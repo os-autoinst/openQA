@@ -1,0 +1,20 @@
+#!/bin/sh
+dir=$1
+shift
+video=$1
+shift
+
+mkdir -p $dir/tmp/
+cp -a ~/code/cvs/perl/autoinst/tools/ppmtompg $dir/tmp/
+
+cat > $dir/tmp/init <<EOF
+#!/bin/sh
+cd /host
+./tmp/ppmtompg qemuscreenshot $video
+sync
+EOF
+chmod a+x $dir/tmp/init
+
+linux ubda=/space/bernhard/img/lenny32.img root=/dev/ubda1 mem=600M con0=fd:0,fd:1 con=pts init=/usr/local/sbin/hostinit hostinit=/host/tmp/init hostfs=$dir $*
+
+rm -f $dir/tmp/*
