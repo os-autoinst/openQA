@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # if you have something slower than Core i7 you might need to increase the IDLETHRESHOLD value... e.g. on my Phenom X4 I have 25 instead of 16
-export IDLETHESHOLD=19
+export IDLETHESHOLD=20
 
 # default: 0.5 (two screenshots per second)
 export SCREENSHOTINTERVAL=0.5
@@ -9,6 +9,7 @@ export SCREENSHOTINTERVAL=0.5
 #export HTTPPROXY=192.168.234.34:3128
 
 # leave empty for http://download.opensuse.org/factory
+export SUSEMIRROR=http://widehat.opensuse.org/factory
 #export SUSEMIRROR=http://ftp5.gwdg.de/pub/opensuse/factory
 
 # possible values: 0|1|5|6|10

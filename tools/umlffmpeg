@@ -12,9 +12,13 @@ cat > $dir/tmp/init <<EOF
 cd /host
 ./tmp/ppmtompg qemuscreenshot $video
 sync
+/sbin/halt
 EOF
 chmod a+x $dir/tmp/init
 
-linux ubda=/space/bernhard/img/lenny32.img root=/dev/ubda1 mem=600M con0=fd:0,fd:1 con=pts init=/usr/local/sbin/hostinit hostinit=/host/tmp/init hostfs=$dir $*
+img=/space/bernhard/img/opensuse-113-32.img ; rootp=2
+img=/space/bernhard/img/lenny32.img ; rootp=1
+
+linux ubda=$img root=/dev/ubda$rootp mem=600M con0=fd:0,fd:1 con=pts init=/usr/local/sbin/hostinit hostinit=/host/tmp/init hostfs=$dir $*
 
 rm -f $dir/tmp/*

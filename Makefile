@@ -1,7 +1,7 @@
 L=video/runlog.txt
 #bwlimit=--bwlimit=1500
 excludes=--exclude="*.zsync" --exclude="*DVD*" 
-excludes+=--exclude="*GNOME*"
+#excludes+=--exclude="*GNOME*"
 excludes+=--exclude="*i686*"
 #excludes+=--exclude="*KDE*"
 repoexcludes=--exclude="texlive*" 
@@ -12,7 +12,7 @@ rsyncserver=stage.opensuse.org
 dvdpath=/factory-all-dvd/iso/
 #dvdpath=/factory-all-dvd/11.3-isos/
 
-all: sync list
+all: sync prune list
 syncall: reposync sync gnomesync dvdsync promosync biarchsync
 
 sync:
@@ -20,7 +20,7 @@ sync:
 	/usr/local/bin/withlock sync.lock rsync -aPHv ${bwlimit} ${excludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/ factory/iso/
 
 prune:
-	find factory/iso/ -type f -name \*.iso -atime +30 -print0 | xargs --no-run-if-empty -0 echo would rm -f
+	find factory/iso/ -type f -name \*.iso -atime +30 -print0 | xargs --no-run-if-empty -0 rm -f
 
 prune2:
 	find factory/iso/ -type f -mtime +30 \( -name "*-NET-*iso" -o -name "*-KDE-*.iso" \) |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
