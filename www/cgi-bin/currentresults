@@ -1,0 +1,65 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use lib "/srv/www/cgi-bin/modules";
+use awstandard;
+use sort_table;
+use openqa;
+my $daysfresh=3;
+my $maxage=3600*24*$daysfresh;
+
+sub parse_log_to_stats($) { my($fn)=@_;
+	my @lines=parse_log($fn);
+	my %stats;
+	foreach my $entry (@lines) {
+		my $result=$entry->[1];
+		$stats{$result}++;
+	}
+	return \%stats;
+}
+
+my %options;
+for my $p (qw'sort') {
+   $options{$p}=param($p);
+}
+#if(!defined $options{sort}){$options{sort}="-5.3.4.-7";} # default sort by Build# descending
+if(!defined $options{sort}){$options{sort}="-7";} # default sort by Time descending
+
+my $resultdir="$basedir/opensuse/video";
+my @list=();
+my $now=time();
+for my $r (<$resultdir/*.autoinst.txt>) {
+	my @s=stat($r);
+	my ($logsize,$mtime)=@s[7,9];
+	next if $mtime < $now - $maxage; # skip old
+	next if $logsize<100; # too small => bug somewhere
+	my $parsed=parse_log_to_stats($r);
+	my ($link, $distri, $type, $arch, $build, $extrainfo)=split_filename($r);
+	push(@list, [$link, $distri, $type, $arch, $build, $extrainfo, 
+	    $mtime, $parsed->{OK}||0, $parsed->{unknown}||"", $parsed->{fail}||""]);
+}
+
+sub resultspan($$) {my ($status,$value)=@_;qq'<span class="overview$_[0]">$_[1]</span>'}
+
+my $table=sort_table(
+  [qw(link distr type arch build extra 
+      testtime OK unk fail)],
+  [\&display_string, undef, \&display_string, \&display_string, \&display_string, \&display_string, 
+      \&display_time, sub{resultspan("ok",$_[0])}, sub{resultspan("unknown",$_[0])}, sub{resultspan("fail",$_[0])}],
+  [undef, undef, \&sort_string, \&sort_string, \&sort_num, \&sort_string, 
+      \&sort_num, \&sort_num, \&sort_num, \&sort_num],
+  sort_param_to_keys($options{sort}), \@list
+);
+
+my ($header,$footer)=get_header_footer();
+print header("text/html").
+$header.
+"<p>This tool lists automated test-results from the last $daysfresh days.
+<br/>".
+(scalar @list)." 
+results:</p>
+<center>
+$table
+</center>
+$footer";
+

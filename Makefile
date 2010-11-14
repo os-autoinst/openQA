@@ -1,8 +1,9 @@
 L=video/runlog.txt
+newdays=4
 #bwlimit=--bwlimit=1500
 excludes=--exclude="*.zsync" --exclude="*DVD*" 
 #excludes+=--exclude="*GNOME*"
-excludes+=--exclude="*i686*"
+#excludes+=--exclude="*i686*"
 #excludes+=--exclude="*KDE*"
 repoexcludes=--exclude="texlive*" 
 #--max-delete=4000
@@ -10,9 +11,11 @@ repoexcludes=--exclude="texlive*"
 #rsyncserver=rsync.opensuse.org
 rsyncserver=stage.opensuse.org
 dvdpath=/factory-all-dvd/iso/
+testdir=testrun1
 #dvdpath=/factory-all-dvd/11.3-isos/
 
 all: sync prune list
+cron: reposync sync prune newvideos
 syncall: reposync sync gnomesync dvdsync promosync biarchsync
 
 sync:
@@ -20,10 +23,10 @@ sync:
 	/usr/local/bin/withlock sync.lock rsync -aPHv ${bwlimit} ${excludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/ factory/iso/
 
 prune:
-	find factory/iso/ -type f -name \*.iso -atime +30 -print0 | xargs --no-run-if-empty -0 rm -f
+	-find factory/iso/ -type f -name \*.iso -atime +30 -print0 | xargs --no-run-if-empty -0 rm -f
 
 prune2:
-	find factory/iso/ -type f -mtime +30 \( -name "*-NET-*iso" -o -name "*-KDE-*.iso" \) |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
+	-find factory/iso/ -type f -mtime +30 \( -name "*-NET-*iso" -o -name "*-KDE-*.iso" \) |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
 
 list:
 	ls factory/iso/*Build*.iso
@@ -59,34 +62,41 @@ reposync:
 	mkdir -p factory/repo/oss/suse/
 	# first sync all big files without deleting. This keeps consistency
 	# another sync in case server changed during first long sync
-	for i in 1 2 3 ; do date=$$(date +%s) ; /usr/local/bin/withlock reposync.lock rsync -aPHv ${bwlimit} ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/oss/suse/ factory/repo/oss/suse/ ; test $$(date +%s) -le $$(expr $$date + 200) && break ; done
+	for i in 1 2 3 ; do date=$$(date +%s) ; /usr/local/bin/withlock reposync.lock rsync -aH ${bwlimit} ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/oss/suse/ factory/repo/oss/suse/ ; test $$(date +%s) -le $$(expr $$date + 200) && break ; done
 	# copy meta-data ; delete old files as last step
 	-rsync -aPHv --delete-after ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/ factory/repo/
 
 
 ISOS=$(shell ls factory/iso/*Build*-Media.iso)
-NEWISOS=$(shell find factory/iso/ -name "*Build*-Media.iso" ! -name "*-Addon-*" -mtime -4)
+NEWISOS=$(shell find factory/iso/ -name "*Build*-Media.iso" ! -name "*-Addon-*" -mtime -$(newdays))
+NEWNETISOS=$(shell find factory/iso/ \( -name "*NET*Build*-Media.iso" -o -name "*DVD*Build*-Media.iso" \) -mtime -$(newdays))
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
 NEWOGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS))
 allvideos: $(OGGS)
 newvideos: $(NEWOGGS)
+newlxdevideos: $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
+newxfcevideos: $(patsubst factory/iso/%-Media.iso,video/%-xfce.ogv,$(NEWNETISOS))
+newgnomevideos: $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS))
 
 video/%.ogv: factory/iso/%-Media.iso
-	echo in=$< out=$@
-	touch $@ # prevent cron going in here during test
-	echo `date` starting to create $@ >>$L
-	pwd=`pwd`; cd testrun1 ; /usr/local/bin/withlock kvm.lock /home/bernhard/code/cvs/perl/autoinst/tools/isotovideo $$pwd/$<
-	echo `date` finished to create $@ >>$L
-	mv testrun1/video/* video/
-	mv -f testrun1/currentautoinst-log.txt $@.autoinst.txt
+	in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	#echo in=$< out=$@
+	#touch $@ # prevent cron going in here during test
+	#echo `date` starting to create $@ >>$L
+	#pwd=`pwd`; cd $(testdir) ; /usr/local/bin/withlock kvm.lock ../perl/autoinst/tools/isotovideo $$pwd/$<
+	#echo `date` finished to create $@ >>$L
+	#mv $(testdir)/video/* video/
+	#-mv $(testdir)/testresults/* testresults/
+	#mv -f $(testdir)/currentautoinst-log.txt $@.autoinst.txt
 
 video/%-lxde.ogv: factory/iso/%-Media.iso
-	x=`perl -e '$$_=shift;s/-\w+.ogv/.ogv/;print' $@`; DESKTOP=lxde $(MAKE) -B $$x ; mv $$x $@ ; mv $$x.autoinst.txt $@.autoinst.txt
-video/%-xfce.ogv: factory/iso/%-Media.iso
-	x=`perl -e '$$_=shift;s/-\w+.ogv/.ogv/;print' $@`; DESKTOP=xfce $(MAKE) -B $$x ; mv $$x $@ ; mv $$x.autoinst.txt $@.autoinst.txt
-video/%-gnome.ogv: factory/iso/%-Media.iso
-	x=`perl -e '$$_=shift;s/-\w+.ogv/.ogv/;print' $@`; DESKTOP=gnome $(MAKE) -B $$x ; mv $$x $@ ; mv $$x.autoinst.txt $@.autoinst.txt
+	export DESKTOP=lxde ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
+video/%-xfce.ogv: factory/iso/%-Media.iso
+	export DESKTOP=xfce ; EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-gnome.ogv: factory/iso/%-Media.iso
+	export DESKTOP=gnome ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	
 
 %.ogg: %.mp3
 	ffmpeg -ab 192k -i $< -acodec vorbis $@

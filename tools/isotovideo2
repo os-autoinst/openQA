@@ -1,0 +1,19 @@
+#!/bin/sh -xe
+# %s/\$@/\$out/g
+# %s/\$</\$in/g
+	basetestname=`perl -e '$_=shift;s/(?:-Media)?.iso$//;s%.*/%%;print' $in`
+	test -z "$basetestname" && exit 1
+	test -z "$testdir" && exit 2
+	test -z "$in" -o -z "$out" && exit 3
+	echo in=$in out=$out
+	#trap "rm -f $out" EXIT # clean up in case of errors
+	touch $out # prevent cron going in here during test
+	echo `date` starting to create $out >>$L
+	(pwd=`pwd`; cd ${testdir} ; /usr/local/bin/withlock kvm.lock ../perl/autoinst/tools/isotovideo $pwd/$in)
+	echo `date` finished to create $out >>$L
+	mv -f ${testdir}/video/$basetestname.ogv $out
+	#trap "" EXIT
+	mv -f ${testdir}/currentautoinst-log.txt $out.autoinst.txt
+	rm -rf testresults/$basetestname$EXTRANAME
+	mv ${testdir}/testresults/$basetestname testresults/$basetestname$EXTRANAME || true
+

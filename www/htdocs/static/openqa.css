@@ -1,0 +1,13 @@
+
+td { text-align: center ;}
+tr.odd {background-color:#cfdcff ;}  /* Sky light */
+tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
+
+.resultok {background-color:#d4f291 ;} /* Lemon */
+.resultunknown {background-color:#ff9 ;}
+.resultfail {background-color:#faa ;}
+
+.overviewok {color: #248509 ;}		/* dark Lemon */
+.overviewunknown {color: #5c5c15 ;}	/* dark Butter*/
+.overviewfail {color: #900 ;}		/* dark Blood */
+

@@ -1,0 +1,21 @@
+common makefile targets:
+
+make sync:
+	fetch new NET/KDE/GNOME iso images
+
+make dvdsync:
+	fetch new DVD iso images
+
+make prune:
+	delete old isos
+
+make newvideos:
+	testrun iso images from last three days
+
+make allvideos:
+	testrun all iso images that have no video yet
+
+make video/openSUSE...ogv:
+	make a specific video from the corresponding factory/iso/ image
+
+

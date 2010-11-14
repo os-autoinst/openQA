@@ -9,7 +9,8 @@ export SCREENSHOTINTERVAL=0.5
 #export HTTPPROXY=192.168.234.34:3128
 
 # leave empty for http://download.opensuse.org/factory
-export SUSEMIRROR=http://widehat.opensuse.org/factory
+#export SUSEMIRROR=http://widehat.opensuse.org/factory
+export SUSEMIRROR=http://openqa.opensuse.org/opensuse/factory
 #export SUSEMIRROR=http://ftp5.gwdg.de/pub/opensuse/factory
 
 # possible values: 0|1|5|6|10

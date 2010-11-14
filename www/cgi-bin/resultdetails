@@ -1,0 +1,49 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use lib "/srv/www/cgi-bin/modules";
+use awstandard;
+#use sort_table;
+use openqa;
+
+sub imgfqdn_to_link
+{ my($x)=@_;
+	my $name=$x;
+	$name=~s/.*-(\d+)\.ppm/$1/;
+	$x=~s{^$basedir/opensuse}{/cgi-bin/jpg};
+	qq(<a href="$x">$name</a>);
+}
+
+
+my $fn=$ENV{PATH_INFO};
+if(!defined $fn) { print header(-status=>404)."must specify result file as path"; exit 0 }
+$fn=~s%^/%%;
+if($fn=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
+$fn=~s/\.autoinst\.txt$//; $fn=~s/\.ogv$//; # be tolerant in what we accept
+my $resultdir="$basedir/opensuse/video";
+my $imgdir=openqa::imgdir($fn);
+my $fqfn="$resultdir/$fn.ogv.autoinst.txt";
+if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
+
+my @fnsplit=split_filename($fqfn);
+
+my @lines=parse_log($fqfn);
+my @out=();
+foreach my $entry (@lines) {
+	my ($name,$result)=@$entry;
+	# TODO add link to $imgdir/$name*.ppm via png CGI
+	my @imglist=map {imgfqdn_to_link($_)} <$imgdir/$name-[0-9]*.ppm>;
+	push(@out, "$name: <span class='result\L$result\E'>$result</span> @imglist<br/>");
+}
+
+my ($header,$footer)=get_header_footer();
+print header("text/html").
+$header.
+qq{<p>This tool gives details on one particular test result.
+<br/>
+$fnsplit[0]
+<a href="/cgi-bin/currentresults"><img src="/images/back.png" alt="back" title="back to overview page" /></a> 
+<br/>@out
+</p>}.
+$footer;
+

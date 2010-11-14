@@ -1,0 +1,15 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use Image::Magick;
+
+my $p = new Image::Magick(depth=>8);
+my $name=$ENV{PATH_INFO};
+if($name=~m/\.\./) {die "invalid path"}
+$name=~s/\.ppm$//;
+my $fullname="/space/geekotest/opensuse/$name.ppm";
+if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
+$p->Read($fullname, depth=>8);
+print header("image/png").
+      $p->ImageToBlob(magick=>'PNG', depth=>8);
+
