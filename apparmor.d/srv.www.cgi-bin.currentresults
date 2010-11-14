@@ -1,0 +1,24 @@
+# $Id: usr.sbin.mdnsd 697 2007-05-25 03:09:30Z steve-beattie $
+# vim:syntax=apparmor
+# ------------------------------------------------------------------
+#
+#    Copyright (C) 2002-2005 Novell/SUSE
+#
+#    This program is free software; you can redistribute it and/or
+#    modify it under the terms of version 2 of the GNU General Public
+#    License published by the Free Software Foundation.
+#
+# ------------------------------------------------------------------
+
+#include <tunables/global>
+#include <tunables/openqa>
+
+/srv/www/cgi-bin/currentresults {
+  #include <abstractions/base>
+  #include <abstractions/perl>
+  #include <abstractions/openqacgi>
+
+#  /usr/bin/perl rmix,
+  /srv/www/cgi-bin/currentresults	r,
+}
+

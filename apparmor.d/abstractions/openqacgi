@@ -1,0 +1,9 @@
+
+# for use in openqa CGI scripts
+
+  #include <abstractions/perl>
+
+/srv/www/cgi-bin/modules/**	r,
+/srv/www/htdocs/template/**	r,
+@{TESTHOME}**			r,
+
