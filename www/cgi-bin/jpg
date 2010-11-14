@@ -10,6 +10,12 @@ $name=~s/\.ppm$//;
 my $fullname="/space/geekotest/opensuse/$name.ppm";
 if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
 $p->Read($fullname, depth=>8);
+
+my $size=param("size");
+if($size && $size=~m/^\d{1,3}x\d{1,3}$/) {
+	$p->Resize($size); # make thumbnail
+}
+
 print header("image/jpg").
       $p->ImageToBlob(magick=>'JPG', depth=>8, quality=>80);
 

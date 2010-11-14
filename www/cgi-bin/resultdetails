@@ -6,12 +6,14 @@ use awstandard;
 #use sort_table;
 use openqa;
 
-sub imgfqdn_to_link
-{ my($x)=@_;
+sub imgfqdn_to_link($;$)
+{ my($x,$wantthumb)=@_;
 	my $name=$x;
 	$name=~s/.*-(\d+)\.ppm/$1/;
 	$x=~s{^$basedir/opensuse}{/cgi-bin/jpg};
-	qq(<a href="$x">$name</a>);
+	# add thumbnail inline img
+	my $thumb=($wantthumb?qq(<img src="$x?size=80x60"/>):"");
+	qq(<a href="$x">$name$thumb</a>);
 }
 
 
@@ -31,8 +33,9 @@ my @lines=parse_log($fqfn);
 my @out=();
 foreach my $entry (@lines) {
 	my ($name,$result)=@$entry;
-	# TODO add link to $imgdir/$name*.ppm via png CGI
-	my @imglist=map {imgfqdn_to_link($_)} <$imgdir/$name-[0-9]*.ppm>;
+	my $wantthumb=($result!~m/OK/);
+	# add link to $imgdir/$name*.ppm via png CGI
+	my @imglist=map {imgfqdn_to_link($_,$wantthumb)} <$imgdir/$name-[0-9]*.ppm>;
 	push(@out, "$name: <span class='result\L$result\E'>$result</span> @imglist<br/>");
 }
 
