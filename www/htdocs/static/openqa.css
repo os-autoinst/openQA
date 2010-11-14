@@ -1,5 +1,6 @@
 
 td { text-align: center ;}
+td { padding: 0.3em 0.6em; }
 tr.odd {background-color:#cfdcff ;}  /* Sky light */
 tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 
@@ -10,4 +11,7 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 .overviewok {color: #248509 ;}		/* dark Lemon */
 .overviewunknown {color: #5c5c15 ;}	/* dark Butter*/
 .overviewfail {color: #900 ;}		/* dark Blood */
+
+.component { text-align: right; }
+.links { text-align: left; }
 

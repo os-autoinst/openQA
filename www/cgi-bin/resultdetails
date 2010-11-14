@@ -6,13 +6,13 @@ use awstandard;
 #use sort_table;
 use openqa;
 
-sub imgfqdn_to_link($;$)
+sub imgfqfn_to_link($;$)
 { my($x,$wantthumb)=@_;
 	my $name=$x;
 	$name=~s/.*-(\d+)\.ppm/$1/;
 	$x=~s{^$basedir/opensuse}{/cgi-bin/jpg};
 	# add thumbnail inline img
-	my $thumb=($wantthumb?qq(<img src="$x?size=80x60"/>):"");
+	my $thumb=($wantthumb?qq(<img src="$x?size=80x60" alt="$name" />):"");
 	qq(<a href="$x">$name$thumb</a>);
 }
 
@@ -35,18 +35,21 @@ foreach my $entry (@lines) {
 	my ($name,$result)=@$entry;
 	my $wantthumb=($result!~m/OK/);
 	# add link to $imgdir/$name*.ppm via png CGI
-	my @imglist=map {imgfqdn_to_link($_,$wantthumb)} <$imgdir/$name-[0-9]*.ppm>;
-	push(@out, "$name: <span class='result\L$result\E'>$result</span> @imglist<br/>");
+	my @imglist=map {imgfqfn_to_link($_,$wantthumb)} <$imgdir/$name-[0-9]*.ppm>;
+	push(@out, qq(<tr><td class="component">$name</td><td class='result\L$result\E'>$result</td><td class="links">@imglist</td></tr>\n));
 }
 
 my ($header,$footer)=get_header_footer();
 print header("text/html").
 $header.
-qq{<p>This tool gives details on one particular test result.
+qq{
+<p>This tool displays details on one particular test result.
 <br/>
-$fnsplit[0]
-<a href="/cgi-bin/currentresults"><img src="/images/back.png" alt="back" title="back to overview page" /></a> 
-<br/>@out
-</p>}.
+$fnsplit[0] <a href="/cgi-bin/currentresults"><img src="/images/back.png" alt="back" title="back to overview page" /></a> 
+</p>
+<h2>results</h2>
+<table>
+@out
+</table>}.
 $footer;
 

@@ -15,7 +15,7 @@ testdir=testrun1
 #dvdpath=/factory-all-dvd/11.3-isos/
 
 all: sync prune list
-cron: reposync sync prune newvideos
+cron: reposync sync prune prune2 newvideos
 syncall: reposync sync gnomesync dvdsync promosync biarchsync
 
 sync:
@@ -23,10 +23,10 @@ sync:
 	/usr/local/bin/withlock sync.lock rsync -aPHv ${bwlimit} ${excludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/ factory/iso/
 
 prune:
-	-find factory/iso/ -type f -name \*.iso -atime +30 -print0 | xargs --no-run-if-empty -0 rm -f
+	-find factory/iso/ testresults/ video/ -type f -name \*.iso -atime +30 -print0 | xargs --no-run-if-empty -0 rm -f
 
 prune2:
-	-find factory/iso/ -type f -mtime +30 \( -name "*-NET-*iso" -o -name "*-KDE-*.iso" \) |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
+	-df .|grep -q "9[4-9]%" && find factory/iso/ -type f -mtime +10 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
 
 list:
 	ls factory/iso/*Build*.iso
