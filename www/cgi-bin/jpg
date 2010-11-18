@@ -20,6 +20,6 @@ if($size && $size=~m/^\d{1,3}x\d{1,3}$/) {
 
 my $mtime=(stat($fullname))[9];
 
-print header(-type=>"image/jpg", -expires=>'+3d', -max_age=>'200000', -Last_Modified=>awstandard::HTTPdate($mtime)).
+print header(-type=>"image/jpg", -expires=>'+30m', -max_age=>'20000', -Last_Modified=>awstandard::HTTPdate($mtime)).
       $p->ImageToBlob(magick=>'JPG', depth=>8, quality=>80);
 

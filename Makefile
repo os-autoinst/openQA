@@ -26,7 +26,11 @@ prune:
 	-find factory/iso/ testresults/ video/ -type f -name \*.iso -atime +30 -print0 | xargs --no-run-if-empty -0 rm -f
 
 prune2:
-	-df .|grep -q "9[4-9]%" && find factory/iso/ -type f -mtime +10 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
+	-df .|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +10 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
+
+prune3: 
+	# only keep latest NET iso of each arch
+	#find factory/iso/ -name "*-NET-*"|sort -t- -k4| perl -ne '...'
 
 list:
 	ls factory/iso/*Build*.iso
@@ -65,11 +69,17 @@ reposync:
 	for i in 1 2 3 ; do date=$$(date +%s) ; /usr/local/bin/withlock reposync.lock rsync -aH ${bwlimit} ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/oss/suse/ factory/repo/oss/suse/ ; test $$(date +%s) -le $$(expr $$date + 200) && break ; done
 	# copy meta-data ; delete old files as last step
 	-rsync -aPHv --delete-after ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/ factory/repo/
+snapshot:
+	mkdir -p factory-tested/repo/
+	# link-dest is relative to dest dir
+	#rsync -aSHPv --link-dest=../../factory/repo/ factory/repo/ factory-tested/repo/
+	rsync -aSHPv --delete-after --link-dest=../factory/ rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/ factory-tested/
 
 
 ISOS=$(shell ls factory/iso/*Build*-Media.iso)
-NEWISOS=$(shell find factory/iso/ -name "*Build*-Media.iso" ! -name "*-Addon-*" -mtime -$(newdays))
-NEWNETISOS=$(shell find factory/iso/ \( -name "*NET*Build*-Media.iso" -o -name "*DVD*Build*-Media.iso" \) -mtime -$(newdays))
+NEWISOS=$(shell find factory/iso/ -name "*Build*-Media.iso" ! -name "*-Addon-*" -mtime -$(newdays)|sort -r -t- -k4|head -8)
+# it is enough to test one i586+x86_64 NET-iso
+NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${newdays}|sort -r -t- -k4|head -2 ; find factory/iso/ -name "*DVD*Build*-Media.iso" -mtime -${newdays})
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
 NEWOGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS))
 allvideos: $(OGGS)
@@ -80,14 +90,6 @@ newgnomevideos: $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISO
 
 video/%.ogv: factory/iso/%-Media.iso
 	in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-	#echo in=$< out=$@
-	#touch $@ # prevent cron going in here during test
-	#echo `date` starting to create $@ >>$L
-	#pwd=`pwd`; cd $(testdir) ; /usr/local/bin/withlock kvm.lock ../perl/autoinst/tools/isotovideo $$pwd/$<
-	#echo `date` finished to create $@ >>$L
-	#mv $(testdir)/video/* video/
-	#-mv $(testdir)/testresults/* testresults/
-	#mv -f $(testdir)/currentautoinst-log.txt $@.autoinst.txt
 
 video/%-lxde.ogv: factory/iso/%-Media.iso
 	export DESKTOP=lxde ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
@@ -105,6 +107,10 @@ video/%-gnome.ogv: factory/iso/%-Media.iso
 	#ffmpeg -t 100 -i $< -i /home/bernhard/public_html/mirror/opensuse/music/www.musopen.com/161.ogg -vcodec copy -acodec copy -f ogg - | ffmpeg2theora -o $@ -
 	#segfaults: ffmpeg -t 100 -b 20000k -i $< -i /home/bernhard/public_html/mirror/opensuse/music/www.musopen.com/161.mp3 -f ogg - | ffmpeg2theora -o $@ -
 	#ffmpeg -t 100 -i $< -i /home/bernhard/public_html/mirror/opensuse/music/www.musopen.com/161.mp3 -vcodec copy $@
+
+gitcollect:
+	rsync -a /srv/www/ www/
+	rsync -a /usr/local/bin/umlffmpeg ./tools/
 
 clean:
 	rm -f factory/iso/*-current-Media.iso.zsync

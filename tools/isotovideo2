@@ -7,7 +7,7 @@
 	test -z "$in" -o -z "$out" && exit 3
 	echo in=$in out=$out
 	#trap "rm -f $out" EXIT # clean up in case of errors
-	touch $out # prevent cron going in here during test
+	touch $out $out.autoinst.txt # prevent cron going in here during test
 	echo `date` starting to create $out >>$L
 	(pwd=`pwd`; cd ${testdir} ; /usr/local/bin/withlock kvm.lock ../perl/autoinst/tools/isotovideo $pwd/$in)
 	echo `date` finished to create $out >>$L

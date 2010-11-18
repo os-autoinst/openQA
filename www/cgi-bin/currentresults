@@ -32,9 +32,13 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	my @s=stat($r);
 	my ($logsize,$mtime)=@s[7,9];
 	next if $mtime < $now - $maxage; # skip old
-	next if $logsize<100; # too small => bug somewhere
-	my $parsed=parse_log_to_stats($r);
 	my ($link, $distri, $type, $arch, $build, $extrainfo)=split_filename($r);
+	my $parsed=parse_log_to_stats($r);
+	if($logsize==0) {
+		$link="testing";
+		$parsed->{OK}=" ";
+	}
+#	next if $logsize<100; # too small => bug somewhere
 	push(@list, [$link, $distri, $type, $arch, $build, $extrainfo, 
 	    $mtime, $parsed->{OK}||0, $parsed->{unknown}||"", $parsed->{fail}||""]);
 }

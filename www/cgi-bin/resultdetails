@@ -12,7 +12,8 @@ sub imgfqfn_to_link($;$)
 	$name=~s/.*-(\d+)\.ppm/$1/;
 	$x=~s{^$basedir/opensuse}{/cgi-bin/jpg};
 	# add thumbnail inline img
-	my $thumb=($wantthumb?qq(<img src="$x?size=80x60" alt="$name" />):"");
+	my $width=80; my $height=int($width/4*3);
+	my $thumb=($wantthumb?qq(<img src="$x?size=${width}x${height}" width="${width}" height="${height}" alt="$name" />):"");
 	qq(<a href="$x">$name$thumb</a>);
 }
 
