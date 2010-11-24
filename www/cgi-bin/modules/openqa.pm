@@ -41,7 +41,7 @@ sub path_to_url($) { my($fn)=@_;
 sub path_to_ogvlink($) { my($fn)=@_;
 	my $url=path_to_url($fn);
 	$url=~s%\.autoinst\.txt$%%;
-	$url=~s%^(.*)%<a href="$1"><img src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>%;
+	$url=~s%^(.*)%<a href="$1"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>%;
 	return $url;
 }
 sub path_to_detailurl($) { my($fn)=@_;
@@ -51,13 +51,12 @@ sub path_to_detailurl($) { my($fn)=@_;
 }
 sub path_to_detaillink($) { my($fn)=@_;
 	my $url=path_to_detailurl($fn);
-	$url=qq(<a href="$url"><img src="/images/details.png" alt="details" title="test result details"/></a>);
+	$url=qq(<a href="$url"><img width="23" height="23" src="/images/details.png" alt="details" title="test result details"/></a>);
 	return $url;
 }
 sub path_to_loglink($) { my($fn)=@_;
 	my $url=path_to_url($fn);
-	$url=~s%^(.*)%<a href="$1"><img src="/images/log.png" alt="log" title="complete log of this testrun"/></a>%;
-	return $url;
+	return qq%<a href="$url"><img width="23" height="23" src="/images/log.png" alt="log" title="complete log of this testrun"/></a>%;
 }
 sub split_filename($) { my($fn)=@_;
 	my $origfn=$fn;
