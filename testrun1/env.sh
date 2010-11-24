@@ -10,7 +10,7 @@ export SCREENSHOTINTERVAL=0.5
 
 # leave empty for http://download.opensuse.org/factory
 #export SUSEMIRROR=http://widehat.opensuse.org/factory
-export SUSEMIRROR=http://openqa.opensuse.org/opensuse/factory
+export SUSEMIRROR=http://openqa.opensuse.org/opensuse/factory-testing
 #export SUSEMIRROR=http://ftp5.gwdg.de/pub/opensuse/factory
 
 # possible values: 0|1|5|6|10
@@ -37,6 +37,6 @@ export QEMUPORT=15222
 # which VNC port to use. default is to allow vncviewer $HOSTNAME:99
 export VNC=99
 # VNC keyboard layout of vncclient machine
-#export VNCKB=de
+export VNCKB=de
 
 #export INSTLANG=de_DE

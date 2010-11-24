@@ -1,4 +1,4 @@
-# $Id: bernhard-wiedemann $
+# $Id: usr.sbin.rsyncd bernhard-wiedemann $
 # vim:syntax=apparmor
 # ------------------------------------------------------------------
 #
@@ -13,12 +13,19 @@
 #include <tunables/global>
 #include <tunables/openqa>
 
-/srv/www/cgi-bin/png {
+/usr/sbin/rsyncd {
   #include <abstractions/base>
-  #include <abstractions/openqacgi>
+  #include <abstractions/nameservice>
 
-  /srv/www/cgi-bin/png		r,
-# converting ppm (pnm) to png
-  /usr/lib64/ImageMagick*/modules*/coders/pn[gm].so	m,
+  capability setgid,
+  capability setuid,
+  capability sys_chroot,
+
+  /etc/rsyncd.conf		r,
+  /etc/slp.**			r,
+  /var/log/rsyncd.log		w,
+  /var/run/rsyncd.pid		w,
+  @{TESTHOME}**			r,
+  #/opensuse			r,
 }
 

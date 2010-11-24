@@ -1,11 +1,11 @@
 L=video/runlog.txt
-newdays=4
+newdays=1
 #bwlimit=--bwlimit=1500
 excludes=--exclude="*.zsync" --exclude="*DVD*" 
 #excludes+=--exclude="*GNOME*"
 #excludes+=--exclude="*i686*"
 #excludes+=--exclude="*KDE*"
-repoexcludes=--exclude="texlive*" 
+#repoexcludes=--exclude="texlive*"
 #--max-delete=4000
 #repoexcludes+=--exclude="x86_64"
 #rsyncserver=rsync.opensuse.org
@@ -23,7 +23,7 @@ sync:
 	/usr/local/bin/withlock sync.lock rsync -aPHv ${bwlimit} ${excludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/ factory/iso/
 
 prune:
-	-find factory/iso/ testresults/ video/ -type f -name \*.iso -atime +30 -print0 | xargs --no-run-if-empty -0 rm -f
+	-find factory/iso/ testresults/ video/ -type f -name \*.iso -atime +30 -mtime +30 -print0 | xargs --no-run-if-empty -0 rm -f
 
 prune2:
 	-df .|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +10 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
@@ -69,11 +69,16 @@ reposync:
 	for i in 1 2 3 ; do date=$$(date +%s) ; /usr/local/bin/withlock reposync.lock rsync -aH ${bwlimit} ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/oss/suse/ factory/repo/oss/suse/ ; test $$(date +%s) -le $$(expr $$date + 200) && break ; done
 	# copy meta-data ; delete old files as last step
 	-rsync -aPHv --delete-after ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/ factory/repo/
+preparesnapshot: sync reposync
+	mkdir -p factory-testing/repo/
+	rsync -aSHPv --delete-after --link-dest=../factory/ rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/ factory-testing/
+
 snapshot:
 	mkdir -p factory-tested/repo/
 	# link-dest is relative to dest dir
 	#rsync -aSHPv --link-dest=../../factory/repo/ factory/repo/ factory-tested/repo/
-	rsync -aSHPv --delete-after --link-dest=../factory/ rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/ factory-tested/
+	#rsync -aSHPv --delete-after --link-dest=../factory/ rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/ factory-tested/
+	rsync -aH --delete-after --link-dest=../factory-testing/ factory-testing/ factory-tested/
 
 
 ISOS=$(shell ls factory/iso/*Build*-Media.iso)
@@ -111,6 +116,7 @@ video/%-gnome.ogv: factory/iso/%-Media.iso
 gitcollect:
 	rsync -a /srv/www/ www/
 	rsync -a /usr/local/bin/umlffmpeg ./tools/
+	rsync -a /etc/apparmor.d/{srv.www,usr.sbin.{httpd,rsyncd}}* apparmor.d
 
 clean:
 	rm -f factory/iso/*-current-Media.iso.zsync

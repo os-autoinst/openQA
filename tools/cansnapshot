@@ -1,0 +1,28 @@
+#!/usr/bin/perl -w
+# This code is Copyright 2010 Bernhard M. Wiedemann
+# and is licensed under the GNU General Public License version 2 or later.
+# http://www.gnu.org/licenses/gpl-2.0.html
+
+# This code decides if a release is good enough to be snapshotted
+# returning non-zero on failure
+
+use strict;
+
+# autodetect build number
+my $buildnr;
+for my $i (<factory-testing/iso/*.iso>) {
+	$i=~m/-Build(\d{4})-Media\.iso$/;
+	my $b=$1;
+	if(!$buildnr) {$buildnr=$b}
+	if($b ne $buildnr) {die "error: inconsistent build numbers '$b'!='$buildnr' in iso filenames"}
+}
+
+# check results
+my $overalls=`tail -n 1 video/*-Build$buildnr.ogv.autoinst.txt`;
+
+if($overalls=~m/overall: fail/ || $overalls!~m/overall: OK/) {
+	exit 1; # fail
+}
+print "Build $buildnr autodetected as good to snapshot\n";
+sleep 20; # last chance to hit Ctrl+C here
+exit 0 # OK

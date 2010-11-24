@@ -1,0 +1,29 @@
+#!/usr/bin/perl -w
+# This code is Copyright 2010 Bernhard M. Wiedemann
+# and is licensed under the GNU General Public License version 2 or later.
+# http://www.gnu.org/licenses/gpl-2.0.html
+
+# This runs the main test loop
+
+use strict;
+
+my $waittime=20*60;
+my $lasttime;
+sub maybewait()
+{
+	my $t=$lasttime;
+	$lasttime=time;
+	return if !$t; # dont sleep first time
+	my $time=$waittime-$lasttime+time;
+	return if $time<=0; # dont sleep if loop took long
+	sleep $time; # wait to not overload rsync server
+}
+
+# perpetual main loop
+while (1) {
+	maybewait();
+	system("make preparesnapshot");
+	system("make newvideos testdir=testrun-cron");
+	system("tools/cansnapshot && make snapshot");
+}
+

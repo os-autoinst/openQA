@@ -5,8 +5,8 @@ use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 use sort_table;
 use openqa;
-my $daysfresh=3;
-my $maxage=3600*24*$daysfresh;
+
+my $defaulthoursfresh=4*24;
 
 sub parse_log_to_stats($) { my($fn)=@_;
 	my @lines=parse_log($fn);
@@ -19,11 +19,14 @@ sub parse_log_to_stats($) { my($fn)=@_;
 }
 
 my %options;
-for my $p (qw'sort') {
+for my $p (qw'sort hours') {
    $options{$p}=param($p);
 }
 #if(!defined $options{sort}){$options{sort}="-5.3.4.-7";} # default sort by Build# descending
 if(!defined $options{sort}){$options{sort}="-7";} # default sort by Time descending
+my $hoursfresh=($options{hours}+0);
+if($hoursfresh<1 || $hoursfresh>300) {$hoursfresh=$defaulthoursfresh}
+my $maxage=3600*$hoursfresh;
 
 my $resultdir="$basedir/opensuse/video";
 my @list=();
@@ -55,10 +58,12 @@ my $table=sort_table(
   sort_param_to_keys($options{sort}), \@list
 );
 
+my $hoursselect="";
+
 my ($header,$footer)=get_header_footer();
 print header("text/html").
 $header.
-"<p>This tool lists automated test-results from the last $daysfresh days.
+"<p>This tool lists automated test-results from the last $hoursfresh hours. $hoursselect
 <br/>".
 (scalar @list)." 
 results:</p>
