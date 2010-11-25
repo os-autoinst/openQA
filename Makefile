@@ -23,7 +23,7 @@ sync:
 	/usr/local/bin/withlock sync.lock rsync -aPHv ${bwlimit} ${excludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/ factory/iso/
 
 prune:
-	-find factory/iso/ testresults/ video/ -type f -name \*.iso -atime +30 -mtime +30 -print0 | xargs --no-run-if-empty -0 rm -f
+	-find factory/iso/ testresults/ video/ -type f -name \*.iso -atime +20 -mtime +20 -print0 | xargs --no-run-if-empty -0 rm -f
 
 prune2:
 	-df .|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +10 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
@@ -31,6 +31,11 @@ prune2:
 prune3: 
 	# only keep latest NET iso of each arch
 	#find factory/iso/ -name "*-NET-*"|sort -t- -k4| perl -ne '...'
+
+renameresult:
+	mv -f video/$f.ogv video/$t.ogv
+	mv -f video/$f.ogv.autoinst.txt video/$t.ogv.autoinst.txt
+	mv -f testresults/$f testresults/$t
 
 list:
 	ls factory/iso/*Build*.iso
@@ -82,7 +87,7 @@ snapshot:
 
 
 ISOS=$(shell ls factory/iso/*Build*-Media.iso)
-NEWISOS=$(shell find factory/iso/ -name "*Build*-Media.iso" ! -name "*-Addon-*" -mtime -$(newdays)|sort -r -t- -k4|head -8)
+NEWISOS=$(shell find factory/iso/ -name "*Build*-Media.iso" ! -name "*-Addon-*" -mtime -$(newdays)|sort -r -t- -k4|head -12)
 # it is enough to test one i586+x86_64 NET-iso
 NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${newdays}|sort -r -t- -k4|head -2 ; find factory/iso/ -name "*DVD*Build*-Media.iso" -mtime -${newdays})
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))

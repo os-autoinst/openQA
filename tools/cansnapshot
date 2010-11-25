@@ -20,7 +20,10 @@ for my $i (<factory-testing/iso/*.iso>) {
 # check results
 my $overalls=`tail -n 1 video/*-Build$buildnr.ogv.autoinst.txt`;
 
-if($overalls=~m/overall: fail/ || $overalls!~m/overall: OK/) {
+if($overalls=~m/overall: fail/) {
+	exit 2; # fail
+}
+if($overalls!~m/overall: OK/) { # we want at least one OK
 	exit 1; # fail
 }
 print "Build $buildnr autodetected as good to snapshot\n";

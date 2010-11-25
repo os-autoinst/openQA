@@ -8,15 +8,6 @@ use openqa;
 
 my $defaulthoursfresh=4*24;
 
-sub parse_log_to_stats($) { my($fn)=@_;
-	my @lines=parse_log($fn);
-	my %stats;
-	foreach my $entry (@lines) {
-		my $result=$entry->[1];
-		$stats{$result}++;
-	}
-	return \%stats;
-}
 
 my %options;
 for my $p (qw'sort hours') {
