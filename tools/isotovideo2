@@ -13,9 +13,9 @@
 	echo `date` starting to create $out >>$L
 	(pwd=`pwd`; cd ${testdir} ; /usr/local/bin/withlock kvm.lock ../perl/autoinst/tools/isotovideo $pwd/$in)
 	echo `date` finished to create $out >>$L
+	mv -f ${testdir}/currentautoinst-log.txt $out.autoinst.txt
 	mv -f ${testdir}/video/$basetestname.ogv $out
 	#trap "" EXIT
-	mv -f ${testdir}/currentautoinst-log.txt $out.autoinst.txt
 	rm -rf testresults/$baseoutname
 	mv ${testdir}/testresults/$basetestname testresults/$baseoutname || true
 

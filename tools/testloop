@@ -45,7 +45,7 @@ sub maybewait()
 	my $timeneeded=time-$t;
 	if($timeneeded<100) { # had nothing to do
 		run_extra_test;
-		my $timeneeded=time-$t;
+		$timeneeded=time-$t;
 	}
 	my $timetowait=$waittime-$timeneeded;
 	return if $timetowait<=0; # dont sleep if loop took long
