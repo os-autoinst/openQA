@@ -15,6 +15,7 @@ for my $p (qw'sort hours') {
 }
 #if(!defined $options{sort}){$options{sort}="-5.3.4.-7";} # default sort by Build# descending
 if(!defined $options{sort}){$options{sort}="-7";} # default sort by Time descending
+if(!defined($options{hours}) || $options{hours}=~m/\D/) {$options{hours}=$defaulthoursfresh}
 my $hoursfresh=($options{hours}+0);
 if($hoursfresh<1 || $hoursfresh>300) {$hoursfresh=$defaulthoursfresh}
 my $maxage=3600*$hoursfresh;
@@ -37,7 +38,7 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	    $mtime, $parsed->{OK}||0, $parsed->{unknown}||"", $parsed->{fail}||""]);
 }
 
-sub resultspan($$) {my ($status,$value)=@_;qq'<span class="overview$_[0]">$_[1]</span>'}
+sub resultspan($$) {my ($status,$value)=@_;if($value eq ""){return ""} qq'<span class="overview$_[0]">&nbsp;$_[1]&nbsp;</span>'}
 
 my $table=sort_table(
   [qw(link distr type arch build extra 
@@ -61,5 +62,10 @@ results:</p>
 <center>
 $table
 </center>
+
+<p>
+Note: times are UTC ; tests without an 'extra' string just use default desktop+settings - which means KDE, except on GNOME-LiveCD
+</p>
+
 $footer";
 

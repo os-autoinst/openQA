@@ -6,24 +6,58 @@
 # This runs the main test loop
 
 use strict;
+use List::Util qw(shuffle);
 
-my $waittime=20*60;
+my $testdir="testrun-cron";
+my $waittime=10*60;
+
+my @extralist=qw(gnome lxde xfce RAID10);
+my @extralistshuffled;
+my @archlist=qw(i586 x86_64);
+my @archlistshuffled;
+
+sub run_extra_test()
+{
+	print "running one random extra test to spend time without idling\n";
+	@extralistshuffled=shuffle(@extralist) if not @extralistshuffled;
+	my $test=pop @extralistshuffled;
+	@archlistshuffled=shuffle(@archlist) if not @archlistshuffled;
+	my $arch=pop @archlistshuffled;
+	# note: diamond operator will stop returning results in scalar context
+	my $iso=(glob "factory-testing/iso/openSUSE-NET-$arch-*.iso")[0];
+	unless ($iso) {
+		print "no $arch NET iso found - should be rare";
+		return;
+	}
+	my $maketarget=$iso;
+	$maketarget=~s{.*/}{video/};
+	$maketarget=~s{-Media.iso}{-$test.ogv};
+	print "testing $maketarget\n";
+	system("make $maketarget testdir=$testdir");
+}
+
 my $lasttime;
 sub maybewait()
 {
 	my $t=$lasttime;
 	$lasttime=time;
 	return if !$t; # dont sleep first time
-	my $time=$waittime-$lasttime+time;
-	return if $time<=0; # dont sleep if loop took long
-	sleep $time; # wait to not overload rsync server
+	my $timeneeded=time-$t;
+	if($timeneeded<100) { # had nothing to do
+		run_extra_test;
+		my $timeneeded=time-$t;
+	}
+	my $timetowait=$waittime-$timeneeded;
+	return if $timetowait<=0; # dont sleep if loop took long
+	print "waiting $timetowait seconds\n";
+	sleep $timetowait; # wait to not overload rsync server
 }
 
 # perpetual main loop
 while (1) {
 	maybewait();
-	system("make preparesnapshot");
-	system("make newvideos testdir=testrun-cron");
+	system("make prune prune2 preparesnapshot");
+	system("make newvideos testdir=$testdir");
 	system("tools/cansnapshot && make snapshot");
 }
 

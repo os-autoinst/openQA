@@ -18,6 +18,8 @@ for my $i (<factory-testing/iso/*.iso>) {
 }
 
 # check results
+# having no * after buildnr means we ignore results from other desktops and RAID
+# to have more snapshots
 my $overalls=`tail -n 1 video/*-Build$buildnr.ogv.autoinst.txt`;
 
 if($overalls=~m/overall: fail/) {

@@ -9,8 +9,8 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 .resultfail {background-color:#faa ;}
 
 .overviewok {color: #248509 ;}		/* dark Lemon */
-.overviewunknown {color: #5c5c15 ;}	/* dark Butter*/
-.overviewfail {color: #900 ;}		/* dark Blood */
+.overviewunknown {background-color:#ff9 ;}
+.overviewfail {background-color:#fbb ;}
 
 .component { text-align: right; }
 .links { text-align: left; }

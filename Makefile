@@ -108,6 +108,8 @@ video/%-xfce.ogv: factory/iso/%-Media.iso
 	export DESKTOP=xfce ; EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-gnome.ogv: factory/iso/%-Media.iso
 	export DESKTOP=gnome ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-RAID10.ogv: factory/iso/%-Media.iso
+	export RAIDLEVEL=10 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 	
 
 %.ogg: %.mp3

@@ -32,7 +32,7 @@ sub display_time{ my($n)=@_;
    return AWisodatetime2($n);
 }
 
-sub sort_num($$) {defined($_[0]) && defined($_[1]) && ($_[0]<=>$_[1])}
+sub sort_num($$) {defined($_[0]) && defined($_[1]) && (($_[0]||0)<=>($_[1]||0))}
 sub sort_string($$) {$_[0] cmp $_[1]}
 sub sort_istring($$) {lc($_[0]) cmp lc($_[1])}
 

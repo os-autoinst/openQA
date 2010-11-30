@@ -56,7 +56,7 @@ sub path_to_ogvlink($) { my($fn)=@_;
 }
 sub path_to_detailurl($) { my($fn)=@_;
 	my $url=path_to_url($fn);
-	$url=~s%^/opensuse/video(.*).ogv.autoinst.txt%/cgi-bin/resultdetails$1%;
+	$url=~s%^/opensuse/video(.*).ogv.autoinst.txt%/results$1%;
 	return $url;
 }
 sub path_to_detaillink($) { my($fn)=@_;
