@@ -7,6 +7,8 @@
 # returning non-zero on failure
 
 use strict;
+use lib "/srv/www/cgi-bin/modules";
+use awstandard;
 
 # autodetect build number
 my $buildnr;
@@ -16,6 +18,11 @@ for my $i (<factory-testing/iso/*.iso>) {
 	if(!$buildnr) {$buildnr=$b}
 	if($b ne $buildnr) {die "error: inconsistent build numbers '$b'!='$buildnr' in iso filenames"}
 }
+my $lastbuildnrfilename="/var/tmp/lastfactorysnapshotisobuildnr";
+my $lastbuildnr=file_content($lastbuildnrfilename); chomp($lastbuildnr);
+if($lastbuildnr && !-e "factory-tested/iso/openSUSE-NET-x86_64-Build$lastbuildnr-Media.iso") {die "ERROR: old iso not found - something strange here!"}
+# should not re-snapshot as FTP tree could meanwhile have been updated
+if($lastbuildnr==$buildnr) { exit 5 }
 
 # check results
 # having no * after buildnr means we ignore results from other desktops and RAID
@@ -28,6 +35,9 @@ if($overalls=~m/overall: fail/) {
 if($overalls!~m/overall: OK/) { # we want at least one OK
 	exit 1; # fail
 }
+
+# here we are sure that we want a new snapshot
+
 print "Build $buildnr autodetected as good to snapshot\n";
 sleep 20; # last chance to hit Ctrl+C here
 exit 0 # OK

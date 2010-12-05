@@ -54,7 +54,7 @@ sub maybewait()
 }
 
 # perpetual main loop
-while (1) {
+while (! -e "stopfile") {
 	maybewait();
 	system("make prune prune2 preparesnapshot");
 	system("make newvideos testdir=$testdir");

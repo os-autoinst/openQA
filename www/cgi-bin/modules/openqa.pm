@@ -22,7 +22,7 @@ sub parse_log($) { my($fn)=@_;
 	close($fd);
 
 	# assume first log line is splashscreen:
-	$logdata=~s/.*(splashscreen:)/$1/s;
+	return () unless $logdata=~s/.*(splashscreen:)/$1/s;
 	my @lines=map {[split(": ")]} split("\n",$logdata);
 	return @lines;
 }
@@ -73,9 +73,12 @@ sub split_filename($) { my($fn)=@_;
 	$fn=~s%\.autoinst\.txt$%%; # strip suffix
 	$fn=~s%\.ogv$%%; # strip suffix
 	$fn=~s%.*/%%; # strip path
-	$fn=~s/-LiveCD/xLiveCD/; # belongs to KDE/GNOME, so protect from split
+
+	# since we want to split at "-", this should not appear within fields
+	$fn=~s/Promo-DVD/DVD_Promo/;
+	$fn=~s/DVD-Biarch-i586-x86_64/DVD_Biarch-i586+x86_64/;
+	$fn=~s/-LiveCD/_LiveCD/; # belongs to KDE/GNOME, so protect from split
 	my @a=split("-",$fn);
-	$a[1]=~s/xLiveCD/-LiveCD/;
 	$a[3]=~s/Build//;
 	$a[4]||=""; # extrainfo is optional
 	my $links=path_to_detaillink($origfn)." ".path_to_ogvlink($origfn)." ".path_to_loglink($origfn);

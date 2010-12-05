@@ -1,11 +1,12 @@
 #!/bin/sh -xe
 # %s/\$@/\$out/g
 # %s/\$</\$in/g
-	basetestname=`perl -e '$_=shift;s/(?:-Media)?.iso$//;s%.*/%%;print' $in`
-	baseoutname=`perl -e '$_=shift;s/\.ogv$//;s%.*/%%;print' $out`
-	test -z "$basetestname" && exit 1
 	test -z "$testdir" && exit 2
 	test -z "$in" -o -z "$out" && exit 3
+	buildnr=`cat factory-testing/repo/oss/media.1/build`
+	basetestname=`perl -e '$_=shift;s/(?:-Media)?.iso$//;s%.*/%%;print' $in`
+	test -z "$basetestname" && exit 1
+	baseoutname=`perl -e '$_=shift;s/\.ogv$//;s%.*/%%;print' $out`
 	echo in=$in out=$out
 	#trap "rm -f $out" EXIT # clean up in case of errors
 	sleep 1 # let date be higher than a previous test

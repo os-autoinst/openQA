@@ -50,15 +50,23 @@ my $table=sort_table(
   sort_param_to_keys($options{sort}), \@list
 );
 
-my $hoursselect="";
+my @hoursoptions=(24,96,200,300);
+my %hoursoptionslabels=map {($_,"$_ h")} @hoursoptions;
+my $hoursselect=qq{<form method="get" action="">}.
+	popup_menu(-name=>'hours', -values=>\@hoursoptions, -labels=>\%hoursoptionslabels).
+	qq{<input value="change" class="smbutton" type="submit" /></form>\n};
+my $knownissues=file_content("/opensuse/doc/knownissues.html");
 
 my ($header,$footer)=get_header_footer();
 print header("text/html").
 $header.
-"<p>This tool lists automated test-results from the last $hoursfresh hours. $hoursselect
+"<p>This tool lists automated test-results from the last $hoursfresh hours.
+</p>
+$hoursselect
+$knownissues
 <br/>".
 (scalar @list)." 
-results:</p>
+results:
 <center>
 $table
 </center>
@@ -66,6 +74,5 @@ $table
 <p>
 Note: times are UTC ; tests without an 'extra' string just use default desktop+settings - which means KDE, except on GNOME-LiveCD
 </p>
-
 $footer";
 

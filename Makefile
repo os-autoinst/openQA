@@ -1,5 +1,5 @@
 L=video/runlog.txt
-newdays=1
+newdays=2
 #bwlimit=--bwlimit=1500
 excludes=--exclude="*.zsync" --exclude="*DVD*" 
 #excludes+=--exclude="*GNOME*"
@@ -12,6 +12,8 @@ excludes=--exclude="*.zsync" --exclude="*DVD*"
 rsyncserver=stage.opensuse.org
 dvdpath=/factory-all-dvd/iso/
 testdir=testrun1
+buildnr=$(shell cat factory-testing/repo/oss/media.1/build)
+testedbuildnr=$(shell cat factory-tested/repo/oss/media.1/build)
 #dvdpath=/factory-all-dvd/11.3-isos/
 
 all: sync prune list
@@ -36,6 +38,11 @@ renameresult:
 	mv -f video/$f.ogv video/$t.ogv
 	mv -f video/$f.ogv.autoinst.txt video/$t.ogv.autoinst.txt
 	mv -f testresults/$f testresults/$t
+renamenetresults:
+	n=`perl -e '$$_="${buildnr}";s/.*Build(\d+)/$$1/;print;'` ; echo $$n ;\
+	make renameresult f=openSUSE-NET-i586-Build$f t=openSUSE-NET-i586-Build$f+$$n ;\
+	make renameresult f=openSUSE-NET-x86_64-Build$f t=openSUSE-NET-x86_64-Build$f+$$n
+	
 
 list:
 	ls factory/iso/*Build*.iso
@@ -77,13 +84,13 @@ reposync:
 preparesnapshot: sync reposync
 	mkdir -p factory-testing/repo/
 	rsync -aSHPv --delete-after --link-dest=../factory/ rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/ factory-testing/
+	cat factory-test*/repo/oss/media.1/build
 
 snapshot:
 	mkdir -p factory-tested/repo/
 	# link-dest is relative to dest dir
-	#rsync -aSHPv --link-dest=../../factory/repo/ factory/repo/ factory-tested/repo/
-	#rsync -aSHPv --delete-after --link-dest=../factory/ rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/ factory-tested/
 	rsync -aH --delete-after --link-dest=../factory-testing/ factory-testing/ factory-tested/
+	tools/updateisobuildnr
 
 
 ISOS=$(shell ls factory/iso/*Build*-Media.iso)
@@ -108,10 +115,17 @@ video/%-xfce.ogv: factory/iso/%-Media.iso
 	export DESKTOP=xfce ; EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-gnome.ogv: factory/iso/%-Media.iso
 	export DESKTOP=gnome ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-live.ogv: factory/iso/%-Media.iso
+	LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID10.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=10 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID5.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=5 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.3dup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space/bernhard/img/opensuse-113-32.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.1dup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space/bernhard/img/opensuse-111-64.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+
 
 	
 

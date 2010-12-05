@@ -31,6 +31,8 @@ if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 my @fnsplit=split_filename($fqfn);
 
 my @lines=parse_log($fqfn);
+my @timeouts=<$imgdir/timeout-[0-9]*.ppm>;
+if(@timeouts) {unshift(@lines, ["timeout","unknown"])}
 my @out=();
 foreach my $entry (@lines) {
 	my ($name,$result)=@$entry;
