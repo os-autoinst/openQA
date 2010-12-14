@@ -15,7 +15,8 @@ for my $i (<factory-tested/iso/*.iso>) {
 	$i=~m/-Build(\d{4})-Media\.iso$/;
 	my $b=$1;
 	if(!$buildnr) {$buildnr=$b}
-	if($b ne $buildnr) {warn "error: inconsistent build numbers '$b'!='$buildnr' in iso filenames"}
+	if($b ne $buildnr) {warn "info: inconsistent build numbers '$b'!='$buildnr' in iso filenames"}
+	$buildnr=$b if($b>$buildnr);
 }
 my $lastbuildnrfilename="/var/tmp/lastfactorysnapshotisobuildnr";
 awstandard::set_file_content($lastbuildnrfilename,$buildnr);

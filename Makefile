@@ -25,7 +25,9 @@ sync:
 	/usr/local/bin/withlock sync.lock rsync -aPHv ${bwlimit} ${excludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/ factory/iso/
 
 prune:
-	-find factory/iso/ testresults/ video/ -type f -name \*.iso -atime +20 -mtime +20 -print0 | xargs --no-run-if-empty -0 rm -f
+	-find factory/iso/ -type f -name \*.iso -atime +20 -mtime +20 -print0 | xargs --no-run-if-empty -0 rm -f
+	make resultarchive
+	-find testresults/ video/ -type f -name \*.iso -atime +50 -mtime +50 -print0 | xargs --no-run-if-empty -0 rm -f
 
 prune2:
 	-df .|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +10 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
@@ -46,6 +48,10 @@ renamenetresults:
 
 list:
 	ls factory/iso/*Build*.iso
+status:
+	ls factory-testing/iso/openSUSE-*x86_64-*
+	cat factory*/repo/oss/media.1/build /var/tmp/lastfactorysnapshotisobuildnr
+	@echo
 
 dvdsync:
 	rsync -aPHv ${bwlimit} --exclude="*Biarch*" rsync://${rsyncserver}${dvdpath}openSUSE-DVD-*.iso factory/iso/
@@ -84,13 +90,17 @@ reposync:
 preparesnapshot: sync reposync
 	mkdir -p factory-testing/repo/
 	rsync -aSHPv --delete-after --link-dest=../factory/ rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/ factory-testing/
-	cat factory-test*/repo/oss/media.1/build
+	make status
 
 snapshot:
 	mkdir -p factory-tested/repo/
 	# link-dest is relative to dest dir
 	rsync -aH --delete-after --link-dest=../factory-testing/ factory-testing/ factory-tested/
 	tools/updateisobuildnr
+
+resultarchive:
+	mkdir -p archive/
+	ln -f video/*.autoinst.txt archive/
 
 
 ISOS=$(shell ls factory/iso/*Build*-Media.iso)
@@ -124,7 +134,7 @@ video/%-RAID5.ogv: factory/iso/%-Media.iso
 video/%-11.3dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-113-32.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.1dup.ogv: factory/iso/%-Media.iso
-	export UPGRADE=/space/bernhard/img/opensuse-111-64.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	export UPGRADE=/space/bernhard/img/opensuse-111-64.img ; HDDMODEL=ide KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
 
 	
