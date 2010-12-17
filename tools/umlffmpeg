@@ -24,6 +24,6 @@ img=/space/bernhard/img/lenny32.img ; rootp=1
 # con0=fd:0,fd:1
 echo encoding with ffmpeg2theora within user-mode-linux...
 # using perl-pipe because ffmpeg will sometimes block if stdin is closed
-perl -e 'alarm 500;$|=1;while(sleep(10)){print " "}' | linux ubda=$img root=/dev/ubda$rootp mem=600M panic=30 raid=noautodetect con=fd:0,fd:1 init=/usr/local/sbin/hostinit hostinit=/host/tmp/init hostfs=$dir $*
+dummypiper linux ubda=$img root=/dev/ubda$rootp mem=600M panic=30 raid=noautodetect con=fd:0,fd:1 init=/usr/local/sbin/hostinit hostinit=/host/tmp/init hostfs=$dir $*
 
 rm -f $dir/tmp/*

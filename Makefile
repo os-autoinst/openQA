@@ -25,7 +25,7 @@ sync:
 	/usr/local/bin/withlock sync.lock rsync -aPHv ${bwlimit} ${excludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/ factory/iso/
 
 prune:
-	-find factory/iso/ -type f -name \*.iso -atime +20 -mtime +20 -print0 | xargs --no-run-if-empty -0 rm -f
+	-find liveiso/ factory/iso/ -type f -name \*.iso -atime +20 -mtime +20 -print0 | xargs --no-run-if-empty -0 rm -f
 	make resultarchive
 	-find testresults/ video/ -type f -name \*.iso -atime +50 -mtime +50 -print0 | xargs --no-run-if-empty -0 rm -f
 
@@ -69,6 +69,13 @@ ftpsync:
 
 gnomesync:
 	rsync -aPHv ${bwlimit} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/*GNOME*.iso factory/iso/
+
+getkdeunstable:
+	wget -r -nc -np --accept "KDE4-UNSTABLE-Live*.iso" http://widehat.opensuse.org/repositories/KDE:/Medias/images/iso/ #KDE4-UNSTABLE-Live.x86_64-4.5.77-Build2.3.iso
+	tools/niceisonames widehat.opensuse.org/repositories/KDE:/Medias/images/iso/*.iso
+getsmeegol:
+	wget -r -nc -np --accept "Smeegol*.iso" http://widehat.opensuse.org/repositories/Meego:/Netbook:/1.1/images/iso/
+	tools/niceisonames widehat.opensuse.org/repositories/Meego:/Netbook:/1.1/images/iso/*.iso
 
 
 zsync:	
@@ -135,6 +142,8 @@ video/%-11.3dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-113-32.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.1dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-111-64.img ; HDDMODEL=ide KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/openSUSE-%.ogv: liveiso/openSUSE-%.iso
+	LIVEOBSWORKAROUND=1 LIVECD=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
 
 	
