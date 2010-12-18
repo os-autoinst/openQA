@@ -1,10 +1,8 @@
-<?xml version="1.0" encoding="iso-8859-1"?>
-<!DOCTYPE html
-	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!DOCTYPE HTML>
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
 <head>
   <title>openQA.opensuse.org</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <link href="http://static.opensuse.org/themes/bento/images/favicon.png" rel="shortcut icon" />
   <link href="https://static.opensuse.org/themes/bento/css/style.css?1275313426" media="screen" rel="stylesheet" type="text/css" />
   <link href="https://static.opensuse.org/hosts/build2.o.o/stylesheets/style.css?1284630609" media="screen" rel="stylesheet" title="All" type="text/css" />
@@ -28,26 +26,58 @@
   <!-- End: Header -->
 
 
-<div id="openqa_main">
-<h1>open QA</h1>
+ <div id="subheader" class="container_16">
+  <div id="breadcrump" class="grid_9 alpha">
+    <img alt="Home_grey" src="/images/home_grey.png?1291132351" /><a href="/"><b>openQA</b> - openSUSE automated testing</a>
 
-<p>
-<img src="/images/factory-tested.png" alt="factory-tested logo" align="right"/>
-This machine runs regular automated tests of the openSUSE Factory distribution to find bugs early in the development cycle. <br/>
-Read <a href="http://en.opensuse.org/openSUSE:Factory-tested_Proposal">Why</a>
- and <a href="http://lwn.net/Articles/414413/">How</a>.
-</p>
+  </div>
+ </div>
 
-<ul>
-<li><a href="/results/">test result overview</a></li>
-<li><a href="http://download.opensuse.org/factory-tested/repo/">factory-tested</a> repo</li>
-<li><a href="/opensuse/video/">all result videos and log files are in here</a></li>
-</ul>
+  <!-- Start: Main Content Area -->
+<div id="content" class="container_16 content-wrapper">
+ <div class="grid_10 box box-shadow alpha">
 
-<h3>Testing Software</h3>
-<p>
-If you want to setup a similar test system, you can use the <a href="http://www.os-autoinst.org/">OS autoinst</a> software.
-</p>
+  <h1>Welcome to open QA</h1>
+
+  <p>
+   <img src="/images/factory-tested.png" alt="factory-tested logo" class="tactorytestedlogo"/>
+   This machine runs regular automated tests of the openSUSE Factory distribution to find bugs early in the development cycle. <br/>
+   Read <a href="http://en.opensuse.org/openSUSE:Factory-tested_Proposal">Why</a>
+   and <a href="http://lwn.net/Articles/414413/">How</a>.
+  </p>
+
+  <ul>
+   <li><a href="/results/">test result overview</a></li>
+   <li><a href="http://download.opensuse.org/factory-tested/repo/">factory-tested</a> repo</li>
+   <li><a href="/opensuse/video/">all result videos and log files are in here</a></li>
+  </ul>
+
+  <h3>Testing Software</h3>
+  <p>
+    If you want to setup a similar automated testing system, you can use the <a href="http://www.os-autoinst.org/">OS autoinst</a> software.
+  </p>
+ </div>
+	<div style="display: table;">
+	  <div class="grid_6 box box-shadow omega" id="top_features_box">
+	    <div class="box-header aligncenter">
+	       Recent issues for Factory
+	    </div>
+	    <div id='recent-issues'>
+	      <ol class="openqaissues">
+		<li>
+		  <a href="">TODO</a>
+		  <!--#include file='/opensuse/doc/knownissues.html' -->
+	        </li>
+	      </ol>
+	    </div>
+	  </div>
+	</div>
+
+      <video width="800" height="600" src="http://www3.zq1.de/opensuse/video/openSUSE-DVD-i586-Build0702d.ogv" controls>
+               <div class="video-fallback">
+                    With firefox-3.5 or later you could see a video here
+               </div>
+      </video>
 
 </div>
 </body>

@@ -29,6 +29,7 @@ my $fqfn="$resultdir/$fn.ogv.autoinst.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 
 my @fnsplit=split_filename($fqfn);
+$fnsplit[0].=" ".openqa::path_to_loglink($fqfn);
 
 my @lines=parse_log($fqfn);
 my @timeouts=<$imgdir/timeout-[0-9]*.ppm>;

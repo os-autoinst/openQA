@@ -32,7 +32,7 @@ sub display_time{ my($n)=@_;
    return AWisodatetime2($n);
 }
 
-sub sort_num($$) {defined($_[0]) && defined($_[1]) && (($_[0]||0)<=>($_[1]||0))}
+sub sort_num($$) {if(!defined($_[0]) || !defined($_[1])) {return 0} my @a=@_; $a[0]=~s/\D//g;$a[1]=~s/\D//g; (($a[0]||0)<=>($a[1]||0))}
 sub sort_string($$) {$_[0] cmp $_[1]}
 sub sort_istring($$) {lc($_[0]) cmp lc($_[1])}
 
@@ -53,7 +53,7 @@ sub sort_table(@@@) { my($header, $displayfunc, $sortfunc, $sortkeys, $data)=@_;
             my $oldparams=$ENV{QUERY_STRING};
             $oldparams=~s/sort=[-.0-9]*&?//;
             if($oldparams) {$oldparams="&$oldparams"}
-            $sortlinks.=a({-href=>"?sort=$sortval$oldparams"},img({-src=>"/images/ico_arrow_$updown.gif", -alt=>"sort $updown", -style=>"border:0"}));
+            $sortlinks.=a({-href=>"?sort=$sortval$oldparams", -rel=>"nofollow"},img({-src=>"/images/ico_arrow_$updown.gif", -alt=>"sort $updown", -style=>"border:0"}));
          }
          if(! defined ($$sortfunc[$n-1])) {$sortlinks=""}
          $headerstr.=th($_.$sortlinks);

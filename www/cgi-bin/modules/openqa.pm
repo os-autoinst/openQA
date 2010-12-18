@@ -8,7 +8,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
 $basedir
-&parse_log &parse_log_to_stats &path_to_url &split_filename &get_header_footer
+&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
@@ -27,14 +27,20 @@ sub parse_log($) { my($fn)=@_;
 	return @lines;
 }
 
-sub parse_log_to_stats($) { my($fn)=@_;
-	my @lines=parse_log($fn);
+sub parse_log_to_stats($) { my($lines)=@_;
 	my %stats;
-	foreach my $entry (@lines) {
+	foreach my $entry (@$lines) {
 		my $result=$entry->[1];
 		$stats{$result}++;
 	}
 	return \%stats;
+}
+sub parse_log_to_hash($) { my($lines)=@_;
+	my %results=();
+	foreach my $entry (@$lines) {
+		$results{$entry->[0]}=$entry->[1];
+	}
+	return \%results;
 }
 
 sub imgdir($) { my $fn=shift;
@@ -81,7 +87,7 @@ sub split_filename($) { my($fn)=@_;
 	my @a=split("-",$fn);
 	$a[3]=~s/Build//;
 	$a[4]||=""; # extrainfo is optional
-	my $links=path_to_detaillink($origfn)." ".path_to_ogvlink($origfn)." ".path_to_loglink($origfn);
+	my $links=path_to_detaillink($origfn)." ".path_to_ogvlink($origfn);
 	return ($links, @a);
 }
 

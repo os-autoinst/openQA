@@ -23,19 +23,24 @@ my $maxage=3600*$hoursfresh;
 my $resultdir="$basedir/opensuse/video";
 my @list=();
 my $now=time();
+my $maxmtime=0;
 for my $r (<$resultdir/*.autoinst.txt>) {
 	my @s=stat($r);
 	my ($logsize,$mtime)=@s[7,9];
+	if($mtime>$maxmtime){$maxmtime=$mtime}
 	next if $mtime < $now - $maxage; # skip old
 	my ($link, $distri, $type, $arch, $build, $extrainfo)=split_filename($r);
-	my $parsed=parse_log_to_stats($r);
+	my @lines=parse_log($r);
+	my $parsed=parse_log_to_stats(\@lines);
+#	my $result=parse_log_to_hash(\@lines);
 	if($logsize==0) {
 		$link="testing";
 		$parsed->{OK}=" ";
 	}
 #	next if $logsize<100; # too small => bug somewhere
 	push(@list, [$link, $distri, $type, $arch, $build, $extrainfo, 
-	    $mtime, $parsed->{OK}||0, $parsed->{unknown}||"", $parsed->{fail}||""]);
+	    $mtime, $parsed->{OK}||0, $parsed->{unknown}||"", $parsed->{fail}||""#, $result->{overall}
+	    ]);
 }
 
 sub resultspan($$) {my ($status,$value)=@_;if($value eq ""){return ""} qq'<span class="overview$_[0]">&nbsp;$_[1]&nbsp;</span>'}
@@ -58,8 +63,8 @@ my $hoursselect=qq{<form method="get" action="">}.
 my $knownissues=file_content("/opensuse/doc/knownissues.html");
 
 my ($header,$footer)=get_header_footer();
-print header("text/html").
-$header.
+print header(-type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
+print $header.
 "<p>This tool lists automated test-results from the last $hoursfresh hours.
 </p>
 $hoursselect

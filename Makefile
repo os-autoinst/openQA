@@ -159,7 +159,8 @@ video/openSUSE-%.ogv: liveiso/openSUSE-%.iso
 gitcollect:
 	rsync -a /srv/www/ www/
 	rsync -a /usr/local/bin/umlffmpeg ./tools/
-	rsync -a /etc/apparmor.d/{srv.www,usr.sbin.{httpd,rsyncd}}* apparmor.d
+	rsync -a /etc/apparmor.d/{srv.www,usr.sbin.{httpd,rsyncd}}* etc/apparmor.d
+	rsync -a /etc/apache2/conf.d/openqa.conf etc/apache2/conf.d/
 
 clean:
 	rm -f factory/iso/*-current-Media.iso.zsync
