@@ -60,7 +60,7 @@ my %hoursoptionslabels=map {($_,"$_ h")} @hoursoptions;
 my $hoursselect=qq{<form method="get" action="">}.
 	popup_menu(-name=>'hours', -values=>\@hoursoptions, -labels=>\%hoursoptionslabels).
 	qq{<input value="change" class="smbutton" type="submit" /></form>\n};
-my $knownissues=file_content("/opensuse/doc/knownissues.html");
+my $knownissues=file_content("/srv/www/htdocs/includes/knownissues.html");
 
 my ($header,$footer)=get_header_footer();
 print header(-type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
