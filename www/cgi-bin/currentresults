@@ -23,7 +23,7 @@ my $maxage=3600*$hoursfresh;
 my $resultdir="$basedir/opensuse/video";
 my @list=();
 my $now=time();
-my $maxmtime=0;
+my $maxmtime=(stat($ENV{SCRIPT_FILENAME}))[9];
 for my $r (<$resultdir/*.autoinst.txt>) {
 	my @s=stat($r);
 	my ($logsize,$mtime)=@s[7,9];
@@ -57,21 +57,36 @@ my $table=sort_table(
 
 my @hoursoptions=(24,96,200,300);
 my %hoursoptionslabels=map {($_,"$_ h")} @hoursoptions;
-my $hoursselect=qq{<form method="get" action="">}.
+my $hoursselect=qq{<form method="get" action="" class="cutofftimeform">}.
 	popup_menu(-name=>'hours', -values=>\@hoursoptions, -labels=>\%hoursoptionslabels).
 	qq{<input value="change" class="smbutton" type="submit" /></form>\n};
 my $knownissues=file_content("/srv/www/htdocs/includes/knownissues.html");
+my $numresults=@list;
 
 my ($header,$footer)=get_header_footer();
 print header(-type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
 print $header.
-"<p>This tool lists automated test-results from the last $hoursfresh hours.
+qq{
+  <!-- Start: Main Content Area -->
+<div id="content" class="container_16 content-wrapper">
+ <div class="grid_10 box box-shadow alpha">
+<h2>Test result overview</h2>
+<p>This page lists $numresults automated test-results from the last $hoursfresh hours.
 </p>
 $hoursselect
+ </div>
+	<div style="display: table;">
+	  <div class="grid_6 box box-shadow omega" id="top_features_box">
+	    <div class="box-header aligncenter">
+	       Recent issues in Factory
+	    </div>
 $knownissues
-<br/>".
-(scalar @list)." 
-results:
+          </div>
+        </div>
+</div>
+
+<br/>
+
 <center>
 $table
 </center>
@@ -79,5 +94,5 @@ $table
 <p>
 Note: times are UTC ; tests without an 'extra' string just use default desktop+settings - which means KDE, except on GNOME-LiveCD
 </p>
-$footer";
+$footer};
 

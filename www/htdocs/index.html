@@ -5,39 +5,18 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <link href="http://static.opensuse.org/themes/bento/images/favicon.png" rel="shortcut icon" />
   <link href="https://static.opensuse.org/themes/bento/css/style.css?1275313426" media="screen" rel="stylesheet" type="text/css" />
-  <link href="https://static.opensuse.org/hosts/build2.o.o/stylesheets/style.css?1284630609" media="screen" rel="stylesheet" title="All" type="text/css" />
+  <!--link href="https://static.opensuse.org/hosts/build2.o.o/stylesheets/style.css?1284630609" media="screen" rel="stylesheet" title="All" type="text/css" /-->
   <link href="/static/openqa.css" media="screen" rel="stylesheet" title="All" type="text/css" />
 </head>
 <body>
 
-  <!-- Start: Header -->
-  <div id="header">
-    <div id="header-content" class="container_12">
-      <a id="header-logo" href="http://www.opensuse.org"><img src="https://static.opensuse.org/themes/bento/images/header-logo.png?1274082993" alt="Header Logo" height="26" width="46"/></a>
-      <ul id="global-navigation">
-        <li id="item-downloads"><a href="http://en.opensuse.org/openSUSE:Browse#Downloads">Downloads</a></li>
-        <li id="item-support"><a href="http://en.opensuse.org/openSUSE:Browse#Support">Support</a></li>
-
-        <li id="item-community"><a href="http://en.opensuse.org/openSUSE:Browse#Community">Community</a></li>
-        <li id="item-development"><a href="http://en.opensuse.org/openSUSE:Browse#Development">Development</a></li>
-      </ul>
-    </div>
-  </div>
-  <!-- End: Header -->
-
-
- <div id="subheader" class="container_16">
-  <div id="breadcrump" class="grid_9 alpha">
-    <img alt="Home_grey" src="/images/home_grey.png?1291132351" /><a href="/"><b>openQA</b> - openSUSE automated testing</a>
-
-  </div>
- </div>
+<!--#include file='template/header.html' -->
 
   <!-- Start: Main Content Area -->
 <div id="content" class="container_16 content-wrapper">
  <div class="grid_10 box box-shadow alpha">
 
-  <h1>Welcome to open QA</h1>
+  <h1>Welcome to openQA</h1>
 
   <p>
    <a href="http://en.opensuse.org/openSUSE:Factory-tested"><img src="/images/factory-tested.png" alt="factory-tested logo" class="tactorytestedlogo"/></a>
@@ -47,7 +26,7 @@
   </p>
 
   <ul>
-   <li><a href="/results/">test result overview</a></li>
+   <li><b><a href="/results/">test result overview</a></b></li>
    <li><a href="http://download.opensuse.org/factory-tested/repo/">factory-tested</a> repo</li>
    <li><a href="/opensuse/video/">all result videos and log files are in here</a></li>
   </ul>
@@ -60,17 +39,15 @@
 	<div style="display: table;">
 	  <div class="grid_6 box box-shadow omega" id="top_features_box">
 	    <div class="box-header aligncenter">
-	       Recent issues for Factory
+	       Recent issues in Factory
 	    </div>
-	    <div id='recent-issues'>
 	      <!-- start recent issues -->
 	      <!--#include file='includes/knownissues.html' -->
 	      <!-- end recent issues -->
-	    </div>
 	  </div>
 	</div>
 </div>
-      <video width="800" height="600" src="http://www3.zq1.de/opensuse/video/openSUSE-DVD-i586-Build0702d.ogv" controls>
+      <video width="800" height="600" src="http://www3.zq1.de/opensuse/video/openSUSE-DVD-i586-Build0702d.ogv" title="automagic DVD-install of openSUSE-11.3" controls>
                <div class="video-fallback">
                     With firefox-3.5 or later you could see a video here
                </div>

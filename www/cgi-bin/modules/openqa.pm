@@ -95,6 +95,7 @@ sub get_header_footer()
 {
 	my $templatedir="/srv/www/htdocs/template";
 	my $header=file_content("$templatedir/header.html");
+	$header=file_content("$templatedir/header0.html").$header.file_content("$templatedir/header-cgi.html");
 	my $footer=file_content("$templatedir/footer.html");
 	return ($header,$footer);
 }

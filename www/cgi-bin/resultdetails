@@ -49,7 +49,7 @@ $header.
 qq{
 <p>This tool displays details on one particular test result.
 <br/>
-$fnsplit[0] <a href="/cgi-bin/currentresults"><img src="/images/back.png" alt="back" title="back to overview page" /></a> 
+$fnsplit[0] <a href="/results/"><img src="/images/back.png" alt="back" title="back to overview page" /></a> 
 </p>
 <h2>results</h2>
 <table>
