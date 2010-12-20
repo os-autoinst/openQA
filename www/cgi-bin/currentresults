@@ -32,15 +32,26 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	my ($link, $distri, $type, $arch, $build, $extrainfo)=split_filename($r);
 	my @lines=parse_log($r);
 	my $parsed=parse_log_to_stats(\@lines);
-#	my $result=parse_log_to_hash(\@lines);
+	my $result=parse_log_to_hash(\@lines);
 	if($logsize==0) {
 		$link="testing";
 		$parsed->{OK}=" ";
 	}
 #	next if $logsize<100; # too small => bug somewhere
 	push(@list, [$link, $distri, $type, $arch, $build, $extrainfo, 
-	    $mtime, $parsed->{OK}||0, $parsed->{unknown}||"", $parsed->{fail}||""#, $result->{overall}
+	    $mtime, $parsed->{OK}||0, $parsed->{unknown}||"", $parsed->{fail}||"", $result->{overall}
 	    ]);
+}
+
+# gets arrayref to current row
+sub qarowfunc($) {
+	my $overall=$_[0]->[10];
+	$overall=!defined($overall) || ($overall eq "OK"); # not defined while test in progress
+	if(!$overall) {
+		for my $i (4,5) {
+			$_[0]->[$i]=~s{.*}{<span class="overviewfail">$&</span>};
+		}
+	}
 }
 
 sub resultspan($$) {my ($status,$value)=@_;if($value eq ""){return ""} qq'<span class="overview$_[0]">&nbsp;$_[1]&nbsp;</span>'}
@@ -52,7 +63,7 @@ my $table=sort_table(
       \&display_time, sub{resultspan("ok",$_[0])}, sub{resultspan("unknown",$_[0])}, sub{resultspan("fail",$_[0])}],
   [undef, undef, \&sort_string, \&sort_string, \&sort_num, \&sort_string, 
       \&sort_num, \&sort_num, \&sort_num, \&sort_num],
-  sort_param_to_keys($options{sort}), \@list
+  sort_param_to_keys($options{sort}), \@list, \&qarowfunc
 );
 
 my @hoursoptions=(24,96,200,300);
@@ -88,7 +99,9 @@ $knownissues
 <br/>
 
 <center>
+<div class="">
 $table
+</div>
 </center>
 
 <p>
