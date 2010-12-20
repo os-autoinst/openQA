@@ -74,7 +74,7 @@ my $hoursselect=qq{<form method="get" action="" class="cutofftimeform">}.
 my $knownissues=file_content("/srv/www/htdocs/includes/knownissues.html");
 my $numresults=@list;
 
-my ($header,$footer)=get_header_footer();
+my ($header,$footer)=get_header_footer("Results");
 print header(-type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
 print $header.
 qq{

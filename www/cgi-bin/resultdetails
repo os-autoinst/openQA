@@ -43,7 +43,7 @@ foreach my $entry (@lines) {
 	push(@out, qq(<tr><td class="component">$name</td><td class='result\L$result\E'>$result</td><td class="links">@imglist</td></tr>\n));
 }
 
-my ($header,$footer)=get_header_footer();
+my ($header,$footer)=get_header_footer(qq{<a href="/results/">Results</a> &gt; $fn});
 print header("text/html").
 $header.
 qq{

@@ -91,10 +91,12 @@ sub split_filename($) { my($fn)=@_;
 	return ($links, @a);
 }
 
-sub get_header_footer()
-{
+sub get_header_footer(;$)
+{	my ($title)=@_;
 	my $templatedir="/srv/www/htdocs/template";
 	my $header=file_content("$templatedir/header.html");
+	$title=($title? " &gt; $title" : "");
+	$header=~s{<!-- CURRENTLOCATION -->}{$title};
 	$header=file_content("$templatedir/header0.html").$header.file_content("$templatedir/header-cgi.html");
 	my $footer=file_content("$templatedir/footer.html");
 	return ($header,$footer);
