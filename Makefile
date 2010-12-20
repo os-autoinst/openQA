@@ -140,6 +140,8 @@ video/%-RAID5.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=5 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.3dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-113-32.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.2dup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space/bernhard/img/opensuse-112-64.img ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.1dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-111-64.img ; HDDMODEL=ide KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/openSUSE-%.ogv: liveiso/openSUSE-%.iso
