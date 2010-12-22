@@ -32,7 +32,8 @@ my $overalls=`tail -n 1 video/*-Build$buildnr.ogv.autoinst.txt`;
 if($overalls=~m/overall: fail/) {
 	exit 2; # fail
 }
-if($overalls!~m/overall: OK/) { # we want at least one OK
+my $okcount=($overalls=~s/overall: OK//g);
+if($okcount<4) { # we want at least four OKs so that it is not just one arch
 	exit 1; # fail
 }
 
