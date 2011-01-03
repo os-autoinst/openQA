@@ -17,7 +17,7 @@ for my $p (qw'sort hours') {
 if(!defined $options{sort}){$options{sort}="-7";} # default sort by Time descending
 if(!defined($options{hours}) || $options{hours}=~m/\D/) {$options{hours}=$defaulthoursfresh}
 my $hoursfresh=($options{hours}+0);
-if($hoursfresh<1 || $hoursfresh>300) {$hoursfresh=$defaulthoursfresh}
+if($hoursfresh<1 || $hoursfresh>900) {$hoursfresh=$defaulthoursfresh}
 my $maxage=3600*$hoursfresh;
 
 my $resultdir="$basedir/opensuse/video";

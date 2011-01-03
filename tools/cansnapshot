@@ -33,7 +33,7 @@ if($overalls=~m/overall: fail/) {
 	exit 2; # fail
 }
 my $okcount=($overalls=~s/overall: OK//g);
-if($okcount<4) { # we want at least four OKs so that it is not just one arch
+if($okcount<6) { # we want at least six OKs so that it is not just one arch
 	exit 1; # fail
 }
 

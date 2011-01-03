@@ -11,6 +11,7 @@
 # vim:syntax=apparmor
 
 #include <tunables/global>
+#include <tunables/openqa>
 
 /usr/sbin/httpd2-prefork {
   #include <abstractions/base>
@@ -133,7 +134,8 @@
   /var/lib/php/sess_*                rwl,
 
   # openqa exported data
-  /space/geekotest/opensuse**        r,
+  @{TESTHOME}**			r,
+  @{TESTHOMEBIG}**		r,
   /srv/www/cgi-bin/**                rpx,
 
   ^HANDLING_UNTRUSTED_INPUT {

@@ -25,12 +25,12 @@ sync:
 	/usr/local/bin/withlock sync.lock rsync -aPHv ${bwlimit} ${excludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/ factory/iso/
 
 prune:
-	-find liveiso/ factory/iso/ -type f -name \*.iso -atime +20 -mtime +20 -print0 | xargs --no-run-if-empty -0 rm -f
+	-find liveiso/ factory/iso/ -type f -name \*.iso -atime +90 -mtime +90 -print0 | xargs --no-run-if-empty -0 rm -f
 	make resultarchive
-	-find testresults/ video/ -type f -name \*.iso -atime +50 -mtime +50 -print0 | xargs --no-run-if-empty -0 rm -f
+	-find testresults/ video/ -type f -name \*.iso -atime +150 -mtime +150 -print0 | xargs --no-run-if-empty -0 rm -f
 
 prune2:
-	-df .|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +10 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
+	-df .|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +20 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
 
 prune3: 
 	# only keep latest NET iso of each arch
@@ -163,6 +163,9 @@ gitcollect:
 	rsync -a /usr/local/bin/umlffmpeg ./tools/
 	rsync -a /etc/apparmor.d/{srv.www,usr.sbin.{httpd,rsyncd}}* etc/apparmor.d
 	rsync -a /etc/apache2/conf.d/openqa.conf etc/apache2/conf.d/
+
+janitor:
+	git update-server-info
 
 clean:
 	rm -f factory/iso/*-current-Media.iso.zsync

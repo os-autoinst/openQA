@@ -26,6 +26,7 @@
   /var/log/rsyncd.log		w,
   /var/run/rsyncd.pid		w,
   @{TESTHOME}**			r,
+  @{TESTHOMEBIG}**		r,
 #  /opensuse			r,
 }
 

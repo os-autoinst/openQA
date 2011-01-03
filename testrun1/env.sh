@@ -5,6 +5,7 @@ export IDLETHESHOLD=20
 
 # default: 0.5 (two screenshots per second)
 export SCREENSHOTINTERVAL=0.5
+export VIDEOFRAMERATE=12
 
 #export HTTPPROXY=192.168.234.34:3128
 
