@@ -11,7 +11,7 @@ use List::Util qw(shuffle);
 my $testdir="testrun-cron";
 my $waittime=10*60;
 
-my @extralist=qw(gnome lxde xfce RAID10);
+my @extralist=qw(gnome lxde xfce RAID10 KDF kdeplayground gnomedevel basesystem);
 my @extralistshuffled;
 my @archlist=qw(i586 x86_64);
 my @archlistshuffled;
@@ -53,11 +53,15 @@ sub maybewait()
 	sleep $timetowait; # wait to not overload rsync server
 }
 
+our $wantrestart=0;
+$SIG{HUP}=sub{$wantrestart=1; print "will restart after current test\n"};
+
 # perpetual main loop
 while (! -e "stopfile") {
 	maybewait();
 	system("make prune prune2 preparesnapshot");
 	system("make newvideos testdir=$testdir");
 	system("tools/cansnapshot && make snapshot");
+	if($wantrestart) {exec($0, @ARGV) or die $!}
 }
 

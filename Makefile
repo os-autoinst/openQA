@@ -144,6 +144,16 @@ video/%-11.2dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-112-64.img ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.1dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-111-64.img ; HDDMODEL=ide KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-basesystem.ogv: factory/iso/%-Media.iso
+	ADDONURL=http://widehat.opensuse.org/repositories/Base:/System/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-kernelhead.ogv: factory/iso/%-Media.iso
+	ADDONURL=http://widehat.opensuse.org/repositories/Kernel:/HEAD/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-kdeplayground.ogv: factory/iso/%-Media.iso
+	ADDONURL=http://widehat.opensuse.org/repositories/KDE:/Unstable:/Playground/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-KDF.ogv: factory/iso/%-Media.iso
+	ADDONURL=http://widehat.opensuse.org/repositories/KDE:/Distro:/Factory/openSUSE_Factory/+http://widehat.opensuse.org/repositories/LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-gnomedevel.ogv: factory/iso/%-Media.iso
+	DESKTOP=gnome ADDONURL=http://widehat.opensuse.org/repositories/GNOME:/Factory/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/openSUSE-%.ogv: liveiso/openSUSE-%.iso
 	LIVEOBSWORKAROUND=1 LIVECD=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
