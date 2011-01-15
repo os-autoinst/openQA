@@ -12,11 +12,13 @@
 	sleep 1 # let date be higher than a previous test
 	touch $out $out.autoinst.txt # prevent cron going in here during test
 	echo `date` starting to create $out >>$L
-	(pwd=`pwd`; cd ${testdir} ; /usr/local/bin/withlock kvm.lock ../perl/autoinst/tools/isotovideo $pwd/$in)
+	(pwd=`pwd`; cd ${testdir} ; /usr/local/bin/withlock kvm.lock ../perl/autoinst/tools/isotovideo $pwd/$in )
+	tools/backlog ${testdir}/raid/
 	echo `date` finished to create $out >>$L
 	mv -f ${testdir}/currentautoinst-log.txt $out.autoinst.txt
 	mv -f ${testdir}/video/$basetestname.ogv $out
 	#trap "" EXIT
 	rm -rf testresults/$baseoutname
 	mv ${testdir}/testresults/$basetestname testresults/$baseoutname || true
+	tools/notify $baseoutname
 

@@ -16,7 +16,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.60 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = 
 qw(&awstandard_init &bmwround &bmwmod &awdiag &AWheader3 &AWheader2 &AWheader &AWtail &AWfocus 
-&mon2id &gmdate &AWtime &AWisodate &AWisodatetime &AWisodatetime2 &AWreltime &safe_encode &html_encode &url_encode &file_content &awmax &awmin 
+&mon2id &gmdate &AWtime &AWisodate &AWisodatetime &AWisodatetime2 &AWreltime &safe_encode &html_encode &url_encode &file_content &set_file_content &awmax &awmin 
   );
 
 use CGI ":standard";

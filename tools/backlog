@@ -1,0 +1,4 @@
+#!/bin/sh
+# TODO mv/cp to keep backlog of rootfs img
+
+true

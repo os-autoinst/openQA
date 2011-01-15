@@ -8,11 +8,12 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
 $basedir
-&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer
+&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 our $basedir="/space/geekotest";
+our $hostname="openqa.opensuse.org";
 
 sub parse_log($) { my($fn)=@_;
 	open(my $fd, "<", $fn) || return;
@@ -100,6 +101,13 @@ sub get_header_footer(;$)
 	$header=file_content("$templatedir/header0.html").$header.file_content("$templatedir/header-cgi.html");
 	my $footer=file_content("$templatedir/footer.html");
 	return ($header,$footer);
+}
+
+sub resultname_to_log($)
+{ "/opensuse/video/$_[0].ogv.autoinst.txt"; 
+}
+sub resultname_to_url($)
+{ "http://$hostname/results/$_[0]"; 
 }
 
 1;
