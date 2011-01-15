@@ -9,6 +9,7 @@ excludes=--exclude="*.zsync" --exclude="*DVD*"
 #--max-delete=4000
 #repoexcludes+=--exclude="x86_64"
 #rsyncserver=rsync.opensuse.org
+repourl=http://widehat.opensuse.org/repositories/
 rsyncserver=stage.opensuse.org
 dvdpath=/factory-all-dvd/iso/
 testdir=testrun1
@@ -30,7 +31,7 @@ prune:
 	-find testresults/ video/ -type f -name \*.iso -atime +150 -mtime +150 -print0 | xargs --no-run-if-empty -0 rm -f
 
 prune2:
-	-df .|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +20 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
+	-df factory/iso/|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +20 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
 
 prune3: 
 	# only keep latest NET iso of each arch
@@ -71,10 +72,10 @@ gnomesync:
 	rsync -aPHv ${bwlimit} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/*GNOME*.iso factory/iso/
 
 getkdeunstable:
-	wget -r -nc -np --accept "KDE4-UNSTABLE-Live*.iso" http://widehat.opensuse.org/repositories/KDE:/Medias/images/iso/ #KDE4-UNSTABLE-Live.x86_64-4.5.77-Build2.3.iso
+	wget -r -nc -np --accept "KDE4-UNSTABLE-Live*.iso" ${repourl}KDE:/Medias/images/iso/ #KDE4-UNSTABLE-Live.x86_64-4.5.77-Build2.3.iso
 	tools/niceisonames widehat.opensuse.org/repositories/KDE:/Medias/images/iso/*.iso
 getsmeegol:
-	wget -r -nc -np --accept "Smeegol*.iso" http://widehat.opensuse.org/repositories/Meego:/Netbook:/1.1/images/iso/
+	wget -r -nc -np --accept "Smeegol*.iso" ${repourl}Meego:/Netbook:/1.1/images/iso/
 	tools/niceisonames widehat.opensuse.org/repositories/Meego:/Netbook:/1.1/images/iso/*.iso
 
 
@@ -111,7 +112,7 @@ resultarchive:
 
 
 ISOS=$(shell ls factory/iso/*Build*-Media.iso)
-NEWISOS=$(shell find factory/iso/ -name "*Build*-Media.iso" ! -name "*-Addon-*" -mtime -$(newdays)|sort -r -t- -k4|head -12)
+NEWISOS=$(shell find factory/iso/ -name "*[DN][VE][DT]*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k4|head -8 ; find factory/iso/ -name "*LiveCD*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k5|head -4)
 # it is enough to test one i586+x86_64 NET-iso
 NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${newdays}|sort -r -t- -k4|head -2 ; find factory/iso/ -name "*DVD*Build*-Media.iso" -mtime -${newdays})
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
@@ -145,15 +146,23 @@ video/%-11.2dup.ogv: factory/iso/%-Media.iso
 video/%-11.1dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-111-64.img ; HDDMODEL=ide KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-basesystem.ogv: factory/iso/%-Media.iso
-	ADDONURL=http://widehat.opensuse.org/repositories/Base:/System/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	ADDONURL=${repourl}Base:/System/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-kernelhead.ogv: factory/iso/%-Media.iso
-	ADDONURL=http://widehat.opensuse.org/repositories/Kernel:/HEAD/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	ADDONURL=${repourl}Kernel:/HEAD/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-mozilladevel.ogv: factory/iso/%-Media.iso
+	ADDONURL=${repourl}mozilla:/beta/SUSE_Factory/+${repourl}LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-xorgdevel.ogv: factory/iso/%-Media.iso
+	ADDONURL=${repourl}X11:/XOrg/openSUSE_Factory/+${repourl}Kernel:/HEAD/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-kdeplayground.ogv: factory/iso/%-Media.iso
-	ADDONURL=http://widehat.opensuse.org/repositories/KDE:/Unstable:/Playground/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	ADDONURL=${repourl}KDE:/Unstable:/Playground/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-KDF.ogv: factory/iso/%-Media.iso
-	ADDONURL=http://widehat.opensuse.org/repositories/KDE:/Distro:/Factory/openSUSE_Factory/+http://widehat.opensuse.org/repositories/LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	ADDONURL=${repourl}KDE:/Distro:/Factory/openSUSE_Factory/+${repourl}LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-gnomedevel.ogv: factory/iso/%-Media.iso
-	DESKTOP=gnome ADDONURL=http://widehat.opensuse.org/repositories/GNOME:/Factory/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	DESKTOP=gnome ADDONURL=${repourl}GNOME:/Factory/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-xfcedevel.ogv: factory/iso/%-Media.iso
+	DESKTOP=xfce ADDONURL=${repourl}X11:/xfce/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-lxdedevel.ogv: factory/iso/%-Media.iso
+	DESKTOP=lxde ADDONURL=${repourl}X11:/lxde/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/openSUSE-%.ogv: liveiso/openSUSE-%.iso
 	LIVEOBSWORKAROUND=1 LIVECD=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 

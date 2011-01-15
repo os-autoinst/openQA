@@ -11,7 +11,7 @@ use List::Util qw(shuffle);
 my $testdir="testrun-cron";
 my $waittime=10*60;
 
-my @extralist=qw(gnome lxde xfce RAID10 KDF kdeplayground gnomedevel basesystem);
+my @extralist=qw(gnome lxde lxdedevel xfce xfcedevel RAID10 KDF kdeplayground gnomedevel xorgdevel kernelhead basesystem);
 my @extralistshuffled;
 my @archlist=qw(i586 x86_64);
 my @archlistshuffled;
@@ -42,13 +42,16 @@ sub maybewait()
 	my $t=$lasttime;
 	$lasttime=time;
 	return if !$t; # dont sleep first time
-	my $timeneeded=time-$t;
-	if($timeneeded<100) { # had nothing to do
-		run_extra_test;
-		$timeneeded=time-$t;
+	my $timetowait;
+	for(1..4) { # try different variants before idling
+		my $timeneeded=time-$t;
+		if($timeneeded<100) { # had nothing to do
+			run_extra_test;
+			$timeneeded=time-$t;
+		}
+		$timetowait=$waittime-$timeneeded;
+		return if $timetowait<=0; # dont sleep if loop took long
 	}
-	my $timetowait=$waittime-$timeneeded;
-	return if $timetowait<=0; # dont sleep if loop took long
 	print "waiting $timetowait seconds\n";
 	sleep $timetowait; # wait to not overload rsync server
 }
