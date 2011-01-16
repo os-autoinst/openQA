@@ -10,8 +10,11 @@ my $defaulthoursfresh=4*24;
 
 
 my %options;
-for my $p (qw'sort hours') {
+for my $p (qw'sort hours ib') {
    $options{$p}=param($p);
+}
+if($options{ib}) {
+	require boring;
 }
 #if(!defined $options{sort}){$options{sort}="-5.3.4.-7";} # default sort by Build# descending
 if(!defined $options{sort}){$options{sort}="-7";} # default sort by Time descending
@@ -38,6 +41,9 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 		$parsed->{OK}=" ";
 	}
 #	next if $logsize<100; # too small => bug somewhere
+	if($options{ib}) {
+		next if(boring::is_boring($r, $result));
+	}
 	push(@list, [$link, $distri, $type, $arch, $build, $extrainfo, 
 	    $mtime, $parsed->{OK}||0, $parsed->{unknown}||"", $parsed->{fail}||"", $result->{overall}
 	    ]);
