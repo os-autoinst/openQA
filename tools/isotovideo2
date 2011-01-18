@@ -8,12 +8,16 @@
 	test -z "$basetestname" && exit 1
 	baseoutname=`perl -e '$_=shift;s/\.ogv$//;s%.*/%%;print' $out`
 	echo in=$in out=$out
+
+	# some tests do not need to be run everytime
+	test $(date +%k) -lt 6 && export BIGTEST=1
+
 	#trap "rm -f $out" EXIT # clean up in case of errors
 	sleep 1 # let date be higher than a previous test
 	touch $out $out.autoinst.txt # prevent cron going in here during test
 	echo `date` starting to create $out >>$L
-	(pwd=`pwd`; cd ${testdir} ; /usr/local/bin/withlock kvm.lock ../perl/autoinst/tools/isotovideo $pwd/$in )
-	tools/backlog ${testdir}/raid/
+	(pwd=`pwd`; cd ${testdir} ; echo $baseoutname > testname ; /usr/local/bin/withlock kvm.lock $pwd/perl/autoinst/tools/isotovideo $pwd/$in )
+	tools/backlog ${testdir}/raid/ $baseoutname
 	echo `date` finished to create $out >>$L
 	mv -f ${testdir}/currentautoinst-log.txt $out.autoinst.txt
 	mv -f ${testdir}/video/$basetestname.ogv $out
