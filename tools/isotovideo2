@@ -1,28 +1,48 @@
-#!/bin/sh -xe
-# %s/\$@/\$out/g
-# %s/\$</\$in/g
-	test -z "$testdir" && exit 2
-	test -z "$in" -o -z "$out" && exit 3
-	buildnr=`cat factory-testing/repo/oss/media.1/build`
-	basetestname=`perl -e '$_=shift;s/(?:-Media)?.iso$//;s%.*/%%;print' $in`
-	test -z "$basetestname" && exit 1
-	baseoutname=`perl -e '$_=shift;s/\.ogv$//;s%.*/%%;print' $out`
-	echo in=$in out=$out
+#!/usr/bin/perl -w
+# allocate one test dir from a pool and run isotovideo3
+use strict;
+use Time::HiRes qw(sleep);
+use Fcntl qw(:DEFAULT :flock);
+use lib "/srv/www/cgi-bin/modules";
+use awstandard;
 
-	# some tests do not need to be run everytime
-	test $(date +%k) -lt 6 && export BIGTEST=1
+my @dirs=</mnt/ssd/pool/?>;
+my $lockname="kvm2.lock";
+my $allocname="queuesched.pid";
+#print "@dirs\n";
 
-	#trap "rm -f $out" EXIT # clean up in case of errors
-	sleep 1 # let date be higher than a previous test
-	touch $out $out.autoinst.txt # prevent cron going in here during test
-	echo `date` starting to create $out >>$L
-	(pwd=`pwd`; cd ${testdir} ; echo $baseoutname > testname ; /usr/local/bin/withlock kvm.lock $pwd/perl/autoinst/tools/isotovideo $pwd/$in )
-	tools/backlog ${testdir}/raid/ $baseoutname
-	echo `date` finished to create $out >>$L
-	mv -f ${testdir}/currentautoinst-log.txt $out.autoinst.txt
-	mv -f ${testdir}/video/$basetestname.ogv $out
-	#trap "" EXIT
-	rm -rf testresults/$baseoutname
-	mv ${testdir}/testresults/$basetestname testresults/$baseoutname || true
-	tools/notify $baseoutname
+sleep(rand(2)); # reduce chance of collisions with make -j
 
+# lock+select testdir
+my $found=0;
+if($ENV{testdir} ne "testrun-cron") {@dirs=($ENV{testdir})}
+foreach my $d (@dirs) {
+	my $l="$d/$lockname";
+	next if -e $l; # occopied for sure
+	# likely free, use own allocation lock protocol
+	# tmp will be autocleaned, so we can just exec
+	mkdir "$d/tmp";
+	my $a="$d/tmp/$allocname";
+	sysopen my $fh, $a, O_RDWR|O_CREAT or die "cant create $a";
+	flock $fh, LOCK_EX or next;
+	my $num = <$fh>;
+	if($num && $num=~m/^\d{1,5}$/) {
+		my $signalled=kill(0, $num);
+		if($signalled) {
+			print "someone else owns $a and is alive\n";
+			next;
+		}
+	}
+	# process is dead => cleanup
+	seek $fh, 0, 0 or die "can't rewind numfile: $!";
+	truncate $fh, 0 or die "can't truncate numfile: $!";
+	print $fh "$$\n";
+	close($fh);
+	$ENV{testdir}=$d;
+	$found=1;
+	last;
+}
+if(!$found) {die "all dirs (@dirs) are currently in use"}
+print "using testdir=$ENV{testdir}\n";
+exec("/usr/local/bin/withlock", "$ENV{testdir}/$lockname", "tools/isotovideo3");
+die "exec failed: $!";
