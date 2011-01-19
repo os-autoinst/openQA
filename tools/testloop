@@ -10,13 +10,13 @@ use List::Util qw(shuffle);
 
 my $testdir="testrun-cron";
 my $waittime=10*60;
-
-my @extralist=qw(gnome lxde lxdedevel xfce xfcedevel RAID10 KDF kdeplayground gnomedevel xorgdevel kernelhead basesystem);
+my $makeflags=" testdir=$testdir -j4 -k ";
+my @extralist=qw(gnome gnome lxde lxdedevel xfce xfcedevel RAID10 KDF kdeplayground gnomedevel xorgdevel kernelhead basesystem mozilladevel);
 my @extralistshuffled;
 my @archlist=qw(i586 x86_64);
 my @archlistshuffled;
 
-sub run_extra_test()
+sub get_extra_test()
 {
 	print "running one random extra test to spend time without idling\n";
 	@extralistshuffled=shuffle(@extralist) if not @extralistshuffled;
@@ -33,7 +33,17 @@ sub run_extra_test()
 	$maketarget=~s{.*/}{video/};
 	$maketarget=~s{-Media.iso}{-$test.ogv};
 	print "testing $maketarget\n";
-	system("make $maketarget testdir=$testdir");
+	return $maketarget;
+}
+
+sub run_extra_tests
+{
+	my @targets;
+	for(1..4) { # try different variants before idling
+		my $t=get_extra_test;
+		push(@targets, $t);
+	}
+	system("make $makeflags @targets");
 }
 
 my $lasttime;
@@ -43,15 +53,16 @@ sub maybewait()
 	$lasttime=time;
 	return if !$t; # dont sleep first time
 	my $timetowait;
-	for(1..4) { # try different variants before idling
+	{
 		my $timeneeded=time-$t;
 		if($timeneeded<100) { # had nothing to do
-			run_extra_test;
+			run_extra_tests;
 			$timeneeded=time-$t;
 		}
 		$timetowait=$waittime-$timeneeded;
 		return if $timetowait<=0; # dont sleep if loop took long
 	}
+
 	print "waiting $timetowait seconds\n";
 	sleep $timetowait; # wait to not overload rsync server
 }
@@ -63,7 +74,7 @@ $SIG{HUP}=sub{$wantrestart=1; print "will restart after current test\n"};
 while (! -e "stopfile") {
 	maybewait();
 	system("make prune prune2 preparesnapshot");
-	system("make newvideos testdir=$testdir");
+	system("make newvideos $makeflags");
 	system("tools/cansnapshot && make snapshot");
 	if($wantrestart) {exec($0, @ARGV) or die $!}
 }
