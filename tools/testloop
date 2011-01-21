@@ -10,11 +10,31 @@ use List::Util qw(shuffle);
 
 my $testdir="testrun-cron";
 my $waittime=10*60;
-my $makeflags=" testdir=$testdir -j4 -k ";
-my @extralist=qw(gnome gnome lxde lxdedevel xfce xfcedevel RAID10 KDF kdeplayground gnomedevel xorgdevel kernelhead basesystem mozilladevel);
+my $makeflags=" testdir=$testdir -j3 -k ";
+my @extralist=qw(gnome gnome lxde lxdedevel xfce xfcedevel RAID10 kdedevel kdeplaygrounddevel gnomedevel xorgdevel kerneldevel basesystemdevel mozilladevel GNOMElive KDElive 11.2dup 11.4ms5gnomedup);
 my @extralistshuffled;
 my @archlist=qw(i586 x86_64);
 my @archlistshuffled;
+
+sub maketarget_adjust($)
+{ my($t)=@_;
+	# -live tests need a different .iso
+	if($t=~s/-(\w+)live/-live/) {
+		my $desktop=$1;
+		$t=~s/-i586-/-i686-/;
+		$t=~s/-NET-/-$desktop-LiveCD-/;
+	}
+	if($t=~m/-(11\.\w+)dup/) { # distribution upgrade test
+		my $base=$1;
+		# we only have base images for certain archs
+		if($base=~m/(11.[12])|11.3gnome|11.4ms5gnome/) {
+			$t=~s/-i586-/-x86_64-/;
+		} else {
+			$t=~s/-x86_64-/-i586-/;
+		}
+	}
+	return $t;
+}
 
 sub get_extra_test()
 {
@@ -29,9 +49,13 @@ sub get_extra_test()
 		print "no $arch NET iso found - should be rare";
 		return;
 	}
+	$iso=~s{.*/}{video/};
+	my $dvdiso="factory/iso/$iso"; $dvdiso=~s/-NET-/-DVD-/;
 	my $maketarget=$iso;
-	$maketarget=~s{.*/}{video/};
 	$maketarget=~s{-Media.iso}{-$test.ogv};
+	$maketarget=maketarget_adjust($maketarget);
+	# if we have a DVD iso, do some tests on this instead
+	if(-e $dvdiso && rand(100)<60) {$maketarget=~s/-NET-/-DVD-/}
 	print "testing $maketarget\n";
 	return $maketarget;
 }
@@ -69,6 +93,7 @@ sub maybewait()
 
 our $wantrestart=0;
 $SIG{HUP}=sub{$wantrestart=1; print "will restart after current test\n"};
+$SIG{USR1}=sub{}; # interrupt sleep
 
 # perpetual main loop
 while (! -e "stopfile") {
