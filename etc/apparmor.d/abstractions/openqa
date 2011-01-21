@@ -1,0 +1,5 @@
+# openqa public storage space
+
+@{TESTHOME}**			r,
+@{TESTHOMEBIG}**		r,
+/mnt/ssd/**			r,

@@ -2,8 +2,8 @@
 # for use in openqa CGI scripts
 
   #include <abstractions/perl>
+  #include <abstractions/openqa>
 
 /srv/www/cgi-bin/modules/**	r,
 /srv/www/htdocs/template/**	r,
-@{TESTHOME}**			r,
-
+/srv/www/htdocs/includes/**	r,

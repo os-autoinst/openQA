@@ -19,6 +19,7 @@
   #include <abstractions/kerberosclient>
   #include <abstractions/nameservice>
   #include <abstractions/perl>
+  #include <abstractions/openqa>
 
   capability kill,
   capability net_bind_service,
@@ -134,8 +135,6 @@
   /var/lib/php/sess_*                rwl,
 
   # openqa exported data
-  @{TESTHOME}**			r,
-  @{TESTHOMEBIG}**		r,
   /srv/www/cgi-bin/**                rpx,
 
   ^HANDLING_UNTRUSTED_INPUT {

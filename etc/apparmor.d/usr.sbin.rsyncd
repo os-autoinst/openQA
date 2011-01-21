@@ -16,6 +16,7 @@
 /usr/sbin/rsyncd {
   #include <abstractions/base>
   #include <abstractions/nameservice>
+  #include <abstractions/openqa>
 
   capability setgid,
   capability setuid,
@@ -25,8 +26,5 @@
   /etc/slp.**			r,
   /var/log/rsyncd.log		w,
   /var/run/rsyncd.pid		w,
-  @{TESTHOME}**			r,
-  @{TESTHOMEBIG}**		r,
-#  /opensuse			r,
 }
 
