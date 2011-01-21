@@ -4,13 +4,14 @@
 use strict;
 use warnings;
 use POE qw(Component::IRC);
+use POE::Component::IRC::Plugin::Connector;
 
 my $queuedir = '/tmp/ircboteventqueue';
 my $nickname = 'openqabot';
 my $ircname = 'Bernhard\'s Event Notification Bot';
 my $server = 'chat.eu.freenode.net';
 
-my @channels = ('#opensuse-testing');
+my @channels = ('#opensuse-openqa');
 
 
 my $joined=0;
@@ -31,12 +32,14 @@ POE::Session->create(
 $poe_kernel->run(); # main loop in here
 
 sub _start {
-    my $heap = $_[HEAP];
+    my ($kernel, $heap) = @_[KERNEL ,HEAP];
 
     # retrieve our component's object from the heap where we stashed it
     my $irc = $heap->{irc};
 
     $irc->yield( register => 'all' );
+    $heap->{connector} = POE::Component::IRC::Plugin::Connector->new();
+    $irc->plugin_add( 'Connector' => $heap->{connector} );
     $irc->yield( connect => { } );
     return;
 }
