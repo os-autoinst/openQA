@@ -4,10 +4,12 @@ use strict;
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 use openqa;
+use boring;
 
 my $resultname=shift;
 if(!$resultname) { die "usage: $0 RESULTNAME" }
 my $hostname="openqa.opensuse.org";
+my $pinglist="bmwiedemann: ";
 my $queuepath="/tmp/ircboteventqueue";
 mkdir $queuepath;
 my $eventname="$queuepath/".time().".$$";
@@ -17,13 +19,13 @@ sub get_summary_string($)
 	my @lines=parse_log(resultname_to_log($xresultname));
 	die "no log" if not @lines;
 	my $stats=parse_log_to_stats(\@lines);
-	#my $results=parse_log_to_hash(\@lines);
+	my $results=parse_log_to_hash(\@lines);
 	my @stats;
 	foreach my $r ("fail", "OK", "unknown") {
 		my $s=$stats->{$r};
 		next unless $s;
 		push(@stats, "$r:$s");
-		next if $s>2; # skip details if there are too many
+		next if $s>3; # skip details if there are too many
 		my @d=();
 		foreach my $entry (@lines) {
 			next if $entry->[1] ne $r;
@@ -31,12 +33,14 @@ sub get_summary_string($)
 		}
 		push(@stats, "(".join(", ",@d).")");
 	}
-	return join(" ", @stats);
+	my $boring=boring::is_boring($xresultname, $results);
+	return join(" ", @stats), $boring;
 }
 
-my $stat=get_summary_string($resultname);
+my ($stat,$boring)=get_summary_string($resultname);
+my $ping=($boring?"":$pinglist);
 my $url=resultname_to_url($resultname);
-my $note=AWisodatetime2(time)." new $url $stat\n";
+my $note=$ping.AWisodatetime2(time)." new $url $stat\n";
 print $note;
 set_file_content($eventname, $note) unless $ENV{TESTMODE};
 
