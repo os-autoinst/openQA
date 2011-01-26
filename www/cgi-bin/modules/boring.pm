@@ -17,22 +17,26 @@ sub expect($$$)
 sub is_boring($$)
 { my($name,$results)=@_;
 	if($name=~m/-i[56]86-/) {
-		# TODO note 10 OKs in a row
-		return 1; # https://bugzilla.novell.com/show_bug.cgi?id=660464
+		#return 1; # https://bugzilla.novell.com/show_bug.cgi?id=660464
 	}
 	delete $results->{NET_inst_mirror}; # randomly fails from pingus
 	delete $results->{reboot_wait_for_grub}; # randomly fails from pingus
 	if($name=~m/-kdeplayground/) {
-		expect($results, "hal", "fail");
+		#expect($results, "hal", "fail");
 	}
-	if($name=~m/-RAID10/) {
+	if($name=~m/-gnome/) {
+		delete $results->{xterm}; # randomly fails from policykit auth popups
+	}
+	if($name=~m/-[DN][VE][DT]-.*-RAID10/) {
 		# https://bugzilla.novell.com/show_bug.cgi?id=656536
 		expect($results, "kde_reboot_plasmatheme", "unknown");
+		expect($results, "standstill", "fail");
 	}
 	if($name=~m/openSUSE-[DN][VE][DT]-/) {
 		# https://bugzilla.novell.com/show_bug.cgi?id=652562
-		expect($results, "ooffice", "unknown");
+		#expect($results, "ooffice", "unknown"); # workarounded
 	}
+	#expect($results, "mtab", "fail");
 	my $allok=1;
 	my $nonok=0;
 	my $ok=0;

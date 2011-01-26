@@ -76,6 +76,7 @@ my @hoursoptions=(24,96,200,300);
 my %hoursoptionslabels=map {($_,"$_ h")} @hoursoptions;
 my $hoursselect=qq{<form method="get" action="" class="cutofftimeform">}.
 	popup_menu(-name=>'hours', -values=>\@hoursoptions, -labels=>\%hoursoptionslabels).
+	checkbox(-name=>"ib", -label=>"ignore boring results")." ".
 	qq{<input value="change" class="smbutton" type="submit" /></form>\n};
 my $knownissues=file_content("/srv/www/htdocs/includes/knownissues.html");
 my $numresults=@list;

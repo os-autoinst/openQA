@@ -12,7 +12,7 @@ excludes=--exclude="*.zsync" --exclude="*DVD*"
 repourl=http://widehat.opensuse.org/repositories/
 rsyncserver=stage.opensuse.org
 dvdpath=/factory-all-dvd/iso/
-testdir=testrun1
+testdir=testrun-manual
 buildnr=$(shell cat factory-testing/repo/oss/media.1/build)
 testedbuildnr=$(shell cat factory-tested/repo/oss/media.1/build)
 #dvdpath=/factory-all-dvd/11.3-isos/
@@ -37,6 +37,10 @@ prune3:
 	# only keep latest NET iso of each arch
 	#find factory/iso/ -name "*-NET-*"|sort -t- -k4| perl -ne '...'
 
+deleteresult:
+	rm -f video/$t.ogv
+	rm -f video/$t.ogv.autoinst.txt
+	rm -rf testresults/$t
 renameresult:
 	mv -f video/$f.ogv video/$t.ogv
 	mv -f video/$f.ogv.autoinst.txt video/$t.ogv.autoinst.txt
@@ -133,29 +137,36 @@ video/%-xfce.ogv: factory/iso/%-Media.iso
 	export DESKTOP=xfce ; EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-gnome.ogv: factory/iso/%-Media.iso
 	export DESKTOP=gnome ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-usbboot.ogv: factory/iso/%-Media.iso
+	USBBOOT=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-live.ogv: factory/iso/%-Media.iso
 	LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID10.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=10 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID5.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=5 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.4ms5gnomedup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space2/opensuse/img/opensuse-11.4-ms5-gnome-64.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.3gnomedup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space/bernhard/img/opensuse-113-64-gnome.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.3dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-113-32.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.2dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-112-64.img ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.1dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-111-64.img ; HDDMODEL=ide KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-basesystem.ogv: factory/iso/%-Media.iso
+
+video/%-basesystemdevel.ogv: factory/iso/%-Media.iso
 	ADDONURL=${repourl}Base:/System/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-kernelhead.ogv: factory/iso/%-Media.iso
+video/%-kerneldevel.ogv: factory/iso/%-Media.iso
 	ADDONURL=${repourl}Kernel:/HEAD/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-mozilladevel.ogv: factory/iso/%-Media.iso
-	ADDONURL=${repourl}mozilla:/beta/SUSE_Factory/+${repourl}LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	BIGTEST=1 ADDONURL=${repourl}mozilla:/beta/SUSE_Factory/+${repourl}LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-xorgdevel.ogv: factory/iso/%-Media.iso
 	ADDONURL=${repourl}X11:/XOrg/openSUSE_Factory/+${repourl}Kernel:/HEAD/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-kdeplayground.ogv: factory/iso/%-Media.iso
+video/%-kdeplaygrounddevel.ogv: factory/iso/%-Media.iso
 	ADDONURL=${repourl}KDE:/Unstable:/Playground/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-KDF.ogv: factory/iso/%-Media.iso
+video/%-kdedevel.ogv: factory/iso/%-Media.iso
 	ADDONURL=${repourl}KDE:/Distro:/Factory/openSUSE_Factory/+${repourl}LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-gnomedevel.ogv: factory/iso/%-Media.iso
 	DESKTOP=gnome ADDONURL=${repourl}GNOME:/Factory/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
@@ -181,6 +192,7 @@ gitcollect:
 	rsync -a /srv/www/ www/
 	rsync -a /usr/local/bin/umlffmpeg ./tools/
 	rsync -a /etc/apparmor.d/{srv.www,usr.sbin.{httpd,rsyncd}}* etc/apparmor.d
+	cp -a --parent /etc/apparmor.d/{tunables,abstractions}/openqa* .
 	rsync -a /etc/apache2/conf.d/openqa.conf etc/apache2/conf.d/
 
 janitor:

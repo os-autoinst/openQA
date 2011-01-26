@@ -11,7 +11,7 @@ use List::Util qw(shuffle);
 my $testdir="testrun-cron";
 my $waittime=10*60;
 my $makeflags=" testdir=$testdir -j3 -k ";
-my @extralist=qw(gnome gnome lxde lxdedevel xfce xfcedevel RAID10 kdedevel kdeplaygrounddevel gnomedevel xorgdevel kerneldevel basesystemdevel mozilladevel GNOMElive KDElive 11.2dup 11.4ms5gnomedup);
+my @extralist=qw(gnome gnome lxde lxdedevel xfce xfcedevel RAID10 kdedevel kdeplaygrounddevel gnomedevel xorgdevel kerneldevel basesystemdevel mozilladevel GNOMElive KDElive GNOMEusbboot KDEusbboot 11.2dup 11.3dup 11.4ms5gnomedup);
 my @extralistshuffled;
 my @archlist=qw(i586 x86_64);
 my @archlistshuffled;
@@ -19,7 +19,7 @@ my @archlistshuffled;
 sub maketarget_adjust($)
 { my($t)=@_;
 	# -live tests need a different .iso
-	if($t=~s/-(\w+)live/-live/) {
+	if($t=~s/-(\w+)(live|usbboot)/-$2/) {
 		my $desktop=$1;
 		$t=~s/-i586-/-i686-/;
 		$t=~s/-NET-/-$desktop-LiveCD-/;
@@ -63,7 +63,7 @@ sub get_extra_test()
 sub run_extra_tests
 {
 	my @targets;
-	for(1..4) { # try different variants before idling
+	for(1..3) { # try different variants before idling
 		my $t=get_extra_test;
 		push(@targets, $t);
 	}

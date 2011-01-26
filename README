@@ -19,3 +19,7 @@ make video/openSUSE...ogv:
 	make a specific video from the corresponding factory/iso/ image
 
 
+things to run:
+tools/testloop    # automatic test scheduler
+tools/notifier.pl # IRC notification
+

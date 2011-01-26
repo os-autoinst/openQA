@@ -16,6 +16,7 @@
 	sleep 1 # let date be higher than a previous test
 	touch $out $out.autoinst.txt # prevent cron going in here during test
 	echo `date` starting to create $out >>$L
+	#echo $basetestname | grep -q ^openSUSE- && export DISTRI=opensuse
 	(pwd=`pwd`; cd ${testdir} ; echo $baseoutname > testname ; /usr/local/bin/withlock kvm.lock $pwd/perl/autoinst/tools/isotovideo $pwd/$in )
 	tools/backlog ${testdir}/raid/ $baseoutname
 	echo `date` finished to create $out >>$L

@@ -6,6 +6,7 @@ max=9
 imgdir=$1
 name=$2
 
+test -n $LIVETEST && exit 0 # nothing to backlog
 rm -rf $bd/$max # delete oldest
 for i in $(seq $max -1 1) ; do # rotate
 	n=$(expr $i - 1)
