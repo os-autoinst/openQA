@@ -2,11 +2,18 @@
 <p>Known Issues seen in test-results:
 </p>
 <ul class="openqaissues">
- <li>Build0963-Build0988+ random hangup - <a href="https://bugzilla.novell.com/show_bug.cgi?id=660464">i586 kernel udev-165 SCSI system freeze</a></li> <!-- 2010-12-19 19:57  -->
- <li>Build0989+-gnomeunstable gdm causing Xorg trouble - vuntz found gdm-vt-allocation-hack.patch still needed</li>
- <li>Build0989+-kdeplayground amarok crashing from missing config</li>
- <li>Build0923+ XFCE 4.7 not being default desktop/WM + some of it not working</li>
- <li>Build0845+ <a href="https://bugzilla.novell.com/show_bug.cgi?id=652562">LibreOffice not starting first time on DVD/NET</a> </li>
+ <li>Build0963-1030 -<s><a href="https://bugzilla.novell.com/show_bug.cgi?id=660464">random i586 kernel udev-165 SCSI system freeze</a></s></li> <!-- 2010-12-19 19:57 - 2011-01-24 not prevented-->
+ <li>Build1024-1032 zypper up test fails because update-repo is outdated - marked as OK for now</li>
+ <li>Build1005+ <a href="https://bugzilla.novell.com/show_bug.cgi?id=666504">USB-boot broken (because of fdisk -ul change)</a></li> <!-- 2011-01-11 09:44 -->
+ <li>Build1012-1031 <s><a href="https://bugzilla.novell.com/show_bug.cgi?id=664873">df does not show info because /etc/mtab is empty</a></s></li> <!-- 2011-01-14 12:50 - 2011-19? openSUSE-i586-x86_64-Build0898 - 2011-01-24-->
+ <li>Build1022+-LiveCD kexec/CD-eject fail - caused by mtab change? - workarounded</li> <!-- 2011-01-19 05:13 -->
+ <li>Build100x+ <a href="https://bugzilla.novell.com/show_bug.cgi?id=666830">upgrading fails: "Problem: preload-kmp-default-1.2_k2.6.37-2.13.i586 requires ksym(default:current_task) = 48fa29dc, but this requirement cannot be provided"</a></li>
+ <li>Build1016+ <a href="https://bugzilla.novell.com/show_bug.cgi?id=665497">firefox not default browser (because of .desktop file rename?)</a></li>
+ <li>Build1016-kde kontact <a href="https://bugs.kde.org/show_bug.cgi?id=263293">migration</a> <s>and <a href="https://bugs.kde.org/show_bug.cgi?id=263294">restart</a></s> issues</li>
+ <li>?Build1000+ unknown cause: logout instead of shutdown &amp; KDE/Xorg sometimes ignoring keyboard input after amarok test?</li>
+ <li>Build0923+ XFCE 4.7 not being default desktop/WM</li>
+ <li>Build0882+-LiveCD <s><a href="https://bugzilla.novell.com/show_bug.cgi?id=665413">install progress bar not updating</a></s></li> <!-- 19-Nov-2010 10:19  last working: Build0878 19-Nov-2010 07:22 -->
+ <li>Build0845+ <a href="https://bugzilla.novell.com/show_bug.cgi?id=652562">LibreOffice not starting first time on DVD/NET</a> - workarounded</li>
  <li>Build0700+ <a href="https://bugzilla.novell.com/show_bug.cgi?id=656536">RAID problems on some DVD/NET installs</a> - workarounded in tests</li>
 <!--
  started tracking 2010-11-28
@@ -16,6 +23,14 @@ rpm/libzypp prob? since 2010-12-09-19:00 0940+0852 til 2010-12-12 02:39 = 55h
  <li>Build0940-0947 /0856 <s><a href="https://bugzilla.novell.com/show_bug.cgi?id=658714">libzypp RPM Exception</a></s> </li>
 2010-12-19 found gnome-menu missing - fixed the next day and tested OK 2010-12-20 21:35
  <li><s>"live" and "dup" test summary shows bogus errors</s></li>
+ <li>Build0995 <a href="https://bugzilla.novell.com/show_bug.cgi?id=662991">tests missing keystrokes in bootloader from long kernel args strings</a> - workarounded</li>
+ <li>~Build1000<s>amarok not (dis)playing the test.wav file</s></li>
+ <li>Build0989-998-kdeplayground <s>amarok crashing from missing config</s></li>  2011-01-04 to 2011-01-08 
+ <li>~Build1000 <s>firefox 4-beta crashing on lxde and xfce (caused by GIO support)</s></li>
+ <li>Build1000 <s>openSUSE-i586-x86_64-Build0889 lacking oowriter and kontact (cause khelpcenter test to fail in my tests)</s></li>
+ <li>Build1015-gnome <a href="https://build.opensuse.org/request/show/58112">yast2-gtk plugin bad - no 2nd stage</a></li> = gone after 8h
+ <li>some tests fail from <a href="https://bugzilla.novell.com/show_bug.cgi?id=662560">repo keys need to be trusted twice bug</a></li>
+ <li>Build0989-1015-gnomedevel <s><a href="http://lists.opensuse.org/opensuse-factory/2011-01/msg00112.html">gdm causing Xorg trouble - vuntz working on it</a></s></li>
 -->
 
 </ul>
