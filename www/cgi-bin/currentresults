@@ -10,14 +10,17 @@ my $defaulthoursfresh=4*24;
 
 
 my %options;
-for my $p (qw'sort hours ib') {
+for my $p (qw'sort hours ib match') {
    $options{$p}=param($p);
 }
 if($options{ib}) {
 	require boring;
 }
+if($options{match}) {
+	$options{match}=~s/[^\w\[\].+*?\\|-]//g; # sanitize
+}
 #if(!defined $options{sort}){$options{sort}="-5.3.4.-7";} # default sort by Build# descending
-if(!defined $options{sort}){$options{sort}="-7";} # default sort by Time descending
+if(!defined $options{sort}){$options{sort}="-7"; param("sort",$options{sort})} # default sort by Time descending
 if(!defined($options{hours}) || $options{hours}=~m/\D/) {$options{hours}=$defaulthoursfresh}
 my $hoursfresh=($options{hours}+0);
 if($hoursfresh<1 || $hoursfresh>900) {$hoursfresh=$defaulthoursfresh}
@@ -32,6 +35,7 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	my ($logsize,$mtime)=@s[7,9];
 	if($mtime>$maxmtime){$maxmtime=$mtime}
 	next if $mtime < $now - $maxage; # skip old
+	next if($options{match} && $r!~m/$options{match}/);
 	my ($link, $distri, $type, $arch, $build, $extrainfo)=split_filename($r);
 	my @lines=parse_log($r);
 	my $parsed=parse_log_to_stats(\@lines);
@@ -75,11 +79,15 @@ my $table=sort_table(
 my @hoursoptions=(24,96,200,300);
 my %hoursoptionslabels=map {($_,"$_ h")} @hoursoptions;
 my $hoursselect=qq{<form method="get" action="" class="cutofftimeform">}.
+	hidden(-name=>'sort').
 	popup_menu(-name=>'hours', -values=>\@hoursoptions, -labels=>\%hoursoptionslabels).
+	textfield(-name=>"match")." filter ".
 	checkbox(-name=>"ib", -label=>"ignore boring results")." ".
 	qq{<input value="change" class="smbutton" type="submit" /></form>\n};
 my $knownissues=file_content("/srv/www/htdocs/includes/knownissues.html");
 my $numresults=@list;
+
+my $note="Note: times are UTC ; tests without an 'extra' string just use default desktop+settings - which means KDE, except on GNOME-LiveCD";
 
 my ($header,$footer)=get_header_footer("Results");
 print header(-type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
@@ -87,32 +95,25 @@ print $header.
 qq{
   <!-- Start: Main Content Area -->
 <div id="content" class="container_16 content-wrapper">
- <div class="grid_10 box box-shadow alpha">
-<h2>Test result overview</h2>
-<p>This page lists $numresults automated test-results from the last $hoursfresh hours.
-</p>
-$hoursselect
- </div>
-	<div style="display: table;">
-	  <div class="grid_6 box box-shadow omega" id="top_features_box">
+
+	  <div class="grid_5 box box-shadow alpha" id="top_features_box">
 	    <div class="box-header aligncenter">
 	       Recent issues in Factory
 	    </div>
 $knownissues
           </div>
-        </div>
-</div>
-
-<br/>
-
-<center>
-<div class="">
-$table
-</div>
-</center>
-
-<p>
-Note: times are UTC ; tests without an 'extra' string just use default desktop+settings - which means KDE, except on GNOME-LiveCD
+ <div class="grid_11 box box-shadow omega">
+<h2>Test result overview</h2>
+<p>This page lists $numresults automated test-results from the last $hoursfresh hours.
 </p>
+$hoursselect
+<p></p>
+$table
+<p>
+$note
+</p>
+ </div>
+</div>
+
 $footer};
 

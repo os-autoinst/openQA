@@ -1,11 +1,12 @@
 
 td { text-align: center ;}
 td { padding: 0.3em 0.6em; }
-tr.odd {background-color:#cfdcff ;}  /* Sky light */
+tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
 tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 
 .resultok {background-color:#d4f291 ;} /* Lemon */
 .resultunknown {background-color:#ff9 ;}
+.resultwarning {background-color:#ff9 ;}
 .resultfail {background-color:#faa ;}
 
 .overviewok {color: #248509 ;}		/* dark Lemon */
@@ -16,5 +17,6 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 .links { text-align: left; }
 
 .tactorytestedlogo {float: right; vertical-align: middle; }
-.sponsors {float: right; display: table;}
+.sponsors {}
 .cutofftimeform { margin-left: 2em; }
+table {width: 100%;}

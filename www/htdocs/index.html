@@ -14,7 +14,19 @@
 
   <!-- Start: Main Content Area -->
 <div id="content" class="container_16 content-wrapper">
- <div class="grid_10 box box-shadow alpha">
+
+
+	  <div class="grid_6 box box-shadow alpha" id="top_features_box">
+	    <div class="box-header aligncenter">
+	       Recent issues in Factory
+	    </div>
+	      <!-- start recent issues -->
+	      <!--#include file='includes/knownissues.html' -->
+	      <!-- end recent issues -->
+	  </div>
+
+
+ <div class="grid_10 box box-shadow omega">
 
   <h1>Welcome to openQA</h1>
 
@@ -36,17 +48,8 @@
     If you want to setup a similar automated testing system, you can use the <a href="http://www.os-autoinst.org/">OS autoinst</a> software.
   </p>
  </div>
-	<div style="display: table;">
-	  <div class="grid_6 box box-shadow omega" id="top_features_box">
-	    <div class="box-header aligncenter">
-	       Recent issues in Factory
-	    </div>
-	      <!-- start recent issues -->
-	      <!--#include file='includes/knownissues.html' -->
-	      <!-- end recent issues -->
-	  </div>
-	</div>
-  <div class="box box-shadow sponsors">
+
+  <div class="grid_10 box box-shadow sponsors omega">
     <div class="box-header aligncenter">
       Sponsored by
     </div>
@@ -71,6 +74,8 @@
     </div>
   </div>
 </div>
+  <div class="clear"></div>
+
       <video width="800" height="600" src="http://www3.zq1.de/opensuse/video/openSUSE-DVD-i586-Build0702d.ogv" title="automagic DVD-install of openSUSE-11.3" controls>
                <div class="video-fallback">
                     With firefox-3.5 or later you could see a video here

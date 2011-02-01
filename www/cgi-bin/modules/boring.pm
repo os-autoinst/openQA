@@ -16,6 +16,11 @@ sub expect($$$)
 
 sub is_boring($$)
 { my($name,$results)=@_;
+	if($name=~m/-usbboot/) {
+		#expect($results, "overall", "fail");
+		#expect($results, "standstill", "fail");
+		#return 1 if(!$results->{overall} && !$results->{standstill});
+	}
 	if($name=~m/-i[56]86-/) {
 		#return 1; # https://bugzilla.novell.com/show_bug.cgi?id=660464
 	}
@@ -36,7 +41,6 @@ sub is_boring($$)
 		# https://bugzilla.novell.com/show_bug.cgi?id=652562
 		#expect($results, "ooffice", "unknown"); # workarounded
 	}
-	#expect($results, "mtab", "fail");
 	my $allok=1;
 	my $nonok=0;
 	my $ok=0;
