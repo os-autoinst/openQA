@@ -33,6 +33,7 @@ sub maketarget_adjust($)
 			$t=~s/-x86_64-/-i586-/;
 		}
 	}
+	rand(100)>50 && $t=~s/-NET-/-DVD-/; # run some extra tests on DVD
 	return $t;
 }
 

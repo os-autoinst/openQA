@@ -9,7 +9,7 @@ excludes=--exclude="*.zsync" --exclude="*DVD*"
 #--max-delete=4000
 #repoexcludes+=--exclude="x86_64"
 #rsyncserver=rsync.opensuse.org
-repourl=http://widehat.opensuse.org/repositories/
+repourl=http://download.opensuse.org/repositories/
 rsyncserver=stage.opensuse.org
 dvdpath=/factory-all-dvd/iso/
 testdir=testrun-manual
@@ -30,8 +30,10 @@ prune:
 	make resultarchive
 	-find testresults/ video/ -type f -name \*.iso -atime +150 -mtime +150 -print0 | xargs --no-run-if-empty -0 rm -f
 
-prune2:
+prune2: dvdprune
 	-df factory/iso/|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +20 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
+dvdprune:
+	-df factory/iso/|grep -q "[6-9][0-9]%" &&find factory/iso/ -name "*-DVD-*.iso" -mtime +3 |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f
 
 prune3: 
 	# only keep latest NET iso of each arch
@@ -99,7 +101,7 @@ reposync:
 	for i in 1 2 3 ; do date=$$(date +%s) ; /usr/local/bin/withlock reposync.lock rsync -aH ${bwlimit} ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/oss/suse/ factory/repo/oss/suse/ ; test $$(date +%s) -le $$(expr $$date + 200) && break ; done
 	# copy meta-data ; delete old files as last step
 	-rsync -aPHv --delete-after ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/ factory/repo/
-preparesnapshot: sync reposync
+preparesnapshot: sync reposync dvdsync
 	mkdir -p factory-testing/repo/
 	rsync -aSHPv --delete-after --link-dest=../factory/ rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/ factory-testing/
 	make status
@@ -161,9 +163,10 @@ video/%-basesystemdevel.ogv: factory/iso/%-Media.iso
 video/%-kerneldevel.ogv: factory/iso/%-Media.iso
 	ADDONURL=${repourl}Kernel:/HEAD/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-mozilladevel.ogv: factory/iso/%-Media.iso
-	BIGTEST=1 ADDONURL=${repourl}mozilla:/beta/SUSE_Factory/+${repourl}LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	BIGTEST=1 DESKTOP=gnome ADDONURL=${repourl}mozilla:/beta/SUSE_Factory/+${repourl}LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-xorgdevel.ogv: factory/iso/%-Media.iso
-	ADDONURL=${repourl}X11:/XOrg/openSUSE_Factory/+${repourl}Kernel:/HEAD/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	ADDONURL=${repourl}X11:/XOrg/openSUSE_Factory/ LVM=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	#ADDONURL=${repourl}X11:/XOrg/openSUSE_Factory/+${repourl}Kernel:/HEAD/openSUSE_Factory/ LVM=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-kdeplaygrounddevel.ogv: factory/iso/%-Media.iso
 	ADDONURL=${repourl}KDE:/Unstable:/Playground/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-kdedevel.ogv: factory/iso/%-Media.iso
@@ -174,6 +177,8 @@ video/%-xfcedevel.ogv: factory/iso/%-Media.iso
 	DESKTOP=xfce ADDONURL=${repourl}X11:/xfce/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-lxdedevel.ogv: factory/iso/%-Media.iso
 	DESKTOP=lxde ADDONURL=${repourl}X11:/lxde/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-64.ogv: factory/iso/%-Media.iso
+	QEMUCPU=qemu64 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/openSUSE-%.ogv: liveiso/openSUSE-%.iso
 	LIVEOBSWORKAROUND=1 LIVECD=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
