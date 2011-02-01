@@ -10,7 +10,9 @@
 	echo in=$in out=$out
 
 	# some tests do not need to be run everytime
-	test $(date +%k) -lt 6 && export BIGTEST=1
+	for f in test.rules/* ; do
+		. $f
+	done
 
 	#trap "rm -f $out" EXIT # clean up in case of errors
 	sleep 1 # let date be higher than a previous test
