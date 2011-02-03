@@ -1,0 +1,9 @@
+
+if echo $in | grep -q -- -LiveCD- ; then
+	export LIVECD=1
+	if echo $in | grep -q -e -gnome -e -lxde -e -xfce ; then
+		exit 1 # no alternate desktops on LiveCDs
+	fi
+fi
+
+true
