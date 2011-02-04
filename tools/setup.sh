@@ -1,9 +1,8 @@
 #!/bin/bash
 
-mkdir perl
-cd perl
-git clone git://gitorious.org/os-autoinst/os-autoinst.git autoinst
+mkdir -p perl testresults testrun-manual factory/iso video
+(cd perl ; git clone git://gitorious.org/os-autoinst/os-autoinst.git autoinst )
 
-mkdir -p testresults testrun-manual factory/iso
-echo video/ogg ogv >> /etc/mime.types
+# part of the install needs to be done as root
+sudo tools/rootsetup.sh
 
