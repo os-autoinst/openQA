@@ -16,6 +16,10 @@ sub expect($$$)
 
 sub is_boring($$)
 { my($name,$results)=@_;
+	#return 1 if($name=~m/i586-.*-kerneldevel/); # bnc#667542
+	if($name=~m/-LiveCD/) {
+		expect($results, "yast2_lan", "unknown");
+	}
 	if($name=~m/-usbboot/) {
 		#expect($results, "overall", "fail");
 		#expect($results, "standstill", "fail");
@@ -24,10 +28,17 @@ sub is_boring($$)
 	if($name=~m/-i[56]86-/) {
 		#return 1; # https://bugzilla.novell.com/show_bug.cgi?id=660464
 	}
+	if($name=~m/-11.3dup/) {
+		return 1 if($results->{booted} eq "unknown");
+	}
+	delete $results->{sshxterm}; # sigs need updating - waiting for dheidler
 	delete $results->{NET_inst_mirror}; # randomly fails from pingus
 	delete $results->{reboot_wait_for_grub}; # randomly fails from pingus
-	if($name=~m/-kdeplayground/) {
-		#expect($results, "hal", "fail");
+	delete $results->{kontact}; # randomly fails from bnc#668138
+	#if($results->{ooffice}) { expect($results, "ooffice", "unknown"); }
+	if($results->{amarok}) { expect($results, "amarok", "unknown"); }
+	if($name=~m/-lxde/) {
+		expect($results, "sshxterm", "unknown");
 	}
 	if($name=~m/-gnome/) {
 		delete $results->{xterm}; # randomly fails from policykit auth popups
@@ -41,6 +52,8 @@ sub is_boring($$)
 		# https://bugzilla.novell.com/show_bug.cgi?id=652562
 		#expect($results, "ooffice", "unknown"); # workarounded
 	}
+
+
 	my $allok=1;
 	my $nonok=0;
 	my $ok=0;

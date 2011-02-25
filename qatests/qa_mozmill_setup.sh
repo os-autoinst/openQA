@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # sudo zypper -n in gcc python-devel python-pip mercurial curlftpfs
 # sudo pip install mozmill mercurial
 # needed for mozmill-automation:
@@ -10,7 +10,7 @@ hg clone http://hg.mozilla.org/qa/mozmill-automation
 mkdir ffmnt
 curlftpfs ftp://ftp.mozilla.org/pub/firefox/nightly/latest-mozilla-central/ ffmnt
 (
-	cp -a ffmnt/firefox-*`uname -m`.tar.bz2 .
+	cp -a $(ls ffmnt/firefox-*`uname -m`.tar.bz2|tail -1) .
 	fusermount -u ffmnt
 	tar xjf firefox-*.tar.bz2
 	rm -f firefox-*.tar.bz2

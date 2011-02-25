@@ -9,7 +9,7 @@ excludes=--exclude="*.zsync" --exclude="*DVD*"
 #--max-delete=4000
 #repoexcludes+=--exclude="x86_64"
 #rsyncserver=rsync.opensuse.org
-repourl=http://download.opensuse.org/repositories/
+repourl=http://widehat.opensuse.org/repositories/
 rsyncserver=stage.opensuse.org
 dvdpath=/factory-all-dvd/iso/
 testdir=testrun-manual
@@ -33,7 +33,8 @@ prune:
 prune2: dvdprune
 	-df factory/iso/|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +20 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
 dvdprune:
-	-df factory/iso/|grep -q "[6-9][0-9]%" &&find factory/iso/ -name "*-DVD-*.iso" -mtime +3 |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f
+	-df factory/iso/|grep -q "[8-9][0-9]%" &&find factory/iso/ -name "*-DVD-*.iso" -mtime +3 |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f
+	-df testresults/ |grep -q "9[0-9]%" && find testresults/ -type f -mtime +37 |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f
 
 prune3: 
 	# only keep latest NET iso of each arch
@@ -122,7 +123,7 @@ NEWISOS=$(shell find factory/iso/ -name "*[DN][VE][DT]*Build*-Media.iso" -mtime 
 # it is enough to test one i586+x86_64 NET-iso
 NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${newdays}|sort -r -t- -k4|head -2 ; find factory/iso/ -name "*DVD*Build*-Media.iso" -mtime -${newdays})
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
-NEWOGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWISOS))
+NEWOGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS)) $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
 allvideos: $(OGGS)
 newvideos: $(NEWOGGS)
 newlxdevideos: $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
@@ -141,6 +142,8 @@ video/%-gnome.ogv: factory/iso/%-Media.iso
 	export DESKTOP=gnome ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-usbboot.ogv: factory/iso/%-Media.iso
 	USBBOOT=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-nice.ogv: factory/iso/%-Media.iso
+	NICEVIDEO=1 SCREENSHOTINTERVAL=0.25 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-live.ogv: factory/iso/%-Media.iso
 	LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID10.ogv: factory/iso/%-Media.iso
@@ -152,7 +155,7 @@ video/%-11.4ms5gnomedup.ogv: factory/iso/%-Media.iso
 video/%-11.3gnomedup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-113-64-gnome.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.3dup.ogv: factory/iso/%-Media.iso
-	export UPGRADE=/space/bernhard/img/opensuse-113-32.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	export UPGRADE=/space2/opensuse/img/opensuse-11.3-32.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.2dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-112-64.img ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.1dup.ogv: factory/iso/%-Media.iso
@@ -177,6 +180,12 @@ video/%-xfcedevel.ogv: factory/iso/%-Media.iso
 	DESKTOP=xfce ADDONURL=${repourl}X11:/xfce/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-lxdedevel.ogv: factory/iso/%-Media.iso
 	DESKTOP=lxde ADDONURL=${repourl}X11:/lxde/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-se.ogv: factory/iso/%-Media.iso
+	INSTLANG=sv_SE in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-es.ogv: factory/iso/%-Media.iso
+	INSTLANG=es_ES in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-dk.ogv: factory/iso/%-Media.iso
+	INSTLANG=da_DK in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-64.ogv: factory/iso/%-Media.iso
 	QEMUCPU=qemu64 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/openSUSE-%.ogv: liveiso/openSUSE-%.iso
@@ -205,4 +214,5 @@ janitor:
 
 clean:
 	rm -f factory/iso/*-current-Media.iso.zsync
+	rm -rf /mnt/ssd/pool/*/testresults/*
 
