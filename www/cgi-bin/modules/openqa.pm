@@ -8,7 +8,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
 $basedir
-&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url
+&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
@@ -32,6 +32,7 @@ sub parse_log_to_stats($) { my($lines)=@_;
 	my %stats;
 	foreach my $entry (@$lines) {
 		my $result=$entry->[1];
+		$result=~s/\s.*//;
 		$stats{$result}++;
 	}
 	return \%stats;
@@ -108,6 +109,13 @@ sub resultname_to_log($)
 }
 sub resultname_to_url($)
 { "http://$hostname/results/$_[0]"; 
+}
+
+sub is_authorized_rw()
+{
+	my $ip=$ENV{REMOTE_ADDR};
+	return 1 if($ip eq "195.135.221.2" || $ip eq "78.46.32.14");
+	return 0;
 }
 
 1;

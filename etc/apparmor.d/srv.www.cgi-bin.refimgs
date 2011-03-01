@@ -13,16 +13,11 @@
 #include <tunables/global>
 #include <tunables/openqa>
 
-/srv/www/cgi-bin/jpg {
+/srv/www/cgi-bin/refimgs {
   #include <abstractions/base>
   #include <abstractions/openqacgi>
 
-  /srv/www/cgi-bin/jpg		r,
-# converting ppm (pnm) to jpg/png
-  /usr/lib64/ImageMagick*/modules*/coders/*p*.so	m,
-
-# for ungzip tmp files
-  /tmp/magick-*	rw,
-  deny /srv/www/cgi-bin/magick*	rw,
+  /srv/www/cgi-bin/refimgs		r,
+  @{TESTPERLHOME}/testimgs/*		rw,
 }
 

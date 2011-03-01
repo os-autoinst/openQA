@@ -7,13 +7,14 @@ use sort_table;
 use openqa;
 
 
+my $readonly=!is_authorized_rw();
 my $testfilter;
 $testfilter = $ENV{PATH_INFO} if($ENV{PATH_INFO}=~m/\w/);
 $testfilter = param('test') if(defined param('test'));
 $testfilter=~s/\W//g if(defined $testfilter);
 
 # Delete Image
-if(param() && param('delete')) {
+if(!$readonly && param('delete')) {
 	my $filename = param('delete');
 	if(!($filename=~m/.*-\d+-\d+-.*\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
 	my $fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$filename";
@@ -36,8 +37,9 @@ sub imgfqfn_to_link($;$)
 	my $width=80; my $height=int($width/4*3);
 	my $thumb=qq(<img src="$x?csize=${width}x${height}" width="${width}" height="${height}" alt="$filename" title="$filename" style="border: 1px dotted #ccc;" class="pic" />);
 	my $resicon='http://static.opensuse.org/themes/bento/images/icons/'.(($result eq 'good')?'accept.png':'exclamation.png');
+	my $delete=($readonly?"":'<span class="delete-icon"><input type="hidden" name="delete" value="'.$filename.'" /><input type="image" src="http://static.opensuse.org/themes/bento/images/icons/cross.png" alt="X" title="Delete Image" /></span>');
 	'<form method="post" action="/refimgs/'.($testfilter?$testfilter:'').'" onsubmit="return confirm(\'Delete '.$filename.'?\');" style="display: inline;"><span class="refpic"><a href="'.$linkurl.'">'.$thumb.'</a>
-	<span class="delete-icon"><input type="hidden" name="delete" value="'.$filename.'" /><input type="image" src="http://static.opensuse.org/themes/bento/images/icons/cross.png" alt="X" title="Delete Image" /></span>
+	'.$delete.'
 	<span class="result-icon"><img src="'.$resicon.'" width="16" height="16" alt="'.$result.'" title="'.$result.'" style="border: none;" /></span>
 	</span></form>';
 }

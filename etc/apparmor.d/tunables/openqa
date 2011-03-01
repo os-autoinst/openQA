@@ -1,2 +1,3 @@
 @{TESTHOME}=/space/geekotest/opensuse
 @{TESTHOMEBIG}=/space2/opensuse
+@{TESTPERLHOME}=@{TESTHOME}/perl/autoinst
