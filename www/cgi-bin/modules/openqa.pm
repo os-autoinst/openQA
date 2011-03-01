@@ -7,12 +7,13 @@ our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
-$basedir
-&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw
+$basedir $perldir
+&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 our $basedir="/space/geekotest";
+our $perldir="$basedir/opensuse/perl/autoinst";
 our $hostname="openqa.opensuse.org";
 
 sub parse_log($) { my($fn)=@_;
@@ -116,6 +117,11 @@ sub is_authorized_rw()
 	my $ip=$ENV{REMOTE_ADDR};
 	return 1 if($ip eq "195.135.221.2" || $ip eq "78.46.32.14");
 	return 0;
+}
+
+sub get_testimgs($)
+{ my $name=shift;
+	return <$perldir/testimgs/$name-*>
 }
 
 1;

@@ -17,7 +17,7 @@ $testfilter=~s/\W//g if(defined $testfilter);
 if(!$readonly && param('delete')) {
 	my $filename = param('delete');
 	if(!($filename=~m/.*-\d+-\d+-.*\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
-	my $fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$filename";
+	my $fullname = "$perldir/testimgs/$filename";
 	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
 	unlink($fullname);
 	print redirect(-location=>'/refimgs/'.($testfilter?$testfilter:''),-nph=>0,status=>302);
@@ -54,7 +54,7 @@ sub testsubhtml($)
 	$tid=~s{.*/.*-(\d+)-\d+-.*\.ppm}{$1};
 	if(!$testnames{$tname}{$tid}) {
 		$testnames{$tname}{$tid}=1;
-		my @testimglist=map {imgfqfn_to_link($_)} </space/geekotest/opensuse/perl/autoinst/testimgs/$tname-$tid-*-*.ppm>;
+		my @testimglist=map {imgfqfn_to_link($_)} get_testimgs("$tname-$tid");
 		'<td>'.$tid.'</td><td class="links">'.join("\n",@testimglist).'</td>';
 	}
 }
@@ -64,7 +64,7 @@ sub testhtml($)
 	my($tname)=@_;
 	$tname=~s{.*/(.*)-\d+-\d+-.*\.ppm}{$1};
 	if(!$testnames{$tname} && (!defined $testfilter || $testfilter eq $tname)) {
-		my @plaintestsublist=map {testsubhtml($_)} </space/geekotest/opensuse/perl/autoinst/testimgs/$tname-*-*-*.ppm>;
+		my @plaintestsublist=map {testsubhtml($_)} get_testimgs($tname);
 		my @testsublist=();
 		foreach my $testsub (@plaintestsublist) {
 			push @testsublist, $testsub if($testsub);
@@ -73,7 +73,7 @@ sub testhtml($)
 	}
 }
 
-my @testlist=map {testhtml($_)} </space/geekotest/opensuse/perl/autoinst/testimgs/*-*-*.ppm>;
+my @testlist=map {testhtml($_)} get_testimgs("*");
 
 my ($header,$footer)=get_header_footer('<a href="/refimgs/">Reference Images</a>'.(defined $testfilter?' &gt; '.$testfilter:''));
 print header("text/html").
