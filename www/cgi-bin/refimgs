@@ -1,0 +1,88 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use lib "/srv/www/cgi-bin/modules";
+use awstandard;
+use sort_table;
+use openqa;
+
+
+my $testfilter;
+$testfilter = $ENV{PATH_INFO} if($ENV{PATH_INFO}=~m/\w/);
+$testfilter = param('test') if(defined param('test'));
+$testfilter=~s/\W//g if(defined $testfilter);
+
+# Delete Image
+if(param() && param('delete')) {
+  my $filename = param('delete');
+  if(!($filename=~m/.*-\d+-\d+-.*\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
+  my $fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$filename";
+  if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
+  unlink($fullname);
+  print redirect(-location=>'/refimgs/'.($testfilter?$testfilter:''),-nph=>0,status=>302);
+  exit;
+}
+
+sub imgfqfn_to_link($;$)
+{ my($x)=@_;
+	#my $name=$x;
+	my ($filename,$result,$linkurl)=($x,$x,$x);
+	$filename=~s/.*\/(.*)-(\d+)-(\d+)-(.*)\.ppm/$1-$2-$3-$4.ppm/;
+	$result=~s/.*\/.*-\d+-\d+-(.*)\.ppm/$1/;
+	#$name=~s/.*-(\d+)\.ppm/$1/;
+	$x=~s{^$basedir(/opensuse.*)\.ppm}{$1.jpg};
+	$linkurl=~s{^$basedir(/opensuse.*)\.ppm}{$1.png};
+	# add thumbnail inline img
+	my $width=80; my $height=int($width/4*3);
+	my $thumb=qq(<img src="$x?csize=${width}x${height}" width="${width}" height="${height}" alt="$filename" title="$filename" style="border: 1px dotted #ccc;" class="pic" />);
+  my $resicon='http://static.opensuse.org/themes/bento/images/icons/'.(($result eq 'good')?'accept.png':'exclamation.png');
+  '<form method="post" action="/refimgs/'.($testfilter?$testfilter:'').'" onsubmit="return confirm(\'Delete '.$filename.'?\');" style="display: inline;"><span class="refpic"><a href="'.$linkurl.'">'.$thumb.'</a>
+   <span class="delete-icon"><input type="hidden" name="delete" value="'.$filename.'" /><input type="image" src="http://static.opensuse.org/themes/bento/images/icons/cross.png" alt="X" title="Delete Image" /></span>
+   <span class="result-icon"><img src="'.$resicon.'" width="16" height="16" alt="'.$result.'" title="'.$result.'" style="border: none;" /></span>
+  </span></form>';
+}
+
+my %testnames=();
+
+sub testsubhtml($)
+{
+  my($tname)=@_;
+  my $tid=$tname;
+  $tname=~s{.*/(.*)-\d+-\d+-.*\.ppm}{$1};
+  $tid=~s{.*/.*-(\d+)-\d+-.*\.ppm}{$1};
+  if(!$testnames{$tname}{$tid}) {
+    $testnames{$tname}{$tid}=1;
+    my @testimglist=map {imgfqfn_to_link($_)} </space/geekotest/opensuse/perl/autoinst/testimgs/$tname-$tid-*-*.ppm>;
+    '<td>'.$tid.'</td><td class="links">'.join("\n",@testimglist).'</td>';
+  }
+}
+
+sub testhtml($)
+{
+  my($tname)=@_;
+  $tname=~s{.*/(.*)-\d+-\d+-.*\.ppm}{$1};
+  if(!$testnames{$tname} && (!defined $testfilter || $testfilter eq $tname)) {
+    my @plaintestsublist=map {testsubhtml($_)} </space/geekotest/opensuse/perl/autoinst/testimgs/$tname-*-*-*.ppm>;
+    my @testsublist=();
+		foreach my $testsub (@plaintestsublist) {
+			push @testsublist, $testsub if($testsub);
+		}
+    '<tr><td rowspan="'.@testsublist.'" class="component">'.$tname.'</td>'.join("</tr>\n<tr>",@testsublist).'</tr>';
+  }
+}
+
+my @testlist=map {testhtml($_)} </space/geekotest/opensuse/perl/autoinst/testimgs/*-*-*.ppm>;
+
+my ($header,$footer)=get_header_footer('<a href="/refimgs/">Reference Images</a>'.(defined $testfilter?' &gt; '.$testfilter:''));
+print header("text/html").
+$header.
+qq{
+<p>This tool displays all available reference images.
+<br/>
+</p>
+<h2>images</h2>
+<table>
+@testlist
+</table>}.
+$footer;
+
