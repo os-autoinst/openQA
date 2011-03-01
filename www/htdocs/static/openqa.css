@@ -1,3 +1,4 @@
+@import url(container18.css);
 
 td { text-align: center ;}
 td { padding: 0.3em 0.6em; }
@@ -20,3 +21,54 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 .sponsors {}
 .cutofftimeform { margin-left: 2em; }
 table {width: 100%;}
+
+
+/* Reference Picture delete Button */
+
+span.refpic{
+  width:80px;
+  text-decoration:none;
+  position:relative;
+  display:block;
+  /*
+  padding:3px;
+  */
+  margin-right:5px;
+  margin-top:3px;
+  float:left;
+}
+
+span.refpic span.delete-icon{
+  visibility:hidden;
+  position:absolute;
+  right:0px;
+  top:2px;
+  /*
+  filter:alpha(opacity=50);
+  -moz-opacity:0.5;
+  -khtml-opacity: 0.5;
+  opacity: 0.5;
+  */
+}
+
+span.refpic:hover span.delete-icon{
+  visibility:visible;
+}
+
+span.refpic span.result-icon{
+  position:absolute;
+  right:2px;
+  bottom:3px;
+  filter:alpha(opacity=80);
+  -moz-opacity:0.8;
+  -khtml-opacity: 0.8;
+  opacity: 0.8;
+}
+
+span.refpic span.delete-icon input, button{
+	background: none;
+	padding: none;
+	border: none;
+	color: none;
+	margin: none;
+}
