@@ -8,7 +8,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
 $basedir $perldir
-&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs
+&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs testimg
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
@@ -122,6 +122,11 @@ sub is_authorized_rw()
 sub get_testimgs($)
 { my $name=shift;
 	return <$perldir/testimgs/$name-*>
+}
+
+sub testimg($)
+{ my $name=shift;
+	return "$perldir/testimgs/$name";
 }
 
 1;

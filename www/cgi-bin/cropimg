@@ -15,7 +15,7 @@ $name=~s/\.jpg$//;
 $name=~s/^opensuse\///;
 $name=~s/^\/opensuse\//\//;
 
-my $fullname="/space/geekotest/opensuse/$name.ppm";
+my $fullname="$basedir/opensuse/$name.ppm";
 if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
 my(undef,undef,$testrun,$testname) = split(/\//, $name);
 my $imgdir=openqa::imgdir($testrun);
@@ -90,9 +90,9 @@ if(param()) {
 		my ($new_name,$new_fullname);
 		for(my $i=1;;$i++) {
 			$new_name = $testname.'-'.$i.'-'.$result;
-			$new_fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$new_name.ppm";
-			my $good_fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$testname-$i-good.ppm";
-			my $bad_fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$testname-$i-bad.ppm";
+			$new_fullname = testimg("$new_name.ppm");
+			my $good_fullname = testimg("$testname-$i-good.ppm");
+			my $bad_fullname = testimg("$testname-$i-bad.ppm");
 			last if(!-e $new_fullname && !-e $good_fullname && !-e $bad_fullname);
 		}
 

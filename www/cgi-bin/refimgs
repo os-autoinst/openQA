@@ -17,7 +17,7 @@ $testfilter=~s/\W//g if(defined $testfilter);
 if(!$readonly && param('delete')) {
 	my $filename = param('delete');
 	if(!($filename=~m/.*-\d+-\d+-.*\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
-	my $fullname = "$perldir/testimgs/$filename";
+	my $fullname = testimg($filename);
 	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
 	unlink($fullname);
 	print redirect(-location=>'/refimgs/'.($testfilter?$testfilter:''),-nph=>0,status=>302);
