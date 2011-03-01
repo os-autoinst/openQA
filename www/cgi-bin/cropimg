@@ -22,28 +22,28 @@ my $imgdir=openqa::imgdir($testrun);
 my ($mtname,undef) = split('-',$testname);
 
 sub imgfqfn_to_link($;$) {
-  my($imgpath)=@_;
+	my($imgpath)=@_;
 	my $imgid=$imgpath;
 	$imgid=~s/.*-(\d+)\.ppm/$1/;
 	$imgpath=~s{^$basedir(/opensuse.*)\.ppm}{$1.png};
-  my $imglink=$imgpath;
+	my $imglink=$imgpath;
 	$imglink=~s/opensuse/cropimg/;
-  my(undef,undef,undef,undef,$mytestname) = split(/\//, $imgpath);
-  $mytestname=~s/\.png//;
+	my(undef,undef,undef,undef,$mytestname) = split(/\//, $imgpath);
+	$mytestname=~s/\.png//;
 	# add thumbnail inline img
 	my $width=80; my $height=int($width/4*3);
-  my $current=($mytestname eq $testname)?'border: 2px solid #669900;':'border: 2px solid #555555;';
+	my $current=($mytestname eq $testname)?'border: 2px solid #669900;':'border: 2px solid #555555;';
 	qq(<a href="$imglink" title="$mytestname"><img src="$imgpath?size=${width}x${height}" width="${width}" height="${height}" alt="$mytestname" style="background-color: #eeeeee; padding: 1px; $current" /></a>);
 }
 
 sub testoptions($;$) {
-  my ($tname) = @_;
-  my $link=$tname;
-  $tname=~s{.*/(.*)-\d+\.ppm}{$1};
+	my ($tname) = @_;
+	my $link=$tname;
+	$tname=~s{.*/(.*)-\d+\.ppm}{$1};
 	$link=~s{^$basedir(/opensuse.*)\.ppm}{$1.png};
 	$link=~s/opensuse/cropimg/;
-  my $selected = ($tname eq $mtname)?' selected="selected"':'';
-  '<option value="'.$link.'"'.$selected.'>'.$tname.'</option>';
+	my $selected = ($tname eq $mtname)?' selected="selected"':'';
+	'<option value="'.$link.'"'.$selected.'>'.$tname.'</option>';
 }
 
 # add link to $imgdir/$name*.ppm via png CGI
@@ -60,10 +60,10 @@ my @lines=parse_log($fqfn);
 my $testresult = '';
 foreach my $entry (@lines) {
 	my ($name,$result)=@$entry;
-  if($name eq $mtname) {
-    $testresult = $result;
-    last
-  }
+	if($name eq $mtname) {
+		$testresult = $result;
+		last
+	}
 }
 
 $testresult=~s{^$}{unknown};
@@ -75,31 +75,31 @@ my $detailscontent = '';
 my %resultselected=();
 
 if(param()) {
-  my ($x1,$y1,$x2,$y2,$width,$height,$result) = (param('x1'),param('y1'),param('x2'),param('y2'),param('width'),param('height'),param('result'));
-  if($x2 && $y2 && $width && $height && $result) {
-    my $size = '';
-    $size = '?size=200x150' if($width > 200 || $height > 150);
-    $loadcoord = qq{
-      displayOnInit: true,
-      onloadCoords: \{ x1: $x1, y1: $y1, x2: $x2, y2: $y2 \},
-    };
-    $resultselected{$result}=1;
-    my $image = new Image::Magick();
-    $image->Read($fullname);
-    $image->Crop($width.'x'.$height.'+'.$x1.'+'.$y1);
-    my ($new_name,$new_fullname);
-    for(my $i=1;;$i++) {
-      $new_name = $testname.'-'.$i.'-'.$result;
-      $new_fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$new_name.ppm";
-      my $good_fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$testname-$i-good.ppm";
-      my $bad_fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$testname-$i-bad.ppm";
-      last if(!-e $new_fullname && !-e $good_fullname && !-e $bad_fullname);
-    }
+	my ($x1,$y1,$x2,$y2,$width,$height,$result) = (param('x1'),param('y1'),param('x2'),param('y2'),param('width'),param('height'),param('result'));
+	if($x2 && $y2 && $width && $height && $result) {
+		my $size = '';
+		$size = '?size=200x150' if($width > 200 || $height > 150);
+		$loadcoord = qq{
+			displayOnInit: true,
+			onloadCoords: \{ x1: $x1, y1: $y1, x2: $x2, y2: $y2 \},
+		};
+		$resultselected{$result}=1;
+		my $image = new Image::Magick();
+		$image->Read($fullname);
+		$image->Crop($width.'x'.$height.'+'.$x1.'+'.$y1);
+		my ($new_name,$new_fullname);
+		for(my $i=1;;$i++) {
+			$new_name = $testname.'-'.$i.'-'.$result;
+			$new_fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$new_name.ppm";
+			my $good_fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$testname-$i-good.ppm";
+			my $bad_fullname = "/space/geekotest/opensuse/perl/autoinst/testimgs/$testname-$i-bad.ppm";
+			last if(!-e $new_fullname && !-e $good_fullname && !-e $bad_fullname);
+		}
 
-    $image->Write($new_fullname);
-    undef $image;
+		$image->Write($new_fullname);
+		undef $image;
 
-    $detailscontent = qq{
+		$detailscontent = qq{
       <br /><br />
       <div class="aligncenter">
         <img src="http://static.opensuse.org/themes/bento/images/icons/accept.png" width="16" height="16" />
@@ -118,7 +118,7 @@ if(param()) {
       </table>
     };
 
-  }
+	}
 }
 
 
