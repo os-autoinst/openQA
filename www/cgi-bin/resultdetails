@@ -43,6 +43,9 @@ foreach my $entry (@lines) {
 	my $cssclass="\L$result";
 	$cssclass=~s/\s.*//;
 	my $component=$name;
+	if(get_testimgs($name)) {
+		$component='<a href="/refimgs/'.$name.'">'.$name.'</a>';
+	}
 	#$result=~s/\s.*//;
 	$result=~s{(.*)\s\((.*)\)}{$1<br /><span class="subresults">$2</span>};
 	push(@out, qq(<tr><td class="component">$component</td><td class='result$cssclass'>$result</td><td class="links">@imglist</td></tr>\n));

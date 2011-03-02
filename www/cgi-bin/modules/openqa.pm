@@ -121,7 +121,8 @@ sub is_authorized_rw()
 
 sub get_testimgs($)
 { my $name=shift;
-	return <$perldir/testimgs/$name-*>
+	my @a=<$perldir/testimgs/$name-*>; # needs to be in list context
+	return @a;
 }
 
 sub testimg($)
