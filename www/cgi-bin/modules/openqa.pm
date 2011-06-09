@@ -7,13 +7,14 @@ our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
-$basedir $perldir
+$prj $basedir $perldir
 &parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs testimg
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 our $basedir="/space/geekotest";
-our $perldir="$basedir/opensuse/perl/autoinst";
+our $prj="opensuse";
+our $perldir="$basedir/$prj/perl/autoinst";
 our $hostname="openqa.opensuse.org";
 
 sub parse_log($) { my($fn)=@_;
@@ -24,7 +25,7 @@ sub parse_log($) { my($fn)=@_;
 	close($fd);
 
 	# assume first log line is splashscreen:
-	return () unless $logdata=~s/.*(splashscreen:)/$1/s;
+	return () unless $logdata=~s/.*====\n//s;
 	my @lines=map {[split(": ")]} split("\n",$logdata);
 	return @lines;
 }
@@ -49,7 +50,7 @@ sub parse_log_to_hash($) { my($lines)=@_;
 sub imgdir($) { my $fn=shift;
 	$fn=~s%\.autoinst\.txt$%%;
 	$fn=~s%\.ogv$%%;
-	"$basedir/opensuse/testresults/$fn";
+	"$basedir/$prj/testresults/$fn";
 }
 sub path_to_url($) { my($fn)=@_;
 	my $url=$fn;
@@ -65,7 +66,7 @@ sub path_to_ogvlink($) { my($fn)=@_;
 }
 sub path_to_detailurl($) { my($fn)=@_;
 	my $url=path_to_url($fn);
-	$url=~s%^/opensuse/video(.*).ogv.autoinst.txt%/results$1%;
+	$url=~s%^/$prj/video(.*).ogv.autoinst.txt%/results$1%;
 	return $url;
 }
 sub path_to_detaillink($) { my($fn)=@_;
@@ -87,6 +88,7 @@ sub split_filename($) { my($fn)=@_;
 	$fn=~s/Promo-DVD/DVD_Promo/;
 	$fn=~s/DVD-Biarch-i586-x86_64/DVD_Biarch-i586+x86_64/;
 	$fn=~s/-LiveCD/_LiveCD/; # belongs to KDE/GNOME, so protect from split
+	$fn=~s/(SLE.)-(\d+)-(SP|G)/$1_$2_$3/;
 	my @a=split("-",$fn);
 	$a[3]=~s/Build//;
 	$a[4]||=""; # extrainfo is optional
@@ -106,7 +108,7 @@ sub get_header_footer(;$)
 }
 
 sub resultname_to_log($)
-{ "/opensuse/video/$_[0].ogv.autoinst.txt"; 
+{ "/$prj/video/$_[0].ogv.autoinst.txt"; 
 }
 sub resultname_to_url($)
 { "http://$hostname/results/$_[0]"; 
@@ -115,7 +117,7 @@ sub resultname_to_url($)
 sub is_authorized_rw()
 {
 	my $ip=$ENV{REMOTE_ADDR};
-	return 1 if($ip eq "195.135.221.2" || $ip eq "78.46.32.14");
+	return 1 if($ip eq "195.135.221.2" || $ip eq "78.46.32.14" || $ip=~m/^2001:6f8:11fc:/ || $ip eq "2001:6f8:900:9b2::2" || $ip=~m/^10\./);
 	return 0;
 }
 

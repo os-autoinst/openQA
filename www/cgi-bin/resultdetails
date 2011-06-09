@@ -10,7 +10,7 @@ sub imgfqfn_to_link($;$)
 { my($x,$wantthumb)=@_;
 	my $name=$x;
 	$name=~s/.*-(\d+)\.ppm/$1/;
-	$x=~s{^$basedir(/opensuse.*)\.ppm}{$1.jpg};
+	$x=~s{^$basedir(/$prj)(.*)\.ppm}{/$prj$2.jpg};
 	# add thumbnail inline img
 	my $width=80; my $height=int($width/4*3);
 	my $thumb=($wantthumb?qq(<img src="$x?size=${width}x${height}" width="${width}" height="${height}" alt="$name" />):"");
@@ -23,7 +23,7 @@ if(!defined $fn) { print header(-status=>404)."must specify result file as path"
 $fn=~s%^/%%;
 if($fn=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
 $fn=~s/\.autoinst\.txt$//; $fn=~s/\.ogv$//; # be tolerant in what we accept
-my $resultdir="$basedir/opensuse/video";
+my $resultdir="$basedir/$prj/video";
 my $imgdir=openqa::imgdir($fn);
 my $fqfn="$resultdir/$fn.ogv.autoinst.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }

@@ -26,7 +26,7 @@ my $hoursfresh=($options{hours}+0);
 if($hoursfresh<1 || $hoursfresh>900) {$hoursfresh=$defaulthoursfresh}
 my $maxage=3600*$hoursfresh;
 
-my $resultdir="$basedir/opensuse/video";
+my $resultdir="$basedir/$prj/video";
 my @list=();
 my $now=time();
 my $maxmtime=(stat($ENV{SCRIPT_FILENAME}))[9];
@@ -67,7 +67,7 @@ sub qarowfunc($) {
 sub resultspan($$) {my ($status,$value)=@_;if($value eq ""){return ""} qq'<span class="overview$_[0]">&nbsp;$_[1]&nbsp;</span>'}
 
 my $table=sort_table(
-  [qw(link distr type arch build extra 
+  [qw(link distri type arch build extra 
       testtime OK unk fail)],
   [\&display_string, undef, \&display_string, \&display_string, \&display_string, \&display_string, 
       \&display_time, sub{resultspan("ok",$_[0])}, sub{resultspan("unknown",$_[0])}, sub{resultspan("fail",$_[0])}],

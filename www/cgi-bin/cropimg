@@ -12,10 +12,10 @@ if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
 $name=~s/\.png$//;
 $name=~s/\.jpg$//;
 
-$name=~s/^opensuse\///;
-$name=~s/^\/opensuse\//\//;
+$name=~s/^$prj\///;
+$name=~s/^\/$prj\//\//;
 
-my $fullname="$basedir/opensuse/$name.ppm";
+my $fullname="$basedir/$prj/$name.ppm";
 if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
 my(undef,undef,$testrun,$testname) = split(/\//, $name);
 my $imgdir=openqa::imgdir($testrun);
@@ -25,9 +25,9 @@ sub imgfqfn_to_link($;$) {
 	my($imgpath)=@_;
 	my $imgid=$imgpath;
 	$imgid=~s/.*-(\d+)\.ppm/$1/;
-	$imgpath=~s{^$basedir(/opensuse.*)\.ppm}{$1.png};
+	$imgpath=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
 	my $imglink=$imgpath;
-	$imglink=~s/opensuse/cropimg/;
+	$imglink=~s/$prj/cropimg/;
 	my(undef,undef,undef,undef,$mytestname) = split(/\//, $imgpath);
 	$mytestname=~s/\.png//;
 	# add thumbnail inline img
@@ -40,8 +40,8 @@ sub testoptions($;$) {
 	my ($tname) = @_;
 	my $link=$tname;
 	$tname=~s{.*/(.*)-\d+\.ppm}{$1};
-	$link=~s{^$basedir(/opensuse.*)\.ppm}{$1.png};
-	$link=~s/opensuse/cropimg/;
+	$link=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
+	$link=~s/$prj/cropimg/;
 	my $selected = ($tname eq $mtname)?' selected="selected"':'';
 	'<option value="'.$link.'"'.$selected.'>'.$tname.'</option>';
 }
@@ -53,7 +53,7 @@ my @testlist=map {testoptions($_)} <$imgdir/*-1*.ppm>;
 
 
 # Get Test Result
-my $resultdir="$basedir/opensuse/video";
+my $resultdir="$basedir/$prj/video";
 my $fqfn="$resultdir/$testrun.ogv.autoinst.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 my @lines=parse_log($fqfn);
@@ -112,7 +112,7 @@ if(param()) {
         </tr>
         <tr>
           <td colspan="2">
-            <a href="/opensuse/perl/autoinst/testimgs/$new_name.png"><img src="/opensuse/perl/autoinst/testimgs/$new_name.png$size" style="border: 1px dotted #ccc;" /></a>
+            <a href="/$prj/perl/autoinst/testimgs/$new_name.png"><img src="/$prj/perl/autoinst/testimgs/$new_name.png$size" style="border: 1px dotted #ccc;" /></a>
           </td>
         </tr>
       </table>
@@ -289,7 +289,7 @@ $header.
 
   <div class="grid_14 box box-shadow omega">
     <div style="margin: 0 10px;">
-      <img src="/opensuse/'.$name.'.png" alt="test image" id="testImage" width="800" height="600" />
+      <img src="/'."$prj/$name".'.png" alt="test image" id="testImage" width="800" height="600" />
     </div>
   </div>
 

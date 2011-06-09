@@ -10,7 +10,7 @@ my $p = new Image::Magick(depth=>8);
 my $name=$ENV{PATH_INFO};
 if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
 $name=~s/\.ppm$//;
-my $fullname="$basedir/opensuse/$name.ppm";
+my $fullname="$basedir/$prj/$name.ppm";
 if (!-e $fullname) {
 	$fullname.=".gz";
 	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }

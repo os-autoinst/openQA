@@ -31,8 +31,8 @@ sub imgfqfn_to_link($;$)
 	$filename=~s/.*\/(.*)-(\d+)-(\d+)-(.*)\.ppm/$1-$2-$3-$4.ppm/;
 	$result=~s/.*\/.*-\d+-\d+-(.*)\.ppm/$1/;
 	#$name=~s/.*-(\d+)\.ppm/$1/;
-	$x=~s{^$basedir(/opensuse.*)\.ppm}{$1.jpg};
-	$linkurl=~s{^$basedir(/opensuse.*)\.ppm}{$1.png};
+	$x=~s{^$basedir(/$prj.*)\.ppm}{$1.jpg};
+	$linkurl=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
 	# add thumbnail inline img
 	my $width=80; my $height=int($width/4*3);
 	my $thumb=qq(<img src="$x?csize=${width}x${height}" width="${width}" height="${height}" alt="$filename" title="$filename" style="border: 1px dotted #ccc;" class="pic" />);
