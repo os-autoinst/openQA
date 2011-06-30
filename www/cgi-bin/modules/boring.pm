@@ -13,12 +13,18 @@ sub expect($$$)
 		$results->{$t}.="surprising";
 	}
 }
+sub ignore($$) 
+{ my($results,$t)=@_;
+	delete $results->{$t};
+}
 
 sub is_boring($$)
 { my($name,$results)=@_;
 	foreach my $t (keys %$results) { $results->{$t}=~s/ .*//; } # strip extras
-	return 1 unless $results->{overall} eq "OK";#temp broken
+	#return 1 unless $results->{overall} eq "OK";#temp broken
 	#return 1 if($name=~m/i586-.*-kerneldevel/); # bnc#667542
+	ignore($results,"firefox");
+	ignore($results,"application_browser");
 	if($name=~m/-LiveCD/) {
 		#expect($results, "yast2_lan", "unknown");
 	}
@@ -46,7 +52,7 @@ sub is_boring($$)
 #		expect($results, "sshxterm", "unknown");
 	}
 	if($name=~m/-gnome/) {
-		delete $results->{xterm}; # randomly fails from policykit auth popups
+		#delete $results->{xterm}; # randomly fails from policykit auth popups
 	}
 	if($name=~m/-[DN][VE][DT]-.*-RAID10/) {
 		# https://bugzilla.novell.com/show_bug.cgi?id=656536
