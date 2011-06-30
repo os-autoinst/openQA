@@ -11,6 +11,7 @@ cat > $dir/tmp/init <<EOF
 #!/bin/sh
 cd /host
 echo starting encoder
+EXTRADIR="$EXTRADIR"
 ./tmp/ppmtompg qemuscreenshot $video
 echo encoder returned \$?
 sync

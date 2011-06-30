@@ -117,7 +117,7 @@ sub resultname_to_url($)
 sub is_authorized_rw()
 {
 	my $ip=$ENV{REMOTE_ADDR};
-	return 1 if($ip eq "195.135.221.2" || $ip eq "78.46.32.14" || $ip=~m/^2001:6f8:11fc:/ || $ip eq "2001:6f8:900:9b2::2" || $ip=~m/^10\./);
+	return 1 if($ip eq "195.135.221.2" || $ip eq "78.46.32.14" || $ip=~m/^2001:6f8:11fc:/ || $ip eq "2001:6f8:900:9b2::2" || $ip eq "2a01:4f8:100:9041::2" || $ip=~m/^10\./);
 	return 0;
 }
 

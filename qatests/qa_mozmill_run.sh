@@ -7,7 +7,13 @@ dburl2=http://mozmill-archive.brasstacks.mozilla.com/db/
 # test upstream nightly:
 time mozmill-automation/testrun_general.py --report=$dburl /tmp/firefox/firefox-bin
 # test our build:
-#rm -rf mozmill-tests/firefox/restartTests/{testDefaultBookmarks,testSoftwareUpdateAutoProxy}
-time mozmill-automation/testrun_general.py --report=$dburl2 /usr/lib*/firefox/firefox > /dev/ttyS0 2>&1
+(cd mozmill-tests ; 
+ hg rm firefox/restartTests/{testDefaultBookmarks,testSoftwareUpdateAutoProxy}/*.js
+ hg rm firefox/testInstallation/testBreakpadInstalled.js
+ hg rm tests/functional/restartTests/{testDefaultBookmarks,testSoftwareUpdateAutoProxy}/*.js tests/functional/testInstallation/testBreakpadInstalled.js
+ hg commit -m "disable for openSUSE" -u bernhardtemp
+)
+#rm -rf mozmill-tests/firefox/restartTests/{testDefaultBookmarks,testSoftwareUpdateAutoProxy} 
+time mozmill-automation/testrun_general.py --report=$dburl2 --repository=/tmp/mozmill-tests/ /usr/lib*/firefox/firefox > /dev/ttyS0 2>&1
 echo "mozmill testrun_general returned $?"
 echo "mozmill testrun finished" > /dev/ttyS0

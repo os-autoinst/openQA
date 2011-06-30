@@ -28,7 +28,7 @@ sub get_summary_string($)
 		next if $s>3; # skip details if there are too many
 		my @d=();
 		foreach my $entry (@lines) {
-			next if $entry->[1] ne $r;
+			next unless $entry->[1]=~m/^$r/;
 			push(@d, $entry->[0]);
 		}
 		push(@stats, "(".join(", ",@d).")");

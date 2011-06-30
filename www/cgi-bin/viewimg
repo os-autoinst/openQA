@@ -6,6 +6,7 @@ use awstandard;
 #use sort_table;
 use openqa;
 
+my $readonly=!is_authorized_rw();
 my $name=$ENV{PATH_INFO};
 if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
 $name=~s/\.png$//;
@@ -26,6 +27,7 @@ $header=~s{<!-- FLUIDSTYLE_END}{};
 $header=~s{container_12}{container_16};
 $header=~s{container_16}{container_16};
 $header=~s{grid_9}{grid_16};
+my $crop=($readonly?"":'<a href="/cropimg'.$name.'.png"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>');
 print header("text/html").
 $header.
 '
@@ -33,7 +35,7 @@ $header.
   <div class="grid_2 box box-shadow alpha" id="cropdetails_box">
     <div class="box-header aligncenter">Actions</div>
     <div class="aligncenter">
-      <a href="/cropimg/'.$name.'.png"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a> 
+      '.$crop.'
       <a href="/results/'.$testrun.'"><img src="/images/back.png" alt="back" title="back to overview page" /></a> 
     </div>
   </div>

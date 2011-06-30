@@ -1,0 +1,26 @@
+#!/bin/sh
+
+sudo zypper in kvm apache2 ffmpeg2theora git vim rsync screen make perl-PerlMagick
+mkdir -p testrun-manual video perl testresults factory/iso
+(
+        cd perl/
+        git clone git://gitorious.org/os-autoinst/os-autoinst.git autoinst
+)
+cp -a perl/autoinst/env.sh.sample testrun-manual/env.sh
+echo vim testrun-manual/env.sh
+echo vim Makefile
+
+# needs root:
+(
+        cd /usr/local/bin
+        wget http://withlock.googlecode.com/svn/trunk/withlock
+        chmod +x withlock
+)
+cp -a www/* /srv/www/
+cp -a etc/apache2/conf.d/openqa.conf /etc/apache2/conf.d/
+grep -q ogv /etc/mime.types || echo "video/ogg                                       ogv" >> /etc/mime.types
+vim /etc/sysconfig/apache2 # APACHE_MODULES=... rewrite
+insserv apache2
+insserv -r boot.apparmor
+usermod -A kvm geekotest
+grep kvm /etc/sysconfig/kernel || echo 'MODULES_LOADED_ON_BOOT="kvm-intel"' >> /etc/sysconfig/kernel

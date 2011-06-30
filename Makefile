@@ -28,6 +28,7 @@ sync:
 prune:
 	-find liveiso/ factory/iso/ -type f -name \*.iso -atime +90 -mtime +90 -print0 | xargs --no-run-if-empty -0 rm -f
 	make resultarchive
+	-find testresults/ -atime +50 -mtime +50 -name \*.ppm -print0 | xargs --no-run-if-empty -0 gzip -9
 	-find testresults/ video/ -type f -name \*.iso -atime +150 -mtime +150 -print0 | xargs --no-run-if-empty -0 rm -f
 
 prune2: dvdprune
@@ -40,6 +41,8 @@ prune3:
 	# only keep latest NET iso of each arch
 	#find factory/iso/ -name "*-NET-*"|sort -t- -k4| perl -ne '...'
 
+recheck:
+	cd perl/autoinst/ ; tools/rechecklog ../../video/$t.ogv.autoinst.txt
 deleteresult:
 	rm -f video/$t.ogv
 	rm -f video/$t.ogv.autoinst.txt
@@ -62,7 +65,7 @@ status:
 	@echo
 
 dvdsync:
-	rsync -aPHv ${bwlimit} --exclude="*Biarch*" rsync://${rsyncserver}${dvdpath}openSUSE-DVD-*.iso factory/iso/
+	-rsync -aPHv ${bwlimit} --exclude="*Biarch*" rsync://${rsyncserver}${dvdpath}openSUSE-DVD-*.iso factory/iso/
 promosync:
 	rsync -aPHv ${bwlimit} rsync://${rsyncserver}${dvdpath}openSUSE-Promo-*.iso factory/iso/
 biarchsync:
@@ -140,6 +143,8 @@ video/%-xfce.ogv: factory/iso/%-Media.iso
 	export DESKTOP=xfce ; EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-gnome.ogv: factory/iso/%-Media.iso
 	export DESKTOP=gnome ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-textmode.ogv: factory/iso/%-Media.iso
+	export DESKTOP=textmode ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-usbboot.ogv: factory/iso/%-Media.iso
 	USBBOOT=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-nice.ogv: factory/iso/%-Media.iso
@@ -154,6 +159,8 @@ video/%-11.4ms5gnomedup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.4-ms5-gnome-64.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.3gnomedup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-113-64-gnome.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.3dupb.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space2/tmp/opensuse-113-32-updated.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.3dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.3-32.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.2dup.ogv: factory/iso/%-Media.iso
@@ -215,4 +222,5 @@ janitor:
 clean:
 	rm -f factory/iso/*-current-Media.iso.zsync
 	rm -rf /mnt/ssd/pool/*/testresults/*
+	find video -size 0 | xargs --no-run-if-empty rm -f
 

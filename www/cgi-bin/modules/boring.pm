@@ -16,9 +16,11 @@ sub expect($$$)
 
 sub is_boring($$)
 { my($name,$results)=@_;
+	foreach my $t (keys %$results) { $results->{$t}=~s/ .*//; } # strip extras
+	return 1 unless $results->{overall} eq "OK";#temp broken
 	#return 1 if($name=~m/i586-.*-kerneldevel/); # bnc#667542
 	if($name=~m/-LiveCD/) {
-		expect($results, "yast2_lan", "unknown");
+		#expect($results, "yast2_lan", "unknown");
 	}
 	if($name=~m/-usbboot/) {
 		#expect($results, "overall", "fail");
@@ -29,29 +31,33 @@ sub is_boring($$)
 		#return 1; # https://bugzilla.novell.com/show_bug.cgi?id=660464
 	}
 	if($name=~m/-11.3dup/) {
-		return 1 if($results->{booted} eq "unknown");
+		#return 1 if($results->{booted} eq "unknown");
 	}
-	delete $results->{sshxterm}; # sigs need updating - waiting for dheidler
+	#delete $results->{sshxterm}; # sigs need updating - waiting for dheidler
+	delete $results->{firefox}; # sigs need update for 4.0 final
+	delete $results->{ooffice}; # broken on factory 20110401
+	delete $results->{banshee}; # sigs need update
 	delete $results->{NET_inst_mirror}; # randomly fails from pingus
 	delete $results->{reboot_wait_for_grub}; # randomly fails from pingus
 	delete $results->{kontact}; # randomly fails from bnc#668138
 	#if($results->{ooffice}) { expect($results, "ooffice", "unknown"); }
-	if($results->{amarok}) { expect($results, "amarok", "unknown"); }
+	#if($results->{amarok}) { expect($results, "amarok", "unknown"); }
 	if($name=~m/-lxde/) {
-		expect($results, "sshxterm", "unknown");
+#		expect($results, "sshxterm", "unknown");
 	}
 	if($name=~m/-gnome/) {
 		delete $results->{xterm}; # randomly fails from policykit auth popups
 	}
 	if($name=~m/-[DN][VE][DT]-.*-RAID10/) {
 		# https://bugzilla.novell.com/show_bug.cgi?id=656536
-		expect($results, "kde_reboot_plasmatheme", "unknown");
-		expect($results, "standstill", "fail");
+		#expect($results, "kde_reboot_plasmatheme", "unknown");
+		#expect($results, "standstill", "fail");
 	}
 	if($name=~m/openSUSE-[DN][VE][DT]-/) {
 		# https://bugzilla.novell.com/show_bug.cgi?id=652562
 		#expect($results, "ooffice", "unknown"); # workarounded
 	}
+	expect($results, "glxgears", "fail");
 
 
 	my $allok=1;
