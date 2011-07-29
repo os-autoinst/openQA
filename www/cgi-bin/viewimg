@@ -12,8 +12,8 @@ if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
 $name=~s/\.png$//;
 $name=~s/\.jpg$//;
 
-$name=~s/^$prj\///;
-$name=~s/^\/$prj\///;
+$name=~s/^$prj//;
+$name=~s/^\/$prj//;
 
 my $fullname="/space/geekotest/$prj/$name.ppm";
 if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
@@ -42,7 +42,7 @@ $header.
 
   <div class="grid_14 box box-shadow omega">
     <div style="margin: 0 10px;">
-      <a href="/'."$prj/$name".'.png"><img src="/'."$prj/$name".'.jpg" width="800" height="600" alt="'.$testname.'" /></a>
+      <a href="/'."$prj/$name".'.png"><img src="/'."$prj/$name".'.png" width="800" height="600" alt="'.$testname.'" /></a>
     </div>
   </div>
 

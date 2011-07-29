@@ -1,0 +1,20 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use lib "/srv/www/cgi-bin/modules";
+use awstandard;
+use openqa;
+
+my $name=$ENV{PATH_INFO};
+if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
+$name=~s/\.wav$//;
+my $fullname="$basedir/$prj/$name.wav";
+if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
+
+$|=1;
+
+my $mtime=(stat($fullname))[9];
+
+print header(-type=>"audio/ogg", -expires=>'+30m', -max_age=>'20000', -Last_Modified=>awstandard::HTTPdate($mtime));
+system("oggenc -Q -o- $fullname");
+

@@ -6,15 +6,39 @@ use awstandard;
 #use sort_table;
 use openqa;
 
-sub imgfqfn_to_link($;$)
-{ my($x,$wantthumb)=@_;
-	my $name=$x;
+my %result_colors = (
+	'ok'   => 'green',
+	'fail' => 'red',
+	'unk'  => 'orange'
+);
+
+sub result_color($) {
+	my $res = shift;
+	return ($result_colors{$res})?"border: 3px solid $result_colors{$res}; padding: 1px;":"padding: 4px;";
+}
+
+sub imgfqfn_to_link($$) {
+	my ($x, $imgres) = @_;
+	my $bcolor = result_color($imgres);
+	my ($name, $titlename) = ($x, $x);
 	$name=~s/.*-(\d+)\.ppm/$1/;
-	$x=~s{^$basedir(/$prj)(.*)\.ppm}{/$prj$2.jpg};
+	$titlename=~s/.*\/(\w+)-(\d+)\.ppm/$1-$2.ppm/;
+	$x=~s{^$basedir(/$prj)(.*)\.ppm}{/$prj$2.png};
 	# add thumbnail inline img
-	my $width=80; my $height=int($width/4*3);
-	my $thumb=($wantthumb?qq(<img src="$x?size=${width}x${height}" width="${width}" height="${height}" alt="$name" />):"");
-	qq(<a href="/viewimg$x">$name$thumb</a>);
+	my $width = 60; my $height = int($width/4*3);
+	my $thumb = qq(<img src="$x?size=${width}x${height}" width="${width}" height="${height}" alt="$name" style="$bcolor" />);
+	return qq(<a href="/viewimg$x" title="$titlename">$thumb</a>);
+}
+
+sub wavfqfn_to_link($$) {
+	my ($x, $wavres) = @_;
+	my $bcolor = result_color($wavres);
+	my ($name, $titlename) = ($x, $x);
+	$name=~s/.*-(\d+)\.wav/$1/;
+	$titlename=~s/.*\/(\w+)-(\d+)\.wav/$1-$2.wav/;
+	$x=~s{^$basedir(/$prj)(.*)\.wav}{/$prj$2.ogg};
+	my $thumb = qq(<img src="/images/audio.png" width="28" height="26" alt="$name" style="$bcolor" />);
+	return qq(<a href="$x" title="$titlename">$thumb</a>);
 }
 
 
@@ -35,33 +59,74 @@ my @lines=parse_log($fqfn);
 my @timeouts=<$imgdir/timeout-[0-9]*.ppm>;
 if(@timeouts) {unshift(@lines, ["timeout","unknown"])}
 my @out=();
+my $cycle='odd';
 foreach my $entry (@lines) {
-	my ($name,$result)=@$entry;
-	my $wantthumb=($result!~m/OK/);
+	my ($name,$result) = @$entry;
+	my ($imgresultstring,$wavresultstring) = ($result,$result);
+	if ($imgresultstring=~/\(.+\)/) { $imgresultstring=~s{.*\((.*)\).*}{$1}; }
+	else { $imgresultstring=''; }
+	if ($wavresultstring=~/\[.+\]/) { $wavresultstring=~s{.*\[(.*)\].*}{$1}; }
+	else { $wavresultstring=''; }
+	my @imgresults=split(/,/, $imgresultstring);
+	my @wavresults=split(/,/, $wavresultstring);
 	# add link to $imgdir/$name*.ppm via png CGI
-	my @imglist=map {imgfqfn_to_link($_,$wantthumb)} <$imgdir/$name-[0-9]*.ppm>;
+	my @imglist;
+	foreach my $imgpath (<$imgdir/$name-[0-9]*.ppm>) {
+		my $imgres = (@imgresults)?$imgresults[scalar(@imglist)]:'na';
+		push(@imglist, imgfqfn_to_link($imgpath,$imgres));
+	}
+	# add link to $imgdir/$name*.wav via ogg CGI
+	my @wavlist;
+	foreach my $wavpath (<$imgdir/$name-[0-9]*.wav>) {
+		my $wavres = (@wavresults)?$wavresults[scalar(@wavlist)]:'na';
+		push(@wavlist, wavfqfn_to_link($wavpath,$wavres));
+	}
 	my $cssclass="\L$result";
 	$cssclass=~s/\s.*//;
 	my $component=$name;
-	if(get_testimgs($name)) {
+	if(get_testimgs($name) || get_testwavs($name)) {
 		$component='<a href="/refimgs/'.$name.'">'.$name.'</a>';
 	}
 	#$result=~s/\s.*//;
-	$result=~s{(.*)\s\((.*)\)}{$1<br /><span class="subresults">$2</span>};
-	push(@out, qq(<tr><td class="component">$component</td><td class='result$cssclass'>$result</td><td class="links">@imglist</td></tr>\n));
+	($result)=split(/ /, $result); #~s{(.+) .*}{$1};
+	push(@out, qq(<tr class="$cycle">
+									<td class="component">$component</td>
+									<td class='result$cssclass'>$result</td>
+									<td class="links" style="width: 50%;">@imglist</td>
+									<td class="links" style="width: 50%;">@wavlist</td>
+								</tr>\n));
+	$cycle = ($cycle eq 'odd')?'even':'odd';
 }
 
 my ($header,$footer)=get_header_footer(qq{<a href="/results/">Results</a> &gt; $fn});
 print header("text/html").
 $header.
 qq{
-<p>This tool displays details on one particular test result.
-<br/>
-$fnsplit[0] <a href="/results/"><img src="/images/back.png" alt="back" title="back to overview page" /></a> 
-</p>
-<h2>results</h2>
-<table>
-@out
-</table>}.
+<div id="content" class="container_16 content-wrapper">
+  <div class="grid_2 box box-shadow alpha" id="cropdetails_box">
+    <div class="box-header aligncenter">Actions</div>
+    <div class="aligncenter">
+			$fnsplit[0] <a href="/results/"><img src="/images/back.png" alt="back" title="back to overview page" /></a> 
+    </div>
+  </div>
+
+	<div class="grid_14 box box-shadow omega" style="padding-left: 1.5%;">
+		<h2>Results</h2>
+		<p>This tool displays details on one particular test result.
+		<br/>
+		<!-- $fnsplit[0] <a href="/results/"><img src="/images/back.png" alt="back" title="back to overview page" /></a> -->
+		<br />
+		</p>
+		<table style="width: 95%;">
+		<tr>
+			<th style="width: 200px;">Test</th>
+			<th style="width: 150px;">Result</th>
+			<th colspan="2">References</th>
+		</tr>
+		@out
+		</table>
+	</div>
+</div>
+}.
 $footer;
 

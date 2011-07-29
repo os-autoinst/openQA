@@ -55,10 +55,11 @@ sub testsubhtml($)
 	if(!$testnames{$tname}{$tid}) {
 		$testnames{$tname}{$tid}=1;
 		my @testimglist=map {imgfqfn_to_link($_)} get_testimgs("$tname-$tid");
-		'<td>'.$tid.'</td><td class="links">'.join("\n",@testimglist).'</td>';
+		return '<td>'.$tid.'</td><td class="links">'.join("\n",@testimglist).'</td>';
 	}
 }
 
+my $cycle='even';
 sub testhtml($)
 {
 	my($tname)=@_;
@@ -69,22 +70,52 @@ sub testhtml($)
 		foreach my $testsub (@plaintestsublist) {
 			push @testsublist, $testsub if($testsub);
 		}
-		'<tr><td rowspan="'.@testsublist.'" class="component">'.$tname.'</td>'.join("</tr>\n<tr>",@testsublist).'</tr>';
+		$cycle = ($cycle eq 'odd')?'even':'odd';
+		return '<tr class="'.$cycle.'"><td rowspan="'.@testsublist.'" class="component">'.$tname.'</td>'.join("</tr>\n<tr class='$cycle'>",@testsublist).'</tr>';
 	}
 }
 
+sub testwavlink($) {
+	my($x)=@_;
+	#my $name=$x;
+	my ($filename,$linkurl)=($x,$x);
+	$filename=~s/.*\/(.*)-(\d+)\.wav/$1-$2.wav/;
+	$linkurl=~s{^$basedir(/$prj.*)\.wav}{$1.ogg};
+	return "<a href='$linkurl'>$filename</a><br />";
+}
+
 my @testlist=map {testhtml($_)} get_testimgs("*");
+my @wavlist=map {testwavlink($_)} get_testwavs((defined $testfilter)?$testfilter:"*");
+my $wavli = "<ul>\n<li>".join("</li>\n<li>", @wavlist)."</li>\n</ul>\n";
 
 my ($header,$footer)=get_header_footer('<a href="/refimgs/">Reference Images</a>'.(defined $testfilter?' &gt; '.$testfilter:''));
 print header("text/html").
 $header.
 qq{
-<p>This tool displays all available reference images.
-<br/>
-</p>
-<h2>images</h2>
-<table>
-@testlist
-</table>}.
+<div id="content" class="container_16 content-wrapper">
+  <div class="grid_2 box box-shadow alpha" id="cropdetails_box">
+    <div class="box-header aligncenter">Audio Files</div>
+    <div style="text-align: center;">
+			<span style="display: inline-block; text-align: left;">
+			@wavlist
+			</span>
+    </div>
+  </div>
+	
+	<div class="grid_14 box box-shadow omega">
+    <div class="box-header aligncenter">Reference Images</div>
+		<h2>Images</h2>
+		<p>This tool displays all available reference images.
+		<table style="width: 95%;">
+		<tr>
+			<th style="width: 200px;">Test</th>
+			<th style="width: 150px;">Screenshot&nbsp;#</th>
+			<th style="width: 100%;">Images</th>
+		</tr>
+		@testlist
+		</table>
+	</div>
+</div>
+}.
 $footer;
 

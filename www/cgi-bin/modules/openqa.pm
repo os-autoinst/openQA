@@ -8,7 +8,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
 $prj $basedir $perldir
-&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs testimg
+&parse_log &parse_log_to_stats &parse_log_to_hash &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs testimg &get_testwavs
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
@@ -117,13 +117,19 @@ sub resultname_to_url($)
 sub is_authorized_rw()
 {
 	my $ip=$ENV{REMOTE_ADDR};
-	return 1 if($ip eq "195.135.221.2" || $ip eq "78.46.32.14" || $ip=~m/^2001:6f8:11fc:/ || $ip eq "2001:6f8:900:9b2::2" || $ip eq "2a01:4f8:100:9041::2" || $ip=~m/^10\./);
+	return 1 if($ip eq "195.135.221.2" || $ip eq "78.46.32.14" || $ip=~m/^2001:6f8:11fc:/ || $ip eq "2001:6f8:900:9b2::2" || $ip eq "2a01:4f8:100:9041::2" || $ip=~m/^10\./ || $ip eq "127.0.0.1" || $ip eq "::1");
 	return 0;
 }
 
 sub get_testimgs($)
 { my $name=shift;
 	my @a=<$perldir/testimgs/$name-*>; # needs to be in list context
+	return @a;
+}
+
+sub get_testwavs($)
+{ my $name=shift;
+	my @a=<$perldir/audio/$name-*>; # needs to be in list context
 	return @a;
 }
 
