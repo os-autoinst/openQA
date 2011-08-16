@@ -17,7 +17,7 @@ if($options{ib}) {
 	require boring;
 }
 if($options{match}) {
-	$options{match}=~s/[^\w\[\]\{\}\(\),:.+*?\\|-]//g; # sanitize
+	$options{match}=~s/[^\w\[\]\{\}\(\),:.+*?\\\$|-]//g; # sanitize
 }
 #if(!defined $options{sort}){$options{sort}="-5.3.4.-7";} # default sort by Build# descending
 if(!defined $options{sort}){$options{sort}="-7"; param("sort",$options{sort})} # default sort by Time descending
@@ -41,7 +41,9 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	my $parsed=parse_log_to_stats(\@lines);
 	my $result=parse_log_to_hash(\@lines);
 	if($logsize==0) {
-		$link="testing";
+		my $url=path_to_url($r);
+		$url=~s%^/$prj/video(.*).ogv.autoinst.txt%/running$1%;
+		$link="<a href='$url'>testing</a>";
 		$parsed->{OK}=" ";
 	}
 #	next if $logsize<100; # too small => bug somewhere

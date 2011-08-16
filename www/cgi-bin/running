@@ -1,0 +1,64 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use lib "/srv/www/cgi-bin/modules";
+use awstandard;
+#use sort_table;
+use openqa;
+
+my $name=$ENV{PATH_INFO};
+
+$name=~s/^\/(.*)/$1/;
+
+my @runner = </space/geekotest/$prj/pool/[0-9]>;
+my $basepath = '';
+foreach my $path (@runner) {
+	my $testfile = $path."/testname";
+	open(my $fd, $testfile) || next ;
+	my @rname = <$fd>;
+	my $rnam = $rname[0];
+	$rnam=~s/^(.*)\n/$1/;
+	close($fd);
+	if ($name eq $rnam) {
+		$basepath = $path."/";
+		last;
+	}
+}
+
+my $img = qq(<img src="/mjpeg/$name" alt="Waiting for new Images..." />);
+if($basepath eq '') {
+	$img = qq(<font color="red"><b>Error:</b> Test not running!</font>);
+}
+
+
+my ($header,$footer)=get_header_footer(qq{Running Tests &gt; $name});
+$header=~s{<!-- DEFSTYLE_START}{};
+$header=~s{DEFSTYLE_END -->}{};
+$header=~s{FLUIDSTYLE_START -->}{};
+$header=~s{<!-- FLUIDSTYLE_END}{};
+$header=~s{container_12}{container_16};
+$header=~s{container_16}{container_16};
+$header=~s{grid_9}{grid_16};
+print header("text/html").
+$header.
+'
+<div id="content" class="container_16 content-wrapper">
+  <div class="grid_2 box box-shadow alpha" id="cropdetails_box">
+    <div class="box-header aligncenter">Actions</div>
+    <div class="aligncenter">
+      <a href="/results/"><img src="/images/back.png" alt="back" title="back to result page" /></a> 
+    </div>
+  </div>
+
+  <div class="grid_14 box box-shadow omega">
+    <div style="margin: 0 10px;">
+      <div style="width: 800px; height: 600px; background-color: #202020;">
+        '.$img.'
+      </div>
+    </div>
+  </div>
+
+</div>
+'.
+$footer;
+
