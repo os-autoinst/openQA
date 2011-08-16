@@ -13,11 +13,11 @@
 #include <tunables/global>
 #include <tunables/openqa>
 
-/srv/www/cgi-bin/jpg {
+/srv/www/cgi-bin/ogg {
   #include <abstractions/base>
   #include <abstractions/openqacgi>
-  #include <abstractions/imagemagick>
 
-  /srv/www/cgi-bin/jpg		r,
+  /srv/www/cgi-bin/ogg		r,
+  /usr/bin/oggenc		rUx,
 }
 

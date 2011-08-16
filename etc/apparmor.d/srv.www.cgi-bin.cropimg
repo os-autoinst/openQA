@@ -16,8 +16,8 @@
 /srv/www/cgi-bin/cropimg {
   #include <abstractions/base>
   #include <abstractions/openqacgi>
+  #include <abstractions/imagemagick>
 
-  /usr/lib*/ImageMagick*/modules*/coders/*p*.so	m,
   /srv/www/cgi-bin/cropimg		r,
   @{TESTPERLHOME}/testimgs/*		rw,
 }

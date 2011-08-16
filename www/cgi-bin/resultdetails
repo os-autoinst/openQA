@@ -6,10 +6,11 @@ use awstandard;
 #use sort_table;
 use openqa;
 
+# from http://www.w3schools.com/cssref/css_colornames.asp
 my %result_colors = (
 	'ok'   => 'green',
 	'fail' => 'red',
-	'unk'  => 'orange'
+	'unk'  => 'Sienna'
 );
 
 sub result_color($) {
@@ -92,8 +93,8 @@ foreach my $entry (@lines) {
 	push(@out, qq(<tr class="$cycle">
 									<td class="component">$component</td>
 									<td class='result$cssclass'>$result</td>
-									<td class="links" style="width: 50%;">@imglist</td>
-									<td class="links" style="width: 50%;">@wavlist</td>
+									<td class="links" style="width: 80%;">@imglist</td>
+									<td class="links" style="width: 20%;">@wavlist</td>
 								</tr>\n));
 	$cycle = ($cycle eq 'odd')?'even':'odd';
 }
