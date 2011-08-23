@@ -90,8 +90,12 @@ foreach my $entry (@lines) {
 	}
 	#$result=~s/\s.*//;
 	($result)=split(/ /, $result); #~s{(.+) .*}{$1};
+	my $testdetails="";
+	if($name ne "timeout") {
+		$testdetails=qq{<a href="/test/show/$fn/$name"><img src="/images/details.png" alt="details" /></a>};
+	}
 	push(@out, qq(<tr class="$cycle">
-									<td class="component">$component</td>
+									<td class="component">$component$testdetails</td>
 									<td class='result$cssclass'>$result</td>
 									<td class="links" style="width: 80%;">@imglist</td>
 									<td class="links" style="width: 20%;">@wavlist</td>
