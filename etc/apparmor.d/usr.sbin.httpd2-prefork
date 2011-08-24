@@ -135,6 +135,8 @@
   /var/lib/php/sess_*                rwl,
 
   # openqa exported data
+  /srv/www/cgi-bin/rechecklog        rUx,
+  /srv/www/cgi-bin/uploadlog         rUx,
   /srv/www/cgi-bin/**                rpx,
 
   ^HANDLING_UNTRUSTED_INPUT {
