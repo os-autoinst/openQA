@@ -9,3 +9,6 @@ cp -a www/* /srv/www/
 a2enmod rewrite
 /etc/init.d/apache2 restart
 
+mkdir logs
+chown geekotest.www logs # make it writable for apache
+chmod g+w logs

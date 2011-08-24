@@ -89,6 +89,9 @@ sub path_to_loglink($) { my($fn)=@_;
 	my $url=path_to_url($fn);
 	return qq%<a href="$url"><img width="23" height="23" src="/images/log.png" alt="log" title="complete log of this testrun"/></a>%;
 }
+sub test_to_logslink($) { my($fn)=@_;
+	return qq%<a href="/$prj/logs/$fn.tar.bz2"><img width="23" height="23" src="/images/download.png" alt="logs" title="download var/log.tar.bz2"/></a>%;
+}
 sub split_filename($) { my($fn)=@_;
 	my $origfn=$fn;
 	$fn=~s%\.autoinst\.txt$%%; # strip suffix
