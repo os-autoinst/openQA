@@ -1,8 +1,9 @@
 #!/usr/bin/perl -w
 use strict;
 use CGI qw":standard";
+BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
 use Image::Magick;
-use Time::HiRes qw(usleep);
+use Time::HiRes qw(sleep);
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 use openqa;
@@ -54,7 +55,7 @@ sub waitppmcomplete($)
   for(1..25) {
     my $size=-s $filename;
     if($goodsizes{$size}) {last}
-    usleep 20000;
+    sleep 0.02;
   }
 }
 
@@ -63,6 +64,9 @@ print header("multipart/x-mixed-replace;boundary=__myboundary__")."--__myboundar
 my $lastfile = '';
 my $lastdata = '';
 my $donetimeout = 0;
+#my $p2 = Image::Magick->new(depth=>8);
+#$p2->Set(size=>'800x600');
+
 while (1) {
   my @ppmfiles=<$basepath/qemuscreenshot/*.ppm>;
   my $newfile = ($ppmfiles[-1])?$ppmfiles[-1]:$lastfile;
@@ -72,6 +76,8 @@ while (1) {
     if($data ne $lastdata) {
       my $p = new Image::Magick(depth=>8, magick=>"PPM");
       $p->BlobToImage($data);
+      #$p2->ReadImage("xc:black");
+      #$p2->Composite(image=>$p, compose=>'Over');
       my $jpg=$p->ImageToBlob(magick=>'JPEG', depth=>8, quality=>60);
 #     my $jpg=ppm2jpg($newfile);
       my $jpgsize=length($jpg);
@@ -82,22 +88,22 @@ while (1) {
     $donetimeout = 0;
   }
   else {
-    usleep(200000);
+    sleep 0.2;
     if ($lastfile ne '') {
       $donetimeout++;
+      print "X-NoKeepAlive: This message will trigger SIGPIPE in the CGI if you close the page in your browser\015\012";
       if($donetimeout > 15) {
-        print "X-NoKeepAlive: This message will trigger SIGPIPE in the CGI if you close the page in your browser\015\012";
         $donetimeout = 0;
         if(! -e $basepath."qemu.pid") {
-          my $png=file_content("../htdocs/images/suse-tested.png");
-          my $pngsize=length($png);
-          print "Content-Type: image/png\015\012Content-Size: $pngsize\015\012\015\012$png\015\012--__myboundary__--\015\012";
+          # Some browsers can't handle mpng (at least after reciving jpeg all the time)
+          my $jpg=png2jpg("../htdocs/images/suse-tested.png");
+          my $jpgsize=length($jpg);
+          print "Content-Type: image/jpeg\015\012Content-Size: $jpgsize\015\012\015\012$jpg\015\012--__myboundary__--\015\012";
           exit 0;
         }
       }
     }
   }
-  usleep(200000);
+  sleep 0.2;
 }
-exit 0;
 
