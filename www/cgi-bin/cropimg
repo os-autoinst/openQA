@@ -242,7 +242,7 @@ $header.
 <div id="content" class="container_18 content-wrapper">
   <div class="grid_5 box box-shadow alpha" id="cropdetails_box">
     <div class="box-header aligncenter">Cropping details</div>
-    <div id="recent-issues" style="margin: 0 18px 0 0;">
+    <div style="margin: 0 18px 0 0;">
       <form method="post" action="" onsubmit="return checkform(this);">
         <table style="border: none;">
           <tr>

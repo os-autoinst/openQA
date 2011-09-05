@@ -10,7 +10,7 @@ use openqa;
 my %result_colors = (
 	'ok'   => 'green',
 	'fail' => 'red',
-	'unk'  => 'Sienna'
+	'unk'  => 'DimGrey'
 );
 
 sub result_color($) {
@@ -90,12 +90,18 @@ foreach my $entry (@lines) {
 	}
 	#$result=~s/\s.*//;
 	($result)=split(/ /, $result); #~s{(.+) .*}{$1};
-	my $testdetails="";
+	my $testdetails="$name";
+	my $sound="";
+	my $image="";
 	if($name ne "timeout") {
-		$testdetails=qq{<a href="/test/show/$fn/$name"><img src="/images/details.png" alt="details" /></a>};
+		$sound = (get_testwavs($name))?'&#9835;':'';
+		$image = (get_testimgs($name))?'&#10063;':'';
+		$testdetails=qq{<a href="/tdata/show/$fn/$name">$name</a>
+		};
 	}
 	push(@out, qq(<tr class="$cycle">
-									<td class="component">$component$testdetails</td>
+									<td class="info" style="width: 1em;">$sound $image</td>
+									<td class="component">$testdetails</td>
 									<td class='result$cssclass'>$result</td>
 									<td class="links" style="width: 80%;">@imglist</td>
 									<td class="links" style="width: 20%;">@wavlist</td>
@@ -124,7 +130,7 @@ qq{
 		</p>
 		<table style="width: 95%;">
 		<tr>
-			<th style="width: 200px;">Test</th>
+			<th style="width: 200px;" colspan="2">Test</th>
 			<th style="width: 150px;">Result</th>
 			<th colspan="2">References</th>
 		</tr>

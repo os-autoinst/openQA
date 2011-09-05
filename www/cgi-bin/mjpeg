@@ -64,8 +64,8 @@ print header("multipart/x-mixed-replace;boundary=__myboundary__")."--__myboundar
 my $lastfile = '';
 my $lastdata = '';
 my $donetimeout = 0;
-#my $p2 = Image::Magick->new(depth=>8);
-#$p2->Set(size=>'800x600');
+my $p2 = Image::Magick->new(depth=>8);
+$p2->Set(size=>'800x600'); 
 
 while (1) {
   my @ppmfiles=<$basepath/qemuscreenshot/*.ppm>;
@@ -76,9 +76,13 @@ while (1) {
     if($data ne $lastdata) {
       my $p = new Image::Magick(depth=>8, magick=>"PPM");
       $p->BlobToImage($data);
-      #$p2->ReadImage("xc:black");
-      #$p2->Composite(image=>$p, compose=>'Over');
-      my $jpg=$p->ImageToBlob(magick=>'JPEG', depth=>8, quality=>60);
+      my $p3=$p;
+      if(length($data) != 1440015) { # everything not 800x600 needs cropping
+        $p2->ReadImage("xc:black");
+        $p2->Composite(image=>$p, compose=>'Over');
+      	$p3=$p2;
+      }
+      my $jpg=$p3->ImageToBlob(magick=>'JPEG', depth=>8, quality=>60);
 #     my $jpg=ppm2jpg($newfile);
       my $jpgsize=length($jpg);
       print "Content-Type: image/jpeg\015\012Content-Size: $jpgsize\015\012\015\012".$jpg."\015\012--__myboundary__\015\012";

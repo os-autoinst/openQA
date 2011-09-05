@@ -21,7 +21,7 @@ if($options{match}) {
 }
 #if(!defined $options{sort}){$options{sort}="-5.3.4.-7";} # default sort by Build# descending
 if(!defined $options{sort}){$options{sort}="-7"; param("sort",$options{sort})} # default sort by Time descending
-if(!defined($options{hours}) || $options{hours}=~m/\D/) {$options{hours}=$defaulthoursfresh}
+if(!defined($options{hours}) || $options{hours}=~m/\D/) {$options{hours}=$defaulthoursfresh; param("hours",$options{hours});}
 my $hoursfresh=($options{hours}+0);
 if($hoursfresh<1 || $hoursfresh>900) {$hoursfresh=$defaulthoursfresh}
 my $maxage=3600*$hoursfresh;

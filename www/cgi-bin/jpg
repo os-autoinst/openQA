@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
 use CGI ":standard";
+BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
 use Image::Magick;
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;

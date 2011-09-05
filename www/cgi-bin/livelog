@@ -1,0 +1,53 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI qw":standard";
+use Time::HiRes qw(sleep);
+use lib "/srv/www/cgi-bin/modules";
+use awstandard;
+use openqa;
+#use File::Tail;
+
+
+
+$| = 1;
+
+$SIG{HUP} = sub { exit 0; };
+$SIG{TERM} = sub { exit 0; };
+$SIG{PIPE} = sub { exit 0; };
+
+my $name=$ENV{PATH_INFO};
+
+$name=~s/^\/(.*)/$1/;
+
+my @runner = </space/geekotest/$prj/pool/[0-9]>;
+my $basepath = '';
+foreach my $path (@runner) {
+	my $testfile = $path."/testname";
+	my $rnam = file_content($testfile);
+	chomp $rnam;
+	if ($name eq $rnam) {
+		$basepath = $path."/";
+		last;
+	}
+}
+
+if($basepath eq '') {print header(-status=>404)."test not running"; exit 0; }
+
+if(param('log') and param('log') eq 'current') {
+	unless(-e $basepath.'currentstep') {print header(-status=>404)."test not running"; exit 0; }
+	my @currentstep = split(' ', file_content($basepath.'currentstep'));
+	print header("text/plain").$currentstep[1];
+	exit;
+}
+
+else {
+	unless(-e $basepath.'currentautoinst-log.txt') {print header(-status=>404)."test not running"; exit 0; }
+	#my $file=File::Tail->new($basepath.'currentautoinst-log.txt');
+	print header("text/plain")."\n";
+	#while (defined(my $line=$file->read)) {
+	#	print $line;
+	#}
+	system('tail -fn+0 '.$basepath.'currentautoinst-log.txt');
+	exit;
+}
+
