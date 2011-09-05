@@ -18,6 +18,29 @@ $name=~s/^\/$prj//;
 my $fullname="/space/geekotest/$prj/$name.ppm";
 if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
 my(undef,undef,$testrun,$testname) = split(/\//, $name);
+my $imgdir=openqa::imgdir($testrun);
+my ($mtname,undef) = split('-',$testname);
+
+
+sub imgfqfn_to_link($;$)
+{ my($x)=@_;
+	#my $name=$x;
+	my ($filename,$result,$linkurl)=($x,$x,$x);
+	$filename=~s/.*\/(.*)-(\d+)-(\d+)-(.*)\.ppm/$1-$2-$3-$4.ppm/;
+	$result=~s/.*\/.*-\d+-\d+-(.*)\.ppm/$1/;
+	#$name=~s/.*-(\d+)\.ppm/$1/;
+	$x=~s{^$basedir(/$prj.*)\.ppm}{$1.jpg};
+	$linkurl=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
+	# add thumbnail inline img
+	my $width=80; my $height=int($width/4*3);
+	my $thumb=qq(<img src="$x?csize=${width}x${height}" width="${width}" height="${height}" alt="$filename" title="$filename" style="padding: 1px;" class="pic" />);
+	my $resicon='http://static.opensuse.org/themes/bento/images/icons/'.(($result eq 'good')?'accept.png':'exclamation.png');
+	'<span class="refcomppic"><a href="'.$linkurl.'">'.$thumb.'</a>
+	<span class="result-icon"><img src="'.$resicon.'" width="16" height="16" alt="'.$result.'" title="'.$result.'" style="border: none;" /></span>
+	</span>';
+}
+
+my @imglist=map {imgfqfn_to_link($_)} get_testimgs($testname);
 
 my ($header,$footer)=get_header_footer(qq{View Image &gt; <a href="/results/$testrun">$testrun</a> &gt; $testname});
 $header=~s{<!-- DEFSTYLE_START}{};
@@ -43,6 +66,15 @@ $header.
   <div class="grid_14 box box-shadow omega">
     <div style="margin: 0 10px;">
       <a href="/'."$prj/$name".'.png"><img src="/'."$prj/$name".'.png" width="800" height="600" alt="'.$testname.'" /></a>
+    </div>
+  </div>
+
+  <div class="grid_2 alpha">
+  </div>
+
+  <div class="grid_14 box box-shadow omega">
+    <div style="margin: 0 20px; overflow-x: scroll; overflow-y: hidden; overflow: auto; white-space: nowrap;">
+      '.join("\n",@imglist).'
     </div>
   </div>
 

@@ -73,3 +73,58 @@ span.refpic span.delete-icon input, button{
 	color: none;
 	margin: none;
 }
+
+
+
+span.refcomppic{
+  width:80px;
+  text-decoration:none;
+  position:relative;
+  display:inline-block;
+  /*
+  padding:3px;
+  */
+  margin-right:5px;
+/*
+  margin-top:2px;
+*/
+}
+
+
+span.refcomppic span.result-icon{
+  position:absolute;
+  right:2px;
+  bottom:3px;
+  filter:alpha(opacity=80);
+  -moz-opacity:0.8;
+  -khtml-opacity: 0.8;
+  opacity: 0.8;
+}
+
+
+/*
+#recent-issues {color:#999; font-size: 0.9em;}
+#recent-issues a{colo}
+#recent-issues li{padding: 0.73em 0px ; list-style: none;  border-bottom: 1px solid #eee}
+#recent-issues  p{font-style: italic; text-align: center;}
+
+#top_features_box, .sponsors{border-style: none !important; box-shadow: none !important; background-color: transparent !important}
+
+.sponsors .box-header,
+#top_features_box .box-header{font-weight: bold; padding-top: 1.33em ; border-style: none !important; font-size: 1.3em ; color: #666; background-color: transparent;}
+
+.sponsors p{ display: inline; padding: 0px 2em;}
+
+.omega{position: relative !important;}
+
+.omega img{}
+
+.omega h3{ padding-top: 2em}
+.omega li{list-style: none; }
+
+.omega li b a{margin: 1.7em 0em; }
+.omega li b a:link,.omega li b a:visited{background-color: #555; display: block; width: 60%; padding: 1.7em 0em; text-align:center; color: #fff; font-size: 1.33em; border-radius: .41em; box-shadow: inset 0px -2em 5px #333, 0px 2px 3px rgba(0,0,0,0.4); text-shadow: 0px -1px 0px #000; text-transform: uppercase; letter-spacing: 1px }
+
+.omega li b a:hover,.omega li b a:focus{background-color:#ccc; color: #222;  box-shadow: inset 0px 2em 5px #eee, 0px 2px 3px rgba(0,0,0,0.4); text-decoration: none !important; text-shadow: 0px 1px 0px #fff}
+
+*/
