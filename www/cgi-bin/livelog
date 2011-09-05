@@ -43,11 +43,12 @@ if(param('log') and param('log') eq 'current') {
 else {
 	unless(-e $basepath.'currentautoinst-log.txt') {print header(-status=>404)."test not running"; exit 0; }
 	#my $file=File::Tail->new($basepath.'currentautoinst-log.txt');
-	print header("text/plain")."\n";
+	print header({-type=>"text/plain", Content_Encoding=>"none"});
 	#while (defined(my $line=$file->read)) {
 	#	print $line;
 	#}
-	system('tail -fn+0 '.$basepath.'currentautoinst-log.txt');
+	alarm(7200);
+	system('tail', '-fn+0', $basepath.'currentautoinst-log.txt');
 	exit;
 }
 
