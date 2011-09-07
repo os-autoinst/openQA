@@ -19,24 +19,54 @@ my $name=$ENV{PATH_INFO};
 
 $name=~s/^\/(.*)/$1/;
 
-my @runner = </space/geekotest/$prj/pool/[0-9]>;
-my $basepath = '';
-foreach my $path (@runner) {
-	my $testfile = $path."/testname";
-	my $rnam = file_content($testfile);
-	chomp $rnam;
-	if ($name eq $rnam) {
-		$basepath = $path."/";
-		last;
-	}
-}
+my $basepath = running_log($name);
 
 if($basepath eq '') {print header(-status=>404)."test not running"; exit 0; }
 
-if(param('log') and param('log') eq 'current') {
+my $log = param('log') || '';
+
+
+if($log eq 'current') {
 	unless(-e $basepath.'currentstep') {print header(-status=>404)."test not running"; exit 0; }
-	my @currentstep = split(' ', file_content($basepath.'currentstep'));
-	print header("text/plain").$currentstep[1];
+	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
+	print header({-type=>"text/plain", Content_Encoding=>"none"});
+	print $currentstep;
+	exit;
+}
+elsif($log eq 'modlist') {
+	unless(-e $basepath.'currentstep') {print header(-status=>404)."test not running"; exit 0; }
+	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
+	print header({-type=>"text/html", Content_Encoding=>"none"});
+	my @modules = file_content($basepath.'currentautoinst-log.txt')=~m/^scheduling\s(\w+)\s\S+$/gm;
+	my $found = 0;
+	unless ($currentstep and grep(/^$currentstep$/, @modules)) {
+		$found = 1;
+	}
+	my @modlist;
+	foreach my $module (@modules) {
+		my $out;
+		my $omod = $module;
+		if ($found) {
+			#$out = '&#9679;';
+			$out = '-';
+		}
+		elsif ($module=~m/^$currentstep$/) {
+			$found = 1;
+			#$out = '&#10148;';
+			$out = '<b>&gt;</b>';
+			$omod = "<b>$module</b>";
+		}
+		else {
+			#$out = '&#10004;';
+			$out = '&#10003;';
+		}
+		push(@modlist, "<tr><td>$out</td><td><a href='/tdata/show/$name/$module'>$omod</a></td></tr>");
+	}
+
+
+	print "<table>\n";
+	print join("\n", @modlist);
+	print "</table>\n";
 	exit;
 }
 

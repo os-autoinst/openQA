@@ -35,14 +35,28 @@ my $resultdir="$basedir/$prj/video";
 my $fqfn="$resultdir/$fn.ogv.autoinst.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 
-#my @fnsplit=split_filename($fqfn);
-#$fnsplit[0].=" ".openqa::path_to_loglink($fqfn);
-my $actions = "<a href='/tdata/raw/$fn/$teststep'><img src='/images/log.png' alt='raw test' title='raw test' height='23' width='23' /></a>";
-$actions .= " <a href='".openqa::path_to_detailurl($fqfn)."'><img src='/images/back.png' alt='back to result details' title='back to result details' height='23' width='23' /></a>";
 
 #my @lines=parse_log($fqfn);
 my $scriptpath=log_to_scriptpath($fqfn, $teststep);
-if(!$scriptpath || !-e $scriptpath) { print header(-status=>404)."test not found: $teststep $scriptpath"; exit 0 }
+my $backcgi = 'results';
+if(!$scriptpath || !-e $scriptpath) {
+	$fqfn = running_log($fn).'currentautoinst-log.txt';
+	$backcgi = 'running';
+	$scriptpath=log_to_scriptpath($fqfn, $teststep);
+	if(!$scriptpath || !-e $scriptpath) {
+		print header(-status=>404)."test not found: $teststep $scriptpath"; exit 0
+	}
+}
+
+#my @fnsplit=split_filename($fqfn);
+#$fnsplit[0].=" ".openqa::path_to_loglink($fqfn);
+my $actions = "<a href='/tdata/raw/$fn/$teststep'><img src='/images/log.png' alt='raw test' title='raw test' height='23' width='23' /></a>";
+if ($backcgi eq 'results') {
+	$actions .= " <a href='".openqa::path_to_detailurl($fqfn)."'><img src='/images/back.png' alt='back to result details' title='back to result details' height='22' width='23' /></a>";
+}
+elsif ($backcgi eq 'running') {
+	$actions .= " <a href='/running/".$fn."'><img src='/images/back.png' alt='back to running test' title='back to running test' height='22' width='23' /></a>";
+}
 
 my $script=file_content($scriptpath);
 if($action eq "raw") { print header(-type=>"text/plain").$script; exit 0}

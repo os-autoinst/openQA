@@ -21,17 +21,7 @@ my $name=$ENV{PATH_INFO};
 
 $name=~s/^\/(.*)/$1/;
 
-my @runner = </space/geekotest/$prj/pool/[0-9]>;
-my $basepath = '';
-foreach my $path (@runner) {
-	my $testfile = $path."/testname";
-	my $rnam = file_content($testfile);
-	chomp $rnam;
-	if ($name eq $rnam) {
-		$basepath = $path."/";
-		last;
-	}
-}
+my $basepath = running_log($name);
 
 if($basepath eq '') {print header(-status=>404)."test not running"; exit 0; }
 

@@ -8,7 +8,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
 $prj $basedir $perldir
-&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs testimg &get_testwavs
+&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs testimg &get_testwavs &running_log
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
@@ -52,10 +52,26 @@ sub log_to_scriptpath($$)
 { my($fn,$testname)=@_;
 	open(my $fd, "<", $fn) or return undef;
 	while(my $line=<$fd>) {
-		next unless $line=~m/^starting $testname (\S*)/;
+		next unless $line=~m/^(?:scheduling|starting) $testname (\S*)/;
 		return $1;
 	}
 	return undef;
+}
+
+sub running_log($) {
+	my ($name) = @_;
+	my @runner = </space/geekotest/$prj/pool/[0-9]>;
+	foreach my $path (@runner) {
+		my $testfile = $path."/testname";
+		open(my $fd, $testfile) || next ;
+		my @rname = <$fd>;
+		my $rnam = $rname[0];
+		$rnam=~s/^(.*)\n/$1/;
+		close($fd);
+		if ($name eq $rnam) {
+			return $path."/";
+		}
+	}
 }
 
 sub imgdir($) { my $fn=shift;
