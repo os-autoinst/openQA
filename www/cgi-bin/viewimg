@@ -42,6 +42,19 @@ sub imgfqfn_to_link($;$)
 
 my @imglist=map {imgfqfn_to_link($_)} get_testimgs($testname);
 
+my $refimgs = '';
+if (@imglist) {
+	$refimgs = '
+	  <div class="grid_2 alpha">
+	  </div>
+
+	  <div class="grid_14 box box-shadow omega">
+	    <div style="margin: 0 20px; overflow-x: scroll; overflow-y: hidden; overflow: auto; white-space: nowrap;">
+	      '.join("\n",@imglist).'
+	    </div>
+	  </div>';
+}
+
 my ($header,$footer)=get_header_footer(qq{View Image &gt; <a href="/results/$testrun">$testrun</a> &gt; $testname});
 $header=~s{<!-- DEFSTYLE_START}{};
 $header=~s{DEFSTYLE_END -->}{};
@@ -69,14 +82,7 @@ $header.
     </div>
   </div>
 
-  <div class="grid_2 alpha">
-  </div>
-
-  <div class="grid_14 box box-shadow omega">
-    <div style="margin: 0 20px; overflow-x: scroll; overflow-y: hidden; overflow: auto; white-space: nowrap;">
-      '.join("\n",@imglist).'
-    </div>
-  </div>
+  '.$refimgs.'
 
 </div>
 '.
