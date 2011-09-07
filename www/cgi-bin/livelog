@@ -24,6 +24,7 @@ my $basepath = running_log($name);
 if($basepath eq '') {print header(-status=>404)."test not running"; exit 0; }
 
 my $log = param('log') || '';
+my $text = param('text') || '';
 
 
 if($log eq 'current') {
@@ -73,11 +74,14 @@ elsif($log eq 'modlist') {
 else {
 	unless(-e $basepath.'currentautoinst-log.txt') {print header(-status=>404)."test not running"; exit 0; }
 	#my $file=File::Tail->new($basepath.'currentautoinst-log.txt');
-	print header({-type=>"text/plain", Content_Encoding=>"none"});
-	#while (defined(my $line=$file->read)) {
-	#	print $line;
-	#}
 	alarm(7200);
+	if ($text) {
+		print header({-type=>"text/plain", Content_Encoding=>"none"});
+	}
+	else {
+		print header({-type=>"text/html", Content_Encoding=>"none"});
+		print "<style>pre { font-family: 'monospace', monospace; font-size: 12px; }</style><pre>";
+	}
 	system('tail', '-fn+0', $basepath.'currentautoinst-log.txt');
 	exit;
 }

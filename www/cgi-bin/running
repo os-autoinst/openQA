@@ -44,8 +44,10 @@ td a {
 table {
 	border: none;
 	margin: 0;
-	font-family: monospace;
-	font-size: 110%;
+	font-family: "monospace", monospace;
+	/*font-size: 110%;*/
+	font-size: 10.5667px;
+	line-height: 13px;
 }
 -->
 </style>
@@ -78,14 +80,14 @@ table {
   <div class="grid_16 box box-shadow alpha" onmouseover="window.scrolldownc = 0;" onmouseout="scrolldownc = 1;">
 	<script type="text/javascript">
 		var scrolldownc = 1;
+		var livelog = 0;
 	</script>
   	<div class="box-header aligncenter">Live Log</div>
 	<div style="margin: 0 10px;">
-		<iframe id="livelog" src="/livelog/'.$name.'" style="width: 98.9%; height: 20em;"><a href="'.$basepath.'currentautoinst-log.txt">Test Log</a></iframe>
+		<iframe id="livelog" src="about:blank" style="width: 98.9%; height: 20em;"><a href="'.$basepath.'currentautoinst-log.txt">Test Log</a></iframe>
 	</div>
 	<script type="text/javascript">
 		function scrolldown() {
-			
 			if(window.scrolldownc) {
 				document.getElementById("livelog").contentWindow.scrollTo(0, 99999999);
 			}
@@ -103,8 +105,23 @@ table {
 			});
 		}
 
-	scrolldown();
-	updatemodule();
+		function start_livelog() {
+			if(!window.livelog) {
+				window.livelog = 1;
+				document.getElementById("livelog").src="/livelog/'.$name.'?text=1";
+				scrolldown();
+			}
+		}
+
+
+		if (window.opera) {
+			start_livelog();
+		}
+		else {
+			window.onload=start_livelog;
+			window.setTimeout("start_livelog()", 3000);
+		}
+		updatemodule();
 	</script>
   </div>
 
