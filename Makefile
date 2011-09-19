@@ -1,5 +1,6 @@
 L=video/runlog.txt
 newdays=2
+d=$(shell date +%Y%m%d)
 #bwlimit=--bwlimit=1500
 excludes=--exclude="*.zsync" --exclude="*DVD*" 
 #excludes+=--exclude="*GNOME*"
@@ -28,8 +29,9 @@ sync:
 prune:
 	-find liveiso/ factory/iso/ -type f -name \*.iso -atime +90 -mtime +90 -print0 | xargs --no-run-if-empty -0 rm -f
 	make resultarchive
-	-find testresults/ -atime +50 -mtime +50 -name \*.ppm -print0 | xargs --no-run-if-empty -0 gzip -9
-	-find testresults/ video/ -type f -name \*.iso -atime +150 -mtime +150 -print0 | xargs --no-run-if-empty -0 rm -f
+	-find testresults/ -atime +20 -mtime +35 -name \*.ppm -print0 | xargs --no-run-if-empty -0 gzip -9
+	-find testresults/ video/ logs/ -type f -atime +100 -mtime +150 -print0 | xargs --no-run-if-empty -0 rm -f
+	-df factory/iso/|grep -q "9[0-9]%" && find testresults/ video/ -type f -atime +30 -mtime +60 |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f
 
 prune2: dvdprune
 	-df factory/iso/|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +20 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
@@ -128,7 +130,7 @@ NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${new
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
 NEWOGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS)) $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
 allvideos: $(OGGS)
-newvideos: $(NEWOGGS)
+newvideos: $(NEWOGGS) Tumbleweed-kde64 Tumbleweed-gnome32
 newlxdevideos: $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
 newxfcevideos: $(patsubst factory/iso/%-Media.iso,video/%-xfce.ogv,$(NEWNETISOS))
 newgnomevideos: $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS))
@@ -155,6 +157,20 @@ video/%-RAID10.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=10 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID5.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=5 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+Tumbleweed-gnome32: video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv
+video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
+	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Tumbleweed:/Testing/openSUSE_Tumbleweed_standard/ export UPGRADE=/space2/opensuse/img/opensuse-11.4-gnome-32.img ; TUMBLEWEED=1 NOINSTALL=1 ZDUP=1 DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+Tumbleweed-kde64: video/openSUSE-Tumbleweed-x86_64-$d-11.4kde64.ogv
+video/openSUSE-Tumbleweed-x86_64-$d-11.4kde64.ogv: distribution/11.4/iso/openSUSE-DVD-x86_64-11.4dummy.iso
+	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Tumbleweed:/Testing/openSUSE_Tumbleweed_standard/ export UPGRADE=/space2/opensuse/img/opensuse-11.4-kde-64.img ; TUMBLEWEED=1 NOINSTALL=1 ZDUP=1 DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.4kde64zdup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space2/opensuse/img/opensuse-11.4-kde-64.img ; NOINSTALL=1 ZDUP=1 DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.4kde64dup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space2/opensuse/img/opensuse-11.4-kde-64.img ; DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.4gnome32zdup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space2/opensuse/img/opensuse-11.4-gnome-32.img ; NOINSTALL=1 ZDUP=1 DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.4gnome32dup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space2/opensuse/img/opensuse-11.4-gnome-32.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.4ms5gnomedup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.4-ms5-gnome-64.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.3gnomedup.ogv: factory/iso/%-Media.iso
@@ -170,8 +186,10 @@ video/%-11.1dup.ogv: factory/iso/%-Media.iso
 
 video/%-basesystemdevel.ogv: factory/iso/%-Media.iso
 	ADDONURL=${repourl}Base:/System/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-yastdevel.ogv: factory/iso/%-Media.iso
+	ADDONURL=${repourl}YaST:/Head/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-kerneldevel.ogv: factory/iso/%-Media.iso
-	ADDONURL=${repourl}Kernel:/HEAD/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	ADDONURL=${repourl}Kernel:/HEAD/standard/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-mozilladevel.ogv: factory/iso/%-Media.iso
 	BIGTEST=1 DESKTOP=gnome ADDONURL=${repourl}mozilla:/beta/SUSE_Factory/+${repourl}LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-xorgdevel.ogv: factory/iso/%-Media.iso
@@ -187,6 +205,8 @@ video/%-xfcedevel.ogv: factory/iso/%-Media.iso
 	DESKTOP=xfce ADDONURL=${repourl}X11:/xfce/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-lxdedevel.ogv: factory/iso/%-Media.iso
 	DESKTOP=lxde ADDONURL=${repourl}X11:/lxde/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-btrfs.ogv: factory/iso/%-Media.iso
+	BTRFS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-se.ogv: factory/iso/%-Media.iso
 	INSTLANG=sv_SE in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-es.ogv: factory/iso/%-Media.iso
@@ -213,7 +233,7 @@ gitcollect:
 	rsync -a /srv/www/ www/
 	rsync -a /usr/local/bin/umlffmpeg ./tools/
 	rsync -a /etc/apparmor.d/{srv.www,usr.sbin.{httpd,rsyncd}}* etc/apparmor.d
-	cp -a --parent /etc/apparmor.d/{tunables,abstractions}/openqa* .
+	cp -a --parent /etc/apparmor.d/{tunables,abstractions}/openqa* /etc/apparmor.d/abstractions/imagemagick .
 	rsync -a /etc/apache2/conf.d/openqa.conf etc/apache2/conf.d/
 
 janitor:
@@ -221,6 +241,7 @@ janitor:
 
 clean:
 	rm -f factory/iso/*-current-Media.iso.zsync
-	rm -rf /mnt/ssd/pool/*/testresults/*
+	rm -rf /mnt/ssd/pool/*/{testresults,video,raid,qemuscreenshot}/*
+	rm -f /mnt/ssd/pool/*/qemu.pid
 	find video -size 0 | xargs --no-run-if-empty rm -f
 
