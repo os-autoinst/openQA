@@ -60,18 +60,20 @@ sub log_to_scriptpath($$)
 
 sub running_log($) {
 	my ($name) = @_;
-	my @runner = </space/geekotest/$prj/pool/[0-9]>;
+	my @runner = <$basedir/$prj/pool/[0-9]>;
+	push(@runner, "$basedir/$prj/pool/manual");
 	foreach my $path (@runner) {
 		my $testfile = $path."/testname";
 		open(my $fd, $testfile) || next ;
 		my @rname = <$fd>;
 		my $rnam = $rname[0];
-		$rnam=~s/^(.*)\n/$1/;
+		chomp($rnam);
 		close($fd);
 		if ($name eq $rnam) {
 			return $path."/";
 		}
 	}
+	return "";
 }
 
 sub imgdir($) { my $fn=shift;
