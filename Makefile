@@ -29,9 +29,9 @@ sync:
 prune:
 	-find liveiso/ factory/iso/ -type f -name \*.iso -atime +90 -mtime +90 -print0 | xargs --no-run-if-empty -0 rm -f
 	make resultarchive
-	-find testresults/ -atime +20 -mtime +35 -name \*.ppm -print0 | xargs --no-run-if-empty -0 gzip -9
+	-find testresults/ -atime +15 -mtime +25 -name \*.ppm -print0 | xargs --no-run-if-empty -0 gzip -9
 	-find testresults/ video/ logs/ -type f -atime +100 -mtime +150 -print0 | xargs --no-run-if-empty -0 rm -f
-	-df factory/iso/|grep -q "9[0-9]%" && find testresults/ video/ -type f -atime +30 -mtime +60 |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f
+	-df testresults/ |grep -q "9[0-9]%" && find testresults/ video/ -type f -atime +15 -mtime +25 |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f
 
 prune2: dvdprune
 	-df factory/iso/|grep -q "9[0-9]%" && find factory/iso/ -type f -mtime +20 -name "*.iso" |sort|perl -ne 'if(($$n++%2)==0){print}' | xargs --no-run-if-empty rm -f 
@@ -42,6 +42,9 @@ dvdprune:
 prune3: 
 	# only keep latest NET iso of each arch
 	#find factory/iso/ -name "*-NET-*"|sort -t- -k4| perl -ne '...'
+
+updatechangedb:
+	cd changedb ; find /opensuse/factory/repo/oss/ -mtime -7 -name \*.rpm | ./recentchanges.pl
 
 recheck:
 	cd perl/autoinst/ ; tools/rechecklog ../../video/$t.ogv.autoinst.txt
@@ -65,6 +68,10 @@ status:
 	ls factory-testing/iso/openSUSE-*x86_64-*
 	cat factory*/repo/oss/media.1/build /var/tmp/lastfactorysnapshotisobuildnr
 	@echo
+
+debiansync:
+	wget -Ofactory/iso/debian-netinst-i386-testing-Media.iso http://cdimage.debian.org/cdimage/daily-builds/daily/arch-latest/i386/iso-cd/debian-testing-i386-netinst.iso
+	wget -Ofactory/iso/debian-netinst-amd64-testing-Media.iso http://cdimage.debian.org/cdimage/daily-builds/daily/arch-latest/amd64/iso-cd/debian-testing-amd64-netinst.iso
 
 dvdsync:
 	-rsync -aPHv ${bwlimit} --exclude="*Biarch*" rsync://${rsyncserver}${dvdpath}openSUSE-DVD-*.iso factory/iso/
@@ -107,7 +114,7 @@ reposync:
 	for i in 1 2 3 ; do date=$$(date +%s) ; /usr/local/bin/withlock reposync.lock rsync -aH ${bwlimit} ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/oss/suse/ factory/repo/oss/suse/ ; test $$(date +%s) -le $$(expr $$date + 200) && break ; done
 	# copy meta-data ; delete old files as last step
 	-rsync -aPHv --delete-after ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/ factory/repo/
-preparesnapshot: sync reposync dvdsync
+preparesnapshot: sync reposync dvdsync updatechangedb
 	mkdir -p factory-testing/repo/
 	rsync -aSHPv --delete-after --link-dest=../factory/ rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/ factory-testing/
 	make status
@@ -130,7 +137,7 @@ NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${new
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
 NEWOGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS)) $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
 allvideos: $(OGGS)
-newvideos: $(NEWOGGS) Tumbleweed-kde64 Tumbleweed-gnome32
+newvideos: $(NEWOGGS) Tumbleweed-kde64 Tumbleweed-gnome32 debian
 newlxdevideos: $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
 newxfcevideos: $(patsubst factory/iso/%-Media.iso,video/%-xfce.ogv,$(NEWNETISOS))
 newgnomevideos: $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS))
@@ -145,18 +152,25 @@ video/%-xfce.ogv: factory/iso/%-Media.iso
 	export DESKTOP=xfce ; EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-gnome.ogv: factory/iso/%-Media.iso
 	export DESKTOP=gnome ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-minimalx.ogv: factory/iso/%-Media.iso
+	export DESKTOP=minimalx ; EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-textmode.ogv: factory/iso/%-Media.iso
-	export DESKTOP=textmode ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	export DESKTOP=textmode ; VIDEOMODE=text EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-usbboot.ogv: factory/iso/%-Media.iso
 	USBBOOT=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-nice.ogv: factory/iso/%-Media.iso
 	NICEVIDEO=1 SCREENSHOTINTERVAL=0.25 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-live.ogv: factory/iso/%-Media.iso
-	LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	LIVETEST=1 REBOOTAFTERINSTALL=0 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID10.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=10 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID5.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=5 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+debian: debian-32 debian-64
+debian-32: video/debian-netinst-i386-testing_$d.ogv
+debian-64: video/debian-netinst-amd64-testing_$d.ogv
+video/debian-%_$d.ogv: factory/iso/debian-%-Media.iso
+	HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 Tumbleweed-gnome32: video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv
 video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
 	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Tumbleweed:/Testing/openSUSE_Tumbleweed_standard/ export UPGRADE=/space2/opensuse/img/opensuse-11.4-gnome-32.img ; TUMBLEWEED=1 NOINSTALL=1 ZDUP=1 DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
@@ -175,10 +189,14 @@ video/%-11.4ms5gnomedup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.4-ms5-gnome-64.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.3gnomedup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-113-64-gnome.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.3zdup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space2/opensuse/img/opensuse-11.3-32.img ; NOINSTALL=1 ZDUP=1 DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.3dupb.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space2/tmp/opensuse-113-32-updated.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.3dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.3-32.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-11.2zdup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space/bernhard/img/opensuse-112-64.img ; NOINSTALL=1 ZDUP=1 DESKTOP=kde in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.2dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-112-64.img ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.1dup.ogv: factory/iso/%-Media.iso
