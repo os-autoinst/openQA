@@ -20,6 +20,7 @@ sub result_color($) {
 
 sub imgfqfn_to_link($$) {
 	my ($x, $imgres) = @_;
+	$x=~s/\.gz$//;
 	my $bcolor = result_color($imgres);
 	my ($name, $titlename) = ($x, $x);
 	$name=~s/.*-(\d+)\.ppm/$1/;
@@ -57,8 +58,8 @@ my @fnsplit=split_filename($fqfn);
 $fnsplit[0].=" ".openqa::path_to_loglink($fqfn)." ".openqa::test_to_logslink($fn);
 
 my @lines=parse_log($fqfn);
-my @timeouts=<$imgdir/timeout-[0-9]*.ppm>;
-if(@timeouts) {unshift(@lines, ["timeout","unknown"])}
+my @timeouts=<$imgdir/timeout-[0-9]*.ppm*>;
+if(@timeouts) {unshift(@lines, ["timeout","not-autochecked"])}
 my @out=();
 my $cycle='odd';
 foreach my $entry (@lines) {
@@ -72,7 +73,7 @@ foreach my $entry (@lines) {
 	my @wavresults=split(/,/, $wavresultstring);
 	# add link to $imgdir/$name*.ppm via png CGI
 	my @imglist;
-	foreach my $imgpath (<$imgdir/$name-[0-9]*.ppm>) {
+	foreach my $imgpath (<$imgdir/$name-[0-9]*.ppm*>) {
 		my $imgres = (@imgresults)?$imgresults[scalar(@imglist)]:'na';
 		push(@imglist, imgfqfn_to_link($imgpath,$imgres));
 	}
