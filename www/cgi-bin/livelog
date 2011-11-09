@@ -38,7 +38,8 @@ elsif($log eq 'modlist') {
 	unless(-e $basepath.'currentstep') {print header(-status=>404)."test not running"; exit 0; }
 	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
 	print header({-type=>"text/html", Content_Encoding=>"none"});
-	my @modules = file_content($basepath.'currentautoinst-log.txt')=~m/^scheduling\s(\w+)\s\S+$/gm;
+	my $filecontent = file_content($basepath.'currentautoinst-log.txt') || '';
+	my @modules = $filecontent=~m/^scheduling\s(\w+)\s\S+$/gm;
 	my $found = 0;
 	unless ($currentstep and grep(/^$currentstep$/, @modules)) {
 		$found = 1;

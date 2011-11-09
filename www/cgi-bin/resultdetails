@@ -64,17 +64,21 @@ my @out=();
 my $cycle='odd';
 foreach my $entry (@lines) {
 	my ($name,$result) = @$entry;
-	my ($imgresultstring,$wavresultstring) = ($result,$result);
+	my ($imgresultstring,$wavresultstring,$ocrresultstring) = ($result,$result,$result);
 	if ($imgresultstring=~/\(.+\)/) { $imgresultstring=~s{.*\((.*)\).*}{$1}; }
 	else { $imgresultstring=''; }
 	if ($wavresultstring=~/\[.+\]/) { $wavresultstring=~s{.*\[(.*)\].*}{$1}; }
 	else { $wavresultstring=''; }
+	if ($ocrresultstring=~/\{.+\}/) { $ocrresultstring=~s{.*\{(.*)\}.*}{$1}; }
+	else { $ocrresultstring=''; }
 	my @imgresults=split(/,/, $imgresultstring);
 	my @wavresults=split(/,/, $wavresultstring);
+	my @ocrresults=split(/,/, $ocrresultstring);
 	# add link to $imgdir/$name*.ppm via png CGI
 	my @imglist;
 	foreach my $imgpath (<$imgdir/$name-[0-9]*.ppm*>) {
 		my $imgres = (@imgresults)?$imgresults[scalar(@imglist)]:'na';
+		if($imgres eq "na") { $imgres=(@ocrresults)?$ocrresults[scalar(@imglist)]:'na';}
 		push(@imglist, imgfqfn_to_link($imgpath,$imgres));
 	}
 	# add link to $imgdir/$name*.wav via ogg CGI
@@ -94,14 +98,16 @@ foreach my $entry (@lines) {
 	my $testdetails="$name";
 	my $sound="";
 	my $image="";
+	my $ocr="";
 	if($name ne "timeout") {
 		$sound = (get_testwavs($name))?'&#9835;':'';
 		$image = (get_testimgs($name))?'&#10063;':'';
+		$ocr = (@ocrresults)?'&#7425;':'';
 		$testdetails=qq{<a href="/tdata/show/$fn/$name">$name</a>
 		};
 	}
 	push(@out, qq(<tr class="$cycle">
-									<td class="info" style="width: 1em;">$sound $image</td>
+									<td class="info" style="width: 1em;">$sound $image $ocr</td>
 									<td class="component">$testdetails</td>
 									<td class='result$cssclass'>$result</td>
 									<td class="links" style="width: 80%;">@imglist</td>

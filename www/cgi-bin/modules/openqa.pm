@@ -8,7 +8,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
 $prj $basedir $perldir
-&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs testimg &get_testwavs &running_log
+&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs testimg &get_testwavs &running_log &clickimg
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
@@ -168,6 +168,11 @@ sub get_testwavs($)
 sub testimg($)
 { my $name=shift;
 	return "$perldir/testimgs/$name";
+}
+
+sub clickimg($)
+{ my $name=shift;
+	return "$perldir/waitimgs/click/$name";
 }
 
 1;

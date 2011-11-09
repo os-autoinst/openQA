@@ -12,6 +12,8 @@ $name=~s/^\/(.*)/$1/;
 
 my $basepath = running_log($name);
 
+my $readonly=!is_authorized_rw();
+
 my $img = qq(<img src="/mjpeg/$name" alt="Waiting for new Images..." />);
 if($basepath eq '') {
 	$img = qq(<font color="red"><b>Error:</b> Test not running!</font>);
@@ -27,6 +29,9 @@ $header=~s{<!-- FLUIDSTYLE_END}{};
 $header=~s{container_12}{container_18};
 $header=~s{container_16}{container_18};
 $header=~s{grid_9}{grid_16};
+
+my $crop=($readonly?"":'<a href="/croplive/'.$name.'?getlastimg=1"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>');
+
 print header("text/html").
 $header.
 '
@@ -56,10 +61,11 @@ table {
 	  <div class="grid_5 box box-shadow alpha" id="actions_box">
 	    <div class="box-header aligncenter">Actions</div>
 	    <div class="aligncenter">
+		'.$crop.'
 	      <a href="/results/"><img src="/images/back.png" alt="back" title="back to result page" /></a> 
 	    </div>
 	  </div>
-	  <div class="grid_5 box box-shadow alpha" id="modules_box">
+	  <div class="grid_5 box box-shadow alpha" id="modules_box" style="min-height: 508px;">
 	    <div class="box-header aligncenter">Modules</div>
 	    <div style="margin: 0 10px; text-align: center;">
 	    	<span style="display: inline-block;" id="modcontent">
@@ -68,62 +74,65 @@ table {
 	  </div>
   </div>
 
-  <div class="grid_14 box box-shadow omega">
-    <div style="margin: 0 10px;">
-      <div style="width: 800px; height: 600px; background-color: #202020;">
-        '.$img.'
-      </div>
-    </div>
-  </div>
+  <div class="grid_14 omega">
+	  <div class="grid_14 box box-shadow omega">
+	    <div style="margin: 0 10px;">
+	      <div style="width: 800px; height: 600px; background-color: #202020;">
+		'.$img.'
+	      </div>
+	    </div>
+	  </div>
 
-
-  <div class="grid_16 box box-shadow alpha" onmouseover="window.scrolldownc = 0;" onmouseout="scrolldownc = 1;">
-	<script type="text/javascript">
-		var scrolldownc = 1;
-		var livelog = 0;
-	</script>
-  	<div class="box-header aligncenter">Live Log</div>
-	<div style="margin: 0 10px;">
-		<iframe id="livelog" src="about:blank" style="width: 98.9%; height: 20em;"><a href="'.$basepath.'currentautoinst-log.txt">Test Log</a></iframe>
-	</div>
-	<script type="text/javascript">
-		function scrolldown() {
-			if(window.scrolldownc) {
-				document.getElementById("livelog").contentWindow.scrollTo(0, 99999999);
-			}
-			window.setTimeout("scrolldown()", 50);
-		}
-		function updatemodule() {
-			var url = "/livelog/'.$name.'?log=modlist";
-			new Ajax.Request(url, {
-				method: "get",
-				onSuccess: function(response) {
-					// Set Module
-					document.getElementById("modcontent").innerHTML = response.responseText;
-					window.setTimeout("updatemodule()", 1000);
+	  <div class="grid_14 box box-shadow omega" onmouseover="window.scrolldownc = 0;" onmouseout="scrolldownc = 1;">
+		<script type="text/javascript">
+			var scrolldownc = 1;
+			var livelog = 0;
+		</script>
+		<div class="box-header aligncenter">Live Log</div>
+		<div style="margin: 0 10px;">
+			<iframe id="livelog" src="about:blank" style="width: 98.9%; height: 20em; overflow-x: hidden;"><a href="'.$basepath.'currentautoinst-log.txt">Test Log</a></iframe>
+		</div>
+		<script type="text/javascript">
+			function scrolldown() {
+				if(window.scrolldownc) {
+					document.getElementById("livelog").contentWindow.scrollTo(0, 99999999);
 				}
-			});
-		}
-
-		function start_livelog() {
-			if(!window.livelog) {
-				window.livelog = 1;
-				document.getElementById("livelog").src="/livelog/'.$name.'?text=1";
-				scrolldown();
+				window.setTimeout("scrolldown()", 50);
 			}
-		}
+			function updatemodule() {
+				var url = "/livelog/'.$name.'?log=modlist";
+				new Ajax.Request(url, {
+					method: "get",
+					onSuccess: function(response) {
+						// Set Module
+						document.getElementById("modcontent").innerHTML = response.responseText;
+						window.setTimeout("updatemodule()", 1000);
+					}
+				});
+			}
+
+			function start_livelog() {
+				if(!window.livelog) {
+					window.livelog = 1;
+					document.getElementById("livelog").src="/livelog/'.$name.'?text=1";
+					scrolldown();
+				}
+			}
 
 
-		if (window.opera) {
-			start_livelog();
-		}
-		else {
-			window.onload=start_livelog;
-			window.setTimeout("start_livelog()", 3000);
-		}
-		updatemodule();
-	</script>
+			if (window.opera) {
+				start_livelog();
+			}
+			else {
+				window.onload=start_livelog;
+				window.setTimeout("start_livelog()", 3000);
+			}
+			updatemodule();
+		</script>
+	  </div>
   </div>
+
+
 
 </div>
 '.
