@@ -149,6 +149,28 @@ unless(@wavlist) {
 	$wavlist[0] = '<i>None</i>';
 }
 
+my $imgtab = "";
+if(@testlist) {
+	$imgtab = qq{
+	<div class="box box-shadow">
+		<div class="box-header aligncenter">Reference Images</div>
+		<h2>Images</h2>
+		<p>This are the available reference images for the <i>$teststep</i> test.</p>
+		<table style="width: 95%;">
+		<tr>
+			<th style="width: 200px;">Test</th>
+			<th style="width: 150px;">Screenshot&nbsp;#</th>
+			<th style="width: 100%;">Images</th>
+		</tr>
+		@testlist
+		</table>
+	</div>
+	};
+}
+else {
+	$imgtab = "";
+}
+
 my @out=(niceoutput($script));
 
 my $nicescriptpath = $scriptpath;
@@ -177,30 +199,18 @@ qq{
 	  </div>
   </div>
 
-	<div class="grid_14 box box-shadow omega">
-		<div class="box-header aligncenter">Test Script</div>
-		<h2>Test Source</h2>
-		<p>This is the <b>$teststep</b> test for <b>$testrun</b>
-		<br />
-		<br />
-		Test-Module: <tt>$nicescriptpath</tt>
-		</p>
-		@out
-	</div>
-	<div class="grid_2 alpha">
-	</div>
-	<div class="grid_14 box box-shadow omega">
-		<div class="box-header aligncenter">Reference Images</div>
-		<h2>Images</h2>
-		<p>This are the available reference images for the <i>$teststep</i> test.</p>
-		<table style="width: 95%;">
-		<tr>
-			<th style="width: 200px;">Test</th>
-			<th style="width: 150px;">Screenshot&nbsp;#</th>
-			<th style="width: 100%;">Images</th>
-		</tr>
-		@testlist
-		</table>
+	<div class="grid_14 omega">
+		$imgtab
+		<div class="box box-shadow">
+			<div class="box-header aligncenter">Test Script</div>
+			<h2>Test Source</h2>
+			<p>This is the <b>$teststep</b> test for <b>$testrun</b>
+			<br />
+			<br />
+			Test-Module: <tt>$nicescriptpath</tt>
+			</p>
+			@out
+		</div>
 	</div>
 </div>
 }.
