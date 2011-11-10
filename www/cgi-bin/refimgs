@@ -86,7 +86,9 @@ sub testwavlink($) {
 
 my @testlist=map {testhtml($_)} get_testimgs("*");
 my @wavlist=map {testwavlink($_)} get_testwavs((defined $testfilter)?$testfilter:"*");
-my $wavli = "<ul>\n<li>".join("</li>\n<li>", @wavlist)."</li>\n</ul>\n";
+unless(@wavlist) {
+	$wavlist[0] = '<i>None</i>';
+}
 
 my ($header,$footer)=get_header_footer('<a href="/refimgs/">Reference Images</a>'.(defined $testfilter?' &gt; '.$testfilter:''));
 print header("text/html").
