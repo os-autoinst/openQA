@@ -29,6 +29,16 @@ if(!$readonly && param('delete')) {
 	exit;
 }
 
+if(!$readonly && param('delete-click')) {
+	my $filename = param('delete-click');
+	if(!($filename=~m/([a-zA-Z0-9_]+)-\d+--?\d+--?\d+\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
+	my $fullname = clickimg($filename);
+	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
+	unlink($fullname);
+	print redirect(-location=>"/tdata/$action/$testrun/$teststep",-nph=>0,status=>302);
+	exit;
+}
+
 $fn=$testrun;
 if($fn=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
 my $resultdir="$basedir/$prj/video";
@@ -93,17 +103,35 @@ sub imgfqfn_to_link($;$)
 	# add thumbnail inline img
 	my $width=80; my $height=int($width/4*3);
 	my $thumb=qq(<img src="$x?csize=${width}x${height}" width="${width}" height="${height}" alt="$filename" title="$filename" style="border: 1px dotted #ccc;" class="pic" />);
-	my $resicon='http://static.opensuse.org/themes/bento/images/icons/'.(($result eq 'good')?'accept.png':'exclamation.png');
-	my $delete=($readonly?"":'<span class="delete-icon"><input type="hidden" name="delete" value="'.$filename.'" /><input type="image" src="http://static.opensuse.org/themes/bento/images/icons/cross.png" alt="X" title="Delete Image" /></span>');
+	my $resicon='/images/'.(($result eq 'good')?'accept.png':'exclamation.png');
+	my $delete=($readonly?"":'<span class="delete-icon"><input type="hidden" name="delete" value="'.$filename.'" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>');
 	'<form method="post" action="/tdata/show/'.$testrun.'/'.$teststep.'" onsubmit="return confirm(\'Delete '.$filename.'?\');" style="display: inline;"><span class="refpic"><a href="'.$linkurl.'">'.$thumb.'</a>
 	'.$delete.'
 	<span class="result-icon"><img src="'.$resicon.'" width="16" height="16" alt="'.$result.'" title="'.$result.'" style="border: none;" /></span>
 	</span></form>';
 }
 
-my %testnames=();
+sub imgfqfn_to_link_interactive($;$) {
+	my $x = shift;
+	my $deleteable = shift||0;
+	#my $name=$x;
+	my ($filename,$linkurl)=($x,$x);
+	$filename=~s/.*\/(.*)-(\d+)(.*)\.ppm/$1-$2$3.ppm/;
+	$x=~s{^$basedir(/$prj.*)\.ppm}{$1.jpg};
+	$linkurl=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
+	# add thumbnail inline img
+	my $width=80; my $height=int($width/4*3);
+	my $thumb=qq(<img src="$x?csize=${width}x${height}" width="${width}" height="${height}" alt="$filename" title="$filename" style="border: 1px dotted #ccc;" class="pic" />);
+	my $delete=(($readonly || !$deleteable)?"":'<span class="delete-icon"><input type="hidden" name="delete-click" value="'.$filename.'" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>');
+	'<form method="post" action="/tdata/show/'.$testrun.'/'.$teststep.'" onsubmit="return confirm(\'Delete '.$filename.'?\');" style="display: inline-block;"><span class="refpic"><a href="'.$linkurl.'">'.$thumb.'</a>
+	'.$delete.'
+	</span></form>';
+}
 
-sub testsubhtml($)
+my %testnames=();
+my $cycle='even';
+
+sub testhtml($)
 {
 	my($tname)=@_;
 	my $tid=$tname;
@@ -112,25 +140,11 @@ sub testsubhtml($)
 	if(!$testnames{$tname}{$tid}) {
 		$testnames{$tname}{$tid}=1;
 		my @testimglist=map {imgfqfn_to_link($_)} get_testimgs("$tname-$tid");
-		return '<td>'.$tid.'</td><td class="links">'.join("\n",@testimglist).'</td>';
+		$cycle = ($cycle eq 'odd')?'even':'odd';
+		return '<tr class="'.$cycle.'"><td>'.$tid.'</td><td class="links">'.join("\n",@testimglist).'</td>';
 	}
 }
 
-my $cycle='even';
-sub testhtml($)
-{
-	my($tname)=@_;
-	$tname=~s{.*/(.*)-\d+-\d+-.*\.ppm}{$1};
-	if(!$testnames{$tname} && (!defined $teststep || $teststep eq $tname)) {
-		my @plaintestsublist=map {testsubhtml($_)} get_testimgs($tname);
-		my @testsublist=();
-		foreach my $testsub (@plaintestsublist) {
-			push @testsublist, $testsub if($testsub);
-		}
-		$cycle = ($cycle eq 'odd')?'even':'odd';
-		return '<tr class="'.$cycle.'"><td rowspan="'.@testsublist.'" class="component">'.$tname.'</td>'.join("</tr>\n<tr class='$cycle'>",@testsublist).'</tr>';
-	}
-}
 
 sub testwavlink($) {
 	my($x)=@_;
@@ -138,16 +152,14 @@ sub testwavlink($) {
 	my ($filename,$linkurl)=($x,$x);
 	$filename=~s/.*\/(.*)-(\d+)\.wav/$1-$2.wav/;
 	$linkurl=~s{^$basedir(/$prj.*)\.wav}{$1.ogg};
-	return "<a href='$linkurl'>$filename</a><br />";
+	return "<a href='$linkurl'>$filename</a>";
 }
 
 my @testlist=map {testhtml($_)} get_testimgs($teststep);
-
 my @wavlist=map {testwavlink($_)} get_testwavs($teststep);
+my @waitlist=map {imgfqfn_to_link_interactive($_)} get_waitimgs($teststep);
+my @clicklist=map {imgfqfn_to_link_interactive($_,1)} get_clickimgs($teststep);
 
-unless(@wavlist) {
-	$wavlist[0] = '<i>None</i>';
-}
 
 my $imgtab = "";
 if(@testlist) {
@@ -157,19 +169,52 @@ if(@testlist) {
 		<h2>Images</h2>
 		<p>This are the available reference images for the <i>$teststep</i> test.</p>
 		<table style="width: 95%;">
-		<tr>
-			<th style="width: 200px;">Test</th>
-			<th style="width: 150px;">Screenshot&nbsp;#</th>
-			<th style="width: 100%;">Images</th>
-		</tr>
-		@testlist
+			<tr>
+				<th style="width: 150px;">Screenshot&nbsp;#</th>
+				<th style="width: 100%;">Images</th>
+			</tr>
+			@testlist
 		</table>
 	</div>
 	};
 }
-else {
-	$imgtab = "";
+
+my $audiobox = "";
+if(@wavlist) {
+	$audiobox = '
+	<div class="box box-shadow alpha" id="audio_box">
+		<div class="box-header aligncenter">Audio Files</div>
+		<div style="text-align: center;">
+			'.join("<br />",@wavlist).'
+		</div>
+	</div>
+	';
 }
+
+my $waitbox = "";
+if(@waitlist) {
+	$waitbox = '
+	<div class="box box-shadow alpha" id="wait_box">
+		<div class="box-header aligncenter">Wait Images</div>
+		<div style="text-align: center; line-height: 0.5em;">
+			'.join("<br /><br />",@waitlist).'
+		</div>
+	</div>
+	';
+}
+
+my $clickbox = "";
+if(@clicklist) {
+	$clickbox = '
+	<div class="box box-shadow alpha" id="click_box">
+		<div class="box-header aligncenter">Click Images</div>
+		<div style="text-align: center; line-height: 0.5em;">
+			'.join("<br /><br />",@clicklist).'
+		</div>
+	</div>
+	';
+}
+
 
 my @out=(niceoutput($script));
 
@@ -183,31 +228,27 @@ print header("text/html").
 $header.
 qq{
 <div id="content" class="container_16 content-wrapper">
-  <div class="grid_2 alpha">
-	  <div class="box box-shadow alpha" id="actions_box">
-	    <div class="box-header aligncenter">Actions</div>
-	    <div class="aligncenter">
+	<div class="grid_2 alpha">
+		<div class="box box-shadow alpha" id="actions_box">
+			<div class="box-header aligncenter">Actions</div>
+			<div class="aligncenter">
 				$actions<br />
-	    </div>
-	  </div>
-
-	  <div class="box box-shadow alpha" id="audio_box">
-	    <div class="box-header aligncenter">Audio Files</div>
-	    <div style="text-align: center;">
-		@wavlist
-	    </div>
-	  </div>
-  </div>
-
+			</div>
+		</div>
+		$audiobox
+		$waitbox
+		$clickbox
+	</div>
 	<div class="grid_14 omega">
 		$imgtab
 		<div class="box box-shadow">
 			<div class="box-header aligncenter">Test Script</div>
 			<h2>Test Source</h2>
-			<p>This is the <b>$teststep</b> test for <b>$testrun</b>
-			<br />
-			<br />
-			Test-Module: <tt>$nicescriptpath</tt>
+			<p>
+				This is the <b>$teststep</b> test for <b>$testrun</b>
+				<br />
+				<br />
+				Test-Module: <tt>$nicescriptpath</tt>
 			</p>
 			@out
 		</div>
