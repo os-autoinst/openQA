@@ -5,7 +5,6 @@ use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 use sort_list;
 use openqa;
-use Time::ParseDate;
 use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
 
@@ -51,7 +50,10 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	else {
 		if( open(FD, $r) ) {
 			my $timeline = <FD>;
-			$mtime = parsedate($timeline);
+			chomp($timeline);
+			if($timeline=~m/^\d+$/) {
+				$mtime = $timeline;
+			}
 		}
 		close(FD);
 	}
