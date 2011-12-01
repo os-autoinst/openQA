@@ -3,9 +3,9 @@ use strict;
 use CGI ":standard";
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
-use sort_table;
 use openqa;
-
+use Text::MicroTemplate "encoded_string";
+use Text::MicroTemplate::Extended;
 
 my $readonly=!is_authorized_rw();
 my $testfilter;
@@ -24,8 +24,8 @@ if(!$readonly && param('delete')) {
 	exit;
 }
 
-if(!$readonly && param('delete-click')) {
-	my $filename = param('delete-click');
+if(!$readonly && param('deleteclick')) {
+	my $filename = param('deleteclick');
 	if(!($filename=~m/([a-zA-Z0-9_]+)-\d+--?\d+--?\d+\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
 	my $fullname = clickimg($filename);
 	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
@@ -34,152 +34,50 @@ if(!$readonly && param('delete-click')) {
 	exit;
 }
 
-sub imgfqfn_to_link($;$)
-{ my($x)=@_;
-	#my $name=$x;
-	my ($filename,$result,$linkurl)=($x,$x,$x);
-	$filename=~s/.*\/(.*)-(\d+)-(\d+)-(.*)\.ppm/$1-$2-$3-$4.ppm/;
-	$result=~s/.*\/.*-\d+-\d+-(.*)\.ppm/$1/;
-	#$name=~s/.*-(\d+)\.ppm/$1/;
-	$x=~s{^$basedir(/$prj.*)\.ppm}{$1.jpg};
-	$linkurl=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
-	# add thumbnail inline img
-	my $width=80; my $height=int($width/4*3);
-	my $thumb=qq(<img src="$x?csize=${width}x${height}" width="${width}" height="${height}" alt="$filename" title="$filename" style="border: 1px dotted #ccc;" class="pic" />);
-	my $resicon='/images/'.(($result eq 'good')?'accept.png':'exclamation.png');
-	my $delete=($readonly?"":'<span class="delete-icon"><input type="hidden" name="delete" value="'.$filename.'" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>');
-	'<form method="post" action="/refimgs/'.($testfilter?$testfilter:'').'" onsubmit="return confirm(\'Delete '.$filename.'?\');" style="display: inline;"><span class="refpic"><a href="'.$linkurl.'">'.$thumb.'</a>
-	'.$delete.'
-	<span class="result-icon"><img src="'.$resicon.'" width="16" height="16" alt="'.$result.'" title="'.$result.'" style="border: none;" /></span>
-	</span></form>';
-}
-
-sub imgfqfn_to_link_interactive($;$) {
-	my $x = shift;
-	my $deleteable = shift||0;
-	#my $name=$x;
-	my ($filename,$linkurl)=($x,$x);
-	$filename=~s/.*\/(.*)-(\d+)(.*)\.ppm/$1-$2$3.ppm/;
-	$x=~s{^$basedir(/$prj.*)\.ppm}{$1.jpg};
-	$linkurl=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
-	# add thumbnail inline img
-	my $width=80; my $height=int($width/4*3);
-	my $thumb=qq(<img src="$x?csize=${width}x${height}" width="${width}" height="${height}" alt="$filename" title="$filename" style="border: 1px dotted #ccc;" class="pic" />);
-	my $delete=(($readonly || !$deleteable)?"":'<span class="delete-icon"><input type="hidden" name="delete-click" value="'.$filename.'" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>');
-	'<form method="post" action="/refimgs/'.($testfilter?$testfilter:'').'" onsubmit="return confirm(\'Delete '.$filename.'?\');" style="display: inline;"><span class="refpic"><a href="'.$linkurl.'">'.$thumb.'</a>
-	'.$delete.'
-	</span></form>';
-}
-
-my %testnames=();
-my %testnames_interact=();
-my $cycle='even';
-
-sub testsubhtml($)
-{
-	my($tname)=@_;
-	my $tid=$tname;
-	$tname=~s{.*/(.*)-\d+-\d+-.*\.ppm}{$1};
-	$tid=~s{.*/.*-(\d+)-\d+-.*\.ppm}{$1};
-	if(!$testnames{$tname}{$tid}) {
-		$testnames{$tname}{$tid}=1;
-		my @testimglist=map {imgfqfn_to_link($_)} get_testimgs("$tname-$tid");
-		return '<td>'.$tid.'</td><td class="links">'.join("\n",@testimglist).'</td>';
-	}
-}
-
-sub testhtml($)
-{
-	my($tname)=@_;
-	$tname=~s{.*/(.*)-\d+-\d+-.*\.ppm}{$1};
-	if(!$testnames{$tname} && (!defined $testfilter || $testfilter eq $tname)) {
-		my @plaintestsublist=map {testsubhtml($_)} get_testimgs($tname);
-		my @testsublist=();
-		foreach my $testsub (@plaintestsublist) {
-			push @testsublist, $testsub if($testsub);
-		}
-		$cycle = ($cycle eq 'odd')?'even':'odd';
-		return '<tr class="'.$cycle.'"><td rowspan="'.@testsublist.'" class="component">'.$tname.'</td>'.join("</tr>\n<tr class='$cycle'>",@testsublist).'</tr>';
-	}
-}
-
-sub testhtml_interact($)
-{
-	my($tname)=@_;
-	if(!$testnames_interact{$tname} && (!defined $testfilter || $testfilter eq $tname)) {
-		$testnames_interact{$tname}=1;
-		my @waitimglist=map {imgfqfn_to_link_interactive($_)} get_waitimgs($tname);
-		my @clickimglist=map {imgfqfn_to_link_interactive($_,1)} get_clickimgs($tname);
-		$cycle = ($cycle eq 'odd')?'even':'odd';
-		return '<tr class="'.$cycle.'"><td class="component">'.$tname.'</td><td>'.join("\n",@waitimglist).'</td><td>'.join("\n",@clickimglist).'</td></tr>';
-	}
-}
-
-sub testwavlink($) {
-	my($x)=@_;
-	#my $name=$x;
-	my ($filename,$linkurl)=($x,$x);
-	$filename=~s/.*\/(.*)-(\d+)\.wav/$1-$2.wav/;
-	$linkurl=~s{^$basedir(/$prj.*)\.wav}{$1.ogg};
-	return "<a href='$linkurl'>$filename</a><br />";
-}
-
 sub get_tname_int($) {
-	my($tname)=@_;
-	$tname=~s{.*/([a-zA-Z0-9_]+)-\d+.*\.ppm}{$1};
-	return $tname;
+	m{.*/([a-zA-Z0-9_]+)-\d+.*\.ppm};
+	return $1;
 }
 
-my @testlist=map {testhtml($_)} get_testimgs("*");
-my @wavlist=map {testwavlink($_)} get_testwavs((defined $testfilter)?$testfilter:"*");
-$wavlist[0] = '<i>None</i>' unless(@wavlist);
+my %testmodules=();
+my @testrefs;
+for my $testmodule (get_testimgs((defined $testfilter)?$testfilter:"*")) {
+	$testmodule=(parse_refimg_path($testmodule))[0];
+	if(!$testmodules{$testmodule}) {
+		$testmodules{$testmodule} = {};
+		my @screenrefs;
+		for my $screenshotid (get_testimgs($testmodule)) {
+			$screenshotid=(parse_refimg_path($screenshotid))[1];
+			# check if refimgs for this screenshot were already found
+			if(!$testmodules{$testmodule}->{$screenshotid}) {
+				$testmodules{$testmodule}->{$screenshotid}=1;
+				my @refimgs=map {parse_refimg_name($_)} get_testimgs("$testmodule-$screenshotid");
+				push(@screenrefs, {screenshot => $screenshotid, refimgs => \@refimgs});
+			}
+		}
+		push(@testrefs, {testmodule => $testmodule, screenrefs => \@screenrefs});
+	}
+}
 
-$cycle='even';
-my @interactive_imgs=sort( map {get_tname_int($_)} (get_waitimgs("*"),get_clickimgs("*")) );
-my @interactlist=map {testhtml_interact($_)} @interactive_imgs;
+my %testmodules_interact=();
+my @testinteracts;
+for my $testmodule (sort(map {get_tname_int($_)} (get_waitimgs((defined $testfilter)?$testfilter:"*"),get_clickimgs((defined $testfilter)?$testfilter:"*")))) {
+	$testmodule=~s{.*/(\w+)-.*\.ppm}{$1};
+	if(!$testmodules_interact{$testmodule}) {
+		$testmodules_interact{$testmodule} = 1;
+		my @waitimgs = map {data_name($_)} get_waitimgs($testmodule);
+		my @clickimgs = map {data_name($_)} get_clickimgs($testmodule);
+		push(@testinteracts, {testmodule => $testmodule, waitimgs => \@waitimgs, clickimgs => \@clickimgs});
+	}
+}
 
-my ($header,$footer)=get_header_footer('<a href="/refimgs/">Reference Images</a>'.(defined $testfilter?' &gt; '.$testfilter:''));
-print header("text/html").
-$header.
-qq{
-<div id="content" class="container_16 content-wrapper">
-	<div class="grid_2 box box-shadow alpha" id="cropdetails_box">
-		<div class="box-header aligncenter">Audio Files</div>
-		<div style="text-align: center;">
-			<span style="display: inline-block; text-align: left;">
-				@wavlist
-			</span>
-		</div>
-	</div>
-	<div class="grid_14 omega">
-		<div class="box box-shadow">
-			<div class="box-header aligncenter">Reference Images</div>
-			<h2>Images</h2>
-			<p>This tool displays all available reference images.</p>
-			<table style="width: 95%;">
-				<tr>
-					<th style="width: 200px;">Test</th>
-					<th style="width: 150px;">Screenshot&nbsp;#</th>
-					<th style="width: 100%;">Images</th>
-				</tr>
-				@testlist
-			</table>
-		</div>
-		<div class="box box-shadow">
-			<div class="box-header aligncenter">Interaction Images</div>
-			<h2>Images</h2>
-			<p>This tool displays all available wait/click images.</p>
-			<table style="width: 95%;">
-				<tr>
-					<th style="width: 200px;">Test</th>
-					<th style="width: 50%;">Wait-Images</th>
-					<th style="width: 50%;">Click-Images</th>
-				</tr>
-				@interactlist
-			</table>
-		</div>
-	</div>
-</div>
-}.
-$footer;
+my @audiofiles=map {data_name($_)} get_testwavs((defined $testfilter)?$testfilter:"*");
 
+
+my $mt = Text::MicroTemplate::Extended->new(
+	include_path  => ['../htdocs/template'],
+	template_args => { testfilter => (defined $testfilter)?$testfilter:'', testrefs => \@testrefs, audiofiles => \@audiofiles, testinteracts => \@testinteracts },
+);
+
+print header(-charset=>"UTF-8", -type=>"text/html");
+print $mt->render('refimgs');

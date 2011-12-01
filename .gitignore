@@ -1,0 +1,6 @@
+logs/*.tar.*
+temp
+testresults
+testrun-manual
+video
+*.swp

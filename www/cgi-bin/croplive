@@ -3,17 +3,18 @@ use strict;
 use CGI ":standard";
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
-#use sort_table;
 use openqa;
 use Image::Magick;
+use Text::MicroTemplate "encoded_string";
+use Text::MicroTemplate::Extended;
 
 my $getlastimg = param('getlastimg') || '';
-my $testrun = param('testrun') || '';
 my $testname = param('testname') || '';
+my $testmodule = param('testmodule') || '';
 my $name=$ENV{PATH_INFO};
 
+$testmodule=~s/[^a-zA-Z0-9._+-]//g;
 $testname=~s/[^a-zA-Z0-9._+-]//g;
-$testrun=~s/[^a-zA-Z0-9._+-]//g;
 $name=~s/[^a-zA-Z0-9._+\/-]//g;
 
 our %goodsizes=(1440015=>1, 2359312=>1, 864015=>1);
@@ -37,10 +38,9 @@ if($getlastimg eq '1') {
 	waitppmcomplete($newfile);
 	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
 	$newfile=~s{^$basedir/$prj/+(.*)\.ppm}{$1.png};
-	print header(-status=>302, -location=>"/croplive/$newfile?testrun=$name&testname=$currentstep");
+	print header(-status=>302, -location=>"/croplive/$prj/$newfile?testname=$name&testmodule=$currentstep");
 	exit 0;
 }
-
 
 $name=~s/\.png$//;
 $name=~s/\.jpg$//;
@@ -50,364 +50,35 @@ $name=~s/^\/$prj\//\//;
 
 my $fullname="$basedir/$prj/$name.ppm";
 if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
+$name=~s/^\///;
 
-
-my $loadcoord = '';
-my $loadclick = '';
-my $detailscontent = '';
-my %resultselected=();
+my %processed;
 
 if(defined param('process')) {
 	my ($x1,$y1,$x2,$y2,$width,$height,$xc,$yc) = (param('x1'),param('y1'),param('x2'),param('y2'),param('width'),param('height'),param('xc'),param('yc'));
 	if($x2 && $y2 && $width && $height && $xc && $yc) {
-		my $size = '';
-		$size = '?size=200x150' if($width > 200 || $height > 150);
-		$loadcoord = qq{
-			displayOnInit: true,
-			onloadCoords: \{ x1: $x1, y1: $y1, x2: $x2, y2: $y2 \},
-		};
-		$loadclick = qq{
-			var doset = 1;
-			var PosX = $xc;
-			var PosY = $yc;
-		};
-		$xc -= $x1;
-		$yc -= $y1;
+		my ($xc_r,$yc_r) = ($xc-$x1,$yc-$y1);
 		my $image = new Image::Magick();
 		$image->Read($fullname);
 		$image->Crop($width.'x'.$height.'+'.$x1.'+'.$y1);
 		my ($new_name,$new_fullname);
 		for(my $i=1;;$i++) {
-			$new_name = $testname.'-'.$i.'-'.$xc.'-'.$yc;
+			$new_name = $testmodule.'-'.$i.'-'.$xc_r.'-'.$yc_r;
 			$new_fullname = clickimg("$new_name.ppm");
-			my $check_fullname = clickimg("$testname-$i");
+			my $check_fullname = clickimg("$testmodule-$i");
 			my @a = <$check_fullname-*.ppm>;
 			last if(!@a);
 		}
-
 		$image->Write($new_fullname);
 		undef $image;
-
-		$detailscontent = qq{
-      <br /><br />
-      <div class="aligncenter">
-        <img src="http://static.opensuse.org/themes/bento/images/icons/accept.png" width="16" height="16" />
-        Image Processed
-      </div>
-      <table style="border: none;">
-        <tr>
-          <td style="width: 60px;">Filename:</td>
-          <td style="width: 150px;">$new_name.ppm</td>
-        </tr>
-        <tr>
-          <td colspan="2">
-            <a href="/$prj/perl/autoinst/waitimgs/click/$new_name.png"><img src="/$prj/perl/autoinst/waitimgs/click/$new_name.png$size" style="border: 1px dotted #ccc;" /></a>
-          </td>
-        </tr>
-      </table>
-    };
-
+		%processed = ('x1' => $x1, 'y1' => $y1, 'x2' => $x2, 'y2' => $y2, 'width' => $width, 'height' => $height, 'xc' => $xc, 'yc' => $yc, 'name' => $new_name);
 	}
 }
 
+my $mt = Text::MicroTemplate::Extended->new(
+	include_path  => ['../htdocs/template'],
+	template_args => { testname => $testname, testmodule => $testmodule, imgpath => $name, processed => \%processed },
+);
 
-my $myheader = '
-  <script src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.1.0/prototype.js" type="text/javascript"></script>
-  <script src="http://ajax.googleapis.com/ajax/libs/scriptaculous/1.8.2/scriptaculous.js" type="text/javascript"></script>
-  <script src="/static/cropper.uncompressed.js" type="text/javascript"></script>
-
-  <script type="text/javascript" charset="utf-8">
-    <!--
-    var crpr;
-    // setup the callback function
-    function onEndCrop( coords, dimensions ) {
-      $( "x1" ).value = coords.x1;
-      $( "y1" ).value = coords.y1;
-      $( "x2" ).value = coords.x2;
-      $( "y2" ).value = coords.y2;
-      $( "width" ).value = dimensions.width;
-      $( "height" ).value = dimensions.height;
-    }
-
-    function onDraw( coords, dimensions ) {
-      $( "x1" ).value = coords.x1;
-      $( "y1" ).value = coords.y1;
-      $( "x2" ).value = coords.x2;
-      $( "y2" ).value = coords.y2;
-      $( "width" ).value = dimensions.width;
-      $( "height" ).value = dimensions.height;
-    }
-
-    function cropinit() { 
-        crpr = new Cropper.Img( 
-          "testImage",
-          {
-            onEndCrop: onEndCrop,
-            '.$loadcoord.'
-            onDraw: onDraw 
-          }
-        ) 
-    }
-
-    function clickinit() {
-       '.$loadclick.'
-       if(doset) {
-	  $("xc").value = PosX;
-	  $("yc").value = PosY;
-	  $("click-location-pointer").style.left = PosX + "px";
-	  $("click-location-pointer").style.top = PosY + "px";
-	}
-	return true;
-    }
-    
-    function cropreinit() { 
-        crpr = new Cropper.Img( 
-          "testImage",
-          {
-            onEndCrop: onEndCrop,
-	    displayOnInit: true,
-	    onloadCoords: { x1: $("x1").value, y1: $("y1").value, x2: $("x2").value, y2: $("y2").value },
-            onDraw: onDraw 
-          }
-        ) 
-    }
-
-    function init() { 
-      	modechange();
-	cropinit();
-	clickinit();
-    }
-    Event.observe( 
-      window, 
-      "load", 
-      init
-    );
-
-    document.onclick = function(e) {
-      if(!e) e=window.event;
-      elem = getEventTarget(e);
-      if(elem.nodeName == "BODY" || elem.nodeName == "HTML")
-      {
-      	if ($("cropp").checked) {
-		crpr.options.onloadCoords=null;
-		crpr.reset();
-	}
-      }
-    }
-
-    function getEventTarget(evt) {
-      var targ = (evt.target) ? evt.target : evt.srcElement;
-      if(targ != null) {
-        if(targ.nodeType == 3)
-          targ = targ.parentNode;
-      }
-      return targ;
-    }
-
-	function FindPosition(oElement)
-	{
-	  if(typeof( oElement.offsetParent ) != "undefined")
-	  {
-	    for(var posX = 0, posY = 0; oElement; oElement = oElement.offsetParent)
-	    {
-	      posX += oElement.offsetLeft;
-	      posY += oElement.offsetTop;
-	    }
-	      return [ posX, posY ];
-	    }
-	    else
-	    {
-	      return [ oElement.x, oElement.y ];
-	    }
-	}
-
-	function GetCoordinates(e)
-	{
-	  var PosX = 0;
-	  var PosY = 0;
-	  var ImgPos;
-	  ImgPos = FindPosition($("testImage"));
-	  if (!e) var e = window.event;
-	  if (e.pageX || e.pageY)
-	  {
-	    PosX = e.pageX;
-	    PosY = e.pageY;
-	  }
-	  else if (e.clientX || e.clientY)
-	    {
-	      PosX = e.clientX + document.body.scrollLeft
-		+ document.documentElement.scrollLeft;
-	      PosY = e.clientY + document.body.scrollTop
-		+ document.documentElement.scrollTop;
-	    }
-	  PosX = PosX - ImgPos[0];
-	  PosY = PosY - ImgPos[1];
-	  $("xc").value = PosX;
-	  $("yc").value = PosY;
-	  $("click-location-pointer").style.left = PosX + "px";
-	  $("click-location-pointer").style.top = PosY + "px";
-	}
-
-
-    function checkform(f) {
-      if(
-          ! isvalnum(f.x2.value) ||
-          ! isvalnum(f.y2.value) ||
-          ! isvalnum(f.width.value) ||
-          ! isvalnum(f.height.value) ||
-          ! isvalnum(f.xc.value) ||
-          ! isvalnum(f.yc.value)
-        )
-      {
-        alert("Make your selection first!");
-        return false;
-      }
-      return true;
-    }
-
-    function isvalnum(input) {
-      return (input - 0) == input && input.length > 0 && input > 0;
-    }
-
-    function resetform() {
-      $("testImage").onmousedown = 0;
-      $("click-location-pointer").onmousedown = 0;
-      $("click-location-pointer").style.display = "none";
-      $("testImage").style.cursor = "";
-      crpr.options.onloadCoords=null;
-      crpr.reset();
-      $("xc").defaultValue = 0;
-      $("yc").defaultValue = 0;
-      $("cropp").checked = 1;
-      $("cpi1").setOpacity(1);
-      $("cpi2").setOpacity(1);
-      $("cpi3").setOpacity(1);
-      $("cli1").setOpacity(0.3);
-      $("click-location-pointer").style.left = "0px";
-      $("click-location-pointer").style.top = "0px";
-    }
-    
-    function modechange() {
-    	if ($("cropp").checked) {
-		$("cpi1").setOpacity(1);
-		$("cpi2").setOpacity(1);
-		$("cpi3").setOpacity(1);
-		$("cli1").setOpacity(0.3);
-		$("testImage").onmousedown = 0;
-		$("click-location-pointer").onmousedown = 0;
-		$("click-location-pointer").style.display = "none";
-		$("testImage").style.cursor = "";
-		if(crpr) {
-			cropreinit();
-			if($("width").value == 0) {
-				crpr.options.onloadCoords=null;
-				crpr.reset();
-			}
-		}
-	}
-	else {
-		$("cpi1").setOpacity(0.3);
-		$("cpi2").setOpacity(0.3);
-		$("cpi3").setOpacity(0.3);
-		$("cli1").setOpacity(1);
-		crpr.remove();
-		$("testImage").onmousedown = GetCoordinates;
-		$("click-location-pointer").style.display = "block";
-		$("click-location-pointer").onmousedown = GetCoordinates;
-		$("testImage").style.cursor = "crosshair";
-	}
-    }
-		
-
-    -->
-  </script>
- 
-';
-
-my ($header,$footer)=get_header_footer(qq{Live Crop &gt; <a href="/running/$testrun">$testrun</a> &gt; $testname});
-$header=~s{<!-- ADDHEADERLINES -->}{$myheader};
-$header=~s{<!-- DEFSTYLE_START}{};
-$header=~s{DEFSTYLE_END -->}{};
-$header=~s{FLUIDSTYLE_START -->}{};
-$header=~s{<!-- FLUIDSTYLE_END}{};
-$header=~s{container_12}{container_18};
-$header=~s{container_16}{container_18};
-$header=~s{grid_9}{grid_16};
-print header("text/html").
-$header.
-'
-<div id="content" class="container_18 content-wrapper">
-  <div class="grid_5 alpha" id="left_col">
-	  <div class="grid_5 box box-shadow alpha" id="actions_box">
-	    <div class="box-header aligncenter">Actions</div>
-	    <div class="aligncenter">
-	      <a href="/running/'.$testrun.'"><img src="/images/back.png" alt="back" title="back to running page" /></a> 
-	    </div>
-	  </div>
-	  <div class="grid_5 box box-shadow alpha" id="mode_box">
-	    <div class="box-header aligncenter">Mode Select</div>
-	    <div class="aligncenter">
-	      <div style="display: inline-block; text-align: left;">
-		    <input type="radio" name="mode" value="cropp" id="cropp" checked="checked" onchange="modechange()" /><label for="cropp">Crop Image</label><br />
-		    <input type="radio" name="mode" value="click" id="click" onchange="modechange()" /><label for="click">Click Location</label>
-	      </div>
-	    </div>
-	  </div>
-	  <div class="grid_5 box box-shadow alpha" id="cropdetails_box">
-	    <div class="box-header aligncenter">Cropping details</div>
-	    <div style="margin: 0 18px 0 0;">
-	      <form method="post" action="" onsubmit="return checkform(this);">
-		<table style="border: none;">
-		  <tr id="cpi1">
-		    <td style="width: 60px;">Start Position:</td>
-		    <td style="width: 65px;">
-		      <input type="text" name="x1" id="x1" size="1" readonly="readonly" value="0" /> x
-		      <input type="text" name="y1" id="y1" size="1" readonly="readonly" value="0" />
-		    </td>
-		  </tr>
-		  <tr id="cpi2">
-		    <td>Size:</td>
-		    <td>
-		      <input type="text" name="width" id="width" size="1" readonly="readonly" value="0" /> x
-		      <input type="text" name="height" id="height" size="1" readonly="readonly" value="0" />
-		    </td>
-		  </tr>
-		  <tr id="cpi3">
-		    <td>End Position:</td>
-		    <td>
-		      <input type="text" name="x2" id="x2" size="1" readonly="readonly" value="0" /> x
-		      <input type="text" name="y2" id="y2" size="1" readonly="readonly" value="0" />
-		    </td>
-		  </tr>
-		  <tr id="cli1">
-		    <td>Click Location:</td>
-		    <td>
-		      <input type="text" name="xc" id="xc" size="1" readonly="readonly" value="0" /> x
-		      <input type="text" name="yc" id="yc" size="1" readonly="readonly" value="0" />
-		    </td>
-		  </tr>
-		</table>
-		<br />
-		<div class="aligncenter">
-		  <input type="hidden" name="testrun" value="'.$testrun.'" />
-		  <input type="hidden" name="testname" value="'.$testname.'" />
-		  <input type="reset" onclick="resetform();" class="button" value="Reset" />
-		  <input type="submit" value="Process Image" name="process" />
-		</div>
-	      </form>
-	      '.$detailscontent.'
-	    </div>
-	  </div>
-  </div>
-
-  <div class="grid_14 box box-shadow omega">
-    <div style="margin: 0 10px; position: relative;">
-      <img src="/'."$prj/$name".'.png" alt="test image" id="testImage" width="800" height="600" />
-      <div class="click-location-pointer" id="click-location-pointer"><div>+</div></div>
-    </div>
-  </div>
-
-</div>
-'.
-$footer;
-
+print header(-charset=>"UTF-8", -type=>"text/html");
+print $mt->render('croplive');

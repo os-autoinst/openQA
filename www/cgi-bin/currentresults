@@ -3,15 +3,17 @@ use strict;
 use CGI ":standard";
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
-use sort_table;
+use sort_list;
 use openqa;
+use Time::ParseDate;
+use Text::MicroTemplate "encoded_string";
+use Text::MicroTemplate::Extended;
 
 my $defaulthoursfresh=4*24;
 
-
 my %options;
 for my $p (qw'sort hours ib match') {
-   $options{$p}=param($p);
+	$options{$p}=param($p);
 }
 if($options{ib}) {
 	require boring;
@@ -19,9 +21,9 @@ if($options{ib}) {
 if($options{match}) {
 	$options{match}=~s/[^\w\[\]\{\}\(\),:.+*?\\\$|-]//g; # sanitize
 }
-#if(!defined $options{sort}){$options{sort}="-5.3.4.-7";} # default sort by Build# descending
-if(!defined $options{sort}){$options{sort}="-7"; param("sort",$options{sort})} # default sort by Time descending
-if(!defined($options{hours}) || $options{hours}=~m/\D/) {$options{hours}=$defaulthoursfresh; param("hours",$options{hours});}
+
+if(!defined $options{sort}){$options{sort}="-mtime";} # default sort by Time descending
+if(!defined($options{hours}) || $options{hours}=~m/\D/) {$options{hours}=$defaulthoursfresh;}
 my $hoursfresh=($options{hours}+0);
 if($hoursfresh<1 || $hoursfresh>900) {$hoursfresh=$defaulthoursfresh}
 my $maxage=3600*$hoursfresh;
@@ -37,85 +39,44 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	next if $mtime < $now - $maxage; # skip old
 	next if($options{match} && $r!~m/$options{match}/);
 	my ($link, $distri, $type, $arch, $build, $extrainfo)=split_filename($r);
+	my $testname = path_to_testname($r);
 	my @lines=parse_log($r);
 	my $parsed=parse_log_to_stats(\@lines);
 	my $result=parse_log_to_hash(\@lines);
+	my $running = 0;
 	if($logsize==0) {
 		my $url=path_to_url($r);
-		$url=~s%^/$prj/video(.*).ogv.autoinst.txt%/running$1%;
-		$link="<a href='$url'>testing</a>";
-		$parsed->{OK}=" ";
+		$running = 1;
 	}
-#	next if $logsize<100; # too small => bug somewhere
+	else {
+		if( open(FD, $r) ) {
+			my $timeline = <FD>;
+			$mtime = parsedate($timeline);
+		}
+		close(FD);
+	}
 	if($options{ib}) {
 		next if(boring::is_boring($r, $result));
 	}
-	push(@list, [$link, $distri, $type, $arch, $build, $extrainfo, 
-	    $mtime, $parsed->{OK}||0, $parsed->{unknown}||"", $parsed->{fail}||"", $result->{overall}
-	    ]);
-}
-
-# gets arrayref to current row
-sub qarowfunc($) {
-	my $overall=$_[0]->[10];
-	$overall=!defined($overall) || ($overall eq "OK"); # not defined while test in progress
-	if(!$overall) {
-		for my $i (4,5) {
-			$_[0]->[$i]=~s{.*}{<span class="overviewfail">$&</span>};
+	push(@list, {
+		testname=>$testname, running=>$running, distri=>$distri, type=>$type, arch=>$arch,
+		build=>$build, extrainfo=>$extrainfo, mtime=>$mtime,
+		res_ok=>$parsed->{OK}||0, res_unknown=>$parsed->{unknown}||0, res_fail=>$parsed->{fail}||0,
+		res_overall=>$result->{overall}
 		}
-	}
+	);
 }
 
-sub resultspan($$) {my ($status,$value)=@_;if($value eq ""){return ""} qq'<span class="overview$_[0]">&nbsp;$_[1]&nbsp;</span>'}
-
-my $table=sort_table(
-  [qw(link distri type arch build extra 
-      testtime OK unk fail)],
-  [\&display_string, undef, \&display_string, \&display_string, \&display_string, \&display_string, 
-      \&display_time, sub{resultspan("ok",$_[0])}, sub{resultspan("unknown",$_[0])}, sub{resultspan("fail",$_[0])}],
-  [undef, undef, \&sort_string, \&sort_string, \&sort_num, \&sort_string, 
-      \&sort_num, \&sort_num, \&sort_num, \&sort_num],
-  sort_param_to_keys($options{sort}), \@list, \&qarowfunc
+my @sorted_list = sort_list(
+	{running=>\&sort_num, build=>\&sort_num, mtime=>\&sort_num, res_ok=>\&sort_num, res_unknown=>\&sort_num, res_fail=>\&sort_num},
+	sort_param_to_keys($options{sort}), \@list
 );
 
-my @hoursoptions=(24,96,200,300);
-my %hoursoptionslabels=map {($_,"$_ h")} @hoursoptions;
-my $hoursselect=qq{<form method="get" action="" class="cutofftimeform">}.
-	hidden(-name=>'sort').
-	popup_menu(-name=>'hours', -values=>\@hoursoptions, -labels=>\%hoursoptionslabels).
-	textfield(-name=>"match")." filter ".
-	checkbox(-name=>"ib", -label=>"ignore boring results")." ".
-	qq{<input value="change" class="smbutton" type="submit" /></form>\n};
-my $knownissues=file_content("/srv/www/htdocs/includes/knownissues.html");
-my $numresults=@list;
+my $mt = Text::MicroTemplate::Extended->new(
+	include_path  => ['../htdocs/template'],
+	template_args => { resultlist => \@sorted_list, options => \%options, hoursfresh=>$hoursfresh },
+	macro => { sortarrows => sub { encoded_string(sortkeys(\%options, $_[0])); } },
+);
 
-my $note="Note: times are UTC ; tests without an 'extra' string just use default desktop+settings - which means KDE, except on GNOME-LiveCD";
-
-my ($header,$footer)=get_header_footer("Results");
-print header(-type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
-print $header.
-qq{
-  <!-- Start: Main Content Area -->
-<div id="content" class="container_16 content-wrapper">
-
-	  <div class="grid_5 box box-shadow alpha recent-issues-hide" id="top_features_box">
-	    <div class="box-header aligncenter">
-	       Recent issues in Factory
-	    </div>
-$knownissues
-          </div>
- <div class="grid_11 box box-shadow omega">
-<h2>Test result overview</h2>
-<p>This page lists $numresults automated test-results from the last $hoursfresh hours.
-</p>
-$hoursselect
-<p></p>
-$table
-<p>
-$note
-</p>
- </div>
-</div>
-
-$footer};
-
+print header(-charset=>"UTF-8", -type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
+print $mt->render('currentresults');

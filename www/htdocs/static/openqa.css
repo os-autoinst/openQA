@@ -74,22 +74,17 @@ span.refpic span.delete-icon input, button{
 	margin: none;
 }
 
-
+span.refpic img.pic{
+	border: 1px dotted #ccc;
+}
 
 span.refcomppic{
   width:80px;
   text-decoration:none;
   position:relative;
   display:inline-block;
-  /*
-  padding:3px;
-  */
   margin-right:5px;
-/*
-  margin-top:2px;
-*/
 }
-
 
 span.refcomppic span.result-icon{
   position:absolute;
@@ -99,6 +94,18 @@ span.refcomppic span.result-icon{
   -moz-opacity:0.8;
   -khtml-opacity: 0.8;
   opacity: 0.8;
+}
+
+img.crop-screenshot {
+	background-color: #eeeeee;
+	padding: 1px;
+	border: 2px solid #555555;
+}
+
+img.crop-screenshot-current {
+	background-color: #eeeeee;
+	padding: 1px;
+	border: 2px solid #669900;
 }
 
 /* Recent Issues Hover */
@@ -132,4 +139,23 @@ div.click-location-pointer div {
 	color: black;
 	text-size: 13px;
 	text-shadow: white 0px 0px 7px, white 0px 0px 7px;
+}
+
+img.resborderok {
+	border: 3px solid green;
+	padding: 1px;
+}
+
+img.resborderfail {
+	border: 3px solid red;
+	padding: 1px;
+}
+
+img.resborderunk {
+	border: 3px solid dimgray;
+	padding: 1px;
+}
+
+img.resborderna {
+	padding: 4px;
 }

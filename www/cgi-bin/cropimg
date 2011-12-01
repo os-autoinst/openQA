@@ -2,10 +2,10 @@
 use strict;
 use CGI ":standard";
 use lib "/srv/www/cgi-bin/modules";
-use awstandard;
-#use sort_table;
 use openqa;
 use Image::Magick;
+use Text::MicroTemplate "encoded_string";
+use Text::MicroTemplate::Extended;
 
 my $name=$ENV{PATH_INFO};
 if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
@@ -17,307 +17,69 @@ $name=~s/^\/$prj\//\//;
 
 my $fullname="$basedir/$prj/$name.ppm";
 if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
-my(undef,undef,$testrun,$testname) = split(/\//, $name);
-my $imgdir=openqa::imgdir($testrun);
-my ($mtname,undef) = split('-',$testname);
+my(undef,undef,$testname,$imgname) = split(/\//, $name);
+my $imgdir=openqa::imgdir($testname);
+my ($testmodule,undef) = split('-',$imgname);
 
-sub imgfqfn_to_link($;$) {
-	my($imgpath)=@_;
-	my $imgid=$imgpath;
-	$imgid=~s/.*-(\d+)\.ppm/$1/;
-	$imgpath=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
-	my $imglink=$imgpath;
-	$imglink=~s/$prj/cropimg/;
-	my(undef,undef,undef,undef,$mytestname) = split(/\//, $imgpath);
-	$mytestname=~s/\.png//;
-	# add thumbnail inline img
-	my $width=80; my $height=int($width/4*3);
-	my $current=($mytestname eq $testname)?'border: 2px solid #669900;':'border: 2px solid #555555;';
-	qq(<a href="$imglink" title="$mytestname"><img src="$imgpath?size=${width}x${height}" width="${width}" height="${height}" alt="$mytestname" style="background-color: #eeeeee; padding: 1px; $current" /></a>);
-}
-
-sub testoptions($;$) {
-	my ($tname) = @_;
-	my $link=$tname;
-	$tname=~s{.*/(.*)-\d+\.ppm}{$1};
-	$link=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
-	$link=~s/$prj/cropimg/;
-	my $selected = ($tname eq $mtname)?' selected="selected"':'';
-	'<option value="'.$link.'"'.$selected.'>'.$tname.'</option>';
+sub testoptions($) {
+	m/.*\/(.*?)-1/;
+	return $1;
 }
 
 # add link to $imgdir/$name*.ppm via png CGI
-my @imglist=map {imgfqfn_to_link($_)} <$imgdir/$mtname-[0-9]*.ppm>;
-
-my @testlist=map {testoptions($_)} <$imgdir/*-1*.ppm>;
-
+my @imglist=map {data_name($_)} <$imgdir/$testmodule-[0-9]*.ppm>;
+my @testlist=map {testoptions($_)} <$imgdir/*-1.ppm>;
 
 # Get Test Result
 my $resultdir="$basedir/$prj/video";
-my $fqfn="$resultdir/$testrun.ogv.autoinst.txt";
+my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 my @lines=parse_log($fqfn);
 my $testresult = '';
 foreach my $entry (@lines) {
 	my ($name,$result)=@$entry;
-	if($name eq $mtname) {
+	if($name eq $testmodule) {
 		$testresult = $result;
-		last
+		last;
 	}
 }
 
 $testresult=~s{^$}{unknown};
-my $testcssclass="\L$testresult";
-$testcssclass=~s/\s.*//;
+my $refimg_result = $testresult;
+if($refimg_result=~m/.*(\(.*\)).*/) {
+	$refimg_result = $1;
+}
+else {
+	$refimg_result = '';
+}
+$testresult=~s/^(.*?)\s.*/$1/;
 
-my $loadcoord = '';
-my $detailscontent = '';
-my %resultselected=();
+my %cropped;
 
 if(param()) {
 	my ($x1,$y1,$x2,$y2,$width,$height,$result) = (param('x1'),param('y1'),param('x2'),param('y2'),param('width'),param('height'),param('result'));
 	if($x2 && $y2 && $width && $height && $result) {
-		my $size = '';
-		$size = '?size=200x150' if($width > 200 || $height > 150);
-		$loadcoord = qq{
-			displayOnInit: true,
-			onloadCoords: \{ x1: $x1, y1: $y1, x2: $x2, y2: $y2 \},
-		};
-		$resultselected{$result}=1;
 		my $image = new Image::Magick();
 		$image->Read($fullname);
 		$image->Crop($width.'x'.$height.'+'.$x1.'+'.$y1);
 		my ($new_name,$new_fullname);
 		for(my $i=1;;$i++) {
-			$new_name = $testname.'-'.$i.'-'.$result;
+			$new_name = $imgname.'-'.$i.'-'.$result;
 			$new_fullname = testimg("$new_name.ppm");
-			my $good_fullname = testimg("$testname-$i-good.ppm");
-			my $bad_fullname = testimg("$testname-$i-bad.ppm");
+			my $good_fullname = testimg("$imgname-$i-good.ppm");
+			my $bad_fullname = testimg("$imgname-$i-bad.ppm");
 			last if(!-e $new_fullname && !-e $good_fullname && !-e $bad_fullname);
 		}
-
 		$image->Write($new_fullname);
 		undef $image;
-
-		$detailscontent = qq{
-      <br /><br />
-      <div class="aligncenter">
-        <img src="http://static.opensuse.org/themes/bento/images/icons/accept.png" width="16" height="16" />
-        Image Cropped
-      </div>
-      <table style="border: none;">
-        <tr>
-          <td style="width: 60px;">Filename:</td>
-          <td style="width: 150px;">$new_name.ppm</td>
-        </tr>
-        <tr>
-          <td colspan="2">
-            <a href="/$prj/perl/autoinst/testimgs/$new_name.png"><img src="/$prj/perl/autoinst/testimgs/$new_name.png$size" style="border: 1px dotted #ccc;" /></a>
-          </td>
-        </tr>
-      </table>
-    };
-
+		%cropped = ('x1' => $x1, 'y1' => $y1, 'x2' => $x2, 'y2' => $y2, 'width' => $width, 'height' => $height, 'result' => $result, 'name' => $new_name);
 	}
 }
 
+my $mt = Text::MicroTemplate::Extended->new(
+	include_path  => ['../htdocs/template'],
+	template_args => { testname => $testname, testmodule => $testmodule, imgname => $imgname, testresult => $testresult, refimg_result => $refimg_result, imglist => \@imglist, testlist => \@testlist, cropped => \%cropped },
+);
 
-my $myheader = '
-  <script src="http://ajax.googleapis.com/ajax/libs/prototype/1.6.1.0/prototype.js" type="text/javascript"></script>
-  <script src="http://ajax.googleapis.com/ajax/libs/scriptaculous/1.8.2/scriptaculous.js" type="text/javascript"></script>
-  <script src="/static/cropper.uncompressed.js" type="text/javascript"></script>
-
-  <script type="text/javascript" charset="utf-8">
-    <!--
-    var crpr;
-    // setup the callback function
-    function onEndCrop( coords, dimensions ) {
-      $( "x1" ).value = coords.x1;
-      $( "y1" ).value = coords.y1;
-      $( "x2" ).value = coords.x2;
-      $( "y2" ).value = coords.y2;
-      $( "width" ).value = dimensions.width;
-      $( "height" ).value = dimensions.height;
-    }
-
-    function onDraw( coords, dimensions ) {
-      $( "x1" ).value = coords.x1;
-      $( "y1" ).value = coords.y1;
-      $( "x2" ).value = coords.x2;
-      $( "y2" ).value = coords.y2;
-      $( "width" ).value = dimensions.width;
-      $( "height" ).value = dimensions.height;
-    }
-    
-    Event.observe( 
-      window, 
-      "load", 
-      function() { 
-        crpr = new Cropper.Img( 
-          "testImage",
-          {
-            onEndCrop: onEndCrop,
-            '.$loadcoord.'
-            onDraw: onDraw 
-          }
-        ) 
-      }
-    );
-
-    document.onclick = function(e) {
-      if(!e) e=window.event;
-      elem = getEventTarget(e);
-      if(elem.nodeName == "BODY" || elem.nodeName == "HTML")
-      {
-        crpr.options.onloadCoords=null;
-        crpr.reset();
-      }
-    }
-
-    function getEventTarget(evt) {
-      var targ = (evt.target) ? evt.target : evt.srcElement;
-      if(targ != null) {
-        if(targ.nodeType == 3)
-          targ = targ.parentNode;
-      }
-      return targ;
-    }
-
-    function checkform(f) {
-      if(
-          ! isvalnum(f.x2.value) ||
-          ! isvalnum(f.y2.value) ||
-          ! isvalnum(f.width.value) ||
-          ! isvalnum(f.height.value)
-        )
-      {
-        alert("Make your selection first!");
-        return false;
-      }
-
-      if( !f.result[0].checked && !f.result[1].checked )
-      {
-        alert("Select a result first!");
-        return false;
-      }
-
-      return true;
-    }
-
-    function isvalnum(input) {
-      return (input - 0) == input && input.length > 0 && input > 0;
-    }
-
-    function resetform() {
-      crpr.options.onloadCoords=null;
-      crpr.reset();
-      $("good").defaultChecked = false;
-      $("bad").defaultChecked = false;
-      /*
-      $("x1").defaultValue = 0;
-      $("x2").defaultValue = 0;
-      $("y1").defaultValue = 0;
-      $("y2").defaultValue = 0;
-      $("width").defaultValue = 0;
-      $("height").defaultValue = 0;
-      */
-    }
-    -->
-  </script>
- 
-';
-
-my ($header,$footer)=get_header_footer(qq{<a href="/refimgs/">Crop Image</a> &gt; <a href="/results/$testrun">$testrun</a> &gt; $testname});
-$header=~s{<!-- ADDHEADERLINES -->}{$myheader};
-$header=~s{<!-- DEFSTYLE_START}{};
-$header=~s{DEFSTYLE_END -->}{};
-$header=~s{FLUIDSTYLE_START -->}{};
-$header=~s{<!-- FLUIDSTYLE_END}{};
-$header=~s{container_12}{container_18};
-$header=~s{container_16}{container_18};
-$header=~s{grid_9}{grid_16};
-print header("text/html").
-$header.
-'
-<div id="content" class="container_18 content-wrapper">
-  <div class="grid_5 box box-shadow alpha" id="cropdetails_box">
-    <div class="box-header aligncenter">Cropping details</div>
-    <div style="margin: 0 18px 0 0;">
-      <form method="post" action="" onsubmit="return checkform(this);">
-        <table style="border: none;">
-          <tr>
-            <td style="width: 60px;">Start Position:</td>
-            <td style="width: 65px;">
-              <input type="text" name="x1" id="x1" size="1" readonly="readonly" value="0" /> x
-              <input type="text" name="y1" id="y1" size="1" readonly="readonly" value="0" />
-            </td>
-          </tr>
-          <tr>
-            <td>Size:</td>
-            <td>
-              <input type="text" name="width" id="width" size="1" readonly="readonly" value="0" /> x
-              <input type="text" name="height" id="height" size="1" readonly="readonly" value="0" />
-            </td>
-          </tr>
-          <tr>
-            <td>End Position:</td>
-            <td>
-              <input type="text" name="x2" id="x2" size="1" readonly="readonly" value="0" /> x
-              <input type="text" name="y2" id="y2" size="1" readonly="readonly" value="0" />
-            </td>
-          </tr>
-          <tr>
-            <td>Result:</td>
-            <td style="text-align: left; padding-left: 15px;">
-              <input type="radio" name="result" id="good" value="good" '.($resultselected{'good'}?'checked="checked"':'').' />
-              <label for="good" class="resultok" style="display: inline-block; width: 3em; text-align: center;">Good</label>
-              <br />
-              <input type="radio" name="result" id="bad" value="bad" '.($resultselected{'bad'}?'checked="checked"':'').' />
-              <label for="bad" class="resultfail" style="display: inline-block; width: 3em; text-align: center;">Bad</label>
-            </td>
-          </tr>
-        </table>
-        <br />
-        <div class="aligncenter">
-          <input type="reset" onclick="resetform();" class="button" value="Reset" />
-          <input type="submit" value="Crop Image" />
-        </div>
-      </form>
-      '.$detailscontent.'
-    </div>
-  </div>
-
-  <div class="grid_14 box box-shadow omega">
-    <div style="margin: 0 10px;">
-      <img src="/'."$prj/$name".'.png" alt="test image" id="testImage" width="800" height="600" />
-    </div>
-  </div>
-
-  <div class="grid_5 box box-shadow alpha">
-    <div class="box-header aligncenter">Test details</div>
-      <div style="margin: 0 18px 0 0;">
-        <table style="border: none;">
-          <tr>
-            <td style="width: 60px;">Test:</td>
-            <td style="width: 65px;">
-              <select name="testlist" id="testlist" onchange="self.location.href=this.value;">
-              '.join("\n",@testlist).'
-              </select>
-            </td>
-          </tr>
-          <tr>
-            <td>Result:</td>
-            <td class="result'.$testcssclass.'">'.$testresult.'</td>
-          </tr>
-        </table>
-      </div>
-  </div>
-  <div class="grid_14 box box-shadow omega">
-    <div style="margin: 0 20px; overflow-x: scroll; overflow-y: hidden; overflow: auto; white-space: nowrap;">
-      '.join("\n",@imglist).'
-    </div>
-  </div>
-</div>
-'.
-$footer;
-
+print header(-charset=>"UTF-8", -type=>"text/html");
+print $mt->render('cropimg');

@@ -7,14 +7,15 @@ our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
-$prj $basedir $perldir
-&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg
+$prj $basedir $perldir $perlurl
+&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &get_header_footer &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 our $basedir="/space/geekotest";
 our $prj="opensuse";
-our $perldir="$basedir/$prj/perl/autoinst";
+our $perlurl="$prj/perl/autoinst";
+our $perldir="$basedir/$perlurl";
 our $hostname="openqa.opensuse.org";
 
 sub parse_log($) { my($fn)=@_;
@@ -65,8 +66,7 @@ sub running_log($) {
 	foreach my $path (@runner) {
 		my $testfile = $path."/testname";
 		open(my $fd, $testfile) || next ;
-		my @rname = <$fd>;
-		my $rnam = $rname[0];
+		my $rnam = <$fd>;
 		chomp($rnam);
 		close($fd);
 		if ($name eq $rnam) {
@@ -74,6 +74,15 @@ sub running_log($) {
 		}
 	}
 	return "";
+}
+
+# get testname by name or path
+sub path_to_testname($) {
+	my $fn=shift;
+	$fn=~s%\.autoinst\.txt$%%;
+	$fn=~s%\.ogv$%%;
+	$fn=~s%.*/%%;
+	return $fn;
 }
 
 sub imgdir($) { my $fn=shift;
@@ -185,6 +194,81 @@ sub testimg($)
 sub clickimg($)
 { my $name=shift;
 	return "$perldir/waitimgs/click/$name";
+}
+
+
+our $table_row_style = 0;
+sub cycle(;$) {
+	my $cset = shift||0;
+	if($cset == 1) {
+		$table_row_style = 0;
+		return;
+	}
+	if($cset != 2) { # 2 means read without toggle
+		$table_row_style^=1; # toggle state
+	}
+	return $table_row_style?'odd':'even';
+}
+
+our $loop_first_run = 1;
+sub first_run(;$) {
+	if(shift) {
+		$loop_first_run = 1;
+		return;
+	}
+	if($loop_first_run) {
+		$loop_first_run = 0;
+		return 1;
+	}
+	else {
+		return 0;
+	}
+}
+
+sub sortkeys($$) {
+	my $options = shift;
+	my $sortname = shift;
+	my $suffix = "";
+	$suffix .= ".".$options->{'sort'}."&amp;hours=".$options->{'hours'};
+	$suffix .= (defined $options->{'match'})?"&amp;match=".$options->{'match'}:"";
+	$suffix .= ($options->{'ib'})?"&amp;ib=on":"";
+	my $dn_url = "?sort=-".$sortname.$suffix;
+	my $up_url = "?sort=".$sortname.$suffix;
+	return '<a rel="nofollow" href="'.$dn_url.'"><img src="/images/ico_arrow_dn.gif" style="border:0" alt="sort dn" /></a><a rel="nofollow" href="'.$up_url.'"><img src="/images/ico_arrow_up.gif" style="border:0" alt="sort up" /></a>';
+}
+
+sub syntax_highlight($)
+{
+	my $script=shift;
+	$script=~s{^sub is_applicable}{# this function decides if the test shall run\n$&}m;
+	$script=~s{^sub run}{# this part contains the steps to run this test\n$&}m;
+	$script=~s{^sub checklist}{# this part contains known hash values of good or bad results\n$&}m;
+	eval "require Perl::Tidy;" or return "<pre>$script</pre>";
+	push(@ARGV,"-html", "-css=/dev/null");
+	my @out;
+	Perl::Tidy::perltidy(
+		source => \$script,
+		destination => \@out,
+	);
+	my $out=join("",@out);
+	#$out=~s/.*<body>//s;
+	$out=~s/.*<!-- contents of filename: perltidy -->//s;
+	$out=~s{</body>.*}{}s;
+	return $out;
+}
+
+sub data_name($) {
+	$_[0]=~m/^.*\/(.*)\.\w\w\w$/;
+	return $1;
+}
+
+sub parse_refimg_path($) {
+	$_[0]=~m/.*\/(\w+)-(\d+)-(\d+)-(\w+)\.ppm/;
+	return ($1,$2,$3,$4);
+}
+sub parse_refimg_name($) {
+	my($testmodule,$screenshot,$n,$result)=parse_refimg_path($_[0]);
+	return {name => "$testmodule-$screenshot-$n-$result", result => $result};
 }
 
 1;

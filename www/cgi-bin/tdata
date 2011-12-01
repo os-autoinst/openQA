@@ -4,6 +4,8 @@ use CGI ":standard";
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 use openqa;
+use Text::MicroTemplate "encoded_string";
+use Text::MicroTemplate::Extended;
 
 # usage: http://openqa.opensuse.org/test/show/openSUSE-NET-x86_64-Build0221/systemsettings
 
@@ -12,7 +14,7 @@ my $fn=$ENV{PATH_INFO};
 if(!defined $fn) { print header(-status=>404)."must specify result file as path"; exit 0 }
 $fn=~s%^/%%;
 $fn=~s/\.autoinst\.txt$//; $fn=~s/\.ogv$//; # be tolerant in what we accept
-my ($action,$testrun,$teststep)=split("/", $fn);
+my ($action,$testname,$testmodule)=split("/", $fn);
 if($action!~m%^(?:show|raw)$%) {
 	print header(-status=>404)."unknown action";
 	exit 0;
@@ -21,239 +23,66 @@ if($action!~m%^(?:show|raw)$%) {
 # Delete Image
 if(!$readonly && param('delete')) {
 	my $filename = param('delete');
-	if(!($filename=~m/.*-\d+-\d+-.*\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
+	if(!($filename=~m/\w+-\d+-\d+-\w+\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
 	my $fullname = testimg($filename);
 	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
 	unlink($fullname);
-	print redirect(-location=>"/tdata/$action/$testrun/$teststep",-nph=>0,status=>302);
+	print redirect(-location=>"/tdata/$action/$testname/$testmodule",-nph=>0,status=>302);
 	exit;
 }
 
-if(!$readonly && param('delete-click')) {
-	my $filename = param('delete-click');
+if(!$readonly && param('deleteclick')) {
+	my $filename = param('deleteclick');
 	if(!($filename=~m/([a-zA-Z0-9_]+)-\d+--?\d+--?\d+\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
 	my $fullname = clickimg($filename);
 	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
 	unlink($fullname);
-	print redirect(-location=>"/tdata/$action/$testrun/$teststep",-nph=>0,status=>302);
+	print redirect(-location=>"/tdata/$action/$testname/$testmodule",-nph=>0,status=>302);
 	exit;
 }
 
-$fn=$testrun;
-if($fn=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
-my $resultdir="$basedir/$prj/video";
-my $fqfn="$resultdir/$fn.ogv.autoinst.txt";
+if($testname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
+my $fqfn="$basedir/$prj/video/$testname.ogv.autoinst.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 
-
-#my @lines=parse_log($fqfn);
-my $scriptpath=log_to_scriptpath($fqfn, $teststep);
-my $backcgi = 'results';
+my $scriptpath=log_to_scriptpath($fqfn, $testmodule);
+my $running = 0;
 if(!$scriptpath || !-e $scriptpath) {
-	$fqfn = running_log($fn).'currentautoinst-log.txt';
-	$backcgi = 'running';
-	$scriptpath=log_to_scriptpath($fqfn, $teststep);
+	$fqfn = running_log($testname).'currentautoinst-log.txt';
+	$running = 1;
+	$scriptpath=log_to_scriptpath($fqfn, $testmodule);
 	if(!$scriptpath || !-e $scriptpath) {
-		print header(-status=>404)."test not found: $teststep $scriptpath"; exit 0
+		print header(-status=>404)."test not found: $testmodule $scriptpath"; exit 0
 	}
-}
-
-#my @fnsplit=split_filename($fqfn);
-#$fnsplit[0].=" ".openqa::path_to_loglink($fqfn);
-my $actions = "<a href='/tdata/raw/$fn/$teststep'><img src='/images/log.png' alt='raw test' title='raw test' height='23' width='23' /></a>";
-if ($backcgi eq 'results') {
-	$actions .= " <a href='".openqa::path_to_detailurl($fqfn)."'><img src='/images/back.png' alt='back to result details' title='back to result details' height='22' width='23' /></a>";
-}
-elsif ($backcgi eq 'running') {
-	$actions .= " <a href='/running/".$fn."'><img src='/images/back.png' alt='back to running test' title='back to running test' height='22' width='23' /></a>";
 }
 
 my $script=file_content($scriptpath);
 if($action eq "raw") { print header(-type=>"text/plain").$script; exit 0}
 
-sub niceoutput($)
-{
-	my $script=shift;
-	$script=~s{^sub is_applicable}{# this function decides if the test shall run\n$&}m;
-	$script=~s{^sub run}{# this part contains the steps to run this test\n$&}m;
-	$script=~s{^sub checklist}{# this part contains known hash values of good or bad results\n$&}m;
-	eval "require Perl::Tidy;" or return "<pre>$script</pre>";
-	push(@ARGV,"-html", "-css=/srv/www/htdocs/static/perltidy.css");
-	my @out;
-	Perl::Tidy::perltidy(
-		source => \$script,
-		destination => \@out,
-	);
-	my $out=join("",@out);
-	#$out=~s/.*<body>//s;
-	$out=~s/.*<!-- contents of filename: perltidy -->//s;
-	$out=~s{</body>.*}{}s;
-	return $out;
-}
+my $nicescriptpath = $scriptpath;
+$nicescriptpath=~s/^.*autoinst\///;
 
-sub imgfqfn_to_link($;$)
-{ my($x)=@_;
-	#my $name=$x;
-	my ($filename,$result,$linkurl)=($x,$x,$x);
-	$filename=~s/.*\/(.*)-(\d+)-(\d+)-(.*)\.ppm/$1-$2-$3-$4.ppm/;
-	$result=~s/.*\/.*-\d+-\d+-(.*)\.ppm/$1/;
-	#$name=~s/.*-(\d+)\.ppm/$1/;
-	$x=~s{^$basedir(/$prj.*)\.ppm}{$1.jpg};
-	$linkurl=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
-	# add thumbnail inline img
-	my $width=80; my $height=int($width/4*3);
-	my $thumb=qq(<img src="$x?csize=${width}x${height}" width="${width}" height="${height}" alt="$filename" title="$filename" style="border: 1px dotted #ccc;" class="pic" />);
-	my $resicon='/images/'.(($result eq 'good')?'accept.png':'exclamation.png');
-	my $delete=($readonly?"":'<span class="delete-icon"><input type="hidden" name="delete" value="'.$filename.'" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>');
-	'<form method="post" action="/tdata/show/'.$testrun.'/'.$teststep.'" onsubmit="return confirm(\'Delete '.$filename.'?\');" style="display: inline;"><span class="refpic"><a href="'.$linkurl.'">'.$thumb.'</a>
-	'.$delete.'
-	<span class="result-icon"><img src="'.$resicon.'" width="16" height="16" alt="'.$result.'" title="'.$result.'" style="border: none;" /></span>
-	</span></form>';
-}
-
-sub imgfqfn_to_link_interactive($;$) {
-	my $x = shift;
-	my $deleteable = shift||0;
-	#my $name=$x;
-	my ($filename,$linkurl)=($x,$x);
-	$filename=~s/.*\/(.*)-(\d+)(.*)\.ppm/$1-$2$3.ppm/;
-	$x=~s{^$basedir(/$prj.*)\.ppm}{$1.jpg};
-	$linkurl=~s{^$basedir(/$prj.*)\.ppm}{$1.png};
-	# add thumbnail inline img
-	my $width=80; my $height=int($width/4*3);
-	my $thumb=qq(<img src="$x?csize=${width}x${height}" width="${width}" height="${height}" alt="$filename" title="$filename" style="border: 1px dotted #ccc;" class="pic" />);
-	my $delete=(($readonly || !$deleteable)?"":'<span class="delete-icon"><input type="hidden" name="delete-click" value="'.$filename.'" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>');
-	'<form method="post" action="/tdata/show/'.$testrun.'/'.$teststep.'" onsubmit="return confirm(\'Delete '.$filename.'?\');" style="display: inline-block;"><span class="refpic"><a href="'.$linkurl.'">'.$thumb.'</a>
-	'.$delete.'
-	</span></form>';
-}
-
-my %testnames=();
-my $cycle='even';
-
-sub testhtml($)
-{
-	my($tname)=@_;
-	my $tid=$tname;
-	$tname=~s{.*/(.*)-\d+-\d+-.*\.ppm}{$1};
-	$tid=~s{.*/.*-(\d+)-\d+-.*\.ppm}{$1};
-	if(!$testnames{$tname}{$tid}) {
-		$testnames{$tname}{$tid}=1;
-		my @testimglist=map {imgfqfn_to_link($_)} get_testimgs("$tname-$tid");
-		$cycle = ($cycle eq 'odd')?'even':'odd';
-		return '<tr class="'.$cycle.'"><td>'.$tid.'</td><td class="links">'.join("\n",@testimglist).'</td>';
+my %testmodules=();
+my @screenrefs;
+for my $screenshotid (get_testimgs($testmodule)) {
+	$screenshotid=(parse_refimg_path($screenshotid))[1];
+	# check if refimgs for this screenshot were already found
+	if(!$testmodules{$testmodule}{$screenshotid}) {
+		$testmodules{$testmodule}{$screenshotid}=1;
+		my @refimgs=map {parse_refimg_name($_)} get_testimgs("$testmodule-$screenshotid");
+		push(@screenrefs, {screenshot => $screenshotid, refimgs => \@refimgs});
 	}
 }
 
-
-sub testwavlink($) {
-	my($x)=@_;
-	#my $name=$x;
-	my ($filename,$linkurl)=($x,$x);
-	$filename=~s/.*\/(.*)-(\d+)\.wav/$1-$2.wav/;
-	$linkurl=~s{^$basedir(/$prj.*)\.wav}{$1.ogg};
-	return "<a href='$linkurl'>$filename</a>";
-}
-
-my @testlist=map {testhtml($_)} get_testimgs($teststep);
-my @wavlist=map {testwavlink($_)} get_testwavs($teststep);
-my @waitlist=map {imgfqfn_to_link_interactive($_)} get_waitimgs($teststep);
-my @clicklist=map {imgfqfn_to_link_interactive($_,1)} get_clickimgs($teststep);
+my @audiofiles=map {data_name($_)} get_testwavs($testmodule);
+my @waitimgs=map {data_name($_)} get_waitimgs($testmodule);
+my @clickimgs=map {data_name($_)} get_clickimgs($testmodule);
 
 
-my $imgtab = "";
-if(@testlist) {
-	$imgtab = qq{
-	<div class="box box-shadow">
-		<div class="box-header aligncenter">Reference Images</div>
-		<h2>Images</h2>
-		<p>This are the available reference images for the <i>$teststep</i> test.</p>
-		<table style="width: 95%;">
-			<tr>
-				<th style="width: 150px;">Screenshot&nbsp;#</th>
-				<th style="width: 100%;">Images</th>
-			</tr>
-			@testlist
-		</table>
-	</div>
-	};
-}
+my $mt = Text::MicroTemplate::Extended->new(
+	include_path  => ['../htdocs/template'],
+	template_args => { testname => $testname, testmodule => $testmodule, running => $running, screenrefs => \@screenrefs, audiofiles => \@audiofiles, waitimgs => \@waitimgs, clickimgs => \@clickimgs, scriptpath => $nicescriptpath, scriptsrc => $script },
+);
 
-my $audiobox = "";
-if(@wavlist) {
-	$audiobox = '
-	<div class="box box-shadow alpha" id="audio_box">
-		<div class="box-header aligncenter">Audio Files</div>
-		<div style="text-align: center;">
-			'.join("<br />",@wavlist).'
-		</div>
-	</div>
-	';
-}
-
-my $waitbox = "";
-if(@waitlist) {
-	$waitbox = '
-	<div class="box box-shadow alpha" id="wait_box">
-		<div class="box-header aligncenter">Wait Images</div>
-		<div style="text-align: center; line-height: 0.5em;">
-			'.join("<br /><br />",@waitlist).'
-		</div>
-	</div>
-	';
-}
-
-my $clickbox = "";
-if(@clicklist) {
-	$clickbox = '
-	<div class="box box-shadow alpha" id="click_box">
-		<div class="box-header aligncenter">Click Images</div>
-		<div style="text-align: center; line-height: 0.5em;">
-			'.join("<br /><br />",@clicklist).'
-		</div>
-	</div>
-	';
-}
-
-
-my @out=(niceoutput($script));
-
-my $nicescriptpath = $scriptpath;
-
-$nicescriptpath=~s/^.*autoinst\///;
-
-my ($header,$footer)=get_header_footer(qq{<a href="/refimgs/">Test Data</a> &gt; $teststep});
-$header=~s{<link}{<link href="/static/perltidy.css" rel="stylesheet" type="text/css" />\n$&};
-print header("text/html").
-$header.
-qq{
-<div id="content" class="container_16 content-wrapper">
-	<div class="grid_2 alpha">
-		<div class="box box-shadow alpha" id="actions_box">
-			<div class="box-header aligncenter">Actions</div>
-			<div class="aligncenter">
-				$actions<br />
-			</div>
-		</div>
-		$audiobox
-		$waitbox
-		$clickbox
-	</div>
-	<div class="grid_14 omega">
-		$imgtab
-		<div class="box box-shadow">
-			<div class="box-header aligncenter">Test Script</div>
-			<h2>Test Source</h2>
-			<p>
-				This is the <b>$teststep</b> test for <b>$testrun</b>
-				<br />
-				<br />
-				Test-Module: <tt>$nicescriptpath</tt>
-			</p>
-			@out
-		</div>
-	</div>
-</div>
-}.
-$footer;
-
+print header(-charset=>"UTF-8", -type=>"text/html");
+print $mt->render('tdata');
