@@ -38,7 +38,7 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	if($mtime>$maxmtime){$maxmtime=$mtime}
 	next if $mtime < $now - $maxage; # skip old
 	next if($options{match} && $r!~m/$options{match}/);
-	my ($link, $distri, $type, $arch, $build, $extrainfo)=split_filename($r);
+	my ($distri, $type, $arch, $build, $extrainfo)=split_filename($r);
 	my $testname = path_to_testname($r);
 	my @lines=parse_log($r);
 	my $parsed=parse_log_to_stats(\@lines);
