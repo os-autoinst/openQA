@@ -13,6 +13,9 @@
 <div class="grid_2 box box-shadow alpha" id="actions_box">
 	<div class="box-header aligncenter">Actions</div>
 	<div class="aligncenter">
+		<? if($diskimg) { ?>
+		<a href="/diskimg/<?= $testname ?>/l1.gz"><img width="23" height="23" src="/images/floppy.png" alt="img" title="download disk image"/></a>
+		<? } ?>
 		<a href="/<?= $prj ?>/video/<?= $testname ?>.ogv"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
 		<a href="/<?= $prj ?>/video/<?= $testname ?>.ogv.autoinst.txt"><img width="23" height="23" src="/images/log.png" alt="log" title="complete log of this testrun"/></a>
 		<a href="/<?= $prj ?>/logs/<?= $testname ?>.tar.bz2"><img width="23" height="23" src="/images/download.png" alt="logs" title="download var/log.tar.bz2"/></a>

@@ -63,10 +63,17 @@ foreach my $entry (@lines) {
 	push(@modlist, {name => $name, result => $result, screenshots => \@imglist, wavs => \@wavlist, ocrs => \@ocrlist, refimg => $image, audio => $sound, ocr => $ocr});
 }
 
+my $backlogpath = back_log($testname);
+my $diskimg = 0;
+if(-e "$backlogpath/l1") {
+	if((stat("$backlogpath/l1"))[12] && !((stat("$backlogpath/l2"))[12])) { # skip raid
+		$diskimg = 1;
+	}
+}
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { modlist => \@modlist, testname => $testname },
+	template_args => { modlist => \@modlist, testname => $testname, diskimg => $diskimg },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

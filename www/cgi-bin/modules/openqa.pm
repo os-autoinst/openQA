@@ -8,7 +8,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
 $prj $basedir $perldir $perlurl
-&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name
+&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
@@ -66,6 +66,24 @@ sub running_log($) {
 	foreach my $path (@runner) {
 		my $testfile = $path."/testname";
 		open(my $fd, $testfile) || next ;
+		my $rnam = <$fd>;
+		chomp($rnam);
+		close($fd);
+		if ($name eq $rnam) {
+			return $path."/";
+		}
+	}
+	return "";
+}
+
+sub back_log($) {
+	my ($name) = @_;
+	my $backlogdir = "*";
+	my @backlogs = <$basedir/$prj/backlog/$backlogdir/name>;
+	foreach my $filepath (@backlogs) {
+		my $path = $filepath;
+		$path=~s/\/name$//;
+		open(my $fd, $filepath) || next ;
 		my $rnam = <$fd>;
 		chomp($rnam);
 		close($fd);

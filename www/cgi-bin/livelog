@@ -5,9 +5,6 @@ use Time::HiRes qw(sleep);
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 use openqa;
-#use File::Tail;
-
-
 
 $| = 1;
 
