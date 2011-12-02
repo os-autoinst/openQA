@@ -1,5 +1,5 @@
 
-  /usr/lib64/ImageMagick*/modules*/coders/*p*.so	m,
+  /usr/lib*/ImageMagick*/modules*/coders/*.so	m,
 
 # for ungzip tmp files
   /tmp/magick-*	rw,

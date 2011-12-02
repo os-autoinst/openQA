@@ -137,6 +137,9 @@
   # openqa exported data
   /srv/www/cgi-bin/rechecklog        rUx,
   /srv/www/cgi-bin/uploadlog         rUx,
+  /srv/www/cgi-bin/livelog           rUx,
+  /srv/www/cgi-bin/croplive          rUx,
+  /srv/www/cgi-bin/tdata             rUx,
   /srv/www/cgi-bin/**                rpx,
 
   ^HANDLING_UNTRUSTED_INPUT {
