@@ -1,0 +1,23 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use lib "/srv/www/cgi-bin/modules";
+use awstandard;
+use openqa;
+use Text::MicroTemplate "encoded_string";
+use Text::MicroTemplate::Extended;
+
+my $name=$ENV{PATH_INFO};
+$name=~s/^\/(\w+)/$1/;
+$name=~s/(\w+)\.html$/$1/;
+unless($name=~m/\w+/) {print header(-status=>403)."invalid filename"; exit 0; }
+
+my $templatefile = "../htdocs/template/$name.mt";
+unless(-e $templatefile) {print header(-status=>404)."file not found"; exit 0; }
+
+my $mt = Text::MicroTemplate::Extended->new(
+	include_path  => ['../htdocs/template'],
+);
+
+print header(-charset=>"UTF-8", -type=>"text/html");
+print $mt->render($name);

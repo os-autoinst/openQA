@@ -7,7 +7,7 @@ our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
-$prj $basedir $perldir $perlurl
+$prj $basedir $perldir $perlurl $app_title $app_subtitle
 &parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log
 );
 use lib "/srv/www/cgi-bin/modules";
@@ -17,6 +17,8 @@ our $prj="opensuse";
 our $perlurl="$prj/perl/autoinst";
 our $perldir="$basedir/$perlurl";
 our $hostname="openqa.opensuse.org";
+our $app_title = 'openQA';
+our $app_subtitle = 'openSUSE automated testing';
 
 sub parse_log($) { my($fn)=@_;
 	open(my $fd, "<", $fn) || return;
