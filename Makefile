@@ -73,6 +73,14 @@ debiansync:
 	wget -Ofactory/iso/debian-netinst-i386-testing-Media.iso http://cdimage.debian.org/cdimage/daily-builds/daily/arch-latest/i386/iso-cd/debian-testing-i386-netinst.iso
 	wget -Ofactory/iso/debian-netinst-amd64-testing-Media.iso http://cdimage.debian.org/cdimage/daily-builds/daily/arch-latest/amd64/iso-cd/debian-testing-amd64-netinst.iso
 
+archsync: archbuild=$(shell curl -s http://releng.archlinux.org/isos/ | grep "Directory" | tail -n1 | sed -e 's#.*\/">\(.*\)<\/a>.*#\1#')
+archsync: archbuild_local=$(shell echo -n $(archbuild) | awk -F '_' '{print $$1}')
+archsync:
+	#wget -c -Ofactory/iso/archlinux-core-i686-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-core-i686.iso
+	wget -c -Ofactory/iso/archlinux-core-x86_64-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-core-x86_64.iso
+	wget -c -Ofactory/iso/archlinux-netinst-i686-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-netinstall-i686.iso
+	#wget -c -Ofactory/iso/archlinux-netinst-x86_64-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-netinstall-x86_64.iso
+
 dvdsync:
 	-rsync -aPHv ${bwlimit} --exclude="*Biarch*" rsync://${rsyncserver}${dvdpath}openSUSE-DVD-*.iso factory/iso/
 promosync:
@@ -131,7 +139,8 @@ resultarchive:
 
 
 ISOS=$(shell ls factory/iso/*Build*-Media.iso)
-NEWISOS=$(shell find factory/iso/ -name "*[DN][VE][DT]*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k4|head -8 ; find factory/iso/ -name "*LiveCD*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k5|head -4)
+
+NEWISOS=$(shell find factory/iso/ -name "*[DN][VE][DT]*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k4|head -8 ; find factory/iso/ -name "*LiveCD*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k5|head -4 ; find factory/iso/ -name "archlinux-*.iso" -mtime -$(newdays)|sort -r -t- -k5|head -4)
 # it is enough to test one i586+x86_64 NET-iso
 NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${newdays}|sort -r -t- -k4|head -2 ; find factory/iso/ -name "*DVD*Build*-Media.iso" -mtime -${newdays})
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
@@ -166,11 +175,18 @@ video/%-RAID10.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=10 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID5.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=5 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+
+# Debian
 debian: debian-32 debian-64
 debian-32: video/debian-netinst-i386-testing_$d.ogv
 debian-64: video/debian-netinst-amd64-testing_$d.ogv
 video/debian-%_$d.ogv: factory/iso/debian-%-Media.iso
 	HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+
+# Arch
+video/archlinux-%.ogv: factory/iso/archlinux-%.iso
+	HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+
 Tumbleweed-gnome32: video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv
 video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
 	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Tumbleweed:/Testing/openSUSE_Tumbleweed_standard/ export UPGRADE=/space2/opensuse/img/opensuse-11.4-gnome-32.img ; TUMBLEWEED=1 NOINSTALL=1 ZDUP=1 DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2

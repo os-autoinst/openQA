@@ -28,4 +28,7 @@
 	rm -rf testresults/$baseoutname
 	mv ${testdir}/testresults/$basetestname testresults/$baseoutname || true
 	tools/notify $baseoutname
+	if echo "$baseoutname" | grep -q 'archlinux' ; then
+		tools/notify_archlinux.pl $baseoutname
+	fi
 

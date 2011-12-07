@@ -184,8 +184,8 @@ function modechange() {
 </div>
 
 <div class="grid_14 box box-shadow omega">
-	<div style="margin: 0 10px; position: relative;">
-		<img src="/<?= $prj ?>/<?= $imgpath ?>.png" alt="test image" id="testImage" width="800" height="600" />
+	<div style="margin: 0 10px; position: relative; background-color: #202020;">
+		<img src="/<?= $prj ?>/<?= $imgpath ?>.png" alt="test image" id="testImage" />
 		<div class="click-location-pointer" id="click-location-pointer"><div>+</div></div>
 	</div>
 </div>
