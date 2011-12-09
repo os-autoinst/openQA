@@ -15,7 +15,7 @@ $name=~s/\.jpg$//;
 $name=~s/^$prj//;
 $name=~s/^\/$prj//;
 
-my $fullname="/space/geekotest/$prj/$name.ppm";
+my $fullname="/$basedir/$prj/$name.ppm";
 if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
 my(undef,undef,$testname,$imgname) = split(/\//, $name);
 
