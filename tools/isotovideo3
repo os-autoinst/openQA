@@ -3,7 +3,6 @@
 # %s/\$</\$in/g
 	test -z "$testdir" && exit 2
 	test -z "$in" -o -z "$out" && exit 3
-	buildnr=`cat factory-testing/repo/oss/media.1/build`
 	basetestname=`perl -e '$_=shift;s/(?:-Media)?.iso$//;s%.*/%%;print' $in`
 	test -z "$basetestname" && exit 1
 	baseoutname=`perl -e '$_=shift;s/\.ogv$//;s%.*/%%;print' $out`
