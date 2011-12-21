@@ -36,36 +36,45 @@ elsif($log eq 'modlist') {
 	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
 	print header({-type=>"text/html", Content_Encoding=>"none"});
 	my $filecontent = file_content($basepath.'currentautoinst-log.txt') || '';
-	my @modules = $filecontent=~m/^scheduling\s(\w+)\s\S+$/gm;
+	my @modules = $filecontent=~m/^scheduling\s(\w+)\s.*\/(\w+)\.d\/.*\.pm$/gm;
 	my $found = 0;
 	unless ($currentstep and grep(/^$currentstep$/, @modules)) {
 		$found = 1;
 	}
 	my @modlist;
+	my $lastcatagory = '';
+	cycle(1);
+	first_run(1);
 	foreach my $module (@modules) {
-		my $out;
-		my $omod = $module;
-		if ($found) {
-			#$out = '&#9679;';
-			$out = '-';
-		}
-		elsif ($module=~m/^$currentstep$/) {
-			$found = 1;
-			#$out = '&#10148;';
-			$out = '<b>&gt;</b>';
-			$omod = "<b>$module</b>";
+		if(cycle() eq 'even') {
+			if($lastcatagory ne $module) {
+				my $litem = pop(@modlist);
+				push(@modlist, (first_run()?'':'</ul>')."<h2 class='box-subheader modcategory'>$module</h2><ul class='navigation modcategory'>");
+				push(@modlist, $litem);
+				$lastcatagory = $module;
+			}
 		}
 		else {
-			#$out = '&#10004;';
-			$out = '&#10003;';
+			my $out;
+			my $omod = $module;
+			if ($found) {
+				$out = 'todo';
+			}
+			elsif ($module=~m/^$currentstep$/) {
+				$found = 1;
+				$out = 'current';
+				$omod = "<b>$module</b>";
+			}
+			else {
+				$out = 'done';
+			}
+			push(@modlist, "<li class='mod-$out'><a href='/tdata/show/$name/$module'>$omod</a></li>");
 		}
-		push(@modlist, "<tr><td>$out</td><td><a href='/tdata/show/$name/$module'>$omod</a></td></tr>");
 	}
 
 
-	print "<table>\n";
 	print join("\n", @modlist);
-	print "</table>\n";
+	print '</ul>';
 	exit;
 }
 

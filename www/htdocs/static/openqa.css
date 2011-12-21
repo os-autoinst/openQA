@@ -159,3 +159,28 @@ img.resborderunk {
 img.resborderna {
 	padding: 4px;
 }
+
+h2.modcategory {
+	margin-top: 0.9em !important;
+}
+
+ul.modcategory {
+	margin-bottom: 0;
+}
+
+li.mod-done,li.mod-current,li.mod-todo {
+	margin: 1px 0 0px 20px;
+	list-style-position: outside;
+}
+
+li.mod-done {
+	list-style-image:url(../images/step-done.png);
+}
+
+li.mod-current {
+	list-style-image:url(../images/step-current.png);
+}
+
+li.mod-todo {
+	list-style-image:url(../images/step-todo.png);
+}

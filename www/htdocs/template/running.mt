@@ -44,9 +44,7 @@ table {
 	</div>
 	<div class="grid_5 box box-shadow alpha" id="modules_box" style="min-height: 508px;">
 		<div class="box-header aligncenter">Modules</div>
-		<div style="margin: 0 10px; text-align: center;">
-			<span style="display: inline-block;" id="modcontent">
-			</span>
+		<div id="modcontent">
 		</div>
 	</div>
 </div>
