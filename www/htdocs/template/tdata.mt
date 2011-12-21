@@ -5,6 +5,12 @@
 
 ? block additional_headlines => sub {
 <link href="/static/perltidy.css" rel="stylesheet" type="text/css" />
+<style type="text/css">
+	tt,pre {
+		font-family: "monospace", monospace;
+		font-size: 90%;
+	}
+</style>
 ? }
 
 ? block locbar => sub {
