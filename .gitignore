@@ -1,6 +1,11 @@
 logs/*.tar.*
 temp
 testresults
+testrun-cron
 testrun-manual
+archive
+backlog
+perl
+factory
 video
 *.swp
