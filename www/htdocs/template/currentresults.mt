@@ -64,6 +64,6 @@
 		</tr>
 		<? } ?>
 	</table>
-	<p>Note: times are CET/CEST</p>
+	<p>Note: times are UTC</p>
 </div>
 ? } # endblock content

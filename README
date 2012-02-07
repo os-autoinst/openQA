@@ -1,3 +1,8 @@
+The openQA framework consists of two parts, which are tracked in separate git repos. The OS-autoinst test engine and the front-end with web-interface, test-scheduler and other high-level logic, which is part of this repo.
+
+see tools/setup.sh on how to setup the software on openSUSE. It has also been successfully deployed on Debian/lenny in the past.
+
+
 common makefile targets:
 
 make sync:

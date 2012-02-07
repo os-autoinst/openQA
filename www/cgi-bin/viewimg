@@ -16,7 +16,7 @@ $name=~s/^$prj//;
 $name=~s/^\/$prj//;
 
 my $fullname="/$basedir/$prj/$name.ppm";
-if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
+if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
 my(undef,undef,$testname,$imgname) = split(/\//, $name);
 
 sub get_img_details($) {

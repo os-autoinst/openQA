@@ -14,6 +14,8 @@ curlftpfs ftp://ftp.mozilla.org/pub/firefox/nightly/latest-mozilla-central/ ffmn
 	fusermount -u ffmnt
 	tar xjf firefox-*.tar.bz2
 	rm -f firefox-*.tar.bz2
-)&
+)
 
 cd
+echo "qa_mozmill_setup.sh done" > /dev/ttyS0
+

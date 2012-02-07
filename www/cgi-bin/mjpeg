@@ -42,9 +42,9 @@ sub png2jpg($) {
 sub waitppmcomplete($)
 {
   my $filename = shift;
-  for(1..25) {
+  for(1..250) {
     my $size=-s $filename;
-    if($goodsizes{$size}) {last}
+    if($size && $goodsizes{$size}) {last}
     sleep 0.02;
   }
 }
@@ -67,7 +67,7 @@ while (1) {
       my $p = new Image::Magick(depth=>8, magick=>"PPM");
       $p->BlobToImage($data);
       my $p3=$p;
-      if(length($data) != 1440015) { # everything not 800x600 needs cropping
+      if(0 && length($data) != 1440015) { # everything not 800x600 needs cropping
         $p2->ReadImage("xc:black");
         $p2->Composite(image=>$p, compose=>'Over');
       	$p3=$p2;

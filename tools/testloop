@@ -11,12 +11,12 @@ use List::Util qw(shuffle);
 my $testdir="testrun-cron";
 my $waittime=10*60;
 my $makeflags=" testdir=$testdir RANDOMENV=1 -j3 -k ";
-my @extralist=qw(gnome gnome lxde lxdedevel xfce xfcedevel RAID10 kdedevel kdeplaygrounddevel gnomedevel xorgdevel kerneldevel yastdevel basesystemdevel basesystemdevel mozilladevel GNOMElive KDElive GNOMEusbboot KDEusbboot 11.2dup 11.3dup 11.4gnome32zdup 11.4gnome32dup 11.4kde64zdup 11.4kde64dup btrfs);
+my @extralist=qw(gnome gnome lxde lxdedevel xfce xfcedevel RAID10 kdedevel kdeplaygrounddevel gnomedevel xorgdevel kerneldevel yastdevel basesystemdevel basesystemdevel mozilladevel GNOMElive KDElive GNOMEusbboot KDEusbboot 11.2dup 11.3zdup 11.3dup 11.4gnome32zdup 11.4gnome32dup 11.4kde64zdup 11.4kde64dup btrfs smp textmode minimalx);
 my @extralistshuffled;
 my @archlist=qw(i586 x86_64);
 my @archlistshuffled;
 
-sub skippattern($) {open(my $f, "/tmp/openqaskip") or return 0; my $pattern=<$f>; close($f); return $_[0]=~m/$pattern/; }
+sub skippattern($) {open(my $f, "/tmp/openqaskip") or return 0; my $pattern=<$f>; close($f); chomp($pattern); return $_[0]=~m/$pattern/; }
 
 sub maketarget_adjust($)
 { my($t)=@_;

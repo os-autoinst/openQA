@@ -2,10 +2,11 @@ L=video/runlog.txt
 newdays=2
 d=$(shell date +%Y%m%d)
 #bwlimit=--bwlimit=1500
-excludes=--exclude="*.zsync" --exclude="*DVD*" 
+#excludes=--exclude="*.zsync" --exclude="*DVD*" 
 #excludes+=--exclude="*GNOME*"
 #excludes+=--exclude="*i686*"
 #excludes+=--exclude="*KDE*"
+excludes+=--exclude="*Addon*"
 #repoexcludes=--exclude="texlive*"
 #--max-delete=4000
 #repoexcludes+=--exclude="x86_64"
@@ -43,6 +44,9 @@ prune3:
 	# only keep latest NET iso of each arch
 	#find factory/iso/ -name "*-NET-*"|sort -t- -k4| perl -ne '...'
 
+testloop:
+	rm -f stopfile
+	tools/testloop
 updatechangedb:
 	cd changedb ; find /opensuse/factory/repo/oss/ -mtime -7 -name \*.rpm | ./recentchanges.pl
 
@@ -51,7 +55,7 @@ recheck:
 deleteresult:
 	rm -f video/$t.ogv
 	rm -f video/$t.ogv.autoinst.txt
-	rm -rf testresults/$t
+	test -n "$t" && rm -rf testresults/$t
 renameresult:
 	mv -f video/$f.ogv video/$t.ogv
 	mv -f video/$f.ogv.autoinst.txt video/$t.ogv.autoinst.txt
@@ -66,20 +70,25 @@ list:
 	ls factory/iso/*Build*.iso
 status:
 	ls factory-testing/iso/openSUSE-*x86_64-*
-	cat factory*/repo/oss/media.1/build /var/tmp/lastfactorysnapshotisobuildnr
+	cat factory*/repo/oss/media.1/build factory-tested/repo/oss/media.1/media /var/tmp/lastfactorysnapshotisobuildnr
 	@echo
 
 debiansync:
-	wget -Ofactory/iso/debian-netinst-i386-testing-Media.iso http://cdimage.debian.org/cdimage/daily-builds/daily/arch-latest/i386/iso-cd/debian-testing-i386-netinst.iso
-	wget -Ofactory/iso/debian-netinst-amd64-testing-Media.iso http://cdimage.debian.org/cdimage/daily-builds/daily/arch-latest/amd64/iso-cd/debian-testing-amd64-netinst.iso
+	wget -q -Ofactory/iso/debian-netinst-i386-testing-Media.iso http://cdimage.debian.org/cdimage/daily-builds/daily/arch-latest/i386/iso-cd/debian-testing-i386-netinst.iso
+	wget -q -Ofactory/iso/debian-bc-i386-testing-Media.iso http://cdimage.debian.org/cdimage/daily-builds/daily/arch-latest/i386/iso-cd/debian-testing-i386-businesscard.iso
+	wget -q -Ofactory/iso/debian-netinst-amd64-testing-Media.iso http://cdimage.debian.org/cdimage/daily-builds/daily/arch-latest/amd64/iso-cd/debian-testing-amd64-netinst.iso
 
-archsync: archbuild=$(shell curl -s http://releng.archlinux.org/isos/ | grep "Directory" | tail -n1 | sed -e 's#.*\/">\(.*\)<\/a>.*#\1#')
-archsync: archbuild_local=$(shell echo -n $(archbuild) | awk -F '_' '{print $$1}')
-archsync:
-	#wget -c -Ofactory/iso/archlinux-core-i686-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-core-i686.iso
-	wget -c -Ofactory/iso/archlinux-core-x86_64-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-core-x86_64.iso
-	wget -c -Ofactory/iso/archlinux-netinst-i686-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-netinstall-i686.iso
-	#wget -c -Ofactory/iso/archlinux-netinst-x86_64-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-netinstall-x86_64.iso
+fedorasync:
+	wget -q -Ofactory/iso/fedora-netinst-i386-16-Media.iso http://mirror.fraunhofer.de/download.fedora.redhat.com/fedora/linux/releases/16/Fedora/i386/os/images/boot.iso
+
+archlinuxsync: archbuild=$(shell curl -s http://releng.archlinux.org/isos/ | grep "Directory" | tail -n1 | sed -e 's#.*\/">\(.*\)<\/a>.*#\1#')
+archlinuxsync: archbuild_local=$(shell echo -n $(archbuild) | awk -F '_' '{print $$1}')
+archlinuxsync:
+	wget -q -Ofactory/iso/archlinux-core-i686.iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-core-i686.iso
+	#wget -q -Ofactory/iso/archlinux-core-i686-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-core-i686.iso
+	#wget -q -Ofactory/iso/archlinux-core-x86_64-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-core-x86_64.iso
+	#wget -q -Ofactory/iso/archlinux-netinst-i686-$(archbuild_local).iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-netinstall-i686.iso
+	wget -q -Ofactory/iso/archlinux-netinst-x86_64.iso http://releng.archlinux.org/isos/$(archbuild)/archlinux-$(archbuild)-netinstall-x86_64.iso
 
 dvdsync:
 	-rsync -aPHv ${bwlimit} --exclude="*Biarch*" rsync://${rsyncserver}${dvdpath}openSUSE-DVD-*.iso factory/iso/
@@ -146,7 +155,7 @@ NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${new
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
 NEWOGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS)) $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
 allvideos: $(OGGS)
-newvideos: $(NEWOGGS) Tumbleweed-kde64 Tumbleweed-gnome32 debian
+newvideos: $(NEWOGGS) Tumbleweed-kde64 Tumbleweed-gnome32 debian archlinux
 newlxdevideos: $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
 newxfcevideos: $(patsubst factory/iso/%-Media.iso,video/%-xfce.ogv,$(NEWNETISOS))
 newgnomevideos: $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS))
@@ -154,6 +163,8 @@ newgnomevideos: $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISO
 video/%.ogv: factory/iso/%-Media.iso
 	in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
+video/%-de.ogv: factory/iso/%-Media.iso
+	INSTLANG=de_DE QEMUVGA=std in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-lxde.ogv: factory/iso/%-Media.iso
 	export DESKTOP=lxde ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
@@ -163,12 +174,16 @@ video/%-gnome.ogv: factory/iso/%-Media.iso
 	export DESKTOP=gnome ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-minimalx.ogv: factory/iso/%-Media.iso
 	export DESKTOP=minimalx ; EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-smp.ogv: factory/iso/%-Media.iso
+	QEMUCPUS=4 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-textmode.ogv: factory/iso/%-Media.iso
 	export DESKTOP=textmode ; VIDEOMODE=text EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-usbboot.ogv: factory/iso/%-Media.iso
 	USBBOOT=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-usbinst.ogv: factory/iso/%-Media.iso
+	USBBOOT=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-nice.ogv: factory/iso/%-Media.iso
-	NICEVIDEO=1 SCREENSHOTINTERVAL=0.25 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	NICEVIDEO=1 REBOOTAFTERINSTALL=0 SCREENSHOTINTERVAL=0.25 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-live.ogv: factory/iso/%-Media.iso
 	LIVETEST=1 REBOOTAFTERINSTALL=0 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID10.ogv: factory/iso/%-Media.iso
@@ -178,13 +193,28 @@ video/%-RAID5.ogv: factory/iso/%-Media.iso
 
 # Debian
 debian: debian-32 debian-64
-debian-32: video/debian-netinst-i386-testing_$d.ogv
-debian-64: video/debian-netinst-amd64-testing_$d.ogv
+debian-32: video/debian-netinst-i386-testing_$d.ogv video/debian-bc-i386-testing_$d.ogv
+debian-64: video/debian-netinst-amd64-testing_$d.ogv video/debian-netinst-amd64-sid_$d.ogv
 video/debian-%_$d.ogv: factory/iso/debian-%-Media.iso
 	HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/debian-%sid_$d.ogv: factory/iso/debian-%testing-Media.iso
+	HTTPPROXY=10.0.2.2:3128 SID=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+
+# Fedora
+fedora: fedora-32
+fedora-32: video/fedora-netinst-i386-16_$d.ogv 
+#video/fedora-netinst-i386-rawhide_$d.ogv
+video/fedora-%_$d.ogv: factory/iso/fedora-%-Media.iso
+	QEMUVGA=cirrus DISTRI=fedora-16 HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/fedora-%rawhide_$d.ogv: factory/iso/fedora-%16-Media.iso
+	RAWHIDE=1 QEMUVGA=cirrus DISTRI=fedora-16 HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
 # Arch
-video/archlinux-%.ogv: factory/iso/archlinux-%.iso
+archlinux: archlinux-32 archlinux-64
+archlinux-32: video/archlinux-core-i686-$d.ogv
+archlinux-64: video/archlinux-netinst-x86_64-$d.ogv
+#archlinux-64: video/archlinux-core-x86_64-$d.ogv video/archlinux-netinst-x86_64-$d.ogv
+video/archlinux-%-$d.ogv: factory/iso/archlinux-%.iso
 	HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
 Tumbleweed-gnome32: video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv
@@ -272,6 +302,8 @@ gitcollect:
 
 janitor:
 	git update-server-info
+	cd qatests/xfstests ; git pull ; git update-server-info #from git clone git://oss.sgi.com/xfs/cmds/xfstests
+	cd qatests/xfsprogs ; git pull ; git update-server-info
 
 clean:
 	rm -f factory/iso/*-current-Media.iso.zsync

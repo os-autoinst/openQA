@@ -1,0 +1,201 @@
+#!/usr/bin/env python
+
+# Copyright 2009,2010 Peter Poeml
+# 
+#    Licensed under the Apache License, Version 2.0 (the "License");
+#    you may not use this file except in compliance with the License.
+#    You may obtain a copy of the License at
+# 
+#        http://www.apache.org/licenses/LICENSE-2.0
+# 
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS,
+#    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#    See the License for the specific language governing permissions and
+#    limitations under the License.
+#
+#
+#
+# withlock -- http://code.google.com/p/withlock/
+#
+#
+# A locking wrapper that make sure that a program isn't run more than once.
+# It creates locks that are valid only while the wrapper is running, and thus
+# will never require a cleanup, e.g. after a reboot.
+
+# Parts of the locking strategy, and parts of the usage semantics, of this
+# script were inspired from with-lock-ex.c, which was written by Ian Jackson and
+# placed in the public domain by him.
+#
+#
+# Usage is simple. Instead of your command 
+#   CMD ARGS...
+# you simply use
+#   withlock LOCKFILE CMD ARGS...
+#
+# See --help output for more options.
+
+
+__version__ = '0.2'
+
+import os
+import os.path
+import errno
+import sys
+import time
+import stat
+import fcntl
+import signal
+import atexit
+from optparse import OptionParser
+
+
+class SignalInterrupt(Exception):
+    """Exception raised on SIGTERM and SIGHUP."""
+
+
+def catchterm(*args):
+    raise SignalInterrupt
+
+
+for name in 'SIGBREAK', 'SIGHUP', 'SIGTERM':
+    num = getattr(signal, name, None)
+    if num: signal.signal(num, catchterm)
+
+
+def cleanup(lockfile):
+    try:
+        os.unlink(lockfile)
+    except:
+        pass
+
+
+def main():
+
+    usage = 'usage: %prog [options] LOCKFILE CMD ARGS...'
+    version = '%prog ' + __version__
+
+    parser = OptionParser(usage=usage, version=version)
+    parser.disable_interspersed_args()
+
+    parser.add_option('-w', '--wait',
+                      dest='wait',
+                      help="wait for maximum SECONDS until the lock is acquired",
+                      metavar="SECONDS")
+
+    parser.add_option("-q", "--quiet",
+                      action="store_true", dest="quiet", default=False,
+                      help="if lock can't be acquired immediately, silently "
+                           "quit without error")
+
+    parser.add_option("-v", "--verbose",
+                      action="store_true", dest="verbose", default=False,
+                      help="print debug messages to stderr")
+
+
+
+    (options, args) = parser.parse_args()
+
+    usage = usage.replace('%prog', os.path.basename(sys.argv[0]))
+
+
+    if len(args) < 2:
+        sys.exit(usage)
+
+    lockfile = args[0]
+    cmd = args[1:]
+    waited = 0
+    if options.wait:
+        options.wait = int(options.wait)
+
+    if options.verbose:
+        sys.stderr.write('lockfile: %r\n' % lockfile)
+        sys.stderr.write('cmd: %r\n' % cmd)
+
+    # check that symlink attacks in the lockfile directory are not possible
+    lockdir = os.path.dirname(os.path.realpath(lockfile)) or os.curdir
+    lockdir_mode = stat.S_IMODE(os.stat(lockdir).st_mode)
+    if options.verbose:
+        sys.stderr.write('lockdir: %r\n' % lockdir)
+        sys.stderr.write('lockdir mode: %s\n' % oct(lockdir_mode))
+    if (lockdir_mode & stat.S_IWGRP) or (lockdir_mode & stat.S_IWOTH):
+        sys.stderr.write('withlock: the destination directory for %r is %r, \n'
+                         '          which is writable by other users. That allows for symlink attacks. \n'
+                         '          Choose another directory.\n' \
+                                % (lockfile, lockdir))
+        sys.exit(3)
+
+
+    prev_umask = os.umask(0066)
+
+    lock = open(lockfile, 'w')
+
+    while 1 + 1 == 2:
+
+        try:
+            fcntl.lockf(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            break
+        except IOError, e:
+            if e.errno in [ errno.EAGAIN, 
+                            errno.EACCES, 
+                            errno.EWOULDBLOCK, 
+                            errno.EBUSY ]:
+                if options.wait:
+                    if waited >= options.wait:
+                        if options.quiet:
+                            if options.verbose:
+                                sys.stderr.write('quitting silently\n')
+                            sys.exit(0)
+                        else:
+                            sys.stderr.write('could not acquire lock\n')
+                            sys.exit(1)
+                    if options.verbose and waited == 0:
+                        sys.stderr.write('waiting up to %ss for lock\n' \
+                                            % options.wait)
+                    time.sleep(1)
+                    waited += 1
+                    continue
+                elif options.quiet:
+                    if options.verbose:
+                        sys.stderr.write('quitting silently\n')
+                    sys.exit(0)
+                else:
+                    sys.exit('could not acquire lock')
+                
+        try:
+            os.stat(lockfile)
+            break
+        except OSError, e: 
+            if e.errno == errno.ENOENT:
+                sys.exit('====== could not stat %s, which we have just locked' \
+                            % lockfile)
+
+
+    atexit.register(cleanup, lockfile)
+    os.umask(prev_umask)
+
+    import subprocess
+    rc = subprocess.call(' '.join(cmd), shell=True)
+    sys.stdout.flush()
+    sys.stderr.flush()
+
+    if options.verbose:
+        sys.stderr.write('command terminated with exit code %s\n' % rc)
+
+    if options.verbose:
+        sys.stderr.write('removing lockfile\n')
+
+    sys.exit(rc)
+
+
+if __name__ == '__main__':
+
+    try:
+        main()
+
+    except SignalInterrupt:
+        print >>sys.stderr, 'killed!'
+
+    except KeyboardInterrupt:
+        print >>sys.stderr, 'interrupted!'
+

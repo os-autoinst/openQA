@@ -1,12 +1,12 @@
 #!/bin/sh
 # mv/cp to keep backlog of rootfs img
 
-bd=/space2/opensuse/backlog/
+bd=backlog
 max=19
 imgdir=$1
 name=$2
 
-test -n "$LIVETEST" && exit 0 # nothing to backlog
+test `du -c $imgdir/l? $imgdir/? |tail -1|cut -f1` -eq 0 && exit 0 # nothing to backlog
 rm -rf $bd/$max # delete oldest
 for i in $(seq $max -1 1) ; do # rotate
 	n=$(expr $i - 1)
