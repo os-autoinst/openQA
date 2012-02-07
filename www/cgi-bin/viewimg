@@ -4,6 +4,7 @@ use CGI ":standard";
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 use openqa;
+use Digest::MD5;
 use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
 
@@ -29,9 +30,11 @@ sub get_img_details($) {
 
 my @imglist=map {get_img_details($_)} get_testimgs($imgname);
 
+my $imgmd5 = Digest::MD5::md5_hex(file_content($fullname));
+
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, imgname => $imgname , imglist => \@imglist },
+	template_args => { testname => $testname, imgname => $imgname, imgmd5 => $imgmd5, imglist => \@imglist },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

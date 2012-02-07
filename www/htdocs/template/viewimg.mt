@@ -23,6 +23,7 @@
 
 <div class="grid_14 alpha">
 	<div class="grid_14 box box-shadow omega">
+		<div class="box-header aligncenter"><?= $imgmd5 ?></div>
 		<div style="margin: 0 10px;">
 			<a href="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>.png"><img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>.png?fixsize=1" width="800" height="600" alt="<?= $imgname ?>" /></a>
 		</div>
