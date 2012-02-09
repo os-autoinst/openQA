@@ -1,0 +1,27 @@
+#!/usr/bin/perl -w
+use strict;
+use lib "/srv/www/cgi-bin/modules/";
+use awstandard;
+use openqa;
+
+my $testname=shift;
+my $action=shift||"cont";
+my $actionlist="stop|cont|kill";
+if(!$testname || $action!~m/^($actionlist)$/) {
+	die "usage: $0 TESTNAME [$actionlist]\n";
+}
+my $dir=running_log($testname);
+
+if($action eq "kill") {
+	my $pid=file_content("$dir/qemu.pid");
+	chomp($pid);
+	kill 15, $pid;
+	exit 0;
+}
+
+my $sig=($action eq "stop"?"STOP":"CONT");
+my $pid=file_content("$dir/os-autoinst.pid");
+chomp($pid);
+#print "$dir $pid $sig\n"; # debug
+kill $sig, $pid;
+

@@ -6,6 +6,7 @@ zypper in make apache2 perl-PerlMagick vorbis-tools perl-Perl-Tidy perl-Text-Mic
 
 cp -a etc/apache2/* /etc/apache2/
 cp -a www/* /srv/www/
+cp -a tools/autoinstctl /usr/local/bin/
 
 a2enmod rewrite
 /etc/init.d/apache2 restart
