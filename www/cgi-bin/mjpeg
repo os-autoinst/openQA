@@ -49,6 +49,8 @@ sub waitppmcomplete($)
   }
 }
 
+my $sendimgtwice = ($ENV{HTTP_USER_AGENT}=~m/Chrome/)?1:0;
+
 print header("multipart/x-mixed-replace;boundary=__myboundary__")."--__myboundary__\015\012";
 
 my $lastfile = '';
@@ -56,6 +58,7 @@ my $lastdata = '';
 my $donetimeout = 0;
 my $p2 = Image::Magick->new(depth=>8);
 $p2->Set(size=>'800x600'); 
+
 
 while (1) {
   my @ppmfiles=<$basepath/qemuscreenshot/*.ppm>;
@@ -72,10 +75,13 @@ while (1) {
         $p2->Composite(image=>$p, compose=>'Over');
       	$p3=$p2;
       }
-      my $jpg=$p3->ImageToBlob(magick=>'JPEG', depth=>8, quality=>60);
-#     my $jpg=ppm2jpg($newfile);
-      my $jpgsize=length($jpg);
-      print "Content-Type: image/jpeg\015\012Content-Size: $jpgsize\015\012\015\012".$jpg."\015\012--__myboundary__\015\012";
+	      my $jpg=$p3->ImageToBlob(magick=>'JPEG', depth=>8, quality=>60);
+	#     my $jpg=ppm2jpg($newfile);
+	      my $jpgsize=length($jpg);
+      for(0..$sendimgtwice) {
+	      print "Content-Type: image/jpeg\015\012Content-Size: $jpgsize\015\012\015\012".$jpg."\015\012--__myboundary__\015\012";
+      }
+      
       $lastdata = $data;
     }
     $lastfile = $ppmfiles[-1];

@@ -2,6 +2,7 @@
 use strict;
 use CGI qw":standard";
 use Time::HiRes qw(sleep);
+use JSON;
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
 use openqa;
@@ -34,7 +35,7 @@ if($log eq 'current') {
 elsif($log eq 'modlist') {
 	unless(-e $basepath.'currentstep') {print header(-status=>404)."test not running"; exit 0; }
 	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
-	print header({-type=>"text/html", Content_Encoding=>"none"});
+	print header({-type=>"application/json", Content_Encoding=>"none"});
 	my $filecontent = file_content($basepath.'currentautoinst-log.txt') || '';
 	my @modules = $filecontent=~m/^scheduling\s(\w+)\s.*\/(\w+)\.d\/.*\.pm$/gm;
 	my $found = 0;
@@ -72,9 +73,9 @@ elsif($log eq 'modlist') {
 		}
 	}
 
-
-	print join("\n", @modlist);
-	print '</ul>';
+	my $json->{'modlist'} = join("\n", @modlist).'</ul>';
+	$json->{'running_state'} = running_state($name);
+	print to_json($json);
 	exit;
 }
 

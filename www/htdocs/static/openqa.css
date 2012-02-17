@@ -184,3 +184,18 @@ li.mod-current {
 li.mod-todo {
 	list-style-image:url(../images/step-todo.png);
 }
+
+a.pauseplay {
+	background: url("../images/pauseplay.png") 0 0 no-repeat;
+	width: 23px;
+	height: 23px;
+	display: inline-block;
+}
+
+a.pauseplay.pause {
+	background-position: 0 0;
+}
+
+a.pauseplay.play {
+	background-position: -23px 0;
+}

@@ -8,7 +8,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
 $prj $basedir $perldir $perlurl $app_title $app_subtitle
-&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log
+&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state
 );
 use lib "/srv/www/cgi-bin/modules";
 use awstandard;
@@ -94,6 +94,17 @@ sub back_log($) {
 		}
 	}
 	return "";
+}
+
+sub running_state($) {
+	my ($name) = @_;
+	my $dir = running_log($name);
+	my $pid = file_content("$dir/os-autoinst.pid");
+	chomp($pid);
+	my $state = file_content("/proc/$pid/status") || "";
+	$state=~m/^State:\s+(\w)\s/m;
+	$state = $1;
+	return ($state eq "T")?0:1;
 }
 
 # get testname by name or path

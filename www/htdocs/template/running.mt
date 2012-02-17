@@ -38,6 +38,7 @@ table {
 		<div class="aligncenter">
 			<? if(is_authorized_rw()) { ?>
 			<a href="/croplive/<?= $testname ?>?getlastimg=1"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
+			<a href="javascript:stopcont()" class="pauseplay pause" id="stopcont" title="pause testrun"></a>
 			<? } ?>
 			<a href="/results/"><img src="/images/back.png" alt="back" title="back to result page" /></a> 
 		</div>

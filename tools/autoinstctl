@@ -6,11 +6,16 @@ use openqa;
 
 my $testname=shift;
 my $action=shift||"cont";
-my $actionlist="stop|cont|kill";
-if(!$testname || $action!~m/^($actionlist)$/) {
+my $actionlist="stop|cont|kill|find";
+if($action!~m/^($actionlist)$/) {
 	die "usage: $0 TESTNAME [$actionlist]\n";
 }
 my $dir=running_log($testname);
+
+if($action eq "find") {
+	print "$dir\n";
+	exit 0;
+}
 
 if($action eq "kill") {
 	my $pid=file_content("$dir/qemu.pid");

@@ -1,0 +1,21 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI qw":standard";
+use lib "/srv/www/cgi-bin/modules";
+use awstandard;
+use openqa;
+
+my $testname = param('testname') || '';
+my $action = param('action') || '';
+
+if($testname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/) { print header(-status=>"403 Forbidden")."Forbidden: invalid name"; exit 0 }
+
+my $basepath = running_log($testname);
+if($basepath eq '') { print header(-status=>"404 Not Found")."Test not found"; exit 0 }
+
+unless($action=~m/stop|cont/) {  print header(-status=>"403 Forbidden")."Forbidden: invalid action"; exit 0 }
+
+system('sudo', '-u', 'geekotest', 'autoinstctl', $testname, $action);
+
+print header({-type=>"text/plain", Content_Encoding=>"none"});
+print running_state($testname);
