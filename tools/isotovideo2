@@ -44,5 +44,5 @@ foreach my $d (@dirs) {
 }
 if(!$found) {die "all dirs (@dirs) are currently in use"}
 print "using testdir=$ENV{testdir}\n";
-exec("/usr/local/bin/withlock", "$ENV{testdir}/$lockname", "tools/isotovideo3");
+exec("withlock", "$ENV{testdir}/$lockname", "tools/isotovideo3");
 die "exec failed: $!";
