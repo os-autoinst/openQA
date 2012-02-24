@@ -25,7 +25,7 @@ syncall: reposync sync gnomesync dvdsync promosync biarchsync
 
 sync:
 	for i in $(seq 1 36) ; do scripts/preparersync ; done
-	/usr/local/bin/withlock sync.lock rsync -aPHv ${bwlimit} ${excludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/ factory/iso/
+	withlock sync.lock rsync -aPHv ${bwlimit} ${excludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/iso/ factory/iso/
 
 prune:
 	-find liveiso/ factory/iso/ -type f -name \*.iso -atime +90 -mtime +90 -print0 | xargs --no-run-if-empty -0 rm -f
@@ -128,7 +128,7 @@ reposync:
 	mkdir -p factory/repo/oss/suse/
 	# first sync all big files without deleting. This keeps consistency
 	# another sync in case server changed during first long sync
-	for i in 1 2 3 ; do date=$$(date +%s) ; /usr/local/bin/withlock reposync.lock rsync -aH ${bwlimit} ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/oss/suse/ factory/repo/oss/suse/ ; test $$(date +%s) -le $$(expr $$date + 200) && break ; done
+	for i in 1 2 3 ; do date=$$(date +%s) ; withlock reposync.lock rsync -aH ${bwlimit} ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/oss/suse/ factory/repo/oss/suse/ ; test $$(date +%s) -le $$(expr $$date + 200) && break ; done
 	# copy meta-data ; delete old files as last step
 	-rsync -aPHv --delete-after ${repoexcludes} rsync://${rsyncserver}/opensuse-full-with-factory/opensuse/factory/repo/ factory/repo/
 preparesnapshot: sync reposync dvdsync updatechangedb
@@ -294,7 +294,7 @@ video/openSUSE-%.ogv: liveiso/openSUSE-%.iso
 	#ffmpeg -t 100 -i $< -i /home/bernhard/public_html/mirror/opensuse/music/www.musopen.com/161.mp3 -vcodec copy $@
 
 gitcollect:
-	rsync -a /srv/www/ www/
+	#rsync -a /srv/www/ www/
 	rsync -a /usr/local/bin/umlffmpeg ./tools/
 	rsync -a /etc/apparmor.d/{srv.www,usr.sbin.{httpd,rsyncd}}* etc/apparmor.d
 	cp -a --parent /etc/apparmor.d/{tunables,abstractions}/openqa* /etc/apparmor.d/abstractions/imagemagick .
