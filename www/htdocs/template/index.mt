@@ -9,7 +9,7 @@
 	<div class="box-header aligncenter">
 		Recent issues in Factory
 	</div>
-	<?= $self->include_file("/srv/www/htdocs/includes/knownissues") ?>
+	<?= $self->include_file("../../htdocs/includes/knownissues") ?>
 </div>
 
 <div class="grid_10 box box-shadow omega">
@@ -41,7 +41,7 @@
 	 <a title="SUSE" href="http://en.opensuse.org/Sponsors"><img alt="SUSE" src="/images/suse.png" title="SUSE" height="58" width="99" /></a>
 &nbsp;
 	  <a title="B1 Systems" href="http://www.b1-systems.de/">
-	    <img alt="B1-systems" src="https://static.opensuse.org/themes/bento/images/sponsors/sponsor_b1-systems.png" height="60" width="60" /></a>
+	    <img alt="B1-systems" src="/images/b1-systems.png" height="60" width="60" /></a>
 	  <br/>
 	  <br/>
 ? }

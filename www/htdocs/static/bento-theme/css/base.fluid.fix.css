@@ -1,0 +1,9 @@
+.box-footer {
+/* this does not work with fluid 960gs */
+/*	position: absolute;*/
+/*	bottom: 0px;*/
+/*	left: 0;*/
+/*	margin-bottom: 0!important;*/
+	position: relative;
+	margin-bottom: -15px!important;
+}
