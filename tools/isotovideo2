@@ -3,10 +3,8 @@
 use strict;
 use Time::HiRes qw(sleep);
 use Fcntl qw(:DEFAULT :flock);
-use lib "/srv/www/cgi-bin/modules";
-use awstandard;
 
-my @dirs=</mnt/ssd/pool/?>;
+my @dirs=<pool/?>;
 my $lockname="kvm2.lock";
 my $allocname="queuesched.pid";
 #print "@dirs\n";

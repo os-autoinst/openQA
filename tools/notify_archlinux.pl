@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 use strict;
-use lib "/srv/www/cgi-bin/modules";
+use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
 use openqa;
 

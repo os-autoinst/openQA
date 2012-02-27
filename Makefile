@@ -14,7 +14,7 @@ excludes+=--exclude="*Addon*"
 repourl=http://widehat.opensuse.org/repositories/
 rsyncserver=stage.opensuse.org
 dvdpath=/factory-all-dvd/iso/
-testdir=testrun-manual
+testdir=pool/manual
 buildnr=$(shell cat factory-testing/repo/oss/media.1/build)
 testedbuildnr=$(shell cat factory-tested/repo/oss/media.1/build)
 #dvdpath=/factory-all-dvd/11.3-isos/
@@ -307,7 +307,7 @@ janitor:
 
 clean:
 	rm -f factory/iso/*-current-Media.iso.zsync
-	rm -rf /mnt/ssd/pool/*/{testresults,video,raid,qemuscreenshot}/*
-	rm -f /mnt/ssd/pool/*/qemu.pid
+	rm -rf pool/*/{testresults,video,raid,qemuscreenshot}/*
+	rm -f pool/*/qemu.pid
 	find video -size 0 | xargs --no-run-if-empty rm -f
 

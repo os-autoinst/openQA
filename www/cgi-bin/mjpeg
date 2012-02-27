@@ -4,7 +4,7 @@ use CGI qw":standard";
 BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
 use Image::Magick;
 use Time::HiRes qw(sleep);
-use lib "/srv/www/cgi-bin/modules";
+use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
 use openqa;
 
