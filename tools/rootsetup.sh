@@ -11,6 +11,6 @@ cp -a tools/autoinstctl /usr/local/bin/
 a2enmod rewrite
 /etc/init.d/apache2 restart
 
-mkdir logs
+mkdir -p logs
 chown geekotest.www logs perl/autoinst/testimgs # make it writable for apache
 chmod g+w logs perl/autoinst/testimgs
