@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #echo video/ogg ogv >> /etc/mime.types
-zypper in make apache2 perl-PerlMagick vorbis-tools perl-Perl-Tidy perl-Text-MicroTemplate-Extended
+zypper in make apache2 perl-PerlMagick vorbis-tools perl-Perl-Tidy perl-Text-MicroTemplate-Extended perl-JSON
 #cpan Text::MicroTemplate::Extended
 
 cp -a etc/apache2/* /etc/apache2/
