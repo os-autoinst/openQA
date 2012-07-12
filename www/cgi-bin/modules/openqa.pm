@@ -255,7 +255,7 @@ sub syntax_highlight($)
 }
 
 sub data_name($) {
-	$_[0]=~m/^.*\/(.*)\.\w\w\w$/;
+	$_[0]=~m/^.*\/(.*)\.\w\w\w(?:\.gz)?$/;
 	return $1;
 }
 

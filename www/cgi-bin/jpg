@@ -14,7 +14,7 @@ $name=~s/\.ppm$//;
 my $fullname="$basedir/$prj/$name.ppm";
 if (!-e $fullname) {
 	$fullname.=".gz";
-	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
+	if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
 }
 $p->Read($fullname, depth=>8);
 
