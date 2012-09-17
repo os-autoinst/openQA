@@ -163,8 +163,10 @@ newgnomevideos: $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISO
 video/%.ogv: factory/iso/%-Media.iso
 	in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
+video/%-doc.ogv: factory/iso/%-Media.iso
+	DOCRUN=1 QEMUVGA=std in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-de.ogv: factory/iso/%-Media.iso
-	INSTLANG=de_DE QEMUVGA=std in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	DOCRUN=1 INSTLANG=de_DE QEMUVGA=std in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-lxde.ogv: factory/iso/%-Media.iso
 	export DESKTOP=lxde ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
@@ -183,13 +185,23 @@ video/%-usbboot.ogv: factory/iso/%-Media.iso
 video/%-usbinst.ogv: factory/iso/%-Media.iso
 	USBBOOT=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-nice.ogv: factory/iso/%-Media.iso
-	NICEVIDEO=1 REBOOTAFTERINSTALL=0 SCREENSHOTINTERVAL=0.25 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+	NICEVIDEO=1 DOCRUN=1 REBOOTAFTERINSTALL=0 SCREENSHOTINTERVAL=0.25 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-live.ogv: factory/iso/%-Media.iso
 	LIVETEST=1 REBOOTAFTERINSTALL=0 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-RAID0.ogv: factory/iso/%-Media.iso
+	export RAIDLEVEL=`echo $@ | sed 's/.*RAID\([0-9]*\)\.ogv$$/\1/'` ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-RAID1.ogv: factory/iso/%-Media.iso
+	export RAIDLEVEL=`echo $@ | sed 's/.*RAID\([0-9]*\)\.ogv$$/\1/'` ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID10.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=10 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-RAID5.ogv: factory/iso/%-Media.iso
 	export RAIDLEVEL=5 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-splitusr.ogv: factory/iso/%-Media.iso
+	SPLITUSR=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-cryptlvm.ogv: factory/iso/%-Media.iso
+	REBOOTAFTERINSTALL=0 ENCRYPT=1 LVM=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-btrfscryptlvm.ogv: factory/iso/%-Media.iso
+	BTRFS=1 ENCRYPT=1 LVM=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
 # Debian
 debian: debian-32 debian-64
@@ -223,6 +235,10 @@ video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv: distribution/11.4/iso/openSUS
 Tumbleweed-kde64: video/openSUSE-Tumbleweed-x86_64-$d-11.4kde64.ogv
 video/openSUSE-Tumbleweed-x86_64-$d-11.4kde64.ogv: distribution/11.4/iso/openSUSE-DVD-x86_64-11.4dummy.iso
 	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Tumbleweed:/Testing/openSUSE_Tumbleweed_standard/ export UPGRADE=/space2/opensuse/img/opensuse-11.4-kde-64.img ; TUMBLEWEED=1 NOINSTALL=1 ZDUP=1 DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-12.1gnome32dup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space2/opensuse/img/opensuse-12.1-gnome-32.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-12.1gnome32zdup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/space2/opensuse/img/opensuse-12.1-gnome-32.img ; NOINSTALL=1 ZDUP=1 DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.4kde64zdup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.4-kde-64.img ; NOINSTALL=1 ZDUP=1 DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-11.4kde64dup.ogv: factory/iso/%-Media.iso
@@ -250,6 +266,8 @@ video/%-11.1dup.ogv: factory/iso/%-Media.iso
 
 video/%-basesystemdevel.ogv: factory/iso/%-Media.iso
 	ADDONURL=${repourl}Base:/System/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-zyppdevel.ogv: factory/iso/%-Media.iso
+	ADDONURL=${repourl}zypp:/Head/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-yastdevel.ogv: factory/iso/%-Media.iso
 	ADDONURL=${repourl}YaST:/Head/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-kerneldevel.ogv: factory/iso/%-Media.iso
