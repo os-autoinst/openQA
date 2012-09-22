@@ -110,12 +110,13 @@ for my $r (<$resultdir/*.autoinst.txt>) {
   $builds{$build} = gmtime($mtime);
 }
 
+my $readonly=!is_authorized_rw();
 
 # template
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { resultlist => \@sorted_list, options => \%options, builds => \%builds, desktops => [qw"kde gnome xfce lxde"] },
+	template_args => { resultlist => \@sorted_list, options => \%options, builds => \%builds, desktops => [qw"kde gnome xfce lxde"], readonly=>$readonly },
 	macro => { sortarrows => sub { encoded_string(sortkeys(\%options, $_[0])); } },
 );
 

@@ -39,6 +39,8 @@
 			<td><span class="result<?= lc($r->{'result'}) ?> textlink <?= ($r->{'result'} eq 'fail')?'tooltip':'' ?>" style="display: inline-block; width: 5em;">
         <? if ($r->{'result'} eq 'testing') { ?>
           <a href="/running/<?= $r->{'testname'} ?>"><?= $r->{'result'} ?></a>
+        <? } elsif (!$readonly && $r->{'result'} eq 'missing') { ?>
+          <a title="click to schedule" href="/cgi-bin/schedule/<?= $r->{'testname'} ?>"><?= $r->{'result'} ?></a>
         <? } elsif ($r->{'result'} eq 'missing' || $r->{'result'} eq 'n/a') { ?>
           <?= $r->{'result'} ?>
         <? } elsif ($r->{'result'} eq 'fail') { ?>

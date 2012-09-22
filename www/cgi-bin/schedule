@@ -1,0 +1,22 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use FindBin;
+use lib "$FindBin::Bin/modules";
+use openqa;
+
+my $name=$ENV{PATH_INFO};
+$name=~s{^/}{};
+$name=~s/[^a-zA-Z0-9.+_-]//g; # sanitize
+$|=1;
+
+print header(-type=>"text/plain");
+if(!is_authorized_rw()) {
+  print "denied"
+} else {
+  if(open(my $fd, ">", "$basedir/$prj/schedule.d/$name")) {
+    print "scheduled test $name";
+  } else {
+    print "error: $!";
+  }
+}
