@@ -1,6 +1,6 @@
 @import url(container18.css);
 
-td { text-align: center ;}
+td { text-align: center; vertical-align: middle; }
 td { padding: 0.3em 0.6em; }
 tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
 tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
@@ -9,6 +9,18 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 .resultunknown {background-color:#ff9 ;}
 .resultwarning {background-color:#ff9 ;}
 .resultfail {background-color:#faa ;}
+.resultmissing {background-color: #ddd; }
+.resulttesting {background-color: #9df; }
+
+.textlink a {
+  text-decoration: none;
+  color: #444;
+}
+
+.textlink a:hover {
+  text-decoration: underline;
+  color: #444;
+}
 
 .overviewok {color: #248509 ;}		/* dark Lemon */
 .overviewunknown {background-color:#ff9 ;}
@@ -199,3 +211,29 @@ a.pauseplay.pause {
 a.pauseplay.play {
 	background-position: -23px 0;
 }
+ 
+/* tooltips */
+
+.tooltip {
+  /*cursor: help;*/
+  position: relative;
+}
+.tooltip span.box {
+  margin-left: -999em;
+  position: absolute;
+  padding: 0.8em 1em;
+  opacity: 0.9;
+}
+.tooltip:hover span.box {
+  /*border-radius: 5px 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px; 
+  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1); -webkit-box-shadow: 5px 5px rgba(0, 0, 0, 0.1); -moz-box-shadow: 5px 5px rgba(0, 0, 0, 0.1);
+  font-family: Calibri, Tahoma, Geneva, sans-serif;*/
+  position: absolute;
+  left: 4.5em;
+  top: 1.3em;
+  z-index: 99;
+  margin-left: 0;
+  width: 150px;
+}
+
+/* tooltips end */

@@ -1,0 +1,124 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use FindBin;
+use lib "$FindBin::Bin/modules";
+use awstandard;
+use sort_list;
+use openqa;
+use Text::MicroTemplate "encoded_string";
+use Text::MicroTemplate::Extended;
+
+# This tool is specific to openSUSE
+# to enable the Release Team to see the quality at a glance
+
+sub get_result($) {
+  my $testname = shift;
+  my $logfile = resultname_to_log($testname);
+  my $result;
+  my %failindicators;
+  if(-e $logfile) {
+    my @s=stat($logfile);
+    my ($logsize,$mtime)=@s[7,9];
+    if($logsize==0) {
+      $result = 'testing';
+    }
+    else {
+      my @lines=parse_log($logfile);
+      my $logresult=parse_log_to_hash(\@lines);
+      $result = $logresult->{overall};
+      for my $res (qw"xterm zypper_up isosize") {
+        $logresult->{$res}=~s/\s.*//;
+        next if($logresult->{$res} eq 'OK');
+        $failindicators{$res} = $logresult->{$res};
+      }
+    }
+  }
+  return {
+    'result'=> $result || 'missing',
+    'testname'=> $testname,
+    'fails'=> \%failindicators,
+  }
+}
+
+my %options;
+for my $p (qw'sort build') {
+	$options{$p}=param($p);
+}
+if(!defined $options{sort}){$options{sort}="type";}
+my $maxmtime=(stat($ENV{SCRIPT_FILENAME}))[9];
+
+# build
+my $b=$ENV{PATH_INFO};
+$b=~s%^/%%;
+$options{'build'} = $b;
+
+my @list=();
+
+my @results=();
+
+for my $type (qw"NET DVD Promo-DVD DVD-Biarch LiveCD") {
+  my @archs = ("i586", "x86_64");
+  if($type eq "DVD-Biarch") {
+    @archs = ("i586-x86_64")
+  }
+  if($type eq "LiveCD") {
+    @archs = ("i686", "x86_64")
+  }
+  for my $arch (@archs) {
+    my %results;
+    if($type eq "LiveCD") {
+      for my $desktop (qw"KDE GNOME") {
+        push(@results, "openSUSE-$desktop-$type-$arch-$b");
+        $results{lc($desktop)} = get_result("openSUSE-$desktop-$type-$arch-$b");
+      }
+    }
+    else { 
+      for my $desktop ("", qw"-gnome -xfce -lxde") {
+        push(@results, "openSUSE-$type-$arch-$b$desktop");
+        my $adesktop = $desktop || '-kde';
+        $adesktop=~s/^-//;
+        $results{lc($adesktop)} = get_result("openSUSE-$type-$arch-$b$desktop");
+      }
+    }
+    # push line
+    push(@list, {
+      type=>$type, arch=>$arch,
+      results=>\%results
+      }
+    );
+  }
+}
+
+my @sorted_list = sort_list(
+	{},
+	sort_param_to_keys($options{sort}), \@list
+);
+
+
+# last factory builds
+my $maxage=3600*24*10;
+my $resultdir="$basedir/$prj/video";
+my $timelimit = time - $maxage;
+my %builds;
+for my $r (<$resultdir/*.autoinst.txt>) {
+	my ($distri, $type, $arch, $build, $extrainfo)=split_filename($r);
+  next unless($build=~m/^\d{4}$/);
+  my @s=stat($r);
+  my ($logsize,$mtime)=@s[7,9];
+  next if($mtime < $timelimit);
+  $builds{$build} = gmtime($mtime);
+}
+
+
+# template
+
+my $mt = Text::MicroTemplate::Extended->new(
+	include_path  => ['../htdocs/template'],
+	template_args => { resultlist => \@sorted_list, options => \%options, builds => \%builds, desktops => [qw"kde gnome xfce lxde"] },
+	macro => { sortarrows => sub { encoded_string(sortkeys(\%options, $_[0])); } },
+);
+
+#print header(-charset=>"UTF-8", -type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
+print header(-charset=>"UTF-8", -type=>"text/html");
+print $mt->render('buildview');

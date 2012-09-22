@@ -146,7 +146,7 @@ sub split_filename($) { my($fn)=@_;
 }
 
 sub resultname_to_log($)
-{ "/$prj/video/$_[0].ogv.autoinst.txt"; 
+{ "$basedir/$prj/video/$_[0].ogv.autoinst.txt"; 
 }
 sub resultname_to_url($)
 { "http://$hostname/results/$_[0]"; 
@@ -226,7 +226,7 @@ sub sortkeys($$) {
 	my $options = shift;
 	my $sortname = shift;
 	my $suffix = "";
-	$suffix .= ".".$options->{'sort'}."&amp;hours=".$options->{'hours'};
+	$suffix .= ".".$options->{'sort'}.(defined($options->{'hours'})?"&amp;hours=".$options->{'hours'}:"");
 	$suffix .= (defined $options->{'match'})?"&amp;match=".$options->{'match'}:"";
 	$suffix .= ($options->{'ib'})?"&amp;ib=on":"";
 	my $dn_url = "?sort=-".$sortname.$suffix;
