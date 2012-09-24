@@ -15,8 +15,11 @@ $name=~s/\.jpg$//;
 $name=~s/^$prj\///;
 $name=~s/^\/$prj\//\//;
 
-my $fullname="$basedir/$prj/$name.ppm";
-if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
+my $fullname="/$basedir/$prj/$name.ppm";
+if (!-e $fullname) {
+        $fullname.=".gz";
+	if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
+}
 my(undef,undef,$testname,$imgname) = split(/\//, $name);
 my $imgdir=openqa::imgdir($testname);
 my ($testmodule,undef) = split('-',$imgname);
@@ -27,8 +30,8 @@ sub testoptions($) {
 }
 
 # add link to $imgdir/$name*.ppm via png CGI
-my @imglist=map {data_name($_)} <$imgdir/$testmodule-[0-9]*.ppm>;
-my @testlist=map {testoptions($_)} <$imgdir/*-1.ppm>;
+my @imglist=map {data_name($_)} <$imgdir/$testmodule-[0-9]*.ppm*>;
+my @testlist=map {testoptions($_)} <$imgdir/*-1.ppm*>;
 
 # Get Test Result
 my $fqfn="$resultdir/$testname.ogv.autoinst.txt";

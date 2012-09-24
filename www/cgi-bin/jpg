@@ -44,14 +44,15 @@ if($csize && $csize=~m/^\d{1,3}x\d{1,3}$/) {
 my $fixsize=param("fixsize");
 if($fixsize) {
 	my $filesize = -s $fullname;
-	if($filesize < 1440015) {
+	my ($img_width,$img_height) = $p->Get('width','height');
+	if($img_width < 800) {
 		my $p2 = Image::Magick->new(depth=>8);
 		$p2->Set(size=>'800x600');
 		$p2->ReadImage("xc:black");
 		$p2->Composite(image=>$p, compose=>'Over');
 		$p=$p2;
 	}
-	elsif($filesize > 1440015) {
+	elsif($img_width > 800) {
 		$p->Resize('800x600');
 	}
 }
