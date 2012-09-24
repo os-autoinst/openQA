@@ -31,7 +31,6 @@ my @imglist=map {data_name($_)} <$imgdir/$testmodule-[0-9]*.ppm>;
 my @testlist=map {testoptions($_)} <$imgdir/*-1.ppm>;
 
 # Get Test Result
-my $resultdir="$basedir/$prj/video";
 my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 my @lines=parse_log($fqfn);

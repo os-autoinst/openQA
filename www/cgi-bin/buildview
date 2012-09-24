@@ -101,7 +101,6 @@ my @sorted_list = sort_list(
 
 # last factory builds
 my $maxage=3600*24*10;
-my $resultdir="$basedir/$prj/video";
 my $timelimit = time - $maxage;
 my %builds;
 for my $r (<$resultdir/*.autoinst.txt>) {

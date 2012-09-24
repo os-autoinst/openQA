@@ -42,7 +42,7 @@ if(!$readonly && param('deleteclick')) {
 }
 
 if($testname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
-my $fqfn="$basedir/$prj/video/$testname.ogv.autoinst.txt";
+my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 
 my $scriptpath=log_to_scriptpath($fqfn, $testmodule);

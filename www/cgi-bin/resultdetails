@@ -12,7 +12,7 @@ $testname=~s%^/%%;
 if($testname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
 $testname=~s/\.autoinst\.txt$//; $testname=~s/\.ogv$//; # be tolerant in what we accept
 my $imgdir=openqa::imgdir($testname);
-my $fqfn="$basedir/$prj/video/$testname.ogv.autoinst.txt";
+my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 
 my @lines=parse_log($fqfn);

@@ -27,7 +27,6 @@ my $hoursfresh=($options{hours}+0);
 if($hoursfresh<1 || $hoursfresh>900) {$hoursfresh=$defaulthoursfresh}
 my $maxage=3600*$hoursfresh;
 
-my $resultdir="$basedir/$prj/video";
 my @list=();
 my $now=time();
 my $maxmtime=(stat($ENV{SCRIPT_FILENAME}))[9];
