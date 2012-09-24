@@ -7,15 +7,16 @@ our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
-$prj $basedir $perldir $perlurl $app_title $app_subtitle
-&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state
+$prj $basedir $perldir $perlurl $scheduledir $app_title $app_subtitle
+&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state
 );
-use lib "/usr/share/openqa/cgi-bin/modules";
+#use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
 our $basedir="/usr/lib";
 our $prj="openqa";
 our $perlurl="$prj/perl/autoinst";
 our $perldir="$basedir/$perlurl";
+our $scheduledir="$basedir/$prj/schedule.d";
 our $hostname="openqa.opensuse.org";
 our $app_title = 'openQA';
 our $app_subtitle = 'openSUSE automated testing';
@@ -157,6 +158,12 @@ sub is_authorized_rw()
 	my $ip=$ENV{REMOTE_ADDR};
 	return 1 if($ip eq "195.135.221.2" || $ip eq "78.46.32.14" || $ip=~m/^2001:6f8:11fc:/ || $ip eq "2001:6f8:900:9b2::2" || $ip eq "2a01:4f8:100:9041::2" || $ip=~m/^10\./ || $ip eq "127.0.0.1" || $ip eq "::1");
 	return 0;
+}
+
+sub is_scheduled($)
+{
+	my $testname=shift;
+	return -e "$scheduledir/$testname";
 }
 
 sub get_testimgs($)

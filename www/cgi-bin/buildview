@@ -34,6 +34,9 @@ sub get_result($) {
       }
     }
   }
+  if(!$result && is_scheduled($testname)) {
+    $result="scheduled";
+  }
   return {
     'result'=> $result || 'missing',
     'testname'=> $testname,

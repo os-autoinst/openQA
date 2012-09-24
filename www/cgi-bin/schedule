@@ -14,7 +14,7 @@ print header(-type=>"text/plain");
 if(!is_authorized_rw()) {
   print "denied"
 } else {
-  if(open(my $fd, ">", "$basedir/$prj/schedule.d/$name")) {
+  if(open(my $fd, ">", "$scheduledir/$name")) {
     print "scheduled test $name";
   } else {
     print "error: $!";

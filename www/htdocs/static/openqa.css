@@ -11,6 +11,7 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 .resultfail {background-color:#faa ;}
 .resultmissing {background-color: #ddd; }
 .resulttesting {background-color: #9df; }
+.resultscheduled {background-color: #bef; }
 
 .textlink a {
   text-decoration: none;

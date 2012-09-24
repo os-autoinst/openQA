@@ -41,8 +41,8 @@
           <a href="/running/<?= $r->{'testname'} ?>"><?= $r->{'result'} ?></a>
         <? } elsif (!$readonly && $r->{'result'} eq 'missing') { ?>
           <a title="click to schedule" href="/cgi-bin/schedule/<?= $r->{'testname'} ?>"><?= $r->{'result'} ?></a>
-        <? } elsif ($r->{'result'} eq 'missing' || $r->{'result'} eq 'n/a') { ?>
-          <?= $r->{'result'} ?>
+        <? } elsif ($r->{'result'} eq 'OK') { ?>
+          <a href="/results/<?= $r->{'testname'} ?>"><?= $r->{'result'} ?></a>
         <? } elsif ($r->{'result'} eq 'fail') { ?>
           <a href="/results/<?= $r->{'testname'} ?>">
             <?= $r->{'result'} ?>
@@ -54,7 +54,7 @@
             </span>
           </a>
         <? } else { ?>
-          <a href="/results/<?= $r->{'testname'} ?>"><?= $r->{'result'} ?></a>
+          <?= $r->{'result'} ?>
         <? } ?>
       </span></td>
       <? } ?>
