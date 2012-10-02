@@ -58,8 +58,6 @@ $options{'build'} = $b;
 
 my @list=();
 
-my @results=();
-
 for my $type (qw"NET DVD Promo-DVD DVD-Biarch LiveCD") {
   my @archs = ("i586", "x86_64");
   if($type eq "DVD-Biarch") {
@@ -72,13 +70,11 @@ for my $type (qw"NET DVD Promo-DVD DVD-Biarch LiveCD") {
     my %results;
     if($type eq "LiveCD") {
       for my $desktop (qw"KDE GNOME") {
-        push(@results, "openSUSE-$desktop-$type-$arch-$b");
         $results{lc($desktop)} = get_result("openSUSE-$desktop-$type-$arch-$b");
       }
     }
     else { 
       for my $desktop ("", qw"-gnome -xfce -lxde") {
-        push(@results, "openSUSE-$type-$arch-$b$desktop");
         my $adesktop = $desktop || '-kde';
         $adesktop=~s/^-//;
         $results{lc($adesktop)} = get_result("openSUSE-$type-$arch-$b$desktop");
