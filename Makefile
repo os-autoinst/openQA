@@ -154,7 +154,7 @@ NEWISOS=$(shell find factory/iso/ -name "*[DN][VE][DT]*Build*-Media.iso" -mtime 
 NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${newdays}|sort -r -t- -k4|head -2 ; find factory/iso/ -name "*DVD*Build*-Media.iso" -mtime -${newdays})
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
 NEWOGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS)) $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
-scheduledvideos=$(patsubst %,video/%.ogv,$(shell cd schedule.d/ ; ls * ))
+scheduledvideos=$(patsubst %,video/%.ogv,$(shell cd schedule.d/ ; ls ))
 allvideos: $(OGGS)
 newvideos: $(NEWOGGS) Tumbleweed-kde64 Tumbleweed-gnome32 debian archlinux $(scheduledvideos)
 newlxdevideos: $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
