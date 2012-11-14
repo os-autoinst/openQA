@@ -55,7 +55,7 @@
 			<td><?= $test->{'distri'} ?></td>
 			<td><?= $test->{'type'} ?></td>
 			<td><?= $test->{'arch'} ?></td>
-			<td><span class="<?= (!defined $test->{'res_overall'} || $test->{'res_overall'} eq "OK")?'':'overviewfail' ?>"><?= $test->{'build'} ?></span></td>
+			<td><span class="textlink <?= (!defined $test->{'res_overall'} || $test->{'res_overall'} eq "OK")?'':'overviewfail' ?>"><a href="/buildview/Build<?= $test->{'build'} ?>"><?= $test->{'build'} ?></a></span></td>
 			<td><span class="<?= (!defined $test->{'res_overall'} || $test->{'res_overall'} eq "OK")?'':'overviewfail' ?>"><?= $test->{'extrainfo'} ?></span></td>
 			<td><?= AWisodatetime2($test->{'mtime'}) ?></td>
 			<td><span class="overviewok"><?= ($test->{'res_ok'})?$test->{'res_ok'}:'' ?></span></td>
