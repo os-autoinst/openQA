@@ -5,7 +5,7 @@ var running_state = 1;
 
 function scrolldown() {
 	if(window.scrolldownc) {
-		document.getElementById("livelog").contentWindow.scrollTo(0, 99999999);
+		document.getElementById("livelog").contentWindow.scrollTo(0, 999999);
 	}
 	window.setTimeout("scrolldown()", 50);
 }
