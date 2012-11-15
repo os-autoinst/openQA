@@ -55,7 +55,7 @@ table {
 		<div style="margin: 0 10px;">
 			<div style="width: 800px; height: 600px; background-color: #202020;">
 				<? if($running) { ?>
-				<img src="/mjpeg/<?= $testname ?>" alt="Waiting for new Images..." />
+				<img src="/mjpeg/<?= $testname ?>" alt="Waiting for new Images..." style="width: 800px; height: 600px;" />
 				<? } else { ?>
 				<font color="red"><b>Error:</b> Test not running!</font>
 				<? } ?>

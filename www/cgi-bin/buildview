@@ -81,8 +81,10 @@ for my $type (qw"NET DVD Promo-DVD DVD-Biarch LiveCD") {
       }
     }
     # push line
+    my $t=$type;
+    $t=~s/Promo-DVD/DVD-Promo/;
     push(@list, {
-      type=>$type, arch=>$arch,
+      type=>$t, arch=>$arch,
       results=>\%results
       }
     );
