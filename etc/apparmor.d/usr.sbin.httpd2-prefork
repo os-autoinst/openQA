@@ -134,11 +134,14 @@
   # php session state
   /var/lib/php/sess_*                rwl,
 
+  /proc/sys/crypto/fips_enabled      r,
+
   # openqa exported data
   /srv/www/cgi-bin/rechecklog        rUx,
   /srv/www/cgi-bin/uploadlog         rUx,
   /srv/www/cgi-bin/livelog           rUx,
   /srv/www/cgi-bin/croplive          rUx,
+  /srv/www/cgi-bin/stopcont          rUx,
   /srv/www/cgi-bin/tdata             rUx,
   /srv/www/cgi-bin/**                rpx,
 
