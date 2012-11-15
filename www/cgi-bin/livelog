@@ -3,7 +3,8 @@ use strict;
 use CGI qw":standard";
 use Time::HiRes qw(sleep);
 use JSON;
-use lib "/usr/share/openqa/cgi-bin/modules";
+use FindBin;
+use lib "$FindBin::Bin/modules";
 use awstandard;
 use openqa;
 
