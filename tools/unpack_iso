@@ -1,0 +1,18 @@
+#!/bin/sh
+# needs zypper -n in fuseiso
+
+b=$1
+shift
+mnt=temp/mnt
+mkdir -p $mnt
+
+for iso in "$@" ; do
+	target=$b/$(perl -e '$_=shift; s{.*/}{}; s/-Build\d{4}.*//;print' $iso)
+	echo "unpacking $iso to $target"
+	fuseiso $iso $mnt
+
+	mkdir -p $target
+	rsync -aH --delete-after $mnt/ $target/
+
+	fusermount -u $mnt
+done
