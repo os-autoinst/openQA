@@ -9,7 +9,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<link href="/favicon.ico" rel="shortcut icon" />
 	<? block csstype => sub { ?>
-	<link href="/static/bento-theme/css/style.css" media="screen" rel="stylesheet" title="Normal" type="text/css" />
+	<link href="http://static.opensuse.org/themes/bento/css/style.css" media="screen" rel="stylesheet" title="Normal" type="text/css" />
 	<? } ?>
 	<link href="/static/openqa.css" media="screen" rel="stylesheet" type="text/css" />
 	<? block additional_headlines => sub { } ?>

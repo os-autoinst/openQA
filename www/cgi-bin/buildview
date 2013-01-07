@@ -13,35 +13,35 @@ use Text::MicroTemplate::Extended;
 # to enable the Release Team to see the quality at a glance
 
 sub get_result($) {
-  my $testname = shift;
-  my $logfile = resultname_to_log($testname);
-  my $result;
-  my %failindicators;
-  if(-e $logfile) {
-    my @s=stat($logfile);
-    my ($logsize,$mtime)=@s[7,9];
-    if($logsize==0) {
-      $result = 'testing';
-    }
-    else {
-      my @lines=parse_log($logfile);
-      my $logresult=parse_log_to_hash(\@lines);
-      $result = $logresult->{overall};
-      for my $res (qw"xterm zypper_up isosize") {
-        $logresult->{$res}=~s/\s.*//;
-        next if($logresult->{$res} eq 'OK');
-        $failindicators{$res} = $logresult->{$res};
-      }
-    }
-  }
-  if(!$result && is_scheduled($testname)) {
-    $result="scheduled";
-  }
-  return {
-    'result'=> $result || 'missing',
-    'testname'=> $testname,
-    'fails'=> \%failindicators,
-  }
+	my $testname = shift;
+	my $logfile = resultname_to_log($testname);
+	my $result;
+	my %failindicators;
+	if(-e $logfile) {
+		my @s=stat($logfile);
+		my ($logsize,$mtime)=@s[7,9];
+		if($logsize==0) {
+			$result = 'testing';
+		}
+		else {
+			my @lines=parse_log($logfile);
+			my $logresult=parse_log_to_hash(\@lines);
+			$result = $logresult->{overall};
+			for my $res (qw"xterm zypper_up isosize") {
+				$logresult->{$res}=~s/\s.*//;
+				next if($logresult->{$res} eq 'OK');
+				$failindicators{$res} = $logresult->{$res};
+			}
+		}
+	}
+	if(!$result && is_scheduled($testname)) {
+		$result="scheduled";
+	}
+	return {
+		'result'=> $result || 'missing',
+		'testname'=> $testname,
+		'fails'=> \%failindicators,
+	}
 }
 
 my %options;

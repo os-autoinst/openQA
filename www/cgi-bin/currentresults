@@ -12,7 +12,7 @@ use Text::MicroTemplate::Extended;
 my $defaulthoursfresh=4*24;
 
 my %options;
-for my $p (qw'sort hours ib match') {
+for my $p (qw'sort hours ib match ob') {
 	$options{$p}=param($p);
 }
 if($options{ib}) {
@@ -39,15 +39,30 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	next if($options{match} && $r!~m/$options{match}/);
 	my ($distri, $type, $arch, $build, $extrainfo)=split_filename($r);
 	my $testname = path_to_testname($r);
+
+	my $backend_info;
+	my $run_stat = {};
+
 	my @lines=parse_log($r);
 	my $parsed=parse_log_to_stats(\@lines);
 	my $result=parse_log_to_hash(\@lines);
 	my $running = 0;
 	if($logsize==0) {
+		# running
+		my $running_basepath = running_log($testname);
+		$backend_info = parse_log_json($running_basepath.'currentautoinst-log.txt');
 		my $url=path_to_url($r);
+		$run_stat = get_running_modinfo($running_basepath);
+		$run_stat->{'run_backend'} = 0;
+		if(-e "$running_basepath/os-autoinst.pid") {
+			my $backpid = file_content("$running_basepath/os-autoinst.pid");
+			chomp($backpid);
+			$run_stat->{'run_backend'} = (-e "/proc/$backpid"); # kill 0 does not work with www user
+		}
 		$running = 1;
 	}
 	else {
+		$backend_info = parse_log_json($r);
 		if( open(FD, $r) ) {
 			my $timeline = <FD>;
 			chomp($timeline);
@@ -57,14 +72,19 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 		}
 		close(FD);
 	}
+	my $backend = $backend_info->{'backend'} || '';
+	$backend =~s/^.*:://;
 	if($options{ib}) {
 		next if(boring::is_boring($r, $result));
 	}
+	if($options{ob}) {
+		next if($options{ob} ne "" and $options{ob} ne $backend);
+	}
 	push(@list, {
 		testname=>$testname, running=>$running, distri=>$distri, type=>$type, arch=>$arch,
-		build=>$build, extrainfo=>$extrainfo, mtime=>$mtime,
+		build=>$build, extrainfo=>$extrainfo, mtime=>$mtime, backend => $backend,
 		res_ok=>$parsed->{OK}||0, res_unknown=>$parsed->{unknown}||0, res_fail=>$parsed->{fail}||0,
-		res_overall=>$result->{overall}
+		res_overall=>$result->{overall}, run_stat=>$run_stat
 		}
 	);
 }
@@ -79,6 +99,12 @@ my $mt = Text::MicroTemplate::Extended->new(
 	template_args => { resultlist => \@sorted_list, options => \%options, hoursfresh=>$hoursfresh },
 	macro => { sortarrows => sub { encoded_string(sortkeys(\%options, $_[0])); } },
 );
+
+foreach my $rundir (@runner) {
+	my @s = stat($rundir.'/currentstep');
+	my $mtime = $s[9];
+	if($mtime>$maxmtime){$maxmtime=$mtime}
+}
 
 print header(-charset=>"UTF-8", -type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
 print $mt->render('currentresults');

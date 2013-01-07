@@ -72,9 +72,11 @@ if(-e "$backlogpath/l1") {
 	}
 }
 
+my $backend_info = parse_log_json($fqfn);
+
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { modlist => \@modlist, testname => $testname, diskimg => $diskimg },
+	template_args => { modlist => \@modlist, testname => $testname, diskimg => $diskimg, backend_info => $backend_info },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

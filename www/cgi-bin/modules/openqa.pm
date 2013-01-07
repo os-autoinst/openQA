@@ -7,11 +7,13 @@ our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
-$prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle
-&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state
+$prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle @runner
+&parse_log &parse_log_to_stats &parse_log_to_hash &parse_log_json &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo
 );
+#use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
-our $basedir="/usr/lib";
+use JSON "decode_json";
+our $basedir="/opt";
 our $prj="openqa";
 our $perlurl="$prj/perl/autoinst";
 our $perldir="$basedir/$perlurl";
@@ -21,7 +23,11 @@ our $hostname="openqa.opensuse.org";
 our $app_title = 'openQA';
 our $app_subtitle = 'openSUSE automated testing';
 
-sub parse_log($) { my($fn)=@_;
+our @runner = <$basedir/$prj/pool/[0-9]>;
+push(@runner, "$basedir/$prj/pool/manual");
+
+sub parse_log($) {
+	my($fn)=@_;
 	open(my $fd, "<", $fn) || return;
 	seek($fd, -4095, 2);
 	my $logdata;
@@ -34,7 +40,8 @@ sub parse_log($) { my($fn)=@_;
 	return @lines;
 }
 
-sub parse_log_to_stats($) { my($lines)=@_;
+sub parse_log_to_stats($) {
+	my($lines)=@_;
 	my %stats;
 	foreach my $entry (@$lines) {
 		my $result=$entry->[1];
@@ -43,7 +50,9 @@ sub parse_log_to_stats($) { my($lines)=@_;
 	}
 	return \%stats;
 }
-sub parse_log_to_hash($) { my($lines)=@_;
+
+sub parse_log_to_hash($) {
+	my($lines)=@_;
 	my %results=();
 	foreach my $entry (@$lines) {
 		$results{$entry->[0]}=$entry->[1];
@@ -51,12 +60,24 @@ sub parse_log_to_hash($) { my($lines)=@_;
 	return \%results;
 }
 
+sub parse_log_json($) {
+	my $fn = shift;
+	open(my $fd, "<", $fn) or return undef;
+	my $line_limit = 100;
+	while(my $line=<$fd>) {
+		return undef unless($line_limit-- > 0);
+		next unless $line=~m/^\+\+\+BACKEND_JSON: (.*)$/;
+		return decode_json($1);
+	}
+	return undef;
+}
+
 # find the full pathname to a given testrun-logfile and test name
 sub log_to_scriptpath($$)
 { my($fn,$testname)=@_;
 	open(my $fd, "<", $fn) or return undef;
 	while(my $line=<$fd>) {
-		next unless $line=~m/^(?:scheduling|starting) $testname (\S*)/;
+		next unless $line=~m/^(?:scheduling|\|\|\| starting|starting) $testname (\S*)/;
 		return $1;
 	}
 	return undef;
@@ -64,8 +85,6 @@ sub log_to_scriptpath($$)
 
 sub running_log($) {
 	my ($name) = @_;
-	my @runner = <$basedir/$prj/pool/[0-9]>;
-	push(@runner, "$basedir/$prj/pool/manual");
 	foreach my $path (@runner) {
 		my $testfile = $path."/testname";
 		open(my $fd, $testfile) || next ;
@@ -107,6 +126,49 @@ sub running_state($) {
 	$state = $1;
 	return ($state eq "T")?0:1;
 }
+
+sub get_running_modinfo($) {
+	my $mybasepath = shift;
+	unless(-e $mybasepath.'currentstep') {return undef}
+	my (undef, $currentstep) = split(' ', file_content($mybasepath.'currentstep'));
+	my $filecontent = file_content($mybasepath.'currentautoinst-log.txt') || '';
+	my @modules = $filecontent=~m/^scheduling\s(\w+)\s.*\/(\w+)\.d\/.*\.pm$/gm;
+	my $found = 0;
+	unless ($currentstep and grep(/^$currentstep$/, @modules)) {
+		# all modules are todo as the 1st step is not yet running
+		$found = 1;
+	}
+	my $modlist = [];
+	my $current_item = '';
+	my $last_category = '';
+	my $donecount = 0;
+	cycle(1);
+	# every 2nd item is the category name
+	my $i = 0;
+	foreach my $module (@modules) {
+		if(cycle() eq 'even') {
+			if($last_category ne $module) {
+				push(@$modlist, {'category' => $module, 'modules' => []});
+			}
+			$last_category = $module;
+			my $modstate = 'done';
+			if($found) {$modstate = 'todo'}
+			elsif ($current_item=~m/^$currentstep$/) {
+				$found = 1;
+				$modstate = 'current';
+				$donecount = $i;
+			}
+			my $moditem = {'name' => $current_item, 'state' => $modstate};
+			push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
+			++$i;
+		}
+		else {
+			$current_item = $module;
+		}
+	}
+	return {'modlist' => $modlist, 'modcount' => scalar(@modules)/2, 'moddone' => $donecount};
+}
+
 
 # get testname by name or path
 sub path_to_testname($) {

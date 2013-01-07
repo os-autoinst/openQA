@@ -192,6 +192,7 @@ li.mod-done {
 
 li.mod-current {
 	list-style-image:url(../images/step-current.png);
+	font-weight: bold;
 }
 
 li.mod-todo {
@@ -238,3 +239,24 @@ a.pauseplay.play {
 }
 
 /* tooltips end */
+
+/* progressbar */
+
+/* thanks to http://www.useragentman.com/blog/2012/01/03/cross-browser-html5-progress-bars-in-depth/ */
+
+.pbox {
+	position: relative;
+	z-index: +1;
+}
+
+.pbox progress {
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	z-index: -1;
+	overflow: hidden;
+}
+
+/* progressbar end */

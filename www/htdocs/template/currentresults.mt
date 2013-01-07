@@ -2,7 +2,7 @@
 
 ? block locbar => sub {
 ?= super()
-&gt; Results
+&gt; <a href="/results/">Results</a>
 ? }
 
 ? block content => sub {
@@ -15,7 +15,7 @@
 <div class="grid_11 box box-shadow omega">
 	<h2>Test result overview</h2>
 	<p>This page lists <?= @$resultlist ?> automated test-results from the last <?= $hoursfresh ?> hours.</p>
-		<form method="get" action="" class="cutofftimeform">
+		<form method="get" action="" class="cutofftimeform" id="filterform">
 			<input type="hidden" name="sort" value="<?= $options->{'sort'} ?>" />
 			<select name="hours">
 				<? for my $hv (24,96,200,300) { ?>
@@ -25,12 +25,19 @@
 			<input type="text" name="match"<? if(defined $options->{'match'}) { ?> value="<?= $options->{'match'} ?>"<? } ?> />
 			filter
 			<label><input type="checkbox" name="ib" value="on"<? if($options->{'ib'}) { ?> checked="checked"<? } ?> />ignore boring results</label>
+			<select name="ob" onchange="document.getElementById('filterform').submit();">
+				<option value="">All Backends</option>
+				<option<?= ($options->{'ob'} eq 'kvm2usb')?' selected="selected':'' ?>>kvm2usb</option>
+				<option<?= ($options->{'ob'} eq 'qemu')?' selected="selected':'' ?>>qemu</option>
+				<option<?= ($options->{'ob'} eq 'vbox')?' selected="selected':'' ?>>vbox</option>
+			</select>
 			<input type="submit" value="change" class="smbutton" />
 		</form>
 	<p />
 	<table style="width: 95%;">
 		<tr>
 			<th>link</th>
+			<th>backend<?= sortarrows('backend') ?></th>
 			<th>distri<?= sortarrows('distri') ?></th>
 			<th>type<?= sortarrows('type') ?></th>
 			<th>arch<?= sortarrows('arch') ?></th>
@@ -52,15 +59,37 @@
 				<a href="/<?= $prj ?>/video/<?= $test->{'testname'} ?>.ogv"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
 				<? } ?>
 			</td>
+			<td><?= $test->{'backend'} ?></td>
 			<td><?= $test->{'distri'} ?></td>
 			<td><?= $test->{'type'} ?></td>
 			<td><?= $test->{'arch'} ?></td>
 			<td><span class="textlink <?= (!defined $test->{'res_overall'} || $test->{'res_overall'} eq "OK")?'':'overviewfail' ?>"><a href="/buildview/Build<?= $test->{'build'} ?>"><?= $test->{'build'} ?></a></span></td>
 			<td><span class="<?= (!defined $test->{'res_overall'} || $test->{'res_overall'} eq "OK")?'':'overviewfail' ?>"><?= $test->{'extrainfo'} ?></span></td>
 			<td><?= AWisodatetime2($test->{'mtime'}) ?></td>
+			<? if($test->{'running'}) { ?>
+? #<td colspan="3"><?= $test->{'run_stat'}->{'moddone'} ?> / <?= $test->{'run_stat'}->{'modcount'} ?></td>
+				<td colspan="3" style="padding: 3px 4px;">
+					<div class="pbox">
+						<? my $ptext = ""; ?>
+						<? if($test->{'run_stat'}->{'modcount'} > 0) { ?>
+						<? $ptext = int($test->{'run_stat'}->{'moddone'} / $test->{'run_stat'}->{'modcount'} * 100)."%"; ?>
+							<? if(!$test->{'run_stat'}->{'run_backend'}) { ?>
+							<? $ptext = "post-processing"; ?>
+							<? } ?>
+						<? } else { ?>
+						<? $ptext = "pre-processing"; ?>
+						<? } ?>
+						<progress style="width: 100%; height: 100%;" max="<?= $test->{'run_stat'}->{'modcount'} ?>" <?= encoded_string(($test->{'run_stat'}->{'run_backend'} and $test->{'run_stat'}->{'modcount'} > 0)?"value='".$test->{'run_stat'}->{'moddone'}."'":"") ?>>
+							<?= $ptext ?>
+						</progress>
+						<?= $ptext ?>
+					</div>
+				</td>
+			<? } else { ?>
 			<td><span class="overviewok"><?= ($test->{'res_ok'})?$test->{'res_ok'}:'' ?></span></td>
 			<td><span class="overviewunknown"><?= encoded_string(($test->{'res_unknown'})?'&nbsp;'.$test->{'res_unknown'}.'&nbsp;':'') ?></span></td>
 			<td><span class="overviewfail"><?= encoded_string(($test->{'res_fail'})?'&nbsp;'.$test->{'res_fail'}.'&nbsp;':'') ?></span></td>
+			<? } ?>
 		</tr>
 		<? } ?>
 	</table>

@@ -25,7 +25,6 @@ if($basepath eq '') {print header(-status=>404)."test not running"; exit 0; }
 my $log = param('log') || '';
 my $text = param('text') || '';
 
-
 if($log eq 'current') {
 	unless(-e $basepath.'currentstep') {print header(-status=>404)."test not running"; exit 0; }
 	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
@@ -33,50 +32,33 @@ if($log eq 'current') {
 	print $currentstep;
 	exit;
 }
-elsif($log eq 'modlist') {
-	unless(-e $basepath.'currentstep') {print header(-status=>404)."test not running"; exit 0; }
-	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
-	print header({-type=>"application/json", Content_Encoding=>"none"});
-	my $filecontent = file_content($basepath.'currentautoinst-log.txt') || '';
-	my @modules = $filecontent=~m/^scheduling\s(\w+)\s.*\/(\w+)\.d\/.*\.pm$/gm;
-	my $found = 0;
-	unless ($currentstep and grep(/^$currentstep$/, @modules)) {
-		$found = 1;
-	}
-	my @modlist;
-	my $lastcatagory = '';
-	cycle(1);
-	first_run(1);
-	foreach my $module (@modules) {
-		if(cycle() eq 'even') {
-			if($lastcatagory ne $module) {
-				my $litem = pop(@modlist);
-				push(@modlist, (first_run()?'':'</ul>')."<h2 class='box-subheader modcategory'>$module</h2><ul class='navigation modcategory'>");
-				push(@modlist, $litem);
-				$lastcatagory = $module;
-			}
-		}
-		else {
-			my $out;
-			my $omod = $module;
-			if ($found) {
-				$out = 'todo';
-			}
-			elsif ($module=~m/^$currentstep$/) {
-				$found = 1;
-				$out = 'current';
-				$omod = "<b>$module</b>";
-			}
-			else {
-				$out = 'done';
-			}
-			push(@modlist, "<li class='mod-$out'><a href='/tdata/show/$name/$module'>$omod</a></li>");
-		}
-	}
 
-	my $json->{'modlist'} = join("\n", @modlist).'</ul>';
+elsif($log eq 'modlist') {
+	my $modinfo = get_running_modinfo($basepath);
+	unless(defined $modinfo) {print header(-status=>404)."test not running"; exit 0; }
+	print header({-type=>"application/json", Content_Encoding=>"none"});
+	my $html = '';
+	foreach my $category (@{$modinfo->{'modlist'}}) {
+		$html .= "<h2 class='box-subheader modcategory'>".$category->{'category'}."</h2>";
+		$html .= "<ul class='navigation modcategory'>";
+		foreach my $module (@{$category->{'modules'}}) {
+			$html .= "<li class='mod-".$module->{'state'}."'>";
+			$html .= "<a href='/tdata/show/$name/".$module->{'name'}."'>".$module->{'name'}."</a>";
+			$html .= "</li>\n";
+		}
+		$html .= "</ul>\n\n";
+	}
+	my $json->{'modlist'} = $html;
 	$json->{'running_state'} = running_state($name);
 	print to_json($json);
+	exit;
+}
+
+elsif($log eq 'modstat') {
+	print header({-type=>"application/json", Content_Encoding=>"none"});
+	my $modinfo = get_running_modinfo($basepath);
+	delete $modinfo->{'modlist'};
+	print to_json($modinfo);
 	exit;
 }
 

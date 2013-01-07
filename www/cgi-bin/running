@@ -11,9 +11,11 @@ my $testname=path_to_testname($ENV{PATH_INFO});
 my $basepath = running_log($testname);
 my $running = !($basepath eq '');
 
+my $backend_info = parse_log_json($basepath.'currentautoinst-log.txt');
+
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, basepath => $basepath, running => $running },
+	template_args => { testname => $testname, basepath => $basepath, running => $running, backend_info => $backend_info },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

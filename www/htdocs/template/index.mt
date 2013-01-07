@@ -9,7 +9,7 @@
 	<div class="box-header aligncenter">
 		Recent issues in Factory
 	</div>
-	<?= $self->include_file("../../htdocs/includes/knownissues") ?>
+	<?= $self->include_file("/srv/www/htdocs/includes/knownissues") ?>
 </div>
 
 <div class="grid_10 box box-shadow omega">
