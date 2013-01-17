@@ -44,6 +44,12 @@ prune3:
 	# only keep latest NET iso of each arch
 	#find factory/iso/ -name "*-NET-*"|sort -t- -k4| perl -ne '...'
 
+testrun: video/$t.ogv
+	# just a shortcut
+
+testcancel:
+	find pool/ -name testname | while read line ; do test "`cat $$line`" == "$t" && cd `dirname $$line` && rm backend.run ; done
+
 testloop:
 	rm -f stopfile
 	tools/testloop
@@ -56,6 +62,7 @@ deleteresult:
 	rm -f video/$t.ogv
 	rm -f video/$t.ogv.autoinst.txt
 	test -n "$t" && rm -rf testresults/$t
+	find pool/ -name testname | while read line ; do test "`cat $$line`" == "$t" && rm $$line || : ; done
 renameresult:
 	mv -f video/$f.ogv video/$t.ogv
 	mv -f video/$f.ogv.autoinst.txt video/$t.ogv.autoinst.txt
