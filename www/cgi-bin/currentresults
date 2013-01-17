@@ -28,9 +28,31 @@ my $hoursfresh=($options{hours}+0);
 if($hoursfresh<1 || $hoursfresh>900) {$hoursfresh=$defaulthoursfresh}
 my $maxage=3600*$hoursfresh;
 
+my $maxmtime=(stat($ENV{SCRIPT_FILENAME}))[9];
+
+# schedule list
+my @slist=();
+my @s = stat($scheduledir);
+my $smtime = $s[9];
+if($smtime>$maxmtime){$maxmtime=$smtime}
+for my $r (<$scheduledir/*>) {
+	next if($r=~m/^\./);
+	my @s=stat($r);
+	my $mtime=$s[9];
+	next if($options{match} && $r!~m/$options{match}/);
+	my ($distri, $type, $arch, $build, $extrainfo)=split_filename($r);
+	my $testname = path_to_testname($r);
+	push(@slist, {
+		testname=>$testname, distri=>$distri, type=>$type, arch=>$arch,
+		build=>$build, extrainfo=>$extrainfo, mtime=>$mtime
+		}
+	);
+
+}
+# schedule list end
+
 my @list=();
 my $now=time();
-my $maxmtime=(stat($ENV{SCRIPT_FILENAME}))[9];
 for my $r (<$resultdir/*.autoinst.txt>) {
 	my @s=stat($r);
 	my ($logsize,$mtime)=@s[7,9];
@@ -89,6 +111,11 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	);
 }
 
+my @sorted_slist = sort_list(
+	{build=>\&sort_num, mtime=>\&sort_num},
+	sort_param_to_keys($options{sort}), \@slist
+);
+
 my @sorted_list = sort_list(
 	{running=>\&sort_num, build=>\&sort_num, mtime=>\&sort_num, res_ok=>\&sort_num, res_unknown=>\&sort_num, res_fail=>\&sort_num},
 	sort_param_to_keys($options{sort}), \@list
@@ -96,7 +123,7 @@ my @sorted_list = sort_list(
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { resultlist => \@sorted_list, options => \%options, hoursfresh=>$hoursfresh },
+	template_args => { schedulelist => \@sorted_slist, resultlist => \@sorted_list, options => \%options, hoursfresh=>$hoursfresh },
 	macro => { sortarrows => sub { encoded_string(sortkeys(\%options, $_[0])); } },
 );
 
