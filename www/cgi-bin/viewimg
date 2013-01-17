@@ -24,15 +24,7 @@ if (!-e $fullname) {
 }
 my(undef,undef,$testname,$imgname) = split(/\//, $name);
 
-sub get_img_details($) {
-	my($x)=@_;
-	my ($filename,$result)=($x,$x);
-	$filename=~s/.*\/(.*)-(\d+)-(\d+)-(.*)\.ppm/$1-$2-$3-$4/;
-	$result=~s/.*\/.*-\d+-\d+-(.*)\.ppm/$1/;
-	return {name => $filename, result => $result};
-}
-
-my @imglist=map {get_img_details($_)} get_testimgs($imgname);
+my @imglist=map {parse_refimg_name($_)} get_testimgs($imgname);
 
 my $imgmd5 = Digest::MD5::md5_hex(file_content($fullname));
 

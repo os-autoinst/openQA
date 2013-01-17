@@ -79,6 +79,12 @@ span.refpic span.result-icon{
   opacity: 0.8;
 }
 
+span.refpic span.match-icon{
+  position:absolute;
+  left:3px;
+  bottom:3px;
+}
+
 span.refpic span.delete-icon input, button{
 	background: none;
 	padding: none;
@@ -107,6 +113,12 @@ span.refcomppic span.result-icon{
   -moz-opacity:0.8;
   -khtml-opacity: 0.8;
   opacity: 0.8;
+}
+
+span.refcomppic span.match-icon{
+  position:absolute;
+  left:3px;
+  bottom:3px;
 }
 
 img.crop-screenshot {

@@ -60,22 +60,22 @@ $testresult=~s/^(.*?)\s.*/$1/;
 my %cropped;
 
 if(param()) {
-	my ($x1,$y1,$x2,$y2,$width,$height,$result) = (param('x1'),param('y1'),param('x2'),param('y2'),param('width'),param('height'),param('result'));
-	if($x2 && $y2 && $width && $height && $result) {
+	my ($x1,$y1,$x2,$y2,$width,$height,$result,$match) = (param('x1'),param('y1'),param('x2'),param('y2'),param('width'),param('height'),param('result'),param('match'));
+	if($x2 && $y2 && $width && $height && $result && $match) {
 		my $image = new Image::Magick();
 		$image->Read($fullname);
 		$image->Crop($width.'x'.$height.'+'.$x1.'+'.$y1);
 		my ($new_name,$new_fullname);
 		for(my $i=1;;$i++) {
-			$new_name = $imgname.'-'.$i.'-'.$result;
+			$new_name = $imgname.'-'.$i.'-'.$result.'-'.$match;
 			$new_fullname = testimg("$new_name.ppm");
-			my $good_fullname = testimg("$imgname-$i-good.ppm");
-			my $bad_fullname = testimg("$imgname-$i-bad.ppm");
-			last if(!-e $new_fullname && !-e $good_fullname && !-e $bad_fullname);
+			my $match_fullname = testimg("$imgname-$i-*.ppm");
+			my @f =  glob($match_fullname);
+			last if(!-e $new_fullname && scalar(@f) eq 0);
 		}
 		$image->Write($new_fullname);
 		undef $image;
-		%cropped = ('x1' => $x1, 'y1' => $y1, 'x2' => $x2, 'y2' => $y2, 'width' => $width, 'height' => $height, 'result' => $result, 'name' => $new_name);
+		%cropped = ('x1' => $x1, 'y1' => $y1, 'x2' => $x2, 'y2' => $y2, 'width' => $width, 'height' => $height, 'result' => $result, 'match' => $match, 'name' => $new_name);
 	}
 }
 

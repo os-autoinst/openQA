@@ -102,6 +102,7 @@
 							<? if(is_authorized_rw()) { ?>
 							<span class="delete-icon"><input type="hidden" name="delete" value="<?= $refimg->{'name'} ?>.ppm" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>
 							<? } ?>
+							<span class="match-icon"><img src="/images/match_icons/<?= $refimg->{'match'} ?>.png" width="16" height="16" alt="<?= $refimg->{'match'} ?>" title="<?= match_title($refimg->{'match'}) ?>" style="border: none;" /></span>
 							<span class="result-icon"><img src="/images/<?= ($refimg->{'result'} eq 'good')?'accept.png':'exclamation.png' ?>" width="16" height="16" alt="<?= $refimg->{'result'} ?>" title="<?= $refimg->{'result'} ?>" style="border: none;" /></span>
 						</span>
 					</form>

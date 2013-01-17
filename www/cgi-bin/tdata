@@ -24,7 +24,7 @@ if($action!~m%^(?:show|raw)$%) {
 # Delete Image
 if(!$readonly && param('delete')) {
 	my $filename = param('delete');
-	if(!($filename=~m/\w+-\d+-\d+-\w+\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
+	if(!($filename=~m/\w+-\d+-\d+-\w+-\w+\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
 	my $fullname = testimg($filename);
 	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
 	unlink($fullname);
