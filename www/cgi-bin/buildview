@@ -28,6 +28,7 @@ sub get_result($) {
 			my $logresult=parse_log_to_hash(\@lines);
 			$result = $logresult->{overall};
 			for my $res (qw"xterm zypper_up isosize") {
+				$logresult->{$res} ||= ''; # prevent uninitialized warnings
 				$logresult->{$res}=~s/\s.*//;
 				next if($logresult->{$res} eq 'OK');
 				$failindicators{$res} = $logresult->{$res};
@@ -45,50 +46,72 @@ sub get_result($) {
 }
 
 my %options;
-for my $p (qw'sort build') {
+for my $p (qw'sort') {
 	$options{$p}=param($p);
 }
 if(!defined $options{sort}){$options{sort}="type";}
 my $maxmtime=(stat($ENV{SCRIPT_FILENAME}))[9];
 
 # build
-my $b=$ENV{PATH_INFO};
-$b=~s%^/%%;
-$options{'build'} = $b;
+my $p=$ENV{PATH_INFO};
+$p=~s%^/%%;
+($options{'distri'}, $options{'build'}) = split('/', $p);
+my $b = $options{'build'};
+my $df = $options{'distri'};
+my $d = $df;
+
+$df =~s/_/-/g;
+$d =~s/^([a-zA-Z]+).*/$1/;
+
+my @types;
+my @extras;
+if($d eq "openSUSE") {
+	@types = qw"NET DVD Promo-DVD DVD-Biarch LiveCD";
+	@extras = qw"kde gnome xfce lxde";
+}
+elsif($d eq "SLES") {
+	@types = qw"DVD";
+	@extras = qw"gnome btrfs RAID5 LVM SDK HA";
+}
+elsif($d eq "SLED") {
+	@types = qw"DVD";
+	@extras = qw"gnome btrfs RAID5 LVM SDK";
+}
 
 my @list=();
 
-for my $type (qw"NET DVD Promo-DVD DVD-Biarch LiveCD") {
-  my @archs = ("i586", "x86_64");
-  if($type eq "DVD-Biarch") {
-    @archs = ("i586-x86_64")
-  }
-  if($type eq "LiveCD") {
-    @archs = ("i686", "x86_64")
-  }
-  for my $arch (@archs) {
-    my %results;
-    if($type eq "LiveCD") {
-      for my $desktop (qw"KDE GNOME") {
-        $results{lc($desktop)} = get_result("openSUSE-$desktop-$type-$arch-$b");
-      }
-    }
-    else { 
-      for my $desktop ("", qw"-gnome -xfce -lxde") {
-        my $adesktop = $desktop || '-kde';
-        $adesktop=~s/^-//;
-        $results{lc($adesktop)} = get_result("openSUSE-$type-$arch-$b$desktop");
-      }
-    }
-    # push line
-    my $t=$type;
-    $t=~s/Promo-DVD/DVD-Promo/;
-    push(@list, {
-      type=>$t, arch=>$arch,
-      results=>\%results
-      }
-    );
-  }
+for my $type (@types) {
+	my @archs = ("i586", "x86_64");
+	if($type eq "DVD-Biarch") {
+		@archs = ("i586-x86_64")
+	}
+	if($type eq "LiveCD") {
+		@archs = ("i686", "x86_64");
+	}
+	for my $arch (@archs) {
+		my %results;
+		if($type eq "LiveCD") {
+			for my $extra (qw"KDE GNOME") {
+				$results{lc($extra)} = get_result("$df-$extra-$type-$arch-$b");
+			}
+		}
+		else {
+			for my $extra (@extras) {
+				my $aextra = ($extra eq $extras[0])?"":"-$extra";
+				if($extra =~m/SDK|HA/) {
+					$aextra .= ($arch=~m/64$/)?'64':'32';
+				}
+				$results{lc($extra)} = get_result("$df-$type-$arch-$b$aextra");
+			}
+		}
+		# push line
+		my $t=$type;
+		$t=~s/Promo-DVD/DVD-Promo/;
+		push(@list, {
+			type=>$t, arch=>$arch,
+			results=>\%results
+		});
+	}
 }
 
 my @sorted_list = sort_list(
@@ -101,7 +124,7 @@ my @sorted_list = sort_list(
 my $maxage=3600*24*10;
 my $timelimit = time - $maxage;
 my %builds;
-for my $r (<$resultdir/*.autoinst.txt>) {
+for my $r (<$resultdir/$df*.autoinst.txt>) {
 	my ($distri, $type, $arch, $build, $extrainfo)=split_filename($r);
   next unless($build=~m/^\d{4}$/);
   my @s=stat($r);
@@ -116,7 +139,7 @@ my $readonly=!is_authorized_rw();
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { resultlist => \@sorted_list, options => \%options, builds => \%builds, desktops => [qw"kde gnome xfce lxde"], readonly=>$readonly },
+	template_args => { resultlist => \@sorted_list, options => \%options, builds => \%builds, extras => \@extras, readonly=>$readonly, df=>$df },
 	macro => { sortarrows => sub { encoded_string(sortkeys(\%options, $_[0])); } },
 );
 

@@ -10,13 +10,54 @@ $name=~s{^/}{};
 $name=~s/[^a-zA-Z0-9.+_-]//g; # sanitize
 $|=1;
 
-print header(-type=>"text/plain");
+my $back = param('redirect_back');
+my $cancel = param('cancel');
+if(defined $back and $back) {
+	$back = 1;
+	print header(-type=>"text/html");
+	print "<script type='text/javascript'>\n";
+}
+else {
+	$back = 0;
+	print header(-type=>"text/plain");
+}
+$cancel = (defined $cancel and $cancel);
+
+sub myprint($) {
+	my $pr = shift;
+	if($back) { print "alert(\"$pr\");\n" }
+	else { print $pr }
+}
+
 if(!is_authorized_rw()) {
-  print "denied"
-} else {
-  if(open(my $fd, ">", "$scheduledir/$name")) {
-    print "scheduled test $name";
-  } else {
-    print "error: $!";
-  }
+	myprint "denied";
+}
+else {
+	if($cancel) {
+		if(unlink("$scheduledir/$name")) {
+			if(!$back) { myprint "canceled test $name"; }
+		}
+		else {
+			myprint "error: $!";
+		}
+	}
+	else {
+		if(open(my $fd, ">", "$scheduledir/$name")) {
+			if(!$back) { myprint "scheduled test $name"; }
+		}
+		else {
+			myprint "error: $!";
+		}
+	}
+}
+
+if($back) {
+	my ($distri, $type, $arch, $build, $extrainfo)=split_filename($name);
+	if($cancel) {
+		print "window.location = '/results/';\n";
+	}
+	else {
+		print "window.location = '/buildview/$distri/Build$build';\n";
+	}
+	print '</script>\n';
 }
