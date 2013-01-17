@@ -29,7 +29,7 @@ sub maketarget_adjust($)
 	if($t=~m/-(1[1-9]\.\w+)dup/) { # distribution upgrade test
 		my $base=$1;
 		# we only have base images for certain archs
-		if($base=~m/(11.[12])|11.3gnome|11.4kde64/) {
+		if($base=~m/(11\.[12])|11\.3gnome|11\.4kde64/) {
 			$t=~s/-i586-/-x86_64-/;
 		} else {
 			$t=~s/-x86_64-/-i586-/;
