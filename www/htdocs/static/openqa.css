@@ -260,3 +260,10 @@ a.pauseplay.play {
 }
 
 /* progressbar end */
+
+
+/* bento theme fix */
+ul.navigation {
+	width: 90%;
+}
+/* bento theme fix end */
