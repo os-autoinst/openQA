@@ -11,12 +11,37 @@ my $allocname="queuesched.pid";
 
 sleep(rand(2)); # reduce chance of collisions with make -j
 
+sub dirishw($) {
+	my $dirname = shift;
+	return (`cd "$dirname" ; source ./env.sh ; echo -n "\$HW"` eq "1");
+}
+
+sub canrunonkvm($) {
+	my $testname=shift;
+	return 0 if ($testname=~m/SLES-.*-DVD-x86_64-Build\d+\./);
+	return 1;
+}
+
+sub canrunonhw($) {
+	my $testname=shift;
+	my $hour=(gmtime())[2];
+	return 0 if($testname=~m/dup/);
+	return 0 if($testname=~m/RAID/);
+	return 0 if($testname=~m/SLED/ && $hour>6);
+	return 1;
+}
+
 # lock+select testdir
 my $found=0;
 if($ENV{testdir} ne "testrun-cron") {@dirs=($ENV{testdir})}
 foreach my $d (@dirs) {
 	my $l="$d/$lockname";
 	next if -e $l; # occopied for sure
+
+	my $hw=dirishw($d);
+	next if($hw && !canrunonhw($ENV{out}));
+	next if(!$hw && !canrunonkvm($ENV{out}));
+
 	# likely free, use own allocation lock protocol
 	# tmp will be autocleaned, so we can just exec
 	mkdir "$d/tmp";
