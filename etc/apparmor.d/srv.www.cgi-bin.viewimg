@@ -16,6 +16,7 @@
 /srv/www/cgi-bin/viewimg {
   #include <abstractions/base>
   #include <abstractions/openqacgi>
+  #include <abstractions/imagemagick>
 
   /srv/www/cgi-bin/viewimg		r,
 }

@@ -3,6 +3,7 @@ use strict;
 use CGI ":standard";
 use FindBin;
 use lib "$FindBin::Bin/modules";
+use Image::Magick;
 use awstandard;
 use openqa;
 use Digest::MD5;
@@ -22,15 +23,27 @@ if (!-e $fullname) {
         $fullname.=".gz";
 	if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
 }
+
+my $p = new Image::Magick(depth=>8);
+$p->Read($fullname, depth=>8);
+my ($img_width,$img_height) = $p->Get('width','height');
+
 my(undef,undef,$testname,$imgname) = split(/\//, $name);
+my ($testmodule,$screenshotid) = split(/-/, $imgname);
 
 my @imglist=map {parse_refimg_name($_)} get_testimgs($imgname);
-
 my $imgmd5 = Digest::MD5::md5_hex(file_content($fullname));
+
+my $results = test_result($testname);
+my $module_hash = test_result_module($results->{'testmodules'}, $testmodule);
+my $screenshot = ($module_hash)?$module_hash->{'screenshots'}->[$screenshotid-1]:undef;
+if($screenshot) {
+	$screenshot->{'size'} = [$img_width,$img_height];
+}
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, imgname => $imgname, imgmd5 => $imgmd5, imglist => \@imglist },
+	template_args => { testname => $testname, imgname => $imgname, imgmd5 => $imgmd5, imglist => \@imglist, screenshot => $screenshot },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

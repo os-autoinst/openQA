@@ -65,9 +65,11 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	my $backend_info;
 	my $run_stat = {};
 
-	my @lines=parse_log($r);
-	my $parsed=parse_log_to_stats(\@lines);
-	my $result=parse_log_to_hash(\@lines);
+	my $results = test_result($testname);
+
+	my $result_stats = test_result_stats($results);
+	my $result = test_result_hash($results);
+
 	my $running = 0;
 	if($logsize==0) {
 		# running
@@ -105,10 +107,9 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	push(@list, {
 		testname=>$testname, running=>$running, distri=>$distri, type=>$type, arch=>$arch,
 		build=>$build, extrainfo=>$extrainfo, mtime=>$mtime, backend => $backend,
-		res_ok=>$parsed->{OK}||0, res_unknown=>$parsed->{unknown}||0, res_fail=>$parsed->{fail}||0,
-		res_overall=>$result->{overall}, run_stat=>$run_stat
-		}
-	);
+		res_ok=>$result_stats->{ok}||0, res_unknown=>$result_stats->{unk}||0, res_fail=>$result_stats->{fail}||0,
+		res_overall=>$results->{overall}, run_stat=>$run_stat
+	});
 }
 
 my @sorted_slist = sort_list(

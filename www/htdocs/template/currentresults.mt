@@ -27,9 +27,9 @@
 			<label><input type="checkbox" name="ib" value="on"<? if($options->{'ib'}) { ?> checked="checked"<? } ?> />ignore boring results</label>
 			<select name="ob" onchange="document.getElementById('filterform').submit();">
 				<option value="">All Backends</option>
-				<option<?= ($options->{'ob'} eq 'kvm2usb')?' selected="selected':'' ?>>kvm2usb</option>
-				<option<?= ($options->{'ob'} eq 'qemu')?' selected="selected':'' ?>>qemu</option>
-				<option<?= ($options->{'ob'} eq 'vbox')?' selected="selected':'' ?>>vbox</option>
+				<option<?= (defined $options->{'ob'} and $options->{'ob'} eq 'kvm2usb')?' selected="selected':'' ?>>kvm2usb</option>
+				<option<?= (defined $options->{'ob'} and $options->{'ob'} eq 'qemu')?' selected="selected':'' ?>>qemu</option>
+				<option<?= (defined $options->{'ob'} and $options->{'ob'} eq 'vbox')?' selected="selected':'' ?>>vbox</option>
 			</select>
 			<input type="submit" value="change" class="smbutton" />
 		</form>
@@ -78,8 +78,8 @@
 			<td><?= $test->{'distri'} ?></td>
 			<td><?= $test->{'type'} ?></td>
 			<td><?= $test->{'arch'} ?></td>
-			<td><span class="textlink <?= (!defined $test->{'res_overall'} || $test->{'res_overall'} eq "OK")?'':'overviewfail' ?>"><a href="/buildview/<?= $test->{'distri'} ?>/Build<?= $test->{'build'} ?>"><?= $test->{'build'} ?></a></span></td>
-			<td><span class="<?= (!defined $test->{'res_overall'} || $test->{'res_overall'} eq "OK")?'':'overviewfail' ?>"><?= $test->{'extrainfo'} ?></span></td>
+			<td><span class="textlink <?= (!defined $test->{'res_overall'} || $test->{'res_overall'} eq "ok")?'':'overviewfail' ?>"><a href="/buildview/<?= $test->{'distri'} ?>/Build<?= $test->{'build'} ?>"><?= $test->{'build'} ?></a></span></td>
+			<td><span class="<?= (!defined $test->{'res_overall'} || $test->{'res_overall'} eq "ok")?'':'overviewfail' ?>"><?= $test->{'extrainfo'} ?></span></td>
 			<td><?= AWisodatetime2($test->{'mtime'}) ?></td>
 			<? if($test->{'running'}) { ?>
 ? #<td colspan="3"><?= $test->{'run_stat'}->{'moddone'} ?> / <?= $test->{'run_stat'}->{'modcount'} ?></td>

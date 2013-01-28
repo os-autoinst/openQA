@@ -24,13 +24,13 @@ sub get_result($) {
 			$result = 'testing';
 		}
 		else {
-			my @lines=parse_log($logfile);
-			my $logresult=parse_log_to_hash(\@lines);
+			my $results = test_result($testname);
+			my $logresult = test_result_hash($results);
 			$result = $logresult->{overall};
 			for my $res (qw"xterm zypper_up isosize") {
-				$logresult->{$res} ||= ''; # prevent uninitialized warnings
+				next unless defined($logresult->{$res});
 				$logresult->{$res}=~s/\s.*//;
-				next if($logresult->{$res} eq 'OK');
+				next if($logresult->{$res} eq 'ok');
 				$failindicators{$res} = $logresult->{$res};
 			}
 		}

@@ -50,7 +50,7 @@
             <span class="box box-shadow alpha">
               This tests did not succeed:<br />
               <? for my $ftest (keys %{$r->{'fails'}}) { ?>
-                <span class="result<?= lc($r->{'fails'}->{$ftest}) ?>"><?= $ftest ?></span>
+                <span class="result<?= $res_css->{$r->{'fails'}->{$ftest}} ?>"><?= $ftest ?></span>
               <? } ?>
             </span>
           </a>

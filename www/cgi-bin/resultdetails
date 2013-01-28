@@ -16,52 +16,67 @@ my $imgdir=openqa::imgdir($testname);
 my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 
-my @lines=parse_log($fqfn);
+my $results = test_result($testname);
+
 my @timeouts=<$imgdir/timeout-[0-9]*.ppm*>;
-if(@timeouts) {unshift(@lines, ["timeout","not-autochecked"])}
+if(@timeouts) {
+	unshift(@{$results->{'testmodules'}}, {
+			'name' => 'timeout',
+			'result' => 'na'
+	});
+}
+
 my @modlist=();
-foreach my $entry (@lines) {
-	my ($name,$result) = @$entry;
-	my ($imgresultstring,$wavresultstring,$ocrresultstring) = ($result,$result,$result);
-	if ($imgresultstring=~/\(.+\)/) { $imgresultstring=~s{.*\((.*)\).*}{$1}; }
-	else { $imgresultstring=''; }
-	if ($wavresultstring=~/\[.+\]/) { $wavresultstring=~s{.*\[(.*)\].*}{$1}; }
-	else { $wavresultstring=''; }
-	if ($ocrresultstring=~/\{.+\}/) { $ocrresultstring=~s{.*\{(.*)\}.*}{$1}; }
-	else { $ocrresultstring=''; }
-	my @imgresults=split(/,/, $imgresultstring);
-	my @wavresults=split(/,/, $wavresultstring);
-	my @ocrresults=split(/,/, $ocrresultstring);
+foreach my $module (@{$results->{'testmodules'}}) {
+	my $name = $module->{'name'};
 	# add link to $imgdir/$name*.ppm via png CGI
 	my @imglist;
 	foreach my $imgpath (<$imgdir/$name-[0-9]*.ppm*>) {
-		my $imgres = (@imgresults)?$imgresults[scalar(@imglist)]:'na';
-		if($imgres eq "na") { $imgres=(@ocrresults)?$ocrresults[scalar(@imglist)]:'na';}
-		$imgpath=data_name($imgpath);
+		my $imgres = $module->{'screenshots'}->[scalar(@imglist)]->{'refimg_result'} || 'na';
+		if($imgres eq "na") {
+			$imgres = $module->{'screenshots'}->[scalar(@imglist)]->{'ocr_result'} || 'na';
+		}
+		$imgpath = data_name($imgpath);
 		push(@imglist, {name => $imgpath, result => $imgres});
 	}
+
 	# add link to $imgdir/$name*.wav via ogg CGI
 	my @wavlist;
 	foreach my $wavpath (<$imgdir/$name-[0-9]*.wav>) {
-		my $wavres = (@wavresults)?$wavresults[scalar(@wavlist)]:'na';
-		$wavpath=data_name($wavpath);
+		my $wavres = $module->{'audiodumps'}->[scalar(@wavlist)] || 'na';
+		$wavpath = data_name($wavpath);
 		push(@wavlist, {name => $wavpath, result => $wavres});
 	}
+
 	# add link to $imgdir/$name*.txt as direct link
 	my @ocrlist;
 	foreach my $ocrpath (<$imgdir/$name-[0-9]*.txt>) {
-		$ocrpath=data_name($ocrpath);
+		$ocrpath = data_name($ocrpath);
 		my $ocrscreenshotid = $ocrpath;
 		$ocrscreenshotid=~s/^\w+-(\d+)/$1/;
-		my $ocrres = (@ocrresults)?$ocrresults[--$ocrscreenshotid]:'na';
+		my $ocrres = $module->{'screenshots'}->[--$ocrscreenshotid]->{'ocr_result'} || 'na';
 		push(@ocrlist, {name => $ocrpath, result => $ocrres});
 	}
 
-	($result)=split(/ /, $result); #~s{(.+) .*}{$1};
-	my $image = (get_testimgs($name))?1:0;
-	my $sound = (get_testwavs($name))?1:0;
-	my $ocr = (@ocrresults)?1:0;
-	push(@modlist, {name => $name, result => $result, screenshots => \@imglist, wavs => \@wavlist, ocrs => \@ocrlist, refimg => $image, audio => $sound, ocr => $ocr});
+	my $image = (get_testimgs($module->{'name'}))?1:0;
+	my $sound = (get_testwavs($module->{'name'}))?1:0;
+	my $ocr = (@ocrlist)?1:0;
+	push(@modlist, {
+		name => $module->{'name'},
+		result => $module->{'result'},
+		screenshots => \@imglist, wavs => \@wavlist, ocrs => \@ocrlist,
+		refimg => $image, audio => $sound, ocr => $ocr
+	});
+}
+
+# Pseudo testmodules
+for my $module ("standstill", "isosize", "overall") {
+	push(@modlist, {
+		name => $module,
+		result => $results->{$module} || 'na',
+		screenshots => [], wavs => [], ocrs => [],
+		refimg => 0, audio => 0, ocr => 0
+	});
 }
 
 my $backlogpath = back_log($testname);

@@ -97,28 +97,34 @@ span.refpic img.pic{
 	border: 1px dotted #ccc;
 }
 
-span.refcomppic{
-  width:80px;
-  text-decoration:none;
-  position:relative;
-  display:inline-block;
-  margin-right:5px;
+span.refcomppic {
+	width:80px;
+	text-decoration:none;
+	position:relative;
+	display:inline-block;
+	margin-right:5px;
+	padding: 1px;
 }
 
-span.refcomppic span.result-icon{
-  position:absolute;
-  right:2px;
-  bottom:3px;
-  filter:alpha(opacity=80);
-  -moz-opacity:0.8;
-  -khtml-opacity: 0.8;
-  opacity: 0.8;
+span.refcomppic.match {
+	border: 3px solid #3399CC;
+	padding: 1px;
 }
 
-span.refcomppic span.match-icon{
-  position:absolute;
-  left:3px;
-  bottom:3px;
+span.refcomppic span.result-icon {
+	position:absolute;
+	right:3px;
+	bottom:3px;
+	filter:alpha(opacity=80);
+	-moz-opacity:0.8;
+	-khtml-opacity: 0.8;
+	opacity: 0.8;
+}
+
+span.refcomppic span.match-icon {
+	position:absolute;
+	left:4px;
+	bottom:3px;
 }
 
 img.crop-screenshot {
