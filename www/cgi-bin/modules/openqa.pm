@@ -263,6 +263,7 @@ sub split_filename($) { my($fn)=@_;
 	$fn=~s%.*/%%; # strip path
 
 	# since we want to split at "-", this should not appear within fields
+	$fn=~s/(openSUSE)-(1\d\.\d)/$1_$2/; # since 2013-02-05 isos have the distri version included in the name
 	$fn=~s/Promo-DVD/DVD_Promo/;
 	$fn=~s/DVD-Biarch-i586-x86_64/DVD_Biarch-i586+x86_64/;
 	$fn=~s/-LiveCD/_LiveCD/; # belongs to KDE/GNOME, so protect from split
