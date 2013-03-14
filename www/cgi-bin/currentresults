@@ -19,7 +19,7 @@ if($options{ib}) {
 	require boring;
 }
 if($options{match}) {
-	$options{match}=~s/[^\w\[\]\{\}\(\),:.+*?\\\$|-]//g; # sanitize
+	$options{match}=~s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g; # sanitize
 }
 
 if(!defined $options{sort}){$options{sort}="-mtime";} # default sort by Time descending

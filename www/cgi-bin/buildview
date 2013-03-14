@@ -27,7 +27,7 @@ sub get_result($) {
 			my $results = test_result($testname);
 			my $logresult = test_result_hash($results);
 			$result = $logresult->{overall};
-			for my $res (qw"xterm zypper_up isosize") {
+			for my $res (qw"xterm zypper_in isosize yast2_lan") {
 				next unless defined($logresult->{$res});
 				$logresult->{$res}=~s/\s.*//;
 				next if($logresult->{$res} eq 'ok');
@@ -66,7 +66,7 @@ $d =~s/^([a-zA-Z]+).*/$1/;
 my @types;
 my @extras;
 if($d eq "openSUSE") {
-	@types = qw"NET DVD Promo-DVD DVD-Biarch LiveCD";
+	@types = qw"NET DVD Promo-DVD DVD-Biarch Live";
 	@extras = qw"kde gnome xfce lxde";
 }
 elsif($d eq "SLES") {
@@ -85,12 +85,12 @@ for my $type (@types) {
 	if($type eq "DVD-Biarch") {
 		@archs = ("i586-x86_64")
 	}
-	if($type eq "LiveCD") {
+	if($type eq "Live") {
 		@archs = ("i686", "x86_64");
 	}
 	for my $arch (@archs) {
 		my %results;
-		if($type eq "LiveCD") {
+		if($type eq "Live") {
 			for my $extra (qw"KDE GNOME") {
 				$results{lc($extra)} = get_result("$df-$extra-$type-$arch-$b");
 			}

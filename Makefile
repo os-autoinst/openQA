@@ -243,6 +243,16 @@ video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv: distribution/11.4/iso/openSUS
 Tumbleweed-kde64: video/openSUSE-Tumbleweed-x86_64-$d-11.4kde64.ogv
 video/openSUSE-Tumbleweed-x86_64-$d-11.4kde64.ogv: distribution/11.4/iso/openSUSE-DVD-x86_64-11.4dummy.iso
 	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Tumbleweed:/Testing/openSUSE_Tumbleweed_standard/ export UPGRADE=/space2/opensuse/img/opensuse-11.4-kde-64.img ; TUMBLEWEED=1 NOINSTALL=1 ZDUP=1 DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+Evergreen-gnome32: video/openSUSE-Evergreen-i586-$d-11.4gnome32.ogv
+video/openSUSE-Evergreen-i586-$d-11.4gnome32.ogv: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
+	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Evergreen:/11.4/standard/ ; export UPGRADE=/space2/opensuse/img/opensuse-11.4-gnome-32.img ; EVERGREEN=1 NOINSTALL=1 ZDUP=1 DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+Evergreen-11.2: video/openSUSE-Evergreen-x86_64-$d-11.2.ogv
+video/openSUSE-Evergreen-x86_64-$d-11.2.ogv: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
+	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Evergreen:/11.2:/Test/standard/ ; export UPGRADE=/space/bernhard/img/opensuse-112-64.img ; EVERGREEN=1 NOINSTALL=1 ZDUP=1 DESKTOP=kde in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-12.2xfce32dup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/opensuse/img/openSUSE-12.2-xfce.qcow2 ; DESKTOP=xfce KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-12.2xfce32zdup.ogv: factory/iso/%-Media.iso
+	export UPGRADE=/opensuse/img/openSUSE-12.2-xfce.qcow2 ; NOINSTALL=1 ZDUP=1 DESKTOP=xfce KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-12.1gnome32dup.ogv: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-12.1-gnome-32.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-12.1gnome32zdup.ogv: factory/iso/%-Media.iso
@@ -295,6 +305,8 @@ video/%-xfcedevel.ogv: factory/iso/%-Media.iso
 	DESKTOP=xfce ADDONURL=${repourl}X11:/xfce/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-lxdedevel.ogv: factory/iso/%-Media.iso
 	DESKTOP=lxde ADDONURL=${repourl}X11:/lxde/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+video/%-uefi.ogv: factory/iso/%-Media.iso
+	UEFI=/openqa/uefi DESKTOP=lxde in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-btrfs.ogv: factory/iso/%-Media.iso
 	BTRFS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 video/%-se.ogv: factory/iso/%-Media.iso

@@ -4,7 +4,7 @@ n=$(basename $(pwd))
 test $n -gt 0 || n=99
 
 # if you have something slower than Core i7 you might need to increase the IDLETHRESHOLD value... e.g. on my Phenom X4 I have 25 instead of 16
-export IDLETHESHOLD=35
+export IDLETHESHOLD=15
 
 # default: 0.5 (two screenshots per second)
 if test -z "$SCREENSHOTINTERVAL" ; then
@@ -15,6 +15,7 @@ fi
 
 # leave empty for http://download.opensuse.org/factory
 #export SUSEMIRROR=http://dist.suse.de/ibs/SUSE%3A/SLE-11-SP2%3A/GA/standard/
+#export SUSEMIRROR=http://openqa.opensuse.org/opensuse/factory-testing
 
 # possible values: 0|1|5|6|10
 #export RAIDLEVEL=6
