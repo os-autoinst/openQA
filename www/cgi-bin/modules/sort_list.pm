@@ -19,7 +19,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 # this file defines functions to output a sorted table.
 
 sub sort_num($$) {if(!defined($_[0]) || !defined($_[1])) {return 0} my @a=@_; $a[0]=~s/\D//g;$a[1]=~s/\D//g; (($a[0]||0)<=>($a[1]||0))}
-sub sort_string($$) {$_[0] cmp $_[1]}
+sub sort_string($$) {($_[0]||"") cmp ($_[1]||"")}
 sub sort_istring($$) {lc($_[0]) cmp lc($_[1])}
 
 sub sort_list($$$) {

@@ -53,6 +53,7 @@ if(!$scriptpath || !-e $scriptpath) {
 	$running = 1;
 	$scriptpath=log_to_scriptpath($fqfn, $testmodule);
 	if(!$scriptpath || !-e $scriptpath) {
+		$scriptpath||="";
 		print header(-status=>404)."test not found: $testmodule $scriptpath"; exit 0
 	}
 }
