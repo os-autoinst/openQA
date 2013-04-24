@@ -16,7 +16,7 @@ $name=~s/\.jpg$//;
 $name=~s/^$prj\///;
 $name=~s/^\/$prj\//\//;
 
-my $fullname="/$basedir/$prj/$name.ppm";
+my $fullname="/$basedir/$prj/$name.png";
 if (!-e $fullname) {
         $fullname.=".gz";
 	if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
@@ -30,9 +30,9 @@ sub testoptions($) {
 	return $1;
 }
 
-# add link to $imgdir/$name*.ppm via png CGI
-my @imglist=map {data_name($_)} <$imgdir/$testmodule-[0-9]*.ppm*>;
-my @testlist=map {testoptions($_)} <$imgdir/*-1.ppm*>;
+# add link to $imgdir/$name*.png via png CGI
+my @imglist=map {data_name($_)} <$imgdir/$testmodule-[0-9]*.png*>;
+my @testlist=map {testoptions($_)} <$imgdir/*-1.png*>;
 
 # Get Test Result
 my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
@@ -68,8 +68,8 @@ if(param()) {
 		my ($new_name,$new_fullname);
 		for(my $i=1;;$i++) {
 			$new_name = $imgname.'-'.$i.'-'.$result.'-'.$match;
-			$new_fullname = testimg("$new_name.ppm");
-			my $match_fullname = testimg("$imgname-$i-*.ppm");
+			$new_fullname = testimg("$new_name.png");
+			my $match_fullname = testimg("$imgname-$i-*.png");
 			my @f =  glob($match_fullname);
 			last if(!-e $new_fullname && scalar(@f) eq 0);
 		}

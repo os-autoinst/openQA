@@ -18,11 +18,8 @@ $name=~s/\.jpg$//;
 $name=~s/^$prj//;
 $name=~s/^\/$prj//;
 
-my $fullname="/$basedir/$prj/$name.ppm";
-if (!-e $fullname) {
-        $fullname.=".gz";
-	if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
-}
+my $fullname="/$basedir/$prj/$name.png";
+if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
 
 my $p = new Image::Magick(depth=>8);
 $p->Read($fullname, depth=>8);

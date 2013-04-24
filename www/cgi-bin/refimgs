@@ -17,7 +17,7 @@ $testfilter=~s/\W//g if(defined $testfilter);
 # Delete Image
 if(!$readonly && param('delete')) {
 	my $filename = param('delete');
-	if(!($filename=~m/.*-\d+-\d+-.*\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
+	if(!($filename=~m/.*-\d+-\d+-.*\.png/)) {print header(-status=>403)."invalid path"; exit 0; }
 	my $fullname = testimg($filename);
 	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
 	unlink($fullname);
@@ -27,7 +27,7 @@ if(!$readonly && param('delete')) {
 
 if(!$readonly && param('deleteclick')) {
 	my $filename = param('deleteclick');
-	if(!($filename=~m/([a-zA-Z0-9_]+)-\d+--?\d+--?\d+\.ppm/)) {print header(-status=>403)."invalid path"; exit 0; }
+	if(!($filename=~m/([a-zA-Z0-9_]+)-\d+--?\d+--?\d+\.png/)) {print header(-status=>403)."invalid path"; exit 0; }
 	my $fullname = clickimg($filename);
 	if (!-e $fullname) {print header(-status=>404)."file not found"; exit 0; }
 	unlink($fullname);
@@ -36,7 +36,7 @@ if(!$readonly && param('deleteclick')) {
 }
 
 sub get_tname_int($) {
-	m{.*/([a-zA-Z0-9_]+)-\d+.*\.ppm};
+	m{.*/([a-zA-Z0-9_]+)-\d+.*\.png};
 	return $1;
 }
 
@@ -63,7 +63,7 @@ for my $testmodule (get_testimgs((defined $testfilter)?$testfilter:"*")) {
 my %testmodules_interact=();
 my @testinteracts;
 for my $testmodule (sort(map {get_tname_int($_)} (get_waitimgs((defined $testfilter)?$testfilter:"*"),get_clickimgs((defined $testfilter)?$testfilter:"*")))) {
-	$testmodule=~s{.*/(\w+)-.*\.ppm}{$1};
+	$testmodule=~s{.*/(\w+)-.*\.png}{$1};
 	if(!$testmodules_interact{$testmodule}) {
 		$testmodules_interact{$testmodule} = 1;
 		my @waitimgs = map {data_name($_)} get_waitimgs($testmodule);

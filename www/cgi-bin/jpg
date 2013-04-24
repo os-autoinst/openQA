@@ -11,12 +11,9 @@ use openqa;
 my $p = new Image::Magick(depth=>8);
 my $name=$ENV{PATH_INFO};
 if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
-$name=~s/\.ppm$//;
-my $fullname="$basedir/$prj/$name.ppm";
-if (!-e $fullname) {
-	$fullname.=".gz";
-	if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
-}
+$name=~s/\.png$//;
+my $fullname="$basedir/$prj/$name.png";
+if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
 $p->Read($fullname, depth=>8);
 
 my $size=param("size");

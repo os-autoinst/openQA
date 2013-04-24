@@ -62,13 +62,12 @@ $p2->Set(size=>'800x600');
 
 
 while (1) {
-  my @ppmfiles=<$basepath/qemuscreenshot/*.ppm>;
+  my @ppmfiles=<$basepath/qemuscreenshot/*.png>;
   my $newfile = ($ppmfiles[-1])?$ppmfiles[-1]:$lastfile;
   if ($lastfile ne $newfile) {
-    waitppmcomplete($newfile);
     my $data=file_content($newfile);
     if($data ne $lastdata) {
-      my $p = new Image::Magick(depth=>8, magick=>"PPM");
+      my $p = new Image::Magick(depth=>8, magick=>"PNG");
       $p->BlobToImage($data);
       my $p3=$p;
       if(0 && length($data) != 1440015) { # everything not 800x600 needs cropping

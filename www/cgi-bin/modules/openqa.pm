@@ -20,8 +20,8 @@ our $perlurl="$prj/perl/autoinst";
 our $perldir="$basedir/$perlurl";
 our $resultdir="$basedir/$prj/video";
 our $scheduledir="$basedir/$prj/schedule.d";
-our $hostname="openqa.opensuse.org";
-our $app_title = 'openQA';
+our $hostname="boltzmann.suse.de";
+our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
 
 our @runner = <$basedir/$prj/pool/[0-9]>;

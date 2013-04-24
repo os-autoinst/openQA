@@ -18,27 +18,16 @@ $testmodule=~s/[^a-zA-Z0-9._+-]//g;
 $testname=~s/[^a-zA-Z0-9._+-]//g;
 $name=~s/[^a-zA-Z0-9._+\/-]//g;
 
-our %goodsizes=(1440015=>1, 2359312=>1, 864015=>1);
-
-sub waitppmcomplete($)
-{
-  my $filename = shift;
-  for(1..25) {
-    my $size=-s $filename;
-    if($goodsizes{$size}) {last}
-    sleep 0.02;
-  }
-}
+my $filesuffix = 'png';
 
 if($getlastimg eq '1') {
 	$name=~s/^\/(.*)/$1/;
 	my $basepath = running_log($name);
 	if($basepath eq '') {print header(-status=>404)."test not running"; exit 0; }
-	my @ppmfiles=<${basepath}qemuscreenshot/*.ppm>;
-	my $newfile = $ppmfiles[-1];
-	waitppmcomplete($newfile);
+	my @imgfiles=<${basepath}qemuscreenshot/*.${filesuffix}>;
+	my $newfile = $imgfiles[-1];
 	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
-	$newfile=~s{^$basedir/$prj/+(.*)\.ppm}{$1.png};
+	#$newfile=~s{^$basedir/$prj/+(.*)\.ppm}{$1.png};
 	print header(-status=>302, -location=>"/croplive/$prj/$newfile?testname=$name&testmodule=$currentstep");
 	exit 0;
 }
@@ -49,7 +38,7 @@ $name=~s/\.jpg$//;
 $name=~s/^$prj\///;
 $name=~s/^\/$prj\//\//;
 
-my $fullname="$basedir/$prj/$name.ppm";
+my $fullname="$basedir/$prj/$name.$filesuffix";
 if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
 $name=~s/^\///;
 
@@ -65,9 +54,9 @@ if(defined param('process')) {
 		my ($new_name,$new_fullname);
 		for(my $i=1;;$i++) {
 			$new_name = $testmodule.'-'.$i.'-'.$xc_r.'-'.$yc_r;
-			$new_fullname = clickimg("$new_name.ppm");
+			$new_fullname = clickimg("$new_name.$filesuffix");
 			my $check_fullname = clickimg("$testmodule-$i");
-			my @a = <$check_fullname-*.ppm>;
+			my @a = <$check_fullname-*.$filesuffix>;
 			last if(!@a);
 		}
 		$image->Write($new_fullname);
