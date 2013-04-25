@@ -48,9 +48,9 @@
 					<? for my $refimg (@{$screenref->{'refimgs'}}) { ?>
 					<form method="post" action="/refimgs/<?= $testfilter ?>" onsubmit="return confirm('Delete '+this.delete.value+'?');" style="display: inline;">
 						<span class="refpic">
-							<a href="/<?= $perlurl ?>/testimgs/<?= $refimg->{'name'} ?>.png"><img src="/<?= $perlurl ?>/testimgs/<?= $refimg->{'name'} ?>.jpg?csize=<?= $ref_width ?>x<?= $ref_height ?>" width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $refimg->{'name'} ?>.ppm" title="<?= $refimg->{'name'} ?>.ppm" class="pic" /></a>
+							<a href="/<?= $perlurl ?>/testimgs/<?= $refimg->{'name'} ?>.png"><img src="/<?= $perlurl ?>/testimgs/<?= $refimg->{'name'} ?>.jpg?csize=<?= $ref_width ?>x<?= $ref_height ?>" width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $refimg->{'name'} ?>.png" title="<?= $refimg->{'name'} ?>.png" class="pic" /></a>
 							<? if(is_authorized_rw()) { ?>
-							<span class="delete-icon"><input type="hidden" name="delete" value="<?= $refimg->{'name'} ?>.ppm" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>
+							<span class="delete-icon"><input type="hidden" name="delete" value="<?= $refimg->{'name'} ?>.png" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>
 							<? } ?>
 							<span class="match-icon"><img src="/images/match_icons/<?= $refimg->{'match'} ?>.png" width="16" height="16" alt="<?= $refimg->{'match'} ?>" title="<?= match_title($refimg->{'match'}) ?>" style="border: none;" /></span>
 							<span class="result-icon"><img src="/images/<?= ($refimg->{'result'} eq 'good')?'accept.png':'exclamation.png' ?>" width="16" height="16" alt="<?= $refimg->{'result'} ?>" title="<?= $refimg->{'result'} ?>" style="border: none;" /></span>
@@ -82,7 +82,7 @@
 					<? for my $waitimg (@{$testinteract->{'waitimgs'}}) { ?>
 					<div style="display: inline;">
 						<span class="refpic">
-							<a href="/<?= $perlurl ?>/waitimgs/<?= $waitimg ?>.png"><img src="/<?= $perlurl ?>/waitimgs/<?= $waitimg ?>.jpg?csize=<?= $ref_width ?>x<?= $ref_height ?>" width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $waitimg ?>.ppm" title="<?= $waitimg ?>.ppm" class="pic" /></a>
+							<a href="/<?= $perlurl ?>/waitimgs/<?= $waitimg ?>.png"><img src="/<?= $perlurl ?>/waitimgs/<?= $waitimg ?>.jpg?csize=<?= $ref_width ?>x<?= $ref_height ?>" width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $waitimg ?>.png" title="<?= $waitimg ?>.png" class="pic" /></a>
 						</span>
 					</div>
 					<? } ?>
@@ -91,9 +91,9 @@
 					<? for my $clickimg (@{$testinteract->{'clickimgs'}}) { ?>
 					<form method="post" action="/refimgs/<?= $testfilter ?>" onsubmit="return confirm('Delete '+this.deleteclick.value+'?');" style="display: inline;">
 						<span class="refpic">
-							<a href="/<?= $perlurl ?>/waitimgs/click/<?= $clickimg ?>.png"><img src="/<?= $perlurl ?>/waitimgs/click/<?= $clickimg ?>.jpg?csize=<?= $ref_width ?>x<?= $ref_height ?>" width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $clickimg ?>.ppm" title="<?= $clickimg ?>.ppm" class="pic" /></a>
+							<a href="/<?= $perlurl ?>/waitimgs/click/<?= $clickimg ?>.png"><img src="/<?= $perlurl ?>/waitimgs/click/<?= $clickimg ?>.jpg?csize=<?= $ref_width ?>x<?= $ref_height ?>" width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $clickimg ?>.png" title="<?= $clickimg ?>.png" class="pic" /></a>
 							<? if(is_authorized_rw()) { ?>
-							<span class="delete-icon"><input type="hidden" name="deleteclick" value="<?= $clickimg ?>.ppm" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>
+							<span class="delete-icon"><input type="hidden" name="deleteclick" value="<?= $clickimg ?>.png" /><input type="image" src="/images/cross.png" alt="X" title="Delete Image" /></span>
 							<? } ?>
 						</span>
 					</form>

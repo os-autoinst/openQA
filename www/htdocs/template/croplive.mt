@@ -170,7 +170,7 @@ function modechange() {
 			<table style="border: none;">
 				<tr>
 					<td style="width: 60px;">Filename:</td>
-					<td style="width: 150px;"><?= $processed->{'name'} ?>.ppm</td>
+					<td style="width: 150px;"><?= $processed->{'name'} ?>.png</td>
 				</tr>
 				<tr>
 					<td colspan="2">

@@ -134,7 +134,7 @@ function resetform() {
 		<table style="border: none;">
 			<tr>
 				<td style="width: 60px;">Filename:</td>
-				<td style="width: 150px;"><?= $cropped->{'name'} ?>.ppm</td>
+				<td style="width: 150px;"><?= $cropped->{'name'} ?>.png</td>
 			</tr>
 			<tr>
 				<td colspan="2">

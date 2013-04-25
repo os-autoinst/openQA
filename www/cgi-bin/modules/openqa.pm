@@ -396,7 +396,7 @@ sub data_name($) {
 }
 
 sub parse_refimg_path($) {
-	$_[0]=~m/.*\/(\w+)-(\d+)-(\d+)-(\w+)-(\w+)\.ppm/;
+	$_[0]=~m/.*\/(\w+)-(\d+)-(\d+)-(\w+)-(\w+)\.png/;
 	return ($1,$2,$3,$4,$5);
 }
 sub parse_refimg_name($) {
