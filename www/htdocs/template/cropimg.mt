@@ -47,12 +47,6 @@ function checkform(f) {
 function resetform() {
 	crpr.options.onloadCoords=null;
 	crpr.reset();
-	$("good").defaultChecked = false;
-	$("bad").defaultChecked = false;
-	$("strict").defaultChecked = false;
-	$("diff").defaultChecked = false;
-	$("hwfuzzy").defaultChecked = true;
-	$("fuzzy").defaultChecked = false;
 }
 -->
 </script>
@@ -90,32 +84,6 @@ function resetform() {
 					<td>
 						<input type="text" name="x2" id="x2" size="1" readonly="readonly" value="0" /> x
 						<input type="text" name="y2" id="y2" size="1" readonly="readonly" value="0" />
-					</td>
-				</tr>
-				<tr>
-					<td>Result:</td>
-					<td style="text-align: left; padding-left: 15px;">
-						<input type="radio" name="result" id="good" value="good"<?= (defined $cropped->{'result'} && $cropped->{'result'} eq 'good')?encoded_string(' checked="checked"'):'' ?> />
-						<label for="good" class="resultok" style="display: inline-block; width: 3em; text-align: center;">Good</label>
-						<br />
-						<input type="radio" name="result" id="bad" value="bad"<?= (defined $cropped->{'result'} && $cropped->{'result'} eq 'bad')?encoded_string(' checked="checked"'):'' ?> />
-						<label for="bad" class="resultfail" style="display: inline-block; width: 3em; text-align: center;">Bad</label>
-					</td>
-				</tr>
-				<tr>
-					<td>Match:</td>
-					<td style="text-align: left; padding-left: 15px;">
-						<input type="radio" name="match" id="strict" value="strict"<?= (defined $cropped->{'match'} && $cropped->{'match'} eq 'strict')?encoded_string(' checked="checked"'):'' ?> title="<?= match_title('strict') ?>" />
-						<label for="strict" title="<?= match_title('strict') ?>">Strict</label>
-						<br />
-						<input type="radio" name="match" id="diff" value="diff"<?= (defined $cropped->{'match'} && $cropped->{'match'} eq 'diff')?encoded_string(' checked="checked"'):'' ?> title="<?= match_title('diff') ?>" />
-						<label for="bytediff" title="<?= match_title('diff') ?>">Byte-Diff</label>
-						<br />
-						<input type="radio" name="match" id="hwfuzzy" value="hwfuzzy"<?= (defined $cropped->{'match'} && $cropped->{'match'} eq 'hwfuzzy' || !defined $cropped->{'match'})?encoded_string(' checked="checked"'):'' ?> title="<?= match_title('hwfuzzy') ?>" />
-						<label for="hwfuzzy" title="<?= match_title('hwfuzzy') ?>">HW-Fuzzy</label>
-						<br />
-						<input type="radio" name="match" id="fuzzy" value="fuzzy"<?= (defined $cropped->{'match'} && $cropped->{'match'} eq 'fuzzy')?encoded_string(' checked="checked"'):'' ?> title="<?= match_title('fuzzy') ?>" />
-						<label for="fuzzy" title="<?= match_title('fuzzy') ?>">Fuzzy</label>
 					</td>
 				</tr>
 			</table>

@@ -4,7 +4,7 @@ use CGI ":standard";
 use FindBin;
 use lib "$FindBin::Bin/modules";
 use openqa;
-use Image::Magick;
+use File::Copy;
 use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
 
@@ -17,10 +17,8 @@ $name=~s/^$prj\///;
 $name=~s/^\/$prj\//\//;
 
 my $fullname="/$basedir/$prj/$name.png";
-if (!-e $fullname) {
-        $fullname.=".gz";
-	if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
-}
+if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
+
 my(undef,undef,$testname,$imgname) = split(/\//, $name);
 my $imgdir=openqa::imgdir($testname);
 my ($testmodule,undef) = split('-',$imgname);
@@ -60,22 +58,23 @@ $testresult=~s/^(.*?)\s.*/$1/;
 my %cropped;
 
 if(param()) {
-	my ($x1,$y1,$x2,$y2,$width,$height,$result,$match) = (param('x1'),param('y1'),param('x2'),param('y2'),param('width'),param('height'),param('result'),param('match'));
-	if($x2 && $y2 && $width && $height && $result && $match) {
-		my $image = new Image::Magick();
-		$image->Read($fullname);
-		$image->Crop($width.'x'.$height.'+'.$x1.'+'.$y1);
-		my ($new_name,$new_fullname);
-		for(my $i=1;;$i++) {
-			$new_name = $imgname.'-'.$i.'-'.$result.'-'.$match;
-			$new_fullname = testimg("$new_name.png");
-			my $match_fullname = testimg("$imgname-$i-*.png");
-			my @f =  glob($match_fullname);
-			last if(!-e $new_fullname && scalar(@f) eq 0);
-		}
-		$image->Write($new_fullname);
-		undef $image;
-		%cropped = ('x1' => $x1, 'y1' => $y1, 'x2' => $x2, 'y2' => $y2, 'width' => $width, 'height' => $height, 'result' => $result, 'match' => $match, 'name' => $new_name);
+	my ($x1,$y1,$x2,$y2,$width,$height) = (param('x1'),param('y1'),param('x2'),param('y2'),param('width'),param('height'));
+	if($x1 && $y1 && $width && $height) {
+                #FIXME: don't hardcode distname
+                my $t = time();
+                my $path = "$perldir/distri/opensuse/needles/";
+                my $basename = "$imgname-$t";
+
+                my $fn = $path.$basename.'.json';
+                open(J, ">", $fn) or die "$fn: $!\n";
+                my $json = { area => [ { xpos => int($x1), ypos => int($y1), width => int($width), height => int($height), type => 'match' } ] };
+                $json->{"tags"} = [$imgname];
+                print J JSON->new->pretty->encode( $json );
+                close(J);
+
+                copy( $fullname, $path.$basename.'.png' ) or die "copy failed: $!";
+            
+		%cropped = ('x1' => $x1, 'y1' => $y1, 'x2' => $x2, 'y2' => $y2, 'width' => $width, 'height' => $height, 'name' => $basename);
 	}
 }
 
