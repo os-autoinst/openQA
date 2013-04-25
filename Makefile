@@ -156,7 +156,7 @@ resultarchive:
 
 ISOS=$(shell ls factory/iso/*Build*-Media.iso)
 
-NEWISOS=$(shell find factory/iso/ -name "*[DN][VE][DT]*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k4|head -8 ; find factory/iso/ -name "*LiveCD*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k5|head -4 ; find factory/iso/ -name "archlinux-*.iso" -mtime -$(newdays)|sort -r -t- -k5|head -4)
+NEWISOS=$(shell find factory/iso/ -name "*[DN][VE][DT]*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k4|head -8 ; find factory/iso/ -name "*Live*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k5|head -4 ; find factory/iso/ -name "archlinux-*.iso" -mtime -$(newdays)|sort -r -t- -k5|head -4)
 # it is enough to test one i586+x86_64 NET-iso
 NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${newdays}|sort -r -t- -k4|head -2 ; find factory/iso/ -name "*DVD*Build*-Media.iso" -mtime -${newdays})
 OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
