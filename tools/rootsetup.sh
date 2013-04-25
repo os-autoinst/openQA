@@ -12,5 +12,5 @@ a2enmod rewrite
 /etc/init.d/apache2 restart
 
 mkdir -p logs
-chown geekotest.www logs perl/autoinst/testimgs schedule.d/ # make it writable for apache
-chmod g+w logs perl/autoinst/testimgs
+chown geekotest.www logs perl/autoinst/testimgs schedule.d # make it writable for apache
+chmod g+w logs perl/autoinst/testimgs schedule.d
