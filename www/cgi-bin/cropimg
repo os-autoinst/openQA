@@ -55,6 +55,14 @@ else {
 }
 $testresult=~s/^(.*?)\s.*/$1/;
 
+# fetch needle info
+my $jsonfile=$fullname.'.json';
+open( my $fh, '<', $jsonfile ) or die "opening $jsonfile failed: $!";
+my $needle_meta = JSON::decode_json( <$fh> ) || die "broken json $jsonfile";
+close($fh);
+
+die "json $jsonfile missing needledir or tag" unless( $needle_meta->{'needledir'} && $needle_meta->{'tag'} );
+
 my %cropped;
 
 if(param()) {
@@ -62,13 +70,13 @@ if(param()) {
 	if($width && $height) {
                 #FIXME: don't hardcode distname
                 my $t = time();
-                my $path = "$perldir/distri/opensuse/needles/";
+                my $path = $needle_meta->{'needledir'}.'/';
                 my $basename = "$imgname-$t";
 
                 my $fn = $path.$basename.'.json';
                 open(J, ">", $fn) or die "$fn: $!\n";
                 my $json = { area => [ { xpos => $x1, ypos => $y1, width => $width, height => $height, type => 'match' } ] };
-                $json->{"tags"} = [$imgname];
+                $json->{"tags"} = [$needle_meta->{'tag'}];
                 print J JSON->new->pretty->encode( $json );
                 close(J);
 
