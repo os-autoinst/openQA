@@ -3,7 +3,7 @@
 use strict;
 #use FindBin;
 #use lib "$FindBin::Bin/../www/cgi-bin/modules";
-use lib "www/cgi-bin/modules";
+use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
 use openqa;
 use boring;
@@ -12,7 +12,7 @@ my $resultname=shift;
 if(!$resultname) { die "usage: $0 RESULTNAME" }
 my $hostname="openqa.opensuse.org";
 my $pinglist="bmwiedemann: ";
-my $queuepath="/tmp/ircboteventqueue";
+my $queuepath="$basedir/$prj/ircboteventqueue";
 mkdir $queuepath;
 my $eventname="$queuepath/".time().".$$";
 
