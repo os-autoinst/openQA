@@ -27,7 +27,7 @@ if($getlastimg eq '1') {
 	my @imgfiles=<${basepath}qemuscreenshot/*.${filesuffix}>;
 	my $newfile = $imgfiles[-1];
 	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
-	#$newfile=~s{^$basedir/$prj/+(.*)\.ppm}{$1.png};
+	$newfile=~s{^$basedir/$prj/+(.*)}{$1};
 	print header(-status=>302, -location=>"/croplive/$prj/$newfile?testname=$name&testmodule=$currentstep");
 	exit 0;
 }
@@ -35,11 +35,11 @@ if($getlastimg eq '1') {
 $name=~s/\.png$//;
 $name=~s/\.jpg$//;
 
-$name=~s/^$prj\///;
-$name=~s/^\/$prj\//\//;
+$name=~s|^$prj/||;
+$name=~s|^/$prj/|/|;
 
 my $fullname="$basedir/$prj/$name.$filesuffix";
-if (!-e $fullname) {print header(-status=>404)."file not found".$fullname; exit 0; }
+if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
 $name=~s/^\///;
 
 my %processed;
