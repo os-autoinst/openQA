@@ -33,7 +33,7 @@ my $maxmtime=(stat($ENV{SCRIPT_FILENAME}))[9];
 # schedule list
 my @slist=();
 my @s = stat($scheduledir) || die "$scheduledir: $!\n";
-my $smtime = $s[9];
+my $smtime = $s[9] || 0;
 if($smtime>$maxmtime){$maxmtime=$smtime}
 for my $r (<$scheduledir/*>) {
 	next if($r=~m/^\./);
@@ -130,7 +130,7 @@ my $mt = Text::MicroTemplate::Extended->new(
 
 foreach my $rundir (@runner) {
 	my @s = stat($rundir.'/currentstep') || next;
-	my $mtime = $s[9];
+	my $mtime = $s[9] || 0;
 	if($mtime>$maxmtime){$maxmtime=$mtime}
 }
 
