@@ -14,13 +14,13 @@ $prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
 use JSON "decode_json";
-our $basedir="/opt";
+our $basedir=$ENV{'OPENQA_BASEDIR'}||"/opt";
 our $prj="openqa";
 our $perlurl="$prj/perl/autoinst";
 our $perldir="$basedir/$perlurl";
 our $resultdir="$basedir/$prj/video";
 our $scheduledir="$basedir/$prj/schedule.d";
-our $hostname="boltzmann.suse.de";
+our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
 
