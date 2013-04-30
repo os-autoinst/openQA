@@ -63,32 +63,32 @@ close($fh);
 
 die "json $jsonfile missing needledir or tag" unless( $needle_meta->{'needledir'} && $needle_meta->{'tag'} );
 
-my %cropped;
+my $needle = "/$prj/testresults/$testname/$imgname";
 
-if(param()) {
-        my ($x1,$y1,$x2,$y2,$width,$height) = map {int($_)} @{Vars()}{qw(x1 y1 x2 y2 width height)};
-	if($width && $height) {
-                #FIXME: don't hardcode distname
-                my $t = time();
-                my $path = $needle_meta->{'needledir'}.'/';
-                my $basename = "$imgname-$t";
+#FIXME: Validate json
+#FIXME: Do not create new needle on every save
+if(my $json = param('json')) {
+    my $t = time();
+    my $path = $needle_meta->{'needledir'}.'/';
+    my $basename = "$imgname-$t";
 
-                my $fn = $path.$basename.'.json';
-                open(J, ">", $fn) or die "$fn: $!\n";
-                my $json = { area => [ { xpos => $x1, ypos => $y1, width => $width, height => $height, type => 'match' } ] };
-                $json->{"tags"} = [$needle_meta->{'tag'}];
-                print J JSON->new->pretty->encode( $json );
-                close(J);
+    my $fn = $path.$basename.'.json';
+    open(J, ">", $fn) or die "$fn: $!\n";
+    print J $json;
+    close(J);
 
-                copy( $fullname, $path.$basename.'.png' ) or die "copy failed: $!";
-            
-		%cropped = ('x1' => $x1, 'y1' => $y1, 'x2' => $x2, 'y2' => $y2, 'width' => $width, 'height' => $height, 'name' => $basename);
-	}
+    copy( $fullname, $path.$basename.'.png' ) or die "copy failed: $!";
+
+    ($needle = $path.$basename) =~ s|^$basedir||;
 }
+
+print STDERR "needle:$needle\n";
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, testmodule => $testmodule, imgname => $imgname, testresult => $testresult, refimg_result => $refimg_result, imglist => \@imglist, testlist => \@testlist, cropped => \%cropped },
+	template_args => { testname => $testname, testmodule => $testmodule, imgname => $imgname,
+                           testresult => $testresult, refimg_result => $refimg_result,
+                           imglist => \@imglist, testlist => \@testlist, needle => $needle },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

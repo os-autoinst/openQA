@@ -4,50 +4,14 @@
 ? my $ref_height=int($ref_width/4*3);
 
 ? block additional_headlines => sub {
-<script src="/static/prototype.js" type="text/javascript"></script>
-<script src="/static/scriptaculous/scriptaculous.js" type="text/javascript"></script>
-<script src="/static/cropper.uncompressed.js" type="text/javascript"></script>
-<script src="/static/crop.js" type="text/javascript"></script>
+<script src="/static/keyevent.js"></script>
+<script src="/static/shapes.js"></script>
+<script src="/static/needleeditor.js"></script>
 <script type="text/javascript">
 <!--
-var initcoords = <?= (%$cropped)?encoded_string("{ x1: $cropped->{'x1'}, y1: $cropped->{'y1'}, x2: $cropped->{'x2'}, y2: $cropped->{'y2'} }"):'0' ?>;
-
-Event.observe(window, "load", cropinit);
-
-document.onclick = function(e) {
-	if(!e) e=window.event;
-	elem = getEventTarget(e);
-	if(elem.nodeName == "BODY" || elem.nodeName == "HTML") {
-		crpr.options.onloadCoords=null;
-		crpr.reset();
-	}
-}
-
-function checkform(f) {
-	if(
-	! isvalnum(f.x2.value) ||
-	! isvalnum(f.y2.value) ||
-	! isvalnum(f.width.value) ||
-	! isvalnum(f.height.value) ) {
-		alert("Make your selection first!");
-		return false;
-	}
-
-	if(!f.result[0].checked && !f.result[1].checked) {
-		alert("Select a result first!");
-		return false;
-	}
-	if(!f.match[0].checked && !f.match[1].checked && !f.match[2].checked && !f.match[3].checked) {
-		alert("Select a matching method first!");
-		return false;
-	}
-	return true;
-}
-
-function resetform() {
-	crpr.options.onloadCoords=null;
-	crpr.reset();
-}
+window.onload=function(){ 
+  new NeedleEditor('<?= $needle ?>');
+};
 -->
 </script>
 ? }
@@ -62,61 +26,18 @@ function resetform() {
 ? block content => sub {
 <div class="grid_5 box box-shadow alpha" id="cropdetails_box">
 	<div class="box-header aligncenter">Cropping details</div>
-	<div style="margin: 0 18px 0 0;">
-		<form method="post" action="" onsubmit="return checkform(this);">
-			<table style="border: none;">
-				<tr>
-					<td style="width: 60px;">Start Position:</td>
-					<td style="width: 65px;">
-						<input type="text" name="x1" id="x1" size="1" readonly="readonly" value="0" /> x
-						<input type="text" name="y1" id="y1" size="1" readonly="readonly" value="0" />
-					</td>
-				</tr>
-				<tr>
-					<td>Size:</td>
-					<td>
-						<input type="text" name="width" id="width" size="1" readonly="readonly" value="0" /> x
-						<input type="text" name="height" id="height" size="1" readonly="readonly" value="0" />
-					</td>
-				</tr>
-				<tr>
-					<td>End Position:</td>
-					<td>
-						<input type="text" name="x2" id="x2" size="1" readonly="readonly" value="0" /> x
-						<input type="text" name="y2" id="y2" size="1" readonly="readonly" value="0" />
-					</td>
-				</tr>
-			</table>
-			<br />
-			<div class="aligncenter">
-				<input type="reset" onclick="resetform();" class="button" value="Reset" />
-				<input type="submit" value="Crop Image" />
-			</div>
-		</form>
-		<? if(%$cropped) { ?>
-		<br /><br />
-		<div class="aligncenter">
-			<img src="/images/accept.png" width="16" height="16" />
-			Image Cropped
-		</div>
-		<table style="border: none;">
-			<tr>
-				<td style="width: 60px;">Filename:</td>
-				<td style="width: 150px;"><?= $cropped->{'name'} ?>.png</td>
-			</tr>
-			<tr>
-				<td colspan="2">
-					<a href="/<?= $perlurl ?>/testimgs/<?= $cropped->{'name'} ?>.png"><img src="/<?= $perlurl ?>/testimgs/<?= $cropped->{'name'} ?>.png?<?= ($cropped->{'width'} > 200 || $cropped->{'height'} > 150)?'size=200x150':'' ?>" style="border: 1px dotted #ccc;" /></a>
-				</td>
-			</tr>
-		</table>
-		<? } ?>
-	</div>
+	<div id="needleeditor_tags" style="margin: 0 18px 0 0;"></div>
+        <form method="post" action="">
+          <textarea id="needleeditor_textarea" name="json" readOnly="yes" style="width:97%; height:300px;"></textarea>
+          <input type="submit" value="Save" />
+        </form>
 </div>
 
 <div class="grid_14 box box-shadow omega">
 	<div style="margin: 0 10px; background-color: #202020;">
-		<img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>.png" alt="test image" id="testImage" />
+             <canvas tabindex="1" id="needleeditor_canvas" width="1024" height="768" style="border: 1px solid black;">
+             This text is displayed if your browser does not support HTML5 Canvas.
+             </canvas>
 	</div>
 </div>
 
