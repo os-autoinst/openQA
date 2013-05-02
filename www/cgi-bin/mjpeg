@@ -16,7 +16,6 @@ $| = 1;
 $SIG{HUP} = sub { exit 0; };
 $SIG{TERM} = sub { exit 0; };
 $SIG{PIPE} = sub { exit 0; };
-our %goodsizes=(1440015=>1, 2359312=>1, 864015=>1);
 
 my $name=$ENV{PATH_INFO};
 
@@ -26,28 +25,11 @@ my $basepath = running_log($name);
 
 if($basepath eq '') {print header(-status=>404)."test not running"; exit 0; }
 
-sub ppm2jpg($) {
-  my $p = new Image::Magick(depth=>8);
-  my $name = shift;
-  $p->Read($name, depth=>8);
-  return $p->ImageToBlob(magick=>uc('jpg'), depth=>8, quality=>60);
-}
-
 sub png2jpg($) {
   my $p = new Image::Magick(depth=>8);
   my $name = shift;
   $p->Read($name, depth=>8);
   return $p->ImageToBlob(magick=>uc('jpg'), depth=>8, quality=>100);
-}
-
-sub waitppmcomplete($)
-{
-  my $filename = shift;
-  for(1..250) {
-    my $size=-s $filename;
-    if($size && $goodsizes{$size}) {last}
-    sleep 0.02;
-  }
 }
 
 my $sendimgtwice = ($ENV{HTTP_USER_AGENT}=~m/Chrome/)?1:0;
@@ -58,52 +40,43 @@ my $lastfile = '';
 my $lastdata = '';
 my $donetimeout = 0;
 my $p2 = Image::Magick->new(depth=>8);
-$p2->Set(size=>'800x600'); 
-
+$p2->Set(size=>'800x600');
 
 while (1) {
-  my @ppmfiles=<$basepath/qemuscreenshot/*.png>;
-  my $newfile = ($ppmfiles[-1])?$ppmfiles[-1]:$lastfile;
+  my @imgfiles=<$basepath/qemuscreenshot/*.png>;
+  my $newfile = ($imgfiles[-1])?$imgfiles[-1]:$lastfile;
   if ($lastfile ne $newfile) {
-    my $data=file_content($newfile);
-    if($data ne $lastdata) {
+    if ( !-l $newfile ) {
+      my $data=file_content($newfile);
       my $p = new Image::Magick(depth=>8, magick=>"PNG");
       $p->BlobToImage($data);
       my $p3=$p;
-      if(0 && length($data) != 1440015) { # everything not 800x600 needs cropping
-        $p2->ReadImage("xc:black");
-        $p2->Composite(image=>$p, compose=>'Over');
-      	$p3=$p2;
-      }
-	      my $jpg=$p3->ImageToBlob(magick=>'JPEG', depth=>8, quality=>60);
-	#     my $jpg=ppm2jpg($newfile);
-	      my $jpgsize=length($jpg);
+      my $jpg=$p3->ImageToBlob(magick=>'JPEG', depth=>8, quality=>60);
+      my $jpgsize=length($jpg);
       for(0..$sendimgtwice) {
-	      print "Content-Type: image/jpeg\015\012Content-Size: $jpgsize\015\012\015\012".$jpg."\015\012--__myboundary__\015\012";
+        print "Content-Type: image/jpeg\015\012Content-Size: $jpgsize\015\012\015\012".$jpg."\015\012--__myboundary__\015\012";
       }
-      
-      $lastdata = $data;
+      $lastfile = $imgfiles[-1];
+      $donetimeout = 0;
     }
-    $lastfile = $ppmfiles[-1];
-    $donetimeout = 0;
-  }
-  else {
-    sleep 0.2;
-    if ($lastfile ne '') {
-      $donetimeout++;
-      print "X-NoKeepAlive: This message will trigger SIGPIPE in the CGI if you close the page in your browser\015\012";
-      if($donetimeout > 15) {
-        $donetimeout = 0;
-        if(! -e $basepath."backend.run") {
-          # Some browsers can't handle mpng (at least after reciving jpeg all the time)
-          my $jpg=png2jpg("../htdocs/images/suse-tested.png");
-          my $jpgsize=length($jpg);
-          print "Content-Type: image/jpeg\015\012Content-Size: $jpgsize\015\012\015\012$jpg\015\012--__myboundary__--\015\012";
-          exit 0;
+    else {
+      sleep 0.2;
+      if ($lastfile ne '') {
+        $donetimeout++;
+        print "X-NoKeepAlive: This message will trigger SIGPIPE in the CGI if you close the page in your browser\015\012";
+        if($donetimeout > 15) {
+          $donetimeout = 0;
+          if(! -e $basepath."backend.run") {
+
+   # Some browsers can't handle mpng (at least after reciving jpeg all the time)
+            my $jpg=png2jpg("../htdocs/images/suse-tested.png");
+            my $jpgsize=length($jpg);
+            print "Content-Type: image/jpeg\015\012Content-Size: $jpgsize\015\012\015\012$jpg\015\012--__myboundary__--\015\012";
+            exit 0;
+          }
         }
       }
     }
+    sleep 0.2;
   }
-  sleep 0.2;
 }
-
