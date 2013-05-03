@@ -46,7 +46,7 @@ while (1) {
   my $newfile = ($imgfiles[-1])?$imgfiles[-1]:$lastfile;
   if ($lastfile ne $newfile) {
     if ( !-l $newfile || !$lastfile ) {
-      print STDERR "file\n";
+      #print STDERR "file\n";
       my $data=file_content($newfile);
       my $p = new Image::Magick(depth=>8, magick=>"PNG");
       $p->BlobToImage($data);
@@ -60,7 +60,7 @@ while (1) {
       $donetimeout = 0;
     }
     else {
-      print STDERR "symlink\n";
+      #print STDERR "symlink\n";
       sleep 0.2;
       if ($lastfile ne '') {
         $donetimeout++;
