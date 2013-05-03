@@ -15,9 +15,11 @@
 
 	#trap "rm -f $out" EXIT # clean up in case of errors
 	sleep 1 # let date be higher than a previous test
-	rm -f $out $out.autoinst.txt testresults/$baseoutname/*
+	rm -f $out $out.autoinst.txt
+	rm -rf testresults/$baseoutname
 	touch $out $out.autoinst.txt # prevent cron going in here during test
 	rm -f schedule.d/$baseoutname
+	ln -s ../${testdir}/testresults/$basetestname testresults/$baseoutname || true
 	echo `date` starting to create $out >>$L
 	#echo $basetestname | grep -q ^openSUSE- && export DISTRI=opensuse
 	pwd=`pwd`
@@ -32,7 +34,7 @@
 	mv -f ${testdir}/currentautoinst-log.txt $out.autoinst.txt
 	mv -f ${testdir}/video/$basetestname.ogv $out
 	#trap "" EXIT
-	rm -rf testresults/$baseoutname
+	rm -f testresults/$baseoutname
 	mv ${testdir}/testresults/$basetestname testresults/$baseoutname || true
 	tools/notify $baseoutname || true
 	if echo "$baseoutname" | grep -q 'archlinux' ; then

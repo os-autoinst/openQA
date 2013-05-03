@@ -34,7 +34,8 @@ if($log eq 'current') {
 }
 
 elsif($log eq 'modlist') {
-	my $modinfo = get_running_modinfo($basepath);
+	my $results = test_result($name);
+	my $modinfo = get_running_modinfo($results);
 	unless(defined $modinfo) {print header(-status=>404)."test not running"; exit 0; }
 	print header({-type=>"application/json", Content_Encoding=>"none"});
 	my $html = '';
@@ -55,8 +56,9 @@ elsif($log eq 'modlist') {
 }
 
 elsif($log eq 'modstat') {
+	my $results = test_result($name);
 	print header({-type=>"application/json", Content_Encoding=>"none"});
-	my $modinfo = get_running_modinfo($basepath);
+	my $modinfo = get_running_modinfo($results);
 	delete $modinfo->{'modlist'};
 	print to_json($modinfo);
 	exit;

@@ -192,45 +192,31 @@ sub running_state($) {
 }
 
 sub get_running_modinfo($) {
-	my $mybasepath = shift;
-	unless(-e $mybasepath.'currentstep') {return undef}
-	my (undef, $currentstep) = split(' ', file_content($mybasepath.'currentstep'));
-	my $filecontent = file_content($mybasepath.'currentautoinst-log.txt') || '';
-	my @modules = $filecontent=~m/^scheduling\s(\w+)\s.*\/(\w+)\.d\/.*\.pm$/gm;
-	my $found = 0;
-	unless ($currentstep and grep(/^$currentstep$/, @modules)) {
-		# all modules are todo as the 1st step is not yet running
-		$found = 1;
-	}
+	my $results = shift;
+	return {} unless $results;
+	my $currentstep = $results->{'running'};
 	my $modlist = [];
-	my $current_item = '';
-	my $last_category = '';
 	my $donecount = 0;
-	cycle(1);
-	# every 2nd item is the category name
-	my $i = 0;
-	foreach my $module (@modules) {
-		if(cycle() eq 'even') {
-			if($last_category ne $module) {
-				push(@$modlist, {'category' => $module, 'modules' => []});
-			}
-			$last_category = $module;
-			my $modstate = 'done';
-			if($found) {$modstate = 'todo'}
-			elsif ($current_item=~m/^$currentstep$/) {
-				$found = 1;
-				$modstate = 'current';
-				$donecount = $i;
-			}
-			my $moditem = {'name' => $current_item, 'state' => $modstate};
-			push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
-			++$i;
+	my $count = @{$results->{'testmodules'}};
+	my $modstate = 'done';
+	my $category;
+	for my $module (@{$results->{'testmodules'}}) {
+		my $name = $module->{'name'};
+		if (!$category || $category ne $module->{'category'}) {
+			$category = $module->{'category'};
+			push(@$modlist, {'category' => $category, 'modules' => []});
 		}
-		else {
-			$current_item = $module;
+		if ($name eq $currentstep) {
+			$modstate = 'current';
+		} elsif ($modstate eq 'current') {
+			$modstate = 'todo';
+		} elsif ($modstate eq 'done') {
+			$donecount++;
 		}
+		my $moditem = {'name' => $name, 'state' => $modstate};
+		push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
 	}
-	return {'modlist' => $modlist, 'modcount' => scalar(@modules)/2, 'moddone' => $donecount};
+	return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount};
 }
 
 
