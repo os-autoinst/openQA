@@ -18,28 +18,17 @@ if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 
 my $results = test_result($testname);
 
-my @timeouts=<$imgdir/timeout-*.png>;
-if(@timeouts) {
-	unshift(@{$results->{'testmodules'}}, {
-			'name' => 'timeout',
-			'result' => 'na'
-	});
-}
-
 my @modlist=();
 foreach my $module (@{$results->{'testmodules'}}) {
 	my $name = $module->{'name'};
 	# add link to $imgdir/$name*.png via png CGI
 	my @imglist;
-	foreach my $imgpath (<$imgdir/$name-*.png>) {
-		my $imgres = $module->{'screenshots'}->[scalar(@imglist)]->{'refimg_result'} || 'na';
-		if($imgres eq "na") {
-			$imgres = $module->{'screenshots'}->[scalar(@imglist)]->{'ocr_result'} || 'na';
-		}
-		$imgpath = data_name($imgpath);
-		push(@imglist, {name => $imgpath, result => $imgres});
-	}
+	foreach my $img (@{$module->{'details'}}) {
+            my $imgpath = data_name("$imgdir/".$img->{'screenshot'});
+            push(@imglist, {name => $imgpath, result => $img->{'result'}});
+        }
 
+#FIXME: Read wav and orc also from results.json as soon as it is in there
 	# add link to $imgdir/$name*.wav via ogg CGI
 	my @wavlist;
 	foreach my $wavpath (<$imgdir/$name-[0-9]*.wav>) {
@@ -58,14 +47,13 @@ foreach my $module (@{$results->{'testmodules'}}) {
 		push(@ocrlist, {name => $ocrpath, result => $ocrres});
 	}
 
-	my $image = (get_testimgs($module->{'name'}))?1:0;
 	my $sound = (get_testwavs($module->{'name'}))?1:0;
 	my $ocr = (@ocrlist)?1:0;
 	push(@modlist, {
 		name => $module->{'name'},
 		result => $module->{'result'},
 		screenshots => \@imglist, wavs => \@wavlist, ocrs => \@ocrlist,
-		refimg => $image, audio => $sound, ocr => $ocr
+		refimg => 0, audio => $sound, ocr => $ocr
 	});
 }
 
