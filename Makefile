@@ -71,7 +71,6 @@ renamenetresults:
 	n=`perl -e '$$_="${buildnr}";s/.*Build(\d+)/$$1/;print;'` ; echo $$n ;\
 	make renameresult f=openSUSE-NET-i586-Build$f t=openSUSE-NET-i586-Build$f+$$n ;\
 	make renameresult f=openSUSE-NET-x86_64-Build$f t=openSUSE-NET-x86_64-Build$f+$$n
-	
 
 list:
 	ls factory/iso/*Build*.iso
@@ -167,6 +166,7 @@ newvideos: $(NEWOGGS) Tumbleweed-kde64 Tumbleweed-gnome32 debian archlinux $(sch
 newlxdevideos: $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
 newxfcevideos: $(patsubst factory/iso/%-Media.iso,video/%-xfce.ogv,$(NEWNETISOS))
 newgnomevideos: $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS))
+allnewvideos: $(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-doc.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-xfce.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-minimalx.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-smp.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-textmode.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-usbboot.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-usbinst.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-nice.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-live.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-RAID0.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-RAID1.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-RAID10.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-RAID5.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-splitusr.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-cryptlvm.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-btrfscryptlvm.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-basesystemdevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-zyppdevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-yastdevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-kerneldevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-mozilladevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-xorgdevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-kdeplaygrounddevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-kdedevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnomedevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-xfcedevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-lxdedevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-uefi.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-btrfs.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-64.ogv,$(NEWISOS))
 
 video/%.ogv: factory/iso/%-Media.iso
 	in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
