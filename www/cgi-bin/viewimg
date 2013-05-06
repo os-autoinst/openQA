@@ -6,41 +6,37 @@ use lib "$FindBin::Bin/modules";
 use Image::Magick;
 use awstandard;
 use openqa;
-use Digest::MD5;
 use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
 
 my $name=$ENV{PATH_INFO};
 if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
-$name=~s/\.png$//;
-$name=~s/\.jpg$//;
 
 $name=~s/^$prj//;
 $name=~s/^\/$prj//;
 
-my $fullname="/$basedir/$prj/$name.png";
-if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
-
-my $p = new Image::Magick(depth=>8);
-$p->Read($fullname, depth=>8);
-my ($img_width,$img_height) = $p->Get('width','height');
-
-my(undef,undef,$testname,$imgname) = split(/\//, $name);
-my ($testmodule,$screenshotid) = split(/-/, $imgname);
-
-my @imglist=map {parse_refimg_name($_)} get_testimgs($imgname);
-my $imgmd5 = Digest::MD5::md5_hex(file_content($fullname));
+my(undef,undef,$testname,$testmodule,$screenshotid) = split(/\//, $name);
 
 my $results = test_result($testname);
-my $module_hash = test_result_module($results->{'testmodules'}, $testmodule);
-my $screenshot = ($module_hash)?$module_hash->{'screenshots'}->[$screenshotid-1]:undef;
-if($screenshot) {
-	$screenshot->{'size'} = [$img_width,$img_height];
-}
+if (!defined($results)) {print header(-status=>404)."no testresults found: ".$results; exit 0; }
+
+my $module = test_result_module($results->{'testmodules'}, $testmodule);
+my $module_detail = $module->{'details'}->[$screenshotid-1];
+my $imgname = $module_detail->{'screenshot'};
+my $needle = $module_detail->{'matcharea'}->[0];
+
+#my $fullname="/$basedir/$prj/testresults/$testname/$imgname";
+#my $p = new Image::Magick(depth=>8);
+#$p->Read($fullname, depth=>8);
+#my ($img_width,$img_height) = $p->Get('width','height');
+my ($img_width,$img_height) = qw(1024 768);
+
+my @imglist=(); # FIXME: list of needles
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, imgname => $imgname, imgmd5 => $imgmd5, imglist => \@imglist, screenshot => $screenshot },
+	template_args => { testname => $testname, imgname => $imgname, img_width => $img_width,
+                           img_height => $img_height, imglist => \@imglist, screenshot => $needle },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

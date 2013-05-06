@@ -23,9 +23,10 @@ foreach my $module (@{$results->{'testmodules'}}) {
 	my $name = $module->{'name'};
 	# add link to $imgdir/$name*.png via png CGI
 	my @imglist;
+        my $num = 1;
 	foreach my $img (@{$module->{'details'}}) {
             my $imgpath = data_name("$imgdir/".$img->{'screenshot'});
-            push(@imglist, {name => $imgpath, result => $img->{'result'}});
+            push(@imglist, {name => $imgpath, num => $num++, result => $img->{'result'}});
         }
 
 #FIXME: Read wav and orc also from results.json as soon as it is in there

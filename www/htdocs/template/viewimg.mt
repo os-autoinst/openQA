@@ -15,7 +15,7 @@
 	<div class="box-header aligncenter">Actions</div>
 	<div class="aligncenter">
 		<? if(is_authorized_rw()) { ?>
-		<a href="/cropimg/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>.png"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
+		<a href="/cropimg/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
 		<? } ?>
 		<a href="/results/<?= $testname ?>"><img src="/images/back.png" alt="back" title="back to overview page" /></a> 
 	</div>
@@ -23,19 +23,19 @@
 
 <div class="grid_14 alpha">
 	<div class="grid_14 box box-shadow omega">
-		<div class="box-header aligncenter"><?= $imgmd5 ?></div>
+		<div class="box-header aligncenter"><?= $imgname ?></div>
 		<div style="margin: 0 10px; position: relative; width: 800px; height: 600px;">
-			<a href="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>.png">
-				<img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>.png?fixsize=1" width="800" height="600"
+			<a href="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>">
+				<img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>?fixsize=1" width="800" height="600"
 				alt="<?= $imgname ?>" style="position: absolute; z-index: 2;" />
-				<? if ($screenshot->{'refimg'}) { ?>
+				<? if (1) { ?>
 				<script type="text/javascript">
-					var refpos_x = <?= $screenshot->{'refimg'}->{'match'}->[0] ?>;
-					var refpos_y = <?= $screenshot->{'refimg'}->{'match'}->[1] ?>;
-					var ref_x = <?= $screenshot->{'refimg'}->{'size'}->[0] ?>;
-					var ref_y = <?= $screenshot->{'refimg'}->{'size'}->[1] ?>;
-					var scr_x = <?= $screenshot->{'size'}->[0] ?>;
-					var scr_y = <?= $screenshot->{'size'}->[1] ?>;
+					var refpos_x = <?= $screenshot->{'x'} ?>;
+					var refpos_y = <?= $screenshot->{'y'} ?>;
+					var ref_x = <?= $screenshot->{'w'} ?>;
+					var ref_y = <?= $screenshot->{'h'} ?>;
+					var scr_x = <?= $img_width ?>;
+					var scr_y = <?= $img_height ?>;
 					if(scr_x > 800 || scr_y > 600) {
 						refpos_x = (refpos_x / scr_x) * 800;
 						refpos_y = (refpos_y / scr_y) * 600;
