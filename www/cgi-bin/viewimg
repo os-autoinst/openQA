@@ -23,7 +23,7 @@ if (!defined($results)) {print header(-status=>404)."no testresults found: ".$re
 my $module = test_result_module($results->{'testmodules'}, $testmodule);
 my $module_detail = $module->{'details'}->[$screenshotid-1];
 my $imgname = $module_detail->{'screenshot'};
-my $needle = $module_detail->{'matcharea'}->[0];
+my $needle = $module_detail->{'area'}->[0];
 
 #my $fullname="/$basedir/$prj/testresults/$testname/$imgname";
 #my $p = new Image::Magick(depth=>8);
