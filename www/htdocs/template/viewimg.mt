@@ -30,12 +30,18 @@
 				alt="<?= $imgname ?>" style="position: absolute; z-index: 2;" />
 				<? if (1) { ?>
 				<script type="text/javascript">
+                                        var colorset = {
+                                            'ok':   { 'stroke': 'rgb(34,120,8)', 'fill': 'rgba(151, 208, 5, .5)'},
+                                            'fail': { 'stroke': 'rgb(140,0,0)', 'fill': 'rgba(255, 77, 77, .5)'},
+                                        };
 					var refpos_x = <?= $screenshot->{'x'} ?>;
 					var refpos_y = <?= $screenshot->{'y'} ?>;
 					var ref_x = <?= $screenshot->{'w'} ?>;
 					var ref_y = <?= $screenshot->{'h'} ?>;
 					var scr_x = <?= $img_width ?>;
 					var scr_y = <?= $img_height ?>;
+                                        var similarity = "<?= $screenshot->{'similarity'} ?>";
+                                        var result = "<?= $screenshot->{'result'} ?>";
 					if(scr_x > 800 || scr_y > 600) {
 						refpos_x = (refpos_x / scr_x) * 800;
 						refpos_y = (refpos_y / scr_y) * 600;
@@ -47,13 +53,13 @@
 					var context = canvas.getContext('2d');
 					//context.beginPath();
 					context.lineWidth = 3;
-					context.strokeStyle = 'rgb(34,120,8)';
+					context.strokeStyle = colorset[result]['stroke'];
 					context.strokeRect(refpos_x, refpos_y, ref_x, ref_y);
-                                        context.fillStyle = 'rgba(151, 208, 5, .5)';
+                                        context.fillStyle = colorset[result]['fill'];
 					context.fillRect(refpos_x, refpos_y, ref_x, ref_y);
-                                        context.font = "14pt sans-serif";
-                                        context.fillStyle = 'rgb(34,120,8)';
-                                        context.fillText("X.XXXXX", refpos_x, refpos_y);
+                                        context.font = "bold 12px sans-serif";
+                                        context.fillStyle = colorset[result]['stroke'];
+                                        context.fillText(similarity, refpos_x+2, refpos_y+12);
 					//context.stroke();
 				</script>
 				<? } ?>
