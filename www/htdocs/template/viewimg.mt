@@ -7,7 +7,7 @@
 ?= super()
 &gt; View Image
 &gt; <a href="/results/<?= $testname ?>"><?= $testname ?></a>
-&gt; <?= $imgname ?>
+&gt; <?= $testmodule ?>
 ? }
 
 ? block content => sub {
@@ -45,28 +45,32 @@
 					document.write('<canvas id="cmatch" class="cmatch" width="800" height="600" style="position: absolute; z-index: 3;"></canvas>');
 					var canvas = document.getElementById('cmatch');
 					var context = canvas.getContext('2d');
-					context.beginPath();
-					context.rect(refpos_x, refpos_y, ref_x, ref_y);
+					//context.beginPath();
 					context.lineWidth = 3;
-					context.strokeStyle = '#3399CC';
-					context.stroke();
+					context.strokeStyle = 'rgb(34,120,8)';
+					context.strokeRect(refpos_x, refpos_y, ref_x, ref_y);
+                                        context.fillStyle = 'rgba(151, 208, 5, .5)';
+					context.fillRect(refpos_x, refpos_y, ref_x, ref_y);
+                                        context.font = "14pt sans-serif";
+                                        context.fillStyle = 'rgb(34,120,8)';
+                                        context.fillText("X.XXXXX", refpos_x, refpos_y);
+					//context.stroke();
 				</script>
 				<? } ?>
 			</a>
 		</div>
 	</div>
 
-	<? if(@$imglist) { ?>
+	<? if(@$imglist) {
+             my $img_count = 1; ?>
 	<div class="grid_14 box box-shadow omega">
 		<div style="margin: 0 20px; overflow-x: scroll; overflow-y: hidden; overflow: auto; white-space: nowrap;">
 			<? for my $refimg (@$imglist) { ?>
 			<span class="refcomppic <?= ($screenshot->{'refimg'} and $refimg->{'id'} eq $screenshot->{'refimg'}->{'id'})?'match':'' ?>">
-				<a href="/<?= $perlurl ?>/testimgs/<?= $refimg->{'name'} ?>.png"><img
-					src="/<?= $perlurl ?>/testimgs/<?= $refimg->{'name'} ?>.jpg?csize=<?= $ref_width ?>x<?= $ref_height ?>"
+				<a href="<?= $img_count++ ?>"><img
+					src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $refimg->{'screenshot'} ?>?size=<?= $ref_width ?>x<?= $ref_height ?>"
 					width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $refimg->{'name'} ?>.png" title="<?= $refimg->{'name'} ?>.png"
-					class="pic" /></a>
-				<span class="match-icon"><img src="/images/match_icons/<?= $refimg->{'match'} ?>.png" width="16" height="16" alt="<?= $refimg->{'match'} ?>" title="<?= match_title($refimg->{'match'}) ?>" style="border: none;" /></span>
-				<span class="result-icon"><img src="/images/<?= ($refimg->{'result'} eq 'good')?'accept.png':'exclamation.png' ?>" width="16" height="16" alt="<?= $refimg->{'result'} ?>" title="<?= $refimg->{'result'} ?>" style="border: none;" /></span>
+					class="<?= "resborder\L$refimg->{'result'}" ?>" /></a>
 			</span>
 			<? } ?>
 		</div>

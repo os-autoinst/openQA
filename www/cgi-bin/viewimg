@@ -23,7 +23,14 @@ if (!defined($results)) {print header(-status=>404)."no testresults found: ".$re
 my $module = test_result_module($results->{'testmodules'}, $testmodule);
 my $module_detail = $module->{'details'}->[$screenshotid-1];
 my $imgname = $module_detail->{'screenshot'};
-my $needle = $module_detail->{'area'}->[0];
+
+my $needle;
+if( defined($module_detail->{'area'}) ) {
+    $needle = $module_detail->{'area'}->[0];
+}
+elsif( defined($module_detail->{'needles'}) ) {
+    $needle = $module_detail->{'needles'}->[0]->{'area'}->[0];
+}
 
 #my $fullname="/$basedir/$prj/testresults/$testname/$imgname";
 #my $p = new Image::Magick(depth=>8);
@@ -31,12 +38,10 @@ my $needle = $module_detail->{'area'}->[0];
 #my ($img_width,$img_height) = $p->Get('width','height');
 my ($img_width,$img_height) = qw(1024 768);
 
-my @imglist=(); # FIXME: list of needles
-
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, imgname => $imgname, img_width => $img_width,
-                           img_height => $img_height, imglist => \@imglist, screenshot => $needle },
+	template_args => { testname => $testname, testmodule => $testmodule, imgname => $imgname, img_width => $img_width,
+                           img_height => $img_height, imglist => $module->{'details'}, screenshot => $needle },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");
