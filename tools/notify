@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w
 # produce notifications about a new test result
 use strict;
-#use FindBin;
-#use lib "$FindBin::Bin/../www/cgi-bin/modules";
-use lib "/usr/share/openqa/cgi-bin/modules";
+use FindBin;
+use lib "$FindBin::Bin/../www/cgi-bin/modules";
+#use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
 use openqa;
 use boring;
