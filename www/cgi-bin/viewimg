@@ -39,11 +39,14 @@ elsif( defined($module_detail->{'needles'}) ) {
 #my ($img_width,$img_height) = $p->Get('width','height');
 my ($img_width,$img_height) = qw(1024 768);
 
+my $modinfo = get_running_modinfo($results);
+
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
 	template_args => { testname => $testname, testmodule => $testmodule, imgname => $imgname,
                            img_width => $img_width, img_height => $img_height,
-                           imglist => $module->{'details'}, areas => encoded_string(JSON::to_json($areas)) });
+                           imglist => $module->{'details'}, areas => encoded_string(JSON::to_json($areas)),
+                           modinfo => $modinfo, action => 'viewimg' });
 
 print header(-charset=>"UTF-8", -type=>"text/html");
 print $mt->render('viewimg');

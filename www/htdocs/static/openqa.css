@@ -12,6 +12,7 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 .resultmissing {background-color: #ddd; }
 .resulttesting {background-color: #9df; }
 .resultscheduled {background-color: #bef; }
+.modcategory li.selected a { font-weight: bold; color: black; }
 
 .textlink a {
   text-decoration: none;

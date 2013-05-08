@@ -1,0 +1,48 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use FindBin;
+use lib "$FindBin::Bin/modules";
+use awstandard;
+use openqa;
+use Text::MicroTemplate "encoded_string";
+use Text::MicroTemplate::Extended;
+
+my $fn=$ENV{PATH_INFO};
+if(!defined $fn) { print header(-status=>404)."must specify result file as path"; exit 0 }
+$fn=~s%^/%%;
+my ($action,$testname,$testmodule)=split("/", $fn);
+if($action!~m%^(?:show|raw)$%) {
+	print header(-status=>404)."unknown action";
+	exit 0;
+}
+if($testname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
+my $results = test_result($testname);
+if (!defined($results)) {print header(-status=>404)."no testresults found: ".$results; exit 0; }
+my $modinfo = get_running_modinfo($results);
+
+my $fqfn = "";
+if ($modinfo->{'running'} eq "") {
+	$fqfn = "$resultdir/$testname.ogv.autoinst.txt"
+} else {
+	$fqfn = running_log($testname).'currentautoinst-log.txt';
+}
+my $scriptpath=log_to_scriptpath($fqfn, $testmodule);
+if(!$scriptpath || !-e $scriptpath) {
+	$scriptpath||="";
+	print header(-status=>404)."test not found: $testmodule $scriptpath"; exit 0
+}
+
+my $script=file_content($scriptpath);
+if($action eq "raw") { print header(-type=>"text/plain").$script; exit 0}
+
+my $nicescriptpath = $scriptpath;
+$nicescriptpath=~s/^.*autoinst\///;
+
+my $mt = Text::MicroTemplate::Extended->new(
+	include_path  => ['../htdocs/template'],
+	template_args => { testname => $testname, testmodule => $testmodule, modinfo => $modinfo, scriptpath => $nicescriptpath, scriptsrc => $script, action => 'viewsrc' },
+);
+
+print header(-charset=>"UTF-8", -type=>"text/html");
+print $mt->render('viewsrc');

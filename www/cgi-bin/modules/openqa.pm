@@ -202,6 +202,7 @@ sub get_running_modinfo($) {
 	my $category;
 	for my $module (@{$results->{'testmodules'}}) {
 		my $name = $module->{'name'};
+		my $result = $module->{'result'};
 		if (!$category || $category ne $module->{'category'}) {
 			$category = $module->{'category'};
 			push(@$modlist, {'category' => $category, 'modules' => []});
@@ -213,10 +214,10 @@ sub get_running_modinfo($) {
 		} elsif ($modstate eq 'done') {
 			$donecount++;
 		}
-		my $moditem = {'name' => $name, 'state' => $modstate};
+		my $moditem = {'name' => $name, 'state' => $modstate, 'result' => $result};
 		push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
 	}
-	return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount};
+	return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $results->{'running'}};
 }
 
 

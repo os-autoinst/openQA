@@ -1,29 +1,30 @@
-? extends 'defstyle'
+? extends 'fluid'
 
 ? my $ref_width=80;
 ? my $ref_height=int($ref_width/4*3);
 
 ? block locbar => sub {
-?= super()
-&gt; View Image
-&gt; <a href="/results/<?= $testname ?>"><?= $testname ?></a>
-&gt; <?= $testmodule ?>
+<?= $self->include_file("../../htdocs/includes/moduleslistlocbar") ?>
 ? }
 
 ? block content => sub {
-<div class="grid_2 box box-shadow alpha" id="actions_box">
-	<div class="box-header aligncenter">Actions</div>
-	<div class="aligncenter">
-		<? if(is_authorized_rw()) { ?>
-		<a href="/cropimg/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
-		<? } ?>
-		<a href="/results/<?= $testname ?>"><img src="/images/back.png" alt="back" title="back to overview page" /></a> 
+<div class="grid_3 alpha" id="actions_box">
+	<div class="box box-shadow alpha" id="actions_box">
+		<div class="box-header aligncenter">Actions</div>
+		<div class="aligncenter">
+			<?= $self->include_file("../../htdocs/includes/moduleslistoptions") ?>
+			<? if(is_authorized_rw()) { ?>
+			<a href="/cropimg/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
+			<? } ?>
+		</div>
 	</div>
+
+	<?= $self->include_file("../../htdocs/includes/moduleslist") ?>
 </div>
 
-<div class="grid_14 alpha">
-	<div class="grid_14 box box-shadow omega">
-		<div class="box-header aligncenter"><?= $imgname ?></div>
+<div class="grid_13 omega">
+	<div class="box box-shadow">
+		<?= $self->include_file("../../htdocs/includes/moduleslisttabs") ?>
 		<div style="margin: 0 10px; position: relative; width: 800px; height: 600px;">
 			<a href="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>">
 				<img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>?fixsize=1" width="800" height="600"
@@ -81,7 +82,7 @@
 
 	<? if(@$imglist) {
              my $img_count = 1; ?>
-	<div class="grid_14 box box-shadow omega">
+	<div class="box box-shadow">
 		<div style="margin: 0 20px; overflow-x: scroll; overflow-y: hidden; overflow: auto; white-space: nowrap;">
 			<? for my $refimg (@$imglist) { ?>
 			<span class="refcomppic">
