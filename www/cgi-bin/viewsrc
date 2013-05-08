@@ -21,12 +21,8 @@ my $results = test_result($testname);
 if (!defined($results)) {print header(-status=>404)."no testresults found: ".$results; exit 0; }
 my $modinfo = get_running_modinfo($results);
 
-my $fqfn = "";
-if ($modinfo->{'running'} eq "") {
-	$fqfn = "$resultdir/$testname.ogv.autoinst.txt"
-} else {
-	$fqfn = running_log($testname).'currentautoinst-log.txt';
-}
+my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
+$fqfn = running_log($testname).'currentautoinst-log.txt' if ($modinfo->{'running'} ne "");
 my $scriptpath=log_to_scriptpath($fqfn, $testmodule);
 if(!$scriptpath || !-e $scriptpath) {
 	$scriptpath||="";
