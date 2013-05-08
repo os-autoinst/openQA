@@ -55,21 +55,25 @@ else {
 }
 $testresult=~s/^(.*?)\s.*/$1/;
 
-# fetch needle info
-my $jsonfile=$fullname.'.json';
-open( my $fh, '<', $jsonfile ) or die "opening $jsonfile failed: $!";
-my $needle_meta = JSON::decode_json( <$fh> ) || die "broken json $jsonfile";
-close($fh);
-
-die "json $jsonfile missing needledir or tag" unless( $needle_meta->{'needledir'} && $needle_meta->{'tag'} );
+## fetch needle info
+#my $jsonfile=$fullname.'.json';
+#open( my $fh, '<', $jsonfile ) or die "opening $jsonfile failed: $!";
+#my $needle_meta = JSON::decode_json( <$fh> ) || die "broken json $jsonfile";
+#close($fh);
+#
+#die "json $jsonfile missing needledir" unless( $needle_meta->{'needledir'} && $needle_meta->{'tag'} );
 
 my $needle = "/$prj/testresults/$testname/$imgname";
+
+my $results = test_result($testname);
+if (!defined($results)) {print header(-status=>404)."no testresults found: ".$results; exit 0; }
+if (!defined($results->{'needledir'})) {print header(-status=>404)."needledir missing in testresults."; exit 0; }
 
 #FIXME: Validate json
 #FIXME: Do not create new needle on every save
 if(my $json = param('json')) {
     my $t = time();
-    my $path = $needle_meta->{'needledir'}.'/';
+    my $path = $results->{'needledir'}.'/';
     my $basename = "$imgname-$t";
 
     my $fn = $path.$basename.'.json';
@@ -83,7 +87,7 @@ if(my $json = param('json')) {
 }
 
 print STDERR "needle:$needle\n";
-
+#$needle_meta->{'tag'}
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
 	template_args => { testname => $testname, testmodule => $testmodule, imgname => $imgname,
