@@ -16,13 +16,19 @@ if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
 $name=~s/^$prj//;
 $name=~s/^\/$prj//;
 
-my(undef,undef,$testname,$testmodule,$screenshotid) = split(/\//, $name);
+my(undef,undef,$testname,$testmodule,$testindex) = split(/\//, $name);
 
 my $results = test_result($testname);
-if (!defined($results)) {print header(-status=>404)."no testresults found: ".$results; exit 0; }
+unless ($results) { print header(-status=>404)."no testresults found"; exit 0; }
 
 my $module = test_result_module($results->{'testmodules'}, $testmodule);
-my $module_detail = $module->{'details'}->[$screenshotid-1];
+unless ($module) { print header(-status=>404)."module not found"; exit 0; }
+
+unless ($testindex =~ m/^\d+$/ && $testindex > 0 && $testindex <= @{$module->{'details'}}) {
+	print header(-status=>403)."invalid index"; exit 0;
+}
+
+my $module_detail = $module->{'details'}->[$testindex-1];
 my $imgname = $module_detail->{'screenshot'};
 
 my $areas = [];
