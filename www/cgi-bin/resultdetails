@@ -23,20 +23,20 @@ foreach my $module (@{$results->{'testmodules'}}) {
 	my $name = $module->{'name'};
 	# add link to $imgdir/$name*.png via png CGI
 	my @imglist;
+	my @wavlist;
         my $num = 1;
 	foreach my $img (@{$module->{'details'}}) {
-            my $imgpath = data_name("$imgdir/".$img->{'screenshot'});
-            push(@imglist, {name => $imgpath, num => $num++, result => $img->{'result'}});
+            if( $img->{'screenshot'} ) {
+                my $imgpath = data_name("$imgdir/".$img->{'screenshot'});
+                push(@imglist, {name => $imgpath, num => $num++, result => $img->{'result'}});
+            }
+            elsif( $img->{'audio'} ) {
+		my $wavpath = data_name("$imgdir/".$img->{'audio'});
+		push(@wavlist, {name => $wavpath, result => $img->{'result'}});
+            }
         }
 
-#FIXME: Read wav and orc also from results.json as soon as it is in there
-	# add link to $imgdir/$name*.wav via ogg CGI
-	my @wavlist;
-	foreach my $wavpath (<$imgdir/$name-[0-9]*.wav>) {
-		my $wavres = $module->{'audiodumps'}->[scalar(@wavlist)] || 'na';
-		$wavpath = data_name($wavpath);
-		push(@wavlist, {name => $wavpath, result => $wavres});
-	}
+#FIXME: Read ocr also from results.json as soon as we know how it looks like
 
 	# add link to $imgdir/$name*.txt as direct link
 	my @ocrlist;
