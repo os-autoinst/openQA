@@ -31,12 +31,16 @@ unless ($testindex =~ m/^\d+$/ && $testindex > 0 && $testindex <= @{$module->{'d
 my $module_detail = $module->{'details'}->[$testindex-1];
 my $imgname = $module_detail->{'screenshot'};
 
+#FIXME: Show more details about the matches in a mouseover hooked to the rectangle.
+# ../htdocs/static/shapes.js might be useful for that
+
 my $areas = [];
 if( defined($module_detail->{'area'}) ) {
     $areas = $module_detail->{'area'};
 }
 elsif( defined($module_detail->{'needles'}) ) {
-    $areas = $module_detail->{'needles'}->[0]->{'area'};
+    my @tmp = map { $_->{'area'}->[0] } @{$module_detail->{'needles'}};
+    $areas = \@tmp;
 }
 
 #my $fullname="/$basedir/$prj/testresults/$testname/$imgname";

@@ -37,8 +37,8 @@
                                         var imgpath ="/<?= $prj ?>/testresults/<?= $testname ?>/";
 
                                         var colorset = {
-                                            'ok':   { 'stroke': 'rgb(34,120,8)', 'fill': 'rgba(151, 208, 5, .5)'},
-                                            'fail': { 'stroke': 'rgb(140,0,0)', 'fill': 'rgba(255, 77, 77, .5)'},
+                                            'ok':   { 'stroke': 'rgb(34,255,8)', 'fill': 'rgba(151, 208, 5, .5)'},
+                                            'fail': { 'stroke': 'rgb(255,0,0)', 'fill': 'rgba(255, 77, 77, .5)'},
                                         };
 
 					document.write('<canvas id="cmatch" class="cmatch" width="800" height="600" style="position: absolute; z-index: 3;"></canvas>');
@@ -56,12 +56,16 @@
 
                                             context.font = "bold 12px sans-serif";
                                             context.fillStyle = colorset[area['result']]['stroke'];
-                                            context.fillText(area['similarity'], area['x']+2, area['y']+12);
+                                            var text = String(area['similarity']) + "%";
+                                            var text_width = context.measureText(text).width;
+                                            var text_xpos = area['x']+area['w']-text_width-2;
+                                            var text_ypos = area['y']+area['h']-3;
+                                            context.fillText(text, text_xpos, text_ypos);
     
         				    context.lineWidth = 3;
     					    context.strokeStyle = colorset[area['result']]['stroke'];
     					    context.strokeRect(area['x'], area['y'], area['w'], area['h']);
-                                            if(area['result'] == 'fail') { 
+                                            if(area['diff']) { 
                                                 context.globalCompositeOperation='destination-over';
                                                 var imageObj = new Image();
                                                 imageObj.onload = function() {
