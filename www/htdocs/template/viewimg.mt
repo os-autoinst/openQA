@@ -8,13 +8,13 @@
 ? }
 
 ? block content => sub {
-<div class="grid_3 alpha" id="actions_box">
+<div class="grid_3 alpha" id="sidebar">
 	<div class="box box-shadow alpha" id="actions_box">
 		<div class="box-header aligncenter">Actions</div>
 		<div class="aligncenter">
 			<?= $self->include_file("../../htdocs/includes/moduleslistoptions") ?>
 			<? if(is_authorized_rw()) { ?>
-			<a href="/cropimg/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
+			<a href="/cropimg/edit/<?= $testname ?>/<?= $testmodule ?>/<?= $imgindex ?>"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
 			<? } ?>
 		</div>
 	</div>

@@ -12,7 +12,7 @@
 				push(@classes, "selected") if ($module->{'name'} eq $testmodule);
 				?>
 				<li class="<?= join(" ", @classes) ?>">
-					<a href="/viewimg/<?= $prj ?>/testresult/<?= $testname ?>/<?= $module->{'name'} ?>/1"><?= $module->{'name'} ?></a>
+					<a href="/viewimg/show/<?= $testname ?>/<?= $module->{'name'} ?>/1"><?= $module->{'name'} ?></a>
 				</li>
 			<? } ?>
 		</ul>

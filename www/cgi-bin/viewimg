@@ -10,13 +10,10 @@ use openqa;
 use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
 
-my $name=$ENV{PATH_INFO};
-if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
-
-$name=~s/^$prj//;
-$name=~s/^\/$prj//;
-
-my(undef,undef,$testname,$testmodule,$testindex) = split(/\//, $name);
+my $fn=$ENV{PATH_INFO};
+if($fn=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
+$fn=~s%^/%%;
+my($action,$testname,$testmodule,$testindex) = split(/\//, $fn);
 
 my $results = test_result($testname);
 unless ($results) { print header(-status=>404)."no testresults found"; exit 0; }
@@ -54,7 +51,7 @@ my $modinfo = get_running_modinfo($results);
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
 	template_args => { testname => $testname, testmodule => $testmodule, imgname => $imgname,
-                           img_width => $img_width, img_height => $img_height,
+                           img_width => $img_width, img_height => $img_height, imgindex => $testindex,
                            imglist => $module->{'details'}, areas => encoded_string(JSON::to_json($areas)),
                            modinfo => $modinfo, action => 'viewimg' });
 

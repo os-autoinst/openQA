@@ -91,7 +91,7 @@
 				<td class="<?= "result$res_css->{$module->{'result'}}" ?>"><?= $res_display->{$module->{'result'}} ?></td>
 				<td class="links" style="width: 60%;">
 					<? for my $screenshot (@{$module->{'screenshots'}}) { ?>
-					<a href="/viewimg/<?= $prj ?>/testresults/<?= $testname ?>/<?= $module->{'name'} ?>/<?= $screenshot->{'num'} ?>" title="<?= $screenshot->{'name'} ?>.png"><img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $screenshot->{'name'} ?>.png?size=<?= $ref_width ?>x<?= $ref_height ?>" width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $screenshot->{'name'} ?>.png" class="<?= "resborder\L$screenshot->{'result'}" ?>" /></a>
+					<a href="/viewimg/show/<?= $testname ?>/<?= $module->{'name'} ?>/<?= $screenshot->{'num'} ?>" title="<?= $screenshot->{'name'} ?>.png"><img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $screenshot->{'name'} ?>.png?size=<?= $ref_width ?>x<?= $ref_height ?>" width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $screenshot->{'name'} ?>.png" class="<?= "resborder\L$screenshot->{'result'}" ?>" /></a>
 					<? } ?>
 				</td>
 				<td class="links" style="width: 20%;">
