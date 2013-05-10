@@ -8,92 +8,86 @@ use File::Copy;
 use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
 
-my $name=$ENV{PATH_INFO};
-if($name=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
-$name=~s/\.png$//;
-$name=~s/\.jpg$//;
-
-$name=~s/^$prj\///;
-$name=~s/^\/$prj\//\//;
-
-my $fullname="/$basedir/$prj/$name.png";
-if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
-
-my(undef,undef,$testname,$imgname) = split(/\//, $name);
-my $imgdir=openqa::imgdir($testname);
-my ($testmodule,undef) = split('-',$imgname);
-
-sub testoptions($) {
-	m/.*\/(.*?)-1/;
-	return $1;
-}
-
-# add link to $imgdir/$name*.png via png CGI
-my @imglist=map {data_name($_)} <$imgdir/$testmodule-*.png>;
-my @testlist=map {testoptions($_)} <$imgdir/*-1.png>; #FIXME: show all needles
-
-# Get Test Result
-my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
-if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
-my @lines=parse_log($fqfn);
-my $testresult = '';
-foreach my $entry (@lines) {
-	my ($name,$result)=@$entry;
-	if($name eq $testmodule) {
-		$testresult = $result;
-		last;
-	}
-}
-
-$testresult=~s{^$}{unknown};
-my $refimg_result = $testresult;
-if($refimg_result=~m/.*(\(.*\)).*/) {
-	$refimg_result = $1;
-}
-else {
-	$refimg_result = '';
-}
-$testresult=~s/^(.*?)\s.*/$1/;
-
-## fetch needle info
-#my $jsonfile=$fullname.'.json';
-#open( my $fh, '<', $jsonfile ) or die "opening $jsonfile failed: $!";
-#my $needle_meta = JSON::decode_json( <$fh> ) || die "broken json $jsonfile";
-#close($fh);
-#
-#die "json $jsonfile missing needledir" unless( $needle_meta->{'needledir'} && $needle_meta->{'tag'} );
-
-my $needle = "/$prj/testresults/$testname/$imgname";
+my $fn=$ENV{PATH_INFO};
+if($fn=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
+$fn=~s%^/%%;
+my($action,$testname,$testmodule,$testindex) = split(/\//, $fn);
 
 my $results = test_result($testname);
-if (!defined($results)) {print header(-status=>404)."no testresults found: ".$results; exit 0; }
-if (!defined($results->{'needledir'})) {print header(-status=>404)."needledir missing in testresults."; exit 0; }
+unless ($results) { print header(-status=>404)."no testresults found"; exit 0; }
 
-#FIXME: Validate json
-#FIXME: Do not create new needle on every save
-if(my $json = param('json')) {
-    my $t = time();
-    my $path = $results->{'needledir'}.'/';
-    my $basename = "$imgname-$t";
+my $module = test_result_module($results->{'testmodules'}, $testmodule);
+unless ($module) { print header(-status=>404)."module not found"; exit 0; }
 
-    my $fn = $path.$basename.'.json';
-    open(J, ">", $fn) or die "$fn: $!\n";
-    print J $json;
-    close(J);
-
-    copy( $fullname, $path.$basename.'.png' ) or die "copy failed: $!";
-
-    ($needle = $path.$basename) =~ s|^$basedir||;
+unless ($testindex =~ m/^\d+$/ && $testindex > 0 && $testindex <= @{$module->{'details'}}) {
+	print header(-status=>403)."invalid index"; exit 0;
 }
 
-print STDERR "needle:$needle\n";
-#$needle_meta->{'tag'}
+my $module_detail = $module->{'details'}->[$testindex-1];
+my $imgname = $module_detail->{'screenshot'};
+my $modinfo = get_running_modinfo($results);
+
+# Each object in $needles will contain the name, the url of the image and 2 lists of
+# areas: 'area' and 'matches'. The former refers to the original definitions and the
+# later shows the position found (best try) in the actual screenshot.
+# The first element of the needles array is the screenshot itself, with an empty
+# 'areas' (there is no needle associated to the screenshot) and with all matching
+# areas in 'matches'.
+my $needles = [];
+if ($module_detail->{'needle'}) {
+
+	# First position: the screenshot with all the matching areas (in result)
+	push(@$needles, {'name' => 'screenshot', 'image' => "/$prj/testresults/$testname/$imgname",
+			'area' => [], 'matches' => []});
+	for my $area (@{$module_detail->{'area'}}) {
+		push(@{$needles->[0]->{'matches'}},
+			{'xpos' => $area->{'x'}, 'width' => $area->{'w'},
+			 'ypos' => $area->{'y'}, 'height' => $area->{'h'},
+			 'type' => 'match'});
+	}
+	# Second position: the only needle (with the same matches)
+	my $needle = needle_info($module_detail->{'needle'}, $results->{'needledir'});
+	push(@$needles, {'name' => $module_detail->{'needle'}, 'image' => $needle->{'imageurl'},
+			'area' => $needle->{'area'}, 'matches' => $needles->[0]->{'matches'}});
+
+} elsif ($module_detail->{'needles'}) {
+
+	# First position: the screenshot
+	push(@$needles, {'name' => 'screenshot', 'image' => "/$prj/testresults/$testname/$imgname",
+			'area' => [], 'matches' => []});
+	# Afterwards, all the candidate needles
+	my $needleinfo;
+	my $needlename;
+	my $area;
+	# For each candidate we will use theee variables:
+	# $needle: needle information from result, in which 'areas' refers to the best matches
+	# $needlename: read from the above
+	# $needleinfo: actual definition of the needle, with the original areas
+	# We also use $area for transforming the match information intro a real area
+	for my $needle (@{$module_detail->{'needles'}}) {
+		$needlename = $needle->{'name'};
+		$needleinfo  = needle_info($needlename, $results->{'needledir'});
+		push(@$needles, {'name' => $needlename, 'image' => $needleinfo->{'imageurl'},
+			'area' => $needleinfo->{'area'}, 'matches' => []});
+		for my $match (@{$needle->{'area'}}) {
+			$area = {'xpos' => $match->{'x'}, 'width' => $match->{'w'},
+				 'ypos' => $match->{'y'}, 'height' => $match->{'h'},
+				 'type' => 'match'};
+			push(@{$needles->[0]->{'matches'}}, $area);
+			push(@{$needles->[scalar(@$needles)-1]->{'matches'}}, $area);
+		}
+	}
+} else {
+	# Can happen?
+	push(@$needles, {'name' => 'screenshot', 'image' => "/$prj/testresults/$testname/$imgname",
+			'area' => [], 'matches' => []});
+}
+
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
 	template_args => { testname => $testname, testmodule => $testmodule, imgname => $imgname,
-                           testresult => $testresult, refimg_result => $refimg_result,
-                           imglist => \@imglist, testlist => \@testlist, needle => $needle },
-);
+                           needles => $needles, imglist => $module->{'details'}, imgindex => $testindex,
+                           modinfo => $modinfo, action => 'cropimg' });
 
 print header(-charset=>"UTF-8", -type=>"text/html");
 print $mt->render('cropimg');

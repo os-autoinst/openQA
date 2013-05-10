@@ -400,6 +400,16 @@ CanvasState.prototype.delete_shape_idx = function(idx) {
   this.dirty = true;
 }
 
+CanvasState.prototype.delete_shapes = function() {
+  var l = this.shapes.length;
+
+  for (var i = l-1; i >= 0; i--) {
+    this.shapes.splice(i, 1);
+  }
+  this.selection = null;
+  this.dirty = true;
+}
+
 // Creates an object with x and y defined, set to the mouse position relative to the state's canvas
 // If you wanna be super-correct this can be tricky, we have to worry about padding and borders
 CanvasState.prototype.getMouse = function(e) {

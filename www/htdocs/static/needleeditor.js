@@ -7,7 +7,7 @@ function NeedleEditor(baseurl) {
     return;
   }
   this.LoadBackground(baseurl + ".png");
-  this.loadNeedle(baseurl + ".json");
+  this.LoadNeedle(baseurl + ".json");
   this.needle = null;
   this.bgImage = null;
   this.cv = null;
@@ -44,10 +44,7 @@ NeedleEditor.prototype.init = function() {
       label.appendChild(document.createElement('br'));
     }
   }
-  for (var i in this.needle['area']) {
-    var a = this.needle['area'][i];
-    cv.addShape(NeedleEditor.ShapeFromArea(a));
-  }
+  this.DrawAreas();
   this.UpdateTextArea();
 
   // double click switched type
@@ -118,6 +115,14 @@ NeedleEditor.ShapeFromArea = function(a) {
   return new Shape(a['xpos'], a['ypos'], a['width'], a['height'], NeedleEditor.areacolor(a['type']));
 }
 
+NeedleEditor.prototype.DrawAreas = function() {
+  for (var i in this.needle['area']) {
+    var a = this.needle['area'][i];
+    this.cv.addShape(NeedleEditor.ShapeFromArea(a));
+  }
+  return true;
+}
+
 NeedleEditor.prototype.LoadBackground = function(url) {
   var editor = this;
   var cv = this.cv;
@@ -125,11 +130,15 @@ NeedleEditor.prototype.LoadBackground = function(url) {
   image.src = url;
   image.onload = function() {
     editor.bgImage = image;
-    editor.init();
+    if (cv) {
+      cv.set_bgImage(editor.bgImage);
+    } else {
+      editor.init();
+    }
   }
 }
 
-NeedleEditor.prototype.loadNeedle = function(url) {
+NeedleEditor.prototype.LoadNeedle = function(url) {
   var editor = this;
   var cv = this.cv;
   var x = new XMLHttpRequest();
@@ -155,6 +164,16 @@ NeedleEditor.prototype.loadNeedle = function(url) {
   }
   x.open("GET", url, true);
   x.send();
+}
+
+NeedleEditor.prototype.LoadAreas = function(areas) {
+  var editor = this;
+  var cv = this.cv;
+
+  editor.needle["area"] = JSON.parse(areas);
+  cv.delete_shapes();
+  this.DrawAreas();
+  this.UpdateTextArea();
 }
 
 NeedleEditor.areacolors = {
