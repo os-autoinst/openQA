@@ -27,17 +27,34 @@ my $module_detail = $module->{'details'}->[$testindex-1];
 my $imgname = $module_detail->{'screenshot'};
 my $modinfo = get_running_modinfo($results);
 
-# Each object in $needles will contain the name, the url of the image and 2 lists of
-# areas: 'area' and 'matches'. The former refers to the original definitions and the
-# later shows the position found (best try) in the actual screenshot.
+if ($action eq "save") {
+	my $json = param('json');
+	my $imagepath = param('imagepath');
+	my $needlename = param('needlename');
+	my $baseneedle = $results->{'needledir'};
+	$baseneedle = "$baseneedle/$needlename";
+	copy($imagepath, "$baseneedle.png") or die "copy failed $!";
+	open(J, ">", "$baseneedle.json") or die "$baseneedle: $!\n";
+	print J $json;
+	close(J);
+}
+
+
+# Each object in $needles will contain the name, both the url and the local path
+# of the image and 2 lists of areas: 'area' and 'matches'.
+# The former refers to the original definitions and the later shows the position
+# found (best try) in the actual screenshot.
 # The first element of the needles array is the screenshot itself, with an empty
 # 'areas' (there is no needle associated to the screenshot) and with all matching
 # areas in 'matches'.
 my $needles = [];
+my $tags = [];
 if ($module_detail->{'needle'}) {
 
 	# First position: the screenshot with all the matching areas (in result)
-	push(@$needles, {'name' => 'screenshot', 'image' => "/$prj/testresults/$testname/$imgname",
+	push(@$needles, {'name' => 'screenshot',
+			'imageurl' => "/$prj/testresults/$testname/$imgname",
+			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
 			'area' => [], 'matches' => []});
 	for my $area (@{$module_detail->{'area'}}) {
 		push(@{$needles->[0]->{'matches'}},
@@ -47,13 +64,20 @@ if ($module_detail->{'needle'}) {
 	}
 	# Second position: the only needle (with the same matches)
 	my $needle = needle_info($module_detail->{'needle'}, $results->{'needledir'});
-	push(@$needles, {'name' => $module_detail->{'needle'}, 'image' => $needle->{'imageurl'},
-			'area' => $needle->{'area'}, 'matches' => $needles->[0]->{'matches'}});
+	push(@$needles, {'name' => $module_detail->{'needle'}, 'imageurl' => $needle->{'imageurl'},
+			'imagepath' => $needle->{'image'}, 'area' => $needle->{'area'},
+			'matches' => $needles->[0]->{'matches'}});
+	for my $t (@{$needle->{'tags'}}) {
+		push(@$tags, $t) unless grep(/^$t$/, @$tags);
+	}
+
 
 } elsif ($module_detail->{'needles'}) {
 
 	# First position: the screenshot
-	push(@$needles, {'name' => 'screenshot', 'image' => "/$prj/testresults/$testname/$imgname",
+	push(@$needles, {'name' => 'screenshot',
+			'imageurl' => "/$prj/testresults/$testname/$imgname",
+			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
 			'area' => [], 'matches' => []});
 	# Afterwards, all the candidate needles
 	my $needleinfo;
@@ -67,7 +91,9 @@ if ($module_detail->{'needle'}) {
 	for my $needle (@{$module_detail->{'needles'}}) {
 		$needlename = $needle->{'name'};
 		$needleinfo  = needle_info($needlename, $results->{'needledir'});
-		push(@$needles, {'name' => $needlename, 'image' => $needleinfo->{'imageurl'},
+		push(@$needles, {'name' => $needlename,
+			'imageurl' => $needleinfo->{'imageurl'},
+			'imagepath' => $needleinfo->{'image'},
 			'area' => $needleinfo->{'area'}, 'matches' => []});
 		for my $match (@{$needle->{'area'}}) {
 			$area = {'xpos' => $match->{'x'}, 'width' => $match->{'w'},
@@ -76,18 +102,24 @@ if ($module_detail->{'needle'}) {
 			push(@{$needles->[0]->{'matches'}}, $area);
 			push(@{$needles->[scalar(@$needles)-1]->{'matches'}}, $area);
 		}
+		for my $t (@{$needleinfo->{'tags'}}) {
+			push(@$tags, $t) unless grep(/^$t$/, @$tags);
+		}
 	}
 } else {
 	# Can happen?
-	push(@$needles, {'name' => 'screenshot', 'image' => "/$prj/testresults/$testname/$imgname",
+	push(@$needles, {'name' => 'screenshot',
+			'imageurl' => "/$prj/testresults/$testname/$imgname",
+			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
 			'area' => [], 'matches' => []});
 }
 
+
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, testmodule => $testmodule, imgname => $imgname,
+	template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
                            needles => $needles, imglist => $module->{'details'}, imgindex => $testindex,
-                           modinfo => $modinfo, action => 'cropimg' });
+                           modinfo => $modinfo, tags => $tags, action => 'cropimg' });
 
 print header(-charset=>"UTF-8", -type=>"text/html");
 print $mt->render('cropimg');

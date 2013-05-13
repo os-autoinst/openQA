@@ -281,8 +281,14 @@ a.pauseplay.play {
 /* progressbar end */
 
 
-/* bento theme fix */
+/* bento theme fixes */
 ul.navigation {
 	width: 90%;
 }
-/* bento theme fix end */
+
+input[type='image'] {
+	border: 0;
+	background-color: none;
+	padding: 0;
+}
+/* bento theme fixes end */

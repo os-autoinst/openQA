@@ -10,8 +10,14 @@
 <script type="text/javascript">
 <!--
 window.onload=function(){ 
-  window.nEditor = new NeedleEditor('<?= ${@$needles[0]}{'image'} ?>');
+  window.nEditor = new NeedleEditor('<?= ${@$needles[0]}{'imageurl'} ?>');
 };
+
+function loadBackground(tag) {
+	window.nEditor.LoadBackground(tag.dataset.url);
+	document.getElementById("needleeditor_image").setAttribute("value", tag.dataset.path);
+	return false;
+}
 -->
 </script>
 ? }
@@ -24,15 +30,27 @@ window.onload=function(){
 <div class="grid_3 alpha" id="sidebar">
 	<div class="box box-shadow alpha" id="actions_box">
 		<div class="box-header aligncenter">Actions</div>
-		<div class="aligncenter">
-			<?= $self->include_file("../../htdocs/includes/moduleslistoptions") ?>
-			<a href="/cropimg/save/<?= $testname ?>/<?= $imgname ?>"><img src="/images/floppy.png" alt="crop" title="Crop Image" /></a>
-			<a href="/cropimg/download/<?= $testname ?>/<?= $imgname ?>"><img src="/images/download.png" alt="crop" title="Crop Image" /></a>
-		</div>
-		<div class="aligncenter">
-	        	<textarea id="needleeditor_textarea" name="json" readOnly="yes" style="width:94%; height:300px;"></textarea>
-			<div id="needleeditor_tags" style="margin: 0 18px 0 0;"></div>
-		</div>
+		<form action="/cropimg/save/<?= $testname ?>/<?= $testmodule?>/<?= $testindex ?>">
+			<div class="aligncenter">
+				<?= $self->include_file("../../htdocs/includes/moduleslistoptions") ?>
+				<input type="image" src="/images/floppy.png" alt="Save" />
+			</div>
+			<div>
+				<label>Name:</label><br/>
+				<input type="input" name="needlename" value="<?= $testmodule ?>"/>
+				<label>Tags:</label><br/>
+				<div id="needleeditor_tags" style="margin: 0 18px 0 0;">
+					<? for my $tag (@$tags) { ?>
+						<label>
+							<input type="checkbox" onclick="window.nEditor.changeTag(this.value, this.checked);" value="<?= $tag ?>"><?= $tag ?>
+						</label><br/>
+					<? } ?>
+				</div>
+				<label>JSON:</label><br/>
+				<textarea id="needleeditor_textarea" name="json" readOnly="yes" style="width:94%; height:300px;"></textarea>
+				<input type="hidden" id="needleeditor_image" name="imagepath" value="<?= ${@$needles[0]}{'imagepath'} ?>"/>
+			</div>
+		</form>
 	</div>
 
 	<?= $self->include_file("../../htdocs/includes/moduleslist") ?>
@@ -53,7 +71,7 @@ window.onload=function(){
 			<? for my $needle (@$needles) { ?>
 				<tr>
 					<td><?= $needle->{'name'} ?></td>
-					<td><a href="#" onclick="window.nEditor.LoadBackground('<?= $needle->{'image'} ?>'); return false;">Use</a></td>
+					<td><a href="#" data-path="<?= $needle->{'imagepath'} ?>" data-url="<?= $needle->{'imageurl'} ?>" onclick="loadBackground(this);">Use</a></td>
 					<td><a href="#" onclick="window.nEditor.LoadAreas('<?= JSON::to_json($needle->{'area'}) ?>'); return false;">Use</a></td>
 					<td><a href="#" onclick="window.nEditor.LoadAreas('<?= JSON::to_json($needle->{'matches'}) ?>'); return false;">Use</a></td>
 				</tr>
