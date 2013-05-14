@@ -1,8 +1,5 @@
 ? extends 'fluid'
 
-? my $ref_width=80;
-? my $ref_height=int($ref_width/4*3);
-
 ? block additional_headlines => sub {
 <link href="/static/perltidy.css" rel="stylesheet" type="text/css" />
 <style type="text/css">
@@ -31,6 +28,8 @@
 </div>
 
 <div class="grid_13 omega">
+	<?= $self->include_file("../../htdocs/includes/moduleslistthumbnails") ?>
+
 	<div class="box box-shadow">
 		<?= $self->include_file("../../htdocs/includes/moduleslisttabs") ?>
 		<p>

@@ -1,8 +1,5 @@
 ? extends 'fluid'
 
-? my $ref_width=80;
-? my $ref_height=int($ref_width/4*3);
-
 ? block additional_headlines => sub {
 <script src="/static/keyevent.js"></script>
 <script src="/static/shapes.js"></script>
@@ -70,6 +67,8 @@ window.onload=function(){
 </div>
 
 <div class="grid_13 omega">
+	<?= $self->include_file("../../htdocs/includes/moduleslistthumbnails") ?>
+
 	<div class="box box-shadow">
 		<?= $self->include_file("../../htdocs/includes/moduleslisttabs") ?>
 
@@ -97,21 +96,5 @@ window.onload=function(){
              		<canvas tabindex="1" id="needleeditor_canvas" width="1024" height="768" style="border: 1px solid black;">This text is displayed if your browser does not support HTML5 Canvas.</canvas>
 		</div>
 	</div>
-
-	<? if(@$imglist) {
-             my $img_count = 1; ?>
-	<div class="box box-shadow">
-		<div style="margin: 0 20px; overflow-x: scroll; overflow-y: hidden; overflow: auto; white-space: nowrap;">
-			<? for my $refimg (@$imglist) { ?>
-			<span class="refcomppic">
-				<a href="<?= $img_count++ ?>"><img
-					src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $refimg->{'screenshot'} ?>?size=<?= $ref_width ?>x<?= $ref_height ?>"
-					width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $refimg->{'name'} ?>.png" title="<?= $refimg->{'name'} ?>.png"
-					class="<?= "resborder\L$refimg->{'result'}" ?>" /></a>
-			</span>
-			<? } ?>
-		</div>
-	</div>
-	<? } ?>
 </div>
 ? } # endblock content

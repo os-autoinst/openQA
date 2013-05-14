@@ -122,6 +122,18 @@ span.refcomppic span.result-icon {
 	opacity: 0.8;
 }
 
+span.thumbnail {
+	text-decoration:none;
+	position:relative;
+	display:inline-block;
+	margin: 0;
+	padding: 6px;
+}
+
+span.thumbnail.current {
+	background-color: #777;
+}
+
 span.refcomppic span.match-icon {
 	position:absolute;
 	left:4px;

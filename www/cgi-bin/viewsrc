@@ -9,16 +9,23 @@ use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
 
 my $fn=$ENV{PATH_INFO};
-if(!defined $fn) { print header(-status=>404)."must specify result file as path"; exit 0 }
+if($fn=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
 $fn=~s%^/%%;
-my ($action,$testname,$testmodule)=split("/", $fn);
+my($action,$testname,$testmodule,$testindex) = split(/\//, $fn);
+
+my $results = test_result($testname);
+unless ($results) { print header(-status=>404)."no testresults found"; exit 0; }
+
+my $module = test_result_module($results->{'testmodules'}, $testmodule);
+unless ($module) { print header(-status=>404)."module not found"; exit 0; }
+
+unless ($testindex =~ m/^\d+$/ && $testindex > 0 && $testindex <= @{$module->{'details'}}) {
+	print header(-status=>403)."invalid index"; exit 0;
+}
 if($action!~m%^(?:show|raw)$%) {
 	print header(-status=>404)."unknown action";
 	exit 0;
 }
-if($testname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
-my $results = test_result($testname);
-if (!defined($results)) {print header(-status=>404)."no testresults found: ".$results; exit 0; }
 my $modinfo = get_running_modinfo($results);
 
 my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
@@ -37,7 +44,9 @@ $nicescriptpath=~s/^.*autoinst\///;
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, testmodule => $testmodule, modinfo => $modinfo, scriptpath => $nicescriptpath, scriptsrc => $script, action => 'viewsrc' },
+	template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
+			   action => 'viewsrc', modinfo => $modinfo, imglist => $module->{'details'},
+			   scriptpath => $nicescriptpath, scriptsrc => $script },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");
