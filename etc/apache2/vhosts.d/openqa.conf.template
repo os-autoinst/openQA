@@ -1,0 +1,23 @@
+# note: if you enable this you must have a default vhost, e.g. in 01-default.conf
+#NameVirtualHost *:80
+#<VirtualHost *:80>
+#    ServerName www.example.com
+#    DocumentRoot "/srv/www/htdocs"
+#</VirtualHost>
+
+<VirtualHost *:80>
+
+    ServerName FIXME
+
+    Alias /openqa "/var/cache/openqa"
+    ScriptAlias /cgi-bin/ "/usr/share/openqa/cgi-bin/"
+    DocumentRoot "/usr/share/openqa/htdocs"
+
+    SetEnv OPENQA_BASEDIR "/var/cache"
+
+    HostnameLookups Off
+    UseCanonicalName Off
+    ServerSignature On
+
+</VirtualHost>
+
