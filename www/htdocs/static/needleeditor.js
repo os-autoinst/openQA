@@ -1,4 +1,17 @@
-function NeedleEditor(baseurl) {
+// Two possible ways of calling it:
+// 1) new NeedleEditor(baseurl)
+// 2) new NeedleEditor(background, needlestring)
+function NeedleEditor() {
+  var baseurl;
+  var background, needlestring;
+
+  if (arguments.length == 1) {
+    baseurl = arguments[0];
+  } else {
+    background = arguments[0];
+    needlestring = arguments[1];
+  }
+
   this.textarea = document.getElementById("needleeditor_textarea");
   this.tags = document.getElementById("needleeditor_tags");
   this.canvas = document.getElementById("needleeditor_canvas");
@@ -6,11 +19,16 @@ function NeedleEditor(baseurl) {
     alert("missing canvas element "+canvasid);
     return;
   }
-  this.LoadBackground(baseurl + ".png");
-  this.LoadNeedle(baseurl + ".json");
-  this.needle = null;
   this.bgImage = null;
   this.cv = null;
+  if (needlestring) {
+    this.LoadBackground(background);
+    this.needle = JSON.parse(needlestring);
+  } else {
+    this.LoadBackground(baseurl + ".png");
+    this.needle = null;
+    this.LoadNeedle(baseurl + ".json");
+  }
   this.init();
 }
 
@@ -26,22 +44,35 @@ NeedleEditor.prototype.init = function() {
   cv.set_bgImage(this.bgImage);
 
   if (this.tags) {
-    for (var i in this.needle['tags']) {
-      var tag = this.needle['tags'][i]
-      console.log("tag " + tag);
-      var label = document.createElement('label');
-      var input = document.createElement('input');
-      input.type = "checkbox";
-      input.value = tag;
-      input.checked = true;
-      input.addEventListener("click", function(e, f) {
-	editor.changeTag(e.target.value, e.target.checked);
-      });
+    // If tags is empty, we must populate it with a checkbox for every tag
+    if (this.tags.getElementsByTagName('input').length == 0) {
+      for (var i in this.needle['tags']) {
+        var tag = this.needle['tags'][i]
+        console.log("tag " + tag);
+        var label = document.createElement('label');
+        var input = document.createElement('input');
+        input.type = "checkbox";
+        input.value = tag;
+        input.checked = true;
+        input.addEventListener("click", function(e, f) {
+          editor.changeTag(e.target.value, e.target.checked);
+        });
 
-      this.tags.appendChild(label);
-      label.appendChild(input);
-      label.appendChild(document.createTextNode(tag));
-      label.appendChild(document.createElement('br'));
+        this.tags.appendChild(label);
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(tag));
+        label.appendChild(document.createElement('br'));
+      }
+    // If the checkboxes are already there, we simply check them all
+    } else {
+      var inputs = this.tags.getElementsByTagName('input');
+      for (var i = 0; i < inputs.length; i++) {
+        if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
+          inputs[i].checked = true;
+	} else {
+	  inputs[i].checked = false;
+	}
+      }
     }
   }
   this.DrawAreas();

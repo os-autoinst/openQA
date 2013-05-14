@@ -48,6 +48,7 @@ if ($action eq "save") {
 # 'areas' (there is no needle associated to the screenshot) and with all matching
 # areas in 'matches'.
 my $needles = [];
+# All tags (from all needles)
 my $tags = [];
 if ($module_detail->{'needle'}) {
 
@@ -55,7 +56,7 @@ if ($module_detail->{'needle'}) {
 	push(@$needles, {'name' => 'screenshot',
 			'imageurl' => "/$prj/testresults/$testname/$imgname",
 			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
-			'area' => [], 'matches' => []});
+			'area' => [], 'matches' => [], 'tags' => []});
 	for my $area (@{$module_detail->{'area'}}) {
 		push(@{$needles->[0]->{'matches'}},
 			{'xpos' => $area->{'x'}, 'width' => $area->{'w'},
@@ -66,7 +67,7 @@ if ($module_detail->{'needle'}) {
 	my $needle = needle_info($module_detail->{'needle'}, $results->{'needledir'});
 	push(@$needles, {'name' => $module_detail->{'needle'}, 'imageurl' => $needle->{'imageurl'},
 			'imagepath' => $needle->{'image'}, 'area' => $needle->{'area'},
-			'matches' => $needles->[0]->{'matches'}});
+			'tags' => $needle->{'tags'}, 'matches' => $needles->[0]->{'matches'}});
 	for my $t (@{$needle->{'tags'}}) {
 		push(@$tags, $t) unless grep(/^$t$/, @$tags);
 	}
@@ -78,7 +79,7 @@ if ($module_detail->{'needle'}) {
 	push(@$needles, {'name' => 'screenshot',
 			'imageurl' => "/$prj/testresults/$testname/$imgname",
 			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
-			'area' => [], 'matches' => []});
+			'area' => [], 'matches' => [], 'tags' => []});
 	# Afterwards, all the candidate needles
 	my $needleinfo;
 	my $needlename;
@@ -94,6 +95,7 @@ if ($module_detail->{'needle'}) {
 		push(@$needles, {'name' => $needlename,
 			'imageurl' => $needleinfo->{'imageurl'},
 			'imagepath' => $needleinfo->{'image'},
+      'tags' => $needleinfo->{'tags'},
 			'area' => $needleinfo->{'area'}, 'matches' => []});
 		for my $match (@{$needle->{'area'}}) {
 			$area = {'xpos' => $match->{'x'}, 'width' => $match->{'w'},
@@ -111,15 +113,32 @@ if ($module_detail->{'needle'}) {
 	push(@$needles, {'name' => 'screenshot',
 			'imageurl' => "/$prj/testresults/$testname/$imgname",
 			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
-			'area' => [], 'matches' => []});
+			'area' => [], 'matches' => []}, 'tags' => []);
 }
 
+# Default values (area: matches from best candidate, tags: tags from best
+# candidate)
+my $default_needle = {};
+my $default_name;
+# This should be always true (we are supposed to have at least one needle
+# besides the screenshot)
+if (scalar(@$needles) > 1) {
+	$default_needle->{'area'} = $needles->[1]->{'matches'};
+	$default_needle->{'tags'} = $needles->[1]->{'tags'};
+	$default_name = $needles->[1]->{'name'};
+} else {
+	$default_needle->{'area'} = [];
+	$default_needle->{'tags'} = [];
+	$default_name = $testmodule;
+}
+$default_name = $default_name."-".time;
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
 	template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
-                           needles => $needles, imglist => $module->{'details'}, imgindex => $testindex,
-                           modinfo => $modinfo, tags => $tags, action => 'cropimg' });
+			   action => 'cropimg', modinfo => $modinfo, imglist => $module->{'details'},
+                           needles => $needles, tags => $tags, default_needle => $default_needle,
+			   needlename => $default_name});
 
 print header(-charset=>"UTF-8", -type=>"text/html");
 print $mt->render('cropimg');
