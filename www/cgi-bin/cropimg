@@ -96,7 +96,7 @@ if ($module_detail->{'needle'}) {
 		push(@$needles, {'name' => $needlename,
 			'imageurl' => $needleinfo->{'imageurl'},
 			'imagepath' => $needleinfo->{'image'},
-      'tags' => $needleinfo->{'tags'},
+			'tags' => $needleinfo->{'tags'},
 			'area' => $needleinfo->{'area'}, 'matches' => []});
 		for my $match (@{$needle->{'area'}}) {
 			$area = {'xpos' => $match->{'x'}, 'width' => $match->{'w'},
@@ -110,11 +110,11 @@ if ($module_detail->{'needle'}) {
 		}
 	}
 } else {
-	# Can happen?
+	# Failing with not a single candidate needle
 	push(@$needles, {'name' => 'screenshot',
 			'imageurl' => "/$prj/testresults/$testname/$imgname",
 			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
-			'area' => [], 'matches' => []}, 'tags' => []);
+			'area' => [], 'matches' => [], 'tags' => []});
 }
 
 # Default values (area: matches from best candidate, tags: tags from best
