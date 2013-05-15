@@ -87,7 +87,14 @@ window.onload=function(){
 	<div class="box box-shadow">
 		<?= $self->include_file("../../htdocs/includes/moduleslisttabs") ?>
 
-		<table style="width: auto;">
+		<? if ($error_msg) { ?>
+			<blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><?= $error_msg ?></blockquote>
+		<? } ?>
+		<? if ($info_msg) { ?>
+			<blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><?= $info_msg ?></blockquote>
+		<? } ?>
+
+		<table style="width: 97%;">
 			<tr>
 				<th>Screens./Needle</th>
 				<th>Image</th>
