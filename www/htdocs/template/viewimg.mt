@@ -11,7 +11,7 @@
 		<div class="aligncenter">
 			<?= $self->include_file("../../htdocs/includes/moduleslistoptions") ?>
 			<? if(is_authorized_rw()) { ?>
-			<a href="/cropimg/edit/<?= $testname ?>/<?= $testmodule ?>/<?= $testindex ?>"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
+			<a href="/cropimg/show/<?= $testname ?>/<?= $testmodule ?>/<?= $testindex ?>"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
 			<? } ?>
 		</div>
 	</div>
