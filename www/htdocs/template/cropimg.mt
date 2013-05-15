@@ -13,12 +13,12 @@ function loadBackground(tag) {
 
 function loadTags(html) {
 	var tags = JSON.parse(html.dataset.tags);
-	var radios = document.getElementsByName('tags');
-	for (var i = 0; i < radios.length; i++) {
+	var checkboxes = document.getElementById("needleeditor_tags").getElementsByTagName('input');
+	for (var i = 0; i < checkboxes.length; i++) {
 		// If we need to switch
-		if ( (radios[i].checked && tags.indexOf(radios[i].value) == -1) ||
-		     (!radios[i].checked && tags.indexOf(radios[i].value) != -1)) {
-			radios[i].click();
+		if ( (checkboxes[i].checked && tags.indexOf(checkboxes[i].value) == -1) ||
+		     (!checkboxes[i].checked && tags.indexOf(checkboxes[i].value) != -1)) {
+			checkboxes[i].click();
 		}
 	}
 }
