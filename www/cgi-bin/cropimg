@@ -34,6 +34,7 @@ if ($action eq "save") {
 	my $baseneedle = $results->{'needledir'};
 	$baseneedle = "$baseneedle/$needlename";
 	copy($imagepath, "$baseneedle.png") or die "copy failed $!";
+	system("optipng", "-quiet", "$baseneedle.png");
 	open(J, ">", "$baseneedle.json") or die "$baseneedle: $!\n";
 	print J $json;
 	close(J);
