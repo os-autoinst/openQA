@@ -16,7 +16,7 @@ console.warn = console.warn || function(){};
 console.error = console.error || function(){};
 console.info = console.info || function(){};
 
-var MINSIZE = 50;
+var MINSIZE = 10;
 
 // Constructor for Shape objects to hold data for all drawn objects.
 // For now they will just be defined as rectangles.
