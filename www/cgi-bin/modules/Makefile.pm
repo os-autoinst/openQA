@@ -37,8 +37,14 @@ sub list_jobs : Public
 	$sth->execute();
 
 	my $jobs = [];
-	while(my $row = $sth->fetchrow_hashref) {
-		push @$jobs, $row;
+	while(my $job = $sth->fetchrow_hashref) {
+		my $sth2 = $dbh->prepare("SELECT key, value from job_settings where job_settings.jobid = ?");
+		my $rc = $sth2->execute($job->{'id'});
+		$job->{settings} = {};
+		while(my @row = $sth2->fetchrow_array) {
+			$job->{settings}->{$row[0]} = $row[1];
+		}
+		push @$jobs, $job;
 	}
 	return $jobs;
 }
