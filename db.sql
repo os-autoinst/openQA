@@ -10,7 +10,8 @@ CREATE TABLE worker(
 	id INTEGER PRIMARY KEY,
 	host TEXT,
 	port INTEGER,
-	backend TEXT
+	backend TEXT,
+	UNIQUE(host, port)
 );
 INSERT INTO "worker" VALUES(0,NULL,NULL,NULL);
 CREATE TABLE jobs (

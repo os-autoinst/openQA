@@ -11,14 +11,18 @@ my $url = "http://openqa.tanana.suse.de:$port/jsonrpc";
 
 my %cmds = map { $_ => 0 } (qw/
 	list_jobs
+	list_workers
 	/);
 for (qw/
 	echo
 	job_delete
+	job_release
 	/) {
 	$cmds{$_} = 1;
 }
 $cmds{job_set_prio} = 2;
+$cmds{job_grab} = 2;
+$cmds{worker_register} = 3;
 $cmds{job_create} = 99;
 
 $client->prepare($url, [keys %cmds]) or die "$!\n";
