@@ -1,0 +1,15 @@
+#!/usr/bin/perl -w
+
+use strict;
+use JSON::RPC::Server::CGI;
+use FindBin;
+
+use lib "$FindBin::Bin/modules";
+use Makefile;
+
+my $server = JSON::RPC::Server::CGI->new;
+	
+$server->return_die_message(1);
+$server->dispatch('Makefile')->handle();
+
+# vim: syntax=perl
