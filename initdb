@@ -1,0 +1,11 @@
+#!/bin/bash
+set -e
+if ! test -w /; then
+	echo "run me as root\n";
+	exit 1
+fi
+d=/var/lib/openqa
+mkdir -p $d
+rm -f $d/db
+sqlite3 -init db.sql $d/db .quit
+chown wwwrun $d $d/db
