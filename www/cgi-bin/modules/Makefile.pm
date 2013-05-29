@@ -12,6 +12,17 @@ use openqa ();
 
 our $dbfile = '/var/lib/openqa/db';
 
+our $get_job_stmt = "SELECT
+	jobs.id as id,
+	job_state.name as state,
+	jobs.priority as priority,
+	jobs.result as result,
+	jobs.worker as worker,
+	jobs.start_date as start_date,
+	jobs.finish_date as finish_date
+	from jobs, job_state
+	where jobs.state = job_state.id";
+
 our $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","");
 $dbh->{RaiseError} = 1;
 $dbh->do("PRAGMA foreign_keys = ON");
@@ -22,29 +33,26 @@ sub echo : Public
 	return $_[1];
 }
 
+sub job_fill_settings
+{
+	my $job = shift;
+	my $sth = $dbh->prepare("SELECT key, value from job_settings where job_settings.jobid = ?");
+	my $rc = $sth->execute($job->{'id'});
+	$job->{settings} = {};
+	while(my @row = $sth->fetchrow_array) {
+		$job->{settings}->{$row[0]} = $row[1];
+	}
+	return $job;
+}
+
 sub list_jobs : Public
 {
-	my $stmt = "SELECT
-		jobs.id as id,
-		job_state.name as state,
-		jobs.priority as priority,
-		jobs.result as result,
-		jobs.worker as worker,
-		jobs.start_date as start_date,
-		jobs.finish_date as finish_date
-		from jobs, job_state
-		where jobs.state = job_state.id";
-	my $sth = $dbh->prepare($stmt);
+	my $sth = $dbh->prepare($get_job_stmt);
 	$sth->execute();
 
 	my $jobs = [];
 	while(my $job = $sth->fetchrow_hashref) {
-		my $sth2 = $dbh->prepare("SELECT key, value from job_settings where job_settings.jobid = ?");
-		my $rc = $sth2->execute($job->{'id'});
-		$job->{settings} = {};
-		while(my @row = $sth2->fetchrow_array) {
-			$job->{settings}->{$row[0]} = $row[1];
-		}
+		job_fill_settings($job);
 		push @$jobs, $job;
 	}
 	return $jobs;
@@ -52,7 +60,7 @@ sub list_jobs : Public
 
 sub list_workers : Public
 {
-	my $stmt = "SELECT id, host, port, backend from worker";
+	my $stmt = "SELECT id, host, port, backend, seen from worker";
 	my $sth = $dbh->prepare($stmt);
 	$sth->execute();
 
@@ -69,10 +77,21 @@ sub worker_register : Num(host, port, backend)
 	my $self = shift;
 	my $args = shift;
 
-	my $sth = $dbh->prepare("INSERT into worker (host, port, backend) values (?,?,?)");
-	$sth->execute($args->{host}, $args->{port}, $args->{backend});
+	my $sth = $dbh->prepare("SELECT id, backend from worker where host = ? and port = ?");
+	my $r = $sth->execute($args->{'host'}, $args->{'port'}) or die "SQL failed\n";
+	my @row = $sth->fetchrow_array();
 
-	my $id = $dbh->last_insert_id(undef,undef,undef,undef);
+	my $id;
+	if (@row) { # worker already known. Update fields and return id
+		$id = $row[0];
+		$sth = $dbh->prepare("UPDATE worker SET seen = datetime('now'), backend = ? WHERE id = ?");
+		$r = $sth->execute($args->{'backend'}, $id) or die "SQL failed\n";
+	} else {
+		$sth = $dbh->prepare("INSERT INTO worker (host, port, backend, seen) values (?,?,?, datetime('now'))");
+		$sth->execute($args->{host}, $args->{port}, $args->{backend});
+		$id = $dbh->last_insert_id(undef,undef,undef,undef);
+	}
+
 	die "got invalid id" unless $id;
 	return $id;
 }
@@ -108,7 +127,7 @@ sub job_grab : Num
 
 	my $state = "(select id from job_state where name = 'running' limit 1)";
 
-	my $id;
+	my $job;
 	while (1) {
 		$sth = $dbh->prepare("SELECT id from jobs where state == 1");
 		$sth->execute;
@@ -126,18 +145,23 @@ sub job_grab : Num
 					my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = ?, start_date = datetime('now'), result = NULL WHERE id = ?");
 					$sth->execute($workerid, $jobid);
 					$dbh->commit;
+
+					$sth = $dbh->prepare($get_job_stmt.' and jobs.id = ?');
+					$sth->execute($jobid) or die "$!\n";
+					$job = $sth->fetchrow_hashref;
+					job_fill_settings($job);
+
 				};
 				if ($@) {
 					print STDERR "$@\n";
 					eval { $dbh->rollback };
 					next;
 				}
-				$id = $jobid;
 				last;
 			}
 		}
 
-		last if $id;
+		last if $job;
 		last unless $blocking;
 		# XXX: do something smarter here
 		#print STDERR "no jobs for me, sleeping\n";
@@ -145,7 +169,8 @@ sub job_grab : Num
 		$self->raise_error(code => 404, message => 'no open jobs atm');
 		last;
 	};
-	return $id;;
+	return $job;
+
 }
 
 =head2

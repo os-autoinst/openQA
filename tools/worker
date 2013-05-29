@@ -1,0 +1,120 @@
+#!/usr/bin/perl -w
+# Copyright (c) 2013 SUSE Linux Products GmbH
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+=head1 boilerplate
+
+boilerplate - boilerplate code for perl scripts
+
+=head1 SYNOPSIS
+
+boilerplate [OPTIONS] FILE
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--host>
+
+specify dispatcher/scheduler host to connect to
+
+=item B<--help, -h>
+
+print help
+
+=back
+
+=head1 DESCRIPTION
+
+lorem ipsum ...
+
+=cut
+
+use strict;
+use Data::Dump;
+use JSON::RPC::Client;
+use FindBin;
+#use lib "$FindBin::Bin/../www/cgi-bin/modules"
+#use openqa;
+
+my $pooldir = "/var/cache/openqa/pool";
+
+use Getopt::Long;
+Getopt::Long::Configure("no_ignore_case");
+
+my %options;
+
+sub usage($) {
+	my $r = shift;
+	eval "use Pod::Usage; pod2usage($r);";
+	if ($@) {
+		die "cannot display help, install perl(Pod::Usage)\n";
+	}
+}
+
+GetOptions(
+	\%options,
+	"pooldir=s",
+	"host=s",
+	"verbose|v",
+	"help|h",
+) or usage(1);
+
+usage(1) unless exists $options{'host'};
+usage(0) if ($options{'help'});
+
+my $verbose = $options{'verbose'};
+
+$options{'host'} .= '/jsonrpc' unless $options{'host'} =~ '/';
+$options{'host'} = 'http://'.$options{'host'} unless $options{'host'} =~ '://';
+
+$pooldir = $options{'pooldir'} if $options{'pooldir'};
+
+my $client = new JSON::RPC::Client;
+
+printf "connecting to %s ...\n", $options{'host'} if $verbose;
+$client->prepare($options{'host'}, [qw/list_jobs job_grab job_release job_done worker_register/]) or die "xxx $!\n";
+
+my $continue = 1;
+sub catch_exit
+{
+	$continue = 0;
+}
+
+$SIG{HUP} = \*catch_exit;
+$SIG{TERM} = \*catch_exit;
+$SIG{INT} = \*catch_exit;
+
+my $port = 9999; # XXX
+my $workerid = $client->worker_register('localhost', 999, 'qemu');
+
+while($continue) {
+	print "$workerid: trying to get job\n" if $verbose;
+	my $job = $client->job_grab($workerid);
+	unless ($job) {
+		print "no job for me, waiting a little ...\n" if $verbose;
+		sleep 2;
+		next;
+	}
+	printf "$workerid: working on job %d\n", $job->{'id'};
+	sleep 5;
+	printf "$workerid: setting job %d to done\n", $job->{'id'};
+	$client->job_done($job->{'id'});
+}

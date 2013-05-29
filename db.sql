@@ -11,6 +11,7 @@ CREATE TABLE worker(
 	host TEXT,
 	port INTEGER,
 	backend TEXT,
+	seen TIMESTAMP,
 	UNIQUE(host, port)
 );
 INSERT INTO "worker" VALUES(0,NULL,NULL,NULL);
