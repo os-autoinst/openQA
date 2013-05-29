@@ -34,10 +34,10 @@ window.onload=function(){
 		<form action="/cropimg/save/<?= $testname ?>/<?= $testmodule?>/<?= $testindex ?>" method="post">
 			<div class="aligncenter">
 				<?= $self->include_file("../../htdocs/includes/moduleslistoptions") ?>
-				<? if ($modinfo->{'running'} eq "") { ?>
-					<input type="image" src="/images/floppy.png" alt="Save" />
-				<? } else { ?>
+				<? if ($interactive) { ?>
 					<a href="javascript:window.save_needle();"><img src="/images/floppy.png" /></a>
+				<? } else { ?>
+					<input type="image" src="/images/floppy.png" alt="Save" />
 				<? } ?>
 			</div>
 			<div>

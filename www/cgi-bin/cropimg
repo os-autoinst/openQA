@@ -165,9 +165,11 @@ if (scalar(@$needles) > 1) {
 }
 $default_name = $default_name."-".time;
 
-if ($results->{'running'} ne "") {
+my $interactive = 0;
+if ($results->{'running'} ne "" && $results->{"interactive"} && $results->{"needinput"}) {
 	$info_msg = "Running in interactive mode. The screenshot will be used ";
 	$info_msg = $info_msg . "as background image despite the selection";
+	$interactive = 1;
 }
 
 my $mt = Text::MicroTemplate::Extended->new(
@@ -175,7 +177,7 @@ my $mt = Text::MicroTemplate::Extended->new(
 	template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
 			   action => 'cropimg', modinfo => $modinfo, imglist => $module->{'details'},
 			   error_msg => $error_msg, info_msg => $info_msg,
-			   jsonrpc_port => $results->{'jsonrpc'},
+			   jsonrpc_port => $results->{'jsonrpc'}, interactive => $interactive,
 			   needles => $needles, tags => $tags, default_needle => $default_needle,
 			   needlename => $default_name});
 
