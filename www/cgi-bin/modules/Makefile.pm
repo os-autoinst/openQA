@@ -77,13 +77,13 @@ sub worker_register : Num(host, port, backend)
 	return $id;
 }
 
-sub get_statenames()
-{
-	my $sth = $dbh->prepare('SELECT id, name from job_state');
-	$sth->execute();
-	my $h = { map { $_->[1] => $_->[0] } @{$sth->fetchall_arrayref()} };
-	return $h;
-}
+#sub get_statenames()
+#{
+#	my $sth = $dbh->prepare('SELECT id, name from job_state');
+#	$sth->execute();
+#	my $h = { map { $_->[1] => $_->[0] } @{$sth->fetchall_arrayref()} };
+#	return $h;
+#}
 
 =head2
 takes worker id and a blocking argument
@@ -160,23 +160,23 @@ sub job_release : Public(id:num)
 	my $state = "(select id from job_state where name = 'scheduled' limit 1)";
 	my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
 	my $r = $sth->execute($jobid) or die $dbh->errstr;
-	die "failed to release job" unless $r == 1;
+	$self->raise_error(code => 400, message => "failed to release job") unless $r == 1;
 }
 
 =head2
 mark job as done
 =cut
-sub job_done : Public(id:num, result)
+sub job_done : Public #(id:num, result)
 {
 	my $self = shift;
 	my $args = shift;
-	my $jobid = $args->{id};
-	my $result = $args->{result};
+	my $jobid = int(shift $args);
+	my $result = shift $args;
 
 	my $state = "(select id from job_state where name = 'done' limit 1)";
 	my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, finish_date = datetime('now'), result = ? WHERE id = ?");
 	my $r = $sth->execute($result, $jobid) or die $dbh->errstr;
-	die "failed to finish job" unless $r == 1;
+	$self->raise_error(code => 400, message => "failed to finish job") unless $r == 1;
 }
 
 =head2
@@ -191,7 +191,7 @@ sub job_stop : Public(id:num)
 	my $state = "(select id from job_state where name = 'stopped' limit 1)";
 	my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0 WHERE id = ?");
 	my $r = $sth->execute($jobid) or die $dbh->errstr;
-	die "failed to stop job" unless $r == 1;
+	$self->raise_error(code => 400, message => "failed to stop job") unless $r == 1;
 }
 
 =head2
@@ -206,7 +206,7 @@ sub job_waiting : Public(id:num)
 	my $state = "(select id from job_state where name = 'waiting' limit 1)";
 	my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ?");
 	my $r = $sth->execute($jobid) or die $dbh->errstr;
-	die "failed to stop job" unless $r == 1;
+	$self->raise_error(code => 400, message => "failed to set job to waiting") unless $r == 1;
 }
 
 =head2
@@ -221,7 +221,7 @@ sub job_continue : Public(id:num)
 	my $state = "(select id from job_state where name = 'running' limit 1)";
 	my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ? AND state IN (SELECT id from job_state WHERE name IN ('stopped', 'waiting'))");
 	my $r = $sth->execute($jobid) or die $dbh->errstr;
-	die "failed to continue job" unless $r == 1;
+	$self->raise_error(code => 400, message => "failed to continue job") unless $r == 1;
 }
 
 
@@ -264,35 +264,37 @@ sub job_create : Num
 	return $id;
 }
 
-sub job_set_prio : Bool(id:num, prio:num)
+sub job_set_prio : Public #(id:num, prio:num)
 {
 	my $self = shift;
 	my $args = shift;
-	my $id = int($args->{id});
-	my $prio = int($args->{prio});
+	my $id = int(shift $args);
+	my $prio = int(shift $args);
 	my $sth = $dbh->prepare("UPDATE jobs SET priority = ? where id = ?");
-	$sth->execute($id, $prio) or return 0;
-	return 1;
+	my $r = $sth->execute($prio, $id) or die $dbh->error;
+	$self->raise_error(code => 400, message => "didn't update anything") unless $r == 1;
 }
 
-sub job_delete : Bool(id:num)
+sub job_delete : Public(id:num)
 {
 	my $self = shift;
 	my $args = shift;
 	my $id = int($args->{id});
+
 	$dbh->begin_work;
+	my $r = 0;
 	eval {
 		my $sth = $dbh->prepare("DELETE FROM job_settings WHERE jobid = ?");
 		$sth->execute($id);
 		$sth = $dbh->prepare("DELETE FROM jobs WHERE id = ?");
-		$sth->execute($id);
+		$r = $sth->execute($id);
 		$dbh->commit;
 	};
 	if ($@) {
 		print STDERR "$@\n";
 		eval { $dbh->rollback };
 	}
-	return 1;
+	$self->raise_error(code => 400, message => "didn't delete anything") unless $r == 1;
 }
 
 1;
