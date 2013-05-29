@@ -1,0 +1,23 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI qw":standard";
+use JSON;
+use JSON::RPC::Client;
+
+my $url = param('url') || '';
+my $method = param('method') || '';
+my $json = param('params') || 0;
+my $params;
+my $callobj;
+if ($json) {
+	$params = decode_json($json);
+	$callobj = { method => $method, params => $params };
+} else {
+	$callobj = { method => $method };
+}
+
+my $client = new JSON::RPC::Client;
+my $ret = $client->call($url, $callobj);
+print header({-type=>"application/json", Content_Encoding=>"none"});
+print $ret->{'jsontext'};
+exit;

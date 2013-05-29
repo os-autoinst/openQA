@@ -38,20 +38,7 @@ elsif($log eq 'modlist') {
 	my $modinfo = get_running_modinfo($results);
 	unless(defined $modinfo) {print header(-status=>404)."test not running"; exit 0; }
 	print header({-type=>"application/json", Content_Encoding=>"none"});
-	my $html = '';
-	foreach my $category (@{$modinfo->{'modlist'}}) {
-		$html .= "<h2 class='box-subheader modcategory'>".$category->{'category'}."</h2>";
-		$html .= "<ul class='navigation modcategory'>";
-		foreach my $module (@{$category->{'modules'}}) {
-			$html .= "<li class='mod-".$module->{'state'}."'>";
-			$html .= "<a href='/tdata/show/$name/".$module->{'name'}."'>".$module->{'name'}."</a>";
-			$html .= "</li>\n";
-		}
-		$html .= "</ul>\n\n";
-	}
-	my $json->{'modlist'} = $html;
-	$json->{'running_state'} = running_state($name);
-	print to_json($json);
+	print to_json($modinfo->{'modlist'});
 	exit;
 }
 
@@ -64,6 +51,14 @@ elsif($log eq 'modstat') {
 	exit;
 }
 
+elsif($log eq 'status') {
+	my $results = test_result($name);
+	delete $results->{'testmodules'};
+	delete $results->{'needledir'};
+	print header({-type=>"application/json", Content_Encoding=>"none"});
+	print to_json($results);
+	exit;
+}
 else {
 	unless(-e $basepath.'currentautoinst-log.txt') {print header(-status=>404)."test not running"; exit 0; }
 	#my $file=File::Tail->new($basepath.'currentautoinst-log.txt');

@@ -19,7 +19,7 @@ unless ($results) { print header(-status=>404)."no testresults found"; exit 0; }
 my $module = test_result_module($results->{'testmodules'}, $testmodule);
 unless ($module) { print header(-status=>404)."module not found"; exit 0; }
 
-unless ($testindex =~ m/^\d+$/ && $testindex > 0 && $testindex <= @{$module->{'details'}}) {
+unless ($testindex =~ m/^\d+$/ && $testindex > 0) {
 	print header(-status=>403)."invalid index"; exit 0;
 }
 if($action!~m%^(?:show|raw)$%) {

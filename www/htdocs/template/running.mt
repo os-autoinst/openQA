@@ -2,6 +2,8 @@
 
 ? block additional_headlines => sub {
 <script src="/static/prototype.js" type="text/javascript"></script>
+<script src="/static/scriptaculous/scriptaculous.js" type="text/javascript"></script>
+<script src="/static/openqa.js" type="text/javascript"></script>
 <script src="/static/running.js" type="text/javascript"></script>
 <style type="text/css">
 <!--
@@ -36,17 +38,30 @@ table {
 	<div class="grid_5 box box-shadow alpha" id="actions_box">
 		<div class="box-header aligncenter">Actions</div>
 		<div class="aligncenter">
-			<? if(is_authorized_rw()) { ?>
-			<a href="/croplive/<?= $testname ?>?getlastimg=1"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
-			<a href="javascript:stopcont()" class="pauseplay pause" id="stopcont" title="pause testrun"></a>
-			<? } ?>
 			<a href="/results/"><img src="/images/back.png" alt="back" title="back to result page" /></a> 
 		</div>
+		<table style="width: 90%">
+			<tr>
+				<td style="width: 8em; padding: 0;">Interactive:</td>
+				<td style="width: 4.5em; padding: 0;" id="interactive_indicator" data-next-status="">Unknown</td>
+				<td style="padding: 0;" id="needinput_buttons">
+					<a href="javascript:window.toggleInteractive()" style="display:none" id="interactive_button"><img src="/images/toggle.png" alt="toggle" title="Toggle mode" /></a>
+				</td>
+			</tr>
+			<tr>
+				<td style="width: 8em; padding: 0;">Waiting for input:</td>
+				<td style="width: 4.5em; padding: 0;" id="needinput_indicator">N/A</td>
+				<td style="padding: 0;" id="needinput_buttons">
+					<a href="javascript:window.continue()" style="display:none" id="continue_button"><img src="/images/play.png" alt="continue" title="Continue" /></a>
+					<a href="/croplive/<?= $testname ?>" style="display:none" id="crop_button"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
+					<a href="javascript:window.stopWaitforneedle()" style="display:none" id="stop_waitforneedle_button"><img src="/images/cancel.png" alt="cancel" title="Stop waitforneedle" /></a>
+				</td>
+			</tr>
+		</table>
 	</div>
 	<div class="grid_5 box box-shadow alpha" id="modules_box" style="min-height: 508px;">
 		<div class="box-header aligncenter">Modules</div>
-		<div id="modcontent">
-		</div>
+		<div id="modlist_content"></div>
 	</div>
 </div>
 

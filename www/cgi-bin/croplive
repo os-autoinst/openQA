@@ -1,74 +1,23 @@
 #!/usr/bin/perl -w
 use strict;
-use CGI ":standard";
 use FindBin;
 use lib "$FindBin::Bin/modules";
-use awstandard;
+use CGI ":standard";
 use openqa;
-use Image::Magick;
-use Text::MicroTemplate "encoded_string";
-use Text::MicroTemplate::Extended;
 
-my $getlastimg = param('getlastimg') || '';
-my $testname = param('testname') || '';
-my $testmodule = param('testmodule') || '';
-my $name=$ENV{PATH_INFO};
+my $fn=$ENV{PATH_INFO};
+if($fn=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
+$fn=~s%^/%%;
+my($testname) = split(/\//, $fn);
 
-$testmodule=~s/[^a-zA-Z0-9._+-]//g;
-$testname=~s/[^a-zA-Z0-9._+-]//g;
-$name=~s/[^a-zA-Z0-9._+\/-]//g;
+my $results = test_result($testname);
+unless ($results) { print header(-status=>404)."no testresults found"; exit 0; }
 
-my $filesuffix = 'png';
+my $testmodule = $results->{'running'};
+my $module = test_result_module($results->{'testmodules'}, $testmodule);
+unless ($module) { print header(-status=>404)."running module not found"; exit 0; }
+my $testindex = scalar(@{$module->{'details'}});
 
-if($getlastimg eq '1') {
-	$name=~s/^\/(.*)/$1/;
-	my $basepath = running_log($name);
-	if($basepath eq '') {print header(-status=>404)."test not running"; exit 0; }
-	my @imgfiles=<${basepath}qemuscreenshot/*.${filesuffix}>;
-	my $newfile = $imgfiles[-1];
-	my (undef, $currentstep) = split(' ', file_content($basepath.'currentstep'));
-	$newfile=~s{^$basedir/$prj/+(.*)}{$1};
-	print header(-status=>302, -location=>"/croplive/$prj/$newfile?testname=$name&testmodule=$currentstep");
-	exit 0;
-}
-
-$name=~s/\.png$//;
-$name=~s/\.jpg$//;
-
-$name=~s|^$prj/||;
-$name=~s|^/$prj/|/|;
-
-my $fullname="$basedir/$prj/$name.$filesuffix";
-if (!-e $fullname) {print header(-status=>404)."file not found: ".$fullname; exit 0; }
-$name=~s/^\///;
-
-my %processed;
-
-if(defined param('process')) {
-	my ($x1,$y1,$x2,$y2,$width,$height,$xc,$yc) = (param('x1'),param('y1'),param('x2'),param('y2'),param('width'),param('height'),param('xc'),param('yc'));
-	if($x2 && $y2 && $width && $height && $xc && $yc) {
-		my ($xc_r,$yc_r) = ($xc-$x1,$yc-$y1);
-		my $image = new Image::Magick();
-		$image->Read($fullname);
-		$image->Crop($width.'x'.$height.'+'.$x1.'+'.$y1);
-		my ($new_name,$new_fullname);
-		for(my $i=1;;$i++) {
-			$new_name = $testmodule.'-'.$i.'-'.$xc_r.'-'.$yc_r;
-			$new_fullname = clickimg("$new_name.$filesuffix");
-			my $check_fullname = clickimg("$testmodule-$i");
-			my @a = <$check_fullname-*.$filesuffix>;
-			last if(!@a);
-		}
-		$image->Write($new_fullname);
-		undef $image;
-		%processed = ('x1' => $x1, 'y1' => $y1, 'x2' => $x2, 'y2' => $y2, 'width' => $width, 'height' => $height, 'xc' => $xc, 'yc' => $yc, 'name' => $new_name);
-	}
-}
-
-my $mt = Text::MicroTemplate::Extended->new(
-	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, testmodule => $testmodule, imgpath => $name, processed => \%processed },
-);
-
-print header(-charset=>"UTF-8", -type=>"text/html");
-print $mt->render('croplive');
+# Redirect to the right cropimg url
+my $url = "/cropimg/show/$testname/$testmodule/$testindex";
+print header(-status=>302, -location=>$url);

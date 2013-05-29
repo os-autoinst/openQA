@@ -1,39 +1,22 @@
 ? extends 'fluid'
 
 ? block additional_headlines => sub {
-<script src="/static/keyevent.js"></script>
-<script src="/static/shapes.js"></script>
-<script src="/static/needleeditor.js"></script>
+<script src="/static/shapes.js" type="text/javascript"></script>
+<script src="/static/needleeditor.js" type="text/javascript"></script>
+<script src="/static/prototype.js" type="text/javascript"></script>
+<script src="/static/openqa.js" type="text/javascript"></script>
+<script src="/static/cropimg.js" type="text/javascript"></script>
+<script src="/static/keyevent.js" type="text/javascript"></script>
 <script type="text/javascript">
 <!--
-function loadBackground(tag) {
-	window.nEditor.LoadBackground(tag.dataset.url);
-	document.getElementById("needleeditor_image").setAttribute("value", tag.dataset.path);
-}
+// Prototype introduces undesired toJSON definition
+delete Array.prototype.toJSON;
 
-function loadTags(html) {
-	var tags = JSON.parse(html.dataset.tags);
-	var checkboxes = document.getElementById("needleeditor_tags").getElementsByTagName('input');
-	for (var i = 0; i < checkboxes.length; i++) {
-		// If we need to switch
-		if ( (checkboxes[i].checked && tags.indexOf(checkboxes[i].value) == -1) ||
-		     (!checkboxes[i].checked && tags.indexOf(checkboxes[i].value) != -1)) {
-			checkboxes[i].click();
-		}
-	}
-}
-
-function addTag() {
-	var input = document.getElementById('newtag');
-	var checkbox = window.nEditor.AddTag(input.value, false);
-	input.value = '';
-	checkbox.click();
-	return false;
-}
+var jsonrpcport = "<?= $jsonrpc_port ?>";
+var testname = "<?= $testname ?>";
 
 window.onload=function(){
 	window.nEditor = new NeedleEditor('<?= ${@$needles[0]}{'imageurl'} ?>',	'<?= encoded_string(JSON::to_json($default_needle)) ?>');
-
 };
 
 -->
@@ -51,12 +34,16 @@ window.onload=function(){
 		<form action="/cropimg/save/<?= $testname ?>/<?= $testmodule?>/<?= $testindex ?>" method="post">
 			<div class="aligncenter">
 				<?= $self->include_file("../../htdocs/includes/moduleslistoptions") ?>
-				<input type="image" src="/images/floppy.png" alt="Save" />
+				<? if ($modinfo->{'running'} eq "") { ?>
+					<input type="image" src="/images/floppy.png" alt="Save" />
+				<? } else { ?>
+					<a href="javascript:window.save_needle();"><img src="/images/floppy.png" /></a>
+				<? } ?>
 			</div>
 			<div>
 				<div style="margin-top: 1em;">
 				<label>Name:</label><br/>
-				<input type="input" name="needlename" value="<?= $needlename ?>"/>
+				<input type="input" name="needlename" id="needleeditor_name" value="<?= $needlename ?>"/>
 				</div>
 				<div style="margin-top: 1em;">
 					<label>Tags:</label><br/>
@@ -67,7 +54,7 @@ window.onload=function(){
 							</label><br/>
 						<? } ?>
 					</div>
-					<input id="newtag" style="width:70%" onkeypress="if (event.keyCode==13) { return addTag(); }"/> <a href="#" onclick="return addTag();">Add</a>
+					<input id="newtag" style="width:70%" onkeypress="if (event.keyCode==13) { return window.addTag(); }"/> <a href="#" onclick="return window.addTag();">Add</a>
 				</div>
 				<div style="margin-top: 1em;">
 					<label>JSON:</label><br/>
@@ -107,10 +94,10 @@ window.onload=function(){
 				<? my $needle = $needles->[$i]; ?>
 				<tr>
 					<td><?= $needle->{'name'} ?></td>
-					<td><input type="radio" name="background_selector" data-path="<?= $needle->{'imagepath'} ?>" data-url="<?= $needle->{'imageurl'} ?>" onclick="loadBackground(this);" <?= 'checked="checked"' if ($i == 0); ?> /></td>
+					<td><input type="radio" name="background_selector" data-path="<?= $needle->{'imagepath'} ?>" data-url="<?= $needle->{'imageurl'} ?>" onclick="window.loadBackground(this);" <?= 'checked="checked"' if ($i == 0); ?> /></td>
 					<td><input type="radio" name="area_selector" onclick="window.nEditor.LoadAreas('<?= JSON::to_json($needle->{'area'}) ?>');"/></td>
 					<td><input type="radio" name="area_selector" onclick="window.nEditor.LoadAreas('<?= JSON::to_json($needle->{'matches'}) ?>');" <?= 'checked="checked"' if ($i == 1); ?>/></td>
-					<td><input type="radio" name="tags_selector" data-tags="<?= JSON::to_json($needle->{'tags'}) ?>" onclick="loadTags(this);" <?= 'checked="checked"' if ($i == 1); ?>/></td>
+					<td><input type="radio" name="tags_selector" data-tags="<?= JSON::to_json($needle->{'tags'}) ?>" onclick="window.loadTags(this);" <?= 'checked="checked"' if ($i == 1 || scalar(@$needles) == 1); ?>/></td>
 				</tr>
 			<? } ?>
 		</table>

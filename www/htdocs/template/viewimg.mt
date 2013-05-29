@@ -1,5 +1,10 @@
 ? extends 'fluid'
 
+? block additional_headlines => sub {
+<script src="/static/prototype.js" type="text/javascript"></script>
+<script src="/static/openqa.js" type="text/javascript"></script>
+? }
+
 ? block locbar => sub {
 <?= $self->include_file("../../htdocs/includes/moduleslistlocbar") ?>
 ? }
@@ -44,8 +49,7 @@
 					var canvas = document.getElementById('cmatch');
 					var context = canvas.getContext('2d');
 
-                                        for(var i in areas) {
-                                            var area = areas[i];
+                                        areas.forEach(function(area) {
  	 				    if(scr_x > 800 || scr_y > 600) {
   						area['x'] = (area['x'] / scr_x) * 800;
 						area['y'] = (area['y'] / scr_y) * 600;
@@ -76,7 +80,7 @@
                                                 context.fillStyle = colorset[area['result']]['fill'];
     					        context.fillRect(area['x'], area['y'], area['w'], area['h']);
                                             }
-                                        }
+                                        });
 				</script>
 				<? } ?>
 			</a>

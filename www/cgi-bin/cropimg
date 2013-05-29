@@ -19,13 +19,31 @@ unless ($results) { print header(-status=>404)."no testresults found"; exit 0; }
 my $module = test_result_module($results->{'testmodules'}, $testmodule);
 unless ($module) { print header(-status=>404)."module not found"; exit 0; }
 
-unless ($testindex =~ m/^\d+$/ && $testindex > 0 && $testindex <= @{$module->{'details'}}) {
+my $modinfo = get_running_modinfo($results);
+unless ($testindex =~ m/^\d+$/ && $testindex > 0) {
 	print header(-status=>403)."invalid index"; exit 0;
+}
+
+if ($testindex > @{$module->{'details'}}) {
+	# This means that the module have no details at all
+	if ($testindex == 1) {
+		my $mt = Text::MicroTemplate::Extended->new(
+			include_path  => ['../htdocs/template'],
+			template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
+					   action => 'cropimg', modinfo => $modinfo });
+
+		print header(-charset=>"UTF-8", -type=>"text/html");
+		print $mt->render('nodetails');
+		exit 0;
+
+	# In this case there are details, we simply run out of range
+	} else {
+		print header(-status=>403)."invalid index"; exit 0;
+	}
 }
 
 my $module_detail = $module->{'details'}->[$testindex-1];
 my $imgname = $module_detail->{'screenshot'};
-my $modinfo = get_running_modinfo($results);
 my $info_msg;
 my $error_msg;
 
@@ -124,35 +142,41 @@ if ($module_detail->{'needle'}) {
 	}
 } else {
 	# Failing with not a single candidate needle
+	$tags = $module_detail->{'tags'} if ($module_detail->{'tags'});
 	push(@$needles, {'name' => 'screenshot',
 			'imageurl' => "/$prj/testresults/$testname/$imgname",
 			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
-			'area' => [], 'matches' => [], 'tags' => []});
+			'area' => [], 'matches' => [], 'tags' => $tags});
 }
 
-# Default values (area: matches from best candidate, tags: tags from best
-# candidate)
+# Default values
+#  - area: matches from best candidate
+#  - tags: tags from best candidate (or screenshot if no candidates)
 my $default_needle = {};
 my $default_name;
-# This should be always true (we are supposed to have at least one needle
-# besides the screenshot)
 if (scalar(@$needles) > 1) {
 	$default_needle->{'area'} = $needles->[1]->{'matches'};
 	$default_needle->{'tags'} = $needles->[1]->{'tags'};
 	$default_name = $needles->[1]->{'name'};
 } else {
 	$default_needle->{'area'} = [];
-	$default_needle->{'tags'} = [];
+	$default_needle->{'tags'} = $tags;
 	$default_name = $testmodule;
 }
 $default_name = $default_name."-".time;
+
+if ($results->{'running'} ne "") {
+	$info_msg = "Running in interactive mode. The screenshot will be used ";
+	$info_msg = $info_msg . "as background image despite the selection";
+}
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
 	template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
 			   action => 'cropimg', modinfo => $modinfo, imglist => $module->{'details'},
 			   error_msg => $error_msg, info_msg => $info_msg,
-                           needles => $needles, tags => $tags, default_needle => $default_needle,
+			   jsonrpc_port => $results->{'jsonrpc'},
+			   needles => $needles, tags => $tags, default_needle => $default_needle,
 			   needlename => $default_name});
 
 print header(-charset=>"UTF-8", -type=>"text/html");

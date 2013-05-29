@@ -46,10 +46,9 @@ NeedleEditor.prototype.init = function() {
   if (this.tags) {
     // If tags is empty, we must populate it with a checkbox for every tag
     if (this.tags.getElementsByTagName('input').length == 0) {
-      for (var i in this.needle['tags']) {
-        var tag = this.needle['tags'][i];
+      this.needle['tags'].forEach(function(tag) {
         this.AddTag(tag, true);
-      }
+      }.bind(this));
     // If the checkboxes are already there, we simply check them all
     } else {
       var inputs = this.tags.getElementsByTagName('input');
@@ -151,10 +150,9 @@ NeedleEditor.ShapeFromArea = function(a) {
 }
 
 NeedleEditor.prototype.DrawAreas = function() {
-  for (var i in this.needle['area']) {
-    var a = this.needle['area'][i];
-    this.cv.addShape(NeedleEditor.ShapeFromArea(a));
-  }
+  this.needle['area'].forEach(function(area) {
+    this.cv.addShape(NeedleEditor.ShapeFromArea(area));
+  }.bind(this));
   return true;
 }
 
