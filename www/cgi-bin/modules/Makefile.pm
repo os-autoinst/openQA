@@ -297,4 +297,16 @@ sub job_delete : Public(id:num)
 	$self->raise_error(code => 400, message => "didn't delete anything") unless $r == 1;
 }
 
+sub job_update_result : Public #(id:num, result)
+{
+	my $self = shift;
+	my $args = shift;
+	my $id = int(shift $args);
+	my $result = shift $args;
+
+	my $sth = $dbh->prepare("UPDATE jobs SET result = ? where id = ?");
+	my $r = $sth->execute($result, $id) or die $dbh->error;
+	$self->raise_error(code => 400, message => "didn't update anything") unless $r == 1;
+}
+
 1;

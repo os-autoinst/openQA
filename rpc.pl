@@ -26,6 +26,7 @@ for (qw/
 $cmds{job_set_prio} = 2;
 $cmds{job_grab} = 2;
 $cmds{job_done} = 2;
+$cmds{job_update_result} = 2;
 $cmds{worker_register} = 3;
 $cmds{job_create} = 99;
 
