@@ -77,6 +77,14 @@ sub worker_register : Num(host, port, backend)
 	return $id;
 }
 
+sub get_statenames()
+{
+	my $sth = $dbh->prepare('SELECT id, name from job_state');
+	$sth->execute();
+	my $h = { map { $_->[1] => $_->[0] } @{$sth->fetchall_arrayref()} };
+	return $h;
+}
+
 =head2
 takes worker id and a blocking argument
 if I specify the parameters here the get exchanged in order, no idea why
@@ -98,6 +106,8 @@ sub job_grab : Num
 		die "invalid worker id $workerid\n" unless @$res && @$res == 1 && $res->[0]->[0] == $workerid;
 	}
 
+	my $state = "(select id from job_state where name = 'running' limit 1)";
+
 	my $id;
 	while (1) {
 		$sth = $dbh->prepare("SELECT id from jobs where state == 1");
@@ -113,7 +123,7 @@ sub job_grab : Num
 				$dbh->begin_work;
 				eval {
 					# XXX: magic constant 2 == running
-					my $sth = $dbh->prepare("UPDATE jobs set state = 2, worker = ?, start_date = datetime('now') WHERE id = ?");
+					my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = ?, start_date = datetime('now'), result = NULL WHERE id = ?");
 					$sth->execute($workerid, $jobid);
 					$dbh->commit;
 				};
@@ -147,10 +157,73 @@ sub job_release : Public(id:num)
 	my $args = shift;
 	my $jobid = $args->{id};
 
-	my $sth = $dbh->prepare("UPDATE jobs set state = 1, worker = 0, start_date = NULL WHERE id = ?");
+	my $state = "(select id from job_state where name = 'scheduled' limit 1)";
+	my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
 	my $r = $sth->execute($jobid) or die $dbh->errstr;
 	die "failed to release job" unless $r == 1;
 }
+
+=head2
+mark job as done
+=cut
+sub job_done : Public(id:num, result)
+{
+	my $self = shift;
+	my $args = shift;
+	my $jobid = $args->{id};
+	my $result = $args->{result};
+
+	my $state = "(select id from job_state where name = 'done' limit 1)";
+	my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, finish_date = datetime('now'), result = ? WHERE id = ?");
+	my $r = $sth->execute($result, $jobid) or die $dbh->errstr;
+	die "failed to finish job" unless $r == 1;
+}
+
+=head2
+mark job as stopped
+=cut
+sub job_stop : Public(id:num)
+{
+	my $self = shift;
+	my $args = shift;
+	my $jobid = $args->{id};
+
+	my $state = "(select id from job_state where name = 'stopped' limit 1)";
+	my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0 WHERE id = ?");
+	my $r = $sth->execute($jobid) or die $dbh->errstr;
+	die "failed to stop job" unless $r == 1;
+}
+
+=head2
+mark job as waiting
+=cut
+sub job_waiting : Public(id:num)
+{
+	my $self = shift;
+	my $args = shift;
+	my $jobid = $args->{id};
+
+	my $state = "(select id from job_state where name = 'waiting' limit 1)";
+	my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ?");
+	my $r = $sth->execute($jobid) or die $dbh->errstr;
+	die "failed to stop job" unless $r == 1;
+}
+
+=head2
+mark job as waiting
+=cut
+sub job_continue : Public(id:num)
+{
+	my $self = shift;
+	my $args = shift;
+	my $jobid = $args->{id};
+
+	my $state = "(select id from job_state where name = 'running' limit 1)";
+	my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ? AND state IN (SELECT id from job_state WHERE name IN ('stopped', 'waiting'))");
+	my $r = $sth->execute($jobid) or die $dbh->errstr;
+	die "failed to continue job" unless $r == 1;
+}
+
 
 =head2
 create a job, expects key=value pairs

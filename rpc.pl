@@ -17,11 +17,15 @@ for (qw/
 	echo
 	job_delete
 	job_release
+	job_stop
+	job_waiting
+	job_continue
 	/) {
 	$cmds{$_} = 1;
 }
 $cmds{job_set_prio} = 2;
 $cmds{job_grab} = 2;
+$cmds{job_done} = 2;
 $cmds{worker_register} = 3;
 $cmds{job_create} = 99;
 
