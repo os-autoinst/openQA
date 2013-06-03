@@ -7,7 +7,8 @@ use DBI;
 use List::Util qw/shuffle/;
 use Data::Dump qw/pp/;
 
-use lib "$FindBin::Bin/modules";
+use FindBin;
+use lib $FindBin::Bin;
 use openqa ();
 
 our $dbfile = '/var/lib/openqa/db';
@@ -281,10 +282,24 @@ sub job_create : Num
 	for my $i (qw/DISTRI ISO DESKTOP/) {
 		die "need at least one $i key\n" unless exists $settings{$i};
 	}
-	my $iso = sprintf("%s/%s/factory/iso/%s",
-			  $openqa::basedir, $openqa::prj, $settings{ISO});
-	unless (-e $iso) {
-		die "ISO $iso does not exist\n";
+	for my $i (qw/ISO NAME/) {
+		next unless $settings{$i};
+		die "invalid character in $i\n" if $settings{$i} =~ /\//; # TODO: use whitelist?
+	}
+	unless (-e sprintf("%s/%s/factory/iso/%s",
+		$openqa::basedir, $openqa::prj, $settings{ISO})) {
+		die "ISO does not exist\n";
+	}
+	unless ($settings{NAME}) {
+		use Digest::MD5;
+		my $ctx = Digest::MD5->new;
+		for my $k (sort keys %settings) {
+			$ctx->add($settings{$k});
+		}
+		my $name = $settings{ISO};
+		$name =~ s/\.iso$//;
+		$name .= '-'.$ctx->hexdigest;
+		$settings{NAME} = $name;
 	}
 	$dbh->begin_work;
 	my $id = 0;
