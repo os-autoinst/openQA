@@ -50,11 +50,13 @@ lorem ipsum ...
 use strict;
 use Data::Dump;
 use JSON::RPC::Client;
+use Fcntl;
 use FindBin;
 #use lib "$FindBin::Bin/../www/cgi-bin/modules"
 #use openqa;
 
-my $pooldir = "/var/cache/openqa/pool";
+my $pooldir = "/var/cache/openqa/pool/manual";
+my $os_autoinst = "/usr/lib/os-autoinst/start.pl";
 
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
@@ -87,6 +89,20 @@ $options{'host'} = 'http://'.$options{'host'} unless $options{'host'} =~ '://';
 
 $pooldir = $options{'pooldir'} if $options{'pooldir'};
 
+if (! -e $pooldir) {
+	use File::Path qw/make_path/;
+	make_path($pooldir);
+}
+chdir $pooldir || die "cannot change directory to $pooldir: $!\n";
+my $lockfd;
+open($lockfd, '+<', '.locked') or die "cannot open lock file: $!\n";
+unless (fcntl($lockfd, F_SETLK, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
+	die "$pooldir already locked\n";
+}
+$lockfd->autoflush(1);
+truncate($lockfd, 0);
+print $lockfd "$$\n";
+
 my $client = new JSON::RPC::Client;
 
 printf "connecting to %s ...\n", $options{'host'} if $verbose;
@@ -118,3 +134,6 @@ while($continue) {
 	printf "$workerid: setting job %d to done\n", $job->{'id'};
 	$client->job_done($job->{'id'});
 }
+
+print "quit\n";
+exit 0;
