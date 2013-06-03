@@ -57,6 +57,7 @@ use FindBin;
 
 my $pooldir = "/var/cache/openqa/pool/manual";
 my $os_autoinst = "/usr/lib/os-autoinst/start.pl";
+my $keep_running = 1;
 
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
@@ -89,51 +90,68 @@ $options{'host'} = 'http://'.$options{'host'} unless $options{'host'} =~ '://';
 
 $pooldir = $options{'pooldir'} if $options{'pooldir'};
 
-if (! -e $pooldir) {
-	use File::Path qw/make_path/;
-	make_path($pooldir);
+sub lockit()
+{
+	if (! -e $pooldir) {
+		use File::Path qw/make_path/;
+		make_path($pooldir);
+	}
+	chdir $pooldir || die "cannot change directory to $pooldir: $!\n";
+	open(my $lockfd, '+<', '.locked') or die "cannot open lock file: $!\n";
+	unless (fcntl($lockfd, F_SETLK, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
+		die "$pooldir already locked\n";
+	}
+	$lockfd->autoflush(1);
+	truncate($lockfd, 0);
+	print $lockfd "$$\n";
+	return $lockfd;
 }
-chdir $pooldir || die "cannot change directory to $pooldir: $!\n";
-my $lockfd;
-open($lockfd, '+<', '.locked') or die "cannot open lock file: $!\n";
-unless (fcntl($lockfd, F_SETLK, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
-	die "$pooldir already locked\n";
+
+sub main()
+{
+	my $lockfd = lockit();
+	my $client = new JSON::RPC::Client;
+
+	printf "connecting to %s ...\n", $options{'host'} if $verbose;
+	$client->prepare($options{'host'}, [qw/list_jobs job_grab job_release job_done worker_register/]) or die "xxx $!\n";
+
+
+	my $port = 9999; # XXX
+	my $workerid = $client->worker_register('localhost', 999, 'qemu');
+
+	while($keep_running) {
+		print "$workerid: trying to get job\n" if $verbose;
+		my $job = $client->job_grab($workerid);
+		unless ($job) {
+			print "no job for me, waiting a little ...\n" if $verbose;
+			sleep 2;
+			next;
+		}
+		printf "$workerid: working on job %d\n", $job->{'id'};
+		while (my ($k, $v) = each $job->{'settings'}) {
+			print "setting $k=$v\n" if $verbose;
+			$ENV{$k} = $v;
+		}
+		sleep 5;
+		printf "$workerid: setting job %d to done\n", $job->{'id'};
+		$client->job_done($job->{'id'});
+
+		for my $k (keys $job->{'settings'}) {
+			undef $ENV{$k};
+		}
+	}
 }
-$lockfd->autoflush(1);
-truncate($lockfd, 0);
-print $lockfd "$$\n";
 
-my $client = new JSON::RPC::Client;
-
-printf "connecting to %s ...\n", $options{'host'} if $verbose;
-$client->prepare($options{'host'}, [qw/list_jobs job_grab job_release job_done worker_register/]) or die "xxx $!\n";
-
-my $continue = 1;
 sub catch_exit
 {
-	$continue = 0;
+	$keep_running = 0;
 }
 
 $SIG{HUP} = \*catch_exit;
 $SIG{TERM} = \*catch_exit;
 $SIG{INT} = \*catch_exit;
 
-my $port = 9999; # XXX
-my $workerid = $client->worker_register('localhost', 999, 'qemu');
-
-while($continue) {
-	print "$workerid: trying to get job\n" if $verbose;
-	my $job = $client->job_grab($workerid);
-	unless ($job) {
-		print "no job for me, waiting a little ...\n" if $verbose;
-		sleep 2;
-		next;
-	}
-	printf "$workerid: working on job %d\n", $job->{'id'};
-	sleep 5;
-	printf "$workerid: setting job %d to done\n", $job->{'id'};
-	$client->job_done($job->{'id'});
-}
+main();
 
 print "quit\n";
 exit 0;
