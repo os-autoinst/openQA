@@ -96,6 +96,21 @@ sub worker_register : Num(host, port, backend)
 	return $id;
 }
 
+sub iso_new : Bool(iso)
+{
+	my $self = shift;
+	my $args = shift;
+	(my $iso = $args->{iso}) =~ s|^.*/||;
+	my $params = openqa::parse_iso($iso);
+
+	if ( $params ) {
+		return job_create( $self, ["ISO=$iso", "DISTRI=$params->{distri}", "DESKTOP=KDE"] );
+	}
+	else {
+		return 0;
+	}
+}
+
 #sub get_statenames()
 #{
 #	my $sth = $dbh->prepare('SELECT id, name from job_state');
@@ -266,9 +281,10 @@ sub job_create : Num
 	for my $i (qw/DISTRI ISO DESKTOP/) {
 		die "need at least one $i key\n" unless exists $settings{$i};
 	}
-	unless (-e sprintf("%s/%s/factory/iso/%s",
-		$openqa::basedir, $openqa::prj, $settings{ISO})) {
-		die "ISO does not exist\n";
+	my $iso = sprintf("%s/%s/factory/iso/%s",
+			  $openqa::basedir, $openqa::prj, $settings{ISO});
+	unless (-e $iso) {
+		die "ISO $iso does not exist\n";
 	}
 	$dbh->begin_work;
 	my $id = 0;

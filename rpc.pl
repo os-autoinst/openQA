@@ -20,6 +20,7 @@ for (qw/
 	job_stop
 	job_waiting
 	job_continue
+	iso_new
 	/) {
 	$cmds{$_} = 1;
 }

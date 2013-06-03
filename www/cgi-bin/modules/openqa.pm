@@ -8,7 +8,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
 $prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle @runner $res_css $res_display
-&parse_log &parse_log_to_stats &parse_log_to_hash &parse_log_json &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info
+&parse_log &parse_log_to_stats &parse_log_to_hash &parse_log_json &parse_iso &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info
 &test_result &test_result_stats &test_result_hash &test_result_module
 );
 #use lib "/usr/share/openqa/cgi-bin/modules";
@@ -134,6 +134,34 @@ sub parse_log_json($) {
 		return decode_json($1);
 	}
 	return undef;
+}
+
+sub parse_iso($) {
+    my $iso = shift;
+
+    my $distri = '(openSUSE|SLES)';
+    my $version = '(\d+.\d|\d+-SP\d|Factory)';
+    my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-)?DVD|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO)';
+    my $arch = '(i[356]86|x86_64|BiArch-i586-x86_64|ia64|ppc64|s390x)';
+    my $build = '(Build(?:\d+))';
+
+    my @parts = $iso =~ /^$distri(?:-$version)?-$flavor-$arch(?:-$build)?.*\.iso$/i;
+
+    if( @parts ) {
+        my %params;
+        @params{qw(distri version flavor arch build)} = @parts;
+        $params{version} ||= 'Factory';
+        
+        if (wantarray()) {
+            return %params;
+        }
+        else {
+            return \%params;
+        }
+    }
+    else {
+        return undef;
+    }
 }
 
 # find the full pathname to a given testrun-logfile and test name
