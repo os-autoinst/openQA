@@ -77,7 +77,7 @@ function toggleInteractive() {
 	});
 }
 
-function continue() {
+function do_continue() {
 	new Ajax.Request("/rpc", {
 		method: "post",
 		parameters: { 	url: window.testStatus.jsonrpc,
