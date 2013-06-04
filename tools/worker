@@ -167,19 +167,18 @@ sub main()
 	$client->prepare($options{'host'}, [qw/list_jobs job_grab job_release job_done worker_register/]) or die "xxx $!\n";
 
 
-	my $port = 9999; # XXX
-	my $workerid = $client->worker_register('localhost', 999, 'qemu');
+	my $port = $ENV{'VNC'};
+	my $workerid = $client->worker_register('localhost', $port, 'qemu');
 
 	my $job;
 	my $worker;
 	my $testresults;
 	while($keep_running) {
 		unless ($job) {
-			print "trying to get job\n" if $verbose;
+			print "waiting for job ...\n" if $verbose;
 			$job = $client->job_grab($workerid);
 			unless ($job) {
-				print "no job for me, waiting a little ...\n" if $verbose;
-				sleep 2;
+				sleep 5;
 				next;
 			}
 			printf "got job %d\n", $job->{'id'};
