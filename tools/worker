@@ -48,7 +48,7 @@ lorem ipsum ...
 =cut
 
 use strict;
-use POSIX ":sys_wait_h"; # WNOHANG
+use POSIX qw/:sys_wait_h strftime/; # WNOHANG
 use Data::Dump;
 use JSON::RPC::Client;
 use Fcntl;
@@ -200,6 +200,14 @@ sub main()
 				$client->job_release($job->{'id'});
 				$job = undef;
 			}
+			if (open(my $log, '>>', "$videodir/runlog.txt")) {
+				if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
+					my @s = map { sprintf("%s=%s", $_, $job->{'settings'}->{$_}) } grep { $_ ne 'ISO' && $_ ne 'NAME' } keys %{$job->{'settings'}};
+					printf $log "%s started to create %s %s\n",
+						strftime("%F %T", gmtime), $name, join(' ', @s);
+				}
+				close($log);
+			}
 		}
 		if ($worker && $got_sigchld) {
 			$got_sigchld = 0;
@@ -220,6 +228,14 @@ sub main()
 			unless (rename("$pooldir/currentautoinst-log.txt", job_get_dest_log($job))) {
 				warn "can't rename log: $!\n";
 				unlink(job_get_dest_log($job));
+			}
+			if (open(my $log, '>>', "$videodir/runlog.txt")) {
+				if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
+					printf $log "%s finished to create %s\n",
+						strftime("%F %T", gmtime),
+						$name;
+				}
+				close($log);
 			}
 
 			printf "setting job %d to $result\n", $job->{'id'} if $verbose;
