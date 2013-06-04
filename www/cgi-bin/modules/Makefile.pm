@@ -157,6 +157,19 @@ sub iso_new : Num(iso)
 #	return $h;
 #}
 
+sub _validate_workerid($)
+{
+	my $workerid = shift;
+
+	die "invalid worker id\n" unless $workerid;
+
+	my $sth = $dbh->prepare("SELECT id from worker where id == ?");
+	$sth->execute($workerid);
+	my $res = $sth->fetchall_arrayref;
+	die "invalid worker id $workerid\n" unless @$res && @$res == 1 && $res->[0]->[0] == $workerid;
+}
+
+
 =head2
 takes worker id and a blocking argument
 if I specify the parameters here the get exchanged in order, no idea why
@@ -169,22 +182,14 @@ sub job_grab : Num
 	my $workerid = shift @$args;
 	my $blocking = int(shift @$args || 0);
 
-	die "invalid worker id\n" unless $workerid;
-
-	my $sth = $dbh->prepare("SELECT id from worker where id == ?");
-	$sth->execute($workerid);
-	{
-		my $res = $sth->fetchall_arrayref;
-		die "invalid worker id $workerid\n" unless @$res && @$res == 1 && $res->[0]->[0] == $workerid;
-	}
-
+	_validate_workerid($workerid);
 	_seen_worker($workerid);
 
 	my $state = "(select id from job_state where name = 'running' limit 1)";
 
 	my $job;
 	while (1) {
-		$sth = $dbh->prepare("SELECT id FROM jobs WHERE state == 1 ORDER BY priority");
+		my $sth = $dbh->prepare("SELECT id FROM jobs WHERE state == 1 ORDER BY priority");
 		$sth->execute;
 		my @jobids;
 		while(my @row = $sth->fetchrow_array) {
@@ -408,5 +413,51 @@ sub job_update_result : Public #(id:num, result)
 	my $r = $sth->execute($result, $id) or die $dbh->error;
 	$self->raise_error(code => 400, message => "didn't update anything") unless $r == 1;
 }
+
+sub command_get : Arr #(workerid:num)
+{
+	my $self = shift;
+	my $args = shift;
+	my $workerid = shift @$args;
+
+	_validate_workerid($workerid);
+	_seen_worker($workerid);
+
+	my $sth = $dbh->prepare("SELECT command FROM commands WHERE worker = ?");
+	my $r = $sth->execute($workerid) or die $dbh->errstr;
+
+	my $commands = ();
+	while(my @row = $sth->fetchrow_array) {
+		push @$commands, $row[0];
+	}
+
+	return $commands;
+}
+
+sub command_put : Public #(workerid:num, command:str)
+{
+	my $self = shift;
+	my $args = shift;
+	my $workerid = shift @$args;
+	my $command = shift @$args;
+
+	_validate_workerid($workerid);
+
+	my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
+	my $rc = $sth->execute($workerid, $command) or die $dbh->error;
+}
+
+sub command_list : Public
+{
+	my $sth = $dbh->prepare("select * from commands");
+	$sth->execute();
+
+	my $commands = [];
+	while(my $command = $sth->fetchrow_hashref) {
+		push @$commands, $command;
+	}
+	return $commands;
+}
+
 
 1;

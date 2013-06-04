@@ -167,7 +167,7 @@ sub main()
 	my $client = new JSON::RPC::Client;
 
 	printf "connecting to %s ...\n", $options{'host'} if $verbose;
-	$client->prepare($options{'host'}, [qw/list_jobs job_grab job_release job_done worker_register/]) or die "xxx $!\n";
+	$client->prepare($options{'host'}, [qw/list_jobs job_grab job_release job_done worker_register command_get/]) or die "xxx $!\n";
 
 
 	my $workerid = $client->worker_register('localhost', $options{'instance'}, 'qemu');
@@ -176,7 +176,18 @@ sub main()
 	my $worker;
 	my $testresults;
 	while($keep_running) {
-		unless ($job) {
+		my $cmds = $client->command_get($workerid);
+		dd $cmds;
+		for my $cmd (@{$cmds||[]}) {
+			if ($cmd eq 'quit') {
+				$keep_running = 0;
+			} else {
+				print STDERR "got unknown command $cmd\n";
+				next;
+			}
+		}
+
+		if ($keep_running && !$job) {
 			print "waiting for job ...\n" if $verbose;
 			$job = $client->job_grab($workerid);
 			unless ($job) {
@@ -244,9 +255,7 @@ sub main()
 
 		}
 		print "waiting for some action ...\n";
-		sleep 2;
-		# FIXME
-		# $client->get_command($workerid);
+		sleep 2 if $keep_running;
 	}
 	if ($job) {
 		print "killing $worker\n";

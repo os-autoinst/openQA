@@ -29,4 +29,8 @@ CREATE TABLE job_settings(
 	key TEXT,
 	value TEXT
 );
+CREATE TABLE commands(
+	worker INTEGER REFERENCES worker(id),
+	command TEXT
+);
 COMMIT;
