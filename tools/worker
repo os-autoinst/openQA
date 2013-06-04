@@ -210,10 +210,16 @@ sub main()
 				$result = "FAIL";
 			}
 
-			my $name = $videodir, $job->{'settings'}->{'NAME'};
-			rename("$pooldir/testresults/$name", $testresults) or warn "can't rename test results: $!\n";
+			my $name = $job->{'settings'}->{'NAME'};
 			rename("$pooldir/video/$name.ogv", sprintf("%s/%s.ogv", $videodir, $name)) or warn "can't rename video: $!\n";
-			rename("$pooldir/currentautoinst-log.txt", job_get_dest_log($job)) or warn "can't rename log: $!\n";
+			unless (rename("$pooldir/testresults/$name", $testresults)) {
+				warn "can't rename test results: $!\n";
+				unlink($testresults);
+			}
+			unless (rename("$pooldir/currentautoinst-log.txt", job_get_dest_log($job))) {
+				warn "can't rename log: $!\n";
+				unlink(job_get_dest_log($job));
+			}
 
 			printf "setting job %d to $result\n", $job->{'id'} if $verbose;
 			$client->job_done($job->{'id'}, $result);
