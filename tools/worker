@@ -95,13 +95,15 @@ usage(0) if ($options{'help'});
 
 my $verbose = $options{'verbose'};
 
+$options{'instance'} ||= 0;
+
 $options{'host'} .= '/jsonrpc' unless $options{'host'} =~ '/';
 $options{'host'} = 'http://'.$options{'host'} unless $options{'host'} =~ '://';
 
 $pooldir = $openqa_base.'/pool/'.($options{'instance'}||'manual');
 
-$ENV{'QEMUPORT'} = ($options{'instance'}||0)*10 + 20002;
-$ENV{'VNC'}      = ($options{'instance'}||0)    + 90;
+$ENV{'QEMUPORT'} = ($options{'instance'})*10 + 20002;
+$ENV{'VNC'}      = ($options{'instance'})    + 90;
 
 $isotovideo = $options{'isotovideo'} if $options{'isotovideo'};
 
@@ -168,8 +170,7 @@ sub main()
 	$client->prepare($options{'host'}, [qw/list_jobs job_grab job_release job_done worker_register/]) or die "xxx $!\n";
 
 
-	my $port = $ENV{'VNC'};
-	my $workerid = $client->worker_register('localhost', $port, 'qemu');
+	my $workerid = $client->worker_register('localhost', $options{'instance'}, 'qemu');
 
 	my $job;
 	my $worker;
@@ -236,6 +237,7 @@ sub main()
 		kill("SIGTERM", $worker);
 		unlink($testresults);
 		unlink(job_get_dest_log($job));
+		$client->job_release($job->{'id'});
 	}
 }
 
