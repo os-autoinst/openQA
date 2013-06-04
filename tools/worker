@@ -212,9 +212,9 @@ sub main()
 
 			my $name = $job->{'settings'}->{'NAME'};
 			rename("$pooldir/video/$name.ogv", sprintf("%s/%s.ogv", $videodir, $name)) or warn "can't rename video: $!\n";
+			unlink($testresults); # can't move directory atomically to replace symlink
 			unless (rename("$pooldir/testresults/$name", $testresults)) {
-				warn "can't rename test results: $!\n";
-				unlink($testresults);
+				warn "can't rename test results $pooldir/testresults/$name -> $testresults: $!\n";
 			}
 			unless (rename("$pooldir/currentautoinst-log.txt", job_get_dest_log($job))) {
 				warn "can't rename log: $!\n";
