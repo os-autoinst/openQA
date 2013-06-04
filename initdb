@@ -1,10 +1,11 @@
 #!/bin/bash
 set -e
-if ! test -w /; then
-	echo "run me as root\n";
+: ${DESTDIR:=/}
+if ! test -w "$DESTDIR"; then
+	echo "need write access to $DESTDIR!";
 	exit 1
 fi
-d=/var/lib/openqa
+d=$DESTDIR/var/lib/openqa
 mkdir -p $d
 rm -f $d/db
 echo .quit | sqlite3 -init db.sql $d/db

@@ -59,7 +59,7 @@ sub list_jobs : Public
 
 sub list_workers : Public
 {
-	my $stmt = "SELECT id, host, port, backend, seen from worker";
+	my $stmt = "SELECT id, host, instance, backend, seen from worker";
 	my $sth = $dbh->prepare($stmt);
 	$sth->execute();
 
@@ -71,13 +71,13 @@ sub list_workers : Public
 }
 
 
-sub worker_register : Num(host, port, backend)
+sub worker_register : Num(host, instance, backend)
 {
 	my $self = shift;
 	my $args = shift;
 
-	my $sth = $dbh->prepare("SELECT id, backend from worker where host = ? and port = ?");
-	my $r = $sth->execute($args->{'host'}, $args->{'port'}) or die "SQL failed\n";
+	my $sth = $dbh->prepare("SELECT id, backend from worker where host = ? and instance = ?");
+	my $r = $sth->execute($args->{'host'}, $args->{'instance'}) or die "SQL failed\n";
 	my @row = $sth->fetchrow_array();
 
 	my $id;
@@ -86,8 +86,8 @@ sub worker_register : Num(host, port, backend)
 		$sth = $dbh->prepare("UPDATE worker SET seen = datetime('now'), backend = ? WHERE id = ?");
 		$r = $sth->execute($args->{'backend'}, $id) or die "SQL failed\n";
 	} else {
-		$sth = $dbh->prepare("INSERT INTO worker (host, port, backend, seen) values (?,?,?, datetime('now'))");
-		$sth->execute($args->{host}, $args->{port}, $args->{backend});
+		$sth = $dbh->prepare("INSERT INTO worker (host, instance, backend, seen) values (?,?,?, datetime('now'))");
+		$sth->execute($args->{host}, $args->{instance}, $args->{backend});
 		$id = $dbh->last_insert_id(undef,undef,undef,undef);
 	}
 

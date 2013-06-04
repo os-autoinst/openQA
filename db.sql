@@ -9,12 +9,12 @@ INSERT INTO "job_state" VALUES(5,'done');
 CREATE TABLE worker(
 	id INTEGER PRIMARY KEY,
 	host TEXT,
-	port INTEGER,
+	instance INTEGER,
 	backend TEXT,
 	seen TIMESTAMP,
-	UNIQUE(host, port)
+	UNIQUE(host, instance)
 );
-INSERT INTO "worker" VALUES(0,NULL,NULL,NULL);
+INSERT INTO worker (id) VALUES(0);
 CREATE TABLE jobs (
 	id INTEGER PRIMARY KEY,
 	state INTEGER DEFAULT 1 REFERENCES job_state(id),
