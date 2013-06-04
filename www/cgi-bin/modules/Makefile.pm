@@ -11,8 +11,6 @@ use FindBin;
 use lib $FindBin::Bin;
 use openqa ();
 
-our $dbfile = '/var/lib/openqa/db';
-
 our $get_job_stmt = "SELECT
 	jobs.id as id,
 	job_state.name as state,
@@ -24,7 +22,7 @@ our $get_job_stmt = "SELECT
 	from jobs, job_state
 	where jobs.state = job_state.id";
 
-our $dbh = DBI->connect("dbi:SQLite:dbname=$dbfile","","");
+our $dbh = DBI->connect("dbi:SQLite:dbname=$openqa::dbfile","","");
 $dbh->{RaiseError} = 1;
 $dbh->do("PRAGMA foreign_keys = ON");
 
