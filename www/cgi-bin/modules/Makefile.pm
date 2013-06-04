@@ -57,6 +57,13 @@ sub list_jobs : Public
 	return $jobs;
 }
 
+sub _seen_worker($)
+{
+	my $id = shift;
+	my $sth = $dbh->prepare("UPDATE worker SET seen = datetime('now') WHERE id = ?");
+	$sth->execute($id) or die "SQL failed\n";
+}
+
 sub list_workers : Public
 {
 	my $stmt = "SELECT id, host, instance, backend, seen from worker";
@@ -170,6 +177,8 @@ sub job_grab : Num
 		my $res = $sth->fetchall_arrayref;
 		die "invalid worker id $workerid\n" unless @$res && @$res == 1 && $res->[0]->[0] == $workerid;
 	}
+
+	_seen_worker($workerid);
 
 	my $state = "(select id from job_state where name = 'running' limit 1)";
 
