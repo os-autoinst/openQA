@@ -145,7 +145,7 @@ sub job_grab : Num
 
 	my $job;
 	while (1) {
-		$sth = $dbh->prepare("SELECT id from jobs where state == 1");
+		$sth = $dbh->prepare("SELECT id FROM jobs WHERE state == 1 ORDER BY priority");
 		$sth->execute;
 		my @jobids;
 		while(my @row = $sth->fetchrow_array) {
@@ -154,7 +154,7 @@ sub job_grab : Num
 
 		if (@jobids) {
 			# run through all job ids and try to grab one
-			for my $jobid (shuffle(@jobids)) {
+			for my $jobid (@jobids) {
 				$dbh->begin_work;
 				eval {
 					# XXX: magic constant 2 == running
