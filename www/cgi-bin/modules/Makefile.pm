@@ -95,19 +95,51 @@ sub worker_register : Num(host, port, backend)
 	return $id;
 }
 
-sub iso_new : Bool(iso)
+sub iso_new : Num(iso)
 {
 	my $self = shift;
 	my $args = shift;
+
+	my %testruns = ( 64 => {'QEMUCPU' => 'qemu64'},
+			 RAID0 => {'RAIDLEVEL' => '0'},
+			 RAID1 => {'RAIDLEVEL' => '1'},
+			 RAID10 => {'RAIDLEVEL' => '10'},
+			 RAID5 => {'RAIDLEVEL' => '5'},
+			 btrfs => {'BTRFS' => '1'},
+			 btrfscryptlvm => {'BTRFS' => '1', 'ENCRYPT' => '1', 'LVM' => '1'},
+			 cryptlvm => {'REBOOTAFTERINSTALL' => '0', 'ENCRYPT' => '1', 'LVM' => '1'},
+			 de => {'DOCRUN' => '1', 'INSTLANG' => 'de_DE', 'QEMUVGA' => 'std'},
+			 doc => {'DOCRUN' => '1', 'QEMUVGA' => 'std'},
+			 gnome => {'DESKTOP' => 'gnome', 'LVM' => '1'},
+			 live => {'LIVETEST' => '1', 'REBOOTAFTERINSTALL' => '0'},
+			 lxde => {'DESKTOP' => 'lxde', 'LVM' => '1'},
+			 minimalx => {'DESKTOP' => 'minimalx'},
+			 nice => {'NICEVIDEO' => '1', 'DOCRUN' => '1', 'REBOOTAFTERINSTALL' => '0', 'SCREENSHOTINTERVAL' => '0.25'},
+			 smp => {'QEMUCPUS' => '4'},
+			 splitusr => {'SPLITUSR' => '1'},
+			 textmode => {'DESKTOP' => 'textmode', 'VIDEOMODE' => 'text'},
+			 uefi => {'UEFI' => '/openqa/uefi', 'DESKTOP' => 'lxde'},
+			 usbboot => {'USBBOOT' => '1', 'LIVETEST' => '1'},
+			 usbinst => {'USBBOOT' => '1'},
+                         xfce => {'DESKTOP' => 'xfce'}
+        );
+
 	(my $iso = $args->{iso}) =~ s|^.*/||;
 	my $params = openqa::parse_iso($iso);
 
+        my $cnt = 0;
+
 	if ( $params ) {
-		return job_create( $self, ["ISO=$iso", "DISTRI=$params->{distri}", "DESKTOP=KDE"] );
+            foreach my $run ( keys(%testruns) ) {
+                my %env = (ISO => $iso, DISTRI => lc($params->{distri}), DESKTOP => 'KDE');
+                @env{keys %{$testruns{$run}}} = values %{$testruns{$run}};
+                my @env = map { $_.'='.$env{$_} } keys %env;
+		$cnt++ if job_create( $self, \@env );
+            }
+
 	}
-	else {
-		return 0;
-	}
+
+        return $cnt;
 }
 
 #sub get_statenames()
@@ -274,7 +306,7 @@ sub job_create : Num
 	my %settings;
 	die "invalid arguments" unless ref $args eq 'ARRAY';
 	for my $i (@$args) {
-		die "invalid argument\n" unless $i =~ /^([A-Z]+)=([^\s]+)$/;
+		die "invalid argument: $i\n" unless $i =~ /^([A-Z]+)=([^\s]+)$/;
 		$settings{$1} = $2;
 	}
 	for my $i (qw/DISTRI ISO DESKTOP/) {
