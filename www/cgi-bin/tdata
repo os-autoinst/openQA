@@ -43,13 +43,13 @@ if(!$readonly && param('deleteclick')) {
 }
 
 if($testname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
-my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
+my $fqfn="$resultdir/$testname/autoinst-log.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 
 my $scriptpath=log_to_scriptpath($fqfn, $testmodule);
 my $running = 0;
 if(!$scriptpath || !-e $scriptpath) {
-	$fqfn = running_log($testname).'currentautoinst-log.txt';
+	$fqfn = running_log($testname).'autoinst-log.txt';
 	$running = 1;
 	$scriptpath=log_to_scriptpath($fqfn, $testmodule);
 	if(!$scriptpath || !-e $scriptpath) {
@@ -57,6 +57,7 @@ if(!$scriptpath || !-e $scriptpath) {
 		print header(-status=>404)."test not found: $testmodule $scriptpath"; exit 0
 	}
 }
+if(!-e $fqfn) { print header(-status=>404)."file not found: $fqfn"; exit 0 }
 
 my $script=file_content($scriptpath);
 if($action eq "raw") { print header(-type=>"text/plain").$script; exit 0}

@@ -11,7 +11,7 @@ my $testname=path_to_testname($ENV{PATH_INFO});
 my $basepath = running_log($testname);
 my $running = !($basepath eq '');
 
-my $backend_info = parse_log_json($basepath.'currentautoinst-log.txt');
+my $backend_info = parse_log_json($basepath.'autoinst-log.txt');
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],

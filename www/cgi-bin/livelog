@@ -60,8 +60,7 @@ elsif($log eq 'status') {
 	exit;
 }
 else {
-	unless(-e $basepath.'currentautoinst-log.txt') {print header(-status=>404)."test not running"; exit 0; }
-	#my $file=File::Tail->new($basepath.'currentautoinst-log.txt');
+	unless(-e $basepath.'autoinst-log.txt') {print header(-status=>404)."test not running"; exit 0; }
 	alarm(7200);
 	if ($text) {
 		print header({-type=>"text/plain", Content_Encoding=>"none"});
@@ -70,7 +69,7 @@ else {
 		print header({-type=>"text/html", Content_Encoding=>"none"});
 		print "<style>pre { font-family: 'monospace', monospace; font-size: 12px; }</style><pre>";
 	}
-	system('tail', '-fn+0', $basepath.'currentautoinst-log.txt');
+	system('tail', '-fn+0', $basepath.'autoinst-log.txt');
 	exit;
 }
 

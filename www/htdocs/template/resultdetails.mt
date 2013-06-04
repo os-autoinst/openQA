@@ -30,12 +30,20 @@
 			<? if($diskimg) { ?>
 			<a href="/diskimg/<?= $testname ?>/l1.gz"><img width="23" height="23" src="/images/floppy.png" alt="img" title="download disk image"/></a>
 			<? } ?>
-			<a href="/<?= $prj ?>/video/<?= $testname ?>.ogv"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
-			<a href="/<?= $prj ?>/video/<?= $testname ?>.ogv.autoinst.txt"><img width="23" height="23" src="/images/log.png" alt="log" title="complete log of this testrun"/></a>
-			<a href="/<?= $prj ?>/logs/<?= $testname ?>.tar.bz2"><img width="23" height="23" src="/images/download.png" alt="logs" title="download var/log.tar.bz2"/></a>
+			<a href="/<?= $prj ?>/testresults/<?= $testname ?>/video.ogv"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
 			<a href="/results/"><img src="/images/back.png" alt="back" title="back to overview page" /></a>
 		</div>
 	</div>
+	<? if($resultfiles) { ?>
+	<div class="box box-shadow" id="result_files_box">
+		<div class="box-header aligncenter">Result Files</div>
+		<div style="text-align: center;">
+			<? for my $resultfile (@$resultfiles) { ?>
+			<a href="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $resultfile ?>"><?= $resultfile ?></a><br />
+			<? } ?>
+		</div>
+	</div>
+	<? } ?>
 	<? if($backend_info) { ?>
 	<? $backend_info->{'backend'} =~s/^.*:://; ?>
 	<div class="box box-shadow" id="backend_info_box">

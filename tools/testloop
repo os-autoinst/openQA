@@ -52,10 +52,10 @@ sub get_extra_test()
 		print "no $arch NET iso found - should be rare";
 		return;
 	}
-	$iso=~s{.*/}{video/};
+	$iso=~s{.*/}{testresults/};
 	my $dvdiso="factory/iso/$iso"; $dvdiso=~s/-NET-/-DVD-/;
 	my $maketarget=$iso;
-	$maketarget=~s{-Media.iso}{-$test.ogv};
+	$maketarget=~s{-Media1.iso}{-$test};
 	$maketarget=maketarget_adjust($maketarget);
 	# if we have a DVD iso, do some tests on this instead
 	if(-e $dvdiso && rand(100)<60) {$maketarget=~s/-NET-/-DVD-/}
@@ -105,7 +105,7 @@ $SIG{USR1}=sub{}; # interrupt sleep
 while (! -e "stopfile") {
 	maybewait();
 	system("make prune prune2 preparesnapshot");
-	system("make newvideos $makeflags");
+	system("make newtests $makeflags");
 	system("tools/cansnapshot && make snapshot");
 	if($wantrestart) {exec($0, @ARGV) or die $!}
 }

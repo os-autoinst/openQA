@@ -53,9 +53,11 @@ for my $r (<$scheduledir/*>) {
 
 my @list=();
 my $now=time();
-for my $r (<$resultdir/*.autoinst.txt>) {
-	my @s=stat($r);
-	my ($logsize,$mtime)=@s[7,9];
+for my $r (<$resultdir/*>) {
+	my @s;
+	if(-e "$r/autoinst-log.txt") {@s = stat("$r/autoinst-log.txt");}
+	else {@s = stat($r);} # running test don't have a logfile, yet
+	my $mtime = $s[9];
 	if($mtime>$maxmtime){$maxmtime=$mtime}
 	next if $mtime < $now - $maxage; # skip old
 	next if($options{match} && $r!~m/$options{match}/);
@@ -71,11 +73,10 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 	my $result = test_result_hash($results);
 
 	my $running = 0;
-	if($logsize==0) {
+	if(not -e "$r/autoinst-log.txt") {
 		# running
 		my $running_basepath = running_log($testname);
-		$backend_info = parse_log_json($running_basepath.'currentautoinst-log.txt');
-		my $url=path_to_url($r);
+		$backend_info = parse_log_json($running_basepath.'autoinst-log.txt');
 		$run_stat = get_running_modinfo($results);
 		$run_stat->{'run_backend'} = 0;
 		if(-e "$running_basepath/os-autoinst.pid") {
@@ -86,7 +87,7 @@ for my $r (<$resultdir/*.autoinst.txt>) {
 		$running = 1;
 	}
 	else {
-		$backend_info = parse_log_json($r);
+		$backend_info = parse_log_json("$r/autoinst-log.txt");
 		if( open(FD, $r) ) {
 			my $timeline = <FD>;
 			chomp($timeline);
@@ -134,5 +135,6 @@ foreach my $rundir (@runner) {
 	if($mtime>$maxmtime){$maxmtime=$mtime}
 }
 
-print header(-charset=>"UTF-8", -type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
+#print header(-charset=>"UTF-8", -type=>"text/html", -Last_Modified=>awstandard::HTTPdate($maxmtime));
+print header(-charset=>"UTF-8", -type=>"text/html");
 print $mt->render('currentresults');

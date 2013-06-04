@@ -9,7 +9,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @EXPORT = qw(
 $prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle @runner $res_css $res_display
 &parse_log &parse_log_to_stats &parse_log_to_hash &parse_log_json &parse_iso &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info
-&test_result &test_result_stats &test_result_hash &test_result_module
+&test_result &test_result_stats &test_result_hash &test_result_module &test_resultfile_list &testresultdir
 $localstatedir $dbfile
 );
 #use lib "/usr/share/openqa/cgi-bin/modules";
@@ -20,7 +20,7 @@ our $basedir=$ENV{'OPENQA_BASEDIR'}||"/opt";
 our $prj="openqa";
 our $perlurl="$prj/perl/autoinst";
 our $perldir="$basedir/$perlurl";
-our $resultdir="$basedir/$prj/video";
+our $resultdir="$basedir/$prj/testresults";
 our $scheduledir="$basedir/$prj/schedule.d";
 our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
@@ -50,7 +50,7 @@ our $res_display = {
 
 sub test_result($) {
 	my $testname = shift;
-	my $testresdir = imgdir($testname);
+	my $testresdir = testresultdir($testname);
 	local $/;
 	open(JF, "<", "$testresdir/results.json") || return;
 	my $result_hash = decode_json(<JF>);
@@ -256,7 +256,7 @@ sub path_to_testname($) {
 	return $fn;
 }
 
-sub imgdir($) { #FIXME: rename to resultdir
+sub testresultdir($) {
 	my $fn=shift;
 	$fn=~s%\.autoinst\.txt$%%;
 	$fn=~s%\.ogv$%%;
@@ -288,8 +288,23 @@ sub split_filename($) { my($fn)=@_;
 	return (@a);
 }
 
+sub test_resultfile_list($) {
+	# get a list of existing resultfiles
+	my $testname = shift;
+	my $testresdir = testresultdir($testname);
+	my @filelist = qw(results.json backend.json serial0.txt autoinst-log.txt);
+	my @filelist_existing;
+	for my $f (@filelist) {
+		if(-e "$testresdir/$f") {
+			push(@filelist_existing, $f);
+		}
+	}
+	return @filelist_existing;
+}
+
+
 sub resultname_to_log($)
-{ "$basedir/$prj/video/$_[0].ogv.autoinst.txt"; 
+{ testresultdir($_[0])."/autoinst-log.txt";
 }
 sub resultname_to_url($)
 { "http://$hostname/results/$_[0]"; 

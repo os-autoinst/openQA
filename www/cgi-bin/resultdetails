@@ -12,8 +12,8 @@ if(!defined $testname) { print header(-status=>404)."must specify result file as
 $testname=~s%^/%%;
 if($testname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden")."Forbidden: invalid path"; exit 0 }
 $testname=~s/\.autoinst\.txt$//; $testname=~s/\.ogv$//; # be tolerant in what we accept
-my $imgdir=openqa::imgdir($testname);
-my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
+my $testresultdir=openqa::testresultdir($testname);
+my $fqfn="$resultdir/$testname/autoinst-log.txt";
 if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
 
 my $results = test_result($testname);
@@ -21,26 +21,26 @@ my $results = test_result($testname);
 my @modlist=();
 foreach my $module (@{$results->{'testmodules'}}) {
 	my $name = $module->{'name'};
-	# add link to $imgdir/$name*.png via png CGI
+	# add link to $testresultdir/$name*.png via png CGI
 	my @imglist;
 	my @wavlist;
         my $num = 1;
 	foreach my $img (@{$module->{'details'}}) {
             if( $img->{'screenshot'} ) {
-                my $imgpath = data_name("$imgdir/".$img->{'screenshot'});
+                my $imgpath = data_name("$testresultdir/".$img->{'screenshot'});
                 push(@imglist, {name => $imgpath, num => $num++, result => $img->{'result'}});
             }
             elsif( $img->{'audio'} ) {
-		my $wavpath = data_name("$imgdir/".$img->{'audio'});
+		my $wavpath = data_name("$testresultdir/".$img->{'audio'});
 		push(@wavlist, {name => $wavpath, result => $img->{'result'}});
             }
         }
 
 #FIXME: Read ocr also from results.json as soon as we know how it looks like
 
-	# add link to $imgdir/$name*.txt as direct link
+	# add link to $testresultdir/$name*.txt as direct link
 	my @ocrlist;
-	foreach my $ocrpath (<$imgdir/$name-[0-9]*.txt>) {
+	foreach my $ocrpath (<$testresultdir/$name-[0-9]*.txt>) {
 		$ocrpath = data_name($ocrpath);
 		my $ocrscreenshotid = $ocrpath;
 		$ocrscreenshotid=~s/^\w+-(\d+)/$1/;
@@ -78,9 +78,12 @@ if(-e "$backlogpath/l1") {
 
 my $backend_info = parse_log_json($fqfn);
 
+# result files box
+my @resultfiles = test_resultfile_list($testname);
+
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { modlist => \@modlist, testname => $testname, diskimg => $diskimg, backend_info => $backend_info },
+	template_args => { modlist => \@modlist, testname => $testname, diskimg => $diskimg, backend_info => $backend_info, resultfiles => \@resultfiles },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

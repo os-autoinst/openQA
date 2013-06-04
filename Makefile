@@ -1,4 +1,4 @@
-L=video/runlog.txt
+L=runlog.txt
 newdays=2
 d=$(shell date +%Y%m%d)
 #bwlimit=--bwlimit=1500
@@ -20,7 +20,7 @@ testedbuildnr=$(shell cat factory-tested/repo/oss/media.1/build)
 #dvdpath=/factory-all-dvd/11.3-isos/
 
 all: sync prune list
-cron: reposync sync prune prune2 newvideos
+cron: reposync sync prune prune2 newtests
 syncall: reposync sync gnomesync dvdsync promosync biarchsync
 
 sync:
@@ -44,7 +44,7 @@ prune3:
 	# only keep latest NET iso of each arch
 	#find factory/iso/ -name "*-NET-*"|sort -t- -k4| perl -ne '...'
 
-testrun: video/$t.ogv
+testrun: testresults/$t
 	# just a shortcut
 
 testcancel:
@@ -57,15 +57,11 @@ updatechangedb:
 	cd changedb ; find /opensuse/factory/repo/oss/ -mtime -7 -name \*.rpm | ./recentchanges.pl
 
 recheck:
-	cd perl/autoinst/ ; tools/rechecklog ../../video/$t.ogv.autoinst.txt
+	cd perl/autoinst/ ; tools/rechecklog ../../testresults/$t/autoinst-log.txt
 deleteresult:
-	rm -f video/$t.ogv
-	rm -f video/$t.ogv.autoinst.txt
 	test -n "$t" && rm -rf testresults/$t
 	find pool/ -name testname | while read line ; do test "`cat $$line`" == "$t" && rm $$line || : ; done
 renameresult:
-	mv -f video/$f.ogv video/$t.ogv
-	mv -f video/$f.ogv.autoinst.txt video/$t.ogv.autoinst.txt
 	mv -f testresults/$f testresults/$t
 renamenetresults:
 	n=`perl -e '$$_="${buildnr}";s/.*Build(\d+)/$$1/;print;'` ; echo $$n ;\
@@ -158,166 +154,166 @@ ISOS=$(shell ls factory/iso/*Build*-Media.iso)
 NEWISOS=$(shell find factory/iso/ -name "*[DN][VE][DT]*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k4|head -8 ; find factory/iso/ -name "*Live*Build*-Media.iso" -mtime -$(newdays)|sort -r -t- -k5|head -4 ; find factory/iso/ -name "archlinux-*.iso" -mtime -$(newdays)|sort -r -t- -k5|head -4)
 # it is enough to test one i586+x86_64 NET-iso
 NEWNETISOS=$(shell find factory/iso/ -name "*NET*Build*-Media.iso" -mtime -${newdays}|sort -r -t- -k4|head -2 ; find factory/iso/ -name "*DVD*Build*-Media.iso" -mtime -${newdays})
-OGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(ISOS))
-NEWOGGS=$(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS)) $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
-scheduledvideos=$(patsubst %,video/%.ogv,$(shell cd schedule.d/ ; ls ))
-allvideos: $(OGGS)
-newvideos: $(NEWOGGS) Tumbleweed-kde64 Tumbleweed-gnome32 debian archlinux $(scheduledvideos)
-newlxdevideos: $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWNETISOS))
-newxfcevideos: $(patsubst factory/iso/%-Media.iso,video/%-xfce.ogv,$(NEWNETISOS))
-newgnomevideos: $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWNETISOS))
-allnewvideos: $(patsubst factory/iso/%-Media.iso,video/%.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-doc.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-lxde.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-xfce.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnome.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-minimalx.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-smp.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-textmode.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-usbboot.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-usbinst.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-nice.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-live.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-RAID0.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-RAID1.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-RAID10.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-RAID5.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-splitusr.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-cryptlvm.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-btrfscryptlvm.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-basesystemdevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-zyppdevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-yastdevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-kerneldevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-mozilladevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-xorgdevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-kdeplaygrounddevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-kdedevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-gnomedevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-xfcedevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-lxdedevel.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-uefi.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-btrfs.ogv,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,video/%-64.ogv,$(NEWISOS))
+TESTS=$(patsubst factory/iso/%-Media.iso,testresults/%,$(ISOS))
+NEWTESTS=$(patsubst factory/iso/%-Media1.iso,testresults/%,$(NEWISOS))
+scheduledtests=$(patsubst %,testresults/%,$(shell cd schedule.d/ ; ls ))
+alltests: $(TESTS)
+newtests: $(NEWTESTS) $(scheduledtests)
+newlxdetests: $(patsubst factory/iso/%-Media.iso,testresults/%-lxde,$(NEWNETISOS))
+newxfcetests: $(patsubst factory/iso/%-Media.iso,testresults/%-xfce,$(NEWNETISOS))
+newgnometests: $(patsubst factory/iso/%-Media.iso,testresults/%-gnome,$(NEWNETISOS))
+allnewtests: $(patsubst factory/iso/%-Media.iso,testresults/%,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-doc,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-lxde,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-xfce,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-gnome,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-minimalx,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-smp,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-textmode,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-usbboot,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-usbinst,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-nice,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-live,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-RAID0,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-RAID1,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-RAID10,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-RAID5,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-splitusr,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-cryptlvm,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-btrfscryptlvm,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-basesystemdevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-zyppdevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-yastdevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-kerneldevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-mozilladevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-xorgdevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-kdeplaygrounddevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-kdedevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-gnomedevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-xfcedevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-lxdedevel,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-uefi,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-btrfs,$(NEWISOS)) $(patsubst factory/iso/%-Media.iso,testresults/%-64,$(NEWISOS))
 
-video/%.ogv: factory/iso/%-Media.iso
+testresults/%: factory/iso/%-Media.iso
 	in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
-video/%-doc.ogv: factory/iso/%-Media.iso
+testresults/%-doc: factory/iso/%-Media.iso
 	DOCRUN=1 QEMUVGA=std in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-de.ogv: factory/iso/%-Media.iso
+testresults/%-de: factory/iso/%-Media.iso
 	DOCRUN=1 INSTLANG=de_DE QEMUVGA=std in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-lxde.ogv: factory/iso/%-Media.iso
+testresults/%-lxde: factory/iso/%-Media.iso
 	export DESKTOP=lxde ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
-video/%-xfce.ogv: factory/iso/%-Media.iso
+testresults/%-xfce: factory/iso/%-Media.iso
 	export DESKTOP=xfce ; EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-gnome.ogv: factory/iso/%-Media.iso
+testresults/%-gnome: factory/iso/%-Media.iso
 	export DESKTOP=gnome ; LVM=1 EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-minimalx.ogv: factory/iso/%-Media.iso
+testresults/%-minimalx: factory/iso/%-Media.iso
 	export DESKTOP=minimalx ; EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-smp.ogv: factory/iso/%-Media.iso
+testresults/%-smp: factory/iso/%-Media.iso
 	QEMUCPUS=4 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-textmode.ogv: factory/iso/%-Media.iso
+testresults/%-textmode: factory/iso/%-Media.iso
 	export DESKTOP=textmode ; VIDEOMODE=text EXTRANAME=-$$DESKTOP in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-usbboot.ogv: factory/iso/%-Media.iso
+testresults/%-usbboot: factory/iso/%-Media.iso
 	USBBOOT=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-usbinst.ogv: factory/iso/%-Media.iso
+testresults/%-usbinst: factory/iso/%-Media.iso
 	USBBOOT=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-nice.ogv: factory/iso/%-Media.iso
+testresults/%-nice: factory/iso/%-Media.iso
 	NICEVIDEO=1 DOCRUN=1 REBOOTAFTERINSTALL=0 SCREENSHOTINTERVAL=0.25 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-live.ogv: factory/iso/%-Media.iso
+testresults/%-live: factory/iso/%-Media.iso
 	LIVETEST=1 REBOOTAFTERINSTALL=0 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-RAID0.ogv: factory/iso/%-Media.iso
-	export RAIDLEVEL=`echo $@ | sed 's/.*RAID\([0-9]*\)\.ogv$$/\1/'` ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-RAID1.ogv: factory/iso/%-Media.iso
-	export RAIDLEVEL=`echo $@ | sed 's/.*RAID\([0-9]*\)\.ogv$$/\1/'` ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-RAID10.ogv: factory/iso/%-Media.iso
+testresults/%-RAID0: factory/iso/%-Media1.iso
+	export RAIDLEVEL=`echo $@ | sed 's/.*RAID\([0-9]*\)\$$/\1/'` ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+testresults/%-RAID1: factory/iso/%-Media1.iso
+	export RAIDLEVEL=`echo $@ | sed 's/.*RAID\([0-9]*\)\$$/\1/'` ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
+testresults/%-RAID10: factory/iso/%-Media1.iso
 	export RAIDLEVEL=10 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-RAID5.ogv: factory/iso/%-Media.iso
+testresults/%-RAID5: factory/iso/%-Media1.iso
 	export RAIDLEVEL=5 ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-splitusr.ogv: factory/iso/%-Media.iso
+testresults/%-splitusr: factory/iso/%-Media.iso
 	SPLITUSR=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-cryptlvm.ogv: factory/iso/%-Media.iso
+testresults/%-cryptlvm: factory/iso/%-Media.iso
 	REBOOTAFTERINSTALL=0 ENCRYPT=1 LVM=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-btrfscryptlvm.ogv: factory/iso/%-Media.iso
+testresults/%-btrfscryptlvm: factory/iso/%-Media.iso
 	BTRFS=1 ENCRYPT=1 LVM=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
 # Debian
 debian: debian-32 debian-64
-debian-32: video/debian-netinst-i386-testing_$d.ogv video/debian-bc-i386-testing_$d.ogv
-debian-64: video/debian-netinst-amd64-testing_$d.ogv video/debian-netinst-amd64-sid_$d.ogv
-video/debian-%_$d.ogv: factory/iso/debian-%-Media.iso
+debian-32: testresults/debian-netinst-i386-testing_$d testresults/debian-bc-i386-testing_$d
+debian-64: testresults/debian-netinst-amd64-testing_$d testresults/debian-netinst-amd64-sid_$d
+testresults/debian-%_$d: factory/iso/debian-%-Media.iso
 	HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/debian-%sid_$d.ogv: factory/iso/debian-%testing-Media.iso
+testresults/debian-%sid_$d: factory/iso/debian-%testing-Media.iso
 	HTTPPROXY=10.0.2.2:3128 SID=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
 # Fedora
 fedora: fedora-32
-fedora-32: video/fedora-netinst-i386-16_$d.ogv 
-#video/fedora-netinst-i386-rawhide_$d.ogv
-video/fedora-%_$d.ogv: factory/iso/fedora-%-Media.iso
+fedora-32: testresults/fedora-netinst-i386-16_$d 
+#testresults/fedora-netinst-i386-rawhide_$d
+testresults/fedora-%_$d: factory/iso/fedora-%-Media.iso
 	QEMUVGA=cirrus DISTRI=fedora-16 HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/fedora-%rawhide_$d.ogv: factory/iso/fedora-%16-Media.iso
+testresults/fedora-%rawhide_$d: factory/iso/fedora-%16-Media.iso
 	RAWHIDE=1 QEMUVGA=cirrus DISTRI=fedora-16 HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
 # Arch
 archlinux: archlinux-32 archlinux-64
-archlinux-32: video/archlinux-core-i686-$d.ogv
-archlinux-64: video/archlinux-netinst-x86_64-$d.ogv
-#archlinux-64: video/archlinux-core-x86_64-$d.ogv video/archlinux-netinst-x86_64-$d.ogv
-video/archlinux-%-$d.ogv: factory/iso/archlinux-%.iso
+archlinux-32: testresults/archlinux-core-i686-$d
+archlinux-64: testresults/archlinux-netinst-x86_64-$d
+#archlinux-64: testresults/archlinux-core-x86_64-$d testresults/archlinux-netinst-x86_64-$d
+testresults/archlinux-%-$d: factory/iso/archlinux-%.iso
 	HTTPPROXY=10.0.2.2:3128 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
-Tumbleweed-gnome32: video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv
-video/openSUSE-Tumbleweed-i586-$d-11.4gnome32.ogv: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
+Tumbleweed-gnome32: testresults/openSUSE-Tumbleweed-i586-$d-11.4gnome32
+testresults/openSUSE-Tumbleweed-i586-$d-11.4gnome32: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
 	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Tumbleweed:/Testing/openSUSE_Tumbleweed_standard/ export UPGRADE=/space2/opensuse/img/opensuse-11.4-gnome-32.img ; TUMBLEWEED=1 NOINSTALL=1 ZDUP=1 DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-Tumbleweed-kde64: video/openSUSE-Tumbleweed-x86_64-$d-11.4kde64.ogv
-video/openSUSE-Tumbleweed-x86_64-$d-11.4kde64.ogv: distribution/11.4/iso/openSUSE-DVD-x86_64-11.4dummy.iso
+Tumbleweed-kde64: testresults/openSUSE-Tumbleweed-x86_64-$d-11.4kde64
+testresults/openSUSE-Tumbleweed-x86_64-$d-11.4kde64: distribution/11.4/iso/openSUSE-DVD-x86_64-11.4dummy.iso
 	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Tumbleweed:/Testing/openSUSE_Tumbleweed_standard/ export UPGRADE=/space2/opensuse/img/opensuse-11.4-kde-64.img ; TUMBLEWEED=1 NOINSTALL=1 ZDUP=1 DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-Evergreen-gnome32: video/openSUSE-Evergreen-i586-$d-11.4gnome32.ogv
-video/openSUSE-Evergreen-i586-$d-11.4gnome32.ogv: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
+Evergreen-gnome32: testresults/openSUSE-Evergreen-i586-$d-11.4gnome32
+testresults/openSUSE-Evergreen-i586-$d-11.4gnome32: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
 	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Evergreen:/11.4/standard/ ; export UPGRADE=/space2/opensuse/img/opensuse-11.4-gnome-32.img ; EVERGREEN=1 NOINSTALL=1 ZDUP=1 DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-Evergreen-11.2: video/openSUSE-Evergreen-x86_64-$d-11.2.ogv
-video/openSUSE-Evergreen-x86_64-$d-11.2.ogv: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
+Evergreen-11.2: testresults/openSUSE-Evergreen-x86_64-$d-11.2
+testresults/openSUSE-Evergreen-x86_64-$d-11.2: distribution/11.4/iso/openSUSE-DVD-i586-11.4dummy.iso
 	export ZDUPREPOS=http://download.opensuse.org/repositories/openSUSE:/Evergreen:/11.2:/Test/standard/ ; export UPGRADE=/space/bernhard/img/opensuse-112-64.img ; EVERGREEN=1 NOINSTALL=1 ZDUP=1 DESKTOP=kde in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-12.2xfce32dup.ogv: factory/iso/%-Media.iso
+testresults/%-12.2xfce32dup: factory/iso/%-Media.iso
 	export UPGRADE=/opensuse/img/openSUSE-12.2-xfce.qcow2 ; DESKTOP=xfce KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-12.2xfce32zdup.ogv: factory/iso/%-Media.iso
+testresults/%-12.2xfce32zdup: factory/iso/%-Media.iso
 	export UPGRADE=/opensuse/img/openSUSE-12.2-xfce.qcow2 ; NOINSTALL=1 ZDUP=1 DESKTOP=xfce KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-12.1gnome32dup.ogv: factory/iso/%-Media.iso
+testresults/%-12.1gnome32dup: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-12.1-gnome-32.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-12.1gnome32zdup.ogv: factory/iso/%-Media.iso
+testresults/%-12.1gnome32zdup: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-12.1-gnome-32.img ; NOINSTALL=1 ZDUP=1 DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.4kde64zdup.ogv: factory/iso/%-Media.iso
+testresults/%-11.4kde64zdup: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.4-kde-64.img ; NOINSTALL=1 ZDUP=1 DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.4kde64dup.ogv: factory/iso/%-Media.iso
+testresults/%-11.4kde64dup: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.4-kde-64.img ; DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.4gnome32zdup.ogv: factory/iso/%-Media.iso
+testresults/%-11.4gnome32zdup: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.4-gnome-32.img ; NOINSTALL=1 ZDUP=1 DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.4gnome32dup.ogv: factory/iso/%-Media.iso
+testresults/%-11.4gnome32dup: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.4-gnome-32.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.4ms5gnomedup.ogv: factory/iso/%-Media.iso
+testresults/%-11.4ms5gnomedup: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.4-ms5-gnome-64.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.3gnomedup.ogv: factory/iso/%-Media.iso
+testresults/%-11.3gnomedup: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-113-64-gnome.img ; DESKTOP=gnome KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.3zdup.ogv: factory/iso/%-Media.iso
+testresults/%-11.3zdup: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.3-32.img ; NOINSTALL=1 ZDUP=1 DESKTOP=kde KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.3dupb.ogv: factory/iso/%-Media.iso
+testresults/%-11.3dupb: factory/iso/%-Media.iso
 	export UPGRADE=/space2/tmp/opensuse-113-32-updated.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.3dup.ogv: factory/iso/%-Media.iso
+testresults/%-11.3dup: factory/iso/%-Media.iso
 	export UPGRADE=/space2/opensuse/img/opensuse-11.3-32.img ; KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.2zdup.ogv: factory/iso/%-Media.iso
+testresults/%-11.2zdup: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-112-64.img ; NOINSTALL=1 ZDUP=1 DESKTOP=kde in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.2dup.ogv: factory/iso/%-Media.iso
+testresults/%-11.2dup: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-112-64.img ; in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-11.1dup.ogv: factory/iso/%-Media.iso
+testresults/%-11.1dup: factory/iso/%-Media.iso
 	export UPGRADE=/space/bernhard/img/opensuse-111-64.img ; HDDMODEL=ide KEEPHDDS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
-video/%-basesystemdevel.ogv: factory/iso/%-Media.iso
+testresults/%-basesystemdevel: factory/iso/%-Media.iso
 	ADDONURL=${repourl}Base:/System/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-zyppdevel.ogv: factory/iso/%-Media.iso
+testresults/%-zyppdevel: factory/iso/%-Media.iso
 	ADDONURL=${repourl}zypp:/Head/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-yastdevel.ogv: factory/iso/%-Media.iso
+testresults/%-yastdevel: factory/iso/%-Media.iso
 	ADDONURL=${repourl}YaST:/Head/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-kerneldevel.ogv: factory/iso/%-Media.iso
+testresults/%-kerneldevel: factory/iso/%-Media.iso
 	ADDONURL=${repourl}Kernel:/HEAD/standard/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-mozilladevel.ogv: factory/iso/%-Media.iso
+testresults/%-mozilladevel: factory/iso/%-Media.iso
 	BIGTEST=1 DESKTOP=gnome ADDONURL=${repourl}mozilla:/beta/SUSE_Factory/+${repourl}LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-xorgdevel.ogv: factory/iso/%-Media.iso
+testresults/%-xorgdevel: factory/iso/%-Media.iso
 	ADDONURL=${repourl}X11:/XOrg/openSUSE_Factory/ LVM=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 	#ADDONURL=${repourl}X11:/XOrg/openSUSE_Factory/+${repourl}Kernel:/HEAD/openSUSE_Factory/ LVM=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-kdeplaygrounddevel.ogv: factory/iso/%-Media.iso
+testresults/%-kdeplaygrounddevel: factory/iso/%-Media.iso
 	ADDONURL=${repourl}KDE:/Unstable:/Playground/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-kdedevel.ogv: factory/iso/%-Media.iso
+testresults/%-kdedevel: factory/iso/%-Media.iso
 	ADDONURL=${repourl}KDE:/Distro:/Factory/openSUSE_Factory/+${repourl}LibreOffice:/Unstable/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-gnomedevel.ogv: factory/iso/%-Media.iso
+testresults/%-gnomedevel: factory/iso/%-Media.iso
 	DESKTOP=gnome ADDONURL=${repourl}GNOME:/Factory/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-xfcedevel.ogv: factory/iso/%-Media.iso
+testresults/%-xfcedevel: factory/iso/%-Media.iso
 	DESKTOP=xfce ADDONURL=${repourl}X11:/xfce/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-lxdedevel.ogv: factory/iso/%-Media.iso
+testresults/%-lxdedevel: factory/iso/%-Media.iso
 	DESKTOP=lxde ADDONURL=${repourl}X11:/lxde/openSUSE_Factory/ in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-uefi.ogv: factory/iso/%-Media.iso
+testresults/%-uefi: factory/iso/%-Media.iso
 	UEFI=/openqa/uefi DESKTOP=lxde in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-btrfs.ogv: factory/iso/%-Media.iso
+testresults/%-btrfs: factory/iso/%-Media.iso
 	BTRFS=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-se.ogv: factory/iso/%-Media.iso
+testresults/%-se: factory/iso/%-Media.iso
 	INSTLANG=sv_SE in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-es.ogv: factory/iso/%-Media.iso
+testresults/%-es: factory/iso/%-Media.iso
 	INSTLANG=es_ES in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-dk.ogv: factory/iso/%-Media.iso
+testresults/%-dk: factory/iso/%-Media.iso
 	INSTLANG=da_DK in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/%-64.ogv: factory/iso/%-Media.iso
+testresults/%-64: factory/iso/%-Media.iso
 	QEMUCPU=qemu64 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
-video/openSUSE-%.ogv: liveiso/openSUSE-%.iso
+testresults/openSUSE-%: liveiso/openSUSE-%.iso
 	LIVEOBSWORKAROUND=1 LIVECD=1 LIVETEST=1 in=$< out=$@ L=$L testdir=${testdir} tools/isotovideo2
 
 
@@ -345,7 +341,7 @@ janitor:
 
 clean:
 	rm -f factory/iso/*-current-Media.iso.zsync
-	rm -rf pool/*/{testresults,video,raid,qemuscreenshot}/*
+	rm -rf pool/*/{testresults,raid,qemuscreenshot}/*
+	rmdir --ignore-fail-on-non-empty testresults/*
 	rm -f pool/*/qemu.pid
-	find video -size 0 | xargs --no-run-if-empty rm -f
 

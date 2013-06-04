@@ -71,7 +71,7 @@
 				<a href="/running/<?= $test->{'testname'} ?>">testing</a>
 				<? } else { ?>
 				<a href="/results/<?= $test->{'testname'} ?>"><img src="/images/details.png" alt="details" title="test result details" height="23" width="23" /></a>
-				<a href="/<?= $prj ?>/video/<?= $test->{'testname'} ?>.ogv"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
+				<a href="/<?= $prj ?>/testresults/<?= $test->{'testname'} ?>/video.ogv"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
 				<? } ?>
 			</td>
 			<td><?= $test->{'backend'} ?></td>

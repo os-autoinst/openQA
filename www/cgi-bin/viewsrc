@@ -28,8 +28,8 @@ if($action!~m%^(?:show|raw)$%) {
 }
 my $modinfo = get_running_modinfo($results);
 
-my $fqfn="$resultdir/$testname.ogv.autoinst.txt";
-$fqfn = running_log($testname).'currentautoinst-log.txt' if ($modinfo->{'running'} ne "");
+my $fqfn=testresultdir($testname).'/autoinst-log.txt';
+$fqfn = running_log($testname).'/autoinst-log.txt' if ($modinfo->{'running'} ne "");
 my $scriptpath=log_to_scriptpath($fqfn, $testmodule);
 if(!$scriptpath || !-e $scriptpath) {
 	$scriptpath||="";
