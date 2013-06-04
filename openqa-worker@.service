@@ -1,0 +1,14 @@
+# unit description file for openQA worker processes
+# enable using e.g.
+# systemctl enable openqa-worker@1.service
+# replace '1' with the instance number you want
+[Unit]
+Description=openQA Worker #%i
+
+[Service]
+Type=simple
+ExecStart=/usr/share/openqa/tools --host localhost --instance %i
+User=geekotest
+
+[Install]
+WantedBy=multi-user.target
