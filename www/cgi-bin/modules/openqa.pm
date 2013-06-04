@@ -13,6 +13,7 @@ $prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle
 );
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
+use File::Basename;
 use JSON "decode_json";
 our $basedir=$ENV{'OPENQA_BASEDIR'}||"/opt";
 our $prj="openqa";
@@ -124,6 +125,7 @@ sub parse_log_to_hash($) {
 	return \%results;
 }
 
+# FIXME: get rid of this crap
 sub parse_log_json($) {
 	my $fn = shift;
 	open(my $fd, "<", $fn) or return undef;
@@ -176,18 +178,10 @@ sub log_to_scriptpath($$)
 }
 
 sub running_log($) {
-	my ($name) = @_;
-	foreach my $path (@runner) {
-		my $testfile = $path."/testname";
-		open(my $fd, $testfile) || next ;
-		my $rnam = <$fd>;
-		chomp($rnam);
-		close($fd);
-		if ($name eq $rnam) {
-			return $path."/";
-		}
-	}
-	return "";
+	my $name = shift;
+	my $dest = readlink("$basedir/$prj/testresults/$name");
+	return '' unless $dest;
+	return dirname(dirname($dest)).'/';
 }
 
 sub back_log($) {
