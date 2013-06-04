@@ -296,9 +296,14 @@ sub job_create : Num
 		for my $k (sort keys %settings) {
 			$ctx->add($settings{$k});
 		}
+
 		my $name = $settings{ISO};
 		$name =~ s/\.iso$//;
-		$name .= '-'.$ctx->hexdigest;
+		$name =~ s/-Media$//;
+		$name .= '-';
+		$name .= $settings{DESKTOP};
+		$name .= '_'.$settings{VIDEOMODE} if $settings{VIDEOMODE};
+		$name .= '_'.substr($ctx->hexdigest, 0, 6);
 		$settings{NAME} = $name;
 	}
 	$dbh->begin_work;
