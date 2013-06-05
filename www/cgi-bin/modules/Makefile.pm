@@ -117,28 +117,50 @@ sub iso_new : Num(iso)
 	my $self = shift;
 	my $args = shift;
 
-	my %testruns = ( 64 => {'QEMUCPU' => 'qemu64'},
-			 RAID0 => {'RAIDLEVEL' => '0'},
-			 RAID1 => {'RAIDLEVEL' => '1'},
-			 RAID10 => {'RAIDLEVEL' => '10'},
-			 RAID5 => {'RAIDLEVEL' => '5'},
-			 btrfs => {'BTRFS' => '1'},
-			 btrfscryptlvm => {'BTRFS' => '1', 'ENCRYPT' => '1', 'LVM' => '1'},
-			 cryptlvm => {'REBOOTAFTERINSTALL' => '0', 'ENCRYPT' => '1', 'LVM' => '1'},
-			 de => {'DOCRUN' => '1', 'INSTLANG' => 'de_DE', 'QEMUVGA' => 'std'},
-			 doc => {'DOCRUN' => '1', 'QEMUVGA' => 'std'},
-			 gnome => {'DESKTOP' => 'gnome', 'LVM' => '1'},
-			 live => {'LIVETEST' => '1', 'REBOOTAFTERINSTALL' => '0'},
-			 lxde => {'DESKTOP' => 'lxde', 'LVM' => '1'},
-			 minimalx => {'DESKTOP' => 'minimalx'},
-			 nice => {'NICEVIDEO' => '1', 'DOCRUN' => '1', 'REBOOTAFTERINSTALL' => '0', 'SCREENSHOTINTERVAL' => '0.25'},
-			 smp => {'QEMUCPUS' => '4'},
-			 splitusr => {'SPLITUSR' => '1'},
-			 textmode => {'DESKTOP' => 'textmode', 'VIDEOMODE' => 'text'},
-			 uefi => {'UEFI' => '/openqa/uefi', 'DESKTOP' => 'lxde'},
-			 usbboot => {'USBBOOT' => '1', 'LIVETEST' => '1'},
-			 usbinst => {'USBBOOT' => '1'},
-                         xfce => {'DESKTOP' => 'xfce'}
+	my %testruns = ( 64 => { applies => sub { $_[0]->{arch} =~ /Biarch/ },
+                                 settings => {'QEMUCPU' => 'qemu64'} },
+			 RAID0 => { applies => sub {1},
+                                    settings => {'RAIDLEVEL' => '0'} },
+			 RAID1 => { applies => sub {1},
+                                    settings => {'RAIDLEVEL' => '1'} },
+			 RAID10 => { applies => sub {1},
+                                     settings => {'RAIDLEVEL' => '10'} },
+			 RAID5 => { applies => sub {1},
+                                    settings => {'RAIDLEVEL' => '5'} },
+			 btrfs => { applies => sub {1},
+                                    settings => {'BTRFS' => '1'} },
+			 btrfscryptlvm => { applies => sub {1},
+                                            settings => {'BTRFS' => '1', 'ENCRYPT' => '1', 'LVM' => '1'} },
+			 cryptlvm => { applies => sub {1},
+                                       settings => {'REBOOTAFTERINSTALL' => '0', 'ENCRYPT' => '1', 'LVM' => '1'} },
+			 de => { applies => sub {1},
+                                 settings => {'DOCRUN' => '1', 'INSTLANG' => 'de_DE', 'QEMUVGA' => 'std'} },
+			 doc => { applies => sub {1},
+                                  settings => {'DOCRUN' => '1', 'QEMUVGA' => 'std'} },
+			 gnome => { applies => sub {1},
+                                    settings => {'DESKTOP' => 'gnome', 'LVM' => '1'} },
+			 live => { applies => sub { $_[0]->{flavor} =~ /Live/ },
+                                   settings => {'LIVETEST' => '1', 'REBOOTAFTERINSTALL' => '0'} },
+			 lxde => { applies => sub { $_[0]->{flavor} !~ /Live/ },
+                                   settings => {'DESKTOP' => 'lxde', 'LVM' => '1'} },
+                         xfce => { applies => sub { $_[0]->{flavor} !~ /Live/ },
+                                   settings => {'DESKTOP' => 'xfce'} },
+			 minimalx => { applies => sub { $_[0]->{flavor} !~ /Live/ },
+                                       settings => {'DESKTOP' => 'minimalx'} },
+			 nice => { applies => sub {1},
+                                   settings => {'NICEVIDEO' => '1', 'DOCRUN' => '1', 'REBOOTAFTERINSTALL' => '0', 'SCREENSHOTINTERVAL' => '0.25'} },
+			 smp => { applies => sub {1},
+                                  settings => {'QEMUCPUS' => '4'} },
+			 splitusr => { applies => sub { $_[0]->{flavor} !~ /Live/ },
+                                       settings => {'SPLITUSR' => '1'} },
+			 textmode => { applies => sub { $_[0]->{flavor} !~ /Live/ },
+                                       settings => {'DESKTOP' => 'textmode', 'VIDEOMODE' => 'text'} },
+			 uefi => { applies => sub {1},
+                                   settings => {'UEFI' => '/openqa/uefi', 'DESKTOP' => 'lxde'} },
+			 usbboot => { applies => sub {1},
+                                      settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
+			 usbinst => { applies => sub {1},
+                                      settings => {'USBBOOT' => '1'} }
         );
         
         # remove any path info path from iso file name
@@ -147,14 +169,33 @@ sub iso_new : Num(iso)
 
         my $cnt = 0;
 
+        # only continue if parsing the ISO filename was successful
 	if ( $params ) {
+            # go through all the testscenarios defined in %testruns:
             foreach my $run ( keys(%testruns) ) {
+                # the testrun applies if the anonlymous 'applies' function returns true
+                if ( $testruns{$run}->{applies}->($params) ) {
+                    print STDERR "$run applied $iso\n";
+                }
+                else {
+                    print STDERR "$run didn't apply $iso\n";
+                    next;
+                }
+
+                # set defaults here:
                 my %env = ( ISO => $iso,
                             NAME => join('-', @{$params}{qw(distri version flavor arch build)}, $run),
                             DISTRI => lc($params->{distri}),
                             DESKTOP => 'kde' );
-                @env{keys %{$testruns{$run}}} = values %{$testruns{$run}};
+
+                # merge defaults form above with the settings from %testruns
+                my $settings = $testruns{$run}->{settings};
+                @env{keys %$settings} = values %$settings;
+
+                # convert %env to 'KEY=value' strings
                 my @env = map { $_.'='.$env{$_} } keys %env;
+
+                # create a new job with these parameters and count if successful
 		$cnt++ if job_create( $self, \@env );
             }
 
