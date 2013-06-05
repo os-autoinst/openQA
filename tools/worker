@@ -278,6 +278,9 @@ sub main()
 				unless (rename("$pooldir/testresults/$name", $testresults)) {
 					warn "can't rename test results $pooldir/testresults/$name -> $testresults: $!\n";
 				}
+				unless (rename("$pooldir/autoinst-log.txt", $testresults.'/autoinst-log.txt')) {
+					warn "can't rename log: $!\n";
+				}
 				printf "setting job %d to $result\n", $job->{'id'} if $verbose;
 				$client->job_done($job->{'id'}, $result);
 			}
