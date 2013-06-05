@@ -30,6 +30,7 @@ CREATE TABLE job_settings(
 	value TEXT
 );
 CREATE TABLE commands(
+	id INTEGER PRIMARY KEY,
 	worker INTEGER REFERENCES worker(id),
 	command TEXT
 );

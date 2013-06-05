@@ -68,6 +68,16 @@ my $isotovideo = "/usr/lib/os-autoinst/tools/isotovideo";
 my $keep_running = 1;
 my $got_sigchld = 0;
 
+my $client_commands = [qw/
+	list_jobs
+	job_grab
+	job_release
+	job_done
+	worker_register
+	command_get
+	command_dequeue
+	/];
+
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
@@ -167,24 +177,26 @@ sub main()
 	my $client = new JSON::RPC::Client;
 
 	printf "connecting to %s ...\n", $options{'host'} if $verbose;
-	$client->prepare($options{'host'}, [qw/list_jobs job_grab job_release job_done worker_register command_get/]) or die "xxx $!\n";
+	$client->prepare($options{'host'}, $client_commands) or die "xxx $!\n";
 
 
 	my $workerid = $client->worker_register('localhost', $options{'instance'}, 'qemu');
+	$ENV{'WORKERID'} = $workerid;
 
 	my $job;
 	my $worker;
 	my $testresults;
 	while($keep_running) {
 		my $cmds = $client->command_get($workerid);
-		dd $cmds;
+		# [[id, command], ... ]
 		for my $cmd (@{$cmds||[]}) {
-			if ($cmd eq 'quit') {
+			if ($cmd->[1] eq 'quit') {
 				$keep_running = 0;
 			} else {
-				print STDERR "got unknown command $cmd\n";
+				print STDERR "got unknown command $cmd->[1]\n";
 				next;
 			}
+			$client->command_dequeue($workerid, $cmd->[0]);
 		}
 
 		if ($keep_running && !$job) {

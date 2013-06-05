@@ -98,6 +98,10 @@ sub worker_register : Num(host, instance, backend)
 		$id = $dbh->last_insert_id(undef,undef,undef,undef);
 	}
 
+	# maybe worker died, delete pending commands
+	$sth = $dbh->prepare("DELETE FROM commands WHERE worker = ?");
+	$r = $sth->execute($id);
+
 	die "got invalid id" unless $id;
 	return $id;
 }
@@ -423,18 +427,15 @@ sub command_get : Arr #(workerid:num)
 	_validate_workerid($workerid);
 	_seen_worker($workerid);
 
-	my $sth = $dbh->prepare("SELECT command FROM commands WHERE worker = ?");
+	my $sth = $dbh->prepare("SELECT id, command FROM commands WHERE worker = ?");
 	my $r = $sth->execute($workerid) or die $dbh->errstr;
 
-	my $commands = ();
-	while(my @row = $sth->fetchrow_array) {
-		push @$commands, $row[0];
-	}
+	my $commands = $sth->fetchall_arrayref;
 
 	return $commands;
 }
 
-sub command_put : Public #(workerid:num, command:str)
+sub command_enqueue : Public #(workerid:num, command:str)
 {
 	my $self = shift;
 	my $args = shift;
@@ -445,9 +446,26 @@ sub command_put : Public #(workerid:num, command:str)
 
 	my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
 	my $rc = $sth->execute($workerid, $command) or die $dbh->error;
+
+	return $dbh->last_insert_id(undef,undef,undef,undef);
 }
 
-sub command_list : Public
+sub command_dequeue : Public #(workerid:num, id:num)
+{
+	my $self = shift;
+	my $args = shift;
+	my $workerid = shift @$args or die "missing workerid parameter\n";
+	my $id = shift @$args or die "missing id parameter\n";
+
+	_validate_workerid($workerid);
+
+	my $sth = $dbh->prepare("DELETE FROM commands WHERE id = ? and worker = ?");
+	my $r = $sth->execute($id, $workerid);
+
+	return int($r);
+}
+
+sub list_commands : Public
 {
 	my $sth = $dbh->prepare("select * from commands");
 	$sth->execute();

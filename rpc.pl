@@ -12,7 +12,7 @@ my $url = "http://openqa.tanana.suse.de:$port/jsonrpc";
 my %cmds = map { $_ => 0 } (qw/
 	list_jobs
 	list_workers
-	command_list
+	list_commands
 	/);
 for (qw/
 	echo
@@ -26,11 +26,16 @@ for (qw/
 	/) {
 	$cmds{$_} = 1;
 }
-$cmds{job_set_prio} = 2;
-$cmds{job_grab} = 2;
-$cmds{job_done} = 2;
-$cmds{job_update_result} = 2;
-$cmds{command_put} = 2;
+for (qw/
+	job_set_prio
+	job_grab
+	job_done
+	job_update_result
+	command_enqueue
+	command_dequeue
+	/) {
+	$cmds{$_} = 2;
+}
 $cmds{worker_register} = 3;
 $cmds{job_create} = 99;
 
