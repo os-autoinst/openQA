@@ -53,6 +53,7 @@ use Data::Dump;
 use JSON::RPC::Client;
 use Fcntl;
 use File::Path qw/make_path remove_tree/;
+use File::Copy qw(copy);
 use FindBin;
 #use lib "$FindBin::Bin/../www/cgi-bin/modules"
 #use openqa;
@@ -61,6 +62,7 @@ my $openqa_base = "/var/cache/openqa";
 my $pooldir;
 my $isodir = "$openqa_base/factory/iso";
 my $results_dir = "$openqa_base/testresults";
+my $logupload_dir = "$openqa_base/logupload";
 
 my $isotovideo = "/usr/lib/os-autoinst/tools/isotovideo";
 
@@ -275,6 +277,20 @@ sub main()
 			}
 
 			if (!$aborted || $aborted eq 'stop') {
+				# collect uploaded logs
+				my @uploaded_logfiles = <$logupload_dir/$name/*>;
+				mkdir("$pooldir/testresults/ulogs/");
+				if(@uploaded_logfiles) {
+					for my $uploaded_logfile (@uploaded_logfiles) {
+						unless(copy($uploaded_logfile, "$pooldir/testresults/ulogs/")) {
+							warn "can't copy ulog: $uploaded_logfile -> $pooldir/testresults/ulogs/\n";
+						}
+					}
+				}
+				if(-e "$logupload_dir/$name/") {
+					remove_tree("$logupload_dir/$name/"); # cleanup
+				}
+
 				unless (rename("$pooldir/testresults/$name", $testresults)) {
 					warn "can't rename test results $pooldir/testresults/$name -> $testresults: $!\n";
 				}
