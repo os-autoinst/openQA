@@ -61,7 +61,6 @@ my $openqa_base = "/var/cache/openqa";
 my $pooldir;
 my $isodir = "$openqa_base/factory/iso";
 my $results_dir = "$openqa_base/testresults";
-my $videodir = "$openqa_base/video";
 
 my $isotovideo = "/usr/lib/os-autoinst/tools/isotovideo";
 
@@ -165,12 +164,6 @@ sub workit($)
 	}
 }
 
-sub job_get_dest_log($)
-{
-	my $job = shift;
-	return sprintf("%s/%s.ogv.autoinst.txt", $videodir, $job->{'settings'}->{'NAME'});
-}
-
 sub main()
 {
 	my $lockfd = lockit();
@@ -213,10 +206,6 @@ sub main()
 				remove_tree($testresults);
 			}
 			symlink(join('/', $pooldir, 'testresults', $name), $testresults) or warn "symlink $testresults: $!\n";
-			# create/truncate destination log file. Used as running indicator by web ui
-			if (open(my $fd, '>', job_get_dest_log($job))) {
-				close $fd;
-			}
 			$worker = workit($job);
 			unless ($worker) {
 				warn "launching worker failed, releasing job\n";
@@ -243,16 +232,11 @@ sub main()
 			}
 
 			my $name = $job->{'settings'}->{'NAME'};
-			rename("$pooldir/video/$name.ogv", sprintf("%s/%s.ogv", $videodir, $name)) or warn "can't rename video: $!\n";
 			unlink($testresults); # can't move directory atomically to replace symlink
 			unless (rename("$pooldir/testresults/$name", $testresults)) {
 				warn "can't rename test results $pooldir/testresults/$name -> $testresults: $!\n";
 			}
-			unless (rename("$pooldir/currentautoinst-log.txt", job_get_dest_log($job))) {
-				warn "can't rename log: $!\n";
-				unlink(job_get_dest_log($job));
-			}
-			if (open(my $log, '>>', "$videodir/runlog.txt")) {
+			if (open(my $log, '>>', "$results_dir/runlog.txt")) {
 				if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
 					printf $log "%s finished to create %s\n",
 						strftime("%F %T", gmtime),
@@ -276,7 +260,6 @@ sub main()
 			sleep 2;
 		}
 		unlink($testresults);
-		unlink(job_get_dest_log($job));
 		$client->job_release($job->{'id'});
 	}
 }
