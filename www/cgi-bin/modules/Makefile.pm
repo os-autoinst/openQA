@@ -420,18 +420,61 @@ sub job_update_result : Public #(id:num, result)
 	$self->raise_error(code => 400, message => "didn't update anything") unless $r == 1;
 }
 
+
+sub _job_find_by_name($;@)
+{
+	my $name = shift;
+	my @cols = @_;
+	@cols = ('id') unless @_;
+	
+	my $sth = $dbh->prepare("SELECT ".join(',', @cols)." FROM jobs WHERE name = ?");
+	my $rc = $sth->execute($name);
+	my $row = $sth->fetchrow_arrayref;
+
+	return $row||[undef];
+}
+
 sub job_find_by_name : Public #(name:str)
 {
 	my $self = shift;
 	my $args = shift;
 	my $name = shift @$args or die "missing name parameter\n";
 
-	my $sth = $dbh->prepare("SELECT id FROM jobs WHERE name = ?");
-	my $rc = $sth->execute($name);
-	my @row = $sth->fetchrow_array;
-
-	return $row[0];
+	return _job_find_by_name($name)->[0];
 }
+
+sub job_restart_by_name : Public #(name:str)
+{
+	my $self = shift;
+	my $args = shift;
+	my $name = shift @$args or die "missing name parameter\n";
+
+
+	# needs to be a transaction as we need to make sure no worker assigns
+	# itself while we modify the job
+	$dbh->begin_work;
+	eval {
+		my ($id, $workerid) = @{_job_find_by_name($name, 'id', 'worker')};
+
+		print STDERR "workerid $id, $workerid\n";
+		if ($workerid) {
+			my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
+			my $rc = $sth->execute($workerid, "restart") or die $dbh->error;
+		} else {
+			my $state = "(select id from job_state where name = 'scheduled' limit 1)";
+			my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
+			my $r = $sth->execute($id) or die $dbh->errstr;
+
+		}
+		$dbh->commit;
+	};
+	if ($@) {
+		print STDERR "$@\n";
+		eval { $dbh->rollback };
+		next;
+	}
+}
+
 
 sub command_get : Arr #(workerid:num)
 {
