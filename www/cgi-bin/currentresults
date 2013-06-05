@@ -73,7 +73,7 @@ for my $r (<$resultdir/*>) {
 	my $result = test_result_hash($results);
 
 	my $running = 0;
-	if(not -e "$r/autoinst-log.txt") {
+	if(not -e "$r/qemu.pid") {
 		# running
 		my $running_basepath = running_log($testname);
 		$backend_info = parse_log_json($running_basepath.'autoinst-log.txt');
