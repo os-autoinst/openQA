@@ -13,6 +13,7 @@ use openqa ();
 
 our $get_job_stmt = "SELECT
 	jobs.id as id,
+	jobs.name as name,
 	job_state.name as state,
 	jobs.priority as priority,
 	jobs.result as result,
@@ -357,7 +358,8 @@ sub job_create : Num
 	$dbh->begin_work;
 	my $id = 0;
 	eval {
-		my $rc = $dbh->do("INSERT INTO jobs DEFAULT VALUES");
+		my $sth = $dbh->prepare("INSERT INTO jobs (name) VALUES(?)");
+		my $rc = $sth->execute($settings{'NAME'});
 		$id = $dbh->last_insert_id(undef,undef,undef,undef);
 		die "got invalid id" unless $id;
 		while(my ($k, $v) = each %settings) {
@@ -416,6 +418,19 @@ sub job_update_result : Public #(id:num, result)
 	my $sth = $dbh->prepare("UPDATE jobs SET result = ? where id = ?");
 	my $r = $sth->execute($result, $id) or die $dbh->error;
 	$self->raise_error(code => 400, message => "didn't update anything") unless $r == 1;
+}
+
+sub job_find_by_name : Public #(name:str)
+{
+	my $self = shift;
+	my $args = shift;
+	my $name = shift @$args or die "missing name parameter\n";
+
+	my $sth = $dbh->prepare("SELECT id FROM jobs WHERE name = ?");
+	my $rc = $sth->execute($name);
+	my @row = $sth->fetchrow_array;
+
+	return $row[0];
 }
 
 sub command_get : Arr #(workerid:num)

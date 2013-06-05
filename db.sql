@@ -17,12 +17,14 @@ CREATE TABLE worker(
 INSERT INTO worker (id) VALUES(0);
 CREATE TABLE jobs (
 	id INTEGER PRIMARY KEY,
+	name TEXT,
 	state INTEGER DEFAULT 1 REFERENCES job_state(id),
 	priority INTEGER DEFAULT 50, -- 0-99
 	result TEXT,
 	worker INTEGER DEFAULT 0 REFERENCES worker(id) ON DELETE SET DEFAULT,
 	start_date TIMESTAMP,
-	finish_date TIMESTAMP
+	finish_date TIMESTAMP,
+	UNIQUE(name)
 );
 CREATE TABLE job_settings(
 	jobid INTEGER REFERENCES jobs(id),
