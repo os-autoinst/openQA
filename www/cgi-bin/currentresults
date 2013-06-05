@@ -54,6 +54,7 @@ for my $r (<$scheduledir/*>) {
 my @list=();
 my $now=time();
 for my $r (<$resultdir/*>) {
+	next unless -d $r;
 	my @s;
 	if(-e "$r/autoinst-log.txt") {@s = stat("$r/autoinst-log.txt");}
 	else {@s = stat($r);} # running test don't have a logfile, yet
