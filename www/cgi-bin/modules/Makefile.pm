@@ -140,7 +140,8 @@ sub iso_new : Num(iso)
 			 usbinst => {'USBBOOT' => '1'},
                          xfce => {'DESKTOP' => 'xfce'}
         );
-
+        
+        # remove any path info path from iso file name
 	(my $iso = $args->{iso}) =~ s|^.*/||;
 	my $params = openqa::parse_iso($iso);
 
@@ -148,7 +149,10 @@ sub iso_new : Num(iso)
 
 	if ( $params ) {
             foreach my $run ( keys(%testruns) ) {
-                my %env = (ISO => $iso, DISTRI => lc($params->{distri}), DESKTOP => 'kde');
+                my %env = ( ISO => $iso,
+                            NAME => join('-', @{$params}{qw(distri version flavor arch build)}, $run),
+                            DISTRI => lc($params->{distri}),
+                            DESKTOP => 'kde' );
                 @env{keys %{$testruns{$run}}} = values %{$testruns{$run}};
                 my @env = map { $_.'='.$env{$_} } keys %env;
 		$cnt++ if job_create( $self, \@env );
