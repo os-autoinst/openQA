@@ -99,9 +99,14 @@ sub worker_register : Num(host, instance, backend)
 		$id = $dbh->last_insert_id(undef,undef,undef,undef);
 	}
 
-	# maybe worker died, delete pending commands
+
+	# maybe worker died, delete pending commands and reset running jobs
+	my $state = "(select id from job_state where name = 'scheduled' limit 1)";
+	$sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE worker = ?");
+	$r = $sth->execute($id) or die $dbh->errstr;
+
 	$sth = $dbh->prepare("DELETE FROM commands WHERE worker = ?");
-	$r = $sth->execute($id);
+	$r = $sth->execute($id) or die $dbh->errstr;
 
 	die "got invalid id" unless $id;
 	return $id;
