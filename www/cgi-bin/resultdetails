@@ -81,9 +81,12 @@ my $backend_info = parse_log_json($fqfn);
 # result files box
 my @resultfiles = test_resultfile_list($testname);
 
+# uploaded logs box
+my @ulogs = test_uploadlog_list($testname);
+
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { modlist => \@modlist, testname => $testname, diskimg => $diskimg, backend_info => $backend_info, resultfiles => \@resultfiles },
+	template_args => { modlist => \@modlist, testname => $testname, diskimg => $diskimg, backend_info => $backend_info, resultfiles => \@resultfiles, ulogs => \@ulogs },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

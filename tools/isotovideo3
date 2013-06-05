@@ -33,6 +33,14 @@
 	#XXX reenable tools/backlog ${testdir}/raid/ $baseoutname
 	echo `date` finished to create $out >>$L
 	mv -f ${testdir}/autoinst-log.txt ${testdir}/testresults/$basetestname/autoinst-log.txt
+
+	# save uploaded logfiles
+	mkdir -p ${testdir}/testresults/$basetestname/ulogs/
+	if test -e logupload/$baseoutname/* ; then
+	       cp logupload/$baseoutname/* ${testdir}/testresults/$basetestname/ulogs/
+	       rm -rf logupload/$baseoutname
+	fi
+
 	#trap "" EXIT
 	rm -f testresults/$baseoutname
 	mv ${testdir}/testresults/$basetestname testresults/$baseoutname || true

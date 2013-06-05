@@ -44,6 +44,16 @@
 		</div>
 	</div>
 	<? } ?>
+	<? if($ulogs and @$ulogs) { ?>
+	<div class="box box-shadow" id="result_files_box">
+		<div class="box-header aligncenter">Uploaded Logs</div>
+		<div style="text-align: center;">
+			<? for my $ulog (@$ulogs) { ?>
+			<a href="/<?= $prj ?>/testresults/<?= $testname ?>/ulogs/<?= $ulog ?>"><?= $ulog ?></a><br />
+			<? } ?>
+		</div>
+	</div>
+	<? } ?>
 	<? if($backend_info) { ?>
 	<? $backend_info->{'backend'} =~s/^.*:://; ?>
 	<div class="box box-shadow" id="backend_info_box">
