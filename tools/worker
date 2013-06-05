@@ -288,7 +288,7 @@ sub main()
 			$worker = undef;
 		}
 
-		print "waiting for some action ...\n";
+		print "waiting for some action ...\n" if $verbose;
 		sleep 2 if $keep_running;
 	}
 	if ($job) {
