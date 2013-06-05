@@ -48,7 +48,7 @@ lorem ipsum ...
 =cut
 
 use strict;
-use POSIX qw/:sys_wait_h strftime/; # WNOHANG
+use POSIX qw/:sys_wait_h strftime SIGTERM/; # WNOHANG
 use Data::Dump;
 use JSON::RPC::Client;
 use Fcntl;
@@ -270,8 +270,11 @@ sub main()
 		sleep 2 if $keep_running;
 	}
 	if ($job) {
-		print "killing $worker\n";
-		kill("SIGTERM", $worker);
+		for (1..3) {
+			print "killing $worker\n";
+			last if kill(SIGTERM, $worker);
+			sleep 2;
+		}
 		unlink($testresults);
 		unlink(job_get_dest_log($job));
 		$client->job_release($job->{'id'});
