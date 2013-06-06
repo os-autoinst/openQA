@@ -4,6 +4,8 @@
 # replace '1' with the instance number you want
 [Unit]
 Description=openQA Worker #%i
+Wants=apache2.service
+After=apache2.service
 
 [Service]
 Type=simple
