@@ -15,6 +15,7 @@ $localstatedir $dbfile
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
 use File::Basename;
+use Fcntl;
 use JSON "decode_json";
 our $basedir=$ENV{'OPENQA_BASEDIR'}||"/opt";
 our $prj="openqa";
@@ -53,7 +54,11 @@ sub test_result($) {
 	my $testresdir = testresultdir($testname);
 	local $/;
 	open(JF, "<", "$testresdir/results.json") || return;
-	my $result_hash = decode_json(<JF>);
+	return unless fcntl(JF, F_SETLKW, pack('ssqql', F_RDLCK, 0, 0, 0, $$));
+	my $result_hash;
+	eval {
+		$result_hash = decode_json(<JF>);
+	}; warn "failed to parse $testresdir/results.json: $@" if $@;
 	close(JF);
 	return $result_hash;
 }
