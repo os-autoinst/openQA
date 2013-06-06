@@ -167,6 +167,7 @@ sub workit($)
 sub _kill_worker($)
 {
 	my $worker = shift;
+	return unless $worker;
 	for (1..3) {
 		print "killing $worker\n";
 		last unless $got_sigchld || kill(SIGTERM, $worker);
@@ -192,21 +193,32 @@ sub main()
 	my $worker;
 	my $testresults;
 	my $aborted;
+	my $retries;
+
+	$SIG{__DIE__} = sub { return if $^S; _kill_worker($worker); exit(1); };
+
 	while($keep_running) {
-		my $cmds = $client->command_get($workerid);
+		my $cmds;
+		$retries = 3; while(1) { eval {
+			$cmds = $client->command_get($workerid);
+		}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 		# [[id, command], ... ]
 		for my $cmd (@{$cmds||[]}) {
 			if ($cmd->[1] eq 'quit') {
 				$keep_running = 0;
 				if ($worker) {
 					_kill_worker($worker);
-					$client->job_release($job->{'id'});
+					$retries = 3; while(1) { eval {
+						$client->job_release($job->{'id'});
+					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 					$aborted = 'quit';
 				}
 			} elsif ($cmd->[1] eq 'abort') {
 				if ($worker) {
 					_kill_worker($worker);
-					$client->job_release($job->{'id'});
+					$retries = 3; while(1) { eval {
+						$client->job_release($job->{'id'});
+					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 					$aborted = 'abort';
 				}
 			} elsif ($cmd->[1] eq 'stop') {
@@ -254,12 +266,16 @@ sub main()
 			} else {
 				print STDERR "got unknown command $cmd->[1]\n";
 			}
-			$client->command_dequeue($workerid, $cmd->[0]);
+			$retries = 3; while(1) { eval {
+				$client->command_dequeue($workerid, $cmd->[0]);
+			}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 		}
 
 		if ($keep_running && !$job) {
 			print "waiting for job ...\n" if $verbose;
-			$job = $client->job_grab($workerid);
+			$retries = 3; while(1) { eval {
+				$job = $client->job_grab($workerid);
+			}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 			unless ($job) {
 				sleep 5;
 				next;
@@ -274,7 +290,9 @@ sub main()
 			$worker = workit($job);
 			unless ($worker) {
 				warn "launching worker failed, releasing job\n";
-				$client->job_release($job->{'id'});
+				$retries = 3; while(1) { eval {
+					$client->job_release($job->{'id'});
+				}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 				$job = undef;
 			}
 			$aborted = undef;
@@ -318,7 +336,9 @@ sub main()
 					warn "can't rename log: $!\n";
 				}
 				printf "setting job %d to $result\n", $job->{'id'} if $verbose;
-				$client->job_done($job->{'id'}, $result);
+				$retries = 3; while(1) { eval {
+					$client->job_done($job->{'id'}, $result);
+				}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 			}
 			$job = undef;
 			$worker = undef;
@@ -330,7 +350,9 @@ sub main()
 	if ($job) {
 		_kill_worker($worker);
 		unlink($testresults);
-		$client->job_release($job->{'id'});
+		$retries = 3; while(1) { eval {
+			$client->job_release($job->{'id'});
+		}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 	}
 }
 
