@@ -7,7 +7,7 @@ Description=openQA Worker #%i
 
 [Service]
 Type=simple
-ExecStart=/usr/share/openqa/tools --host localhost --instance %i
+ExecStart=/usr/share/openqa/tools/worker --host localhost --instance %i
 User=geekotest
 
 [Install]
