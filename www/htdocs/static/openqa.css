@@ -127,11 +127,11 @@ span.thumbnail {
 	position:relative;
 	display:inline-block;
 	margin: 0;
-	padding: 6px;
+	margin: 6px;
 }
 
 span.thumbnail.current {
-	background-color: #777;
+	box-shadow: 0 0 3px 4px #666;
 }
 
 span.refcomppic span.match-icon {

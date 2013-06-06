@@ -9,7 +9,7 @@
 			<span class="<?= ($img_count == $testindex) ? "thumbnail current" : "thumbnail" ?>">
 				<a href="<?= "/$action/show/$testname/$testmodule/".$img_count++ ?>">
 					<img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $refimg->{'screenshot'} ?>?size=<?= $ref_width ?>x<?= $ref_height ?>"
-					width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $refimg->{'name'} ?>.png" title="<?= $refimg->{'name'} ?>.png"
+					width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $refimg->{'screenshot'} ?>" title="<?= $refimg->{'screenshot'} ?>"
 					class="<?= "resborder\L$refimg->{'result'}" ?>" /></a>
 			</span>
 			<? } ?>
