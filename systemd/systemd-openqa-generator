@@ -1,0 +1,13 @@
+#!/bin/bash
+shopt -s nullglob
+if [ $# != 3 ]; then
+	logger -s "invalid number of arguments"
+	exit 1
+fi
+pooldir="/var/cache/openqa/pool"
+dir="$1"
+mkdir -p "$dir/openqa-worker.wants"
+for i in $pooldir/[0-9]*; do
+	i="${i#$pooldir/}"
+	ln -s "/usr/lib/systemd/openqa-worker@.service" "$dir/openqa-worker.wants/openqa-worker@$i.service"
+done

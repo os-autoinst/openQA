@@ -1,0 +1,5 @@
+[Unit]
+Description=openQA Worker
+
+[Install]
+WantedBy=multi-user.target
