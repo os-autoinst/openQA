@@ -48,7 +48,7 @@ lorem ipsum ...
 =cut
 
 use strict;
-use POSIX qw/:sys_wait_h strftime SIGTERM/; # WNOHANG
+use POSIX qw/:sys_wait_h strftime SIGTERM/;
 use Data::Dump;
 use JSON::RPC::Client;
 use Fcntl;
@@ -214,9 +214,45 @@ sub main()
 					_kill_worker($worker);
 					$aborted = 'stop';
 				}
+			} elsif ($cmd->[1] eq 'stop_waitforneedle') {
+				if ($worker) {
+					if (open(my $f, '>', "$pooldir/stop_waitforneedle")) {
+						close $f;
+						print "waitforneedle will be stopped";
+					} else {
+						warn "can't stop waitforneedle: $!";
+					}
+				}
+			} elsif ($cmd->[1] eq 'reload_needles_and_retry') {
+				if ($worker) {
+					if (open(my $f, '>', "$pooldir/reload_needles_and_retry")) {
+						close $f;
+						print "needles will be reloaded";
+					} else {
+						warn "can't reload needles: $!";
+					}
+				}
+			} elsif ($cmd->[1] eq 'enable_interactive_mode') {
+				if ($worker) {
+					if (open(my $f, '>', "$pooldir/interactive_mode")) {
+						close $f;
+						print "interactive mode enabled\n";
+					} else {
+						warn "can't enable interactive mode: $!";
+					}
+				}
+			} elsif ($cmd->[1] eq 'disable_interactive_mode') {
+				if ($worker) {
+					unlink("$pooldir/interactive_mode");
+					print "interactive mode disabled\n";
+				}
+			} elsif ($cmd->[1] eq 'continue_waitforneedle') {
+				if ($worker) {
+					unlink("$pooldir/stop_waitforneedle");
+					print "continuing waitforneedle";
+				}
 			} else {
 				print STDERR "got unknown command $cmd->[1]\n";
-				next;
 			}
 			$client->command_dequeue($workerid, $cmd->[0]);
 		}
