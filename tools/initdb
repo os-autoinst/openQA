@@ -8,5 +8,5 @@ fi
 d=$DESTDIR/var/lib/openqa
 mkdir -p $d
 rm -f $d/db
-echo .quit | sqlite3 -init db.sql $d/db
+echo .quit | sqlite3 -init ${0%/*}/db.sql $d/db
 chown wwwrun $d $d/db
