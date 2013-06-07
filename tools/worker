@@ -58,6 +58,7 @@ use FindBin;
 #use lib "$FindBin::Bin/../www/cgi-bin/modules"
 #use openqa;
 
+my $max_job_time = 60*60; # 1h
 my $openqa_base = "/var/cache/openqa";
 my $pooldir;
 my $isodir = "$openqa_base/factory/iso";
@@ -180,6 +181,25 @@ sub _kill_worker($)
 	die "worker didn't want to die!\n" unless $got_sigchld;
 }
 
+# set job to done if priority is bigger threshold. Otherwise release
+# it with worse priority
+sub job_release_or_done($$$)
+{
+	my ($client, $job, $result) = @_;
+	my $retries = 3; while(1) { eval {
+		# give up if the prio is too bad
+		if ($job->{'priority'} gt 70) {
+			printf "setting job %d to $result\n", $job->{'id'} if $verbose;
+			$client->job_done($job->{'id'}, $result);
+		} else {
+			printf "releasing job %d\n", $job->{'id'} if $verbose;
+			# make it less attractive so we don't get it again
+			$client->job_set_prio($job->{'id'}, $job->{'priority'}+1);
+			$client->job_release($job->{'id'});
+		}
+	}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+}
+
 sub main()
 {
 	my $lockfd = lockit();
@@ -194,6 +214,7 @@ sub main()
 
 	my $job;
 	my $worker;
+	my $worker_start_time;
 	my $testresults;
 	my $aborted;
 	my $retries;
@@ -201,11 +222,10 @@ sub main()
 	$SIG{__DIE__} = sub { return if $^S; _kill_worker($worker); exit(1); };
 
 	while($keep_running) {
-		my $cmds;
+		my $cmds; # [[id, command], ... ]
 		$retries = 3; while(1) { eval {
 			$cmds = $client->command_get($workerid);
 		}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
-		# [[id, command], ... ]
 		for my $cmd (@{$cmds||[]}) {
 			if ($cmd->[1] eq 'quit') {
 				$keep_running = 0;
@@ -274,6 +294,14 @@ sub main()
 			}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 		}
 
+		# abort job if it takes too long
+		if ($job && $worker_start_time && time-$worker_start_time > $max_job_time && !$aborted) {
+			print "max job time exceeded, abort ...\n";
+			_kill_worker($worker);
+			job_release_or_done($client, $job, "time exceeded");
+			$aborted = 'timeout';
+		}
+
 		if ($keep_running && !$job) {
 			print "waiting for job ...\n" if $verbose;
 			$retries = 3; while(1) { eval {
@@ -298,6 +326,7 @@ sub main()
 				}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 				$job = undef;
 			}
+			$worker_start_time = time;
 			$aborted = undef;
 			if (open(my $log, '>>', "$results_dir/runlog.txt")) {
 				if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
@@ -317,8 +346,10 @@ sub main()
 			my $result = "ok";
 			if ($?) {
 				warn "child $pid died with exit status $?\n";
-				$result = "FAIL";
+				$result = "died";
 			}
+
+			$result = $aborted if $aborted;
 
 			unlink($testresults); # can't move directory atomically to replace symlink
 			my $name = $job->{'settings'}->{'NAME'};
@@ -352,25 +383,21 @@ sub main()
 				unless (rename("$pooldir/autoinst-log.txt", $testresults.'/autoinst-log.txt')) {
 					warn "can't rename log: $!\n";
 				}
-				$retries = 3; while(1) { eval {
-					# if there's no results.json start.pl probably died early, e.g. due to configuration
-					# problem. Release the job so another worker may grab it.
-					if (-e "$pooldir/results.json"
-						|| ($aborted && $aborted eq 'stop')
-						# give up if the prio is too bad
-						|| $job->{'priority'} gt 70) {
+
+				# if there's no results.json start.pl probably died early, e.g. due to configuration
+				# problem. Release the job so another worker may grab it.
+				if (-e "$pooldir/results.json" || ($aborted && $aborted eq 'stop')) {
+					$retries = 3; while(1) { eval {
 						printf "setting job %d to $result\n", $job->{'id'} if $verbose;
 						$client->job_done($job->{'id'}, $result);
-					} else {
-						printf "releasing job %d\n", $job->{'id'} if $verbose;
-						# make it less attractive so we don't get it again
-						$client->job_set_prio($job->{'id'}, $job->{'priority'}+1);
-						$client->job_release($job->{'id'});
-					}
-				}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+				} else {
+					job_release_or_done($client, $job, $result);
+				}
 			}
 			$job = undef;
 			$worker = undef;
+			$worker_start_time = undef;
 		}
 
 		print "waiting for some action ...\n" if $verbose;
