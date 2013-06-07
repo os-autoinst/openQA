@@ -2,6 +2,7 @@ package Scheduler;
 
 use strict;
 use DBI;
+use Digest::MD5;
 #use List::Util qw/shuffle/;
 #use Data::Dump qw/pp/;
 
@@ -12,8 +13,11 @@ use openqa ();
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
-@EXPORT = qw(_seen_worker _validate_workerid);
-#qw(job_fill_settings list_jobs list_workers _seen_worker _validate_workerid);
+@EXPORT = qw(ob_fill_settings list_jobs list_workers worker_register job_grab
+ job_release job_done job_stop job_waiting job_continue job_create job_set_prio
+ job_delete job_update_result job_find_by_name($;@) job_restart_by_name
+ command_get command_enqueue command_dequeue list_commands);
+
 
 my $get_job_stmt = "SELECT
 	jobs.id as id,
@@ -43,7 +47,8 @@ sub job_fill_settings
     return $job;
 }
 
-sub list_jobs {
+sub list_jobs
+{
     my %args = @_;
     my @params;
     my $stmt = $get_job_stmt;
@@ -67,13 +72,15 @@ sub list_jobs {
     return $jobs;
 }
 
-sub _seen_worker($) {
+sub _seen_worker($)
+{
     my $id = shift;
     my $sth = $dbh->prepare("UPDATE worker SET seen = datetime('now') WHERE id = ?");
     $sth->execute($id) or die "SQL failed\n";
 }
 
-sub list_workers {
+sub list_workers
+{
     my $stmt = "SELECT id, host, instance, backend, seen from worker";
     my $sth = $dbh->prepare($stmt);
     $sth->execute();
@@ -86,7 +93,8 @@ sub list_workers {
 }
 
 # param hash: host, instance, backend
-sub worker_register {
+sub worker_register
+{
     my %args = @_;
     
     my $sth = $dbh->prepare("SELECT id, backend from worker where host = ? and instance = ?");
@@ -259,4 +267,203 @@ sub job_continue
     my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ? AND state IN (SELECT id from job_state WHERE name IN ('stopped', 'waiting'))");
     my $r = $sth->execute($jobid) or die $dbh->errstr;
     return $r;
+}
+
+=head2
+create a job
+=cut
+sub job_create
+{
+    my %settings = @_;
+
+    for my $i (qw/DISTRI ISO DESKTOP/) {
+        die "need at least one $i key\n" unless exists $settings{$i};
+    }
+
+    for my $i (qw/ISO NAME/) {
+        next unless $settings{$i};
+        die "invalid character in $i\n" if $settings{$i} =~ /\//; # TODO: use whitelist?
+    }
+
+    unless (-e sprintf("%s/%s/factory/iso/%s",
+                       $openqa::basedir, $openqa::prj, $settings{ISO})) {
+        die "ISO does not exist\n";
+    }
+
+    unless ($settings{NAME}) {
+        my $ctx = Digest::MD5->new;
+        for my $k (sort keys %settings) {
+            $ctx->add($settings{$k});
+        }
+
+        my $name = $settings{ISO};
+        $name =~ s/\.iso$//;
+        $name =~ s/-Media$//;
+        $name .= '-';
+        $name .= $settings{DESKTOP};
+        $name .= '_'.$settings{VIDEOMODE} if $settings{VIDEOMODE};
+        $name .= '_'.substr($ctx->hexdigest, 0, 6);
+        $settings{NAME} = $name;
+    }
+
+    unless (-e sprintf("%s/%s/factory/iso/%s",
+                       $openqa::basedir, $openqa::prj, $settings{ISO})) {
+        die "ISO does not exist\n";
+    }
+
+    $dbh->begin_work;
+    my $id = 0;
+    eval {
+        my $sth = $dbh->prepare("INSERT INTO jobs (name) VALUES(?)");
+        my $rc = $sth->execute($settings{'NAME'});
+        $id = $dbh->last_insert_id(undef,undef,undef,undef);
+        die "got invalid id" unless $id;
+        while(my ($k, $v) = each %settings) {
+            my $sth = $dbh->prepare("INSERT INTO job_settings (jobid, key, value) values (?, ?, ?)");
+            $sth->execute($id, $k, $v);
+        }
+        $dbh->commit;
+    };
+    if ($@) {
+        print STDERR "$@\n";
+        eval { $dbh->rollback };
+    }
+    return $id;
+}
+
+sub job_set_prio
+{
+    my %args = @_;
+    
+    my $sth = $dbh->prepare("UPDATE jobs SET priority = ? where id = ?");
+    my $r = $sth->execute(int($args{prio}), int($args{jobid})) or die $dbh->error;
+    return $r;
+}
+
+sub job_delete
+{
+    my $jobid = int(shift);
+
+    $dbh->begin_work;
+    my $r;
+    eval {
+        my $sth = $dbh->prepare("DELETE FROM job_settings WHERE jobid = ?");
+        $sth->execute($jobid);
+        $sth = $dbh->prepare("DELETE FROM jobs WHERE id = ?");
+        $r = $sth->execute($jobid);
+        $dbh->commit;
+    };
+    if ($@) {
+        print STDERR "$@\n";
+        eval { $dbh->rollback };
+    }
+    return $r;
+}
+
+sub job_update_result
+{
+    my %args = @_;
+
+    my $id = int($args{jobid});
+    my $result = $args{result};
+
+    my $sth = $dbh->prepare("UPDATE jobs SET result = ? where id = ?");
+    my $r = $sth->execute($result, $id) or die $dbh->error;
+    return $r;
+}
+
+sub job_find_by_name($;@)
+{
+    my $name = shift;
+    my @cols = @_;
+    @cols = ('id') unless @_;
+
+    my $sth = $dbh->prepare("SELECT ".join(',', @cols)." FROM jobs WHERE name = ?");
+    my $rc = $sth->execute($name);
+    my $row = $sth->fetchrow_arrayref;
+
+    return $row||[undef];
+}
+
+sub job_restart_by_name
+{
+    my $name = shift or die "missing name parameter\n";
+
+    # needs to be a transaction as we need to make sure no worker assigns
+    # itself while we modify the job
+    $dbh->begin_work;
+    eval {
+        my ($id, $workerid) = @{job_find_by_name($name, 'id', 'worker')};
+
+        print STDERR "workerid $id, $workerid\n";
+        if ($workerid) {
+            my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
+            my $rc = $sth->execute($workerid, "abort") or die $dbh->error;
+        } else {
+            my $state = "(select id from job_state where name = 'scheduled' limit 1)";
+            my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
+            my $r = $sth->execute($id) or die $dbh->errstr;
+
+        }
+        $dbh->commit;
+    };
+    if ($@) {
+        print STDERR "$@\n";
+        eval { $dbh->rollback };
+        next;
+    }
+}
+
+sub command_get
+{
+    my $workerid = shift;
+
+    _validate_workerid($workerid);
+    _seen_worker($workerid);
+
+    my $sth = $dbh->prepare("SELECT id, command FROM commands WHERE worker = ?");
+    my $r = $sth->execute($workerid) or die $dbh->errstr;
+
+    my $commands = $sth->fetchall_arrayref;
+
+    return $commands;
+}
+
+sub command_enqueue
+{
+    my %args = @_;
+
+    _validate_workerid($args{workerid});
+
+    my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
+    my $rc = $sth->execute($args{workerid}, $args{command}) or die $dbh->error;
+
+    return $dbh->last_insert_id(undef,undef,undef,undef);
+}
+
+sub command_dequeue
+{
+    my %args = @_;
+
+    die "missing workerid parameter\n" unless $args{workerid};
+    die "missing id parameter\n" unless $args{id};
+
+    _validate_workerid($args{workerid});
+
+    my $sth = $dbh->prepare("DELETE FROM commands WHERE id = ? and worker = ?");
+    my $r = $sth->execute($args{id}, $args{workerid});
+    
+    return int($r);
+}
+
+sub list_commands
+{
+    my $sth = $dbh->prepare("select * from commands");
+    $sth->execute();
+
+    my $commands = [];
+    while(my $command = $sth->fetchrow_hashref) {
+        push @$commands, $command;
+    }
+    return $commands;
 }
