@@ -58,7 +58,6 @@ use JSON::RPC::Client;
 Getopt::Long::Configure("no_ignore_case");
 
 my %cmds = map { $_ => 0 } (qw/
-	list_jobs
 	list_workers
 	list_commands
 	/);
@@ -88,6 +87,7 @@ for (qw/
 }
 $cmds{worker_register} = 3;
 $cmds{job_create} = 99;
+$cmds{list_jobs} = 99;
 
 sub showcommands
 {

@@ -36,7 +36,16 @@ sub echo : Public
 
 sub list_jobs : Public
 {
-    return Scheduler::list_jobs();
+    my $self = shift;
+    my $args = shift;
+
+    my %params;
+    for my $i (@$args) {
+	    die "invalid argument: $i\n" unless $i =~ /^([[:alnum:]_]+)=([^\s]+)$/;
+	    $params{$1} = $2;
+    }
+
+    return Scheduler::list_jobs(%params);
 }
 
 sub list_workers : Public

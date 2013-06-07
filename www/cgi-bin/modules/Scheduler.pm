@@ -44,8 +44,20 @@ sub job_fill_settings
 }
 
 sub list_jobs {
-    my $sth = $dbh->prepare($get_job_stmt);
-    $sth->execute();
+    my %args = @_;
+    my @params;
+    my $stmt = $get_job_stmt;
+    if ($args{'state'}) {
+	my @states = split(',', $args{'state'});
+	$stmt .= " AND job_state.name IN (?".",?"x$#states.")";
+	push @params, @states;
+    }
+    if ($args{'finish_after'}) {
+	$stmt .= " AND jobs.finish_date > datetime(?)";
+	push @params, $args{'finish_after'};
+    }
+    my $sth = $dbh->prepare($stmt);
+    $sth->execute(@params);
     
     my $jobs = [];
     while(my $job = $sth->fetchrow_hashref) {
