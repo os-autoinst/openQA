@@ -71,6 +71,7 @@ my $client_commands = [qw/
 	list_jobs
 	job_grab
 	job_release
+	job_set_prio
 	job_done
 	worker_register
 	command_get
@@ -335,9 +336,21 @@ sub main()
 				unless (rename("$pooldir/autoinst-log.txt", $testresults.'/autoinst-log.txt')) {
 					warn "can't rename log: $!\n";
 				}
-				printf "setting job %d to $result\n", $job->{'id'} if $verbose;
 				$retries = 3; while(1) { eval {
-					$client->job_done($job->{'id'}, $result);
+					# if there's no results.json start.pl probably died early, e.g. due to configuration
+					# problem. Release the job so another worker may grab it.
+					if (-e "$pooldir/results.json"
+						|| ($aborted && $aborted eq 'stop')
+						# give up if the prio is too bad
+						|| $job->{'priority'} gt 70) {
+						printf "setting job %d to $result\n", $job->{'id'} if $verbose;
+						$client->job_done($job->{'id'}, $result);
+					} else {
+						printf "releasing job %d\n", $job->{'id'} if $verbose;
+						# make it less attractive so we don't get it again
+						$client->job_set_prio($job->{'id'}, $job->{'priority'}+1);
+						$client->job_release($job->{'id'});
+					}
 				}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 			}
 			$job = undef;
