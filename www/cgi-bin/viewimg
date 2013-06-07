@@ -50,7 +50,7 @@ my $imgname = $module_detail->{'screenshot'};
 my $needles = [];
 my $screenshot = "/$prj/testresults/$testname/$imgname";
 if ($module_detail->{'needle'}) {
-	my $needle = needle_info($module_detail->{'needle'}, $results->{'needledir'});
+	my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'});
 	push(@$needles, {'name' => $module_detail->{'needle'}, 'image' => $needle->{'imageurl'},
 			'areas' => $needle->{'area'}, 'matches' => []});
 	for my $area (@{$module_detail->{'area'}}) {
