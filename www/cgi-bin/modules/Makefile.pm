@@ -162,21 +162,16 @@ sub job_grab : Num
     return $job;
 }
 
-## REFACTORING MARKER: unexpored area begins here ##
-
 =head2
 release job from a worker and put back to scheduled (e.g. if worker aborted)
 =cut
 sub job_release : Public(id:num)
 {
-	my $self = shift;
-	my $args = shift;
-	my $jobid = $args->{id};
+    my $self = shift;
+    my $args = shift;
 
-	my $state = "(select id from job_state where name = 'scheduled' limit 1)";
-	my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
-	my $r = $sth->execute($jobid) or die $dbh->errstr;
-	$self->raise_error(code => 400, message => "failed to release job") unless $r == 1;
+    my $r = Scheduler::job_release( $args->{id} );
+    $self->raise_error(code => 400, message => "failed to release job") unless $r == 1;
 }
 
 =head2
@@ -184,15 +179,13 @@ mark job as done
 =cut
 sub job_done : Public #(id:num, result)
 {
-	my $self = shift;
-	my $args = shift;
-	my $jobid = int(shift $args);
-	my $result = shift $args;
+    my $self = shift;
+    my $args = shift;
+    my $jobid = int(shift $args);
+    my $result = shift $args;
 
-	my $state = "(select id from job_state where name = 'done' limit 1)";
-	my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, finish_date = datetime('now'), result = ? WHERE id = ?");
-	my $r = $sth->execute($result, $jobid) or die $dbh->errstr;
-	$self->raise_error(code => 400, message => "failed to finish job") unless $r == 1;
+    my $r = Scheduler::job_done( jobid => $jobid, result => $result );
+    $self->raise_error(code => 400, message => "failed to finish job") unless $r == 1;
 }
 
 =head2
@@ -200,14 +193,11 @@ mark job as stopped
 =cut
 sub job_stop : Public(id:num)
 {
-	my $self = shift;
-	my $args = shift;
-	my $jobid = $args->{id};
+    my $self = shift;
+    my $args = shift;
 
-	my $state = "(select id from job_state where name = 'stopped' limit 1)";
-	my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0 WHERE id = ?");
-	my $r = $sth->execute($jobid) or die $dbh->errstr;
-	$self->raise_error(code => 400, message => "failed to stop job") unless $r == 1;
+    my $r = Scheduler::job_stop( $args->{id} );
+    $self->raise_error(code => 400, message => "failed to stop job") unless $r == 1;
 }
 
 =head2
@@ -215,31 +205,26 @@ mark job as waiting
 =cut
 sub job_waiting : Public(id:num)
 {
-	my $self = shift;
-	my $args = shift;
-	my $jobid = $args->{id};
+    my $self = shift;
+    my $args = shift;
 
-	my $state = "(select id from job_state where name = 'waiting' limit 1)";
-	my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ?");
-	my $r = $sth->execute($jobid) or die $dbh->errstr;
-	$self->raise_error(code => 400, message => "failed to set job to waiting") unless $r == 1;
+    my $r = Scheduler::job_waiting( $args->{id} );
+    $self->raise_error(code => 400, message => "failed to set job to waiting") unless $r == 1;
 }
 
 =head2
-mark job as waiting
+continue job after waiting
 =cut
 sub job_continue : Public(id:num)
 {
-	my $self = shift;
-	my $args = shift;
-	my $jobid = $args->{id};
+    my $self = shift;
+    my $args = shift;
 
-	my $state = "(select id from job_state where name = 'running' limit 1)";
-	my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ? AND state IN (SELECT id from job_state WHERE name IN ('stopped', 'waiting'))");
-	my $r = $sth->execute($jobid) or die $dbh->errstr;
-	$self->raise_error(code => 400, message => "failed to continue job") unless $r == 1;
+    my $r = Scheduler::job_continue( $args->{id} );
+    $self->raise_error(code => 400, message => "failed to continue job") unless $r == 1;
 }
 
+## REFACTORING MARKER: unexpored area begins here ##
 
 =head2
 create a job, expects key=value pairs

@@ -181,3 +181,70 @@ sub job_grab
 
     return $job;
 }
+
+=head2
+release job from a worker and put back to scheduled (e.g. if worker aborted)
+=cut
+sub job_release
+{
+    my $jobid = shift;
+
+    my $state = "(select id from job_state where name = 'scheduled' limit 1)";
+    my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
+    my $r = $sth->execute($jobid) or die $dbh->errstr;
+    return $r;
+}
+
+=head2
+mark job as done
+=cut
+sub job_done
+{
+    my %args = @_;
+    my $jobid = int($args{jobid});
+    my $result = $args{result};
+
+    my $state = "(select id from job_state where name = 'done' limit 1)";
+    my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, finish_date = datetime('now'), result = ? WHERE id = ?");
+    my $r = $sth->execute($result, $jobid) or die $dbh->errstr;
+    return $r;
+}
+
+=head2
+mark job as stopped
+=cut
+sub job_stop
+{
+    my $jobid = shift;
+
+    my $state = "(select id from job_state where name = 'stopped' limit 1)";
+    my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0 WHERE id = ?");
+    my $r = $sth->execute($jobid) or die $dbh->errstr;
+    return $r;
+}
+
+=head2
+mark job as waiting
+=cut
+sub job_waiting
+{
+    my $jobid = shift;
+
+    my $state = "(select id from job_state where name = 'waiting' limit 1)";
+    my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ?");
+    my $r = $sth->execute($jobid) or die $dbh->errstr;
+    return $r;
+}
+
+=head2
+mark job as running
+=cut
+sub job_continue
+{
+    my $jobid = shift;
+
+    my $state = "(select id from job_state where name = 'running' limit 1)";
+    my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ? AND state IN (SELECT id from job_state WHERE name IN ('stopped', 'waiting'))");
+    my $r = $sth->execute($jobid) or die $dbh->errstr;
+    return $r;
+}
