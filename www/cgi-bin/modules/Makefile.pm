@@ -158,7 +158,6 @@ sub job_grab : Num
     my $job = Scheduler::job_grab( workerid => $workerid,
                                    blocking => $blocking );
 
-    $self->raise_error(code => 404, message => 'no open jobs atm') if !defined $job;
     return $job;
 }
 
