@@ -386,7 +386,7 @@ sub main()
 
 				# if there's no results.json start.pl probably died early, e.g. due to configuration
 				# problem. Release the job so another worker may grab it.
-				if (-e "$pooldir/results.json" || ($aborted && $aborted eq 'stop')) {
+				if (-e "$testresults/results.json") {
 					$retries = 3; while(1) { eval {
 						printf "setting job %d to $result\n", $job->{'id'} if $verbose;
 						$client->job_done($job->{'id'}, $result);
