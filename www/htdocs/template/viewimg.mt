@@ -3,6 +3,24 @@
 ? block additional_headlines => sub {
 <script src="/static/prototype.js" type="text/javascript"></script>
 <script src="/static/openqa.js" type="text/javascript"></script>
+<script src="/static/needlediff.js" type="text/javascript"></script>
+<script type="text/javascript">
+<? if (scalar(@$needles) > 0) { ?>
+<!--
+window.onload=function(){
+	window.diff = new NeedleDiff('needle_diff', <?= $img_width ?>, <?= $img_height ?>);
+	window.diff.setScreenshot('<?= $screenshot ?>');
+	var firstDataset = $('needlediff_selector').options[0].dataset;
+	window.diff.setNeedle(firstDataset.image, JSON.parse(firstDataset.areas), JSON.parse(firstDataset.matches));
+
+	$('needlediff_selector').onchange = function() {
+		var selDataset = this.options[this.selectedIndex].dataset;
+		window.diff.setNeedle(selDataset.image, JSON.parse(selDataset.areas), JSON.parse(selDataset.matches));
+	};
+};
+-->
+<? } ?>
+</script>
 ? }
 
 ? block locbar => sub {
@@ -29,61 +47,25 @@
 
 	<div class="box box-shadow">
 		<?= $self->include_file("../../htdocs/includes/moduleslisttabs") ?>
-		<div style="margin: 0 10px; position: relative; width: 800px; height: 600px;">
-			<a href="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>">
-				<img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $imgname ?>?fixsize=1" width="800" height="600"
-				alt="<?= $imgname ?>" style="position: absolute; z-index: 2;" />
-				<? if (1) { ?>
-				<script type="text/javascript">
-                                        var areas = <?= $areas ?>;
-					var scr_x = <?= $img_width ?>;
-					var scr_y = <?= $img_height ?>;
-                                        var imgpath ="/<?= $prj ?>/testresults/<?= $testname ?>/";
 
-                                        var colorset = {
-                                            'ok':   { 'stroke': 'rgb(34,255,8)', 'fill': 'rgba(151, 208, 5, .5)'},
-                                            'fail': { 'stroke': 'rgb(255,0,0)', 'fill': 'rgba(255, 77, 77, .5)'},
-                                        };
-
-					document.write('<canvas id="cmatch" class="cmatch" width="800" height="600" style="position: absolute; z-index: 3;"></canvas>');
-					var canvas = document.getElementById('cmatch');
-					var context = canvas.getContext('2d');
-
-                                        areas.forEach(function(area) {
- 	 				    if(scr_x > 800 || scr_y > 600) {
-  						area['x'] = (area['x'] / scr_x) * 800;
-						area['y'] = (area['y'] / scr_y) * 600;
-						area['w'] = (area['w'] / scr_x) * 800;
-						area['h'] = (area['h'] / scr_y) * 600;
-					    }
-
-                                            context.font = "bold 12px sans-serif";
-                                            context.fillStyle = colorset[area['result']]['stroke'];
-                                            var text = String(area['similarity']) + "%";
-                                            var text_width = context.measureText(text).width;
-                                            var text_xpos = area['x']+area['w']-text_width-2;
-                                            var text_ypos = area['y']+area['h']-3;
-                                            context.fillText(text, text_xpos, text_ypos);
-    
-        				    context.lineWidth = 3;
-    					    context.strokeStyle = colorset[area['result']]['stroke'];
-    					    context.strokeRect(area['x'], area['y'], area['w'], area['h']);
-                                            if(area['diff']) { 
-                                                context.globalCompositeOperation='destination-over';
-                                                var imageObj = new Image();
-                                                imageObj.onload = function() {
-                                                    context.drawImage(imageObj, area['x'], area['y'], area['w'], area['h']);
-                                                };
-                                                imageObj.src = imgpath + area['diff'];
-                                            }
-                                            else {
-                                                context.fillStyle = colorset[area['result']]['fill'];
-    					        context.fillRect(area['x'], area['y'], area['w'], area['h']);
-                                            }
-                                        });
-				</script>
+		<div class="aligncenter">
+		<? if (scalar(@$needles) > 0) { ?>
+				Candidate needle:
+				<select id="needlediff_selector">
+				<? for (my $i = 0; $i < scalar(@$needles); $i++) { ?>
+					<? my $needle = $needles->[$i]; ?>
+					<option data-image="<?= $needle->{'image'} ?>"
+						data-areas="<?= JSON::to_json($needle->{'areas'}) ?>"
+						data-matches="<?= JSON::to_json($needle->{'matches'}) ?>"><?= $needle->{'name'} ?></option>
 				<? } ?>
-			</a>
+				</select>
+			</div>
+
+			<div style="margin: 5px;">
+				<div id="needle_diff"></div>
+		<? } else { ?>
+			<img src="<?= $screenshot ?>" />
+		<? } ?>
 		</div>
 	</div>
 

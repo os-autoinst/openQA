@@ -47,16 +47,33 @@ if ($testindex > @{$module->{'details'}}) {
 my $module_detail = $module->{'details'}->[$testindex-1];
 my $imgname = $module_detail->{'screenshot'};
 
-#FIXME: Show more details about the matches in a mouseover hooked to the rectangle.
-# ../htdocs/static/shapes.js might be useful for that
-
-my $areas = [];
-if( defined($module_detail->{'area'}) ) {
-    $areas = $module_detail->{'area'};
-}
-elsif( defined($module_detail->{'needles'}) ) {
-    my @tmp = map { $_->{'area'}->[0] } @{$module_detail->{'needles'}};
-    $areas = \@tmp;
+my $needles = [];
+my $screenshot = "/$prj/testresults/$testname/$imgname";
+if ($module_detail->{'needle'}) {
+	my $needle = needle_info($module_detail->{'needle'}, $results->{'needledir'});
+	push(@$needles, {'name' => $module_detail->{'needle'}, 'image' => $needle->{'imageurl'},
+			'areas' => $needle->{'area'}, 'matches' => []});
+	for my $area (@{$module_detail->{'area'}}) {
+		push(@{$needles->[0]->{'matches'}},
+			{'xpos' => $area->{'x'}, 'width' => $area->{'w'},
+			 'ypos' => $area->{'y'}, 'height' => $area->{'h'},
+			 'type' => $area->{'result'}});
+	}
+} elsif ($module_detail->{'needles'}) {
+	my $needlename;
+	my $needleinfo;
+	for my $needle (@{$module_detail->{'needles'}}) {
+		$needlename = $needle->{'name'};
+		$needleinfo  = needle_info($needlename, $results->{'needledir'});
+		push(@$needles, {'name' => $needlename, 'image' => $needleinfo->{'imageurl'},
+				'areas' => $needleinfo->{'area'}, 'matches' => []});
+		for my $area (@{$module_detail->{'area'}}) {
+			push(@{$needles->[scalar(@$needles)-1]->{'matches'}},
+				{'xpos' => $area->{'x'}, 'width' => $area->{'w'},
+				 'ypos' => $area->{'y'}, 'height' => $area->{'h'},
+				 'type' => $area->{'result'}});
+		}
+	}
 }
 
 #my $fullname="/$basedir/$prj/testresults/$testname/$imgname";
@@ -69,8 +86,8 @@ my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
 	template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
 			   action => 'viewimg', modinfo => $modinfo, imglist => $module->{'details'},
-			   imgname => $imgname, img_width => $img_width, img_height => $img_height,
-                           areas => encoded_string(JSON::to_json($areas)) });
+			   needles => $needles, screenshot => $screenshot,
+			   img_width => $img_width, img_height => $img_height});
 
 print header(-charset=>"UTF-8", -type=>"text/html");
 print $mt->render('viewimg');
