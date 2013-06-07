@@ -22,7 +22,7 @@
 		<div class="box-header aligncenter">Actions</div>
 		<div class="aligncenter">
 			<?= $self->include_file("../../htdocs/includes/moduleslistoptions") ?>
-			<a href='/viewsrc/raw/<?= $testname ?>/<?= $testmodule ?>'><img src='/images/log.png' alt='raw test' title='raw test' height='23' width='23' /></a>
+			<a href='/viewsrc/raw/<?= $testname ?>/<?= $testmodule ?>/1'><img src='/images/log.png' alt='raw test' title='raw test' height='23' width='23' /></a>
 		</div>
 	</div>
 	

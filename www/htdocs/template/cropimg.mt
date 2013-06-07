@@ -40,10 +40,10 @@ window.onload=function(){
 					<input type="image" src="/images/floppy.png" alt="Save" />
 				<? } ?>
 			</div>
-			<div>
+			<div style="margin: 0 3px;">
 				<div style="margin-top: 1em;">
 				<label>Name:</label><br/>
-				<input type="input" name="needlename" id="needleeditor_name" value="<?= $needlename ?>"/>
+				<input type="input" name="needlename" id="needleeditor_name" value="<?= $needlename ?>" style="width: calc(100% - 8px);"/>
 				</div>
 				<div style="margin-top: 1em;">
 					<label>Tags:</label><br/>
@@ -54,11 +54,11 @@ window.onload=function(){
 							</label><br/>
 						<? } ?>
 					</div>
-					<input id="newtag" style="width:70%" onkeypress="if (event.keyCode==13) { return window.addTag(); }"/> <a href="#" onclick="return window.addTag();">Add</a>
+					<input id="newtag" style="width: calc(100% - 6px - 40px);" onkeypress="if (event.keyCode==13) { return window.addTag(); }"/> <input type="button" onclick="return window.addTag();" style="width: 34px;" class="button" value="Add" />
 				</div>
 				<div style="margin-top: 1em;">
 					<label>JSON:</label><br/>
-					<textarea id="needleeditor_textarea" name="json" readOnly="yes" style="width:94%; height:300px;"></textarea>
+					<textarea id="needleeditor_textarea" name="json" readOnly="yes" style="width: calc(100% - 8px); height:300px;"></textarea>
 					<input type="hidden" id="needleeditor_image" name="imagepath" value="<?= ${@$needles[0]}{'imagepath'} ?>"/>
 				</div>
 			</div>
