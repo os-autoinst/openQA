@@ -4,6 +4,7 @@ use CGI ":standard";
 use FindBin;
 use lib "$FindBin::Bin/modules";
 use openqa;
+use Scheduler ();
 
 my $name=$ENV{PATH_INFO};
 $name=~s{^/}{};
@@ -34,20 +35,10 @@ if(!is_authorized_rw()) {
 }
 else {
 	if($cancel) {
-		if(unlink("$scheduledir/$name")) {
-			if(!$back) { myprint "canceled test $name"; }
-		}
-		else {
-			myprint "error: $!";
-		}
+	    Scheduler::job_stop_by_name($name);
 	}
 	else {
-		if(open(my $fd, ">", "$scheduledir/$name")) {
-			if(!$back) { myprint "scheduled test $name"; }
-		}
-		else {
-			myprint "error: $!";
-		}
+	    Scheduler::job_restart_by_name($name);
 	}
 }
 
