@@ -97,7 +97,7 @@ if ($module_detail->{'needle'}) {
 			 'type' => 'match'});
 	}
 	# Second position: the only needle (with the same matches)
-	my $needle = needle_info($module_detail->{'needle'}, $results->{'needledir'});
+	my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'});
 	push(@$needles, {'name' => $module_detail->{'needle'}, 'imageurl' => $needle->{'imageurl'},
 			'imagepath' => $needle->{'image'}, 'area' => $needle->{'area'},
 			'tags' => $needle->{'tags'}, 'matches' => $needles->[0]->{'matches'}});
@@ -124,7 +124,7 @@ if ($module_detail->{'needle'}) {
 	# We also use $area for transforming the match information intro a real area
 	for my $needle (@{$module_detail->{'needles'}}) {
 		$needlename = $needle->{'name'};
-		$needleinfo  = needle_info($needlename, $results->{'needledir'});
+		$needleinfo  = needle_info($needlename, $results->{'distribution'});
 		push(@$needles, {'name' => $needlename,
 			'imageurl' => $needleinfo->{'imageurl'},
 			'imagepath' => $needleinfo->{'image'},

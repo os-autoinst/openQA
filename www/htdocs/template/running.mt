@@ -81,7 +81,7 @@ table {
 	<div class="grid_14 box box-shadow omega" onmouseover="window.scrolldownc = 0;" onmouseout="window.scrolldownc = 1;">
 		<div class="box-header aligncenter">Live Log</div>
 		<div style="margin: 0 10px;">
-			<iframe id="livelog" src="about:blank" style="width: 98.9%; height: 20em; overflow-x: hidden;"><? if($running) { ?><a href="<?= path_to_url($basepath) ?>autoinst-log.txt">Test Log</a><? } else { ?>Test not running!<? } ?></iframe>
+			<iframe id="livelog" src="about:blank" style="width: 98.9%; height: 20em; overflow-x: hidden;"><? if($running) { ?><a href="<?= running_log($testname) ?>autoinst-log.txt">Test Log</a><? } else { ?>Test not running!<? } ?></iframe>
 		</div>
 		<script type="text/javascript">
 			<? if($running) { ?>

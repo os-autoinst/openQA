@@ -268,12 +268,6 @@ sub testresultdir($) {
 	"$basedir/$prj/testresults/$fn";
 }
 
-sub path_to_url($) { my($fn)=@_;
-	my $url=$fn;
-	$url=~s%^$basedir%%; # strip path to make relative URL
-	return $url;
-}
-
 sub split_filename($) { my($fn)=@_;
 	my $origfn=$fn;
 	$fn=~s%\.autoinst\.txt$%%; # strip suffix
@@ -461,18 +455,19 @@ sub match_title($) {
 
 sub needle_info($$) {
 	my $name = shift;
-	my $basepath = shift;
+	my $distri = shift;
 	local $/;
 
-	open(JF, '<', "$basepath/$name.json" ) || return undef;
+	my $needledir = "distri/$distri/needles";
+
+	open(JF, '<', "$perldir/$needledir/$name.json" ) || return undef;
 	my $needle = decode_json(<JF>) || return undef ;
 	close(JF);
 
-	$$needle{'image'} = "$basepath/$name.png";
-	$$needle{'json'} = "$basepath/$name.json";
-	(my $baseurl = $basepath) =~ s/$perldir/$perlurl/;
-	$$needle{'imageurl'} = "/$baseurl/$name.png";
-	$$needle{'jsonurl'} = "/$baseurl/$name.json";
+	$needle->{'image'} = "$perldir/$needledir/$name.png";
+	$needle->{'json'} = "$perldir/$needledir/$name.json";
+	$needle->{'imageurl'} = "/$perlurl/$needledir/$name.png";
+	$needle->{'jsonurl'} = "/$perlurl/$needledir/$name.json";
 	return $needle;
 }
 
