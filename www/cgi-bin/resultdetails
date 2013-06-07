@@ -14,7 +14,7 @@ if($testname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/){ print header(-status=>"403 Forbidden
 $testname=~s/\.autoinst\.txt$//; $testname=~s/\.ogv$//; # be tolerant in what we accept
 my $testresultdir=openqa::testresultdir($testname);
 my $fqfn="$resultdir/$testname/autoinst-log.txt";
-if(!-e $fqfn) { print header(-status=>404)."file not found"; exit 0 }
+if(!-e $fqfn) { print redirect(-status=>302, -location => "/running/$testname")."test is not finished, try live view"; exit 0 }
 
 my $results = test_result($testname);
 
