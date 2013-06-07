@@ -117,6 +117,7 @@ sub iso_new : Num(iso)
                 my %settings = ( ISO => $iso,
                                  NAME => join('-', @{$params}{qw(distri version flavor arch build)}, $run),
                                  DISTRI => lc($params->{distri}),
+				 QEMUCPU => 'qemu32',
                                  DESKTOP => 'kde' );
 
                 # merge defaults form above with the settings from %testruns
