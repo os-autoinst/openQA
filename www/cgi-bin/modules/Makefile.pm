@@ -370,7 +370,7 @@ sub job_restart_by_name : Public #(name:str)
 		print STDERR "workerid $id, $workerid\n";
 		if ($workerid) {
 			my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
-			my $rc = $sth->execute($workerid, "restart") or die $dbh->error;
+			my $rc = $sth->execute($workerid, "abort") or die $dbh->error;
 		} else {
 			my $state = "(select id from job_state where name = 'scheduled' limit 1)";
 			my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
