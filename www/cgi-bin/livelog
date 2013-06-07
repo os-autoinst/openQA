@@ -54,7 +54,7 @@ elsif($log eq 'modstat') {
 elsif($log eq 'status') {
 	my $results = test_result($name);
 	delete $results->{'testmodules'};
-	delete $results->{'needledir'};
+	delete $results->{'distribution'};
 	print header({-type=>"application/json", Content_Encoding=>"none"});
 	print to_json($results);
 	exit;
