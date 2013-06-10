@@ -129,11 +129,21 @@ NeedleDiff.prototype.draw = function() {
       this.ctx.fillRect(x, a['ypos'], width, a['height']);
     }
   }.bind(this));
-  // Draw all matches, no matter where they are
+  // Draw all matches
   this.matches.forEach(function(a) {
     this.ctx.strokeStyle = NeedleDiff.shapecolor(a['type']);
     this.ctx.lineWidth = 3;
-    this.ctx.strokeRect(a['xpos'], a['ypos'], a['width'], a['height']);
+    // Only matches in the right of the handle are drew
+    var x = a['xpos'];
+    var width = a['width'];
+    if (x+width > split) {
+      // And only the part at the right of the handle
+      if (x < split) {
+        width = width + x - split;
+        x = split;
+      }
+      this.ctx.strokeRect(x, a['ypos'], width, a['height']);
+    }
   }.bind(this));
   // Draw the handle
   this.ctx.fillStyle = "rgb(255, 145, 75)";
