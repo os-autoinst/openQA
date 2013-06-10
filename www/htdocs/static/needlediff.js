@@ -43,12 +43,6 @@ function NeedleDiff(id, width, height) {
     }
   });
 
-  Object.defineProperty(this, 'ready', {
-    get: function() {
-      return (this.screenshotImg && this.needleImg);
-    }
-  });
-
   Object.defineProperty(this, 'width', {
     get: function() {
       return width;
@@ -81,38 +75,47 @@ NeedleDiff.prototype.setScreenshot = function(screenshotSrc) {
   image.src = screenshotSrc;
   image.addEventListener('load', function(ev) {
     this.screenshotImg = image;
-    if (this.ready) {
-      this.draw();
-    }
+    this.draw();
   }.bind(this));
 }
 
 NeedleDiff.prototype.setNeedle = function(src, areas, matches) {
   this.areas = areas;
   this.matches = matches;
-  var image = new Image();
-  image.src = src;
-  image.addEventListener('load', function(ev) {
-    this.needleImg = image;
-    if (this.ready) {
+  if (src) {
+    var image = new Image();
+    image.src = src;
+    image.addEventListener('load', function(ev) {
+      this.needleImg = image;
       this.draw();
-    }
-  }.bind(this));
+    }.bind(this));
+  } else {
+    this.needleImg = null;
+    this.draw();
+  }
 }
 
 NeedleDiff.prototype.draw = function() {
-  if (!this.ready) {
+  // First of all, draw the screenshot as background (if ready)
+  if (!this.screenshotImg) {
+    return;
+  }
+  this.ctx.drawImage(this.screenshotImg, 0, 0);
+
+  // Then, check if there is a needle to compare with
+  if (!this.needleImg) {
     return;
   }
   
+  // Calculate the pixel in which the division will be done
   var split = this.divide * this.width;
   if (split < 1) {
     split = 1;
   }
   
-  this.ctx.drawImage(this.screenshotImg, 0, 0);
+  // Draw the needle
   this.ctx.drawImage(this.needleImg, 0, 0, split, this.height, 0, 0, split, this.height);
-  // Currently we always draw all areas and matches
+  // Draw all areas
   this.areas.forEach(function(a) {
     this.ctx.fillStyle = NeedleDiff.shapecolor(a['type']);
     // Only areas in the left of the handle are drew
@@ -126,12 +129,14 @@ NeedleDiff.prototype.draw = function() {
       this.ctx.fillRect(x, a['ypos'], width, a['height']);
     }
   }.bind(this));
+  // Draw all matches, no matter where they are
   this.matches.forEach(function(a) {
     this.ctx.strokeStyle = NeedleDiff.shapecolor(a['type']);
+    this.ctx.lineWidth = 3;
     this.ctx.strokeRect(a['xpos'], a['ypos'], a['width'], a['height']);
   }.bind(this));
   // Draw the handle
-  this.ctx.fillStyle = "rgb(220, 50, 50)";
+  this.ctx.fillStyle = "rgb(255, 145, 75)";
   this.ctx.fillRect(split - 1, 0, 2, this.height);
 }
 
@@ -166,8 +171,8 @@ NeedleDiff.shapecolors = {
   'match':   'rgba(  0, 255, 0, .5)',
   'exclude': 'rgba(255,   0, 0, .5)',
   'ocr':     'rgba(255, 255, 0, .5)',
-  'ok':      'rgba(  0, 255, 0, .5)',
-  'fail':    'rgba(255,   0, 0, .5)',
+  'ok':      'rgba(  0, 255, 0, .8)',
+  'fail':    'rgba(255,   0, 0, .8)',
 };
 
 NeedleDiff.shapecolor = function(type) {
