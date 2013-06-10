@@ -92,8 +92,8 @@ if ($module_detail->{'needle'}) {
 			'area' => [], 'matches' => [], 'tags' => []});
 	for my $area (@{$module_detail->{'area'}}) {
 		push(@{$needles->[0]->{'matches'}},
-			{'xpos' => $area->{'x'}, 'width' => $area->{'w'},
-			 'ypos' => $area->{'y'}, 'height' => $area->{'h'},
+			{'xpos' => int $area->{'x'}, 'width' => int $area->{'w'},
+			 'ypos' => int $area->{'y'}, 'height' => int $area->{'h'},
 			 'type' => 'match'});
 	}
 	# Second position: the only needle (with the same matches)
@@ -131,8 +131,8 @@ if ($module_detail->{'needle'}) {
 			'tags' => $needleinfo->{'tags'},
 			'area' => $needleinfo->{'area'}, 'matches' => []});
 		for my $match (@{$needle->{'area'}}) {
-			$area = {'xpos' => $match->{'x'}, 'width' => $match->{'w'},
-				 'ypos' => $match->{'y'}, 'height' => $match->{'h'},
+			$area = {'xpos' => int $match->{'x'}, 'width' => int $match->{'w'},
+				 'ypos' => int $match->{'y'}, 'height' => int $match->{'h'},
 				 'type' => 'match'};
 			push(@{$needles->[0]->{'matches'}}, $area);
 			push(@{$needles->[scalar(@$needles)-1]->{'matches'}}, $area);
