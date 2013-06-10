@@ -126,8 +126,11 @@ span.thumbnail {
 	text-decoration:none;
 	position:relative;
 	display:inline-block;
-	margin: 0;
 	margin: 6px;
+}
+
+.ui-oo-content-wrapper .ui-oo-box-shadow > * >.thumbnail:first-child, .content-wrapper .box > * >.thumbnail:first-child {
+	margin-top: 6px; !important
 }
 
 span.thumbnail.current {
