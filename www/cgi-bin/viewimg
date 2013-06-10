@@ -67,7 +67,7 @@ if ($module_detail->{'needle'}) {
 		$needleinfo  = needle_info($needlename, $results->{'distribution'});
 		push(@$needles, {'name' => $needlename, 'image' => $needleinfo->{'imageurl'},
 				'areas' => $needleinfo->{'area'}, 'matches' => []});
-		for my $area (@{$module_detail->{'area'}}) {
+		for my $area (@{$needle->{'area'}}) {
 			push(@{$needles->[scalar(@$needles)-1]->{'matches'}},
 				{'xpos' => int $area->{'x'}, 'width' => int $area->{'w'},
 				 'ypos' => int $area->{'y'}, 'height' => int $area->{'h'},
