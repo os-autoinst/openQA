@@ -1,0 +1,60 @@
+#!/usr/bin/perl -w
+use strict;
+use CGI ":standard";
+use FindBin;
+use JSON;
+use lib "$FindBin::Bin/modules";
+#use Image::Magick;
+use awstandard;
+use openqa;
+use Text::MicroTemplate "encoded_string";
+use Text::MicroTemplate::Extended;
+
+my $fn=$ENV{PATH_INFO};
+if($fn=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
+$fn=~s%^/%%;
+my($action,$testname,$testmodule,$testindex) = split(/\//, $fn);
+
+my $results = test_result($testname);
+unless ($results) { print header(-status=>404)."no testresults found"; exit 0; }
+
+my $module = test_result_module($results->{'testmodules'}, $testmodule);
+unless ($module) { print header(-status=>404)."module not found"; exit 0; }
+
+my $modinfo = get_running_modinfo($results);
+unless ($testindex =~ m/^\d+$/ && $testindex > 0) {
+	print header(-status=>403)."invalid index"; exit 0;
+}
+
+if ($testindex > @{$module->{'details'}}) {
+	# This means that the module have no details at all
+	if ($testindex == 1) {
+		my $mt = Text::MicroTemplate::Extended->new(
+			include_path  => ['../htdocs/template'],
+			template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
+					   action => 'viewaudio', modinfo => $modinfo, tabmode => 'audio' });
+
+		print header(-charset=>"UTF-8", -type=>"text/html");
+		print $mt->render('nodetails');
+		exit 0;
+
+	# In this case there are details, we simply run out of range
+	} else {
+		print header(-status=>403)."invalid index"; exit 0;
+	}
+}
+
+my $module_detail = $module->{'details'}->[$testindex-1];
+my $audioname = $module_detail->{'audio'};
+
+my $audio = "/$prj/testresults/$testname/$audioname";
+
+my $mt = Text::MicroTemplate::Extended->new(
+	include_path  => ['../htdocs/template'],
+	template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
+			   action => 'viewaudio', modinfo => $modinfo, imglist => $module->{'details'},
+			   audio => $audio, audio_details => $module_detail,
+			   tabmode => 'audio' });
+
+print header(-charset=>"UTF-8", -type=>"text/html");
+print $mt->render('viewaudio');

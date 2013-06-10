@@ -32,7 +32,7 @@ if ($testindex > @{$module->{'details'}}) {
 		my $mt = Text::MicroTemplate::Extended->new(
 			include_path  => ['../htdocs/template'],
 			template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
-					   action => 'viewimg', modinfo => $modinfo });
+					   action => 'viewimg', modinfo => $modinfo, tabmode => 'screenshot' });
 
 		print header(-charset=>"UTF-8", -type=>"text/html");
 		print $mt->render('nodetails');
@@ -87,7 +87,8 @@ my $mt = Text::MicroTemplate::Extended->new(
 	template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
 			   action => 'viewimg', modinfo => $modinfo, imglist => $module->{'details'},
 			   needles => $needles, screenshot => $screenshot,
-			   img_width => $img_width, img_height => $img_height});
+			   img_width => $img_width, img_height => $img_height,
+			   tabmode => 'screenshot' });
 
 print header(-charset=>"UTF-8", -type=>"text/html");
 print $mt->render('viewimg');

@@ -42,12 +42,14 @@ if($action eq "raw") { print header(-type=>"text/plain").$script; exit 0}
 my $nicescriptpath = $scriptpath;
 $nicescriptpath=~s/^.*autoinst\///;
 
+my $tabmode = (defined $module->{'details'}->[$testindex-1]->{'audio'})?'audio':'screenshot';
+
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
 	template_args => { testname => $testname, testmodule => $testmodule, testindex => $testindex,
 			   action => 'viewsrc', modinfo => $modinfo, imglist => $module->{'details'},
-			   scriptpath => $nicescriptpath, scriptsrc => $script },
-);
+			   scriptpath => $nicescriptpath, scriptsrc => $script,
+			   tabmode => $tabmode });
 
 print header(-charset=>"UTF-8", -type=>"text/html");
 print $mt->render('viewsrc');
