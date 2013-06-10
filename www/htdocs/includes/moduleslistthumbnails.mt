@@ -8,9 +8,16 @@
 			<? for my $refimg (@$imglist) { ?>
 			<span class="<?= ($img_count == $testindex) ? "thumbnail current" : "thumbnail" ?>">
 				<a href="<?= "/$action/show/$testname/$testmodule/".$img_count++ ?>">
-					<img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $refimg->{'screenshot'} ?>?size=<?= $ref_width ?>x<?= $ref_height ?>"
-					width="<?= $ref_width ?>" height="<?= $ref_height ?>" alt="<?= $refimg->{'screenshot'} ?>" title="<?= $refimg->{'screenshot'} ?>"
-					class="<?= "resborder\L$refimg->{'result'}" ?>" /></a>
+					<? if($refimg->{'screenshot'}) { ?>
+						<img src="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $refimg->{'screenshot'} ?>?size=<?= $ref_width ?>x<?= $ref_height ?>"
+						alt="<?= $refimg->{'screenshot'} ?>" title="<?= $refimg->{'screenshot'} ?>"
+						width="<?= $ref_width ?>" height="<?= $ref_height ?>" class="<?= "resborder\L$refimg->{'result'}" ?>" />
+					<? } elsif ($refimg->{'audio'}) { ?>
+						<img src="/images/audio.svg"
+						alt="<?= $refimg->{'audio'} ?>" title="<?= $refimg->{'audio'} ?>"
+						width="<?= $ref_width ?>" height="<?= $ref_height ?>" class="<?= "resborder\L$refimg->{'result'}" ?>" />
+					<? } ?>
+				</a>
 			</span>
 			<? } ?>
 		</div>
