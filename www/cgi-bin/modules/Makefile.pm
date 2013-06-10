@@ -123,9 +123,25 @@ sub iso_new : Num(iso)
                 my $test_definition = $testruns{$run}->{settings};
                 @settings{keys %$test_definition} = values %$test_definition;
 
+		## define some default envs
+
 		# match i386, i586, i686 and Biarch-i586-x86_64
-		if ($params{arch} =~ m/i[3-6]86/) {
+		if ($params->{arch} =~ m/i[3-6]86/) {
 		  $settings{QEMUCPU} ||= 'qemu32';
+		}
+		if($params->{flavor} =~ m/Live/i || $params->{flavor} =~ m/Rescue/i) {
+		  $settings{LIVECD}=1;
+		}
+		if ($params->{flavor} =~ m/Promo/i) {
+		  $settings{PROMO}=1;
+		}
+		if($params->{flavor}=~m/(DVD|NET|KDE|GNOME|LXDE|XFCE)/) {
+		  $settings{$1}=1;
+		  $settings{NETBOOT}=$settings{NET};
+
+		  if($settings{LIVECD}) {
+		    $settings{DESKTOP}=lc($1);
+		  }
 		}
 
                 # create a new job with these parameters and count if successful
