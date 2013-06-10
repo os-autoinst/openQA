@@ -117,12 +117,16 @@ sub iso_new : Num(iso)
                 my %settings = ( ISO => $iso,
                                  NAME => join('-', @{$params}{qw(distri version flavor arch build)}, $run),
                                  DISTRI => lc($params->{distri}),
-				 QEMUCPU => 'qemu32',
                                  DESKTOP => 'kde' );
 
                 # merge defaults form above with the settings from %testruns
                 my $test_definition = $testruns{$run}->{settings};
                 @settings{keys %$test_definition} = values %$test_definition;
+
+		# match i386, i586, i686 and Biarch-i586-x86_64
+		if ($params{arch} =~ m/i[3-6]86/) {
+		  $settings{QEMUCPU} ||= 'qemu32';
+		}
 
                 # create a new job with these parameters and count if successful
                 $cnt++ if Scheduler::job_create(%settings)
