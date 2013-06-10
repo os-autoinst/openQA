@@ -55,8 +55,8 @@ if ($module_detail->{'needle'}) {
 			'areas' => $needle->{'area'}, 'matches' => []});
 	for my $area (@{$module_detail->{'area'}}) {
 		push(@{$needles->[0]->{'matches'}},
-			{'xpos' => $area->{'x'}, 'width' => $area->{'w'},
-			 'ypos' => $area->{'y'}, 'height' => $area->{'h'},
+			{'xpos' => int $area->{'x'}, 'width' => int $area->{'w'},
+			 'ypos' => int $area->{'y'}, 'height' => int $area->{'h'},
 			 'type' => $area->{'result'}});
 	}
 } elsif ($module_detail->{'needles'}) {
@@ -69,8 +69,8 @@ if ($module_detail->{'needle'}) {
 				'areas' => $needleinfo->{'area'}, 'matches' => []});
 		for my $area (@{$module_detail->{'area'}}) {
 			push(@{$needles->[scalar(@$needles)-1]->{'matches'}},
-				{'xpos' => $area->{'x'}, 'width' => $area->{'w'},
-				 'ypos' => $area->{'y'}, 'height' => $area->{'h'},
+				{'xpos' => int $area->{'x'}, 'width' => int $area->{'w'},
+				 'ypos' => int $area->{'y'}, 'height' => int $area->{'h'},
 				 'type' => $area->{'result'}});
 		}
 	}
