@@ -17,7 +17,7 @@ use awstandard;
 use File::Basename;
 use Fcntl;
 use JSON "decode_json";
-our $basedir=$ENV{'OPENQA_BASEDIR'}||"/opt";
+our $basedir=$ENV{'OPENQA_BASEDIR'}||"/var/cache";
 our $prj="openqa";
 our $perlurl="$prj/perl/autoinst";
 our $perldir="$basedir/$perlurl";
