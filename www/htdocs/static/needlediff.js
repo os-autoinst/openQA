@@ -113,37 +113,22 @@ NeedleDiff.prototype.draw = function() {
     split = 1;
   }
   
-  // Draw the needle
-  this.ctx.drawImage(this.needleImg, 0, 0, split, this.height, 0, 0, split, this.height);
-  // Draw all areas
-  this.areas.forEach(function(a) {
-    this.ctx.fillStyle = NeedleDiff.shapecolor(a['type']);
-    // Only areas in the left of the handle are drew
+  // Draw all matches
+  this.matches.forEach(function(a, idx) {
+    // If some part of the match is at the left of the handle
+    var width = a['width'];
     var x = a['xpos'];
-    if (x < split) {
-      // And only the part at the left of the handle
-      var width = a['width'];
+    if (split > x) {
+      // Fill the left part with the original needle's area
       if (split - x < width) {
         width = split - x;
       }
-      this.ctx.fillRect(x, a['ypos'], width, a['height']);
+      var orig = this.areas[idx];
+      this.ctx.drawImage(this.needleImg, orig['xpos'], orig['ypos'], width, a['height'], x, a['ypos'], width, a['height']);
     }
-  }.bind(this));
-  // Draw all matches
-  this.matches.forEach(function(a) {
     this.ctx.strokeStyle = NeedleDiff.shapecolor(a['type']);
     this.ctx.lineWidth = 3;
-    // Only matches in the right of the handle are drew
-    var x = a['xpos'];
-    var width = a['width'];
-    if (x+width > split) {
-      // And only the part at the right of the handle
-      if (x < split) {
-        width = width + x - split;
-        x = split;
-      }
-      this.ctx.strokeRect(x, a['ypos'], width, a['height']);
-    }
+    this.ctx.strokeRect(x, a['ypos'], a['width'], a['height']);
   }.bind(this));
   // Draw the handle
   this.ctx.fillStyle = "rgb(255, 145, 75)";
