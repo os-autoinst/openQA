@@ -57,7 +57,7 @@ if ($module_detail->{'needle'}) {
 		push(@{$needles->[0]->{'matches'}},
 			{'xpos' => int $area->{'x'}, 'width' => int $area->{'w'},
 			 'ypos' => int $area->{'y'}, 'height' => int $area->{'h'},
-			 'type' => $area->{'result'}});
+			 'type' => $area->{'result'}, 'similarity' => int $area->{'similarity'}});
 	}
 } elsif ($module_detail->{'needles'}) {
 	my $needlename;
@@ -71,7 +71,7 @@ if ($module_detail->{'needle'}) {
 			push(@{$needles->[scalar(@$needles)-1]->{'matches'}},
 				{'xpos' => int $area->{'x'}, 'width' => int $area->{'w'},
 				 'ypos' => int $area->{'y'}, 'height' => int $area->{'h'},
-				 'type' => $area->{'result'}});
+				 'type' => $area->{'result'}, 'similarity' => int $area->{'similarity'}});
 		}
 	}
 }

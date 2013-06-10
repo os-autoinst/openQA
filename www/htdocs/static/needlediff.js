@@ -13,6 +13,7 @@ function NeedleDiff(id, width, height) {
   this.needleImg = null;
   this.areas = [];
   this.matches = [];
+  this.showSimilarity = [];
   
   // Event handlers
   canvas.addEventListener('mousemove', handler, false);
@@ -82,6 +83,7 @@ NeedleDiff.prototype.setScreenshot = function(screenshotSrc) {
 NeedleDiff.prototype.setNeedle = function(src, areas, matches) {
   this.areas = areas;
   this.matches = matches;
+  this.showSimilarity = new Array(matches.length);
   if (src) {
     var image = new Image();
     image.src = src;
@@ -115,20 +117,29 @@ NeedleDiff.prototype.draw = function() {
   
   // Draw all matches
   this.matches.forEach(function(a, idx) {
-    // If some part of the match is at the left of the handle
+    // If some part of the match is at the left of the handle...
     var width = a['width'];
     var x = a['xpos'];
     if (split > x) {
-      // Fill the left part with the original needle's area
+      // ...fill that left part with the original needle's area
       if (split - x < width) {
         width = split - x;
       }
       var orig = this.areas[idx];
       this.ctx.drawImage(this.needleImg, orig['xpos'], orig['ypos'], width, a['height'], x, a['ypos'], width, a['height']);
     }
+    // Then draw the rectangle
     this.ctx.strokeStyle = NeedleDiff.shapecolor(a['type']);
     this.ctx.lineWidth = 3;
     this.ctx.strokeRect(x, a['ypos'], a['width'], a['height']);
+    // And the similarity, if needed
+    if (this.showSimilarity[idx]) {
+      this.ctx.fillStyle = "rgb(255, 255, 255)";
+      this.ctx.fillRect(x+2, a['ypos']+2, 50, 20);
+      this.ctx.fillStyle = NeedleDiff.shapecolor(a['type']);
+      this.ctx.font = "bold 24px Arial";
+      this.ctx.fillText(a['similarity']+"%", x+4, a['ypos']+20);
+    }
   }.bind(this));
   // Draw the handle
   this.ctx.fillStyle = "rgb(255, 145, 75)";
@@ -146,9 +157,26 @@ NeedleDiff.prototype.mousedown = function(event) {
 
 NeedleDiff.prototype.mousemove = function(event) {
   var divide = event._x / this.width;
+  var redraw = false;
+
+  // Show match percentage if the cursor is over the match
+  this.matches.forEach(function(a, idx) {
+    if (event._x > a['xpos'] && event._x < a['xpos'] + a['width'] &&
+        event._y > a['ypos'] && event._y < a['ypos'] + a['height']) {
+      if (!this.showSimilarity[idx]) redraw = true;
+      this.showSimilarity[idx] = true;
+    } else {
+      if (this.showSimilarity[idx]) redraw = true;
+      this.showSimilarity[idx] = false;
+    }
+  }.bind(this));
+
   // Drag
   if (this.dragstart === true) {
     this.divide = divide;
+  } else if (redraw) {
+    // FIXME: Really ugly
+    this.draw();
   }
   // Change cursor
   if (Math.abs(this.divide - divide) < 0.01) {
@@ -163,11 +191,8 @@ NeedleDiff.prototype.mouseup = function(event) {
 }
 
 NeedleDiff.shapecolors = {
-  'match':   'rgba(  0, 255, 0, .5)',
-  'exclude': 'rgba(255,   0, 0, .5)',
-  'ocr':     'rgba(255, 255, 0, .5)',
-  'ok':      'rgba(  0, 255, 0, .8)',
-  'fail':    'rgba(255,   0, 0, .8)',
+  'ok':      'rgba(  0, 255, 0, .9)',
+  'fail':    'rgba(255,   0, 0, .9)',
 };
 
 NeedleDiff.shapecolor = function(type) {
