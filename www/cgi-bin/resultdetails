@@ -31,8 +31,7 @@ foreach my $module (@{$results->{'testmodules'}}) {
                 push(@imglist, {name => $imgpath, num => $num++, result => $img->{'result'}});
             }
             elsif( $img->{'audio'} ) {
-		my $wavpath = data_name("$testresultdir/".$img->{'audio'});
-		push(@wavlist, {name => $wavpath, result => $img->{'result'}});
+		push(@wavlist, {name => $img->{'audio'}, num => $num++, result => $img->{'result'}});
             }
         }
 

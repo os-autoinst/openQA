@@ -115,7 +115,7 @@
 				</td>
 				<td class="links" style="width: 20%;">
 					<? for my $wav (@{$module->{'wavs'}}) { ?>
-					<a href="/<?= $prj ?>/testresults/<?= $testname ?>/<?= $wav->{'name'} ?>.ogg" title="<?= $wav->{'name'} ?>.wav"><img src="/images/audio.png" width="28" height="26" alt="<?= $wav->{'name'} ?>.wav" class="<?= "resborder\L$wav->{'result'}" ?>" /></a>
+					<a href="/viewaudio/show/<?= $testname ?>/<?= $module->{'name'} ?>/<?= $wav->{'num'} ?>" title="<?= $wav->{'name'} ?>"><img src="/images/audio.png" width="28" height="26" alt="<?= $wav->{'name'} ?>" class="<?= "resborder\L$wav->{'result'}" ?>" /></a>
 					<? } ?>
 				</td>
 				<td class="links" style="width: 20%;">
