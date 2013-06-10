@@ -71,7 +71,7 @@ sub test_result_hash($) {
 	for $module (@{$result_hash->{'testmodules'}}) {
 		$result_simple_hash->{$module->{'name'}} = $module->{'result'};
 	}
-	for $module ("standstill", "isosize", "overall") {
+	for $module ("standstill", "overall") {
 		if(defined $result_hash->{$module}) {
 			$result_simple_hash->{$module} = $result_hash->{$module};
 		}

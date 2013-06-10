@@ -311,6 +311,18 @@ sub job_create
         die "ISO does not exist\n";
     }
 
+    unless ($settings{ISO_MAXSIZE}) {
+	my $maxsize = 737_280_000;
+	if ($settings{ISO} =~ /-DVD/) {
+	    if ($settings{ISO} =~ /-DVD-Biarch/) {
+		$maxsize=8_539_996_160;
+	    } else {
+		$maxsize=4_700_372_992;
+	    }
+	}
+	$settings{ISO_MAXSIZE} = $maxsize;
+    }
+
     $dbh->begin_work;
     my $id = 0;
     eval {
