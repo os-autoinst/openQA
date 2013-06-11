@@ -22,18 +22,3 @@ function addTag() {
 	checkbox.click();
 	return false;
 }
-
-function save_needle() {
-	var url = "http://" + window.location.hostname + ":" + window.jsonrpcport + "/jsonrpc/API";
-	var needle = JSON.parse(document.getElementById('needleeditor_textarea').value);
-	var name = document.getElementById('needleeditor_name').value;
-	new Ajax.Request("/rpc", {
-		method: "post",
-	    	parameters: { 	url: url,
-				method: "save_needle",
-	    			params: JSON.stringify([name, needle]) },
-	    	onSuccess: function(response) {
-			window.location = "/running/"+window.testname;
-		}
-	});
-}

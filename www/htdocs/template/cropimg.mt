@@ -12,9 +12,6 @@
 // Prototype introduces undesired toJSON definition
 delete Array.prototype.toJSON;
 
-var jsonrpcport = "<?= $jsonrpc_port ?>";
-var testname = "<?= $testname ?>";
-
 window.onload=function(){
 	window.nEditor = new NeedleEditor('<?= ${@$needles[0]}{'imageurl'} ?>',	'<?= encoded_string(JSON::to_json($default_needle)) ?>');
 };
@@ -34,11 +31,7 @@ window.onload=function(){
 		<form action="/cropimg/save/<?= $testname ?>/<?= $testmodule?>/<?= $testindex ?>" method="post">
 			<div class="aligncenter">
 				<?= $self->include_file("../../htdocs/includes/moduleslistoptions") ?>
-				<? if ($interactive) { ?>
-					<a href="javascript:window.save_needle();"><img src="/images/floppy.png" /></a>
-				<? } else { ?>
-					<input type="image" src="/images/floppy.png" alt="Save" />
-				<? } ?>
+				<input type="image" src="/images/floppy.png" alt="Save" />
 			</div>
 			<div style="margin: 0 3px;">
 				<div style="margin-top: 1em;">
