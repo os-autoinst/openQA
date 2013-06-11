@@ -299,6 +299,15 @@ sub job_restart_by_name : Public #(name:str)
     Scheduler::job_restart_by_name($name);
 }
 
+sub job_stop_by_name : Public #(name:str)
+{
+    my $self = shift;
+    my $args = shift;
+    my $name = shift @$args or die "missing name parameter\n";
+
+    Scheduler::job_stop_by_name($name);
+}
+
 sub command_get : Arr #(workerid:num)
 {
     my $self = shift;

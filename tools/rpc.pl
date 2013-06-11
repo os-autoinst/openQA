@@ -70,6 +70,7 @@ for (qw/
 	job_continue
 	job_find_by_name
 	job_restart_by_name
+	job_stop_by_name
 	iso_new
 	command_get
 	/) {
