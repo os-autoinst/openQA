@@ -2,15 +2,16 @@ The openQA framework consists of two parts, which are tracked in separate git
 repos. The OS-autoinst test engine and the front-end with web-interface,
 test-scheduler and other high-level logic, which is part of this repo.
 
-see devel:openQA/openQA on how to setup the software on openSUSE
+see devel:openQA/openQA on how to setup the software on openSUSE or run
+tools/setup.sh for some help
 
 openQA requires os-autoinst to be installed in /usr/lib/os-autoinst
 (you can bind mount/symlink the git dir there)
 
-openQA main files must be in /usr/share/openqa (again, can be bind
-mounted/linked to git).
+openQA web files (www/*) must be in /usr/share/openqa (again, can be bind
+mounted/linked to git checkout).
 
-/var/cache/openqa/ must be owned by root and contain several sub
+/var/lib/openqa/ must be owned by root and contain several sub
 directories owned by 'geekotest':
 
 backlog
@@ -18,18 +19,24 @@ factory/iso
 perl/ (subdirectory autoinst must link to /usr/lib/os-autoinst)
 pool/1 (add more for each worker)
 testresults
-schedule.d
 tools (symlink to /usr/share/openqa/tools/)
+
+/var/lib/openqa/db contains the sqlite database and must be owned by the web
+user. You need to run tools/initdb to create it.
 
 By default everything expects the openqa web stuff to run on
 localhost. Please configure your apache accordingly (see config
 files in etc/apache2).
+You need to enable the rewrite module (a2enmod rewrite)
 
 To start the worker either use the provided systemd files (systemctl
 start openqa-worker.target will start as many workers as you have
 pool directories) or run tools/worker --instance X manually.
+If you did not install os-autoinst from packages make sure to pass --isotovideo
+to point to the checkout dir of isotovideo, not /usr/lib! It won't find the
+perl modules then.
 
-Place iso images you want to test in /var/cache/openqa/factory/iso/
+Place iso images you want to test in /var/lib/openqa/factory/iso/
 Then run
 /usr/share/openqa/tools/rpc.pl --host localhost iso_new FILE.ISO
 

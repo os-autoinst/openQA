@@ -59,7 +59,7 @@ use FindBin;
 #use openqa;
 
 my $max_job_time = 60*60; # 1h
-my $openqa_base = "/var/cache/openqa";
+my $openqa_base = "/var/lib/openqa";
 my $pooldir;
 my $isodir = "$openqa_base/factory/iso";
 my $results_dir = "$openqa_base/testresults";
@@ -314,7 +314,9 @@ sub main()
 			printf "got job %d\n", $job->{'id'};
 			my $name = $job->{'settings'}->{'NAME'};
 			$testresults = join('/', $results_dir, $name);
-			if (-e $testresults) {
+			if (-l "$testresults") {
+				unlink($testresults);
+			} elsif (-e $testresults) {
 				remove_tree($testresults);
 			}
 			symlink(join('/', $pooldir, 'testresults', $name), $testresults) or warn "symlink $testresults: $!\n";

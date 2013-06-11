@@ -9,11 +9,11 @@
 
     ServerName FIXME
 
-    Alias /openqa "/var/cache/openqa"
+    Alias /openqa "/var/lib/openqa"
     ScriptAlias /cgi-bin/ "/usr/share/openqa/cgi-bin/"
     DocumentRoot "/usr/share/openqa/htdocs"
 
-    SetEnv OPENQA_BASEDIR "/var/cache"
+    SetEnv OPENQA_BASEDIR "/var/lib"
 
     HostnameLookups Off
     UseCanonicalName Off

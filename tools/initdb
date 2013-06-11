@@ -5,8 +5,8 @@ if ! test -w "$DESTDIR"; then
 	echo "need write access to $DESTDIR!";
 	exit 1
 fi
-d=$DESTDIR/var/lib/openqa
+d=$DESTDIR/var/lib/openqa/db
 mkdir -p $d
-rm -f $d/db
-echo .quit | sqlite3 -init ${0%/*}/db.sql $d/db
-chown wwwrun $d $d/db
+rm -f $d/db.sqlite
+echo .quit | sqlite3 -init ${0%/*}/db.sql $d/db.sqlite
+chown wwwrun $d $d/db.sqlite

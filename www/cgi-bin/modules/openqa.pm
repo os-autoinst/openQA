@@ -17,7 +17,7 @@ use awstandard;
 use File::Basename;
 use Fcntl;
 use JSON "decode_json";
-our $basedir=$ENV{'OPENQA_BASEDIR'}||"/var/cache";
+our $basedir=$ENV{'OPENQA_BASEDIR'}||"/var/lib";
 our $prj="openqa";
 our $perlurl="$prj/perl/autoinst";
 our $perldir="$basedir/$perlurl";
@@ -27,8 +27,7 @@ our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
 
-our $localstatedir = '/var/lib/openqa';
-our $dbfile = $localstatedir.'/db';
+our $dbfile = "$basedir/$prj/db/db.sqlite";
 
 our @runner = <$basedir/$prj/pool/[0-9]>;
 push(@runner, "$basedir/$prj/pool/manual");
