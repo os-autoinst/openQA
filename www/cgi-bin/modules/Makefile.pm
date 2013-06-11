@@ -186,6 +186,42 @@ sub iso_new : Num
         return $cnt;
 }
 
+
+sub iso_delete : Num(iso)
+{
+    my $self = shift;
+    my $args = shift;
+
+    # remove any path info path from iso file name
+    (my $iso = $args->{iso}) =~ s|^.*/||;
+
+    my $jobs = list_jobs;
+    foreach my $job (@$jobs) {
+	if ($job->{settings}->{ISO} eq $iso) {
+	    Scheduler::job_delete($job->{id});
+	}
+    }
+}
+
+
+sub iso_stop : Num(iso)
+{
+    my $self = shift;
+    my $args = shift;
+
+    # remove any path info path from iso file name
+    (my $iso = $args->{iso}) =~ s|^.*/||;
+
+    my $jobs = list_jobs;
+    foreach my $job (@$jobs) {
+	if ($job->{settings}->{ISO} eq $iso) {
+	    Scheduler::job_stop($job->{id});
+	}
+    }
+}
+
+
+
 =head2
 takes worker id and a blocking argument
 if I specify the parameters here the get exchanged in order, no idea why

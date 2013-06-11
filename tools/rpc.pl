@@ -72,6 +72,8 @@ for (qw/
 	job_restart_by_name
 	job_stop_by_name
 	iso_new
+        iso_delete
+        iso_stop
 	command_get
 	/) {
 	$cmds{$_} = 1;
