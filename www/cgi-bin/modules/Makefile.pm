@@ -87,7 +87,7 @@ sub iso_new : Num(iso)
 			 textmode => { applies => sub { $_[0]->{flavor} !~ /Live/ },
                                        settings => {'DESKTOP' => 'textmode', 'VIDEOMODE' => 'text'} },
 			 uefi => { applies => sub {1},
-                                   settings => {'UEFI' => '/usr/share/qemu-ovmf/bios-ms', 'DESKTOP' => 'lxde'} },
+                                   settings => {'UEFI' => '1', 'DESKTOP' => 'lxde'} },
 			 usbboot => { applies => sub {1},
                                       settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
 			 usbinst => { applies => sub {1},
