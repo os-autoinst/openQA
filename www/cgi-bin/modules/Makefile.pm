@@ -138,7 +138,7 @@ sub iso_new : Num(iso)
 		}
 		if($params->{flavor}=~m/(DVD|NET|KDE|GNOME|LXDE|XFCE)/) {
 		  $settings{$1}=1;
-		  $settings{NETBOOT}=$settings{NET};
+		  $settings{NETBOOT}=$settings{NET} if exists $settings{NET};
 
 		  if($settings{LIVECD}) {
 		    $settings{DESKTOP}=lc($1);
