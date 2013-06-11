@@ -43,13 +43,24 @@ sub worker_register : Num(host, instance, backend)
     return Scheduler::worker_register(%$args);
 }
 
-sub iso_new : Num(iso)
+sub iso_new : Num
 {
 	my $self = shift;
 	my $args = shift;
+	my $iso;
 
 	my %testruns = ( 64 => { applies => sub { $_[0]->{arch} =~ /Biarch/ },
                                  settings => {'QEMUCPU' => 'qemu64'} },
+			 kde => {
+				 settings => {
+					 'DESKTOP' => 'kde',
+				 },
+				 prio => 45,
+			 },
+			 gnome => { applies => sub {1},
+                                    settings => {'DESKTOP' => 'gnome', 'LVM' => '1'},
+				    prio => 45,
+				},
 			 RAID0 => { applies => sub {1},
                                     settings => {'RAIDLEVEL' => '0'} },
 			 RAID1 => { applies => sub {1},
@@ -68,16 +79,20 @@ sub iso_new : Num(iso)
                                  settings => {'DOCRUN' => '1', 'INSTLANG' => 'de_DE', 'QEMUVGA' => 'std'} },
 			 doc => { applies => sub {1},
                                   settings => {'DOCRUN' => '1', 'QEMUVGA' => 'std'} },
-			 gnome => { applies => sub {1},
-                                    settings => {'DESKTOP' => 'gnome', 'LVM' => '1'} },
 			 live => { applies => sub { $_[0]->{flavor} =~ /Live/ },
                                    settings => {'LIVETEST' => '1', 'REBOOTAFTERINSTALL' => '0'} },
 			 lxde => { applies => sub { $_[0]->{flavor} !~ /Live/ },
-                                   settings => {'DESKTOP' => 'lxde', 'LVM' => '1'} },
+                                   settings => {'DESKTOP' => 'lxde', 'LVM' => '1'},
+				   prio => 45,
+			       },
                          xfce => { applies => sub { $_[0]->{flavor} !~ /Live/ },
-                                   settings => {'DESKTOP' => 'xfce'} },
+                                   settings => {'DESKTOP' => 'xfce'},
+				   prio => 45,
+			       },
 			 minimalx => { applies => sub { $_[0]->{flavor} !~ /Live/ },
-                                       settings => {'DESKTOP' => 'minimalx'} },
+                                       settings => {'DESKTOP' => 'minimalx'},
+				       prio => 45,
+				   },
 			 nice => { applies => sub {1},
                                    settings => {'NICEVIDEO' => '1', 'DOCRUN' => '1', 'REBOOTAFTERINSTALL' => '0', 'SCREENSHOTINTERVAL' => '0.25'} },
 			 smp => { applies => sub {1},
@@ -85,7 +100,9 @@ sub iso_new : Num(iso)
 			 splitusr => { applies => sub { $_[0]->{flavor} !~ /Live/ },
                                        settings => {'SPLITUSR' => '1'} },
 			 textmode => { applies => sub { $_[0]->{flavor} !~ /Live/ },
-                                       settings => {'DESKTOP' => 'textmode', 'VIDEOMODE' => 'text'} },
+                                       settings => {'DESKTOP' => 'textmode', 'VIDEOMODE' => 'text'},
+				       prio => 40,
+				   },
 			 uefi => { applies => sub {1},
                                    settings => {'UEFI' => '1', 'DESKTOP' => 'lxde'} },
 			 usbboot => { applies => sub {1},
@@ -93,9 +110,19 @@ sub iso_new : Num(iso)
 			 usbinst => { applies => sub {1},
                                       settings => {'USBBOOT' => '1'} }
         );
-        
-        # remove any path info path from iso file name
-	(my $iso = $args->{iso}) =~ s|^.*/||;
+
+	my @requested_runs;
+	for my $arg (@$args) {
+	    if ($arg =~ /\.iso$/) {
+		# remove any path info path from iso file name
+		($iso = $arg) =~ s|^.*/||;
+	    } elsif (exists $testruns{$arg}) {
+		push @requested_runs, $arg;
+	    } else {
+		die "invalid parameter $arg";
+	    }
+	}
+
 	my $params = openqa::parse_iso($iso);
 
         my $cnt = 0;
@@ -103,15 +130,14 @@ sub iso_new : Num(iso)
         # only continue if parsing the ISO filename was successful
 	if ( $params ) {
             # go through all the testscenarios defined in %testruns:
-            foreach my $run ( keys(%testruns) ) {
+            foreach my $run ( @requested_runs || keys(%testruns) ) {
                 # the testrun applies if the anonlymous 'applies' function returns true
-                if ( $testruns{$run}->{applies}->($params) ) {
-                    print STDERR "$run applied $iso\n";
-                }
-                else {
-                    print STDERR "$run didn't apply $iso\n";
-                    next;
-                }
+		if ( !$testruns{$run}->{applies} || $testruns{$run}->{applies}->($params) ) {
+		    print STDERR "$run applied $iso\n";
+		} else {
+		    print STDERR "$run didn't apply $iso\n";
+		    next;
+		}
 
                 # set defaults here:
                 my %settings = ( ISO => $iso,
@@ -146,7 +172,13 @@ sub iso_new : Num(iso)
 		}
 
                 # create a new job with these parameters and count if successful
-                $cnt++ if Scheduler::job_create(%settings)
+		my $id = Scheduler::job_create(%settings);
+		if ($id) {
+		    $cnt++;
+		    if ($testruns{$run}->{prio}) {
+			Scheduler::job_set_prio(jobid => $id, prio => $testruns{$run}->{prio});
+		    }
+		}
             }
 
 	}
