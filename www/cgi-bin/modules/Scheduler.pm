@@ -426,6 +426,36 @@ sub job_restart_by_name
     }
 }
 
+# XXX same as job_restart_by_name with s/abort/stop;s/scheduled/stopped/
+sub job_stop_by_name
+{
+    my $name = shift or die "missing name parameter\n";
+
+    # needs to be a transaction as we need to make sure no worker assigns
+    # itself while we modify the job
+    $dbh->begin_work;
+    eval {
+        my ($id, $workerid) = @{job_find_by_name($name, 'id', 'worker')};
+
+        print STDERR "workerid $id, $workerid\n";
+        if ($workerid) {
+            my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
+            my $rc = $sth->execute($workerid, "stop") or die $dbh->error;
+        } else {
+            my $state = "(select id from job_state where name = 'stopped' limit 1)";
+            my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
+            my $r = $sth->execute($id) or die $dbh->errstr;
+
+        }
+        $dbh->commit;
+    };
+    if ($@) {
+        print STDERR "$@\n";
+        eval { $dbh->rollback };
+        next;
+    }
+}
+
 sub command_get
 {
     my $workerid = shift;
