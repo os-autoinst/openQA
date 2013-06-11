@@ -52,9 +52,10 @@ table {
 				<td style="width: 8em; padding: 0;">Waiting for input:</td>
 				<td style="width: 4.5em; padding: 0;" id="needinput_indicator">N/A</td>
 				<td style="padding: 0;" id="needinput_buttons">
-					<a href="javascript:window.continue()" style="display:none" id="continue_button"><img src="/images/play.png" alt="continue" title="Continue" /></a>
+					<a href="javascript:window.sendCommand('continue_waitforneedle')" style="display:none" id="continue_button"><img src="/images/cancel.png" alt="continue" title="Continue" /></a>
+					<a href="javascript:window.sendCommand('reload_needles_and_retry')" style="display:none" id="retry_button"><img src="/images/play.png" alt="retry" title="Retry" /></a>
 					<a href="/croplive/<?= $testname ?>" style="display:none" id="crop_button"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
-					<a href="javascript:window.stopWaitforneedle()" style="display:none" id="stop_waitforneedle_button"><img src="/images/cancel.png" alt="cancel" title="Stop waitforneedle" /></a>
+					<a href="javascript:window.sendCommand('stop_waitforneedle')" style="display:none" id="stop_button"><img src="/images/cancel.png" alt="cancel" title="Stop waitforneedle" /></a>
 				</td>
 			</tr>
 		</table>
