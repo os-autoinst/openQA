@@ -83,6 +83,7 @@ if ($action eq "save") {
 my $needles = [];
 # All tags (from all needles)
 my $tags = [];
+$tags = $module_detail->{'tags'} if ($module_detail->{'tags'});
 if ($module_detail->{'needle'}) {
 
 	# First position: the screenshot with all the matching areas (in result)
@@ -90,6 +91,9 @@ if ($module_detail->{'needle'}) {
 			'imageurl' => "/$prj/testresults/$testname/$imgname",
 			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
 			'area' => [], 'matches' => [], 'tags' => []});
+  for my $tag (@$tags) {
+		push(@{$needles->[0]->{'tags'}}, $tag);
+  }
 	for my $area (@{$module_detail->{'area'}}) {
 		push(@{$needles->[0]->{'matches'}},
 			{'xpos' => int $area->{'x'}, 'width' => int $area->{'w'},
@@ -113,6 +117,9 @@ if ($module_detail->{'needle'}) {
 			'imageurl' => "/$prj/testresults/$testname/$imgname",
 			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
 			'area' => [], 'matches' => [], 'tags' => []});
+  for my $tag (@$tags) {
+		push(@{$needles->[0]->{'tags'}}, $tag);
+  }
 	# Afterwards, all the candidate needles
 	my $needleinfo;
 	my $needlename;
@@ -143,7 +150,6 @@ if ($module_detail->{'needle'}) {
 	}
 } else {
 	# Failing with not a single candidate needle
-	$tags = $module_detail->{'tags'} if ($module_detail->{'tags'});
 	push(@$needles, {'name' => 'screenshot',
 			'imageurl' => "/$prj/testresults/$testname/$imgname",
 			'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
@@ -152,16 +158,15 @@ if ($module_detail->{'needle'}) {
 
 # Default values
 #  - area: matches from best candidate
-#  - tags: tags from best candidate (or screenshot if no candidates)
+#  - tags: tags from the screenshot
 my $default_needle = {};
 my $default_name;
+$default_needle->{'tags'} = $needles->[0]->{'tags'};
 if (scalar(@$needles) > 1) {
 	$default_needle->{'area'} = $needles->[1]->{'matches'};
-	$default_needle->{'tags'} = $needles->[1]->{'tags'};
 	$default_name = $needles->[1]->{'name'};
 } else {
 	$default_needle->{'area'} = [];
-	$default_needle->{'tags'} = $tags;
 	$default_name = $testmodule;
 }
 $default_name = $default_name."-".time;

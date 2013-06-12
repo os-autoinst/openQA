@@ -90,7 +90,7 @@ window.onload=function(){
 					<td><input type="radio" name="background_selector" data-path="<?= $needle->{'imagepath'} ?>" data-url="<?= $needle->{'imageurl'} ?>" onclick="window.loadBackground(this);" <?= 'checked="checked"' if ($i == 0); ?> /></td>
 					<td><input type="radio" name="area_selector" onclick="window.nEditor.LoadAreas('<?= JSON::to_json($needle->{'area'}) ?>');"/></td>
 					<td><input type="radio" name="area_selector" onclick="window.nEditor.LoadAreas('<?= JSON::to_json($needle->{'matches'}) ?>');" <?= 'checked="checked"' if ($i == 1); ?>/></td>
-					<td><input type="radio" name="tags_selector" data-tags="<?= JSON::to_json($needle->{'tags'}) ?>" onclick="window.loadTags(this);" <?= 'checked="checked"' if ($i == 1 || scalar(@$needles) == 1); ?>/></td>
+					<td><input type="radio" name="tags_selector" data-tags="<?= JSON::to_json($needle->{'tags'}) ?>" onclick="window.loadTags(this);" <?= 'checked="checked"' if ($i == 0); ?>/></td>
 				</tr>
 			<? } ?>
 		</table>
