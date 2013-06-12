@@ -94,8 +94,8 @@ window.onload=function(){
 				</tr>
 			<? } ?>
 		</table>
-		<div style="margin: 0 10px; position: relative; width: 1024px; height: 768px;">
-             		<canvas tabindex="1" id="needleeditor_canvas" width="1024" height="768" style="border: 1px solid black;">This text is displayed if your browser does not support HTML5 Canvas.</canvas>
+		<div style="margin: 0 10px; position: relative; width: 1024px; padding: 1px; border: 0px; background-color: black;">
+			<canvas tabindex="1" id="needleeditor_canvas" width="1024" height="768" style="border: 0px;">This text is displayed if your browser does not support HTML5 Canvas.</canvas>
 		</div>
 	</div>
 </div>
