@@ -65,6 +65,7 @@ if ($module_detail->{'needle'}) {
 	for my $needle (@{$module_detail->{'needles'}}) {
 		$needlename = $needle->{'name'};
 		$needleinfo  = needle_info($needlename, $results->{'distribution'});
+		next unless $needleinfo;
 		push(@$needles, {'name' => $needlename, 'image' => $needleinfo->{'imageurl'},
 				'areas' => $needleinfo->{'area'}, 'matches' => []});
 		for my $area (@{$needle->{'area'}}) {

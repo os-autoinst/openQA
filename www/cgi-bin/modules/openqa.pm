@@ -459,7 +459,11 @@ sub needle_info($$) {
 
 	my $needledir = "distri/$distri/needles";
 
-	open(JF, '<', "$perldir/$needledir/$name.json" ) || return undef;
+	my $fn = "$perldir/$needledir/$name.json";
+	unless (open(JF, '<', $fn )) {
+		warn "$fn: $!";
+		return undef;
+	}
 	my $needle = decode_json(<JF>) || return undef ;
 	close(JF);
 
