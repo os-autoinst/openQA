@@ -49,21 +49,6 @@
 			<th>fail<?= sortarrows('res_fail') ?></th>
 		</tr>
 		<? cycle(1) ?>
-		<? for my $test (@$schedulelist) { ?>
-		<tr class="<?= cycle() ?>">
-			<td style="font-style: italic;">scheduled</td>
-			<td>n/a</td>
-			<td><?= $test->{'distri'} ?></td>
-			<td><?= $test->{'type'} ?></td>
-			<td><?= $test->{'arch'} ?></td>
-			<td><span class="textlink"><a href="/buildview/<?= $test->{'distri'} ?>/Build<?= $test->{'build'} ?>"><?= $test->{'build'} ?></a></span></td>
-			<td><span class=""><?= $test->{'extrainfo'} ?></span></td>
-			<td><?= AWisodatetime2($test->{'mtime'}) ?></td>
-			<td colspan="3" style="padding: 3px 4px; font-style: italic;">
-				<a href="/schedule/<?= $test->{'testname'} ?>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
-			</td>
-		</tr>
-		<? } ?>
 		<? for my $test (@$resultlist) { ?>
 		<tr class="<?= cycle() ?>">
 			<td>
@@ -105,6 +90,20 @@
 			<td><span class="overviewunknown"><?= encoded_string(($test->{'res_unknown'})?'&nbsp;'.$test->{'res_unknown'}.'&nbsp;':'') ?></span></td>
 			<td><span class="overviewfail"><?= encoded_string(($test->{'res_fail'})?'&nbsp;'.$test->{'res_fail'}.'&nbsp;':'') ?></span></td>
 			<? } ?>
+		</tr>
+		<? } ?>
+		<? for my $test (@$schedulelist) { ?>
+		<tr class="<?= cycle() ?>">
+			<td style="font-style: italic;">scheduled</td>
+			<td>n/a</td>
+			<td><?= $test->{'distri'} ?></td>
+			<td><?= $test->{'type'} ?></td>
+			<td><?= $test->{'arch'} ?></td>
+			<td><span class="textlink"><a href="/buildview/<?= $test->{'distri'} ?>/Build<?= $test->{'build'} ?>"><?= $test->{'build'} ?></a></span></td>
+			<td><span class=""><?= $test->{'extrainfo'} ?></span></td>
+			<td colspan="4" style="padding: 3px 4px; font-style: italic;">
+				<a href="/schedule/<?= $test->{'testname'} ?>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+			</td>
 		</tr>
 		<? } ?>
 	</table>
