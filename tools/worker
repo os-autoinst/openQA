@@ -143,6 +143,11 @@ sub workit($)
 	my $iso = $job->{'settings'}->{'ISO'};
 	return undef unless $iso;
 
+	if (open(my $fh, '>', 'job.json')) {
+		print $fh to_json($job, { pretty => 1 });
+		close $fh;
+	}
+
 	$iso = join('/', $isodir, $iso);
 	unless (-e $iso) {
 		warn "$iso does not exist!\n";
