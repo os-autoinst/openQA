@@ -4,7 +4,7 @@ if [ $# != 3 ]; then
 	logger -s "invalid number of arguments"
 	exit 1
 fi
-pooldir="/var/cache/openqa/pool"
+pooldir="/var/lib/openqa/pool"
 dir="$1"
 mkdir -p "$dir/openqa-worker.target.wants"
 for i in $pooldir/[0-9]*; do
