@@ -50,6 +50,7 @@ lorem ipsum ...
 use strict;
 use POSIX qw/:sys_wait_h strftime SIGTERM/;
 use Data::Dump;
+use JSON;
 use JSON::RPC::Client;
 use Fcntl;
 use File::Path qw/make_path remove_tree/;
@@ -198,6 +199,20 @@ sub job_release_or_done($$$)
 			$client->job_release($job->{'id'});
 		}
 	}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+}
+
+# check if results.json contains an overal result. If the latter is
+# missing the worker probably crashed.
+sub results_ok($)
+{
+	my $fn = shift;
+	my $ret = 0;
+	local $/;
+	open(my $fh, '<', $fn) or return 0;
+	my $json = decode_json(<$fh>);
+	$ret = 1 if $json && $json->{'overall'};
+	close($fh);
+	return $ret;
 }
 
 sub main()
@@ -388,7 +403,7 @@ sub main()
 
 				# if there's no results.json start.pl probably died early, e.g. due to configuration
 				# problem. Release the job so another worker may grab it.
-				if (-e "$testresults/results.json") {
+				if (results_ok("$testresults/results.json")) {
 					$retries = 3; while(1) { eval {
 						printf "setting job %d to $result\n", $job->{'id'} if $verbose;
 						$client->job_done($job->{'id'}, $result);
