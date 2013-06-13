@@ -6,6 +6,7 @@ use lib "$FindBin::Bin/modules";
 use openqa;
 use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
+use POSIX "strftime";
 
 my $testname=$ENV{PATH_INFO};
 if(!defined $testname) { print header(-status=>404)."must specify result file as path"; exit 0 }
@@ -68,6 +69,11 @@ if(-e "$backlogpath/l1") {
 
 my $backend_info = parse_log_json($fqfn);
 
+# details box
+#FIXME: get test duration
+#my $test_duration = strftime("%H:%M:%S", gmtime(test_duration($testname)));
+my $test_duration = 'n/a';
+
 # result files box
 my @resultfiles = test_resultfile_list($testname);
 
@@ -76,7 +82,7 @@ my @ulogs = test_uploadlog_list($testname);
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { overall => $results->{'overall'}, modlist => \@modlist, testname => $testname, diskimg => $diskimg, backend_info => $backend_info, resultfiles => \@resultfiles, ulogs => \@ulogs },
+	template_args => { overall => $results->{'overall'}, modlist => \@modlist, testname => $testname, diskimg => $diskimg, backend_info => $backend_info, resultfiles => \@resultfiles, ulogs => \@ulogs, test_duration => $test_duration },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

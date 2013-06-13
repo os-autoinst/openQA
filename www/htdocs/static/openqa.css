@@ -312,3 +312,11 @@ input[type='image'] {
 	padding: 0;
 }
 /* bento theme fixes end */
+
+
+.infotbl td {
+        padding: 0 0 0 0;
+}
+.infotbl img {
+        padding-right: 3px;
+}

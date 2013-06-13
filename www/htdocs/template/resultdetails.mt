@@ -1,18 +1,5 @@
 ? extends 'fluid'
 
-? block additional_headlines => sub {
-<style type="text/css">
-<!--
-.infotbl td {
-	padding: 0 0 0 0;
-}
-.infotbl img {
-	padding-right: 3px;
-}
--->
-</style>
-? }
-
 ? my $ref_width=60;
 ? my $ref_height=int($ref_width/4*3);
 
@@ -55,6 +42,21 @@
 		</div>
 	</div>
 	<? } ?>
+	<div class="box box-shadow" id="info_box">
+		<div class="box-header aligncenter">Test Details</div>
+		<div style="margin: 0 3px 0 3px;" class="cligncenter">
+			<table style="border: none; margin: 0;" class="infotbl">
+				<tr>
+					<td style="width: 40%;">Duration</td>
+					<td><?= $test_duration ?></td>
+				</tr>
+				<tr>
+					<td>Result</td>
+					<td><span style="padding: 0 10%; display: inline-block; text-align: center;" class="<?= "result$res_css->{$overall}" ?>"><?= $res_display->{$overall} ?></span></td>
+				</tr>
+			</table>
+		</div>
+	</div>
 	<? if($backend_info) { ?>
 	<? $backend_info->{'backend'} =~s/^.*:://; ?>
 	<div class="box box-shadow" id="backend_info_box">
@@ -93,11 +95,8 @@
 
 <div class="grid_14 omega">
 	<div class="box box-shadow">
-		<h2>Test result for <?= $testname ?>: </h2>
-		<div style="margin-left: 1em; font-size: 120%;">Overall result: <div style="width: 8em; text-align:center;
-		font-size: 120%; display: inline-block;"
-		class="<?= "result$overall" ?>"><?= $overall ?></div></p>
-		</div>
+		<h2>Test result for <i><?= $testname ?></i></h2>
+		<p />
 		<table style="width: 95%;">
 			<tr>
 				<th style="width: 200px;" colspan="2">Test</th>
