@@ -53,6 +53,7 @@ foreach my $module (@{$results->{'testmodules'}}) {
 		name => $module->{'name'},
 		result => $module->{'result'},
 		screenshots => \@imglist, wavs => \@wavlist, ocrs => \@ocrlist,
+		attention => (($module->{'flags'}->{'important'}||0) && ($module->{'result'}||'') ne 'ok')?1:0,
 		refimg => 0, audio => $sound, ocr => $ocr
 	});
 }

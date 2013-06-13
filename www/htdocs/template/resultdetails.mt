@@ -107,7 +107,11 @@
 			<? cycle(1) ?>
 			<? for my $module (@$modlist) { ?>
 			<tr class="<?= cycle() ?>">
-				<td class="info" style="width: 1em;"><?= $module->{'refimg'}?encoded_string('&#10063;'):'' ?> <?= $module->{'audio'}?encoded_string('&#9835;'):'' ?> <?= $module->{'ocr'}?encoded_string('&#7425;'):'' ?></td>
+				<td class="info" style="width: 1em;"><?= $module->{'refimg'}?encoded_string('&#10063;'):'' ?>
+				<?= $module->{'audio'}?encoded_string('&#9835;'):'' ?>
+				<?= $module->{'ocr'}?encoded_string('&#7425;'):'' ?>
+				<?= $module->{'attention'}?encoded_string('&#9888;'):'' ?>
+				</td>
 				<td class="component"><a href="/viewsrc/show/<?= $testname ?>/<?= $module->{'name'} ?>/1"><?= $module->{'name'} ?></a></td>
 				<td class="<?= "result$res_css->{$module->{'result'}}" ?>"><?= $res_display->{$module->{'result'}} ?></td>
 				<td class="links" style="width: 60%;">
