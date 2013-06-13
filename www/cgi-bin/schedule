@@ -13,13 +13,11 @@ $|=1;
 
 my $back = param('redirect_back');
 my $cancel = param('cancel');
-if(defined $back and $back) {
-	$back = 1;
+if($back) {
 	print header(-type=>"text/html");
 	print "<script type='text/javascript'>\n";
 }
 else {
-	$back = 0;
 	print header(-type=>"text/plain");
 }
 $cancel = (defined $cancel and $cancel);
@@ -44,10 +42,11 @@ else {
 
 if($back) {
 	my ($distri, $type, $arch, $build, $extrainfo)=split_filename($name);
-	if($cancel) {
+	if($cancel || $back eq 'results') {
 		print "window.location = '/results/';\n";
-	}
-	else {
+	} elsif ($back eq 'details') {
+		print "window.location = '/results/$name';\n";
+	} else {
 		print "window.location = '/buildview/$distri/Build$build';\n";
 	}
 	print '</script>\n';
