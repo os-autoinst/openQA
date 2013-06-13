@@ -93,9 +93,11 @@
 
 <div class="grid_14 omega">
 	<div class="box box-shadow">
-		<h2>Results</h2>
-		<p>This tool displays details on one particular test result.</p>
-		<p />
+		<h2>Test result for <?= $testname ?>: </h2>
+		<div style="margin-left: 1em; font-size: 120%;">Overall result: <div style="width: 8em; text-align:center;
+		font-size: 120%; display: inline-block;"
+		class="<?= "result$overall" ?>"><?= $overall ?></div></p>
+		</div>
 		<table style="width: 95%;">
 			<tr>
 				<th style="width: 200px;" colspan="2">Test</th>
@@ -106,7 +108,7 @@
 			<? for my $module (@$modlist) { ?>
 			<tr class="<?= cycle() ?>">
 				<td class="info" style="width: 1em;"><?= $module->{'refimg'}?encoded_string('&#10063;'):'' ?> <?= $module->{'audio'}?encoded_string('&#9835;'):'' ?> <?= $module->{'ocr'}?encoded_string('&#7425;'):'' ?></td>
-				<td class="component"><? unless($module->{'name'}=~m/timeout|standstill|isosize|overall/) { ?><a href="/viewsrc/show/<?= $testname ?>/<?= $module->{'name'} ?>/1"><?= $module->{'name'} ?></a><? } else { ?><?= $module->{'name'} ?><? } ?></td>
+				<td class="component"><a href="/viewsrc/show/<?= $testname ?>/<?= $module->{'name'} ?>/1"><?= $module->{'name'} ?></a></td>
 				<td class="<?= "result$res_css->{$module->{'result'}}" ?>"><?= $res_display->{$module->{'result'}} ?></td>
 				<td class="links" style="width: 60%;">
 					<? for my $screenshot (@{$module->{'screenshots'}}) { ?>
