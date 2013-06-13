@@ -39,13 +39,15 @@ table {
 		<div class="box-header aligncenter">Actions</div>
 		<div class="aligncenter">
 			<a href="/results/"><img src="/images/back.png" alt="back" title="back to result page" /></a> 
+			<a href="/schedule/<?= $testname ?>?redirect_back=details"><img src="/images/toggle.png" alt="restart" title="Restart Job"/></a>
+			<a href="/schedule/<?= $testname ?>?redirect_back=details&cancel=1"><img src="/images/cancel.png" alt="stop" title="Stop Job"/></a>
 		</div>
 		<table style="width: 90%">
 			<tr>
 				<td style="width: 8em; padding: 0;">Interactive:</td>
 				<td style="width: 4.5em; padding: 0;" id="interactive_indicator" data-next-status="">Unknown</td>
 				<td style="padding: 0;" id="needinput_buttons">
-					<a href="javascript:window.toggleInteractive()" style="display:none" id="interactive_button"><img src="/images/toggle.png" alt="toggle" title="Toggle mode" /></a>
+					<a href="javascript:window.toggleInteractive()" style="display:none" id="interactive_button"><img src="/images/interactive.png" alt="toggle" title="Toggle mode" /></a>
 				</td>
 			</tr>
 			<tr>
