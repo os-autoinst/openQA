@@ -14,7 +14,7 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 @EXPORT = qw(ob_fill_settings list_jobs list_workers worker_register job_grab
- job_release job_done job_stop job_waiting job_continue job_create job_set_prio
+ job_set_scheduled job_set_done job_set_stop job_set_waiting job_set_running job_create job_set_prio
  job_delete job_update_result job_find_by_name($;@) job_restart_by_name
  command_get command_enqueue command_dequeue list_commands);
 
@@ -145,6 +145,23 @@ sub _validate_workerid($)
     die "invalid worker id $workerid\n" unless @$res && @$res == 1 && $res->[0]->[0] == $workerid;
 }
 
+sub _job_get($;$)
+{
+    my $jobid = shift;
+    my $cond = shift;
+
+    my $stmt = $get_job_stmt;
+    $stmt .= $cond if $cond;
+
+    my $sth = $dbh->prepare($stmt);
+    $sth->execute($jobid) or die "$!\n";
+
+    my $job = $sth->fetchrow_hashref;
+    job_fill_settings($job);
+
+    return $job;
+}
+
 # TODO: add some sanity check so the same host doesn't grab two jobs
 sub job_grab
 {
@@ -154,8 +171,6 @@ sub job_grab
 
     _validate_workerid($workerid);
     _seen_worker($workerid);
-
-    my $state = "(select id from job_state where name = 'running' limit 1)";
 
     my $job;
     while (1) {
@@ -171,16 +186,12 @@ sub job_grab
             for my $jobid (@jobids) {
                 $dbh->begin_work;
                 eval {
-                    # XXX: magic constant 2 == running
+		    my $state = "(select id from job_state where name = 'running' limit 1)";
                     my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = ?, start_date = datetime('now'), result = NULL WHERE id = ?");
                     $sth->execute($workerid, $jobid);
                     $dbh->commit;
 
-                    $sth = $dbh->prepare($get_job_stmt.' and jobs.id = ?');
-                    $sth->execute($jobid) or die "$!\n";
-                    $job = $sth->fetchrow_hashref;
-                    job_fill_settings($job);
-
+                    $job = _job_get($jobid, ' and jobs.id = ?');
                 };
                 if ($@) {
                     print STDERR "$@\n";
@@ -202,10 +213,20 @@ sub job_grab
     return $job;
 }
 
+sub job_get($)
+{
+    my $jobid = shift;
+
+    if ($jobid =~ /^\d+$/) {
+	return _job_get($jobid, ' and jobs.id = ?');
+    }
+    return _job_get($jobid, ' and jobs.name = ?');
+}
+
 =head2
-release job from a worker and put back to scheduled (e.g. if worker aborted)
+release job from a worker and put back to scheduled (e.g. if worker aborted). No error check. Meant to be called from worker!
 =cut
-sub job_release
+sub job_set_scheduled
 {
     my $jobid = shift;
 
@@ -216,9 +237,9 @@ sub job_release
 }
 
 =head2
-mark job as done
+mark job as done. No error check. Meant to be called from worker!
 =cut
-sub job_done
+sub job_set_done
 {
     my %args = @_;
     my $jobid = int($args{jobid});
@@ -231,9 +252,9 @@ sub job_done
 }
 
 =head2
-mark job as stopped
+mark job as stopped. No error check. Meant to be called from worker!
 =cut
-sub job_stop
+sub job_set_stop
 {
     my $jobid = shift;
 
@@ -244,9 +265,9 @@ sub job_stop
 }
 
 =head2
-mark job as waiting
+mark job as waiting. No error check. Meant to be called from worker!
 =cut
-sub job_waiting
+sub job_set_waiting
 {
     my $jobid = shift;
 
@@ -257,9 +278,9 @@ sub job_waiting
 }
 
 =head2
-mark job as running
+mark job as running. No error check. Meant to be called from worker!
 =cut
-sub job_continue
+sub job_set_running
 {
     my $jobid = shift;
 
@@ -384,7 +405,7 @@ sub job_update_result
     return $r;
 }
 
-sub job_find_by_name($;@)
+sub _job_find_by_name($;@)
 {
     my $name = shift;
     my @cols = @_;
@@ -397,23 +418,48 @@ sub job_find_by_name($;@)
     return $row||[undef];
 }
 
-sub job_restart_by_name
+sub _job_find_by_id($;@)
 {
-    my $name = shift or die "missing name parameter\n";
+    my $id = shift;
+    my @cols = @_;
+    @cols = ('id') unless @_;
+
+    my $sth = $dbh->prepare("SELECT ".join(',', @cols)." FROM jobs WHERE id = ?");
+    my $rc = $sth->execute($id);
+    my $row = $sth->fetchrow_arrayref;
+
+    return $row||[undef];
+}
+
+# set job to a final state, resetting it's properties
+# parameters:
+# - id or name
+# - command to send to worker if the job is in use
+# - name of final state
+sub _job_set_final_state($$$)
+{
+    my $name = shift;
+    my $cmd = shift;
+    my $statename = shift;
 
     # needs to be a transaction as we need to make sure no worker assigns
     # itself while we modify the job
     $dbh->begin_work;
     eval {
-        my ($id, $workerid) = @{job_find_by_name($name, 'id', 'worker')};
+        my ($id, $workerid);
+	if ($name =~ /^\d+$/ ) {
+		($id, $workerid) = @{_job_find_by_id($name, 'id', 'worker')};
+	} else {
+		($id, $workerid) = @{_job_find_by_name($name, 'id', 'worker')};
+	}
 
         print STDERR "workerid $id, $workerid\n";
         if ($workerid) {
             my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
-            my $rc = $sth->execute($workerid, "abort") or die $dbh->error;
+            my $rc = $sth->execute($workerid, $cmd) or die $dbh->error;
         } else {
-            my $state = "(select id from job_state where name = 'scheduled' limit 1)";
-            my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
+            my $stateid = "(select id from job_state where name = '$statename' limit 1)";
+            my $sth = $dbh->prepare("UPDATE jobs set state = $stateid, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
             my $r = $sth->execute($id) or die $dbh->errstr;
 
         }
@@ -426,34 +472,16 @@ sub job_restart_by_name
     }
 }
 
-# XXX same as job_restart_by_name with s/abort/stop;s/scheduled/stopped/
-sub job_stop_by_name
+sub job_restart
 {
     my $name = shift or die "missing name parameter\n";
+    return _job_set_final_state($name, "abort", "scheduled");
+}
 
-    # needs to be a transaction as we need to make sure no worker assigns
-    # itself while we modify the job
-    $dbh->begin_work;
-    eval {
-        my ($id, $workerid) = @{job_find_by_name($name, 'id', 'worker')};
-
-        print STDERR "workerid $id, $workerid\n";
-        if ($workerid) {
-            my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
-            my $rc = $sth->execute($workerid, "stop") or die $dbh->error;
-        } else {
-            my $state = "(select id from job_state where name = 'stopped' limit 1)";
-            my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
-            my $r = $sth->execute($id) or die $dbh->errstr;
-
-        }
-        $dbh->commit;
-    };
-    if ($@) {
-        print STDERR "$@\n";
-        eval { $dbh->rollback };
-        next;
-    }
+sub job_stop
+{
+    my $name = shift or die "missing name parameter\n";
+    return _job_set_final_state($name, "stop", "stopped");
 }
 
 sub command_get

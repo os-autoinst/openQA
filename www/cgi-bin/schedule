@@ -33,10 +33,9 @@ if(!is_authorized_rw()) {
 }
 else {
 	if($cancel) {
-	    Scheduler::job_stop_by_name($name);
-	}
-	else {
-	    Scheduler::job_restart_by_name($name);
+	    Scheduler::job_stop($name);
+	} else {
+	    Scheduler::job_restart($name);
 	}
 }
 

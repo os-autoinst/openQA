@@ -63,14 +63,15 @@ my %cmds = map { $_ => 0 } (qw/
 	/);
 for (qw/
 	echo
+	job_get
 	job_delete
-	job_release
-	job_stop
-	job_waiting
-	job_continue
+	job_set_scheduled
+	job_set_stop
+	job_set_waiting
+	job_set_running
 	job_find_by_name
-	job_restart_by_name
-	job_stop_by_name
+	job_restart
+	job_stop
 	iso_new
         iso_delete
         iso_stop
@@ -81,7 +82,7 @@ for (qw/
 for (qw/
 	job_set_prio
 	job_grab
-	job_done
+	job_set_done
 	job_update_result
 	command_enqueue
 	command_dequeue

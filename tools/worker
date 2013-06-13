@@ -74,9 +74,9 @@ my $got_sigchld = 0;
 my $client_commands = [qw/
 	list_jobs
 	job_grab
-	job_release
+	job_set_scheduled
 	job_set_prio
-	job_done
+	job_set_done
 	worker_register
 	command_get
 	command_dequeue
@@ -196,12 +196,12 @@ sub job_release_or_done($$$)
 		# give up if the prio is too bad
 		if ($job->{'priority'} gt 70) {
 			printf "setting job %d to $result\n", $job->{'id'} if $verbose;
-			$client->job_done($job->{'id'}, $result);
+			$client->job_set_done($job->{'id'}, $result);
 		} else {
 			printf "releasing job %d\n", $job->{'id'} if $verbose;
 			# make it less attractive so we don't get it again
 			$client->job_set_prio($job->{'id'}, $job->{'priority'}+1);
-			$client->job_release($job->{'id'});
+			$client->job_set_scheduled($job->{'id'});
 		}
 	}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 }
@@ -252,7 +252,7 @@ sub main()
 				if ($worker) {
 					_kill_worker($worker);
 					$retries = 3; while(1) { eval {
-						$client->job_release($job->{'id'});
+						$client->job_set_scheduled($job->{'id'});
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 					$aborted = 'quit';
 				}
@@ -260,7 +260,7 @@ sub main()
 				if ($worker) {
 					_kill_worker($worker);
 					$retries = 3; while(1) { eval {
-						$client->job_release($job->{'id'});
+						$client->job_set_scheduled($job->{'id'});
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 					$aborted = 'abort';
 				}
@@ -344,7 +344,7 @@ sub main()
 			unless ($worker) {
 				warn "launching worker failed, releasing job\n";
 				$retries = 3; while(1) { eval {
-					$client->job_release($job->{'id'});
+					$client->job_set_scheduled($job->{'id'});
 				}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 				$job = undef;
 			}
@@ -408,10 +408,10 @@ sub main()
 
 				# if there's no results.json start.pl probably died early, e.g. due to configuration
 				# problem. Release the job so another worker may grab it.
-				if (results_ok("$testresults/results.json")) {
+				if (($aborted||'') eq 'stop' || results_ok("$testresults/results.json")) {
 					$retries = 3; while(1) { eval {
 						printf "setting job %d to $result\n", $job->{'id'} if $verbose;
-						$client->job_done($job->{'id'}, $result);
+						$client->job_set_done($job->{'id'}, $result);
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 				} else {
 					job_release_or_done($client, $job, $result);
@@ -429,7 +429,7 @@ sub main()
 		_kill_worker($worker);
 		unlink($testresults);
 		$retries = 3; while(1) { eval {
-			$client->job_release($job->{'id'});
+			$client->job_set_scheduled($job->{'id'});
 		}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 	}
 }

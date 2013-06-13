@@ -187,6 +187,8 @@ sub iso_new : Num
 }
 
 
+# FIXME: this function is bad, it should do the db query properly
+# and handle jobs assigned to workers
 sub iso_delete : Num(iso)
 {
     my $self = shift;
@@ -204,6 +206,8 @@ sub iso_delete : Num(iso)
 }
 
 
+# FIXME: this function is bad, it should do the db query properly
+# and handle jobs assigned to workers
 sub iso_stop : Num(iso)
 {
     my $self = shift;
@@ -215,7 +219,7 @@ sub iso_stop : Num(iso)
     my $jobs = list_jobs;
     foreach my $job (@$jobs) {
 	if ($job->{settings}->{ISO} eq $iso) {
-	    Scheduler::job_stop($job->{id});
+	    Scheduler::job_set_stop($job->{id});
 	}
     }
 }
@@ -242,62 +246,62 @@ sub job_grab : Num
 =head2
 release job from a worker and put back to scheduled (e.g. if worker aborted)
 =cut
-sub job_release : Public(id:num)
+sub job_set_scheduled : Public(id:num)
 {
     my $self = shift;
     my $args = shift;
 
-    my $r = Scheduler::job_release( $args->{id} );
+    my $r = Scheduler::job_set_scheduled( $args->{id} );
     $self->raise_error(code => 400, message => "failed to release job") unless $r == 1;
 }
 
 =head2
 mark job as done
 =cut
-sub job_done : Public #(id:num, result)
+sub job_set_done : Public #(id:num, result)
 {
     my $self = shift;
     my $args = shift;
     my $jobid = int(shift $args);
     my $result = shift $args;
 
-    my $r = Scheduler::job_done( jobid => $jobid, result => $result );
+    my $r = Scheduler::job_set_done( jobid => $jobid, result => $result );
     $self->raise_error(code => 400, message => "failed to finish job") unless $r == 1;
 }
 
 =head2
 mark job as stopped
 =cut
-sub job_stop : Public(id:num)
+sub job_set_stop : Public(id:num)
 {
     my $self = shift;
     my $args = shift;
 
-    my $r = Scheduler::job_stop( $args->{id} );
+    my $r = Scheduler::job_set_stop( $args->{id} );
     $self->raise_error(code => 400, message => "failed to stop job") unless $r == 1;
 }
 
 =head2
 mark job as waiting
 =cut
-sub job_waiting : Public(id:num)
+sub job_set_waiting : Public(id:num)
 {
     my $self = shift;
     my $args = shift;
 
-    my $r = Scheduler::job_waiting( $args->{id} );
+    my $r = Scheduler::job_set_waiting( $args->{id} );
     $self->raise_error(code => 400, message => "failed to set job to waiting") unless $r == 1;
 }
 
 =head2
 continue job after waiting
 =cut
-sub job_continue : Public(id:num)
+sub job_set_continue : Public(id:num)
 {
     my $self = shift;
     my $args = shift;
 
-    my $r = Scheduler::job_continue( $args->{id} );
+    my $r = Scheduler::job_set_continue( $args->{id} );
     $self->raise_error(code => 400, message => "failed to continue job") unless $r == 1;
 }
 
@@ -349,31 +353,22 @@ sub job_update_result : Public #(id:num, result)
     $self->raise_error(code => 400, message => "didn't update anything") unless $r == 1;
 }
 
-sub job_find_by_name : Public #(name:str)
+sub job_restart: Public #(name:str)
 {
     my $self = shift;
     my $args = shift;
     my $name = shift @$args or die "missing name parameter\n";
 
-    return Scheduler::job_find_by_name($name)->[0];
+    Scheduler::job_restart($name);
 }
 
-sub job_restart_by_name : Public #(name:str)
+sub job_stop: Public #(name:str)
 {
     my $self = shift;
     my $args = shift;
     my $name = shift @$args or die "missing name parameter\n";
 
-    Scheduler::job_restart_by_name($name);
-}
-
-sub job_stop_by_name : Public #(name:str)
-{
-    my $self = shift;
-    my $args = shift;
-    my $name = shift @$args or die "missing name parameter\n";
-
-    Scheduler::job_stop_by_name($name);
+    Scheduler::job_stop($name);
 }
 
 sub command_get : Arr #(workerid:num)
@@ -409,5 +404,15 @@ sub list_commands : Public
 {
     return Scheduler::list_commands;
 }
+
+sub job_get : Public #(jobid)
+{
+    my $self = shift;
+    my $args = shift;
+    my $jobid = shift @$args;
+
+    return Scheduler::job_get($jobid);
+}
+
 
 1;
