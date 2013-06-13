@@ -422,7 +422,7 @@ sub job_restart_by_name
     if ($@) {
         print STDERR "$@\n";
         eval { $dbh->rollback };
-        next;
+        return;
     }
 }
 
