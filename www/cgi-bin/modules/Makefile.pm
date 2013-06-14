@@ -45,145 +45,208 @@ sub worker_register : Num(host, instance, backend)
 
 sub iso_new : Num
 {
-	my $self = shift;
-	my $args = shift;
-	my $iso;
+    my $self = shift;
+    my $args = shift;
+    my $iso;
 
-	my %testruns = ( 64 => { applies => sub { $_[0]->{arch} =~ /Biarch/ },
-                                 settings => {'QEMUCPU' => 'qemu64'} },
-			 kde => {
-				 settings => {
-					 'DESKTOP' => 'kde',
-				 },
-				 prio => 45,
-			 },
-			 gnome => { applies => sub {1},
-                                    settings => {'DESKTOP' => 'gnome', 'LVM' => '1'},
-				    prio => 45,
-				},
-			 RAID0 => { applies => sub {1},
-                                    settings => {'RAIDLEVEL' => '0'} },
-			 RAID1 => { applies => sub {1},
-                                    settings => {'RAIDLEVEL' => '1'} },
-			 RAID10 => { applies => sub {1},
-                                     settings => {'RAIDLEVEL' => '10'} },
-			 RAID5 => { applies => sub {1},
-                                    settings => {'RAIDLEVEL' => '5'} },
-			 btrfs => { applies => sub {1},
-                                    settings => {'BTRFS' => '1'} },
-			 btrfscryptlvm => { applies => sub {1},
-                                            settings => {'BTRFS' => '1', 'ENCRYPT' => '1', 'LVM' => '1'} },
-			 cryptlvm => { applies => sub {1},
-                                       settings => {'REBOOTAFTERINSTALL' => '0', 'ENCRYPT' => '1', 'LVM' => '1'} },
-			 de => { applies => sub {1},
-                                 settings => {'DOCRUN' => '1', 'INSTLANG' => 'de_DE', 'QEMUVGA' => 'std'} },
-			 doc => { applies => sub {1},
-                                  settings => {'DOCRUN' => '1', 'QEMUVGA' => 'std'} },
-			 live => { applies => sub { $_[0]->{flavor} =~ /Live/ },
-                                   settings => {'LIVETEST' => '1', 'REBOOTAFTERINSTALL' => '0'} },
-			 lxde => { applies => sub { $_[0]->{flavor} !~ /Live/ },
-                                   settings => {'DESKTOP' => 'lxde', 'LVM' => '1'},
-				   prio => 45,
-			       },
-                         xfce => { applies => sub { $_[0]->{flavor} !~ /Live/ },
-                                   settings => {'DESKTOP' => 'xfce'},
-				   prio => 45,
-			       },
-			 minimalx => { applies => sub { $_[0]->{flavor} !~ /Live/ },
-                                       settings => {'DESKTOP' => 'minimalx'},
-				       prio => 45,
-				   },
-			 nice => { applies => sub {1},
-                                   settings => {'NICEVIDEO' => '1', 'DOCRUN' => '1', 'REBOOTAFTERINSTALL' => '0', 'SCREENSHOTINTERVAL' => '0.25'} },
-			 smp => { applies => sub {1},
-                                  settings => {'QEMUCPUS' => '4'} },
-			 splitusr => { applies => sub { $_[0]->{flavor} !~ /Live/ },
-                                       settings => {'SPLITUSR' => '1'} },
-			 textmode => { applies => sub { $_[0]->{flavor} !~ /Live/ },
-                                       settings => {'DESKTOP' => 'textmode', 'VIDEOMODE' => 'text'},
-				       prio => 40,
-				   },
-			 uefi => { applies => sub {1},
-                                   settings => {'UEFI' => '1', 'DESKTOP' => 'lxde'} },
-			 usbboot => { applies => sub {1},
-                                      settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
-			 usbinst => { applies => sub {1},
-                                      settings => {'USBBOOT' => '1'} }
+    ### definition of special tests
+    my %testruns = (
+        64 => {
+            applies => '$iso{arch} =~ /Biarch/',
+            settings => {'QEMUCPU' => 'qemu64'} },
+        default => {
+            settings => { 'DESKTOP' => 'kde' },
+            prio => 60 },
+        kde => {
+            applies => '$iso{flavor} !~ /GNOME/',
+            settings => { 'DESKTOP' => 'kde' },
+            prio => 45 },
+        gnome => {
+            applies => sub { $_[0]->{flavor} !~ /KDE/ },
+            settings => {'DESKTOP' => 'gnome', 'LVM' => '1'},
+            prio => 45 },
+        lxde => {
+            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            settings => {'DESKTOP' => 'lxde',
+                         'LVM' => '1'},
+            prio => 45 },
+        xfce => {
+            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            settings => {'DESKTOP' => 'xfce'},
+            prio => 45 },
+        minimalx => {
+            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            settings => {'DESKTOP' => 'minimalx'},
+            prio => 45 },
+        textmode => {
+            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            settings => {'DESKTOP' => 'textmode',
+                         'VIDEOMODE' => 'text'},
+            prio => 40 },
+        RAID0 => {
+            settings => {'RAIDLEVEL' => '0'} },
+        RAID1 => {
+            settings => {'RAIDLEVEL' => '1'} },
+        RAID5 => {
+            settings => {'RAIDLEVEL' => '5'} },
+        RAID10 => {
+            settings => {'RAIDLEVEL' => '10'} },
+        btrfs => {
+            settings => {'BTRFS' => '1'} },
+        btrfscryptlvm => {
+            settings => {'BTRFS' => '1',
+                         'ENCRYPT' => '1',
+                         'LVM' => '1'} },
+        cryptlvm => {
+            settings => {'REBOOTAFTERINSTALL' => '0',
+                         'ENCRYPT' => '1',
+                         'LVM' => '1'} },
+        doc_de => {
+            applies => 0,
+            settings => {'DOCRUN' => '1',
+                         'INSTLANG' => 'de_DE',
+                         'QEMUVGA' => 'std'} },
+        doc => { 
+            settings => {'DOCRUN' => '1',
+                         'QEMUVGA' => 'std'} },
+        live => {
+            applies => sub { $_[0]->{flavor} =~ /Live/ },
+            settings => {'LIVETEST' => '1',
+                         'REBOOTAFTERINSTALL' => '0'} },
+        rescue => {
+            applies => sub { $_[0]->{flavor} =~ /Rescue/ },
+            settings => {'DESKTOP' => 'xfce',
+                         'LIVETEST' => '1',
+                         'REBOOTAFTERINSTALL' => '0'} },
+        nice => { 
+            settings => {'NICEVIDEO' => '1',
+                         'DOCRUN' => '1',
+                         'REBOOTAFTERINSTALL' => '0',
+                         'SCREENSHOTINTERVAL' => '0.25'} },
+        smp => { 
+            settings => {'QEMUCPUS' => '4'} },
+        splitusr => {
+            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            settings => {'SPLITUSR' => '1'} },
+        uefi => { 
+            settings => {'UEFI' => '1',
+                         'DESKTOP' => 'lxde'} },
+        usbboot => {
+            applies => sub { $_[0]->{flavor} =~ /Live/ },
+            settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
+        usbinst => {
+            settings => {'USBBOOT' => '1'} }
         );
 
-	my @requested_runs;
-	for my $arg (@$args) {
-	    if ($arg =~ /\.iso$/) {
-		# remove any path info path from iso file name
-		($iso = $arg) =~ s|^.*/||;
-	    } elsif (exists $testruns{$arg}) {
-		push @requested_runs, $arg;
-	    } else {
-		die "invalid parameter $arg";
-	    }
-	}
+    my @requested_runs;
 
-	my $params = openqa::parse_iso($iso);
+    # handle given parameters
+    for my $arg (@$args) {
+        if ($arg =~ /\.iso$/) {
+            # remove any path info path from iso file name
+            ($iso = $arg) =~ s|^.*/||;
+        } elsif (exists $testruns{$arg}) {
+            push @requested_runs, $arg;
+        } else {
+            die "invalid parameter $arg";
+        }
+    }
 
-        my $cnt = 0;
+    # parse the iso filename
+    my $params = openqa::parse_iso($iso);
+    
+    ### iso-based test restrictions go here
+    # Rescue_CD cannot be installed; so livetest only
+    if($params->{flavor} =~ m/Rescue/i) {
+        @requested_runs = ( 'rescue' );
+    }
+ 
+    my $cnt = 0;
 
-        # only continue if parsing the ISO filename was successful
-	if ( $params ) {
-            # go through all the testscenarios defined in %testruns:
-            foreach my $run ( @requested_runs || keys(%testruns) ) {
-                # the testrun applies if the anonlymous 'applies' function returns true
-		if ( !$testruns{$run}->{applies} || $testruns{$run}->{applies}->($params) ) {
-		    print STDERR "$run applied $iso\n";
-		} else {
-		    print STDERR "$run didn't apply $iso\n";
-		    next;
-		}
-
-                # set defaults here:
-                my %settings = ( ISO => $iso,
-                                 NAME => join('-', @{$params}{qw(distri version flavor arch build)}, $run),
-                                 DISTRI => lc($params->{distri}),
-                                 DESKTOP => 'kde' );
-
-                # merge defaults form above with the settings from %testruns
-                my $test_definition = $testruns{$run}->{settings};
-                @settings{keys %$test_definition} = values %$test_definition;
-
-		## define some default envs
-
-		# match i386, i586, i686 and Biarch-i586-x86_64
-		if ($params->{arch} =~ m/i[3-6]86/) {
-		  $settings{QEMUCPU} ||= 'qemu32';
-		}
-		if($params->{flavor} =~ m/Live/i || $params->{flavor} =~ m/Rescue/i) {
-		  $settings{LIVECD}=1;
-		}
-		if ($params->{flavor} =~ m/Promo/i) {
-		  $settings{PROMO}=1;
-                  $settings{NOIMAGES}=1;
-		}
-		if($params->{flavor}=~m/(DVD|NET|KDE|GNOME|LXDE|XFCE)/) {
-		  $settings{$1}=1;
-		  $settings{NETBOOT}=$settings{NET} if exists $settings{NET};
-
-		  if($settings{LIVECD}) {
-		    $settings{DESKTOP}=lc($1);
-		  }
-		}
-
-                # create a new job with these parameters and count if successful
-		my $id = Scheduler::job_create(%settings);
-		if ($id) {
-		    $cnt++;
-		    if ($testruns{$run}->{prio}) {
-			Scheduler::job_set_prio(jobid => $id, prio => $testruns{$run}->{prio});
-		    }
-		}
+    # only continue if parsing the ISO filename was successful
+    if ( $params ) {
+        # go through all requested special tests or all of them if nothing requested
+        foreach my $run ( @requested_runs ? @requested_runs : keys(%testruns) ) {
+            # ...->{applies} can be a function ref to be executed, a string to be eval'ed or
+            # can even not exist.
+            # if it results to true or does not exist the test is assumed to apply
+            my $applies = 0;
+            if ( defined $testruns{$run}->{applies} ) {
+                if ( ref($testruns{$run}->{applies}) eq 'CODE' ) {
+                    $applies = $testruns{$run}->{applies}->($params);
+                } else {
+                    my %iso = %$params;
+                    $applies = eval $testruns{$run}->{applies};
+                    warn "error in testrun '$run': $@" if $@;
+                }
+            } else {
+                $applies = 1;
             }
 
-	}
+            # som debug output
+            if ( $applies ) {
+                print STDERR "$run applied $iso\n";
+            } else {
+                print STDERR "$run didn't apply $iso\n";
+                next;
+            }
 
-        return $cnt;
+            # set defaults here:
+            my %settings = ( ISO => $iso,
+                             NAME => join('-', @{$params}{qw(distri version flavor arch build)}, $run),
+                             DISTRI => lc($params->{distri}),
+                             DESKTOP => 'kde' );
+
+            # merge defaults form above with the settings from %testruns
+            my $test_definition = $testruns{$run}->{settings};
+            @settings{keys %$test_definition} = values %$test_definition;
+
+            ## define some default envs
+
+            # match i386, i586, i686 and Biarch-i586-x86_64
+            if ($params->{arch} =~ m/i[3-6]86/) {
+                $settings{QEMUCPU} ||= 'qemu32';
+            }
+            if($params->{flavor} =~ m/Live/i || $params->{flavor} =~ m/Rescue/i) {
+                $settings{LIVECD}=1;
+            }
+            if ($params->{flavor} =~ m/Promo/i) {
+                $settings{PROMO}=1;
+                $settings{NOIMAGES}=1;
+            }
+            if($params->{flavor}=~m/(DVD|NET|KDE|GNOME|LXDE|XFCE)/) {
+                $settings{$1}=1;
+                $settings{NETBOOT}=$settings{NET} if exists $settings{NET};
+
+                if($settings{LIVECD}) {
+		    $settings{DESKTOP}=lc($1);
+                }
+            }
+
+            # default priority
+            my $prio = 50;
+            
+            # change prio if defined
+            $prio = $testruns{$run}->{prio} if ($testruns{$run}->{prio});
+
+            # increase priority for DVDs
+            $prio += 20 if($params->{flavor}=~m/DVD/);
+
+            # create a new job with these parameters and count if successful
+            my $id = Scheduler::job_create(%settings);
+            if ($id) {
+                $cnt++;
+
+                # change prio only if other than defalt prio
+                if( $prio != 50 ) {
+                    Scheduler::job_set_prio(jobid => $id, prio => $prio);
+                }
+            }
+        }
+
+    }
+
+    return $cnt;
 }
 
 
