@@ -155,11 +155,25 @@ sub parse_iso($) {
     my $arch = '(i[356]86|x86_64|BiArch-i586-x86_64|ia64|ppc64|s390x)';
     my $build = '(Build(?:\d+))';
 
-    my @parts = $iso =~ /^$distri(?:-$version)?-$flavor-$arch(?:-$build)?.*\.iso$/i;
+    my @parts = $iso =~ /^$distri(?:-$version)?-$flavor(?:-$build)?-$arch.*\.iso$/i;
+
+    my $order = 1;
+    if (!$parts[3] ) {
+	@parts = $iso =~ /^$distri(?:-$version)?-$flavor-$arch(?:-$build)?.*\.iso$/i;
+	$order = 2;
+    }
+
+    foreach (@parts) {
+	print STDERR "{$_}\n";
+    }
 
     if( @parts ) {
         my %params;
-        @params{qw(distri version flavor arch build)} = @parts;
+	if ($order == 1) {
+	    @params{qw(distri version flavor build arch)} = @parts;
+	} else {
+	    @params{qw(distri version flavor arch build)} = @parts;
+	}
         $params{version} ||= 'Factory';
         
         if (wantarray()) {
