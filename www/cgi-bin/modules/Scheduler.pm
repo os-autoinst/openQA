@@ -341,6 +341,11 @@ sub job_create
 		$maxsize=4_700_372_992;
 	    }
 	}
+	# live images are for 1G sticks
+        if ($settings{ISO} =~ /-Live/ && $settings{ISO} !~ /CD/) {
+            $maxsize=999_999_999;
+        }
+
 	$settings{ISO_MAXSIZE} = $maxsize;
     }
 
