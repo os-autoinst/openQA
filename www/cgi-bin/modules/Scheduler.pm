@@ -35,6 +35,10 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=$openqa::dbfile","","");
 $dbh->{RaiseError} = 1;
 $dbh->do("PRAGMA foreign_keys = ON");
 
+# in the hope to make it faster
+# http://www.sqlite.org/pragma.html#pragma_synchronous
+$dbh->do("PRAGMA synchronous = OFF;");
+
 sub job_fill_settings
 {
     my $job = shift;
