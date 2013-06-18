@@ -134,6 +134,11 @@ sub iso_new : Num
         usbboot => {
             applies => sub { $_[0]->{flavor} =~ /Live/ },
             settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
+        usbboot_uefi => {
+            applies => sub { $_[0]->{flavor} =~ /Live/ },
+            settings => {'USBBOOT' => '1',
+			 'LIVETEST' => '1',
+			 'UEFI' => '1'} },
         usbinst => {
             settings => {'USBBOOT' => '1'} }
         );
