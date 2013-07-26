@@ -6,6 +6,7 @@
 Description=openQA Worker #%i
 Wants=apache2.service
 After=apache2.service
+PartOf=openqa-worker.target
 
 [Service]
 Type=simple
