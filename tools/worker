@@ -55,6 +55,7 @@ use JSON::RPC::Client;
 use Fcntl;
 use File::Path qw/make_path remove_tree/;
 use File::Copy qw(copy move);
+use File::Copy::Recursive qw(dirmove);
 use FindBin;
 #use lib "$FindBin::Bin/../www/cgi-bin/modules"
 #use openqa;
@@ -399,11 +400,13 @@ sub main()
 					remove_tree("$logupload_dir/$name/"); # cleanup
 				}
 
-				unless (move("$pooldir/testresults/$name", $testresults)) {
+				unless (dirmove("$pooldir/testresults/$name", $testresults)) {
 					warn "can't move test results $pooldir/testresults/$name -> $testresults: $!\n";
+					$keep_running = 0;
 				}
 				unless (move("$pooldir/autoinst-log.txt", $testresults.'/autoinst-log.txt')) {
 					warn "can't move log: $!\n";
+					$keep_running = 0;
 				}
 
 				# if there's no results.json start.pl probably died early, e.g. due to configuration
