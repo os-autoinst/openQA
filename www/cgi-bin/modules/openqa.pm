@@ -151,7 +151,7 @@ sub parse_iso($) {
 
     my $distri = '(openSUSE|SLES)';
     my $version = '(\d+.\d|\d+-SP\d|Factory)';
-    my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-)?DVD|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO)';
+    my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-)?DVD|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO|staging_[^-]+)';
     my $arch = '(i[356]86|x86_64|BiArch-i586-x86_64|ia64|ppc64|s390x)';
     my $build = '(Build(?:\d+))';
 
@@ -163,10 +163,10 @@ sub parse_iso($) {
 	$order = 2;
     }
 
-    foreach (@parts) {
-	print STDERR "{$_}\n";
-    }
-
+#    foreach (@parts) {
+#	print STDERR "{$_}\n";
+#    }
+#
     if( @parts ) {
         my %params;
 	if ($order == 1) {
