@@ -235,7 +235,7 @@ sub iso_new : Num
             $prio = $testruns{$run}->{prio} if ($testruns{$run}->{prio});
 
             # increase priority for DVDs
-            $prio += 20 if($params->{flavor}=~m/DVD/);
+            $prio -= 20 if($params->{flavor}=~m/DVD/);
 
             # create a new job with these parameters and count if successful
             my $id = Scheduler::job_create(%settings);
