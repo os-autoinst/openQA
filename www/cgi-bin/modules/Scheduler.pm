@@ -422,9 +422,21 @@ sub _job_find_by_name($;@)
 
     my $sth = $dbh->prepare("SELECT ".join(',', @cols)." FROM jobs WHERE name = ?");
     my $rc = $sth->execute($name);
-    my $row = $sth->fetchrow_arrayref;
+    return $sth;
+}
 
-    return $row||[undef];
+sub _jobs_find_by_iso($;@)
+{
+    my $iso = shift;
+    my @cols = @_;
+    @cols = ('id') unless @_;
+
+    my $sth = $dbh->prepare("SELECT ".join(',', @cols)." FROM jobs, job_settings"
+	    . " WHERE jobs.id == job_settings.jobid"
+	    . " AND job_settings.key == 'ISO'"
+	    . " AND job_settings.value == ?");
+    my $rc = $sth->execute($iso);
+    return $sth;
 }
 
 sub _job_find_by_id($;@)
@@ -435,9 +447,7 @@ sub _job_find_by_id($;@)
 
     my $sth = $dbh->prepare("SELECT ".join(',', @cols)." FROM jobs WHERE id = ?");
     my $rc = $sth->execute($id);
-    my $row = $sth->fetchrow_arrayref;
-
-    return $row||[undef];
+    return $sth;
 }
 
 # set job to a final state, resetting it's properties
@@ -455,23 +465,27 @@ sub _job_set_final_state($$$)
     # itself while we modify the job
     $dbh->begin_work;
     eval {
-        my ($id, $workerid);
+	my $sth;
 	if ($name =~ /^\d+$/ ) {
-		($id, $workerid) = @{_job_find_by_id($name, 'id', 'worker')};
+		$sth = _job_find_by_id($name, 'id', 'worker');
+	} elsif ($name =~ /\.iso$/) {
+		$sth = _jobs_find_by_iso($name, 'id', 'worker');
 	} else {
-		($id, $workerid) = @{_job_find_by_name($name, 'id', 'worker')};
+		$sth = _job_find_by_name($name, 'id', 'worker');
 	}
 
-        print STDERR "workerid $id, $workerid\n";
-        if ($workerid) {
-            my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
-            my $rc = $sth->execute($workerid, $cmd) or die $dbh->error;
-        } else {
-            my $stateid = "(select id from job_state where name = '$statename' limit 1)";
-            my $sth = $dbh->prepare("UPDATE jobs set state = $stateid, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
-            my $r = $sth->execute($id) or die $dbh->errstr;
+	while (my ($id, $workerid) = @{$sth->fetchrow_arrayref||[]}) {
+	    print STDERR "workerid $id, $workerid -> $cmd\n";
+	    if ($workerid) {
+		my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
+		my $rc = $sth->execute($workerid, $cmd) or die $dbh->error;
+	    } else {
+		my $stateid = "(select id from job_state where name = '$statename' limit 1)";
+		my $sth = $dbh->prepare("UPDATE jobs set state = $stateid, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
+		my $r = $sth->execute($id) or die $dbh->errstr;
 
-        }
+	    }
+	}
         $dbh->commit;
     };
     if ($@) {

@@ -275,8 +275,6 @@ sub iso_delete : Num(iso)
 }
 
 
-# FIXME: this function is bad, it should do the db query properly
-# and handle jobs assigned to workers
 sub iso_stop : Num(iso)
 {
     my $self = shift;
@@ -285,12 +283,7 @@ sub iso_stop : Num(iso)
     # remove any path info path from iso file name
     (my $iso = $args->{iso}) =~ s|^.*/||;
 
-    my $jobs = list_jobs;
-    foreach my $job (@$jobs) {
-	if ($job->{settings}->{ISO} eq $iso) {
-	    Scheduler::job_set_stop($job->{id});
-	}
-    }
+    Scheduler::job_stop($iso);
 }
 
 
