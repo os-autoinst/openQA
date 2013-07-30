@@ -54,9 +54,6 @@ sub iso_new : Num
         64 => {
             applies => '$iso{arch} =~ /Biarch/',
             settings => {'QEMUCPU' => 'qemu64'} },
-        default => {
-            settings => { 'DESKTOP' => 'kde' },
-            prio => 60 },
         kde => {
             applies => '$iso{flavor} !~ /GNOME/',
             settings => { 'DESKTOP' => 'kde' },
@@ -66,12 +63,12 @@ sub iso_new : Num
             settings => {'DESKTOP' => 'gnome', 'LVM' => '1'},
             prio => 45 },
         lxde => {
-            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {'DESKTOP' => 'lxde',
                          'LVM' => '1'},
             prio => 45 },
         xfce => {
-            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {'DESKTOP' => 'xfce'},
             prio => 45 },
         minimalx => {
@@ -84,20 +81,27 @@ sub iso_new : Num
                          'VIDEOMODE' => 'text'},
             prio => 40 },
         RAID0 => {
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'RAIDLEVEL' => '0'} },
         RAID1 => {
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'RAIDLEVEL' => '1'} },
         RAID5 => {
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'RAIDLEVEL' => '5'} },
         RAID10 => {
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'RAIDLEVEL' => '10'} },
         btrfs => {
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'BTRFS' => '1'} },
         btrfscryptlvm => {
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'BTRFS' => '1',
                          'ENCRYPT' => '1',
                          'LVM' => '1'} },
         cryptlvm => {
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'REBOOTAFTERINSTALL' => '0',
                          'ENCRYPT' => '1',
                          'LVM' => '1'} },
@@ -107,6 +111,7 @@ sub iso_new : Num
                          'INSTLANG' => 'de_DE',
                          'QEMUVGA' => 'std'} },
         doc => { 
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'DOCRUN' => '1',
                          'QEMUVGA' => 'std'} },
         live => {
@@ -119,14 +124,16 @@ sub iso_new : Num
                          'LIVETEST' => '1',
                          'REBOOTAFTERINSTALL' => '0'} },
         nice => { 
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'NICEVIDEO' => '1',
                          'DOCRUN' => '1',
                          'REBOOTAFTERINSTALL' => '0',
                          'SCREENSHOTINTERVAL' => '0.25'} },
         smp => { 
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'QEMUCPUS' => '4'} },
         splitusr => {
-            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {'SPLITUSR' => '1'} },
         uefi => { 
             settings => {'UEFI' => '1',
@@ -140,6 +147,7 @@ sub iso_new : Num
 			 'LIVETEST' => '1',
 			 'UEFI' => '1'} },
         usbinst => {
+            applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'USBBOOT' => '1'} }
         );
 
