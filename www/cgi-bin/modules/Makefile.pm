@@ -159,6 +159,7 @@ sub iso_new : Num
 
     # parse the iso filename
     my $params = openqa::parse_iso($iso);
+    die "can't parse iso file name" unless $params;
     
     ### iso-based test restrictions go here
     # Rescue_CD cannot be installed; so livetest only
