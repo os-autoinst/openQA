@@ -11,6 +11,8 @@ my $testname=path_to_testname($ENV{PATH_INFO});
 my $basepath = running_log($testname);
 my $running = !($basepath eq '');
 
+if(!$running && -e testresultdir($testname).'/autoinst-log.txt') { print redirect(-status=>302, -location => "/results/$testname")."test is not running, try results view"; exit 0 }
+
 my $backend_info = parse_log_json($basepath.'autoinst-log.txt');
 
 my $mt = Text::MicroTemplate::Extended->new(
