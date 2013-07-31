@@ -221,6 +221,20 @@ sub results_ok($)
 	return $ret;
 }
 
+sub clean_pool($)
+{
+	my $job = shift;
+	my $name = $job->{'settings'}->{'NAME'};
+	remove_tree(
+		"$logupload_dir/$name",
+		"$pooldir/testresults",
+		"$pooldir/video",
+		"$pooldir/movie",
+		"$pooldir/qemuscreenshot",
+		"$pooldir/raid"
+	);
+}
+
 sub main()
 {
 	my $lockfd = lockit();
@@ -420,6 +434,7 @@ sub main()
 					job_release_or_done($client, $job, $result);
 				}
 			}
+			clean_pool($job);
 			$job = undef;
 			$worker = undef;
 			$worker_start_time = undef;
@@ -434,6 +449,8 @@ sub main()
 		$retries = 3; while(1) { eval {
 			$client->job_set_scheduled($job->{'id'});
 		}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+
+		clean_pool($job);
 	}
 }
 
