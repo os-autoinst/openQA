@@ -81,17 +81,9 @@ for my $r (<$resultdir/*>) {
 			$run_stat->{'run_backend'} = (-e "/proc/$backpid"); # kill 0 does not work with www user
 		}
 		$running = 1;
-	}
-	else {
+	} else {
+		$mtime = (stat(_))[9];
 		$backend_info = parse_log_json("$r/autoinst-log.txt");
-		if( open(FD, $r) ) {
-			my $timeline = <FD>;
-			chomp($timeline);
-			if($timeline=~m/^\d+$/) {
-				$mtime = $timeline;
-			}
-		}
-		close(FD);
 	}
 	my $backend = $backend_info->{'backend'} || '';
 	$backend =~s/^.*:://;
