@@ -560,3 +560,24 @@ sub list_commands
     }
     return $commands;
 }
+
+sub iso_stop_old_builds($)
+{
+    my $pattern = shift;
+
+    my $stopped = "(SELECT id FROM job_state WHERE name = 'stopped' LIMIT 1)";
+    my $scheduled = "(SELECT id FROM job_state WHERE name = 'scheduled' LIMIT 1)";
+    my $sth = $dbh->prepare("UPDATE jobs SET state = $stopped, worker = 0"
+	    . " WHERE id IN"
+	    . " (SELECT jobs.id from jobs, job_settings"
+		. " WHERE jobs.state = $scheduled"
+		. " AND jobs.id = job_settings.jobid"
+		. " AND jobs.state = $scheduled"
+		. " AND job_settings.key = 'ISO'"
+		. " AND job_settings.value LIKE ?)"
+    );
+    my $r = $sth->execute($pattern) or die $dbh->errstr;
+    printf STDERR "stopped %d builds\n", $r;
+    return $r;
+}
+

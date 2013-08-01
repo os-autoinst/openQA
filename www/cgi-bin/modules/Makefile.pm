@@ -175,6 +175,11 @@ sub iso_new : Num
     if($params->{flavor} =~ m/Rescue/i) {
         @requested_runs = ( 'rescue' );
     }
+
+    my $pattern = $iso;
+    if ($pattern =~ s/Build\d.*/Build%/) {
+	Scheduler::iso_stop_old_builds($pattern);
+    }
  
     my $cnt = 0;
 
