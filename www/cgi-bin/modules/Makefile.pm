@@ -136,13 +136,14 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {'SPLITUSR' => '1'} },
         uefi => { 
+            applies => sub { $_[0]->{arch} =~ /x86_64/ },
             settings => {'UEFI' => '1',
                          'DESKTOP' => 'lxde'} },
         usbboot => {
             applies => sub { $_[0]->{flavor} =~ /Live/ },
             settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
         usbboot_uefi => {
-            applies => sub { $_[0]->{flavor} =~ /Live/ },
+            applies => sub { $_[0]->{flavor} =~ /Live/ && $_[0]->{arch} =~ /x86_64/  },
             settings => {'USBBOOT' => '1',
 			 'LIVETEST' => '1',
 			 'UEFI' => '1'} },
