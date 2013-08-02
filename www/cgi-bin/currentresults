@@ -60,7 +60,6 @@ for my $r (<$resultdir/*>) {
 	my ($distri, $type, $arch, $build, $extrainfo)=split_filename($r);
 	my $testname = path_to_testname($r);
 
-	my $backend_info;
 	my $run_stat = {};
 
 	my $results = test_result($testname);
@@ -72,7 +71,6 @@ for my $r (<$resultdir/*>) {
 	if(not -e "$r/autoinst-log.txt") {
 		# running
 		my $running_basepath = running_log($testname);
-		$backend_info = parse_log_json($running_basepath.'autoinst-log.txt');
 		$run_stat = get_running_modinfo($results);
 		$run_stat->{'run_backend'} = 0;
 		if(-e "$running_basepath/os-autoinst.pid") {
@@ -83,9 +81,8 @@ for my $r (<$resultdir/*>) {
 		$running = 1;
 	} else {
 		$mtime = (stat(_))[9];
-		$backend_info = parse_log_json("$r/autoinst-log.txt");
 	}
-	my $backend = $backend_info->{'backend'} || '';
+	my $backend = $results->{'backend'}->{'backend'} || '';
 	$backend =~s/^.*:://;
 	if($options{ib}) {
 		next if(boring::is_boring($r, $result));

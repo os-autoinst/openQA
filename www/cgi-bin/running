@@ -13,11 +13,11 @@ my $running = !($basepath eq '');
 
 if(!$running && -e testresultdir($testname).'/autoinst-log.txt') { print redirect(-status=>302, -location => "/results/$testname")."test is not running, try results view"; exit 0 }
 
-my $backend_info = parse_log_json($basepath.'autoinst-log.txt');
+my $results = test_result($testname);
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, basepath => $basepath, running => $running, backend_info => $backend_info },
+	template_args => { testname => $testname, basepath => $basepath, running => $running, backend_info => $results->{backend} },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

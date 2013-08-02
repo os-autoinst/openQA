@@ -67,8 +67,6 @@ if(-e "$backlogpath/l1") {
 	}
 }
 
-my $backend_info = parse_log_json($fqfn);
-
 # details box
 #FIXME: get test duration
 #my $test_duration = strftime("%H:%M:%S", gmtime(test_duration($testname)));
@@ -82,7 +80,7 @@ my @ulogs = test_uploadlog_list($testname);
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { overall => $results->{'overall'}, modlist => \@modlist, testname => $testname, diskimg => $diskimg, backend_info => $backend_info, resultfiles => \@resultfiles, ulogs => \@ulogs, test_duration => $test_duration },
+	template_args => { overall => $results->{'overall'}, modlist => \@modlist, testname => $testname, diskimg => $diskimg, backend_info => $results->{backend}, resultfiles => \@resultfiles, ulogs => \@ulogs, test_duration => $test_duration },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");
