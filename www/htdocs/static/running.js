@@ -1,6 +1,7 @@
 var scrolldownc = 1;
 var livelog = 0;
 var testStatus = {
+		initialized: 0,
 		testname: null,
 		running: null,
 		workerid: null,
@@ -19,7 +20,8 @@ function updateTestStatus(newStatus) {
 		window.updateNeedinputIndicator();
 	}
 	// If a new module have been started, redraw module list
-	if (window.testStatus.running != newStatus.running) {
+	if (window.testStatus.initialized == 0 || window.testStatus.running != newStatus.running) {
+		window.testStatus.initialized = 1;
 		window.testStatus.running = newStatus.running;
 		new Ajax.Request("/livelog/" + window.testStatus.testname + "?log=modlist", {
 			method: "get",
