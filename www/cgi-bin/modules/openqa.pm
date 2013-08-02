@@ -238,7 +238,7 @@ sub running_state($) {
 sub get_running_modinfo($) {
 	my $results = shift;
 	return {} unless $results;
-	my $currentstep = $results->{'running'};
+	my $currentstep = $results->{'running'}||'';
 	my $modlist = [];
 	my $donecount = 0;
 	my $count = @{$results->{'testmodules'}};
