@@ -249,8 +249,11 @@ sub iso_new : Num
             # change prio if defined
             $prio = $testruns{$run}->{prio} if ($testruns{$run}->{prio});
 
-            # increase priority for DVDs
-            $prio -= 20 if($params->{flavor}=~m/DVD/);
+            # prefer DVDs
+            $prio -= 5 if($params->{flavor}=~m/DVD/);
+
+	    # prefer staging even more
+            $prio -= 10 if($params->{flavor}=~m/staging_/);
 
             # create a new job with these parameters and count if successful
             my $id = Scheduler::job_create(%settings);
