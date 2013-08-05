@@ -19,21 +19,37 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-=head1 boilerplate
+=head1 worker
 
-boilerplate - boilerplate code for perl scripts
+worker - openQA worker daemon
 
 =head1 SYNOPSIS
 
-boilerplate [OPTIONS] FILE
+worker [OPTIONS]
 
 =head1 OPTIONS
 
 =over 4
 
-=item B<--host>
+=item B<--host> HOST
 
 specify dispatcher/scheduler host to connect to
+
+=item B<--instance> NR
+
+specify instance number, ie pool directory to use
+
+=item B<--isotovideo> PATH
+
+path to isotovideo script, useful for running from git
+
+=item B<--no-cleanup>
+
+don't clean pool directory after job
+
+=item B<--verbose>
+
+verbose output
 
 =item B<--help, -h>
 
