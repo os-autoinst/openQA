@@ -98,6 +98,7 @@ sub usage($) {
 
 GetOptions(
 	\%options,
+	"no-cleanup",
 	"instance=i",
 	"isotovideo=s",
 	"host=s",
@@ -223,6 +224,7 @@ sub results_ok($)
 
 sub clean_pool($)
 {
+	return if $options{'no-cleanup'};
 	my $job = shift;
 	my $name = $job->{'settings'}->{'NAME'};
 	remove_tree(
