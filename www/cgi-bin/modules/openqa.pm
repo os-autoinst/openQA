@@ -11,6 +11,7 @@ $prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle
 &parse_log &parse_log_to_stats &parse_log_to_hash &parse_iso &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info
 &test_result &test_result_stats &test_result_hash &test_result_module &test_resultfile_list &testresultdir &test_uploadlog_list
 $localstatedir $dbfile
+&get_failed_needles
 );
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
@@ -473,6 +474,39 @@ sub needle_info($$) {
 	$needle->{'imageurl'} = "/$perlurl/$needledir/$name.png";
 	$needle->{'jsonurl'} = "/$perlurl/$needledir/$name.json";
 	return $needle;
+}
+
+sub get_failed_needles(;$)
+{
+	my $how = shift || 'byname';
+	my $glob = "$resultdir/*/results.json";
+	my $failures;
+	for my $fn (glob $glob) {
+		local $/; # enable localized slurp mode
+		open (my $fd, '<', $fn);
+		my $results = decode_json(<$fd>);
+		close $fn;
+		my $name = $fn;
+		$name =~ s,.*/([^/]+)/results.json$,$1,;
+		for my $module (@{$results->{testmodules}}) {
+			next unless $module->{result} eq 'fail';
+			for my $detail (@{$module->{details}}) {
+				next unless $detail->{result} eq 'fail';
+				next unless $detail->{needles};
+				for my $needle (@{$detail->{needles}}) {
+					if ($how eq 'byname') {
+						push @{$failures->{$name}->{$module->{name}}}, {
+							needle=> $needle->{name},
+							error => $needle->{error}||undef
+						};
+					} elsif ($how eq 'byneedle') {
+						push @{$failures->{$needle->{name}}}, $name;
+					}
+				}
+			}
+		}
+	}
+	return $failures;
 }
 
 1;
