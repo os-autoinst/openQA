@@ -394,7 +394,7 @@ sub job_create : Num
     my %settings;
     die "invalid arguments" unless ref $args eq 'ARRAY';
     for my $i (@$args) {
-        die "invalid argument: $i\n" unless $i =~ /^([A-Z]+)=([^\s]+)$/;
+        die "invalid argument: $i\n" unless $i =~ /^([A-Z_]+)=([^\s]+)$/;
         $settings{$1} = $2;
     }
 
