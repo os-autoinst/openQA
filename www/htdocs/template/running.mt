@@ -98,6 +98,11 @@ table {
 		<div class="box-header aligncenter">Backend</div>
 		<div style="margin: 0 3px 0 3px;" class="cligncenter">
 			<table style="border: none; margin: 0;" class="infotbl">
+				<? if($results->{'workerid'}) { ?>
+					<tr>
+						<td>Worker #<?= $results->{'workerid'} ?></td>
+					</tr>
+				<? } ?>
 				<tr>
 					<td colspan="2" style="padding: 0 0 <?= ($backend_info->{'backend'} eq 'kvm2usb')?'8px':'0' ?> 0;"><?= $backend_info->{'backend'} ?></td>
 				</tr>

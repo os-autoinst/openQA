@@ -17,7 +17,7 @@ my $results = test_result($testname);
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, basepath => $basepath, running => $running, backend_info => $results->{backend} },
+	template_args => { testname => $testname, basepath => $basepath, results => $results, running => $running, backend_info => $results->{backend} },
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");
