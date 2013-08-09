@@ -66,6 +66,20 @@ if ($action eq "save") {
 		}
 	}
 	if ($success) {
+		if ($ENV{OPENQA_NEEDLES_SCM}||'' eq 'git') {
+			my $dir = $ENV{OPENQA_NEEDLES_GIT_WORKTREE};
+			if ($dir && -d "$dir/.git") {
+				my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);
+				my @files = ($baseneedle.'.json', $baseneedle.'.png');
+				print STDERR "checking ito $dir\n";
+				system(@git, 'add', @files);
+				system(@git, 'commit', '-q', '-m',
+					sprintf("update from %s@%s", $ENV{REMOTE_USER}||'anonymous', $ENV{REMOTE_ADDR}),
+					@files);
+			} else {
+				print STDERR "error: please define OPENQA_NEEDLES_GIT_WORKTREE\n";
+			}
+		}
 		$info_msg = "Needle $needlename created/updated.";
 	} else {
 		$error_msg = "Error creating/updating needle.";
