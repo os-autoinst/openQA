@@ -226,14 +226,14 @@ sub job_release_or_done($$$)
 
 # check if results.json contains an overal result. If the latter is
 # missing the worker probably crashed.
-sub results_ok($)
+sub results_overall($)
 {
 	my $fn = shift;
-	my $ret = 0;
+	my $ret;
 	local $/;
 	open(my $fh, '<', $fn) or return 0;
 	my $json = decode_json(<$fh>);
-	$ret = 1 if $json && $json->{'overall'};
+	$ret = $json->{'overall'} if $json && $json->{'overall'};
 	close($fh);
 	return $ret;
 }
@@ -443,7 +443,9 @@ sub main()
 
 				# if there's no results.json start.pl probably died early, e.g. due to configuration
 				# problem. Release the job so another worker may grab it.
-				if (($aborted||'') eq 'stop' || results_ok("$testresults/results.json")) {
+				my $overall = results_overall("$testresults/results.json");
+				$result = $overall if !$aborted && $overall;
+				if (($aborted||'') eq 'stop' || $overall) {
 					$retries = 3; while(1) { eval {
 						printf "setting job %d to $result\n", $job->{'id'} if $verbose;
 						$client->job_set_done($job->{'id'}, $result);
