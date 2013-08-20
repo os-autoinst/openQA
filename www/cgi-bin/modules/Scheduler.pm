@@ -191,17 +191,23 @@ sub job_grab
                 $dbh->begin_work;
                 eval {
 		    my $state = "(select id from job_state where name = 'running' limit 1)";
-                    my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = ?, start_date = datetime('now'), result = NULL WHERE id = ?");
-                    $sth->execute($workerid, $jobid);
+                    my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = ?, start_date = datetime('now'), result = NULL WHERE id = ? and state = 1 and worker = 0");
+                    my $r = $sth->execute($workerid, $jobid);
                     $dbh->commit;
+
+		    if ($r != 1) {
+			print STDERR "worker $workerid couldn't grab job $jobid\n";
+			next;
+		    }
 
                     $job = _job_get($jobid, ' and jobs.id = ?');
                 };
                 if ($@) {
-                    print STDERR "$@\n";
+                    print STDERR "worker $workerid: $@\n";
                     eval { $dbh->rollback };
                     next;
                 }
+		print STDERR "worker $workerid got job $jobid\n";
                 last;
             }
         }
