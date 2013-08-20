@@ -4,6 +4,7 @@ use CGI ":standard";
 use FindBin;
 use lib "$FindBin::Bin/modules";
 use openqa;
+use Scheduler qw/worker_get/;
 use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
 
@@ -14,10 +15,17 @@ my $running = !($basepath eq '');
 if(!$running && -e testresultdir($testname).'/autoinst-log.txt') { print redirect(-status=>302, -location => "/results/$testname")."test is not running, try results view"; exit 0 }
 
 my $results = test_result($testname);
+my $worker = worker_get($results->{'workerid'});
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { testname => $testname, basepath => $basepath, results => $results, running => $running, backend_info => $results->{backend} },
+	template_args => { testname => $testname,
+		basepath => $basepath,
+		results => $results,
+		running => $running,
+		backend_info => $results->{backend},
+		worker =>  $worker,
+	},
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");

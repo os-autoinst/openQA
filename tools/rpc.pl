@@ -76,6 +76,7 @@ for (qw/
         iso_delete
         iso_stop
 	command_get
+	worker_get
 	/) {
 	$cmds{$_} = 1;
 }

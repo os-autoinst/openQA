@@ -98,9 +98,9 @@ table {
 		<div class="box-header aligncenter">Backend</div>
 		<div style="margin: 0 3px 0 3px;" class="cligncenter">
 			<table style="border: none; margin: 0;" class="infotbl">
-				<? if($results->{'workerid'}) { ?>
+				<? if($worker) { ?>
 					<tr>
-						<td>Worker #<?= $results->{'workerid'} ?></td>
+						<td><?= $worker->{'host'} ?>:<?= $worker->{instance} ?></td>
 					</tr>
 				<? } ?>
 				<tr>

@@ -13,7 +13,7 @@ use openqa ();
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
-@EXPORT = qw(ob_fill_settings list_jobs list_workers worker_register job_grab
+@EXPORT = qw(ob_fill_settings list_jobs list_workers worker_register worker_get job_grab
  job_set_scheduled job_set_done job_set_stop job_set_waiting job_set_running job_create job_set_prio
  job_delete job_update_result job_find_by_name($;@) job_restart_by_name
  command_get command_enqueue command_dequeue list_commands);
@@ -96,23 +96,35 @@ sub list_workers
     return $workers;
 }
 
+# param hash:
+sub worker_get
+{
+    my $workerid = shift;
+
+    my $stmt = "SELECT id, host, instance, backend, seen from worker where id == ?";
+    my $sth = $dbh->prepare($stmt);
+    $sth->execute($workerid);
+
+    return $sth->fetchrow_hashref;
+}
+
 # param hash: host, instance, backend
 sub worker_register
 {
-    my %args = @_;
+    my ($host, $instance, $backend) = @_;
     
     my $sth = $dbh->prepare("SELECT id, backend from worker where host = ? and instance = ?");
-    my $r = $sth->execute($args{'host'}, $args{'instance'}) or die "SQL failed\n";
+    my $r = $sth->execute($host, $instance) or die "SQL failed\n";
     my @row = $sth->fetchrow_array();
 
     my $id;
     if (@row) { # worker already known. Update fields and return id
         $id = $row[0];
         $sth = $dbh->prepare("UPDATE worker SET seen = datetime('now'), backend = ? WHERE id = ?");
-        $r = $sth->execute($args{'backend'}, $id) or die "SQL failed\n";
+        $r = $sth->execute($backend, $id) or die "SQL failed\n";
     } else {
         $sth = $dbh->prepare("INSERT INTO worker (host, instance, backend, seen) values (?,?,?, datetime('now'))");
-        $sth->execute($args{host}, $args{instance}, $args{backend});
+        $sth->execute($host, $instance, $backend);
         $id = $dbh->last_insert_id(undef,undef,undef,undef);
     }
     

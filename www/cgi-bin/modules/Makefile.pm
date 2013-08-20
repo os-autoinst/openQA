@@ -35,12 +35,12 @@ sub list_workers : Public
     return Scheduler::list_workers;
 }
 
-sub worker_register : Num(host, instance, backend)
+sub worker_register : Public # Num(host, instance, backend)
 {
     my $self = shift;
     my $args = shift;
     
-    return Scheduler::worker_register(%$args);
+    return Scheduler::worker_register(@$args);
 }
 
 sub iso_new : Num
@@ -493,5 +493,13 @@ sub job_get : Public #(jobid)
     return Scheduler::job_get($jobid);
 }
 
+sub worker_get : Public #(workerid)
+{
+    my $self = shift;
+    my $args = shift;
+    my $workerid = shift @$args;
+
+    return Scheduler::worker_get($workerid);
+}
 
 1;
