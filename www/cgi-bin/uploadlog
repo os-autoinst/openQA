@@ -17,18 +17,34 @@ if(!$whitelist{$ip}) {
 	print header(-status=>403)."forbidden";
 	exit 2;
 }
-#print header(),<$up>, $testname, $ENV{REQUEST_METHOD};
 
-$testname=~s/(?:\.\.)|[^a-zA-Z0-9._+-]//g;
+$testname = sanitize_testname($testname);
 my $upname = $up;
-$upname=~s#.*/##;
-$upname=~s/(?:\.\.)|[^a-zA-Z0-9._+-]//g;
-print header(),"OK: $testname -> $upname\n";
-mkdir("/$prj/logupload/$testname");
-chmod(0777, "/$prj/logupload/$testname");
-my $file="/$prj/logupload/$testname/$upname";
-open(my $out, ">", $file) or die "opening $file failed: $!";
-while(<$up>) {
-	print $out $_;
+$upname =~ s#.*/##;
+$upname = sanitize_testname($upname);
+unless ($upname && $testname) {
+	$testname ||= '';
+	print header(-status=>"400 invalid parmeters");
+	warn "invalid parameters passed, testname '$testname', upname '$upname'\n";
+	exit 1;
+}
+unless (-l join('/', $resultdir, $testname)) {
+	print header(-status=>"404 test not running");
+	warn "test $testname is no running, refused to upload logs";
+	exit 1;
+}
+print STDERR "$upname $testname\n";
+my $dir = join('/', $loguploaddir, $testname);
+mkdir($dir);
+my $file = join('/', $dir, $upname);
+if (open(my $out, ">", $file)) {
+	while(<$up>) {
+		print $out $_;
+	}
+} else {
+	print header(-status=>500);
+	warn "opening $upname failed: $!\n";
+	exit 1;
 }
 
+print header(),"OK: $testname -> $upname\n";

@@ -68,6 +68,7 @@ use POSIX qw/:sys_wait_h strftime SIGTERM/;
 use Data::Dump;
 use JSON;
 use JSON::RPC::Client;
+use URI;
 use Fcntl;
 use File::Path qw/make_path remove_tree/;
 use File::Copy qw(copy move);
@@ -129,13 +130,22 @@ my $verbose = $options{'verbose'};
 
 $options{'instance'} ||= 0;
 
-$options{'host'} .= '/jsonrpc' unless $options{'host'} =~ '/';
-$options{'host'} = 'http://'.$options{'host'} unless $options{'host'} =~ '://';
+my $uri;
+if ($options{host} !~ '/') {
+	$uri = URI->new();
+	$uri->authority($options{host});
+	$uri->scheme('http');
+} else {
+	$uri = URI->new($options{host});
+}
+$uri->path('/jsonrpc') unless $uri->path;
+$options{host} = $uri->as_string;
 
 $pooldir = $openqa_base.'/pool/'.($options{'instance'}||'manual');
 
 $ENV{'QEMUPORT'} = ($options{'instance'})*10 + 20002;
 $ENV{'VNC'}      = ($options{'instance'})    + 90;
+$ENV{'OPENQA_HOSTNAME'} = $uri->authority;
 
 $isotovideo = $options{'isotovideo'} if $options{'isotovideo'};
 
@@ -420,11 +430,12 @@ sub main()
 			if (!$aborted || $aborted eq 'stop') {
 				# collect uploaded logs
 				my @uploaded_logfiles = <$logupload_dir/$name/*>;
-				mkdir("$pooldir/testresults/ulogs/");
+				mkdir("$pooldir/testresults/$name/ulogs/");
 				if(@uploaded_logfiles) {
 					for my $uploaded_logfile (@uploaded_logfiles) {
-						unless(copy($uploaded_logfile, "$pooldir/testresults/ulogs/")) {
-							warn "can't copy ulog: $uploaded_logfile -> $pooldir/testresults/ulogs/\n";
+						next unless -f $uploaded_logfile;
+						unless(copy($uploaded_logfile, "$pooldir/testresults/$name/ulogs/")) {
+							warn "can't copy ulog: $uploaded_logfile -> $pooldir/testresults/$name/ulogs/\n";
 						}
 					}
 				}
