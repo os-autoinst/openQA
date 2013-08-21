@@ -6,6 +6,9 @@ if [ $# != 3 ]; then
 fi
 pooldir="/var/lib/openqa/pool"
 dir="$1"
+if [ -e /etc/tmpfiles.d/openqa.conf ]; then
+	/usr/bin/systemd-tmpfiles --create /etc/tmpfiles.d/openqa.conf
+fi
 mkdir -p "$dir/openqa-worker.target.wants"
 for i in $pooldir/[0-9]*; do
 	i="${i#$pooldir/}"
