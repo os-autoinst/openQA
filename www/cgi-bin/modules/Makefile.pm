@@ -82,29 +82,48 @@ sub iso_new : Num
             prio => 40 },
         RAID0 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
-            settings => {'RAIDLEVEL' => '0'} },
+            settings => {
+                    'RAIDLEVEL' => '0',
+                    'NICEVIDEO' => '1',
+            } },
         RAID1 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
-            settings => {'RAIDLEVEL' => '1'} },
+            settings => {
+                    'RAIDLEVEL' => '1',
+                    'NICEVIDEO' => '1',
+            } },
         RAID5 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
-            settings => {'RAIDLEVEL' => '5'} },
+            settings => {
+                    'RAIDLEVEL' => '5',
+                    'NICEVIDEO' => '1',
+            } },
         RAID10 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
-            settings => {'RAIDLEVEL' => '10'} },
+            settings => {
+                    'RAIDLEVEL' => '10',
+                    'NICEVIDEO' => '1',
+            } },
         btrfs => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
-            settings => {'BTRFS' => '1'} },
+            settings => {
+                    'BTRFS' => '1',
+                    'NICEVIDEO' => '1',
+            } },
         btrfscryptlvm => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'BTRFS' => '1',
                          'ENCRYPT' => '1',
-                         'LVM' => '1'} },
+                         'LVM' => '1',
+                         'NICEVIDEO' => '1',
+                 } },
         cryptlvm => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'REBOOTAFTERINSTALL' => '0',
                          'ENCRYPT' => '1',
-                         'LVM' => '1'} },
+                         'LVM' => '1',
+                         'NICEVIDEO' => '1',
+                 } },
         doc_de => {
             applies => 0,
             settings => {'DOCRUN' => '1',
@@ -131,14 +150,23 @@ sub iso_new : Num
                          'SCREENSHOTINTERVAL' => '0.25'} },
         smp => { 
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
-            settings => {'QEMUCPUS' => '4'} },
+            settings => {
+                'QEMUCPUS' => '4',
+                'NICEVIDEO' => '1',
+            } },
         splitusr => {
             applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
-            settings => {'SPLITUSR' => '1'} },
+            settings => {
+                'SPLITUSR' => '1',
+                'NICEVIDEO' => '1',
+            } },
         uefi => { 
             applies => sub { $_[0]->{arch} =~ /x86_64/ },
-            settings => {'UEFI' => '1',
-                         'DESKTOP' => 'lxde'} },
+            settings => {
+                'UEFI' => '1',
+                'DESKTOP' => 'lxde',
+                'NICEVIDEO' => '1',
+            } },
         usbboot => {
             applies => sub { $_[0]->{flavor} =~ /Live/ },
             settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
