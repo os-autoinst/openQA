@@ -17,6 +17,9 @@
     SetEnv OPENQA_NEEDLES_SCM "git"
     SetEnv OPENQA_NEEDLES_GIT_WORKTREE "/var/lib/os-autoinst/needles"
 
+    # set if you have a local repo mirror
+    # SetEnv OPENQA_SUSE_MIRROR "http://FIXME"
+
     HostnameLookups Off
     UseCanonicalName Off
     ServerSignature On

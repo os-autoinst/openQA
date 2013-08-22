@@ -245,6 +245,10 @@ sub iso_new : Num
                              DISTRI => lc($params->{distri}),
                              DESKTOP => 'kde' );
 
+            if ($ENV{OPENQA_SUSE_MIRROR}) {
+                $settings{SUSEMIRROR} = $ENV{OPENQA_SUSE_MIRROR};
+            }
+
             # merge defaults form above with the settings from %testruns
             my $test_definition = $testruns{$run}->{settings};
             @settings{keys %$test_definition} = values %$test_definition;
