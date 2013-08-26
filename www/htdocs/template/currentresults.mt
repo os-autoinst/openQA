@@ -64,8 +64,10 @@
 			<td><?= $test->{'distri'} ?></td>
 			<td><?= $test->{'type'} ?></td>
 			<td><?= $test->{'arch'} ?></td>
-			<td><span class="textlink <?= ($test->{'running'} || ($test->{'res_overall'}||'') eq "ok")?'':'overviewfail' ?>"><a href="/buildview/<?= $test->{'distri'} ?>/Build<?= $test->{'build'} ?>"><?= $test->{'build'} ?></a></span></td>
-			<td><span class="<?= ($test->{'running'} || ($test->{'res_overall'}||'') eq "ok")?'':'overviewfail' ?>"><?= $test->{'extrainfo'} ?></span></td>
+                        <?= my $resultclass = ($test->{'running'} || ($test->{'res_overall'}||'') eq "ok")?'':'overviewfail' ?>
+                        <?= $resultclass = 'overviewunknown' if ($resultclass eq '' && $test->{'res_dents'}) ?>
+			<td><span class="textlink <?= $resultclass ?>"><a href="/buildview/<?= $test->{'distri'} ?>/Build<?= $test->{'build'} ?>"><?= $test->{'build'} ?></a></span></td>
+			<td><span class="<?= $resultclass ?>"><?= $test->{'extrainfo'} ?></span></td>
 			<td><?= AWisodatetime2($test->{'mtime'}) ?></td>
 			<? if($test->{'running'}) { ?>
 ? #<td colspan="3"><?= $test->{'run_stat'}->{'moddone'} ?> / <?= $test->{'run_stat'}->{'modcount'} ?></td>

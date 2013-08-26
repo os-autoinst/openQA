@@ -94,7 +94,7 @@ for my $r (<$resultdir/*>) {
 		testname=>$testname, running=>$running, distri=>$distri, type=>$type, arch=>$arch,
 		build=>$build, extrainfo=>$extrainfo, mtime=>$mtime, backend => $backend,
 		res_ok=>$result_stats->{ok}||0, res_unknown=>$result_stats->{unk}||0, res_fail=>$result_stats->{fail}||0,
-		res_overall=>$results->{overall}, run_stat=>$run_stat
+		res_overall=>$results->{overall}, res_dents=>$results->{dents}, run_stat=>$run_stat
 	});
 }
 
