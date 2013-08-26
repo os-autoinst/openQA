@@ -64,8 +64,10 @@
 			<td><?= $test->{'distri'} ?></td>
 			<td><?= $test->{'type'} ?></td>
 			<td><?= $test->{'arch'} ?></td>
-                        <?= my $resultclass = ($test->{'running'} || ($test->{'res_overall'}||'') eq "ok")?'':'overviewfail' ?>
-                        <?= $resultclass = 'overviewunknown' if ($resultclass eq '' && $test->{'res_dents'}) ?>
+                        <!-- <?= my $resultclass = '';
+                        $resultclass = 'overviewfail' if (!$test->{'running'} && ($test->{'res_overall'}||'') ne 'ok');
+                        $resultclass = 'overviewunknown' if (($test->{'res_overall'}||'') eq 'ok' && $test->{'res_dents'}); ?>
+                        -->
 			<td><span class="textlink <?= $resultclass ?>"><a href="/buildview/<?= $test->{'distri'} ?>/Build<?= $test->{'build'} ?>"><?= $test->{'build'} ?></a></span></td>
 			<td><span class="<?= $resultclass ?>"><?= $test->{'extrainfo'} ?></span></td>
 			<td><?= AWisodatetime2($test->{'mtime'}) ?></td>
