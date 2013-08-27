@@ -246,7 +246,11 @@ sub iso_new : Num
                              DESKTOP => 'kde' );
 
             if ($ENV{OPENQA_SUSE_MIRROR}) {
-                $settings{SUSEMIRROR} = $ENV{OPENQA_SUSE_MIRROR};
+                my $repodir = $iso;
+                $repodir =~ s/-Media\.iso$//;
+                $repodir .= '-oss';
+                $settings{SUSEMIRROR} = $ENV{OPENQA_SUSE_MIRROR}."/iso/$repodir";
+                $settings{FULLURL} = 1;
             }
 
             # merge defaults form above with the settings from %testruns
