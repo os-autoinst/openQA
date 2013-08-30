@@ -16,6 +16,7 @@
     SetEnv OPENQA_BASEDIR "/var/lib"
     SetEnv OPENQA_NEEDLES_SCM "git"
     SetEnv OPENQA_NEEDLES_GIT_WORKTREE "/var/lib/os-autoinst/needles"
+    SetEnv OPENQA_NEEDLES_GIT_DO_PUSH "no"
 
     # set if you have a local repo mirror
     # SetEnv OPENQA_SUSE_MIRROR "http://FIXME"

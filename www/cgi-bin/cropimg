@@ -75,6 +75,9 @@ if ($action eq "save") {
 				system(@git, 'commit', '-q', '-m',
 					sprintf("%s by %s@%s", $testname, $ENV{REMOTE_USER}||'anonymous', $ENV{REMOTE_ADDR}),
 					@files);
+                                if (($ENV{OPENQA_NEEDLES_GIT_DO_PUSH}||'') eq 'yes') {
+                                    system(@git, 'push', 'origin', 'master');
+                                }
 			} else {
 				print STDERR "error: please define OPENQA_NEEDLES_GIT_WORKTREE\n";
 			}

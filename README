@@ -41,3 +41,19 @@ Then run
 /usr/share/openqa/tools/rpc.pl --host localhost iso_new FILE.ISO
 
 Watch your workers (hopefully) picking up the jobs!
+
+== setting up git support ==
+
+to enable git support OPENQA_NEEDLES_SCM,
+OPENQA_NEEDLES_GIT_WORKTREE and have to be set in the apache config.
+openQA will commit new needles to the git repo then.
+
+You may want to add something like this to the config of the git
+repo (/var/lib/os-autoinst/needles/.git/config):
+[user]
+	email = whatever@example.com
+	name = openQA web UI
+
+To enable pushing the repo somewhere set OPENQA_NEEDLES_GIT_DO_PUSH
+to "yes". You may need to generate an ssh key and put it in the
+wwwrun home dir to be able to push.
