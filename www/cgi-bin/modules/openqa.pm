@@ -497,6 +497,7 @@ sub get_failed_needles(@)
 		$name =~ s,.*/([^/]+)/results.json$,$1,;
 		for my $module (@{$results->{testmodules}}) {
 			next unless $module->{result} eq 'fail';
+			next if ($args{fatal} && ! $module->{flags}->{fatal});
 			for my $detail (@{$module->{details}}) {
 				next unless $detail->{result} eq 'fail';
 				next unless $detail->{needles};

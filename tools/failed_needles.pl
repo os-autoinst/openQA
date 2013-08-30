@@ -86,6 +86,7 @@ GetOptions(
 	\%options,
 	"pattern=s",
 	"ordering=s",
+	"fatal",
 	"verbose|v",
 	"help|h",
 ) or usage(1);
@@ -93,7 +94,7 @@ GetOptions(
 usage(0) if $options{help};
 
 $options{ordering} ||= 'byneedle';
-my $failures = get_failed_needles(ordering => $options{ordering}, pattern => $options{pattern});
+my $failures = get_failed_needles(%options);
 
 if (@ARGV) {
 	my %x = map { $_ => $failures->{$_} } @ARGV;
