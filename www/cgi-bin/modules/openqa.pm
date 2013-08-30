@@ -479,14 +479,18 @@ sub needle_info($$) {
 	return $needle;
 }
 
-sub get_failed_needles(;$)
+sub get_failed_needles(@)
 {
-	my $how = shift || 'byname';
-	my $glob = "$resultdir/*/results.json";
-	my $failures;
+	my %args = @_;
+	my $how = $args{'ordering'}||'byname';
+	my $pattern = $args{'pattern'}||'*';
+	my $glob = "$resultdir/$pattern/results.json";
+	my $failures = {};
 	for my $fn (glob $glob) {
 		local $/; # enable localized slurp mode
+		next unless -e $fn;
 		open (my $fd, '<', $fn);
+		next unless $fd;
 		my $results = decode_json(<$fd>);
 		close $fn;
 		my $name = $fn;

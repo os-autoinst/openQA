@@ -19,13 +19,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-=head1 clone_job
+=head1 failed_needles
 
-clone_job.pl - clone job from remote QA instance
+failed_needles.pl - display information about failed needles
 
 =head1 SYNOPSIS
 
-clone_job.pl [OPTIONS] JOBS...
+failed_needles.pl [OPTIONS] FILTER...
 
 =head1 OPTIONS
 
@@ -35,11 +35,30 @@ clone_job.pl [OPTIONS] JOBS...
 
 print help
 
+=item B<--pattern> PATTERN
+
+restrict to test results matching PATTERN
+
+=item B<--ordering> <byneedle|byname>
+
+byneedle: needle name is the index. filter applies to needle name
+byname: test name is the index. filter applies to test name
+
+=item B<FILTER
+
+only output results with that index match (see --ordering)
+
 =back
 
 =head1 DESCRIPTION
 
-lorem ipsum ...
+by default informations about all test results are printed
+
+=head1 EXAMPLES
+
+$ failed_needles.pl --pattern openSUSE-Factory-NET-x86_64-Build0670*
+
+$ failed_needles.pl zypper_in-1-131M2
 
 =cut
 
@@ -65,11 +84,16 @@ sub usage($) {
 
 GetOptions(
 	\%options,
+	"pattern=s",
+	"ordering=s",
 	"verbose|v",
 	"help|h",
 ) or usage(1);
 
-my $failures = get_failed_needles("byneedle");
+usage(0) if $options{help};
+
+$options{ordering} ||= 'byneedle';
+my $failures = get_failed_needles(ordering => $options{ordering}, pattern => $options{pattern});
 
 if (@ARGV) {
 	my %x = map { $_ => $failures->{$_} } @ARGV;
