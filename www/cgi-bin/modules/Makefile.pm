@@ -62,6 +62,14 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} !~ /KDE/ },
             settings => {'DESKTOP' => 'gnome', 'LVM' => '1'},
             prio => 45 },
+        gnomeLaptop => {
+            applies => sub { $_[0]->{flavor} !~ /KDE/ },
+            settings => {'DESKTOP' => 'gnome', 'LAPTOP' => '1'},
+            prio => 50 },
+        kdeLaptop => {
+            applies => sub { $_[0]->{flavor} !~ /GNOME/ },
+            settings => {'DESKTOP' => 'kde', 'LAPTOP' => '1'},
+            prio => 50 },
         lxde => {
             applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {'DESKTOP' => 'lxde',
