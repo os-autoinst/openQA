@@ -72,7 +72,6 @@ for (qw/
 	job_find_by_name
 	job_restart
 	job_stop
-	iso_new
         iso_delete
         iso_stop
 	command_get
@@ -93,6 +92,7 @@ for (qw/
 $cmds{worker_register} = 3;
 $cmds{job_create} = 99;
 $cmds{list_jobs} = 99;
+$cmds{iso_new} = 99;
 
 sub showcommands
 {
