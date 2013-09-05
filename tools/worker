@@ -263,6 +263,18 @@ sub clean_pool($)
 	);
 }
 
+sub backup_testresults($)
+{
+	my $testresults = shift;
+	for (my $i = 0; $i < 100; $i++) {
+		if (rename($testresults, $testresults."~$i")) {
+			return;
+		}
+	}
+	remove_tree($testresults);
+}
+
+
 sub main()
 {
 	my $lockfd = lockit();
@@ -380,7 +392,7 @@ sub main()
 			if (-l "$testresults") {
 				unlink($testresults);
 			} elsif (-e $testresults) {
-				remove_tree($testresults);
+				backup_testresults($testresults);
 			}
 			symlink(join('/', $pooldir, 'testresults', $name), $testresults) or warn "symlink $testresults: $!\n";
 			$worker = workit($job);
