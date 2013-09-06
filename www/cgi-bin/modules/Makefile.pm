@@ -83,11 +83,26 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} !~ /Live/ },
             settings => {'DESKTOP' => 'minimalx'},
             prio => 45 },
+        "minimalx+btrfs" => {
+            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            settings => {
+                    'DESKTOP' => 'minimalx',
+                    'BTRFS' => '1'
+                    },
+            },
         textmode => {
             applies => sub { $_[0]->{flavor} !~ /Live/ },
             settings => {'DESKTOP' => 'textmode',
                          'VIDEOMODE' => 'text'},
             prio => 40 },
+        'textmode+btrfs' => {
+            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            settings => {
+                    'DESKTOP' => 'textmode',
+                    'BTRFS' => '1',
+                    'VIDEOMODE' => 'text'
+                    },
+            },
         RAID0 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {
