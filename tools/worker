@@ -267,7 +267,7 @@ sub backup_testresults($)
 {
 	my $testresults = shift;
 	for (my $i = 0; $i < 100; $i++) {
-		if (rename($testresults, $testresults."~$i")) {
+		if (rename($testresults, $testresults.".$i")) {
 			return;
 		}
 	}
