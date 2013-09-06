@@ -186,6 +186,7 @@ sub iso_new : Num
         uefi => { 
             applies => sub { $_[0]->{arch} =~ /x86_64/ },
             settings => {
+                'QEMUCPU' => 'qemu64',
                 'UEFI' => '1',
                 'DESKTOP' => 'lxde',
                 'NICEVIDEO' => '1',
@@ -197,7 +198,9 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} =~ /Live/ && $_[0]->{arch} =~ /x86_64/  },
             settings => {'USBBOOT' => '1',
 			 'LIVETEST' => '1',
-			 'UEFI' => '1'} },
+			 'UEFI' => '1',
+                         'QEMUCPU' => 'qemu64',
+                     } },
         usbinst => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'USBBOOT' => '1'} }
