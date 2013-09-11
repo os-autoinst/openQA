@@ -153,7 +153,7 @@ sub iso_new : Num
                          'INSTLANG' => 'de_DE',
                          'QEMUVGA' => 'std'} },
         doc => { 
-            applies => sub { $_[0]->{flavor} !~ /Promo/ },
+            applies => sub { $_[0]->{flavor} =~ /DVD/ && $_[0]->{arch} =~ /x86_64/ },
             settings => {'DOCRUN' => '1',
                          'QEMUVGA' => 'std'} },
         live => {
@@ -166,7 +166,7 @@ sub iso_new : Num
                          'LIVETEST' => '1',
                          'REBOOTAFTERINSTALL' => '0'} },
         nice => { 
-            applies => sub { $_[0]->{flavor} !~ /Promo/ },
+            applies => sub { $_[0]->{flavor} =~ /DVD/ && $_[0]->{arch} =~ /x86_64/ },
             settings => {'NICEVIDEO' => '1',
                          'DOCRUN' => '1',
                          'REBOOTAFTERINSTALL' => '0',
@@ -178,7 +178,7 @@ sub iso_new : Num
                 'NICEVIDEO' => '1',
             } },
         splitusr => {
-            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
+            applies => sub { $_[0]->{flavor} =~ /DVD/ && $_[0]->{arch} =~ /x86_64/ },
             settings => {
                 'SPLITUSR' => '1',
                 'NICEVIDEO' => '1',
