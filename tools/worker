@@ -143,6 +143,7 @@ $options{host} = $uri->as_string;
 
 $pooldir = $openqa_base.'/pool/'.($options{'instance'}||'manual');
 
+# XXX: this should be sent to the scheduler to be included in the worker's table
 $ENV{'QEMUPORT'} = ($options{'instance'})*10 + 20002;
 $ENV{'VNC'}      = ($options{'instance'})    + 90;
 $ENV{'OPENQA_HOSTNAME'} = $uri->authority;
@@ -170,6 +171,13 @@ sub workit($)
 	my $job = shift;
 	my $iso = $job->{'settings'}->{'ISO'};
 	return undef unless $iso;
+
+	# XXX: this should come from the worker table. Only included
+	# here for convenience when looking at the pool of
+	# debugging.
+	for my $i (qw/QEMUPORT VNC OPENQA_HOSTNAME/) {
+		$job->{settings}->{$i} = $ENV{$i};
+	}
 
 	if (open(my $fh, '>', 'job.json')) {
 		print $fh to_json($job, { pretty => 1 });
