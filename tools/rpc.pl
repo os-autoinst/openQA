@@ -54,8 +54,14 @@ lorem ipsum ...
 use strict;
 use Data::Dump;
 use Getopt::Long;
-use JSON::RPC::Client;
 Getopt::Long::Configure("no_ignore_case");
+
+my $clientclass;
+for my $i (qw/JSON::RPC::Legacy::Client JSON::RPC::Client/) {
+	eval "use $i;";
+	$clientclass = $i unless $@;
+}
+die $@ unless $clientclass;
 
 my %cmds = map { $_ => 0 } (qw/
 	list_workers
@@ -127,7 +133,7 @@ usage(1) unless exists $options{'host'};
 $options{'host'} .= '/jsonrpc' unless $options{'host'} =~ '/';
 $options{'host'} = 'http://'.$options{'host'} unless $options{'host'} =~ '://';
 
-my $client = new JSON::RPC::Client;
+my $client = new $clientclass;
 my $port = 80;
 
 

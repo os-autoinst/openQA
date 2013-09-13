@@ -67,7 +67,6 @@ use strict;
 use POSIX qw/:sys_wait_h strftime SIGTERM/;
 use Data::Dump;
 use JSON;
-use JSON::RPC::Client;
 use URI;
 use Fcntl;
 use File::Path qw/make_path remove_tree/;
@@ -76,6 +75,12 @@ use File::Copy::Recursive qw(dirmove);
 use FindBin;
 #use lib "$FindBin::Bin/../www/cgi-bin/modules"
 #use openqa;
+my $clientclass;
+for my $i (qw/JSON::RPC::Legacy::Client JSON::RPC::Client/) {
+	eval "use $i;";
+	$clientclass = $i unless $@;
+}
+die $@ unless $clientclass;
 
 my $max_job_time = 60*60; # 1h
 my $openqa_base = "/var/lib/openqa";
@@ -286,7 +291,7 @@ sub backup_testresults($)
 sub main()
 {
 	my $lockfd = lockit();
-	my $client = new JSON::RPC::Client;
+	my $client = new $clientclass;
 
 	printf "connecting to %s ...\n", $options{'host'} if $verbose;
 	$client->prepare($options{'host'}, $client_commands) or die "xxx $!\n";

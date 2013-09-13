@@ -58,9 +58,15 @@ lorem ipsum ...
 use strict;
 use Data::Dump;
 use Getopt::Long;
-use JSON::RPC::Client;
 use LWP::UserAgent;
 Getopt::Long::Configure("no_ignore_case");
+
+my $clientclass;
+for my $i (qw/JSON::RPC::Legacy::Client JSON::RPC::Client/) {
+	eval "use $i;";
+	$clientclass = $i unless $@;
+}
+die $@ unless $clientclass;
 
 my %options;
 
@@ -101,8 +107,8 @@ sub fixup_url($)
 
 $options{'host'} ||= 'localhost';
 
-my $local = new JSON::RPC::Client;
-my $remote = new JSON::RPC::Client;
+my $local = new $clientclass;
+my $remote = new $clientclass;
 
 $options{'host'} = fixup_url($options{'host'});
 $options{'from'} = fixup_url($options{'from'});
