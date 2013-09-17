@@ -180,6 +180,7 @@ sub parse_iso($) {
 }
 
 # find the full pathname to a given testrun-logfile and test name
+# FIXME: what a crap
 sub log_to_scriptpath($$)
 { my($fn,$testname)=@_;
 	open(my $fd, "<", $fn) or return undef;
