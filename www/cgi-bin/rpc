@@ -2,7 +2,12 @@
 use strict;
 use CGI qw":standard";
 use JSON;
-use JSON::RPC::Legacy::Client;
+my $clientclass;
+for my $i (qw/JSON::RPC::Legacy::Client JSON::RPC::Client/) {
+	eval "use $i;";
+	$clientclass = $i unless $@;
+}
+die $@ unless $clientclass;
 
 my $url = param('url') || '';
 my $method = param('method') || '';
@@ -16,7 +21,7 @@ if ($json) {
 	$callobj = { method => $method };
 }
 
-my $client = new JSON::RPC::Legacy::Client;
+my $client = new $clientclass;
 my $ret = $client->call($url, $callobj);
 print header({-type=>"application/json", Content_Encoding=>"none"});
 print $ret->{'jsontext'};
