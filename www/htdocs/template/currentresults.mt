@@ -1,5 +1,9 @@
 ? extends 'fluid'
 
+? block additional_headlines => sub {
+	<script src="/static/tablefilter.js" type="text/javascript"></script>
+? }
+
 ? block locbar => sub {
 ?= super()
 &gt; <a href="/results/">Results</a>
@@ -34,7 +38,9 @@
 			<input type="submit" value="change" class="smbutton" />
 		</form>
 	<p />
-	<table style="width: 95%;">
+	Filter: <input type="text" name="filter" onkeyup="tablefilter(this, 'results')"/>
+	<p />
+	<table style="width: 95%;" id="results">
 		<tr>
 			<th>link</th>
 			<th>backend<?= sortarrows('backend') ?></th>
