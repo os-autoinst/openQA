@@ -65,15 +65,28 @@ sub iso_new : Num
             applies => '$iso{flavor} !~ /GNOME/',
             settings => { 'DESKTOP' => 'kde' },
             prio => 45 },
+        'kde+btrfs' => {
+            applies => '$iso{flavor} !~ /GNOME/',
+            settings => {
+		    'DESKTOP' => 'kde',
+		    'BTRFS' => 1,
+	    } },
         gnome => {
             applies => sub { $_[0]->{flavor} !~ /KDE/ },
             settings => {'DESKTOP' => 'gnome', 'LVM' => '1'},
             prio => 45 },
-        gnomeLaptop => {
+        'gnome+btrfs' => {
+            applies => sub { $_[0]->{flavor} !~ /KDE/ },
+            settings => {
+		    'DESKTOP' => 'gnome',
+		    'LVM' => '1',
+		    'BTRFS' => '1'
+	    } },
+        'gnome+laptop' => {
             applies => sub { $_[0]->{flavor} !~ /KDE/ },
             settings => {'DESKTOP' => 'gnome', 'LAPTOP' => '1'},
             prio => 50 },
-        kdeLaptop => {
+        'kde+laptop' => {
             applies => sub { $_[0]->{flavor} !~ /GNOME/ },
             settings => {'DESKTOP' => 'kde', 'LAPTOP' => '1'},
             prio => 50 },
@@ -132,12 +145,6 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {
                     'RAIDLEVEL' => '10',
-                    'NICEVIDEO' => '1',
-            } },
-        btrfs => {
-            applies => sub { $_[0]->{flavor} !~ /Promo/ },
-            settings => {
-                    'BTRFS' => '1',
                     'NICEVIDEO' => '1',
             } },
         btrfscryptlvm => {
