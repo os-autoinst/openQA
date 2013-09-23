@@ -452,7 +452,7 @@ sub main()
 				close($log);
 			}
 
-			if (!$aborted || $aborted eq 'stop') {
+			if (!$aborted || $aborted eq 'stop' || $aborted eq 'timeout') {
 				# collect uploaded logs
 				my @uploaded_logfiles = <$logupload_dir/$name/*>;
 				mkdir("$pooldir/testresults/$name/ulogs/");
