@@ -82,7 +82,7 @@ for my $i (qw/JSON::RPC::Legacy::Client JSON::RPC::Client/) {
 }
 die $@ unless $clientclass;
 
-my $max_job_time = 60*60; # 1h
+my $max_job_time = 2*60*60; # 2h
 my $openqa_base = "/var/lib/openqa";
 my $pooldir;
 my $isodir = "$openqa_base/factory/iso";
