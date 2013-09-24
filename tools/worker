@@ -477,6 +477,12 @@ sub main()
 					$keep_running = 0;
 				}
 
+				if (open(my $log, '>>', "$testresults/autoinst-log.txt")) {
+					print $log "+++ worker notes +++\n";
+					print $log "overall result: $result\n";
+					close $log;
+				}
+
 				# if there's no results.json start.pl probably died early, e.g. due to configuration
 				# problem. Release the job so another worker may grab it.
 				my $overall = results_overall("$testresults/results.json");
