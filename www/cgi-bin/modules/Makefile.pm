@@ -69,6 +69,7 @@ sub iso_new : Num
             applies => '$iso{flavor} !~ /GNOME/',
             settings => {
 		    'DESKTOP' => 'kde',
+		    'HDDSIZEGB' => '20',
 		    'BTRFS' => 1,
 	    } },
         gnome => {
@@ -80,6 +81,7 @@ sub iso_new : Num
             settings => {
 		    'DESKTOP' => 'gnome',
 		    'LVM' => '1',
+		    'HDDSIZEGB' => '20',
 		    'BTRFS' => '1'
 	    } },
         'gnome+laptop' => {
@@ -107,6 +109,17 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} !~ /Live/ },
             settings => {
                     'DESKTOP' => 'minimalx',
+		    'HDDSIZEGB' => '20',
+                    'BTRFS' => '1'
+                    },
+            },
+	"minimalx+btrfs+nosephome" => {
+            applies => sub { $_[0]->{flavor} eq 'DVD' },
+            settings => {
+                    'DESKTOP' => 'minimalx',
+		    'INSTALLONLY' => '1',
+		    'HDDSIZEGB' => '20',
+		    'TOGGLEHOME' => '1',
                     'BTRFS' => '1'
                     },
             },
@@ -119,6 +132,7 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} !~ /Live/ },
             settings => {
                     'DESKTOP' => 'textmode',
+		    'HDDSIZEGB' => '20',
                     'BTRFS' => '1',
                     'VIDEOMODE' => 'text'
                     },
