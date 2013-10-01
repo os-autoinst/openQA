@@ -124,12 +124,12 @@ sub iso_new : Num
                     },
             },
         textmode => {
-            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {'DESKTOP' => 'textmode',
                          'VIDEOMODE' => 'text'},
             prio => 40 },
         'textmode+btrfs' => {
-            applies => sub { $_[0]->{flavor} !~ /Live/ },
+            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {
                     'DESKTOP' => 'textmode',
 		    'HDDSIZEGB' => '20',
@@ -181,7 +181,7 @@ sub iso_new : Num
                          'INSTLANG' => 'de_DE',
                          'QEMUVGA' => 'std'} },
         doc => { 
-            applies => sub { $_[0]->{flavor} =~ /DVD/ && $_[0]->{arch} =~ /x86_64/ },
+            applies => sub { $_[0]->{flavor} eq 'DVD' && $_[0]->{arch} =~ /x86_64/ },
             settings => {'DOCRUN' => '1',
                          'QEMUVGA' => 'std'} },
         live => {
@@ -194,7 +194,7 @@ sub iso_new : Num
                          'LIVETEST' => '1',
                          'REBOOTAFTERINSTALL' => '0'} },
         nice => { 
-            applies => sub { $_[0]->{flavor} =~ /DVD/ && $_[0]->{arch} =~ /x86_64/ },
+            applies => sub { $_[0]->{flavor} eq 'DVD' && $_[0]->{arch} =~ /x86_64/ },
             settings => {'NICEVIDEO' => '1',
                          'DOCRUN' => '1',
                          'REBOOTAFTERINSTALL' => '0',
@@ -206,7 +206,7 @@ sub iso_new : Num
                 'NICEVIDEO' => '1',
             } },
         splitusr => {
-            applies => sub { $_[0]->{flavor} =~ /DVD/ && $_[0]->{arch} =~ /x86_64/ },
+            applies => sub { $_[0]->{flavor} eq 'DVD' && $_[0]->{arch} =~ /x86_64/ },
             settings => {
                 'SPLITUSR' => '1',
                 'NICEVIDEO' => '1',
@@ -340,7 +340,7 @@ sub iso_new : Num
             $prio = $testruns{$run}->{prio} if ($testruns{$run}->{prio});
 
             # prefer DVDs
-            $prio -= 5 if($params->{flavor}=~m/DVD/);
+            $prio -= 5 if($params->{flavor} eq 'DVD');
 
 	    # prefer staging even more
             $prio -= 10 if($params->{flavor}=~m/staging_/);
