@@ -141,25 +141,25 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {
                     'RAIDLEVEL' => '0',
-                    'NICEVIDEO' => '1',
+		    'INSTALLONLY' => '1',
             } },
         RAID1 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {
                     'RAIDLEVEL' => '1',
-                    'NICEVIDEO' => '1',
+		    'INSTALLONLY' => '1',
             } },
         RAID5 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {
                     'RAIDLEVEL' => '5',
-                    'NICEVIDEO' => '1',
+		    'INSTALLONLY' => '1',
             } },
         RAID10 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {
                     'RAIDLEVEL' => '10',
-                    'NICEVIDEO' => '1',
+		    'INSTALLONLY' => '1',
             } },
         btrfscryptlvm => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
@@ -217,7 +217,6 @@ sub iso_new : Num
                 'QEMUCPU' => 'qemu64',
                 'UEFI' => '1',
                 'DESKTOP' => 'lxde',
-                'NICEVIDEO' => '1',
             } },
         usbboot => {
             applies => sub { $_[0]->{flavor} =~ /Live/ },
