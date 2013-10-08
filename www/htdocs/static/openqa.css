@@ -320,3 +320,29 @@ input[type='image'] {
 .infotbl img {
         padding-right: 3px;
 }
+
+/* results table */
+
+table#results tr {background-color:#f0ffcf ;} /* Lemon ultra-light */
+table#results tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
+table#results select.table-autofilter { font-size: 9px; }
+table#results select.table-autofilter option { font-size: 9px; }
+
+table#results th.table-sortable {
+	background-image: url(../images/sortable.png);
+	background-position: left top;
+	background-repeat: no-repeat;
+	cursor: pointer;
+	padding: 0px 0px 0px 7px;
+	text-align: left;
+}
+table#results th.table-sorted-desc {
+	background-image: url(../images/sorted-down.png);
+	background-position: left top;
+	background-repeat: no-repeat;
+}
+table#results th.table-sorted-asc {
+	background-image: url(../images/sorted-up.png);
+	background-position: left top;
+	background-repeat: no-repeat;
+}

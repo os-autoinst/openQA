@@ -1,7 +1,7 @@
 ? extends 'fluid'
 
 ? block additional_headlines => sub {
-	<script src="/static/tablefilter.js" type="text/javascript"></script>
+	<script src="/static/table.js" type="text/javascript"></script>
 ? }
 
 ? block locbar => sub {
@@ -38,25 +38,25 @@
 			<input type="submit" value="change" class="smbutton" />
 		</form>
 	<p />
-	Filter: <input type="text" name="filter" onkeyup="tablefilter(this, 'results')"/>
-	<p />
-	<table style="width: 95%;" id="results">
+	<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
+		<thead>
 		<tr>
-			<th>link</th>
-			<th>backend<?= sortarrows('backend') ?></th>
-			<th>distri<?= sortarrows('distri') ?></th>
-			<th>type<?= sortarrows('type') ?></th>
-			<th>arch<?= sortarrows('arch') ?></th>
-			<th>build<?= sortarrows('build') ?></th>
-			<th>extra<?= sortarrows('extrainfo') ?></th>
-			<th>testtime<?= sortarrows('mtime') ?></th>
-			<th>OK<?= sortarrows('res_ok') ?></th>
-			<th>unk<?= sortarrows('res_unknown') ?></th>
-			<th>fail<?= sortarrows('res_fail') ?></th>
+			<th class="table-sortable:alphanumeric">link</th>
+			<th class="table-sortable:alphanumeric table-filterable">backend</th>
+			<th class="table-sortable:alphanumeric table-filterable">distri</th>
+			<th class="table-sortable:alphanumeric table-filterable">type</th>
+			<th class="table-sortable:alphanumeric table-filterable">arch</th>
+			<th class="table-sortable:alphanumeric table-filterable">build</th>
+			<th class="table-sortable:alphanumeric table-filterable">extra</th>
+			<th class="table-sortable:date">testtime</th>
+			<th class="table-sortable:numeric">OK</th>
+			<th class="table-sortable:numeric">unk</th>
+			<th class="table-sortable:numeric">fail</th>
 		</tr>
-		<? cycle(1) ?>
+		</thead>
+		<tbody>
 		<? for my $test (@$resultlist) { ?>
-		<tr class="<?= cycle() ?>">
+		<tr>
 			<td>
 				<? if($test->{'running'}) { ?>
 				<a href="/running/<?= $test->{'testname'} ?>">testing</a>
@@ -104,7 +104,7 @@
 		</tr>
 		<? } ?>
 		<? for my $test (@$schedulelist) { ?>
-		<tr class="<?= cycle() ?>">
+		<tr>
 			<td style="font-style: italic;">scheduled</td>
 			<td>n/a</td>
 			<td><?= $test->{'distri'} ?></td>
@@ -117,6 +117,7 @@
 			</td>
 		</tr>
 		<? } ?>
+		</tbody>
 	</table>
 	<p>Note: times are UTC</p>
 </div>
