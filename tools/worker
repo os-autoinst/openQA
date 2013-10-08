@@ -487,7 +487,7 @@ sub main()
 				# problem. Release the job so another worker may grab it.
 				my $overall = results_overall("$testresults/results.json");
 				$result = $overall if !$aborted && $overall;
-				if (($aborted||'') eq 'stop' || $overall) {
+				if (($aborted||'') eq 'stop' || ($overall && $result ne 'died')) {
 					$retries = 3; while(1) { eval {
 						printf "setting job %d to $result\n", $job->{'id'} if $verbose;
 						$client->job_set_done($job->{'id'}, $result);
