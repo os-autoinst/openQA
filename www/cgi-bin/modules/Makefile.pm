@@ -192,6 +192,7 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} =~ /Rescue/ },
             settings => {'DESKTOP' => 'xfce',
                          'LIVETEST' => '1',
+                         'RESCUECD' => '1',
                          'REBOOTAFTERINSTALL' => '0'} },
         nice => { 
             applies => sub { $_[0]->{flavor} eq 'DVD' && $_[0]->{arch} =~ /x86_64/ },
