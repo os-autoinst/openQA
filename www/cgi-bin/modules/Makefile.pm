@@ -164,6 +164,7 @@ sub iso_new : Num
         btrfscryptlvm => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {'BTRFS' => '1',
+                         'HDDSIZEGB' => '20',
                          'ENCRYPT' => '1',
                          'LVM' => '1',
                          'NICEVIDEO' => '1',
