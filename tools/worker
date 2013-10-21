@@ -239,9 +239,10 @@ sub job_release_or_done($$$)
 			printf "setting job %d to $result\n", $job->{'id'} if $verbose;
 			$client->job_set_done($job->{'id'}, $result);
 		} else {
-			printf "releasing job %d\n", $job->{'id'} if $verbose;
+			$job->{'priority'}++;
+			printf "releasing job %d, prio %d\n", $job->{'id'}, $job->{'priority'} if $verbose;
 			# make it less attractive so we don't get it again
-			$client->job_set_prio($job->{'id'}, $job->{'priority'}+1);
+			$client->job_set_prio($job->{'id'}, $job->{'priority'});
 			$client->job_set_scheduled($job->{'id'});
 		}
 	}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
@@ -411,14 +412,12 @@ sub main()
 			$worker = workit($job);
 			unless ($worker) {
 				warn "launching worker failed, releasing job\n";
-				$retries = 3; while(1) { eval {
-					$client->job_set_scheduled($job->{'id'});
-				}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+				job_release_or_done($client, $job, "worker died");
 				$job = undef;
 			}
 			$worker_start_time = time;
 			$aborted = undef;
-			if (open(my $log, '>>', "$results_dir/runlog.txt")) {
+			if ($job && open(my $log, '>>', "$results_dir/runlog.txt")) {
 				if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
 					my @s = map { sprintf("%s=%s", $_, $job->{'settings'}->{$_}) } grep { $_ ne 'ISO' && $_ ne 'NAME' } keys %{$job->{'settings'}};
 					printf $log "%s started to create %s %s\n",
