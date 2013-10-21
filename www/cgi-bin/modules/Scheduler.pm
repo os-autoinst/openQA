@@ -212,17 +212,18 @@ sub job_grab
                     $dbh->commit;
 
 		    if ($r != 1) {
-			print STDERR "worker $workerid couldn't grab job $jobid\n";
-			next;
+			print STDERR "worker $workerid couldn't grab job $jobid, ret: $r\n";
+			$jobid = undef;
+		    } else {
+			$job = _job_get($jobid, ' and jobs.id = ?');
 		    }
-
-                    $job = _job_get($jobid, ' and jobs.id = ?');
                 };
                 if ($@) {
                     print STDERR "worker $workerid: $@\n";
                     eval { $dbh->rollback };
                     next;
                 }
+		next unless $jobid;
 		print STDERR "worker $workerid got job $jobid\n";
                 last;
             }
