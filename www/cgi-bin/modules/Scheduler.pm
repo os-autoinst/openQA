@@ -65,6 +65,10 @@ sub list_jobs
 	$stmt .= " AND jobs.finish_date > datetime(?)";
 	push @params, $args{'finish_after'};
     }
+    if ($args{'build'}) {
+	$stmt .= " AND jobs.name like ?";
+	push @params, sprintf("%%-Build%04d-%%",$args{'build'});
+    }
     my $sth = $dbh->prepare($stmt);
     $sth->execute(@params);
     
