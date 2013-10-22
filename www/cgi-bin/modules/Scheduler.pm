@@ -74,7 +74,7 @@ sub list_jobs
     
     my $jobs = [];
     while(my $job = $sth->fetchrow_hashref) {
-        job_fill_settings($job);
+        job_fill_settings($job) if $args{fulldetails};
         push @$jobs, $job;
     }
     return $jobs;
@@ -411,11 +411,13 @@ sub job_delete
 
     if ($name !~ /^\d+$/ ) {
 	my $r;
+	my $cnt = 0;
 	my $sth = _job_find_smart($name, 'id', 'worker');
 	while (my ($id, $workerid) = @{$sth->fetchrow_arrayref||[]}) {
 	    $r = _job_delete($id);
+	    $cnt += $r if $r;
 	}
-	return $r;
+	return $cnt;
     }
     return _job_delete($name);
 }
