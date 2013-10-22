@@ -59,7 +59,7 @@ sub iso_new : Num
     ### definition of special tests
     my %testruns = (
         64 => {
-            applies => '$iso{arch} =~ /Biarch/',
+            applies => '$iso{flavor} =~ /Biarch/',
             settings => {'QEMUCPU' => 'qemu64'} },
         kde => {
             applies => '$iso{flavor} !~ /GNOME/',
