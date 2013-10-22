@@ -20,13 +20,13 @@ my @testdata = (
         },
     },
     {
-        iso => "openSUSE-13.1-Addon-OpenSourcePress-i586-x86_64-Build0002-Media.iso",
+        iso => "openSUSE-13.1-Promo-DVD-OpenSourcePress-i586-x86_64-Build0002-Media.iso",
         params => {
             'distri' => 'openSUSE',
             'arch' => 'i586-x86_64',
             'version' => '13.1',
             'build' => 'Build0002',
-            'flavor' => 'Addon-OpenSourcePress'
+            'flavor' => 'Promo-DVD-OpenSourcePress'
         },
     },
     {
