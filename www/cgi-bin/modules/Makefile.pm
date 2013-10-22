@@ -297,7 +297,7 @@ sub iso_new : Num
 	@cloned = ();
 	for my $t (@requested_runs) {
 	    my $name = $t.'-64bit';
-	    $testruns{$name} = clone_testrun($testruns{$t}, QEMUCPU => 'qemu64', INSTALLONLY => 1);
+	    $testruns{$name} = clone_testrun($testruns{$t}, QEMUCPU => 'qemu64');
 	    push @cloned, $name;
 	}
 	for my $t (grep(1, @cloned)) {
@@ -307,6 +307,10 @@ sub iso_new : Num
 	    push @cloned, $name;
 	}
 	push @requested_runs, @cloned;
+
+	for my $t (@requested_runs) {
+	    $testruns{$t}->{settings}->{INSTALLONLY} = 1;
+	}
     }
 
     my $pattern = $iso;
