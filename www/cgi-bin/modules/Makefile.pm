@@ -11,6 +11,7 @@ BEGIN {
 
 use strict;
 use Data::Dump qw/pp/;
+use Clone qw/clone/;
 
 use FindBin;
 use lib $FindBin::Bin;
@@ -185,10 +186,18 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} eq 'DVD' && $_[0]->{arch} =~ /x86_64/ },
             settings => {'DOCRUN' => '1',
                          'QEMUVGA' => 'std'} },
-        live => {
-            applies => sub { $_[0]->{flavor} =~ /Live|Promo|Addon-OpenSourcePress/ },
-            settings => {'LIVETEST' => '1',
-                         'REBOOTAFTERINSTALL' => '0'} },
+        'kde-live' => {
+            applies => sub { $_[0]->{flavor} =~ /KDE-Live|Promo/ },
+            settings => {
+		'DESKTOP' => 'kde',
+		'LIVETEST' => '1',
+		} },
+        'gnome-live' => {
+            applies => sub { $_[0]->{flavor} =~ /GNOME-Live|Promo/ },
+            settings => {
+		'DESKTOP' => 'gnome',
+		'LIVETEST' => '1',
+		} },
         rescue => {
             applies => sub { $_[0]->{flavor} =~ /Rescue/ }, # Note: special case handled below
             settings => {'DESKTOP' => 'xfce',
@@ -253,16 +262,51 @@ sub iso_new : Num
     # parse the iso filename
     my $params = openqa::parse_iso($iso);
     die "can't parse iso file name" unless $params;
+
+    @requested_runs = keys(%testruns) unless @requested_runs;
     
     ### iso-based test restrictions go here
-    # Rescue_CD cannot be installed; so livetest only
-    if($params->{flavor} =~ m/Rescue/i) {
-        @requested_runs = ( 'rescue' );
-    }
 
-    # open source press is live only
-    if($params->{flavor} eq 'Addon-OpenSourcePress') {
-        @requested_runs = ( 'live' );
+    if($params->{flavor} =~ m/Rescue/i) {
+	# Rescue_CD cannot be installed; so livetest only
+        @requested_runs = grep(/rescue/, @requested_runs);
+    } elsif($params->{flavor} eq 'Promo-DVD-OpenSourcePress') {
+	sub clone_testrun($;@)
+	{
+	    my $run = shift;
+	    my %h = @_;
+
+	    my $settings = clone $run;
+
+	    while (my ($k, $v) = each %h) {
+		$settings->{settings}->{$k} = $v;
+	    }
+	    use Data::Dump qw/pp/;
+	    print STDERR pp($settings);
+	    return $settings;
+	}
+	# open source press is live only
+        @requested_runs = grep (/live/, @requested_runs);
+	my @cloned;
+	for my $t (@requested_runs) {
+	    my $name = $t.'-usb';
+	    $testruns{$name} = clone_testrun($testruns{$t}, USBBOOT => 1);
+	    push @cloned, $name;
+	}
+	push @requested_runs, @cloned;
+	@cloned = ();
+	for my $t (@requested_runs) {
+	    my $name = $t.'-64bit';
+	    $testruns{$name} = clone_testrun($testruns{$t}, QEMUCPU => 'qemu64', INSTALLONLY => 1);
+	    push @cloned, $name;
+	}
+	for my $t (grep(1, @cloned)) {
+	    my $name = $t;
+	    $name =~ s/-64bit/-uefi/;
+	    $testruns{$name} = clone_testrun($testruns{$t}, 'UEFI' => 1);
+	    push @cloned, $name;
+	}
+	push @requested_runs, @cloned;
     }
 
     my $pattern = $iso;
@@ -275,7 +319,7 @@ sub iso_new : Num
     # only continue if parsing the ISO filename was successful
     if ( $params ) {
         # go through all requested special tests or all of them if nothing requested
-        foreach my $run ( @requested_runs ? @requested_runs : keys(%testruns) ) {
+        foreach my $run ( @requested_runs ) {
             # ...->{applies} can be a function ref to be executed, a string to be eval'ed or
             # can even not exist.
             # if it results to true or does not exist the test is assumed to apply
