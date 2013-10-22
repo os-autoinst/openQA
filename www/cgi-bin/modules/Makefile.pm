@@ -377,15 +377,7 @@ sub iso_delete : Num(iso)
     my $self = shift;
     my $args = shift;
 
-    # remove any path info path from iso file name
-    (my $iso = $args->{iso}) =~ s|^.*/||;
-
-    my $jobs = list_jobs;
-    foreach my $job (@$jobs) {
-	if ($job->{settings}->{ISO} eq $iso) {
-	    Scheduler::job_delete($job->{id});
-	}
-    }
+    my $r = Scheduler::job_delete($args->{iso});
 }
 
 

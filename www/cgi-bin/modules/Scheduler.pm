@@ -407,6 +407,21 @@ sub job_set_prio
 
 sub job_delete
 {
+    my $name = shift;
+
+    if ($name !~ /^\d+$/ ) {
+	my $r;
+	my $sth = _job_find_smart($name, 'id', 'worker');
+	while (my ($id, $workerid) = @{$sth->fetchrow_arrayref||[]}) {
+	    $r = _job_delete($id);
+	}
+	return $r;
+    }
+    return _job_delete($name);
+}
+
+sub _job_delete($)
+{
     my $jobid = int(shift);
 
     $dbh->begin_work;
@@ -473,6 +488,22 @@ sub _job_find_by_id($;@)
     return $sth;
 }
 
+sub _job_find_smart($;@) {
+	my $name = shift;
+	my @cols = @_;
+
+	my $sth;
+	if ($name =~ /^\d+$/ ) {
+		$sth = _job_find_by_id($name, @cols);
+	} elsif ($name =~ /\.iso$/) {
+		$sth = _jobs_find_by_iso($name, @cols);
+	} else {
+		$sth = _job_find_by_name($name, @cols);
+	}
+
+	return $sth;
+}
+
 # set job to a final state, resetting it's properties
 # parameters:
 # - id or name
@@ -488,14 +519,7 @@ sub _job_set_final_state($$$)
     # itself while we modify the job
     $dbh->begin_work;
     eval {
-	my $sth;
-	if ($name =~ /^\d+$/ ) {
-		$sth = _job_find_by_id($name, 'id', 'worker');
-	} elsif ($name =~ /\.iso$/) {
-		$sth = _jobs_find_by_iso($name, 'id', 'worker');
-	} else {
-		$sth = _job_find_by_name($name, 'id', 'worker');
-	}
+	my $sth = _job_find_smart($name, 'id', 'worker');
 
 	while (my ($id, $workerid) = @{$sth->fetchrow_arrayref||[]}) {
 	    print STDERR "workerid $id, $workerid -> $cmd\n";
