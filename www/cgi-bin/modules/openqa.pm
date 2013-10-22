@@ -14,6 +14,7 @@ $loguploaddir
 $localstatedir $dbfile
 &get_failed_needles
 &sanitize_testname
+&parse_testname
 );
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
@@ -137,14 +138,42 @@ sub parse_log_to_hash($) {
 	return \%results;
 }
 
-sub parse_iso($) {
-    my $iso = shift;
 
+sub _regexp_parts
+{
     my $distri = '(openSUSE|SLES)';
     my $version = '(\d+.\d|\d+-SP\d|Factory)';
     my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-)?DVD(?:-BiArch|-OpenSourcePress)?|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO|staging_[^-]+)';
     my $arch = '(i[356]86(?:-x86_64)?|x86_64|i586-x86_64|ia64|ppc64|s390x)';
     my $build = '(Build(?:\d+))';
+
+    return ($distri, $version, $flavor, $arch, $build);
+}
+
+sub parse_testname($)
+{
+    my $name = shift;
+    my ($distri, $version, $flavor, $arch, $build) = _regexp_parts;
+
+    my @parts = $name =~ /^$distri(?:-$version)?-$flavor-$arch(?:-$build)?-(.+)$/i;
+
+    return undef unless @parts;
+
+    my %params;
+    @params{qw(distri version flavor build arch extrainfo)} = @parts;
+
+    if (wantarray()) {
+	return %params;
+    }
+    else {
+	return \%params;
+    }
+}
+
+sub parse_iso($) {
+    my $iso = shift;
+
+    my ($distri, $version, $flavor, $arch, $build) = _regexp_parts;
 
     my @parts = $iso =~ /^$distri(?:-$version)?-$flavor(?:-$build)?-$arch.*\.iso$/i;
 

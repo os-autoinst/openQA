@@ -36,10 +36,10 @@ my @slist=();
 for my $job (@{Scheduler::list_jobs('state' => 'scheduled')||[]}) {
 	my $testname = $job->{'name'};
 	next if($options{match} && $testname !~ m/$options{match}/);
-	my ($distri, $type, $arch, $build, $extrainfo)=split_filename($testname);
+	my $params = openqa::parse_testname($testname);
 	push(@slist, {
-		testname=>$testname, distri=>$distri, type=>$type, arch=>$arch,
-		build=>$build, extrainfo=>$extrainfo, mtime=>0
+		testname=>$testname, distri=>$params->{distri}.'-'.$params->{version}, type=>$params->{flavor}, arch=>$params->{arch},
+		build=>$params->{build}, extrainfo=>$params->{extrainfo}, mtime=>0
 		}
 	);
 
@@ -57,8 +57,8 @@ for my $r (<$resultdir/*>) {
 	if($mtime>$maxmtime){$maxmtime=$mtime}
 	next if $mtime < $now - $maxage; # skip old
 	next if($options{match} && $r!~m/$options{match}/);
-	my ($distri, $type, $arch, $build, $extrainfo)=split_filename($r);
 	my $testname = path_to_testname($r);
+	my $params = openqa::parse_testname($testname);
 
 	my $run_stat = {};
 
@@ -91,8 +91,8 @@ for my $r (<$resultdir/*>) {
 		next if($options{ob} ne "" and $options{ob} ne $backend);
 	}
 	push(@list, {
-		testname=>$testname, running=>$running, distri=>$distri, type=>$type, arch=>$arch,
-		build=>$build, extrainfo=>$extrainfo, mtime=>$mtime, backend => $backend,
+		testname=>$testname, running=>$running, distri=>$params->{distri}, type=>$params->{flavor}, arch=>$params->{arch},
+		build=>$params->{build}, extrainfo=>$params->{extrainfo}, mtime=>$mtime, backend => $backend,
 		res_ok=>$result_stats->{ok}||0, res_unknown=>$result_stats->{unk}||0, res_fail=>$result_stats->{fail}||0,
 		res_overall=>$results->{overall}, res_dents=>$results->{dents}, run_stat=>$run_stat
 	});
