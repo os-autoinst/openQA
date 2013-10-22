@@ -186,11 +186,11 @@ sub iso_new : Num
             settings => {'DOCRUN' => '1',
                          'QEMUVGA' => 'std'} },
         live => {
-            applies => sub { $_[0]->{flavor} =~ /Live/ },
+            applies => sub { $_[0]->{flavor} =~ /Live|Promo|Addon-OpenSourcePress/ },
             settings => {'LIVETEST' => '1',
                          'REBOOTAFTERINSTALL' => '0'} },
         rescue => {
-            applies => sub { $_[0]->{flavor} =~ /Rescue/ },
+            applies => sub { $_[0]->{flavor} =~ /Rescue/ }, # Note: special case handled below
             settings => {'DESKTOP' => 'xfce',
                          'LIVETEST' => '1',
                          'RESCUECD' => '1',
@@ -258,6 +258,11 @@ sub iso_new : Num
     # Rescue_CD cannot be installed; so livetest only
     if($params->{flavor} =~ m/Rescue/i) {
         @requested_runs = ( 'rescue' );
+    }
+
+    # open source press is live only
+    if($params->{flavor} eq 'Addon-OpenSourcePress') {
+        @requested_runs = ( 'live' );
     }
 
     my $pattern = $iso;
