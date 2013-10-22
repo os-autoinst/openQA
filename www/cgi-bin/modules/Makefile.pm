@@ -331,6 +331,7 @@ sub iso_new : Num
                 $settings{PROMO}=1;
                 $settings{NOIMAGES}=1;
             }
+	    $settings{FLAVOR} = $params->{flavor};
             if($params->{flavor}=~m/(DVD|NET|KDE|GNOME|LXDE|XFCE)/) {
                 $settings{$1}=1;
                 $settings{NETBOOT}=$settings{NET} if exists $settings{NET};
