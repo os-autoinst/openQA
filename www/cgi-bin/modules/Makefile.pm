@@ -228,7 +228,7 @@ sub iso_new : Num
             settings => {
                 'QEMUCPU' => 'qemu64',
                 'UEFI' => '1',
-                'DESKTOP' => 'lxde',
+                'DESKTOP' => 'kde',
             } },
         usbboot => {
             applies => sub { $_[0]->{flavor} =~ /Live/ },
