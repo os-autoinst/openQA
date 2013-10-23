@@ -3,7 +3,7 @@ package Scheduler;
 use strict;
 use DBI;
 use Digest::MD5;
-#use List::Util qw/shuffle/;
+use List::Util qw/shuffle/;
 #use Data::Dump qw/pp/;
 
 use FindBin;
@@ -182,6 +182,32 @@ sub _job_get($;$)
     return $job;
 }
 
+# expects an array consisting of two element array refs. first item in those
+# refs is job id, second the prio [[1,50], [2, 50], [3, 60], ...].
+# list must be sorted by prio.
+# all items with same prio are shuffled
+# returns list of job ids
+sub _shuffle_priolist($)
+{
+    my $list = shift;
+
+    my @result;
+    my @tmp;
+    my $last;
+
+    for my $e (@{$list}) {
+	if (!$last || $last ne $e->[1]) {
+	    $last = $e->[1];
+	    push @result, map { $_->[0] } shuffle @tmp;
+	    @tmp = ();
+	}
+	push @tmp, $e;
+    }
+    push @result, map { $_->[0] } shuffle @tmp;
+
+    return @result;
+}
+
 # TODO: add some sanity check so the same host doesn't grab two jobs
 sub job_grab
 {
@@ -194,12 +220,10 @@ sub job_grab
 
     my $job;
     while (1) {
-        my $sth = $dbh->prepare("SELECT id FROM jobs WHERE state == 1 ORDER BY priority");
+        my $sth = $dbh->prepare("SELECT id, priority FROM jobs WHERE state == 1 ORDER BY priority");
         $sth->execute;
-        my @jobids;
-        while(my @row = $sth->fetchrow_array) {
-            push @jobids, $row[0];
-        }
+
+        my @jobids = _shuffle_priolist($sth->fetchall_arrayref);
 
         if (@jobids) {
             # run through all job ids and try to grab one
