@@ -106,7 +106,7 @@
 		<? for my $test (@$schedulelist) { ?>
 		<tr>
 			<td style="font-style: italic;">scheduled</td>
-			<td>n/a</td>
+			<td><?= $test->{'priority'} ?></td>
 			<td><?= $test->{'distri'} ?></td>
 			<td><?= $test->{'type'} ?></td>
 			<td><?= $test->{'arch'} ?></td>

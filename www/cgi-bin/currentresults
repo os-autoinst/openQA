@@ -38,6 +38,7 @@ for my $job (@{Scheduler::list_jobs('state' => 'scheduled')||[]}) {
 	next if($options{match} && $testname !~ m/$options{match}/);
 	my $params = openqa::parse_testname($testname);
 	push(@slist, {
+		priority => $job->{priority},
 		testname=>$testname, distri=>$params->{distri}.'-'.$params->{version}, type=>$params->{flavor}, arch=>$params->{arch},
 		build=>$params->{build}, extrainfo=>$params->{extrainfo}, mtime=>0
 		}
