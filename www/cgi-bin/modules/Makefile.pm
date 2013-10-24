@@ -59,13 +59,34 @@ sub iso_new : Num
 
     ### definition of special tests
     my %testruns = (
-        64 => {
-            applies => '$iso{flavor} =~ /Biarch/',
-            settings => {'QEMUCPU' => 'qemu64'} },
+        textmode => {
+            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
+            settings => {'DESKTOP' => 'textmode',
+                         'VIDEOMODE' => 'text'},
+            prio => 40 },
         kde => {
             applies => '$iso{flavor} !~ /GNOME/',
-            settings => { 'DESKTOP' => 'kde' },
+            settings => {
+		'DESKTOP' => 'kde'
+	    },
             prio => 45 },
+        uefi => { 
+            applies => sub { $_[0]->{arch} =~ /x86_64/ },
+	    prio => 45,
+            settings => {
+                'QEMUCPU' => 'qemu64',
+                'UEFI' => '1',
+                'DESKTOP' => 'kde',
+		'INSTALLONLY' => 1, # XXX
+            } },
+        'kde+usb' => {
+            applies => sub { $_[0]->{flavor} !~ /GNOME/ },
+            settings => {
+		DESKTOP => 'kde',
+		'USBBOOT' => '1',
+	    },
+	    prio => 45,
+	    },
         'kde+btrfs' => {
             applies => '$iso{flavor} !~ /GNOME/',
             settings => {
@@ -77,6 +98,13 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} !~ /KDE/ },
             settings => {'DESKTOP' => 'gnome', 'LVM' => '1'},
             prio => 45 },
+        'gnome+usb' => {
+            applies => sub { $_[0]->{flavor} =~ /GNOME/ },
+	    prio => 45,
+            settings => {
+		DESKTOP => 'gnome',
+		'USBBOOT' => '1',
+		} },
         'gnome+btrfs' => {
             applies => sub { $_[0]->{flavor} !~ /KDE/ },
             settings => {
@@ -85,23 +113,6 @@ sub iso_new : Num
 		    'HDDSIZEGB' => '20',
 		    'BTRFS' => '1'
 	    } },
-        'gnome+laptop' => {
-            applies => sub { $_[0]->{flavor} !~ /KDE/ },
-            settings => {'DESKTOP' => 'gnome', 'LAPTOP' => '1'},
-            prio => 50 },
-        'kde+laptop' => {
-            applies => sub { $_[0]->{flavor} !~ /GNOME/ },
-            settings => {'DESKTOP' => 'kde', 'LAPTOP' => '1'},
-            prio => 50 },
-        lxde => {
-            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
-            settings => {'DESKTOP' => 'lxde',
-                         'LVM' => '1'},
-            prio => 45 },
-        xfce => {
-            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
-            settings => {'DESKTOP' => 'xfce'},
-            prio => 45 },
         minimalx => {
             applies => sub { $_[0]->{flavor} !~ /Live/ },
             settings => {'DESKTOP' => 'minimalx'},
@@ -124,11 +135,6 @@ sub iso_new : Num
                     'BTRFS' => '1'
                     },
             },
-        textmode => {
-            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
-            settings => {'DESKTOP' => 'textmode',
-                         'VIDEOMODE' => 'text'},
-            prio => 40 },
         'textmode+btrfs' => {
             applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {
@@ -138,6 +144,26 @@ sub iso_new : Num
                     'VIDEOMODE' => 'text'
                     },
             },
+        lxde => {
+            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
+            settings => {'DESKTOP' => 'lxde',
+                         'LVM' => '1'},
+            prio => 49 },
+        xfce => {
+            applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
+            settings => {'DESKTOP' => 'xfce'},
+            prio => 49 },
+        'gnome+laptop' => {
+            applies => sub { $_[0]->{flavor} !~ /KDE/ },
+            settings => {'DESKTOP' => 'gnome', 'LAPTOP' => '1'},
+            },
+        'kde+laptop' => {
+            applies => sub { $_[0]->{flavor} !~ /GNOME/ },
+            settings => {'DESKTOP' => 'kde', 'LAPTOP' => '1'},
+            },
+        64 => {
+            applies => '$iso{flavor} =~ /Biarch/',
+            settings => {'QEMUCPU' => 'qemu64'} },
         RAID0 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {
@@ -184,6 +210,7 @@ sub iso_new : Num
                          'QEMUVGA' => 'std'} },
         doc => { 
             applies => sub { $_[0]->{flavor} eq 'DVD' && $_[0]->{arch} =~ /x86_64/ },
+	    prio => 60,
             settings => {'DOCRUN' => '1',
                          'QEMUVGA' => 'std'} },
         'kde-live' => {
@@ -223,13 +250,6 @@ sub iso_new : Num
                 'SPLITUSR' => '1',
                 'NICEVIDEO' => '1',
             } },
-        uefi => { 
-            applies => sub { $_[0]->{arch} =~ /x86_64/ },
-            settings => {
-                'QEMUCPU' => 'qemu64',
-                'UEFI' => '1',
-                'DESKTOP' => 'kde',
-            } },
         usbboot => {
             applies => sub { $_[0]->{flavor} =~ /Live/ },
             settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
@@ -240,9 +260,6 @@ sub iso_new : Num
 			 'UEFI' => '1',
                          'QEMUCPU' => 'qemu64',
                      } },
-        usbinst => {
-            applies => sub { $_[0]->{flavor} !~ /Promo/ },
-            settings => {'USBBOOT' => '1'} }
         );
 
     my @requested_runs;
