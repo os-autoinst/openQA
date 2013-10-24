@@ -160,7 +160,7 @@ sub parse_testname($)
     return undef unless @parts;
 
     my %params;
-    @params{qw(distri version flavor build arch extrainfo)} = @parts;
+    @params{qw(distri version flavor arch build extrainfo)} = @parts;
 
     if (wantarray()) {
 	return %params;
