@@ -92,7 +92,8 @@ for my $r (<$resultdir/*>) {
 		next if($options{ob} ne "" and $options{ob} ne $backend);
 	}
 	push(@list, {
-		testname=>$testname, running=>$running, distri=>$params->{distri}, type=>$params->{flavor}, arch=>$params->{arch},
+		testname=>$testname, running=>$running, distri=>$params->{distri}.'-'.$params->{version},
+		type=>$params->{flavor}, arch=>$params->{arch},
 		build=>$params->{build}, extrainfo=>$params->{extrainfo}, mtime=>$mtime, backend => $backend,
 		res_ok=>$result_stats->{ok}||0, res_unknown=>$result_stats->{unk}||0, res_fail=>$result_stats->{fail}||0,
 		res_overall=>$results->{overall}, res_dents=>$results->{dents}, run_stat=>$run_stat
