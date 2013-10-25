@@ -478,6 +478,7 @@ sub main()
 
 				if (open(my $log, '>>', "$testresults/autoinst-log.txt")) {
 					print $log "+++ worker notes +++\n";
+					printf $log "time: %s\n", strftime("%F %T", gmtime);
 					print $log "overall result: $result\n";
 					close $log;
 				}
