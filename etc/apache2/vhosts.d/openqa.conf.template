@@ -17,10 +17,7 @@
     SetEnv OPENQA_NEEDLES_SCM "git"
     SetEnv OPENQA_NEEDLES_GIT_WORKTREE "/var/lib/os-autoinst/needles"
     SetEnv OPENQA_NEEDLES_GIT_DO_PUSH "no"
-    # put matched pattern below and please separate each pattern by a space
-    SetEnv OPENQA_MATCHED_PATTERNS "^2001:6f8:11fc: ^10\."
-    # put allowed ip below and please separate each ip by a space
-    SetEnv OPENQA_ALLOWED_HOSTS "195.135.221.2 78.46.32.14 2001:6f8:900:9b2::2 2a01:4f8:100:9041::2 127.0.0.1 ::1"
+    SetEnv OPENQA_ALLOWED_HOSTS "195.135.221.2 78.46.32.14 2001:6f8:900:9b2::2 2a01:4f8:100:9041::2 127.0.0.1 ::1 ^2001:6f8:11fc: ^10\."
 
     # set if you have a local repo mirror
     # SetEnv OPENQA_SUSE_MIRROR "http://FIXME"
