@@ -21,7 +21,6 @@ use awstandard;
 use File::Basename;
 use Fcntl;
 use JSON "decode_json";
-use Data::Validate::IP qw(is_ipv4 is_ipv6);
 our $basedir=$ENV{'OPENQA_BASEDIR'}||"/var/lib";
 our $prj="openqa";
 our $perlurl="$prj/perl/autoinst";
@@ -358,14 +357,14 @@ sub resultname_to_url($)
 sub is_authorized_rw()
 {
 	my $ip=$ENV{REMOTE_ADDR};
-	my $allowedhosts=$ENV{OPENQA_ALLOWED_HOSTS};
+	my $allowedhosts=$ENV{OPENQA_ALLOWED_HOSTS} || '::1 127.0.0.1';
 
 	my @allowedhost=split(' ',$allowedhosts);
 	foreach my $val (@allowedhost) {
-		if (is_ipv4($val) || is_ipv6($val)) {
-			return 1 if($ip eq $val);
-		} else {
+		if ($val =~ /[*^?\\]/) {
 			return 1 if($ip =~ m/$val/);
+		} else {
+			return 1 if($ip eq $val);
 		}
 	}
 
