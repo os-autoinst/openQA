@@ -15,9 +15,14 @@ use Text::MicroTemplate::Extended;
 
 my $fn=$ENV{PATH_INFO};
 if($fn=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
-$fn=~s%^/%%;
-my($build) = split(/\//, $fn);
-$build =~ s/^Build//;
+$fn=~s%^.*/%%;
+my $build;
+if ($fn =~ /Build(\d+)$/) {
+    $build = $1;
+} else {
+    print header(-status=>403)."invalid build";
+    exit 0;
+}
 
 my @configs=();
 my %archs=();
@@ -37,21 +42,12 @@ sub store_result {
 	$results{$config}{$type}{$arch} = $result;
 }
 
-for my $r (<$resultdir/*>) {
-	# Iterate over the results, skipping everything but the target build
-	next unless -d $r;
-
-	my $testname = path_to_testname($r);
+for my $job (@{Scheduler::list_jobs('build'=>$build)||[]}) {
+	my $testname = $job->{'name'};
 	my $params = openqa::parse_testname($testname);
-	next if "Build$build" ne $params->{build};
-
-	my $state;
-	my $result;
-	my $result_stats;
-	# Finished test
-	if (-e "$r/autoinst-log.txt") {
-		$result = test_result($testname);
-		$result_stats = test_result_stats($result);
+	if ($job->{state} eq 'done') {
+		my $result = test_result($testname);
+		my $result_stats = test_result_stats($result);
 		my $overall = "fail";
 		if (($result->{overall}||'') eq "ok") {
 			$overall = ($result->{dents}) ? "unknown" : "ok";
@@ -59,16 +55,11 @@ for my $r (<$resultdir/*>) {
 		store_result($params->{extrainfo}, $params->{flavor}, $params->{arch}, { ok=>$result_stats->{ok}||0, unknown=>$result_stats->{unk}||0,
 							fail=>$result_stats->{fail}||0, overall=>$overall,
 							state=>"done", testname=>$testname });
-	# Running test
-	} else {
+	} elsif ($job->{state} eq 'running') {
 		store_result($params->{extrainfo}, $params->{flavor}, $params->{arch}, { state=>"running", testname=>$testname });
+	} else {
+		store_result($params->{extrainfo}, $params->{flavor}, $params->{arch}, { state=>$job->{state}, testname=>$testname });
 	}
-}
-
-for my $job (@{Scheduler::list_jobs('state' => 'scheduled,stopped', 'build'=>$build)||[]}) {
-	my $testname = $job->{'name'};
-	my $p = openqa::parse_testname($testname);
-	store_result($p->{extrainfo}, $p->{flavor}, $p->{arch}, { state=>$job->{state}, testname=>$testname });
 }
 
 # Sorting everything
