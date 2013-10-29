@@ -100,6 +100,7 @@ my $client_commands = [qw/
 	job_set_scheduled
 	job_set_prio
 	job_set_done
+	job_set_stop
 	worker_register
 	command_get
 	command_dequeue
@@ -230,14 +231,14 @@ sub _kill_worker($)
 
 # set job to done if priority is bigger threshold. Otherwise release
 # it with worse priority
-sub job_release_or_done($$$)
+sub job_release_or_stop($$$)
 {
 	my ($client, $job, $result) = @_;
 	my $retries = 3; while(1) { eval {
 		# give up if the prio is too bad
 		if ($job->{'priority'} gt 70) {
-			printf "setting job %d to $result\n", $job->{'id'};
-			$client->job_set_done($job->{'id'}, $result);
+			printf "stopping job %d\n", $job->{'id'};
+			$client->job_set_stop($job->{'id'});
 		} else {
 			$job->{'priority'}++;
 			printf "releasing job %d, prio %d\n", $job->{'id'}, $job->{'priority'};
@@ -387,7 +388,7 @@ sub main()
 		if ($job && $worker_start_time && time-$worker_start_time > $max_job_time && !$aborted) {
 			warn sprintf("max job time exceeded, aborting %s ...\n", $job->{'settings'}->{'NAME'});
 			_kill_worker($worker);
-			job_release_or_done($client, $job, "time exceeded");
+			job_release_or_stop($client, $job, "time exceeded");
 			$aborted = 'timeout';
 		}
 
@@ -412,7 +413,7 @@ sub main()
 			$worker = workit($job);
 			unless ($worker) {
 				warn "launching worker failed, releasing job\n";
-				job_release_or_done($client, $job, "worker died");
+				job_release_or_stop($client, $job, "worker died");
 				$job = undef;
 			}
 			$worker_start_time = time;
@@ -487,16 +488,19 @@ sub main()
 				# problem. Release the job so another worker may grab it.
 				my $overall = results_overall("$testresults/results.json");
 				$result = $overall if !$aborted && $overall;
+				# XXX: use job_set_stop in case of stop?
 				if (($aborted||'') eq 'stop' || $overall) {
 					$retries = 3; while(1) { eval {
 						printf "setting job %d to $result\n", $job->{'id'};
 						$client->job_set_done($job->{'id'}, $result);
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 				} else {
-					job_release_or_done($client, $job, $result);
+					job_release_or_stop($client, $job, $result);
 				}
+			} else {
+			    job_release_or_stop($client, $job, $result);
 			}
-			warn sprintf("cleaning up %s ...\n", $job->{'settings'}->{'NAME'});
+			warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
 			clean_pool($job);
 			$job = undef;
 			$worker = undef;
