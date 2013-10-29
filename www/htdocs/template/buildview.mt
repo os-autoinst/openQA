@@ -16,13 +16,13 @@
 			<tr>
 				<th></th>
 				<? for my $type (@$types) { ?>
-					<th colspan="2"><?= $type ?></th>
+					<th colspan="<?= scalar(@{$archs->{$type}}) ?>"><?= $type ?></th>
 				<? } ?>
 			</tr>
 			<tr>
 				<th>Test</th>
 				<? for my $type (@$types) { ?>
-					<? for my $arch (@{$$archs{$type}}) { ?>
+					<? for my $arch (@{$archs->{$type}}) { ?>
 						<th><?= $arch ?></th>
 					<? } ?>
 				<? } ?>
@@ -38,11 +38,16 @@
 							<td>
 							<? my $res = $results->{$config}{$type}{$arch} ?>
 							<? if ($res) { ?>
-								<span class="overview<?= $res->{overall} ?>">
-									<?= $res->{ok} ?> /
-									<?= $res->{unknown} ?> /
-									<?= $res->{fail} ?>
-								</span>
+								<? my $state = $res->{state}; ?>
+								<? if ($state eq "done") { ?>
+									<span class="overview<?= $res->{overall} ?>">
+									<a href="/results/<?= $res->{testname} ?>"><?= $res->{ok} ?>/<?= $res->{unknown} ?>/<?= $res->{fail} ?></a>
+									</span>
+								<? } elsif ($state eq "running") { ?>
+									<span><a href="/running/<?= $res->{testname} ?>">running</a></span>
+								<? } else { ?>
+									<span><?= $state ?></span>
+								<? } ?>
 							<? } ?>
 							</td>
 						<? } ?>

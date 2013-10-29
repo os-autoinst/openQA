@@ -6,6 +6,7 @@ use lib "$FindBin::Bin/modules";
 use awstandard;
 use sort_list;
 use openqa;
+use Scheduler ();
 use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
 
@@ -20,32 +21,56 @@ my($build) = split(/\//, $fn);
 my @configs=();
 my %archs=();
 my %results=();
-my $now=time();
-for my $r (<$resultdir/*>) {
-	next unless -d $r;
-	next unless -e "$r/autoinst-log.txt"; # Only finished tests
-	my ($distri, $type, $arch, $b, $config)=split_filename($r);
-	next if $build ne $b;
 
-	my $testname = path_to_testname($r);
-	my $result = test_result($testname);
-	my $result_stats = test_result_stats($result);
+sub store_result {
+	my ($config,$type,$arch,$result) = @_;
 
+	# Populate @configs and %archs
 	push(@configs, $config) unless ($config ~~ @configs); # manage xxx.0, xxx.1 (we only want the most recent one)
 	$archs{$type} = [] unless $archs{$type};
 	push(@{$archs{$type}}, $arch) unless ($arch ~~ @{$archs{$type}});
 
+	# Populate %results
 	$results{$config} = {} unless $results{$config};
 	$results{$config}{$type} = {} unless $results{$config}{$type};
-	my $overall = "fail";
-	if (($result->{overall}||'') eq "ok") {
-		$overall = ($result->{dents}) ? "unknown" : "ok";
-	}
-	$results{$config}{$type}{$arch} = { ok=>$result_stats->{ok}||0, unknown=>$result_stats->{unk}||0,
-					    fail=>$result_stats->{fail}||0, overall=>$overall };
+	$results{$config}{$type}{$arch} = $result;
 }
-my @types = keys %archs;
+
+for my $r (<$resultdir/*>) {
+	# Iterate over the results, skipping everything but the target build
+	next unless -d $r;
+	my ($distri, $type, $arch, $b, $config)=split_filename($r);
+	next if $build ne $b;
+
+	my $testname = path_to_testname($r);
+	my $state;
+	my $result;
+	my $result_stats;
+	# Finished test
+	if (-e "$r/autoinst-log.txt") {
+		$result = test_result($testname);
+		$result_stats = test_result_stats($result);
+		my $overall = "fail";
+		if (($result->{overall}||'') eq "ok") {
+			$overall = ($result->{dents}) ? "unknown" : "ok";
+		}
+		store_result($config, $type, $arch, { ok=>$result_stats->{ok}||0, unknown=>$result_stats->{unk}||0,
+							fail=>$result_stats->{fail}||0, overall=>$overall,
+							state=>"done", testname=>$testname });
+	# Running test
+	} else {
+		store_result($config, $type, $arch, { state=>"running", testname=>$testname });
+	}
+}
+
+for my $job (@{Scheduler::list_jobs('state' => 'scheduled,stopped', 'build'=>$build)||[]}) {
+	my $testname = $job->{'name'};
+	my $p = openqa::parse_testname($testname);
+	store_result($p->{extrainfo}, $p->{flavor}, $p->{arch}, { state=>$job->{state}, testname=>$testname });
+}
+
 # Sorting everything
+my @types = keys %archs;
 @types = sort @types;
 @configs = sort @configs;
 for my $type (@types) {
