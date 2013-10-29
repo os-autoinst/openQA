@@ -10,13 +10,7 @@
 ? }
 
 ? block content => sub {
-<div class="grid_5 box box-shadow alpha recent-issues-hide" id="top_features_box">
-	<div class="box-header aligncenter">
-		Recent issues in Factory
-	</div>
-	<?= $self->include_file("../../htdocs/includes/knownissues") ?>
-</div>
-<div class="grid_11 box box-shadow omega">
+<div class="grid_16 box box-shadow omega">
 	<h2>Test result overview</h2>
 	<p>This page lists <?= @$resultlist ?> automated test-results from the last <?= $hoursfresh ?> hours.</p>
 		<form method="get" action="" class="cutofftimeform" id="filterform">
