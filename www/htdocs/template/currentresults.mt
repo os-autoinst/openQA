@@ -99,11 +99,16 @@
 		<? } ?>
 		<? for my $test (@$schedulelist) { ?>
 		<tr>
-			<td style="font-style: italic;">scheduled</td>
 			<?
 			  my $prio = $test->{'priority'};
 			  my $href = "/schedule/".$test->{'testname'}."?action=setpriority&priority=";
+			  my $state = $test->{'state'};
 			?>
+			<td style="font-style: italic;"><?= $state ?>
+			<? if($state eq 'stopped') { ?>
+			<a href="/schedule/<?= $test->{'testname'} ?>?action=restart&redirect_back=results"><img src="/images/toggle.png" alt="restart" title="Restart Job"/></a>
+			<? } ?>
+			</td>
 			<td>
 				<a href="<?= $href.($prio-10)?>" onclick="this.href += '&redirect_back=results'" rel="nofollow">-</a>
 				<?= $prio ?>
