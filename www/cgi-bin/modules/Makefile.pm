@@ -242,6 +242,7 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
             settings => {
                 'QEMUCPUS' => '4',
+		'INSTALLONLY' => '1',
                 'NICEVIDEO' => '1',
             } },
         splitusr => {
