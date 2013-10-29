@@ -11,7 +11,7 @@ $name=~s{^/}{};
 $name=~s/[^a-zA-Z0-9.+_-]//g; # sanitize
 $|=1;
 
-my $back = param('redirect_back');
+my $back = param('back');
 my $action = param('action') || 'restart';
 my $priority = param('priority');
 if($back) {
@@ -45,12 +45,12 @@ else {
 if($back) {
 
 	my $params = openqa::parse_testname($name);
-	if($back eq 'results') {
+	if ($back eq 'results') {
 		print "window.location = '/results/';\n";
 	} elsif ($back eq 'details') {
 		print "window.location = '/results/$name';\n";
 	} else {
-		print "window.location = '/buildview/$params->{distri}/Build$params->{build}';\n";
+		print "window.location = '".referer()."';\n";
 	}
 	print '</script>\n';
 }

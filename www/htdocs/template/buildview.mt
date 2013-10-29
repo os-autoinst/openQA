@@ -4,6 +4,7 @@
 ?= super()
 &gt; <a href="/results/">Results</a>
 &gt; <?= $build ?>
+<script src="/static/wz_tooltip/wz_tooltip.js" type="text/javascript"></script>
 ? }
 
 ? block content => sub {
@@ -38,16 +39,41 @@
 							<td>
 							<? my $res = $results->{$config}{$type}{$arch} ?>
 							<? if ($res) { ?>
-								<? my $state = $res->{state}; ?>
+								<?
+								  my $state = $res->{state};
+								  my $jobid = $res->{jobid};
+								  my $testname = $res->{testname};
+								  my $css = "";
+								  $css = "overview".$res->{overall} if ($state eq "done");
+								?>
+
+								<?# Visible information ?>
+								<span class="<?=$css?>" onmouseout="UnTip()" onmouseover="TagToTip('actions_<?=$jobid?>', STICKY, 1, CLICKCLOSE, true)">
 								<? if ($state eq "done") { ?>
-									<span class="overview<?= $res->{overall} ?>">
-									<a href="/results/<?= $res->{testname} ?>"><?= $res->{ok} ?>/<?= $res->{unknown} ?>/<?= $res->{fail} ?></a>
-									</span>
+									<a href="/results/<?=$testname?>"><?= $res->{ok} ?>/<?= $res->{unknown} ?>/<?= $res->{fail} ?></a>
 								<? } elsif ($state eq "running") { ?>
-									<span><a href="/running/<?= $res->{testname} ?>">running</a></span>
+									<a href="/running/<?=$testname?>">running</a>
+								<? } elsif ($state eq "scheduled") { ?>
+									sched.(<?= $res->{priority} ?>)
 								<? } else { ?>
-									<span><?= $state ?></span>
+									<?= $state ?>
 								<? } ?>
+								</span>
+
+								<?# Actions ?>
+								<span id="actions_<?=$jobid?>" style="display:none"><ul style="margin: 0px;">
+								<? my $href = "/schedule/$testname?back=1&action="; ?>
+								<? if ($state eq "scheduled") { ?>
+									<? my $prio = $res->{'priority'}; ?>
+									<li style="margin: 0px;"><a href="<?= $href."setpriority&priority=".($prio+10)?>">Raise priority</a></li>
+									<li style="margin: 0px;"><a href="<?= $href."setpriority&priority=".($prio-10)?>">Lower priority</a></li>
+								<? } else { ?>
+									<li style="margin: 0px;"><a href="<?=$href."restart"?>">Re-schedule</a></li>
+								<? } ?>
+								<? if ($state eq "scheduled" || $state eq "running") { ?>
+									<li style="margin: 0px;"><a href="<?=$href."cancel"?>">Cancel</a></li>
+								<? } ?>
+								</ul></span>
 							<? } ?>
 							</td>
 						<? } ?>

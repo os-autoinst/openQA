@@ -44,7 +44,11 @@ sub store_result {
 
 for my $job (@{Scheduler::list_jobs('build'=>$build)||[]}) {
 	my $testname = $job->{'name'};
-	my $params = openqa::parse_testname($testname);
+	my $p = openqa::parse_testname($testname);
+	my $config = $p->{extrainfo};
+	my $type = $p->{flavor};
+	my $arch = $p->{arch};
+
 	if ($job->{state} eq 'done') {
 		my $result = test_result($testname);
 		my $result_stats = test_result_stats($result);
@@ -52,13 +56,14 @@ for my $job (@{Scheduler::list_jobs('build'=>$build)||[]}) {
 		if (($result->{overall}||'') eq "ok") {
 			$overall = ($result->{dents}) ? "unknown" : "ok";
 		}
-		store_result($params->{extrainfo}, $params->{flavor}, $params->{arch}, { ok=>$result_stats->{ok}||0, unknown=>$result_stats->{unk}||0,
-							fail=>$result_stats->{fail}||0, overall=>$overall,
+		store_result($config, $type, $arch, { ok=>$result_stats->{ok}||0, unknown=>$result_stats->{unk}||0,
+							fail=>$result_stats->{fail}||0, overall=>$overall, jobid=>$job->{id},
 							state=>"done", testname=>$testname });
 	} elsif ($job->{state} eq 'running') {
-		store_result($params->{extrainfo}, $params->{flavor}, $params->{arch}, { state=>"running", testname=>$testname });
+		store_result($config, $type, $arch, { state=>"running", testname=>$testname, jobid=>$job->{id} });
 	} else {
-		store_result($params->{extrainfo}, $params->{flavor}, $params->{arch}, { state=>$job->{state}, testname=>$testname });
+		store_result($config, $type, $arch, { state=>$job->{state}, testname=>$testname,
+							jobid=>$job->{id}, priority=>$job->{priority} });
 	}
 }
 
