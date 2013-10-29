@@ -12,7 +12,8 @@ $name=~s/[^a-zA-Z0-9.+_-]//g; # sanitize
 $|=1;
 
 my $back = param('redirect_back');
-my $cancel = param('cancel');
+my $action = param('action') || 'restart';
+my $priority = param('priority');
 if($back) {
 	print header(-type=>"text/html");
 	print "<script type='text/javascript'>\n";
@@ -20,7 +21,6 @@ if($back) {
 else {
 	print header(-type=>"text/plain");
 }
-$cancel = (defined $cancel and $cancel);
 
 sub myprint($) {
 	my $pr = shift;
@@ -32,17 +32,20 @@ if(!is_authorized_rw()) {
 	myprint "denied";
 }
 else {
-	if($cancel) {
+	if($action eq 'cancel') {
 	    Scheduler::job_stop($name);
-	} else {
+	} elsif ($action eq 'restart') {
 	    Scheduler::job_restart($name);
+	} elsif ($action eq 'setpriority' and defined $priority) {
+	    my $job = Scheduler::job_get($name);
+	    Scheduler::job_set_prio( prio=>$priority, jobid=>$job->{id} );
 	}
 }
 
 if($back) {
 
 	my $params = openqa::parse_testname($name);
-	if($cancel || $back eq 'results') {
+	if($back eq 'results') {
 		print "window.location = '/results/';\n";
 	} elsif ($back eq 'details') {
 		print "window.location = '/results/$name';\n";

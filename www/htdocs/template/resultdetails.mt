@@ -19,7 +19,7 @@
 			<? } ?>
 			<a href="/<?= $prj ?>/testresults/<?= $testname ?>/video.ogv"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
 			<a href="/results/"><img src="/images/back.png" alt="back" title="back to overview page" /></a>
-			<a href="/schedule/<?= $testname ?>?redirect_back=details"><img src="/images/toggle.png" alt="schedule" title="re-schedule"/></a>
+			<a href="/schedule/<?= $testname ?>?action=restart&redirect_back=details"><img src="/images/toggle.png" alt="schedule" title="re-schedule"/></a>
 		</div>
 	</div>
 	<? if($resultfiles) { ?>

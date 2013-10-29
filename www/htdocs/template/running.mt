@@ -39,8 +39,8 @@ table {
 		<div class="box-header aligncenter">Actions</div>
 		<div class="aligncenter">
 			<a href="/results/"><img src="/images/back.png" alt="back" title="back to result page" /></a> 
-			<a href="/schedule/<?= $testname ?>?redirect_back=details"><img src="/images/toggle.png" alt="restart" title="Restart Job"/></a>
-			<a href="/schedule/<?= $testname ?>?redirect_back=details&cancel=1"><img src="/images/cancel.png" alt="stop" title="Stop Job"/></a>
+			<a href="/schedule/<?= $testname ?>?action=restart&redirect_back=details"><img src="/images/toggle.png" alt="restart" title="Restart Job"/></a>
+			<a href="/schedule/<?= $testname ?>?action=cancel&redirect_back=details"><img src="/images/cancel.png" alt="stop" title="Stop Job"/></a>
 		</div>
 		<table style="width: 90%">
 			<tr>

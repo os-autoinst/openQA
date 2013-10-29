@@ -57,7 +57,7 @@
 				<? } else { ?>
 				<a href="/results/<?= $test->{'testname'} ?>"><img src="/images/details.png" alt="details" title="test result details" height="23" width="23" /></a>
 				<a href="/<?= $prj ?>/testresults/<?= $test->{'testname'} ?>/video.ogv"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
-				<a href="/schedule/<?= $test->{'testname'} ?>?redirect_back=results"><img src="/images/toggle.png" alt="restart" title="Restart Job"/></a>
+				<a href="/schedule/<?= $test->{'testname'} ?>?action=restart&redirect_back=results"><img src="/images/toggle.png" alt="restart" title="Restart Job"/></a>
 				<? } ?>
 			</td>
 			<td><?= $test->{'backend'} ?></td>
@@ -100,14 +100,22 @@
 		<? for my $test (@$schedulelist) { ?>
 		<tr>
 			<td style="font-style: italic;">scheduled</td>
-			<td><?= $test->{'priority'} ?></td>
+			<?
+			  my $prio = $test->{'priority'};
+			  my $href = "/schedule/".$test->{'testname'}."?action=setpriority&priority=";
+			?>
+			<td>
+				<a href="<?= $href.($prio-10)?>" onclick="this.href += '&redirect_back=results'" rel="nofollow">-</a>
+				<?= $prio ?>
+				<a href="<?= $href.($prio+10)?>" onclick="this.href += '&redirect_back=results'" rel="nofollow">+</a>
+			</td>
 			<td><?= $test->{'distri'} ?></td>
 			<td><?= $test->{'type'} ?></td>
 			<td><?= $test->{'arch'} ?></td>
 			<td><span class="textlink"><a href="/buildview/<?= $test->{'distri'} ?>/Build<?= $test->{'build'} ?>"><?= $test->{'build'} ?></a></span></td>
 			<td><span class=""><?= $test->{'extrainfo'} ?></span></td>
 			<td colspan="4" style="padding: 3px 4px; font-style: italic;">
-				<a href="/schedule/<?= $test->{'testname'} ?>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+				<a href="/schedule/<?= $test->{'testname'} ?>?action=cancel" onclick="this.href += '&redirect_back=results'" rel="nofollow">cancel</a>
 			</td>
 		</tr>
 		<? } ?>
