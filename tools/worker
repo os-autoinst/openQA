@@ -236,11 +236,11 @@ sub job_release_or_done($$$)
 	my $retries = 3; while(1) { eval {
 		# give up if the prio is too bad
 		if ($job->{'priority'} gt 70) {
-			printf "setting job %d to $result\n", $job->{'id'} if $verbose;
+			printf "setting job %d to $result\n", $job->{'id'};
 			$client->job_set_done($job->{'id'}, $result);
 		} else {
 			$job->{'priority'}++;
-			printf "releasing job %d, prio %d\n", $job->{'id'}, $job->{'priority'} if $verbose;
+			printf "releasing job %d, prio %d\n", $job->{'id'}, $job->{'priority'};
 			# make it less attractive so we don't get it again
 			$client->job_set_prio($job->{'id'}, $job->{'priority'});
 			$client->job_set_scheduled($job->{'id'});
@@ -385,7 +385,7 @@ sub main()
 
 		# abort job if it takes too long
 		if ($job && $worker_start_time && time-$worker_start_time > $max_job_time && !$aborted) {
-			print "max job time exceeded, abort ...\n";
+			warn sprintf("max job time exceeded, aborting %s ...\n", $job->{'settings'}->{'NAME'});
 			_kill_worker($worker);
 			job_release_or_done($client, $job, "time exceeded");
 			$aborted = 'timeout';
@@ -489,13 +489,14 @@ sub main()
 				$result = $overall if !$aborted && $overall;
 				if (($aborted||'') eq 'stop' || $overall) {
 					$retries = 3; while(1) { eval {
-						printf "setting job %d to $result\n", $job->{'id'} if $verbose;
+						printf "setting job %d to $result\n", $job->{'id'};
 						$client->job_set_done($job->{'id'}, $result);
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 				} else {
 					job_release_or_done($client, $job, $result);
 				}
 			}
+			warn sprintf("cleaning up %s ...\n", $job->{'settings'}->{'NAME'});
 			clean_pool($job);
 			$job = undef;
 			$worker = undef;

@@ -17,6 +17,7 @@ my $fn=$ENV{PATH_INFO};
 if($fn=~m/\.\./) {print header(-status=>403)."invalid path"; exit 0; }
 $fn=~s%^/%%;
 my($build) = split(/\//, $fn);
+$build =~ s/^Build//;
 
 my @configs=();
 my %archs=();
@@ -39,10 +40,11 @@ sub store_result {
 for my $r (<$resultdir/*>) {
 	# Iterate over the results, skipping everything but the target build
 	next unless -d $r;
-	my ($distri, $type, $arch, $b, $config)=split_filename($r);
-	next if $build ne $b;
 
 	my $testname = path_to_testname($r);
+	my $params = openqa::parse_testname($testname);
+	next if "Build$build" ne $params->{build};
+
 	my $state;
 	my $result;
 	my $result_stats;
@@ -54,12 +56,12 @@ for my $r (<$resultdir/*>) {
 		if (($result->{overall}||'') eq "ok") {
 			$overall = ($result->{dents}) ? "unknown" : "ok";
 		}
-		store_result($config, $type, $arch, { ok=>$result_stats->{ok}||0, unknown=>$result_stats->{unk}||0,
+		store_result($params->{extrainfo}, $params->{flavor}, $params->{arch}, { ok=>$result_stats->{ok}||0, unknown=>$result_stats->{unk}||0,
 							fail=>$result_stats->{fail}||0, overall=>$overall,
 							state=>"done", testname=>$testname });
 	# Running test
 	} else {
-		store_result($config, $type, $arch, { state=>"running", testname=>$testname });
+		store_result($params->{extrainfo}, $params->{flavor}, $params->{arch}, { state=>"running", testname=>$testname });
 	}
 }
 
