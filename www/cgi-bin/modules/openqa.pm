@@ -9,7 +9,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @EXPORT = qw(
 $prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle @runner $res_css $res_display
 $loguploaddir
-&parse_log &parse_log_to_stats &parse_log_to_hash &parse_iso &log_to_scriptpath &path_to_url &split_filename &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info
+&parse_log &parse_log_to_stats &parse_log_to_hash &parse_iso &log_to_scriptpath &path_to_url &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info
 &test_result &test_result_stats &test_result_hash &test_result_module &test_resultfile_list &testresultdir &test_uploadlog_list
 $localstatedir $dbfile
 &get_failed_needles
@@ -300,25 +300,6 @@ sub testresultdir($) {
 	$fn=~s%\.autoinst\.txt$%%;
 	$fn=~s%\.ogv$%%;
 	"$basedir/$prj/testresults/$fn";
-}
-
-sub split_filename($) { my($fn)=@_;
-	my $origfn=$fn;
-	$fn=~s%\.autoinst\.txt$%%; # strip suffix
-	$fn=~s%\.ogv$%%; # strip suffix
-	$fn=~s%.*/%%; # strip path
-
-	# since we want to split at "-", this should not appear within fields
-	$fn=~s/(openSUSE)-(1\d\.\d|Factory)/$1_$2/; # since 2013-02-05 isos have the distri version included in the name
-	$fn=~s/Promo-DVD/DVD_Promo/;
-	$fn=~s/DVD-Biarch-i586-x86_64/DVD_Biarch-i586+x86_64/;
-	$fn=~s/-Live/_Live/; # belongs to KDE/GNOME, so protect from split
-	$fn=~s/-CD-/_CD-/; # for Rescue-CD
-	$fn=~s/(SLE.)-(\d+)-(SP|G)/$1_$2_$3/;
-	my @a=split("-",$fn);
-	$a[3]=~s/Build//;
-	$a[4]||=""; # extrainfo is optional
-	return (@a);
 }
 
 sub test_resultfile_list($) {
