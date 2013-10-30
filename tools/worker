@@ -203,11 +203,13 @@ sub workit($)
 		# just to make isotovideo happy
 		unlink('env.sh');
 		open(my $e, '>', 'env.sh') or die "can't open env.sh: $!\n";
-		close $e;
 		while (my ($k, $v) = each $job->{'settings'}) {
 			print "setting $k=$v\n" if $verbose;
 			$ENV{$k} = $v;
+			# XXX: this assumes no quoting needed!
+			printf $e "%s=\"%s\"\n", $k, $v;
 		}
+		close $e;
 		printf "$$: WORKING %d\n", $job->{'id'};
 		exec($isotovideo, $iso);
 		die "exec failed: $!\n";
