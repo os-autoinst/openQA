@@ -33,7 +33,7 @@ my $maxmtime=(stat($ENV{SCRIPT_FILENAME}))[9];
 
 # schedule list
 my @slist=();
-for my $job (@{Scheduler::list_jobs('state' => 'scheduled,stopped')||[]}) {
+for my $job (@{Scheduler::list_jobs('state' => 'scheduled')||[]}) {
 	my $testname = $job->{'name'};
 	next if($options{match} && $testname !~ m/$options{match}/);
 	my $params = openqa::parse_testname($testname);
