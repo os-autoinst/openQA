@@ -71,7 +71,7 @@ sub iso_new : Num
 	    },
             prio => 45 },
         uefi => { 
-            applies => sub { $_[0]->{arch} =~ /x86_64/ },
+            applies => sub { $_[0]->{arch} =~ /x86_64/ && $_[0]->{flavor} !~ /Live/ },
 	    prio => 45,
             settings => {
                 'QEMUCPU' => 'qemu64',
@@ -251,16 +251,6 @@ sub iso_new : Num
                 'SPLITUSR' => '1',
                 'NICEVIDEO' => '1',
             } },
-        usbboot => {
-            applies => sub { $_[0]->{flavor} =~ /Live/ },
-            settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
-        usbboot_uefi => {
-            applies => sub { $_[0]->{flavor} =~ /Live/ && $_[0]->{arch} =~ /x86_64/  },
-            settings => {'USBBOOT' => '1',
-			 'LIVETEST' => '1',
-			 'UEFI' => '1',
-                         'QEMUCPU' => 'qemu64',
-                     } },
         );
 
     my @requested_runs;
@@ -285,24 +275,25 @@ sub iso_new : Num
     
     ### iso-based test restrictions go here
 
+    sub clone_testrun($;@)
+    {
+	my $run = shift;
+	my %h = @_;
+
+	my $settings = clone $run;
+
+	while (my ($k, $v) = each %h) {
+	    $settings->{settings}->{$k} = $v;
+	}
+	use Data::Dump qw/pp/;
+	print STDERR pp($settings);
+	return $settings;
+    }
+
     if($params->{flavor} =~ m/Rescue/i) {
 	# Rescue_CD cannot be installed; so livetest only
         @requested_runs = grep(/rescue/, @requested_runs);
     } elsif($params->{flavor} eq 'Promo-DVD-OpenSourcePress') {
-	sub clone_testrun($;@)
-	{
-	    my $run = shift;
-	    my %h = @_;
-
-	    my $settings = clone $run;
-
-	    while (my ($k, $v) = each %h) {
-		$settings->{settings}->{$k} = $v;
-	    }
-	    use Data::Dump qw/pp/;
-	    print STDERR pp($settings);
-	    return $settings;
-	}
 	# open source press is live only
         @requested_runs = grep (/live/, @requested_runs);
 	my @cloned;
@@ -328,6 +319,24 @@ sub iso_new : Num
 
 	for my $t (@requested_runs) {
 	    $testruns{$t}->{settings}->{INSTALLONLY} = 1;
+	}
+    } elsif($params->{flavor} =~ /Live/ || $params->{flavor} eq 'Promo-DVD') {
+	my @cloned;
+	for my $t (grep (/live/, @requested_runs)) {
+	    my $name = $t.'-usb';
+	    $testruns{$name} = clone_testrun($testruns{$t}, USBBOOT => 1, INSTALLONLY => 1);
+	    push @cloned, $name;
+	}
+	push @requested_runs, @cloned;
+
+	if ($params->{arch} eq 'x86_64') {
+	    for my $t (grep (/live/, @requested_runs)) {
+		my $name = $t;
+		$name = $t.'-uefi';
+		$testruns{$name} = clone_testrun($testruns{$t}, 'UEFI' => 1);
+		push @cloned, $name;
+	    }
+	    push @requested_runs, @cloned;
 	}
     }
 
