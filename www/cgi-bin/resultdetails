@@ -6,6 +6,7 @@ use lib "$FindBin::Bin/modules";
 use openqa;
 use Text::MicroTemplate "encoded_string";
 use Text::MicroTemplate::Extended;
+use Scheduler ();
 use POSIX "strftime";
 
 my $testname=$ENV{PATH_INFO};
@@ -18,6 +19,8 @@ my $fqfn="$resultdir/$testname/autoinst-log.txt";
 if(!-e $fqfn) { print redirect(-status=>302, -location => "/running/$testname")."test is not finished, try live view"; exit 0 }
 
 my $results = test_result($testname);
+
+my $job = Scheduler::job_get($testname);
 
 my @modlist=();
 foreach my $module (@{$results->{'testmodules'}}) {
@@ -80,7 +83,17 @@ my @ulogs = test_uploadlog_list($testname);
 
 my $mt = Text::MicroTemplate::Extended->new(
 	include_path  => ['../htdocs/template'],
-	template_args => { overall => $results->{'overall'}, modlist => \@modlist, testname => $testname, diskimg => $diskimg, backend_info => $results->{backend}, resultfiles => \@resultfiles, ulogs => \@ulogs, test_duration => $test_duration },
+	template_args => {
+		overall => $results->{'overall'},
+		modlist => \@modlist,
+		testname => $testname,
+		diskimg => $diskimg,
+		backend_info => $results->{backend},
+		resultfiles => \@resultfiles,
+		ulogs => \@ulogs,
+		test_duration => $test_duration,
+		job => $job,
+	},
 );
 
 print header(-charset=>"UTF-8", -type=>"text/html");
