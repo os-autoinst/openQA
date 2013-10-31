@@ -338,6 +338,14 @@ sub iso_new : Num
 	    }
 	    push @requested_runs, @cloned;
 	}
+
+	# for promo make live tests install only as we already tested the
+	# apps in the plain live cds.
+	if ($params->{flavor} eq 'Promo-DVD') {
+	    for my $t (@requested_runs) {
+		$testruns{$t}->{settings}->{INSTALLONLY} = 1;
+	    }
+	}
     }
 
     my $pattern = $iso;
