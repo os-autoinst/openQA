@@ -421,7 +421,6 @@ sub iso_new : Num
             }
             if ($params->{flavor} =~ m/Promo/i) {
                 $settings{PROMO}=1;
-                $settings{NOIMAGES}=1;
             }
 	    $settings{FLAVOR} = $params->{flavor};
             if($params->{flavor}=~m/(DVD|NET|KDE|GNOME|LXDE|XFCE)/) {
