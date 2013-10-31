@@ -57,22 +57,24 @@ sub iso_new : Num
     my $args = shift;
     my $iso;
 
+    my $default_prio = 50;
+
     ### definition of special tests
     my %testruns = (
         textmode => {
             applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {'DESKTOP' => 'textmode',
                          'VIDEOMODE' => 'text'},
-            prio => 40 },
+            prio => $default_prio - 10 },
         kde => {
             applies => '$iso{flavor} !~ /GNOME/',
             settings => {
 		'DESKTOP' => 'kde'
 	    },
-            prio => 45 },
+            prio => $default_prio - 10 },
         uefi => { 
             applies => sub { $_[0]->{arch} =~ /x86_64/ && $_[0]->{flavor} !~ /Live/ },
-	    prio => 45,
+	    prio => $default_prio - 5,
             settings => {
                 'QEMUCPU' => 'qemu64',
                 'UEFI' => '1',
@@ -85,7 +87,7 @@ sub iso_new : Num
 		DESKTOP => 'kde',
 		'USBBOOT' => '1',
 	    },
-	    prio => 45,
+	    prio => $default_prio - 5,
 	    },
         'kde+btrfs' => {
             applies => '$iso{flavor} !~ /GNOME/',
@@ -97,10 +99,10 @@ sub iso_new : Num
         gnome => {
             applies => sub { $_[0]->{flavor} !~ /KDE/ },
             settings => {'DESKTOP' => 'gnome', 'LVM' => '1'},
-            prio => 45 },
+            prio => $default_prio - 5, },
         'gnome+usb' => {
             applies => sub { $_[0]->{flavor} =~ /GNOME/ },
-	    prio => 45,
+	    prio => $default_prio - 5,
             settings => {
 		DESKTOP => 'gnome',
 		'USBBOOT' => '1',
@@ -116,7 +118,7 @@ sub iso_new : Num
         minimalx => {
             applies => sub { $_[0]->{flavor} !~ /Live/ },
             settings => {'DESKTOP' => 'minimalx'},
-            prio => 45 },
+            prio => $default_prio - 5 },
         "minimalx+btrfs" => {
             applies => sub { $_[0]->{flavor} !~ /Live/ },
             settings => {
@@ -148,11 +150,11 @@ sub iso_new : Num
             applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {'DESKTOP' => 'lxde',
                          'LVM' => '1'},
-            prio => 49 },
+            prio => $default_prio - 1 },
         xfce => {
             applies => sub { $_[0]->{flavor} !~ /Live|Promo/ },
             settings => {'DESKTOP' => 'xfce'},
-            prio => 49 },
+            prio => $default_prio - 1 },
         'gnome+laptop' => {
             applies => sub { $_[0]->{flavor} !~ /KDE/ },
             settings => {'DESKTOP' => 'gnome', 'LAPTOP' => '1'},
@@ -172,18 +174,21 @@ sub iso_new : Num
             } },
         RAID1 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
+	    prio => $default_prio + 1,
             settings => {
                     'RAIDLEVEL' => '1',
 		    'INSTALLONLY' => '1',
             } },
         RAID5 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
+	    prio => $default_prio + 1,
             settings => {
                     'RAIDLEVEL' => '5',
 		    'INSTALLONLY' => '1',
             } },
         RAID10 => {
             applies => sub { $_[0]->{flavor} !~ /Promo/ },
+	    prio => $default_prio + 1,
             settings => {
                     'RAIDLEVEL' => '10',
 		    'INSTALLONLY' => '1',
@@ -210,22 +215,25 @@ sub iso_new : Num
                          'QEMUVGA' => 'std'} },
         doc => { 
             applies => sub { $_[0]->{flavor} eq 'DVD' && $_[0]->{arch} =~ /x86_64/ },
-	    prio => 60,
+	    prio => $default_prio + 10,
             settings => {'DOCRUN' => '1',
                          'QEMUVGA' => 'std'} },
         'kde-live' => {
             applies => sub { $_[0]->{flavor} =~ /KDE-Live|Promo/ },
+	    prio => $default_prio - 2,
             settings => {
 		'DESKTOP' => 'kde',
 		'LIVETEST' => '1',
 		} },
         'gnome-live' => {
             applies => sub { $_[0]->{flavor} =~ /GNOME-Live|Promo/ },
+	    prio => $default_prio - 2,
             settings => {
 		'DESKTOP' => 'gnome',
 		'LIVETEST' => '1',
 		} },
         rescue => {
+	    prio => $default_prio - 1,
             applies => sub { $_[0]->{flavor} =~ /Rescue/ }, # Note: special case handled below
             settings => {'DESKTOP' => 'xfce',
                          'LIVETEST' => '1',
@@ -425,7 +433,7 @@ sub iso_new : Num
             }
 
             # default priority
-            my $prio = 50;
+            my $prio = $default_prio;
             
             # change prio if defined
             $prio = $testruns{$run}->{prio} if ($testruns{$run}->{prio});
