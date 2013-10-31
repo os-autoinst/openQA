@@ -327,6 +327,7 @@ sub iso_new : Num
 
 	for my $t (@requested_runs) {
 	    $testruns{$t}->{settings}->{INSTALLONLY} = 1;
+	    $testruns{$t}->{settings}->{OSP_SPECIAL} = 1;
 	}
     } elsif($params->{flavor} =~ /Live/ || $params->{flavor} eq 'Promo-DVD') {
 	my @cloned;
