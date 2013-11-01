@@ -272,19 +272,19 @@ sub iso_new : Num
 	    } },
 	update_121 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
-	    settings => {'UPDATE' => '1',
+	    settings => {'UPGRADE' => '1',
 			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.1.hda'),
 			 'HDDVERSION' => 'openSUSE-12.1',
 	    } },
 	update_122 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
-	    settings => {'UPDATE' => '1',
+	    settings => {'UPGRADE' => '1',
 			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.2.hda'),
 			 'HDDVERSION' => 'openSUSE-12.2',
 	    } },
 	update_123 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
-	    settings => {'UPDATE' => '1',
+	    settings => {'UPGRADE' => '1',
 			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.3.hda'),
 			 'HDDVERSION' => 'openSUSE-12.3',
 	    } },
