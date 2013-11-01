@@ -12,6 +12,7 @@ BEGIN {
 use strict;
 use Data::Dump qw/pp/;
 use Clone qw/clone/;
+use File::Spec;
 
 use FindBin;
 use lib $FindBin::Bin;
@@ -259,6 +260,40 @@ sub iso_new : Num
                 'SPLITUSR' => '1',
                 'NICEVIDEO' => '1',
             } },
+        usbboot => {
+            applies => sub { $_[0]->{flavor} =~ /Live/ },
+            settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
+        usbboot_uefi => {
+            applies => sub { $_[0]->{flavor} =~ /Live/ && $_[0]->{arch} =~ /x86_64/  },
+            settings => {'USBBOOT' => '1',
+			 'LIVETEST' => '1',
+			 'UEFI' => '1',
+                         'QEMUCPU' => 'qemu64',
+	    } },
+	update_121 => {
+	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
+	    settings => {'UPDATE' => '1',
+			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.1.hda'),
+			 'HDDVERSION' => 'openSUSE-12.1',
+	    } },
+	update_122 => {
+	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
+	    settings => {'UPDATE' => '1',
+			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.2.hda'),
+			 'HDDVERSION' => 'openSUSE-12.2',
+	    } },
+	update_123 => {
+	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
+	    settings => {'UPDATE' => '1',
+			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.3.hda'),
+			 'HDDVERSION' => 'openSUSE-12.3',
+	    } },
+	dual_windows8 => {
+	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
+	    settings => {'DUALBOOT' => '1',
+			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'Windows-8.hda'),
+			 'HDDVERSION' => 'Windows 8',
+	    } },
         );
 
     my @requested_runs;
