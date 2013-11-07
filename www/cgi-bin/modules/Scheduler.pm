@@ -495,6 +495,12 @@ sub _jobs_find_by_iso($;@)
     my @cols = @_;
     @cols = ('id') unless @_;
 
+    # In case iso file use a absolute path
+    # like iso_delete /var/lib/.../xxx.iso
+    if ($iso =~ /\// ) {
+            $iso =~ s#^.*/##;
+    }
+
     my $sth = $dbh->prepare("SELECT ".join(',', @cols)." FROM jobs, job_settings"
 	    . " WHERE jobs.id == job_settings.jobid"
 	    . " AND job_settings.key == 'ISO'"
