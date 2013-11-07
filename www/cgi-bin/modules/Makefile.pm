@@ -273,26 +273,30 @@ sub iso_new : Num
 	update_121 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
 	    settings => {'UPGRADE' => '1',
-			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.1.hda'),
+			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.1-x86_64.hda'),
 			 'HDDVERSION' => 'openSUSE-12.1',
+			 'DESKTOP' => 'kde',
 	    } },
 	update_122 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
 	    settings => {'UPGRADE' => '1',
-			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.2.hda'),
+			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.2-x86_64.hda'),
 			 'HDDVERSION' => 'openSUSE-12.2',
+			 'DESKTOP' => 'kde',
 	    } },
 	update_123 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
 	    settings => {'UPGRADE' => '1',
-			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.3.hda'),
+			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.3-x86_64.hda'),
 			 'HDDVERSION' => 'openSUSE-12.3',
+			 'DESKTOP' => 'kde',
 	    } },
 	dual_windows8 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
 	    settings => {'DUALBOOT' => '1',
 			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'Windows-8.hda'),
 			 'HDDVERSION' => 'Windows 8',
+			 'DESKTOP' => 'kde',
 	    } },
         );
 
