@@ -296,8 +296,21 @@ sub iso_new : Num
 	    settings => {'DUALBOOT' => '1',
 			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'Windows-8.hda'),
 			 'HDDVERSION' => 'Windows 8',
+			 'HDDMODEL' => 'ide-hd',
+			 'NUMDISKS' => 1,
 			 'DESKTOP' => 'kde',
 	    } },
+	# dual_windows8_uefi => {
+	#     applies => sub { $_[0]->{flavor} !~ /Promo/ && $_[0]->{arch} =~ /x86_64/ },
+	#     settings => {'DUALBOOT' => '1',
+	# 		 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'Windows-8.hda'),
+	# 		 'HDDVERSION' => 'Windows 8',
+	# 		 'HDDMODEL' => 'ide-hd',
+	# 		 'NUMDISKS' => 1,
+	# 		 'DESKTOP' => 'kde',
+	# 		 'UEFI' => '1',
+        # 	         'QEMUCPU' => 'qemu64',
+	#     } },
         );
 
     my @requested_runs;
