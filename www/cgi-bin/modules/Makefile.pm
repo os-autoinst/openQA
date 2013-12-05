@@ -260,16 +260,6 @@ sub iso_new : Num
                 'SPLITUSR' => '1',
                 'NICEVIDEO' => '1',
             } },
-        usbboot => {
-            applies => sub { $_[0]->{flavor} =~ /Live/ },
-            settings => {'USBBOOT' => '1', 'LIVETEST' => '1'} },
-        usbboot_uefi => {
-            applies => sub { $_[0]->{flavor} =~ /Live/ && $_[0]->{arch} =~ /x86_64/  },
-            settings => {'USBBOOT' => '1',
-			 'LIVETEST' => '1',
-			 'UEFI' => '1',
-                         'QEMUCPU' => 'qemu64',
-	    } },
 	update_121 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
 	    settings => {'UPGRADE' => '1',
