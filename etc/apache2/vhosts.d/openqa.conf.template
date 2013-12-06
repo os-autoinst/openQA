@@ -17,7 +17,6 @@
     SetEnv OPENQA_NEEDLES_SCM "git"
     SetEnv OPENQA_NEEDLES_GIT_WORKTREE "/var/lib/os-autoinst/needles"
     SetEnv OPENQA_NEEDLES_GIT_DO_PUSH "no"
-    SetEnv OPENQA_HDDPOOL "/var/lib/openqa/hdd"
 
     # space seaparated list of IPs or regular expressions that match IPs
     SetEnv OPENQA_ALLOWED_HOSTS "127.0.0.1 ::1"

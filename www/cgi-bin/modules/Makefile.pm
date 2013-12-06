@@ -12,7 +12,6 @@ BEGIN {
 use strict;
 use Data::Dump qw/pp/;
 use Clone qw/clone/;
-use File::Spec;
 
 use FindBin;
 use lib $FindBin::Bin;
@@ -263,28 +262,28 @@ sub iso_new : Num
 	update_121 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
 	    settings => {'UPGRADE' => '1',
-			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.1-x86_64.hda'),
+			 'HDD' => 'openSUSE-12.1-x86_64.hda',
 			 'HDDVERSION' => 'openSUSE-12.1',
 			 'DESKTOP' => 'kde',
 	    } },
 	update_122 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
 	    settings => {'UPGRADE' => '1',
-			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.2-x86_64.hda'),
+			 'HDD' => 'openSUSE-12.2-x86_64.hda',
 			 'HDDVERSION' => 'openSUSE-12.2',
 			 'DESKTOP' => 'kde',
 	    } },
 	update_123 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
 	    settings => {'UPGRADE' => '1',
-			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'openSUSE-12.3-x86_64.hda'),
+			 'HDD' => 'openSUSE-12.3-x86_64.hda',
 			 'HDDVERSION' => 'openSUSE-12.3',
 			 'DESKTOP' => 'kde',
 	    } },
 	dual_windows8 => {
 	    applies => sub { $_[0]->{flavor} !~ /Promo/ },
 	    settings => {'DUALBOOT' => '1',
-			 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'Windows-8.hda'),
+			 'HDD' => 'Windows-8.hda',
 			 'HDDVERSION' => 'Windows 8',
 			 'HDDMODEL' => 'ide-hd',
 			 'NUMDISKS' => 1,
@@ -293,7 +292,7 @@ sub iso_new : Num
 	# dual_windows8_uefi => {
 	#     applies => sub { $_[0]->{flavor} !~ /Promo/ && $_[0]->{arch} =~ /x86_64/ },
 	#     settings => {'DUALBOOT' => '1',
-	# 		 'HDDPATH' => File::Spec->catfile($ENV{OPENQA_HDDPOOL}, 'Windows-8.hda'),
+	# 		 'HDD' => 'Windows-8.hda',
 	# 		 'HDDVERSION' => 'Windows 8',
 	# 		 'HDDMODEL' => 'ide-hd',
 	# 		 'NUMDISKS' => 1,
