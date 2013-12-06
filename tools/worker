@@ -177,7 +177,6 @@ sub workit($)
 {
 	my $job = shift;
 	my $iso = $job->{'settings'}->{'ISO'};
-	my $hdd = $job->{'settings'}->{'HDD'} || undef;
 	return undef unless $iso;
 
 	# XXX: this should come from the worker table. Only included
@@ -199,13 +198,17 @@ sub workit($)
 	}
 	$job->{'settings'}->{'ISO'} = $iso;
 
-	if ($hdd) {
-		$hdd = join('/', $hdddir, $hdd);
-		unless (-e $hdd) {
-			warn "$hdd does not exist!\n";
-			return undef;
+	my $nd = $job->{'settings'}->{'NUMDISKS'} || 2;
+	for my $i (1..$nd) {
+		my $hdd = $job->{'settings'}->{'HDD_$i'} || undef;
+		if ($hdd) {
+			$hdd = join('/', $hdddir, $hdd);
+			unless (-e $hdd) {
+				warn "$hdd does not exist!\n";
+				return undef;
+			}
+			$job->{'settings'}->{'HDD_$i'} = $hdd;
 		}
-		$job->{'settings'}->{'HDD'} = $hdd;
 	}
 
 	my $child = fork();
