@@ -437,6 +437,7 @@ sub iso_new : Num
             my %settings = ( ISO => $iso,
                              NAME => join('-', @{$params}{qw(distri version flavor arch build)}, $run),
                              DISTRI => lc($params->{distri}),
+                             VERSION => $params->{distri},
                              DESKTOP => 'kde' );
 
             if ($ENV{OPENQA_SUSE_MIRROR}) {
