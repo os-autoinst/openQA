@@ -6,7 +6,7 @@ use FindBin;
 use lib $FindBin::Bin.'/../www/cgi-bin/modules';
 use openqa qw(parse_iso);
 
-use Test::Simple tests => 8;
+use Test::Simple tests => 10;
 
 my @testdata = (
     {
@@ -88,6 +88,26 @@ my @testdata = (
             'build' => 'Build0066',
             'flavor' => 'Rescue-CD'
         },
+    },
+    {
+	iso => 'SLES-12-DVD-x86_64-Build0067-Media1.iso',
+	params => {
+	    arch    => "x86_64",
+	    build   => "Build0067",
+	    distri  => "SLES",
+	    flavor  => "DVD",
+	    version => 12,
+	},
+    },
+    {
+	iso => 'SLED-12-DVD-x86_64-Build0044-Media1.iso',
+	params => {
+	    arch    => "x86_64",
+	    build   => "Build0044",
+	    distri  => "SLED",
+	    flavor  => "DVD",
+	    version => 12,
+	},
     },
 );
 

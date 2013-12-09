@@ -141,8 +141,8 @@ sub parse_log_to_hash($) {
 
 sub _regexp_parts
 {
-    my $distri = '(openSUSE|SLES)';
-    my $version = '(\d+.\d|\d+-SP\d|Factory)';
+    my $distri = '(openSUSE|SLE[DS])';
+    my $version = '(\d+(?:\.\d|-SP\d)?|Factory)';
     my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-)?DVD(?:-BiArch|-OpenSourcePress)?|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO|staging_[^-]+)';
     my $arch = '(i[356]86(?:-x86_64)?|x86_64|i586-x86_64|ia64|ppc64|s390x)';
     my $build = '(Build(?:\d+))';
