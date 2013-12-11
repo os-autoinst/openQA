@@ -1,12 +1,12 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Data::Dump qw/pp/;
+use Data::Dump qw/pp dd/;
 use FindBin;
 use lib $FindBin::Bin.'/../www/cgi-bin/modules';
 use openqa qw(parse_iso);
 
-use Test::Simple tests => 10;
+use Test::Simple tests => 11;
 
 my @testdata = (
     {
@@ -109,9 +109,21 @@ my @testdata = (
 	    version => 12,
 	},
     },
+    {
+	iso => 'openSUSE-Factory-staging_core-x86_64-Build0047.0001-Media.iso',
+	params => {
+	    arch    => "x86_64",
+	    build   => "Build0047.0001",
+	    distri  => "openSUSE",
+	    flavor  => "staging_core",
+	    version => "Factory",
+	},
+    },
 );
 
 for my $t (@testdata) {
     my $params = parse_iso($t->{iso});
-    ok (pp($params) eq pp($t->{params}), $t->{iso});
+    my $r = pp($params) eq pp($t->{params});
+    ok ($r, $t->{iso});
+    dd $params unless $r;
 }
