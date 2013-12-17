@@ -52,7 +52,7 @@ if ($action eq "save") {
 	my $json = param('json');
 	my $imagepath = param('imagepath');
 	my $needlename = param('needlename');
-	my $needledir = "distri/$results->{distribution}/needles";
+	my $needledir = needledir($results->{distribution}, $results->{version});
 	my $success = 1;
 
 	my $baseneedle = "$perldir/$needledir/$needlename";
@@ -84,7 +84,7 @@ if ($action eq "save") {
 		}
 		$info_msg = "Needle $needlename created/updated.";
 	} else {
-		$error_msg = "Error creating/updating needle.";
+		$error_msg = "Error creating/updating needle: $!.";
 	}
 }
 
@@ -117,7 +117,7 @@ if ($module_detail->{'needle'}) {
 			 'type' => 'match'});
 	}
 	# Second position: the only needle (with the same matches)
-	my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'});
+	my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'}, $results->{'version'}||'');
 	push(@$needles, {'name' => $module_detail->{'needle'}, 'imageurl' => $needle->{'imageurl'},
 			'imagepath' => $needle->{'image'}, 'area' => $needle->{'area'},
 			'tags' => $needle->{'tags'}, 'matches' => $needles->[0]->{'matches'}});
@@ -147,7 +147,7 @@ if ($module_detail->{'needle'}) {
 	# We also use $area for transforming the match information intro a real area
 	for my $needle (@{$module_detail->{'needles'}}) {
 		$needlename = $needle->{'name'};
-		$needleinfo  = needle_info($needlename, $results->{'distribution'});
+		$needleinfo  = needle_info($needlename, $results->{'distribution'}, $results->{'version'}||'');
 		push(@$needles, {'name' => $needlename,
 			'imageurl' => $needleinfo->{'imageurl'},
 			'imagepath' => $needleinfo->{'image'},
