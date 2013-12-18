@@ -67,9 +67,10 @@ if ($action eq "save") {
 	}
 	if ($success) {
 		if ($ENV{OPENQA_NEEDLES_SCM}||'' eq 'git') {
-			my $dir = $ENV{OPENQA_NEEDLES_GIT_WORKTREE};
-			if ($dir && -d "$dir/.git") {
-				my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);
+			if ($needledir && -d "$perldir/$needledir/.git") {
+				my @git = ('git',
+					'--git-dir', "$perldir/$needledir/.git",
+					'--work-tree', "$perldir/$needledir");
 				my @files = ($baseneedle.'.json', $baseneedle.'.png');
 				system(@git, 'add', @files);
 				system(@git, 'commit', '-q', '-m',
@@ -79,7 +80,7 @@ if ($action eq "save") {
                                     system(@git, 'push', 'origin', 'master');
                                 }
 			} else {
-				print STDERR "error: please define OPENQA_NEEDLES_GIT_WORKTREE\n";
+				$error_msg = "error: $needledir is not a git repo";
 			}
 		}
 		$info_msg = "Needle $needlename created/updated.";

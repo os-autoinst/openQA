@@ -15,7 +15,6 @@
 
     SetEnv OPENQA_BASEDIR "/var/lib"
     SetEnv OPENQA_NEEDLES_SCM "git"
-    SetEnv OPENQA_NEEDLES_GIT_WORKTREE "/var/lib/os-autoinst/needles"
     SetEnv OPENQA_NEEDLES_GIT_DO_PUSH "no"
 
     # space seaparated list of IPs or regular expressions that match IPs
