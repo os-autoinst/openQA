@@ -138,6 +138,24 @@ sub parse_log_to_hash($) {
 	return \%results;
 }
 
+sub _match_sle
+{
+	my $iso = shift;
+	if ($iso =~ /^(?<distri>SLE)-(?<version>12)-(?<flavor>[[:alpha:]]+)-(?<medium>DVD)-(?<arch>x86_64)-(?<build>Build(?:[0-9.]+))-Media1\.iso$/)
+	{
+		my $distri;
+		if ($+{flavor} eq 'Server') {
+			$distri = 'SLES';
+		} elsif ($+{flavor} eq 'Desktop') {
+			$distri = 'SLED';
+		} else {
+			print STDERR "unhandled flavor $+{flavor}\n";
+			return ();
+		}
+		return ($distri, $+{version}, $+{medium}, $+{build}, $+{arch});
+	}
+	return ();
+}
 
 sub _regexp_parts
 {
@@ -173,14 +191,18 @@ sub parse_testname($)
 sub parse_iso($) {
     my $iso = shift;
 
-    my ($distri, $version, $flavor, $arch, $build) = _regexp_parts;
-
-    my @parts = $iso =~ /^$distri(?:-$version)?-$flavor(?:-$build)?-$arch.*\.iso$/i;
-
+    # XXX: refactor this
     my $order = 1;
-    if (!$parts[3] ) {
-	@parts = $iso =~ /^$distri(?:-$version)?-$flavor-$arch(?:-$build)?.*\.iso$/i;
-	$order = 2;
+    my @parts = _match_sle($iso);
+    if (!@parts) {
+	my ($distri, $version, $flavor, $arch, $build) = _regexp_parts;
+
+	@parts = $iso =~ /^$distri(?:-$version)?-$flavor(?:-$build)?-$arch.*\.iso$/i;
+
+	if (!$parts[3] ) {
+	    @parts = $iso =~ /^$distri(?:-$version)?-$flavor-$arch(?:-$build)?.*\.iso$/i;
+	    $order = 2;
+	}
     }
 
 #    foreach (@parts) {
