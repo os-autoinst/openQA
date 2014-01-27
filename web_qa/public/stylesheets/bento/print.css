@@ -1,0 +1,83 @@
+/*
+ * Title: openSUSE.org stylesheet (Bento-Theme)
+ * Author: Robert Lihm <rlihm@opensuse.org>
+ * Copyright (c) 2009 AUTHORS.txt (http://www.opensuse.org)
+ * Licensed under the MIT (MIT-LICENSE.txt) license.
+ */
+ 
+/* = Print CSS = */
+
+body {
+  background: white;
+  color: #333; /* save ink, use dark grey :-) */
+  font: 75% "Lucida Grande", "Helvetica Neue", Arial, sans-serif;
+  margin-left: 20mm;
+}
+
+h2, h3, h4, h5, h6 {
+  display: block;
+  border-bottom: 1px solid #999;
+  padding-bottom: 2mm;
+  text-indent: 2mm;
+  font-size: 16pt;
+  text-align: left !important;
+  color: #690 !important;
+}
+
+a {
+ text-decoration: none !important;
+}
+
+a[href]:after {
+ content:" <"attr(href)">";
+ color: #ccc;
+ font-style: italic;
+}
+
+a img {
+  border: none;
+}
+
+#header,
+#subheader,
+.navigation,
+.box-header ul,
+.box-footer ul,
+#login-form,
+.siteSub  {
+  display: none;
+}
+#content {
+  font-size: 10pt;
+}
+#toc h2 {
+  font-size: 12pt;
+}
+
+.box {
+  border-bottom: 0.25pt dotted #666;
+}
+
+#footer {
+  font-size: 8pt;
+  color: #666;
+}
+#footer #footer-legal {
+  font-style: italic;
+  border-top: 0.25pt dotted #666;
+}
+
+pre {
+  background-color: #fefefe;
+  padding: 10px 0;
+  font-size: 0.9em;
+}
+
+blockquote {
+  border-left: 2px solid #ccc;
+  padding-left: 25px;
+  color: #111;
+  font-style: italic;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}

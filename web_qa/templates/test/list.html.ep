@@ -1,0 +1,49 @@
+% layout 'default';
+% title 'Welcome';
+<div class="grid_16 box box-shadow omega">
+	<h2>Test result overview</h2>
+	<p>This page lists <%= @$slist %> automated test-results from the last XX hours.</p>
+		<form method="get" action="" class="cutofftimeform" id="filterform">
+			<input type="hidden" name="sort" value="<?= $options->{'sort'} ?>" />
+			<input type="submit" value="change" class="smbutton" />
+		</form>
+	<p />
+	<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
+		<thead>
+		  <tr>
+        <th class="table-sortable:alphanumeric">link</th>
+        <th class="table-sortable:alphanumeric table-filterable">backend</th>
+        <th class="table-sortable:alphanumeric table-filterable">distri</th>
+        <th class="table-sortable:alphanumeric table-filterable">type</th>
+        <th class="table-sortable:alphanumeric table-filterable">arch</th>
+        <th class="table-sortable:alphanumeric table-filterable">build</th>
+        <th class="table-sortable:alphanumeric table-filterable">extra</th>
+        <th class="table-sortable:date">testtime</th>
+        <th class="table-sortable:numeric">OK</th>
+        <th class="table-sortable:numeric">unk</th>
+        <th class="table-sortable:numeric">fail</th>
+		  </tr>
+		</thead>
+		<tbody>
+      % for my $test (@$slist) {
+		    <tr>
+          <td style="font-style: italic;">scheduled</td>
+          <td>n/a</td>
+          <td><%= $test->{'distri'} %></td>
+          <td><%= $test->{'type'} %></td>
+          <td><%= $test->{'arch'} %></td>
+          <td>
+            <span class="textlink">
+              <%= link_to 'http://mojolicio.us' => begin %><%= $test->{'build'} %><% end %>
+            </span>
+          </td>
+          <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+          <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+            <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+          </td>
+  		  </tr>
+      % }
+		</tbody>
+	</table>
+	<p>Note: times are UTC</p>
+</div>

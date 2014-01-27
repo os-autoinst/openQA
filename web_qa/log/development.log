@@ -1,0 +1,628 @@
+[Sat Oct 12 16:53:00 2013] [info] Listening at "http://*:3000".
+[Sat Oct 12 16:53:10 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sat Oct 12 16:53:10 2013] [debug] GET "/".
+[Sat Oct 12 16:53:10 2013] [debug] Routing to controller "WebQA::Example" and action "welcome".
+[Sat Oct 12 16:53:10 2013] [debug] Rendering template "example/welcome.html.ep".
+[Sat Oct 12 16:53:10 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sat Oct 12 16:53:10 2013] [debug] 200 OK (0.007887s, 126.791/s).
+[Sat Oct 12 22:40:25 2013] [info] Listening at "http://*:3000".
+[Sat Oct 12 22:40:39 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sat Oct 12 22:40:39 2013] [debug] GET "/".
+[Sat Oct 12 22:40:39 2013] [error] Can't locate openqa.pm in @INC (@INC contains: /home/ags/projects/openqa/web_qa/script/../lib /usr/bin/../lib /usr/lib/perl5/site_perl/5.16.2/x86_64-linux-thread-multi /usr/lib/perl5/site_perl/5.16.2 /usr/lib/perl5/vendor_perl/5.16.2/x86_64-linux-thread-multi /usr/lib/perl5/vendor_perl/5.16.2 /usr/lib/perl5/5.16.2/x86_64-linux-thread-multi /usr/lib/perl5/5.16.2 /usr/lib/perl5/site_perl .) at /home/ags/projects/openqa/web_qa/script/../lib/WebQA/Test.pm line 3.
+BEGIN failed--compilation aborted at /home/ags/projects/openqa/web_qa/script/../lib/WebQA/Test.pm line 3.
+Compilation failed in require at (eval 241) line 1.
+
+[Sat Oct 12 22:40:39 2013] [debug] Template "exception.development.html.ep" not found.
+[Sat Oct 12 22:40:39 2013] [debug] Template "exception.html.ep" not found.
+[Sat Oct 12 22:40:39 2013] [debug] Rendering inline template.
+[Sat Oct 12 22:40:39 2013] [debug] Rendering inline template.
+[Sat Oct 12 22:40:39 2013] [debug] 500 Internal Server Error (0.022213s, 45.019/s).
+[Sat Oct 12 22:42:16 2013] [info] Listening at "http://*:3000".
+[Sat Oct 12 22:42:19 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sat Oct 12 22:42:19 2013] [debug] GET "/".
+[Sat Oct 12 22:42:19 2013] [error] Global symbol "%options" requires explicit package name at /home/ags/projects/openqa/web_qa/script/../lib/WebQA/Test.pm line 15.
+Global symbol "%options" requires explicit package name at /home/ags/projects/openqa/web_qa/script/../lib/WebQA/Test.pm line 15.
+Compilation failed in require at (eval 241) line 1.
+
+[Sat Oct 12 22:42:19 2013] [debug] Template "exception.development.html.ep" not found.
+[Sat Oct 12 22:42:19 2013] [debug] Template "exception.html.ep" not found.
+[Sat Oct 12 22:42:19 2013] [debug] Rendering inline template.
+[Sat Oct 12 22:42:19 2013] [debug] Rendering inline template.
+[Sat Oct 12 22:42:19 2013] [debug] 500 Internal Server Error (0.070472s, 14.190/s).
+[Sat Oct 12 22:43:14 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sat Oct 12 22:43:14 2013] [debug] GET "/".
+[Sat Oct 12 22:43:14 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sat Oct 12 22:43:14 2013] [debug] Template "test/list.html.ep" not found.
+[Sat Oct 12 22:43:14 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sat Oct 12 22:43:14 2013] [debug] Template "not_found.html.ep" not found.
+[Sat Oct 12 22:43:14 2013] [debug] Rendering inline template.
+[Sat Oct 12 22:43:14 2013] [debug] Rendering inline template.
+[Sat Oct 12 22:43:14 2013] [debug] 404 Not Found (0.046266s, 21.614/s).
+[Sat Oct 12 22:47:47 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sat Oct 12 22:47:47 2013] [debug] GET "/".
+[Sat Oct 12 22:47:47 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sat Oct 12 22:47:47 2013] [debug] Rendering template "test/list.html.ep".
+[Sat Oct 12 22:47:47 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sat Oct 12 22:47:47 2013] [debug] 200 OK (0.040859s, 24.474/s).
+[Sat Oct 12 23:07:10 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sat Oct 12 23:07:10 2013] [debug] GET "/".
+[Sat Oct 12 23:07:10 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sat Oct 12 23:07:10 2013] [debug] Rendering template "test/list.html.ep".
+[Sat Oct 12 23:07:10 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sat Oct 12 23:07:10 2013] [debug] 200 OK (0.037904s, 26.382/s).
+[Sat Oct 12 23:07:59 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sat Oct 12 23:07:59 2013] [debug] GET "/".
+[Sat Oct 12 23:07:59 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sat Oct 12 23:07:59 2013] [error] Can't use string ("6") as a SCALAR ref while "strict refs" in use at /home/ags/projects/openqa/web_qa/script/../lib/WebQA/Test.pm line 23.
+
+[Sat Oct 12 23:07:59 2013] [debug] Template "exception.development.html.ep" not found.
+[Sat Oct 12 23:07:59 2013] [debug] Template "exception.html.ep" not found.
+[Sat Oct 12 23:07:59 2013] [debug] Rendering inline template.
+[Sat Oct 12 23:07:59 2013] [debug] Rendering inline template.
+[Sat Oct 12 23:07:59 2013] [debug] 500 Internal Server Error (0.053585s, 18.662/s).
+[Sat Oct 12 23:12:43 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sat Oct 12 23:12:43 2013] [debug] GET "/".
+[Sat Oct 12 23:12:43 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sat Oct 12 23:12:43 2013] [debug] Rendering template "test/list.html.ep".
+[Sat Oct 12 23:12:43 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sat Oct 12 23:12:43 2013] [debug] 200 OK (0.039675s, 25.205/s).
+[Sun Oct 13 00:04:49 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:04:49 2013] [debug] GET "/".
+[Sun Oct 13 00:04:49 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:04:49 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:04:49 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 00:04:49 2013] [debug] 200 OK (0.075779s, 13.196/s).
+[Sun Oct 13 00:04:49 2013] [debug] GET "/web_qa/css/bento/style.css".
+[Sun Oct 13 00:04:49 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:04:49 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:04:49 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:04:49 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:04:49 2013] [debug] 404 Not Found (0.017929s, 55.776/s).
+[Sun Oct 13 00:04:49 2013] [debug] GET "/web_qa/css/openqa.css".
+[Sun Oct 13 00:04:49 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:04:49 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:04:49 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:04:49 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:04:49 2013] [debug] 404 Not Found (0.004670s, 214.133/s).
+[Sun Oct 13 00:04:49 2013] [debug] GET "/images/header-logo.png".
+[Sun Oct 13 00:04:49 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:04:49 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:04:49 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:04:49 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:04:49 2013] [debug] 404 Not Found (0.005617s, 178.031/s).
+[Sun Oct 13 00:04:49 2013] [debug] GET "/images/home_grey.png".
+[Sun Oct 13 00:04:49 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:04:49 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:04:49 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:04:49 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:04:49 2013] [debug] 404 Not Found (0.004931s, 202.799/s).
+[Sun Oct 13 00:05:11 2013] [info] Listening at "http://*:3000".
+[Sun Oct 13 00:05:16 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:05:16 2013] [debug] GET "/".
+[Sun Oct 13 00:05:16 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:05:16 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:05:16 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 00:05:16 2013] [debug] 200 OK (0.042546s, 23.504/s).
+[Sun Oct 13 00:05:16 2013] [debug] GET "/web_qa/css/bento/style.css".
+[Sun Oct 13 00:05:16 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:05:16 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:05:16 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:05:16 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:05:16 2013] [debug] 404 Not Found (0.019446s, 51.424/s).
+[Sun Oct 13 00:05:16 2013] [debug] GET "/web_qa/css/openqa.css".
+[Sun Oct 13 00:05:16 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:05:16 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:05:16 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:05:16 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:05:16 2013] [debug] 404 Not Found (0.004786s, 208.943/s).
+[Sun Oct 13 00:05:16 2013] [debug] GET "/images/header-logo.png".
+[Sun Oct 13 00:05:16 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:05:16 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:05:16 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:05:16 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:05:16 2013] [debug] 404 Not Found (0.006602s, 151.469/s).
+[Sun Oct 13 00:05:16 2013] [debug] GET "/images/home_grey.png".
+[Sun Oct 13 00:05:16 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:05:16 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:05:16 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:05:16 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:05:16 2013] [debug] 404 Not Found (0.004773s, 209.512/s).
+[Sun Oct 13 00:10:49 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:11:07 2013] [debug] GET "/web_qa/".
+[Sun Oct 13 00:11:07 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:11:07 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:11:07 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:11:07 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:11:07 2013] [debug] 404 Not Found (0.023858s, 41.915/s).
+[Sun Oct 13 00:11:11 2013] [debug] GET "/web_qa/css".
+[Sun Oct 13 00:11:11 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:11:11 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:11:11 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:11:11 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:11:11 2013] [debug] 404 Not Found (0.004958s, 201.694/s).
+[Sun Oct 13 00:11:47 2013] [debug] GET "/web_qa/css/openqa.css".
+[Sun Oct 13 00:11:47 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:11:47 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:11:47 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:11:47 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:11:47 2013] [debug] 404 Not Found (0.007163s, 139.606/s).
+[Sun Oct 13 00:12:38 2013] [debug] GET "/".
+[Sun Oct 13 00:12:38 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:12:38 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:12:38 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 00:12:38 2013] [debug] 200 OK (0.038939s, 25.681/s).
+[Sun Oct 13 00:12:38 2013] [debug] GET "/images/header-logo.png".
+[Sun Oct 13 00:12:38 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:12:38 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:12:38 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:12:38 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:12:38 2013] [debug] 404 Not Found (0.005747s, 174.004/s).
+[Sun Oct 13 00:12:38 2013] [debug] GET "/images/home_grey.png".
+[Sun Oct 13 00:12:38 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:12:38 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:12:38 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:12:38 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:12:38 2013] [debug] 404 Not Found (0.005891s, 169.750/s).
+[Sun Oct 13 00:27:01 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:27:01 2013] [debug] GET "/".
+[Sun Oct 13 00:27:01 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:27:01 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:27:01 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 00:27:01 2013] [error] syntax error at template layouts/default.html.ep line 16, near "'/img/header-logo.png' alt"
+11:   </head>
+12:   <body>
+13:   	<div id="header">
+14:       <div id="header-content" class="container_16">
+15:         <%= link_to 'http://www.opensuse.org' => begin %>
+16:           <%= image '/img/header-logo.png' alt => 'Header Logo' height => "26" width => "46" %>
+17:         <% end %>
+18:         <a id="header-logo" href="http://www.opensuse.org">
+19: 			  <ul id="global-navigation">
+20: 				  <li id="item-downloads"><a href="http://software.opensuse.org/">Downloads</a></li>
+21: 			  </ul>
+
+[Sun Oct 13 00:27:01 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 00:27:01 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 00:27:01 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:27:01 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:27:01 2013] [debug] 500 Internal Server Error (0.059691s, 16.753/s).
+[Sun Oct 13 00:27:37 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:27:37 2013] [debug] GET "/".
+[Sun Oct 13 00:27:37 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:27:37 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:27:37 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 00:27:37 2013] [debug] 200 OK (0.040933s, 24.430/s).
+[Sun Oct 13 00:27:38 2013] [debug] GET "/img/header-logo.png".
+[Sun Oct 13 00:27:38 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:27:38 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:27:38 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:27:38 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:27:38 2013] [debug] 404 Not Found (0.016298s, 61.357/s).
+[Sun Oct 13 00:27:38 2013] [debug] GET "/images/home_grey.png".
+[Sun Oct 13 00:27:38 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:27:38 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:27:38 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:27:38 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:27:38 2013] [debug] 404 Not Found (0.005128s, 195.008/s).
+[Sun Oct 13 00:28:22 2013] [debug] GET "/img/header-logo.png".
+[Sun Oct 13 00:28:22 2013] [debug] Template "not_found.development.html.ep" not found.
+[Sun Oct 13 00:28:22 2013] [debug] Template "not_found.html.ep" not found.
+[Sun Oct 13 00:28:22 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:28:22 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 00:28:22 2013] [debug] 404 Not Found (0.005897s, 169.578/s).
+[Sun Oct 13 00:31:45 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:31:45 2013] [debug] GET "/".
+[Sun Oct 13 00:31:45 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:31:45 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:31:45 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 00:31:45 2013] [debug] 200 OK (0.044720s, 22.361/s).
+[Sun Oct 13 00:41:53 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:41:53 2013] [debug] GET "/".
+[Sun Oct 13 00:41:53 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:41:53 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:41:53 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 00:41:53 2013] [debug] 200 OK (0.042790s, 23.370/s).
+[Sun Oct 13 00:51:00 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:51:00 2013] [debug] GET "/".
+[Sun Oct 13 00:51:00 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:51:00 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:51:00 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 00:51:00 2013] [debug] 200 OK (0.042644s, 23.450/s).
+[Sun Oct 13 00:51:31 2013] [debug] GET "/".
+[Sun Oct 13 00:51:31 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:51:31 2013] [debug] Rendering cached template "test/list.html.ep".
+[Sun Oct 13 00:51:31 2013] [debug] Rendering cached template "layouts/default.html.ep".
+[Sun Oct 13 00:51:31 2013] [debug] 200 OK (0.004733s, 211.282/s).
+[Sun Oct 13 00:51:32 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:51:41 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:51:41 2013] [debug] GET "/".
+[Sun Oct 13 00:51:41 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:51:41 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:51:41 2013] [error] Global symbol "@slist" requires explicit package name at template test/list.html.ep line 10.
+5: 		Recent issues in Factory
+6: 	</div>
+7: </div>
+8: <div class="grid_11 box box-shadow omega">
+9: 	<h2>Test result overview</h2>
+10: 	<p>This page lists <%= @slist %> automated test-results from the last XX hours.</p>
+11: 		<form method="get" action="" class="cutofftimeform" id="filterform">
+12: 			<input type="hidden" name="sort" value="<?= $options->{'sort'} ?>" />
+13: 			<input type="submit" value="change" class="smbutton" />
+14: 		</form>
+15: 	<p />
+
+[Sun Oct 13 00:51:41 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 00:51:41 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 00:51:41 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:51:41 2013] [debug] Rendering inline template.
+[Sun Oct 13 00:51:41 2013] [debug] 500 Internal Server Error (0.057920s, 17.265/s).
+[Sun Oct 13 00:51:54 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:51:54 2013] [debug] GET "/".
+[Sun Oct 13 00:51:54 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:51:54 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:51:54 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 00:51:54 2013] [debug] 200 OK (0.043825s, 22.818/s).
+[Sun Oct 13 00:58:10 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 00:58:10 2013] [debug] GET "/".
+[Sun Oct 13 00:58:10 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 00:58:10 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 00:58:10 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 00:58:10 2013] [debug] 200 OK (0.044344s, 22.551/s).
+[Sun Oct 13 01:01:05 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:01:05 2013] [debug] GET "/".
+[Sun Oct 13 01:01:05 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:01:05 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:01:05 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 01:01:05 2013] [debug] 200 OK (0.043531s, 22.972/s).
+[Sun Oct 13 01:07:43 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:07:43 2013] [debug] GET "/".
+[Sun Oct 13 01:07:43 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:07:43 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:07:43 2013] [error] syntax error at template test/list.html.ep line 43, near "} 
+$_M "
+38:           <td><%= $test->{'type'} %></td>
+39:           <td><%= $test->{'arch'} %></td>
+40:           <td>
+41:             <span class="textlink">
+42:               % link_to "/buildview/${$test->{'distri'}}/Build${$test->{'build'}}" => $test->{'build'}
+43:           </span>
+44:           </td>
+45:           <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+46:           <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+47:             <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+48:           </td>
+
+[Sun Oct 13 01:07:43 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 01:07:43 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 01:07:43 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:07:43 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:07:43 2013] [debug] 500 Internal Server Error (0.059857s, 16.706/s).
+[Sun Oct 13 01:08:01 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:08:01 2013] [debug] GET "/".
+[Sun Oct 13 01:08:01 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:08:01 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:08:01 2013] [error] syntax error at template test/list.html.ep line 43, near "} 
+$_M "
+38:           <td><%= $test->{'type'} %></td>
+39:           <td><%= $test->{'arch'} %></td>
+40:           <td>
+41:             <span class="textlink">
+42:               % link_to "/buildview/" => $test->{'build'}
+43:           </span>
+44:           </td>
+45:           <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+46:           <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+47:             <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+48:           </td>
+
+[Sun Oct 13 01:08:01 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 01:08:01 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 01:08:01 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:08:01 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:08:01 2013] [debug] 500 Internal Server Error (0.060099s, 16.639/s).
+[Sun Oct 13 01:09:47 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:09:47 2013] [debug] GET "/".
+[Sun Oct 13 01:09:47 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:09:47 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:09:47 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 01:09:47 2013] [debug] 200 OK (0.045347s, 22.052/s).
+[Sun Oct 13 01:13:18 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:13:18 2013] [debug] GET "/".
+[Sun Oct 13 01:13:18 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:13:18 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:13:19 2013] [error] syntax error at template test/list.html.ep line 43, near "} 
+$_M "
+38:           <td><%= $test->{'type'} %></td>
+39:           <td><%= $test->{'arch'} %></td>
+40:           <td>
+41:             <span class="textlink">
+42:               % link_to $test->{'build'} => "/buildview/".$test->{'distri'}."/Build".$test->{'build'} => $test->{'build'}
+43:           </span>
+44:           </td>
+45:           <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+46:           <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+47:             <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+48:           </td>
+
+[Sun Oct 13 01:13:19 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 01:13:19 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 01:13:19 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:13:19 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:13:19 2013] [debug] 500 Internal Server Error (0.061752s, 16.194/s).
+[Sun Oct 13 01:13:51 2013] [debug] GET "/".
+[Sun Oct 13 01:13:51 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:13:51 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:13:51 2013] [error] syntax error at template test/list.html.ep line 43, near "} 
+$_M "
+38:           <td><%= $test->{'type'} %></td>
+39:           <td><%= $test->{'arch'} %></td>
+40:           <td>
+41:             <span class="textlink">
+42:               % link_to $test->{'build'} => "/buildview/".$test->{'distri'}."/Build".$test->{'build'}
+43:           </span>
+44:           </td>
+45:           <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+46:           <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+47:             <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+48:           </td>
+
+[Sun Oct 13 01:13:51 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 01:13:51 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 01:13:51 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 01:13:51 2013] [debug] Rendering cached inline template.
+[Sun Oct 13 01:13:51 2013] [debug] 500 Internal Server Error (0.014320s, 69.832/s).
+[Sun Oct 13 01:14:06 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:14:06 2013] [debug] GET "/".
+[Sun Oct 13 01:14:06 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:14:06 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:14:06 2013] [error] syntax error at template test/list.html.ep line 43, near ""/buildview/" 
+$_M "
+38:           <td><%= $test->{'type'} %></td>
+39:           <td><%= $test->{'arch'} %></td>
+40:           <td>
+41:             <span class="textlink">
+42:               % link_to $test->{'build'} => "/buildview/"
+43:           </span>
+44:           </td>
+45:           <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+46:           <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+47:             <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+48:           </td>
+
+[Sun Oct 13 01:14:06 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 01:14:06 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 01:14:06 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:14:06 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:14:06 2013] [debug] 500 Internal Server Error (0.059136s, 16.910/s).
+[Sun Oct 13 01:14:21 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:14:21 2013] [debug] GET "/".
+[Sun Oct 13 01:14:21 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:14:21 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:14:21 2013] [error] syntax error at template test/list.html.ep line 43, near ""/buildview/" 
+$_M "
+38:           <td><%= $test->{'type'} %></td>
+39:           <td><%= $test->{'arch'} %></td>
+40:           <td>
+41:             <span class="textlink">
+42:               % link_to ($test->{'build'}) => "/buildview/"
+43:           </span>
+44:           </td>
+45:           <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+46:           <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+47:             <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+48:           </td>
+
+[Sun Oct 13 01:14:21 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 01:14:21 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 01:14:21 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:14:21 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:14:21 2013] [debug] 500 Internal Server Error (0.063024s, 15.867/s).
+[Sun Oct 13 01:15:21 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:15:21 2013] [debug] GET "/".
+[Sun Oct 13 01:15:21 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:15:21 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:15:21 2013] [error] syntax error at template test/list.html.ep line 43, near "" " 
+$_M "
+38:           <td><%= $test->{'type'} %></td>
+39:           <td><%= $test->{'arch'} %></td>
+40:           <td>
+41:             <span class="textlink">
+42:               % link_to $test->{'build'} => " "
+43:           </span>
+44:           </td>
+45:           <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+46:           <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+47:             <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+48:           </td>
+
+[Sun Oct 13 01:15:21 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 01:15:21 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 01:15:21 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:15:21 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:15:21 2013] [debug] 500 Internal Server Error (0.058156s, 17.195/s).
+[Sun Oct 13 01:15:30 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:15:30 2013] [debug] GET "/".
+[Sun Oct 13 01:15:30 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:15:30 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:15:30 2013] [error] syntax error at template test/list.html.ep line 43, near "" " 
+$_M "
+38:           <td><%= $test->{'type'} %></td>
+39:           <td><%= $test->{'arch'} %></td>
+40:           <td>
+41:             <span class="textlink">
+42:               % link_to "dd" => " "
+43:           </span>
+44:           </td>
+45:           <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+46:           <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+47:             <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+48:           </td>
+
+[Sun Oct 13 01:15:30 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 01:15:30 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 01:15:30 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:15:30 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:15:30 2013] [debug] 500 Internal Server Error (0.059787s, 16.726/s).
+[Sun Oct 13 01:16:24 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:16:24 2013] [debug] GET "/".
+[Sun Oct 13 01:16:24 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:16:24 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:16:24 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 01:16:24 2013] [debug] 200 OK (0.042546s, 23.504/s).
+[Sun Oct 13 01:17:34 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:17:34 2013] [debug] GET "/".
+[Sun Oct 13 01:17:34 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:17:34 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:17:34 2013] [error] syntax error at template test/list.html.ep line 43, near "'bu' 
+$_M "
+38:           <td><%= $test->{'type'} %></td>
+39:           <td><%= $test->{'arch'} %></td>
+40:           <td>
+41:             <span class="textlink">
+42:               % link_to "bu" => 'bu'
+43:             </span>
+44:           </td>
+45:           <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+46:           <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+47:             <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+48:           </td>
+
+[Sun Oct 13 01:17:34 2013] [debug] Template "exception.development.html.ep" not found.
+[Sun Oct 13 01:17:34 2013] [debug] Template "exception.html.ep" not found.
+[Sun Oct 13 01:17:34 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:17:34 2013] [debug] Rendering inline template.
+[Sun Oct 13 01:17:34 2013] [debug] 500 Internal Server Error (0.059486s, 16.811/s).
+[Sun Oct 13 01:18:22 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:18:22 2013] [debug] GET "/".
+[Sun Oct 13 01:18:22 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:18:22 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:18:22 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 01:18:22 2013] [debug] 200 OK (0.045664s, 21.899/s).
+[Sun Oct 13 01:19:12 2013] [debug] GET "/".
+[Sun Oct 13 01:19:12 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:19:12 2013] [debug] Rendering cached template "test/list.html.ep".
+[Sun Oct 13 01:19:12 2013] [debug] Rendering cached template "layouts/default.html.ep".
+[Sun Oct 13 01:19:12 2013] [debug] 200 OK (0.006203s, 161.212/s).
+[Sun Oct 13 01:19:23 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:19:23 2013] [debug] GET "/".
+[Sun Oct 13 01:19:23 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:19:23 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:19:23 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 01:19:23 2013] [debug] 200 OK (0.045169s, 22.139/s).
+[Sun Oct 13 01:22:40 2013] [debug] Your secret passphrase needs to be changed!!!
+[Sun Oct 13 01:22:40 2013] [debug] GET "/".
+[Sun Oct 13 01:22:40 2013] [debug] Routing to controller "WebQA::Test" and action "list".
+[Sun Oct 13 01:22:40 2013] [debug] Rendering template "test/list.html.ep".
+[Sun Oct 13 01:22:40 2013] [debug] Rendering template "layouts/default.html.ep".
+[Sun Oct 13 01:22:40 2013] [debug] 200 OK (0.043500s, 22.989/s).
+[Mon Jan 27 09:49:42 2014] [info] Listening at "http://*:3000".
+[Mon Jan 27 09:50:07 2014] [debug] Your secret passphrase needs to be changed!!!
+[Mon Jan 27 09:50:07 2014] [debug] GET "/".
+[Mon Jan 27 09:50:07 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 09:50:07 2014] [debug] Rendering template "test/list.html.ep".
+[Mon Jan 27 09:50:08 2014] [debug] Rendering template "layouts/default.html.ep".
+[Mon Jan 27 09:50:08 2014] [debug] 200 OK (0.531417s, 1.882/s).
+[Mon Jan 27 16:02:11 2014] [debug] Your secret passphrase needs to be changed!!!
+[Mon Jan 27 16:02:11 2014] [debug] GET "/".
+[Mon Jan 27 16:02:11 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:11 2014] [debug] Rendering template "test/list.html.ep".
+[Mon Jan 27 16:02:11 2014] [debug] Rendering template "layouts/default.html.ep".
+[Mon Jan 27 16:02:11 2014] [debug] 200 OK (0.041670s, 23.998/s).
+[Mon Jan 27 16:02:15 2014] [debug] Your secret passphrase needs to be changed!!!
+[Mon Jan 27 16:02:15 2014] [debug] GET "/".
+[Mon Jan 27 16:02:15 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:15 2014] [debug] Rendering template "test/list.html.ep".
+[Mon Jan 27 16:02:15 2014] [debug] Rendering template "layouts/default.html.ep".
+[Mon Jan 27 16:02:15 2014] [debug] 200 OK (0.041177s, 24.285/s).
+[Mon Jan 27 16:02:17 2014] [debug] GET "/".
+[Mon Jan 27 16:02:17 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:17 2014] [debug] Rendering cached template "test/list.html.ep".
+[Mon Jan 27 16:02:17 2014] [debug] Rendering cached template "layouts/default.html.ep".
+[Mon Jan 27 16:02:17 2014] [debug] 200 OK (0.004326s, 231.160/s).
+[Mon Jan 27 16:02:17 2014] [debug] GET "/".
+[Mon Jan 27 16:02:17 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:17 2014] [debug] Rendering cached template "test/list.html.ep".
+[Mon Jan 27 16:02:17 2014] [debug] Rendering cached template "layouts/default.html.ep".
+[Mon Jan 27 16:02:17 2014] [debug] 200 OK (0.007845s, 127.470/s).
+[Mon Jan 27 16:02:18 2014] [debug] GET "/".
+[Mon Jan 27 16:02:18 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:18 2014] [debug] Rendering cached template "test/list.html.ep".
+[Mon Jan 27 16:02:18 2014] [debug] Rendering cached template "layouts/default.html.ep".
+[Mon Jan 27 16:02:18 2014] [debug] 200 OK (0.004190s, 238.663/s).
+[Mon Jan 27 16:02:18 2014] [debug] GET "/".
+[Mon Jan 27 16:02:18 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:18 2014] [debug] Rendering cached template "test/list.html.ep".
+[Mon Jan 27 16:02:18 2014] [debug] Rendering cached template "layouts/default.html.ep".
+[Mon Jan 27 16:02:18 2014] [debug] 200 OK (0.010403s, 96.126/s).
+[Mon Jan 27 16:02:18 2014] [debug] GET "/".
+[Mon Jan 27 16:02:18 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:18 2014] [debug] Rendering cached template "test/list.html.ep".
+[Mon Jan 27 16:02:18 2014] [debug] Rendering cached template "layouts/default.html.ep".
+[Mon Jan 27 16:02:18 2014] [debug] 200 OK (0.006445s, 155.159/s).
+[Mon Jan 27 16:02:18 2014] [debug] GET "/".
+[Mon Jan 27 16:02:18 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:18 2014] [debug] Rendering cached template "test/list.html.ep".
+[Mon Jan 27 16:02:18 2014] [debug] Rendering cached template "layouts/default.html.ep".
+[Mon Jan 27 16:02:18 2014] [debug] 200 OK (0.005716s, 174.948/s).
+[Mon Jan 27 16:02:23 2014] [info] Listening at "http://*:3000".
+[Mon Jan 27 16:02:27 2014] [debug] Your secret passphrase needs to be changed!!!
+[Mon Jan 27 16:02:27 2014] [debug] GET "/".
+[Mon Jan 27 16:02:27 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:27 2014] [debug] Rendering template "test/list.html.ep".
+[Mon Jan 27 16:02:27 2014] [debug] Rendering template "layouts/default.html.ep".
+[Mon Jan 27 16:02:27 2014] [debug] 200 OK (0.043819s, 22.821/s).
+[Mon Jan 27 16:02:35 2014] [debug] Your secret passphrase needs to be changed!!!
+[Mon Jan 27 16:02:35 2014] [debug] GET "/".
+[Mon Jan 27 16:02:35 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:35 2014] [debug] Rendering template "test/list.html.ep".
+[Mon Jan 27 16:02:35 2014] [error] Global symbol "$slist" requires explicit package name at template test/list.html.ep line 10.
+Global symbol "$slist" requires explicit package name at template test/list.html.ep line 33.
+28:         <th class="table-sortable:numeric">unk</th>
+29:         <th class="table-sortable:numeric">fail</th>
+30: 		  </tr>
+31: 		</thead>
+32: 		<tbody>
+33:       % for my $test (@$slist) {
+34: 		    <tr>
+35:           <td style="font-style: italic;">scheduled</td>
+36:           <td>n/a</td>
+37:           <td><%= $test->{'distri'} %></td>
+38:           <td><%= $test->{'type'} %></td>
+
+[Mon Jan 27 16:02:35 2014] [debug] Template "exception.development.html.ep" not found.
+[Mon Jan 27 16:02:35 2014] [debug] Template "exception.html.ep" not found.
+[Mon Jan 27 16:02:35 2014] [debug] Rendering inline template.
+[Mon Jan 27 16:02:35 2014] [debug] Rendering inline template.
+[Mon Jan 27 16:02:35 2014] [debug] 500 Internal Server Error (0.100372s, 9.963/s).
+[Mon Jan 27 16:02:45 2014] [debug] Your secret passphrase needs to be changed!!!
+[Mon Jan 27 16:02:45 2014] [debug] GET "/".
+[Mon Jan 27 16:02:45 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:02:45 2014] [debug] Rendering template "test/list.html.ep".
+[Mon Jan 27 16:02:45 2014] [debug] Rendering template "layouts/default.html.ep".
+[Mon Jan 27 16:02:45 2014] [debug] 200 OK (0.041989s, 23.816/s).
+[Mon Jan 27 16:51:21 2014] [info] Listening at "http://*:3000".
+[Mon Jan 27 16:51:25 2014] [debug] Your secret passphrase needs to be changed!!!
+[Mon Jan 27 16:51:25 2014] [debug] GET "/".
+[Mon Jan 27 16:51:26 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 16:51:31 2014] [debug] Rendering template "test/list.html.ep".
+[Mon Jan 27 16:51:31 2014] [debug] Rendering template "layouts/default.html.ep".
+[Mon Jan 27 16:51:31 2014] [debug] 200 OK (5.133652s, 0.195/s).
+[Mon Jan 27 17:08:50 2014] [info] Listening at "http://*:3000".
+[Mon Jan 27 17:08:56 2014] [debug] Your secret passphrase needs to be changed!!!
+[Mon Jan 27 17:08:56 2014] [debug] GET "/".
+[Mon Jan 27 17:08:56 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 17:08:56 2014] [debug] Rendering template "test/list.html.ep".
+[Mon Jan 27 17:08:58 2014] [debug] Rendering template "layouts/default.html.ep".
+[Mon Jan 27 17:08:58 2014] [debug] 200 OK (1.902408s, 0.526/s).
+[Mon Jan 27 17:12:46 2014] [info] Listening at "http://*:3000".
+[Mon Jan 27 17:12:49 2014] [debug] Your secret passphrase needs to be changed!!!
+[Mon Jan 27 17:12:49 2014] [debug] GET "/".
+[Mon Jan 27 17:12:49 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 17:12:49 2014] [debug] Rendering template "test/list.html.ep".
+[Mon Jan 27 17:12:50 2014] [debug] Rendering template "layouts/default.html.ep".
+[Mon Jan 27 17:12:50 2014] [debug] 200 OK (1.886199s, 0.530/s).
+[Mon Jan 27 17:12:57 2014] [debug] GET "/".
+[Mon Jan 27 17:12:57 2014] [debug] Routing to controller "WebQA::Test" and action "list".
+[Mon Jan 27 17:12:57 2014] [debug] Rendering cached template "test/list.html.ep".
+[Mon Jan 27 17:12:59 2014] [debug] Rendering cached template "layouts/default.html.ep".
+[Mon Jan 27 17:12:59 2014] [debug] 200 OK (1.834420s, 0.545/s).

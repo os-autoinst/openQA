@@ -1,0 +1,11 @@
+/*
+ * Title: openSUSE.org stylesheet (Bento-Theme)
+ * Author: Robert Lihm <rlihm@opensuse.org>
+ * Copyright (c) 2009 AUTHORS.txt (http://www.opensuse.org)
+ * Licensed under the MIT (MIT-LICENSE.txt) license.
+ */
+
+@import url("reset.css");	/* reset default browser settings */
+@import url("grid.css"); 	/* add fluid 960 Grid System */
+@import url("base.css");	/* Basic CSS - Common styles */
+@import url("base.fluid.fix.css");	/* Fixes for Bento with fluid 960gs */
