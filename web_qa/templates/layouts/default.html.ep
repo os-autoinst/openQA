@@ -1,41 +1,42 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html
-	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
   <head>
     <title><%= title %></title>
-	  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     %= stylesheet '/stylesheets/bento/style.fluid.css'
     %= stylesheet '/stylesheets/openqa.css'
+    %= javascript '/javascripts/table.js'
   </head>
   <body>
-  	<div id="header">
+    <div id="header">
       <div id="header-content" class="container_16">
         <%= link_to 'http://www.opensuse.org' => (id => 'header-logo') => begin %>
           <%= image '/images/header-logo.png', alt => 'Header Logo', height => "26", width => "46" %>
         <% end %>
-			  <ul id="global-navigation">
-				  <li id="item-downloads"><a href="http://software.opensuse.org/">Downloads</a></li>
-			  </ul>
-		  </div>
-	  </div>
+        <ul id="global-navigation">
+          <li id="item-downloads"><a href="http://software.opensuse.org/">Downloads</a></li>
+        </ul>
+      </div>
+    </div>
 
-	  <div id="subheader" class="container_16">
-		  <div id="breadcrump" class="grid_16 alpha">
-			  <a href="/"><img alt="Home" src="/images/home_grey.png" /> <b>AAA</a>
-		  </div>
-	  </div>
+    <div id="subheader" class="container_16">
+      <div id="breadcrump" class="grid_16 alpha">
+        <a href="/"><img alt="Home" src="/images/home_grey.png" /> <b>AAA</b></a>
+      </div>
+    </div>
 
-	  <div id="content" class="container_16 content-wrapper">
-		  %= content
-	  </div>
+    <div id="content" class="container_16 content-wrapper">
+      %= content
+    </div>
 
-  	<div class="clear"></div>
-	  <div id="footer" class="container_16">
-		  <div class="box_content grid_16" style="text-align: center;">
-      Footer
-		  </div>
-	  </div>
+    <div class="clear"></div>
+    <div id="footer" class="container_16">
+      <div class="box_content grid_16" style="text-align: center;">
+        Footer
+      </div>
+    </div>
   </body>
 </html>
