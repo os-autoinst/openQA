@@ -98,4 +98,109 @@ sub list {
 
 }
 
+sub show {
+  my $self = shift;
+
+  return $self->render_not_found if (!defined $self->param('testid'));
+  my $testname = $self->param('testid');
+  $testname=~s%^/%%;
+  return $self->render(text => "Invalid path", status => 403) if ($testname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/);
+  $testname =~ s/\.autoinst\.txt$//; $testname=~s/\.ogv$//; # be tolerant in what we accept
+  $self->stash(testname => $testname);
+  $self->stash(resultdir => openqa::testresultdir($testname));
+  $self->stash(fqfn => $self->stash('resultdir')."/autoinst-log.txt");
+
+  # FIXME: inherited from the old webUI, should really really really die
+  $self->stash(res_css => $res_css);
+  $self->stash(res_display => $res_display);
+
+  if (!-e $self->stash('fqfn')) {
+    running($self);
+  } else {
+    result($self);
+  }
+}
+
+sub result {
+  my $self = shift;
+  my $testname = $self->stash('testname');
+  my $testresultdir = $self->stash('resultdir');
+  my $results = test_result($testname);
+
+  my @modlist=();
+  foreach my $module (@{$results->{'testmodules'}}) {
+    my $name = $module->{'name'};
+    # add link to $testresultdir/$name*.png via png CGI
+    my @imglist;
+    my @wavlist;
+    my $num = 1;
+    foreach my $img (@{$module->{'details'}}) {
+      if( $img->{'screenshot'} ) {
+        my $imgpath = data_name("$testresultdir/".$img->{'screenshot'});
+        push(@imglist, {name => $imgpath, num => $num++, result => $img->{'result'}});
+      }
+      elsif( $img->{'audio'} ) {
+        push(@wavlist, {name => $img->{'audio'}, num => $num++, result => $img->{'result'}});
+      }
+    }
+
+#FIXME: Read ocr also from results.json as soon as we know how it looks like
+
+    # add link to $testresultdir/$name*.txt as direct link
+    my @ocrlist;
+    foreach my $ocrpath (<$testresultdir/$name-[0-9]*.txt>) {
+      $ocrpath = data_name($ocrpath);
+      my $ocrscreenshotid = $ocrpath;
+      $ocrscreenshotid=~s/^\w+-(\d+)/$1/;
+      my $ocrres = $module->{'screenshots'}->[--$ocrscreenshotid]->{'ocr_result'} || 'na';
+      push(@ocrlist, {name => $ocrpath, result => $ocrres});
+    }
+
+    my $sound = (get_testwavs($module->{'name'}))?1:0;
+    my $ocr = (@ocrlist)?1:0;
+    push(@modlist, {
+        name => $module->{'name'},
+        result => $module->{'result'},
+        screenshots => \@imglist, wavs => \@wavlist, ocrs => \@ocrlist,
+        attention => (($module->{'flags'}->{'important'}||0) && ($module->{'result'}||'') ne 'ok')?1:0,
+        refimg => 0, audio => $sound, ocr => $ocr
+      });
+  }
+
+  my $backlogpath = back_log($testname);
+  my $diskimg = 0;
+  if(-e "$backlogpath/l1") {
+    if((stat("$backlogpath/l1"))[12] && !((stat("$backlogpath/l2"))[12])) { # skip raid
+      $diskimg = 1;
+    }
+  }
+
+# details box
+#FIXME: get test duration
+#my $test_duration = strftime("%H:%M:%S", gmtime(test_duration($testname)));
+  my $test_duration = 'n/a';
+
+# result files box
+  my @resultfiles = test_resultfile_list($testname);
+
+# uploaded logs box
+  my @ulogs = test_uploadlog_list($testname);
+
+  $self->stash(overall => $results->{'overall'});
+  $self->stash(modlist => \@modlist);
+  $self->stash(diskimg => $diskimg);
+  $self->stash(backend_info => $results->{backend});
+  $self->stash(resultfiles => \@resultfiles);
+  $self->stash(ulogs => \@ulogs);
+  $self->stash(test_duration => $test_duration);
+
+  $self->render('test/result');
+}
+
+sub running {
+  my $self = shift;
+
+  $self->app->log->debug('<<<<<<<<<<<<<<<< Running');
+}
+
 1;
