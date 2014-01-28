@@ -11,7 +11,8 @@ sub startup {
   # Router
   my $r = $self->routes;
 
-  # Normal route to controller
+  $r->get('/tests')->name('tests')->to('test#list');
+  # Default route
   $r->get('/')->to('test#list');
 }
 
