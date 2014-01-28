@@ -9,7 +9,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @EXPORT = qw(
 $prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle @runner $res_css $res_display
 $loguploaddir
-&parse_log &parse_log_to_stats &parse_log_to_hash &parse_iso &log_to_scriptpath &path_to_url &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info &needledir
+&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info &needledir
 &test_result &test_result_stats &test_result_hash &test_result_module &test_resultfile_list &testresultdir &test_uploadlog_list
 $localstatedir $dbfile
 &get_failed_needles
@@ -31,6 +31,8 @@ our $loguploaddir="$basedir/$prj/logupload";
 our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
+
+our $distri_file_glob =  $basedir.'/os-autoinst/tests/*/main.pm';
 
 our $dbfile = "$basedir/$prj/db/db.sqlite";
 
@@ -138,25 +140,6 @@ sub parse_log_to_hash($) {
 	return \%results;
 }
 
-sub _match_sle
-{
-	my $iso = shift;
-	if ($iso =~ /^(?<distri>SLE)-(?<version>12)-(?<flavor>[[:alpha:]]+)-(?<medium>DVD)-(?<arch>x86_64)-(?<build>Build(?:[0-9.]+))-Media1\.iso$/)
-	{
-		my $distri;
-		if ($+{flavor} eq 'Server') {
-			$distri = 'SLES';
-		} elsif ($+{flavor} eq 'Desktop') {
-			$distri = 'SLED';
-		} else {
-			print STDERR "unhandled flavor $+{flavor}\n";
-			return ();
-		}
-		return ($distri, $+{version}, $+{medium}, $+{build}, $+{arch});
-	}
-	return ();
-}
-
 sub _regexp_parts
 {
     my $distri = '(openSUSE|SLE[DS])';
@@ -168,6 +151,7 @@ sub _regexp_parts
     return ($distri, $version, $flavor, $arch, $build);
 }
 
+# FIXME: get rid of this (task#1349)
 sub parse_testname($)
 {
     my $name = shift;
@@ -185,48 +169,6 @@ sub parse_testname($)
     }
     else {
 	return \%params;
-    }
-}
-
-sub parse_iso($) {
-    my $iso = shift;
-
-    # XXX: refactor this
-    my $order = 1;
-    my @parts = _match_sle($iso);
-    if (!@parts) {
-	my ($distri, $version, $flavor, $arch, $build) = _regexp_parts;
-
-	@parts = $iso =~ /^$distri(?:-$version)?-$flavor(?:-$build)?-$arch.*\.iso$/i;
-
-	if (!$parts[3] ) {
-	    @parts = $iso =~ /^$distri(?:-$version)?-$flavor-$arch(?:-$build)?.*\.iso$/i;
-	    $order = 2;
-	}
-    }
-
-#    foreach (@parts) {
-#	print STDERR "{$_}\n";
-#    }
-#
-    if( @parts ) {
-        my %params;
-	if ($order == 1) {
-	    @params{qw(distri version flavor build arch)} = @parts;
-	} else {
-	    @params{qw(distri version flavor arch build)} = @parts;
-	}
-        $params{version} ||= 'Factory';
-        
-        if (wantarray()) {
-            return %params;
-        }
-        else {
-            return \%params;
-        }
-    }
-    else {
-        return undef;
     }
 }
 
@@ -575,6 +517,33 @@ sub sanitize_testname($)
 	$name =~ s/[^a-zA-Z0-9._+-]//g;
 	return undef unless $name =~ /^[a-zA-Z]/;
 	return $name;
+}
+
+package openqa::distri;
+
+sub generate_jobs
+{
+	my $ret = [];
+	# walk through all provided modules to let them generate
+	# jobs for the iso
+	for my $module (glob $distri_file_glob) {
+		$module =~ s,/[^/]+\.pm$,,;
+		$module =~ s,.*/,,;
+		$module = __PACKAGE__ . "::" . $module;
+		eval {
+			eval "require $module";
+			if ($@) {
+				print STDERR "failed to load module $module\n";
+				next;
+			}
+			my $jobs = $module->generate_jobs(@_);
+			push @$ret, @$jobs if $jobs;
+		};
+		if ($@) {
+			print STDERR "Error in $module: $@\n";
+		}
+	}
+	return $ret;
 }
 
 1;

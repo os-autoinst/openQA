@@ -4,7 +4,7 @@ use strict;
 use Data::Dump qw/pp dd/;
 use FindBin;
 use lib $FindBin::Bin.'/../www/cgi-bin/modules';
-use openqa qw(parse_iso);
+use openqa::distri::opensuse qw(parse_iso);
 
 use Test::Simple tests => 12;
 
@@ -90,51 +90,37 @@ my @testdata = (
         },
     },
     {
-	iso => 'SLES-12-DVD-x86_64-Build0067-Media1.iso',
-	params => {
-	    arch    => "x86_64",
-	    build   => "Build0067",
-	    distri  => "SLES",
-	    flavor  => "DVD",
-	    version => 12,
-	},
+        iso => 'SLES-12-DVD-x86_64-Build0067-Media1.iso',
+        # not accepted
     },
     {
-	iso => 'SLED-12-DVD-x86_64-Build0044-Media1.iso',
-	params => {
-	    arch    => "x86_64",
-	    build   => "Build0044",
-	    distri  => "SLED",
-	    flavor  => "DVD",
-	    version => 12,
-	},
+        iso => 'SLED-12-DVD-x86_64-Build0044-Media1.iso',
+        # not accepted
     },
     {
-	iso => 'SLE-12-Server-DVD-x86_64-Build0005-Media1.iso',
-	params => {
-	    arch    => "x86_64",
-	    build   => "Build0005",
-	    distri  => "SLES",
-	    flavor  => "DVD",
-	    version => 12,
-	},
+        iso => 'SLE-12-Server-DVD-x86_64-Build0005-Media1.iso',
+        # not accepted
     },
 
     {
-	iso => 'openSUSE-Factory-staging_core-x86_64-Build0047.0001-Media.iso',
-	params => {
-	    arch    => "x86_64",
-	    build   => "Build0047.0001",
-	    distri  => "openSUSE",
-	    flavor  => "staging_core",
-	    version => "Factory",
-	},
+        iso => 'openSUSE-Factory-staging_core-x86_64-Build0047.0001-Media.iso',
+        params => {
+            arch    => "x86_64",
+            build   => "Build0047.0001",
+            distri  => "openSUSE",
+            flavor  => "staging_core",
+            version => "Factory",
+        },
     },
 );
 
 for my $t (@testdata) {
-    my $params = parse_iso($t->{iso});
-    my $r = pp($params) eq pp($t->{params});
-    ok ($r, $t->{iso});
-    dd $params unless $r;
+    my $params = openqa::distri::opensuse::parse_iso($t->{iso});
+    if ($t->{params}) {
+        my $r = pp($params) eq pp($t->{params});
+        ok($r, $t->{iso});
+        dd $params unless $r;
+    } else {
+        ok(!defined $params, $t->{iso});
+    }
 }
