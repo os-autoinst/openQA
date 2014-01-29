@@ -9,7 +9,7 @@ function updateModuleslist(modlist, testname, testmodule) {
 			li.addClassName("mod-"+module.state);
 			li.addClassName("result"+module.result);
 			if (testmodule == module.name) { li.addClassName("selected"); }
-			li.update(new Element("a", {href: "/viewimg/show/"+testname+"/"+module.name+"/1"}).update(module.name));
+			li.update(new Element("a", {href: "/tests/"+testname+"/modules/"+module.name+"/steps/1"}).update(module.name));
 			ul.insert(li);
 		});
 		container.insert(title);
