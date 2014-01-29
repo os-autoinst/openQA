@@ -29,18 +29,17 @@ sub startup {
   $test_r->get('/images/:filename')->name('test_img')->to('file#test_image');
   $test_r->get('/diskimages/:imageid')->name('diskimage')->to('diskimage#show');
 
-  my $asset_r = $test_r->get('/modules/:moduleid/steps/:stepid');
-  $asset_r->get('/view')->name('view_step')->to(action => 'view');
+  my $asset_r = $test_r->get('/modules/:moduleid/steps/:stepid')->to(controller => 'step');
+  $asset_r->get('/view')->to(action => 'view');
   $asset_r->get('/edit')->name('edit_step')->to(action => 'edit');
   $asset_r->get('/src')->name('src_step')->to(action => 'src');
-  $asset_r->get('/')->name('step')->to(controller => 'step', action => 'view', stepid => 1);
+  $asset_r->get('/')->name('step')->to(action => 'view');
 
   $r->get('/builds/:buildid')->name('build')->to('build#show');
   $r->post('/rpc')->name('rpc')->to('rpc#call');
   $r->post('/jsonrpc/:method')->name('jsonrpc')->to('jsonrpc#call');
 
-  $r->get('/needles/:distri/:name', format => ['png'])->name('needle_img')->to('file#needle_image');
-  $r->get('/needles/:distri/:name', format => ['json'])->name('needle_json')->to('file#needle_json');
+  $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
 
   # Default route
   $r->get('/')->to('test#list');
