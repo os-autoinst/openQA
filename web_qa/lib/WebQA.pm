@@ -26,18 +26,21 @@ sub startup {
   $test_r->post('/restart')->name('restart')->to('schedule#restart');
   $test_r->post('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
   $test_r->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
-  $test_r->get('/images/#filename')->name('image')->to('image#show');
+  $test_r->get('/images/:filename')->name('test_img')->to('file#test_image');
   $test_r->get('/diskimages/:imageid')->name('diskimage')->to('diskimage#show');
 
-  my $asset_r = $test_r->get('/modules/:moduleid/assets/:assetid');
-  $asset_r->get('/view')->to(action => 'view');
-  $asset_r->get('/edit')->name('edit_asset')->to(action => 'edit');
-  $asset_r->get('/src')->name('src_asset')->to(action => 'src');
-  $asset_r->get('/')->name('asset')->to(controller => 'asset', action => 'view', assetid => 1);
+  my $asset_r = $test_r->get('/modules/:moduleid/steps/:stepid');
+  $asset_r->get('/view')->name('view_step')->to(action => 'view');
+  $asset_r->get('/edit')->name('edit_step')->to(action => 'edit');
+  $asset_r->get('/src')->name('src_step')->to(action => 'src');
+  $asset_r->get('/')->name('step')->to(controller => 'step', action => 'view', stepid => 1);
 
   $r->get('/builds/:buildid')->name('build')->to('build#show');
   $r->post('/rpc')->name('rpc')->to('rpc#call');
   $r->post('/jsonrpc/:method')->name('jsonrpc')->to('jsonrpc#call');
+
+  $r->get('/needles/:distri/:name', format => ['png'])->name('needle_img')->to('file#needle_image');
+  $r->get('/needles/:distri/:name', format => ['json'])->name('needle_json')->to('file#needle_json');
 
   # Default route
   $r->get('/')->to('test#list');
