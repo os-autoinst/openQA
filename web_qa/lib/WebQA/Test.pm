@@ -94,6 +94,7 @@ sub list {
 
   $self->stash(slist => \@slist);
   $self->stash(list => \@list);
+  $self->stash(prj => $prj);
   $self->stash(hoursfresh => $hoursfresh);
 
 }

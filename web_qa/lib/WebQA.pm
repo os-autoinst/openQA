@@ -1,5 +1,6 @@
 package WebQA;
 use Mojo::Base 'Mojolicious';
+use WebQA::Helpers;
 
 # This method will run once at server start
 sub startup {
@@ -7,6 +8,7 @@ sub startup {
 
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer');
+  $self->plugin('WebQA::Helpers');
 
   # Router
   my $r = $self->routes;
