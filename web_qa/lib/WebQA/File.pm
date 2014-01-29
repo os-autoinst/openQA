@@ -13,6 +13,22 @@ sub test_image {
   $self->image($fullname);
 }
 
+sub needle {
+  my $self = shift;
+
+  my $name = $self->param('name');
+  $name =~ s/\.([^.]+)$//; # Remove file extension
+  $self->stash('format', $1);
+  my $distri = $self->param('distri');
+  if ($self->stash('format') eq 'json') {
+    my $fullname = openqa::needle_info($name, $distri)->{'json'};
+    $self->render_static($fullname);
+  } else {
+    my $info = openqa::needle_info($name, $distri);
+    $self->image($info->{'image'});
+  }
+}
+
 sub image {
   my $self = shift;
   my $fullname = shift;
