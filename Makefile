@@ -4,6 +4,6 @@ install:
 	DESTDIR="$(DESTDIR)" tools/install
 
 test:
-	$(MAKE) -C t test
+	prove
 
 .PHONY: all install
