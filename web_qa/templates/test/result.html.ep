@@ -1,5 +1,5 @@
 % layout 'default';
-% title $testname;
+% title $testid;
 % my $ref_width=60;
 % my $ref_height=int($ref_width/4*3);
 % use Mojo::ByteStream 'b';
@@ -9,11 +9,11 @@
 		<div class="box-header aligncenter">Actions</div>
 		<div class="aligncenter">
 			<% if($diskimg) { %>
-			<a href="/diskimg/<%= $testname %>/l1.gz"><img width="23" height="23" src="/images/floppy.png" alt="img" title="download disk image"/></a>
+			<a href="/diskimg/<%= $testid %>/l1.gz"><img width="23" height="23" src="/images/floppy.png" alt="img" title="download disk image"/></a>
 			<% } %>
-			<a href="/testresults/<%= $testname %>/video.ogv"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
+			<a href="/testresults/<%= $testid %>/video.ogv"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
 			<a href="/results/"><img src="/images/back.png" alt="back" title="back to overview page" /></a>
-			<a href="/schedule/<%= $testname %>?action=restart&back=details"><img src="/images/toggle.png" alt="schedule" title="re-schedule"/></a>
+			<a href="/schedule/<%= $testid %>?action=restart&back=details"><img src="/images/toggle.png" alt="schedule" title="re-schedule"/></a>
 		</div>
 	</div>
 	<% if($resultfiles) { %>
@@ -21,7 +21,7 @@
 		<div class="box-header aligncenter">Result Files</div>
 		<div style="text-align: center;">
 			<% for my $resultfile (@$resultfiles) { %>
-			<a href="/testresults/<%= $testname %>/<%= $resultfile %>"><%= $resultfile %></a><br />
+			<a href="/testresults/<%= $testid %>/<%= $resultfile %>"><%= $resultfile %></a><br />
 			<% } %>
 		</div>
 	</div>
@@ -31,7 +31,7 @@
 		<div class="box-header aligncenter">Uploaded Logs</div>
 		<div style="text-align: center;">
 			<% for my $ulog (@$ulogs) { %>
-			<a href="/testresults/<%= $testname %>/ulogs/<%= $ulog %>"><%= $ulog %></a><br />
+			<a href="/testresults/<%= $testid %>/ulogs/<%= $ulog %>"><%= $ulog %></a><br />
 			<% } %>
 		</div>
 	</div>
@@ -91,7 +91,7 @@
 
 <div class="grid_14 omega">
 	<div class="box box-shadow">
-		<h2>Test result for <i><%= $testname %></i></h2>
+		<h2>Test result for <i><%= $testid %></i></h2>
 		<p />
 		<table style="width: 95%;">
 			<tr>
@@ -107,23 +107,23 @@
 				%= $module->{'ocr'} ? b('&#7425;') : ''
 				%= $module->{'attention'} ? b('&#9888;') : ''
 				</td>
-				<td class="component"><a href="/viewsrc/show/<%= $testname %>/<%= $module->{'name'} %>/1"><%= $module->{'name'} %></a></td>
+				<td class="component"><a href="/viewsrc/show/<%= $testid %>/<%= $module->{'name'} %>/1"><%= $module->{'name'} %></a></td>
 				<td class="<%= "result$res_css->{$module->{'result'}}" %>"><%= $res_display->{$module->{'result'}} %></td>
 				<td class="links" style="width: 60%;">
-					<% for my $screenshot (@{$module->{'screenshots'}}) { %>
-					<a href="/viewimg/show/<%= $testname %>/<%= $module->{'name'} %>/<%= $screenshot->{'num'} %>" title="<%= $screenshot->{'name'} %>.png">
-            %= image "/tests/$testname/images/".$screenshot->{'name'}."?size=$ref_width"."x$ref_height", width => $ref_width, height => $ref_height, alt => $screenshot->{'name'}, class => "resborder\L$screenshot->{'result'}"
-          </a>
-					<% } %>
+					% for my $screenshot (@{$module->{'screenshots'}}) {
+            %= link_to url_for('step', moduleid => $module->{'name'}, stepid => $screenshot->{'num'}) => begin
+              %= image "/tests/$testid/images/".$screenshot->{'name'}."?size=$ref_width"."x$ref_height", width => $ref_width, height => $ref_height, alt => $screenshot->{'name'}, class => "resborder\L$screenshot->{'result'}"
+            % end
+					% }
 				</td>
 				<td class="links" style="width: 20%;">
 					<% for my $wav (@{$module->{'wavs'}}) { %>
-					<a href="/viewaudio/show/<%= $testname %>/<%= $module->{'name'} %>/<%= $wav->{'num'} %>" title="<%= $wav->{'name'} %>"><img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{'name'} %>" class="<%= "resborder\L$wav->{'result'}" %>" /></a>
+					<a href="/viewaudio/show/<%= $testid %>/<%= $module->{'name'} %>/<%= $wav->{'num'} %>" title="<%= $wav->{'name'} %>"><img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{'name'} %>" class="<%= "resborder\L$wav->{'result'}" %>" /></a>
 					<% } %>
 				</td>
 				<td class="links" style="width: 20%;">
 					<% for my $ocr (@{$module->{'ocrs'}}) { %>
-					<a href="/testresults/<%= $testname %>/<%= $ocr->{'name'} %>.txt" title="<%= $ocr->{'name'} %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{'name'} %>.txt" class="<%= "resborder\L$ocr->{'result'}" %>" /></a>
+					<a href="/testresults/<%= $testid %>/<%= $ocr->{'name'} %>.txt" title="<%= $ocr->{'name'} %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{'name'} %>.txt" class="<%= "resborder\L$ocr->{'result'}" %>" /></a>
 					<% } %>
 				</td>
 			</tr>
