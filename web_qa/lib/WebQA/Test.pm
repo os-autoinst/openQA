@@ -137,8 +137,7 @@ sub result {
     my $num = 1;
     foreach my $img (@{$module->{'details'}}) {
       if( $img->{'screenshot'} ) {
-        my $imgpath = data_name("$testresultdir/".$img->{'screenshot'});
-        push(@imglist, {name => $imgpath, num => $num++, result => $img->{'result'}});
+        push(@imglist, {name => $img->{'screenshot'}, num => $num++, result => $img->{'result'}});
       }
       elsif( $img->{'audio'} ) {
         push(@wavlist, {name => $img->{'audio'}, num => $num++, result => $img->{'result'}});
