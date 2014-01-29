@@ -9,6 +9,9 @@
     %= stylesheet '/stylesheets/bento/style.fluid.css'
     %= stylesheet '/stylesheets/openqa.css'
     %= javascript '/javascripts/table.js'
+    %= javascript '/javascripts/prototype.js'
+    %= javascript '/javascripts/openqa.js'
+    %= javascript '/javascripts/needlediff.js'
   </head>
   <body>
     <div id="header">
