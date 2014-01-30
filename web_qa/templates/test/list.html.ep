@@ -2,8 +2,8 @@
 % title 'Welcome';
 <div class="grid_16 box box-shadow omega">
 	<h2>Test result overview</h2>
-	<p>This page lists <%= @$slist + @$list %> automated test-results from the last <%= $hoursfresh %> hours.</p>
-		%= form_for tests => (method => 'GET') => (class => "cutofftimeform") => begin
+	<p>This page lists <%= @$list %> automated test-results from the last <%= $hoursfresh %> hours.</p>
+		%= form_for tests => (method => 'GET') => (class => "cutofftimeform") => (id => "filterform") => begin
       %= select_field hours => [ ['24 h' => '24'], ['96 h' => '96'], ['200 h' => '200'], ['300 h' => '300'] ]
       %= text_field "match"
       filter
@@ -11,8 +11,8 @@
         %= check_box "ib" => 1
         ignore boring results
       </label>
-      %= select_field ob => [ ['All Backends' => ''], ['kvm2usb' => 'kvm2usb'], ['qemu' => 'qemu'], ['vbox' => 'vbox'] ]
-			%= submit_button "change", class => "smbutton"
+      %= select_field ob => [ ['All Backends' => ''], ['kvm2usb' => 'kvm2usb'], ['qemu' => 'qemu'], ['vbox' => 'vbox'] ], onchange => "document.getElementById('filterform').submit();"
+      %= submit_button "change", class => "smbutton"
     % end
 	<p />
 	<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
@@ -32,37 +32,6 @@
 		  </tr>
 		</thead>
 		<tbody>
-      % for my $test (@$slist) {
-		    <tr>
-          <%
-            my $prio = $test->{'priority'};
-            my $href = "/schedule/".$test->{'testname'}."?back=1&action=setpriority&priority=";
-            my $state = $test->{'state'};
-          %>
-          <td style="font-style: italic;"><%= $state %>
-          % if ($state eq 'stopped') {
-            <%= link_to "AAA" => begin %><%= image "images/toggle.png", alt => "restart", title => "Restart job"; %><% end %>
-          % }
-          <td>
-            <%= link_to "-" => $href.($prio-10) %>
-            <%= $prio %>
-            <%= link_to "+" => $href.($prio+10) %>
-          </td>
-          <td><%= $test->{'distri'} %></td>
-          <td><%= $test->{'type'} %></td>
-          <td><%= $test->{'arch'} %></td>
-          <td>
-            <span class="textlink">
-              <%= link_to 'http://mojolicio.us' => begin %><%= $test->{'build'} %><% end %>
-            </span>
-          </td>
-          <td><span class=""><%= $test->{'extrainfo'} %></span></td>
-          <td colspan="4" style="padding: 3px 4px; font-style: italic;">
-            <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
-          </td>
-       </tr>
-    % }
-
     % for my $test (@$list) {
        <tr>
 	  <td>
@@ -108,6 +77,38 @@
 		<td><span class="overviewunknown"><%= ($test->{'res_unknown'}?$test->{'res_unknown'}:'') %></span></td>
 		<td><span class="overviewfail"><%= ($test->{'res_fail'}?$test->{'res_fail'}:'') %></span></td>
 		<% } %>
+       </tr>
+    % }
+
+
+      % for my $test (@$slist) {
+		    <tr>
+          <%
+            my $prio = $test->{'priority'};
+            my $href = "/schedule/".$test->{'testname'}."?back=1&action=setpriority&priority=";
+            my $state = $test->{'state'};
+          %>
+          <td style="font-style: italic;"><%= $state %>
+          % if ($state eq 'stopped') {
+            <%= link_to "AAA" => begin %><%= image "images/toggle.png", alt => "restart", title => "Restart job"; %><% end %>
+          % }
+          <td>
+            <%= link_to "-" => $href.($prio-10) %>
+            <%= $prio %>
+            <%= link_to "+" => $href.($prio+10) %>
+          </td>
+          <td><%= $test->{'distri'} %></td>
+          <td><%= $test->{'type'} %></td>
+          <td><%= $test->{'arch'} %></td>
+          <td>
+            <span class="textlink">
+              <%= link_to 'http://mojolicio.us' => begin %><%= $test->{'build'} %><% end %>
+            </span>
+          </td>
+          <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+          <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+            <a href="/schedule/<%= $test->{'testname'} %>?cancel=1" onclick="this.href += '&redirect_back=1'" rel="nofollow">cancel</a>
+          </td>
        </tr>
     % }
      </tbody>
