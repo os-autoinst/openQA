@@ -3,6 +3,7 @@ package WebQA::Helpers;
 use strict;
 use warnings;
 use awstandard;
+# TODO: Move all needed subs form awstandard to here.
 
 use base 'Mojolicious::Plugin';
 
@@ -10,9 +11,7 @@ sub register {
 
     my ($self, $app) = @_;
 
-    # does not really work with parameters; needs investigation
-    $app->helper(AWisodatetime2 =>
-                 sub { shift; return AWisodatetime2(@_); });
+    $app->helper(AWisodatetime2 => sub { shift; return AWisodatetime2(shift); });
 
     $app->helper(syntax_highlight => sub {
         my $c=shift;
