@@ -9,8 +9,12 @@
     %= stylesheet '/stylesheets/bento/style.fluid.css'
     %= stylesheet '/stylesheets/openqa.css'
     %= javascript '/javascripts/table.js'
+    %= javascript '/javascripts/shapes.js'
+    %= javascript '/javascripts/needleeditor.js'
     %= javascript '/javascripts/prototype.js'
     %= javascript '/javascripts/openqa.js'
+    %= javascript '/javascripts/cropimg.js'
+    %= javascript '/javascripts/keyevent.js'
     %= javascript '/javascripts/needlediff.js'
   </head>
   <body>
