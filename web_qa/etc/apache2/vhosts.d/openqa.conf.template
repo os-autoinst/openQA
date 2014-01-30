@@ -1,0 +1,43 @@
+# note: if you enable this you must have a default vhost, e.g. in 01-default.conf
+#NameVirtualHost *:80
+#<VirtualHost *:80>
+#    ServerName www.example.com
+#    DocumentRoot "/srv/www/htdocs"
+#</VirtualHost>
+
+<VirtualHost *:80>
+
+    ServerName FIXME
+
+    DocumentRoot "/usr/share/openqa/htdocs"
+
+    <Proxy *>
+        Order deny,allow
+        Allow from all
+    </Proxy>
+
+    ProxyRequests Off
+    ProxyPreserveHost On
+    ProxyPass / http://localhost:9526/ keepalive=On
+    ProxyPassReverse / http://localhost:9526/
+    RequestHeader set X-Forwarded-HTTPS "0"
+
+    ProxyPass /public !
+    ProxyPass /favicon.ico !
+
+    SetEnv OPENQA_BASEDIR "/var/lib"
+    SetEnv OPENQA_NEEDLES_SCM "git"
+    SetEnv OPENQA_NEEDLES_GIT_WORKTREE "/var/lib/os-autoinst/needles"
+    SetEnv OPENQA_NEEDLES_GIT_DO_PUSH "no"
+
+    # space seaparated list of IPs or regular expressions that match IPs
+    SetEnv OPENQA_ALLOWED_HOSTS "127.0.0.1 ::1"
+
+    # set if you have a local repo mirror
+    # SetEnv OPENQA_SUSE_MIRROR "http://FIXME"
+
+    HostnameLookups Off
+    UseCanonicalName Off
+    ServerSignature On
+
+</VirtualHost>
