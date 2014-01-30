@@ -1,0 +1,33 @@
+% layout 'default';
+% title $moduleid;
+% use Mojo::ByteStream 'b';
+
+<div class="grid_3 alpha" id="sidebar">
+	<div class="box box-shadow alpha" id="actions_box">
+		<div class="box-header aligncenter">Actions</div>
+		<div class="aligncenter">
+      %= link_to url_for('test') => begin
+        %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
+      % end
+      %= link_to url_for('src_step', format => 'txt') => begin
+        %= image '/images/log.png', alt => 'raw test', title => 'raw test'
+      % end
+		</div>
+	</div>
+
+	%= include 'step/moduleslist'
+</div>
+
+<div class="grid_13 omega">
+	%= include 'step/moduleslistthumbnails' unless ($tabmode eq 'onlysrc')
+
+	<div class="box box-shadow">
+	  %= include 'step/moduleslisttabs'
+
+    <p>
+    Test-Module: <tt><%= $scriptpath %></tt>
+    </p>
+    %= b(syntax_highlight($script))
+
+  </div>
+</div>

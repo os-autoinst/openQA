@@ -1,36 +1,59 @@
 package WebQA::Step;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
+use awstandard;
 
-sub view {
+sub init {
   my $self = shift;
-
-  # Call to viewimg or viewaudio
 
   my $testindex = $self->param('stepid');
 
   my $results = test_result($self->param('testid'));
-  return $self->render_not_found unless ($results);
+  unless ($results) {
+    $self->render_not_found;
+    return 0;
+  }
   $self->stash('results', $results);
 
   my $module = test_result_module($results->{'testmodules'}, $self->param('moduleid'));
-  return $self->render_not_found unless ($module);
+  unless ($module) {
+    $self->render_not_found;
+    return 0;
+  }
   $self->stash('module', $module);
+  $self->stash('imglist', $module->{'details'});
 
   my $modinfo = get_running_modinfo($results);
   $self->stash('modinfo', $modinfo);
 
+  my $tabmode = 'screenshot'; # Default
   if ($testindex > @{$module->{'details'}}) {
     # This means that the module have no details at all
     if ($testindex == 1) {
-      return $self->render('step/nodetails');
+      if ($self->stash('action') eq 'src') {
+        $tabmode = 'onlysrc';
+      } else {
+        $self->redirect_to('src_step');
+        return 0;
+      }
       # In this case there are details, we simply run out of range
     } else {
-      return $self->render_not_found;
+      $self->render_not_found;
+      return 0;
     }
   }
+  $self->stash('tabmode', $tabmode);
 
-  my $module_detail = $module->{'details'}->[$testindex-1];
+  1;
+}
+
+# Call to viewimg or viewaudio
+sub view {
+  my $self = shift;
+  return 0 unless $self->init();
+
+  my $testindex = $self->stash('testindex');
+  my $module_detail = $self->stash('module')->{'details'}->[$testindex-1];
   if ($module_detail->{'audio'}) {
     $self->viewaudio($module_detail);
   } else {
@@ -46,8 +69,25 @@ sub edit {
 
 sub src {
   my $self = shift;
+  return 0 unless $self->init();
 
-  # Old viewsrc
+  my $testid = $self->param('testid');
+  my $moduleid = $self->param('moduleid');
+  my $running = $self->stash('modinfo')->{'running'};
+
+  my $fqfn = testresultdir("$testid/autoinst-log.txt");
+  $fqfn = running_log($testid).'/autoinst-log.txt' if (($running||'') ne "" && -e running_log($testid).'/autoinst-log.txt');
+  my $scriptpath=log_to_scriptpath($fqfn, $moduleid);
+  if(!$scriptpath || !-e $scriptpath) {
+    $scriptpath||="";
+    return $self->render_not_found;
+  }
+
+  my $script=file_content($scriptpath);
+  $scriptpath=~s/^.*autoinst\///;
+
+  $self->stash('script', $script);
+  $self->stash('scriptpath', $scriptpath);
 }
 
 sub viewimg {
@@ -87,11 +127,9 @@ sub viewimg {
   }
 
   $self->stash('screenshot', $module_detail->{'screenshot'});
-  $self->stash('imglist', $self->stash('module')->{'details'});
   $self->stash('needles', $needles);
   $self->stash('img_width', 1024);
   $self->stash('img_height', 768);
-  $self->stash('tabmode', 'screenshot');
   $self->render('step/viewimg');
 }
 

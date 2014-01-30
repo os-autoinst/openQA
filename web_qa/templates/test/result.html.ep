@@ -107,7 +107,9 @@
 				%= $module->{'ocr'} ? b('&#7425;') : ''
 				%= $module->{'attention'} ? b('&#9888;') : ''
 				</td>
-				<td class="component"><a href="/viewsrc/show/<%= $testid %>/<%= $module->{'name'} %>/1"><%= $module->{'name'} %></a></td>
+				<td class="component">
+          %= link_to $module->{'name'} => url_for('src_step', stepid => 1, moduleid => $module->{'name'})
+        </td>
 				<td class="<%= "result$res_css->{$module->{'result'}}" %>"><%= $res_display->{$module->{'result'}} %></td>
 				<td class="links" style="width: 60%;">
 					% for my $screenshot (@{$module->{'screenshots'}}) {
