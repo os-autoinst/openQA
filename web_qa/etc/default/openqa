@@ -1,0 +1,9 @@
+OPENQA_BASEDIR="/var/lib"
+OPENQA_NEEDLES_SCM="git"
+OPENQA_NEEDLES_GIT_WORKTREE="/var/lib/os-autoinst/needles"
+OPENQA_NEEDLES_GIT_DO_PUSH="no"
+
+# space seaparated list of IPs or regular expressions that match IPs
+OPENQA_ALLOWED_HOSTS="127.0.0.1 ::1"
+# set if you have a local repo mirror
+# OPENQA_SUSE_MIRROR="http://FIXME"

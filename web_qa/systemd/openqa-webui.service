@@ -1,0 +1,11 @@
+[Unit]
+Description=The openQA web UI
+Wants=apache2.service
+Before=apache2.service
+
+[Service]
+EnvironmentFile=/etc/default/openqa
+ExecStart=/usr/share/openqa/script/web_qa daemon -m production
+
+[Install]
+WantedBy=multi-user.target
