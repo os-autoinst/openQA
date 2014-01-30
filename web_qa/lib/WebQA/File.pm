@@ -35,14 +35,37 @@ sub image {
 
   return $self->render_not_found if (!-e $fullname);
 
-  my $p = new Image::Magick(depth=>8);
-  $p->Read($fullname, depth=>8);
-  my $size = $self->param("size");
-  if ($size && $size=~m/^\d{1,3}x\d{1,3}$/) {
-    $p->Resize($size); # make thumbnail
+  # Last modified
+  my $mtime = (stat _)[9];
+  my $res = $self->res;
+  $res->code(200)->headers->last_modified(Mojo::Date->new($mtime));
+
+  # If modified since
+  my $headers = $self->req->headers;
+  if (my $date = $headers->if_modified_since) {
+    $self->app->log->debug("not modified");
+    my $since = Mojo::Date->new($date)->epoch;
+    if (defined $since && $since == $mtime) {
+      $res->code(304);
+      return !!$self->rendered;
+    }
   }
 
-  return $self->render(data => $p->ImageToBlob(magick=>uc($self->stash('format')), depth=>8, quality=>80));
+  my $size = $self->param("size");
+  if ($size) {
+    if ($size !~ m/^\d{1,3}x\d{1,3}$/) {
+      $res->code(400);
+      return !!$self->rendered;
+    }
+    my $p = new Image::Magick(depth=>8);
+    $p->Read($fullname, depth=>8);
+    $p->Resize($size); # make thumbnail
+    return $self->render(data => $p->ImageToBlob(magick=>uc($self->stash('format')), depth=>8, quality=>80));
+  } else {
+    $self->app->log->debug("serve static");
+    $res->content->asset(Mojo::Asset::File->new(path => $fullname));
+    return !!$self->rendered;
+  }
 }
 
 1;
