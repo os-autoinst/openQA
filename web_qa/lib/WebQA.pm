@@ -1,6 +1,7 @@
 package WebQA;
 use Mojo::Base 'Mojolicious';
 use WebQA::Helpers;
+use WebQA::Jsonrpc;
 
 # This method will run once at server start
 sub startup {
@@ -37,7 +38,28 @@ sub startup {
 
   $r->get('/builds/:buildid')->name('build')->to('build#show');
   $r->post('/rpc')->name('rpc')->to('rpc#call');
-  $r->post('/jsonrpc/:method')->name('jsonrpc')->to('jsonrpc#call');
+#  $r->post('/jsonrpc/:method')->name('jsonrpc')->to('jsonrpc#call');
+
+  $self->plugin(
+    'json_rpc_dispatcher',
+    services => {
+      '/jsonrpc'  => WebQA::Jsonrpc->new,
+    },
+    exception_handler => sub {
+      my ( $dispatcher, $err, $m ) = @_;
+
+      # $dispatcher is the dispatcher Mojolicious::Controller object
+      # $err is $@ received from the exception
+      # $m is the MojoX::JSON::RPC::Dispatcher::Method object to be returned.
+
+      $dispatcher->app->log->error(qq{Internal error: $err});
+
+      # Fake invalid request
+      $m->invalid_request('Faking invalid request');
+      return;
+    }
+  );
+
 
   $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
 
