@@ -16,17 +16,21 @@ sub test_image {
 sub needle {
   my $self = shift;
 
-  my $name = $self->param('name');
-  $name =~ s/\.([^.]+)$//; # Remove file extension
-  $self->stash('format', $1);
-  my $distri = $self->param('distri');
-  if ($self->stash('format') eq 'json') {
-    my $fullname = openqa::needle_info($name, $distri)->{'json'};
-    $self->render_static($fullname);
-  } else {
-    my $info = openqa::needle_info($name, $distri);
-    $self->image($info->{'image'});
-  }
+  $self->app->log->debug("FIXME third parameter of needle_info missing");
+
+  return $self->render_not_found;
+
+#  my $name = $self->param('name');
+#  $name =~ s/\.([^.]+)$//; # Remove file extension
+#  $self->stash('format', $1);
+#  my $distri = $self->param('distri');
+#  if ($self->stash('format') eq 'json') {
+#    my $fullname = openqa::needle_info($name, $distri)->{'json'};
+#    $self->render_static($fullname);
+#  } else {
+#    my $info = openqa::needle_info($name, $distri);
+#    $self->image($info->{'image'});
+#  }
 }
 
 sub image {

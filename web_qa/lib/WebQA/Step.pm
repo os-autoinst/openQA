@@ -102,7 +102,7 @@ sub edit {
           'type' => 'match'});
     }
     # Second position: the only needle (with the same matches)
-    my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'});
+    my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'}, $results->{'version'}||'');
     push(@$needles, {'name' => $module_detail->{'needle'},
         'imageurl' => $self->url_for('needle_file', distri => $results->{'distribution'}, name => $module_detail->{'needle'}.'.png'),
         'imagepath' => $needle->{'image'}, 'area' => $needle->{'area'},
@@ -133,7 +133,7 @@ sub edit {
     # We also use $area for transforming the match information intro a real area
     for my $needle (@{$module_detail->{'needles'}}) {
       $needlename = $needle->{'name'};
-      $needleinfo  = needle_info($needlename, $results->{'distribution'});
+      $needleinfo  = needle_info($needlename, $results->{'distribution'}, $results->{'version'}||'');
       push(@$needles, {'name' => $needlename,
           'imageurl' => $self->url_for('needle_file', distri => $results->{'distribution'}, name => "$needlename.png"),
           'imagepath' => $needleinfo->{'image'},
@@ -211,7 +211,7 @@ sub viewimg {
 
   my $needles = [];
   if ($module_detail->{'needle'}) {
-    my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'});
+    my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'}, $results->{'version'}||'');
     push(@$needles, {'name' => $module_detail->{'needle'},
         'image' => $self->url_for('needle_file', distri => $results->{'distribution'}, name => $module_detail->{'needle'}.'.png'),
         'areas' => $needle->{'area'}, 'matches' => []});
@@ -226,7 +226,7 @@ sub viewimg {
     my $needleinfo;
     for my $needle (@{$module_detail->{'needles'}}) {
       $needlename = $needle->{'name'};
-      $needleinfo  = needle_info($needlename, $results->{'distribution'});
+      $needleinfo  = needle_info($needlename, $results->{'distribution'}, $results->{'version'}||'');
       next unless $needleinfo;
       push(@$needles, {'name' => $needlename,
           'image' => $self->url_for('needle_file', distri => $results->{'distribution'}, name => "$needlename.png"),
