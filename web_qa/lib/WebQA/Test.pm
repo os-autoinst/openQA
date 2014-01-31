@@ -28,7 +28,7 @@ sub list {
   my $now=time();
   
   # schedule list
-  for my $job (@{Scheduler::list_jobs('state' => 'scheduled,stopped')||[]}) {
+  for my $job (@{Scheduler::list_jobs('state' => 'scheduled')||[]}) {
     my $testname = $job->{'name'};
     next if($match && $testname !~ m/$match/);
     my $params = openqa::parse_testname($testname);
