@@ -186,6 +186,8 @@ sub result {
 # uploaded logs box
   my @ulogs = test_uploadlog_list($testname);
 
+  my $job = Scheduler::job_get($testname);
+
   $self->stash(overall => $results->{'overall'});
   $self->stash(modlist => \@modlist);
   $self->stash(diskimg => $diskimg);
@@ -193,6 +195,7 @@ sub result {
   $self->stash(resultfiles => \@resultfiles);
   $self->stash(ulogs => \@ulogs);
   $self->stash(test_duration => $test_duration);
+  $self->stash(job => $job);
 
   $self->render('test/result');
 }

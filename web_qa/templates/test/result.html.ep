@@ -48,6 +48,10 @@
 					<td>Result</td>
 					<td><span style="padding: 0 10%; display: inline-block; text-align: center;" class="<%= "result$res_css->{$overall}" %>"><%= $res_display->{$overall} %></span></td>
 				</tr>
+				<tr>
+					<td style="width: 40%;">State</td>
+					<td><%= $job->{state} %></td>
+				</tr>
 			</table>
 		</div>
 	</div>
