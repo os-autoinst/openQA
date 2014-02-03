@@ -47,6 +47,20 @@ sub init {
   1;
 }
 
+# Helper function to generate the needle url, with an optional version
+sub needle_url {
+  my $self = shift;
+  my $distri = shift;
+  my $name = shift;
+  my $version = shift;
+
+  if (defined($version) && $version) {
+    $self->url_for('needle_file', distri => $distri, name => $name)->query(version => $version);
+  } else {
+    $self->url_for('needle_file', distri => $distri, name => $name);
+  }
+}
+
 # Call to viewimg or viewaudio
 sub view {
   my $self = shift;
@@ -104,7 +118,8 @@ sub edit {
     # Second position: the only needle (with the same matches)
     my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'}, $results->{'version'}||'');
     push(@$needles, {'name' => $module_detail->{'needle'},
-        'imageurl' => $self->url_for('needle_file', distri => $results->{'distribution'}, name => $module_detail->{'needle'}.'.png'),
+        'imageurl' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png',
+                        $results->{'version'}),
         'imagepath' => $needle->{'image'}, 'area' => $needle->{'area'},
         'tags' => $needle->{'tags'}, 'matches' => $needles->[0]->{'matches'}});
     for my $t (@{$needle->{'tags'}}) {
@@ -135,7 +150,7 @@ sub edit {
       $needlename = $needle->{'name'};
       $needleinfo  = needle_info($needlename, $results->{'distribution'}, $results->{'version'}||'');
       push(@$needles, {'name' => $needlename,
-          'imageurl' => $self->url_for('needle_file', distri => $results->{'distribution'}, name => "$needlename.png"),
+          'imageurl' => $self->needle_url($results->{'distribution'}, "$needlename.png", $results->{'version'}),
           'imagepath' => $needleinfo->{'image'},
           'tags' => $needleinfo->{'tags'},
           'area' => $needleinfo->{'area'}, 'matches' => []});
@@ -213,7 +228,7 @@ sub viewimg {
   if ($module_detail->{'needle'}) {
     my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'}, $results->{'version'}||'');
     push(@$needles, {'name' => $module_detail->{'needle'},
-        'image' => $self->url_for('needle_file', distri => $results->{'distribution'}, name => $module_detail->{'needle'}.'.png'),
+        'image' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png', $results->{'version'}),
         'areas' => $needle->{'area'}, 'matches' => []});
     for my $area (@{$module_detail->{'area'}}) {
       push(@{$needles->[0]->{'matches'}},
@@ -229,7 +244,7 @@ sub viewimg {
       $needleinfo  = needle_info($needlename, $results->{'distribution'}, $results->{'version'}||'');
       next unless $needleinfo;
       push(@$needles, {'name' => $needlename,
-          'image' => $self->url_for('needle_file', distri => $results->{'distribution'}, name => "$needlename.png"),
+          'image' => $self->needle_url($results->{'distribution'}, "$needlename.png", $results->{'version'}),
           'areas' => $needleinfo->{'area'}, 'matches' => []});
       for my $area (@{$needle->{'area'}}) {
         push(@{$needles->[scalar(@$needles)-1]->{'matches'}},
