@@ -1,6 +1,7 @@
 package WebQA::Step;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
+use awstandard;
 use File::Copy;
 
 sub init {
