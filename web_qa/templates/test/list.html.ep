@@ -1,5 +1,7 @@
 % layout 'default';
 % title 'Welcome';
+% use Mojo::ByteStream 'b';
+
 <div class="grid_16 box box-shadow omega">
 	<h2>Test result overview</h2>
 	<p>This page lists <%= @$list %> automated test-results from the last <%= $hoursfresh %> hours.</p>
@@ -66,7 +68,7 @@
 		    <% } else { %>
 		    <% $ptext = "pre-processing"; %>
 		    <% } %>
-		    <progress style="width: 100%; height: 100%;" max="<%= $test->{'run_stat'}->{'modcount'} %>" <%= encoded_string(($test->{'run_stat'}->{'run_backend'} and $test->{'run_stat'}->{'modcount'} > 0)?"value='".$test->{'run_stat'}->{'moddone'}."'":"") %>>
+		    <progress style="width: 100%; height: 100%;" max="<%= $test->{'run_stat'}->{'modcount'} %>" <%= b(($test->{'run_stat'}->{'run_backend'} and $test->{'run_stat'}->{'modcount'} > 0)?"value='".$test->{'run_stat'}->{'moddone'}."'":"") %>>
 		      <%= $ptext %>
 		    </progress>
 		    <%= $ptext %>
