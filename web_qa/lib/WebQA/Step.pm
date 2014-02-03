@@ -66,8 +66,8 @@ sub view {
   my $self = shift;
   return 0 unless $self->init();
 
-  my $testindex = $self->stash('testindex');
-  my $module_detail = $self->stash('module')->{'details'}->[$testindex-1];
+  my $stepid = $self->param('stepid');
+  my $module_detail = $self->stash('module')->{'details'}->[$stepid-1];
   if ($module_detail->{'audio'}) {
     $self->viewaudio($module_detail);
   } else {
