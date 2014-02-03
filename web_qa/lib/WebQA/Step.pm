@@ -1,7 +1,7 @@
 package WebQA::Step;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
-use awstandard;
+use File::Copy;
 
 sub init {
   my $self = shift;
@@ -85,8 +85,6 @@ sub edit {
   my $imgname = $module_detail->{'screenshot'};
   my $results = $self->stash('results');
   my $testname = $self->param('testid');
-  my $info_msg;
-  my $error_msg;
 
   # Each object in $needles will contain the name, both the url and the local path
   # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -188,8 +186,6 @@ sub edit {
   }
   $default_name = $default_name."-".time;
 
-  $self->stash('error_msg', $error_msg);
-  $self->stash('info_msg', $info_msg);
   $self->stash('needles', $needles);
   $self->stash('tags', $tags);
   $self->stash('default_needle', $default_needle);
@@ -217,6 +213,53 @@ sub src {
 
   $self->stash('script', $script);
   $self->stash('scriptpath', $scriptpath);
+}
+
+sub save_needle {
+  my $self = shift;
+  return 0 unless $self->init();
+
+  my $results = $self->stash('results');
+  my $testname = $self->param('testid');
+  my $json = $self->param('json');
+	my $imagepath = $self->param('imagepath');
+	my $needlename = $self->param('needlename');
+	my $needledir = needledir($results->{distribution}, $results->{version});
+	my $success = 1;
+
+  my $baseneedle = "$perldir/$needledir/$needlename";
+  copy($imagepath, "$baseneedle.png") or $success = 0;
+  if ($success) {
+    system("optipng", "-quiet", "$baseneedle.png");
+    open(J, ">", "$baseneedle.json") or $success = 0;
+    if ($success) {
+      print J $json;
+      close(J);
+    }
+  }
+  if ($success) {
+    if ($ENV{OPENQA_NEEDLES_SCM}||'' eq 'git') {
+      if ($needledir && -d "$perldir/$needledir/.git") {
+        my @git = ('git',
+          '--git-dir', "$perldir/$needledir/.git",
+          '--work-tree', "$perldir/$needledir");
+        my @files = ($baseneedle.'.json', $baseneedle.'.png');
+        system(@git, 'add', @files);
+        system(@git, 'commit', '-q', '-m',
+          sprintf("%s by %s@%s", $testname, $ENV{REMOTE_USER}||'anonymous', $ENV{REMOTE_ADDR}),
+          @files);
+        if (($ENV{OPENQA_NEEDLES_GIT_DO_PUSH}||'') eq 'yes') {
+          system(@git, 'push', 'origin', 'master');
+        }
+      } else {
+        $self->flash(error => "$needledir is not a git repo");
+      }
+    }
+    $self->flash(info => "Needle $needlename created/updated.");
+  } else {
+    $self->flash(error => "Error creating/updating needle: $!.");
+  }
+  $self->redirect_to('edit_step');
 }
 
 sub viewimg {

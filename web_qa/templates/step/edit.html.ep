@@ -17,7 +17,7 @@ window.onload=function(){
 <div class="grid_3 alpha" id="sidebar">
 	<div class="box box-shadow alpha" id="actions_box">
 		<div class="box-header aligncenter">Actions</div>
-    <form action="/cropimg/save/<%= $testid %>/<%= $moduleid%>/<%= $stepid %>" method="post">
+    %= form_for save_needle => (method => 'POST') => begin
       <div class="aligncenter">
         %= link_to url_for('test') => begin
           %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
@@ -46,7 +46,7 @@ window.onload=function(){
           <input type="hidden" id="needleeditor_image" name="imagepath" value="<%= ${@$needles[0]}{'imagepath'} %>"/>
         </div>
       </div>
-    </form>
+    % end
 	</div>
 
 	%= include 'step/moduleslist'
@@ -58,11 +58,11 @@ window.onload=function(){
 	<div class="box box-shadow">
 	  %= include 'step/moduleslisttabs'
 
-    % if ($error_msg) {
-      <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $error_msg %></blockquote>
+    % if (my $msg = flash 'error') {
+      <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
     % }
-    % if ($error_msg) {
-      <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $info_msg %></blockquote>
+    % if (my $msg = flash 'info') {
+      <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
     % }
 
     <table style="width: 97%;">

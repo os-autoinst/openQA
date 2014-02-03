@@ -15,7 +15,7 @@ sub startup {
   my $r = $self->routes;
 
   $r->get('/tests')->name('tests')->to('test#list');
-  my $test_r = $r->get('/tests/#testid');
+  my $test_r = $r->route('/tests/#testid');
   $test_r->get('/')->name('test')->to('test#show');
   $test_r->get('/currentstep')->name('currentstep')->to('test#currentstep');
   $test_r->get('/modlist')->name('modlist')->to('test#modlist');
@@ -30,10 +30,11 @@ sub startup {
   $test_r->get('/images/:filename')->name('test_img')->to('file#test_image');
   $test_r->get('/diskimages/:imageid')->name('diskimage')->to('diskimage#show');
 
-  my $asset_r = $test_r->get('/modules/:moduleid/steps/:stepid')->to(controller => 'step');
+  my $asset_r = $test_r->route('/modules/:moduleid/steps/:stepid')->to(controller => 'step');
   $asset_r->get('/view')->to(action => 'view');
   $asset_r->get('/edit')->name('edit_step')->to(action => 'edit');
   $asset_r->get('/src')->name('src_step')->to(action => 'src');
+  $asset_r->post('/')->name('save_needle')->to(action => 'save_needle');
   $asset_r->get('/')->name('step')->to(action => 'view');
 
   $r->get('/builds/:buildid')->name('build')->to('build#show');
