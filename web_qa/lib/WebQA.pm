@@ -23,9 +23,9 @@ sub startup {
   $test_r->get('/status')->name('status')->to('test#status');
   $test_r->get('/livelog')->name('livelog')->to('test#livelog');
   $test_r->get('/streaming')->name('streaming')->to('streaming#show');
-  $test_r->post('/cancel')->name('cancel')->to('schedule#cancel');
-  $test_r->post('/restart')->name('restart')->to('schedule#restart');
-  $test_r->post('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
+  $test_r->get('/cancel')->name('cancel')->to('schedule#cancel');
+  $test_r->get('/restart')->name('restart')->to('schedule#restart');
+  $test_r->get('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
   $test_r->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
   $test_r->get('/images/:filename')->name('test_img')->to('file#test_image');
   $test_r->get('/diskimages/:imageid')->name('diskimage')->to('diskimage#show');
