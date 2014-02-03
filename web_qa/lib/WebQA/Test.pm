@@ -206,4 +206,59 @@ sub running {
   $self->app->log->debug('<<<<<<<<<<<<<<<< Running');
 }
 
+sub uploadlog
+{
+    my $self = shift;
+
+    my $name = $self->param('filename');
+    my $testname = $self->param('testid');
+
+    # FIXME: this cannot work due to proxy setting
+    my $ip = $self->tx->remote_address;
+
+    $self->app->log->debug("upload $name $testname $ip");
+
+    my %whitelist=(
+	"127.0.0.1"=>1, # occurs for 10.0.2.2
+    );
+    if(!$whitelist{$ip}) {
+	return $self->render(text => "forbidden", status => 403);
+    }
+
+    if ($self->req->is_limit_exceeded) {
+	return $self->render(message => 'File is too big.', status => 200)
+    }
+
+    $testname = sanitize_testname($testname);
+    my $upname = $name;
+    $upname =~ s#.*/##;
+    $upname = sanitize_testname($upname);
+    unless ($upname && $testname) {
+	$testname ||= '';
+	$self->app->log->warn("invalid parameters passed, testname '$testname', upname '$upname'");
+	return $self->render(text => "invalid parameters", status => 400);
+    }
+
+    # FIXME: check database
+    unless (-l join('/', $resultdir, $testname)) {
+	$self->app->log->warn("test $testname is not running, refused to upload logs");
+	return $self->render(text => "test not running", status => 404);
+    }
+    $self->app->log->info("$upname $testname");
+
+    my $upload = $self->req->upload('upload');
+    if (!$upload) {
+	return $self->render(message => 'upload file content missing', status => 400)
+    }
+
+    my $dir = join('/', $loguploaddir, $testname);
+    if (! -e $dir) {
+	mkdir($dir) or die "$!";
+    }
+    my $file = join('/', $dir, $upname);
+    $upload->move_to($file);
+
+    return $self->render(text => "OK: $testname -> $upname\n");
+}
+
 1;
