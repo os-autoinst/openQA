@@ -41,9 +41,7 @@
 
     <div class="clear"></div>
     <div id="footer" class="container_16">
-      <div class="box_content grid_16" style="text-align: center;">
-        Footer
-      </div>
+      <div class="box_content grid_16" style="text-align: center;"></div>
     </div>
   </body>
 </html>

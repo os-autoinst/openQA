@@ -1,5 +1,5 @@
 % layout 'default';
-% title $testid;
+% title title.$testid;
 % my $ref_width=60;
 % my $ref_height=int($ref_width/4*3);
 % use Mojo::ByteStream 'b';
