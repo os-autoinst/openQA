@@ -229,6 +229,7 @@ sub save_needle {
 	my $success = 1;
 
   my $baseneedle = "$perldir/$needledir/$needlename";
+  $self->app->log->warn("*** imagepath is from client! FIXME!!!");
   copy($imagepath, "$baseneedle.png") or $success = 0;
   if ($success) {
     system("optipng", "-quiet", "$baseneedle.png");
