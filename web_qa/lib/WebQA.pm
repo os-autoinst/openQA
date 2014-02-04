@@ -27,7 +27,9 @@ sub startup {
   $test_r->get('/restart')->name('restart')->to('schedule#restart');
   $test_r->get('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
   $test_r->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
-  $test_r->get('/images/:filename')->name('test_img')->to('file#test_image');
+  $test_r->get('/images/:filename')->name('test_img')->to('file#test_file');
+  $test_r->get('/file/:filename')->name('test_file')->to('file#test_file');
+  $test_r->get('/logfile/:filename')->name('test_logfile')->to('file#test_logfile');
   $test_r->get('/diskimages/:imageid')->name('diskimage')->to('diskimage#show');
 
   my $asset_r = $test_r->route('/modules/:moduleid/steps/:stepid')->to(controller => 'step');

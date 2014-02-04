@@ -4,15 +4,6 @@ BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
 use Image::Magick;
 use openqa;
 
-sub test_image {
-  my $self = shift;
-
-  my $name = $self->param('filename');
-  my $testname = $self->param('testid');
-  my $fullname = openqa::testresultdir($testname)."/$name.".$self->stash('format');
-  $self->image($fullname);
-}
-
 sub needle {
   my $self = shift;
 
@@ -30,9 +21,31 @@ sub needle {
   }
 }
 
-sub image {
+sub test_logfile {
   my $self = shift;
-  my $fullname = shift;
+
+  my $name = $self->param('filename');
+  $name = 'ulogs/'.$name;
+
+  return $self->_test_file($name);
+}
+
+sub test_file {
+  my $self = shift;
+
+  my $name = $self->param('filename');
+
+  return $self->_test_file($name);
+}
+
+sub _test_file {
+  my $self = shift;
+  my $name = shift;
+
+  my $testname = $self->param('testid');
+
+  my $fullname = openqa::testresultdir($testname).'/'.$name;
+  $fullname .= '.'.$self->stash('format') if $self->stash('format');
 
   return $self->render_not_found if (!-e $fullname);
 
@@ -52,21 +65,20 @@ sub image {
     }
   }
 
-  my $size = $self->param("size");
-  if ($size) {
+  my $size;
+  if ($self->stash('format') eq 'png' && ($size = $self->param("size"))) {
     if ($size !~ m/^\d{1,3}x\d{1,3}$/) {
-      $res->code(400);
-      return !!$self->rendered;
+      return $self->render(text => "invalid parameter 'size'\n", code => 400);
     }
     my $p = new Image::Magick(depth=>8);
     $p->Read($fullname, depth=>8);
     $p->Resize($size); # make thumbnail
     return $self->render(data => $p->ImageToBlob(magick=>uc($self->stash('format')), depth=>8, quality=>80));
-  } else {
-    $self->app->log->debug("serve static");
-    $res->content->asset(Mojo::Asset::File->new(path => $fullname));
-    return !!$self->rendered;
   }
+
+  $self->app->log->debug("serve static");
+  $res->content->asset(Mojo::Asset::File->new(path => $fullname));
+  return !!$self->rendered;
 }
 
 1;
