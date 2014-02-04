@@ -15,13 +15,7 @@
     <% } %>
     <% if ($back) { %>
         <script type='text/javascript'>
-        <% if ($back eq 'results') { %>
-            window.location = "<%== url_for('tests') %>";
-        <% } elsif($back eq 'details') { %>
-            window.location = "<%== url_for('test', 'testid' => $testid) %>";
-        <% } else { %>
-            window.location = referer();
-        <% } %>
+            window.location = "<%= $back %>";
         </script>
     <% } %>
   </head>
