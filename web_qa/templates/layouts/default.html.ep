@@ -12,10 +12,12 @@
     %= javascript '/javascripts/shapes.js'
     %= javascript '/javascripts/needleeditor.js'
     %= javascript '/javascripts/prototype.js'
+    %= javascript '/javascripts/scriptaculous/scriptaculous.js'
     %= javascript '/javascripts/openqa.js'
     %= javascript '/javascripts/cropimg.js'
     %= javascript '/javascripts/keyevent.js'
     %= javascript '/javascripts/needlediff.js'
+    %= javascript '/javascripts/running.js'
   </head>
   <body>
     <div id="header">

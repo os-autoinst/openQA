@@ -23,7 +23,7 @@ function updateTestStatus(newStatus) {
 	if (window.testStatus.initialized == 0 || window.testStatus.running != newStatus.running) {
 		window.testStatus.initialized = 1;
 		window.testStatus.running = newStatus.running;
-		new Ajax.Request("/livelog/" + window.testStatus.testname + "?log=modlist", {
+		new Ajax.Request("/tests/" + window.testStatus.testname + "/modlist", {
 			method: "get",
 			dataType: 'json',
 			onSuccess: function(resp) {
@@ -116,13 +116,13 @@ function scrolldown() {
 function start_livelog() {
 	if(!window.livelog) {
 		window.livelog = 1;
-		document.getElementById("livelog").src="/livelog/" + window.testStatus.testname + "?text=1";
+		document.getElementById("livelog").src="/tests/" + window.testStatus.testname + "/livelog.txt";
 		scrolldown();
 	}
 }
 
 function updateStatus() {
-	new Ajax.Request("/livelog/" + window.testStatus.testname + "?log=status", {
+	new Ajax.Request("/tests/" + window.testStatus.testname + "/status", {
 		method: "get",
 		dataType: 'json',
 		onSuccess: function(resp) {

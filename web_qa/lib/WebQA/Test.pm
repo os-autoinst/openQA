@@ -1,7 +1,8 @@
 package WebQA::Test;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
-use Scheduler ();
+use awstandard;
+use Scheduler qw/worker_get/;
 
 sub list {
   my $self = shift;
@@ -115,8 +116,14 @@ sub show {
   $self->stash(res_css => $res_css);
   $self->stash(res_display => $res_display);
 
+  # If it's running
   if (!-e $self->stash('fqfn')) {
-    running($self);
+    my $results = test_result($testname);
+    $self->stash(worker => worker_get($results->{'workerid'}));
+    $self->stash(backend_info => $results->{backend});
+    $self->render('test/running');
+
+  # If it's finished
   } else {
     result($self);
   }
@@ -198,12 +205,6 @@ sub result {
   $self->stash(job => $job);
 
   $self->render('test/result');
-}
-
-sub running {
-  my $self = shift;
-
-  $self->app->log->debug('<<<<<<<<<<<<<<<< Running');
 }
 
 sub uploadlog

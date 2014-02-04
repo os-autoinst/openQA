@@ -1,5 +1,3 @@
-@import url(container18.css);
-
 td { text-align: center; vertical-align: middle; }
 td { padding: 0.3em 0.6em; }
 tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
@@ -345,4 +343,13 @@ table#results th.table-sorted-asc {
 	background-image: url(../images/sorted-up.png);
 	background-position: left top;
 	background-repeat: no-repeat;
+}
+
+/* Live view */
+.container_16 .live-sidebar {
+    width: 280px;
+}
+
+.container_16 .live-content {
+    width: 820px;
 }

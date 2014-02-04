@@ -21,11 +21,11 @@ sub startup {
   my $test_r = $r->route('/tests/#testid');
   $test_r->get('/')->name('test')->to('test#show');
   $test_r->get('/currentstep')->name('currentstep')->to('test#currentstep');
-  $test_r->get('/modlist')->name('modlist')->to('test#modlist');
-  $test_r->get('/modstat')->name('modstat')->to('test#modstat');
-  $test_r->get('/status')->name('status')->to('test#status');
-  $test_r->get('/livelog')->name('livelog')->to('test#livelog');
-  $test_r->get('/streaming')->name('streaming')->to('streaming#show');
+  $test_r->get('/modlist')->name('modlist')->to('running#modlist');
+  $test_r->get('/modstat')->name('modstat')->to('running#modstat');
+  $test_r->get('/status')->name('status')->to('running#status');
+  $test_r->get('/livelog')->name('livelog')->to('running#livelog');
+  $test_r->get('/streaming')->name('streaming')->to('running#streaming');
   $test_r->get('/cancel')->name('cancel')->to('schedule#cancel');
   $test_r->get('/restart')->name('restart')->to('schedule#restart');
   $test_r->get('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');

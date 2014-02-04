@@ -39,7 +39,7 @@
        <tr>
 	  <td>
 	    <% if($test->{'running'}) { %>
-            <a href="/running/<?= $test->{'testname'} ?>">testing</a>
+            <a href="/tests/<%= $test->{'testname'} %>">testing</a>
             <% } else { %>
 	    <a href="<%= url_for('test', 'testid' => $test->{'testname'}) %>"><img src="/images/details.png" alt="details" title="test result details" height="23" width="23" /></a>
 	    <a href="<%= url_for('test_file', 'testid' => $test->{'testname'}, 'filename' => 'video.ogv') %>"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
