@@ -97,7 +97,7 @@
 	<div class="box box-shadow">
 		<h2>Test result for <i><%= $testid %></i></h2>
 		<p />
-		<table style="width: 95%;">
+		<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
 			<tr>
 				<th style="width: 200px;" colspan="2">Test</th>
 				<th style="width: 150px; padding: 0 25px;">Result</th>
