@@ -8,9 +8,13 @@
         <div class="aligncenter">
             %= link_to url_for('tests') => begin
                 %= image '/images/back.png', alt => 'back', title => 'back to overview page', height => 22
-                % end
-            <a href="/schedule/<%= $testid %>?action=restart&back=details"><img src="/images/toggle.png" alt="restart" title="Restart Job"/></a>
-            <a href="/schedule/<%= $testid %>?action=cancel&back=details"><img src="/images/cancel.png" alt="stop" title="Stop Job"/></a>
+            % end
+            %= link_to url_for('restart')->query(back => 'details') => begin
+                %= image '/images/toggle.png', alt => "restart", title => "Restart job"
+            % end
+            %= link_to url_for('cancel')->query(back => 'details') => begin
+                %= image '/images/cancel.png', alt => "stop", title => "Stop job"
+            % end
         </div>
         <table style="width: 90%">
 	        <tr>
@@ -26,7 +30,9 @@
 				<td style="padding: 0;" id="needinput_buttons">
 					<a href="javascript:window.sendCommand('continue_waitforneedle')" style="display:none" id="continue_button"><img src="/images/cancel.png" alt="continue" title="Continue" /></a>
 					<a href="javascript:window.sendCommand('reload_needles_and_retry')" style="display:none" id="retry_button"><img src="/images/play.png" alt="retry" title="Retry" /></a>
-					<a href="/croplive/<%= $testid %>" style="display:none" id="crop_button"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
+                    %= link_to url_for('edit_test') => (style => 'display:none', id => 'crop_button') => begin
+                        %= image '/images/edit.png', alt => "edit", title => "Needle editor"
+                    % end
 					<a href="javascript:window.sendCommand('stop_waitforneedle')" style="display:none" id="stop_button"><img src="/images/cancel.png" alt="cancel" title="Stop waitforneedle" /></a>
 				</td>
 			</tr>

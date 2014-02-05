@@ -20,16 +20,18 @@ sub startup {
   $r->get('/tests')->name('tests')->to('test#list');
   my $test_r = $r->route('/tests/#testid');
   $test_r->get('/')->name('test')->to('test#show');
-  $test_r->get('/currentstep')->name('currentstep')->to('test#currentstep');
+
   $test_r->get('/modlist')->name('modlist')->to('running#modlist');
-  $test_r->get('/modstat')->name('modstat')->to('running#modstat');
   $test_r->get('/status')->name('status')->to('running#status');
   $test_r->get('/livelog')->name('livelog')->to('running#livelog');
   $test_r->get('/streaming')->name('streaming')->to('running#streaming');
+  $test_r->get('/edit')->name('edit_test')->to('running#edit');
+
   $test_r->get('/cancel')->name('cancel')->to('schedule#cancel');
   $test_r->get('/restart')->name('restart')->to('schedule#restart');
   $test_r->get('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
   $test_r->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
+
   $test_r->get('/images/:filename')->name('test_img')->to('file#test_file');
   $test_r->get('/file/:filename')->name('test_file')->to('file#test_file');
   $test_r->get('/logfile/:filename')->name('test_logfile')->to('file#test_logfile');

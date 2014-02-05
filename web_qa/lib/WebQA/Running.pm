@@ -44,6 +44,21 @@ sub status {
     $self->render(json => $results);
 }
 
+sub edit {
+    my $self = shift;
+    return 0 unless $self->init();
+
+    my $results = test_result($self->stash('testid'));
+    my $moduleid = $results->{'running'};
+    my $module = test_result_module($results->{'testmodules'}, $moduleid);
+    if ($module) {
+        my $stepid = scalar(@{$module->{'details'}});
+        $self->redirect_to('edit_step', moduleid => $moduleid, stepid => $stepid);
+    } else {
+        $self->render_not_found;
+    }
+}
+
 sub livelog {
     my $self = shift;
     return 0 unless $self->init();
