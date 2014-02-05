@@ -17,7 +17,6 @@ sub startup {
   # Router
   my $r = $self->routes;
 
-  $r->get('/')->name('index')->to('index#index');
   $r->get('/tests')->name('tests')->to('test#list');
   my $test_r = $r->route('/tests/#testid');
   $test_r->get('/')->name('test')->to('test#show');
@@ -73,8 +72,10 @@ sub startup {
 
   $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
 
+  # Favicon
+  $r->get('/favicon.ico' => sub {my $c = shift; $c->render_static('favicon.ico') });
   # Default route
-  $r->get('/')->to('test#list');
+  $r->get('/')->name('index')->to('index#index');
 }
 
 1;
