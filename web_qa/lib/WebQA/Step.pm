@@ -42,6 +42,10 @@ sub init {
       $self->render_not_found;
       return 0;
     }
+  } else {
+    my $module_detail = $module->{'details'}->[$testindex-1];
+    $tabmode = 'audio' if ($module_detail->{'audio'});
+    $self->stash('module_detail', $module_detail);
   }
   $self->stash('tabmode', $tabmode);
 
@@ -67,12 +71,10 @@ sub view {
   my $self = shift;
   return 0 unless $self->init();
 
-  my $stepid = $self->param('stepid');
-  my $module_detail = $self->stash('module')->{'details'}->[$stepid-1];
-  if ($module_detail->{'audio'}) {
-    $self->viewaudio($module_detail);
+  if ('audio' eq $self->stash('tabmode')) {
+    $self->render('step/viewaudio');
   } else {
-    $self->viewimg($module_detail);
+    $self->viewimg;
   }
 }
 
@@ -81,8 +83,7 @@ sub edit {
   my $self = shift;
   return 0 unless $self->init();
 
-  my $testindex = $self->stash('stepid');
-  my $module_detail = $self->stash('module')->{'details'}->[$testindex-1];
+  my $module_detail = $self->stash('module_detail');
   my $imgname = $module_detail->{'screenshot'};
   my $results = $self->stash('results');
   my $testname = $self->param('testid');
@@ -266,7 +267,7 @@ sub save_needle {
 
 sub viewimg {
   my $self = shift;
-  my $module_detail = shift;
+  my $module_detail = $self->stash('module_detail');;
   my $results = $self->stash('results');
 
   my $needles = [];
@@ -305,10 +306,6 @@ sub viewimg {
   $self->stash('img_width', 1024);
   $self->stash('img_height', 768);
   $self->render('step/viewimg');
-}
-
-sub viewaudio {
-  my $self = shift;
 }
 
 1;

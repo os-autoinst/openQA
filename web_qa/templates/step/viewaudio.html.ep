@@ -1,0 +1,38 @@
+% layout 'default';
+% title $moduleid;
+
+<div class="grid_3 alpha" id="sidebar">
+	<div class="box box-shadow alpha" id="actions_box">
+		<div class="box-header aligncenter">Actions</div>
+		<div class="aligncenter">
+      %= link_to url_for('test') => begin
+        %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
+      % end
+		</div>
+	</div>
+
+	%= include 'step/moduleslist'
+</div>
+
+<div class="grid_13 omega">
+	%= include 'step/moduleslistthumbnails'
+
+	<div class="box box-shadow">
+	  %= include 'step/moduleslisttabs'
+
+		<div style="margin: 6px;">
+			<table style="width: 300px;">
+				<tr>
+					<td>Expected DTMF</td>
+					<td><tt><%= $module_detail->{'reference_text'} %></tt></td>
+				</tr>
+				<tr>
+					<td>Decoded DTMF</td>
+					<td><tt><%= $module_detail->{'decoded_text'} %></tt></td>
+				</tr>
+			</table>
+			<br />
+			<audio style="width: 300px; margin: 0 10px;" src="<%= url_for('test_file', filename => $module_detail->{'audio'}) %>" controls="controls"></audio>
+		</div>
+	</div>
+</div>
