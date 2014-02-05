@@ -17,7 +17,7 @@ sub needle {
     $self->render_static($fullname);
   } else {
     my $info = openqa::needle_info($name, $distri, $version);
-    $self->image($info->{'image'});
+    $self->_serve_file($info->{'image'});
   }
 }
 
@@ -25,27 +25,31 @@ sub test_logfile {
   my $self = shift;
 
   my $name = $self->param('filename');
-  $name = 'ulogs/'.$name;
+  my $testname = $self->param('testid');
 
-  return $self->_test_file($name);
+  my $fullname = openqa::testresultdir($testname).'/ulogs/'.$name;
+  $fullname .= '.'.$self->stash('format') if $self->stash('format');
+
+  return $self->_serve_file($fullname);
 }
 
 sub test_file {
   my $self = shift;
 
   my $name = $self->param('filename');
-
-  return $self->_test_file($name);
-}
-
-sub _test_file {
-  my $self = shift;
-  my $name = shift;
-
   my $testname = $self->param('testid');
 
   my $fullname = openqa::testresultdir($testname).'/'.$name;
   $fullname .= '.'.$self->stash('format') if $self->stash('format');
+
+  return $self->_serve_file($fullname);
+}
+
+# serve file specified with absolute path name. No sanity checks
+# done here. Take care!
+sub _serve_file {
+  my $self = shift;
+  my $fullname = shift;
 
   return $self->render_not_found if (!-e $fullname);
 
