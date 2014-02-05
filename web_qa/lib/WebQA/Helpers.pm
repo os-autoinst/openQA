@@ -41,7 +41,7 @@ sub register {
         my $crumbs = '<div id="breadcrump" class="grid_16 alpha">';
         $crumbs .= '<a href="'.$c->url_for('/').'">';
         $crumbs .= $c->image('/images/home_grey.png', alt => "Home");
-        $crumbs .= '<b>openQA</b></a>';
+        $crumbs .= '<b>'.$c->stash('appname').'</b></a>';
         if ($c->current_route('tests')) {
             $crumbs .= ' > Test results';
         } elsif (my $test = $c->param('testid')) {

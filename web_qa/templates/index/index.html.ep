@@ -1,5 +1,5 @@
 % layout 'default';
-% title title;
+% title $appname;
 % content_for footer => begin
   <a title="SUSE" href="http://en.opensuse.org/Sponsors"><img alt="SUSE" src="/images/suse.png" title="SUSE"/></a>
 % end
@@ -13,7 +13,7 @@
 </div>
 
 <div class="grid_10 box box-shadow omega">
-	<h1>Welcome to <%= title %></h1>
+	<h1>Welcome to <%= $appname %></h1>
 	<p>
 		<a href="/results/"><img src="/images/factory-tested.png" alt="factory-tested logo" class="tactorytestedlogo"/></a>
 		This machine runs regular automated tests of the openSUSE Factory distribution to find bugs early in the development cycle. <br/>

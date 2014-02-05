@@ -7,6 +7,9 @@ use WebQA::Jsonrpc;
 sub startup {
   my $self = shift;
 
+  # Set some application defaults
+  $self->defaults( appname => 'openQA' );
+
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer');
   $self->plugin('WebQA::Helpers');
