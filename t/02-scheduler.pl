@@ -4,10 +4,12 @@ use strict;
 use Data::Dump qw/pp dd/;
 use FindBin;
 use lib $FindBin::Bin.'/../www/cgi-bin/modules';
+# use lib $FindBin::Bin.'/../www/cgi-bin/modules/Schema';
 use Scheduler;
 use openqa;
 
-use Test::Simple tests => 22;
+use Test::Simple tests => 25;
+
 
 # Testing worker_register and worker_get
 # New worker
@@ -63,7 +65,7 @@ my $job = {
     },
     start_date => undef,
     state => "scheduled",
-    worker => 0,
+    worker_id => 0,
     };
 
 my $iso = sprintf("%s/%s/factory/iso/%s", $openqa::basedir, $openqa::prj, $settings{ISO});
@@ -86,7 +88,7 @@ my $jobs = [
 	result => undef,
 	start_date => undef,
 	state => "scheduled",
-	worker => 0,
+	worker_id => 0,
     },
     ];
 
@@ -106,12 +108,17 @@ $job = job_grab(%args);
 ok(pp($job->{settings}) eq pp(\%settings) && length $job->{start_date} == 19, "job_grab");
 
 
+# # Testing when a worker register for second time and had pending jobs
+# $id2 = worker_register("host", "instance", "backend");
+# ok($id == $id2, "Pending jobs worker_register");
+
+
 # Testing job_set_scheduled
 $job = Scheduler::job_get($job_id);
 ok($job->{state} eq "running", "Job is in running state");   # After job_grab the job is in running state.
 my $result = Scheduler::job_set_scheduled($job_id);
 $job = Scheduler::job_get($job_id);
-ok($result == 1 && $job->{state} eq "scheduled", "job_set_scheduled");
+ok($result == 1&& $job->{state} eq "scheduled", "job_set_scheduled");
 
 
 # Testing job_set_done
@@ -139,7 +146,7 @@ ok($result == 1 && $job->{state} eq "waiting", "job_set_waiting");
 # Testing job_set_running
 $result = Scheduler::job_set_running($job_id);
 $job = Scheduler::job_get($job_id);
-ok($result ==1 && $job->{state} eq "running", "job_set_running");
+ok($result == 1 && $job->{state} eq "running", "job_set_running");
 $result = Scheduler::job_set_running($job_id);
 $job = Scheduler::job_get($job_id);
 ok($result == 0 && $job->{state} eq "running", "Retry job_set_running");
@@ -174,10 +181,14 @@ ok($result == 1 && $job->{result} == 1, "job_update_result");
 # Testing job_fill_settings
 # TBD
 
+
 # Testing job_delete
 $result = Scheduler::job_delete($job_id);
 my $no_job_id = Scheduler::job_get($job_id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
+my $fake_job = { id => $job_id };
+Scheduler::_job_fill_settings($fake_job);
+ok(pp($fake_job->{settings}) eq "{}", "Cascade delete");
 
 
 # Testing command_enqueue and list_commands
@@ -187,7 +198,7 @@ ok($result == 1 && !defined $no_job_id, "job_delete");
     );
 my %command = (
     id => 1,
-    worker => 1,
+    worker_id => 1,
     command => "command",
     );
 my $command_id = Scheduler::command_enqueue(%args);
@@ -206,4 +217,12 @@ ok(scalar @$commands == 1 && pp($commands) eq '[[1, "command"]]',  "command_get"
 # TBD
 
 # Testing iso_stop_old_builds
-# TBD
+$result = Scheduler::iso_stop_old_builds('ISO');
+ok($result == 0, "Empty iso_old_builds");
+open $fh, ">", $iso;
+$job_id = Scheduler::job_create(%settings);
+unlink $iso;
+$result = Scheduler::iso_stop_old_builds('ISO');
+$new_job = Scheduler::job_get($job_id);
+ok($result == 1 && $new_job->{state} eq "stopped" && $new_job->{worker_id} == 0, "Match iso_old_builds");
+

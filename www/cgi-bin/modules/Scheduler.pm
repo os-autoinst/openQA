@@ -1,386 +1,177 @@
 package Scheduler;
 
 use strict;
-use DBI;
+use warnings;
+use diagnostics;
+
+use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
-use List::Util qw/shuffle/;
-#use Data::Dump qw/pp/;
+use Data::Dump qw/pp/;
 
 use FindBin;
 use lib $FindBin::Bin;
+#use lib $FindBin::Bin.'Schema';
+use Schema::Schema; 
 use openqa ();
+
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
-@EXPORT = qw(ob_fill_settings list_jobs list_workers worker_register worker_get job_grab
- job_set_scheduled job_set_done job_set_stop job_set_waiting job_set_running job_create job_set_prio
- job_delete job_update_result job_find_by_name($;@) job_restart_by_name
- command_get command_enqueue command_dequeue list_commands);
+
+@EXPORT = qw(worker_register worker_get list_workers job_create
+    job_get list_jobs job_grab job_set_scheduled job_set_done
+    job_set_stop job_set_waiting job_set_running job_set_prio
+    job_delete job_update_result job_restart job_stop command_enqueue
+    command_get list_commands command_dequeue iso_stop_old_builds);
 
 
-my $get_job_stmt = "SELECT
-	jobs.id as id,
-	jobs.name as name,
-	job_state.name as state,
-	jobs.priority as priority,
-	jobs.result as result,
-	jobs.worker as worker,
-	jobs.start_date as start_date,
-	jobs.finish_date as finish_date
-	from jobs, job_state
-	where jobs.state = job_state.id";
+my $schema = Schema->connect({
+    dsn => "dbi:SQLite:dbname=$openqa::dbfile",
+    on_connect_call => "use_foreign_keys",
+});
 
-my $dbh = DBI->connect("dbi:SQLite:dbname=$openqa::dbfile","","");
-$dbh->{RaiseError} = 1;
-$dbh->do("PRAGMA foreign_keys = ON");
 
-# in the hope to make it faster
-# http://www.sqlite.org/pragma.html#pragma_synchronous
-$dbh->do("PRAGMA synchronous = OFF;");
+=item _hashref()
 
-sub job_fill_settings
-{
-    my $job = shift;
-    my $sth = $dbh->prepare("SELECT key, value from job_settings where job_settings.jobid = ?");
-    my $rc = $sth->execute($job->{'id'});
-    $job->{settings} = {};
-    while(my @row = $sth->fetchrow_array) {
-        $job->{settings}->{$row[0]} = $row[1];
+Convert an ORM object into a hashref. The API only export hashes and
+not ORM objects.
+
+=cut
+
+# XXX TODO - Remove this useless function when is not needed anymore 
+sub _hashref {
+    my $obj = shift;
+    my @fields = @_;
+
+    my %hashref = ();
+    foreach my $field (@fields) {
+	$hashref{$field} = $obj->$field;
     }
-    return $job;
+
+    return \%hashref;
 }
 
-sub list_jobs
-{
-    my %args = @_;
-    my @params;
-    my $stmt = $get_job_stmt;
-    if ($args{'state'}) {
-	my @states = split(',', $args{'state'});
-	$stmt .= " AND job_state.name IN (?".",?"x$#states.")";
-	push @params, @states;
-    }
-    if ($args{'finish_after'}) {
-	$stmt .= " AND jobs.finish_date > datetime(?)";
-	push @params, $args{'finish_after'};
-    }
-    if ($args{'build'}) {
-	$stmt .= " AND jobs.name like ?";
-	push @params, sprintf("%%-Build%04d-%%",$args{'build'});
-    }
-    my $sth = $dbh->prepare($stmt);
-    $sth->execute(@params);
-    
-    my $jobs = [];
-    while(my $job = $sth->fetchrow_hashref) {
-        job_fill_settings($job) if $args{fulldetails};
-        push @$jobs, $job;
-    }
-    return $jobs;
-}
 
-sub _seen_worker($)
-{
-    my $id = shift;
-    my $sth = $dbh->prepare("UPDATE worker SET seen = datetime('now') WHERE id = ?");
-    $sth->execute($id) or die "SQL failed\n";
-}
+#
+# Workers API
+#
 
-sub list_workers
-{
-    my $stmt = "SELECT id, host, instance, backend, seen from worker";
-    my $sth = $dbh->prepare($stmt);
-    $sth->execute();
-    
-    my $workers = [];
-    while(my $worker = $sth->fetchrow_hashref) {
-        push @$workers, $worker;
+# param hash: host, instance, backend
+sub worker_register {
+    my ($host, $instance, $backend) = @_;
+
+    my $worker = $schema->resultset("Workers")->search({
+	host => $host,
+	instance => $instance,
+    })->first;
+
+    my $now = "datetime('now')";
+    if ($worker) { # worker already known. Update fields and return id
+	$worker->update({
+	    seen => \$now,
+	});
+    } else {
+	$worker = $schema->resultset("Workers")->create({
+	    host => $host,
+	    instance => $instance,
+	    backend => $backend,
+	    seen => \$now,
+	});
     }
-    return $workers;
+
+    # maybe worker died, delete pending commands and reset running jobs
+    $worker->jobs->update_all({
+	state_id => $schema->resultset("JobState")->search({ name => "scheduled" })->single->id,
+    });
+    $schema->resultset("Commands")->search({
+	worker_id => $worker->id
+    })->delete_all();
+
+    die "got invalid id" unless $worker->id;
+    return $worker->id;
 }
 
 # param hash:
-sub worker_get
-{
+# XXX TODO: Remove HashRedInflator
+sub worker_get {
     my $workerid = shift;
 
-    my $stmt = "SELECT id, host, instance, backend, seen from worker where id == ?";
-    my $sth = $dbh->prepare($stmt);
-    $sth->execute($workerid);
+    my $rs = $schema->resultset("Workers");
+    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+    my $worker = $rs->find($workerid);
 
-    return $sth->fetchrow_hashref;
+    return $worker;
 }
 
-# param hash: host, instance, backend
-sub worker_register
-{
-    my ($host, $instance, $backend) = @_;
-    
-    my $sth = $dbh->prepare("SELECT id, backend from worker where host = ? and instance = ?");
-    my $r = $sth->execute($host, $instance) or die "SQL failed\n";
-    my @row = $sth->fetchrow_array();
+# XXX TODO: Remove HashRedInflator
+sub list_workers {
+    my $rs = $schema->resultset("Workers");
+    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+    my @workers = $rs->all;
 
-    my $id;
-    if (@row) { # worker already known. Update fields and return id
-        $id = $row[0];
-        $sth = $dbh->prepare("UPDATE worker SET seen = datetime('now'), backend = ? WHERE id = ?");
-        $r = $sth->execute($backend, $id) or die "SQL failed\n";
-    } else {
-        $sth = $dbh->prepare("INSERT INTO worker (host, instance, backend, seen) values (?,?,?, datetime('now'))");
-        $sth->execute($host, $instance, $backend);
-        $id = $dbh->last_insert_id(undef,undef,undef,undef);
-    }
-    
-    
-    # maybe worker died, delete pending commands and reset running jobs
-    my $state = "(select id from job_state where name = 'scheduled' limit 1)";
-    $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE worker = ?");
-    $r = $sth->execute($id) or die $dbh->errstr;
-    
-    $sth = $dbh->prepare("DELETE FROM commands WHERE worker = ?");
-    $r = $sth->execute($id) or die $dbh->errstr;
-    
-    die "got invalid id" unless $id;
-    return $id;
+    return \@workers;
 }
 
-#sub get_statenames()
-#{
-#	my $sth = $dbh->prepare('SELECT id, name from job_state');
-#	$sth->execute();
-#	my $h = { map { $_->[1] => $_->[0] } @{$sth->fetchall_arrayref()} };
-#	return $h;
-#}
-
-sub _validate_workerid($)
-{
+sub _validate_workerid($) {
     my $workerid = shift;
-
     die "invalid worker id\n" unless $workerid;
-
-    my $sth = $dbh->prepare("SELECT id from worker where id == ?");
-    $sth->execute($workerid);
-    my $res = $sth->fetchall_arrayref;
-    die "invalid worker id $workerid\n" unless @$res && @$res == 1 && $res->[0]->[0] == $workerid;
+    my $rs = $schema->resultset("Workers")->search({ id => $workerid });
+    die "invalid worker id $workerid\n" unless $rs->count;
 }
 
-sub _job_get($;$)
-{
-    my $jobid = shift;
-    my $cond = shift;
-
-    my $stmt = $get_job_stmt;
-    $stmt .= $cond if $cond;
-
-    my $sth = $dbh->prepare($stmt);
-    $sth->execute($jobid) or die "$!\n";
-
-    my $job = $sth->fetchrow_hashref;
-    job_fill_settings($job);
-
-    return $job;
+sub _seen_worker($) {
+    my $id = shift;
+    my $now = "datetime('now')";
+    $schema->resultset("Workers")->find($id)->update({ seen => \$now });
 }
 
-# expects an array consisting of two element array refs. first item in those
-# refs is job id, second the prio [[1,50], [2, 50], [3, 60], ...].
-# list must be sorted by prio.
-# all items with same prio are shuffled
-# returns list of job ids
-sub _shuffle_priolist($)
-{
-    my $list = shift;
 
-    my @result;
-    my @tmp;
-    my $last;
+#
+# Jobs API
+#
 
-    for my $e (@{$list}) {
-	if (!$last || $last ne $e->[1]) {
-	    $last = $e->[1];
-	    push @result, map { $_->[0] } shuffle @tmp;
-	    @tmp = ();
-	}
-	push @tmp, $e;
-    }
-    push @result, map { $_->[0] } shuffle @tmp;
+=item job_create
 
-    return @result;
-}
-
-# TODO: add some sanity check so the same host doesn't grab two jobs
-sub job_grab
-{
-    my %args = @_;
-    my $workerid = $args{workerid};
-    my $blocking = int($args{blocking} || 0);
-
-    _validate_workerid($workerid);
-    _seen_worker($workerid);
-
-    my $job;
-    while (1) {
-        my $sth = $dbh->prepare("SELECT id, priority FROM jobs WHERE state == 1 ORDER BY priority");
-        $sth->execute;
-
-        my @jobids = _shuffle_priolist($sth->fetchall_arrayref);
-
-        if (@jobids) {
-            # run through all job ids and try to grab one
-            for my $jobid (@jobids) {
-                $dbh->begin_work;
-                eval {
-		    my $state = "(select id from job_state where name = 'running' limit 1)";
-                    my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = ?, start_date = datetime('now'), result = NULL WHERE id = ? and state = 1 and worker = 0");
-                    my $r = $sth->execute($workerid, $jobid);
-                    $dbh->commit;
-
-		    if ($r != 1) {
-			print STDERR "worker $workerid couldn't grab job $jobid, ret: $r\n";
-			$jobid = undef;
-		    } else {
-			$job = _job_get($jobid, ' and jobs.id = ?');
-		    }
-                };
-                if ($@) {
-                    print STDERR "worker $workerid: $@\n";
-                    eval { $dbh->rollback };
-                    next;
-                }
-		next unless $jobid;
-		print STDERR "worker $workerid got job $jobid\n";
-                last;
-            }
-        }
-
-        last if $job;
-        last unless $blocking;
-        # XXX: do something smarter here
-        #print STDERR "no jobs for me, sleeping\n";
-        #sleep 1;
-        last;
-    }
-
-    return $job;
-}
-
-sub job_get($)
-{
-    my $jobid = shift;
-
-    if ($jobid =~ /^\d+$/) {
-	return _job_get($jobid, ' and jobs.id = ?');
-    }
-    return _job_get($jobid, ' and jobs.name = ?');
-}
-
-=head2
-release job from a worker and put back to scheduled (e.g. if worker aborted). No error check. Meant to be called from worker!
-=cut
-sub job_set_scheduled
-{
-    my $jobid = shift;
-
-    my $state = "(select id from job_state where name = 'scheduled' limit 1)";
-    my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
-    my $r = $sth->execute($jobid) or die $dbh->errstr;
-    return $r;
-}
-
-=head2
-mark job as done. No error check. Meant to be called from worker!
-=cut
-sub job_set_done
-{
-    my %args = @_;
-    my $jobid = int($args{jobid});
-    my $result = $args{result};
-
-    my $state = "(select id from job_state where name = 'done' limit 1)";
-    my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0, finish_date = datetime('now'), result = ? WHERE id = ?");
-    my $r = $sth->execute($result, $jobid) or die $dbh->errstr;
-    return $r;
-}
-
-=head2
-mark job as stopped. No error check. Meant to be called from worker!
-=cut
-sub job_set_stop
-{
-    my $jobid = shift;
-
-    my $state = "(select id from job_state where name = 'stopped' limit 1)";
-    my $sth = $dbh->prepare("UPDATE jobs set state = $state, worker = 0 WHERE id = ?");
-    my $r = $sth->execute($jobid) or die $dbh->errstr;
-    return $r;
-}
-
-=head2
-mark job as waiting. No error check. Meant to be called from worker!
-=cut
-sub job_set_waiting
-{
-    my $jobid = shift;
-
-    my $state = "(select id from job_state where name = 'waiting' limit 1)";
-    my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ?");
-    my $r = $sth->execute($jobid) or die $dbh->errstr;
-    return $r;
-}
-
-=head2
-mark job as running. No error check. Meant to be called from worker!
-=cut
-sub job_set_running
-{
-    my $jobid = shift;
-
-    my $state = "(select id from job_state where name = 'running' limit 1)";
-    my $sth = $dbh->prepare("UPDATE jobs set state = $state WHERE id = ? AND state IN (SELECT id from job_state WHERE name IN ('stopped', 'waiting'))");
-    my $r = $sth->execute($jobid) or die $dbh->errstr;
-    return $r;
-}
-
-=head2
 create a job
+
 =cut
-sub job_create
-{
+sub job_create {
     my %settings = @_;
 
     for my $i (qw/DISTRI ISO DESKTOP/) {
-        die "need at least one $i key\n" unless exists $settings{$i};
+	die "need at least one $i key\n" unless exists $settings{$i};
     }
 
     for my $i (qw/ISO NAME/) {
-        next unless $settings{$i};
-        die "invalid character in $i\n" if $settings{$i} =~ /\//; # TODO: use whitelist?
+	next unless $settings{$i};
+	die "invalid character in $i\n" if $settings{$i} =~ /\//; # TODO: use whitelist?
     }
 
     unless (-e sprintf("%s/%s/factory/iso/%s",
-                       $openqa::basedir, $openqa::prj, $settings{ISO})) {
-        die "ISO does not exist\n";
+		       $openqa::basedir, $openqa::prj, $settings{ISO})) {
+	die "ISO does not exist\n";
     }
 
     unless ($settings{NAME}) {
-        my $ctx = Digest::MD5->new;
-        for my $k (sort keys %settings) {
-            $ctx->add($settings{$k});
-        }
+	my $ctx = Digest::MD5->new;
+	for my $k (sort keys %settings) {
+	    $ctx->add($settings{$k});
+	}
 
-        my $name = $settings{ISO};
-        $name =~ s/\.iso$//;
-        $name =~ s/-Media$//;
-        $name .= '-';
-        $name .= $settings{DESKTOP};
-        $name .= '_'.$settings{VIDEOMODE} if $settings{VIDEOMODE};
-        $name .= '_'.substr($ctx->hexdigest, 0, 6);
-        $settings{NAME} = $name;
+	my $name = $settings{ISO};
+	$name =~ s/\.iso$//;
+	$name =~ s/-Media$//;
+	$name .= '-';
+	$name .= $settings{DESKTOP};
+	$name .= '_'.$settings{VIDEOMODE} if $settings{VIDEOMODE};
+	$name .= '_'.substr($ctx->hexdigest, 0, 6);
+	$settings{NAME} = $name;
     }
 
     unless (-e sprintf("%s/%s/factory/iso/%s",
-                       $openqa::basedir, $openqa::prj, $settings{ISO})) {
-        die "ISO does not exist\n";
+		       $openqa::basedir, $openqa::prj, $settings{ISO})) {
+	die "ISO does not exist\n";
     }
 
     unless ($settings{ISO_MAXSIZE}) {
@@ -393,147 +184,299 @@ sub job_create
 	    }
 	}
 	# live images are for 1G sticks
-        if ($settings{ISO} =~ /-Live/ && $settings{ISO} !~ /CD/) {
-            $maxsize=999_999_999;
-        }
+	if ($settings{ISO} =~ /-Live/ && $settings{ISO} !~ /CD/) {
+	    $maxsize=999_999_999;
+	}
 
 	$settings{ISO_MAXSIZE} = $maxsize;
     }
 
-    $dbh->begin_work;
-    my $id = 0;
-    eval {
-        my $sth = $dbh->prepare("INSERT INTO jobs (name) VALUES(?)");
-        my $rc = $sth->execute($settings{'NAME'});
-        $id = $dbh->last_insert_id(undef,undef,undef,undef);
-        die "got invalid id" unless $id;
-        while(my ($k, $v) = each %settings) {
-            my $sth = $dbh->prepare("INSERT INTO job_settings (jobid, key, value) values (?, ?, ?)");
-            $sth->execute($id, $k, $v);
-        }
-        $dbh->commit;
-    };
-    if ($@) {
-        print STDERR "$@\n";
-        eval { $dbh->rollback };
+    my @settings = ();
+    while(my ($k, $v) = each %settings) {
+	push @settings, { key => $k, value => $v };
     }
-    return $id;
+
+    my $jobs = $schema->resultset("Jobs")->search({ name => $settings{'NAME'} });
+    return 0 if $jobs->count;
+
+    my $job = $schema->resultset("Jobs")->create({
+	name => $settings{'NAME'},
+	settings => \@settings,
+    });
+
+    return $job->id;
 }
 
-sub job_set_prio
-{
+sub job_get($) {
+    my $value = shift;
+
+    if ($value =~ /^\d+$/) {
+	return _job_get({ id => $value });
+    }
+    return _job_get({name => $value });
+}
+
+# XXX TODO: Do not expand the Job
+sub _job_get($) {
+    my $search = shift;
+
+    my $job = $schema->resultset("Jobs")->search($search)->first;
+    my $job_hashref;
+    if ($job) {
+	$job_hashref = _hashref($job, qw/ id name priority result worker_id start_date finish_date /);
+	$job_hashref->{state} = $job->state->name;
+	_job_fill_settings($job_hashref);
+    }
+    return $job_hashref;
+}
+
+sub _job_fill_settings {
+    my $job = shift;
+    my $job_settings = $schema->resultset("JobSettings")->search({ job_id => $job->{id} });
+    $job->{settings} = {};
+    while(my $js = $job_settings->next) {
+	$job->{settings}->{$js->key} = $js->value;
+    }
+
+    return $job;
+}
+
+sub list_jobs {
     my %args = @_;
-    
-    my $sth = $dbh->prepare("UPDATE jobs SET priority = ? where id = ?");
-    my $r = $sth->execute(int($args{prio}), int($args{jobid})) or die $dbh->error;
+
+    my %search = ();
+    if ($args{state}) {
+	$search{states} = { '-in' => split(',', $args{state}) }
+    }
+    if ($args{finish_after}) {
+	my $param = "datetime($args{finish_after})";
+	$search{finish_date} = { '>' => \$param }
+    }
+    if ($args{build}) {
+	my $param = sprintf("%%-Build%04d-%%", $args{build});
+	$search{build} = { like => $param }
+    }
+    my @jobs = $schema->resultset("Jobs")->all();
+
+    my @results = ();
+    for my $job (@jobs) {
+	my $j = _hashref($job, qw/ id name priority result worker_id start_date finish_date /);
+	$j->{state} = $job->state->name;
+	push @results, $j;
+    }
+
+    return \@results;
+}
+
+# TODO: add some sanity check so the same host doesn't grab two jobs
+sub job_grab {
+    my %args = @_;
+    my $workerid = $args{workerid};
+    my $blocking = int($args{blocking} || 0);
+
+    _validate_workerid($workerid);
+    _seen_worker($workerid);
+
+    my $result;
+    while (1) {
+	my $now = "datetime('now')";
+	$result = $schema->resultset("Jobs")->search({
+	    state_id => $schema->resultset("JobState")->search({ name => "scheduled" })->single->id,
+	    worker_id => 0,
+	})->get_column("pritority")->max_rs->update({
+	    state_id => $schema->resultset("JobState")->search({ name => "running" })->single->id,
+	    worker_id => $workerid,
+	    start_date => \$now,
+	});
+
+	last if $result != 0;
+	last unless $blocking;
+	# XXX: do something smarter here
+	#print STDERR "no jobs for me, sleeping\n";
+	#sleep 1;
+	last;
+    }
+
+    my $job_hashref;
+    $job_hashref = _job_get({
+	id => $schema->resultset("Jobs")->search({
+		  state_id => $schema->resultset("JobState")->search({ name => "running" })->single->id,
+		  worker_id => $workerid,
+	      })->single->id,
+    }) if $result != 0;
+
+    return $job_hashref;
+}
+
+=item job_set_scheduled
+
+release job from a worker and put back to scheduled (e.g. if worker
+aborted). No error check. Meant to be called from worker!
+
+=cut
+sub job_set_scheduled {
+    my $jobid = shift;
+
+    my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
+	state_id => $schema->resultset("JobState")->search({ name => "scheduled" })->single->id,
+	worker_id => 0,
+	start_date => undef,
+	finish_date => undef,
+	result => undef,
+    });
     return $r;
 }
 
-sub job_delete
-{
-    my $name = shift;
+=item job_set_done
 
-    if ($name !~ /^\d+$/ ) {
-	my $r;
-	my $cnt = 0;
-	my $sth = _job_find_smart($name, 'id', 'worker');
-	while (my ($id, $workerid) = @{$sth->fetchrow_arrayref||[]}) {
-	    $r = _job_delete($id);
-	    $cnt += $r if $r;
-	}
-	return $cnt;
-    }
-    return _job_delete($name);
-}
+mark job as done. No error check. Meant to be called from worker!
 
-sub _job_delete($)
-{
-    my $jobid = int(shift);
+=cut
+# XXX TODO Parameters is a hash, check if is better use normal parameters    
+sub job_set_done {
+    my %args = @_;
+    my $jobid = int($args{jobid});
+    my $result = $args{result};
 
-    $dbh->begin_work;
-    my $r;
-    eval {
-        my $sth = $dbh->prepare("DELETE FROM job_settings WHERE jobid = ?");
-        $sth->execute($jobid);
-        $sth = $dbh->prepare("DELETE FROM jobs WHERE id = ?");
-        $r = $sth->execute($jobid);
-        $dbh->commit;
-    };
-    if ($@) {
-        print STDERR "$@\n";
-        eval { $dbh->rollback };
-    }
+    my $now = "datetime('now')";
+    my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
+	state_id => $schema->resultset("JobState")->search({ name => "done" })->single->id,
+	worker_id => 0,
+	finish_date => \$now,
+	result => $result,
+    });
     return $r;
 }
 
-sub job_update_result
-{
+=item job_set_stop
+
+mark job as stopped. No error check. Meant to be called from worker!
+
+=cut
+sub job_set_stop {
+    my $jobid = shift;
+
+    my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
+	state_id => $schema->resultset("JobState")->search({ name => "stopped" })->single->id,
+	worker_id => 0,
+    });
+    return $r;
+}
+
+=item job_set_waiting
+
+mark job as waiting. No error check. Meant to be called from worker!
+
+=cut
+sub job_set_waiting {
+    my $jobid = shift;
+
+    my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
+	state_id => $schema->resultset("JobState")->search({ name => "waiting" })->single->id,
+    });
+    return $r;
+}
+
+=item job_set_running
+
+mark job as running. No error check. Meant to be called from worker!
+
+=cut
+sub job_set_running {
+    my $jobid = shift;
+
+    my $states_rs = $schema->resultset("JobState")->search({ name => ['stopped', 'waiting'] });
+    my $r = $schema->resultset("Jobs")->search({
+	id => $jobid,
+        state_id => { -in => $states_rs->get_column("id")->as_query },
+    })->update({
+	state_id => $schema->resultset("JobState")->search({ name => "running" })->single->id,
+    });
+    return $r;
+}
+
+sub job_set_prio {
+    my %args = @_;
+
+    my $r = $schema->resultset("Jobs")->search({ id => $args{jobid} })->update({
+	priority => $args{prio},
+    });
+}
+
+sub job_delete {
+    my $value = shift;
+
+    my $cnt = 0;
+    my $jobs = _job_find_smart($value);
+    foreach my $job ($jobs) {
+	my $r = $job->delete;
+	$cnt += $r if $r != 0;
+    }
+    return $cnt;
+}
+
+sub job_update_result {
     my %args = @_;
 
     my $id = int($args{jobid});
     my $result = $args{result};
 
-    my $sth = $dbh->prepare("UPDATE jobs SET result = ? where id = ?");
-    my $r = $sth->execute($result, $id) or die $dbh->error;
+    my $r = $schema->resultset("Jobs")->search({ id => $id })->update({ result => $result });
+
     return $r;
 }
 
-sub _job_find_by_name($;@)
-{
-    my $name = shift;
-    my @cols = @_;
-    @cols = ('id') unless @_;
+sub _job_find_smart($) {
+    my $value = shift;
 
-    my $sth = $dbh->prepare("SELECT ".join(',', @cols)." FROM jobs WHERE name = ?");
-    my $rc = $sth->execute($name);
-    return $sth;
+    my $jobs;
+    if ($value =~ /^\d+$/ ) {
+	$jobs = _job_find_by_id($value);
+    } elsif ($value =~ /\.iso$/) {
+	$jobs = _jobs_find_by_iso($value);
+    } else {
+	$jobs = _job_find_by_name($value);
+    }
+
+    return $jobs;
 }
 
-sub _jobs_find_by_iso($;@)
-{
+sub _job_find_by_id($) {
+    my $id = shift;
+    my $jobs = $schema->resultset("Jobs")->search({ id => $id});
+}
+
+sub _jobs_find_by_iso($) {
     my $iso = shift;
-    my @cols = @_;
-    @cols = ('id') unless @_;
 
     # In case iso file use a absolute path
     # like iso_delete /var/lib/.../xxx.iso
     if ($iso =~ /\// ) {
-            $iso =~ s#^.*/##;
+	$iso =~ s#^.*/##;
     }
 
-    my $sth = $dbh->prepare("SELECT ".join(',', @cols)." FROM jobs, job_settings"
-	    . " WHERE jobs.id == job_settings.jobid"
-	    . " AND job_settings.key == 'ISO'"
-	    . " AND job_settings.value == ?");
-    my $rc = $sth->execute($iso);
-    return $sth;
+    my $jobs = $schema->resultset("Jobs")->search_related("settings", {
+	key => "ISO",
+	value => $iso,
+    });
+    return $jobs;
 }
 
-sub _job_find_by_id($;@)
-{
-    my $id = shift;
-    my @cols = @_;
-    @cols = ('id') unless @_;
+sub _job_find_by_name($) {
+    my $name = shift;
 
-    my $sth = $dbh->prepare("SELECT ".join(',', @cols)." FROM jobs WHERE id = ?");
-    my $rc = $sth->execute($id);
-    return $sth;
+    my $jobs = $schema->resultset("Jobs")->search({ name => $name });
+    return $jobs;
 }
 
-sub _job_find_smart($;@) {
-	my $name = shift;
-	my @cols = @_;
+sub job_restart {
+    my $name = shift or die "missing name parameter\n";
+    return _job_set_final_state($name, "abort", "scheduled");
+}
 
-	my $sth;
-	if ($name =~ /^\d+$/ ) {
-		$sth = _job_find_by_id($name, @cols);
-	} elsif ($name =~ /\.iso$/) {
-		$sth = _jobs_find_by_iso($name, @cols);
-	} else {
-		$sth = _job_find_by_name($name, @cols);
-	}
-
-	return $sth;
+sub job_stop {
+    my $name = shift or die "missing name parameter\n";
+    return _job_set_final_state($name, "stop", "stopped");
 }
 
 # set job to a final state, resetting it's properties
@@ -541,80 +484,74 @@ sub _job_find_smart($;@) {
 # - id or name
 # - command to send to worker if the job is in use
 # - name of final state
-sub _job_set_final_state($$$)
-{
+sub _job_set_final_state($$$) {
     my $name = shift;
     my $cmd = shift;
     my $statename = shift;
 
+    # XXX TODO Put this into a transaction
     # needs to be a transaction as we need to make sure no worker assigns
     # itself while we modify the job
-    $dbh->begin_work;
-    eval {
-	my $sth = _job_find_smart($name, 'id', 'worker');
-
-	while (my ($id, $workerid) = @{$sth->fetchrow_arrayref||[]}) {
-	    print STDERR "workerid $id, $workerid -> $cmd\n";
-	    if ($workerid) {
-		my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
-		my $rc = $sth->execute($workerid, $cmd) or die $dbh->error;
-	    } else {
-		my $stateid = "(select id from job_state where name = '$statename' limit 1)";
-		my $sth = $dbh->prepare("UPDATE jobs set state = $stateid, worker = 0, start_date = NULL, finish_date = NULL, result = NULL WHERE id = ?");
-		my $r = $sth->execute($id) or die $dbh->errstr;
-
-	    }
+    my $jobs = _job_find_smart($name);
+    foreach my $job ($jobs->next) {
+	print STDERR "workerid ". $job->id . ", " . $job->worker_id . " -> $cmd\n";
+	if ($job->worker_id) {
+	    $schema->resultset("Commands")->create({
+		worker_id => $job->worker_id,
+		command => $cmd,
+	    });
+	} else {
+	    # XXX This do not make sense
+	    $job->update({
+		state_id => $schema->resultset("JobState")->search({ name => $statename })->single->id,
+		worker_id => 0,
+	    });
 	}
-        $dbh->commit;
-    };
-    if ($@) {
-        print STDERR "$@\n";
-        eval { $dbh->rollback };
-        return;
     }
 }
 
-sub job_restart
-{
-    my $name = shift or die "missing name parameter\n";
-    return _job_set_final_state($name, "abort", "scheduled");
+
+#
+# Commands API
+#
+
+sub command_enqueue {
+    my %args = @_;
+
+    _validate_workerid($args{workerid});
+
+    my $command = $schema->resultset("Commands")->create({
+	worker_id => $args{workerid},
+	command => $args{command},
+    });
+    return $command->id;
 }
 
-sub job_stop
-{
-    my $name = shift or die "missing name parameter\n";
-    return _job_set_final_state($name, "stop", "stopped");
-}
-
-sub command_get
-{
+sub command_get {
     my $workerid = shift;
 
     _validate_workerid($workerid);
     _seen_worker($workerid);
 
-    my $sth = $dbh->prepare("SELECT id, command FROM commands WHERE worker = ?");
-    my $r = $sth->execute($workerid) or die $dbh->errstr;
+    my @commands = $schema->resultset("Commands")->search({ worker_id => $workerid });
 
-    my $commands = $sth->fetchall_arrayref;
+    my @as_array = ();
+    foreach my $command (@commands) {
+	push @as_array, [$command->id, $command->command];
+    }
 
-    return $commands;
+    return \@as_array;
 }
 
-sub command_enqueue
-{
-    my %args = @_;
+sub list_commands {
+    my $rs = $schema->resultset("Commands");
+    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+    my @commands = $rs->all;
 
-    _validate_workerid($args{workerid});
-
-    my $sth = $dbh->prepare("INSERT INTO commands (worker, command) VALUES(?, ?)");
-    my $rc = $sth->execute($args{workerid}, $args{command}) or die $dbh->error;
-
-    return $dbh->last_insert_id(undef,undef,undef,undef);
+    return \@commands;
 }
 
-sub command_dequeue
-{
+sub command_dequeue {
     my %args = @_;
 
     die "missing workerid parameter\n" unless $args{workerid};
@@ -622,41 +559,27 @@ sub command_dequeue
 
     _validate_workerid($args{workerid});
 
-    my $sth = $dbh->prepare("DELETE FROM commands WHERE id = ? and worker = ?");
-    my $r = $sth->execute($args{id}, $args{workerid});
-    
-    return int($r);
-}
+    my $r = $schema->resultset("Commands")->search({
+	id => $args{workerid},
+	worker_id =>$args{workerid},
+    })->delete;
 
-sub list_commands
-{
-    my $sth = $dbh->prepare("select * from commands");
-    $sth->execute();
-
-    my $commands = [];
-    while(my $command = $sth->fetchrow_hashref) {
-        push @$commands, $command;
-    }
-    return $commands;
-}
-
-sub iso_stop_old_builds($)
-{
-    my $pattern = shift;
-
-    my $stopped = "(SELECT id FROM job_state WHERE name = 'stopped' LIMIT 1)";
-    my $scheduled = "(SELECT id FROM job_state WHERE name = 'scheduled' LIMIT 1)";
-    my $sth = $dbh->prepare("UPDATE jobs SET state = $stopped, worker = 0"
-	    . " WHERE id IN"
-	    . " (SELECT jobs.id from jobs, job_settings"
-		. " WHERE jobs.state = $scheduled"
-		. " AND jobs.id = job_settings.jobid"
-		. " AND jobs.state = $scheduled"
-		. " AND job_settings.key = 'ISO'"
-		. " AND job_settings.value LIKE ?)"
-    );
-    my $r = $sth->execute($pattern) or die $dbh->errstr;
-    printf STDERR "stopped %d builds\n", $r;
     return $r;
 }
 
+# XXX TODO this is wrong, the semantic of stopping jobs here is different from job_stop()
+sub iso_stop_old_builds($) {
+    my $pattern = shift;
+
+    my $r = $schema->resultset("Jobs")->search({
+	state_id => $schema->resultset("JobState")->search({ name => "scheduled" })->single->id,
+	'settings.key' => "ISO",
+	'settings.value' => { like => $pattern },
+    }, {
+	join => "settings",
+    })->update({
+	state_id => $schema->resultset("JobState")->search({ name => "stopped" })->single->id,
+	worker_id => 0,
+    });
+    return $r;
+}
