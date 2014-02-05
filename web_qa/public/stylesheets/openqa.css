@@ -1,3 +1,5 @@
+@import url(container18.css);
+
 td { text-align: center; vertical-align: middle; }
 td { padding: 0.3em 0.6em; }
 tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
@@ -10,6 +12,7 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 .resultmissing {background-color: #ddd; }
 .resulttesting {background-color: #9df; }
 .resultscheduled {background-color: #bef; }
+.modcategory li.selected a { font-weight: bold; color: black; }
 
 .textlink a {
   text-decoration: none;
@@ -119,6 +122,21 @@ span.refcomppic span.result-icon {
 	opacity: 0.8;
 }
 
+span.thumbnail {
+	text-decoration:none;
+	position:relative;
+	display:inline-block;
+	margin: 6px;
+}
+
+.ui-oo-content-wrapper .ui-oo-box-shadow > * >.thumbnail:first-child, .content-wrapper .box > * >.thumbnail:first-child {
+	margin-top: 6px; !important
+}
+
+span.thumbnail.current {
+	box-shadow: 0 0 3px 4px #666;
+}
+
 span.refcomppic span.match-icon {
 	position:absolute;
 	left:4px;
@@ -199,7 +217,12 @@ ul.modcategory {
 
 li.mod-done,li.mod-current,li.mod-todo {
 	margin: 1px 0 0px 20px;
+	padding: 0 3px;
 	list-style-position: outside;
+}
+
+.modcategory li a:focus, .modcategory li a:hover {
+	 background: none;
 }
 
 li.mod-done {
@@ -294,17 +317,48 @@ a.pauseplay.play {
 /* progressbar end */
 
 
-/* bento theme fix */
+/* bento theme fixes */
 ul.navigation {
-	width: 90%;
-}
-/* bento theme fix end */
-
-/* Live view */
-.container_16 .live-sidebar {
-    width: 280px;
+	width: calc(100% - 20px); /* subtract margin (which is 10px on each side) */
 }
 
-.container_16 .live-content {
-    width: 820px;
+input[type='image'] {
+	border: 0;
+	background-color: none;
+	padding: 0;
+}
+/* bento theme fixes end */
+
+
+.infotbl td {
+        padding: 0 0 0 0;
+}
+.infotbl img {
+        padding-right: 3px;
+}
+
+/* results table */
+
+table#results tr {background-color:#f0ffcf ;} /* Lemon ultra-light */
+table#results tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
+table#results select.table-autofilter { font-size: 9px; }
+table#results select.table-autofilter option { font-size: 9px; }
+
+table#results th.table-sortable {
+	background-image: url(../images/sortable.png);
+	background-position: left top;
+	background-repeat: no-repeat;
+	cursor: pointer;
+	padding: 0px 0px 0px 7px;
+	text-align: left;
+}
+table#results th.table-sorted-desc {
+	background-image: url(../images/sorted-down.png);
+	background-position: left top;
+	background-repeat: no-repeat;
+}
+table#results th.table-sorted-asc {
+	background-image: url(../images/sorted-up.png);
+	background-position: left top;
+	background-repeat: no-repeat;
 }
