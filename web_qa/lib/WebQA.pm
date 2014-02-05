@@ -8,7 +8,7 @@ sub startup {
   my $self = shift;
 
   # Set some application defaults
-  $self->defaults( title => 'openQA test instance - ' );
+  $self->defaults( title => 'openQA test instance' );
 
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer');
@@ -17,6 +17,7 @@ sub startup {
   # Router
   my $r = $self->routes;
 
+  $r->get('/')->name('index')->to('index#index');
   $r->get('/tests')->name('tests')->to('test#list');
   my $test_r = $r->route('/tests/#testid');
   $test_r->get('/')->name('test')->to('test#show');

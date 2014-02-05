@@ -1,6 +1,6 @@
 % layout 'default';
 % my $page_title = 'Test result overview';
-% title title.$page_title;
+% title join(' - ', title, $page_title);
 % use Mojo::ByteStream 'b';
 
 <div class="grid_16 box box-shadow omega">

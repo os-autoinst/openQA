@@ -10,7 +10,6 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 .resultmissing {background-color: #ddd; }
 .resulttesting {background-color: #9df; }
 .resultscheduled {background-color: #bef; }
-.modcategory li.selected a { font-weight: bold; color: black; }
 
 .textlink a {
   text-decoration: none;
@@ -120,21 +119,6 @@ span.refcomppic span.result-icon {
 	opacity: 0.8;
 }
 
-span.thumbnail {
-	text-decoration:none;
-	position:relative;
-	display:inline-block;
-	margin: 6px;
-}
-
-.ui-oo-content-wrapper .ui-oo-box-shadow > * >.thumbnail:first-child, .content-wrapper .box > * >.thumbnail:first-child {
-	margin-top: 6px; !important
-}
-
-span.thumbnail.current {
-	box-shadow: 0 0 3px 4px #666;
-}
-
 span.refcomppic span.match-icon {
 	position:absolute;
 	left:4px;
@@ -215,12 +199,7 @@ ul.modcategory {
 
 li.mod-done,li.mod-current,li.mod-todo {
 	margin: 1px 0 0px 20px;
-	padding: 0 3px;
 	list-style-position: outside;
-}
-
-.modcategory li a:focus, .modcategory li a:hover {
-	 background: none;
 }
 
 li.mod-done {
@@ -250,7 +229,23 @@ a.pauseplay.pause {
 a.pauseplay.play {
 	background-position: -23px 0;
 }
- 
+
+#recent-issues a{colo}
+#recent-issues li{padding: 0.73em 0px ; list-style: none;  border-bottom: 1px solid #eee}
+#recent-issues  p{font-style: italic; text-align: center;}
+
+/*.omega{position: relative !important;}*/
+
+.omega img{}
+
+.omega h3{ padding-top: 2em}
+.omega li{list-style: none; }
+
+.omega li b a{margin: 1.7em 0em; }
+.omega li b a:link,.omega li b a:visited{background-color: #555; display: block; width: 60%; padding: 1.7em 0em; text-align:center; color: #fff; font-size: 1.33em; border-radius: .41em; box-shadow: inset 0px -2em 5px #333, 0px 2px 3px rgba(0,0,0,0.4); text-shadow: 0px -1px 0px #000; text-transform: uppercase; letter-spacing: 1px }
+
+.omega li b a:hover,.omega li b a:focus{background-color:#ccc; color: #222;  box-shadow: inset 0px 2em 5px #eee, 0px 2px 3px rgba(0,0,0,0.4); text-decoration: none !important; text-shadow: 0px 1px 0px #fff}
+
 /* tooltips */
 
 .tooltip {
@@ -299,51 +294,11 @@ a.pauseplay.play {
 /* progressbar end */
 
 
-/* bento theme fixes */
+/* bento theme fix */
 ul.navigation {
-	width: calc(100% - 20px); /* subtract margin (which is 10px on each side) */
+	width: 90%;
 }
-
-input[type='image'] {
-	border: 0;
-	background-color: none;
-	padding: 0;
-}
-/* bento theme fixes end */
-
-
-.infotbl td {
-        padding: 0 0 0 0;
-}
-.infotbl img {
-        padding-right: 3px;
-}
-
-/* results table */
-
-table#results tr {background-color:#f0ffcf ;} /* Lemon ultra-light */
-table#results tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
-table#results select.table-autofilter { font-size: 9px; }
-table#results select.table-autofilter option { font-size: 9px; }
-
-table#results th.table-sortable {
-	background-image: url(../images/sortable.png);
-	background-position: left top;
-	background-repeat: no-repeat;
-	cursor: pointer;
-	padding: 0px 0px 0px 7px;
-	text-align: left;
-}
-table#results th.table-sorted-desc {
-	background-image: url(../images/sorted-down.png);
-	background-position: left top;
-	background-repeat: no-repeat;
-}
-table#results th.table-sorted-asc {
-	background-image: url(../images/sorted-up.png);
-	background-position: left top;
-	background-repeat: no-repeat;
-}
+/* bento theme fix end */
 
 /* Live view */
 .container_16 .live-sidebar {

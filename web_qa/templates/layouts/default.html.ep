@@ -6,7 +6,7 @@
   <head>
     <title><%= title %></title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    %= stylesheet '/stylesheets/bento/style.fluid.css'
+    %= stylesheet 'http://static.opensuse.org/themes/bento/css/style.css'
     %= stylesheet '/stylesheets/openqa.css'
     %= javascript '/javascripts/table.js'
     %= javascript '/javascripts/shapes.js'
@@ -43,7 +43,7 @@
 
     <div class="clear"></div>
     <div id="footer" class="container_16">
-      <div class="box_content grid_16" style="text-align: center;"></div>
+      <div class="box_content grid_16" style="text-align: center;"><%= content_for 'footer' %></div>
     </div>
   </body>
 </html>
