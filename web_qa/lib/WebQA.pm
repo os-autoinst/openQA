@@ -38,7 +38,7 @@ sub startup {
   $test_r->get('/logfile/:filename')->name('test_logfile')->to('file#test_logfile');
   $test_r->get('/diskimages/:imageid')->name('diskimage')->to('file#test_diskimage');
 
-  my $asset_r = $test_r->route('/modules/:moduleid/steps/:stepid')->to(controller => 'step');
+  my $asset_r = $test_r->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/)->to(controller => 'step');
   $asset_r->get('/view')->to(action => 'view');
   $asset_r->get('/edit')->name('edit_step')->to(action => 'edit');
   $asset_r->get('/src')->name('src_step')->to(action => 'src');
