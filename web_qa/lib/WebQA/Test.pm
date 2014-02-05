@@ -116,6 +116,7 @@ sub show {
   $self->stash(res_css => $res_css);
   $self->stash(res_display => $res_display);
 
+  return $self->render_not_found unless (-e $self->stash('resultdir'));
   # If it's running
   if (!-e $self->stash('fqfn')) {
     my $results = test_result($testname);
