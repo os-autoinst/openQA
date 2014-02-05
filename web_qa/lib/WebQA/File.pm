@@ -45,6 +45,23 @@ sub test_file {
   return $self->_serve_file($fullname);
 }
 
+sub test_diskimage {
+  my $self = shift;
+  my $testname = $self->param('testid');
+  my $diskimg = $self->param('imageid');
+
+  my $basepath = back_log($testname);
+
+  return $self->render_not_found if (!-d $basepath);
+
+  my $imgpath = "$basepath/$diskimg";
+  return $self->render_not_found if (!-e $imgpath);
+
+  # TODO: the original had gzip compression here
+  #print header(-charset=>"UTF-8", -type=>"application/x-gzip", -attachment => $testname.'_'.$diskimg.'.gz', -expires=>'+24h', -max_age=>'86400', -Last_Modified=>awstandard::HTTPdate($mtime));
+  $self->_serve_file($imgpath)
+}
+
 # serve file specified with absolute path name. No sanity checks
 # done here. Take care!
 sub _serve_file {
@@ -70,7 +87,7 @@ sub _serve_file {
   }
 
   my $size;
-  if ($self->stash('format') eq 'png' && ($size = $self->param("size"))) {
+  if (($self->stash('format')||'') eq 'png' && ($size = $self->param("size"))) {
     if ($size !~ m/^\d{1,3}x\d{1,3}$/) {
       return $self->render(text => "invalid parameter 'size'\n", code => 400);
     }

@@ -174,6 +174,7 @@ sub result {
       });
   }
 
+  # TODO: make better
   my $backlogpath = back_log($testname);
   my $diskimg = 0;
   if(-e "$backlogpath/l1") {
