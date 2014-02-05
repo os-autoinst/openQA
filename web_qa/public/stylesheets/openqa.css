@@ -362,3 +362,14 @@ table#results th.table-sorted-asc {
 	background-position: left top;
 	background-repeat: no-repeat;
 }
+
+
+/* Live view */
+
+.container_16 .live-sidebar {
+    width: 280px;
+}
+
+.container_16 .live-content {
+    width: 820px;
+}
