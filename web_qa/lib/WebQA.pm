@@ -28,6 +28,7 @@ sub startup {
   $test_r->get('/streaming')->name('streaming')->to('running#streaming');
   $test_r->get('/edit')->name('edit_test')->to('running#edit');
 
+  # FIXME: should be post
   $test_r->get('/cancel')->name('cancel')->to('schedule#cancel');
   $test_r->get('/restart')->name('restart')->to('schedule#restart');
   $test_r->get('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
