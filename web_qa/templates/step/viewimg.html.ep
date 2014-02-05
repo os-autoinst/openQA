@@ -29,7 +29,6 @@ window.onload=function(){
       %= link_to url_for('test') => begin
         %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
       % end
-			<a href="/cropimg/show/<%= $testid %>/<%= $moduleid %>/<%= $stepid %>"><img src="/images/edit.png" alt="crop" title="Crop Image" /></a>
 		</div>
 	</div>
 

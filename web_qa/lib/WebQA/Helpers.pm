@@ -2,8 +2,9 @@ package WebQA::Helpers;
 
 use strict;
 use warnings;
-use awstandard;
 # TODO: Move all needed subs form awstandard to here.
+use awstandard;
+use Mojo::ByteStream;
 
 use base 'Mojolicious::Plugin';
 
@@ -32,6 +33,35 @@ sub register {
         $out=~s{</body>.*}{}s;
         return $out;
     });
+
+    # Breadcrumbs generation can be centralized, since it's really simple
+    $app->helper(breadcrumbs => sub {
+        my $c = shift;
+
+        my $crumbs = '<div id="breadcrump" class="grid_16 alpha">';
+        $crumbs .= '<a href="'.$c->url_for('/').'">';
+        $crumbs .= $c->image('/images/home_grey.png', alt => "Home");
+        $crumbs .= '<b>openQA</b></a>';
+        if ($c->current_route('tests')) {
+            $crumbs .= ' > Test results';
+        } elsif (my $test = $c->param('testid')) {
+            $crumbs .= ' > '.$c->link_to('Test results' => $c->url_for('tests'));
+            if ($c->current_route('test')) {
+                $crumbs .= " > $test";
+            } else {
+                $crumbs .= ' > '.$c->link_to($test => $c->url_for('test'));
+                my $mod = $c->param('moduleid');
+                $crumbs .= " > $mod" if $mod;
+            }
+        } elsif ($c->current_route('build')) {
+            $crumbs .= ' > '.$c->link_to('Test results' => $c->url_for('tests'));
+            $crumbs .= ' > '.$c->param('buildid');
+        }
+        $crumbs .= '</div>';
+
+        Mojo::ByteStream->new($crumbs);
+    });
+
 }
 
 1;

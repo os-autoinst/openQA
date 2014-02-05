@@ -4,7 +4,7 @@
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
   <head>
-    <title><%= title %></title>
+      <title>openQA: <%= title %></title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     %= stylesheet 'http://static.opensuse.org/themes/bento/css/style.css'
     %= stylesheet '/stylesheets/openqa.css'
@@ -32,9 +32,7 @@
     </div>
 
     <div id="subheader" class="container_16">
-      <div id="breadcrump" class="grid_16 alpha">
-        <a href="/"><img alt="Home" src="/images/home_grey.png" /> <b>AAA</b></a>
-      </div>
+        %= breadcrumbs
     </div>
 
     <div id="content" class="container_16 content-wrapper">

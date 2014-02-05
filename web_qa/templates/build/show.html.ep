@@ -1,10 +1,8 @@
 % layout 'default';
-% title 'Welcome';
+% title $buildid;
 % use Mojo::ByteStream 'b';
 
-&gt; <a href="<%= url_for 'tests' %>">Results</a>
-&gt; <%= $build %>
-%= javascript "/javascripts/wz_tooltip/wz_tooltip.js"
+%= javascript '/javascripts/wz_tooltip/wz_tooltip.js'
 
 <div class="grid_16 box box-shadow omega">
 	<h2>Test result overview</h2>
