@@ -196,8 +196,8 @@ sub job_create {
 	push @settings, { key => $k, value => $v };
     }
 
-    my $jobs = $schema->resultset("Jobs")->search({ name => $settings{'NAME'} });
-    return 0 if $jobs->count;
+    my $njobs = $schema->resultset("Jobs")->search({ name => $settings{'NAME'} })->count;
+    return 0 if $njobs;
 
     my $job = $schema->resultset("Jobs")->create({
 	name => $settings{'NAME'},
