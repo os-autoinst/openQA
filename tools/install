@@ -1,5 +1,5 @@
 #!/bin/bash
-for i in config test.rules tools; do
+for i in lib public script templates tools; do
 	mkdir -p "$DESTDIR"/usr/share/openqa/$i
 	cp -a $i/* "$DESTDIR"/usr/share/openqa/$i
 done
@@ -7,12 +7,11 @@ for i in install; do
 	rm "$DESTDIR"/usr/share/openqa/tools/$i
 done
 #
-cp -a www/* "$DESTDIR"/usr/share/openqa
 for i in backlog factory/iso logs perl pool testresults logupload \
 	; do
 	mkdir -p "$DESTDIR"/var/lib/openqa/$i
 done
-for i in config test.rules tools; do
+for i in tools; do
 	ln -s /usr/share/openqa/$i "$DESTDIR"/var/lib/openqa/$i
 done
 ln -s /usr/lib/os-autoinst "$DESTDIR"/var/lib/openqa/perl/autoinst
@@ -24,6 +23,7 @@ install -m 644 etc/apache2/vhosts.d/openqa.conf.template "$DESTDIR"/etc/apache2/
 install -d -m 755 "$DESTDIR"/usr/lib/systemd/{system,system-generators}
 install -m 644 systemd/openqa-worker@.service "$DESTDIR"/usr/lib/systemd/system
 install -m 644 systemd/openqa-worker.target "$DESTDIR"/usr/lib/systemd/system
+install -m 644 systemd/openqa-webui.service "$DESTDIR"/usr/lib/systemd/system
 install -m 755 systemd/systemd-openqa-generator "$DESTDIR"/usr/lib/systemd/system-generators
 #
 install -D -m 640 /dev/null "$DESTDIR"/var/lib/openqa/db/db.sqlite
