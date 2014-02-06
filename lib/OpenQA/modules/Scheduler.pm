@@ -246,17 +246,18 @@ sub list_jobs {
 
     my %search = ();
     if ($args{state}) {
-	$search{states} = { '-in' => split(',', $args{state}) }
+	my $states_rs = $schema->resultset("JobState")->search({ name => [split(',', $args{state})] });
+	$search{state_id} = { -in => $states_rs->get_column("id")->as_query }
     }
     if ($args{finish_after}) {
-	my $param = "datetime($args{finish_after})";
-	$search{finish_date} = { '>' => \$param }
+    	my $param = "datetime($args{finish_after})";
+    	$search{finish_date} = { '>' => \$param }
     }
     if ($args{build}) {
-	my $param = sprintf("%%-Build%04d-%%", $args{build});
-	$search{build} = { like => $param }
+    	my $param = sprintf("%%-Build%04d-%%", $args{build});
+    	$search{build} = { like => $param }
     }
-    my @jobs = $schema->resultset("Jobs")->all();
+    my @jobs = $schema->resultset("Jobs")->search(\%search);
 
     my @results = ();
     for my $job (@jobs) {

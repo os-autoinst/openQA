@@ -7,7 +7,7 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use openqa;
 
-use Test::Simple tests => 25;
+use Test::Simple tests => 26;
 
 
 # Testing worker_register and worker_get
@@ -97,6 +97,10 @@ ok(pp($current_jobs) eq pp($jobs), "All list_jobs");
 my %state = (state => "scheduled");
 $current_jobs = list_jobs(%state);
 ok(pp($current_jobs) eq pp($jobs), "All list_jobs with state scheduled");
+
+%state = (state => "running");
+$current_jobs = list_jobs(%state);
+ok(pp($current_jobs) eq "[]", "All list_jobs with state running");
 
 
 # Testing job_grab
