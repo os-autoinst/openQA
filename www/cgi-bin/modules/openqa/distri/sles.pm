@@ -3,6 +3,7 @@
 package openqa::distri::sles;
 
 use strict;
+use Clone qw/clone/;
 
 sub parse_iso($)
 {

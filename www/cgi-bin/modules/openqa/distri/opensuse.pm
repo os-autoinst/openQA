@@ -3,6 +3,7 @@
 package openqa::distri::opensuse;
 
 use strict;
+use Clone qw/clone/;
 
 sub _regexp_parts
 {
