@@ -4,24 +4,34 @@
 #    ServerName www.example.com
 #    DocumentRoot "/srv/www/htdocs"
 #</VirtualHost>
+#
+# also, don't forget to
+# a2enmod proxy
+# a2enmod proxy_http
 
 <VirtualHost *:80>
 
-    ServerName FIXME
+    #ServerName your.server.name
 
-    Alias /openqa "/var/lib/openqa"
-    ScriptAlias /cgi-bin/ "/usr/share/openqa/cgi-bin/"
-    DocumentRoot "/usr/share/openqa/htdocs"
+    DocumentRoot /usr/share/openqa/public
 
-    SetEnv OPENQA_BASEDIR "/var/lib"
-    SetEnv OPENQA_NEEDLES_SCM "git"
-    SetEnv OPENQA_NEEDLES_GIT_DO_PUSH "no"
+    <Proxy *>
+        Order deny,allow
+        Allow from all
+    </Proxy>
 
-    # space seaparated list of IPs or regular expressions that match IPs
-    SetEnv OPENQA_ALLOWED_HOSTS "127.0.0.1 ::1"
+    ProxyRequests Off
+    ProxyPreserveHost On
 
-    # set if you have a local repo mirror
-    # SetEnv OPENQA_SUSE_MIRROR "http://FIXME"
+    ProxyPass /favicon.ico !
+    ProxyPass /images !
+    ProxyPass /javascripts !
+    ProxyPass /stylesheets !
+
+    ProxyPass / http://localhost:9526/ keepalive=On
+    ProxyPassReverse / http://localhost:9526/
+
+    RequestHeader set X-Forwarded-HTTPS "0"
 
     HostnameLookups Off
     UseCanonicalName Off
