@@ -1,4 +1,4 @@
-package WebQA::Test;
+package OpenQA::Test;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use awstandard;

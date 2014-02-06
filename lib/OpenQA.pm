@@ -1,7 +1,7 @@
-package WebQA;
+package OpenQA;
 use Mojo::Base 'Mojolicious';
-use WebQA::Helpers;
-use WebQA::Jsonrpc;
+use OpenQA::Helpers;
+use OpenQA::Jsonrpc;
 
 # This method will run once at server start
 sub startup {
@@ -12,7 +12,7 @@ sub startup {
 
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer');
-  $self->plugin('WebQA::Helpers');
+  $self->plugin('OpenQA::Helpers');
 
   # Router
   my $r = $self->routes;
@@ -52,7 +52,7 @@ sub startup {
   $self->plugin(
     'json_rpc_dispatcher',
     services => {
-      '/jsonrpc'  => WebQA::Jsonrpc->new,
+      '/jsonrpc'  => OpenQA::Jsonrpc->new,
     },
     exception_handler => sub {
       my ( $dispatcher, $err, $m ) = @_;

@@ -1,4 +1,4 @@
-package WebQA::Helpers;
+package OpenQA::Helpers;
 
 use strict;
 use warnings;

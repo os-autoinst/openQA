@@ -1,4 +1,4 @@
-package WebQA::File;
+package OpenQA::File;
 use Mojo::Base 'Mojolicious::Controller';
 BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
 use Image::Magick;

@@ -1,4 +1,4 @@
-package WebQA::Schedule;
+package OpenQA::Schedule;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 

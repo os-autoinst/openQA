@@ -1,4 +1,4 @@
-package WebQA::Jsonrpc;
+package OpenQA::Jsonrpc;
 
 use Data::Dump qw/pp/;
 use Mojo::Base 'MojoX::JSON::RPC::Service';

@@ -1,4 +1,4 @@
-package WebQA::Index;
+package OpenQA::Index;
 use Mojo::Base 'Mojolicious::Controller';
 
 sub index {

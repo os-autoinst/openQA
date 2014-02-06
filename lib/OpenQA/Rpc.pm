@@ -1,4 +1,4 @@
-package WebQA::Rpc;
+package OpenQA::Rpc;
 use Mojo::Base 'Mojolicious::Controller';
 use JSON;
 
