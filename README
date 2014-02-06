@@ -42,7 +42,7 @@ configuring the web server
 By default everything expects the openqa web stuff to run on
 localhost. Please configure your apache accordingly (see config
 files in etc/apache2).
-You need to enable the 'rewrite' and 'headers' module (use a2enmod)
+You need to enable the 'proxy_http' and 'proxy' modules (use a2enmod)
 
 running workers
 ===============

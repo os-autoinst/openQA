@@ -1,0 +1,104 @@
+% layout 'default';
+% title $testid;
+% use Mojo::ByteStream 'b';
+
+<div class="grid_4 live-sidebar alpha">
+    <div class="grid_4 live-sidebar box box-shadow alpha" id="actions_box">
+        <div class="box-header aligncenter">Actions</div>
+        <div class="aligncenter">
+            %= link_to url_for('tests') => begin
+                %= image '/images/back.png', alt => 'back', title => 'back to overview page', height => 22
+            % end
+            %= link_to url_for('restart')->query(back => 'details') => begin
+                %= image '/images/toggle.png', alt => "restart", title => "Restart job"
+            % end
+            %= link_to url_for('cancel')->query(back => 'details') => begin
+                %= image '/images/cancel.png', alt => "stop", title => "Stop job"
+            % end
+        </div>
+        <table style="width: 90%">
+	        <tr>
+			    <td style="width: 8em; padding: 0;">Interactive:</td>
+				<td style="width: 4.5em; padding: 0;" id="interactive_indicator" data-next-status="">Unknown</td>
+				<td style="padding: 0;" id="needinput_buttons">
+					<a href="javascript:window.toggleInteractive()" style="display:none" id="interactive_button"><img src="/images/interactive.png" alt="toggle" title="Toggle mode" /></a>
+				</td>
+			</tr>
+			<tr>
+				<td style="width: 8em; padding: 0;">Waiting for input:</td>
+				<td style="width: 4.5em; padding: 0;" id="needinput_indicator">N/A</td>
+				<td style="padding: 0;" id="needinput_buttons">
+					<a href="javascript:window.sendCommand('continue_waitforneedle')" style="display:none" id="continue_button"><img src="/images/cancel.png" alt="continue" title="Continue" /></a>
+					<a href="javascript:window.sendCommand('reload_needles_and_retry')" style="display:none" id="retry_button"><img src="/images/play.png" alt="retry" title="Retry" /></a>
+                    %= link_to url_for('edit_test') => (style => 'display:none', id => 'crop_button') => begin
+                        %= image '/images/edit.png', alt => "edit", title => "Needle editor"
+                    % end
+					<a href="javascript:window.sendCommand('stop_waitforneedle')" style="display:none" id="stop_button"><img src="/images/cancel.png" alt="cancel" title="Stop waitforneedle" /></a>
+				</td>
+			</tr>
+        </table>
+    </div>
+	<div class="grid_4 live-sidebar box box-shadow alpha" id="modules_box" style="min-height: 508px;">
+		<div class="box-header aligncenter">Test modules</div>
+		<div id="modlist_content"></div>
+	</div>
+</div>
+
+<div class="grid_10 live-content alpha">
+	<div class="grid_10 live-content box box-shadow omega">
+		<div style="margin: 0 10px;">
+			<div style="width: 800px; height: 600px; background-color: #202020;">
+				<img src="/tests/<%= $testid %>/streaming" alt="Waiting for new Images..." style="width: 800px; height: 600px;" />
+			</div>
+		</div>
+	</div>
+
+	<div class="grid_10 live-content box box-shadow omega" onmouseover="window.scrolldownc = 0;" onmouseout="window.scrolldownc = 1;">
+		<div class="box-header aligncenter">Live Log</div>
+		<div style="margin: 0 10px;">
+			<iframe id="livelog" src="about:blank" style="width: 98.9%; height: 20em; overflow-x: hidden;">Test Log</iframe>
+		</div>
+		<script type="text/javascript">
+			init_running("<%= $testid %>");
+		</script>
+	</div>
+	<% if($backend_info) { %>
+	<% $backend_info->{'backend'} =~s/^.*:://; %>
+	<div class="grid_6 box box-shadow omega">
+		<div class="box-header aligncenter">Backend</div>
+		<div style="margin: 0 3px 0 3px;" class="cligncenter">
+			<table style="border: none; margin: 0;" class="infotbl">
+				<% if($worker) { %>
+					<tr>
+						<td><%= $worker->{'host'} %>:<%= $worker->{instance} %></td>
+					</tr>
+				<% } %>
+				<tr>
+					<td colspan="2" style="padding: 0 0 <%= ($backend_info->{'backend'} eq 'kvm2usb')?'8px':'0' %> 0;"><%= $backend_info->{'backend'} %></td>
+				</tr>
+				<% if($backend_info->{'backend'} eq 'kvm2usb') { %>
+					<tr>
+						<td style="width: 16px;"><img src="/images/hw_icons/slot.svg" width="16" height="16" title="slot" alt="slot"/></td>
+						<td><%= $backend_info->{'backend_info'}->{'hwslot'} %></td>
+					</tr>
+					<% if(defined $backend_info->{'backend_info'}->{'hw_info'}) { %>
+						<% my $hw_info = $backend_info->{'backend_info'}->{'hw_info'}; %>
+						% for my $hw_key ( ('vendor', 'name', 'cpu', 'cpu_cores', 'memory', 'disks') ) {
+							% next unless (defined $hw_info->{$hw_key});
+							<tr>
+								<td><img src="/images/hw_icons/<%= $hw_key %>.svg" title="<%= $hw_key %>" width="16" height="16" alt="<%= $hw_key %>" /></td>
+								<td><%= $hw_info->{$hw_key} %></td>
+							</tr>
+						% }
+						<% if(defined $hw_info->{'comment'}) { %>
+							<tr>
+								<td colspan="2" style="padding: 8px 0 0 0;"><%= $hw_info->{'comment'} %></td>
+							</tr>
+						<% } %>
+					<% } %>
+				<% } %>
+			</table>
+		</div>
+	</div>
+	<% } %>
+</div>

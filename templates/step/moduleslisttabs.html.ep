@@ -1,0 +1,20 @@
+<div class="box-header header-tabs">
+	<ul>
+		<% if ($tabmode eq 'audio') { %>
+		<li <%= ($action eq 'view') ? 'class=selected' : '' %>>
+      %= link_to 'Audio' => url_for('step')
+		</li>
+		<% } elsif($tabmode eq 'screenshot') { %>
+		<li <%= ($action eq 'view') ? 'class=selected' : '' %>>
+      %= link_to 'Screenshot' => url_for('step')
+		</li>
+		<li <%= ($action eq 'edit') ? 'class=selected' : '' %>>
+      %= link_to 'Needles editor' => url_for('edit_step')
+		</li>
+		<% } %>
+		<li <%= ($action eq 'src') ? 'class=selected' : '' %>>
+      %= link_to 'Source code' => url_for('src_step', stepid => $stepid)
+		</li>
+	</ul>
+</div>
+

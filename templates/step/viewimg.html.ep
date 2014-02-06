@@ -1,0 +1,62 @@
+% layout 'default';
+% title $moduleid;
+
+<script type="text/javascript">
+<!--
+
+function setNeedle() {
+	var sel = $('needlediff_selector');
+	var dset = sel.options[sel.selectedIndex].dataset;
+	window.diff.setNeedle(dset.image, JSON.parse(dset.areas), JSON.parse(dset.matches));
+}
+
+window.onload=function(){
+	window.diff = new NeedleDiff('needle_diff', <%= $img_width %>, <%= $img_height %>);
+	window.diff.setScreenshot('<%= url_for('test_img', filename => $screenshot) %>');
+	window.setNeedle(); // Just in case is a page reload
+
+	$('needlediff_selector').onchange = function() {
+		window.setNeedle();
+	};
+};
+-->
+</script>
+
+<div class="grid_3 alpha" id="sidebar">
+	<div class="box box-shadow alpha" id="actions_box">
+		<div class="box-header aligncenter">Actions</div>
+		<div class="aligncenter">
+      %= link_to url_for('test') => begin
+        %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
+      % end
+		</div>
+	</div>
+
+	%= include 'step/moduleslist'
+</div>
+
+<div class="grid_13 omega">
+	%= include 'step/moduleslistthumbnails'
+
+	<div class="box box-shadow">
+	  %= include 'step/moduleslisttabs'
+
+		<div class="aligncenter">
+			Candidate needle:
+			<select id="needlediff_selector">
+				<option data-areas="[]" data-matches="[]">-None-</option>
+				<% for (my $i = 0; $i < scalar(@$needles); $i++) { %>
+					<% my $needle = $needles->[$i]; %>
+					<option data-image="<%= $needle->{'image'} %>"
+						data-areas="<%= JSON::to_json($needle->{'areas'}) %>"
+						data-matches="<%= JSON::to_json($needle->{'matches'}) %>"><%= $needle->{'name'} %></option>
+				<% } %>
+			</select>
+		</div>
+
+		<div style="margin: 5px;">
+			<div id="needle_diff"></div>
+		</div>
+	</div>
+
+</div>

@@ -1,0 +1,79 @@
+% layout 'default';
+% title $buildid;
+% use Mojo::ByteStream 'b';
+
+%= javascript '/javascripts/wz_tooltip/wz_tooltip.js'
+
+<div class="grid_16 box box-shadow omega">
+	<h2>Test result overview</h2>
+	<p>This page lists the results for <b>Build<%= $build %></b></p>
+	<p />
+	<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
+		<thead>
+			<tr>
+				<th></th>
+				<% for my $type (@$types) { %>
+					<th colspan="<%= scalar(@{$archs->{$type}}) %>"><%= $type %></th>
+				<% } %>
+			</tr>
+			<tr>
+				<th>Test</th>
+				<% for my $type (@$types) { %>
+					<% for my $arch (@{$archs->{$type}}) { %>
+						<th><%= $arch %></th>
+					<% } %>
+				<% } %>
+			</tr>
+		</thead>
+		<tbody>
+			<% for my $config (@$configs) { %>
+				<tr>
+					<td><%= $config %></td>
+					<% for my $type (@$types) { %>
+						<% for my $arch (@{$archs->{$type}}) { %>
+							<td>
+							<% my $res = $results->{$config}{$type}{$arch}; %>
+							<% if ($res) { %>
+								<%
+								  my $state = $res->{state};
+								  my $jobid = $res->{jobid};
+								  my $testname = $res->{testname};
+								  my $css = "";
+								  $css = "overview".$res->{overall} if ($state eq "done");
+								%>
+
+								<%# Visible information %>
+								<span class="<%=$css%>" onmouseout="UnTip()" onmouseover="TagToTip('actions_<%=$jobid%>', STICKY, 1, CLICKCLOSE, true)">
+								<% if ($state eq "done") { %>
+                                                                        <a href="<%= url_for('test', 'testid' => $testname) %>"><%= $res->{ok} %>/<%= $res->{unknown} %>/<%= $res->{fail} %></a>
+								<% } elsif ($state eq "running") { %>
+									<a href="<%= url_for('test', 'testid' => $testname) %>">running</a>
+								<% } elsif ($state eq "scheduled") { %>
+									sched.(<%= $res->{priority} %>)
+								<% } else { %>
+									<%= $state %>
+								<% } %>
+								</span>
+
+								<%# Actions %>
+								<span id="actions_<%=$jobid%>" style="display:none"><ul style="margin: 0px;">
+								<% if ($state eq "scheduled") { %>
+									<% my $prio = $res->{'priority'}; %>
+                                                                        <li style="margin: 0px;"><a href="<%= url_for('setpriority', 'testid' => $testname, 'priority' => $prio-10)->query('back' => 1) %>">Raise priority</a></li>
+                                                                        <li style="margin: 0px;"><a href="<%= url_for('setpriority', 'testid' => $testname, 'priority' => $prio+10)->query('back' => 1) %>">Lower priority</a></li>
+								<% } else { %>
+                                                                <li style="margin: 0px;"><a href="<%= url_for('restart', 'testid' => $testname)->query('back' => 1) %>">Re-schedule</a></li>
+								<% } %>
+								<% if ($state eq "scheduled" || $state eq "running") { %>
+									<li style="margin: 0px;"><a href="<%= url_for('cancel', 'testid' => $testname)->query('back' => 1) %>">Cancel</a></li>
+								<% } %>
+								</ul></span>
+							<% } %>
+							</td>
+						<% } %>
+					<% } %>
+				</tr>
+			<% } %>
+		</tbody>
+	</table>
+</div>

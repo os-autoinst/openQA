@@ -1,0 +1,93 @@
+% layout 'default';
+% title $moduleid;
+% use Mojo::ByteStream 'b';
+
+<script type="text/javascript">
+<!--
+// Prototype introduces undesired toJSON definition
+delete Array.prototype.toJSON;
+
+window.onload=function(){
+	window.nEditor = new NeedleEditor('<%= ${@$needles[0]}{'imageurl'} %>',	'<%= b(JSON::to_json($default_needle)) %>');
+};
+
+-->
+</script>
+
+<div class="grid_3 alpha" id="sidebar">
+	<div class="box box-shadow alpha" id="actions_box">
+		<div class="box-header aligncenter">Actions</div>
+    %= form_for save_needle => (method => 'POST') => begin
+      <div class="aligncenter">
+        %= link_to url_for('test') => begin
+          %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
+        % end
+        <input type="image" src="/images/floppy.png" alt="Save" />
+      </div>
+      <div style="margin: 0 3px;">
+        <div style="margin-top: 1em;">
+          <label>Name:</label><br/>
+          <input type="input" name="needlename" id="needleeditor_name" value="<%= $needlename %>" style="width: calc(100% - 8px);"/>
+        </div>
+        <div style="margin-top: 1em;">
+          <label>Tags:</label><br/>
+          <div id="needleeditor_tags" style="margin: 0 18px 0 0;">
+            % for my $tag (@$tags) {
+              <label>
+                <input type="checkbox" name="tags" id="tag_<%= $tag %>" onclick="window.nEditor.changeTag(this.value, this.checked);" value="<%= $tag %>"><%= $tag %>
+              </label><br/>
+            % }
+          </div>
+          <input id="newtag" style="width: calc(100% - 6px - 40px);" onkeypress="if (event.keyCode==13) { return window.addTag(); }"/> <input type="button" onclick="return window.addTag();" style="width: 34px;" class="button" value="Add" />
+        </div>
+        <div style="margin-top: 1em;">
+          <label>JSON:</label><br/>
+          <textarea id="needleeditor_textarea" name="json" readOnly="yes" style="width: calc(100% - 8px); height:300px;"></textarea>
+          <input type="hidden" id="needleeditor_image" name="imagepath" value="<%= ${@$needles[0]}{'imagepath'} %>"/>
+        </div>
+      </div>
+    % end
+	</div>
+
+	%= include 'step/moduleslist'
+</div>
+
+<div class="grid_13 omega">
+	%= include 'step/moduleslistthumbnails'
+
+	<div class="box box-shadow">
+	  %= include 'step/moduleslisttabs'
+
+    % if (my $msg = flash 'error') {
+      <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
+    % }
+    % if (my $msg = flash 'info') {
+      <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
+    % }
+
+    <table style="width: 97%;">
+      <tr>
+        <th>Screens./Needle</th>
+        <th>Image</th>
+        <th>Areas</th>
+        <th>Matches</th>
+        <th>Tags</th>
+      </tr>
+
+      % for (my $i = 0; $i < scalar(@$needles); $i++) {
+        % my $needle = $needles->[$i];
+          
+        <tr>
+        <td><%= $needle->{'name'} %></td>
+        <td><input type="radio" name="background_selector" data-path="<%= $needle->{'imagepath'} %>" data-url="<%= $needle->{'imageurl'} %>" onclick="window.loadBackground(this);" <%= 'checked="checked"' if ($i == 0); %> /></td>
+        <td><input type="radio" name="area_selector" onclick="window.nEditor.LoadAreas('<%= JSON::to_json($needle->{'area'}) %>');"/></td>
+        <td><input type="radio" name="area_selector" onclick="window.nEditor.LoadAreas('<%= JSON::to_json($needle->{'matches'}) %>');" <%= 'checked="checked"' if ($i == 1); %>/></td>
+        <td><input type="radio" name="tags_selector" data-tags="<%= JSON::to_json($needle->{'tags'}) %>" onclick="window.loadTags(this);" <%= 'checked="checked"' if ($i == 0); %>/></td>
+        </tr>
+      % }
+    </table>
+    <div style="margin: 0 10px; position: relative; width: 1024px; padding: 1px; border: 0px; background-color: black;">
+      <canvas tabindex="1" id="needleeditor_canvas" width="1024" height="768" style="border: 0px;">This text is displayed if your browser does not support HTML5 Canvas.</canvas>
+    </div>
+  </div>
+</div>

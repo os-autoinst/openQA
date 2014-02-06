@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
+  <head>
+      <title><%= $appname.": ".title %></title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    %= stylesheet '/stylesheets/bento/style.fluid.css'
+    %= stylesheet '/stylesheets/openqa.css'
+    %= javascript '/javascripts/table.js'
+    %= javascript '/javascripts/shapes.js'
+    %= javascript '/javascripts/needleeditor.js'
+    %= javascript '/javascripts/prototype.js'
+    %= javascript '/javascripts/scriptaculous/scriptaculous.js'
+    %= javascript '/javascripts/openqa.js'
+    %= javascript '/javascripts/cropimg.js'
+    %= javascript '/javascripts/keyevent.js'
+    %= javascript '/javascripts/needlediff.js'
+    %= javascript '/javascripts/running.js'
+  </head>
+  <body>
+    <div id="header">
+      <div id="header-content" class="container_16">
+        <%= link_to 'http://www.opensuse.org' => (id => 'header-logo') => begin %>
+          <%= image '/images/header-logo.png', alt => 'Header Logo', height => "26", width => "46" %>
+        <% end %>
+        <ul id="global-navigation">
+          <li id="item-downloads"><a href="http://software.opensuse.org/">Downloads</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div id="subheader" class="container_16">
+        %= breadcrumbs
+    </div>
+
+    <div id="content" class="container_16 content-wrapper">
+      %= content
+    </div>
+
+    <div class="clear"></div>
+    <div id="footer" class="container_16">
+      <div class="box_content grid_16" style="text-align: center;"><%= content_for 'footer' %></div>
+    </div>
+  </body>
+</html>

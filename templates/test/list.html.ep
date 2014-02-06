@@ -1,0 +1,118 @@
+% layout 'default';
+% title 'Test results';
+% use Mojo::ByteStream 'b';
+
+<div class="grid_16 box box-shadow omega">
+	<h2><%= title %></h2>
+	<p>This page lists <%= @$list %> automated test-results from the last <%= $hoursfresh %> hours.</p>
+		%= form_for tests => (method => 'GET') => (class => "cutofftimeform") => (id => "filterform") => begin
+      %= select_field hours => [ ['24 h' => '24'], ['96 h' => '96'], ['200 h' => '200'], ['300 h' => '300'] ]
+      %= text_field "match"
+      filter
+      <label>
+        %= check_box "ib" => 1
+        ignore boring results
+      </label>
+      %= select_field ob => [ ['All Backends' => ''], ['kvm2usb' => 'kvm2usb'], ['qemu' => 'qemu'], ['vbox' => 'vbox'] ], onchange => "document.getElementById('filterform').submit();"
+      %= submit_button "change", class => "smbutton"
+    % end
+	<p />
+	<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
+		<thead>
+		  <tr>
+        <th class="table-sortable:alphanumeric">link</th>
+        <th class="table-sortable:alphanumeric table-filterable">backend</th>
+        <th class="table-sortable:alphanumeric table-filterable">distri</th>
+        <th class="table-sortable:alphanumeric table-filterable">type</th>
+        <th class="table-sortable:alphanumeric table-filterable">arch</th>
+        <th class="table-sortable:alphanumeric table-filterable">build</th>
+        <th class="table-sortable:alphanumeric table-filterable">extra</th>
+        <th class="table-sortable:date">testtime</th>
+        <th class="table-sortable:numeric">OK</th>
+        <th class="table-sortable:numeric">unk</th>
+        <th class="table-sortable:numeric">fail</th>
+		  </tr>
+		</thead>
+		<tbody>
+    % for my $test (@$list) {
+       <tr>
+	  <td>
+	    <% if($test->{'running'}) { %>
+            <a href="/tests/<%= $test->{'testname'} %>">testing</a>
+            <% } else { %>
+	    <a href="<%= url_for('test', 'testid' => $test->{'testname'}) %>"><img src="/images/details.png" alt="details" title="test result details" height="23" width="23" /></a>
+	    <a href="<%= url_for('test_file', 'testid' => $test->{'testname'}, 'filename' => 'video.ogv') %>"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
+            <a href="<%= url_for('restart', 'testid' => $test->{'testname'})->query('back' => 'results') %>"><img src="/images/toggle.png" alt="restart" title="Restart Job"/></a>
+          <% } %>
+	  </td>
+          <td><%= $test->{'backend'} %></td>
+          <td><%= $test->{'distri'} %></td>
+          <td><%= $test->{'type'} %></td>
+          <td><%= $test->{'arch'} %></td>
+                        <!-- <% my $resultclass = '';
+                        $resultclass = 'overviewfail' if (!$test->{'running'} && ($test->{'res_overall'}||'') ne 'ok');
+                        $resultclass = 'overviewunknown' if (($test->{'res_overall'}||'') eq 'ok' && $test->{'res_dents'}); %>
+                        -->
+	  <td><span class="textlink <%= $resultclass %>"><a href="<%= url_for('build', 'buildid' => $test->{'build'}) %>"><%= $test->{'build'} %></a></span></td>
+	  <td><span class="<%= $resultclass %>"><%= $test->{'extrainfo'} %></span></td>
+		<td><%= AWisodatetime2($test->{'mtime'}) %></td>
+		<% if($test->{'running'}) { %>
+		<td colspan="3" style="padding: 3px 4px;">
+		  <div class="pbox">
+		    <% my $ptext = ""; %>
+		    <% if($test->{'run_stat'}->{'modcount'} > 0) { %>
+		    <% $ptext = int($test->{'run_stat'}->{'moddone'} / $test->{'run_stat'}->{'modcount'} * 100)."%"; %>
+		    <% if(!$test->{'run_stat'}->{'run_backend'}) { %>
+		    <% $ptext = "post-processing"; %>
+		    <% } %>
+		    <% } else { %>
+		    <% $ptext = "pre-processing"; %>
+		    <% } %>
+		    <progress style="width: 100%; height: 100%;" max="<%= $test->{'run_stat'}->{'modcount'} %>" <%= b(($test->{'run_stat'}->{'run_backend'} and $test->{'run_stat'}->{'modcount'} > 0)?"value='".$test->{'run_stat'}->{'moddone'}."'":"") %>>
+		      <%= $ptext %>
+		    </progress>
+		    <%= $ptext %>
+		  </div>
+		</td>
+		<% } else { %>
+		<td><span class="overviewok"><%= ($test->{'res_ok'})?$test->{'res_ok'}:'' %></span></td>
+		<td><span class="overviewunknown"><%= ($test->{'res_unknown'}?$test->{'res_unknown'}:'') %></span></td>
+		<td><span class="overviewfail"><%= ($test->{'res_fail'}?$test->{'res_fail'}:'') %></span></td>
+		<% } %>
+       </tr>
+    % }
+
+
+      % for my $test (@$slist) {
+		    <tr>
+          <%
+            my $prio = $test->{'priority'};
+            my $state = $test->{'state'};
+          %>
+          <td style="font-style: italic;"><%= $state %>
+          % if ($state eq 'stopped') {
+            <%= link_to "AAA" => begin %><%= image "images/toggle.png", alt => "restart", title => "Restart job"; %><% end %>
+          % }
+          <td>
+            <%= link_to "-" => url_for('setpriority', 'testid' => $test->{'testname'}, 'priority' => $prio-10)->query('back' => 'results') %>
+            <%= $prio %>
+            <%= link_to "+" => url_for('setpriority', 'testid' => $test->{'testname'}, 'priority' => $prio+10)->query('back' => 'results') %>
+          </td>
+          <td><%= $test->{'distri'} %></td>
+          <td><%= $test->{'type'} %></td>
+          <td><%= $test->{'arch'} %></td>
+          <td>
+            <span class="textlink">
+              <%= link_to 'http://mojolicio.us' => begin %><%= $test->{'build'} %><% end %>
+            </span>
+          </td>
+          <td><span class=""><%= $test->{'extrainfo'} %></span></td>
+          <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+            <a href="<%== url_for('cancel', 'testid' => $test->{'testname'})->query('back' => 'results') %>">cancel</a>
+          </td>
+       </tr>
+    % }
+     </tbody>
+   </table>
+   <p>Note: times are UTC</p>
+</div>

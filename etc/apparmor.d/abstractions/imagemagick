@@ -1,6 +1,0 @@
-
-  /usr/lib*/ImageMagick*/modules*/coders/*.so	m,
-
-# for ungzip tmp files
-  /tmp/magick-*	rw,
-  deny /srv/www/cgi-bin/magick*	rw,
