@@ -20,6 +20,8 @@ install -d -m 755 "$DESTDIR"/etc/apache2/{conf.d,vhosts.d}
 install -m 644 etc/apache2/conf.d/openqa.conf "$DESTDIR"/etc/apache2/conf.d
 install -m 644 etc/apache2/vhosts.d/openqa.conf.template "$DESTDIR"/etc/apache2/vhosts.d
 #
+install -D -m 644 etc/default/openqa "$DESTDIR"/etc/default/openqa
+#
 install -d -m 755 "$DESTDIR"/usr/lib/systemd/{system,system-generators}
 install -m 644 systemd/openqa-worker@.service "$DESTDIR"/usr/lib/systemd/system
 install -m 644 systemd/openqa-worker.target "$DESTDIR"/usr/lib/systemd/system
