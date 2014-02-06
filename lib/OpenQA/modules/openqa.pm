@@ -34,7 +34,7 @@ our $app_subtitle = 'openSUSE automated testing';
 
 our $distri_file_glob =  $basedir.'/os-autoinst/tests/*/main.pm';
 
-our $dbfile = "$basedir/$prj/db/db.sqlite";
+our $dbfile = $ENV{OPENQA_DB} || "$basedir/$prj/db/db.sqlite";
 
 our @runner = <$basedir/$prj/pool/[0-9]>;
 push(@runner, "$basedir/$prj/pool/manual");

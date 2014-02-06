@@ -1,10 +1,9 @@
 #!/usr/bin/perl -w
 
+BEGIN { unshift @INC, 'lib', 'lib/OpenQA/modules'; }
+
 use strict;
 use Data::Dump qw/pp dd/;
-use FindBin;
-use lib $FindBin::Bin.'/../www/cgi-bin/modules';
-# use lib $FindBin::Bin.'/../www/cgi-bin/modules/Schema';
 use Scheduler;
 use openqa;
 
