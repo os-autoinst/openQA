@@ -1,3 +1,0 @@
-test $(date +%k) -lt 6 && export BIGTEST=1
-
-true
