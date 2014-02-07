@@ -299,10 +299,21 @@ sub resultname_to_url($)
 { "http://$hostname/results/$_[0]"; 
 }
 
-sub is_authorized_rw()
+sub is_authorized_rw
 {
-	my $ip=$ENV{REMOTE_ADDR};
-	my $allowedhosts=$ENV{OPENQA_ALLOWED_HOSTS} || '::1 127.0.0.1';
+	my $self = shift;
+	my $context = shift || 'default';
+
+	my %cfg = (
+		default => $ENV{OPENQA_ALLOWED_HOSTS} || '::1 127.0.0.1',
+		uploadlog => '::1 127.0.0.1',
+	);
+
+	my $ip = $self->req->headers->header('X-Forwarded-For') || '';
+
+	my $allowedhosts = $cfg{$context};
+
+	$self->app->log->debug("check rw access $ip in context $context");
 
 	my @allowedhost=split(' ',$allowedhosts);
 	foreach my $val (@allowedhost) {

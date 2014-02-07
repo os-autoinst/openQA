@@ -22,7 +22,7 @@ sub cancel
     my $self = shift;
     my $name = $self->param('testid');
 
-    if(!is_authorized_rw()) {
+    if(!is_authorized_rw($self)) {
         #return $self->render(text => "forbidden", status => 403);
         $self->stash('denied', 1);
     } else {
@@ -38,7 +38,7 @@ sub restart
     my $self = shift;
     my $name = $self->param('testid');
 
-    if(!is_authorized_rw()) {
+    if(!is_authorized_rw($self)) {
         $self->stash('denied', 1);
     } else {
         Scheduler::job_restart($name);
@@ -54,7 +54,7 @@ sub setpriority
     my $name = $self->param('testid');
     my $priority = $self->param('priority');
 
-    if(!is_authorized_rw()) {
+    if(!is_authorized_rw($self)) {
         $self->stash('denied', 1);
     } else {
         my $job = Scheduler::job_get($name);

@@ -216,15 +216,9 @@ sub uploadlog
     my $name = $self->param('filename');
     my $testname = $self->param('testid');
 
-    # FIXME: this cannot work due to proxy setting
-    my $ip = $self->tx->remote_address;
+    $self->app->log->debug("upload $name $testname");
 
-    $self->app->log->debug("upload $name $testname $ip");
-
-    my %whitelist=(
-	"127.0.0.1"=>1, # occurs for 10.0.2.2
-    );
-    if(!$whitelist{$ip}) {
+    if(!is_authorized_rw($self, 'uploadlog')) {
 	return $self->render(text => "forbidden", status => 403);
     }
 
