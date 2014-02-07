@@ -8,8 +8,8 @@ test-scheduler and other high-level logic, which is part of this repo.
 Installation
 ============
 
-The preferred way is to install openQA from packages. If you are not a
-developer skip this section.
+The preferred way is to install openQA from packages. If you are not
+a developer skip this section.
 
 see devel:openQA/openQA on how to setup the software on openSUSE or run
 tools/setup.sh for some help
@@ -20,11 +20,11 @@ openQA requires os-autoinst to be installed in /usr/lib/os-autoinst
 FS Layout
 ---------
 
-openQA web files (www/*) must be in /usr/share/openqa (again, can be bind
-mounted/linked to git checkout).
+The openQA web interface can be started via "morbo script/openqa" in
+development mode.
 
 /var/lib/openqa/ must be owned by root and contain several sub
-directories owned by 'geekotest':
+directories owned by the user that runs the workers (default 'geekotest'):
 
 backlog
 factory/iso
@@ -33,16 +33,17 @@ pool/1 (add more for each worker)
 testresults
 tools (symlink to /usr/share/openqa/tools/)
 
-/var/lib/openqa/db contains the sqlite database and must be owned by the web
-user. You need to run tools/initdb to create it.
+/var/lib/openqa/db contains the sqlite database and must be owned by
+the user that runs the web interface (you?). You need to run
+tools/initdb to create it.
 
-configuring the web server
-==========================
+configuring a separate web server
+=================================
 
-By default everything expects the openqa web stuff to run on
-localhost. Please configure your apache accordingly (see config
-files in etc/apache2).
-You need to enable the 'proxy_http' and 'proxy' modules (use a2enmod)
+The openQA web interface runs standalone via Mojolicous so a web
+server is not necessarily needed. If you want to use apache you need
+to configure proxy mode. See config files in etc/apache2. You need
+to enable the 'proxy_http' and 'proxy' modules (use a2enmod)
 
 running workers
 ===============
@@ -76,7 +77,7 @@ repo (/var/lib/os-autoinst/needles/.git/config):
 
 To enable pushing the repo somewhere set OPENQA_NEEDLES_GIT_DO_PUSH
 to "yes". You may need to generate an ssh key and put it in the
-wwwrun home dir to be able to push.
+geekotest home dir to be able to push.
 
 troubleshooting
 ===============

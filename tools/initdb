@@ -9,4 +9,4 @@ d=$DESTDIR/var/lib/openqa/db
 mkdir -p $d
 rm -f $d/db.sqlite
 echo .quit | sqlite3 -init ${0%/*}/db.sql $d/db.sqlite
-chown wwwrun $d $d/db.sqlite
+chown geekotest $d $d/db.sqlite
