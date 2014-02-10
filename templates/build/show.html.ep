@@ -59,13 +59,13 @@
 								<span id="actions_<%=$jobid%>" style="display:none"><ul style="margin: 0px;">
 								<% if ($state eq "scheduled") { %>
 									<% my $prio = $res->{'priority'}; %>
-                                                                        <li style="margin: 0px;"><a href="<%= url_for('setpriority', 'testid' => $testname, 'priority' => $prio-10)->query('back' => 1) %>">Raise priority</a></li>
-                                                                        <li style="margin: 0px;"><a href="<%= url_for('setpriority', 'testid' => $testname, 'priority' => $prio+10)->query('back' => 1) %>">Lower priority</a></li>
+									 <li style="margin: 0px;"><a data-method="post" href="<%= url_for('setpriority', 'testid' => $testname, 'priority' => $prio-10)->query('back' => 1) %>">Raise priority</a></li>
+									 <li style="margin: 0px;"><a data-method="post" href="<%= url_for('setpriority', 'testid' => $testname, 'priority' => $prio+10)->query('back' => 1) %>">Lower priority</a></li>
 								<% } else { %>
-                                                                <li style="margin: 0px;"><a href="<%= url_for('restart', 'testid' => $testname)->query('back' => 1) %>">Re-schedule</a></li>
+									 <li style="margin: 0px;"><a data-method="post" href="<%= url_for('restart', 'testid' => $testname)->query('back' => 1) %>">Re-schedule</a></li>
 								<% } %>
 								<% if ($state eq "scheduled" || $state eq "running") { %>
-									<li style="margin: 0px;"><a href="<%= url_for('cancel', 'testid' => $testname)->query('back' => 1) %>">Cancel</a></li>
+									<li style="margin: 0px;"><a data-method="post" href="<%= url_for('cancel', 'testid' => $testname)->query('back' => 1) %>">Cancel</a></li>
 								<% } %>
 								</ul></span>
 							<% } %>

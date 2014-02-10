@@ -27,10 +27,9 @@ sub startup {
   $test_r->get('/streaming')->name('streaming')->to('running#streaming');
   $test_r->get('/edit')->name('edit_test')->to('running#edit');
 
-  # FIXME: should be post
-  $test_r->get('/cancel')->name('cancel')->to('schedule#cancel');
-  $test_r->get('/restart')->name('restart')->to('schedule#restart');
-  $test_r->get('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
+  $test_r->post('/cancel')->name('cancel')->to('schedule#cancel');
+  $test_r->post('/restart')->name('restart')->to('schedule#restart');
+  $test_r->post('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
   $test_r->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
 
   $test_r->get('/images/:filename')->name('test_img')->to('file#test_file');

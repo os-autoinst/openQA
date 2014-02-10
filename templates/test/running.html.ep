@@ -9,10 +9,10 @@
             %= link_to url_for('tests') => begin
                 %= image '/images/back.png', alt => 'back', title => 'back to overview page', height => 22
             % end
-            %= link_to url_for('restart')->query(back => 'details') => begin
+            %= link_to url_for('restart')->query(back => 'details') => ('data-method' => 'post') => begin
                 %= image '/images/toggle.png', alt => "restart", title => "Restart job"
             % end
-            %= link_to url_for('cancel')->query(back => 'details') => begin
+            %= link_to url_for('cancel')->query(back => 'details') => ('data-method' => 'post') => begin
                 %= image '/images/cancel.png', alt => "stop", title => "Stop job"
             % end
         </div>
