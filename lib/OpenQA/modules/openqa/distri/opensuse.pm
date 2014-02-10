@@ -50,7 +50,9 @@ sub parse_iso($) {
 #   requested_runs => [ "name of test runs", ... ]
 sub generate_jobs
 {
-    my $self = shift;
+    my $class = shift;
+    my $c = shift;
+
     my %args = @_;
     my $iso = $args{'iso'} or die "missing parmeter iso\n";
     my @requested_runs = @{$args{'requested_runs'}||[]};
@@ -412,11 +414,11 @@ sub generate_jobs
                              VERSION => $params->{version},
                              DESKTOP => 'kde' );
 
-            if ($ENV{OPENQA_SUSE_MIRROR}) {
+            if ($self->app->config->{suse_mirror}) {
                 my $repodir = $iso;
                 $repodir =~ s/-Media\.iso$//;
                 $repodir .= '-oss';
-                $settings{SUSEMIRROR} = $ENV{OPENQA_SUSE_MIRROR}."/iso/$repodir";
+                $settings{SUSEMIRROR} = $self->app->config->{suse_mirror}."/iso/$repodir";
                 $settings{FULLURL} = 1;
             }
 

@@ -100,7 +100,7 @@ sub iso_new
 
     die "missing iso parameter" unless $iso;
 
-    my $jobs = openqa::distri::generate_jobs(iso => $iso, requested_runs => \@requested_runs);
+    my $jobs = openqa::distri::generate_jobs($self, iso => $iso, requested_runs => \@requested_runs);
 
     # XXX: obviously a hack
     my $pattern = $iso;

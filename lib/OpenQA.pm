@@ -3,6 +3,35 @@ use Mojo::Base 'Mojolicious';
 use OpenQA::Helpers;
 use OpenQA::Jsonrpc;
 
+use Config::IniFiles;
+
+sub _read_config {
+  my $self = shift;
+
+  my $defaults = {
+    needles_scm => 'git',
+    needles_git_worktree => '/var/lib/os-autoinst/needles',
+    needles_git_do_push => 'no',
+  };
+
+  # Mojo's built in config plugins suck. JSON for example does not
+  # support comments
+  my $cfg = Config::IniFiles->new( -fallback => 'global',
+      -file => $ENV{OPENQA_CONFIG} || $self->app->home.'/lib/openqa.ini') || undef;
+
+  for my $k (qw/
+      needles_scm
+      needles_git_worktree
+      needles_git_do_push
+      allowed_hosts
+      suse_mirror
+      /) {
+    my $v = $cfg && $cfg->val('global', $k) || $defaults->{$k};
+    $self->app->config->{$k} = $v if $v;
+  }
+}
+
+
 # This method will run once at server start
 sub startup {
   my $self = shift;
@@ -13,6 +42,8 @@ sub startup {
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer');
   $self->plugin('OpenQA::Helpers');
+
+  $self->_read_config;
 
   # Router
   my $r = $self->routes;

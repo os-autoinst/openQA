@@ -241,7 +241,7 @@ sub save_needle {
     }
   }
   if ($success) {
-    if ($ENV{OPENQA_NEEDLES_SCM}||'' eq 'git') {
+    if ($self->app->config->{needles_scm}||'' eq 'git') {
       if ($needledir && -d "$perldir/$needledir/.git") {
         my @git = ('git',
           '--git-dir', "$perldir/$needledir/.git",
@@ -249,9 +249,10 @@ sub save_needle {
         my @files = ($baseneedle.'.json', $baseneedle.'.png');
         system(@git, 'add', @files);
         system(@git, 'commit', '-q', '-m',
+	  # FIXME
           sprintf("%s by %s@%s", $testname, $ENV{REMOTE_USER}||'anonymous', $ENV{REMOTE_ADDR}),
           @files);
-        if (($ENV{OPENQA_NEEDLES_GIT_DO_PUSH}||'') eq 'yes') {
+        if (($self->app->config->{needles_git_do_push}||'') eq 'yes') {
           system(@git, 'push', 'origin', 'master');
         }
       } else {

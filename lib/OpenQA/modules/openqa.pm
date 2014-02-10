@@ -305,7 +305,7 @@ sub is_authorized_rw
 	my $context = shift || 'default';
 
 	my %cfg = (
-		default => $ENV{OPENQA_ALLOWED_HOSTS} || '::1 127.0.0.1',
+		default => $self->app->config->{allowed_hosts} || '::1 127.0.0.1',
 		uploadlog => '::1 127.0.0.1',
 	);
 
@@ -534,6 +534,7 @@ package openqa::distri;
 
 sub generate_jobs
 {
+	my $c = shift;
 	my $ret = [];
 	# walk through all provided modules to let them generate
 	# jobs for the iso
@@ -547,7 +548,7 @@ sub generate_jobs
 				print STDERR "failed to load module $module\n";
 				next;
 			}
-			my $jobs = $module->generate_jobs(@_);
+			my $jobs = $module->generate_jobs($c, @_);
 			push @$ret, @$jobs if $jobs;
 		};
 		if ($@) {
