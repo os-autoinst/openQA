@@ -333,7 +333,7 @@ sub main()
 			$cmds = $client->command_get($workerid);
 		}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 		for my $cmd (@{$cmds||[]}) {
-			if ($cmd->[1] eq 'quit') {
+			if ($cmd->[1] eq 'quit') { # quit_worker and reschedule the job
 				$keep_running = 0;
 				if ($worker) {
 					_kill_worker($worker);
@@ -342,7 +342,7 @@ sub main()
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 					$aborted = 'quit';
 				}
-			} elsif ($cmd->[1] eq 'abort') {
+			} elsif ($cmd->[1] eq 'abort') { # the work is live and the job is rescheduled
 				if ($worker) {
 					_kill_worker($worker);
 					$retries = 3; while(1) { eval {
@@ -350,12 +350,12 @@ sub main()
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 					$aborted = 'abort';
 				}
-			} elsif ($cmd->[1] eq 'stop') {
+			} elsif ($cmd->[1] eq 'stop') { # The jobs is droped and the work is still alive
 				if ($worker) {
 					_kill_worker($worker);
 					$aborted = 'stop';
 				}
-			} elsif ($cmd->[1] eq 'stop_waitforneedle') {
+			} elsif ($cmd->[1] eq 'stop_waitforneedle') { # Plan: Enable interactive mode -- Now osautoinst decides what that means
 				if ($worker) {
 					if (open(my $f, '>', "$pooldir/stop_waitforneedle")) {
 						close $f;
@@ -364,7 +364,7 @@ sub main()
 						warn "can't stop waitforneedle: $!";
 					}
 				}
-			} elsif ($cmd->[1] eq 'reload_needles_and_retry') {
+			} elsif ($cmd->[1] eq 'reload_needles_and_retry') { # 
 				if ($worker) {
 					if (open(my $f, '>', "$pooldir/reload_needles_and_retry")) {
 						close $f;
