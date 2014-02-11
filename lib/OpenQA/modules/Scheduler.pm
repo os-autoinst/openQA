@@ -254,8 +254,8 @@ sub list_jobs {
     	$search{finish_date} = { '>' => \$param }
     }
     if ($args{build}) {
-    	my $param = sprintf("%%-Build%04d-%%", $args{build});
-    	$search{build} = { like => $param }
+        my $param = sprintf("%%-Build%s-%%", $args{build});
+        $search{name} = { like => $param }
     }
     my @jobs = $schema->resultset("Jobs")->search(\%search);
 
