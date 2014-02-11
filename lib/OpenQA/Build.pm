@@ -10,7 +10,7 @@ sub show {
     my $self  = shift;
     my $build = $self->param('buildid');
 
-    if ( $build =~ /Build(\d+)$/ ) {
+    if ( $build =~ /Build([\d.]+)$/ ) {
         $build = $1;
     }
     else {
