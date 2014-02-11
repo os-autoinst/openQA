@@ -75,7 +75,7 @@ sub startup {
   $asset_r->post('/')->name('save_needle')->to(action => 'save_needle');
   $asset_r->get('/')->name('step')->to(action => 'view');
 
-  $r->get('/builds/:buildid')->name('build')->to('build#show');
+  $r->get('/builds/#buildid')->name('build')->to('build#show');
   $r->post('/rpc')->name('rpc')->to('rpc#call');
 #  $r->post('/jsonrpc/:method')->name('jsonrpc')->to('jsonrpc#call');
 
