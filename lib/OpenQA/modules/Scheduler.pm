@@ -14,6 +14,7 @@ use lib $FindBin::Bin;
 use Schema::Schema; 
 use openqa ();
 
+use Carp;
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -21,9 +22,11 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 @EXPORT = qw(worker_register worker_get list_workers job_create
     job_get list_jobs job_grab job_set_scheduled job_set_done
-    job_set_stop job_set_waiting job_set_running job_set_prio
-    job_delete job_update_result job_restart job_stop command_enqueue
-    command_get list_commands command_dequeue iso_stop_old_builds);
+    job_set_cancel job_set_waiting job_set_running job_set_prio
+    job_delete job_update_result job_restart job_cancel command_enqueue
+    command_get list_commands command_dequeue iso_cancel_old_builds
+    job_set_stop job_stop iso_stop_old_builds
+    );
 
 
 my $schema = Schema->connect({
@@ -349,19 +352,24 @@ sub job_set_done {
     return $r;
 }
 
-=item job_set_stop
+=item job_set_cancel
 
-mark job as stopped. No error check. Meant to be called from worker!
+mark job as cancelled. No error check. Meant to be called from worker!
 
 =cut
-sub job_set_stop {
+sub job_set_cancel {
     my $jobid = shift;
 
     my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
-	state_id => $schema->resultset("JobState")->search({ name => "stopped" })->single->id,
+	state_id => $schema->resultset("JobState")->search({ name => "cancelled" })->single->id,
 	worker_id => 0,
     });
     return $r;
+}
+
+sub job_set_stop {
+    carp "job_set_stop is deprecated, use job_set_cancel instead";
+    return job_set_cancel(@_);
 }
 
 =item job_set_waiting
@@ -386,7 +394,7 @@ mark job as running. No error check. Meant to be called from worker!
 sub job_set_running {
     my $jobid = shift;
 
-    my $states_rs = $schema->resultset("JobState")->search({ name => ['stopped', 'waiting'] });
+    my $states_rs = $schema->resultset("JobState")->search({ name => ['cancelled', 'waiting'] });
     my $r = $schema->resultset("Jobs")->search({
 	id => $jobid,
         state_id => { -in => $states_rs->get_column("id")->as_query },
@@ -475,9 +483,14 @@ sub job_restart {
     return _job_set_final_state($name, "abort", "scheduled");
 }
 
-sub job_stop {
+sub job_cancel {
     my $name = shift or die "missing name parameter\n";
-    return _job_set_final_state($name, "stop", "stopped");
+    return _job_set_final_state($name, "cancel", "cancelled");
+}
+
+sub job_stop {
+    carp "job_stop is deprecated, use job_cancel instead";
+    return job_cancel(@_);
 }
 
 # set job to a final state, resetting it's properties
@@ -568,8 +581,7 @@ sub command_dequeue {
     return $r;
 }
 
-# XXX TODO this is wrong, the semantic of stopping jobs here is different from job_stop()
-sub iso_stop_old_builds($) {
+sub iso_cancel_old_builds($) {
     my $pattern = shift;
 
     my $r = $schema->resultset("Jobs")->search({
@@ -579,8 +591,13 @@ sub iso_stop_old_builds($) {
     }, {
 	join => "settings",
     })->update({
-	state_id => $schema->resultset("JobState")->search({ name => "stopped" })->single->id,
+	state_id => $schema->resultset("JobState")->search({ name => "cancelled" })->single->id,
 	worker_id => 0,
     });
     return $r;
+}
+
+sub iso_stop_old_builds($) {
+    carp "iso_stop_old_builds is deprecated, use iso_cancel_old_builds instead";
+    return iso_cancel_old_builds(shift);
 }

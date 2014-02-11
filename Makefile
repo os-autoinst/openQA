@@ -6,7 +6,7 @@ install:
 test:
 	rm -rf t/openqa; mkdir -p t/openqa/{db,factory/iso}
 	echo .quit | sqlite3 -init tools/db.sql t/openqa/db/db.sqlite
-	env OPENQA_BASEDIR=$(PWD)/t prove
+	env OPENQA_BASEDIR=$(PWD)/t prove $(PROVE_ARGS)
 	rm -rf t/openqa
 
 .PHONY: all install

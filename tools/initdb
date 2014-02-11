@@ -1,10 +1,6 @@
 #!/bin/bash
 set -e
 : ${DESTDIR:=/}
-if ! test -w "$DESTDIR"; then
-	echo "need write access to $DESTDIR!";
-	exit 1
-fi
 d=$DESTDIR/var/lib/openqa/db
 mkdir -p $d
 rm -f $d/db.sqlite

@@ -134,10 +134,10 @@ $job = Scheduler::job_get($job_id);
 ok($result == 1 && $job->{state} eq "done", "job_set_done");
 
 
-# Testing job_set_stop
-$result = Scheduler::job_set_stop($job_id);
+# Testing job_set_cancel
+$result = Scheduler::job_set_cancel($job_id);
 $job = Scheduler::job_get($job_id);
-ok($result == 1 && $job->{state} eq "stopped", "job_set_stop");
+ok($result == 1 && $job->{state} eq "cancelled", "job_set_cancel");
 
 
 # Testing job_set_waiting
@@ -178,7 +178,7 @@ ok($result == 1 && $job->{result} == 1, "job_update_result");
 # Testing job_restart
 # TBD
 
-# Testing job_stop
+# Testing job_cancel
 # TBD
 
 # Testing job_fill_settings
@@ -219,13 +219,13 @@ ok(scalar @$commands == 1 && pp($commands) eq '[[1, "command"]]',  "command_get"
 # Testing command_dequeue
 # TBD
 
-# Testing iso_stop_old_builds
-$result = Scheduler::iso_stop_old_builds('ISO');
+# Testing iso_cancel_old_builds
+$result = Scheduler::iso_cancel_old_builds('ISO');
 ok($result == 0, "Empty iso_old_builds");
 open $fh, ">", $iso;
 $job_id = Scheduler::job_create(%settings);
 unlink $iso;
-$result = Scheduler::iso_stop_old_builds('ISO');
+$result = Scheduler::iso_cancel_old_builds('ISO');
 $new_job = Scheduler::job_get($job_id);
-ok($result == 1 && $new_job->{state} eq "stopped" && $new_job->{worker_id} == 0, "Match iso_old_builds");
+ok($result == 1 && $new_job->{state} eq "cancelled" && $new_job->{worker_id} == 0, "Match iso_old_builds");
 

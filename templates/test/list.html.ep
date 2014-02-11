@@ -89,7 +89,7 @@
             my $state = $test->{'state'};
           %>
           <td style="font-style: italic;"><%= $state %>
-          % if ($state eq 'stopped') {
+          % if ($state eq 'cancelled') {
             %= link_to url_for('restart', 'testid' => $test->{'testname'})->query('back' => 'results') => ('data-method' => 'post') => begin
                 %= image '/images/toggle.png', alt => "restart", title => "Restart job"
             % end

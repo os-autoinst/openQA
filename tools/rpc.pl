@@ -72,14 +72,14 @@ for (qw/
 	job_get
 	job_delete
 	job_set_scheduled
-	job_set_stop
+	job_set_cancel
 	job_set_waiting
 	job_set_running
 	job_find_by_name
 	job_restart
-	job_stop
+	job_cancel
         iso_delete
-        iso_stop
+        iso_cancel
 	command_get
 	worker_get
 	/) {

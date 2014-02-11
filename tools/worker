@@ -101,7 +101,7 @@ my $client_commands = [qw/
 	job_set_scheduled
 	job_set_prio
 	job_set_done
-	job_set_stop
+	job_set_cancel
 	worker_register
 	command_get
 	command_dequeue
@@ -247,14 +247,14 @@ sub _kill_worker($)
 
 # set job to done if priority is bigger threshold. Otherwise release
 # it with worse priority
-sub job_release_or_stop($$$)
+sub job_release_or_cancel($$$)
 {
 	my ($client, $job, $result) = @_;
 	my $retries = 3; while(1) { eval {
 		# give up if the prio is too bad
 		if ($job->{'priority'} gt 70) {
-			printf "stopping job %d\n", $job->{'id'};
-			$client->job_set_stop($job->{'id'});
+			printf "cancel job %d\n", $job->{'id'};
+			$client->job_set_cancel($job->{'id'});
 		} else {
 			$job->{'priority'}++;
 			printf "releasing job %d, prio %d\n", $job->{'id'}, $job->{'priority'};
@@ -350,10 +350,10 @@ sub main()
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 					$aborted = 'abort';
 				}
-			} elsif ($cmd->[1] eq 'stop') { # The jobs is droped and the work is still alive
+			} elsif ($cmd->[1] eq 'cancel') { # The jobs is droped and the work is still alive
 				if ($worker) {
 					_kill_worker($worker);
-					$aborted = 'stop';
+					$aborted = 'cancel';
 				}
 			} elsif ($cmd->[1] eq 'stop_waitforneedle') { # Plan: Enable interactive mode -- Now osautoinst decides what that means
 				if ($worker) {
@@ -404,7 +404,7 @@ sub main()
 		if ($job && $worker_start_time && time-$worker_start_time > $max_job_time && !$aborted) {
 			warn sprintf("max job time exceeded, aborting %s ...\n", $job->{'settings'}->{'NAME'});
 			_kill_worker($worker);
-			job_release_or_stop($client, $job, "time exceeded");
+			job_release_or_cancel($client, $job, "time exceeded");
 			$aborted = 'timeout';
 		}
 
@@ -429,7 +429,7 @@ sub main()
 			$worker = workit($job);
 			unless ($worker) {
 				warn "launching worker failed, releasing job\n";
-				job_release_or_stop($client, $job, "worker died");
+				job_release_or_cancel($client, $job, "worker died");
 				$job = undef;
 			}
 			$worker_start_time = time;
@@ -468,7 +468,7 @@ sub main()
 				close($log);
 			}
 
-			if (!$aborted || $aborted eq 'stop' || $aborted eq 'timeout') {
+			if (!$aborted || $aborted eq 'cancel' || $aborted eq 'timeout') {
 				# collect uploaded logs
 				my @uploaded_logfiles = <$logupload_dir/$name/*>;
 				mkdir("$pooldir/testresults/$name/ulogs/");
@@ -505,16 +505,16 @@ sub main()
 				my $overall = results_overall("$testresults/results.json");
 				$result = $overall if !$aborted && $overall;
 				# XXX: use job_set_stop in case of stop?
-				if (($aborted||'') eq 'stop' || $overall) {
+				if (($aborted||'') eq 'cancel' || $overall) {
 					$retries = 3; while(1) { eval {
 						printf "setting job %d to $result\n", $job->{'id'};
 						$client->job_set_done($job->{'id'}, $result);
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 				} else {
-					job_release_or_stop($client, $job, $result);
+					job_release_or_cancel($client, $job, $result);
 				}
 			} else {
-			    job_release_or_stop($client, $job, $result);
+			    job_release_or_cancel($client, $job, $result);
 			}
 			warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
 			clean_pool($job);

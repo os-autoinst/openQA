@@ -19,11 +19,11 @@ sub new
     worker_register
     iso_new
     iso_delete
-    iso_stop
+    iso_cancel
     job_grab
     job_set_scheduled
     job_set_done
-    job_set_stop
+    job_set_cancel
     job_set_waiting
     job_set_continue
     job_create
@@ -31,7 +31,7 @@ sub new
     job_delete
     job_update_result
     job_restart
-    job_stop
+    job_cancel
     command_get
     command_enqueue
     command_dequeue
@@ -105,7 +105,7 @@ sub iso_new
     # XXX: obviously a hack
     my $pattern = $iso;
     if ($jobs && $pattern =~ s/Build\d.*/Build%/) {
-	Scheduler::iso_stop_old_builds($pattern);
+	Scheduler::iso_cancel_old_builds($pattern);
     }
 
     my $cnt = 0;
@@ -137,14 +137,14 @@ sub iso_delete
 }
 
 
-sub iso_stop
+sub iso_cancel
 {
     my ($self, @params) = @_;
 
     # remove any path info path from iso file name
     (my $iso = $params[0]) =~ s|^.*/||;
 
-    Scheduler::job_stop($iso);
+    Scheduler::job_cancel($iso);
 }
 
 
@@ -192,12 +192,12 @@ sub job_set_done
 =head2
 mark job as stopped
 =cut
-sub job_set_stop
+sub job_set_cancel
 {
     my ($self, @params) = @_;
 
-    my $r = Scheduler::job_set_stop( $params[0] );
-    $self->raise_error(code => 400, message => "failed to stop job") unless $r == 1;
+    my $r = Scheduler::job_set_cancel( $params[0] );
+    $self->raise_error(code => 400, message => "failed to cancel job") unless $r == 1;
 }
 
 =head2
@@ -273,12 +273,12 @@ sub job_restart
     Scheduler::job_restart($name);
 }
 
-sub job_stop:
+sub job_cancel:
 {
     my $self = shift;
     my $name = shift or die "missing name parameter\n";
 
-    Scheduler::job_stop($name);
+    Scheduler::job_cancel($name);
 }
 
 sub command_get

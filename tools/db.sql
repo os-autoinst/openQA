@@ -3,7 +3,7 @@ BEGIN TRANSACTION;
 CREATE TABLE job_state (id INTEGER PRIMARY KEY, name TEXT);
 INSERT INTO "job_state" VALUES(1,'scheduled');
 INSERT INTO "job_state" VALUES(2,'running');
-INSERT INTO "job_state" VALUES(3,'stopped');
+INSERT INTO "job_state" VALUES(3,'cancelled');
 INSERT INTO "job_state" VALUES(4,'waiting');
 INSERT INTO "job_state" VALUES(5,'done');
 CREATE TABLE workers(
