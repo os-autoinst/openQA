@@ -3,7 +3,6 @@
 % content_for footer => begin
   <a title="SUSE" href="http://en.opensuse.org/Sponsors"><img alt="SUSE" src="/images/suse.png" title="SUSE"/></a>
 % end
-% use Mojo::ByteStream 'b';
 
 <div class="grid_6 box box-shadow alpha recent-issues-hide" id="top_features_box">
 	<div class="box-header aligncenter">
