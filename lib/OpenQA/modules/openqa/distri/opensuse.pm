@@ -51,7 +51,7 @@ sub parse_iso($) {
 sub generate_jobs
 {
     my $class = shift;
-    my $c = shift;
+    my $config = shift;
 
     my %args = @_;
     my $iso = $args{'iso'} or die "missing parmeter iso\n";
@@ -414,11 +414,11 @@ sub generate_jobs
                              VERSION => $params->{version},
                              DESKTOP => 'kde' );
 
-            if ($self->app->config->{suse_mirror}) {
+            if ($config->{suse_mirror}) {
                 my $repodir = $iso;
                 $repodir =~ s/-Media\.iso$//;
                 $repodir .= '-oss';
-                $settings{SUSEMIRROR} = $self->app->config->{suse_mirror}."/iso/$repodir";
+                $settings{SUSEMIRROR} = $config->{suse_mirror}."/iso/$repodir";
                 $settings{FULLURL} = 1;
             }
 

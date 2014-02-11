@@ -534,7 +534,7 @@ package openqa::distri;
 
 sub generate_jobs
 {
-	my $c = shift;
+	my $config = shift;
 	my $ret = [];
 	# walk through all provided modules to let them generate
 	# jobs for the iso
@@ -548,7 +548,7 @@ sub generate_jobs
 				print STDERR "failed to load module $module\n";
 				next;
 			}
-			my $jobs = $module->generate_jobs($c, @_);
+			my $jobs = $module->generate_jobs($config, @_);
 			push @$ret, @$jobs if $jobs;
 		};
 		if ($@) {

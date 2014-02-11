@@ -372,7 +372,7 @@ my @testdata = (
 );
 
 for my $t (@testdata) {
-    my $params = openqa::distri::opensuse->generate_jobs(iso => $t->{iso});
+    my $params = openqa::distri::opensuse->generate_jobs({}, iso => $t->{iso});
     if ($t->{params}) {
         is_deeply($params, $t->{params}) or diag("failed params: ". pp($params));
     } else {
