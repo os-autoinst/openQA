@@ -5,7 +5,7 @@ use db_helpers;
 
 # stuff like distro, version, arch etc
 
-__PACKAGE__->table('job_settings');
+__PACKAGE__->table('job_properties');
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
