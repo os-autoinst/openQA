@@ -6,7 +6,6 @@ Before=apache2.service
 [Service]
 # TODO: define whether we want to run the web ui with the same user
 User=geekotest
-EnvironmentFile=/etc/default/openqa
 ExecStart=/usr/share/openqa/script/openqa daemon -m production
 
 [Install]
