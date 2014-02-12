@@ -1,6 +1,8 @@
 package Schema::Result::Workers;
 use base qw/DBIx::Class::Core/;
 
+use db_helpers;
+
 __PACKAGE__->table('workers');
 __PACKAGE__->add_columns(
     id => {
@@ -31,5 +33,11 @@ __PACKAGE__->has_many(commands => 'Schema::Result::Commands', 'worker_id');
 
 # TODO
 # INSERT INTO workers (id, t_created) VALUES(0, datetime('now'));
+
+sub sqlt_deploy_hook {
+    my ($self, $sqlt_table) = @_;
+
+    db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
+}
 
 1;

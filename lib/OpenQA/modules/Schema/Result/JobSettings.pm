@@ -1,6 +1,8 @@
 package Schema::Result::JobSettings;
 use base qw/DBIx::Class::Core/;
 
+use db_helpers;
+
 __PACKAGE__->table('job_settings');
 __PACKAGE__->add_columns(
     id => {
@@ -26,5 +28,11 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(job => 'Schema::Result::Jobs', 'job_id');
+
+sub sqlt_deploy_hook {
+    my ($self, $sqlt_table) = @_;
+
+    db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
+}
 
 1;

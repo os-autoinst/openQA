@@ -1,6 +1,8 @@
 package Schema::Result::Jobs;
 use base qw/DBIx::Class::Core/;
 
+use db_helpers;
+
 __PACKAGE__->table('jobs');
 __PACKAGE__->add_columns(
     id => {
@@ -47,5 +49,10 @@ __PACKAGE__->belongs_to(worker => 'Schema::Result::Workers', 'worker_id');
 
 __PACKAGE__->add_unique_constraint(constraint_name => [ qw/name/ ]);
 
+sub sqlt_deploy_hook {
+    my ($self, $sqlt_table) = @_;
+
+    db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
+}
 
 1;
