@@ -29,3 +29,6 @@ install -m 644 systemd/openqa-webui.service "$DESTDIR"/usr/lib/systemd/system
 install -m 755 systemd/systemd-openqa-generator "$DESTDIR"/usr/lib/systemd/system-generators
 #
 install -D -m 640 /dev/null "$DESTDIR"/var/lib/openqa/db/db.sqlite
+# install openQA apparmor profile
+install -d -m 755 "$DESTDIR"/etc/apparmor.d
+install -m 644 profiles/apparmor.d/usr.share.openqa.script.openqa "$DESTDIR"/etc/apparmor.d

@@ -1,0 +1,33 @@
+# ------------------------------------------------------------------
+#
+#    Copyright (C) 2014 SUSE
+#
+#    This program is free software; you can redistribute it and/or
+#    modify it under the terms of version 2 of the GNU General Public
+#    License published by the Free Software Foundation.
+#
+# ------------------------------------------------------------------
+
+#include <tunables/global>
+
+/usr/share/openqa/script/openqa {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+  #include <abstractions/perl>
+
+
+
+  /usr/bin/perl ix,
+  /usr/share/openqa/lib/** r,
+  /usr/share/openqa/script/openqa r,
+  /usr/share/openqa/templates/ r,
+  /usr/share/openqa/templates/** r,
+  /var/lib/openqa/db/ r,
+  /var/lib/openqa/db/db.sqlite rwk,
+  /var/lib/openqa/db/db.sqlite-journal rw,
+  /var/lib/openqa/pool/ r,
+  /var/lib/openqa/pool/** rwk,
+  /var/lib/openqa/testresults/ r,
+  /var/lib/openqa/testresults/*/** rwk,
+
+}
