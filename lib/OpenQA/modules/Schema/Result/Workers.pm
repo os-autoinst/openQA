@@ -7,6 +7,7 @@ __PACKAGE__->table('workers');
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
+        is_auto_increment => 1,
     },
     host => {
         data_type => 'text',

@@ -7,6 +7,7 @@ __PACKAGE__->table('jobs');
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
+        is_auto_increment => 1,
     },
     name => {
         data_type => 'text',
@@ -14,9 +15,12 @@ __PACKAGE__->add_columns(
     },
     state_id => {
         data_type => 'integer',
+        is_foreign_key => 1,
+        default_value => 0,
     },
     priority => {
         data_type => 'integer',
+        default_value => 50,
     },
     result => {
         data_type => 'text',
@@ -24,6 +28,10 @@ __PACKAGE__->add_columns(
     },
     worker_id => {
         data_type => 'integer',
+        is_foreign_key => 1,
+        # FIXME: get rid of worker 0
+        default_value => 0,
+#        is_nullable => 1,
     },
     t_started => {
         data_type => 'timestamp',
@@ -40,10 +48,12 @@ __PACKAGE__->add_columns(
     },
     t_updated => {
         data_type => 'timestamp',
+        is_nullable => 1,
     },
 );
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(settings => 'Schema::Result::JobSettings', 'job_id');
+__PACKAGE__->has_many(properties => 'Schema::Result::JobProperties', 'job_id');
 __PACKAGE__->belongs_to(state => 'Schema::Result::JobStates', 'state_id');
 __PACKAGE__->belongs_to(worker => 'Schema::Result::Workers', 'worker_id');
 

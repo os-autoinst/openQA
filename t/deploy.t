@@ -8,14 +8,9 @@ use Test::More;
 
 use openqa ();
 
-use Schema::Schema; 
-
 unlink $openqa::dbfile;
 
-my $schema = Schema->connect({
-    dsn => "dbi:SQLite:dbname=$openqa::dbfile",
-    on_connect_call => "use_foreign_keys",
-});
+my $schema = openqa::connect_db();
 
 my $f = 'Schema-1-SQLite.sql';
 my $d = 't/schema';

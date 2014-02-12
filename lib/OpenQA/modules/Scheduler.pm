@@ -11,7 +11,6 @@ use Data::Dump qw/pp/;
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use Schema::Schema; 
 use openqa ();
 
 use Carp;
@@ -29,11 +28,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
     );
 
 
-my $schema = Schema->connect({
-    dsn => "dbi:SQLite:dbname=$openqa::dbfile",
-    on_connect_call => "use_foreign_keys",
-});
-
+my $schema = openqa::connect_db();
 
 =item _hashref()
 

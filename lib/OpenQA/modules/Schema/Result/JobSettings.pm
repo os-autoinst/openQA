@@ -7,6 +7,7 @@ __PACKAGE__->table('job_settings');
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
+        is_auto_increment => 1,
     },
     key => {
         data_type => 'text',
@@ -16,6 +17,7 @@ __PACKAGE__->add_columns(
     },
     job_id => {
         data_type => 'integer',
+        is_foreign_key => 1,
     },
     t_created => {
         data_type => 'timestamp',
@@ -23,11 +25,21 @@ __PACKAGE__->add_columns(
     },
     t_updated => {
         data_type => 'timestamp',
-        default_value => 'datetime("now")',
+        is_nullable => 1,
     },
 );
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->belongs_to(job => 'Schema::Result::Jobs', 'job_id');
+__PACKAGE__->belongs_to(
+    "job",
+    "Schema::Result::Jobs",
+    { 'foreign.id' => "self.job_id" },
+    {
+        is_deferrable => 1,
+        join_type     => "LEFT",
+        on_delete     => "CASCADE",
+        on_update     => "CASCADE",
+    },
+);
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;

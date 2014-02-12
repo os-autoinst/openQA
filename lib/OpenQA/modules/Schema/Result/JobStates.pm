@@ -5,6 +5,7 @@ __PACKAGE__->table('job_states');
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
+        is_auto_increment => 1,
     },
     name => {
         data_type => 'text',

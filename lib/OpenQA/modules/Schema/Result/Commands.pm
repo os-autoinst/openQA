@@ -7,6 +7,7 @@ __PACKAGE__->table('commands');
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
+        is_auto_increment => 1,
     },
     command => {
         data_type => 'text',

@@ -16,6 +16,9 @@ $localstatedir $dbfile
 &sanitize_testname
 &parse_testname
 );
+
+@EXPORT_OK = qw/connect_db/;
+
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
 use File::Basename;
@@ -528,6 +531,16 @@ sub sanitize_testname($)
 	$name =~ s/[^a-zA-Z0-9._+-]//g;
 	return undef unless $name =~ /^[a-zA-Z]/;
 	return $name;
+}
+
+sub connect_db
+{
+    use Schema::Schema;
+    my $schema = Schema->connect({
+	    dsn => "dbi:SQLite:dbname=$dbfile",
+	    on_connect_call => "use_foreign_keys",
+	}) or die "can't conncect db: $!\n";
+    return $schema;
 }
 
 package openqa::distri;

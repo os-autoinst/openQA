@@ -7,8 +7,18 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use openqa;
 
-use Test::Simple tests => 27;
+use Test::More tests => 27;
 
+sub nots
+{
+  my $h = shift;
+  my @ts = @_;
+  unshift @ts, 't_updated', 't_created';
+  for (@ts) {
+    delete $h->{$_};
+  }
+  return $h;
+}
 
 # Testing worker_register and worker_get
 # New worker
@@ -73,7 +83,7 @@ ok($job_id == 1, "job_create");
 unlink $iso;
 
 my $new_job = Scheduler::job_get($job_id);
-ok(pp($job) eq pp($new_job), "job_get");
+is_deeply($job, $new_job, "job_get");
 
 
 # Testing list_jobs
@@ -206,11 +216,8 @@ my %command = (
 my $command_id = Scheduler::command_enqueue(%args);
 my $commands = Scheduler::list_commands();
 ok($command_id == 1 && @$commands == 1, "one command listed");
-my $ret = $commands->[0];
-delete $ret->{t_updated};
-delete $ret->{t_created};
-delete $ret->{t_processed};
-ok(pp($ret) eq pp(\%command),  "command entered correctly");
+
+is_deeply(nots($commands->[0], 't_processed'), \%command,  "command entered correctly");
 
 
 # Testing command_get

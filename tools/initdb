@@ -1,8 +1,13 @@
-#!/bin/bash
-set -e
-: ${DESTDIR:=/}
-d=$DESTDIR/var/lib/openqa/db
-mkdir -p $d
-rm -f $d/db.sqlite
-echo .quit | sqlite3 -init ${0%/*}/db.sql $d/db.sqlite
-chown geekotest $d $d/db.sqlite
+#!/usr/bin/perl -w
+
+BEGIN { unshift @INC, 'lib', 'lib/OpenQA/modules'; }
+
+use strict;
+
+use openqa ();
+
+use Schema::Schema;
+
+my $schema = openqa::connect_db();
+
+$schema->deploy({ add_drop_table => 1 });
