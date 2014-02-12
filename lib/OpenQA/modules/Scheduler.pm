@@ -66,26 +66,22 @@ sub worker_register {
 
     my $worker = $schema->resultset("Workers")->search({
 	host => $host,
-	instance => $instance,
+	instance => int($instance),
     })->first;
 
-    my $now = "datetime('now')";
     if ($worker) { # worker already known. Update fields and return id
-	$worker->update({
-	    seen => \$now,
-	});
+	$worker->update({ t_updated => 0 });
     } else {
 	$worker = $schema->resultset("Workers")->create({
 	    host => $host,
 	    instance => $instance,
 	    backend => $backend,
-	    seen => \$now,
 	});
     }
 
     # maybe worker died, delete pending commands and reset running jobs
     $worker->jobs->update_all({
-	state_id => $schema->resultset("JobState")->search({ name => "scheduled" })->single->id,
+	state_id => $schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
     });
     $schema->resultset("Commands")->search({
 	worker_id => $worker->id
@@ -125,8 +121,7 @@ sub _validate_workerid($) {
 
 sub _seen_worker($) {
     my $id = shift;
-    my $now = "datetime('now')";
-    $schema->resultset("Workers")->find($id)->update({ seen => \$now });
+    $schema->resultset("Workers")->find($id)->update({ t_updated => 0 });
 }
 
 
@@ -226,7 +221,7 @@ sub _job_get($) {
     my $job = $schema->resultset("Jobs")->search($search)->first;
     my $job_hashref;
     if ($job) {
-	$job_hashref = _hashref($job, qw/ id name priority result worker_id start_date finish_date /);
+	$job_hashref = _hashref($job, qw/ id name priority result worker_id t_started t_finished /);
 	$job_hashref->{state} = $job->state->name;
 	_job_fill_settings($job_hashref);
     }
@@ -249,12 +244,12 @@ sub list_jobs {
 
     my %search = ();
     if ($args{state}) {
-	my $states_rs = $schema->resultset("JobState")->search({ name => [split(',', $args{state})] });
+	my $states_rs = $schema->resultset("JobStates")->search({ name => [split(',', $args{state})] });
 	$search{state_id} = { -in => $states_rs->get_column("id")->as_query }
     }
     if ($args{finish_after}) {
-    	my $param = "datetime($args{finish_after})";
-    	$search{finish_date} = { '>' => \$param }
+        my $param = "datetime($args{finish_after})";
+        $search{t_finished} = { '>' => \$param }
     }
     if ($args{build}) {
         my $param = sprintf("%%-Build%s-%%", $args{build});
@@ -264,7 +259,7 @@ sub list_jobs {
 
     my @results = ();
     for my $job (@jobs) {
-	my $j = _hashref($job, qw/ id name priority result worker_id start_date finish_date /);
+	my $j = _hashref($job, qw/ id name priority result worker_id t_started t_finished /);
 	$j->{state} = $job->state->name;
 	push @results, $j;
     }
@@ -285,12 +280,12 @@ sub job_grab {
     while (1) {
 	my $now = "datetime('now')";
 	$result = $schema->resultset("Jobs")->search({
-	    state_id => $schema->resultset("JobState")->search({ name => "scheduled" })->single->id,
+	    state_id => $schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
 	    worker_id => 0,
 	})->get_column("pritority")->max_rs->update({
-	    state_id => $schema->resultset("JobState")->search({ name => "running" })->single->id,
+	    state_id => $schema->resultset("JobStates")->search({ name => "running" })->single->id,
 	    worker_id => $workerid,
-	    start_date => \$now,
+	    t_started => \$now,
 	});
 
 	last if $result != 0;
@@ -304,7 +299,7 @@ sub job_grab {
     my $job_hashref;
     $job_hashref = _job_get({
 	id => $schema->resultset("Jobs")->search({
-		  state_id => $schema->resultset("JobState")->search({ name => "running" })->single->id,
+		  state_id => $schema->resultset("JobStates")->search({ name => "running" })->single->id,
 		  worker_id => $workerid,
 	      })->single->id,
     }) if $result != 0;
@@ -322,10 +317,10 @@ sub job_set_scheduled {
     my $jobid = shift;
 
     my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
-	state_id => $schema->resultset("JobState")->search({ name => "scheduled" })->single->id,
+	state_id => $schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
 	worker_id => 0,
-	start_date => undef,
-	finish_date => undef,
+	t_started => undef,
+	t_finished => undef,
 	result => undef,
     });
     return $r;
@@ -344,9 +339,9 @@ sub job_set_done {
 
     my $now = "datetime('now')";
     my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
-	state_id => $schema->resultset("JobState")->search({ name => "done" })->single->id,
+	state_id => $schema->resultset("JobStates")->search({ name => "done" })->single->id,
 	worker_id => 0,
-	finish_date => \$now,
+	t_finished => \$now,
 	result => $result,
     });
     return $r;
@@ -361,7 +356,7 @@ sub job_set_cancel {
     my $jobid = shift;
 
     my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
-	state_id => $schema->resultset("JobState")->search({ name => "cancelled" })->single->id,
+	state_id => $schema->resultset("JobStates")->search({ name => "cancelled" })->single->id,
 	worker_id => 0,
     });
     return $r;
@@ -381,7 +376,7 @@ sub job_set_waiting {
     my $jobid = shift;
 
     my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
-	state_id => $schema->resultset("JobState")->search({ name => "waiting" })->single->id,
+	state_id => $schema->resultset("JobStates")->search({ name => "waiting" })->single->id,
     });
     return $r;
 }
@@ -394,12 +389,12 @@ mark job as running. No error check. Meant to be called from worker!
 sub job_set_running {
     my $jobid = shift;
 
-    my $states_rs = $schema->resultset("JobState")->search({ name => ['cancelled', 'waiting'] });
+    my $states_rs = $schema->resultset("JobStates")->search({ name => ['cancelled', 'waiting'] });
     my $r = $schema->resultset("Jobs")->search({
 	id => $jobid,
         state_id => { -in => $states_rs->get_column("id")->as_query },
     })->update({
-	state_id => $schema->resultset("JobState")->search({ name => "running" })->single->id,
+	state_id => $schema->resultset("JobStates")->search({ name => "running" })->single->id,
     });
     return $r;
 }
@@ -517,7 +512,7 @@ sub _job_set_final_state($$$) {
 	} else {
 	    # XXX This do not make sense
 	    $job->update({
-		state_id => $schema->resultset("JobState")->search({ name => $statename })->single->id,
+		state_id => $schema->resultset("JobStates")->search({ name => $statename })->single->id,
 		worker_id => 0,
 	    });
 	}
@@ -585,13 +580,13 @@ sub iso_cancel_old_builds($) {
     my $pattern = shift;
 
     my $r = $schema->resultset("Jobs")->search({
-	state_id => $schema->resultset("JobState")->search({ name => "scheduled" })->single->id,
+	state_id => $schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
 	'settings.key' => "ISO",
 	'settings.value' => { like => $pattern },
     }, {
 	join => "settings",
     })->update({
-	state_id => $schema->resultset("JobState")->search({ name => "cancelled" })->single->id,
+	state_id => $schema->resultset("JobStates")->search({ name => "cancelled" })->single->id,
 	worker_id => 0,
     });
     return $r;

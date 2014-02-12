@@ -7,30 +7,29 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use openqa;
 
-use Test::Simple tests => 26;
+use Test::Simple tests => 27;
 
 
 # Testing worker_register and worker_get
 # New worker
-my $id = worker_register("host", "instance", "backend");
+my $id = worker_register("host", "1", "backend");
 ok($id == 1, "New worker registered");
 my $worker = worker_get($id);
 ok($worker->{id} == $id
    && $worker->{host} eq "host"
-   && $worker->{instance} eq "instance"
+   && $worker->{instance} eq "1"
    && $worker->{backend} eq "backend", "New worker_get");
 
 # Update worker
 sleep(1);
-my $id2 = worker_register("host", "instance", "backend");
-ok($id == $id2, "Old worker_register");
+my $id2 = worker_register("host", "1", "backend");
+ok($id == $id2, "Known worker_register");
 my $worker2 = worker_get($id2);
 ok($worker2->{id} == $id2
    && $worker2->{host} eq "host"
-   && $worker2->{instance} eq "instance"
+   && $worker2->{instance} eq "1"
    && $worker2->{backend} eq "backend"
-   && $worker2->{seen} ne $worker->{seen}, "Old worker_get");
-
+   && $worker2->{t_updated} ne $worker->{t_updated}, "Known worker_get");
 
 # Testing list_workers
 my $workers_ref = list_workers();
@@ -49,7 +48,7 @@ my %settings = (
     );
 
 my $job = {
-    finish_date => undef,
+    t_finished => undef,
     id => 1,
     name => "NAME",
     priority => 50,
@@ -62,7 +61,7 @@ my $job = {
 	KVM => "KVM",
 	NAME => "NAME",
     },
-    start_date => undef,
+    t_started => undef,
     state => "scheduled",
     worker_id => 0,
     };
@@ -80,12 +79,12 @@ ok(pp($job) eq pp($new_job), "job_get");
 # Testing list_jobs
 my $jobs = [
     {
-	finish_date => undef,
+	t_finished => undef,
 	id => 1,
 	name => "NAME",
 	priority => 50,
 	result => undef,
-	start_date => undef,
+	t_started => undef,
 	state => "scheduled",
 	worker_id => 0,
     },
@@ -108,7 +107,7 @@ my %args = (
     workerid => $worker->{id},
     );
 $job = job_grab(%args);
-ok(pp($job->{settings}) eq pp(\%settings) && length $job->{start_date} == 19, "job_grab");
+ok(pp($job->{settings}) eq pp(\%settings) && length $job->{t_started} == 19, "job_grab");
 
 
 # # Testing when a worker register for second time and had pending jobs
@@ -206,9 +205,12 @@ my %command = (
     );
 my $command_id = Scheduler::command_enqueue(%args);
 my $commands = Scheduler::list_commands();
-ok($command_id == 1
-   && scalar @$commands == 1
-   && pp($commands->[0]) eq pp(\%command),  "command_enqueue and list_commands");
+ok($command_id == 1 && @$commands == 1, "one command listed");
+my $ret = $commands->[0];
+delete $ret->{t_updated};
+delete $ret->{t_created};
+delete $ret->{t_processed};
+ok(pp($ret) eq pp(\%command),  "command entered correctly");
 
 
 # Testing command_get
@@ -228,4 +230,3 @@ unlink $iso;
 $result = Scheduler::iso_cancel_old_builds('ISO');
 $new_job = Scheduler::job_get($job_id);
 ok($result == 1 && $new_job->{state} eq "cancelled" && $new_job->{worker_id} == 0, "Match iso_old_builds");
-

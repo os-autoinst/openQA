@@ -1,5 +1,7 @@
-package Schema::Result::JobSettings;
+package Schema::Result::JobProperties;
 use base qw/DBIx::Class::Core/;
+
+# stuff like distro, version, arch etc
 
 __PACKAGE__->table('job_settings');
 __PACKAGE__->add_columns(
@@ -21,7 +23,7 @@ __PACKAGE__->add_columns(
     },
     t_updated => {
         data_type => 'timestamp',
-        default_value => 'datetime("now")',
+        is_nullable => 1,
     },
 );
 __PACKAGE__->set_primary_key('id');
