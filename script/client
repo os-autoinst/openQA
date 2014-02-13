@@ -1,0 +1,87 @@
+#!/usr/bin/perl
+
+=head1 boilerplate
+
+client - test openqa json interface
+
+=head1 SYNOPSIS
+
+client [OPTIONS] PATH
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--host> HOST
+
+connect to specified host
+
+=item B<--commands>
+
+show available commands
+
+=item B<--help, -h>
+
+print help
+
+=back
+
+=head1 DESCRIPTION
+
+lorem ipsum ...
+
+=cut
+
+use Data::Dump;
+use Mojo::UserAgent;
+use Mojo::URL;
+use Getopt::Long;
+Getopt::Long::Configure("no_ignore_case");
+
+my %options;
+
+sub usage($) {
+	my $r = shift;
+	eval "use Pod::Usage; pod2usage($r);";
+	if ($@) {
+		die "cannot display help, install perl(Pod::Usage)\n";
+	}
+}
+
+GetOptions(
+	\%options,
+	"host=s",
+    "params:s",
+    "method:s",
+	"verbose|v",
+	"help|?",
+) or usage(1);
+
+usage(1) unless @ARGV;
+usage(1) unless exists $options{'host'};
+
+$options{'method'} = 'get' unless $options{'method'};
+
+my $ua = Mojo::UserAgent->new;
+my $url;
+if ($options{'host'} !~ '/') {
+	$url = Mojo::URL->new();
+	$url->host($options{'host'});
+	$url->scheme('http');
+} else {
+	$url = Mojo::URL->new($options{'host'});
+}
+# Relative paths are appended to the existing one
+$url->path('api/v1/');
+$url->path($ARGV[0] =~ s/^\///r);
+$url->query($options{'params'}) if $options{'params'};
+
+my $method = lc($options{'method'});
+my $res = $ua->$method($url)->res;
+if ($res->code == 200) {
+    dd($res->json || $res->body);
+} else {
+    print $res->code."\n";
+}
+
+1;

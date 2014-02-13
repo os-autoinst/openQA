@@ -1,14 +1,5 @@
 package Makefile;
 
-BEGIN {
-    my $baseclass;
-    for my $i (qw/JSON::RPC::Legacy::Procedure JSON::RPC::Procedure/) {
-        eval "use base qw($i);";
-        $baseclass = $i unless $@;
-    }
-    die $@ unless $baseclass;
-}
-
 use strict;
 use Data::Dump qw/pp/;
 use Clone qw/clone/;

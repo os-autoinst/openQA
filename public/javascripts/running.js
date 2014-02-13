@@ -98,12 +98,11 @@ function toggleInteractive() {
 }
 
 function sendCommand(command) {
-	if (window.testStatus.workerid == null) return false;
-	new Ajax.Request("/rpc", {
+	var wid = window.testStatus.workerid;
+	if (wid == null) return false;
+	new Ajax.Request("/api/v1/workers/" + wid + "/commands", {
 		method: "post",
-		parameters: { 	url: "http://" + window.location.hostname + "/jsonrpc",
-				method: "command_enqueue",
-				params: [window.testStatus.workerid, command].toJSON() }});
+		parameters: { command: command }});
 }
 
 function scrolldown() {

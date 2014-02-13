@@ -1,7 +1,6 @@
 package OpenQA;
 use Mojo::Base 'Mojolicious';
 use OpenQA::Helpers;
-use OpenQA::Jsonrpc;
 
 use Config::IniFiles;
 
@@ -76,29 +75,6 @@ sub startup {
   $asset_r->get('/')->name('step')->to(action => 'view');
 
   $r->get('/builds/#buildid')->name('build')->to('build#show');
-  $r->post('/rpc')->name('rpc')->to('rpc#call');
-#  $r->post('/jsonrpc/:method')->name('jsonrpc')->to('jsonrpc#call');
-
-  $self->plugin(
-    'json_rpc_dispatcher',
-    services => {
-      '/jsonrpc'  => OpenQA::Jsonrpc->new,
-    },
-    exception_handler => sub {
-      my ( $dispatcher, $err, $m ) = @_;
-
-      # $dispatcher is the dispatcher Mojolicious::Controller object
-      # $err is $@ received from the exception
-      # $m is the MojoX::JSON::RPC::Dispatcher::Method object to be returned.
-
-      $dispatcher->app->log->error(qq{Internal error: $err});
-
-      # Fake invalid request
-      $m->invalid_request('Faking invalid request');
-      return;
-    }
-  );
-
 
   $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
 
@@ -106,6 +82,46 @@ sub startup {
   $r->get('/favicon.ico' => sub {my $c = shift; $c->render_static('favicon.ico') });
   # Default route
   $r->get('/')->name('index')->to('index#index');
+
+  ### JSON API starts here
+  my $api_r = $r->route('/api/v1')->to(namespace => 'OpenQA::API::V1');
+
+  # api/v1/jobs
+  $api_r->get('/jobs')->name('apiv1_jobs')->to('job#list'); # list_jobs
+  $api_r->post('/jobs')->name('apiv1_create_job')->to('job#create'); # job_create
+  my $job_r = $api_r->route('/jobs/:jobid', jobid => qr/\d+/);
+  $job_r->get('/')->name('apiv1_job')->to('job#show'); # job_get
+  $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy'); # job_delete
+  $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio'); # job_set_prio
+  $job_r->post('/result')->name('apiv1_job_result')->to('job#result'); # job_update_result
+  $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done'); # job_set_done
+  # job_set_scheduled, job_set_cancel, job_set_waiting, job_set_continue
+  my $command_r = $job_r->route('/set_:command', command => [qw(scheduled cancel waiting continue)]);
+  $command_r->post('/')->name('apiv1_set_command')->to('job#set_command');
+  # restart and cancel are valid both by job id or by job name (which is
+  # exactly the same, but with less restrictive format)
+  my $job_name_r = $api_r->route('/jobs/#name');
+  $job_r->post('/restart')->name('apiv1_restart_job')->to('job#restart'); # job_restart
+  $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel'); # job_cancel
+
+  # api/v1/workers
+  $api_r->get('/workers')->name('apiv1_workers')->to('worker#list'); # list_workers
+  $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create'); # worker_register
+  my $worker_r = $api_r->route('/workers/:workerid', workerid => qr/\d+/);
+  $worker_r->get('/')->name('apiv1_worker')->to('worker#show'); # worker_get
+  $worker_r->get('/commands/')->name('apiv1_commands')->to('command#list'); #command_get
+  $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create'); #command_enqueue
+  $worker_r->delete('/commands/:commandid')->name('apiv1_delete_command')->to('command#destroy'); #command_dequeue
+  $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab'); # job_grab
+
+  # api/v1/isos
+  $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create'); # iso_new
+  $api_r->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy'); # iso_delete
+  $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel'); # iso_cancel
+
+  # json-rpc methods not migrated to this api: echo, list_commands
+  ### JSON API ends here
+
 }
 
 1;

@@ -50,14 +50,14 @@ running workers
 
 To start the worker either use the provided systemd files (systemctl
 start openqa-worker.target will start as many workers as you have
-pool directories) or run tools/worker --instance X manually.
+pool directories) or run script/worker --instance X manually.
 If you did not install os-autoinst from packages make sure to pass --isotovideo
 to point to the checkout dir of isotovideo, not /usr/lib! It won't find the
 perl modules then.
 
 Place iso images you want to test in /var/lib/openqa/factory/iso/
 Then run
-/usr/share/openqa/tools/rpc.pl --host localhost iso_new FILE.ISO
+/usr/share/openqa/script/client --host localhost --method post --params "iso=FILE.ISO" isos
 
 Watch your workers (hopefully) picking up the jobs!
 
