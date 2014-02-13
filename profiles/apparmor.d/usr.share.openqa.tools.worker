@@ -1,0 +1,78 @@
+# ------------------------------------------------------------------
+#
+#    Copyright (C) 2014 SUSE
+#
+#    This program is free software; you can redistribute it and/or
+#    modify it under the terms of version 2 of the GNU General Public
+#    License published by the Free Software Foundation.
+#
+# ------------------------------------------------------------------
+
+#include <tunables/global>
+
+/usr/share/openqa/tools/worker {
+  #include <abstractions/base>
+  #include <abstractions/bash>
+  #include <abstractions/nameservice>
+  #include <abstractions/perl>
+
+  capability sys_ptrace,
+
+
+
+  /bin/bash r,
+  /dev/ r,
+  /dev/bus/usb/ r,
+  /dev/kvm rw,
+  /dev/tty rw,
+  /proc/*/stat r,
+  /proc/filesystems r,
+  /proc/meminfo r,
+  /proc/sys/vm/overcommit_memory r,
+  /sys/bus/usb/devices/ r,
+  /usr/bin/date rix,
+  /usr/bin/dirname rix,
+  /usr/bin/eatmydata rix,
+  /usr/bin/optipng rix,
+  /usr/bin/perl ix,
+  /usr/bin/qemu-img rix,
+  /usr/bin/rm rix,
+  /usr/lib/os-autoinst/tools/absolutize rix,
+  /usr/lib/os-autoinst/tools/isotovideo rix,
+  /usr/share/openqa/tools/worker r,
+  /usr/share/qemu/*.bin r,
+  /usr/share/qemu/*.rom r,
+  /usr/share/qemu/keymaps/* r,
+  /var/lib/openqa/factory/iso/** r,
+  /var/lib/openqa/pool/*/*.ppm rw,
+  /var/lib/openqa/pool/*/.locked wk,
+  /var/lib/openqa/pool/*/autoinst-log.txt rw,
+  /var/lib/openqa/pool/*/backend.run w,
+  /var/lib/openqa/pool/*/env.sh rw,
+  /var/lib/openqa/pool/*/hmp_socket w,
+  /var/lib/openqa/pool/*/job.json w,
+  /var/lib/openqa/pool/*/os-autoinst.pid w,
+  /var/lib/openqa/pool/*/qemu.pid w,
+  /var/lib/openqa/pool/*/qemuscreenshot/ rw,
+  /var/lib/openqa/pool/*/qemuscreenshot/* rw,
+  /var/lib/openqa/pool/*/qmp_socket w,
+  /var/lib/openqa/pool/*/raid/ rw,
+  /var/lib/openqa/pool/*/raid/* rw,
+  /var/lib/openqa/pool/*/runqemu w,
+  /var/lib/openqa/pool/*/serial0 rw,
+  /var/lib/openqa/pool/*/stderr.txt rw,
+  /var/lib/openqa/pool/*/testresults/ rw,
+  /var/lib/openqa/pool/*/testresults/*/ rw,
+  /var/lib/openqa/pool/*/testresults/*/* rwk,
+  /var/lib/openqa/pool/*/testresults/*/ulogs/ rw,
+  /var/lib/openqa/pool/*/video/ rw,
+  /var/lib/openqa/testresults/* wk,
+  /var/lib/openqa/testresults/*/ rw,
+  /var/lib/openqa/testresults/*/* rw,
+  /var/lib/openqa/testresults/*/ulogs/ w,
+  /var/lib/os-autoinst/tests/*/* r,
+  /var/lib/os-autoinst/tests/*/*/ r,
+  /var/lib/os-autoinst/tests/*/*/* r,
+  /var/lib/os-autoinst/tests/opensuse/needles/* r,
+
+}
