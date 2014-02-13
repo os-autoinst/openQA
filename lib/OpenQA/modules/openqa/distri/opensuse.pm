@@ -405,14 +405,19 @@ sub generate_jobs
                 $applies = 1;
             }
 
-	    next unless $applies;
+            next unless $applies;
 
             # set defaults here:
             my %settings = ( ISO => $iso,
-                             NAME => join('-', @{$params}{qw(distri version flavor arch build)}, $run),
-                             DISTRI => lc($params->{distri}),
-                             VERSION => $params->{version},
+                             TEST => $run,
                              DESKTOP => 'kde' );
+
+            for (keys %$params) {
+                $settings{uc $_} = $params->{$_};
+            }
+
+            $settings{DISTRI} = lc $settings{DISTRI} if $settings{DISTRI};
+
 
             if ($config->{suse_mirror}) {
                 my $repodir = $iso;

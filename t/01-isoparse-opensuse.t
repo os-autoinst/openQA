@@ -6,7 +6,7 @@ use strict;
 use Data::Dump qw/pp dd/;
 use openqa::distri::opensuse qw(parse_iso);
 
-use Test::Simple tests => 12;
+use Test::More tests => 12;
 
 my @testdata = (
     {
@@ -117,9 +117,7 @@ my @testdata = (
 for my $t (@testdata) {
     my $params = openqa::distri::opensuse::parse_iso($t->{iso});
     if ($t->{params}) {
-        my $r = pp($params) eq pp($t->{params});
-        ok($r, $t->{iso});
-        dd $params unless $r;
+        is_deeply($params, $t->{params}, $t->{iso});
     } else {
         ok(!defined $params, $t->{iso});
     }

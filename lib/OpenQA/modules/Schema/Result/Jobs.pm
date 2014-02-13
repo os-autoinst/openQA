@@ -9,7 +9,7 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
         is_auto_increment => 1,
     },
-    name => {
+    slug => {
         data_type => 'text',
         is_nullable => 1,
     },
@@ -22,9 +22,10 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
         default_value => 50,
     },
-    result => {
-        data_type => 'text',
-        is_nullable => 1,
+    result_id => {
+        data_type => 'integer',
+        default_value => 0,
+	is_foreign_key => 1,
     },
     worker_id => {
         data_type => 'integer',
@@ -33,6 +34,14 @@ __PACKAGE__->add_columns(
         default_value => 0,
 #        is_nullable => 1,
     },
+    test => {
+        data_type => 'text',
+    },
+    test_branch => {
+        data_type => 'text',
+        is_nullable => 1,
+    },
+
     t_started => {
         data_type => 'timestamp',
         is_nullable => 1,
@@ -53,16 +62,46 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(settings => 'Schema::Result::JobSettings', 'job_id');
-__PACKAGE__->has_many(properties => 'Schema::Result::JobProperties', 'job_id');
 __PACKAGE__->belongs_to(state => 'Schema::Result::JobStates', 'state_id');
 __PACKAGE__->belongs_to(worker => 'Schema::Result::Workers', 'worker_id');
+__PACKAGE__->belongs_to(result => 'Schema::Result::JobResults', 'result_id');
 
-__PACKAGE__->add_unique_constraint(constraint_name => [ qw/name/ ]);
+__PACKAGE__->add_unique_constraint(constraint_name => [ qw/slug/ ]);
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
 
     db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
+}
+
+sub name
+{
+    my $self = shift;
+    return $self->slug if $self->slug;
+
+    if (!$self->{_name}) {
+        my $job_settings = $self->settings;
+        my @a;
+
+        my %s;
+        while(my $js = $job_settings->next) {
+            $s{lc $js->key} = $js->value;
+        }
+
+        my %formats = (
+            build => 'Build%s',
+        );
+
+        for my $c (qw/distri version media arch build test/) {
+            next unless $s{$c};
+            push @a, sprintf(($formats{$c}||'%s'), $s{$c});
+        }
+        $self->{_name} = join('-', @a);
+        if ($self->test_branch) {
+            $self->{_name} .= '@'.$self->test_branch;
+        }
+    }
+    return $self->{_name};
 }
 
 1;

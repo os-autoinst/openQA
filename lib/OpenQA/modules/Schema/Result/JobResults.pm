@@ -1,7 +1,7 @@
-package Schema::Result::JobStates;
+package Schema::Result::JobResults;
 use base qw/DBIx::Class::Core/;
 
-__PACKAGE__->table('job_states');
+__PACKAGE__->table('job_results');
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
@@ -13,6 +13,6 @@ __PACKAGE__->add_columns(
    );
 
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->has_many(jobs => 'Schema::Result::Jobs', 'state_id');
+__PACKAGE__->has_many(jobs => 'Schema::Result::Jobs', 'result_id');
 
 1;

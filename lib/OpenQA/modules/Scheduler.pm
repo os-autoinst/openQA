@@ -132,8 +132,8 @@ create a job
 sub job_create {
     my %settings = @_;
 
-    for my $i (qw/DISTRI ISO DESKTOP/) {
-	die "need at least one $i key\n" unless exists $settings{$i};
+    for my $i (qw/DISTRI ISO DESKTOP TEST/) {
+	die "need one $i key\n" unless exists $settings{$i};
     }
 
     for my $i (qw/ISO NAME/) {
@@ -146,27 +146,12 @@ sub job_create {
 	die "ISO does not exist\n";
     }
 
-    unless ($settings{NAME}) {
-	my $ctx = Digest::MD5->new;
-	for my $k (sort keys %settings) {
-	    $ctx->add($settings{$k});
-	}
-
-	my $name = $settings{ISO};
-	$name =~ s/\.iso$//;
-	$name =~ s/-Media$//;
-	$name .= '-';
-	$name .= $settings{DESKTOP};
-	$name .= '_'.$settings{VIDEOMODE} if $settings{VIDEOMODE};
-	$name .= '_'.substr($ctx->hexdigest, 0, 6);
-	$settings{NAME} = $name;
-    }
-
     unless (-e sprintf("%s/%s/factory/iso/%s",
 		       $openqa::basedir, $openqa::prj, $settings{ISO})) {
 	die "ISO does not exist\n";
     }
 
+    # FIXME: distro specific
     unless ($settings{ISO_MAXSIZE}) {
 	my $maxsize = 737_280_000;
 	if ($settings{ISO} =~ /-DVD/) {
@@ -189,13 +174,19 @@ sub job_create {
 	push @settings, { key => $k, value => $v };
     }
 
-    my $njobs = $schema->resultset("Jobs")->search({ name => $settings{'NAME'} })->count;
-    return 0 if $njobs;
-
-    my $job = $schema->resultset("Jobs")->create({
-	name => $settings{'NAME'},
+    my %new_job_args = (
 	settings => \@settings,
-    });
+	test => $settings{'TEST'},
+    );
+
+    if ($settings{NAME}) {
+	    my $njobs = $schema->resultset("Jobs")->search({ slug => $settings{'NAME'} })->count;
+	    return 0 if $njobs;
+
+	    $new_job_args{slug} = $settings{'NAME'};
+    }
+
+    my $job = $schema->resultset("Jobs")->create(\%new_job_args);
 
     return $job->id;
 }
@@ -206,7 +197,7 @@ sub job_get($) {
     if ($value =~ /^\d+$/) {
 	return _job_get({ id => $value });
     }
-    return _job_get({name => $value });
+    return _job_get({slug => $value });
 }
 
 # XXX TODO: Do not expand the Job
@@ -216,8 +207,10 @@ sub _job_get($) {
     my $job = $schema->resultset("Jobs")->search($search)->first;
     my $job_hashref;
     if ($job) {
-	$job_hashref = _hashref($job, qw/ id name priority result worker_id t_started t_finished /);
+	$job_hashref = _hashref($job, qw/ id name priority worker_id t_started t_finished /);
+	# XXX: use +columns in query above?
 	$job_hashref->{state} = $job->state->name;
+	$job_hashref->{result} = $job->result->name;
 	_job_fill_settings($job_hashref);
     }
     return $job_hashref;
@@ -256,6 +249,7 @@ sub list_jobs {
     for my $job (@jobs) {
 	my $j = _hashref($job, qw/ id name priority result worker_id t_started t_finished /);
 	$j->{state} = $job->state->name;
+	$j->{result} = $job->result->name;
 	push @results, $j;
     }
 
@@ -316,7 +310,7 @@ sub job_set_scheduled {
 	worker_id => 0,
 	t_started => undef,
 	t_finished => undef,
-	result => undef,
+	result_id => 0,
     });
     return $r;
 }
@@ -330,14 +324,16 @@ mark job as done. No error check. Meant to be called from worker!
 sub job_set_done {
     my %args = @_;
     my $jobid = int($args{jobid});
-    my $result = $args{result};
+    my $result = $schema->resultset("JobResults")->search({ name => $args{result}})->single;
+
+    die "invalid result string" unless $result;
 
     my $now = "datetime('now')";
     my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
 	state_id => $schema->resultset("JobStates")->search({ name => "done" })->single->id,
 	worker_id => 0,
 	t_finished => \$now,
-	result => $result,
+	result_id => $result->id,
     });
     return $r;
 }
@@ -418,9 +414,11 @@ sub job_update_result {
     my %args = @_;
 
     my $id = int($args{jobid});
-    my $result = $args{result};
+    my $result = $schema->resultset("JobResults")->search({ name => $args{result}})->single;
 
-    my $r = $schema->resultset("Jobs")->search({ id => $id })->update({ result => $result });
+    my $r = $schema->resultset("Jobs")->search({ id => $id })->update({
+		    result_id => $result->id
+	    });
 
     return $r;
 }
@@ -464,7 +462,7 @@ sub _jobs_find_by_iso($) {
 sub _job_find_by_name($) {
     my $name = shift;
 
-    my $jobs = $schema->resultset("Jobs")->search({ name => $name });
+    my $jobs = $schema->resultset("Jobs")->search({ slug => $name });
     return $jobs;
 }
 

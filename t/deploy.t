@@ -12,7 +12,7 @@ unlink $openqa::dbfile;
 
 my $schema = openqa::connect_db();
 
-my $f = 'Schema-1-SQLite.sql';
+my $f = sprintf('Schema-%s-SQLite.sql', $Schema::VERSION);
 my $d = 't/schema';
 
 unlink("$d/$f");

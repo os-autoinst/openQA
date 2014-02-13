@@ -7,7 +7,7 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use openqa;
 
-use Test::More tests => 27;
+use Test::More tests => 33;
 
 sub nots
 {
@@ -19,6 +19,10 @@ sub nots
   }
   return $h;
 }
+
+my $current_jobs = list_jobs();
+is_deeply($current_jobs , [], "assert database has no jobs to start with")
+    or BAIL_OUT("database not properly initialized");
 
 # Testing worker_register and worker_get
 # New worker
@@ -49,10 +53,13 @@ ok(scalar @$workers_ref == 2
 
 # Testing job_create and job_get
 my %settings = (
-    DISTRI => 'DISTRI',
-    ISO => 'ISO',
+    DISTRI => 'Unicorn',
+    FLAVOR => 'pink',
+    VERSION => '42',
+    BUILD => '666',
+    TEST => 'rainbow',
+    ISO => 'whatever.iso',
     DESKTOP => 'DESKTOP',
-    NAME => 'NAME',
     KVM => 'KVM',
     ISO_MAXSIZE => 1,
     );
@@ -60,16 +67,19 @@ my %settings = (
 my $job = {
     t_finished => undef,
     id => 1,
-    name => "NAME",
+    name => 'Unicorn-42-Build666-rainbow',
     priority => 40,
-    result => undef,
+    result => 'none',
     settings => {
-	DESKTOP => "DESKTOP",
-	DISTRI => "DISTRI",
-	ISO => "ISO",
-	ISO_MAXSIZE => 1,
-	KVM => "KVM",
-	NAME => "NAME",
+        DESKTOP => "DESKTOP",
+        DISTRI => 'Unicorn',
+        FLAVOR => 'pink',
+        VERSION => '42',
+        BUILD => '666',
+        TEST => 'rainbow',
+        ISO => 'whatever.iso',
+        ISO_MAXSIZE => 1,
+        KVM => "KVM",
     },
     t_started => undef,
     state => "scheduled",
@@ -79,50 +89,50 @@ my $job = {
 my $iso = sprintf("%s/%s/factory/iso/%s", $openqa::basedir, $openqa::prj, $settings{ISO});
 open my $fh, ">", $iso;
 my $job_id = Scheduler::job_create(%settings);
-ok($job_id == 1, "job_create");
+is($job_id, 1, "job_create");
 my %settings2 = %settings;
 $settings2{NAME} = "OTHER NAME";
 my $job2_id = Scheduler::job_create(%settings2);
-Scheduler::job_set_prio(jobid => $job_id, prio => 40);
 unlink $iso;
 
+Scheduler::job_set_prio(jobid => $job_id, prio => 40);
 my $new_job = Scheduler::job_get($job_id);
-is_deeply($job, $new_job, "job_get");
+is_deeply($new_job, $job, "job_get");
 
 # Testing list_jobs
 my $jobs = [
     {
-	t_finished => undef,
-	id => 1,
-	name => "NAME",
-	priority => 40,
-	result => undef,
-	t_started => undef,
-	state => "scheduled",
-	worker_id => 0,
+        t_finished => undef,
+        id => 1,
+        name => 'Unicorn-42-Build666-rainbow',
+        priority => 40,
+        result => 'none',
+        t_started => undef,
+        state => "scheduled",
+        worker_id => 0,
     },
     {
-	t_finished => undef,
-	id => 2,
-	name => "OTHER NAME",
-	priority => 50,
-	result => undef,
-	t_started => undef,
-	state => "scheduled",
-	worker_id => 0,
+        t_finished => undef,
+        id => 2,
+        name => "OTHER NAME",
+        priority => 50,
+        result => 'none',
+        t_started => undef,
+        state => "scheduled",
+        worker_id => 0,
     },
-    ];
+];
 
-my $current_jobs = list_jobs();
-ok(pp($current_jobs) eq pp($jobs), "All list_jobs");
+$current_jobs = list_jobs();
+is_deeply($current_jobs , $jobs, "All list_jobs");
 
 my %state = (state => "scheduled");
 $current_jobs = list_jobs(%state);
-ok(pp($current_jobs) eq pp($jobs), "All list_jobs with state scheduled");
+is_deeply($current_jobs, $jobs, "All list_jobs with state scheduled");
 
 %state = (state => "running");
 $current_jobs = list_jobs(%state);
-ok(pp($current_jobs) eq "[]", "All list_jobs with state running");
+is_deeply($current_jobs, [], "All list_jobs with state running");
 
 
 # Testing job_grab
@@ -143,19 +153,21 @@ ok(pp($job->{settings}) eq pp(\%settings) && length $job->{t_started} == 19 && s
 # Testing job_set_scheduled
 $job = Scheduler::job_get($job_id);
 ok($job->{state} eq "running", "Job is in running state");   # After job_grab the job is in running state.
+
 my $result = Scheduler::job_set_scheduled($job_id);
 $job = Scheduler::job_get($job_id);
 ok($result == 1&& $job->{state} eq "scheduled", "job_set_scheduled");
 
-
 # Testing job_set_done
 %args = (
     jobid => $job_id,
-    result => 0,
+    result => 'passed',
     );
 $result = Scheduler::job_set_done(%args);
+ok($result == 1, "job_set_done");
 $job = Scheduler::job_get($job_id);
-ok($result == 1 && $job->{state} eq "done", "job_set_done");
+is($job->{state}, "done", "job_set_done changed state");
+is($job->{result}, "passed", "job_set_done changed result");
 
 
 # Testing job_set_cancel
@@ -192,11 +204,12 @@ ok($result == 1 && $job->{priority} == 100, "job_set_prio");
 # Testing job_update_result
 %args = (
     jobid => $job_id,
-    result => 1,
+    result => 'passed',
     );
 $result = Scheduler::job_update_result(%args);
+ok($result == 1, "job_update_result");
 $job = Scheduler::job_get($job_id);
-ok($result == 1 && $job->{result} == 1, "job_update_result");
+is($job->{result}, $args{result}, "job_get after update");
 
 
 # Testing job_restart
@@ -217,6 +230,12 @@ my $fake_job = { id => $job_id };
 Scheduler::_job_fill_settings($fake_job);
 ok(pp($fake_job->{settings}) eq "{}", "Cascade delete");
 
+$result = Scheduler::job_delete($job2_id);
+$no_job_id = Scheduler::job_get($job_id);
+ok($result == 1 && !defined $no_job_id, "job_delete");
+
+$current_jobs = list_jobs();
+is_deeply($current_jobs , [], "no jobs listed");
 
 # Testing command_enqueue and list_commands
 %args = (
@@ -243,6 +262,8 @@ ok(scalar @$commands == 1 && pp($commands) eq '[[1, "command"]]',  "command_get"
 # Testing command_dequeue
 # TBD
 
+TODO: {
+    local $TODO = "get job by iso name still to be implemented";
 # Testing iso_cancel_old_builds
 $result = Scheduler::iso_cancel_old_builds('ISO');
 ok($result == 1, "Empty iso_old_builds");
@@ -252,3 +273,4 @@ unlink $iso;
 $result = Scheduler::iso_cancel_old_builds('ISO');
 $new_job = Scheduler::job_get($job_id);
 ok($result == 1 && $new_job->{state} eq "cancelled" && $new_job->{worker_id} == 0, "Match iso_old_builds");
+}
