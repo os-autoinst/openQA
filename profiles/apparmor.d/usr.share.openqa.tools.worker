@@ -73,6 +73,5 @@
   /var/lib/os-autoinst/tests/*/* r,
   /var/lib/os-autoinst/tests/*/*/ r,
   /var/lib/os-autoinst/tests/*/*/* r,
-  /var/lib/os-autoinst/tests/opensuse/needles/* r,
 
 }
