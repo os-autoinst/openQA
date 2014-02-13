@@ -277,7 +277,7 @@ sub job_grab {
 	$result = $schema->resultset("Jobs")->search({
 	    state_id => $schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
 	    worker_id => 0,
-	})->get_column("pritority")->max_rs->update({
+	}, { order_by => { -asc => 'priority'}, rows => 1})->update({
 	    state_id => $schema->resultset("JobStates")->search({ name => "running" })->single->id,
 	    worker_id => $workerid,
 	    t_started => \$now,
@@ -497,7 +497,7 @@ sub _job_set_final_state($$$) {
     # needs to be a transaction as we need to make sure no worker assigns
     # itself while we modify the job
     my $jobs = _job_find_smart($name);
-    foreach my $job ($jobs->next) {
+    while (my $job = $jobs->next) {
 	print STDERR "workerid ". $job->id . ", " . $job->worker_id . " -> $cmd\n";
 	if ($job->worker_id) {
 	    $schema->resultset("Commands")->create({
@@ -564,7 +564,7 @@ sub command_dequeue {
     _validate_workerid($args{workerid});
 
     my $r = $schema->resultset("Commands")->search({
-	id => $args{workerid},
+	id => $args{id},
 	worker_id =>$args{workerid},
     })->delete;
 

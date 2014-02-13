@@ -61,7 +61,7 @@ my $job = {
     t_finished => undef,
     id => 1,
     name => "NAME",
-    priority => 50,
+    priority => 40,
     result => undef,
     settings => {
 	DESKTOP => "DESKTOP",
@@ -80,11 +80,14 @@ my $iso = sprintf("%s/%s/factory/iso/%s", $openqa::basedir, $openqa::prj, $setti
 open my $fh, ">", $iso;
 my $job_id = Scheduler::job_create(%settings);
 ok($job_id == 1, "job_create");
+my %settings2 = %settings;
+$settings2{NAME} = "OTHER NAME";
+my $job2_id = Scheduler::job_create(%settings2);
+Scheduler::job_set_prio(jobid => $job_id, prio => 40);
 unlink $iso;
 
 my $new_job = Scheduler::job_get($job_id);
 is_deeply($job, $new_job, "job_get");
-
 
 # Testing list_jobs
 my $jobs = [
@@ -92,6 +95,16 @@ my $jobs = [
 	t_finished => undef,
 	id => 1,
 	name => "NAME",
+	priority => 40,
+	result => undef,
+	t_started => undef,
+	state => "scheduled",
+	worker_id => 0,
+    },
+    {
+	t_finished => undef,
+	id => 2,
+	name => "OTHER NAME",
 	priority => 50,
 	result => undef,
 	t_started => undef,
@@ -116,8 +129,10 @@ ok(pp($current_jobs) eq "[]", "All list_jobs with state running");
 my %args = (
     workerid => $worker->{id},
     );
-$job = job_grab(%args);
-ok(pp($job->{settings}) eq pp(\%settings) && length $job->{t_started} == 19, "job_grab");
+my $rjobs_before = Scheduler::list_jobs(state => 'running');
+$job = Scheduler::job_grab(%args);
+my $rjobs_after = Scheduler::list_jobs(state => 'running');
+ok(pp($job->{settings}) eq pp(\%settings) && length $job->{t_started} == 19 && scalar(@{$rjobs_before})+1 == scalar(@{$rjobs_after}), "job_grab");
 
 
 # # Testing when a worker register for second time and had pending jobs
@@ -230,7 +245,7 @@ ok(scalar @$commands == 1 && pp($commands) eq '[[1, "command"]]',  "command_get"
 
 # Testing iso_cancel_old_builds
 $result = Scheduler::iso_cancel_old_builds('ISO');
-ok($result == 0, "Empty iso_old_builds");
+ok($result == 1, "Empty iso_old_builds");
 open $fh, ">", $iso;
 $job_id = Scheduler::job_create(%settings);
 unlink $iso;
