@@ -1,5 +1,6 @@
 % layout 'default';
 % title 'Test results';
+% use Mojo::ByteStream 'b';
 
 <div class="grid_16 box box-shadow omega">
 	<h2><%= title %></h2>
