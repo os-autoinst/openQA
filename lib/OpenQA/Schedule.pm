@@ -1,6 +1,7 @@
 package OpenQA::Schedule;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
+use Scheduler ();
 
 sub _stash_back
 {
