@@ -7,7 +7,7 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use openqa;
 
-use Test::More tests => 33;
+use Test::More tests => 39;
 
 sub nots
 {
@@ -64,7 +64,7 @@ my %settings = (
     ISO_MAXSIZE => 1,
     );
 
-my $job = {
+my $job_ref = {
     t_finished => undef,
     id => 1,
     name => 'Unicorn-42-Build666-rainbow',
@@ -80,6 +80,7 @@ my $job = {
         ISO => 'whatever.iso',
         ISO_MAXSIZE => 1,
         KVM => "KVM",
+        NAME => '00000001-Unicorn-42-Build666-rainbow',
     },
     t_started => undef,
     state => "scheduled",
@@ -97,7 +98,7 @@ unlink $iso;
 
 Scheduler::job_set_prio(jobid => $job_id, prio => 40);
 my $new_job = Scheduler::job_get($job_id);
-is_deeply($new_job, $job, "job_get");
+is_deeply($new_job, $job_ref, "job_get");
 
 # Testing list_jobs
 my $jobs = [
@@ -140,9 +141,12 @@ my %args = (
     workerid => $worker->{id},
     );
 my $rjobs_before = Scheduler::list_jobs(state => 'running');
-$job = Scheduler::job_grab(%args);
+my $job = Scheduler::job_grab(%args);
 my $rjobs_after = Scheduler::list_jobs(state => 'running');
-ok(pp($job->{settings}) eq pp(\%settings) && length $job->{t_started} == 19 && scalar(@{$rjobs_before})+1 == scalar(@{$rjobs_after}), "job_grab");
+is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
+is(length $job->{t_started}, 19, "job start timestamp updated");
+is(scalar(@{$rjobs_before})+1, scalar(@{$rjobs_after}), "number of running jobs");
+is($job->{worker_id}, $worker->{id}, "correct worker assigned");
 
 
 # # Testing when a worker register for second time and had pending jobs
@@ -155,8 +159,10 @@ $job = Scheduler::job_get($job_id);
 ok($job->{state} eq "running", "Job is in running state");   # After job_grab the job is in running state.
 
 my $result = Scheduler::job_set_scheduled($job_id);
+is($result, 1, "job_set_scheduled");
 $job = Scheduler::job_get($job_id);
-ok($result == 1&& $job->{state} eq "scheduled", "job_set_scheduled");
+is($job->{state}, "scheduled", "job state is scheduled");
+is($job->{worker_id}, 0, "no worker assigned");
 
 # Testing job_set_done
 %args = (
@@ -231,7 +237,7 @@ Scheduler::_job_fill_settings($fake_job);
 ok(pp($fake_job->{settings}) eq "{}", "Cascade delete");
 
 $result = Scheduler::job_delete($job2_id);
-$no_job_id = Scheduler::job_get($job_id);
+$no_job_id = Scheduler::job_get($job2_id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
 
 $current_jobs = list_jobs();
@@ -273,4 +279,8 @@ unlink $iso;
 $result = Scheduler::iso_cancel_old_builds('ISO');
 $new_job = Scheduler::job_get($job_id);
 ok($result == 1 && $new_job->{state} eq "cancelled" && $new_job->{worker_id} == 0, "Match iso_old_builds");
+
+$result = Scheduler::job_delete($job_id);
+$no_job_id = Scheduler::job_get($job_id);
+ok($result == 1 && !defined $no_job_id, "job_delete");
 }
