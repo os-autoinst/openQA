@@ -74,6 +74,7 @@ use File::Copy::Recursive qw(dirmove);
 use FindBin;
 use Mojo::UserAgent;
 use Mojo::URL;
+use Carp;
 #use lib "$FindBin::Bin/../www/cgi-bin/modules"
 #use openqa;
 
@@ -144,15 +145,27 @@ $isotovideo = $options{'isotovideo'} if $options{'isotovideo'};
 sub api_call
 {
 	my $method = lc(shift);
-    my $path = shift;
-    my $params = shift;
-    my $ua = Mojo::UserAgent->new;
-    my $ua_url = $url->clone;
- 
-    $ua_url->path($path =~ s/^\///r);
-    $ua_url->query($params) if $params;
-    my $res = $ua->$method($ua_url)->res;
-    ($res->code == 200) ? $res->json : 0;
+	my $path = shift;
+	my $params = shift;
+	my $ua = Mojo::UserAgent->new;
+	my $ua_url = $url->clone;
+
+	$ua_url->path($path =~ s/^\///r);
+	$ua_url->query($params) if $params;
+
+	my $tries = 3;
+	while (1) {
+		my $tx = $ua->$method($ua_url);
+		if ($tx->success) {
+			return $tx->success->json;
+		}
+		--$tries;
+		my ($err, $code) = $tx->error;
+		my $msg = $code ? "$tries: $code response: $err" : "$tries: Connection error: $err";
+		croak "$msg\n" unless $tries;
+		carp "$msg";
+		sleep 5;
+	}
 }
 
 sub lockit()
@@ -322,25 +335,19 @@ sub main()
 
 	while($keep_running) {
 		my $cmds; # [[id, command], ... ]
-		$retries = 3; while(1) { eval {
-			$cmds = api_call('get', "workers/$workerid/commands")->{commands};
-		}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+		$cmds = api_call('get', "workers/$workerid/commands")->{commands};
 		for my $cmd (@{$cmds||[]}) {
 			if ($cmd->[1] eq 'quit') { # quit_worker and reschedule the job
 				$keep_running = 0;
 				if ($worker) {
 					_kill_worker($worker);
-					$retries = 3; while(1) { eval {
-						api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
-					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+					api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
 					$aborted = 'quit';
 				}
 			} elsif ($cmd->[1] eq 'abort') { # the work is live and the job is rescheduled
 				if ($worker) {
 					_kill_worker($worker);
-					$retries = 3; while(1) { eval {
-						api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
-					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+					api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
 					$aborted = 'abort';
 				}
 			} elsif ($cmd->[1] eq 'cancel') { # The jobs is droped and the work is still alive
@@ -388,9 +395,7 @@ sub main()
 			} else {
 				print STDERR "got unknown command $cmd->[1]\n";
 			}
-			$retries = 3; while(1) { eval {
-				api_call('delete', "workers/$workerid/commands/".$cmd->[0]);
-			}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+			api_call('delete', "workers/$workerid/commands/".$cmd->[0]);
 		}
 
 		# abort job if it takes too long
@@ -403,9 +408,7 @@ sub main()
 
 		if ($keep_running && !$job) {
 			print "waiting for job ...\n" if $verbose;
-			$retries = 3; while(1) { eval {
-				$job = api_call('post', "workers/$workerid/grab_job")->{job};
-			}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+			$job = api_call('post', "workers/$workerid/grab_job")->{job};
 			unless ($job) {
 				sleep 5;
 				next;
@@ -507,10 +510,8 @@ sub main()
 				}
 				# XXX: use job_set_cancel in case of cancel?
 				if (($aborted||'') eq 'cancel' || $overall) {
-					$retries = 3; while(1) { eval {
-						printf "setting job %d to $result\n", $job->{'id'};
-						api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result});
-					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+					printf "setting job %d to $result\n", $job->{'id'};
+					api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result});
 				} else {
 					job_release_or_cancel($job, $result);
 				}
@@ -530,9 +531,7 @@ sub main()
 	if ($job) {
 		_kill_worker($worker);
 		unlink($testresults);
-		$retries = 3; while(1) { eval {
-			api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
-		}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+		api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
 
 		clean_pool($job);
 	}
