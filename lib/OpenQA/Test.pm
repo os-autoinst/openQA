@@ -34,8 +34,7 @@ sub list {
     next if($match && $testname !~ m/$match/);
     my $params = openqa::parse_testname($testname);
     push(@slist, {
-        priority => $job->{priority},
-        state => $job->{'state'},
+	job => $job,
         testname=>$testname, distri=>$params->{distri}.'-'.$params->{version}, type=>$params->{flavor}, arch=>$params->{arch},
         build=>$params->{build}, extrainfo=>$params->{extrainfo}, mtime=>0
       }

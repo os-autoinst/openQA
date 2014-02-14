@@ -86,19 +86,20 @@
       % for my $test (@$slist) {
 		    <tr>
           <%
-            my $prio = $test->{'priority'};
-            my $state = $test->{'state'};
+            my $job = $test->{job};
+            my $prio = $job->{'priority'};
+            my $state = $job->{'state'};
           %>
           <td style="font-style: italic;"><%= $state %>
           % if ($state eq 'cancelled') {
-            %= link_to url_for('restart', 'testid' => $test->{'testname'})->query('back' => 'results') => ('data-method' => 'post') => begin
+            %= link_to url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') => ('data-method' => 'post') => begin
                 %= image '/images/toggle.png', alt => "restart", title => "Restart job"
             % end
           % }
           <td>
-            <%= link_to "-" => url_for('setpriority', 'testid' => $test->{'testname'}, 'priority' => $prio-10)->query('back' => 'results') => ('data-method' => 'post') %>
+            <%= link_to "-" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio-10)->query('back' => 'results') => ('data-method' => 'post') %>
             <%= $prio %>
-            <%= link_to "+" => url_for('setpriority', 'testid' => $test->{'testname'}, 'priority' => $prio+10)->query('back' => 'results') => ('data-method' => 'post') %>
+            <%= link_to "+" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio+10)->query('back' => 'results') => ('data-method' => 'post') %>
           </td>
           <td><%= $test->{'distri'} %></td>
           <td><%= $test->{'type'} %></td>
@@ -110,7 +111,7 @@
           </td>
           <td><span class=""><%= $test->{'extrainfo'} %></span></td>
           <td colspan="4" style="padding: 3px 4px; font-style: italic;">
-            <a data-method="post" href="<%== url_for('cancel', 'testid' => $test->{'testname'})->query('back' => 'results') %>">cancel</a>
+            <a data-method="post" href="<%== url_for('cancel', 'testid' => $job->{'id'})->query('back' => 'results') %>">cancel</a>
           </td>
        </tr>
     % }

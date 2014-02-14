@@ -27,7 +27,7 @@ sub cancel
         #return $self->render(text => "forbidden", status => 403);
         $self->stash('denied', 1);
     } else {
-        Scheduler::job_stop($name);
+        Scheduler::job_cancel($name);
         $self->stash('denied', 0);
     }
 
