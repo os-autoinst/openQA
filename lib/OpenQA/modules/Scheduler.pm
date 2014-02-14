@@ -240,7 +240,7 @@ sub list_jobs {
 	$search{state_id} = { -in => $states_rs->get_column("id")->as_query }
     }
     if ($args{finish_after}) {
-        my $param = "datetime($args{finish_after})";
+        my $param = "datetime('$args{finish_after}')"; # FIXME: SQL injection!
         $search{t_finished} = { '>' => \$param }
     }
     if ($args{build}) {
@@ -254,6 +254,7 @@ sub list_jobs {
 	my $j = _hashref($job, qw/ id name priority result worker_id t_started t_finished /);
 	$j->{state} = $job->state->name;
 	$j->{result} = $job->result->name;
+	_job_fill_settings($j) if $args{fulldetails};
 	push @results, $j;
     }
 

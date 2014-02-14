@@ -6,12 +6,14 @@ use Scheduler ();
 sub list {
     my $self = shift;
 
-    my $state = $self->param('state');
-    my $finish_after = $self->param('finish_after');
-    my $build = $self->param('build');
-    $finish_after = "'$finish_after'" if $finish_after; # Add simple quotes to finish_after
+    my @args;
+    for my $arg (qw/state build finish_after fulldetails/) {
+        next unless defined $self->param($arg);
+        push @args, $arg;
+        push @args, $self->param($arg);
+    }
 
-    my $res = Scheduler::list_jobs(state => $state, finish_after => $finish_after, build => $build);
+    my $res = Scheduler::list_jobs(@args);
     $self->render(json => {jobs => $res});
 }
 
@@ -89,7 +91,9 @@ sub done {
     my $jobid = int($self->stash('jobid'));
     my $result = $self->param('result');
 
-    my $res = Scheduler::job_update_result(jobid => $jobid, result => $result);
+    print STDERR "jobid $jobid $result\n";
+
+    my $res = Scheduler::job_set_done(jobid => $jobid, result => $result);
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
