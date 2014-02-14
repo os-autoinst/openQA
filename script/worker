@@ -497,6 +497,14 @@ sub main()
 				# problem. Release the job so another worker may grab it.
 				my $overall = results_overall("$testresults/results.json");
 				$result = $overall if !$aborted && $overall;
+				# FIXME: this needs improvement
+				if ($result eq 'ok') {
+					$result = 'passed';
+				} elsif ($result eq 'fail') {
+					$result = 'failed';
+				} else {
+					$result = 'incomplete';
+				}
 				# XXX: use job_set_cancel in case of cancel?
 				if (($aborted||'') eq 'cancel' || $overall) {
 					$retries = 3; while(1) { eval {
