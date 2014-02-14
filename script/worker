@@ -308,7 +308,7 @@ sub main()
 {
 	my $lockfd = lockit();
 
-    my $workerid = api_call('post', 'workers', {host => 'localhost', instance => $options{'instance'}, backend => 'qemu'})->{id};
+	my $workerid = api_call('post', 'workers', {host => 'localhost', instance => $options{'instance'}, backend => 'qemu'})->{id};
 	$ENV{'WORKERID'} = $workerid;
 
 	my $job;
@@ -323,7 +323,7 @@ sub main()
 	while($keep_running) {
 		my $cmds; # [[id, command], ... ]
 		$retries = 3; while(1) { eval {
-            $cmds = api_call('get', "workers/$workerid/commands")->{commands};
+			$cmds = api_call('get', "workers/$workerid/commands")->{commands};
 		}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 		for my $cmd (@{$cmds||[]}) {
 			if ($cmd->[1] eq 'quit') { # quit_worker and reschedule the job
@@ -331,7 +331,7 @@ sub main()
 				if ($worker) {
 					_kill_worker($worker);
 					$retries = 3; while(1) { eval {
-                        api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
+						api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 					$aborted = 'quit';
 				}
@@ -339,7 +339,7 @@ sub main()
 				if ($worker) {
 					_kill_worker($worker);
 					$retries = 3; while(1) { eval {
-                        api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
+						api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 					$aborted = 'abort';
 				}
@@ -389,7 +389,7 @@ sub main()
 				print STDERR "got unknown command $cmd->[1]\n";
 			}
 			$retries = 3; while(1) { eval {
-                api_call('delete', "workers/$workerid/commands/".$cmd->[0]);
+				api_call('delete', "workers/$workerid/commands/".$cmd->[0]);
 			}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 		}
 
@@ -404,7 +404,7 @@ sub main()
 		if ($keep_running && !$job) {
 			print "waiting for job ...\n" if $verbose;
 			$retries = 3; while(1) { eval {
-			    $job = api_call('post', "workers/$workerid/grab_job")->{job};
+				$job = api_call('post', "workers/$workerid/grab_job")->{job};
 			}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 			unless ($job) {
 				sleep 5;
@@ -501,7 +501,7 @@ sub main()
 				if (($aborted||'') eq 'cancel' || $overall) {
 					$retries = 3; while(1) { eval {
 						printf "setting job %d to $result\n", $job->{'id'};
-                        api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result});
+						api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result});
 					}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 				} else {
 					job_release_or_cancel($job, $result);
@@ -523,7 +523,7 @@ sub main()
 		_kill_worker($worker);
 		unlink($testresults);
 		$retries = 3; while(1) { eval {
-            api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
+			api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
 		}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
 
 		clean_pool($job);
