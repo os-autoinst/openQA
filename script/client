@@ -25,7 +25,14 @@ print help
 =head1 SYNOPSIS
 
 top level entry points: jobs, workers, isos.
-E.g 'jobs' lists jobs', 'jobs/1' shows job 1
+
+=item client --host openqa.example.com jobs
+
+=item client --host openqa.example.com jobs/1
+
+=item client --host openqa.example.com delete jobs/1
+
+=item client --host openqa.example.com isos post iso=bar.iso tests=blah
 
 =head1 DESCRIPTION
 
@@ -52,8 +59,6 @@ sub usage($) {
 GetOptions(
 	\%options,
 	"host=s",
-    "params:s",
-    "method:s",
 	"verbose|v",
 	"help|?",
 ) or usage(1);
@@ -61,7 +66,23 @@ GetOptions(
 usage(1) unless @ARGV;
 $options{'host'} ||= 'localhost';
 
-$options{'method'} = 'get' unless $options{'method'};
+my $path = shift @ARGV;
+# Relative paths are routed to v1
+if ($path =~ s/^\///r) {
+    $path = 'api/v1/'.$path;
+}
+
+my $method = 'get';
+my @params;
+
+for my $arg (@ARGV) {
+    if ($arg =~ /^(?:get|post|delete|put)$/i) {
+        $method = $arg;
+    } elsif ($arg =~ /^[[:alnum:]]+=.+/) {
+        push @params, $arg;
+    } else {
+    }
+}
 
 my $ua = Mojo::UserAgent->new;
 my $url;
@@ -72,12 +93,9 @@ if ($options{'host'} !~ '/') {
 } else {
 	$url = Mojo::URL->new($options{'host'});
 }
-# Relative paths are appended to the existing one
-$url->path('api/v1/');
-$url->path($ARGV[0] =~ s/^\///r);
-$url->query($options{'params'}) if $options{'params'};
+$url->path($path);
+$url->query(join('&', @params)) if @params;
 
-my $method = lc($options{'method'});
 my $res = $ua->$method($url)->res;
 if ($res->code == 200) {
     dd($res->json || $res->body);
