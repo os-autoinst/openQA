@@ -212,6 +212,10 @@ sub _job_get($) {
 	$job_hashref->{state} = $job->state->name;
 	$job_hashref->{result} = $job->result->name;
 	_job_fill_settings($job_hashref);
+
+	if (!$job_hashref->{settings}->{NAME}) {
+	    $job_hashref->{settings}->{NAME} = sprintf "%08d-%s", $job->id, $job->name;
+	}
     }
     return $job_hashref;
 }
