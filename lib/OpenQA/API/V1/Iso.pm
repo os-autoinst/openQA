@@ -24,16 +24,16 @@ sub create {
     my $cnt = 0;
     for my $settings (@{$jobs||[]}) {
         my $prio = $settings->{PRIO};
-	    delete $settings->{PRIO};
-	    # create a new job with these parameters and count if successful
-	    my $id = Scheduler::job_create(%$settings);
+        delete $settings->{PRIO};
+        # create a new job with these parameters and count if successful
+        my $id = Scheduler::job_create(%$settings);
         if ($id) {
             $cnt++;
             # change prio only if other than defalt prio
             if( $prio && $prio != 50 ) {
                 Scheduler::job_set_prio(jobid => $id, prio => $prio);
             }
-	    }
+        }
     }
     $self->render(json => {count => $cnt});
 }
