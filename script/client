@@ -14,17 +14,18 @@ client [OPTIONS] PATH
 
 =item B<--host> HOST
 
-connect to specified host
-
-=item B<--commands>
-
-show available commands
+connect to specified host, defaults to localhost
 
 =item B<--help, -h>
 
 print help
 
 =back
+
+=head1 SYNOPSIS
+
+top level entry points: jobs, workers, isos.
+E.g 'jobs' lists jobs', 'jobs/1' shows job 1
 
 =head1 DESCRIPTION
 
@@ -42,7 +43,7 @@ my %options;
 
 sub usage($) {
 	my $r = shift;
-	eval "use Pod::Usage; pod2usage($r);";
+	eval "use Pod::Usage; pod2usage(1);";
 	if ($@) {
 		die "cannot display help, install perl(Pod::Usage)\n";
 	}
@@ -58,7 +59,7 @@ GetOptions(
 ) or usage(1);
 
 usage(1) unless @ARGV;
-usage(1) unless exists $options{'host'};
+$options{'host'} ||= 'localhost';
 
 $options{'method'} = 'get' unless $options{'method'};
 
