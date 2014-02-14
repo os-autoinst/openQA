@@ -25,9 +25,10 @@ sub test_logfile {
   my $self = shift;
 
   my $name = $self->param('filename');
-  my $testname = $self->param('testid');
+  my $job = Scheduler::job_get($self->param('testid'));
+  my $testdirname = $job->{'settings'}->{'NAME'};
 
-  my $fullname = openqa::testresultdir($testname).'/ulogs/'.$name;
+  my $fullname = openqa::testresultdir($testdirname).'/ulogs/'.$name;
   $fullname .= '.'.$self->stash('format') if $self->stash('format');
 
   return $self->_serve_file($fullname);
@@ -37,9 +38,10 @@ sub test_file {
   my $self = shift;
 
   my $name = $self->param('filename');
-  my $testname = $self->param('testid');
+  my $job = Scheduler::job_get($self->param('testid'));
+  my $testdirname = $job->{'settings'}->{'NAME'};
 
-  my $fullname = openqa::testresultdir($testname).'/'.$name;
+  my $fullname = openqa::testresultdir($testdirname).'/'.$name;
   $fullname .= '.'.$self->stash('format') if $self->stash('format');
 
   return $self->_serve_file($fullname);
@@ -47,10 +49,11 @@ sub test_file {
 
 sub test_diskimage {
   my $self = shift;
-  my $testname = $self->param('testid');
+  my $job = Scheduler::job_get($self->param('testid'));
+  my $testdirname = $job->{'settings'}->{'NAME'};
   my $diskimg = $self->param('imageid');
 
-  my $basepath = back_log($testname);
+  my $basepath = back_log($testdirname);
 
   return $self->render_not_found if (!-d $basepath);
 

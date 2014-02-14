@@ -1,5 +1,5 @@
 % layout 'default';
-% title $testid;
+% title $job->{name}." test results";
 % my $ref_width=60;
 % my $ref_height=int($ref_width/4*3);
 % use Mojo::ByteStream 'b';
@@ -96,7 +96,7 @@
 
 <div class="grid_14 omega">
 	<div class="box box-shadow">
-		<h2>Test result for <i><%= $testid %></i></h2>
+            <h2>Test result for <i><%= $job->{name} %></i></h2>
 		<p />
 		<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
 			<tr>

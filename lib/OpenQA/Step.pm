@@ -3,13 +3,18 @@ use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use awstandard;
 use File::Copy;
+use Scheduler;
 
 sub init {
   my $self = shift;
 
   my $testindex = $self->param('stepid');
 
-  my $results = test_result($self->param('testid'));
+
+  my $job = Scheduler::job_get($self->param('testid'));
+  my $testdirname = $job->{'settings'}->{'NAME'};
+  my $results = test_result($testdirname);
+
   unless ($results) {
     $self->render_not_found;
     return 0;
@@ -86,7 +91,8 @@ sub edit {
   my $module_detail = $self->stash('module_detail');
   my $imgname = $module_detail->{'screenshot'};
   my $results = $self->stash('results');
-  my $testname = $self->param('testid');
+  my $job = Scheduler::job_get($self->param('testid'));
+  my $testdirname = $job->{'settings'}->{'NAME'};
 
   # Each object in $needles will contain the name, both the url and the local path
   # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -104,7 +110,7 @@ sub edit {
     # First position: the screenshot with all the matching areas (in result)
     push(@$needles, {'name' => 'screenshot',
         'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
-        'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
+        'imagepath' => "$basedir/$prj/testresults/$testdirname/$imgname",
         'area' => [], 'matches' => [], 'tags' => []});
     for my $tag (@$tags) {
       push(@{$needles->[0]->{'tags'}}, $tag);
@@ -131,7 +137,7 @@ sub edit {
 
     # First position: the screenshot
     push(@$needles, {'name' => 'screenshot',
-        'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
+        'imagepath' => "$basedir/$prj/testresults/$testdirname/$imgname",
         'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
         'area' => [], 'matches' => [], 'tags' => []});
     for my $tag (@$tags) {
@@ -169,7 +175,7 @@ sub edit {
     # Failing with not a single candidate needle
     push(@$needles, {'name' => 'screenshot',
         'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
-        'imagepath' => "$basedir/$prj/testresults/$testname/$imgname",
+        'imagepath' => "$basedir/$prj/testresults/$testdirname/$imgname",
         'area' => [], 'matches' => [], 'tags' => $tags});
   }
 
@@ -198,12 +204,13 @@ sub src {
   my $self = shift;
   return 0 unless $self->init();
 
-  my $testid = $self->param('testid');
+  my $job = Scheduler::job_get($self->param('testid'));
+  my $testdirname = $job->{'settings'}->{'NAME'};
   my $moduleid = $self->param('moduleid');
   my $running = $self->stash('modinfo')->{'running'};
 
-  my $fqfn = testresultdir("$testid/autoinst-log.txt");
-  $fqfn = running_log($testid).'/autoinst-log.txt' if (($running||'') ne "" && -e running_log($testid).'/autoinst-log.txt');
+  my $fqfn = testresultdir("$testdirname/autoinst-log.txt");
+  $fqfn = running_log($testdirname).'/autoinst-log.txt' if (($running||'') ne "" && -e running_log($testdirname).'/autoinst-log.txt');
   my $scriptpath=log_to_scriptpath($fqfn, $moduleid);
   if(!$scriptpath || !-e $scriptpath) {
     $scriptpath||="";
@@ -222,7 +229,8 @@ sub save_needle {
   return 0 unless $self->init();
 
   my $results = $self->stash('results');
-  my $testname = $self->param('testid');
+  my $job = Scheduler::job_get($self->param('testid'));
+  my $testdirname = $job->{'settings'}->{'NAME'};
   my $json = $self->param('json');
 	my $imagepath = $self->param('imagepath');
 	my $needlename = $self->param('needlename');
@@ -250,7 +258,7 @@ sub save_needle {
         system(@git, 'add', @files);
         system(@git, 'commit', '-q', '-m',
 	  # FIXME
-          sprintf("%s by %s@%s", $testname, $ENV{REMOTE_USER}||'anonymous', $ENV{REMOTE_ADDR}),
+          sprintf("%s by %s@%s", $job->{'name'}, $ENV{REMOTE_USER}||'anonymous', $ENV{REMOTE_ADDR}),
           @files);
         if (($self->app->config->{needles_git_do_push}||'') eq 'yes') {
           system(@git, 'push', 'origin', 'master');

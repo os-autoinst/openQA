@@ -85,6 +85,8 @@ my $job_ref = {
     t_started => undef,
     state => "scheduled",
     worker_id => 0,
+    test => 'rainbow',
+    test_branch => undef,
     };
 
 my $iso = sprintf("%s/%s/factory/iso/%s", $openqa::basedir, $openqa::prj, $settings{ISO});
@@ -111,6 +113,8 @@ my $jobs = [
         t_started => undef,
         state => "scheduled",
         worker_id => 0,
+        test => 'rainbow',
+        test_branch => undef,
     },
     {
         t_finished => undef,
@@ -121,6 +125,8 @@ my $jobs = [
         t_started => undef,
         state => "scheduled",
         worker_id => 0,
+        test => 'rainbow',
+        test_branch => undef,
     },
 ];
 

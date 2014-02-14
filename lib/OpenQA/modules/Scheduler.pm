@@ -207,15 +207,11 @@ sub _job_get($) {
     my $job = $schema->resultset("Jobs")->search($search)->first;
     my $job_hashref;
     if ($job) {
-	$job_hashref = _hashref($job, qw/ id name priority worker_id t_started t_finished /);
+	$job_hashref = _hashref($job, qw/ id name priority worker_id t_started t_finished test test_branch/);
 	# XXX: use +columns in query above?
 	$job_hashref->{state} = $job->state->name;
 	$job_hashref->{result} = $job->result->name;
 	_job_fill_settings($job_hashref);
-
-	if (!$job_hashref->{settings}->{NAME}) {
-	    $job_hashref->{settings}->{NAME} = sprintf "%08d-%s", $job->id, $job->name;
-	}
     }
     return $job_hashref;
 }
@@ -226,6 +222,10 @@ sub _job_fill_settings {
     $job->{settings} = {};
     while(my $js = $job_settings->next) {
 	$job->{settings}->{$js->key} = $js->value;
+    }
+
+    if ($job->{name} && !$job->{settings}->{NAME}) {
+        $job->{settings}->{NAME} = sprintf "%08d-%s", $job->{id}, $job->{name};
     }
 
     return $job;
@@ -251,7 +251,7 @@ sub list_jobs {
 
     my @results = ();
     for my $job (@jobs) {
-	my $j = _hashref($job, qw/ id name priority result worker_id t_started t_finished /);
+	my $j = _hashref($job, qw/ id name priority worker_id t_started t_finished test test_branch/);
 	$j->{state} = $job->state->name;
 	$j->{result} = $job->result->name;
 	_job_fill_settings($j) if $args{fulldetails};
