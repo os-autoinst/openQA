@@ -12,6 +12,7 @@ use warnings;
 use Carp;
 use Cwd qw/ abs_path getcwd /;
 #use File::Slurp 'slurp';
+use openqa;
 use awstandard;
 use constant DEBUG => $ENV{DEBUG};
 
@@ -33,27 +34,17 @@ sub import {
 
 sub create {
   my $self        = shift;
-  my $schema_name = shift;
-  my $file        = shift || $ENV{TEST_DB} || ':memory:';
 
-  # Remove previous
-  unlink $file if -e $file;
-
-  # New db
-  my $dsn = "dbi:SQLite:dbname=$file";
-  my $schema =
-    $schema_name->connect($dsn, '', '', {quote_char => '`', name_sep => '.'});
-  $schema->deploy({quote_table_names => 1, quote_field_names => 1});
+  my $schema = openqa::connect_db();
 
   # Fixtures
-  $self->insert_fixtures($file, $schema);
+  $self->insert_fixtures($schema);
 
   return $schema;
 }
 
 sub insert_fixtures {
   my $self   = shift;
-  my $file   = shift;
   my $schema = shift;
 
   # Store working dir
