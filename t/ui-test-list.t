@@ -4,7 +4,6 @@ use Mojo::Base -strict;
 
 use Test::More;
 use Test::Mojo;
-use openqa;
 use OpenQA::Test::Database;
 
 my $schema = OpenQA::Test::Database->new->create();
