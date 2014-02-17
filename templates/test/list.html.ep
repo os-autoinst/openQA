@@ -96,6 +96,7 @@
                 %= image '/images/toggle.png', alt => "restart", title => "Restart job"
             % end
           % }
+          </td>
           <td>
             <%= link_to "-" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio-10)->query('back' => 'results') => ('data-method' => 'post') %>
             <%= $prio %>
