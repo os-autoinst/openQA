@@ -6,8 +6,9 @@ use strict;
 use Data::Dump qw/pp dd/;
 use Scheduler;
 use openqa;
+use POSIX qw/strftime/;
 
-use Test::More tests => 39;
+use Test::More tests => 43;
 
 sub nots
 {
@@ -95,7 +96,8 @@ my $job_id = Scheduler::job_create(%settings);
 is($job_id, 1, "job_create");
 my %settings2 = %settings;
 $settings2{NAME} = "OTHER NAME";
-my $job2_id = Scheduler::job_create(%settings2);
+$settings2{BUILD} = "44";
+my $job2_id= Scheduler::job_create(%settings2);
 unlink $iso;
 
 Scheduler::job_set_prio(jobid => $job_id, prio => 40);
@@ -133,24 +135,27 @@ my $jobs = [
 $current_jobs = list_jobs();
 is_deeply($current_jobs , $jobs, "All list_jobs");
 
-my %state = (state => "scheduled");
-$current_jobs = list_jobs(%state);
+my %args = (state => "scheduled");
+$current_jobs = list_jobs(%args);
 is_deeply($current_jobs, $jobs, "All list_jobs with state scheduled");
 
-%state = (state => "running");
-$current_jobs = list_jobs(%state);
+%args = (state => "running");
+$current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [], "All list_jobs with state running");
 
+%args = (build => "666");
+$current_jobs = list_jobs(%args);
+is_deeply($current_jobs, [$jobs->[0]], "list_jobs with build");
 
 # Testing job_grab
-my %args = (
+%args = (
     workerid => $worker->{id},
     );
 my $rjobs_before = Scheduler::list_jobs(state => 'running');
 my $job = Scheduler::job_grab(%args);
 my $rjobs_after = Scheduler::list_jobs(state => 'running');
 is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
-is(length $job->{t_started}, 19, "job start timestamp updated");
+ok($job->{t_started} =~ /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, "job start timestamp updated");
 is(scalar(@{$rjobs_before})+1, scalar(@{$rjobs_after}), "number of running jobs");
 is($job->{worker_id}, $worker->{id}, "correct worker assigned");
 
@@ -170,6 +175,8 @@ $job = Scheduler::job_get($job_id);
 is($job->{state}, "scheduled", "job state is scheduled");
 is($job->{worker_id}, 0, "no worker assigned");
 
+my @now = gmtime;
+sleep 1;
 # Testing job_set_done
 %args = (
     jobid => $job_id,
@@ -180,7 +187,16 @@ ok($result == 1, "job_set_done");
 $job = Scheduler::job_get($job_id);
 is($job->{state}, "done", "job_set_done changed state");
 is($job->{result}, "passed", "job_set_done changed result");
+ok($job->{t_finished} =~ /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, "job end timestamp updated");
 
+%args = (finish_after => strftime("%Y-%m-%d %H:%M:%S", @now), fulldetails => 1);
+$current_jobs = list_jobs(%args);
+is_deeply($current_jobs, [$job], "list_jobs with finish in past");
+
+@now = gmtime;
+%args = (finish_after => strftime("%Y-%m-%d %H:%M:%S", @now), fulldetails => 1);
+$current_jobs = list_jobs(%args);
+is_deeply($current_jobs, [], "list_jobs with finish in future");
 
 # Testing job_set_cancel
 $result = Scheduler::job_set_cancel($job_id);

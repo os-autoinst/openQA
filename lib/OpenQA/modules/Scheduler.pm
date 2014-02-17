@@ -216,23 +216,27 @@ sub _job_fill_settings {
 sub list_jobs {
     my %args = @_;
 
-    my %search = ();
+    my %cond = ();
+    my %attrs = ();
+
     if ($args{state}) {
 	my $states_rs = $schema->resultset("JobStates")->search({ name => [split(',', $args{state})] });
-	$search{state_id} = { -in => $states_rs->get_column("id")->as_query }
+	$cond{state_id} = { -in => $states_rs->get_column("id")->as_query }
     }
     if ($args{finish_after}) {
         my $param = "datetime('$args{finish_after}')"; # FIXME: SQL injection!
-        $search{t_finished} = { '>' => \$param }
+        $cond{t_finished} = { '>' => \$param }
     }
     if ($args{build}) {
-        my $param = sprintf("%%-Build%s-%%", $args{build});
-        $search{name} = { like => $param }
+        $cond{'settings.key'} = "BUILD";
+        $cond{'settings.value'} = $args{build};
+        $attrs{join} = 'settings';
     }
-    my @jobs = $schema->resultset("Jobs")->search(\%search);
+
+    my $jobs = $schema->resultset("Jobs")->search(\%cond, \%attrs);
 
     my @results = ();
-    for my $job (@jobs) {
+    while( my $job = $jobs->next) {
 	my $j = _hashref($job, qw/ id name priority worker_id t_started t_finished test test_branch/);
 	$j->{state} = $job->state->name;
 	$j->{result} = $job->result->name;
