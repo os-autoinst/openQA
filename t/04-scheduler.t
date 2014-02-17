@@ -1,14 +1,20 @@
 #!/usr/bin/perl -w
 
-BEGIN { unshift @INC, 'lib', 'lib/OpenQA/modules'; }
+BEGIN {
+  unshift @INC, 'lib', 'lib/OpenQA/modules';
+  $ENV{OPENQA_DB} = 't/data/db/test.db';
+}
 
 use strict;
 use Data::Dump qw/pp dd/;
 use Scheduler;
 use openqa;
 use POSIX qw/strftime/;
+use OpenQA::Test::Database;
 
 use Test::More tests => 43;
+
+OpenQA::Test::Database->new->create(file => $ENV{OPENQA_DB}, skip_fixtures => 1);
 
 sub nots
 {

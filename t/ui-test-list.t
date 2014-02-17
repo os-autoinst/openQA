@@ -1,6 +1,6 @@
 BEGIN {
   unshift @INC, 'lib', 'lib/OpenQA/modules';
-  $ENV{OPENQA_DB} = 'test.db';
+  $ENV{OPENQA_DB} = 't/data/db/test.db';
 }
 
 use Mojo::Base -strict;
