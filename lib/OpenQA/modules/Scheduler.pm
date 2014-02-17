@@ -132,7 +132,7 @@ create a job
 sub job_create {
     my %settings = @_;
 
-    for my $i (qw/DISTRI ISO DESKTOP TEST/) {
+    for my $i (qw/DISTRI VERSION ISO DESKTOP TEST/) {
 	die "need one $i key\n" unless exists $settings{$i};
     }
 
