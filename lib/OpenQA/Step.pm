@@ -12,6 +12,7 @@ sub init {
 
 
   my $job = Scheduler::job_get($self->param('testid'));
+  $self->stash('testname', $job->{'name'});
   my $testdirname = $job->{'settings'}->{'NAME'};
   my $results = test_result($testdirname);
 

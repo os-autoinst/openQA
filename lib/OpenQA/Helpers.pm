@@ -45,11 +45,12 @@ sub register {
         if ($c->current_route('tests')) {
             $crumbs .= ' > Test results';
         } elsif (my $test = $c->param('testid')) {
+            my $testname = $c->stash('testname') || $test;
             $crumbs .= ' > '.$c->link_to('Test results' => $c->url_for('tests'));
             if ($c->current_route('test')) {
-                $crumbs .= " > $test";
+                $crumbs .= " > $testname";
             } else {
-                $crumbs .= ' > '.$c->link_to($test => $c->url_for('test'));
+                $crumbs .= ' > '.$c->link_to($testname => $c->url_for('test'));
                 my $mod = $c->param('moduleid');
                 $crumbs .= " > $mod" if $mod;
             }
