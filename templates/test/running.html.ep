@@ -1,5 +1,5 @@
 % layout 'default';
-% title $testid;
+% title $testname;
 % use Mojo::ByteStream 'b';
 
 <div class="grid_4 live-sidebar alpha">
@@ -45,6 +45,8 @@
 </div>
 
 <div class="grid_10 live-content alpha">
+            <h2>Live view of <i><%= $testname %></i></h2>
+		<p />
 	<div class="grid_10 live-content box box-shadow omega">
 		<div style="margin: 0 10px;">
 			<div style="width: 800px; height: 600px; background-color: #202020;">
