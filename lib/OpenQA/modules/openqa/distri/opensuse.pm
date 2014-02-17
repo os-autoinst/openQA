@@ -467,6 +467,23 @@ sub generate_jobs
 
 	    $settings{PRIO} = $prio;
 
+            unless ($settings{ISO_MAXSIZE}) {
+                my $maxsize = 737_280_000;
+                if ($settings{ISO} =~ /-DVD/) {
+                    if ($settings{ISO} =~ /-DVD-Biarch/) {
+                        $maxsize=8_539_996_160;
+                    } else {
+                        $maxsize=4_700_372_992;
+                    }
+                }
+                # live images are for 1G sticks
+                if ($settings{ISO} =~ /-Live/ && $settings{ISO} !~ /CD/) {
+                    $maxsize=999_999_999;
+                }
+
+                $settings{ISO_MAXSIZE} = $maxsize;
+            }
+
 	    push @$ret, \%settings;
         }
 

@@ -94,7 +94,9 @@ sub generate_jobs
             # set defaults here:
             my %settings = ( ISO => $iso,
                              TEST => $run,
-                             DESKTOP => 'kde' );
+                             DESKTOP => 'kde',
+                             ISO_MAXSIZE => 4_700_372_992,
+                         );
 
             for (keys $params) {
                 $settings{uc $_} = $params->{$_};
