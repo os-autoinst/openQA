@@ -3,7 +3,7 @@
 
 <div class="grid_16 box box-shadow omega">
 	<h2><%= title %></h2>
-	<p>This page lists <%= @$list %> automated test-results from the last <%= $hoursfresh %> hours.</p>
+	<p>This page lists <%= $ntest %> automated test from the last <%= $hoursfresh %> hours.</p>
 		%= form_for tests => (method => 'GET') => (class => "cutofftimeform") => (id => "filterform") => begin
       %= select_field hours => [ ['24 h' => '24'], ['96 h' => '96'], ['200 h' => '200'], ['300 h' => '300'] ]
       %= text_field "match"
