@@ -14,7 +14,7 @@ my @testdata = (
         params => [
             {
                 ARCH     => 'x86_64',
-                BUILD    => 'Build0005',
+                BUILD    => '0005',
                 DESKTOP  => "gnome",
                 DISTRI   => "sles",
                 DVD      => 1,
@@ -28,7 +28,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0005',
+                BUILD       => '0005',
                 DESKTOP     => "gnome",
                 DISTRI      => "sles",
                 DVD         => 1,

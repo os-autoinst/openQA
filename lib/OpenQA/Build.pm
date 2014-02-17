@@ -10,10 +10,7 @@ sub show {
     my $self  = shift;
     my $build = $self->param('buildid');
 
-    if ( $build =~ /Build([\d.]+)$/ ) {
-        $build = $1;
-    }
-    else {
+    if ( $build !~ /[\d.]+$/ ) {
         return $self->render( text => "invalid build", status => 403 );
     }
 
@@ -23,12 +20,11 @@ sub show {
     my %archs   = ();
     my %results = ();
 
-    for my $job ( @{ Scheduler::list_jobs( 'build' => $build ) || [] } ) {
-        my $testname = $job->{'name'};
-        my $p        = openqa::parse_testname($testname);
-        my $config   = $p->{extrainfo};
-        my $type     = $p->{flavor};
-        my $arch     = $p->{arch};
+    for my $job ( @{ Scheduler::list_jobs( 'build' => $build, fulldetails => 1 ) || [] } ) {
+        my $testname = $job->{settings}->{'NAME'};
+        my $test     = $job->{test};
+        my $flavor   = $job->{settings}->{FLAVOR} || 'sweet';
+        my $arch     = $job->{settings}->{ARCH}   || 'noarch';
 
         my $result;
         if ( $job->{state} eq 'done' ) {
@@ -65,23 +61,23 @@ sub show {
         }
 
         # Populate @configs and %archs
-        push( @configs, $config ) unless ( $config ~~ @configs ); # manage xxx.0, xxx.1 (we only want the most recent one)
-        $archs{$type} = [] unless $archs{$type};
-        push( @{ $archs{$type} }, $arch ) unless ( $arch ~~ @{ $archs{$type} } );
+        push( @configs, $test ) unless ( $test ~~ @configs ); # manage xxx.0, xxx.1 (we only want the most recent one)
+        $archs{$flavor} = [] unless $archs{$flavor};
+        push( @{ $archs{$flavor} }, $arch ) unless ( $arch ~~ @{ $archs{$flavor} } );
 
         # Populate %results
-        $results{$config} = {} unless $results{$config};
-        $results{$config}{$type} = {} unless $results{$config}{$type};
-        $results{$config}{$type}{$arch} = $result;
+        $results{$test} = {} unless $results{$test};
+        $results{$test}{$flavor} = {} unless $results{$test}{$flavor};
+        $results{$test}{$flavor}{$arch} = $result;
     }
 
     # Sorting everything
     my @types = keys %archs;
     @types   = sort @types;
     @configs = sort @configs;
-    for my $type (@types) {
-        my @sorted = sort( @{ $archs{$type} } );
-        $archs{$type} = \@sorted;
+    for my $flavor (@types) {
+        my @sorted = sort( @{ $archs{$flavor} } );
+        $archs{$flavor} = \@sorted;
     }
 
     $self->stash(

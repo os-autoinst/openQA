@@ -15,7 +15,7 @@ my @testdata = (
             'distri' => 'openSUSE',
             'arch' => 'i586-x86_64',
             'version' => '13.1',
-            'build' => 'Build0067',
+            'build' => '0067',
             'flavor' => 'DVD-Biarch'
         },
     },
@@ -25,7 +25,7 @@ my @testdata = (
             'distri' => 'openSUSE',
             'arch' => 'i586-x86_64',
             'version' => '13.1',
-            'build' => 'Build0002',
+            'build' => '0002',
             'flavor' => 'Promo-DVD-OpenSourcePress'
         },
     },
@@ -35,7 +35,7 @@ my @testdata = (
             'distri' => 'openSUSE',
             'arch' => 'x86_64',
             'version' => 'Factory',
-            'build' => 'Build0725',
+            'build' => '0725',
             'flavor' => 'DVD'
         },
     },
@@ -45,7 +45,7 @@ my @testdata = (
             'distri' => 'openSUSE',
             'arch' => 'x86_64',
             'version' => '13.1',
-            'build' => 'Build0034',
+            'build' => '0034',
             'flavor' => 'KDE-Live'
         },
     },
@@ -55,7 +55,7 @@ my @testdata = (
             'distri' => 'openSUSE',
             'arch' => 'i586',
             'version' => '13.1',
-            'build' => 'Build0045',
+            'build' => '0045',
             'flavor' => 'GNOME-Live'
         },
     },
@@ -65,7 +65,7 @@ my @testdata = (
             'distri' => 'openSUSE',
             'arch' => 'i586',
             'version' => '13.1',
-            'build' => 'Build0042',
+            'build' => '0042',
             'flavor' => 'NET'
         },
     },
@@ -75,7 +75,7 @@ my @testdata = (
             'distri' => 'openSUSE',
             'arch' => 'x86_64',
             'version' => '13.1',
-            'build' => 'Build0066',
+            'build' => '0066',
             'flavor' => 'Promo-DVD'
         },
     },
@@ -85,7 +85,7 @@ my @testdata = (
             'distri' => 'openSUSE',
             'arch' => 'i686',
             'version' => '13.1',
-            'build' => 'Build0066',
+            'build' => '0066',
             'flavor' => 'Rescue-CD'
         },
     },
@@ -106,7 +106,7 @@ my @testdata = (
         iso => 'openSUSE-Factory-staging_core-x86_64-Build0047.0001-Media.iso',
         params => {
             arch    => "x86_64",
-            build   => "Build0047.0001",
+            build   => "0047.0001",
             distri  => "openSUSE",
             flavor  => "staging_core",
             version => "Factory",

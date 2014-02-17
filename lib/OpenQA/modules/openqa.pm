@@ -14,7 +14,6 @@ $loguploaddir
 $localstatedir $dbfile
 &get_failed_needles
 &sanitize_testname
-&parse_testname
 );
 
 @EXPORT_OK = qw/connect_db/;
@@ -152,27 +151,6 @@ sub _regexp_parts
     my $build = '(Build(?:[0-9.]+))';
 
     return ($distri, $version, $flavor, $arch, $build);
-}
-
-# FIXME: get rid of this (task#1349)
-sub parse_testname($)
-{
-    my $name = shift;
-    my ($distri, $version, $flavor, $arch, $build) = _regexp_parts;
-
-    my @parts = $name =~ /^$distri(?:-$version)?-$flavor-$arch(?:-$build)?-(.+)$/i;
-
-    return undef unless @parts;
-
-    my %params;
-    @params{qw(distri version flavor arch build extrainfo)} = @parts;
-
-    if (wantarray()) {
-	return %params;
-    }
-    else {
-	return \%params;
-    }
 }
 
 # find the full pathname to a given testrun-logfile and test name

@@ -10,7 +10,7 @@ sub parse_iso($)
         my $iso = shift;
         my %params;
         my $archre = 'i[356]86(?:-x86_64)?|x86_64|ia64|ppc64|s390x';
-        if ($iso =~ /^(?<distri>SLE)-(?<version>12)-(?<flavor>[[:alpha:]]+)-(?<medium>DVD)-(?<arch>$archre)-(?<build>Build(?:[0-9.]+))-Media1\.iso$/)
+        if ($iso =~ /^(?<distri>SLE)-(?<version>12)-(?<flavor>[[:alpha:]]+)-(?<medium>DVD)-(?<arch>$archre)-Build(?<build>[0-9.]+)-Media1\.iso$/)
         {
                 my $distri;
                 if ($+{flavor} eq 'Server') {

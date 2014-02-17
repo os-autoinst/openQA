@@ -14,7 +14,7 @@ my @testdata = (
         params => [
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP     => "kde",
                 DISTRI      => "opensuse",
                 DVD         => 1,
@@ -29,7 +29,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP     => "kde",
                 DISTRI      => "opensuse",
                 DVD         => 1,
@@ -44,7 +44,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP     => "kde",
                 DISTRI      => "opensuse",
                 DVD         => 1,
@@ -59,7 +59,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP     => "kde",
                 DISTRI      => "opensuse",
                 DVD         => 1,
@@ -74,7 +74,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 BTRFS     => 1,
                 DESKTOP   => "kde",
                 DISTRI    => "opensuse",
@@ -92,7 +92,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP            => "kde",
                 DISTRI             => "opensuse",
                 DVD                => 1,
@@ -109,7 +109,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP => "kde",
                 DISTRI  => "opensuse",
                 DOCRUN  => 1,
@@ -124,7 +124,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP    => "kde",
                 DISTRI     => "opensuse",
                 DUALBOOT   => 1,
@@ -142,7 +142,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP => "gnome",
                 DISTRI  => "opensuse",
                 DVD     => 1,
@@ -156,7 +156,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 BTRFS     => 1,
                 DESKTOP   => "gnome",
                 DISTRI    => "opensuse",
@@ -172,7 +172,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP => "gnome",
                 DISTRI  => "opensuse",
                 DVD     => 1,
@@ -186,7 +186,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP => "kde",
                 DISTRI  => "opensuse",
                 DVD     => 1,
@@ -199,7 +199,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 BTRFS     => 1,
                 DESKTOP   => "kde",
                 DISTRI    => "opensuse",
@@ -214,7 +214,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP => "kde",
                 DISTRI  => "opensuse",
                 DVD     => 1,
@@ -228,7 +228,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP => "kde",
                 DISTRI  => "opensuse",
                 DVD     => 1,
@@ -242,7 +242,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP => "lxde",
                 DISTRI  => "opensuse",
                 DVD     => 1,
@@ -256,7 +256,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP => "minimalx",
                 DISTRI  => "opensuse",
                 DVD     => 1,
@@ -269,7 +269,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 BTRFS     => 1,
                 DESKTOP   => "minimalx",
                 DISTRI    => "opensuse",
@@ -284,7 +284,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 BTRFS       => 1,
                 DESKTOP     => "minimalx",
                 DISTRI      => "opensuse",
@@ -301,7 +301,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP => "kde",
                 DISTRI => "opensuse",
                 DOCRUN => 1,
@@ -318,7 +318,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP     => "kde",
                 DISTRI      => "opensuse",
                 DVD         => 1,
@@ -334,7 +334,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP   => "kde",
                 DISTRI    => "opensuse",
                 DVD       => 1,
@@ -349,7 +349,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP   => "textmode",
                 DISTRI    => "opensuse",
                 DVD       => 1,
@@ -363,7 +363,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 BTRFS     => 1,
                 DESKTOP   => "textmode",
                 DISTRI    => "opensuse",
@@ -379,7 +379,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP     => "kde",
                 DISTRI      => "opensuse",
                 DVD         => 1,
@@ -395,7 +395,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP    => "kde",
                 DISTRI     => "opensuse",
                 DVD        => 1,
@@ -411,7 +411,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP    => "kde",
                 DISTRI     => "opensuse",
                 DVD        => 1,
@@ -427,7 +427,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP    => "kde",
                 DISTRI     => "opensuse",
                 DVD        => 1,
@@ -443,7 +443,7 @@ my @testdata = (
             },
             {
                 ARCH        => 'x86_64',
-                BUILD       => 'Build0725',
+                BUILD       => '0725',
                 DESKTOP => "xfce",
                 DISTRI  => "opensuse",
                 DVD     => 1,

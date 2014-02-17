@@ -6,7 +6,7 @@
 
 <div class="grid_16 box box-shadow omega">
 	<h2>Test result overview</h2>
-	<p>This page lists the results for <b>Build<%= $build %></b></p>
+	<p>This page lists the results for <b>Build <%= $build %></b></p>
 	<p />
 	<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
 		<thead>
@@ -37,7 +37,6 @@
 								<%
 								  my $state = $res->{state};
 								  my $jobid = $res->{jobid};
-								  my $testname = $res->{testname};
 								  my $css = "";
 								  $css = "overview".$res->{overall} if ($state eq "done");
 								%>
@@ -45,9 +44,9 @@
 								<%# Visible information %>
 								<span class="<%=$css%>" onmouseout="UnTip()" onmouseover="TagToTip('actions_<%=$jobid%>', STICKY, 1, CLICKCLOSE, true)">
 								<% if ($state eq "done") { %>
-                                                                        <a href="<%= url_for('test', 'testid' => $testname) %>"><%= $res->{ok} %>/<%= $res->{unknown} %>/<%= $res->{fail} %></a>
+                                                                        <a href="<%= url_for('test', 'testid' => $jobid) %>"><%= $res->{ok} %>/<%= $res->{unknown} %>/<%= $res->{fail} %></a>
 								<% } elsif ($state eq "running") { %>
-									<a href="<%= url_for('test', 'testid' => $testname) %>">running</a>
+									<a href="<%= url_for('test', 'testid' => $jobid) %>">running</a>
 								<% } elsif ($state eq "scheduled") { %>
 									sched.(<%= $res->{priority} %>)
 								<% } else { %>
@@ -59,13 +58,13 @@
 								<span id="actions_<%=$jobid%>" style="display:none"><ul style="margin: 0px;">
 								<% if ($state eq "scheduled") { %>
 									<% my $prio = $res->{'priority'}; %>
-									 <li style="margin: 0px;"><a data-method="post" href="<%= url_for('setpriority', 'testid' => $testname, 'priority' => $prio-10)->query('back' => 1) %>">Raise priority</a></li>
-									 <li style="margin: 0px;"><a data-method="post" href="<%= url_for('setpriority', 'testid' => $testname, 'priority' => $prio+10)->query('back' => 1) %>">Lower priority</a></li>
+									 <li style="margin: 0px;"><a data-method="post" href="<%= url_for('setpriority', 'testid' => $jobid, 'priority' => $prio-10)->query('back' => 1) %>">Raise priority</a></li>
+									 <li style="margin: 0px;"><a data-method="post" href="<%= url_for('setpriority', 'testid' => $jobid, 'priority' => $prio+10)->query('back' => 1) %>">Lower priority</a></li>
 								<% } else { %>
-									 <li style="margin: 0px;"><a data-method="post" href="<%= url_for('restart', 'testid' => $testname)->query('back' => 1) %>">Re-schedule</a></li>
+									 <li style="margin: 0px;"><a data-method="post" href="<%= url_for('restart', 'testid' => $jobid)->query('back' => 1) %>">Re-schedule</a></li>
 								<% } %>
 								<% if ($state eq "scheduled" || $state eq "running") { %>
-									<li style="margin: 0px;"><a data-method="post" href="<%= url_for('cancel', 'testid' => $testname)->query('back' => 1) %>">Cancel</a></li>
+									<li style="margin: 0px;"><a data-method="post" href="<%= url_for('cancel', 'testid' => $jobid)->query('back' => 1) %>">Cancel</a></li>
 								<% } %>
 								</ul></span>
 							<% } %>
