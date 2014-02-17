@@ -8,9 +8,13 @@ use Mojolicious::Static;
 
 sub init {
     my $self = shift;
-    my $testid = $self->param('testid');
-    $self->stash('testid', $testid);
-    my $basepath = running_log($testid);
+    my $job = Scheduler::job_get($self->param('testid'));
+    $self->stash('job', $job);
+
+    my $testdirname = $job->{'settings'}->{'NAME'};
+    $self->stash('testdirname', $testdirname);
+
+    my $basepath = running_log($testdirname);
     $self->stash('basepath', $basepath);
 
     if ($basepath eq '') {
@@ -25,7 +29,7 @@ sub modlist {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = test_result($self->stash('testid'));
+    my $results = test_result($self->stash('testdirname'));
     my $modinfo = get_running_modinfo($results);
     if (defined $modinfo) {
         $self->render(json => $modinfo->{'modlist'});
@@ -38,9 +42,9 @@ sub status {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = test_result($self->stash('testid'));
-	delete $results->{'testmodules'};
-	delete $results->{'distribution'};
+    my $results = test_result($self->stash('testdirname'));
+    delete $results->{'testmodules'};
+    delete $results->{'distribution'};
     $self->render(json => $results);
 }
 
@@ -48,7 +52,7 @@ sub edit {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = test_result($self->stash('testid'));
+    my $results = test_result($self->stash('testdirname'));
     my $moduleid = $results->{'running'};
     my $module = test_result_module($results->{'testmodules'}, $moduleid);
     if ($module) {
