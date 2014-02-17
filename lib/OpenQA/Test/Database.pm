@@ -5,46 +5,41 @@
 
 package OpenQA::Test::Database;
 
-#use Modern::Perl;
 use strict;
 use warnings;
-#use lib 'lib';
 use Carp;
 use Cwd qw/ abs_path getcwd /;
-#use File::Slurp 'slurp';
-use openqa;
 use awstandard;
-use constant DEBUG => $ENV{DEBUG};
-
-#our $schema;
-
+use openqa;
 use Mojo::Base -base;
 has fixture_path => 't/fixtures';
 
-sub import {
-  my ($self, $schema_name, $file) = @_;
-
-  return if @_ < 3;
-
-  # Export connected schema to $schema
-  no strict 'refs';
-  my $caller = caller;
-  *{"$caller\::schema"} = $self->create($schema_name => $file);
-}
-
 sub create {
   my $self        = shift;
+  my %options     = (
+    file    =>  $ENV{OPENQA_DB} || ':memory:',
+    skip_fixtures  => 0,
+    @_
+  );
+  my $file = $options{file};
 
-  my $schema = openqa::connect_db();
+  # Remove previous
+  unlink $file if -e $file;
+
+  # New db
+  my $dsn = "dbi:SQLite:dbname=$file";
+  my $schema = Schema->connect($dsn, '', '', {quote_char => '`', name_sep => '.'});
+  $schema->deploy({quote_table_names => 1, quote_field_names => 1});
 
   # Fixtures
-  $self->insert_fixtures($schema);
+  $self->insert_fixtures($file, $schema) unless $options{skip_fixtures};
 
   return $schema;
 }
 
 sub insert_fixtures {
   my $self   = shift;
+  my $file   = shift;
   my $schema = shift;
 
   # Store working dir
@@ -53,8 +48,6 @@ sub insert_fixtures {
   chdir $self->fixture_path;
 
   foreach my $fixture (<*.pl>) {
-
-    warn "$fixture" if DEBUG;
 
     my $info = eval file_content $fixture;
     chdir $cwd, croak "Could not insert fixture $fixture: $@" if $@;
@@ -96,25 +89,19 @@ Deploy schema & load fixtures
 
 =head1 USAGE
 
-    # Creates an sqlite3 test.db database from DBIC Schema
-    my $schema = Test::Database->new->create(Schema => 'test.db');
+    # Creates an sqlite3 test.db database from DBIC Schema without fixtures
+    my $schema = Test::Database->new->create(file => 'test.db', skip_fixtures => 1);
 
-    # Creates an in-memory sqlite3 database from DBIC Schema
-    my $schema = Test::Database->new->create(Schema => ':memory:');
+    # Creates an in-memory sqlite3 database from DBIC Schema (both are equivalent)
+    my $schema = Test::Database->new->create(file => ':memory:');
+    my $schema = Test::Database->new->create;
 
 =head1 METHODS
 
-=head2 import
+=head2 create (%args)
 
-Allows for compile time generation of database.
-Exports the $schema into the current namespace:
-
-    use Test::Database Schema => 'test.db';
-    print $schema->sources;
-
-=head2 create ($schema_name, $file_name)
-
-Create new sqlite3 database from DBIC schema
+Create new sqlite3 database from DBIC schema. Use file to specify the filename
+(or ':memory:') and skip_fixtures to prevent loading fixtures.
 
 =head2 insert_fixtures
 
