@@ -18,6 +18,10 @@ $localstatedir $dbfile
 
 @EXPORT_OK = qw/connect_db/;
 
+if ($0 =~ /\.t$/) {
+    $ENV{OPENQA_BASEDIR} ||= dirname($0).'/data';
+}
+
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use awstandard;
 use File::Basename;
@@ -30,6 +34,7 @@ our $perldir="$basedir/$perlurl";
 our $resultdir="$basedir/$prj/testresults";
 our $scheduledir="$basedir/$prj/schedule.d";
 our $loguploaddir="$basedir/$prj/logupload";
+our $isodir="$basedir/$prj/factory/iso";
 our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';

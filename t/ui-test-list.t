@@ -1,6 +1,5 @@
 BEGIN {
   unshift @INC, 'lib', 'lib/OpenQA/modules';
-  $ENV{OPENQA_DB} = 't/data/db/test.db';
 }
 
 use Mojo::Base -strict;
@@ -8,7 +7,7 @@ use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Database;
 
-OpenQA::Test::Database->new->create(file => $ENV{OPENQA_DB});
+OpenQA::Test::Database->new->create();
 
 my $t = Test::Mojo->new('OpenQA');
 $t->get_ok('/tests')->status_is(200)->content_like(qr/Test results/i, 'result list is there');

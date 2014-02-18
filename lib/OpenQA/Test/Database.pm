@@ -17,29 +17,25 @@ has fixture_path => 't/fixtures';
 sub create {
   my $self        = shift;
   my %options     = (
-    file    =>  $ENV{OPENQA_DB} || ':memory:',
     skip_fixtures  => 0,
     @_
   );
-  my $file = $options{file};
 
   # Remove previous
-  unlink $file if -e $file;
+  unlink $openqa::dbfile if -e $openqa::dbfile;
 
   # New db
-  my $dsn = "dbi:SQLite:dbname=$file";
-  my $schema = Schema->connect($dsn, '', '', {quote_char => '`', name_sep => '.'});
+  my $schema = openqa::connect_db();
   $schema->deploy({quote_table_names => 1, quote_field_names => 1});
 
   # Fixtures
-  $self->insert_fixtures($file, $schema) unless $options{skip_fixtures};
+  $self->insert_fixtures($schema) unless $options{skip_fixtures};
 
   return $schema;
 }
 
 sub insert_fixtures {
   my $self   = shift;
-  my $file   = shift;
   my $schema = shift;
 
   # Store working dir

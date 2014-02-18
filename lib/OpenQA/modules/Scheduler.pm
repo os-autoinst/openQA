@@ -141,13 +141,7 @@ sub job_create {
 	die "invalid character in $i\n" if $settings{$i} =~ /\//; # TODO: use whitelist?
     }
 
-    unless (-e sprintf("%s/%s/factory/iso/%s",
-		       $openqa::basedir, $openqa::prj, $settings{ISO})) {
-	die "ISO does not exist\n";
-    }
-
-    unless (-e sprintf("%s/%s/factory/iso/%s",
-		       $openqa::basedir, $openqa::prj, $settings{ISO})) {
+    unless (-e sprintf("%s/%s", $openqa::isodir, $settings{ISO})) {
 	die "ISO does not exist\n";
     }
 

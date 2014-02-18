@@ -2,7 +2,6 @@
 
 BEGIN {
   unshift @INC, 'lib', 'lib/OpenQA/modules';
-  $ENV{OPENQA_DB} = 't/data/db/test.db';
 }
 
 use strict;
@@ -96,7 +95,7 @@ my $job_ref = {
     test_branch => undef,
     };
 
-my $iso = sprintf("%s/%s/factory/iso/%s", $openqa::basedir, $openqa::prj, $settings{ISO});
+my $iso = sprintf("%s/%s", $openqa::isodir, $settings{ISO});
 open my $fh, ">", $iso;
 my $job_id = Scheduler::job_create(%settings);
 is($job_id, 1, "job_create");
