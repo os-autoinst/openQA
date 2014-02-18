@@ -4,6 +4,16 @@ use OpenQA::Helpers;
 
 use Config::IniFiles;
 
+sub _rndstr {
+    my $length = shift || 16;
+    my $str;
+    my @chars = ('a'..'z', 'A'..'Z', '0'..'9', '_');
+    foreach (1..$length) {
+	$str .= $chars[rand @chars];
+    }
+    return $str;
+}
+
 sub _read_config {
   my $self = shift;
 
@@ -11,6 +21,7 @@ sub _read_config {
     needles_scm => 'git',
     needles_git_worktree => '/var/lib/os-autoinst/needles',
     needles_git_do_push => 'no',
+    openid_secret => _rndstr(16),
   };
 
   # Mojo's built in config plugins suck. JSON for example does not
@@ -24,6 +35,8 @@ sub _read_config {
       needles_git_do_push
       allowed_hosts
       suse_mirror
+      openid_secret
+      base_url
       /) {
     my $v = $cfg && $cfg->val('global', $k) || $defaults->{$k};
     $self->app->config->{$k} = $v if $v;
@@ -46,6 +59,12 @@ sub startup {
 
   # Router
   my $r = $self->routes;
+
+  $r->get('/login')->name('login')->to('login#login');
+  $r->get('/response')->to('login#response');
+
+  my $auth = $r->bridge('secret')->to("login#auth");
+  $auth->get('/test')->to('#test');
 
   $r->get('/tests')->name('tests')->to('test#list');
   my $test_r = $r->route('/tests/#testid');
