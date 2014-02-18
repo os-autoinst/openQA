@@ -1,6 +1,9 @@
 logs/*.tar.*
 temp
-testresults
+/testresults
+/t/data/openqa/db/*.sqlite
+/t/data/openqa/testresults
+/factory
 testrun-cron
 testrun-manual
 archive
