@@ -1,6 +1,9 @@
 #!/usr/bin/perl -w
 
-BEGIN { unshift @INC, 'lib', 'lib/OpenQA/modules'; }
+BEGIN {
+    use FindBin qw($Bin);
+    use lib "$Bin/../lib", "$Bin/../lib/OpenQA/modules";
+}
 
 use strict;
 
