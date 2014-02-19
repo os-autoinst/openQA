@@ -19,7 +19,9 @@ $localstatedir $dbfile
 @EXPORT_OK = qw/connect_db/;
 
 if ($0 =~ /\.t$/) {
-    $ENV{OPENQA_BASEDIR} ||= dirname($0).'/data';
+    # This should result in the 't' directory, even if $0 is in a subdirectory
+    my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
+    $ENV{OPENQA_BASEDIR} ||= $tdirname.'data';
 }
 
 #use lib "/usr/share/openqa/cgi-bin/modules";
