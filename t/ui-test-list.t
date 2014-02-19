@@ -3,7 +3,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 15;
+use Test::More tests => 16;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -29,6 +29,10 @@ ok($get->tx->res->dom->at('#results #job_99963 td.link a') eq '<a href="/tests/9
 # Test 99928 is scheduled (so can be canceled)
 $get->text_is('#results #job_99928 .link' => 'scheduled');
 $get->element_exists('#results #job_99928 .cancel');
+
+# Test 99938 failed, so it should be displayed in red
+$get->text_is('#results #job_99938 .extra .overviewfail' => 'doc');
+
 
 # Test 99937 is too old to be displayed by default
 $get->element_exists_not('#results #job_99937');
