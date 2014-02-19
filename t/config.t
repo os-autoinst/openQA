@@ -9,7 +9,7 @@ my $t = Test::Mojo->new('OpenQA');
 
 my $cfg = $t->app->config;
 
-ok(length($cfg->{openid_secret}), 16, "config has openid_secret");
+is(length($cfg->{openid_secret}), 16, "config has openid_secret");
 delete $cfg->{openid_secret};
 
 is_deeply($cfg,{
