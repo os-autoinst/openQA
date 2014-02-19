@@ -45,18 +45,33 @@ sub generate_jobs
 
     ### definition of special tests
     my %testruns = (
-        uefi => {
-            applies => sub { $_[0]->{arch} =~ /x86_64/},
+        'gnome-uefi' => {
+            applies => sub { $_[0]->{arch} =~ /x86_64/ && $_[0]->{distri} eq 'SLED'},
             settings => {
                 'QEMUCPU' => 'qemu64',
                 'UEFI' => '1',
                 'DESKTOP' => 'gnome',
                 'INSTALLONLY' => 1, # XXX
             } },
-        default => {
+        gnome => {
+            applies => sub { $_[0]->{distri} eq 'SLED'},
             settings => {
                 'QEMUCPUS' => '2',
                 'DESKTOP' => 'gnome'
+            } },
+        minimalx => {
+            applies => sub { $_[0]->{distri} eq 'SLES'},
+            settings => {
+                'QEMUCPUS' => '2',
+                'DESKTOP' => 'minimalx'
+            } },
+        'minimalx-uefi' => {
+            applies => sub { $_[0]->{arch} =~ /x86_64/ && $_[0]->{distri} eq 'SLES' },
+            settings => {
+                'QEMUCPU' => 'qemu64',
+                'UEFI' => '1',
+                'DESKTOP' => 'minimalx',
+                'INSTALLONLY' => 1, # XXX
             } },
     );
 
