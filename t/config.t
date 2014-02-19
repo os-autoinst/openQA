@@ -7,7 +7,12 @@ use Test::Mojo;
 
 my $t = Test::Mojo->new('OpenQA');
 
-is_deeply($t->app->config,{
+my $cfg = $t->app->config;
+
+ok(length($cfg->{openid_secret}), 16, "config has openid_secret");
+delete $cfg->{openid_secret};
+
+is_deeply($cfg,{
 		needles_git_do_push  => "no",
 		needles_git_worktree => "/var/lib/os-autoinst/needles",
 		needles_scm          => "git",
