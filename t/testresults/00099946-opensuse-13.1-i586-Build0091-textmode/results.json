@@ -1,0 +1,2588 @@
+{
+   "version" : "13.1",
+   "dents" : 0,
+   "testmodules" : [
+      {
+         "result" : "ok",
+         "details" : [
+            {
+               "screenshot" : "isosize-1.png",
+               "result" : "unk"
+            }
+         ],
+         "flags" : {
+            "important" : 1
+         },
+         "name" : "isosize",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/010_isosize.pm",
+         "dents" : 0,
+         "category" : "inst"
+      },
+      {
+         "details" : [
+            {
+               "needle" : "bootmenu-dvd-12.3",
+               "tags" : [
+                  "inst-bootmenu"
+               ],
+               "screenshot" : "bootloader-1.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "0",
+                     "similarity" : 99,
+                     "diff" : "bootloader-1-bootmenu-dvd-12.3-diff0.png",
+                     "x" : "0",
+                     "result" : "ok",
+                     "h" : 250,
+                     "w" : 800
+                  }
+               ]
+            },
+            {
+               "tags" : [
+                  "inst-textselected"
+               ],
+               "needle" : "inst-textselected",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "diff" : "bootloader-2-inst-textselected-diff0.png",
+                     "similarity" : 99,
+                     "y" : "390",
+                     "x" : "230",
+                     "w" : 120,
+                     "result" : "ok",
+                     "h" : 80
+                  }
+               ],
+               "screenshot" : "bootloader-2.png"
+            },
+            {
+               "needle" : "inst-video-typed",
+               "tags" : [
+                  "inst-video-typed"
+               ],
+               "screenshot" : "bootloader-3.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "475",
+                     "similarity" : 100,
+                     "h" : 23,
+                     "result" : "ok",
+                     "w" : 519,
+                     "x" : "265"
+                  }
+               ]
+            },
+            {
+               "tags" : [
+                  "inst-consolesettingstyped"
+               ],
+               "needle" : "inst-consolesettingstyped-1",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "similarity" : 100,
+                     "y" : "465",
+                     "x" : "565",
+                     "w" : 220,
+                     "result" : "ok",
+                     "h" : 35
+                  }
+               ],
+               "screenshot" : "bootloader-4.png"
+            }
+         ],
+         "flags" : {
+            "fatal" : 1
+         },
+         "name" : "bootloader",
+         "result" : "ok",
+         "category" : "inst",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/020_bootloader.pm",
+         "dents" : 0
+      },
+      {
+         "result" : "ok",
+         "flags" : {
+            "fatal" : 1
+         },
+         "name" : "welcome",
+         "details" : [
+            {
+               "area" : [
+                  {
+                     "x" : "10",
+                     "w" : 344,
+                     "result" : "ok",
+                     "h" : 128,
+                     "similarity" : 100,
+                     "y" : "25"
+                  },
+                  {
+                     "similarity" : 99,
+                     "diff" : "welcome-1-inst-welcome-textmode-betawarning-13M1-diff0.png",
+                     "y" : "170",
+                     "x" : "10",
+                     "w" : 160,
+                     "h" : 55,
+                     "result" : "ok"
+                  },
+                  {
+                     "result" : "ok",
+                     "h" : 25,
+                     "w" : 1020,
+                     "x" : "0",
+                     "y" : "715",
+                     "diff" : "welcome-1-inst-welcome-textmode-betawarning-13M1-diff1.png",
+                     "similarity" : 99
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "welcome-1.png",
+               "tags" : [
+                  "inst-welcome-textmode",
+                  "welcome-131M1",
+                  "inst-welcome",
+                  "inst-betawarning-textmode-13M1",
+                  "inst-betawarning",
+                  "inst-welcome-textmode-betawarning-13M1",
+                  "inst-betawarning-textmode-13M1"
+               ],
+               "needle" : "inst-welcome-textmode-betawarning-13M1"
+            },
+            {
+               "needle" : "inst-welcome-textmode-betawarning-13M1",
+               "tags" : [
+                  "inst-welcome-textmode",
+                  "welcome-131M1",
+                  "inst-welcome",
+                  "inst-betawarning-textmode-13M1",
+                  "inst-betawarning",
+                  "inst-welcome-textmode-betawarning-13M1",
+                  "inst-betawarning-textmode-13M1"
+               ],
+               "screenshot" : "welcome-2.png",
+               "area" : [
+                  {
+                     "x" : "10",
+                     "h" : 128,
+                     "result" : "ok",
+                     "w" : 344,
+                     "y" : "25",
+                     "similarity" : 100
+                  },
+                  {
+                     "diff" : "welcome-2-inst-welcome-textmode-betawarning-13M1-diff0.png",
+                     "similarity" : 99,
+                     "y" : "170",
+                     "x" : "10",
+                     "w" : 160,
+                     "h" : 55,
+                     "result" : "ok"
+                  },
+                  {
+                     "x" : "0",
+                     "w" : 1020,
+                     "h" : 25,
+                     "result" : "ok",
+                     "similarity" : 99,
+                     "diff" : "welcome-2-inst-welcome-textmode-betawarning-13M1-diff1.png",
+                     "y" : "715"
+                  }
+               ],
+               "result" : "ok"
+            },
+            {
+               "tags" : [
+                  "inst-welcome"
+               ],
+               "needle" : "inst-welcome-textmode",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "5",
+                     "similarity" : 99,
+                     "diff" : "welcome-3-inst-welcome-textmode-diff0.png",
+                     "x" : "0",
+                     "result" : "ok",
+                     "h" : 763,
+                     "w" : 1024
+                  }
+               ],
+               "screenshot" : "welcome-3.png"
+            },
+            {
+               "needle" : "inst-welcome-textmode",
+               "tags" : [
+                  "languagepicked"
+               ],
+               "screenshot" : "welcome-4.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "diff" : "welcome-4-inst-welcome-textmode-diff0.png",
+                     "similarity" : 99,
+                     "y" : "5",
+                     "x" : "0",
+                     "w" : 1024,
+                     "result" : "ok",
+                     "h" : 763
+                  }
+               ]
+            },
+            {
+               "result" : "unk",
+               "needles" : [
+                  {
+                     "error" : 0.429716814211961,
+                     "name" : "langincomplete-1366800311",
+                     "area" : [
+                        {
+                           "x" : "274",
+                           "w" : 374,
+                           "h" : 73,
+                           "result" : "fail",
+                           "diff" : "welcome-5-langincomplete-1366800311-diff0.png",
+                           "similarity" : 34,
+                           "y" : "500"
+                        }
+                     ]
+                  },
+                  {
+                     "area" : [
+                        {
+                           "y" : "644",
+                           "similarity" : 33,
+                           "diff" : "welcome-5-inst-langincomplete-texmode-13M1-diff0.png",
+                           "h" : 73,
+                           "result" : "fail",
+                           "w" : 374,
+                           "x" : "333"
+                        }
+                     ],
+                     "name" : "inst-langincomplete-texmode-13M1",
+                     "error" : 0.437457831733391
+                  }
+               ],
+               "screenshot" : "welcome-5.png",
+               "tags" : [
+                  "langincomplete",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            }
+         ],
+         "category" : "inst",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/050_welcome.pm",
+         "dents" : 0
+      },
+      {
+         "result" : "ok",
+         "flags" : {
+            "fatal" : 1
+         },
+         "name" : "installation_mode",
+         "details" : [
+            {
+               "tags" : [
+                  "inst-instmode"
+               ],
+               "needle" : "installation_mode-text-13M2",
+               "area" : [
+                  {
+                     "x" : "0",
+                     "w" : 851,
+                     "h" : 499,
+                     "result" : "ok",
+                     "similarity" : 100,
+                     "y" : "0"
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "installation_mode-1.png"
+            },
+            {
+               "area" : [
+                  {
+                     "similarity" : 100,
+                     "y" : "0",
+                     "x" : "0",
+                     "w" : 384,
+                     "result" : "ok",
+                     "h" : 217
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "installation_mode-2.png",
+               "tags" : [
+                  "inst-timezone"
+               ],
+               "needle" : "inst-timezone-text"
+            }
+         ],
+         "dents" : 0,
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/051_installation_mode.pm",
+         "category" : "inst"
+      },
+      {
+         "category" : "inst",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/054_installer_timezone.pm",
+         "dents" : 0,
+         "result" : "ok",
+         "name" : "installer_timezone",
+         "flags" : {
+            "fatal" : 1
+         },
+         "details" : [
+            {
+               "screenshot" : "installer_timezone-1.png",
+               "area" : [
+                  {
+                     "y" : "0",
+                     "similarity" : 100,
+                     "h" : 217,
+                     "result" : "ok",
+                     "w" : 384,
+                     "x" : "0"
+                  }
+               ],
+               "result" : "ok",
+               "needle" : "inst-timezone-text",
+               "tags" : [
+                  "inst-timezone"
+               ]
+            }
+         ]
+      },
+      {
+         "details" : [
+            {
+               "screenshot" : "logpackages-1.png",
+               "area" : [
+                  {
+                     "y" : "0",
+                     "diff" : "logpackages-1-before-package-selection-textmode-diff0.png",
+                     "similarity" : 99,
+                     "result" : "ok",
+                     "h" : 768,
+                     "w" : 1024,
+                     "x" : "0"
+                  }
+               ],
+               "result" : "ok",
+               "needle" : "before-package-selection-textmode",
+               "tags" : [
+                  "before-package-selection"
+               ]
+            },
+            {
+               "area" : [
+                  {
+                     "h" : 98,
+                     "result" : "ok",
+                     "w" : 644,
+                     "x" : "0",
+                     "y" : "40",
+                     "similarity" : 99,
+                     "diff" : "logpackages-2-inst-console-1364544833-diff0.png"
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "logpackages-2.png",
+               "tags" : [
+                  "inst-console"
+               ],
+               "needle" : "inst-console-1364544833"
+            },
+            {
+               "screenshot" : "logpackages-3.png",
+               "area" : [
+                  {
+                     "x" : "0",
+                     "w" : 709,
+                     "h" : 51,
+                     "result" : "ok",
+                     "similarity" : 99,
+                     "diff" : "logpackages-3-inst-packagestyped-1364550998-diff0.png",
+                     "y" : "141"
+                  }
+               ],
+               "result" : "ok",
+               "needle" : "inst-packagestyped-1364550998",
+               "tags" : [
+                  "inst-packagestyped"
+               ]
+            },
+            {
+               "screenshot" : "logpackages-4.png",
+               "result" : "unk"
+            },
+            {
+               "area" : [
+                  {
+                     "similarity" : 99,
+                     "diff" : "logpackages-5-desktop-selection-text-diff0.png",
+                     "y" : "0",
+                     "x" : "0",
+                     "w" : 851,
+                     "h" : 492,
+                     "result" : "ok"
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "logpackages-5.png",
+               "tags" : [
+                  "inst-returned-to-yast"
+               ],
+               "needle" : "desktop-selection-text"
+            }
+         ],
+         "flags" : {
+            "fatal" : 1
+         },
+         "name" : "logpackages",
+         "result" : "ok",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/056_logpackages.pm",
+         "category" : "inst",
+         "dents" : 0
+      },
+      {
+         "dents" : 0,
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/057_installer_desktopselection.pm",
+         "category" : "inst",
+         "details" : [
+            {
+               "needle" : "desktop-selection-text",
+               "tags" : [
+                  "desktop-selection"
+               ],
+               "screenshot" : "installer_desktopselection-1.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "0",
+                     "similarity" : 99,
+                     "diff" : "installer_desktopselection-1-desktop-selection-text-diff0.png",
+                     "result" : "ok",
+                     "h" : 492,
+                     "w" : 851,
+                     "x" : "0"
+                  }
+               ]
+            },
+            {
+               "tags" : [
+                  "other-desktop"
+               ],
+               "needle" : "other-desktop-textmode",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "h" : 199,
+                     "result" : "ok",
+                     "w" : 426,
+                     "x" : "0",
+                     "y" : "321",
+                     "similarity" : 100
+                  }
+               ],
+               "screenshot" : "installer_desktopselection-2.png"
+            }
+         ],
+         "flags" : {
+            "fatal" : 1
+         },
+         "name" : "installer_desktopselection",
+         "result" : "ok"
+      },
+      {
+         "result" : "ok",
+         "name" : "partitioning",
+         "flags" : {
+            "fatal" : 1
+         },
+         "details" : [
+            {
+               "needle" : "partioning-text-131M1",
+               "tags" : [
+                  "partitioning"
+               ],
+               "screenshot" : "partitioning-1.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "295",
+                     "similarity" : 100,
+                     "x" : "172",
+                     "result" : "ok",
+                     "h" : 307,
+                     "w" : 563
+                  }
+               ]
+            }
+         ],
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/060_partitioning.pm",
+         "category" : "inst",
+         "dents" : 0
+      },
+      {
+         "flags" : {
+            "fatal" : 1
+         },
+         "details" : [
+            {
+               "tags" : [
+                  "after-paritioning"
+               ],
+               "needle" : "inst-usersetup-text",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "x" : "0",
+                     "w" : 844,
+                     "result" : "ok",
+                     "h" : 652,
+                     "similarity" : 100,
+                     "y" : "0"
+                  }
+               ],
+               "screenshot" : "partitioning_finish-1.png"
+            }
+         ],
+         "name" : "partitioning_finish",
+         "result" : "ok",
+         "category" : "inst",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/064_partitioning_finish.pm",
+         "dents" : 0
+      },
+      {
+         "name" : "user_settings",
+         "flags" : {
+            "fatal" : 1
+         },
+         "details" : [
+            {
+               "needle" : "inst-usersetup-text",
+               "tags" : [
+                  "inst-usersetup"
+               ],
+               "screenshot" : "user_settings-1.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "x" : "0",
+                     "w" : 844,
+                     "h" : 652,
+                     "result" : "ok",
+                     "similarity" : 100,
+                     "y" : "0"
+                  }
+               ]
+            },
+            {
+               "needle" : "inst-userinfostyped-text",
+               "tags" : [
+                  "inst-userinfostyped"
+               ],
+               "screenshot" : "user_settings-2.png",
+               "area" : [
+                  {
+                     "y" : "0",
+                     "diff" : "user_settings-2-inst-userinfostyped-text-diff0.png",
+                     "similarity" : 99,
+                     "x" : "0",
+                     "result" : "ok",
+                     "h" : 372,
+                     "w" : 883
+                  }
+               ],
+               "result" : "ok"
+            },
+            {
+               "tags" : [
+                  "inst-userpasswdtoosimple"
+               ],
+               "needle" : "inst-userpasswdtoosimple-text",
+               "area" : [
+                  {
+                     "diff" : "user_settings-3-inst-userpasswdtoosimple-text-diff0.png",
+                     "similarity" : 99,
+                     "y" : "329",
+                     "w" : 294,
+                     "h" : 112,
+                     "result" : "ok",
+                     "x" : "365"
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "user_settings-3.png"
+            }
+         ],
+         "result" : "ok",
+         "category" : "inst",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/065_user_settings.pm",
+         "dents" : 0
+      },
+      {
+         "result" : "ok",
+         "details" : [
+            {
+               "screenshot" : "installation_overview-1.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "399",
+                     "similarity" : 100,
+                     "x" : "23",
+                     "result" : "ok",
+                     "h" : 57,
+                     "w" : 825
+                  }
+               ],
+               "needle" : "inst-overview-textmode",
+               "tags" : [
+                  "inst-overview"
+               ]
+            }
+         ],
+         "flags" : {
+            "fatal" : 1
+         },
+         "name" : "installation_overview",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/071_installation_overview.pm",
+         "dents" : 0,
+         "category" : "inst"
+      },
+      {
+         "name" : "start_install",
+         "flags" : {
+            "fatal" : 1
+         },
+         "details" : [
+            {
+               "area" : [
+                  {
+                     "y" : "232",
+                     "similarity" : 100,
+                     "x" : "295",
+                     "h" : 286,
+                     "result" : "ok",
+                     "w" : 433
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "start_install-1.png",
+               "tags" : [
+                  "startinstall"
+               ],
+               "needle" : "startinstall-text"
+            },
+            {
+               "screenshot" : "start_install-2.png",
+               "result" : "unk"
+            },
+            {
+               "tags" : [
+                  "inst-packageinstallationstarted"
+               ],
+               "needle" : "inst-packageinstallationstarted-text",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "0",
+                     "similarity" : 99,
+                     "diff" : "start_install-3-inst-packageinstallationstarted-text-diff0.png",
+                     "x" : "0",
+                     "result" : "ok",
+                     "h" : 48,
+                     "w" : 177
+                  }
+               ],
+               "screenshot" : "start_install-3.png"
+            }
+         ],
+         "result" : "ok",
+         "dents" : 0,
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/085_start_install.pm",
+         "category" : "inst"
+      },
+      {
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/090_livecdreboot.pm",
+         "category" : "inst",
+         "dents" : 0,
+         "result" : "ok",
+         "flags" : {
+            "fatal" : 1
+         },
+         "name" : "livecdreboot",
+         "details" : [
+            {
+               "screenshot" : "livecdreboot-1.png",
+               "area" : [
+                  {
+                     "similarity" : 100,
+                     "y" : "271",
+                     "w" : 492,
+                     "result" : "ok",
+                     "h" : 156,
+                     "x" : "264"
+                  }
+               ],
+               "result" : "ok",
+               "needle" : "rebootnow-text",
+               "tags" : [
+                  "rebootnow-131M1",
+                  "rebootnow",
+                  "rebootnow-text",
+                  "yast-error-ntp-bnc836612"
+               ]
+            },
+            {
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "0",
+                     "diff" : "livecdreboot-2-inst-automatic-configuration-textmode-diff0.png",
+                     "similarity" : 98,
+                     "result" : "ok",
+                     "h" : 75,
+                     "w" : 275,
+                     "x" : "0"
+                  }
+               ],
+               "screenshot" : "livecdreboot-2.png",
+               "tags" : [
+                  "reboot-after-installation"
+               ],
+               "needle" : "inst-automatic-configuration-textmode"
+            },
+            {
+               "tags" : [
+                  "inst-bootmenu",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ],
+               "needles" : [
+                  {
+                     "error" : 0.53393915083365,
+                     "area" : [
+                        {
+                           "w" : 800,
+                           "h" : 250,
+                           "result" : "fail",
+                           "x" : "224",
+                           "diff" : "livecdreboot-3-bootmenu-rescue-cd-diff0.png",
+                           "similarity" : 26,
+                           "y" : "373"
+                        }
+                     ],
+                     "name" : "bootmenu-rescue-cd"
+                  },
+                  {
+                     "area" : [
+                        {
+                           "similarity" : 33,
+                           "diff" : "livecdreboot-3-inst-bootmenu-promo-diff0.png",
+                           "y" : "388",
+                           "x" : "578",
+                           "w" : 255,
+                           "h" : 230,
+                           "result" : "fail"
+                        }
+                     ],
+                     "name" : "inst-bootmenu-promo",
+                     "error" : 0.443760671492343
+                  },
+                  {
+                     "name" : "bootmenu-dvd-12.3",
+                     "area" : [
+                        {
+                           "x" : "224",
+                           "w" : 800,
+                           "h" : 250,
+                           "result" : "fail",
+                           "similarity" : 28,
+                           "diff" : "livecdreboot-3-bootmenu-dvd-12.3-diff0.png",
+                           "y" : "373"
+                        }
+                     ],
+                     "error" : 0.517102836169162
+                  },
+                  {
+                     "error" : 0.509654188486607,
+                     "name" : "inst-bootmenu-promo-osp",
+                     "area" : [
+                        {
+                           "similarity" : 28,
+                           "diff" : "livecdreboot-3-inst-bootmenu-promo-osp-diff0.png",
+                           "y" : "373",
+                           "x" : "224",
+                           "w" : 800,
+                           "result" : "fail",
+                           "h" : 303
+                        }
+                     ]
+                  }
+               ],
+               "screenshot" : "livecdreboot-3.png",
+               "result" : "unk"
+            },
+            {
+               "tags" : [
+                  "grub2",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ],
+               "result" : "unk",
+               "needles" : [
+                  {
+                     "error" : 0.466503775557214,
+                     "area" : [
+                        {
+                           "w" : 685,
+                           "h" : 370,
+                           "result" : "fail",
+                           "x" : "0",
+                           "diff" : "livecdreboot-4-grub2-2-diff0.png",
+                           "similarity" : 31,
+                           "y" : "192"
+                        }
+                     ],
+                     "name" : "grub2-2"
+                  },
+                  {
+                     "error" : 0.461578079153103,
+                     "name" : "grub2-2-131RC2",
+                     "area" : [
+                        {
+                           "x" : "0",
+                           "w" : 685,
+                           "result" : "fail",
+                           "h" : 370,
+                           "diff" : "livecdreboot-4-grub2-2-131RC2-diff0.png",
+                           "similarity" : 32,
+                           "y" : "192"
+                        }
+                     ]
+                  },
+                  {
+                     "error" : 0.466503775557214,
+                     "area" : [
+                        {
+                           "x" : "0",
+                           "h" : 370,
+                           "result" : "fail",
+                           "w" : 685,
+                           "y" : "192",
+                           "diff" : "livecdreboot-4-grub2-1-diff0.png",
+                           "similarity" : 31
+                        }
+                     ],
+                     "name" : "grub2-1"
+                  },
+                  {
+                     "error" : 0.466832612429485,
+                     "area" : [
+                        {
+                           "y" : "192",
+                           "diff" : "livecdreboot-4-grub2-2-131M2-diff0.png",
+                           "similarity" : 31,
+                           "x" : "0",
+                           "h" : 370,
+                           "result" : "fail",
+                           "w" : 685
+                        }
+                     ],
+                     "name" : "grub2-2-131M2"
+                  }
+               ],
+               "screenshot" : "livecdreboot-4.png"
+            }
+         ]
+      },
+      {
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/091_second_stage.pm",
+         "category" : "inst",
+         "dents" : 0,
+         "result" : "ok",
+         "flags" : {
+            "important" : 1,
+            "milestone" : 1,
+            "fatal" : 1
+         },
+         "name" : "second_stage",
+         "details" : [
+            {
+               "area" : [
+                  {
+                     "x" : "0",
+                     "h" : 40,
+                     "result" : "ok",
+                     "w" : 195,
+                     "y" : "693",
+                     "similarity" : 99,
+                     "diff" : "second_stage-1-desktop-at-first-boot-text-131M2-diff0.png"
+                  },
+                  {
+                     "similarity" : 99,
+                     "diff" : "second_stage-1-desktop-at-first-boot-text-131M2-diff1.png",
+                     "y" : "748",
+                     "x" : "84",
+                     "w" : 56,
+                     "result" : "ok",
+                     "h" : 20
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "second_stage-1.png",
+               "tags" : [
+                  "desktop-at-first-boot-text-131M1",
+                  "desktop-at-first-boot-text",
+                  "desktop-at-first-boot-text-131M2",
+                  "install-failed-firewall-13M1"
+               ],
+               "needle" : "desktop-at-first-boot-text-131M2"
+            }
+         ]
+      },
+      {
+         "result" : "ok",
+         "flags" : {
+            "milestone" : 1
+         },
+         "name" : "consoletest_setup",
+         "details" : [
+            {
+               "tags" : [
+                  "text-login"
+               ],
+               "needle" : "text-login",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "diff" : "consoletest_setup-1-text-login-diff0.png",
+                     "similarity" : 99,
+                     "y" : "0",
+                     "w" : 128,
+                     "result" : "ok",
+                     "h" : 66,
+                     "x" : "0"
+                  }
+               ],
+               "screenshot" : "consoletest_setup-1.png"
+            },
+            {
+               "result" : "ok",
+               "area" : [
+                  {
+                     "h" : 29,
+                     "result" : "ok",
+                     "w" : 137,
+                     "x" : "0",
+                     "y" : "273",
+                     "diff" : "consoletest_setup-2-sudo-passwordprompt-diff0.png",
+                     "similarity" : 97
+                  }
+               ],
+               "screenshot" : "consoletest_setup-2.png",
+               "tags" : [
+                  "sudo-passwordprompt"
+               ],
+               "needle" : "sudo-passwordprompt"
+            },
+            {
+               "result" : "unk",
+               "screenshot" : "consoletest_setup-3.png"
+            }
+         ],
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/010_consoletest_setup.pm",
+         "category" : "consoletest",
+         "dents" : 0
+      },
+      {
+         "result" : "ok",
+         "details" : [
+            {
+               "needles" : [
+                  {
+                     "error" : 0.132960458626034,
+                     "name" : "sudo-passwordprompt",
+                     "area" : [
+                        {
+                           "y" : "17",
+                           "diff" : "remove_cd_repo-1-sudo-passwordprompt-diff0.png",
+                           "similarity" : 63,
+                           "result" : "fail",
+                           "h" : 29,
+                           "w" : 137,
+                           "x" : "96"
+                        }
+                     ]
+                  },
+                  {
+                     "error" : 0.790182160361099,
+                     "name" : "sudo-passwordprompt-lxde",
+                     "area" : [
+                        {
+                           "similarity" : 11,
+                           "diff" : "remove_cd_repo-1-sudo-passwordprompt-lxde-diff0.png",
+                           "y" : "1",
+                           "w" : 224,
+                           "result" : "fail",
+                           "h" : 33,
+                           "x" : "80"
+                        }
+                     ]
+                  }
+               ],
+               "screenshot" : "remove_cd_repo-1.png",
+               "result" : "unk",
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "tags" : [
+                  "cdreporemoved"
+               ],
+               "needle" : "remove_cd_repo",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "x" : "0",
+                     "w" : 291,
+                     "result" : "ok",
+                     "h" : 20,
+                     "diff" : "remove_cd_repo-2-remove_cd_repo-diff0.png",
+                     "similarity" : 99,
+                     "y" : "60"
+                  }
+               ],
+               "screenshot" : "remove_cd_repo-2.png"
+            }
+         ],
+         "flags" : {
+            "milestone" : 1
+         },
+         "name" : "remove_cd_repo",
+         "dents" : 0,
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/011_remove_cd_repo.pm",
+         "category" : "consoletest"
+      },
+      {
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/140_yast2_lan.pm",
+         "dents" : 0,
+         "category" : "consoletest",
+         "result" : "ok",
+         "details" : [
+            {
+               "result" : "unk",
+               "needles" : [
+                  {
+                     "area" : [
+                        {
+                           "similarity" : 52,
+                           "diff" : "yast2_lan-1-sudo-passwordprompt-diff0.png",
+                           "y" : "660",
+                           "x" : "872",
+                           "w" : 137,
+                           "h" : 29,
+                           "result" : "fail"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt",
+                     "error" : 0.228645558501967
+                  },
+                  {
+                     "area" : [
+                        {
+                           "w" : 224,
+                           "result" : "fail",
+                           "h" : 33,
+                           "x" : "197",
+                           "diff" : "yast2_lan-1-sudo-passwordprompt-lxde-diff0.png",
+                           "similarity" : 62,
+                           "y" : "575"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde",
+                     "error" : 0.139486480876258
+                  }
+               ],
+               "screenshot" : "yast2_lan-1.png",
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "result" : "unk",
+               "screenshot" : "yast2_lan-2.png"
+            },
+            {
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "29",
+                     "similarity" : 100,
+                     "result" : "ok",
+                     "h" : 131,
+                     "w" : 999,
+                     "x" : "7"
+                  }
+               ],
+               "screenshot" : "yast2_lan-3.png",
+               "tags" : [
+                  "test-yast2_lan-1"
+               ],
+               "needle" : "yast2_lan-1370608095"
+            },
+            {
+               "screenshot" : "yast2_lan-4.png",
+               "area" : [
+                  {
+                     "y" : "2",
+                     "similarity" : 99,
+                     "diff" : "yast2_lan-4-yast2_lan-2-1-good-diff-diff0.png",
+                     "result" : "ok",
+                     "h" : 71,
+                     "w" : 64,
+                     "x" : "0"
+                  }
+               ],
+               "result" : "ok",
+               "needle" : "yast2_lan-2-1-good-diff",
+               "tags" : [
+                  "test-yast2_lan-2"
+               ]
+            }
+         ],
+         "flags" : {
+            "milestone" : 1
+         },
+         "name" : "yast2_lan"
+      },
+      {
+         "category" : "consoletest",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/145_aplay.pm",
+         "dents" : 0,
+         "details" : [
+            {
+               "result" : "unk",
+               "screenshot" : "aplay-1.png",
+               "needles" : [
+                  {
+                     "name" : "sudo-passwordprompt",
+                     "area" : [
+                        {
+                           "x" : "376",
+                           "w" : 137,
+                           "h" : 29,
+                           "result" : "fail",
+                           "diff" : "aplay-1-sudo-passwordprompt-diff0.png",
+                           "similarity" : 79,
+                           "y" : "193"
+                        }
+                     ],
+                     "error" : 0.0412513636605105
+                  },
+                  {
+                     "error" : 0.604906791563803,
+                     "name" : "sudo-passwordprompt-lxde",
+                     "area" : [
+                        {
+                           "w" : 224,
+                           "result" : "fail",
+                           "h" : 33,
+                           "x" : "63",
+                           "similarity" : 22,
+                           "diff" : "aplay-1-sudo-passwordprompt-lxde-diff0.png",
+                           "y" : "39"
+                        }
+                     ]
+                  }
+               ],
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "screenshot" : "aplay-2.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "591",
+                     "similarity" : 100,
+                     "h" : 68,
+                     "result" : "ok",
+                     "w" : 440,
+                     "x" : "0"
+                  }
+               ],
+               "needle" : "aplay-1",
+               "tags" : [
+                  "test-aplay-1"
+               ]
+            },
+            {
+               "screenshot" : "aplay-4.png",
+               "result" : "unk"
+            },
+            {
+               "result" : "ok",
+               "decoded_text" : "123A456B789C*0#D",
+               "reference_text" : "123A456B789C*0#D",
+               "audio" : "aplay-3.wav"
+            },
+            {
+               "result" : "ok",
+               "area" : [
+                  {
+                     "h" : 156,
+                     "result" : "ok",
+                     "w" : 50,
+                     "x" : "256",
+                     "y" : "466",
+                     "diff" : "aplay-5-test-aplay-2-diff0.png",
+                     "similarity" : 99
+                  },
+                  {
+                     "x" : "426",
+                     "w" : 85,
+                     "result" : "ok",
+                     "h" : 19,
+                     "similarity" : 100,
+                     "y" : "0"
+                  }
+               ],
+               "screenshot" : "aplay-5.png",
+               "tags" : [
+                  "test-aplay-2"
+               ],
+               "needle" : "test-aplay-2"
+            }
+         ],
+         "flags" : {},
+         "name" : "aplay",
+         "result" : "ok"
+      },
+      {
+         "category" : "consoletest",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/146_glibc_i686.pm",
+         "dents" : 0,
+         "flags" : {},
+         "name" : "glibc_i686",
+         "details" : [
+            {
+               "screenshot" : "glibc_i686-1.png",
+               "area" : [
+                  {
+                     "y" : "91",
+                     "diff" : "glibc_i686-1-glibc_i686-1-diff0.png",
+                     "similarity" : 99,
+                     "result" : "ok",
+                     "h" : 22,
+                     "w" : 255,
+                     "x" : "0"
+                  },
+                  {
+                     "w" : 198,
+                     "result" : "ok",
+                     "h" : 32,
+                     "x" : "0",
+                     "similarity" : 100,
+                     "y" : "0"
+                  }
+               ],
+               "result" : "ok",
+               "needle" : "glibc_i686-1",
+               "tags" : [
+                  "test-glibc_i686-1"
+               ]
+            }
+         ],
+         "result" : "ok"
+      },
+      {
+         "dents" : 0,
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/150_zypper_up.pm",
+         "category" : "consoletest",
+         "flags" : {
+            "milestone" : 1
+         },
+         "name" : "zypper_up",
+         "details" : [
+            {
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ],
+               "result" : "unk",
+               "needles" : [
+                  {
+                     "error" : 0.145523108612512,
+                     "area" : [
+                        {
+                           "y" : "17",
+                           "diff" : "zypper_up-1-sudo-passwordprompt-diff0.png",
+                           "similarity" : 61,
+                           "x" : "0",
+                           "result" : "fail",
+                           "h" : 29,
+                           "w" : 137
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt"
+                  },
+                  {
+                     "area" : [
+                        {
+                           "diff" : "zypper_up-1-sudo-passwordprompt-lxde-diff0.png",
+                           "similarity" : 5,
+                           "y" : "7",
+                           "w" : 224,
+                           "h" : 33,
+                           "result" : "fail",
+                           "x" : "6"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde",
+                     "error" : 0.899388222517777
+                  }
+               ],
+               "screenshot" : "zypper_up-1.png"
+            },
+            {
+               "result" : "unk",
+               "screenshot" : "zypper_up-2.png"
+            },
+            {
+               "needle" : "zypper_up_yesno-131RC2",
+               "tags" : [
+                  "zypper_up_yesno",
+                  "zypper_up_yesno-131RC2",
+                  "zypper_up_nothingtodo"
+               ],
+               "screenshot" : "zypper_up-3.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "x" : "0",
+                     "result" : "ok",
+                     "h" : 36,
+                     "w" : 176,
+                     "y" : "574",
+                     "similarity" : 99,
+                     "diff" : "zypper_up-3-zypper_up_yesno-131RC2-diff0.png"
+                  },
+                  {
+                     "y" : "139",
+                     "similarity" : 100,
+                     "x" : "260",
+                     "result" : "ok",
+                     "h" : 21,
+                     "w" : 166
+                  }
+               ]
+            }
+         ],
+         "result" : "fail"
+      },
+      {
+         "category" : "consoletest",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/155_zypper_in.pm",
+         "dents" : 0,
+         "result" : "ok",
+         "name" : "zypper_in",
+         "flags" : {},
+         "details" : [
+            {
+               "result" : "unk",
+               "screenshot" : "zypper_in-1.png",
+               "needles" : [
+                  {
+                     "name" : "sudo-passwordprompt",
+                     "area" : [
+                        {
+                           "diff" : "zypper_in-1-sudo-passwordprompt-diff0.png",
+                           "similarity" : 63,
+                           "y" : "17",
+                           "x" : "80",
+                           "w" : 137,
+                           "result" : "fail",
+                           "h" : 29
+                        }
+                     ],
+                     "error" : 0.132960458626034
+                  },
+                  {
+                     "error" : 0.817336241933337,
+                     "name" : "sudo-passwordprompt-lxde",
+                     "area" : [
+                        {
+                           "y" : "7",
+                           "similarity" : 9,
+                           "diff" : "zypper_in-1-sudo-passwordprompt-lxde-diff0.png",
+                           "x" : "10",
+                           "h" : 33,
+                           "result" : "fail",
+                           "w" : 224
+                        }
+                     ]
+                  }
+               ],
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "screenshot" : "zypper_in-2.png",
+               "area" : [
+                  {
+                     "y" : "718",
+                     "similarity" : 99,
+                     "diff" : "zypper_in-2-zypper_in-1-diff0.png",
+                     "x" : "0",
+                     "h" : 46,
+                     "result" : "ok",
+                     "w" : 194
+                  }
+               ],
+               "result" : "ok",
+               "needle" : "zypper_in-1",
+               "tags" : [
+                  "test-zypper_in-1"
+               ]
+            },
+            {
+               "tags" : [
+                  "test-zypper_in-2"
+               ],
+               "needle" : "zypper_in-2-131B1",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "similarity" : 99,
+                     "diff" : "zypper_in-3-zypper_in-2-131B1-diff0.png",
+                     "y" : "30",
+                     "w" : 280,
+                     "h" : 19,
+                     "result" : "ok",
+                     "x" : "0"
+                  }
+               ],
+               "screenshot" : "zypper_in-3.png"
+            }
+         ]
+      },
+      {
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/157_yast2_i.pm",
+         "category" : "consoletest",
+         "dents" : 0,
+         "details" : [
+            {
+               "needles" : [
+                  {
+                     "area" : [
+                        {
+                           "similarity" : 58,
+                           "diff" : "yast2_i-1-sudo-passwordprompt-diff0.png",
+                           "y" : "513",
+                           "x" : "152",
+                           "w" : 137,
+                           "result" : "fail",
+                           "h" : 29
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt",
+                     "error" : 0.168957710237638
+                  },
+                  {
+                     "name" : "sudo-passwordprompt-lxde",
+                     "area" : [
+                        {
+                           "diff" : "yast2_i-1-sudo-passwordprompt-lxde-diff0.png",
+                           "similarity" : 33,
+                           "y" : "452",
+                           "w" : 224,
+                           "h" : 33,
+                           "result" : "fail",
+                           "x" : "350"
+                        }
+                     ],
+                     "error" : 0.44441788766055
+                  }
+               ],
+               "screenshot" : "yast2_i-1.png",
+               "result" : "unk",
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "area" : [
+                  {
+                     "x" : "6",
+                     "result" : "ok",
+                     "h" : 192,
+                     "w" : 533,
+                     "y" : "50",
+                     "similarity" : 100
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "yast2_i-2.png",
+               "tags" : [
+                  "test-yast2_i-1"
+               ],
+               "needle" : "test-yast2_i-1"
+            },
+            {
+               "tags" : [
+                  "test-yast2_i-2"
+               ],
+               "needle" : "test-yast2_i-2-131M1",
+               "area" : [
+                  {
+                     "y" : "0",
+                     "similarity" : 100,
+                     "x" : "0",
+                     "h" : 768,
+                     "result" : "ok",
+                     "w" : 1024
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "yast2_i-3.png"
+            },
+            {
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ],
+               "needles" : [
+                  {
+                     "error" : 0.121389203034155,
+                     "area" : [
+                        {
+                           "diff" : "yast2_i-4-sudo-passwordprompt-diff0.png",
+                           "similarity" : 65,
+                           "y" : "1",
+                           "x" : "48",
+                           "w" : 137,
+                           "result" : "fail",
+                           "h" : 29
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt"
+                  },
+                  {
+                     "name" : "sudo-passwordprompt-lxde",
+                     "area" : [
+                        {
+                           "similarity" : 4,
+                           "diff" : "yast2_i-4-sudo-passwordprompt-lxde-diff0.png",
+                           "y" : "9",
+                           "w" : 224,
+                           "result" : "fail",
+                           "h" : 33,
+                           "x" : "73"
+                        }
+                     ],
+                     "error" : 0.919726391251402
+                  }
+               ],
+               "screenshot" : "yast2_i-4.png",
+               "result" : "unk"
+            },
+            {
+               "tags" : [
+                  "test-yast2_i-xdelta-not-installed"
+               ],
+               "needle" : "test-yast2_i-xdelta-not-installed",
+               "area" : [
+                  {
+                     "x" : "1",
+                     "h" : 46,
+                     "result" : "ok",
+                     "w" : 279,
+                     "y" : "17",
+                     "diff" : "yast2_i-5-test-yast2_i-xdelta-not-installed-diff0.png",
+                     "similarity" : 99
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "yast2_i-5.png"
+            }
+         ],
+         "flags" : {},
+         "name" : "yast2_i",
+         "result" : "ok"
+      },
+      {
+         "result" : "ok",
+         "details" : [
+            {
+               "needles" : [
+                  {
+                     "error" : 0.151684684122078,
+                     "area" : [
+                        {
+                           "y" : "161",
+                           "similarity" : 61,
+                           "diff" : "yast2_bootloader-1-sudo-passwordprompt-diff0.png",
+                           "result" : "fail",
+                           "h" : 29,
+                           "w" : 137,
+                           "x" : "688"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt"
+                  },
+                  {
+                     "error" : 0.646342114422771,
+                     "name" : "sudo-passwordprompt-lxde",
+                     "area" : [
+                        {
+                           "x" : "198",
+                           "result" : "fail",
+                           "h" : 33,
+                           "w" : 224,
+                           "y" : "735",
+                           "similarity" : 19,
+                           "diff" : "yast2_bootloader-1-sudo-passwordprompt-lxde-diff0.png"
+                        }
+                     ]
+                  }
+               ],
+               "screenshot" : "yast2_bootloader-1.png",
+               "result" : "unk",
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "needle" : "yast2_bootloader-1-1366961405",
+               "tags" : [
+                  "test-yast2_bootloader-1"
+               ],
+               "screenshot" : "yast2_bootloader-2.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "similarity" : 98,
+                     "diff" : "yast2_bootloader-2-yast2_bootloader-1-1366961405-diff0.png",
+                     "y" : "24",
+                     "x" : "9",
+                     "w" : 849,
+                     "result" : "ok",
+                     "h" : 448
+                  }
+               ]
+            },
+            {
+               "result" : "unk",
+               "screenshot" : "yast2_bootloader-3.png"
+            },
+            {
+               "tags" : [
+                  "exited-bootloader"
+               ],
+               "needle" : "yast2_bootloader-exited",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "similarity" : 100,
+                     "y" : "0",
+                     "x" : "0",
+                     "w" : 151,
+                     "h" : 75,
+                     "result" : "ok"
+                  }
+               ],
+               "screenshot" : "yast2_bootloader-4.png"
+            },
+            {
+               "result" : "unk",
+               "screenshot" : "yast2_bootloader-5.png"
+            }
+         ],
+         "flags" : {},
+         "name" : "yast2_bootloader",
+         "dents" : 0,
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/180_yast2_bootloader.pm",
+         "category" : "consoletest"
+      },
+      {
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/190_sshd.pm",
+         "category" : "consoletest",
+         "dents" : 0,
+         "result" : "ok",
+         "name" : "sshd",
+         "flags" : {
+            "milestone" : 1
+         },
+         "details" : [
+            {
+               "screenshot" : "sshd-1.png",
+               "needles" : [
+                  {
+                     "error" : 0.119006430968739,
+                     "name" : "sudo-passwordprompt",
+                     "area" : [
+                        {
+                           "similarity" : 65,
+                           "diff" : "sshd-1-sudo-passwordprompt-diff0.png",
+                           "y" : "17",
+                           "w" : 137,
+                           "h" : 29,
+                           "result" : "fail",
+                           "x" : "80"
+                        }
+                     ]
+                  },
+                  {
+                     "error" : 0.822892303859479,
+                     "area" : [
+                        {
+                           "diff" : "sshd-1-sudo-passwordprompt-lxde-diff0.png",
+                           "similarity" : 9,
+                           "y" : "7",
+                           "w" : 224,
+                           "result" : "fail",
+                           "h" : 33,
+                           "x" : "10"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde"
+                  }
+               ],
+               "result" : "unk",
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "screenshot" : "sshd-2.png",
+               "area" : [
+                  {
+                     "w" : 196,
+                     "result" : "ok",
+                     "h" : 47,
+                     "x" : "22",
+                     "similarity" : 99,
+                     "diff" : "sshd-2-sshd-1-good-diff0.png",
+                     "y" : "258"
+                  },
+                  {
+                     "x" : "290",
+                     "w" : 375,
+                     "h" : 35,
+                     "result" : "ok",
+                     "similarity" : 100,
+                     "y" : "511"
+                  }
+               ],
+               "result" : "ok",
+               "needle" : "sshd-1-good",
+               "tags" : [
+                  "test-sshd-1"
+               ]
+            }
+         ]
+      },
+      {
+         "category" : "consoletest",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/195_sshfs.pm",
+         "dents" : 0,
+         "result" : "ok",
+         "flags" : {},
+         "details" : [
+            {
+               "result" : "unk",
+               "needles" : [
+                  {
+                     "area" : [
+                        {
+                           "similarity" : 65,
+                           "diff" : "sshfs-1-sudo-passwordprompt-diff0.png",
+                           "y" : "17",
+                           "w" : 137,
+                           "result" : "fail",
+                           "h" : 29,
+                           "x" : "80"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt",
+                     "error" : 0.119006430968739
+                  },
+                  {
+                     "area" : [
+                        {
+                           "x" : "10",
+                           "w" : 224,
+                           "h" : 33,
+                           "result" : "fail",
+                           "similarity" : 9,
+                           "diff" : "sshfs-1-sudo-passwordprompt-lxde-diff0.png",
+                           "y" : "7"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde",
+                     "error" : 0.822892303859479
+                  }
+               ],
+               "screenshot" : "sshfs-1.png",
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "tags" : [
+                  "accept-ssh-host-key"
+               ],
+               "needle" : "accept-ssh-host-key",
+               "area" : [
+                  {
+                     "x" : "0",
+                     "h" : 19,
+                     "result" : "ok",
+                     "w" : 472,
+                     "y" : "511",
+                     "similarity" : 99,
+                     "diff" : "sshfs-2-accept-ssh-host-key-diff0.png"
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "sshfs-2.png"
+            },
+            {
+               "needle" : "sshfs-accepted",
+               "tags" : [
+                  "sshfs-accepted"
+               ],
+               "screenshot" : "sshfs-3.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "y" : "463",
+                     "similarity" : 99,
+                     "diff" : "sshfs-3-sshfs-accepted-diff0.png",
+                     "x" : "0",
+                     "h" : 103,
+                     "result" : "ok",
+                     "w" : 200
+                  }
+               ]
+            },
+            {
+               "needle" : "test-sshfs-131RC1",
+               "tags" : [
+                  "test-sshfs-1"
+               ],
+               "screenshot" : "sshfs-4.png",
+               "result" : "ok",
+               "area" : [
+                  {
+                     "x" : "0",
+                     "h" : 34,
+                     "result" : "ok",
+                     "w" : 372,
+                     "y" : "671",
+                     "diff" : "sshfs-4-test-sshfs-131RC1-diff0.png",
+                     "similarity" : 99
+                  }
+               ]
+            }
+         ],
+         "name" : "sshfs"
+      },
+      {
+         "name" : "mtab",
+         "flags" : {},
+         "details" : [
+            {
+               "needle" : "mtab-1-2-good-diff",
+               "tags" : [
+                  "test-mtab-1"
+               ],
+               "screenshot" : "mtab-1.png",
+               "area" : [
+                  {
+                     "diff" : "mtab-1-mtab-1-2-good-diff-diff0.png",
+                     "similarity" : 99,
+                     "y" : "0",
+                     "w" : 345,
+                     "result" : "ok",
+                     "h" : 32,
+                     "x" : "0"
+                  }
+               ],
+               "result" : "ok"
+            },
+            {
+               "screenshot" : "mtab-2.png",
+               "result" : "unk"
+            }
+         ],
+         "result" : "ok",
+         "category" : "consoletest",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/280_mtab.pm",
+         "dents" : 0
+      },
+      {
+         "details" : [
+            {
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ],
+               "needles" : [
+                  {
+                     "error" : 0.0412513636605105,
+                     "name" : "sudo-passwordprompt",
+                     "area" : [
+                        {
+                           "x" : "360",
+                           "h" : 29,
+                           "result" : "fail",
+                           "w" : 137,
+                           "y" : "81",
+                           "similarity" : 79,
+                           "diff" : "http_srv-1-sudo-passwordprompt-diff0.png"
+                        }
+                     ]
+                  },
+                  {
+                     "area" : [
+                        {
+                           "diff" : "http_srv-1-sudo-passwordprompt-lxde-diff0.png",
+                           "similarity" : 20,
+                           "y" : "23",
+                           "x" : "141",
+                           "w" : 224,
+                           "result" : "fail",
+                           "h" : 33
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde",
+                     "error" : 0.627115843163051
+                  }
+               ],
+               "screenshot" : "http_srv-1.png",
+               "result" : "unk"
+            },
+            {
+               "needle" : "test-http_srv-1-131M4",
+               "tags" : [
+                  "test-http_srv-1"
+               ],
+               "screenshot" : "http_srv-2.png",
+               "area" : [
+                  {
+                     "similarity" : 100,
+                     "y" : "32",
+                     "w" : 620,
+                     "h" : 94,
+                     "result" : "ok",
+                     "x" : "0"
+                  }
+               ],
+               "result" : "ok"
+            },
+            {
+               "needles" : [
+                  {
+                     "error" : 0.0412513636605105,
+                     "name" : "sudo-passwordprompt",
+                     "area" : [
+                        {
+                           "x" : "360",
+                           "w" : 137,
+                           "h" : 29,
+                           "result" : "fail",
+                           "diff" : "http_srv-3-sudo-passwordprompt-diff0.png",
+                           "similarity" : 79,
+                           "y" : "81"
+                        }
+                     ]
+                  },
+                  {
+                     "area" : [
+                        {
+                           "x" : "77",
+                           "w" : 224,
+                           "result" : "fail",
+                           "h" : 33,
+                           "similarity" : 21,
+                           "diff" : "http_srv-3-sudo-passwordprompt-lxde-diff0.png",
+                           "y" : "168"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde",
+                     "error" : 0.618738073220851
+                  }
+               ],
+               "screenshot" : "http_srv-3.png",
+               "result" : "unk",
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "needles" : [
+                  {
+                     "name" : "sudo-passwordprompt",
+                     "area" : [
+                        {
+                           "y" : "81",
+                           "similarity" : 79,
+                           "diff" : "http_srv-4-sudo-passwordprompt-diff0.png",
+                           "x" : "360",
+                           "result" : "fail",
+                           "h" : 29,
+                           "w" : 137
+                        }
+                     ],
+                     "error" : 0.0412513636605105
+                  },
+                  {
+                     "error" : 0.618738073220851,
+                     "area" : [
+                        {
+                           "y" : "168",
+                           "diff" : "http_srv-4-sudo-passwordprompt-lxde-diff0.png",
+                           "similarity" : 21,
+                           "result" : "fail",
+                           "h" : 33,
+                           "w" : 224,
+                           "x" : "77"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde"
+                  }
+               ],
+               "screenshot" : "http_srv-4.png",
+               "result" : "unk",
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "needles" : [
+                  {
+                     "error" : 0.0525300742265813,
+                     "area" : [
+                        {
+                           "diff" : "http_srv-5-sudo-passwordprompt-diff0.png",
+                           "similarity" : 77,
+                           "y" : "737",
+                           "x" : "392",
+                           "w" : 137,
+                           "result" : "fail",
+                           "h" : 29
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt"
+                  },
+                  {
+                     "error" : 0.603232343400922,
+                     "area" : [
+                        {
+                           "y" : "679",
+                           "diff" : "http_srv-5-sudo-passwordprompt-lxde-diff0.png",
+                           "similarity" : 22,
+                           "result" : "fail",
+                           "h" : 33,
+                           "w" : 224,
+                           "x" : "310"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde"
+                  }
+               ],
+               "screenshot" : "http_srv-5.png",
+               "result" : "unk",
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "screenshot" : "http_srv-6.png",
+               "result" : "unk"
+            }
+         ],
+         "flags" : {},
+         "name" : "http_srv",
+         "result" : "ok",
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/300_http_srv.pm",
+         "dents" : 0,
+         "category" : "consoletest"
+      },
+      {
+         "name" : "mysql_srv",
+         "flags" : {},
+         "details" : [
+            {
+               "screenshot" : "mysql_srv-1.png",
+               "needles" : [
+                  {
+                     "error" : 0.0542422543448993,
+                     "area" : [
+                        {
+                           "similarity" : 76,
+                           "diff" : "mysql_srv-1-sudo-passwordprompt-diff0.png",
+                           "y" : "49",
+                           "x" : "248",
+                           "w" : 137,
+                           "result" : "fail",
+                           "h" : 29
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt"
+                  },
+                  {
+                     "area" : [
+                        {
+                           "y" : "23",
+                           "similarity" : 20,
+                           "diff" : "mysql_srv-1-sudo-passwordprompt-lxde-diff0.png",
+                           "h" : 33,
+                           "result" : "fail",
+                           "w" : 224,
+                           "x" : "141"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde",
+                     "error" : 0.628263453782909
+                  }
+               ],
+               "result" : "unk",
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "result" : "unk",
+               "screenshot" : "mysql_srv-2.png",
+               "needles" : [
+                  {
+                     "area" : [
+                        {
+                           "h" : 29,
+                           "result" : "fail",
+                           "w" : 137,
+                           "x" : "248",
+                           "y" : "49",
+                           "similarity" : 76,
+                           "diff" : "mysql_srv-2-sudo-passwordprompt-diff0.png"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt",
+                     "error" : 0.0542422543448993
+                  },
+                  {
+                     "error" : 0.627577604080948,
+                     "area" : [
+                        {
+                           "y" : "119",
+                           "diff" : "mysql_srv-2-sudo-passwordprompt-lxde-diff0.png",
+                           "similarity" : 20,
+                           "result" : "fail",
+                           "h" : 33,
+                           "w" : 224,
+                           "x" : "110"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde"
+                  }
+               ],
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ],
+               "result" : "unk",
+               "screenshot" : "mysql_srv-3.png",
+               "needles" : [
+                  {
+                     "error" : 0.0542422543448993,
+                     "name" : "sudo-passwordprompt",
+                     "area" : [
+                        {
+                           "w" : 137,
+                           "h" : 29,
+                           "result" : "fail",
+                           "x" : "248",
+                           "similarity" : 76,
+                           "diff" : "mysql_srv-3-sudo-passwordprompt-diff0.png",
+                           "y" : "49"
+                        }
+                     ]
+                  },
+                  {
+                     "error" : 0.627577604080948,
+                     "area" : [
+                        {
+                           "result" : "fail",
+                           "h" : 33,
+                           "w" : 224,
+                           "x" : "110",
+                           "y" : "119",
+                           "similarity" : 20,
+                           "diff" : "mysql_srv-3-sudo-passwordprompt-lxde-diff0.png"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt-lxde"
+                  }
+               ]
+            },
+            {
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ],
+               "result" : "unk",
+               "needles" : [
+                  {
+                     "error" : 0.0694834473530506,
+                     "name" : "sudo-passwordprompt",
+                     "area" : [
+                        {
+                           "y" : "737",
+                           "diff" : "mysql_srv-4-sudo-passwordprompt-diff0.png",
+                           "similarity" : 73,
+                           "x" : "152",
+                           "result" : "fail",
+                           "h" : 29,
+                           "w" : 137
+                        }
+                     ]
+                  },
+                  {
+                     "name" : "sudo-passwordprompt-lxde",
+                     "area" : [
+                        {
+                           "y" : "535",
+                           "diff" : "mysql_srv-4-sudo-passwordprompt-lxde-diff0.png",
+                           "similarity" : 22,
+                           "x" : "581",
+                           "h" : 33,
+                           "result" : "fail",
+                           "w" : 224
+                        }
+                     ],
+                     "error" : 0.606229991138107
+                  }
+               ],
+               "screenshot" : "mysql_srv-4.png"
+            },
+            {
+               "result" : "ok",
+               "area" : [
+                  {
+                     "diff" : "mysql_srv-5-test-mysql_srv-1-131RC1-diff0.png",
+                     "similarity" : 98,
+                     "y" : "0",
+                     "w" : 692,
+                     "result" : "ok",
+                     "h" : 192,
+                     "x" : "0"
+                  },
+                  {
+                     "x" : "292",
+                     "w" : 606,
+                     "result" : "ok",
+                     "h" : 312,
+                     "diff" : "mysql_srv-5-test-mysql_srv-1-131RC1-diff1.png",
+                     "similarity" : 99,
+                     "y" : "443"
+                  }
+               ],
+               "screenshot" : "mysql_srv-5.png",
+               "tags" : [
+                  "test-mysql_srv-1"
+               ],
+               "needle" : "test-mysql_srv-1-131RC1"
+            }
+         ],
+         "result" : "ok",
+         "dents" : 0,
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/305_mysql_srv.pm",
+         "category" : "consoletest"
+      },
+      {
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/900_textinfo.pm",
+         "category" : "consoletest",
+         "dents" : 0,
+         "flags" : {},
+         "name" : "textinfo",
+         "details" : [
+            {
+               "area" : [
+                  {
+                     "y" : "510",
+                     "similarity" : 99,
+                     "diff" : "textinfo-1-textinfo-textmode-diff0.png",
+                     "x" : "0",
+                     "result" : "ok",
+                     "h" : 35,
+                     "w" : 397
+                  }
+               ],
+               "result" : "ok",
+               "screenshot" : "textinfo-1.png",
+               "tags" : [
+                  "test-textinfo-1"
+               ],
+               "needle" : "textinfo-textmode"
+            },
+            {
+               "result" : "unk",
+               "screenshot" : "textinfo-2.png",
+               "needles" : [
+                  {
+                     "area" : [
+                        {
+                           "w" : 137,
+                           "result" : "fail",
+                           "h" : 29,
+                           "x" : "176",
+                           "similarity" : 77,
+                           "diff" : "textinfo-2-sudo-passwordprompt-diff0.png",
+                           "y" : "513"
+                        }
+                     ],
+                     "name" : "sudo-passwordprompt",
+                     "error" : 0.0517402601315418
+                  },
+                  {
+                     "error" : 0.621969137598724,
+                     "name" : "sudo-passwordprompt-lxde",
+                     "area" : [
+                        {
+                           "x" : "15",
+                           "w" : 224,
+                           "h" : 33,
+                           "result" : "fail",
+                           "similarity" : 21,
+                           "diff" : "textinfo-2-sudo-passwordprompt-lxde-diff0.png",
+                           "y" : "295"
+                        }
+                     ]
+                  }
+               ],
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ]
+            },
+            {
+               "tags" : [
+                  "sudo-passwordprompt",
+                  "ENV-VIDEOMODE-text",
+                  "ENV-DESKTOP-textmode",
+                  "ENV-DISTRI-opensuse",
+                  "ENV-INSTLANG-en_US",
+                  "ENV-FLAVOR-DVD"
+               ],
+               "result" : "unk",
+               "screenshot" : "textinfo-3.png",
+               "needles" : [
+                  {
+                     "error" : 0.0517402601315418,
+                     "name" : "sudo-passwordprompt",
+                     "area" : [
+                        {
+                           "x" : "176",
+                           "w" : 137,
+                           "h" : 29,
+                           "result" : "fail",
+                           "diff" : "textinfo-3-sudo-passwordprompt-diff0.png",
+                           "similarity" : 77,
+                           "y" : "513"
+                        }
+                     ]
+                  },
+                  {
+                     "name" : "sudo-passwordprompt-lxde",
+                     "area" : [
+                        {
+                           "y" : "295",
+                           "similarity" : 21,
+                           "diff" : "textinfo-3-sudo-passwordprompt-lxde-diff0.png",
+                           "result" : "fail",
+                           "h" : 33,
+                           "w" : 224,
+                           "x" : "15"
+                        }
+                     ],
+                     "error" : 0.621969137598724
+                  }
+               ]
+            }
+         ],
+         "result" : "ok"
+      },
+      {
+         "script" : "/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/999_consoletest_finish.pm",
+         "category" : "consoletest",
+         "dents" : 0,
+         "result" : "ok",
+         "flags" : {
+            "milestone" : 1,
+            "important" : 1,
+            "fatal" : 1
+         },
+         "name" : "consoletest_finish",
+         "details" : [
+            {
+               "result" : "unk",
+               "screenshot" : "consoletest_finish-1.png"
+            },
+            {
+               "screenshot" : "consoletest_finish-2.png",
+               "result" : "unk"
+            },
+            {
+               "needle" : "desktop-at-first-boot-text-131M2",
+               "tags" : [
+                  "test-consoletest_finish-1"
+               ],
+               "screenshot" : "consoletest_finish-3.png",
+               "area" : [
+                  {
+                     "y" : "693",
+                     "similarity" : 99,
+                     "diff" : "consoletest_finish-3-desktop-at-first-boot-text-131M2-diff0.png",
+                     "x" : "0",
+                     "h" : 40,
+                     "result" : "ok",
+                     "w" : 195
+                  },
+                  {
+                     "result" : "ok",
+                     "h" : 20,
+                     "w" : 56,
+                     "x" : "84",
+                     "y" : "748",
+                     "diff" : "consoletest_finish-3-desktop-at-first-boot-text-131M2-diff1.png",
+                     "similarity" : 99
+                  }
+               ],
+               "result" : "ok"
+            }
+         ]
+      }
+   ],
+   "backend" : {
+      "backend_info" : {},
+      "backend" : "backend::qemu"
+   },
+   "distribution" : "opensuse",
+   "overall" : "ok"
+}

@@ -1,5 +1,6 @@
 % layout 'default';
 % title 'Test results';
+% use Mojo::ByteStream 'b';
 
 <div class="grid_16 box box-shadow omega">
 	<h2><%= title %></h2>
@@ -35,8 +36,8 @@
 		<tbody>
     % for my $test (@$list) {
     %  my $job = $test->{job};
-       <tr>
-	  <td>
+       <tr id="job_<%= $job->{'id'} %>">
+	  <td class="link">
 	    <% if($job->{'state'} eq 'running') { %>
             <a href="/tests/<%= $job->{'id'} %>">testing</a>
             <% } else { %>
@@ -45,19 +46,19 @@
             <a data-method="post" href="<%= url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') %>"><img src="/images/toggle.png" alt="restart" title="Restart Job"/></a>
           <% } %>
 	  </td>
-          <td><%= $test->{backend} %></td>
-          <td><%= $job->{settings}->{DISTRI} %></td>
-          <td><%= $job->{settings}->{FLAVOR} %></td>
-          <td><%= $job->{settings}->{ARCH} %></td>
+          <td class="backend"><%= $test->{backend} %></td>
+          <td class="distri"><%= $job->{settings}->{DISTRI} %></td>
+          <td class="type"><%= $job->{settings}->{FLAVOR} %></td>
+          <td class="arch"><%= $job->{settings}->{ARCH} %></td>
                         <!-- <% my $resultclass = '';
                         $resultclass = 'overviewfail' if ($job->{state} ne 'running' && ($test->{'res_overall'}||'') ne 'ok');
                         $resultclass = 'overviewunknown' if (($test->{'res_overall'}||'') eq 'ok' && $test->{'res_dents'}); %>
                         -->
-          <td><span class="textlink <%= $resultclass %>"><a href="<%= url_for('build', 'buildid' => $job->{settings}->{'BUILD'}) %>"><%= $job->{settings}->{'BUILD'} %></a></span></td>
-	  <td><span class="<%= $resultclass %>"><%= $job->{'test'} %></span></td>
-		<td><%= $job->{'t_started'} %></td>
+          <td class="build"><span class="textlink <%= $resultclass %>"><a href="<%= url_for('build', 'buildid' => $job->{settings}->{'BUILD'}) %>"><%= $job->{settings}->{'BUILD'} %></a></span></td>
+	  <td class="extra"><span class="<%= $resultclass %>"><%= $job->{'test'} %></span></td>
+		<td class="testtime"><%= $job->{'t_started'} %></td>
 		<% if($job->{'state'} eq 'running') { %>
-		<td colspan="3" style="padding: 3px 4px;">
+		<td colspan="3" style="padding: 3px 4px;" class="progress">
 		  <div class="pbox">
 		    <% my $ptext = ""; %>
 		    <% if($test->{'run_stat'}->{'modcount'} > 0) { %>
@@ -84,34 +85,34 @@
 
 
       % for my $test (@$slist) {
-		    <tr>
           <%
             my $job = $test->{job};
             my $prio = $job->{'priority'};
             my $state = $job->{'state'};
           %>
-          <td style="font-style: italic;"><%= $state %>
+       <tr id="job_<%= $job->{'id'} %>">
+          <td style="font-style: italic;" class="link"><%= $state %>
           % if ($state eq 'cancelled') {
             %= link_to url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') => ('data-method' => 'post') => begin
                 %= image '/images/toggle.png', alt => "restart", title => "Restart job"
             % end
           % }
           </td>
-          <td>
+          <td class="backend">
             <%= link_to "-" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio-10)->query('back' => 'results') => ('data-method' => 'post') %>
             <%= $prio %>
             <%= link_to "+" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio+10)->query('back' => 'results') => ('data-method' => 'post') %>
           </td>
-          <td><%= $job->{settings}->{'DISTRI'} %></td>
-          <td><%= $job->{settings}->{'FLAVOR'} %></td>
-          <td><%= $job->{settings}->{'ARCH'} %></td>
-          <td>
+          <td class="distri"><%= $job->{settings}->{'DISTRI'} %></td>
+          <td class="type"><%= $job->{settings}->{'FLAVOR'} %></td>
+          <td class="arch"><%= $job->{settings}->{'ARCH'} %></td>
+          <td class="build">
             <span class="textlink">
               <%= link_to url_for('build', 'buildid' => $job->{settings}->{'BUILD'}) => begin %><%= $job->{settings}->{'BUILD'} %><% end %>
             </span>
           </td>
-          <td><span class=""><%= $job->{'test'} %></span></td>
-          <td colspan="4" style="padding: 3px 4px; font-style: italic;">
+          <td class="extra"><span class=""><%= $job->{'test'} %></span></td>
+          <td class="cancel" colspan="4" style="padding: 3px 4px; font-style: italic;">
             <a data-method="post" href="<%== url_for('cancel', 'testid' => $job->{'id'})->query('back' => 'results') %>">cancel</a>
           </td>
        </tr>

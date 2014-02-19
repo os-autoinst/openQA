@@ -7,6 +7,7 @@ use diagnostics;
 use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
 use Data::Dump qw/pp/;
+use Date::Format qw/time2str/;
 
 use FindBin;
 use lib $FindBin::Bin;
@@ -220,6 +221,9 @@ sub list_jobs {
     if ($args{finish_after}) {
         my $param = "datetime('$args{finish_after}')"; # FIXME: SQL injection!
         $cond{t_finished} = { '>' => \$param }
+    }
+    if ($args{maxage}) {
+        $cond{'-or'} = [ t_finished => undef, t_finished => { '>' => time2str('%Y-%m-%d %R', time - $args{maxage}) } ];
     }
     if ($args{build}) {
         $cond{'settings.key'} = "BUILD";

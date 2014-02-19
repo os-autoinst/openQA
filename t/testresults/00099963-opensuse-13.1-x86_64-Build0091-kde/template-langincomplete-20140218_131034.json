@@ -1,0 +1,18 @@
+{
+   "tags" : [
+      "langincomplete",
+      "ENV-DESKTOP-kde",
+      "ENV-DISTRI-opensuse",
+      "ENV-INSTLANG-en_US",
+      "ENV-FLAVOR-DVD"
+   ],
+   "area" : [
+      {
+         "ypos" : 0,
+         "height" : 768,
+         "xpos" : 0,
+         "type" : "match",
+         "width" : 1024
+      }
+   ]
+}

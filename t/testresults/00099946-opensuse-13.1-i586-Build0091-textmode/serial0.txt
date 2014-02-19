@@ -1,0 +1,1564 @@
+[    0.000000] Initializing cgroup subsys cpuset
+[    0.000000] Initializing cgroup subsys cpu
+[    0.000000] Initializing cgroup subsys cpuacct
+[    0.000000] Linux version 3.11.6-4-default (geeko@buildhost) (gcc version 4.8.1 20130909 [gcc-4_8-branch revision 202388] (SUSE Linux) ) #1 SMP Wed Oct 30 18:04:56 UTC 2013 (e6d4a27)
+[    0.000000] e820: BIOS-provided physical RAM map:
+[    0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff] usable
+[    0.000000] BIOS-e820: [mem 0x000000000009fc00-0x000000000009ffff] reserved
+[    0.000000] BIOS-e820: [mem 0x00000000000f0000-0x00000000000fffff] reserved
+[    0.000000] BIOS-e820: [mem 0x0000000000100000-0x000000003fffdfff] usable
+[    0.000000] BIOS-e820: [mem 0x000000003fffe000-0x000000003fffffff] reserved
+[    0.000000] BIOS-e820: [mem 0x00000000feffc000-0x00000000feffffff] reserved
+[    0.000000] BIOS-e820: [mem 0x00000000fffc0000-0x00000000ffffffff] reserved
+[    0.000000] Notice: NX (Execute Disable) protection missing in CPU!
+[    0.000000] SMBIOS 2.4 present.
+[    0.000000] Hypervisor detected: KVM
+[    0.000000] e820: last_pfn = 0x3fffe max_arch_pfn = 0x100000
+[    0.000000] found SMP MP-table at [mem 0x000fdf40-0x000fdf4f] mapped at [c00fdf40]
+[    0.000000] Scanning 1 areas for low memory corruption
+[    0.000000] init_memory_mapping: [mem 0x00000000-0x000fffff]
+[    0.000000] init_memory_mapping: [mem 0x37000000-0x373fffff]
+[    0.000000] init_memory_mapping: [mem 0x30000000-0x36ffffff]
+[    0.000000] init_memory_mapping: [mem 0x00100000-0x2fffffff]
+[    0.000000] init_memory_mapping: [mem 0x37400000-0x377fdfff]
+[    0.000000] RAMDISK: [mem 0x3be26000-0x3fffdfff]
+[    0.000000] Allocated new RAMDISK: [mem 0x33626000-0x377fdbf3]
+[    0.000000] Move RAMDISK from [mem 0x3be26000-0x3fffdbf3] to [mem 0x33626000-0x377fdbf3]
+[    0.000000] ACPI: RSDP 000fdde0 00014 (v00 BOCHS )
+[    0.000000] ACPI: RSDT 3fffe4b0 00034 (v01 BOCHS  BXPCRSDT 00000001 BXPC 00000001)
+[    0.000000] ACPI: FACP 3fffff80 00074 (v01 BOCHS  BXPCFACP 00000001 BXPC 00000001)
+[    0.000000] ACPI: DSDT 3fffe4f0 011A9 (v01   BXPC   BXDSDT 00000001 INTL 20130823)
+[    0.000000] ACPI: FACS 3fffff40 00040
+[    0.000000] ACPI: SSDT 3ffff800 00735 (v01 BOCHS  BXPCSSDT 00000001 BXPC 00000001)
+[    0.000000] ACPI: APIC 3ffff6e0 00078 (v01 BOCHS  BXPCAPIC 00000001 BXPC 00000001)
+[    0.000000] ACPI: HPET 3ffff6a0 00038 (v01 BOCHS  BXPCHPET 00000001 BXPC 00000001)
+[    0.000000] 136MB HIGHMEM available.
+[    0.000000] 887MB LOWMEM available.
+[    0.000000]   mapped low ram: 0 - 377fe000
+[    0.000000]   low ram: 0 - 377fe000
+[    0.000000] kvm-clock: Using msrs 4b564d01 and 4b564d00
+[    0.000000] kvm-clock: cpu 0, msr 0:33625001, boot clock
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x00001000-0x00ffffff]
+[    0.000000]   Normal   [mem 0x01000000-0x377fdfff]
+[    0.000000]   HighMem  [mem 0x377fe000-0x3fffdfff]
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x00001000-0x0009efff]
+[    0.000000]   node   0: [mem 0x00100000-0x3fffdfff]
+[    0.000000] Using APIC driver default
+[    0.000000] ACPI: PM-Timer IO Port: 0xb008
+[    0.000000] ACPI: LAPIC (acpi_id[0x00] lapic_id[0x00] enabled)
+[    0.000000] ACPI: LAPIC_NMI (acpi_id[0xff] dfl dfl lint[0x1])
+[    0.000000] ACPI: IOAPIC (id[0x00] address[0xfec00000] gsi_base[0])
+[    0.000000] IOAPIC[0]: apic_id 0, version 17, address 0xfec00000, GSI 0-23
+[    0.000000] ACPI: INT_SRC_OVR (bus 0 bus_irq 0 global_irq 2 dfl dfl)
+[    0.000000] ACPI: INT_SRC_OVR (bus 0 bus_irq 5 global_irq 5 high level)
+[    0.000000] ACPI: INT_SRC_OVR (bus 0 bus_irq 9 global_irq 9 high level)
+[    0.000000] ACPI: INT_SRC_OVR (bus 0 bus_irq 10 global_irq 10 high level)
+[    0.000000] ACPI: INT_SRC_OVR (bus 0 bus_irq 11 global_irq 11 high level)
+[    0.000000] Using ACPI (MADT) for SMP configuration information
+[    0.000000] ACPI: HPET id: 0x8086a201 base: 0xfed00000
+[    0.000000] smpboot: Allowing 1 CPUs, 0 hotplug CPUs
+[    0.000000] PM: Registered nosave memory: [mem 0x0009f000-0x0009ffff]
+[    0.000000] PM: Registered nosave memory: [mem 0x000a0000-0x000effff]
+[    0.000000] PM: Registered nosave memory: [mem 0x000f0000-0x000fffff]
+[    0.000000] e820: [mem 0x40000000-0xfeffbfff] available for PCI devices
+[    0.000000] Booting paravirtualized kernel on KVM
+[    0.000000] setup_percpu: NR_CPUS:32 nr_cpumask_bits:32 nr_cpu_ids:1 nr_node_ids:1
+[    0.000000] PERCPU: Embedded 14 pages/cpu @f2e10000 s33216 r0 d24128 u57344
+[    0.000000] kvm-clock: cpu 0, msr 0:33625001, primary cpu clock
+[    0.000000] KVM setup async PF for cpu 0
+[    0.000000] kvm-stealtime: cpu 0, msr 32e12900
+[    0.000000] Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 260268
+[    0.000000] Kernel command line: initrd=initrd splash=silent textmode=1 vga=791 video=1024x768-16 drm_kms_helper.edid_firmware=edid/1024x768.bin console=ttyS0 console=tty
+[    0.000000] PID hash table entries: 4096 (order: 2, 16384 bytes)
+[    0.000000] Dentry cache hash table entries: 131072 (order: 7, 524288 bytes)
+[    0.000000] Inode-cache hash table entries: 65536 (order: 6, 262144 bytes)
+[    0.000000] Initializing CPU#0
+[    0.000000] allocated 2097128 bytes of page_cgroup
+[    0.000000] please try 'cgroup_disable=memory' option if you don't want memory cgroups
+[    0.000000] Initializing HighMem for node 0 (000377fe:0003fffe)
+[    0.000000] Memory: 959188K/1048176K available (4837K kernel code, 371K rwdata, 3492K rodata, 580K init, 1016K bss, 88988K reserved, 139264K highmem)
+[    0.000000] virtual kernel memory layout:
+[    0.000000]     fixmap  : 0xffd34000 - 0xfffff000   (2860 kB)
+[    0.000000]     pkmap   : 0xff800000 - 0xffc00000   (4096 kB)
+[    0.000000]     vmalloc : 0xf7ffe000 - 0xff7fe000   ( 120 MB)
+[    0.000000]     lowmem  : 0xc0000000 - 0xf77fe000   ( 887 MB)
+[    0.000000]       .init : 0xc0a81000 - 0xc0b12000   ( 580 kB)
+[    0.000000]       .data : 0xc06b9795 - 0xc0a80d00   (3869 kB)
+[    0.000000]       .text : 0xc0200000 - 0xc06b9795   (4837 kB)
+[    0.000000] Checking if this processor honours the WP bit even in supervisor mode...Ok.
+[    0.000000] Hierarchical RCU implementation.
+[    0.000000] 	RCU dyntick-idle grace-period acceleration is enabled.
+[    0.000000] 	RCU restricting CPUs from NR_CPUS=32 to nr_cpu_ids=1.
+[    0.000000] NR_IRQS:2304 nr_irqs:256 16
+[    0.000000] Console: colour dummy device 80x25
+[    0.000000] console [tty0] enabled
+[    0.000000] console [ttyS0] enabled
+[    0.000000] tsc: Detected 3591.344 MHz processor
+[    0.008000] Calibrating delay loop (skipped) preset value.. 7182.68 BogoMIPS (lpj=14365376)
+[    0.008000] pid_max: default: 32768 minimum: 301
+[    0.008000] Security Framework initialized
+[    0.008000] AppArmor: AppArmor initialized
+[    0.008000] Mount-cache hash table entries: 512
+[    0.008000] Initializing cgroup subsys memory
+[    0.008000] Initializing cgroup subsys devices
+[    0.008000] Initializing cgroup subsys freezer
+[    0.008000] Initializing cgroup subsys net_cls
+[    0.008004] Initializing cgroup subsys blkio
+[    0.008343] Initializing cgroup subsys perf_event
+[    0.008706] Initializing cgroup subsys hugetlb
+[    0.009094] Last level iTLB entries: 4KB 0, 2MB 0, 4MB 0
+[    0.009094] Last level dTLB entries: 4KB 0, 2MB 0, 4MB 0
+[    0.009094] tlb_flushall_shift: 6
+[    0.023137] Freeing SMP alternatives memory: 32K (c0b12000 - c0b1a000)
+[    0.025532] ACPI: Core revision 20130517
+[    0.026526] ACPI: All ACPI Tables successfully acquired
+[    0.027085] Enabling APIC mode:  Flat.  Using 1 I/O APICs
+[    0.028349] ..TIMER: vector=0x30 apic1=0 pin1=2 apic2=-1 pin2=-1
+[    0.028810] smpboot: CPU0: Intel QEMU Virtual CPU version 1.6.2 (fam: 06, model: 03, stepping: 03)
+[    0.032000] Performance Events: Broken PMU hardware detected, using software events only.
+[    0.032000] Failed to access perfctr msr (MSR c1 is 0)
+[    0.032393] Brought up 1 CPUs
+[    0.032644] smpboot: Total of 1 processors activated (7182.68 BogoMIPS)
+[    0.033332] NMI watchdog: disabled (cpu0): hardware events not enabled
+[    0.033934] devtmpfs: initialized
+[    0.036290] RTC time: 12:17:10, date: 02/18/14
+[    0.036675] NET: Registered protocol family 16
+[    0.037185] ACPI: bus type PCI registered
+[    0.037514] acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
+[    0.038128] PCI: PCI BIOS revision 2.10 entry at 0xfc64a, last bus=0
+[    0.038629] PCI: Using configuration type 1 for base access
+[    0.039523] bio: create slab <bio-0> at 0
+[    0.040048] ACPI: Added _OSI(Module Device)
+[    0.040393] ACPI: Added _OSI(Processor Device)
+[    0.040746] ACPI: Added _OSI(3.0 _SCP Extensions)
+[    0.041117] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.043032] ACPI: Interpreter enabled
+[    0.043347] ACPI Exception: AE_NOT_FOUND, While evaluating Sleep State [\_S1_] (20130517/hwxface-571)
+[    0.044008] ACPI Exception: AE_NOT_FOUND, While evaluating Sleep State [\_S2_] (20130517/hwxface-571)
+[    0.044759] ACPI: (supports S0 S3 S4 S5)
+[    0.045069] ACPI: Using IOAPIC for interrupt routing
+[    0.045467] PCI: Using host bridge windows from ACPI; if necessary, use "pci=nocrs" and report a bug
+[    0.046437] ACPI: No dock devices found.
+[    0.049316] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
+[    0.049811] acpi PNP0A03:00: ACPI _OSC support notification failed, disabling PCIe ASPM
+[    0.050436] acpi PNP0A03:00: Unable to request _OSC control (_OSC support mask: 0x08)
+[    0.051148] acpi PNP0A03:00: fail to add MMCONFIG information, can't access extended PCI configuration space under this bridge.
+[    0.052191] acpiphp: Slot [3] registered
+[    0.052523] acpiphp: Slot [4] registered
+[    0.052852] acpiphp: Slot [5] registered
+[    0.053189] acpiphp: Slot [6] registered
+[    0.053519] acpiphp: Slot [7] registered
+[    0.053848] acpiphp: Slot [8] registered
+[    0.054180] acpiphp: Slot [9] registered
+[    0.054512] acpiphp: Slot [10] registered
+[    0.054850] acpiphp: Slot [11] registered
+[    0.055192] acpiphp: Slot [12] registered
+[    0.055525] acpiphp: Slot [13] registered
+[    0.055861] acpiphp: Slot [14] registered
+[    0.056018] acpiphp: Slot [15] registered
+[    0.056352] acpiphp: Slot [16] registered
+[    0.056686] acpiphp: Slot [17] registered
+[    0.057028] acpiphp: Slot [18] registered
+[    0.057364] acpiphp: Slot [19] registered
+[    0.057697] acpiphp: Slot [20] registered
+[    0.058040] acpiphp: Slot [21] registered
+[    0.058374] acpiphp: Slot [22] registered
+[    0.058710] acpiphp: Slot [23] registered
+[    0.059051] acpiphp: Slot [24] registered
+[    0.059393] acpiphp: Slot [25] registered
+[    0.059735] acpiphp: Slot [26] registered
+[    0.060018] acpiphp: Slot [27] registered
+[    0.060351] acpiphp: Slot [28] registered
+[    0.060687] acpiphp: Slot [29] registered
+[    0.061048] acpiphp: Slot [30] registered
+[    0.061385] acpiphp: Slot [31] registered
+[    0.061711] PCI host bridge to bus 0000:00
+[    0.062042] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    0.062470] pci_bus 0000:00: root bus resource [io  0x0000-0x0cf7]
+[    0.062957] pci_bus 0000:00: root bus resource [io  0x0d00-0xffff]
+[    0.063438] pci_bus 0000:00: root bus resource [mem 0x000a0000-0x000bffff]
+[    0.064003] pci_bus 0000:00: root bus resource [mem 0x80000000-0xfebfffff]
+[    0.073418] pci 0000:00:01.3: quirk: [io  0xb000-0xb03f] claimed by PIIX4 ACPI
+[    0.073981] pci 0000:00:01.3: quirk: [io  0xb100-0xb10f] claimed by PIIX4 SMB
+[    0.117136] ACPI: PCI Interrupt Link [LNKA] (IRQs 5 *10 11)
+[    0.117729] ACPI: PCI Interrupt Link [LNKB] (IRQs 5 *10 11)
+[    0.118305] ACPI: PCI Interrupt Link [LNKC] (IRQs 5 10 *11)
+[    0.118871] ACPI: PCI Interrupt Link [LNKD] (IRQs 5 10 *11)
+[    0.119390] ACPI: PCI Interrupt Link [LNKS] (IRQs *9)
+[    0.120117] ACPI: Enabled 16 GPEs in block 00 to 0F
+[    0.120729] vgaarb: device added: PCI:0000:00:02.0,decodes=io+mem,owns=io+mem,locks=none
+[    0.121372] vgaarb: loaded
+[    0.121583] vgaarb: bridge control possible 0000:00:02.0
+[    0.122089] SCSI subsystem initialized
+[    0.122530] PCI: Using ACPI for IRQ routing
+[    0.123066] NetLabel: Initializing
+[    0.123345] NetLabel:  domain hash size = 128
+[    0.123677] NetLabel:  protocols = UNLABELED CIPSOv4
+[    0.124014] NetLabel:  unlabeled traffic allowed by default
+[    0.124526] HPET: 3 timers in total, 0 timers will be used for per-cpu timer
+[    0.125073] hpet0: at MMIO 0xfed00000, IRQs 2, 8, 0
+[    0.125522] hpet0: 3 comparators, 64-bit 100.000000 MHz counter
+[    0.129062] Switched to clocksource kvm-clock
+[    0.131086] AppArmor: AppArmor Filesystem Enabled
+[    0.131474] pnp: PnP ACPI init
+[    0.131725] ACPI: bus type PNP registered
+[    0.131725] pnp: PnP ACPI: found 8 devices
+[    0.131849] ACPI: bus type PNP unregistered
+[    0.132188] PnPBIOS: Disabled
+[    0.167941] NET: Registered protocol family 2
+[    0.168437] TCP established hash table entries: 8192 (order: 4, 65536 bytes)
+[    0.169022] TCP bind hash table entries: 8192 (order: 4, 65536 bytes)
+[    0.169550] TCP: Hash tables configured (established 8192 bind 8192)
+[    0.170073] TCP: reno registered
+[    0.170342] UDP hash table entries: 512 (order: 2, 16384 bytes)
+[    0.170814] UDP-Lite hash table entries: 512 (order: 2, 16384 bytes)
+[    0.171360] NET: Registered protocol family 1
+[    0.171726] pci 0000:00:00.0: Limiting direct PCI/PCI transfers
+[    0.172217] pci 0000:00:01.0: PIIX3: Enabling Passive Release
+[    0.172673] pci 0000:00:01.0: Activating ISA DMA hang workarounds
+[    0.173396] ACPI: PCI Interrupt Link [LNKD] enabled at IRQ 11
+[    0.174305] Unpacking initramfs...
+[    0.480512] Freeing initrd memory: 67424K (f3626000 - f77fe000)
+[    0.481201] microcode: CPU0 sig=0x633, pf=0x0, revision=0x1
+[    0.481669] microcode: Microcode Update Driver: v2.00 <tigran@aivazian.fsnet.co.uk>, Peter Oruba
+[    0.482372] Scanning for low memory corruption every 60 seconds
+[    0.482967] audit: initializing netlink socket (disabled)
+[    0.483421] type=2000 audit(1392725831.499:1): initialized
+[    0.497355] bounce pool size: 64 pages
+[    0.497682] HugeTLB registered 4 MB page size, pre-allocated 0 pages
+[    0.498459] zbud: loaded
+[    0.498721] VFS: Disk quotas dquot_6.5.2
+[    0.499055] Dquot-cache hash table entries: 1024 (order 0, 4096 bytes)
+[    0.499680] msgmni has been set to 1733
+[    0.500159] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 252)
+[    0.500757] io scheduler noop registered
+[    0.501068] io scheduler deadline registered
+[    0.501410] io scheduler cfq registered (default)
+[    0.501826] pci_hotplug: PCI Hot Plug PCI Core version: 0.5
+[    0.502281] pciehp: PCI Express Hot Plug Controller Driver version: 0.4
+[    0.502829] vesafb: mode is 1024x768x16, linelength=2048, pages=1
+[    0.503313] vesafb: scrolling: redraw
+[    0.503607] vesafb: Truecolor: size=0:5:6:5, shift=0:11:5:0
+[    0.504113] vesafb: framebuffer at 0xfc000000, mapped to 0xf8080000, using 3072k, total 4096k
+[    0.505942] Console: switching to colour frame buffer device 128x48
+[    0.507241] fb0: VESA VGA frame buffer device
+[    0.507617] GHES: HEST is not enabled!
+[    0.507951] isapnp: Scanning for PnP cards...
+[    0.824191] isapnp: No Plug & Play device found
+[    0.824679] Serial: 8250/16550 driver, 32 ports, IRQ sharing disabled
+[    0.846120] 00:05: ttyS0 at I/O 0x3f8 (irq = 4) is a 16550A
+[    0.847435] Non-volatile memory driver v1.3
+[    0.847808] Linux agpgart interface v0.103
+[    0.848302] i8042: PNP: PS/2 Controller [PNP0303:KBD,PNP0f13:MOU] at 0x60,0x64 irq 1,12
+[    0.849407] serio: i8042 KBD port at 0x60,0x64 irq 1
+[    0.849811] serio: i8042 AUX port at 0x60,0x64 irq 12
+[    0.850307] mousedev: PS/2 mouse device common for all mice
+[    0.850943] input: AT Translated Set 2 keyboard as /devices/platform/i8042/serio0/input/input0
+[    0.851852] rtc_cmos 00:00: RTC can wake from S4
+[    0.853221] rtc_cmos 00:00: rtc core: registered rtc_cmos as rtc0
+[    0.853780] rtc_cmos 00:00: alarms up to one day, 114 bytes nvram, hpet irqs
+[    0.854446] cpuidle: using governor ladder
+[    0.854798] cpuidle: using governor menu
+[    0.855133] ledtrig-cpu: registered to indicate activity on CPUs
+[    0.855696] TCP: cubic registered
+[    0.855989] NET: Registered protocol family 10
+[    0.856527] Key type dns_resolver registered
+[    0.856936] Using IPI No-Shortcut mode
+[    0.857849] registered taskstats version 1
+[    0.858764]   Magic number: 2:319:279
+[    0.859425] event_source tracepoint: hash matches
+[    0.860180] tty tty16: hash matches
+[    0.860870] rtc_cmos 00:00: setting system clock to 2014-02-18 12:17:11 UTC (1392725831)
+[    0.862079] Freeing unused kernel memory: 580K (c0a81000 - c0b12000)
+[    0.862992] Write protecting the kernel text: 4840k
+[    0.863783] Write protecting the kernel read-only data: 3496k
+[    0.952553] loop: module loaded
+[    1.004264] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    1.085516] BIOS EDD facility v0.16 2004-Jun-25, 2 devices found
+[    1.095684] systemd-udevd[99]: starting version 208
+[    1.131897] ACPI: PCI Interrupt Link [LNKC] enabled at IRQ 10
+[    1.133012] ACPI: PCI Interrupt Link [LNKA] enabled at IRQ 10
+[    1.134556] ACPI: PCI Interrupt Link [LNKB] enabled at IRQ 11
+[    1.136809] ACPI: bus type ATA registered
+[    1.140177] input: Power Button as /devices/LNXSYSTM:00/LNXPWRBN:00/input/input1
+[    1.141808] ACPI: Power Button [PWRF]
+[    1.143186] ACPI: bus type USB registered
+[    1.143533] usbcore: registered new interface driver usbfs
+[    1.143970] usbcore: registered new interface driver hub
+[    1.148556] [drm] Initialized drm 1.1.0 20060810
+[    1.156327] parport_pc 00:04: reported by Plug and Play ACPI
+[    1.156848] parport0: PC-style at 0x378, irq 7 [PCSPP,TRISTATE]
+[    1.160501] usbcore: registered new device driver usb
+[    1.169009] fb: conflicting fb hw usage cirrusdrmfb vs VESA VGA - removing generic driver
+[    1.169677] Console: switching to colour dummy device 80x25
+[    1.172367] FDC 0 is a S82078B
+[    1.179466] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[    1.185517] [TTM] Zone  kernel: Available graphics memory: 443980 kiB
+[    1.186018] [TTM] Zone highmem: Available graphics memory: 513612 kiB
+[    1.186526] [TTM] Initializing pool allocator
+[    1.202401] uhci_hcd: USB Universal Host Controller Interface driver
+[    1.218307]  vda: unknown partition table
+[    1.221312]  vdb: unknown partition table
+[    1.223739] [drm] Got built-in EDID base block and 0 extensions from "edid/1024x768.bin" for connector "VGA-1"
+[    1.224664] [drm] fb mappable at 0x0
+[    1.224955] [drm] vram aper at 0x0
+[    1.225232] [drm] size 0
+[    1.225437] [drm] fb depth is 16
+[    1.225701] [drm]    pitch is 2048
+[    1.226030] fbcon: cirrusdrmfb (fb0) is primary device
+[    1.226619] Console: switching to colour frame buffer device 128x48
+[    1.233127] cirrus 0000:00:02.0: fb0: cirrusdrmfb frame buffer device
+[    1.233618] cirrus 0000:00:02.0: registered panic notifier
+[    1.234044] [drm] Initialized cirrus 1.0.0 20110418 for 0000:00:02.0 on minor 0
+[    1.238277] scsi0 : ata_piix
+[    1.241708] scsi1 : ata_piix
+[    1.241985] ata1: PATA max MWDMA2 cmd 0x1f0 ctl 0x3f6 bmdma 0xc5c0 irq 14
+[    1.242529] ata2: PATA max MWDMA2 cmd 0x170 ctl 0x376 bmdma 0xc5c8 irq 15
+[    1.243956] uhci_hcd 0000:00:01.2: UHCI Host Controller
+[    1.244403] uhci_hcd 0000:00:01.2: new USB bus registered, assigned bus number 1
+[    1.245040] uhci_hcd 0000:00:01.2: irq 11, io base 0x0000c580
+[    1.245528] usb usb1: New USB device found, idVendor=1d6b, idProduct=0001
+[    1.246055] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    1.246659] usb usb1: Product: UHCI Host Controller
+[    1.247038] usb usb1: Manufacturer: Linux 3.11.6-4-default uhci_hcd
+[    1.247528] usb usb1: SerialNumber: 0000:00:01.2
+[    1.248301] hub 1-0:1.0: USB hub found
+[    1.248642] hub 1-0:1.0: 2 ports detected
+[    1.404621] ata2.00: ATAPI: QEMU DVD-ROM, 1.6.2, max UDMA/100
+[    1.405589] ata2.00: configured for MWDMA2
+[    1.406271] scsi 1:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     1.6. PQ: 0 ANSI: 5
+[    1.411836] sr0: scsi3-mmc drive: 4x/4x cd/rw xa/form2 tray
+[    1.412419] cdrom: Uniform CD-ROM driver Revision: 3.20
+[    1.449003] RPC: Registered named UNIX socket transport module.
+[    1.449871] RPC: Registered udp transport module.
+[    1.450340] RPC: Registered tcp transport module.
+[    1.450959] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    1.480042] tsc: Refined TSC clocksource calibration: 3591.318 MHz
+[    1.560072] usb 1-1: new full-speed USB device number 2 using uhci_hcd
+[    1.721339] usb 1-1: New USB device found, idVendor=0627, idProduct=0001
+[    1.721883] usb 1-1: New USB device strings: Mfr=1, Product=3, SerialNumber=5
+[    1.722522] usb 1-1: Product: QEMU USB Tablet
+[    1.722871] usb 1-1: Manufacturer: QEMU
+[    1.723183] usb 1-1: SerialNumber: 42
+[    1.729051] hidraw: raw HID events driver (C) Jiri Kosina
+[    1.734592] usbcore: registered new interface driver usbhid
+[    1.735042] usbhid: USB HID core driver
+[    1.736631] input: QEMU QEMU USB Tablet as /devices/pci0000:00/0000:00:01.2/usb1/1-1/1-1:1.0/input/input2
+[    1.738795] hid-generic 0003:0627:0001.0001: input,hidraw0: USB HID v0.01 Pointer [QEMU QEMU USB Tablet] on usb-0000:00:01.2-1/input0
+[?1l%G%G[9;0]Loading basic drivers...[    1.829104] st: Version 20101219, fixed bufsize 32768, s/g segs 256
+[    1.841511] sr 1:0:0:0: Attached scsi generic sg0 type 5
+[    1.884664] input: ImExPS/2 Generic Explorer Mouse as /devices/platform/i8042/serio1/input/input3
+[    1.905153] NET: Registered protocol family 17
+[    2.443486] FS-Cache: Loaded
+[    2.803824] FS-Cache: Netfs 'nfs' registered for caching
+ ok
+Starting hardware detection...[    4.043779] ppa: Version 2.07 (for Linux 2.4.x)
+ ok
+(If a driver is not working for you, try booting with brokenmodules=driver_name.)
+
+Qumranet Qemu virtual machine
+  drivers: ata_piix*, ata_generic, pata_acpi
+Qumranet Virtio block device
+  drivers: virtio_pci*
+Qumranet Virtio block device
+  drivers: virtio_pci*
+Virtio Storage 0
+  drivers: virtio_blk*
+Virtio Storage 1
+  drivers: virtio_blk*
+Activating usb devices...[    4.213650] usbcore: registered new interface driver usb-storage
+ ok
+Qumranet Virtio network device
+  drivers: virtio_pci*
+Virtio Ethernet Card 0
+  drivers: virtio_net*
+Loading Installation System (1/6) -            0%  1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
+Loading Installation System (2/6) -            0%  1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
+Loading Installation System (3/6) -            0%  1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
+Loading Installation System (4/6) -            1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
+Loading Installation System (5/6) -            0%  1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
+Loading Installation System (6/6) -           32% 65% 98%100%
+%Gstty: standard input: unable to perform all requested operations
+starting dbus...Unknown username "polkitd" in message bus configuration file
+Unknown username "polkitd" in message bus configuration file
+Failed to start message bus: Failed to bind socket "/run/dbus/system_bus_socket": No such file or directory
+ failed
+starting klogd... ok
+rcnscd: no such service nscd
+starting yast...
+20131106
+.packages.initrd:
+aaa_base [13.1-16.17.1.i586]
+acpica [20130823-6.2.i586]
+bash [4.2-68.1.5.i586]
+biosdevname [0.4.1-6.1.2.i586]
+cifs-utils [6.2-1.1.i586]
+coreutils [8.21-7.1.3.i586]
+cpio [2.11-25.1.2.i586]
+cracklib [2.9.0-2.1.2.i586] < libcrack2 < pam
+cracklib-dict-full [2.8.12-62.1.2.i586] < cracklib < libcrack2 < pam
+curl [7.32.0-2.1.2.i586]
+cyrus-sasl [2.1.25-28.1.2.i586] < libldap-2_4-2 < gpg2
+dbus-1 [1.7.4-4.4.1.i586]
+device-mapper [1.02.78-0.14.1.2.i586]
+dhcpcd [3.2.3-47.78.1.2.i586]
+dmidecode [2.12-3.1.2.i586]
+ethtool [3.10-2.1.2.i586]
+expat [2.1.0-12.1.2.i586] < device-mapper
+file-magic [5.14-4.1.2.i586] < libmagic1 < rpm
+glibc [2.18-4.4.1.i586]
+gpg2 [2.0.22-1.1.i586]
+gzip [1.6-4.2.2.i586]
+hwinfo [20.2-1.1.i586]
+iproute2 [3.9.0-3.1.2.i586]
+iputils [s20101006-23.1.2.i586]
+joe [3.7-26.1.4.i586]
+kbd [1.15.5-5.1.2.i586]
+kexec-tools [2.0.3-5.1.3.i586]
+kpartx [0.4.9-11.1.2.i586]
+krb5 [1.11.3-3.1.3.i586]
+libacl1 [2.2.52-2.1.2.i586] < udev
+libadns1 [1.4-100.1.2.i586] < gpg2
+libaio1 [0.3.109-15.1.2.i586] < multipath-tools
+libassuan0 [2.1.1-2.1.4.i586] < gpg2
+libattr1 [2.4.47-2.1.2.i586] < shadow
+libaudit1 [2.2.3-4.1.2.i586] < dbus-1
+libblkid1 [2.23.2-3.1.i586] < linuxrc
+libbz2-1 [1.0.6-26.1.21.i586] < gpg2
+libcap-ng0 [0.7.3-2.1.2.i586] < dbus-1
+libcap2 [2.22-10.1.24.i586] < rpm
+libcom_err2 [1.42.8-2.1.2.i586] < krb5
+libcrack2 [2.9.0-2.1.2.i586] < pam
+libcurl4 [7.32.0-2.1.2.i586] < linuxrc
+libdb-4_8 [4.8.30-25.2.1.i586] < iproute2
+libdbus-1-3 [1.7.4-4.4.1.i586] < dbus-1
+libdrm2 [2.4.46-3.2.2.i586] < plymouth
+libelf1 [0.155-6.1.20.i586] < rpm
+libevent-2_0-5 [2.0.21-2.1.2.i586] < nfs-client
+libexpat1 [2.1.0-12.1.2.i586] < device-mapper
+libfuse2 [2.9.3-2.1.2.i586] < ntfs-3g
+libgcc_s1 [4.8.1_20130909-3.2.1.i586] < device-mapper
+libgcrypt11 [1.5.3-2.1.4.i586] < gpg2
+libgmp10 [5.1.2-2.1.2.i586] < coreutils
+libgpg-error0 [1.12-2.1.4.i586] < gpg2
+libgssglue1 [0.4-2.1.2.i586] < libtirpc1 < pam
+libidn11 [1.25-7.1.2.i586] < libcurl4 < linuxrc
+libiw30 [30.pre9-32.1.2.i586] < wireless-tools
+libkeyutils1 [1.5.5-6.1.3.i586] < krb5
+libkmod2 [14-2.1.2.i586] < udev
+libksba8 [1.3.0-5.1.2.i586] < gpg2
+libldap-2_4-2 [2.4.33-8.1.2.i586] < gpg2
+liblua5_1 [5.1.5-5.2.1.i586] < rpm
+liblzma5 [5.0.5-2.1.20.i586] < rpm
+liblzo2-2 [2.06-12.1.2.i586] < squashfs
+libmagic1 [5.14-4.1.2.i586] < rpm
+libmount1 [2.23.2-3.1.i586] < util-linux
+libncurses5 [5.9-33.1.2.i586]
+libnl-config [3.2.22-2.1.2.noarch] < libnl3-200 < wpa_supplicant
+libnl3-200 [3.2.22-2.1.2.i586] < wpa_supplicant
+libntfs-3g84 [2013.1.13-2.1.2.i586] < ntfs-3g
+libopenssl1_0_0 [1.0.1e-11.2.1.i586] < wireless-tools
+libpci3 [3.2.0-2.1.2.i586] < biosdevname
+libpcre1 [8.33-2.1.2.i586] < libselinux1 < device-mapper
+libply-boot-client2 [0.8.8_git201309032142-2.2.1.i586] < libply2 < plymouth
+libply-splash-core2 [0.8.8_git201309032142-2.2.1.i586] < plymouth
+libply-splash-graphics2 [0.8.8_git201309032142-2.2.1.i586] < plymouth-plugin-script
+libply2 [0.8.8_git201309032142-2.2.1.i586] < plymouth
+libpng16-16 [1.6.6-1.1.i586] < libply-splash-graphics2 < plymouth-plugin-script
+libpopt0 [1.16-24.1.1.i586] < rpm
+libpth20 [2.0.7-138.1.2.i586] < gpg2
+libreadline6 [6.2-68.1.5.i586] < gpg2
+libselinux1 [2.1.13-4.1.21.i586] < device-mapper
+libsemanage1 [2.1.10-3.1.20.i586] < rpm
+libsepol1 [2.1.9-5.1.23.i586] < device-mapper
+libsgutils2-2 [1.36-3.1.2.i586] < sg3_utils
+libssh2-1 [1.4.3-7.1.2.i586] < libcurl4 < linuxrc
+libstdc++6 [4.8.1_20130909-3.2.1.i586] < device-mapper
+libtalloc2 [2.0.8-7.1.2.i586] < cifs-utils
+libtirpc1 [0.2.3-1.1.i586] < pam
+libudev1 [208-6.1.i586] < device-mapper
+libusb-0_1-4 [0.1.13-27.1.2.i586] < gpg2
+libusb-1_0-0 [1.0.9-8.1.2.i586] < libusb-0_1-4 < gpg2
+libustr-1_0-1 [1.0.4-29.1.2.i586] < libsemanage1 < rpm
+libutempter0 [1.1.6-3.1.2.i586] < util-linux
+libuuid1 [2.23.2-3.1.i586] < util-linux
+libwbclient0 [4.1.0-3.5.1.i586] < cifs-utils
+libwrap0 [7.6-881.1.2.i586] < nfs-client
+libx86emu1 [1.1-20.1.2.i586] < hwinfo
+libxtables10 [1.4.19.1-2.1.2.i586] < iproute2
+libz1 [1.2.8-3.1.2.i586] < util-linux
+linuxrc [4.1.5-2.1.3.i586]
+lsscsi [0.27-2.1.2.i586]
+mdadm [3.3-4.1.2.i586]
+module-init-tools [3.15-11.1.2.i586]
+multipath-tools [0.4.9-11.1.2.i586]
+net-tools [1.60-763.1.2.i586]
+netcfg [11.5-18.1.2.noarch]
+nfs-client [1.2.8-4.2.1.i586]
+nfsidmap [0.25-2.1.2.i586]
+nscd [2.18-4.4.1.i586]
+ntfs-3g [2013.1.13-2.1.2.i586]
+open-iscsi [2.0.873-2.2.1.i586]
+openSUSE-build-key [1.0-24.1.2.noarch]
+openssh [6.2p2-3.1.2.i586]
+pam [1.1.8-3.1.i586]
+pcmciautils [017-128.1.2.i586]
+plymouth [0.8.8_git201309032142-2.2.1.i586]
+plymouth-branding-openSUSE [13.1-10.4.13.noarch]
+plymouth-plugin-script [0.8.8_git201309032142-2.2.1.i586]
+plymouth-scripts [0.8.8_git201309032142-2.2.1.i586]
+rpm [4.11.1-6.2.1.i586]
+samba-libs [4.1.0-3.5.1.i586]
+sbl [3.5.0-21.1.3.i586]
+sed [4.2.2-2.1.2.i586]
+sg3_utils [1.36-3.1.2.i586]
+shadow [4.1.5.1-8.1.2.i586]
+squashfs [4.2-10.1.2.i586]
+strace [4.8-3.1.2.i586]
+suse-module-tools [12.3-6.1.2.noarch]
+sysfsutils [2.1.0-150.1.2.i586] < iputils
+sysvinit-tools [2.88+-89.1.2.i586]
+udev [208-6.1.i586]
+util-linux [2.23.2-3.1.i586]
+wireless-tools [30.pre9-32.1.2.i586]
+wpa_supplicant [2.0-3.1.2.i586]
+xf86-input-vmmouse [13.0.0-5.1.2.i586]
+xf86-input-wacom [0.22.1-2.1.2.i586]
+xorg-x11-server [7.6_1.14.3.901-1.1.i586]
+.packages.root:
+Mesa-libEGL1 [9.2.2-61.6.1.i586]
+Mesa-libGL1 [9.2.2-61.6.1.i586] < libqt4-x11
+Mesa-libglapi0 [9.2.2-61.6.1.i586] < Mesa-libGL1 < libqt4-x11
+aaa_base [13.1-16.17.1.i586]
+autoyast2-installation [3.0.8-5.1.noarch]
+bash [4.2-68.1.5.i586]
+btrfsprogs [0.20-4.7.1.i586]
+bzip2 [1.0.6-26.1.21.i586]
+checkmedia [3.0-6.1.4.i586]
+coreutils [8.21-7.1.3.i586]
+cpio [2.11-25.1.2.i586]
+cracklib [2.9.0-2.1.2.i586]
+cryptsetup [1.6.2-2.1.2.i586]
+cyrus-sasl [2.1.25-28.1.2.i586] < libldap-2_4-2 < gpg2
+dbus-1 [1.7.4-4.4.1.i586]
+dejavu-fonts [2.34-2.1.2.noarch]
+desktop-data-openSUSE [13.1-3.1.3.noarch]
+device-mapper [1.02.78-0.14.1.2.i586]
+diffutils [3.3-3.1.2.i586]
+dmraid [1.0.0.rc16-25.1.2.i586]
+dmz-icon-theme-cursors [11.2.0-14.1.2.noarch]
+dosfstools [3.0.22-2.1.2.i586]
+dummy-release [11-21.1.2.i586] < aaa_base
+e2fsprogs [1.42.8-2.1.2.i586]
+efont-unicode-bitmap-fonts [0.4.2-223.1.2.noarch]
+elilo [3.16-1.1.i586]
+expat [2.1.0-12.1.2.i586] < device-mapper
+fbiterm [0.5.20040304-289.1.3.i586]
+file [5.14-4.1.2.i586]
+file-magic [5.14-4.1.2.i586] < libmagic1 < file
+filesystem [13.1-3.1.2.i586]
+fillup [1.42-269.1.2.i586]
+findutils [4.5.12-1.1.i586]
+fontconfig [2.11.0-1.1.i586]
+fonts-config [20080121-82.2.1.noarch]
+fribidi [0.19.2-11.1.2.i586]
+gawk [4.1.0-2.1.14.i586]
+glibc [2.18-4.4.1.i586] < open-iscsi
+glibc-locale [2.18-4.4.1.i586]
+gpart [0.1h-641.1.2.i586]
+gpg2 [2.0.22-1.1.i586]
+gpm [1.20.7-3.1.2.i586]
+graphviz [2.28.0-19.1.3.i586]
+graphviz-gnome [2.28.0-19.1.3.i586]
+grep [2.14-5.1.2.i586]
+gzip [1.6-4.2.2.i586]
+hdparm [9.43-5.1.2.i586]
+hex [1.4-275.1.2.i586]
+hwinfo [20.2-1.1.i586]
+icewm-lite [1.2.38-20.1.3.i586]
+initviocons [0.5-100.1.2.i586]
+insserv-compat [0.1-8.1.2.i586]
+iputils [s20101006-23.1.2.i586]
+jfsutils [1.1.15-12.1.2.i586]
+joe [3.7-26.1.4.i586]
+kbd [1.15.5-5.1.2.i586]
+klogd [1.4.1-772.1.2.i586]
+kpartx [0.4.9-11.1.2.i586] < dmraid
+krb5 [1.11.3-3.1.3.i586]
+less [458-2.1.2.i586]
+libICE6 [1.0.8-7.1.2.i586] < icewm-lite
+libSM6 [1.2.2-2.1.2.i586] < icewm-lite
+libX11-6 [1.6.2-2.1.2.i586] < xrefresh
+libX11-data [1.6.2-2.1.2.noarch] < libX11-6 < xrefresh
+libX11-xcb1 [1.6.2-2.1.2.i586] < xdpyinfo
+libXau6 [1.0.8-2.2.1.i586] < xorg-x11-server
+libXaw7 [1.0.12-2.1.2.i586] < xdm
+libXcomposite1 [0.4.4-6.1.2.i586] < xdpyinfo
+libXcursor1 [1.1.14-2.1.2.i586] < libqt4-x11
+libXdamage1 [1.1.4-6.1.2.i586] < Mesa-libGL1 < libqt4-x11
+libXdmcp6 [1.1.1-7.1.2.i586] < xorg-x11-server
+libXext6 [1.3.2-2.1.2.i586] < icewm-lite
+libXfixes3 [5.0.1-2.1.2.i586] < libqt4-x11
+libXfont1 [1.4.6-2.1.2.i586] < xorg-x11-server
+libXfontcache1 [1.0.5-9.1.2.i586] < xset
+libXft2 [2.3.1-7.1.2.i586] < icewm-lite
+libXi6 [1.7.2-2.1.2.i586] < xf86-input-wacom
+libXinerama1 [1.1.3-2.1.2.i586] < xf86-input-wacom
+libXmu6 [1.1.2-2.1.2.i586] < xdm
+libXmuu1 [1.1.2-2.1.2.i586] < xhost
+libXpm4 [3.5.11-2.1.2.i586] < icewm-lite
+libXrandr2 [1.4.2-2.1.2.i586] < xf86-input-wacom
+libXrender1 [0.9.8-2.1.2.i586] < xdpyinfo
+libXt6 [1.1.4-2.1.2.i586] < xdm
+libXtst6 [1.2.2-2.1.2.i586] < xdpyinfo
+libXxf86dga1 [1.1.4-2.1.2.i586] < xdpyinfo
+libXxf86misc1 [1.0.3-9.1.2.i586] < xdpyinfo
+libXxf86vm1 [1.1.3-2.1.2.i586] < xdpyinfo
+libacl1 [2.2.52-2.1.2.i586] < coreutils
+libadns1 [1.4-100.1.2.i586] < gpg2
+libaio1 [0.3.109-15.1.2.i586] < multipath-tools
+libasound2 [1.0.27.2-3.2.1.i586] < libqt4-x11
+libassuan0 [2.1.1-2.1.4.i586] < gpg2
+libattr1 [2.4.47-2.1.2.i586] < coreutils
+libaudit1 [2.2.3-4.1.2.i586] < util-linux
+libblkid1 [2.23.2-3.1.i586] < util-linux
+libbz2-1 [1.0.6-26.1.21.i586] < bzip2
+libcairo2 [1.12.16-3.1.3.i586] < pango-tools
+libcap-ng0 [0.7.3-2.1.2.i586] < dbus-1
+libcap2 [2.22-10.1.24.i586] < iputils
+libcom_err2 [1.42.8-2.1.2.i586] < krb5
+libcrack2 [2.9.0-2.1.2.i586] < pam
+libcryptsetup4 [1.6.2-2.1.2.i586] < systemd
+libcurl4 [7.32.0-2.1.2.i586] < gpg2
+libdb-4_8 [4.8.30-25.2.1.i586] < pam
+libdbus-1-3 [1.7.4-4.4.1.i586] < dbus-1
+libdmx1 [1.1.3-2.1.2.i586] < xdpyinfo
+libdrm2 [2.4.46-3.2.2.i586] < xorg-x11-server
+libedit0 [3.0.snap20110802-7.1.2.i586] < openssh
+libelf1 [0.155-6.1.20.i586] < rpm
+libevent-2_0-5 [2.0.21-2.1.2.i586] < nfs-client
+libexpat1 [2.1.0-12.1.2.i586] < libsolv-tools
+libext2fs2 [1.42.8-2.1.2.i586] < btrfsprogs
+libffi4 [4.8.1_20130909-3.2.1.i586] < ruby20 < yast2-ruby-bindings
+libfontenc1 [1.1.2-2.1.2.i586] < mkfontscale
+libfreetype6 [2.5.0.1-2.1.2.i586] < fontconfig
+libgbm1 [9.2.2-61.6.1.i586]
+libgcc_s1 [4.8.1_20130909-3.2.1.i586] < yast2-xml
+libgcrypt11 [1.5.3-2.1.4.i586] < gpg2
+libgdbm4 [1.10-7.1.2.i586] < perl
+libgio-2_0-0 [2.38.1-1.1.i586] < polkit
+libglib-2_0-0 [2.38.1-1.1.i586] < polkit
+libgmodule-2_0-0 [2.38.1-1.1.i586] < pango-tools
+libgmp10 [5.1.2-2.1.2.i586] < coreutils
+libgnutls28 [3.2.4-2.2.1.i586] < xorg-x11-Xvnc
+libgobject-2_0-0 [2.38.1-1.1.i586] < polkit
+libgpg-error0 [1.12-2.1.4.i586] < gpg2
+libgraphite2-3 [1.2.0-6.1.2.i586] < libharfbuzz0 < libpango-1_0-0 < pango-tools
+libgssglue1 [0.4-2.1.2.i586] < libtirpc1 < pam
+libharfbuzz0 [0.9.21-1.3.i586] < libpango-1_0-0 < pango-tools
+libhogweed2 [2.7.1-2.1.2.i586] < libgnutls28 < xorg-x11-Xvnc
+libidn11 [1.25-7.1.2.i586] < wget
+libiterm1 [0.5.20040304-289.1.3.i586] < fbiterm
+libjbig2 [2.0-10.1.2.i586] < libtiff5 < libqt4-x11
+libjpeg8 [8.0.2-24.1.3.i586] < xorg-x11-Xvnc
+libkeyutils1 [1.5.5-6.1.3.i586] < krb5
+libkmod2 [14-2.1.2.i586] < systemd
+libksba8 [1.3.0-5.1.2.i586] < gpg2
+liblcms1 [1.19-14.2.1.i586] < libmng1 < libqt4-x11
+libldap-2_4-2 [2.4.33-8.1.2.i586] < gpg2
+libltdl7 [2.4.2-11.1.2.i586] < graphviz
+liblua5_1 [5.1.5-5.2.1.i586] < rpm
+liblzma5 [5.0.5-2.1.20.i586] < xz
+liblzo2-2 [2.06-12.1.2.i586] < btrfsprogs
+libmagic1 [5.14-4.1.2.i586] < file
+libmng1 [1.0.10-111.1.2.i586] < libqt4-x11
+libmodman1 [2.0.1-14.1.2.i586] < libproxy1 < wget
+libmount1 [2.23.2-3.1.i586] < util-linux
+libmozjs-17_0 [17.0-4.1.2.i586] < polkit
+libmtdev1 [1.1.0-7.1.2.i586] < xf86-input-synaptics
+libncurses5 [5.9-33.1.2.i586] < util-linux
+libncurses6 [5.9-33.1.2.i586] < libyui-ncurses-pkg5
+libnettle4 [2.7.1-2.1.2.i586] < libgnutls28 < xorg-x11-Xvnc
+libntfs-3g84 [2013.1.13-2.1.2.i586] < ntfsprogs
+libopenssl1_0_0 [1.0.1e-11.2.1.i586] < iputils
+libp11-kit0 [0.20.1-2.1.2.i586] < libgnutls28 < xorg-x11-Xvnc
+libpango-1_0-0 [1.36.0-1.1.i586] < pango-tools
+libparted0 [2.4-34.2.2.i586] < parted
+libpci3 [3.2.0-2.1.2.i586] < pciutils
+libpciaccess0 [0.13.2-2.1.2.i586] < xorg-x11-server
+libpcre1 [8.33-2.1.2.i586] < grep
+libpixman-1-0 [0.30.2-2.2.1.i586] < xorg-x11-server
+libpng16-16 [1.6.6-1.1.i586] < libqt4-x11
+libpolkit0 [0.112-2.1.i586] < polkit
+libpopt0 [1.16-24.1.1.i586] < rpm
+libprocps1 [3.3.8-5.1.2.i586] < procps
+libproxy1 [0.4.11-9.1.2.i586] < wget
+libpth20 [2.0.7-138.1.2.i586] < gpg2
+libqrencode3 [3.4.2-2.1.2.i586] < systemd
+libqt4 [4.8.5-5.6.1.i586]
+libqt4-sql [4.8.5-5.6.1.i586] < libqt4-x11
+libqt4-x11 [4.8.5-5.6.1.i586]
+libreadline6 [6.2-68.1.5.i586] < gpg2
+libreiserfs-0_3-0 [0.3.0.5-164.1.2.i586] < libparted0 < parted
+libreiserfscore0 [3.6.24-2.2.1.i586] < reiserfs
+libselinux1 [2.1.13-4.1.21.i586] < util-linux
+libsemanage1 [2.1.10-3.1.20.i586] < rpm
+libsepol1 [2.1.9-5.1.23.i586] < device-mapper
+libsgutils2-2 [1.36-3.1.2.i586] < sg3_utils
+libsolv-tools [0.4.0-2.2.i586]
+libssh2-1 [1.4.3-7.1.2.i586] < libcurl4 < gpg2
+libstdc++6 [4.8.1_20130909-3.2.1.i586] < yast2-xml
+libstorage-ruby [2.24.8-1.1.i586] < yast2-storage
+libstorage4 [2.24.8-1.1.i586]
+libstroke [0.5.1-229.1.2.i586]
+libtasn1 [3.3-3.1.2.i586] < libtasn1-6 < libgnutls28 < xorg-x11-Xvnc
+libtasn1-6 [3.3-3.1.2.i586] < libgnutls28 < xorg-x11-Xvnc
+libtiff5 [4.0.3-8.1.2.i586] < libqt4-x11
+libtirpc1 [0.2.3-1.1.i586] < pam
+libudev1 [208-6.1.i586]
+libusb-0_1-4 [0.1.13-27.1.2.i586] < gpg2
+libusb-1_0-0 [1.0.9-8.1.2.i586] < usbutils
+libustr-1_0-1 [1.0.4-29.1.2.i586] < libsemanage1 < rpm
+libutempter0 [1.1.6-3.1.2.i586] < util-linux
+libuuid1 [2.23.2-3.1.i586] < util-linux
+libwayland-client0 [1.2.1-1.1.i586] < libgbm1
+libwayland-server0 [1.2.1-1.1.i586] < libgbm1
+libwrap0 [7.6-881.1.2.i586] < rpcbind
+libx86emu1 [1.1-20.1.2.i586] < hwinfo
+libxcb-dri2-0 [1.9.1-3.1.2.i586] < libgbm1
+libxcb-glx0 [1.9.1-3.1.2.i586] < Mesa-libGL1 < libqt4-x11
+libxcb-render0 [1.9.1-3.1.2.i586] < libcairo2 < pango-tools
+libxcb-shm0 [1.9.1-3.1.2.i586] < libcairo2 < pango-tools
+libxcb-xfixes0 [1.9.1-3.1.2.i586] < Mesa-libEGL1
+libxcb1 [1.9.1-3.1.2.i586] < xdpyinfo
+libxkbfile1 [1.0.8-7.1.2.i586] < xkbcomp
+libxml2-2 [2.9.1-2.1.2.i586] < yast2-xml
+libxslt-tools [1.1.28-5.1.2.i586] < yast2-devtools
+libxslt1 [1.1.28-5.1.2.i586] < libxslt-tools < yast2-devtools
+libyaml-0-2 [0.1.4-2.1.2.i586] < ruby20 < yast2-ruby-bindings
+libyui-ncurses-pkg5 [2.44.4-2.1.5.i586]
+libyui-ncurses5 [2.44.1-2.1.4.i586] < libyui-ncurses-pkg5
+libyui-qt-graph5 [2.42.7-2.2.1.i586]
+libyui-qt-pkg5 [2.42.13-2.1.5.i586]
+libyui-qt5 [2.43.5-2.1.4.i586] < libyui-qt-pkg5
+libyui5 [3.0.10-2.1.4.i586] < libyui-qt-pkg5
+libz1 [1.2.8-3.1.2.i586] < util-linux
+libzypp [13.8.1-1.1.i586] < libyui-qt-pkg5
+lsscsi [0.27-2.1.2.i586] < libstorage4
+ltrace [0.7.2-5.1.3.i586]
+lvm2 [2.02.98-0.28.1.5.i586]
+mkfontdir [1.0.7-7.1.2.i586]
+mkfontscale [1.1.1-2.1.2.i586]
+module-init-tools [3.15-11.1.2.i586]
+mozilla-nspr [4.10.1-1.1.i586]
+multipath-tools [0.4.9-11.1.2.i586]
+ncurses-utils [5.9-33.1.2.i586]
+net-tools [1.60-763.1.2.i586]
+netcfg [11.5-18.1.2.noarch]
+nfs-client [1.2.8-4.2.1.i586]
+nscd [2.18-4.4.1.i586]
+ntfsprogs [2013.1.13-2.1.2.i586]
+ntp [4.2.6p5-15.2.1.i586]
+open-iscsi [2.0.873-2.2.1.i586]
+openslp [1.2.0-202.1.2.i586]
+openslp-server [1.2.0-202.1.2.i586]
+openssh [6.2p2-3.1.2.i586]
+openssl [1.0.1e-11.2.1.i586]
+pam [1.1.8-3.1.i586]
+pam-modules [12.1-20.1.2.i586]
+pango-tools [1.36.0-1.1.i586]
+parted [2.4-34.2.2.i586]
+pciutils [3.2.0-2.1.2.i586]
+pciutils-ids [2013.10.06-1.1.noarch]
+perl [5.18.1-2.1.11.i586]
+perl-Bootloader [0.711-1.1.i586]
+perl-Config-Crontab [1.33-7.1.2.noarch] < yast2
+perl-Digest-SHA1 [2.13-16.1.4.i586] < yast2-users
+perl-Parse-RecDescent [1.967009-6.1.2.i586] < perl-X500-DN < yast2-users
+perl-X500-DN [0.29-105.1.2.i586] < yast2-users
+perl-XML-Bare [0.53-2.1.2.i586]
+perl-XML-NamespaceSupport [1.11-20.1.2.i586]
+perl-XML-Parser [2.41-20.1.2.i586]
+perl-XML-SAX [0.99-21.1.2.i586] < perl-XML-Simple
+perl-XML-SAX-Base [1.08-7.1.2.noarch] < perl-XML-SAX-Expat < perl-XML-Simple
+perl-XML-SAX-Expat [0.50-2.1.2.noarch] < perl-XML-Simple
+perl-XML-Simple [2.20-2.1.2.noarch]
+perl-XML-Writer [0.623-2.1.2.noarch] < yast2-devtools
+perl-XML-XPath [1.13-98.1.2.i586] < yast2
+perl-base [5.18.1-2.1.11.i586]
+perl-gettext [1.05-162.1.2.i586]
+polkit [0.112-2.1.i586]
+procinfo [18-218.1.2.i586]
+procps [3.3.8-5.1.2.i586]
+psmisc [22.20-5.1.2.i586]
+reiserfs [3.6.24-2.2.1.i586]
+rgb [1.0.5-4.1.2.i586]
+rpcbind [0.2.0_git201103171419-12.1.2.i586]
+rpm [4.11.1-6.2.1.i586]
+ruby [2.0-5.1.2.i586]
+ruby20 [2.0.0.p247-3.2.1.i586] < yast2-ruby-bindings
+rubygem-fast_gettext [0.7.1-2.1.2.i586] < yast2-ruby-bindings
+rubygem-ruby-dbus [0.9.2-2.1.3.i586] < yast2-storage
+rubygem-yard [0.8.7-2.1.2.i586] < yast2-devtools
+screen [4.0.4-15.1.2.i586]
+sed [4.2.2-2.1.2.i586]
+setxkbmap [1.3.0-6.1.2.i586]
+sg3_utils [1.36-3.1.2.i586]
+shadow [4.1.5.1-8.1.2.i586]
+smartmontools [6.2-2.1.2.i586]
+strace [4.8-3.1.2.i586]
+suse-module-tools [12.3-6.1.2.noarch]
+sysfsutils [2.1.0-150.1.2.i586] < iputils
+syslinux [4.04-27.1.3.i586]
+syslogd [1.4.1-772.1.2.i586]
+systemd [208-6.1.i586]
+systemd-presets-branding-openSUSE [0.3.0-3.1.2.noarch]
+systemd-sysvinit [208-6.1.i586]
+sysvinit [2.88+-89.1.2.i586]
+sysvinit-tools [2.88+-89.1.2.i586]
+tar [1.26-19.1.2.i586]
+terminfo [5.9-33.1.2.i586]
+terminfo-base [5.9-33.1.2.i586]
+tightvnc [1.3.10-14.2.1.i586]
+timezone [2013h-1.1.i586]
+usbutils [007-2.1.2.i586]
+util-linux [2.23.2-3.1.i586]
+vim [7.4.052-1.1.i586]
+wget [1.14-3.1.3.i586]
+xauth [1.0.7-6.1.2.i586]
+xbitmaps [1.1.1-9.1.2.noarch] < libXmu6 < xdm
+xdm [1.1.10-24.2.1.i586]
+xdpyinfo [1.3.1-2.1.2.i586]
+xf86-input-evdev [2.8.2-1.1.i586]
+xf86-input-joystick [1.6.2-4.1.2.i586]
+xf86-input-keyboard [1.7.0-2.1.2.i586]
+xf86-input-mouse [1.9.0-2.2.2.i586]
+xf86-input-synaptics [1.7.1-2.1.2.i586]
+xf86-input-vmmouse [13.0.0-5.1.2.i586]
+xf86-input-void [1.4.0-6.1.2.i586]
+xf86-input-wacom [0.22.1-2.1.2.i586]
+xf86-video-ati [7.2.0-2.1.2.i586]
+xf86-video-cirrus [1.5.2-6.1.2.i586]
+xf86-video-fbdev [0.4.3-6.1.2.i586]
+xf86-video-intel [2.99.905-1.1.i586]
+xf86-video-modesetting [0.8.0-3.2.1.i586]
+xf86-video-nv [2.1.20-7.1.2.i586]
+xf86-video-r128 [6.9.1-6.1.2.i586]
+xf86-video-sis [0.10.7-6.1.2.i586]
+xf86-video-vesa [2.3.3-2.1.2.i586]
+xf86-video-vmware [13.0.1-2.1.2.i586]
+xfsdump [3.0.5-9.1.2.i586]
+xfsprogs [3.1.11-2.1.2.i586]
+xhost [1.0.6-2.1.2.i586]
+xkbcomp [1.2.4-8.1.2.i586]
+xkeyboard-config [2.9-6.1.3.noarch]
+xmodmap [1.0.8-2.1.2.i586]
+xorg-x11-Xvnc [7.6_1.0.1-15.1.3.i586]
+xorg-x11-fonts [7.6-27.1.2.noarch]
+xorg-x11-fonts-core [7.6-27.1.2.noarch]
+xorg-x11-server [7.6_1.14.3.901-1.1.i586]
+xrefresh [1.0.5-2.1.3.i586]
+xset [1.2.3-2.1.2.i586]
+xterm [297-1.1.i586]
+xz [5.0.5-2.1.20.i586]
+yast2 [3.0.10-4.1.i586]
+yast2-add-on [3.0.2-1.1.noarch]
+yast2-bootloader [3.0.3-2.1.3.i586]
+yast2-core [3.0.3-1.1.i586]
+yast2-country [3.0.2-1.1.i586]
+yast2-country-data [3.0.2-1.1.i586]
+yast2-devtools [3.0.5-1.1.noarch]
+yast2-hardware-detection [3.0.1-2.1.3.i586]
+yast2-installation [3.0.8-1.1.noarch]
+yast2-iscsi-client [3.0.0-2.1.4.noarch]
+yast2-kdump [3.0.0-2.1.4.i586]
+yast2-multipath [2.17.1-22.1.4.noarch]
+yast2-network [3.0.8-5.1.i586]
+yast2-nfs-client [3.0.2-1.3.noarch]
+yast2-ntp-client [3.0.1-7.1.noarch]
+yast2-packager [3.0.8-1.1.i586]
+yast2-perl-bindings [3.0.1-3.1.i586]
+yast2-pkg-bindings [3.0.3-8.1.i586]
+yast2-proxy [3.0.0-2.1.4.noarch]
+yast2-ruby-bindings [3.0.4-1.1.i586]
+yast2-runlevel [3.0.1-1.1.noarch]
+yast2-slp [3.0.2-1.1.i586]
+yast2-storage [3.0.8-1.1.i586]
+yast2-trans-stats [2.19.0-14.1.3.noarch]
+yast2-transfer [3.0.1-2.1.3.i586]
+yast2-tune [3.0.2-1.1.i586]
+yast2-update [3.0.4-2.1.4.i586]
+yast2-users [3.0.1-2.1.4.i586]
+yast2-vm [3.0.2-2.1.4.i586]
+yast2-x11 [3.0.1-2.2.1.i586]
+yast2-xml [3.0.0-2.1.2.i586]
+yast2-ycp-ui-bindings [3.0.1-3.1.i586]
+[  236.630185] reboot: Restarting system
+[    0.016000] Failed to access perfctr msr (MSR c1 is 0)
+
+Welcome to openSUSE 13.1 "Bottle" - Kernel 3.11.6-4-default (ttyS0).
+
+
+linux-3uuv login: 010_consoletest_setup OK
+imroot
+aplay_finished
+imroot
+imroot
+# | Alias                     | Name                               | Enabled | Refresh | Priority | Type | URI                                                             | Service
+--+---------------------------+------------------------------------+---------+---------+----------+------+-----------------------------------------------------------------+--------
+1 | repo-debug                | openSUSE-13.1-Debug                | No      | Yes     |   99     | NONE | http://download.opensuse.org/debug/distribution/13.1/repo/oss/  |        
+2 | repo-debug-update         | openSUSE-13.1-Update-Debug         | No      | Yes     |   99     | NONE | http://download.opensuse.org/debug/update/13.1/                 |        
+3 | repo-debug-update-non-oss | openSUSE-13.1-Update-Debug-Non-Oss | No      | Yes     |   99     | NONE | http://download.opensuse.org/debug/update/13.1-non-oss/         |        
+4 | repo-non-oss              | openSUSE-13.1-Non-Oss              | Yes     | Yes     |   99     | NONE | http://download.opensuse.org/distribution/13.1/repo/non-oss/    |        
+5 | repo-oss                  | openSUSE-13.1-Oss                  | Yes     | Yes     |   99     | NONE | http://download.opensuse.org/distribution/13.1/repo/oss/        |        
+6 | repo-source               | openSUSE-13.1-Source               | No      | Yes     |   99     | NONE | http://download.opensuse.org/source/distribution/13.1/repo/oss/ |        
+7 | repo-update               | openSUSE-13.1-Update               | Yes     | Yes     |   99     | NONE | http://download.opensuse.org/update/13.1/                       |        
+8 | repo-update-non-oss       | openSUSE-13.1-Update-Non-Oss       | Yes     | Yes     |   99     | NONE | http://download.opensuse.org/update/13.1-non-oss/               |        
+imroot
+imroot
+apache2.service - The Apache Webserver
+   Loaded: loaded (/usr/lib/systemd/system/apache2.service; disabled)
+   Active: inactive (dead)
+
+apache2.service - The Apache Webserver
+   Loaded: loaded (/usr/lib/systemd/system/apache2.service; disabled)
+   Active: active (running) since Tue 2014-02-18 07:39:27 EST; 15s ago
+ Main PID: 7469 (httpd2-prefork)
+   Status: "Total requests: 0; Current requests/sec: 0; Current traffic:   0 B/sec"
+   CGroup: /system.slice/apache2.service
+           ├─7469 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -D SYSTEMD -DFOREGROUND -k start
+           ├─7486 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -D SYSTEMD -DFOREGROUND -k start
+           ├─7487 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -D SYSTEMD -DFOREGROUND -k start
+           ├─7488 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -D SYSTEMD -DFOREGROUND -k start
+           ├─7489 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -D SYSTEMD -DFOREGROUND -k start
+           └─7490 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -D SYSTEMD -DFOREGROUND -k start
+
+Feb 18 07:39:27 susetest start_apache2[7469]: AH00557: httpd2-prefork: apr_sockaddr_info_get() failed for susetest
+Feb 18 07:39:27 susetest start_apache2[7469]: AH00558: httpd2-prefork: Could not reliably determine the server's fully qualified domain name, using 127.0.0.1. Set the 'ServerName' directive globally to suppress this message
+Feb 18 07:39:27 susetest systemd[1]: Started The Apache Webserver.
+mysql.service - LSB: Start the MySQL database server
+   Loaded: loaded (/etc/init.d/mysql)
+   Active: inactive (dead)
+
+mysql.service - LSB: Start the MySQL database server
+   Loaded: loaded (/etc/init.d/mysql)
+   Active: active (running) since Tue 2014-02-18 07:40:43 EST; 15s ago
+  Process: 7573 ExecStart=/etc/init.d/mysql start (code=exited, status=0/SUCCESS)
+   CGroup: /system.slice/mysql.service
+           ├─7693 /bin/sh /usr/bin/mysqld_safe --mysqld=mysqld --user=mysql --pid-file=/var/run/mysql/mysqld.pid --socket=/var/run/mysql/mysql.sock --datadir=/var/lib/mysql
+           └─7908 /usr/sbin/mysqld --basedir=/usr --datadir=/var/lib/mysql --plugin-dir=/usr/lib/mysql/plugin --user=mysql --log-error=/var/lib/mysql/susetest.err --pid-file=/var/run/mysql/mysqld.pid --socket=/var/run/mysql/mysql.sock
+
+Feb 18 07:40:42 susetest mysql[7573]: Please report any problems with the '/usr/bin/mysqlbug' script!
+Feb 18 07:40:42 susetest mysql[7573]: The latest information about MariaDB is available at http://mariadb.org/.
+Feb 18 07:40:42 susetest mysql[7573]: You can find additional information about the MySQL part at:
+Feb 18 07:40:42 susetest mysql[7573]: http://dev.mysql.com
+Feb 18 07:40:42 susetest mysql[7573]: Support MariaDB development by buying support/new features from
+Feb 18 07:40:42 susetest mysql[7573]: Monty Program Ab. You can contact us about this at sales@montyprogram.com.
+Feb 18 07:40:42 susetest mysql[7573]: Alternatively consider joining our community based development effort:
+Feb 18 07:40:42 susetest mysql[7573]: http://kb.askmonty.org/en/contributing-to-the-mariadb-project/
+Feb 18 07:40:43 susetest mysql[7573]: Starting service MySQL ..done
+Feb 18 07:40:43 susetest systemd[1]: Started LSB: Start the MySQL database server.
+  PID TTY      STAT   TIME COMMAND
+    1 ?        Ss     0:00 /sbin/init showopts
+    2 ?        S      0:00 [kthreadd]
+    3 ?        S      0:00 [ksoftirqd/0]
+    5 ?        S<     0:00 [kworker/0:0H]
+    7 ?        S      0:00 [migration/0]
+    8 ?        S      0:00 [rcu_bh]
+    9 ?        S      0:00 [rcu_sched]
+   10 ?        S      0:00 [watchdog/0]
+   11 ?        S<     0:00 [khelper]
+   12 ?        S      0:00 [kdevtmpfs]
+   13 ?        S<     0:00 [netns]
+   14 ?        S<     0:00 [writeback]
+   15 ?        S<     0:00 [kintegrityd]
+   16 ?        S<     0:00 [bioset]
+   17 ?        S<     0:00 [kblockd]
+   18 ?        S<     0:00 [md]
+   20 ?        S      0:00 [khungtaskd]
+   21 ?        S      0:00 [kswapd0]
+   22 ?        SN     0:00 [ksmd]
+   23 ?        SN     0:00 [khugepaged]
+   24 ?        S      0:00 [fsnotify_mark]
+   25 ?        S<     0:00 [crypto]
+   30 ?        S<     0:00 [kthrotld]
+   32 ?        S<     0:00 [kpsmoused]
+   34 ?        S<     0:00 [deferwq]
+   76 ?        S<     0:00 [kmpath_rdacd]
+   97 ?        S      0:00 [khubd]
+  100 ?        S<     0:00 [ttm_swap]
+  106 ?        S<     0:00 [kworker/0:1H]
+  160 ?        S      0:00 [jbd2/vda2-8]
+  161 ?        S<     0:00 [ext4-rsv-conver]
+  162 ?        S<     0:00 [ext4-unrsv-conv]
+  197 ?        Ss     0:00 /usr/lib/systemd/systemd-journald
+  198 ?        S      0:00 [kauditd]
+  206 ?        S      0:00 [kworker/u2:2]
+  225 ?        Ss     0:00 /usr/lib/systemd/systemd-udevd
+  244 ?        S<     0:00 [ata_sff]
+  273 ?        S      0:00 [jbd2/vda3-8]
+  276 ?        S<     0:00 [ext4-rsv-conver]
+  279 ?        S<     0:00 [ext4-unrsv-conv]
+  299 ?        S      0:00 [scsi_eh_0]
+  300 ?        S      0:00 [scsi_eh_1]
+  321 ?        Ssl    0:00 /usr/sbin/nscd --foreground
+  323 ?        Ss     0:00 /usr/lib/systemd/systemd-logind
+  324 ?        Ss     0:00 /bin/dbus-daemon --system --address=systemd: --nofork
+ 2400 ?        Ss     0:00 /usr/sbin/cron -n
+ 2403 ttyS0    Ss+    0:00 /sbin/agetty --keep-baud ttyS0 115200 38400 9600
+ 3657 tty1     Ss+    0:00 /sbin/agetty --noclear tty1
+ 3662 ?        Ss     0:00 login -- bernhard     
+ 3663 ?        Ss     0:00 /usr/lib/systemd/systemd --user
+ 3665 tty4     Ss     0:00 -bash
+ 3666 ?        S      0:00 (sd-pam)           
+ 5710 ?        Ss     0:00 /sbin/dhcpcd --netconfig -L -E -HHH -c /etc/sysconfig
+ 6293 ?        Ss     0:00 /usr/lib/systemd/systemd --user
+ 6296 ?        S      0:00 (sd-pam)           
+ 6841 ?        S<     0:00 [xfsalloc]
+ 6842 ?        S<     0:00 [xfs_mru_cache]
+ 6843 ?        S<     0:00 [xfslogd]
+ 6846 ?        S      0:00 [jfsIO]
+ 6847 ?        S      0:00 [jfsCommit]
+ 6848 ?        S      0:00 [jfsSync]
+ 6867 ?        S<     0:00 [bioset]
+ 7011 ?        S      0:00 [kworker/0:0]
+ 7122 ?        Ss     0:00 /usr/sbin/sshd -D
+ 7247 ?        S      0:00 [kworker/0:2]
+ 7272 ?        S      0:00 [kworker/u2:1]
+ 7469 ?        Ss     0:00 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -
+ 7486 ?        S      0:00 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -
+ 7487 ?        S      0:00 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -
+ 7488 ?        S      0:00 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -
+ 7489 ?        S      0:00 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -
+ 7490 ?        S      0:00 /usr/sbin/httpd2-prefork -f /etc/apache2/httpd.conf -
+ 7693 ?        S      0:00 /bin/sh /usr/bin/mysqld_safe --mysqld=mysqld --user=m
+ 7908 ?        Sl     0:00 /usr/sbin/mysqld --basedir=/usr --datadir=/var/lib/my
+ 7940 ?        S      0:00 [kworker/0:1]
+ 7947 tty4     R+     0:00 ps ax
+UNIT                                                                                LOAD   ACTIVE SUB       DESCRIPTION
+proc-sys-fs-binfmt_misc.automount                                                   loaded active waiting   Arbitrary Executable File Formats File System Automount Point
+sys-devices-pci0000:00-0000:00:01.1-ata2-host1-target1:0:0-1:0:0:0-block-sr0.device loaded active plugged   QEMU_DVD-ROM
+sys-devices-pci0000:00-0000:00:03.0-virtio0-net-eth0.device                         loaded active plugged   Virtio network device
+sys-devices-pci0000:00-0000:00:04.0-sound-card0.device                              loaded active plugged   82801AA AC'97 Audio Controller
+sys-devices-pci0000:00-0000:00:05.0-virtio1-block-vda-vda1.device                   loaded active plugged   /sys/devices/pci0000:00/0000:00:05.0/virtio1/block/vda/vda1
+sys-devices-pci0000:00-0000:00:05.0-virtio1-block-vda-vda2.device                   loaded active plugged   /sys/devices/pci0000:00/0000:00:05.0/virtio1/block/vda/vda2
+sys-devices-pci0000:00-0000:00:05.0-virtio1-block-vda-vda3.device                   loaded active plugged   /sys/devices/pci0000:00/0000:00:05.0/virtio1/block/vda/vda3
+sys-devices-pci0000:00-0000:00:05.0-virtio1-block-vda.device                        loaded active plugged   /sys/devices/pci0000:00/0000:00:05.0/virtio1/block/vda
+sys-devices-pci0000:00-0000:00:06.0-virtio2-block-vdb.device                        loaded active plugged   /sys/devices/pci0000:00/0000:00:06.0/virtio2/block/vdb
+sys-devices-platform-serial8250-tty-ttyS10.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS10
+sys-devices-platform-serial8250-tty-ttyS11.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS11
+sys-devices-platform-serial8250-tty-ttyS12.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS12
+sys-devices-platform-serial8250-tty-ttyS13.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS13
+sys-devices-platform-serial8250-tty-ttyS14.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS14
+sys-devices-platform-serial8250-tty-ttyS15.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS15
+sys-devices-platform-serial8250-tty-ttyS16.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS16
+sys-devices-platform-serial8250-tty-ttyS17.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS17
+sys-devices-platform-serial8250-tty-ttyS18.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS18
+sys-devices-platform-serial8250-tty-ttyS19.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS19
+sys-devices-platform-serial8250-tty-ttyS2.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS2
+sys-devices-platform-serial8250-tty-ttyS20.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS20
+sys-devices-platform-serial8250-tty-ttyS21.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS21
+sys-devices-platform-serial8250-tty-ttyS22.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS22
+sys-devices-platform-serial8250-tty-ttyS23.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS23
+sys-devices-platform-serial8250-tty-ttyS24.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS24
+sys-devices-platform-serial8250-tty-ttyS25.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS25
+sys-devices-platform-serial8250-tty-ttyS26.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS26
+sys-devices-platform-serial8250-tty-ttyS27.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS27
+sys-devices-platform-serial8250-tty-ttyS28.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS28
+sys-devices-platform-serial8250-tty-ttyS29.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS29
+sys-devices-platform-serial8250-tty-ttyS3.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS3
+sys-devices-platform-serial8250-tty-ttyS30.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS30
+sys-devices-platform-serial8250-tty-ttyS31.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS31
+sys-devices-platform-serial8250-tty-ttyS4.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS4
+sys-devices-platform-serial8250-tty-ttyS5.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS5
+sys-devices-platform-serial8250-tty-ttyS6.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS6
+sys-devices-platform-serial8250-tty-ttyS7.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS7
+sys-devices-platform-serial8250-tty-ttyS8.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS8
+sys-devices-platform-serial8250-tty-ttyS9.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS9
+sys-devices-pnp0-00:05-tty-ttyS0.device                                             loaded active plugged   /sys/devices/pnp0/00:05/tty/ttyS0
+sys-devices-pnp0-00:06-tty-ttyS1.device                                             loaded active plugged   /sys/devices/pnp0/00:06/tty/ttyS1
+sys-module-fuse.device                                                              loaded active plugged   /sys/module/fuse
+sys-subsystem-net-devices-eth0.device                                               loaded active plugged   Virtio network device
+-.mount                                                                             loaded active mounted   /
+dev-hugepages.mount                                                                 loaded active mounted   Huge Pages File System
+dev-mqueue.mount                                                                    loaded active mounted   POSIX Message Queue File System
+home.mount                                                                          loaded active mounted   /home
+sys-kernel-debug.mount                                                              loaded active mounted   Debug File System
+var-lock.mount                                                                      loaded active mounted   Lock Directory
+var-run.mount                                                                       loaded active mounted   Runtime Directory
+systemd-ask-password-console.path                                                   loaded active waiting   Dispatch Password Requests to Console Directory Watch
+session-1.scope                                                                     loaded active running   Session 1 of user bernhard
+after-local.service                                                                 loaded active exited    /etc/init.d/after.local Compatibility
+apache2.service                                                                     loaded active running   The Apache Webserver
+cron.service                                                                        loaded active running   Command Scheduler
+dbus.service                                                                        loaded active running   D-Bus System Message Bus
+getty@tty1.service                                                                  loaded active running   Getty on tty1
+getty@tty4.service                                                                  loaded active running   Getty on tty4
+kmod-static-nodes.service                                                           loaded active exited    Create list of required static device nodes for the current kernel
+mysql.service                                                                       loaded active running   LSB: Start the MySQL database server
+network.service                                                                     loaded active exited    LSB: Configure network interfaces and set up routing
+network@eth0.service                                                                loaded active running   ifup managed network interface eth0
+nscd.service                                                                        loaded active running   Name Service Cache Daemon
+rc-local.service                                                                    loaded active exited    /etc/init.d/boot.local Compatibility
+serial-getty@ttyS0.service                                                          loaded active running   Serial Getty on ttyS0
+sshd.service                                                                        loaded active running   OpenSSH Daemon
+systemd-fsck@dev-vda3.service                                                       loaded active exited    File System Check on /dev/vda3
+systemd-journald.service                                                            loaded active running   Journal Service
+systemd-logind.service                                                              loaded active running   Login Service
+systemd-modules-load.service                                                        loaded active exited    Load Kernel Modules
+systemd-random-seed.service                                                         loaded active exited    Load/Save Random Seed
+systemd-remount-fs.service                                                          loaded active exited    Remount Root and Kernel File Systems
+systemd-sysctl.service                                                              loaded active exited    Apply Kernel Variables
+systemd-tmpfiles-setup-dev.service                                                  loaded active exited    Create static device nodes in /dev
+systemd-tmpfiles-setup.service                                                      loaded active exited    Recreate Volatile Files and Directories
+systemd-udev-root-symlink.service                                                   loaded active exited    Create dynamic rule for /dev/root link
+systemd-udev-settle.service                                                         loaded active exited    udev Wait for Complete Device Initialization
+systemd-udev-trigger.service                                                        loaded active exited    udev Coldplug all Devices
+systemd-udevd.service                                                               loaded active running   udev Kernel Device Manager
+systemd-update-utmp.service                                                         loaded active exited    Update UTMP about System Reboot/Shutdown
+systemd-user-sessions.service                                                       loaded active exited    Permit User Sessions
+systemd-vconsole-setup.service                                                      loaded active exited    Setup Virtual Console
+user@0.service                                                                      loaded active running   User Manager for 0
+user@1000.service                                                                   loaded active running   User Manager for 1000
+YaST2-Second-Stage.service                                                          loaded active exited    YaST2 Second Stage
+-.slice                                                                             loaded active active    Root Slice
+system-getty.slice                                                                  loaded active active    system-getty.slice
+system-network.slice                                                                loaded active active    system-network.slice
+system-serial\x2dgetty.slice                                                        loaded active active    system-serial\x2dgetty.slice
+system.slice                                                                        loaded active active    System Slice
+user-0.slice                                                                        loaded active active    user-0.slice
+user-1000.slice                                                                     loaded active active    user-1000.slice
+user.slice                                                                          loaded active active    User and Session Slice
+dbus.socket                                                                         loaded active running   D-Bus System Message Bus Socket
+systemd-initctl.socket                                                              loaded active listening /dev/initctl Compatibility Named Pipe
+systemd-journald.socket                                                             loaded active running   Journal Socket
+systemd-shutdownd.socket                                                            loaded active listening Delayed Shutdown Socket
+systemd-udevd-control.socket                                                        loaded active running   udev Control Socket
+systemd-udevd-kernel.socket                                                         loaded active running   udev Kernel Socket
+dev-vda1.swap                                                                       loaded active active    /dev/vda1
+basic.target                                                                        loaded active active    Basic System
+cryptsetup.target                                                                   loaded active active    Encrypted Volumes
+getty.target                                                                        loaded active active    Login Prompts
+local-fs-pre.target                                                                 loaded active active    Local File Systems (Pre)
+local-fs.target                                                                     loaded active active    Local File Systems
+multi-user.target                                                                   loaded active active    Multi-User System
+network.target                                                                      loaded active active    Network
+nss-lookup.target                                                                   loaded active active    Host and Network Name Lookups
+paths.target                                                                        loaded active active    Paths
+remote-fs-pre.target                                                                loaded active active    Remote File Systems (Pre)
+remote-fs.target                                                                    loaded active active    Remote File Systems
+slices.target                                                                       loaded active active    Slices
+sockets.target                                                                      loaded active active    Sockets
+sound.target                                                                        loaded active active    Sound Card
+swap.target                                                                         loaded active active    Swap
+sysinit.target                                                                      loaded active active    System Initialization
+timers.target                                                                       loaded active active    Timers
+systemd-readahead-done.timer                                                        loaded active elapsed   Stop Read-Ahead Data Collection 10s After Completed Startup
+systemd-tmpfiles-clean.timer                                                        loaded active waiting   Daily Cleanup of Temporary Directories
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+
+[1;39m119 loaded units listed.[0m Pass --all to see loaded but inactive units, too.
+To show all installed unit files use 'systemctl list-unit-files'.
+kmod-14-2.1.2.i586
+file-magic-5.14-4.1.2.i586
+libldap-2_4-2-2.4.33-8.1.2.i586
+unzip-doc-6.00-24.1.2.i586
+yast2-ruby-bindings-3.0.4-1.1.i586
+libX11-data-1.6.2-2.1.2.noarch
+libldapcpp1-0.3.1-3.1.2.i586
+yast2-trans-stats-2.19.0-14.1.3.noarch
+yast2-country-data-3.0.2-1.1.i586
+tunctl-1.5-22.1.2.i586
+ntp-4.2.6p5-15.2.1.i586
+prctl-1.5-16.1.2.i586
+systemd-208-6.1.i586
+mozilla-nspr-4.10.1-1.1.i586
+systemd-sysvinit-208-6.1.i586
+libxtables10-1.4.19.1-2.1.2.i586
+sysconfig-network-0.81.5-3.1.i586
+libustr-1_0-1-1.0.4-29.1.2.i586
+udev-208-6.1.i586
+libreiserfs-0_3-0-0.3.0.5-164.1.2.i586
+kernel-default-3.11.6-4.1.i586
+libprocps1-3.3.8-5.1.2.i586
+libyui-ncurses-pkg5-2.44.4-2.1.5.i586
+libnl1-1.1.4-2.1.4.i586
+cryptsetup-1.6.2-2.1.2.i586
+libkeyutils1-1.5.5-6.1.3.i586
+parted-2.4-34.2.2.i586
+libhavege1-1.7c-2.1.2.i586
+yast2-pam-3.0.0-2.1.4.noarch
+libgdbm4-1.10-7.1.2.i586
+yast2-packager-3.0.8-1.1.i586
+libffi4-4.8.1_20130909-3.2.1.i586
+libdbus-1-3-1.7.4-4.4.1.i586
+multipath-tools-0.4.9-11.1.2.i586
+libbz2-1-1.0.6-26.1.21.i586
+dbus-1-glib-0.100.2-2.1.3.i586
+libadns1-1.4-100.1.2.i586
+yast2-online-update-3.0.0-2.1.4.noarch
+fillup-1.42-269.1.2.i586
+os-prober-1.61-3.1.2.i586
+insserv-compat-0.1-8.1.2.i586
+cronie-1.4.8-50.1.2.i586
+libpci3-3.2.0-2.1.2.i586
+polkit-default-privs-13.1-10.2.1.noarch
+libusb-0_1-4-0.1.13-27.1.2.i586
+yast2-storage-3.0.8-1.1.i586
+libxml2-2-2.9.1-2.1.2.i586
+grub2-branding-openSUSE-13.1-10.4.13.noarch
+libgcrypt11-1.5.3-2.1.4.i586
+yast2-x11-3.0.1-2.2.1.i586
+libstdc++6-4.8.1_20130909-3.2.1.i586
+yast2-installation-3.0.8-1.1.noarch
+libext2fs2-1.42.8-2.1.2.i586
+patterns-openSUSE-minimal_base-13.1-13.6.1.i586
+libxcb1-1.9.1-3.1.2.i586
+libssh2-1-1.4.3-7.1.2.i586
+libgthread-2_0-0-2.38.2-8.2.i586
+libmount1-2.23.2-3.1.i586
+liblua5_2-5.2.2-2.1.2.i586
+libplist1-1.8-8.1.3.i586
+apache2-prefork-2.4.6-6.10.1.i586
+libcloog-isl4-0.18.0-5.1.2.i586
+libmodman1-2.0.1-14.1.2.i586
+cpp48-4.8.1_20130909-3.2.1.i586
+ncurses-utils-5.9-33.1.2.i586
+perl-5.18.1-2.1.11.i586
+libXmuu1-1.1.2-2.1.2.i586
+bash-4.2-68.1.5.i586
+perl-gettext-1.05-162.1.2.i586
+perl-Digest-SHA1-2.13-16.1.4.i586
+wallpaper-branding-openSUSE-13.1-10.4.13.noarch
+unzip-6.00-24.1.2.i586
+openSUSE-release-13.1-1.10.i586
+libcrack2-2.9.0-2.1.2.i586
+initviocons-0.5-100.1.2.i586
+elfutils-0.155-6.1.20.i586
+perl-XML-SAX-0.99-21.1.2.i586
+yast2-xml-3.0.0-2.1.2.i586
+which-2.20-2.1.2.i586
+pinentry-0.8.3-2.1.3.i586
+gettext-runtime-0.18.3.1-1.1.i586
+diffutils-3.3-3.1.2.i586
+libXft2-2.3.1-7.1.2.i586
+sg3_utils-1.36-3.1.2.i586
+pciutils-ids-2013.10.06-1.1.noarch
+timezone-2013h-1.1.i586
+ruby20-2.0.0.p247-3.2.1.i586
+nfsidmap-0.25-2.1.2.i586
+hdparm-9.43-5.1.2.i586
+p11-kit-0.20.1-2.1.2.i586
+ruby-2.0-5.1.2.i586
+pam-1.1.8-3.1.i586
+cyrus-sasl-2.1.25-28.1.2.i586
+rubygem-ruby-dbus-0.9.2-2.1.3.i586
+gpg-pubkey-307e3d54-4be01a65
+module-init-tools-3.15-11.1.2.i586
+cracklib-dict-small-2.9.0-2.1.2.i586
+shadow-4.1.5.1-8.1.2.i586
+filesystem-13.1-3.1.2.i586
+util-linux-2.23.2-3.1.i586
+terminfo-base-5.9-33.1.2.i586
+bind-utils-9.9.3P2-2.1.2.i586
+branding-openSUSE-13.1-10.4.13.noarch
+gio-branding-openSUSE-13.1-2.2.3.noarch
+kernel-firmware-20130714git-2.1.1.noarch
+libcryptsetup4-1.6.2-2.1.2.i586
+release-notes-openSUSE-13.1.4-1.1.noarch
+sudo-1.8.7-5.1.3.i586
+yast2-trans-en_US-3.0.0-4.8.1.noarch
+libcurl4-7.32.0-2.1.2.i586
+glibc-2.18-4.4.1.i686
+yast2-hardware-detection-3.0.1-2.1.3.i586
+update-alternatives-1.16.10-3.1.2.i586
+libudev1-208-6.1.i586
+traceroute-2.0.19-3.1.2.i586
+xterm-297-1.1.i586
+sessreg-1.0.8-2.1.2.i586
+aaa_base-extras-13.1-16.17.1.i586
+pkg-config-0.28-4.1.2.i586
+gpg2-2.0.22-1.1.i586
+net-tools-1.60-763.1.2.i586
+telnet-1.2-164.1.2.i586
+lsscsi-0.27-2.1.2.i586
+openSUSE-build-key-1.0-24.1.2.noarch
+libyaml-0-2-0.1.4-2.1.2.i586
+procps-3.3.8-5.1.2.i586
+libx86emu1-1.1-20.1.2.i586
+sysconfig-netconfig-0.81.5-3.1.i586
+libuuid1-2.23.2-3.1.i586
+udevmountd-0.81.5-3.1.i586
+libusb-1_0-0-1.0.9-8.1.2.i586
+mkinitrd-2.8.1-2.1.i586
+libsepol1-2.1.9-5.1.23.i586
+mdadm-3.3-4.1.2.i586
+libqrencode3-3.4.2-2.1.2.i586
+libgudev-1_0-0-208-6.1.i586
+libpth20-2.0.7-138.1.2.i586
+device-mapper-1.02.78-0.14.1.2.i586
+libpopt0-1.16-24.1.1.i586
+yast2-pkg-bindings-3.0.3-8.1.i586
+libntfs-3g84-2013.1.13-2.1.2.i586
+systemd-presets-branding-openSUSE-0.3.0-3.1.2.noarch
+libnfnetlink0-1.0.1-5.1.2.i586
+kpartx-0.4.9-11.1.2.i586
+liblua5_1-5.1.5-5.2.1.i586
+patterns-openSUSE-sw_management-13.1-13.6.1.i586
+libiw30-30.pre9-32.1.2.i586
+dbus-1-1.7.4-4.4.1.i586
+libidn11-1.25-7.1.2.i586
+dmraid-1.0.0.rc16-25.1.2.i586
+libgssglue1-0.4-2.1.2.i586
+yast2-proxy-3.0.0-2.1.4.noarch
+libgmp10-5.1.2-2.1.2.i586
+yast2-ntp-client-3.0.1-7.1.noarch
+libgcc_s1-4.8.1_20130909-3.2.1.i586
+yast2-slp-3.0.2-1.1.i586
+libfuse2-2.9.3-2.1.2.i586
+yast2-ldap-3.0.1-2.1.3.i586
+libexpat1-2.1.0-12.1.2.i586
+usbmuxd-1.0.8-8.1.2.i586
+libelf0-0.8.13-17.1.2.i586
+rpcbind-0.2.0_git201103171419-12.1.2.i586
+libcom_err2-1.42.8-2.1.2.i586
+nscd-2.18-4.4.1.i586
+libcap-ng0-0.7.3-2.1.2.i586
+lvm2-2.02.98-0.28.1.5.i586
+libaudit1-2.2.3-4.1.2.i586
+haveged-1.7c-2.1.2.i586
+libaio1-0.3.109-15.1.2.i586
+cron-4.2-50.1.2.i586
+libXdmcp6-1.1.1-7.1.2.i586
+yast2-security-3.0.0-2.1.4.noarch
+libICE6-1.0.8-7.1.2.i586
+yast2-country-3.0.2-1.1.i586
+ethtool-3.10-2.1.2.i586
+nfs-client-1.2.8-4.2.1.i586
+adjtimex-1.29-2.1.2.i586
+libstorage4-2.24.8-1.1.i586
+checkmedia-3.0-6.1.4.i586
+libupower-glib1-0.9.21-2.1.3.i586
+libpng16-16-1.6.6-1.1.i586
+libimobiledevice4-1.1.5-3.1.2.i586
+libopenssl1_0_0-1.0.1e-11.2.1.i586
+libstorage-ruby-2.24.8-1.1.i586
+libblkid1-2.23.2-3.1.i586
+logrotate-3.8.5-4.1.2.i586
+libselinux1-2.1.13-4.1.21.i586
+grub2-i386-pc-2.00-39.1.3.i586
+xtables-plugins-1.4.19.1-2.1.2.i586
+patterns-openSUSE-base-13.1-13.6.1.i586
+libkmod2-14-2.1.2.i586
+pm-utils-1.4.1-33.1.2.i586
+libksba8-1.3.0-5.1.2.i586
+grub2-i386-efi-2.00-39.1.3.i586
+libassuan0-2.1.1-2.1.4.i586
+yast2-bootloader-3.0.3-2.1.3.i586
+libisl10-0.12-2.1.2.i586
+yast2-ldap-client-3.0.1-2.1.4.noarch
+libp11-kit0-0.20.1-2.1.2.i586
+yast2-users-3.0.1-2.1.4.i586
+libasm1-0.155-6.1.20.i586
+yast2-update-3.0.4-2.1.4.i586
+libzio1-1.00-8.1.2.i586
+patterns-openSUSE-yast2_install_wf-13.1-13.6.1.i586
+libacl1-2.2.52-2.1.2.i586
+patterns-openSUSE-minimal_base-conflicts-13.1-13.6.1.i586
+libSM6-1.2.2-2.1.2.i586
+screen-4.0.4-15.1.2.i586
+openslp-1.2.0-202.1.2.i586
+rsync-3.1.0-21.4.1.i586
+libevent-2_0-5-2.0.21-2.1.2.i586
+fuse-2.9.3-2.1.2.i586
+libsemanage1-2.1.10-3.1.20.i586
+sshfs-2.4-7.1.3.i586
+glibc-extra-2.18-4.4.1.i586
+libapr1-1.4.8-3.2.1.i586
+libgmodule-2_0-0-2.38.1-1.1.i586
+libapr-util1-1.5.2-3.1.3.i586
+libcroco-0_6-3-0.6.8-5.1.3.i586
+apache2-2.4.6-6.10.1.i586
+libmpc3-1.0-5.1.2.i586
+mariadb-errormessages-5.5.33-2.2.i586
+libncurses6-5.9-33.1.2.i586
+libmozjs-17_0-17.0-4.1.2.i586
+libdb-4_8-4.8.30-25.2.1.i586
+augeas-lenses-1.0.0-2.1.3.i586
+w3m-0.5.3-152.1.3.i586
+libedit0-3.0.snap20110802-7.1.2.i586
+libreadline6-6.2-68.1.5.i586
+libproxy1-0.4.11-9.1.2.i586
+libXt6-1.1.4-2.1.2.i586
+libXpm4-3.5.11-2.1.2.i586
+libXext6-1.3.2-2.1.2.i586
+libyui5-3.0.10-2.1.4.i586
+zypper-aptitude-1.9.3-1.1.noarch
+perl-Config-Crontab-1.33-7.1.2.noarch
+perl-XML-Parser-2.41-20.1.2.i586
+perl-Parse-RecDescent-1.967009-6.1.2.i586
+xauth-1.0.7-6.1.2.i586
+libXinerama1-1.1.3-2.1.2.i586
+yast2-core-3.0.3-1.1.i586
+wireless-tools-30.pre9-32.1.2.i586
+strace-4.8-3.1.2.i586
+openssl-1.0.1e-11.2.1.i586
+ntfs-3g-2013.1.13-2.1.2.i586
+mtools-4.0.18-3.1.4.i586
+less-458-2.1.2.i586
+iproute2-3.9.0-3.1.2.i586
+info-4.13a-36.1.2.i586
+fontconfig-2.11.0-1.1.i586
+cpp-4.8-2.1.2.i586
+perl-XML-XPath-1.13-98.1.2.i586
+perl-X500-DN-0.29-105.1.2.i586
+yast2-ycp-ui-bindings-3.0.1-3.1.i586
+syslinux-4.04-27.1.3.i586
+wol-0.7.1-157.1.2.i586
+time-1.7-3.1.2.i586
+sed-4.2.2-2.1.2.i586
+libtasn1-6-3.3-3.1.2.i586
+grep-2.14-5.1.2.i586
+gawk-4.1.0-2.1.14.i586
+e2fsprogs-1.42.8-2.1.2.i586
+cpio-2.11-25.1.2.i586
+bc-1.06.95-5.1.2.i586
+xrdb-1.1.0-2.1.2.i586
+yast2-perl-bindings-3.0.1-3.1.i586
+libtasn1-3.3-3.1.2.i586
+wireless-regdb-2013.02.13-2.1.2.noarch
+wget-1.14-3.1.3.i586
+tnftp-20100108-2.1.2.i586
+tcsh-6.18.01-2.2.1.i586
+shared-mime-info-1.1-2.1.3.i586
+rpm-4.11.1-6.2.1.i586
+perl-Bootloader-0.711-1.1.i586
+krb5-1.11.3-3.1.3.i586
+kbd-1.15.5-5.1.2.i586
+glibc-locale-2.18-4.4.1.i586
+p11-kit-tools-0.20.1-2.1.2.i586
+crda-1.1.2-7.1.2.i586
+libgio-2_0-0-2.38.1-1.1.i586
+suse-module-tools-12.3-6.1.2.noarch
+deltarpm-3.6-2.1.2.i586
+libutempter0-1.1.6-3.1.2.i586
+kexec-tools-2.0.3-5.1.3.i586
+bind-libs-9.9.3P2-2.1.2.i586
+glib2-tools-2.38.1-1.1.i586
+mariadb-5.5.33-2.2.i586
+rubygem-fast_gettext-0.7.1-2.1.2.i586
+gpg-pubkey-3dbdc284-4be1884d
+pam-config-0.86-2.1.2.i586
+openSUSE-release-dvd-13.1-1.10.i586
+ca-certificates-mozilla-1.93-3.1.2.noarch
+bundle-lang-common-en-13.1-2.2.7.noarch
+aaa_base-13.1-16.17.1.i586
+xbitmaps-1.1.1-9.1.2.noarch
+dirmngr-1.1.0-18.1.2.i586
+vlan-1.9-136.1.2.i586
+netcfg-11.5-18.1.2.noarch
+sysfsutils-2.1.0-150.1.2.i586
+curl-7.32.0-2.1.2.i586
+perl-base-5.18.1-2.1.11.i586
+yast2-transfer-3.0.1-2.1.3.i586
+libz1-1.2.8-3.1.2.i586
+sysconfig-0.81.5-3.1.i586
+libwrap0-7.6-881.1.2.i586
+dhcpcd-3.2.3-47.78.1.2.i586
+libsgutils2-2-1.36-3.1.2.i586
+libzypp-13.8.1-1.1.i586
+libpython2_7-1_0-2.7.5-8.3.1.i586
+zypper-1.9.3-1.1.i586
+libpcre1-8.33-2.1.2.i586
+libparted0-2.4-34.2.2.i586
+liblzma5-5.0.5-2.1.20.i586
+yast2-3.0.10-4.1.i586
+libiptc0-1.4.19.1-2.1.2.i586
+cryptsetup-mkinitrd-0_201307311719-2.1.2.i586
+libgpg-error0-1.12-2.1.4.i586
+yast2-firewall-3.0.1-2.1.4.noarch
+libgc1-7.2d-2.1.2.i586
+SuSEfirewall2-3.6.305-2.1.2.noarch
+libelf1-0.155-6.1.20.i586
+openssh-6.2p2-3.1.2.i586
+libcap2-2.22-10.1.24.i586
+libpolkit0-0.112-2.1.i586
+libattr1-2.4.47-2.1.2.i586
+autofs-5.0.7-19.1.1.i586
+libXau6-1.0.8-2.2.1.i586
+libusbmuxd2-1.0.8-8.1.2.i586
+bridge-utils-1.5-16.1.2.i586
+polkit-0.112-2.1.i586
+luit-2.0_20130217-3.1.2.i586
+grub2-2.00-39.1.3.i586
+libmagic1-5.14-4.1.2.i586
+upower-0.9.21-2.1.3.i586
+libglib-2_0-0-2.38.1-1.1.i586
+xdm-1.1.10-24.2.1.i586
+libtirpc1-0.2.3-1.1.i586
+yast2-network-3.0.8-5.1.i586
+libmpfr4-3.1.2-3.1.2.i586
+autoyast2-installation-3.0.8-5.1.noarch
+expat-2.1.0-12.1.2.i586
+yast2-add-on-3.0.2-1.1.noarch
+libdw1-0.155-6.1.20.i586
+suse-ami-tools-1.0.10-2.1.6.noarch
+libfreetype6-2.5.0.1-2.1.2.i586
+file-5.14-4.1.2.i586
+libgobject-2_0-0-2.38.1-1.1.i586
+apache2-utils-2.4.6-6.10.1.i586
+libaugeas0-1.0.0-2.1.3.i586
+mariadb-client-5.5.33-2.2.i586
+libncurses5-5.9-33.1.2.i586
+libX11-6-1.6.2-2.1.2.i586
+libyui-ncurses5-2.44.1-2.1.4.i586
+joe-3.7-26.1.4.i586
+libXrender1-0.9.8-2.1.2.i586
+dbus-1-x11-1.7.4-4.4.1.i586
+perl-XML-SAX-Base-1.08-7.1.2.noarch
+perl-XML-NamespaceSupport-1.11-20.1.2.i586
+libXmu6-1.1.2-2.1.2.i586
+xz-5.0.5-2.1.20.i586
+python-base-2.7.5-8.3.1.i586
+netcat-openbsd-1.89-90.1.2.i586
+iptables-1.4.19.1-2.1.2.i586
+hwinfo-20.2-1.1.i586
+bzip2-1.0.6-26.1.21.i586
+libXaw7-1.0.12-2.1.2.i586
+cracklib-2.9.0-2.1.2.i586
+tar-1.26-19.1.2.i586
+gzip-1.6-4.2.2.i586
+findutils-4.5.12-1.1.i586
+coreutils-8.21-7.1.3.i586
+perl-XML-SAX-Expat-0.50-2.1.2.noarch
+lsof-4.84-19.1.2.i586
+vim-7.4.052-1.1.i586
+sysvinit-tools-2.88+-89.1.2.i586
+permissions-2013.08.22.1339-2.1.2.i586
+klogd-1.4.1-772.1.2.i586
+perl-XML-Simple-2.20-2.1.2.noarch
+pciutils-3.2.0-2.1.2.i586
+libsolv-tools-0.4.0-2.2.i586
+iputils-s20101006-23.1.2.i586
+ca-certificates-1_201310161709-1.1.noarch
+.......T.  c /etc/YaST2/control.xml
+....L....  c /etc/pam.d/common-account
+....L....  c /etc/pam.d/common-auth
+....L....  c /etc/pam.d/common-password
+....L....  c /etc/pam.d/common-session
+.......T.  c /etc/login.defs
+.M.......    /sys
+.M.......    /var/lock
+/usr/sbin/suexec2: cannot verify root:root 0755 - not listed in /etc/permissions
+.......T.    /usr/lib/gconv/gconv-modules.cache
+S.5....T.  c /etc/sysconfig/SuSEfirewall2
+SM5....T.  c /etc/default/grub
+.M.......    /var/lib/ca-certificates/openssl
+.M.......    /var/lib/ca-certificates/pem
+textinfo_ok

@@ -1,0 +1,3316 @@
+[    0.000000] Initializing cgroup subsys cpuset
+[    0.000000] Initializing cgroup subsys cpu
+[    0.000000] Initializing cgroup subsys cpuacct
+[    0.000000] Linux version 3.11.6-4-default (geeko@buildhost) (gcc version 4.8.1 20130909 [gcc-4_8-branch revision 202388] (SUSE Linux) ) #1 SMP Wed Oct 30 18:04:56 UTC 2013 (e6d4a27)
+[    0.000000] e820: BIOS-provided physical RAM map:
+[    0.000000] BIOS-e820: [mem 0x0000000000000000-0x000000000009fbff] usable
+[    0.000000] BIOS-e820: [mem 0x000000000009fc00-0x000000000009ffff] reserved
+[    0.000000] BIOS-e820: [mem 0x00000000000f0000-0x00000000000fffff] reserved
+[    0.000000] BIOS-e820: [mem 0x0000000000100000-0x000000003fffdfff] usable
+[    0.000000] BIOS-e820: [mem 0x000000003fffe000-0x000000003fffffff] reserved
+[    0.000000] BIOS-e820: [mem 0x00000000feffc000-0x00000000feffffff] reserved
+[    0.000000] BIOS-e820: [mem 0x00000000fffc0000-0x00000000ffffffff] reserved
+[    0.000000] Notice: NX (Execute Disable) protection missing in CPU!
+[    0.000000] SMBIOS 2.4 present.
+[    0.000000] Hypervisor detected: KVM
+[    0.000000] e820: last_pfn = 0x3fffe max_arch_pfn = 0x100000
+[    0.000000] found SMP MP-table at [mem 0x000fdf40-0x000fdf4f] mapped at [c00fdf40]
+[    0.000000] Scanning 1 areas for low memory corruption
+[    0.000000] init_memory_mapping: [mem 0x00000000-0x000fffff]
+[    0.000000] init_memory_mapping: [mem 0x37000000-0x373fffff]
+[    0.000000] init_memory_mapping: [mem 0x30000000-0x36ffffff]
+[    0.000000] init_memory_mapping: [mem 0x00100000-0x2fffffff]
+[    0.000000] init_memory_mapping: [mem 0x37400000-0x377fdfff]
+[    0.000000] RAMDISK: [mem 0x3be26000-0x3fffdfff]
+[    0.000000] Allocated new RAMDISK: [mem 0x33626000-0x377fdbf3]
+[    0.000000] Move RAMDISK from [mem 0x3be26000-0x3fffdbf3] to [mem 0x33626000-0x377fdbf3]
+[    0.000000] ACPI: RSDP 000fdde0 00014 (v00 BOCHS )
+[    0.000000] ACPI: RSDT 3fffe4b0 00034 (v01 BOCHS  BXPCRSDT 00000001 BXPC 00000001)
+[    0.000000] ACPI: FACP 3fffff80 00074 (v01 BOCHS  BXPCFACP 00000001 BXPC 00000001)
+[    0.000000] ACPI: DSDT 3fffe4f0 011A9 (v01   BXPC   BXDSDT 00000001 INTL 20130823)
+[    0.000000] ACPI: FACS 3fffff40 00040
+[    0.000000] ACPI: SSDT 3ffff800 00735 (v01 BOCHS  BXPCSSDT 00000001 BXPC 00000001)
+[    0.000000] ACPI: APIC 3ffff6e0 00078 (v01 BOCHS  BXPCAPIC 00000001 BXPC 00000001)
+[    0.000000] ACPI: HPET 3ffff6a0 00038 (v01 BOCHS  BXPCHPET 00000001 BXPC 00000001)
+[    0.000000] 136MB HIGHMEM available.
+[    0.000000] 887MB LOWMEM available.
+[    0.000000]   mapped low ram: 0 - 377fe000
+[    0.000000]   low ram: 0 - 377fe000
+[    0.000000] kvm-clock: Using msrs 4b564d01 and 4b564d00
+[    0.000000] kvm-clock: cpu 0, msr 0:33625001, boot clock
+[    0.000000] Zone ranges:
+[    0.000000]   DMA      [mem 0x00001000-0x00ffffff]
+[    0.000000]   Normal   [mem 0x01000000-0x377fdfff]
+[    0.000000]   HighMem  [mem 0x377fe000-0x3fffdfff]
+[    0.000000] Movable zone start for each node
+[    0.000000] Early memory node ranges
+[    0.000000]   node   0: [mem 0x00001000-0x0009efff]
+[    0.000000]   node   0: [mem 0x00100000-0x3fffdfff]
+[    0.000000] Using APIC driver default
+[    0.000000] ACPI: PM-Timer IO Port: 0xb008
+[    0.000000] ACPI: LAPIC (acpi_id[0x00] lapic_id[0x00] enabled)
+[    0.000000] ACPI: LAPIC_NMI (acpi_id[0xff] dfl dfl lint[0x1])
+[    0.000000] ACPI: IOAPIC (id[0x00] address[0xfec00000] gsi_base[0])
+[    0.000000] IOAPIC[0]: apic_id 0, version 17, address 0xfec00000, GSI 0-23
+[    0.000000] ACPI: INT_SRC_OVR (bus 0 bus_irq 0 global_irq 2 dfl dfl)
+[    0.000000] ACPI: INT_SRC_OVR (bus 0 bus_irq 5 global_irq 5 high level)
+[    0.000000] ACPI: INT_SRC_OVR (bus 0 bus_irq 9 global_irq 9 high level)
+[    0.000000] ACPI: INT_SRC_OVR (bus 0 bus_irq 10 global_irq 10 high level)
+[    0.000000] ACPI: INT_SRC_OVR (bus 0 bus_irq 11 global_irq 11 high level)
+[    0.000000] Using ACPI (MADT) for SMP configuration information
+[    0.000000] ACPI: HPET id: 0x8086a201 base: 0xfed00000
+[    0.000000] smpboot: Allowing 1 CPUs, 0 hotplug CPUs
+[    0.000000] PM: Registered nosave memory: [mem 0x0009f000-0x0009ffff]
+[    0.000000] PM: Registered nosave memory: [mem 0x000a0000-0x000effff]
+[    0.000000] PM: Registered nosave memory: [mem 0x000f0000-0x000fffff]
+[    0.000000] e820: [mem 0x40000000-0xfeffbfff] available for PCI devices
+[    0.000000] Booting paravirtualized kernel on KVM
+[    0.000000] setup_percpu: NR_CPUS:32 nr_cpumask_bits:32 nr_cpu_ids:1 nr_node_ids:1
+[    0.000000] PERCPU: Embedded 14 pages/cpu @f2e10000 s33216 r0 d24128 u57344
+[    0.000000] kvm-clock: cpu 0, msr 0:33625001, primary cpu clock
+[    0.000000] KVM setup async PF for cpu 0
+[    0.000000] kvm-stealtime: cpu 0, msr 32e12900
+[    0.000000] Built 1 zonelists in Zone order, mobility grouping on.  Total pages: 260268
+[    0.000000] Kernel command line: initrd=initrd splash=silent  vga=791 video=1024x768-16 drm_kms_helper.edid_firmware=edid/1024x768.bin console=ttyS0 console=tty
+[    0.000000] PID hash table entries: 4096 (order: 2, 16384 bytes)
+[    0.000000] Dentry cache hash table entries: 131072 (order: 7, 524288 bytes)
+[    0.000000] Inode-cache hash table entries: 65536 (order: 6, 262144 bytes)
+[    0.000000] Initializing CPU#0
+[    0.000000] allocated 2097128 bytes of page_cgroup
+[    0.000000] please try 'cgroup_disable=memory' option if you don't want memory cgroups
+[    0.000000] Initializing HighMem for node 0 (000377fe:0003fffe)
+[    0.000000] Memory: 959188K/1048176K available (4837K kernel code, 371K rwdata, 3492K rodata, 580K init, 1016K bss, 88988K reserved, 139264K highmem)
+[    0.000000] virtual kernel memory layout:
+[    0.000000]     fixmap  : 0xffd34000 - 0xfffff000   (2860 kB)
+[    0.000000]     pkmap   : 0xff800000 - 0xffc00000   (4096 kB)
+[    0.000000]     vmalloc : 0xf7ffe000 - 0xff7fe000   ( 120 MB)
+[    0.000000]     lowmem  : 0xc0000000 - 0xf77fe000   ( 887 MB)
+[    0.000000]       .init : 0xc0a81000 - 0xc0b12000   ( 580 kB)
+[    0.000000]       .data : 0xc06b9795 - 0xc0a80d00   (3869 kB)
+[    0.000000]       .text : 0xc0200000 - 0xc06b9795   (4837 kB)
+[    0.000000] Checking if this processor honours the WP bit even in supervisor mode...Ok.
+[    0.000000] Hierarchical RCU implementation.
+[    0.000000] 	RCU dyntick-idle grace-period acceleration is enabled.
+[    0.000000] 	RCU restricting CPUs from NR_CPUS=32 to nr_cpu_ids=1.
+[    0.000000] NR_IRQS:2304 nr_irqs:256 16
+[    0.000000] Console: colour dummy device 80x25
+[    0.000000] console [tty0] enabled
+[    0.000000] console [ttyS0] enabled
+[    0.000000] tsc: Detected 3591.344 MHz processor
+[    0.008000] Calibrating delay loop (skipped) preset value.. 7182.68 BogoMIPS (lpj=14365376)
+[    0.008000] pid_max: default: 32768 minimum: 301
+[    0.008000] Security Framework initialized
+[    0.008000] AppArmor: AppArmor initialized
+[    0.008000] Mount-cache hash table entries: 512
+[    0.008000] Initializing cgroup subsys memory
+[    0.008000] Initializing cgroup subsys devices
+[    0.008000] Initializing cgroup subsys freezer
+[    0.008000] Initializing cgroup subsys net_cls
+[    0.008009] Initializing cgroup subsys blkio
+[    0.008370] Initializing cgroup subsys perf_event
+[    0.008766] Initializing cgroup subsys hugetlb
+[    0.009199] Last level iTLB entries: 4KB 0, 2MB 0, 4MB 0
+[    0.009199] Last level dTLB entries: 4KB 0, 2MB 0, 4MB 0
+[    0.009199] tlb_flushall_shift: 6
+[    0.023914] Freeing SMP alternatives memory: 32K (c0b12000 - c0b1a000)
+[    0.026020] ACPI: Core revision 20130517
+[    0.027117] ACPI: All ACPI Tables successfully acquired
+[    0.028422] Enabling APIC mode:  Flat.  Using 1 I/O APICs
+[    0.029684] ..TIMER: vector=0x30 apic1=0 pin1=2 apic2=-1 pin2=-1
+[    0.030195] smpboot: CPU0: Intel QEMU Virtual CPU version 1.6.2 (fam: 06, model: 03, stepping: 03)
+[    0.032000] Performance Events: Broken PMU hardware detected, using software events only.
+[    0.032000] Failed to access perfctr msr (MSR c1 is 0)
+[    0.032000] Brought up 1 CPUs
+[    0.032000] smpboot: Total of 1 processors activated (7182.68 BogoMIPS)
+[    0.032000] NMI watchdog: disabled (cpu0): hardware events not enabled
+[    0.032000] devtmpfs: initialized
+[    0.032000] RTC time: 10:56:51, date: 02/18/14
+[    0.032041] NET: Registered protocol family 16
+[    0.032535] ACPI: bus type PCI registered
+[    0.032864] acpiphp: ACPI Hot Plug PCI Controller Driver version: 0.5
+[    0.033468] PCI: PCI BIOS revision 2.10 entry at 0xfc64a, last bus=0
+[    0.033970] PCI: Using configuration type 1 for base access
+[    0.034817] bio: create slab <bio-0> at 0
+[    0.035222] ACPI: Added _OSI(Module Device)
+[    0.035569] ACPI: Added _OSI(Processor Device)
+[    0.035922] ACPI: Added _OSI(3.0 _SCP Extensions)
+[    0.036004] ACPI: Added _OSI(Processor Aggregator Device)
+[    0.037949] ACPI: Interpreter enabled
+[    0.038259] ACPI Exception: AE_NOT_FOUND, While evaluating Sleep State [\_S1_] (20130517/hwxface-571)
+[    0.039013] ACPI Exception: AE_NOT_FOUND, While evaluating Sleep State [\_S2_] (20130517/hwxface-571)
+[    0.040011] ACPI: (supports S0 S3 S4 S5)
+[    0.040340] ACPI: Using IOAPIC for interrupt routing
+[    0.040748] PCI: Using host bridge windows from ACPI; if necessary, use "pci=nocrs" and report a bug
+[    0.041739] ACPI: No dock devices found.
+[    0.044585] ACPI: PCI Root Bridge [PCI0] (domain 0000 [bus 00-ff])
+[    0.045096] acpi PNP0A03:00: ACPI _OSC support notification failed, disabling PCIe ASPM
+[    0.045741] acpi PNP0A03:00: Unable to request _OSC control (_OSC support mask: 0x08)
+[    0.046482] acpi PNP0A03:00: fail to add MMCONFIG information, can't access extended PCI configuration space under this bridge.
+[    0.047607] acpiphp: Slot [3] registered
+[    0.047942] acpiphp: Slot [4] registered
+[    0.048024] acpiphp: Slot [5] registered
+[    0.048357] acpiphp: Slot [6] registered
+[    0.048692] acpiphp: Slot [7] registered
+[    0.049028] acpiphp: Slot [8] registered
+[    0.049365] acpiphp: Slot [9] registered
+[    0.049701] acpiphp: Slot [10] registered
+[    0.050050] acpiphp: Slot [11] registered
+[    0.050390] acpiphp: Slot [12] registered
+[    0.050729] acpiphp: Slot [13] registered
+[    0.051072] acpiphp: Slot [14] registered
+[    0.051410] acpiphp: Slot [15] registered
+[    0.052020] acpiphp: Slot [16] registered
+[    0.052365] acpiphp: Slot [17] registered
+[    0.052703] acpiphp: Slot [18] registered
+[    0.053039] acpiphp: Slot [19] registered
+[    0.053384] acpiphp: Slot [20] registered
+[    0.053724] acpiphp: Slot [21] registered
+[    0.054059] acpiphp: Slot [22] registered
+[    0.054408] acpiphp: Slot [23] registered
+[    0.054746] acpiphp: Slot [24] registered
+[    0.055087] acpiphp: Slot [25] registered
+[    0.055435] acpiphp: Slot [26] registered
+[    0.055774] acpiphp: Slot [27] registered
+[    0.056020] acpiphp: Slot [28] registered
+[    0.056366] acpiphp: Slot [29] registered
+[    0.056713] acpiphp: Slot [30] registered
+[    0.057088] acpiphp: Slot [31] registered
+[    0.057423] PCI host bridge to bus 0000:00
+[    0.057748] pci_bus 0000:00: root bus resource [bus 00-ff]
+[    0.058187] pci_bus 0000:00: root bus resource [io  0x0000-0x0cf7]
+[    0.058672] pci_bus 0000:00: root bus resource [io  0x0d00-0xffff]
+[    0.059162] pci_bus 0000:00: root bus resource [mem 0x000a0000-0x000bffff]
+[    0.059702] pci_bus 0000:00: root bus resource [mem 0x80000000-0xfebfffff]
+[    0.069198] pci 0000:00:01.3: quirk: [io  0xb000-0xb03f] claimed by PIIX4 ACPI
+[    0.069795] pci 0000:00:01.3: quirk: [io  0xb100-0xb10f] claimed by PIIX4 SMB
+[    0.113769] ACPI: PCI Interrupt Link [LNKA] (IRQs 5 *10 11)
+[    0.114409] ACPI: PCI Interrupt Link [LNKB] (IRQs 5 *10 11)
+[    0.114992] ACPI: PCI Interrupt Link [LNKC] (IRQs 5 10 *11)
+[    0.115572] ACPI: PCI Interrupt Link [LNKD] (IRQs 5 10 *11)
+[    0.116188] ACPI: PCI Interrupt Link [LNKS] (IRQs *9)
+[    0.116870] ACPI: Enabled 16 GPEs in block 00 to 0F
+[    0.117538] vgaarb: device added: PCI:0000:00:02.0,decodes=io+mem,owns=io+mem,locks=none
+[    0.118186] vgaarb: loaded
+[    0.118404] vgaarb: bridge control possible 0000:00:02.0
+[    0.118930] SCSI subsystem initialized
+[    0.119366] PCI: Using ACPI for IRQ routing
+[    0.120214] NetLabel: Initializing
+[    0.120504] NetLabel:  domain hash size = 128
+[    0.120855] NetLabel:  protocols = UNLABELED CIPSOv4
+[    0.121262] NetLabel:  unlabeled traffic allowed by default
+[    0.121785] HPET: 3 timers in total, 0 timers will be used for per-cpu timer
+[    0.122366] hpet0: at MMIO 0xfed00000, IRQs 2, 8, 0
+[    0.122804] hpet0: 3 comparators, 64-bit 100.000000 MHz counter
+[    0.125085] Switched to clocksource kvm-clock
+[    0.127080] AppArmor: AppArmor Filesystem Enabled
+[    0.127496] pnp: PnP ACPI init
+[    0.127496] ACPI: bus type PNP registered
+[    0.127533] pnp: PnP ACPI: found 8 devices
+[    0.127861] ACPI: bus type PNP unregistered
+[    0.128232] PnPBIOS: Disabled
+[    0.163985] NET: Registered protocol family 2
+[    0.164503] TCP established hash table entries: 8192 (order: 4, 65536 bytes)
+[    0.165096] TCP bind hash table entries: 8192 (order: 4, 65536 bytes)
+[    0.165632] TCP: Hash tables configured (established 8192 bind 8192)
+[    0.166165] TCP: reno registered
+[    0.166431] UDP hash table entries: 512 (order: 2, 16384 bytes)
+[    0.166937] UDP-Lite hash table entries: 512 (order: 2, 16384 bytes)
+[    0.167487] NET: Registered protocol family 1
+[    0.167853] pci 0000:00:00.0: Limiting direct PCI/PCI transfers
+[    0.168350] pci 0000:00:01.0: PIIX3: Enabling Passive Release
+[    0.168815] pci 0000:00:01.0: Activating ISA DMA hang workarounds
+[    0.169559] ACPI: PCI Interrupt Link [LNKD] enabled at IRQ 11
+[    0.170499] Unpacking initramfs...
+[    0.472621] Freeing initrd memory: 67424K (f3626000 - f77fe000)
+[    0.473312] microcode: CPU0 sig=0x633, pf=0x0, revision=0x1
+[    0.473786] microcode: Microcode Update Driver: v2.00 <tigran@aivazian.fsnet.co.uk>, Peter Oruba
+[    0.474605] Scanning for low memory corruption every 60 seconds
+[    0.475254] audit: initializing netlink socket (disabled)
+[    0.475707] type=2000 audit(1392721012.859:1): initialized
+[    0.489704] bounce pool size: 64 pages
+[    0.490062] HugeTLB registered 4 MB page size, pre-allocated 0 pages
+[    0.490874] zbud: loaded
+[    0.491142] VFS: Disk quotas dquot_6.5.2
+[    0.491481] Dquot-cache hash table entries: 1024 (order 0, 4096 bytes)
+[    0.492128] msgmni has been set to 1733
+[    0.492610] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 252)
+[    0.493223] io scheduler noop registered
+[    0.493542] io scheduler deadline registered
+[    0.493880] io scheduler cfq registered (default)
+[    0.494307] pci_hotplug: PCI Hot Plug PCI Core version: 0.5
+[    0.494758] pciehp: PCI Express Hot Plug Controller Driver version: 0.4
+[    0.495318] vesafb: mode is 1024x768x16, linelength=2048, pages=1
+[    0.495804] vesafb: scrolling: redraw
+[    0.496129] vesafb: Truecolor: size=0:5:6:5, shift=0:11:5:0
+[    0.496616] vesafb: framebuffer at 0xfc000000, mapped to 0xf8080000, using 3072k, total 4096k
+[    0.498478] Console: switching to colour frame buffer device 128x48
+[    0.499784] fb0: VESA VGA frame buffer device
+[    0.500198] GHES: HEST is not enabled!
+[    0.500572] isapnp: Scanning for PnP cards...
+[    0.813330] isapnp: No Plug & Play device found
+[    0.813810] Serial: 8250/16550 driver, 32 ports, IRQ sharing disabled
+[    0.835280] 00:05: ttyS0 at I/O 0x3f8 (irq = 4) is a 16550A
+[    0.836603] Non-volatile memory driver v1.3
+[    0.836963] Linux agpgart interface v0.103
+[    0.837435] i8042: PNP: PS/2 Controller [PNP0303:KBD,PNP0f13:MOU] at 0x60,0x64 irq 1,12
+[    0.838581] serio: i8042 KBD port at 0x60,0x64 irq 1
+[    0.839004] serio: i8042 AUX port at 0x60,0x64 irq 12
+[    0.839480] mousedev: PS/2 mouse device common for all mice
+[    0.840145] input: AT Translated Set 2 keyboard as /devices/platform/i8042/serio0/input/input0
+[    0.841058] rtc_cmos 00:00: RTC can wake from S4
+[    0.842399] rtc_cmos 00:00: rtc core: registered rtc_cmos as rtc0
+[    0.842962] rtc_cmos 00:00: alarms up to one day, 114 bytes nvram, hpet irqs
+[    0.843571] cpuidle: using governor ladder
+[    0.843903] cpuidle: using governor menu
+[    0.844275] ledtrig-cpu: registered to indicate activity on CPUs
+[    0.844808] TCP: cubic registered
+[    0.845096] NET: Registered protocol family 10
+[    0.845592] Key type dns_resolver registered
+[    0.845994] Using IPI No-Shortcut mode
+[    0.846725] registered taskstats version 1
+[    0.847616]   Magic number: 2:278:932
+[    0.848334] rtc_cmos 00:00: setting system clock to 2014-02-18 10:56:52 UTC (1392721012)
+[    0.849501] Freeing unused kernel memory: 580K (c0a81000 - c0b12000)
+[    0.850396] Write protecting the kernel text: 4840k
+[    0.851165] Write protecting the kernel read-only data: 3496k
+[    0.953675] loop: module loaded
+[    1.012593] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    1.094682] BIOS EDD facility v0.16 2004-Jun-25, 2 devices found
+[    1.104887] systemd-udevd[99]: starting version 208
+[    1.140226] ACPI: PCI Interrupt Link [LNKC] enabled at IRQ 10
+[    1.141362] ACPI: PCI Interrupt Link [LNKA] enabled at IRQ 10
+[    1.142953] ACPI: PCI Interrupt Link [LNKB] enabled at IRQ 11
+[    1.145194] ACPI: bus type ATA registered
+[    1.149080] input: Power Button as /devices/LNXSYSTM:00/LNXPWRBN:00/input/input1
+[    1.150870] ACPI: Power Button [PWRF]
+[    1.152879] ACPI: bus type USB registered
+[    1.153278] usbcore: registered new interface driver usbfs
+[    1.153740] usbcore: registered new interface driver hub
+[    1.157435] [drm] Initialized drm 1.1.0 20060810
+[    1.163289] usbcore: registered new device driver usb
+[    1.169069] parport_pc 00:04: reported by Plug and Play ACPI
+[    1.169616] parport0: PC-style at 0x378, irq 7 [PCSPP,TRISTATE]
+[    1.184305] FDC 0 is a S82078B
+[    1.187326] fb: conflicting fb hw usage cirrusdrmfb vs VESA VGA - removing generic driver
+[    1.188071] Console: switching to colour dummy device 80x25
+[    1.191394] ehci_hcd: USB 2.0 'Enhanced' Host Controller (EHCI) Driver
+[    1.200053] uhci_hcd: USB Universal Host Controller Interface driver
+[    1.202760] [TTM] Zone  kernel: Available graphics memory: 443980 kiB
+[    1.203287] [TTM] Zone highmem: Available graphics memory: 513612 kiB
+[    1.203796] [TTM] Initializing pool allocator
+[    1.232758]  vda: unknown partition table
+[    1.234494]  vdb: unknown partition table
+[    1.239343] [drm] Got built-in EDID base block and 0 extensions from "edid/1024x768.bin" for connector "VGA-1"
+[    1.240251] [drm] fb mappable at 0x0
+[    1.240570] [drm] vram aper at 0x0
+[    1.240852] [drm] size 0
+[    1.241072] [drm] fb depth is 16
+[    1.241331] [drm]    pitch is 2048
+[    1.242206] fbcon: cirrusdrmfb (fb0) is primary device
+[    1.242820] Console: switching to colour frame buffer device 128x48
+[    1.249943] cirrus 0000:00:02.0: fb0: cirrusdrmfb frame buffer device
+[    1.250451] cirrus 0000:00:02.0: registered panic notifier
+[    1.250900] [drm] Initialized cirrus 1.0.0 20110418 for 0000:00:02.0 on minor 0
+[    1.256423] scsi0 : ata_piix
+[    1.257450] scsi1 : ata_piix
+[    1.257727] ata1: PATA max MWDMA2 cmd 0x1f0 ctl 0x3f6 bmdma 0xc5c0 irq 14
+[    1.258276] ata2: PATA max MWDMA2 cmd 0x170 ctl 0x376 bmdma 0xc5c8 irq 15
+[    1.259761] uhci_hcd 0000:00:01.2: UHCI Host Controller
+[    1.260280] uhci_hcd 0000:00:01.2: new USB bus registered, assigned bus number 1
+[    1.260934] uhci_hcd 0000:00:01.2: irq 11, io base 0x0000c580
+[    1.261426] usb usb1: New USB device found, idVendor=1d6b, idProduct=0001
+[    1.261975] usb usb1: New USB device strings: Mfr=3, Product=2, SerialNumber=1
+[    1.262601] usb usb1: Product: UHCI Host Controller
+[    1.262989] usb usb1: Manufacturer: Linux 3.11.6-4-default uhci_hcd
+[    1.263506] usb usb1: SerialNumber: 0000:00:01.2
+[    1.263969] hub 1-0:1.0: USB hub found
+[    1.264301] hub 1-0:1.0: 2 ports detected
+[    1.420617] ata2.00: ATAPI: QEMU DVD-ROM, 1.6.2, max UDMA/100
+[    1.421583] ata2.00: configured for MWDMA2
+[    1.422371] scsi 1:0:0:0: CD-ROM            QEMU     QEMU DVD-ROM     1.6. PQ: 0 ANSI: 5
+[    1.427895] sr0: scsi3-mmc drive: 4x/4x cd/rw xa/form2 tray
+[    1.428401] cdrom: Uniform CD-ROM driver Revision: 3.20
+[    1.460310] RPC: Registered named UNIX socket transport module.
+[    1.460821] RPC: Registered udp transport module.
+[    1.461252] RPC: Registered tcp transport module.
+[    1.461627] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    1.472409] tsc: Refined TSC clocksource calibration: 3591.313 MHz
+[    1.576050] usb 1-1: new full-speed USB device number 2 using uhci_hcd
+[    1.736422] usb 1-1: New USB device found, idVendor=0627, idProduct=0001
+[    1.737360] usb 1-1: New USB device strings: Mfr=1, Product=3, SerialNumber=5
+[    1.738258] usb 1-1: Product: QEMU USB Tablet
+[    1.738638] usb 1-1: Manufacturer: QEMU
+[    1.738962] usb 1-1: SerialNumber: 42
+[    1.744215] hidraw: raw HID events driver (C) Jiri Kosina
+[    1.751616] usbcore: registered new interface driver usbhid
+[    1.752483] usbhid: USB HID core driver
+[    1.754620] input: QEMU QEMU USB Tablet as /devices/pci0000:00/0000:00:01.2/usb1/1-1/1-1:1.0/input/input2
+[    1.756836] hid-generic 0003:0627:0001.0001: input,hidraw0: USB HID v0.01 Pointer [QEMU QEMU USB Tablet] on usb-0000:00:01.2-1/input0
+[?1l%G%G[9;0]Loading basic drivers...[    1.847435] st: Version 20101219, fixed bufsize 32768, s/g segs 256
+[    1.860271] sr 1:0:0:0: Attached scsi generic sg0 type 5
+[    1.876698] input: ImExPS/2 Generic Explorer Mouse as /devices/platform/i8042/serio1/input/input3
+[    1.925629] NET: Registered protocol family 17
+[    2.444908] FS-Cache: Loaded
+[    2.791570] FS-Cache: Netfs 'nfs' registered for caching
+ ok
+Starting hardware detection...[    4.028143] ppa: Version 2.07 (for Linux 2.4.x)
+ ok
+(If a driver is not working for you, try booting with brokenmodules=driver_name.)
+
+Qumranet Qemu virtual machine
+  drivers: ata_piix*, ata_generic, pata_acpi
+Qumranet Virtio block device
+  drivers: virtio_pci*
+Qumranet Virtio block device
+  drivers: virtio_pci*
+Virtio Storage 0
+  drivers: virtio_blk*
+Virtio Storage 1
+  drivers: virtio_blk*
+Activating usb devices...[    4.193643] usbcore: registered new interface driver usb-storage
+ ok
+Qumranet Virtio network device
+  drivers: virtio_pci*
+Virtio Ethernet Card 0
+  drivers: virtio_net*
+Loading Installation System (1/6) -            0%  1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
+Loading Installation System (2/6) -            0%  1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
+Loading Installation System (3/6) -            0%  1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
+Loading Installation System (4/6) -            1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
+Loading Installation System (5/6) -            0%  1%  2%  3%  4%  5%  6%  7%  8%  9% 10% 11% 12% 13% 14% 15% 16% 17% 18% 19% 20% 21% 22% 23% 24% 25% 26% 27% 28% 29% 30% 31% 32% 33% 34% 35% 36% 37% 38% 39% 40% 41% 42% 43% 44% 45% 46% 47% 48% 49% 50% 51% 52% 53% 54% 55% 56% 57% 58% 59% 60% 61% 62% 63% 64% 65% 66% 67% 68% 69% 70% 71% 72% 73% 74% 75% 76% 77% 78% 79% 80% 81% 82% 83% 84% 85% 86% 87% 88% 89% 90% 91% 92% 93% 94% 95% 96% 97% 98% 99%100%
+Loading Installation System (6/6) -           32% 65% 98%100%
+%Gstty: standard input: unable to perform all requested operations
+starting dbus...Unknown username "polkitd" in message bus configuration file
+Unknown username "polkitd" in message bus configuration file
+Failed to start message bus: Failed to bind socket "/run/dbus/system_bus_socket": No such file or directory
+ failed
+starting klogd... ok
+rcnscd: no such service nscd
+starting yast...
+[   18.604732] [drm] Got built-in EDID base block and 0 extensions from "edid/1024x768.bin" for connector "VGA-1"
+[   18.606159] [drm] Got built-in EDID base block and 0 extensions from "edid/1024x768.bin" for connector "VGA-1"
+[   19.567683] YaST2.call (2032): /proc/2517/oom_adj is deprecated, please use /proc/2517/oom_score_adj instead.
+20131106
+.packages.initrd:
+aaa_base [13.1-16.17.1.i586]
+acpica [20130823-6.2.i586]
+bash [4.2-68.1.5.i586]
+biosdevname [0.4.1-6.1.2.i586]
+cifs-utils [6.2-1.1.i586]
+coreutils [8.21-7.1.3.i586]
+cpio [2.11-25.1.2.i586]
+cracklib [2.9.0-2.1.2.i586] < libcrack2 < pam
+cracklib-dict-full [2.8.12-62.1.2.i586] < cracklib < libcrack2 < pam
+curl [7.32.0-2.1.2.i586]
+cyrus-sasl [2.1.25-28.1.2.i586] < libldap-2_4-2 < gpg2
+dbus-1 [1.7.4-4.4.1.i586]
+device-mapper [1.02.78-0.14.1.2.i586]
+dhcpcd [3.2.3-47.78.1.2.i586]
+dmidecode [2.12-3.1.2.i586]
+ethtool [3.10-2.1.2.i586]
+expat [2.1.0-12.1.2.i586] < device-mapper
+file-magic [5.14-4.1.2.i586] < libmagic1 < rpm
+glibc [2.18-4.4.1.i586]
+gpg2 [2.0.22-1.1.i586]
+gzip [1.6-4.2.2.i586]
+hwinfo [20.2-1.1.i586]
+iproute2 [3.9.0-3.1.2.i586]
+iputils [s20101006-23.1.2.i586]
+joe [3.7-26.1.4.i586]
+kbd [1.15.5-5.1.2.i586]
+kexec-tools [2.0.3-5.1.3.i586]
+kpartx [0.4.9-11.1.2.i586]
+krb5 [1.11.3-3.1.3.i586]
+libacl1 [2.2.52-2.1.2.i586] < udev
+libadns1 [1.4-100.1.2.i586] < gpg2
+libaio1 [0.3.109-15.1.2.i586] < multipath-tools
+libassuan0 [2.1.1-2.1.4.i586] < gpg2
+libattr1 [2.4.47-2.1.2.i586] < shadow
+libaudit1 [2.2.3-4.1.2.i586] < dbus-1
+libblkid1 [2.23.2-3.1.i586] < linuxrc
+libbz2-1 [1.0.6-26.1.21.i586] < gpg2
+libcap-ng0 [0.7.3-2.1.2.i586] < dbus-1
+libcap2 [2.22-10.1.24.i586] < rpm
+libcom_err2 [1.42.8-2.1.2.i586] < krb5
+libcrack2 [2.9.0-2.1.2.i586] < pam
+libcurl4 [7.32.0-2.1.2.i586] < linuxrc
+libdb-4_8 [4.8.30-25.2.1.i586] < iproute2
+libdbus-1-3 [1.7.4-4.4.1.i586] < dbus-1
+libdrm2 [2.4.46-3.2.2.i586] < plymouth
+libelf1 [0.155-6.1.20.i586] < rpm
+libevent-2_0-5 [2.0.21-2.1.2.i586] < nfs-client
+libexpat1 [2.1.0-12.1.2.i586] < device-mapper
+libfuse2 [2.9.3-2.1.2.i586] < ntfs-3g
+libgcc_s1 [4.8.1_20130909-3.2.1.i586] < device-mapper
+libgcrypt11 [1.5.3-2.1.4.i586] < gpg2
+libgmp10 [5.1.2-2.1.2.i586] < coreutils
+libgpg-error0 [1.12-2.1.4.i586] < gpg2
+libgssglue1 [0.4-2.1.2.i586] < libtirpc1 < pam
+libidn11 [1.25-7.1.2.i586] < libcurl4 < linuxrc
+libiw30 [30.pre9-32.1.2.i586] < wireless-tools
+libkeyutils1 [1.5.5-6.1.3.i586] < krb5
+libkmod2 [14-2.1.2.i586] < udev
+libksba8 [1.3.0-5.1.2.i586] < gpg2
+libldap-2_4-2 [2.4.33-8.1.2.i586] < gpg2
+liblua5_1 [5.1.5-5.2.1.i586] < rpm
+liblzma5 [5.0.5-2.1.20.i586] < rpm
+liblzo2-2 [2.06-12.1.2.i586] < squashfs
+libmagic1 [5.14-4.1.2.i586] < rpm
+libmount1 [2.23.2-3.1.i586] < util-linux
+libncurses5 [5.9-33.1.2.i586]
+libnl-config [3.2.22-2.1.2.noarch] < libnl3-200 < wpa_supplicant
+libnl3-200 [3.2.22-2.1.2.i586] < wpa_supplicant
+libntfs-3g84 [2013.1.13-2.1.2.i586] < ntfs-3g
+libopenssl1_0_0 [1.0.1e-11.2.1.i586] < wireless-tools
+libpci3 [3.2.0-2.1.2.i586] < biosdevname
+libpcre1 [8.33-2.1.2.i586] < libselinux1 < device-mapper
+libply-boot-client2 [0.8.8_git201309032142-2.2.1.i586] < libply2 < plymouth
+libply-splash-core2 [0.8.8_git201309032142-2.2.1.i586] < plymouth
+libply-splash-graphics2 [0.8.8_git201309032142-2.2.1.i586] < plymouth-plugin-script
+libply2 [0.8.8_git201309032142-2.2.1.i586] < plymouth
+libpng16-16 [1.6.6-1.1.i586] < libply-splash-graphics2 < plymouth-plugin-script
+libpopt0 [1.16-24.1.1.i586] < rpm
+libpth20 [2.0.7-138.1.2.i586] < gpg2
+libreadline6 [6.2-68.1.5.i586] < gpg2
+libselinux1 [2.1.13-4.1.21.i586] < device-mapper
+libsemanage1 [2.1.10-3.1.20.i586] < rpm
+libsepol1 [2.1.9-5.1.23.i586] < device-mapper
+libsgutils2-2 [1.36-3.1.2.i586] < sg3_utils
+libssh2-1 [1.4.3-7.1.2.i586] < libcurl4 < linuxrc
+libstdc++6 [4.8.1_20130909-3.2.1.i586] < device-mapper
+libtalloc2 [2.0.8-7.1.2.i586] < cifs-utils
+libtirpc1 [0.2.3-1.1.i586] < pam
+libudev1 [208-6.1.i586] < device-mapper
+libusb-0_1-4 [0.1.13-27.1.2.i586] < gpg2
+libusb-1_0-0 [1.0.9-8.1.2.i586] < libusb-0_1-4 < gpg2
+libustr-1_0-1 [1.0.4-29.1.2.i586] < libsemanage1 < rpm
+libutempter0 [1.1.6-3.1.2.i586] < util-linux
+libuuid1 [2.23.2-3.1.i586] < util-linux
+libwbclient0 [4.1.0-3.5.1.i586] < cifs-utils
+libwrap0 [7.6-881.1.2.i586] < nfs-client
+libx86emu1 [1.1-20.1.2.i586] < hwinfo
+libxtables10 [1.4.19.1-2.1.2.i586] < iproute2
+libz1 [1.2.8-3.1.2.i586] < util-linux
+linuxrc [4.1.5-2.1.3.i586]
+lsscsi [0.27-2.1.2.i586]
+mdadm [3.3-4.1.2.i586]
+module-init-tools [3.15-11.1.2.i586]
+multipath-tools [0.4.9-11.1.2.i586]
+net-tools [1.60-763.1.2.i586]
+netcfg [11.5-18.1.2.noarch]
+nfs-client [1.2.8-4.2.1.i586]
+nfsidmap [0.25-2.1.2.i586]
+nscd [2.18-4.4.1.i586]
+ntfs-3g [2013.1.13-2.1.2.i586]
+open-iscsi [2.0.873-2.2.1.i586]
+openSUSE-build-key [1.0-24.1.2.noarch]
+openssh [6.2p2-3.1.2.i586]
+pam [1.1.8-3.1.i586]
+pcmciautils [017-128.1.2.i586]
+plymouth [0.8.8_git201309032142-2.2.1.i586]
+plymouth-branding-openSUSE [13.1-10.4.13.noarch]
+plymouth-plugin-script [0.8.8_git201309032142-2.2.1.i586]
+plymouth-scripts [0.8.8_git201309032142-2.2.1.i586]
+rpm [4.11.1-6.2.1.i586]
+samba-libs [4.1.0-3.5.1.i586]
+sbl [3.5.0-21.1.3.i586]
+sed [4.2.2-2.1.2.i586]
+sg3_utils [1.36-3.1.2.i586]
+shadow [4.1.5.1-8.1.2.i586]
+squashfs [4.2-10.1.2.i586]
+strace [4.8-3.1.2.i586]
+suse-module-tools [12.3-6.1.2.noarch]
+sysfsutils [2.1.0-150.1.2.i586] < iputils
+sysvinit-tools [2.88+-89.1.2.i586]
+udev [208-6.1.i586]
+util-linux [2.23.2-3.1.i586]
+wireless-tools [30.pre9-32.1.2.i586]
+wpa_supplicant [2.0-3.1.2.i586]
+xf86-input-vmmouse [13.0.0-5.1.2.i586]
+xf86-input-wacom [0.22.1-2.1.2.i586]
+xorg-x11-server [7.6_1.14.3.901-1.1.i586]
+.packages.root:
+Mesa-libEGL1 [9.2.2-61.6.1.i586]
+Mesa-libGL1 [9.2.2-61.6.1.i586] < libqt4-x11
+Mesa-libglapi0 [9.2.2-61.6.1.i586] < Mesa-libGL1 < libqt4-x11
+aaa_base [13.1-16.17.1.i586]
+autoyast2-installation [3.0.8-5.1.noarch]
+bash [4.2-68.1.5.i586]
+btrfsprogs [0.20-4.7.1.i586]
+bzip2 [1.0.6-26.1.21.i586]
+checkmedia [3.0-6.1.4.i586]
+coreutils [8.21-7.1.3.i586]
+cpio [2.11-25.1.2.i586]
+cracklib [2.9.0-2.1.2.i586]
+cryptsetup [1.6.2-2.1.2.i586]
+cyrus-sasl [2.1.25-28.1.2.i586] < libldap-2_4-2 < gpg2
+dbus-1 [1.7.4-4.4.1.i586]
+dejavu-fonts [2.34-2.1.2.noarch]
+desktop-data-openSUSE [13.1-3.1.3.noarch]
+device-mapper [1.02.78-0.14.1.2.i586]
+diffutils [3.3-3.1.2.i586]
+dmraid [1.0.0.rc16-25.1.2.i586]
+dmz-icon-theme-cursors [11.2.0-14.1.2.noarch]
+dosfstools [3.0.22-2.1.2.i586]
+dummy-release [11-21.1.2.i586] < aaa_base
+e2fsprogs [1.42.8-2.1.2.i586]
+efont-unicode-bitmap-fonts [0.4.2-223.1.2.noarch]
+elilo [3.16-1.1.i586]
+expat [2.1.0-12.1.2.i586] < device-mapper
+fbiterm [0.5.20040304-289.1.3.i586]
+file [5.14-4.1.2.i586]
+file-magic [5.14-4.1.2.i586] < libmagic1 < file
+filesystem [13.1-3.1.2.i586]
+fillup [1.42-269.1.2.i586]
+findutils [4.5.12-1.1.i586]
+fontconfig [2.11.0-1.1.i586]
+fonts-config [20080121-82.2.1.noarch]
+fribidi [0.19.2-11.1.2.i586]
+gawk [4.1.0-2.1.14.i586]
+glibc [2.18-4.4.1.i586] < open-iscsi
+glibc-locale [2.18-4.4.1.i586]
+gpart [0.1h-641.1.2.i586]
+gpg2 [2.0.22-1.1.i586]
+gpm [1.20.7-3.1.2.i586]
+graphviz [2.28.0-19.1.3.i586]
+graphviz-gnome [2.28.0-19.1.3.i586]
+grep [2.14-5.1.2.i586]
+gzip [1.6-4.2.2.i586]
+hdparm [9.43-5.1.2.i586]
+hex [1.4-275.1.2.i586]
+hwinfo [20.2-1.1.i586]
+icewm-lite [1.2.38-20.1.3.i586]
+initviocons [0.5-100.1.2.i586]
+insserv-compat [0.1-8.1.2.i586]
+iputils [s20101006-23.1.2.i586]
+jfsutils [1.1.15-12.1.2.i586]
+joe [3.7-26.1.4.i586]
+kbd [1.15.5-5.1.2.i586]
+klogd [1.4.1-772.1.2.i586]
+kpartx [0.4.9-11.1.2.i586] < dmraid
+krb5 [1.11.3-3.1.3.i586]
+less [458-2.1.2.i586]
+libICE6 [1.0.8-7.1.2.i586] < icewm-lite
+libSM6 [1.2.2-2.1.2.i586] < icewm-lite
+libX11-6 [1.6.2-2.1.2.i586] < xrefresh
+libX11-data [1.6.2-2.1.2.noarch] < libX11-6 < xrefresh
+libX11-xcb1 [1.6.2-2.1.2.i586] < xdpyinfo
+libXau6 [1.0.8-2.2.1.i586] < xorg-x11-server
+libXaw7 [1.0.12-2.1.2.i586] < xdm
+libXcomposite1 [0.4.4-6.1.2.i586] < xdpyinfo
+libXcursor1 [1.1.14-2.1.2.i586] < libqt4-x11
+libXdamage1 [1.1.4-6.1.2.i586] < Mesa-libGL1 < libqt4-x11
+libXdmcp6 [1.1.1-7.1.2.i586] < xorg-x11-server
+libXext6 [1.3.2-2.1.2.i586] < icewm-lite
+libXfixes3 [5.0.1-2.1.2.i586] < libqt4-x11
+libXfont1 [1.4.6-2.1.2.i586] < xorg-x11-server
+libXfontcache1 [1.0.5-9.1.2.i586] < xset
+libXft2 [2.3.1-7.1.2.i586] < icewm-lite
+libXi6 [1.7.2-2.1.2.i586] < xf86-input-wacom
+libXinerama1 [1.1.3-2.1.2.i586] < xf86-input-wacom
+libXmu6 [1.1.2-2.1.2.i586] < xdm
+libXmuu1 [1.1.2-2.1.2.i586] < xhost
+libXpm4 [3.5.11-2.1.2.i586] < icewm-lite
+libXrandr2 [1.4.2-2.1.2.i586] < xf86-input-wacom
+libXrender1 [0.9.8-2.1.2.i586] < xdpyinfo
+libXt6 [1.1.4-2.1.2.i586] < xdm
+libXtst6 [1.2.2-2.1.2.i586] < xdpyinfo
+libXxf86dga1 [1.1.4-2.1.2.i586] < xdpyinfo
+libXxf86misc1 [1.0.3-9.1.2.i586] < xdpyinfo
+libXxf86vm1 [1.1.3-2.1.2.i586] < xdpyinfo
+libacl1 [2.2.52-2.1.2.i586] < coreutils
+libadns1 [1.4-100.1.2.i586] < gpg2
+libaio1 [0.3.109-15.1.2.i586] < multipath-tools
+libasound2 [1.0.27.2-3.2.1.i586] < libqt4-x11
+libassuan0 [2.1.1-2.1.4.i586] < gpg2
+libattr1 [2.4.47-2.1.2.i586] < coreutils
+libaudit1 [2.2.3-4.1.2.i586] < util-linux
+libblkid1 [2.23.2-3.1.i586] < util-linux
+libbz2-1 [1.0.6-26.1.21.i586] < bzip2
+libcairo2 [1.12.16-3.1.3.i586] < pango-tools
+libcap-ng0 [0.7.3-2.1.2.i586] < dbus-1
+libcap2 [2.22-10.1.24.i586] < iputils
+libcom_err2 [1.42.8-2.1.2.i586] < krb5
+libcrack2 [2.9.0-2.1.2.i586] < pam
+libcryptsetup4 [1.6.2-2.1.2.i586] < systemd
+libcurl4 [7.32.0-2.1.2.i586] < gpg2
+libdb-4_8 [4.8.30-25.2.1.i586] < pam
+libdbus-1-3 [1.7.4-4.4.1.i586] < dbus-1
+libdmx1 [1.1.3-2.1.2.i586] < xdpyinfo
+libdrm2 [2.4.46-3.2.2.i586] < xorg-x11-server
+libedit0 [3.0.snap20110802-7.1.2.i586] < openssh
+libelf1 [0.155-6.1.20.i586] < rpm
+libevent-2_0-5 [2.0.21-2.1.2.i586] < nfs-client
+libexpat1 [2.1.0-12.1.2.i586] < libsolv-tools
+libext2fs2 [1.42.8-2.1.2.i586] < btrfsprogs
+libffi4 [4.8.1_20130909-3.2.1.i586] < ruby20 < yast2-ruby-bindings
+libfontenc1 [1.1.2-2.1.2.i586] < mkfontscale
+libfreetype6 [2.5.0.1-2.1.2.i586] < fontconfig
+libgbm1 [9.2.2-61.6.1.i586]
+libgcc_s1 [4.8.1_20130909-3.2.1.i586] < yast2-xml
+libgcrypt11 [1.5.3-2.1.4.i586] < gpg2
+libgdbm4 [1.10-7.1.2.i586] < perl
+libgio-2_0-0 [2.38.1-1.1.i586] < polkit
+libglib-2_0-0 [2.38.1-1.1.i586] < polkit
+libgmodule-2_0-0 [2.38.1-1.1.i586] < pango-tools
+libgmp10 [5.1.2-2.1.2.i586] < coreutils
+libgnutls28 [3.2.4-2.2.1.i586] < xorg-x11-Xvnc
+libgobject-2_0-0 [2.38.1-1.1.i586] < polkit
+libgpg-error0 [1.12-2.1.4.i586] < gpg2
+libgraphite2-3 [1.2.0-6.1.2.i586] < libharfbuzz0 < libpango-1_0-0 < pango-tools
+libgssglue1 [0.4-2.1.2.i586] < libtirpc1 < pam
+libharfbuzz0 [0.9.21-1.3.i586] < libpango-1_0-0 < pango-tools
+libhogweed2 [2.7.1-2.1.2.i586] < libgnutls28 < xorg-x11-Xvnc
+libidn11 [1.25-7.1.2.i586] < wget
+libiterm1 [0.5.20040304-289.1.3.i586] < fbiterm
+libjbig2 [2.0-10.1.2.i586] < libtiff5 < libqt4-x11
+libjpeg8 [8.0.2-24.1.3.i586] < xorg-x11-Xvnc
+libkeyutils1 [1.5.5-6.1.3.i586] < krb5
+libkmod2 [14-2.1.2.i586] < systemd
+libksba8 [1.3.0-5.1.2.i586] < gpg2
+liblcms1 [1.19-14.2.1.i586] < libmng1 < libqt4-x11
+libldap-2_4-2 [2.4.33-8.1.2.i586] < gpg2
+libltdl7 [2.4.2-11.1.2.i586] < graphviz
+liblua5_1 [5.1.5-5.2.1.i586] < rpm
+liblzma5 [5.0.5-2.1.20.i586] < xz
+liblzo2-2 [2.06-12.1.2.i586] < btrfsprogs
+libmagic1 [5.14-4.1.2.i586] < file
+libmng1 [1.0.10-111.1.2.i586] < libqt4-x11
+libmodman1 [2.0.1-14.1.2.i586] < libproxy1 < wget
+libmount1 [2.23.2-3.1.i586] < util-linux
+libmozjs-17_0 [17.0-4.1.2.i586] < polkit
+libmtdev1 [1.1.0-7.1.2.i586] < xf86-input-synaptics
+libncurses5 [5.9-33.1.2.i586] < util-linux
+libncurses6 [5.9-33.1.2.i586] < libyui-ncurses-pkg5
+libnettle4 [2.7.1-2.1.2.i586] < libgnutls28 < xorg-x11-Xvnc
+libntfs-3g84 [2013.1.13-2.1.2.i586] < ntfsprogs
+libopenssl1_0_0 [1.0.1e-11.2.1.i586] < iputils
+libp11-kit0 [0.20.1-2.1.2.i586] < libgnutls28 < xorg-x11-Xvnc
+libpango-1_0-0 [1.36.0-1.1.i586] < pango-tools
+libparted0 [2.4-34.2.2.i586] < parted
+libpci3 [3.2.0-2.1.2.i586] < pciutils
+libpciaccess0 [0.13.2-2.1.2.i586] < xorg-x11-server
+libpcre1 [8.33-2.1.2.i586] < grep
+libpixman-1-0 [0.30.2-2.2.1.i586] < xorg-x11-server
+libpng16-16 [1.6.6-1.1.i586] < libqt4-x11
+libpolkit0 [0.112-2.1.i586] < polkit
+libpopt0 [1.16-24.1.1.i586] < rpm
+libprocps1 [3.3.8-5.1.2.i586] < procps
+libproxy1 [0.4.11-9.1.2.i586] < wget
+libpth20 [2.0.7-138.1.2.i586] < gpg2
+libqrencode3 [3.4.2-2.1.2.i586] < systemd
+libqt4 [4.8.5-5.6.1.i586]
+libqt4-sql [4.8.5-5.6.1.i586] < libqt4-x11
+libqt4-x11 [4.8.5-5.6.1.i586]
+libreadline6 [6.2-68.1.5.i586] < gpg2
+libreiserfs-0_3-0 [0.3.0.5-164.1.2.i586] < libparted0 < parted
+libreiserfscore0 [3.6.24-2.2.1.i586] < reiserfs
+libselinux1 [2.1.13-4.1.21.i586] < util-linux
+libsemanage1 [2.1.10-3.1.20.i586] < rpm
+libsepol1 [2.1.9-5.1.23.i586] < device-mapper
+libsgutils2-2 [1.36-3.1.2.i586] < sg3_utils
+libsolv-tools [0.4.0-2.2.i586]
+libssh2-1 [1.4.3-7.1.2.i586] < libcurl4 < gpg2
+libstdc++6 [4.8.1_20130909-3.2.1.i586] < yast2-xml
+libstorage-ruby [2.24.8-1.1.i586] < yast2-storage
+libstorage4 [2.24.8-1.1.i586]
+libstroke [0.5.1-229.1.2.i586]
+libtasn1 [3.3-3.1.2.i586] < libtasn1-6 < libgnutls28 < xorg-x11-Xvnc
+libtasn1-6 [3.3-3.1.2.i586] < libgnutls28 < xorg-x11-Xvnc
+libtiff5 [4.0.3-8.1.2.i586] < libqt4-x11
+libtirpc1 [0.2.3-1.1.i586] < pam
+libudev1 [208-6.1.i586]
+libusb-0_1-4 [0.1.13-27.1.2.i586] < gpg2
+libusb-1_0-0 [1.0.9-8.1.2.i586] < usbutils
+libustr-1_0-1 [1.0.4-29.1.2.i586] < libsemanage1 < rpm
+libutempter0 [1.1.6-3.1.2.i586] < util-linux
+libuuid1 [2.23.2-3.1.i586] < util-linux
+libwayland-client0 [1.2.1-1.1.i586] < libgbm1
+libwayland-server0 [1.2.1-1.1.i586] < libgbm1
+libwrap0 [7.6-881.1.2.i586] < rpcbind
+libx86emu1 [1.1-20.1.2.i586] < hwinfo
+libxcb-dri2-0 [1.9.1-3.1.2.i586] < libgbm1
+libxcb-glx0 [1.9.1-3.1.2.i586] < Mesa-libGL1 < libqt4-x11
+libxcb-render0 [1.9.1-3.1.2.i586] < libcairo2 < pango-tools
+libxcb-shm0 [1.9.1-3.1.2.i586] < libcairo2 < pango-tools
+libxcb-xfixes0 [1.9.1-3.1.2.i586] < Mesa-libEGL1
+libxcb1 [1.9.1-3.1.2.i586] < xdpyinfo
+libxkbfile1 [1.0.8-7.1.2.i586] < xkbcomp
+libxml2-2 [2.9.1-2.1.2.i586] < yast2-xml
+libxslt-tools [1.1.28-5.1.2.i586] < yast2-devtools
+libxslt1 [1.1.28-5.1.2.i586] < libxslt-tools < yast2-devtools
+libyaml-0-2 [0.1.4-2.1.2.i586] < ruby20 < yast2-ruby-bindings
+libyui-ncurses-pkg5 [2.44.4-2.1.5.i586]
+libyui-ncurses5 [2.44.1-2.1.4.i586] < libyui-ncurses-pkg5
+libyui-qt-graph5 [2.42.7-2.2.1.i586]
+libyui-qt-pkg5 [2.42.13-2.1.5.i586]
+libyui-qt5 [2.43.5-2.1.4.i586] < libyui-qt-pkg5
+libyui5 [3.0.10-2.1.4.i586] < libyui-qt-pkg5
+libz1 [1.2.8-3.1.2.i586] < util-linux
+libzypp [13.8.1-1.1.i586] < libyui-qt-pkg5
+lsscsi [0.27-2.1.2.i586] < libstorage4
+ltrace [0.7.2-5.1.3.i586]
+lvm2 [2.02.98-0.28.1.5.i586]
+mkfontdir [1.0.7-7.1.2.i586]
+mkfontscale [1.1.1-2.1.2.i586]
+module-init-tools [3.15-11.1.2.i586]
+mozilla-nspr [4.10.1-1.1.i586]
+multipath-tools [0.4.9-11.1.2.i586]
+ncurses-utils [5.9-33.1.2.i586]
+net-tools [1.60-763.1.2.i586]
+netcfg [11.5-18.1.2.noarch]
+nfs-client [1.2.8-4.2.1.i586]
+nscd [2.18-4.4.1.i586]
+ntfsprogs [2013.1.13-2.1.2.i586]
+ntp [4.2.6p5-15.2.1.i586]
+open-iscsi [2.0.873-2.2.1.i586]
+openslp [1.2.0-202.1.2.i586]
+openslp-server [1.2.0-202.1.2.i586]
+openssh [6.2p2-3.1.2.i586]
+openssl [1.0.1e-11.2.1.i586]
+pam [1.1.8-3.1.i586]
+pam-modules [12.1-20.1.2.i586]
+pango-tools [1.36.0-1.1.i586]
+parted [2.4-34.2.2.i586]
+pciutils [3.2.0-2.1.2.i586]
+pciutils-ids [2013.10.06-1.1.noarch]
+perl [5.18.1-2.1.11.i586]
+perl-Bootloader [0.711-1.1.i586]
+perl-Config-Crontab [1.33-7.1.2.noarch] < yast2
+perl-Digest-SHA1 [2.13-16.1.4.i586] < yast2-users
+perl-Parse-RecDescent [1.967009-6.1.2.i586] < perl-X500-DN < yast2-users
+perl-X500-DN [0.29-105.1.2.i586] < yast2-users
+perl-XML-Bare [0.53-2.1.2.i586]
+perl-XML-NamespaceSupport [1.11-20.1.2.i586]
+perl-XML-Parser [2.41-20.1.2.i586]
+perl-XML-SAX [0.99-21.1.2.i586] < perl-XML-Simple
+perl-XML-SAX-Base [1.08-7.1.2.noarch] < perl-XML-SAX-Expat < perl-XML-Simple
+perl-XML-SAX-Expat [0.50-2.1.2.noarch] < perl-XML-Simple
+perl-XML-Simple [2.20-2.1.2.noarch]
+perl-XML-Writer [0.623-2.1.2.noarch] < yast2-devtools
+perl-XML-XPath [1.13-98.1.2.i586] < yast2
+perl-base [5.18.1-2.1.11.i586]
+perl-gettext [1.05-162.1.2.i586]
+polkit [0.112-2.1.i586]
+procinfo [18-218.1.2.i586]
+procps [3.3.8-5.1.2.i586]
+psmisc [22.20-5.1.2.i586]
+reiserfs [3.6.24-2.2.1.i586]
+rgb [1.0.5-4.1.2.i586]
+rpcbind [0.2.0_git201103171419-12.1.2.i586]
+rpm [4.11.1-6.2.1.i586]
+ruby [2.0-5.1.2.i586]
+ruby20 [2.0.0.p247-3.2.1.i586] < yast2-ruby-bindings
+rubygem-fast_gettext [0.7.1-2.1.2.i586] < yast2-ruby-bindings
+rubygem-ruby-dbus [0.9.2-2.1.3.i586] < yast2-storage
+rubygem-yard [0.8.7-2.1.2.i586] < yast2-devtools
+screen [4.0.4-15.1.2.i586]
+sed [4.2.2-2.1.2.i586]
+setxkbmap [1.3.0-6.1.2.i586]
+sg3_utils [1.36-3.1.2.i586]
+shadow [4.1.5.1-8.1.2.i586]
+smartmontools [6.2-2.1.2.i586]
+strace [4.8-3.1.2.i586]
+suse-module-tools [12.3-6.1.2.noarch]
+sysfsutils [2.1.0-150.1.2.i586] < iputils
+syslinux [4.04-27.1.3.i586]
+syslogd [1.4.1-772.1.2.i586]
+systemd [208-6.1.i586]
+systemd-presets-branding-openSUSE [0.3.0-3.1.2.noarch]
+systemd-sysvinit [208-6.1.i586]
+sysvinit [2.88+-89.1.2.i586]
+sysvinit-tools [2.88+-89.1.2.i586]
+tar [1.26-19.1.2.i586]
+terminfo [5.9-33.1.2.i586]
+terminfo-base [5.9-33.1.2.i586]
+tightvnc [1.3.10-14.2.1.i586]
+timezone [2013h-1.1.i586]
+usbutils [007-2.1.2.i586]
+util-linux [2.23.2-3.1.i586]
+vim [7.4.052-1.1.i586]
+wget [1.14-3.1.3.i586]
+xauth [1.0.7-6.1.2.i586]
+xbitmaps [1.1.1-9.1.2.noarch] < libXmu6 < xdm
+xdm [1.1.10-24.2.1.i586]
+xdpyinfo [1.3.1-2.1.2.i586]
+xf86-input-evdev [2.8.2-1.1.i586]
+xf86-input-joystick [1.6.2-4.1.2.i586]
+xf86-input-keyboard [1.7.0-2.1.2.i586]
+xf86-input-mouse [1.9.0-2.2.2.i586]
+xf86-input-synaptics [1.7.1-2.1.2.i586]
+xf86-input-vmmouse [13.0.0-5.1.2.i586]
+xf86-input-void [1.4.0-6.1.2.i586]
+xf86-input-wacom [0.22.1-2.1.2.i586]
+xf86-video-ati [7.2.0-2.1.2.i586]
+xf86-video-cirrus [1.5.2-6.1.2.i586]
+xf86-video-fbdev [0.4.3-6.1.2.i586]
+xf86-video-intel [2.99.905-1.1.i586]
+xf86-video-modesetting [0.8.0-3.2.1.i586]
+xf86-video-nv [2.1.20-7.1.2.i586]
+xf86-video-r128 [6.9.1-6.1.2.i586]
+xf86-video-sis [0.10.7-6.1.2.i586]
+xf86-video-vesa [2.3.3-2.1.2.i586]
+xf86-video-vmware [13.0.1-2.1.2.i586]
+xfsdump [3.0.5-9.1.2.i586]
+xfsprogs [3.1.11-2.1.2.i586]
+xhost [1.0.6-2.1.2.i586]
+xkbcomp [1.2.4-8.1.2.i586]
+xkeyboard-config [2.9-6.1.3.noarch]
+xmodmap [1.0.8-2.1.2.i586]
+xorg-x11-Xvnc [7.6_1.0.1-15.1.3.i586]
+xorg-x11-fonts [7.6-27.1.2.noarch]
+xorg-x11-fonts-core [7.6-27.1.2.noarch]
+xorg-x11-server [7.6_1.14.3.901-1.1.i586]
+xrefresh [1.0.5-2.1.3.i586]
+xset [1.2.3-2.1.2.i586]
+xterm [297-1.1.i586]
+xz [5.0.5-2.1.20.i586]
+yast2 [3.0.10-4.1.i586]
+yast2-add-on [3.0.2-1.1.noarch]
+yast2-bootloader [3.0.3-2.1.3.i586]
+yast2-core [3.0.3-1.1.i586]
+yast2-country [3.0.2-1.1.i586]
+yast2-country-data [3.0.2-1.1.i586]
+yast2-devtools [3.0.5-1.1.noarch]
+yast2-hardware-detection [3.0.1-2.1.3.i586]
+yast2-installation [3.0.8-1.1.noarch]
+yast2-iscsi-client [3.0.0-2.1.4.noarch]
+yast2-kdump [3.0.0-2.1.4.i586]
+yast2-multipath [2.17.1-22.1.4.noarch]
+yast2-network [3.0.8-5.1.i586]
+yast2-nfs-client [3.0.2-1.3.noarch]
+yast2-ntp-client [3.0.1-7.1.noarch]
+yast2-packager [3.0.8-1.1.i586]
+yast2-perl-bindings [3.0.1-3.1.i586]
+yast2-pkg-bindings [3.0.3-8.1.i586]
+yast2-proxy [3.0.0-2.1.4.noarch]
+yast2-ruby-bindings [3.0.4-1.1.i586]
+yast2-runlevel [3.0.1-1.1.noarch]
+yast2-slp [3.0.2-1.1.i586]
+yast2-storage [3.0.8-1.1.i586]
+yast2-trans-stats [2.19.0-14.1.3.noarch]
+yast2-transfer [3.0.1-2.1.3.i586]
+yast2-tune [3.0.2-1.1.i586]
+yast2-update [3.0.4-2.1.4.i586]
+yast2-users [3.0.1-2.1.4.i586]
+yast2-vm [3.0.2-2.1.4.i586]
+yast2-x11 [3.0.1-2.2.1.i586]
+yast2-xml [3.0.0-2.1.2.i586]
+yast2-ycp-ui-bindings [3.0.1-3.1.i586]
+[  392.044198] reboot: Restarting system
+[    0.016000] Failed to access perfctr msr (MSR c1 is 0)
+Trying manual resume from /dev/vda1
+Invoking userspace resume from /dev/vda1
+resume: libgcrypt version: 1.5.3
+Trying manual resume from /dev/vda1
+Invoking in-kernel resume from /dev/vda1
+Waiting for device /dev/root to appear:  ok
+fsck from util-linux 2.23.2
+[/sbin/fsck.ext4 (1) -- /] fsck.ext4 -a /dev/vda2 
+/dev/vda2: clean, 127842/328320 files, 1016317/1310720 blocks
+fsck succeeded. Mounting root device read-write.
+Mounting root /dev/root
+mount -o rw,acl,user_xattr -t ext4 /dev/root /root
+
+Welcome to [0;32mopenSUSE 13.1 (Bottle) (i586)[0m!
+
+         Expecting device dev-ttyS0.device...
+[[32m  OK  [0m] Listening on Syslog Socket.
+[[32m  OK  [0m] Reached target System Time Synchronized.
+[[32m  OK  [0m] Reached target Remote File Systems (Pre).
+[[32m  OK  [0m] Reached target Remote File Systems.
+[[32m  OK  [0m] Listening on /dev/initctl Compatibility Named Pipe.
+[[32m  OK  [0m] Listening on Delayed Shutdown Socket.
+[[32m  OK  [0m] Listening on Journal Socket.
+         Starting LSB: Set default boot entry if called...
+         Starting Load Kernel Modules...
+         Mounting Debug File System...
+         Starting Create dynamic rule for /dev/root link...
+         Starting Journal Service...
+[[32m  OK  [0m] Started Journal Service.
+[[32m  OK  [0m] Set up automount Arbitrary Executable File Formats File System Automount Point.
+         Starting Create list of required static device nodes for the current kernel...
+         Starting Setup Virtual Console...
+         Mounting Huge Pages File System...
+         Mounting POSIX Message Queue File System...
+         Expecting device dev-vda1.device...
+         Starting Remount Root and Kernel File Systems...
+[[32m  OK  [0m] Listening on udev Kernel Socket.
+%G(K[[32m  OK  [0m] Listening on udev Control Socket.
+[[32m  OK  [0m] Created slice Root Slice.
+[[32m  OK  [0m] Created slice User and Session Slice.
+[[32m  OK  [0m] Created slice System Slice.
+[[32m  OK  [0m] Created slice system-getty.slice.
+[[32m  OK  [0m] Created slice system-serial\x2dgetty.slice.
+[[32m  OK  [0m] Reached target Slices.
+         Expecting device dev-vda3.device...
+[[32m  OK  [0m] Started Load Kernel Modules.
+[[32m  OK  [0m] Mounted Debug File System.
+[[32m  OK  [0m] Started Create dynamic rule for /dev/root link.
+[[32m  OK  [0m] Mounted Huge Pages File System.
+[[32m  OK  [0m] Started LSB: Set default boot entry if called.
+[[32m  OK  [0m] Started Setup Virtual Console.
+[[32m  OK  [0m] Mounted POSIX Message Queue File System.
+[[32m  OK  [0m] Started Remount Root and Kernel File Systems.
+         Starting Load/Save Random Seed...
+         Starting udev Coldplug all Devices...
+         Starting Apply Kernel Variables...
+[[32m  OK  [0m] Started Create list of required static device nodes for the current kernel.
+         Starting Create static device nodes in /dev...
+[[32m  OK  [0m] Started Load/Save Random Seed.
+[[32m  OK  [0m] Started Apply Kernel Variables.
+[[32m  OK  [0m] Started Create static device nodes in /dev.
+         Starting udev Kernel Device Manager...
+[[32m  OK  [0m] Reached target Local File Systems (Pre).
+         Mounting Runtime Directory...
+         Mounting Lock Directory...
+[[32m  OK  [0m] Mounted Runtime Directory.
+[[32m  OK  [0m] Mounted Lock Directory.
+[[32m  OK  [0m] Started udev Kernel Device Manager.
+[[32m  OK  [0m] Started udev Coldplug all Devices.
+         Starting udev Wait for Complete Device Initialization...
+         Starting Show Plymouth Boot Screen...
+[[32m  OK  [0m] Started udev Wait for Complete Device Initialization.
+         Starting Activation of LVM2 logical volumes...
+[[32m  OK  [0m] Started Show Plymouth Boot Screen.
+[[32m  OK  [0m] Started Activation of LVM2 logical volumes.
+[[32m  OK  [0m] Reached target Encrypted Volumes.
+         Starting Activation of LVM2 logical volumes...
+[[32m  OK  [0m] Found device /dev/vda1.
+         Activating swap /dev/vda1...
+[[32m  OK  [0m] Found device /dev/ttyS0.
+[[32m  OK  [0m] Activated swap /dev/vda1.
+[[32m  OK  [0m] Reached target Swap.
+[[32m  OK  [0m] Started Activation of LVM2 logical volumes.
+[[32m  OK  [0m] Found device /dev/vda3.
+         Starting File System Check on /dev/vda3...
+systemd-fsck[320]: /dev/vda3: clean, 11/231536 files, 32735/924672 blocks
+[[32m  OK  [0m] Started File System Check on /dev/vda3.
+         Mounting /home...
+[[32m  OK  [0m] Mounted /home.
+[[32m  OK  [0m] Reached target Local File Systems.
+         Starting Tell Plymouth To Write Out Runtime Data...
+         Starting Trigger Flushing of Journal to Persistent Storage...
+         Starting Recreate Volatile Files and Directories...
+[[32m  OK  [0m] Started Trigger Flushing of Journal to Persistent Storage.
+[[32m  OK  [0m] Started Recreate Volatile Files and Directories.
+         Starting LSB: AppArmor initialization...
+         Starting Update UTMP about System Reboot/Shutdown...
+[[32m  OK  [0m] Started Tell Plymouth To Write Out Runtime Data.
+[[32m  OK  [0m] Started Update UTMP about System Reboot/Shutdown.
+[[32m  OK  [0m] Reached target Sound Card.
+[[32m  OK  [0m] Started LSB: AppArmor initialization.
+[[32m  OK  [0m] Reached target System Initialization.
+[[32m  OK  [0m] Listening on Avahi mDNS/DNS-SD Stack Activation Socket.
+[[32m  OK  [0m] Listening on PC/SC Smart Card Daemon Activation Socket.
+[[32m  OK  [0m] Listening on CUPS Printing Service Sockets.
+[[32m  OK  [0m] Reached target Paths.
+[[32m  OK  [0m] Listening on D-Bus System Message Bus Socket.
+[[32m  OK  [0m] Reached target Sockets.
+[[32m  OK  [0m] Reached target Timers.
+         Starting Restore Sound Card State...
+[[32m  OK  [0m] Reached target Basic System.
+         Starting D-Bus System Message Bus...
+[[32m  OK  [0m] Started D-Bus System Message Bus.
+         Starting Avahi mDNS/DNS-SD Stack...
+         Starting WPA Supplicant daemon...
+         Starting Purge old kernels...
+         Starting Modem Manager...
+         Starting Name Service Cache Daemon...
+[[32m  OK  [0m] Started Name Service Cache Daemon.
+         Starting Permit User Sessions...
+         Starting Login Service...
+         Starting System Logging Service...
+         Starting YaST2 Second Stage...
+[[32m  OK  [0m] Started Restore Sound Card State.
+Trying manual resume from /dev/vda1
+Invoking userspace resume from /dev/vda1
+resume: libgcrypt version: 1.5.3
+Trying manual resume from /dev/vda1
+Invoking in-kernel resume from /dev/vda1
+Waiting for device /dev/root to appear:  ok
+fsck from util-linux 2.23.2
+[/sbin/fsck.ext4 (1) -- /] fsck.ext4 -a /dev/vda2 
+/dev/vda2: clean, 127842/328320 files, 1016317/1310720 blocks
+fsck succeeded. Mounting root device read-write.
+Mounting root /dev/root
+mount -o rw,acl,user_xattr -t ext4 /dev/root /root
+
+Welcome to [0;32mopenSUSE 13.1 (Bottle) (i586)[0m!
+
+         Expecting device dev-ttyS0.device...
+[[32m  OK  [0m] Listening on Syslog Socket.
+[[32m  OK  [0m] Reached target System Time Synchronized.
+[[32m  OK  [0m] Reached target Remote File Systems (Pre).
+[[32m  OK  [0m] Reached target Remote File Systems.
+[[32m  OK  [0m] Listening on /dev/initctl Compatibility Named Pipe.
+[[32m  OK  [0m] Listening on Delayed Shutdown Socket.
+[[32m  OK  [0m] Listening on Journal Socket.
+         Starting LSB: Set default boot entry if called...
+         Starting Load Kernel Modules...
+         Mounting Debug File System...
+         Starting Create dynamic rule for /dev/root link...
+         Starting Journal Service...
+[[32m  OK  [0m] Started Journal Service.
+[[32m  OK  [0m] Set up automount Arbitrary Executable File Formats File System Automount Point.
+         Starting Create list of required static device nodes for the current kernel...
+         Starting Setup Virtual Console...
+         Mounting Huge Pages File System...
+         Mounting POSIX Message Queue File System...
+         Expecting device dev-vda1.device...
+         Starting Remount Root and Kernel File Systems...
+[[32m  OK  [0m] Listening on udev Kernel Socket.
+%G(K[[32m  OK  [0m] Listening on udev Control Socket.
+[[32m  OK  [0m] Created slice Root Slice.
+[[32m  OK  [0m] Created slice User and Session Slice.
+[[32m  OK  [0m] Created slice System Slice.
+[[32m  OK  [0m] Created slice system-getty.slice.
+[[32m  OK  [0m] Created slice system-serial\x2dgetty.slice.
+[[32m  OK  [0m] Reached target Slices.
+         Expecting device dev-vda3.device...
+[[32m  OK  [0m] Started Load Kernel Modules.
+[[32m  OK  [0m] Mounted Debug File System.
+[[32m  OK  [0m] Started Create dynamic rule for /dev/root link.
+[[32m  OK  [0m] Mounted Huge Pages File System.
+[[32m  OK  [0m] Started LSB: Set default boot entry if called.
+[[32m  OK  [0m] Started Setup Virtual Console.
+[[32m  OK  [0m] Mounted POSIX Message Queue File System.
+[[32m  OK  [0m] Started Remount Root and Kernel File Systems.
+         Starting Load/Save Random Seed...
+         Starting udev Coldplug all Devices...
+         Starting Apply Kernel Variables...
+[[32m  OK  [0m] Started Create list of required static device nodes for the current kernel.
+         Starting Create static device nodes in /dev...
+[[32m  OK  [0m] Started Load/Save Random Seed.
+[[32m  OK  [0m] Started Apply Kernel Variables.
+[[32m  OK  [0m] Started Create static device nodes in /dev.
+         Starting udev Kernel Device Manager...
+[[32m  OK  [0m] Reached target Local File Systems (Pre).
+         Mounting Runtime Directory...
+         Mounting Lock Directory...
+[[32m  OK  [0m] Mounted Runtime Directory.
+[[32m  OK  [0m] Mounted Lock Directory.
+[[32m  OK  [0m] Started udev Kernel Device Manager.
+[[32m  OK  [0m] Started udev Coldplug all Devices.
+         Starting udev Wait for Complete Device Initialization...
+         Starting Show Plymouth Boot Screen...
+[[32m  OK  [0m] Started udev Wait for Complete Device Initialization.
+         Starting Activation of LVM2 logical volumes...
+[[32m  OK  [0m] Started Show Plymouth Boot Screen.
+[[32m  OK  [0m] Started Activation of LVM2 logical volumes.
+[[32m  OK  [0m] Reached target Encrypted Volumes.
+         Starting Activation of LVM2 logical volumes...
+[[32m  OK  [0m] Found device /dev/vda1.
+         Activating swap /dev/vda1...
+[[32m  OK  [0m] Found device /dev/ttyS0.
+[[32m  OK  [0m] Activated swap /dev/vda1.
+[[32m  OK  [0m] Reached target Swap.
+[[32m  OK  [0m] Started Activation of LVM2 logical volumes.
+[[32m  OK  [0m] Found device /dev/vda3.
+         Starting File System Check on /dev/vda3...
+systemd-fsck[320]: /dev/vda3: clean, 11/231536 files, 32735/924672 blocks
+[[32m  OK  [0m] Started File System Check on /dev/vda3.
+         Mounting /home...
+[[32m  OK  [0m] Mounted /home.
+[[32m  OK  [0m] Reached target Local File Systems.
+         Starting Tell Plymouth To Write Out Runtime Data...
+         Starting Trigger Flushing of Journal to Persistent Storage...
+         Starting Recreate Volatile Files and Directories...
+[[32m  OK  [0m] Started Trigger Flushing of Journal to Persistent Storage.
+[[32m  OK  [0m] Started Recreate Volatile Files and Directories.
+         Starting LSB: AppArmor initialization...
+         Starting Update UTMP about System Reboot/Shutdown...
+[[32m  OK  [0m] Started Tell Plymouth To Write Out Runtime Data.
+[[32m  OK  [0m] Started Update UTMP about System Reboot/Shutdown.
+[[32m  OK  [0m] Reached target Sound Card.
+[[32m  OK  [0m] Started LSB: AppArmor initialization.
+[[32m  OK  [0m] Reached target System Initialization.
+[[32m  OK  [0m] Listening on Avahi mDNS/DNS-SD Stack Activation Socket.
+[[32m  OK  [0m] Listening on PC/SC Smart Card Daemon Activation Socket.
+[[32m  OK  [0m] Listening on CUPS Printing Service Sockets.
+[[32m  OK  [0m] Reached target Paths.
+[[32m  OK  [0m] Listening on D-Bus System Message Bus Socket.
+[[32m  OK  [0m] Reached target Sockets.
+[[32m  OK  [0m] Reached target Timers.
+         Starting Restore Sound Card State...
+[[32m  OK  [0m] Reached target Basic System.
+         Starting D-Bus System Message Bus...
+[[32m  OK  [0m] Started D-Bus System Message Bus.
+         Starting Avahi mDNS/DNS-SD Stack...
+         Starting WPA Supplicant daemon...
+         Starting Purge old kernels...
+         Starting Modem Manager...
+         Starting Name Service Cache Daemon...
+[[32m  OK  [0m] Started Name Service Cache Daemon.
+         Starting Permit User Sessions...
+         Starting Login Service...
+         Starting System Logging Service...
+         Starting YaST2 Second Stage...
+[[32m  OK  [0m] Started Restore Sound Card State.
+
+Welcome to openSUSE 13.1 "Bottle" - Kernel 3.11.6-4-default (ttyS0).
+
+
+linux-ft0x login: imroot
+[  168.913549] reboot: Restarting system
+[    0.016000] Failed to access perfctr msr (MSR c1 is 0)
+Trying manual resume from /dev/vda1
+Invoking userspace resume from /dev/vda1
+resume: libgcrypt version: 1.5.3
+Trying manual resume from /dev/vda1
+Invoking in-kernel resume from /dev/vda1
+Waiting for device /dev/root to appear:  ok
+fsck from util-linux 2.23.2
+[/sbin/fsck.ext4 (1) -- /] fsck.ext4 -a /dev/vda2 
+/dev/vda2: clean, 128097/328320 files, 1047741/1310720 blocks
+fsck succeeded. Mounting root device read-write.
+Mounting root /dev/root
+mount -o rw,acl,user_xattr -t ext4 /dev/root /root
+
+Welcome to [0;32mopenSUSE 13.1 (Bottle) (i586)[0m!
+
+         Expecting device dev-ttyS0.device...
+[[32m  OK  [0m] Listening on Syslog Socket.
+[[32m  OK  [0m] Reached target System Time Synchronized.
+[[32m  OK  [0m] Reached target Remote File Systems (Pre).
+[[32m  OK  [0m] Reached target Remote File Systems.
+[[32m  OK  [0m] Listening on /dev/initctl Compatibility Named Pipe.
+[[32m  OK  [0m] Listening on Delayed Shutdown Socket.
+[[32m  OK  [0m] Listening on Journal Socket.
+         Starting LSB: Set default boot entry if called...
+         Starting Load Kernel Modules...
+         Mounting Debug File System...
+         Starting Create dynamic rule for /dev/root link...
+         Starting Journal Service...
+[[32m  OK  [0m] Started Journal Service.
+[[32m  OK  [0m] Set up automount Arbitrary Executable File Formats File System Automount Point.
+         Starting Create list of required static device nodes for the current kernel...
+         Starting Setup Virtual Console...
+         Mounting Huge Pages File System...
+         Mounting POSIX Message Queue File System...
+         Expecting device dev-vda1.device...
+         Starting Remount Root and Kernel File Systems...
+[[32m  OK  [0m] Listening on udev Kernel Socket.
+[[32m  OK  [0m] Listening on udev Control Socket.
+[[32m  OK  [0m] Created slice Root Slice.
+[[32m  OK  [0m] Created slice User and Session Slice.
+[[32m  OK  [0m] Created slice System Slice.
+[[32m  OK  [0m] Created slice system-getty.slice.
+[[32m  OK  [0m] Created slice system-serial\x2dgetty.slice.
+[[32m  OK  [0m] Reached target Slices.
+         Expecting device dev-vda3.device...
+[[32m  OK  [0m] Started Load Kernel Modules.
+[[32m  OK  [0m] Mounted Debug File System.
+[[32m  OK  [0m] Mounted Huge Pages File System.
+[[32m  OK  [0m] Mounted POSIX Message Queue File System.
+[[32m  OK  [0m] Started Remount Root and Kernel File Systems.
+         Starting Load/Save Random Seed...
+%G         Starting Apply Kernel Variables...
+(K[[32m  OK  [0m] Started Create list of required static device nodes for the current kernel.
+[[32m  OK  [0m] Started Load/Save Random Seed.
+         Starting Create static device nodes in /dev...
+[[32m  OK  [0m] Started Apply Kernel Variables.
+[[32m  OK  [0m] Started Setup Virtual Console.
+         Starting udev Coldplug all Devices...
+[[32m  OK  [0m] Started Create dynamic rule for /dev/root link.
+[[32m  OK  [0m] Started Create static device nodes in /dev.
+         Starting udev Kernel Device Manager...
+[[32m  OK  [0m] Reached target Local File Systems (Pre).
+         Mounting Runtime Directory...
+         Mounting Lock Directory...
+[[32m  OK  [0m] Mounted Runtime Directory.
+[[32m  OK  [0m] Mounted Lock Directory.
+[[32m  OK  [0m] Started udev Kernel Device Manager.
+[[32m  OK  [0m] Started LSB: Set default boot entry if called.
+[[32m  OK  [0m] Started udev Coldplug all Devices.
+         Starting udev Wait for Complete Device Initialization...
+         Starting Show Plymouth Boot Screen...
+[[32m  OK  [0m] Started Show Plymouth Boot Screen.
+[[32m  OK  [0m] Found device /dev/vda1.
+         Activating swap /dev/vda1...
+[[32m  OK  [0m] Found device /dev/ttyS0.
+[[32m  OK  [0m] Activated swap /dev/vda1.
+[[32m  OK  [0m] Reached target Swap.
+[[32m  OK  [0m] Found device /dev/vda3.
+         Starting File System Check on /dev/vda3...
+systemd-fsck[291]: /dev/vda3: clean, 210/231536 files, 36506/924672 blocks
+[[32m  OK  [0m] Started File System Check on /dev/vda3.
+         Mounting /home...
+[[32m  OK  [0m] Mounted /home.
+[[32m  OK  [0m] Reached target Sound Card.
+[[32m  OK  [0m] Started udev Wait for Complete Device Initialization.
+         Starting Activation of LVM2 logical volumes...
+[[32m  OK  [0m] Started Activation of LVM2 logical volumes.
+[[32m  OK  [0m] Reached target Encrypted Volumes.
+         Starting Activation of LVM2 logical volumes...
+[[32m  OK  [0m] Started Activation of LVM2 logical volumes.
+[[32m  OK  [0m] Reached target Local File Systems.
+         Starting Tell Plymouth To Write Out Runtime Data...
+         Starting Trigger Flushing of Journal to Persistent Storage...
+         Starting Recreate Volatile Files and Directories...
+[[32m  OK  [0m] Started Trigger Flushing of Journal to Persistent Storage.
+[[32m  OK  [0m] Started Recreate Volatile Files and Directories.
+         Starting LSB: AppArmor initialization...
+         Starting Update UTMP about System Reboot/Shutdown...
+[[32m  OK  [0m] Started Tell Plymouth To Write Out Runtime Data.
+[[32m  OK  [0m] Started Update UTMP about System Reboot/Shutdown.
+[[32m  OK  [0m] Started LSB: AppArmor initialization.
+[[32m  OK  [0m] Reached target System Initialization.
+[[32m  OK  [0m] Listening on Avahi mDNS/DNS-SD Stack Activation Socket.
+[[32m  OK  [0m] Listening on PC/SC Smart Card Daemon Activation Socket.
+[[32m  OK  [0m] Listening on CUPS Printing Service Sockets.
+[[32m  OK  [0m] Reached target Paths.
+[[32m  OK  [0m] Listening on D-Bus System Message Bus Socket.
+[[32m  OK  [0m] Reached target Sockets.
+[[32m  OK  [0m] Reached target Timers.
+         Starting Restore Sound Card State...
+[[32m  OK  [0m] Reached target Basic System.
+         Starting D-Bus System Message Bus...
+[[32m  OK  [0m] Started D-Bus System Message Bus.
+         Starting Avahi mDNS/DNS-SD Stack...
+         Starting WPA Supplicant daemon...
+         Starting Modem Manager...
+         Starting Name Service Cache Daemon...
+[[32m  OK  [0m] Started Name Service Cache Daemon.
+         Starting Permit User Sessions...
+         Starting Login Service...
+         Starting System Logging Service...
+         Starting SuSEfirewall2 phase 1...
+[[32m  OK  [0m] Started Restore Sound Card State.
+[[32m  OK  [0m] Started Permit User Sessions.
+         Starting LSB: X Display Manager...
+[[32m  OK  [0m] Started System Logging Service.
+[[32m  OK  [0m] Started Login Service.
+         Starting Authorization Manager...
+[[32m  OK  [0m] Started LSB: X Display Manager.
+[[32m  OK  [0m] Started Authorization Manager.
+[[32m  OK  [0m] Started Modem Manager.
+
+Welcome to openSUSE 13.1 "Bottle" - Kernel 3.11.6-4-default (ttyS0).
+
+
+linux-ft0x login: 010_consoletest_setup OK
+imroot
+aplay_finished
+imroot
+imroot
+# | Alias                     | Name                               | Enabled | Refresh | Priority | Type   | URI                                                             | Service
+--+---------------------------+------------------------------------+---------+---------+----------+--------+-----------------------------------------------------------------+--------
+1 | repo-debug                | openSUSE-13.1-Debug                | No      | Yes     |   99     | NONE   | http://download.opensuse.org/debug/distribution/13.1/repo/oss/  |        
+2 | repo-debug-update         | openSUSE-13.1-Update-Debug         | No      | Yes     |   99     | NONE   | http://download.opensuse.org/debug/update/13.1/                 |        
+3 | repo-debug-update-non-oss | openSUSE-13.1-Update-Debug-Non-Oss | No      | Yes     |   99     | NONE   | http://download.opensuse.org/debug/update/13.1-non-oss/         |        
+4 | repo-non-oss              | openSUSE-13.1-Non-Oss              | Yes     | Yes     |   99     | yast2  | http://download.opensuse.org/distribution/13.1/repo/non-oss/    |        
+5 | repo-oss                  | openSUSE-13.1-Oss                  | Yes     | Yes     |   99     | yast2  | http://download.opensuse.org/distribution/13.1/repo/oss/        |        
+6 | repo-source               | openSUSE-13.1-Source               | No      | Yes     |   99     | NONE   | http://download.opensuse.org/source/distribution/13.1/repo/oss/ |        
+7 | repo-update               | openSUSE-13.1-Update               | Yes     | Yes     |   99     | rpm-md | http://download.opensuse.org/update/13.1/                       |        
+8 | repo-update-non-oss       | openSUSE-13.1-Update-Non-Oss       | Yes     | Yes     |   99     | rpm-md | http://download.opensuse.org/update/13.1-non-oss/               |        
+imroot
+imroot
+  PID TTY      STAT   TIME COMMAND
+    1 ?        Ss     0:00 /sbin/init showopts
+    2 ?        S      0:00 [kthreadd]
+    3 ?        S      0:00 [ksoftirqd/0]
+    5 ?        S<     0:00 [kworker/0:0H]
+    7 ?        S      0:00 [migration/0]
+    8 ?        S      0:00 [rcu_bh]
+    9 ?        S      0:00 [rcu_sched]
+   10 ?        S      0:00 [watchdog/0]
+   11 ?        S<     0:00 [khelper]
+   12 ?        S      0:00 [kdevtmpfs]
+   13 ?        S<     0:00 [netns]
+   14 ?        S<     0:00 [writeback]
+   15 ?        S<     0:00 [kintegrityd]
+   16 ?        S<     0:00 [bioset]
+   17 ?        S<     0:00 [kblockd]
+   18 ?        S<     0:00 [md]
+   20 ?        S      0:00 [khungtaskd]
+   21 ?        S      0:00 [kswapd0]
+   22 ?        SN     0:00 [ksmd]
+   23 ?        SN     0:00 [khugepaged]
+   24 ?        S      0:00 [fsnotify_mark]
+   25 ?        S<     0:00 [crypto]
+   30 ?        S<     0:00 [kthrotld]
+   32 ?        S<     0:00 [kpsmoused]
+   34 ?        S<     0:00 [deferwq]
+   35 ?        S      0:00 [kworker/u2:1]
+   77 ?        S<     0:00 [kmpath_rdacd]
+   97 ?        S      0:00 [khubd]
+  100 ?        S<     0:00 [ttm_swap]
+  106 ?        S<     0:00 [kworker/0:1H]
+  174 ?        S      0:00 [jbd2/vda2-8]
+  175 ?        S<     0:00 [ext4-rsv-conver]
+  176 ?        S<     0:00 [ext4-unrsv-conv]
+  211 ?        Ss     0:00 /usr/lib/systemd/systemd-journald
+  212 ?        S      0:00 [kauditd]
+  220 ?        S      0:00 [kworker/u2:2]
+  245 ?        Ss     0:00 /usr/lib/systemd/systemd-udevd
+  269 ?        S<     0:00 [ata_sff]
+  282 ?        S      0:00 [scsi_eh_0]
+  283 ?        S      0:00 [scsi_eh_1]
+  332 ?        S      0:00 [jbd2/vda3-8]
+  333 ?        S<     0:00 [ext4-rsv-conver]
+  334 ?        S<     0:00 [ext4-unrsv-conv]
+  477 ?        Ss     0:00 /bin/dbus-daemon --system --address=systemd: --nofork
+  478 ?        Ss     0:00 avahi-daemon: running [linux-ft0x.local]
+  479 ?        Ss     0:00 /usr/sbin/wpa_supplicant -c /etc/wpa_supplicant/wpa_s
+  480 ?        Ssl    0:00 /usr/sbin/ModemManager
+  481 ?        Ssl    0:00 /usr/sbin/nscd --foreground
+  483 ?        Ss     0:00 /usr/lib/systemd/systemd-logind
+  516 ?        Ssl    0:00 /usr/sbin/rsyslogd -n
+  522 ?        Ss     0:00 /usr/bin/kdm
+  530 ?        Ssl    0:00 /usr/lib/polkit-1/polkitd --no-debug
+  567 tty7     Ss+    0:00 /usr/bin/Xorg -br :0 vt7 -nolisten tcp -auth /var/lib
+  592 ?        S      0:00 -:0         
+  662 ?        Ss     0:00 /usr/lib/systemd/systemd --user
+  663 ?        Ss     0:00 /bin/sh /usr/bin/startkde
+  675 ?        S      0:00 (sd-pam)           
+  900 ?        S      0:00 /usr/bin/dbus-launch --sh-syntax --close-stderr --exi
+  906 ?        Ss     0:00 /bin/dbus-daemon --fork --print-pid 5 --print-address
+ 1091 ?        S      0:00 /usr/lib/kde4/libexec/start_kdeinit +kcminit_startup
+ 1101 ?        Ss     0:00 kdeinit4: kdeinit4 Running...                  
+ 1124 ?        S      0:00 kdeinit4: klauncher [kdeinit] --fd=9           
+ 1142 ?        Sl     0:00 kdeinit4: kded4 [kdeinit]                      
+ 1244 ?        S      0:00 kdeinit4: kglobalaccel [kdeinit]               
+ 1265 ?        S      0:00 kdeinit4: kwalletd [kdeinit]                   
+ 1273 ?        Sl     0:00 /usr/bin/kactivitymanagerd
+ 1275 ?        Ssl    0:00 /usr/lib/upower/upowerd
+ 1312 ?        S      0:00 kwrapper4 ksmserver
+ 1317 ?        Sl     0:00 kdeinit4: ksmserver [kdeinit]                  
+ 1327 ?        Ssl    0:00 /usr/lib/udisks2/udisksd --no-debug
+ 1357 ?        Sl     0:00 kwin
+ 1438 ?        Sl     0:01 kdeinit4: plasma-desktop [kdeinit]             
+ 1442 ?        Sl     0:00 /usr/bin/knotify4
+ 1575 ?        S      0:00 ksysguardd
+ 1752 ?        S      0:00 /usr/bin/kuiserver
+ 2247 ?        Sl     0:00 kdeinit4: nepomukserver [kdeinit]              
+ 2248 ?        Sl     0:00 kdeinit4: krunner [kdeinit]                    
+ 2256 ?        SNl    0:00 /usr/bin/nepomukstorage
+ 2268 ?        S<l    0:00 /usr/bin/pulseaudio --start
+ 2274 ?        Sl     0:00 kdeinit4: kmix [kdeinit]                       
+ 2275 ?        SNsl   0:00 /usr/lib/rtkit/rtkit-daemon
+ 2280 ?        Sl     0:00 /usr/lib/kde4/libexec/polkit-kde-authentication-agent
+ 2284 ?        S      0:00 kdeinit4: klipper [kdeinit]                    
+ 2294 ?        Ss     0:00 /usr/lib/bluetooth/bluetoothd
+ 2358 ?        SNl    0:03 /usr/bin/virtuoso-t +foreground +configfile /tmp/virt
+ 2739 ?        SNl    0:00 /usr/bin/nepomukfilewatch
+ 3265 ?        Ss     0:00 login -- bernhard     
+ 3266 tty1     Ss+    0:00 /sbin/agetty --noclear tty1
+ 3267 ttyS0    Ss+    0:00 /sbin/agetty --keep-baud ttyS0 115200 38400 9600
+ 3404 ?        Ss     0:00 /usr/lib/postfix/master
+ 3417 ?        Ss     0:00 /usr/sbin/cron -n
+ 3574 tty4     Ss     0:00 -bash
+ 5449 ?        S      0:00 /sbin/dhclient6 -6 -cf /var/lib/dhcp6/dhclient6.eth0.
+ 5973 ?        S      0:00 avahi-autoipd: [eth0] sleeping  
+ 5974 ?        S      0:00 avahi-autoipd: [eth0] callout dispatcher
+ 6039 ?        Ss     0:00 /sbin/dhcpcd --netconfig -L -E -HHH -c /etc/sysconfig
+ 6437 ?        S<     0:00 [xfsalloc]
+ 6438 ?        S<     0:00 [xfs_mru_cache]
+ 6439 ?        S<     0:00 [xfslogd]
+ 6442 ?        S      0:00 [jfsIO]
+ 6443 ?        S      0:00 [jfsCommit]
+ 6444 ?        S      0:00 [jfsSync]
+ 6463 ?        S<     0:00 [bioset]
+ 6607 ?        S      0:00 [kworker/0:1]
+ 6711 ?        Ss     0:00 /usr/sbin/sshd -D
+ 6837 ?        S      0:00 [kworker/0:2]
+ 6862 ?        S      0:00 [kworker/u2:0]
+ 6883 tty4     R+     0:00 ps ax
+ 7397 ?        S      0:00 pickup -l -t fifo -u
+ 7398 ?        S      0:00 qmgr -l -t fifo -u
+ 7401 ?        Sl     0:01 /usr/lib/kde4/libexec/kscreenlocker_greet
+ 7446 ?        S      0:00 [kworker/0:0]
+ 7582 ?        Ss     0:00 /usr/lib/systemd/systemd --user
+ 7585 ?        S      0:00 (sd-pam)           
+UNIT                                                                                LOAD   ACTIVE SUB       DESCRIPTION
+proc-sys-fs-binfmt_misc.automount                                                   loaded active waiting   Arbitrary Executable File Formats File System Automount Point
+sys-devices-pci0000:00-0000:00:01.1-ata2-host1-target1:0:0-1:0:0:0-block-sr0.device loaded active plugged   QEMU_DVD-ROM
+sys-devices-pci0000:00-0000:00:03.0-virtio0-net-eth0.device                         loaded active plugged   Virtio network device
+sys-devices-pci0000:00-0000:00:04.0-sound-card0.device                              loaded active plugged   82801AA AC'97 Audio Controller
+sys-devices-pci0000:00-0000:00:05.0-virtio1-block-vda-vda1.device                   loaded active plugged   /sys/devices/pci0000:00/0000:00:05.0/virtio1/block/vda/vda1
+sys-devices-pci0000:00-0000:00:05.0-virtio1-block-vda-vda2.device                   loaded active plugged   /sys/devices/pci0000:00/0000:00:05.0/virtio1/block/vda/vda2
+sys-devices-pci0000:00-0000:00:05.0-virtio1-block-vda-vda3.device                   loaded active plugged   /sys/devices/pci0000:00/0000:00:05.0/virtio1/block/vda/vda3
+sys-devices-pci0000:00-0000:00:05.0-virtio1-block-vda.device                        loaded active plugged   /sys/devices/pci0000:00/0000:00:05.0/virtio1/block/vda
+sys-devices-pci0000:00-0000:00:06.0-virtio2-block-vdb.device                        loaded active plugged   /sys/devices/pci0000:00/0000:00:06.0/virtio2/block/vdb
+sys-devices-platform-serial8250-tty-ttyS10.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS10
+sys-devices-platform-serial8250-tty-ttyS11.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS11
+sys-devices-platform-serial8250-tty-ttyS12.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS12
+sys-devices-platform-serial8250-tty-ttyS13.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS13
+sys-devices-platform-serial8250-tty-ttyS14.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS14
+sys-devices-platform-serial8250-tty-ttyS15.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS15
+sys-devices-platform-serial8250-tty-ttyS16.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS16
+sys-devices-platform-serial8250-tty-ttyS17.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS17
+sys-devices-platform-serial8250-tty-ttyS18.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS18
+sys-devices-platform-serial8250-tty-ttyS19.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS19
+sys-devices-platform-serial8250-tty-ttyS2.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS2
+sys-devices-platform-serial8250-tty-ttyS20.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS20
+sys-devices-platform-serial8250-tty-ttyS21.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS21
+sys-devices-platform-serial8250-tty-ttyS22.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS22
+sys-devices-platform-serial8250-tty-ttyS23.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS23
+sys-devices-platform-serial8250-tty-ttyS24.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS24
+sys-devices-platform-serial8250-tty-ttyS25.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS25
+sys-devices-platform-serial8250-tty-ttyS26.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS26
+sys-devices-platform-serial8250-tty-ttyS27.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS27
+sys-devices-platform-serial8250-tty-ttyS28.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS28
+sys-devices-platform-serial8250-tty-ttyS29.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS29
+sys-devices-platform-serial8250-tty-ttyS3.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS3
+sys-devices-platform-serial8250-tty-ttyS30.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS30
+sys-devices-platform-serial8250-tty-ttyS31.device                                   loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS31
+sys-devices-platform-serial8250-tty-ttyS4.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS4
+sys-devices-platform-serial8250-tty-ttyS5.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS5
+sys-devices-platform-serial8250-tty-ttyS6.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS6
+sys-devices-platform-serial8250-tty-ttyS7.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS7
+sys-devices-platform-serial8250-tty-ttyS8.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS8
+sys-devices-platform-serial8250-tty-ttyS9.device                                    loaded active plugged   /sys/devices/platform/serial8250/tty/ttyS9
+sys-devices-pnp0-00:05-tty-ttyS0.device                                             loaded active plugged   /sys/devices/pnp0/00:05/tty/ttyS0
+sys-devices-pnp0-00:06-tty-ttyS1.device                                             loaded active plugged   /sys/devices/pnp0/00:06/tty/ttyS1
+sys-module-fuse.device                                                              loaded active plugged   /sys/module/fuse
+sys-subsystem-net-devices-eth0.device                                               loaded active plugged   Virtio network device
+-.mount                                                                             loaded active mounted   /
+dev-hugepages.mount                                                                 loaded active mounted   Huge Pages File System
+dev-mqueue.mount                                                                    loaded active mounted   POSIX Message Queue File System
+home.mount                                                                          loaded active mounted   /home
+sys-kernel-debug.mount                                                              loaded active mounted   Debug File System
+var-lock.mount                                                                      loaded active mounted   Lock Directory
+var-run.mount                                                                       loaded active mounted   Runtime Directory
+cups.path                                                                           loaded active waiting   CUPS Printer Service Spool
+systemd-ask-password-plymouth.path                                                  loaded active waiting   Forward Password Requests to Plymouth Directory Watch
+session-1.scope                                                                     loaded active running   Session 1 of user bernhard
+session-2.scope                                                                     loaded active running   Session 2 of user bernhard
+after-local.service                                                                 loaded active exited    /etc/init.d/after.local Compatibility
+apparmor.service                                                                    loaded active exited    LSB: AppArmor initialization
+avahi-daemon.service                                                                loaded active running   Avahi mDNS/DNS-SD Stack
+bluetooth.service                                                                   loaded active running   Bluetooth service
+cron.service                                                                        loaded active running   Command Scheduler
+cycle.service                                                                       loaded active exited    LSB: Set default boot entry if called
+dbus.service                                                                        loaded active running   D-Bus System Message Bus
+getty@tty1.service                                                                  loaded active running   Getty on tty1
+getty@tty4.service                                                                  loaded active running   Getty on tty4
+kmod-static-nodes.service                                                           loaded active exited    Create list of required static device nodes for the current kernel
+ModemManager.service                                                                loaded active running   Modem Manager
+network.service                                                                     loaded active exited    LSB: Configure network interfaces and set up routing
+network@eth0.service                                                                loaded active running   ifup managed network interface eth0
+nscd.service                                                                        loaded active running   Name Service Cache Daemon
+polkit.service                                                                      loaded active running   Authorization Manager
+postfix.service                                                                     loaded active running   Postfix Mail Transport Agent
+rc-local.service                                                                    loaded active exited    /etc/init.d/boot.local Compatibility
+rsyslog.service                                                                     loaded active running   System Logging Service
+rtkit-daemon.service                                                                loaded active running   RealtimeKit Scheduling Policy Service
+serial-getty@ttyS0.service                                                          loaded active running   Serial Getty on ttyS0
+sshd.service                                                                        loaded active running   OpenSSH Daemon
+SuSEfirewall2.service                                                               loaded active exited    SuSEfirewall2 phase 2
+SuSEfirewall2_init.service                                                          loaded active exited    SuSEfirewall2 phase 1
+systemd-fsck@dev-vda3.service                                                       loaded active exited    File System Check on /dev/vda3
+systemd-journald.service                                                            loaded active running   Journal Service
+systemd-logind.service                                                              loaded active running   Login Service
+systemd-modules-load.service                                                        loaded active exited    Load Kernel Modules
+systemd-random-seed.service                                                         loaded active exited    Load/Save Random Seed
+systemd-remount-fs.service                                                          loaded active exited    Remount Root and Kernel File Systems
+systemd-sysctl.service                                                              loaded active exited    Apply Kernel Variables
+systemd-tmpfiles-setup-dev.service                                                  loaded active exited    Create static device nodes in /dev
+systemd-tmpfiles-setup.service                                                      loaded active exited    Recreate Volatile Files and Directories
+systemd-udev-root-symlink.service                                                   loaded active exited    Create dynamic rule for /dev/root link
+systemd-udev-settle.service                                                         loaded active exited    udev Wait for Complete Device Initialization
+systemd-udev-trigger.service                                                        loaded active exited    udev Coldplug all Devices
+systemd-udevd.service                                                               loaded active running   udev Kernel Device Manager
+systemd-update-utmp.service                                                         loaded active exited    Update UTMP about System Reboot/Shutdown
+systemd-user-sessions.service                                                       loaded active exited    Permit User Sessions
+systemd-vconsole-setup.service                                                      loaded active exited    Setup Virtual Console
+udisks2.service                                                                     loaded active running   Disk Manager
+upower.service                                                                      loaded active running   Daemon for power management
+user@0.service                                                                      loaded active running   User Manager for 0
+user@1000.service                                                                   loaded active running   User Manager for 1000
+wpa_supplicant.service                                                              loaded active running   WPA Supplicant daemon
+xdm.service                                                                         loaded active running   LSB: X Display Manager
+-.slice                                                                             loaded active active    Root Slice
+system-getty.slice                                                                  loaded active active    system-getty.slice
+system-network.slice                                                                loaded active active    system-network.slice
+system-serial\x2dgetty.slice                                                        loaded active active    system-serial\x2dgetty.slice
+system.slice                                                                        loaded active active    System Slice
+user-0.slice                                                                        loaded active active    user-0.slice
+user-1000.slice                                                                     loaded active active    user-1000.slice
+user.slice                                                                          loaded active active    User and Session Slice
+avahi-daemon.socket                                                                 loaded active running   Avahi mDNS/DNS-SD Stack Activation Socket
+cups.socket                                                                         loaded active listening CUPS Printing Service Sockets
+dbus.socket                                                                         loaded active running   D-Bus System Message Bus Socket
+pcscd.socket                                                                        loaded active listening PC/SC Smart Card Daemon Activation Socket
+syslog.socket                                                                       loaded active running   Syslog Socket
+systemd-initctl.socket                                                              loaded active listening /dev/initctl Compatibility Named Pipe
+systemd-journald.socket                                                             loaded active running   Journal Socket
+systemd-shutdownd.socket                                                            loaded active listening Delayed Shutdown Socket
+systemd-udevd-control.socket                                                        loaded active running   udev Control Socket
+systemd-udevd-kernel.socket                                                         loaded active running   udev Kernel Socket
+dev-vda1.swap                                                                       loaded active active    /dev/vda1
+basic.target                                                                        loaded active active    Basic System
+cryptsetup.target                                                                   loaded active active    Encrypted Volumes
+getty.target                                                                        loaded active active    Login Prompts
+graphical.target                                                                    loaded active active    Graphical Interface
+local-fs-pre.target                                                                 loaded active active    Local File Systems (Pre)
+local-fs.target                                                                     loaded active active    Local File Systems
+multi-user.target                                                                   loaded active active    Multi-User System
+network.target                                                                      loaded active active    Network
+nss-lookup.target                                                                   loaded active active    Host and Network Name Lookups
+paths.target                                                                        loaded active active    Paths
+remote-fs-pre.target                                                                loaded active active    Remote File Systems (Pre)
+remote-fs.target                                                                    loaded active active    Remote File Systems
+slices.target                                                                       loaded active active    Slices
+sockets.target                                                                      loaded active active    Sockets
+sound.target                                                                        loaded active active    Sound Card
+swap.target                                                                         loaded active active    Swap
+sysinit.target                                                                      loaded active active    System Initialization
+time-sync.target                                                                    loaded active active    System Time Synchronized
+timers.target                                                                       loaded active active    Timers
+systemd-readahead-done.timer                                                        loaded active elapsed   Stop Read-Ahead Data Collection 10s After Completed Startup
+systemd-tmpfiles-clean.timer                                                        loaded active waiting   Daily Cleanup of Temporary Directories
+
+LOAD   = Reflects whether the unit definition was properly loaded.
+ACTIVE = The high-level unit activation state, i.e. generalization of SUB.
+SUB    = The low-level unit activation state, values depend on unit type.
+
+[1;39m139 loaded units listed.[0m Pass --all to see loaded but inactive units, too.
+To show all installed unit files use 'systemctl list-unit-files'.
+yast2-3.0.10-4.1.i586
+patterns-openSUSE-imaging-13.1-13.6.1.i586
+libmount1-2.23.2-3.1.i586
+kmahjongg-4.11.2-1.1.i586
+apparmor-profiles-2.8.2-4.5.1.noarch
+libreoffice-templates-labels-a4-1.0.1-9.1.2.noarch
+libpdb0-4.1.0-3.5.1.i586
+patterns-openSUSE-non_oss_opt-13.1-13.6.1.i586
+libvorbisenc2-1.3.3-6.1.4.i586
+kdialog-4.11.2-1.1.i586
+xconsole-1.0.6-2.1.2.i586
+myspell-american-20100316-32.1.2.noarch
+rpcbind-0.2.0_git201103171419-12.1.2.i586
+libwebkitgtk-1_0-0-2.2.1-1.1.i586
+libvncclient0-0.9.9-7.1.2.i586
+kde4-kgreeter-plugins-4.11.2-4.1.i586
+x11-tools-0.1-195.2.1.noarch
+python-setuptools-0.9.8-3.1.2.noarch
+libpolkit0-0.112-2.1.i586
+libncurses6-5.9-33.1.2.i586
+bluedevil-1.3.2_bluez5-3.1.i586
+sysvinit-tools-2.88+-89.1.2.i586
+yast2-metapackage-handler-3.0.0-2.1.4.noarch
+xorg-x11-libX11-ccache-7.6-17.1.2.noarch
+at-spi2-core-2.10.1-1.1.i586
+libdb-4_8-4.8.30-25.2.1.i586
+konqueror-plugins-4.11.2-1.1.i586
+permissions-2013.08.22.1339-2.1.2.i586
+yast2-sysconfig-3.0.1-2.1.4.noarch
+tunctl-1.5-22.1.2.i586
+xf86-input-wacom-0.22.1-2.1.2.i586
+libisofs6-1.3.2-2.1.4.i586
+kdepim4-4.11.2-1.1.i586
+hdparm-9.43-5.1.2.i586
+libgegl-0_2-0-0.2.0-8.1.3.i586
+net-tools-1.60-763.1.2.i586
+libxcb-render0-1.9.1-3.1.2.i586
+kmail-4.11.2-1.1.i586
+perl-libwww-perl-6.05-2.1.2.noarch
+libgimpui-2_0-0-2.8.6-3.2.2.i586
+libx86-1-1.1-41.1.2.i586
+os-prober-1.61-3.1.2.i586
+mozilla-nss-3.15.2-1.1.i586
+ktorrent-4.3.1-4.1.3.i586
+libcanberra0-0.30-6.1.3.i586
+libhdf5_hl8-1.8.11-3.2.2.i586
+libusb-1_0-0-1.0.9-8.1.2.i586
+libsndfile1-1.0.25-17.1.2.i586
+kdm-branding-openSUSE-13.1-10.4.13.noarch
+wodim-1.1.11-16.1.3.i586
+libkqoauth0-0.97-3.1.2.i586
+libsmputils1-1-0.97-2.1.2.i586
+splashy-mkinitrd-0.3.13-44.1.2.i586
+libbluedevil2-1.9.4_bluez5-1.1.i586
+ed-1.9-2.1.2.i586
+cups-libs-1.5.4-12.1.3.i586
+MozillaFirefox-25.0-1.1.i586
+libraw1394-11-2.1.0-2.1.2.i586
+libprison0-1.0-12.1.2.i586
+libreadline6-6.2-68.1.5.i586
+grub-0.97-194.1.2.i586
+ca-certificates-1_201310161709-1.1.noarch
+libmspub-0_0-0-0.0.6-2.1.2.i586
+libpixman-1-0-0.30.2-2.2.1.i586
+python-cairo-1.10.0-12.1.2.i586
+xprop-1.2.2-2.1.2.i586
+kexec-tools-2.0.3-5.1.3.i586
+glib2-tools-2.38.1-1.1.i586
+perl-Crypt-SmbHash-0.12-155.1.2.i586
+libogg0-1.3.0-8.1.2.i586
+rtkit-0.11_git201205151338-5.2.1.i586
+libXfixes3-5.0.1-2.1.2.i586
+libaa1-1.4.0-503.1.3.i586
+util-linux-2.23.2-3.1.i586
+gnome-icon-theme-extras-3.6.2-4.1.2.noarch
+libmnl0-1.0.3-7.1.2.i586
+gconf2-branding-openSUSE-13.1-2.1.3.noarch
+libv4lconvert0-0.8.9-5.1.3.i586
+libboost_regex1_53_0-1.53.0-4.1.2.i586
+cyrus-sasl-crammd5-2.1.25-28.1.2.i586
+yast2-online-update-frontend-3.0.0-2.1.4.noarch
+libkeyutils1-1.5.5-6.1.3.i586
+upower-0.9.21-2.1.3.i586
+libproxy1-networkmanager-0.4.11-9.1.1.i586
+libdjvulibre21-3.5.25.3-2.1.3.i586
+libproxy1-pacrunner-webkit-0.4.11-9.1.1.i586
+gstreamer-0_10-plugin-esd-0.10.31-10.1.4.i586
+libidn11-1.25-7.1.2.i586
+libnetapi0-4.1.0-3.5.1.i586
+perl-URI-1.60-6.1.2.noarch
+libgle3-3.1.0-148.1.2.i586
+sox-14.4.1-2.1.2.i586
+libgcc_s1-4.8.1_20130909-3.2.1.i586
+grub2-i386-efi-2.00-39.1.3.i586
+perl-Net-Daemon-0.48-10.1.2.noarch
+libharfbuzz-icu0-0.9.21-1.3.i586
+libsmbconf0-4.1.0-3.5.1.i586
+qt4-qtscript-0.2.0-8.1.3.i586
+libestr0-0.1.9-1.1.i586
+xorg-x11-essentials-7.6_1-11.3.1.noarch
+perl-DBI-1.628-2.1.4.i586
+liblangtag1-0.5.1-2.1.2.i586
+libpackagekit-glib2-16-0.8.11-2.3.1.i586
+mozilla-kde4-integration-0.6.4-4.1.1.i586
+libcom_err2-1.42.8-2.1.2.i586
+libgtk-3-0-3.10.2-1.1.i586
+libfreerdp-1_0-1.0.2-3.1.1.i586
+libmeanwhile1-1.0.2-133.1.3.i586
+libstorage-ruby-2.24.8-1.1.i586
+libbluetooth3-5.8-3.2.1.i586
+libXv1-1.0.10-2.1.2.i586
+libmysqld18-5.5.33-2.2.i586
+xterm-297-1.1.i586
+groff-full-1.22.2-4.1.3.i586
+libadns1-1.4-100.1.2.i586
+gtk3-immodule-inuktitut-3.10.2-1.1.i586
+libXevie1-1.0.3-9.1.2.i586
+libpgf6-6.12.24-5.1.3.i586
+fonts-config-20080121-82.2.1.noarch
+yast2-branding-openSUSE-3.0.0-2.1.2.noarch
+dosfstools-3.0.22-2.1.2.i586
+gtk2-immodule-vietnamese-2.24.22-2.1.i586
+wireless-tools-30.pre9-32.1.2.i586
+libsecret-1-0-0.16-2.1.3.i586
+python-pycurl-7.19.0-14.1.2.i586
+libxine2-1.2.3-3.1.3.i586
+insserv-compat-0.1-8.1.2.i586
+mtools-4.0.18-3.1.4.i586
+libwmf-0_2-7-0.2.8.4-234.1.3.i586
+glib-networking-2.38.1-1.1.i586
+libkface2-3.5.0-4.1.i586
+libpci3-3.2.0-2.1.2.i586
+keyutils-1.5.5-6.1.3.i586
+notification-daemon-0.7.6-4.1.3.i586
+libksane0-4.11.2-1.1.i586
+smp_utils-0.97-2.1.2.i586
+hicolor-icon-theme-branding-openSUSE-13.1-2.1.2.noarch
+patterns-openSUSE-kde4_office-13.1-13.6.1.i586
+python-notify-0.1.1-28.1.3.i586
+kaffeine-1.2.2-25.1.2.i586
+xtables-plugins-1.4.19.1-2.1.2.i586
+apparmor-parser-2.8.2-4.5.1.i586
+pax-3.4-155.1.2.i586
+procps-3.3.8-5.1.2.i586
+python-kde4-khtml-4.11.2-1.1.i586
+libjpeg-turbo-1.2.1-24.1.3.i586
+libktorrent5-1.3.1-4.1.1.i586
+perl-File-Listing-6.04-6.1.2.noarch
+psutils-p17-1021.1.2.i586
+typelib-1_0-Notify-0_7-0.7.6-2.1.3.i586
+libreoffice-math-4.1.2.3-1.1.i586
+libhogweed2-2.7.1-2.1.2.i586
+libkdegames6-4.11.2-1.1.i586
+xrandr-1.4.1-2.2.1.i586
+sharutils-4.11.1-13.1.2.i586
+libsamba-hostconfig0-4.1.0-3.5.1.i586
+yast2-bootloader-3.0.3-2.1.3.i586
+libasm1-0.155-6.1.20.i586
+libnepomukwidgets4-4.11.2-1.1.i586
+yast2-xml-3.0.0-2.1.2.i586
+terminfo-5.9-33.1.2.i586
+dhcp-4.2.5.P1-0.6.2.1.i586
+patterns-openSUSE-kde4_yast-13.1-13.6.1.i586
+libdw1-0.155-6.1.20.i586
+kdepimlibs4-4.11.2-1.1.i586
+acpica-20130823-6.2.i586
+yast2-vm-3.0.2-2.1.4.i586
+lirc-0.9.0-8.1.2.i586
+libreoffice-filters-optional-4.1.2.3-1.1.i586
+libSM6-1.2.2-2.1.2.i586
+kwrite-4.11.2-1.1.i586
+time-1.7-3.1.2.i586
+bundle-lang-common-en-13.1-2.2.7.noarch
+android-tools-4.2.2_r1-2.1.2.i586
+patterns-openSUSE-x11_opt-13.1-13.6.1.i586
+libssh4-0.5.5-2.1.2.i586
+kruler-4.11.2-1.1.i586
+intlfonts-1.2.1-10.1.2.noarch
+kpartx-0.4.9-11.1.2.i586
+patterns-openSUSE-non_oss-13.1-13.6.1.i586
+libldb1-1.1.16-3.1.2.i586
+coreutils-8.21-7.1.3.i586
+at-spi2-atk-common-2.10.0-1.1.i586
+libreoffice-icon-theme-hicontrast-4.1.2.3-1.1.noarch
+yast2-sudo-3.0.0-2.1.4.noarch
+parted-2.4-34.2.2.i586
+kio_kamera-4.11.2-1.1.i586
+libgmodule-2_0-0-2.38.1-1.1.i586
+perl-XML-LibXML-2.0019-2.1.3.i586
+file-magic-5.14-4.1.2.i586
+man-pages-posix-2003a-29.1.4.noarch
+libgstriff-1_0-0-1.0.10-2.1.3.i586
+Mesa-libGL1-9.2.2-61.6.1.i586
+kdenetwork4-filesharing-4.11.2-1.1.i586
+libarchive13-3.1.2-3.1.3.i586
+sg3_utils-1.36-3.1.2.i586
+libicu51_2-data-51.2-6.1.2.noarch
+plymouth-branding-openSUSE-13.1-10.4.13.noarch
+gnome-online-accounts-3.10.1-1.1.i586
+media-player-info-21-2.2.1.noarch
+kcharselect-4.11.2-1.1.i586
+libwebrtc_audio_processing0-0.1-9.1.2.i586
+vim-7.4.052-1.1.i586
+susegreeter-branding-openSUSE-13.1-10.4.13.noarch
+xorg-x11-fonts-core-7.6-27.1.2.noarch
+sshfs-2.4-7.1.3.i586
+bluez-5.8-3.2.1.i586
+kio_audiocd-4.11.2-1.1.i586
+libgps20-3.5-7.1.3.i586
+ruby20-2.0.0.p247-3.2.1.i586
+dmz-icon-theme-cursors-11.2.0-14.1.2.noarch
+yast2-proxy-3.0.0-2.1.4.noarch
+xf86-video-vesa-2.3.3-2.1.2.i586
+kde-gtk-config-lang-2.2.1-2.1.3.noarch
+libIex-2_0-10-2.0.1-2.1.2.i586
+pciutils-ids-2013.10.06-1.1.noarch
+sessreg-1.0.8-2.1.2.i586
+bootcycle-0.3-245.1.2.i586
+xf86-input-keyboard-1.7.0-2.1.2.i586
+NetworkManager-vpnc-0.9.8.6-1.3.i586
+libxcb-sync0-1.9.1-3.1.2.i586
+lsscsi-0.27-2.1.2.i586
+gettext-runtime-0.18.3.1-1.1.i586
+libusbmuxd2-1.0.8-8.1.2.i586
+libxcb-damage0-1.9.1-3.1.2.i586
+libgnutls28-3.2.4-2.2.1.i586
+libwayland-egl1-9.2.2-61.6.1.i586
+gstreamer-1.0.10-2.1.4.i586
+libupower-glib1-0.9.21-2.1.3.i586
+kdebase4-workspace-plasma-calendar-4.11.2-4.1.i586
+libgnome-keyring0-3.10.1-1.1.i586
+suse-module-tools-12.3-6.1.2.noarch
+libtidy-0_99-0-1.0.20100204cvs-17.1.2.i586
+gdk-pixbuf-loader-libopenraw-0.0.9-9.1.3.i586
+libatk-bridge-2_0-0-2.10.0-1.1.i586
+PackageKit-browser-plugin-0.8.11-2.3.1.i586
+libstrigi0-0.7.8-4.1.3.i586
+iputils-s20101006-23.1.2.i586
+libsensors4-3.3.4-3.1.2.i586
+samba-client-4.1.0-3.5.1.i586
+pinentry-qt4-0.8.3-2.1.3.i586
+ft2demos-2.5.0-2.1.2.i586
+libedit0-3.0.snap20110802-7.1.2.i586
+gfxboot-branding-openSUSE-13.1-10.4.13.noarch
+libpython2_7-1_0-2.7.5-8.3.1.i586
+libvisio-0_0-0-0.0.30-3.1.3.i586
+libdbusmenu-qt2-0.9.2-7.1.3.i586
+gtk3-theming-engine-adwaita-3.10.0-1.1.i586
+libIlmThread-2_0-10-2.0.1-2.1.2.i586
+susehelp-2009.10.06-19.1.2.noarch
+libpcre1-8.33-2.1.2.i586
+libwx_baseu_net-2_8-0-stl-2.8.12-21.1.4.i586
+libimobiledevice4-1.1.5-3.1.2.i586
+libFLAC++6-1.3.0-2.1.2.i586
+libXrender1-0.9.8-2.1.2.i586
+kmod-14-2.1.2.i586
+libnl1-1.1.4-2.1.4.i586
+metamail-2.7.19-1264.1.2.i586
+gsettings-backend-dconf-0.18.0-1.1.i586
+libavutil52-2.0-2.1.2.i586
+plymouth-plugin-script-0.8.8_git201309032142-2.2.1.i586
+libmusicbrainz5-0-5.0.1-5.1.2.i586
+liblua5_1-5.1.5-5.2.1.i586
+ispell-3.3.02-106.1.2.i586
+plymouth-scripts-0.8.8_git201309032142-2.2.1.i586
+libchm0-0.40-19.1.2.i586
+dialog-1.2-3.1.2.i586
+cups-client-1.5.4-12.1.3.i586
+libjpeg8-8.0.2-24.1.3.i586
+yast2-country-3.0.2-1.1.i586
+xdm-1.1.10-24.2.1.i586
+libebl1-0.155-6.1.20.i586
+perl-XML-Parser-2.41-20.1.2.i586
+command-not-found-0.1.0-54.1.2.noarch
+libgraphite2-3-1.2.0-6.1.2.i586
+grub2-2.00-39.1.3.i586
+gtk3-tools-3.10.2-1.1.i586
+libgomp1-4.8.1_20130909-3.2.1.i586
+perl-Net-SSLeay-1.55-2.2.1.i586
+libkscreen1-1.0.1-3.1.1.i586
+libfreebl3-3.15.2-1.1.i586
+libmediastreamer_voip3-2.9.0-3.1.1.i586
+pulseaudio-module-bluetooth-4.0.git.270.g9490a-1.1.i586
+libhyphen0-2.8.6-4.1.2.i586
+perl-HTML-Tagset-3.20-70.1.2.noarch
+apparmor-utils-2.8.2-4.5.1.noarch
+libelf0-0.8.13-17.1.2.i586
+gstreamer-0_10-plugins-qt-0.10.3-1.1.i586
+liblensfun0-0.2.7-3.1.2.i586
+libIlmImf-Imf_2_0-20-2.0.1-2.1.2.i586
+libibus-1_0-5-1.5.4-1.1.i586
+libcdda_interface0-3.10.2-23.1.2.i586
+libwx_gtk2u_gl-2_8-0-stl-2.8.12-21.1.4.i586
+cups-1.5.4-12.1.3.i586
+libmpcdec5-1.2.6-30.1.2.i586
+libXxf86vm1-1.1.3-2.1.2.i586
+gcr-data-3.10.1-1.1.i586
+libattr1-2.4.47-2.1.2.i586
+hplip-hpijs-3.13.10-1.1.i586
+libnsssharedhelper0-1.0.10-6.1.2.i586
+libXinerama1-1.1.3-2.1.2.i586
+liberation-fonts-1.07.2-4.1.2.noarch
+libX11-xcb1-1.6.2-2.1.2.i586
+icedtea-web-1.4.1-1.2.i586
+libglade-2_0-0-2.6.4-21.1.3.i586
+libqt4-x11-4.8.5-5.6.1.i586
+yast2-core-3.0.3-1.1.i586
+cantarell-fonts-0.0.15-1.1.noarch
+adjtimex-1.29-2.1.2.i586
+vcdimager-0.7.24cvs-10.1.2.i586
+cups-pk-helper-0.2.5-2.1.3.i586
+libstartup-notification-1-0-0.12-11.1.2.i586
+openssl-1.0.1e-11.2.1.i586
+gpg2-2.0.22-1.1.i586
+mozilla-nss-certs-3.15.2-1.1.i586
+python-kde4-4.11.2-1.1.i586
+gcr-prompter-3.10.1-1.1.i586
+libxcb-xv0-1.9.1-3.1.2.i586
+libblas3-3.4.2-6.1.2.i586
+systemd-208-6.1.i586
+libfontenc1-1.1.2-2.1.2.i586
+patterns-openSUSE-base-13.1-13.6.1.i586
+libcanberra-gtk2-module-0.30-6.1.3.i586
+patterns-openSUSE-fonts-13.1-13.6.1.i586
+hwinfo-20.2-1.1.i586
+icedax-1.1.11-16.1.3.i586
+libglib-2_0-0-2.38.1-1.1.i586
+yast2-control-center-3.0.0-2.1.3.i586
+udev-configure-printer-1.4.2-2.1.3.i586
+patterns-openSUSE-multimedia-13.1-13.6.1.i586
+cpp-4.8-2.1.2.i586
+typelib-1_0-GnomeKeyring-1_0-3.10.1-1.1.i586
+libxml2-2-2.9.1-2.1.2.i586
+python-kde4-phonon-4.11.2-1.1.i586
+libksuseinstall1-4.11.2-3.1.i586
+perl-Parse-RecDescent-1.967009-6.1.2.i586
+perl-WWW-RobotRules-6.02-6.1.2.noarch
+libsamba-util0-4.1.0-3.5.1.i586
+libksba8-1.3.0-5.1.2.i586
+libreoffice-help-en-US-4.1.2.3-1.1.noarch
+libkipi11-4.11.2-1.1.i586
+soprano-2.9.4-4.1.i586
+libndr0-4.1.0-3.5.1.i586
+libwayland-server0-1.2.1-1.1.i586
+libreoffice-base-4.1.2.3-1.1.i586
+snmp-mibs-5.7.2-9.1.2.i586
+libao4-1.1.0-17.1.2.i586
+libtevent-util0-4.1.0-3.5.1.i586
+libdrm_intel1-2.4.46-3.2.2.i586
+skanlite-1.0-2.1.4.i586
+libkgapi2-2-2.0.1-3.1.1.i586
+xf86-video-cirrus-1.5.2-6.1.2.i586
+python-keyring-3.0.5-1.1.noarch
+dhcp-client-4.2.5.P1-0.6.2.1.i586
+libauparse0-2.2.3-4.1.2.i586
+libreoffice-mailmerge-4.1.2.3-1.1.i586
+plasmoid-folderview-4.11.2-1.1.i586
+zsh-5.0.2-8.1.4.i586
+libenchant1-1.6.0-20.1.3.i586
+libgudev-1_0-0-208-6.1.i586
+libsoftokn3-3.15.2-1.1.i586
+yast2-restore-3.0.0-2.1.4.noarch
+ksshaskpass-0.5.3-15.1.1.i586
+desktop-translations-13.1-2.8.1.noarch
+libtasn1-6-3.3-3.1.2.i586
+yast2-pkg-bindings-3.0.3-8.1.i586
+libevent-2_0-5-2.0.21-2.1.2.i586
+yast2-users-3.0.1-2.1.4.i586
+konsole-4.11.2-1.1.i586
+konversation-lang-1.5~rc1-3.1.3.noarch
+cpio-2.11-25.1.2.i586
+libply-splash-core2-0.8.8_git201309032142-2.2.1.i586
+gpg-pubkey-3dbdc284-4be1884d
+libdirectfb-1_6-0-1.6.3-4.1.3.i586
+libXft2-2.3.1-7.1.2.i586
+libpyglib-gi-2_0-python2-0-3.10.1-1.1.i586
+perl-XML-SAX-Expat-0.50-2.1.2.noarch
+perl-HTTP-Cookies-6.01-6.1.2.noarch
+libepub0-0.2.2-25.1.i586
+hicolor-icon-theme-0.12-21.1.2.noarch
+python-gnomekeyring-2.32.0-20.1.4.i586
+libv4l-0.8.9-5.1.3.i586
+libX11-data-1.6.2-2.1.2.noarch
+zypper-log-1.9.3-1.1.noarch
+libmpc3-1.0-5.1.2.i586
+lirc-remotes-0.9.0-8.1.2.i586
+wget-1.14-3.1.3.i586
+libtiff5-4.0.3-8.1.2.i586
+shared-desktop-ontologies-0.11.0-2.1.2.noarch
+timezone-2013h-1.1.i586
+libmozjs-17_0-17.0-4.1.2.i586
+unzip-doc-6.00-24.1.2.i586
+shared-mime-info-1.1-2.1.3.i586
+libfam0-2.7.0-168.1.2.i586
+psmisc-22.20-5.1.2.i586
+libboost_system1_53_0-1.53.0-4.1.2.i586
+vlan-1.9-136.1.2.i586
+perl-Bootloader-0.711-1.1.i586
+libHalf10-2.0.1-2.1.2.i586
+sysfsutils-2.1.0-150.1.2.i586
+klogd-1.4.1-772.1.2.i586
+libxcb-xtest0-1.9.1-3.1.2.i586
+pkg-config-0.28-4.1.2.i586
+gpm-1.20.7-3.1.2.i586
+libxcb-shm0-1.9.1-3.1.2.i586
+master-boot-code-1.22-14.1.2.i586
+xdg-utils-20121008-2.2.1.noarch
+libxcb-keysyms1-0.3.9-7.1.2.i586
+libxtables10-1.4.19.1-2.1.2.i586
+p11-kit-tools-0.20.1-2.1.2.i586
+libxcb-composite0-1.9.1-3.1.2.i586
+libwebp4-0.3.1-2.1.2.i586
+libicu51_2-51.2-6.1.2.i586
+libharfbuzz0-0.9.21-1.3.i586
+libuuid1-2.23.2-3.1.i586
+ruby-2.0-5.1.2.i586
+libatk-1_0-0-2.10.0-1.1.i586
+libtidyp-1_04-0-1.04-12.1.2.i586
+libsolv-tools-0.4.0-2.2.i586
+libv4l1-0-0.8.9-5.1.3.i586
+libspeexdsp1-1.1.999_1.2rc1-21.1.2.i586
+MozillaFirefox-branding-openSUSE-21-2.1.2.i586
+libutempter0-1.1.6-3.1.2.i586
+libqt4-sql-4.8.5-5.6.1.i586
+libsepol1-2.1.9-5.1.23.i586
+clamz-0.5-8.1.3.i586
+libneon27-0.30.0-2.1.2.i586
+libakonadiprotocolinternals1-1.10.3-4.1.i586
+libreiserfs-0_3-0-0.3.0.5-164.1.2.i586
+finger-1.3-162.1.2.i586
+man-2.6.3-9.1.3.i586
+libdialog11-1.2-3.1.2.i586
+libqrencode3-3.4.2-2.1.2.i586
+glibc-locale-2.18-4.4.1.i586
+perl-LWP-Protocol-https-6.04-2.1.2.noarch
+perl-5.18.1-2.1.11.i586
+libpopt0-1.16-24.1.1.i586
+gtk2-theming-engine-adwaita-3.10.0-1.1.i586
+libpkcs11-helper1-1.09-5.1.2.i586
+libisoburn1-1.3.2-2.1.4.i586
+libpcsclite1-1.8.8-4.1.2.i586
+ispell-american-3.3.02-106.1.2.i586
+gptfdisk-0.8.7-2.1.2.i586
+libxkbfile1-1.0.8-7.1.2.i586
+libopenjpeg1-1.5.1-5.1.3.i586
+lcms2-2.5-2.1.2.i586
+module-init-tools-3.15-11.1.2.i586
+libXpm4-3.5.11-2.1.2.i586
+libnl3-200-3.2.22-2.1.2.i586
+libQtGLib-2_0-0-0.10.3-1.1.i586
+ppp-2.4.5-20.1.2.i586
+libXdamage1-1.1.4-6.1.2.i586
+libmtdev1-1.1.0-7.1.2.i586
+libavahi-glib1-0.6.31-16.3.2.i586
+alsa-utils-1.0.27.2-4.2.1.i586
+libgstreamer-0_10-0-0.10.36-10.1.3.i586
+liblzma5-5.0.5-2.1.20.i586
+libboost_date_time1_53_0-1.53.0-4.1.2.i586
+cyrus-sasl-gssapi-2.1.25-28.1.2.i586
+libqt4-sql-mysql-4.8.5-5.6.1.i586
+liblcms2-2-2.5-2.1.2.i586
+libcdio14-0.90-3.1.2.i586
+libfreerdp-1_0-plugins-1.0.2-3.1.1.i586
+hunspell-1.3.2-15.1.2.i586
+libjson0-0.10-3.1.2.i586
+ca-certificates-mozilla-1.93-3.1.2.noarch
+perl-gettext-1.05-162.1.2.i586
+libiptc0-1.4.19.1-2.1.2.i586
+yast2-ruby-bindings-3.0.4-1.1.i586
+perl-XML-NamespaceSupport-1.11-20.1.2.i586
+libgssglue1-0.4-2.1.2.i586
+avahi-autoipd-0.6.31-16.3.1.i586
+perl-Tie-IxHash-1.23-2.1.2.noarch
+libgif6-5.0.5-2.1.2.i586
+libproxy1-config-kde4-0.4.11-9.1.1.i586
+perl-Net-LibIDN-0.12-13.1.2.i586
+libfuse2-2.9.3-2.1.2.i586
+sudo-1.8.7-5.1.3.i586
+perl-LWP-MediaTypes-6.02-6.1.2.noarch
+libexpat1-2.1.0-12.1.2.i586
+dirmngr-1.1.0-18.1.2.i586
+perl-Encode-Locale-1.03-6.1.2.noarch
+libelf1-0.155-6.1.20.i586
+perl-Clone-0.34-2.1.2.i586
+libdbus-1-3-1.7.4-4.4.1.i586
+xkbcomp-1.2.4-8.1.2.i586
+libgck-1-0-3.10.1-1.1.i586
+xauth-1.0.7-6.1.2.i586
+libbz2-1-1.0.6-26.1.21.i586
+girepository-1_0-1.38.0-1.1.i586
+libXxf86misc1-1.0.3-9.1.2.i586
+libaudit1-2.2.3-4.1.2.i586
+lockdev-1.0.3_git201003141408-25.1.2.i586
+libXss1-1.2.2-7.1.2.i586
+libapparmor1-2.8.2-4.5.1.i586
+netcfg-11.5-18.1.2.noarch
+libXi6-1.7.2-2.1.2.i586
+libXau6-1.0.8-2.2.1.i586
+gnu-unifont-bitmap-fonts-20080123-82.1.2.noarch
+libpulse-mainloop-glib0-4.0.git.270.g9490a-1.1.i586
+fillup-1.42-269.1.2.i586
+dejavu-fonts-2.34-2.1.2.noarch
+xz-5.0.5-2.1.20.i586
+bridge-utils-1.5-16.1.2.i586
+libndr-standard0-4.1.0-3.5.1.i586
+unzip-6.00-24.1.2.i586
+libtdb1-1.2.12-4.1.2.i586
+curl-7.32.0-2.1.2.i586
+ntfs-3g-2013.1.13-2.1.2.i586
+checkmedia-3.0-6.1.4.i586
+libgck-modules-gnome-keyring-3.10.1-1.1.i586
+lsb-release-2.0-20.2.1.noarch
+libzip2-0.11.1-3.1.2.i586
+libgphoto2-6-2.5.2.1-2.2.1.i586
+libaspell15-0.60.6.1-14.1.4.i586
+libmagic1-5.14-4.1.2.i586
+iproute2-3.9.0-3.1.2.i586
+libpcap1-1.3.0-4.1.2.i586
+samba-libs-4.1.0-3.5.1.i586
+hunspell-tools-1.3.2-15.1.2.i586
+libselinux1-2.1.13-4.1.21.i586
+libqca2-2.0.3-12.2.1.i586
+fontconfig-2.11.0-1.1.i586
+libtheora0-1.1.1-25.1.2.i586
+typelib-1_0-PackageKitGlib-1_0-0.8.11-2.3.1.i586
+bzip2-1.0.6-26.1.21.i586
+libnetfilter_conntrack3-1.0.4-2.1.2.i586
+python-gobject-3.10.1-1.1.i586
+perl-XML-XPath-1.13-98.1.2.i586
+libv4l2-0-0.8.9-5.1.3.i586
+perl-IO-Socket-SSL-1.953-2.1.2.noarch
+libtirpc1-0.2.3-1.1.i586
+libtranslate0-0.99-7.1.4.i586
+perl-HTTP-Message-6.06-2.1.2.noarch
+libmpfr4-3.1.2-3.1.2.i586
+xsetroot-1.1.1-2.1.2.i586
+libgfortran3-4.8.1_20130909-3.2.1.i586
+librcc0-0.2.10-7.1.2.i586
+freerdp-1.0.2-3.1.1.i586
+expat-2.1.0-12.1.2.i586
+sysconfig-network-0.81.5-3.1.i586
+soprano-backend-redland-2.9.4-4.1.i586
+libdrm_nouveau2-2.4.46-3.2.2.i586
+libsamba-credentials0-4.1.0-3.5.1.i586
+ksplash-qml-branding-openSUSE-13.1-10.4.13.noarch
+libcdda_paranoia0-3.10.2-23.1.2.i586
+mkinitrd-2.8.1-2.1.i586
+pytalloc-2.0.8-7.1.2.i586
+libavahi-client3-0.6.31-16.3.1.i586
+libndr-nbt0-4.1.0-3.5.1.i586
+cracklib-2.9.0-2.1.2.i586
+alsa-plugins-1.0.27-3.1.1.i586
+which-2.20-2.1.2.i586
+Mesa-libGLESv2-2-9.2.2-61.6.1.i586
+libatasmart4-0.19-4.1.2.i586
+sed-4.2.2-2.1.2.i586
+virtuoso-drivers-6.1.6-7.1.2.i586
+zypper-1.9.3-1.1.i586
+gzip-1.6-4.2.2.i586
+libmysqlclient18-5.5.33-2.2.i586
+systemd-presets-branding-openSUSE-0.3.0-3.1.2.noarch
+findutils-4.5.12-1.1.i586
+file-5.14-4.1.2.i586
+patterns-openSUSE-kde4_basis-13.1-13.6.1.i586
+libreoffice-hyphen-20110203.1-8.1.2.noarch
+kmix-4.11.2-1.1.i586
+gstreamer-plugins-base-1.0.10-2.1.3.i586
+libreoffice-icon-theme-oxygen-4.1.2.3-1.1.noarch
+kio_mtp-0.75-2.1.1.i586
+dmraid-1.0.0.rc16-25.1.2.i586
+yast2-inetd-3.0.0-2.1.4.noarch
+libreoffice-templates-presentation-layouts-3.3-9.1.4.noarch
+keditbookmarks-4.11.2-1.1.i586
+yast2-apparmor-3.0.1-2.1.4.noarch
+patterns-openSUSE-kde4-13.1-13.6.1.i586
+manufacturer-PPDs-10.2-269.1.2.noarch
+kdepasswd-4.11.2-1.1.i586
+xinetd-2.3.15-2.1.2.i586
+patterns-openSUSE-yast2_basis-13.1-13.6.1.i586
+oxygen-icon-theme-4.11.2-1.1.noarch
+openvpn-2.3.2-3.1.1.i586
+gimp-2.8.6-3.2.2.i586
+providers-2006.11.21-123.1.2.noarch
+kcolorchooser-4.11.2-1.1.i586
+mariadb-5.5.33-2.2.i586
+gimp-help-browser-2.8.6-3.2.2.i586
+timezone-java-2013h-1.1.noarch
+gwenview-4.11.2-1.1.i586
+dconf-0.18.0-1.1.i586
+yast2-firewall-3.0.1-2.1.4.noarch
+NetworkManager-kde4-libs-0.9.0.9-2.1.2.i586
+avahi-0.6.31-16.3.1.i586
+yast2-ntp-client-3.0.1-7.1.noarch
+kgpg-4.11.2-1.1.i586
+libsmbclient-raw0-4.1.0-3.5.1.i586
+yast2-qt-branding-openSUSE-13.1-10.4.13.noarch
+xf86-video-modesetting-0.8.0-3.2.1.i586
+yast2-trans-en_US-3.0.0-4.8.1.noarch
+NetworkManager-pptp-kde4-0.9.0.9-2.1.2.i586
+xf86-input-vmmouse-13.0.0-5.1.2.i586
+at-3.1.13-5.1.2.i586
+kdebase4-workspace-liboxygenstyle-4.11.2-4.1.i586
+xf86-input-joystick-1.6.2-4.1.2.i586
+libiso9660-8-0.90-3.1.2.i586
+korganizer-4.11.2-1.1.i586
+libGLU1-9.0.0-7.1.2.i586
+libmusicbrainz3-6-3.0.3-16.1.3.i586
+kwin-4.11.2-4.1.i586
+nfs-client-1.2.8-4.2.1.i586
+libMagickCore-6_Q16-1-6.8.6.9-2.5.1.i586
+plasma-addons-4.11.2-1.1.i586
+libdconf1-0.18.0-1.1.i586
+gvfs-1.18.2-2.1.i586
+kdm-4.11.2-4.1.i586
+yast2-ldap-3.0.1-2.1.3.i586
+kdeartwork4-screensaver-4.11.2-2.1.i586
+dbus-1-python-1.2.0-2.1.3.i586
+libmediastreamer_base3-2.9.0-3.1.1.i586
+libdcerpc0-4.1.0-3.5.1.i586
+libQtWebKit4-4.8.5+2.3.3-2.3.1.i586
+xorg-x11-driver-video-7.6_1-11.1.2.i586
+libquicktime0-1.2.4-7.1.2.i586
+libqt4-qt3support-4.8.5-5.6.1.i586
+libucil2-0.9.10-11.1.3.i586
+libphonon4-4.6.80~git20130930-1.1.i586
+libodfgen-0_0-0-0.0.2-2.1.2.i586
+akonadi-runtime-1.10.3-4.1.i586
+wxWidgets-lang-2.8.12-21.1.4.noarch
+pango-tools-1.36.0-1.1.i586
+libstorage4-2.24.8-1.1.i586
+perl-X500-DN-0.29-105.1.2.i586
+libpolkit-qt-1-1-0.103.0-2.1.3.i586
+ghostscript-9.07-3.1.3.i586
+libnm-glib4-0.9.8.8-1.1.i586
+gtk2-metatheme-adwaita-3.10.0-1.1.noarch
+logrotate-3.8.5-4.1.2.i586
+xorg-x11-fonts-7.6-27.1.2.noarch
+appmenu-qt-0.2.6-6.1.2.i586
+yast2-kerberos-client-3.0.0-2.1.4.noarch
+libdc1394-22-2.2.1-2.1.1.i586
+grub2-i386-pc-2.00-39.1.3.i586
+libao-plugin4-esd-1.1.0-17.1.2.i586
+libdvdread4-4.2.0-8.1.2.i586
+wpa_supplicant-2.0-3.1.2.i586
+libvcdinfo0-0.7.24cvs-10.1.2.i586
+libgeoclue0-0.12.99-5.1.4.i586
+plymouth-plugin-label-0.8.8_git201309032142-2.2.1.i586
+kscd-4.11.2-1.1.i586
+libgoa-1_0-0-3.10.1-1.1.i586
+gtk2-tools-2.24.22-2.1.i586
+gvfs-fuse-1.18.2-2.1.i586
+libgstreamer-1_0-0-1.0.10-2.1.4.i586
+pulseaudio-module-zeroconf-4.0.git.270.g9490a-1.1.i586
+libyui-qt-pkg5-2.42.13-2.1.5.i586
+libhdf5-8-1.8.11-3.2.2.i586
+alsa-plugins-pulse-1.0.27-3.1.1.i586
+libmarblewidget16-4.11.2-1.1.i586
+libjavascriptcoregtk-1_0-0-2.2.1-1.1.i586
+rsyslog-7.4.4-2.1.2.i586
+samba-4.1.0-3.5.1.i586
+libldapcpp1-0.3.1-3.1.2.i586
+libopencv2_4-2.4.6.1-3.1.3.i586
+liblqr-1-0-0.4.2-2.1.3.i586
+pulseaudio-module-x11-4.0.git.270.g9490a-1.1.i586
+libwx_gtk2u_aui-2_8-0-stl-2.8.12-21.1.4.i586
+libmodplug1-0.8.8.4-11.2.1.i586
+libsmbclient0-4.1.0-3.5.1.i586
+kdebase4-workspace-4.11.2-4.1.i586
+libmygpo-qt1-1.0.7-2.1.2.i586
+OpenPrintingPPDs-ghostscript-4.0.0-21.1.2.noarch
+libnetpbm11-10.63.1-2.2.1.i586
+gtk3-immodule-vietnamese-3.10.2-1.1.i586
+gtk3-branding-openSUSE-13.1-2.1.5.noarch
+libotr2-3.2.1-5.1.2.i586
+graphviz-gnome-2.28.0-19.1.3.i586
+libqt4-sql-sqlite-4.8.5-5.6.1.i586
+libcanberra-gtk0-0.30-6.1.3.i586
+libmjpegutils-2_0-0-2.0.0-11.1.3.i586
+librest0-0.7.90-6.1.4.i586
+gtk2-immodule-inuktitut-2.24.22-2.1.i586
+gvfs-backends-1.18.2-2.1.i586
+libspandsp2-0.0.6pre21-2.1.2.i586
+python-smbc-1.0.13-9.1.2.i586
+libgsttag-1_0-0-1.0.10-2.1.3.i586
+libtelepathy-glib0-0.22.0-1.1.i586
+marble-4.11.2-1.1.i586
+libwx_baseu-2_8-0-stl-2.8.12-21.1.4.i586
+libreoffice-writer-4.1.2.3-1.1.i586
+mpt-status-1.2.0-190.1.2.i586
+kdebase4-workspace-branding-openSUSE-13.1-6.2.14.i586
+patterns-openSUSE-enhanced_base_opt-13.1-13.6.1.i586
+hplip-sane-3.13.10-1.1.i586
+patterns-openSUSE-kde4_internet-13.1-13.6.1.i586
+gnome-keyring-3.10.1-1.1.i586
+mjpegtools-2.0.0-11.1.3.i586
+patterns-openSUSE-kde4_utilities_opt-13.1-13.6.1.i586
+system-config-printer-common-1.4.2-2.1.3.noarch
+python-kdebase4-4.11.2-4.1.i586
+patterns-openSUSE-office_opt-13.1-13.6.1.i586
+gnome-keyring-pam-3.10.1-1.1.i586
+python-kde4-nepomuk-4.11.2-1.1.i586
+perl-Digest-SHA1-2.13-16.1.4.i586
+system-config-printer-applet-1.4.2-2.1.3.noarch
+marble-data-4.11.2-1.1.noarch
+procinfo-18-218.1.2.i586
+libkscreen-1.0.1-3.1.1.i586
+libreoffice-writer-extensions-4.1.2.3-1.1.i586
+python-sip-4.15.1-3.1.2.i586
+libkexiv2-11-4.11.2-1.1.i586
+libreoffice-impress-4.1.2.3-1.1.i586
+screen-4.0.4-15.1.2.i586
+hugin-2012.0.0-8.1.4.i586
+smartmontools-6.2-2.1.2.i586
+kdelibs4-4.11.2-3.1.i586
+patterns-openSUSE-apparmor_opt-13.1-13.6.1.i586
+tcsh-6.18.01-2.2.1.i586
+libkactivities6-4.11.2-1.1.i586
+kipi-plugins-acquireimage-3.5.0-4.1.i586
+xdmbgrd-0.6-213.1.3.i586
+libkfbapi1-1.0-2.1.1.i586
+marble-doc-4.11.2-1.1.noarch
+yast2-scanner-3.0.0-2.1.4.i586
+kdebase4-runtime-4.11.2-1.1.i586
+libreoffice-impress-extensions-4.1.2.3-1.1.i586
+zip-3.0-13.1.2.i586
+libkcompactdisc4-4.11.2-1.1.i586
+libreoffice-base-extensions-4.1.2.3-1.1.i586
+apparmor-docs-2.8.2-4.5.1.noarch
+kwalletmanager-4.11.2-1.1.i586
+yast2-update-3.0.4-2.1.4.i586
+bundle-lang-kde-en-13.1-2.2.4.noarch
+ksnapshot-4.11.2-1.1.i586
+skanlite-lang-1.0-2.1.4.noarch
+ghostscript-fonts-other-9.06-4.1.2.noarch
+kreversi-4.11.2-1.1.i586
+autoyast2-installation-3.0.8-5.1.noarch
+kernel-firmware-20130714git-2.1.1.noarch
+kompare-4.11.2-1.1.i586
+libdcerpc-binding0-4.1.0-3.5.1.i586
+gpg-pubkey-307e3d54-4be01a65
+libsemanage1-2.1.10-3.1.20.i586
+libpoppler43-0.24.3-1.1.i586
+branding-openSUSE-13.1-10.4.13.noarch
+libgthread-2_0-0-2.38.1-1.1.i586
+perl-Net-DBus-1.0.0-7.1.2.i586
+cracklib-dict-full-2.8.12-62.1.2.i586
+libvorbisfile3-1.3.3-6.1.4.i586
+perl-HTTP-Daemon-6.01-6.1.2.noarch
+gtk2-data-2.24.22-2.1.noarch
+yast2-perl-bindings-3.0.1-3.1.i586
+kdegames4-carddecks-default-4.11.2-1.1.noarch
+libxslt1-1.1.28-5.1.2.i586
+lsof-4.84-19.1.2.i586
+libnl-config-3.2.22-2.1.2.noarch
+libcloog-isl4-0.18.0-5.1.2.i586
+wireless-regdb-2013.02.13-2.1.2.noarch
+release-notes-openSUSE-13.1.4-1.1.noarch
+libqt4-4.8.5-5.6.1.i586
+tnftp-20100108-2.1.2.i586
+translation-update-12.3-2.1.2.noarch
+libmodman1-2.0.1-14.1.2.i586
+sound-theme-freedesktop-0.8-5.1.2.noarch
+glibc-2.18-4.4.1.i686
+libexiv2-12-0.23-9.1.3.i586
+python-numpy-1.7.1-4.1.4.i586
+yp-tools-2.14-2.1.2.i586
+libboost_program_options1_53_0-1.53.0-4.1.2.i586
+perl-Term-ReadKey-2.30-10.1.4.i586
+traceroute-2.0.19-3.1.2.i586
+krb5-1.11.3-3.1.3.i586
+rgb-1.0.5-4.1.2.i586
+libxcb-xfixes0-1.9.1-3.1.2.i586
+groff-1.22.2-4.1.3.i586
+mozilla-nspr-4.10.1-1.1.i586
+libxcb-shape0-1.9.1-3.1.2.i586
+libqalculate5-0.9.7-15.1.3.i586
+libyaml-0-2-0.1.4-2.1.2.i586
+libxcb-glx0-1.9.1-3.1.2.i586
+p11-kit-0.20.1-2.1.2.i586
+libwrap0-7.6-881.1.2.i586
+libX11-6-1.6.2-2.1.2.i586
+susehelp_en-2009.10.06-19.1.2.noarch
+libvisual-0.4.0-200.1.2.i586
+libXfont1-1.4.6-2.1.2.i586
+libgio-2_0-0-2.38.1-1.1.i586
+libts-1_0-0-1.0-5.1.2.i586
+gstreamer-0_10-0.10.36-10.1.3.i586
+python-satsolver-0.45.0-6.1.2.i586
+libsqlite3-0-3.7.17-2.1.2.i586
+Mesa-9.2.2-61.6.1.i586
+libraptor2-0-2.0.10-2.1.2.i586
+pam-1.1.8-3.1.i586
+libsgutils2-2-1.36-3.1.2.i586
+cdrdao-1.2.3-10.1.1.i586
+libqjson0-0.8.1-5.1.2.i586
+mailx-12.5-14.1.3.i586
+libsamplerate0-0.1.8-10.1.3.i586
+enscript-1.6.4-180.1.2.i586
+w3m-0.5.3-152.1.3.i586
+bind-libs-9.9.3P2-2.1.2.i586
+libquadmath0-4.8.1_20130909-3.2.1.i586
+gd-2.0.36.RC1-78.1.2.i586
+ncurses-utils-5.9-33.1.2.i586
+perl-RPC-XML-0.77-3.1.3.noarch
+libprocps1-3.3.8-5.1.2.i586
+libclucene-core1-2.3.3.4-11.1.2.i586
+vpnc-0.5.3r517-6.1.2.i586
+libpipeline1-1.2.2-6.1.2.i586
+libxcb-image0-0.3.9-7.1.2.i586
+liborc-0_4-0-0.4.17-2.1.2.i586
+libatspi0-2.10.1-1.1.i586
+rubygem-fast_gettext-0.7.1-2.1.2.i586
+libntfs-3g84-2013.1.13-2.1.2.i586
+libXmuu1-1.1.2-2.1.2.i586
+shadow-4.1.5.1-8.1.2.i586
+libnettle4-2.7.1-2.1.2.i586
+libXcomposite1-0.4.4-6.1.2.i586
+libkdecore4-4.11.2-3.1.i586
+liblzo2-2-2.06-12.1.2.i586
+libpulse0-4.0.git.270.g9490a-1.1.i586
+cyrus-sasl-plain-2.1.25-28.1.2.i586
+liblirc_client0-0.9.0-8.1.2.i586
+libpackagekit-qt2-6-0.8.8-2.2.2.i586
+python-cups-1.9.63-2.1.2.i586
+libkate1-0.4.1-19.1.2.i586
+bash-4.2-68.1.5.i586
+perl-apparmor-2.8.2-4.5.1.i586
+libiw30-30.pre9-32.1.2.i586
+perl-XML-XPathEngine-0.14-2.1.2.noarch
+gio-branding-openSUSE-13.1-2.2.3.noarch
+libical1-1.0-3.1.3.i586
+perl-X11-Protocol-0.56-11.1.2.i586
+liblockdev1-1.0.3_git201003141408-25.1.2.i586
+libgmp10-5.1.2-2.1.2.i586
+perl-Text-Wrapper-1.04-2.1.2.noarch
+aaa_base-13.1-16.17.1.i586
+libgc1-7.2d-2.1.2.i586
+perl-Net-HTTP-6.06-2.1.2.noarch
+virtuoso-server-6.1.6-7.1.2.i586
+libffi4-4.8.1_20130909-3.2.1.i586
+perl-IO-HTML-1.00-2.1.2.noarch
+libcurl4-7.32.0-2.1.2.i586
+libenca0-1.14-5.1.2.i586
+perl-Data-Dump-1.22-2.1.2.noarch
+libudisks2-0-2.1.1-2.1.3.i586
+libdmtx0-0.7.4-11.1.2.i586
+foomatic-filters-4.0.12-5.1.1.i586
+libmm-glib0-1.0.0-3.1.3.i586
+libcelt0-2-0.11.1-14.1.2.i586
+setxkbmap-1.3.0-6.1.2.i586
+libgdk_pixbuf-2_0-0-2.30.0-1.1.i586
+libcap-ng0-0.7.3-2.1.2.i586
+libvdpau1-0.6-3.1.3.i586
+gsettings-desktop-schemas-3.10.1-1.1.i586
+libavahi-common3-0.6.31-16.3.1.i586
+libXxf86dga1-1.1.4-2.1.2.i586
+yast2-country-data-3.0.2-1.1.i586
+libasound2-1.0.27.2-3.2.1.i586
+libXrandr2-1.4.2-2.1.2.i586
+ntp-4.2.6p5-15.2.1.i586
+libXdmcp6-1.1.1-7.1.2.i586
+libXfontcache1-1.0.5-9.1.2.i586
+google-droid-fonts-20121204-2.1.2.noarch
+gpart-0.1h-641.1.2.i586
+libao-plugins4-1.1.0-17.1.2.i586
+desktop-file-utils-0.22-2.1.3.i586
+dmidecode-2.12-3.1.2.i586
+xdg-user-dirs-0.15-2.1.3.i586
+soprano-backend-virtuoso-2.9.4-4.1.i586
+mobile-broadband-provider-info-20120614-4.1.2.noarch
+strace-4.8-3.1.2.i586
+libkolabxml0-0.8.4-5.1.3.i586
+info2html-2.0-215.1.2.noarch
+netcat-openbsd-1.89-90.1.2.i586
+libnotify4-0.7.6-2.1.3.i586
+luit-2.0_20130217-3.1.2.i586
+libcrack2-2.9.0-2.1.2.i586
+libgirepository-1_0-1-1.38.0-1.1.i586
+libopenssl1_0_0-1.0.1e-11.2.1.i586
+less-458-2.1.2.i586
+xdg-menu-0.2-213.1.2.noarch
+libusb-0_1-4-0.1.13-27.1.2.i586
+info-4.13a-36.1.2.i586
+update-desktop-files-12.1-21.2.1.noarch
+libply2-0.8.8_git201309032142-2.2.1.i586
+htdig-3.2.0b6-236.1.2.i586
+openSUSE-build-key-1.0-24.1.2.noarch
+libvorbis0-1.3.3-6.1.4.i586
+elfutils-0.155-6.1.20.i586
+libsoup-2_4-1-2.44.0-1.1.i586
+libguess1-1.1-2.1.2.i586
+audit-2.2.3-4.1.2.i586
+typelib-1_0-Atk-1_0-2.10.0-1.1.i586
+liboggkate1-0.4.1-19.1.2.i586
+perl-XML-Twig-3.44-2.1.2.noarch
+icewm-1.3.7-26.1.4.i586
+libjasper1-1.900.1-160.1.2.i586
+perl-PlRPC-0.2020-22.1.2.i586
+libqoauth1-1.0.1-18.1.2.i586
+libassuan0-2.1.1-2.1.4.i586
+perl-DBD-SQLite-1.40-2.1.4.i586
+sysconfig-0.81.5-3.1.i586
+libstdc++6-4.8.1_20130909-3.2.1.i586
+numlockx-1.2-177.1.2.i586
+dvd+rw-tools-7.1-57.1.2.i586
+libp11-kit0-0.20.1-2.1.2.i586
+xdpyinfo-1.3.1-2.1.2.i586
+rcc-runtime-0.2.10-7.1.2.i586
+libdrm_radeon1-2.4.46-3.2.2.i586
+yast2-ycp-ui-bindings-3.0.1-3.1.i586
+udevmountd-0.81.5-3.1.i586
+python-2.7.5-8.3.1.i586
+libsamdb0-4.1.0-3.5.1.i586
+libavahi-core7-0.6.31-16.3.1.i586
+gdb-7.6.50.20130731-3.1.2.i586
+udev-208-6.1.i586
+attr-2.4.47-2.1.2.i586
+liblapack3-3.4.2-6.1.2.i586
+libzypp-13.8.1-1.1.i586
+iceauth-1.0.6-2.1.2.i586
+wdiff-1.2.1-2.1.2.i586
+libcolord2-1.1.2-2.1.i586
+icoutils-0.31.0-2.1.3.i586
+recode-3.6-662.1.2.i586
+libwbclient0-4.1.0-3.5.1.i586
+libssh2-1-1.4.3-7.1.2.i586
+grep-2.14-5.1.2.i586
+Mesa-libEGL1-9.2.2-61.6.1.i586
+genisoimage-1.1.11-16.1.3.i586
+e2fsprogs-1.42.8-2.1.2.i586
+cryptsetup-1.6.2-2.1.2.i586
+kmousetool-4.11.2-1.1.i586
+libreoffice-icon-theme-crystal-4.1.2.3-1.1.noarch
+patterns-openSUSE-games-13.1-13.6.1.i586
+kmag-4.11.2-1.1.i586
+libreoffice-templates-en-3.3-10.1.4.noarch
+yast2-mail-3.0.0-2.1.4.noarch
+cryptsetup-mkinitrd-0_201307311719-2.1.2.i586
+kgamma-4.11.2-1.1.i586
+libreoffice-thesaurus-en-US-20060111.1-17.1.2.noarch
+patterns-openSUSE-kde4_imaging-13.1-13.6.1.i586
+DirectFB-1.6.3-4.1.3.i586
+kdepim4-runtime-4.11.2-2.1.i586
+metatheme-adwaita-common-3.10.0-1.1.noarch
+yast2-add-on-3.0.2-1.1.noarch
+usbmuxd-1.0.8-8.1.2.i586
+kdebase4-libkonq-4.11.2-1.1.i586
+perl-Archive-Zip-1.30-24.1.2.noarch
+libgoa-backend-1_0-1-3.10.1-1.1.i586
+openssh-6.2p2-3.1.2.i586
+kde-gtk-config-2.2.1-2.1.3.i586
+python-pyudev-0.16.1-6.1.2.noarch
+gimp-plugins-python-2.8.6-3.2.2.i586
+lvm2-2.02.98-0.28.1.5.i586
+kactivities4-4.11.2-1.1.i586
+vim-data-7.4.052-1.1.noarch
+rsync-3.1.0-21.4.1.i586
+dbus-1-glib-0.100.2-2.1.3.i586
+ark-4.11.2-1.1.i586
+yast2-iscsi-client-3.0.0-2.1.4.noarch
+autofs-5.0.7-19.1.1.i586
+konversation-1.5~rc1-3.1.3.i586
+yast2-online-update-3.0.0-2.1.4.noarch
+splashy-0.3.13-44.1.2.i586
+dolphin-4.11.2-1.1.i586
+yast2-services-manager-0.0.9-3.1.4.noarch
+xf86-video-fbdev-0.4.3-6.1.2.i586
+NetworkManager-vpnc-kde4-0.9.0.9-2.1.2.i586
+yast2-trans-stats-2.19.0-14.1.3.noarch
+xf86-input-synaptics-1.7.1-2.1.2.i586
+konqueror-4.11.2-1.1.i586
+libesd0-0.2.41-26.1.2.i586
+xf86-input-evdev-2.8.2-1.1.i586
+NetworkManager-openvpn-0.9.8.4-1.3.i586
+libcdio_cdda1-10.2+0.90-2.1.2.i586
+DirectFB-Mesa-1.6.3-4.1.3.i586
+kaddressbook-4.11.2-1.1.i586
+libexttextcat-2_0-0-3.4.0-4.1.2.i586
+openssh-askpass-1.2.4.1-5.1.2.i586
+plasmoid-quickaccess-0.8.1-23.1.1.i586
+libgpod-tools-0.8.2-16.1.4.i586
+ypbind-1.37.1-2.1.3.i586
+kget-4.11.2-1.1.i586
+haveged-1.7c-2.1.2.i586
+libnm-util2-0.9.8.8-1.1.i586
+kdebase4-openSUSE-13.1-6.2.14.i586
+lensfun-data-0.2.7-3.1.2.noarch
+cronie-1.4.8-50.1.2.i586
+libyui-qt5-2.43.5-2.1.4.i586
+libQtGStreamer-0_10-0-0.10.3-1.1.i586
+xorg-x11-driver-input-7.6_1-7.1.2.noarch
+libsmi2-0.4.8-17.1.2.i586
+libqimageblitz4-0.0.6-10.1.2.i586
+libwps-0_2-2-0.2.9-2.1.2.i586
+libgrantlee_gui0-0.3.0-4.1.2.i586
+gsl-1.16-2.1.2.i586
+libmwaw-0_1-1-0.1.9-2.1.2.i586
+python-gobject-cairo-3.10.1-1.1.i586
+initviocons-0.5-100.1.2.i586
+libwx_gtk2u_core-2_8-0-stl-2.8.12-21.1.4.i586
+libcairo-gobject2-1.12.16-3.1.3.i586
+ksh-93u-28.2.2.i586
+openSUSE-release-13.1-1.10.i586
+udisks2-2.1.1-2.1.3.i586
+libHX28-3.15-2.1.2.i586
+libsnmp30-5.7.2-9.1.2.i586
+PackageKit-branding-openSUSE-13.1-2.2.1.noarch
+libaudiofile1-0.3.6-2.1.2.i586
+gnome-icon-theme-symbolic-3.10.1-1.1.noarch
+libnm-glib-vpn1-0.9.8.8-1.1.i586
+libbluray1-0.3.0-2.1.2.i586
+perl-Image-ExifTool-9.34-2.1.2.noarch
+at-spi2-atk-gtk2-2.10.0-1.1.i586
+libboost_signals1_53_0-1.53.0-4.1.2.i586
+yast2-nfs-client-3.0.2-1.3.noarch
+libpango-1_0-0-1.36.0-1.1.i586
+libcroco-0_6-3-0.6.8-5.1.3.i586
+yast2-nis-client-3.0.0-2.1.4.i586
+pulseaudio-4.0.git.270.g9490a-1.1.i586
+libdv4-1.0.0-171.1.3.i586
+libSDL-1_2-0-1.2.15-10.1.2.i586
+syslog-service-2.0-772.1.2.noarch
+libgadu3-1.11.2-4.1.2.i586
+libcdio_paranoia1-10.2+0.90-2.1.2.i586
+libglut3-2.8.1-2.1.2.i586
+libMagickWand-6_Q16-1-6.8.6.9-2.5.1.i586
+pm-utils-1.4.1-33.1.2.i586
+libgsm1-1.0.13-23.1.2.i586
+gvfs-backend-afc-1.18.2-2.1.i586
+pulseaudio-module-lirc-4.0.git.270.g9490a-1.1.i586
+libhavege1-1.7c-2.1.2.i586
+libyui-qt-graph5-2.42.7-2.2.1.i586
+PackageKit-0.8.11-2.3.1.i586
+libixion-0_6-0-0.5.0-2.1.2.i586
+libkvkontakte1-1.0.0-7.1.1.i586
+libsmbldap0-4.1.0-3.5.1.i586
+liblastfm1-1.0.7-2.1.2.i586
+tcpdump-4.4.0-2.1.2.i586
+libgstinterfaces-0_10-0-0.10.36-9.1.4.i586
+liblpsolve55-0-5.5.2.0-5.1.2.i586
+libreoffice-4.1.2.3-1.1.i586
+postfix-2.9.6-7.4.1.i586
+libmediawiki1-3.5.0-4.1.i586
+libwx_gtk2u_adv-2_8-0-stl-2.8.12-21.1.4.i586
+plymouth-0.8.8_git201309032142-2.2.1.i586
+libmspack0-0.4-2.1.2.i586
+perl-NetxAP-0.02-719.1.2.i586
+libgcr-3-1-3.10.1-1.1.i586
+libmythes-1_2-0-1.2.3-5.1.2.i586
+gutenprint-5.2.9-5.1.3.i586
+gtk3-immodule-thai-3.10.2-1.1.i586
+libortp9-0.22.0-2.1.2.i586
+gtk2-branding-openSUSE-13.1-1.3.noarch
+PackageKit-gtk3-module-0.8.11-2.3.1.i586
+libpoppler-glib8-0.24.3-1.1.i586
+yast2-samba-client-3.0.1-3.1.noarch
+libregistry0-4.1.0-3.5.1.i586
+libSDL_gfx13-2.0.23-6.1.1.i586
+gtk2-immodule-amharic-2.24.22-2.1.i586
+libsmi-0.4.8-17.1.2.i586
+grub2-branding-openSUSE-13.1-10.4.13.noarch
+libtag_c0-1.8-11.1.4.i586
+enblend-enfuse-4.1-3.1.5.i586
+gstreamer-0_10-plugins-good-0.10.31-10.1.4.i586
+libwpd-0_9-9-0.9.9-2.1.4.i586
+libkgeomap1-3.5.0-4.1.i586
+libcanberra-gtk3-module-0.30-6.1.3.i586
+moodbar-0.1.2-17.1.3.i586
+libwx_gtk2u_xrc-2_8-0-stl-2.8.12-21.1.4.i586
+python-cupshelpers-1.4.2-2.1.3.noarch
+openSUSE-release-dvd-13.1-1.10.i586
+sane-backends-autoconfig-1.0.23-9.2.3.i586
+gtk2-theme-oxygen-1.4.0-2.1.3.i586
+patterns-openSUSE-kde4_games-13.1-13.6.1.i586
+gxditview-1.22.2-4.1.3.i586
+gcr-viewer-3.10.1-1.1.i586
+patterns-openSUSE-kde4_utilities-13.1-13.6.1.i586
+libxine2-pulse-1.2.3-3.1.3.i586
+patterns-openSUSE-office-13.1-13.6.1.i586
+python-kde4-soprano-4.11.2-1.1.i586
+system-config-printer-dbus-service-1.4.2-2.1.3.noarch
+perl-Digest-MD4-1.9-2.1.4.i586
+python-kde4-knewstuff-4.11.2-1.1.i586
+prctl-1.5-16.1.2.i586
+kipi-plugins-geolocation-3.5.0-4.1.i586
+libkonq5-4.11.2-1.1.i586
+pullin-flash-player-12.3-4.1.2.i586
+libreoffice-pyuno-4.1.2.3-1.1.i586
+libkerfuffle4-4.11.2-1.1.i586
+sash-3.7-192.1.2.i586
+libreoffice-draw-4.1.2.3-1.1.i586
+libkmahjongg-4.11.2-1.1.i586
+sharutils-lang-4.11.1-13.1.2.i586
+yast2-network-3.0.8-5.1.i586
+nepomuk-core-4.11.2-2.1.i586
+systemtap-runtime-2.3-2.1.3.i586
+patterns-openSUSE-apparmor-13.1-13.6.1.i586
+libakonadi4-4.11.2-1.1.i586
+wol-0.7.1-157.1.2.i586
+okular-4.11.2-1.1.i586
+libkdepim4-4.11.2-1.1.i586
+yast2-printer-3.0.0-3.1.4.i586
+plasma-addons-marble-4.11.2-1.1.i586
+sweeper-4.11.2-1.1.i586
+yast2-x11-3.0.1-2.2.1.i586
+libreoffice-draw-extensions-4.1.2.3-1.1.i586
+libkcddb4-4.11.2-1.1.i586
+OpenPrintingPPDs-postscript-4.0.0-21.1.2.noarch
+libreoffice-base-drivers-mysql-4.1.2.3-1.1.i586
+kvkbd-0.6-23.1.3.i586
+bundle-lang-gnome-en-13.1-2.2.8.noarch
+yast2-tune-3.0.2-1.1.i586
+kscreen-1.0.1-3.1.3.i586
+efont-unicode-bitmap-fonts-0.4.2-223.1.2.noarch
+skanlite-doc-1.0-2.1.4.i586
+krdc-4.11.2-2.1.i586
+iso-codes-3.47-1.1.noarch
+patterns-openSUSE-sw_management_kde4-13.1-13.6.1.i586
+knotes-4.11.2-1.1.i586
+cln-1.3.3-2.1.2.i586
+libreoffice-icon-theme-galaxy-4.1.2.3-1.1.noarch
+boost-license1_53_0-1.53.0-4.1.2.noarch
+dbus-1-1.7.4-4.4.1.i586
+yast2-samba-server-3.0.2-2.1.4.noarch
+libgobject-2_0-0-2.38.1-1.1.i586
+kio_iso-2.4.0~beta3-4.1.3.i586
+perl-HTTP-Negotiate-6.01-6.1.2.noarch
+man-pages-3.53-2.1.4.noarch
+filesystem-13.1-3.1.2.i586
+xorg-x11-server-7.6_1.14.3.901-1.1.i586
+yast2-backup-3.0.0-2.1.4.noarch
+libaugeas0-1.0.0-2.1.3.i586
+kdebase4-nsplugin-4.11.2-1.1.i586
+libtasn1-3.3-3.1.2.i586
+perl-File-RandomAccess-9.34-2.1.2.noarch
+libkdegames-4.11.2-1.1.i586
+nscd-2.18-4.4.1.i586
+gimp-help-2.8.0-7.1.3.noarch
+libxerces-c-3_1-3.1.1-9.4.1.i586
+kcalc-4.11.2-1.1.i586
+usbutils-007-2.1.2.i586
+words-7.1-18.1.2.noarch
+terminfo-base-5.9-33.1.2.i586
+cron-4.2-50.1.2.i586
+libjack0-1.9.9.5-5.1.2.i586
+plasma-addons-akonadi-4.11.2-1.1.i586
+rpm-4.11.1-6.2.1.i586
+yast2-pam-3.0.0-2.1.4.noarch
+translation-update-en_US-12.3-2.1.2.noarch
+xorg-x11-driver-video-nouveau-1.0.9-3.1.2.i586
+libLLVM-3.3-6.4.1.i586
+plasmoid-networkmanagement-0.9.0.9-2.1.2.i586
+nfsidmap-0.25-2.1.2.i586
+graphviz-gd-2.28.0-19.1.3.i586
+sbc-1.0-4.1.2.i586
+xf86-input-mouse-1.9.0-2.2.2.i586
+libxcb-util1-0.3.9-9.1.2.i586
+NetworkManager-pptp-0.9.8.4-1.3.i586
+gfxboot-4.5.1-4.1.3.i586
+librsvg-2-2-2.39.0-3.1.3.i586
+libz1-1.2.8-3.1.2.i586
+xorg-x11-Xvnc-7.6_1.0.1-15.1.3.i586
+libxcb-dri2-0-1.9.1-3.1.2.i586
+kdebase4-workspace-ksysguardd-4.11.2-4.1.i586
+crda-1.1.2-7.1.2.i586
+libsox2-14.4.1-2.1.2.i586
+libwavpack1-4.60.99-2.1.2.i586
+obex-data-server-0.4.6-11.1.3.i586
+libply-splash-graphics2-0.8.8_git201309032142-2.2.1.i586
+kdebase4-session-4.11-2.1.2.noarch
+rpm-python-4.11.1-6.2.1.i586
+netpbm-10.63.1-2.2.1.i586
+libtalloc2-2.0.8-7.1.2.i586
+nss-mdns-0.10-61.1.2.i586
+cpp48-4.8.1_20130909-3.2.1.i586
+bc-1.06.95-5.1.2.i586
+pciutils-3.2.0-2.1.2.i586
+akregator-4.11.2-1.1.i586
+libsbc1-1.0-4.1.2.i586
+strigi-0.7.8-4.1.3.i586
+libyui5-3.0.10-2.1.4.i586
+fuse-2.9.3-2.1.2.i586
+desktop-data-openSUSE-13.1-3.1.3.noarch
+libwpg-0_2-2-0.2.2-2.1.2.i586
+libpth20-2.0.7-138.1.2.i586
+libgrantlee_core0-0.3.0-4.1.2.i586
+libboost_thread1_53_0-1.53.0-4.1.2.i586
+icewm-lite-1.2.38-20.1.3.i586
+libjavascriptcoregtk-3_0-0-2.2.1-1.1.i586
+libwx_baseu_xml-2_8-0-stl-2.8.12-21.1.4.i586
+libpciaccess0-0.13.2-2.1.2.i586
+tightvnc-1.3.10-14.2.1.i586
+libXt6-1.1.4-2.1.2.i586
+libGLEW1_9-1.9.0-5.1.2.i586
+scout-0.1.0-54.1.2.noarch
+systemtap-2.3-2.1.3.i586
+libnfnetlink0-1.0.1-5.1.2.i586
+ModemManager-1.0.0-3.1.3.i586
+dbus-1-x11-1.7.4-4.4.1.i586
+libbabl-0_1-0-0.1.10-6.1.2.i586
+libldap-2_4-2-2.4.33-8.1.2.i586
+java-1_7_0-openjdk-1.7.0.6-24.2.1.i586
+libltdl7-2.4.2-11.1.2.i586
+libndr-krb5pac0-4.1.0-3.5.1.i586
+libyui-ncurses5-2.44.1-2.1.4.i586
+libclucene-contribs-lib1-2.3.3.4-11.1.2.i586
+bind-utils-9.9.3P2-2.1.2.i586
+yast2-theme-openSUSE-Oxygen-3.0.1-1.2.noarch
+libjbig2-2.0-10.1.2.i586
+PackageKit-backend-zypp-0.8.11-2.3.1.i586
+perl-XML-SAX-Base-1.08-7.1.2.noarch
+libexttextcat-3.4.0-4.1.2.i586
+mariadb-client-5.5.33-2.2.i586
+gdk-pixbuf-loader-rsvg-2.39.0-3.1.3.i586
+libgpg-error0-1.12-2.1.4.i586
+libgstapp-0_10-0-0.10.36-9.1.4.i586
+perl-Params-Util-1.07-6.1.2.i586
+libgpod4-0.8.2-16.1.4.i586
+alsa-1.0.27.2-3.2.1.i586
+libvigraimpex4-1.9.0-2.1.3.i586
+libfftw3-3-3.3.3-4.1.3.i586
+pulseaudio-module-jack-4.0.git.270.g9490a-1.1.i586
+perl-HTTP-Date-6.02-6.1.2.noarch
+libieee1284-0.2.11-52.1.3.i586
+python-gobject2-2.28.6-22.1.3.i586
+k3b-2.0.2-29.1.3.i586
+libdrm2-2.4.46-3.2.2.i586
+cifs-utils-6.2-1.1.i586
+libsoprano4-2.9.4-4.1.i586
+libloudmouth-1-0-1.4.3-21.1.3.i586
+libwx_gtk2u_html-2_8-0-stl-2.8.12-21.1.4.i586
+libcap2-2.22-10.1.24.i586
+pcsc-lite-1.8.8-4.1.2.i586
+libdmx1-1.1.3-2.1.2.i586
+libmsn0_3-4.2.1-7.1.2.i586
+yast2-hardware-detection-3.0.1-2.1.3.i586
+sane-backends-1.0.23-9.2.3.i586
+libatm1-2.5.0-161.1.2.i586
+libcanberra-gtk3-0-0.30-6.1.3.i586
+libXmu6-1.1.2-2.1.2.i586
+libopenraw1-0.0.9-9.1.3.i586
+intlfonts-euro-bitmap-fonts-1.2.1-10.1.2.noarch
+exiftool-9.34-2.1.2.noarch
+libICE6-1.0.8-7.1.2.i586
+typelib-1_0-Gtk-2_0-2.24.22-2.1.i586
+librdf0-1.0.16-5.1.2.i586
+libquazip1-0.5.1-2.1.3.i586
+aaa_base-extras-13.1-16.17.1.i586
+gegl-0_2-0.2.0-8.1.3.i586
+Mesa-libglapi0-9.2.2-61.6.1.i586
+gtk2-engine-oxygen-1.4.0-2.1.3.i586
+python-base-2.7.5-8.3.1.i586
+libtag-extras1-1.0.1-19.1.1.i586
+PackageKit-gstreamer-plugin-0.8.11-2.3.1.i586
+kopete-4.11.2-1.1.i586
+pigz-2.3-2.1.2.i586
+libcanberra-gtk-module-common-0.30-6.1.3.i586
+libyui-ncurses-pkg5-2.44.4-2.1.5.i586
+xinit-1.3.3-3.1.2.i586
+yast2-storage-3.0.8-1.1.i586
+libblkid1-2.23.2-3.1.i586
+python-gtk-2.24.0-12.1.3.i586
+ifplugd-0.28-233.1.1.i586
+patterns-openSUSE-fonts_opt-13.1-13.6.1.i586
+yast2-transfer-3.0.1-2.1.3.i586
+libspectre1-0.2.7-4.1.2.i586
+openal-soft-1.15.1-2.1.2.i586
+db48-utils-4.8.30-25.2.1.i586
+patterns-openSUSE-multimedia_opt-13.1-13.6.1.i586
+typelib-1_0-GdkPixbuf-2_0-2.30.0-1.1.i586
+python-kde4-plasma-4.11.2-1.1.i586
+libkmod2-14-2.1.2.i586
+perl-XML-SAX-0.99-21.1.2.i586
+perl-TermReadLine-Gnu-1.20-5.1.2.i586
+cdrkit-cdrtools-compat-1.1.11-16.1.3.i586
+digikam-3.5.0-4.1.i586
+libgcrypt11-1.5.3-2.1.4.i586
+libkmahjongglib4-4.11.2-1.1.i586
+perl-SQL-Statement-1.405-2.1.2.noarch
+rubygem-ruby-dbus-0.9.2-2.1.3.i586
+zisofs-tools-1.0.8-19.1.2.i586
+libreoffice-calc-4.1.2.3-1.1.i586
+libwayland-client0-1.2.1-1.1.i586
+kdelibs4-branding-openSUSE-13.1-10.4.13.noarch
+xset-1.2.3-2.1.2.i586
+suspend-1.0-28.1.1.i586
+libtag1-1.8-11.1.4.i586
+synaptiks-0.8.1-11.1.2.noarch
+libext2fs2-1.42.8-2.1.2.i586
+libkolab0-0.4.2-4.1.1.i586
+python-xml-2.7.5-8.3.1.i586
+xtermset-0.5.2-278.1.2.i586
+libgensec0-4.1.0-3.5.1.i586
+libreoffice-converter-3.3-18.1.2.noarch
+libacl1-2.2.52-2.1.2.i586
+polkit-kde-agent-1-0.99.0-19.1.1.i586
+link-grammar-4.7.14-2.1.2.i586
+OpenPrintingPPDs-4.0.0-21.1.2.noarch
+libgbm1-9.2.2-61.6.1.i586
+yast2-ldap-client-3.0.1-2.1.4.noarch
+libfreetype6-2.5.0.1-2.1.2.i586
+ksudoku-4.11.2-1.1.i586
+pinentry-0.8.3-2.1.3.i586
+digikam-doc-3.5.0-4.1.noarch
+libgstpbutils-1_0-0-1.0.10-2.1.3.i586
+libFLAC8-1.3.0-2.1.2.i586
+kpat-4.11.2-1.1.i586
+diffutils-3.3-3.1.2.i586
+libreoffice-branding-openSUSE-4.0-2.1.2.noarch
+patterns-openSUSE-imaging_opt-13.1-13.6.1.i586
+kmines-4.11.2-1.1.i586
+glibc-extra-2.18-4.4.1.i586
+xrdb-1.1.0-2.1.2.i586
+libreoffice-templates-labels-letter-1.0.1-9.1.2.noarch
+yast2-installation-3.0.8-1.1.noarch
+yast2-sound-3.0.3-1.1.i586
+kdnssd-4.11.2-1.1.i586
+libplist1-1.8-8.1.3.i586
+xmessage-1.0.4-4.1.2.i586
+kde4-filesystem-4.11-3.3.1.i586
+opensuse-startup_en-12.3-1.1.noarch
+libwebkitgtk-3_0-0-2.2.1-1.1.i586
+parallel-printer-support-1.00-10.1.2.noarch
+kde4-print-manager-4.11.2-1.1.i586
+libmtp9-1.1.6-2.2.1.i586
+xkeyboard-config-2.9-6.1.3.noarch
+mariadb-errormessages-5.5.33-2.2.i586
+readline-doc-6.2-68.1.5.noarch
+suse-ami-tools-1.0.10-2.1.6.noarch
+dnsmasq-2.65-7.1.2.i586
+choqok-1.4-2.1.2.i586
+libncurses5-5.9-33.1.2.i586
+tcl-8.6.1-1.2.i586
+xbitmaps-1.1.1-9.1.2.noarch
+yast2-nfs-common-3.0.0-2.1.4.noarch
+SuSEfirewall2-3.6.305-2.1.2.noarch
+akonadi-4.11.2-1.1.i586
+libclucene-shared1-2.3.3.4-11.1.2.i586
+pm-profiler-0.1_git20110726-9.1.2.noarch
+update-alternatives-1.16.10-3.1.2.i586
+yast2-theme-openSUSE-3.0.1-1.2.noarch
+xf86-input-void-1.4.0-6.1.2.i586
+NetworkManager-openvpn-kde4-0.9.0.9-2.1.2.i586
+acl-2.2.52-2.1.2.i586
+kbd-1.15.5-5.1.2.i586
+perl-base-5.18.1-2.1.11.i586
+libcmis-0_3-3-0.3.1-3.1.2.i586
+libcairo2-1.12.16-3.1.3.i586
+kontact-4.11.2-1.1.i586
+libxcb-randr0-1.9.1-3.1.2.i586
+perl-XML-Simple-2.20-2.1.2.noarch
+libx86emu1-1.1-20.1.2.i586
+xscreensaver-data-extra-5.22-2.1.3.i586
+polkit-0.112-2.1.i586
+plasma-addons-lancelot-4.11.2-1.1.i586
+mkfontscale-1.1.1-2.1.2.i586
+usb_modeswitch-data-1.2.5-5.1.3.noarch
+libustr-1_0-1-1.0.4-29.1.2.i586
+liborcus-0_6-0-0.5.1-2.1.2.i586
+gconf2-3.2.6-2.1.3.i586
+apper-0.8.0-11.4.1.i586
+augeas-lenses-1.0.0-2.1.3.i586
+deltarpm-3.6-2.1.2.i586
+libspeex1-1.1.999_1.2rc1-21.1.2.i586
+libkdcraw22-4.11.2-1.1.i586
+splashy-branding-openSUSE-0.3.13-44.1.2.i586
+dos2unix-6.0.3-2.1.4.i586
+libattica0_4-0.4.2-2.1.2.i586
+cyrus-sasl-2.1.25-28.1.2.i586
+librcd0-0.1.13-16.1.2.i586
+taglib-1.8-11.1.4.i586
+libpoppler-qt4-4-0.24.3-1.1.i586
+graphviz-2.28.0-19.1.3.i586
+libproxy1-0.4.11-9.1.2.i586
+perl-HTML-Tidy-1.54-4.1.2.i586
+libply-boot-client2-0.8.8_git201309032142-2.2.1.i586
+libcdr-0_0-0-0.0.14-3.1.2.i586
+poppler-tools-0.24.3-1.1.i586
+joe-3.7-26.1.4.i586
+xmodmap-1.0.8-2.1.2.i586
+usb_modeswitch-1.2.5-5.1.3.i586
+libopenal1-1.15.1-2.1.2.i586
+perl-Digest-HMAC-1.03-17.1.2.noarch
+polkit-default-privs-13.1-10.2.1.noarch
+libXvMC1-1.0.8-2.1.2.i586
+libXext6-1.3.2-2.1.2.i586
+pam-config-0.86-2.1.2.i586
+libmowgli2-1.0.0-7.1.2.i586
+gtk3-metatheme-adwaita-3.10.0-1.1.noarch
+gconf-polkit-3.2.6-2.1.3.i586
+libboost_filesystem1_53_0-1.53.0-4.1.2.i586
+librasqal3-0.9.30-2.1.2.i586
+cyrus-sasl-digestmd5-2.1.25-28.1.2.i586
+liblcms1-1.19-14.2.1.i586
+yast2-security-3.0.0-2.1.4.noarch
+libdiscid0-0.5.2-2.1.2.i586
+zypper-aptitude-1.9.3-1.1.noarch
+pkcs11-helper-1.09-5.1.2.i586
+libiodbc3-3.52.8-5.1.3.i586
+esound-daemon-0.2.41-26.1.2.i586
+typelib-1_0-Pango-1_0-1.36.0-1.1.i586
+libgimp-2_0-0-2.8.6-3.2.2.i586
+perl-TimeDate-1.20-23.1.2.noarch
+libcryptsetup4-1.6.2-2.1.2.i586
+libgdbm4-1.10-7.1.2.i586
+libgstapp-1_0-0-1.0.10-2.1.3.i586
+pulseaudio-utils-4.0.git.270.g9490a-1.1.i586
+libgvfscommon0-1.18.2-2.1.i586
+perl-MLDBM-2.05-2.1.2.noarch
+openldap2-client-2.4.33-8.1.2.i586
+libexif12-0.6.21-4.1.2.i586
+python-qt4-4.10.3-3.1.4.i586
+NetworkManager-0.9.8.8-1.1.i586
+libjson-glib-1_0-0-0.16.2-1.3.i586
+perl-Config-Crontab-1.33-7.1.2.noarch
+libproxy1-config-gnome3-0.4.11-9.1.1.i586
+libdaemon0-0.14-13.1.2.i586
+amarok-2.8.0-4.2.1.i586
+libgtk-2_0-0-2.24.22-2.1.i586
+liblua5_2-5.2.2-2.1.2.i586
+libXcursor1-1.1.14-2.1.2.i586
+gtk3-data-3.10.2-1.1.noarch
+libburn4-1.3.2-2.1.4.i586
+kernel-default-3.11.6-4.1.i586
+gstreamer-0_10-plugins-base-0.10.36-9.1.4.i586
+libmysqlcppconn6-1.1.2-4.1.3.i586
+libXtst6-1.2.2-2.1.2.i586
+libudev1-208-6.1.i586
+libaio1-0.3.109-15.1.2.i586
+ghostscript-x11-9.07-3.1.3.i586
+gtk3-immodule-amharic-3.10.2-1.1.i586
+libpano13-2-2.9.18-12.1.2.i586
+libXRes1-1.0.7-2.1.2.i586
+ghostscript-fonts-std-9.06-4.1.2.noarch
+ethtool-3.10-2.1.2.i586
+yast2-control-center-qt-3.0.0-2.1.3.i586
+gtk2-immodule-thai-2.24.22-2.1.i586
+libschroedinger-1_0-0-1.0.11-7.1.2.i586
+wallpaper-branding-openSUSE-13.1-10.4.13.noarch
+vorbis-tools-1.4.0-14.1.1.i586
+pptp-1.7.2-42.1.2.i586
+ImageMagick-6.8.6.9-2.5.1.i586
+phonon-backend-gstreamer-0_10-4.6.80~git20130915-2.1.4.i586
+libunicap2-0.9.12-15.1.2.i586
+mkfontdir-1.0.7-7.1.2.i586
+libpng16-16-1.6.6-1.1.i586
+kipi-plugins-3.5.0-4.1.i586
+multipath-tools-0.4.9-11.1.2.i586
+iptables-1.4.19.1-2.1.2.i586
+a2ps-4.13-1356.1.4.i586
+libtevent0-0.9.18-4.1.2.i586
+OpenPrintingPPDs-hpijs-4.0.0-21.1.2.noarch
+yast2-packager-3.0.8-1.1.i586
+patterns-openSUSE-kde4_multimedia-13.1-13.6.1.i586
+gdk-pixbuf-query-loaders-2.30.0-1.1.i586
+libgpgme11-1.4.3-2.1.3.i586
+ntfsprogs-2013.1.13-2.1.2.i586
+libgstaudio-1_0-0-1.0.10-2.1.3.i586
+libkde4-4.11.2-3.1.i586
+patterns-openSUSE-sw_management-13.1-13.6.1.i586
+alsa-oss-1.0.25-8.1.2.i586
+systemd-sysvinit-208-6.1.i586
+libmng1-1.0.10-111.1.2.i586
+python-kde4-akonadi-4.11.2-1.1.i586
+libktexteditor-4.11.2-1.1.i586
+procmail-3.22-264.1.3.i586
+perl-HTML-Parser-3.69-17.1.4.i586
+libisl10-0.12-2.1.2.i586
+libreoffice-kde4-4.1.2.3-1.1.i586
+kdelibs4-core-4.11.2-3.1.i586
+setserial-2.17-738.1.2.i586
+libXaw7-1.0.12-2.1.2.i586
+sysconfig-netconfig-0.81.5-3.1.i586
+ptools-0.1-23.1.2.i586
+patterns-openSUSE-enhanced_base-13.1-13.6.1.i586
+libkdepimlibs4-4.11.2-1.1.i586
+telnet-1.2-164.1.2.i586
+ksplashx-branding-openSUSE-13.1-10.4.13.noarch
+dhcpcd-3.2.3-47.78.1.2.i586
+libzio1-1.00-8.1.2.i586
+libgstvideo-1_0-0-1.0.10-2.1.3.i586
+kdebase4-runtime-branding-openSUSE-13.1-6.2.14.i586
+yast2-slp-3.0.2-1.1.i586
+syslinux-4.04-27.1.3.i586
+mdadm-3.3-4.1.2.i586
+libxcb1-1.9.1-3.1.2.i586
+libreoffice-calc-extensions-4.1.2.3-1.1.i586
+kwebkitpart-1.3.2-2.1.1.i586
+bash-doc-4.2-68.1.5.noarch
+tar-1.26-19.1.2.i586
+device-mapper-1.02.78-0.14.1.2.i586
+openslp-1.2.0-202.1.2.i586
+patterns-openSUSE-x11-13.1-13.6.1.i586
+krfb-4.11.2-2.1.i586
+gnome-icon-theme-3.10.0-1.1.noarch
+gawk-4.1.0-2.1.14.i586
+libparted0-2.4-34.2.2.i586
+libopenobex1-1.5-20.1.2.i586
+[[32m  OK  [0m] Started Show Plymouth Reboot Screen.
+[[32m  OK  [0m] Stopped Postfix Mail Transport Agent.
+[[32m  OK  [0m] Stopped target System Time Synchronized.
+[[32m  OK  [0m] Stopped target Remote File Systems.
+[[32m  OK  [0m] Stopped target Remote File Systems (Pre).
+[[32m  OK  [0m] Stopped target Host and Network Name Lookups.
+[[32m  OK  [0m] Stopped target Network.
+         Stopping LSB: Configure network interfaces and set up routing...
+[[32m  OK  [0m] Stopped ifup managed network interface eth0.
+[[32m  OK  [0m] Removed slice system-network.slice.
+[[32m  OK  [0m] Stopped LSB: Configure network interfaces and set up routing.
+         Stopping SuSEfirewall2 phase 1...
+[[32m  OK  [0m] Stopped SuSEfirewall2 phase 1.
+[[32m  OK  [0m] Stopped target Basic System.
+[[32m  OK  [0m] Stopped target Slices.
+[[32m  OK  [0m] Removed slice User and Session Slice.
+[[32m  OK  [0m] Stopped target Paths.
+[[32m  OK  [0m] Stopped target Timers.
+[[32m  OK  [0m] Stopped target Sockets.
+[[32m  OK  [0m] Closed Avahi mDNS/DNS-SD Stack Activation Socket.
+[[32m  OK  [0m] Closed PC/SC Smart Card Daemon Activation Socket.
+[[32m  OK  [0m] Closed CUPS Printing Service Sockets.
+[[32m  OK  [0m] Closed D-Bus System Message Bus Socket.
+[[32m  OK  [0m] Closed Syslog Socket.
+[[32m  OK  [0m] Stopped target System Initialization.
+         Stopping LSB: AppArmor initialization...
+         Stopping LSB: Set default boot entry if called...
+         Stopping Load/Save Random Seed...
+         Stopping Apply Kernel Variables...
+[[32m  OK  [0m] Stopped Apply Kernel Variables.
+         Stopping Load Kernel Modules...
+[[32m  OK  [0m] Stopped Load Kernel Modules.
+[[32m  OK  [0m] Stopped target Encrypted Volumes.
+[[32m  OK  [0m] Stopped target Swap.
+         Deactivating swap /dev/vda1...
+         Deactivating swap /dev/vda1...
+         Stopping Update UTMP about System Reboot/Shutdown...
+         Stopping Setup Virtual Console...
+[[32m  OK  [0m] Stopped Setup Virtual Console.
+[[32m  OK  [0m] Stopped LSB: Set default boot entry if called.
+[[32m  OK  [0m] Stopped Update UTMP about System Reboot/Shutdown.
+[[32m  OK  [0m] Deactivated swap /dev/disk/by-uuid/c9a5a956-6f8c-414a-a26b-8bc2764cb87a.
+[[32m  OK  [0m] Deactivated swap /dev/vda1.
+[[32m  OK  [0m] Stopped Load/Save Random Seed.
+[[32m  OK  [0m] Stopped LSB: AppArmor initialization.
+         Stopping Recreate Volatile Files and Directories...
+[[32m  OK  [0m] Stopped Recreate Volatile Files and Directories.
+[[32m  OK  [0m] Stopped target Local File Systems.
+         Unmounting Runtime Directory...
+         Unmounting /home...
+         Unmounting Lock Directory...
+[[32m  OK  [0m] Unmounted Lock Directory.
+[[32m  OK  [0m] Failed unmounting /home.
+[[32m  OK  [0m] Unmounted Runtime Directory.
+[[32m  OK  [0m] Reached target Unmount All Filesystems.
+[[32m  OK  [0m] Stopped target Local File Systems (Pre).
+         Stopping Remount Root and Kernel File Systems...
+[[32m  OK  [0m] Stopped Remount Root and Kernel File Systems.
+[[32m  OK  [0m] Reached target Shutdown.
+[ 2003.661591] reboot: Restarting system
+[    0.020000] Failed to access perfctr msr (MSR c1 is 0)
+Trying manual resume from /dev/vda1
+Invoking userspace resume from /dev/vda1
+resume: libgcrypt version: 1.5.3
+Trying manual resume from /dev/vda1
+Invoking in-kernel resume from /dev/vda1
+Waiting for device /dev/root to appear:  ok
+fsck from util-linux 2.23.2
+[/sbin/fsck.ext4 (1) -- /] fsck.ext4 -a /dev/vda2 
+/dev/vda2: clean, 128574/328320 files, 1058448/1310720 blocks
+fsck succeeded. Mounting root device read-write.
+Mounting root /dev/root
+mount -o rw,acl,user_xattr -t ext4 /dev/root /root
+
+Welcome to [0;32mopenSUSE 13.1 (Bottle) (i586)[0m!
+
+         Expecting device dev-ttyS0.device...
+[[32m  OK  [0m] Listening on Syslog Socket.
+[[32m  OK  [0m] Reached target System Time Synchronized.
+[[32m  OK  [0m] Reached target Remote File Systems (Pre).
+[[32m  OK  [0m] Reached target Remote File Systems.
+[[32m  OK  [0m] Listening on /dev/initctl Compatibility Named Pipe.
+[[32m  OK  [0m] Listening on Delayed Shutdown Socket.
+[[32m  OK  [0m] Listening on Journal Socket.
+         Starting LSB: Set default boot entry if called...
+         Starting Load Kernel Modules...
+         Mounting Debug File System...
+         Starting Create dynamic rule for /dev/root link...
+         Starting Journal Service...
+[[32m  OK  [0m] Started Journal Service.
+[[32m  OK  [0m] Set up automount Arbitrary Executable File Formats File System Automount Point.
+         Starting Create list of required static device nodes for the current kernel...
+         Starting Setup Virtual Console...
+         Mounting Huge Pages File System...
+         Mounting POSIX Message Queue File System...
+         Expecting device dev-vda1.device...
+         Starting Remount Root and Kernel File Systems...
+[[32m  OK  [0m] Listening on udev Kernel Socket.
+[[32m  OK  [0m] Listening on udev Control Socket.
+[[32m  OK  [0m] Created slice Root Slice.
+[[32m  OK  [0m] Created slice User and Session Slice.
+[[32m  OK  [0m] Created slice System Slice.
+%G[[32m  OK  [0m] Created slice system-getty.slice.
+[[32m  OK  [0m] Created slice system-serial\x2dgetty.slice.
+[[32m  OK  [0m] Reached target Slices.
+         Expecting device dev-vda3.device...
+[[32m  OK  [0m] Started Load Kernel Modules.
+[[32m  OK  [0m] Mounted Debug File System.
+[[32m  OK  [0m] Mounted Huge Pages File System.
+[[32m  OK  [0m] Mounted POSIX Message Queue File System.
+         Starting Apply Kernel Variables...
+[[32m  OK  [0m] Started Create dynamic rule for /dev/root link.
+(K[[32m  OK  [0m] Started Remount Root and Kernel File Systems.
+[[32m  OK  [0m] Started Create list of required static device nodes for the current kernel.
+         Starting Create static device nodes in /dev...
+         Starting Load/Save Random Seed...
+[[32m  OK  [0m] Started Setup Virtual Console.
+         Starting udev Coldplug all Devices...
+[[32m  OK  [0m] Started Load/Save Random Seed.
+[[32m  OK  [0m] Started LSB: Set default boot entry if called.
+[[32m  OK  [0m] Started Apply Kernel Variables.
+[[32m  OK  [0m] Started udev Coldplug all Devices.
+         Starting udev Wait for Complete Device Initialization...
+         Starting Show Plymouth Boot Screen...
+[[32m  OK  [0m] Started Create static device nodes in /dev.
+         Starting udev Kernel Device Manager...
+[[32m  OK  [0m] Reached target Local File Systems (Pre).
+         Mounting Runtime Directory...
+         Mounting Lock Directory...
+[[32m  OK  [0m] Mounted Runtime Directory.
+[[32m  OK  [0m] Mounted Lock Directory.
+[[32m  OK  [0m] Started udev Kernel Device Manager.
+[[32m  OK  [0m] Started udev Wait for Complete Device Initialization.
+         Starting Activation of LVM2 logical volumes...
+[[32m  OK  [0m] Started Show Plymouth Boot Screen.
+[[32m  OK  [0m] Started Activation of LVM2 logical volumes.
+[[32m  OK  [0m] Reached target Encrypted Volumes.
+         Starting Activation of LVM2 logical volumes...
+[[32m  OK  [0m] Found device /dev/ttyS0.
+[[32m  OK  [0m] Started Activation of LVM2 logical volumes.
+[[32m  OK  [0m] Found device /dev/vda1.
+         Activating swap /dev/vda1...
+[[32m  OK  [0m] Activated swap /dev/vda1.
+[[32m  OK  [0m] Reached target Swap.
+[[32m  OK  [0m] Found device /dev/vda3.
+         Starting File System Check on /dev/vda3...
+systemd-fsck[307]: /dev/vda3: clean, 780/231536 files, 81551/924672 blocks
+[[32m  OK  [0m] Started File System Check on /dev/vda3.
+         Mounting /home...
+[[32m  OK  [0m] Mounted /home.
+[[32m  OK  [0m] Reached target Local File Systems.
+         Starting Tell Plymouth To Write Out Runtime Data...
+         Starting Trigger Flushing of Journal to Persistent Storage...
+         Starting Recreate Volatile Files and Directories...
+[[32m  OK  [0m] Started Trigger Flushing of Journal to Persistent Storage.
+[[32m  OK  [0m] Started Tell Plymouth To Write Out Runtime Data.
+[[32m  OK  [0m] Started Recreate Volatile Files and Directories.
+         Starting LSB: AppArmor initialization...
+         Starting Update UTMP about System Reboot/Shutdown...
+[[32m  OK  [0m] Started Update UTMP about System Reboot/Shutdown.
+[[32m  OK  [0m] Started LSB: AppArmor initialization.
+[[32m  OK  [0m] Reached target System Initialization.
+[[32m  OK  [0m] Listening on Avahi mDNS/DNS-SD Stack Activation Socket.
+[[32m  OK  [0m] Listening on PC/SC Smart Card Daemon Activation Socket.
+[[32m  OK  [0m] Listening on CUPS Printing Service Sockets.
+[[32m  OK  [0m] Reached target Paths.
+[[32m  OK  [0m] Listening on D-Bus System Message Bus Socket.
+[[32m  OK  [0m] Reached target Sockets.
+[[32m  OK  [0m] Reached target Timers.
+         Starting Restore Sound Card State...
+[[32m  OK  [0m] Reached target Basic System.
+         Starting D-Bus System Message Bus...
+[[32m  OK  [0m] Started D-Bus System Message Bus.
+         Starting Avahi mDNS/DNS-SD Stack...
+         Starting WPA Supplicant daemon...
+         Starting Modem Manager...
+         Starting Name Service Cache Daemon...
+[[32m  OK  [0m] Started Name Service Cache Daemon.
+         Starting Permit User Sessions...
+         Starting Login Service...
+         Starting System Logging Service...
+         Starting LSB: Configure network interfaces and set up routing...
+[[32m  OK  [0m] Started Restore Sound Card State.
+[[32m  OK  [0m] Started Permit User Sessions.
+         Starting LSB: X Display Manager...
+[[32m  OK  [0m] Started Avahi mDNS/DNS-SD Stack.
+[[32m  OK  [0m] Started WPA Supplicant daemon.
+[[32m  OK  [0m] Started Login Service.
+         Starting Authorization Manager...
+[[32m  OK  [0m] Started System Logging Service.
+[[32m  OK  [0m] Started Authorization Manager.
+[[32m  OK  [0m] Started Modem Manager.
+[[32m  OK  [0m] Started LSB: X Display Manager.
+
+Welcome to openSUSE 13.1 "Bottle" - Kernel 3.11.6-4-default (ttyS0).
+
+
+susetest login: [[32m  OK  [0m] Started Show Plymouth Power Off Screen.
+[[32m  OK  [0m] Stopped ifup managed network interface eth0.
+[[32m  OK  [0m] Removed slice system-network.slice.
+[[32m  OK  [0m] Stopped LSB: Configure network interfaces and set up routing.
+[[32m  OK  [0m] Stopped target Basic System.
+[[32m  OK  [0m] Stopped target Slices.
+[[32m  OK  [0m] Removed slice User and Session Slice.
+[[32m  OK  [0m] Stopped target Paths.
+[[32m  OK  [0m] Stopped target Timers.
+[[32m  OK  [0m] Stopped target Sockets.
+[[32m  OK  [0m] Closed Avahi mDNS/DNS-SD Stack Activation Socket.
+[[32m  OK  [0m] Closed PC/SC Smart Card Daemon Activation Socket.
+[[32m  OK  [0m] Closed CUPS Printing Service Sockets.
+[[32m  OK  [0m] Closed D-Bus System Message Bus Socket.
+[[32m  OK  [0m] Closed Syslog Socket.
+[[32m  OK  [0m] Stopped target System Initialization.
+         Stopping LSB: AppArmor initialization...
+         Stopping LSB: Set default boot entry if called...
+         Stopping Load/Save Random Seed...
+         Stopping Apply Kernel Variables...
+[[32m  OK  [0m] Stopped Apply Kernel Variables.
+         Stopping Load Kernel Modules...
+[[32m  OK  [0m] Stopped Load Kernel Modules.
+[[32m  OK  [0m] Stopped target Encrypted Volumes.
+[[32m  OK  [0m] Stopped target Swap.
+         Deactivating swap /dev/vda1...
+         Deactivating swap /dev/vda1...
+         Stopping Update UTMP about System Reboot/Shutdown...
+         Stopping Setup Virtual Console...
+[[32m  OK  [0m] Stopped Setup Virtual Console.
+[[32m  OK  [0m] Stopped Load/Save Random Seed.
+[[32m  OK  [0m] Stopped Update UTMP about System Reboot/Shutdown.
+[[32m  OK  [0m] Deactivated swap /dev/disk/by-uuid/c9a5a956-6f8c-414a-a26b-8bc2764cb87a.
+[[32m  OK  [0m] Stopped LSB: Set default boot entry if called.
+[[32m  OK  [0m] Deactivated swap /dev/vda1.
+[[32m  OK  [0m] Stopped LSB: AppArmor initialization.
+         Stopping Recreate Volatile Files and Directories...
+[[32m  OK  [0m] Stopped Recreate Volatile Files and Directories.
+[[32m  OK  [0m] Stopped target Local File Systems.
+         Unmounting Runtime Directory...
+         Unmounting /home...
+         Unmounting Lock Directory...
+[[32m  OK  [0m] Unmounted Lock Directory.
+[[32m  OK  [0m] Failed unmounting /home.
+[[32m  OK  [0m] Failed unmounting Runtime Directory.
+[[32m  OK  [0m] Reached target Unmount All Filesystems.
+[[32m  OK  [0m] Stopped target Local File Systems (Pre).
+         Stopping Remount Root and Kernel File Systems...
+[[32m  OK  [0m] Stopped Remount Root and Kernel File Systems.
+[[32m  OK  [0m] Reached target Shutdown.
+[  295.590695] reboot: Power down

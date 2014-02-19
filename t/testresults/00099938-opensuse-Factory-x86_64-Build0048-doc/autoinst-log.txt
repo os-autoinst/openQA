@@ -1,0 +1,1003 @@
+1392784979
+2014-02-19 04:42:59
+starting: /usr/bin/qemu-kvm -m 1024 -net user -net nic,model=virtio,macaddr=52:54:00:12:34:56 -serial file:serial0 -soundhw ac97 -global isa-fdc.driveA= -vga std -drive file=raid/l1,cache=unsafe,if=none,id=hd1 -device virtio-blk,drive=hd1 -drive file=raid/l2,cache=unsafe,if=none,id=hd2 -device virtio-blk,drive=hd2 -cdrom /var/lib/openqa/factory/iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso -boot once=d,menu=on,splash-time=5000 -usb -usbdevice tablet -smp 1 -enable-kvm -vnc :96 -qmp unix:qmp_socket,server,nowait -monitor unix:hmp_socket,server,nowait -S -monitor telnet:127.0.0.1:20063,server,nowait
+started mgmt loop with thread id 1
+unregister LXDE-lxde
+unregister firefox-131RC1-lxde
+unregister desktop_mainmenu-lxde
+unregister inst-overview-lxde
+unregister consoletest_finish-lxde
+unregister inst-overview-lxde-131M1
+unregister textinfo-lxde
+unregister killxscreensaver-lxde
+unregister tracker_search_in_nautilus-3
+unregister firefox_printpdf_evince
+unregister firefox_openfile
+unregister firefox_search-opensuse-build0041
+unregister firefox_bookmarks-edit03
+unregister pidgin_msn-2
+unregister test-eog-1-131RC2
+unregister tracker_open_apps-2
+unregister inst-welcome-gnomelive
+unregister gnome-selected-131M1
+unregister firefox_help-trouble
+unregister firefox_page-msn
+unregister rebootnow-gnomelive
+unregister pidgin_googletalk-1
+unregister firefox_openfile-build0041
+unregister gnome_terminal
+unregister firefox_page-ftpnvidia-build0041
+unregister firefox_sidebar-bookmark
+unregister pidgin_aim-4
+unregister tracker_starts-1
+unregister prep_pidgin_install-1
+unregister firefox_download-wheretosave-1379923202
+unregister firefox_bookmarks-delete
+unregister firefox_page-popupunblock
+unregister firefox_url-novell-1
+unregister pidgin_googletalk-3
+unregister firefox_page-youtube
+unregister test-gedit-1-131RC2
+unregister firefox-open-build0652
+unregister test-ooffice-2-131RC2
+unregister tracker_by_command-2
+unregister firefox_printing-paragraph1_1
+unregister startinstall-gnomelive
+unregister partitioning_cryptlvm-131RC2-gnome
+unregister firefox_mhtml-3
+unregister reboot-after-installation-gnome
+unregister inst-video-typed-gnomelive-grub2-132SC
+unregister firefox_tab-5
+unregister firefox_audio-gnome
+unregister inst-packageinstallationstarted-gnomelive
+unregister firefox_menu-submenu1
+unregister firefox_restart-addons-disable-build0041
+unregister test-rhythmbox-1-131RC2
+unregister firefox_saveas
+unregister firefox_page-wikipedia
+unregister firefox_know-rights
+unregister firefox_page-ftpnovell
+unregister firefox_sendlink-2
+unregister firefox_search-opensuse
+unregister inst-encrypt-password-prompt-gnomelive-131B1
+unregister firefox_download-lua-show
+unregister firefox_remember_passwd
+unregister firefox_download-wheretosave
+unregister inst-overview-gnome-131M1
+unregister tracker_searchall-1
+unregister tracker_search_in_nautilus-1
+unregister firefox_pref-content-popup
+unregister test-inkscape-1-131RC2-gnome
+unregister firefox_java-2
+unregister firefox_menu-submenu
+unregister GNOME
+unregister firefox_safemode
+unregister textinfo-gdm
+unregister firefox_printing-offlineprint_2
+unregister firefox_url-novell-2
+unregister firefox_bookmarks-add01
+unregister firefox_page-gmail2-vgastd
+unregister firefox_tab-4
+unregister firefox_history-ftpnovell
+unregister firefox_page-slashdot
+unregister firefox_sidebar-history
+unregister screenlock-gnome-blue-bnc840569
+unregister inst-userinfostyped-gnomelive
+unregister firefox_addons-safemode-build0041
+unregister firefox_printing_images-large_jpg
+unregister firefox_page-google
+unregister pidgin_IRC-1
+unregister firefox_autocomplete-testpage
+unregister firefox_pref-general-homepage-build0041
+unregister pidgin_IRC-3
+unregister firefox_sendlink-1
+unregister inst-userinfostyped-gnomelive-131M3
+unregister firefox_tab-2
+unregister firefox_page-pdbsuse
+unregister firefox_history
+unregister GNOME-131Build0038-nowallpaper-bnc844891
+unregister firefox_page-popupblocked
+unregister firefox_https-207-build0041
+unregister firefox_bookmarks-surf
+unregister test-nautilus-1-131RC2
+unregister firefox_mhtml-2
+unregister firefox_contentmenu-arrow
+unregister screenlock-gnome-131RC2
+unregister firefox_saved-passwords
+unregister firefox_page-ftpnovell-build0041
+unregister rebootnow-gnomelive-131B1
+unregister test-gimp-1-131RC2-gnome
+unregister 131beta1-btrfs-popup-GNOME
+unregister createpartsetup-gnome-10G
+unregister firefox_page-flickr
+unregister firefox_http207
+unregister test-gnucash-2-131RC2-gnome
+unregister firefox_page-ftpnvidia
+unregister pidgin_msn-3
+unregister firefox_page-ebay
+unregister firefox_bookmarks-edit02
+unregister consoletest_finish-gnome-131RC1-redraw-bnc844891
+unregister shutdown_gnome
+unregister firefox_print-build0041
+unregister test-desktop_mainmenu-1-131RC2-gnome
+unregister firefox_http207-build0041
+unregister rootpassword-typed-gnomelive
+unregister firefox_autocomplete-1
+unregister firefox_url-wikipedia-1
+unregister firefox_help-trouble-build0041
+unregister firefox_java-java_warning
+unregister firefox_tab-1
+unregister GNOME-131RC1
+unregister pidgin_aim-2
+unregister firefox_pref-applications
+unregister clean_pidgin-1
+unregister gnome-imagesused-131M1
+unregister firefox_page-gmail3
+unregister firefox_https-google
+unregister firefox_addons-page
+unregister firefox_printing_images-animated_gif
+unregister oomath-prompt-131RC2-gnome
+unregister firefox_https-pdbsuse
+unregister partitioning_lvm-131RC2-gnome
+unregister firefox_pageinfo
+unregister firefox_page-opensuse
+unregister firefox_history-ftpnovell-build0041
+unregister firefox_bookmarks-new
+unregister test-evolution-1-131RC2
+unregister firefox_pref-general-homepage
+unregister firefox_history-souceforge-build0041
+unregister test-thunderbird-1-131RC2-gnome
+unregister firefox_page-ie6
+unregister firefox_download-lua-tar
+unregister reboot-after-installation-gnome-131B1
+unregister firefox_menu-view
+unregister Gnomecutfile-1380001469
+unregister firefox_url-googlemaps-1
+unregister inst-encrypt-password-prompt-gnomelive-131M3
+unregister firefox_printing_images-small_gif
+unregister firefox_tab-3
+unregister firefox_printing_images-large_gif
+unregister firefox_java-3
+unregister test-oocalc-3-131RC2-gnome
+unregister tracker_search_in_nautilus-4
+unregister inst-overview-gnomelive
+unregister test-ooffice-1-131RC2-gnome
+unregister firefox-open
+unregister firefox_pageinfo-build0041
+unregister firefox_history-souceforge
+unregister firefox_contentmenu-build0041
+unregister firefox_addon-unmht
+unregister test-oocalc-1-131RC2-gnome
+unregister test-gnucash-1-131RC2-gnome
+unregister firefox_url-googlemaps-2
+unregister firefox_pref-tabs
+unregister createpartsetup-gnome
+unregister firefox_bookmarks-folder
+unregister pidgin_IRC-2
+unregister raid-partition-gnomelive-131RC1
+unregister firefox_help-feedback
+unregister firefox_addexcept
+unregister pidgin-showoff
+unregister firefox_menu-edit
+unregister gnome-imagesused
+unregister boot-grub-opensuse-13.1
+unregister pidgin_googletalk-2
+unregister start-firefox-build0041
+unregister firefox_mhtml-1
+unregister firefox_passwd-required-build0041
+unregister tracker_open_apps-3
+unregister firefox_page-gmail2
+unregister pidgin_aim-3
+unregister firefox_addexcept-build0041
+unregister test-firefox-3-131RC2
+unregister tracker_searchall-2
+unregister firefox_help-forgery
+unregister inst-timezone-gnomelive
+unregister firefox_page-qqmail
+unregister yast2_users-gnome-131RC2
+unregister tracker_search_in_nautilus-2
+unregister firefox_url-wikipedia-2
+unregister prep_pidgin-2
+unregister firefox_page-calendar
+unregister firefox_pref-content
+unregister ooffice-1-gnome-131RC2
+unregister firefox_contentmenu
+unregister inst-overview-gnome
+unregister tracker_pref_starts-1
+unregister firefox_page-opensuse-sponsors
+unregister tracker_info-2
+unregister firefox_print
+unregister inst-overview-gnome-text
+unregister startinstall-gnomelive-131M1
+unregister firefox_page-sourceforge
+unregister partioning-gnomelive
+unregister firefox_page-gmail1
+unregister firefox_printing-offlineprint_1
+unregister rootpwdisabled-gnome
+unregister pidgin_msn-1
+unregister inst-userpasswdtoosimple-131M3-bnc831946
+unregister screenlock-gnome
+unregister firefox_bookmarks-edit01
+unregister tracker_info-1
+unregister test-oocalc-2-131RC2-gnome
+unregister firefox_sendlink-unstable_warning
+unregister firefox_page-gmail2-build0041
+unregister tracker_by_command-1
+unregister firefox_page-facebook
+unregister firefox_printing-paragraph1_0
+unregister partitioning-custompart-gnomelive
+unregister firefox_https-207
+unregister Gnomecutfile-1380011402
+unregister screenlock-gnome-131RC1
+unregister firefox_https-google-build0041
+unregister firefox_sendlink-3
+unregister firefox-open-build0041
+unregister screenlock-gnome-live-131m4
+unregister firefox_page-yahoo
+unregister Gnomecutfile-1380010384
+unregister firefox_printpdf_evince-build0041
+unregister ooffice-save-prompt-131RC2-gnome
+unregister pidgin_aim-1
+unregister firefox_page-baidu
+unregister firefox_help-about-build0041
+unregister inst-video-typed-gnome-grub2-13B1
+unregister firefox_saved-passwords-build0041
+unregister firefox_history-empty
+unregister firefox_autocomplete-testpage_filled
+unregister firefox_help-about
+unregister gnome-selected
+unregister inst-userpasswdtoosimple-131M4-gnomelive-bnc831946
+unregister firefox_remember_passwd-vgastd
+unregister firefox_loadie7
+unregister firefox_page-amazon
+unregister firefox_saveas-build0041
+unregister inst-usersetup-gnomelive
+unregister firefox_pref-general
+unregister firefox_safemode-build0041
+unregister gnome-selected-textmode
+unregister firefox_printing-offlineprint_0
+unregister firefox_page-google-build0041
+unregister firefox_https-risk-build0041
+unregister firefox_restart-addons-disable
+unregister logoutdialog_gnome
+unregister firefox_printing_images-small_jpg
+unregister killscreensaver-gnome
+unregister firefox_page-calendar-passwd
+unregister inst-userpasswdtoosimple-gnomelive
+unregister firefox-131RC2-gnome
+unregister inst-bootmenu-gnomelive
+unregister firefox_bookmarks-open
+unregister firefox_addon-unmht-build0041
+unregister firefox_page-novell
+unregister inst-timezone-gnomelive-131M2
+unregister firefox_yahoo-search
+unregister firefox_about-rights
+unregister consoletest_finish-gnome
+unregister partitioning-usebtrfs-gnomelive-131RC1
+unregister firefox_java-1
+unregister start-firefox
+unregister firefox_bookmarks-add02
+unregister firefox_localpage-1
+unregister firefox_https-risk
+unregister tracker_open_apps-1
+unregister logoutdialog-gnome-131RC2
+unregister desktop_mainmenu-1370356934
+unregister inst-overview-xfce-131M1
+unregister finish_desktop-rescuecd
+unregister XFCE-xfce-131M4
+unregister consoletest_finish-xfce
+unregister XFCE-xfce
+unregister inst-overview-xfce
+unregister consoletest_finish-1369825565
+unregister inst-packageinstallationstarted-132SC
+unregister desktop-at-first-boot-minimalx-3
+unregister textinfo-minimalx
+unregister desktop-selection-132-SC069
+unregister partioning-132SC-B0049
+unregister other-desktop-132SC
+unregister desktop-at-first-boot-minimalx-2
+unregister displaymanager-minimalx
+unregister inst-overview-minimalx
+unregister other-desktop-1-promo-131B1
+unregister inst-overview-minimalx-131M1
+unregister desktop-at-first-boot-minimalx
+unregister inst-overview-minimalx-text
+unregister test-yast2_i-1-131B1
+unregister desktop-at-first-boot-minimalx-SC
+unregister inst-instmode-text-132SC-B0049
+unregister test-zypper_up-first_run-131M1
+unregister inst-overview-textmode-132SC-B0049
+unregister test-aplay-1-131M1
+unregister partioning-text-132SC-B0049
+unregister test-consoletest_setup-1-131M1
+unregister inst-overview-textmode
+unregister inst-welcome-textmode-132SC-B0049
+unregister desktop-at-first-boot-text-131M2
+unregister test-mtab-2-131M1
+unregister textinfo-textmode
+unregister test-yast2_bootloader-3-131M1
+unregister test-zypper_up-second_run-131M1
+unregister zypper-patch-3-131M1
+unregister desktop-at-first-boot-text
+unregister desktop-at-first-boot-text-131M1
+unregister test-yast2_lan-1-131M1
+unregister inst-overview-kdelive-131M4-WRONG_ORDER_BUG
+unregister yast2_lan-2-live
+unregister kontact-window-131RC2-live
+unregister yast-still-running-gnome_live-131RC1
+unregister rebootnow-kdelive
+unregister inst-overview-kdelive
+unregister inst-overview-kdelive-131M1
+unregister rebootnow-kdelive-131M1
+unregister inst-video-typed-grub2-textmode-13M1
+unregister inst-overview-kde-text-13M1
+unregister inst-overview-kde-text-grub2-13M1
+unregister inst-usersetup-text
+unregister partioning-text
+unregister partioning-text-131M1
+unregister inst-welcome-textmode
+unregister inst-textselected
+unregister disabledhome-text
+unregister inst-welcome-textmode-betawarning-13M1
+unregister inst-userpasswdtoosimple-text
+unregister rebootnow-text
+unregister other-desktop-textmode
+unregister inst-automatic-configuration-textmode
+unregister autologindisabled-textmode
+unregister installation_mode-text-13M2
+unregister startinstall-text
+unregister partitioning-usebtrfs-text
+unregister inst-betawarning-textmode-13M1
+unregister yast-still-running-textmode
+unregister before-package-selection-textmode
+unregister inst-instmode-text
+unregister inst-timezone-text
+unregister 131beta1-btrfs-popup-textmode
+unregister other-desktop-textmode-131Build666-enlightenment
+unregister inst-packageinstallationstarted-text
+unregister inst-userinfostyped-text
+unregister desktop-selection-text
+unregister installation_mode-de
+unregister welcome-131M1-de
+usingenv DESKTOP=kde
+usingenv DISTRI=opensuse
+usingenv QEMUCPUS=1
+usingenv INSTLANG=en_US
+usingenv QEMUVGA=std
+usingenv DOCRUN=1
+usingenv DVD=1
+usingenv ISO=/var/lib/openqa/factory/iso/openSUSE-Factory-DVD-x86_64-Build0048-Media.iso
+usingenv ISO_MAXSIZE=4700372992
+usingenv QEMUVGA=std
+scheduling isosize /usr/lib/os-autoinst/distri/opensuse/inst.d/010_isosize.pm
+scheduling bootloader /usr/lib/os-autoinst/distri/opensuse/inst.d/020_bootloader.pm
+scheduling welcome /usr/lib/os-autoinst/distri/opensuse/inst.d/050_welcome.pm
+scheduling installation_mode /usr/lib/os-autoinst/distri/opensuse/inst.d/051_installation_mode.pm
+scheduling partitioning /usr/lib/os-autoinst/distri/opensuse/inst.d/060_partitioning.pm
+scheduling partitioning_finish /usr/lib/os-autoinst/distri/opensuse/inst.d/064_partitioning_finish.pm
+scheduling installer_timezone /usr/lib/os-autoinst/distri/opensuse/inst.d/065_installer_timezone.pm
+scheduling logpackages /usr/lib/os-autoinst/distri/opensuse/inst.d/066_logpackages.pm
+scheduling installer_desktopselection /usr/lib/os-autoinst/distri/opensuse/inst.d/067_installer_desktopselection.pm
+scheduling user_settings /usr/lib/os-autoinst/distri/opensuse/inst.d/068_user_settings.pm
+scheduling installation_overview /usr/lib/os-autoinst/distri/opensuse/inst.d/071_installation_overview.pm
+scheduling start_install /usr/lib/os-autoinst/distri/opensuse/inst.d/085_start_install.pm
+scheduling livecdreboot /usr/lib/os-autoinst/distri/opensuse/inst.d/090_livecdreboot.pm
+scheduling second_stage /usr/lib/os-autoinst/distri/opensuse/inst.d/091_second_stage.pm
+scheduling BNC847880_QT_cirrus /usr/lib/os-autoinst/distri/opensuse/inst.d/700_BNC847880_QT_cirrus.pm
+scheduling reboot_after_install /usr/lib/os-autoinst/distri/opensuse/inst.d/800_reboot_after_install.pm
+scheduling consoletest_setup /usr/lib/os-autoinst/distri/opensuse/consoletest.d/010_consoletest_setup.pm
+scheduling remove_cd_repo /usr/lib/os-autoinst/distri/opensuse/consoletest.d/011_remove_cd_repo.pm
+scheduling yast2_lan /usr/lib/os-autoinst/distri/opensuse/consoletest.d/140_yast2_lan.pm
+scheduling aplay /usr/lib/os-autoinst/distri/opensuse/consoletest.d/145_aplay.pm
+scheduling glibc_i686 /usr/lib/os-autoinst/distri/opensuse/consoletest.d/146_glibc_i686.pm
+scheduling zypper_up /usr/lib/os-autoinst/distri/opensuse/consoletest.d/150_zypper_up.pm
+scheduling zypper_in /usr/lib/os-autoinst/distri/opensuse/consoletest.d/155_zypper_in.pm
+scheduling yast2_i /usr/lib/os-autoinst/distri/opensuse/consoletest.d/157_yast2_i.pm
+scheduling yast2_bootloader /usr/lib/os-autoinst/distri/opensuse/consoletest.d/180_yast2_bootloader.pm
+scheduling sshd /usr/lib/os-autoinst/distri/opensuse/consoletest.d/190_sshd.pm
+scheduling sshfs /usr/lib/os-autoinst/distri/opensuse/consoletest.d/195_sshfs.pm
+scheduling mtab /usr/lib/os-autoinst/distri/opensuse/consoletest.d/280_mtab.pm
+scheduling textinfo /usr/lib/os-autoinst/distri/opensuse/consoletest.d/900_textinfo.pm
+scheduling consoletest_finish /usr/lib/os-autoinst/distri/opensuse/consoletest.d/999_consoletest_finish.pm
+scheduling xterm /usr/lib/os-autoinst/distri/opensuse/x11test.d/200_xterm.pm
+scheduling sshxterm /usr/lib/os-autoinst/distri/opensuse/x11test.d/220_sshxterm.pm
+scheduling kate /usr/lib/os-autoinst/distri/opensuse/x11test.d/300_kate.pm
+scheduling firefox /usr/lib/os-autoinst/distri/opensuse/x11test.d/400_firefox.pm
+scheduling firefox_audio /usr/lib/os-autoinst/distri/opensuse/x11test.d/402_firefox_audio.pm
+scheduling ooffice /usr/lib/os-autoinst/distri/opensuse/x11test.d/420_ooffice.pm
+scheduling oomath /usr/lib/os-autoinst/distri/opensuse/x11test.d/425_oomath.pm
+scheduling oocalc /usr/lib/os-autoinst/distri/opensuse/x11test.d/430_oocalc.pm
+scheduling khelpcenter /usr/lib/os-autoinst/distri/opensuse/x11test.d/440_khelpcenter.pm
+scheduling systemsettings /usr/lib/os-autoinst/distri/opensuse/x11test.d/460_systemsettings.pm
+scheduling yast2_users /usr/lib/os-autoinst/distri/opensuse/x11test.d/470_yast2_users.pm
+scheduling dolphin /usr/lib/os-autoinst/distri/opensuse/x11test.d/480_dolphin.pm
+scheduling amarok /usr/lib/os-autoinst/distri/opensuse/x11test.d/500_amarok.pm
+scheduling kontact /usr/lib/os-autoinst/distri/opensuse/x11test.d/520_kontact.pm
+scheduling reboot /usr/lib/os-autoinst/distri/opensuse/x11test.d/561_reboot.pm
+scheduling desktop_mainmenu /usr/lib/os-autoinst/distri/opensuse/x11test.d/700_desktop_mainmenu.pm
+scheduling gimp /usr/lib/os-autoinst/distri/opensuse/x11test.d/810_gimp.pm
+scheduling inkscape /usr/lib/os-autoinst/distri/opensuse/x11test.d/810_inkscape.pm
+scheduling gnucash /usr/lib/os-autoinst/distri/opensuse/x11test.d/840_gnucash.pm
+scheduling shutdown /usr/lib/os-autoinst/distri/opensuse/x11test.d/900_shutdown.pm
+
+||| starting isosize /usr/lib/os-autoinst/distri/opensuse/inst.d/010_isosize.pm at 2014-02-19 04:43:09
+check if actual iso size 4593811456 fits 4700372992: ok
+||| finished isosize inst at 2014-02-19 04:43:09 (0 s)
+
+||| starting bootloader /usr/lib/os-autoinst/distri/opensuse/inst.d/020_bootloader.pm at 2014-02-19 04:43:09
+<<< waitforneedle('inst-bootmenu', timeout=15)
+MATCH(inst-bootmenu-promo-osp:0.09): 0 376
+MATCH(bootmenu-rescue-cd:0.11): 0 376
+MATCH(bootmenu-dvd-12.3:0.11): 0 376
+MATCH(inst-bootmenu-13.2M0:0.11): 0 376
+MATCH(inst-bootmenu-kdelive:0.30): 108 23
+MATCH(inst-bootmenu-promo:0.33): 43 57
+STAT statuser=0.16 statsystem=0.15 
+MATCH(inst-bootmenu-promo-osp:0.12): 0 233
+MATCH(bootmenu-rescue-cd:0.16): 0 234
+MATCH(bootmenu-dvd-12.3:0.17): 0 234
+MATCH(inst-bootmenu-13.2M0:0.17): 0 234
+MATCH(inst-bootmenu-kdelive:0.08): 0 233
+MATCH(inst-bootmenu-promo:0.25): 88 516
+STAT statuser=0.37 statsystem=0.22 
+MATCH(inst-bootmenu-promo-osp:0.91): 0 0
+MATCH(bootmenu-rescue-cd:0.94): 0 0
+MATCH(bootmenu-dvd-12.3:0.98): 0 0
+MATCH(inst-bootmenu-13.2M0:1.00): 0 0
+MATCH(inst-bootmenu-kdelive:0.93): 0 0
+MATCH(inst-bootmenu-promo:0.67): 250 160
+>>> found inst-bootmenu-13.2M0, similarity 1.00 @ 0/0: 
+<<< sendkey(key=down)
+<<< sendautotype(string='vga=791 ')
+<<< sendkey(key=v)
+<<< sendkey(key=g)
+<<< sendkey(key=a)
+<<< sendkey(key=equal)
+<<< sendkey(key=7)
+<<< sendkey(key=9)
+<<< sendkey(key=1)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendautotype(string='video=1024x768-16 ')
+<<< sendkey(key=v)
+<<< sendkey(key=i)
+<<< sendkey(key=d)
+<<< sendkey(key=e)
+<<< sendkey(key=o)
+<<< sendkey(key=equal)
+<<< sendkey(key=1)
+<<< sendkey(key=0)
+<<< sendkey(key=2)
+<<< sendkey(key=4)
+<<< sendkey(key=x)
+<<< sendkey(key=7)
+<<< sendkey(key=6)
+<<< sendkey(key=8)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=minus)
+<<< sendkey(key=1)
+<<< sendkey(key=6)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendautotype(string='drm_kms_helper.edid_firmware=edid/1024x768.bin ')
+<<< sendkey(key=d)
+<<< sendkey(key=r)
+<<< sendkey(key=m)
+<<< sendkey(key=shift-minus)
+<<< sendkey(key=k)
+<<< sendkey(key=m)
+<<< sendkey(key=s)
+<<< sendkey(key=shift-minus)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=h)
+<<< sendkey(key=e)
+<<< sendkey(key=l)
+<<< sendkey(key=p)
+<<< sendkey(key=e)
+<<< sendkey(key=r)
+<<< sendkey(key=dot)
+<<< sendkey(key=e)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=d)
+<<< sendkey(key=i)
+<<< sendkey(key=d)
+<<< sendkey(key=shift-minus)
+<<< sendkey(key=f)
+<<< sendkey(key=i)
+<<< sendkey(key=r)
+<<< sendkey(key=m)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=w)
+<<< sendkey(key=a)
+<<< sendkey(key=r)
+<<< sendkey(key=e)
+<<< sendkey(key=equal)
+<<< sendkey(key=e)
+<<< sendkey(key=d)
+<<< sendkey(key=i)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=d)
+<<< sendkey(key=slash)
+<<< sendkey(key=1)
+<<< sendkey(key=0)
+<<< sendkey(key=2)
+<<< sendkey(key=4)
+<<< sendkey(key=x)
+<<< sendkey(key=7)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=6)
+<<< sendkey(key=8)
+<<< sendkey(key=dot)
+<<< sendkey(key=b)
+<<< sendkey(key=i)
+<<< sendkey(key=n)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< waitforneedle('inst-video-typed', timeout=13)
+MATCH(inst-video-typed:1.00): 265 475
+>>> found inst-video-typed, similarity 1.00 @ 265/475: 
+<<< sendautotype(string='console=ttyS0 ')
+<<< sendkey(key=c)
+<<< sendkey(key=o)
+<<< sendkey(key=n)
+<<< sendkey(key=s)
+<<< sendkey(key=o)
+<<< sendkey(key=l)
+<<< sendkey(key=e)
+<<< sendkey(key=equal)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=t)
+<<< sendkey(key=t)
+<<< sendkey(key=y)
+<<< sendkey(key=shift-s)
+<<< sendkey(key=0)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendautotype(string='console=tty ')
+<<< sendkey(key=c)
+<<< sendkey(key=o)
+<<< sendkey(key=n)
+<<< sendkey(key=s)
+<<< sendkey(key=o)
+<<< sendkey(key=l)
+<<< sendkey(key=e)
+<<< sendkey(key=equal)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=t)
+<<< sendkey(key=t)
+<<< sendkey(key=y)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< waitforneedle('inst-consolesettingstyped', timeout=30)
+MATCH(inst-consolesettingstyped-1:1.00): 565 465
+>>> found inst-consolesettingstyped-1, similarity 1.00 @ 565/465: 
+<<< sendautotype(string='')
+<<< sendkey(key=ret)
+||| finished bootloader inst at 2014-02-19 04:44:26 (77 s)
+
+||| starting welcome /usr/lib/os-autoinst/distri/opensuse/inst.d/050_welcome.pm at 2014-02-19 04:44:26
+<<< waitforneedle('inst-welcome_inst-welcome-132SC-B0065.2_welcome-132SC-B0047_inst-welcome-132SC-B0065_inst-welcome-132SC-B0066_welcome-131M1_inst-betawarning_', timeout=500)
+MATCH(inst-welcome:0.29): 666 487
+MATCH(inst-welcome:0.35): 661 465
+MATCH(inst-welcome-132SC-B0065.2:0.24): 219 146
+MATCH(inst-welcome-132SC-B0065.2:0.44): 250 178
+MATCH(welcome-132SC-B0047:0.23): 216 147
+MATCH(welcome-132SC-B0047:0.44): 250 178
+MATCH(inst-welcome-132SC-B0065:0.25): 172 145
+MATCH(inst-welcome-132SC-B0065:0.44): 250 178
+MATCH(inst-welcome-132SC-B0066:0.26): 288 495
+MATCH(inst-welcome-132SC-B0066:0.44): 250 178
+MATCH(welcome-131M1:0.29): 666 487
+MATCH(welcome-131M1:0.34): 659 466
+MATCH(inst-betawarning:0.26): 51 33
+STAT statuser=60.8 statsystem=14.98 
+MATCH(inst-welcome:0.30): 91 267
+MATCH(inst-welcome:0.42): 265 277
+MATCH(inst-welcome-132SC-B0065.2:0.24): 124 137
+MATCH(inst-welcome-132SC-B0065.2:0.44): 250 178
+MATCH(welcome-132SC-B0047:0.23): 124 137
+MATCH(welcome-132SC-B0047:0.44): 250 178
+MATCH(inst-welcome-132SC-B0065:0.27): 172 145
+MATCH(inst-welcome-132SC-B0065:0.44): 250 178
+MATCH(inst-welcome-132SC-B0066:0.28): 175 144
+MATCH(inst-welcome-132SC-B0066:0.44): 250 178
+MATCH(welcome-131M1:0.30): 91 267
+MATCH(welcome-131M1:0.42): 266 277
+MATCH(inst-betawarning:0.30): 222 295
+STAT statuser=65.74 statsystem=16.58 
+MATCH(inst-welcome:0.20): 376 66
+MATCH(inst-welcome:0.31): 120 147
+MATCH(inst-welcome-132SC-B0065.2:0.24): 361 66
+MATCH(inst-welcome-132SC-B0065.2:0.31): 164 466
+MATCH(welcome-132SC-B0047:0.21): 376 66
+MATCH(welcome-132SC-B0047:0.31): 164 466
+MATCH(inst-welcome-132SC-B0065:0.23): 354 74
+MATCH(inst-welcome-132SC-B0065:0.31): 164 466
+MATCH(inst-welcome-132SC-B0066:0.22): 364 74
+MATCH(inst-welcome-132SC-B0066:0.31): 164 466
+MATCH(welcome-131M1:0.20): 377 66
+MATCH(welcome-131M1:0.30): 120 147
+MATCH(inst-betawarning:0.22): 199 482
+STAT statuser=71.39 statsystem=18.29 
+MATCH(inst-welcome:0.19): 335 228
+MATCH(inst-welcome:0.30): 219 274
+MATCH(inst-welcome-132SC-B0065.2:0.19): 160 434
+MATCH(inst-welcome-132SC-B0065.2:0.31): 164 242
+MATCH(welcome-132SC-B0047:0.18): 336 234
+MATCH(welcome-132SC-B0047:0.31): 164 242
+MATCH(inst-welcome-132SC-B0065:0.20): 264 459
+MATCH(inst-welcome-132SC-B0065:0.31): 164 242
+MATCH(inst-welcome-132SC-B0066:0.19): 293 460
+MATCH(inst-welcome-132SC-B0066:0.31): 164 242
+MATCH(welcome-131M1:0.20): 335 229
+MATCH(welcome-131M1:0.30): 218 274
+MATCH(inst-betawarning:0.22): 133 463
+STAT statuser=75.31 statsystem=18.7 
+MATCH(inst-welcome:0.19): 335 100
+MATCH(inst-welcome:0.30): 219 146
+MATCH(inst-welcome-132SC-B0065.2:0.19): 160 306
+MATCH(inst-welcome-132SC-B0065.2:0.31): 164 114
+MATCH(welcome-132SC-B0047:0.18): 336 106
+MATCH(welcome-132SC-B0047:0.31): 164 114
+MATCH(inst-welcome-132SC-B0065:0.20): 264 331
+MATCH(inst-welcome-132SC-B0065:0.31): 164 114
+MATCH(inst-welcome-132SC-B0066:0.19): 293 332
+MATCH(inst-welcome-132SC-B0066:0.31): 164 114
+MATCH(welcome-131M1:0.20): 335 101
+MATCH(welcome-131M1:0.30): 218 146
+MATCH(inst-betawarning:0.22): 133 335
+STAT statuser=77.8 statsystem=19.16 
+MATCH(inst-welcome:0.19): 335 4
+MATCH(inst-welcome:0.30): 219 50
+MATCH(inst-welcome-132SC-B0065.2:0.19): 160 210
+MATCH(inst-welcome-132SC-B0065.2:0.31): 164 18
+MATCH(welcome-132SC-B0047:0.18): 336 10
+MATCH(welcome-132SC-B0047:0.31): 164 18
+MATCH(inst-welcome-132SC-B0065:0.20): 264 235
+MATCH(inst-welcome-132SC-B0065:0.31): 164 18
+MATCH(inst-welcome-132SC-B0066:0.19): 293 236
+MATCH(inst-welcome-132SC-B0066:0.31): 164 18
+MATCH(welcome-131M1:0.20): 335 5
+MATCH(welcome-131M1:0.30): 218 50
+MATCH(inst-betawarning:0.22): 133 239
+STAT statuser=84.49 statsystem=19.31 
+MATCH(inst-welcome:0.03): 460 278
+MATCH(inst-welcome:0.07): 349 375
+MATCH(inst-welcome-132SC-B0065.2:0.03): 203 316
+MATCH(inst-welcome-132SC-B0065.2:0.06): 349 371
+MATCH(welcome-132SC-B0047:0.03): 185 316
+MATCH(welcome-132SC-B0047:0.06): 349 371
+MATCH(inst-welcome-132SC-B0065:0.03): 203 278
+MATCH(inst-welcome-132SC-B0065:0.06): 349 371
+MATCH(inst-welcome-132SC-B0066:0.03): 190 278
+MATCH(inst-welcome-132SC-B0066:0.06): 349 371
+MATCH(welcome-131M1:0.03): 461 278
+MATCH(welcome-131M1:0.07): 349 375
+MATCH(inst-betawarning:0.04): 214 263
+STAT statuser=88.77 statsystem=19.57 
+MATCH(inst-welcome:0.44): 380 1
+MATCH(inst-welcome:0.70): 13 152
+MATCH(inst-welcome-132SC-B0065.2:0.62): 11 8
+MATCH(inst-welcome-132SC-B0065.2:1.00): 13 152
+MATCH(welcome-132SC-B0047:0.43): 35 8
+MATCH(welcome-132SC-B0047:1.00): 13 152
+MATCH(inst-welcome-132SC-B0065:1.00): 11 8
+MATCH(inst-welcome-132SC-B0065:1.00): 13 152
+MATCH(inst-welcome-132SC-B0066:0.77): 0 8
+MATCH(inst-welcome-132SC-B0066:1.00): 13 152
+MATCH(welcome-131M1:0.45): 380 1
+MATCH(welcome-131M1:0.80): 13 152
+MATCH(inst-betawarning:0.43): 10 297
+>>> found inst-welcome-132SC-B0065, similarity 1.00 @ 13/152: 
+<<< waitidle(timeout=5)
+waitidle 0 d=2
+waitidle 1 d=3
+waitidle 2 d=2
+>>> waitidle: idle detected
+<<< waitforneedle('inst-welcome_inst-welcome-132SC-B0065.2_welcome-132SC-B0047_inst-welcome-132SC-B0065_inst-welcome-132SC-B0066_welcome-131M1_inst-betawarning_', timeout=3)
+MATCH(inst-welcome:0.44): 380 1
+MATCH(inst-welcome:0.70): 13 152
+MATCH(inst-welcome-132SC-B0065.2:0.62): 11 8
+MATCH(inst-welcome-132SC-B0065.2:1.00): 13 152
+MATCH(welcome-132SC-B0047:0.43): 35 8
+MATCH(welcome-132SC-B0047:1.00): 13 152
+MATCH(inst-welcome-132SC-B0065:1.00): 11 8
+MATCH(inst-welcome-132SC-B0065:1.00): 13 152
+MATCH(inst-welcome-132SC-B0066:0.77): 0 8
+MATCH(inst-welcome-132SC-B0066:1.00): 13 152
+MATCH(welcome-131M1:0.45): 380 1
+MATCH(welcome-131M1:0.80): 13 152
+MATCH(inst-betawarning:0.43): 10 297
+>>> found inst-welcome-132SC-B0065, similarity 1.00 @ 13/152: 
+<<< mouse_hide(border_offset=0)
+<<< waitidle(timeout=19)
+waitidle 0 d=14
+waitidle 1 d=13
+waitidle 2 d=5
+>>> waitidle: idle detected
+<<< waitforneedle('languagepicked', timeout=2)
+MATCH(inst-welcome:0.44): 380 1
+MATCH(inst-welcome:0.70): 13 152
+MATCH(inst-welcome-132SC-B0065.2:0.62): 11 8
+MATCH(inst-welcome-132SC-B0065.2:1.00): 13 152
+MATCH(welcome-132SC-B0047:0.43): 35 8
+MATCH(welcome-132SC-B0047:1.00): 13 152
+MATCH(inst-welcome-132SC-B0065:1.00): 11 8
+MATCH(inst-welcome-132SC-B0065:1.00): 13 152
+MATCH(inst-welcome-132SC-B0066:0.77): 0 8
+MATCH(inst-welcome-132SC-B0066:1.00): 13 152
+MATCH(welcome-131M1:0.45): 380 1
+MATCH(welcome-131M1:0.80): 13 152
+>>> found inst-welcome-132SC-B0065, similarity 1.00 @ 13/152: 
+<<< sendkey(key=alt-n)
+<<< waitforneedle('langincomplete', timeout=1)
+<<< waitidle(timeout=19)
+waitidle 0 d=2
+waitidle 1 d=2
+waitidle 2 d=3
+>>> waitidle: idle detected
+<<< sendautotype(string='curl --form testname=openSUSE-Factory-DVD-x86_64-Build0048-doc --resolve localhost:80:10.0.2.2 --form upload=@/tmp/y2logs.tar.bz2 localhost/cgi-bin/uploadlog
+')
+<<< sendkey(key=c)
+<<< sendkey(key=u)
+<<< sendkey(key=r)
+<<< sendkey(key=l)
+<<< sendkey(key=spc)
+<<< sendkey(key=minus)
+<<< sendkey(key=minus)
+<<< sendkey(key=f)
+<<< sendkey(key=o)
+<<< sendkey(key=r)
+<<< sendkey(key=m)
+<<< sendkey(key=spc)
+<<< sendkey(key=t)
+<<< sendkey(key=e)
+<<< sendkey(key=s)
+<<< sendkey(key=t)
+<<< sendkey(key=n)
+<<< sendkey(key=a)
+<<< sendkey(key=m)
+<<< sendkey(key=e)
+<<< sendkey(key=equal)
+<<< sendkey(key=o)
+<<< sendkey(key=p)
+<<< sendkey(key=e)
+<<< sendkey(key=n)
+<<< sendkey(key=shift-s)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=shift-u)
+<<< sendkey(key=shift-s)
+<<< sendkey(key=shift-e)
+<<< sendkey(key=minus)
+<<< sendkey(key=shift-f)
+<<< sendkey(key=a)
+<<< sendkey(key=c)
+<<< sendkey(key=t)
+<<< sendkey(key=o)
+<<< sendkey(key=r)
+<<< sendkey(key=y)
+<<< sendkey(key=minus)
+<<< sendkey(key=shift-d)
+<<< sendkey(key=shift-v)
+<<< sendkey(key=shift-d)
+<<< sendkey(key=minus)
+<<< sendkey(key=x)
+<<< sendkey(key=8)
+<<< sendkey(key=6)
+<<< sendkey(key=shift-minus)
+<<< sendkey(key=6)
+<<< sendkey(key=4)
+<<< sendkey(key=minus)
+<<< sendkey(key=shift-b)
+<<< sendkey(key=u)
+<<< sendkey(key=i)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=l)
+<<< sendkey(key=d)
+<<< sendkey(key=0)
+<<< sendkey(key=0)
+<<< sendkey(key=4)
+<<< sendkey(key=8)
+<<< sendkey(key=minus)
+<<< sendkey(key=d)
+<<< sendkey(key=o)
+<<< sendkey(key=c)
+<<< sendkey(key=spc)
+<<< sendkey(key=minus)
+<<< sendkey(key=minus)
+<<< sendkey(key=r)
+<<< sendkey(key=e)
+<<< sendkey(key=s)
+<<< sendkey(key=o)
+<<< sendkey(key=l)
+<<< sendkey(key=v)
+<<< sendkey(key=e)
+<<< sendkey(key=spc)
+<<< sendkey(key=l)
+<<< sendkey(key=o)
+<<< sendkey(key=c)
+<<< sendkey(key=a)
+<<< sendkey(key=l)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=h)
+<<< sendkey(key=o)
+<<< sendkey(key=s)
+<<< sendkey(key=t)
+<<< sendkey(key=shift-semicolon)
+<<< sendkey(key=8)
+<<< sendkey(key=0)
+<<< sendkey(key=shift-semicolon)
+<<< sendkey(key=1)
+<<< sendkey(key=0)
+<<< sendkey(key=dot)
+<<< sendkey(key=0)
+<<< sendkey(key=dot)
+<<< sendkey(key=2)
+<<< sendkey(key=dot)
+<<< sendkey(key=2)
+<<< sendkey(key=spc)
+<<< sendkey(key=minus)
+<<< sendkey(key=minus)
+<<< sendkey(key=f)
+<<< sendkey(key=o)
+<<< sendkey(key=r)
+<<< sendkey(key=m)
+<<< sendkey(key=spc)
+<<< sendkey(key=u)
+<<< sendkey(key=p)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=l)
+<<< sendkey(key=o)
+<<< sendkey(key=a)
+<<< sendkey(key=d)
+<<< sendkey(key=equal)
+<<< sendkey(key=shift-2)
+<<< sendkey(key=slash)
+<<< sendkey(key=t)
+<<< sendkey(key=m)
+<<< sendkey(key=p)
+<<< sendkey(key=slash)
+<<< sendkey(key=y)
+<<< sendkey(key=2)
+<<< sendkey(key=l)
+<<< sendkey(key=o)
+<<< sendkey(key=g)
+<<< sendkey(key=s)
+<<< sendkey(key=dot)
+<<< sendkey(key=t)
+<<< sendkey(key=a)
+<<< sendkey(key=r)
+<<< sendkey(key=dot)
+<<< sendkey(key=b)
+<<< sendkey(key=z)
+<<< sendkey(key=2)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=l)
+<<< sendkey(key=o)
+<<< sendkey(key=c)
+<<< sendkey(key=a)
+<<< sendkey(key=l)
+<<< sendkey(key=h)
+<<< sendkey(key=o)
+<<< sendkey(key=s)
+<<< sendkey(key=t)
+<<< sendkey(key=slash)
+<<< sendkey(key=c)
+<<< sendkey(key=g)
+<<< sendkey(key=i)
+<<< sendkey(key=minus)
+<<< sendkey(key=b)
+<<< sendkey(key=i)
+<<< sendkey(key=n)
+<<< sendkey(key=slash)
+<<< sendkey(key=u)
+<<< sendkey(key=p)
+<<< sendkey(key=l)
+<<< sendkey(key=o)
+<<< sendkey(key=a)
+<<< sendkey(key=d)
+<<< sendkey(key=l)
+<<< sendkey(key=o)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=g)
+<<< sendkey(key=ret)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< waitidle(timeout=9)
+waitidle 0 d=2
+waitidle 1 d=1
+waitidle 2 d=2
+>>> waitidle: idle detected
+test logpackages failed: test logpackages died: 
+ at /usr/lib/os-autoinst/basetest.pm line 282.
+	basetest::runtest('logpackages=HASH(0x3975c08)') called at /usr/lib/os-autoinst/autotest.pm line 60
+	eval {...} called at /usr/lib/os-autoinst/autotest.pm line 60
+	autotest::runalltests() called at /usr/lib/os-autoinst/start.pl line 80
+	eval {...} called at /usr/lib/os-autoinst/start.pl line 77
+
+
+management thread exit at 2014-02-19 04:47:52
+ALARM: backend.run got deleted! - exiting...
+Recording to testresults/openSUSE-Factory-DVD-x86_64-Build0048-doc/video.ogv
+567 frames, 1024x768
+Compressing....                                          
+...............................................................................
+   
+done.
+
+QEMU finished, running final checks
++++ STDERR +++
+Can't find /usr/lib/os-autoinst/distri/opensuse/needles/windows8.png at /usr/lib/os-autoinst/needle.pm line 66.
+Possible attempt to separate words with commas at (eval 61) line 98.
+Warning: default mac address being used, creating potential for address conflict
+audio: Failed to create voice `ac97.pi'
+audio: Failed to create voice `ac97.mc'
+audio: Failed to create voice `ac97.pi'
+audio: Failed to create voice `ac97.mc'
+5137: to_child 5, from_child 11
+5137: cmdpipe 4, rsppipe 12
+5137: hmpsocket 13, qmpsocket 14
+EVENT {"timestamp":{"seconds":1392784986,"microseconds":255316},"event":"RESUME"}
+WARNING: read qmp 165 - {"timestamp": {"seconds": 1392785109, "microseconds": 889415}, "event": "NIC_RX_FILTER_CHANGED", "data": {"path": "/machine/unattached/device[19]/virtio-backend"}}
+
+WARNING: read qmp 110 - {"timestamp": {"seconds": 1392785163, "microseconds": 503604}, "event": "RTC_CHANGE", "data": {"offset": 0}}
+
+test logpackages died: mydie at /usr/lib/os-autoinst/bmwqemu.pm line 409.
+	bmwqemu::mydie('needle(s) \'before-package-selection\' not found') called at /usr/lib/os-autoinst/bmwqemu.pm line 1237
+	bmwqemu::_waitforneedle('mustmatch', 'before-package-selection', 'timeout', undef) called at /usr/lib/os-autoinst/bmwqemu.pm line 1244
+	bmwqemu::waitforneedle('before-package-selection') called at /usr/lib/os-autoinst/distri/opensuse/inst.d/066_logpackages.pm line 14
+	logpackages::run('logpackages=HASH(0x3975c08)') called at /usr/lib/os-autoinst/basetest.pm line 267
+	eval {...} called at /usr/lib/os-autoinst/basetest.pm line 260
+	basetest::runtest('logpackages=HASH(0x3975c08)') called at /usr/lib/os-autoinst/autotest.pm line 60
+	eval {...} called at /usr/lib/os-autoinst/autotest.pm line 60
+	autotest::runalltests() called at /usr/lib/os-autoinst/start.pl line 80
+	eval {...} called at /usr/lib/os-autoinst/bmwqemu.pm line 409.
+	bmwqemu::mydie('needle(s) \'before-package-selection\' not found') called at /usr/lib/os-autoinst/bmwqemu.pm line 1237
+	bmwqemu::_waitforneedle('mustmatch', 'before-package-selection', 'timeout', undef) called at /usr/lib/os-autoinst/bmwqemu.pm line 1244
+	bmwqemu::waitforneedle('before-package-selection') called at /usr/lib/os-autoinst/distri/opensuse/inst.d/066_logpackages.pm line 14
+	logpackages::run('logpackages=HASH(0x3975c08)') called at /usr/lib/os-autoinst/basetest.pm line 267
+	eval {...} called at /usr/lib/os-autoinst/basetest.pm line 260
+	basetest::runtest('logpackages=HASH(0x3975c08)') called at /usr/lib/os-autoinst/autotest.pm line 60
+	eval {...} called at /usr/lib/os-autoinst/autotest.pm line 60
+	autotest::runalltests() called at /usr/lib/os-autoinst/start.pl line 80
+	eval {...} called
+ at /usr/lib/os-autoinst/basetest.pm line 275.
+	basetest::runtest('logpackages=HASH(0x3975c08)') called at /usr/lib/os-autoinst/autotest.pm line 60
+	eval {...} called at /usr/lib/os-autoinst/autotest.pm line 60
+	autotest::runalltests() called at /usr/lib/os-autoinst/start.pl line 80
+	eval {...} called at /usr/lib/os-autoinst/start.pl line 77
+WARNING: read qmp 230 - {"timestamp": {"seconds": 1392785272, "microseconds": 893427}, "event": "SHUTDOWN"}
+{"timestamp": {"seconds": 1392785272, "microseconds": 894127}, "event": "DEVICE_TRAY_MOVED", "data": {"device": "ide1-cd0", "tray-open": true}}
+
+ waiting for console read thread to quit...
+read HMP failed: 
+done
+killing 5154
+Died at /usr/lib/os-autoinst/autotest.pm line 68.
+	autotest::runalltests() called at /usr/lib/os-autoinst/start.pl line 80
+	eval {...} called at /usr/lib/os-autoinst/start.pl line 83.
+print() on closed filehandle $logfd at /usr/lib/os-autoinst/bmwqemu.pm line 243.
+	bmwqemu::diag('FAIL') called at /usr/lib/os-autoinst/start.pl line 92
++++ worker notes +++
+time: 2014-02-19 04:48:47
+overall result: ok

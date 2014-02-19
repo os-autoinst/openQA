@@ -7,6 +7,7 @@ package OpenQA::Test::Database;
 
 use strict;
 use warnings;
+use Date::Format; # To allow fixtures with relative dates
 use Carp;
 use Cwd qw/ abs_path getcwd /;
 use awstandard;

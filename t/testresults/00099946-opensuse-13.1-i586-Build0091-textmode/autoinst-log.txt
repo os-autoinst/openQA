@@ -1,0 +1,1291 @@
+1392725754
+2014-02-18 12:15:54
+starting: /usr/bin/qemu-kvm -m 1024 -net user -net nic,model=virtio,macaddr=52:54:00:12:34:56 -serial file:serial0 -soundhw ac97 -global isa-fdc.driveA= -vga cirrus -drive file=raid/l1,cache=unsafe,if=none,id=hd1 -device virtio-blk,drive=hd1 -drive file=raid/l2,cache=unsafe,if=none,id=hd2 -device virtio-blk,drive=hd2 -cdrom /var/lib/openqa/factory/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso -boot once=d,menu=on,splash-time=5000 -cpu qemu32 -usb -usbdevice tablet -smp 1 -enable-kvm -vnc :91 -qmp unix:qmp_socket,server,nowait -monitor unix:hmp_socket,server,nowait -S -monitor telnet:127.0.0.1:20013,server,nowait
+started mgmt loop with thread id 1
+unregister firefox-131RC1-lxde
+unregister LXDE-lxde
+unregister consoletest_finish-lxde
+unregister inst-overview-lxde-131M1
+unregister textinfo-lxde
+unregister killxscreensaver-lxde
+unregister inst-overview-lxde
+unregister desktop_mainmenu-lxde
+unregister test-kate-2-131B1
+unregister yast2_users-kde-131B1
+unregister dolphin-131B1
+unregister desktop-at-first-boot-kde-12.1-13.1-upgrade-2
+unregister desktop-at-first-boot-kde
+unregister installation-settings1
+unregister oomath-prompt-131B1
+unregister inst-overview-kdelive-131M4-WRONG_ORDER_BUG
+unregister select-for-update1
+unregister package-conflict1
+unregister reboot_after_install-131M4
+unregister test-gimp-1-131B1
+unregister partitioning_splitusr-1370255397
+unregister khelpcenter-1370336304
+unregister reboot_after_install-131RC1-live
+unregister desktop-at-first-boot-kde-13M1-2
+unregister test-reboot_kde-1
+unregister ooffice-prompt-131B1
+unregister test-gnucash-2-131RC2-kde
+unregister test-kontact-1
+unregister desktop-at-first-boot-kde-131M2-1378204360
+unregister kde-imagesused-131M1
+unregister firefox-131B1-kde
+unregister systemsettings-131B1
+unregister ooffice-2-131B1
+unregister kontact-window-131RC2-live
+unregister shutdown_kde-131B1
+unregister kde-imagesused-1365010125
+unregister reboot_after_install-12.1-13.1-upgrade
+unregister kontact-window-131RC2
+unregister test-desktop_mainmenu-1
+unregister ooffice-1-kde-131RC2
+unregister test-oocalc-3-131RC2-kde
+unregister desktop-at-first-boot-kde-13M1
+unregister khelpcenter-131B1
+unregister ooffice-1-kde-131B1
+unregister test-upgrade_select-11
+unregister remove-repository1
+unregister inst-overview-kdelive-131M1
+unregister inkscape-1-131RC2-kde
+unregister inst-overview-kde
+unregister test-amarok-1-131RC2
+unregister textinfo-kde-12.1-13.1-upgrade
+unregister inst-overview-kdelive
+unregister reboot_after_install-1
+unregister desktop-at-first-boot-kde-131M3
+unregister test-amarok-2-131RC2
+unregister oomath-prompt-131RC2-kde
+unregister inst-overview-kde-text-13M1
+unregister package-resolve-conflict1
+unregister kate-3-131B1
+unregister firefox-3-kde
+unregister inst-overview-secureboot-131M1
+unregister rebootnow-kdelive
+unregister inst-overview1
+unregister test-kate-1
+unregister apper-refresh-popup-bnc834165
+unregister inst-overview-kde-text-grub2-13M1
+unregister automatic-changes
+unregister textinfo-kde-131B1
+unregister inst-overview-kde-131M1
+unregister bootloader-secureboot-enabled-131M1
+unregister desktop-at-first-boot-kde-131M1
+unregister test-gnucash-1-131RC2-kde
+unregister desktop-at-first-boot-kde-12.1-13.1-upgrade
+unregister desktop-at-first-boot-kde-131M2
+unregister rebootnow-kdelive-131M1
+unregister inst-bootmenu-kdelive
+unregister desktop-at-first-boot-kde-131M3-slightly-broken
+unregister desktop-at-first-boot-kde-131M2-1378204332
+unregister createpartsetup-larger-disk
+unregister firefox-131RC2-kde
+unregister firefox_bookmarks-surf
+unregister firefox_tab-5
+unregister pidgin_googletalk-2
+unregister screenlock-gnome-live-131m4
+unregister firefox_pref-content-popup
+unregister firefox_printpdf_evince-build0041
+unregister firefox_page-popupunblock
+unregister firefox_printpdf_evince
+unregister firefox-open
+unregister screenlock-gnome-131RC1
+unregister firefox_page-opensuse
+unregister firefox_mhtml-2
+unregister firefox_help-about
+unregister firefox_page-ftpnvidia
+unregister tracker_open_apps-2
+unregister firefox_remember_passwd-vgastd
+unregister firefox_audio-gnome
+unregister test-ooffice-1-131RC2-gnome
+unregister test-desktop_mainmenu-1-131RC2-gnome
+unregister firefox_pageinfo-build0041
+unregister reboot-after-installation-gnome-131B1
+unregister firefox_help-trouble-build0041
+unregister firefox_history-empty
+unregister firefox_history-ftpnovell-build0041
+unregister inst-overview-gnome-text
+unregister firefox_tab-1
+unregister firefox_page-amazon
+unregister firefox_addexcept
+unregister GNOME-131RC1
+unregister firefox_page-google-build0041
+unregister test-gimp-1-131RC2-gnome
+unregister firefox_page-ftpnovell-build0041
+unregister firefox_addons-safemode-build0041
+unregister pidgin_msn-3
+unregister tracker_starts-1
+unregister firefox_page-ebay
+unregister pidgin_aim-2
+unregister createpartsetup-gnome-10G
+unregister firefox_url-googlemaps-1
+unregister firefox_url-novell-2
+unregister firefox_loadie7
+unregister firefox_help-about-build0041
+unregister firefox_history-souceforge-build0041
+unregister firefox_history-ftpnovell
+unregister test-ooffice-2-131RC2
+unregister partitioning_cryptlvm-131RC2-gnome
+unregister firefox_know-rights
+unregister firefox_safemode-build0041
+unregister firefox_bookmarks-edit03
+unregister firefox_addon-unmht-build0041
+unregister firefox_help-forgery
+unregister pidgin_aim-3
+unregister firefox_contentmenu-arrow
+unregister firefox_remember_passwd
+unregister ooffice-1-gnome-131RC2
+unregister inst-userinfostyped-gnomelive
+unregister firefox_print
+unregister firefox_page-baidu
+unregister firefox_page-gmail3
+unregister firefox_http207
+unregister firefox_menu-submenu1
+unregister boot-grub-opensuse-13.1
+unregister firefox_autocomplete-testpage_filled
+unregister yast2_users-gnome-131RC2
+unregister startinstall-gnomelive-131M1
+unregister inst-encrypt-password-prompt-gnomelive-131B1
+unregister firefox_sendlink-2
+unregister firefox_bookmarks-delete
+unregister gnome-selected-131M1
+unregister firefox_printing_images-small_jpg
+unregister pidgin_msn-2
+unregister firefox_search-opensuse
+unregister firefox_sidebar-history
+unregister firefox_page-slashdot
+unregister inst-timezone-gnomelive
+unregister 131beta1-btrfs-popup-GNOME
+unregister firefox_autocomplete-1
+unregister pidgin-showoff
+unregister firefox_http207-build0041
+unregister tracker_search_in_nautilus-4
+unregister firefox_sendlink-1
+unregister firefox_bookmarks-add01
+unregister rootpwdisabled-gnome
+unregister firefox_page-qqmail
+unregister firefox_passwd-required-build0041
+unregister Gnomecutfile-1380010384
+unregister test-thunderbird-1-131RC2-gnome
+unregister firefox_printing-paragraph1_0
+unregister test-gnucash-2-131RC2-gnome
+unregister inst-packageinstallationstarted-gnomelive
+unregister inst-timezone-gnomelive-131M2
+unregister firefox_restart-addons-disable-build0041
+unregister firefox_sidebar-bookmark
+unregister screenlock-gnome-blue-bnc840569
+unregister inst-userpasswdtoosimple-gnomelive
+unregister firefox_printing_images-small_gif
+unregister test-nautilus-1-131RC2
+unregister GNOME
+unregister firefox_bookmarks-edit02
+unregister test-evolution-1-131RC2
+unregister test-firefox-3-131RC2
+unregister firefox_addons-page
+unregister partioning-gnomelive
+unregister partitioning-custompart-gnomelive
+unregister oomath-prompt-131RC2-gnome
+unregister test-inkscape-1-131RC2-gnome
+unregister createpartsetup-gnome
+unregister rootpassword-typed-gnomelive
+unregister firefox_printing_images-large_gif
+unregister firefox_url-novell-1
+unregister start-firefox
+unregister firefox_tab-3
+unregister raid-partition-gnomelive-131RC1
+unregister firefox_mhtml-3
+unregister gnome-imagesused
+unregister firefox_page-pdbsuse
+unregister firefox_history-souceforge
+unregister firefox-open-build0041
+unregister gnome_terminal
+unregister screenlock-gnome-131RC2
+unregister firefox_addexcept-build0041
+unregister firefox_download-wheretosave-1379923202
+unregister firefox_pref-content
+unregister firefox_yahoo-search
+unregister firefox_pref-tabs
+unregister firefox_printing_images-large_jpg
+unregister gnome-selected
+unregister tracker_open_apps-3
+unregister tracker_search_in_nautilus-1
+unregister firefox_java-3
+unregister firefox_url-googlemaps-2
+unregister firefox_pref-general-homepage-build0041
+unregister firefox_safemode
+unregister tracker_open_apps-1
+unregister clean_pidgin-1
+unregister start-firefox-build0041
+unregister pidgin_aim-4
+unregister firefox_pageinfo
+unregister killscreensaver-gnome
+unregister firefox_download-lua-show
+unregister firefox_saved-passwords
+unregister firefox_localpage-1
+unregister firefox_printing-paragraph1_1
+unregister tracker_search_in_nautilus-2
+unregister firefox_autocomplete-testpage
+unregister rebootnow-gnomelive-131B1
+unregister firefox_printing-offlineprint_2
+unregister firefox_page-gmail2
+unregister firefox_page-sourceforge
+unregister tracker_pref_starts-1
+unregister Gnomecutfile-1380001469
+unregister firefox_printing-offlineprint_1
+unregister firefox_page-youtube
+unregister firefox_openfile-build0041
+unregister firefox_download-wheretosave
+unregister logoutdialog_gnome
+unregister test-gnucash-1-131RC2-gnome
+unregister firefox_page-google
+unregister firefox_contentmenu-build0041
+unregister firefox_https-risk
+unregister pidgin_aim-1
+unregister gnome-imagesused-131M1
+unregister rebootnow-gnomelive
+unregister firefox_https-pdbsuse
+unregister firefox_page-yahoo
+unregister firefox_page-calendar
+unregister firefox_saved-passwords-build0041
+unregister firefox_printing-offlineprint_0
+unregister firefox_history
+unregister firefox_bookmarks-add02
+unregister inst-overview-gnome-131M1
+unregister firefox_menu-submenu
+unregister screenlock-gnome
+unregister firefox_page-popupblocked
+unregister firefox_https-207-build0041
+unregister shutdown_gnome
+unregister tracker_searchall-2
+unregister partitioning-usebtrfs-gnomelive-131RC1
+unregister inst-welcome-gnomelive
+unregister firefox_page-ftpnovell
+unregister firefox_java-1
+unregister test-rhythmbox-1-131RC2
+unregister firefox_https-google-build0041
+unregister firefox_menu-view
+unregister logoutdialog-gnome-131RC2
+unregister firefox_sendlink-3
+unregister test-oocalc-2-131RC2-gnome
+unregister firefox-131RC2-gnome
+unregister tracker_by_command-2
+unregister firefox_page-gmail2-build0041
+unregister firefox_print-build0041
+unregister firefox_page-ie6
+unregister startinstall-gnomelive
+unregister firefox_help-trouble
+unregister firefox_download-lua-tar
+unregister consoletest_finish-gnome-131RC1-redraw-bnc844891
+unregister firefox_https-risk-build0041
+unregister firefox_page-wikipedia
+unregister firefox_page-flickr
+unregister pidgin_googletalk-1
+unregister tracker_info-2
+unregister tracker_by_command-1
+unregister firefox_bookmarks-edit01
+unregister firefox_bookmarks-open
+unregister firefox_printing_images-animated_gif
+unregister Gnomecutfile-1380011402
+unregister test-eog-1-131RC2
+unregister inst-userpasswdtoosimple-131M3-bnc831946
+unregister firefox_java-2
+unregister reboot-after-installation-gnome
+unregister firefox_help-feedback
+unregister gnome-selected-textmode
+unregister partitioning_lvm-131RC2-gnome
+unregister prep_pidgin_install-1
+unregister inst-usersetup-gnomelive
+unregister firefox_about-rights
+unregister firefox_pref-applications
+unregister firefox_saveas-build0041
+unregister firefox_mhtml-1
+unregister test-oocalc-1-131RC2-gnome
+unregister firefox_restart-addons-disable
+unregister consoletest_finish-gnome
+unregister firefox_contentmenu
+unregister inst-encrypt-password-prompt-gnomelive-131M3
+unregister firefox_menu-edit
+unregister pidgin_IRC-2
+unregister firefox_page-facebook
+unregister firefox_saveas
+unregister GNOME-131Build0038-nowallpaper-bnc844891
+unregister tracker_searchall-1
+unregister inst-overview-gnomelive
+unregister ooffice-save-prompt-131RC2-gnome
+unregister firefox_java-java_warning
+unregister pidgin_msn-1
+unregister firefox_tab-4
+unregister pidgin_googletalk-3
+unregister firefox_sendlink-unstable_warning
+unregister firefox_pref-general-homepage
+unregister firefox-open-build0652
+unregister pidgin_IRC-1
+unregister firefox_page-opensuse-sponsors
+unregister firefox_page-msn
+unregister firefox_https-207
+unregister firefox_https-google
+unregister pidgin_IRC-3
+unregister firefox_bookmarks-folder
+unregister firefox_url-wikipedia-2
+unregister firefox_tab-2
+unregister firefox_search-opensuse-build0041
+unregister inst-bootmenu-gnomelive
+unregister firefox_page-calendar-passwd
+unregister prep_pidgin-2
+unregister test-gedit-1-131RC2
+unregister firefox_page-novell
+unregister firefox_addon-unmht
+unregister tracker_info-1
+unregister firefox_page-gmail2-vgastd
+unregister firefox_openfile
+unregister inst-video-typed-gnome-grub2-13B1
+unregister inst-overview-gnome
+unregister textinfo-gdm
+unregister firefox_bookmarks-new
+unregister firefox_url-wikipedia-1
+unregister firefox_page-gmail1
+unregister tracker_search_in_nautilus-3
+unregister inst-userpasswdtoosimple-131M4-gnomelive-bnc831946
+unregister firefox_page-ftpnvidia-build0041
+unregister inst-userinfostyped-gnomelive-131M3
+unregister test-oocalc-3-131RC2-gnome
+unregister firefox_pref-general
+unregister inst-overview-xfce-131M1
+unregister XFCE-xfce-131M4
+unregister finish_desktop-rescuecd
+unregister consoletest_finish-xfce
+unregister XFCE-xfce
+unregister desktop_mainmenu-1370356934
+unregister inst-overview-xfce
+unregister inst-overview-minimalx-text
+unregister inst-overview-minimalx-131M1
+unregister desktop-at-first-boot-minimalx
+unregister desktop-at-first-boot-minimalx-2
+unregister inst-overview-minimalx
+unregister textinfo-minimalx
+unregister other-desktop-1-promo-131B1
+unregister desktop-at-first-boot-minimalx-3
+unregister consoletest_finish-1369825565
+unregister test-yast2_i-1-131B1
+unregister displaymanager-minimalx
+unregister yast-still-running-gnome_live-131RC1
+unregister yast2_lan-2-live
+unregister welcome-131M1-de
+unregister installation_mode-de
+usingenv DESKTOP=textmode
+usingenv DISTRI=opensuse
+usingenv QEMUCPU=qemu32
+usingenv QEMUCPUS=1
+usingenv INSTLANG=en_US
+usingenv QEMUVGA=cirrus
+usingenv DVD=1
+usingenv ISO=/var/lib/openqa/factory/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso
+usingenv ISO_MAXSIZE=4700372992
+usingenv QEMUVGA=cirrus
+usingenv VIDEOMODE=text
+scheduling isosize /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/010_isosize.pm
+scheduling bootloader /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/020_bootloader.pm
+scheduling welcome /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/050_welcome.pm
+scheduling installation_mode /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/051_installation_mode.pm
+scheduling installer_timezone /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/054_installer_timezone.pm
+scheduling logpackages /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/056_logpackages.pm
+scheduling installer_desktopselection /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/057_installer_desktopselection.pm
+scheduling partitioning /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/060_partitioning.pm
+scheduling partitioning_finish /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/064_partitioning_finish.pm
+scheduling user_settings /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/065_user_settings.pm
+scheduling installation_overview /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/071_installation_overview.pm
+scheduling start_install /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/085_start_install.pm
+scheduling livecdreboot /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/090_livecdreboot.pm
+scheduling second_stage /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/091_second_stage.pm
+scheduling consoletest_setup /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/010_consoletest_setup.pm
+scheduling remove_cd_repo /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/011_remove_cd_repo.pm
+scheduling yast2_lan /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/140_yast2_lan.pm
+scheduling aplay /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/145_aplay.pm
+scheduling glibc_i686 /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/146_glibc_i686.pm
+scheduling zypper_up /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/150_zypper_up.pm
+scheduling zypper_in /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/155_zypper_in.pm
+scheduling yast2_i /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/157_yast2_i.pm
+scheduling yast2_bootloader /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/180_yast2_bootloader.pm
+scheduling sshd /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/190_sshd.pm
+scheduling sshfs /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/195_sshfs.pm
+scheduling mtab /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/280_mtab.pm
+scheduling http_srv /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/300_http_srv.pm
+scheduling mysql_srv /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/305_mysql_srv.pm
+scheduling textinfo /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/900_textinfo.pm
+scheduling consoletest_finish /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/999_consoletest_finish.pm
+
+||| starting isosize /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/010_isosize.pm at 2014-02-18 12:16:10
+Creating a VM snapshot inst-isosize
+check if actual iso size 4441767936 fits 4700372992: ok
+||| finished isosize inst at 2014-02-18 12:16:10 (0 s)
+
+||| starting bootloader /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/020_bootloader.pm at 2014-02-18 12:16:10
+Creating a VM snapshot inst-bootloader
+<<< waitforneedle('inst-bootmenu', timeout=15)
+MATCH(bootmenu-rescue-cd:0.11): 0 376
+MATCH(inst-bootmenu-promo:0.33): 43 41
+MATCH(bootmenu-dvd-12.3:0.11): 0 376
+MATCH(inst-bootmenu-promo-osp:0.09): 0 376
+STAT statuser=0.24 statsystem=0.1 
+no change 14 statuser=0.24 statsystem=0.1 
+MATCH(bootmenu-rescue-cd:0.01): 0 430
+MATCH(inst-bootmenu-promo:0.00): 769 387
+MATCH(bootmenu-dvd-12.3:-0.02): 0 431
+MATCH(inst-bootmenu-promo-osp:-0.02): 0 276
+STAT statuser=0.25 statsystem=0.1 
+MATCH(bootmenu-rescue-cd:0.16): 0 234
+MATCH(inst-bootmenu-promo:0.26): 540 256
+MATCH(bootmenu-dvd-12.3:0.17): 0 234
+MATCH(inst-bootmenu-promo-osp:0.13): 0 234
+STAT statuser=1.18 statsystem=0.28 
+no change 11 statuser=2.55 statsystem=0.52 
+MATCH(bootmenu-rescue-cd:0.95): 0 0
+MATCH(inst-bootmenu-promo:0.66): 250 160
+MATCH(bootmenu-dvd-12.3:1.00): 0 0
+MATCH(inst-bootmenu-promo-osp:0.92): 0 0
+>>> found bootmenu-dvd-12.3, similarity 1.00 @ 0/0: 
+<<< sendkey(key=down)
+<<< sendkey(key=f3)
+<<< sendkey(key=up)
+<<< sendkey(key=up)
+<<< waitforneedle('inst-textselected', timeout=5)
+MATCH(inst-textselected:0.82): 233 363
+STAT statuser=4.75 statsystem=1.31 
+MATCH(inst-textselected:1.00): 230 390
+>>> found inst-textselected, similarity 1.00 @ 230/390: 
+<<< sendkey(key=ret)
+<<< sendautotype(string='vga=791 ')
+<<< sendkey(key=v)
+<<< sendkey(key=g)
+<<< sendkey(key=a)
+<<< sendkey(key=equal)
+<<< sendkey(key=7)
+<<< sendkey(key=9)
+<<< sendkey(key=1)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendautotype(string='video=1024x768-16 ')
+<<< sendkey(key=v)
+<<< sendkey(key=i)
+<<< sendkey(key=d)
+<<< sendkey(key=e)
+<<< sendkey(key=o)
+<<< sendkey(key=equal)
+<<< sendkey(key=1)
+<<< sendkey(key=0)
+<<< sendkey(key=2)
+<<< sendkey(key=4)
+<<< sendkey(key=x)
+<<< sendkey(key=7)
+<<< sendkey(key=6)
+<<< sendkey(key=8)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=minus)
+<<< sendkey(key=1)
+<<< sendkey(key=6)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendautotype(string='drm_kms_helper.edid_firmware=edid/1024x768.bin ')
+<<< sendkey(key=d)
+<<< sendkey(key=r)
+<<< sendkey(key=m)
+<<< sendkey(key=shift-minus)
+<<< sendkey(key=k)
+<<< sendkey(key=m)
+<<< sendkey(key=s)
+<<< sendkey(key=shift-minus)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=h)
+<<< sendkey(key=e)
+<<< sendkey(key=l)
+<<< sendkey(key=p)
+<<< sendkey(key=e)
+<<< sendkey(key=r)
+<<< sendkey(key=dot)
+<<< sendkey(key=e)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=d)
+<<< sendkey(key=i)
+<<< sendkey(key=d)
+<<< sendkey(key=shift-minus)
+<<< sendkey(key=f)
+<<< sendkey(key=i)
+<<< sendkey(key=r)
+<<< sendkey(key=m)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=w)
+<<< sendkey(key=a)
+<<< sendkey(key=r)
+<<< sendkey(key=e)
+<<< sendkey(key=equal)
+<<< sendkey(key=e)
+<<< sendkey(key=d)
+<<< sendkey(key=i)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=d)
+<<< sendkey(key=slash)
+<<< sendkey(key=1)
+<<< sendkey(key=0)
+<<< sendkey(key=2)
+<<< sendkey(key=4)
+<<< sendkey(key=x)
+<<< sendkey(key=7)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=6)
+<<< sendkey(key=8)
+<<< sendkey(key=dot)
+<<< sendkey(key=b)
+<<< sendkey(key=i)
+<<< sendkey(key=n)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< waitforneedle('inst-video-typed', timeout=13)
+MATCH(inst-video-typed:1.00): 265 475
+>>> found inst-video-typed, similarity 1.00 @ 265/475: 
+<<< sendautotype(string='console=ttyS0 ')
+<<< sendkey(key=c)
+<<< sendkey(key=o)
+<<< sendkey(key=n)
+<<< sendkey(key=s)
+<<< sendkey(key=o)
+<<< sendkey(key=l)
+<<< sendkey(key=e)
+<<< sendkey(key=equal)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=t)
+<<< sendkey(key=t)
+<<< sendkey(key=y)
+<<< sendkey(key=shift-s)
+<<< sendkey(key=0)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendautotype(string='console=tty ')
+<<< sendkey(key=c)
+<<< sendkey(key=o)
+<<< sendkey(key=n)
+<<< sendkey(key=s)
+<<< sendkey(key=o)
+<<< sendkey(key=l)
+<<< sendkey(key=e)
+<<< sendkey(key=equal)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< sendkey(key=t)
+<<< sendkey(key=t)
+<<< sendkey(key=y)
+<<< sendkey(key=spc)
+<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)
+>>> waitstillimage: detected same image for 1.6 seconds
+<<< waitforneedle('inst-consolesettingstyped', timeout=30)
+MATCH(inst-consolesettingstyped-1:1.00): 565 465
+>>> found inst-consolesettingstyped-1, similarity 1.00 @ 565/465: 
+<<< sendautotype(string='')
+<<< sendkey(key=ret)
+||| finished bootloader inst at 2014-02-18 12:17:05 (55 s)
+
+||| starting welcome /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/inst.d/050_welcome.pm at 2014-02-18 12:17:05
+Creating a VM snapshot inst-welcome
+<<< waitforneedle('inst-welcome-textmode_welcome-131M1_inst-welcome_inst-betawarning-textmode-13M1_inst-betawarning_inst-welcome-textmode-betawarning-13M1_inst-betawarning-textmode-13M1_', timeout=500)
+MATCH(inst-welcome-textmode:-0.30): 0 0
+MATCH(welcome-131M1:0.29): 666 487
+MATCH(welcome-131M1:0.35): 264 213
+MATCH(inst-welcome:0.29): 666 487
+MATCH(inst-welcome:0.35): 263 213
+MATCH(inst-betawarning-textmode-13M1:0.55): 491 568
+MATCH(inst-betawarning:0.26): 52 33
+MATCH(inst-welcome-textmode-betawarning-13M1:0.32): 350 380
+MATCH(inst-welcome-textmode-betawarning-13M1:0.48): 609 562
+MATCH(inst-welcome-textmode-betawarning-13M1:0.16): 4 0
+MATCH(inst-betawarning-textmode-13M1:0.55): 491 568
+STAT statuser=37.09 statsystem=16.16 
+MATCH(inst-welcome-textmode:-0.18): 0 0
+MATCH(welcome-131M1:0.31): 91 260
+MATCH(welcome-131M1:0.45): 256 277
+MATCH(inst-welcome:0.31): 92 260
+MATCH(inst-welcome:0.44): 262 277
+MATCH(inst-betawarning-textmode-13M1:0.55): 491 568
+MATCH(inst-betawarning:0.32): 223 295
+MATCH(inst-welcome-textmode-betawarning-13M1:0.32): 350 380
+MATCH(inst-welcome-textmode-betawarning-13M1:0.51): 216 223
+MATCH(inst-welcome-textmode-betawarning-13M1:0.16): 4 0
+MATCH(inst-betawarning-textmode-13M1:0.55): 491 568
+STAT statuser=38.81 statsystem=16.63 
+MATCH(inst-welcome-textmode:0.06): 0 0
+MATCH(welcome-131M1:0.18): 159 276
+MATCH(welcome-131M1:0.30): 117 1
+MATCH(inst-welcome:0.18): 159 276
+MATCH(inst-welcome:0.31): 123 1
+MATCH(inst-betawarning-textmode-13M1:0.26): 23 199
+MATCH(inst-betawarning:0.25): 321 159
+MATCH(inst-welcome-textmode-betawarning-13M1:0.24): 353 249
+MATCH(inst-welcome-textmode-betawarning-13M1:0.32): 431 243
+MATCH(inst-welcome-textmode-betawarning-13M1:0.07): 1 364
+MATCH(inst-betawarning-textmode-13M1:0.26): 23 199
+STAT statuser=41.29 statsystem=17.25 
+MATCH(inst-welcome-textmode:0.03): 0 0
+MATCH(welcome-131M1:0.16): 0 338
+MATCH(welcome-131M1:0.30): 256 146
+MATCH(inst-welcome:0.16): 0 338
+MATCH(inst-welcome:0.30): 257 146
+MATCH(inst-betawarning-textmode-13M1:0.21): 340 302
+MATCH(inst-betawarning:0.24): 158 335
+MATCH(inst-welcome-textmode-betawarning-13M1:0.22): 258 26
+MATCH(inst-welcome-textmode-betawarning-13M1:0.37): 288 193
+MATCH(inst-welcome-textmode-betawarning-13M1:0.15): 0 397
+MATCH(inst-betawarning-textmode-13M1:0.21): 340 302
+STAT statuser=43.73 statsystem=17.54 
+MATCH(inst-welcome-textmode:0.09): 0 0
+MATCH(welcome-131M1:0.16): 223 371
+MATCH(welcome-131M1:0.30): 256 146
+MATCH(inst-welcome:0.16): 223 371
+MATCH(inst-welcome:0.30): 257 146
+MATCH(inst-betawarning-textmode-13M1:0.19): 344 41
+MATCH(inst-betawarning:0.23): 133 335
+MATCH(inst-welcome-textmode-betawarning-13M1:0.22): 258 26
+MATCH(inst-welcome-textmode-betawarning-13M1:0.42): 424 388
+MATCH(inst-welcome-textmode-betawarning-13M1:0.13): 0 381
+MATCH(inst-betawarning-textmode-13M1:0.19): 344 41
+STAT statuser=45.15 statsystem=17.63 
+no change 495 statuser=45.18 statsystem=17.65 
+no change 494 statuser=45.18 statsystem=17.66 
+MATCH(inst-welcome-textmode:0.08): 0 0
+MATCH(welcome-131M1:0.16): 223 371
+MATCH(welcome-131M1:0.30): 256 146
+MATCH(inst-welcome:0.16): 223 371
+MATCH(inst-welcome:0.30): 257 146
+MATCH(inst-betawarning-textmode-13M1:0.19): 344 41
+MATCH(inst-betawarning:0.23): 133 335
+MATCH(inst-welcome-textmode-betawarning-13M1:0.22): 258 26
+MATCH(inst-welcome-textmode-betawarning-13M1:0.42): 424 388
+MATCH(inst-welcome-textmode-betawarning-13M1:0.14): 0 685
+MATCH(inst-betawarning-textmode-13M1:0.19): 344 41
+STAT statuser=45.18 statsystem=17.66 
+MATCH(inst-welcome-textmode:0.06): 0 0
+MATCH(welcome-131M1:0.16): 223 371
+MATCH(welcome-131M1:0.30): 256 146
+MATCH(inst-welcome:0.16): 223 371
+MATCH(inst-welcome:0.30): 257 146
+MATCH(inst-betawarning-textmode-13M1:0.19): 344 41
+MATCH(inst-betawarning:0.23): 133 335
+MATCH(inst-welcome-textmode-betawarning-13M1:0.22): 258 26
+MATCH(inst-welcome-textmode-betawarning-13M1:0.42): 424 388
+MATCH(inst-welcome-textmode-betawarning-13M1:0.14): 0 733
+MATCH(inst-betawarning-textmode-13M1:0.19): 344 41
+STAT statuser=47.51 statsystem=17.89 
+MATCH(inst-welcome-textmode:0.10): 0 0
+MATCH(welcome-131M1:0.19): 101 564
+MATCH(welcome-131M1:0.30): 172 18
+MATCH(inst-welcome:0.18): 101 564
+MATCH(inst-welcome:0.30): 155 18
+MATCH(inst-betawarning-textmode-13M1:0.21): 358 537
+MATCH(inst-betawarning:0.23): 133 111
+MATCH(inst-welcome-textmode-betawarning-13M1:0.25): 394 490
+MATCH(inst-welcome-textmode-betawarning-13M1:0.43): 424 164
+MATCH(inst-welcome-textmode-betawarning-13M1:0.22): 0 637
+MATCH(inst-betawarning-textmode-13M1:0.21): 358 537
+STAT statuser=49.83 statsystem=18.03 
+MATCH(inst-welcome-textmode:1.00): 0 5
+MATCH(welcome-131M1:0.24): 349 561
+MATCH(welcome-131M1:0.40): 424 522
+MATCH(inst-welcome:0.24): 347 561
+MATCH(inst-welcome:0.44): 444 522
+MATCH(inst-betawarning-textmode-13M1:0.80): 187 176
+MATCH(inst-betawarning:0.24): 345 588
+MATCH(inst-welcome-textmode-betawarning-13M1:1.00): 10 25
+MATCH(inst-welcome-textmode-betawarning-13M1:1.00): 10 170
+MATCH(inst-welcome-textmode-betawarning-13M1:1.00): 0 715
+MATCH(inst-betawarning-textmode-13M1:0.80): 187 176
+>>> found inst-welcome-textmode-betawarning-13M1, similarity 1.00 @ 0/715: 
+<<< waitidle(timeout=5)
+waitidle 0 d=2
+waitidle 1 d=1
+waitidle 2 d=0
+>>> waitidle: idle detected
+<<< waitforneedle('inst-welcome-textmode_welcome-131M1_inst-welcome_inst-betawarning-textmode-13M1_inst-betawarning_inst-welcome-textmode-betawarning-13M1_inst-betawarning-textmode-13M1_', timeout=3)
+MATCH(inst-welcome-textmode:1.00): 0 5
+MATCH(welcome-131M1:0.24): 349 561
+MATCH(welcome-131M1:0.40): 424 522
+MATCH(inst-welcome:0.24): 347 561
+MATCH(inst-welcome:0.44): 444 522
+MATCH(inst-betawarning-textmode-13M1:0.80): 187 176
+MATCH(inst-betawarning:0.24): 345 588
+MATCH(inst-welcome-textmode-betawarning-13M1:1.00): 10 25
+MATCH(inst-welcome-textmode-betawarning-13M1:1.00): 10 170
+MATCH(inst-welcome-textmode-betawarning-13M1:1.00): 0 715
+MATCH(inst-betawarning-textmode-13M1:0.80): 187 176
+>>> found inst-welcome-textmode-betawarning-13M1, similarity 1.00 @ 0/715: 
+<<< sendkey(key=ret)
+<<< waitforneedle('inst-welcome', timeout=5)
+[34m<<< sendautotype(string='ps ax > /dev/ttyS0
+')[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=x)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=shift-dot)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=v)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=y)[0m
+[34m<<< sendkey(key=shift-s)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=ret)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< waitidle(timeout=9)[0m
+waitidle 0 d=2
+waitidle 1 d=1
+waitidle 2 d=1
+[32m>>> waitidle: idle detected[0m
+[34m<<< waitidle(timeout=19)[0m
+waitidle 0 d=0
+waitidle 1 d=2
+waitidle 2 d=1
+[32m>>> waitidle: idle detected[0m
+[34m<<< sendautotype(string='systemctl --no-pager --full > /dev/ttyS0
+')[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=y)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=m)[0m
+[34m<<< sendkey(key=c)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=g)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=f)[0m
+[34m<<< sendkey(key=u)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=shift-dot)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=v)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=y)[0m
+[34m<<< sendkey(key=shift-s)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=ret)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< waitidle(timeout=9)[0m
+waitidle 0 d=0
+waitidle 1 d=2
+waitidle 2 d=1
+[32m>>> waitidle: idle detected[0m
+[34m<<< waitidle(timeout=19)[0m
+waitidle 0 d=1
+waitidle 1 d=1
+waitidle 2 d=1
+[32m>>> waitidle: idle detected[0m
+[34m<<< sendautotype(string='rpm -qa > /dev/ttyS0
+')[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=m)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=q)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=shift-dot)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=v)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=y)[0m
+[34m<<< sendkey(key=shift-s)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=ret)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< waitidle(timeout=9)[0m
+waitidle 0 d=1
+waitidle 1 d=1
+waitidle 2 d=1
+[32m>>> waitidle: idle detected[0m
+[34m<<< sendautotype(string='sudo rpm -qaV > /dev/ttyS0
+')[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=u)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=m)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=q)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=shift-v)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=shift-dot)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=v)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=y)[0m
+[34m<<< sendkey(key=shift-s)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=ret)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< waitforneedle('sudo-passwordprompt', timeout=3)[0m
+MATCH(sudo-passwordprompt:0.77): 176 513
+MATCH(sudo-passwordprompt-lxde:0.21): 15 295
+STAT statuser=204.31 statsystem=68.42 
+no change 2 statuser=204.44 statsystem=68.45 
+no change 1 statuser=204.7 statsystem=68.5 
+[32m>>> waitforneedle: match=sudo-passwordprompt timed out after 3[0m
+/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/needles/sudo-passwordprompt.json
+/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/needles/sudo-passwordprompt-lxde.json
+wrote testresults/00000046-opensuse-13.1-i586-Build0091-textmode/template-sudo-passwordprompt-20140218_130207.json
+[34m<<< sendautotype(string='sudo tar cjf /tmp/logs.tar.bz2 /var/log
+')[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=u)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=c)[0m
+[34m<<< sendkey(key=j)[0m
+[34m<<< sendkey(key=f)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=m)[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=g)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=b)[0m
+[34m<<< sendkey(key=z)[0m
+[34m<<< sendkey(key=2)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=v)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=g)[0m
+[34m<<< sendkey(key=ret)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< waitforneedle('sudo-passwordprompt', timeout=3)[0m
+MATCH(sudo-passwordprompt:0.77): 176 513
+MATCH(sudo-passwordprompt-lxde:0.21): 15 295
+STAT statuser=209.23 statsystem=69.46 
+MATCH(sudo-passwordprompt:0.77): 176 513
+MATCH(sudo-passwordprompt-lxde:0.21): 15 295
+STAT statuser=209.55 statsystem=69.47 
+no change 1 statuser=209.89 statsystem=69.47 
+[32m>>> waitforneedle: match=sudo-passwordprompt timed out after 3[0m
+/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/needles/sudo-passwordprompt.json
+/var/lib/openqa/perl/autoinst/distri/opensuse-13.1/needles/sudo-passwordprompt-lxde.json
+wrote testresults/00000046-opensuse-13.1-i586-Build0091-textmode/template-sudo-passwordprompt-20140218_130219.json
+[34m<<< waitidle(timeout=19)[0m
+waitidle 0 d=0
+waitidle 1 d=2
+waitidle 2 d=1
+[32m>>> waitidle: idle detected[0m
+[34m<<< sendautotype(string='curl --form testname=00000046-opensuse-13.1-i586-Build0091-textmode --resolve openqa.tanana.suse.de:80:10.0.2.2 --form upload=@/tmp/logs.tar.bz2 openqa.tanana.suse.de/cgi-bin/uploadlog
+')[0m
+[34m<<< sendkey(key=c)[0m
+[34m<<< sendkey(key=u)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=f)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=m)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=m)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=equal)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=4)[0m
+[34m<<< sendkey(key=6)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=u)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=1)[0m
+[34m<<< sendkey(key=3)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=1)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=i)[0m
+[34m<<< sendkey(key=5)[0m
+[34m<<< sendkey(key=8)[0m
+[34m<<< sendkey(key=6)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=shift-b)[0m
+[34m<<< sendkey(key=u)[0m
+[34m<<< sendkey(key=i)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=9)[0m
+[34m<<< sendkey(key=1)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=x)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=m)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=v)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=q)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=u)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=shift-semicolon)[0m
+[34m<<< sendkey(key=8)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=shift-semicolon)[0m
+[34m<<< sendkey(key=1)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=2)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=2)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=f)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=m)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=u)[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=equal)[0m
+[34m<<< sendkey(key=shift-2)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=m)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=g)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=b)[0m
+[34m<<< sendkey(key=z)[0m
+[34m<<< sendkey(key=2)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=q)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=u)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=dot)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=c)[0m
+[34m<<< sendkey(key=g)[0m
+[34m<<< sendkey(key=i)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=b)[0m
+[34m<<< sendkey(key=i)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=u)[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=g)[0m
+[34m<<< sendkey(key=ret)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< waitidle(timeout=9)[0m
+waitidle 0 d=0
+waitidle 1 d=2
+waitidle 2 d=1
+[32m>>> waitidle: idle detected[0m
+[34m<<< waitidle(timeout=19)[0m
+waitidle 0 d=1
+waitidle 1 d=2
+waitidle 2 d=0
+[32m>>> waitidle: idle detected[0m
+[34m<<< sendautotype(string='echo 'textinfo_ok' >  /dev/ttyS0
+')[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=c)[0m
+[34m<<< sendkey(key=h)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=apostrophe)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=x)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=i)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=f)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=shift-minus)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=k)[0m
+[34m<<< sendkey(key=apostrophe)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=shift-dot)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=d)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=v)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=slash)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=y)[0m
+[34m<<< sendkey(key=shift-s)[0m
+[34m<<< sendkey(key=0)[0m
+[34m<<< sendkey(key=ret)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< waitidle(timeout=9)[0m
+waitidle 0 d=1
+waitidle 1 d=1
+waitidle 2 d=2
+[32m>>> waitidle: idle detected[0m
+[34m<<< waitserial(regex=textinfo_ok, timeout=5)[0m
+[32m>>> waitserial: found textinfo_ok[0m
+||| finished textinfo consoletest at 2014-02-18 13:03:29 (279 s)
+[1m||| starting consoletest_finish /var/lib/openqa/perl/autoinst/distri/opensuse-13.1/consoletest.d/999_consoletest_finish.pm[0m
+Creating a VM snapshot consoletest-consoletest_finish
+WARNING: read qmp 164 - {"timestamp": {"seconds": 1392728609, "microseconds": 116146}, "event": "STOP"}
+{"timestamp": {"seconds": 1392728610, "microseconds": 577422}, "event": "RESUME"}
+
+SAVED consoletest-consoletest_finish savevm consoletest-consoletest_finish
+[34m<<< sendkey(key=ctrl-c)[0m
+[34m<<< sendkey(key=ctrl-c)[0m
+[34m<<< sendautotype(string='reset
+')[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=s)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=ret)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendautotype(string='loginctl --no-pager
+')[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=g)[0m
+[34m<<< sendkey(key=i)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=c)[0m
+[34m<<< sendkey(key=t)[0m
+[34m<<< sendkey(key=l)[0m
+[34m<<< sendkey(key=spc)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=n)[0m
+[34m<<< sendkey(key=o)[0m
+[34m<<< sendkey(key=minus)[0m
+[34m<<< sendkey(key=p)[0m
+[34m<<< sendkey(key=a)[0m
+[34m<<< sendkey(key=g)[0m
+[34m<<< sendkey(key=e)[0m
+[34m<<< sendkey(key=r)[0m
+[34m<<< sendkey(key=ret)[0m
+[34m<<< waitstillimage(stilltime=1.6, timeout=30, simlvl=47)[0m
+[32m>>> waitstillimage: detected same image for 1.6 seconds[0m
+[34m<<< sendkey(key=ctrl-c)[0m
+[34m<<< sendkey(key=ctrl-d)[0m
+[34m<<< sendkey(key=ctrl-alt-f1)[0m
+[34m<<< waitidle(timeout=19)[0m
+waitidle 0 d=1
+waitidle 1 d=1
+waitidle 2 d=2
+[32m>>> waitidle: idle detected[0m
+[34m<<< waitforneedle('test-consoletest_finish-1', timeout=3)[0m
+MATCH(desktop-at-first-boot-text-131M2:1.00): 0 693
+MATCH(desktop-at-first-boot-text-131M2:1.00): 84 748
+[32m>>> found desktop-at-first-boot-text-131M2, similarity 1.00 @ 84/748: [0m
+||| finished consoletest_finish consoletest at 2014-02-18 13:03:54 (24 s)
+Creating a VM snapshot lastgood
+WARNING: read qmp 164 - {"timestamp": {"seconds": 1392728634, "microseconds": 396232}, "event": "STOP"}
+{"timestamp": {"seconds": 1392728636, "microseconds": 927395}, "event": "RESUME"}
+
+SAVED lastgood savevm lastgood
+done
+WARNING: read qmp 85 - {"timestamp": {"seconds": 1392728646, "microseconds": 936344}, "event": "SHUTDOWN"}
+
+ waiting for console read thread to quit...
+WARNING: read qmp 145 - {"timestamp": {"seconds": 1392728646, "microseconds": 936768}, "event": "DEVICE_TRAY_MOVED", "data": {"device": "ide1-cd0", "tray-open": true}}
+
+ALARM: backend.run got deleted! - exiting...
+read HMP failed: 
+management thread exit at 2014-02-18 13:04:07
+done
+killing 24435
++++ worker notes +++
+time: 2014-02-18 13:08:46
+overall result: ok
