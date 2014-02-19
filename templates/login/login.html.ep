@@ -1,0 +1,16 @@
+% layout 'default';
+% title $appname;
+% content_for footer => begin
+<a title="SUSE" href="http://en.opensuse.org/Sponsors"><img alt="SUSE" src="/images/suse.png" title="SUSE"/></a>
+% end
+
+<div class="grid_6 box box-shadow omega">
+  %= t h1 => 'Login to ' . $appname
+  %= form_for login => begin
+    %= label_for openid => 'openID URL'
+    %= text_field 'openid'
+    <br/>
+    %= submit_button 'Log in'
+  %= end
+</div>
+
