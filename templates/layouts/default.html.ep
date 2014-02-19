@@ -34,6 +34,11 @@
 
     <div id="subheader" class="container_16">
         %= breadcrumbs
+        <div class="grid_3 omega">
+            % if (current_user) {
+                %= 'Logged as '.current_user
+            % }
+        </div>
     </div>
 
     <div id="content" class="container_16 content-wrapper">

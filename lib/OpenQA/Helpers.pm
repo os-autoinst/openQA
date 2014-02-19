@@ -38,7 +38,7 @@ sub register {
     $app->helper(breadcrumbs => sub {
         my $c = shift;
 
-        my $crumbs = '<div id="breadcrump" class="grid_16 alpha">';
+        my $crumbs = '<div id="breadcrump" class="grid_13 alpha">';
         $crumbs .= '<a href="'.$c->url_for('/').'">';
         $crumbs .= $c->image('/images/home_grey.png', alt => "Home");
         $crumbs .= '<b>'.$c->stash('appname').'</b></a>';
@@ -61,6 +61,16 @@ sub register {
         $crumbs .= '</div>';
 
         Mojo::ByteStream->new($crumbs);
+    });
+
+    $app->helper(current_user => sub {
+        my $c = shift;
+        if (my $id = $c->session->{user}) {
+            my ($path, $user) = split(/\/([^\/]+)$/, $id);
+            $user;
+        } else {
+            undef;
+        }
     });
 
 }
