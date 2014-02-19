@@ -122,6 +122,7 @@ sub startup {
   my $job_name_r = $api_r->route('/jobs/#name');
   $job_r->post('/restart')->name('apiv1_restart_job')->to('job#restart'); # job_restart
   $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel'); # job_cancel
+  $job_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate'); # job_duplicate
 
   # api/v1/workers
   $api_r->get('/workers')->name('apiv1_workers')->to('worker#list'); # list_workers

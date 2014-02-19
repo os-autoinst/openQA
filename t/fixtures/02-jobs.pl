@@ -151,7 +151,7 @@
     id => 99981,
     priority => 50,
     result => { name => "none"},
-    state => { name => "scheduled"},
+    state => { name => "cancelled"},
     t_finished => undef,
     t_started => undef,
     test => "RAID0",

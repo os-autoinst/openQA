@@ -14,7 +14,7 @@ sub create {
     my $workerid = $self->stash('workerid');
     my $command = $self->param('command');
 
-    $self->render(json => {id => Scheduler::command_enqueue(workerid => $workerid, command => $command)});
+    $self->render(json => {id => Scheduler::command_enqueue_checked(workerid => $workerid, command => $command)});
 }
 
 sub destroy {

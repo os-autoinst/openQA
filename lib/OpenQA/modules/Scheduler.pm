@@ -29,6 +29,18 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
     );
 
 
+our %worker_commands = map { $_ => 1 } qw/
+    quit
+    abort
+    cancel
+    stop_waitforneedle
+    reload_needles_and_retry
+    enable_interactive_mode
+    disable_interactive_mode
+    continue_waitforneedle
+    /;
+
+
 my $schema = openqa::connect_db();
 
 =item _hashref()
@@ -455,11 +467,78 @@ sub _job_find_by_name($) {
     return $jobs;
 }
 
-sub job_restart {
-    my $name = shift or die "missing name parameter\n";
-    return _job_set_final_state($name, "abort", "scheduled");
+sub job_duplicate {
+    my %args = @_;
+
+    print STDERR "duplicating $args{jobid}\n";
+
+    my $job = _job_get({ id => $args{jobid} });
+    return undef unless $job;
+
+    my %settings = %{$job->{settings}};
+    delete $settings{NAME};
+    $settings{TEST} = $job->{test};
+    # TODO: test_branch
+
+    my $id = job_create(%settings);
+    if (defined $id) {
+        job_set_prio(jobid => $id, prio => $args{prio} || $job->{priority})
+    }
+
+    print STDERR "new job $id\n";
+
+    return $id;
 }
 
+sub job_restart {
+    my $name = shift or die "missing name parameter\n";
+
+    # TODO: support by name and by iso here
+    my $idqry = $name;
+
+    # first, duplicate all jobs that are either running, waiting or done
+    my $jobs = $schema->resultset("Jobs")->search(
+        {
+            id => $idqry,
+            state_id => {
+                -in => $schema->resultset("JobStates")->search({ name => [qw/running waiting done/] })->get_column("id")->as_query
+            }
+        }, {
+            columns => [qw/id/]
+        });
+    while (my $j = $jobs->next) {
+        job_duplicate(jobid => $j->id);
+    }
+
+    # then tell workers to abort
+    $jobs = $schema->resultset("Jobs")->search(
+        {
+            id => $idqry,
+            state_id => {
+                -in => $schema->resultset("JobStates")->search({ name => [qw/running waiting/] })->get_column("id")->as_query
+            }
+        }, {
+            colums => [qw/id worker_id/]
+        });
+    while (my $j = $jobs->next) {
+        print STDERR "enqueuing ".$j->id." ".$j->worker_id."\n";
+        command_enqueue(workerid => $j->worker_id, command => 'abort');
+    }
+
+    # now set all cancelled jobs to scheduled again
+    $schema->resultset("Jobs")->search(
+        {
+            id => $idqry,
+            state_id => {
+                -in => $schema->resultset("JobStates")->search({ name => [qw/cancelled/] })->get_column("id")->as_query
+            }
+        }, {
+    })->update({
+        state_id => $schema->resultset("JobStates")->search({ name => 'scheduled' })->single->id
+    });
+}
+
+# TODO: make sure job is in scheduled state
 sub job_cancel {
     my $name = shift or die "missing name parameter\n";
     return _job_set_final_state($name, "cancel", "cancelled");
@@ -487,10 +566,7 @@ sub _job_set_final_state($$$) {
     while (my $job = $jobs->next) {
 	print STDERR "workerid ". $job->id . ", " . $job->worker_id . " -> $cmd\n";
 	if ($job->worker_id) {
-	    $schema->resultset("Commands")->create({
-		worker_id => $job->worker_id,
-		command => $cmd,
-	    });
+            command_enqueue(workerid => $job->worker_id, command => $cmd );
 	} else {
 	    # XXX This do not make sense
 	    $job->update({
@@ -506,10 +582,18 @@ sub _job_set_final_state($$$) {
 # Commands API
 #
 
-sub command_enqueue {
+sub command_enqueue_checked {
     my %args = @_;
 
     _validate_workerid($args{workerid});
+
+    return command_enqueue(%args);
+}
+
+sub command_enqueue {
+    my %args = @_;
+
+    die "invalid command\n" unless $worker_commands{$args{command}};
 
     my $command = $schema->resultset("Commands")->create({
 	worker_id => $args{workerid},

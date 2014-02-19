@@ -256,24 +256,22 @@ sub _kill_worker($)
 	die "worker didn't want to die!\n" unless $got_sigchld;
 }
 
-# set job to done if priority is bigger threshold. Otherwise release
-# it with worse priority
-sub job_release_or_cancel($$)
+# set job to done. if priority is less than threshold duplicate it
+# with worse priority so it can be picked up again.
+sub job_incomplete($$$)
 {
-	my ($job, $result) = @_;
-	my $retries = 3; while(1) { eval {
-		# give up if the prio is too bad
-		if ($job->{'priority'} gt 70) {
-			printf "canceling job %d\n", $job->{'id'};
-			api_call('post', 'jobs/'.$job->{'id'}.'/set_cancel');
-		} else {
-			$job->{'priority'}++;
-			printf "releasing job %d, prio %d\n", $job->{'id'}, $job->{'priority'};
-			# make it less attractive so we don't get it again
-			api_call('post', 'jobs/'.$job->{'id'}.'/prio', {prio => $job->{'priority'}});
-			api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
-		}
-	}; last unless ($@); warn "$retries: $@"; die "$@" unless $retries--; sleep 5; next; }
+        my ($job, $prio_adjust, $result) = @_;
+        api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
+        if (!$prio_adjust || ($prio_adjust && $job->{'priority'} le 70)) {
+                my %args;
+                if ($prio_adjust) {
+                    $job->{'priority'}++;
+                    $args{prio} = $job->{'priority'};
+                }
+                printf "duplicating job %d, prio %d\n", $job->{'id'}, $job->{'priority'};
+                # make it less attractive so we don't get it again
+                api_call('post', 'jobs/'.$job->{'id'}.'/duplicate', \%args);
+        }
 }
 
 # check if results.json contains an overal result. If the latter is
@@ -341,13 +339,13 @@ sub main()
 				$keep_running = 0;
 				if ($worker) {
 					_kill_worker($worker);
-					api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
+                                        job_incomplete($job, 0, "worker quit");
 					$aborted = 'quit';
 				}
 			} elsif ($cmd->[1] eq 'abort') { # the work is live and the job is rescheduled
 				if ($worker) {
 					_kill_worker($worker);
-					api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
+                                        api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
 					$aborted = 'abort';
 				}
 			} elsif ($cmd->[1] eq 'cancel') { # The jobs is droped and the work is still alive
@@ -402,7 +400,7 @@ sub main()
 		if ($job && $worker_start_time && time-$worker_start_time > $max_job_time && !$aborted) {
 			warn sprintf("max job time exceeded, aborting %s ...\n", $job->{'settings'}->{'NAME'});
 			_kill_worker($worker);
-			job_release_or_cancel($job, "time exceeded");
+			job_incomplete($job, 1, "time exceeded");
 			$aborted = 'timeout';
 		}
 
@@ -425,7 +423,7 @@ sub main()
 			$worker = workit($job);
 			unless ($worker) {
 				warn "launching worker failed, releasing job\n";
-				job_release_or_cancel($job, "worker died");
+				job_incomplete($job, 1, "worker died");
 				$job = undef;
 			}
 			$worker_start_time = time;
@@ -513,10 +511,10 @@ sub main()
 					printf "setting job %d to $result\n", $job->{'id'};
 					api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result});
 				} else {
-					job_release_or_cancel($job, $result);
+					job_incomplete($job, 1, $result);
 				}
 			} else {
-			    job_release_or_cancel($job, $result);
+			    job_incomplete($job, 1, $result);
 			}
 			warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
 			clean_pool($job);
@@ -531,8 +529,7 @@ sub main()
 	if ($job) {
 		_kill_worker($worker);
 		unlink($testresults);
-		api_call('post', 'jobs/'.$job->{'id'}.'/set_scheduled');
-
+                job_incomplete($job, 0, "worker quit");
 		clean_pool($job);
 	}
 }

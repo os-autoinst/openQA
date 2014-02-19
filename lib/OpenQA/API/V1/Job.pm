@@ -114,4 +114,18 @@ sub cancel {
     $self->render(json => {result => $res});
 }
 
+sub duplicate {
+    my $self = shift;
+    my $jobid =
+    my %args = (
+         jobid => int($self->stash('jobid')),
+    );
+    if (defined $self->param('prio')) {
+        $args{prio} = int($self->param('prio'));
+    }
+
+    my $id = Scheduler::job_duplicate(%args);
+    $self->render(json => {id => $id});
+}
+
 1;

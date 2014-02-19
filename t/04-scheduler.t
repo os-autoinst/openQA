@@ -244,7 +244,6 @@ ok($result == 1, "job_update_result");
 $job = Scheduler::job_get($job_id);
 is($job->{result}, $args{result}, "job_get after update");
 
-
 # Testing job_restart
 # TBD
 
@@ -273,12 +272,12 @@ is_deeply($current_jobs , [], "no jobs listed");
 # Testing command_enqueue and list_commands
 %args = (
     workerid => $id,
-    command => "command",
+    command => "quit",
     );
 my %command = (
     id => 1,
     worker_id => 1,
-    command => "command",
+    command => "quit",
     );
 my $command_id = Scheduler::command_enqueue(%args);
 my $commands = Scheduler::list_commands();
@@ -289,7 +288,7 @@ is_deeply(nots($commands->[0], 't_processed'), \%command,  "command entered corr
 
 # Testing command_get
 $commands = Scheduler::command_get($command_id);
-ok(scalar @$commands == 1 && pp($commands) eq '[[1, "command"]]',  "command_get");
+ok(scalar @$commands == 1 && pp($commands) eq '[[1, "quit"]]',  "command_get");
 
 
 # Testing command_dequeue
