@@ -11,7 +11,7 @@ sub auth {
 
     # XXX TODO - Move this into a table in the database
     my %whitelist = (
-	'https://www.suse.com/openid/user/ancor' => undef,
+	'https://www.suse.com/openid/user/ancorgs' => undef,
 	'https://www.suse.com/openid/user/aplanas' => undef,
 	'https://www.suse.com/openid/user/coolo' => undef,
 	'https://www.suse.com/openid/user/cwh' => undef,
