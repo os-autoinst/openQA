@@ -53,6 +53,17 @@ sub generate_jobs
                 'DESKTOP' => 'gnome',
                 'INSTALLONLY' => 1, # XXX
             } },
+        # use firmware that accepts suse signed shim so it can be tested
+        # without ms' signature already
+        'gnome-uefi-suse' => {
+            applies => sub { $_[0]->{arch} =~ /x86_64/ },
+            settings => {
+                'QEMUCPU' => 'qemu64',
+                'UEFI' => '1',
+                'DESKTOP' => 'gnome',
+                'INSTALLONLY' => 1, # XXX
+                'UEFI_BIOS' => '/usr/share/qemu/ovmf-x86_64-suse.bin',
+            } },
         gnome => {
             settings => {
                 'QEMUCPUS' => '2',
