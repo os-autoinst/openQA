@@ -105,7 +105,7 @@ sub show {
   $self->stash(res_css => $res_css);
   $self->stash(res_display => $res_display);
 
-  return $self->render_not_found unless (-e $self->stash('resultdir'));
+#  return $self->render_not_found unless (-e $self->stash('resultdir'));
 
   my $results = test_result($testdirname);
 
@@ -167,8 +167,7 @@ sub show {
 
 # details box
 #FIXME: get test duration
-#my $test_duration = strftime("%H:%M:%S", gmtime(test_duration($testname)));
-  my $test_duration = 'n/a';
+  my $test_duration = 'FIXME'; # strftime("%H:%M:%S",$job->{t_finished} - $job->{t_started});
 
 # result files box
   my @resultfiles = test_resultfile_list($testdirname);
