@@ -63,7 +63,11 @@ sub list {
         run_stat=>$run_stat,
         backend => $backend,
       };
-      unshift @list, $settings;
+      if ($job->{state} eq 'running') {
+	      unshift @list, $settings;
+      } else {
+	      push @list, $settings;
+      }
     } else {
       my $settings = {
         job => $job,
