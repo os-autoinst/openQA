@@ -7,7 +7,19 @@ use Test::More tests => 16;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
+
 OpenQA::Test::Case->new->init_data;
+
+{
+    # ARGL, we can't fake the current time and the db manages
+    # t_started so we have to override it manually
+    use openqa qw/connect_db/;
+    use Date::Format qw/time2str/;
+    my $schema = connect_db();
+    my $r = $schema->resultset("Jobs")->search({ id => 99937 })->update({
+            t_created => time2str('%Y-%m-%d %H:%M:%S', time-540000, 'UTC'),  # 150 hours ago;
+    });
+}
 
 my $t = Test::Mojo->new('OpenQA');
 

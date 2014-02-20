@@ -56,8 +56,8 @@
     priority => 35,
     result => { name => "passed"},
     state => { name => "done"},
-    t_finished => time2str('%Y-%m-%d %R', time-536400), # 149 hours ago
-    t_started => time2str('%Y-%m-%d %R', time-540000),  # 150 hours ago
+    t_finished => time2str('%Y-%m-%d %H:%M:%S', time-536400, 'UTC'), # 149 hours ago
+    t_started => time2str('%Y-%m-%d %H:%M:%S', time-540000, 'UTC'),  # 150 hours ago
     test => "kde",
     test_branch => undef,
     worker_id => 0,
@@ -80,8 +80,8 @@
     priority => 36,
     result => { name => "failed"},
     state => { name => "done"},
-    t_finished => time2str('%Y-%m-%d %R', time-3600), # One hour ago
-    t_started => time2str('%Y-%m-%d %R', time-7200),  # Two hours ago
+    t_finished => time2str('%Y-%m-%d %H:%M:%S', time-3600, 'UTC'), # One hour ago
+    t_started => time2str('%Y-%m-%d %H:%M:%S', time-7200, 'UTC'),  # Two hours ago
     test => "doc",
     test_branch => undef,
     worker_id => 0,
@@ -104,8 +104,8 @@
     priority => 35,
     result => { name => "passed"},
     state => { name => "done"},
-    t_finished => time2str('%Y-%m-%d %R', time-10800), # Three hour ago
-    t_started => time2str('%Y-%m-%d %R', time-14400),  # Four hours ago
+    t_finished => time2str('%Y-%m-%d %H:%M:%S', time-10800, 'UTC'), # Three hour ago
+    t_started => time2str('%Y-%m-%d %H:%M:%S', time-14400, 'UTC'),  # Four hours ago
     test => "textmode",
     test_branch => undef,
     worker_id => 0,
@@ -130,7 +130,7 @@
     result => { name => "none"},
     state => { name => "running"},
     t_finished => undef,
-    t_started => time2str('%Y-%m-%d %R', time-600), # 10 minutes ago
+    t_started => time2str('%Y-%m-%d %H:%M:%S', time-600, 'UTC'), # 10 minutes ago
     test => "kde",
     test_branch => undef,
     worker_id => 1,

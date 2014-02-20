@@ -8,7 +8,6 @@ use strict;
 use Data::Dump qw/pp dd/;
 use Scheduler;
 use openqa;
-use POSIX qw/strftime/;
 use OpenQA::Test::Database;
 
 use Test::More;

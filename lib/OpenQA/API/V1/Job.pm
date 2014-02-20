@@ -7,7 +7,7 @@ sub list {
     my $self = shift;
 
     my @args;
-    for my $arg (qw/state build finish_after fulldetails/) {
+    for my $arg (qw/state build maxage fulldetails/) {
         next unless defined $self->param($arg);
         push @args, $arg;
         push @args, $self->param($arg);

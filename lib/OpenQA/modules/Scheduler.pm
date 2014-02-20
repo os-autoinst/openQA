@@ -230,12 +230,13 @@ sub list_jobs {
 	my $states_rs = $schema->resultset("JobStates")->search({ name => [split(',', $args{state})] });
 	$cond{state_id} = { -in => $states_rs->get_column("id")->as_query }
     }
-    if ($args{finish_after}) {
-        my $param = "datetime('$args{finish_after}')"; # FIXME: SQL injection!
-        $cond{t_finished} = { '>' => \$param }
-    }
     if ($args{maxage}) {
-        $cond{'-or'} = [ t_finished => undef, t_finished => { '>' => time2str('%Y-%m-%d %R', time - $args{maxage}) } ];
+        my $agecond = { '>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC') };
+        $cond{'-or'} = [
+            t_created => $agecond,
+            t_started => $agecond,
+            t_finished => $agecond
+        ];
     }
     if ($args{build}) {
         $cond{'settings.key'} = "BUILD";

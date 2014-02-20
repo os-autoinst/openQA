@@ -8,7 +8,6 @@ use strict;
 use Data::Dump qw/pp dd/;
 use Scheduler;
 use openqa;
-use POSIX qw/strftime/;
 use OpenQA::Test::Database;
 
 use Test::More tests => 43;
@@ -180,7 +179,6 @@ $job = Scheduler::job_get($job_id);
 is($job->{state}, "scheduled", "job state is scheduled");
 is($job->{worker_id}, 0, "no worker assigned");
 
-my @now = gmtime;
 sleep 1;
 # Testing job_set_done
 %args = (
@@ -194,12 +192,13 @@ is($job->{state}, "done", "job_set_done changed state");
 is($job->{result}, "passed", "job_set_done changed result");
 ok($job->{t_finished} =~ /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, "job end timestamp updated");
 
-%args = (finish_after => strftime("%Y-%m-%d %H:%M:%S", @now), fulldetails => 1);
+# XXX: this sucks because it depends on local time
+%args = (maxage => 2, fulldetails => 1);
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [$job], "list_jobs with finish in past");
 
-@now = gmtime;
-%args = (finish_after => strftime("%Y-%m-%d %H:%M:%S", @now), fulldetails => 1);
+sleep 1;
+%args = (maxage => 1, fulldetails => 1);
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [], "list_jobs with finish in future");
 
