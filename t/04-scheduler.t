@@ -10,7 +10,7 @@ use Scheduler;
 use openqa;
 use OpenQA::Test::Database;
 
-use Test::More tests => 43;
+use Test::More tests => 41;
 
 OpenQA::Test::Database->new->create(file => $ENV{OPENQA_DB}, skip_fixtures => 1);
 
@@ -192,15 +192,15 @@ is($job->{state}, "done", "job_set_done changed state");
 is($job->{result}, "passed", "job_set_done changed result");
 ok($job->{t_finished} =~ /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, "job end timestamp updated");
 
-# XXX: this sucks because it depends on local time
-%args = (maxage => 2, fulldetails => 1);
-$current_jobs = list_jobs(%args);
-is_deeply($current_jobs, [$job], "list_jobs with finish in past");
-
-sleep 1;
-%args = (maxage => 1, fulldetails => 1);
-$current_jobs = list_jobs(%args);
-is_deeply($current_jobs, [], "list_jobs with finish in future");
+# we cannot test maxage here as it depends too much on too small
+# time slots. The ui tests check maxage instead too
+#%args = (maxage => 2, fulldetails => 1);
+#$current_jobs = list_jobs(%args);
+#is_deeply($current_jobs, [$job], "list_jobs with finish in past");
+#sleep 1;
+#%args = (maxage => 1, fulldetails => 1);
+#$current_jobs = list_jobs(%args);
+#is_deeply($current_jobs, [], "list_jobs with finish in future");
 
 # Testing job_set_cancel
 $result = Scheduler::job_set_cancel($job_id);
