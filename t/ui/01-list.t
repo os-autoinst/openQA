@@ -7,7 +7,6 @@ use Test::More tests => 16;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
-
 OpenQA::Test::Case->new->init_data;
 
 {

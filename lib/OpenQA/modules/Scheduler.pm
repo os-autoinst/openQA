@@ -539,45 +539,44 @@ sub job_restart {
     });
 }
 
-# TODO: make sure job is in scheduled state
 sub job_cancel {
     my $name = shift or die "missing name parameter\n";
-    return _job_set_final_state($name, "cancel", "cancelled");
+
+    # TODO: support by name and by iso here
+    my $idqry = $name;
+
+    # first set all scheduled jobs to cancelled
+    $schema->resultset("Jobs")->search(
+        {
+            id => $idqry,
+            state_id => {
+                -in => $schema->resultset("JobStates")->search({ name => [qw/scheduled/] })->get_column("id")->as_query
+            }
+        }, {
+    })->update({
+        state_id => $schema->resultset("JobStates")->search({ name => 'cancelled' })->single->id
+    });
+
+    # then tell workers to cancel their jobs
+    my $jobs = $schema->resultset("Jobs")->search(
+        {
+            id => $idqry,
+            state_id => {
+                -in => $schema->resultset("JobStates")->search({ name => [qw/running waiting/] })->get_column("id")->as_query
+            }
+        }, {
+            colums => [qw/id worker_id/]
+        });
+    while (my $j = $jobs->next) {
+        print STDERR "enqueuing ".$j->id." ".$j->worker_id."\n";
+        command_enqueue(workerid => $j->worker_id, command => 'cancel');
+    }
 }
 
 sub job_stop {
     carp "job_stop is deprecated, use job_cancel instead";
     return job_cancel(@_);
 }
-
-# set job to a final state, resetting it's properties
-# parameters:
-# - id or name
-# - command to send to worker if the job is in use
-# - name of final state
-sub _job_set_final_state($$$) {
-    my $name = shift;
-    my $cmd = shift;
-    my $statename = shift;
-
-    # XXX TODO Put this into a transaction
-    # needs to be a transaction as we need to make sure no worker assigns
-    # itself while we modify the job
-    my $jobs = _job_find_smart($name);
-    while (my $job = $jobs->next) {
-	print STDERR "workerid ". $job->id . ", " . $job->worker_id . " -> $cmd\n";
-	if ($job->worker_id) {
-            command_enqueue(workerid => $job->worker_id, command => $cmd );
-	} else {
-	    # XXX This do not make sense
-	    $job->update({
-		state_id => $schema->resultset("JobStates")->search({ name => $statename })->single->id,
-		worker_id => 0,
-	    });
-	}
-    }
-}
-
 
 #
 # Commands API
