@@ -42,7 +42,9 @@
             <% } else { %>
 	    <a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><img src="/images/details.png" alt="details" title="test result details" height="23" width="23" /></a>
 	    <a href="<%= url_for('test_file', 'testid' => $job->{'id'}, 'filename' => 'video.ogv') %>"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
-            <a data-method="post" href="<%= url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') %>"><img src="/images/toggle.png" alt="restart" title="Restart Job"/></a>
+            %= link_post url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') => begin
+                %= image "/images/toggle.png", alt=>"restart", title=>"Restart Job"
+            %= end
           <% } %>
 	  </td>
           <td class="backend"><%= $test->{backend} %></td>
@@ -98,9 +100,9 @@
           % }
           </td>
           <td class="backend">
-            <%= link_to "-" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio-10)->query('back' => 'results') => ('data-method' => 'post') %>
+            <%= link_post "-" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio-10)->query('back' => 'results') %>
             <%= $prio %>
-            <%= link_to "+" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio+10)->query('back' => 'results') => ('data-method' => 'post') %>
+            <%= link_post "+" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio+10)->query('back' => 'results') %>
           </td>
           <td class="distri"><%= $job->{settings}->{'DISTRI'} %></td>
           <td class="type"><%= $job->{settings}->{'FLAVOR'} %></td>
@@ -112,7 +114,7 @@
           </td>
           <td class="extra"><span class=""><%= $job->{'test'} %></span></td>
           <td class="cancel" colspan="4" style="padding: 3px 4px; font-style: italic;">
-            <a data-method="post" href="<%== url_for('cancel', 'testid' => $job->{'id'})->query('back' => 'results') %>">cancel</a>
+              <%= link_post 'cancel' => url_for('cancel', 'testid' => $job->{'id'})->query('back' => 'results') %>
           </td>
        </tr>
     % }

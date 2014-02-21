@@ -7,7 +7,6 @@ use Scheduler qw/worker_get/;
 sub list {
   my $self = shift;
 
-  require boring if $self->param('ib');
   my $match;
   if(defined($self->param('match'))) {
     $match = $self->param('match');
@@ -18,6 +17,7 @@ sub list {
   if (!defined($self->param('hours')) || $self->param('hours') =~ m/\D/) {
     $self->param(hours => $defaulthoursfresh);
   }
+
   my $hoursfresh = $self->param('hours') + 0;
   if ($hoursfresh < 1 || $hoursfresh > 900) {
     $hoursfresh=$defaulthoursfresh

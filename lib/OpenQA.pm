@@ -54,6 +54,7 @@ sub startup {
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer');
   $self->plugin('OpenQA::Helpers');
+  $self->plugin('OpenQA::CSRF');
 
   $self->_read_config;
 
