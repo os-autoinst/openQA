@@ -1,0 +1,146 @@
+openQA
+======
+
+openQA is testing framework that allows you to test GUI applications on one
+hand and bootloader and kernel on the other. In both cases, it is difficult to
+script test and verify the output. Output can be popup window or it can be
+error in early boot even before init is executed.
+
+Therefor openQA runs virtual machines and closely monitors their state and
+runs tests on them.
+
+Testing framework can be divided in two parts. One that is hosted in this
+repository is web frontend and management logic (test scheduling, management,
+high-level API, ...)
+
+The other part that you need to run openQA is OS-autoinst test engine that is
+hosted in separate https://github.com/openSUSE/os-autoinst[repository].
+
+Installation
+------------
+
+The easiest way to install openQA is from packages. You can find them in OBS in
+https://build.opensuse.org/project/show/devel:openQA[openQA] repository or
+latest development version can be found also in OBS in
+https://build.opensuse.org/project/show/devel:openQA:devel[openQA:devel]
+repository. Installation on openSUSE is therefore pretty simple:
+
+--------------------------------------------------------------------------------
+zypper ar -f obs://devel:openQA/openSUSE_13.1 openQA
+zypper in openQA apache2
+# Fetch needles
+sh /usr/lib/os-autoinst/tools/fetchneedles
+# Init database
+/usr/share/openqa/tools/initdb
+chown geekotest /var/lib/openqa/db/db.sqlite
+# Start WebUI
+systemctl start openqa-webui
+# Start apache proxy
+a2enmod proxy
+a2enmod headers
+a2enmod proxy_http
+systemctl start apache2
+# Start some workers
+systemctl start openqa-worker.target
+--------------------------------------------------------------------------------
+
+Now you have WebUI running on localhost and workers running as well. You can
+take a look at WebUI at http://localhost But so far it is empty. To create a
+test, put ISO in +/var/lib/openqa/factory/iso+ and call following commands:
+
+--------------------------------------------------------------------------------
+# Run the first test
+/usr/share/openqa/script/client isos post \
+         iso=openSUSE-Factory-NET-x86_64-Build0053-Media.iso tests=minimalx
+--------------------------------------------------------------------------------
+
+WARNING: Using only iso name in 'client' command and saving it in
++/var/lib/openqa/factory/iso+ is recommended as is using factory iso. To use
+different iso, you would need to to make sure it is recognizable by openQA. See
+how naming is being parsed in +lib/OpenQA/modules/openqa/distri/opensuse.pm+
+
+Filesystem Layout
+~~~~~~~~~~~~~~~~~
+
+The openQA web interface can be started via "morbo script/openqa" in
+development mode.
+
++/var/lib/openqa/+ must be owned by root and contain several sub
+directories owned by the user that runs the workers (default 'geekotest'):
+
+* +backlog+
+* +factory/iso+
+* +perl/+ (subdirectory 'autoinst' must link to +/usr/lib/os-autoinst+)
+* +pool/1+ (add more for each worker)
+* +testresults+
+* +tools+ (symlink to +/usr/share/openqa/tools/+)
+
++/var/lib/openqa/db+ contains the sqlite database and must be owned by
+the user that runs the web interface ('geekotest'). To initially create this
+database, you need to run +tools/initdb+.
+
+Configuring a separate web server
+---------------------------------
+
+The openQA web interface can run standalone via Mojolicous so a web server is
+not necessarily needed. If you want to use apache you need to configure proxy
+mode. See +openqa.conf.template+ config file in +apache2/vhosts.d+. To make
+everything work correctly, you need to enable the 'proxy_http', 'headers' and
+'proxy' modules (use 'a2enmod').
+
+Running workers
+---------------
+
+To start the workers you can use the provided systemd files via +systemctl
+start openqa-worker.target+. This will start as many workers as you have pool
+directories. Alternatively you can run
+
+--------------------------------------------------------------------------------
+script/worker --instance X
+--------------------------------------------------------------------------------
+
+This will run worker manually showing you debug output. If you haven't
+installed 'os-autoinst' from packages make sure to pass +--isotovideo+ option
+to point to the checkout dir where isotovideo is, not to +/usr/lib+! Otherwise
+it will have troubles finding perl modules then.
+
+Setting up git support
+----------------------
+
+Editing needles from web can optionally commit new or changed needles
+automatically to git. To do so, you need to enable git support by setting
+'OPENQA_NEEDLES_SCM', 'OPENQA_NEEDLES_GIT_WORKTREE'
+in the apache config. Once you do so and restart the web interface, openQA will
+commit new needles to the git repository automatically.
+
+You may want to add some description to automatic commits coming from web UI.
+You can do so by setting configuration in the repository
+(+/var/lib/os-autoinst/needles/.git/config+) to some reasonable defaults like:
+
+--------------------------------------------------------------------------------
+[user]
+	email = whatever@example.com
+	name = openQA web UI
+--------------------------------------------------------------------------------
+
+To enable automatic pushing of the repo as well, you need to set
+'OPENQA_NEEDLES_GIT_DO_PUSH' to 'yes' as well. Depending on your setup, you
+might need to generate and propagate ssh key for user 'geekotest' to be able to
+push.
+
+Troubleshooting
+---------------
+
+Tests fail quickly
+~~~~~~~~~~~~~~~~~~
+
+Check the log files in +/var/lib/openqa/testresults+
+
+KVM doesn't work
+~~~~~~~~~~~~~~~~
+
+* make sure you a machine with kvm support
+* make sure +kvm_intel+ or +kvm_amd+ modules are loaded
+* make sure you do not have virtualization disabled in BIOS
+* make sure the 'geekotest' user can access +/dev/kvm+
+* make sure you are not running other hypervisors already like VirtualBox
