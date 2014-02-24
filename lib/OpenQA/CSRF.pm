@@ -53,7 +53,7 @@ sub register {
             if ($c->req->method ne 'GET' && $c->req->method ne 'HEAD') {
                 my $validation = $c->validation;
                 if ($validation->csrf_protect->has_error('csrf_token')) {
-                    $c->app->log->debug("Bad CSRF token on ");
+                    $c->app->log->debug("Bad CSRF token");
                     return $c->render(text => 'Bad CSRF token!', status => 403)
                 }
             }

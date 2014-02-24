@@ -100,7 +100,7 @@ my $res = $ua->$method($url)->res;
 if ($res->code == 200) {
     dd($res->json || $res->body);
 } else {
-    print $res->code."\n";
+    print $res->code." ".$res->message."\n";
 }
 
 1;
