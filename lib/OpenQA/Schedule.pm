@@ -23,11 +23,6 @@ sub cancel
     my $self = shift;
     my $name = $self->param('testid');
 
-    # Check CSRF token
-    my $validation = $self->validation;
-    return $self->render(text => 'Bad CSRF token!', status => 403)
-        if $validation->csrf_protect->has_error('csrf_token');
-
     if(!is_authorized_rw($self)) {
         #return $self->render(text => "forbidden", status => 403);
         $self->stash('denied', 1);
@@ -44,11 +39,6 @@ sub restart
     my $self = shift;
     my $name = $self->param('testid');
 
-    # Check CSRF token
-    my $validation = $self->validation;
-    return $self->render(text => 'Bad CSRF token!', status => 403)
-        if $validation->csrf_protect->has_error('csrf_token');
-
     if(!is_authorized_rw($self)) {
         $self->stash('denied', 1);
     } else {
@@ -64,11 +54,6 @@ sub setpriority
     my $self = shift;
     my $name = $self->param('testid');
     my $priority = $self->param('priority');
-
-    # Check CSRF token
-    my $validation = $self->validation;
-    return $self->render(text => 'Bad CSRF token!', status => 403)
-        if $validation->csrf_protect->has_error('csrf_token');
 
     if(!is_authorized_rw($self)) {
         $self->stash('denied', 1);

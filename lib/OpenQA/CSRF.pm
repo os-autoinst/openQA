@@ -27,6 +27,8 @@ sub register {
             }
             return $app->$form_for(@_);
         });
+
+    # special anchor tag with data-method="post" and csrf token
     $app->helper(
         link_post => sub {
             my ($self, $content) = (shift, shift);
@@ -42,6 +44,22 @@ sub register {
                 unless Scalar::Util::blessed $url && $url->isa('Mojo::URL');
 
             return $self->tag('a', href => $url->query(csrf_token => $self->csrf_token), 'data-method' => 'post', @_);
+        });
+
+    # require CSRF token for all requests that are not GET or HEAD
+    $app->hook(
+        before_routes => sub {
+            my $c = shift;
+
+            if ($c->req->method ne 'GET' && $c->req->method ne 'HEAD') {
+                my $validation = $c->validation;
+                if ($validation->csrf_protect->has_error('csrf_token')) {
+                    $c->app->log->debug("Bad CSRF token on ");
+                    return $c->render(text => 'Bad CSRF token!', status => 403)
+                }
+            }
+
+            return 1;
         });
 }
 
