@@ -68,7 +68,7 @@ $options{'host'} ||= 'localhost';
 
 my $path = shift @ARGV;
 # Relative paths are routed to v1
-if ($path =~ s/^\///r) {
+if ($path !~ s/^\///) {
     $path = 'api/v1/'.$path;
 }
 
