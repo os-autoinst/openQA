@@ -5,6 +5,7 @@ use awstandard;
 BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
 use Image::Magick;
 use Mojolicious::Static;
+use Scheduler ();
 
 sub init {
     my $self = shift;
