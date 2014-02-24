@@ -32,7 +32,6 @@ zypper in openQA apache2
 sh /usr/lib/os-autoinst/tools/fetchneedles
 # Init database
 /usr/share/openqa/tools/initdb
-chown geekotest /var/lib/openqa/db/db.sqlite
 # Start WebUI
 systemctl start openqa-webui
 # Start apache proxy
