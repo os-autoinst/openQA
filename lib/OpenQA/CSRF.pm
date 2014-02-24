@@ -18,14 +18,13 @@ sub register {
     $app->helper(
         form_for => sub {
             my $self = shift;
-
             my $code = $_[-1];
             if ( defined $code && ref $code eq 'CODE' ) {
                 $_[-1] = sub {
                     $self->csrf_field . $code->();
                 };
             }
-            return $app->$form_for(@_);
+            return $self->$form_for(@_);
         });
 
     # special anchor tag with data-method="post" and csrf token
