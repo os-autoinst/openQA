@@ -25,6 +25,7 @@
   /usr/lib64/ImageMagick-6.8.6/modules-Q16/coders/jpeg.so mr,
   /usr/lib64/ImageMagick-6.8.6/modules-Q16/coders/png.so mr,
   /usr/share/openqa/lib/** r,
+  /usr/share/openqa/public/** r,
   /usr/share/openqa/script/openqa r,
   /usr/share/openqa/templates/ r,
   /usr/share/openqa/templates/** r,
