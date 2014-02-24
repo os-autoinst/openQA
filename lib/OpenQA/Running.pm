@@ -10,6 +10,12 @@ use Scheduler ();
 sub init {
     my $self = shift;
     my $job = Scheduler::job_get($self->param('testid'));
+
+    unless (defined $job) {
+        $self->render_not_found;
+        return 0;
+    }
+
     $self->stash('job', $job);
 
     my $testdirname = $job->{'settings'}->{'NAME'};
