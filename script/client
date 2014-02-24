@@ -59,17 +59,19 @@ sub usage($) {
 GetOptions(
 	\%options,
 	"host=s",
+	"apibase=s",
 	"verbose|v",
 	"help|?",
 ) or usage(1);
 
 usage(1) unless @ARGV;
 $options{'host'} ||= 'localhost';
+$options{'apibase'} ||= '/api/v1';
 
 my $path = shift @ARGV;
 # Relative paths are routed to v1
 if ($path !~ s/^\///) {
-    $path = 'api/v1/'.$path;
+    $path = join('/', $options{apibase}, $path);
 }
 
 my $method = 'get';
@@ -77,7 +79,7 @@ my @params;
 
 for my $arg (@ARGV) {
     if ($arg =~ /^(?:get|post|delete|put)$/i) {
-        $method = $arg;
+        $method = lc $arg;
     } elsif ($arg =~ /^[[:alnum:]]+=.+/) {
         push @params, $arg;
     } else {
@@ -93,10 +95,25 @@ if ($options{'host'} !~ '/') {
 } else {
 	$url = Mojo::URL->new($options{'host'});
 }
+
+my $headers = {
+    Accept => 'application/json'
+};
+
+if ($method ne 'get') {
+    $url->path(join('/', $options{apibase}, 'authenticate'));
+    my $res = $ua->get($url, $headers)->res;
+    if ($res->code == 200) {
+        if (my $token = $res->json->{token}) {
+            $headers->{'X-CSRF-Token'} = $token;
+        }
+    }
+}
+
 $url->path($path);
 $url->query(join('&', @params)) if @params;
 
-my $res = $ua->$method($url)->res;
+my $res = $ua->$method($url, $headers)->res;
 if ($res->code == 200) {
     dd($res->json || $res->body);
 } else {

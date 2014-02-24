@@ -106,6 +106,9 @@ sub startup {
   ### JSON API starts here
   my $api_r = $r->route('/api/v1')->to(namespace => 'OpenQA::API::V1');
 
+  # api/v1/authenticate
+  $api_r->get('/authenticate')->name('apiv1_authenticate')->to('authenticate#authenticate');
+
   # api/v1/jobs
   $api_r->get('/jobs')->name('apiv1_jobs')->to('job#list'); # list_jobs
   $api_r->post('/jobs')->name('apiv1_create_job')->to('job#create'); # job_create
