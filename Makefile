@@ -1,7 +1,7 @@
 all:
 
 install:
-	DESTDIR="$(DESTDIR)" tools/install
+	DESTDIR="$(DESTDIR)" script/install
 
 test:
 	script/openqa test

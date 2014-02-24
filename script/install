@@ -1,17 +1,17 @@
 #!/bin/bash
-for i in lib public script templates tools; do
+for i in lib public script templates; do
 	mkdir -p "$DESTDIR"/usr/share/openqa/$i
 	cp -a $i/* "$DESTDIR"/usr/share/openqa/$i
 done
 for i in install; do
-	rm "$DESTDIR"/usr/share/openqa/tools/$i
+	rm "$DESTDIR"/usr/share/openqa/script/$i
 done
 #
 for i in backlog factory/iso logs perl pool testresults logupload \
 	; do
 	mkdir -p "$DESTDIR"/var/lib/openqa/$i
 done
-for i in tools; do
+for i in script; do
 	ln -s /usr/share/openqa/$i "$DESTDIR"/var/lib/openqa/$i
 done
 ln -s /usr/lib/os-autoinst "$DESTDIR"/var/lib/openqa/perl/autoinst
