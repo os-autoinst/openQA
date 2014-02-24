@@ -94,7 +94,7 @@
        <tr id="job_<%= $job->{'id'} %>">
           <td style="font-style: italic;" class="link"><%= $state %>
           % if ($state eq 'cancelled') {
-            %= link_to url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') => ('data-method' => 'post') => begin
+            %= link_post url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') => begin
                 %= image '/images/toggle.png', alt => "restart", title => "Restart job"
             % end
           % }

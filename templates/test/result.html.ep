@@ -10,11 +10,19 @@
 		<div class="aligncenter">
 			<% if($diskimg) { %>
 			%# TODO: l1 should not be hardcoded here
-			<a href="<%= url_for('diskimage', testid => $testid, imageid => 'l1') %>"><img width="23" height="23" src="/images/floppy.png" alt="img" title="download disk image"/></a>
+                        %= link_to url_for('diskimage', testid => $testid, imageid => 'l1') => begin
+                            %= image "/images/floppy.png", width=>"23", height=>"23", alt=>"img", title=>"download disk image"
+                        %= end
 			<% } %>
-			<a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => 'video.ogv') %>"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
-			<a href="<%= url_for('tests') %>"><img src="/images/back.png" alt="back" title="back to overview page" /></a>
-			<a data-method="post" href="<%= url_for('restart', 'testid' => $testid)->query('back' => 'details') %>"><img src="/images/toggle.png" alt="schedule" title="re-schedule"/></a>
+                        %= link_to url_for('test_file', 'testid' => $testid, 'filename' => 'video.ogv') => begin
+                            %= image "/images/video.png", width=>"23", height=>"23", alt=>"ogv", title=>"ogg/theora video of this testrun"
+                        %= end
+                        %= link_to tests => begin
+                            %= image "/images/back.png", alt=>"back", title=>"back to overview page"
+                        %= end
+                        %= link_post url_for('restart', 'testid' => $testid)->query('back' => 'details') => begin
+                            %= image "/images/toggle.png", alt => "schedule", title => "re-schedule"
+                        %= end
 		</div>
 	</div>
 	<% if($resultfiles) { %>
