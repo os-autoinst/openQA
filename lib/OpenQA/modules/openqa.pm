@@ -214,7 +214,7 @@ sub get_running_modinfo($) {
 	my $currentstep = $results->{'running'}||'';
 	my $modlist = [];
 	my $donecount = 0;
-	my $count = @{$results->{'testmodules'}};
+	my $count = @{$results->{'testmodules'}||[]};
 	my $modstate = 'done';
 	my $category;
 	for my $module (@{$results->{'testmodules'}}) {
