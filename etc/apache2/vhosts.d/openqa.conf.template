@@ -1,11 +1,18 @@
-# note: if you enable this you must have a default vhost, e.g. in 01-default.conf
+# sample apache config file for the openqa vhost. At the very
+# minimum you need to set the ServerName.
+#
+# If this is your first vhost you must create a default vhost, e.g.
+# in 01-default.conf with the following content:
+#
 #NameVirtualHost *:80
 #<VirtualHost *:80>
 #    ServerName www.example.com
 #    DocumentRoot "/srv/www/htdocs"
 #</VirtualHost>
 #
-# also, don't forget to
+# Also, the following apache modules must be enabled:
+#
+# a2enmod headers
 # a2enmod proxy
 # a2enmod proxy_http
 
@@ -13,29 +20,8 @@
 
     #ServerName your.server.name
 
-    DocumentRoot /usr/share/openqa/public
-
-    <Proxy *>
-        Order deny,allow
-        Allow from all
-    </Proxy>
-
-    ProxyRequests Off
-    ProxyPreserveHost On
-
-    ProxyPass /favicon.ico !
-    ProxyPass /images !
-    ProxyPass /javascripts !
-    ProxyPass /stylesheets !
-
-    ProxyPass / http://localhost:9526/ keepalive=On
-    ProxyPassReverse / http://localhost:9526/
-
-    RequestHeader set X-Forwarded-HTTPS "0"
-
-    HostnameLookups Off
-    UseCanonicalName Off
-    ServerSignature On
+    Include /etc/apache2/vhosts.d/openqa-common.inc
 
 </VirtualHost>
 
+# vim: syntax=apache

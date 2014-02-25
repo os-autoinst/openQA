@@ -1,0 +1,28 @@
+# sample apache config file for the ssl enabled openqa vhost.
+# At the very minimum you need to set the ServerName.
+
+<IfDefine SSL>
+<IfDefine !NOSSL>
+
+<VirtualHost *:443>
+
+    #ServerName your.server.name
+
+    SSLEngine on
+
+    ## SSL settings in case you want to override your server's
+    ## default:
+
+    #SSLProtocol all -SSLv2 -SSLv3
+    #SSLCipherSuite HIGH:MEDIUM:!aNULL:!MD5
+    #SSLCertificateFile /etc/apache2/ssl.crt/openqa.crt
+    #SSLCertificateKeyFile /etc/apache2/ssl.key/openqa.key
+    #SSLCertificateChainFile /etc/apache2/ssl.crt/ca.crt
+
+    Include /etc/apache2/vhosts.d/openqa-common.inc
+
+</VirtualHost>
+
+</IfDefine>
+</IfDefine>
+
