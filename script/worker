@@ -282,7 +282,7 @@ sub _kill_worker($)
 		sleep 2;
 	}
 
-	die "worker didn't want to die!\n" unless $got_sigchld;
+	carp "worker didn't want to die!\n" unless $got_sigchld;
 }
 
 # set job to done. if priority is less than threshold duplicate it
@@ -311,7 +311,10 @@ sub results_overall($)
 	my $ret;
 	local $/;
 	open(my $fh, '<', $fn) or return 0;
-	my $json = decode_json(<$fh>);
+	my $json;
+	eval {
+		$json = decode_json(<$fh>);
+	}; warn "os-autoinst didn't write proper results.json" if $@;
 	$ret = $json->{'overall'} if $json && $json->{'overall'};
 	close($fh);
 	return $ret;
