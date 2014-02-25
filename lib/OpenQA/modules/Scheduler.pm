@@ -103,10 +103,18 @@ sub worker_register {
 	});
     }
 
-    # maybe worker died, delete pending commands and reset running jobs
+    # in case the worker died ...
+    # ... restart jobs assigned to this worker
+    for my $j ($worker->jobs->all()) {
+        job_duplicate(jobid => $j->id);
+    }
+    # .. set them to incomplete
     $worker->jobs->update_all({
-	state_id => $schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
+       state_id => $schema->resultset("JobStates")->search({ name => "done" })->single->id,
+       result_id => $schema->resultset("JobResults")->search({ name => 'incomplete' })->single->id,
+       worker_id => 0,
     });
+    # ... delete pending commands
     $schema->resultset("Commands")->search({
 	worker_id => $worker->id
     })->delete_all();
@@ -314,25 +322,6 @@ sub job_grab {
     return $job_hashref;
 }
 
-=item job_set_scheduled
-
-release job from a worker and put back to scheduled (e.g. if worker
-aborted). No error check. Meant to be called from worker!
-
-=cut
-sub job_set_scheduled {
-    my $jobid = shift;
-
-    my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
-	state_id => $schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
-	worker_id => 0,
-	t_started => undef,
-	t_finished => undef,
-	result_id => 0,
-    });
-    return $r;
-}
-
 =item job_set_done
 
 mark job as done. No error check. Meant to be called from worker!
@@ -356,26 +345,6 @@ sub job_set_done {
     return $r;
 }
 
-=item job_set_cancel
-
-mark job as cancelled. No error check. Meant to be called from worker!
-
-=cut
-sub job_set_cancel {
-    my $jobid = shift;
-
-    my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
-	state_id => $schema->resultset("JobStates")->search({ name => "cancelled" })->single->id,
-	worker_id => 0,
-    });
-    return $r;
-}
-
-sub job_set_stop {
-    carp "job_set_stop is deprecated, use job_set_cancel instead";
-    return job_set_cancel(@_);
-}
-
 =item job_set_waiting
 
 mark job as waiting. No error check. Meant to be called from worker!
@@ -384,6 +353,7 @@ mark job as waiting. No error check. Meant to be called from worker!
 sub job_set_waiting {
     my $jobid = shift;
 
+    # TODO: only allowed for running jobs
     my $r = $schema->resultset("Jobs")->search({ id => $jobid })->update({
 	state_id => $schema->resultset("JobStates")->search({ name => "waiting" })->single->id,
     });

@@ -538,7 +538,6 @@ sub main()
 				} else {
 					$result = 'incomplete';
 				}
-				# XXX: use job_set_cancel in case of cancel?
 				if (($aborted||'') eq 'cancel' || $overall) {
 					printf "setting job %d to $result\n", $job->{'id'};
 					api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result});

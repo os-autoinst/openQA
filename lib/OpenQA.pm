@@ -135,7 +135,7 @@ sub startup {
   $job_r->post('/result')->name('apiv1_job_result')->to('job#result'); # job_update_result
   $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done'); # job_set_done
   # job_set_scheduled, job_set_cancel, job_set_waiting, job_set_continue
-  my $command_r = $job_r->route('/set_:command', command => [qw(scheduled cancel waiting continue)]);
+  my $command_r = $job_r->route('/set_:command', command => [qw(waiting continue)]);
   $command_r->post('/')->name('apiv1_set_command')->to('job#set_command');
   # restart and cancel are valid both by job id or by job name (which is
   # exactly the same, but with less restrictive format)

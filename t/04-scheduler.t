@@ -26,9 +26,11 @@ use Scheduler;
 use openqa;
 use OpenQA::Test::Database;
 
-use Test::More tests => 41;
+use Test::More tests => 43;
 
 OpenQA::Test::Database->new->create(file => $ENV{OPENQA_DB}, skip_fixtures => 1);
+
+my $result;
 
 sub nots
 {
@@ -118,7 +120,6 @@ my %settings2 = %settings;
 $settings2{NAME} = "OTHER NAME";
 $settings2{BUILD} = "44";
 my $job2_id= Scheduler::job_create(%settings2);
-unlink $iso;
 
 Scheduler::job_set_prio(jobid => $job_id, prio => 40);
 my $new_job = Scheduler::job_get($job_id);
@@ -179,21 +180,24 @@ ok($job->{t_started} =~ /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, "job start timest
 is(scalar(@{$rjobs_before})+1, scalar(@{$rjobs_after}), "number of running jobs");
 is($job->{worker_id}, $worker->{id}, "correct worker assigned");
 
-
-# # Testing when a worker register for second time and had pending jobs
-# $id2 = worker_register("host", "instance", "backend");
-# ok($id == $id2, "Pending jobs worker_register");
-
-
-# Testing job_set_scheduled
 $job = Scheduler::job_get($job_id);
-ok($job->{state} eq "running", "Job is in running state");   # After job_grab the job is in running state.
+ok($job->{state} eq "running", "Job is in running state"); # After job_grab the job is in running state.
 
-my $result = Scheduler::job_set_scheduled($job_id);
-is($result, 1, "job_set_scheduled");
+# register worker again while it has a running job
+$id2 = worker_register("host", "1", "backend");
+ok($id == $id2, "re-register worker got same id");
+
+# Now it's previous job must be set to done
 $job = Scheduler::job_get($job_id);
-is($job->{state}, "scheduled", "job state is scheduled");
-is($job->{worker_id}, 0, "no worker assigned");
+is($job->{state}, "done", "Previous job is in done state");
+is($job->{result}, "incomplete", "result is incomplete");
+
+$job = Scheduler::job_grab(%args);
+isnt($job_id, $job->{id}, "new job grabbed");
+$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-Build666-rainbow',
+is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
+my $job3_id = $job_id;
+$job_id = $job->{id};
 
 sleep 1;
 # Testing job_set_done
@@ -217,12 +221,6 @@ ok($job->{t_finished} =~ /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, "job end timesta
 #%args = (maxage => 1, fulldetails => 1);
 #$current_jobs = list_jobs(%args);
 #is_deeply($current_jobs, [], "list_jobs with finish in future");
-
-# Testing job_set_cancel
-$result = Scheduler::job_set_cancel($job_id);
-$job = Scheduler::job_get($job_id);
-ok($result == 1 && $job->{state} eq "cancelled", "job_set_cancel");
-
 
 # Testing job_set_waiting
 $result = Scheduler::job_set_waiting($job_id);
@@ -281,6 +279,10 @@ $result = Scheduler::job_delete($job2_id);
 $no_job_id = Scheduler::job_get($job2_id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
 
+$result = Scheduler::job_delete($job3_id);
+$no_job_id = Scheduler::job_get($job3_id);
+ok($result == 1 && !defined $no_job_id, "job_delete");
+
 $current_jobs = list_jobs();
 is_deeply($current_jobs , [], "no jobs listed");
 
@@ -314,9 +316,7 @@ TODO: {
 # Testing iso_cancel_old_builds
 $result = Scheduler::iso_cancel_old_builds('ISO');
 ok($result == 1, "Empty iso_old_builds");
-open $fh, ">", $iso;
 $job_id = Scheduler::job_create(%settings);
-unlink $iso;
 $result = Scheduler::iso_cancel_old_builds('ISO');
 $new_job = Scheduler::job_get($job_id);
 ok($result == 1 && $new_job->{state} eq "cancelled" && $new_job->{worker_id} == 0, "Match iso_old_builds");
@@ -325,3 +325,5 @@ $result = Scheduler::job_delete($job_id);
 $no_job_id = Scheduler::job_get($job_id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
 }
+
+unlink $iso;
