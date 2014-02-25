@@ -2,7 +2,6 @@
 % title $job->{name}." test results";
 % my $ref_width=60;
 % my $ref_height=int($ref_width/4*3);
-% use Mojo::ByteStream 'b';
 
 <div class="grid_2 alpha">
 	<div class="box box-shadow" id="actions_box">

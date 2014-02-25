@@ -1,6 +1,5 @@
 % layout 'default';
 % title $moduleid;
-% use Mojo::ByteStream 'b';
 
 <div class="grid_3 alpha" id="sidebar">
 	<div class="box box-shadow alpha" id="actions_box">

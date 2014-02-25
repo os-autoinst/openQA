@@ -1,6 +1,5 @@
 % layout 'default';
 % title $testname;
-% use Mojo::ByteStream 'b';
 
 <div class="grid_4 live-sidebar alpha">
     <div class="grid_4 live-sidebar box box-shadow alpha" id="actions_box">

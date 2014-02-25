@@ -1,2 +1,1 @@
-% use Mojo::ByteStream 'b';
 %= b($script)

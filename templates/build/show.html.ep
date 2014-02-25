@@ -1,6 +1,5 @@
 % layout 'default';
 % title $buildid;
-% use Mojo::ByteStream 'b';
 
 %= javascript '/javascripts/wz_tooltip/wz_tooltip.js'
 

@@ -1,4 +1,3 @@
-% use Mojo::ByteStream 'b';
 <div class="box box-shadow alpha" id="testmodules_box">
 	<div class="box-header aligncenter">Test modules</div>
 	<div id="modlist_content"></div>
