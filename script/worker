@@ -91,6 +91,11 @@ my $isotovideo = "/usr/lib/os-autoinst/tools/isotovideo";
 my $keep_running = 1;
 my $got_sigchld = 0;
 
+my $ua = Mojo::UserAgent->new;
+my $headers = {
+    Accept => 'application/json'
+};
+
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
@@ -141,13 +146,33 @@ $ENV{'OPENQA_HOSTNAME'} = $url->authority;
 
 $isotovideo = $options{'isotovideo'} if $options{'isotovideo'};
 
+sub authenticate
+{
+	if (!$headers->{'X-CSRF-Token'}) {
+		my $ua_url = $url->clone;
+		$ua_url->path('authenticate');
+
+		my $tx = $ua->get($ua_url, $headers);
+
+		return $tx->error unless $tx->success;
+
+		if (my $token = $tx->success->json->{token}) {
+			CORE::say "got csrf token $token";
+			$headers->{'X-CSRF-Token'} = $token;
+		} else {
+			return (1, "failed to acquire csrf token");
+		}
+	}
+
+	return (0, "success");
+}
+
 # send a command to openQA API
 sub api_call
 {
 	my $method = lc(shift);
 	my $path = shift;
 	my $params = shift;
-	my $ua = Mojo::UserAgent->new;
 	my $ua_url = $url->clone;
 
 	$ua_url->path($path =~ s/^\///r);
@@ -155,12 +180,16 @@ sub api_call
 
 	my $tries = 3;
 	while (1) {
-		my $tx = $ua->$method($ua_url);
-		if ($tx->success) {
-			return $tx->success->json;
+		my ($err, $code) = authenticate();
+		if (!$err) {
+			my $tx = $ua->$method($ua_url, $headers);
+			if ($tx->success) {
+				return $tx->success->json;
+			} else {
+				($err, $code) = $tx->error;
+			}
 		}
 		--$tries;
-		my ($err, $code) = $tx->error;
 		my $msg = $code ? "$tries: $code response: $err" : "$tries: Connection error: $err";
 		croak "$msg\n" unless $tries;
 		carp "$msg";
