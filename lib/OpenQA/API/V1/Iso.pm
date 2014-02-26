@@ -30,11 +30,18 @@ sub create {
     }
     my $jobs = openqa::distri::generate_jobs($self->app->config, iso => $iso, requested_runs => \@tests);
 
-    # XXX: obviously a hack
-    my $pattern = $iso;
-    if ($jobs && $pattern =~ s/Build\d.*/Build%/) {
-        $self->app->log->debug("Stopping old builds for $pattern");
-        Scheduler::iso_cancel_old_builds($pattern);
+    # XXX: take some attributes from the first job to guess what old jobs to
+    # cancel. We should have distri object that decides which attributes are
+    # relevant here.
+    if ($jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
+        my %cond;
+        for my $k (qw/DISTRI VERSION FLAVOR ARCH/) {
+            next unless $jobs->[0]->{$k};
+            $cond{$k} = $jobs->[0]->{$k};
+        }
+        if (%cond) {
+            Scheduler::job_cancel(\%cond);
+        }
     }
 
     my $cnt = 0;

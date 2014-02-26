@@ -26,7 +26,7 @@ use Scheduler;
 use openqa;
 use OpenQA::Test::Database;
 
-use Test::More tests => 43;
+use Test::More tests => 40;
 
 OpenQA::Test::Database->new->create(file => $ENV{OPENQA_DB}, skip_fixtures => 1);
 
@@ -310,20 +310,5 @@ ok(scalar @$commands == 1 && pp($commands) eq '[[1, "quit"]]',  "command_get");
 
 # Testing command_dequeue
 # TBD
-
-TODO: {
-    local $TODO = "get job by iso name still to be implemented";
-# Testing iso_cancel_old_builds
-$result = Scheduler::iso_cancel_old_builds('ISO');
-ok($result == 1, "Empty iso_old_builds");
-$job_id = Scheduler::job_create(%settings);
-$result = Scheduler::iso_cancel_old_builds('ISO');
-$new_job = Scheduler::job_get($job_id);
-ok($result == 1 && $new_job->{state} eq "cancelled" && $new_job->{worker_id} == 0, "Match iso_old_builds");
-
-$result = Scheduler::job_delete($job_id);
-$no_job_id = Scheduler::job_get($job_id);
-ok($result == 1 && !defined $no_job_id, "job_delete");
-}
 
 unlink $iso;

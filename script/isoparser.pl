@@ -4,15 +4,15 @@ use warnings;
 use strict;
 use Data::Dumper;
 use FindBin;
-use lib $FindBin::Bin.'/../www/cgi-bin/modules';
-use openqa qw(parse_iso);
+BEGIN { unshift @INC, $FindBin::Bin.'/../lib', $FindBin::Bin.'/../lib/OpenQA/modules'; }
+use openqa::distri::opensuse ();
 
 while ( my $line = <> ) {
     chomp $line;
     $line =~ s|^.*/||;
     print "$line:";
     
-    my $params = parse_iso($line);
+    my $params = openqa::distri::opensuse::parse_iso($line);
 
     if ( $params ) {
         print "\n" . Dumper($params);

@@ -526,33 +526,41 @@ sub job_restart {
 }
 
 sub job_cancel {
-    my $name = shift or die "missing name parameter\n";
+    my $value = shift or die "missing name parameter\n";
 
-    # TODO: support by name and by iso here
-    my $idqry = $name;
+    my %attrs;
+    my %cond;
+    if (ref $value eq '') {
+        if ($value =~ /\.iso/) {
+            $value = { ISO => $value };
+        }
+    }
+    if (ref $value eq 'HASH') {
+        while (my ($k, $v) = each %$value) {
+            $cond{'settings.key'} = $k;
+            $cond{'settings.value'} = $v;
+        }
+        $attrs{join} = 'settings';
+    } else {
+        # TODO: support by name and by iso here
+        $cond{id} = $value;
+    }
+
+    $cond{state_id} = {
+        -in => $schema->resultset("JobStates")->search({ name => [qw/scheduled/] })->get_column("id")->as_query
+    };
 
     # first set all scheduled jobs to cancelled
-    $schema->resultset("Jobs")->search(
-        {
-            id => $idqry,
-            state_id => {
-                -in => $schema->resultset("JobStates")->search({ name => [qw/scheduled/] })->get_column("id")->as_query
-            }
-        }, {
-    })->update({
+    $schema->resultset("Jobs")->search(\%cond, \%attrs)->update({
         state_id => $schema->resultset("JobStates")->search({ name => 'cancelled' })->single->id
     });
 
+    $attrs{colums} = [qw/id worker_id/];
+    $cond{state_id} = {
+        -in => $schema->resultset("JobStates")->search({ name => [qw/running waiting/] })->get_column("id")->as_query
+    };
     # then tell workers to cancel their jobs
-    my $jobs = $schema->resultset("Jobs")->search(
-        {
-            id => $idqry,
-            state_id => {
-                -in => $schema->resultset("JobStates")->search({ name => [qw/running waiting/] })->get_column("id")->as_query
-            }
-        }, {
-            colums => [qw/id worker_id/]
-        });
+    my $jobs = $schema->resultset("Jobs")->search(\%cond, \%attrs);
     while (my $j = $jobs->next) {
         print STDERR "enqueuing ".$j->id." ".$j->worker_id."\n";
         command_enqueue(workerid => $j->worker_id, command => 'cancel');
@@ -628,23 +636,4 @@ sub command_dequeue {
     return $r;
 }
 
-sub iso_cancel_old_builds($) {
-    my $pattern = shift;
-
-    my $r = $schema->resultset("Jobs")->search({
-	state_id => $schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
-	'settings.key' => "ISO",
-	'settings.value' => { like => $pattern },
-    }, {
-	join => "settings",
-    })->update({
-	state_id => $schema->resultset("JobStates")->search({ name => "cancelled" })->single->id,
-	worker_id => 0,
-    });
-    return $r;
-}
-
-sub iso_stop_old_builds($) {
-    carp "iso_stop_old_builds is deprecated, use iso_cancel_old_builds instead";
-    return iso_cancel_old_builds(shift);
-}
+1;
