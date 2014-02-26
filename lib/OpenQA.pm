@@ -38,7 +38,6 @@ sub _read_config {
     needles_scm => 'git',
     needles_git_worktree => '/var/lib/os-autoinst/needles',
     needles_git_do_push => 'no',
-    openid_secret => _rndstr(16),
   };
 
   # Mojo's built in config plugins suck. JSON for example does not
@@ -52,12 +51,12 @@ sub _read_config {
       needles_git_do_push
       allowed_hosts
       suse_mirror
-      openid_secret
       base_url
       /) {
     my $v = $cfg && $cfg->val('global', $k) || $defaults->{$k};
     $self->app->config->{$k} = $v if $v;
   }
+  $self->app->config->{ _openid_secret} = _rndstr(16);
 }
 
 has schema => sub {

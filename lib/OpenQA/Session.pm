@@ -17,10 +17,10 @@
 package OpenQA::Session;
 use Mojo::Base 'Mojolicious::Controller';
 
+use Carp;
 use Net::OpenID::Consumer;
 use URI::Escape;
 use LWP::UserAgent;
-
 
 sub auth {
     my $self = shift;
@@ -38,7 +38,6 @@ sub destroy {
     $self->redirect_to('index');
 }
 
-
 sub create {
     my $self = shift;
     my $url = $self->app->config->{base_url} || $self->req->url->base;
@@ -51,7 +50,7 @@ sub create {
     my $csr = Net::OpenID::Consumer->new(
 	ua              => LWP::UserAgent->new,
 	required_root   => $url,
-	consumer_secret => $self->app->config->{openid_secret},
+	consumer_secret => $self->app->config->{_openid_secret},
 	);
     my $claimed_id = $csr->claimed_identity($self->param('openid'));
     my $check_url = $claimed_id->check_url(
@@ -74,7 +73,7 @@ sub response {
     my $csr = Net::OpenID::Consumer->new(
         ua              => LWP::UserAgent->new,
         required_root   => $url,
-        consumer_secret => $self->app->config->{openid_secret},
+        consumer_secret => $self->app->config->{_openid_secret},
         args            => \%params,
 	);
 
@@ -110,8 +109,8 @@ sub response {
         },
         error => sub {
             my $err = shift;
-            app->log->error($err);
-            die($err);
+            $self->app->log->error($err);
+            croak($err);
         },
 	);
 

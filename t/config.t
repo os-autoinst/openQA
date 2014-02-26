@@ -25,8 +25,8 @@ my $t = Test::Mojo->new('OpenQA');
 
 my $cfg = $t->app->config;
 
-is(length($cfg->{openid_secret}), 16, "config has openid_secret");
-delete $cfg->{openid_secret};
+is(length($cfg->{_openid_secret}), 16, "config has openid_secret");
+delete $cfg->{_openid_secret};
 
 is_deeply($cfg,{
 		needles_git_do_push  => "no",
