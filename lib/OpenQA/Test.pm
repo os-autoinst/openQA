@@ -212,10 +212,6 @@ sub uploadlog
 
     $self->app->log->debug("upload $name $testname");
 
-    if(!is_authorized_rw($self, 'uploadlog')) {
-	return $self->render(text => "forbidden", status => 403);
-    }
-
     if ($self->req->is_limit_exceeded) {
 	return $self->render(message => 'File is too big.', status => 200)
     }

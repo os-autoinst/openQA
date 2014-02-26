@@ -92,6 +92,7 @@ sub startup {
 
   # Router
   my $r = $self->routes;
+  my $auth = $r->bridge('/')->to("session#auth");
 
   $r->get('/session/new')->to('session#new');
   $r->post('/session')->to('session#create');
@@ -100,12 +101,11 @@ sub startup {
   $r->post('/login')->to('session#create');
   $r->delete('/logout')->name('logout')->to('session#destroy');
   $r->get('/response')->to('session#response');
-
-  my $auth = $r->bridge('secret')->to("session#auth");
-  $auth->get('/test')->to('#test');
+  $auth->get('/session/test')->to('session#test');
 
   $r->get('/tests')->name('tests')->to('test#list');
   my $test_r = $r->route('/tests/#testid');
+  my $test_auth = $auth->route('/tests/#testid');
   $test_r->get('/')->name('test')->to('test#show');
 
   $test_r->get('/modlist')->name('modlist')->to('running#modlist');
@@ -114,10 +114,10 @@ sub startup {
   $test_r->get('/streaming')->name('streaming')->to('running#streaming');
   $test_r->get('/edit')->name('edit_test')->to('running#edit');
 
-  $test_r->post('/cancel')->name('cancel')->to('schedule#cancel');
-  $test_r->post('/restart')->name('restart')->to('schedule#restart');
-  $test_r->post('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
-  $test_r->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
+  $test_auth->post('/cancel')->name('cancel')->to('schedule#cancel');
+  $test_auth->post('/restart')->name('restart')->to('schedule#restart');
+  $test_auth->post('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
+  $test_auth->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
 
   $test_r->get('/images/:filename')->name('test_img')->to('file#test_file');
   $test_r->get('/file/:filename')->name('test_file')->to('file#test_file');
@@ -125,10 +125,11 @@ sub startup {
   $test_r->get('/diskimages/:imageid')->name('diskimage')->to('file#test_diskimage');
 
   my $asset_r = $test_r->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/)->to(controller => 'step');
+  my $asset_auth = $auth->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/);
   $asset_r->get('/view')->to(action => 'view');
   $asset_r->get('/edit')->name('edit_step')->to(action => 'edit');
   $asset_r->get('/src')->name('src_step')->to(action => 'src');
-  $asset_r->post('/')->name('save_needle')->to(action => 'save_needle');
+  $asset_auth->post('/')->name('save_needle')->to(action => 'step#save_needle');
   $asset_r->get('/')->name('step')->to(action => 'view');
 
   $r->get('/builds/#buildid')->name('build')->to('build#show');
@@ -141,7 +142,8 @@ sub startup {
   $r->get('/')->name('index')->to('index#index');
 
   ### JSON API starts here
-  my $api_r = $r->route('/api/v1')->to(namespace => 'OpenQA::API::V1');
+  my $api_auth = $r->bridge('/api/v1')->to(controller => 'API::V1', action => 'auth');
+  my $api_r = $api_auth->route('/')->to(namespace => 'OpenQA::API::V1');
 
   # api/v1/authenticate
   $api_r->get('/authenticate')->name('apiv1_authenticate')->to('authenticate#authenticate');

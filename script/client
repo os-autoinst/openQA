@@ -59,6 +59,7 @@ lorem ipsum ...
 use Data::Dump;
 use Mojo::UserAgent;
 use Mojo::URL;
+use Mojo::Util 'hmac_sha1_sum';
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
@@ -72,11 +73,27 @@ sub usage($) {
 	}
 }
 
+sub api_call($$$$) {
+    my ($ua, $method, $url) = (shift, shift, shift);
+    my $h = shift;
+    my $headers = {%$h};
+
+    $headers->{'X-API-Key'} = $options{'key'};
+    my $timestamp = time;
+    $headers->{'X-API-Microtime'} = $timestamp;
+    my $msg = $url->to_string;
+    $headers->{'X-API-Hash'} = hmac_sha1_sum($url->to_string.$timestamp, $options{'secret'});
+
+    $ua->$method($url, $headers)->res;
+}
+
 GetOptions(
 	\%options,
 	"host=s",
 	"apibase=s",
 	"verbose|v",
+    "key:s",
+    "secret:s",
 	"help|?",
 ) or usage(1);
 
@@ -118,7 +135,7 @@ my $headers = {
 
 if ($method ne 'get') {
     $url->path(join('/', $options{apibase}, 'authenticate'));
-    my $res = $ua->get($url, $headers)->res;
+    my $res = api_call($ua, 'get', $url, $headers);
     if ($res->code == 200) {
         if (my $token = $res->json->{token}) {
             $headers->{'X-CSRF-Token'} = $token;
@@ -129,7 +146,7 @@ if ($method ne 'get') {
 $url->path($path);
 $url->query(join('&', @params)) if @params;
 
-my $res = $ua->$method($url, $headers)->res;
+my $res = api_call($ua, $method, $url, $headers);
 if ($res->code == 200) {
     dd($res->json || $res->body);
 } else {

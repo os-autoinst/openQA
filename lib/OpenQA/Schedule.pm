@@ -39,13 +39,7 @@ sub cancel
     my $self = shift;
     my $name = $self->param('testid');
 
-    if(!is_authorized_rw($self)) {
-        #return $self->render(text => "forbidden", status => 403);
-        $self->stash('denied', 1);
-    } else {
-        Scheduler::job_cancel($name);
-        $self->stash('denied', 0);
-    }
+    Scheduler::job_cancel($name);
 
     _stash_back($self);
 }
@@ -55,18 +49,13 @@ sub restart
     my $self = shift;
     my $name = $self->param('testid');
 
-    if(!is_authorized_rw($self)) {
-        $self->stash('denied', 1);
-    } else {
-        $self->stash('denied', 0);
-        my @ids = Scheduler::job_restart($name);
-        if (@ids) {
-            my $code = 'duplicated ';
-            for my $id (@ids) {
-                $code .= $self->link_to($id => $self->url_for('test', 'testid' => $id));
-            }
-            $self->flash(code => $code);
+    my @ids = Scheduler::job_restart($name);
+    if (@ids) {
+        my $code = 'duplicated ';
+        for my $id (@ids) {
+            $code .= $self->link_to($id => $self->url_for('test', 'testid' => $id));
         }
+        $self->flash(code => $code);
     }
 
     _stash_back($self);
@@ -78,13 +67,8 @@ sub setpriority
     my $name = $self->param('testid');
     my $priority = $self->param('priority');
 
-    if(!is_authorized_rw($self)) {
-        $self->stash('denied', 1);
-    } else {
-        my $job = Scheduler::job_get($name);
-        Scheduler::job_set_prio( prio=>$priority, jobid=>$job->{id} );
-        $self->stash('denied', 0);
-    }
+    my $job = Scheduler::job_get($name);
+    Scheduler::job_set_prio( prio=>$priority, jobid=>$job->{id} );
 
     _stash_back($self);
 }

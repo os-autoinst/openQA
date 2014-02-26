@@ -9,7 +9,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @EXPORT = qw(
 $prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle @runner $res_css $res_display
 $loguploaddir
-&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &resultname_to_log &resultname_to_url &is_authorized_rw &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info &needledir
+&parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &resultname_to_log &resultname_to_url &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &syntax_highlight &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info &needledir
 &test_result &test_result_stats &test_result_hash &test_result_module &test_resultfile_list &testresultdir &test_uploadlog_list
 $localstatedir $dbfile
 &get_failed_needles
@@ -285,34 +285,6 @@ sub resultname_to_log($)
 }
 sub resultname_to_url($)
 { "http://$hostname/results/$_[0]"; 
-}
-
-sub is_authorized_rw
-{
-	my $self = shift;
-	my $context = shift || 'default';
-
-	my %cfg = (
-		default => $self->app->config->{global}->{allowed_hosts} || '::1 127.0.0.1',
-		uploadlog => '::1 127.0.0.1',
-	);
-
-	my $ip = $self->req->headers->header('X-Forwarded-For') || '';
-
-	my $allowedhosts = $cfg{$context};
-
-	$self->app->log->debug("check rw access $ip in context $context");
-
-	my @allowedhost=split(' ',$allowedhosts);
-	foreach my $val (@allowedhost) {
-		if ($val =~ /[*^?\\]/) {
-			return 1 if($ip =~ m/$val/);
-		} else {
-			return 1 if($ip eq $val);
-		}
-	}
-
-	return 0;
 }
 
 sub is_scheduled($)
