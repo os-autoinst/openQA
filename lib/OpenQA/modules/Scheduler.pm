@@ -471,8 +471,10 @@ sub job_restart {
         }, {
             columns => [qw/id/]
         });
+    my @duplicated;
     while (my $j = $jobs->next) {
-        job_duplicate(jobid => $j->id);
+        my $id = job_duplicate(jobid => $j->id);
+        push @duplicated, $id if $id;
     }
 
     # then tell workers to abort
@@ -501,6 +503,7 @@ sub job_restart {
     })->update({
         state_id => $schema->resultset("JobStates")->search({ name => 'scheduled' })->single->id
     });
+    return @duplicated;
 }
 
 sub job_cancel {

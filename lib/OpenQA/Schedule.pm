@@ -58,8 +58,15 @@ sub restart
     if(!is_authorized_rw($self)) {
         $self->stash('denied', 1);
     } else {
-        Scheduler::job_restart($name);
         $self->stash('denied', 0);
+        my @ids = Scheduler::job_restart($name);
+        if (@ids) {
+            my $code = 'duplicated ';
+            for my $id (@ids) {
+                $code .= $self->link_to($id => $self->url_for('test', 'testid' => $id));
+            }
+            $self->flash(code => $code);
+        }
     }
 
     _stash_back($self);

@@ -46,6 +46,15 @@
 <div class="grid_10 live-content alpha">
             <h2>Live view of <i><%= $testname %></i></h2>
 		<p />
+                % if (my $msg = flash 'error') {
+                  <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
+                % }
+                % if (my $msg = flash 'info') {
+                  <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
+                % }
+                % if (my $msg = flash 'code') {
+                  <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
+                % }
 	<div class="grid_10 live-content box box-shadow omega">
 		<div style="margin: 0 10px;">
 			<div style="width: 800px; height: 600px; background-color: #202020;">
