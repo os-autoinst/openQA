@@ -389,12 +389,13 @@ sub job_set_prio {
 sub job_delete {
     my $value = shift;
 
-    my $cnt = 0;
-    my $jobs = _job_find_smart($value);
-    foreach my $job ($jobs) {
-	my $r = $job->delete;
-	$cnt += $r if $r != 0;
-    }
+    my %attrs;
+    my %cond;
+
+    _job_find_smart($value, \%cond, \%attrs);
+
+    my $cnt = $schema->resultset("Jobs")->search(\%cond, \%attrs)->delete;
+
     return $cnt;
 }
 
@@ -411,47 +412,24 @@ sub job_update_result {
     return $r;
 }
 
-sub _job_find_smart($) {
-    my $value = shift;
+sub _job_find_smart($$$) {
+    my ($value, $cond, $attrs) = @_;
 
-    my $jobs;
-    if ($value =~ /^\d+$/ ) {
-	$jobs = _job_find_by_id($value);
-    } elsif ($value =~ /\.iso$/) {
-	$jobs = _jobs_find_by_iso($value);
+    if (ref $value eq '') {
+        if ($value =~ /\.iso/) {
+            $value = { ISO => $value };
+        }
+    }
+    if (ref $value eq 'HASH') {
+        while (my ($k, $v) = each %$value) {
+            $cond->{'settings.key'} = $k;
+            $cond->{'settings.value'} = $v;
+        }
+        $attrs->{join} = 'settings';
     } else {
-	$jobs = _job_find_by_name($value);
+        # TODO: support by name and by iso here
+        $cond->{id} = $value;
     }
-
-    return $jobs;
-}
-
-sub _job_find_by_id($) {
-    my $id = shift;
-    my $jobs = $schema->resultset("Jobs")->search({ id => $id});
-}
-
-sub _jobs_find_by_iso($) {
-    my $iso = shift;
-
-    # In case iso file use a absolute path
-    # like iso_delete /var/lib/.../xxx.iso
-    if ($iso =~ /\// ) {
-	$iso =~ s#^.*/##;
-    }
-
-    my $jobs = $schema->resultset("Jobs")->search_related("settings", {
-	key => "ISO",
-	value => $iso,
-    });
-    return $jobs;
-}
-
-sub _job_find_by_name($) {
-    my $name = shift;
-
-    my $jobs = $schema->resultset("Jobs")->search({ slug => $name });
-    return $jobs;
 }
 
 sub job_duplicate {
@@ -530,21 +508,8 @@ sub job_cancel {
 
     my %attrs;
     my %cond;
-    if (ref $value eq '') {
-        if ($value =~ /\.iso/) {
-            $value = { ISO => $value };
-        }
-    }
-    if (ref $value eq 'HASH') {
-        while (my ($k, $v) = each %$value) {
-            $cond{'settings.key'} = $k;
-            $cond{'settings.value'} = $v;
-        }
-        $attrs{join} = 'settings';
-    } else {
-        # TODO: support by name and by iso here
-        $cond{id} = $value;
-    }
+
+    _job_find_smart($value, \%cond, \%attrs);
 
     $cond{state_id} = {
         -in => $schema->resultset("JobStates")->search({ name => [qw/scheduled/] })->get_column("id")->as_query
