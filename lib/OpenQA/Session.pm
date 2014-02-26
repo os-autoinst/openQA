@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::Login;
+package OpenQA::Session;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Net::OpenID::Consumer;
@@ -25,36 +25,35 @@ use LWP::UserAgent;
 sub auth {
     my $self = shift;
 
-    # XXX TODO - Move this into a table in the database
-    my %whitelist = (
-	'https://www.suse.com/openid/user/ancorgs' => undef,
-	'https://www.suse.com/openid/user/aplanas' => undef,
-	'https://www.suse.com/openid/user/coolo' => undef,
-	'https://www.suse.com/openid/user/cwh' => undef,
-	'https://www.suse.com/openid/user/lnussel' => undef,
-	);
-    return 1 if exists $whitelist{$self->session->{user}};
+    return 1 if $self->current_user && $self->current_user->is_operator;
+
+    $self->render(text => "You're not an operator");
+    return undef;
 }
 
-sub login {
+sub destroy {
     my $self = shift;
-    my %params = @{ $self->req->params->params };
+
+    delete $self->session->{user};
+    $self->redirect_to('index');
+}
+
+
+sub create {
+    my $self = shift;
     my $url = $self->app->config->{base_url} || $self->req->url->base;
 
-    # Show the form if there is not data
+    # Show the form if data doesn't look sane
     my $validation = $self->validation;
-    return $self->render unless $validation->has_data;
-
-    # Validate the openID URL
     $validation->required('openid')->like(qr/^https?:\/\/.+$/);
-    return $self->render if $validation->has_error;
+    return $self->render(template => 'new') if ($validation->has_error);
 
     my $csr = Net::OpenID::Consumer->new(
 	ua              => LWP::UserAgent->new,
 	required_root   => $url,
 	consumer_secret => $self->app->config->{openid_secret},
 	);
-    my $claimed_id = $csr->claimed_identity($params{openid});
+    my $claimed_id = $csr->claimed_identity($self->param('openid'));
     my $check_url = $claimed_id->check_url(
 	return_to  => qq{$url/response},
 	trust_root => qq{$url/},
@@ -103,10 +102,11 @@ sub response {
         },
         verified => sub {
             my $vident = shift;
+            my $id = $vident->{identity};
 
-            # Do something with the VerifiedIdentity object $vident
+            my $user = $self->db->resultset("Users")->find_or_create({openid => $id});
             $msg = 'verified';
-	    $self->session->{user} = $vident->{identity};
+            $self->session->{user} = $vident->{identity};
         },
         error => sub {
             my $err = shift;
@@ -118,10 +118,9 @@ sub response {
     return $self->redirect_to("index");
 }
 
-
 sub test {
     my $self = shift;
-    $self->render(text=>"You can see this because you are " . $self->session->{user});
+    $self->render(text=>"You can see this because you are " . $self->current_user->openid);
 }
-    
+
 1;

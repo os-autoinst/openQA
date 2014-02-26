@@ -43,24 +43,6 @@ sub register {
             return $self->$form_for(@_);
         });
 
-    # special anchor tag with data-method="post" and csrf token
-    $app->helper(
-        link_post => sub {
-            my ($self, $content) = (shift, shift);
-            my $url = $content;
-
-            # Content
-            unless (ref $_[-1] eq 'CODE') {
-                $url = shift;
-                push @_, $content;
-            }
-
-            Carp::croak "url is not a url"
-                unless Scalar::Util::blessed $url && $url->isa('Mojo::URL');
-
-            return $self->tag('a', href => $url->query(csrf_token => $self->csrf_token), 'data-method' => 'post', @_);
-        });
-
     # require CSRF token for all requests that are not GET or HEAD
     $app->hook(
         before_routes => sub {

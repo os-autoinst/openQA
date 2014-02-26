@@ -7,6 +7,7 @@
       <title><%= $appname.": ".title %></title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="csrf-token" content="<%= csrf_token %>" />
+    <meta name="csrf-param" content="csrf_token" />
     %= stylesheet '/stylesheets/bento/style.fluid.css'
     %= stylesheet '/stylesheets/openqa.css'
     %= javascript '/javascripts/table.js'
@@ -37,7 +38,8 @@
         %= breadcrumbs
         <div class="grid_3 omega">
             % if (current_user) {
-                %= 'Logged as '.current_user
+                %= 'Logged as '.current_user->name
+                %= link_delete '(logout)' => url_for('logout');
             % }
         </div>
     </div>

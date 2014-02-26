@@ -6,7 +6,7 @@
 
 <div class="grid_6 box box-shadow omega">
   %= t h1 => 'Login to ' . $appname
-  %= form_for login => begin
+  %= form_for login => (method => 'POST') => begin
     %= label_for openid => 'openID URL'
     %= text_field 'openid'
     <br/>

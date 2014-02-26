@@ -16,6 +16,7 @@
 
 package OpenQA;
 use Mojo::Base 'Mojolicious';
+use openqa 'connect_db';
 use OpenQA::Helpers;
 
 use Config::IniFiles;
@@ -59,6 +60,9 @@ sub _read_config {
   }
 }
 
+has schema => sub {
+    return connect_db();
+};
 
 # This method will run once at server start
 sub startup {
@@ -71,16 +75,22 @@ sub startup {
   $self->plugin('PODRenderer');
   $self->plugin('OpenQA::Helpers');
   $self->plugin('OpenQA::CSRF');
+  $self->plugin('OpenQA::REST');
 
   $self->_read_config;
 
   # Router
   my $r = $self->routes;
 
-  $r->get('/login')->name('login')->to('login#login');
-  $r->get('/response')->to('login#response');
+  $r->get('/session/new')->to('session#new');
+  $r->post('/session')->to('session#create');
+  $r->delete('/session')->to('session#destroy');
+  $r->get('/login')->name('login')->to('session#new');
+  $r->post('/login')->to('session#create');
+  $r->delete('/logout')->name('logout')->to('session#destroy');
+  $r->get('/response')->to('session#response');
 
-  my $auth = $r->bridge('secret')->to("login#auth");
+  my $auth = $r->bridge('secret')->to("session#auth");
   $auth->get('/test')->to('#test');
 
   $r->get('/tests')->name('tests')->to('test#list');

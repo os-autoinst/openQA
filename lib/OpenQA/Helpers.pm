@@ -79,16 +79,33 @@ sub register {
         Mojo::ByteStream->new($crumbs);
     });
 
-    $app->helper(current_user => sub {
+    $app->helper(db => sub {
         my $c = shift;
-        if (my $id = $c->session->{user}) {
-            my ($path, $user) = split(/\/([^\/]+)$/, $id);
-            $user;
-        } else {
-            undef;
-        }
+        $c->app->schema;
     });
 
+    $app->helper(current_user => sub {
+        my $c = shift;
+
+        # If the value is not in the stash
+        if ( !(defined($c->stash('current_user')) &&
+                ($c->stash('current_user')->{no_user} || defined($c->stash('current_user')->{user})))) {
+
+            my $user = undef;
+            if (my $id = $c->session->{user}) {
+                $user = $c->db->resultset("Users")->find({openid => $id});
+            }
+            if ($user) {
+                $c->stash('current_user' => { user => $user });
+            } else {
+                $c->stash('current_user' => { no_user => 1 });
+            }
+        }
+        my $is_user_def = defined($c->stash('current_user'))
+                          && defined($c->stash('current_user')->{user});
+
+        return $is_user_def ? $c->stash('current_user')->{user} : undef;
+    });
 }
 
 1;

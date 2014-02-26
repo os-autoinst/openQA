@@ -27,18 +27,18 @@ OpenQA::Test::Case->new->init_data;
 
 my $t = Test::Mojo->new('OpenQA');
 
-my $token = $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content');
+my $get = $t->ua->get('/tests');
+my $token = $get->res->dom->at('meta[name=csrf-token]')->attr('content');
 
 ok($token =~ /[0-9a-z]{40}/, "csrf token in meta tag");
+ok($get->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token', "csrf param in meta tag");
 #say "csrf token is $token";
 
-is($token, $t->ua->get('/tests')->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");
+is($token, $get->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");
 
-# Test 99928 is scheduled, so can be canceled. Make sure link contains csrf
-# token
-is($t->ua->get('/tests')->res->dom->at('#results #job_99928 .cancel a'),
-    sprintf ('<a data-method="post" href="/tests/99928/cancel?csrf_token=%s">cancel</a>', $token),
-    'CSRF token present in links');
+# Test 99928 is scheduled, so can be canceled. Make sure link contains
+# data-method=post
+$t->get_ok('/tests')->element_exists('#results #job_99928 .cancel a[data-method=post]');
 
 # test cancel with and without CSRF token
 $t->post_ok('/tests/99928/cancel' => form => { csrf_token => 'foobar' })
