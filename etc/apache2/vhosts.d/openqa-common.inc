@@ -19,7 +19,12 @@ ProxyPass /stylesheets !
 ProxyPass / http://localhost:9526/ keepalive=On
 ProxyPassReverse / http://localhost:9526/
 
-RequestHeader set X-Forwarded-HTTPS %{HTTPS}s
+<If "%{HTTPS} == 'on'">
+RequestHeader set X-Forwarded-HTTPS "1"
+</If>
+<Else>
+RequestHeader set X-Forwarded-HTTPS "0"
+</Else>
 
 HostnameLookups Off
 UseCanonicalName Off
