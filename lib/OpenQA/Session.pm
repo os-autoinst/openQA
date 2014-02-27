@@ -25,9 +25,12 @@ use LWP::UserAgent;
 sub auth {
     my $self = shift;
 
-    return 1 if $self->current_user && $self->current_user->is_operator;
-
-    $self->render(text => "Forbidden", status => 403);
+    if ($self->valid_csrf) {
+        return 1 if $self->current_user && $self->current_user->is_operator;
+        $self->render(text => "Forbidden", status => 403);
+    } else {
+        $self->render(text => 'Bad CSRF token!', status => 403);
+    }
     return undef;
 }
 

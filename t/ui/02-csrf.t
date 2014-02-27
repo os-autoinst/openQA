@@ -23,7 +23,8 @@ use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
-OpenQA::Test::Case->new->init_data;
+my $test_case = OpenQA::Test::Case->new;
+$test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA');
 
@@ -39,6 +40,17 @@ is($token, $get->res->dom->at('form input[name=csrf_token]')->{value}, "token is
 # Test 99928 is scheduled, so can be canceled. Make sure link contains
 # data-method=post
 $t->get_ok('/tests')->element_exists('#results #job_99928 .cancel a[data-method=post]');
+
+# test cancel, restart and setpriority without logging in
+$t->post_ok('/tests/99928/cancel' => { 'X-CSRF-Token' => $token } => form => {})
+    ->status_is(403);
+$t->post_ok('/tests/99928/restart' => { 'X-CSRF-Token' => $token } => form => {})
+    ->status_is(403);
+$t->post_ok('/tests/99928/setpriority/34' => { 'X-CSRF-Token' => $token } => form => {})
+    ->status_is(403);
+
+# Log in with an authorized user for the rest of the test
+$test_case->login($t, 'https://openid.camelot.uk/percival');
 
 # test cancel with and without CSRF token
 $t->post_ok('/tests/99928/cancel' => form => { csrf_token => 'foobar' })
@@ -56,7 +68,7 @@ $t->post_ok('/tests/99928/restart' => { 'X-CSRF-Token' => $token } => form => {}
 $t->post_ok('/tests/99928/restart' => form => { csrf_token => $token })
     ->status_is(200);
 
-# test restart with and without CSRF token
+# test setpriority with and without CSRF token
 $t->post_ok('/tests/99928/setpriority/33' => form => { csrf_token => 'foobar' })
     ->status_is(403);
 $t->post_ok('/tests/99928/setpriority/34' => { 'X-CSRF-Token' => $token } => form => {})

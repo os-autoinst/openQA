@@ -73,10 +73,11 @@ sub usage($) {
 	}
 }
 
-sub api_call($$$$) {
-    my ($ua, $method, $url) = (shift, shift, shift);
+sub api_call($$$) {
+    my ($method, $url) = (shift, shift);
     my $h = shift;
     my $headers = {%$h};
+    my $ua = Mojo::UserAgent->new;
 
     $headers->{'X-API-Key'} = $options{'key'};
     my $timestamp = time;
@@ -119,7 +120,6 @@ for my $arg (@ARGV) {
     }
 }
 
-my $ua = Mojo::UserAgent->new;
 my $url;
 if ($options{'host'} !~ '/') {
 	$url = Mojo::URL->new();
@@ -133,20 +133,10 @@ my $headers = {
     Accept => 'application/json'
 };
 
-if ($method ne 'get') {
-    $url->path(join('/', $options{apibase}, 'authenticate'));
-    my $res = api_call($ua, 'get', $url, $headers);
-    if ($res->code == 200) {
-        if (my $token = $res->json->{token}) {
-            $headers->{'X-CSRF-Token'} = $token;
-        }
-    }
-}
-
 $url->path($path);
 $url->query(join('&', @params)) if @params;
 
-my $res = api_call($ua, $method, $url, $headers);
+my $res = api_call($method, $url, $headers);
 if ($res->code == 200) {
     dd($res->json || $res->body);
 } else {

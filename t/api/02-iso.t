@@ -34,12 +34,6 @@ my $headers = {
 
 my $ret;
 
-$ret = $t->get_ok('/api/v1/authenticate', $headers)->status_is(200);
-my $token = $ret->tx->res->json->{token};
-like($token, qr/[0-9a-z]{40}/, "token looks good");
-
-$headers->{'X-CSRF-Token'} = $token;
-
 my $iso = 'openSUSE-13.1-DVD-i586-Build0091-Media.iso';
 
 $ret = $t->get_ok('/api/v1/jobs/99927', $headers)->status_is(200);

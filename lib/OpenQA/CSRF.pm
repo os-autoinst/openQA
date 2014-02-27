@@ -44,18 +44,15 @@ sub register {
         });
 
     # require CSRF token for all requests that are not GET or HEAD
-    $app->hook(
-        before_routes => sub {
+    $app->helper(
+        valid_csrf => sub {
             my $c = shift;
 
-            if ($c->req->method ne 'GET' && $c->req->method ne 'HEAD') {
-                my $validation = $c->validation;
-                if ($validation->csrf_protect->has_error('csrf_token')) {
-                    $c->app->log->debug("Bad CSRF token");
-                    return $c->render(text => 'Bad CSRF token!', status => 403)
-                }
+            my $validation = $c->validation;
+            if ($validation->csrf_protect->has_error('csrf_token')) {
+                $c->app->log->debug("Bad CSRF token");
+                return 0;
             }
-
             return 1;
         });
 }

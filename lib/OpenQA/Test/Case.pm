@@ -20,6 +20,8 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Testresults;
 use Mojo::Base -base;
 use Date::Format qw/time2str/;
+use Mojo::JSON 'j';
+use Mojo::Util qw(b64_decode b64_encode hmac_sha1_sum);
 
 sub init_data {
     # This should result in the 't' directory, even if $0 is in a subdirectory
@@ -33,6 +35,30 @@ sub init_data {
     });
 
     OpenQA::Test::Testresults->new->create(directory => $tdirname.'testresults');
+}
+
+sub login {
+    my ($self, $test, $openid) = (shift, shift, shift);
+    # Used to sign the cookie after modifying it
+    my $secret = $test->app->secrets->[0];
+
+    # Look for the signed cookie
+    if (my $jar = $test->ua->cookie_jar) {
+        my @cookies = $jar->all;
+        my $cookie = $cookies[0];
+
+        # Extract the information...
+        my ($value) = split('--', $cookie->value);
+        $value = j(b64_decode($value));
+        # ..add the user value...
+        $value->{user} = $openid;
+        # ...and sign the cookie again with the new value
+        $value = b64_encode(j($value), '');
+        $value =~ y/=/-/;
+        $cookie->value("$value--".hmac_sha1_sum($value, $secret));
+    }
+
+    return 1;
 }
 
 1;

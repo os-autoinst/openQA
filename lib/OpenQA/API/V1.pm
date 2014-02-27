@@ -26,7 +26,12 @@ sub auth {
     my $timestamp = $headers->header('X-API-Microtime');
     my $user;
 
-    unless ($user = $self->current_user) {
+    if ($user = $self->current_user) { # Browser with a logged in user
+        unless ($self->valid_csrf) {
+            $self->render(json => {error => "Bad CSRF token!"}, status => 403);
+            return undef;
+        }
+    } else { # No session (probably not a browser)
         my $api_key = $self->db->resultset("ApiKeys")->find({key => $key});
         my $msg = $self->req->url->to_abs->to_string;
         if ($api_key && $self->_valid_hmac($hash, $msg, $timestamp, $api_key)) {
@@ -50,8 +55,6 @@ sub _valid_hmac {
         if (!$exp || $exp->epoch > time) {
             if (my $secret = $api_key->secret) {
                 my $sum = hmac_sha1_sum($request.$timestamp, $secret);
-                $self->app->log->debug("El cuerpo:".$request.$timestamp);
-                $self->app->log->debug("ES *$sum* igual a *$hash*??");
                 return 1 if $sum eq $hash;
             }
         }
