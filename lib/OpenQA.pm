@@ -42,7 +42,6 @@ sub _read_config {
       scm => 'git',
     },
     'scm git' => {
-      worktree => '/var/lib/os-autoinst/needles',
       do_push => 'no',
     },
     logging => {
@@ -86,6 +85,9 @@ sub startup {
 
   if ($self->config->{'logging'}->{'file'}) {
     $self->log->path($self->config->{'logging'}->{'file'});
+  }
+  if ($self->config->{'logging'}->{'level'}) {
+    $self->log->level($self->config->{'logging'}->{'level'});
   }
 
   # Router

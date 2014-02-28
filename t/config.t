@@ -28,21 +28,27 @@ my $cfg = $t->app->config;
 is(length($cfg->{_openid_secret}), 16, "config has openid_secret");
 delete $cfg->{_openid_secret};
 
-is_deeply($cfg,{
-		needles_git_do_push  => "no",
-		needles_git_worktree => "/var/lib/os-autoinst/needles",
-		needles_scm          => "git",
-	}, 'default config');
+is_deeply($cfg, {
+	global => {
+	    scm => 'git',
+	},
+	'scm git' => {
+	    do_push => 'no',
+	},
+	logging => {
+	},
+    });
 
 $ENV{OPENQA_CONFIG} = 't/testcfg.ini';
 open(my $fd, '>', $ENV{OPENQA_CONFIG});
+print $fd "[global]\n";
 print $fd "allowed_hosts=foo bar\n";
 print $fd "suse_mirror=http://blah/\n";
 close $fd;
 
 $t = Test::Mojo->new('OpenQA');
-ok($t->app->config->{'allowed_hosts'} eq 'foo bar', 'allowed hosts');
-ok($t->app->config->{'suse_mirror'} eq 'http://blah/', 'suse mirror');
+ok($t->app->config->{'global'}->{'allowed_hosts'} eq 'foo bar', 'allowed hosts');
+ok($t->app->config->{'global'}->{'suse_mirror'} eq 'http://blah/', 'suse mirror');
 
 unlink($ENV{OPENQA_CONFIG});
 
