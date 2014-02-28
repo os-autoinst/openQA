@@ -34,29 +34,35 @@ sub _rndstr {
 sub _read_config {
   my $self = shift;
 
-  my $defaults = {
-    needles_scm => 'git',
-    needles_git_worktree => '/var/lib/os-autoinst/needles',
-    needles_git_do_push => 'no',
-  };
+  my %defaults = (
+    global => {
+      base_url => undef,
+      allowed_hosts => undef,
+      suse_mirror => undef,
+      scm => 'git',
+    },
+    'scm git' => {
+      worktree => '/var/lib/os-autoinst/needles',
+      do_push => 'no',
+    },
+    logging => {
+      level => undef,
+      file => undef,
+    },
+  );
 
   # Mojo's built in config plugins suck. JSON for example does not
   # support comments
-  my $cfg = Config::IniFiles->new( -fallback => 'global',
+  my $cfg = Config::IniFiles->new(
       -file => $ENV{OPENQA_CONFIG} || $self->app->home.'/lib/openqa.ini') || undef;
 
-  for my $k (qw/
-      needles_scm
-      needles_git_worktree
-      needles_git_do_push
-      allowed_hosts
-      suse_mirror
-      base_url
-      /) {
-    my $v = $cfg && $cfg->val('global', $k) || $defaults->{$k};
-    $self->app->config->{$k} = $v if $v;
+  for my $section (sort keys %defaults) {
+    for my $k (sort keys %{$defaults{$section}}) {
+      my $v = $cfg && $cfg->val($section, $k) || $defaults{$section}->{$k};
+      $self->app->config->{$section}->{$k} = $v if $v;
+    }
   }
-  $self->app->config->{ _openid_secret} = _rndstr(16);
+  $self->app->config->{_openid_secret} = _rndstr(16);
 }
 
 has schema => sub {
@@ -77,6 +83,10 @@ sub startup {
   $self->plugin('OpenQA::REST');
 
   $self->_read_config;
+
+  if ($self->config->{'logging'}->{'file'}) {
+    $self->log->path($self->config->{'logging'}->{'file'});
+  }
 
   # Router
   my $r = $self->routes;

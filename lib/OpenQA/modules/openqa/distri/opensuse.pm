@@ -435,11 +435,11 @@ sub generate_jobs
             $settings{DISTRI} = lc $settings{DISTRI} if $settings{DISTRI};
 
 
-            if ($config->{suse_mirror}) {
+            if ($config->{global}->{suse_mirror}) {
                 my $repodir = $iso;
                 $repodir =~ s/-Media\.iso$//;
                 $repodir .= '-oss';
-                $settings{SUSEMIRROR} = $config->{suse_mirror}."/iso/$repodir";
+                $settings{SUSEMIRROR} = $config->{global}->{suse_mirror}."/iso/$repodir";
                 $settings{FULLURL} = 1;
             }
 

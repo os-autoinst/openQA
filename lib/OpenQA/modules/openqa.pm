@@ -293,7 +293,7 @@ sub is_authorized_rw
 	my $context = shift || 'default';
 
 	my %cfg = (
-		default => $self->app->config->{allowed_hosts} || '::1 127.0.0.1',
+		default => $self->app->config->{global}->{allowed_hosts} || '::1 127.0.0.1',
 		uploadlog => '::1 127.0.0.1',
 	);
 

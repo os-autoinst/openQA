@@ -266,7 +266,7 @@ sub save_needle {
     }
   }
   if ($success) {
-    if ($self->app->config->{needles_scm}||'' eq 'git') {
+    if ($self->app->config->{global}->{scm}||'' eq 'git') {
       if ($needledir && -d "$perldir/$needledir/.git") {
         my @git = ('git',
           '--git-dir', "$perldir/$needledir/.git",
@@ -277,7 +277,7 @@ sub save_needle {
 	  # FIXME
           sprintf("%s by %s@%s", $job->{'name'}, $ENV{REMOTE_USER}||'anonymous', $ENV{REMOTE_ADDR}),
           @files);
-        if (($self->app->config->{needles_git_do_push}||'') eq 'yes') {
+        if (($self->app->config->{'scm git'}->{'do_push'}||'') eq 'yes') {
           system(@git, 'push', 'origin', 'master');
         }
       } else {
