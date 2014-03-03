@@ -75,8 +75,9 @@ use FindBin;
 use Mojo::UserAgent;
 use Mojo::URL;
 use Carp;
-#use lib "$FindBin::Bin/../www/cgi-bin/modules"
+use lib "$FindBin::Bin/../lib";
 #use openqa;
+use OpenQA::API::V1::Client;
 
 my $max_job_time = 2*60*60; # 2h
 my $openqa_base = "/var/lib/openqa";
@@ -91,10 +92,7 @@ my $isotovideo = "/usr/lib/os-autoinst/tools/isotovideo";
 my $keep_running = 1;
 my $got_sigchld = 0;
 
-my $ua = Mojo::UserAgent->new;
-my $headers = {
-    Accept => 'application/json'
-};
+my $ua = OpenQA::API::V1::Client->new;
 
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
@@ -115,12 +113,21 @@ GetOptions(
 	"instance=i",
 	"isotovideo=s",
 	"host=s",
+	"key:s",
+	"secret:s",
 	"verbose|v",
 	"help|h",
 ) or usage(1);
 
 usage(1) unless exists $options{'host'};
 usage(0) if ($options{'help'});
+
+unless ($options{'key'} && $options{secret}) {
+	die "key and secret are needed for the worker\n";
+}
+
+$ua->key($options{'key'});
+$ua->secret($options{'secret'});
 
 my $verbose = $options{'verbose'};
 
@@ -135,7 +142,7 @@ if ($options{'host'} !~ '/') {
 	$url = Mojo::URL->new($options{'host'});
 }
 # Relative paths are appended to the existing one
-$url->path('api/v1/');
+$url->path('/api/v1/');
 
 $pooldir = $openqa_base.'/pool/'.($options{'instance'}||'manual');
 
@@ -145,27 +152,6 @@ $ENV{'VNC'}      = ($options{'instance'})    + 90;
 $ENV{'OPENQA_HOSTNAME'} = $url->authority;
 
 $isotovideo = $options{'isotovideo'} if $options{'isotovideo'};
-
-sub authenticate
-{
-	if (!$headers->{'X-CSRF-Token'}) {
-		my $ua_url = $url->clone;
-		$ua_url->path('authenticate');
-
-		my $tx = $ua->get($ua_url, $headers);
-
-		return $tx->error unless $tx->success;
-
-		if (my $token = $tx->success->json->{token}) {
-			CORE::say "got csrf token $token";
-			$headers->{'X-CSRF-Token'} = $token;
-		} else {
-			return (1, "failed to acquire csrf token");
-		}
-	}
-
-	return (0, "success");
-}
 
 # send a command to openQA API
 sub api_call
@@ -180,16 +166,12 @@ sub api_call
 
 	my $tries = 3;
 	while (1) {
-		my ($err, $code) = authenticate();
-		if (!$err) {
-			my $tx = $ua->$method($ua_url, $headers);
-			if ($tx->success) {
-				return $tx->success->json;
-			} else {
-				($err, $code) = $tx->error;
-			}
+		my $tx = $ua->$method($ua_url);
+		if ($tx->success) {
+			return $tx->success->json;
 		}
 		--$tries;
+		my ($err, $code) = $tx->error;
 		my $msg = $code ? "$tries: $code response: $err" : "$tries: Connection error: $err";
 		croak "$msg\n" unless $tries;
 		carp "$msg";

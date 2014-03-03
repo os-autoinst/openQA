@@ -80,8 +80,8 @@ GetOptions(
 	"host=s",
 	"apibase=s",
 	"verbose|v",
-    "key:s",
-    "secret:s",
+	"key:s",
+	"secret:s",
 	"help|?",
 ) or usage(1);
 
@@ -119,8 +119,9 @@ if ($options{'host'} !~ '/') {
 $url->path($path);
 $url->query(join('&', @params)) if @params;
 
-my $client = OpenQA::API::V1::Client->new($options{'key'}, $options{'secret'});
-my $res = $client->call($method, $url)->res;
+my $client = OpenQA::API::V1::Client->new(key => $options{'key'}, secret => $options{'secret'});
+
+my $res = $client->$method($url)->res;
 if ($res->code == 200) {
     dd($res->json || $res->body);
 } else {

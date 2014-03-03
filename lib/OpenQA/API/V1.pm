@@ -36,6 +36,7 @@ sub auth {
         my $msg = $self->req->url->to_string;
         if ($api_key && $self->_valid_hmac($hash, $msg, $timestamp, $api_key)) {
             $user = $api_key->user;
+            $self->app->log->debug(sprintf "API auth by user: %s, operator: %d", $user->openid, $user->is_operator);
         }
     }
 

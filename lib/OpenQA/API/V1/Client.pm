@@ -16,40 +16,56 @@
 
 package OpenQA::API::V1::Client;
 
-use Mojo::UserAgent;
+use Mojo::Base 'Mojo::UserAgent';
 use Mojo::Util 'hmac_sha1_sum';
+use Carp;
+
+has 'key';
+has 'secret';
 
 sub new {
-    my $class = shift;
-    my ($key, $secret)= @_;
+    my $self = shift->SUPER::new;
+    my %args = @_;
 
-    my $self = bless {key => $key, secret => $secret}, $class;
+    for my $i (qw/key secret/) {
+        next unless $args{$i};
+        $self->$i($args{$i});
+    }
+
+    $self->on(start => sub {
+            $self->_add_auth_headers(@_);
+        });
+
     return $self;
 }
 
-sub call {
-    my $self = shift;
-    my ($method, $url, $form) = (shift, shift, shift);
-    my $obj = shift;
+sub _add_auth_headers {
+    my ($self, $ua, $tx) = @_;
 
-    unless ($obj) {
-        $obj = ($method =~ /_ok$/) ?  Test::Mojo->new('OpenQA') : Mojo::UserAgent->new;
+    unless ($self->secret && $self->key) {
+        carp "missing secret and/or key";
+        return;
     }
 
-    my $headers = { Accept => 'application/json' };
-    $headers->{'X-API-Key'} = $self->{key};
     my $timestamp = time;
-    $headers->{'X-API-Microtime'} = $timestamp;
-    $headers->{'X-API-Hash'} = hmac_sha1_sum($self->_path_query($url).$timestamp, $self->{secret});
+    my %headers = (
+        Accept => 'application/json',
+        'X-API-Key' => $self->key,
+        'X-API-Microtime' => $timestamp,
+        'X-API-Hash' => hmac_sha1_sum($self->_path_query($tx).$timestamp, $self->secret),
+    );
 
-    $obj->$method($url, $headers => form => $form);
+    while (my ($k, $v) = each %headers) {
+        $tx->req->headers->header($k, $v);
+    }
 }
 
 sub _path_query {
     my $self  = shift;
-    my $url = shift;
+    my $url = shift->req->url;
     my $query = $url->query->to_string;
-    return $url->path->to_string . (length $query ? "?$query" : '');
+    my $r = $url->path->to_string . (length $query ? "?$query" : '');
+    return $r;
 }
 
 1;
