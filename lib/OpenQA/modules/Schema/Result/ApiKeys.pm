@@ -59,4 +59,14 @@ sub sqlt_deploy_hook {
     db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
 }
 
+sub new {
+    my ( $class, $attrs ) = @_;
+
+    $attrs->{key} = db_helpers::rndhex unless $attrs->{key};
+    $attrs->{secret} = db_helpers::rndhex unless $attrs->{secret};
+
+    my $new = $class->next::method($attrs);
+    return $new;
+}
+
 1;

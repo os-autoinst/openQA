@@ -1,0 +1,53 @@
+# Copyright (C) 2014 SUSE Linux Products GmbH
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+package OpenQA::ApiKey;
+use Mojo::Base 'Mojolicious::Controller';
+use DateTime::Format::SQLite;
+
+sub index {
+    my $self = shift;
+    my $user = $self->current_user;
+    my @keys = $user->api_keys;
+
+    $self->stash('keys', \@keys);
+}
+
+sub create {
+    my $self = shift;
+    my $user = $self->current_user;
+    my $expiration;
+    eval { $expiration = DateTime::Format::SQLite->parse_datetime($self->param('t_expiration')) };
+    eval { $self->db->resultset("ApiKeys")->create({user_id => $user->id, t_expiration => $expiration}) };
+    $self->flash(info => 'Error adding the API key. Please retry.') if $@;
+    $self->redirect_to(action => 'index');
+}
+
+sub destroy {
+    my $self = shift;
+    my $user = $self->current_user;
+    my $key = $user->find_related('api_keys', {id => $self->param('apikeyid')});
+
+    if ($key) {
+        $key->delete;
+        $self->flash(info => 'API key deleted');
+    } else {
+        $self->flash(error => 'API key not found');
+    }
+    $self->redirect_to($self->url_for('api_keys'));
+}
+
+1;

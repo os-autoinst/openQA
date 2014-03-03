@@ -1,0 +1,46 @@
+% layout 'default';
+% title 'API keys';
+
+<div class="grid_4 alpha">
+    <div class="box box-shadow alpha" id="actions_box">
+        <div class="box-header aligncenter">New API key</div>
+        <div class="aligncenter">
+		    %= form_for api_keys => (method => 'post') => begin
+                %= label_for t_expiration => 'Expiration'
+                %= datetime_field 't_expiration', size => 14
+                %= submit_button 'create'
+            % end
+        </div>
+    </div>
+</div>
+
+<div class="grid_10 box box-shadow omega">
+	<h2><%= title %></h2>
+
+    % if (my $msg = flash 'error') {
+      <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
+    % }
+    % if (my $msg = flash 'info') {
+      <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
+    % }
+
+	<table style="width: 95%;" class="table-autostripe table-stripeclass:odd">
+	    <thead>
+		    <tr>
+                <th>key</th>
+                <th>secret</th>
+                <th>expires</th>
+                <th>action</th>
+            </tr>
+        </thead>
+        <tbody>
+            % for my $key (@$keys) {
+                <tr>
+                <td><%= $key->key %></td>
+                <td><%= $key->secret %></td>
+                <td><%= $key->t_expiration %></td>
+                <td><%= link_to 'delete' => url_for('api_key', apikeyid => $key->id) => ('data-method' => 'delete') %></td>
+            % }
+        </tbody>
+    </ul>
+</div>

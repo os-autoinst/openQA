@@ -21,6 +21,7 @@ use warnings;
 # TODO: Move all needed subs form awstandard to here.
 use awstandard;
 use Mojo::ByteStream;
+use db_helpers;
 
 use base 'Mojolicious::Plugin';
 
@@ -105,6 +106,11 @@ sub register {
                           && defined($c->stash('current_user')->{user});
 
         return $is_user_def ? $c->stash('current_user')->{user} : undef;
+    });
+
+    $app->helper(rndstr => sub {
+        my $c = shift;
+        db_helpers::rndstr(@_);
     });
 }
 

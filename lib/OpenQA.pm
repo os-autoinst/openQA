@@ -21,16 +21,6 @@ use OpenQA::Helpers;
 
 use Config::IniFiles;
 
-sub _rndstr {
-    my $length = shift || 16;
-    my $str;
-    my @chars = ('a'..'z', 'A'..'Z', '0'..'9', '_');
-    foreach (1..$length) {
-	$str .= $chars[rand @chars];
-    }
-    return $str;
-}
-
 sub _read_config {
   my $self = shift;
 
@@ -102,6 +92,11 @@ sub startup {
   $r->delete('/logout')->name('logout')->to('session#destroy');
   $r->get('/response')->to('session#response');
   $auth->get('/session/test')->to('session#test');
+
+  my $apik_auth = $auth->route('/api_keys');
+  $apik_auth->get('/')->name('api_keys')->to('api_key#index');
+  $apik_auth->post('/')->to('api_key#create');
+  $apik_auth->delete('/:apikeyid')->name('api_key')->to('api_key#destroy');
 
   $r->get('/tests')->name('tests')->to('test#list');
   my $test_r = $r->route('/tests/#testid');

@@ -52,4 +52,21 @@ sub create_auto_timestamps
     _create_timestamp_trigger($schema, $table, 'UPDATE');
 }
 
+sub rndstr
+{
+    my $length = shift || 16;
+    my $chars = shift || ['a'..'z', 'A'..'Z', '0'..'9', '_'];
+    my $str;
+    foreach (1..$length) {
+        $str .= $chars->[rand @$chars];
+    }
+    return $str;
+}
+
+sub rndhex
+{
+    my $length = shift || 16;
+    rndstr($length, ['A'..'F', '0'..'9']);
+}
+
 1;
