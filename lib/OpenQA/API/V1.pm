@@ -33,7 +33,7 @@ sub auth {
         }
     } else { # No session (probably not a browser)
         my $api_key = $self->db->resultset("ApiKeys")->find({key => $key});
-        my $msg = $self->req->url->to_abs->to_string;
+        my $msg = $self->req->url->to_string;
         if ($api_key && $self->_valid_hmac($hash, $msg, $timestamp, $api_key)) {
             $user = $api_key->user;
         }

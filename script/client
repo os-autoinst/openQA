@@ -56,10 +56,12 @@ lorem ipsum ...
 
 =cut
 
+use FindBin;
+BEGIN { unshift @INC, "$FindBin::Bin/../lib"}
+
 use Data::Dump;
-use Mojo::UserAgent;
 use Mojo::URL;
-use Mojo::Util 'hmac_sha1_sum';
+use OpenQA::API::V1::Client;
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
@@ -71,21 +73,6 @@ sub usage($) {
 	if ($@) {
 		die "cannot display help, install perl(Pod::Usage)\n";
 	}
-}
-
-sub api_call($$$) {
-    my ($method, $url) = (shift, shift);
-    my $h = shift;
-    my $headers = {%$h};
-    my $ua = Mojo::UserAgent->new;
-
-    $headers->{'X-API-Key'} = $options{'key'};
-    my $timestamp = time;
-    $headers->{'X-API-Microtime'} = $timestamp;
-    my $msg = $url->to_string;
-    $headers->{'X-API-Hash'} = hmac_sha1_sum($url->to_string.$timestamp, $options{'secret'});
-
-    $ua->$method($url, $headers)->res;
 }
 
 GetOptions(
@@ -129,14 +116,11 @@ if ($options{'host'} !~ '/') {
 	$url = Mojo::URL->new($options{'host'});
 }
 
-my $headers = {
-    Accept => 'application/json'
-};
-
 $url->path($path);
 $url->query(join('&', @params)) if @params;
 
-my $res = api_call($method, $url, $headers);
+my $client = OpenQA::API::V1::Client->new($options{'key'}, $options{'secret'});
+my $res = $client->call($method, $url)->res;
 if ($res->code == 200) {
     dd($res->json || $res->body);
 } else {

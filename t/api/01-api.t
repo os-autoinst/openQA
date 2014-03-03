@@ -21,33 +21,34 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
+use Mojo::URL;
 use OpenQA::Test::Case;
-use Data::Dump;
+use OpenQA::API::V1::Client;
 
 OpenQA::Test::Case->new->init_data;
 
 my $t = Test::Mojo->new('OpenQA');
-
-my $headers = {
-    Accept => 'application/json'
-};
+my $client = OpenQA::API::V1::Client->new('PERCIVALKEY02', 'PERCIVALSECRET02');
 
 my $ret;
 
-$ret = $t->get_ok('/api/v1/workers');
+#$ret = $t->get_ok('/api/v1/workers');
+$ret = $client->call('get_ok', Mojo::URL->new('/api/v1/workers'), {}, $t);
 ok($ret->tx->success, 'listing workers works');
 is(ref $ret->tx->res->json, 'HASH', 'workers returned hash');
 # just a random check that the structure is sane
 is($ret->tx->res->json->{workers}->[1]->{host}, 'localhost', 'worker present');
 
-$ret = $t->post_ok('/api/v1/workers', $headers, form => {host => 'localhost', instance => 1, backend => 'qemu' });
+$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu' });
 is($ret->tx->res->code, 403, "register worker without API key fails");
 
-$ret = $t->post_ok('/api/v1/workers', $headers, form => {host => 'localhost', instance => 1, backend => 'qemu' });
+#$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu' });
+$ret = $client->call('post_ok', Mojo::URL->new('/api/v1/workers'), {host => 'localhost', instance => 1, backend => 'qemu' }, $t);
 is($ret->tx->res->code, 200, "register existing worker with token");
 is($ret->tx->res->json->{id}, 1, "worker id is 1");
 
-$ret = $t->post_ok('/api/v1/workers', $headers, form => {host => 'localhost', instance => 42, backend => 'qemu' });
+#$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 42, backend => 'qemu' });
+$ret = $client->call('post_ok', Mojo::URL->new('/api/v1/workers'), {host => 'localhost', instance => 42, backend => 'qemu' }, $t);
 is($ret->tx->res->code, 200, "register new worker");
 is($ret->tx->res->json->{id}, 2, "new worker id is 2");
 
