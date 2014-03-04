@@ -34,16 +34,20 @@ sub register {
             my ($self, $method, $content) = (shift, shift, shift);
             my $url = $content;
 
-            # Content
-            unless (ref $_[-1] eq 'CODE') {
-                $url = shift;
-                push @_, $content;
+            if ($self->is_operator) {
+                # Content
+                unless (ref $_[-1] eq 'CODE') {
+                    $url = shift;
+                    push @_, $content;
+                }
+
+                Carp::croak "url is not a url"
+                    unless Scalar::Util::blessed $url && $url->isa('Mojo::URL');
+
+                return $self->tag('a', href => $url, 'data-method' => $method, @_);
+            } else {
+                return '';
             }
-
-            Carp::croak "url is not a url"
-                unless Scalar::Util::blessed $url && $url->isa('Mojo::URL');
-
-            return $self->tag('a', href => $url, 'data-method' => $method, @_);
         });
 
     # special anchor tag for post links

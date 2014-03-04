@@ -113,11 +113,18 @@ sub register {
         db_helpers::rndstr(@_);
     });
 
-    $app->helper(is_authorized => sub {
+    $app->helper(is_operator => sub {
         my $c = shift;
         my $user = shift || $c->current_user;
 
         return ($user && $user->is_operator);
+    });
+
+    $app->helper(is_admin => sub {
+        my $c = shift;
+        my $user = shift || $c->current_user;
+
+        return ($user && $user->is_admin);
     });
 }
 

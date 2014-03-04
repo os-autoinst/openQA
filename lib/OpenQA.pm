@@ -87,7 +87,7 @@ sub startup {
 
   # Router
   my $r = $self->routes;
-  my $auth = $r->bridge('/')->to("session#auth");
+  my $auth = $r->bridge('/')->to("session#ensure_operator");
 
   $r->get('/session/new')->to('session#new');
   $r->post('/session')->to('session#create');

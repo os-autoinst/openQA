@@ -22,10 +22,22 @@ use Net::OpenID::Consumer;
 use URI::Escape;
 use LWP::UserAgent;
 
-sub auth {
+sub ensure_operator {
     my $self = shift;
 
-    if ($self->is_authorized) {
+    if ($self->is_operator) {
+        return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
+        $self->render(text => 'Bad CSRF token!', status => 403);
+    } else {
+        $self->render(text => "Forbidden", status => 403);
+    }
+    return undef;
+}
+
+sub ensure_admin {
+    my $self = shift;
+
+    if ($self->is_admin) {
         return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
         $self->render(text => 'Bad CSRF token!', status => 403);
     } else {

@@ -37,9 +37,8 @@ ok($get->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token',
 
 is($token, $get->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");
 
-# Test 99928 is scheduled, so can be canceled. Make sure link contains
-# data-method=post
-$t->get_ok('/tests')->element_exists('#results #job_99928 .cancel a[data-method=post]');
+# look for the cancel link without logging in
+$t->get_ok('/tests')->element_exists_not('#results #job_99928 .cancel a');
 
 # test cancel, restart and setpriority without logging in
 $t->post_ok('/tests/99928/cancel' => { 'X-CSRF-Token' => $token } => form => {})
@@ -51,6 +50,10 @@ $t->post_ok('/tests/99928/setpriority/34' => { 'X-CSRF-Token' => $token } => for
 
 # Log in with an authorized user for the rest of the test
 $test_case->login($t, 'https://openid.camelot.uk/percival');
+
+# Test 99928 is scheduled, so can be canceled. Make sure link contains
+# data-method=post
+$t->get_ok('/tests')->element_exists('#results #job_99928 .cancel a[data-method=post]');
 
 # test cancel with and without CSRF token
 $t->post_ok('/tests/99928/cancel' => form => { csrf_token => 'foobar' })

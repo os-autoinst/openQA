@@ -20,19 +20,23 @@
 			    <td style="width: 8em; padding: 0;">Interactive:</td>
 				<td style="width: 4.5em; padding: 0;" id="interactive_indicator" data-next-status="">Unknown</td>
 				<td style="padding: 0;" id="needinput_buttons">
+                    % if (is_operator) {
 					<a href="javascript:window.toggleInteractive()" style="display:none" id="interactive_button"><img src="/images/interactive.png" alt="toggle" title="Toggle mode" /></a>
+                    % }
 				</td>
 			</tr>
 			<tr>
 				<td style="width: 8em; padding: 0;">Waiting for input:</td>
 				<td style="width: 4.5em; padding: 0;" id="needinput_indicator">N/A</td>
 				<td style="padding: 0;" id="needinput_buttons">
-					<a href="javascript:window.sendCommand('continue_waitforneedle')" style="display:none" id="continue_button"><img src="/images/cancel.png" alt="continue" title="Continue" /></a>
-					<a href="javascript:window.sendCommand('reload_needles_and_retry')" style="display:none" id="retry_button"><img src="/images/play.png" alt="retry" title="Retry" /></a>
-                    %= link_to url_for('edit_test') => (style => 'display:none', id => 'crop_button') => begin
-                        %= image '/images/edit.png', alt => "edit", title => "Needle editor"
-                    % end
-					<a href="javascript:window.sendCommand('stop_waitforneedle')" style="display:none" id="stop_button"><img src="/images/cancel.png" alt="cancel" title="Stop waitforneedle" /></a>
+                    % if (is_operator) {
+					    <a href="javascript:window.sendCommand('continue_waitforneedle')" style="display:none" id="continue_button"><img src="/images/cancel.png" alt="continue" title="Continue" /></a>
+					    <a href="javascript:window.sendCommand('reload_needles_and_retry')" style="display:none" id="retry_button"><img src="/images/play.png" alt="retry" title="Retry" /></a>
+                        %= link_to url_for('edit_test') => (style => 'display:none', id => 'crop_button') => begin
+                            %= image '/images/edit.png', alt => "edit", title => "Needle editor"
+                        % end
+					    <a href="javascript:window.sendCommand('stop_waitforneedle')" style="display:none" id="stop_button"><img src="/images/cancel.png" alt="cancel" title="Stop waitforneedle" /></a>
+                    % }
 				</td>
 			</tr>
         </table>

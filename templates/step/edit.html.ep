@@ -21,7 +21,9 @@ window.onload=function(){
         %= link_to url_for('test') => begin
           %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
         % end
-        <input type="image" src="/images/floppy.png" alt="Save" />
+        % if (is_operator) {
+            <input type="image" src="/images/floppy.png" alt="Save" />
+        % }
       </div>
       <div style="margin: 0 3px;">
         <div style="margin-top: 1em;">
