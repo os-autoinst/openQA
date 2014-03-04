@@ -29,17 +29,17 @@ is(length($cfg->{_openid_secret}), 16, "config has openid_secret");
 delete $cfg->{_openid_secret};
 
 is_deeply($cfg, {
-	global => {
-	    scm => 'git',
-	},
-	'scm git' => {
-	    do_push => 'no',
-	},
-	logging => {
-	},
-	openid => {
-	  provider => 'https://www.suse.com/openid/user/',
-	}
+        global => {
+            scm => 'git',
+        },
+        'scm git' => {
+            do_push => 'no',
+        },
+        logging => {
+        },
+        openid => {
+            provider => 'https://www.opensuse.org/openid/user/',
+        }
     });
 
 $ENV{OPENQA_CONFIG} = 't/testcfg.ini';

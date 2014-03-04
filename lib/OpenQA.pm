@@ -39,7 +39,7 @@ sub _read_config {
       file => undef,
     },
     openid => {
-      provider => 'https://www.suse.com/openid/user/',
+      provider => 'https://www.opensuse.org/openid/user/',
     }
   );
 
