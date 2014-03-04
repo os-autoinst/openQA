@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA');
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::API::V1::Client->new()->ioloop(Mojo::IOLoop->singleton));
+$t->ua(OpenQA::API::V1::Client->new->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 my $ret;
@@ -39,8 +39,8 @@ my $ret;
 $ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu' });
 is($ret->tx->res->code, 403, "register worker without API key fails");
 
-$t->ua->key('PERCIVALKEY02');
-$t->ua->secret('PERCIVALSECRET02');
+$t->ua(OpenQA::API::V1::Client->new(api => 'testapi')->ioloop(Mojo::IOLoop->singleton));
+$t->app($app);
 
 $ret = $t->get_ok('/api/v1/workers');
 ok($ret->tx->success, 'listing workers works');

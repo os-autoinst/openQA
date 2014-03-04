@@ -18,6 +18,10 @@ package OpenQA::API::V1::Client;
 
 use Mojo::Base 'Mojo::UserAgent';
 use Mojo::Util 'hmac_sha1_sum';
+
+use Config::IniFiles;
+use Scalar::Util ();
+
 use Carp;
 
 has 'key';
@@ -30,6 +34,19 @@ sub new {
     for my $i (qw/key secret/) {
         next unless $args{$i};
         $self->$i($args{$i});
+    }
+
+    if ($args{api}) {
+        for my $file ($ENV{OPENQA_CLIENT_CONFIG}||undef, glob ('~/.config/openqa/client.conf'), '/etc/openqa/client.conf') {
+            next unless $file && -r $file;
+            my $cfg = Config::IniFiles->new(-file => $file) || last;
+            last unless $cfg->SectionExists($args{api});
+            for my $i (qw/key secret/) {
+                next if $self->$i;
+                $self->$i($cfg->val($args{api}, $i));
+            }
+            last;
+        }
     }
 
     $self->on(start => sub {

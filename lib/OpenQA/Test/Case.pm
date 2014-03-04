@@ -23,6 +23,14 @@ use Date::Format qw/time2str/;
 use Mojo::JSON 'j';
 use Mojo::Util qw(b64_decode b64_encode hmac_sha1_sum);
 
+sub new {
+    my $self = shift->SUPER::new;
+
+    $ENV{OPENQA_CLIENT_CONFIG} = 't/data/client.conf';
+
+    return $self;
+}
+
 sub init_data {
     # This should result in the 't' directory, even if $0 is in a subdirectory
     my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;

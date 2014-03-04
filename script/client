@@ -119,7 +119,7 @@ if ($options{'host'} !~ '/') {
 $url->path($path);
 $url->query(join('&', @params)) if @params;
 
-my $client = OpenQA::API::V1::Client->new(key => $options{'key'}, secret => $options{'secret'});
+my $client = OpenQA::API::V1::Client->new(key => $options{'key'}, secret => $options{'secret'}, api => $url->host);
 
 my $res = $client->$method($url)->res;
 if ($res->code == 200) {
