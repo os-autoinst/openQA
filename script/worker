@@ -92,8 +92,6 @@ my $isotovideo = "/usr/lib/os-autoinst/tools/isotovideo";
 my $keep_running = 1;
 my $got_sigchld = 0;
 
-my $ua = OpenQA::API::V1::Client->new;
-
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
@@ -122,13 +120,6 @@ GetOptions(
 usage(1) unless exists $options{'host'};
 usage(0) if ($options{'help'});
 
-unless ($options{'key'} && $options{secret}) {
-	die "key and secret are needed for the worker\n";
-}
-
-$ua->key($options{'key'});
-$ua->secret($options{'secret'});
-
 my $verbose = $options{'verbose'};
 
 $options{'instance'} ||= 0;
@@ -143,6 +134,17 @@ if ($options{'host'} !~ '/') {
 }
 # Relative paths are appended to the existing one
 $url->path('/api/v1/');
+
+my $ua = OpenQA::API::V1::Client->new(api => $url->host);
+
+unless ($ua->key && $ua->secret) {
+	unless ($options{'key'} && $options{secret}) {
+		die "key and secret are needed for the worker\n";
+	}
+
+	$ua->key($options{'key'});
+	$ua->secret($options{'secret'});
+}
 
 $pooldir = $openqa_base.'/pool/'.($options{'instance'}||'manual');
 
