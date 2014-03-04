@@ -33,7 +33,21 @@ my $t = Test::Mojo->new('OpenQA');
 $t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged as/);
 $t->get_ok('/api_keys')->status_is(403);
 
-#
+# check error message on empty login
+$t->get_ok('/login')->status_is(200)->element_exists('#input-name');
+$t->post_ok('/login')
+  ->status_is(400)
+  ->element_exists('.ui-state-error')
+  ->content_like(qr/User Name is required/)
+  ->element_exists('#input-name');
+
+# check error on invalid characters
+$t->post_ok('/login', form => { name => '!"§$!%:' })
+  ->status_is(400)
+  ->element_exists('.ui-state-error')
+  ->content_like(qr/alphanumeric ASCII/)
+  ->element_exists('#input-name');
+
 # So let's log in as an unpriviledged user...
 $test_case->login($t, 'https://openid.camelot.uk/lancelot');
 # ...who should see a logout option but no link to API keys

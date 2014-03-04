@@ -16,7 +16,7 @@
       % }
     % }
     %= label_for name => 'User Name'
-    %= text_field 'name', autofocus => 'true'
+    %= text_field 'name', id => 'input-name', autofocus => 'true'
     %= submit_button 'Log in'
   %= end
 </div>

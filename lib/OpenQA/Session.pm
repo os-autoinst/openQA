@@ -49,7 +49,7 @@ sub create {
     my $validation = $self->validation;
     $validation->required('name')->like(qr/^\w{2,}$/a);
     if ($validation->has_error) {
-        return $self->render('session/new');
+        return $self->render(template => 'session/new', status => 400);
     }
 
     # TODO: support multiple openid providers, get them from the
