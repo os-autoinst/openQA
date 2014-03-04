@@ -373,3 +373,9 @@ table#results th.table-sorted-asc {
 .container_16 .live-content {
     width: 820px;
 }
+
+/* User info header */
+
+#user-info {
+    text-align: right;
+}

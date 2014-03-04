@@ -55,7 +55,7 @@ sub register {
     $app->helper(breadcrumbs => sub {
         my $c = shift;
 
-        my $crumbs = '<div id="breadcrump" class="grid_13 alpha">';
+        my $crumbs = '<div id="breadcrump" class="grid_11 alpha">';
         $crumbs .= '<a href="'.$c->url_for('/').'">';
         $crumbs .= $c->image('/images/home_grey.png', alt => "Home");
         $crumbs .= '<b>'.$c->stash('appname').'</b></a>';
@@ -111,6 +111,13 @@ sub register {
     $app->helper(rndstr => sub {
         my $c = shift;
         db_helpers::rndstr(@_);
+    });
+
+    $app->helper(is_authorized => sub {
+        my $c = shift;
+        my $user = shift || $c->current_user;
+
+        return ($user && $user->is_operator);
     });
 }
 

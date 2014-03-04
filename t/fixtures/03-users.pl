@@ -11,7 +11,7 @@
     is_operator => 0,
     is_admin => 0,
     api_keys => [
-        { key => 'LANCELOTKEY01', secret => 'MANYPEOPLEKNOW'},
+        { key => 'LANCELOTKEY01', secret => 'MANYPEOPLEKNOW', id => 99901},
     ]
   },
   Users => {
@@ -20,11 +20,11 @@
     is_operator => 1,
     is_admin => 0,
     api_keys => [
-        { key => 'EXPIREDKEY01', secret => 'WHOCARESAFTERALL',
+        { key => 'EXPIREDKEY01', secret => 'WHOCARESAFTERALL', id => 99902,
             t_expiration => DateTime->from_epoch(epoch => time-7200) },
-        { key => 'PERCIVALKEY01', secret => 'PERCIVALSECRET01',
+        { key => 'PERCIVALKEY01', secret => 'PERCIVALSECRET01', id => 99903,
             t_expiration => DateTime->from_epoch(epoch => time+7200) },
-        { key => 'PERCIVALKEY02', secret => 'PERCIVALSECRET02' },
+        { key => 'PERCIVALKEY02', secret => 'PERCIVALSECRET02', id => 99904},
     ]
   }
 ]

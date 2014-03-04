@@ -14,7 +14,7 @@
     </div>
 </div>
 
-<div class="grid_10 box box-shadow omega">
+<div class="grid_12 box box-shadow omega">
 	<h2><%= title %></h2>
 
     % if (my $msg = flash 'error') {
@@ -35,11 +35,11 @@
         </thead>
         <tbody>
             % for my $key (@$keys) {
-                <tr>
-                <td><%= $key->key %></td>
-                <td><%= $key->secret %></td>
-                <td><%= $key->t_expiration %></td>
-                <td><%= link_to 'delete' => url_for('api_key', apikeyid => $key->id) => ('data-method' => 'delete') %></td>
+                <tr id="api_key_<%= $key->id %>">
+                <td class="key"><%= $key->key %></td>
+                <td class="secret"><%= $key->secret %></td>
+                <td class="expiration"><%= $key->t_expiration %></td>
+                <td class="action"><%= link_to 'delete' => url_for('api_key', apikeyid => $key->id) => ('data-method' => 'delete') %></td>
             % }
         </tbody>
     </ul>

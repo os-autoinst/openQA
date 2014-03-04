@@ -40,7 +40,7 @@ sub auth {
         }
     }
 
-    return 1 if $user && $user->is_operator;
+    return 1 if $self->is_authorized($user);
 
     $self->render(json => {error => "Not authorized"}, status => 403);
     return undef;

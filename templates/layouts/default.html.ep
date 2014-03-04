@@ -36,10 +36,14 @@
 
     <div id="subheader" class="container_16">
         %= breadcrumbs
-        <div class="grid_3 omega">
+        <div id="user-info" class="grid_5 omega">
+            %# Using a variable to avoid additional whitespaces
             % if (current_user) {
-                %= 'Logged as '.current_user->name
-                %= link_delete '(logout)' => url_for('logout');
+                % my $out = 'Logged as '.current_user->name.' (';
+                % if (is_authorized) {
+                    % $out = $out.link_to('manage API keys' => url_for('api_keys')).' | ';
+                % }
+                %= b($out.link_delete('logout' => url_for('logout')).')');
             % }
         </div>
     </div>
