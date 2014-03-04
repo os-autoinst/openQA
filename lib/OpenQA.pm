@@ -38,6 +38,9 @@ sub _read_config {
       level => undef,
       file => undef,
     },
+    openid => {
+      provider => 'https://www.suse.com/openid/user/',
+    }
   );
 
   # Mojo's built in config plugins suck. JSON for example does not

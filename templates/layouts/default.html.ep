@@ -44,6 +44,8 @@
                     % $out = $out.link_to('manage API keys' => url_for('api_keys')).' | ';
                 % }
                 %= b($out.link_delete('logout' => url_for('logout')).')');
+            % } else {
+            %= link_to('login' => url_for('login'));
             % }
         </div>
     </div>

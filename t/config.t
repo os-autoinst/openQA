@@ -37,6 +37,9 @@ is_deeply($cfg, {
 	},
 	logging => {
 	},
+	openid => {
+	  provider => 'https://www.suse.com/openid/user/',
+	}
     });
 
 $ENV{OPENQA_CONFIG} = 't/testcfg.ini';
