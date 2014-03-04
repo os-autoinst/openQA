@@ -65,10 +65,25 @@ has schema => sub {
 sub startup {
   my $self = shift;
 
+  # FIXME: this shouldn't be needed. Check!
+  srand;
+
   # Set some application defaults
   $self->defaults( appname => 'openQA' );
 
   unshift @{$self->app->renderer->paths}, '/etc/openqa/templates';
+
+  # read application secret from database
+  my @secrets = $self->schema->resultset('Secrets')->all();
+  if (!@secrets) {
+    # create one if it doesn't exist
+    $self->app->log->debug('creating secret');
+    $self->schema->resultset('Secrets')->create({});
+    @secrets = $self->schema->resultset('Secrets')->all();
+  }
+  die "couldn't create secrets\n" unless @secrets;
+  $self->app->secrets([ map { $_->secret } @secrets ]);
+  $self->app->log->debug('secrets', @{$self->app->secrets});
 
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer');
