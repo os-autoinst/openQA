@@ -68,6 +68,8 @@ sub startup {
   # Set some application defaults
   $self->defaults( appname => 'openQA' );
 
+  unshift @{$self->app->renderer->paths}, '/etc/openqa/templates';
+
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer');
   $self->plugin('OpenQA::Helpers');
