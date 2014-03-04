@@ -51,7 +51,7 @@ sub _read_config {
       $self->app->config->{$section}->{$k} = $v if $v;
     }
   }
-  $self->app->config->{_openid_secret} = _rndstr(16);
+  $self->app->config->{_openid_secret} = $self->rndstr(16);
 }
 
 has schema => sub {
