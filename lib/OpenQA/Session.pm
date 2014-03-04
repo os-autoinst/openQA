@@ -45,23 +45,12 @@ sub create {
     my $self = shift;
     my $url = $self->app->config->{base_url} || $self->req->url->base;
 
-    # Show the form if data doesn't look sane
-    my $validation = $self->validation;
-    $validation->required('name')->like(qr/^\w{2,}$/a);
-    if ($validation->has_error) {
-        return $self->render(template => 'session/new', status => 400);
-    }
-
-    # TODO: support multiple openid providers, get them from the
-    # database
-    my $openid_url = join('/', $self->config->{openid}->{provider}, $self->param('name'));
-
     my $csr = Net::OpenID::Consumer->new(
 	ua              => LWP::UserAgent->new,
 	required_root   => $url,
 	consumer_secret => $self->app->config->{_openid_secret},
 	);
-    my $claimed_id = $csr->claimed_identity($openid_url);
+    my $claimed_id = $csr->claimed_identity($self->config->{openid}->{provider});
     my $check_url = $claimed_id->check_url(
 	return_to  => qq{$url/response},
 	trust_root => qq{$url/},

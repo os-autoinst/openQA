@@ -92,7 +92,7 @@ sub startup {
   $r->get('/session/new')->to('session#new');
   $r->post('/session')->to('session#create');
   $r->delete('/session')->to('session#destroy');
-  $r->get('/login')->name('login')->to('session#new');
+  $r->get('/login')->name('login')->to('session#create');
   $r->post('/login')->to('session#create');
   $r->delete('/logout')->name('logout')->to('session#destroy');
   $r->get('/response')->to('session#response');
