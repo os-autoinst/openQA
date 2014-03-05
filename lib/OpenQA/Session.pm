@@ -58,7 +58,7 @@ sub create {
     my $url = $self->app->config->{base_url} || $self->req->url->base;
 
     # force secure connection after login
-    $url->scheme('https') if $url->scheme eq 'http';
+    $url->scheme('https') if $url->scheme eq 'http' && $self->app->config->{openid}->{httpsonly};
 
     my $csr = Net::OpenID::Consumer->new(
 	ua              => LWP::UserAgent->new,

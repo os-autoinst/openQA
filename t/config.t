@@ -40,6 +40,7 @@ is_deeply($cfg, {
         },
         openid => {
             provider => 'https://www.opensuse.org/openid/user/',
+            httpsonly => '1',
         }
     });
 
