@@ -65,9 +65,6 @@ has schema => sub {
 sub startup {
   my $self = shift;
 
-  # FIXME: this shouldn't be needed. Check!
-  srand;
-
   # Set some application defaults
   $self->defaults( appname => 'openQA' );
 
