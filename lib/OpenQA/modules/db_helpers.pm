@@ -56,17 +56,12 @@ sub rndstr
 {
     my $length = shift || 16;
     my $chars = shift || ['a'..'z', 'A'..'Z', '0'..'9', '_'];
-    my $str;
-    foreach (1..$length) {
-        $str .= $chars->[rand @$chars];
-    }
-    return $str;
+    return join('', map { $chars->[rand @$chars] } 1 .. $length);
 }
 
 sub rndhex
 {
-    my $length = shift || 16;
-    rndstr($length, ['A'..'F', '0'..'9']);
+    rndstr(shift, ['A'..'F', '0'..'9']);
 }
 
 1;
