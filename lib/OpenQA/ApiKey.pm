@@ -20,8 +20,7 @@ use DateTime::Format::SQLite;
 
 sub index {
     my $self = shift;
-    my $user = $self->current_user;
-    my @keys = $user->api_keys;
+    my @keys = $self->current_user->api_keys;
 
     $self->stash('keys', \@keys);
 }
@@ -30,9 +29,26 @@ sub create {
     my $self = shift;
     my $user = $self->current_user;
     my $expiration;
-    eval { $expiration = DateTime::Format::SQLite->parse_datetime($self->param('t_expiration')) };
-    eval { $self->db->resultset("ApiKeys")->create({user_id => $user->id, t_expiration => $expiration}) };
-    $self->flash(info => 'Error adding the API key. Please retry.') if $@;
+    my $validation = $self->validation;
+    my $re = qr/^\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2}(?::\d{2})?)?$/a;
+    $validation->optional('t_expiration')->like($re);
+    my $error;
+    if ($validation->has_error) {
+        $error = "Date must be in format $re";
+    }
+    if (!$error && $validation->is_valid('t_expiration')) {
+        eval { $expiration = DateTime::Format::SQLite->parse_datetime($self->param('t_expiration')) };
+        $error = $@;
+    }
+    unless ($error) {
+        eval { $self->db->resultset("ApiKeys")->create({user_id => $user->id, t_expiration => $expiration}) };
+        $error = $@;
+    }
+    if ($error) {
+        my $msg = "Error adding the API key: $error";
+        $self->app->log->debug($msg);
+        $self->flash(error => $msg);
+    }
     $self->redirect_to(action => 'index');
 }
 
