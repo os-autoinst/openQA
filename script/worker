@@ -39,6 +39,14 @@ specify dispatcher/scheduler host to connect to
 
 specify instance number, ie pool directory to use
 
+=item B<--key> <value>
+
+specify the public key needed for API authentication
+
+=item B<--secret> <value>
+
+specify the secret key needed for API authentication
+
 =item B<--isotovideo> PATH
 
 path to isotovideo script, useful for running from git
@@ -60,6 +68,21 @@ print help
 =head1 DESCRIPTION
 
 lorem ipsum ...
+
+=head1 CONFIG FILE
+
+L<OpenQA::API::V1::Client> tries to find a config file in
+$OPENQA_CLIENT_CONFIG, ~/.config/openqa/client.conf or
+/etc/openqa/client.conf and reads whatever comes first.
+You can put key and secret in that config file.
+
+Example:
+  [openqa.example.com]
+  key = foo
+  secret = bar
+
+=head1 SEE ALSO
+L<OpenQA::API::V1::Client>
 
 =cut
 
