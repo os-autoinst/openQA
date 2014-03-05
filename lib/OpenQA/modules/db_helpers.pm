@@ -16,6 +16,11 @@
 
 package db_helpers;
 
+use Mojo::Base 'Exporter';
+our @EXPORT_OK = qw/create_auto_timestamps rndstr rndhex rndstrU rndhexU/;
+
+use Carp;
+
 sub _create_timestamp_trigger
 {
     my $schema = shift;
@@ -64,4 +69,26 @@ sub rndhex
     rndstr(shift, ['A'..'F', '0'..'9']);
 }
 
+sub _rb
+{
+    my ($fd, $max) = @_;
+    my $b;
+    read($fd, $b, 1) || croak "can't read random byte: $!";
+    return int($max * ord($b)/256.0);
+}
+
+sub rndstrU
+{
+    my $length = shift || 16;
+    my $chars = shift || ['a'..'z', 'A'..'Z', '0'..'9', '_'];
+    open (my $fd,  '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
+    my $str = join('', map { $chars->[_rb($fd, scalar @$chars)] } 1 .. $length);
+    close $fd;
+    return $str;
+}
+
+sub rndhexU
+{
+    rndstrU(shift, ['A'..'F', '0'..'9']);
+}
 1;

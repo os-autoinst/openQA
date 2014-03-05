@@ -49,7 +49,7 @@ sub sqlt_deploy_hook {
 sub new {
     my ( $class, $attrs ) = @_;
 
-    $attrs->{secret} = db_helpers::rndhex(32) unless $attrs->{secret};
+    $attrs->{secret} = db_helpers::rndhexU(32) unless $attrs->{secret};
 
     my $new = $class->next::method($attrs);
     return $new;
