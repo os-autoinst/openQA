@@ -63,6 +63,10 @@ sub login {
         # ...and sign the cookie again with the new value
         $value = b64_encode(j($value), '');
         $value =~ y/=/-/;
+        # make login cookie only valid for https
+        # XXX_: we can't do this because the test server runs on
+        # http so the Mojo useragent doesn't use the cookie
+        #$cookie->secure(1);
         $cookie->value("$value--".hmac_sha1_sum($value, $secret));
     }
 
