@@ -54,8 +54,9 @@ sub _read_config {
 
   for my $section (sort keys %defaults) {
     for my $k (sort keys %{$defaults{$section}}) {
-      my $v = $cfg && $cfg->val($section, $k) || $defaults{$section}->{$k};
-      $self->app->config->{$section}->{$k} = $v if $v;
+      my $v = $cfg && $cfg->val($section, $k);
+      $v = $defaults{$section}->{$k} unless defined $v;
+      $self->app->config->{$section}->{$k} = $v if defined $v;
     }
   }
   $self->app->config->{_openid_secret} = $self->rndstr(16);
