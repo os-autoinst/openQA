@@ -131,6 +131,15 @@ sub startup {
   $self->plugin('OpenQA::CSRF');
   $self->plugin('OpenQA::REST');
 
+  # set secure flag on cookies of https connections
+  $self->app->hook(before_dispatch => sub {
+      my $c = shift;
+      #$c->app->log->debug(sprintf "this connection is %ssecure", $c->req->is_secure?'':'NOT ');
+      if ($c->req->is_secure) {
+	$c->app->sessions->secure(1);
+      }
+    });
+
   $self->_read_config;
 
   if ($self->config->{'logging'}->{'file'}) {
