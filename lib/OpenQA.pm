@@ -32,6 +32,7 @@ sub _read_config {
       allowed_hosts => undef,
       suse_mirror => undef,
       scm => 'git',
+      hsts => 365,
     },
     'scm git' => {
       do_push => 'no',
@@ -137,6 +138,9 @@ sub startup {
       #$c->app->log->debug(sprintf "this connection is %ssecure", $c->req->is_secure?'':'NOT ');
       if ($c->req->is_secure) {
 	$c->app->sessions->secure(1);
+      }
+      if (my $days = $c->app->config->{global}->{hsts}) {
+	$c->res->headers->header('Strict-Transport-Security', sprintf 'max-age=%d; includeSubDomains', $days*24*60*60);
       }
     });
 

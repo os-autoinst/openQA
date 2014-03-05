@@ -31,6 +31,7 @@ delete $cfg->{_openid_secret};
 is_deeply($cfg, {
         global => {
             scm => 'git',
+            hsts => '365',
         },
         'scm git' => {
             do_push => 'no',
