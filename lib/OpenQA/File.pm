@@ -30,7 +30,7 @@ sub needle {
   my $version = $self->param('version') || '';
   if ($self->stash('format') eq 'json') {
     my $fullname = openqa::needle_info($name, $distri, $version)->{'json'};
-    $self->render_static($fullname);
+    $self->_serve_file($fullname);
   } else {
     my $info = openqa::needle_info($name, $distri, $version);
     $self->_serve_file($info->{'image'});
@@ -117,6 +117,7 @@ sub _serve_file {
   }
 
   $self->app->log->debug("serve static");
+  $res->headers->content_type($self->app->types->type($self->stash('format')));
   $res->content->asset(Mojo::Asset::File->new(path => $fullname));
   return !!$self->rendered;
 }
