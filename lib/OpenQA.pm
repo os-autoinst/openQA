@@ -18,6 +18,8 @@ package OpenQA;
 use Mojo::Base 'Mojolicious';
 use openqa 'connect_db';
 use OpenQA::Helpers;
+use Scheduler;
+use Mojo::IOLoop;
 
 use Config::IniFiles;
 
@@ -55,6 +57,47 @@ sub _read_config {
     }
   }
   $self->app->config->{_openid_secret} = $self->rndstr(16);
+}
+
+# check if have worker died
+sub _workers_checker {
+    my $self = shift;
+
+    # Start recurring timer, check workers alive every 20 mins
+    my $id = Mojo::IOLoop->recurring(1200 => sub {
+	my @workers_time;
+
+	my $workers_ref = Scheduler::list_workers();
+	my $workers_count = scalar @$workers_ref;
+
+	for my $workerid (1..$workers_count-1) {
+	    my $worker = Scheduler::worker_get($workerid);
+	    my $last_tupdated = $worker->{t_updated};
+	    $workers_time[$workerid] = $last_tupdated;
+	}
+
+	for my $workerid (1..$workers_count-1) {
+	    Mojo::IOLoop->timer(10 => sub {
+		# check the t_updated again after 10 seconds
+		my $worker = Scheduler::worker_get($workerid);
+		my $cur_tupdated = $worker->{t_updated};
+
+		# if t_updated didn't updated then assumed worker is died
+		if($cur_tupdated eq $workers_time[$workerid]) {
+		    print STDERR "found died worker $workerid\n";
+		    my $job = Scheduler::job_get_by_workerid($workerid);
+		    if($job) {
+			Scheduler::job_cancel($job->{id});
+			print STDERR "cancelled job $job->{id}\n";
+		    } else {
+			print STDERR "no jobs running on died worker $workerid\n";
+		    }
+		    # TODO: should rescheduled the cancelled job to avoid
+		    # if job cancel failed
+		}
+	    });
+	}
+    });
 }
 
 has schema => sub {
@@ -194,6 +237,8 @@ sub startup {
   # json-rpc methods not migrated to this api: echo, list_commands
   ### JSON API ends here
 
+  # start workers checker
+  $self->_workers_checker;
 }
 
 1;

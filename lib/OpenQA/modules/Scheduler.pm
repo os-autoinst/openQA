@@ -37,8 +37,8 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
 @EXPORT = qw(worker_register worker_get list_workers job_create
-    job_get list_jobs job_grab job_set_scheduled job_set_done
-    job_set_cancel job_set_waiting job_set_running job_set_prio
+    job_get job_get_by_workerid list_jobs job_grab job_set_done
+    job_set_waiting job_set_running job_set_prio
     job_delete job_update_result job_restart job_cancel command_enqueue
     command_get list_commands command_dequeue iso_cancel_old_builds
     job_set_stop job_stop iso_stop_old_builds
@@ -211,6 +211,12 @@ sub job_get($) {
 	return _job_get({ id => $value });
     }
     return _job_get({slug => $value });
+}
+
+sub job_get_by_workerid($) {
+    my $workerid = shift;
+
+    return _job_get({worker_id => $workerid });
 }
 
 # XXX TODO: Do not expand the Job
