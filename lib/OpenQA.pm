@@ -20,6 +20,7 @@ use openqa 'connect_db';
 use OpenQA::Helpers;
 use Scheduler;
 use Mojo::IOLoop;
+use DateTime;
 
 use Config::IniFiles;
 
@@ -62,44 +63,43 @@ sub _read_config {
   $self->app->config->{_openid_secret} = $self->rndstr(16);
 }
 
-# check if have worker died
+# check if have worker dead
 sub _workers_checker {
     my $self = shift;
 
     # Start recurring timer, check workers alive every 20 mins
     my $id = Mojo::IOLoop->recurring(1200 => sub {
-	my @workers_time;
-
 	my $workers_ref = Scheduler::list_workers();
 	my $workers_count = scalar @$workers_ref;
 
-	for my $workerid (1..$workers_count-1) {
-	    my $worker = Scheduler::worker_get($workerid);
-	    my $last_tupdated = $worker->{t_updated};
-	    $workers_time[$workerid] = $last_tupdated;
-	}
+	my $dt = DateTime->now(time_zone=>'UTC');
+	my $threshold = join ' ',$dt->ymd, $dt->hms;
 
-	for my $workerid (1..$workers_count-1) {
-	    Mojo::IOLoop->timer(10 => sub {
+	Mojo::IOLoop->timer(10 => sub {
+	    for my $workerid (1..$workers_count-1) {
 		# check the t_updated again after 10 seconds
 		my $worker = Scheduler::worker_get($workerid);
-		my $cur_tupdated = $worker->{t_updated};
 
-		# if t_updated didn't updated then assumed worker is died
-		if($cur_tupdated eq $workers_time[$workerid]) {
-		    print STDERR "found died worker $workerid\n";
+		# if t_updated didn't updated then assumed worker is dead
+		unless($worker->{t_updated} gt $threshold) {
+		    print STDERR "found dead worker $workerid\n";
 		    my $job = Scheduler::job_get_by_workerid($workerid);
 		    if($job) {
-			Scheduler::job_cancel($job->{id});
-			print STDERR "cancelled job $job->{id}\n";
+			my %args = (
+			    jobid => $job->{id},
+			    result => 'incomplete',
+			);
+			my $result = Scheduler::job_set_done(%args);
+			if($result) {
+			    Scheduler::job_duplicate(jobid => $job->{id});
+			    print STDERR "cancelled job $job->{id}\n";
+			}
 		    } else {
-			print STDERR "no jobs running on died worker $workerid\n";
+			print STDERR "no jobs running on dead worker $workerid\n";
 		    }
-		    # TODO: should rescheduled the cancelled job to avoid
-		    # if job cancel failed
 		}
-	    });
-	}
+	    }
+	});
     });
 }
 
