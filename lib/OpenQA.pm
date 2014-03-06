@@ -97,16 +97,12 @@ has schema => sub {
     return connect_db();
 };
 
-# This method will run once at server start
-sub startup {
+has secrets => sub {
   my $self = shift;
-
-  # Set some application defaults
-  $self->defaults( appname => 'openQA' );
-
-  unshift @{$self->app->renderer->paths}, '/etc/openqa/templates';
-
   # read application secret from database
+  # we cannot use our own schema here as we must not actually
+  # initialize the db connection here. Would break for prefork.
+  $self->app->log->debug('<<< init secrets >>>');
   my @secrets = $self->schema->resultset('Secrets')->all();
   if (!@secrets) {
     # create one if it doesn't exist
@@ -115,8 +111,19 @@ sub startup {
     @secrets = $self->schema->resultset('Secrets')->all();
   }
   die "couldn't create secrets\n" unless @secrets;
-  $self->app->secrets([ map { $_->secret } @secrets ]);
-  $self->app->log->debug('secrets', @{$self->app->secrets});
+  my $ret = [ map { $_->secret } @secrets ];
+  $self->app->log->debug('secrets', @$ret);
+  return $ret;
+};
+
+# This method will run once at server start
+sub startup {
+  my $self = shift;
+
+  # Set some application defaults
+  $self->defaults( appname => 'openQA' );
+
+  unshift @{$self->app->renderer->paths}, '/etc/openqa/templates';
 
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer');
