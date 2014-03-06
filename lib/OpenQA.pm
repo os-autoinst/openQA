@@ -45,7 +45,11 @@ sub _read_config {
     openid => {
       provider => 'https://www.opensuse.org/openid/user/',
       httpsonly => '1',
-    }
+    },
+    hypnotoad => {
+      listen => ['http://localhost:9526/'],
+      proxy => 1,
+    },
   );
 
   # Mojo's built in config plugins suck. JSON for example does not

@@ -41,7 +41,11 @@ is_deeply($cfg, {
         openid => {
             provider => 'https://www.opensuse.org/openid/user/',
             httpsonly => '1',
-        }
+        },
+        hypnotoad => {
+            listen => ['http://localhost:9526/'],
+            proxy => 1,
+        },
     });
 
 $ENV{OPENQA_CONFIG} = 't/testcfg.ini';
