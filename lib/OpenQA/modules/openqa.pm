@@ -492,11 +492,12 @@ sub sanitize_testname($)
 
 sub connect_db
 {
+    my $file = shift || $dbfile;
     use Schema::Schema;
     CORE::state $schema;
     unless ($schema) {
         $schema = Schema->connect({
-                dsn => "dbi:SQLite:dbname=$dbfile",
+                dsn => "dbi:SQLite:dbname=$file",
                 on_connect_call => "use_foreign_keys",
             }) or die "can't conncect db: $!\n";
     }

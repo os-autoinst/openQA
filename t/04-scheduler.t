@@ -23,12 +23,11 @@ BEGIN {
 use strict;
 use Data::Dump qw/pp dd/;
 use Scheduler;
-use openqa;
 use OpenQA::Test::Database;
 
 use Test::More tests => 40;
 
-OpenQA::Test::Database->new->create(file => $ENV{OPENQA_DB}, skip_fixtures => 1);
+OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
 my $result;
 

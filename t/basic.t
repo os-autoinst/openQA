@@ -20,6 +20,9 @@ use Mojo::Base -strict;
 
 use Test::More;
 use Test::Mojo;
+use OpenQA::Test::Database;
+
+OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
 my $t = Test::Mojo->new('OpenQA');
 $t->get_ok('/')->status_is(200)->content_like(qr/Test result overview/i);

@@ -27,7 +27,7 @@ sub create {
   unlink $openqa::dbfile if -e $openqa::dbfile;
 
   # New db
-  my $schema = openqa::connect_db();
+  my $schema = openqa::connect_db(':memory:');
   $schema->deploy({quote_table_names => 1, quote_field_names => 1});
 
   # Fixtures
