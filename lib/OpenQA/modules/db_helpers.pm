@@ -89,6 +89,12 @@ sub rndstrU
 
 sub rndhexU
 {
-    rndstrU(shift, ['A'..'F', '0'..'9']);
+    my $length = shift || 16;
+    my $toread = $length/2+$length%2;
+    open (my $fd,  '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
+    read($fd, my $bytes, $toread) || croak "can't read random byte: $!";
+    close $fd;
+    return uc substr(unpack('H*', $bytes), 0, $length);
 }
+
 1;
