@@ -140,6 +140,12 @@ sub edit {
     }
     # Second position: the only needle (with the same matches)
     my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'}, $results->{'version'}||'');
+
+    $self->app->log->error(sprintf("Could not find needle: %s for %s %s",
+                                   $module_detail->{'needle'},
+                                   $results->{'distribution'},
+                                   $results->{'version'})) if !defined $needle;
+
     push(@$needles, {'name' => $module_detail->{'needle'},
         'imageurl' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png',
                         $results->{'version'}),
