@@ -37,7 +37,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
 @EXPORT = qw(worker_register worker_get list_workers job_create
-    job_get job_get_by_workerid list_jobs job_grab job_set_done
+    job_get jobs_get_dead_worker list_jobs job_grab job_set_done
     job_set_waiting job_set_running job_set_prio
     job_delete job_update_result job_restart job_cancel command_enqueue
     command_get list_commands command_dequeue iso_cancel_old_builds
@@ -213,10 +213,24 @@ sub job_get($) {
     return _job_get({slug => $value });
 }
 
-sub job_get_by_workerid($) {
-    my $workerid = shift;
+sub jobs_get_dead_worker {
+    my $threshold = shift;
 
-    return _job_get({worker_id => $workerid });
+    my %cond = (
+	'state_id' => 1,
+	'worker.t_updated' => { '<' => $threshold},
+    );
+    my %attrs = (join => 'worker',);
+
+    my $dead_jobs = $schema->resultset("Jobs")->search(\%cond, \%attrs);
+
+    my @results = ();
+    while( my $job = $dead_jobs->next) {
+	my $j = _hashref($job, qw/ id state_id result_id worker_id/);
+	push @results, $j;
+    }
+
+    return \@results;
 }
 
 # XXX TODO: Do not expand the Job

@@ -63,40 +63,26 @@ sub _read_config {
   $self->app->config->{_openid_secret} = $self->rndstr(16);
 }
 
-# check if have worker dead
+# check if have worker dead then clean up its job
 sub _workers_checker {
     my $self = shift;
 
     # Start recurring timer, check workers alive every 20 mins
     my $id = Mojo::IOLoop->recurring(1200 => sub {
-	my $workers_ref = Scheduler::list_workers();
-	my $workers_count = scalar @$workers_ref;
-
 	my $dt = DateTime->now(time_zone=>'UTC');
 	my $threshold = join ' ',$dt->ymd, $dt->hms;
 
 	Mojo::IOLoop->timer(10 => sub {
-	    for my $workerid (1..$workers_count-1) {
-		# check the t_updated again after 10 seconds
-		my $worker = Scheduler::worker_get($workerid);
-
-		# if t_updated didn't updated then assumed worker is dead
-		unless($worker->{t_updated} gt $threshold) {
-		    print STDERR "found dead worker $workerid\n";
-		    my $job = Scheduler::job_get_by_workerid($workerid);
-		    if($job) {
-			my %args = (
-			    jobid => $job->{id},
-			    result => 'incomplete',
-			);
-			my $result = Scheduler::job_set_done(%args);
-			if($result) {
-			    Scheduler::job_duplicate(jobid => $job->{id});
-			    print STDERR "cancelled job $job->{id}\n";
-			}
-		    } else {
-			print STDERR "no jobs running on dead worker $workerid\n";
-		    }
+	    my $dead_jobs = Scheduler::jobs_get_dead_worker($threshold);
+	    foreach my $job (@$dead_jobs) {
+		my %args = (
+		    jobid => $job->{id},
+		    result => 'incomplete',
+		);
+		my $result = Scheduler::job_set_done(%args);
+		if($result) {
+		    Scheduler::job_duplicate(jobid => $job->{id});
+		    print STDERR "cancelled dead job $job->{id} and re-duplicated done\n";
 		}
 	    }
 	});
