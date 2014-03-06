@@ -1,9 +1,0 @@
-#!/bin/sh
-# wait until factory repo has a new build number
-# for use when nothing else need testing
-# but we want to start testing again later
-
-cp -a factory/repo/oss/media.1/build /tmp/old-factory-build
-while make reposync && diff factory/repo/oss/media.1/build /tmp/old-factory-build ; do
-	sleep 10m
-done
