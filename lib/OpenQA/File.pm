@@ -81,6 +81,27 @@ sub test_diskimage {
   $self->_serve_file($imgpath)
 }
 
+sub isoimage {
+  my $self = shift;
+  my $name = $self->param('filename');
+  my $job = Scheduler::job_get($self->param('testid'));
+
+  my $filename = $job ? $job->{'settings'}->{'ISO'} : $name;
+  return $self->render_not_found if !$filename;
+
+  my $iso_file = $openqa::isodir.'/'.$filename;
+
+  if (!-f $iso_file) {
+    $self->app->log->warn("Could not find $iso_file");
+    return $self->render_not_found;
+  }
+
+  # TODO: gzip compression
+  #print header(-charset=>"UTF-8", -type=>"application/x-gzip", -attachment => $testname.'_'.$diskimg.'.gz', -expires=>'+24h', -max_age=>'86400', -Last_Modified=>awstandard::HTTPdate($mtime));
+  #$self->res->headers->content_disposition("attachment; filename=$name;");
+  $self->_serve_file($iso_file);
+}
+
 # serve file specified with absolute path name. No sanity checks
 # done here. Take care!
 sub _serve_file {

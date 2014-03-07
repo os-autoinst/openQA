@@ -31,6 +31,7 @@
 			<% for my $resultfile (@$resultfiles) { %>
 			<a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $resultfile) %>"><%= $resultfile %></a><br />
 			<% } %>
+                        <a href="<%= url_for('isoimage', 'filename' => $iso) %>">Download ISO</a>
 		</div>
 	</div>
 	<% } %>

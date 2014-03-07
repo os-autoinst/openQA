@@ -116,6 +116,7 @@ sub show {
   $self->stash(testname => $job->{'name'});
   $self->stash(resultdir => $testresultdir);
   $self->stash(fqfn => $self->stash('resultdir')."/autoinst-log.txt");
+  $self->stash(iso => $job->{'settings'}->{'ISO'});
 
   # FIXME: inherited from the old webUI, should really really really die
   $self->stash(res_css => $res_css);

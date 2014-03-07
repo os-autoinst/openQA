@@ -202,6 +202,7 @@ sub startup {
   $r->get('/builds/#buildid')->name('build')->to('build#show');
 
   $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
+  $r->get('/iso/#filename')->name('isoimage')->to('file#isoimage');
 
   # Favicon
   $r->get('/favicon.ico' => sub {my $c = shift; $c->render_static('favicon.ico') });
