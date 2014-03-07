@@ -212,6 +212,8 @@ sub job_create {
 sub job_get($) {
     my $value = shift;
 
+    return undef if !defined($value);
+
     if ($value =~ /^\d+$/) {
 	return _job_get({ id => $value });
     }
