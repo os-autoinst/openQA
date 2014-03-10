@@ -64,7 +64,7 @@ sub iso_new : Num
         if ($arg =~ /\.iso$/) {
             # remove any path info path from iso file name
             ($iso = $arg) =~ s|^.*/||;
-        } elsif ($arg =~ /^[[:alnum:]]+$/) {
+        } elsif ($arg =~ /^[[:alnum:]+-]+$/) {
             push @requested_runs, $arg;
         } else {
             die "invalid parameter $arg";
