@@ -50,6 +50,7 @@
   /usr/bin/uname rix,
   /usr/lib/os-autoinst/tools/absolutize rix,
   /usr/lib/os-autoinst/tools/isotovideo rix,
+  /usr/share/openqa/lib/OpenQA/API/V1/Client.pm r,
   /usr/share/openqa/script/worker r,
   /usr/share/qemu/* r,
   /usr/share/qemu/keymaps/* r,
