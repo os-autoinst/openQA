@@ -30,6 +30,7 @@ sub _read_config {
   my %defaults = (
     global => {
       base_url => undef,
+      branding => "plain",
       allowed_hosts => undef,
       suse_mirror => undef,
       scm => 'git',
