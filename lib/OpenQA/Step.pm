@@ -227,21 +227,17 @@ sub src {
   my $self = shift;
   return 0 unless $self->init();
 
-  my $job = Scheduler::job_get($self->param('testid'));
-  my $testdirname = $job->{'settings'}->{'NAME'};
-  my $moduleid = $self->param('moduleid');
-  my $running = $self->stash('modinfo')->{'running'};
+  my $results = $self->stash('results');
+  my $module = $self->stash('module');
 
-  my $fqfn = testresultdir("$testdirname/autoinst-log.txt");
-  $fqfn = running_log($testdirname).'/autoinst-log.txt' if (($running||'') ne "" && -e running_log($testdirname).'/autoinst-log.txt');
-  my $scriptpath=log_to_scriptpath($fqfn, $moduleid);
+  my $testcasedir = testcasedir($results->{distribution}, $results->{version});
+  my $scriptpath = "$testcasedir/$module->{'script'}";
   if(!$scriptpath || !-e $scriptpath) {
     $scriptpath||="";
     return $self->render_not_found;
   }
 
   my $script=file_content($scriptpath);
-  $scriptpath=~s/^.*autoinst\///;
 
   $self->stash('script', $script);
   $self->stash('scriptpath', $scriptpath);
