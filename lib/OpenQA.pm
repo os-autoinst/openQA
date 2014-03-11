@@ -30,7 +30,7 @@ sub _read_config {
   my %defaults = (
     global => {
       base_url => undef,
-      branding => "plain",
+      branding => "openSUSE",
       allowed_hosts => undef,
       suse_mirror => undef,
       scm => 'git',

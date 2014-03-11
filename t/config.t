@@ -30,6 +30,7 @@ delete $cfg->{_openid_secret};
 
 is_deeply($cfg, {
         global => {
+            branding => "openSUSE",
             scm => 'git',
             hsts => '365',
         },
