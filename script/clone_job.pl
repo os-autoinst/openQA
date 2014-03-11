@@ -60,6 +60,7 @@ use Data::Dump;
 use Getopt::Long;
 use LWP::UserAgent;
 Getopt::Long::Configure("no_ignore_case");
+use Mojo::URL;
 
 my $clientclass;
 for my $i (qw/JSON::RPC::Legacy::Client JSON::RPC::Client/) {
@@ -67,6 +68,10 @@ for my $i (qw/JSON::RPC::Legacy::Client JSON::RPC::Client/) {
 	$clientclass = $i unless $@;
 }
 die $@ unless $clientclass;
+
+use FindBin;
+use lib "$FindBin::Bin/../lib";
+use OpenQA::API::V1::Client;
 
 my %options;
 
@@ -82,6 +87,7 @@ GetOptions(
 	\%options,
 	"from=s",
 	"host=s",
+	"hostv3",
 	"dir=s",
 	"verbose|v",
 	"help|h",
@@ -107,15 +113,29 @@ sub fixup_url($)
 
 $options{'host'} ||= 'localhost';
 
-my $local = new $clientclass;
+my $local;
+my $local_url;
+if ($options{hostv3}) {
+	if ($options{'host'} !~ '/') {
+		$local_url = Mojo::URL->new();
+		$local_url->host($options{'host'});
+		$local_url->scheme('http');
+	} else {
+		$local_url = Mojo::URL->new($options{'host'});
+	}
+	$local_url->path('/api/v1/jobs');
+	$local = OpenQA::API::V1::Client->new(api => $local_url->host);
+
+} else {
+	$local = new $clientclass;
+	$local->prepare(fixup_url($options{'host'}), [qw/job_create/]) or die "$!\n";
+}
 my $remote = new $clientclass;
 
-$options{'host'} = fixup_url($options{'host'});
 $options{'from'} = fixup_url($options{'from'});
 
-$local->prepare($options{'host'}, [qw/job_create/]) or die "$!\n";
 $remote->prepare($options{'from'}, [qw/job_get/]) or die "$!\n";
-while (my $name = shift @ARGV) {
+if (my $name = shift @ARGV) {
 	my $job = $remote->job_get($name);
 	dd $job if $options{verbose};
 	my $dst = $job->{settings}->{ISO};
@@ -130,8 +150,29 @@ while (my $name = shift @ARGV) {
 		print STDERR "$name failed: ",$r->status_line, "\n"; 
 		next;
 	}
-	my @settings = map { sprintf("%s=%s", $_, $job->{settings}->{$_}) } sort keys %{$job->{settings}};
-	$r = $local->job_create(@settings);
+	if ($options{hostv3}) {
+		warn "here";
+		my $url = $local_url->clone;
+		my @settings = %{$job->{settings}};
+		for my $arg (@ARGV) {
+			if ($arg =~ /([A-Z0-9]+)=([[:alnum:]+_-]+)/) {
+				push @settings, $1, $2;
+			} else {
+				warn "arg $arg doesnt match";
+			}
+		}
+		$url->query(@settings);
+		my $tx = $local->post($url);
+		if ($tx->success) {
+			$r = $tx->success->json->{id};
+		} else {
+			warn "failed to create job ", $tx->error;
+			exit(1);
+		}
+	} else {
+		my @settings = map { sprintf("%s=%s", $_, $job->{settings}->{$_}) } sort keys %{$job->{settings}};
+		$r = $local->job_create(@settings);
+	}
 	print "Created job #$r\n";
 }
 
