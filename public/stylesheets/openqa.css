@@ -262,12 +262,10 @@ a.pauseplay.play {
 .omega img{}
 
 .omega h3{ padding-top: 2em}
-.omega li{list-style: none; }
 
-.omega li b a{margin: 1.7em 0em; }
-.omega li b a:link,.omega li b a:visited{background-color: #555; display: block; width: 60%; padding: 1.7em 0em; text-align:center; color: #fff; font-size: 1.33em; border-radius: .41em; box-shadow: inset 0px -2em 5px #333, 0px 2px 3px rgba(0,0,0,0.4); text-shadow: 0px -1px 0px #000; text-transform: uppercase; letter-spacing: 1px }
+.big-button a:link, .big-button a:visited{background-color: #555; margin: 2em; padding: 1.7em 0em; text-align:center; color: #fff; font-size: 1.33em; border-radius: .41em; box-shadow: inset 0px -2em 5px #333, 0px 2px 3px rgba(0,0,0,0.4); text-shadow: 0px -1px 0px #000; text-transform: uppercase; letter-spacing: 1px; font-weight: bold }
 
-.omega li b a:hover,.omega li b a:focus{background-color:#ccc; color: #222;  box-shadow: inset 0px 2em 5px #eee, 0px 2px 3px rgba(0,0,0,0.4); text-decoration: none !important; text-shadow: 0px 1px 0px #fff}
+.big-button a:hover,.big-button a:focus{background-color:#ccc; color: #222;  box-shadow: inset 0px 2em 5px #eee, 0px 2px 3px rgba(0,0,0,0.4); text-decoration: none !important; text-shadow: 0px 1px 0px #fff}
 
 /* tooltips */
 
@@ -282,7 +280,7 @@ a.pauseplay.play {
   opacity: 0.9;
 }
 .tooltip:hover span.box {
-  /*border-radius: 5px 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px; 
+  /*border-radius: 5px 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
   box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1); -webkit-box-shadow: 5px 5px rgba(0, 0, 0, 0.1); -moz-box-shadow: 5px 5px rgba(0, 0, 0, 0.1);
   font-family: Calibri, Tahoma, Geneva, sans-serif;*/
   position: absolute;
