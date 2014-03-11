@@ -12,9 +12,9 @@ for i in backlog factory/iso logs perl pool testresults logupload \
 	mkdir -p "$DESTDIR"/var/lib/openqa/$i
 done
 for i in script; do
-	ln -s /usr/share/openqa/$i "$DESTDIR"/var/lib/openqa/$i
+	ln -sfn /usr/share/openqa/$i "$DESTDIR"/var/lib/openqa/$i
 done
-ln -s /usr/lib/os-autoinst "$DESTDIR"/var/lib/openqa/perl/autoinst
+ln -sfn /usr/lib/os-autoinst "$DESTDIR"/var/lib/openqa/perl/autoinst
 #
 install -d -m 755 "$DESTDIR"/etc/apache2/{conf.d,vhosts.d}
 install -m 644 etc/apache2/conf.d/openqa.conf "$DESTDIR"/etc/apache2/conf.d
