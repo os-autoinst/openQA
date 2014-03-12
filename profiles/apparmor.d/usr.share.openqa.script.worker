@@ -26,6 +26,7 @@
   /dev/kvm rw,
   /dev/tty rw,
   /etc/qemu/* r,
+  /etc/openqa/client.conf r,
   /proc/*/stat r,
   /proc/filesystems r,
   /proc/meminfo r,

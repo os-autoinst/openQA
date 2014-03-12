@@ -19,6 +19,8 @@ install:
 	for i in openqa-common.inc openqa.conf.template openqa-ssl.conf.template; do \
 		install -m 644 etc/apache2/vhosts.d/$$i "$(DESTDIR)"/etc/apache2/vhosts.d ;\
 	done
+
+	install -D -m 640 etc/openqa/client.conf "$(DESTDIR)"/etc/openqa/client.conf
 #
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/{system,system-generators}
 	install -m 644 systemd/openqa-worker@.service "$(DESTDIR)"/usr/lib/systemd/system
