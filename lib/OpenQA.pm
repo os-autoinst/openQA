@@ -193,11 +193,11 @@ sub startup {
   $test_r->get('/diskimages/:imageid')->name('diskimage')->to('file#test_diskimage');
 
   my $asset_r = $test_r->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/)->to(controller => 'step');
-  my $asset_auth = $auth->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/);
+  my $asset_auth = $test_auth->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/);
   $asset_r->get('/view')->to(action => 'view');
   $asset_r->get('/edit')->name('edit_step')->to(action => 'edit');
   $asset_r->get('/src')->name('src_step')->to(action => 'src');
-  $asset_auth->post('/')->name('save_needle')->to(action => 'step#save_needle');
+  $asset_auth->post('/')->name('save_needle')->to('step#save_needle');
   $asset_r->get('/')->name('step')->to(action => 'view');
 
   $r->get('/builds/#buildid')->name('build')->to('build#show');
