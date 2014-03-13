@@ -19,6 +19,7 @@
 
   /etc/ImageMagick-6/* r,
   /proc/meminfo r,
+  /tmp/mojo.tmp rw,
   /usr/bin/optipng rix,
   /usr/bin/perl ix,
   /usr/lib/git/git rix,
