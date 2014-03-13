@@ -25,12 +25,13 @@
 	<div class="big-button prefix_2 alpha omega"><a class="grid_12" href="/tests/">test result overview</a></div>
 	<div class="clear"> </div>
   </div>
+  <div class="box box-shadow">
+    <h2 class="box-header">Usage statistics</h2>
+    <p>Not implemented yet</p>
+  </div>
 </div>
 
 <div class="grid_6 omega">
-  <div class="box box-shadow centered">
-    <a href="/results/"><img src="/images/factory-tested.png" alt="factory-tested logo"/></a>
-  </div>
 % if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
   <div class="box box-shadow centered">
     <h2 class="box-header">Sponsor</h2>
@@ -40,4 +41,12 @@
     </p>
   </div>
 % }
+  <div class="box box-shadow centered">
+    <h2 class="box-header">Latest news</h2>
+    <p>Not implemented yet</p>
+  </div>
+  <div class="box box-shadow centered">
+    <h2 class="box-header">Recent test runs</h2>
+    <p>Not implemented yet</p>
+  </div>
 </div>
