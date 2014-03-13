@@ -26,7 +26,7 @@
         <th class="table-sortable:alphanumeric table-filterable">arch</th>
         <th class="table-sortable:alphanumeric table-filterable">build</th>
         <th class="table-sortable:alphanumeric table-filterable">extra</th>
-        <th class="table-sortable:date">testtime</th>
+        <th class="table-sortable:alphanumeric">testtime</th>
         <th class="table-sortable:numeric">OK</th>
         <th class="table-sortable:numeric">unk</th>
         <th class="table-sortable:numeric">fail</th>
