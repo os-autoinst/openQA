@@ -26,12 +26,6 @@
     %= javascript '/javascripts/keyevent.js'
     %= javascript '/javascripts/needlediff.js'
     %= javascript '/javascripts/running.js'
-% if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
-    <script type="text/javascript" src="https://static.opensuse.org/stage/themes/bento/js/jquery.js"></script>
-    <script type="text/javascript" src="https://static.opensuse.org/stage/themes/bento/js/script.js"></script>
-    <script type="text/javascript" src="https://static.opensuse.org/themes/bento/js/l10n/global-navigation-data-en.js"></script>
-    <script type="text/javascript" src="https://static.opensuse.org/themes/bento/js/global-navigation.js"></script>
-% }
   </head>
   <body>
     <div id="header">
