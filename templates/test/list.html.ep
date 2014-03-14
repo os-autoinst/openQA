@@ -1,7 +1,7 @@
 % layout 'default';
 % title 'Test results';
 
-<div class="grid_16 box box-shadow omega">
+<div class="grid_16 box box-shadow alpha">
 	<h2><%= title %></h2>
 	<p>This page lists <%= $ntest %> automated test from the last <%= $hoursfresh %> hours.</p>
 		%= form_for tests => (method => 'GET') => (class => "cutofftimeform") => (id => "filterform") => begin

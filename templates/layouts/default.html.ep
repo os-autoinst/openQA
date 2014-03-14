@@ -59,9 +59,9 @@
                 % if (is_operator) {
                     % $out = $out.link_to('manage API keys' => url_for('api_keys')).' | ';
                 % }
-                %= b($out.link_to('logout' => url_for('logout') => 'data-method' => 'delete').')');
+                %= b($out.link_to('Logout' => url_for('logout') => 'data-method' => 'delete').')');
             % } else {
-                %= link_to('login' => url_for('login'));
+                %= link_to('Login' => url_for('login'));
             % }
         </div>
     </div>
