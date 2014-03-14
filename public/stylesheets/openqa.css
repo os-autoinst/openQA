@@ -383,3 +383,10 @@ td.info {
 #user-info {
     text-align: right;
 }
+
+/* Code view */
+
+tt, pre {
+	font-family: "monospace", monospace;
+	font-size: 90%;
+}
