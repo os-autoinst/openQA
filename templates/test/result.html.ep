@@ -100,6 +100,33 @@
 		</div>
 	</div>
 	<% } %>
+	<div class="box box-shadow" id="legend_box">
+		<div class="box-header aligncenter">Flag Legend</div>
+		<div style="margin: 0 3px 0 3px;" class="cligncenter">
+			<table style="border: none; margin: 0;" class="infotbl">
+				<tr>
+					<td style="width: 1.5em;" class="info">&#9760;</td>
+					<td title="Testsuite is aborted if this test fails">Fatal</td>
+				</tr>
+				<tr>
+					<td style="width: 1.5em;" class="info">&#9888;</td>
+					<td title="Overall result is failed if this test fails">Important</td>
+				</tr>
+				<tr>
+					<td style="width: 1.5em;" class="info">&#9875;</td>
+					<td title="Snapshot the state after this test for restoring">Milestone</td>
+				</tr>
+				<tr>
+					<td style="width: 1.5em;" class="info">&#9835;</td>
+					<td>Audio Test</td>
+				</tr>
+				<tr>
+					<td style="width: 1.5em;" class="info">&#7425;</td>
+					<td>OCR Test</td>
+				</tr>
+			</table>
+		</div>
+	</div>
 </div>
 
 <div class="grid_14 omega">
@@ -118,17 +145,20 @@
 
 		<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
 			<tr>
-				<th style="width: 200px;" colspan="2">Test</th>
+				<th style="width: 1.5em;">Flags</th>
+				<th style="width: 200px;">Test</th>
 				<th style="width: 150px; padding: 2px 25px;">Result</th>
 				<th colspan="3">References</th>
 			</tr>
 			<!--% cycle(1) %-->
 			<% for my $module (@$modlist) { %>
 			<tr><!-- class="%= cycle() %>"-->
-				<td class="info" style="width: 1em;"><%= $module->{'refimg'}?encoded_string('&#10063;'):'' %>
+				<td class="info" style="width: 1em;">
+				%= ($module->{'flags'}->{'fatal'}||0) ? b('&#9760;') : ''
+				%= ($module->{'flags'}->{'important'}||0) ? b('&#9888;') : ''
+				%= ($module->{'flags'}->{'milestone'}||0) ? b('&#9875;') : ''
 				%= $module->{'audio'} ? b('&#9835;') : ''
 				%= $module->{'ocr'} ? b('&#7425;') : ''
-				%= $module->{'attention'} ? b('&#9888;') : ''
 				</td>
 				<td class="component">
           %= link_to $module->{'name'} => url_for('src_step', stepid => 1, moduleid => $module->{'name'})

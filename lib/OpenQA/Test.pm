@@ -168,8 +168,8 @@ sub show {
         name => $module->{'name'},
         result => $module->{'result'},
         screenshots => \@imglist, wavs => \@wavlist, ocrs => \@ocrlist,
-        attention => (($module->{'flags'}->{'important'}||0) && ($module->{'result'}||'') ne 'ok')?1:0,
-        refimg => 0, audio => $sound, ocr => $ocr
+        flags => $module->{'flags'},
+        audio => $sound, ocr => $ocr
       });
   }
 

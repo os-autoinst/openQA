@@ -363,6 +363,9 @@ table#results th.table-sorted-asc i.sort-arrows {
 	background-position: left top;
 	background-repeat: no-repeat;
 }
+td.info {
+	font-size: 1.5em;
+}
 
 
 /* Live view */
