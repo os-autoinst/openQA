@@ -46,7 +46,7 @@ top level entry points: jobs, workers, isos.
 
 =item client --host openqa.example.com jobs/1
 
-=item client --host openqa.example.com delete jobs/1
+=item client --host openqa.example.com jobs/1 delete
 
 =item client --host openqa.example.com isos post iso=bar.iso tests=blah
 
