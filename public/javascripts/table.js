@@ -903,6 +903,7 @@ var Table = (function(){
 				c.title =c.title || table.AutoSortTitle;
 				addClass(c,table.SortableClassName);
 				c.onclick = Function("","Table.sort(this,{'sorttype':Sort['"+type+"']})");
+				c.innerHTML = '<i class="sort-arrows"></i>&nbsp;' + c.innerHTML;
 				// If we are going to auto sort on a column, we need to keep track of what kind of sort it will be
 				if (args.col!=null) {
 					if (args.col==table.getActualCellIndex(c)) {
@@ -971,7 +972,7 @@ var Table = (function(){
 							sel += '<option value="'+colValues[i]+'">'+colValues[i]+'</option>';
 						}
 						sel += '</select>';
-						cell.innerHTML += "<br>"+sel;
+						cell.innerHTML += " "+sel;
 					}
 				}
 			}

@@ -343,19 +343,22 @@ table#results select.table-autofilter { font-size: 9px; }
 table#results select.table-autofilter option { font-size: 9px; }
 
 table#results th.table-sortable {
+	cursor: pointer;
+}
+table#results th.table-sortable i.sort-arrows {
 	background-image: url(../images/sortable.png);
 	background-position: left top;
 	background-repeat: no-repeat;
-	cursor: pointer;
-	padding: 0px 0px 0px 7px;
-	text-align: left;
+	display: inline-block;
+	width: 7px;
+	height: 16px;
 }
-table#results th.table-sorted-desc {
+table#results th.table-sorted-desc i.sort-arrows {
 	background-image: url(../images/sorted-down.png);
 	background-position: left top;
 	background-repeat: no-repeat;
 }
-table#results th.table-sorted-asc {
+table#results th.table-sorted-asc i.sort-arrows {
 	background-image: url(../images/sorted-up.png);
 	background-position: left top;
 	background-repeat: no-repeat;
