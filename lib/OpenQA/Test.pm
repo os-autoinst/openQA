@@ -26,7 +26,7 @@ sub list {
   my $match;
   if(defined($self->param('match'))) {
     $match = $self->param('match');
-	  $match =~ s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g; # sanitize
+    $match =~ s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g; # sanitize
   }
 
   my $defaulthoursfresh=4*24;
