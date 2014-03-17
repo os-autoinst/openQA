@@ -89,7 +89,7 @@ my %settings = (
 my $job_ref = {
     t_finished => undef,
     id => 1,
-    name => 'Unicorn-42-Build666-rainbow',
+    name => 'Unicorn-42-pink-Build666-rainbow',
     priority => 40,
     result => 'none',
     settings => {
@@ -102,7 +102,7 @@ my $job_ref = {
         ISO => 'whatever.iso',
         ISO_MAXSIZE => 1,
         KVM => "KVM",
-        NAME => '00000001-Unicorn-42-Build666-rainbow',
+        NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
     },
     t_started => undef,
     state => "scheduled",
@@ -129,7 +129,7 @@ my $jobs = [
     {
         t_finished => undef,
         id => 1,
-        name => 'Unicorn-42-Build666-rainbow',
+        name => 'Unicorn-42-pink-Build666-rainbow',
         priority => 40,
         result => 'none',
         t_started => undef,
@@ -193,7 +193,7 @@ is($job->{result}, "incomplete", "result is incomplete");
 
 $job = Scheduler::job_grab(%args);
 isnt($job_id, $job->{id}, "new job grabbed");
-$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-Build666-rainbow',
+$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-Build666-rainbow',
 is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job_id;
 $job_id = $job->{id};
