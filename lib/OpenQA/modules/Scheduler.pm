@@ -129,7 +129,7 @@ sub worker_register {
 }
 
 # param hash:
-# XXX TODO: Remove HashRedInflator
+# XXX TODO: Remove HashRefInflator
 sub worker_get {
     my $workerid = shift;
 
@@ -140,7 +140,7 @@ sub worker_get {
     return $worker;
 }
 
-# XXX TODO: Remove HashRedInflator
+# XXX TODO: Remove HashRefInflator
 sub list_workers {
     my $rs = schema->resultset("Workers");
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
