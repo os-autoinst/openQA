@@ -91,7 +91,7 @@ $options{'apibase'} ||= '/api/v1';
 
 my $path = shift @ARGV;
 # Relative paths are routed to v1
-if ($path !~ s/^\///) {
+if ($path !~ m/^\//) {
     $path = join('/', $options{apibase}, $path);
 }
 
