@@ -18,6 +18,7 @@
 
 
   /etc/ImageMagick-6/* r,
+  /etc/openqa/openqa.ini r,
   /proc/meminfo r,
   /tmp/mojo.tmp rw,
   /usr/bin/optipng rix,
