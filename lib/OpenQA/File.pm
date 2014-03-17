@@ -98,8 +98,10 @@ sub isoimage {
 
   # TODO: gzip compression
   #print header(-charset=>"UTF-8", -type=>"application/x-gzip", -attachment => $testname.'_'.$diskimg.'.gz', -expires=>'+24h', -max_age=>'86400', -Last_Modified=>awstandard::HTTPdate($mtime));
-  #$self->res->headers->content_disposition("attachment; filename=$name;");
-  $self->_serve_file($iso_file);
+
+  return $self->render_file(
+    'filepath' => $iso_file,
+    'format' => 'iso');
 }
 
 # serve file specified with absolute path name. No sanity checks
