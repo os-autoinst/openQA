@@ -173,6 +173,8 @@ sub startup {
   my $test_auth = $auth->route('/tests/#testid');
   $test_r->get('/')->name('test')->to('test#show');
 
+  $r->get('/workers')->name('workers')->to('worker#list');
+
   $test_r->get('/modlist')->name('modlist')->to('running#modlist');
   $test_r->get('/status')->name('status')->to('running#status');
   $test_r->get('/livelog')->name('livelog')->to('running#livelog');

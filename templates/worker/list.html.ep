@@ -1,0 +1,34 @@
+% layout 'default';
+% title 'Workers view';
+
+<div class="grid_16 box box-shadow alpha">
+	<h2><%= title %></h2>
+	<p>This page lists the status of <%= $workers_cnt %> workers.</p>
+	<p />
+	<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
+		<thead>
+		  <tr>
+        <th class="table-sortable:alphanumeric">worker</th>
+        <th class="table-sortable:alphanumeric">host</th>
+        <th class="table-sortable:alphanumeric">instance</th>
+        <th class="table-sortable:alphanumeric table-filterable">backend</th>
+        <th class="table-sortable:alphanumeric">status</th>
+		  </tr>
+		</thead>
+		<tbody>
+    % for my $view (@$wlist) {
+       <tr id="worker_<%= $view->{'workerid'} %>">
+          <td class="worker"><%= $view->{'workerid'} %></td>
+          <td class="host"><%= $view->{'host'} %></td>
+          <td class="instance"><%= $view->{'instance'} %></td>
+          <td class="backend"><%= $view->{'backend'} %></td>
+	  <td class="status">
+	    <% if($view->{'status'} eq 'idle') { %>
+            Idle
+            <% } else { %>
+            Working on job <a href="/tests/<%= $view->{'status'} %>"><%= $view->{'status'} %></a>
+          <% } %>
+	  </td>
+       </tr>
+    % }
+</div>

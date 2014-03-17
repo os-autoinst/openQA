@@ -59,9 +59,12 @@
                 % if (is_operator) {
                     % $out = $out.link_to('manage API keys' => url_for('api_keys')).' | ';
                 % }
+                % $out = $out.link_to('Workers View' => url_for('workers')).' | ';
                 %= b($out.link_to('Logout' => url_for('logout') => 'data-method' => 'delete').')');
             % } else {
-                %= link_to('Login' => url_for('login'));
+                % my $out = '';
+                % $out = $out.link_to('Workers View' => url_for('workers')).' | ';
+                %= b($out.link_to('Login' => url_for('login')));
             % }
         </div>
     </div>
