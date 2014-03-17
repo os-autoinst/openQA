@@ -103,17 +103,14 @@ has secrets => sub {
   # read application secret from database
   # we cannot use our own schema here as we must not actually
   # initialize the db connection here. Would break for prefork.
-  $self->app->log->debug('<<< init secrets >>>');
   my @secrets = $self->schema->resultset('Secrets')->all();
   if (!@secrets) {
     # create one if it doesn't exist
-    $self->app->log->debug('creating secret');
     $self->schema->resultset('Secrets')->create({});
     @secrets = $self->schema->resultset('Secrets')->all();
   }
   die "couldn't create secrets\n" unless @secrets;
   my $ret = [ map { $_->secret } @secrets ];
-  $self->app->log->debug('secrets', @$ret);
   return $ret;
 };
 
