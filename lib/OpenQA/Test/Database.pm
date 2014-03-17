@@ -28,7 +28,7 @@ sub create {
 
   # New db
   my $schema = openqa::connect_db(':memory:');
-  $schema->deploy({quote_table_names => 1, quote_field_names => 1});
+  $schema->deploy();
 
   # Fixtures
   $self->insert_fixtures($schema) unless $options{skip_fixtures};

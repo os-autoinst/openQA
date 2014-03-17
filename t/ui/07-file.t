@@ -59,6 +59,10 @@ $t->get_ok('/tests/99938/file/ulogs/y2logs.tar.bz2')->status_is(404);
 
 $t->get_ok('/tests/99938/logfile/y2logs.tar.bz2')->status_is(200);
 
+$t->get_ok('/iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso')
+    ->status_is(200)
+    ->content_type_is('application/x-download;name="openSUSE-13.1-DVD-x86_64-Build0091-Media.iso"');
+
 #XXX this test assumes the opensuse needles are there
 SKIP: {
 skip "We need to fake tests are needles before running these tests", 7;
