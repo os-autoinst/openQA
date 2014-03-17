@@ -108,7 +108,7 @@ sub name
             build => 'Build%s',
         );
 
-        for my $c (qw/distri version media arch build test/) {
+        for my $c (qw/distri version flavor media arch build test/) {
             next unless $s{$c};
             push @a, sprintf(($formats{$c}||'%s'), $s{$c});
         }
