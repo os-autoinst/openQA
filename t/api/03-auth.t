@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 14;
+use Test::More tests => 18;
 use Test::Mojo;
 use Mojo::URL;
 use OpenQA::Test::Case;
@@ -36,35 +36,38 @@ $t->app($app);
 
 my $ret;
 
-# Access without API key is denied
-$ret = $t->get_ok('/api/v1/workers')->status_is(403);
+# Public access to read workers
+$ret = $t->get_ok('/api/v1/workers')->status_is(200);
+$ret = $t->get_ok('/api/v1/workers/1')->status_is(200);
+# But access without API key is denied for command list
+$ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(403);
 
 # Valid key with no expiration date works
 $t->ua->key('PERCIVALKEY02');
 $t->ua->secret('PERCIVALSECRET02');
-$ret = $t->get_ok('/api/v1/workers')->status_is(200);
+$ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(200);
 
 # But only with the right secret
 $t->ua->secret('PERCIVALNOSECRET');
-$ret = $t->get_ok('/api/v1/workers')->status_is(403);
+$ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(403);
 
 # Keys that are still valid also work
 $t->ua->key('PERCIVALKEY01');
 $t->ua->secret('PERCIVALSECRET01');
-$ret = $t->get_ok('/api/v1/workers')->status_is(200);
+$ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(200);
 
 # But expired ones don't
 $t->ua->key('EXPIREDKEY01');
 $t->ua->secret('WHOCARESAFTERALL');
-$ret = $t->get_ok('/api/v1/workers')->status_is(403);
+$ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(403);
 
 # Of course, non-existent keys fail
 $t->ua->key('INVENTEDKEY01');
-$ret = $t->get_ok('/api/v1/workers')->status_is(403);
+$ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(403);
 
 # Valid keys are rejected if the associated user is not operator
 $t->ua->key('LANCELOTKEY01');
 $t->ua->secret('MANYPEOPLEKNOW');
-$ret = $t->get_ok('/api/v1/workers')->status_is(403);
+$ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(403);
 
 done_testing();

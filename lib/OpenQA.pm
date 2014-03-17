@@ -212,12 +212,13 @@ sub startup {
   ### JSON API starts here
   my $api_auth = $r->bridge('/api/v1')->to(controller => 'API::V1', action => 'auth');
   my $api_r = $api_auth->route('/')->to(namespace => 'OpenQA::API::V1');
+  my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::API::V1');
 
   # api/v1/jobs
-  $api_r->get('/jobs')->name('apiv1_jobs')->to('job#list'); # list_jobs
+  $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list'); # list_jobs
   $api_r->post('/jobs')->name('apiv1_create_job')->to('job#create'); # job_create
   my $job_r = $api_r->route('/jobs/:jobid', jobid => qr/\d+/);
-  $job_r->get('/')->name('apiv1_job')->to('job#show'); # job_get
+  $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show'); # job_get
   $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy'); # job_delete
   $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio'); # job_set_prio
   $job_r->post('/result')->name('apiv1_job_result')->to('job#result'); # job_update_result
@@ -228,15 +229,15 @@ sub startup {
   # restart and cancel are valid both by job id or by job name (which is
   # exactly the same, but with less restrictive format)
   my $job_name_r = $api_r->route('/jobs/#name');
-  $job_r->post('/restart')->name('apiv1_restart_job')->to('job#restart'); # job_restart
-  $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel'); # job_cancel
-  $job_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate'); # job_duplicate
+  $job_name_r->post('/restart')->name('apiv1_restart_job')->to('job#restart'); # job_restart
+  $job_name_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel'); # job_cancel
+  $job_name_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate'); # job_duplicate
 
   # api/v1/workers
-  $api_r->get('/workers')->name('apiv1_workers')->to('worker#list'); # list_workers
+  $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list'); # list_workers
   $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create'); # worker_register
   my $worker_r = $api_r->route('/workers/:workerid', workerid => qr/\d+/);
-  $worker_r->get('/')->name('apiv1_worker')->to('worker#show'); # worker_get
+  $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show'); # worker_get
   $worker_r->get('/commands/')->name('apiv1_commands')->to('command#list'); #command_get
   $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create'); #command_enqueue
   $worker_r->delete('/commands/:commandid')->name('apiv1_delete_command')->to('command#destroy'); #command_dequeue
