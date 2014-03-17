@@ -29,7 +29,7 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 .overviewfail {background-color:#fbb ;}
 
 .component { text-align: right; }
-.links { text-align: left; }
+.links { text-align: left; padding-top: 0; }
 
 .tactorytestedlogo {float: right; vertical-align: middle; }
 .sponsors {}
@@ -186,6 +186,10 @@ div.click-location-pointer div {
 	color: black;
 	text-size: 13px;
 	text-shadow: white 0px 0px 7px, white 0px 0px 7px;
+}
+
+td img.resborderok, td img.resborderfail, td img.resborderunk,td img.resborderna {
+	margin-top: 3px;
 }
 
 img.resborderok {
