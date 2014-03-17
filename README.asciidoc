@@ -61,7 +61,7 @@ how naming is being parsed in +lib/OpenQA/modules/openqa/distri/opensuse.pm+
 Filesystem Layout
 ~~~~~~~~~~~~~~~~~
 
-The openQA web interface can be started via "morbo script/openqa" in
+The openQA web interface can be started via +morbo script/openqa+ in
 development mode.
 
 +/var/lib/openqa/+ must be owned by root and contain several sub
