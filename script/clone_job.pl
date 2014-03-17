@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/env perl -w
 # Copyright (c) 2013 SUSE Linux Products GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
