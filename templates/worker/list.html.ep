@@ -13,6 +13,7 @@
         <th class="table-sortable:alphanumeric">instance</th>
         <th class="table-sortable:alphanumeric table-filterable">backend</th>
         <th class="table-sortable:alphanumeric">status</th>
+        <th class="table-sortable:alphanumeric">current step</th>
 		  </tr>
 		</thead>
 		<tbody>
@@ -27,6 +28,11 @@
             Idle
             <% } else { %>
             Working on job <a href="/tests/<%= $view->{'status'} %>"><%= $view->{'status'} %></a>
+          <% } %>
+	  </td>
+	  <td class="currentstep">
+            <% if(defined($view->{'currentstep'})) { %>
+            <%= $view->{'currentstep'} %>
           <% } %>
 	  </td>
        </tr>
