@@ -2,6 +2,7 @@ language: perl
 perl:
   - "5.18"
 install:
+  - sudo apt-get install libgmp3-dev libmagickwand-dev
   - cpanm -nq `cat DEPENDENCIES.txt`
   - cpanm -nq "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
