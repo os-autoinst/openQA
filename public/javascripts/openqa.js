@@ -16,3 +16,10 @@ function updateModuleslist(modlist, testname, testmodule) {
 		container.insert(ul);
 	});
 }
+
+document.observe('dom:loaded', function(evt) {
+    var elements = $$('.chosen-select');
+    for (var i = 0; i < elements.length; i++) {
+        new Chosen(elements[i], {width: "98%"});
+    }
+});
