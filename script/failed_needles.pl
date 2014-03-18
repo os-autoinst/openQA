@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 # Copyright (c) 2013 SUSE Linux Products GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -63,6 +63,7 @@ $ failed_needles.pl zypper_in-1-131M2
 =cut
 
 use strict;
+use warnings;
 use Data::Dump;
 use Getopt::Long;
 use JSON;

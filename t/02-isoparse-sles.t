@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 
 # Copyright (C) 2014 SUSE Linux Products GmbH
 #
@@ -19,6 +19,7 @@
 BEGIN { unshift @INC, 'lib', 'lib/OpenQA/modules'; }
 
 use strict;
+use warnings;
 use Data::Dump qw/pp dd/;
 use openqa::distri::sles qw(parse_iso);
 

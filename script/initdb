@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 
 # Copyright (C) 2014 SUSE Linux Products GmbH
 #
@@ -22,6 +22,7 @@ BEGIN {
 }
 
 use strict;
+use warnings;
 use File::Basename qw/dirname/;
 use POSIX qw/getuid getgid setuid setgid/;
 use openqa ();
