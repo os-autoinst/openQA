@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 # Copyright (C) 2014 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
@@ -14,11 +15,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-#!/usr/bin/env perl -w
-
 package openqa::distri::sles;
 
 use strict;
+use warnings;
 use Clone qw/clone/;
 
 sub parse_iso($)

@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 # Copyright (c) 2013 SUSE Linux Products GmbH
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -87,6 +87,7 @@ L<OpenQA::API::V1::Client>
 =cut
 
 use strict;
+use warnings;
 use POSIX qw/:sys_wait_h strftime SIGTERM/;
 use Data::Dump;
 use JSON;

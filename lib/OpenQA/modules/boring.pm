@@ -1,5 +1,6 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 use strict;
+use warnings;
 package boring;
 
 sub expect($$$)
