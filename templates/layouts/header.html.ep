@@ -1,0 +1,20 @@
+<div id="header-content" class="container_16">
+% if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
+    <%= link_to 'http://www.opensuse.org' => (id => 'header-logo') => begin %>
+        <%= image '/images/header-logo.png', alt => 'Header Logo', height => "26", width => "46" %>
+    <% end %>
+    <ul id="global-navigation">
+        <li id="item-downloads"><a href="http://opensuse.org/sitemap#downloads">Downloads</a></li>
+        <li id="item-support"><a href="http://opensuse.org/sitemap#support">Support</a></li>
+        <li id="item-community"><a href="http://opensuse.org/sitemap#community">Community</a></li>
+        <li id="item-development"><a href="http://opensuse.org/sitemap#development">Development</a></li>
+    </ul>
+% } else {
+    <%= link_to 'http://www.opensuse.org' => (id => 'header-logo') => begin %>
+        <%= image '/images/header-logo.png', alt => 'Header Logo', height => "26", width => "46" %>
+    <% end %>
+    <ul id="global-navigation">
+        <li id="item-support"><a href="http://github.com/openSUSE/openQA">openQA</a></li>
+    </ul>
+% }
+</div>
