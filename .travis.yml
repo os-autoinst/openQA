@@ -2,7 +2,8 @@ language: perl
 perl:
   - "5.18"
 install:
-  - cpanm -nq `cat DEPENDENCIES.txt`
+  - sudo apt-get install libgmp3-dev
+  - cpanm -nq `grep -v Image::Magick DEPENDENCIES.txt`
   - cpanm -nq "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
   - cover -test
