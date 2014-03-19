@@ -71,7 +71,7 @@ not ORM objects.
 
 =cut
 
-# XXX TODO - Remove this useless function when is not needed anymore 
+# XXX TODO - Remove this useless function when is not needed anymore
 sub _hashref {
     my $obj = shift;
     my @fields = @_;
@@ -111,13 +111,13 @@ sub worker_register {
     # in case the worker died ...
     # ... restart jobs assigned to this worker
     for my $j ($worker->jobs->all()) {
-        job_duplicate(jobid => $j->id);
+	job_duplicate(jobid => $j->id);
     }
     # .. set them to incomplete
     $worker->jobs->update_all({
-       state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
-       result_id => schema->resultset("JobResults")->search({ name => 'incomplete' })->single->id,
-       worker_id => 0,
+	state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
+	result_id => schema->resultset("JobResults")->search({ name => 'incomplete' })->single->id,
+	worker_id => 0,
     });
     # ... delete pending commands
     schema->resultset("Commands")->search({
@@ -198,10 +198,10 @@ sub job_create {
     );
 
     if ($settings{NAME}) {
-	    my $njobs = schema->resultset("Jobs")->search({ slug => $settings{'NAME'} })->count;
-	    return 0 if $njobs;
+	my $njobs = schema->resultset("Jobs")->search({ slug => $settings{'NAME'} })->count;
+	return 0 if $njobs;
 
-	    $new_job_args{slug} = $settings{'NAME'};
+	$new_job_args{slug} = $settings{'NAME'};
     }
 
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
@@ -273,7 +273,7 @@ sub _job_fill_settings {
     }
 
     if ($job->{name} && !$job->{settings}->{NAME}) {
-        $job->{settings}->{NAME} = sprintf "%08d-%s", $job->{id}, $job->{name};
+	$job->{settings}->{NAME} = sprintf "%08d-%s", $job->{id}, $job->{name};
     }
 
     return $job;
@@ -290,17 +290,23 @@ sub list_jobs {
 	$cond{state_id} = { -in => $states_rs->get_column("id")->as_query }
     }
     if ($args{maxage}) {
-        my $agecond = { '>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC') };
-        $cond{'-or'} = [
-            t_created => $agecond,
-            t_started => $agecond,
-            t_finished => $agecond
-        ];
+	my $agecond = { '>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC') };
+	$cond{'-or'} = [
+	    'me.t_created' => $agecond,
+	    'me.t_started' => $agecond,
+	    'me.t_finished' => $agecond
+	    ];
     }
     if ($args{build}) {
-        $cond{'settings.key'} = "BUILD";
-        $cond{'settings.value'} = $args{build};
-        $attrs{join} = 'settings';
+	$cond{'settings.key'} = "BUILD";
+	$cond{'settings.value'} = $args{build};
+	$attrs{join} = 'settings';
+    }
+    if ($args{match}) {
+	$cond{'settings.key'} = ['DISTRI', 'FLAVOR', 'BUILD', 'TEST'];
+	$cond{'settings.value'} = { '-like' => "%$args{match}%" };
+	$attrs{join} = 'settings';
+	$attrs{group_by} = [ 'me.id' ];
     }
 
     my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
@@ -349,9 +355,9 @@ sub job_grab {
     my $job_hashref;
     $job_hashref = _job_get({
 	id => schema->resultset("Jobs")->search({
-		  state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
-		  worker_id => $workerid,
-	      })->single->id,
+	    state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
+	    worker_id => $workerid,
+	})->single->id,
     }) if $result != 0;
 
     return $job_hashref;
@@ -362,7 +368,7 @@ sub job_grab {
 mark job as done. No error check. Meant to be called from worker!
 
 =cut
-# XXX TODO Parameters is a hash, check if is better use normal parameters    
+# XXX TODO Parameters is a hash, check if is better use normal parameters
 sub job_set_done {
     my %args = @_;
     my $jobid = int($args{jobid});
@@ -406,7 +412,7 @@ sub job_set_running {
     my $states_rs = schema->resultset("JobStates")->search({ name => ['cancelled', 'waiting'] });
     my $r = schema->resultset("Jobs")->search({
 	id => $jobid,
-        state_id => { -in => $states_rs->get_column("id")->as_query },
+	state_id => { -in => $states_rs->get_column("id")->as_query },
     })->update({
 	state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
     });

@@ -46,7 +46,8 @@ sub list {
   # TODO: implement match, boring and maxage again
 
   for my $job (@{Scheduler::list_jobs('state' => 'scheduled,running,done',
-                                       maxage => $maxage, fulldetails => 1)||[]}) {
+				      match => $match,
+				      maxage => $maxage, fulldetails => 1)||[]}) {
 
     if ($job->{state} eq 'running' || $job->{state} eq 'done') {
 
