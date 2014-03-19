@@ -233,6 +233,9 @@ sub workit($)
 	for my $i (qw/QEMUPORT VNC OPENQA_HOSTNAME/) {
 		$job->{settings}->{$i} = $ENV{$i};
 	}
+	# os-autoinst will recognize openQA v3 depending on this variable set
+	# used for uploading logfiles
+	$job->{settings}->{'TEST_ID'} = $job->{'id'};
 
 	if (open(my $fh, '>', 'job.json')) {
 		print $fh to_json($job, { pretty => 1 });
