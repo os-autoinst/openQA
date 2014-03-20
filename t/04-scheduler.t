@@ -128,9 +128,9 @@ is_deeply($new_job, $job_ref, "job_get");
 my $jobs = [
     {
         t_finished => undef,
-        id => 1,
-        name => 'Unicorn-42-pink-Build666-rainbow',
-        priority => 40,
+        id => 2,
+        name => "OTHER NAME",
+        priority => 50,
         result => 'none',
         t_started => undef,
         state => "scheduled",
@@ -140,9 +140,9 @@ my $jobs = [
     },
     {
         t_finished => undef,
-        id => 2,
-        name => "OTHER NAME",
-        priority => 50,
+        id => 1,
+        name => 'Unicorn-42-pink-Build666-rainbow',
+        priority => 40,
         result => 'none',
         t_started => undef,
         state => "scheduled",
@@ -165,7 +165,7 @@ is_deeply($current_jobs, [], "All list_jobs with state running");
 
 %args = (build => "666");
 $current_jobs = list_jobs(%args);
-is_deeply($current_jobs, [$jobs->[0]], "list_jobs with build");
+is_deeply($current_jobs, [$jobs->[1]], "list_jobs with build");
 
 # Testing job_grab
 %args = (

@@ -308,6 +308,7 @@ sub list_jobs {
 	$attrs{join} = 'settings';
 	$attrs{group_by} = [ 'me.id' ];
     }
+    $attrs{order_by} = [ 'me.id DESC' ];
 
     my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
 
