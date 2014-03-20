@@ -163,14 +163,11 @@ sub show {
       push(@ocrlist, {name => $ocrpath, result => $ocrres});
     }
 
-    my $sound = (get_testwavs($module->{'name'}))?1:0;
-    my $ocr = (@ocrlist)?1:0;
     push(@modlist, {
         name => $module->{'name'},
         result => $module->{'result'},
         screenshots => \@imglist, wavs => \@wavlist, ocrs => \@ocrlist,
-        flags => $module->{'flags'},
-        audio => $sound, ocr => $ocr
+        flags => $module->{'flags'}
       });
   }
 

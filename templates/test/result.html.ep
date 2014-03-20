@@ -116,14 +116,6 @@
 					<td style="width: 1.5em;" class="info">&#9875;</td>
 					<td title="Snapshot the state after this test for restoring">Milestone</td>
 				</tr>
-				<tr>
-					<td style="width: 1.5em;" class="info">&#9835;</td>
-					<td>Audio Test</td>
-				</tr>
-				<tr>
-					<td style="width: 1.5em;" class="info">&#7425;</td>
-					<td>OCR Test</td>
-				</tr>
 			</table>
 		</div>
 	</div>
@@ -157,8 +149,6 @@
 				%= ($module->{'flags'}->{'fatal'}||0) ? b('&#9760;') : ''
 				%= ($module->{'flags'}->{'important'}||0) ? b('&#9888;') : ''
 				%= ($module->{'flags'}->{'milestone'}||0) ? b('&#9875;') : ''
-				%= $module->{'audio'} ? b('&#9835;') : ''
-				%= $module->{'ocr'} ? b('&#7425;') : ''
 				</td>
 				<td class="component">
           %= link_to $module->{'name'} => url_for('src_step', stepid => 1, moduleid => $module->{'name'})
