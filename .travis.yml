@@ -5,6 +5,9 @@ install:
   - sudo apt-get install libgmp3-dev
   - cpanm -nq `grep -v Image::Magick DEPENDENCIES.txt`
   - cpanm -nq "Devel::Cover" "Devel::Cover::Report::Coveralls"
+  - sudo mkdir -p /var/lib/openqa/db/
+  - sudo chown "travis:" /var/lib/openqa/db/
+  - ./script/initdb
 script:
   - cover -test
 after_success:
