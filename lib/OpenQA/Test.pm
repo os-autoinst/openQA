@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use awstandard;
 use Scheduler qw/worker_get/;
+use File::Basename;
 
 sub list {
   my $self = shift;
@@ -206,45 +207,42 @@ sub uploadlog
 {
     my $self = shift;
 
-    my $name = $self->param('filename');
-    my $testname = $self->param('testid');
+    my $job = Scheduler::job_get($self->param('testid'));
 
-    $self->app->log->debug("upload $name $testname");
+    if (!$job) {
+      return $self->render(message => 'No such job.', status => 404);
+    }
+
+    my $testdirname = $job->{'settings'}->{'NAME'};
+    my $testresultdir = openqa::testresultdir($testdirname);
+
+    return $self->render(text => "Invalid path", status => 403) if ($testdirname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/);
 
     if ($self->req->is_limit_exceeded) {
 	return $self->render(message => 'File is too big.', status => 200)
     }
 
-    $testname = sanitize_testname($testname);
-    my $upname = $name;
-    $upname =~ s#.*/##;
-    $upname = sanitize_testname($upname);
-    unless ($upname && $testname) {
-	$testname ||= '';
-	$self->app->log->warn("invalid parameters passed, testname '$testname', upname '$upname'");
-	return $self->render(text => "invalid parameters", status => 400);
+    if ($job->{state} ne 'running') {
+      $self->app->log->warn("test $job->{id} is not running, refused to upload logs");
+      return $self->render(text => "test not running", status => 400);
     }
-
-    # FIXME: check database
-    unless (-l join('/', $resultdir, $testname)) {
-	$self->app->log->warn("test $testname is not running, refused to upload logs");
-	return $self->render(text => "test not running", status => 404);
-    }
-    $self->app->log->info("$upname $testname");
 
     my $upload = $self->req->upload('upload');
     if (!$upload) {
-	return $self->render(message => 'upload file content missing', status => 400)
+      return $self->render(message => 'upload file content missing', status => 400);
     }
 
-    my $dir = join('/', $loguploaddir, $testname);
+    my $dir = join('/', $testresultdir, 'ulogs');
     if (! -e $dir) {
-	mkdir($dir) or die "$!";
+      mkdir($dir) or die "$!";
     }
+    my $upname = basename($self->param('filename'));
+    $upname = sanitize_testname($upname);
+
     my $file = join('/', $dir, $upname);
     $upload->move_to($file);
 
-    return $self->render(text => "OK: $testname -> $upname\n");
+    return $self->render(text => "OK: $file\n");
 }
 
 1;
