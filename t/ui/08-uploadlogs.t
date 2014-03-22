@@ -44,7 +44,7 @@ mkdir('t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde
 my $file = Mojo::Asset::File->new->add_chunk('lalala');
 $req = $t->post_ok('/tests/99963/uploadlog/test.tar.gz' => form => { upload => 
      { file => $file} })->status_is(200);
-$req->content_is("OK: t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/test.tar.gz\n");
+$req->content_like(qr{OK: .*data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/test.tar.gz\n});
 
 open(TFILE, "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/test.tar.gz");
 my $content = <TFILE>;
