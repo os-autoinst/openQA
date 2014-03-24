@@ -92,6 +92,7 @@ use POSIX qw/:sys_wait_h strftime SIGTERM/;
 use Data::Dump;
 use JSON;
 use Fcntl;
+use Config::IniFiles;
 use File::Path qw/make_path remove_tree/;
 use File::Copy qw(copy move);
 use File::Copy::Recursive qw(dirmove);
@@ -357,12 +358,33 @@ sub backup_testresults($)
 	remove_tree($testresults);
 }
 
+sub read_worker_config($)
+{
+	my $instance = shift;
+	my $worker_config = "/etc/openqa/workers.ini";
+	if(-r $worker_config) {
+		my $cfg = Config::IniFiles->new( -file => "$worker_config" );
+		if($cfg->SectionExists($instance)) {
+			my $sets = {};
+			foreach my $set ($cfg->Parameters($instance)) {
+				$sets->{uc $set} = $cfg->val($instance, $set);
+			}
+			$sets->{'BACKEND'} = "qemu" unless $sets->{'BACKEND'};
+			return $sets;
+		}
+	}
+	# fallback to default backend
+	return {"BACKEND" => "qemu"};
+}
+
 
 sub main()
 {
 	my $lockfd = lockit();
 
-	my $workerid = api_call('post', 'workers', {host => 'localhost', instance => $options{'instance'}, backend => 'qemu'})->{id};
+	my $worker_settings = read_worker_config($options{'instance'});
+
+	my $workerid = api_call('post', 'workers', {host => 'localhost', instance => $options{'instance'}, backend => $worker_settings->{'BACKEND'}})->{id};
 	$ENV{'WORKERID'} = $workerid;
 
 	my $job;
@@ -454,6 +476,8 @@ sub main()
 				sleep 5;
 				next;
 			}
+			# update settings with worker-specific stuff
+			@{$job->{'settings'}}{keys $worker_settings} = values $worker_settings;
 			my $name = $job->{'settings'}->{'NAME'};
 			printf "got job %d: %s\n", $job->{'id'}, $name;
 			$testresults = join('/', $results_dir, $name);
