@@ -49,7 +49,7 @@ running workers
 
 To start the worker either use the provided systemd files (systemctl
 start openqa-worker.target will start as many workers as you have
-pool directories) or run tools/worker --instance X manually.
+pool directories) or run tools/worker --host localhost --instance X manually.
 If you did not install os-autoinst from packages make sure to pass --isotovideo
 to point to the checkout dir of isotovideo, not /usr/lib! It won't find the
 perl modules then.
@@ -87,6 +87,6 @@ check the log files in /var/lib/openqa/testresults
 
 kvm doesn't work
 ----------------
-1. make sure you a machine with kvm support
+1. make sure you have a machine with kvm support
 2. make sure kvm_intel or kvm_amd are loaded (might be disabled in the BIOS)
 3. make sure the 'geekotest' user can access /dev/kvm
