@@ -49,6 +49,7 @@ Net::OpenID::Consumer
 Package::Stash
 Params::Util
 Params::Validate
+Perl::Tidy
 SQL::Translator
 Scalar::Util
 Sub::Install
