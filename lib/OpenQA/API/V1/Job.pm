@@ -118,8 +118,8 @@ sub restart {
     my $self = shift;
     my $name = $self->param('name');
 
-    my $res = Scheduler::job_restart($name);
-    $self->render(json => {result => $res});
+    my @res = Scheduler::job_restart($name);
+    $self->render(json => {result => \@res});
 }
 
 sub cancel {
