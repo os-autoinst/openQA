@@ -6,6 +6,7 @@ install:
   - cpanm -nq `grep -v Image::Magick DEPENDENCIES.txt`
   - cpanm -nq "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
-  - cover -test
+  # - cover -test
+  - PERL5OPT=-MDevel::Cover prove
 after_success:
   - cover -report coveralls
