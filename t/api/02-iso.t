@@ -36,6 +36,15 @@ my $app = $t->app;
 $t->ua(OpenQA::API::V1::Client->new(key => 'PERCIVALKEY02', secret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+sub lj {
+    return unless $ENV{HARNESS_IS_VERBOSE};
+    my $ret = $t->get_ok('/api/v1/jobs')->status_is(200);
+    my @jobs = @{$ret->tx->res->json->{jobs}};
+    for my $j (@jobs) {
+        printf "%d %-10s %s\n", $j->{id}, $j->{state}, $j->{name};
+    }
+}
+
 my $ret;
 
 my $iso = 'openSUSE-13.1-DVD-i586-Build0091-Media.iso';
@@ -47,27 +56,41 @@ is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job 99928 is scheduled');
 $ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
 is($ret->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
 
+$ret = $t->get_ok('/api/v1/jobs/99981')->status_is(200);
+is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99981 is cancelled');
+
+$ret = $t->post_ok('/api/v1/jobs/99981/restart')->status_is(200);
+
+lj;
+
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
 $ret = $t->post_ok('/api/v1/isos', form => { iso => $iso })->status_is(200);
 
+lj;
+
 # check that the old tests are cancelled
 $ret = $t->get_ok('/api/v1/jobs/99927')->status_is(200);
 is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99927 is cancelled');
+
 $ret = $t->get_ok('/api/v1/jobs/99928')->status_is(200);
 is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99928 is cancelled');
 $ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
 is($ret->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
 
+# make sure unrelated jobs are not cancelled
+$ret = $t->get_ok('/api/v1/jobs/99981')->status_is(200);
+is($ret->tx->res->json->{job}->{state}, 'scheduled', "job 99981 is still scheduled");
+
 # ... and we have a new test
-$ret = $t->get_ok('/api/v1/jobs/99982')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'scheduled', 'new job 99982 is scheduled');
+$ret = $t->get_ok('/api/v1/jobs/99999')->status_is(200);
+is($ret->tx->res->json->{job}->{state}, 'scheduled', 'new job 99999 is scheduled');
 
 # cancel the iso
 $ret = $t->post_ok("/api/v1/isos/$iso/cancel")->status_is(200);
 
-$ret = $t->get_ok('/api/v1/jobs/99982')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99982 is cancelled');
+$ret = $t->get_ok('/api/v1/jobs/99999')->status_is(200);
+is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99999 is cancelled');
 
 TODO: {
     local $TODO = 'iso delete doesnt seem to work';

@@ -49,7 +49,8 @@ delete $job2->{id};
 delete $job2->{settings}->{NAME};
 is_deeply($job1, $job2, "duplicated job equal");
 
-Scheduler::job_restart(99927);
+my @ret = Scheduler::job_restart(99927);
+is(@ret, 0, "no job ids returned");
 
 $jobs = list_jobs();
 is_deeply($jobs, $current_jobs, "jobs unchanged after restarting scheduled job");
@@ -59,10 +60,16 @@ $job1 = Scheduler::job_get(99927);
 is($job1->{state}, 'cancelled', "scheduled job cancelled after cancelled");
 
 $job1 = Scheduler::job_get(99937);
-Scheduler::job_restart(99937);
+@ret = Scheduler::job_restart(99937);
 $job2 = Scheduler::job_get(99937);
 
 is_deeply($job1, $job2, "done job unchanged after restart");
+
+is(@ret, 1, "one job id returned");
+$job2 = Scheduler::job_get($ret[0]);
+
+isnt($job1->{id}, $job2->{id}, "new job has a different id");
+is($job2->{state}, 'scheduled', "new job is scheduled");
 
 $jobs = list_jobs();
 

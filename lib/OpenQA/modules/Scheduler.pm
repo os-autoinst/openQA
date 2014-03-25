@@ -463,11 +463,17 @@ sub _job_find_smart($$$) {
         }
     }
     if (ref $value eq 'HASH') {
+        my $i = 0;
         while (my ($k, $v) = each %$value) {
-            $cond->{'settings.key'} = $k;
-            $cond->{'settings.value'} = $v;
+            ++$i;
+            my $t = 'settings';
+            $t .= '_'.$i if $i > 1;
+            $cond->{$t.'.key'} = $k;
+            $cond->{$t.'.value'} = $v;
         }
-        $attrs->{join} = 'settings';
+        while ($i--) {
+            push @{$attrs->{join}}, 'settings';
+        }
     } else {
         # TODO: support by name and by iso here
         $cond->{id} = $value;
@@ -561,7 +567,7 @@ sub job_cancel {
     };
 
     # first set all scheduled jobs to cancelled
-    schema->resultset("Jobs")->search(\%cond, \%attrs)->update({
+    my $r = schema->resultset("Jobs")->search(\%cond, \%attrs)->update({
         state_id => schema->resultset("JobStates")->search({ name => 'cancelled' })->single->id
     });
 
@@ -572,9 +578,11 @@ sub job_cancel {
     # then tell workers to cancel their jobs
     my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
     while (my $j = $jobs->next) {
-        print STDERR "enqueuing ".$j->id." ".$j->worker_id."\n";
+        print STDERR "enqueuing cancel for ".$j->id." ".$j->worker_id."\n" if $debug;
         command_enqueue(workerid => $j->worker_id, command => 'cancel');
+        ++$r;
     }
+    return $r;
 }
 
 sub job_stop {
