@@ -87,6 +87,7 @@ sub usage($) {
 GetOptions(
 	\%options,
 	"from=s",
+	"fromv3",
 	"host=s",
 	"hostv3",
 	"dir=s",
@@ -131,25 +132,59 @@ if ($options{hostv3}) {
 	$local = new $clientclass;
 	$local->prepare(fixup_url($options{'host'}), [qw/job_create/]) or die "$!\n";
 }
-my $remote = new $clientclass;
 
-$options{'from'} = fixup_url($options{'from'});
+my $remote;
+my $remote_url;
+if ($options{fromv3}) {
+	if ($options{'from'} !~ '/') {
+		$remote_url = Mojo::URL->new();
+		$remote_url->host($options{'from'});
+		$remote_url->scheme('http');
+	} else {
+		$remote_url = Mojo::URL->new($options{'from'});
+	}
+	$remote_url->path('/api/v1/jobs');
+	$remote = OpenQA::API::V1::Client->new(api => $remote_url->host);
 
-$remote->prepare($options{'from'}, [qw/job_get/]) or die "$!\n";
+} else {
+	$remote = new $clientclass;
+	$remote->prepare(fixup_url($options{'from'}), [qw/job_get/]) or die "$!\n";
+}
+
 if (my $name = shift @ARGV) {
-	my $job = $remote->job_get($name);
+	my $job;
+	if ($options{fromv3}) {
+		my $url = $remote_url->clone;
+		$url->path("jobs/$name");
+		my $tx = $remote->get($url);
+		if ($tx->success) {
+			$job = $tx->success->json->{job};
+		} else {
+			warn "failed to get job ", $tx->error;
+			exit(1);
+		}
+
+	} else {
+		$job = $remote->job_get($name);
+	}
 	dd $job if $options{verbose};
 	my $dst = $job->{settings}->{ISO};
 	$dst =~ s,.*/,,;
 	$dst = join('/', $options{dir}, $dst);
-	my $from = $options{from};
-	$from =~ s,^(http://[^/]*).*,$1,;
-	$from .= '/openqa/factory/iso/'.$job->{settings}->{ISO};
+	my $from;
+	if ($options{fromv3}) {
+		$from = $remote_url->clone;
+		$from->path('/iso/'.$job->{settings}->{ISO});
+		$from = $from->to_string;
+	} else {
+		$from = fixup_url($options{from});
+		$from =~ s,^(http://[^/]*).*,$1,;
+		$from .= '/openqa/factory/iso/'.$job->{settings}->{ISO};
+	}
 	print "downloading\n$from\nto\n$dst\n";
 	my $r = $ua->mirror($from, $dst);
 	unless ($r->is_success || $r->code == 304) {
-		print STDERR "$name failed: ",$r->status_line, "\n"; 
-		next;
+		die "$name failed: ",$r->status_line, "\n";
 	}
 	if ($options{hostv3}) {
 		warn "here";
