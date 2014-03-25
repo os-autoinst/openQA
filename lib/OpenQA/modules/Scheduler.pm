@@ -32,6 +32,11 @@ use openqa ();
 
 use Carp;
 
+our $debug;
+BEGIN {
+    $debug = $ENV{HARNESS_IS_VERBOSE};
+}
+
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
@@ -483,7 +488,7 @@ sub _job_find_smart($$$) {
 sub job_duplicate {
     my %args = @_;
 
-    print STDERR "duplicating $args{jobid}\n";
+    print STDERR "duplicating $args{jobid}\n" if $debug;
 
     my $job = _job_get({ id => $args{jobid} });
     return undef unless $job;
@@ -498,7 +503,7 @@ sub job_duplicate {
         job_set_prio(jobid => $id, prio => $args{prio} || $job->{priority})
     }
 
-    print STDERR "new job $id\n";
+    print STDERR "new job $id\n" if $debug;
 
     return $id;
 }
@@ -536,7 +541,7 @@ sub job_restart {
             colums => [qw/id worker_id/]
         });
     while (my $j = $jobs->next) {
-        print STDERR "enqueuing ".$j->id." ".$j->worker_id."\n";
+        print STDERR "enqueuing abort for ".$j->id." ".$j->worker_id."\n" if $debug;
         command_enqueue(workerid => $j->worker_id, command => 'abort');
     }
 
