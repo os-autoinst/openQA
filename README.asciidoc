@@ -16,7 +16,7 @@ high-level API, ...)
 The other part that you need to run openQA is OS-autoinst test engine that is
 hosted in separate https://github.com/openSUSE/os-autoinst[repository].
 
-image:https://api.travis-ci.org/openSUSE-Team/openQA.png[link=https://travis-ci.org/openSUSE-Team/openQA]
+image:https://api.travis-ci.org/openSUSE-Team/openQA.svg[link=https://travis-ci.org/openSUSE-Team/openQA]
 
 Installation
 ------------
