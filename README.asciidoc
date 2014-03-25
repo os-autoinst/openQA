@@ -29,6 +29,8 @@ repository. Installation on openSUSE is therefore pretty simple:
 
 --------------------------------------------------------------------------------
 zypper ar -f obs://devel:openQA/openSUSE_13.1 openQA
+zypper ar -f obs://devel:openQA:devel/openSUSE_13.1 openQA-devel
+zypper ar -f obs://devel:openQA:devel:13.1/openSUSE_13.1 openQA-devel-perl-modules
 zypper in openQA apache2
 # Fetch needles
 sh /usr/lib/os-autoinst/tools/fetchneedles
@@ -110,8 +112,11 @@ Setting up git support
 
 Editing needles from web can optionally commit new or changed needles
 automatically to git. To do so, you need to enable git support by setting
-'OPENQA_NEEDLES_SCM', 'OPENQA_NEEDLES_GIT_WORKTREE'
-in the apache config. Once you do so and restart the web interface, openQA will
+--------------------------------------------------------------------------------
+[global]
+scm = git
+--------------------------------------------------------------------------------
+in +/etc/openqa/openqa.ini+. Once you do so and restart the web interface, openQA will
 commit new needles to the git repository automatically.
 
 You may want to add some description to automatic commits coming from web UI.
@@ -124,10 +129,14 @@ You can do so by setting configuration in the repository
 	name = openQA web UI
 --------------------------------------------------------------------------------
 
-To enable automatic pushing of the repo as well, you need to set
-'OPENQA_NEEDLES_GIT_DO_PUSH' to 'yes' as well. Depending on your setup, you
-might need to generate and propagate ssh key for user 'geekotest' to be able to
-push.
+To enable automatic pushing of the repo as well, you need to add the following
+to your openqa.ini:
+--------------------------------------------------------------------------------
+[scm git]
+do_push = yes
+--------------------------------------------------------------------------------
+Depending on your setup, you might need to generate and propagate ssh key for
+user 'geekotest' to be able to push.
 
 Troubleshooting
 ---------------
