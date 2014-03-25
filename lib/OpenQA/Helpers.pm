@@ -38,12 +38,15 @@ sub register {
         $script=~s{^sub run}{# this part contains the steps to run this test\n$&}m;
         $script=~s{^sub checklist}{# this part contains known hash values of good or bad results\n$&}m;
         eval "require Perl::Tidy;" or return "<pre>$script</pre>";
-        push(@ARGV,"-html", "-css=/dev/null");
         my @out;
-        Perl::Tidy::perltidy(
-            source => \$script,
-            destination => \@out,
-        );
+        {
+            local @ARGV;
+            push(@ARGV,"-html", "-css=/dev/null");
+            Perl::Tidy::perltidy(
+                source => \$script,
+                destination => \@out,
+            );
+        }
         my $out=join("",@out);
         #$out=~s/.*<body>//s;
         $out=~s/.*<!-- contents of filename: perltidy -->//s;
