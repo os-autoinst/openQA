@@ -27,6 +27,7 @@
   /dev/tty rw,
   /etc/qemu/* r,
   /etc/openqa/client.conf r,
+  /etc/openqa/workers.ini r,
   /tmp/* w,
   /proc/*/stat r,
   /proc/filesystems r,
