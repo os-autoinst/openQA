@@ -20,6 +20,7 @@ use openqa;
 use awstandard;
 use Scheduler qw/worker_get/;
 use File::Basename;
+use POSIX qw/strftime/;
 
 sub list {
   my $self = shift;
@@ -152,7 +153,7 @@ sub show {
       }
     }
 
-#FIXME: Read ocr also from results.json as soon as we know how it looks like
+    #FIXME: Read ocr also from results.json as soon as we know how it looks like
 
     # add link to $testresultdir/$name*.txt as direct link
     my @ocrlist;
@@ -181,14 +182,13 @@ sub show {
     }
   }
 
-# details box
-#FIXME: get test duration
-  my $test_duration = 'FIXME'; # strftime("%H:%M:%S",$job->{t_finished} - $job->{t_started});
+  # details box
+  my $test_duration = strftime("%H:%M:%S", gmtime($job->{t_finished} - $job->{t_started}));
 
-# result files box
+  # result files box
   my @resultfiles = test_resultfile_list($testdirname);
 
-# uploaded logs box
+  # uploaded logs box
   my @ulogs = test_uploadlog_list($testdirname);
 
   $self->stash(overall => $results->{'overall'});
