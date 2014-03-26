@@ -882,10 +882,13 @@ var Table = (function(){
 				if ((val = classValue(t,table.AutoSortColumnPrefix)) || (hasClass(t,table.AutoSortClassName))) {
 					table.autosort(t,{'col':(val==null)?null:+val});
 				}
+				/*
 				// Do auto-stripe if necessary
+				DONE WITH CSS3
 				if (tdata.stripeclass && hasClass(t,table.AutoStripeClassName)) {
 					table.stripe(t);
 				}
+				*/
 			}
 		}
 	};

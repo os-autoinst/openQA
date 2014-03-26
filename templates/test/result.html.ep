@@ -105,15 +105,15 @@
 		<div style="margin: 0 3px 0 3px;" class="cligncenter">
 			<table style="border: none; margin: 0;" class="infotbl">
 				<tr>
-					<td style="width: 1.5em;" class="info">&#9760;</td>
+					<td class="flags">&#9760;</td>
 					<td title="Testsuite is aborted if this test fails">Fatal</td>
 				</tr>
 				<tr>
-					<td style="width: 1.5em;" class="info">&#9888;</td>
+					<td class="flags">&#9888;</td>
 					<td title="Overall result is failed if this test fails">Important</td>
 				</tr>
 				<tr>
-					<td style="width: 1.5em;" class="info">&#9875;</td>
+					<td class="flags">&#9875;</td>
 					<td title="Snapshot the state after this test for restoring">Milestone</td>
 				</tr>
 			</table>
@@ -142,10 +142,9 @@
 				<th style="width: 150px; padding: 2px 25px;">Result</th>
 				<th colspan="3">References</th>
 			</tr>
-			<!--% cycle(1) %-->
 			<% for my $module (@$modlist) { %>
-			<tr><!-- class="%= cycle() %>"-->
-				<td class="info" style="width: 1em;">
+			<tr>
+				<td class="flags">
 				%= ($module->{'flags'}->{'fatal'}||0) ? b('&#9760;') : ''
 				%= ($module->{'flags'}->{'important'}||0) ? b('&#9888;') : ''
 				%= ($module->{'flags'}->{'milestone'}||0) ? b('&#9875;') : ''

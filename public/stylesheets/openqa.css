@@ -3,8 +3,37 @@
 
 td { text-align: center; vertical-align: middle; }
 td { padding: 0.3em 0.6em; }
-tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
+
 tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
+tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
+table.table-autostripe tr:nth-of-type(even) { background-color:#f0ffcf; }  /* Lemon ultra-light */
+table.table-autostripe tr:nth-of-type(odd) { background-color:#f9ffeb; }  /* Lemon hyper-light */
+
+table select.table-autofilter { font-size: 9px; }
+table select.table-autofilter option { font-size: 9px; }
+
+table th.table-sortable {
+	cursor: pointer;
+}
+table th.table-sortable i.sort-arrows {
+	background-image: url(../images/sortable.png);
+	background-position: left top;
+	background-repeat: no-repeat;
+	display: inline-block;
+	width: 7px;
+	height: 16px;
+}
+table th.table-sorted-desc i.sort-arrows {
+	background-image: url(../images/sorted-down.png);
+	background-position: left top;
+	background-repeat: no-repeat;
+}
+table th.table-sorted-asc i.sort-arrows {
+	background-image: url(../images/sorted-up.png);
+	background-position: left top;
+	background-repeat: no-repeat;
+}
+
 
 .resultok {background-color:#d4f291 ;} /* Lemon */
 .resultunknown {background-color:#ff9 ;}
@@ -333,6 +362,8 @@ input[type='image'] {
 /* bento theme fixes end */
 
 
+/* special table stuff */
+
 .infotbl td {
         padding: 0 0 0 0;
 }
@@ -340,36 +371,9 @@ input[type='image'] {
         padding-right: 3px;
 }
 
-/* results table */
-
-table#results tr {background-color:#f0ffcf ;} /* Lemon ultra-light */
-table#results tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
-table#results select.table-autofilter { font-size: 9px; }
-table#results select.table-autofilter option { font-size: 9px; }
-
-table#results th.table-sortable {
-	cursor: pointer;
-}
-table#results th.table-sortable i.sort-arrows {
-	background-image: url(../images/sortable.png);
-	background-position: left top;
-	background-repeat: no-repeat;
-	display: inline-block;
-	width: 7px;
-	height: 16px;
-}
-table#results th.table-sorted-desc i.sort-arrows {
-	background-image: url(../images/sorted-down.png);
-	background-position: left top;
-	background-repeat: no-repeat;
-}
-table#results th.table-sorted-asc i.sort-arrows {
-	background-image: url(../images/sorted-up.png);
-	background-position: left top;
-	background-repeat: no-repeat;
-}
-td.info {
+td.flags {
 	font-size: 1.5em;
+	width: 1.5em;
 }
 
 
