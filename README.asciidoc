@@ -1,4 +1,4 @@
-openQA image:https://api.travis-ci.org/openSUSE-Team/openQA.svg[link=https://travis-ci.org/openSUSE-Team/openQA]
+openQA image:https://api.travis-ci.org/openSUSE-Team/openQA.svg[link=https://travis-ci.org/openSUSE-Team/openQA] image:https://coveralls.io/repos/openSUSE-Team/openQA/badge.png?branch=devel[link=https://coveralls.io/r/openSUSE-Team/openQA?branch=devel]
 ================================================================================================================
 
 openQA is testing framework that allows you to test GUI applications on one
