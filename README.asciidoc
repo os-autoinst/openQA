@@ -1,5 +1,5 @@
-openQA
-======
+openQA image:https://api.travis-ci.org/openSUSE-Team/openQA.svg[link=https://travis-ci.org/openSUSE-Team/openQA]
+================================================================================================================
 
 openQA is testing framework that allows you to test GUI applications on one
 hand and bootloader and kernel on the other. In both cases, it is difficult to
@@ -16,7 +16,6 @@ high-level API, ...)
 The other part that you need to run openQA is OS-autoinst test engine that is
 hosted in separate https://github.com/openSUSE/os-autoinst[repository].
 
-image:https://api.travis-ci.org/openSUSE-Team/openQA.svg[link=https://travis-ci.org/openSUSE-Team/openQA]
 
 Installation
 ------------
