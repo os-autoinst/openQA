@@ -94,6 +94,18 @@ sub _workers_checker {
     });
 }
 
+# reinit pseudo random number generator in every child to avoid
+# starting off with the same state.
+sub _init_rand
+{
+    my $self = shift;
+    return unless $ENV{HYPNOTOAD_APP};
+    Mojo::IOLoop->timer(0 => sub {
+            srand;
+            $self->app->log->debug("initialized random number generator in $$");
+        });
+}
+
 has schema => sub {
     return connect_db();
 };
@@ -255,6 +267,7 @@ sub startup {
 
   # start workers checker
   $self->_workers_checker;
+  $self->_init_rand;
 }
 
 1;
