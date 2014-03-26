@@ -93,7 +93,7 @@ sub livelog {
     
     # We'll open the log file and keep the filehandle.
     my $log;
-    unless (open($log, $logfile)) {
+    unless (open($log, '<', $logfile)) {
         $self->render_not_found;
         return;
     }

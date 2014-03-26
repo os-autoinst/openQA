@@ -196,7 +196,7 @@ sub back_log($) {
 	foreach my $filepath (@backlogs) {
 		my $path = $filepath;
 		$path=~s/\/name$//;
-		open(my $fd, $filepath) || next ;
+		open(my $fd, '<', $filepath) || next ;
 		my $rnam = <$fd>;
 		chomp($rnam);
 		close($fd);
