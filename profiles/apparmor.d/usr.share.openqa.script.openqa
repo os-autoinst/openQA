@@ -20,7 +20,6 @@
   /etc/ImageMagick-6/* r,
   /etc/openqa/openqa.ini r,
   /proc/meminfo r,
-  /tmp/mojo.tmp rw,
   /usr/bin/optipng rix,
   /usr/bin/perl ix,
   /usr/lib/git/git rix,
@@ -47,5 +46,6 @@
   /var/lib/os-autoinst/tests/ r,
   /var/lib/os-autoinst/tests/** rw,
   /var/tmp/* rw,
-
+  /tmp/mojo.tmp rw,
+  /tmp/mojo.tmp.* rw,
 }
