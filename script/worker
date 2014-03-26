@@ -362,16 +362,14 @@ sub read_worker_config($)
 {
 	my $instance = shift;
 	my $worker_config = "/etc/openqa/workers.ini";
-	if(-r $worker_config) {
-		my $cfg = Config::IniFiles->new( -file => "$worker_config" );
-		if($cfg->SectionExists($instance)) {
-			my $sets = {};
-			foreach my $set ($cfg->Parameters($instance)) {
-				$sets->{uc $set} = $cfg->val($instance, $set);
-			}
-			$sets->{'BACKEND'} = "qemu" unless $sets->{'BACKEND'};
-			return $sets;
+	my $cfg = Config::IniFiles->new( -file => "$worker_config" );
+	if($cfg && $cfg->SectionExists($instance)) {
+		my $sets = {};
+		foreach my $set ($cfg->Parameters($instance)) {
+			$sets->{uc $set} = $cfg->val($instance, $set);
 		}
+		$sets->{'BACKEND'} = "qemu" unless $sets->{'BACKEND'};
+		return $sets;
 	}
 	# fallback to default backend
 	return {"BACKEND" => "qemu"};
