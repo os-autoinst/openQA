@@ -41,16 +41,15 @@ sub register {
         my @out;
         {
             local @ARGV;
-            push(@ARGV,"-html", "-css=/dev/null");
+            push(@ARGV,"-html", "-pre", "-css=/dev/null", "-q", "-se");
             Perl::Tidy::perltidy(
                 source => \$script,
                 destination => \@out,
+                logfile => "/dev/null",
+                errorfile => "/dev/null"
             );
         }
         my $out=join("",@out);
-        #$out=~s/.*<body>//s;
-        $out=~s/.*<!-- contents of filename: perltidy -->//s;
-        $out=~s{</body>.*}{}s;
         return $out;
     });
 
