@@ -24,31 +24,21 @@ BEGIN {
 use strict;
 use warnings;
 use aliased 'DBIx::Class::DeploymentHandler' => 'DH';
-use File::Basename qw/dirname/;
-use POSIX qw/getuid getgid setuid setgid/;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use openqa ();
 use Schema::Schema;
 
-my $dbdir = dirname($openqa::dbfile);
-die "$dbdir does not exist\n" unless -d $dbdir;
-my @s = stat(_);
-if (getgid() != $s[5]) {
-    setgid($s[5]) or die "can't change gid to $s[5]: $!\n";
-}
-if (getuid() != $s[4]) {
-    setuid($s[4]) or die "can't change uid to $s[4]: $!\n";
-}
-
 my $schema = openqa::connect_db();
+
 my $dh = DH->new(
     {
-	schema              => $schema,
-	script_directory    => "$FindBin::Bin/../dbicdh",
-	databases           => 'SQLite',
-	sql_translator_args => { add_drop_table => 0 },
-	force_overwrite     => 0,
-    }
-    );
+    schema              => $schema,
+    script_directory    => "$FindBin::Bin/../dbicdh",
+    databases           => 'SQLite',
+    sql_translator_args => { add_drop_table => 0 },
+    });
 
-$dh->prepare_install;
-$dh->install;
+$dh->prepare_deploy;
+$dh->prepare_upgrade({ from_version => 3, to_version => 4});
+$dh->upgrade;
