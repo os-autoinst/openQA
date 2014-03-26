@@ -5,7 +5,7 @@
 	<h2><%= title %></h2>
 	<p>This page lists the status of <%= $workers_cnt %> workers.</p>
 	<p />
-	<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
+	<table id="results" class="table-autosort table-autofilter table-autostripe">
 		<thead>
 		  <tr>
         <th class="table-sortable:alphanumeric">worker</th>

@@ -7,7 +7,7 @@
 	<h2>Test result overview</h2>
 	<p>This page lists the results for <b>Build <%= $build %></b></p>
 	<p />
-	<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
+	<table id="results" class="table-autosort table-autofilter table-autostripe">
 		<thead>
 			<tr>
 				<th></th>

@@ -16,7 +16,7 @@
       %= submit_button "change", class => "smbutton"
     % end
 	<p />
-	<table style="width: 95%;" id="results" class="table-autosort table-autofilter table-autostripe table-stripeclass:odd">
+	<table id="results" class="table-autosort table-autofilter table-autostripe">
 		<thead>
 		  <tr>
         <th class="table-sortable:alphanumeric">link</th>

@@ -24,7 +24,7 @@
       <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
     % }
 
-	<table style="width: 95%;" class="table-autostripe table-stripeclass:odd">
+	<table class="table-autostripe">
 	    <thead>
 		    <tr>
                 <th>key</th>

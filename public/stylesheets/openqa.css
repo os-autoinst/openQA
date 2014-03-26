@@ -376,6 +376,10 @@ td.flags {
 	width: 1.5em;
 }
 
+div.box table {
+	width: calc(100% - 20px);
+}
+
 
 /* Live view */
 
