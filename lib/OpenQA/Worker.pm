@@ -17,7 +17,6 @@
 package OpenQA::Worker;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
-use awstandard;
 use Scheduler qw/list_workers worker_get job_get_by_workerid/;
 
 sub list {

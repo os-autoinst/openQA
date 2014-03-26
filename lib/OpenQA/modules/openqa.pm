@@ -14,6 +14,7 @@ $loguploaddir
 $localstatedir $dbfile
 &get_failed_needles
 &sanitize_testname
+&file_content
 );
 
 @EXPORT_OK = qw/connect_db/;
@@ -25,7 +26,6 @@ if ($0 =~ /\.t$/) {
 }
 
 #use lib "/usr/share/openqa/cgi-bin/modules";
-use awstandard;
 use File::Basename;
 use Fcntl;
 use JSON "decode_json";
@@ -492,6 +492,17 @@ sub connect_db
             }) or die "can't conncect db: $!\n";
     }
     return $schema;
+}
+
+
+sub file_content($)
+{
+    my($fn)=@_;
+    open(FCONTENT, "<", $fn) or return undef;
+    local $/;
+    my $result=<FCONTENT>;
+    close(FCONTENT);
+    return $result;
 }
 
 package openqa::distri;

@@ -17,7 +17,6 @@
 package OpenQA::Test;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
-use awstandard;
 use Scheduler qw/worker_get/;
 use File::Basename;
 use POSIX qw/strftime/;

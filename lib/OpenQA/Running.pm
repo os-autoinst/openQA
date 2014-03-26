@@ -17,7 +17,6 @@
 package OpenQA::Running;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
-use awstandard;
 BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
 use Image::Magick;
 use Mojolicious::Static;

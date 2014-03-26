@@ -11,7 +11,6 @@ use Date::Format; # To allow fixtures with relative dates
 use DateTime; # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw/ abs_path getcwd /;
-use awstandard;
 use openqa;
 use Mojo::Base -base;
 has fixture_path => 't/fixtures';

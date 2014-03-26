@@ -18,10 +18,9 @@ package OpenQA::Helpers;
 
 use strict;
 use warnings;
-# TODO: Move all needed subs form awstandard to here.
-use awstandard;
 use Mojo::ByteStream;
 use db_helpers;
+use POSIX qw/strftime/;
 
 use base 'Mojolicious::Plugin';
 
@@ -29,7 +28,12 @@ sub register {
 
     my ($self, $app) = @_;
 
-    $app->helper(AWisodatetime2 => sub { shift; return AWisodatetime2(shift); });
+    $app->helper(format_time => sub {
+        my $c = shift;
+        my $timestamp = shift;
+        my $format = shift || "%Y-%m-%d %H:%M:%S";
+        return strftime($format, localtime($timestamp));
+    });
 
     $app->helper(syntax_highlight => sub {
         my $c=shift;
