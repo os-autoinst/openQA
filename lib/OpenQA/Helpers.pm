@@ -32,7 +32,10 @@ sub register {
         my $c = shift;
         my $timestamp = shift;
         my $format = shift || "%Y-%m-%d %H:%M:%S";
-        return strftime($format, localtime($timestamp));
+	# XXX we'd have to use InflateColumn::DateTime and check for
+	# DateTime objects if this should be made useful
+        #return strftime($format, localtime($timestamp));
+	return $timestamp;
     });
 
     $app->helper(syntax_highlight => sub {
