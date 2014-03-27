@@ -20,7 +20,6 @@ use strict;
 use warnings;
 use Mojo::ByteStream;
 use db_helpers;
-use POSIX qw/strftime/;
 
 use base 'Mojolicious::Plugin';
 
@@ -30,12 +29,15 @@ sub register {
 
     $app->helper(format_time => sub {
         my $c = shift;
-        my $timestamp = shift;
+        my $timedate = shift || return undef;
         my $format = shift || "%Y-%m-%d %H:%M:%S";
-	# XXX we'd have to use InflateColumn::DateTime and check for
-	# DateTime objects if this should be made useful
-        #return strftime($format, localtime($timestamp));
-	return $timestamp;
+        return $timedate->strftime($format);
+    });
+
+    $app->helper(format_time_duration => sub {
+        my $c = shift;
+        my $timedate = shift || return undef;
+        return sprintf("%02d:%02d:%02d", $timedate->hours(), $timedate->minutes(), $timedate->seconds());
     });
 
     $app->helper(syntax_highlight => sub {

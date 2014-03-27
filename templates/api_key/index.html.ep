@@ -38,7 +38,7 @@
                 <tr id="api_key_<%= $key->id %>">
                 <td class="key"><%= $key->key %></td>
                 <td class="secret"><%= $key->secret %></td>
-                <td class="expiration"><%= $key->t_expiration %></td>
+                <td class="expiration"><%= format_time($key->t_expiration) || "never" %></td>
                 <td class="action"><%= link_delete 'delete' => url_for('api_key', apikeyid => $key->id) %></td>
             % }
         </tbody>

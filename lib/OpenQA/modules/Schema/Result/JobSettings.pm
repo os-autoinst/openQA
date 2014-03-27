@@ -20,6 +20,7 @@ use base qw/DBIx::Class::Core/;
 use db_helpers;
 
 __PACKAGE__->table('job_settings');
+__PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
