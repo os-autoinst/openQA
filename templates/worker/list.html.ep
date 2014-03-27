@@ -26,12 +26,14 @@
 	  <td class="status">
 	    <% if($view->{'status'} eq 'idle') { %>
             Idle
+            <% } elsif($view->{'status'} eq 'dead') { %>
+            Dead with job <a href="/tests/<%= $view->{'jobid'} %>"><%= $view->{'jobid'} %></a>
             <% } else { %>
-            Working on job <a href="/tests/<%= $view->{'status'} %>"><%= $view->{'status'} %></a>
+            Working on job <a href="/tests/<%= $view->{'jobid'} %>"><%= $view->{'jobid'} %></a>
           <% } %>
 	  </td>
 	  <td class="currentstep">
-            <% if(defined($view->{'currentstep'})) { %>
+            <% if(defined($view->{'currentstep'}) && $view->{'status'} eq 'running') { %>
             <%= $view->{'currentstep'} %>
           <% } %>
 	  </td>

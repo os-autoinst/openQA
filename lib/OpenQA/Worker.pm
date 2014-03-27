@@ -17,7 +17,7 @@
 package OpenQA::Worker;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
-use Scheduler qw/list_workers worker_get job_get_by_workerid/;
+use Scheduler qw/list_workers worker_get workers_get_dead_worker job_get_by_workerid/;
 
 sub list {
     my $self = shift;
@@ -41,10 +41,17 @@ sub list {
 	    my $testdirname = $job->{'settings'}->{'NAME'};
 	    my $results = test_result($testdirname);
 	    my $modinfo = get_running_modinfo($results);
-	    $settings->{status} = $job->{id};
+	    $settings->{status} = "running";
+	    $settings->{jobid} = $job->{id};
 	    $settings->{currentstep} = $modinfo->{running};
 	} else {
 	    $settings->{status} = "idle";
+	}
+	my $dead_workers = workers_get_dead_worker();
+	foreach my $dead_worker (@$dead_workers) {
+	    if($dead_worker->{id} == $workerid) {
+		$settings->{status} = "dead";
+	    }
 	}
 	push @wlist, $settings;
     }

@@ -24,6 +24,7 @@ use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
 use Data::Dump qw/pp/;
 use Date::Format qw/time2str/;
+use DateTime;
 
 use FindBin;
 use lib $FindBin::Bin;
@@ -41,7 +42,7 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-@EXPORT = qw(worker_register worker_get list_workers job_create
+@EXPORT = qw(worker_register worker_get workers_get_dead_worker list_workers job_create
     job_get job_get_by_workerid jobs_get_dead_worker list_jobs job_grab job_set_done
     job_set_waiting job_set_running job_set_prio
     job_delete job_update_result job_restart job_cancel command_enqueue
@@ -143,6 +144,28 @@ sub worker_get {
     my $worker = $rs->find($workerid);
 
     return $worker;
+}
+
+sub workers_get_dead_worker {
+    my $dt = DateTime->now(time_zone=>'UTC');
+    # set the threshold as 00 second
+    $dt->set_second(00);
+    my $threshold = join ' ',$dt->ymd, $dt->hms;
+
+    my %cond = (
+	'host' => { '!=' => 'NONE'},
+	't_updated' => { '<' => $threshold},
+    );
+
+    my $dead_workers = schema->resultset("Workers")->search(\%cond);
+
+    my @results = ();
+    while( my $worker = $dead_workers->next) {
+	my $j = _hashref($worker, qw/ id host instance backend/);
+	push @results, $j;
+    }
+
+    return \@results;
 }
 
 # XXX TODO: Remove HashRefInflator
