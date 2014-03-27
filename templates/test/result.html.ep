@@ -48,7 +48,7 @@
 	<div class="box box-shadow" id="info_box">
 		<div class="box-header aligncenter">Test Details</div>
 		<div style="margin: 0 3px 0 3px;" class="cligncenter">
-			<table style="border: none; margin: 0;" class="infotbl">
+			<table class="infotbl">
 				<tr>
 					<td style="width: 40%;">Duration</td>
 					<td><%= $test_duration %></td>
@@ -69,7 +69,7 @@
 	<div class="box box-shadow" id="backend_info_box">
 		<div class="box-header aligncenter">Backend</div>
 		<div style="margin: 0 3px 0 3px;" class="cligncenter">
-			<table style="border: none; margin: 0;" class="infotbl">
+			<table class="infotbl">
 				<tr>
 					<td colspan="2" style="padding: 0 0 <%= ($backend_info->{'backend'} eq 'kvm2usb')?'8px':'0' %> 0;"><%= $backend_info->{'backend'} %></td>
 				</tr>
@@ -103,7 +103,7 @@
 	<div class="box box-shadow" id="legend_box">
 		<div class="box-header aligncenter">Flag Legend</div>
 		<div style="margin: 0 3px 0 3px;" class="cligncenter">
-			<table style="border: none; margin: 0;" class="infotbl">
+			<table class="infotbl">
 				<tr>
 					<td class="flags">&#9760;</td>
 					<td title="Testsuite is aborted if this test fails">Fatal</td>

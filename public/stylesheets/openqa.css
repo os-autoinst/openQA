@@ -1,6 +1,14 @@
 @import url(container18.css);
 @import url(perltidy.css);
 
+
+table {
+	/* tables have 10px margin on each side
+	 * so we must subtract it to fit the table
+	 * into the container */
+	width: calc(100% - 20px);
+}
+
 td { text-align: center; vertical-align: middle; }
 td { padding: 0.3em 0.6em; }
 
@@ -65,8 +73,6 @@ table th.table-sorted-asc i.sort-arrows {
 .sponsors {}
 .subresults {font-size: 80%; }
 .cutofftimeform { margin-left: 2em; }
-table {width: 100%;}
-
 
 /* Reference Picture delete Button */
 
@@ -364,20 +370,22 @@ input[type='image'] {
 
 /* special table stuff */
 
+.infotbl {
+	border: none;
+	margin: 0;
+	width: 100%;
+}
+
 .infotbl td {
-        padding: 0 0 0 0;
+	padding: 0 0 0 0;
 }
 .infotbl img {
-        padding-right: 3px;
+	padding-right: 3px;
 }
 
 td.flags {
 	font-size: 1.5em;
 	width: 1.5em;
-}
-
-div.box table {
-	width: calc(100% - 20px);
 }
 
 
