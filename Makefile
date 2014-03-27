@@ -6,7 +6,7 @@ install:
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
 #
-	for i in backlog factory/iso logs perl pool testresults logupload; do \
+	for i in backlog cache factory/iso logs perl pool testresults logupload; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
 	for i in script; do \

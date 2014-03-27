@@ -141,6 +141,7 @@ sub startup {
   $self->plugin('OpenQA::CSRF');
   $self->plugin('OpenQA::REST');
   $self->plugin('RenderFile');
+  $self->plugin('CHI');
 
   # set secure flag on cookies of https connections
   $self->app->hook(before_dispatch => sub {
@@ -162,6 +163,21 @@ sub startup {
   if ($self->config->{'logging'}->{'level'}) {
     $self->log->level($self->config->{'logging'}->{'level'});
   }
+
+  $self->app->plugin(CHI => {
+    ThumbCache => {
+      driver     => 'CacheCache',
+      cc_class   => 'Cache::FileCache',
+      cc_options => { cache_root  => '/var/lib/openqa/cache'},
+    },
+    default => {
+      driver => 'Memory',
+      global => 1
+    },
+    namespaces => 1
+  });
+  # clear thumbnails cache when openqa started
+  $self->app->chi('ThumbCache')->clear();
 
   # Router
   my $r = $self->routes;

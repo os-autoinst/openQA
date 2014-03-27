@@ -71,6 +71,7 @@ development mode.
 directories owned by the user that runs the workers (default 'geekotest'):
 
 * +backlog+
+* +cache+ (cache directory, it need owned by the user who runs openqa)
 * +factory/iso+
 * +perl/+ (subdirectory 'autoinst' must link to +/usr/lib/os-autoinst+)
 * +pool/1+ (add more for each worker)

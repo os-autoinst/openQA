@@ -133,10 +133,14 @@ sub _serve_file {
     if ($size !~ m/^\d{1,3}x\d{1,3}$/) {
       return $self->render(text => "invalid parameter 'size'\n", code => 400);
     }
-    my $p = new Image::Magick(depth=>8);
-    $p->Read($fullname, depth=>8);
-    $p->Resize($size); # make thumbnail
-    return $self->render(data => $p->ImageToBlob(magick=>uc($self->stash('format')), depth=>8, quality=>80));
+    my $cachename = "cache_$fullname";
+    if(!$self->app->chi('ThumbCache')->is_valid($cachename)) {
+      my $p = new Image::Magick(depth=>8);
+      $p->Read($fullname, depth=>8);
+      $p->Resize($size); # make thumbnail
+      $self->app->chi('ThumbCache')->set($cachename, $p->ImageToBlob(magick=>uc($self->stash('format')), depth=>8, quality=>80), { expires_in => '30 min' });
+    }
+    return $self->render(data => $self->app->chi('ThumbCache')->get($cachename));
   }
 
   $self->app->log->debug("serve static");

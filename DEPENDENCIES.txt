@@ -1,4 +1,6 @@
 CGI
+CHI
+Cache::Cache
 Carp
 Clone
 Config::IniFiles
@@ -43,6 +45,7 @@ MojoX::JSON::RPC
 Mojolicious
 Mojolicious::Commands
 Mojolicious::Plugin
+Mojolicious::Plugin::CHI
 Mojolicious::Plugin::RenderFile
 Mojolicious::Static
 Net::OpenID::Consumer
