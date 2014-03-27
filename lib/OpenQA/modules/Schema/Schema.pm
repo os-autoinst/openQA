@@ -24,7 +24,7 @@ __PACKAGE__->load_namespaces;
 sub deploy {
     my ( $class, $attrs ) = @_;
 
-    my $ret = $class->next::method($attrs);
+    # my $ret = $class->next::method($attrs);
 
     # insert pre-defined values to job_states
     $class->storage->dbh_do(

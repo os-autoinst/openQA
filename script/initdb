@@ -52,3 +52,9 @@ my $dh = DH->new(
 
 $dh->prepare_install;
 $dh->install;
+
+# XXX TODO - Replace the deploy with the tools that DH provides for
+# fixtures and bulk data.
+
+# Populate the databases with initial data
+$schema->deploy;
