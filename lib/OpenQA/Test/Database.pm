@@ -22,9 +22,6 @@ sub create {
     @_
   );
 
-  # Remove previous
-  unlink $openqa::dbfile if -e $openqa::dbfile;
-
   # New db
   my $schema = openqa::connect_db(':memory:');
   $schema->deploy();
