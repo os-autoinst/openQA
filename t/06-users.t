@@ -26,7 +26,7 @@ use OpenQA::Test::Database;
 use Test::More;
 use Test::Mojo;
 
-OpenQA::Test::Database->new->create(file => $ENV{OPENQA_DB}, skip_fixtures => 1);
+OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $t = Test::Mojo->new('OpenQA');
 
 my $mordred_id = 'https://openid.badguys.uk/mordred';

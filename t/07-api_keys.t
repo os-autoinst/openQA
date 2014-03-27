@@ -26,7 +26,7 @@ use OpenQA::Test::Database;
 use Test::More;
 use Test::Mojo;
 
-OpenQA::Test::Database->new->create(file => $ENV{OPENQA_DB});
+OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA');
 
 
