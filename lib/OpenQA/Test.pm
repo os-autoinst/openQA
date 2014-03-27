@@ -182,7 +182,7 @@ sub show {
   }
 
   # details box
-  my $test_duration = strftime("%H:%M:%S", gmtime($job->{t_finished} - $job->{t_started}));
+  my $test_duration = $job->{t_finished} - $job->{t_started};
 
   # result files box
   my @resultfiles = test_resultfile_list($testdirname);

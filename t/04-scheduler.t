@@ -175,7 +175,7 @@ my $rjobs_before = Scheduler::list_jobs(state => 'running');
 my $job = Scheduler::job_grab(%args);
 my $rjobs_after = Scheduler::list_jobs(state => 'running');
 is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
-ok($job->{t_started} =~ /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, "job start timestamp updated");
+ok($job->{t_started} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job start timestamp updated");
 is(scalar(@{$rjobs_before})+1, scalar(@{$rjobs_after}), "number of running jobs");
 is($job->{worker_id}, $worker->{id}, "correct worker assigned");
 
@@ -209,7 +209,7 @@ ok($result == 1, "job_set_done");
 $job = Scheduler::job_get($job_id);
 is($job->{state}, "done", "job_set_done changed state");
 is($job->{result}, "passed", "job_set_done changed result");
-ok($job->{t_finished} =~ /\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/, "job end timestamp updated");
+ok($job->{t_finished} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job end timestamp updated");
 
 # we cannot test maxage here as it depends too much on too small
 # time slots. The ui tests check maxage instead too

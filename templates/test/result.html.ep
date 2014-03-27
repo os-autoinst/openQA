@@ -51,7 +51,7 @@
 			<table class="infotbl">
 				<tr>
 					<td style="width: 40%;">Duration</td>
-					<td><%= $test_duration %></td>
+					<td><%= format_time_duration($test_duration) %></td>
 				</tr>
 				<tr>
 					<td>Result</td>
