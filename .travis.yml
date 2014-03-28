@@ -3,8 +3,6 @@ perl:
   - "5.18"
 install:
   - sudo apt-get install libgmp3-dev
-  - curl http://security.ubuntu.com/ubuntu/pool/main/i/imagemagick/perlmagick_6.6.9.7-5ubuntu3.3_amd64.deb -o /tmp/pkg.deb
-  - sudo dpkg --install /tmp/pkg.deb
   - cpanm -nq `grep -v Image::Magick DEPENDENCIES.txt`
   - cpanm -nq "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
