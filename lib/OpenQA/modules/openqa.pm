@@ -37,6 +37,7 @@ our $resultdir="$basedir/$prj/testresults";
 our $scheduledir="$basedir/$prj/schedule.d";
 our $loguploaddir="$basedir/$prj/logupload";
 our $isodir="$basedir/$prj/factory/iso";
+our $cachedir="$basedir/$prj/cache";
 our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';

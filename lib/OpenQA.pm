@@ -21,6 +21,7 @@ use OpenQA::Helpers;
 use Scheduler;
 use Mojo::IOLoop;
 use DateTime;
+use Cwd qw/abs_path/;
 
 use Config::IniFiles;
 
@@ -167,7 +168,9 @@ sub startup {
     ThumbCache => {
       driver     => 'CacheCache',
       cc_class   => 'Cache::FileCache',
-      cc_options => { cache_root  => '/var/lib/openqa/cache'},
+      cc_options => {
+	  cache_root  => abs_path($openqa::cachedir),
+	},
     },
     default => {
       driver => 'Memory',
