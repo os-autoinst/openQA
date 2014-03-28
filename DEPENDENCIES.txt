@@ -4,6 +4,7 @@ Cache::Cache
 Carp
 Clone
 Config::IniFiles
+Crypt::DH::GMP
 Cwd
 DBD::SQLite
 DBIx::Class

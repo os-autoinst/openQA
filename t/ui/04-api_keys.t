@@ -47,7 +47,7 @@ $req->element_exists('#api_key_99902', 'keys are there');
 $req->element_exists('#api_key_99903', 'keys are there');
 $req->element_exists('#api_key_99904', 'keys are there');
 $req->element_exists_not('#api_key_99901', "no other users's keys");
-$req->text_isnt('#api_key_99902 .expiration' => '');
+$req->text_isnt('#api_key_99902 .expiration' => 'never');
 $req->text_is('#api_key_99904 .expiration' => 'never');
 
 # When clicking in 'create' a new API key is displayed in the listing
@@ -60,7 +60,7 @@ $req->element_exists('#api_key_99905', 'keys are there');
 $req = $t->post_ok('/api_keys', { 'X-CSRF-Token' => $token } => form => {t_expiration => '2016-01-05'})->status_is(302);
 $req = $t->get_ok('/api_keys')->status_is(200);
 $req->text_is('#api_key_99905 .expiration' => 'never');
-$req->text_like('#api_key_99906 .expiration' => qr/2016-01-05 /);
+$req->text_like('#api_key_99906 .expiration' => qr/2016-01-05/);
 
 # check invalid expiration date
 $req = $t->post_ok('/api_keys', { 'X-CSRF-Token' => $token } => form => {t_expiration => 'asdlfj'})->status_is(302);
