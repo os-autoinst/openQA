@@ -141,7 +141,6 @@ sub startup {
   $self->plugin('OpenQA::CSRF');
   $self->plugin('OpenQA::REST');
   $self->plugin('RenderFile');
-  $self->plugin('CHI');
 
   # set secure flag on cookies of https connections
   $self->app->hook(before_dispatch => sub {
