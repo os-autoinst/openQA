@@ -7,6 +7,8 @@ install:
   - cpanm -nq "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
   # - cover -test
-  - PERL5OPT=-MDevel::Cover prove -r
+  - PERL5OPT=-MDevel::Cover MOJO_LOG_LEVEL=debug prove -r 2>/tmp/openqa-debug.log
 after_success:
   - cover -report coveralls
+after_failure:
+  - cat /tmp/openqa-debug.log
