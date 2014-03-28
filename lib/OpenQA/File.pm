@@ -144,7 +144,10 @@ sub _serve_file {
   }
 
   $self->app->log->debug("serve static");
-  $res->headers->content_type($self->app->types->type($self->stash('format')))->accept_ranges('bytes');
+  my $filetype = $self->app->types->type($self->stash('format'));
+  if ($filetype) {
+      $res->headers->content_type($filetype)->accept_ranges('bytes');
+  }
   $res->content->asset(Mojo::Asset::File->new(path => $fullname));
   return !!$self->rendered;
 }
