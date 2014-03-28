@@ -7,6 +7,6 @@ install:
   - cpanm -nq "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
   # - cover -test
-  - PERL5OPT=-MDevel::Cover prove
+  - PERL5OPT=-MDevel::Cover prove -r
 after_success:
   - cover -report coveralls
