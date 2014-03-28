@@ -60,7 +60,7 @@ $req->element_exists('#api_key_99905', 'keys are there');
 $req = $t->post_ok('/api_keys', { 'X-CSRF-Token' => $token } => form => {t_expiration => '2016-01-05'})->status_is(302);
 $req = $t->get_ok('/api_keys')->status_is(200);
 $req->text_is('#api_key_99905 .expiration' => '');
-$req->text_like('#api_key_99906 .expiration' => qr/2016-01-05T/);
+$req->text_like('#api_key_99906 .expiration' => qr/2016-01-05/);
 
 # check invalid expiration date
 $req = $t->post_ok('/api_keys', { 'X-CSRF-Token' => $token } => form => {t_expiration => 'asdlfj'})->status_is(302);
