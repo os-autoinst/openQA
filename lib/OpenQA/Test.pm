@@ -182,7 +182,7 @@ sub show {
   }
 
   # details box
-  my $test_duration = $job->{t_finished} - $job->{t_started};
+  my $test_duration = $job->{t_finished}&&$job->{t_started}?$job->{t_finished} - $job->{t_started}:undef;
 
   # result files box
   my @resultfiles = test_resultfile_list($testdirname);
@@ -190,7 +190,7 @@ sub show {
   # uploaded logs box
   my @ulogs = test_uploadlog_list($testdirname);
 
-  $self->stash(overall => $results->{'overall'});
+  $self->stash(overall => $results->{'overall'}||'na');
   $self->stash(modlist => \@modlist);
   $self->stash(diskimg => $diskimg);
   $self->stash(backend_info => $results->{backend});
