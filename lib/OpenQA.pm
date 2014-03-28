@@ -170,6 +170,7 @@ sub startup {
       cc_class   => 'Cache::FileCache',
       cc_options => {
 	  cache_root  => abs_path($openqa::cachedir),
+	  directory_umask => 077,
 	},
     },
     default => {
