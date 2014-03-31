@@ -157,12 +157,15 @@ sub startup {
 
   $self->_read_config;
 
-  if ($self->config->{'logging'}->{'file'}) {
-    $self->log->path($self->config->{'logging'}->{'file'});
-  }
-  if ($self->config->{'logging'}->{'level'}) {
-    $self->log->level($self->config->{'logging'}->{'level'});
-  }
+    if ($ENV{OPENQA_LOGFILE}) {
+        $self->log->path($ENV{OPENQA_LOGFILE});
+    }
+    elsif ($self->config->{'logging'}->{'file'}) {
+        $self->log->path($self->config->{'logging'}->{'file'});
+    }
+    if ($self->config->{'logging'}->{'level'}) {
+        $self->log->level($self->config->{'logging'}->{'level'});
+    }
 
   $self->app->plugin(CHI => {
     ThumbCache => {
