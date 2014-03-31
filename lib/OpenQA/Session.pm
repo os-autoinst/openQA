@@ -95,6 +95,10 @@ sub response {
     my %params = @{ $self->req->query_params->params };
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base;
 
+    if ($self->app->config->{openid}->{httpsonly} && $url !~ /^https:\/\//) {
+        return $self->render(text => "got response on http but https is forced. MOJO_REVERSE_PROXY not set?", status => 500);
+    }
+
     while ( my ( $k, $v ) = each %params ) {
 	$params{$k} = URI::Escape::uri_unescape($v);
     }
