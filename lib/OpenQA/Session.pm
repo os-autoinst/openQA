@@ -78,6 +78,10 @@ sub create {
 	consumer_secret => $self->app->config->{_openid_secret},
 	);
     my $claimed_id = $csr->claimed_identity($self->config->{openid}->{provider});
+    unless ($claimed_id) {
+        # XXX: looks ulgy
+        return $self->render(text => $csr->err, status => 500);
+    }
     my $check_url = $claimed_id->check_url(
 	return_to  => qq{$url/response},
 	trust_root => qq{$url/},
