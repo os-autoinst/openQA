@@ -31,24 +31,35 @@ sub list {
   }
 
   my $defaulthoursfresh=4*24;
-  if (!defined($self->param('hours')) || $self->param('hours') =~ m/\D/) {
-    $self->param(hours => $defaulthoursfresh);
+  my $hoursfresh = $self->param('hours') || 0;
+  my $limit = $self->param('limit');
+  my $page = $self->param('page');
+
+  if ($hoursfresh =~ m/\D/) {
+	  $hoursfresh = 0;
+  }
+  if ($limit && $limit =~ m/\D/) {
+	  $limit = undef;
+  }
+  if ($page && $page =~ m/\D/) {
+	  $page = undef;
+  }
+  if ($limit && $limit > 500) {
+	  $limit = 500;
   }
 
-  my $hoursfresh = $self->param('hours') + 0;
-  if ($hoursfresh < 1 || $hoursfresh > 900) {
-    $hoursfresh=$defaulthoursfresh
+  if (!$limit && (!$hoursfresh || $hoursfresh > 900)) {
+    $hoursfresh = $defaulthoursfresh
   }
-  my $maxage = 3600 * $hoursfresh;
 
   my @slist=();
   my @list=();
 
-  # TODO: implement match, boring and maxage again
-
   for my $job (@{Scheduler::list_jobs('state' => 'scheduled,running,done',
 				      match => $match,
-				      maxage => $maxage, fulldetails => 1)||[]}) {
+				      limit => $limit,
+				      page => $page,
+				      maxage => $hoursfresh*3600, fulldetails => 1)||[]}) {
 
     if ($job->{state} eq 'running' || $job->{state} eq 'done') {
 

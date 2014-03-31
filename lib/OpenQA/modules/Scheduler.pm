@@ -325,6 +325,11 @@ sub list_jobs {
 	    'me.t_finished' => $agecond
 	    ];
     }
+    if ($args{limit}) {
+	    $attrs{rows} = $args{limit};
+    }
+    $attrs{page} = $args{page}||0;
+
     if ($args{build}) {
 	$cond{'settings.key'} = "BUILD";
 	$cond{'settings.value'} = $args{build};
