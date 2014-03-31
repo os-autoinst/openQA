@@ -66,7 +66,7 @@ sub register {
     $app->helper(breadcrumbs => sub {
         my $c = shift;
 
-        my $crumbs = '<div id="breadcrump" class="grid_11 alpha">';
+        my $crumbs = '<div id="breadcrump" class="grid_10 alpha">';
         $crumbs .= '<a href="'.$c->url_for('/').'">';
         $crumbs .= $c->image('/images/home_grey.png', alt => "Home");
         $crumbs .= '<b>'.$c->stash('appname').'</b></a>';
