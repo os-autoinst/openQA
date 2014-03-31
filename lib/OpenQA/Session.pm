@@ -138,6 +138,11 @@ sub response {
 
             my $user = $self->db->resultset("Users")->find_or_create({openid => $id});
             $msg = 'verified';
+            if($self->db->resultset("Users")->find({ is_admin => 1 })) {
+                $user->is_admin(1);
+                $user->is_operator(1);
+                $user->update;
+            }
             $self->session->{user} = $vident->{identity};
         },
         error => sub {
