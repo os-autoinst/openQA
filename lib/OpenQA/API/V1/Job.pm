@@ -132,9 +132,9 @@ sub cancel {
 
 sub duplicate {
     my $self = shift;
-    my $jobid =
+    my $jobid = int($self->param('name'));
     my %args = (
-         jobid => int($self->stash('jobid')),
+         jobid => $jobid
     );
     if (defined $self->param('prio')) {
         $args{prio} = int($self->param('prio'));
