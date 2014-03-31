@@ -1,8 +1,8 @@
 language: perl
-perl:
-  - "5.18"
+# We do not specify a perl version for travis, as we're using the
+# perl deb from ubuntu/trusty
 before_install:
-  - echo "deb http://cz.archive.ubuntu.com/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/trusty.list
+  - echo "deb http://us.archive.ubuntu.com/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/trusty.list
   - sudo apt-get update
 install:
   # the libfoo-perl stuff is stated here to pull in some deps (apt is faster than cpanm)
