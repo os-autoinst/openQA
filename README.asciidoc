@@ -26,6 +26,7 @@ latest development version can be found also in OBS in
 https://build.opensuse.org/project/show/devel:openQA:devel[openQA:devel]
 repository. Installation on openSUSE is therefore pretty simple:
 
+[source,sh]
 --------------------------------------------------------------------------------
 zypper ar -f obs://devel:openQA/openSUSE_13.1 openQA
 zypper ar -f obs://devel:openQA:devel/openSUSE_13.1 openQA-devel
@@ -50,6 +51,7 @@ Now you have WebUI running on localhost and workers running as well. You can
 take a look at WebUI at http://localhost But so far it is empty. To create a
 test, put ISO in +/var/lib/openqa/factory/iso+ and call following commands:
 
+[source,sh]
 --------------------------------------------------------------------------------
 # Run the first test
 /usr/share/openqa/script/client isos post \
@@ -98,6 +100,7 @@ To start the workers you can use the provided systemd files via +systemctl
 start openqa-worker.target+. This will start as many workers as you have pool
 directories. Alternatively you can run
 
+[source,sh]
 --------------------------------------------------------------------------------
 script/worker --instance X
 --------------------------------------------------------------------------------
@@ -112,6 +115,8 @@ Setting up git support
 
 Editing needles from web can optionally commit new or changed needles
 automatically to git. To do so, you need to enable git support by setting
+
+[source,ini]
 --------------------------------------------------------------------------------
 [global]
 scm = git
@@ -131,6 +136,8 @@ You can do so by setting configuration in the repository
 
 To enable automatic pushing of the repo as well, you need to add the following
 to your openqa.ini:
+
+[source,ini]
 --------------------------------------------------------------------------------
 [scm git]
 do_push = yes
