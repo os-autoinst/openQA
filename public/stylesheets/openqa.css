@@ -372,8 +372,8 @@ input[type='image'] {
 
 .infotbl {
 	border: none;
-	margin: 0;
-	width: 100%;
+	margin: 0 3px 0 3px;
+	width: calc(100% - 6px);
 }
 
 .infotbl td {

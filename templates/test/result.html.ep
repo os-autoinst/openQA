@@ -47,78 +47,72 @@
 	<% } %>
 	<div class="box box-shadow" id="info_box">
 		<div class="box-header aligncenter">Test Details</div>
-		<div style="margin: 0 3px 0 3px;" class="cligncenter">
-			<table class="infotbl">
-				<tr>
-					<td style="width: 40%;">Duration</td>
-					<td><%= format_time_duration($test_duration) %></td>
-				</tr>
-				<tr>
-					<td>Result</td>
-					<td><span style="padding: 0 10%; display: inline-block; text-align: center;" class="<%= "result$res_css->{$overall}" %>"><%= $res_display->{$overall} %></span></td>
-				</tr>
-				<tr>
-					<td style="width: 40%;">State</td>
-					<td><%= $job->{state} %></td>
-				</tr>
-			</table>
-		</div>
+        <table class="infotbl">
+            <tr>
+                <td style="width: 40%;">Duration</td>
+                <td><%= format_time_duration($test_duration) %></td>
+            </tr>
+            <tr>
+                <td>Result</td>
+                <td><span style="padding: 0 10%; display: inline-block; text-align: center;" class="<%= "result$res_css->{$overall}" %>"><%= $res_display->{$overall} %></span></td>
+            </tr>
+            <tr>
+                <td style="width: 40%;">State</td>
+                <td><%= $job->{state} %></td>
+            </tr>
+        </table>
 	</div>
 	<% if($backend_info) { %>
 	<% $backend_info->{'backend'} =~s/^.*:://; %>
 	<div class="box box-shadow" id="backend_info_box">
 		<div class="box-header aligncenter">Backend</div>
-		<div style="margin: 0 3px 0 3px;" class="cligncenter">
-			<table class="infotbl">
-				<tr>
-					<td colspan="2" style="padding: 0 0 <%= ($backend_info->{'backend'} eq 'kvm2usb')?'8px':'0' %> 0;"><%= $backend_info->{'backend'} %></td>
-				</tr>
-				<% if($backend_info->{'backend'} eq 'kvm2usb') { %>
-					<tr>
-						<td style="width: 16px;"><img src="/images/hw_icons/slot.svg" width="16" height="16" title="slot" alt="slot"/></td>
-						<td><%= $backend_info->{'backend_info'}->{'hwslot'} %></td>
-					</tr>
-					<% if(defined $backend_info->{'backend_info'}->{'hw_info'}) { %>
-						<% my $hw_info = $backend_info->{'backend_info'}->{'hw_info'}; %>
-						% for my $hw_key ( ('vendor', 'name', 'cpu', 'cpu_cores', 'memory', 'disks') ) { 
-							% unless (defined $hw_info->{$hw_key}) {
-                % next
-              % }
-							<tr>
-								<td><img src="/images/hw_icons/<%= $hw_key %>.svg" title="<%= $hw_key %>" width="16" height="16" alt="<%= $hw_key %>" /></td>
-								<td><%= $hw_info->{$hw_key} %></td>
-							</tr>
-						% }
-						<% if(defined $hw_info->{'comment'}) { %>
-							<tr>
-								<td colspan="2" style="padding: 8px 0 0 0;"><%= $hw_info->{'comment'} %></td>
-							</tr>
-						<% } %>
-					<% } %>
-				<% } %>
-			</table>
-		</div>
+        <table class="infotbl">
+            <tr>
+                <td colspan="2" style="padding: 0 0 <%= ($backend_info->{'backend'} eq 'kvm2usb')?'8px':'0' %> 0;"><%= $backend_info->{'backend'} %></td>
+            </tr>
+            % if($backend_info->{'backend'} eq 'kvm2usb') {
+                <tr>
+                    <td style="width: 16px;"><img src="/images/hw_icons/slot.svg" width="16" height="16" title="slot" alt="slot"/></td>
+                    <td><%= $backend_info->{'backend_info'}->{'hwslot'} %></td>
+                </tr>
+                % if(defined $backend_info->{'backend_info'}->{'hw_info'}) {
+                    % my $hw_info = $backend_info->{'backend_info'}->{'hw_info'};
+                    % for my $hw_key ( ('vendor', 'name', 'cpu', 'cpu_cores', 'memory', 'disks') ) { 
+                        % unless (defined $hw_info->{$hw_key}) {
+                            % next
+                        % }
+                        <tr>
+                            <td><img src="/images/hw_icons/<%= $hw_key %>.svg" title="<%= $hw_key %>" width="16" height="16" alt="<%= $hw_key %>" /></td>
+                            <td><%= $hw_info->{$hw_key} %></td>
+                        </tr>
+                    % }
+                    % if(defined $hw_info->{'comment'}) {
+                        <tr>
+                            <td colspan="2" style="padding: 8px 0 0 0;"><%= $hw_info->{'comment'} %></td>
+                        </tr>
+                    % }
+                % }
+            % }
+        </table>
 	</div>
 	<% } %>
 	<div class="box box-shadow" id="legend_box">
 		<div class="box-header aligncenter">Flag Legend</div>
-		<div style="margin: 0 3px 0 3px;" class="cligncenter">
-			<table class="infotbl">
-				<tr>
-					<td class="flags">&#9760;</td>
-					<td title="Testsuite is aborted if this test fails">Fatal</td>
-				</tr>
-				<tr>
-					<td class="flags">&#9888;</td>
-					<td title="Overall result is failed if this test fails">Important</td>
-				</tr>
-				<tr>
-					<td class="flags">&#9875;</td>
-					<td title="Snapshot the state after this test for restoring">Milestone</td>
-				</tr>
-			</table>
-		</div>
-	</div>
+        <table class="infotbl">
+            <tr>
+                <td class="flags">&#9760;</td>
+                <td title="Testsuite is aborted if this test fails">Fatal</td>
+            </tr>
+            <tr>
+                <td class="flags">&#9888;</td>
+                <td title="Overall result is failed if this test fails">Important</td>
+            </tr>
+            <tr>
+                <td class="flags">&#9875;</td>
+                <td title="Snapshot the state after this test for restoring">Milestone</td>
+            </tr>
+        </table>
+    </div>
 </div>
 
 <div class="grid_14 omega">
