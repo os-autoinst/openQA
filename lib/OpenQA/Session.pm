@@ -67,10 +67,10 @@ sub destroy {
 
 sub create {
     my $self = shift;
-    my $url = $self->app->config->{base_url} || $self->req->url->base;
+    my $url = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;
 
     # force secure connection after login
-    $url->scheme('https') if $url->scheme eq 'http' && $self->app->config->{openid}->{httpsonly};
+    $url =~ s,^http://,https://, if $self->app->config->{openid}->{httpsonly};
 
     my $csr = Net::OpenID::Consumer->new(
 	ua              => LWP::UserAgent->new,
@@ -93,7 +93,7 @@ sub create {
 sub response {
     my $self = shift;
     my %params = @{ $self->req->query_params->params };
-    my $url = $self->app->config->{base_url} || $self->req->url->base;
+    my $url = $self->app->config->{global}->{base_url} || $self->req->url->base;
 
     while ( my ( $k, $v ) = each %params ) {
 	$params{$k} = URI::Escape::uri_unescape($v);
