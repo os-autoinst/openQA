@@ -95,6 +95,9 @@ sub response {
 	$params{$k} = URI::Escape::uri_unescape($v);
     }
 
+    # required_root comes back as https
+    $url->scheme('https') if $url->scheme eq 'http' && $self->app->config->{openid}->{httpsonly};
+
     my $csr = Net::OpenID::Consumer->new(
         ua              => LWP::UserAgent->new,
         required_root   => $url,
