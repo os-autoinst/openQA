@@ -36,23 +36,39 @@ function updateTestStatus(newStatus) {
 	}
 }
 
+// Helper functions to show/hide elements
+
+function hide(id) {
+    if ($(id)) {
+        $(id).hide();
+    }
+    return true;
+}
+
+function show(id) {
+    if ($(id)) {
+        $(id).show();
+    }
+    return true;
+}
+
 function updateInteractiveIndicator() {
 	var indicator = $("interactive_indicator");
 	if (window.testStatus.interactive == null) {
 		indicator.innerHTML = "Unknown";
 		indicator.dataset.nextStatus = "";
-		$("interactive_button").hide();
+		window.hide("interactive_button");
 	} else if (window.testStatus.interactive == 1) {
 		indicator.innerHTML = "Yes";
 		indicator.dataset.nextStatus = 0;
-		$("interactive_button").show();
+		window.show("interactive_button");
 		if (!window.testStatus.needinput) {
-			$("stop_button").show();
+			window.show("stop_button");
 		}
 	} else {
 		indicator.innerHTML = "No";
 		indicator.dataset.nextStatus = 1;
-		$("interactive_button").show();
+		window.show("interactive_button");
 	}
 	indicator.highlight();
 }
@@ -61,22 +77,22 @@ function updateNeedinputIndicator() {
 	var indicator = $("needinput_indicator");
 	if (window.testStatus.interactive != 1 || window.testStatus.needinput == null) {
 		indicator.innerHTML = "N/A";
-		$("crop_button").hide();
-		$("continue_button").hide();
-		$("retry_button").hide();
+		window.hide("crop_button");
+		window.hide("continue_button");
+		window.hide("retry_button");
 	} else if (window.testStatus.needinput == 1) {
 		indicator.innerHTML = "Yes";
-		$("crop_button").show();
-		$("continue_button").show();
-		$("retry_button").show();
-		$("stop_button").hide();
+		window.show("crop_button");
+		window.show("continue_button");
+		window.show("retry_button");
+		window.hide("stop_button");
 	} else {
 		indicator.innerHTML = "No";
-		$("crop_button").hide();
-		$("continue_button").hide();
-		$("retry_button").hide();
+		window.hide("crop_button");
+		window.hide("continue_button");
+		window.hide("retry_button");
 		if (window.testStatus.interactive) {
-			$("stop_button").show();
+			window.show("stop_button");
 		}
 	}
 	indicator.highlight();
