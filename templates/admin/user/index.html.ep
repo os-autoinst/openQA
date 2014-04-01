@@ -1,0 +1,44 @@
+% layout 'admin';
+% title 'Users';
+
+<div class="grid_16 box box-shadow omega">
+	<h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+	<table style="width: 95%;" class="table-autostripe table-stripeclass:odd">
+	    <thead>
+		    <tr>
+                <th>id</th>
+                <th>openID</th>
+                <th>operator</th>
+                <th>admin</th>
+                <th colspan="2">actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            % for my $user (@$users) {
+                <tr id="user_<%= $user->id %>">
+                    <td class="id"><%= $user->id %></td>
+                    <td class="openid"><%= $user->openid %></td>
+                    <td class="is_operator"><%= $user->is_operator ? 'yes' : 'no' %></td>
+                    <td class="is_admin"><%= $user->is_admin ? 'yes' : 'no' %></td>
+                    <td class="action">
+                        % if ($user->is_operator) {
+                            %= link_to '- operator' => url_for('admin_user', userid=> $user->id)->query(is_operator => '0') => 'data-method' => 'post'
+                        % } else {
+                            %= link_to '+ operator' => url_for('admin_user', userid=> $user->id)->query(is_operator => '1') => 'data-method' => 'post'
+                        % }
+                    </td>
+                    <td class="action">
+                        % if ($user->is_admin) {
+                            %= link_to '- admin' => url_for('admin_user', userid=> $user->id)->query(is_admin => '0') => 'data-method' => 'post'
+                        % } else {
+                            %= link_to '+ admin' => url_for('admin_user', userid=> $user->id)->query(is_admin => '1') => 'data-method' => 'post'
+                        % }
+                    </td>
+                </tr>
+            % }
+        </tbody>
+    </table>
+</div>

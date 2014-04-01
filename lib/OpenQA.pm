@@ -252,6 +252,7 @@ sub startup {
   my $admin_r = $admin_auth->route('/')->to(namespace => 'OpenQA::Admin');
 
   $admin_r->get('/users')->name('admin_users')->to('user#index');
+  $admin_r->post('/users/:userid')->name('admin_user')->to('user#update');
   $admin_r->get('/')->name('admin')->to('user#index'); # Users' list as default option
   ###
   ## Admin area ends here
