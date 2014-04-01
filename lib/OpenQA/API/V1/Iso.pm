@@ -24,6 +24,12 @@ sub create {
 
     my $iso = $self->param('iso');
     my @tests = split(',', ($self->param('tests') || ''));
+    for my $t (@tests) {
+        if ($t !~ /^[a-zA-Z0-9+_-]+$/) {
+            $self->res->message("invalid character in test name");
+            return $self->rendered(400);
+        }
+    }
     unless ($iso) {
         $self->res->message("Missing iso parameter");
         return $self->rendered(400);

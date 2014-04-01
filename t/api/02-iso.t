@@ -92,6 +92,9 @@ $ret = $t->post_ok("/api/v1/isos/$iso/cancel")->status_is(200);
 $ret = $t->get_ok('/api/v1/jobs/99999')->status_is(200);
 is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99999 is cancelled');
 
+# make sure we can't post invalid parameters
+$ret = $t->post_ok('/api/v1/isos', form => { iso => $iso, tests => "kde/usb" })->status_is(400);
+
 TODO: {
     local $TODO = 'iso delete doesnt seem to work';
 
