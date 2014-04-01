@@ -75,7 +75,7 @@
 
     <div class="clear"></div>
     <div id="footer" class="container_16">
-      <div class="box_content grid_16" style="text-align: center;"><%= content_for 'footer' %></div>
+      <div class="box_content grid_16" style="text-align: center; margin-bottom: 12px;"><%= content_for 'footer' %></div>
     </div>
   </body>
 </html>

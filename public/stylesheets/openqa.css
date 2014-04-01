@@ -395,8 +395,10 @@ td.flags {
     width: 280px;
 }
 
+
 .container_16 .live-content {
-    width: 820px;
+    min-width: 820px;
+    width: calc(73% + (23% - 280px));
 }
 
 /* User info header */

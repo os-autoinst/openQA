@@ -2,7 +2,7 @@
 % title $testname;
 
 <div class="grid_4 live-sidebar alpha">
-    <div class="grid_4 live-sidebar box box-shadow alpha" id="actions_box">
+    <div class="box box-shadow" id="actions_box">
         <div class="box-header aligncenter">Actions</div>
         <div class="aligncenter">
             %= link_to url_for('tests') => begin
@@ -15,7 +15,7 @@
                 %= image '/images/cancel.png', alt => "stop", title => "Stop job"
             % end
         </div>
-        <table class="infotbl">
+        <table class="infotbl" style="border-top: 1px dotted rgb(204, 204, 204); border-bottom: 1px dotted rgb(204, 204, 204); margin-top: 6px;">
 	        <tr>
 			    <td style="width: 8em; padding: 0;">Interactive:</td>
 				<td style="width: 4.5em; padding: 0;" id="interactive_indicator" data-next-status="">Unknown</td>
@@ -41,44 +41,13 @@
 			</tr>
         </table>
     </div>
-	<div class="grid_4 live-sidebar box box-shadow alpha" id="modules_box" style="min-height: 508px;">
+	<div class="box box-shadow" id="modules_box" style="min-height: 508px;">
 		<div class="box-header aligncenter">Test modules</div>
 		<div id="modlist_content"></div>
 	</div>
-</div>
-
-<div class="grid_10 live-content alpha">
-            <h2>Live view of <i><%= $testname %></i></h2>
-		<p />
-                % if (my $msg = flash 'error') {
-                  <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
-                % }
-                % if (my $msg = flash 'info') {
-                  <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
-                % }
-                % if (my $msg = flash 'code') {
-                  <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
-                % }
-	<div class="grid_10 live-content box box-shadow omega">
-		<div style="margin: 0 10px;">
-			<div style="width: 800px; height: 600px; background-color: #202020;">
-				<img src="/tests/<%= $testid %>/streaming" alt="Waiting for new Images..." style="width: 800px; height: 600px;" />
-			</div>
-		</div>
-	</div>
-
-	<div class="grid_10 live-content box box-shadow omega" onmouseover="window.scrolldownc = 0;" onmouseout="window.scrolldownc = 1;">
-		<div class="box-header aligncenter">Live Log</div>
-		<div style="margin: 0 10px;">
-			<iframe id="livelog" src="about:blank" style="width: 98.9%; height: 20em; overflow-x: hidden;">Test Log</iframe>
-		</div>
-		<script type="text/javascript">
-			init_running("<%= $testid %>");
-		</script>
-	</div>
 	% if($backend_info) {
 	% $backend_info->{'backend'} =~s/^.*:://;
-	<div class="grid_6 box box-shadow omega">
+	<div class="box box-shadow">
 		<div class="box-header aligncenter">Backend</div>
         <table class="infotbl">
             % if($worker) {
@@ -113,4 +82,36 @@
         </table>
 	</div>
 	% }
+</div>
+
+<div class="grid_12 live-content omega">
+                % if (my $msg = flash 'error') {
+                  <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
+                % }
+                % if (my $msg = flash 'info') {
+                  <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
+                % }
+                % if (my $msg = flash 'code') {
+                  <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
+                % }
+	<div class="box box-shadow">
+		<h2>Live view of <i><%= $testname %></i></h2>
+	</div>
+	<div class="box box-shadow">
+		<div style="margin: 0 10px;">
+			<div style="width: 800px; height: 600px; background-color: #202020;">
+				<img src="/tests/<%= $testid %>/streaming" alt="Waiting for new Images..." style="width: 800px; height: 600px;" />
+			</div>
+		</div>
+	</div>
+
+	<div class="box box-shadow" onmouseover="window.scrolldownc = 0;" onmouseout="window.scrolldownc = 1;">
+		<div class="box-header aligncenter">Live Log</div>
+		<div style="margin: 0 10px;">
+			<iframe id="livelog" src="about:blank" style="width: 100%; height: 30em; overflow-x: hidden;">Test Log</iframe>
+		</div>
+		<script type="text/javascript">
+			init_running("<%= $testid %>");
+		</script>
+	</div>
 </div>
