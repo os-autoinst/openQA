@@ -22,6 +22,7 @@ use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
+use File::Path qw/remove_tree/;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -40,16 +41,17 @@ $req->content_is('test not running');
 $req = $t->post_ok('/tests/99963/uploadlog/test.tar.gz', { } => form => {})->status_is(404);
 
 # not in git
-mkdir('t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde');
 my $file = Mojo::Asset::File->new->add_chunk('lalala');
-$req = $t->post_ok('/tests/99963/uploadlog/test.tar.gz' => form => { upload => 
+$req = $t->post_ok('/tests/99963/uploadlog/test.tar.gz' => form => { upload =>
      { file => $file} })->status_is(200);
-$req->content_like(qr{OK: .*data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/test.tar.gz\n});
+$req->content_like(qr{OK: test.tar.gz\n});
 
-open(TFILE, "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/test.tar.gz");
+open(TFILE, "t/data/openqa/logupload/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/test.tar.gz");
 my $content = <TFILE>;
 close(TFILE);
 
 is($content, 'lalala', 'uploaded correctly');
+
+remove_tree("t/data/openqa/logupload/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde", { verbose => 1});
 
 done_testing();

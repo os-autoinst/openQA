@@ -69,6 +69,7 @@
   /var/lib/openqa/pool/*/testresults/** rwk,
   /var/lib/openqa/pool/*/video/ rw,
   /var/lib/openqa/testresults/** rwk,
+  /var/lib/openqa/logupload/** rwk,
   /var/lib/os-autoinst/tests/** r,
 
 }

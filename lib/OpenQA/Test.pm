@@ -224,7 +224,6 @@ sub uploadlog
     }
 
     my $testdirname = $job->{'settings'}->{'NAME'};
-    my $testresultdir = openqa::testresultdir($testdirname);
 
     return $self->render(text => "Invalid path", status => 403) if ($testdirname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/);
 
@@ -242,17 +241,16 @@ sub uploadlog
       return $self->render(message => 'upload file content missing', status => 400);
     }
 
-    my $dir = join('/', $testresultdir, 'ulogs');
+    my $dir = join('/', $openqa::loguploaddir, $testdirname);
     if (! -e $dir) {
       mkdir($dir) or die "$!";
     }
     my $upname = basename($self->param('filename'));
     $upname = sanitize_testname($upname);
 
-    my $file = join('/', $dir, $upname);
-    $upload->move_to($file);
+    $upload->move_to(join('/', $dir, $upname));
 
-    return $self->render(text => "OK: $file\n");
+    return $self->render(text => "OK: $upname\n");
 }
 
 1;
