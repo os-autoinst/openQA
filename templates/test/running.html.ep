@@ -15,7 +15,7 @@
                 %= image '/images/cancel.png', alt => "stop", title => "Stop job"
             % end
         </div>
-        <table style="width: 90%">
+        <table class="infotbl">
 	        <tr>
 			    <td style="width: 8em; padding: 0;">Interactive:</td>
 				<td style="width: 4.5em; padding: 0;" id="interactive_indicator" data-next-status="">Unknown</td>
@@ -76,43 +76,41 @@
 			init_running("<%= $testid %>");
 		</script>
 	</div>
-	<% if($backend_info) { %>
-	<% $backend_info->{'backend'} =~s/^.*:://; %>
+	% if($backend_info) {
+	% $backend_info->{'backend'} =~s/^.*:://;
 	<div class="grid_6 box box-shadow omega">
 		<div class="box-header aligncenter">Backend</div>
-		<div style="margin: 0 3px 0 3px;" class="cligncenter">
-			<table class="infotbl">
-				<% if($worker) { %>
-					<tr>
-						<td><%= $worker->{'host'} %>:<%= $worker->{instance} %></td>
-					</tr>
-				<% } %>
-				<tr>
-					<td colspan="2" style="padding: 0 0 <%= ($backend_info->{'backend'} eq 'kvm2usb')?'8px':'0' %> 0;"><%= $backend_info->{'backend'} %></td>
-				</tr>
-				<% if($backend_info->{'backend'} eq 'kvm2usb') { %>
-					<tr>
-						<td style="width: 16px;"><img src="/images/hw_icons/slot.svg" width="16" height="16" title="slot" alt="slot"/></td>
-						<td><%= $backend_info->{'backend_info'}->{'hwslot'} %></td>
-					</tr>
-					<% if(defined $backend_info->{'backend_info'}->{'hw_info'}) { %>
-						<% my $hw_info = $backend_info->{'backend_info'}->{'hw_info'}; %>
-						% for my $hw_key ( ('vendor', 'name', 'cpu', 'cpu_cores', 'memory', 'disks') ) {
-							% next unless (defined $hw_info->{$hw_key});
-							<tr>
-								<td><img src="/images/hw_icons/<%= $hw_key %>.svg" title="<%= $hw_key %>" width="16" height="16" alt="<%= $hw_key %>" /></td>
-								<td><%= $hw_info->{$hw_key} %></td>
-							</tr>
-						% }
-						<% if(defined $hw_info->{'comment'}) { %>
-							<tr>
-								<td colspan="2" style="padding: 8px 0 0 0;"><%= $hw_info->{'comment'} %></td>
-							</tr>
-						<% } %>
-					<% } %>
-				<% } %>
-			</table>
-		</div>
+        <table class="infotbl">
+            % if($worker) {
+                <tr>
+                    <td><%= $worker->{'host'} %>:<%= $worker->{instance} %></td>
+                </tr>
+            % }
+            <tr>
+                <td colspan="2" style="padding: 0 0 <%= ($backend_info->{'backend'} eq 'kvm2usb')?'8px':'0' %> 0;"><%= $backend_info->{'backend'} %></td>
+            </tr>
+            % if($backend_info->{'backend'} eq 'kvm2usb') {
+                <tr>
+                    <td style="width: 16px;"><img src="/images/hw_icons/slot.svg" width="16" height="16" title="slot" alt="slot"/></td>
+                    <td><%= $backend_info->{'backend_info'}->{'hwslot'} %></td>
+                </tr>
+                <% if(defined $backend_info->{'backend_info'}->{'hw_info'}) { %>
+                    <% my $hw_info = $backend_info->{'backend_info'}->{'hw_info'}; %>
+                    % for my $hw_key ( ('vendor', 'name', 'cpu', 'cpu_cores', 'memory', 'disks') ) {
+                        % next unless (defined $hw_info->{$hw_key});
+                        <tr>
+                            <td><img src="/images/hw_icons/<%= $hw_key %>.svg" title="<%= $hw_key %>" width="16" height="16" alt="<%= $hw_key %>" /></td>
+                            <td><%= $hw_info->{$hw_key} %></td>
+                        </tr>
+                    % }
+                    % if(defined $hw_info->{'comment'}) {
+                        <tr>
+                            <td colspan="2" style="padding: 8px 0 0 0;"><%= $hw_info->{'comment'} %></td>
+                        </tr>
+                    % }
+                % }
+            % }
+        </table>
 	</div>
-	<% } %>
+	% }
 </div>
