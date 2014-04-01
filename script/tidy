@@ -1,0 +1,18 @@
+#!/bin/bash
+
+if [ "`dirname $0|sed s#./##g`" != "script" ] ; then
+    echo "This tool must be run from the root of the git tree"
+    exit 1
+fi
+
+TIDY_ARGS="-b -l=0"
+
+find -name *.pl | xargs perltidy $TIDY_ARGS
+find -name *.pm | xargs perltidy $TIDY_ARGS
+
+ls script/{check_dependencies,client,initdb,openqa,worker} |\
+    xargs perltidy $TIDY_ARGS
+
+find -name *.bak | xargs rm
+
+# vim: set ts=4 sw=4 sts=4 et:
