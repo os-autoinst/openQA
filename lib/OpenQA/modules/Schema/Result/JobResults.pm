@@ -32,4 +32,3 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(jobs => 'Schema::Result::Jobs', 'result_id');
 
 1;
-# vim: set ts=4 sw=4 sts=4 et:
