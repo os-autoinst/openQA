@@ -24,14 +24,14 @@ use Scalar::Util ();
 
 use Carp;
 
-has 'key';
-has 'secret';
+has 'apikey';
+has 'apisecret';
 
 sub new {
     my $self = shift->SUPER::new;
     my %args = @_;
 
-    for my $i (qw/key secret/) {
+    for my $i (qw/apikey apisecret/) {
         next unless $args{$i};
         $self->$i($args{$i});
     }
@@ -42,8 +42,9 @@ sub new {
             my $cfg = Config::IniFiles->new(-file => $file) || last;
             last unless $cfg->SectionExists($args{api});
             for my $i (qw/key secret/) {
-                next if $self->$i;
-                $self->$i($cfg->val($args{api}, $i));
+		my $attr = "api$i";
+                next if $self->$attr;
+                $self->$attr($cfg->val($args{api}, $i));
             }
             last;
         }
@@ -59,17 +60,17 @@ sub new {
 sub _add_auth_headers {
     my ($self, $ua, $tx) = @_;
 
-    unless ($self->secret && $self->key) {
-        carp "missing secret and/or key";
+    unless ($self->apisecret && $self->apikey) {
+        carp "missing apisecret and/or apikey";
         return;
     }
 
     my $timestamp = time;
     my %headers = (
         Accept => 'application/json',
-        'X-API-Key' => $self->key,
+        'X-API-Key' => $self->apikey,
         'X-API-Microtime' => $timestamp,
-        'X-API-Hash' => hmac_sha1_sum($self->_path_query($tx).$timestamp, $self->secret),
+        'X-API-Hash' => hmac_sha1_sum($self->_path_query($tx).$timestamp, $self->apisecret),
     );
 
     while (my ($k, $v) = each %headers) {
@@ -102,15 +103,15 @@ OpenQA::API::V1::Client - special version of Mojo::UserAgent that handles authen
   my $ua = OpenQA::API::V1::Client->new(api => 'localhost');
 
   # specify key and secret manually
-  my $ua = OpenQA::API::V1::Client->new(key => 'foo', secret => 'bar');
+  my $ua = OpenQA::API::V1::Client->new(apikey => 'foo', apisecret => 'bar');
 
 =head1 DESCRIPTION
 
 L<OpenQA::API::V1::Client> inherits from L<Mojo::UserAgent>. It
-automatically sets the correct authentication headers if key and
+automatically sets the correct authentication headers if API key and
 secret are available.
 
-Key and secret can either be set manually in the constructor, via
+API key and secret can either be set manually in the constructor, via
 attributes or read from a config file. L<OpenQA::API::V1::Client>
 tries to find a config file in $OPENQA_CLIENT_CONFIG,
 ~/.config/openqa/client.conf or /etc/openqa/client.conf and reads
@@ -122,26 +123,26 @@ See L<Mojo::UserAgent> for more.
 
 L<OpenQA::API::V1::Client> implmements the following attributes.
 
-=head2 key
+=head2 apikey
 
-  my $key = $ua->key;
-  $ua     = $ua->key('foo');
+  my $apikey = $ua->apikey;
+  $ua        = $ua->apikey('foo');
 
-The authentication public key
+The API public key
 
-=head2 secret
+=head2 apisecret
 
-  my $secret = $ua->secret;
-  $ua     = $ua->secret('bar');
+  my $apisecret = $ua->apisecret;
+  $ua           = $ua->apisecret('bar');
 
-The authentication secret key
+The API secret key
 
 =head1 METHODS
 
 =head2 new
 
   my $ua = OpenQA::API::V1::Client->new(api => 'localhost');
-  my $ua = OpenQA::API::V1::Client->new(key => 'foo', secret => 'bar');
+  my $ua = OpenQA::API::V1::Client->new(apikey => 'foo', apisecret => 'bar');
 
 Generate the L<OpenQA::API::V1::Client> object.
 

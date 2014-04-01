@@ -39,11 +39,11 @@ specify dispatcher/scheduler host to connect to
 
 specify instance number, ie pool directory to use
 
-=item B<--key> <value>
+=item B<--apikey> <value>
 
 specify the public key needed for API authentication
 
-=item B<--secret> <value>
+=item B<--apisecret> <value>
 
 specify the secret key needed for API authentication
 
@@ -74,7 +74,7 @@ lorem ipsum ...
 L<OpenQA::API::V1::Client> tries to find a config file in
 $OPENQA_CLIENT_CONFIG, ~/.config/openqa/client.conf or
 /etc/openqa/client.conf and reads whatever comes first.
-You can put key and secret in that config file.
+You can put API key and secret in that config file.
 
 Example:
   [openqa.example.com]
@@ -136,8 +136,8 @@ GetOptions(
 	"instance=i",
 	"isotovideo=s",
 	"host=s",
-	"key:s",
-	"secret:s",
+	"apikey:s",
+	"apisecret:s",
 	"verbose|v",
 	"help|h",
 ) or usage(1);
@@ -162,13 +162,13 @@ $url->path('/api/v1/');
 
 my $ua = OpenQA::API::V1::Client->new(api => $url->host);
 
-unless ($ua->key && $ua->secret) {
-	unless ($options{'key'} && $options{secret}) {
-		die "key and secret are needed for the worker\n";
+unless ($ua->apikey && $ua->apisecret) {
+	unless ($options{'apikey'} && $options{apisecret}) {
+		die "API key and secret are needed for the worker\n";
 	}
 
-	$ua->key($options{'key'});
-	$ua->secret($options{'secret'});
+	$ua->apikey($options{'apikey'});
+	$ua->apisecret($options{'apisecret'});
 }
 
 $pooldir = $openqa_base.'/pool/'.($options{'instance'}||'manual');

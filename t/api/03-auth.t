@@ -43,31 +43,31 @@ $ret = $t->get_ok('/api/v1/workers/1')->status_is(200);
 $ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(403);
 
 # Valid key with no expiration date works
-$t->ua->key('PERCIVALKEY02');
-$t->ua->secret('PERCIVALSECRET02');
+$t->ua->apikey('PERCIVALKEY02');
+$t->ua->apisecret('PERCIVALSECRET02');
 $ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(200);
 
 # But only with the right secret
-$t->ua->secret('PERCIVALNOSECRET');
+$t->ua->apisecret('PERCIVALNOSECRET');
 $ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(403);
 
 # Keys that are still valid also work
-$t->ua->key('PERCIVALKEY01');
-$t->ua->secret('PERCIVALSECRET01');
+$t->ua->apikey('PERCIVALKEY01');
+$t->ua->apisecret('PERCIVALSECRET01');
 $ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(200);
 
 # But expired ones don't
-$t->ua->key('EXPIREDKEY01');
-$t->ua->secret('WHOCARESAFTERALL');
+$t->ua->apikey('EXPIREDKEY01');
+$t->ua->apisecret('WHOCARESAFTERALL');
 $ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(403);
 
 # Of course, non-existent keys fail
-$t->ua->key('INVENTEDKEY01');
+$t->ua->apikey('INVENTEDKEY01');
 $ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(403);
 
 # Valid keys are rejected if the associated user is not operator
-$t->ua->key('LANCELOTKEY01');
-$t->ua->secret('MANYPEOPLEKNOW');
+$t->ua->apikey('LANCELOTKEY01');
+$t->ua->apisecret('MANYPEOPLEKNOW');
 $ret = $t->get_ok('/api/v1/workers/1/commands')->status_is(403);
 
 done_testing();
