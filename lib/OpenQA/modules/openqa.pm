@@ -50,10 +50,16 @@ our @runner = <$basedir/$prj/pool/[0-9]>;
 push(@runner, "$basedir/$prj/pool/manual");
 
 our $res_css = {
+# module results
 	'na' => 'not-autochecked',
 	'unk' => 'unknown',
 	'ok' => 'ok',
-	'fail' => 'fail'
+	'fail' => 'fail',
+# job result
+	'incomplete' => 'not-autochecked',
+	'none' => 'unknown',
+	'passed' => 'ok',
+	'failed' => 'fail'
 };
 
 our $res_display = {

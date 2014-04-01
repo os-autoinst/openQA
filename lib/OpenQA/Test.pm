@@ -201,7 +201,7 @@ sub show {
   # uploaded logs box
   my @ulogs = test_uploadlog_list($testdirname);
 
-  $self->stash(overall => $results->{'overall'}||'na');
+  $self->stash(overall => $job->{result});
   $self->stash(modlist => \@modlist);
   $self->stash(diskimg => $diskimg);
   $self->stash(backend_info => $results->{backend});
