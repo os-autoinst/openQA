@@ -42,3 +42,4 @@ my $dh = DH->new(
 $dh->prepare_deploy;
 $dh->prepare_upgrade({ from_version => 3, to_version => 4});
 $dh->upgrade;
+# vim: set ts=4 sw=4 sts=4 et:
