@@ -32,4 +32,13 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(jobs => 'Schema::Result::Jobs', 'result_id');
 
 1;
+# Local Variables:
+# mode: cperl
+# cperl-close-paren-offset: -4
+# cperl-continued-statement-offset: 4
+# cperl-indent-level: 4
+# cperl-indent-parens-as-block: t
+# cperl-tab-always-indent: t
+# indent-tabs-mode: nil
+# End:
 # vim: set ts=4 sw=4 sts=4 et:
