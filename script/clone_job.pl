@@ -158,7 +158,12 @@ if (my $name = shift @ARGV) {
 		$url->path("jobs/$name");
 		my $tx = $remote->get($url);
 		if ($tx->success) {
-			$job = $tx->success->json->{job};
+			if ($tx->success->code == 200) {
+				$job = $tx->success->json->{job};
+			} else {
+				warn sprintf ("unexpected return code: %s %s", $tx->success->code, $tx->success->message);
+				exit 1;
+			}
 		} else {
 			warn "failed to get job ", $tx->error;
 			exit(1);
