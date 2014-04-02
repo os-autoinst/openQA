@@ -1,7 +1,7 @@
 % layout 'admin';
 % title 'Users';
 
-<div class="grid_16 box box-shadow omega">
+<div class="box box-shadow omega">
 	<h2><%= title %></h2>
 
     %= include 'layouts/info'
