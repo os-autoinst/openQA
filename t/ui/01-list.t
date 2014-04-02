@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 16;
+use Test::More tests => 21;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -36,8 +36,8 @@ $get->content_like(qr/Test results/i, 'result list is there');
 # Test 99946 is successful (30/0/1)
 $get->element_exists('#results #job_99946 .extra');
 $get->text_is('#results #job_99946 .extra span' => 'textmode');
-$get->text_is('#results #job_99946 .overviewok' => '30');
-$get->text_is('#results #job_99946 .overviewfail' => '1');
+$get->text_is('#results #job_99946 td:nth-child(9) .overview_passed' => '30');
+$get->text_is('#results #job_99946 td:nth-child(11) .overview_failed' => '1');
 
 # Test 99963 is still running
 ok($get->tx->res->dom->at('#results #job_99963 td.link a') eq '<a href="/tests/99963">testing</a>');
@@ -47,11 +47,20 @@ $get->text_is('#results #job_99928 .link' => 'scheduled');
 $get->element_exists('#results #job_99928 .cancel');
 
 # Test 99938 failed, so it should be displayed in red
-$get->text_is('#results #job_99938 .extra .overviewfail' => 'doc');
+$get->text_is('#results #job_99938 .extra .overview_failed' => 'doc');
 
 
 # Test 99937 is too old to be displayed by default
 $get->element_exists_not('#results #job_99937');
+
+# Test 99926 is displayed
+$get->element_exists('#results #job_99926');
+$get->text_is('#results #job_99926 .extra .overview_incomplete' => 'minimalx');
+
+$get = $t->get_ok('/tests' => form => {ignore_incomplete => 1})->status_is(200);
+
+# Test 99926 not displayed anymore
+$get->element_exists_not('#results #job_99926');
 
 #
 # List with a limit of 200h
@@ -60,6 +69,6 @@ $get = $t->get_ok('/tests' => form => {hours => 200})->status_is(200);
 
 # Test 99937 is displayed now
 $get->element_exists('#results #job_99937');
-$get->text_is('#results #job_99937 .overviewok' => '48');
+$get->text_is('#results #job_99937 td:nth-child(9) .overview_passed' => '48');
 
 done_testing();

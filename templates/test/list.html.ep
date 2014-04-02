@@ -55,10 +55,8 @@
           <td class="distri"><%= $job->{settings}->{DISTRI}.'-'.$job->{settings}->{VERSION} %></td>
           <td class="type"><%= $job->{settings}->{FLAVOR} %></td>
           <td class="arch"><%= $job->{settings}->{ARCH} %></td>
-                        <!-- <% my $resultclass = '';
-                        $resultclass = 'overviewfail' if ($job->{state} ne 'running' && ($test->{'res_overall'}||'') ne 'ok');
-                        $resultclass = 'overviewunknown' if (($test->{'res_overall'}||'') eq 'ok' && $test->{'res_dents'}); %>
-                        -->
+          % my $resultclass = 'overview_'.$job->{result};
+          % $resultclass = 'overview_unknown' if ($job->{result} eq 'passed' && $test->{'res_dents'});
           <td class="build"><span class="textlink <%= $resultclass %>"><a href="<%= url_for('build', 'buildid' => $job->{settings}->{'BUILD'}) %>"><%= $job->{settings}->{'BUILD'} %></a></span></td>
 	  <td class="extra"><span class="<%= $resultclass %>"><%= $job->{'test'} %></span></td>
 		<td class="testtime"><%= format_time($job->{'t_started'}) %></td>
@@ -81,9 +79,9 @@
 		  </div>
 		</td>
 		<% } else { %>
-		<td><span class="overviewok"><%= ($test->{'res_ok'})?$test->{'res_ok'}:'' %></span></td>
-		<td><span class="overviewunknown"><%= ($test->{'res_unknown'}?$test->{'res_unknown'}:'') %></span></td>
-		<td><span class="overviewfail"><%= ($test->{'res_fail'}?$test->{'res_fail'}:'') %></span></td>
+		<td><span class="overview_passed"><%= ($test->{'res_ok'})?$test->{'res_ok'}:'' %></span></td>
+		<td><span class="overview_unknown"><%= ($test->{'res_unknown'}?$test->{'res_unknown'}:'') %></span></td>
+		<td><span class="overview_failed"><%= ($test->{'res_fail'}?$test->{'res_fail'}:'') %></span></td>
 		<% } %>
        </tr>
     % }
