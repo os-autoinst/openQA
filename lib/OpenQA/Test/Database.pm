@@ -106,3 +106,4 @@ Insert fixtures into sqlite3 database
 Disconnect from database handle
 
 =cut
+# vim: set sw=4 sts=4 et:

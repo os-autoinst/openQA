@@ -688,3 +688,4 @@ sub command_dequeue {
 }
 
 1;
+# vim: set sw=4 sts=4 et:

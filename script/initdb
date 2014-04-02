@@ -58,3 +58,4 @@ my $schema = openqa::connect_db();
 
 # Populate the databases with initial data
 $schema->deploy({add_drop_table => 1 });
+# vim: set sw=4 sts=4 et:
