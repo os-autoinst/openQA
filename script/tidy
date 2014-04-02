@@ -1,18 +1,21 @@
-#!/bin/bash
-
-if [ "`dirname $0|sed s#./##g`" != "script" ] ; then
-    echo "This tool must be run from the root of the git tree"
-    exit 1
-fi
+#!/bin/sh
 
 TIDY_ARGS="-b -l=0"
 
-find -name *.pl | xargs perltidy $TIDY_ARGS
-find -name *.pm | xargs perltidy $TIDY_ARGS
+if ! which perltidy > /dev/null 2>&1; then
+    echo "No perltidy found, install it first!"
+    exit 1
+fi
 
-ls script/{check_dependencies,client,initdb,openqa,worker} |\
-    xargs perltidy $TIDY_ARGS
+ROOT_DIR="$0"
+ROOT_DIR="`dirname "$ROOT_DIR"`" # Get rid of script
+ROOT_DIR="`dirname "$ROOT_DIR"`" # Get to the git root
+cd "$ROOT_DIR"
 
-find -name *.bak | xargs rm
+find . -name '*.p[lm]' -exec perltidy $TIDY_ARGS \{\} \;
+
+find script/{check_dependencies,client,initdb,openqa,worker} -exec perltidy $TIDY_ARGS \{\} \;
+
+find -name '*.bak' -delete
 
 # vim: set ts=4 sw=4 sts=4 et:
