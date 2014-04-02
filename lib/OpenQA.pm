@@ -134,7 +134,7 @@ sub startup {
   # Set some application defaults
   $self->defaults( appname => 'openQA' );
 
-  unshift @{$self->app->renderer->paths}, '/etc/openqa/templates';
+  unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
   # Documentation browser under "/perldoc"
   $self->plugin('PODRenderer');
@@ -144,7 +144,7 @@ sub startup {
   $self->plugin('RenderFile');
 
   # set secure flag on cookies of https connections
-  $self->app->hook(before_dispatch => sub {
+  $self->hook(before_dispatch => sub {
       my $c = shift;
       #$c->app->log->debug(sprintf "this connection is %ssecure", $c->req->is_secure?'':'NOT ');
       if ($c->req->is_secure) {
@@ -167,7 +167,7 @@ sub startup {
         $self->log->level($self->config->{'logging'}->{'level'});
     }
 
-  $self->app->plugin(CHI => {
+  $self->plugin(CHI => {
     ThumbCache => {
       driver     => 'CacheCache',
       cc_class   => 'Cache::FileCache',
@@ -183,7 +183,7 @@ sub startup {
     namespaces => 1
   });
   # clear thumbnails cache when openqa started
-  $self->app->chi('ThumbCache')->clear();
+  $self->chi('ThumbCache')->clear();
 
   # Router
   my $r = $self->routes;
