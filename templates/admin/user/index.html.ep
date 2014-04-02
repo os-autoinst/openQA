@@ -23,14 +23,14 @@
                     <td class="openid"><%= $user->openid %></td>
                     <td class="is_operator"><%= $user->is_operator ? 'yes' : 'no' %></td>
                     <td class="is_admin"><%= $user->is_admin ? 'yes' : 'no' %></td>
-                    <td class="action">
+                    <td class="action action_operator">
                         % if ($user->is_operator) {
                             %= link_to '- operator' => url_for('admin_user', userid=> $user->id)->query(is_operator => '0') => 'data-method' => 'post'
                         % } else {
                             %= link_to '+ operator' => url_for('admin_user', userid=> $user->id)->query(is_operator => '1') => 'data-method' => 'post'
                         % }
                     </td>
-                    <td class="action">
+                    <td class="action action_admin">
                         % if ($user->is_admin) {
                             %= link_to '- admin' => url_for('admin_user', userid=> $user->id)->query(is_admin => '0') => 'data-method' => 'post'
                         % } else {
