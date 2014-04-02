@@ -618,3 +618,4 @@ main();
 
 print "quit\n";
 exit 0;
+# vim: set sw=4 sts=4 et:
