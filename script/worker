@@ -459,6 +459,16 @@ sub main()
 			api_call('delete', "workers/$workerid/commands/".$cmd->[0]);
 		}
 
+		# abort job if backend crashed and reschedule it
+		if(-e "$pooldir/backend.crashed") {
+		        if(unlink("$pooldir/backend.crashed") && $worker) {
+			        print STDERR "backend crashed and need a reschedule...\n";
+			        _kill_worker($worker);
+			        api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
+			        $aborted = 'crashed';
+		        }
+		}
+
 		# abort job if it takes too long
 		if ($job && $worker_start_time && time-$worker_start_time > $max_job_time && !$aborted) {
 			warn sprintf("max job time exceeded, aborting %s ...\n", $job->{'settings'}->{'NAME'});
