@@ -45,4 +45,4 @@ sub show {
 }
 
 1;
-# vim: set sw=4 sts=4 et:
+# vim: set sw=4 et:

@@ -60,4 +60,4 @@ Copy a testresults directory
 Copy the given directory to the location used as testresults by running tests.
 
 =cut
-# vim: set sw=4 sts=4 et:
+# vim: set sw=4 et:
