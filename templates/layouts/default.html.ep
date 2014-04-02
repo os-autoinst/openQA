@@ -4,67 +4,28 @@
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
   <head>
-      <title><%= $appname.": ".title %></title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <meta name="csrf-token" content="<%= csrf_token %>" />
-    <meta name="csrf-param" content="csrf_token" />
-% if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
-    <link rel="stylesheet" href="https://static.opensuse.org/themes/bento/css/style.fluid.css" media="screen" />
-    <link rel="stylesheet" href="https://static.opensuse.org/themes/bento/css/print.css" media="print" />
-% } else {
-    %= stylesheet '/stylesheets/bento/style.fluid.css'
-% }
-    %= stylesheet '/stylesheets/openqa.css'
-    %= javascript '/javascripts/table.js'
-    %= javascript '/javascripts/shapes.js'
-    %= javascript '/javascripts/needleeditor.js'
-    %= javascript '/javascripts/prototype.js'
-    %= javascript '/javascripts/prototype_ujs.js'
-    %= javascript '/javascripts/scriptaculous/scriptaculous.js'
-    %= javascript '/javascripts/openqa.js'
-    %= javascript '/javascripts/cropimg.js'
-    %= javascript '/javascripts/keyevent.js'
-    %= javascript '/javascripts/needlediff.js'
-    %= javascript '/javascripts/running.js'
+      %= include 'layouts/head'
   </head>
   <body>
     <div id="header">
-      <div id="header-content" class="container_16">
-% if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
-        <%= link_to 'http://www.opensuse.org' => (id => 'header-logo') => begin %>
-          <%= image '/images/header-logo.png', alt => 'Header Logo', height => "26", width => "46" %>
-        <% end %>
-        <ul id="global-navigation">
-        <li id="item-downloads"><a href="http://opensuse.org/sitemap#downloads">Downloads</a></li>
-        <li id="item-support"><a href="http://opensuse.org/sitemap#support">Support</a></li>
-        <li id="item-community"><a href="http://opensuse.org/sitemap#community">Community</a></li>
-        <li id="item-development"><a href="http://opensuse.org/sitemap#development">Development</a></li>
-        </ul>
-% } else {
-        <%= link_to 'http://www.opensuse.org' => (id => 'header-logo') => begin %>
-          <%= image '/images/header-logo.png', alt => 'Header Logo', height => "26", width => "46" %>
-        <% end %>
-        <ul id="global-navigation">
-        <li id="item-support"><a href="http://github.com/openSUSE/openQA">openQA</a></li></ul>
-% }
-      </div>
+      %= include 'layouts/header'
     </div>
 
     <div id="subheader" class="container_16">
         %= breadcrumbs
         <div id="user-info" class="grid_5 omega">
-            %# Using a variable to avoid additional whitespaces
             % if (current_user) {
+                %# Using a variable to avoid additional whitespaces
                 % my $out = 'Logged as '.current_user->name.' (';
                 % if (is_operator) {
                     % $out = $out.link_to('manage API keys' => url_for('api_keys')).' | ';
                 % }
-                % $out = $out.link_to('Workers View' => url_for('workers')).' | ';
+                % if (is_admin) {
+                    % $out = $out.link_to('admin' => url_for('admin')).' | ';
+                % }
                 %= b($out.link_to('Logout' => url_for('logout') => 'data-method' => 'delete').')');
             % } else {
-                % my $out = '';
-                % $out = $out.link_to('Workers View' => url_for('workers')).' | ';
-                %= b($out.link_to('Login' => url_for('login')));
+                %= link_to('Login' => url_for('login'));
             % }
         </div>
     </div>

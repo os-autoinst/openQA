@@ -245,7 +245,22 @@ sub startup {
   # Default route
   $r->get('/')->name('index')->to('index#index');
 
-  ### JSON API starts here
+  #
+  ## Admin area starts here
+  ###
+  my $admin_auth = $r->bridge('/admin')->to("session#ensure_admin");
+  my $admin_r = $admin_auth->route('/')->to(namespace => 'OpenQA::Admin');
+
+  $admin_r->get('/users')->name('admin_users')->to('user#index');
+  $admin_r->post('/users/:userid')->name('admin_user')->to('user#update');
+  $admin_r->get('/')->name('admin')->to('user#index'); # Users' list as default option
+  ###
+  ## Admin area ends here
+  #
+
+  #
+  ## JSON API starts here
+  ###
   my $api_auth = $r->bridge('/api/v1')->to(controller => 'API::V1', action => 'auth');
   my $api_r = $api_auth->route('/')->to(namespace => 'OpenQA::API::V1');
   my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::API::V1');
@@ -285,7 +300,9 @@ sub startup {
   $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel'); # iso_cancel
 
   # json-rpc methods not migrated to this api: echo, list_commands
-  ### JSON API ends here
+  ###
+  ## JSON API ends here
+  #
 
   # start workers checker
   $self->_workers_checker;

@@ -1,0 +1,24 @@
+<title><%= $appname.": ".title %></title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="csrf-token" content="<%= csrf_token %>" />
+<meta name="csrf-param" content="csrf_token" />
+% if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
+    <link rel="stylesheet" href="https://static.opensuse.org/themes/bento/css/style.fluid.css" media="screen" />
+    <link rel="stylesheet" href="https://static.opensuse.org/themes/bento/css/print.css" media="print" />
+% } else {
+    %= stylesheet '/stylesheets/bento/style.fluid.css'
+% }
+%= stylesheet '/stylesheets/chosen.css'
+%= stylesheet '/stylesheets/openqa.css'
+%= javascript '/javascripts/table.js'
+%= javascript '/javascripts/shapes.js'
+%= javascript '/javascripts/needleeditor.js'
+%= javascript '/javascripts/prototype.js'
+%= javascript '/javascripts/prototype_ujs.js'
+%= javascript '/javascripts/scriptaculous/scriptaculous.js'
+%= javascript '/javascripts/cropimg.js'
+%= javascript '/javascripts/keyevent.js'
+%= javascript '/javascripts/needlediff.js'
+%= javascript '/javascripts/running.js'
+%= javascript '/javascripts/chosen.proto.min.js'
+%= javascript '/javascripts/openqa.js'

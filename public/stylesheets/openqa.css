@@ -413,3 +413,23 @@ tt, pre {
 	font-family: "monospace", monospace;
 	font-size: 90%;
 }
+
+/* Fix chosen incompability */
+
+td .chosen-results {
+    text-align: left;
+}
+
+/* Menu */
+#actions_box ul {
+    list-style: none;
+}
+
+#actions_box ul li {
+    margin-left: 0px;
+}
+
+/* Form on top of the lists (admin area) */
+.list-form {
+    text-align: right;
+}
