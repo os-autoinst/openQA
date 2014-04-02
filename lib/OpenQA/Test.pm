@@ -59,6 +59,7 @@ sub list {
 				      match => $match,
 				      limit => $limit,
 				      page => $page,
+				      ignore_incomplete => $self->param('ignore_incomplete')?1:0,
 				      maxage => $hoursfresh*3600, fulldetails => 1)||[]}) {
 
     if ($job->{state} eq 'running' || $job->{state} eq 'done') {

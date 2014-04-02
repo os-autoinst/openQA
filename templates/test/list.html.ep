@@ -13,8 +13,8 @@
       %= text_field "match"
       filter
       <label>
-        %= check_box "ib" => 1
-        ignore boring results
+        %= check_box "ignore_incomplete" => 1
+        ignore incomplete
       </label>
       %= select_field ob => [ ['All Backends' => ''], ['kvm2usb' => 'kvm2usb'], ['qemu' => 'qemu'], ['vbox' => 'vbox'] ], onchange => "document.getElementById('filterform').submit();"
       %= submit_button "change", class => "smbutton"
