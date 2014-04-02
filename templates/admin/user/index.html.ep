@@ -6,7 +6,7 @@
 
     %= include 'layouts/info'
 
-	<table style="width: 95%;" class="table-autostripe table-stripeclass:odd">
+	<table class="table-autostripe">
 	    <thead>
 		    <tr>
                 <th>id</th>
