@@ -16,9 +16,8 @@
 
 package OpenQA::Running;
 use Mojo::Base 'Mojolicious::Controller';
+use Mojo::Util 'b64_encode';
 use openqa;
-BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
-use Image::Magick;
 use Mojolicious::Static;
 use Scheduler ();
 
@@ -154,13 +153,6 @@ sub livelog {
     });
 }
 
-sub png2jpg($) {
-  my $p = new Image::Magick(depth=>8);
-  my $name = shift;
-  $p->Read($name, depth=>8);
-  return $p->ImageToBlob(magick=>uc('jpg'), depth=>8, quality=>100);
-}
-
 sub streaming {
     my $self = shift;
     return 0 unless $self->init();
@@ -168,14 +160,10 @@ sub streaming {
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     $self->res->code(200);
-    $self->res->headers->content_type('multipart/x-mixed-replace;boundary=openqashot');
-    $self->write_chunk("--openqashot\015\012");
+    $self->res->headers->content_type('text/event-stream');
 
-    my $sendimgtwice = ($self->req->headers->user_agent=~m/Chrome/)?1:0;
     my $lastfile = '';
     my $basepath = $self->stash('basepath');
-    my $p2 = Image::Magick->new(depth=>8);
-    $p2->Set(size=>'800x600');
 
     # Set up a recurring timer to send the last screenshot to the client,
     # plus a utility function to close the connection if anything goes wrong.
@@ -185,26 +173,19 @@ sub streaming {
         $self->finish;
         return;
     };
+
     $id = Mojo::IOLoop->recurring(0.3 => sub {
         my @imgfiles=<$basepath/qemuscreenshot/*.png>;
         my $newfile = ($imgfiles[-1])?$imgfiles[-1]:$lastfile;
         if ($lastfile ne $newfile) {
             if ( !-l $newfile || !$lastfile ) {
-                my $data=file_content($newfile);
-                my $p = new Image::Magick(depth=>8, magick=>"PNG");
-                $p->BlobToImage($data);
-                my $p3=$p;
-                my $jpg=$p3->ImageToBlob(magick=>'JPEG', depth=>8, quality=>60);
-                my $jpgsize=length($jpg);
-                for(0..$sendimgtwice) {
-                    $self->write_chunk("Content-Type: image/jpeg\015\012Content-Size: $jpgsize\015\012\015\012".$jpg."\015\012--openqashot\015\012");
-                }
-                $lastfile = $imgfiles[-1];
+                my $data = file_content($newfile);
+                $self->write("data: data:image/png;base64,".b64_encode($data, '')."\n\n");
+                $lastfile = $newfile;
             } elsif (! -e $basepath.'backend.run') {
                 # Some browsers can't handle mpng (at least after reciving jpeg all the time)
-                my $jpg=png2jpg($self->app->static->file('images/suse-tested.png')->path);
-                my $jpgsize=length($jpg);
-                $self->write_chunk("Content-Type: image/jpeg\015\012Content-Size: $jpgsize\015\012\015\012".$jpg."\015\012--openqashot--\015\012");
+                my $data = file_content($self->app->static->file('images/suse-tested.png')->path);
+                $self->write("data: data:image/png;base64,".b64_encode($data, '')."\n\n");
                 $close->();
             }
         }
