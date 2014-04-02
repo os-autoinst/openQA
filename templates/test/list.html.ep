@@ -52,7 +52,7 @@
           <% } %>
 	  </td>
           <td class="backend"><%= $test->{backend} %></td>
-          <td class="distri"><%= $job->{settings}->{DISTRI} %></td>
+          <td class="distri"><%= $job->{settings}->{DISTRI}.'-'.$job->{settings}->{VERSION} %></td>
           <td class="type"><%= $job->{settings}->{FLAVOR} %></td>
           <td class="arch"><%= $job->{settings}->{ARCH} %></td>
                         <!-- <% my $resultclass = '';
