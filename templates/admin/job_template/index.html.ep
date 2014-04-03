@@ -1,13 +1,13 @@
 % layout 'admin';
 % title 'Job templates';
 
-<div class="grid_16 box box-shadow omega">
+<div class="box box-shadow">
 	<h2><%= title %></h2>
 
     %= include 'layouts/info'
 
     %= form_for admin_job_templates => (method => 'post') => begin
-	<table style="width: 98%;" class="table-autostripe table-stripeclass:odd" id="job_settings">
+	<table class="table-autostripe" id="job_settings">
 	    <thead>
 		    <tr>
                 <th>&nbsp;</th>

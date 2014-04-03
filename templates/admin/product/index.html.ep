@@ -1,7 +1,7 @@
 % layout 'admin';
 % title 'Products';
 
-<div class="grid_16 omega box box-shadow list-form">
+<div class="box box-shadow list-form">
     <div class="box-header aligncenter">New product</div>
     %= form_for admin_products => (method => 'post') => begin
         <p>
@@ -24,12 +24,12 @@
     % end
 </div>
 
-<div class="grid_16 box box-shadow omega">
+<div class="box box-shadow">
 	<h2><%= title %></h2>
 
     %= include 'layouts/info'
 
-	<table style="width: 95%;" class="table-autostripe table-stripeclass:odd">
+	<table class="table-autostripe">
 	    <thead>
 		    <tr>
                 <th>name</th>
