@@ -13,7 +13,7 @@
 
     <div id="subheader" class="container_16">
         %= breadcrumbs
-        <div id="user-info" class="grid_5 omega">
+        <div id="user-info" class="grid_6 omega">
             %# Using a variable to avoid additional whitespaces
             % my $out = 'Logged as '.current_user->name.' (';
             % if (is_operator) {
