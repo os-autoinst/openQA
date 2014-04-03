@@ -23,11 +23,14 @@ sub index {
     my @products = $self->db->resultset("Products")->search(undef, {order_by => 'name'});
     my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});
     my @suites = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
-    my $temps = $self->db->resultset("JobTemplates")->search(undef, {
-        select => ['product_id', 'machine_id',
-                 { group_concat => 'test_suite_id'}],
-        as => [qw/product_id machine_id ids/ ],
-        group_by => [qw/product_id machine_id/]});
+    my $temps = $self->db->resultset("JobTemplates")->search(
+        undef,
+        {
+            select => ['product_id', 'machine_id',{ group_concat => 'test_suite_id'}],
+            as => [qw/product_id machine_id ids/],
+            group_by => [qw/product_id machine_id/]
+        }
+    );
 
     my $templates = {};
     while (my $template = $temps->next)  {
@@ -53,19 +56,26 @@ sub update {
             my @requested = $self->param('templates_'.$product->id.'_'.$machine->id);
             my %present = map { $_ => 1 } @requested;
             for my $suite (@suites) {
-                my $existing = $self->db->resultset("JobTemplates")->find({
+                my $existing = $self->db->resultset("JobTemplates")->find(
+                    {
                         product_id => $product->id,
                         machine_id => $machine->id,
-                        test_suite_id => $suite->id});
+                        test_suite_id => $suite->id
+                    }
+                );
                 # If is present in DB but not in the request, delete it
                 if ($existing && !$present{$suite->id}) {
                     $existing->delete;
-                # The other way around? create it
-                } elsif (!$existing && $present{$suite->id}) {
-                    $self->db->resultset("JobTemplates")->create({
-                        product_id => $product->id,
-                        machine_id => $machine->id,
-                        test_suite_id => $suite->id});
+                    # The other way around? create it
+                }
+                elsif (!$existing && $present{$suite->id}) {
+                    $self->db->resultset("JobTemplates")->create(
+                        {
+                            product_id => $product->id,
+                            machine_id => $machine->id,
+                            test_suite_id => $suite->id
+                        }
+                    );
                 }
             }
         }

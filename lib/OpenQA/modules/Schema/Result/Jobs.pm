@@ -42,14 +42,14 @@ __PACKAGE__->add_columns(
     result_id => {
         data_type => 'integer',
         default_value => 0,
-	is_foreign_key => 1,
+        is_foreign_key => 1,
     },
     worker_id => {
         data_type => 'integer',
         is_foreign_key => 1,
         # FIXME: get rid of worker 0
         default_value => 0,
-#        is_nullable => 1,
+        #        is_nullable => 1,
     },
     test => {
         data_type => 'text',
@@ -83,7 +83,7 @@ __PACKAGE__->belongs_to(state => 'Schema::Result::JobStates', 'state_id');
 __PACKAGE__->belongs_to(worker => 'Schema::Result::Workers', 'worker_id');
 __PACKAGE__->belongs_to(result => 'Schema::Result::JobResults', 'result_id');
 
-__PACKAGE__->add_unique_constraint(constraint_name => [ qw/slug/ ]);
+__PACKAGE__->add_unique_constraint(constraint_name => [qw/slug/]);
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
@@ -91,8 +91,7 @@ sub sqlt_deploy_hook {
     db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
 }
 
-sub name
-{
+sub name{
     my $self = shift;
     return $self->slug if $self->slug;
 
@@ -105,9 +104,7 @@ sub name
             $s{lc $js->key} = $js->value;
         }
 
-        my %formats = (
-            build => 'Build%s',
-        );
+        my %formats = (build => 'Build%s',);
 
         for my $c (qw/distri version flavor media arch build test/) {
             next unless $s{$c};
@@ -121,8 +118,7 @@ sub name
     return $self->{_name};
 }
 
-sub machine
-{
+sub machine{
     my $self = shift;
 
     if (!defined($self->{_machine})) {
@@ -130,7 +126,8 @@ sub machine
 
         if ($setting) {
             $self->{_machine} = $setting->value;
-        } else {
+        }
+        else {
             $self->{_machine} = '';
         }
     }

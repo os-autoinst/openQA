@@ -22,20 +22,20 @@ use openqa;
 use Mojo::Base -base;
 
 sub create {
-  my $self        = shift;
-  my %options     = (
-    directory  => undef,
-    @_
-  );
+    my $self        = shift;
+    my %options     = (
+        directory  => undef,
+        @_
+    );
 
-  if ($options{directory}) {
-          # Remove previous
-          remove_tree($openqa::resultdir) if -e $openqa::resultdir;
-          # copy new
-          dircopy($options{directory}, $openqa::resultdir) or die $!;
-  }
+    if ($options{directory}) {
+        # Remove previous
+        remove_tree($openqa::resultdir) if -e $openqa::resultdir;
+        # copy new
+        dircopy($options{directory}, $openqa::resultdir) or die $!;
+    }
 
-  return $openqa::resultdir;
+    return $openqa::resultdir;
 }
 
 1;

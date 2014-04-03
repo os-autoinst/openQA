@@ -37,12 +37,12 @@ sub new {
     }
 
     if ($args{api}) {
-        for my $file ($ENV{OPENQA_CLIENT_CONFIG}||undef, glob ('~/.config/openqa/client.conf'), '/etc/openqa/client.conf') {
+        for my $file ($ENV{OPENQA_CLIENT_CONFIG}||undef, glob('~/.config/openqa/client.conf'), '/etc/openqa/client.conf') {
             next unless $file && -r $file;
             my $cfg = Config::IniFiles->new(-file => $file) || last;
             last unless $cfg->SectionExists($args{api});
             for my $i (qw/key secret/) {
-		my $attr = "api$i";
+                my $attr = "api$i";
                 next if $self->$attr;
                 $self->$attr($cfg->val($args{api}, $i));
             }
@@ -50,9 +50,11 @@ sub new {
         }
     }
 
-    $self->on(start => sub {
+    $self->on(
+        start => sub {
             $self->_add_auth_headers(@_);
-        });
+        }
+    );
 
     return $self;
 }

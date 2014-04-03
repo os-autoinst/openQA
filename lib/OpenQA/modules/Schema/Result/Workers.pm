@@ -45,7 +45,7 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint(constraint_name => [ qw/host instance/ ]);
+__PACKAGE__->add_unique_constraint(constraint_name => [qw/host instance/]);
 __PACKAGE__->has_many(jobs => 'Schema::Result::Jobs', 'worker_id');
 __PACKAGE__->has_many(commands => 'Schema::Result::Commands', 'worker_id');
 

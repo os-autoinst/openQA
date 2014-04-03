@@ -474,9 +474,7 @@
         flavor => 'Rescue-CD',
         arch => 'i686',
         variables => 'LIVECD=1;ISO_MAXSIZE=681_574_400;RESCUECD=1',
-        job_templates => [
-            {machine_id => 1001, test_suite_id => 1023},
-        ]
+        job_templates => [{machine_id => 1001, test_suite_id => 1023},]
     },
     Products => {
         name => 'oS-Rescue-x86_64',
@@ -484,9 +482,7 @@
         flavor => 'Rescue-CD',
         arch => 'x86_64',
         variables => 'LIVECD=1;ISO_MAXSIZE=681_574_400;RESCUECD=1',
-        job_templates => [
-            {machine_id => 1002, test_suite_id => 1023},
-        ]
+        job_templates => [{machine_id => 1002, test_suite_id => 1023},]
     },
     Products => {
         name => 'oS-DVD-Biarch',
@@ -529,9 +525,7 @@
         flavor => 'Staging',
         arch => 'i686',
         variables => 'ISO_MAXSIZE=4_700_372_992',
-        job_templates => [
-            {machine_id => 1001, test_suite_id => 1007},
-        ]
+        job_templates => [{machine_id => 1001, test_suite_id => 1007},]
     },
     Products => {
         name => 'oS-Promo-i586',
@@ -580,10 +574,7 @@
         flavor => 'Promo-DVD-OpenSourcePress',
         arch => 'i586',
         variables => 'ISO_MAXSIZE=4_700_372_992;PROMO=1',
-        job_templates => [
-            {machine_id => 1001, test_suite_id => 1021},
-            {machine_id => 1001, test_suite_id => 1022},
-        ]
+        job_templates => [{machine_id => 1001, test_suite_id => 1021},{machine_id => 1001, test_suite_id => 1022},]
     },
     Products => {
         name => 'oS-OpenSourcePress-x86_64',
@@ -591,10 +582,7 @@
         flavor => 'Promo-DVD-OpenSourcePress',
         arch => 'x86_64',
         variables => 'ISO_MAXSIZE=4_700_372_992;PROMO=1',
-        job_templates => [
-            {machine_id => 1001, test_suite_id => 1021},
-            {machine_id => 1001, test_suite_id => 1022},
-        ]
+        job_templates => [{machine_id => 1001, test_suite_id => 1021},{machine_id => 1001, test_suite_id => 1022},]
     },
 ]
 

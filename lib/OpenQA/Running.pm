@@ -54,7 +54,8 @@ sub modlist {
     my $modinfo = get_running_modinfo($results);
     if (defined $modinfo) {
         $self->render(json => $modinfo->{'modlist'});
-    } else {
+    }
+    else {
         $self->render_not_found;
     }
 }
@@ -79,7 +80,8 @@ sub edit {
     if ($module) {
         my $stepid = scalar(@{$module->{'details'}});
         $self->redirect_to('edit_step', moduleid => $moduleid, stepid => $stepid);
-    } else {
+    }
+    else {
         $self->render_not_found;
     }
 }
@@ -89,7 +91,7 @@ sub livelog {
     return 0 unless $self->init();
 
     my $logfile = $self->stash('basepath').'autoinst-log.txt';
-    
+
     # We'll open the log file and keep the filehandle.
     my $log;
     unless (open($log, '<', $logfile)) {
@@ -124,33 +126,39 @@ sub livelog {
         close $log;
         return;
     };
-    $id = Mojo::IOLoop->recurring(1 => sub {
-        my @st = stat $logfile;
+    $id = Mojo::IOLoop->recurring(
+        1 => sub {
+            my @st = stat $logfile;
 
-        # Zero tolerance for any shenanigans with the logfile, such as
-        # truncation, rotation, etc.
-        unless (@st && $st[1] == $ino &&
-                $st[3] > 0 && $st[7] >= $size)
-        {
-            return $close->();
-        }
-
-        # If there's new data, read it all and send it out. Then
-        # seek to the current position to reset EOF.
-        if ($size < $st[7]) {
-            $size = $st[7];
-            while (defined(my $l = <$log>)) {
-                $self->write_chunk($l);
+            # Zero tolerance for any shenanigans with the logfile, such as
+            # truncation, rotation, etc.
+            unless (@st
+                && $st[1] == $ino
+                &&$st[3] > 0
+                && $st[7] >= $size)
+            {
+                return $close->();
             }
-            seek $log, 0, 1;
+
+            # If there's new data, read it all and send it out. Then
+            # seek to the current position to reset EOF.
+            if ($size < $st[7]) {
+                $size = $st[7];
+                while (defined(my $l = <$log>)) {
+                    $self->write_chunk($l);
+                }
+                seek $log, 0, 1;
+            }
         }
-    });
+    );
 
     # If the client closes the connection, we can stop monitoring the
     # logfile.
-    $self->on(finish => sub {
+    $self->on(
+        finish => sub {
             Mojo::IOLoop->remove($id);
-    });
+        }
+    );
 }
 
 sub streaming {
@@ -174,22 +182,25 @@ sub streaming {
         return;
     };
 
-    $id = Mojo::IOLoop->recurring(0.3 => sub {
-        my @imgfiles=<$basepath/qemuscreenshot/*.png>;
-        my $newfile = ($imgfiles[-1])?$imgfiles[-1]:$lastfile;
-        if ($lastfile ne $newfile) {
-            if ( !-l $newfile || !$lastfile ) {
-                my $data = file_content($newfile);
-                $self->write("data: data:image/png;base64,".b64_encode($data, '')."\n\n");
-                $lastfile = $newfile;
-            } elsif (! -e $basepath.'backend.run') {
-                # Some browsers can't handle mpng (at least after reciving jpeg all the time)
-                my $data = file_content($self->app->static->file('images/suse-tested.png')->path);
-                $self->write("data: data:image/png;base64,".b64_encode($data, '')."\n\n");
-                $close->();
+    $id = Mojo::IOLoop->recurring(
+        0.3 => sub {
+            my @imgfiles=<$basepath/qemuscreenshot/*.png>;
+            my $newfile = ($imgfiles[-1])?$imgfiles[-1]:$lastfile;
+            if ($lastfile ne $newfile) {
+                if ( !-l $newfile || !$lastfile ) {
+                    my $data = file_content($newfile);
+                    $self->write("data: data:image/png;base64,".b64_encode($data, '')."\n\n");
+                    $lastfile = $newfile;
+                }
+                elsif (!-e $basepath.'backend.run') {
+                    # Some browsers can't handle mpng (at least after reciving jpeg all the time)
+                    my $data = file_content($self->app->static->file('images/suse-tested.png')->path);
+                    $self->write("data: data:image/png;base64,".b64_encode($data, '')."\n\n");
+                    $close->();
+                }
             }
         }
-    });
+    );
 
     $self->on(finish => sub { Mojo::IOLoop->remove($id) });
 }

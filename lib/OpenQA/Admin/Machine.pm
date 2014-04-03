@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my $self = shift;
-    my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});;
+    my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});
 
     $self->stash('error', undef);
     $self->stash('machines', \@machines);
@@ -36,22 +36,21 @@ sub create {
     if ($validation->has_error) {
         $error = "wrong parameters.";
         if ($validation->has_error('variables')) {
-            $error = $error.' Variables should contain a list of assignations delimited by semicolons.'
+            $error = $error.' Variables should contain a list of assignations delimited by semicolons.';
         }
-    } else {
-        eval { $self->db->resultset("Machines")->create({
-                    name => $self->param('name'),
-                    backend => $self->param('backend'),
-                    variables => $self->param('variables')}) };
+    }
+    else {
+        eval { $self->db->resultset("Machines")->create({name => $self->param('name'),backend => $self->param('backend'),variables => $self->param('variables')}) };
         $error = $@;
     }
 
     if ($error) {
-        my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});;
+        my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});
         $self->stash('error', "Error adding the machine: $error");
         $self->stash('machines', \@machines);
         $self->render('admin/machine/index');
-    } else {
+    }
+    else {
         $self->flash(info => 'Machine '.$self->param('name').' added');
         $self->redirect_to($self->url_for('admin_machines'));
     }
@@ -63,7 +62,8 @@ sub destroy {
 
     if ($machines->search({id => $self->param('machineid')})->delete_all) {
         $self->flash(info => 'Machine deleted');
-    } else {
+    }
+    else {
         $self->flash(error => 'Failed to delete machine');
     }
     $self->redirect_to($self->url_for('admin_machines'));

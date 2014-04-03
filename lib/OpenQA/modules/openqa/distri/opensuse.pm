@@ -22,8 +22,7 @@ use warnings;
 use Clone qw/clone/;
 use openqa ();
 
-sub _regexp_parts
-{
+sub _regexp_parts{
     my $distri = '(openSUSE)';
     my $version = '(\d+(?:\.\d)?|Factory|FTT)';
     my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-)?DVD(?:-BiArch|-OpenSourcePress)?|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO|staging_[^-]+)';
@@ -43,18 +42,19 @@ sub parse_iso($) {
     my @parts = $iso =~ /^$distri(?:-$version)?-$flavor(?:-$build)?-$arch.*\.iso$/i;
 
     if (!$parts[3] ) {
-	@parts = $iso =~ /^$distri(?:-$version)?-$flavor-$arch(?:-$build)?.*\.iso$/i;
-	$order = 2;
+        @parts = $iso =~ /^$distri(?:-$version)?-$flavor-$arch(?:-$build)?.*\.iso$/i;
+        $order = 2;
     }
 
     my %params;
-    if( @parts ) {
-	if ($order == 1) {
-	    @params{qw(distri version flavor build arch)} = @parts;
-	} else {
-	    @params{qw(distri version flavor arch build)} = @parts;
-	}
-	$params{version} ||= 'Factory';
+    if(@parts) {
+        if ($order == 1) {
+            @params{qw(distri version flavor build arch)} = @parts;
+        }
+        else {
+            @params{qw(distri version flavor arch build)} = @parts;
+        }
+        $params{version} ||= 'Factory';
     }
 
     return %params if (wantarray());
@@ -89,40 +89,42 @@ sub generate_jobs {
     return $ret unless $params;
 
     my $schema = openqa::connect_db();
-    my @products = $schema->resultset('Products')->search({
-	arch => $params->{arch},
-	distri => lc($params->{distri}),
-	flavor => $params->{flavor},
-	});
+    my @products = $schema->resultset('Products')->search(
+        {
+            arch => $params->{arch},
+            distri => lc($params->{distri}),
+            flavor => $params->{flavor},
+        }
+    );
 
     foreach my $product (@products) {
-	foreach my $job_template ($product->job_templates) {
-	    my %settings = _str_to_hash($product->variables);
- 
-	    my %tmp_settings = _str_to_hash($job_template->machine->variables);
-	    @settings{keys %tmp_settings} = values %tmp_settings;
+        foreach my $job_template ($product->job_templates) {
+            my %settings = _str_to_hash($product->variables);
 
-	    %tmp_settings = _str_to_hash($job_template->test_suite->variables);
-	    @settings{keys %tmp_settings} = values %tmp_settings;
-	    $settings{TEST} = $job_template->test_suite->name;
-	    $settings{MACHINE} = $job_template->machine->name;
+            my %tmp_settings = _str_to_hash($job_template->machine->variables);
+            @settings{keys %tmp_settings} = values %tmp_settings;
 
-	    # ISO_MAXSIZE can have the separator _
-	    if (exists $settings{ISO_MAXSIZE}) {
-		$settings{ISO_MAXSIZE} =~ s/_//g;
-	    }
+            %tmp_settings = _str_to_hash($job_template->test_suite->variables);
+            @settings{keys %tmp_settings} = values %tmp_settings;
+            $settings{TEST} = $job_template->test_suite->name;
+            $settings{MACHINE} = $job_template->machine->name;
 
-	    for (keys  %$params) {
+            # ISO_MAXSIZE can have the separator _
+            if (exists $settings{ISO_MAXSIZE}) {
+                $settings{ISO_MAXSIZE} =~ s/_//g;
+            }
+
+            for (keys  %$params) {
                 $settings{uc $_} = $params->{$_};
             }
-	    # Makes sure tha the DISTRI is lowercase
-	    $settings{DISTRI} = lc($settings{DISTRI});
+            # Makes sure tha the DISTRI is lowercase
+            $settings{DISTRI} = lc($settings{DISTRI});
 
-	    $settings{PRIO} = $job_template->test_suite->prio;
-	    $settings{ISO} = $iso;
+            $settings{PRIO} = $job_template->test_suite->prio;
+            $settings{ISO} = $iso;
 
-	    push @$ret, \%settings;
-	}
+            push @$ret, \%settings;
+        }
     }
 
     return $ret;

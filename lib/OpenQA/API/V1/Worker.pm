@@ -39,7 +39,8 @@ sub show {
     my $res = Scheduler::worker_get($self->stash('workerid'));
     if ($res) {
         $self->render(json => {worker => $res });
-    } else {
+    }
+    else {
         $self->render_not_found;
     }
 }

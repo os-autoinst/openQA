@@ -26,7 +26,7 @@ __PACKAGE__->add_columns(
     name => {
         data_type => 'text',
     }
-   );
+);
 
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(jobs => 'Schema::Result::Jobs', 'state_id');

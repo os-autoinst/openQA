@@ -47,7 +47,7 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(product => 'Schema::Result::Products', 'product_id');
 __PACKAGE__->belongs_to(machine => 'Schema::Result::Machines', 'machine_id');
 __PACKAGE__->belongs_to(test_suite => 'Schema::Result::TestSuites', 'test_suite_id');
-__PACKAGE__->add_unique_constraint([ qw/product_id machine_id test_suite_id/ ]);
+__PACKAGE__->add_unique_constraint([qw/product_id machine_id test_suite_id/]);
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;

@@ -38,23 +38,20 @@ sub create {
     if ($validation->has_error) {
         $error = "wrong parameters";
         if ($validation->has_error('variables')) {
-            $error = $error.' Variables should contain a list of assignations delimited by semicolons.'
+            $error = $error.' Variables should contain a list of assignations delimited by semicolons.';
         }
-    } else {
-        eval { $self->db->resultset("Products")->create({
-                    name => $self->param('name'),
-                    distri => $self->param('distri'),
-                    arch => $self->param('arch'),
-                    variables => $self->param('variables'),
-                    flavor => $self->param('flavor')}) };
+    }
+    else {
+        eval { $self->db->resultset("Products")->create({name => $self->param('name'),distri => $self->param('distri'),arch => $self->param('arch'),variables => $self->param('variables'),flavor => $self->param('flavor')}) };
         $error = $@;
     }
     if ($error) {
-        my @products = $self->db->resultset("Products")->search(undef, {order_by => 'name'});;
+        my @products = $self->db->resultset("Products")->search(undef, {order_by => 'name'});
         $self->stash('error', "Error adding the product: $error");
         $self->stash('products', \@products);
         $self->render('admin/product/index');
-    } else {
+    }
+    else {
         $self->flash(info => 'Product '.$self->param('name').' added');
         $self->redirect_to($self->url_for('admin_products'));
     }
@@ -66,7 +63,8 @@ sub destroy {
 
     if ($products->search({id => $self->param('productid')})->delete_all) {
         $self->flash(info => 'Product deleted');
-    } else {
+    }
+    else {
         $self->flash(error => 'Failed to delete product');
     }
     $self->redirect_to($self->url_for('admin_products'));

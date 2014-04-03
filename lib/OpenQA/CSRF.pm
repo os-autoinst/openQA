@@ -41,7 +41,8 @@ sub register {
                 };
             }
             return $self->$form_for(@_);
-        });
+        }
+    );
 
     # require CSRF token for all requests that are not GET or HEAD
     $app->helper(
@@ -54,7 +55,8 @@ sub register {
                 return 0;
             }
             return 1;
-        });
+        }
+    );
 }
 
 1;

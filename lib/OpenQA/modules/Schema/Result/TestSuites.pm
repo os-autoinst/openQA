@@ -44,7 +44,7 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([ qw/name/ ]);
+__PACKAGE__->add_unique_constraint([qw/name/]);
 __PACKAGE__->has_many(job_templates => 'Schema::Result::JobTemplates', 'test_suite_id');
 
 sub sqlt_deploy_hook {

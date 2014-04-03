@@ -33,11 +33,12 @@ my $schema = openqa::connect_db();
 
 my $dh = DH->new(
     {
-    schema              => $schema,
-    script_directory    => "$FindBin::Bin/../dbicdh",
-    databases           => 'SQLite',
-    sql_translator_args => { add_drop_table => 0 },
-    });
+        schema              => $schema,
+        script_directory    => "$FindBin::Bin/../dbicdh",
+        databases           => 'SQLite',
+        sql_translator_args => { add_drop_table => 0 },
+    }
+);
 
 $dh->prepare_deploy;
 $dh->prepare_upgrade({ from_version => 3, to_version => 4});

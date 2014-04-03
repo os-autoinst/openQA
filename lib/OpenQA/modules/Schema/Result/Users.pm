@@ -51,7 +51,7 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint(constraint_name => [ qw/openid/ ]);
+__PACKAGE__->add_unique_constraint(constraint_name => [qw/openid/]);
 __PACKAGE__->has_many(api_keys => 'Schema::Result::ApiKeys', 'user_id');
 
 sub sqlt_deploy_hook {
@@ -60,8 +60,7 @@ sub sqlt_deploy_hook {
     db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
 }
 
-sub name
-{
+sub name{
     my $self = shift;
 
     if (!$self->{_name}) {

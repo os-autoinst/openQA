@@ -21,36 +21,35 @@ use strict;
 use warnings;
 use Clone qw/clone/;
 
-sub parse_iso($)
-{
-        my $iso = shift;
-        my %params;
-        my $archre = 'i[356]86(?:-x86_64)?|x86_64|ia64|ppc64|s390x';
-        if ($iso =~ /^(?<distri>SLE)-(?<version>12)-(?<flavor>[[:alpha:]]+)-(?<medium>DVD)-(?<arch>$archre)-Build(?<build>[0-9.]+)-Media1\.iso$/)
-        {
-                my $distri;
-                if ($+{flavor} eq 'Server') {
-                        $distri = 'SLES';
-                } elsif ($+{flavor} eq 'Desktop') {
-                        $distri = 'SLED';
-                } else {
-                        print STDERR "unhandled flavor $+{flavor}\n";
-                }
-                if ($distri) {
-                    @params{qw(distri version flavor build arch)} = ($distri, $+{version}, $+{medium}, $+{build}, $+{arch});
-                }
+sub parse_iso($){
+    my $iso = shift;
+    my %params;
+    my $archre = 'i[356]86(?:-x86_64)?|x86_64|ia64|ppc64|s390x';
+    if ($iso =~ /^(?<distri>SLE)-(?<version>12)-(?<flavor>[[:alpha:]]+)-(?<medium>DVD)-(?<arch>$archre)-Build(?<build>[0-9.]+)-Media1\.iso$/){
+        my $distri;
+        if ($+{flavor} eq 'Server') {
+            $distri = 'SLES';
         }
+        elsif ($+{flavor} eq 'Desktop') {
+            $distri = 'SLED';
+        }
+        else {
+            print STDERR "unhandled flavor $+{flavor}\n";
+        }
+        if ($distri) {
+            @params{qw(distri version flavor build arch)} = ($distri, $+{version}, $+{medium}, $+{build}, $+{arch});
+        }
+    }
 
-        return %params if (wantarray());
-        return %params?\%params:undef;
+    return %params if (wantarray());
+    return %params?\%params:undef;
 }
 
 # look at iso file name and create jobs suitable for this iso image
 # parameter is a hash with the keys
 #   iso => "name of the iso image"
 #   requested_runs => [ "name of test runs", ... ]
-sub generate_jobs
-{
+sub generate_jobs{
     my $class = shift;
     my $config = shift;
 
@@ -71,12 +70,14 @@ sub generate_jobs
                 'UEFI' => '1',
                 'DESKTOP' => 'gnome',
                 'INSTALLONLY' => 1, # XXX
-            } },
+            }
+        },
         default => {
             settings => {
                 'QEMUCPUS' => '2',
                 'DESKTOP' => 'gnome'
-            } },
+            }
+        },
     );
 
     # parse the iso filename
@@ -86,9 +87,9 @@ sub generate_jobs
     @requested_runs = sort keys(%testruns) unless @requested_runs;
 
     # only continue if parsing the ISO filename was successful
-    if ( $params ) {
+    if ($params) {
         # go through all requested special tests or all of them if nothing requested
-        foreach my $run ( @requested_runs ) {
+        foreach my $run (@requested_runs) {
             # ...->{applies} can be a function ref to be executed, a string to be eval'ed or
             # can even not exist.
             # if it results to true or does not exist the test is assumed to apply
@@ -96,23 +97,26 @@ sub generate_jobs
             if ( defined $testruns{$run}->{applies} ) {
                 if ( ref($testruns{$run}->{applies}) eq 'CODE' ) {
                     $applies = $testruns{$run}->{applies}->($params);
-                } else {
+                }
+                else {
                     my %iso = %$params;
                     $applies = eval $testruns{$run}->{applies};
                     warn "error in testrun '$run': $@" if $@;
                 }
-            } else {
+            }
+            else {
                 $applies = 1;
             }
 
             next unless $applies;
 
             # set defaults here:
-            my %settings = ( ISO => $iso,
-                             TEST => $run,
-                             DESKTOP => 'kde',
-                             ISO_MAXSIZE => 4_700_372_992,
-                         );
+            my %settings = (
+                ISO => $iso,
+                TEST => $run,
+                DESKTOP => 'kde',
+                ISO_MAXSIZE => 4_700_372_992,
+            );
 
             for (keys $params) {
                 $settings{uc $_} = $params->{$_};
