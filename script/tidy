@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TIDY_ARGS="-b -l=0 -io"
+TIDY_ARGS="-b -l=0 -fws -fbl"
 
 if ! which perltidy > /dev/null 2>&1; then
     echo "No perltidy found, install it first!"
