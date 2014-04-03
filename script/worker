@@ -449,7 +449,7 @@ sub main(){
             if(unlink("$pooldir/backend.crashed") && $worker) {
                 print STDERR "backend crashed and need a reschedule...\n";
                 _kill_worker($worker);
-                api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
+                job_incomplete($job, 1, "backend crashed");
                 $aborted = 'crashed';
             }
         }
@@ -520,7 +520,7 @@ sub main(){
                 close($log);
             }
 
-            if (!$aborted || $aborted eq 'cancel' || $aborted eq 'timeout') {
+            if (!$aborted || $aborted eq 'cancel' || $aborted eq 'timeout' || $aborted eq 'crashed') {
                 # collect uploaded logs
                 my @uploaded_logfiles = <$logupload_dir/$name/*>;
                 mkdir("$pooldir/testresults/$name/ulogs/");
