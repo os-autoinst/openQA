@@ -34,52 +34,52 @@ sub new {
 
 {
 
-my $schema;
+    my $schema;
 
-sub init_data {
-    # This should result in the 't' directory, even if $0 is in a subdirectory
-    my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
-    $schema = OpenQA::Test::Database->new->create();
+    sub init_data {
+        # This should result in the 't' directory, even if $0 is in a subdirectory
+        my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
+        $schema = OpenQA::Test::Database->new->create();
 
-    # ARGL, we can't fake the current time and the db manages
-    # t_started so we have to override it manually
-    my $r = $schema->resultset("Jobs")->search({ id => 99937 })->update(
-        {
-            t_created => time2str('%Y-%m-%d %H:%M:%S', time-540000, 'UTC'),  # 150 hours ago;
-        }
-    );
+        # ARGL, we can't fake the current time and the db manages
+        # t_started so we have to override it manually
+        my $r = $schema->resultset("Jobs")->search({ id => 99937 })->update(
+            {
+                t_created => time2str('%Y-%m-%d %H:%M:%S', time-540000, 'UTC'),  # 150 hours ago;
+            }
+        );
 
-    OpenQA::Test::Testresults->new->create(directory => $tdirname.'testresults');
-}
-
-sub login {
-    my ($self, $test, $openid) = (shift, shift, shift);
-    # Used to sign the cookie after modifying it
-    my $secret = $test->app->secrets->[0];
-
-    # Look for the signed cookie
-    if (my $jar = $test->ua->cookie_jar) {
-        my @cookies = $jar->all;
-        my $cookie = $cookies[0];
-
-        # Extract the information...
-        my ($value) = split('--', $cookie->value);
-        $value = j(b64_decode($value));
-        # ..add the user value...
-        Schema::Result::Users->create_user($openid, $schema);
-        $value->{user} = $openid;
-        # ...and sign the cookie again with the new value
-        $value = b64_encode(j($value), '');
-        $value =~ y/=/-/;
-        # make login cookie only valid for https
-        # XXX_: we can't do this because the test server runs on
-        # http so the Mojo useragent doesn't use the cookie
-        #$cookie->secure(1);
-        $cookie->value("$value--".hmac_sha1_sum($value, $secret));
+        OpenQA::Test::Testresults->new->create(directory => $tdirname.'testresults');
     }
 
-    return 1;
-}
+    sub login {
+        my ($self, $test, $openid) = (shift, shift, shift);
+        # Used to sign the cookie after modifying it
+        my $secret = $test->app->secrets->[0];
+
+        # Look for the signed cookie
+        if (my $jar = $test->ua->cookie_jar) {
+            my @cookies = $jar->all;
+            my $cookie = $cookies[0];
+
+            # Extract the information...
+            my ($value) = split('--', $cookie->value);
+            $value = j(b64_decode($value));
+            # ..add the user value...
+            Schema::Result::Users->create_user($openid, $schema);
+            $value->{user} = $openid;
+            # ...and sign the cookie again with the new value
+            $value = b64_encode(j($value), '');
+            $value =~ y/=/-/;
+            # make login cookie only valid for https
+            # XXX_: we can't do this because the test server runs on
+            # http so the Mojo useragent doesn't use the cookie
+            #$cookie->secure(1);
+            $cookie->value("$value--".hmac_sha1_sum($value, $secret));
+        }
+
+        return 1;
+    }
 
 }
 

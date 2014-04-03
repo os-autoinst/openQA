@@ -71,8 +71,7 @@ sub name{
     return $self->{_name};
 }
 
-sub create_user
-{
+sub create_user{
     my $self = shift;
     my $id = shift;
     my $db = shift;

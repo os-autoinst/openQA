@@ -323,9 +323,7 @@ sub list_jobs {
 
     if ($args{state}) {
         my $states_rs = schema->resultset("JobStates")->search({ name => [split(',', $args{state})] });
-        $cond{state_id} = {
-            -in => $states_rs->get_column("id")->as_query
-          };
+        $cond{state_id} = {-in => $states_rs->get_column("id")->as_query};
     }
     if ($args{maxage}) {
         my $agecond = { '>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC') };
@@ -568,7 +566,7 @@ sub job_duplicate {
         job_set_prio(
             jobid => $id,
             prio => $args{prio} || $job->{priority}
-          );
+        );
     }
 
     print STDERR "new job $id\n" if $debug;

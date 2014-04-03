@@ -79,8 +79,7 @@ sub test_diskimage {
 
     # TODO: the original had gzip compression here
     #print header(-charset=>"UTF-8", -type=>"application/x-gzip", -attachment => $testname.'_'.$diskimg.'.gz', -expires=>'+24h', -max_age=>'86400', -Last_Modified=>awstandard::HTTPdate($mtime));
-    $self->_serve_file(
-        $imgpath);
+    $self->_serve_file($imgpath);
 }
 
 sub isoimage {

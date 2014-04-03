@@ -245,7 +245,7 @@ sub uploadlog{
         return $self->render(
             message => 'File is too big.',
             status => 200
-          );
+        );
     }
 
     if ($job->{state} ne 'running') {

@@ -140,7 +140,7 @@ sub response {
             my $vident = shift;
             my $id = $vident->{identity};
 
-	    my $user = Schema::Result::Users->create_user($id, $self->db);
+            my $user = Schema::Result::Users->create_user($id, $self->db);
 
             $msg = 'verified';
             $self->session->{user} = $id;
