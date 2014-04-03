@@ -28,7 +28,8 @@ sub ensure_operator {
     if ($self->is_operator) {
         return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
         $self->render(text => 'Bad CSRF token!', status => 403);
-    } else {
+    }
+    else {
         $self->render(text => "Forbidden", status => 403);
     }
     return undef;
@@ -40,7 +41,8 @@ sub ensure_admin {
     if ($self->is_admin) {
         return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
         $self->render(text => 'Bad CSRF token!', status => 403);
-    } else {
+    }
+    else {
         $self->render(text => "Forbidden", status => 403);
     }
     return undef;
@@ -52,7 +54,8 @@ sub ensure_authorized_ip {
     my $addr = $self->tx->remote_address;
     if ($addr eq "127.0.0.1" || $addr eq "::1") {
         return 1;
-    } else {
+    }
+    else {
         $self->render(text => "Forbidden", status => 403);
         return undef;
     }
@@ -73,19 +76,19 @@ sub create {
     $url =~ s,^http://,https://, if $self->app->config->{openid}->{httpsonly};
 
     my $csr = Net::OpenID::Consumer->new(
-	ua              => LWP::UserAgent->new,
-	required_root   => $url,
-	consumer_secret => $self->app->config->{_openid_secret},
-	);
+        ua              => LWP::UserAgent->new,
+        required_root   => $url,
+        consumer_secret => $self->app->config->{_openid_secret},
+    );
     my $claimed_id = $csr->claimed_identity($self->config->{openid}->{provider});
     unless ($claimed_id) {
         # XXX: looks ulgy
         return $self->render(text => $csr->err, status => 500);
     }
     my $check_url = $claimed_id->check_url(
-	return_to  => qq{$url/response},
-	trust_root => qq{$url/},
-	);
+        return_to  => qq{$url/response},
+        trust_root => qq{$url/},
+    );
 
     return $self->redirect_to($check_url);
 }
@@ -100,7 +103,7 @@ sub response {
     }
 
     while ( my ( $k, $v ) = each %params ) {
-	$params{$k} = URI::Escape::uri_unescape($v);
+        $params{$k} = URI::Escape::uri_unescape($v);
     }
 
     my $csr = Net::OpenID::Consumer->new(
@@ -108,7 +111,7 @@ sub response {
         required_root   => $url,
         consumer_secret => $self->app->config->{_openid_secret},
         args            => \%params,
-	);
+    );
 
     my $msg = "The openID server doesn't respond";
 
@@ -150,7 +153,7 @@ sub response {
             $self->app->log->error($err);
             croak($err);
         },
-	);
+    );
 
     return $self->redirect_to("index");
 }

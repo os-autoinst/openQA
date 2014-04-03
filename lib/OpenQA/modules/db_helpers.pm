@@ -21,8 +21,7 @@ our @EXPORT_OK = qw/create_auto_timestamps rndstr rndhex rndstrU rndhexU/;
 
 use Carp;
 
-sub _create_timestamp_trigger
-{
+sub _create_timestamp_trigger{
     my $schema = shift;
     my $table = shift;
     my $action = shift;
@@ -30,9 +29,11 @@ sub _create_timestamp_trigger
     my $timestamp;
     if ($action eq 'UPDATE') {
         $timestamp = 't_updated';
-    } elsif ($action eq 'INSERT') {
+    }
+    elsif ($action eq 'INSERT') {
         $timestamp = 't_created';
-    } else {
+    }
+    else {
         die "invalid action, must be INSERT or UPDATE\n";
     }
 
@@ -48,8 +49,7 @@ sub _create_timestamp_trigger
 
 }
 
-sub create_auto_timestamps
-{
+sub create_auto_timestamps{
     my $schema = shift;
     my $table = shift;
 
@@ -57,41 +57,36 @@ sub create_auto_timestamps
     _create_timestamp_trigger($schema, $table, 'UPDATE');
 }
 
-sub rndstr
-{
+sub rndstr{
     my $length = shift || 16;
     my $chars = shift || ['a'..'z', 'A'..'Z', '0'..'9', '_'];
     return join('', map { $chars->[rand @$chars] } 1 .. $length);
 }
 
-sub rndhex
-{
+sub rndhex{
     rndstr(shift, ['A'..'F', '0'..'9']);
 }
 
-sub _rb
-{
+sub _rb{
     my ($fd, $max) = @_;
     my $b;
     read($fd, $b, 1) || croak "can't read random byte: $!";
     return int($max * ord($b)/256.0);
 }
 
-sub rndstrU
-{
+sub rndstrU{
     my $length = shift || 16;
     my $chars = shift || ['a'..'z', 'A'..'Z', '0'..'9', '_'];
-    open (my $fd,  '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
+    open(my $fd,  '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
     my $str = join('', map { $chars->[_rb($fd, scalar @$chars)] } 1 .. $length);
     close $fd;
     return $str;
 }
 
-sub rndhexU
-{
+sub rndhexU{
     my $length = shift || 16;
     my $toread = $length/2+$length%2;
-    open (my $fd,  '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
+    open(my $fd,  '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
     read($fd, my $bytes, $toread) || croak "can't read random byte: $!";
     close $fd;
     return uc substr(unpack('H*', $bytes), 0, $length);

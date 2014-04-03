@@ -73,24 +73,17 @@ use FindBin;
 use lib "/usr/share/openqa/cgi-bin/modules/";
 use openqa qw/get_failed_needles/;
 
-my %options ;
+my %options;
 
 sub usage($) {
-	my $r = shift;
-	eval "use Pod::Usage; pod2usage($r);";
-	if ($@) {
-		die "cannot display help, install perl(Pod::Usage)\n";
-	}
+    my $r = shift;
+    eval "use Pod::Usage; pod2usage($r);";
+    if ($@) {
+        die "cannot display help, install perl(Pod::Usage)\n";
+    }
 }
 
-GetOptions(
-	\%options,
-	"pattern=s",
-	"ordering=s",
-	"fatal",
-	"verbose|v",
-	"help|h",
-) or usage(1);
+GetOptions(\%options,"pattern=s","ordering=s","fatal","verbose|v","help|h",) or usage(1);
 
 usage(0) if $options{help};
 
@@ -98,8 +91,8 @@ $options{ordering} ||= 'byneedle';
 my $failures = get_failed_needles(%options);
 
 if (@ARGV) {
-	my %x = map { $_ => $failures->{$_} } @ARGV;
-	$failures = \%x;
+    my %x = map { $_ => $failures->{$_} } @ARGV;
+    $failures = \%x;
 }
 
 dd $failures;

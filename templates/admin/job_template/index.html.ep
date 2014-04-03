@@ -1,0 +1,51 @@
+% layout 'admin';
+% title 'Job templates';
+
+<div class="grid_16 box box-shadow omega">
+	<h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+    %= form_for admin_job_templates => (method => 'post') => begin
+	<table style="width: 98%;" class="table-autostripe table-stripeclass:odd" id="job_settings">
+	    <thead>
+		    <tr>
+                <th>&nbsp;</th>
+                % for my $machine (@$machines) {
+                    <th><%= $machine->name %></th>
+                % }
+            </tr>
+        </thead>
+        <tbody>
+            % for my $product (@$products) {
+                <tr id="product_<%= $product->id %>">
+                    <td><%= $product->name %></td>
+                    % for my $machine (@$machines) {
+                        % my $pid = $product->id;
+                        % my $mid = $machine->id;
+                        % my @ids;
+                        <%
+                        if (my $list = $templates->{$product->id}->{$machine->id}) {
+                            @ids = split(',', $list);
+                        } else {
+                            @ids = [];
+                        } %>
+                        % my %sel = map { $_ => 'selected="true"' } @ids;
+                        <td>
+                        <select class="chosen-select" multiple="true" name="<%= "templates_".$pid."_$mid" %>" data-placeholder="None">
+                            % for my $suite (@$suites) {
+                                <option value="<%= $suite->id %>" <%= $sel{$suite->id} %>><%= $suite->name %></option>
+                            % }
+                        </select>
+                        </td>
+                    % }
+                </tr>
+            % }
+        </tbody>
+    </table>
+    <div style="text-align: center;">
+        <br />
+        %= submit_button 'Update'
+    </div>
+    % end
+</div>

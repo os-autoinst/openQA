@@ -84,6 +84,7 @@ my %settings = (
     DESKTOP => 'DESKTOP',
     KVM => 'KVM',
     ISO_MAXSIZE => 1,
+    MACHINE => "RainbowPC"
     );
 
 my $job_ref = {
@@ -102,6 +103,7 @@ my $job_ref = {
         ISO => 'whatever.iso',
         ISO_MAXSIZE => 1,
         KVM => "KVM",
+        MACHINE => "RainbowPC",
         NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
     },
     t_started => undef,
@@ -136,6 +138,7 @@ my $jobs = [
         state => "scheduled",
         worker_id => 0,
         test => 'rainbow',
+        machine => 'RainbowPC',
         test_branch => undef,
     },
     {
@@ -148,6 +151,7 @@ my $jobs = [
         state => "scheduled",
         worker_id => 0,
         test => 'rainbow',
+        machine => 'RainbowPC',
         test_branch => undef,
     },
 ];

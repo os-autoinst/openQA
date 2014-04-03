@@ -42,34 +42,40 @@ sub register {
                 }
 
                 Carp::croak "url is not a url"
-                    unless Scalar::Util::blessed $url && $url->isa('Mojo::URL');
+                  unless Scalar::Util::blessed $url && $url->isa('Mojo::URL');
 
                 return $self->tag('a', href => $url, 'data-method' => $method, @_);
-            } else {
+            }
+            else {
                 return '';
             }
-        });
+        }
+    );
 
     # special anchor tag for post links
     $app->helper(
         link_post => sub {
             my $self = shift;
             $self->action_link('post', @_);
-        });
+        }
+    );
 
     # special anchor tag for delete links
     $app->helper(
         link_delete => sub {
             my $self = shift;
             $self->action_link('delete', @_);
-        });
+        }
+    );
 
     # Allow "_method" query parameter to override request method
-    $app->hook(before_dispatch => sub {
+    $app->hook(
+        before_dispatch => sub {
             my $c = shift;
             return unless my $method = $c->req->param('_method');
             $c->req->method($method);
-        });
+        }
+    );
 }
 
 1;

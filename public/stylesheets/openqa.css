@@ -434,3 +434,8 @@ td .chosen-results {
 .list-form {
     text-align: right;
 }
+
+/* Job setting table */
+table#job_settings td {
+    padding: 2px;
+}

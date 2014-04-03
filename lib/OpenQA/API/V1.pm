@@ -31,7 +31,8 @@ sub auth {
             $self->render(json => {error => "Bad CSRF token!"}, status => 403);
             return undef;
         }
-    } else { # No session (probably not a browser)
+    }
+    else { # No session (probably not a browser)
         my $api_key = $self->db->resultset("ApiKeys")->find({key => $key});
         my $msg = $self->req->url->to_string;
         if ($api_key && $self->_valid_hmac($hash, $msg, $timestamp, $api_key)) {

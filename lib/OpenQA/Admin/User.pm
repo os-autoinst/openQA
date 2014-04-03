@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my $self = shift;
-    my @users = $self->db->resultset("Users")->search(undef, {order_by => 'openid'});;
+    my @users = $self->db->resultset("Users")->search(undef, {order_by => 'openid'});
 
     $self->stash('users', \@users);
     $self->render('admin/user/index');
@@ -44,7 +44,8 @@ sub update {
 
     if ($error) {
         $self->flash('error', "Error updating the user: $error");
-    } else {
+    }
+    else {
         $self->flash('info', 'User #'.$self->param('userid').' updated');
     }
     $self->redirect_to($self->url_for('admin_users'));

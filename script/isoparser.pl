@@ -11,14 +11,14 @@ while ( my $line = <> ) {
     chomp $line;
     $line =~ s|^.*/||;
     print "$line:";
-    
+
     my $params = openqa::distri::opensuse::parse_iso($line);
 
-    if ( $params ) {
+    if ($params) {
         print "\n" . Dumper($params);
     }
     else {
         print " no match\n";
-    };
+    }
 }
 # vim: set sw=4 et:

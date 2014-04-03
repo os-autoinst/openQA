@@ -59,12 +59,7 @@ window.onload=function(){
 	<div class="box box-shadow">
 	  %= include 'step/moduleslisttabs'
 
-    % if (my $msg = flash 'error') {
-      <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
-    % }
-    % if (my $msg = flash 'info') {
-      <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
-    % }
+        %= include 'layouts/info'
 
     <table style="width: 97%;">
       <tr>

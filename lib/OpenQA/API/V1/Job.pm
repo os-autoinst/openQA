@@ -47,7 +47,7 @@ sub grab {
     my $self = shift;
 
     my $workerid = $self->stash('workerid');
-    my $blocking = int ($self->param('blocking') || 0);
+    my $blocking = int($self->param('blocking') || 0);
 
     my $res = Scheduler::job_grab(workerid => $workerid, blocking => $blocking);
     $self->render(json => {job => $res});
@@ -58,7 +58,8 @@ sub show {
     my $res = Scheduler::job_get(int($self->stash('jobid')));
     if ($res) {
         $self->render(json => {job => $res});
-    } else {
+    }
+    else {
         $self->render_not_found;
     }
 }
@@ -133,9 +134,7 @@ sub cancel {
 sub duplicate {
     my $self = shift;
     my $jobid = int($self->param('name'));
-    my %args = (
-         jobid => $jobid
-    );
+    my %args = (jobid => $jobid);
     if (defined $self->param('prio')) {
         $args{prio} = int($self->param('prio'));
     }

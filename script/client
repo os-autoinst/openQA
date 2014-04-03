@@ -68,22 +68,14 @@ Getopt::Long::Configure("no_ignore_case");
 my %options;
 
 sub usage($) {
-	my $r = shift;
-	eval "use Pod::Usage; pod2usage(1);";
-	if ($@) {
-		die "cannot display help, install perl(Pod::Usage)\n";
-	}
+    my $r = shift;
+    eval "use Pod::Usage; pod2usage(1);";
+    if ($@) {
+        die "cannot display help, install perl(Pod::Usage)\n";
+    }
 }
 
-GetOptions(
-	\%options,
-	"host=s",
-	"apibase=s",
-	"verbose|v",
-	"apikey:s",
-	"apisecret:s",
-	"help|?",
-) or usage(1);
+GetOptions(\%options,"host=s","apibase=s","verbose|v","apikey:s","apisecret:s","help|?",) or usage(1);
 
 usage(1) unless @ARGV;
 $options{'host'} ||= 'localhost';
@@ -101,19 +93,22 @@ my @params;
 for my $arg (@ARGV) {
     if ($arg =~ /^(?:get|post|delete|put)$/i) {
         $method = lc $arg;
-    } elsif ($arg =~ /^[[:alnum:]]+=.+/) {
+    }
+    elsif ($arg =~ /^[[:alnum:]]+=.+/) {
         push @params, $arg;
-    } else {
+    }
+    else {
     }
 }
 
 my $url;
 if ($options{'host'} !~ '/') {
-	$url = Mojo::URL->new();
-	$url->host($options{'host'});
-	$url->scheme('http');
-} else {
-	$url = Mojo::URL->new($options{'host'});
+    $url = Mojo::URL->new();
+    $url->host($options{'host'});
+    $url->scheme('http');
+}
+else {
+    $url = Mojo::URL->new($options{'host'});
 }
 
 $url->path($path);
@@ -124,7 +119,8 @@ my $client = OpenQA::API::V1::Client->new(apikey => $options{'apikey'}, apisecre
 my $res = $client->$method($url)->res;
 if ($res->code == 200) {
     dd($res->json || $res->body);
-} else {
+}
+else {
     print $res->code." ".$res->message."\n";
 }
 

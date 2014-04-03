@@ -43,28 +43,27 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
 @EXPORT = qw(worker_register worker_get workers_get_dead_worker list_workers job_create
-    job_get job_get_by_workerid jobs_get_dead_worker list_jobs job_grab job_set_done
-    job_set_waiting job_set_running job_set_prio
-    job_delete job_update_result job_restart job_cancel command_enqueue
-    command_get list_commands command_dequeue iso_cancel_old_builds
-    job_set_stop job_stop iso_stop_old_builds
-    );
+  job_get job_get_by_workerid jobs_get_dead_worker list_jobs job_grab job_set_done
+  job_set_waiting job_set_running job_set_prio
+  job_delete job_update_result job_restart job_cancel command_enqueue
+  command_get list_commands command_dequeue iso_cancel_old_builds
+  job_set_stop job_stop iso_stop_old_builds
+);
 
 
 our %worker_commands = map { $_ => 1 } qw/
-    quit
-    abort
-    cancel
-    stop_waitforneedle
-    reload_needles_and_retry
-    enable_interactive_mode
-    disable_interactive_mode
-    continue_waitforneedle
-    /;
+  quit
+  abort
+  cancel
+  stop_waitforneedle
+  reload_needles_and_retry
+  enable_interactive_mode
+  disable_interactive_mode
+  continue_waitforneedle
+  /;
 
 
-sub schema
-{
+sub schema{
     CORE::state $schema;
     $schema = openqa::connect_db() unless $schema;
     return $schema;
@@ -84,7 +83,7 @@ sub _hashref {
 
     my %hashref = ();
     foreach my $field (@fields) {
-	$hashref{$field} = $obj->$field;
+        $hashref{$field} = $obj->$field;
     }
 
     return \%hashref;
@@ -99,36 +98,45 @@ sub _hashref {
 sub worker_register {
     my ($host, $instance, $backend) = @_;
 
-    my $worker = schema->resultset("Workers")->search({
-	host => $host,
-	instance => int($instance),
-    })->first;
+    my $worker = schema->resultset("Workers")->search(
+        {
+            host => $host,
+            instance => int($instance),
+        }
+    )->first;
 
     if ($worker) { # worker already known. Update fields and return id
-	$worker->update({ t_updated => 0 });
-    } else {
-	$worker = schema->resultset("Workers")->create({
-	    host => $host,
-	    instance => $instance,
-	    backend => $backend,
-	});
+        $worker->update({ t_updated => 0 });
+    }
+    else {
+        $worker = schema->resultset("Workers")->create(
+            {
+                host => $host,
+                instance => $instance,
+                backend => $backend,
+            }
+        );
     }
 
     # in case the worker died ...
     # ... restart jobs assigned to this worker
     for my $j ($worker->jobs->all()) {
-	job_duplicate(jobid => $j->id);
+        job_duplicate(jobid => $j->id);
     }
     # .. set them to incomplete
-    $worker->jobs->update_all({
-	state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
-	result_id => schema->resultset("JobResults")->search({ name => 'incomplete' })->single->id,
-	worker_id => 0,
-    });
+    $worker->jobs->update_all(
+        {
+            state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
+            result_id => schema->resultset("JobResults")->search({ name => 'incomplete' })->single->id,
+            worker_id => 0,
+        }
+    );
     # ... delete pending commands
-    schema->resultset("Commands")->search({
-	worker_id => $worker->id
-    })->delete_all();
+    schema->resultset("Commands")->search(
+        {
+            worker_id => $worker->id
+        }
+    )->delete_all();
 
     die "got invalid id" unless $worker->id;
     return $worker->id;
@@ -153,16 +161,16 @@ sub workers_get_dead_worker {
     my $threshold = join ' ',$dt->ymd, $dt->hms;
 
     my %cond = (
-	'host' => { '!=' => 'NONE'},
-	't_updated' => { '<' => $threshold},
+        'host' => { '!=' => 'NONE'},
+        't_updated' => { '<' => $threshold},
     );
 
     my $dead_workers = schema->resultset("Workers")->search(\%cond);
 
     my @results = ();
     while( my $worker = $dead_workers->next) {
-	my $j = _hashref($worker, qw/ id host instance backend/);
-	push @results, $j;
+        my $j = _hashref($worker, qw/ id host instance backend/);
+        push @results, $j;
     }
 
     return \@results;
@@ -203,33 +211,33 @@ sub job_create {
     my %settings = @_;
 
     for my $i (qw/DISTRI VERSION ISO DESKTOP TEST/) {
-	die "need one $i key\n" unless exists $settings{$i};
+        die "need one $i key\n" unless exists $settings{$i};
     }
 
     for my $i (qw/ISO NAME/) {
-	next unless $settings{$i};
-	die "invalid character in $i\n" if $settings{$i} =~ /\//; # TODO: use whitelist?
+        next unless $settings{$i};
+        die "invalid character in $i\n" if $settings{$i} =~ /\//; # TODO: use whitelist?
     }
 
     unless (-e sprintf("%s/%s", $openqa::isodir, $settings{ISO})) {
-	die "ISO does not exist\n";
+        die "ISO does not exist\n";
     }
 
     my @settings = ();
     while(my ($k, $v) = each %settings) {
-	push @settings, { key => $k, value => $v };
+        push @settings, { key => $k, value => $v };
     }
 
     my %new_job_args = (
-	settings => \@settings,
-	test => $settings{'TEST'},
+        settings => \@settings,
+        test => $settings{'TEST'},
     );
 
     if ($settings{NAME}) {
-	my $njobs = schema->resultset("Jobs")->search({ slug => $settings{'NAME'} })->count;
-	return 0 if $njobs;
+        my $njobs = schema->resultset("Jobs")->search({ slug => $settings{'NAME'} })->count;
+        return 0 if $njobs;
 
-	$new_job_args{slug} = $settings{'NAME'};
+        $new_job_args{slug} = $settings{'NAME'};
     }
 
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
@@ -243,7 +251,7 @@ sub job_get($) {
     return undef if !defined($value);
 
     if ($value =~ /^\d+$/) {
-	return _job_get({ id => $value });
+        return _job_get({ id => $value });
     }
     return _job_get({slug => $value });
 }
@@ -260,8 +268,8 @@ sub jobs_get_dead_worker {
     my $threshold = shift;
 
     my %cond = (
-	'state_id' => 1,
-	'worker.t_updated' => { '<' => $threshold},
+        'state_id' => 1,
+        'worker.t_updated' => { '<' => $threshold},
     );
     my %attrs = (join => 'worker',);
 
@@ -269,8 +277,8 @@ sub jobs_get_dead_worker {
 
     my @results = ();
     while( my $job = $dead_jobs->next) {
-	my $j = _hashref($job, qw/ id state_id result_id worker_id/);
-	push @results, $j;
+        my $j = _hashref($job, qw/ id state_id result_id worker_id/);
+        push @results, $j;
     }
 
     return \@results;
@@ -283,11 +291,11 @@ sub _job_get($) {
     my $job = schema->resultset("Jobs")->search($search)->first;
     my $job_hashref;
     if ($job) {
-	$job_hashref = _hashref($job, qw/ id name priority result worker_id t_started t_finished test test_branch/);
-	# XXX: use +columns in query above?
-	$job_hashref->{state} = $job->state->name;
-	$job_hashref->{result} = $job->result->name;
-	_job_fill_settings($job_hashref);
+        $job_hashref = _hashref($job, qw/ id name priority result worker_id t_started t_finished test test_branch/);
+        # XXX: use +columns in query above?
+        $job_hashref->{state} = $job->state->name;
+        $job_hashref->{result} = $job->result->name;
+        _job_fill_settings($job_hashref);
     }
     return $job_hashref;
 }
@@ -297,11 +305,11 @@ sub _job_fill_settings {
     my $job_settings = schema->resultset("JobSettings")->search({ job_id => $job->{id} });
     $job->{settings} = {};
     while(my $js = $job_settings->next) {
-	$job->{settings}->{$js->key} = $js->value;
+        $job->{settings}->{$js->key} = $js->value;
     }
 
     if ($job->{name} && !$job->{settings}->{NAME}) {
-	$job->{settings}->{NAME} = sprintf "%08d-%s", $job->{id}, $job->{name};
+        $job->{settings}->{NAME} = sprintf "%08d-%s", $job->{id}, $job->{name};
     }
 
     return $job;
@@ -314,48 +322,51 @@ sub list_jobs {
     my %attrs = ();
 
     if ($args{state}) {
-	my $states_rs = schema->resultset("JobStates")->search({ name => [split(',', $args{state})] });
-	$cond{state_id} = { -in => $states_rs->get_column("id")->as_query }
+        my $states_rs = schema->resultset("JobStates")->search({ name => [split(',', $args{state})] });
+        $cond{state_id} = {
+            -in => $states_rs->get_column("id")->as_query
+          };
     }
     if ($args{maxage}) {
-	my $agecond = { '>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC') };
-	$cond{'-or'} = [
-	    'me.t_created' => $agecond,
-	    'me.t_started' => $agecond,
-	    'me.t_finished' => $agecond
-	    ];
+        my $agecond = { '>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC') };
+        $cond{'-or'} = [
+            'me.t_created' => $agecond,
+            'me.t_started' => $agecond,
+            'me.t_finished' => $agecond
+        ];
     }
     if ($args{ignore_incomplete}) {
         my $results_rs = schema->resultset("JobResults")->search({ name => 'incomplete' });
         $cond{result_id} = { '!=' => $results_rs->get_column("id")->as_query };
     }
     if ($args{limit}) {
-	    $attrs{rows} = $args{limit};
+        $attrs{rows} = $args{limit};
     }
     $attrs{page} = $args{page}||0;
 
     if ($args{build}) {
-	$cond{'settings.key'} = "BUILD";
-	$cond{'settings.value'} = $args{build};
-	$attrs{join} = 'settings';
+        $cond{'settings.key'} = "BUILD";
+        $cond{'settings.value'} = $args{build};
+        $attrs{join} = 'settings';
     }
     if ($args{match}) {
-	$cond{'settings.key'} = ['DISTRI', 'FLAVOR', 'BUILD', 'TEST'];
-	$cond{'settings.value'} = { '-like' => "%$args{match}%" };
-	$attrs{join} = 'settings';
-	$attrs{group_by} = [ 'me.id' ];
+        $cond{'settings.key'} = ['DISTRI', 'FLAVOR', 'BUILD', 'TEST'];
+        $cond{'settings.value'} = { '-like' => "%$args{match}%" };
+        $attrs{join} = 'settings';
+        $attrs{group_by} = ['me.id'];
     }
-    $attrs{order_by} = [ 'me.id DESC' ];
+    $attrs{order_by} = ['me.id DESC'];
 
     my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
 
     my @results = ();
     while( my $job = $jobs->next) {
-	my $j = _hashref($job, qw/ id name priority worker_id t_started t_finished test test_branch/);
-	$j->{state} = $job->state->name;
-	$j->{result} = $job->result->name;
-	_job_fill_settings($j) if $args{fulldetails};
-	push @results, $j;
+        my $j = _hashref($job, qw/ id name priority worker_id t_started t_finished test test_branch/);
+        $j->{state} = $job->state->name;
+        $j->{result} = $job->result->name;
+        $j->{machine} = $job->machine;
+        _job_fill_settings($j) if $args{fulldetails};
+        push @results, $j;
     }
 
     return \@results;
@@ -372,31 +383,40 @@ sub job_grab {
 
     my $result;
     while (1) {
-	my $now = "datetime('now')";
-	$result = schema->resultset("Jobs")->search({
-	    state_id => schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
-	    worker_id => 0,
-	}, { order_by => { -asc => 'priority'}, rows => 1})->update({
-	    state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
-	    worker_id => $workerid,
-	    t_started => \$now,
-	});
+        my $now = "datetime('now')";
+        $result = schema->resultset("Jobs")->search(
+            {
+                state_id => schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
+                worker_id => 0,
+            },
+            { order_by => { -asc => 'priority'}, rows => 1}
+          )->update(
+            {
+                state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
+                worker_id => $workerid,
+                t_started => \$now,
+            }
+          );
 
-	last if $result != 0;
-	last unless $blocking;
-	# XXX: do something smarter here
-	#print STDERR "no jobs for me, sleeping\n";
-	#sleep 1;
-	last;
+        last if $result != 0;
+        last unless $blocking;
+        # XXX: do something smarter here
+        #print STDERR "no jobs for me, sleeping\n";
+        #sleep 1;
+        last;
     }
 
     my $job_hashref;
-    $job_hashref = _job_get({
-	id => schema->resultset("Jobs")->search({
-	    state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
-	    worker_id => $workerid,
-	})->single->id,
-    }) if $result != 0;
+    $job_hashref = _job_get(
+        {
+            id => schema->resultset("Jobs")->search(
+                {
+                    state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
+                    worker_id => $workerid,
+                }
+            )->single->id,
+        }
+    ) if $result != 0;
 
     return $job_hashref;
 }
@@ -415,12 +435,14 @@ sub job_set_done {
     die "invalid result string" unless $result;
 
     my $now = "datetime('now')";
-    my $r = schema->resultset("Jobs")->search({ id => $jobid })->update({
-	state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
-	worker_id => 0,
-	t_finished => \$now,
-	result_id => $result->id,
-    });
+    my $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
+        {
+            state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
+            worker_id => 0,
+            t_finished => \$now,
+            result_id => $result->id,
+        }
+    );
     return $r;
 }
 
@@ -433,9 +455,11 @@ sub job_set_waiting {
     my $jobid = shift;
 
     # TODO: only allowed for running jobs
-    my $r = schema->resultset("Jobs")->search({ id => $jobid })->update({
-	state_id => schema->resultset("JobStates")->search({ name => "waiting" })->single->id,
-    });
+    my $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
+        {
+            state_id => schema->resultset("JobStates")->search({ name => "waiting" })->single->id,
+        }
+    );
     return $r;
 }
 
@@ -448,21 +472,27 @@ sub job_set_running {
     my $jobid = shift;
 
     my $states_rs = schema->resultset("JobStates")->search({ name => ['cancelled', 'waiting'] });
-    my $r = schema->resultset("Jobs")->search({
-	id => $jobid,
-	state_id => { -in => $states_rs->get_column("id")->as_query },
-    })->update({
-	state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
-    });
+    my $r = schema->resultset("Jobs")->search(
+        {
+            id => $jobid,
+            state_id => { -in => $states_rs->get_column("id")->as_query },
+        }
+      )->update(
+        {
+            state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
+        }
+      );
     return $r;
 }
 
 sub job_set_prio {
     my %args = @_;
 
-    my $r = schema->resultset("Jobs")->search({ id => $args{jobid} })->update({
-	priority => $args{prio},
-    });
+    my $r = schema->resultset("Jobs")->search({ id => $args{jobid} })->update(
+        {
+            priority => $args{prio},
+        }
+    );
 }
 
 sub job_delete {
@@ -484,9 +514,11 @@ sub job_update_result {
     my $id = int($args{jobid});
     my $result = schema->resultset("JobResults")->search({ name => $args{result}})->single;
 
-    my $r = schema->resultset("Jobs")->search({ id => $id })->update({
-		    result_id => $result->id
-	    });
+    my $r = schema->resultset("Jobs")->search({ id => $id })->update(
+        {
+            result_id => $result->id
+        }
+    );
 
     return $r;
 }
@@ -511,7 +543,8 @@ sub _job_find_smart($$$) {
         while ($i--) {
             push @{$attrs->{join}}, 'settings';
         }
-    } else {
+    }
+    else {
         # TODO: support by name and by iso here
         $cond->{id} = $value;
     }
@@ -532,7 +565,10 @@ sub job_duplicate {
 
     my $id = job_create(%settings);
     if (defined $id) {
-        job_set_prio(jobid => $id, prio => $args{prio} || $job->{priority})
+        job_set_prio(
+            jobid => $id,
+            prio => $args{prio} || $job->{priority}
+          );
     }
 
     print STDERR "new job $id\n" if $debug;
@@ -553,9 +589,11 @@ sub job_restart {
             state_id => {
                 -in => schema->resultset("JobStates")->search({ name => [qw/running waiting done/] })->get_column("id")->as_query
             }
-        }, {
+        },
+        {
             columns => [qw/id/]
-        });
+        }
+    );
     my @duplicated;
     while (my $j = $jobs->next) {
         my $id = job_duplicate(jobid => $j->id);
@@ -569,9 +607,11 @@ sub job_restart {
             state_id => {
                 -in => schema->resultset("JobStates")->search({ name => [qw/running waiting/] })->get_column("id")->as_query
             }
-        }, {
+        },
+        {
             colums => [qw/id worker_id/]
-        });
+        }
+    );
     while (my $j = $jobs->next) {
         print STDERR "enqueuing abort for ".$j->id." ".$j->worker_id."\n" if $debug;
         command_enqueue(workerid => $j->worker_id, command => 'abort');
@@ -584,10 +624,13 @@ sub job_restart {
             state_id => {
                 -in => schema->resultset("JobStates")->search({ name => [qw/cancelled/] })->get_column("id")->as_query
             }
-        }, {
-    })->update({
-        state_id => schema->resultset("JobStates")->search({ name => 'scheduled' })->single->id
-    });
+        },
+        {}
+      )->update(
+        {
+            state_id => schema->resultset("JobStates")->search({ name => 'scheduled' })->single->id
+        }
+      );
     return @duplicated;
 }
 
@@ -599,19 +642,17 @@ sub job_cancel {
 
     _job_find_smart($value, \%cond, \%attrs);
 
-    $cond{state_id} = {
-        -in => schema->resultset("JobStates")->search({ name => [qw/scheduled/] })->get_column("id")->as_query
-    };
+    $cond{state_id} = {-in => schema->resultset("JobStates")->search({ name => [qw/scheduled/] })->get_column("id")->as_query};
 
     # first set all scheduled jobs to cancelled
-    my $r = schema->resultset("Jobs")->search(\%cond, \%attrs)->update({
-        state_id => schema->resultset("JobStates")->search({ name => 'cancelled' })->single->id
-    });
+    my $r = schema->resultset("Jobs")->search(\%cond, \%attrs)->update(
+        {
+            state_id => schema->resultset("JobStates")->search({ name => 'cancelled' })->single->id
+        }
+    );
 
     $attrs{colums} = [qw/id worker_id/];
-    $cond{state_id} = {
-        -in => schema->resultset("JobStates")->search({ name => [qw/running waiting/] })->get_column("id")->as_query
-    };
+    $cond{state_id} = {-in => schema->resultset("JobStates")->search({ name => [qw/running waiting/] })->get_column("id")->as_query};
     # then tell workers to cancel their jobs
     my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
     while (my $j = $jobs->next) {
@@ -644,10 +685,12 @@ sub command_enqueue {
 
     die "invalid command\n" unless $worker_commands{$args{command}};
 
-    my $command = schema->resultset("Commands")->create({
-	worker_id => $args{workerid},
-	command => $args{command},
-    });
+    my $command = schema->resultset("Commands")->create(
+        {
+            worker_id => $args{workerid},
+            command => $args{command},
+        }
+    );
     return $command->id;
 }
 
@@ -661,7 +704,7 @@ sub command_get {
 
     my @as_array = ();
     foreach my $command (@commands) {
-	push @as_array, [$command->id, $command->command];
+        push @as_array, [$command->id, $command->command];
     }
 
     return \@as_array;
@@ -683,10 +726,12 @@ sub command_dequeue {
 
     _validate_workerid($args{workerid});
 
-    my $r = schema->resultset("Commands")->search({
-	id => $args{id},
-	worker_id =>$args{workerid},
-    })->delete;
+    my $r = schema->resultset("Commands")->search(
+        {
+            id => $args{id},
+            worker_id =>$args{workerid},
+        }
+    )->delete;
 
     return $r;
 }

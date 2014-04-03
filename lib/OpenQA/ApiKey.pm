@@ -60,7 +60,8 @@ sub destroy {
     if ($key) {
         $key->delete;
         $self->flash(info => 'API key deleted');
-    } else {
+    }
+    else {
         $self->flash(error => 'API key not found');
     }
     $self->redirect_to($self->url_for('api_keys'));

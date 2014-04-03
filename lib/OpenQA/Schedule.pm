@@ -19,23 +19,23 @@ use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use Scheduler ();
 
-sub _stash_back
-{
+sub _stash_back{
     my $self = shift;
     my $back = $self->param('back')||'';
 
     if ($back eq 'results') {
         $back = $self->url_for('tests');
-    } elsif ($back eq 'details') {
+    }
+    elsif ($back eq 'details') {
         $back = $self->url_for('test', 'testid' => $self->param('testid'));
-    } else {
+    }
+    else {
         $back = $self->req->headers->referrer;
     }
     $self->stash('back', $back);
 }
 
-sub cancel
-{
+sub cancel{
     my $self = shift;
     my $name = $self->param('testid');
 
@@ -44,8 +44,7 @@ sub cancel
     _stash_back($self);
 }
 
-sub restart
-{
+sub restart{
     my $self = shift;
     my $name = $self->param('testid');
 
@@ -61,8 +60,7 @@ sub restart
     _stash_back($self);
 }
 
-sub setpriority
-{
+sub setpriority{
     my $self = shift;
     my $name = $self->param('testid');
     my $priority = $self->param('priority');

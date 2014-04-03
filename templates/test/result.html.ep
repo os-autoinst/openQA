@@ -119,12 +119,7 @@
 	<div class="box box-shadow">
             <h2>Test result for <i><%= $job->{name} %></i></h2>
 		<p />
-                % if (my $msg = flash 'error') {
-                  <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
-                % }
-                % if (my $msg = flash 'info') {
-                  <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
-                % }
+                %= include 'layouts/info'
                 % if (my $msg = flash 'code') {
                   <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
                 % }

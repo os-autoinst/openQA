@@ -16,59 +16,59 @@ use Mojo::Base -base;
 has fixture_path => 't/fixtures';
 
 sub create {
-  my $self        = shift;
-  my %options     = (
-    skip_fixtures  => 0,
-    @_
-  );
+    my $self        = shift;
+    my %options     = (
+        skip_fixtures  => 0,
+        @_
+    );
 
-  # New db
-  my $schema = openqa::connect_db(':memory:');
-  $schema->deploy();
+    # New db
+    my $schema = openqa::connect_db(':memory:');
+    $schema->deploy();
 
-  # Fixtures
-  $self->insert_fixtures($schema) unless $options{skip_fixtures};
+    # Fixtures
+    $self->insert_fixtures($schema) unless $options{skip_fixtures};
 
-  return $schema;
+    return $schema;
 }
 
 sub insert_fixtures {
-  my $self   = shift;
-  my $schema = shift;
+    my $self   = shift;
+    my $schema = shift;
 
-  # Store working dir
-  my $cwd = getcwd;
+    # Store working dir
+    my $cwd = getcwd;
 
-  chdir $self->fixture_path;
+    chdir $self->fixture_path;
 
-  foreach my $fixture (<*.pl>) {
+    foreach my $fixture (<*.pl>) {
 
-    my $info = eval file_content $fixture;
-    chdir $cwd, croak "Could not insert fixture $fixture: $@" if $@;
+        my $info = eval file_content $fixture;
+        chdir $cwd, croak "Could not insert fixture $fixture: $@" if $@;
 
-    # Arrayrefs of rows, (dbic syntax) table defined by fixture filename
-    if (ref $info->[0] eq 'HASH') {
-      my $rs_name = (split /\./, $fixture)[0];
-      $rs_name =~ s/s$//;
+        # Arrayrefs of rows, (dbic syntax) table defined by fixture filename
+        if (ref $info->[0] eq 'HASH') {
+            my $rs_name = (split /\./, $fixture)[0];
+            $rs_name =~ s/s$//;
 
-      # list context, so that populate uses dbic ->insert overrides
-      my @noop = $schema->resultset(ucfirst $rs_name)->populate($info);
+            # list context, so that populate uses dbic ->insert overrides
+            my @noop = $schema->resultset(ucfirst $rs_name)->populate($info);
 
-      next;
+            next;
+        }
+
+        # Arrayref of hashrefs, multiple tables per file
+        for (my $i = 0; $i < @$info; $i++) {
+            $schema->resultset($info->[$i])->create($info->[++$i]);
+        }
     }
 
-    # Arrayref of hashrefs, multiple tables per file
-    for (my $i = 0; $i < @$info; $i++) {
-      $schema->resultset($info->[$i])->create($info->[++$i]);
-    }
-  }
-
-  # Restore working dir
-  chdir $cwd;
+    # Restore working dir
+    chdir $cwd;
 }
 
 sub disconnect {
-  return shift->storage->dbh->disconnect;
+    return shift->storage->dbh->disconnect;
 }
 
 1;

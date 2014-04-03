@@ -17,12 +17,7 @@
 <div class="grid_12 box box-shadow omega">
 	<h2><%= title %></h2>
 
-    % if (my $msg = flash 'error') {
-      <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
-    % }
-    % if (my $msg = flash 'info') {
-      <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
-    % }
+    %= include 'layouts/info'
 
 	<table class="table-autostripe">
 	    <thead>
