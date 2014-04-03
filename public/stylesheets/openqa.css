@@ -62,9 +62,10 @@ table th.table-sorted-asc i.sort-arrows {
   color: #444;
 }
 
-.overviewok {color: #248509 ;}		/* dark Lemon */
-.overviewunknown {background-color:#ff9 ;}
-.overviewfail {background-color:#fbb ;}
+.overview_passed {color: #248509 ;}		/* dark Lemon */
+.overview_unknown {background-color:#ff9 ;}
+.overview_failed {background-color:#fbb ;}
+.overview_incomplete {background-color:#bebebe;}
 
 .component { text-align: right; }
 .links { text-align: left; padding-top: 0; }

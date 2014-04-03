@@ -325,6 +325,10 @@ sub list_jobs {
 	    'me.t_finished' => $agecond
 	    ];
     }
+    if ($args{ignore_incomplete}) {
+        my $results_rs = schema->resultset("JobResults")->search({ name => 'incomplete' });
+        $cond{result_id} = { '!=' => $results_rs->get_column("id")->as_query };
+    }
     if ($args{limit}) {
 	    $attrs{rows} = $args{limit};
     }
