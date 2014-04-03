@@ -55,7 +55,7 @@ $get->element_exists_not('#results #job_99937');
 
 # Test 99926 is displayed
 $get->element_exists('#results #job_99926');
-$get->text_is('#results #job_99926 .extra .overview_incomplete' => 'minimalx');
+$get->text_is('#results #job_99926 .extra .overview_incomplete' => 'minimalx@');
 
 $get = $t->get_ok('/tests' => form => {ignore_incomplete => 1})->status_is(200);
 
