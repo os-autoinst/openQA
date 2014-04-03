@@ -1,0 +1,56 @@
+% layout 'admin';
+% title 'Products';
+
+<div class="grid_16 omega box box-shadow list-form">
+    <div class="box-header aligncenter">New product</div>
+    %= form_for admin_products => (method => 'post') => begin
+        <p>
+            %= label_for name => 'Name'
+            %= text_field 'name', size => 15
+            %= label_for name => 'Distri'
+            %= text_field 'distri', size => 15
+        </p>
+        <p>
+            %= label_for name => 'Flavor'
+            %= text_field 'flavor', size => 15
+            %= label_for name => 'Arch'
+            %= text_field 'arch', size => 10
+        </p>
+        <p>
+            %= label_for name => 'Variables'
+            %= text_field 'variables', size => 35
+            %= submit_button 'create'
+        </p>
+    % end
+</div>
+
+<div class="grid_16 box box-shadow omega">
+	<h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+	<table style="width: 95%;" class="table-autostripe table-stripeclass:odd">
+	    <thead>
+		    <tr>
+                <th>name</th>
+                <th>distri</th>
+                <th>flavor</th>
+                <th>arch</th>
+                <th>variables</th>
+                <th>action</th>
+            </tr>
+        </thead>
+        <tbody>
+            % for my $product (@$products) {
+                <tr id="product_<%= $product->id %>">
+                    <td class="name"><%= $product->name %></td>
+                    <td class="distri"><%= $product->distri %></td>
+                    <td class="flavor"><%= $product->flavor %></td>
+                    <td class="arch"><%= $product->arch %></td>
+                    <td class="variables"><%= $product->variables %></td>
+                    <td class="action"><%= link_to 'delete' => url_for('admin_product', productid => $product->id) => 'data-method' => 'delete' %></td>
+                </tr>
+            % }
+        </tbody>
+    </table>
+</div>

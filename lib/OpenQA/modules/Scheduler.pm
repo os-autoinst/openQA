@@ -354,6 +354,7 @@ sub list_jobs {
 	my $j = _hashref($job, qw/ id name priority worker_id t_started t_finished test test_branch/);
 	$j->{state} = $job->state->name;
 	$j->{result} = $job->result->name;
+	$j->{machine} = $job->machine;
 	_job_fill_settings($j) if $args{fulldetails};
 	push @results, $j;
     }

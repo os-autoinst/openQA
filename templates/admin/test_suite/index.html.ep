@@ -1,0 +1,46 @@
+% layout 'admin';
+% title 'Test suites';
+
+<div class="grid_16 box box-shadow omega list-form">
+    <div class="box-header aligncenter">New test suite</div>
+    %= form_for admin_test_suites => (method => 'post') => begin
+        <p>
+            %= label_for name => 'Name'
+            %= text_field 'name', size => 15
+            %= label_for name => 'Priority'
+            %= text_field 'prio', size => 5
+        </p>
+        <p>
+            %= label_for name => 'Variables'
+            %= text_field 'variables', size => 30
+            %= submit_button 'create'
+        </p>
+    % end
+</div>
+
+<div class="grid_16 box box-shadow omega">
+	<h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+	<table style="width: 95%;" class="table-autostripe table-stripeclass:odd">
+	    <thead>
+		    <tr>
+                <th>name</th>
+                <th>prio</th>
+                <th>variables</th>
+                <th>action</th>
+            </tr>
+        </thead>
+        <tbody>
+            % for my $suite (@$suites) {
+                <tr id="test_suite_<%= $suite->id %>">
+                    <td class="name"><%= $suite->name %></td>
+                    <td class="prio"><%= $suite->prio %></td>
+                    <td class="variables"><%= $suite->variables %></td>
+                    <td class="action"><%= link_to 'delete' => url_for('admin_test_suite', testsuiteid => $suite->id) => 'data-method' => 'delete' %></td>
+                </tr>
+            % }
+        </tbody>
+    </table>
+</div>

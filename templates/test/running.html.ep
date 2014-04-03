@@ -85,12 +85,7 @@
 </div>
 
 <div class="grid_12 live-content omega">
-                % if (my $msg = flash 'error') {
-                  <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
-                % }
-                % if (my $msg = flash 'info') {
-                  <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
-                % }
+                %= include 'layouts/info'
                 % if (my $msg = flash 'code') {
                   <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
                 % }

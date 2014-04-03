@@ -121,5 +121,21 @@ sub name
     return $self->{_name};
 }
 
+sub machine
+{
+    my $self = shift;
+
+    if (!defined($self->{_machine})) {
+        my $setting = $self->settings({key => 'MACHINE'})->first;
+
+        if ($setting) {
+            $self->{_machine} = $setting->value;
+        } else {
+            $self->{_machine} = '';
+        }
+    }
+    return $self->{_machine};
+}
+
 1;
 # vim: set sw=4 et:
