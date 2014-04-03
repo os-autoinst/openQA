@@ -23,7 +23,7 @@ use warnings;
 use Data::Dump qw/pp dd/;
 use openqa::distri::opensuse qw(parse_iso);
 
-use Test::More tests => 12;
+use Test::More tests => 13;
 
 my @testdata = (
     {
@@ -129,6 +129,17 @@ my @testdata = (
             version => "Factory",
         },
     },
+
+    {
+        iso => 'openSUSE-FTT-KDE-Live-x86_64-Snapshot20140402-Media.iso',
+        params => {
+            version => 'FTT',
+            distri => 'openSUSE',
+            flavor => 'KDE-Live',
+            build => '20140402',
+            arch => 'x86_64',
+        },
+    }
 );
 
 for my $t (@testdata) {
