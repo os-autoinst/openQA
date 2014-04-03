@@ -18,6 +18,7 @@ package OpenQA::Test::Case;
 
 use OpenQA::Test::Database;
 use OpenQA::Test::Testresults;
+use Schema::Result::Users;
 use Mojo::Base -base;
 use Date::Format qw/time2str/;
 use Mojo::JSON 'j';
@@ -31,10 +32,14 @@ sub new {
     return $self;
 }
 
+{
+
+my $schema;
+
 sub init_data {
     # This should result in the 't' directory, even if $0 is in a subdirectory
     my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
-    my $schema = OpenQA::Test::Database->new->create();
+    $schema = OpenQA::Test::Database->new->create();
 
     # ARGL, we can't fake the current time and the db manages
     # t_started so we have to override it manually
@@ -61,6 +66,7 @@ sub login {
         my ($value) = split('--', $cookie->value);
         $value = j(b64_decode($value));
         # ..add the user value...
+        Schema::Result::Users->create_user($openid, $schema);
         $value->{user} = $openid;
         # ...and sign the cookie again with the new value
         $value = b64_encode(j($value), '');
@@ -73,6 +79,8 @@ sub login {
     }
 
     return 1;
+}
+
 }
 
 1;

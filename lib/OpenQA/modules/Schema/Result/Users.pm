@@ -71,5 +71,20 @@ sub name{
     return $self->{_name};
 }
 
+sub create_user
+{
+    my $self = shift;
+    my $id = shift;
+    my $db = shift;
+
+    my $user = $db->resultset("Users")->find_or_create({openid => $id});
+    if(not $db->resultset("Users")->search({ is_admin => 1 })->single()) {
+        $user->is_admin(1);
+        $user->is_operator(1);
+        $user->update;
+    }
+    return $user;
+}
+
 1;
 # vim: set sw=4 et:

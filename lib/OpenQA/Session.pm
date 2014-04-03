@@ -21,6 +21,7 @@ use Carp;
 use Net::OpenID::Consumer;
 use URI::Escape;
 use LWP::UserAgent;
+use Schema::Result::Users;
 
 sub ensure_operator {
     my $self = shift;
@@ -139,14 +140,10 @@ sub response {
             my $vident = shift;
             my $id = $vident->{identity};
 
-            my $user = $self->db->resultset("Users")->find_or_create({openid => $id});
+	    my $user = Schema::Result::Users->create_user($id, $self->db);
+
             $msg = 'verified';
-            if($self->db->resultset("Users")->find({ is_admin => 1 })) {
-                $user->is_admin(1);
-                $user->is_operator(1);
-                $user->update;
-            }
-            $self->session->{user} = $vident->{identity};
+            $self->session->{user} = $id;
         },
         error => sub {
             my $err = shift;
