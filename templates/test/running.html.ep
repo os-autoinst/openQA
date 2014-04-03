@@ -111,7 +111,7 @@
 		    <script type="text/javascript">
                         var livestream = document.getElementById('livestream');
                         var last_event;
-                        var events = new EventSource("<%= url_for("streaming", testid => 2) %>");
+                        var events = new EventSource("<%= url_for("streaming", testid => $testid) %>");
                         events.addEventListener('message', function(event) {
                             load_canvas(livestream, event.data);
                                 last_event = event;
