@@ -34,8 +34,10 @@ use IO::Dir;
 my $prepare_upgrades=0;
 my $upgrade_database=0;
 
-my $result = GetOptions ("prepare_upgrades" => \$prepare_upgrades,    # flag
-                      "upgrade_database"  => \$upgrade_database); # integer
+my $result = GetOptions(
+    "prepare_upgrades" => \$prepare_upgrades,    # flag
+    "upgrade_database"  => \$upgrade_database
+); # integer
 
 my $schema = openqa::connect_db();
 
@@ -43,11 +45,12 @@ my $script_directory="$FindBin::Bin/../dbicdh";
 
 my $dh = DH->new(
     {
-    schema              => $schema,
-    script_directory    => $script_directory,
-    databases           => 'SQLite',
-    sql_translator_args => { add_drop_table => 0 },
-    });
+        schema              => $schema,
+        script_directory    => $script_directory,
+        databases           => 'SQLite',
+        sql_translator_args => { add_drop_table => 0 },
+    }
+);
 
 my $version=$dh->schema_version;
 my $db_version = $dh->version_storage->database_version;
@@ -71,7 +74,7 @@ if ($prepare_upgrades) {
 
     $dh->prepare_deploy;
     $dh->prepare_upgrade({ from_version => $prev_version, to_version => $version});
-};
+}
 
 if ($upgrade_database) {
     $dh->upgrade;
