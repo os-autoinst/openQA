@@ -347,6 +347,11 @@ sub list_jobs {
         $cond{'settings.value'} = $args{build};
         $attrs{join} = 'settings';
     }
+    if ($args{iso}) {
+        $cond{'settings.key'} = "ISO";
+        $cond{'settings.value'} = $args{iso};
+        $attrs{join} = 'settings';
+    }
     if ($args{match}) {
         $cond{'settings.key'} = ['DISTRI', 'FLAVOR', 'BUILD', 'TEST'];
         $cond{'settings.value'} = { '-like' => "%$args{match}%" };
