@@ -35,6 +35,7 @@ install:
 	install -m 644 profiles/apparmor.d/usr.share.openqa.script.openqa "$(DESTDIR)"/etc/apparmor.d
 	install -m 644 profiles/apparmor.d/usr.share.openqa.script.worker "$(DESTDIR)"/etc/apparmor.d
 
+	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 test:
 	script/openqa test
 
