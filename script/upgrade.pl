@@ -31,17 +31,34 @@ use Schema::Schema;
 use Getopt::Long;
 use IO::Dir;
 
-my $prepare_upgrades=0;
-my $upgrade_database=0;
+my $prepare_upgrades            = 0;
+my $upgrade_database            = 0;
+my $help                        = 0;
+my $from_uninitialized_database = 0;
 
 my $result = GetOptions(
-    "prepare_upgrades" => \$prepare_upgrades,    # flag
-    "upgrade_database"  => \$upgrade_database
-); # integer
+    "help"                        => \$help,
+    "from_uninitialized_database" => \$from_uninitialized_database,
+    "prepare_upgrades"            => \$prepare_upgrades,
+    "upgrade_database"            => \$upgrade_database
+);
+
+if ($help) {
+    print "Usage: $0 [flags]\n\n";
+    print "  --prepare_upgrades : Create the deployment files used to upgrade the database.\n";
+    print "                       Don't forget to increase the version before using this\n";
+    print "                       and note those files should be commited to the source repo.\n";
+    print "  --upgrade_database : Use the generated deployment files created with --prepare_upgrades\n";
+    print "                       to actually upgrade a database.\n";
+    print "  --from_uninitialized_database : Create and populate an existing database as if it was\n";
+    print "                       initialized with the initdb script.\n";
+    print "  --help             : This help message.\n";
+    exit;
+}
 
 my $schema = openqa::connect_db();
 
-my $script_directory="$FindBin::Bin/../dbicdh";
+my $script_directory = "$FindBin::Bin/../dbicdh";
 
 my $dh = DH->new(
     {
@@ -52,13 +69,14 @@ my $dh = DH->new(
     }
 );
 
-my $version=$dh->schema_version;
+my $version    = $dh->schema_version;
 my $db_version = $dh->version_storage->database_version;
+
 #print "Schema version: $version\n";
 #print "Current DB version: $db_version\n";
 
-my $prev_version=$version-1;
-my $upgrade_directory="$prev_version-$version";
+my $prev_version      = $version - 1;
+my $upgrade_directory = "$prev_version-$version";
 
 my %upgrade_dir;
 tie %upgrade_dir, 'IO::Dir', "$script_directory/SQLite/upgrade";
@@ -66,17 +84,20 @@ my %deploy_dir;
 tie %deploy_dir, 'IO::Dir', "$script_directory/SQLite/deploy";
 
 if ($prepare_upgrades) {
-    if (exists $upgrade_dir{$upgrade_directory}) {
+    if ( exists $upgrade_dir{$upgrade_directory} ) {
         print "The current version $version already has upgrade data generated. Nothing to upgrade\n";
         print "Remove the $script_directory/SQLite/upgrade/$upgrade_directory if you want to regenerate it\n";
-        die;
+        exit 1;
     }
 
     $dh->prepare_deploy;
-    $dh->prepare_upgrade({ from_version => $prev_version, to_version => $version});
+    $dh->prepare_upgrade({ from_version => $prev_version, to_version => $version } );
 }
 
 if ($upgrade_database) {
+    if ($from_uninitialized_database) {
+        print "'--from_uninitialized_database' not implemented yet";
+    }
     $dh->upgrade;
 }
 
