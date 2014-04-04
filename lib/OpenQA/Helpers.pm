@@ -96,6 +96,10 @@ sub register {
                 $crumbs .= ' > '.$c->link_to('Test results' => $c->url_for('tests'));
                 $crumbs .= ' > '.$c->param('buildid');
             }
+            elsif ($c->current_route =~ /^admin/) {
+                $crumbs .= ' > '.$c->link_to('Admin' => $c->url_for('admin'));
+                $crumbs .= ' > '.$c->stash('title');
+            }
             $crumbs .= '</div>';
 
             Mojo::ByteStream->new($crumbs);
