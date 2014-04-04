@@ -17,16 +17,16 @@ find . -name '*.p[lm]' -exec perltidy $TIDY_ARGS \{\} \;
 find script/{check_dependencies,client,initdb,openqa,worker} -exec perltidy $TIDY_ARGS \{\} \;
 
 if test "$1"  = '--check'; then
-  find . -name "*.bak" | while read file; do 
-    if ! diff -u $file ${file/.bak/}; then
-       echo "RUN tools/tidy script before checkin"
-       exit 1
-    fi
-  done
-  # propate subshell exit status
-  exit $?
-else
-  find -name '*.bak' -delete
+    find . -name "*.bak" | while read file; do
+        if ! diff -u $file ${file/.bak/}; then
+            echo "RUN tools/tidy script before checkin"
+            exit 1
+        fi
+    done
+    # propate subshell exit status
+    exit $?
 fi
+
+find -name '*.bak' -delete
 
 # vim: set ts=4 sw=4 sts=4 et:
