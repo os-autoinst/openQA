@@ -93,31 +93,38 @@
 		<h2>Live view of <i><%= $testname %></i></h2>
 		<p>
 		    Resolution:
-		    <select onchange="resize_livestream(this.value);">
-			<option value="800x600" selected="selected">800x600</option>
+		    <select onchange="set_resolution(this.value);" id="sel_resolution">
+			<option value="auto">---</option>
+			<option value="800x600">800x600</option>
 			<option value="1024x768">1024x768</option>
 			<option value="1280x1024">1280x1024</option>
 		    </select>
 		</p>
 	</div>
 	<div class="box box-shadow">
-		<div style="margin: 0 10px;">
+		<div style="margin: 0 10px;" id="canholder">
 		    <canvas id="livestream" width="800" height="600"></canvas>
 		    <script type="text/javascript">
                         var livestream = document.getElementById('livestream');
+                        var canholder = document.getElementById('canholder');
+                        var sel_resolution = document.getElementById('sel_resolution');
+
+                        // initially set canvas size
+                        var livestream_size = get_cookie("livestream_size");
+                        if (! livestream_size) {
+                            livestream_size = "auto";
+                        }
+                        set_resolution(livestream_size);
+                        sel_resolution.value = livestream_size;
+
+                        // start stream
                         var last_event;
-                        var events = new EventSource("<%= url_for("streaming", testid => $testid) %>");
+                        var events = new EventSource('<%= url_for("streaming", testid => $testid) %>');
                         events.addEventListener('message', function(event) {
                             load_canvas(livestream, event.data);
-                                last_event = event;
+                            last_event = event;
                         }, false);
-                        function resize_livestream(arg) {
-                            livestream.width  = arg.split("x")[0];
-                            livestream.height = arg.split("x")[1];
-                                if (last_event) {
-                                        load_canvas(livestream, last_event.data);
-                                }
-                        }
+
 		    </script>
 		</div>
 	</div>

@@ -159,3 +159,27 @@ function init_running(tname) {
 	}
 	updateStatus();
 }
+
+// canvas size
+function resize_livestream(arg) {
+    livestream.width  = arg.split("x")[0];
+    livestream.height = arg.split("x")[1];
+    if (last_event) {
+        load_canvas(livestream, last_event.data);
+    }
+}
+function set_resolution(arg) {
+    if (arg == "auto") {
+        set_cookie("livestream_size", arg, -5);
+        if (canholder.clientWidth >= 1024) {
+            resize_livestream("1024x768");
+        }
+        else {
+            resize_livestream("800x600");
+        }
+    }
+    else {
+        set_cookie("livestream_size", arg, 365);
+        resize_livestream(arg);
+    }
+}
