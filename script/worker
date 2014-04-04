@@ -370,7 +370,14 @@ sub main(){
 
     while($keep_running) {
         my $cmds; # [[id, command], ... ]
-        $cmds = api_call('get', "workers/$workerid/commands")->{commands};
+        my $call = api_call('get', "workers/$workerid/commands");
+        if (defined($call)) {
+            $cmds = $call->{commands};
+        }
+        else {
+            # Server returned an empty response (database locked, most likely)
+            $cmds = [];
+        }
         for my $cmd (@{$cmds||[]}) {
             if ($cmd->[1] eq 'quit') { # quit_worker and reschedule the job
                 $keep_running = 0;
