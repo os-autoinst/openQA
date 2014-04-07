@@ -123,16 +123,21 @@ if ($prepare_upgrades) {
 
 if ($upgrade_database) {
     if ($from_uninitialized_database) {
-        print "'--from_uninitialized_database' not implemented yet";
+        print "'--from_uninitialized_database' not implemented yet\n";
     }
-    $dh->upgrade;
 
-    my %fixture_upgrade_dir;
-    tie %fixture_upgrade_dir, 'IO::Dir', "$script_directory/fixtures/upgrade/$upgrade_directory";
+    if ($db_version == $version) {
+        print "Database already at version $version . No need to upgrade\n";
+    } else {
+        $dh->upgrade;
 
-    foreach (keys %fixture_upgrade_dir) {
-        if ( S_ISREG($fixture_upgrade_dir{$_}->mode) ) {
-            execute_sql_file("$script_directory/fixtures/upgrade/$upgrade_directory/$_");
+        my %fixture_upgrade_dir;
+        tie %fixture_upgrade_dir, 'IO::Dir', "$script_directory/fixtures/upgrade/$upgrade_directory";
+
+        foreach (keys %fixture_upgrade_dir) {
+            if ( S_ISREG($fixture_upgrade_dir{$_}->mode) ) {
+                execute_sql_file("$script_directory/fixtures/upgrade/$upgrade_directory/$_");
+            }
         }
     }
 }
