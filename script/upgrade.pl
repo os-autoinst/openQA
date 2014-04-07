@@ -30,20 +30,31 @@ use openqa ();
 use Schema::Schema;
 use Getopt::Long;
 use IO::Dir;
+use SQL::SplitStatement;
+use Fcntl ':mode';
 
 sub execute_sql_file {
     my $sqlfile = shift;
+    print "Executing SQL statements from: $sqlfile\n";
 
-    my $dbh = DBI->connect("dbi:SQLite:dbname=$openqa::dbfile" ) or die $DBI::errstr;
+    open my $fh, '<', $sqlfile or die "error opening $sqlfile: $!";
+    my $contents = do { local $/; <$fh> };
 
-    $/ = ';';
-    open FH, "< ", $sqlfile;
-    while (<FH>) {
-        $dbh->do($_);
- #       my $sth = $dbh->prepare($_);
-  #      $sth->execute();
+    my $sql_splitter = SQL::SplitStatement->new;
+    my @statements = $sql_splitter->split($contents);
+
+    my $dbh = DBI->connect("dbi:SQLite:dbname=$openqa::dbfile") or die $DBI::errstr;
+    $dbh->do("BEGIN TRANSACTION");
+    foreach (@statements) {
+        print "$_\n";
+
+        unless ($dbh->do($_)) {
+            print "ROLLBACK;\n";
+            $dbh->do("ROLLBACK");
+            die;
+        }
     }
-    close FH;
+    $dbh->do("COMMIT");
 }
 
 my $prepare_upgrades            = 0;
@@ -83,8 +94,7 @@ my $dh = DH->new(
         sql_translator_args => { add_drop_table => 0 },
     }
 );
-execute_sql_file("./test");
-die
+
 
 my $version    = $dh->schema_version;
 my $db_version = $dh->version_storage->database_version;
@@ -116,6 +126,15 @@ if ($upgrade_database) {
         print "'--from_uninitialized_database' not implemented yet";
     }
     $dh->upgrade;
+
+    my %fixture_upgrade_dir;
+    tie %fixture_upgrade_dir, 'IO::Dir', "$script_directory/fixtures/upgrade/$upgrade_directory";
+
+    foreach (keys %fixture_upgrade_dir) {
+        if ( S_ISREG($fixture_upgrade_dir{$_}->mode) ) {
+            execute_sql_file("$script_directory/fixtures/upgrade/$upgrade_directory/$_");
+        }
+    }
 }
 
 # vim: set sw=4 sts=4 et:
