@@ -77,7 +77,7 @@ sub create_user{
     my $db = shift;
 
     my $user = $db->resultset("Users")->find_or_create({openid => $id});
-    if(not $db->resultset("Users")->search({ is_admin => 1 })->single()) {
+    if(not $db->resultset("Users")->find({ is_admin => 1 }, { rows => 1 })) {
         $user->is_admin(1);
         $user->is_operator(1);
         $user->update;
