@@ -1,4 +1,3 @@
-BEGIN TRANSACTION;
 INSERT INTO "machines" VALUES(1001,'32bit','qemu','QEMUCPU=qemu32',datetime('now'),datetime('now'));
 INSERT INTO "machines" VALUES(1002,'64bit','qemu','QEMUCPU=qemu64',datetime('now'),datetime('now'));
 INSERT INTO "machines" VALUES(1003,'smp_32','qemu','QEMUCPU=qemu32;QEMUCPUS=4;SMP=1',datetime('now'),datetime('now'));
@@ -276,4 +275,3 @@ INSERT INTO "job_templates" VALUES(220,15,1001,1021,datetime('now'),datetime('no
 INSERT INTO "job_templates" VALUES(221,15,1001,1022,datetime('now'),datetime('now'));
 INSERT INTO "job_templates" VALUES(222,16,1001,1021,datetime('now'),datetime('now'));
 INSERT INTO "job_templates" VALUES(223,16,1001,1022,datetime('now'),datetime('now'));
-COMMIT;
