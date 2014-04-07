@@ -17,6 +17,7 @@
 package OpenQA::Running;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
+import JSON;
 use openqa;
 use Mojolicious::Static;
 use Scheduler ();
@@ -99,8 +100,9 @@ sub livelog {
         return;
     }
     $self->render_later;
+    Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     $self->res->code(200);
-    $self->res->headers->content_type("text/plain");
+    $self->res->headers->content_type("text/event-stream");
 
     # Send the last 10KB of data from the logfile, so that
     # the client sees some data immediately
@@ -112,7 +114,7 @@ sub livelog {
         my $dummy = <$log>;
     }
     while (defined(my $l = <$log>)) {
-        $self->write_chunk($l);
+        $self->write("data: ".encode_json([$l])."\n\n");
     }
     seek $log, 0, 1;
 
@@ -145,7 +147,7 @@ sub livelog {
             if ($size < $st[7]) {
                 $size = $st[7];
                 while (defined(my $l = <$log>)) {
-                    $self->write_chunk($l);
+                    $self->write("data: ".encode_json([$l])."\n\n");
                 }
                 seek $log, 0, 1;
             }

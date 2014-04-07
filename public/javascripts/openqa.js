@@ -24,19 +24,6 @@ document.observe('dom:loaded', function(evt) {
     }
 });
 
-// loads a data-url img into a canvas
-function load_canvas(canvas, dataURL) {
-    var context = canvas.getContext('2d');
-
-    // load image from data url
-    var scrn = new Image();
-    scrn.onload = function() {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(this, 0, 0, width=canvas.width, height=canvas.height);
-    };
-    scrn.src = dataURL;
-}
-
 function set_cookie(cname, cvalue, exdays) {
     var d = new Date();
     d.setTime(d.getTime()+(exdays*24*60*60*1000));

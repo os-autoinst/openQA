@@ -3,10 +3,10 @@
 
 
 table {
-	/* tables have 10px margin on each side
-	 * so we must subtract it to fit the table
-	 * into the container */
-	width: calc(100% - 20px);
+    /* tables have 10px margin on each side
+     * so we must subtract it to fit the table
+     * into the container */
+    width: calc(100% - 20px);
 }
 
 td { text-align: center; vertical-align: middle; }
@@ -21,25 +21,25 @@ table select.table-autofilter { font-size: 9px; }
 table select.table-autofilter option { font-size: 9px; }
 
 table th.table-sortable {
-	cursor: pointer;
+    cursor: pointer;
 }
 table th.table-sortable i.sort-arrows {
-	background-image: url(../images/sortable.png);
-	background-position: left top;
-	background-repeat: no-repeat;
-	display: inline-block;
-	width: 7px;
-	height: 16px;
+    background-image: url(../images/sortable.png);
+    background-position: left top;
+    background-repeat: no-repeat;
+    display: inline-block;
+    width: 7px;
+    height: 16px;
 }
 table th.table-sorted-desc i.sort-arrows {
-	background-image: url(../images/sorted-down.png);
-	background-position: left top;
-	background-repeat: no-repeat;
+    background-image: url(../images/sorted-down.png);
+    background-position: left top;
+    background-repeat: no-repeat;
 }
 table th.table-sorted-asc i.sort-arrows {
-	background-image: url(../images/sorted-up.png);
-	background-position: left top;
-	background-repeat: no-repeat;
+    background-image: url(../images/sorted-up.png);
+    background-position: left top;
+    background-repeat: no-repeat;
 }
 
 
@@ -124,72 +124,72 @@ span.refpic span.match-icon{
 }
 
 span.refpic span.delete-icon input, button{
-	background: none;
-	padding: none;
-	border: none;
-	color: none;
-	margin: none;
+    background: none;
+    padding: none;
+    border: none;
+    color: none;
+    margin: none;
 }
 
 span.refpic img.pic{
-	border: 1px dotted #ccc;
+    border: 1px dotted #ccc;
 }
 
 span.refcomppic {
-	width:80px;
-	text-decoration:none;
-	position:relative;
-	display:inline-block;
-	margin-right:5px;
-	padding: 1px;
+    width:80px;
+    text-decoration:none;
+    position:relative;
+    display:inline-block;
+    margin-right:5px;
+    padding: 1px;
 }
 
 span.refcomppic.match {
-	border: 3px solid #3399CC;
-	padding: 1px;
+    border: 3px solid #3399CC;
+    padding: 1px;
 }
 
 span.refcomppic span.result-icon {
-	position:absolute;
-	right:3px;
-	bottom:3px;
-	filter:alpha(opacity=80);
-	-moz-opacity:0.8;
-	-khtml-opacity: 0.8;
-	opacity: 0.8;
+    position:absolute;
+    right:3px;
+    bottom:3px;
+    filter:alpha(opacity=80);
+    -moz-opacity:0.8;
+    -khtml-opacity: 0.8;
+    opacity: 0.8;
 }
 
 span.thumbnail {
-	text-decoration:none;
-	position:relative;
-	display:inline-block;
-	margin: 6px;
+    text-decoration:none;
+    position:relative;
+    display:inline-block;
+    margin: 6px;
 }
 
 .ui-oo-content-wrapper .ui-oo-box-shadow > * >.thumbnail:first-child, .content-wrapper .box > * >.thumbnail:first-child {
-	margin-top: 6px; !important
+    margin-top: 6px; !important
 }
 
 span.thumbnail.current {
-	box-shadow: 0 0 3px 4px #666;
+    box-shadow: 0 0 3px 4px #666;
 }
 
 span.refcomppic span.match-icon {
-	position:absolute;
-	left:4px;
-	bottom:3px;
+    position:absolute;
+    left:4px;
+    bottom:3px;
 }
 
 img.crop-screenshot {
-	background-color: #eeeeee;
-	padding: 1px;
-	border: 2px solid #555555;
+    background-color: #eeeeee;
+    padding: 1px;
+    border: 2px solid #555555;
 }
 
 img.crop-screenshot-current {
-	background-color: #eeeeee;
-	padding: 1px;
-	border: 2px solid #669900;
+    background-color: #eeeeee;
+    padding: 1px;
+    border: 2px solid #669900;
 }
 
 /* Recent Issues Hover */
@@ -208,90 +208,90 @@ div.recent-issues-hide:hover {
 }
 
 div.click-location-pointer {
-	position: absolute;
-	width: 6px;
-	height: 6px;
-	line-height: 0.5;
-	cursor: crosshair;
-	display: none;
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    line-height: 0.5;
+    cursor: crosshair;
+    display: none;
 }
 
 div.click-location-pointer div {
-	position: relative;
-	top: -4px;
-	left: -4px;
-	color: black;
-	text-size: 13px;
-	text-shadow: white 0px 0px 7px, white 0px 0px 7px;
+    position: relative;
+    top: -4px;
+    left: -4px;
+    color: black;
+    text-size: 13px;
+    text-shadow: white 0px 0px 7px, white 0px 0px 7px;
 }
 
 td img.resborderok, td img.resborderfail, td img.resborderunk,td img.resborderna {
-	margin-top: 3px;
+    margin-top: 3px;
 }
 
 img.resborderok {
-	border: 3px solid green;
-	padding: 1px;
+    border: 3px solid green;
+    padding: 1px;
 }
 
 img.resborderfail {
-	border: 3px solid red;
-	padding: 1px;
+    border: 3px solid red;
+    padding: 1px;
 }
 
 img.resborderunk {
-	border: 3px solid dimgray;
-	padding: 1px;
+    border: 3px solid dimgray;
+    padding: 1px;
 }
 
 img.resborderna {
-	padding: 4px;
+    padding: 4px;
 }
 
 h2.modcategory {
-	margin-top: 0.9em !important;
+    margin-top: 0.9em !important;
 }
 
 ul.modcategory {
-	margin-bottom: 0;
+    margin-bottom: 0;
 }
 
 li.mod-done,li.mod-current,li.mod-todo {
-	margin: 1px 0 0px 20px;
-	padding: 0 3px;
-	list-style-position: outside;
+    margin: 1px 0 0px 20px;
+    padding: 0 3px;
+    list-style-position: outside;
 }
 
 .modcategory li a:focus, .modcategory li a:hover {
-	 background: none;
+     background: none;
 }
 
 li.mod-done {
-	list-style-image:url(../images/step-done.png);
+    list-style-image:url(../images/step-done.png);
 }
 
 li.mod-current {
-	list-style-image:url(../images/step-current.png);
-	font-weight: bold;
+    list-style-image:url(../images/step-current.png);
+    font-weight: bold;
 }
 
 li.mod-todo {
-	list-style-image:url(../images/step-todo.png);
+    list-style-image:url(../images/step-todo.png);
 }
 
 a.pauseplay {
-	background: url("../images/pauseplay.png") 0 0 no-repeat;
-	width: 23px;
-	height: 23px;
-	display: inline-block;
+    background: url("../images/pauseplay.png") 0 0 no-repeat;
+    width: 23px;
+    height: 23px;
+    display: inline-block;
 }
 
 a.pauseplay.pause {
-	background-position: 0 0;
+    background-position: 0 0;
 }
 
 a.pauseplay.play {
-	background-position: -23px 0;
+    background-position: -23px 0;
 }
 
 #recent-issues a{colo}
@@ -339,18 +339,18 @@ a.pauseplay.play {
 /* thanks to http://www.useragentman.com/blog/2012/01/03/cross-browser-html5-progress-bars-in-depth/ */
 
 .pbox {
-	position: relative;
-	z-index: +1;
+    position: relative;
+    z-index: +1;
 }
 
 .pbox progress {
-	position: absolute;
-	top: 0;
-	left: 0;
-	bottom: 0;
-	right: 0;
-	z-index: -1;
-	overflow: hidden;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    z-index: -1;
+    overflow: hidden;
 }
 
 /* progressbar end */
@@ -358,13 +358,13 @@ a.pauseplay.play {
 
 /* bento theme fixes */
 ul.navigation {
-	width: calc(100% - 20px); /* subtract margin (which is 10px on each side) */
+    width: calc(100% - 20px); /* subtract margin (which is 10px on each side) */
 }
 
 input[type='image'] {
-	border: 0;
-	background-color: none;
-	padding: 0;
+    border: 0;
+    background-color: none;
+    padding: 0;
 }
 /* bento theme fixes end */
 
@@ -372,21 +372,29 @@ input[type='image'] {
 /* special table stuff */
 
 .infotbl {
-	border: none;
-	margin: 0 3px 0 3px;
-	width: calc(100% - 6px);
+    border: none;
+    margin: 0 3px 0 3px;
+    width: calc(100% - 6px);
 }
 
 .infotbl td {
-	padding: 0 0 0 0;
+    padding: 0 0 0 0;
 }
 .infotbl img {
-	padding-right: 3px;
+    padding-right: 3px;
 }
 
 td.flags {
-	font-size: 1.5em;
-	width: 1.5em;
+    font-size: 1.5em;
+    width: 1.5em;
+}
+
+.noborder {
+    border: none;
+}
+
+.noborder tr, .noborder td {
+    border: none;
 }
 
 
@@ -402,6 +410,17 @@ td.flags {
     width: calc(73% + (23% - 280px));
 }
 
+#livelog {
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: none;
+    width: 100%;
+    height: 30em;
+    overflow-x: hidden;
+    overflow-y: scroll;
+}
+
 /* User info header */
 
 #user-info {
@@ -411,8 +430,8 @@ td.flags {
 /* Code view */
 
 tt, pre {
-	font-family: "monospace", monospace;
-	font-size: 90%;
+    font-family: "monospace", monospace;
+    font-size: 90%;
 }
 
 /* Fix chosen incompability */
@@ -439,3 +458,5 @@ td .chosen-results {
 table#job_settings td {
     padding: 2px;
 }
+
+/* vim: set sw=4 et: */
