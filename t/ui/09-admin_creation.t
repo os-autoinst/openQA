@@ -51,7 +51,7 @@ $t->delete_ok('/logout')->status_is(302);
 
 # Login and claim the kingdom
 $test_case->login($t, 'https://openid.camelot.uk/morgana');
-my $get = $t->get_ok('/admin/users')->status_is(200);
+$get = $t->get_ok('/admin/users')->status_is(200);
 $get->text_is('#user_99901 .action_operator a' => '- operator');
 $get->text_is('#user_99901 .action_admin a' => '+ admin');
 $get->text_is('#user_99902 .action_operator a' => '+ operator');
