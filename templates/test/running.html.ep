@@ -42,8 +42,13 @@
         </table>
     </div>
 	<div class="box box-shadow" id="modules_box" style="min-height: 508px;">
-		<div class="box-header aligncenter">Test modules</div>
-		<div id="modlist_content"></div>
+            <div class="box-header aligncenter">Test modules</div>
+            <div id="modlist_content"></div>
+            <script type="text/javascript">
+                window.addEventListener("load", function() {
+                    init_status("<%= $testid %>");
+                }, false);
+            </script>
 	</div>
 	% if($backend_info) {
 	% $backend_info->{'backend'} =~s/^.*:://;
@@ -90,45 +95,53 @@
                   <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
                 % }
 	<div class="box box-shadow">
-		<h2>Live view of <i><%= $testname %></i></h2>
-		<p>
-		    Resolution:
-		    <select onchange="resize_livestream(this.value);">
-			<option value="800x600" selected="selected">800x600</option>
-			<option value="1024x768">1024x768</option>
-			<option value="1280x1024">1280x1024</option>
-		    </select>
-		</p>
-	</div>
-	<div class="box box-shadow">
-		<div style="margin: 0 10px;">
+		<!--<h2>Live view of <i><%= $testname %></i></h2>-->
+		<div class="box-header aligncenter">Live view of <i><%= $testname %></i></div>
+		<div style="margin: 0 10px;" id="canholder">
 		    <canvas id="livestream" width="800" height="600"></canvas>
 		    <script type="text/javascript">
-                        var livestream = document.getElementById('livestream');
-                        var last_event;
-                        var events = new EventSource("<%= url_for("streaming", testid => $testid) %>");
-                        events.addEventListener('message', function(event) {
-                            load_canvas(livestream, event.data);
-                                last_event = event;
+                        window.addEventListener("load", function() {
+                            init_livestream('<%= url_for("streaming", testid => $testid) %>');
                         }, false);
-                        function resize_livestream(arg) {
-                            livestream.width  = arg.split("x")[0];
-                            livestream.height = arg.split("x")[1];
-                                if (last_event) {
-                                        load_canvas(livestream, last_event.data);
-                                }
-                        }
 		    </script>
 		</div>
 	</div>
 
-	<div class="box box-shadow" onmouseover="window.scrolldownc = 0;" onmouseout="window.scrolldownc = 1;">
+	<div class="box box-shadow" style="padding: 5px 10px;">
+            <table class="infotbl noborder">
+                <tr>
+                    <td style="width: 200px; text-align: left;">
+                        Resolution:
+                        <select onchange="set_resolution(this.value);" id="sel_resolution">
+                            <option value="auto">default</option>
+                            <option value="800x600">800x600</option>
+                            <option value="1024x768">1024x768</option>
+                            <option value="1280x1024">1280x1024</option>
+                        </select>
+                    </td>
+                    <td style="width: 200px; text-align: left;">
+                        Raw Size:
+                        <span id="image_size_x" style="display: inline-block; width: 2em; text-align: right;"></span> x
+                        <span id="image_size_y" style="display: inline-block; width: 2em;"></span>
+                    </td>
+                    <td style="text-align: right;">
+                        <input type="checkbox" id="scrolldown" onchange="set_scrolldown(this.checked);" checked="checked" />
+                        <label for="scrolldown">Autoscroll log</label>
+                    </td>
+                </tr>
+            </table>
+	</div>
+
+	<div class="box box-shadow">
 		<div class="box-header aligncenter">Live Log</div>
 		<div style="margin: 0 10px;">
-			<iframe id="livelog" src="about:blank" style="width: 100%; height: 30em; overflow-x: hidden;">Test Log</iframe>
+                    <pre id="livelog"></pre>
+                    <script type="text/javascript">
+                        window.addEventListener("load", function() {
+                            init_livelog('<%= url_for("livelog", testid => $testid) %>');
+                        }, false);
+                    </script>
 		</div>
-		<script type="text/javascript">
-			init_running("<%= $testid %>");
-		</script>
 	</div>
 </div>
+%# vim: set sw=4 et:
