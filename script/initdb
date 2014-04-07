@@ -107,11 +107,11 @@ if ($init_database) {
     $dh->install;
 
     my $version = $dh->schema_version;
-    my %fixture_upgrade_dir;
-    tie %fixture_upgrade_dir, 'IO::Dir', "$script_directory/fixtures/deploy/$version";
+    my %fixture_deploy_dir;
+    tie %fixture_deploy_dir, 'IO::Dir', "$script_directory/fixtures/deploy/$version";
 
-    foreach (keys %fixture_upgrade_dir) {
-        if ( S_ISREG($fixture_upgrade_dir{$_}->mode) ) {
+    foreach (keys %fixture_deploy_dir) {
+        if ( S_ISREG($fixture_deploy_dir{$_}->mode) ) {
             execute_sql_file("$script_directory/fixtures/deploy/$version/$_");
         }
     }

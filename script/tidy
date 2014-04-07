@@ -14,7 +14,7 @@ cd "$ROOT_DIR"
 
 find . -name '*.p[lm]' -exec perltidy $TIDY_ARGS \{\} \;
 
-find script/{check_dependencies,client,initdb,openqa,worker,upgrade.pl} -exec perltidy $TIDY_ARGS \{\} \;
+find script/{check_dependencies,client,initdb,openqa,worker,upgradedb} -exec perltidy $TIDY_ARGS \{\} \;
 
 if test "$1"  = '--check'; then
     find . -name "*.bak" | while read file; do
