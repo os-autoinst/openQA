@@ -128,7 +128,8 @@ if ($upgrade_database) {
 
     if ($db_version == $version) {
         print "Database already at version $version . No need to upgrade\n";
-    } else {
+    }
+    else {
         $dh->upgrade;
 
         my %fixture_upgrade_dir;
