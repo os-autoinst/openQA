@@ -31,6 +31,21 @@ use Schema::Schema;
 use Getopt::Long;
 use IO::Dir;
 
+sub execute_sql_file {
+    my $sqlfile = shift;
+
+    my $dbh = DBI->connect("dbi:SQLite:dbname=$openqa::dbfile" ) or die $DBI::errstr;
+
+    $/ = ';';
+    open FH, "< ", $sqlfile;
+    while (<FH>) {
+        $dbh->do($_);
+ #       my $sth = $dbh->prepare($_);
+  #      $sth->execute();
+    }
+    close FH;
+}
+
 my $prepare_upgrades            = 0;
 my $upgrade_database            = 0;
 my $help                        = 0;
@@ -68,6 +83,8 @@ my $dh = DH->new(
         sql_translator_args => { add_drop_table => 0 },
     }
 );
+execute_sql_file("./test");
+die
 
 my $version    = $dh->schema_version;
 my $db_version = $dh->version_storage->database_version;
