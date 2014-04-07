@@ -18,6 +18,7 @@ package OpenQA::API::V1::Iso;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use Scheduler ();
+use Data::Dump qw(pp);
 
 sub create {
     my $self = shift;

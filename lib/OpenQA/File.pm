@@ -14,63 +14,65 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+use strict;
+use warnings;
+
 package OpenQA::File;
 use Mojo::Base 'Mojolicious::Controller';
 BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
 use Image::Magick;
 use openqa;
+use File::Basename;
+
+use Data::Dump qw(pp);
+
+use Mojolicious::Static;
 
 sub needle {
     my $self = shift;
 
     my $name = $self->param('name');
-    $name =~ s/\.([^.]+)$//; # Remove file extension
-    $self->stash('format', $1);
     my $distri = $self->param('distri');
     my $version = $self->param('version') || '';
     if ($self->stash('format') eq 'json') {
         my $fullname = openqa::needle_info($name, $distri, $version)->{'json'};
-        $self->_serve_file($fullname);
+        return $self->static->serve($self, $fullname);
     }
     else {
         my $info = openqa::needle_info($name, $distri, $version);
-        $self->_serve_file($info->{'image'});
+        return $self->static->serve($self, $info->{'image'});
     }
 }
 
-sub test_logfile {
+sub _set_test($) {
     my $self = shift;
 
-    my $name = $self->param('filename');
-    my $job = Scheduler::job_get($self->param('testid'));
-    my $testdirname = $job->{'settings'}->{'NAME'};
+    $self->{job} = Scheduler::job_get($self->param('testid'));
+    return undef unless $self->{job};
 
-    my $fullname = openqa::testresultdir($testdirname).'/ulogs/'.$name;
-    $fullname .= '.'.$self->stash('format') if $self->stash('format');
-
-    return $self->_serve_file($fullname);
+    $self->{testdirname} = $self->{job}->{'settings'}->{'NAME'};
+    $self->{static} = Mojolicious::Static->new;
+    push @{$self->{static}->paths}, openqa::testresultdir($self->{testdirname});
+    push @{$self->{static}->paths}, openqa::testresultdir($self->{testdirname} . '/ulogs');
+    return 1;
 }
 
 sub test_file {
     my $self = shift;
 
-    my $name = $self->param('filename');
-    my $job = Scheduler::job_get($self->param('testid'));
-    my $testdirname = $job->{'settings'}->{'NAME'};
+    return $self->render_not_found unless $self->_set_test;
 
-    my $fullname = openqa::testresultdir($testdirname).'/'.$name;
-    $fullname .= '.'.$self->stash('format') if $self->stash('format');
-
-    return $self->_serve_file($fullname);
+    return $self->serve_static_($self->param('filename'));
 }
 
 sub test_diskimage {
     my $self = shift;
-    my $job = Scheduler::job_get($self->param('testid'));
-    my $testdirname = $job->{'settings'}->{'NAME'};
+
+    return $self->render_not_found unless $self->_set_test;
+
     my $diskimg = $self->param('imageid');
 
-    my $basepath = back_log($testdirname);
+    my $basepath = back_log($self->{testdirname});
 
     return $self->render_not_found if (!-d $basepath);
 
@@ -79,79 +81,74 @@ sub test_diskimage {
 
     # TODO: the original had gzip compression here
     #print header(-charset=>"UTF-8", -type=>"application/x-gzip", -attachment => $testname.'_'.$diskimg.'.gz', -expires=>'+24h', -max_age=>'86400', -Last_Modified=>awstandard::HTTPdate($mtime));
-    $self->_serve_file($imgpath);
+    return $self->serve_static_($imgpath);
 }
 
-sub isoimage {
+sub test_isoimage {
     my $self = shift;
-    my $name = $self->param('filename');
-    my $job = Scheduler::job_get($self->param('testid'));
 
-    my $filename = $job ? $job->{'settings'}->{'ISO'} : $name;
-    return $self->render_not_found if !$filename;
+    return $self->render_not_found unless $self->_set_test;
+    push @{$self->{static}->paths}, $openqa::isodir;
 
-    my $iso_file = $openqa::isodir.'/'.$filename;
-
-    if (!-f $iso_file) {
-        $self->app->log->warn("Could not find $iso_file");
-        return $self->render_not_found;
-    }
-
-    # TODO: gzip compression
-    #print header(-charset=>"UTF-8", -type=>"application/x-gzip", -attachment => $testname.'_'.$diskimg.'.gz', -expires=>'+24h', -max_age=>'86400', -Last_Modified=>awstandard::HTTPdate($mtime));
-
-    return $self->render_file(
-        'filepath' => $iso_file,
-        'format' => 'iso'
-    );
+    return $self->serve_static_($self->{job}->{settings}->{ISO});
 }
 
-# serve file specified with absolute path name. No sanity checks
-# done here. Take care!
-sub _serve_file {
+sub serve_static_($$) {
     my $self = shift;
-    my $fullname = shift;
 
-    return $self->render_not_found if (!-e $fullname);
+    my $asset = shift;
 
-    # Last modified
-    my $mtime = (stat _)[9];
-    my $res = $self->res;
-    $res->code(200)->headers->last_modified(Mojo::Date->new($mtime));
+    unless (ref($asset)) {
+        # TODO: check for plain file name
+        $asset = $self->{static}->file($asset);
+    }
 
-    # If modified since
-    my $headers = $self->req->headers;
-    if (my $date = $headers->if_modified_since) {
-        $self->app->log->debug("not modified");
-        my $since = Mojo::Date->new($date)->epoch;
-        if (defined $since && $since == $mtime) {
-            $res->code(304);
-            return !!$self->rendered;
+    return $self->render_not_found unless $asset;
+
+    if (ref($asset) eq "Mojo::Asset::File") {
+        my $filename = basename($asset->path);
+        $self->res->headers->content_disposition("attatchment; filename=$filename;");
+        # guess content type from extension
+        if ($filename =~ m/\.([^\.]+)/) {
+            my $filetype = $self->app->types->type($1);
+            if ($filetype) {
+                $self->res->headers->content_type($filetype);
+            }
         }
     }
 
-    my $size;
-    if (($self->stash('format')||'') eq 'png' && ($size = $self->param("size"))) {
-        if ($size !~ m/^\d{1,3}x\d{1,3}$/) {
-            return $self->render(text => "invalid parameter 'size'\n", code => 400);
-        }
-        my $cachename = "cache_$fullname";
-        if(!$self->app->chi('ThumbCache')->is_valid($cachename)) {
-            my $p = new Image::Magick(depth=>8);
-            $p->Read($fullname, depth=>8);
-            $p->Resize($size); # make thumbnail
-            $self->app->chi('ThumbCache')->set($cachename, $p->ImageToBlob(magick=>uc($self->stash('format')), depth=>8, quality=>80), { expires_in => '30 min' });
-        }
-        return $self->render(data => $self->app->chi('ThumbCache')->get($cachename));
-    }
-
-    $self->app->log->debug("serve static");
-    my $filetype = $self->app->types->type($self->stash('format'));
-    if ($filetype) {
-        $res->headers->content_type($filetype)->accept_ranges('bytes');
-    }
-    $res->content->asset(Mojo::Asset::File->new(path => $fullname));
+    $self->{static}->serve_asset($self, $asset);
     return !!$self->rendered;
+}
+
+# images are served by test_file, only thumbnails are special
+sub test_thumbnail {
+    my $self = shift;
+
+    return $self->render_not_found unless $self->_set_test;
+
+    my $asset = $self->{static}->file($self->param('filename'));
+    return $self->render_not_found unless $asset;
+
+    my $mem = Mojo::Asset::Memory->new;
+
+    my $cachename = "cache_" . $asset->path;
+    if(!$self->app->chi('ThumbCache')->is_valid($cachename)) {
+        my $p = new Image::Magick(depth=>8);
+        $p->Read($asset->path, depth=>8);
+        $p->Resize( geometry => "120x120" ); # make thumbnail
+        $p = $p->ImageToBlob(magick=>'PNG', depth=>8, quality=>80);
+        $mem->add_chunk($p);
+        $self->app->chi('ThumbCache')->set($cachename, $p, { expires_in => '30 min' });
+    }
+    else {
+        my $p2 = $self->app->chi('ThumbCache')->get($cachename);
+        $mem->add_chunk($p2);
+    }
+
+    $self->res->headers->content_type("image/png");
+
+    return $self->serve_static_($mem);
 }
 
 1;

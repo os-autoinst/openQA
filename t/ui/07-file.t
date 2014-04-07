@@ -33,17 +33,19 @@ $t->get_ok('/tests/99938/images/logpackages-1.png')
     ->content_type_is('image/png')
     ->header_is('Content-Length' => '48019'); # Exact size of logpackages-1.png
 
-$t->get_ok('/tests/99938/images/logpackages-1.png' => form => {size => '60x45'})
+$t->get_ok('/tests/99937/../99938/images/logpackages-1.png')->status_is(404);
+
+$t->get_ok('/tests/99938/images/thumb/logpackages-1.png')
     ->status_is(200)
     ->content_type_is('image/png')
-    ->header_like('Content-Length' => qr/[0-9]{3,4}/); # Resized image should be smaller than 9999 bytes
+    ->header_like('Content-Length' => qr/^65..$/); # Resized image should be around 6500 bytes
 
 $t->get_ok('/tests/99946/images/logpackages-1.png')
     ->header_is('Content-Length' => '211'); # Not the same logpackages-1.png
 
 $t->get_ok('/tests/99938/images/doesntexist.png')->status_is(404);
 
-$t->get_ok('/tests/99938/images/doesntexist.png' => form => {size => '60x45'})->status_is(404);
+$t->get_ok('/tests/99938/images/thumb/doesntexist.png')->status_is(404);
 
 $t->get_ok('/tests/99938/file/video.ogv')
     ->status_is(200)
@@ -53,15 +55,13 @@ $t->get_ok('/tests/99938/file/serial0.txt')
     ->status_is(200)
     ->content_type_is('text/plain;charset=UTF-8');
 
-$t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(404);
+$t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200);
 
 $t->get_ok('/tests/99938/file/ulogs/y2logs.tar.bz2')->status_is(404);
 
-$t->get_ok('/tests/99938/logfile/y2logs.tar.bz2')->status_is(200);
-
-$t->get_ok('/iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso')
+$t->get_ok('/tests/99927/iso')
     ->status_is(200)
-    ->content_type_is('application/x-download;name="openSUSE-13.1-DVD-x86_64-Build0091-Media.iso"');
+    ->header_is('Content-Disposition' => "attatchment; filename=openSUSE-13.1-DVD-i586-Build0091-Media.iso;");
 
 #XXX this test assumes the opensuse needles are there
 SKIP: {

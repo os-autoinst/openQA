@@ -48,7 +48,6 @@ Mojolicious
 Mojolicious::Commands
 Mojolicious::Plugin
 Mojolicious::Plugin::CHI
-Mojolicious::Plugin::RenderFile
 Mojolicious::Static
 Net::OpenID::Consumer
 Package::Stash
