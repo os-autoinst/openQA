@@ -358,7 +358,9 @@ sub backup_testresults($){
 sub main(){
     my $lockfd = lockit();
 
-    my $workerid = api_call('post', 'workers', {host => 'localhost', instance => $options{'instance'}, backend => $worker_settings->{'BACKEND'}})->{id};
+    my $hostname = `uname -n`;
+
+    my $workerid = api_call('post', 'workers', {host => $hostname, instance => $options{'instance'}, backend => $worker_settings->{'BACKEND'}})->{id};
     $ENV{'WORKERID'} = $workerid;
 
     my $job;
