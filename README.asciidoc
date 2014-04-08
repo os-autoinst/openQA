@@ -153,7 +153,7 @@ needs to be changed. After modifying files in +lib/OpenQA/modules/Schema/Result+
 there are some steps that have to be followed so that new database instances
 and upgrades include those changes.
 
-1. First, you need to increase the database version number in the $VERSION 
+1. First, you need to increase the database version number in the $VERSION
    variable at the first lines of the +lib/OpenQA/modules/Schema/Schema.pm+ file.
    Note that it's recommended to notify the other developers before doing so,
    to synchronize in case there are more developers wanting to increase the
@@ -173,13 +173,13 @@ and upgrades include those changes.
 
 4. And finally, you need to create the fixtures files. Under
    +dbicdh/fixtures/deploy+, rename the directory of the (previous) latest version
-   to the new version and do the necessary changes (if any). Then, under 
+   to the new version and do the necessary changes (if any). Then, under
    +dbicdh/fixtures/upgrade+ create a +<prev_version>-<new_version>+ directory and
    put there some files with SQL statements that upgrade the fixtures. Usually a
    diff from the previous version to the new one helps to see what has to be in
    the upgrade file.
 
-The above steps are executed in the developer's system. Once openQA is 
+The above steps are executed in the developer's system. Once openQA is
 installed in a production server, you should run either
 +./initdb --init_database+ or +./upgradedb --upgrade_database+ to actually
 create or upgrade a database.
