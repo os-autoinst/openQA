@@ -127,7 +127,11 @@ sub test_thumbnail {
 
     return $self->render_not_found unless $self->_set_test;
 
-    my $asset = $self->{static}->file($self->param('filename'));
+    my $asset = $self->{static}->file(".thumbs/" . $self->param('filename'));
+    return $self->serve_static_($asset) if ($asset);
+
+    # old way. TODO: remove soonish (as soon as all existant tests are created with recent os-autoinst)
+    $asset = $self->{static}->file($self->param('filename'));
     return $self->render_not_found unless $asset;
 
     my $mem = Mojo::Asset::Memory->new;

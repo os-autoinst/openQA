@@ -55,6 +55,7 @@ Params::Util
 Params::Validate
 Perl::Tidy
 SQL::Translator
+SQL::SplitStatement
 Scalar::Util
 Sub::Install
 Sub::Name
