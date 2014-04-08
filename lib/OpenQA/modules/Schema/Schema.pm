@@ -17,7 +17,7 @@
 package Schema;
 use base qw/DBIx::Class::Schema/;
 
-our $VERSION = '4';
+our $VERSION = '5';
 
 __PACKAGE__->load_namespaces;
 
