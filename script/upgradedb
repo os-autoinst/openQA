@@ -69,6 +69,10 @@ my $result = GetOptions(
     "upgrade_database"            => \$upgrade_database
 );
 
+if (!$prepare_upgrades and !$upgrade_database) {
+    $help=1;
+}
+
 if ($help) {
     print "Usage: $0 [flags]\n\n";
     print "  --prepare_upgrades : Create the deployment files used to upgrade the database.\n";
@@ -97,7 +101,6 @@ my $dh = DH->new(
 
 
 my $version    = $dh->schema_version;
-my $db_version = $dh->version_storage->database_version;
 
 #print "Schema version: $version\n";
 #print "Current DB version: $db_version\n";
@@ -117,7 +120,6 @@ if ($prepare_upgrades) {
         exit 1;
     }
 
-    $dh->prepare_deploy;
     $dh->prepare_upgrade({ from_version => $prev_version, to_version => $version } );
 }
 
@@ -125,6 +127,7 @@ if ($upgrade_database) {
     if ($from_uninitialized_database) {
         print "'--from_uninitialized_database' not implemented yet\n";
     }
+    my $db_version = $dh->version_storage->database_version;
 
     if ($db_version == $version) {
         print "Database already at version $version . No need to upgrade\n";
