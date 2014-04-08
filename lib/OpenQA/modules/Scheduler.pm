@@ -328,11 +328,16 @@ sub list_jobs {
     }
     if ($args{maxage}) {
         my $agecond = { '>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC') };
-        push(@conds, { -or => [
-            'me.t_created' => $agecond,
-            'me.t_started' => $agecond,
-            'me.t_finished' => $agecond
-        ]});
+        push(
+            @conds,
+            {
+                -or => [
+                    'me.t_created' => $agecond,
+                    'me.t_started' => $agecond,
+                    'me.t_finished' => $agecond
+                ]
+            }
+        );
     }
     if ($args{ignore_incomplete}) {
         my $results_rs = schema->resultset("JobResults")->search({ name => 'incomplete' });
@@ -342,10 +347,15 @@ sub list_jobs {
     if ($scope eq 'relevant') {
         my $states_rs = schema->resultset("JobStates")->search({ name => ['running', 'scheduled'] });
         push( @joins, 'clone');
-        push( @conds, { -or => [
-            'me.clone_id' => undef,
-            'clone.state_id' => {-in => $states_rs->get_column("id")->as_query}
-        ]});
+        push(
+            @conds,
+            {
+                -or => [
+                    'me.clone_id' => undef,
+                    'clone.state_id' => {-in => $states_rs->get_column("id")->as_query}
+                ]
+            }
+        );
     }
     if ($scope eq 'current') {
         push(@conds, {'me.clone_id' => undef});
