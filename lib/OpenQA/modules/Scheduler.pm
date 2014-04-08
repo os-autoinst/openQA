@@ -346,7 +346,7 @@ sub list_jobs {
     my $scope = $args{scope} || '';
     if ($scope eq 'relevant') {
         my $states_rs = schema->resultset("JobStates")->search({ name => ['running', 'scheduled'] });
-        push( @joins, 'clone');
+        push(@joins, 'clone');
         push(
             @conds,
             {
@@ -368,17 +368,17 @@ sub list_jobs {
     if ($args{build}) {
         push(@conds, { 'settings.key' => "BUILD"});
         push(@conds, { 'settings.value' => $args{build}});
-        push( @joins, 'settings' ) unless ( grep { 'settings' eq $_} @joins );
+        push(@joins, 'settings') unless ( grep { 'settings' eq $_} @joins );
     }
     if ($args{iso}) {
         push(@conds, { 'settings.key' => "ISO"});
         push(@conds, { 'settings.value' => $args{iso}});
-        push( @joins, 'settings' ) unless ( grep { 'settings' eq $_} @joins );
+        push(@joins, 'settings') unless ( grep { 'settings' eq $_} @joins );
     }
     if ($args{match}) {
         push(@conds, { 'settings.key' => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST']});
         push(@conds, { 'settings.value' => { '-like' => "%$args{match}%" }});
-        push( @joins, 'settings' ) unless ( grep { 'settings' eq $_} @joins );
+        push(@joins, 'settings') unless ( grep { 'settings' eq $_} @joins );
         $attrs{group_by} = ['me.id'];
     }
     $attrs{order_by} = ['me.id DESC'];
