@@ -236,13 +236,13 @@ sub startup {
     $test_r->get('/diskimages/:imageid')->name('diskimage')->to('file#test_diskimage');
     $test_r->get('/iso')->name('isoimage')->to('file#test_isoimage');
 
-    my $asset_r = $test_r->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/)->to(controller => 'step');
-    my $asset_auth = $test_auth->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/);
-    $asset_r->get('/view')->to(action => 'view');
-    $asset_r->get('/edit')->name('edit_step')->to(action => 'edit');
-    $asset_r->get('/src')->name('src_step')->to(action => 'src');
-    $asset_auth->post('/')->name('save_needle')->to('step#save_needle');
-    $asset_r->get('/')->name('step')->to(action => 'view');
+    my $step_r = $test_r->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/)->to(controller => 'step');
+    my $step_auth = $test_auth->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/);
+    $step_r->get('/view')->to(action => 'view');
+    $step_r->get('/edit')->name('edit_step')->to(action => 'edit');
+    $step_r->get('/src')->name('src_step')->to(action => 'src');
+    $step_auth->post('/')->name('save_needle')->to('step#save_needle');
+    $step_r->get('/')->name('step')->to(action => 'view');
 
     $r->get('/needles/:distri/:name')->name('needle_file')->to('file#needle');
 
@@ -321,6 +321,14 @@ sub startup {
     $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create'); # iso_new
     $api_r->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy'); # iso_delete
     $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel'); # iso_cancel
+
+    # api/v1/assets
+    $api_r->post('/assets')->name('apiv1_post_asset')->to('asset#register');
+    $api_r->get('/assets')->name('apiv1_get_asset')->to('asset#list');
+    $api_r->get('/assets/#id')->name('apiv1_get_asset_id')->to('asset#get');
+    $api_r->get('/assets/#type/#name')->name('apiv1_get_asset_name')->to('asset#get');
+    $api_r->delete('/assets/#id')->name('apiv1_delete_asset')->to('asset#delete');
+    $api_r->delete('/assets/#type/#name')->name('apiv1_delete_asset_name')->to('asset#delete');
 
     # json-rpc methods not migrated to this api: echo, list_commands
     ###
