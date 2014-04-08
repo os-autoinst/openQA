@@ -17,6 +17,7 @@
             %= check_box "ignore_incomplete" => 1
             ignore incomplete
         </label>
+        %= select_field scope => [ ['All' => ''], ['Current (no clone)' => 'current'], ['Relevant (no finished clone)' => 'relevant'] ]
         %= select_field ob => [ ['All Backends' => ''], ['kvm2usb' => 'kvm2usb'], ['qemu' => 'qemu'], ['vbox' => 'vbox'] ], onchange => "document.getElementById('filterform').submit();"
         %= submit_button "change", class => "smbutton"
     % end

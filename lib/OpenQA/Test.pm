@@ -34,6 +34,9 @@ sub list {
     my $hoursfresh = $self->param('hours') || 0;
     my $limit = $self->param('limit');
     my $page = $self->param('page');
+    my $scope = $self->param('scope');
+    $scope = 'relevant' unless defined($scope);
+    $self->param(scope => $scope);
 
     if ($hoursfresh =~ m/\D/) {
         $hoursfresh = 0;
@@ -64,7 +67,8 @@ sub list {
                 page => $page,
                 ignore_incomplete => $self->param('ignore_incomplete')?1:0,
                 maxage => $hoursfresh*3600,
-                fulldetails => 1
+                fulldetails => 1,
+                scope => $scope
               )
               ||[]
         }

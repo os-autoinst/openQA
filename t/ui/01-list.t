@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 21;
+use Test::More tests => 42;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -70,5 +70,39 @@ $get = $t->get_ok('/tests' => form => {hours => 200})->status_is(200);
 # Test 99937 is displayed now
 $get->element_exists('#results #job_99937');
 $get->text_is('#results #job_99937 td:nth-child(10) .overview_passed' => '48');
+
+#
+# Testing the default scope (relevant)
+#
+$get = $t->get_ok('/tests')->status_is(200);
+$get->content_like(qr/Test results/i, 'result list is there');
+$get->element_exists('#results #job_99946');
+$get->element_exists('#results #job_99963');
+# Test 99945 is not longer relevant (replaced by 99946)
+$get->element_exists_not('#results #job_99945');
+# Test 99962 is still relevant (99963 is still running)
+$get->element_exists('#results #job_99962');
+
+#
+# Testing the scope current
+#
+$get = $t->get_ok('/tests' => form => {scope => 'current'})->status_is(200);
+$get->content_like(qr/Test results/i, 'result list is there');
+$get->element_exists('#results #job_99946');
+$get->element_exists('#results #job_99963');
+# Test 99945 is not current (replaced by 99946)
+$get->element_exists_not('#results #job_99945');
+# Test 99962 is not current (replaced by 99963)
+$get->element_exists_not('#results #job_99962');
+
+#
+# Testing with no scope
+#
+$get = $t->get_ok('/tests' => form => {scope => ''})->status_is(200);
+$get->content_like(qr/Test results/i, 'result list is there');
+$get->element_exists('#results #job_99946');
+$get->element_exists('#results #job_99963');
+$get->element_exists('#results #job_99945');
+$get->element_exists('#results #job_99962');
 
 done_testing();

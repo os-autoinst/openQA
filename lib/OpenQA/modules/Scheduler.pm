@@ -318,24 +318,37 @@ sub _job_fill_settings {
 sub list_jobs {
     my %args = @_;
 
-    my %cond = ();
+    my @conds = [];
     my %attrs = ();
+    my @joins = [];
 
     if ($args{state}) {
         my $states_rs = schema->resultset("JobStates")->search({ name => [split(',', $args{state})] });
-        $cond{state_id} = {-in => $states_rs->get_column("id")->as_query};
+        push(@conds, { 'me.state_id' => {-in => $states_rs->get_column("id")->as_query}});
     }
     if ($args{maxage}) {
         my $agecond = { '>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC') };
-        $cond{'-or'} = [
+        push(@conds, { -or => [
             'me.t_created' => $agecond,
             'me.t_started' => $agecond,
             'me.t_finished' => $agecond
-        ];
+        ]});
     }
     if ($args{ignore_incomplete}) {
         my $results_rs = schema->resultset("JobResults")->search({ name => 'incomplete' });
-        $cond{result_id} = { '!=' => $results_rs->get_column("id")->as_query };
+        push(@conds, {'me.result_id' => { '!=' => $results_rs->get_column("id")->as_query }});
+    }
+    my $scope = $args{scope} || '';
+    if ($scope eq 'relevant') {
+        my $states_rs = schema->resultset("JobStates")->search({ name => ['running', 'scheduled'] });
+        push( @joins, 'clone');
+        push( @conds, { -or => [
+            'me.clone_id' => undef,
+            'clone.state_id' => {-in => $states_rs->get_column("id")->as_query}
+        ]});
+    }
+    if ($scope eq 'current') {
+        push(@conds, {'me.clone_id' => undef});
     }
     if ($args{limit}) {
         $attrs{rows} = $args{limit};
@@ -343,24 +356,25 @@ sub list_jobs {
     $attrs{page} = $args{page}||0;
 
     if ($args{build}) {
-        $cond{'settings.key'} = "BUILD";
-        $cond{'settings.value'} = $args{build};
-        $attrs{join} = 'settings';
+        push(@conds, { 'settings.key' => "BUILD"});
+        push(@conds, { 'settings.value' => $args{build}});
+        push( @joins, 'settings' ) unless ( grep { 'settings' eq $_} @joins );
     }
     if ($args{iso}) {
-        $cond{'settings.key'} = "ISO";
-        $cond{'settings.value'} = $args{iso};
-        $attrs{join} = 'settings';
+        push(@conds, { 'settings.key' => "ISO"});
+        push(@conds, { 'settings.value' => $args{iso}});
+        push( @joins, 'settings' ) unless ( grep { 'settings' eq $_} @joins );
     }
     if ($args{match}) {
-        $cond{'settings.key'} = ['DISTRI', 'FLAVOR', 'BUILD', 'TEST'];
-        $cond{'settings.value'} = { '-like' => "%$args{match}%" };
-        $attrs{join} = 'settings';
+        push(@conds, { 'settings.key' => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST']});
+        push(@conds, { 'settings.value' => { '-like' => "%$args{match}%" }});
+        push( @joins, 'settings' ) unless ( grep { 'settings' eq $_} @joins );
         $attrs{group_by} = ['me.id'];
     }
     $attrs{order_by} = ['me.id DESC'];
 
-    my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
+    $attrs{join} = \@joins if @joins;
+    my $jobs = schema->resultset("Jobs")->search({-and => \@conds}, \%attrs);
 
     my @results = ();
     while( my $job = $jobs->next) {
