@@ -558,25 +558,18 @@ sub job_duplicate {
 
     print STDERR "duplicating $args{jobid}\n" if $debug;
 
-    my $job = _job_get({ id => $args{jobid} });
+    my $job = schema->resultset("Jobs")->find({id => $args{jobid}});
     return undef unless $job;
 
-    my %settings = %{$job->{settings}};
-    delete $settings{NAME};
-    $settings{TEST} = $job->{test};
-    # TODO: test_branch
-
-    my $id = job_create(%settings);
-    if (defined $id) {
-        job_set_prio(
-            jobid => $id,
-            prio => $args{prio} || $job->{priority}
-        );
+    my $clone = $job->duplicate(\%args);
+    if (defined($clone)) {
+        print STDERR "new job ".$clone->id."\n" if $debug;
+        return $clone->id;
     }
-
-    print STDERR "new job $id\n" if $debug;
-
-    return $id;
+    else {
+        print STDERR "clone failed\n" if $debug;
+        return undef;
+    }
 }
 
 sub job_restart {
