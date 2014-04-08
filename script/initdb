@@ -67,14 +67,18 @@ my $result = GetOptions(
     "init_database"            => \$init_database
 );
 
+if (!$prepare_init and !$init_database) {
+    $help=1;
+}
+
 if ($help) {
     print "Usage: $0 [flags]\n\n";
-    print "  --prepare_init : Create the deployment files used to initialize the database.\n";
-    print "                       Don't forget to increase the version before using this\n";
-    print "                       and note those files should be commited to the source repo.\n";
+    print "  --prepare_init  : Create the deployment files used to initialize the database.\n";
+    print "                    Don't forget to increase the version before using this\n";
+    print "                    and note those files should be commited to the source repo.\n";
     print "  --init_database : Use the generated deployment files created with --prepare_init\n";
-    print "                       to actually initialize a database.\n";
-    print "  --help             : This help message.\n";
+    print "                    to actually initialize a database.\n";
+    print "  --help          : This help message.\n";
     exit;
 }
 
