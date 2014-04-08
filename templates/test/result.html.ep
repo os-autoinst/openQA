@@ -31,7 +31,7 @@
 			<% for my $resultfile (@$resultfiles) { %>
 			<a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $resultfile) %>"><%= $resultfile %></a><br />
 			<% } %>
-                        <a href="<%= url_for('isoimage', 'filename' => $iso) %>">Download ISO</a>
+                        <a href="<%= url_for('isoimage', 'testid' => $testid) %>">Download ISO</a>
 		</div>
 	</div>
 	<% } %>
@@ -40,7 +40,7 @@
 		<div class="box-header aligncenter">Uploaded Logs</div>
 		<div style="text-align: center;">
 			<% for my $ulog (@$ulogs) { %>
-			<a href="<%= url_for('test_logfile', 'testid' => $testid, 'filename' => $ulog) %>"><%= $ulog %></a><br />
+			<a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $ulog) %>"><%= $ulog %></a><br />
 			<% } %>
 		</div>
 	</div>
@@ -142,13 +142,13 @@
 				%= ($module->{'flags'}->{'milestone'}||0) ? b('&#9875;') : ''
 				</td>
 				<td class="component">
-          %= link_to $module->{'name'} => url_for('src_step', stepid => 1, moduleid => $module->{'name'})
-        </td>
+				  %= link_to $module->{'name'} => url_for('src_step', stepid => 1, moduleid => $module->{'name'})
+				</td>
 				<td class="<%= "result$res_css->{$module->{'result'}}" %>"><%= $res_display->{$module->{'result'}} %></td>
 				<td class="links" style="width: 60%;">
 					% for my $screenshot (@{$module->{'screenshots'}}) {
             %= link_to url_for('step', moduleid => $module->{'name'}, stepid => $screenshot->{'num'}) => begin
-              %= image "/tests/$testid/images/".$screenshot->{'name'}."?size=$ref_width"."x$ref_height", width => $ref_width, height => $ref_height, alt => $screenshot->{'name'}, class => "resborder\L$screenshot->{'result'}"
+              %= image url_for('test_thumbnail', 'testid' => $testid, 'filename' => $screenshot->{'name'}), width => $ref_width, height => $ref_height, alt => $screenshot->{'name'}, class => "resborder\L$screenshot->{'result'}"
             % end
 					% }
 				</td>

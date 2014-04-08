@@ -145,7 +145,6 @@ sub startup {
     $self->plugin('OpenQA::Helpers');
     $self->plugin('OpenQA::CSRF');
     $self->plugin('OpenQA::REST');
-    $self->plugin('RenderFile');
 
     # set secure flag on cookies of https connections
     $self->hook(
@@ -212,8 +211,8 @@ sub startup {
     $apik_auth->delete('/:apikeyid')->name('api_key')->to('api_key#destroy');
 
     $r->get('/tests')->name('tests')->to('test#list');
-    my $test_r = $r->route('/tests/#testid');
-    my $test_auth = $auth->route('/tests/#testid');
+    my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
+    my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0 );
     $test_r->get('/')->name('test')->to('test#show');
 
     $r->get('/workers')->name('workers')->to('worker#list');
@@ -230,10 +229,11 @@ sub startup {
     my $log_auth = $r->bridge('/tests/#testid')->to("session#ensure_authorized_ip");
     $log_auth->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
 
-    $test_r->get('/images/:filename')->name('test_img')->to('file#test_file');
-    $test_r->get('/file/:filename')->name('test_file')->to('file#test_file');
-    $test_r->get('/logfile/:filename')->name('test_logfile')->to('file#test_logfile');
+    $test_r->get('/images/#filename')->name('test_img')->to('file#test_file');
+    $test_r->get('/images/thumb/#filename')->name('test_thumbnail')->to('file#test_thumbnail');
+    $test_r->get('/file/#filename')->name('test_file')->to('file#test_file');
     $test_r->get('/diskimages/:imageid')->name('diskimage')->to('file#test_diskimage');
+    $test_r->get('/iso')->name('isoimage')->to('file#test_isoimage');
 
     my $asset_r = $test_r->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/)->to(controller => 'step');
     my $asset_auth = $test_auth->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/);
@@ -245,8 +245,7 @@ sub startup {
 
     $r->get('/builds/#buildid')->name('build')->to('build#show');
 
-    $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
-    $r->get('/iso/#filename')->name('isoimage')->to('file#isoimage');
+    $r->get('/needles/:distri/:name')->name('needle_file')->to('file#needle');
 
     # Favicon
     $r->get('/favicon.ico' => sub {my $c = shift; $c->render_static('favicon.ico') });
