@@ -121,6 +121,7 @@ use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
 my %options;
+my $worker_settings;
 
 sub usage($) {
     my $r = shift;
@@ -132,12 +133,32 @@ sub usage($) {
 
 GetOptions(\%options,"no-cleanup","instance=i","isotovideo=s","host=s","apikey:s","apisecret:s","verbose|v","help|h",) or usage(1);
 
-usage(1) unless exists $options{'host'};
 usage(0) if ($options{'help'});
 
 my $verbose = $options{'verbose'};
 
 $options{'instance'} ||= 0;
+
+sub read_worker_config($){
+    my $instance = shift;
+    my $worker_config = "/etc/openqa/workers.ini";
+    my $cfg = Config::IniFiles->new( -file => "$worker_config" );
+    my $sets = {};
+    foreach my $section ('global', $instance) {
+        if($cfg && $cfg->SectionExists($section)) {
+            foreach my $set ($cfg->Parameters($section)) {
+                $sets->{uc $set} = $cfg->val($section, $set);
+            }
+        }
+    }
+    $sets->{'BACKEND'} ||= "qemu";
+    $sets->{'HOST'} ||= "localhost";
+    return $sets;
+}
+
+$worker_settings = read_worker_config($options{'instance'});
+
+$options{'host'} ||= $worker_settings->{'HOST'};
 
 my $url;
 if ($options{'host'} !~ '/') {
@@ -334,27 +355,8 @@ sub backup_testresults($){
     remove_tree($testresults);
 }
 
-sub read_worker_config($){
-    my $instance = shift;
-    my $worker_config = "/etc/openqa/workers.ini";
-    my $cfg = Config::IniFiles->new( -file => "$worker_config" );
-    if($cfg && $cfg->SectionExists($instance)) {
-        my $sets = {};
-        foreach my $set ($cfg->Parameters($instance)) {
-            $sets->{uc $set} = $cfg->val($instance, $set);
-        }
-        $sets->{'BACKEND'} = "qemu" unless $sets->{'BACKEND'};
-        return $sets;
-    }
-    # fallback to default backend
-    return {"BACKEND" => "qemu"};
-}
-
-
 sub main(){
     my $lockfd = lockit();
-
-    my $worker_settings = read_worker_config($options{'instance'});
 
     my $workerid = api_call('post', 'workers', {host => 'localhost', instance => $options{'instance'}, backend => $worker_settings->{'BACKEND'}})->{id};
     $ENV{'WORKERID'} = $workerid;
