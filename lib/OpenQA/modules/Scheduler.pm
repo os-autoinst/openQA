@@ -291,7 +291,7 @@ sub _job_get($) {
     my $job = schema->resultset("Jobs")->search($search)->first;
     my $job_hashref;
     if ($job) {
-        $job_hashref = _hashref($job, qw/ id name priority result worker_id t_started t_finished test test_branch/);
+        $job_hashref = _hashref($job, qw/ id name priority result worker_id clone_id t_started t_finished test test_branch/);
         # XXX: use +columns in query above?
         $job_hashref->{state} = $job->state->name;
         $job_hashref->{result} = $job->result->name;
@@ -364,7 +364,7 @@ sub list_jobs {
 
     my @results = ();
     while( my $job = $jobs->next) {
-        my $j = _hashref($job, qw/ id name priority worker_id t_started t_finished test test_branch/);
+        my $j = _hashref($job, qw/ id name priority worker_id clone_id t_started t_finished test test_branch/);
         $j->{state} = $job->state->name;
         $j->{result} = $job->result->name;
         $j->{machine} = $job->machine;
@@ -558,25 +558,18 @@ sub job_duplicate {
 
     print STDERR "duplicating $args{jobid}\n" if $debug;
 
-    my $job = _job_get({ id => $args{jobid} });
+    my $job = schema->resultset("Jobs")->find({id => $args{jobid}});
     return undef unless $job;
 
-    my %settings = %{$job->{settings}};
-    delete $settings{NAME};
-    $settings{TEST} = $job->{test};
-    # TODO: test_branch
-
-    my $id = job_create(%settings);
-    if (defined $id) {
-        job_set_prio(
-            jobid => $id,
-            prio => $args{prio} || $job->{priority}
-        );
+    my $clone = $job->duplicate(\%args);
+    if (defined($clone)) {
+        print STDERR "new job ".$clone->id."\n" if $debug;
+        return $clone->id;
     }
-
-    print STDERR "new job $id\n" if $debug;
-
-    return $id;
+    else {
+        print STDERR "clone failed\n" if $debug;
+        return undef;
+    }
 }
 
 sub job_restart {

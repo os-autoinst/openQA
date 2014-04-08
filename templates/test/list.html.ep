@@ -2,125 +2,141 @@
 % title 'Test results';
 
 <div class="grid_16 box box-shadow alpha">
-	<h2><%= title %></h2>
-	<p>This page lists <%= $ntest %> automated tests
-		%if ($hoursfresh) {
-			from the last <%= $hoursfresh %> hours.
-		%}
-	</p>
-		%= form_for tests => (method => 'GET') => (class => "cutofftimeform") => (id => "filterform") => begin
-      %= select_field hours => [ ['24 h' => '24'], ['96 h' => '96'], ['200 h' => '200'], ['300 h' => '300'] ]
-      %= text_field "match"
-      filter
-      <label>
-        %= check_box "ignore_incomplete" => 1
-        ignore incomplete
-      </label>
-      %= select_field ob => [ ['All Backends' => ''], ['kvm2usb' => 'kvm2usb'], ['qemu' => 'qemu'], ['vbox' => 'vbox'] ], onchange => "document.getElementById('filterform').submit();"
-      %= submit_button "change", class => "smbutton"
+    <h2><%= title %></h2>
+    <p>This page lists <%= $ntest %> automated tests
+        %if ($hoursfresh) {
+            from the last <%= $hoursfresh %> hours.
+        %}
+    </p>
+
+    %= form_for tests => (method => 'GET') => (class => "cutofftimeform") => (id => "filterform") => begin
+        %= select_field hours => [ ['24 h' => '24'], ['96 h' => '96'], ['200 h' => '200'], ['300 h' => '300'] ]
+        %= text_field "match"
+        filter
+        <label>
+            %= check_box "ignore_incomplete" => 1
+            ignore incomplete
+        </label>
+        %= select_field ob => [ ['All Backends' => ''], ['kvm2usb' => 'kvm2usb'], ['qemu' => 'qemu'], ['vbox' => 'vbox'] ], onchange => "document.getElementById('filterform').submit();"
+        %= submit_button "change", class => "smbutton"
     % end
-	<p />
-	<table id="results" class="table-autosort table-autofilter table-autostripe">
-		<thead>
-		  <tr>
-        <th class="table-sortable:alphanumeric">link</th>
-        <th class="table-sortable:alphanumeric table-filterable">backend</th>
-        <th class="table-sortable:alphanumeric table-filterable">distri</th>
-        <th class="table-sortable:alphanumeric table-filterable">type</th>
-        <th class="table-sortable:alphanumeric table-filterable">arch</th>
-        <th class="table-sortable:alphanumeric table-filterable">build</th>
-        <th class="table-sortable:alphanumeric table-filterable">extra</th>
-        <th class="table-sortable:alphanumeric">testtime</th>
-        <th class="table-sortable:numeric">OK</th>
-        <th class="table-sortable:numeric">unk</th>
-        <th class="table-sortable:numeric">fail</th>
-		  </tr>
-		</thead>
+    <p />
+    <table id="results" class="table-autosort table-autofilter table-autostripe">
+        <thead>
+            <tr>
+                <th class="table-sortable:alphanumeric">link</th>
+                <th class="table-sortable:alphanumeric">clone</th>
+                <th class="table-sortable:alphanumeric table-filterable">backend</th>
+                <th class="table-sortable:alphanumeric table-filterable">distri</th>
+                <th class="table-sortable:alphanumeric table-filterable">type</th>
+                <th class="table-sortable:alphanumeric table-filterable">arch</th>
+                <th class="table-sortable:alphanumeric table-filterable">build</th>
+                <th class="table-sortable:alphanumeric table-filterable">extra</th>
+                <th class="table-sortable:alphanumeric">testtime</th>
+                <th class="table-sortable:numeric">OK</th>
+                <th class="table-sortable:numeric">unk</th>
+                <th class="table-sortable:numeric">fail</th>
+            </tr>
+        </thead>
 		<tbody>
-    % for my $test (@$list) {
-    %  my $job = $test->{job};
-       <tr id="job_<%= $job->{'id'} %>">
-	  <td class="link">
-	    <% if($job->{'state'} eq 'running') { %>
-            <a href="/tests/<%= $job->{'id'} %>">testing</a>
-            <% } else { %>
-	    <a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><img src="/images/details.png" alt="details" title="test result details" height="23" width="23" /></a>
-	    <a href="<%= url_for('test_file', 'testid' => $job->{'id'}, 'filename' => 'video.ogv') %>"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
-            %= link_post url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') => begin
-                %= image "/images/toggle.png", alt=>"restart", title=>"Restart Job"
-            %= end
-          <% } %>
-	  </td>
-          <td class="backend"><%= $test->{backend} %></td>
-          <td class="distri"><%= $job->{settings}->{DISTRI}.'-'.$job->{settings}->{VERSION} %></td>
-          <td class="type"><%= $job->{settings}->{FLAVOR} %></td>
-          <td class="arch"><%= $job->{settings}->{ARCH} %></td>
-          % my $resultclass = 'overview_'.$job->{result};
-          % $resultclass = 'overview_unknown' if ($job->{result} eq 'passed' && $test->{'res_dents'});
-          <td class="build"><span class="textlink <%= $resultclass %>"><a href="<%= url_for('build', 'buildid' => $job->{settings}->{'BUILD'}) %>"><%= $job->{settings}->{'BUILD'} %></a></span></td>
-	  <td class="extra"><span class="<%= $resultclass %>"><%= $job->{'test'} %>@<%= $job->{'machine'} %></span></td>
-		<td class="testtime"><%= format_time($job->{'t_started'}) %></td>
-		<% if($job->{'state'} eq 'running') { %>
-		<td colspan="3" style="padding: 3px 4px;" class="progress">
-		  <div class="pbox">
-		    <% my $ptext = ""; %>
-		    <% if($test->{'run_stat'}->{'modcount'} > 0) { %>
-		    <% $ptext = int($test->{'run_stat'}->{'moddone'} / $test->{'run_stat'}->{'modcount'} * 100)."%"; %>
-		    <% if(!$test->{'run_stat'}->{'run_backend'}) { %>
-		    <% $ptext = "post-processing"; %>
-		    <% } %>
-		    <% } else { %>
-		    <% $ptext = "pre-processing"; %>
-		    <% } %>
-		    <progress style="width: 100%; height: 100%;" max="<%= $test->{'run_stat'}->{'modcount'} %>" <%= b(($test->{'run_stat'}->{'run_backend'} and $test->{'run_stat'}->{'modcount'} > 0)?"value='".$test->{'run_stat'}->{'moddone'}."'":"") %>>
-		      <%= $ptext %>
-		    </progress>
-		    <%= $ptext %>
-		  </div>
-		</td>
-		<% } else { %>
-		<td><span class="overview_passed"><%= ($test->{'res_ok'})?$test->{'res_ok'}:'' %></span></td>
-		<td><span class="overview_unknown"><%= ($test->{'res_unknown'}?$test->{'res_unknown'}:'') %></span></td>
-		<td><span class="overview_failed"><%= ($test->{'res_fail'}?$test->{'res_fail'}:'') %></span></td>
-		<% } %>
-       </tr>
-    % }
+        % for my $test (@$list) {
+            % my $job = $test->{job};
+            % my $resultclass = 'overview_'.$job->{result};
+            % $resultclass = 'overview_unknown' if ($job->{result} eq 'passed' && $test->{'res_dents'});
 
+            <tr id="job_<%= $job->{'id'} %>">
+                <td class="link">
+                    % if($job->{'state'} eq 'running') {
+                        <a href="/tests/<%= $job->{'id'} %>">testing</a>
+                    % } else {
+                        <a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><img src="/images/details.png" alt="details" title="test result details" height="23" width="23" /></a>
+                        <a href="<%= url_for('test_file', 'testid' => $job->{'id'}, 'filename' => 'video.ogv') %>"><img width="23" height="23" src="/images/video.png" alt="ogv" title="ogg/theora video of this testrun"/></a>
+                    % }
+                </td>
+                <td>
+                    % if ($job->{'clone_id'}) {
+                        <a href="<%= url_for('test', 'testid' => $job->{'clone_id'}) %>">#<%= $job->{'clone_id'} %></a>
+                    % } elsif ($job->{'state'} ne 'running') {
+                        %= link_post url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') => begin
+                            %= image "/images/toggle.png", alt=>"restart", title=>"Restart Job"
+                        % end
+                    % } else {
+                        -
+                    % }
+                </td>
+                <td class="backend"><%= $test->{backend} %></td>
+                <td class="distri"><%= $job->{settings}->{DISTRI}.'-'.$job->{settings}->{VERSION} %></td>
+                <td class="type"><%= $job->{settings}->{FLAVOR} %></td>
+                <td class="arch"><%= $job->{settings}->{ARCH} %></td>
+                <td class="build"><span class="textlink <%= $resultclass %>"><a href="<%= url_for('build', 'buildid' => $job->{settings}->{'BUILD'}) %>"><%= $job->{settings}->{'BUILD'} %></a></span></td>
+                <td class="extra"><span class="<%= $resultclass %>"><%= $job->{'test'} %>@<%= $job->{'machine'} %></span></td>
+                <td class="testtime"><%= format_time($job->{'t_started'}) %></td>
 
-      % for my $test (@$slist) {
-          <%
+                <% if($job->{'state'} eq 'running') { %>
+                    <td colspan="3" style="padding: 3px 4px;" class="progress">
+                        <div class="pbox">
+                            % my $ptext = "";
+                            % if($test->{'run_stat'}->{'modcount'} > 0) {
+                                % $ptext = int($test->{'run_stat'}->{'moddone'} / $test->{'run_stat'}->{'modcount'} * 100)."%";
+                                % if(!$test->{'run_stat'}->{'run_backend'}) {
+                                    % $ptext = "post-processing";
+                                % }
+                            % } else {
+                                % $ptext = "pre-processing";
+                            % }
+                            <progress style="width: 100%; height: 100%;" max="<%= $test->{'run_stat'}->{'modcount'} %>" <%= b(($test->{'run_stat'}->{'run_backend'} and $test->{'run_stat'}->{'modcount'} > 0)?"value='".$test->{'run_stat'}->{'moddone'}."'":"") %>>
+                                <%= $ptext %>
+                            </progress>
+                            <%= $ptext %>
+                        </div>
+                    </td>
+                % } else {
+                    <td><span class="overview_passed"><%= ($test->{'res_ok'})?$test->{'res_ok'}:'' %></span></td>
+                    <td><span class="overview_unknown"><%= ($test->{'res_unknown'}?$test->{'res_unknown'}:'') %></span></td>
+                    <td><span class="overview_failed"><%= ($test->{'res_fail'}?$test->{'res_fail'}:'') %></span></td>
+                % }
+            </tr>
+        % }
+
+        % for my $test (@$slist) {
+            <%
             my $job = $test->{job};
             my $prio = $job->{'priority'};
             my $state = $job->{'state'};
-          %>
-       <tr id="job_<%= $job->{'id'} %>">
-          <td style="font-style: italic;" class="link"><%= $state %>
-          % if ($state eq 'cancelled') {
-            %= link_post url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') => begin
-                %= image '/images/toggle.png', alt => "restart", title => "Restart job"
-            % end
-          % }
-          </td>
-          <td class="backend">
-            <%= link_post "-" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio-10)->query('back' => 'results') %>
-            <%= $prio %>
-            <%= link_post "+" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio+10)->query('back' => 'results') %>
-          </td>
-          <td class="distri"><%= $job->{settings}->{'DISTRI'}.'-'.$job->{settings}->{VERSION} %></td>
-          <td class="type"><%= $job->{settings}->{'FLAVOR'} %></td>
-          <td class="arch"><%= $job->{settings}->{'ARCH'} %></td>
-          <td class="build">
-            <span class="textlink">
-              <%= link_to url_for('build', 'buildid' => $job->{settings}->{'BUILD'}) => begin %><%= $job->{settings}->{'BUILD'} %><% end %>
-            </span>
-          </td>
-          <td class="extra"><span class=""><%= $job->{'test'} %>@<%= $job->{'machine'} %></span></td>
-          <td class="cancel" colspan="4" style="padding: 3px 4px; font-style: italic;">
-              <%= link_post 'cancel' => url_for('cancel', 'testid' => $job->{'id'})->query('back' => 'results') %>
-          </td>
-       </tr>
-    % }
-     </tbody>
-   </table>
-   <p>Note: times are UTC</p>
+            %>
+            <tr id="job_<%= $job->{'id'} %>">
+                <td style="font-style: italic;" class="link"><%= $state %></td>
+                <td>
+                    % if ($job->{'clone_id'}) {
+                        <a href="<%= url_for('test', 'testid' => $job->{'clone_id'}) %>">#<%= $job->{'clone_id'} %></a>
+                    % } elsif ($state eq 'cancelled') {
+                        %= link_post url_for('restart', 'testid' => $job->{'id'})->query('back' => 'results') => begin
+                            %= image "/images/toggle.png", alt=>"restart", title=>"Restart Job"
+                        % end
+                    % } else {
+                        -
+                    % }
+                </td>
+                <td class="backend">
+                    <%= link_post "-" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio-10)->query('back' => 'results') %>
+                    <%= $prio %>
+                    <%= link_post "+" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio+10)->query('back' => 'results') %>
+                </td>
+                <td class="distri"><%= $job->{settings}->{'DISTRI'}.'-'.$job->{settings}->{VERSION} %></td>
+                <td class="type"><%= $job->{settings}->{'FLAVOR'} %></td>
+                <td class="arch"><%= $job->{settings}->{'ARCH'} %></td>
+                <td class="build">
+                    <span class="textlink">
+                        <%= link_to url_for('build', 'buildid' => $job->{settings}->{'BUILD'}) => begin %><%= $job->{settings}->{'BUILD'} %><% end %>
+                    </span>
+                </td>
+                <td class="extra"><span class=""><%= $job->{'test'} %>@<%= $job->{'machine'} %></span></td>
+                <td class="cancel" colspan="4" style="padding: 3px 4px; font-style: italic;">
+                    <%= link_post 'cancel' => url_for('cancel', 'testid' => $job->{'id'})->query('back' => 'results') %>
+                </td>
+            </tr>
+        % }
+        </tbody>
+    </table>
+    <p>Note: times are UTC</p>
 </div>

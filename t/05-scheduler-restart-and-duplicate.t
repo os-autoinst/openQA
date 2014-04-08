@@ -63,6 +63,8 @@ $job1 = Scheduler::job_get(99937);
 @ret = Scheduler::job_restart(99937);
 $job2 = Scheduler::job_get(99937);
 
+is($job2->{clone_id}, 99983, "clone is tracked");
+$job1->{clone_id} = 99983; # Just for comparing
 is_deeply($job1, $job2, "done job unchanged after restart");
 
 is(@ret, 1, "one job id returned");

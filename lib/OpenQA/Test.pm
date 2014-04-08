@@ -153,6 +153,7 @@ sub show {
     if ($job->{state} eq 'running') {
         $self->stash(worker => worker_get($job->{'worker_id'}));
         $self->stash(backend_info => $results->{backend});
+        $self->stash(job => $job);
         $self->render('test/running');
         return;
     }
