@@ -21,10 +21,8 @@ our $VERSION = '5';
 
 __PACKAGE__->load_namespaces;
 
-sub deploy {
+sub deploy_fixtures {
     my ( $class, $attrs ) = @_;
-
-    my $ret = $class->next::method($attrs);
 
     # insert pre-defined values to job_states
     $class->storage->dbh_do(
@@ -57,7 +55,7 @@ sub deploy {
         }
     );
 
-    return $ret;
+    return 0;
 }
 
 1;

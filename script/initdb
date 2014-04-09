@@ -99,7 +99,7 @@ my $dh = DBIx::Class::DeploymentHandler->new(
         schema              => $schema,
         script_directory    => $script_directory,
         databases           => 'SQLite',
-        sql_translator_args => { add_drop_table => 0 },
+        sql_translator_args => { add_drop_table => 1 },
         force_overwrite     => 0,
     }
 );
@@ -108,8 +108,13 @@ if ($prepare_init) {
     $dh->prepare_install;
 }
 if ($init_database) {
+    # Create the schema
     $dh->install;
 
+    # Deploy fixtures specified programatically in the schema
+    $schema->deploy_fixtures;
+
+    # Deploy fixtures specified statically in the fixtures directory
     my $version = $dh->schema_version;
     my %fixture_deploy_dir;
     tie %fixture_deploy_dir, 'IO::Dir', "$script_directory/fixtures/deploy/$version";
