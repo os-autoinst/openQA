@@ -28,34 +28,7 @@ use File::Basename qw/dirname/;
 use POSIX qw/getuid getgid setuid setgid/;
 use openqa ();
 use Schema::Schema;
-use IO::Dir;
-use SQL::SplitStatement;
-use Fcntl ':mode';
 use Getopt::Long;
-
-sub execute_sql_file {
-    my $sqlfile = shift;
-    print "Executing SQL statements from: $sqlfile\n";
-
-    open my $fh, '<', $sqlfile or die "error opening $sqlfile: $!";
-    my $contents = do { local $/; <$fh> };
-
-    my $sql_splitter = SQL::SplitStatement->new;
-    my @statements = $sql_splitter->split($contents);
-
-    my $dbh = DBI->connect("dbi:SQLite:dbname=$openqa::dbfile") or die $DBI::errstr;
-    $dbh->do("BEGIN TRANSACTION");
-    foreach (@statements) {
-        print "$_\n";
-
-        unless ($dbh->do($_)) {
-            print "ROLLBACK;\n";
-            $dbh->do("ROLLBACK");
-            die;
-        }
-    }
-    $dbh->do("COMMIT");
-}
 
 my $help=0;
 my $prepare_init=0;
@@ -111,19 +84,9 @@ if ($init_database) {
     # Create the schema
     $dh->install;
 
-    # Deploy fixtures specified programatically in the schema
+    # Deploy fixtures in the schema
     $schema->deploy_fixtures;
 
-    # Deploy fixtures specified statically in the fixtures directory
-    my $version = $dh->schema_version;
-    my %fixture_deploy_dir;
-    tie %fixture_deploy_dir, 'IO::Dir', "$script_directory/fixtures/deploy/$version";
-
-    foreach (keys %fixture_deploy_dir) {
-        if ( S_ISREG($fixture_deploy_dir{$_}->mode) ) {
-            execute_sql_file("$script_directory/fixtures/deploy/$version/$_");
-        }
-    }
 }
 
 # vim: set sw=4 sts=4 et:
