@@ -10,7 +10,7 @@ PartOf=openqa-worker.target
 
 [Service]
 Type=simple
-ExecStart=/usr/share/openqa/script/worker --host localhost --instance %i
+ExecStart=/usr/share/openqa/script/worker --instance %i
 User=geekotest
 
 [Install]
