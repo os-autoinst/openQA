@@ -1,0 +1,59 @@
+Development documentation
+=========================
+
+Frontend for openQA is written in http://mojolicio.us/[Mojolicious] web
+framework. You can find plenty of http://mojolicio.us/perldoc[documentation]
+for it on their website. Therefore this document covers only openQA specific
+tips and tricks.
+
+How to change the database schema
+---------------------------------
+
+During the development process there are cases in which the database schema
+needs to be changed. After modifying files in +lib/OpenQA/modules/Schema/Result+
+there are some steps that have to be followed so that new database instances
+and upgrades include those changes.
+
+.  First, you need to increase the database version number in the $VERSION
+   variable at the first lines of the +lib/OpenQA/modules/Schema/Schema.pm+ file.
+   Note that it's recommended to notify the other developers before doing so,
+   to synchronize in case there are more developers wanting to increase the
+   version number at the same time.
+
+.  Then you need to generate the deployment files for new installations,
+   this is done by running +./initdb --prepare_init+ in the +scripts+ directory.
+
+.  Afterwards you need to generate the deployment files for new installations,
+   this is done by running +./upgradedb --prepare_upgrade+ in the +scripts+
+   directory. +
+   After doing so, the directories +dbicdh/SQLite/deploy/<new version>+ and
+   +dbicdh/SQLite/upgrade/<prev version>-<new version>+ should have been created
+   with some sql files inside containing the sql statements to initialize the
+   schema and to upgrade from one version to the next.
+
+.  And finally, you need to create the fixtures files. Under
+   +dbicdh/fixtures/deploy+, rename the directory of the (previous) latest version
+   to the new version and do the necessary changes (if any). Then, under
+   +dbicdh/fixtures/upgrade+ create a +<prev_version>-<new_version>+ directory and
+   put there some files with SQL statements that upgrade the fixtures. Usually a
+   diff from the previous version to the new one helps to see what has to be in
+   the upgrade file.
+
+The above steps are executed in the developer's system. Once openQA is
+installed in a production server, you should run either
++./initdb --init_database+ or +./upgradedb --upgrade_database+ to actually
+create or upgrade a database.
+
+How to add fixtures to the database
+-----------------------------------
+Fixtures (initial data stored in tables at installation time) are stored
+in files into the +dbicdh/fixtures/deploy/<version>+ and
++dbicdh/fixtures/upgrade/<prev_version>-<next_version>+ directories.
+
+You can create as many files as you want in each directory. These files contain
+SQL statements that will be executed when initializing or upgrading a database.
+Note that those files (and directories) have to be created manually and they
+shouldn't create a transaction, since each file is already executed in its own
+transaction automatically (so that changes are rolled back if there's any
+problem) and sqlite doesn't support nested transactions.
+

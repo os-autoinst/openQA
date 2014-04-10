@@ -1,0 +1,21 @@
+Filesystem Layout
+=================
+
+The openQA web interface can be started via +morbo script/openqa+ in
+development mode.
+
++/var/lib/openqa/+ must be owned by root and contain several sub
+directories owned by the user that runs the workers (default 'geekotest'):
+
+* +backlog+
+* +cache+ (cache directory, it need owned by the user who runs openqa)
+* +factory/iso+
+* +perl/+ (subdirectory 'autoinst' must link to +/usr/lib/os-autoinst+)
+* +pool/1+ (add more for each worker)
+* +testresults+
+* +tools+ (symlink to +/usr/share/openqa/tools/+)
+
++/var/lib/openqa/db+ contains the sqlite database and must be owned by
+the user that runs the web interface ('geekotest'). To initially create this
+database, you need to run +tools/initdb+.
+
