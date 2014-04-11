@@ -243,6 +243,15 @@ sub job_create {
     my %new_job_args = (
         settings => \@settings,
         test => $settings{'TEST'},
+        # make sure the iso is registered as asset
+        jobs_assets => [
+            {
+                asset => {
+                    type => 'iso',
+                    name => $settings{'ISO'},
+                },
+            },
+        ],
     );
 
     if ($settings{NAME}) {
