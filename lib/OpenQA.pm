@@ -211,6 +211,7 @@ sub startup {
     $apik_auth->delete('/:apikeyid')->name('api_key')->to('api_key#destroy');
 
     $r->get('/tests')->name('tests')->to('test#list');
+    $r->get('/tests/overview')->name('tests_overview')->to('test#overview');
     my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0 );
     $test_r->get('/')->name('test')->to('test#show');
@@ -242,8 +243,6 @@ sub startup {
     $asset_r->get('/src')->name('src_step')->to(action => 'src');
     $asset_auth->post('/')->name('save_needle')->to('step#save_needle');
     $asset_r->get('/')->name('step')->to(action => 'view');
-
-    $r->get('/builds/#buildid')->name('build')->to('build#show');
 
     $r->get('/needles/:distri/:name')->name('needle_file')->to('file#needle');
 

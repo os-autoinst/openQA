@@ -275,5 +275,106 @@ sub uploadlog{
     return $self->render(text => "OK: $upname\n");
 }
 
+# Custom action enabling the openSUSE Release Team
+# to see the quality at a glance
+sub overview {
+    my $self  = shift;
+    my $validation = $self->validation;
+
+    $validation->required('build');
+    $validation->required('distri');
+    $validation->required('version');
+    if ($validation->has_error) {
+        return $self->render(text => 'Missing parameters', status => 404);
+    }
+    my $build = $self->param('build');
+    my $distri = $self->param('distri');
+    my $version = $self->param('version');
+
+    my %search_args = (build => $build, distri => $distri, version => $version);
+    $search_args{fulldetails} = 1;
+    $search_args{scope} = 'current';
+
+    my @configs = ();
+    my %archs   = ();
+    my %results = ();
+    my $aggregated = {'ok' => 0, 'fail' => 0, 'unk' => 0, 'na' => 0};
+
+    for my $job ( @{ Scheduler::list_jobs(%search_args) || [] } ) {
+        my $testname = $job->{settings}->{'NAME'};
+        my $test     = $job->{test};
+        my $flavor   = $job->{settings}->{FLAVOR} || 'sweet';
+        my $arch     = $job->{settings}->{ARCH}   || 'noarch';
+
+        my $result;
+        if ( $job->{state} eq 'done' ) {
+            my $r            = test_result($testname);
+            my $result_stats = test_result_stats($r);
+            my $overall      = "fail";
+            if ( ( $r->{overall} || '' ) eq "ok" ) {
+                $overall = ( $r->{dents} ) ? "unknown" : "ok";
+            }
+            $result = {
+                ok      => $result_stats->{ok}   || 0,
+                unknown => $result_stats->{unk}  || 0,
+                fail    => $result_stats->{fail} || 0,
+                overall => $overall,
+                jobid   => $job->{id},
+                state   => "done",
+                testname => $testname,
+            };
+            $aggregated->{$overall}++;
+        }
+        elsif ( $job->{state} eq 'running' ) {
+            $result = {
+                state    => "running",
+                testname => $testname,
+                jobid    => $job->{id},
+            };
+            $aggregated->{'na'}++;
+        }
+        else {
+            $result = {
+                state    => $job->{state},
+                testname => $testname,
+                jobid    => $job->{id},
+                priority => $job->{priority},
+            };
+            $aggregated->{'na'}++;
+        }
+
+        # Populate @configs and %archs
+        push( @configs, $test ) unless ( grep { $test eq $_ } @configs );
+        $archs{$flavor} = [] unless $archs{$flavor};
+        push( @{ $archs{$flavor} }, $arch ) unless ( grep { $arch eq $_ } @{ $archs{$flavor} } );
+
+        # Populate %results
+        $results{$test} = {} unless $results{$test};
+        $results{$test}{$flavor} = {} unless $results{$test}{$flavor};
+        $results{$test}{$flavor}{$arch} = $result;
+    }
+
+    # Sorting everything
+    my @types = keys %archs;
+    @types   = sort @types;
+    @configs = sort @configs;
+    for my $flavor (@types) {
+        my @sorted = sort( @{ $archs{$flavor} } );
+        $archs{$flavor} = \@sorted;
+    }
+
+    $self->stash(
+        build   => $build,
+        version => $version,
+        distri => $distri,
+        configs => \@configs,
+        types   => \@types,
+        archs   => \%archs,
+        results => \%results,
+        aggregated => $aggregated
+    );
+}
+
+
 1;
 # vim: set sw=4 et:

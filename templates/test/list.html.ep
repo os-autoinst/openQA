@@ -44,6 +44,9 @@
             % my $job = $test->{job};
             % my $resultclass = 'overview_'.$job->{result};
             % $resultclass = 'overview_unknown' if ($job->{result} eq 'passed' && $test->{'res_dents'});
+            % my $build = $job->{settings}->{'BUILD'};
+            % my $distri = $job->{settings}->{'DISTRI'};
+            % my $version = $job->{settings}->{'VERSION'};
 
             <tr id="job_<%= $job->{'id'} %>">
                 <td class="link">
@@ -66,10 +69,11 @@
                     % }
                 </td>
                 <td class="backend"><%= $test->{backend} %></td>
-                <td class="distri"><%= $job->{settings}->{DISTRI}.'-'.$job->{settings}->{VERSION} %></td>
+                <td class="distri"><%= "$distri-$version" %></td>
                 <td class="type"><%= $job->{settings}->{FLAVOR} %></td>
                 <td class="arch"><%= $job->{settings}->{ARCH} %></td>
-                <td class="build"><span class="textlink <%= $resultclass %>"><a href="<%= url_for('build', 'buildid' => $job->{settings}->{'BUILD'}) %>"><%= $job->{settings}->{'BUILD'} %></a></span></td>
+                % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
+                <td class="build"><span class="textlink <%= $resultclass %>"><a href="<%= $href %>"><%= $build %></a></span></td>
                 <td class="extra"><span class="<%= $resultclass %>"><%= $job->{'test'} %>@<%= $job->{'machine'} %></span></td>
                 <td class="testtime"><%= format_time($job->{'t_started'}) %></td>
 
@@ -104,6 +108,9 @@
             my $job = $test->{job};
             my $prio = $job->{'priority'};
             my $state = $job->{'state'};
+            my $build = $job->{settings}->{'BUILD'};
+            my $distri = $job->{settings}->{'DISTRI'};
+            my $version = $job->{settings}->{'VERSION'};
             %>
             <tr id="job_<%= $job->{'id'} %>">
                 <td style="font-style: italic;" class="link"><%= $state %></td>
@@ -123,12 +130,13 @@
                     <%= $prio %>
                     <%= link_post "+" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio+10)->query('back' => 'results') %>
                 </td>
-                <td class="distri"><%= $job->{settings}->{'DISTRI'}.'-'.$job->{settings}->{VERSION} %></td>
+                <td class="distri"><%= "$distri-$version" %></td>
                 <td class="type"><%= $job->{settings}->{'FLAVOR'} %></td>
                 <td class="arch"><%= $job->{settings}->{'ARCH'} %></td>
                 <td class="build">
                     <span class="textlink">
-                        <%= link_to url_for('build', 'buildid' => $job->{settings}->{'BUILD'}) => begin %><%= $job->{settings}->{'BUILD'} %><% end %>
+                        % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
+                        <%= link_to $href => begin %><%= $build %><% end %>
                     </span>
                 </td>
                 <td class="extra"><span class=""><%= $job->{'test'} %>@<%= $job->{'machine'} %></span></td>

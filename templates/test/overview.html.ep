@@ -1,25 +1,27 @@
 % layout 'default';
-% title $buildid;
+% title 'Test summary';
 
 %= javascript '/javascripts/wz_tooltip/wz_tooltip.js'
 
 <div class="grid_16 box box-shadow omega">
 	<h2>Test result overview</h2>
-	<p>This page lists the results for <b>Build <%= $build %></b></p>
+	<p>This page displays the current results for <b><%= $distri %> <%= $version %> build <%= $build %></b>, which overall summary is
+    <b>ok: <%= $aggregated->{'ok'} %>, fail: <%= $aggregated->{'fail'} %>, unknown: <%= $aggregated->{'unk'} %>, n/a: <%= $aggregated->{'na'} %></b>
+    </p>
 	<p />
 	<table id="results" class="table-autosort table-autofilter table-autostripe">
 		<thead>
-			<tr>
+			<tr id="flavors">
 				<th></th>
 				<% for my $type (@$types) { %>
-					<th colspan="<%= scalar(@{$archs->{$type}}) %>"><%= $type %></th>
+					<th colspan="<%= scalar(@{$archs->{$type}}) %>" id="flavor_<%= $type %>"><%= $type %></th>
 				<% } %>
 			</tr>
-			<tr>
+			<tr id="archs">
 				<th>Test</th>
 				<% for my $type (@$types) { %>
 					<% for my $arch (@{$archs->{$type}}) { %>
-						<th><%= $arch %></th>
+						<th id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
 					<% } %>
 				<% } %>
 			</tr>
@@ -30,7 +32,7 @@
 					<td><%= $config %></td>
 					<% for my $type (@$types) { %>
 						<% for my $arch (@{$archs->{$type}}) { %>
-							<td>
+							<td id="res_<%= $type %>_<%= $arch %>_<%= $config %>">
 							<% my $res = $results->{$config}{$type}{$arch}; %>
 							<% if ($res) { %>
 								<%
@@ -63,7 +65,7 @@
                                                                         <li style="margin: 0px;"><%= link_post "Re-schedule" => url_for('restart', 'testid' => $jobid)->query('back' => 1) %></li>
 								<% } %>
 								<% if ($state eq "scheduled" || $state eq "running") { %>
-                                                                        <li style="margin: 0px;"><%= link_post "Cancel" => url_for('cancel', 'testid' => $jobid)->query('back' => 1) %>"</li>
+                                                                        <li style="margin: 0px;"><%= link_post "Cancel" => url_for('cancel', 'testid' => $jobid)->query('back' => 1) %></li>
 								<% } %>
 								</ul></span>
 							<% } %>
