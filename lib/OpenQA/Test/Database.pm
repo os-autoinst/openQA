@@ -49,9 +49,9 @@ sub create {
 
     # Fixtures
     my $f= $self->fixture_path;
-    $schema->deploy_fixtures(skip_some_fixtures => $options{skip_fixtures}, fixtures_path => $self->fixture_path."/sql");
+    $schema->deploy_fixtures(skip_some_fixtures => 1);
 
-#    $self->insert_fixtures($schema) unless $options{skip_fixtures};
+    $self->insert_fixtures($schema) unless $options{skip_fixtures};
 
     return $schema;
 }
@@ -59,9 +59,6 @@ sub create {
 sub insert_fixtures {
     my $self   = shift;
     my $schema = shift;
-    $schema->deploy_fixtures();
-
-    return 0;
 
     # Store working dir
     my $cwd = getcwd;
