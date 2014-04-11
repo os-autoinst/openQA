@@ -24,58 +24,8 @@ our $VERSION = '5';
 
 __PACKAGE__->load_namespaces;
 
-sub execute_sql_file {
-    my ( $class, $sqlfile ) = @_;
-    print "Executing SQL statements from: $sqlfile\n";
-
-    open my $fh, '<', $sqlfile or die "error opening $sqlfile: $!";
-    my $contents = do { local $/; <$fh> };
-
-    my $sql_splitter = SQL::SplitStatement->new;
-    my @statements = $sql_splitter->split($contents);
-    $class->storage->dbh_do(
-        sub {
-            my ($storage, $dbh, @values) = @_;
-            $dbh->do("BEGIN TRANSACTION");
-        }
-    );
-
-    foreach (@statements) {
-        print "$_\n";
-
-        my $rr=$class->storage->dbh_do(
-            sub {
-                my ($storage, $dbh, @values) = @_;
-                $dbh->do($_);
-            }
-        );
-        unless ($rr) {
-            print "ROLLBACK;\n";
-            $class->storage->dbh_do(
-                sub {
-                    my ($storage, $dbh, @values) = @_;
-                    $dbh->do("ROLLBACK");
-                }
-            );
-            die;
-        }
-    }
-    $class->storage->dbh_do(
-        sub {
-            my ($storage, $dbh, @values) = @_;
-            $dbh->do("COMMIT");
-        }
-    );
-}
-
-sub deploy_fixtures {
-#    my ( $class, $skip_some_fixtures, $fixtures_path ) = @_;
+sub deploy_seeds {
     my $class        = shift;
-    my %options     = (
-        skip_some_fixtures => 0,
-        fixtures_path => "",
-        @_
-    );
 
     # insert pre-defined values to job_states
     $class->storage->dbh_do(
@@ -107,33 +57,6 @@ sub deploy_fixtures {
             $dbh->do("INSERT INTO workers (id, host, instance, backend) VALUES(0, 'NONE', 0, 'NONE');");
         }
     );
-
-    if ( ! $options{skip_some_fixtures} ) {
-        my $fixtures_path= "$options{fixtures_path}";
-        if ( ! $fixtures_path ) {
-
-            # Deploy fixtures specified statically in the fixtures directory
-            my $script_directory = "$FindBin::Bin/../dbicdh";
-            if (! -d $script_directory) {
-                $script_directory = "$FindBin::Bin/../../dbicdh";  # For tests
-                if (! -d $script_directory) {
-                    $script_directory = "$FindBin::Bin/../../../dbicdh";  # For tests
-                    if (! -d $script_directory) {
-                        $script_directory = "/usr/share/openqa/dbicdh";
-                    }
-                }
-            }
-            $fixtures_path="$script_directory/fixtures/deploy/$VERSION";
-        }
-        my %fixture_deploy_dir;
-        tie %fixture_deploy_dir, 'IO::Dir', $fixtures_path;
-
-        foreach (keys %fixture_deploy_dir) {
-            if ( S_ISREG($fixture_deploy_dir{$_}->mode) ) {
-                $class->execute_sql_file("$fixtures_path/$_");
-            }
-        }
-    }
 
     return 0;
 }

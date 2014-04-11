@@ -27,11 +27,11 @@ sub create {
     # New db
     my $schema = openqa::connect_db(':memory:');
     my $script_directory = "$FindBin::Bin/../dbicdh";
-    if (! -d $script_directory) {
+    if (!-d $script_directory) {
         $script_directory = "$FindBin::Bin/../../dbicdh";  # For tests
-        if (! -d $script_directory) {
+        if (!-d $script_directory) {
             $script_directory = "$FindBin::Bin/../../../dbicdh";  # For tests
-            if (! -d $script_directory) {
+            if (!-d $script_directory) {
                 $script_directory = "/usr/share/openqa/dbicdh";
             }
         }
@@ -46,10 +46,7 @@ sub create {
     );
 
     $dh->install();
-
-    # Fixtures
-    my $f= $self->fixture_path;
-    $schema->deploy_fixtures(skip_some_fixtures => 1);
+    $schema->deploy_seeds;
 
     $self->insert_fixtures($schema) unless $options{skip_fixtures};
 

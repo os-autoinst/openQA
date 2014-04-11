@@ -84,8 +84,8 @@ if ($init_database) {
     # Create the schema
     $dh->install;
 
-    # Deploy fixtures in the schema
-    $schema->deploy_fixtures;
+    # Deploy seed data in the schema
+    $schema->deploy_seeds;
 
 }
 

@@ -109,15 +109,6 @@ if ($upgrade_database) {
     }
     else {
         $dh->upgrade;
-
-        my %fixture_upgrade_dir;
-        tie %fixture_upgrade_dir, 'IO::Dir', "$script_directory/fixtures/upgrade/$upgrade_directory";
-
-        foreach (keys %fixture_upgrade_dir) {
-            if ( S_ISREG($fixture_upgrade_dir{$_}->mode) ) {
-                $schema->execute_sql_file("$script_directory/fixtures/upgrade/$upgrade_directory/$_");
-            }
-        }
     }
 }
 
