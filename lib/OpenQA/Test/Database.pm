@@ -12,6 +12,8 @@ use DateTime; # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw/ abs_path getcwd /;
 use openqa;
+use FindBin qw($Bin);
+use DBIx::Class::DeploymentHandler;
 use Mojo::Base -base;
 has fixture_path => 't/fixtures';
 
@@ -24,9 +26,28 @@ sub create {
 
     # New db
     my $schema = openqa::connect_db(':memory:');
-    $schema->deploy();
+    my $script_directory = "$FindBin::Bin/../dbicdh";
+    if (!-d $script_directory) {
+        $script_directory = "$FindBin::Bin/../../dbicdh";  # For tests
+        if (!-d $script_directory) {
+            $script_directory = "$FindBin::Bin/../../../dbicdh";  # For tests
+            if (!-d $script_directory) {
+                $script_directory = "/usr/share/openqa/dbicdh";
+            }
+        }
+    }
+    my $dh = DBIx::Class::DeploymentHandler->new(
+        {
+            schema              => $schema,
+            script_directory    => $script_directory,
+            sql_translator_args => { add_drop_table => 0 },
+            force_overwrite     => 0,
+        }
+    );
 
-    # Fixtures
+    $dh->install();
+    $schema->deploy_seeds;
+
     $self->insert_fixtures($schema) unless $options{skip_fixtures};
 
     return $schema;

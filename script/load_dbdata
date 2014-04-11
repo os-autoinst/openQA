@@ -27,11 +27,11 @@ use POSIX qw/getuid getgid setuid setgid/;
 use openqa;
 use Schema::Schema;
 
-my $fixture = shift @ARGV;
-die "Fixtures file not found\n" unless $fixture && -r $fixture;
-my $info = eval file_content($fixture);
+my $datafile = shift @ARGV;
+die "Data file not found\n" unless $datafile && -r $datafile;
+my $info = eval file_content($datafile);
 if (my $error = $@) {
-    die "Error in fixtures file: $error\n" ;
+    die "Error in data file: $error\n" ;
 }
 
 my $dbdir = dirname($openqa::dbfile);

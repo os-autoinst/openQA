@@ -671,7 +671,7 @@ sub job_cancel {
         }
     );
 
-    $attrs{colums} = [qw/id worker_id/];
+    $attrs{columns} = [qw/id worker_id/];
     $cond{state_id} = {-in => schema->resultset("JobStates")->search({ name => [qw/running waiting/] })->get_column("id")->as_query};
     # then tell workers to cancel their jobs
     my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);

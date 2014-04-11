@@ -16,15 +16,16 @@
 
 package Schema;
 use base qw/DBIx::Class::Schema/;
+use IO::Dir;
+use SQL::SplitStatement;
+use Fcntl ':mode';
 
 our $VERSION = '5';
 
 __PACKAGE__->load_namespaces;
 
-sub deploy {
-    my ( $class, $attrs ) = @_;
-
-    my $ret = $class->next::method($attrs);
+sub deploy_seeds {
+    my $class        = shift;
 
     # insert pre-defined values to job_states
     $class->storage->dbh_do(
@@ -57,7 +58,7 @@ sub deploy {
         }
     );
 
-    return $ret;
+    return 0;
 }
 
 1;
