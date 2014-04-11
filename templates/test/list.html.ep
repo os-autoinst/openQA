@@ -106,7 +106,7 @@
             my $state = $job->{'state'};
             %>
             <tr id="job_<%= $job->{'id'} %>">
-                <td style="font-style: italic;" class="link"><%= $state %></td>
+                <td style="font-style: italic;" class="link"><a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><%= $state %></a></td>
                 <td>
                     % if ($job->{'clone_id'}) {
                         <a href="<%= url_for('test', 'testid' => $job->{'clone_id'}) %>">#<%= $job->{'clone_id'} %></a>
