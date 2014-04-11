@@ -494,8 +494,8 @@ sub main(){
             symlink(join('/', $pooldir, 'testresults', $name), $testresults) or warn "symlink $testresults: $!\n";
             $worker = workit($job);
             unless ($worker) {
-                warn "launching worker failed, releasing job\n";
-                job_incomplete($job, 1, "worker died");
+                warn "job is missing files, releasing job\n";
+                api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
                 $job = undef;
             }
             $worker_start_time = time;
