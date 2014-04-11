@@ -48,6 +48,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   job_delete job_update_result job_restart job_cancel command_enqueue
   command_get list_commands command_dequeue iso_cancel_old_builds
   job_set_stop job_stop iso_stop_old_builds
+  job_get_assets
   asset_list asset_get asset_delete asset_register
 );
 
@@ -319,6 +320,20 @@ sub _job_get($) {
         _job_fill_settings($job_hashref);
     }
     return $job_hashref;
+}
+
+sub job_get_assets
+{
+    my $id = shift;
+    my $ret = [];
+
+    my $rc = schema->resultset("Jobs")->find({id => $id})->assets();
+    while (my $a = $rc->next())
+    {
+        push @$ret, { id => $a->id, type => $a->type, name => $a->name };
+    }
+
+    return $ret;
 }
 
 sub _job_fill_settings {

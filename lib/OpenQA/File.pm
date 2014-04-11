@@ -66,6 +66,16 @@ sub test_file {
     return $self->serve_static_($self->param('filename'));
 }
 
+sub test_asset {
+    my $self = shift;
+
+    return $self->render_not_found unless $self->_set_test;
+
+    warn "TODO";
+    return $self->render_not_found;
+}
+
+
 sub test_diskimage {
     my $self = shift;
 

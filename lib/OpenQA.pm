@@ -235,6 +235,7 @@ sub startup {
     $test_r->get('/file/#filename')->name('test_file')->to('file#test_file');
     $test_r->get('/diskimages/:imageid')->name('diskimage')->to('file#test_diskimage');
     $test_r->get('/iso')->name('isoimage')->to('file#test_isoimage');
+    $test_r->get('/asset/#assetid')->name('test_asset')->to('file#test_asset');
 
     my $step_r = $test_r->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/)->to(controller => 'step');
     my $step_auth = $test_auth->route('/modules/:moduleid/steps/:stepid', stepid => qr/[1-9]\d*/);
