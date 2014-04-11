@@ -43,7 +43,7 @@ sub _create_timestamp_trigger{
         database_events     => [$action],
         fields              => [$timestamp],
         on_table            => $table,
-        action              => "UPDATE $table SET $timestamp = datetime('now') WHERE id = NEW.id;",
+        action              => "UPDATE $table SET $timestamp = datetime('now') WHERE _rowid_ = NEW._rowid_;",
         schema              => $schema,
     );
 
