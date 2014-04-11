@@ -57,3 +57,8 @@ shouldn't create a transaction, since each file is already executed in its own
 transaction automatically (so that changes are rolled back if there's any
 problem) and sqlite doesn't support nested transactions.
 
+Tracing SQL statements
+~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------------------------------------------------------
+export DBIC_TRACE=1
+--------------------------------------------------------------------------------
