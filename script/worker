@@ -88,7 +88,7 @@ L<OpenQA::API::V1::Client>
 
 use strict;
 use warnings;
-use POSIX qw/:sys_wait_h strftime SIGTERM/;
+use POSIX qw/:sys_wait_h strftime SIGTERM uname/;
 use Data::Dump;
 use JSON;
 use Fcntl;
@@ -358,7 +358,7 @@ sub backup_testresults($){
 sub main(){
     my $lockfd = lockit();
 
-    my $hostname = `uname -n`;
+    my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
 
     my $workerid = api_call('post', 'workers', {host => $hostname, instance => $options{'instance'}, backend => $worker_settings->{'BACKEND'}})->{id};
     $ENV{'WORKERID'} = $workerid;
