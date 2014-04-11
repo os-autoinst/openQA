@@ -22,6 +22,7 @@
   /proc/meminfo r,
   /usr/bin/optipng rix,
   /usr/bin/perl ix,
+  /usr/bin/ssh rcx,
   /usr/lib/git/git rix,
   /usr/lib64/ImageMagick-6.8.6/modules-Q16/coders/jpeg.so mr,
   /usr/lib64/ImageMagick-6.8.6/modules-Q16/coders/png.so mr,
@@ -43,11 +44,26 @@
   /var/lib/openqa/pool/*/qemuscreenshot/ r,
   /var/lib/openqa/pool/*/qemuscreenshot/* r,
   /var/lib/openqa/pool/*/testresults/*/* rk,
+  /var/lib/openqa/pool/*/testresults/*/.thumbs/* r,
   /var/lib/openqa/testresults/ r,
   /var/lib/openqa/testresults/** rk,
   /var/lib/os-autoinst/tests/ r,
   /var/lib/os-autoinst/tests/** rw,
+  /var/lib/os-autoinst/tests/*/needles/.git/objects/*/* rwl,
   /var/tmp/* rw,
   /tmp/mojo.tmp rw,
   /tmp/mojo.tmp.* rw,
+
+  profile /usr/bin/ssh {
+    #include <abstractions/base>
+    #include <abstractions/consoles>
+    #include <abstractions/nameservice>
+
+    /etc/ssh/ssh_config r,
+    /etc/ssl/openssl.cnf r,
+    /proc/*/fd/ r,
+    /proc/filesystems r,
+    /usr/bin/ssh rix,
+    /var/lib/openqa/.ssh/* rw,
+  }
 }
