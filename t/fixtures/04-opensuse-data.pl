@@ -1,0 +1,1 @@
+../../lib/OpenQA/modules/openqa/distri/opensuse-data.pl

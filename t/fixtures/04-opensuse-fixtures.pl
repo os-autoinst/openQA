@@ -1,1 +1,0 @@
-../../lib/OpenQA/modules/openqa/distri/opensuse-fixtures.pl
