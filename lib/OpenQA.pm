@@ -276,6 +276,8 @@ sub startup {
     $admin_r->get('/job_templates')->name('admin_job_templates')->to('job_template#index');
     $admin_r->post('/job_templates')->to('job_template#update');
 
+    $admin_r->get('/assets')->name('admin_assets')->to('asset#index');
+
     # Users list as default option
     $admin_r->get('/')->name('admin')->to('user#index');
     ###
