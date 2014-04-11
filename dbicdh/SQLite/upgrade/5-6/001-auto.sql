@@ -32,7 +32,7 @@ CREATE INDEX jobs_assets_idx_asset_id ON jobs_assets (asset_id);
 CREATE INDEX jobs_assets_idx_job_id ON jobs_assets (job_id);
 
 ;
-CREATE UNIQUE INDEX constraint_name ON jobs_assets (job_id, asset_id);
+CREATE UNIQUE INDEX constraint_name06 ON jobs_assets (job_id, asset_id);
 
 ;
 
