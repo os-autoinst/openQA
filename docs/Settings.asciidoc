@@ -1,0 +1,51 @@
+Configuring your openQA
+=======================
+:toc:
+
+This page describes what you can configure in admin section of openQA and
+effects it will have. If you are starting from scratch, you should probably go
+through the following order:
+
+. Define machines in 'Machines' menu
+. Define products you have in 'Products' menu
+. Specify various collections of test you want to run in 'Test suites' menu
+. Go to the template matrix in 'Job templates' menu and decide what
+  combinations does make sense and need to be tested
+
+Products
+--------
+
+Test Suites
+-----------
+
+
+Machines
+--------
+
+You need to have at least one machine set up to be able to run any tests. Those
+machine represents virtual machine types that you want to test. To make tests
+actually happen, you have to have a 'openQA worker' connected that can fullfill
+those specifications.
+
+Name
+~~~~
+
+User defined string only needed for operator to identify the machine
+configuration.
+
+Backend
+~~~~~~~
+
+What backaend should be used for this machine. Recommended value is +qemu+ as
+it is the most tested one, but other options (like +kvm2usb+ or +vbox+) are
+also possible.
+
+Variables
+~~~~~~~~~
+
+Variables represent a way how to influence backend behaviour. Few important
+examples:
+
+* +WEMUCPU+ can be 'qemu32' or 'qemu64' and specifies architecture of virtual CPU
+* +QEMUCPUS+ is an integer that specifies number of cores you wish for
+* +SMP+ enables smp when set to 1, disables when set to 0

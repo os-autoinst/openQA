@@ -1,0 +1,48 @@
+Advanced configuration
+======================
+
+Running behind Apache proxy
+----------------------------
+
+The openQA web interface can run standalone via Mojolicous so a web server is
+not necessarily needed. If you want to use apache you need to configure proxy
+mode. See +openqa.conf.template+ config file in +apache2/vhosts.d+. To make
+everything work correctly, you need to enable the 'proxy_http', 'headers' and
+'proxy' modules (use 'a2enmod').
+
+
+Setting up git support
+----------------------
+
+Editing needles from web can optionally commit new or changed needles
+automatically to git. To do so, you need to enable git support by setting
+
+[source,ini]
+--------------------------------------------------------------------------------
+[global]
+scm = git
+--------------------------------------------------------------------------------
+in +/etc/openqa/openqa.ini+. Once you do so and restart the web interface, openQA will
+commit new needles to the git repository automatically.
+
+You may want to add some description to automatic commits coming from web UI.
+You can do so by setting configuration in the repository
+(+/var/lib/os-autoinst/needles/.git/config+) to some reasonable defaults like:
+
+--------------------------------------------------------------------------------
+[user]
+	email = whatever@example.com
+	name = openQA web UI
+--------------------------------------------------------------------------------
+
+To enable automatic pushing of the repo as well, you need to add the following
+to your openqa.ini:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[scm git]
+do_push = yes
+--------------------------------------------------------------------------------
+Depending on your setup, you might need to generate and propagate ssh key for
+user 'geekotest' to be able to push.
+
