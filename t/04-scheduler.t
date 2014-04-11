@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 40;
+use Test::More tests => 44;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -173,6 +173,22 @@ is_deeply($current_jobs, [], "All list_jobs with state running");
 %args = (build => "666");
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [$jobs->[1]], "list_jobs with build");
+
+%args = (iso => "whatever.iso");
+$current_jobs = list_jobs(%args);
+is_deeply($current_jobs, $jobs, "list_jobs with iso");
+
+%args = (build => "666", state => "scheduled");
+$current_jobs = list_jobs(%args);
+is_deeply($current_jobs, [$jobs->[1]], "list_jobs combining a setting (BUILD) and state");
+
+%args = (iso => "whatever.iso", build => "666");
+$current_jobs = list_jobs(%args);
+is_deeply($current_jobs, [$jobs->[1]], "list_jobs combining two settings (ISO and BUILD)");
+
+%args = (build => "whatever.iso", iso => "666");
+$current_jobs = list_jobs(%args);
+is_deeply($current_jobs, [], "list_jobs messing two settings up");
 
 # Testing job_grab
 %args = (
