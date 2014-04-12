@@ -92,9 +92,9 @@ sub register {
                     $crumbs .= " > $mod" if $mod;
                 }
             }
-            elsif ($c->current_route('build')) {
+            elsif ($c->current_route('tests_overview')) {
                 $crumbs .= ' > '.$c->link_to('Test results' => $c->url_for('tests'));
-                $crumbs .= ' > '.$c->param('buildid');
+                $crumbs .= ' > Build overview';
             }
             elsif ($c->current_route =~ /^admin/) {
                 $crumbs .= ' > '.$c->link_to('Admin' => $c->url_for('admin'));

@@ -365,16 +365,19 @@ sub list_jobs {
     }
     $attrs{page} = $args{page}||0;
 
-    if ($args{build}) {
-        push(@conds, { 'settings.key' => "BUILD"});
-        push(@conds, { 'settings.value' => $args{build}});
-        push(@joins, 'settings') unless ( grep { 'settings' eq $_} @joins );
+    # Search into the following job_settings
+    for my $setting (qw(build iso distri version flavor)) {
+        if ($args{$setting}) {
+            my $subquery = schema->resultset("JobSettings")->search(
+                {
+                    key => uc($setting),
+                    value => $args{$setting}
+                }
+            );
+            push(@conds, { id => { -in => $subquery->get_column('job_id')->as_query }});
+        }
     }
-    if ($args{iso}) {
-        push(@conds, { 'settings.key' => "ISO"});
-        push(@conds, { 'settings.value' => $args{iso}});
-        push(@joins, 'settings') unless ( grep { 'settings' eq $_} @joins );
-    }
+    # Text search across some settings
     if ($args{match}) {
         push(@conds, { 'settings.key' => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST']});
         push(@conds, { 'settings.value' => { '-like' => "%$args{match}%" }});
