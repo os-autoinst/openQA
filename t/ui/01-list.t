@@ -43,7 +43,7 @@ $get->text_is('#results #job_99946 td:nth-child(12) .overview_failed' => '1');
 ok($get->tx->res->dom->at('#results #job_99963 td.link a') eq '<a href="/tests/99963">testing</a>');
 
 # Test 99928 is scheduled (so can be canceled)
-$get->text_is('#results #job_99928 .link' => 'scheduled');
+$get->text_is('#results #job_99928 td.link a' => 'scheduled');
 $get->element_exists('#results #job_99928 .cancel');
 
 # Test 99938 failed, so it should be displayed in red

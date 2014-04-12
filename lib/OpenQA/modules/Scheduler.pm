@@ -62,10 +62,21 @@ our %worker_commands = map { $_ => 1 } qw/
   continue_waitforneedle
   /;
 
+# job states, initialized in schema()
+# name => id
+our %job_states;
 
 sub schema{
     CORE::state $schema;
-    $schema = openqa::connect_db() unless $schema;
+    return $schema if $schema;
+
+    $schema = openqa::connect_db();
+    if ($schema) {
+        my $rs = $schema->resultset("JobStates")->search(undef, { columns => [qw/id name/], });
+        %job_states = map { $_->name => $_->id } $rs->all() if $rs;
+        die "database schema not initialized properly!\n" unless keys %job_states == 5;
+    }
+
     return $schema;
 }
 

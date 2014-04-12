@@ -64,6 +64,17 @@
                 <td style="width: 40%;">State</td>
                 <td><%= $job->{state} %></td>
             </tr>
+            <% if ($job->{state} eq 'scheduled') {  %>
+            <tr>
+                <td style="width: 40%;">Priority</td>
+                <%  my $prio = $job->{priority}; %>
+                <td>
+                    <%= link_post "-" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio-10)->query('back' => 'details') %>
+                    <%= $prio %>
+                    <%= link_post "+" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio+10)->query('back' => 'details') %>
+                </td>
+            </tr>
+            <% }  %>
         </table>
 	</div>
 	<% if($backend_info) { %>
