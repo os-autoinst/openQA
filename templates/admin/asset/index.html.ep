@@ -1,0 +1,33 @@
+% layout 'admin';
+% title 'Assets';
+
+<div class="box box-shadow omega">
+    <h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+    <table class="table-autosort table-autofilter table-autostripe">
+        <thead>
+            <tr>
+                <th class="table-sortable:numeric">ID</th>
+                <th class="table-sortable:alphanumeric table-filterable">Type</th>
+                <th class="table-sortable:alphanumeric">Name</th>
+                <th class="table-sortable:numeric">#Jobs</th>
+                <th class="table-sortable:alphanumeric">Created</th>
+                <th class="table-sortable:alphanumeric">Updated</th>
+            </tr>
+        </thead>
+        <tbody>
+        % while (my $asset = $assets->next()) {
+        <tr id="asset_<%= $asset->id %>">
+            <td class="id"><%= $asset->id %></td>
+            <td class="type"><%= $asset->type %></td>
+            <td class="name"><%= $asset->name %></td>
+            <td class="nrjobs"><%= $asset->jobs->count() %></td>
+            <td class="t_created"><%= $asset->t_created %></td>
+            <td class="t_updated"><%= $asset->t_updated %></td>
+        </tr>
+        % }
+        </tbody>
+    </table>
+</div>

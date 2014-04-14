@@ -28,16 +28,25 @@
                         % }
 		</div>
 	</div>
-	<% if($resultfiles) { %>
+	<% if(@$resultfiles) { %>
 	<div class="box box-shadow" id="result_files_box">
 		<div class="box-header aligncenter">Result Files</div>
 		<div style="text-align: center;">
 			<% for my $resultfile (@$resultfiles) { %>
 			<a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $resultfile) %>"><%= $resultfile %></a><br />
 			<% } %>
-                        <a href="<%= url_for('isoimage', 'testid' => $testid) %>">Download ISO</a>
 		</div>
 	</div>
+	<% } %>
+	<% if(@$assets) { %>
+        <div class="box box-shadow" id="result_files_box">
+                <div class="box-header aligncenter">Assets</div>
+                <div style="text-align: center;">
+                        <% for my $a (@$assets) { %>
+                        %= link_to "Download ".$a->{type} => url_for('test_asset', 'testid' => $testid, assetid => $a->{'id'})
+                        <% } %>
+                </div>
+        </div>
 	<% } %>
 	<% if($ulogs and @$ulogs) { %>
 	<div class="box box-shadow" id="result_files_box">

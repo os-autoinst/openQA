@@ -1,0 +1,146 @@
+# Copyright (C) 2014 SUSE Linux Products GmbH
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+BEGIN {
+  unshift @INC, 'lib', 'lib/OpenQA/modules';
+}
+
+use Mojo::Base -strict;
+use Test::More;
+use Test::Mojo;
+use OpenQA::Test::Case;
+use OpenQA::API::V1::Client;
+use Mojo::IOLoop;
+use Data::Dump;
+
+sub nots
+{
+  my $h = shift;
+  my @ts = @_;
+  if (ref $h eq 'ARRAY') {
+      my @r;
+      for my $i (@$h) {
+          push @r, nots($i, @ts);
+      }
+      return \@r;
+  }
+  unshift @ts, 't_updated', 't_created';
+  for (@ts) {
+    delete $h->{$_};
+  }
+  return $h;
+}
+
+OpenQA::Test::Case->new->init_data;
+
+my $t = Test::Mojo->new('OpenQA');
+
+# XXX: Test::Mojo loses it's app when setting a new ua
+# https://github.com/kraih/mojo/issues/598
+my $app = $t->app;
+$t->ua(OpenQA::API::V1::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->app($app);
+
+sub la {
+    return unless $ENV{HARNESS_IS_VERBOSE};
+    my $ret = $t->get_ok('/api/v1/assets')->status_is(200);
+    my @assets = @{$ret->tx->res->json->{assets}};
+    for my $a (@assets) {
+        printf "%d %-5s %s\n", $a->{id}, $a->{type}, $a->{name};
+    }
+}
+
+my $ret;
+
+my $iso1 = 'openSUSE-13.1-DVD-i586-Build0091-Media.iso';
+my $iso2 = 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso';
+
+my $listing = [
+    {
+        id => 1,
+        name => $iso1,
+        type => "iso",
+    },
+    {
+        id => 2,
+        name => $iso2,
+        type => "iso",
+    },
+];
+
+la;
+
+# register an iso
+$ret = $t->post_ok('/api/v1/assets', form => { type => 'iso', name => $iso1 })->status_is(200);
+is($ret->tx->res->json->{id}, 1, "asset has id 1");
+
+# register same iso again yields same id
+$ret = $t->post_ok('/api/v1/assets', form => { type => 'iso', name => $iso1 })->status_is(200);
+is($ret->tx->res->json->{id}, 1, "asset still has id 1, no duplicate");
+
+la;
+
+# check data
+$ret = $t->get_ok('/api/v1/assets/iso/'.$iso1)->status_is(200);
+is_deeply(nots($ret->tx->res->json), $listing->[0], "asset correctly entered by name");
+$ret = $t->get_ok('/api/v1/assets/1')->status_is(200);
+is_deeply(nots($ret->tx->res->json), $listing->[0], "asset correctly entered by id");
+
+# check 404 for non existing isos
+$ret = $t->get_ok('/api/v1/assets/iso/'.$iso2)->status_is(404);
+
+# register a second one
+$ret = $t->post_ok('/api/v1/assets', form => { type => 'iso', name => $iso2 })->status_is(200);
+is($ret->tx->res->json->{id}, 2, "asset has id 2");
+
+# check data
+$ret = $t->get_ok('/api/v1/assets/2')->status_is(200);
+is_deeply(nots($ret->tx->res->json), $listing->[1], "asset correctly entered by id");
+
+# check listing
+$ret = $t->get_ok('/api/v1/assets')->status_is(200);
+is_deeply(nots($ret->tx->res->json->{assets}), $listing, "listing ok");
+
+la;
+
+# test delete operation
+$ret = $t->delete_ok('/api/v1/assets/1')->status_is(200);
+is($ret->tx->res->json->{count}, 1, "one asset deleted");
+
+# verify it's really gone
+$ret = $t->get_ok('/api/v1/assets/1')->status_is(404);
+# but two must be still there
+$ret = $t->get_ok('/api/v1/assets/2')->status_is(200);
+
+# register it again
+$ret = $t->post_ok('/api/v1/assets', form => { type => 'iso', name => $iso1 })->status_is(200);
+is($ret->tx->res->json->{id}, 3, "asset has id 3");
+
+# delete by name
+$ret = $t->delete_ok('/api/v1/assets/iso/'.$iso2)->status_is(200);
+is($ret->tx->res->json->{count}, 1, "one asset deleted");
+# but three must be still there
+$ret = $t->get_ok('/api/v1/assets/3')->status_is(200);
+
+la;
+
+# try to register with invalid type
+$ret = $t->post_ok('/api/v1/assets', form => { type => 'foo', name => $iso1 })->status_is(400);
+
+# try to register non existing asset
+$ret = $t->post_ok('/api/v1/assets', form => { type => 'iso', name => 'foo.iso' })->status_is(400);
+
+done_testing();

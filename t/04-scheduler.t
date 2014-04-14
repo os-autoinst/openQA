@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 44;
+use Test::More tests => 52;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -118,6 +118,10 @@ my $iso = sprintf("%s/%s", $openqa::isodir, $settings{ISO});
 open my $fh, ">", $iso;
 my $job_id = Scheduler::job_create(%settings);
 is($job_id, 1, "job_create");
+
+my $assets = Scheduler::job_get_assets($job_id);
+is_deeply($assets, [{ id => 1, name => "whatever.iso", type => "iso" }], "job created asset");
+
 my %settings2 = %settings;
 $settings2{NAME} = "OTHER NAME";
 $settings2{BUILD} = "44";
@@ -328,6 +332,28 @@ is_deeply(nots($commands->[0], 't_processed'), \%command,  "command entered corr
 # Testing command_get
 $commands = Scheduler::command_get($command_id);
 ok(scalar @$commands == 1 && pp($commands) eq '[[1, "quit"]]',  "command_get");
+
+my $rs = Scheduler::asset_list();
+$rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+is_deeply(nots($rs->all()), { id => 1, name => "whatever.iso", type => "iso" }, "asset list");
+
+my $asset = Scheduler::asset_get(type => 'iso', name => $settings{ISO});
+is($asset->single->id, 1, "asset get");
+
+$asset = Scheduler::asset_get(id => 1);
+is($asset->single->name, "whatever.iso", "asset get by id");
+
+$asset = Scheduler::asset_get(id => 2);
+is($asset->single, undef, "asset get with unassigned id");
+
+$asset = Scheduler::asset_get(blah => "blub");
+is($asset, undef, "asset get with invalid args");
+
+$asset = Scheduler::asset_register(type => 'iso', name => $settings{ISO});
+is($asset->id, 1, "asset register returns same");
+
+$asset = Scheduler::asset_delete(type => 'iso', name => $settings{ISO});
+is($asset, 1, "asset delete");
 
 
 # Testing command_dequeue
