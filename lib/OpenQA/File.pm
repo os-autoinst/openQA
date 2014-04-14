@@ -20,7 +20,6 @@ use warnings;
 package OpenQA::File;
 use Mojo::Base 'Mojolicious::Controller';
 BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
-use Image::Magick;
 use openqa;
 use File::Basename;
 
@@ -100,7 +99,7 @@ sub serve_static_($$) {
     my $asset = shift;
 
     $self->app->log->debug("looking for " . pp($asset) . " in " . pp($self->{static}->paths));
-    unless (ref($asset)) {
+    if ($asset && !ref($asset)) {
         # TODO: check for plain file name
         $asset = $self->{static}->file($asset);
     }
