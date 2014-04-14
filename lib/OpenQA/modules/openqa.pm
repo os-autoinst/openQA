@@ -70,8 +70,6 @@ our $res_display = {
     'fail' => 'FAIL'
 };
 
-
-
 sub test_result($) {
     my $testname = shift;
     my $testresdir = testresultdir($testname);
