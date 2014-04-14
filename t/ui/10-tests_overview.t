@@ -43,7 +43,7 @@ my $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version
 $get->status_is(200);
 
 $get->content_like(qr/current results for.*opensuse 13\.1 build 0091/i);
-$get->content_like(qr/ok: 2, fail: 0, unknown: 0, n\/a: 4/i);
+$get->content_like(qr/passed: 2, failed: 0, unknown: 0, incomplete: 0, none: 4/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_i586');
@@ -52,8 +52,8 @@ $get->element_exists('#flavor_GNOME-Live_arch_i686');
 $get->element_exists_not('#flavor_GNOME-Live_arch_x86_64');
 $get->element_exists_not('#flavor_DVD_arch_i686');
 
-# Check some results
-$get->text_is('#res_DVD_i586_kde span a' => '48/0/3');
+# Check some results (and it's overview_xxx classes)
+$get->text_is('#res_DVD_i586_kde span.overview_passed a' => '48/0/3');
 $get->text_is('#res_GNOME-Live_i686_RAID0 span' => 'cancelled');
 $get->text_is('#res_DVD_i586_RAID1 span' => 'sched.(46)');
 $get->text_is('#res_DVD_x86_64_RAID1 span' => '');
@@ -64,15 +64,15 @@ $get->element_exists_not('#res_DVD_x86_64_doc');
 #
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
 $get->status_is(200);
-$get->content_like(qr/ok: 0, fail: 1, unknown: 0, n\/a: 0/i);
+$get->content_like(qr/passed: 0, failed: 1, unknown: 0, incomplete: 0, none: 0/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_x86_64');
 $get->element_exists_not('#flavor_DVD_arch_i586');
 $get->element_exists_not('#flavor_GNOME-Live_arch_i686');
 
-# Check some results
-$get->text_is('#res_DVD_x86_64_doc span a' => '7/0/2');
+# Check some results (and it's overview_xxx classes)
+$get->text_is('#res_DVD_x86_64_doc span.overview_failed a' => '7/0/2');
 $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
 $get->element_exists_not('#res_DVD_x86_64_kde');

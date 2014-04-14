@@ -299,7 +299,7 @@ sub overview {
     my @configs = ();
     my %archs   = ();
     my %results = ();
-    my $aggregated = {'ok' => 0, 'fail' => 0, 'unk' => 0, 'na' => 0};
+    my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, unknown => 0};
 
     for my $job ( @{ Scheduler::list_jobs(%search_args) || [] } ) {
         my $testname = $job->{settings}->{'NAME'};
@@ -311,9 +311,9 @@ sub overview {
         if ( $job->{state} eq 'done' ) {
             my $r            = test_result($testname);
             my $result_stats = test_result_stats($r);
-            my $overall      = "fail";
-            if ( ( $r->{overall} || '' ) eq "ok" ) {
-                $overall = ( $r->{dents} ) ? "unknown" : "ok";
+            my $overall      = $job->{result};
+            if ( $job->{result} eq "passed" && $r->{dents}) {
+                $overall = "unknown";
             }
             $result = {
                 ok      => $result_stats->{ok}   || 0,
@@ -332,7 +332,7 @@ sub overview {
                 testname => $testname,
                 jobid    => $job->{id},
             };
-            $aggregated->{'na'}++;
+            $aggregated->{'none'}++;
         }
         else {
             $result = {
@@ -341,7 +341,7 @@ sub overview {
                 jobid    => $job->{id},
                 priority => $job->{priority},
             };
-            $aggregated->{'na'}++;
+            $aggregated->{'none'}++;
         }
 
         # Populate @configs and %archs
