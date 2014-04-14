@@ -31,6 +31,8 @@ use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
 use openqa ();
 
+use OpenQA::Variables;
+
 use Carp;
 
 our $debug;
@@ -223,43 +225,53 @@ create a job
 sub job_create {
     my %settings = @_;
 
-    for my $i (qw/DISTRI VERSION ISO DESKTOP TEST/) {
+    if (my $error = OpenQA::Variables->new()->check(%settings)) {
+        die $error;
+    }
+
+    for my $i (qw/DISTRI VERSION DESKTOP TEST/) {
         die "need one $i key\n" unless exists $settings{$i};
     }
 
-    for my $i (qw/ISO NAME/) {
-        next unless $settings{$i};
-        die "invalid character in $i\n" if $settings{$i} =~ /\//; # TODO: use whitelist?
+    my @assets;
+    for my $k (keys %settings) {
+        if ($k eq 'ISO') {
+            push @assets, { type => 'iso', name => $settings{$k}};
+        }
+        if ($k =~ /^HDD_\d$/) {
+            push @assets, { type => 'hdd', name => $settings{$k}};
+        }
+        if ($k =~ /^REPO_\d$/) {
+            push @assets, { type => 'repo', name => $settings{$k}};
+        }
     }
 
-    unless (-e sprintf("%s/%s", $openqa::isodir, $settings{ISO})) {
-        die "ISO does not exist\n";
+    die "job has no assets\n" unless @assets;
+
+    for my $a (@assets) {
+        die "invalid character in $a->{name}\n" if $a->{name} =~ /\//; # TODO: use whitelist?
+
+        unless (-e sprintf("%s/%s", $openqa::assetdir, $a->{type}, $a->{name})) {
+            die "$a->{name} does not exist\n";
+        }
     }
 
-    my @settings = ();
-    while(my ($k, $v) = each %settings) {
-        push @settings, { key => $k, value => $v };
-    }
-
-    my %new_job_args = (
-        settings => \@settings,
-        test => $settings{'TEST'},
-        # make sure the iso is registered as asset
-        jobs_assets => [
-            {
-                asset => {
-                    type => 'iso',
-                    name => $settings{'ISO'},
-                },
-            },
-        ],
-    );
+    my %new_job_args = (test => $settings{'TEST'},);
 
     if ($settings{NAME}) {
         my $njobs = schema->resultset("Jobs")->search({ slug => $settings{'NAME'} })->count;
         return 0 if $njobs;
 
         $new_job_args{slug} = $settings{'NAME'};
+        delete $settings{NAME};
+    }
+
+    while(my ($k, $v) = each %settings) {
+        push @{$new_job_args{settings}}, { key => $k, value => $v };
+    }
+
+    for my $a (@assets) {
+        push @{$new_job_args{jobs_assets}}, { asset => $a };
     }
 
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
