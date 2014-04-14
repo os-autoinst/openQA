@@ -38,7 +38,7 @@ $t->get_ok('/tests/99937/../99938/images/logpackages-1.png')->status_is(404);
 $t->get_ok('/tests/99938/images/thumb/logpackages-1.png')
     ->status_is(200)
     ->content_type_is('image/png')
-    ->header_like('Content-Length' => qr/^65..$/); # Resized image should be around 6500 bytes
+    ->header_is('Content-Length' => '6769');
 
 $t->get_ok('/tests/99946/images/logpackages-1.png')
     ->header_is('Content-Length' => '211'); # Not the same logpackages-1.png

@@ -1,17 +1,14 @@
 language: perl
-# We do not specify a perl version for travis, as we're using the
-# perl deb from ubuntu/trusty
+perl:
+  - "5.18"
 before_install:
   - echo "deb http://us.archive.ubuntu.com/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/trusty.list
   - sudo apt-get update
 install:
   - cpanm -nq Perl::Tidy
   - ./script/tidy --check
-  - perlbrew switch-off
-  # the libfoo-perl stuff is stated here to pull in some deps (apt is faster than cpanm)
-  - sudo apt-get install cpanminus libgmp3-dev perlmagick libwww-perl libindirect-perl libstrictures-perl libmldbm-perl libaliased-perl
-  - sudo cpanm -nq `grep -v Image::Magick DEPENDENCIES.txt`
-  - sudo cpanm -nq "Devel::Cover" "Devel::Cover::Report::Coveralls"
+  - sudo apt-get install libgmp3-dev
+  - cpanm -nq `cat DEPENDENCIES.txt` "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
   # - cover -test
   - PERL5OPT=-MDevel::Cover MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log prove -r

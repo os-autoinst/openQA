@@ -30,7 +30,6 @@ FindBin
 Getopt::Long
 IO::Socket::INET6
 IO::Socket::SSL
-Image::Magick
 JSON
 LWP::UserAgent
 List::MoreUtils

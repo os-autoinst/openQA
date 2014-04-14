@@ -20,7 +20,6 @@ use warnings;
 package OpenQA::File;
 use Mojo::Base 'Mojolicious::Controller';
 BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
-use Image::Magick;
 use openqa;
 use File::Basename;
 
@@ -100,7 +99,7 @@ sub serve_static_($$) {
     my $asset = shift;
 
     $self->app->log->debug("looking for " . pp($asset) . " in " . pp($self->{static}->paths));
-    unless (ref($asset)) {
+    if ($asset && !ref($asset)) {
         # TODO: check for plain file name
         $asset = $self->{static}->file($asset);
     }
@@ -136,31 +135,7 @@ sub test_thumbnail {
     return $self->render_not_found unless $self->_set_test;
 
     my $asset = $self->{static}->file(".thumbs/" . $self->param('filename'));
-    return $self->serve_static_($asset) if ($asset);
-
-    # old way. TODO: remove soonish (as soon as all existant tests are created with recent os-autoinst)
-    $asset = $self->{static}->file($self->param('filename'));
-    return $self->render_not_found unless $asset;
-
-    my $mem = Mojo::Asset::Memory->new;
-
-    my $cachename = "cache_" . $asset->path;
-    if(!$self->app->chi('ThumbCache')->is_valid($cachename)) {
-        my $p = new Image::Magick(depth=>8);
-        $p->Read($asset->path, depth=>8);
-        $p->Resize( geometry => "120x120" ); # make thumbnail
-        $p = $p->ImageToBlob(magick=>'PNG', depth=>8, quality=>80);
-        $mem->add_chunk($p);
-        $self->app->chi('ThumbCache')->set($cachename, $p, { expires_in => '30 min' });
-    }
-    else {
-        my $p2 = $self->app->chi('ThumbCache')->get($cachename);
-        $mem->add_chunk($p2);
-    }
-
-    $self->res->headers->content_type("image/png");
-
-    return $self->serve_static_($mem);
+    return $self->serve_static_($asset);
 }
 
 1;
