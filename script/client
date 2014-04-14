@@ -94,7 +94,7 @@ for my $arg (@ARGV) {
     if ($arg =~ /^(?:get|post|delete|put)$/i) {
         $method = lc $arg;
     }
-    elsif ($arg =~ /^[[:alnum:]]+=.+/) {
+    elsif ($arg =~ /^[[:alnum:]_]+=.+/) {
         push @params, $arg;
     }
     else {
