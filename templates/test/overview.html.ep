@@ -6,7 +6,7 @@
 <div class="grid_16 box box-shadow omega">
 	<h2>Test result overview</h2>
 	<p>This page displays the current results for <b><%= $distri %> <%= $version %> build <%= $build %></b>, which overall summary is
-    <b>ok: <%= $aggregated->{'ok'} %>, fail: <%= $aggregated->{'fail'} %>, unknown: <%= $aggregated->{'unk'} %>, n/a: <%= $aggregated->{'na'} %></b>
+    <b>passed: <%= $aggregated->{passed} %>, failed: <%= $aggregated->{failed} %>, unknown: <%= $aggregated->{unknown} %>, incomplete: <%= $aggregated->{incomplete} %>, none: <%= $aggregated->{none} %></b>
     </p>
 	<p />
 	<table id="results" class="table-autosort table-autofilter table-autostripe">
@@ -39,7 +39,7 @@
 								  my $state = $res->{state};
 								  my $jobid = $res->{jobid};
 								  my $css = "";
-								  $css = "overview".$res->{overall} if ($state eq "done");
+								  $css = "overview_".$res->{overall} if ($state eq "done");
 								%>
 
 								<%# Visible information %>
