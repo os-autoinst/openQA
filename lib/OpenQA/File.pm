@@ -107,12 +107,16 @@ sub serve_static_($$) {
 
     if (ref($asset) eq "Mojo::Asset::File") {
         my $filename = basename($asset->path);
-        $self->res->headers->content_disposition("attatchment; filename=$filename;");
         # guess content type from extension
-        if ($filename =~ m/\.([^\.]+)/) {
-            my $filetype = $self->app->types->type($1);
+        if ($filename =~ m/\.([^\.]+)$/) {
+            my $ext = $1;
+            my $filetype = $self->app->types->type($ext);
             if ($filetype) {
                 $self->res->headers->content_type($filetype);
+            }
+            if ($ext eq 'iso') {
+                # force saveAs
+                $self->res->headers->content_disposition("attatchment; filename=$filename;");
             }
         }
     }
