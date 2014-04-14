@@ -10,7 +10,7 @@
                 % if($refimg->{'screenshot'}) {
                     % my $scr = $refimg->{'screenshot'};
                     %= link_to url_for('step', stepid => $img_count) => (class => 'no_hover') => begin
-                        %= image url_for('test_thumbnail', 'testid' => $testid, 'filename' => $scr), width => $ref_width, height => $ref_height, alt => $scr, class => "resborder\L$refimg->{'result'}", title => $scr
+                        %= image url_for('test_thumbnail', 'testid' => $testid, 'filename' => $scr), width => $ref_width, height => $ref_height, alt => $scr, class => "resborder_\L$refimg->{'result'}", title => $scr
                     % end
                 % } elsif ($refimg->{'audio'}) {
                     %= link_to url_for('step', stepid => $img_count) => (class => 'no_hover') => begin

@@ -163,7 +163,7 @@
 				<td class="links" style="width: 60%;">
                                   % for my $screenshot (@{$module->{'screenshots'}}) {
                                      %= link_to url_for('step', moduleid => $module->{'name'}, stepid => $screenshot->{'num'}) => (class => 'no_hover') => begin
-                                        %= image url_for('test_thumbnail', 'testid' => $testid, 'filename' => $screenshot->{'name'}), width => $ref_width, height => $ref_height, alt => $screenshot->{'name'}, class => "resborder\L$screenshot->{'result'}"
+                                        %= image url_for('test_thumbnail', 'testid' => $testid, 'filename' => $screenshot->{'name'}), width => $ref_width, height => $ref_height, alt => $screenshot->{'name'}, class => "resborder_\L$screenshot->{'result'}"
                                      % end
                                 % }
 				</td>
