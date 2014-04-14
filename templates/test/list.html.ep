@@ -133,11 +133,8 @@
                 <td class="distri"><%= "$distri-$version" %></td>
                 <td class="type"><%= $job->{settings}->{'FLAVOR'} %></td>
                 <td class="arch"><%= $job->{settings}->{'ARCH'} %></td>
-                <td class="build">
-                    <span class="textlink">
-                        % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
-                        <%= link_to $href => begin %><%= $build %><% end %>
-                    </span>
+                % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
+                <td class="build"><span class="textlink"><a href="<%= $href %>"><%= $build %></a></span></td>
                 </td>
                 <td class="extra"><span class=""><%= $job->{'test'} %>@<%= $job->{'machine'} %></span></td>
                 <td class="cancel" colspan="4" style="padding: 3px 4px; font-style: italic;">
