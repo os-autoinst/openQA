@@ -107,8 +107,9 @@ use OpenQA::API::V1::Client;
 my $max_job_time = 2*60*60; # 2h
 my $openqa_base = "/var/lib/openqa";
 my $pooldir;
-my $isodir = "$openqa_base/factory/iso";
-my $hdddir = "$openqa_base/hdd";
+my $assetdir = "$openqa_base/factory";
+my $isodir = "$assetdir/iso";
+my $hdddir = "$assetdir/hdd";
 my $results_dir = "$openqa_base/testresults";
 my $logupload_dir = "$openqa_base/logupload";
 
@@ -234,8 +235,6 @@ sub lockit(){
 
 sub workit($){
     my $job = shift;
-    my $iso = $job->{'settings'}->{'ISO'};
-    return undef unless $iso;
 
     # XXX: this should come from the worker table. Only included
     # here for convenience when looking at the pool of
@@ -252,12 +251,14 @@ sub workit($){
         close $fh;
     }
 
-    $iso = join('/', $isodir, $iso);
-    unless (-e $iso) {
-        warn "$iso does not exist!\n";
-        return undef;
+    if (my $iso = $job->{'settings'}->{'ISO'}) {
+        $iso = join('/', $isodir, $iso);
+        unless (-e $iso) {
+            warn "$iso does not exist!\n";
+            return undef;
+        }
+        $job->{'settings'}->{'ISO'} = $iso;
     }
-    $job->{'settings'}->{'ISO'} = $iso;
 
     my $nd = $job->{'settings'}->{'NUMDISKS'} || 2;
     for my $i (1..$nd) {
@@ -286,7 +287,7 @@ sub workit($){
         }
         close $e;
         printf "$$: WORKING %d\n", $job->{'id'};
-        exec($isotovideo, $iso);
+        exec($isotovideo);
         die "exec failed: $!\n";
     }
     else {
