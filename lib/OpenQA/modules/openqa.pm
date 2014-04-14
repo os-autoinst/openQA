@@ -433,6 +433,7 @@ sub needle_info($$$) {
     my $needle = decode_json(<JF>) || return undef;
     close(JF);
 
+    $needle->{'needledir'} = "$perldir/$needledir";
     $needle->{'image'} = "$perldir/$needledir/$name.png";
     $needle->{'json'} = "$perldir/$needledir/$name.json";
     $needle->{'imageurl'} = "/$perlurl/$needledir/$name.png";
