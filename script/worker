@@ -262,14 +262,14 @@ sub workit($){
 
     my $nd = $job->{'settings'}->{'NUMDISKS'} || 2;
     for my $i (1..$nd) {
-        my $hdd = $job->{'settings'}->{'HDD_$i'} || undef;
+        my $hdd = $job->{'settings'}->{"HDD_$i"} || undef;
         if ($hdd) {
             $hdd = join('/', $hdddir, $hdd);
             unless (-e $hdd) {
                 warn "$hdd does not exist!\n";
                 return undef;
             }
-            $job->{'settings'}->{'HDD_$i'} = $hdd;
+            $job->{'settings'}->{"HDD_$i"} = $hdd;
         }
     }
 
