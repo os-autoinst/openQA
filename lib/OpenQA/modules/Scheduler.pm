@@ -322,14 +322,12 @@ sub _job_get($) {
     return $job_hashref;
 }
 
-sub job_get_assets
-{
+sub job_get_assets {
     my $id = shift;
     my $ret = [];
 
     my $rc = schema->resultset("Jobs")->find({id => $id})->assets();
-    while (my $a = $rc->next())
-    {
+    while (my $a = $rc->next()) {
         push @$ret, { id => $a->id, type => $a->type, name => $a->name };
     }
 
@@ -825,10 +823,12 @@ sub asset_get {
 
     if (defined $args{id}) {
         $cond{id} = $args{id};
-    } elsif (defined $args{type} && defined $args{name}) {
+    }
+    elsif (defined $args{type} && defined $args{name}) {
         $cond{name} = $args{name};
         $cond{type} = $args{type};
-    } else {
+    }
+    else {
         return undef;
     }
 

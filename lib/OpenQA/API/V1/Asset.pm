@@ -32,7 +32,8 @@ sub register {
     my $json = {};
     if ($rs) {
         $json->{id} = $rs->id;
-    } else {
+    }
+    else {
         $status = 400;
     }
     $self->render(json => $json, status => $status);
@@ -82,7 +83,8 @@ sub delete {
     my $json = {};
     if ($rs) {
         $json->{count} = int($rs);
-    } else {
+    }
+    else {
         $status = 400;
     }
     $self->render(json => $json, status => $status);
