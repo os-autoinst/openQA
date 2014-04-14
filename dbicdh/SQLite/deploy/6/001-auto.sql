@@ -8,7 +8,7 @@ BEGIN TRANSACTION;
 --
 -- Table: assets
 --
-DROP TABLE assets;
+DROP TABLE IF EXISTS assets;
 CREATE TABLE assets (
   id INTEGER PRIMARY KEY NOT NULL,
   type text NOT NULL,
@@ -20,7 +20,7 @@ CREATE UNIQUE INDEX assets_type_name ON assets (type, name);
 --
 -- Table: job_results
 --
-DROP TABLE job_results;
+DROP TABLE IF EXISTS job_results;
 CREATE TABLE job_results (
   id INTEGER PRIMARY KEY NOT NULL,
   name text NOT NULL
@@ -28,7 +28,7 @@ CREATE TABLE job_results (
 --
 -- Table: job_settings
 --
-DROP TABLE job_settings;
+DROP TABLE IF EXISTS job_settings;
 CREATE TABLE job_settings (
   id INTEGER PRIMARY KEY NOT NULL,
   key text NOT NULL,
@@ -42,7 +42,7 @@ CREATE INDEX job_settings_idx_job_id ON job_settings (job_id);
 --
 -- Table: job_states
 --
-DROP TABLE job_states;
+DROP TABLE IF EXISTS job_states;
 CREATE TABLE job_states (
   id INTEGER PRIMARY KEY NOT NULL,
   name text NOT NULL
@@ -50,7 +50,7 @@ CREATE TABLE job_states (
 --
 -- Table: machines
 --
-DROP TABLE machines;
+DROP TABLE IF EXISTS machines;
 CREATE TABLE machines (
   id INTEGER PRIMARY KEY NOT NULL,
   name text NOT NULL,
@@ -63,7 +63,7 @@ CREATE UNIQUE INDEX machines_name ON machines (name);
 --
 -- Table: products
 --
-DROP TABLE products;
+DROP TABLE IF EXISTS products;
 CREATE TABLE products (
   id INTEGER PRIMARY KEY NOT NULL,
   name text NOT NULL,
@@ -79,7 +79,7 @@ CREATE UNIQUE INDEX products_name ON products (name);
 --
 -- Table: secrets
 --
-DROP TABLE secrets;
+DROP TABLE IF EXISTS secrets;
 CREATE TABLE secrets (
   id INTEGER PRIMARY KEY NOT NULL,
   secret text NOT NULL,
@@ -90,7 +90,7 @@ CREATE UNIQUE INDEX constraint_name ON secrets (secret);
 --
 -- Table: test_suites
 --
-DROP TABLE test_suites;
+DROP TABLE IF EXISTS test_suites;
 CREATE TABLE test_suites (
   id INTEGER PRIMARY KEY NOT NULL,
   name text NOT NULL,
@@ -103,7 +103,7 @@ CREATE UNIQUE INDEX test_suites_name ON test_suites (name);
 --
 -- Table: users
 --
-DROP TABLE users;
+DROP TABLE IF EXISTS users;
 CREATE TABLE users (
   id INTEGER PRIMARY KEY NOT NULL,
   openid text NOT NULL,
@@ -116,7 +116,7 @@ CREATE UNIQUE INDEX constraint_name02 ON users (openid);
 --
 -- Table: workers
 --
-DROP TABLE workers;
+DROP TABLE IF EXISTS workers;
 CREATE TABLE workers (
   id INTEGER PRIMARY KEY NOT NULL,
   host text NOT NULL,
@@ -129,7 +129,7 @@ CREATE UNIQUE INDEX constraint_name03 ON workers (host, instance);
 --
 -- Table: api_keys
 --
-DROP TABLE api_keys;
+DROP TABLE IF EXISTS api_keys;
 CREATE TABLE api_keys (
   id INTEGER PRIMARY KEY NOT NULL,
   key text NOT NULL,
@@ -145,7 +145,7 @@ CREATE UNIQUE INDEX constraint_name04 ON api_keys (key);
 --
 -- Table: commands
 --
-DROP TABLE commands;
+DROP TABLE IF EXISTS commands;
 CREATE TABLE commands (
   id INTEGER PRIMARY KEY NOT NULL,
   command text NOT NULL,
@@ -159,7 +159,7 @@ CREATE INDEX commands_idx_worker_id ON commands (worker_id);
 --
 -- Table: job_templates
 --
-DROP TABLE job_templates;
+DROP TABLE IF EXISTS job_templates;
 CREATE TABLE job_templates (
   id INTEGER PRIMARY KEY NOT NULL,
   product_id integer NOT NULL,
@@ -178,7 +178,7 @@ CREATE UNIQUE INDEX job_templates_product_id_machine_id_test_suite_id ON job_tem
 --
 -- Table: jobs
 --
-DROP TABLE jobs;
+DROP TABLE IF EXISTS jobs;
 CREATE TABLE jobs (
   id INTEGER PRIMARY KEY NOT NULL,
   slug text,
@@ -206,7 +206,7 @@ CREATE UNIQUE INDEX constraint_name05 ON jobs (slug);
 --
 -- Table: jobs_assets
 --
-DROP TABLE jobs_assets;
+DROP TABLE IF EXISTS jobs_assets;
 CREATE TABLE jobs_assets (
   job_id integer NOT NULL,
   asset_id integer NOT NULL,
