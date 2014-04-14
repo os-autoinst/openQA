@@ -34,14 +34,15 @@ sub needle {
     my $name = $self->param('name');
     my $distri = $self->param('distri');
     my $version = $self->param('version') || '';
-    if ($self->stash('format') eq 'json') {
-        my $fullname = openqa::needle_info($name, $distri, $version)->{'json'};
-        return $self->static->serve($self, $fullname);
-    }
-    else {
-        my $info = openqa::needle_info($name, $distri, $version);
-        return $self->static->serve($self, $info->{'image'});
-    }
+    my $needle = openqa::needle_info($name, $distri, $version);
+    return $self->render_not_found unless $needle;
+
+    $self->{static} = Mojolicious::Static->new;
+    # needledir is an absolute path from the needle database
+    push @{$self->{static}->paths}, $needle->{needledir};
+
+    # name is an URL parameter and can't contain slashes, so it should be safe
+    return $self->serve_static_($name . "." . $self->stash('format'));
 }
 
 sub _set_test($) {
@@ -98,10 +99,13 @@ sub serve_static_($$) {
 
     my $asset = shift;
 
+    $self->app->log->debug("looking for " . pp($asset) . " in " . pp($self->{static}->paths));
     unless (ref($asset)) {
         # TODO: check for plain file name
         $asset = $self->{static}->file($asset);
     }
+
+    $self->app->log->debug("found " . pp($asset));
 
     return $self->render_not_found unless $asset;
 
