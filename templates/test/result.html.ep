@@ -44,6 +44,7 @@
                 <div style="text-align: center;">
                         <% for my $a (@$assets) { %>
                         %= link_to "Download ".$a->{type} => url_for('test_asset', 'testid' => $testid, assetid => $a->{'id'})
+                        <br>
                         <% } %>
                 </div>
         </div>
