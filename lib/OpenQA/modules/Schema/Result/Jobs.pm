@@ -207,7 +207,8 @@ sub duplicate{
             {
                 test => $self->test,
                 settings => \@new_settings,
-                priority => $args->{prio} || $self->priority
+                priority => $args->{prio} || $self->priority,
+                jobs_assets => [ map { { asset => { id => $_->asset_id } } } $self->jobs_assets->all() ],
             }
         );
         # Perform optimistic locking on clone_id. If the job is not longer there
