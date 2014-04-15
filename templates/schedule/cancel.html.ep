@@ -10,7 +10,7 @@
     %= stylesheet '/stylesheets/openqa.css'
     <% if ($back) { %>
         <script type='text/javascript'>
-            window.location = "<%= $back %>";
+            window.location = "<%= $back %>".replace(/&amp;/g, '&');
         </script>
     <% } %>
   </head>
