@@ -68,10 +68,11 @@ sub test_file {
 sub test_asset {
     my $self = shift;
 
-    return $self->render_not_found unless $self->_set_test;
+    my $asset = Scheduler::asset_get(id => $self->param('assetid'))->single();
 
-    warn "TODO";
-    return $self->render_not_found;
+    return $self->render_not_found unless $asset;
+
+    return $self->redirect_to('/assets/'.$asset->type.'/'.$asset->name);
 }
 
 
