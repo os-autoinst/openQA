@@ -40,7 +40,7 @@ sub create {
     # XXX: take some attributes from the first job to guess what old jobs to
     # cancel. We should have distri object that decides which attributes are
     # relevant here.
-    if ($jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
+    if ($jobs && $jobs->[0] && $jobs->[0]->{BUILD} && $jobs->[0]->{FLAVOR} ne 'Staging-DVD') {
         my %cond;
         for my $k (qw/DISTRI VERSION FLAVOR ARCH/) {
             next unless $jobs->[0]->{$k};
