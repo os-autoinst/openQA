@@ -25,9 +25,9 @@ use openqa ();
 sub _regexp_parts{
     my $distri = '(openSUSE)';
     my $version = '(\d+(?:\.\d)?|Factory|FTT)';
-    my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-)?DVD(?:-BiArch|-OpenSourcePress)?|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO|staging_[^-]+)';
+    my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-|Staging-)?DVD(?:-BiArch|-OpenSourcePress)?|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO)';
     my $arch = '(i[356]86(?:-x86_64)?|x86_64|i586-x86_64)';
-    my $build = '(?:Build|Snapshot)([0-9.]+)';
+    my $build = '(?:Build|Snapshot)([^-]+)';
 
     return ($distri, $version, $flavor, $arch, $build);
 }

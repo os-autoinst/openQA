@@ -120,12 +120,12 @@ my @testdata = (
     },
 
     {
-        iso => 'openSUSE-Factory-staging_core-x86_64-Build0047.0001-Media.iso',
+        iso => 'openSUSE-Factory-Staging-DVD-x86_64-BuildA.59.1-Media.iso',
         params => {
             arch    => "x86_64",
-            build   => "0047.0001",
+            build   => "A.59.1",
             distri  => "openSUSE",
-            flavor  => "staging_core",
+            flavor  => "Staging-DVD",
             version => "Factory",
         },
     },
