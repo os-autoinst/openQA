@@ -65,17 +65,22 @@ sub la {
 
 my $ret;
 
-my $iso1 = 'openSUSE-13.1-DVD-i586-Build0091-Media.iso';
-my $iso2 = 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso';
+my $iso1 = 'test-dvd-1.iso';
+my $iso2 = 'test-dvd-2.iso';
+
+for my $i ($iso1, $iso2) {
+    ok(open(FH, '>', "t/data/openqa/factory/iso/$i"), "touch $i");
+    close FH;
+}
 
 my $listing = [
     {
-        id => 1,
+        id => 5,
         name => $iso1,
         type => "iso",
     },
     {
-        id => 2,
+        id => 6,
         name => $iso2,
         type => "iso",
     },
@@ -85,18 +90,18 @@ la;
 
 # register an iso
 $ret = $t->post_ok('/api/v1/assets', form => { type => 'iso', name => $iso1 })->status_is(200);
-is($ret->tx->res->json->{id}, 1, "asset has id 1");
+is($ret->tx->res->json->{id}, $listing->[0]->{id}, "asset has correct id");
 
 # register same iso again yields same id
 $ret = $t->post_ok('/api/v1/assets', form => { type => 'iso', name => $iso1 })->status_is(200);
-is($ret->tx->res->json->{id}, 1, "asset still has id 1, no duplicate");
+is($ret->tx->res->json->{id}, $listing->[0]->{id}, "asset still has correct id, no duplicate");
 
 la;
 
 # check data
 $ret = $t->get_ok('/api/v1/assets/iso/'.$iso1)->status_is(200);
 is_deeply(nots($ret->tx->res->json), $listing->[0], "asset correctly entered by name");
-$ret = $t->get_ok('/api/v1/assets/1')->status_is(200);
+$ret = $t->get_ok('/api/v1/assets/'.$listing->[0]->{id})->status_is(200);
 is_deeply(nots($ret->tx->res->json), $listing->[0], "asset correctly entered by id");
 
 # check 404 for non existing isos
@@ -104,36 +109,36 @@ $ret = $t->get_ok('/api/v1/assets/iso/'.$iso2)->status_is(404);
 
 # register a second one
 $ret = $t->post_ok('/api/v1/assets', form => { type => 'iso', name => $iso2 })->status_is(200);
-is($ret->tx->res->json->{id}, 2, "asset has id 2");
+is($ret->tx->res->json->{id}, $listing->[1]->{id}, "asset has corect id");
 
 # check data
-$ret = $t->get_ok('/api/v1/assets/2')->status_is(200);
+$ret = $t->get_ok('/api/v1/assets/'.$listing->[1]->{id})->status_is(200);
 is_deeply(nots($ret->tx->res->json), $listing->[1], "asset correctly entered by id");
 
 # check listing
 $ret = $t->get_ok('/api/v1/assets')->status_is(200);
-is_deeply(nots($ret->tx->res->json->{assets}), $listing, "listing ok");
+is_deeply(nots($ret->tx->res->json->{assets}->[4]), $listing->[0], "listing ok");
 
 la;
 
 # test delete operation
-$ret = $t->delete_ok('/api/v1/assets/1')->status_is(200);
+$ret = $t->delete_ok('/api/v1/assets/'.$listing->[0]->{id})->status_is(200);
 is($ret->tx->res->json->{count}, 1, "one asset deleted");
 
 # verify it's really gone
-$ret = $t->get_ok('/api/v1/assets/1')->status_is(404);
+$ret = $t->get_ok('/api/v1/assets/'.$listing->[0]->{id})->status_is(404);
 # but two must be still there
-$ret = $t->get_ok('/api/v1/assets/2')->status_is(200);
+$ret = $t->get_ok('/api/v1/assets/'.$listing->[1]->{id})->status_is(200);
 
 # register it again
 $ret = $t->post_ok('/api/v1/assets', form => { type => 'iso', name => $iso1 })->status_is(200);
-is($ret->tx->res->json->{id}, 3, "asset has id 3");
+is($ret->tx->res->json->{id}, $listing->[1]->{id}+1, "asset has next id");
 
 # delete by name
 $ret = $t->delete_ok('/api/v1/assets/iso/'.$iso2)->status_is(200);
 is($ret->tx->res->json->{count}, 1, "one asset deleted");
 # but three must be still there
-$ret = $t->get_ok('/api/v1/assets/3')->status_is(200);
+$ret = $t->get_ok('/api/v1/assets/'.($listing->[1]->{id}+1))->status_is(200);
 
 la;
 
@@ -142,5 +147,10 @@ $ret = $t->post_ok('/api/v1/assets', form => { type => 'foo', name => $iso1 })->
 
 # try to register non existing asset
 $ret = $t->post_ok('/api/v1/assets', form => { type => 'iso', name => 'foo.iso' })->status_is(400);
+
+
+for my $i ($iso1, $iso2) {
+    ok(unlink("t/data/openqa/factory/iso/$i"), "rm $i");
+}
 
 done_testing();

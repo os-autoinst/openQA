@@ -43,7 +43,7 @@
                 <div class="box-header aligncenter">Assets</div>
                 <div style="text-align: center;">
                         <% for my $a (@$assets) { %>
-                        %= link_to "Download ".$a->{type} => url_for('test_asset', 'testid' => $testid, assetid => $a->{'id'})
+                        %= link_to "Download ".$a->{type} => url_for('test_asset_id', 'testid' => $testid, assetid => $a->{'id'}), id => "asset_".$a->{id}
                         <br>
                         <% } %>
                 </div>

@@ -68,11 +68,27 @@ sub test_file {
 sub test_asset {
     my $self = shift;
 
-    my $asset = Scheduler::asset_get(id => $self->param('assetid'))->single();
+    # FIXME: make sure asset belongs to the job
+
+    my $asset;
+    if ($self->param('assetid')) {
+        $asset = Scheduler::asset_get(id => $self->param('assetid'))->single();
+    } else {
+        $asset = Scheduler::asset_get(type => $self->param('assettype'), name => $self->param('assetname'))->single();
+    }
 
     return $self->render_not_found unless $asset;
 
-    return $self->redirect_to('/assets/'.$asset->type.'/'.$asset->name);
+    my $path = '/assets/'.$asset->type.'/'.$asset->name;
+    if ($self->param('subpath')) {
+        $path .= '/'.$self->param('subpath');
+        # better safe than sorry. Mojo seems to canonicalize the
+        # urls for us already so this is actually not needed
+        return $self->render_exception("invalid character in path") if ($path =~ /\/\.\./ || $path =~ /\.\.\//);
+    }
+
+    $self->app->log->debug("redirect to $path");
+    return $self->redirect_to($path);
 }
 
 
