@@ -43,6 +43,7 @@ has variables => sub {
           HDDSIZEGB
           HDDVERSION
           HDD_1
+          HDD_2
           INSTALLONLY
           ISO
           ISO_MAXSIZE
@@ -62,6 +63,8 @@ has variables => sub {
           QEMUVGA
           RAIDLEVEL
           REBOOTAFTERINSTALL
+          REPO_1
+          REPO_2
           RESCUECD
           SCREENSHOTINTERVAL
           SMP
