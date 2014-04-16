@@ -34,7 +34,7 @@ following command:
 [source,sh]
 --------------------------------------------------------------------------------
 cd /usr/share/openqa
-./script/load_fixture lib/OpenQA/modules/openqa/distri/opensuse-fixtures.pl
+./script/load_dbdata ./lib/OpenQA/modules/openqa/distri/opensuse.pm
 --------------------------------------------------------------------------------
 
 This will load some default settings that were used at some point of time in
@@ -54,8 +54,12 @@ following commands:
          iso=openSUSE-Factory-NET-x86_64-Build0053-Media.iso tests=minimalx
 --------------------------------------------------------------------------------
 
+If your openQA is not running on port 80 on 'localhost', you can add option
++--host=http://otherhost:9526+ to specify different port or host.
+
 WARNING: Using only iso name in 'client' command and saving it in
-+/var/lib/openqa/factory/iso+ is recommended as is using Factory iso. To use
-different iso, you would need to to make sure it is recognizable by openQA. See
-how naming is being parsed in +lib/OpenQA/modules/openqa/distri/opensuse.pm+
++/var/lib/openqa/factory/iso+ is recommended as is using Factory iso. ISOs are
+not uploaded from the path that you would specify. To use different iso, you
+would need to to make sure it is recognizable by openQA. See how naming is
+being parsed in +lib/OpenQA/modules/openqa/distri/opensuse.pm+
 
