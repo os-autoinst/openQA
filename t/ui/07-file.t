@@ -59,9 +59,34 @@ $t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200);
 
 $t->get_ok('/tests/99938/file/ulogs/y2logs.tar.bz2')->status_is(404);
 
-$t->get_ok('/tests/99927/iso')
+$t->get_ok('/tests/99946/iso')
     ->status_is(200)
     ->header_is('Content-Disposition' => "attatchment; filename=openSUSE-13.1-DVD-i586-Build0091-Media.iso;");
+
+# check the download links
+my $req = $t->get_ok('/tests/99946')->status_is(200);
+$req->element_exists('#result_files_box #asset_1');
+$req->text_is('#result_files_box #asset_1' => "Download iso");
+is($req->tx->res->dom->at('#result_files_box #asset_1')->{'href'}, '/tests/99946/asset/1');
+
+# downloads are currently redirects
+$req = $t->get_ok('/tests/99946/asset/1')
+    ->status_is(302)
+    ->header_like(Location => qr/http:\/\/localhost:\d+\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
+$req = $t->get_ok('/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')
+    ->status_is(302)
+    ->header_like(Location => qr/http:\/\/localhost:\d+\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
+# verify error on invalid downloads
+$req = $t->get_ok('/tests/99946/asset/iso/foobar.iso')
+    ->status_is(404);
+
+# TODO: also test repos
+
+SKIP: {
+    skip "FIXME: allow to download only assets related to a test", 1;
+
+    $req = $t->get_ok('/tests/99946/asset/2')->status_is(400);
+}
 
 #XXX this test assumes the opensuse needles are there
 SKIP: {
