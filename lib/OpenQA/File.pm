@@ -73,7 +73,8 @@ sub test_asset {
     my $asset;
     if ($self->param('assetid')) {
         $asset = Scheduler::asset_get(id => $self->param('assetid'))->single();
-    } else {
+    }
+    else {
         $asset = Scheduler::asset_get(type => $self->param('assettype'), name => $self->param('assetname'))->single();
     }
 
