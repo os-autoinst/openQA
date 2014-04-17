@@ -34,7 +34,7 @@ following command:
 [source,sh]
 --------------------------------------------------------------------------------
 cd /usr/share/openqa
-./script/load_dbdata ./lib/OpenQA/modules/openqa/distri/opensuse.pm
+./script/load_dbdata ./lib/OpenQA/modules/openqa/distri/opensuse-data.pl
 --------------------------------------------------------------------------------
 
 This will load some default settings that were used at some point of time in
