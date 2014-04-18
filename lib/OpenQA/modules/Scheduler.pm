@@ -628,11 +628,31 @@ sub _job_find_smart($$$) {
 
 sub job_duplicate {
     my %args = @_;
+    # set this clone was triggered by manually if it's not auto-clone
+    $args{dup_type_auto} = 0 unless defined $args{dup_type_auto};
 
     print STDERR "duplicating $args{jobid}\n" if $debug;
 
     my $job = schema->resultset("Jobs")->find({id => $args{jobid}});
     return undef unless $job;
+
+    if($args{dup_type_auto}) {
+        if ( int($job->retry_avbl) > 0) {
+            $args{retry_avbl} = int($job->retry_avbl)-1;
+        }
+        else {
+            print STDERR "Could not auto-duplicated! The job are auto-duplicated too many times.\nPlease restart the job manually.\n";
+            return undef;
+        }
+    }
+    else {
+        if ( int($job->retry_avbl) > 0) {
+            $args{retry_avbl} = int($job->retry_avbl);
+        }
+        else {
+            $args{retry_avbl} = 1; # set retry_avbl back to 1
+        }
+    }
 
     my $clone = $job->duplicate(\%args);
     if (defined($clone)) {

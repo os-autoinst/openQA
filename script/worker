@@ -310,18 +310,14 @@ sub _kill_worker($){
 # set job to done. if priority is less than threshold duplicate it
 # with worse priority so it can be picked up again.
 sub job_incomplete($$$){
-    my ($job, $prio_adjust, $result) = @_;
+    my ($job, $result) = @_;
     api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
-    if (!$prio_adjust || ($prio_adjust && $job->{'priority'} le 70)) {
-        my %args;
-        if ($prio_adjust) {
-            $job->{'priority'}++;
-            $args{prio} = $job->{'priority'};
-        }
-        printf "duplicating job %d, prio %d\n", $job->{'id'}, $job->{'priority'};
-        # make it less attractive so we don't get it again
-        api_call('post', 'jobs/'.$job->{'id'}.'/duplicate', \%args);
-    }
+    my %args;
+    $args{dup_type_auto} = 1;
+
+    printf "duplicating job %d\n", $job->{'id'};
+    # make it less attractive so we don't get it again
+    api_call('post', 'jobs/'.$job->{'id'}.'/duplicate', \%args);
 }
 
 # check if results.json contains an overal result. If the latter is
@@ -388,7 +384,7 @@ sub main(){
                 $keep_running = 0;
                 if ($worker) {
                     _kill_worker($worker);
-                    job_incomplete($job, 0, "worker quit");
+                    job_incomplete($job, "worker quit");
                     $aborted = 'quit';
                 }
             }
@@ -461,7 +457,7 @@ sub main(){
             if(unlink("$pooldir/backend.crashed") && $worker) {
                 print STDERR "backend crashed and need a reschedule...\n";
                 _kill_worker($worker);
-                job_incomplete($job, 1, "backend crashed");
+                job_incomplete($job, "backend crashed");
                 $aborted = 'crashed';
             }
         }
@@ -470,7 +466,7 @@ sub main(){
         if ($job && $worker_start_time && time-$worker_start_time > $max_job_time && !$aborted) {
             warn sprintf("max job time exceeded, aborting %s ...\n", $job->{'settings'}->{'NAME'});
             _kill_worker($worker);
-            job_incomplete($job, 1, "time exceeded");
+            job_incomplete($job, "time exceeded");
             $aborted = 'timeout';
         }
 
@@ -583,11 +579,11 @@ sub main(){
                     api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result});
                 }
                 else {
-                    job_incomplete($job, 1, $result);
+                    job_incomplete($job, $result);
                 }
             }
             else {
-                job_incomplete($job, 1, $result);
+                job_incomplete($job, $result);
             }
             warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
             clean_pool($job);
@@ -602,7 +598,7 @@ sub main(){
     if ($job) {
         _kill_worker($worker);
         unlink($testresults);
-        job_incomplete($job, 0, "worker quit");
+        job_incomplete($job, "worker quit");
         clean_pool($job);
     }
 }

@@ -64,6 +64,10 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable => 1
     },
+    retry_avbl => {
+        data_type => 'integer',
+        default_value => 3,
+    },
     t_started => {
         data_type => 'timestamp',
         is_nullable => 1,
@@ -209,6 +213,7 @@ sub duplicate{
                 settings => \@new_settings,
                 priority => $args->{prio} || $self->priority,
                 jobs_assets => [ map { { asset => { id => $_->asset_id } } } $self->jobs_assets->all() ],
+                retry_avbl => $args->{retry_avbl},
             }
         );
         # Perform optimistic locking on clone_id. If the job is not longer there
