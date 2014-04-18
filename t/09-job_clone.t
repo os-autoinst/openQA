@@ -30,7 +30,7 @@ OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA');
 
 my $minimalx = $t->app->db->resultset("Jobs")->find({id => 99926});
-my $clone = $minimalx->duplicate;
+my $clone = $minimalx->duplicate({retry_avbl => 3});
 
 isnt($clone->id, $minimalx->id, "is not the same job");
 is($clone->test, "minimalx", "but is the same test");
@@ -40,7 +40,7 @@ is($clone->state->name, "scheduled", "the new job is scheduled");
 
 # Second attempt
 ok($minimalx->can_be_duplicated, "looks cloneable");
-is($minimalx->duplicate, undef, "cannot clone again");
+is($minimalx->duplicate({retry_avbl => 3}), undef, "cannot clone again");
 
 # Reload minimalx from the database
 $minimalx->discard_changes;
@@ -63,10 +63,10 @@ is_deeply($m_hashed, $c_hashed, "equivalent job settings (skipping NAME)");
 
 # After reloading minimalx, it doesn't look cloneable anymore
 ok(!$minimalx->can_be_duplicated, "doesn't look cloneable after reloading");
-is($minimalx->duplicate, undef, "cannot clone after reloading");
+is($minimalx->duplicate({retry_avbl => 3}), undef, "cannot clone after reloading");
 
 # But cloning the clone should be possible
-my $second = $clone->duplicate({prio => 35});
+my $second = $clone->duplicate({prio => 35, retry_avbl => 3});
 is($second->test, "minimalx", "same test again");
 is($second->priority, 35, "with adjusted priority");
 
