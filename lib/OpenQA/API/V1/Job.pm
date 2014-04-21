@@ -138,6 +138,9 @@ sub duplicate {
     if (defined $self->param('prio')) {
         $args{prio} = int($self->param('prio'));
     }
+    if (defined $self->param('dup_type_auto')) {
+        $args{dup_type_auto} = 1;
+    }
 
     my $id = Scheduler::job_duplicate(%args);
     $self->render(json => {id => $id});

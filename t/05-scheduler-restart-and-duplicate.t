@@ -109,4 +109,25 @@ Scheduler::command_dequeue(workerid => $commands->[0]->{worker_id}, id => $comma
 $commands = Scheduler::list_commands();
 is_deeply($commands, [], "command dequeued");
 
+my $job3 = Scheduler::job_get(99928);
+is($job3->{retry_avbl}, 3, "the retry counter decreased");
+my $round1_id = Scheduler::job_duplicate((jobid => 99928, dup_type_auto => 1));
+ok(defined $round1_id, "auto-duplicate works");
+$job3 = Scheduler::job_get($round1_id);
+is($job3->{retry_avbl}, 2, "the retry counter decreased");
+my $round2_id = Scheduler::job_duplicate((jobid => $round1_id, dup_type_auto => 1));
+ok(defined $round2_id, "auto-duplicate works");
+$job3 = Scheduler::job_get($round2_id);
+is($job3->{retry_avbl}, 1, "the retry counter decreased");
+my $round3_id = Scheduler::job_duplicate((jobid => $round2_id, dup_type_auto => 1));
+ok(defined $round3_id, "auto-duplicate works");
+$job3 = Scheduler::job_get($round3_id);
+is($job3->{retry_avbl}, 0, "the retry counter decreased");
+my $round4_id = Scheduler::job_duplicate((jobid => $round3_id, dup_type_auto => 1));
+ok(!defined $round4_id, "auto-duplicate works");
+my $round5_id = Scheduler::job_duplicate(jobid => $round3_id);
+ok(defined $round5_id, "manual-duplicate works");
+$job3 = Scheduler::job_get($round5_id);
+is($job3->{retry_avbl}, 1, "the retry counter increased");
+
 done_testing;

@@ -325,7 +325,7 @@ sub _job_get($) {
     my $job = schema->resultset("Jobs")->search($search)->first;
     my $job_hashref;
     if ($job) {
-        $job_hashref = _hashref($job, qw/ id name priority result worker_id clone_id t_started t_finished test test_branch/);
+        $job_hashref = _hashref($job, qw/ id name priority result worker_id clone_id retry_avbl t_started t_finished test test_branch/);
         # XXX: use +columns in query above?
         $job_hashref->{state} = $job->state->name;
         $job_hashref->{result} = $job->result->name;
@@ -437,7 +437,7 @@ sub list_jobs {
 
     my @results = ();
     while( my $job = $jobs->next) {
-        my $j = _hashref($job, qw/ id name priority worker_id clone_id t_started t_finished test test_branch/);
+        my $j = _hashref($job, qw/ id name priority worker_id clone_id retry_avbl t_started t_finished test test_branch/);
         $j->{state} = $job->state->name;
         $j->{result} = $job->result->name;
         $j->{machine} = $job->machine;
@@ -628,11 +628,31 @@ sub _job_find_smart($$$) {
 
 sub job_duplicate {
     my %args = @_;
+    # set this clone was triggered by manually if it's not auto-clone
+    $args{dup_type_auto} = 0 unless defined $args{dup_type_auto};
 
     print STDERR "duplicating $args{jobid}\n" if $debug;
 
     my $job = schema->resultset("Jobs")->find({id => $args{jobid}});
     return undef unless $job;
+
+    if($args{dup_type_auto}) {
+        if ( int($job->retry_avbl) > 0) {
+            $args{retry_avbl} = int($job->retry_avbl)-1;
+        }
+        else {
+            print STDERR "Could not auto-duplicated! The job are auto-duplicated too many times.\nPlease restart the job manually.\n" if $debug;
+            return undef;
+        }
+    }
+    else {
+        if ( int($job->retry_avbl) > 0) {
+            $args{retry_avbl} = int($job->retry_avbl);
+        }
+        else {
+            $args{retry_avbl} = 1; # set retry_avbl back to 1
+        }
+    }
 
     my $clone = $job->duplicate(\%args);
     if (defined($clone)) {

@@ -110,6 +110,7 @@ my $job_ref = {
     state => "scheduled",
     worker_id => 0,
     clone_id => undef,
+    retry_avbl => 3,
     test => 'rainbow',
     test_branch => undef,
     };
@@ -145,6 +146,7 @@ my $jobs = [
         test => 'rainbow',
         machine => 'RainbowPC',
         clone_id => undef,
+        retry_avbl => 3,
         test_branch => undef,
     },
     {
@@ -159,6 +161,7 @@ my $jobs = [
         test => 'rainbow',
         machine => 'RainbowPC',
         clone_id => undef,
+        retry_avbl => 3,
         test_branch => undef,
     },
 ];
