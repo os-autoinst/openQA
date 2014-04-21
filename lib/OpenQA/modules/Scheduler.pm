@@ -641,7 +641,7 @@ sub job_duplicate {
             $args{retry_avbl} = int($job->retry_avbl)-1;
         }
         else {
-            print STDERR "Could not auto-duplicated! The job are auto-duplicated too many times.\nPlease restart the job manually.\n";
+            print STDERR "Could not auto-duplicated! The job are auto-duplicated too many times.\nPlease restart the job manually.\n" if $debug;
             return undef;
         }
     }
