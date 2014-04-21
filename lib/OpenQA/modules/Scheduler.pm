@@ -325,7 +325,7 @@ sub _job_get($) {
     my $job = schema->resultset("Jobs")->search($search)->first;
     my $job_hashref;
     if ($job) {
-        $job_hashref = _hashref($job, qw/ id name priority result worker_id clone_id t_started t_finished test test_branch/);
+        $job_hashref = _hashref($job, qw/ id name priority result worker_id clone_id retry_avbl t_started t_finished test test_branch/);
         # XXX: use +columns in query above?
         $job_hashref->{state} = $job->state->name;
         $job_hashref->{result} = $job->result->name;
@@ -437,7 +437,7 @@ sub list_jobs {
 
     my @results = ();
     while( my $job = $jobs->next) {
-        my $j = _hashref($job, qw/ id name priority worker_id clone_id t_started t_finished test test_branch/);
+        my $j = _hashref($job, qw/ id name priority worker_id clone_id retry_avbl t_started t_finished test test_branch/);
         $j->{state} = $job->state->name;
         $j->{result} = $job->result->name;
         $j->{machine} = $job->machine;
