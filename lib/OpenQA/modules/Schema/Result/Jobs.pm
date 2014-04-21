@@ -192,6 +192,8 @@ sub duplicate{
     # If the job already have a clone, none is created
     return undef unless $self->can_be_duplicated;
 
+    # Copied retry_avbl as default value if the input undefined
+    $args->{retry_avbl} = $self->retry_avbl unless defined $args->{retry_avbl};
     # Code to be executed in a transaction to perform optimistic locking on
     # clone_id
     my $coderef = sub {
