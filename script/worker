@@ -309,7 +309,7 @@ sub _kill_worker($){
 
 # set job to done. if priority is less than threshold duplicate it
 # with worse priority so it can be picked up again.
-sub job_incomplete($$$){
+sub job_incomplete($$){
     my ($job, $result) = @_;
     api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
     my %args;
