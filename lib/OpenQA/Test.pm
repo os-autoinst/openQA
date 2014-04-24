@@ -311,6 +311,7 @@ sub overview {
         if ( $job->{state} eq 'done' ) {
             my $r            = test_result($testname);
             my $result_stats = test_result_stats($r);
+            my $failures     = get_failed_needles($testname);
             my $overall      = $job->{result};
             if ( $job->{result} eq "passed" && $r->{dents}) {
                 $overall = "unknown";
@@ -323,6 +324,7 @@ sub overview {
                 jobid   => $job->{id},
                 state   => "done",
                 testname => $testname,
+                failures => $failures,
             };
             $aggregated->{$overall}++;
         }
