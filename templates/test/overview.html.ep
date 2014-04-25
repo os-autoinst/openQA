@@ -4,76 +4,101 @@
 %= javascript '/javascripts/wz_tooltip/wz_tooltip.js'
 
 <div class="grid_16 box box-shadow omega">
-	<h2>Test result overview</h2>
-	<p>This page displays the current results for <b><%= $distri %> <%= $version %> build <%= $build %></b>, which overall summary is
+    <h2>Test result overview</h2>
+    <p>This page displays the current results for <b><%= $distri %> <%= $version %> build <%= $build %></b>, which overall summary is
     <b>passed: <%= $aggregated->{passed} %>, failed: <%= $aggregated->{failed} %>, unknown: <%= $aggregated->{unknown} %>, incomplete: <%= $aggregated->{incomplete} %>, none: <%= $aggregated->{none} %></b>
     </p>
-	<p />
-	<table id="results" class="table-autosort table-autofilter table-autostripe">
-		<thead>
-			<tr id="flavors">
-				<th></th>
-				<% for my $type (@$types) { %>
-					<th colspan="<%= scalar(@{$archs->{$type}}) %>" id="flavor_<%= $type %>"><%= $type %></th>
-				<% } %>
-			</tr>
-			<tr id="archs">
-				<th>Test</th>
-				<% for my $type (@$types) { %>
-					<% for my $arch (@{$archs->{$type}}) { %>
-						<th id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
-					<% } %>
-				<% } %>
-			</tr>
-		</thead>
-		<tbody>
-			<% for my $config (@$configs) { %>
-				<tr>
-					<td><%= $config %></td>
-					<% for my $type (@$types) { %>
-						<% for my $arch (@{$archs->{$type}}) { %>
-							<td id="res_<%= $type %>_<%= $arch %>_<%= $config %>">
-							<% my $res = $results->{$config}{$type}{$arch}; %>
-							<% if ($res) { %>
-								<%
-								  my $state = $res->{state};
-								  my $jobid = $res->{jobid};
-								  my $css = "";
-								  $css = "overview_".$res->{overall} if ($state eq "done");
-								%>
+    <% for my $type (@$types) { %>
+        <p />
+        <table id="results" class="table-autosort table-autofilter table-autostripe">
+            <thead>
+                <tr id="flavors">
+                    <th colspan="<%= scalar(@{$archs->{$type}})*2+1 %>" id="flavor_<%= $type %>"><%= $type %></th>
+                </tr>
+                <tr id="archs">
+                    <th>Test</th>
+                    <% for my $arch (@{$archs->{$type}}) { %>
+                        <th id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
+                        <th>Failed Modules</th>
+                    <% } %>
+                </tr>
+            </thead>
+            <tbody>
+                <% for my $config (@$configs) { %>
+                <tr>
+                    <td><%= $config %></td>
+                    <% for my $arch (@{$archs->{$type}}) { %>
+                        <td id="res_<%= $type %>_<%= $arch %>_<%= $config %>">
+                        <% my $res = $results->{$config}{$type}{$arch}; %>
+                        <%
+                            my $state = $res->{state};
+                            $state = "no test" if !defined($state);
+                        %>
+                        <% my $jobid = $res->{jobid}; %>
+                        <% if ($res) { %>
+                            <%
+                                my $css = "";
+                                $css = "overview_".$res->{overall} if ($state eq "done");
+                            %>
 
-								<%# Visible information %>
-								<span class="<%=$css%>" onmouseout="UnTip()" onmouseover="TagToTip('actions_<%=$jobid%>', STICKY, 1, CLICKCLOSE, true)">
-								<% if ($state eq "done") { %>
-                                                                        <a href="<%= url_for('test', 'testid' => $jobid) %>"><%= $res->{ok} %>/<%= $res->{unknown} %>/<%= $res->{fail} %></a>
-								<% } elsif ($state eq "running") { %>
-									<a href="<%= url_for('test', 'testid' => $jobid) %>">running</a>
-								<% } elsif ($state eq "scheduled") { %>
-									sched.(<%= $res->{priority} %>)
-								<% } else { %>
-									<%= $state %>
-								<% } %>
-								</span>
+                            <%# Visible information %>
+                            <span class="<%=$css%>" onmouseout="UnTip()" onmouseover="TagToTip('actions_<%=$jobid%>', STICKY, 1, CLICKCLOSE, true)">
+                            <% if ($state eq "done") { %>
+                                <a href="<%= url_for('test', 'testid' => $jobid) %>"><%= $res->{ok} %>/<%= $res->{unknown} %>/<%= $res->{fail} %></a>
+                            <% } elsif ($state eq "running") { %>
+                                <a href="<%= url_for('test', 'testid' => $jobid) %>">running</a>
+                            <% } elsif ($state eq "scheduled") { %>
+                                sched.(<%= $res->{priority} %>)
+                            <% } else { %>
+                                <%= $state %>
+                            <% } %>
+                            </span>
 
-								<%# Actions %>
-								<span id="actions_<%=$jobid%>" style="display:none"><ul style="margin: 0px;">
-								<% if ($state eq "scheduled") { %>
-									<% my $prio = $res->{'priority'}; %>
-                                                                        <li style="margin: 0px;"><%= link_post "Raise priority" => url_for('setpriority', 'testid' => $jobid, 'priority' => $prio-10)->query('back' => 1) %></li>
-                                                                        <li style="margin: 0px;"><%= link_post "Lower priority" => url_for('setpriority', 'testid' => $jobid, 'priority' => $prio+10)->query('back' => 1) %></li>
-								<% } else { %>
-                                                                        <li style="margin: 0px;"><%= link_post "Re-schedule" => url_for('restart', 'testid' => $jobid)->query('back' => 1) %></li>
-								<% } %>
-								<% if ($state eq "scheduled" || $state eq "running") { %>
-                                                                        <li style="margin: 0px;"><%= link_post "Cancel" => url_for('cancel', 'testid' => $jobid)->query('back' => 1) %></li>
-								<% } %>
-								</ul></span>
-							<% } %>
-							</td>
-						<% } %>
-					<% } %>
-				</tr>
-			<% } %>
-		</tbody>
-	</table>
+                            <%# Actions %>
+                            <span id="actions_<%=$jobid%>" style="display:none"><ul style="margin: 0px;">
+                            <% if ($state eq "scheduled") { %>
+                                <% my $prio = $res->{'priority'}; %>
+                                <li style="margin: 0px;"><%= link_post "Raise priority" => url_for('setpriority', 'testid' => $jobid, 'priority' => $prio-10)->query('back' => 1) %></li>
+                                <li style="margin: 0px;"><%= link_post "Lower priority" => url_for('setpriority', 'testid' => $jobid, 'priority' => $prio+10)->query('back' => 1) %></li>
+                            <% } else { %>
+                                <li style="margin: 0px;"><%= link_post "Re-schedule" => url_for('restart', 'testid' => $jobid)->query('back' => 1) %></li>
+                            <% } %>
+                            <% if ($state eq "scheduled" || $state eq "running") { %>
+                                <li style="margin: 0px;"><%= link_post "Cancel" => url_for('cancel', 'testid' => $jobid)->query('back' => 1) %></li>
+                            <% } %>
+                            </ul></span>
+                        <% } %>
+                        </td>
+                        <td style="text-align: left; margin: 0px;">
+                            <% if ($state eq "done" && $res->{'failures'}) { %>
+                                <% my $failedmodules = $res->{'failures'}->{$res->{'testname'}}->{'failedmodules'}; %>
+                                <% if ($failedmodules) { %>
+                                    <% for my $failedmodule (@$failedmodules) { %>
+                                        <%# Visible information %>
+                                        <span onmouseout="UnTip()" onmouseover="TagToTip('actions_<%=$failedmodule%>', STICKY, 1, CLICKCLOSE, true)">
+                                            <a href="<%= url_for('step', 'testid' => $jobid, 'moduleid' => $failedmodule, 'stepid' => 1) %>"><%= $failedmodule %></a>
+                                        </span>
+
+                                        <%# Actions %>
+                                        <span id="actions_<%=$failedmodule%>" style="display:none"><ul style="margin: 0px;">
+                                            <% my $failedneedles = $res->{'failures'}->{$res->{'testname'}}->{'failedneedles'}; %>
+                                            <% if ($failedneedles) { %>
+                                                Failed Needles
+                                                <% for my $failedneedle (@$failedneedles) { %>
+                                                    <li style="margin: 0px;">
+                                                        <%= $failedneedle %>
+                                                    </li>
+                                                <% } %>
+                                            <% } %>
+                                        </ul></span> 
+                                    <% } %>
+                                <% } %>
+                            <% } %>
+                        </td>
+                        <% } %>
+                    </tr>
+                <% } %>
+            </tbody>
+        </table>
+    <% } %>
 </div>

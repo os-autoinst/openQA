@@ -440,12 +440,16 @@ sub needle_info($$$) {
     return $needle;
 }
 
-sub get_failed_needles(@){
-    my %args = @_;
-    my $how = $args{'ordering'}||'byname';
-    my $pattern = $args{'pattern'}||'*';
-    my $glob = "$resultdir/$pattern/results.json";
+# actually it's also return failed modules
+sub get_failed_needles($){
+    my $testname = shift;
+    return undef if !defined($testname);
+
+    my $testresdir = testresultdir($testname);
+    my $glob = "$testresdir/results.json";
     my $failures = {};
+    my @failedneedles = ();
+    my @failedmodules = ();
     for my $fn (glob $glob) {
         local $/; # enable localized slurp mode
         next unless -e $fn;
@@ -453,27 +457,18 @@ sub get_failed_needles(@){
         next unless $fd;
         my $results = decode_json(<$fd>);
         close $fn;
-        my $name = $fn;
-        $name =~ s,.*/([^/]+)/results.json$,$1,;
         for my $module (@{$results->{testmodules}}) {
             next unless $module->{result} eq 'fail';
-            next if ($args{fatal} && !$module->{flags}->{fatal});
+            push( @failedmodules, $module->{name} );
             for my $detail (@{$module->{details}}) {
                 next unless $detail->{result} eq 'fail';
                 next unless $detail->{needles};
                 for my $needle (@{$detail->{needles}}) {
-                    if ($how eq 'byname') {
-                        push @{$failures->{$name}->{$module->{name}}},
-                          {
-                            needle=> $needle->{name},
-                            error => $needle->{error}||undef
-                          };
-                    }
-                    elsif ($how eq 'byneedle') {
-                        push @{$failures->{$needle->{name}}}, $name;
-                    }
+                    push( @failedneedles, $needle->{name} );
                 }
+                $failures->{$testname}->{failedneedles} = \@failedneedles;
             }
+            $failures->{$testname}->{failedmodules} = \@failedmodules;
         }
     }
     return $failures;
