@@ -520,10 +520,10 @@
         ]
     },
     Products => {
-        name => 'oS-Staging-i686',
+        name => 'oS-Staging-x86_64',
         distri => 'opensuse',
-        flavor => 'Staging',
-        arch => 'i686',
+        flavor => 'Staging-DVD',
+        arch => 'x86_64',
         variables => 'ISO_MAXSIZE=4_700_372_992',
         job_templates => [{machine_id => 1001, test_suite_id => 1007},]
     },
