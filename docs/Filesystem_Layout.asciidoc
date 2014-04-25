@@ -1,7 +1,7 @@
 Filesystem Layout
 =================
 
-The openQA web interface can be started via +morbo script/openqa+ in
+The openQA web interface can be started via +MOJO_REVERSE_PROXY=1 morbo script/openqa+ in
 development mode.
 
 +/var/lib/openqa/+ must be owned by root and contain several sub
