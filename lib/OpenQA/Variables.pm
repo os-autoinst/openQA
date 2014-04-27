@@ -55,6 +55,7 @@ has variables => sub {
           MACHINE
           NAME
           NICEVIDEO
+          NICMODEL
           NOAUTOLOGIN
           NUMDISKS
           PROMO
