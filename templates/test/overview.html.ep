@@ -10,31 +10,29 @@
     </p>
     <% for my $type (@$types) { %>
         <p />
-        <table id="results" class="table-autosort table-autofilter table-autostripe">
-            <thead>
+        <table id="results_<%= $type %>" class="table-autosort table-autofilter table-autostripe">
+            <thread>
                 <tr id="flavors">
-                    <th colspan="<%= scalar(@{$archs->{$type}})*2+1 %>" id="flavor_<%= $type %>"><%= $type %></th>
+                    <th colspan="3" id="flavor_<%= $type %>"><%= $type %></th>
                 </tr>
-                <tr id="archs">
-                    <th>Test</th>
-                    <% for my $arch (@{$archs->{$type}}) { %>
-                        <th id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
-                        <th>Failed Modules</th>
-                    <% } %>
-                </tr>
-            </thead>
+            </thread>
             <tbody>
+            <% for my $arch (@{$archs->{$type}}) { %>
+                <tr id="archs_<%= $arch %>">
+                    <th width="20%">Test</th>
+                    <th width="10%" id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
+                    <th>Failed Modules</th>
+                </tr>
                 <% for my $config (@$configs) { %>
-                <tr>
-                    <td><%= $config %></td>
-                    <% for my $arch (@{$archs->{$type}}) { %>
+                    <% my $res = $results->{$config}{$type}{$arch}; %>
+                    <% my $jobid = $res->{jobid}; %>
+                    <%
+                        my $state = $res->{state};
+                        next if !defined($state);
+                    %>
+                    <tr>
+                        <td><%= $config %></td>
                         <td id="res_<%= $type %>_<%= $arch %>_<%= $config %>">
-                        <% my $res = $results->{$config}{$type}{$arch}; %>
-                        <%
-                            my $state = $res->{state};
-                            $state = "no test" if !defined($state);
-                        %>
-                        <% my $jobid = $res->{jobid}; %>
                         <% if ($res) { %>
                             <%
                                 my $css = "";
@@ -95,9 +93,9 @@
                                 <% } %>
                             <% } %>
                         </td>
-                        <% } %>
                     </tr>
                 <% } %>
+            <% } %>
             </tbody>
         </table>
     <% } %>

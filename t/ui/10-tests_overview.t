@@ -56,7 +56,6 @@ $get->element_exists_not('#flavor_DVD_arch_i686');
 $get->text_is('#res_DVD_i586_kde span.overview_passed a' => '48/0/3');
 $get->text_is('#res_GNOME-Live_i686_RAID0 span' => 'cancelled');
 $get->text_is('#res_DVD_i586_RAID1 span' => 'sched.(46)');
-$get->text_is('#res_DVD_x86_64_RAID1 span' => 'no test');
 $get->element_exists_not('#res_DVD_x86_64_doc');
 
 #
