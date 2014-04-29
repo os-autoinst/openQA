@@ -123,6 +123,17 @@ sub generate_jobs {
             $settings{PRIO} = $job_template->test_suite->prio;
             $settings{ISO} = $iso;
 
+            # XXX: hack, maybe use http proxy instead!?
+            if ($settings{NETBOOT}) {
+                if ($config->{global}->{suse_mirror}) {
+                    my $repodir = $iso;
+                    $repodir =~ s/-Media\.iso$//;
+                    $repodir .= '-oss';
+                    $settings{SUSEMIRROR} = $config->{global}->{suse_mirror}."/iso/$repodir";
+                    $settings{FULLURL} = 1;
+                }
+            }
+
             push @$ret, \%settings;
         }
     }

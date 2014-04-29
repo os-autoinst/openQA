@@ -406,7 +406,7 @@
         distri => 'opensuse',
         flavor => 'NET',
         arch => 'i586',
-        variables => 'ISO_MAXSIZE=4_700_372_992', # Bigger than needed
+        variables => 'ISO_MAXSIZE=737_280_000;NETBOOT=1', # Bigger than needed
         job_templates => [
             {machine_id => 1001, test_suite_id => 1001},
             {machine_id => 1001, test_suite_id => 1002},
@@ -439,7 +439,7 @@
         distri => 'opensuse',
         flavor => 'NET',
         arch => 'x86_64',
-        variables => 'ISO_MAXSIZE=4_700_372_992', # Bigger than needed
+        variables => 'ISO_MAXSIZE=737_280_000;NETBOOT=1', # Bigger than needed
         job_templates => [
             {machine_id => 1002, test_suite_id => 1001},
             {machine_id => 1002, test_suite_id => 1002},
