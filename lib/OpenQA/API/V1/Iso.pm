@@ -35,7 +35,7 @@ sub create {
         $self->res->message("Missing iso parameter");
         return $self->rendered(400);
     }
-    my $jobs = openqa::distri::generate_jobs($self->app->config, iso => $iso, requested_runs => \@tests);
+    my $jobs = openqa::distri::generate_jobs($self->app, iso => $iso, requested_runs => \@tests);
 
     # XXX: take some attributes from the first job to guess what old jobs to
     # cancel. We should have distri object that decides which attributes are

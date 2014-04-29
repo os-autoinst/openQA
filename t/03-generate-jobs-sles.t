@@ -22,7 +22,10 @@ use strict;
 use Data::Dump qw/pp dd/;
 use openqa::distri::sles qw(generate_jobs);
 
+use Test::Mojo;
 use Test::More;
+
+my $app = Test::Mojo->new('OpenQA')->app;
 
 my @testdata = (
     {
@@ -63,7 +66,7 @@ my @testdata = (
 );
 
 for my $t (@testdata) {
-    my $params = openqa::distri::sles->generate_jobs({}, iso => $t->{iso});
+    my $params = openqa::distri::sles->generate_jobs($app, iso => $t->{iso});
     if ($t->{params}) {
         SKIP: {
             skip "number of jobs does not match" unless is(scalar  @{$t->{params}}, scalar @$params);

@@ -21,6 +21,7 @@ use strict;
 use warnings;
 use Clone qw/clone/;
 use openqa ();
+use Data::Dump qw/pp/;
 
 sub _regexp_parts{
     my $distri = '(openSUSE)';
@@ -76,7 +77,7 @@ sub _str_to_hash {
 
 sub generate_jobs {
     my $class = shift;
-    my $config = shift;
+    my $app = shift;
 
     my %args = @_;
     my $iso = $args{'iso'} or die "missing parmeter iso\n";
@@ -86,6 +87,7 @@ sub generate_jobs {
 
     # parse the iso filename
     my $params = parse_iso($iso);
+    $app->log->debug("parsed iso params: ". join('|', %{$params//{}}));
     return $ret unless $params;
 
     my $schema = openqa::connect_db();
@@ -96,6 +98,8 @@ sub generate_jobs {
             flavor => $params->{flavor},
         }
     );
+
+    $app->log->debug("products: ". join(',', map { $_->name } @products));
 
     foreach my $product (@products) {
         foreach my $job_template ($product->job_templates) {
@@ -124,14 +128,12 @@ sub generate_jobs {
             $settings{ISO} = $iso;
 
             # XXX: hack, maybe use http proxy instead!?
-            if ($settings{NETBOOT}) {
-                if ($config->{global}->{suse_mirror}) {
-                    my $repodir = $iso;
-                    $repodir =~ s/-Media\.iso$//;
-                    $repodir .= '-oss';
-                    $settings{SUSEMIRROR} = $config->{global}->{suse_mirror}."/iso/$repodir";
-                    $settings{FULLURL} = 1;
-                }
+            if ($settings{NETBOOT} && !$settings{SUSEMIRROR} && $app->config->{global}->{suse_mirror}) {
+                my $repourl = $app->config->{global}->{suse_mirror}."/iso/".$iso;
+                $repourl =~ s/-Media\.iso$//;
+                $repourl .= '-oss';
+                $settings{SUSEMIRROR} = $repourl;
+                $settings{FULLURL} = 1;
             }
 
             push @$ret, \%settings;

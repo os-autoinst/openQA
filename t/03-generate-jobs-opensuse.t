@@ -24,11 +24,13 @@ use Data::Dump qw/pp dd/;
 use openqa::distri::opensuse qw(generate_jobs);
 use OpenQA::Test::Database;
 
+use Test::Mojo;
 use Test::More;
 
 
 OpenQA::Test::Database->new->create(skip_fixtures => 0);
 
+my $app = Test::Mojo->new('OpenQA')->app;
 
 my @testdata = (
     {
@@ -1675,7 +1677,7 @@ my @testdata = (
 );
 
 for my $t (@testdata) {
-    my $params = openqa::distri::opensuse->generate_jobs({}, iso => $t->{iso});
+    my $params = openqa::distri::opensuse->generate_jobs($app, iso => $t->{iso});
     if ($t->{params}) {
       SKIP: {
           skip "number of jobs does not match", $#{$t->{params}} unless is(scalar keys $t->{params}, scalar @$params);
