@@ -2,30 +2,111 @@ Configuring your openQA
 =======================
 :toc:
 
-This page describes what you can configure in admin section of openQA and
-effects it will have. If you are starting from scratch, you should probably go
-through the following order:
+This page describes what you can configure in admin section of openQA
+and effects it will have. If you are starting from scratch, you should
+probably go through the following order:
 
 . Define machines in 'Machines' menu
 . Define products you have in 'Products' menu
-. Specify various collections of test you want to run in 'Test suites' menu
+. Specify various collections of test you want to run in 'Test suites'
+  menu
 . Go to the template matrix in 'Job templates' menu and decide what
   combinations does make sense and need to be tested
+
+In openQA we can parametrize a test describing for what product will
+run and for what king of machines will be executed. For example, a
+test like KDE can be run for any product that have KDE installed, and
+can be tested in x86-64 and i586 machines. If we write this as a
+triples, we can create a list like this to characterize KDE tests:
+
+  (Product,             Test Suite, Machine)
+  (openSUSE-DVD-x86_64, KDE,        64bit) 
+  (openSUSE-DVD-x86_64, KDE,        Laptop-64bit)
+  (openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
+  (openSUSE-DVD-i586,   KDE,        32bit) 
+  (openSUSE-DVD-i586,   KDE,        Laptop-32bit) 
+  (openSUSE-DVD-x86_64, KDE,        USBBoot-32bit)
+  (openSUSE-DVD-i586,   KDE,        64bit) 
+  (openSUSE-DVD-i586,   KDE,        Laptop-64bit) 
+  (openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
+
+For every triplet, we need to configure a different instance of
+os-autoinst with a different set of parameters.
 
 Products
 --------
 
+A product in openQA is a simple description without any concrete
+meaning. Basically consist of a name and a set of variables that
+define or characterize this product in os-autoinst.
+
+For example, the product openSUSE-DVD-x86_64 require the variables
++ISO_MAXSIZE+ and +DVD+ to be set up.
+
+The list of variables as dynamic and are consumed by the tests, that
+is the one that provide a semantic to this variable. Some usual
+variables are:
+
+* +ISO_MAXSIZE+ contains the maximum size of the product. There is a
+  test that check that the current size of the product is less or
+  equal than this variable.
+* +DVD+ if is set to 1, this indicate that the medium is a DVD.
+* +LIVECD+ if is set to 1, this indicate that the medium is a live
+  image (can be a CD or USB)
+* +GNOME+ this variable, is is set to 1, will indicate that is a GNOME
+  only distribution.
+* +PROMO+ mark the promotional product.
+* +RESCUECD+ if set to 1 for rescue CD images.
+
+
 Test Suites
 -----------
 
+This is the form where we define the different tests that we created
+for openQA. A test consist of a name, a priority (used in the
+scheduler to choose the next job) and a set of variables that are used
+inside this particular test.
+
+Again, the list of variables is not complete, because are
+test-dependent, but some of the usual are:
+
+* +BTRFS+ if set, the file system will be BtrFS.
+* +DESKTOP+ possible values are 'kde' 'gnome' 'lxde' 'xfce' or
+  'texmode'. Used to indicate the desktop selected by the user during
+  the test.
+* +DOCRUN+ used for document tests.
+* +DUALBOOT+ dual boot testing, need HDD_1 and HDDVERSION.
+* +ENCRYPT+ encrypt the home directory via YaST.
+* +HDDMODEL+ variable to set the HDD hardware model.
+* +HDDSIZEGB+ hard disk size in GB. Used together with BtrFS variable.
+* +HDDVERSION+ together with HDD_1 to set the operating system
+  previously installed in the hard disk.
+* +HDD_1+ path for the pre-created hard disk.
+* +INSTALLONLY+ only basic installation.
+* +INSTLANG+ installation language. Actually used only in document
+  tests.
+* +LIVETEST+ the test is on live medium, do not install the distribution.
+* +LVM+ select LVM volume manager.
+* +NICEVIDEO+ used for test with better video quality (show room).
+* +NOAUTOLOGIN+ unmark autologin in YaST
+* +NUMDISKS+ total number of disks in QEMU.
+* +QEMUVGA+ parameter to declare the video hardware configuration in QEMU.
+* +RAIDLEVEL+ RAID configuration variable
+* +REBOOTAFTERINSTALL+ if set to 1, will reboot after the installation.
+* +SCREENSHOTINTERVAL+ used with NICEVIDEO to improve the video quality.
+* +SPLITUSR+ a YaST configuration option.
+* +TOGGLEHOME+ a YaST configuration option.
+* +UPGRADE+ upgrade testing, need HDD_1 and HDDVERSION.
+* +VIDEOMODE+ if the value is 'text', the installation will be done in
+  text mode.
 
 Machines
 --------
 
-You need to have at least one machine set up to be able to run any tests. Those
-machine represents virtual machine types that you want to test. To make tests
-actually happen, you have to have a 'openQA worker' connected that can fullfill
-those specifications.
+You need to have at least one machine set up to be able to run any
+tests. Those machine represents virtual machine types that you want to
+test. To make tests actually happen, you have to have a 'openQA
+worker' connected that can fullfill those specifications.
 
 Name
 ~~~~
@@ -46,6 +127,10 @@ Variables
 Variables represent a way how to influence backend behaviour. Few important
 examples:
 
-* +WEMUCPU+ can be 'qemu32' or 'qemu64' and specifies architecture of virtual CPU
-* +QEMUCPUS+ is an integer that specifies number of cores you wish for
-* +SMP+ enables smp when set to 1, disables when set to 0
+* +QEMUCPU+ can be 'qemu32' or 'qemu64' and specifies architecture of
+  virtual CPU.
+* +QEMUCPUS+ is an integer that specifies number of cores you wish for.
+* +LAPTOP+ if set to 1, QEMU will create a laptop profile.
+* +USBBOOT+ when set to 1, the image will be loaded through an
+  emulated USB stick.
+* +SMP+ enables smp when set to 1, disables when set to 0.
