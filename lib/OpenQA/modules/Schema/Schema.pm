@@ -20,7 +20,7 @@ use IO::Dir;
 use SQL::SplitStatement;
 use Fcntl ':mode';
 
-our $VERSION = '7';
+our $VERSION = '8';
 
 __PACKAGE__->load_namespaces;
 
