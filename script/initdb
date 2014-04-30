@@ -83,10 +83,6 @@ if ($prepare_init) {
 if ($init_database) {
     # Create the schema
     $dh->install;
-
-    # Deploy seed data in the schema
-    $schema->deploy_seeds;
-
 }
 
 # vim: set sw=4 sts=4 et:

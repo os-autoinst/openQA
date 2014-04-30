@@ -509,21 +509,21 @@ sub file_content($){
 package openqa::distri;
 
 sub generate_jobs{
-    my $config = shift;
+    my $app = shift;
     my $ret = [];
     # walk through all provided modules to let them generate
     # jobs for the iso
     for my $module (glob $distri_file_glob) {
+        $app->log->debug($module);
         $module =~ s,/[^/]+\.pm$,,;
         $module =~ s,.*/,,;
         $module = __PACKAGE__ . "::" . $module;
         eval {
             eval "require $module";
             if ($@) {
-                print STDERR "failed to load module $module\n";
-                next;
+                die $@;
             }
-            my $jobs = $module->generate_jobs($config, @_);
+            my $jobs = $module->generate_jobs($app, @_);
             push @$ret, @$jobs if $jobs;
         };
         if ($@) {

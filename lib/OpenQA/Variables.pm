@@ -38,6 +38,7 @@ has variables => sub {
           DVD
           ENCRYPT
           FLAVOR
+          FULLURL
           GNOME
           HDDMODEL
           HDDSIZEGB
@@ -54,6 +55,7 @@ has variables => sub {
           LVM
           MACHINE
           NAME
+          NETBOOT
           NICEVIDEO
           NICMODEL
           NOAUTOLOGIN
@@ -70,6 +72,7 @@ has variables => sub {
           SCREENSHOTINTERVAL
           SMP
           SPLITUSR
+          SUSEMIRROR
           TEST
           TOGGLEHOME
           UEFI

@@ -46,7 +46,6 @@ sub create {
     );
 
     $dh->install();
-    $schema->deploy_seeds;
 
     $self->insert_fixtures($schema) unless $options{skip_fixtures};
 

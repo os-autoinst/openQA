@@ -51,7 +51,7 @@ sub parse_iso($){
 #   requested_runs => [ "name of test runs", ... ]
 sub generate_jobs{
     my $class = shift;
-    my $config = shift;
+    my $app = shift;
 
     my %args = @_;
     my $iso = $args{'iso'} or die "missing parmeter iso\n";
@@ -124,11 +124,11 @@ sub generate_jobs{
 
             $settings{DISTRI} = lc $settings{DISTRI} if $settings{DISTRI};
 
-            if ($config->{global}->{suse_mirror}) {
+            if ($app->config->{global}->{suse_mirror}) {
                 my $repodir = $iso;
                 $repodir =~ s/-Media\.iso$//;
                 $repodir .= '-oss';
-                $settings{SUSEMIRROR} = $config->{global}->{suse_mirror}."/iso/$repodir";
+                $settings{SUSEMIRROR} = $app->config->{global}->{suse_mirror}."/iso/$repodir";
                 $settings{FULLURL} = 1;
             }
 
