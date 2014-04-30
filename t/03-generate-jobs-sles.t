@@ -1,4 +1,4 @@
-#!/usr/bin/env perl -w
+#!/usr/bin/env perl
 
 # Copyright (C) 2014 SUSE Linux Products GmbH
 #
@@ -19,11 +19,15 @@
 BEGIN { unshift @INC, 'lib', 'lib/OpenQA/modules'; }
 
 use strict;
+use warnings;
 use Data::Dump qw/pp dd/;
 use openqa::distri::sles qw(generate_jobs);
+use OpenQA::Test::Database;
 
 use Test::Mojo;
 use Test::More;
+
+OpenQA::Test::Database->new->create(skip_fixtures => 0);
 
 my $app = Test::Mojo->new('OpenQA')->app;
 
