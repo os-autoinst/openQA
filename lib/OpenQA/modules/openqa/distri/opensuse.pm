@@ -26,7 +26,7 @@ use Data::Dump qw/pp/;
 sub _regexp_parts{
     my $distri = '(openSUSE)';
     my $version = '(\d+(?:\.\d)?|Factory|FTT)';
-    my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-|Staging-)?DVD(?:-BiArch|-OpenSourcePress)?|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO)';
+    my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-|Staging\d?-)?DVD(?:-BiArch|-OpenSourcePress)?|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO)';
     my $arch = '(i[356]86(?:-x86_64)?|x86_64|i586-x86_64)';
     my $build = '(?:Build|Snapshot)([^-]+)';
 

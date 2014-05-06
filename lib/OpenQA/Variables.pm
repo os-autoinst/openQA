@@ -59,6 +59,7 @@ has variables => sub {
           NICEVIDEO
           NICMODEL
           NOAUTOLOGIN
+          NOIMAGES
           NUMDISKS
           PROMO
           QEMUCPU
