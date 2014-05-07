@@ -122,6 +122,9 @@ if ($res->code == 200) {
 }
 else {
     printf STDERR "ERROR: %s - %s\n", $res->code, $res->message;
+    if ($res->body) {
+        dd($res->json || $res->body);
+    }
     exit(1);
 }
 

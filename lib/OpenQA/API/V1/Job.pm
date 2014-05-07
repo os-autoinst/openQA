@@ -18,6 +18,7 @@ package OpenQA::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use Scheduler ();
+use Try::Tiny;
 
 sub list {
     my $self = shift;
@@ -39,8 +40,17 @@ sub create {
     # job_create expects upper case keys
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
 
-    my $res = Scheduler::job_create(%up_params);
-    $self->render(json => {id => $res});
+    my $json = {};
+    my $status;
+    try {
+        my $res = Scheduler::job_create(%up_params);
+        $json->{id} = $res;
+    }
+    catch {
+        $status = 400;
+        $json->{error} = "$_";
+    };
+    $self->render(json => $json, status => $status);
 }
 
 sub grab {
