@@ -18,7 +18,7 @@ package OpenQA::API::V1::Iso;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use Scheduler ();
-use Data::Dump qw(pp);
+use Try::Tiny;
 
 sub create {
     my $self = shift;
@@ -56,7 +56,14 @@ sub create {
         my $prio = $settings->{PRIO};
         delete $settings->{PRIO};
         # create a new job with these parameters and count if successful
-        my $id = Scheduler::job_create(%$settings);
+        my $id;
+        try {
+            $id = Scheduler::job_create(%$settings);
+        }
+        catch {
+            chomp;
+            $self->app->log->error("job_create: $_");
+        };
         if ($id) {
             $cnt++;
             # change prio only if other than defalt prio
