@@ -21,82 +21,82 @@ use warnings;
 
 use Mojo::Base -base;
 
+use openqa qw/testcasedir/;
+
 use Carp ();
+use Data::Dump;
+
 
 # https://progress.opensuse.org/issues/2214
-has variables => sub {
-    return {
-        map  { $_ => 1 }
-          qw/
-          ARCH
-          BTRFS
-          BUILD
-          DESKTOP
-          DISTRI
-          DOCRUN
-          DUALBOOT
-          DVD
-          ENCRYPT
-          FLAVOR
-          FULLURL
-          GNOME
-          HDDMODEL
-          HDDSIZEGB
-          HDDVERSION
-          HDD_1
-          HDD_2
-          INSTALLONLY
-          ISO
-          ISO_MAXSIZE
-          KVM
-          LAPTOP
-          LIVECD
-          LIVETEST
-          LVM
-          MACHINE
-          NAME
-          NETBOOT
-          NICEVIDEO
-          NICMODEL
-          NOAUTOLOGIN
-          NOIMAGES
-          NUMDISKS
-          PROMO
-          QEMUCPU
-          QEMUCPUS
-          QEMUVGA
-          RAIDLEVEL
-          REBOOTAFTERINSTALL
-          REPO_1
-          REPO_2
-          RESCUECD
-          SCREENSHOTINTERVAL
-          SMP
-          SPLITUSR
-          SUSEMIRROR
-          TEST
-          TOGGLEHOME
-          UEFI
-          UPGRADE
-          USBBOOT
-          VERSION
-          VIDEOMODE
-          /
-    };
-};
+our $variables = {};
+
+our %DEFAULT_VARIABLES = (
+    NAME => {},
+    DISTRI => {},
+    VERSION => {},
+    TEST => {},
+);
+
+sub get {
+    my $self = shift;
+    my $distri = shift;
+    my $version = shift;
+    my $variable = shift;
+    my $h = $variables->{$distri}->{$version} || {};
+    unless ($h) {
+        $variables->{$distri}->{$version} = {%DEFAULT_VARIABLES};
+    }
+    my $file = testcasedir($distri, $version).'/variables';
+    if (open(my $fd, '<', $file)) {
+        my @s = stat($fd);
+        if (($h->{'.mtime'}||-1) != $s[9]) {
+            $h = {%DEFAULT_VARIABLES};
+            $h->{'.mtime'} = $s[9];
+            while (<$fd>) {
+                chomp;
+                # TODO: parste type information or make this even a real file format
+                my ($name, $type) = split(/ +/, $_, 2);
+                if ($h->{$name}) {
+                    warn "$file: $name redefined\n";
+                    next;
+                }
+                $h->{$name} = {};
+            }
+            close $fd;
+            $variables->{$distri}->{$version} = $h;
+        }
+    }
+    else {
+        warn "$file: $!\n";
+    }
+    return $h->{$variable} if $variable;
+    return $h;
+}
+
+sub new {
+    my $self = shift->SUPER::new(@_);
+    return $self;
+}
 
 sub check {
     my $self = shift;
     my %args = @_;
 
-    for my $i (qw/NAME/) {
-        next unless $args{$i};
-        die "invalid character in $i\n" if $args{$i} =~ /\//; # TODO: use whitelist?
+    for my $i (qw/DISTRI VERSION TEST/) {
+        die "need one $i key\n" unless exists $args{$i};
     }
 
-    while (my ($k, $v) = each %args) {
-        return "$k invalid" unless exists $self->variables->{$k};
+    for my $i (qw/NAME DISTRI VERSION/) {
+        next unless $args{$i};
+        die "invalid character in $i\n" if $args{$i} =~ /\// || $args{$i} =~ /\.\./; # TODO: use whitelist?
     }
+
+    my @invalid;
+    while (my ($k, $v) = each %args) {
+        next if defined $self->get($args{DISTRI}, $args{VERSION}, $k);
+        push @invalid, $k;
+    }
+    return 'invalid variables: '.join(' ', sort @invalid) if @invalid;
     return undef;
 }
 
