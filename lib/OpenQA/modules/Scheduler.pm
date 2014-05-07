@@ -226,11 +226,7 @@ sub job_create {
     my %settings = @_;
 
     if (my $error = OpenQA::Variables->new()->check(%settings)) {
-        die $error;
-    }
-
-    for my $i (qw/DISTRI VERSION DESKTOP TEST/) {
-        die "need one $i key\n" unless exists $settings{$i};
+        die "$error\n";
     }
 
     my @assets;
