@@ -970,7 +970,7 @@ var Table = (function(){
 						func.insert(cell,colValues);
 					}
 					else {
-						var sel = '<select onchange="Table.filter(this,this)" onclick="Table.cancelBubble(event)" class="'+table.AutoFilterClassName+'"><option value="">'+table.FilterAllLabel+'</option>';
+						var sel = '<br/><select onchange="Table.filter(this,this)" onclick="Table.cancelBubble(event)" class="'+table.AutoFilterClassName+'"><option value="">'+table.FilterAllLabel+'</option>';
 						for (var i=0; i<colValues.length; i++) {
 							sel += '<option value="'+colValues[i]+'">'+colValues[i]+'</option>';
 						}
