@@ -27,12 +27,12 @@
             <tr>
                 <th class="table-sortable:alphanumeric">link</th>
                 <th class="table-sortable:alphanumeric">clone</th>
-                <th class="table-sortable:alphanumeric table-filterable">backend</th>
+                <th class="table-sortable:alphanumeric table-filterable">machine</th>
                 <th class="table-sortable:alphanumeric table-filterable">distri</th>
                 <th class="table-sortable:alphanumeric table-filterable">type</th>
                 <th class="table-sortable:alphanumeric table-filterable">arch</th>
                 <th class="table-sortable:alphanumeric table-filterable">build</th>
-                <th class="table-sortable:alphanumeric table-filterable">extra</th>
+                <th class="table-sortable:alphanumeric table-filterable">testsuite</th>
                 <th class="table-sortable:alphanumeric">testtime</th>
                 <th class="table-sortable:numeric">OK</th>
                 <th class="table-sortable:numeric">unk</th>
@@ -68,13 +68,13 @@
                         -
                     % }
                 </td>
-                <td class="backend"><%= $test->{backend} %></td>
+                <td class="backend"><%= $job->{machine} %></td>
                 <td class="distri"><%= "$distri-$version" %></td>
                 <td class="type"><%= $job->{settings}->{FLAVOR} %></td>
                 <td class="arch"><%= $job->{settings}->{ARCH} %></td>
                 % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
                 <td class="build"><span class="textlink <%= $resultclass %>"><a href="<%= $href %>"><%= $build %></a></span></td>
-                <td class="extra"><span class="<%= $resultclass %>"><%= $job->{'test'} %>@<%= $job->{'machine'} %></span></td>
+                <td class="extra"><span class="<%= $resultclass %>"><%= $job->{'test'} %></span></td>
                 <td class="testtime"><%= format_time($job->{'t_started'}) %></td>
 
                 <% if($job->{'state'} eq 'running') { %>

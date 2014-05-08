@@ -35,7 +35,7 @@ $get->content_like(qr/Test results/i, 'result list is there');
 
 # Test 99946 is successful (30/0/1)
 $get->element_exists('#results #job_99946 .extra');
-$get->text_is('#results #job_99946 .extra span' => 'textmode@');
+$get->text_is('#results #job_99946 .extra span' => 'textmode');
 $get->text_is('#results #job_99946 td:nth-child(10) .overview_passed' => '30');
 $get->text_is('#results #job_99946 td:nth-child(12) .overview_failed' => '1');
 
@@ -47,7 +47,7 @@ $get->text_is('#results #job_99928 td.link a' => 'scheduled');
 $get->element_exists('#results #job_99928 .cancel');
 
 # Test 99938 failed, so it should be displayed in red
-$get->text_is('#results #job_99938 .extra .overview_failed' => 'doc@');
+$get->text_is('#results #job_99938 .extra .overview_failed' => 'doc');
 
 
 # Test 99937 is too old to be displayed by default
@@ -55,7 +55,7 @@ $get->element_exists_not('#results #job_99937');
 
 # Test 99926 is displayed
 $get->element_exists('#results #job_99926');
-$get->text_is('#results #job_99926 .extra .overview_incomplete' => 'minimalx@');
+$get->text_is('#results #job_99926 .extra .overview_incomplete' => 'minimalx');
 
 $get = $t->get_ok('/tests' => form => {ignore_incomplete => 1})->status_is(200);
 
