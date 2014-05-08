@@ -198,4 +198,5 @@
 			</tbody>
 		</table>
 	</div>
+        %= include 'layouts/settings'
 </div>
