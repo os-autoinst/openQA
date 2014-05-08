@@ -138,7 +138,7 @@ sub show {
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $testresultdir = openqa::testresultdir($testdirname);
 
-    return $self->render(text => "Invalid path", status => 403) if ($testdirname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/);
+    return $self->render(text => "Invalid path", status => 403) if ($testdirname=~/(?:\.\.)|[^a-zA-Z0-9._+-:]/);
 
     $self->stash(testname => $job->{'name'});
     $self->stash(resultdir => $testresultdir);
@@ -245,7 +245,7 @@ sub uploadlog{
 
     my $testdirname = $job->{'settings'}->{'NAME'};
 
-    return $self->render(text => "Invalid path", status => 403) if ($testdirname=~/(?:\.\.)|[^a-zA-Z0-9._+-]/);
+    return $self->render(text => "Invalid path", status => 403) if ($testdirname=~/(?:\.\.)|[^a-zA-Z0-9._+-:]/);
 
     if ($self->req->is_limit_exceeded) {
         return $self->render(
