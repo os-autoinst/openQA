@@ -37,11 +37,15 @@ sub list {
     my $scope = $self->param('scope');
     $scope = 'relevant' unless defined($scope);
     $self->param(scope => $scope);
+    my $state = $self->param('state') // 'scheduled,running,done';
+    $state = undef if $state eq 'all';
+
+    my $assetid = $self->param('assetid');
 
     if ($hoursfresh =~ m/\D/) {
         $hoursfresh = 0;
     }
-    if ($limit && $limit =~ m/\D/) {
+    if (defined $limit && $limit =~ m/\D/) {
         $limit = undef;
     }
     if ($page && $page =~ m/\D/) {
@@ -51,7 +55,7 @@ sub list {
         $limit = 500;
     }
 
-    if (!$limit && (!$hoursfresh || $hoursfresh > 900)) {
+    if (!defined $limit && (!$hoursfresh || $hoursfresh > 900)) {
         $hoursfresh = $defaulthoursfresh;
     }
 
@@ -61,14 +65,15 @@ sub list {
     for my $job (
         @{
             Scheduler::list_jobs(
-                'state' => 'scheduled,running,done',
+                state => $state,
                 match => $match,
                 limit => $limit,
                 page => $page,
                 ignore_incomplete => $self->param('ignore_incomplete')?1:0,
                 maxage => $hoursfresh*3600,
                 fulldetails => 1,
-                scope => $scope
+                scope => $scope,
+                assetid => $assetid,
               )
               ||[]
         }
