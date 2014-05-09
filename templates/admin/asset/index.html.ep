@@ -23,7 +23,7 @@
             <td class="id"><%= $asset->id %></td>
             <td class="type"><%= $asset->type %></td>
             <td class="name"><%= $asset->name %></td>
-            <td class="nrjobs"><%= $asset->jobs->count() %></td>
+            <td class="nrjobs"><%= link_to $asset->jobs->count() => url_for('tests')->query(assetid => $asset->id, state => 'all', scope => undef, limit => undef ) %></td>
             <td class="t_created"><%= $asset->t_created %></td>
             <td class="t_updated"><%= $asset->t_updated %></td>
         </tr>

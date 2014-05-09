@@ -406,6 +406,15 @@ sub list_jobs {
         $attrs{rows} = $args{limit};
     }
     $attrs{page} = $args{page}||0;
+    if ($args{assetid}) {
+        push(@joins, 'jobs_assets');
+        push(
+            @conds,
+            {
+                'jobs_assets.asset_id' => $args{assetid},
+            }
+        );
+    }
 
     # Search into the following job_settings
     for my $setting (qw(build iso distri version flavor)) {
