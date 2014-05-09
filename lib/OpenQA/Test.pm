@@ -352,6 +352,7 @@ sub overview {
         }
 
         # Populate @configs and %archs
+        $test = $test.'@'.$job->{machine} unless ( $job->{machine} eq '64bit' || $job->{machine} eq '32bit' );
         push( @configs, $test ) unless ( grep { $test eq $_ } @configs );
         $archs{$flavor} = [] unless $archs{$flavor};
         push( @{ $archs{$flavor} }, $arch ) unless ( grep { $arch eq $_ } @{ $archs{$flavor} } );
