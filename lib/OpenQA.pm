@@ -275,6 +275,8 @@ sub startup {
     $admin_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
     $admin_r->post('/test_suites')->to('test_suite#create');
     $admin_r->delete('/test_suites/:testsuiteid')->name('admin_test_suite')->to('test_suite#destroy');
+    $admin_r->post('/test_suites/:testsuiteid')->name('admin_test_suite_setting_post')->to('test_suite#add_variable');
+    $admin_r->delete('/test_suites/:testsuiteid/:settingid')->name('admin_test_suite_setting_delete')->to('test_suite#remove_variable');
 
     $admin_r->get('/job_templates')->name('admin_job_templates')->to('job_template#index');
     $admin_r->post('/job_templates')->to('job_template#update');
