@@ -18,6 +18,7 @@ package OpenQA::Admin::TestSuite;
 use Mojo::Base 'Mojolicious::Controller';
 
 use base 'OpenQA::Admin::VariableHelpers';
+use OpenQA::Variables;
 
 sub index {
     my $self = shift;
@@ -25,6 +26,8 @@ sub index {
 
     $self->stash('error', undef);
     $self->stash('suites', \@suites);
+    my $rc = $self->db->resultset("TestSuiteSettings")->search(undef, { columns => [ qw/key/ ], distinct => 1 } );
+    $self->stash('variables', [ sort map { $_->key } $rc->all() ]);
     $self->render('admin/test_suite/index');
 }
 
