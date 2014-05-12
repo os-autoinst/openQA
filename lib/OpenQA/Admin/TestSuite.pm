@@ -17,6 +17,8 @@
 package OpenQA::Admin::TestSuite;
 use Mojo::Base 'Mojolicious::Controller';
 
+use base 'OpenQA::Admin::VariableHelpers';
+
 sub index {
     my $self = shift;
     my @suites = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
@@ -57,65 +59,19 @@ sub create {
 
 sub add_variable {
     my $self = shift;
-    my $error;
-    my $validation = $self->validation;
-    $self->app->log->debug($self->param('testsuiteid'));
-#    $validation->required('testsuiteid');
-    $validation->required('key')->like(qr/^[[:alnum:]]+$/);
-    $validation->required('value');
-    if ($validation->has_error) {
-        $error = "wrong parameters.";
-        for my $k (qw/key value/) {
-        $self->app->log->debug(@{$validation->error($k)}) if $validation->has_error($k);
-            $error .= $k if $validation->has_error($k);
-        }
-    }
-    else {
-        eval {
-            $self->db->resultset("TestSuiteSettings")->create({
-                'test_suite_id' => $self->param('testsuiteid'),
-                key => $self->param('key'),
-                value => $self->param('value')
-                });
-        };
-        $error = $@;
-    }
-
-    if ($error) {
-        my @suites = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
-        $self->stash('error', "Error adding the test suite: $error");
-        $self->stash('suites', \@suites);
-        $self->render('admin/test_suite/index');
-    }
-    else {
-        $self->flash(info => 'Variable '.$self->param('key').' added');
-        $self->redirect_to($self->url_for('admin_test_suites'));
-    }
-
+    $self->SUPER::add_variable('test_suite', 'TestSuiteSettings');
 }
 
 sub remove_variable {
     my $self = shift;
-
-    $self->app->log->debug("delete var", $self->param('settingid'));
-
-    eval { $self->db->resultset("TestSuiteSettings")
-        ->find({
-            id => $self->param('settingid'),
-            'test_suite.id' => $self->param('testsuiteid') })->delete };
-    my $error = $@;
-
-    if ($error) {
-        $self->stash('error', "$error" );
-    }
-    $self->redirect_to('admin_test_suites');
+    $self->SUPER::remove_variable('test_suite', 'TestSuiteSettings');
 }
 
 sub destroy {
     my $self = shift;
     my $suites = $self->db->resultset('TestSuites');
 
-    if ($suites->search({id => $self->param('testsuiteid')})->delete_all) {
+    if ($suites->search({id => $self->param('test_suite_id')})->delete_all) {
         $self->flash(info => 'Test suite deleted');
     }
     else {

@@ -57,11 +57,21 @@ sub create {
     }
 }
 
+sub add_variable {
+    my $self = shift;
+    $self->SUPER::add_variable('product', 'ProductSettings');
+}
+
+sub remove_variable {
+    my $self = shift;
+    $self->SUPER::remove_variable('product', 'ProductSettings');
+}
+
 sub destroy {
     my $self = shift;
     my $products = $self->db->resultset('Products');
 
-    if ($products->search({id => $self->param('productid')})->delete_all) {
+    if ($products->search({id => $self->param('product_id')})->delete_all) {
         $self->flash(info => 'Product deleted');
     }
     else {

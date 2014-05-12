@@ -11,8 +11,6 @@
             %= text_field 'backend', size => 10
         </p>
         <p>
-            %= label_for name => 'Variables'
-            %= text_field 'variables', size => 30
             %= submit_button 'create'
         </p>
     % end
@@ -37,7 +35,7 @@
                 <tr id="machine_<%= $machine->id %>">
                     <td class="name"><%= $machine->name %></td>
                     <td class="backend"><%= $machine->backend %></td>
-                    <td class="variables"><%= $machine->variables %></td>
+                    %= include 'layouts/admin_settings', obj => $machine, table => 'machine'
                     <td class="action"><%= link_to 'delete' => url_for('admin_machine', machineid => $machine->id) => 'data-method' => 'delete' %></td>
                 </tr>
             % }

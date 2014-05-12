@@ -56,11 +56,21 @@ sub create {
     }
 }
 
+sub add_variable {
+    my $self = shift;
+    $self->SUPER::add_variable('machine', 'MachineSettings');
+}
+
+sub remove_variable {
+    my $self = shift;
+    $self->SUPER::remove_variable('machine', 'MachineSettings');
+}
+
 sub destroy {
     my $self = shift;
     my $machines = $self->db->resultset('Machines');
 
-    if ($machines->search({id => $self->param('machineid')})->delete_all) {
+    if ($machines->search({id => $self->param('machine_id')})->delete_all) {
         $self->flash(info => 'Machine deleted');
     }
     else {
