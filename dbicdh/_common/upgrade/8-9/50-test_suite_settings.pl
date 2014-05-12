@@ -40,5 +40,26 @@ sub {
     $schema->resultset('TestSuites')->update({ variables => ''});
     $schema->resultset('TestSuiteSettings')->populate($data);
 
+    $rs = $schema->resultset('Products');
+    $data = [ [qw/product_id key value/]];
+    while (my $r = $rs->next()) {
+        my @vars = split(/;/, $r->variables);
+        for (@vars) {
+            push @$data, [ $r->id, split(/=/, $_, 2)];
+        };
+    }
+    $schema->resultset('Products')->update({ variables => ''});
+    $schema->resultset('ProductSettings')->populate($data);
+
+    $rs = $schema->resultset('Machines');
+    $data = [ [qw/machine_id key value/]];
+    while (my $r = $rs->next()) {
+        my @vars = split(/;/, $r->variables);
+        for (@vars) {
+            push @$data, [ $r->id, split(/=/, $_, 2)];
+        };
+    }
+    $schema->resultset('Machines')->update({ variables => ''});
+    $schema->resultset('MachineSettings')->populate($data);
 }
   #);
