@@ -39,5 +39,22 @@ CREATE UNIQUE INDEX product_settings_product_id_key ON product_settings (product
 
 ;
 
+DROP TRIGGER IF EXISTS trigger_machine_settings_t_created;
+CREATE TRIGGER trigger_machine_settings_t_created after insert on machine_settings BEGIN UPDATE machine_settings SET t_created = datetime('now') WHERE _rowid_ = NEW._rowid_; END;
+DROP TRIGGER IF EXISTS trigger_machine_settings_t_updated;
+CREATE TRIGGER trigger_machine_settings_t_updated after update on machine_settings BEGIN UPDATE machine_settings SET t_updated = datetime('now') WHERE _rowid_ = NEW._rowid_; END;
+DROP TRIGGER IF EXISTS trigger_machines_t_created;
+CREATE TRIGGER trigger_machines_t_created after insert on machines BEGIN UPDATE machines SET t_created = datetime('now') WHERE _rowid_ = NEW._rowid_; END;
+DROP TRIGGER IF EXISTS trigger_machines_t_updated;
+CREATE TRIGGER trigger_machines_t_updated after update on machines BEGIN UPDATE machines SET t_updated = datetime('now') WHERE _rowid_ = NEW._rowid_; END;
+DROP TRIGGER IF EXISTS trigger_product_settings_t_created;
+CREATE TRIGGER trigger_product_settings_t_created after insert on product_settings BEGIN UPDATE product_settings SET t_created = datetime('now') WHERE _rowid_ = NEW._rowid_; END;
+DROP TRIGGER IF EXISTS trigger_product_settings_t_updated;
+CREATE TRIGGER trigger_product_settings_t_updated after update on product_settings BEGIN UPDATE product_settings SET t_updated = datetime('now') WHERE _rowid_ = NEW._rowid_; END;
+DROP TRIGGER IF EXISTS trigger_products_t_created;
+CREATE TRIGGER trigger_products_t_created after insert on products BEGIN UPDATE products SET t_created = datetime('now') WHERE _rowid_ = NEW._rowid_; END;
+DROP TRIGGER IF EXISTS trigger_products_t_updated;
+CREATE TRIGGER trigger_products_t_updated after update on products BEGIN UPDATE products SET t_updated = datetime('now') WHERE _rowid_ = NEW._rowid_; END;
+
 COMMIT;
 
