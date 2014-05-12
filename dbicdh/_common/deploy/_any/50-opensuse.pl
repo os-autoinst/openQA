@@ -71,185 +71,333 @@ my $info =[
 
     TestSuites => {
         id => 1001,
-        name => 'textmode',
+        name => "textmode",
         prio => 40,
-        variables => 'DESKTOP=textmode;VIDEOMODE=text'
-    },
+        variables => '',
+        settings => [
+          { key => "DESKTOP", value => "textmode" },
+          { key => "VIDEOMODE", value => "text" },
+        ],
+      },
     TestSuites => {
         id => 1002,
-        name => 'kde',
+        name => "kde",
         prio => 40,
-        variables => 'DESKTOP=kde'
-    },
+        variables => '',
+        settings => [{ key => "DESKTOP", value => "kde" }],
+      },
     TestSuites => {
         id => 1003,
-        name => 'uefi',
+        name => "uefi",
         prio => 45,
-        variables => 'UEFI=1;DESKTOP=kde;INSTALLONLY=1'
-    },
+        variables => '',
+        settings => [
+          { key => "UEFI", value => 1 },
+          { key => "DESKTOP", value => "kde" },
+          { key => "INSTALLONLY", value => 1 },
+        ],
+      },
     TestSuites => {
         id => 1004,
-        name => 'kde+btrfs',
+        name => "kde+btrfs",
         prio => 50,
-        variables => 'DESKTOP=kde;BTRFS=1;HDDSIZEGB=20'
-    },
+        variables => '',
+        settings => [
+          { key => "DESKTOP", value => "kde" },
+          { key => "BTRFS", value => 1 },
+          { key => "HDDSIZEGB", value => 20 },
+        ],
+      },
     TestSuites => {
         id => 1005,
-        name => 'gnome',
+        name => "gnome",
         prio => 45,
-        variables => 'DESKTOP=gnome'
-    },
+        variables => '',
+        settings => [{ key => "DESKTOP", value => "gnome" }],
+      },
     TestSuites => {
         id => 1006,
-        name => 'gnome+btrfs',
+        name => "gnome+btrfs",
         prio => 50,
-        variables => 'DESKTOP=gnome;LVM=1;BTRFS=1;HDDSIZEGB=20'
-    },
+        variables => '',
+        settings => [
+          { key => "DESKTOP", value => "gnome" },
+          { key => "LVM", value => 1 },
+          { key => "BTRFS", value => 1 },
+          { key => "HDDSIZEGB", value => 20 },
+        ],
+      },
     TestSuites => {
         id => 1007,
-        name => 'minimalx',
+        name => "minimalx",
         prio => 45,
-        variables => 'DESKTOP=minimalx'
-    },
+        variables => '',
+        settings => [{ key => "DESKTOP", value => "minimalx" }],
+      },
     TestSuites => {
         id => 1008,
-        name => 'minimalx+btrfs',
+        name => "minimalx+btrfs",
         prio => 50,
-        variables => 'DESKTOP=minimalx;BTRFS=1;HDDSIZEGB=20'
-    },
+        variables => '',
+        settings => [
+          { key => "DESKTOP", value => "minimalx" },
+          { key => "BTRFS", value => 1 },
+          { key => "HDDSIZEGB", value => 20 },
+        ],
+      },
     TestSuites => {
         id => 1009,
-        name => 'minimalx+btrfs+nosephome',
+        name => "minimalx+btrfs+nosephome",
         prio => 50,
-        variables => 'DESKTOP=minimalx;BTRFS=1;HDDSIZEGB=20;INSTALLONLY=1;TOGGLEHOME=1'
-    },
+        variables => '',
+        settings => [
+          { key => "DESKTOP", value => "minimalx" },
+          { key => "BTRFS", value => 1 },
+          { key => "HDDSIZEGB", value => 20 },
+          { key => "INSTALLONLY", value => 1 },
+          { key => "TOGGLEHOME", value => 1 },
+        ],
+      },
     TestSuites => {
         id => 1010,
-        name => 'textmode+btrfs',
+        name => "textmode+btrfs",
         prio => 50,
-        variables => 'DESKTOP=textmode;VIDEOMODE=text;BTRFS=1;HDDSIZEGB=20'
-    },
+        variables => '',
+        settings => [
+          { key => "DESKTOP", value => "textmode" },
+          { key => "VIDEOMODE", value => "text" },
+          { key => "BTRFS", value => 1 },
+          { key => "HDDSIZEGB", value => 20 },
+        ],
+      },
     TestSuites => {
         id => 1011,
-        name => 'lxde',
+        name => "lxde",
         prio => 49,
-        variables => 'DESKTOP=lxde;LVM=1'
-    },
+        variables => '',
+        settings => [
+          { key => "DESKTOP", value => "lxde" },
+          { key => "LVM", value => 1 },
+        ],
+      },
     TestSuites => {
         id => 1012,
-        name => 'xfce',
+        name => "xfce",
         prio => 49,
-        variables => 'DESKTOP=xfce'
-    },
+        variables => '',
+        settings => [{ key => "DESKTOP", value => "xfce" }],
+      },
     TestSuites => {
         id => 1013,
-        name => 'RAID0',
+        name => "RAID0",
         prio => 50,
-        variables => 'RAIDLEVEL=0;INSTALLONLY=1;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "RAIDLEVEL", value => 0 },
+          { key => "INSTALLONLY", value => 1 },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1014,
-        name => 'RAID1',
+        name => "RAID1",
         prio => 51,
-        variables => 'RAIDLEVEL=1;INSTALLONLY=1;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "RAIDLEVEL", value => 1 },
+          { key => "INSTALLONLY", value => 1 },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1015,
-        name => 'RAID5',
+        name => "RAID5",
         prio => 51,
-        variables => 'RAIDLEVEL=5;INSTALLONLY=1;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "RAIDLEVEL", value => 5 },
+          { key => "INSTALLONLY", value => 1 },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1016,
-        name => 'RAID10',
+        name => "RAID10",
         prio => 51,
-        variables => 'RAIDLEVEL=10;INSTALLONLY=1;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "RAIDLEVEL", value => 10 },
+          { key => "INSTALLONLY", value => 1 },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1017,
-        name => 'btrfscryptlvm',
+        name => "btrfscryptlvm",
         prio => 50,
-        variables => 'BTRFS=1;HDDSIZEGB=20;ENCRYPT=1;LVM=1;NICEVIDEO=1;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "BTRFS", value => 1 },
+          { key => "HDDSIZEGB", value => 20 },
+          { key => "ENCRYPT", value => 1 },
+          { key => "LVM", value => 1 },
+          { key => "NICEVIDEO", value => 1 },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1018,
-        name => 'cryptlvm',
+        name => "cryptlvm",
         prio => 50,
-        variables => 'REBOOTAFTERINSTALL=0;ENCRYPT=1;LVM=1;NICEVIDEO=1;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "REBOOTAFTERINSTALL", value => 0 },
+          { key => "ENCRYPT", value => 1 },
+          { key => "LVM", value => 1 },
+          { key => "NICEVIDEO", value => 1 },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1019,
-        name => 'doc',
+        name => "doc",
         prio => 60,
-        variables => 'DOCRUN=1;QEMUVGA=std;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "DOCRUN", value => 1 },
+          { key => "QEMUVGA", value => "std" },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1020,
-        name => 'doc_de',
+        name => "doc_de",
         prio => 60,
-        variables => 'DOCRUN=1;QEMUVGA=std;INSTLANG=de_DE;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "DOCRUN", value => 1 },
+          { key => "QEMUVGA", value => "std" },
+          { key => "INSTLANG", value => "de_DE" },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1021,
-        name => 'kde-live',
+        name => "kde-live",
         prio => 48,
-        variables => 'DESKTOP=kde;LIVETEST=1'
-    },
+        variables => '',
+        settings => [
+          { key => "DESKTOP", value => "kde" },
+          { key => "LIVETEST", value => 1 },
+        ],
+      },
     TestSuites => {
         id => 1022,
-        name => 'gnome-live',
+        name => "gnome-live",
         prio => 48,
-        variables => 'DESKTOP=gnome;LIVETEST=1'
-    },
+        variables => '',
+        settings => [
+          { key => "DESKTOP", value => "gnome" },
+          { key => "LIVETEST", value => 1 },
+        ],
+      },
     TestSuites => {
         id => 1023,
-        name => 'rescue',
+        name => "rescue",
         prio => 49,
-        variables => 'DESKTOP=xfce;LIVETEST=1;NOAUTOLOGIN=1;REBOOTAFTERINSTALL=0'
-    },
+        variables => '',
+        settings => [
+          { key => "DESKTOP", value => "xfce" },
+          { key => "LIVETEST", value => 1 },
+          { key => "NOAUTOLOGIN", value => 1 },
+          { key => "REBOOTAFTERINSTALL", value => 0 },
+        ],
+      },
     TestSuites => {
         id => 1024,
-        name => 'nice',
+        name => "nice",
         prio => 50,
-        variables => 'NICEVIDEO=1;DOCRUN=1;REBOOTAFTERINSTALL=0;SCREENSHOTINTERVAL=0.25;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "NICEVIDEO", value => 1 },
+          { key => "DOCRUN", value => 1 },
+          { key => "REBOOTAFTERINSTALL", value => 0 },
+          { key => "SCREENSHOTINTERVAL", value => 0.25 },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1025,
-        name => 'splitusr',
+        name => "splitusr",
         prio => 50,
-        variables => 'NICEVIDEO=1;SPLITUSR=1;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "NICEVIDEO", value => 1 },
+          { key => "SPLITUSR", value => 1 },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1026,
-        name => 'update_121',
+        name => "update_121",
         prio => 50,
-        variables => 'UPGRADE=1;HDD_1=openSUSE-12.1-x86_64.hda;HDDVERSION=openSUSE-12.1;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "UPGRADE", value => 1 },
+          { key => "HDD_1", value => "openSUSE-12.1-x86_64.hda" },
+          { key => "HDDVERSION", value => "openSUSE-12.1" },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1027,
-        name => 'update_122',
+        name => "update_122",
         prio => 50,
-        variables => 'UPGRADE=1;HDD_1=openSUSE-12.2-x86_64.hda;HDDVERSION=openSUSE-12.2;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "UPGRADE", value => 1 },
+          { key => "HDD_1", value => "openSUSE-12.2-x86_64.hda" },
+          { key => "HDDVERSION", value => "openSUSE-12.2" },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1028,
-        name => 'update_123',
+        name => "update_123",
         prio => 50,
-        variables => 'UPGRADE=1;HDD_1=openSUSE-12.3-x86_64.hda;HDDVERSION=openSUSE-12.3;DESKTOP=kde'
-    },
+        variables => '',
+        variables => '',
+        settings => [
+          { key => "UPGRADE", value => 1 },
+          { key => "HDD_1", value => "openSUSE-12.3-x86_64.hda" },
+          { key => "HDDVERSION", value => "openSUSE-12.3" },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1029,
-        name => 'dual_windows8',
+        name => "dual_windows8",
         prio => 50,
-        variables => 'HDD_1=Windows-8.hda;HDDVERSION=Windows 8;HDDMODEL=ide-hd;DUALBOOT=1;NUMDISKS=1;DESKTOP=kde'
-    },
+        variables => '',
+        settings => [
+          { key => "HDD_1", value => "Windows-8.hda" },
+          { key => "HDDVERSION", value => "Windows 8" },
+          { key => "HDDMODEL", value => "ide-hd" },
+          { key => "DUALBOOT", value => 1 },
+          { key => "NUMDISKS", value => 1 },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     TestSuites => {
         id => 1030,
-        name => 'install_only',
+        name => "install_only",
         prio => 40,
-        variables => 'INSTALLONLY=1;DESKTOP=kde'
-    },
-
+        variables => '',
+        settings => [
+          { key => "INSTALLONLY", value => 1 },
+          { key => "DESKTOP", value => "kde" },
+        ],
+      },
     Products => {
         name => 'oS-DVD-i586',
         distri => 'opensuse',

@@ -108,7 +108,7 @@ sub generate_jobs {
             my %tmp_settings = _str_to_hash($job_template->machine->variables);
             @settings{keys %tmp_settings} = values %tmp_settings;
 
-            %tmp_settings = _str_to_hash($job_template->test_suite->variables);
+            %tmp_settings = map { $_->key => $_->value } $job_template->test_suite->settings;
             @settings{keys %tmp_settings} = values %tmp_settings;
             $settings{TEST} = $job_template->test_suite->name;
             $settings{MACHINE} = $job_template->machine->name;
