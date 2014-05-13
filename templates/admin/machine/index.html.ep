@@ -21,7 +21,7 @@
 
     %= include 'layouts/info'
 
-	<table class="table-autostripe">
+	<table class="table-autostripe" id="machines">
 	    <thead>
 		    <tr>
                 <th>name</th>
@@ -36,7 +36,7 @@
                     <td class="name"><%= $machine->name %></td>
                     <td class="backend"><%= $machine->backend %></td>
                     %= include 'layouts/admin_settings', obj => $machine, table => 'machine'
-                    <td class="action"><%= link_to 'delete' => url_for('admin_machine', machineid => $machine->id) => 'data-method' => 'delete' %></td>
+                    <td class="action"><%= link_to 'delete' => url_for('admin_machine', machine_id => $machine->id) => 'data-method' => 'delete' %></td>
                 </tr>
             % }
         </tbody>

@@ -18,15 +18,14 @@ package OpenQA::Admin::TestSuite;
 use Mojo::Base 'Mojolicious::Controller';
 
 use base 'OpenQA::Admin::VariableHelpers';
-use OpenQA::Variables;
 
 sub index {
     my $self = shift;
     my @suites = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
 
-    $self->stash('error', undef);
+    #    $self->stash('error', undef);
     $self->stash('suites', \@suites);
-    my $rc = $self->db->resultset("TestSuiteSettings")->search(undef, { columns => [ qw/key/ ], distinct => 1 } );
+    my $rc = $self->db->resultset("TestSuiteSettings")->search(undef, { columns => [qw/key/], distinct => 1 } );
     $self->stash('variables', [ sort map { $_->key } $rc->all() ]);
     $self->render('admin/test_suite/index');
 }
@@ -44,15 +43,13 @@ sub create {
         }
     }
     else {
-        eval { $self->db->resultset("TestSuites")->create({name => $self->param('name'),prio => $self->param('prio')}) };
+        eval { $self->db->resultset("TestSuites")->create({name => $self->param('name'),prio => $self->param('prio'),variables => '',})};
         $error = $@;
     }
 
     if ($error) {
-        my @suites = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
         $self->stash('error', "Error adding the test suite: $error");
-        $self->stash('suites', \@suites);
-        $self->render('admin/test_suite/index');
+        return $self->index;
     }
     else {
         $self->flash(info => 'Test suite '.$self->param('name').' added');

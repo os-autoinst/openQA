@@ -17,12 +17,18 @@
 package OpenQA::Admin::Machine;
 use Mojo::Base 'Mojolicious::Controller';
 
+use base 'OpenQA::Admin::VariableHelpers';
+
 sub index {
     my $self = shift;
     my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});
 
-    $self->stash('error', undef);
+    #    $self->stash('error', undef);
     $self->stash('machines', \@machines);
+
+    my $rc = $self->db->resultset("MachineSettings")->search(undef, { columns => [qw/key/], distinct => 1 } );
+    $self->stash('variables', [ sort map { $_->key } $rc->all() ]);
+
     $self->render('admin/machine/index');
 }
 
@@ -32,23 +38,20 @@ sub create {
     my $validation = $self->validation;
     $validation->required('name');
     $validation->required('backend');
-    $validation->required('variables')->like(qr/^(\w+=[ \,\.\-\w]+;?)+$/);
     if ($validation->has_error) {
-        $error = "wrong parameters.";
-        if ($validation->has_error('variables')) {
-            $error = $error.' Variables should contain a list of assignations delimited by semicolons.';
+        $error = "wrong parameter: ";
+        for my $k (qw/name backend/) {
+            $error .= $k if $validation->has_error($k);
         }
     }
     else {
-        eval { $self->db->resultset("Machines")->create({name => $self->param('name'),backend => $self->param('backend'),variables => $self->param('variables')}) };
+        eval { $self->db->resultset("Machines")->create({name => $self->param('name'),backend => $self->param('backend'),variables => ''})};
         $error = $@;
     }
 
     if ($error) {
-        my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});
         $self->stash('error', "Error adding the machine: $error");
-        $self->stash('machines', \@machines);
-        $self->render('admin/machine/index');
+        return $self->index;
     }
     else {
         $self->flash(info => 'Machine '.$self->param('name').' added');

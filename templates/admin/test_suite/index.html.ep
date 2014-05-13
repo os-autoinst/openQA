@@ -20,7 +20,7 @@
 
     %= include 'layouts/info'
 
-	<table class="table-autostripe">
+	<table class="table-autostripe" id='test-suites'>
 	    <thead>
 		    <tr>
                 <th>name</th>

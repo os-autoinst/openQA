@@ -27,7 +27,7 @@
 
     %= include 'layouts/info'
 
-	<table class="table-autostripe">
+	<table class="table-autostripe" id='products'>
 	    <thead>
 		    <tr>
                 <th>name</th>
@@ -45,8 +45,8 @@
                     <td class="distri"><%= $product->distri %></td>
                     <td class="flavor"><%= $product->flavor %></td>
                     <td class="arch"><%= $product->arch %></td>
-                    %= include 'layouts/admin_settings', obj => $product, table => 'machine'
-                    <td class="action"><%= link_to 'delete' => url_for('admin_product', productid => $product->id) => 'data-method' => 'delete' %></td>
+                    %= include 'layouts/admin_settings', obj => $product, table => 'product'
+                    <td class="action"><%= link_to 'delete' => url_for('admin_product', product_id => $product->id) => 'data-method' => 'delete' %></td>
                 </tr>
             % }
         </tbody>
