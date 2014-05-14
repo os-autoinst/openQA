@@ -6,12 +6,12 @@
     % }
 
     %= form_for url_for("admin_${table}_setting_post", "${table}_id" => $obj->id) => (id => "form_${table}_".$obj->id ), (method => 'post') => begin
-        <select name="key" required="true" size="1">
-                <option value=""></option>
+        %= text_field 'key', list => "variables"
+        <datalist id="variables">
             % for my $v (@$variables) {
                 <option><%= $v %></option>
             % }
-        </select>
+        </datalist>
         %= text_field 'value', size => 5
 
         %= submit_button 'add'

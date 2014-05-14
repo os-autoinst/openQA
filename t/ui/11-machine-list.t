@@ -68,9 +68,10 @@ like($delvarhref, qr,^/admin/machines/$id/\d+$,, "delete link ok ok");
 
 say "delete link $delvarhref\n";
 
-# variable selection box, value and add button
-$req->element_exists("#machine_$id td.variables select");
-$req->text_is("#machine_$id td.variables select option:nth-child(2)" => 'LAPTOP');
+# variable combo box, value and add button
+$req->element_exists("#machine_$id td.variables input[type=text][name=key]");
+$req->element_exists("#machine_$id td.variables datalist");
+$req->text_is("#machine_$id td.variables datalist option:nth-child(1)" => 'LAPTOP');
 $req->element_exists("#machine_$id td.variables input[type=text][name=value]");
 $req->element_exists("#machine_$id td.variables input[type=submit][value=add]");
 # test suite delete button

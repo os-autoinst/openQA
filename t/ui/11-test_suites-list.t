@@ -54,9 +54,11 @@ $req->text_is('#test_suite_1013 td.prio' => '50');
 $req->element_exists('#test_suite_1013 td.variables');
 # delete one variable link
 $req->element_exists('#test_suite_1013 td.variables a[data-method=delete][href="/admin/test_suites/1013/33"]');
-# variable selection box, value and add button
-$req->element_exists('#test_suite_1013 td.variables select');
-$req->text_is('#test_suite_1013 td.variables select option:nth-child(2)' => 'BTRFS');
+
+# variable combo box, value and add button
+$req->element_exists("#test_suite_1013 td.variables input[type=text][name=key]");
+$req->element_exists("#test_suite_1013 td.variables datalist");
+$req->text_is('#test_suite_1013 td.variables datalist option:nth-child(1)' => 'BTRFS');
 $req->element_exists('#test_suite_1013 td.variables input[type=text][name=value]');
 $req->element_exists('#test_suite_1013 td.variables input[type=submit][value=add]');
 # test suite delete button
