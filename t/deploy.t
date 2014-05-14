@@ -41,22 +41,28 @@ my $dh = DBIx::Class::DeploymentHandler->new(
 );
 ok(defined $dh->install, "deployed");
 
-my $fn = 't/diagram-v' . $schema->VERSION . '.png';
-unlink($fn);
-my $trans = SQL::Translator->new(
-    parser        => 'SQL::Translator::Parser::DBIx::Class',
-    parser_args   => { dbic_schema => $schema },
-    producer      => 'Diagram',
-    producer_args => {
-        out_file         => $fn,
-        show_constraints => 1,
-        show_datatypes   => 1,
-        show_sizes       => 1,
-        show_fk_only     => 0,
-        title            => 'openQA database schema version '.$schema->VERSION,
-    } );
+SKIP: {
+    eval { require SQL::Translator::Producer::Diagram; };
 
-ok($trans->translate, "generate graph");
-ok(-e $fn, "graph png exists");
+    skip "SQL::Translator::Producer::Diagram not functional", 2 if "$@";
+
+    my $fn = 't/diagram-v' . $schema->VERSION . '.png';
+    unlink($fn);
+    my $trans = SQL::Translator->new(
+        parser        => 'SQL::Translator::Parser::DBIx::Class',
+        parser_args   => { dbic_schema => $schema },
+        producer      => 'Diagram',
+        producer_args => {
+            out_file         => $fn,
+            show_constraints => 1,
+            show_datatypes   => 1,
+            show_sizes       => 1,
+            show_fk_only     => 0,
+            title            => 'openQA database schema version '.$schema->VERSION,
+        } );
+
+    ok($trans->translate, "generate graph");
+    ok(-e $fn, "graph png exists");
+}
 
 done_testing();
