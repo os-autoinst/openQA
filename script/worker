@@ -564,6 +564,9 @@ sub main(){
                     warn "can't move log: $!\n";
                     $keep_running = 0;
                 }
+                if (-s "$pooldir/serial0") {
+                    move("$pooldir/serial0", $testresults.'/serial0.txt');
+                }
 
                 if (open(my $log, '>>', "$testresults/autoinst-log.txt")) {
                     print $log "+++ worker notes +++\n";
