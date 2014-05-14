@@ -25,7 +25,7 @@ sub add_variable {
     my $validation = $self->validation;
     $self->app->log->debug($self->param($table.'_id'));
     #    $validation->required('testsuiteid');
-    $validation->required('key')->like(qr/^[[:alnum:]]+$/);
+    $validation->required('key')->like(qr/^[[:alnum:]_]+$/);
     $validation->required('value');
     if ($validation->has_error) {
         $error = "wrong parameters.";
