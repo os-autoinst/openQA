@@ -25,7 +25,7 @@ use Fcntl ':mode';
 # - run script/upgradedb --prepare
 # - edit dbicdh/SQLite/upgrade/$old-$new/001-auto.sql and add missing triggers
 # - optionally add migration script dbicdh/_common/upgrade/$old-$new/...
-our $VERSION = '10';
+our $VERSION = '11';
 
 __PACKAGE__->load_namespaces;
 

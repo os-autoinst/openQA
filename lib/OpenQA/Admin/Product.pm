@@ -36,36 +36,41 @@ sub create {
     my $self = shift;
     my $error;
     my $validation = $self->validation;
-    $validation->required('name');
     $validation->required('distri');
+    $validation->required('version');
     $validation->required('arch');
     $validation->required('flavor');
+
+    my $product;
     if ($validation->has_error) {
         $error = "wrong parameter: ";
-        for my $k (qw/name distri arch flavor/) {
+        for my $k (qw/distri version arch flavor/) {
             $error .= $k if $validation->has_error($k);
         }
     }
     else {
         eval {
-            $self->db->resultset("Products")->create(
+            $product = $self->db->resultset("Products")->create(
                 {
-                    name => $self->param('name'),
                     distri => $self->param('distri'),
+                    version => $self->param('version'),
                     arch => $self->param('arch'),
+                    flavor => $self->param('flavor'),
+                    name => '', # TODO: remove
                     variables => '', # TODO: remove
-                    flavor => $self->param('flavor')
                 }
             );
         };
         $error = $@;
+        $error = "unexpected error: \$product undef" unless $error || $product;
     }
     if ($error) {
         $self->stash('error', "Error adding the product: $error");
+        $self->app->log->error($error);
         return $self->index;
     }
     else {
-        $self->flash(info => 'Product '.$self->param('name').' added');
+        $self->flash(info => 'Product '.$product->name.' added');
         $self->redirect_to($self->url_for('admin_products'));
     }
 }

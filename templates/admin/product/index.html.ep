@@ -5,18 +5,14 @@
     <div class="box-header aligncenter">New product</div>
     %= form_for admin_products => (method => 'post') => begin
         <p>
-            %= label_for name => 'Name'
-            %= text_field 'name', size => 15
             %= label_for name => 'Distri'
             %= text_field 'distri', size => 15
-        </p>
-        <p>
+            %= label_for name => 'Version'
+            %= text_field 'version', size => 10
             %= label_for name => 'Flavor'
             %= text_field 'flavor', size => 15
             %= label_for name => 'Arch'
             %= text_field 'arch', size => 10
-        </p>
-        <p>
             %= submit_button 'create'
         </p>
     % end
@@ -32,6 +28,7 @@
 		    <tr>
                 <th>name</th>
                 <th>distri</th>
+                <th>version</th>
                 <th>flavor</th>
                 <th>arch</th>
                 <th>variables</th>
@@ -43,6 +40,7 @@
                 <tr id="product_<%= $product->id %>">
                     <td class="name"><%= $product->name %></td>
                     <td class="distri"><%= $product->distri %></td>
+                    <td class="version"><%= $product->version %></td>
                     <td class="flavor"><%= $product->flavor %></td>
                     <td class="arch"><%= $product->arch %></td>
                     %= include 'layouts/admin_settings', obj => $product, table => 'product'

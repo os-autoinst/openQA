@@ -289,8 +289,9 @@ my $info =[
         settings => [{ key => "INSTALLONLY", value => 1 },{ key => "DESKTOP", value => "kde" },],
     },
     Products => {
-        name => 'oS-DVD-i586',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'DVD',
         arch => 'i586',
         variables => '',
@@ -324,8 +325,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-DVD-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'DVD',
         arch => 'x86_64',
         variables => '',
@@ -363,8 +365,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-GNOME-Live-i686',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'GNOME-Live',
         arch => 'i686',
         variables => '',
@@ -389,8 +392,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-GNOME-Live-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'GNOME-Live',
         arch => 'x86_64',
         variables => '',
@@ -415,8 +419,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-KDE-Live-i686',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'KDE-Live',
         arch => 'i686',
         variables => '',
@@ -441,8 +446,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-KDE-Live-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'KDE-Live',
         arch => 'x86_64',
         variables => '',
@@ -467,8 +473,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-NET-i586',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'NET',
         arch => 'i586',
         variables => '', # Bigger than needed
@@ -501,8 +508,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-NET-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'NET',
         arch => 'x86_64',
         variables => '', # Bigger than needed
@@ -536,8 +544,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-Rescue-i686',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Rescue-CD',
         arch => 'i686',
         variables => '',
@@ -545,8 +554,9 @@ my $info =[
         job_templates => [{machine_id => 1001, test_suite_id => 1023},]
     },
     Products => {
-        name => 'oS-Rescue-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Rescue-CD',
         arch => 'x86_64',
         variables => '',
@@ -554,8 +564,9 @@ my $info =[
         job_templates => [{machine_id => 1002, test_suite_id => 1023},]
     },
     Products => {
-        name => 'oS-DVD-Biarch',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'DVD',
         arch => 'i586-x86_64',
         variables => '',
@@ -590,8 +601,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-Staging-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Staging:Core',
         flavor => 'Staging-DVD',
         arch => 'x86_64',
         variables => '',
@@ -599,8 +611,9 @@ my $info =[
         job_templates => [{machine_id => 1001, test_suite_id => 1007},]
     },
     Products => {
-        name => 'oS-Promo-i586',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Promo-DVD',
         arch => 'i586',
         variables => '',
@@ -620,8 +633,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-Promo-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Promo-DVD',
         arch => 'x86_64',
         variables => '',
@@ -642,8 +656,9 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-OpenSourcePress-i586',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Promo-DVD-OpenSourcePress',
         arch => 'i586',
         variables => '',
@@ -651,8 +666,9 @@ my $info =[
         job_templates => [{machine_id => 1001, test_suite_id => 1021},{machine_id => 1001, test_suite_id => 1022},]
     },
     Products => {
-        name => 'oS-OpenSourcePress-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Promo-DVD-OpenSourcePress',
         arch => 'x86_64',
         variables => '',

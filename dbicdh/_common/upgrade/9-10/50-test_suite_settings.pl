@@ -29,7 +29,7 @@ sub {
     # [1] for deploy, [1,2] for upgrade or downgrade, probably used with _any
     my $versions = shift;
 
-    my $rs = $schema->resultset('Products');
+    my $rs = $schema->resultset('Products')->search({}, { columns => [qw/id variables/]});
     my $data = [ [qw/product_id key value/]];
     while (my $r = $rs->next()) {
         my @vars = split(/;/, $r->variables);
