@@ -338,7 +338,15 @@ sub clean_pool($){
     return if $options{'no-cleanup'};
     my $job = shift;
     my $name = $job->{'settings'}->{'NAME'};
-    remove_tree("$logupload_dir/$name","$pooldir/testresults","$pooldir/video","$pooldir/movie","$pooldir/qemuscreenshot","$pooldir/raid");
+    for my $file (<$pooldir/*>) {
+        if (-d $file) {
+            remove_tree($file);
+        }
+        else {
+            unlink $file;
+        }
+    }
+    remove_tree("$logupload_dir/$name");
 }
 
 sub backup_testresults($){
