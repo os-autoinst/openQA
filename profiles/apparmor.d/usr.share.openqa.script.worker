@@ -59,7 +59,7 @@
   /usr/share/qemu/keymaps/* r,
   /var/lib/openqa/factory/iso/* r,
   /var/lib/openqa/factory/hdd/* r,
-  /var/lib/openqa/pool/*/ w,
+  /var/lib/openqa/pool/*/ rw,
   /var/lib/openqa/pool/*/* rw,
   /var/lib/openqa/pool/*/vars.json rwk,
   /var/lib/openqa/pool/*/.locked wk,
