@@ -65,7 +65,7 @@ lj;
 
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
-$ret = $t->post_ok('/api/v1/isos', form => { iso => $iso, distri => 'opensuse', version => '13.1', flavor => 'DVD', arch => 'i586', build => '0091' })->status_is(200);
+$ret = $t->post_ok('/api/v1/isos', form => { ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091' })->status_is(200);
 
 is($ret->tx->res->json->{count}, 2, "two new jobs created");
 my @newids = @{$ret->tx->res->json->{ids}};
