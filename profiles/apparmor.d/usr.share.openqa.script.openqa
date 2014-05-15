@@ -28,6 +28,7 @@
   /usr/share/openqa/script/openqa r,
   /usr/share/openqa/templates/ r,
   /usr/share/openqa/templates/** r,
+  /var/lib/openqa/.gitconfig r,
   /var/lib/openqa/backlog/ r,
   /var/lib/openqa/cache/** rw,
   /var/lib/openqa/db/ r,
