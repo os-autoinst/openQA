@@ -20,27 +20,102 @@ use openqa;
 use Scheduler ();
 use Try::Tiny;
 
+sub _generate_jobs {
+    my ($self, %args) = @_;
+
+    my $ret = [];
+
+    my @products = $self->db->resultset('Products')->search(
+        {
+            distri => lc($args{DISTRI}),
+            version => $args{VERSION},
+            flavor => $args{FLAVOR},
+            arch => $args{ARCH},
+        }
+    );
+
+    if (@products) {
+        $self->app->log->debug("products: ". join(',', map { $_->name } @products));
+    }
+    else {
+        $self->app->log->error("no products found for ".join('-', map { $args{$_} } qw/DISTRI VERSION FLAVOR ARCH/));
+    }
+
+    for my $product (@products) {
+        my @templates = $product->job_templates;
+        unless (@templates) {
+            $self->app->log->error("no templates found for ".join('-', map { $args{$_} } qw/DISTRI VERSION FLAVOR ARCH/));
+        }
+        for my $job_template (@templates) {
+            my %settings = map { $_->key => $_->value } $product->settings;
+
+            my %tmp_settings = map { $_->key => $_->value } $job_template->machine->settings;
+            @settings{keys %tmp_settings} = values %tmp_settings;
+
+            %tmp_settings = map { $_->key => $_->value } $job_template->test_suite->settings;
+            @settings{keys %tmp_settings} = values %tmp_settings;
+            $settings{TEST} = $job_template->test_suite->name;
+            $settings{MACHINE} = $job_template->machine->name;
+
+            # ISO_MAXSIZE can have the separator _
+            if (exists $settings{ISO_MAXSIZE}) {
+                $settings{ISO_MAXSIZE} =~ s/_//g;
+            }
+
+            for (keys  %args) {
+                $settings{uc $_} = $args{$_};
+            }
+            # Makes sure tha the DISTRI is lowercase
+            $settings{DISTRI} = lc($settings{DISTRI});
+
+            $settings{PRIO} = $job_template->test_suite->prio;
+
+            # XXX: hack, maybe use http proxy instead!?
+            if ($settings{NETBOOT} && !$settings{SUSEMIRROR} && $self->app->config->{global}->{suse_mirror}) {
+                my $repourl = $self->app->config->{global}->{suse_mirror}."/iso/".$args{ISO};
+                $repourl =~ s/-Media\.iso$//;
+                $repourl .= '-oss';
+                $settings{SUSEMIRROR} = $repourl;
+                $settings{FULLURL} = 1;
+            }
+
+            push @$ret, \%settings;
+        }
+    }
+
+    return $ret;
+}
+
+
 sub create {
     my $self = shift;
 
-    my $iso = $self->param('iso');
-    my @tests = split(',', ($self->param('tests') || ''));
-    for my $t (@tests) {
-        if ($t !~ /^[a-zA-Z0-9+_-]+$/) {
-            $self->res->message("invalid character in test name");
-            return $self->rendered(400);
+    my $validation = $self->validation;
+    $validation->required('iso');
+    $validation->required('distri');
+    $validation->required('version');
+    $validation->required('flavor');
+    $validation->required('arch');
+    if ($validation->has_error) {
+        my $error = "Error: missing parameters:";
+        for my $k (qw/iso distri version flavor arch/) {
+            $self->app->log->debug(@{$validation->error($k)}) if $validation->has_error($k);
+            $error .= ' '.$k if $validation->has_error($k);
         }
-    }
-    unless ($iso) {
-        $self->res->message("Missing iso parameter");
+        $self->res->message($error);
         return $self->rendered(400);
     }
-    my $jobs = openqa::distri::generate_jobs($self->app, iso => $iso, requested_runs => \@tests);
+
+    my $params = $self->req->params->to_hash;
+    # job_create expects upper case keys
+    my %up_params = map { uc $_ => $params->{$_} } keys %$params;
+
+    my $jobs = $self->_generate_jobs(%up_params);
 
     # XXX: take some attributes from the first job to guess what old jobs to
     # cancel. We should have distri object that decides which attributes are
     # relevant here.
-    if ($jobs && $jobs->[0] && $jobs->[0]->{BUILD} && $jobs->[0]->{FLAVOR} ne 'Staging-DVD') {
+    if ($jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
         my %cond;
         for my $k (qw/DISTRI VERSION FLAVOR ARCH/) {
             next unless $jobs->[0]->{$k};
@@ -52,6 +127,7 @@ sub create {
     }
 
     my $cnt = 0;
+    my @ids;
     for my $settings (@{$jobs||[]}) {
         my $prio = $settings->{PRIO};
         delete $settings->{PRIO};
@@ -66,13 +142,15 @@ sub create {
         };
         if ($id) {
             $cnt++;
+            push @ids, $id;
             # change prio only if other than defalt prio
             if( $prio && $prio != 50 ) {
                 Scheduler::job_set_prio(jobid => $id, prio => $prio);
             }
         }
     }
-    $self->render(json => {count => $cnt});
+    $self->app->log->debug("created $cnt jobs");
+    $self->render(json => {count => $cnt, ids => \@ids });
 }
 
 sub destroy {

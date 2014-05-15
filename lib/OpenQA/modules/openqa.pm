@@ -506,32 +506,5 @@ sub file_content($){
     return $result;
 }
 
-package openqa::distri;
-
-sub generate_jobs{
-    my $app = shift;
-    my $ret = [];
-    # walk through all provided modules to let them generate
-    # jobs for the iso
-    for my $module (glob $distri_file_glob) {
-        $app->log->debug($module);
-        $module =~ s,/[^/]+\.pm$,,;
-        $module =~ s,.*/,,;
-        $module = __PACKAGE__ . "::" . $module;
-        eval {
-            eval "require $module";
-            if ($@) {
-                die $@;
-            }
-            my $jobs = $module->generate_jobs($app, @_);
-            push @$ret, @$jobs if $jobs;
-        };
-        if ($@) {
-            print STDERR "Error in $module: $@\n";
-        }
-    }
-    return $ret;
-}
-
 1;
 # vim: set sw=4 et:

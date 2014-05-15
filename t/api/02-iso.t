@@ -65,7 +65,11 @@ lj;
 
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
-$ret = $t->post_ok('/api/v1/isos', form => { iso => $iso })->status_is(200);
+$ret = $t->post_ok('/api/v1/isos', form => { iso => $iso, distri => 'opensuse', version => '13.1', flavor => 'DVD', arch => 'i586', build => '0091' })->status_is(200);
+
+is($ret->tx->res->json->{count}, 2, "two new jobs created");
+my @newids = @{$ret->tx->res->json->{ids}};
+my $newid = $newids[0];
 
 lj;
 
@@ -83,14 +87,14 @@ $ret = $t->get_ok('/api/v1/jobs/99981')->status_is(200);
 is($ret->tx->res->json->{job}->{state}, 'scheduled', "job 99981 is still scheduled");
 
 # ... and we have a new test
-$ret = $t->get_ok('/api/v1/jobs/99999')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'scheduled', 'new job 99999 is scheduled');
+$ret = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
+is($ret->tx->res->json->{job}->{state}, 'scheduled', "new job $newid is scheduled");
 
 # cancel the iso
 $ret = $t->post_ok("/api/v1/isos/$iso/cancel")->status_is(200);
 
-$ret = $t->get_ok('/api/v1/jobs/99999')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99999 is cancelled');
+$ret = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
+is($ret->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 
 # make sure we can't post invalid parameters
 $ret = $t->post_ok('/api/v1/isos', form => { iso => $iso, tests => "kde/usb" })->status_is(400);
