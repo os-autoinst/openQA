@@ -338,7 +338,15 @@ sub clean_pool($){
     return if $options{'no-cleanup'};
     my $job = shift;
     my $name = $job->{'settings'}->{'NAME'};
-    remove_tree("$logupload_dir/$name","$pooldir/testresults","$pooldir/video","$pooldir/movie","$pooldir/qemuscreenshot","$pooldir/raid");
+    for my $file (<$pooldir/*>) {
+        if (-d $file) {
+            remove_tree($file);
+        }
+        else {
+            unlink $file;
+        }
+    }
+    remove_tree("$logupload_dir/$name");
 }
 
 sub backup_testresults($){
@@ -540,7 +548,7 @@ sub main(){
                 close($log);
             }
 
-            if (!$aborted || $aborted eq 'cancel' || $aborted eq 'timeout' || $aborted eq 'crashed') {
+            if (!$aborted || !($aborted eq 'quit' && $aborted eq 'abort')) {
                 # collect uploaded logs
                 my @uploaded_logfiles = <$logupload_dir/$name/*>;
                 mkdir("$pooldir/testresults/$name/ulogs/");
@@ -563,6 +571,9 @@ sub main(){
                 unless (move("$pooldir/autoinst-log.txt", $testresults.'/autoinst-log.txt')) {
                     warn "can't move log: $!\n";
                     $keep_running = 0;
+                }
+                if (-s "$pooldir/serial0") {
+                    move("$pooldir/serial0", $testresults.'/serial0.txt');
                 }
 
                 if (open(my $log, '>>', "$testresults/autoinst-log.txt")) {

@@ -17,12 +17,18 @@
 package OpenQA::Admin::Product;
 use Mojo::Base 'Mojolicious::Controller';
 
+use base 'OpenQA::Admin::VariableHelpers';
+
 sub index {
     my $self = shift;
     my @products = $self->db->resultset("Products")->search(undef, {order_by => 'name'});
 
-    $self->stash('error', undef);
+    #    $self->stash('error', undef);
     $self->stash('products', \@products);
+
+    my $rc = $self->db->resultset("ProductSettings")->search(undef, { columns => [qw/key/], distinct => 1 } );
+    $self->stash('variables', [ sort map { $_->key } $rc->all() ]);
+
     $self->render('admin/product/index');
 }
 
@@ -34,22 +40,29 @@ sub create {
     $validation->required('distri');
     $validation->required('arch');
     $validation->required('flavor');
-    $validation->required('variables')->like(qr/^(\w+=[ \,\.\-\w]+;?)+$/);
     if ($validation->has_error) {
-        $error = "wrong parameters";
-        if ($validation->has_error('variables')) {
-            $error = $error.' Variables should contain a list of assignations delimited by semicolons.';
+        $error = "wrong parameter: ";
+        for my $k (qw/name distri arch flavor/) {
+            $error .= $k if $validation->has_error($k);
         }
     }
     else {
-        eval { $self->db->resultset("Products")->create({name => $self->param('name'),distri => $self->param('distri'),arch => $self->param('arch'),variables => $self->param('variables'),flavor => $self->param('flavor')}) };
+        eval {
+            $self->db->resultset("Products")->create(
+                {
+                    name => $self->param('name'),
+                    distri => $self->param('distri'),
+                    arch => $self->param('arch'),
+                    variables => '', # TODO: remove
+                    flavor => $self->param('flavor')
+                }
+            );
+        };
         $error = $@;
     }
     if ($error) {
-        my @products = $self->db->resultset("Products")->search(undef, {order_by => 'name'});
         $self->stash('error', "Error adding the product: $error");
-        $self->stash('products', \@products);
-        $self->render('admin/product/index');
+        return $self->index;
     }
     else {
         $self->flash(info => 'Product '.$self->param('name').' added');
@@ -57,11 +70,21 @@ sub create {
     }
 }
 
+sub add_variable {
+    my $self = shift;
+    $self->SUPER::add_variable('product', 'ProductSettings');
+}
+
+sub remove_variable {
+    my $self = shift;
+    $self->SUPER::remove_variable('product', 'ProductSettings');
+}
+
 sub destroy {
     my $self = shift;
     my $products = $self->db->resultset('Products');
 
-    if ($products->search({id => $self->param('productid')})->delete_all) {
+    if ($products->search({id => $self->param('product_id')})->delete_all) {
         $self->flash(info => 'Product deleted');
     }
     else {

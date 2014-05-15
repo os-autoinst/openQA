@@ -91,12 +91,15 @@ sub check {
         die "invalid character in $i\n" if $args{$i} =~ /\// || $args{$i} =~ /\.\./; # TODO: use whitelist?
     }
 
-    my @invalid;
-    while (my ($k, $v) = each %args) {
-        next if defined $self->get($args{DISTRI}, $args{VERSION}, $k);
-        push @invalid, $k;
-    }
-    return 'invalid variables: '.join(' ', sort @invalid) if @invalid;
+    # don't do this for now, accept any and let os-autoinst handle the sanitizing
+    #
+    #    my @invalid;
+    #    while (my ($k, $v) = each %args) {
+    #        next if defined $self->get($args{DISTRI}, $args{VERSION}, $k);
+    #        push @invalid, $k;
+    #    }
+    #    return 'invalid variables: '.join(' ', sort @invalid) if @invalid;
+    #
     return undef;
 }
 

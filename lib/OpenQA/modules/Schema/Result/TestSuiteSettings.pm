@@ -14,24 +14,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::Machines;
+package Schema::Result::TestSuiteSettings;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
 
-__PACKAGE__->table('machines');
+__PACKAGE__->table('test_suite_settings');
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
         is_auto_increment => 1,
     },
-    name => {
+    test_suite_id => {
+        data_type => 'integer',
+        is_foreign_key => 1,
+    },
+    key => {
         data_type => 'text',
     },
-    backend => {
-        data_type => 'text',
-    },
-    variables => {
+    value => {
         data_type => 'text',
     },
     t_created => {
@@ -44,9 +45,19 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([qw/name/]);
-__PACKAGE__->has_many(job_templates => 'Schema::Result::JobTemplates', 'machine_id');
-__PACKAGE__->has_many(settings => 'Schema::Result::MachineSettings', 'machine_id');
+__PACKAGE__->add_unique_constraint([qw/test_suite_id key/]);
+
+__PACKAGE__->belongs_to(
+    "test_suite",
+    "Schema::Result::TestSuites",
+    { 'foreign.id' => "self.test_suite_id" },
+    {
+        is_deferrable => 1,
+        join_type     => "LEFT",
+        on_delete     => "CASCADE",
+        on_update     => "CASCADE",
+    },
+);
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;

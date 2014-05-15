@@ -103,12 +103,12 @@ sub generate_jobs {
 
     foreach my $product (@products) {
         foreach my $job_template ($product->job_templates) {
-            my %settings = _str_to_hash($product->variables);
+            my %settings = map { $_->key => $_->value } $product->settings;
 
-            my %tmp_settings = _str_to_hash($job_template->machine->variables);
+            my %tmp_settings = map { $_->key => $_->value } $job_template->machine->settings;
             @settings{keys %tmp_settings} = values %tmp_settings;
 
-            %tmp_settings = _str_to_hash($job_template->test_suite->variables);
+            %tmp_settings = map { $_->key => $_->value } $job_template->test_suite->settings;
             @settings{keys %tmp_settings} = values %tmp_settings;
             $settings{TEST} = $job_template->test_suite->name;
             $settings{MACHINE} = $job_template->machine->name;

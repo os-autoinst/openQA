@@ -9,10 +9,7 @@
             %= text_field 'name', size => 15
             %= label_for name => 'Priority'
             %= text_field 'prio', size => 5
-        </p>
-        <p>
-            %= label_for name => 'Variables'
-            %= text_field 'variables', size => 30
+
             %= submit_button 'create'
         </p>
     % end
@@ -23,7 +20,7 @@
 
     %= include 'layouts/info'
 
-	<table class="table-autostripe">
+	<table class="table-autostripe" id='test-suites'>
 	    <thead>
 		    <tr>
                 <th>name</th>
@@ -37,8 +34,8 @@
                 <tr id="test_suite_<%= $suite->id %>">
                     <td class="name"><%= $suite->name %></td>
                     <td class="prio"><%= $suite->prio %></td>
-                    <td class="variables"><%= $suite->variables %></td>
-                    <td class="action"><%= link_to 'delete' => url_for('admin_test_suite', testsuiteid => $suite->id) => 'data-method' => 'delete' %></td>
+                    %= include 'layouts/admin_settings', obj => $suite, table => 'test_suite'
+                    <td class="action"><%= link_to 'delete' => url_for('admin_test_suite', test_suite_id => $suite->id) => 'data-method' => 'delete' %></td>
                 </tr>
             % }
         </tbody>

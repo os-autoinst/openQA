@@ -70,7 +70,7 @@ my $dh = DH->new(
         schema              => $schema,
         script_directory    => $script_directory,
         databases           => 'SQLite',
-        sql_translator_args => { add_drop_table => 0 },
+        sql_translator_args => { add_drop_table => 0, producer_args => { sqlite_version => '3.7' } },
     }
 );
 

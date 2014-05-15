@@ -53,6 +53,7 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/name/]);
 __PACKAGE__->has_many(job_templates => 'Schema::Result::JobTemplates', 'product_id');
 __PACKAGE__->add_unique_constraint([qw/distri arch flavor/]);
+__PACKAGE__->has_many(settings => 'Schema::Result::ProductSettings', 'product_id');
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;

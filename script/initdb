@@ -72,7 +72,7 @@ my $dh = DBIx::Class::DeploymentHandler->new(
         schema              => $schema,
         script_directory    => $script_directory,
         databases           => 'SQLite',
-        sql_translator_args => { add_drop_table => 1 },
+        sql_translator_args => { add_drop_table => 1, producer_args => { sqlite_version => '3.7' } },
         force_overwrite     => 0,
     }
 );

@@ -17,12 +17,16 @@
 package OpenQA::Admin::TestSuite;
 use Mojo::Base 'Mojolicious::Controller';
 
+use base 'OpenQA::Admin::VariableHelpers';
+
 sub index {
     my $self = shift;
     my @suites = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
 
-    $self->stash('error', undef);
+    #    $self->stash('error', undef);
     $self->stash('suites', \@suites);
+    my $rc = $self->db->resultset("TestSuiteSettings")->search(undef, { columns => [qw/key/], distinct => 1 } );
+    $self->stash('variables', [ sort map { $_->key } $rc->all() ]);
     $self->render('admin/test_suite/index');
 }
 
@@ -32,23 +36,20 @@ sub create {
     my $validation = $self->validation;
     $validation->required('name');
     $validation->required('prio')->like(qr/^[0-9]{1,2}$/);
-    $validation->required('variables')->like(qr/^(\w+=[ \,\.\-\w]+;?)+$/);
     if ($validation->has_error) {
-        $error = "wrong parameters.";
-        if ($validation->has_error('variables')) {
-            $error = $error.' Variables should contain a list of assignations delimited by semicolons.';
+        $error = "wrong parameter: ";
+        for my $k (qw/name prio/) {
+            $error .= $k if $validation->has_error($k);
         }
     }
     else {
-        eval { $self->db->resultset("TestSuites")->create({name => $self->param('name'),prio => $self->param('prio'),variables => $self->param('variables')}) };
+        eval { $self->db->resultset("TestSuites")->create({name => $self->param('name'),prio => $self->param('prio'),variables => '',})};
         $error = $@;
     }
 
     if ($error) {
-        my @suites = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
-        $self->stash('error', "Error adding the machine: $error");
-        $self->stash('suites', \@suites);
-        $self->render('admin/test_suite/index');
+        $self->stash('error', "Error adding the test suite: $error");
+        return $self->index;
     }
     else {
         $self->flash(info => 'Test suite '.$self->param('name').' added');
@@ -56,11 +57,21 @@ sub create {
     }
 }
 
+sub add_variable {
+    my $self = shift;
+    $self->SUPER::add_variable('test_suite', 'TestSuiteSettings');
+}
+
+sub remove_variable {
+    my $self = shift;
+    $self->SUPER::remove_variable('test_suite', 'TestSuiteSettings');
+}
+
 sub destroy {
     my $self = shift;
     my $suites = $self->db->resultset('TestSuites');
 
-    if ($suites->search({id => $self->param('testsuiteid')})->delete_all) {
+    if ($suites->search({id => $self->param('test_suite_id')})->delete_all) {
         $self->flash(info => 'Test suite deleted');
     }
     else {
