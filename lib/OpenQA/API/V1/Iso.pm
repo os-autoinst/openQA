@@ -34,6 +34,18 @@ sub _generate_jobs {
         }
     );
 
+    unless (@products) {
+        $self->app->log->debug("no products found, retrying version wildcard");
+        @products = $self->db->resultset('Products')->search(
+            {
+                distri => lc($args{DISTRI}),
+                version => '*',
+                flavor => $args{FLAVOR},
+                arch => $args{ARCH},
+            }
+        );
+    }
+
     if (@products) {
         $self->app->log->debug("products: ". join(',', map { $_->name } @products));
     }
