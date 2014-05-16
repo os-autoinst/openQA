@@ -31,9 +31,22 @@ use Data::Dump qw/dd pp/;
 
 my $datafile = shift @ARGV;
 die "Data file not found\n" unless $datafile && -r $datafile;
-my $info = do $datafile;
-if (my $error = $@) {
-    die "Error in data file: $error\n";
+
+my $info;
+
+if ($datafile =~ /\.json$/) {
+    use JSON;
+    local $/;
+    open(my $fh, '<', $datafile);
+    $info = JSON->new->relaxed->decode(<$fh>);
+    close $fh;
+    dd $info;
+}
+else {
+    $info = do $datafile;
+    if (my $error = $@) {
+        die "Error in data file: $error\n";
+    }
 }
 
 my $dbdir = dirname($openqa::dbfile);
@@ -53,11 +66,13 @@ $schema->storage->dbh_do(
     sub {
         my ($storage, $dbh, @args) = @_;
         $dbh->do("PRAGMA synchronous = OFF");
-    });
+    }
+);
 
 my @tables = (qw/Machines TestSuites Products JobTemplates/);
 my %added;
 for my $table (@tables) {
+    next unless $info->{$table};
     $added{$table}->{of} = @{$info->{$table}};
     $added{$table}->{added} = 0;
     for my $entry (@{$info->{$table}}) {

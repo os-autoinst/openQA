@@ -64,7 +64,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options,"tmp","help|h",) or usage(1);
+GetOptions(\%options, "json", "tmp","help|h",) or usage(1);
 
 
 my $schema;
@@ -171,4 +171,10 @@ for my $table (keys %result) {
     }
 }
 
-dd \%result;
+if ($options{json}) {
+    use JSON;
+    print JSON->new->pretty->encode(\%result);
+}
+else {
+    dd \%result;
+}
