@@ -34,7 +34,11 @@ sub {
     while (my $r = $rs->next()) {
         my @vars = split(/;/, $r->variables);
         for (@vars) {
-            push @$data, [ $r->id, split(/=/, $_, 2)];
+            my ($k, $v) = split(/=/, $_, 2);
+            if ($k eq 'ISO_MAXSIZE') {
+                $v =~ s/_//g;
+            }
+            push @$data, [ $r->id, $k, $v];
         }
     }
     $schema->resultset('Products')->update({ variables => ''});

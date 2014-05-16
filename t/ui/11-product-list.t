@@ -79,13 +79,13 @@ $req->element_exists("#product_$id td.variables input[type=submit][value=add]");
 # test suite delete button
 $req->element_exists("#product_$id td.action a[data-method=delete][href=\"/admin/products/$id\"]");
 
-$req->text_is("#product_$id td.variables" => 'DVD=1 ISO_MAXSIZE=4_700_372_992');
+$req->text_is("#product_$id td.variables" => 'DVD=1 ISO_MAXSIZE=4700372992');
 
 # delete a variable
 $t->delete_ok($delvarhref, { 'X-CSRF-Token' => $token })->status_is(302);
 
 $req = $t->get_ok('/admin/products')->status_is(200);
-$req->text_is("#product_$id td.variables" => 'ISO_MAXSIZE=4_700_372_992');
+$req->text_is("#product_$id td.variables" => 'ISO_MAXSIZE=4700372992');
 
 # delete a test suite
 $t->delete_ok("/admin/products/$id", { 'X-CSRF-Token' => $token })->status_is(302);

@@ -73,11 +73,6 @@ sub _generate_jobs {
             $settings{TEST} = $job_template->test_suite->name;
             $settings{MACHINE} = $job_template->machine->name;
 
-            # ISO_MAXSIZE can have the separator _
-            if (exists $settings{ISO_MAXSIZE}) {
-                $settings{ISO_MAXSIZE} =~ s/_//g;
-            }
-
             for (keys  %args) {
                 $settings{uc $_} = $args{$_};
             }
