@@ -39,7 +39,11 @@ sub _generate_jobs {
         @products = $self->db->resultset('Products')->search(
             {
                 distri => lc($args{DISTRI}),
-                version => '*',
+                # TODO: add conversion to future migration script?
+                -or => [
+                    version => '',
+                    version => '*',
+                ],
                 flavor => $args{FLAVOR},
                 arch => $args{ARCH},
             }
