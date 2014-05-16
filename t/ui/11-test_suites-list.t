@@ -48,35 +48,44 @@ $t->delete_ok('/logout')->status_is(302);
 $test_case->login($t, 'https://openid.camelot.uk/arthur');
 $req = $t->get_ok('/admin/test_suites')->status_is(200);
 
+my $id;
+$req->tx->res->dom->find('#test-suites tbody td.name')->each(sub { my $node = shift; $id = $node->parent->{id} if $node->text eq 'RAID0'});
+$id =~ s/test_suite_(\d+)/$1/;
+ok($id, "id found");
+
 # check columns
-$req->text_is('#test_suite_1013 td.name' => 'RAID0');
-$req->text_is('#test_suite_1013 td.prio' => '50');
-$req->element_exists('#test_suite_1013 td.variables');
+$req->text_is("#test_suite_$id td.name" => 'RAID0');
+$req->text_is("#test_suite_$id td.prio" => '50');
+$req->element_exists("#test_suite_$id td.variables");
 # delete one variable link
-$req->element_exists('#test_suite_1013 td.variables a[data-method=delete][href="/admin/test_suites/1013/33"]');
+$req->element_exists("#test_suite_$id td.variables a[data-method=delete]");
+my $delvarhref = $req->tx->res->dom->at("#test_suite_$id td.variables a[data-method=delete]")->{'href'};
+like($delvarhref, qr,^/admin/test_suites/$id/\d+$,, "delete link ok ok");
+
+say "delete link $delvarhref\n";
 
 # variable combo box, value and add button
-$req->element_exists("#test_suite_1013 td.variables input[type=text][name=key]");
-$req->element_exists("#test_suite_1013 td.variables datalist");
-$req->text_is('#test_suite_1013 td.variables datalist option:nth-child(1)' => 'BTRFS');
-$req->element_exists('#test_suite_1013 td.variables input[type=text][name=value]');
-$req->element_exists('#test_suite_1013 td.variables input[type=submit][value=add]');
+$req->element_exists("#test_suite_$id td.variables input[type=text][name=key]");
+$req->element_exists("#test_suite_$id td.variables datalist");
+$req->text_is("#test_suite_$id td.variables datalist option:nth-child(1)" => 'DESKTOP');
+$req->element_exists("#test_suite_$id td.variables input[type=text][name=value]");
+$req->element_exists("#test_suite_$id td.variables input[type=submit][value=add]");
 # test suite delete button
-$req->element_exists('#test_suite_1013 td.action a[data-method=delete][href="/admin/test_suites/1013"]');
+$req->element_exists("#test_suite_$id td.action a[data-method=delete][href=\"/admin/test_suites/$id\"]");
 
-$req->text_is('#test_suite_1013 td.variables' => 'DESKTOP=kde INSTALLONLY=1 RAIDLEVEL=0');
+$req->text_is("#test_suite_$id td.variables" => 'DESKTOP=kde INSTALLONLY=1 RAIDLEVEL=0');
 
 # delete a variable
-$t->delete_ok('/admin/test_suites/1013/33', { 'X-CSRF-Token' => $token })->status_is(302);
+$t->delete_ok($delvarhref, { 'X-CSRF-Token' => $token })->status_is(302);
 
 $req = $t->get_ok('/admin/test_suites')->status_is(200);
-$req->text_is('#test_suite_1013 td.variables' => 'INSTALLONLY=1 RAIDLEVEL=0');
+$req->text_is("#test_suite_$id td.variables" => 'INSTALLONLY=1 RAIDLEVEL=0');
 
 # delete a test suite
-$t->delete_ok('/admin/test_suites/1013', { 'X-CSRF-Token' => $token })->status_is(302);
+$t->delete_ok("/admin/test_suites/$id", { 'X-CSRF-Token' => $token })->status_is(302);
 
 $req = $t->get_ok('/admin/test_suites')->status_is(200);
-$req->element_exists_not('td#test_suite_1013');
+$req->element_exists_not("td#test_suite_$id");
 
 # add a test suite, invalid
 $req = $t->post_ok('/admin/test_suites', { 'X-CSRF-Token' => $token }, form => { name => 'foo', prio => "foobar"})->status_is(200);
@@ -95,9 +104,9 @@ $req->element_exists_not('.ui-state-error');
 $req = $t->get_ok('/admin/test_suites')->status_is(200);
 $req->element_exists_not('.ui-state-error');
 
-my $id = 1031;
-# we could figure it out as well
-#$req->tx->res->dom->find('#test-suites tr td.name')->each(sub { my $node = shift; say $node->parent->{id} if $node->text eq 'foo'});
+$req->tx->res->dom->find('#test-suites tbody td.name')->each(sub { my $node = shift; $id = $node->parent->{id} if $node->text eq 'foo'});
+$id =~ s/test_suite_(\d+)/$1/;
+ok($id, "id found");
 
 $req->text_is("#test_suite_$id td.name" => 'foo');
 $req->text_is("#test_suite_$id td.prio" => '42');
