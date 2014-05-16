@@ -27,6 +27,7 @@ use POSIX qw/getuid getgid setuid setgid/;
 use openqa;
 use Schema::Schema;
 use Try::Tiny;
+use Data::Dump qw/pp/;
 
 my $datafile = shift @ARGV;
 die "Data file not found\n" unless $datafile && -r $datafile;
@@ -46,12 +47,14 @@ if (getuid() != $s[4]) {
 }
 
 my $schema = openqa::connect_db();
-for (my $i = 0; $i < @$info; $i++) {
-    try {
-        $schema->resultset($info->[$i])->create($info->[++$i]);
+
+for my $table (qw/Machines TestSuites Products/) {
+    for my $entry (@{$info->{$table}}) {
+        try {
+            $schema->resultset($table)->create($entry);
+        }
+        catch {
+            warn $_, pp $entry;
+        };
     }
-    catch {
-        my $tag = $info->[$i]->{name} || $info->[$i]->{id} || $i;
-        warn $tag.': '.$_;
-    };
 }
