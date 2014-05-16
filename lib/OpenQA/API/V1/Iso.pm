@@ -82,15 +82,6 @@ sub _generate_jobs {
 
             $settings{PRIO} = $job_template->test_suite->prio;
 
-            # XXX: hack, maybe use http proxy instead!?
-            if ($settings{NETBOOT} && !$settings{SUSEMIRROR} && $self->app->config->{global}->{suse_mirror}) {
-                my $repourl = $self->app->config->{global}->{suse_mirror}."/iso/".$args{ISO};
-                $repourl =~ s/-Media\.iso$//;
-                $repourl .= '-oss';
-                $settings{SUSEMIRROR} = $repourl;
-                $settings{FULLURL} = 1;
-            }
-
             push @$ret, \%settings;
         }
     }
