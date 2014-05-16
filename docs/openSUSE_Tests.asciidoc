@@ -33,8 +33,7 @@ following command:
 
 [source,sh]
 --------------------------------------------------------------------------------
-cd /usr/share/openqa
-./script/load_dbdata ./lib/OpenQA/modules/openqa/distri/opensuse-data.pl
+/var/lib/os-autoinst/tests/opensuse/templates
 --------------------------------------------------------------------------------
 
 This will load some default settings that were used at some point of time in
@@ -51,7 +50,12 @@ following commands:
 --------------------------------------------------------------------------------
 # Run the first test
 /usr/share/openqa/script/client isos post \
-         iso=openSUSE-Factory-NET-x86_64-Build0053-Media.iso tests=minimalx
+         ISO=openSUSE-Factory-NET-x86_64-Build0053-Media.iso \
+         DISTRI=opensuse \
+         VERSION=Factory \
+         FLAVOR=NET \
+         ARCH=x86_64 \
+         BUILD=0053
 --------------------------------------------------------------------------------
 
 If your openQA is not running on port 80 on 'localhost', you can add option
@@ -59,7 +63,4 @@ If your openQA is not running on port 80 on 'localhost', you can add option
 
 WARNING: Using only iso name in 'client' command and saving it in
 +/var/lib/openqa/factory/iso+ is recommended as is using Factory iso. ISOs are
-not uploaded from the path that you would specify. To use different iso, you
-would need to to make sure it is recognizable by openQA. See how naming is
-being parsed in +lib/OpenQA/modules/openqa/distri/opensuse.pm+
-
+not uploaded from the path that you would specify.
