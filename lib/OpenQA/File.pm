@@ -30,7 +30,9 @@ use Mojolicious::Static;
 sub needle {
     my $self = shift;
 
-    my $name = $self->param('name');
+    # do the format splitting ourselves instead of using mojo to restrict the suffixes
+    # 13.1.png would be format 1.png otherwise
+    my ($name, $dummy, $format) = fileparse($self->param('name'), qw(.png .txt));
     my $distri = $self->param('distri');
     my $version = $self->param('version') || '';
     my $needle = openqa::needle_info($name, $distri, $version);
@@ -41,7 +43,7 @@ sub needle {
     push @{$self->{static}->paths}, $needle->{needledir};
 
     # name is an URL parameter and can't contain slashes, so it should be safe
-    return $self->serve_static_($name . "." . $self->stash('format'));
+    return $self->serve_static_($name . $format);
 }
 
 sub _set_test($) {
