@@ -52,15 +52,15 @@ $req->element_exists('table#products');
 $req->element_exists('#products tbody td.name');
 
 my $id;
-$req->tx->res->dom->find('#products tbody td.name')->each(sub { my $node = shift; $id = $node->parent->{id} if $node->text eq 'opensuse-Factory-DVD-x86_64'});
+$req->tx->res->dom->find('#products tbody td.name')->each(sub { my $node = shift; $id = $node->parent->{id} if $node->text eq 'opensuse-13.1-DVD-i586'});
 $id =~ s/product_(\d+)/$1/;
 ok($id, "id found");
 
 # check columns
-$req->text_is("#product_$id td.name" => 'opensuse-Factory-DVD-x86_64');
-$req->text_is("#product_$id td.version" => 'Factory');
+$req->text_is("#product_$id td.name" => 'opensuse-13.1-DVD-i586');
+$req->text_is("#product_$id td.version" => '13.1');
 $req->text_is("#product_$id td.flavor" => 'DVD');
-$req->text_is("#product_$id td.arch" => 'x86_64');
+$req->text_is("#product_$id td.arch" => 'i586');
 $req->element_exists("#product_$id td.variables");
 # delete one variable link
 $req->element_exists("#product_$id td.variables a[data-method=delete]");

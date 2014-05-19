@@ -27,12 +27,26 @@ use POSIX qw/getuid getgid setuid setgid/;
 use openqa;
 use Schema::Schema;
 use Try::Tiny;
+use Data::Dump qw/dd pp/;
 
 my $datafile = shift @ARGV;
 die "Data file not found\n" unless $datafile && -r $datafile;
-my $info = do $datafile;
-if (my $error = $@) {
-    die "Error in data file: $error\n";
+
+my $info;
+
+if ($datafile =~ /\.json$/) {
+    use JSON;
+    local $/;
+    open(my $fh, '<', $datafile);
+    $info = JSON->new->relaxed->decode(<$fh>);
+    close $fh;
+    dd $info;
+}
+else {
+    $info = do $datafile;
+    if (my $error = $@) {
+        die "Error in data file: $error\n";
+    }
 }
 
 my $dbdir = dirname($openqa::dbfile);
@@ -46,12 +60,30 @@ if (getuid() != $s[4]) {
 }
 
 my $schema = openqa::connect_db();
-for (my $i = 0; $i < @$info; $i++) {
-    try {
-        $schema->resultset($info->[$i])->create($info->[++$i]);
+
+# speed this up a bit
+$schema->storage->dbh_do(
+    sub {
+        my ($storage, $dbh, @args) = @_;
+        $dbh->do("PRAGMA synchronous = OFF");
     }
-    catch {
-        my $tag = $info->[$i]->{name} || $info->[$i]->{id} || $i;
-        warn $tag.': '.$_;
-    };
+);
+
+my @tables = (qw/Machines TestSuites Products JobTemplates/);
+my %added;
+for my $table (@tables) {
+    next unless $info->{$table};
+    $added{$table}->{of} = @{$info->{$table}};
+    $added{$table}->{added} = 0;
+    for my $entry (@{$info->{$table}}) {
+        try {
+            $schema->resultset($table)->create($entry);
+            ++$added{$table}->{added};
+        }
+        catch {
+            warn $_, pp $entry;
+        };
+    }
 }
+
+dd \%added;

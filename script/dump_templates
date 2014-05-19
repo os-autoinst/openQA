@@ -1,0 +1,180 @@
+#!/usr/bin/perl -w
+
+# Copyright (C) 2014 SUSE Linux Products GmbH
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+=head1 boilerplate
+
+boilerplate - boilerplate code for perl scripts
+
+=head1 SYNOPSIS
+
+boilerplate [OPTIONS] FILE
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--help, -h>
+
+print help
+
+=back
+
+=head1 DESCRIPTION
+
+lorem ipsum ...
+
+=cut
+
+BEGIN {
+    use FindBin qw($Bin);
+    use lib "$Bin/../lib", "$Bin/../lib/OpenQA/modules";
+}
+
+use strict;
+use Schema::Schema;
+use Data::Dump;
+use v5.10;
+use DBIx::Class::DeploymentHandler;
+use Getopt::Long;
+
+Getopt::Long::Configure("no_ignore_case");
+
+my %options;
+
+sub usage($) {
+    my $r = shift;
+    eval "use Pod::Usage; pod2usage($r);";
+    if ($@) {
+        die "cannot display help, install perl(Pod::Usage)\n";
+    }
+}
+
+GetOptions(\%options, "json", "tmp","help|h",) or usage(1);
+
+
+my $schema;
+
+if ($options{tmp}) {
+    my $file = ":memory:";
+    #unlink($file);
+    $schema = Schema->connect(
+        {
+            dsn => "dbi:SQLite:dbname=$file",
+            on_connect_call => "use_foreign_keys",
+            on_connect_do => [
+                #                    "PRAGMA journal_mode = OFF",
+                #                    "PRAGMA temp_store = MEMORY",
+                "PRAGMA synchronous = OFF",
+            ],
+        }
+    ) or die "can't conncect db: $!\n";
+
+    my $dh = DBIx::Class::DeploymentHandler->new(
+        {
+            schema              => $schema,
+            script_directory    => "$FindBin::Bin/../dbicdh",
+            databases           => 'SQLite',
+            sql_translator_args => { add_drop_table => 0, producer_args => { sqlite_version => '3.7' } },
+            force_overwrite     => 0,
+        }
+    );
+    $dh->install;
+}
+else {
+    use openqa;
+    $schema = openqa::connect_db();
+}
+
+die unless $schema;
+
+my %result;
+
+my $rs = $schema->resultset('Machines')->search(
+    {},
+    {
+        '+columns' => [ 'settings.id', 'settings.key', 'settings.value' ],
+        collapse => 1,
+        join => ['settings'],
+        order_by => { -asc => 'name' },
+    }
+);
+$rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+$result{'Machines'} = [ $rs->all() ];
+
+$rs = $schema->resultset('TestSuites')->search(
+    {},
+    {
+        '+columns' => [ 'settings.id', 'settings.key', 'settings.value' ],
+        collapse => 1,
+        join => [qw/settings/],
+        order_by => { -asc => 'name' },
+    }
+);
+$rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+$result{'TestSuites'} = [ $rs->all() ];
+
+$rs = $schema->resultset('Products')->search(
+    {},
+    {
+        '+columns' => [ 'settings.id', 'settings.key', 'settings.value' ],
+        collapse => 1,
+        join => [qw/settings/],
+        order_by => { -asc => [qw/distri version flavor arch/] },
+    }
+);
+$rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+$result{'Products'} = [ $rs->all() ];
+
+$rs = $schema->resultset('JobTemplates')->search(
+    {},
+    {
+        '+columns' => [qw'product.id machine.name test_suite.name product.distri product.version product.flavor product.arch'],
+        collapse => 1,
+        join => [qw/product machine test_suite/],
+    }
+);
+$rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+$result{'JobTemplates'} = [ $rs->all() ];
+
+
+for my $table (keys %result) {
+    for my $i (0..$#{$result{$table}}) {
+        delete $result{$table}->[$i]->{id};
+        delete $result{$table}->[$i]->{t_created};
+        delete $result{$table}->[$i]->{t_updated};
+        delete $result{$table}->[$i]->{machine_id};
+        delete $result{$table}->[$i]->{test_suite_id};
+        delete $result{$table}->[$i]->{product_id};
+        if ($result{$table}->[$i]->{settings}) {
+            for my $s (0..$#{$result{$table}->[$i]->{settings}}) {
+                delete $result{$table}->[$i]->{settings}->[$s]->{id};
+            }
+        }
+        if ($result{$table}->[$i]->{product}) {
+            delete $result{$table}->[$i]->{product}->{id};
+        }
+    }
+}
+
+if ($options{json}) {
+    use JSON;
+    print JSON->new->pretty->encode(\%result);
+}
+else {
+    dd \%result;
+}

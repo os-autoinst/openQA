@@ -24,7 +24,7 @@ test -e script/openqa || exit 1
 
 find . -name '*.p[lm]' -print0 | xargs -0 perltidy $TIDY_ARGS
 
-find script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_dbdata} -print0 | xargs -0 perltidy $TIDY_ARGS
+find script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates} -print0 | xargs -0 perltidy $TIDY_ARGS
 
 if test -n "$check"; then
     while read file; do

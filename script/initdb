@@ -67,6 +67,15 @@ if (getuid() != $s[4]) {
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
 my $schema = openqa::connect_db();
+
+# speed this up a bit
+$schema->storage->dbh_do(
+    sub {
+        my ($storage, $dbh, @args) = @_;
+        $dbh->do("PRAGMA synchronous = OFF");
+    }
+);
+
 my $dh = DBIx::Class::DeploymentHandler->new(
     {
         schema              => $schema,
