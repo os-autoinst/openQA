@@ -93,14 +93,13 @@ sub create {
     my $self = shift;
 
     my $validation = $self->validation;
-    $validation->required('ISO');
     $validation->required('DISTRI');
     $validation->required('VERSION');
     $validation->required('FLAVOR');
     $validation->required('ARCH');
     if ($validation->has_error) {
         my $error = "Error: missing parameters:";
-        for my $k (qw/ISO DISTRI VERSION FLAVOR ARCH/) {
+        for my $k (qw/DISTRI VERSION FLAVOR ARCH/) {
             $self->app->log->debug(@{$validation->error($k)}) if $validation->has_error($k);
             $error .= ' '.$k if $validation->has_error($k);
         }
