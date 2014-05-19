@@ -1,3 +1,5 @@
+BEGIN { unshift @INC, 'lib', 'lib/OpenQA/modules'; }
+
 # Copyright (C) 2014 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
@@ -14,20 +16,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema;
-use base qw/DBIx::Class::Schema/;
-use IO::Dir;
-use SQL::SplitStatement;
-use Fcntl ':mode';
+use Test::More;
 
-# after bumping the version ...
-# - run script/initdb --prepare
-# - run script/upgradedb --prepare
-# - edit dbicdh/SQLite/upgrade/$old-$new/001-auto.sql and add missing triggers
-# - optionally add migration script dbicdh/_common/upgrade/$old-$new/...
-our $VERSION = '11';
+is(system('script/tidy', '--check'), 0, "tidy");
 
-__PACKAGE__->load_namespaces;
-
-1;
-# vim: set sw=4 et:
+done_testing();

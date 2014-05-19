@@ -29,12 +29,16 @@ sub {
     # [1] for deploy, [1,2] for upgrade or downgrade, probably used with _any
     my $versions = shift;
 
-    my $rs = $schema->resultset('Products');
+    my $rs = $schema->resultset('Products')->search({}, { columns => [qw/id variables/]});
     my $data = [ [qw/product_id key value/]];
     while (my $r = $rs->next()) {
         my @vars = split(/;/, $r->variables);
         for (@vars) {
-            push @$data, [ $r->id, split(/=/, $_, 2)];
+            my ($k, $v) = split(/=/, $_, 2);
+            if ($k eq 'ISO_MAXSIZE') {
+                $v =~ s/_//g;
+            }
+            push @$data, [ $r->id, $k, $v];
         }
     }
     $schema->resultset('Products')->update({ variables => ''});

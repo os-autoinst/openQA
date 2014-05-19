@@ -27,9 +27,14 @@ __PACKAGE__->add_columns(
     },
     name => {
         data_type => 'text',
+        accessor => '_name',
     },
     distri => {
         data_type => 'text',
+    },
+    version => {
+        data_type => 'text',
+        default_value => '',
     },
     arch => {
         data_type => 'text',
@@ -50,10 +55,14 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([qw/name/]);
 __PACKAGE__->has_many(job_templates => 'Schema::Result::JobTemplates', 'product_id');
-__PACKAGE__->add_unique_constraint([qw/distri arch flavor/]);
+__PACKAGE__->add_unique_constraint([qw/distri version arch flavor/]);
 __PACKAGE__->has_many(settings => 'Schema::Result::ProductSettings', 'product_id');
+
+sub name {
+    my ($self) = @_;
+    join('-', map { $self->$_ } qw/distri version flavor arch/);
+}
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;

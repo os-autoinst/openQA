@@ -289,12 +289,13 @@ my $info =[
         settings => [{ key => "INSTALLONLY", value => 1 },{ key => "DESKTOP", value => "kde" },],
     },
     Products => {
-        name => 'oS-DVD-i586',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'DVD',
         arch => 'i586',
         variables => '',
-        settings => [{ key => "ISO_MAXSIZE", value => "4_700_372_992" },{ key => "DVD", value => "1" },],
+        settings => [{ key => "ISO_MAXSIZE", value => 4_700_372_992 },{ key => "DVD", value => "1" },],
         job_templates => [
             {machine_id => 1001, test_suite_id => 1001},
             {machine_id => 1001, test_suite_id => 1002},
@@ -324,12 +325,13 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-DVD-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'DVD',
         arch => 'x86_64',
         variables => '',
-        settings => [{ key => "ISO_MAXSIZE", value => "4_700_372_992" },{ key => "DVD", value => "1" },],
+        settings => [{ key => "ISO_MAXSIZE", value => 4_700_372_992 },{ key => "DVD", value => "1" },],
         job_templates => [
             {machine_id => 1002, test_suite_id => 1001},
             {machine_id => 1002, test_suite_id => 1002},
@@ -363,12 +365,13 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-GNOME-Live-i686',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'GNOME-Live',
         arch => 'i686',
         variables => '',
-        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => "999_999_999" },{ key => "GNOME", value => "1" },],
+        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => 999_999_999 },{ key => "GNOME", value => "1" },],
         job_templates => [
             {machine_id => 1001, test_suite_id => 1005},
             {machine_id => 1005, test_suite_id => 1005}, # USB+gnome
@@ -389,12 +392,13 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-GNOME-Live-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'GNOME-Live',
         arch => 'x86_64',
         variables => '',
-        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => "999_999_999" },],
+        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => 999_999_999 },],
         job_templates => [
             {machine_id => 1002, test_suite_id => 1005},
             {machine_id => 1006, test_suite_id => 1005}, # USB+gnome
@@ -415,12 +419,13 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-KDE-Live-i686',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'KDE-Live',
         arch => 'i686',
         variables => '',
-        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => "999_999_999" },],
+        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => 999_999_999 },],
         job_templates => [
             {machine_id => 1001, test_suite_id => 1002},
             {machine_id => 1005, test_suite_id => 1002}, # USB+kde
@@ -441,12 +446,13 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-KDE-Live-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'KDE-Live',
         arch => 'x86_64',
         variables => '',
-        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => "999_999_999" },],
+        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => 999_999_999 },],
         job_templates => [
             {machine_id => 1002, test_suite_id => 1002},
             {machine_id => 1006, test_suite_id => 1002}, # USB+kde
@@ -467,12 +473,13 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-NET-i586',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'NET',
         arch => 'i586',
         variables => '', # Bigger than needed
-        settings => [{ key => "ISO_MAXSIZE", value => "737_280_000" },{ key => "NETBOOT", value => "1" },],
+        settings => [{ key => "ISO_MAXSIZE", value => 737_280_000 },{ key => "NETBOOT", value => "1" },],
         job_templates => [
             {machine_id => 1001, test_suite_id => 1001},
             {machine_id => 1001, test_suite_id => 1002},
@@ -501,12 +508,13 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-NET-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'NET',
         arch => 'x86_64',
         variables => '', # Bigger than needed
-        settings => [{ key => "ISO_MAXSIZE", value => "737_280_000" },{ key => "NETBOOT", value => "1" },],
+        settings => [{ key => "ISO_MAXSIZE", value => 737_280_000 },{ key => "NETBOOT", value => "1" },],
         job_templates => [
             {machine_id => 1002, test_suite_id => 1001},
             {machine_id => 1002, test_suite_id => 1002},
@@ -536,30 +544,33 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-Rescue-i686',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Rescue-CD',
         arch => 'i686',
         variables => '',
-        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => "681_574_400" },{ key => "RESCUECD", value => "1" },],
+        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => 681_574_400 },{ key => "RESCUECD", value => "1" },],
         job_templates => [{machine_id => 1001, test_suite_id => 1023},]
     },
     Products => {
-        name => 'oS-Rescue-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Rescue-CD',
         arch => 'x86_64',
         variables => '',
-        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => "681_574_400" },{ key => "RESCUECD", value => "1" },],
+        settings => [{ key => "LIVECD", value => "1" },{ key => "ISO_MAXSIZE", value => 681_574_400 },{ key => "RESCUECD", value => "1" },],
         job_templates => [{machine_id => 1002, test_suite_id => 1023},]
     },
     Products => {
-        name => 'oS-DVD-Biarch',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'DVD',
         arch => 'i586-x86_64',
         variables => '',
-        settings => [{ key => "ISO_MAXSIZE", value => "8_539_996_160" },],
+        settings => [{ key => "ISO_MAXSIZE", value => 8_539_996_160 },],
         job_templates => [
             {machine_id => 1001, test_suite_id => 1001},
             {machine_id => 1002, test_suite_id => 1002},
@@ -590,21 +601,23 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-Staging-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Staging:Core',
         flavor => 'Staging-DVD',
         arch => 'x86_64',
         variables => '',
-        settings => [{ key => "ISO_MAXSIZE", value => "4_700_372_992" },],
+        settings => [{ key => "ISO_MAXSIZE", value => 4_700_372_992 },],
         job_templates => [{machine_id => 1001, test_suite_id => 1007},]
     },
     Products => {
-        name => 'oS-Promo-i586',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Promo-DVD',
         arch => 'i586',
         variables => '',
-        settings => [{ key => "ISO_MAXSIZE", value => "4_700_372_992" },{ key => "PROMO", value => "1" },],
+        settings => [{ key => "ISO_MAXSIZE", value => 4_700_372_992 },{ key => "PROMO", value => "1" },],
         job_templates => [
             {machine_id => 1001, test_suite_id => 1002},
             {machine_id => 1001, test_suite_id => 1004},
@@ -620,12 +633,13 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-Promo-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Promo-DVD',
         arch => 'x86_64',
         variables => '',
-        settings => [{ key => "ISO_MAXSIZE", value => "4_700_372_992" },{ key => "PROMO", value => "1" },],
+        settings => [{ key => "ISO_MAXSIZE", value => 4_700_372_992 },{ key => "PROMO", value => "1" },],
         job_templates => [
             {machine_id => 1002, test_suite_id => 1002},
             {machine_id => 1002, test_suite_id => 1003},
@@ -642,21 +656,23 @@ my $info =[
         ]
     },
     Products => {
-        name => 'oS-OpenSourcePress-i586',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Promo-DVD-OpenSourcePress',
         arch => 'i586',
         variables => '',
-        settings => [{ key => "ISO_MAXSIZE", value => "4_700_372_992" },{ key => "PROMO", value => "1" },],
+        settings => [{ key => "ISO_MAXSIZE", value => 4_700_372_992 },{ key => "PROMO", value => "1" },],
         job_templates => [{machine_id => 1001, test_suite_id => 1021},{machine_id => 1001, test_suite_id => 1022},]
     },
     Products => {
-        name => 'oS-OpenSourcePress-x86_64',
+        name => '',
         distri => 'opensuse',
+        version => 'Factory',
         flavor => 'Promo-DVD-OpenSourcePress',
         arch => 'x86_64',
         variables => '',
-        settings => [{ key => "ISO_MAXSIZE", value => "4_700_372_992" },{ key => "PROMO", value => "1" },],
+        settings => [{ key => "ISO_MAXSIZE", value => 4_700_372_992 },{ key => "PROMO", value => "1" },],
         job_templates => [{machine_id => 1001, test_suite_id => 1021},{machine_id => 1001, test_suite_id => 1022},]
     },
 ];

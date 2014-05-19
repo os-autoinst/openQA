@@ -52,12 +52,13 @@ $req->element_exists('table#products');
 $req->element_exists('#products tbody td.name');
 
 my $id;
-$req->tx->res->dom->find('#products tbody td.name')->each(sub { my $node = shift; $id = $node->parent->{id} if $node->text eq 'oS-DVD-x86_64'});
+$req->tx->res->dom->find('#products tbody td.name')->each(sub { my $node = shift; $id = $node->parent->{id} if $node->text eq 'opensuse-Factory-DVD-x86_64'});
 $id =~ s/product_(\d+)/$1/;
 ok($id, "id found");
 
 # check columns
-$req->text_is("#product_$id td.name" => 'oS-DVD-x86_64');
+$req->text_is("#product_$id td.name" => 'opensuse-Factory-DVD-x86_64');
+$req->text_is("#product_$id td.version" => 'Factory');
 $req->text_is("#product_$id td.flavor" => 'DVD');
 $req->text_is("#product_$id td.arch" => 'x86_64');
 $req->element_exists("#product_$id td.variables");
@@ -78,13 +79,13 @@ $req->element_exists("#product_$id td.variables input[type=submit][value=add]");
 # test suite delete button
 $req->element_exists("#product_$id td.action a[data-method=delete][href=\"/admin/products/$id\"]");
 
-$req->text_is("#product_$id td.variables" => 'DVD=1 ISO_MAXSIZE=4_700_372_992');
+$req->text_is("#product_$id td.variables" => 'DVD=1 ISO_MAXSIZE=4700372992');
 
 # delete a variable
 $t->delete_ok($delvarhref, { 'X-CSRF-Token' => $token })->status_is(302);
 
 $req = $t->get_ok('/admin/products')->status_is(200);
-$req->text_is("#product_$id td.variables" => 'ISO_MAXSIZE=4_700_372_992');
+$req->text_is("#product_$id td.variables" => 'ISO_MAXSIZE=4700372992');
 
 # delete a test suite
 $t->delete_ok("/admin/products/$id", { 'X-CSRF-Token' => $token })->status_is(302);
@@ -98,20 +99,20 @@ $req->element_exists('.ui-state-error');
 
 # add a test suite
 $req = $t->post_ok('/admin/products', { 'X-CSRF-Token' => $token },
-    form => { name => 'foo', distri => 'bar', flavor => 'baz', arch => 'blub' })->status_is(302);
+    form => { distri => 'foo', version => 42, flavor => 'bar', arch => 'baz' })->status_is(302);
 
 $req->element_exists_not('.ui-state-error');
 $req = $t->get_ok('/admin/products')->status_is(200);
 $req->element_exists_not('.ui-state-error');
 
-$req->tx->res->dom->find('#products tbody td.name')->each(sub { my $node = shift; $id = $node->parent->{id} if $node->text eq 'foo'});
+$req->tx->res->dom->find('#products tbody td.name')->each(sub { my $node = shift; $id = $node->parent->{id} if $node->text eq 'foo-42-bar-baz'});
 $id =~ s/product_(\d+)/$1/;
 ok($id, "id found");
 
-$req->text_is("#product_$id td.name" => 'foo');
-$req->text_is("#product_$id td.distri" => 'bar');
-$req->text_is("#product_$id td.flavor" => 'baz');
-$req->text_is("#product_$id td.arch" => 'blub');
+$req->text_is("#product_$id td.distri" => 'foo');
+$req->text_is("#product_$id td.version" => '42');
+$req->text_is("#product_$id td.flavor" => 'bar');
+$req->text_is("#product_$id td.arch" => 'baz');
 
 # add variable
 $t->post_ok("/admin/products/$id", { 'X-CSRF-Token' => $token }, form => { key => 'DESKTOP', value => "dwarf"})->status_is(302);
