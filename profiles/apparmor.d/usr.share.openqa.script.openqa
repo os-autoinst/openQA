@@ -48,6 +48,7 @@
   /var/lib/os-autoinst/tests/ r,
   /var/lib/os-autoinst/tests/** rw,
   /var/lib/os-autoinst/tests/*/needles/.git/objects/*/* rwl,
+  /var/log/openqa rkw,
   /var/tmp/* rw,
   /tmp/mojo.tmp rw,
   /tmp/mojo.tmp.* rw,
