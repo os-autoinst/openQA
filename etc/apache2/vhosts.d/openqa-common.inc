@@ -16,6 +16,7 @@ ProxyPass /images !
 ProxyPass /javascripts !
 ProxyPass /stylesheets !
 ProxyPass /assets !
+ProxyPass /error !
 
 ProxyPass / http://localhost:9526/ keepalive=On
 ProxyPassReverse / http://localhost:9526/
