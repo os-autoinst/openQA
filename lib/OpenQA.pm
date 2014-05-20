@@ -42,7 +42,7 @@ sub _read_config {
         },
         logging => {
             level => undef,
-            file => undef,
+            file => "/var/log/openqa",
         },
         openid => {
             provider => 'https://www.opensuse.org/openid/user/',
