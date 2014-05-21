@@ -215,6 +215,7 @@ sub startup {
     my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0 );
     $test_r->get('/')->name('test')->to('test#show');
+    $test_auth->get('/menu')->name('test_menu')->to('test#menu');
 
     $r->get('/workers')->name('workers')->to('worker#list');
 

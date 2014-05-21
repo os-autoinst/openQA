@@ -1,0 +1,11 @@
+<ul>
+<% if ($state eq "scheduled") { %>
+    <li style="margin: 0px;"><%= link_post "Raise priority" => url_for('setpriority', 'testid' => $jobid, 'priority' => $prio-10)->query('back' => 1) %></li>
+    <li style="margin: 0px;"><%= link_post "Lower priority" => url_for('setpriority', 'testid' => $jobid, 'priority' => $prio+10)->query('back' => 1) %></li>
+<% } else { %>
+    <li style="margin: 0px;"><%= link_post "Re-schedule" => url_for('restart', 'testid' => $jobid)->query('back' => 1) %></li>
+<% } %>
+<% if ($state eq "scheduled" || $state eq "running") { %>
+    <li style="margin: 0px;"><%= link_post "Cancel" => url_for('cancel', 'testid' => $jobid) => ('data-remote' => 'true', class => 'cancel') %></li>
+<% } %>
+</ul>

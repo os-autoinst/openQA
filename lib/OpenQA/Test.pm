@@ -384,6 +384,17 @@ sub overview {
     );
 }
 
+sub menu {
+    my $self = shift;
+
+    return $self->render_not_found if (!defined $self->param('testid'));
+
+    my $job = Scheduler::job_get($self->param('testid'));
+
+    $self->stash(state => $job->{'state'});
+    $self->stash(prio => $job->{'priority'});
+    $self->stash(jobid => $job->{'id'});
+}
 
 1;
 # vim: set sw=4 et:
