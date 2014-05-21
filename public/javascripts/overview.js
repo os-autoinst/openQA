@@ -1,8 +1,12 @@
-document.on('ajax:success', function(event) {
-  // We only have to care about 'cancel' right now since the other calls are still
-  // not AJAX (WIP)
-  var span = $('res-' + event.memo.responseJSON.name);
+document.on('ajax:success', 'a', function(event, element) {
+  var json = event.memo.responseJSON;
+  var span = $('res-' + json.id);
   span.retrieve('opentips')[0].hide();
-  span.update('cancelled');
-  new Effect.Highlight(span);
+  if (element.hasClassName('cancel')) {
+    span.update('cancelled');
+    new Effect.Highlight(span);
+  } else if (element.hasClassName('prio')) {
+    span.update('sched.('+json.priority+')');
+    new Effect.Highlight(span);
+  }
 });
