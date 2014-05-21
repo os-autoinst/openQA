@@ -39,7 +39,7 @@ sub cancel{
     my $self = shift;
     my $name = $self->param('testid');
 
-    $self->render(json => {count => Scheduler::job_cancel($name), name => $name});
+    $self->render(json => {count => Scheduler::job_cancel($name), id => $name});
 }
 
 sub restart{
@@ -66,7 +66,7 @@ sub setpriority{
     my $job = Scheduler::job_get($name);
     Scheduler::job_set_prio( prio=>$priority, jobid=>$job->{id} );
 
-    _stash_back($self);
+    $self->render(json => { id => $job->{id}, priority => $priority});
 }
 
 1;

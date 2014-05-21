@@ -126,9 +126,9 @@
                     % }
                 </td>
                 <td class="backend">
-                    <%= link_post "-" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio-10)->query('back' => 'results') %>
-                    <%= $prio %>
-                    <%= link_post "+" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio+10)->query('back' => 'results') %>
+                    <%= link_post "-" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio-10) => (class => 'prio-down') %>
+                    <span data-prio="<%= $prio %>"><%= $prio %></span>
+                    <%= link_post "+" => url_for('setpriority', 'testid' => $job->{'id'}, 'priority' => $prio+10) => (class => 'prio-up') %>
                 </td>
                 <td class="distri"><%= "$distri-$version" %></td>
                 <td class="type"><%= $job->{settings}->{'FLAVOR'} %></td>

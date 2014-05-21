@@ -15,4 +15,34 @@ document.observe('dom:loaded', function() {
       setTimeout(function() {location.reload();}, 5000);
     });
   }
+
+  $$('a.prio-down').each(function(element) {
+    element.on('click', function(event) {
+      window.adjustPriority($(this), -10);
+      event.stop();
+    });
+  });
+
+  $$('a.prio-up').each(function(element) {
+    element.on('click', function(event) {
+      window.adjustPriority($(this), 10);
+      event.stop();
+    });
+  });
+
+
 });
+
+/* Before sending the AJAX request, the updated priority must be calculated.
+ * In fact, this should be probably done server-side having an 'adjustpriority'
+ * url instead of (or in addition to) the current 'setpriority'
+ */
+function adjustPriority(element, amount) {
+  var prioHolder = element.up(1).select('[data-prio]')[0];
+  var prio = parseInt(prioHolder.dataset.prio) + amount;
+  var url = element.href.substring(0, element.href.lastIndexOf("/") + 1) + prio;
+  new Ajax.Request(url, {
+    method: 'post',
+    onSuccess: function(r) { prioHolder.replace('<span data-prio="'+prio+'">'+prio+'</span> '); }
+  });
+}
