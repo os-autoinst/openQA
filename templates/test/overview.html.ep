@@ -38,7 +38,11 @@
                                 my $css = "";
                                 $css = "overview_".$res->{overall} if ($state eq "done");
                             %>
-                            <span class="<%=$css%>" id="res-<%= $jobid %>" data-ot="<%= $jobid %>" data-ot-title="Actions (<%= $config %>)" data-ot-ajax="<%= url_for('test_menu', 'testid' => $jobid) %>" data-ot-fixed="true" data-ot-group="scheduler" data-ot-hide-trigger="closeButton" data-ot-cache="false" data-ot-target="true">
+                            % if (is_operator) {
+                                <span class="<%=$css%>" id="res-<%= $jobid %>" data-ot="<%= $jobid %>" data-ot-title="Actions (<%= $config %>)" data-ot-ajax="<%= url_for('test_menu', 'testid' => $jobid) %>" data-ot-ajax-error-message="Access denied." data-ot-fixed="true" data-ot-group="scheduler" data-ot-hide-trigger="closeButton" data-ot-cache="false" data-ot-target="true">
+                            % } else {
+                                <span class="<%=$css%>" id="res-<%= $jobid %>">
+                            % }
                             <% if ($state eq "done") { %>
                                 <a href="<%= url_for('test', 'testid' => $jobid) %>"><%= $res->{ok} %>/<%= $res->{unknown} %>/<%= $res->{fail} %></a>
                             <% } elsif ($state eq "running") { %>
