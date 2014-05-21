@@ -463,4 +463,18 @@ table#job_settings td {
     padding: 2px;
 }
 
+/* Opentip tooltips */
+
+/* Green on top of yellow doesn't sound wise */
+.opentip a {
+  color: inherit;
+}
+.opentip ul li {
+  margin: 0px;
+}
+.opentip h1 {
+  margin: 0px;
+  font-size: 1.1em;
+}
+
 /* vim: set sw=4 et: */

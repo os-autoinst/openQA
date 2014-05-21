@@ -39,9 +39,7 @@ sub cancel{
     my $self = shift;
     my $name = $self->param('testid');
 
-    Scheduler::job_cancel($name);
-
-    _stash_back($self);
+    $self->render(json => {count => Scheduler::job_cancel($name), name => $name});
 }
 
 sub restart{

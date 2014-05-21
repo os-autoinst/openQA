@@ -1,7 +1,7 @@
 % layout 'default';
 % title 'Test summary';
 
-%= javascript '/javascripts/wz_tooltip/wz_tooltip.js'
+%= javascript '/javascripts/overview.js'
 
 <div class="grid_16 box box-shadow omega">
     <h2>Test result overview</h2>
@@ -38,9 +38,11 @@
                                 my $css = "";
                                 $css = "overview_".$res->{overall} if ($state eq "done");
                             %>
-
-                            <%# Visible information %>
-                            <span class="<%=$css%>" onmouseout="UnTip()" onmouseover="TagToTip('actions_<%=$jobid%>', STICKY, 1, CLICKCLOSE, true)">
+                            % if (is_operator) {
+                                <span class="<%=$css%>" id="res-<%= $jobid %>" data-ot="<%= $jobid %>" data-ot-title="Actions (<%= $config %>)" data-ot-ajax="<%= url_for('test_menu', 'testid' => $jobid) %>" data-ot-ajax-error-message="Access denied." data-ot-fixed="true" data-ot-group="scheduler" data-ot-hide-trigger="closeButton" data-ot-cache="false" data-ot-target="true">
+                            % } else {
+                                <span class="<%=$css%>" id="res-<%= $jobid %>">
+                            % }
                             <% if ($state eq "done") { %>
                                 <a href="<%= url_for('test', 'testid' => $jobid) %>"><%= $res->{ok} %>/<%= $res->{unknown} %>/<%= $res->{fail} %></a>
                             <% } elsif ($state eq "running") { %>
@@ -51,20 +53,6 @@
                                 <%= $state %>
                             <% } %>
                             </span>
-
-                            <%# Actions %>
-                            <span id="actions_<%=$jobid%>" style="display:none"><ul style="margin: 0px;">
-                            <% if ($state eq "scheduled") { %>
-                                <% my $prio = $res->{'priority'}; %>
-                                <li style="margin: 0px;"><%= link_post "Raise priority" => url_for('setpriority', 'testid' => $jobid, 'priority' => $prio-10)->query('back' => 1) %></li>
-                                <li style="margin: 0px;"><%= link_post "Lower priority" => url_for('setpriority', 'testid' => $jobid, 'priority' => $prio+10)->query('back' => 1) %></li>
-                            <% } else { %>
-                                <li style="margin: 0px;"><%= link_post "Re-schedule" => url_for('restart', 'testid' => $jobid)->query('back' => 1) %></li>
-                            <% } %>
-                            <% if ($state eq "scheduled" || $state eq "running") { %>
-                                <li style="margin: 0px;"><%= link_post "Cancel" => url_for('cancel', 'testid' => $jobid)->query('back' => 1) %></li>
-                            <% } %>
-                            </ul></span>
                         <% } %>
                         </td>
                         <td style="text-align: left; margin: 0px;">
@@ -72,23 +60,13 @@
                                 <% my $failedmodules = $res->{'failures'}->{$res->{'testname'}}->{'failedmodules'}; %>
                                 <% if ($failedmodules) { %>
                                     <% for my $failedmodule (@$failedmodules) { %>
-                                        <%# Visible information %>
-                                        <span onmouseout="UnTip()" onmouseover="TagToTip('actions_<%=$failedmodule%>', STICKY, 1, CLICKCLOSE, true)">
+                                        % if (my $failedneedles = $res->{'failures'}->{$res->{'testname'}}->{'failedneedles'}) {
+                                          <span data-ot="<ul><li><%= join('</li><li>', @$failedneedles) %></li></ul>" data-ot-title="Failed needles">
+                                        % } else {
+                                          <span>
+                                        % }
                                             <a href="<%= url_for('step', 'testid' => $jobid, 'moduleid' => $failedmodule, 'stepid' => 1) %>"><%= $failedmodule %></a>
                                         </span>
-
-                                        <%# Actions %>
-                                        <span id="actions_<%=$failedmodule%>" style="display:none"><ul style="margin: 0px;">
-                                            <% my $failedneedles = $res->{'failures'}->{$res->{'testname'}}->{'failedneedles'}; %>
-                                            <% if ($failedneedles) { %>
-                                                Failed Needles
-                                                <% for my $failedneedle (@$failedneedles) { %>
-                                                    <li style="margin: 0px;">
-                                                        <%= $failedneedle %>
-                                                    </li>
-                                                <% } %>
-                                            <% } %>
-                                        </ul></span> 
                                     <% } %>
                                 <% } %>
                             <% } %>

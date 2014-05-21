@@ -10,6 +10,7 @@
 % }
 %= stylesheet '/stylesheets/chosen.css'
 %= stylesheet '/stylesheets/openqa.css'
+%= stylesheet '/stylesheets/opentip.css'
 %= javascript '/javascripts/table.js'
 %= javascript '/javascripts/shapes.js'
 %= javascript '/javascripts/needleeditor.js'
@@ -22,3 +23,5 @@
 %= javascript '/javascripts/running.js'
 %= javascript '/javascripts/chosen.proto.min.js'
 %= javascript '/javascripts/openqa.js'
+%= javascript '/javascripts/scheduler.js'
+%= javascript '/javascripts/opentip-prototype.min.js'
