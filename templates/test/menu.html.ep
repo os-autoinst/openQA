@@ -6,6 +6,6 @@
     <li style="margin: 0px;"><%= link_post "Re-schedule" => url_for('restart', 'testid' => $jobid)->query('back' => 1) %></li>
 <% } %>
 <% if ($state eq "scheduled" || $state eq "running") { %>
-    <li style="margin: 0px;"><%= link_post "Cancel" => url_for('cancel', 'testid' => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) %></li>
+    <li style="margin: 0px;"><%= link_post "Cancel" => url_for('apiv1_cancel', 'name' => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) %></li>
 <% } %>
 </ul>

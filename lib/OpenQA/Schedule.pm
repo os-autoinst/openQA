@@ -35,13 +35,6 @@ sub _stash_back{
     $self->stash('back', $back);
 }
 
-sub cancel{
-    my $self = shift;
-    my $name = $self->param('testid');
-
-    $self->render(json => {count => Scheduler::job_cancel($name), id => $name});
-}
-
 sub restart{
     my $self = shift;
     my $name = $self->param('testid');

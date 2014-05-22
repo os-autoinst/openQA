@@ -138,7 +138,7 @@
                 </td>
                 <td class="extra"><span class=""><%= $job->{'test'} %>@<%= $job->{'machine'} %></span></td>
                 <td class="cancel" colspan="4" style="padding: 3px 4px; font-style: italic;">
-                    <%= link_post 'cancel' => url_for('cancel', 'testid' => $job->{'id'}) => ('data-remote' => 'true') %>
+                    <%= link_post 'cancel' => url_for('apiv1_cancel', 'name' => $job->{'id'}) => ('data-remote' => 'true') %>
                 </td>
             </tr>
         % }

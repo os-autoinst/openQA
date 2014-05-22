@@ -225,7 +225,6 @@ sub startup {
     $test_r->get('/streaming')->name('streaming')->to('running#streaming');
     $test_r->get('/edit')->name('edit_test')->to('running#edit');
 
-    $test_auth->post('/cancel')->name('cancel')->to('schedule#cancel');
     $test_auth->post('/restart')->name('restart')->to('schedule#restart');
     my $log_auth = $r->bridge('/tests/#testid')->to("session#ensure_authorized_ip");
     $log_auth->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
@@ -309,7 +308,7 @@ sub startup {
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio'); # job_set_prio
     $job_r->post('/result')->name('apiv1_job_result')->to('job#result'); # job_update_result
     $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done'); # job_set_done
-    # job_set_scheduled, job_set_cancel, job_set_waiting, job_set_continue
+    # job_set_waiting, job_set_continue
     my $command_r = $job_r->route('/set_:command', command => [qw(waiting continue)]);
     $command_r->post('/')->name('apiv1_set_command')->to('job#set_command');
     # restart and cancel are valid both by job id or by job name (which is
