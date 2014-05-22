@@ -2,7 +2,15 @@ document.observe('dom:loaded', function() {
 
   $$('#results td.cancel a').each(function(element) {
     element.on('ajax:success', 'tr', function(event, row) {
-      Effect.Fade(row);
+      new Effect.Fade(row);
+    });
+  });
+
+  $$('#results td.clone a').each(function(element) {
+    element.on('ajax:success', 'td', function(event, cell) {
+      var jobid = event.memo.responseJSON.result[0];
+      cell.update('<a href="/tests/'+jobid+'">#'+jobid+'</a>');
+      new Effect.Highlight(cell);
     });
   });
 
@@ -13,6 +21,20 @@ document.observe('dom:loaded', function() {
       alert('Job canceled. Postprocessing. You will be redirected to the results page in a few seconds.');
       // Even though, it will most likely not be enough
       setTimeout(function() {location.reload();}, 5000);
+    });
+  }
+
+  if (target = $('restart_running')) {
+    target.on('ajax:success', function(event) {
+      var jobid = event.memo.responseJSON.result[0];
+      var c = confirm('Job clonned into #'+jobid+'. Confirm to visit that job. Cancel to be redirected to the results of the interrupted one.');
+      if (c) {
+        var url = document.URL.substring(0, document.URL.lastIndexOf("/") + 1) + jobid;
+        window.location = url;
+      } else {
+        // We need to wait a little bit before accessing the results
+        setTimeout(function() {location.reload();}, 5000);
+      }
     });
   }
 
