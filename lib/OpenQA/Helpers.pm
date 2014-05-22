@@ -77,12 +77,19 @@ sub register {
             $crumbs .= '<a href="'.$c->url_for('/').'">';
             $crumbs .= $c->image('/images/home_grey.png', alt => "Home");
             $crumbs .= '<b>'.$c->stash('appname').'</b></a>';
-            if ($c->current_route('tests')) {
-                $crumbs .= ' > Test results';
-            }
-            elsif (my $test = $c->param('testid')) {
-                my $testname = $c->stash('testname') || $test;
+
+            my $test = $c->param('testid');
+
+            if ($test || $c->current_route =~ /^tests/) {
                 $crumbs .= ' > '.$c->link_to('Test results' => $c->url_for('tests'));
+            }
+            elsif ($c->current_route =~ /^admin/) {
+                $crumbs .= ' > '.$c->link_to('Admin' => $c->url_for('admin'));
+                $crumbs .= ' > '.$c->stash('title');
+            }
+
+            if ($test) {
+                my $testname = $c->stash('testname') || $test;
                 if ($c->current_route('test')) {
                     $crumbs .= " > $testname";
                 }
@@ -93,13 +100,9 @@ sub register {
                 }
             }
             elsif ($c->current_route('tests_overview')) {
-                $crumbs .= ' > '.$c->link_to('Test results' => $c->url_for('tests'));
                 $crumbs .= ' > Build overview';
             }
-            elsif ($c->current_route =~ /^admin/) {
-                $crumbs .= ' > '.$c->link_to('Admin' => $c->url_for('admin'));
-                $crumbs .= ' > '.$c->stash('title');
-            }
+
             $crumbs .= '</div>';
 
             Mojo::ByteStream->new($crumbs);
