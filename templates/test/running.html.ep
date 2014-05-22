@@ -15,7 +15,7 @@
                     %= image '/images/toggle.png', alt => "restart", title => "Restart job"
                 % end
             % }
-            %= link_post url_for('cancel') => ('data-remote' => 'true', id => 'cancel_running') => begin
+            %= link_post url_for('apiv1_cancel', name => $job->{'id'}) => ('data-remote' => 'true', id => 'cancel_running') => begin
                 %= image '/images/cancel.png', alt => "stop", title => "Stop job"
             % end
         </div>

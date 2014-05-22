@@ -35,13 +35,6 @@ sub _stash_back{
     $self->stash('back', $back);
 }
 
-sub cancel{
-    my $self = shift;
-    my $name = $self->param('testid');
-
-    $self->render(json => {count => Scheduler::job_cancel($name), id => $name});
-}
-
 sub restart{
     my $self = shift;
     my $name = $self->param('testid');
@@ -56,17 +49,6 @@ sub restart{
     }
 
     _stash_back($self);
-}
-
-sub setpriority{
-    my $self = shift;
-    my $name = $self->param('testid');
-    my $priority = $self->param('priority');
-
-    my $job = Scheduler::job_get($name);
-    Scheduler::job_set_prio( prio=>$priority, jobid=>$job->{id} );
-
-    $self->render(json => { id => $job->{id}, priority => $priority});
 }
 
 1;

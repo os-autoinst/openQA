@@ -1,11 +1,11 @@
 <ul>
 <% if ($state eq "scheduled") { %>
-    <li style="margin: 0px;"><%= link_post "Raise priority" => url_for('setpriority', 'testid' => $jobid, 'priority' => $prio-10) => ('data-remote' => 'true', class => 'prio') %></li>
-    <li style="margin: 0px;"><%= link_post "Lower priority" => url_for('setpriority', 'testid' => $jobid, 'priority' => $prio+10) => ('data-remote' => 'true', class => 'prio') %></li>
+    <li style="margin: 0px;"><%= link_post "Raise priority" => url_for('apiv1_job_prio', 'jobid' => $jobid)->query(prio => $prio-10) => ('data-remote' => 'true', class => 'prio', 'data-jobid' => $jobid) %></li>
+    <li style="margin: 0px;"><%= link_post "Lower priority" => url_for('apiv1_job_prio', 'jobid' => $jobid)->query(prio => $prio+10) => ('data-remote' => 'true', class => 'prio', 'data-jobid' => $jobid) %></li>
 <% } else { %>
     <li style="margin: 0px;"><%= link_post "Re-schedule" => url_for('restart', 'testid' => $jobid)->query('back' => 1) %></li>
 <% } %>
 <% if ($state eq "scheduled" || $state eq "running") { %>
-    <li style="margin: 0px;"><%= link_post "Cancel" => url_for('cancel', 'testid' => $jobid) => ('data-remote' => 'true', class => 'cancel') %></li>
+    <li style="margin: 0px;"><%= link_post "Cancel" => url_for('apiv1_cancel', 'name' => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) %></li>
 <% } %>
 </ul>
