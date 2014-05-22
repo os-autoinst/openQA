@@ -30,8 +30,9 @@ sub list {
         $match =~ s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g; # sanitize
     }
 
-    my $defaulthoursfresh=4*24;
-    my $hoursfresh = $self->param('hours') || 0;
+    my $hoursfresh = $self->param('hoursfresh');
+    $hoursfresh = 4*24 unless defined($hoursfresh);
+    $self->param(hoursfresh => $hoursfresh);
     my $limit = $self->param('limit');
     my $page = $self->param('page');
     my $scope = $self->param('scope');
@@ -42,9 +43,6 @@ sub list {
 
     my $assetid = $self->param('assetid');
 
-    if ($hoursfresh =~ m/\D/) {
-        $hoursfresh = 0;
-    }
     if (defined $limit && $limit =~ m/\D/) {
         $limit = undef;
     }
@@ -53,10 +51,6 @@ sub list {
     }
     if ($limit && $limit > 500) {
         $limit = 500;
-    }
-
-    if (!defined $limit && (!$hoursfresh || $hoursfresh > 900)) {
-        $hoursfresh = $defaulthoursfresh;
     }
 
     my @slist=();

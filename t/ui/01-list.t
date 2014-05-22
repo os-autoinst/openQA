@@ -65,7 +65,7 @@ $get->element_exists_not('#results #job_99926');
 #
 # List with a limit of 200h
 #
-$get = $t->get_ok('/tests' => form => {hours => 200})->status_is(200);
+$get = $t->get_ok('/tests' => form => {hoursfresh => 200})->status_is(200);
 
 # Test 99937 is displayed now
 $get->element_exists('#results #job_99937');
