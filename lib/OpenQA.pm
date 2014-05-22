@@ -225,7 +225,6 @@ sub startup {
     $test_r->get('/streaming')->name('streaming')->to('running#streaming');
     $test_r->get('/edit')->name('edit_test')->to('running#edit');
 
-    $test_auth->post('/restart')->name('restart')->to('schedule#restart');
     my $log_auth = $r->bridge('/tests/#testid')->to("session#ensure_authorized_ip");
     $log_auth->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
 
@@ -314,7 +313,7 @@ sub startup {
     # restart and cancel are valid both by job id or by job name (which is
     # exactly the same, but with less restrictive format)
     my $job_name_r = $api_r->route('/jobs/#name');
-    $job_name_r->post('/restart')->name('apiv1_restart_job')->to('job#restart'); # job_restart
+    $job_name_r->post('/restart')->name('apiv1_restart')->to('job#restart'); # job_restart
     $job_name_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel'); # job_cancel
     $job_name_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate'); # job_duplicate
 
