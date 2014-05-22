@@ -227,7 +227,6 @@ sub startup {
 
     $test_auth->post('/cancel')->name('cancel')->to('schedule#cancel');
     $test_auth->post('/restart')->name('restart')->to('schedule#restart');
-    $test_auth->post('/setpriority/:priority')->name('setpriority')->to('schedule#setpriority');
     my $log_auth = $r->bridge('/tests/#testid')->to("session#ensure_authorized_ip");
     $log_auth->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
 

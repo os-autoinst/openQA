@@ -40,12 +40,10 @@ is($token, $get->res->dom->at('form input[name=csrf_token]')->{value}, "token is
 # look for the cancel link without logging in
 $t->get_ok('/tests')->element_exists_not('#results #job_99928 .cancel a');
 
-# test cancel, restart and setpriority without logging in
+# test cancel and restart without logging in
 $t->post_ok('/tests/99928/cancel' => { 'X-CSRF-Token' => $token } => form => {})
     ->status_is(403);
 $t->post_ok('/tests/99928/restart' => { 'X-CSRF-Token' => $token } => form => {})
-    ->status_is(403);
-$t->post_ok('/tests/99928/setpriority/34' => { 'X-CSRF-Token' => $token } => form => {})
     ->status_is(403);
 
 # Log in with an authorized user for the rest of the test
@@ -69,14 +67,6 @@ $t->post_ok('/tests/99928/restart' => form => { csrf_token => 'foobar' })
 $t->post_ok('/tests/99928/restart' => { 'X-CSRF-Token' => $token } => form => {})
     ->status_is(200);
 $t->post_ok('/tests/99928/restart' => form => { csrf_token => $token })
-    ->status_is(200);
-
-# test setpriority with and without CSRF token
-$t->post_ok('/tests/99928/setpriority/33' => form => { csrf_token => 'foobar' })
-    ->status_is(403);
-$t->post_ok('/tests/99928/setpriority/34' => { 'X-CSRF-Token' => $token } => form => {})
-    ->status_is(200);
-$t->post_ok('/tests/99928/setpriority/35' => form => { csrf_token => $token })
     ->status_is(200);
 
 done_testing();

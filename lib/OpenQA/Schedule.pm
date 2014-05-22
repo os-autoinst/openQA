@@ -58,16 +58,5 @@ sub restart{
     _stash_back($self);
 }
 
-sub setpriority{
-    my $self = shift;
-    my $name = $self->param('testid');
-    my $priority = $self->param('priority');
-
-    my $job = Scheduler::job_get($name);
-    Scheduler::job_set_prio( prio=>$priority, jobid=>$job->{id} );
-
-    $self->render(json => { id => $job->{id}, priority => $priority});
-}
-
 1;
 # vim: set sw=4 et:
