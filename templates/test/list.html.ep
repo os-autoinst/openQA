@@ -10,7 +10,7 @@
     </p>
 
     %= form_for tests => (method => 'GET') => (class => "cutofftimeform") => (id => "filterform") => begin
-        %= select_field hours => [ ['24 h' => '24'], ['96 h' => '96'], ['200 h' => '200'], ['300 h' => '300'] ]
+        %= select_field hoursfresh => [ ['24 h' => '24'], ['96 h' => '96'], ['200 h' => '200'], ['300 h' => '300'] ]
         %= text_field "match"
         filter
         <label>
