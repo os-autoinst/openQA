@@ -7,6 +7,14 @@
         %if ($hoursfresh) {
             from the last <%= $hoursfresh %> hours.
         %}
+        % if (is_operator) {
+            <a href="#" id="list-select">Select</a>
+            |
+            <a href="#" id="list-unselect">Unselect</a>
+            |
+            <a href="#" id="list-restart">Restart selected</a>
+            (<span id="list-counter">0</span>)
+        % }
     </p>
 
     %= form_for tests => (method => 'GET') => (class => "cutofftimeform") => (id => "filterform") => begin
@@ -22,9 +30,11 @@
         %= submit_button "change", class => "smbutton"
     % end
     <p />
+    %= form_for apiv1_restart_jobs => (method => 'POST') => (id => "list-form") => begin
     <table id="results" class="table-autosort table-autofilter table-autostripe">
         <thead>
             <tr>
+                <th class="table-sortable:numeric">#</th>
                 <th class="table-sortable:alphanumeric">link</th>
                 <th class="table-sortable:alphanumeric">clone</th>
                 <th class="table-sortable:alphanumeric table-filterable">machine</th>
@@ -49,6 +59,13 @@
             % my $version = $job->{settings}->{'VERSION'};
 
             <tr id="job_<%= $job->{'id'} %>">
+                <td class="id">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="check-<%= $job->{'id'} %>" name="jobs" value="<%= $job->{'id'} %>"/>
+                        <label for="check-<%= $job->{'id'} %>"></label>
+                    </div>
+                    <%= $job->{'id'} %>
+                </td>
                 <td class="link">
                     % if($job->{'state'} eq 'running') {
                         <a href="/tests/<%= $job->{'id'} %>">testing</a>
@@ -113,6 +130,13 @@
             my $version = $job->{settings}->{'VERSION'};
             %>
             <tr id="job_<%= $job->{'id'} %>">
+                <td class="id">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="check-<%= $job->{'id'} %>" name="jobs" value="<%= $job->{'id'} %>"/>
+                        <label for="check-<%= $job->{'id'} %>"></label>
+                    </div>
+                    <%= $job->{'id'} %>
+                </td>
                 <td style="font-style: italic;" class="link"><a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><%= $state %></a></td>
                 <td>
                     % if ($job->{'clone_id'}) {
@@ -144,5 +168,6 @@
         % }
         </tbody>
     </table>
+    % end
     <p>Note: times are UTC</p>
 </div>
