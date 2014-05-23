@@ -252,6 +252,13 @@ sub startup {
     $r->get('/favicon.ico' => sub {my $c = shift; $c->render_static('favicon.ico') });
     # Default route
     $r->get('/')->name('index')->to('index#index');
+    # Redirection for old links to openQAv1
+    $r->get(
+        '/results' => sub {
+            my $c = shift;
+            $c->redirect_to('tests');
+        }
+    );
 
     #
     ## Admin area starts here

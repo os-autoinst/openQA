@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 42;
+use Test::More tests => 45;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -104,5 +104,11 @@ $get->element_exists('#results #job_99946');
 $get->element_exists('#results #job_99963');
 $get->element_exists('#results #job_99945');
 $get->element_exists('#results #job_99962');
+
+#
+# Test the legacy redirection
+#
+$t->get_ok('/results')->status_is(302)
+  ->header_like(Location => qr/\/tests$/);
 
 done_testing();
