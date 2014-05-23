@@ -125,11 +125,15 @@ sub done {
     $self->render(json => {result => \$res});
 }
 
+# Used for both apiv1_restart and apiv1_restart_jobs
 sub restart {
     my $self = shift;
-    my $name = $self->param('name');
+    my $target = $self->param('name');
+    unless ($target) {
+        $target = $self->param('jobs');
+    }
 
-    my @res = Scheduler::job_restart($name);
+    my @res = Scheduler::job_restart($target);
     $self->render(json => {result => \@res});
 }
 

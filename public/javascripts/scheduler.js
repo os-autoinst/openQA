@@ -1,4 +1,5 @@
 document.observe('dom:loaded', function() {
+  var target;
 
   $$('#results td.cancel a').each(function(element) {
     element.on('ajax:success', 'tr', function(event, row) {
@@ -14,7 +15,44 @@ document.observe('dom:loaded', function() {
     });
   });
 
-  var target;
+  // Init the counter
+  window.updateListCounter();
+
+  $$('#results input[name=jobs]').each(function(element) {
+    element.on('click', window.updateListCounter)
+  });
+
+  if (target = $('list-restart')) {
+    target.on('click', function(event) {
+      event.stop(); // Don't follow the link
+      // Submit the form, but using AJAX, and reload afterwards
+      // (assign window.location instead of reload() to reset forms)
+      $('list-form').request({
+        onComplete: function() { window.location = document.URL }
+      });
+    });
+  }
+
+  if (target = $('list-select')) {
+    target.on('click', function(event) {
+      event.stop(); // Don't follow the link
+      $$('#results tbody tr').select(Element.visible).each(function(e) {
+        e.select('input[name=jobs]')[0].checked=true
+      });
+      window.updateListCounter();
+    });
+  }
+
+  if (target = $('list-unselect')) {
+    target.on('click', function(event) {
+      event.stop(); // Don't follow the link
+      $$('#results tbody tr').select(Element.visible).each(function(e) {
+        e.select('input[name=jobs]')[0].checked=false
+      });
+      window.updateListCounter();
+    });
+  }
+
   if (target = $('cancel_running')) {
     target.on('ajax:success', function(event) {
       // Let's bother the user to have time to really cancel
@@ -41,14 +79,14 @@ document.observe('dom:loaded', function() {
   $$('a.prio-down').each(function(element) {
     element.on('click', function(event) {
       window.adjustPriority($(this), -10);
-      event.stop();
+      event.stop(); // Don't follow the link
     });
   });
 
   $$('a.prio-up').each(function(element) {
     element.on('click', function(event) {
       window.adjustPriority($(this), 10);
-      event.stop();
+      event.stop(); // Don't follow the link
     });
   });
 
@@ -64,4 +102,9 @@ function adjustPriority(element, amount) {
     method: 'post',
     onSuccess: function(r) { prioHolder.replace('<span data-prio="'+prio+'">'+prio+'</span> '); }
   });
+}
+
+// Update the counter of selected items in the jobs list
+function updateListCounter() {
+  $('list-counter').update($$('input[name=jobs]:checked').length);
 }
