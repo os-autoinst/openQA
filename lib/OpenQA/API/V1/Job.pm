@@ -129,8 +129,14 @@ sub done {
 sub restart {
     my $self = shift;
     my $target = $self->param('name');
-    unless ($target) {
-        $target = $self->param('jobs');
+    my @jobs;
+    if ($target) {
+        $self->app->log->debug("Restarting job $target");
+    }
+    else {
+        @jobs = $self->param('jobs');
+        $self->app->log->debug("Restarting jobs @jobs");
+        $target = \@jobs;
     }
 
     my @res = Scheduler::job_restart($target);
