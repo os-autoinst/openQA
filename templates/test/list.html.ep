@@ -60,10 +60,12 @@
 
             <tr id="job_<%= $job->{'id'} %>">
                 <td class="id">
-                    <div class="checkbox-wrapper">
-                        <input type="checkbox" id="check-<%= $job->{'id'} %>" name="jobs" value="<%= $job->{'id'} %>"/>
-                        <label for="check-<%= $job->{'id'} %>"></label>
-                    </div>
+                    % if (is_operator) {
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="check-<%= $job->{'id'} %>" name="jobs" value="<%= $job->{'id'} %>"/>
+                            <label for="check-<%= $job->{'id'} %>"></label>
+                        </div>
+                    % }
                     <%= $job->{'id'} %>
                 </td>
                 <td class="link">
@@ -131,10 +133,12 @@
             %>
             <tr id="job_<%= $job->{'id'} %>">
                 <td class="id">
-                    <div class="checkbox-wrapper">
-                        <input type="checkbox" id="check-<%= $job->{'id'} %>" name="jobs" value="<%= $job->{'id'} %>"/>
-                        <label for="check-<%= $job->{'id'} %>"></label>
-                    </div>
+                    % if (is_operator) {
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="check-<%= $job->{'id'} %>" name="jobs" value="<%= $job->{'id'} %>"/>
+                            <label for="check-<%= $job->{'id'} %>"></label>
+                        </div>
+                    % }
                     <%= $job->{'id'} %>
                 </td>
                 <td style="font-style: italic;" class="link"><a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><%= $state %></a></td>
