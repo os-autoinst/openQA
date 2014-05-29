@@ -76,6 +76,23 @@ document.observe('dom:loaded', function() {
     });
   }
 
+  if (target = $('restart-result')) {
+    target.on('ajax:success', 'a', function(event, element) {
+      var jobid = event.memo.responseJSON.result[0];
+      event.stop(); // Don't follow the link
+      // If the API call returns a id, a new job have been created.
+      // If not, nothing happened (or the old job is being reused).
+      if (jobid) {
+        var cell;
+        if (cell = $('clone')) {
+          cell.update('<a href="/tests/'+jobid+'">'+jobid+'</a>');
+          new Effect.Highlight(cell);
+        }
+      }
+      new Effect.Fade(element);
+    });
+  }
+
   $$('a.prio-down').each(function(element) {
     element.on('click', function(event) {
       window.adjustPriority($(this), -10);
