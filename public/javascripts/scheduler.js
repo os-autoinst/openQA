@@ -106,5 +106,8 @@ function adjustPriority(element, amount) {
 
 // Update the counter of selected items in the jobs list
 function updateListCounter() {
-  $('list-counter').update($$('input[name=jobs]:checked').length);
+  var counter;
+  if (counter = $('list-counter')) {
+    counter.update($$('input[name=jobs]:checked').length);
+  }
 }
