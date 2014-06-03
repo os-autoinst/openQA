@@ -419,6 +419,7 @@ sub list_jobs {
     }
 
     push @{$attrs{'prefetch'}}, 'settings';
+    push @{$attrs{'prefetch'}}, {'jobs_assets' => 'asset' };
 
     # Search into the following job_settings
     for my $setting (qw(build iso distri version flavor)) {
@@ -450,6 +451,9 @@ sub list_jobs {
         $j->{state} = $job->state->name;
         $j->{result} = $job->result->name;
         $j->{settings} = { map { $_->key => $_->value } $job->settings->all() };
+        for my $a ($job->jobs_assets->all()) {
+            push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
+        }
         push @results, $j;
     }
 
