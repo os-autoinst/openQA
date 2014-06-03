@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 52;
+use Test::More tests => 51;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -144,10 +144,25 @@ my $jobs = [
         state => "scheduled",
         worker_id => 0,
         test => 'rainbow',
-        machine => 'RainbowPC',
         clone_id => undef,
         retry_avbl => 3,
         test_branch => undef,
+        settings => {
+            DESKTOP => "DESKTOP",
+            DISTRI => 'Unicorn',
+            FLAVOR => 'pink',
+            VERSION => '42',
+            BUILD => '44',
+            TEST => 'rainbow',
+            ISO => 'whatever.iso',
+            ISO_MAXSIZE => 1,
+            KVM => "KVM",
+            MACHINE => "RainbowPC",
+            NAME => '00000002-OTHER NAME',
+        },
+        assets => {
+            iso => ['whatever.iso'],
+        },
     },
     {
         t_finished => undef,
@@ -159,10 +174,25 @@ my $jobs = [
         state => "scheduled",
         worker_id => 0,
         test => 'rainbow',
-        machine => 'RainbowPC',
         clone_id => undef,
         retry_avbl => 3,
         test_branch => undef,
+        settings => {
+            DESKTOP => "DESKTOP",
+            DISTRI => 'Unicorn',
+            FLAVOR => 'pink',
+            VERSION => '42',
+            BUILD => '666',
+            TEST => 'rainbow',
+            ISO => 'whatever.iso',
+            ISO_MAXSIZE => 1,
+            KVM => "KVM",
+            MACHINE => "RainbowPC",
+            NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
+        },
+        assets => {
+            iso => ['whatever.iso'],
+        },
     },
 ];
 
@@ -300,9 +330,6 @@ is($job->{result}, $args{result}, "job_get after update");
 $result = Scheduler::job_delete($job_id);
 my $no_job_id = Scheduler::job_get($job_id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
-my $fake_job = { id => $job_id };
-Scheduler::_job_fill_settings($fake_job);
-ok(pp($fake_job->{settings}) eq "{}", "Cascade delete");
 
 $result = Scheduler::job_delete($job2_id);
 $no_job_id = Scheduler::job_get($job2_id);
