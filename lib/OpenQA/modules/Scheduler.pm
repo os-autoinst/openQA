@@ -364,6 +364,8 @@ sub list_jobs {
     my %attrs = ();
     my @joins = [];
 
+    push @{$attrs{'prefetch'}}, qw/state result/;
+
     if ($args{state}) {
         my $states_rs = schema->resultset("JobStates")->search({ name => [split(',', $args{state})] });
         push(@conds, { 'me.state_id' => {-in => $states_rs->get_column("id")->as_query}});
@@ -416,6 +418,8 @@ sub list_jobs {
         );
     }
 
+    push @{$attrs{'prefetch'}}, 'settings';
+
     # Search into the following job_settings
     for my $setting (qw(build iso distri version flavor)) {
         if ($args{$setting}) {
@@ -445,8 +449,7 @@ sub list_jobs {
         my $j = _hashref($job, qw/ id name priority worker_id clone_id retry_avbl t_started t_finished test test_branch/);
         $j->{state} = $job->state->name;
         $j->{result} = $job->result->name;
-        $j->{machine} = $job->machine;
-        _job_fill_settings($j) if $args{fulldetails};
+        $j->{settings} = { map { $_->key => $_->value } $job->settings->all() };
         push @results, $j;
     }
 
