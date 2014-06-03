@@ -281,7 +281,7 @@ sub job_get($) {
     return undef if !defined($value);
 
     if ($value =~ /^\d+$/) {
-        return _job_get({ id => $value });
+        return _job_get({ 'me.id' => $value });
     }
     return _job_get({slug => $value });
 }
@@ -314,20 +314,34 @@ sub jobs_get_dead_worker {
     return \@results;
 }
 
+sub _job_to_hash {
+    my ($job, %args) = @_;
+    return undef unless $job;
+    my $j = _hashref($job, qw/ id name priority worker_id clone_id retry_avbl t_started t_finished test test_branch/);
+    $j->{state} = $job->state->name;
+    $j->{result} = $job->result->name;
+    $j->{settings} = { map { $_->key => $_->value } $job->settings->all() };
+    if ($job->name && !$j->{settings}->{NAME}) {
+        $j->{settings}->{NAME} = sprintf "%08d-%s", $job->id, $job->name;
+    }
+    if ($args{assets}) {
+        for my $a ($job->jobs_assets->all()) {
+            push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
+        }
+    }
+    return $j;
+}
+
 # XXX TODO: Do not expand the Job
 sub _job_get($) {
     my $search = shift;
+    my %attrs = ();
 
-    my $job = schema->resultset("Jobs")->search($search)->first;
-    my $job_hashref;
-    if ($job) {
-        $job_hashref = _hashref($job, qw/ id name priority result worker_id clone_id retry_avbl t_started t_finished test test_branch/);
-        # XXX: use +columns in query above?
-        $job_hashref->{state} = $job->state->name;
-        $job_hashref->{result} = $job->result->name;
-        _job_fill_settings($job_hashref);
-    }
-    return $job_hashref;
+    push @{$attrs{'prefetch'}}, qw/state result/;
+    push @{$attrs{'prefetch'}}, 'settings';
+
+    my $job = schema->resultset("Jobs")->search($search, \%attrs)->first;
+    return _job_to_hash($job);
 }
 
 sub job_get_assets {
@@ -342,21 +356,6 @@ sub job_get_assets {
     return $ret;
 }
 
-sub _job_fill_settings {
-    my $job = shift;
-    my $job_settings = schema->resultset("JobSettings")->search({ job_id => $job->{id} });
-    $job->{settings} = {};
-    while(my $js = $job_settings->next) {
-        $job->{settings}->{$js->key} = $js->value;
-    }
-
-    if ($job->{name} && !$job->{settings}->{NAME}) {
-        $job->{settings}->{NAME} = sprintf "%08d-%s", $job->{id}, $job->{name};
-    }
-
-    return $job;
-}
-
 sub list_jobs {
     my %args = @_;
 
@@ -365,6 +364,8 @@ sub list_jobs {
     my @joins = [];
 
     push @{$attrs{'prefetch'}}, qw/state result/;
+    push @{$attrs{'prefetch'}}, 'settings';
+    push @{$attrs{'prefetch'}}, {'jobs_assets' => 'asset' };
 
     if ($args{state}) {
         my $states_rs = schema->resultset("JobStates")->search({ name => [split(',', $args{state})] });
@@ -418,9 +419,6 @@ sub list_jobs {
         );
     }
 
-    push @{$attrs{'prefetch'}}, 'settings';
-    push @{$attrs{'prefetch'}}, {'jobs_assets' => 'asset' };
-
     # Search into the following job_settings
     for my $setting (qw(build iso distri version flavor)) {
         if ($args{$setting}) {
@@ -430,7 +428,7 @@ sub list_jobs {
                     value => $args{$setting}
                 }
             );
-            push(@conds, { id => { -in => $subquery->get_column('job_id')->as_query }});
+            push(@conds, { 'me.id' => { -in => $subquery->get_column('job_id')->as_query }});
         }
     }
     # Text search across some settings
@@ -447,14 +445,7 @@ sub list_jobs {
 
     my @results = ();
     while( my $job = $jobs->next) {
-        my $j = _hashref($job, qw/ id name priority worker_id clone_id retry_avbl t_started t_finished test test_branch/);
-        $j->{state} = $job->state->name;
-        $j->{result} = $job->result->name;
-        $j->{settings} = { map { $_->key => $_->value } $job->settings->all() };
-        for my $a ($job->jobs_assets->all()) {
-            push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
-        }
-        push @results, $j;
+        push @results, _job_to_hash($job, assets => 1);
     }
 
     return \@results;
@@ -497,7 +488,7 @@ sub job_grab {
     my $job_hashref;
     $job_hashref = _job_get(
         {
-            id => schema->resultset("Jobs")->search(
+            'me.id' => schema->resultset("Jobs")->search(
                 {
                     state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
                     worker_id => $workerid,
