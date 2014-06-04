@@ -359,9 +359,9 @@ sub job_get_assets {
 sub list_jobs {
     my %args = @_;
 
-    my @conds = [];
-    my %attrs = ();
-    my @joins = [];
+    my @conds;
+    my %attrs;
+    my @joins;
 
     push @{$attrs{'prefetch'}}, qw/state result/;
     push @{$attrs{'prefetch'}}, 'settings';
