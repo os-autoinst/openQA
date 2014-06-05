@@ -87,7 +87,7 @@
                         -
                     % }
                 </td>
-                <td class="backend"><%= $job->{machine} %></td>
+                <td class="backend"><%= $job->{settings}->{MACHINE} %></td>
                 <td class="distri"><%= "$distri-$version" %></td>
                 <td class="type"><%= $job->{settings}->{FLAVOR} %></td>
                 <td class="arch"><%= $job->{settings}->{ARCH} %></td>

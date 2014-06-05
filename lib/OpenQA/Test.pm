@@ -65,7 +65,6 @@ sub list {
                 page => $page,
                 ignore_incomplete => $self->param('ignore_incomplete')?1:0,
                 maxage => $hoursfresh*3600,
-                fulldetails => 1,
                 scope => $scope,
                 assetid => $assetid,
               )
@@ -346,7 +345,7 @@ sub overview {
         }
 
         # Populate @configs and %archs
-        $test = $test.'@'.$job->{machine} unless ( $job->{machine} eq '64bit' || $job->{machine} eq '32bit' );
+        $test = $test.'@'.$job->{settings}->{MACHINE} unless ( $job->{settings}->{MACHINE} eq '64bit' || $job->{settings}->{MACHINE} eq '32bit' );
         push( @configs, $test ) unless ( grep { $test eq $_ } @configs );
         $archs{$flavor} = [] unless $archs{$flavor};
         push( @{ $archs{$flavor} }, $arch ) unless ( grep { $arch eq $_ } @{ $archs{$flavor} } );
