@@ -4,7 +4,6 @@
 # If this is your first vhost you must create a default vhost, e.g.
 # in 01-default.conf with the following content:
 #
-#NameVirtualHost *:80
 #<VirtualHost *:80>
 #    ServerName www.example.com
 #    DocumentRoot "/srv/www/htdocs"
