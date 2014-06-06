@@ -25,7 +25,7 @@ clone_job.pl - clone job from remote QA instance
 
 =head1 SYNOPSIS
 
-clone_job.pl [OPTIONS] JOBID
+clone_job.pl [OPTIONS] JOBID [KEY=[VALUE] ...]
 
 =head1 OPTIONS
 
@@ -51,7 +51,14 @@ print help
 
 =head1 DESCRIPTION
 
-lorem ipsum ...
+Clone job from another instance. Downloads all assets associated
+with the job. Optionally settings can be modified.
+
+clone_job.pl --from https://openqa.opensuse.org 42
+
+clone_job.pl --from https://openqa.opensuse.org --host openqa.example.com 42
+
+clone_job.pl --from localhost --host localhost 42 MAKETESTSNAPSHOTS=1 FOOBAR=
 
 =cut
 
@@ -90,11 +97,10 @@ usage(1) unless @ARGV;
 usage(1) unless exists $options{'from'};
 
 my $jobid = shift @ARGV || die "missing jobid\n";
-my %variables = map { /([A-Z_0-9]+)=(.*)?/ && $1 => $2 } @ARGV;
 
-$options{'dir'} ||= '/var/lib/openqa/factory/iso';
+$options{'dir'} ||= '/var/lib/openqa/factory';
 
-die "can't write $options{dir}\n" unless -w $options{dir};
+die "can't write $options{dir}\n" unless -w $options{dir}.'/iso';
 
 my $ua = LWP::UserAgent->new;
 $ua->timeout(10);
@@ -154,38 +160,56 @@ if ($jobid) {
         exit(1);
     }
     dd $job if $options{verbose};
-    my $dst = $job->{settings}->{ISO};
-    $dst =~ s,.*/,,;
-    $dst = join('/', $options{dir}, $dst);
-    my $from = $remote_url->clone;
-    $from->path(sprintf '/tests/%d/iso', $jobid);
-    $from = $from->to_string;
 
-    print "downloading\n$from\nto\n$dst\n";
-    my $r = $ua->mirror($from, $dst);
-    unless ($r->is_success || $r->code == 304) {
-        die "$jobid failed: ",$r->status_line, "\n";
+    for my $type (keys %{$job->{assets}}) {
+        for my $file (@{$job->{assets}->{$type}}) {
+            my $dst = $file;
+            $dst =~ s,.*/,,;
+            $dst = join('/', $options{dir}, $type, $dst);
+            my $from = $remote_url->clone;
+            $from->path(sprintf '/tests/%d/asset/%s/%s', $jobid, $type, $file);
+            $from = $from->to_string;
+
+            print "downloading\n$from\nto\n$dst\n";
+            my $r = $ua->mirror($from, $dst);
+            unless ($r->is_success || $r->code == 304) {
+                die "$jobid failed: ",$r->status_line, "\n";
+            }
+        }
     }
+
     $url = $local_url->clone;
-    my @settings = %{$job->{settings}};
+    my %settings = %{$job->{settings}};
+    delete $settings{NAME}; # usually autocreated
     for my $arg (@ARGV) {
-        if ($arg =~ /([A-Z0-9]+)=([[:alnum:]+_-]+)/) {
-            push @settings, $1, $2;
+        if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
+            if ($2) {
+                $settings{$1} = $2;
+            }
+            else {
+                delete $settings{$1};
+            }
         }
         else {
-            warn "arg $arg doesnt match";
+            warn "arg $arg doesn't match";
         }
     }
-    $url->query(@settings);
+    dd \%settings if $options{verbose};
+    $url->query(%settings);
     $tx = $local->post($url);
     if ($tx->success) {
-        $r = $tx->success->json->{id};
+        my $r = $tx->success->json->{id};
+        if ($r) {
+            print "Created job #$r\n";
+        }
+        else {
+            print "job not created. duplicate?\n";
+        }
     }
     else {
         warn "failed to create job ", $tx->error;
         exit(1);
     }
-    print "Created job #$r\n";
 }
 
 1;

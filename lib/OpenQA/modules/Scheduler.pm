@@ -341,7 +341,7 @@ sub _job_get($) {
     push @{$attrs{'prefetch'}}, 'settings';
 
     my $job = schema->resultset("Jobs")->search($search, \%attrs)->first;
-    return _job_to_hash($job);
+    return _job_to_hash($job, assets => 1);
 }
 
 sub job_get_assets {
