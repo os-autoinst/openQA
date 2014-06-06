@@ -1,10 +1,39 @@
-Development documentation
-=========================
+OpenQA developer guide
+======================
+:author: openSUSE Team at SUSE
+:toc:
+
+Introduction
+------------
+[id="intro"]
+
+OpenQA is an automated test tool that makes possible to test the whole
+installation process of an operating system. It's free software released
+under the http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The
+source code and documentation are hosted in the
+https://github.com/os-autoinst[os-autoinst organization on GitHub].
+
+This document provides the information needed to start contributing to the
+OpenQA development improving the tool, fixing bugs and implementing new
+features. For information about writing or improving OpenQA tests, refer to the
+Tests Developer Guide. In both documents it's assumed that the reader is already
+familiar with OpenQA and has already read the Starter Guide. All those documents
+are available at the 
+https://github.com/os-autoinst/openQA[official repository].
+
+Development tools
+-----------------
+
+TODO: to be written based on https://www.youtube.com/watch?v=W-CFeHjsFYw
+
+Technologies
+------------
+
+TODO: to be written based on https://www.youtube.com/watch?v=W-CFeHjsFYw
 
 Frontend for openQA is written in http://mojolicio.us/[Mojolicious] web
 framework. You can find plenty of http://mojolicio.us/perldoc[documentation]
-for it on their website. Therefore this document covers only openQA specific
-tips and tricks.
+for it on their website.
 
 How to change the database schema
 ---------------------------------
