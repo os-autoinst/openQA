@@ -25,7 +25,7 @@ clone_job.pl - clone job from remote QA instance
 
 =head1 SYNOPSIS
 
-clone_job.pl [OPTIONS] JOBS...
+clone_job.pl [OPTIONS] JOBID
 
 =head1 OPTIONS
 
@@ -84,10 +84,14 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options,"from=s","fromv3","host=s","hostv3","dir=s","verbose|v","help|h",) or usage(1);
+GetOptions(\%options,"from=s","host=s","dir=s","verbose|v","help|h",) or usage(1);
 
 usage(1) unless @ARGV;
 usage(1) unless exists $options{'from'};
+
+my $jobid = shift @ARGV || die "missing jobid\n";
+my %variables = map { /([A-Z_0-9]+)=(.*)?/ && $1 => $2 } @ARGV;
+
 $options{'dir'} ||= '/var/lib/openqa/factory/iso';
 
 die "can't write $options{dir}\n" unless -w $options{dir};
@@ -107,113 +111,79 @@ $options{'host'} ||= 'localhost';
 
 my $local;
 my $local_url;
-if ($options{hostv3}) {
-    if ($options{'host'} !~ '/') {
-        $local_url = Mojo::URL->new();
-        $local_url->host($options{'host'});
-        $local_url->scheme('http');
-    }
-    else {
-        $local_url = Mojo::URL->new($options{'host'});
-    }
-    $local_url->path('/api/v1/jobs');
-    $local = OpenQA::API::V1::Client->new(api => $local_url->host);
-
+if ($options{'host'} !~ '/') {
+    $local_url = Mojo::URL->new();
+    $local_url->host($options{'host'});
+    $local_url->scheme('http');
 }
 else {
-    $local = new $clientclass;
-    $local->prepare(fixup_url($options{'host'}), [qw/job_create/]) or die "$!\n";
+    $local_url = Mojo::URL->new($options{'host'});
 }
+$local_url->path('/api/v1/jobs');
+$local = OpenQA::API::V1::Client->new(api => $local_url->host);
 
 my $remote;
 my $remote_url;
-if ($options{fromv3}) {
-    if ($options{'from'} !~ '/') {
-        $remote_url = Mojo::URL->new();
-        $remote_url->host($options{'from'});
-        $remote_url->scheme('http');
-    }
-    else {
-        $remote_url = Mojo::URL->new($options{'from'});
-    }
-    $remote_url->path('/api/v1/jobs');
-    $remote = OpenQA::API::V1::Client->new(api => $remote_url->host);
-
+if ($options{'from'} !~ '/') {
+    $remote_url = Mojo::URL->new();
+    $remote_url->host($options{'from'});
+    $remote_url->scheme('http');
 }
 else {
-    $remote = new $clientclass;
-    $remote->prepare(fixup_url($options{'from'}), [qw/job_get/]) or die "$!\n";
+    $remote_url = Mojo::URL->new($options{'from'});
 }
+$remote_url->path('/api/v1/jobs');
+$remote = OpenQA::API::V1::Client->new(api => $remote_url->host);
 
-if (my $name = shift @ARGV) {
+if ($jobid) {
     my $job;
-    if ($options{fromv3}) {
-        my $url = $remote_url->clone;
-        $url->path("jobs/$name");
-        my $tx = $remote->get($url);
-        if ($tx->success) {
-            if ($tx->success->code == 200) {
-                $job = $tx->success->json->{job};
-            }
-            else {
-                warn sprintf("unexpected return code: %s %s", $tx->success->code, $tx->success->message);
-                exit 1;
-            }
+    my $url = $remote_url->clone;
+    $url->path("jobs/$jobid");
+    my $tx = $remote->get($url);
+    if ($tx->success) {
+        if ($tx->success->code == 200) {
+            $job = $tx->success->json->{job};
         }
         else {
-            warn "failed to get job ", $tx->error;
-            exit(1);
+            warn sprintf("unexpected return code: %s %s", $tx->success->code, $tx->success->message);
+            exit 1;
         }
-
     }
     else {
-        $job = $remote->job_get($name);
+        warn "failed to get job ", $tx->error;
+        exit(1);
     }
     dd $job if $options{verbose};
     my $dst = $job->{settings}->{ISO};
     $dst =~ s,.*/,,;
     $dst = join('/', $options{dir}, $dst);
-    my $from;
-    if ($options{fromv3}) {
-        $from = $remote_url->clone;
-        $from->path('/iso/'.$job->{settings}->{ISO});
-        $from = $from->to_string;
-    }
-    else {
-        $from = fixup_url($options{from});
-        $from =~ s,^(http://[^/]*).*,$1,;
-        $from .= '/openqa/factory/iso/'.$job->{settings}->{ISO};
-    }
+    my $from = $remote_url->clone;
+    $from->path(sprintf '/tests/%d/iso', $jobid);
+    $from = $from->to_string;
+
     print "downloading\n$from\nto\n$dst\n";
     my $r = $ua->mirror($from, $dst);
     unless ($r->is_success || $r->code == 304) {
-        die "$name failed: ",$r->status_line, "\n";
+        die "$jobid failed: ",$r->status_line, "\n";
     }
-    if ($options{hostv3}) {
-        warn "here";
-        my $url = $local_url->clone;
-        my @settings = %{$job->{settings}};
-        for my $arg (@ARGV) {
-            if ($arg =~ /([A-Z0-9]+)=([[:alnum:]+_-]+)/) {
-                push @settings, $1, $2;
-            }
-            else {
-                warn "arg $arg doesnt match";
-            }
-        }
-        $url->query(@settings);
-        my $tx = $local->post($url);
-        if ($tx->success) {
-            $r = $tx->success->json->{id};
+    $url = $local_url->clone;
+    my @settings = %{$job->{settings}};
+    for my $arg (@ARGV) {
+        if ($arg =~ /([A-Z0-9]+)=([[:alnum:]+_-]+)/) {
+            push @settings, $1, $2;
         }
         else {
-            warn "failed to create job ", $tx->error;
-            exit(1);
+            warn "arg $arg doesnt match";
         }
     }
+    $url->query(@settings);
+    $tx = $local->post($url);
+    if ($tx->success) {
+        $r = $tx->success->json->{id};
+    }
     else {
-        my @settings = map { sprintf("%s=%s", $_, $job->{settings}->{$_}) } sort keys %{$job->{settings}};
-        $r = $local->job_create(@settings);
+        warn "failed to create job ", $tx->error;
+        exit(1);
     }
     print "Created job #$r\n";
 }
