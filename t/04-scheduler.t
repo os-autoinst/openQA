@@ -106,6 +106,9 @@ my $job_ref = {
         MACHINE => "RainbowPC",
         NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
     },
+    assets => {
+        iso => ['whatever.iso'],
+    },
     t_started => undef,
     state => "scheduled",
     worker_id => 0,

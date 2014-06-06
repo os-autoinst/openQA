@@ -35,6 +35,6 @@ if test -n "$check"; then
     done < <(find . -name "*.tdy")
 fi
 
-find -name '*.bak' -delete
+find -name '*.bak' -delete -or -name '*.tdy' -delete
 
 # vim: set ts=4 sw=4 sts=4 et:
