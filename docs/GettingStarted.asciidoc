@@ -1,0 +1,267 @@
+OpenQA starter guide
+====================
+:author: openSUSE Team at SUSE
+:toc:
+
+Introduction
+------------
+[id="intro"]
+
+OpenQA is an automated test tool that makes possible to test the whole
+installation process of an operating system. It uses virtual machines to
+reproduce the process, checking the output (both serial console and
+screen) in every step and sending the necessary keystrokes and commands to
+proceed to the next. OpenQA can check whether the system can be installed,
+whether it works properly in `live' mode, whether applications work
+or whether the system responds as expected to different installation options and
+commands.
+
+Even more important, OpenQA can run several combinations of tests for every
+revision of the operating system, reporting the errors detected for each
+combination of hardware configuration, installation options and variant of the
+operating system.
+
+OpenQA is free software released under the
+http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The source code and
+documentation are hosted in the https://github.com/os-autoinst[os-autoinst
+organization on GitHub].
+
+This document describes the general operation and usage of OpenQA. The main goal
+is to provide a general overview of the tool, with all the information needed to
+become a happy user. More advanced topics like installation, administration or
+development of new tests are covered by further documents available at the
+https://github.com/os-autoinst/openQA[official repository].
+
+Basic concepts
+--------------
+[id="concepts"]
+
+TODO: explain
+
+* jobs, clones, states and results
+* needles
+
+Architecture: OpenQA and os-autoinst
+------------------------------------
+[id="architecture"]
+
+TODO: openQA, os-autoinst and workers
+
+.OpenQA architecture
+image::images/arch.png[OpenQA architecture]
+
+Access management
+-----------------
+[id="auth"]
+
+TODO: Explain openID and API keys. Can be partially based on
+http://lizards.opensuse.org/2014/02/28/about-openqa-and-authentication/
+but without all that theory.
+
+Using job templates to automate jobs creation
+---------------------------------------------
+[id="job_templates"]
+
+The problem
+~~~~~~~~~~~
+
+When testing an operating system, specially when doing continuous testing,
+there is always a certain combination of jobs, each one with its own
+settings, that needs to be run for every revision. Those combinations can be
+different for different `flavors' of the same revision, like running a different
+set of jobs for each architecture or for the Full and the Lite versions. This
+combinational problem can go one step further if openQA is being used for
+different kind of tests, like running some simple pre-integration tests
+for some snapshots combined with more comprehensive post-integration tests for
+release candidates.
+
+This section describes how an instance of OpenQA can be configured using the
+options in the admin area to automatically create all the required jobs for each
+revision of your operating system that needs to be tested. If you are starting
+from scratch, you should probably go through the following order:
+
+. Define machines in 'Machines' menu
+. Define products you have in 'Products' menu
+. Specify various collections of test you want to run in 'Test suites'
+  menu
+. Go to the template matrix in 'Job templates' menu and decide what
+  combinations does make sense and need to be tested
+
+In openQA we can parametrize a test describing for what product will
+run and for what king of machines will be executed. For example, a
+test like KDE can be run for any product that have KDE installed, and
+can be tested in x86-64 and i586 machines. If we write this as a
+triples, we can create a list like this to characterize KDE tests:
+
+  (Product,             Test Suite, Machine)
+  (openSUSE-DVD-x86_64, KDE,        64bit) 
+  (openSUSE-DVD-x86_64, KDE,        Laptop-64bit)
+  (openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
+  (openSUSE-DVD-i586,   KDE,        32bit) 
+  (openSUSE-DVD-i586,   KDE,        Laptop-32bit) 
+  (openSUSE-DVD-x86_64, KDE,        USBBoot-32bit)
+  (openSUSE-DVD-i586,   KDE,        64bit) 
+  (openSUSE-DVD-i586,   KDE,        Laptop-64bit) 
+  (openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
+
+For every triplet, we need to configure a different instance of
+os-autoinst with a different set of parameters.
+
+Products
+~~~~~~~~
+
+A product in openQA is a simple description without any concrete
+meaning. Basically consist of a name and a set of variables that
+define or characterize this product in os-autoinst.
+
+For example, the product openSUSE-DVD-x86_64 require the variables
++ISO_MAXSIZE+ and +DVD+ to be set up.
+
+The list of variables as dynamic and are consumed by the tests, that
+is the one that provide a semantic to this variable. Some usual
+variables are:
+
+* +ISO_MAXSIZE+ contains the maximum size of the product. There is a
+  test that check that the current size of the product is less or
+  equal than this variable.
+* +DVD+ if is set to 1, this indicate that the medium is a DVD.
+* +LIVECD+ if is set to 1, this indicate that the medium is a live
+  image (can be a CD or USB)
+* +GNOME+ this variable, is is set to 1, will indicate that is a GNOME
+  only distribution.
+* +PROMO+ mark the promotional product.
+* +RESCUECD+ if set to 1 for rescue CD images.
+
+
+Test Suites
+~~~~~~~~~~~
+
+This is the form where we define the different tests that we created
+for openQA. A test consist of a name, a priority (used in the
+scheduler to choose the next job) and a set of variables that are used
+inside this particular test.
+
+Again, the list of variables is not complete, because are
+test-dependent, but some of the usual are:
+
+* +BTRFS+ if set, the file system will be BtrFS.
+* +DESKTOP+ possible values are 'kde' 'gnome' 'lxde' 'xfce' or
+  'texmode'. Used to indicate the desktop selected by the user during
+  the test.
+* +DOCRUN+ used for document tests.
+* +DUALBOOT+ dual boot testing, need HDD_1 and HDDVERSION.
+* +ENCRYPT+ encrypt the home directory via YaST.
+* +HDDMODEL+ variable to set the HDD hardware model.
+* +HDDSIZEGB+ hard disk size in GB. Used together with BtrFS variable.
+* +HDDVERSION+ together with HDD_1 to set the operating system
+  previously installed in the hard disk.
+* +HDD_1+ path for the pre-created hard disk.
+* +INSTALLONLY+ only basic installation.
+* +INSTLANG+ installation language. Actually used only in document
+  tests.
+* +LIVETEST+ the test is on live medium, do not install the distribution.
+* +LVM+ select LVM volume manager.
+* +NICEVIDEO+ used for test with better video quality (show room).
+* +NOAUTOLOGIN+ unmark autologin in YaST
+* +NUMDISKS+ total number of disks in QEMU.
+* +QEMUVGA+ parameter to declare the video hardware configuration in QEMU.
+* +RAIDLEVEL+ RAID configuration variable
+* +REBOOTAFTERINSTALL+ if set to 1, will reboot after the installation.
+* +SCREENSHOTINTERVAL+ used with NICEVIDEO to improve the video quality.
+* +SPLITUSR+ a YaST configuration option.
+* +TOGGLEHOME+ a YaST configuration option.
+* +UPGRADE+ upgrade testing, need HDD_1 and HDDVERSION.
+* +VIDEOMODE+ if the value is 'text', the installation will be done in
+  text mode.
+
+Machines
+~~~~~~~~
+
+You need to have at least one machine set up to be able to run any
+tests. Those machine represents virtual machine types that you want to
+test. To make tests actually happen, you have to have a 'openQA
+worker' connected that can fullfill those specifications.
+
+* *Name.* User defined string only needed for operator to identify the machine
+configuration.
+
+* *Backend.* What backend should be used for this machine. Recommended value is
++qemu+ as it is the most tested one, but other options (like +kvm2usb+ or +vbox+)
+are also possible.
+
+* *Variables* Variables represent a way how to influence backend behaviour.
+Few important examples:
+** +QEMUCPU+ can be 'qemu32' or 'qemu64' and specifies architecture of
+   virtual CPU.
+** +QEMUCPUS+ is an integer that specifies number of cores you wish for.
+** +LAPTOP+ if set to 1, QEMU will create a laptop profile.
+** +USBBOOT+ when set to 1, the image will be loaded through an
+   emulated USB stick.
+** +SMP+ enables smp when set to 1, disables when set to 0.
+
+Testing openSUSE
+----------------
+
+Easiest way to start using openQA is to start testing openSUSE as we have
+everything setup and prepared to ease the initial deployment. If you want to
+play deeper, you can configure whole openQA manually from scratch, but this
+document should help you to get started faster.
+
+Getting tests
+~~~~~~~~~~~~~
+
+First you need to get actual tests. You can get openSUSE tests and needles (the
+expected results) from 
+https://github.com/os-autoinst/os-autoinst-needles-opensuse[GitHub]. It belongs
+to the +/var/lib/os-autoinst/tests+ directory. To make it easier, you can just
+run
+
+[source,sh]
+--------------------------------------------------------------------------------
+/usr/lib/os-autoinst/tools/fetchneedles
+--------------------------------------------------------------------------------
+
+Which will download the tests to the correct location and will set correct
+rights as well.
+
+Getting openQA configuration
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To get everything configured to actually run the tests, there is a plenty of
+options to set in admin interface. If you plan to tes openSUSE Factory, using
+tests mentioned in previous section, easiest way to get started is the
+following command:
+
+[source,sh]
+--------------------------------------------------------------------------------
+/var/lib/os-autoinst/tests/opensuse/templates
+--------------------------------------------------------------------------------
+
+This will load some default settings that were used at some point of time in
+openSUSE production openQA. Therefor those should work reasonably well with
+openSUSE tests and needles.
+
+Adding new iso to test
+~~~~~~~~~~~~~~~~~~~~~~
+
+To start testing new ISO put it in +/var/lib/openqa/factory/iso+ and call
+following commands:
+
+[source,sh]
+--------------------------------------------------------------------------------
+# Run the first test
+/usr/share/openqa/script/client isos post \
+         ISO=openSUSE-Factory-NET-x86_64-Build0053-Media.iso \
+         DISTRI=opensuse \
+         VERSION=Factory \
+         FLAVOR=NET \
+         ARCH=x86_64 \
+         BUILD=0053
+--------------------------------------------------------------------------------
+
+If your openQA is not running on port 80 on 'localhost', you can add option
++--host=http://otherhost:9526+ to specify different port or host.
+
+WARNING: Using only iso name in 'client' command and saving it in
++/var/lib/openqa/factory/iso+ is recommended as is using Factory iso. ISOs are
+not uploaded from the path that you would specify.

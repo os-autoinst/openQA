@@ -1,0 +1,51 @@
+OpenQA tests developer guide
+============================
+:author: openSUSE Team at SUSE
+:toc:
+
+Introduction
+------------
+[id="intro"]
+
+OpenQA is an automated test tool that makes possible to test the whole
+installation process of an operating system. It's free software released
+under the http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The
+source code and documentation are hosted in the
+https://github.com/os-autoinst[os-autoinst organization on GitHub].
+
+This document provides the information needed to start developing new tests for
+OpenQA or to improve the existing ones. It's
+assumed that the reader is already familiar with OpenQA and has already read the
+Starter Guide, available at the 
+https://github.com/os-autoinst/openQA[official repository].
+
+Basic
+-----
+
+TODO: this document needs to be written, based mainly on
+https://www.youtube.com/watch?v=EM3XmaQXcLg
+
+Using Snapshots to speed up development of tests
+------------------------------------------------
+[id="snapshots"]
+
+Sometimes it's annoying to run the full installation to adjust some
+test. It would be nice to have the VM jump to a certain point. There
+is an undocumented feature that allows to start from a snapshot that
+might help in that situation:
+
+set MAKETESTSNAPSHOTS=1 on a testsuite, resp file a job with that
+setting. This will make openQA save a snapshot for every test run.
+
+run the worker with --no-cleanup parameter
+
+after the ended copy the disk image
+/var/lib/openqa/pool/$workerid/raid/1 to
+/var/lib/openqa/factory/hdd/something.img
+
+set SKIPTO=$stage and HDD_1=something.img on the testsuite and
+create a new job with those settings.
+
+$stage is the name of the test you want to skip to. use qemu-img
+snapshot -l something.img to find out what snapshots are there.
+
