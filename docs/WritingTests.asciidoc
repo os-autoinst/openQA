@@ -31,21 +31,23 @@ Using Snapshots to speed up development of tests
 
 Sometimes it's annoying to run the full installation to adjust some
 test. It would be nice to have the VM jump to a certain point. There
-is an undocumented feature that allows to start from a snapshot that
-might help in that situation:
+is an experimental hidden feature that allows to start from a
+snapshot that might help in that situation:
 
-set MAKETESTSNAPSHOTS=1 on a testsuite, resp file a job with that
-setting. This will make openQA save a snapshot for every test run.
+1. run the worker with --no-cleanup parameter. This will preserve the hard
+disks after test runs.
 
-run the worker with --no-cleanup parameter
+2. set MAKETESTSNAPSHOTS=1 on a job. This will make openQA save a
+snapshot for every test run. One way to do that is to cloning an
+existing job and adding the setting:
 
-after the ended copy the disk image
-/var/lib/openqa/pool/$workerid/raid/1 to
-/var/lib/openqa/factory/hdd/something.img
+$ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 MAKETESTSNAPSHOTS=1
 
-set SKIPTO=$stage and HDD_1=something.img on the testsuite and
-create a new job with those settings.
+3. create a job again, this time setting the SKIPTO variable to the snapshot
+you need. Again, clone_job.pl comes handy here:
 
-$stage is the name of the test you want to skip to. use qemu-img
-snapshot -l something.img to find out what snapshots are there.
+$ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 SKIPTO=consoletest-yast2_i
+
+Use qemu-img snapshot -l something.img to find out what snapshots
+are in the image.
 
