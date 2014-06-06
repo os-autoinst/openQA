@@ -19,17 +19,11 @@ hosted in separate https://github.com/os-autoinst/os-autoinst[repository].
 Getting started
 ---------------
 
-To get started, we have a documentation about how you can
-link:docs/Installation.asciidoc[install openQA] and how to
-link:docs/openSUSE_Tests.asciidoc[run openSUSE tests there].
-If you are interested in more advance features, we have documentation regarding
-link:docs/Advanced_configuration.asciidoc[advanced setups] like git integration
-or running behind the proxy. All the settings that could influence the testing
-are also link:/docs/Settings.asciidoc[documented].
+The project's information is organized into four basic documents. As a first
+step, read the link:docs/GettingStarted.asciidoc[Starter Guide] and then, if
+needed, proceed to the link:docs/Installing.asciidoc[Installation Guide].
 
-If you run into troubles, check our
-link:docs/Troubleshooting.asciidoc[troubleshooting guide].
-
-If you are interested in development, check
-link:docs/Development.asciidoc[developers documentation], write your code and
+If you are interested in development, check the 
+link:docs/Contributing.asciidoc[Developer Guide] or the
+link:docs/WritingTests.asciidoc[Tests Developer Guide], write your code and
 send a pull request ;-)
