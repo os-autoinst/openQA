@@ -36,10 +36,101 @@ Basic concepts
 --------------
 [id="concepts"]
 
-TODO: explain
+Jobs
+~~~~
 
-* jobs, clones, states and results
-* needles
+One of the most important features of OpenQA is that it can be used to test
+several combinations of actions and configurations. For every one of those
+combinations, the system creates a virtual machine, performs certain steps and
+returns an overall result. Every one of those execution is called a 'job'. Every
+job is labeled a numeric identifier and has several associated 'settings' that
+will drive its behavior.
+
+A job goes through several states:
+
+* *scheduled* Initial state for recently created jobs. Queued for future
+  execution.
+* *running* In progress.
+* *cancelled* The job was explicitly canceled by the user or was replaced by a
+  clone (see below).
+* *waiting* The job is in `interactive mode' (see below) and waiting for input.
+* *done* Execution finished.
+
+Jobs in state 'done' have typically gone through a whole sequence of steps
+(called 'testmodules') each of one with its own result. But in addition to those
+partial results, a finished job also provides an overall result from the
+following list.
+
+* *none* For jobs that have not reached the 'done' state.
+* *passed* No critical check failed during the process. It doesn't necessarily 
+  mean that all testmodules where successful or that no single assertion failed.
+* *failed* At least one assertion considered to be critical was not satisfied at some
+  point.
+* *incomplete* The job is not longer running but no result was provided. Either
+  it was canceled while running either it crashed.
+
+Sometimes, the reason of a failure is not an error in the tested operating system
+itself, but an outdated test or a problem in the execution of the job for some
+external reason. In those situations, it makes sense to run again a given job from
+the beginning once the problem is fixed or the tests have been updated.
+This is done by means of 'cloning'. Every job can be superseded by a clone which
+is scheduled to run with exactly the same settings than the original job. If the
+original job is still not in 'done' state, it's canceled immmediately.
+From that point in time, the clone becomes the current version and the original
+job is considered outdated (and can be filtered as so in the listing) but its
+information and results (if any) are kept for future reference.
+
+Needles
+~~~~~~~
+
+One of the main mechanisms for OpenQA to know the state of the virtual machine
+is checking the presence of some elements in the machine's `screen'.
+This is performed using fuzzy image matching between the screen and the so
+called 'needles'. A needle specifies both the elements to search for and a
+list of tags used to decide which needles should be used in every moment.
+
+A needle consists of a full screenshot in PNG format and a json file with
+the same name (e.g. foo.png and foo.json) containing the associated data, like
+which areas inside the full screenshot are relevant or the mentioned list of
+tags.
+
+[source,json]
+-------------------------------------------------------------------
+{
+   "area" : [
+      {
+         "xpos" : INTEGER,
+         "ypos" : INTEGER,
+         "width" : INTEGER,
+         "height" : INTEGER,
+         "type" : ( "match" | "ocr" | "exclude" ),
+         "match" : INTEGER, // 0-100. similarity percentage
+      },
+      ...
+   ],
+   "tags" : [
+      STRING, ...
+   ]
+}
+-------------------------------------------------------------------
+
+Interactive mode
+~~~~~~~~~~~~~~~~
+
+There are several points in time during the execution of a job in which OpenQA
+tries to match the screen with the available needles, reacting to the result of
+that check. If the job is running in interactive mode it will stop the execution
+in that point, freezing the virtual machine and waiting for user input before
+proceeding. In that moment, the user can modify the existing needles or can
+create a new one using as a starting point either the current screen of the
+virtual machine or one of the existing needles. Once the needles are adjusted,
+the user can command the job to reload the list of needles and continue with the
+execution.
+
+The interactive mode is specially useful when creating needles for a new
+operating system or when the look & feel have changed and several needles need
+to be adjusted accordingly.
+
 
 Architecture: OpenQA and os-autoinst
 ------------------------------------
