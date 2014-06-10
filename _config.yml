@@ -1,0 +1,10 @@
+# Site settings
+title: OpenQA, automated testing for operating systems
+email: openqa@suse.de
+description: "Home of OpenQA, the engine at the heart of http://openqa.opensuse.org"
+baseurl: ""
+url: "http://os-autoinst.github.io/openQA"
+
+# Build settings
+markdown: kramdown
+permalink: pretty
