@@ -16,6 +16,34 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+=head1 load_templates
+
+load_templates - load openqa job templates
+
+=head1 SYNOPSIS
+
+load_templates [OPTIONS] FILE
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--clean>
+
+delete all job templates before loading new ones. be careful!
+
+=item B<--help, -h>
+
+print help
+
+=back
+
+=head1 DESCRIPTION
+
+lorem ipsum ...
+
+=cut
+
 BEGIN {
     use FindBin qw($Bin);
     use lib "$Bin/../lib", "$Bin/../lib/OpenQA/modules";
@@ -28,6 +56,24 @@ use openqa;
 use Schema::Schema;
 use Try::Tiny;
 use Data::Dump qw/dd pp/;
+
+use Getopt::Long;
+
+Getopt::Long::Configure("no_ignore_case");
+
+my %options;
+
+sub usage($) {
+    my $r = shift;
+    eval "use Pod::Usage; pod2usage($r);";
+    if ($@) {
+        die "cannot display help, install perl(Pod::Usage)\n";
+    }
+}
+
+GetOptions(\%options, "clean", "help|h",) or usage(1);
+
+usage(1) if $options{help} || $#ARGV;
 
 my $datafile = shift @ARGV;
 die "Data file not found\n" unless $datafile && -r $datafile;
@@ -72,6 +118,7 @@ $schema->storage->dbh_do(
 my @tables = (qw/Machines TestSuites Products JobTemplates/);
 my %added;
 for my $table (@tables) {
+    $schema->resultset($table)->delete_all() if $options{'clean'};
     next unless $info->{$table};
     $added{$table}->{of} = @{$info->{$table}};
     $added{$table}->{added} = 0;
