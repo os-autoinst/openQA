@@ -159,22 +159,23 @@ beings and a JSON based REST-like API. That server -in light gray in
 relies on a SQLite database to store the list of jobs and all the associated
 information.
 
-The OpenQA package also include some smaller components that make
+The OpenQA package also includes some smaller components that make
 use of the REST-like API for several tasks. The most important one is the
 'worker'. An OpenQA worker is a small piece of software that runs a continuous
-loop. In each iteration it asks the server for the next job to execute, place
+loop. In each iteration it asks the server for the next job to execute, places
 all the related information in a pool directory and calls os-autoinst with the
 proper configuration values. Then os-autoinst use the pool directory to read
-and write all the relevant information and results. When os-autoinst finish its
-execution, the worker reports the result back to the server. In fact, during
+and write all the relevant information and results. When os-autoinst finishes
+its execution, the worker reports the result back to the server. In fact, during
 the execution of os-autoinst the worker is not idle, since it keeps constantly
 querying the server for commands (like `cancel execution' or `go into interactive
 mode') that are partially processed by the worker itself and partially forwarded
 to the underlying instance of os-autoinst.
 
 Obviously, every instance of OpenQA hosts several workers, every one with its
-own pool directory. They can be run manually or managed using systemd. The only
-limit is the disk space and the processing power of the host machine.
+own pool directory. They can be run manually or managed using systemd. The
+only limit to the number of workers is the one defined by the free resources of
+the host machine.
 
 Access management
 -----------------
