@@ -41,10 +41,10 @@ zypper in openQA
 systemctl start openqa-webui
 --------------------------------------------------------------------------------
 
-Now you have WebUI running on http://localhost:9526 and workers running as
-well. You can take a look at WebUI at http://localhost:9526 But so far it is
-empty. You need to do few more actions to get it configured in a way that it
-will be able to run tests.
+Now you have the WebUI running. You can take a look at WebUI at
+http://localhost:9526 but so far it is empty. You need to do few
+more actions to get it configured in a way that it will be able to
+run tests.
 
 Basic configuration
 -------------------
@@ -53,29 +53,44 @@ Basic configuration
 OpenID
 ~~~~~~
 
-First thing you need to setup is url for your OpenID provider. It is one of the
-last entries in +/etc/openqa/openqa.ini+. Whenever you click on 'login' button
-in OpenQA, this provider will be asked for your identity. First user that logs
-in (if there is no admin yet) will automatically get admin and operator rights.
-As admin you need to do some further actions to get your OpenQA instance
-testing software.
+By default openQA uses the opensuse.org OpenID provider to
+authenticate users. If you want to change that you can do it in
++/etc/openqa/openqa.ini+. The first user that logs in (if there is
+no admin yet) will automatically get admin and operator rights. As
+admin you need to do some further actions to get your OpenQA
+instance testing software.
+
+SSL
+~~~
+
+By default openQA expects to be run with HTTPS. If you don't have an
+SSL certificate for your host you need to turn HTTPS off. You can do
+that in +/etc/openqa/openqa.ini+:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[openid]
+httpsonly = 0
+--------------------------------------------------------------------------------
+
 
 Running workers
 ~~~~~~~~~~~~~~~
 
-Workers are processes running virtual machines and doing actual testing. To get
-them up and running, you need to log into OpenQA as operator and create API
-keys. Once you are logged in, there will be link 'manage API keys' in top right
-corner. You can create +key+ and +secret+ there and afterward put them into
-+/etc/openqa/client.conf+. Make sure to put in section reflecting your
-webserver URL. If you are running the simplest setup, your +client.conf+ can
-look like this:
+Workers are processes running virtual machines to perform the actual
+testing. To allow them to access your instance, you need to log into
+OpenQA as operator and create a pair of API key and secret. Once you
+are logged in, follow the  link 'manage API keys' in top right
+corner. Click the 'create' button to generate +key+ and +secret+.
+Copy&paste them into +/etc/openqa/client.conf+. Make
+sure to put in section reflecting your webserver URL. In the simple
+case, your +client.conf+ may look like this:
 
 [source,ini]
 --------------------------------------------------------------------------------
 [localhost]
-key = 71BF7D2267AE92BE
-secret = 7B6C8382DA2C357E
+key = 0123456789ABCDEF
+secret = 0123456789ABCDEF
 --------------------------------------------------------------------------------
 
 To start the workers you can use the provided systemd files via +systemctl
@@ -87,7 +102,7 @@ You can also run workers manually from command line.
 
 [source,sh]
 --------------------------------------------------------------------------------
-script/worker --instance X
+sudo -u geekotest /usr/share/openqa/script/worker --instance X
 --------------------------------------------------------------------------------
 
 This will run worker manually showing you debug output. If you haven't
@@ -95,34 +110,17 @@ installed 'os-autoinst' from packages make sure to pass +--isotovideo+ option
 to point to the checkout dir where isotovideo is, not to +/usr/lib+! Otherwise
 it will have troubles finding perl modules then.
 
-Default behaviour for all workers is to use 'Qemu' backend and connect to
-'http://localhost'. If you want to change some of those options, you can do so
-in +/etc/openqa/workers.ini+. For example if you want to connect to the port
-9526 (default port after installation if you haven't set up Apache proxy), you
-can do so using following code:
+Apache proxy
+~~~~~~~~~~~~
 
-[source,ini]
---------------------------------------------------------------------------------
-[global]
-HOST = http://localhost:9526
---------------------------------------------------------------------------------
-
-When you get worker running they should show up in admin section of openQA in
-the workers section as 'idle'. When you get so far, you have your own instance
-of openQA up and running and all that is left is to set up some tests.
+It's recommended to run openQA behind an apache proxy. See
++openqa.conf.template+ config file in +/etc/apache2/vhosts.d+. To make
+everything work correctly, you need to enable the 'proxy_http',
+'headers' and 'proxy' modules (use 'a2enmod').
 
 Advanced configuration
 ----------------------
 [id="advanced"]
-
-Running behind Apache proxy
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The openQA web interface can run standalone via Mojolicous so a web server is
-not necessarily needed. If you want to use apache you need to configure proxy
-mode. See +openqa.conf.template+ config file in +apache2/vhosts.d+. To make
-everything work correctly, you need to enable the 'proxy_http', 'headers' and
-'proxy' modules (use 'a2enmod').
 
 
 Setting up git support
@@ -139,7 +137,8 @@ scm = git
 in +/etc/openqa/openqa.ini+. Once you do so and restart the web interface, openQA will
 commit new needles to the git repository automatically.
 
-You may want to add some description to automatic commits coming from web UI.
+You may want to add some description to automatic commits coming
+from the web UI.
 You can do so by setting configuration in the repository
 (+/var/lib/os-autoinst/needles/.git/config+) to some reasonable defaults like:
 
@@ -157,8 +156,28 @@ to your openqa.ini:
 [scm git]
 do_push = yes
 --------------------------------------------------------------------------------
-Depending on your setup, you might need to generate and propagate ssh key for
-user 'geekotest' to be able to push.
+Depending on your setup, you might need to generate and propagate
+ssh keys for user 'geekotest' to be able to push.
+
+Worker settings
+~~~~~~~~~~~~~~~
+
+Default behaviour for all workers is to use 'Qemu' backend and connect to
+'http://localhost'. If you want to change some of those options, you can do so
+in +/etc/openqa/workers.ini+. For example if you want to connect to the port
+9526 (default port after installation if you haven't set up Apache proxy), you
+can do so using following code:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[global]
+HOST = http://localhost:9526
+--------------------------------------------------------------------------------
+
+Once you got workers running they should show up in admin section of openQA in
+the workers section as 'idle'. When you get so far, you have your own instance
+of openQA up and running and all that is left is to set up some tests.
+
 
 Filesystem Layout
 -----------------
