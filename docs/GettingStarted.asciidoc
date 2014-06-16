@@ -136,18 +136,85 @@ Architecture: OpenQA and os-autoinst
 ------------------------------------
 [id="architecture"]
 
-TODO: openQA, os-autoinst and workers
+Although the project as a whole is referred as OpenQA, there are in fact two
+different components that are hosted in separate repositories and available as
+two different packages, as shown in <<arch_img,the following figure>>.
 
+[[arch_img]]
 .OpenQA architecture
 image::images/arch.png[OpenQA architecture]
+
+The base of the system is a
+standalone application called 'os-autoinst'. In each execution, this application
+creates a virtual machine and uses it to run the tests located in a certain
+directory, generating a video and a JSON file with detailed results. In its
+first stage, os-autoinst reads several configuration variables that have an
+influence in the configuration of the machine, the exact behavior of the tests
+and the set of needles used in every check.
+
+The rest of the infrastructure is located in the OpenQA package, which main
+component is the server that offers two interfaces: a web-based one for human
+beings and a JSON based REST-like API. That server -in light gray in
+<<arch_img,the figure>>-
+relies on a SQLite database to store the list of jobs and all the associated
+information.
+
+The OpenQA package also includes some smaller components that make
+use of the REST-like API for several tasks. The most important one is the
+'worker'. An OpenQA worker is a small piece of software that runs a continuous
+loop. In each iteration it asks the server for the next job to execute, places
+all the related information in a pool directory and calls os-autoinst with the
+proper configuration values. Then os-autoinst use the pool directory to read
+and write all the relevant information and results. When os-autoinst finishes
+its execution, the worker reports the result back to the server. In fact, during
+the execution of os-autoinst the worker is not idle, since it keeps constantly
+querying the server for commands (like `cancel execution' or `go into interactive
+mode') that are partially processed by the worker itself and partially forwarded
+to the underlying instance of os-autoinst.
+
+Obviously, every instance of OpenQA hosts several workers, every one with its
+own pool directory. They can be run manually or managed using systemd. The
+only limit to the number of workers is the one defined by the free resources of
+the host machine.
 
 Access management
 -----------------
 [id="auth"]
 
-TODO: Explain openID and API keys. Can be partially based on
-http://lizards.opensuse.org/2014/02/28/about-openqa-and-authentication/
-but without all that theory.
+Some actions in OpenQA require special privileges. OpenQA provides
+authentication through http://en.wikipedia.org/wiki/OpenID[openID]. By default,
+OpenQA is configured to use the openSUSE openID provider, but it can be very
+easily configured to use any other valid provider. Every time a new user logs
+into an instance, a new user profile is created. That profile only
+contains the openID identity and two flags used for access control:
+
+* *operator* Means that the user is able to manage jobs, performing actions like
+  creating new jobs, canceling them, etc.
+* *admin* Means that the user is able to manage users (granting or revoking
+  operator and admin rights) as well as job templates and other related
+  information (see the <<job_templates,the corresponding section>>).
+
+Many of the operations in an OpenQA instance are not performed through the web
+interface but using the REST-like API. The most obvious examples are the
+workers and the scripts that fetch new versions of the operating system and
+schedule the corresponding tests. Those clients must be authorized by an
+operator using an
+http://en.wikipedia.org/wiki/Application_programming_interface_key[API key] with
+an associated shared secret.
+
+For that purpose, users with the operator flag have access in the web interface
+to a page that allows them to manage as many API keys as they may need. For every
+key, a secret is automatically generated. The user can then configure the
+workers or any other client application to use whatever pair of API key and
+secret owned by him. Any client to the REST-like API using one of those API keys
+will be considered to be acting on behalf of the associated user. So the API key
+not only has to be correct and valid (not expired), it also has to belong to a
+user with operator rights.
+
+For more insights about authentication, authorization and the technical details
+of the OpenQA security model, refer to the
+http://lizards.opensuse.org/2014/02/28/about-openqa-and-authentication/[detailed
+blog post] about the subject by the OpenQA development team.
 
 Using job templates to automate jobs creation
 ---------------------------------------------
