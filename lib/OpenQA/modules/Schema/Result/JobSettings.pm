@@ -62,6 +62,8 @@ sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
 
     db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
+
+    $sqlt_table->add_index(name => 'job_settings_kv_index', fields => [qw/key value/]);
 }
 
 1;

@@ -433,10 +433,13 @@ sub list_jobs {
     }
     # Text search across some settings
     if ($args{match}) {
-        push(@conds, { 'settings.key' => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST']});
-        push(@conds, { 'settings.value' => { '-like' => "%$args{match}%" }});
-        push(@joins, 'settings') unless ( grep { 'settings' eq $_} @joins );
-        $attrs{group_by} = ['me.id'];
+        my $subquery = schema->resultset("JobSettings")->search(
+            {
+                'key' => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST'],
+                'value' => { '-like' => "%$args{match}%" },
+            }
+        );
+        push(@conds, { 'me.id' => { -in => $subquery->get_column('job_id')->as_query }});
     }
     $attrs{order_by} = ['me.id DESC'];
 
