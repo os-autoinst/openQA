@@ -34,7 +34,6 @@ $t->get_ok('/tests/overview')->status_is(404);
 $t->get_ok('/tests/overview' => form => {build => '0091'})->status_is(404);
 $t->get_ok('/tests/overview' => form => {build => '0091', distri => 'opensuse'})->status_is(404);
 $t->get_ok('/tests/overview' => form => {build => '0091', version => '13.1'})->status_is(404);
-$t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'})->status_is(404);
 
 #
 # Overview of build 0091
@@ -75,5 +74,29 @@ $get->text_is('#res_DVD_x86_64_doc span.overview_failed a' => '7/0/2');
 $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
 $get->element_exists_not('#res_DVD_x86_64_kde');
+
+#
+# Default overview for 13.1
+#
+$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'});
+$get->status_is(200);
+$get->content_like(qr/current results for.*opensuse 13\.1 build 0091/i);
+$get->content_like(qr/passed: 2, failed: 0, unknown: 0, incomplete: 0, none: 4/i);
+
+#
+# Default overview for Factory
+#
+$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory'});
+$get->status_is(200);
+$get->content_like(qr/current results for.*opensuse Factory build 0048/i);
+$get->content_like(qr/passed: 0, failed: 1, unknown: 0, incomplete: 0, none: 0/i);
+
+#
+# Still possible to check an old build
+#
+$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '87.5011'});
+$get->status_is(200);
+$get->content_like(qr/current results for.*opensuse Factory build 87.5011/i);
+$get->content_like(qr/passed: 0, failed: 0, unknown: 0, incomplete: 1, none: 0/i);
 
 done_testing();
