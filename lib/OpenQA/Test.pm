@@ -280,17 +280,22 @@ sub overview {
     my $self  = shift;
     my $validation = $self->validation;
 
-    $validation->required('build');
     $validation->required('distri');
     $validation->required('version');
     if ($validation->has_error) {
         return $self->render(text => 'Missing parameters', status => 404);
     }
-    my $build = $self->param('build');
     my $distri = $self->param('distri');
     my $version = $self->param('version');
 
-    my %search_args = (build => $build, distri => $distri, version => $version);
+    my %search_args = (distri => $distri, version => $version);
+
+    my $build = $self->param('build');
+    if (!$build) {
+        $build = $self->db->resultset("Jobs")->latest_build(%search_args);
+    }
+
+    $search_args{build} = $build;
     $search_args{fulldetails} = 1;
     $search_args{scope} = 'current';
 
