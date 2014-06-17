@@ -490,6 +490,11 @@ sub connect_db{
             {
                 dsn => "dbi:SQLite:dbname=$file",
                 on_connect_call => "use_foreign_keys",
+                on_connect_do => [
+                    #    "PRAGMA journal_mode = OFF",
+                    #    "PRAGMA temp_store = MEMORY",
+                    "PRAGMA synchronous = OFF",
+                ],
             }
         ) or die "can't conncect db: $!\n";
     }
