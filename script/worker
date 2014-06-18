@@ -256,9 +256,7 @@ sub workit($){
     # and allow MAC addresses for more than 256 workers (up to 65535)
     if ($job->{'settings'}->{'NICTYPE'} eq 'tap') {
         $job->{'settings'}->{'TAPDEV'} = 'tap' . ($options{'instance'} - 1);
-        $job->{'settings'}->{'NICMAC'} = sprintf("52:54:00:12:%02x:%02x",
-                                                 int($options{'instance'} / 256),
-                                                 $options{'instance'} % 256);
+        $job->{'settings'}->{'NICMAC'} = sprintf("52:54:00:12:%02x:%02x", int($options{'instance'} / 256), $options{'instance'} % 256);
     }
 
     if (my $iso = $job->{'settings'}->{'ISO'}) {
