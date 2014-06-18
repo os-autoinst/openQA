@@ -1,7 +1,7 @@
 # Site settings
-title: OpenQA, automated testing for operating systems
+title: openQA, automated testing for operating systems
 email: openqa@suse.de
-description: "Home of OpenQA, the engine at the heart of http://openqa.opensuse.org"
+description: "Home of openQA, the engine at the heart of http://openqa.opensuse.org"
 baseurl: "/openQA"
 url: "http://os-autoinst.github.io/openQA"
 
