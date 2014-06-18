@@ -1,4 +1,4 @@
-OpenQA starter guide
+openQA starter guide
 ====================
 :author: openSUSE Team at SUSE
 :toc:
@@ -7,26 +7,26 @@ Introduction
 ------------
 [id="intro"]
 
-OpenQA is an automated test tool that makes possible to test the whole
+openQA is an automated test tool that makes possible to test the whole
 installation process of an operating system. It uses virtual machines to
 reproduce the process, checking the output (both serial console and
 screen) in every step and sending the necessary keystrokes and commands to
-proceed to the next. OpenQA can check whether the system can be installed,
+proceed to the next. openQA can check whether the system can be installed,
 whether it works properly in `live' mode, whether applications work
 or whether the system responds as expected to different installation options and
 commands.
 
-Even more important, OpenQA can run several combinations of tests for every
+Even more important, openQA can run several combinations of tests for every
 revision of the operating system, reporting the errors detected for each
 combination of hardware configuration, installation options and variant of the
 operating system.
 
-OpenQA is free software released under the
+openQA is free software released under the
 http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The source code and
 documentation are hosted in the https://github.com/os-autoinst[os-autoinst
 organization on GitHub].
 
-This document describes the general operation and usage of OpenQA. The main goal
+This document describes the general operation and usage of openQA. The main goal
 is to provide a general overview of the tool, with all the information needed to
 become a happy user. More advanced topics like installation, administration or
 development of new tests are covered by further documents available at the
@@ -39,7 +39,7 @@ Basic concepts
 Jobs
 ~~~~
 
-One of the most important features of OpenQA is that it can be used to test
+One of the most important features of openQA is that it can be used to test
 several combinations of actions and configurations. For every one of those
 combinations, the system creates a virtual machine, performs certain steps and
 returns an overall result. Every one of those execution is called a 'job'. Every
@@ -83,7 +83,7 @@ information and results (if any) are kept for future reference.
 Needles
 ~~~~~~~
 
-One of the main mechanisms for OpenQA to know the state of the virtual machine
+One of the main mechanisms for openQA to know the state of the virtual machine
 is checking the presence of some elements in the machine's `screen'.
 This is performed using fuzzy image matching between the screen and the so
 called 'needles'. A needle specifies both the elements to search for and a
@@ -117,7 +117,7 @@ tags.
 Interactive mode
 ~~~~~~~~~~~~~~~~
 
-There are several points in time during the execution of a job in which OpenQA
+There are several points in time during the execution of a job in which openQA
 tries to match the screen with the available needles, reacting to the result of
 that check. If the job is running in interactive mode it will stop the execution
 in that point, freezing the virtual machine and waiting for user input before
@@ -132,17 +132,17 @@ operating system or when the look & feel have changed and several needles need
 to be adjusted accordingly.
 
 
-Architecture: OpenQA and os-autoinst
+Architecture: openQA and os-autoinst
 ------------------------------------
 [id="architecture"]
 
-Although the project as a whole is referred as OpenQA, there are in fact two
+Although the project as a whole is referred as openQA, there are in fact two
 different components that are hosted in separate repositories and available as
 two different packages, as shown in <<arch_img,the following figure>>.
 
 [[arch_img]]
-.OpenQA architecture
-image::images/arch.png[OpenQA architecture]
+.openQA architecture
+image::images/arch.png[openQA architecture]
 
 The base of the system is a
 standalone application called 'os-autoinst'. In each execution, this application
@@ -152,16 +152,16 @@ first stage, os-autoinst reads several configuration variables that have an
 influence in the configuration of the machine, the exact behavior of the tests
 and the set of needles used in every check.
 
-The rest of the infrastructure is located in the OpenQA package, which main
+The rest of the infrastructure is located in the openQA package, which main
 component is the server that offers two interfaces: a web-based one for human
 beings and a JSON based REST-like API. That server -in light gray in
 <<arch_img,the figure>>-
 relies on a SQLite database to store the list of jobs and all the associated
 information.
 
-The OpenQA package also includes some smaller components that make
+The openQA package also includes some smaller components that make
 use of the REST-like API for several tasks. The most important one is the
-'worker'. An OpenQA worker is a small piece of software that runs a continuous
+'worker'. An openQA worker is a small piece of software that runs a continuous
 loop. In each iteration it asks the server for the next job to execute, places
 all the related information in a pool directory and calls os-autoinst with the
 proper configuration values. Then os-autoinst use the pool directory to read
@@ -172,7 +172,7 @@ querying the server for commands (like `cancel execution' or `go into interactiv
 mode') that are partially processed by the worker itself and partially forwarded
 to the underlying instance of os-autoinst.
 
-Obviously, every instance of OpenQA hosts several workers, every one with its
+Obviously, every instance of openQA hosts several workers, every one with its
 own pool directory. They can be run manually or managed using systemd. The
 only limit to the number of workers is the one defined by the free resources of
 the host machine.
@@ -181,9 +181,9 @@ Access management
 -----------------
 [id="auth"]
 
-Some actions in OpenQA require special privileges. OpenQA provides
+Some actions in openQA require special privileges. openQA provides
 authentication through http://en.wikipedia.org/wiki/OpenID[openID]. By default,
-OpenQA is configured to use the openSUSE openID provider, but it can be very
+openQA is configured to use the openSUSE openID provider, but it can be very
 easily configured to use any other valid provider. Every time a new user logs
 into an instance, a new user profile is created. That profile only
 contains the openID identity and two flags used for access control:
@@ -194,7 +194,7 @@ contains the openID identity and two flags used for access control:
   operator and admin rights) as well as job templates and other related
   information (see the <<job_templates,the corresponding section>>).
 
-Many of the operations in an OpenQA instance are not performed through the web
+Many of the operations in an openQA instance are not performed through the web
 interface but using the REST-like API. The most obvious examples are the
 workers and the scripts that fetch new versions of the operating system and
 schedule the corresponding tests. Those clients must be authorized by an
@@ -212,9 +212,9 @@ not only has to be correct and valid (not expired), it also has to belong to a
 user with operator rights.
 
 For more insights about authentication, authorization and the technical details
-of the OpenQA security model, refer to the
+of the openQA security model, refer to the
 http://lizards.opensuse.org/2014/02/28/about-openqa-and-authentication/[detailed
-blog post] about the subject by the OpenQA development team.
+blog post] about the subject by the openQA development team.
 
 Using job templates to automate jobs creation
 ---------------------------------------------
@@ -233,7 +233,7 @@ different kind of tests, like running some simple pre-integration tests
 for some snapshots combined with more comprehensive post-integration tests for
 release candidates.
 
-This section describes how an instance of OpenQA can be configured using the
+This section describes how an instance of openQA can be configured using the
 options in the admin area to automatically create all the required jobs for each
 revision of your operating system that needs to be tested. If you are starting
 from scratch, you should probably go through the following order:

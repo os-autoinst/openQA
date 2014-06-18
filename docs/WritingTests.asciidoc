@@ -1,4 +1,4 @@
-OpenQA tests developer guide
+openQA tests developer guide
 ============================
 :author: openSUSE Team at SUSE
 :toc:
@@ -7,15 +7,15 @@ Introduction
 ------------
 [id="intro"]
 
-OpenQA is an automated test tool that makes possible to test the whole
+openQA is an automated test tool that makes possible to test the whole
 installation process of an operating system. It's free software released
 under the http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The
 source code and documentation are hosted in the
 https://github.com/os-autoinst[os-autoinst organization on GitHub].
 
 This document provides the information needed to start developing new tests for
-OpenQA or to improve the existing ones. It's
-assumed that the reader is already familiar with OpenQA and has already read the
+openQA or to improve the existing ones. It's
+assumed that the reader is already familiar with openQA and has already read the
 Starter Guide, available at the 
 https://github.com/os-autoinst/openQA[official repository].
 
