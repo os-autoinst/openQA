@@ -53,13 +53,20 @@ sub ensure_authorized_ip {
     my $self = shift;
 
     my $addr = $self->tx->remote_address;
-    if ($addr eq "127.0.0.1" || $addr eq "::1") {
-        return 1;
+    my @auth_ips;
+    if ($self->app->config->{'global'}->{'allowed_hosts'}) {
+        @auth_ips = split(/ /, $self->app->config->{'global'}->{'allowed_hosts'});
     }
     else {
-        $self->render(text => "Forbidden", status => 403);
-        return undef;
+        @auth_ips = ('127.0.0.1', '::1');
     }
+    foreach (@auth_ips) {
+        if ($addr =~ /$_/) {
+            return 1;
+        }
+    }
+    $self->render(text => "Forbidden", status => 403);
+    return undef;
 }
 
 sub destroy {
