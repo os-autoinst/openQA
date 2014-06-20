@@ -21,9 +21,151 @@ https://github.com/os-autoinst/openQA[official repository].
 
 Basic
 -----
+[id="basic"]
 
-TODO: this document needs to be written, based mainly on
-https://www.youtube.com/watch?v=EM3XmaQXcLg
+This part will introduce the basic of openQA tests, it was coverd the information of
+basic concept, tests template, commands, etc. Currently openQA tests only supported *Perl* language,
+the basic knowledge about Perl is needed, this document assumed that the reader is already
+familiar with Perl.
+
+Variables
+~~~~~~~~~
+
+Basically you can defined the variable for each test suite in 'Test suites'
+setting page on openQA WebUI. For openSUSE, available variables for openQA can be found in
+https://github.com/os-autoinst/os-autoinst-distri-opensuse/blob/master/variables[this file] at
+https://github.com/os-autoinst/os-autoinst-distri-opensuse[os-autoinst-distri-opensuse on GitHub].
+
+Once the variable be defined, it will be stored to *$vars* variable when a test started, you can
+call '$vars{VAR_NAME}' in tests when you want to access the variables.
+
+Common use commands
+~~~~~~~~~~~~~~~~~~~
+
+Most of commands are defined in https://github.com/os-autoinst/os-autoinst[os-autoinst]. This part
+explains the behavior of common use commands.
+
+* +check_var+ Check that whether the variable exists.
+* +send_key+ Send key to openQA instance.
+* +type_string+ Typing the given string.
+* +save_screenshot+ Capture a screenshot.
+* +check_screen+ Capture a screenshot and compare it to the specific needle.
+* +assert_screen+ Capture a screenshot and compare it to the specific needle. If return false then it will leave that running test and marked it failed.
+* +wait_idle+  Waiting until system idle.
+* +wait_serial+ Waiting until the specific string outputed to serialX. Default is serial0.
+* +ensure_installed+ Check the specific application was installed in system, if not then will try to install it from download repositories.
+* +x11_start_program+ Execute the graphic application by specific way according to desktop environment. Eg. execute application by krunner under KDE.
+* +become_root+ Change to root.
+* +script_run+ Execute what is given as a shell script.
+* +script_sudo+ Change to root and execute the following parameters as a shell script..
+* +sendpassword+ Send default root password.
+* +qemusend+ Send http://qemu.weilnetz.de/qemu-doc.html#pcsys_005fmonitor[QEMU command].
+
+How to write tests
+~~~~~~~~~~~~~~~~~~
+
+A openQA tests at least need *run* subroutine as entry point, openQA will walk through the steps
+what defined in 'run' subroutine. *is_applicable* and *test_flags* are two special subroutines
+in openQA. There is an simple example below.
+
+[source,perl]
+-------------------------------------------------------------------
+use base "basetest";
+use strict;
+use bmwqemu;
+
+sub is_applicable {
+    return 1; # check for $vars{SOMETHING}
+}
+
+sub run {
+    # wait for bootloader to appear
+    assert_screen "bootloader", 30; # timeout 30 seconds
+
+    # press enter to boot right away
+    send_key "ret";
+
+    # wait for the desktop to appear
+    assert_screen "desktop", 300;
+}
+
+sub test_flags {
+    # without anything - rollback to 'lastgood' snapshot if failed
+    # 'fatal' - whole test suite is in danger if this fails
+    # 'milestone' - after this test succeeds, update 'lastgood'
+    # 'important' - if this fails, set the overall state to 'fail'
+    return { important => 1 };
+}
+
+1;
+-------------------------------------------------------------------
+
+This example is in order to test 'A live image boot succeed and the desktop environment appears properly'.
+
+Numbers of cases
+~~~~~~~~~~~~~~~~
+
+TODO: explain the example below
+
+[source,perl]
+----------------------------------------------------------------------------------------------------------
+sub run() {
+    my $self = shift;
+    # change to root
+    become_root();
+
+    # output zypper repos to the serial
+    script_run("zypper lr -d > /dev/$serialdev");
+
+    # install xdelta and insert a string 'xdelta_installed' to the serial
+    script_run("zypper --gpg-auto-import-keys -n in xdelta && echo 'xdelta_installed' > /dev/$serialdev");
+
+    # detecting whether 'xdelta_installed' was appears in the serial in 200 seconds
+    wait_serial "xdelta_installed", 200  || die "zypper install failed";
+
+    # capture a screenshot and compare with needle 'test-zypper_in-1'
+    assert_screen 'test-zypper_in-1', 3;
+}
+----------------------------------------------------------------------------------------------------------
+
+TODO: explain the example below
+
+[source,perl]
+--------------------------------------------------------------
+sub is_applicable {
+    # do this test if desktop environment is KDE
+    return ( $vars{DESKTOP} eq "kde" );
+}
+
+sub run() {
+    my $self = shift;
+    # make sure kate was installed
+    # if not ensure_installed will tru to install it
+    ensure_installed("kate");
+
+    # start kate
+    x11_start_program("kate");
+
+    # check kate was execute succeed
+    assert_screen 'test-kate-1', 10; 
+
+    # close kate's welcome window and wait system idle
+    send_key 'alt-c', 1;
+
+    # typing the string on kate
+    type_string "If you can see this text kate is working.\n";
+
+    # check the result
+    assert_screen 'test-kate-2', 5;
+
+    # quit kate
+    send_key "ctrl-q";
+
+    # make sure kate was closed
+    assert_screen 'test-kate-3', 5;
+}
+--------------------------------------------------------------
+
 
 Using Snapshots to speed up development of tests
 ------------------------------------------------
