@@ -149,8 +149,8 @@ sub run() {
     # check kate was execute succeed
     assert_screen 'test-kate-1', 10; 
 
-    # close kate's welcome window and wait idle 3 seconds
-    send_key 'alt-c', 3;
+    # close kate's welcome window and wait system idle
+    send_key 'alt-c', 1;
 
     # typing the string on kate
     type_string "If you can see this text kate is working.\n";
