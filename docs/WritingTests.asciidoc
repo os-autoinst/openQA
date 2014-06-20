@@ -105,7 +105,7 @@ This example is in order to test 'A live image boot succeed and the desktop envi
 Numbers of cases
 ~~~~~~~~~~~~~~~~
 
-TODO: explain the example below
+* A test case that testing install software from remote repository via zypper command
 
 [source,perl]
 ----------------------------------------------------------------------------------------------------------
@@ -128,7 +128,7 @@ sub run() {
 }
 ----------------------------------------------------------------------------------------------------------
 
-TODO: explain the example below
+* A test case that testing basic functionality of kate
 
 [source,perl]
 --------------------------------------------------------------
