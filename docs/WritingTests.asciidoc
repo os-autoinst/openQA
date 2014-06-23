@@ -35,7 +35,7 @@ https://github.com/os-autoinst/os-autoinst[os-autoinst] provides the
 API for the tests. The most commonly used functions are:
 
 * +check_var NAME, CONTENT+ Check content of a variable, treating undef as empty.
-* +send_key KEY+ Send key to openQA instance. (e.g. +send_key "alt-o"+)
+* +send_key KEY[, WAITIDLE]+ Send key to openQA instance. Call +wait_idle+ at the end if WAITIDLE is set. (e.g. +send_key "alt-o", 1+)
 * +type_string STRING+ Typing the given string. (e.g. +type_string "yes\n"+)
 * +save_screenshot+ Capture and save a screenshot in the test results.
 * +check_screen NEEDLE[, TIMEOUT]+ Wait until NEEDLE is seen on the screen. Return undef if not found within TIMEOUT (default 30s).
