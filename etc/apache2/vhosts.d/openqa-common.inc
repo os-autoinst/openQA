@@ -3,6 +3,26 @@
 #
 DocumentRoot /usr/share/openqa/public
 
+<Directory "/usr/share/openqa/public">
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+</Directory>
+
+<Directory "/var/lib/openqa/factory">
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+</Directory>
+Alias /assets "/var/lib/openqa/factory"
+
+<Directory "/var/lib/os-autoinst/tests">
+    AllowOverride None
+    Order allow,deny
+    Allow from all
+</Directory>
+Alias /test-data "/var/lib/os-autoinst/tests"
+
 <Proxy *>
 Order deny,allow
 Allow from all
@@ -16,6 +36,7 @@ ProxyPass /images !
 ProxyPass /javascripts !
 ProxyPass /stylesheets !
 ProxyPass /assets !
+ProxyPass /test-data !
 ProxyPass /error !
 
 ProxyPass / http://localhost:9526/ keepalive=On
