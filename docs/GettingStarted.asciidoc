@@ -423,3 +423,7 @@ If your openQA is not running on port 80 on 'localhost', you can add option
 WARNING: Using only iso name in 'client' command and saving it in
 +/var/lib/openqa/factory/iso+ is recommended as is using Factory iso. ISOs are
 not uploaded from the path that you would specify.
+
+Pitfalls
+--------
+take a look at link:Pitfalls.asciidoc
