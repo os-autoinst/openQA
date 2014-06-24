@@ -88,7 +88,7 @@ L<OpenQA::API::V1::Client>
 
 use strict;
 use warnings;
-use POSIX qw/:sys_wait_h strftime SIGTERM uname/;
+use POSIX qw/:sys_wait_h strftime SIGTERM SIGKILL uname/;
 use Data::Dump;
 use JSON;
 use Fcntl;
@@ -314,6 +314,19 @@ sub _kill_worker($){
     carp "worker didn't want to die!\n" unless $got_sigchld;
 }
 
+sub _kill {
+    my $pid = shift;
+    my $n = kill(SIGTERM, $pid);
+    for (my $i = 0; $n && $i < 5; ++$i) {
+        sleep 1;
+        $n = kill(SIGTERM, $pid);
+    }
+    if ($n) {
+        warn "pid $pid didn't die, sending KILL";
+        kill(SIGKILL, $pid);
+    }
+}
+
 # set job to done. if priority is less than threshold duplicate it
 # with worse priority so it can be picked up again.
 sub job_incomplete($$){
@@ -482,11 +495,26 @@ sub main(){
 
         # abort job if backend crashed and reschedule it
         if(-e "$pooldir/backend.crashed") {
-            if(unlink("$pooldir/backend.crashed") && $worker) {
-                print STDERR "backend crashed and need a reschedule...\n";
-                _kill_worker($worker);
-                job_incomplete($job, "backend crashed");
-                $aborted = 'crashed';
+            unlink("$pooldir/backend.crashed");
+            print STDERR "backend crashed ...\n";
+            $aborted = 'crashed';
+            if (open(my $fh, '<', "$pooldir/qemu.pid")) {
+                local $/;
+                my $pid = <$fh>;
+                close $fh;
+                if ($pid =~ /(\d+)/) {
+                    print STDERR "killing qemu $1\n";
+                    _kill($1);
+                }
+            }
+            if (open(my $fh, '<', "$pooldir/os-autoinst.pid")) {
+                local $/;
+                my $pid = <$fh>;
+                close $fh;
+                if ($pid =~ /(\d+)/) {
+                    print STDERR "killing os-autoinst $1\n";
+                    _kill($1);
+                }
             }
         }
 
