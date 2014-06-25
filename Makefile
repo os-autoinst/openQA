@@ -14,8 +14,7 @@ install:
 	done
 	ln -sfn /usr/lib/os-autoinst "$(DESTDIR)"/var/lib/openqa/perl/autoinst
 #
-	install -d -m 755 "$(DESTDIR)"/etc/apache2/{conf.d,vhosts.d}
-	install -m 644 etc/apache2/conf.d/openqa.conf "$(DESTDIR)"/etc/apache2/conf.d
+	install -d -m 755 "$(DESTDIR)"/etc/apache2/vhosts.d
 	for i in openqa-common.inc openqa.conf.template openqa-ssl.conf.template; do \
 		install -m 644 etc/apache2/vhosts.d/$$i "$(DESTDIR)"/etc/apache2/vhosts.d ;\
 	done
