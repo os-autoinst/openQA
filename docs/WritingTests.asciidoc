@@ -179,6 +179,17 @@ on GitHub] for examples.
 Variables are accesible via the *%vars* hash, e.g
 '$vars{DESKTOP}' or better use the API method 'check_var'.
 
+Modifying setting of an existing test
+-------------------------------------
+
+There is no interface to modify existing tests but the clone script
+can be used to create a new job that adds, removes or changes
+settings:
+
+[source,sh]
+--------------------------------------------------------------------------------
+/usr/share/openqa/script/clone_job.pl --from localhost --host localhost 42 FOO=bar BAZ=
+--------------------------------------------------------------------------------
 
 Using Snapshots to speed up development of tests
 ------------------------------------------------
@@ -205,4 +216,3 @@ $ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --ho
 
 Use qemu-img snapshot -l something.img to find out what snapshots
 are in the image.
-
