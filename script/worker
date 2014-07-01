@@ -173,7 +173,11 @@ else {
 # Relative paths are appended to the existing one
 $url->path('/api/v1/');
 
-my $ua = OpenQA::API::V1::Client->new(api => $url->host);
+my $ua = OpenQA::API::V1::Client->new(
+    api => $url->host,
+    apikey => $options{'apikey'},
+    apisecret => $options{'apisecret'}
+);
 
 unless ($ua->apikey && $ua->apisecret) {
     unless ($options{'apikey'} && $options{apisecret}) {
@@ -211,7 +215,7 @@ sub api_call{
         }
         --$tries;
         my ($err, $code) = $tx->error;
-        my $msg = $code ? "$tries: $code response: $err" : "$tries: Connection error: $err";
+        my $msg = $code ? "$tries: $code response: $err" : "$tries: Connection error: $err->{code} $err->{message}";
         croak "$msg\n" unless $tries;
         carp "$msg";
         sleep 5;
