@@ -44,7 +44,8 @@ sub new {
             for my $i (qw/key secret/) {
                 my $attr = "api$i";
                 next if $self->$attr;
-                $self->$attr($cfg->val($args{api}, $i));
+                (my $val = $cfg->val($args{api}, $i)) =~ s/\s+$//; # remove trailing whitespace
+                $self->$attr($val);
             }
             last;
         }

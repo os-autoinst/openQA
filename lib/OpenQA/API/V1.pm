@@ -25,6 +25,7 @@ sub auth {
     my $hash = $headers->header('X-API-Hash');
     my $timestamp = $headers->header('X-API-Microtime');
     my $user;
+    $self->app->log->debug("API key from client: *$key*");
 
     if ($user = $self->current_user) { # Browser with a logged in user
         unless ($self->valid_csrf) {
