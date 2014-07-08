@@ -67,7 +67,7 @@ sub _add_auth_headers {
     my ($self, $ua, $tx) = @_;
 
     unless ($self->apisecret && $self->apikey) {
-        carp "missing apisecret and/or apikey";
+        carp "missing apisecret and/or apikey" unless $tx->req->method eq 'GET';
         return;
     }
 
