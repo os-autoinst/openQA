@@ -168,5 +168,64 @@ sub test_thumbnail {
     return $self->serve_static_($asset);
 }
 
+# borrowed from obs with permission from mls@suse.de to license as
+# GPLv2+
+sub _makecpiohead {
+    my ($name, $s) = @_;
+    return "07070100000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000b00000000TRAILER!!!\0\0\0\0" if !$s;
+    #        magic ino
+    my $h = "07070100000000";
+    # mode                S_IFREG
+    $h .= sprintf("%08x", 0100000 | $s->[2]&0777);
+    #      uid     gid     nlink
+    $h .= "000000000000000000000001";
+    $h .= sprintf("%08x%08x", $s->[9], $s->[7]);
+    $h .= "00000000000000000000000000000000";
+    $h .= sprintf("%08x", length($name) + 1);
+    $h .= "00000000$name\0";
+    $h .= substr("\0\0\0\0", (length($h) & 3)) if length($h) & 3;
+    my $pad = '';
+    $pad = substr("\0\0\0\0", ($s->[7] & 3)) if $s->[7] & 3;
+    return ($h, $pad);
+}
+
+# send test data as cpio archive
+sub test_data {
+    my $self = shift;
+    $self->{job} = Scheduler::job_get($self->param('testid'));
+    return $self->render_not_found unless ($self->{job});
+
+    $self->app->log->debug("serving data for job ".$self->{job}->{id});
+
+    my $distri = $self->{job}->{settings}->{DISTRI};
+
+    $self->res->headers->content_type('application/x-cpio');
+
+    my $data = '';
+    my $base = sprintf "%s/os-autoinst/tests/%s/data/", $openqa::basedir, $distri;
+    for my $file (glob $base.'*') {
+        next unless -f $file;
+        my @s = stat _;
+        unless (@s) {
+            $self->app->log->error("error stating $file: $!");
+            next;
+        }
+        my $fn = 'data/'.substr($file, length($base));
+        local $/; # enable localized slurp mode
+        my $fd;
+        unless (open($fd, '<:raw', $file)) {
+            $self->app->log->error("error reading $file: $!");
+            next;
+        }
+        my ($header, $pad) = _makecpiohead($fn, \@s);
+        $data .= $header;
+        $data .= <$fd>;
+        close $fd;
+        $data .= $pad if $pad;
+    }
+    $data .= _makecpiohead();
+    return $self->render(data => $data);
+}
+
 1;
 # vim: set sw=4 et:
