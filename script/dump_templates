@@ -16,17 +16,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-=head1 boilerplate
+=head1 dump_templates
 
-boilerplate - boilerplate code for perl scripts
+dump_templates - dump openQA templates
 
 =head1 SYNOPSIS
 
-boilerplate [OPTIONS] FILE
+dump_templates [OPTIONS] [TABLES...]
 
 =head1 OPTIONS
 
 =over 4
+
+=item B<--tmp>
+
+deploy schema to memory and dump that
+
+=item B<--json>
+
+dump as json
 
 =item B<--help, -h>
 
@@ -36,7 +44,8 @@ print help
 
 =head1 DESCRIPTION
 
-lorem ipsum ...
+Dump openQA database tables for Machines TestSuites Products
+JobTemplates e.g. to load them on another instance.
 
 =cut
 
@@ -54,6 +63,8 @@ use Getopt::Long;
 
 Getopt::Long::Configure("no_ignore_case");
 
+my %tables = map { $_ => 1 } qw/Machines TestSuites Products JobTemplates/;
+
 my %options;
 
 sub usage($) {
@@ -62,10 +73,19 @@ sub usage($) {
     if ($@) {
         die "cannot display help, install perl(Pod::Usage)\n";
     }
+    exit $_[0];
 }
 
 GetOptions(\%options, "json", "tmp","help|h",) or usage(1);
 
+usage(0) if $options{help};
+
+if (@ARGV) {
+    my %want = map { $_ => 1 } @ARGV;
+    for my $t (keys %tables) {
+        $tables{$t} = $want{$t}?1:0;
+    }
+}
 
 my $schema;
 
@@ -104,52 +124,60 @@ die unless $schema;
 
 my %result;
 
-my $rs = $schema->resultset('Machines')->search(
-    {},
-    {
-        '+columns' => [ 'settings.id', 'settings.key', 'settings.value' ],
-        collapse => 1,
-        join => ['settings'],
-        order_by => { -asc => 'name' },
-    }
-);
-$rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-$result{'Machines'} = [ $rs->all() ];
+if ($tables{'Machines'}) {
+    my $rs = $schema->resultset('Machines')->search(
+        {},
+        {
+            '+columns' => [ 'settings.id', 'settings.key', 'settings.value' ],
+            collapse => 1,
+            join => ['settings'],
+            order_by => { -asc => 'name' },
+        }
+    );
+    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+    $result{'Machines'} = [ $rs->all() ];
+}
 
-$rs = $schema->resultset('TestSuites')->search(
-    {},
-    {
-        '+columns' => [ 'settings.id', 'settings.key', 'settings.value' ],
-        collapse => 1,
-        join => [qw/settings/],
-        order_by => { -asc => 'name' },
-    }
-);
-$rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-$result{'TestSuites'} = [ $rs->all() ];
+if ($tables{'TestSuites'}) {
+    my $rs = $schema->resultset('TestSuites')->search(
+        {},
+        {
+            '+columns' => [ 'settings.id', 'settings.key', 'settings.value' ],
+            collapse => 1,
+            join => [qw/settings/],
+            order_by => { -asc => 'name' },
+        }
+    );
+    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+    $result{'TestSuites'} = [ $rs->all() ];
+}
 
-$rs = $schema->resultset('Products')->search(
-    {},
-    {
-        '+columns' => [ 'settings.id', 'settings.key', 'settings.value' ],
-        collapse => 1,
-        join => [qw/settings/],
-        order_by => { -asc => [qw/distri version flavor arch/] },
-    }
-);
-$rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-$result{'Products'} = [ $rs->all() ];
+if ($tables{'Products'}) {
+    my $rs = $schema->resultset('Products')->search(
+        {},
+        {
+            '+columns' => [ 'settings.id', 'settings.key', 'settings.value' ],
+            collapse => 1,
+            join => [qw/settings/],
+            order_by => { -asc => [qw/distri version flavor arch/] },
+        }
+    );
+    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+    $result{'Products'} = [ $rs->all() ];
+}
 
-$rs = $schema->resultset('JobTemplates')->search(
-    {},
-    {
-        '+columns' => [qw'product.id machine.name test_suite.name product.distri product.version product.flavor product.arch'],
-        collapse => 1,
-        join => [qw/product machine test_suite/],
-    }
-);
-$rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-$result{'JobTemplates'} = [ $rs->all() ];
+if ($tables{'JobTemplates'}) {
+    my $rs = $schema->resultset('JobTemplates')->search(
+        {},
+        {
+            '+columns' => [qw'product.id machine.name test_suite.name product.distri product.version product.flavor product.arch'],
+            collapse => 1,
+            join => [qw/product machine test_suite/],
+        }
+    );
+    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+    $result{'JobTemplates'} = [ $rs->all() ];
+}
 
 
 for my $table (keys %result) {
