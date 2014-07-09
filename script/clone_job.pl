@@ -156,8 +156,9 @@ if ($jobid) {
         }
     }
     else {
-        warn "failed to get job ", $tx->error;
-        exit(1);
+        my $err = $tx->error;
+        warn "failed to get job: $err->{code} $err->{message}";
+        exit 1;
     }
     dd $job if $options{verbose};
 
