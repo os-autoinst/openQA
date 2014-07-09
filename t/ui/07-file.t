@@ -108,6 +108,9 @@ $t->get_ok('/needles/opensuse/doesntexist.png')->status_is(404);
 # local file
 my $reference_cpio = "07070100000000000081a4000000000000000000000001########00000015000000000000000000000000000000000000000a00000000data/motd\0Have a lot of fun...\n\0\0\00007070100000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000b00000000TRAILER!!!\0\0\0\0";
 my @s = stat 't/data/os-autoinst/tests/opensuse/data/motd';
+if (($s[2]&0777) != 0644) { # take care of different umask on git checkout
+    substr($reference_cpio, 14, 8) = sprintf "%08x", 0100000 | $s[2]&0777
+}
 substr($reference_cpio, 46, 8) = sprintf "%08x", $s[9];
 $t->get_ok('/tests/99946/data')
     ->status_is(200)
