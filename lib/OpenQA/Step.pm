@@ -205,7 +205,17 @@ sub edit {
         # We also use $area for transforming the match information intro a real area
         for my $needle (@{$module_detail->{'needles'}}) {
             $needlename = $needle->{'name'};
-            $needleinfo  = needle_info($needlename, $results->{'distribution'}, $results->{'version'}||'');
+            $needleinfo = needle_info($needlename, $results->{'distribution'}, $results->{'version'}||'');
+
+            if( !defined $needleinfo ) {
+                $self->app->log->error(sprintf("Could not parse needle: %s for %s %s",$needlename,$results->{'distribution'},$results->{'version'} || ''));
+
+                $needleinfo->{'image'} = [];
+                $needleinfo->{'tags'} = [];
+                $needleinfo->{'area'} = [];
+                $needleinfo->{'broken'} = 1;
+            }
+
             push(
                 @$needles,
                 {
@@ -214,7 +224,8 @@ sub edit {
                     'imagepath' => $needleinfo->{'image'},
                     'tags' => $needleinfo->{'tags'},
                     'area' => $needleinfo->{'area'},
-                    'matches' => []
+                    'matches' => [],
+                    'broken' => $needleinfo->{'broken'}
                 }
             );
             for my $match (@{$needle->{'area'}}) {
