@@ -429,8 +429,15 @@ sub needle_info($$$) {
         warn "$fn: $!";
         return undef;
     }
-    my $needle = decode_json(<JF>) || return undef;
+
+    my $needle;
+    eval {$needle = decode_json(<JF>);};
     close(JF);
+
+    if($@) {
+        warn "failed to parse $needledir/$name.json: $@";
+        return undef;
+    }
 
     $needle->{'needledir'} = "$perldir/$needledir";
     $needle->{'image'} = "$perldir/$needledir/$name.png";
