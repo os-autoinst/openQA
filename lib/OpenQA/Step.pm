@@ -316,13 +316,21 @@ sub save_needle {
 
     my $baseneedle = "$perldir/$needledir/$needlename";
     $self->app->log->warn("*** imagepath is from client! FIXME!!!");
-    copy($imagepath, "$baseneedle.png") or $success = 0;
+    unless ($imagepath eq "$baseneedle.png") {
+        unless (copy($imagepath, "$baseneedle.png")) {
+            $self->app->log->error("Copy $imagepath -> $baseneedle.png failed: $!");
+            $success = 0;
+        }
+    }
     if ($success) {
         system("optipng", "-quiet", "$baseneedle.png");
         open(J, ">", "$baseneedle.json") or $success = 0;
         if ($success) {
             print J $json;
             close(J);
+        }
+        else {
+            $self->app->log->error("Writing needle $baseneedle.json failed: $!");
         }
     }
     if ($success) {
