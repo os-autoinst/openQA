@@ -59,6 +59,7 @@ our %worker_commands = map { $_ => 1 } qw/
   quit
   abort
   cancel
+  obsolete
   stop_waitforneedle
   reload_needles_and_retry
   enable_interactive_mode
@@ -512,19 +513,34 @@ mark job as done. No error check. Meant to be called from worker!
 sub job_set_done {
     my %args = @_;
     my $jobid = int($args{jobid});
+    my $newbuild = 0;
+    $newbuild = int($args{newbuild}) if defined $args{newbuild};
     my $result = schema->resultset("JobResults")->search({ name => $args{result}})->single;
 
     die "invalid result string" unless $result;
 
     my $now = "datetime('now')";
-    my $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
-        {
-            state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
-            worker_id => 0,
-            t_finished => \$now,
-            result_id => $result->id,
-        }
-    );
+    my $r;
+    if ($newbuild) {
+        $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
+            {
+                state_id => schema->resultset("JobStates")->search({ name => "obsoleted" })->single->id,
+                worker_id => 0,
+                t_finished => \$now,
+                result_id => $result->id,
+            }
+        );
+    }
+    else {
+        $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
+            {
+                state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
+                worker_id => 0,
+                t_finished => \$now,
+                result_id => $result->id,
+            }
+        );
+    }
     return $r;
 }
 
@@ -729,8 +745,9 @@ sub job_restart {
     return @duplicated;
 }
 
-sub job_cancel {
+sub job_cancel($;$) {
     my $value = shift or die "missing name parameter\n";
+    my $newbuild = shift || 0;
 
     my %attrs;
     my %cond;
@@ -751,8 +768,14 @@ sub job_cancel {
     # then tell workers to cancel their jobs
     my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
     while (my $j = $jobs->next) {
-        print STDERR "enqueuing cancel for ".$j->id." ".$j->worker_id."\n" if $debug;
-        command_enqueue(workerid => $j->worker_id, command => 'cancel');
+        if ($newbuild) {
+            print STDERR "enqueuing obsolete for ".$j->id." ".$j->worker_id."\n" if $debug;
+            command_enqueue(workerid => $j->worker_id, command => 'obsolete');
+        }
+        else {
+            print STDERR "enqueuing cancel for ".$j->id." ".$j->worker_id."\n" if $debug;
+            command_enqueue(workerid => $j->worker_id, command => 'cancel');
+        }
         ++$r;
     }
     return $r;
