@@ -14,20 +14,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema;
-use base qw/DBIx::Class::Schema/;
-use IO::Dir;
-use SQL::SplitStatement;
-use Fcntl ':mode';
+#!perl
 
-# after bumping the version ...
-# - run script/initdb --prepare
-# - run script/upgradedb --prepare
-# - edit dbicdh/SQLite/upgrade/$old-$new/001-auto.sql and add missing triggers
-# - optionally add migration script dbicdh/_common/upgrade/$old-$new/...
-our $VERSION = '13';
+use strict;
+use warnings;
 
-__PACKAGE__->load_namespaces;
+# no use case for that yet
+#use DBIx::Class::DeploymentHandler::DeployMethod::SQL::Translator::ScriptHelpers 'schema_from_schema_loader';
 
-1;
-# vim: set sw=4 et:
+#schema_from_schema_loader({ naming => 'v4' },
+sub {
+    my $schema = shift;
+
+    # [1] for deploy, [1,2] for upgrade or downgrade, probably used with _any
+    my $versions = shift;
+
+    $schema->resultset('JobStates')->populate([[qw/id name/],[ 5,'obsoleted'],]);
+
+  }
+  #);
