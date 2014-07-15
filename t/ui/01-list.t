@@ -36,14 +36,14 @@ $get->content_like(qr/Test results/i, 'result list is there');
 # Test 99946 is successful (30/0/1)
 $get->element_exists('#results #job_99946 .extra');
 $get->text_is('#results #job_99946 .extra span' => 'textmode');
-$get->text_is('#results #job_99946 td:nth-child(11) .overview_passed' => '30');
-$get->text_is('#results #job_99946 td:nth-child(13) .overview_failed' => '1');
+$get->text_is('#results #job_99946 td:nth-child(10) .overview_passed' => '30');
+$get->text_is('#results #job_99946 td:nth-child(12) .overview_failed' => '1');
 
 # Test 99963 is still running
-ok($get->tx->res->dom->at('#results #job_99963 td.link a') eq '<a href="/tests/99963">testing</a>');
+$get->element_exists('#results #job_99963 td:nth-child(10) progress');
 
 # Test 99928 is scheduled (so can be canceled)
-$get->text_is('#results #job_99928 td.link a' => 'scheduled');
+$get->text_is('#results #job_99928 td:nth-child(10)' => 'scheduled');
 $get->element_exists('#results #job_99928 .cancel');
 
 # Test 99938 failed, so it should be displayed in red
@@ -69,7 +69,7 @@ $get = $t->get_ok('/tests' => form => {hoursfresh => 200})->status_is(200);
 
 # Test 99937 is displayed now
 $get->element_exists('#results #job_99937');
-$get->text_is('#results #job_99937 td:nth-child(11) .overview_passed' => '48');
+$get->text_is('#results #job_99937 td:nth-child(10) .overview_passed' => '48');
 
 #
 # Testing the default scope (relevant)
