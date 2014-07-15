@@ -13,9 +13,6 @@
                             %= image "/images/floppy.png", width=>"23", height=>"23", alt=>"img", title=>"download disk image"
                         %= end
 			<% } %>
-                        %= link_to url_for('test_file', 'testid' => $testid, 'filename' => 'video.ogv') => begin
-                            %= image "/images/video.png", width=>"23", height=>"23", alt=>"ogv", title=>"ogg/theora video of this testrun"
-                        %= end
                         %= link_to tests => begin
                             %= image "/images/back.png", alt=>"back", title=>"back to overview page"
                         %= end
@@ -33,7 +30,15 @@
 		<div class="box-header aligncenter">Result Files</div>
 		<div style="text-align: center;">
 			<% for my $resultfile (@$resultfiles) { %>
-			<a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $resultfile) %>"><%= $resultfile %></a><br />
+                                <% if($resultfile =~ /video.ogv$/) { %>
+                                %= link_to url_for('test_file', 'testid' => $testid, 'filename' => 'video.ogv') => begin
+                                %= image "/images/video.png", width=>"23", height=>"23", alt=>"ogv", title=>"ogg/theora video of this testrun"
+                                %= end
+                                <br/>
+                                <% }
+                                else { %>   
+                                <a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $resultfile) %>"><%= $resultfile %></a><br />
+                                <% } %>
 			<% } %>
 		</div>
 	</div>
