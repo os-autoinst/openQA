@@ -123,7 +123,7 @@ sub create {
             $cond{$k} = $jobs->[0]->{$k};
         }
         if (%cond) {
-            Scheduler::job_cancel(\%cond, 1);
+            Scheduler::job_cancel(\%cond, 1); # have new build jobs instead
         }
     }
 
