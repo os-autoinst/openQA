@@ -117,10 +117,17 @@ sub done {
     my $self = shift;
     my $jobid = int($self->stash('jobid'));
     my $result = $self->param('result');
+    my $newbuild = 1 if defined $self->param('newbuild');
 
     print STDERR "jobid $jobid $result\n";
 
-    my $res = Scheduler::job_set_done(jobid => $jobid, result => $result);
+    my $res;
+    if ($newbuild) {
+        $res = Scheduler::job_set_done(jobid => $jobid, result => $result, newbuild => $newbuild);
+    }
+    else {
+        $res = Scheduler::job_set_done(jobid => $jobid, result => $result);
+    }
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
