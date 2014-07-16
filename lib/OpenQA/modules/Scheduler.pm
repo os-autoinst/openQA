@@ -79,7 +79,7 @@ sub schema{
     if ($schema) {
         my $rs = $schema->resultset("JobStates")->search(undef, { columns => [qw/id name/], });
         %job_states = map { $_->name => $_->id } $rs->all() if $rs;
-        die "database schema not initialized properly!\n" unless keys %job_states == 5;
+        die "database schema not initialized properly!\n" unless keys %job_states == 6;
     }
 
     return $schema;
