@@ -446,6 +446,12 @@ sub main(){
                     $aborted = 'cancel';
                 }
             }
+            elsif ($cmd->[1] eq 'obsolete') { # The jobs is droped and a new build job replaced it
+                if ($worker) {
+                    _kill_worker($worker);
+                    $aborted = 'obsolete';
+                }
+            }
             elsif ($cmd->[1] eq 'stop_waitforneedle') { # Plan: Enable interactive mode -- Now osautoinst decides what that means
                 if ($worker) {
                     if (open(my $f, '>', "$pooldir/stop_waitforneedle")) {
@@ -637,7 +643,11 @@ sub main(){
                 else {
                     $result = 'incomplete';
                 }
-                if (($aborted||'') eq 'cancel' || $overall) {
+                if ($aborted eq 'obsolete') {
+                    printf "setting job %d to $result and obsoleted\n", $job->{'id'};
+                    api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result, newbuild => 1});
+                }
+                elsif (($aborted||'') eq 'cancel' || $overall) {
                     printf "setting job %d to $result\n", $job->{'id'};
                     api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result});
                 }
