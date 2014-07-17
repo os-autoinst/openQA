@@ -257,7 +257,7 @@ sub startup {
             my $c = shift;
             $c->render(template => 'pages/index');
         }
-    );
+    )->name('index');
 
     # Redirection for old links to openQAv1
     $r->get(
