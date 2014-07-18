@@ -553,11 +553,17 @@ sub job_set_waiting {
     my $jobid = shift;
 
     # TODO: only allowed for running jobs
-    my $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
+    my $state = schema->resultset("JobStates")->find({name => 'running'})->id;
+    my $r = schema->resultset("Jobs")->search(
+        {
+            id => $jobid,
+            state_id => $state
+        }
+      )->update(
         {
             state_id => schema->resultset("JobStates")->search({ name => "waiting" })->single->id,
         }
-    );
+      );
     return $r;
 }
 
@@ -573,7 +579,7 @@ sub job_set_running {
     my $r = schema->resultset("Jobs")->search(
         {
             id => $jobid,
-            state_id => { -in => $states_rs->get_column("id")->as_query },
+            state_id => { -in => $states_rs->get_column("id")->as_query }
         }
       )->update(
         {
