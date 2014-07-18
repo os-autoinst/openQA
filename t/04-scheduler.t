@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 51;
+use Test::More tests => 53;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -261,6 +261,22 @@ is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job_id;
 $job_id = $job->{id};
 
+
+# Testing job_set_waiting
+$result = Scheduler::job_set_waiting($job_id);
+$job = Scheduler::job_get($job_id);
+ok($result == 1 && $job->{state} eq "waiting", "job_set_waiting");
+
+
+# Testing job_set_running
+$result = Scheduler::job_set_running($job_id);
+$job = Scheduler::job_get($job_id);
+ok($result == 1 && $job->{state} eq "running", "job_set_running");
+$result = Scheduler::job_set_running($job_id);
+$job = Scheduler::job_get($job_id);
+ok($result == 0 && $job->{state} eq "running", "Retry job_set_running");
+
+
 sleep 1;
 # Testing job_set_done
 %args = (
@@ -284,19 +300,16 @@ ok($job->{t_finished} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job end timesta
 #$current_jobs = list_jobs(%args);
 #is_deeply($current_jobs, [], "list_jobs with finish in future");
 
-# Testing job_set_waiting
+# Testing job_set_waiting on job not in running state
 $result = Scheduler::job_set_waiting($job_id);
 $job = Scheduler::job_get($job_id);
-ok($result == 1 && $job->{state} eq "waiting", "job_set_waiting");
+ok($result == 0 && $job->{state} eq "done", "job_set_waiting on done job");
 
 
-# Testing job_set_running
+# Testing job_set_running on done job
 $result = Scheduler::job_set_running($job_id);
 $job = Scheduler::job_get($job_id);
-ok($result == 1 && $job->{state} eq "running", "job_set_running");
-$result = Scheduler::job_set_running($job_id);
-$job = Scheduler::job_get($job_id);
-ok($result == 0 && $job->{state} eq "running", "Retry job_set_running");
+ok($result == 0 && $job->{state} eq "done", "job_set_running on done job");
 
 
 # Testing job_set_prio
