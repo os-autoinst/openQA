@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use File::Copy;
 use Scheduler;
+use POSIX qw/strftime/;
 
 sub init {
     my $self = shift;
@@ -273,7 +274,8 @@ sub edit {
         $default_needle->{'area'} = [];
         $default_name = $self->param('moduleid');
     }
-    $default_name = $default_name."-".time;
+    my $today = strftime("%Y%m%d", localtime(time));
+    $default_name = $default_name."-".$today;
 
     $self->stash('needles', $needles);
     $self->stash('tags', $tags);
