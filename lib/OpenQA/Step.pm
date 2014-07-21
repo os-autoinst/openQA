@@ -274,7 +274,7 @@ sub edit {
         $default_needle->{'area'} = [];
         $default_name = $self->param('moduleid');
     }
-    my $today = strftime("%Y%m%d", localtime(time));
+    my $today = strftime("%Y%m%d", gmtime(time));
     $default_name = $default_name."-".$today;
 
     $self->stash('needles', $needles);
