@@ -46,6 +46,7 @@
   /usr/bin/qemu-img rix,
   /usr/bin/qemu-kvm rix,
   /usr/bin/qemu-system-* rix,
+  /usr/lib*/qemu/block-curl.so rix,
   /usr/bin/rm rix,
   /usr/bin/sox rix,
   /usr/bin/tail rix,
@@ -73,5 +74,5 @@
   /var/lib/openqa/testresults/** rwk,
   /var/lib/openqa/logupload/** rwk,
   /var/lib/os-autoinst/tests/** r,
-
+  /var/tmp/* w,
 }
