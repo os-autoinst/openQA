@@ -275,7 +275,12 @@ sub edit {
         $default_name = $self->param('moduleid');
     }
     my $today = strftime("%Y%m%d", gmtime(time));
-    $default_name = $default_name."-".$today;
+    if ( $default_name =~ /([\w\-]+)[\-]([\d]+$)/ ) {
+        $default_name = $1."-".$today;
+    }
+    else {
+        $default_name = $default_name."-".$today;
+    }
 
     $self->stash('needles', $needles);
     $self->stash('tags', $tags);
