@@ -275,7 +275,7 @@ sub edit {
         $default_name = $self->param('moduleid');
     }
     my $today = strftime("%Y%m%d", gmtime(time));
-    if ( $default_name =~ /([\w\-]+)[\-]([\d]+$)/ ) {
+    if ( $default_name =~ /(.*)-\d{8}$/ ) {
         $default_name = $1."-".$today;
     }
     else {
