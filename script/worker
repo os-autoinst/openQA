@@ -478,6 +478,7 @@ sub main(){
                 if ($worker) {
                     if (open(my $f, '>', "$pooldir/interactive_mode")) {
                         close $f;
+                        api_call('post', 'jobs/'.$job->{'id'}.'/set_waiting');
                         print "interactive mode enabled\n";
                     }
                     else {
@@ -488,6 +489,7 @@ sub main(){
             elsif ($cmd->[1] eq 'disable_interactive_mode') {
                 if ($worker) {
                     unlink("$pooldir/interactive_mode");
+                    api_call('post', 'jobs/'.$job->{'id'}.'/set_running');
                     print "interactive mode disabled\n";
                 }
             }
