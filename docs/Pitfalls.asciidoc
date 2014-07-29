@@ -7,10 +7,10 @@ openQA pitfalls
 Needle editing
 ==============
 
-- if a new needle is created based on a failed test the new needle
+- if a new needle is created based on a failed test, the new needle
   will not be listed in old tests.
 - if an existing needle is updated with a new image or different
-  areas old test will display the new needle which might be
+  areas, the old test will display the new needle which might be
   confusing
-- if a needle is deleted old tests may display an error when viewing
-  them in the web ui.
+- if a needle is deleted, old tests may display an error when viewing
+  them in the web UI.

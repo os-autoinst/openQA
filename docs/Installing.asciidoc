@@ -7,14 +7,14 @@ Introduction
 ------------
 [id="intro"]
 
-openQA is an automated test tool that makes possible to test the whole
+openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It's free software released
 under the http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The
 source code and documentation are hosted in the
 https://github.com/os-autoinst[os-autoinst organization on GitHub].
 
 This document provides the information needed to install and setup the tool, as
-well as information usefull for everyday administration of the system. It's
+well as information useful for everyday administration of the system. It's
 assumed that the reader is already familiar with openQA and has already read the
 Starter Guide, available at the 
 https://github.com/os-autoinst/openQA[official repository].
@@ -24,8 +24,8 @@ Installation
 [id="installation"]
 
 The easiest way to install openQA is from packages. You can find them in OBS in
-https://build.opensuse.org/project/show/devel:openQA[openQA] repository or
-latest development version can be found also in OBS in
+the https://build.opensuse.org/project/show/devel:openQA[openQA] repository or
+the latest development version can also be found in OBS in the
 https://build.opensuse.org/project/show/devel:openQA:devel[openQA:devel]
 repository. Installation on openSUSE is therefore pretty simple:
 
@@ -41,8 +41,8 @@ zypper in openQA
 systemctl start openqa-webui
 --------------------------------------------------------------------------------
 
-Now you have the WebUI running. You can take a look at WebUI at
-http://localhost:9526 but so far it is empty. You need to do few
+Now you have the WebUI running. You can take a look at the WebUI at
+http://localhost:9526 but so far it is empty. You need to do a few
 more actions to get it configured in a way that it will be able to
 run tests.
 
@@ -54,7 +54,7 @@ OpenID
 ~~~~~~
 
 By default openQA uses the opensuse.org OpenID provider to
-authenticate users. If you want to change that you can do it in
+authenticate users. If you want to change that, you can do it in
 +/etc/openqa/openqa.ini+. The first user that logs in (if there is
 no admin yet) will automatically get admin and operator rights. As
 admin you need to do some further actions to get your openQA
@@ -80,10 +80,10 @@ Running workers
 Workers are processes running virtual machines to perform the actual
 testing. To allow them to access your instance, you need to log into
 openQA as operator and create a pair of API key and secret. Once you
-are logged in, follow the  link 'manage API keys' in top right
+are logged in, follow the link 'manage API keys' in the top right
 corner. Click the 'create' button to generate +key+ and +secret+.
 Copy&paste them into +/etc/openqa/client.conf+. Make
-sure to put in section reflecting your webserver URL. In the simple
+sure to put in a section reflecting your webserver URL. In the simplemost
 case, your +client.conf+ may look like this:
 
 [source,ini]
@@ -105,10 +105,10 @@ You can also run workers manually from command line.
 sudo -u geekotest /usr/share/openqa/script/worker --instance X
 --------------------------------------------------------------------------------
 
-This will run worker manually showing you debug output. If you haven't
+This will run a worker manually showing you debug output. If you haven't
 installed 'os-autoinst' from packages make sure to pass +--isotovideo+ option
 to point to the checkout dir where isotovideo is, not to +/usr/lib+! Otherwise
-it will have troubles finding perl modules then.
+it will have trouble finding its perl modules.
 
 Apache proxy
 ~~~~~~~~~~~~
@@ -116,7 +116,7 @@ Apache proxy
 It's recommended to run openQA behind an apache proxy. See
 +openqa.conf.template+ config file in +/etc/apache2/vhosts.d+. To make
 everything work correctly, you need to enable the 'proxy_http',
-'headers' and 'proxy' modules (use 'a2enmod').
+'headers' and 'proxy' modules using 'a2enmod'.
 
 Advanced configuration
 ----------------------
@@ -135,12 +135,12 @@ automatically to git. To do so, you need to enable git support by setting
 scm = git
 --------------------------------------------------------------------------------
 in +/etc/openqa/openqa.ini+. Once you do so and restart the web interface, openQA will
-commit new needles to the git repository automatically.
+automatically commit new needles to the git repository.
 
 You may want to add some description to automatic commits coming
 from the web UI.
-You can do so by setting configuration in the repository
-(+/var/lib/os-autoinst/needles/.git/config+) to some reasonable defaults like:
+You can do so by setting your configuration in the repository
+(+/var/lib/os-autoinst/needles/.git/config+) to some reasonable defaults such as:
 
 --------------------------------------------------------------------------------
 [user]
@@ -162,7 +162,7 @@ ssh keys for user 'geekotest' to be able to push.
 Worker settings
 ~~~~~~~~~~~~~~~
 
-Default behaviour for all workers is to use 'Qemu' backend and connect to
+Default behaviour for all workers is to use the 'Qemu' backend and connect to
 'http://localhost'. If you want to change some of those options, you can do so
 in +/etc/openqa/workers.ini+. For example if you want to connect to the port
 9526 (default port after installation if you haven't set up Apache proxy), you
@@ -174,7 +174,7 @@ can do so using following code:
 HOST = http://localhost:9526
 --------------------------------------------------------------------------------
 
-Once you got workers running they should show up in admin section of openQA in
+Once you got workers running they should show up in the admin section of openQA in
 the workers section as 'idle'. When you get so far, you have your own instance
 of openQA up and running and all that is left is to set up some tests.
 
@@ -190,7 +190,7 @@ development mode.
 directories owned by the user that runs the workers (default 'geekotest'):
 
 * +backlog+
-* +cache+ (cache directory, it need owned by the user who runs openqa)
+* +cache+ (cache directory, needs to be owned by the user who runs openqa)
 * +factory/iso+
 * +perl/+ (subdirectory 'autoinst' must link to +/usr/lib/os-autoinst+)
 * +pool/1+ (add more for each worker)
@@ -213,8 +213,8 @@ Check the log files in +/var/lib/openqa/testresults+
 KVM doesn't work
 ~~~~~~~~~~~~~~~~
 
-* make sure you a machine with kvm support
+* make sure you have a machine with kvm support
 * make sure +kvm_intel+ or +kvm_amd+ modules are loaded
-* make sure you do not have virtualization disabled in BIOS
+* make sure you do have virtualization enabled in BIOS
 * make sure the 'geekotest' user can access +/dev/kvm+
-* make sure you are not running other hypervisors already like VirtualBox
+* make sure you are not already running other hypervisors such as VirtualBox

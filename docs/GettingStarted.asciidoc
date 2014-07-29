@@ -7,16 +7,16 @@ Introduction
 ------------
 [id="intro"]
 
-openQA is an automated test tool that makes possible to test the whole
+openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It uses virtual machines to
-reproduce the process, checking the output (both serial console and
-screen) in every step and sending the necessary keystrokes and commands to
+reproduce the process, check the output (both serial console and
+screen) in every step and send the necessary keystrokes and commands to
 proceed to the next. openQA can check whether the system can be installed,
 whether it works properly in `live' mode, whether applications work
 or whether the system responds as expected to different installation options and
 commands.
 
-Even more important, openQA can run several combinations of tests for every
+Even more importantly, openQA can run several combinations of tests for every
 revision of the operating system, reporting the errors detected for each
 combination of hardware configuration, installation options and variant of the
 operating system.
@@ -29,7 +29,7 @@ organization on GitHub].
 This document describes the general operation and usage of openQA. The main goal
 is to provide a general overview of the tool, with all the information needed to
 become a happy user. More advanced topics like installation, administration or
-development of new tests are covered by further documents available at the
+development of new tests are covered by further documents available in the
 https://github.com/os-autoinst/openQA[official repository].
 
 Basic concepts
@@ -42,22 +42,22 @@ Jobs
 One of the most important features of openQA is that it can be used to test
 several combinations of actions and configurations. For every one of those
 combinations, the system creates a virtual machine, performs certain steps and
-returns an overall result. Every one of those execution is called a 'job'. Every
-job is labeled a numeric identifier and has several associated 'settings' that
-will drive its behavior.
+returns an overall result. Every one of those executions is called a 'job'.
+Every job is labeled with a numeric identifier and has several associated
+'settings' that will drive its behavior.
 
 A job goes through several states:
 
 * *scheduled* Initial state for recently created jobs. Queued for future
   execution.
 * *running* In progress.
-* *cancelled* The job was explicitly canceled by the user or was replaced by a
+* *cancelled* The job was explicitly cancelled by the user or was replaced by a
   clone (see below).
 * *waiting* The job is in `interactive mode' (see below) and waiting for input.
 * *done* Execution finished.
 
 Jobs in state 'done' have typically gone through a whole sequence of steps
-(called 'testmodules') each of one with its own result. But in addition to those
+(called 'testmodules') each one with its own result. But in addition to those
 partial results, a finished job also provides an overall result from the
 following list.
 
@@ -66,18 +66,18 @@ following list.
   mean that all testmodules where successful or that no single assertion failed.
 * *failed* At least one assertion considered to be critical was not satisfied at some
   point.
-* *incomplete* The job is not longer running but no result was provided. Either
-  it was canceled while running either it crashed.
+* *incomplete* The job is no longer running but no result was provided. Either
+  it was cancelled while running either it crashed.
 
 Sometimes, the reason of a failure is not an error in the tested operating system
 itself, but an outdated test or a problem in the execution of the job for some
-external reason. In those situations, it makes sense to run again a given job from
+external reason. In those situations, it makes sense to re-run a given job from
 the beginning once the problem is fixed or the tests have been updated.
 This is done by means of 'cloning'. Every job can be superseded by a clone which
-is scheduled to run with exactly the same settings than the original job. If the
-original job is still not in 'done' state, it's canceled immmediately.
+is scheduled to run with exactly the same settings as the original job. If the
+original job is still not in 'done' state, it's cancelled immediately.
 From that point in time, the clone becomes the current version and the original
-job is considered outdated (and can be filtered as so in the listing) but its
+job is considered outdated (and can be filtered in the listing) but its
 information and results (if any) are kept for future reference.
 
 Needles
@@ -87,7 +87,7 @@ One of the main mechanisms for openQA to know the state of the virtual machine
 is checking the presence of some elements in the machine's `screen'.
 This is performed using fuzzy image matching between the screen and the so
 called 'needles'. A needle specifies both the elements to search for and a
-list of tags used to decide which needles should be used in every moment.
+list of tags used to decide which needles should be used at any moment.
 
 A needle consists of a full screenshot in PNG format and a json file with
 the same name (e.g. foo.png and foo.json) containing the associated data, like
@@ -117,11 +117,11 @@ tags.
 Interactive mode
 ~~~~~~~~~~~~~~~~
 
-There are several points in time during the execution of a job in which openQA
+There are several points in time during the execution of a job at which openQA
 tries to match the screen with the available needles, reacting to the result of
 that check. If the job is running in interactive mode it will stop the execution
-in that point, freezing the virtual machine and waiting for user input before
-proceeding. In that moment, the user can modify the existing needles or can
+at that point, freezing the virtual machine and waiting for user input before
+proceeding. At that moment, the user can modify the existing needles or can
 create a new one using as a starting point either the current screen of the
 virtual machine or one of the existing needles. Once the needles are adjusted,
 the user can command the job to reload the list of needles and continue with the
@@ -136,8 +136,8 @@ Architecture: openQA and os-autoinst
 ------------------------------------
 [id="architecture"]
 
-Although the project as a whole is referred as openQA, there are in fact two
-different components that are hosted in separate repositories and available as
+Although the project as a whole is referred to as openQA, there are in fact two
+different components that are hosted in separate repositories and are available as
 two different packages, as shown in <<arch_img,the following figure>>.
 
 [[arch_img]]
@@ -147,9 +147,9 @@ image::images/arch.png[openQA architecture]
 The base of the system is a
 standalone application called 'os-autoinst'. In each execution, this application
 creates a virtual machine and uses it to run the tests located in a certain
-directory, generating a video and a JSON file with detailed results. In its
+directory, generating a video, screenshots and a JSON file with detailed results. In its
 first stage, os-autoinst reads several configuration variables that have an
-influence in the configuration of the machine, the exact behavior of the tests
+influence on the configuration of the machine, the exact behavior of the tests
 and the set of needles used in every check.
 
 The rest of the infrastructure is located in the openQA package, which main
@@ -164,7 +164,7 @@ use of the REST-like API for several tasks. The most important one is the
 'worker'. An openQA worker is a small piece of software that runs a continuous
 loop. In each iteration it asks the server for the next job to execute, places
 all the related information in a pool directory and calls os-autoinst with the
-proper configuration values. Then os-autoinst use the pool directory to read
+proper configuration values. Then os-autoinst uses the pool directory to read
 and write all the relevant information and results. When os-autoinst finishes
 its execution, the worker reports the result back to the server. In fact, during
 the execution of os-autoinst the worker is not idle, since it keeps constantly
@@ -183,13 +183,13 @@ Access management
 
 Some actions in openQA require special privileges. openQA provides
 authentication through http://en.wikipedia.org/wiki/OpenID[openID]. By default,
-openQA is configured to use the openSUSE openID provider, but it can be very
-easily configured to use any other valid provider. Every time a new user logs
+openQA is configured to use the openSUSE openID provider, but it can very
+easily be configured to use any other valid provider. Every time a new user logs
 into an instance, a new user profile is created. That profile only
 contains the openID identity and two flags used for access control:
 
 * *operator* Means that the user is able to manage jobs, performing actions like
-  creating new jobs, canceling them, etc.
+  creating new jobs, cancelling them, etc.
 * *admin* Means that the user is able to manage users (granting or revoking
   operator and admin rights) as well as job templates and other related
   information (see the <<job_templates,the corresponding section>>).
@@ -229,7 +229,7 @@ settings, that needs to be run for every revision. Those combinations can be
 different for different `flavors' of the same revision, like running a different
 set of jobs for each architecture or for the Full and the Lite versions. This
 combinational problem can go one step further if openQA is being used for
-different kind of tests, like running some simple pre-integration tests
+different kinds of tests, like running some simple pre-integration tests
 for some snapshots combined with more comprehensive post-integration tests for
 release candidates.
 
@@ -240,14 +240,14 @@ from scratch, you should probably go through the following order:
 
 . Define machines in 'Machines' menu
 . Define products you have in 'Products' menu
-. Specify various collections of test you want to run in 'Test suites'
+. Specify various collections of tests you want to run in the 'Test suites'
   menu
 . Go to the template matrix in 'Job templates' menu and decide what
-  combinations does make sense and need to be tested
+  combinations do make sense and need to be tested
 
-In openQA we can parametrize a test describing for what product will
-run and for what king of machines will be executed. For example, a
-test like KDE can be run for any product that have KDE installed, and
+In openQA we can parametrize a test to describe for what product it will
+run and for what kind of machines it will be executed. For example, a
+test like KDE can be run for any product that has KDE installed, and
 can be tested in x86-64 and i586 machines. If we write this as a
 triples, we can create a list like this to characterize KDE tests:
 
@@ -269,57 +269,58 @@ Products
 ~~~~~~~~
 
 A product in openQA is a simple description without any concrete
-meaning. Basically consist of a name and a set of variables that
+meaning. It basically consists of a name and a set of variables that
 define or characterize this product in os-autoinst.
 
-For example, the product openSUSE-DVD-x86_64 require the variables
+For example, the product openSUSE-DVD-x86_64 requires the variables
 +ISO_MAXSIZE+ and +DVD+ to be set up.
 
-The list of variables as dynamic and are consumed by the tests, that
-is the one that provide a semantic to this variable. Some usual
+The list of variables is dynamic. The semantic of a variable is defined
+by the tests using it. Some usual
 variables are:
 
 * +ISO_MAXSIZE+ contains the maximum size of the product. There is a
-  test that check that the current size of the product is less or
+  test that checks that the current size of the product is less or
   equal than this variable.
-* +DVD+ if is set to 1, this indicate that the medium is a DVD.
-* +LIVECD+ if is set to 1, this indicate that the medium is a live
+* +DVD+ if it is set to 1, this indicates that the medium is a DVD.
+* +LIVECD+ if it is set to 1, this indicates that the medium is a live
   image (can be a CD or USB)
-* +GNOME+ this variable, is is set to 1, will indicate that is a GNOME
+* +GNOME+ this variable, if it is set to 1, indicates that it is a GNOME
   only distribution.
-* +PROMO+ mark the promotional product.
-* +RESCUECD+ if set to 1 for rescue CD images.
+* +PROMO+ marks the promotional product.
+* +RESCUECD+ is set to 1 for rescue CD images.
 
 
 Test Suites
 ~~~~~~~~~~~
 
 This is the form where we define the different tests that we created
-for openQA. A test consist of a name, a priority (used in the
+for openQA. A test consists of a name, a priority (used in the
 scheduler to choose the next job) and a set of variables that are used
 inside this particular test.
 
-Again, the list of variables is not complete, because are
-test-dependent, but some of the usual are:
+Again, the list of variables is not complete, because they are
+test-dependent, but some of the usual ones are:
 
 * +BTRFS+ if set, the file system will be BtrFS.
 * +DESKTOP+ possible values are 'kde' 'gnome' 'lxde' 'xfce' or
-  'texmode'. Used to indicate the desktop selected by the user during
+  'textmode'. Used to indicate the desktop selected by the user during
   the test.
-* +DOCRUN+ used for document tests.
-* +DUALBOOT+ dual boot testing, need HDD_1 and HDDVERSION.
+* +DOCRUN+ used for documentation tests.
+* +DUALBOOT+ dual boot testing, needs HDD_1 and HDDVERSION.
 * +ENCRYPT+ encrypt the home directory via YaST.
 * +HDDMODEL+ variable to set the HDD hardware model.
 * +HDDSIZEGB+ hard disk size in GB. Used together with BtrFS variable.
-* +HDDVERSION+ together with HDD_1 to set the operating system
-  previously installed in the hard disk.
+* +HDDVERSION+ used together with HDD_1 to set the operating system
+  previously installed on the hard disk.
 * +HDD_1+ path for the pre-created hard disk.
 * +INSTALLONLY+ only basic installation.
-* +INSTLANG+ installation language. Actually used only in document
+* +INSTLANG+ installation language. Actually used only in documentation
   tests.
-* +LIVETEST+ the test is on live medium, do not install the distribution.
+* +LIVETEST+ the test is on a live medium, do not install the distribution.
 * +LVM+ select LVM volume manager.
-* +NICEVIDEO+ used for test with better video quality (show room).
+* +NICEVIDEO+ used for rendering a result video for use in show rooms,
+  skipping ugly and boring tests.
 * +NOAUTOLOGIN+ unmark autologin in YaST
 * +NUMDISKS+ total number of disks in QEMU.
 * +QEMUVGA+ parameter to declare the video hardware configuration in QEMU.
@@ -336,22 +337,22 @@ Machines
 ~~~~~~~~
 
 You need to have at least one machine set up to be able to run any
-tests. Those machine represents virtual machine types that you want to
-test. To make tests actually happen, you have to have a 'openQA
-worker' connected that can fullfill those specifications.
+tests. Those machines represent virtual machine types that you want to
+test. To make tests actually happen, you have to have an 'openQA
+worker' connected that can fulfill those specifications.
 
-* *Name.* User defined string only needed for operator to identify the machine
+* *Name.* User defined string - only needed for operator to identify the machine
 configuration.
 
 * *Backend.* What backend should be used for this machine. Recommended value is
-+qemu+ as it is the most tested one, but other options (like +kvm2usb+ or +vbox+)
++qemu+ as it is the most tested one, but other options (such as +kvm2usb+ or +vbox+)
 are also possible.
 
 * *Variables* Variables represent a way how to influence backend behaviour.
 Few important examples:
-** +QEMUCPU+ can be 'qemu32' or 'qemu64' and specifies architecture of
+** +QEMUCPU+ can be 'qemu32' or 'qemu64' and specifies the architecture of the
    virtual CPU.
-** +QEMUCPUS+ is an integer that specifies number of cores you wish for.
+** +QEMUCPUS+ is an integer that specifies the number of cores you wish for.
 ** +LAPTOP+ if set to 1, QEMU will create a laptop profile.
 ** +USBBOOT+ when set to 1, the image will be loaded through an
    emulated USB stick.
@@ -362,7 +363,7 @@ Testing openSUSE
 
 Easiest way to start using openQA is to start testing openSUSE as we have
 everything setup and prepared to ease the initial deployment. If you want to
-play deeper, you can configure whole openQA manually from scratch, but this
+play deeper, you can configure the whole openQA manually from scratch, but this
 document should help you to get started faster.
 
 Getting tests
@@ -371,7 +372,7 @@ Getting tests
 First you need to get actual tests. You can get openSUSE tests and needles (the
 expected results) from 
 https://github.com/os-autoinst/os-autoinst-needles-opensuse[GitHub]. It belongs
-to the +/var/lib/os-autoinst/tests+ directory. To make it easier, you can just
+into the +/var/lib/os-autoinst/tests+ directory. To make it easier, you can just
 run
 
 [source,sh]
@@ -379,15 +380,15 @@ run
 /usr/lib/os-autoinst/tools/fetchneedles
 --------------------------------------------------------------------------------
 
-Which will download the tests to the correct location and will set correct
+Which will download the tests to the correct location and will set the correct
 rights as well.
 
 Getting openQA configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To get everything configured to actually run the tests, there is a plenty of
-options to set in admin interface. If you plan to tes openSUSE Factory, using
-tests mentioned in previous section, easiest way to get started is the
+To get everything configured to actually run the tests, there are plenty of
+options to set in the admin interface. If you plan to test openSUSE Factory, using
+tests mentioned in the previous section, the easiest way to get started is the
 following command:
 
 [source,sh]
@@ -396,14 +397,14 @@ following command:
 --------------------------------------------------------------------------------
 
 This will load some default settings that were used at some point of time in
-openSUSE production openQA. Therefor those should work reasonably well with
+openSUSE production openQA. Therefore those should work reasonably well with
 openSUSE tests and needles.
 
-Adding new iso to test
-~~~~~~~~~~~~~~~~~~~~~~
+Adding a new iso to test
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-To start testing new ISO put it in +/var/lib/openqa/factory/iso+ and call
-following commands:
+To start testing a new ISO put it in +/var/lib/openqa/factory/iso+ and call
+the following commands:
 
 [source,sh]
 --------------------------------------------------------------------------------
@@ -418,12 +419,12 @@ following commands:
 --------------------------------------------------------------------------------
 
 If your openQA is not running on port 80 on 'localhost', you can add option
-+--host=http://otherhost:9526+ to specify different port or host.
++--host=http://otherhost:9526+ to specify a different port or host.
 
 WARNING: Using only iso name in 'client' command and saving it in
-+/var/lib/openqa/factory/iso+ is recommended as is using Factory iso. ISOs are
++/var/lib/openqa/factory/iso+ is recommended as is using Factory isos. ISOs are
 not uploaded from the path that you would specify.
 
 Pitfalls
 --------
-take a look at link:Pitfalls.asciidoc
+take a look at link:Pitfalls.asciidoc[Documented Pitfalls]

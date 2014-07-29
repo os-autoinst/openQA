@@ -7,7 +7,7 @@ Introduction
 ------------
 [id="intro"]
 
-openQA is an automated test tool that makes possible to test the whole
+openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It's free software released
 under the http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The
 source code and documentation are hosted in the
@@ -32,21 +32,21 @@ repositories can be found:
 * https://github.com/os-autoinst/openQA[openQA] containing documentation,
   server, worker and other support scripts.
 * https://github.com/os-autoinst/os-autoinst[os-autoinst] with the standalone
-  tool.
+  test tool.
 * https://github.com/os-autoinst/os-autoinst-distri-opensuse[os-autoinst-distri-opensuse]
   containing the tests used in http://openqa.opensuse.org
 * https://github.com/os-autoinst/os-autoinst-needles-opensuse[os-autoinst-needles-opensuse]
   with the needles associated to the tests in the former repository.
-* https://github.com/os-autoinst/os-autoinst-needles-opensuse[os-autoinst-needles-opensuse]
+* https://github.com/os-autoinst/os-autoinst-distri-example[os-autoinst-distri-example]
   with an almost empty set of tests meant to be used to start writing tests (and
   creating the corresponding needles) from scratch for a new operating system.
 
-As in most projects hosted in Github, pull request are always welcome and
+As in most projects hosted on GitHub, pull request are always welcome and
 are the right way to contribute improvements and fixes. But developers
 willing to get really involved into the development of openQA or people
-interested in following the always-changing roadmap should take a look to the
-https://progress.opensuse.org/projects/openqav3[openQAv2 project] in the
-the openSUSE's project management tool. This Redmine instance is used to
+interested in following the always-changing roadmap should take a look at the
+https://progress.opensuse.org/projects/openqav3[openQAv2 project] in
+openSUSE's project management tool. This Redmine instance is used to
 coordinate the main development effort organizing the existing issues (bugs and
 desired features) into `target versions'.
 
@@ -65,9 +65,9 @@ that are not specially urgent and that are considered to be easy to implement
 by newcomers. Developers looking for a place to start contributing
 are encouraged to simply go to that list and assign any open issue to themselves.
 https://progress.opensuse.org/versions/90[Future improvements] groups features
-that are in the developers and users wish list but that have little chances to be
+that are in the developers' and users' wish list but that have little chances to be
 addressed in the short term, either because the return of investment is not
-worth it either because they are out of the current scope of the development.
+worth it or because they are out of the current scope of the development.
 
 openQA and os-autoinst repositories also include test suites aimed at preventing
 bugs and regressions in the software. https://coveralls.io/[Coveralls] is
@@ -80,7 +80,7 @@ Technologies
 [id="technologies"]
 
 Everything in openQA, from +os-autoinst+ to the web frontend and from the tests
-to the support scripts is written in Perl. So having some ground knowledge
+to the support scripts is written in Perl. So having some basic knowledge
 about that language is really desirable in order to understand and develop
 openQA. Of course, in addition to bare Perl, several libraries and additional
 tools are required. The easiest way to install all needed dependencies is
@@ -94,7 +94,7 @@ http://wiki.qemu.org/Main_Page[QEMU],
 https://code.google.com/p/tesseract-ocr/[Tesseract] and
 http://optipng.sourceforge.net/[OptiPNG]. Last but not least, the
 http://opencv.org/[OpenCV] library is the core of the openQA image matching
-mechanism, so it should be available in the system.
+mechanism, so it must be available on the system.
 
 The openQA package is built on top of Mojolicious, an excellent Perl framework
 for web development that will be extremely familiar to developers coming from
@@ -117,7 +117,7 @@ As stated in the previous section, every feature implemented in both packages
 should be backed by proper tests.
 http://perldoc.perl.org/Test/More.html[Test::More] is used to implement those
 tests. As usual, tests are located under the +/t/+ directory. In the openQA
-package, one of the tests consists in a call to
+package, one of the tests consists of a call to
 http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code
 follows the most common Perl style conventions.
 
@@ -153,7 +153,7 @@ and upgrades include those changes.
    +dbicdh/fixtures/deploy+, rename the directory of the (previous) latest version
    to the new version and do the necessary changes (if any). Then, under
    +dbicdh/fixtures/upgrade+ create a +<prev_version>-<new_version>+ directory and
-   put there some files with SQL statements that upgrade the fixtures. Usually a
+   put some files there with SQL statements that upgrade the fixtures. Usually a
    diff from the previous version to the new one helps to see what has to be in
    the upgrade file.
 
@@ -172,8 +172,8 @@ in files into the +dbicdh/fixtures/deploy/<version>+ and
 You can create as many files as you want in each directory. These files contain
 SQL statements that will be executed when initializing or upgrading a database.
 Note that those files (and directories) have to be created manually and they
-shouldn't create a transaction, since each file is already executed in its own
-transaction automatically (so that changes are rolled back if there's any
+shouldn't create a transaction, since each file is already automatically
+executed in its own transaction (so that changes are rolled back if there's any
 problem) and sqlite doesn't support nested transactions.
 
 Executed SQL statements can be traced by setting the +DBIC_TRACE+ environment
