@@ -25,7 +25,7 @@ Basic
 
 This section explains the basic layout of openQA tests and the API available in tests.
 openQA tests are written in the *Perl* programming language. Some basic but no
-in-depth knowledge of Perl is needed. This document assumed that the reader
+in-depth knowledge of Perl is needed. This document assumes that the reader
 is already familiar with Perl.
 
 API
@@ -46,7 +46,7 @@ API for the tests. The most commonly used functions are:
 
 The following API is distribution specific and subject to change
 
-* +ensure_installed PACKAGES...+ Check the specific application was installed in system, if not then will try to install it from download repositories.
+* +ensure_installed PACKAGES...+ Check that the specific application was installed in the system, if not then it will try to install it from download repositories.
 * +x11_start_program NAME+ Execute the graphical application NAME. How exactly depends on the desktop environment.
 * +become_root+ Become root (in a shell)
 * +script_run COMMAND[, TIMEOUT]+ Wrapper for type_string meant to type in shell commands. Waits TIMEOUT until idle (default 9s)
@@ -119,7 +119,7 @@ sub run() {
     # install xdelta and insert a string 'xdelta_installed' to the serial
     script_run("zypper --gpg-auto-import-keys -n in xdelta && echo 'xdelta_installed' > /dev/$serialdev");
 
-    # detecting whether 'xdelta_installed' was appears in the serial in 200 seconds
+    # detecting whether 'xdelta_installed' appears in the serial within 200 seconds
     wait_serial "xdelta_installed", 200  || die "zypper install failed";
 
     # capture a screenshot and compare with needle 'test-zypper_in-1'
@@ -145,10 +145,10 @@ sub run() {
     # start kate
     x11_start_program("kate");
 
-    # check kate was execute succeed
+    # check that kate execution succeeded
     assert_screen 'test-kate-1', 10; 
 
-    # close kate's welcome window and wait system idle
+    # close kate's welcome window and wait for system becoming idle
     send_key 'alt-c', 1;
 
     # typing the string on kate
@@ -204,7 +204,7 @@ snapshot that might help in that situation:
 disks after test runs.
 
 2. set MAKETESTSNAPSHOTS=1 on a job. This will make openQA save a
-snapshot for every test run. One way to do that is to cloning an
+snapshot for every test run. One way to do that is by cloning an
 existing job and adding the setting:
 
 $ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 MAKETESTSNAPSHOTS=1
