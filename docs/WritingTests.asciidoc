@@ -7,7 +7,7 @@ Introduction
 ------------
 [id="intro"]
 
-openQA is an automated test tool that makes possible to test the whole
+openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It's free software released
 under the http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The
 source code and documentation are hosted in the
@@ -42,7 +42,7 @@ API for the tests. The most commonly used functions are:
 * +assert_screen NEEDLE[, TIMEOUT]+ Wait until NEEDLE is seen on the screen. Abort test and mark as failed if not found within TIMEOUT (default 30s).
 * +wait_idle TIMEOUT+  Wait for max TIMEOUT seconds until system is idle.
 * +wait_serial REGEX[, TIMEOUT]+ Wait until REGEX is seen on serial port. Return 0 if not found after TIMEOUT (default 90s)
-* +upload_logs FILE+ Type in necceary shell commands to save FILE in the test results
+* +upload_logs FILE+ Type in necessary shell commands to save FILE in the test results
 
 The following API is distribution specific and subject to change
 
@@ -139,7 +139,7 @@ sub is_applicable {
 sub run() {
 
     # make sure kate was installed
-    # if not ensure_installed will tru to install it
+    # if not ensure_installed will try to install it
     ensure_installed("kate");
 
     # start kate
@@ -168,15 +168,15 @@ sub run() {
 Variables
 ~~~~~~~~~
 
-Test case behavor can be controlled via variables. Some basic
+Test case behavior can be controlled via variables. Some basic
 variables like +DISTRI+, +VERSION+, +ARCH+ are always set.
 Others like +DESKTOP+ are defined by the 'Test suites' in the openQA
-web ui.
+web UI.
 Check the existing tests at
 https://github.com/os-autoinst/os-autoinst-distri-opensuse[os-autoinst-distri-opensuse
 on GitHub] for examples.
 
-Variables are accesible via the *%vars* hash, e.g
+Variables are accessible via the *%vars* hash, e.g
 '$vars{DESKTOP}' or better use the API method 'check_var'.
 
 Modifying setting of an existing test

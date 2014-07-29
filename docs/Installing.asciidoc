@@ -14,7 +14,7 @@ source code and documentation are hosted in the
 https://github.com/os-autoinst[os-autoinst organization on GitHub].
 
 This document provides the information needed to install and setup the tool, as
-well as information usefull for everyday administration of the system. It's
+well as information useful for everyday administration of the system. It's
 assumed that the reader is already familiar with openQA and has already read the
 Starter Guide, available at the 
 https://github.com/os-autoinst/openQA[official repository].
@@ -213,8 +213,8 @@ Check the log files in +/var/lib/openqa/testresults+
 KVM doesn't work
 ~~~~~~~~~~~~~~~~
 
-* make sure you a machine with kvm support
+* make sure you have a machine with kvm support
 * make sure +kvm_intel+ or +kvm_amd+ modules are loaded
-* make sure you do not have virtualization disabled in BIOS
+* make sure you do have virtualization enabled in BIOS
 * make sure the 'geekotest' user can access +/dev/kvm+
 * make sure you are not running other hypervisors already like VirtualBox

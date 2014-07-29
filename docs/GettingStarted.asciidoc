@@ -75,7 +75,7 @@ external reason. In those situations, it makes sense to run again a given job fr
 the beginning once the problem is fixed or the tests have been updated.
 This is done by means of 'cloning'. Every job can be superseded by a clone which
 is scheduled to run with exactly the same settings than the original job. If the
-original job is still not in 'done' state, it's canceled immmediately.
+original job is still not in 'done' state, it's canceled immediately.
 From that point in time, the clone becomes the current version and the original
 job is considered outdated (and can be filtered as so in the listing) but its
 information and results (if any) are kept for future reference.
@@ -304,7 +304,7 @@ test-dependent, but some of the usual are:
 
 * +BTRFS+ if set, the file system will be BtrFS.
 * +DESKTOP+ possible values are 'kde' 'gnome' 'lxde' 'xfce' or
-  'texmode'. Used to indicate the desktop selected by the user during
+  'textmode'. Used to indicate the desktop selected by the user during
   the test.
 * +DOCRUN+ used for document tests.
 * +DUALBOOT+ dual boot testing, need HDD_1 and HDDVERSION.
@@ -338,7 +338,7 @@ Machines
 You need to have at least one machine set up to be able to run any
 tests. Those machine represents virtual machine types that you want to
 test. To make tests actually happen, you have to have a 'openQA
-worker' connected that can fullfill those specifications.
+worker' connected that can fulfill those specifications.
 
 * *Name.* User defined string only needed for operator to identify the machine
 configuration.
@@ -386,7 +386,7 @@ Getting openQA configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To get everything configured to actually run the tests, there is a plenty of
-options to set in admin interface. If you plan to tes openSUSE Factory, using
+options to set in admin interface. If you plan to test openSUSE Factory, using
 tests mentioned in previous section, easiest way to get started is the
 following command:
 
@@ -399,11 +399,11 @@ This will load some default settings that were used at some point of time in
 openSUSE production openQA. Therefor those should work reasonably well with
 openSUSE tests and needles.
 
-Adding new iso to test
-~~~~~~~~~~~~~~~~~~~~~~
+Adding a new iso to test
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-To start testing new ISO put it in +/var/lib/openqa/factory/iso+ and call
-following commands:
+To start testing a new ISO put it in +/var/lib/openqa/factory/iso+ and call
+the following commands:
 
 [source,sh]
 --------------------------------------------------------------------------------
@@ -426,4 +426,4 @@ not uploaded from the path that you would specify.
 
 Pitfalls
 --------
-take a look at link:Pitfalls.asciidoc
+take a look at link:Pitfalls.asciidoc[Documented Pitfalls]

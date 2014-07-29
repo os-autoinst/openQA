@@ -13,4 +13,4 @@ Needle editing
   areas old test will display the new needle which might be
   confusing
 - if a needle is deleted old tests may display an error when viewing
-  them in the web ui.
+  them in the web UI.

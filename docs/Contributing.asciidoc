@@ -7,7 +7,7 @@ Introduction
 ------------
 [id="intro"]
 
-openQA is an automated test tool that makes possible to test the whole
+openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It's free software released
 under the http://www.gnu.org/licenses/gpl-2.0.html[GPLv2 license]. The
 source code and documentation are hosted in the
@@ -41,12 +41,12 @@ repositories can be found:
   with an almost empty set of tests meant to be used to start writing tests (and
   creating the corresponding needles) from scratch for a new operating system.
 
-As in most projects hosted in Github, pull request are always welcome and
+As in most projects hosted on GitHub, pull request are always welcome and
 are the right way to contribute improvements and fixes. But developers
 willing to get really involved into the development of openQA or people
-interested in following the always-changing roadmap should take a look to the
-https://progress.opensuse.org/projects/openqav3[openQAv2 project] in the
-the openSUSE's project management tool. This Redmine instance is used to
+interested in following the always-changing roadmap should take a look at the
+https://progress.opensuse.org/projects/openqav3[openQAv2 project] in
+openSUSE's project management tool. This Redmine instance is used to
 coordinate the main development effort organizing the existing issues (bugs and
 desired features) into `target versions'.
 
