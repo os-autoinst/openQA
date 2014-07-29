@@ -1,20 +1,20 @@
 openQA image:https://api.travis-ci.org/os-autoinst/openQA.svg[link=https://travis-ci.org/os-autoinst/openQA] image:https://coveralls.io/repos/os-autoinst/openQA/badge.png[link=https://coveralls.io/r/os-autoinst/openQA]
 ==========================================================================================================================================================================================================================
 
-openQA is testing framework that allows you to test GUI applications on one
+openQA is a testing framework that allows you to test GUI applications on one
 hand and bootloader and kernel on the other. In both cases, it is difficult to
-script test and verify the output. Output can be popup window or it can be
-error in early boot even before init is executed.
+script tests and verify the output. Output can be a popup window or it can be
+an error in early boot even before init is executed.
 
-Therefor openQA runs virtual machines and closely monitors their state and
+Therefore openQA runs virtual machines and closely monitors their state and
 runs tests on them.
 
-Testing framework can be divided in two parts. One that is hosted in this
-repository is web frontend and management logic (test scheduling, management,
-high-level API, ...)
+The testing framework can be divided in two parts. The one that is hosted in
+this repository contains the web frontend and management logic (test 
+scheduling, management, high-level API, ...)
 
-The other part that you need to run openQA is OS-autoinst test engine that is
-hosted in separate https://github.com/os-autoinst/os-autoinst[repository].
+The other part that you need to run openQA is the OS-autoinst test engine that
+is hosted in a separate https://github.com/os-autoinst/os-autoinst[repository].
 
 Getting started
 ---------------
