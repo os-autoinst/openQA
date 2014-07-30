@@ -140,8 +140,6 @@ sub show {
 
     $self->stash(testname => $job->{'name'});
     $self->stash(resultdir => $testresultdir);
-    $self->stash(fqfn => $self->stash('resultdir')."/autoinst-log.txt");
-    $self->stash(iso => $job->{'settings'}->{'ISO'});
     $self->stash(assets => Scheduler::job_get_assets($job->{'id'}));
 
     # FIXME: inherited from the old webUI, should really really really die
