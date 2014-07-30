@@ -130,7 +130,7 @@
                             <label for="check-<%= $job->{'id'} %>"></label>
                         </div>
                     % }
-                    <%= $job->{'id'} %>
+                    <a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><%= $job->{'id'} %></a>
                 </td>
                 <td class="clone">
                     % if ($job->{'clone_id'}) {

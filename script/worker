@@ -615,7 +615,11 @@ sub main(){
                     $keep_running = 0;
                 }
                 unless (move("$pooldir/autoinst-log.txt", $testresults.'/autoinst-log.txt')) {
-                    warn "can't move log: $!\n";
+                    warn "can't move autoinst-log.txt: $!\n";
+                    $keep_running = 0;
+                }
+                unless (move("$pooldir/stderr.txt", $testresults.'/stderr.txt')) {
+                    warn "can't move stderr.txt: $!\n";
                     $keep_running = 0;
                 }
                 if (-s "$pooldir/serial0") {
