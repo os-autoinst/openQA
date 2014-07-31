@@ -148,7 +148,7 @@ sub response {
         not_openid => sub {
             die "Not an OpenID message";
         },
-        setup_required => sub {
+        setup_needed => sub {
             my $setup_url = shift;
 
             # Redirect the user to $setup_url
