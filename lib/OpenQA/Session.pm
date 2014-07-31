@@ -93,7 +93,28 @@ sub create {
         # XXX: looks ulgy
         return $self->render(text => $csr->err, status => 500);
     }
+    $claimed_id->set_extension_args(
+        'http://openid.net/extensions/sreg/1.1',
+        {
+            required => 'email',
+            optional => 'fullname,nickname',
+        },
+    );
+    $claimed_id->set_extension_args(
+        'http://openid.net/srv/ax/1.0',
+        {
+            mode => 'fetch_request',
+            'required' => 'email,fullname,nickname,firstname,lastname',
+            'type.email' => "http://schema.openid.net/contact/email",
+            'type.fullname' => "http://axschema.org/namePerson",
+            'type.nickname' => "http://axschema.org/namePerson/friendly",
+            'type.firstname' => 'http://axschema.org/namePerson/first',
+            'type.lastname' => 'http://axschema.org/namePerson/last',
+        },
+    );
+
     my $check_url = $claimed_id->check_url(
+        delayed_return => 1,
         return_to  => qq{$url/response},
         trust_root => qq{$url/},
     );
@@ -146,8 +167,29 @@ sub response {
         verified => sub {
             my $vident = shift;
             my $id = $vident->{identity};
+            my $sreg = $vident->signed_extension_fields('http://openid.net/extensions/sreg/1.1');
+            my $ax = $vident->signed_extension_fields('http://openid.net/srv/ax/1.0');
 
-            my $user = Schema::Result::Users->create_user($id, $self->db);
+            my $email = $sreg->{email} || $ax->{'value.email'} || 'nobody@example.com';
+            my $nickname = $sreg->{nickname} || $ax->{'value.nickname'} || $ax->{'value.firstname'};
+            unless ($nickname) {
+                my @a = split(/@/, $email);
+                $nickname = $a[0];
+            }
+            my $fullname = $sreg->{fullname} || $ax->{'value.fullname'};
+            unless ($fullname) {
+                if ($ax->{'value.firstname'}) {
+                    $fullname = $ax->{'value.firstname'};
+                    if ($ax->{'value.lastname'}) {
+                        $fullname .= ' '.$ax->{'value.lastname'};
+                    }
+                }
+                else {
+                    $fullname = $nickname;
+                }
+            }
+
+            my $user = Schema::Result::Users->create_user($id, $self->db, email => $email, nickname => $nickname, fullname => $fullname);
 
             $msg = 'verified';
             $self->session->{user} = $id;

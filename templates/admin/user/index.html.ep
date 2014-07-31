@@ -11,6 +11,9 @@
 		    <tr>
                 <th>id</th>
                 <th>openID</th>
+                <th>email</th>
+                <th>name</th>
+                <th>nick</th>
                 <th>operator</th>
                 <th>admin</th>
                 <th colspan="2">actions</th>
@@ -21,6 +24,9 @@
                 <tr id="user_<%= $user->id %>">
                     <td class="id"><%= $user->id %></td>
                     <td class="openid"><%= $user->openid %></td>
+                    <td class="email"><%= $user->email %></td>
+                    <td class="name"><%= $user->fullname %></td>
+                    <td class="nick"><%= $user->nickname %></td>
                     <td class="is_operator"><%= $user->is_operator ? 'yes' : 'no' %></td>
                     <td class="is_admin"><%= $user->is_admin ? 'yes' : 'no' %></td>
                     <td class="action action_operator">
