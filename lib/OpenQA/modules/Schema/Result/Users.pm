@@ -72,9 +72,7 @@ sub name{
 }
 
 sub create_user{
-    my $self = shift;
-    my $id = shift;
-    my $db = shift;
+    my ($self, $id, $db, %attrs) = @_;
 
     my $user = $db->resultset("Users")->find_or_create({openid => $id});
     if(not $db->resultset("Users")->find({ is_admin => 1 }, { rows => 1 })) {
