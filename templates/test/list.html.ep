@@ -85,7 +85,7 @@
                 % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
                 <td class="build"><span class="textlink <%= $resultclass %>"><a href="<%= $href %>"><%= $build %></a></span></td>
                 <td class="extra"><span class="<%= $resultclass %>"><%= $job->{'test'} %></span></td>
-                <td class="testtime"><%= format_time($job->{'t_started'}) %></td>
+                <td class="testtime"><time><%= format_time($job->{'t_started'}) %></time></td>
 
                 <% if($job->{'state'} eq 'running') { %>
                     <td colspan="3" style="padding: 3px 4px;" class="progress">

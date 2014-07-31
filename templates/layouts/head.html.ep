@@ -18,6 +18,7 @@
 %= javascript '/javascripts/prototype_ujs.js'
 %= javascript '/javascripts/scriptaculous/scriptaculous.js'
 %= javascript '/javascripts/cropimg.js'
+%= javascript '/javascripts/datetime.js'
 %= javascript '/javascripts/keyevent.js'
 %= javascript '/javascripts/needlediff.js'
 %= javascript '/javascripts/running.js'

@@ -70,12 +70,12 @@
             % if ($job->{t_started}) {
                 <tr>
                     <td style="width: 40%;">Start</td>
-                    <td><%= format_time($job->{t_started}) %></td>
+                    <td><time><%= format_time($job->{t_started}) %></time></td>
                 </tr>
                 % if ($job->{t_finished}) {
                     <tr>
                         <td style="width: 40%;">Finish</td>
-                        <td><%= format_time($job->{t_finished}) %></td>
+                        <td><time><%= format_time($job->{t_finished}) %></time></td>
                     </tr>
                     <tr>
                         <td style="width: 40%;">Duration</td>
