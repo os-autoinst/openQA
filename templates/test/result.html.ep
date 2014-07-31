@@ -67,10 +67,22 @@
 	<div class="box box-shadow" id="info_box">
 		<div class="box-header aligncenter">Test Details</div>
         <table class="infotbl">
-            <tr>
-                <td style="width: 40%;">Duration</td>
-                <td><%= format_time_duration($test_duration) %></td>
-            </tr>
+            % if ($job->{t_started}) {
+                <tr>
+                    <td style="width: 40%;">Start</td>
+                    <td><%= format_time($job->{t_started}) %></td>
+                </tr>
+                % if ($job->{t_finished}) {
+                    <tr>
+                        <td style="width: 40%;">Finish</td>
+                        <td><%= format_time($job->{t_finished}) %></td>
+                    </tr>
+                    <tr>
+                        <td style="width: 40%;">Duration</td>
+                        <td><%= format_time_duration($job->{t_finished} - $job->{t_started}) %></td>
+                    </tr>
+                % }
+            % }
             <tr>
                 <td>Result</td>
                 <td><span style="padding: 0 10%; display: inline-block; text-align: center;" class="<%= "result$res_css->{$overall}" %>"><%= $overall %></span></td>

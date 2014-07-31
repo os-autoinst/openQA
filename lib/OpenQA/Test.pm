@@ -209,9 +209,6 @@ sub show {
         }
     }
 
-    # details box
-    my $test_duration = $job->{t_finished}&&$job->{t_started}?$job->{t_finished} - $job->{t_started}:undef;
-
     # result files box
     my @resultfiles = test_resultfile_list($testdirname);
 
@@ -224,7 +221,6 @@ sub show {
     $self->stash(backend_info => $results->{backend});
     $self->stash(resultfiles => \@resultfiles);
     $self->stash(ulogs => \@ulogs);
-    $self->stash(test_duration => $test_duration);
     $self->stash(job => $job);
 
     $self->render('test/result');
