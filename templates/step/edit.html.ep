@@ -44,7 +44,9 @@ window.onload=function(){
         <div style="margin-top: 1em;">
           <label>JSON:</label><br/>
           <textarea id="needleeditor_textarea" name="json" readOnly="yes" style="width: calc(100% - 8px); height:300px;"></textarea>
-          <input type="hidden" id="needleeditor_image" name="imagepath" value="<%= ${@$needles[0]}{'imagepath'} %>"/>
+          <input type="hidden" id="needleeditor_image" name="imagename" value="<%= ${@$needles[0]}{'imagename'} %>"/>
+          <input type="hidden" id="needleeditor_imagedistri" name="imagedistri" value="<%= ${@$needles[0]}{'imagedistri'} %>"/>
+          <input type="hidden" id="needleeditor_imageversion" name="imageversion" value="<%= ${@$needles[0]}{'imageversion'} %>"/>
         </div>
       </div>
     % end
@@ -75,7 +77,12 @@ window.onload=function(){
           
         <tr <%= 'title=broken' if ($needle->{'broken'}) %> >
         <td <%= 'style=color:red;' if ($needle->{'broken'}) %> ><%= $needle->{'name'} %></td>
-        <td><input type="radio" name="background_selector" data-path="<%= $needle->{'imagepath'} %>" data-url="<%= $needle->{'imageurl'} %>" onclick="window.loadBackground(this);" <%= 'checked="checked"' if ($i == 0); %> <%= 'disabled="disabled"' if ($needle->{'broken'}); %> /></td>
+        <td><input type="radio" name="background_selector"
+            data-image="<%= $needle->{'imagename'} %>"
+            data-distri="<%= $needle->{'imagedistri'} %>"
+            data-version="<%= $needle->{'imageversion'} %>"
+            data-url="<%= $needle->{'imageurl'} %>"
+            onclick="window.loadBackground(this);" <%= 'checked="checked"' if ($i == 0); %> <%= 'disabled="disabled"' if ($needle->{'broken'}); %> /></td>
         <td><input type="radio" name="area_selector" onclick="window.nEditor.LoadAreas('<%= JSON::to_json($needle->{'area'}) %>');" <%= 'disabled="disabled"' if ($needle->{'broken'}); %>/></td>
         <td><input type="radio" name="area_selector" onclick="window.nEditor.LoadAreas('<%= JSON::to_json($needle->{'matches'}) %>');" <%= 'checked="checked"' if ($i == 1); %> <%= 'disabled="disabled"' if ($needle->{'broken'}); %>/></td>
         <td><input type="radio" name="tags_selector" data-tags="<%= JSON::to_json($needle->{'tags'}) %>" onclick="window.loadTags(this);" <%= 'checked="checked"' if ($i == 0); %> <%= 'disabled="disabled"' if ($needle->{'broken'}); %>/></td>

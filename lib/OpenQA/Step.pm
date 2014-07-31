@@ -17,6 +17,7 @@
 package OpenQA::Step;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
+use File::Basename;
 use File::Copy;
 use Scheduler;
 use POSIX qw/strftime/;
@@ -135,7 +136,7 @@ sub edit {
             {
                 'name' => 'screenshot',
                 'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
-                'imagepath' => "$basedir/$prj/testresults/$testdirname/$imgname",
+                'imagename' => $imgname,
                 'area' => [],
                 'matches' => [],
                 'tags' => []
@@ -166,12 +167,15 @@ sub edit {
             {
                 'name' => $module_detail->{'needle'},
                 'imageurl' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png',$results->{'version'}),
-                'imagepath' => $needle->{'image'},
+                'imagename' => basename($needle->{'image'}),
+                'imagedistri' => $needle->{'distri'},
+                'imageversion' => $needle->{'version'},
                 'area' => $needle->{'area'},
                 'tags' => $needle->{'tags'},
                 'matches' => $needles->[0]->{'matches'}
             }
         );
+
         for my $t (@{$needle->{'tags'}}) {
             push(@$tags, $t) unless grep(/^$t$/, @$tags);
         }
@@ -185,7 +189,7 @@ sub edit {
             @$needles,
             {
                 'name' => 'screenshot',
-                'imagepath' => "$basedir/$prj/testresults/$testdirname/$imgname",
+                'imagename' => $imgname,
                 'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
                 'area' => [],
                 'matches' => [],
@@ -222,7 +226,9 @@ sub edit {
                 {
                     'name' => $needlename,
                     'imageurl' => $self->needle_url($results->{'distribution'}, "$needlename.png", $results->{'version'}),
-                    'imagepath' => $needleinfo->{'image'},
+                    'imagename' => basename($needleinfo->{'image'}),
+                    'imagedistri' => $needleinfo->{'distri'},
+                    'imageversion' => $needleinfo->{'version'},
                     'tags' => $needleinfo->{'tags'},
                     'area' => $needleinfo->{'area'},
                     'matches' => [],
@@ -252,7 +258,7 @@ sub edit {
             {
                 'name' => 'screenshot',
                 'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
-                'imagepath' => "$basedir/$prj/testresults/$testdirname/$imgname",
+                'imagename' => $imgname,
                 'area' => [],
                 'matches' => [],
                 'tags' => $tags
@@ -333,17 +339,50 @@ sub save_needle {
     my $self = shift;
     return 0 unless $self->init();
 
+    my $validation = $self->validation;
+
+    $validation->required('json');
+    $validation->required('imagename')->like(qr/^[^.\/][^\/]{3,}\.png$/);
+    $validation->optional('imagedistri')->like(qr/^[^.\/]+$/);
+    $validation->optional('imageversion')->like(qr/^[^.\/]+$/);
+    $validation->optional('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
+
+    if ($validation->has_error) {
+        my $error = "wrong parameters";
+        for my $k (qw/json imagename imagedistri imageversion needlename/) {
+            $self->app->log->error($k.' '. join(' ', @{$validation->error($k)})) if $validation->has_error($k);
+            $error .= ' '.$k if $validation->has_error($k);
+        }
+        $self->flash(error => "Error creating/updating needle: $error");
+        $self->redirect_to('edit_step');
+        return;
+    }
+
     my $results = $self->stash('results');
     my $job = Scheduler::job_get($self->param('testid'));
     my $testdirname = $job->{'settings'}->{'NAME'};
-    my $json = $self->param('json');
-    my $imagepath = $self->param('imagepath');
-    my $needlename = $self->param('needlename');
+    my $json = $validation->param('json');
+    my $imagename = $validation->param('imagename');
+    my $imagedistri = $validation->param('imagedistri');
+    my $imageversion = $validation->param('imageversion');
+    my $needlename = $validation->param('needlename');
     my $needledir = needledir($results->{distribution}, $results->{version});
     my $success = 1;
 
+    my $imagepath;
+    if ($imagedistri) {
+        $imagepath = '/'.join('/', $perldir, needledir($imagedistri, $imageversion), $imagename);
+    } else {
+        $imagepath = '/'.join('/', $basedir, $prj, 'testresults', $testdirname, $imagename);
+    }
+    if (! -f $imagepath) {
+        $self->flash(error => "Image $imagename could not be found!\n");
+        $self->app->log->error("$imagepath is not a file");
+        $self->redirect_to('edit_step');
+        return;
+    }
+
     my $baseneedle = "$perldir/$needledir/$needlename";
-    $self->app->log->warn("*** imagepath is from client! FIXME!!!");
     unless ($imagepath eq "$baseneedle.png") {
         unless (copy($imagepath, "$baseneedle.png")) {
             $self->app->log->error("Copy $imagepath -> $baseneedle.png failed: $!");

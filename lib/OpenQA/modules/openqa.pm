@@ -444,6 +444,9 @@ sub needle_info($$$) {
     $needle->{'json'} = "$perldir/$needledir/$name.json";
     $needle->{'imageurl'} = "/$perlurl/$needledir/$name.png";
     $needle->{'jsonurl'} = "/$perlurl/$needledir/$name.json";
+    $needle->{'name'} = $name;
+    $needle->{'distri'} = $distri;
+    $needle->{'version'} = $version;
     return $needle;
 }
 
