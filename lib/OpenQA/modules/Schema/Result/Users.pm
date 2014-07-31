@@ -29,6 +29,18 @@ __PACKAGE__->add_columns(
     openid => {
         data_type => 'text',
     },
+    email => {
+        data_type => 'text',
+        is_nullable => 1,
+    },
+    fullname => {
+        data_type => 'text',
+        is_nullable => 1,
+    },
+    nickname => {
+        data_type => 'text',
+        is_nullable => 1,
+    },
     is_operator => {
         data_type => 'integer',
         is_boolean => 1,
