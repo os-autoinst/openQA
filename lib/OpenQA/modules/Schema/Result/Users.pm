@@ -76,9 +76,12 @@ sub name{
     my $self = shift;
 
     if (!$self->{_name}) {
-        my $id = $self->openid;
-        my ($path, $user) = split(/\/([^\/]+)$/, $id);
-        $self->{_name} = $user;
+        $self->{_name} = $self->nickname;
+        if (!$self->{_name}) { # old hack for opensuse openid to nick mapping
+            my $id = $self->openid;
+            my ($path, $user) = split(/\/([^\/]+)$/, $id);
+            $self->{_name} = $user;
+        }
     }
     return $self->{_name};
 }
@@ -86,11 +89,15 @@ sub name{
 sub create_user{
     my ($self, $id, $db, %attrs) = @_;
 
-    my $user = $db->resultset("Users")->find_or_create({openid => $id});
-    if(not $db->resultset("Users")->find({ is_admin => 1 }, { rows => 1 })) {
-        $user->is_admin(1);
-        $user->is_operator(1);
-        $user->update;
+    my $user = $db->resultset("Users")->update_or_new(
+        {openid => $id, %attrs} # FIXME, need to remove the constraint_name above! , { key => 'users_openid' }
+    );
+    if (!$user->in_storage) {
+        if(not $db->resultset("Users")->find({ is_admin => 1 }, { rows => 1 })) {
+            $user->is_admin(1);
+            $user->is_operator(1);
+        }
+        $user->insert;
     }
     return $user;
 }
