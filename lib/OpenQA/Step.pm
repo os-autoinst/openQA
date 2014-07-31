@@ -308,6 +308,27 @@ sub src {
     $self->stash('scriptpath', $scriptpath);
 }
 
+sub _commit_git {
+    my ($self, $job, $dir, $name) = @_;
+    my @git = ('git','--git-dir', "$dir/.git",'--work-tree', $dir);
+    my @files = ($dir.'/'.$name.'.json', $dir.'/'.$name.'.png');
+    if (system(@git, 'add', @files) != 0) {
+        $self->app->log->error("failed to git add $name");
+        return;
+    }
+    my @cmd = (@git, 'commit', '-q', '-m',sprintf("%s for %s", $name, $job->{'name'}),sprintf('--author=%s <%s>', $self->current_user->fullname, $self->current_user->email),@files);
+    $self->app->log->debug(join(' ', @cmd));
+    if (system(@cmd) != 0) {
+        $self->app->log->error("failed to git commit $name");
+        return;
+    }
+    if (($self->app->config->{'scm git'}->{'do_push'}||'') eq 'yes') {
+        if (system(@git, 'push', 'origin', 'master') != 0) {
+            $self->app->log->error("failed to git push $name");
+        }
+    }
+}
+
 sub save_needle {
     my $self = shift;
     return 0 unless $self->init();
@@ -343,18 +364,7 @@ sub save_needle {
     if ($success) {
         if ($self->app->config->{global}->{scm}||'' eq 'git') {
             if ($needledir && -d "$perldir/$needledir/.git") {
-                my @git = ('git','--git-dir', "$perldir/$needledir/.git",'--work-tree', "$perldir/$needledir");
-                my @files = ($baseneedle.'.json', $baseneedle.'.png');
-                system(@git, 'add', @files);
-                system(
-                    @git, 'commit', '-q', '-m',
-                    # FIXME
-                    sprintf("%s by %s@%s", $job->{'name'}, $ENV{REMOTE_USER}||'anonymous', $ENV{REMOTE_ADDR}),
-                    @files
-                );
-                if (($self->app->config->{'scm git'}->{'do_push'}||'') eq 'yes') {
-                    system(@git, 'push', 'origin', 'master');
-                }
+                $self->_commit_git($job, "$perldir/$needledir", $needlename);
             }
             else {
                 $self->flash(error => "$needledir is not a git repo");
