@@ -33,8 +33,8 @@ remove_tree($dir);
 make_path($dir);
 my @git = ('git','--git-dir', "$dir/.git",'--work-tree', $dir);
 is(system(@git, 'init'), 0, "git init");
-#is(system(@git, 'add', $dir), 0, "git add");
-#is(system(@git, 'commit'), 0, "git commit");
+is(system(@git, 'config', 'user.email', 'openqa@examle.com'), 0, "git config email");
+is(system(@git, 'config', 'user.name', 'openQA testsuite'), 0, "git config name");
 
 my $t = Test::Mojo->new('OpenQA');
 
