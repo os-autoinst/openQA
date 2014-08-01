@@ -21,6 +21,7 @@ use File::Basename;
 use File::Copy;
 use Scheduler;
 use POSIX qw/strftime/;
+use Try::Tiny;
 
 sub init {
     my $self = shift;
@@ -292,6 +293,8 @@ sub edit {
     $self->stash('tags', $tags);
     $self->stash('default_needle', $default_needle);
     $self->stash('needlename', $default_name);
+
+    $self->render('step/edit');
 }
 
 sub src {
@@ -316,21 +319,23 @@ sub src {
 
 sub _commit_git {
     my ($self, $job, $dir, $name) = @_;
+    if ($dir !~ /^\//) {
+        use Cwd qw/abs_path/;
+        $dir = abs_path($dir);
+    }
     my @git = ('git','--git-dir', "$dir/.git",'--work-tree', $dir);
     my @files = ($dir.'/'.$name.'.json', $dir.'/'.$name.'.png');
     if (system(@git, 'add', @files) != 0) {
-        $self->app->log->error("failed to git add $name");
-        return;
+        die "failed to git add $name";
     }
     my @cmd = (@git, 'commit', '-q', '-m',sprintf("%s for %s", $name, $job->{'name'}),sprintf('--author=%s <%s>', $self->current_user->fullname, $self->current_user->email),@files);
     $self->app->log->debug(join(' ', @cmd));
     if (system(@cmd) != 0) {
-        $self->app->log->error("failed to git commit $name");
-        return;
+        die "failed to git commit $name";
     }
     if (($self->app->config->{'scm git'}->{'do_push'}||'') eq 'yes') {
         if (system(@git, 'push', 'origin', 'master') != 0) {
-            $self->app->log->error("failed to git push $name");
+            die "failed to git push $name";
         }
     }
 }
@@ -345,7 +350,7 @@ sub save_needle {
     $validation->required('imagename')->like(qr/^[^.\/][^\/]{3,}\.png$/);
     $validation->optional('imagedistri')->like(qr/^[^.\/]+$/);
     $validation->optional('imageversion')->like(qr/^[^.\/]+$/);
-    $validation->optional('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
+    $validation->required('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
 
     if ($validation->has_error) {
         my $error = "wrong parameters";
@@ -353,9 +358,8 @@ sub save_needle {
             $self->app->log->error($k.' '. join(' ', @{$validation->error($k)})) if $validation->has_error($k);
             $error .= ' '.$k if $validation->has_error($k);
         }
-        $self->flash(error => "Error creating/updating needle: $error");
-        $self->redirect_to('edit_step');
-        return;
+        $self->stash(error => "Error creating/updating needle: $error");
+        return $self->edit;
     }
 
     my $results = $self->stash('results');
@@ -371,18 +375,18 @@ sub save_needle {
 
     my $imagepath;
     if ($imagedistri) {
-        $imagepath = '/'.join('/', $perldir, needledir($imagedistri, $imageversion), $imagename);
-    } else {
-        $imagepath = '/'.join('/', $basedir, $prj, 'testresults', $testdirname, $imagename);
+        $imagepath = join('/', needledir($imagedistri, $imageversion), $imagename);
     }
-    if (! -f $imagepath) {
-        $self->flash(error => "Image $imagename could not be found!\n");
+    else {
+        $imagepath = join('/', $basedir, $prj, 'testresults', $testdirname, $imagename);
+    }
+    if (!-f $imagepath) {
+        $self->stash(error => "Image $imagename could not be found!\n");
         $self->app->log->error("$imagepath is not a file");
-        $self->redirect_to('edit_step');
-        return;
+        return $self->edit;
     }
 
-    my $baseneedle = "$perldir/$needledir/$needlename";
+    my $baseneedle = "$needledir/$needlename";
     unless ($imagepath eq "$baseneedle.png") {
         unless (copy($imagepath, "$baseneedle.png")) {
             $self->app->log->error("Copy $imagepath -> $baseneedle.png failed: $!");
@@ -400,21 +404,28 @@ sub save_needle {
             $self->app->log->error("Writing needle $baseneedle.json failed: $!");
         }
     }
+
     if ($success) {
         if ($self->app->config->{global}->{scm}||'' eq 'git') {
-            if ($needledir && -d "$perldir/$needledir/.git") {
-                $self->_commit_git($job, "$perldir/$needledir", $needlename);
+            if ($needledir && -d "$needledir/.git") {
+                try {
+                    $self->_commit_git($job, $needledir, $needlename);
+                }
+                catch {
+                    $self->app->log->error($_);
+                    $self->stash(error => $_);
+                };
             }
             else {
-                $self->flash(error => "$needledir is not a git repo");
+                $self->stash(error => "$needledir is not a git repo");
             }
         }
-        $self->flash(info => "Needle $needlename created/updated.");
+        $self->stash(info => "Needle $needlename created/updated.");
     }
     else {
-        $self->flash(error => "Error creating/updating needle: $!.");
+        $self->stash(error => "Error creating/updating needle: $!.");
     }
-    $self->redirect_to('edit_step');
+    return $self->edit;
 }
 
 sub viewimg {
