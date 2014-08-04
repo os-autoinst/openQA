@@ -74,8 +74,6 @@
                         %= link_post url_for('apiv1_restart', name => $job->{'id'}) => ('data-remote' => 'true') => begin
                             %= image "/images/toggle.png", alt=>"restart", title=>"Restart Job"
                         % end
-                    % } else {
-                        -
                     % }
                 </td>
                 <td class="backend"><%= $job->{settings}->{MACHINE} %></td>
@@ -139,8 +137,6 @@
                         %= link_post url_for('apiv1_restart', name => $job->{'id'}) => ('data-remote' => 'true') => begin
                             %= image "/images/toggle.png", alt=>"restart", title=>"Restart Job"
                         % end
-                    % } else {
-                        -
                     % }
                 </td>
                 <td class="backend"><%= $job->{settings}->{MACHINE} %></td>

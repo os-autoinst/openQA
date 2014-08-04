@@ -1,6 +1,8 @@
 function loadBackground(tag) {
 	window.nEditor.LoadBackground(tag.dataset.url);
-	document.getElementById("needleeditor_image").setAttribute("value", tag.dataset.path);
+	document.getElementById("needleeditor_image").setAttribute("value", tag.dataset.image);
+	document.getElementById("needleeditor_imagedistri").setAttribute("value", tag.dataset.distri);
+	document.getElementById("needleeditor_imageversion").setAttribute("value", tag.dataset.version);
 }
 
 function loadTags(html) {

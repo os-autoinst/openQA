@@ -2,12 +2,18 @@
     Users => {
         id => 99901,
         openid => 'https://openid.camelot.uk/arthur',
+        email => 'arthur@example.com',
+        fullname => 'King Arthur',
+        nickname => 'artie',
         is_operator => 1,
         is_admin => 1,
     },
     Users => {
         id => 99902,
         openid => 'https://openid.camelot.uk/lancelot',
+        email => 'lancelot@example.com',
+        fullname => 'Lancelot du Lac',
+        nickname => 'lance',
         is_operator => 0,
         is_admin => 0,
         api_keys => [{ key => 'LANCELOTKEY01', secret => 'MANYPEOPLEKNOW', id => 99901},]
@@ -15,6 +21,9 @@
     Users => {
         id => 99903,
         openid => 'https://openid.camelot.uk/percival',
+        email => 'percival@example.com',
+        fullname => 'Percival',
+        nickname => 'perci',
         is_operator => 1,
         is_admin => 0,
         api_keys => [

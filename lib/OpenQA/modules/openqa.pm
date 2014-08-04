@@ -409,11 +409,7 @@ sub match_title($) {
 }
 
 sub needledir($$) {
-    my ($distri, $version) = @_;
-    # XXX: share this code with os-autoinst
-    my $needledir = "distri/$distri";
-    $needledir .= "-$version" if $version && -e "$perldir/$needledir-$version";
-    $needledir .= '/needles';
+    return testcasedir($_[0], $_[1]).'/needles';
 }
 
 sub needle_info($$$) {
@@ -424,7 +420,7 @@ sub needle_info($$$) {
 
     my $needledir = needledir($distri, $version);
 
-    my $fn = "$perldir/$needledir/$name.json";
+    my $fn = "$needledir/$name.json";
     unless (open(JF, '<', $fn )) {
         warn "$fn: $!";
         return undef;
@@ -439,11 +435,12 @@ sub needle_info($$$) {
         return undef;
     }
 
-    $needle->{'needledir'} = "$perldir/$needledir";
-    $needle->{'image'} = "$perldir/$needledir/$name.png";
-    $needle->{'json'} = "$perldir/$needledir/$name.json";
-    $needle->{'imageurl'} = "/$perlurl/$needledir/$name.png";
-    $needle->{'jsonurl'} = "/$perlurl/$needledir/$name.json";
+    $needle->{'needledir'} = $needledir;
+    $needle->{'image'} = "$needledir/$name.png";
+    $needle->{'json'} = "$needledir/$name.json";
+    $needle->{'name'} = $name;
+    $needle->{'distri'} = $distri;
+    $needle->{'version'} = $version;
     return $needle;
 }
 
