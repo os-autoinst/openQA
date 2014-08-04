@@ -436,7 +436,7 @@ sub list_jobs {
     if ($args{match}) {
         my $subquery = schema->resultset("JobSettings")->search(
             {
-                'key' => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST'],
+                'key' => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST', 'VERSION'],
                 'value' => { '-like' => "%$args{match}%" },
             }
         );
