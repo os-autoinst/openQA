@@ -68,11 +68,12 @@
   /var/lib/openqa/pool/*/qemuscreenshot/* rw,
   /var/lib/openqa/pool/*/raid/ rw,
   /var/lib/openqa/pool/*/raid/* rw,
+  /var/lib/openqa/pool/*/tmp/ rw,
+  /var/lib/openqa/pool/*/tmp/* rw,
   /var/lib/openqa/pool/*/testresults/ rw,
   /var/lib/openqa/pool/*/testresults/** rwk,
   /var/lib/openqa/pool/*/video/ rw,
   /var/lib/openqa/testresults/** rwk,
   /var/lib/openqa/logupload/** rwk,
   /var/lib/os-autoinst/tests/** r,
-  /var/tmp/* w,
 }
