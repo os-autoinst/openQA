@@ -405,6 +405,11 @@ sub main(){
     my $workerid = api_call('post', 'workers', {host => $hostname, instance => $options{'instance'}, backend => $worker_settings->{'BACKEND'}})->{id};
     $ENV{'WORKERID'} = $workerid;
 
+    # create tmpdir for qemu to write here
+    my $tmpdir = "$pooldir/tmp";
+    mkdir($tmpdir) unless (-d $tmpdir);
+    $ENV{'TMPDIR'} = $tmpdir;
+
     my $job;
     my $worker;
     my $worker_start_time;
