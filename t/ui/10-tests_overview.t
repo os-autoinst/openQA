@@ -42,7 +42,7 @@ my $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version
 $get->status_is(200);
 
 $get->content_like(qr/current results for.*opensuse 13\.1 build 0091/i);
-$get->content_like(qr/passed: 2, failed: 0, unknown: 0, incomplete: 0, none: 4/i);
+$get->content_like(qr/passed: 2, failed: 0, unknown: 0, incomplete: 0, scheduled: 2, running: 1, none: 1/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_i586');
@@ -62,7 +62,7 @@ $get->element_exists_not('#res_DVD_x86_64_doc');
 #
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
 $get->status_is(200);
-$get->content_like(qr/passed: 0, failed: 1, unknown: 0, incomplete: 0, none: 0/i);
+$get->content_like(qr/passed: 0, failed: 1, unknown: 0, incomplete: 0, scheduled: 0, running: 0, none: 0/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_x86_64');
@@ -81,7 +81,7 @@ $get->element_exists_not('#res_DVD_x86_64_kde');
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'});
 $get->status_is(200);
 $get->content_like(qr/current results for.*opensuse 13\.1 build 0091/i);
-$get->content_like(qr/passed: 2, failed: 0, unknown: 0, incomplete: 0, none: 4/i);
+$get->content_like(qr/passed: 2, failed: 0, unknown: 0, incomplete: 0, scheduled: 2, running: 1, none: 1/i);
 
 #
 # Default overview for Factory
@@ -89,7 +89,8 @@ $get->content_like(qr/passed: 2, failed: 0, unknown: 0, incomplete: 0, none: 4/i
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory'});
 $get->status_is(200);
 $get->content_like(qr/current results for.*opensuse Factory build 0048/i);
-$get->content_like(qr/passed: 0, failed: 1, unknown: 0, incomplete: 0, none: 0/i);
+$get->content_like(qr/passed: 0, failed: 1, unknown: 0, incomplete: 0, scheduled: 0, running: 0, none: 0/i);
+
 
 #
 # Still possible to check an old build
@@ -97,6 +98,6 @@ $get->content_like(qr/passed: 0, failed: 1, unknown: 0, incomplete: 0, none: 0/i
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '87.5011'});
 $get->status_is(200);
 $get->content_like(qr/current results for.*opensuse Factory build 87.5011/i);
-$get->content_like(qr/passed: 0, failed: 0, unknown: 0, incomplete: 1, none: 0/i);
+$get->content_like(qr/passed: 0, failed: 0, unknown: 0, incomplete: 1, scheduled: 0, running: 0, none: 0/i);
 
 done_testing();

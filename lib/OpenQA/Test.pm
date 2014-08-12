@@ -296,7 +296,7 @@ sub overview {
     my @configs = ();
     my %archs   = ();
     my %results = ();
-    my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, unknown => 0};
+    my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
 
     for my $job ( @{ Scheduler::list_jobs(%search_args) || [] } ) {
         my $testname = $job->{settings}->{'NAME'};
@@ -331,7 +331,7 @@ sub overview {
                 testname => $testname,
                 jobid    => $job->{id},
             };
-            $aggregated->{'none'}++;
+            $aggregated->{'running'}++;
         }
         else {
             $result = {
@@ -340,8 +340,13 @@ sub overview {
                 jobid    => $job->{id},
                 priority => $job->{priority},
             };
-            $aggregated->{'none'}++;
-        }
+            if ( $job->{state} eq 'scheduled' ) {
+                $aggregated->{'scheduled'}++;
+            }
+            else {
+                $aggregated->{'none'}++;
+            };
+        };
 
         # Populate @configs and %archs
         $test = $test.'@'.$job->{settings}->{MACHINE} unless ( $job->{settings}->{MACHINE} eq '64bit' || $job->{settings}->{MACHINE} eq '32bit' );
