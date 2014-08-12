@@ -345,8 +345,8 @@ sub overview {
             }
             else {
                 $aggregated->{'none'}++;
-            };
-        };
+            }
+        }
 
         # Populate @configs and %archs
         $test = $test.'@'.$job->{settings}->{MACHINE} unless ( $job->{settings}->{MACHINE} eq '64bit' || $job->{settings}->{MACHINE} eq '32bit' );
