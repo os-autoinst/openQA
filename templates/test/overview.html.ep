@@ -6,7 +6,7 @@
 <div class="grid_16 box box-shadow omega">
     <h2>Test result overview</h2>
     <p>This page displays the current results for <b><%= $distri %> <%= $version %> build <%= $build %></b>, which overall summary is
-    <b>passed: <%= $aggregated->{passed} %>, failed: <%= $aggregated->{failed} %>, unknown: <%= $aggregated->{unknown} %>, incomplete: <%= $aggregated->{incomplete} %>, none: <%= $aggregated->{none} %></b>
+    <b>passed: <%= $aggregated->{passed} %>, failed: <%= $aggregated->{failed} %>, unknown: <%= $aggregated->{unknown} %>, incomplete: <%= $aggregated->{incomplete} %>, scheduled: <%= $aggregated->{scheduled} %>, running: <%= $aggregated->{running} %>, none: <%= $aggregated->{none} %></b>
     </p>
     <% for my $type (@$types) { %>
         <p />
