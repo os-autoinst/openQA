@@ -7,11 +7,56 @@ our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
-  $prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle @runner $res_css $res_display
+  $prj
+  $basedir
+  $perldir
+  $perlurl
+  $resultdir
+  $scheduledir
+  $app_title
+  $app_subtitle
+  @runner
+  $res_css
+  $res_display
   $loguploaddir
-  &parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &resultname_to_log &resultname_to_url &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info &needledir &testcasedir
-  &test_result &test_result_stats &test_result_hash &test_result_module &test_resultfile_list &testresultdir &test_uploadlog_list
-  $localstatedir $dbfile
+  &parse_log
+  &parse_log_to_stats
+  &parse_log_to_hash
+  &log_to_scriptpath
+  &path_to_url
+  &resultname_to_log
+  &resultname_to_url
+  &is_scheduled
+  &get_testimgs
+  &get_waitimgs
+  &get_clickimgs
+  testimg
+  &get_testwavs
+  &running_log
+  &clickimg
+  &path_to_testname
+  &cycle
+  &sortkeys
+  &first_run
+  &data_name
+  &parse_refimg_path
+  &parse_refimg_name
+  &back_log
+  &running_state
+  &get_running_modinfo
+  &match_title
+  &needle_info
+  &needledir
+  &testcasedir
+  &test_result
+  &test_result_stats
+  &test_result_hash
+  &test_result_module
+  &test_resultfile_list
+  &testresultdir
+  &test_uploadlog_list
+  $localstatedir
+  $dbfile
   &get_failed_needles
   &sanitize_testname
   &file_content
