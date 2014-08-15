@@ -7,11 +7,48 @@ our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @ISA = qw(Exporter);
 @EXPORT = qw(
-  $prj $basedir $perldir $perlurl $resultdir $scheduledir $app_title $app_subtitle @runner $res_css $res_display
+  $prj
+  $basedir
+  $resultdir
+  $scheduledir
+  $app_title
+  $app_subtitle
+  @runner
+  $res_css
+  $res_display
   $loguploaddir
-  &parse_log &parse_log_to_stats &parse_log_to_hash &log_to_scriptpath &path_to_url &resultname_to_log &resultname_to_url &is_scheduled &get_testimgs &get_waitimgs &get_clickimgs testimg &get_testwavs &running_log &clickimg &path_to_testname &cycle &sortkeys &first_run &data_name &parse_refimg_path &parse_refimg_name &back_log &running_state &get_running_modinfo &match_title &needle_info &needledir &testcasedir
-  &test_result &test_result_stats &test_result_hash &test_result_module &test_resultfile_list &testresultdir &test_uploadlog_list
-  $localstatedir $dbfile
+  &parse_log
+  &parse_log_to_stats
+  &parse_log_to_hash
+  &log_to_scriptpath
+  &path_to_url
+  &resultname_to_log
+  &resultname_to_url
+  &is_scheduled
+  &running_log
+  &path_to_testname
+  &cycle
+  &sortkeys
+  &first_run
+  &data_name
+  &parse_refimg_path
+  &parse_refimg_name
+  &back_log
+  &running_state
+  &get_running_modinfo
+  &match_title
+  &needle_info
+  &needledir
+  &testcasedir
+  &test_result
+  &test_result_stats
+  &test_result_hash
+  &test_result_module
+  &test_resultfile_list
+  &testresultdir
+  &test_uploadlog_list
+  $localstatedir
+  $dbfile
   &get_failed_needles
   &sanitize_testname
   &file_content
@@ -31,8 +68,6 @@ use Fcntl;
 use JSON "decode_json";
 our $basedir=$ENV{'OPENQA_BASEDIR'}||"/var/lib";
 our $prj="openqa";
-our $perlurl="$prj/perl/autoinst";
-our $perldir="$basedir/$perlurl";
 our $resultdir="$basedir/$prj/testresults";
 our $scheduledir="$basedir/$prj/schedule.d";
 our $loguploaddir="$basedir/$prj/logupload";
@@ -42,8 +77,7 @@ our $cachedir="$basedir/$prj/cache";
 our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
-
-our $distri_file_glob =  $basedir.'/os-autoinst/tests/*/main.pm';
+our $testcasedir = "$basedir/os-autoinst/tests";
 
 our $dbfile = $ENV{OPENQA_DB} || "$basedir/$prj/db/db.sqlite";
 
@@ -187,10 +221,10 @@ sub testcasedir($$) {
     my $distri = shift;
     my $version = shift;
 
-    my $testcasedir = "$basedir/os-autoinst/tests/$distri";
-    $testcasedir .= "-$version" if $version && -e "$perldir/distri/$distri-$version";
+    my $dir = "$testcasedir/$distri";
+    $dir .= "-$version" if $version && -e "$dir-$version";
 
-    return $testcasedir;
+    return $dir;
 }
 
 sub back_log($) {
@@ -307,41 +341,6 @@ sub is_scheduled($){
     my $testname=shift;
     return -e "$scheduledir/$testname";
 }
-
-sub get_testimgs($){
-    my $name=shift;
-    my @a=<$perldir/testimgs/$name-*>; # needs to be in list context
-    return @a;
-}
-
-sub get_waitimgs($){
-    my $name=shift;
-    my @a=<$perldir/waitimgs/$name-*>; # needs to be in list context
-    return @a;
-}
-
-sub get_clickimgs($){
-    my $name=shift;
-    my @a=<$perldir/waitimgs/click/$name-*>; # needs to be in list context
-    return @a;
-}
-
-sub get_testwavs($){
-    my $name=shift;
-    my @a=<$perldir/audio/$name-*>; # needs to be in list context
-    return @a;
-}
-
-sub testimg($){
-    my $name=shift;
-    return "$perldir/testimgs/$name";
-}
-
-sub clickimg($){
-    my $name=shift;
-    return "$perldir/waitimgs/click/$name";
-}
-
 
 our $table_row_style = 0;
 sub cycle(;$) {
