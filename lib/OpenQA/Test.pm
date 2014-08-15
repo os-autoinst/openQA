@@ -38,7 +38,7 @@ sub list {
     my $scope = $self->param('scope');
     $scope = 'relevant' unless defined($scope);
     $self->param(scope => $scope);
-    my $state = $self->param('state') // 'scheduled,running,done';
+    my $state = $self->param('state') // 'scheduled,running,waiting,done';
     $state = undef if $state eq 'all';
 
     my $assetid = $self->param('assetid');
@@ -73,7 +73,7 @@ sub list {
       )
     {
 
-        if ($job->{state} eq 'running' || $job->{state} eq 'done') {
+        if ($job->{state} =~ /^(?:running|waiting|done)$/) {
 
             my $testdirname = $job->{'settings'}->{'NAME'};
             my $results = test_result($testdirname);
@@ -104,7 +104,7 @@ sub list {
                 run_stat=>$run_stat,
                 backend => $backend,
             };
-            if ($job->{state} eq 'running') {
+            if ($job->{state} ne 'done') {
                 unshift @list, $settings;
             }
             else {
@@ -151,7 +151,7 @@ sub show {
     my $results = test_result($testdirname);
 
     # If it's running
-    if ($job->{state} eq 'running') {
+    if ($job->{state} =~ /^(?:running|waiting)$/) {
         $self->stash(worker => worker_get($job->{'worker_id'}));
         $self->stash(backend_info => $results->{backend});
         $self->stash(job => $job);
