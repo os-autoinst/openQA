@@ -42,8 +42,7 @@ our $cachedir="$basedir/$prj/cache";
 our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
-
-our $distri_file_glob =  $basedir.'/os-autoinst/tests/*/main.pm';
+our $testcasedir = "$basedir/os-autoinst/tests";
 
 our $dbfile = $ENV{OPENQA_DB} || "$basedir/$prj/db/db.sqlite";
 
@@ -187,10 +186,10 @@ sub testcasedir($$) {
     my $distri = shift;
     my $version = shift;
 
-    my $testcasedir = "$basedir/os-autoinst/tests/$distri";
-    $testcasedir .= "-$version" if $version && -e "$perldir/distri/$distri-$version";
+    my $dir = "$testcasedir/$distri";
+    $dir .= "-$version" if $version && -e "$dir-$version";
 
-    return $testcasedir;
+    return $dir;
 }
 
 sub back_log($) {
