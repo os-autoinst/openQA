@@ -472,7 +472,7 @@ sub job_grab {
                 state_id => schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
                 worker_id => 0,
             },
-            { order_by => { -asc => 'priority'}, rows => 1}
+            { order_by => { -asc => [qw/priority id/] }, rows => 1 }
           )->update(
             {
                 state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,

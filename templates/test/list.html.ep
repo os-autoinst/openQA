@@ -85,11 +85,13 @@
                 <td class="extra"><span class="<%= $resultclass %>"><%= $job->{'test'} %></span></td>
                 <td class="testtime"><time><%= format_time($job->{'t_started'}) %></time></td>
 
-                <% if($job->{'state'} eq 'running') { %>
+                <% if($job->{'state'} eq 'running' || $job->{'state'} eq 'waiting') { %>
                     <td colspan="3" style="padding: 3px 4px;" class="progress">
                         <div class="pbox">
                             % my $ptext = "";
-                            % if($test->{'run_stat'}->{'modcount'} > 0) {
+                            %if ($job->{'state'} eq 'waiting') {
+                                % $ptext = "waiting";
+                                % } elsif($test->{'run_stat'}->{'modcount'} > 0) {
                                 % $ptext = int($test->{'run_stat'}->{'moddone'} / $test->{'run_stat'}->{'modcount'} * 100)."%";
                                 % if(!$test->{'run_stat'}->{'run_backend'}) {
                                     % $ptext = "post-processing";
