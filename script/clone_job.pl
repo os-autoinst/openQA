@@ -43,6 +43,14 @@ get job from specified host
 
 specify directory where the iso is stored (default /var/lib/openqa/factory/iso/)
 
+=item B<--apikey> <value>
+
+specify the public key needed for API authentication
+
+=item B<--apisecret> <value>
+
+specify the secret key needed for API authentication
+
 =item B<--help, -h>
 
 print help
@@ -91,7 +99,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options,"from=s","host=s","dir=s","verbose|v","help|h",) or usage(1);
+GetOptions(\%options,"from=s","host=s","dir=s","apikey:s","apisecret:s","verbose|v","help|h",) or usage(1);
 
 usage(1) unless @ARGV;
 usage(1) unless exists $options{'from'};
@@ -126,7 +134,11 @@ else {
     $local_url = Mojo::URL->new($options{'host'});
 }
 $local_url->path('/api/v1/jobs');
-$local = OpenQA::API::V1::Client->new(api => $local_url->host);
+$local = OpenQA::API::V1::Client->new(
+    api => $local_url->host,
+    apikey => $options{'apikey'},
+    apisecret => $options{'apisecret'}
+);
 
 my $remote;
 my $remote_url;
