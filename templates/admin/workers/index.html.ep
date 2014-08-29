@@ -1,9 +1,12 @@
-% layout 'default';
-% title 'Workers view';
+% layout 'admin';
+% title 'Workers';
 
 <div class="grid_16 box box-shadow alpha">
 	<h2><%= title %></h2>
-	<p>This page lists the status of <%= $workers_cnt %> workers.</p>
+
+    %= include 'layouts/info'
+
+	<p>This page lists the status of <%= $wamount %> workers.</p>
 	<p />
 	<table id="results" class="table-autosort table-autofilter table-autostripe">
 		<thead>
