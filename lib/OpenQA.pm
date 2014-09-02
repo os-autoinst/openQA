@@ -217,8 +217,6 @@ sub startup {
     $test_r->get('/')->name('test')->to('test#show');
     $test_auth->get('/menu')->name('test_menu')->to('test#menu');
 
-    $r->get('/workers')->name('workers')->to('worker#list');
-
     $test_r->get('/modlist')->name('modlist')->to('running#modlist');
     $test_r->get('/status')->name('status')->to('running#status');
     $test_r->get('/livelog')->name('livelog')->to('running#livelog');
@@ -298,6 +296,8 @@ sub startup {
     $admin_r->post('/job_templates')->to('job_template#update');
 
     $admin_r->get('/assets')->name('admin_assets')->to('asset#index');
+
+    $admin_r->get('/workers')->name('admin_workers')->to('workers#index');
 
     # Users list as default option
     $admin_r->get('/')->name('admin')->to('user#index');

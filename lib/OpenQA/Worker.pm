@@ -19,15 +19,23 @@ use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use Scheduler qw/list_workers worker_get workers_get_dead_worker job_get_by_workerid/;
 
-sub list {
+sub workers_amount {
     my $self = shift;
 
     my $workers_ref = list_workers();
-    my $workers_cnt = scalar(@$workers_ref) - 1;
+    my $workers_amount = scalar(@$workers_ref) - 1;
+
+    return $workers_amount;
+}
+
+sub workers_list {
+    my $self = shift;
+
+    my $workers_amount = workers_amount();
 
     my @wlist=();
 
-    for my $workerid (1..$workers_cnt) {
+    for my $workerid (1..$workers_amount) {
         my $worker = worker_get($workerid);
         my $job = job_get_by_workerid($workerid);
         my $settings = {
@@ -56,8 +64,7 @@ sub list {
         }
         push @wlist, $settings;
     }
-    $self->stash(wlist => \@wlist);
-    $self->stash(workers_cnt => $workers_cnt);
+    return @wlist;
 }
 
 1;
