@@ -73,6 +73,9 @@ sub _generate_jobs {
             $settings{TEST} = $job_template->test_suite->name;
             $settings{MACHINE} = $job_template->machine->name;
 
+            next if $args{TEST} && $args{TEST} ne $settings{TEST};
+            next if $args{MACHINE} && $args{MACHINE} ne $settings{MACHINE};
+
             for (keys  %args) {
                 $settings{uc $_} = $args{$_};
             }
