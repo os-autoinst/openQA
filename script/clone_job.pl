@@ -220,7 +220,7 @@ if ($jobid) {
         }
     }
     else {
-        warn "failed to create job ", $tx->error;
+        warn "failed to create job: ", $tx->error->{message};
         exit(1);
     }
 }
