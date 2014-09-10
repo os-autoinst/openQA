@@ -175,6 +175,7 @@ if ($jobid) {
     dd $job if $options{verbose};
 
     for my $type (keys %{$job->{assets}}) {
+        next if $type eq 'repo'; # we can't download repos
         for my $file (@{$job->{assets}->{$type}}) {
             my $dst = $file;
             $dst =~ s,.*/,,;
