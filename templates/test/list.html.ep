@@ -147,7 +147,7 @@
                 <td class="arch"><%= $job->{settings}->{'ARCH'} %></td>
                 % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
                 <td class="build"><span class="textlink"><a href="<%= $href %>"><%= $build %></a></span></td>
-                <td class="extra"><span class=""><%= $job->{'test'} %>@<%= $job->{'machine'} %></span></td>
+                <td class="extra"><span class=""><%= $job->{'test'} %></span></td>
                 <td class="testtime">
                     <%= link_post "-" => url_for('apiv1_job_prio', 'jobid' => $job->{'id'})->query(prio => $prio-10) => (class => 'prio-down') %>
                     <span data-prio="<%= $prio %>"><%= $prio %></span>
