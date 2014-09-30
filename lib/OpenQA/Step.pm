@@ -167,6 +167,7 @@ sub edit {
             @$needles,
             {
                 'name' => $module_detail->{'needle'},
+                'defaultname' => $module_detail->{'needle'} =~ /(.*)-\d{8}$/ ? $1 : $module_detail->{'needle'},
                 'imageurl' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png',$results->{'version'}),
                 'imagename' => basename($needle->{'image'}),
                 'imagedistri' => $needle->{'distri'},
@@ -226,6 +227,7 @@ sub edit {
                 @$needles,
                 {
                     'name' => $needlename,
+                    'defaultname' => $needlename =~ /(.*)-\d{8}$/ ? $1 : $needlename,
                     'imageurl' => $self->needle_url($results->{'distribution'}, "$needlename.png", $results->{'version'}),
                     'imagename' => basename($needleinfo->{'image'}),
                     'imagedistri' => $needleinfo->{'distri'},
@@ -275,24 +277,21 @@ sub edit {
     $default_needle->{'tags'} = $needles->[0]->{'tags'};
     if (scalar(@$needles) > 1) {
         $default_needle->{'area'} = $needles->[1]->{'matches'};
-        $default_name = $needles->[1]->{'name'};
+        $default_name = $needles->[1]->{'defaultname'};
     }
     else {
         $default_needle->{'area'} = [];
         $default_name = $self->param('moduleid');
     }
     my $today = strftime("%Y%m%d", gmtime(time));
-    if ( $default_name =~ /(.*)-\d{8}$/ ) {
-        $default_name = $1."-".$today;
-    }
-    else {
-        $default_name = $default_name."-".$today;
-    }
 
     $self->stash('needles', $needles);
     $self->stash('tags', $tags);
     $self->stash('default_needle', $default_needle);
-    $self->stash('needlename', $default_name);
+    # the format of default needle name in the input field is $default_name-$date_today
+    # it was the same as when choose screenshot's tag
+    $self->stash('date_today', $today);
+    $self->stash('default_needlename', $default_name);
 
     $self->render('step/edit');
 }

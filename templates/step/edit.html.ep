@@ -28,7 +28,7 @@ window.onload=function(){
       <div style="margin: 0 3px;">
         <div style="margin-top: 1em;">
           <label>Name:</label><br/>
-          <input type="input" name="needlename" id="needleeditor_name" value="<%= $needlename %>" style="width: calc(100% - 8px);"/>
+          <input type="input" name="needlename" id="needleeditor_name" value="<%= $default_needlename.'-'.$date_today %>" style="width: calc(100% - 8px);"/>
         </div>
         <div style="margin-top: 1em;">
           <label>Tags:</label><br/>
@@ -85,7 +85,7 @@ window.onload=function(){
             onclick="window.loadBackground(this);" <%= 'checked="checked"' if ($i == 0); %> <%= 'disabled="disabled"' if ($needle->{'broken'}); %> /></td>
         <td><input type="radio" name="area_selector" onclick="window.nEditor.LoadAreas('<%= JSON::to_json($needle->{'area'}) %>');" <%= 'disabled="disabled"' if ($needle->{'broken'}); %>/></td>
         <td><input type="radio" name="area_selector" onclick="window.nEditor.LoadAreas('<%= JSON::to_json($needle->{'matches'}) %>');" <%= 'checked="checked"' if ($i == 1); %> <%= 'disabled="disabled"' if ($needle->{'broken'}); %>/></td>
-        <td><input type="radio" name="tags_selector" data-tags="<%= JSON::to_json($needle->{'tags'}) %>" onclick="window.loadTags(this);" <%= 'checked="checked"' if ($i == 0); %> <%= 'disabled="disabled"' if ($needle->{'broken'}); %>/></td>
+        <td><input type="radio" name="tags_selector" data-tags="<%= JSON::to_json($needle->{'tags'}) %>" onclick="window.loadTags(this); window.changeName('<%= defined($needle->{'defaultname'}) ? $needle->{'defaultname'}.'-'.$date_today : $default_needlename.'-'.$date_today %>');" <%= 'checked="checked"' if ($i == 0); %> <%= 'disabled="disabled"' if ($needle->{'broken'}); %>/></td>
         </tr>
       % }
     </table>
