@@ -24,3 +24,8 @@ function addTag() {
 	checkbox.click();
 	return false;
 }
+
+function changeName(needlename) {
+	this.needlename = document.getElementById("needleeditor_name");
+	this.needlename.value = needlename;
+}
