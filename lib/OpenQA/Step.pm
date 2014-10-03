@@ -167,6 +167,7 @@ sub edit {
             @$needles,
             {
                 'name' => $module_detail->{'needle'},
+                'suggested_name' => $self->_timestamp($module_detail->{'needle'}),
                 'imageurl' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png',$results->{'version'}),
                 'imagename' => basename($needle->{'image'}),
                 'imagedistri' => $needle->{'distri'},
@@ -226,6 +227,7 @@ sub edit {
                 @$needles,
                 {
                     'name' => $needlename,
+                    'suggested_name' => $self->_timestamp($needlename),
                     'imageurl' => $self->needle_url($results->{'distribution'}, "$needlename.png", $results->{'version'}),
                     'imagename' => basename($needleinfo->{'image'}),
                     'imagedistri' => $needleinfo->{'distri'},
@@ -275,24 +277,16 @@ sub edit {
     $default_needle->{'tags'} = $needles->[0]->{'tags'};
     if (scalar(@$needles) > 1) {
         $default_needle->{'area'} = $needles->[1]->{'matches'};
-        $default_name = $needles->[1]->{'name'};
+        $needles->[0]->{'suggested_name'} = $needles->[1]->{'suggested_name'};
     }
     else {
         $default_needle->{'area'} = [];
-        $default_name = $self->param('moduleid');
-    }
-    my $today = strftime("%Y%m%d", gmtime(time));
-    if ( $default_name =~ /(.*)-\d{8}$/ ) {
-        $default_name = $1."-".$today;
-    }
-    else {
-        $default_name = $default_name."-".$today;
+        $needles->[0]->{'suggested_name'} = $self->_timestamp($self->param('moduleid'));
     }
 
     $self->stash('needles', $needles);
     $self->stash('tags', $tags);
     $self->stash('default_needle', $default_needle);
-    $self->stash('needlename', $default_name);
 
     $self->render('step/edit');
 }
@@ -337,6 +331,20 @@ sub _commit_git {
         if (system(@git, 'push', 'origin', 'master') != 0) {
             die "failed to git push $name";
         }
+    }
+}
+
+# Adds a timestamp to a needle name or replace the already present timestamp
+sub _timestamp {
+    my $self = shift;
+    my $name = shift;
+    my $today = strftime("%Y%m%d", gmtime(time));
+
+    if ( $name =~ /(.*)-\d{8}$/ ) {
+        return $1."-".$today;
+    }
+    else {
+        return $name."-".$today;
     }
 }
 

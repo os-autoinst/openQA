@@ -5,7 +5,7 @@ function loadBackground(tag) {
 	document.getElementById("needleeditor_imageversion").setAttribute("value", tag.dataset.version);
 }
 
-function loadTags(html) {
+function loadTagsAndName(html) {
 	var tags = JSON.parse(html.dataset.tags);
 	var checkboxes = document.getElementById("needleeditor_tags").getElementsByTagName('input');
 	for (var i = 0; i < checkboxes.length; i++) {
@@ -15,6 +15,7 @@ function loadTags(html) {
 			checkboxes[i].click();
 		}
 	}
+	document.getElementById("needleeditor_name").setAttribute("value", html.dataset.suggested);
 }
 
 function addTag() {
