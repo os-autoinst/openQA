@@ -1,0 +1,158 @@
+#!/usr/bin/env perl
+# Copyright (c) 2013 SUSE Linux Products GmbH
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+=head1 clean_needles
+
+clean_needles - check the log results to detect not used needles
+
+=head1 SYNOPSIS
+
+clean_needles [OPTIONS]
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--dir, -d> DIR
+
+Base directory for openQA (default: /var/lib/openqa)
+
+=item B<--project, -p> PRJ
+
+Distribution or project (default: opensuse)
+
+=item B<--days, -t> DAYS
+
+Number of days to consider the needle obsolete (default: 60)
+
+=item B<--remove>
+
+Remove obsolete and unused needles
+
+=item B<--help, -h>
+
+print help
+
+=back
+
+=head1 DESCRIPTION
+
+TBD
+
+=cut
+
+use strict;
+use warnings;
+use DateTime;
+use DateTime::Format::SQLite;
+use Getopt::Long;
+
+
+my $BASE = "/var/lib/openqa";
+my $DIST = "opensuse";
+my $DAYS = 60;
+my $REMOVE = 0;
+
+Getopt::Long::Configure("no_ignore_case");
+
+sub usage($) {
+    my $r = shift;
+    eval "use Pod::Usage; pod2usage($r);";
+    if ($@) {
+        die "cannot display help, install perl(Pod::Usage)\n";
+    }
+}
+
+my %options;
+GetOptions(\%options, "dir|d=s", "project|p=s", "days|t=s", "remove|r", "verbose|v", "help|h",) or usage(1);
+usage(1) if $options{help};
+
+my $base = $options{dir} || $BASE;
+my $dist = $options{project} || $DIST;
+
+my $testresults = "$base/testresults";
+my $needles = "$base/perl/autoinst/distri/$dist/needles";
+
+my $days = $options{days} || $DAYS;
+my $remove = $options{remove} || $REMOVE;
+
+my %last_seen;
+
+opendir(DIR, $testresults) or die $!;
+while (my $dir = readdir(DIR)) {
+    # Skip non-directories
+    next unless -d "$testresults/$dir";
+    next unless -e "$testresults/$dir/autoinst-log.txt";
+
+    open FILE, "<", "$testresults/$dir/autoinst-log.txt" or die $!;
+    <FILE>;
+    my $datetime = <FILE>;
+    $datetime =~ s/^\s+|\s+$//g;
+
+    print "$dir\n";
+
+    foreach my $line (<FILE>) {
+        $line =~ /^>>> found ([-a-zA-Z0-9]+), similarity .*/ || next;
+        my $needle = $1;
+        if ((!exists $last_seen{$needle}) || ($last_seen{$needle} lt $datetime)) {
+            $last_seen{$needle} = $datetime;
+        }
+    }
+
+    close FILE;
+}
+closedir(DIR);
+
+
+my $today = DateTime->now(time_zone => 'floating', formatter => 'DateTime::Format::SQLite');
+
+opendir(DIR, $needles);
+while (my $file = readdir(DIR)) {
+    next if ($file !~ m/\.json$/);
+    $file =~ s/\.json$//g;
+    if (!exists $last_seen{$file}) {
+        print "$file never used.";
+        if ($remove) {
+            unlink "$file.json" or warn "Could not unlink $file.json: $!";
+            unlink "$file.png" or warn "Could not unlink $file.png: $!";
+            print " Removed needle.";
+        }
+        else {
+            print "\n";
+        }
+    }
+    else {
+        my $date = DateTime::Format::SQLite->parse_datetime($last_seen{$file});
+        my $dur_days = $today->delta_days($date)->delta_days;
+        if ($dur_days > $days) {
+            print "$file last access was $dur_days ago.";
+            if ($remove) {
+                unlink "$file.json" or warn "Could not unlink $file.json: $!";
+                unlink "$file.png" or warn "Could not unlink $file.png: $!";
+                print " Removed needle.";
+            }
+            else {
+                print "\n";
+            }
+        }
+    }
+}
+closedir(DIR);
