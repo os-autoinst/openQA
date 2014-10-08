@@ -28,6 +28,10 @@ clean_needles [OPTIONS]
 
 =over 4
 
+=item B<--dry>
+
+dry run, don't actually delete
+
 =item B<--days> N
 
 evaluate jobs for the last N days
@@ -81,7 +85,7 @@ sub usage($) {
     exit $_[0];
 }
 
-GetOptions(\%options, "days=i", "debug", "verbose", "delete", "help|h",) or usage(1);
+GetOptions(\%options, "days=i", "debug", "verbose", "dry", "help|h",) or usage(1);
 
 $options{days} = 60 unless $options{days}//0 > 0;
 
@@ -185,7 +189,7 @@ for my $distri (sort keys %seen_tags) {
                 }
                 unless ($keep) {
                     $stats{$distri}{$version}{obsolete}++;
-                    if ($options{delete}) {
+                    unless ($options{dry}) {
                         unlink($needle->{json});
                         unlink($needle->{image});
                     }
