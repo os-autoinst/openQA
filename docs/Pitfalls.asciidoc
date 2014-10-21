@@ -14,3 +14,17 @@ Needle editing
   confusing
 - if a needle is deleted, old tests may display an error when viewing
   them in the web UI.
+
+IPv6
+====
+
+www.opensuse.org's openid provider may have trouble with IPv6. openQA shows a message like this:
+
+  no_identity_server: Could not determine ID provider from URL.
+
+To avoid that switch off IPv6 or add a special route that prevents the system
+from trying to use IPv6 with www.opensuse.org:
+
+--------------------------------------------------------------------------------
+ip -6 r a to unreachable 2600:806:310::100/128
+--------------------------------------------------------------------------------
