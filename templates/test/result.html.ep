@@ -198,7 +198,11 @@
 				<td class="component">
 				  %= link_to $module->{'name'} => url_for('src_step', stepid => 1, moduleid => $module->{'name'})
 				</td>
-				<td class="<%= "result$res_css->{$module->{'result'}}" %>"><%= $res_display->{$module->{'result'}} %></td>
+				% my $result_class = $res_css->{$module->{'result'}};
+				% if (($result_class eq 'ok') && ($module->{'dents'})) {
+				%   $result_class = 'warning';
+				% }
+				<td class="<%= "result$result_class" %>"><%= $res_display->{$module->{'result'}} %></td>
 				<td class="links" style="width: 60%;">
                                   % for my $screenshot (@{$module->{'screenshots'}}) {
                                      %= link_to url_for('step', moduleid => $module->{'name'}, stepid => $screenshot->{'num'}) => (class => 'no_hover') => begin

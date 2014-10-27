@@ -192,6 +192,7 @@ sub show {
             {
                 name => $module->{'name'},
                 result => $module->{'result'},
+                dents => $module->{'dents'},
                 screenshots => \@imglist,
                 wavs => \@wavlist,
                 ocrs => \@ocrlist,
