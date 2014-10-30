@@ -45,6 +45,7 @@
                 <th class="table-sortable:alphanumeric">testtime</th>
                 <th class="table-sortable:numeric">OK</th>
                 <th class="table-sortable:numeric">unk</th>
+                <th class="table-sortable:numeric">dents</th>
                 <th class="table-sortable:numeric">fail</th>
             </tr>
         </thead>
@@ -108,6 +109,7 @@
                 % } else {
                     <td><span class="overview_passed"><%= ($test->{'res_ok'})?$test->{'res_ok'}:'' %></span></td>
                     <td><span class="overview_unknown"><%= ($test->{'res_unknown'}?$test->{'res_unknown'}:'') %></span></td>
+		    <td><span class="overview_dent"><%= ($test->{'res_dents'}?$test->{'res_dents'}:'') %></span></td>
                     <td><span class="overview_failed"><%= ($test->{'res_fail'}?$test->{'res_fail'}:'') %></span></td>
                 % }
             </tr>
