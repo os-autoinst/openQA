@@ -32,11 +32,8 @@ repository. Installation on openSUSE is therefore pretty simple:
 [source,sh]
 --------------------------------------------------------------------------------
 zypper ar -f obs://devel:openQA/openSUSE_13.1 openQA
-zypper ar -f obs://devel:openQA:devel/openSUSE_13.1 openQA-devel
-zypper ar -f obs://devel:openQA:devel:13.1/openSUSE_13.1 openQA-devel-perl-modules
+zypper ar -f obs://devel:openQA:13.1/openSUSE_13.1 openQA-perl-modules
 zypper in openQA
-# Init database
-/usr/share/openqa/script/initdb --init_database
 # Start WebUI
 systemctl start openqa-webui
 --------------------------------------------------------------------------------
