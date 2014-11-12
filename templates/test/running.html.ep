@@ -63,6 +63,9 @@
                 <tr>
                     <td><%= $worker->{'host'} %>:<%= $worker->{instance} %></td>
                 </tr>
+                <tr>
+                    <td>VNC port:<%= $worker->{instance} + 90 %></td>
+                </tr>
             % }
             <tr>
                 <td colspan="2" style="padding: 0 0 <%= ($backend_info->{'backend'} eq 'kvm2usb')?'8px':'0' %> 0;"><%= $backend_info->{'backend'} %></td>
