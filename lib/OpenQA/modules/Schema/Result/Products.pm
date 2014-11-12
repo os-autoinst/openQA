@@ -57,7 +57,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(job_templates => 'Schema::Result::JobTemplates', 'product_id');
 __PACKAGE__->add_unique_constraint([qw/distri version arch flavor/]);
-__PACKAGE__->has_many(settings => 'Schema::Result::ProductSettings', 'product_id');
+__PACKAGE__->has_many(settings => 'Schema::Result::ProductSettings', 'product_id', { order_by => { -asc => 'key' } });
 
 sub name {
     my ($self) = @_;
