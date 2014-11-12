@@ -53,8 +53,8 @@ sub update {
 
     while (my $product = $products->next) {
         for my $machine (@machines) {
-            my @requested = $self->param('templates_'.$product->id.'_'.$machine->id);
-            my %present = map { $_ => 1 } @requested;
+            my $requested = $self->every_param('templates_'.$product->id.'_'.$machine->id);
+            my %present = map { $_ => 1 } @$requested;
             for my $suite (@suites) {
                 my $existing = $self->db->resultset("JobTemplates")->find(
                     {

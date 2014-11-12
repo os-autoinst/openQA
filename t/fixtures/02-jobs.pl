@@ -24,7 +24,7 @@
         priority => 56,
         result => { name => "incomplete" },
         retry_avbl => 3,
-        settings => [{ key => 'ARCH', value => 'x86_64'},{ key => 'BUILD', value => 87.5011},{ key => 'DESKTOP', value => 'minimalx'},{ key => 'DISTRI', value => 'opensuse'},{ key => 'FLAVOR', value => 'staging_e'},{ key => 'ISO', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'},{ key => 'ISO_MAXSIZE', value => 737280000},{ key => 'NAME', value => '00000322-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx'},{ key => 'TEST', value => 'minimalx'},{ key => 'VERSION', value => 'Factory'},],
+        settings => [{ key => 'ARCH', value => 'x86_64'},{ key => 'BUILD', value => 87.5011},{ key => 'DESKTOP', value => 'minimalx'},{ key => 'DISTRI', value => 'opensuse'},{ key => 'FLAVOR', value => 'staging_e'},{ key => 'ISO', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'},{ key => 'ISO_MAXSIZE', value => 737280000},{ key => 'NAME', value => '00000322-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx'},{ key => 'TEST', value => 'minimalx'},{ key => 'VERSION', value => 'Factory'}, { key => 'MACHINE', value => '32bit'},],
         state => { name => "done"},
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-3600, 'UTC'), # One hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-7200, 'UTC'),  # Two hours ago

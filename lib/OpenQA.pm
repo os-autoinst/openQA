@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA;
+use Mojolicious 5.60;
 use Mojo::Base 'Mojolicious';
 use openqa 'connect_db';
 use OpenQA::Helpers;
