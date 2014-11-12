@@ -161,14 +161,14 @@ Worker settings
 
 Default behaviour for all workers is to use the 'Qemu' backend and connect to
 'http://localhost'. If you want to change some of those options, you can do so
-in +/etc/openqa/workers.ini+. For example if you want to connect to the port
-9526 (default port after installation if you haven't set up Apache proxy), you
-can do so using following code:
+in +/etc/openqa/workers.ini+. For example to point the workers to the FQDN of
+your host (needed if test cases need to access files of the host) use the
+following setting:
 
 [source,ini]
 --------------------------------------------------------------------------------
 [global]
-HOST = http://localhost:9526
+HOST = http://openqa.example.com
 --------------------------------------------------------------------------------
 
 Once you got workers running they should show up in the admin section of openQA in
