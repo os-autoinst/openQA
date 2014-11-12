@@ -87,7 +87,7 @@
                 <td class="testtime"><time><%= format_time($job->{'t_started'}) %></time></td>
 
                 <% if($job->{'state'} eq 'running' || $job->{'state'} eq 'waiting') { %>
-                    <td colspan="3" style="padding: 3px 4px;" class="progress">
+                    <td colspan="4" style="padding: 3px 4px;" class="progress">
                         <div class="pbox">
                             % my $ptext = "";
                             %if ($job->{'state'} eq 'waiting') {
@@ -155,7 +155,7 @@
                     <span data-prio="<%= $prio %>"><%= $prio %></span>
                     <%= link_post "+" => url_for('apiv1_job_prio', 'jobid' => $job->{'id'})->query(prio => $prio+10) => (class => 'prio-up') %>
                 </td>
-                <td class="cancel" colspan="3" style="padding: 3px 4px; font-style: italic;">
+                <td class="cancel" colspan="4" style="padding: 3px 4px; font-style: italic;">
                     <%= $state %>
                     <%= link_post '[cancel]' => url_for('apiv1_cancel', 'name' => $job->{'id'}) => ('data-remote' => 'true') %>
                 </td>
