@@ -75,13 +75,21 @@ Running workers
 ~~~~~~~~~~~~~~~
 
 Workers are processes running virtual machines to perform the actual
-testing. To allow them to access your instance, you need to log into
+testing. They are distributed as a separate package and can be installed on
+multiple machines but still using only one WebUI.
+
+[source,sh]
+--------------------------------------------------------------------------------
+zypper in openQA-worker
+--------------------------------------------------------------------------------
+
+To allow them to access your instance, you need to log into
 openQA as operator and create a pair of API key and secret. Once you
 are logged in, follow the link 'manage API keys' in the top right
 corner. Click the 'create' button to generate +key+ and +secret+.
-Copy&paste them into +/etc/openqa/client.conf+. Make
-sure to put in a section reflecting your webserver URL. In the simplemost
-case, your +client.conf+ may look like this:
+Copy&Paste them into +/etc/openqa/client.conf+ on machine where openQA-worker
+is installed. Make sure to put in a section reflecting your webserver URL.
+In the simplemost case, your +client.conf+ may look like this:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -106,6 +114,29 @@ This will run a worker manually showing you debug output. If you haven't
 installed 'os-autoinst' from packages make sure to pass +--isotovideo+ option
 to point to the checkout dir where isotovideo is, not to +/usr/lib+! Otherwise
 it will have trouble finding its perl modules.
+
+Configuring remote workers
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are some additional requirements to get remote worker running. First is to
+ensure shared storage between openQA WebUI and workers.
+Directory +/var/lib/openqa/share+ contains all required data and should be
+shared with read-write access across all nodes present in openQA cluster.
+This step is intentionally left on system administrator to choose proper shared
+storage for her specific needs.
+
+Example of NFS configuration:
+NFS server is where openQA WebUI is running. Content of +/etc/exports+
+[source]
+--------------------------------------------------------------------------------
+/var/lib/openqa/share *(fsid=0,rw,no_root_squash,sync,no_subtree_check)
+--------------------------------------------------------------------------------
+
+NFS clients are where openQA workers are running. Run following command:
+[source, sh]
+--------------------------------------------------------------------------------
+mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share
+--------------------------------------------------------------------------------
 
 Apache proxy
 ~~~~~~~~~~~~
