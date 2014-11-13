@@ -152,6 +152,9 @@ sub serve_static_($$) {
                 $self->res->headers->content_disposition("attatchment; filename=$filename;");
             }
         }
+        else {
+            $self->res->headers->content_type("application/octet-stream");
+        }
     }
 
     $self->{static}->serve_asset($self, $asset);
@@ -189,20 +192,29 @@ sub _makecpiohead {
     return ($h, $pad);
 }
 
-# send test data as cpio archive
-sub test_data {
-    my $self = shift;
+sub _test_data_directory {
+    my ($self) = @_;
+
     $self->{job} = Scheduler::job_get($self->param('testid'));
-    return $self->render_not_found unless ($self->{job});
+    return undef unless ($self->{job});
 
     $self->app->log->debug("serving data for job ".$self->{job}->{id});
 
     my $distri = $self->{job}->{settings}->{DISTRI};
 
+    return sprintf "%s/os-autoinst/tests/%s/data/", $openqa::basedir, $distri;
+}
+
+# send test data as cpio archive
+sub test_data {
+    my $self = shift;
+    my $base = $self->_test_data_directory();
+
+    return $self->render_not_found unless $base;
+
     $self->res->headers->content_type('application/x-cpio');
 
     my $data = '';
-    my $base = sprintf "%s/os-autoinst/tests/%s/data/", $openqa::basedir, $distri;
     for my $file (glob $base.'*') {
         next unless -f $file;
         my @s = stat _;
@@ -225,6 +237,19 @@ sub test_data {
     }
     $data .= _makecpiohead();
     return $self->render(data => $data);
+}
+
+# send single files from the data directory
+sub test_data_file {
+    my ($self) = @_;
+    my $base = $self->_test_data_directory();
+
+    return $self->render_not_found unless $base;
+
+    $self->{static} = Mojolicious::Static->new;
+    push @{$self->{static}->paths}, $base;
+
+    return $self->serve_static_($self->param('filename'));
 }
 
 1;
