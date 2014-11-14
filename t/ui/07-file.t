@@ -117,4 +117,9 @@ $t->get_ok('/tests/99946/data')
     ->content_type_is('application/x-cpio')
     ->content_is($reference_cpio);
 
+$t->get_ok('/tests/99946/data/motd')
+    ->status_is(200)
+    ->content_type_is("application/octet-stream")
+    ->content_is("Have a lot of fun...\n");
+
 done_testing();
