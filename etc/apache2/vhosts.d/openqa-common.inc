@@ -9,12 +9,12 @@ DocumentRoot /usr/share/openqa/public
     Allow from all
 </Directory>
 
-<Directory "/var/lib/openqa/factory">
+<Directory "/var/lib/openqa/share/factory">
     AllowOverride None
     Order allow,deny
     Allow from all
 </Directory>
-Alias /assets "/var/lib/openqa/factory"
+Alias /assets "/var/lib/openqa/share/factory"
 
 <Directory "/var/lib/os-autoinst/tests">
     AllowOverride None
