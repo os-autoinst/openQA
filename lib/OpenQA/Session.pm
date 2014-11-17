@@ -136,6 +136,7 @@ sub response {
     }
 
     my $csr = Net::OpenID::Consumer->new(
+        debug           => sub { $self->app->log->debug("Net::OpenID::Consumer: ".join(' ', @_)); },
         ua              => LWP::UserAgent->new,
         required_root   => $url,
         consumer_secret => $self->app->config->{_openid_secret},
@@ -195,9 +196,10 @@ sub response {
             $self->session->{user} = $id;
         },
         error => sub {
-            my $err = shift;
-            $self->app->log->error($err);
-            croak($err);
+            my ($err, $txt) = @_;
+            $self->app->log->error($err, $txt);
+            $self->flash(error => "$err: $txt");
+            return $self->redirect_to("index");
         },
     );
 
