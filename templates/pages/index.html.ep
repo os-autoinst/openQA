@@ -1,6 +1,8 @@
 % layout 'default';
 % title $appname;
 
+%= include 'layouts/info'
+
 <div class="grid_10 alpha">
   <div class="box box-shadow">
     <h1>Welcome to <%= $appname %></h1>
