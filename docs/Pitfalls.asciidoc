@@ -15,6 +15,24 @@ Needle editing
 - if a needle is deleted, old tests may display an error when viewing
   them in the web UI.
 
+DNS
+===
+
+You can use the environement variable +OPENQA_HOST+ from your perl test
+scripts, so they can communicate with the real host. This variable will
+expand to the value passed to the worker. You can configure this value for
+example with
+
+  HOST = http://www.example.com:9526
+
+in +/etc/openqa/workers.ini+.
+
+However, for that to work, you will need some DNS server to resolve the
+domain name you chose to an IP address. Furthermore, the address of that
+DNS server needs to be listed as the first entry in the host's +/etc/resolv.conf+
+file, since it is the one that QEmu will pick up to set up its "user mode
+networking".
+
 IPv6
 ====
 
