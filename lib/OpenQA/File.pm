@@ -200,9 +200,9 @@ sub _test_data_directory {
 
     $self->app->log->debug("serving data for job ".$self->{job}->{id});
 
-    my $distri = $self->{job}->{settings}->{DISTRI};
-
-    return sprintf "%s/os-autoinst/tests/%s/data/", $openqa::basedir, $distri;
+    my $dir = testcasedir($self->{job}->{settings}->{DISTRI}, $self->{job}->{settings}->{VERSION});
+    return undef unless $dir && -d $dir.'/data';
+    return $dir.'/data/';
 }
 
 # send test data as cpio archive
