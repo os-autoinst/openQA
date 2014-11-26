@@ -16,7 +16,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   @runner
   $res_css
   $res_display
-  $loguploaddir
   &parse_log
   &parse_log_to_stats
   &parse_log_to_hash
@@ -70,7 +69,6 @@ our $basedir=$ENV{'OPENQA_BASEDIR'}||"/var/lib";
 our $prj="openqa";
 our $resultdir="$basedir/$prj/testresults";
 our $scheduledir="$basedir/$prj/schedule.d";
-our $loguploaddir="$basedir/$prj/logupload";
 our $assetdir="$basedir/$prj/factory";
 our $isodir="$assetdir/iso";
 our $cachedir="$basedir/$prj/cache";

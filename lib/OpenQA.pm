@@ -225,13 +225,10 @@ sub startup {
     $test_r->get('/edit')->name('edit_test')->to('running#edit');
 
     my $log_auth = $r->bridge('/tests/#testid')->to("session#ensure_authorized_ip");
-    $log_auth->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
 
     $test_r->get('/images/#filename')->name('test_img')->to('file#test_file');
     $test_r->get('/images/thumb/#filename')->name('test_thumbnail')->to('file#test_thumbnail');
     $test_r->get('/file/#filename')->name('test_file')->to('file#test_file');
-    $test_r->get('/data')->name('test_data')->to('file#test_data');
-    $test_r->get('/data/#filename')->name('test_data')->to('file#test_data_file');
     $test_r->get('/diskimages/:imageid')->name('diskimage')->to('file#test_diskimage');
     $test_r->get('/iso')->name('isoimage')->to('file#test_isoimage');
     # adding assetid => qr/\d+/ doesn't work here. wtf?

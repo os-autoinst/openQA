@@ -77,6 +77,5 @@
   /var/lib/openqa/share/factory/iso/* r,
   /var/lib/openqa/share/factory/hdd/* r,
   /var/lib/openqa/share/testresults/** rwk,
-  /var/lib/openqa/share/logupload/** rwk,
   /var/lib/os-autoinst/tests/** r,
 }
