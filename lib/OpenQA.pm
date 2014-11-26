@@ -225,7 +225,6 @@ sub startup {
     $test_r->get('/edit')->name('edit_test')->to('running#edit');
 
     my $log_auth = $r->bridge('/tests/#testid')->to("session#ensure_authorized_ip");
-    $log_auth->post('/uploadlog/#filename')->name('uploadlog')->to('test#uploadlog');
 
     $test_r->get('/images/#filename')->name('test_img')->to('file#test_file');
     $test_r->get('/images/thumb/#filename')->name('test_thumbnail')->to('file#test_thumbnail');

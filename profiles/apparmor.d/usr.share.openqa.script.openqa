@@ -45,7 +45,6 @@
   /var/lib/openqa/share/factory/iso/* r,
   /var/lib/openqa/share/testresults/ r,
   /var/lib/openqa/share/testresults/** rk,
-  /var/lib/openqa/share/logupload/** rwk,
   /var/lib/os-autoinst/tests/ r,
   /var/lib/os-autoinst/tests/** rw,
   /var/lib/os-autoinst/tests/*/needles/.git/objects/*/* rwl,

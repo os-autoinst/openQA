@@ -112,7 +112,6 @@ my $assetdir = "$openqa_base/factory";
 my $isodir = "$assetdir/iso";
 my $hdddir = "$assetdir/hdd";
 my $results_dir = "$openqa_base/testresults";
-my $logupload_dir = "$openqa_base/logupload";
 
 my $isotovideo = "/usr/lib/os-autoinst/tools/isotovideo";
 
@@ -379,7 +378,6 @@ sub clean_pool($){
             unlink $file;
         }
     }
-    remove_tree("$logupload_dir/$name");
 }
 
 sub backup_testresults($){
@@ -604,20 +602,14 @@ sub main(){
 
             if (!$aborted || !($aborted eq 'quit' && $aborted eq 'abort')) {
                 # collect uploaded logs
-                my @uploaded_logfiles = <$logupload_dir/$name/*>;
+                my @uploaded_logfiles = <$pooldir/ulogs/*>;
                 mkdir("$pooldir/testresults/$name/ulogs/");
-                if(@uploaded_logfiles) {
-                    for my $uploaded_logfile (@uploaded_logfiles) {
-                        next unless -f $uploaded_logfile;
-                        unless(copy($uploaded_logfile, "$pooldir/testresults/$name/ulogs/")) {
-                            warn "can't copy ulog: $uploaded_logfile -> $pooldir/testresults/$name/ulogs/\n";
-                        }
+                for my $uploaded_logfile (@uploaded_logfiles) {
+                    next unless -f $uploaded_logfile;
+                    unless(copy($uploaded_logfile, "$pooldir/testresults/$name/ulogs/")) {
+                        warn "can't copy ulog: $uploaded_logfile -> $pooldir/testresults/$name/ulogs/\n";
                     }
                 }
-                if(-e "$logupload_dir/$name/") {
-                    remove_tree("$logupload_dir/$name/"); # cleanup
-                }
-
                 unless (dirmove("$pooldir/testresults/$name", $testresults)) {
                     warn "can't move test results $pooldir/testresults/$name -> $testresults: $!\n";
                     $keep_running = 0;

@@ -227,48 +227,6 @@ sub show {
     $self->render('test/result');
 }
 
-sub uploadlog{
-    my $self = shift;
-
-    my $job = Scheduler::job_get($self->param('testid'));
-
-    if (!$job) {
-        return $self->render(message => 'No such job.', status => 404);
-    }
-
-    my $testdirname = $job->{'settings'}->{'NAME'};
-
-    return $self->render(text => "Invalid path", status => 403) if ($testdirname=~/(?:\.\.)|[^a-zA-Z0-9._+-:]/);
-
-    if ($self->req->is_limit_exceeded) {
-        return $self->render(
-            message => 'File is too big.',
-            status => 200
-        );
-    }
-
-    if ($job->{state} ne 'running') {
-        $self->app->log->warn("test $job->{id} is not running, refused to upload logs");
-        return $self->render(text => "test not running", status => 400);
-    }
-
-    my $upload = $self->req->upload('upload');
-    if (!$upload) {
-        return $self->render(message => 'upload file content missing', status => 400);
-    }
-
-    my $dir = join('/', $openqa::loguploaddir, $testdirname);
-    if (!-e $dir) {
-        mkdir($dir) or die "$!";
-    }
-    my $upname = basename($self->param('filename'));
-    $upname = sanitize_testname($upname);
-
-    $upload->move_to(join('/', $dir, $upname));
-
-    return $self->render(text => "OK: $upname\n");
-}
-
 # Custom action enabling the openSUSE Release Team
 # to see the quality at a glance
 sub overview {
