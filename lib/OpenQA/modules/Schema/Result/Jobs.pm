@@ -95,6 +95,8 @@ __PACKAGE__->belongs_to(clone => 'Schema::Result::Jobs', 'clone_id', { join_type
 __PACKAGE__->might_have(origin => 'Schema::Result::Jobs', 'clone_id', { cascade_delete => 0 });
 __PACKAGE__->has_many(jobs_assets => 'Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
+__PACKAGE__->has_many(children => 'Schema::Result::JobDependencies', 'parent_job_id');
+__PACKAGE__->has_many(parents => 'Schema::Result::JobDependencies', 'child_job_id');
 
 __PACKAGE__->add_unique_constraint(constraint_name => [qw/slug/]);
 

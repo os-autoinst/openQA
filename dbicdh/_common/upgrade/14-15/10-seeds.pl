@@ -29,13 +29,6 @@ sub {
     # [1] for deploy, [1,2] for upgrade or downgrade, probably used with _any
     my $versions = shift;
 
-    $schema->resultset('JobStates')->populate([[qw/id name/],[ 0,'scheduled' ],[ 1,'running' ],[ 2,'cancelled' ],[ 3,'waiting'],[ 4,'done'],[ 5,'obsoleted'],]);
-
-    $schema->resultset('JobResults')->populate([[qw/id name/],[ 0,'none' ],[ 1,'passed' ],[ 2,'failed' ],[ 3,'incomplete' ],]);
-
-    # XXX: get rid of worker zero at some point
-    $schema->resultset('Workers')->populate([[qw/id host instance backend/],[ 0, 'NONE', 0, 'NONE' ],]);
-
     $schema->resultset('Dependencies')->populate([[qw/id name/],[ 0,'chained' ],]);
 
   }
