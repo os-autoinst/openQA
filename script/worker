@@ -113,7 +113,7 @@ my $isodir = "$assetdir/iso";
 my $hdddir = "$assetdir/hdd";
 my $results_dir = "$openqa_base/testresults";
 
-my $isotovideo = "/usr/lib/os-autoinst/tools/isotovideo";
+my $isotovideo = "/usr/bin/isotovideo";
 
 my $keep_running = 1;
 my $got_sigchld = 0;
@@ -289,9 +289,6 @@ sub workit($){
     while (my ($k, $v) = each %{$job->{'settings'}}) {
         print "setting $k=$v\n" if $verbose;
         $vars{$k} = $v;
-        # TODO: isotovideo need $NAME, once we can get rid
-        # of isotovideo then should drop this line
-        $ENV{NAME} = $v if ($k eq 'NAME');
     }
     $vars{CASEDIR} = openqa::testcasedir($vars{DISTRI}, $vars{VERSION});
     save_vars(\%vars);
@@ -611,6 +608,9 @@ sub main(){
                     unless(copy($uploaded_logfile, "$pooldir/testresults/$name/ulogs/")) {
                         warn "can't copy ulog: $uploaded_logfile -> $pooldir/testresults/$name/ulogs/\n";
                     }
+                }
+		unless (move("$pooldir/video.ogv", $testresults.'/video.ogv')) {
+			warn "can't move video: $!\n";
                 }
                 unless (dirmove("$pooldir/testresults/$name", $testresults)) {
                     warn "can't move test results $pooldir/testresults/$name -> $testresults: $!\n";

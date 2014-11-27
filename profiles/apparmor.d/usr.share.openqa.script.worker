@@ -53,7 +53,7 @@
   /usr/bin/tee rix,
   /usr/bin/uname rix,
   /usr/lib/os-autoinst/tools/absolutize rix,
-  /usr/lib/os-autoinst/tools/isotovideo rix,
+  /usr/bin/isotovideo rix,
   /usr/share/openqa/lib/OpenQA/API/V1/Client.pm r,
   /usr/share/openqa/lib/OpenQA/modules/openqa.pm r,
   /usr/share/openqa/lib/OpenQA/modules/Schema/Schema.pm r,
