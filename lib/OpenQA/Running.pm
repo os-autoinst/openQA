@@ -186,10 +186,10 @@ sub streaming {
 
     $id = Mojo::IOLoop->recurring(
         0.3 => sub {
-            my $newfile = readlink("$basepath/qemuscreenshot/last.png")||'';
+            my $newfile = readlink("$basepath/last.png")||'';
             if ($lastfile ne $newfile) {
                 if ( !-l $newfile || !$lastfile ) {
-                    my $data = file_content("$basepath/qemuscreenshot/$newfile");
+                    my $data = file_content("$basepath/$newfile");
                     $self->write("data: data:image/png;base64,".b64_encode($data, '')."\n\n");
                     $lastfile = $newfile;
                 }

@@ -107,11 +107,12 @@ use OpenQA::API::V1::Client;
 
 my $max_job_time = 2*60*60; # 2h
 my $openqa_base = "/var/lib/openqa";
+my $openqa_share = "$openqa_base/share";
 my $pooldir;
-my $assetdir = "$openqa_base/factory";
+my $assetdir = "$openqa_share/factory";
 my $isodir = "$assetdir/iso";
 my $hdddir = "$assetdir/hdd";
-my $results_dir = "$openqa_base/testresults";
+my $results_dir = "$openqa_share/testresults";
 
 my $isotovideo = "/usr/bin/isotovideo";
 
@@ -559,7 +560,10 @@ sub main(){
             elsif (-e $testresults) {
                 backup_testresults($testresults);
             }
-            symlink(join('/', $pooldir, 'testresults', $name), $testresults) or warn "symlink $testresults: $!\n";
+            mkdir($testresults);
+            mkdir(join('/', $pooldir, 'testresults'));
+            symlink($testresults, join('/', $pooldir, 'testresults', $name)) or warn "symlink $testresults: $!\n";
+
             $worker = workit($job);
             unless ($worker) {
                 warn "job is missing files, releasing job\n";
@@ -590,7 +594,6 @@ sub main(){
 
             $result = $aborted if $aborted;
 
-            unlink($testresults); # can't move directory atomically to replace symlink
             my $name = $job->{'settings'}->{'NAME'};
             if (open(my $log, '>>', "$results_dir/runlog.txt")) {
                 if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
@@ -611,14 +614,6 @@ sub main(){
                 }
                 unless (move("$pooldir/video.ogv", $testresults.'/video.ogv')) {
                     warn "can't move video: $!\n";
-                }
-                unless (dirmove("$pooldir/testresults/$name", $testresults)) {
-                    warn "can't move test results $pooldir/testresults/$name -> $testresults: $!\n";
-                    $keep_running = 0;
-                }
-                unless (move("$pooldir/autoinst-log.txt", $testresults.'/autoinst-log.txt')) {
-                    warn "can't move autoinst-log.txt: $!\n";
-                    $keep_running = 0;
                 }
                 unless (move("$pooldir/stderr.txt", $testresults.'/stderr.txt')) {
                     warn "can't move stderr.txt: $!\n";
