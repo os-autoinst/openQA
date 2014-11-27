@@ -14,20 +14,32 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema;
-use base qw/DBIx::Class::Schema/;
-use IO::Dir;
-use SQL::SplitStatement;
-use Fcntl ':mode';
+package Schema::Result::JobDependencies;
+use base qw/DBIx::Class::Core/;
 
-# after bumping the version ...
-# - run script/initdb --prepare
-# - run script/upgradedb --prepare
-# - edit dbicdh/SQLite/upgrade/$old-$new/001-auto.sql and add missing triggers
-# - optionally add migration script dbicdh/_common/upgrade/$old-$new/...
-our $VERSION = '15';
+use db_helpers;
 
-__PACKAGE__->load_namespaces;
+__PACKAGE__->table('job_dependencies');
+__PACKAGE__->add_columns(
+    child_job_id => {
+        data_type => 'integer',
+        is_foreign_key => 1,
+    },
+    parent_job_id => {
+        data_type => 'integer',
+        is_foreign_key => 1,
+    },
+    dep_id => {
+        data_type => 'integer',
+        is_foreign_key => 1,
+    },
+);
+
+__PACKAGE__->set_primary_key('child_job_id', 'parent_job_id', 'dep_id');
+
+__PACKAGE__->belongs_to( child => 'Schema::Result::Jobs', 'child_job_id' );
+__PACKAGE__->belongs_to( parent => 'Schema::Result::Jobs', 'parent_job_id' );
+__PACKAGE__->belongs_to( dependency => 'Schema::Result::Dependencies', 'dep_id' );
+
 
 1;
-# vim: set sw=4 et:

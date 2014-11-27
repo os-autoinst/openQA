@@ -14,20 +14,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema;
-use base qw/DBIx::Class::Schema/;
-use IO::Dir;
-use SQL::SplitStatement;
-use Fcntl ':mode';
+package Schema::Result::Dependencies;
+use base qw/DBIx::Class::Core/;
 
-# after bumping the version ...
-# - run script/initdb --prepare
-# - run script/upgradedb --prepare
-# - edit dbicdh/SQLite/upgrade/$old-$new/001-auto.sql and add missing triggers
-# - optionally add migration script dbicdh/_common/upgrade/$old-$new/...
-our $VERSION = '15';
+__PACKAGE__->table('dependencies');
+__PACKAGE__->add_columns(
+    id => {
+        data_type => 'integer',
+        is_auto_increment => 1,
+    },
+    name => {
+        data_type => 'text',
+    }
+);
 
-__PACKAGE__->load_namespaces;
+__PACKAGE__->set_primary_key('id');
+__PACKAGE__->has_many(jobs => 'Schema::Result::JobDependencies', 'dep_id');
 
 1;
 # vim: set sw=4 et:
