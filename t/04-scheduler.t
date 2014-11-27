@@ -116,6 +116,7 @@ my $job_ref = {
     retry_avbl => 3,
     test => 'rainbow',
     test_branch => undef,
+    parents => [],
     };
 
 my $iso = sprintf("%s/%s", $openqa::isodir, $settings{ISO});
@@ -166,6 +167,7 @@ my $jobs = [
         assets => {
             iso => ['whatever.iso'],
         },
+        parents => [],
     },
     {
         t_finished => undef,
@@ -196,6 +198,7 @@ my $jobs = [
         assets => {
             iso => ['whatever.iso'],
         },
+        parents => [],
     },
 ];
 
