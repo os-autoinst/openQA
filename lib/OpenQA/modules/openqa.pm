@@ -209,10 +209,8 @@ sub log_to_scriptpath($$){
 }
 
 sub running_log($) {
-    my $name = shift;
-    my $dest = readlink("$basedir/$prj/testresults/$name");
-    return '' unless $dest;
-    return dirname(dirname($dest)).'/';
+    my ($name) = @_;
+    return join('/', $basedir, $prj, 'testresults', $name, '/');
 }
 
 sub testcasedir($$) {
