@@ -609,8 +609,8 @@ sub main(){
                         warn "can't copy ulog: $uploaded_logfile -> $pooldir/testresults/$name/ulogs/\n";
                     }
                 }
-		unless (move("$pooldir/video.ogv", $testresults.'/video.ogv')) {
-			warn "can't move video: $!\n";
+                unless (move("$pooldir/video.ogv", $testresults.'/video.ogv')) {
+                    warn "can't move video: $!\n";
                 }
                 unless (dirmove("$pooldir/testresults/$name", $testresults)) {
                     warn "can't move test results $pooldir/testresults/$name -> $testresults: $!\n";
