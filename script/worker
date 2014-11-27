@@ -342,13 +342,15 @@ sub _kill {
 # with worse priority so it can be picked up again.
 sub job_incomplete($$){
     my ($job, $result) = @_;
-    api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
     my %args;
     $args{dup_type_auto} = 1;
 
     printf "duplicating job %d\n", $job->{'id'};
     # make it less attractive so we don't get it again
     api_call('post', 'jobs/'.$job->{'id'}.'/duplicate', \%args);
+
+    # set result after creating duplicete job so the chained jobs can survive
+    api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
 }
 
 # check if results.json contains an overal result. If the latter is

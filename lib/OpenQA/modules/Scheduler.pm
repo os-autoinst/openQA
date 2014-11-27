@@ -263,6 +263,18 @@ sub job_create {
         delete $settings{NAME};
     }
 
+    if ($settings{_START_AFTER_JOBS}) {
+        for my $id (@{$settings{_START_AFTER_JOBS}}) {
+            push @{$new_job_args{parents}},
+              {
+                parent_job_id => $id,
+                dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+              };
+        }
+        delete $settings{_START_AFTER_JOBS};
+    }
+
+
     while(my ($k, $v) = each %settings) {
         push @{$new_job_args{settings}}, { key => $k, value => $v };
     }
@@ -272,7 +284,6 @@ sub job_create {
     }
 
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
-
     return $job->id;
 }
 
@@ -329,6 +340,10 @@ sub _job_to_hash {
         for my $a ($job->jobs_assets->all()) {
             push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
         }
+    }
+    $j->{parents} = [];
+    for my $p ($job->parents->all()) {
+        push @{$j->{parents}}, $p->parent_job_id;
     }
     return $j;
 }
@@ -467,10 +482,25 @@ sub job_grab {
     my $result;
     while (1) {
         my $now = "datetime('now')";
+
+        my $blocked = schema->resultset("JobDependencies")->search(
+            {
+                dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+                -or => {
+                    state_id => { '!=', schema->resultset("JobStates")->search({ name => "done" })->single->id },
+                    result_id => { '!=',  schema->resultset("JobResults")->search({ name => "passed" })->single->id },
+                },
+            },
+            {
+                join => 'parent',
+            }
+        );
+
         $result = schema->resultset("Jobs")->search(
             {
                 state_id => schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
                 worker_id => 0,
+                id => { -not_in => $blocked->get_column('child_job_id')->as_query},
             },
             { order_by => { -asc => [qw/priority id/] }, rows => 1 }
           )->update(
@@ -503,6 +533,69 @@ sub job_grab {
 
     return $job_hashref;
 }
+
+# parent job failed, handle children - set them to done incomplete immediately
+sub _job_skip_children{
+    my $jobid = shift;
+
+    my $children = schema->resultset("JobDependencies")->search(
+        {
+            dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+            parent_job_id => $jobid,
+        },
+    );
+
+    my $now = "datetime('now')";
+
+    my $result = schema->resultset("Jobs")->search(
+        {
+            id => { -in => $children->get_column('child_job_id')->as_query},
+        },
+      )->update(
+        {
+            state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
+            result_id => schema->resultset("JobResults")->search({ name => "incomplete" })->single->id,
+            t_started => \$now,
+            t_finished => \$now,
+        }
+      );
+
+    while (my $j = $children->next) {
+        my $id = $j->child_job_id;
+        _job_skip_children($id);
+    }
+}
+
+# parent job has been cloned, move the scheduled children to the new one
+sub _job_update_parent{
+    my $jobid = shift;
+    my $new_jobid = shift;
+
+    my $children = schema->resultset("JobDependencies")->search(
+        {
+            dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+            parent_job_id => $jobid,
+            state_id => schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
+        },
+        {
+            join => 'child',
+        }
+    );
+
+    my $result = schema->resultset("JobDependencies")->search(
+        {
+            dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+            parent_job_id => $jobid,
+            child_job_id => { -in => $children->get_column('child_job_id')->as_query},
+        }
+      )->update(
+        {
+            parent_job_id => $new_jobid,
+        }
+      );
+}
+
+
 
 =item job_set_done
 
@@ -540,6 +633,9 @@ sub job_set_done {
                 result_id => $result->id,
             }
         );
+    }
+    if ($args{result} ne 'passed') {
+        _job_skip_children($jobid);
     }
     return $r;
 }
@@ -685,6 +781,9 @@ sub job_duplicate {
     my $clone = $job->duplicate(\%args);
     if (defined($clone)) {
         print STDERR "new job ".$clone->id."\n" if $debug;
+
+        _job_update_parent($job->id, $clone->id);
+
         return $clone->id;
     }
     else {

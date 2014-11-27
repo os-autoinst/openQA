@@ -20,6 +20,43 @@ use openqa;
 use Scheduler ();
 use Try::Tiny;
 
+sub _sort_dep {
+    my ($self, $list) = @_;
+
+    my %done;
+    my %count;
+    my @out;
+
+    for my $job (@$list) {
+        $count{$job->{TEST}} //= 0;
+        $count{$job->{TEST}}++;
+    }
+
+
+    my $added;
+    do {
+        $added = 0;
+        for my $job (@$list) {
+            next if $done{$job};
+            my $after = $job->{START_AFTER_TEST};
+            if (!defined $after || $count{$after} == 0) {
+                push @out, $job;
+                $done{$job} = 1;
+                $count{$job->{TEST}}--;
+                $added = 1;
+            }
+        }
+    } while ($added);
+
+    #cycles, broken dep put at the end of the list
+    for my $job (@$list) {
+        next if $done{$job};
+        push @out, $job;
+    }
+
+    return \@out;
+}
+
 sub _generate_jobs {
     my ($self, %args) = @_;
 
@@ -88,7 +125,7 @@ sub _generate_jobs {
         }
     }
 
-    return $ret;
+    return $self->_sort_dep($ret);
 }
 
 
@@ -132,9 +169,19 @@ sub create {
 
     my $cnt = 0;
     my @ids;
+    my %testsuite_ids;
     for my $settings (@{$jobs||[]}) {
         my $prio = $settings->{PRIO};
         delete $settings->{PRIO};
+
+        if (defined $settings->{START_AFTER_TEST}) {
+            if (defined $testsuite_ids{$settings->{START_AFTER_TEST}}) {
+                $settings->{_START_AFTER_JOBS} = $testsuite_ids{$settings->{START_AFTER_TEST}};
+            }
+            else {
+                $self->app->log->error("START_AFTER_TEST=" . $settings->{START_AFTER_TEST} . " not sorted");
+            }
+        }
         # create a new job with these parameters and count if successful
         my $id;
         try {
@@ -147,6 +194,11 @@ sub create {
         if ($id) {
             $cnt++;
             push @ids, $id;
+
+            my $testsuite = $settings->{TEST};
+            $testsuite_ids{$testsuite} //= [];
+            push @{$testsuite_ids{$testsuite}}, $id;
+
             # change prio only if other than defalt prio
             if( $prio && $prio != 50 ) {
                 Scheduler::job_set_prio(jobid => $id, prio => $prio);

@@ -35,6 +35,7 @@
         <thead>
             <tr>
                 <th class="table-sortable:numeric">#</th>
+                <th class="table-sortable:alphanumeric">deps</th>
                 <th class="table-sortable:alphanumeric">clone</th>
                 <th class="table-sortable:alphanumeric table-filterable">machine</th>
                 <th class="table-sortable:alphanumeric table-filterable">distri</th>
@@ -67,6 +68,11 @@
                         </div>
                     % }
                     <a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><%= $job->{'id'} %></a>
+                </td>
+                <td class="parents">
+                    % for my $parent_id (@{$job->{'parents'}}) {
+                        <a href="<%= url_for('test', 'testid' => $parent_id) %>">#<%= $parent_id %></a>
+                    % }
                 </td>
                 <td class="clone">
                     % if ($job->{'clone_id'}) {
@@ -133,6 +139,11 @@
                         </div>
                     % }
                     <a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><%= $job->{'id'} %></a>
+                </td>
+                <td class="parents">
+                    % for my $parent_id (@{$job->{'parents'}}) {
+                        <a href="<%= url_for('test', 'testid' => $parent_id) %>">#<%= $parent_id %></a>
+                    % }
                 </td>
                 <td class="clone">
                     % if ($job->{'clone_id'}) {
