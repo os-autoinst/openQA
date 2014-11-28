@@ -1,4 +1,7 @@
 % layout 'default';
+%= javascript '/javascripts/lib/codemirror.js'
+%= javascript '/javascripts/mode/perl/perl.js'
+%= stylesheet '/stylesheets/codemirror.css'
 % title $moduleid;
 
 <div class="grid_3 alpha" id="sidebar">
@@ -26,7 +29,14 @@
     <p>
     Test-Module: <tt><%= $scriptpath %></tt>
     </p>
-    %= b(syntax_highlight($script))
+<textarea class='code' id='script'>
+%= $script
+</textarea>
 
+<script type="text/javascript">
+ var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
+     lineNumbers: true
+ });
+</script>
   </div>
 </div>
