@@ -385,43 +385,43 @@ usingenv ISO=/var/lib/openqa/factory/iso/openSUSE-13.1-DVD-i586-Build0091-Media.
 usingenv ISO_MAXSIZE=4700372992
 usingenv QEMUVGA=cirrus
 usingenv VIDEOMODE=text
-scheduling isosize /var/lib/os-autoinst/tests/opensuse/inst.d/010_isosize.pm
-scheduling bootloader /var/lib/os-autoinst/tests/opensuse/inst.d/020_bootloader.pm
-scheduling welcome /var/lib/os-autoinst/tests/opensuse/inst.d/050_welcome.pm
-scheduling installation_mode /var/lib/os-autoinst/tests/opensuse/inst.d/051_installation_mode.pm
-scheduling installer_timezone /var/lib/os-autoinst/tests/opensuse/inst.d/054_installer_timezone.pm
-scheduling logpackages /var/lib/os-autoinst/tests/opensuse/inst.d/056_logpackages.pm
-scheduling installer_desktopselection /var/lib/os-autoinst/tests/opensuse/inst.d/057_installer_desktopselection.pm
-scheduling partitioning /var/lib/os-autoinst/tests/opensuse/inst.d/060_partitioning.pm
-scheduling partitioning_finish /var/lib/os-autoinst/tests/opensuse/inst.d/064_partitioning_finish.pm
-scheduling user_settings /var/lib/os-autoinst/tests/opensuse/inst.d/065_user_settings.pm
-scheduling installation_overview /var/lib/os-autoinst/tests/opensuse/inst.d/071_installation_overview.pm
-scheduling start_install /var/lib/os-autoinst/tests/opensuse/inst.d/085_start_install.pm
-scheduling livecdreboot /var/lib/os-autoinst/tests/opensuse/inst.d/090_livecdreboot.pm
-scheduling second_stage /var/lib/os-autoinst/tests/opensuse/inst.d/091_second_stage.pm
-scheduling consoletest_setup /var/lib/os-autoinst/tests/opensuse/consoletest.d/010_consoletest_setup.pm
-scheduling remove_cd_repo /var/lib/os-autoinst/tests/opensuse/consoletest.d/011_remove_cd_repo.pm
-scheduling yast2_lan /var/lib/os-autoinst/tests/opensuse/consoletest.d/140_yast2_lan.pm
-scheduling aplay /var/lib/os-autoinst/tests/opensuse/consoletest.d/145_aplay.pm
-scheduling glibc_i686 /var/lib/os-autoinst/tests/opensuse/consoletest.d/146_glibc_i686.pm
-scheduling zypper_up /var/lib/os-autoinst/tests/opensuse/consoletest.d/150_zypper_up.pm
-scheduling zypper_in /var/lib/os-autoinst/tests/opensuse/consoletest.d/155_zypper_in.pm
-scheduling yast2_i /var/lib/os-autoinst/tests/opensuse/consoletest.d/157_yast2_i.pm
-scheduling yast2_bootloader /var/lib/os-autoinst/tests/opensuse/consoletest.d/180_yast2_bootloader.pm
-scheduling sshd /var/lib/os-autoinst/tests/opensuse/consoletest.d/190_sshd.pm
-scheduling sshfs /var/lib/os-autoinst/tests/opensuse/consoletest.d/195_sshfs.pm
-scheduling mtab /var/lib/os-autoinst/tests/opensuse/consoletest.d/280_mtab.pm
-scheduling http_srv /var/lib/os-autoinst/tests/opensuse/consoletest.d/300_http_srv.pm
-scheduling mysql_srv /var/lib/os-autoinst/tests/opensuse/consoletest.d/305_mysql_srv.pm
-scheduling textinfo /var/lib/os-autoinst/tests/opensuse/consoletest.d/900_textinfo.pm
-scheduling consoletest_finish /var/lib/os-autoinst/tests/opensuse/consoletest.d/999_consoletest_finish.pm
+scheduling isosize /var/lib/openqa/tests/opensuse/inst.d/010_isosize.pm
+scheduling bootloader /var/lib/openqa/tests/opensuse/inst.d/020_bootloader.pm
+scheduling welcome /var/lib/openqa/tests/opensuse/inst.d/050_welcome.pm
+scheduling installation_mode /var/lib/openqa/tests/opensuse/inst.d/051_installation_mode.pm
+scheduling installer_timezone /var/lib/openqa/tests/opensuse/inst.d/054_installer_timezone.pm
+scheduling logpackages /var/lib/openqa/tests/opensuse/inst.d/056_logpackages.pm
+scheduling installer_desktopselection /var/lib/openqa/tests/opensuse/inst.d/057_installer_desktopselection.pm
+scheduling partitioning /var/lib/openqa/tests/opensuse/inst.d/060_partitioning.pm
+scheduling partitioning_finish /var/lib/openqa/tests/opensuse/inst.d/064_partitioning_finish.pm
+scheduling user_settings /var/lib/openqa/tests/opensuse/inst.d/065_user_settings.pm
+scheduling installation_overview /var/lib/openqa/tests/opensuse/inst.d/071_installation_overview.pm
+scheduling start_install /var/lib/openqa/tests/opensuse/inst.d/085_start_install.pm
+scheduling livecdreboot /var/lib/openqa/tests/opensuse/inst.d/090_livecdreboot.pm
+scheduling second_stage /var/lib/openqa/tests/opensuse/inst.d/091_second_stage.pm
+scheduling consoletest_setup /var/lib/openqa/tests/opensuse/consoletest.d/010_consoletest_setup.pm
+scheduling remove_cd_repo /var/lib/openqa/tests/opensuse/consoletest.d/011_remove_cd_repo.pm
+scheduling yast2_lan /var/lib/openqa/tests/opensuse/consoletest.d/140_yast2_lan.pm
+scheduling aplay /var/lib/openqa/tests/opensuse/consoletest.d/145_aplay.pm
+scheduling glibc_i686 /var/lib/openqa/tests/opensuse/consoletest.d/146_glibc_i686.pm
+scheduling zypper_up /var/lib/openqa/tests/opensuse/consoletest.d/150_zypper_up.pm
+scheduling zypper_in /var/lib/openqa/tests/opensuse/consoletest.d/155_zypper_in.pm
+scheduling yast2_i /var/lib/openqa/tests/opensuse/consoletest.d/157_yast2_i.pm
+scheduling yast2_bootloader /var/lib/openqa/tests/opensuse/consoletest.d/180_yast2_bootloader.pm
+scheduling sshd /var/lib/openqa/tests/opensuse/consoletest.d/190_sshd.pm
+scheduling sshfs /var/lib/openqa/tests/opensuse/consoletest.d/195_sshfs.pm
+scheduling mtab /var/lib/openqa/tests/opensuse/consoletest.d/280_mtab.pm
+scheduling http_srv /var/lib/openqa/tests/opensuse/consoletest.d/300_http_srv.pm
+scheduling mysql_srv /var/lib/openqa/tests/opensuse/consoletest.d/305_mysql_srv.pm
+scheduling textinfo /var/lib/openqa/tests/opensuse/consoletest.d/900_textinfo.pm
+scheduling consoletest_finish /var/lib/openqa/tests/opensuse/consoletest.d/999_consoletest_finish.pm
 
-||| starting isosize /var/lib/os-autoinst/tests/opensuse/inst.d/010_isosize.pm at 2014-02-18 12:16:10
+||| starting isosize /var/lib/openqa/tests/opensuse/inst.d/010_isosize.pm at 2014-02-18 12:16:10
 Creating a VM snapshot inst-isosize
 check if actual iso size 4441767936 fits 4700372992: ok
 ||| finished isosize inst at 2014-02-18 12:16:10 (0 s)
 
-||| starting bootloader /var/lib/os-autoinst/tests/opensuse/inst.d/020_bootloader.pm at 2014-02-18 12:16:10
+||| starting bootloader /var/lib/openqa/tests/opensuse/inst.d/020_bootloader.pm at 2014-02-18 12:16:10
 Creating a VM snapshot inst-bootloader
 <<< waitforneedle('inst-bootmenu', timeout=15)
 MATCH(bootmenu-rescue-cd:0.11): 0 376
@@ -596,7 +596,7 @@ MATCH(inst-consolesettingstyped-1:1.00): 565 465
 <<< sendkey(key=ret)
 ||| finished bootloader inst at 2014-02-18 12:17:05 (55 s)
 
-||| starting welcome /var/lib/os-autoinst/tests/opensuse/inst.d/050_welcome.pm at 2014-02-18 12:17:05
+||| starting welcome /var/lib/openqa/tests/opensuse/inst.d/050_welcome.pm at 2014-02-18 12:17:05
 Creating a VM snapshot inst-welcome
 <<< waitforneedle('inst-welcome-textmode_welcome-131M1_inst-welcome_inst-betawarning-textmode-13M1_inst-betawarning_inst-welcome-textmode-betawarning-13M1_inst-betawarning-textmode-13M1_', timeout=500)
 MATCH(inst-welcome-textmode:-0.30): 0 0
@@ -889,8 +889,8 @@ STAT statuser=204.31 statsystem=68.42
 no change 2 statuser=204.44 statsystem=68.45 
 no change 1 statuser=204.7 statsystem=68.5 
 [32m>>> waitforneedle: match=sudo-passwordprompt timed out after 3[0m
-/var/lib/os-autoinst/tests/opensuse/needles/sudo-passwordprompt.json
-/var/lib/os-autoinst/tests/opensuse/needles/sudo-passwordprompt-lxde.json
+/var/lib/openqa/tests/opensuse/needles/sudo-passwordprompt.json
+/var/lib/openqa/tests/opensuse/needles/sudo-passwordprompt-lxde.json
 wrote testresults/00000046-opensuse-13.1-i586-Build0091-textmode/template-sudo-passwordprompt-20140218_130207.json
 [34m<<< sendautotype(string='sudo tar cjf /tmp/logs.tar.bz2 /var/log
 ')[0m
@@ -947,8 +947,8 @@ MATCH(sudo-passwordprompt-lxde:0.21): 15 295
 STAT statuser=209.55 statsystem=69.47 
 no change 1 statuser=209.89 statsystem=69.47 
 [32m>>> waitforneedle: match=sudo-passwordprompt timed out after 3[0m
-/var/lib/os-autoinst/tests/opensuse/needles/sudo-passwordprompt.json
-/var/lib/os-autoinst/tests/opensuse/needles/sudo-passwordprompt-lxde.json
+/var/lib/openqa/tests/opensuse/needles/sudo-passwordprompt.json
+/var/lib/openqa/tests/opensuse/needles/sudo-passwordprompt-lxde.json
 wrote testresults/00000046-opensuse-13.1-i586-Build0091-textmode/template-sudo-passwordprompt-20140218_130219.json
 [34m<<< waitidle(timeout=19)[0m
 waitidle 0 d=0
@@ -1215,7 +1215,7 @@ waitidle 2 d=2
 [34m<<< waitserial(regex=textinfo_ok, timeout=5)[0m
 [32m>>> waitserial: found textinfo_ok[0m
 ||| finished textinfo consoletest at 2014-02-18 13:03:29 (279 s)
-[1m||| starting consoletest_finish /var/lib/os-autoinst/tests/opensuse/consoletest.d/999_consoletest_finish.pm[0m
+[1m||| starting consoletest_finish /var/lib/openqa/tests/opensuse/consoletest.d/999_consoletest_finish.pm[0m
 Creating a VM snapshot consoletest-consoletest_finish
 WARNING: read qmp 164 - {"timestamp": {"seconds": 1392728609, "microseconds": 116146}, "event": "STOP"}
 {"timestamp": {"seconds": 1392728610, "microseconds": 577422}, "event": "RESUME"}

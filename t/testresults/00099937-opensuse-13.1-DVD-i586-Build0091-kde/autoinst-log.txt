@@ -359,63 +359,63 @@ usingenv DVD=1
 usingenv ISO=/var/lib/openqa/factory/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso
 usingenv ISO_MAXSIZE=4700372992
 usingenv QEMUVGA=cirrus
-scheduling isosize /var/lib/os-autoinst/tests/opensuse/inst.d/010_isosize.pm
-scheduling bootloader /var/lib/os-autoinst/tests/opensuse/inst.d/020_bootloader.pm
-scheduling welcome /var/lib/os-autoinst/tests/opensuse/inst.d/050_welcome.pm
-scheduling installation_mode /var/lib/os-autoinst/tests/opensuse/inst.d/051_installation_mode.pm
-scheduling installer_timezone /var/lib/os-autoinst/tests/opensuse/inst.d/054_installer_timezone.pm
-scheduling logpackages /var/lib/os-autoinst/tests/opensuse/inst.d/056_logpackages.pm
-scheduling installer_desktopselection /var/lib/os-autoinst/tests/opensuse/inst.d/057_installer_desktopselection.pm
-scheduling partitioning /var/lib/os-autoinst/tests/opensuse/inst.d/060_partitioning.pm
-scheduling partitioning_finish /var/lib/os-autoinst/tests/opensuse/inst.d/064_partitioning_finish.pm
-scheduling user_settings /var/lib/os-autoinst/tests/opensuse/inst.d/065_user_settings.pm
-scheduling installation_overview /var/lib/os-autoinst/tests/opensuse/inst.d/071_installation_overview.pm
-scheduling start_install /var/lib/os-autoinst/tests/opensuse/inst.d/085_start_install.pm
-scheduling livecdreboot /var/lib/os-autoinst/tests/opensuse/inst.d/090_livecdreboot.pm
-scheduling second_stage /var/lib/os-autoinst/tests/opensuse/inst.d/091_second_stage.pm
-scheduling BNC847880_QT_cirrus /var/lib/os-autoinst/tests/opensuse/inst.d/700_BNC847880_QT_cirrus.pm
-scheduling reboot_after_install /var/lib/os-autoinst/tests/opensuse/inst.d/800_reboot_after_install.pm
-scheduling consoletest_setup /var/lib/os-autoinst/tests/opensuse/consoletest.d/010_consoletest_setup.pm
-scheduling remove_cd_repo /var/lib/os-autoinst/tests/opensuse/consoletest.d/011_remove_cd_repo.pm
-scheduling yast2_lan /var/lib/os-autoinst/tests/opensuse/consoletest.d/140_yast2_lan.pm
-scheduling aplay /var/lib/os-autoinst/tests/opensuse/consoletest.d/145_aplay.pm
-scheduling glibc_i686 /var/lib/os-autoinst/tests/opensuse/consoletest.d/146_glibc_i686.pm
-scheduling zypper_up /var/lib/os-autoinst/tests/opensuse/consoletest.d/150_zypper_up.pm
-scheduling zypper_in /var/lib/os-autoinst/tests/opensuse/consoletest.d/155_zypper_in.pm
-scheduling yast2_i /var/lib/os-autoinst/tests/opensuse/consoletest.d/157_yast2_i.pm
-scheduling yast2_bootloader /var/lib/os-autoinst/tests/opensuse/consoletest.d/180_yast2_bootloader.pm
-scheduling sshd /var/lib/os-autoinst/tests/opensuse/consoletest.d/190_sshd.pm
-scheduling sshfs /var/lib/os-autoinst/tests/opensuse/consoletest.d/195_sshfs.pm
-scheduling mtab /var/lib/os-autoinst/tests/opensuse/consoletest.d/280_mtab.pm
-scheduling textinfo /var/lib/os-autoinst/tests/opensuse/consoletest.d/900_textinfo.pm
-scheduling consoletest_finish /var/lib/os-autoinst/tests/opensuse/consoletest.d/999_consoletest_finish.pm
-scheduling xterm /var/lib/os-autoinst/tests/opensuse/x11test.d/200_xterm.pm
-scheduling sshxterm /var/lib/os-autoinst/tests/opensuse/x11test.d/220_sshxterm.pm
-scheduling kate /var/lib/os-autoinst/tests/opensuse/x11test.d/300_kate.pm
-scheduling firefox /var/lib/os-autoinst/tests/opensuse/x11test.d/400_firefox.pm
-scheduling firefox_audio /var/lib/os-autoinst/tests/opensuse/x11test.d/402_firefox_audio.pm
-scheduling ooffice /var/lib/os-autoinst/tests/opensuse/x11test.d/420_ooffice.pm
-scheduling oomath /var/lib/os-autoinst/tests/opensuse/x11test.d/425_oomath.pm
-scheduling oocalc /var/lib/os-autoinst/tests/opensuse/x11test.d/430_oocalc.pm
-scheduling khelpcenter /var/lib/os-autoinst/tests/opensuse/x11test.d/440_khelpcenter.pm
-scheduling systemsettings /var/lib/os-autoinst/tests/opensuse/x11test.d/460_systemsettings.pm
-scheduling yast2_users /var/lib/os-autoinst/tests/opensuse/x11test.d/470_yast2_users.pm
-scheduling dolphin /var/lib/os-autoinst/tests/opensuse/x11test.d/480_dolphin.pm
-scheduling amarok /var/lib/os-autoinst/tests/opensuse/x11test.d/500_amarok.pm
-scheduling kontact /var/lib/os-autoinst/tests/opensuse/x11test.d/520_kontact.pm
-scheduling reboot /var/lib/os-autoinst/tests/opensuse/x11test.d/561_reboot.pm
-scheduling desktop_mainmenu /var/lib/os-autoinst/tests/opensuse/x11test.d/700_desktop_mainmenu.pm
-scheduling gimp /var/lib/os-autoinst/tests/opensuse/x11test.d/810_gimp.pm
-scheduling inkscape /var/lib/os-autoinst/tests/opensuse/x11test.d/810_inkscape.pm
-scheduling gnucash /var/lib/os-autoinst/tests/opensuse/x11test.d/840_gnucash.pm
-scheduling shutdown /var/lib/os-autoinst/tests/opensuse/x11test.d/900_shutdown.pm
+scheduling isosize /var/lib/openqa/tests/opensuse/inst.d/010_isosize.pm
+scheduling bootloader /var/lib/openqa/tests/opensuse/inst.d/020_bootloader.pm
+scheduling welcome /var/lib/openqa/tests/opensuse/inst.d/050_welcome.pm
+scheduling installation_mode /var/lib/openqa/tests/opensuse/inst.d/051_installation_mode.pm
+scheduling installer_timezone /var/lib/openqa/tests/opensuse/inst.d/054_installer_timezone.pm
+scheduling logpackages /var/lib/openqa/tests/opensuse/inst.d/056_logpackages.pm
+scheduling installer_desktopselection /var/lib/openqa/tests/opensuse/inst.d/057_installer_desktopselection.pm
+scheduling partitioning /var/lib/openqa/tests/opensuse/inst.d/060_partitioning.pm
+scheduling partitioning_finish /var/lib/openqa/tests/opensuse/inst.d/064_partitioning_finish.pm
+scheduling user_settings /var/lib/openqa/tests/opensuse/inst.d/065_user_settings.pm
+scheduling installation_overview /var/lib/openqa/tests/opensuse/inst.d/071_installation_overview.pm
+scheduling start_install /var/lib/openqa/tests/opensuse/inst.d/085_start_install.pm
+scheduling livecdreboot /var/lib/openqa/tests/opensuse/inst.d/090_livecdreboot.pm
+scheduling second_stage /var/lib/openqa/tests/opensuse/inst.d/091_second_stage.pm
+scheduling BNC847880_QT_cirrus /var/lib/openqa/tests/opensuse/inst.d/700_BNC847880_QT_cirrus.pm
+scheduling reboot_after_install /var/lib/openqa/tests/opensuse/inst.d/800_reboot_after_install.pm
+scheduling consoletest_setup /var/lib/openqa/tests/opensuse/consoletest.d/010_consoletest_setup.pm
+scheduling remove_cd_repo /var/lib/openqa/tests/opensuse/consoletest.d/011_remove_cd_repo.pm
+scheduling yast2_lan /var/lib/openqa/tests/opensuse/consoletest.d/140_yast2_lan.pm
+scheduling aplay /var/lib/openqa/tests/opensuse/consoletest.d/145_aplay.pm
+scheduling glibc_i686 /var/lib/openqa/tests/opensuse/consoletest.d/146_glibc_i686.pm
+scheduling zypper_up /var/lib/openqa/tests/opensuse/consoletest.d/150_zypper_up.pm
+scheduling zypper_in /var/lib/openqa/tests/opensuse/consoletest.d/155_zypper_in.pm
+scheduling yast2_i /var/lib/openqa/tests/opensuse/consoletest.d/157_yast2_i.pm
+scheduling yast2_bootloader /var/lib/openqa/tests/opensuse/consoletest.d/180_yast2_bootloader.pm
+scheduling sshd /var/lib/openqa/tests/opensuse/consoletest.d/190_sshd.pm
+scheduling sshfs /var/lib/openqa/tests/opensuse/consoletest.d/195_sshfs.pm
+scheduling mtab /var/lib/openqa/tests/opensuse/consoletest.d/280_mtab.pm
+scheduling textinfo /var/lib/openqa/tests/opensuse/consoletest.d/900_textinfo.pm
+scheduling consoletest_finish /var/lib/openqa/tests/opensuse/consoletest.d/999_consoletest_finish.pm
+scheduling xterm /var/lib/openqa/tests/opensuse/x11test.d/200_xterm.pm
+scheduling sshxterm /var/lib/openqa/tests/opensuse/x11test.d/220_sshxterm.pm
+scheduling kate /var/lib/openqa/tests/opensuse/x11test.d/300_kate.pm
+scheduling firefox /var/lib/openqa/tests/opensuse/x11test.d/400_firefox.pm
+scheduling firefox_audio /var/lib/openqa/tests/opensuse/x11test.d/402_firefox_audio.pm
+scheduling ooffice /var/lib/openqa/tests/opensuse/x11test.d/420_ooffice.pm
+scheduling oomath /var/lib/openqa/tests/opensuse/x11test.d/425_oomath.pm
+scheduling oocalc /var/lib/openqa/tests/opensuse/x11test.d/430_oocalc.pm
+scheduling khelpcenter /var/lib/openqa/tests/opensuse/x11test.d/440_khelpcenter.pm
+scheduling systemsettings /var/lib/openqa/tests/opensuse/x11test.d/460_systemsettings.pm
+scheduling yast2_users /var/lib/openqa/tests/opensuse/x11test.d/470_yast2_users.pm
+scheduling dolphin /var/lib/openqa/tests/opensuse/x11test.d/480_dolphin.pm
+scheduling amarok /var/lib/openqa/tests/opensuse/x11test.d/500_amarok.pm
+scheduling kontact /var/lib/openqa/tests/opensuse/x11test.d/520_kontact.pm
+scheduling reboot /var/lib/openqa/tests/opensuse/x11test.d/561_reboot.pm
+scheduling desktop_mainmenu /var/lib/openqa/tests/opensuse/x11test.d/700_desktop_mainmenu.pm
+scheduling gimp /var/lib/openqa/tests/opensuse/x11test.d/810_gimp.pm
+scheduling inkscape /var/lib/openqa/tests/opensuse/x11test.d/810_inkscape.pm
+scheduling gnucash /var/lib/openqa/tests/opensuse/x11test.d/840_gnucash.pm
+scheduling shutdown /var/lib/openqa/tests/opensuse/x11test.d/900_shutdown.pm
 
-||| starting isosize /var/lib/os-autoinst/tests/opensuse/inst.d/010_isosize.pm at 2014-02-18 10:55:55
+||| starting isosize /var/lib/openqa/tests/opensuse/inst.d/010_isosize.pm at 2014-02-18 10:55:55
 Creating a VM snapshot inst-isosize
 check if actual iso size 4441767936 fits 4700372992: ok
 ||| finished isosize inst at 2014-02-18 10:55:55 (0 s)
 
-||| starting bootloader /var/lib/os-autoinst/tests/opensuse/inst.d/020_bootloader.pm at 2014-02-18 10:55:55
+||| starting bootloader /var/lib/openqa/tests/opensuse/inst.d/020_bootloader.pm at 2014-02-18 10:55:55
 Creating a VM snapshot inst-bootloader
 <<< waitforneedle('inst-bootmenu', timeout=15)
 MATCH(bootmenu-rescue-cd:0.11): 0 376
@@ -584,7 +584,7 @@ MATCH(inst-consolesettingstyped-1:1.00): 565 465
 <<< sendkey(key=ret)
 ||| finished bootloader inst at 2014-02-18 10:56:46 (51 s)
 
-||| starting welcome /var/lib/os-autoinst/tests/opensuse/inst.d/050_welcome.pm at 2014-02-18 10:56:46
+||| starting welcome /var/lib/openqa/tests/opensuse/inst.d/050_welcome.pm at 2014-02-18 10:56:46
 Creating a VM snapshot inst-welcome
 <<< waitforneedle('welcome-131M1_inst-welcome_inst-betawarning_', timeout=500)
 MATCH(welcome-131M1:0.29): 666 487
@@ -694,12 +694,12 @@ MATCH(langincomplete-1366800311:0.49): 365 76
 MATCH(inst-langincomplete-texmode-13M1:0.18): 419 119
 STAT statuser=50.37 statsystem=17.1 
 >>> waitforneedle: match=langincomplete timed out after 1
-/var/lib/os-autoinst/tests/opensuse/needles/langincomplete-1366800311.json
-/var/lib/os-autoinst/tests/opensuse/needles/inst-langincomplete-texmode-13M1.json
+/var/lib/openqa/tests/opensuse/needles/langincomplete-1366800311.json
+/var/lib/openqa/tests/opensuse/needles/inst-langincomplete-texmode-13M1.json
 wrote testresults/00000037-opensuse-13.1-i586-Build0091-kde/template-langincomplete-20140218_105727.json
 ||| finished welcome inst at 2014-02-18 10:57:30 (43 s)
 
-||| starting installation_mode /var/lib/os-autoinst/tests/opensuse/inst.d/051_installation_mode.pm at 2014-02-18 10:57:30
+||| starting installation_mode /var/lib/openqa/tests/opensuse/inst.d/051_installation_mode.pm at 2014-02-18 10:57:30
 Creating a VM snapshot inst-installation_mode
 <<< waitforneedle('inst-instmode', timeout=120)
 MATCH(inst-instmode-131Build0670:0.30): 461 178
@@ -724,7 +724,7 @@ MATCH(inst-timezone:0.97): 261 0
 >>> found inst-timezone, similarity 0.97 @ 261/0: 
 ||| finished installation_mode inst at 2014-02-18 10:57:39 (8 s)
 
-||| starting installer_timezone /var/lib/os-autoinst/tests/opensuse/inst.d/054_installer_timezone.pm at 2014-02-18 10:57:39
+||| starting installer_timezone /var/lib/openqa/tests/opensuse/inst.d/054_installer_timezone.pm at 2014-02-18 10:57:39
 Creating a VM snapshot inst-installer_timezone
 <<< waitforneedle('inst-timezone', timeout=125)
 MATCH(inst-timezone:0.97): 261 0
@@ -732,7 +732,7 @@ MATCH(inst-timezone:0.97): 261 0
 <<< sendkey(key=alt-n)
 ||| finished installer_timezone inst at 2014-02-18 10:57:40 (1 s)
 
-||| starting logpackages /var/lib/os-autoinst/tests/opensuse/inst.d/056_logpackages.pm at 2014-02-18 10:57:40
+||| starting logpackages /var/lib/openqa/tests/opensuse/inst.d/056_logpackages.pm at 2014-02-18 10:57:40
 Creating a VM snapshot inst-logpackages
 <<< waitforneedle('before-package-selection', timeout=30)
 MATCH(desktop-selection-ruby-wrong_order:0.14): 250 220
@@ -944,7 +944,7 @@ MATCH(reboot_after_install-12.1-13.1-upgrade:0.11): 0 0
 MATCH(reboot_after_install-12.1-13.1-upgrade:1.00): 52 43
 [32m>>> found reboot_after_install-131M4, similarity 0.99 @ 63/54: [0m
 ||| finished gnucash x11test at 2014-02-18 12:06:38 (118 s)
-[1m||| starting shutdown /var/lib/os-autoinst/tests/opensuse/x11test.d/900_shutdown.pm[0m
+[1m||| starting shutdown /var/lib/openqa/tests/opensuse/x11test.d/900_shutdown.pm[0m
 Creating a VM snapshot x11test-shutdown
 WARNING: read qmp 164 - {"timestamp": {"seconds": 1392725198, "microseconds": 696911}, "event": "STOP"}
 {"timestamp": {"seconds": 1392725200, "microseconds": 169390}, "event": "RESUME"}
@@ -1026,7 +1026,7 @@ test shutdown died: mydie at /var/lib/openqa/perl/autoinst/bmwqemu.pm line 409.
 	bmwqemu::mydie('needle(s) \'splashscreen\' not found') called at /var/lib/openqa/perl/autoinst/bmwqemu.pm line 1237
 	bmwqemu::_waitforneedle('mustmatch', 'splashscreen', 'timeout', 40) called at /var/lib/openqa/perl/autoinst/bmwqemu.pm line 1244
 	bmwqemu::waitforneedle('splashscreen', 40) called at /var/lib/openqa/perl/autoinst/bmwqemu.pm line 976
-	bmwqemu::waitinststage('splashscreen', 40) called at /var/lib/os-autoinst/tests/opensuse/x11test.d/900_shutdown.pm line 20
+	bmwqemu::waitinststage('splashscreen', 40) called at /var/lib/openqa/tests/opensuse/x11test.d/900_shutdown.pm line 20
 	shutdown::run('shutdown=HASH(0x2fc8768)') called at /var/lib/openqa/perl/autoinst/basetest.pm line 267
 	eval {...} called at /var/lib/openqa/perl/autoinst/basetest.pm line 260
 	basetest::runtest('shutdown=HASH(0x2fc8768)') called at /var/lib/openqa/perl/autoinst/autotest.pm line 60
@@ -1036,7 +1036,7 @@ test shutdown died: mydie at /var/lib/openqa/perl/autoinst/bmwqemu.pm line 409.
 	bmwqemu::mydie('needle(s) \'splashscreen\' not found') called at /var/lib/openqa/perl/autoinst/bmwqemu.pm line 1237
 	bmwqemu::_waitforneedle('mustmatch', 'splashscreen', 'timeout', 40) called at /var/lib/openqa/perl/autoinst/bmwqemu.pm line 1244
 	bmwqemu::waitforneedle('splashscreen', 40) called at /var/lib/openqa/perl/autoinst/bmwqemu.pm line 976
-	bmwqemu::waitinststage('splashscreen', 40) called at /var/lib/os-autoinst/tests/opensuse/x11test.d/900_shutdown.pm line 20
+	bmwqemu::waitinststage('splashscreen', 40) called at /var/lib/openqa/tests/opensuse/x11test.d/900_shutdown.pm line 20
 	shutdown::run('shutdown=HASH(0x2fc8768)') called at /var/lib/openqa/perl/autoinst/basetest.pm line 267
 	eval {...} called at /var/lib/openqa/perl/autoinst/basetest.pm line 260
 	basetest::runtest('shutdown=HASH(0x2fc8768)') called at /var/lib/openqa/perl/autoinst/autotest.pm line 60

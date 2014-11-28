@@ -371,8 +371,8 @@ Getting tests
 
 First you need to get actual tests. You can get openSUSE tests and needles (the
 expected results) from 
-https://github.com/os-autoinst/os-autoinst-needles-opensuse[GitHub]. It belongs
-into the +/var/lib/os-autoinst/tests+ directory. To make it easier, you can just
+https://github.com/os-autoinst/os-autoinst-distri-opensuse[GitHub]. It belongs
+into the +/var/lib/openqa/tests/opensuse+ directory. To make it easier, you can just
 run
 
 [source,sh]
@@ -393,7 +393,7 @@ following command:
 
 [source,sh]
 --------------------------------------------------------------------------------
-/var/lib/os-autoinst/tests/opensuse/templates
+/var/lib/openqa/tests/opensuse/templates
 --------------------------------------------------------------------------------
 
 This will load some default settings that were used at some point of time in
