@@ -28,7 +28,7 @@ use File::Path qw/make_path remove_tree/;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $dir = "t/data/os-autoinst/tests/opensuse/needles";
+my $dir = "t/data/openqa/share/tests/opensuse/needles";
 remove_tree($dir);
 make_path($dir);
 my @git = ('git','--git-dir', "$dir/.git",'--work-tree', $dir);

@@ -75,7 +75,7 @@ our $cachedir="$basedir/$prj/cache";
 our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
-our $testcasedir = "$basedir/os-autoinst/tests";
+our $testcasedir = "$basedir/openqa/share/tests";
 
 our $dbfile = $ENV{OPENQA_DB} || "$basedir/$prj/db/db.sqlite";
 

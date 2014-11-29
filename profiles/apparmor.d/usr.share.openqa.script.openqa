@@ -45,9 +45,10 @@
   /var/lib/openqa/share/factory/iso/* r,
   /var/lib/openqa/share/testresults/ r,
   /var/lib/openqa/share/testresults/** rk,
-  /var/lib/os-autoinst/tests/ r,
-  /var/lib/os-autoinst/tests/** rw,
-  /var/lib/os-autoinst/tests/*/needles/.git/objects/*/* rwl,
+  /var/lib/openqa/share/tests/ r,
+  /var/lib/openqa/share/tests/** rw,
+  /var/lib/openqa/share/tests/*/needles/.git/objects/*/* rwl,
+
   /var/log/openqa rkw,
   /var/tmp/* rw,
   /tmp/mojo.tmp rw,
