@@ -44,30 +44,6 @@ sub register {
         }
     );
 
-    $app->helper(
-        syntax_highlight => sub {
-            my $c=shift;
-            my $script=shift;
-            $script=~s{^sub is_applicable}{# this function decides if the test shall run\n$&}m;
-            $script=~s{^sub run}{# this part contains the steps to run this test\n$&}m;
-            $script=~s{^sub checklist}{# this part contains known hash values of good or bad results\n$&}m;
-            eval "require Perl::Tidy;" or return "<pre>$script</pre>";
-            my @out;
-            {
-                local @ARGV;
-                push(@ARGV,"-html", "-pre", "-css=/dev/null", "-q", "-se");
-                Perl::Tidy::perltidy(
-                    source => \$script,
-                    destination => \@out,
-                    logfile => "/dev/null",
-                    errorfile => "/dev/null"
-                );
-            }
-            my $out=join("",@out);
-            return $out;
-        }
-    );
-
     # Breadcrumbs generation can be centralized, since it's really simple
     $app->helper(
         breadcrumbs => sub {

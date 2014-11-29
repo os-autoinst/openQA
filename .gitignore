@@ -8,7 +8,6 @@ testrun-cron
 testrun-manual
 archive
 backlog
-perl
 video
 *.swp
 www/htdocs/includes/knownissues.html
