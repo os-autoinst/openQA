@@ -31,7 +31,9 @@ my $cfg = $t->app->config;
 is(length($cfg->{_openid_secret}), 16, "config has openid_secret");
 delete $cfg->{_openid_secret};
 
-is_deeply($cfg, {
+is_deeply(
+    $cfg,
+    {
         global => {
             branding => "openSUSE",
             scm => 'git',
@@ -41,7 +43,7 @@ is_deeply($cfg, {
             do_push => 'no',
         },
         logging => {
-	    file => '/var/log/openqa'
+            file => '/var/log/openqa'
         },
         openid => {
             provider => 'https://www.opensuse.org/openid/user/',
@@ -51,7 +53,8 @@ is_deeply($cfg, {
             listen => ['http://localhost:9526/'],
             proxy => 1,
         },
-    });
+    }
+);
 
 $ENV{OPENQA_CONFIG} = 't/testcfg.ini';
 open(my $fd, '>', $ENV{OPENQA_CONFIG});

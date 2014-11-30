@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-  unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA/modules';
 }
 
 use strict;
@@ -36,16 +36,18 @@ my $app = $t->app;
 
 my $hash = {};
 
-$app->plugin(CHI => {
-  default => {
-        driver => 'Memory',
-        global => 1
-  },
-  TestCache => {
-    driver => 'Memory',
-    datastore => $hash
-  }
-});
+$app->plugin(
+    CHI => {
+        default => {
+            driver => 'Memory',
+            global => 1
+        },
+        TestCache => {
+            driver => 'Memory',
+            datastore => $hash
+        }
+    }
+);
 
 my $c = Mojolicious::Controller->new;
 $c->app($app);

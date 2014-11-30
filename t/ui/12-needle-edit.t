@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-  unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA/modules';
 }
 
 use Mojo::Base -strict;
@@ -57,22 +57,18 @@ $req->element_exists("img[src=/tests/99937/images/thumb/isosize-1.png]");
 $req->element_exists("input[data-image=isosize-1.png]");
 
 # save needle without auth must fail
-$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',
-    { 'X-CSRF-Token' => $token },
-    form => { name => 'foo', prio => "foobar"})->status_is(403);
+$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { name => 'foo', prio => "foobar"})->status_is(403);
 
 # log in as operator
 $test_case->login($t, 'https://openid.camelot.uk/percival');
 
 # post needle based on screenshot
-$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',
-    { 'X-CSRF-Token' => $token },
-    form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah" })->status_is(200);
+$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah" })->status_is(200);
 $req->element_exists_not('.ui-state-error');
 ok(-f "$dir/isosize-blah.png", "isosize-blah.png created");
 ok(-f "$dir/isosize-blah.json", "isosize-blah.json created");
 
-ok(open (GIT, '-|', @git, 'show'), "git show");
+ok(open(GIT, '-|', @git, 'show'), "git show");
 {
     local $/;
     my $commit = <GIT>;
@@ -82,17 +78,30 @@ close GIT;
 
 # post needle based on existing needle, reuse the one we created in the test
 # above
-$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',
+$req = $t->post_ok(
+    '/tests/99937/modules/isosize/steps/1',
     { 'X-CSRF-Token' => $token },
-    form => { json => 'blub', imagename => 'isosize-blah.png',
-        imagedistri => 'opensuse', needlename => "isosize-blub" })->status_is(200);
+    form => {
+        json => 'blub',
+        imagename => 'isosize-blah.png',
+        imagedistri => 'opensuse',
+        needlename => "isosize-blub"
+    }
+)->status_is(200);
 $req->element_exists_not('.ui-state-error');
 
 # post invalid values
-$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',
+$req = $t->post_ok(
+    '/tests/99937/modules/isosize/steps/1',
     { 'X-CSRF-Token' => $token },
-    form => { json => 'blub', imagename => '../isosize-blah.png',
-        imagedistri => 'ope/nsuse', needlename => ".isosize-blub", imageversion => "/" })->status_is(200);
+    form => {
+        json => 'blub',
+        imagename => '../isosize-blah.png',
+        imagedistri => 'ope/nsuse',
+        needlename => ".isosize-blub",
+        imageversion => "/"
+    }
+)->status_is(200);
 $req->text_is('.ui-state-error' => 'Error creating/updating needle: wrong parameters imagename imagedistri imageversion needlename');
 
 #open (F, '|-', 'w3m -T text/html');

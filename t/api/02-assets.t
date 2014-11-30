@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-  unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA/modules';
 }
 
 use Mojo::Base -strict;
@@ -26,22 +26,21 @@ use OpenQA::API::V1::Client;
 use Mojo::IOLoop;
 use Data::Dump;
 
-sub nots
-{
-  my $h = shift;
-  my @ts = @_;
-  if (ref $h eq 'ARRAY') {
-      my @r;
-      for my $i (@$h) {
-          push @r, nots($i, @ts);
-      }
-      return \@r;
-  }
-  unshift @ts, 't_updated', 't_created';
-  for (@ts) {
-    delete $h->{$_};
-  }
-  return $h;
+sub nots{
+    my $h = shift;
+    my @ts = @_;
+    if (ref $h eq 'ARRAY') {
+        my @r;
+        for my $i (@$h) {
+            push @r, nots($i, @ts);
+        }
+        return \@r;
+    }
+    unshift @ts, 't_updated', 't_created';
+    for (@ts) {
+        delete $h->{$_};
+    }
+    return $h;
 }
 
 OpenQA::Test::Case->new->init_data;
