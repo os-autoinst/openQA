@@ -434,11 +434,11 @@ sub stop_job {
     if (!$aborted || !($aborted eq 'quit' && $aborted eq 'abort')) {
         # collect uploaded logs
         my @uploaded_logfiles = <$pooldir/ulogs/*>;
-        mkdir("$pooldir/testresults/$name/ulogs/");
+        mkdir("$testresults/ulogs/");
         for my $uploaded_logfile (@uploaded_logfiles) {
             next unless -f $uploaded_logfile;
-            unless(copy($uploaded_logfile, "$pooldir/testresults/$name/ulogs/")) {
-                warn "can't copy ulog: $uploaded_logfile -> $pooldir/testresults/$name/ulogs/\n";
+            unless(copy($uploaded_logfile, "$testresults/ulogs/")) {
+                warn "can't copy ulog: $uploaded_logfile -> $testresults/ulogs/\n";
             }
         }
         unless (move("$pooldir/video.ogv", $testresults.'/video.ogv')) {
@@ -498,6 +498,11 @@ sub stop_job {
 
 }
 
+sub set_job_incomplete {
+    api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
+    $job = undef;
+}
+
 sub start_job {
     # update settings with worker-specific stuff
     @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
@@ -510,15 +515,28 @@ sub start_job {
     elsif (-e $testresults) {
         backup_testresults($testresults);
     }
-    mkdir($testresults);
-    mkdir(join('/', $pooldir, 'testresults'));
-    symlink($testresults, join('/', $pooldir, 'testresults', $name)) or warn "symlink $testresults: $!\n";
+    if (!mkdir($testresults)) {
+        warn "mkdir $testresults: $!\n";
+        $aborted = 'crashed';
+        set_job_incomplete;
+        return;
+    }
+    if (!mkdir(join('/', $pooldir, 'testresults'))) {
+        warn "mkdir $pooldir/$testresults: $!\n";
+        set_job_incomplete;
+        return;
+    }
+    if (!symlink($testresults, join('/', $pooldir, 'testresults', $name))) {
+        warn "symlink $testresults: $!\n";
+        set_job_incomplete;
+        return;
+    }
 
     $worker = workit($job);
     unless ($worker) {
         warn "job is missing files, releasing job\n";
-        api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
-        $job = undef;
+        set_job_incomplete;
+        return;
     }
     $worker_start_time = time;
     $aborted = undef;
