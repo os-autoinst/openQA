@@ -263,6 +263,9 @@ sub job_create {
         delete $settings{NAME};
     }
 
+    # add a dummy password, set to something real in job_grab
+    $settings{CONNECT_PASSWORD} = '';
+
     if ($settings{_START_AFTER_JOBS}) {
         for my $id (@{$settings{_START_AFTER_JOBS}}) {
             push @{$new_job_args{parents}},
@@ -531,7 +534,29 @@ sub job_grab {
         }
     ) if $result != 0;
 
+    _job_set_connect_password($job_hashref->{id});
+
     return $job_hashref;
+}
+
+sub _job_set_connect_password($) {
+
+    my $jobid = shift;
+    my @chars = ("A".."Z", "a".."z", '0'..'9');
+    my $password;
+    $password .= $chars[rand @chars] for 1..32;
+
+    # set a connect password
+    my $r = schema->resultset("JobSettings")->search(
+        {
+            job_id => $jobid,
+            key => 'CONNECT_PASSWORD'
+        }
+      )->update(
+        {
+            value => $password
+        }
+      );
 }
 
 # parent job failed, handle children - set them to done incomplete immediately

@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 53;
+use Test::More tests => 55;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -96,6 +96,7 @@ my $job_ref = {
         KVM => "KVM",
         MACHINE => "RainbowPC",
         NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
+        CONNECT_PASSWORD => ''
     },
     assets => {
         iso => ['whatever.iso'],
@@ -154,6 +155,7 @@ my $jobs = [
             KVM => "KVM",
             MACHINE => "RainbowPC",
             NAME => '00000002-OTHER NAME',
+            CONNECT_PASSWORD => ''
         },
         assets => {
             iso => ['whatever.iso'],
@@ -185,6 +187,7 @@ my $jobs = [
             KVM => "KVM",
             MACHINE => "RainbowPC",
             NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
+            CONNECT_PASSWORD => ''
         },
         assets => {
             iso => ['whatever.iso'],
@@ -248,7 +251,16 @@ is($job->{result}, "incomplete", "result is incomplete");
 
 $job = Scheduler::job_grab(%args);
 isnt($job_id, $job->{id}, "new job grabbed");
-$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-Build666-rainbow',is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
+$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-Build666-rainbow';
+
+isnt($job->{settings}->{CONNECT_PASSWORD}, '', 'Connect password must be set');
+is(length($job->{settings}->{CONNECT_PASSWORD}), 32, 'We expect a long string');
+
+# it's hard to test that we have a valid random string - so remove them from the test
+delete $job->{settings}->{CONNECT_PASSWORD};
+delete $job_ref->{settings}->{CONNECT_PASSWORD};
+
+is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job_id;
 $job_id = $job->{id};
 
