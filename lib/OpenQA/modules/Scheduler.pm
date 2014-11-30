@@ -523,18 +523,17 @@ sub job_grab {
     }
 
     my $job_hashref;
-    $job_hashref = _job_get(
-        {
-            'me.id' => schema->resultset("Jobs")->search(
-                {
-                    state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
-                    worker_id => $workerid,
-                }
-            )->single->id,
-        }
-    ) if $result != 0;
-
-    _job_set_connect_password($job_hashref->{id});
+    if ($result != 0) {
+	$job_hashref = _job_get({
+	    'me.id' => schema->resultset("Jobs")->search(
+		{
+		    state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
+		    worker_id => $workerid,
+		}
+		)->single->id,
+				});
+	_job_set_connect_password($job_hashref->{id});
+    }
 
     return $job_hashref;
 }
