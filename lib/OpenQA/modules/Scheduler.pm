@@ -265,6 +265,8 @@ sub job_create {
 
     # add a dummy password, set to something real in job_grab
     $settings{CONNECT_PASSWORD} = '';
+    # add a dummy ip, job_grab will fill the real worker ip
+    $settings{CONNECT_IP} = '';
 
     if ($settings{_START_AFTER_JOBS}) {
         for my $id (@{$settings{_START_AFTER_JOBS}}) {
@@ -478,6 +480,7 @@ sub job_grab {
     my %args = @_;
     my $workerid = $args{workerid};
     my $blocking = int($args{blocking} || 0);
+    my $workerip = $args{workerip};
 
     _validate_workerid($workerid);
     _seen_worker($workerid);
@@ -533,6 +536,7 @@ sub job_grab {
 		)->single->id,
 				});
 	_job_set_connect_password($job_hashref);
+	_job_set_connect_ip($job_hashref->{id}, $workerip);
     }
     return $job_hashref;
 }
@@ -556,6 +560,20 @@ sub _job_set_connect_password($) {
         }
       );
     $jobref->{'settings'}->{'CONNECT_PASSWORD'} = $password;
+}
+
+sub _job_set_connect_ip {
+    my ($jobid, $ip) = @_;
+    my $r = schema->resultset("JobSettings")->search(
+        {
+            job_id => $jobid,
+            key => 'CONNECT_IP'
+        }
+      )->update(
+        {
+            value => $ip
+        }
+      );
 }
 
 # parent job failed, handle children - set them to done incomplete immediately
