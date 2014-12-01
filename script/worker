@@ -365,6 +365,8 @@ sub job_incomplete($$){
 
     # set result after creating duplicete job so the chained jobs can survive
     api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
+
+    clean_pool($job);
 }
 
 # check if results.json contains an overal result. If the latter is
@@ -498,11 +500,6 @@ sub stop_job {
 
 }
 
-sub set_job_incomplete {
-    api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
-    $job = undef;
-}
-
 sub start_job {
     # update settings with worker-specific stuff
     @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
@@ -517,25 +514,21 @@ sub start_job {
     }
     if (!mkdir($testresults)) {
         warn "mkdir $testresults: $!\n";
-        $aborted = 'crashed';
-        set_job_incomplete;
-        return;
+        return job_incomplete($job, 'setup failure');
     }
     if (!mkdir(join('/', $pooldir, 'testresults'))) {
-        warn "mkdir $pooldir/$testresults: $!\n";
-        set_job_incomplete;
-        return;
+        warn "mkdir $pooldir/testresults: $!\n";
+        return job_incomplete($job, 'setup failure');
     }
     if (!symlink($testresults, join('/', $pooldir, 'testresults', $name))) {
         warn "symlink $testresults: $!\n";
-        set_job_incomplete;
-        return;
+        return job_incomplete($job, 'setup failure');
     }
 
     $worker = workit($job);
     unless ($worker) {
         warn "job is missing files, releasing job\n";
-        set_job_incomplete;
+        job_incomplete($job, "missing files");
         return;
     }
     $worker_start_time = time;
@@ -734,7 +727,6 @@ sub main(){
         _kill_worker($worker);
         unlink($testresults);
         job_incomplete($job, "worker quit");
-        clean_pool($job);
     }
 }
 
