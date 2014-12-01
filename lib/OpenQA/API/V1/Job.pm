@@ -58,8 +58,9 @@ sub grab {
 
     my $workerid = $self->stash('workerid');
     my $blocking = int($self->param('blocking') || 0);
+    my $workerip = $self->tx->remote_address;
 
-    my $res = Scheduler::job_grab(workerid => $workerid, blocking => $blocking);
+    my $res = Scheduler::job_grab(workerid => $workerid, blocking => $blocking, workerip => $workerip);
     $self->render(json => {job => $res});
 }
 

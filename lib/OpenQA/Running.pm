@@ -42,7 +42,7 @@ sub init {
     my $workerid = $job->{'worker_id'};
     my $worker = Scheduler::worker_get($workerid);
     my $workerport = $worker->{'instance'} * 10 + $WORKER_PORT_START;
-    my $workerurl = $worker->{'host'} . ':' . $workerport;
+    my $workerurl = $job->{'settings'}->{'CONNECT_IP'} . ':' . $workerport;
     $self->stash('workerurl', $workerurl);
     $self->stash('jobpassword', $job->{'settings'}->{'CONNECT_PASSWORD'});
 
