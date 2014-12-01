@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-  unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA/modules';
 }
 
 use strict;
@@ -67,7 +67,7 @@ is($job->{state}, 'running', "old job still running");
 $commands = Scheduler::list_commands();
 is(@$commands, 1, "one command enqueued");
 
-is_deeply($commands->[0]->{command} , "cancel", "cancel command enqued");
+is_deeply($commands->[0]->{command}, "cancel", "cancel command enqued");
 
 $job = Scheduler::job_get(99928);
 is($job->{state}, 'scheduled', "unrelated job 99928 still scheduled");

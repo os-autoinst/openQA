@@ -22,7 +22,7 @@ cd "${0%/*}/.."
 # just to make sure we are at the right location
 test -e script/openqa || exit 1
 
-find . -name '*.p[lm]' -print0 | xargs -0 perltidy $TIDY_ARGS
+find . -name '*.p[lm]' -o -name '*.t' -print0 | xargs -0 perltidy $TIDY_ARGS
 
 find script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,clean_needles} -print0 | xargs -0 perltidy $TIDY_ARGS
 

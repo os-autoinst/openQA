@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-  unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA/modules';
 }
 
 use Mojo::Base -strict;
@@ -108,7 +108,6 @@ $get->element_exists('#results #job_99962');
 #
 # Test the legacy redirection
 #
-$t->get_ok('/results')->status_is(302)
-  ->header_like(Location => qr/\/tests$/);
+$t->get_ok('/results')->status_is(302)->header_like(Location => qr/\/tests$/);
 
 done_testing();

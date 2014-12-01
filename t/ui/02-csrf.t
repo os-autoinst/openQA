@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-  unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA/modules';
 }
 
 use Mojo::Base -strict;
@@ -41,12 +41,9 @@ is($token, $get->res->dom->at('form input[name=csrf_token]')->{value}, "token is
 $t->get_ok('/tests')->element_exists_not('#results #job_99928 .cancel a');
 
 # test cancel and restart without logging in
-$t->post_ok('/api/v1/jobs/99928/cancel' => { 'X-CSRF-Token' => $token } => form => {})
-    ->status_is(403);
-$t->post_ok('/api/v1/jobs/99928/restart' => { 'X-CSRF-Token' => $token } => form => {})
-    ->status_is(403);
-$t->post_ok('/api/v1/jobs/99928/prio?prio=34' => { 'X-CSRF-Token' => $token } => form => {})
-    ->status_is(403);
+$t->post_ok('/api/v1/jobs/99928/cancel' => { 'X-CSRF-Token' => $token } => form => {})->status_is(403);
+$t->post_ok('/api/v1/jobs/99928/restart' => { 'X-CSRF-Token' => $token } => form => {})->status_is(403);
+$t->post_ok('/api/v1/jobs/99928/prio?prio=34' => { 'X-CSRF-Token' => $token } => form => {})->status_is(403);
 
 
 # Log in with an authorized user for the rest of the test
@@ -57,27 +54,18 @@ $test_case->login($t, 'https://openid.camelot.uk/percival');
 $t->get_ok('/tests')->element_exists('#results #job_99928 .cancel a[data-method=post]');
 
 # test cancel with and without CSRF token
-$t->post_ok('/api/v1/jobs/99928/cancel' => form => { csrf_token => 'foobar' })
-    ->status_is(403);
-$t->post_ok('/api/v1/jobs/99928/cancel' => { 'X-CSRF-Token' => $token } => form => {})
-    ->status_is(200);
-$t->post_ok('/api/v1/jobs/99928/cancel' => form => { csrf_token => $token })
-    ->status_is(200);
+$t->post_ok('/api/v1/jobs/99928/cancel' => form => { csrf_token => 'foobar' })->status_is(403);
+$t->post_ok('/api/v1/jobs/99928/cancel' => { 'X-CSRF-Token' => $token } => form => {})->status_is(200);
+$t->post_ok('/api/v1/jobs/99928/cancel' => form => { csrf_token => $token })->status_is(200);
 
 # test restart with and without CSRF token
-$t->post_ok('/api/v1/jobs/99928/restart' => form => { csrf_token => 'foobar' })
-    ->status_is(403);
-$t->post_ok('/api/v1/jobs/99928/restart' => { 'X-CSRF-Token' => $token } => form => {})
-    ->status_is(200);
-$t->post_ok('/api/v1/jobs/99928/restart' => form => { csrf_token => $token })
-    ->status_is(200);
+$t->post_ok('/api/v1/jobs/99928/restart' => form => { csrf_token => 'foobar' })->status_is(403);
+$t->post_ok('/api/v1/jobs/99928/restart' => { 'X-CSRF-Token' => $token } => form => {})->status_is(200);
+$t->post_ok('/api/v1/jobs/99928/restart' => form => { csrf_token => $token })->status_is(200);
 
 # test prio with and without CSRF token
-$t->post_ok('/api/v1/jobs/99928/prio?prio=33' => form => { csrf_token => 'foobar' })
-    ->status_is(403);
-$t->post_ok('/api/v1/jobs/99928/prio?prio=34' => { 'X-CSRF-Token' => $token } => form => {})
-    ->status_is(200);
-$t->post_ok('/api/v1/jobs/99928/prio?prio=35' => form => { csrf_token => $token })
-    ->status_is(200);
+$t->post_ok('/api/v1/jobs/99928/prio?prio=33' => form => { csrf_token => 'foobar' })->status_is(403);
+$t->post_ok('/api/v1/jobs/99928/prio?prio=34' => { 'X-CSRF-Token' => $token } => form => {})->status_is(200);
+$t->post_ok('/api/v1/jobs/99928/prio?prio=35' => form => { csrf_token => $token })->status_is(200);
 
 done_testing();

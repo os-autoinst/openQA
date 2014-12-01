@@ -142,6 +142,15 @@ my $verbose = $options{'verbose'};
 
 $options{'instance'} ||= 0;
 
+my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
+
+my $job;
+my $worker;
+my $workerid;
+my $worker_start_time;
+my $testresults;
+my $aborted;
+
 sub read_worker_config($){
     my $instance = shift;
     my $worker_config = "/etc/openqa/workers.ini";
@@ -183,7 +192,7 @@ my $ua = OpenQA::API::V1::Client->new(
 
 unless ($ua->apikey && $ua->apisecret) {
     unless ($options{'apikey'} && $options{apisecret}) {
-        die "API key and secret are needed for the worker\n";
+        die "API key and secret are needed for the worker connecting " . $url->host . "\n";
     }
 
     $ua->apikey($options{'apikey'});
@@ -218,9 +227,14 @@ sub api_call{
         }
         --$tries;
         my ($err, $code) = $tx->error;
-        my $msg = $code ? "$tries: $code response: $err" : "$tries: Connection error: $err->{code} $err->{message}";
-        croak "$msg\n" unless $tries;
+        my $msg = $code ? "$tries: $code response: $err" : "$tries: Connection error: $err->{message}";
         carp "$msg";
+        if (!$tries) {
+            # abort the current job, we're in trouble - but keep the worker running to grab the next
+            $aborted = 'incomplete';
+            $workerid = undef;
+            return undef;
+        }
         sleep 5;
     }
 }
@@ -351,6 +365,8 @@ sub job_incomplete($$){
 
     # set result after creating duplicete job so the chained jobs can survive
     api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
+
+    clean_pool($job);
 }
 
 # check if results.json contains an overal result. If the latter is
@@ -405,111 +421,238 @@ sub save_vars($) {
     close($fd);
 }
 
+sub stop_job {
+    my $result = "ok";
+    $result = $aborted if $aborted;
+
+    my $name = $job->{'settings'}->{'NAME'};
+    if (open(my $log, '>>', "$results_dir/runlog.txt")) {
+        if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
+            printf $log "%s finished to create %s: %s\n",strftime("%F %T", gmtime),$name, $result;
+        }
+        close($log);
+    }
+
+    if (!$aborted || !($aborted eq 'quit' && $aborted eq 'abort')) {
+        # collect uploaded logs
+        my @uploaded_logfiles = <$pooldir/ulogs/*>;
+        mkdir("$testresults/ulogs/");
+        for my $uploaded_logfile (@uploaded_logfiles) {
+            next unless -f $uploaded_logfile;
+            unless(copy($uploaded_logfile, "$testresults/ulogs/")) {
+                warn "can't copy ulog: $uploaded_logfile -> $testresults/ulogs/\n";
+            }
+        }
+        for my $file (qw(video.ogv stderr.txt stdout.txt vars.json serial0.txt)) {
+            unless (move("$pooldir/$file", join('/', $testresults, $file))) {
+                warn "can't move $file: $!\n";
+            }
+        }
+        if (open(my $log, '>>', "$testresults/autoinst-log.txt")) {
+            print $log "+++ worker notes +++\n";
+            printf $log "time: %s\n", strftime("%F %T", gmtime);
+            print $log "overall result: $result\n";
+            close $log;
+        }
+
+        # if there's no results.json start.pl probably died early, e.g. due to configuration
+        # problem. Release the job so another worker may grab it.
+        my $overall = results_overall("$testresults/results.json");
+        $result = $overall if !$aborted && $overall;
+        # FIXME: this needs improvement
+        if ($result eq 'ok') {
+            $result = 'passed';
+        }
+        elsif ($result eq 'fail') {
+            $result = 'failed';
+        }
+        else {
+            $result = 'incomplete';
+        }
+        if (($aborted||'') eq 'obsolete') {
+            printf "setting job %d to $result and obsoleted\n", $job->{'id'};
+            api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result, newbuild => 1});
+        }
+        elsif (($aborted||'') eq 'cancel' || $overall) {
+            printf "setting job %d to $result\n", $job->{'id'};
+            api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result});
+        }
+        else {
+            job_incomplete($job, $result);
+        }
+    }
+    else {
+        job_incomplete($job, $result);
+    }
+    warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
+    clean_pool($job);
+    $job = undef;
+    $worker = undef;
+    $worker_start_time = undef;
+
+}
+
+sub start_job {
+    # update settings with worker-specific stuff
+    @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
+    my $name = $job->{'settings'}->{'NAME'};
+    printf "got job %d: %s\n", $job->{'id'}, $name;
+    $testresults = join('/', $results_dir, $name);
+    if (-l "$testresults") {
+        unlink($testresults);
+    }
+    elsif (-e $testresults) {
+        backup_testresults($testresults);
+    }
+    if (!mkdir($testresults)) {
+        warn "mkdir $testresults: $!\n";
+        return job_incomplete($job, 'setup failure');
+    }
+    if (!mkdir(join('/', $pooldir, 'testresults'))) {
+        warn "mkdir $pooldir/testresults: $!\n";
+        return job_incomplete($job, 'setup failure');
+    }
+    if (!symlink($testresults, join('/', $pooldir, 'testresults', $name))) {
+        warn "symlink $testresults: $!\n";
+        return job_incomplete($job, 'setup failure');
+    }
+
+    $worker = workit($job);
+    unless ($worker) {
+        warn "job is missing files, releasing job\n";
+        job_incomplete($job, "missing files");
+        return;
+    }
+    $worker_start_time = time;
+    $aborted = undef;
+    if ($job && open(my $log, '>>', "$results_dir/runlog.txt")) {
+        if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
+            my @s = map { sprintf("%s=%s", $_, $job->{'settings'}->{$_}) } grep { $_ ne 'ISO' && $_ ne 'NAME' } keys %{$job->{'settings'}};
+            printf $log "%s started to create %s %s\n",strftime("%F %T", gmtime), $name, join(' ', @s);
+        }
+        close($log);
+    }
+}
+
+sub handle_commands {
+    my $cmds; # [[id, command], ... ]
+    my $call = api_call('get', "workers/$workerid/commands");
+    if (defined($call)) {
+        $cmds = $call->{commands};
+    }
+    else {
+        # Server returned an empty response (database locked, most likely)
+        $cmds = [];
+    }
+    for my $cmd (@{$cmds||[]}) {
+        if ($cmd->[1] eq 'quit') { # quit_worker and reschedule the job
+            $keep_running = 0;
+            if ($worker) {
+                _kill_worker($worker);
+                job_incomplete($job, "worker quit");
+                $aborted = 'quit';
+            }
+        }
+        elsif ($cmd->[1] eq 'abort') { # the work is live and the job is rescheduled
+            if ($worker) {
+                _kill_worker($worker);
+                api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
+                $aborted = 'abort';
+            }
+        }
+        elsif ($cmd->[1] eq 'cancel') { # The jobs is droped and the work is still alive
+            if ($worker) {
+                _kill_worker($worker);
+                $aborted = 'cancel';
+            }
+        }
+        elsif ($cmd->[1] eq 'obsolete') { # The jobs is droped and a new build job replaced it
+            if ($worker) {
+                _kill_worker($worker);
+                $aborted = 'obsolete';
+            }
+        }
+        elsif ($cmd->[1] eq 'stop_waitforneedle') { # Plan: Enable interactive mode -- Now osautoinst decides what that means
+            if ($worker) {
+                if (open(my $f, '>', "$pooldir/stop_waitforneedle")) {
+                    close $f;
+                    print "waitforneedle will be stopped";
+                }
+                else {
+                    warn "can't stop waitforneedle: $!";
+                }
+            }
+        }
+        elsif ($cmd->[1] eq 'reload_needles_and_retry') { #
+            if ($worker) {
+                if (open(my $f, '>', "$pooldir/reload_needles_and_retry")) {
+                    close $f;
+                    print "needles will be reloaded";
+                }
+                else {
+                    warn "can't reload needles: $!";
+                }
+            }
+        }
+        elsif ($cmd->[1] eq 'enable_interactive_mode') {
+            if ($worker) {
+                if (open(my $f, '>', "$pooldir/interactive_mode")) {
+                    close $f;
+                    print "interactive mode enabled\n";
+                }
+                else {
+                    warn "can't enable interactive mode: $!";
+                }
+            }
+        }
+        elsif ($cmd->[1] eq 'disable_interactive_mode') {
+            if ($worker) {
+                unlink("$pooldir/interactive_mode");
+                print "interactive mode disabled\n";
+            }
+        }
+        elsif ($cmd->[1] eq 'continue_waitforneedle') {
+            if ($worker) {
+                unlink("$pooldir/stop_waitforneedle");
+                print "continuing waitforneedle";
+            }
+        }
+        else {
+            print STDERR "got unknown command $cmd->[1]\n";
+        }
+        api_call('delete', "workers/$workerid/commands/".$cmd->[0]);
+    }
+}
+
+sub verify_workerid {
+
+    return $workerid if $workerid;
+
+    my $res = api_call(
+        'post',
+        'workers',
+        {
+            host => $hostname,
+            instance => $options{'instance'},
+            backend => $worker_settings->{'BACKEND'}
+        }
+    );
+    return unless $res;
+    $ENV{'WORKERID'} = $workerid = $res->{id};
+    return $workerid;
+}
+
 sub main(){
     my $lockfd = lockit();
-
-    my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-
-    my $workerid = api_call('post', 'workers', {host => $hostname, instance => $options{'instance'}, backend => $worker_settings->{'BACKEND'}})->{id};
-    $ENV{'WORKERID'} = $workerid;
-
-    my $job;
-    my $worker;
-    my $worker_start_time;
-    my $testresults;
-    my $aborted;
-    my $retries;
 
     $SIG{__DIE__} = sub { return if $^S; _kill_worker($worker); exit(1); };
 
     while($keep_running) {
-        my $cmds; # [[id, command], ... ]
-        my $call = api_call('get', "workers/$workerid/commands");
-        if (defined($call)) {
-            $cmds = $call->{commands};
-        }
-        else {
-            # Server returned an empty response (database locked, most likely)
-            $cmds = [];
-        }
-        for my $cmd (@{$cmds||[]}) {
-            if ($cmd->[1] eq 'quit') { # quit_worker and reschedule the job
-                $keep_running = 0;
-                if ($worker) {
-                    _kill_worker($worker);
-                    job_incomplete($job, "worker quit");
-                    $aborted = 'quit';
-                }
-            }
-            elsif ($cmd->[1] eq 'abort') { # the work is live and the job is rescheduled
-                if ($worker) {
-                    _kill_worker($worker);
-                    api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
-                    $aborted = 'abort';
-                }
-            }
-            elsif ($cmd->[1] eq 'cancel') { # The jobs is droped and the work is still alive
-                if ($worker) {
-                    _kill_worker($worker);
-                    $aborted = 'cancel';
-                }
-            }
-            elsif ($cmd->[1] eq 'obsolete') { # The jobs is droped and a new build job replaced it
-                if ($worker) {
-                    _kill_worker($worker);
-                    $aborted = 'obsolete';
-                }
-            }
-            elsif ($cmd->[1] eq 'stop_waitforneedle') { # Plan: Enable interactive mode -- Now osautoinst decides what that means
-                if ($worker) {
-                    if (open(my $f, '>', "$pooldir/stop_waitforneedle")) {
-                        close $f;
-                        print "waitforneedle will be stopped";
-                    }
-                    else {
-                        warn "can't stop waitforneedle: $!";
-                    }
-                }
-            }
-            elsif ($cmd->[1] eq 'reload_needles_and_retry') { #
-                if ($worker) {
-                    if (open(my $f, '>', "$pooldir/reload_needles_and_retry")) {
-                        close $f;
-                        print "needles will be reloaded";
-                    }
-                    else {
-                        warn "can't reload needles: $!";
-                    }
-                }
-            }
-            elsif ($cmd->[1] eq 'enable_interactive_mode') {
-                if ($worker) {
-                    if (open(my $f, '>', "$pooldir/interactive_mode")) {
-                        close $f;
-                        print "interactive mode enabled\n";
-                    }
-                    else {
-                        warn "can't enable interactive mode: $!";
-                    }
-                }
-            }
-            elsif ($cmd->[1] eq 'disable_interactive_mode') {
-                if ($worker) {
-                    unlink("$pooldir/interactive_mode");
-                    print "interactive mode disabled\n";
-                }
-            }
-            elsif ($cmd->[1] eq 'continue_waitforneedle') {
-                if ($worker) {
-                    unlink("$pooldir/stop_waitforneedle");
-                    print "continuing waitforneedle";
-                }
-            }
-            else {
-                print STDERR "got unknown command $cmd->[1]\n";
-            }
-            api_call('delete', "workers/$workerid/commands/".$cmd->[0]);
-        }
+
+        # if openQA is not yet up, continue - assuming api_call sleeps enough
+        next unless verify_workerid;
+
+        handle_commands;
 
         # abort job if backend crashed and reschedule it
         if(-e "$pooldir/backend.crashed") {
@@ -544,43 +687,15 @@ sub main(){
             $aborted = 'timeout';
         }
 
-        if ($keep_running && !$job) {
+        if ($keep_running && !$job && $workerid) {
             print "waiting for job ...\n" if $verbose;
-            $job = api_call('post', "workers/$workerid/grab_job")->{job};
-            unless ($job) {
+            my $res = api_call('post', "workers/$workerid/grab_job") || { job => undef };
+            $job = $res->{job};
+            unless ($job && $job->{id}) {
                 sleep 5;
                 next;
             }
-            # update settings with worker-specific stuff
-            @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
-            my $name = $job->{'settings'}->{'NAME'};
-            printf "got job %d: %s\n", $job->{'id'}, $name;
-            $testresults = join('/', $results_dir, $name);
-            if (-l "$testresults") {
-                unlink($testresults);
-            }
-            elsif (-e $testresults) {
-                backup_testresults($testresults);
-            }
-            mkdir($testresults);
-            mkdir(join('/', $pooldir, 'testresults'));
-            symlink($testresults, join('/', $pooldir, 'testresults', $name)) or warn "symlink $testresults: $!\n";
-
-            $worker = workit($job);
-            unless ($worker) {
-                warn "job is missing files, releasing job\n";
-                api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
-                $job = undef;
-            }
-            $worker_start_time = time;
-            $aborted = undef;
-            if ($job && open(my $log, '>>', "$results_dir/runlog.txt")) {
-                if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
-                    my @s = map { sprintf("%s=%s", $_, $job->{'settings'}->{$_}) } grep { $_ ne 'ISO' && $_ ne 'NAME' } keys %{$job->{'settings'}};
-                    printf $log "%s started to create %s %s\n",strftime("%F %T", gmtime), $name, join(' ', @s);
-                }
-                close($log);
-            }
+            start_job;
         }
 
         # we also enter here if the worker was killed intentionally
@@ -588,88 +703,11 @@ sub main(){
             $got_sigchld = 0;
             my $pid = waitpid($worker->{pid}, WNOHANG);
             die "huh? wrong child?\n" unless $pid == $worker->{pid};
-            my $result = "ok";
             if ($?) {
                 warn "child $pid died with exit status $?\n";
                 $aborted = "died" unless $aborted;
             }
-
-            $result = $aborted if $aborted;
-
-            my $name = $job->{'settings'}->{'NAME'};
-            if (open(my $log, '>>', "$results_dir/runlog.txt")) {
-                if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
-                    printf $log "%s finished to create %s: %s\n",strftime("%F %T", gmtime),$name, $result;
-                }
-                close($log);
-            }
-
-            if (!$aborted || !($aborted eq 'quit' && $aborted eq 'abort')) {
-                # collect uploaded logs
-                my @uploaded_logfiles = <$pooldir/ulogs/*>;
-                mkdir("$pooldir/testresults/$name/ulogs/");
-                for my $uploaded_logfile (@uploaded_logfiles) {
-                    next unless -f $uploaded_logfile;
-                    unless(copy($uploaded_logfile, "$pooldir/testresults/$name/ulogs/")) {
-                        warn "can't copy ulog: $uploaded_logfile -> $pooldir/testresults/$name/ulogs/\n";
-                    }
-                }
-                unless (move("$pooldir/video.ogv", $testresults.'/video.ogv')) {
-                    warn "can't move video: $!\n";
-                }
-                unless (move("$pooldir/stderr.txt", $testresults.'/stderr.txt')) {
-                    warn "can't move stderr.txt: $!\n";
-                    $keep_running = 0;
-                }
-                unless (move("$pooldir/stdout.txt", $testresults.'/stdout.txt')) {
-                    warn "can't move stdout.txt: $!\n";
-                    $keep_running = 0;
-                }
-                if (-s "$pooldir/serial0") {
-                    move("$pooldir/serial0", $testresults.'/serial0.txt');
-                }
-
-                if (open(my $log, '>>', "$testresults/autoinst-log.txt")) {
-                    print $log "+++ worker notes +++\n";
-                    printf $log "time: %s\n", strftime("%F %T", gmtime);
-                    print $log "overall result: $result\n";
-                    close $log;
-                }
-
-                # if there's no results.json start.pl probably died early, e.g. due to configuration
-                # problem. Release the job so another worker may grab it.
-                my $overall = results_overall("$testresults/results.json");
-                $result = $overall if !$aborted && $overall;
-                # FIXME: this needs improvement
-                if ($result eq 'ok') {
-                    $result = 'passed';
-                }
-                elsif ($result eq 'fail') {
-                    $result = 'failed';
-                }
-                else {
-                    $result = 'incomplete';
-                }
-                if ($aborted eq 'obsolete') {
-                    printf "setting job %d to $result and obsoleted\n", $job->{'id'};
-                    api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result, newbuild => 1});
-                }
-                elsif (($aborted||'') eq 'cancel' || $overall) {
-                    printf "setting job %d to $result\n", $job->{'id'};
-                    api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $result});
-                }
-                else {
-                    job_incomplete($job, $result);
-                }
-            }
-            else {
-                job_incomplete($job, $result);
-            }
-            warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
-            clean_pool($job);
-            $job = undef;
-            $worker = undef;
-            $worker_start_time = undef;
+            stop_job;
         }
 
         last unless $keep_running;
@@ -681,7 +719,6 @@ sub main(){
         _kill_worker($worker);
         unlink($testresults);
         job_incomplete($job, "worker quit");
-        clean_pool($job);
     }
 }
 

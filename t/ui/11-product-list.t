@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-  unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA/modules';
 }
 
 use Mojo::Base -strict;
@@ -98,8 +98,7 @@ $req = $t->post_ok('/admin/products', { 'X-CSRF-Token' => $token }, form => { na
 $req->element_exists('.ui-state-error');
 
 # add a test suite
-$req = $t->post_ok('/admin/products', { 'X-CSRF-Token' => $token },
-    form => { distri => 'foo', version => 42, flavor => 'bar', arch => 'baz' })->status_is(302);
+$req = $t->post_ok('/admin/products', { 'X-CSRF-Token' => $token },form => { distri => 'foo', version => 42, flavor => 'bar', arch => 'baz' })->status_is(302);
 
 $req->element_exists_not('.ui-state-error');
 $req = $t->get_ok('/admin/products')->status_is(200);

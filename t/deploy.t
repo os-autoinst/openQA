@@ -59,7 +59,8 @@ SKIP: {
             show_sizes       => 1,
             show_fk_only     => 0,
             title            => 'openQA database schema version '.$schema->VERSION,
-        } );
+        }
+    );
 
     ok($trans->translate, "generate graph");
     ok(-e $fn, "graph png exists");

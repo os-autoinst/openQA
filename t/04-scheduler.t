@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-  unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA/modules';
 }
 
 use strict;
@@ -25,52 +25,43 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 53;
+use Test::More tests => 55;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
 my $result;
 
-sub nots
-{
-  my $h = shift;
-  my @ts = @_;
-  unshift @ts, 't_updated', 't_created';
-  for (@ts) {
-    delete $h->{$_};
-  }
-  return $h;
+sub nots{
+    my $h = shift;
+    my @ts = @_;
+    unshift @ts, 't_updated', 't_created';
+    for (@ts) {
+        delete $h->{$_};
+    }
+    return $h;
 }
 
 my $current_jobs = list_jobs();
-is_deeply($current_jobs , [], "assert database has no jobs to start with")
-    or BAIL_OUT("database not properly initialized");
+is_deeply($current_jobs, [], "assert database has no jobs to start with")
+  or BAIL_OUT("database not properly initialized");
 
 # Testing worker_register and worker_get
 # New worker
 my $id = worker_register("host", "1", "backend");
 ok($id == 1, "New worker registered");
 my $worker = worker_get($id);
-ok($worker->{id} == $id
-   && $worker->{host} eq "host"
-   && $worker->{instance} eq "1"
-   && $worker->{backend} eq "backend", "New worker_get");
+ok($worker->{id} == $id&& $worker->{host} eq "host"&& $worker->{instance} eq "1"&& $worker->{backend} eq "backend", "New worker_get");
 
 # Update worker
 sleep(1);
 my $id2 = worker_register("host", "1", "backend");
 ok($id == $id2, "Known worker_register");
 my $worker2 = worker_get($id2);
-ok($worker2->{id} == $id2
-   && $worker2->{host} eq "host"
-   && $worker2->{instance} eq "1"
-   && $worker2->{backend} eq "backend"
-   && $worker2->{t_updated} ne $worker->{t_updated}, "Known worker_get");
+ok($worker2->{id} == $id2&& $worker2->{host} eq "host"&& $worker2->{instance} eq "1"&& $worker2->{backend} eq "backend"&& $worker2->{t_updated} ne $worker->{t_updated}, "Known worker_get");
 
 # Testing list_workers
 my $workers_ref = list_workers();
-ok(scalar @$workers_ref == 2
-   && pp($workers_ref->[1]) eq pp($worker2) , "list_workers");
+ok(scalar @$workers_ref == 2&& pp($workers_ref->[1]) eq pp($worker2), "list_workers");
 
 
 # Testing job_create and job_get
@@ -85,7 +76,7 @@ my %settings = (
     KVM => 'KVM',
     ISO_MAXSIZE => 1,
     MACHINE => "RainbowPC"
-    );
+);
 
 my $job_ref = {
     t_finished => undef,
@@ -105,6 +96,7 @@ my $job_ref = {
         KVM => "KVM",
         MACHINE => "RainbowPC",
         NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
+        CONNECT_PASSWORD => ''
     },
     assets => {
         iso => ['whatever.iso'],
@@ -117,7 +109,7 @@ my $job_ref = {
     test => 'rainbow',
     test_branch => undef,
     parents => [],
-    };
+};
 
 my $iso = sprintf("%s/%s", $openqa::isodir, $settings{ISO});
 open my $fh, ">", $iso;
@@ -163,6 +155,7 @@ my $jobs = [
             KVM => "KVM",
             MACHINE => "RainbowPC",
             NAME => '00000002-OTHER NAME',
+            CONNECT_PASSWORD => ''
         },
         assets => {
             iso => ['whatever.iso'],
@@ -194,6 +187,7 @@ my $jobs = [
             KVM => "KVM",
             MACHINE => "RainbowPC",
             NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
+            CONNECT_PASSWORD => ''
         },
         assets => {
             iso => ['whatever.iso'],
@@ -203,7 +197,7 @@ my $jobs = [
 ];
 
 $current_jobs = list_jobs();
-is_deeply($current_jobs , $jobs, "All list_jobs");
+is_deeply($current_jobs, $jobs, "All list_jobs");
 
 my %args = (state => "scheduled");
 $current_jobs = list_jobs(%args);
@@ -234,9 +228,7 @@ $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [], "list_jobs messing two settings up");
 
 # Testing job_grab
-%args = (
-    workerid => $worker->{id},
-    );
+%args = (workerid => $worker->{id},);
 my $rjobs_before = Scheduler::list_jobs(state => 'running');
 my $job = Scheduler::job_grab(%args);
 my $rjobs_after = Scheduler::list_jobs(state => 'running');
@@ -259,7 +251,15 @@ is($job->{result}, "incomplete", "result is incomplete");
 
 $job = Scheduler::job_grab(%args);
 isnt($job_id, $job->{id}, "new job grabbed");
-$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-Build666-rainbow',
+$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-Build666-rainbow';
+
+isnt($job->{settings}->{CONNECT_PASSWORD}, '', 'Connect password must be set');
+is(length($job->{settings}->{CONNECT_PASSWORD}), 32, 'We expect a long string');
+
+# it's hard to test that we have a valid random string - so remove them from the test
+delete $job->{settings}->{CONNECT_PASSWORD};
+delete $job_ref->{settings}->{CONNECT_PASSWORD};
+
 is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job_id;
 $job_id = $job->{id};
@@ -285,7 +285,7 @@ sleep 1;
 %args = (
     jobid => $job_id,
     result => 'passed',
-    );
+);
 $result = Scheduler::job_set_done(%args);
 ok($result == 1, "job_set_done");
 $job = Scheduler::job_get($job_id);
@@ -319,7 +319,7 @@ ok($result == 0 && $job->{state} eq "done", "job_set_running on done job");
 %args = (
     jobid => $job_id,
     prio => 100,
-    );
+);
 $result = Scheduler::job_set_prio(%args);
 $job = Scheduler::job_get($job_id);
 ok($result == 1 && $job->{priority} == 100, "job_set_prio");
@@ -329,7 +329,7 @@ ok($result == 1 && $job->{priority} == 100, "job_set_prio");
 %args = (
     jobid => $job_id,
     result => 'passed',
-    );
+);
 $result = Scheduler::job_update_result(%args);
 ok($result == 1, "job_update_result");
 $job = Scheduler::job_get($job_id);
@@ -359,18 +359,18 @@ $no_job_id = Scheduler::job_get($job3_id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
 
 $current_jobs = list_jobs();
-is_deeply($current_jobs , [], "no jobs listed");
+is_deeply($current_jobs, [], "no jobs listed");
 
 # Testing command_enqueue and list_commands
 %args = (
     workerid => $id,
     command => "quit",
-    );
+);
 my %command = (
     id => 1,
     worker_id => 1,
     command => "quit",
-    );
+);
 my $command_id = Scheduler::command_enqueue(%args);
 my $commands = Scheduler::list_commands();
 ok($command_id == 1 && @$commands == 1, "one command listed");

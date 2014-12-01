@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-  unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA/modules';
 }
 
 use Mojo::Base -strict;
@@ -24,17 +24,17 @@ use Test::Mojo;
 use OpenQA::Test::Case;
 
 SKIP: {
-skip "breaks package build", 4;
+    skip "breaks package build", 4;
 
-OpenQA::Test::Case->new->init_data;
+    OpenQA::Test::Case->new->init_data;
 
-my $t = Test::Mojo->new('OpenQA');
+    my $t = Test::Mojo->new('OpenQA');
 
-my $test_name = 'isosize';
+    my $test_name = 'isosize';
 
-my $get = $t->get_ok("/tests/99938/modules/$test_name/steps/1/src")->status_is(200);
-$get->content_like(qr|inst\.d/.*$test_name.pm|i, "$test_name test source found");
-$get->content_like(qr/ISO_MAXSIZE/i, "$test_name test source shown");
+    my $get = $t->get_ok("/tests/99938/modules/$test_name/steps/1/src")->status_is(200);
+    $get->content_like(qr|inst\.d/.*$test_name.pm|i, "$test_name test source found");
+    $get->content_like(qr/ISO_MAXSIZE/i, "$test_name test source shown");
 }
 
 done_testing();

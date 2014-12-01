@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-  unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA/modules';
 }
 
 use Mojo::Base -strict;
@@ -96,8 +96,7 @@ $req = $t->post_ok('/admin/machines', { 'X-CSRF-Token' => $token }, form => { na
 $req->element_exists('.ui-state-error');
 
 # add a machine
-$req = $t->post_ok('/admin/machines', { 'X-CSRF-Token' => $token },
-    form => { name => 'foo', backend => 'bar' })->status_is(302);
+$req = $t->post_ok('/admin/machines', { 'X-CSRF-Token' => $token },form => { name => 'foo', backend => 'bar' })->status_is(302);
 
 say "### here";
 
