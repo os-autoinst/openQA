@@ -22,7 +22,7 @@ use diagnostics;
 
 use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
-use Data::Dump qw/pp/;
+use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
 use DateTime;
 
@@ -161,13 +161,23 @@ sub worker_register {
 # param hash:
 # XXX TODO: Remove HashRefInflator
 sub worker_get {
-    my $workerid = shift;
+  my $workerid = shift;
 
-    my $rs = schema->resultset("Workers");
-    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    my $worker = $rs->find($workerid);
+  my $rs = schema->resultset("Workers");
+  $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+  my $worker = $rs->find($workerid);
 
-    return $worker;
+  # TODO: transfer these from the worker
+  my $WORKER_PORT_START = 20003;
+
+  $worker->{properties}->{WORKER_VNC_PORT} = $worker->{'instance'} + 90;
+  $worker->{properties}->{WORKER_PORT} = $worker->{'instance'} * 10 + $WORKER_PORT_START;
+
+  for my $r (schema->resultset("WorkerProperties")->search({ worker_id => $worker->{id} })) {
+    $worker->{properties}->{$r->key} = $r->value;
+  }
+
+  return $worker;
 }
 
 sub workers_get_dead_worker {
@@ -532,7 +542,7 @@ sub job_grab {
 	  });
 	# store a new one time password both in the job and in the worker properties
 	worker_set_property($workerid, 'CONNECT_PASSWORD', _job_set_connect_password($job_hashref));
-	worker_set_property($workerid, 'CONNECT_IP', $workerip) if $workerip;
+	worker_set_property($workerid, 'WORKER_IP', $workerip) if $workerip;
     }
     return $job_hashref;
 }

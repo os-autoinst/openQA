@@ -61,7 +61,11 @@ ok($worker2->{id} == $id2&& $worker2->{host} eq "host"&& $worker2->{instance} eq
 
 # Testing list_workers
 my $workers_ref = list_workers();
-ok(scalar @$workers_ref == 2&& pp($workers_ref->[1]) eq pp($worker2), "list_workers");
+is(scalar @$workers_ref, 2, "2 workers");
+# check properties independent, list_workers doesn't return it
+is(pp($worker2->{properties}), "{ WORKER_PORT => 20013, WORKER_VNC_PORT => 91 }", "worker properties");
+delete $worker2->{properties};
+is(pp($workers_ref->[1]), pp($worker2), "list_workers");
 
 
 # Testing job_create and job_get

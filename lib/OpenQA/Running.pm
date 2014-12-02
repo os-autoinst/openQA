@@ -22,6 +22,7 @@ import JSON;
 use openqa;
 use Mojolicious::Static;
 use Scheduler ();
+use Data::Dump qw(dd);
 
 sub init {
     my $self = shift;
@@ -31,7 +32,6 @@ sub init {
         $self->render_not_found;
         return 0;
     }
-    my $WORKER_PORT_START = 20003;
     $self->stash('job', $job);
 
     my $testdirname = $job->{'settings'}->{'NAME'};
@@ -41,8 +41,8 @@ sub init {
     $self->stash('basepath', $basepath);
     my $workerid = $job->{'worker_id'};
     my $worker = Scheduler::worker_get($workerid);
-    my $workerport = $worker->{'instance'} * 10 + $WORKER_PORT_START;
-    my $workerurl = $job->{'settings'}->{'CONNECT_IP'} . ':' . $workerport;
+    my $workerport = $worker->{properties}->{WORKER_PORT};
+    my $workerurl = $worker->{properties}->{WORKER_IP} . ':' . $workerport;
     $self->stash('workerurl', $workerurl);
     $self->stash('jobpassword', $job->{'settings'}->{'CONNECT_PASSWORD'});
 
