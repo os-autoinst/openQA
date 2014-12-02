@@ -263,11 +263,6 @@ sub job_create {
         delete $settings{NAME};
     }
 
-    # add a dummy password, set to something real in job_grab
-    $settings{CONNECT_PASSWORD} = '';
-    # add a dummy ip, job_grab will fill the real worker ip
-    $settings{CONNECT_IP} = '';
-
     if ($settings{_START_AFTER_JOBS}) {
         for my $id (@{$settings{_START_AFTER_JOBS}}) {
             push @{$new_job_args{parents}},
@@ -534,9 +529,10 @@ sub job_grab {
 		    worker_id => $workerid,
 		}
 		)->single->id,
-				});
-	_job_set_connect_password($job_hashref);
-	_job_set_connect_ip($job_hashref->{id}, $workerip);
+	  });
+	# store a new one time password both in the job and in the worker properties
+	worker_set_property($workerid, 'CONNECT_PASSWORD', _job_set_connect_password($job_hashref));
+	worker_set_property($workerid, 'CONNECT_IP', $workerip) if $workerip;
     }
     return $job_hashref;
 }
@@ -549,31 +545,39 @@ sub _job_set_connect_password($) {
     $password .= $chars[rand @chars] for 1..32;
 
     # set a connect password
-    my $r = schema->resultset("JobSettings")->search(
+    my $r = schema->resultset("JobSettings")->find_or_new(
         {
             job_id => $jobref->{id},
             key => 'CONNECT_PASSWORD'
-        }
-      )->update(
-        {
-            value => $password
-        }
+	  },
       );
+    if (!$r->in_storage) {
+      $r->value($password);
+      $r->insert;
+    } else {
+      $r->update({ value => $password });
+    }
+
     $jobref->{'settings'}->{'CONNECT_PASSWORD'} = $password;
+    return $password;
 }
 
-sub _job_set_connect_ip {
-    my ($jobid, $ip) = @_;
-    my $r = schema->resultset("JobSettings")->search(
-        {
-            job_id => $jobid,
-            key => 'CONNECT_IP'
-        }
-      )->update(
-        {
-            value => $ip
-        }
-      );
+sub worker_set_property($$$) {
+
+  my ($workerid, $key, $val) = @_;
+
+    my $r = schema->resultset("WorkerProperties")->find_or_new(
+      {
+	worker_id => $workerid,
+        key => $key
+      });
+
+  if (!$r->in_storage) {
+    $r->value($val);
+    $r->insert;
+  } else {
+    $r->update({ value => $val });
+  }
 }
 
 # parent job failed, handle children - set them to done incomplete immediately
