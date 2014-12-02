@@ -29,15 +29,18 @@ use POSIX qw/getuid getgid setuid setgid/;
 use openqa ();
 use Schema::Schema;
 use Getopt::Long;
+use IO::Dir;
 
 my $help=0;
 my $prepare_init=0;
 my $init_database=0;
+my $force=0;
 
 my $result = GetOptions(
-    "help"                        => \$help,
-    "prepare_init"            => \$prepare_init,
-    "init_database"            => \$init_database
+    "help"          => \$help,
+    "prepare_init"  => \$prepare_init,
+    "init_database" => \$init_database,
+    "force"         => \$force
 );
 
 if (!$prepare_init and !$init_database) {
@@ -51,6 +54,7 @@ if ($help) {
     print "                    and note those files should be commited to the source repo.\n";
     print "  --init_database : Use the generated deployment files created with --prepare_init\n";
     print "                    to actually initialize a database.\n";
+    print "  --force         : Force overwriting existing data.\n";
     print "  --help          : This help message.\n";
     exit;
 }
@@ -82,11 +86,22 @@ my $dh = DBIx::Class::DeploymentHandler->new(
         script_directory    => $script_directory,
         databases           => 'SQLite',
         sql_translator_args => { add_drop_table => 1, producer_args => { sqlite_version => '3.7' } },
-        force_overwrite     => 0,
+        force_overwrite     => $force,
     }
 );
 
+my $version    = $dh->schema_version;
+
+my %deploy_dir;
+tie %deploy_dir, 'IO::Dir', "$script_directory/SQLite/deploy";
+
 if ($prepare_init) {
+    if ( exists $deploy_dir{$version} and not $force) {
+        print "The deploy directory already contains the schema for the current version.\n";
+        print "Use the --force option if you want to overwrite the contents of the $script_directory/SQLite/upgrade/$version directory\n";
+        exit 1;
+    }
+
     $dh->prepare_install;
 }
 if ($init_database) {

@@ -36,12 +36,14 @@ my $prepare_upgrades            = 0;
 my $upgrade_database            = 0;
 my $help                        = 0;
 my $from_uninitialized_database = 0;
+my $force                       = 0;
 
 my $result = GetOptions(
     "help"                        => \$help,
     "from_uninitialized_database" => \$from_uninitialized_database,
     "prepare_upgrades"            => \$prepare_upgrades,
-    "upgrade_database"            => \$upgrade_database
+    "upgrade_database"            => \$upgrade_database,
+    "force"                       => \$force
 );
 
 if (!$prepare_upgrades and !$upgrade_database) {
@@ -57,6 +59,7 @@ if ($help) {
     print "                       to actually upgrade a database.\n";
     print "  --from_uninitialized_database : Create and populate an existing database as if it was\n";
     print "                       initialized with the initdb script.\n";
+    print "  --force            : Force overwriting existing data.\n";
     print "  --help             : This help message.\n";
     exit;
 }
@@ -71,6 +74,7 @@ my $dh = DH->new(
         script_directory    => $script_directory,
         databases           => 'SQLite',
         sql_translator_args => { add_drop_table => 0, producer_args => { sqlite_version => '3.7' } },
+        force_overwrite     => $force,
     }
 );
 
@@ -89,9 +93,9 @@ my %deploy_dir;
 tie %deploy_dir, 'IO::Dir', "$script_directory/SQLite/deploy";
 
 if ($prepare_upgrades) {
-    if ( exists $upgrade_dir{$upgrade_directory} ) {
-        print "The current version $version already has upgrade data generated. Nothing to upgrade\n";
-        print "Remove the $script_directory/SQLite/upgrade/$upgrade_directory if you want to regenerate it\n";
+    if ( exists $upgrade_dir{$upgrade_directory} and not $force) {
+        print "The upgrade directory already contains files to upgrade to the current version ($version)\n";
+        print "Use the --force option if you want to overwrite the contents of the $script_directory/SQLite/upgrade/$upgrade_directory directory\n";
         exit 1;
     }
 
