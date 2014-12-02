@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 55;
+use Test::More tests => 57;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -61,7 +61,11 @@ ok($worker2->{id} == $id2&& $worker2->{host} eq "host"&& $worker2->{instance} eq
 
 # Testing list_workers
 my $workers_ref = list_workers();
-ok(scalar @$workers_ref == 2&& pp($workers_ref->[1]) eq pp($worker2), "list_workers");
+is(scalar @$workers_ref, 2, "2 workers");
+# check properties independent, list_workers doesn't return it
+is(pp($worker2->{properties}), "{ WORKER_PORT => 20013, WORKER_VNC_PORT => 91 }", "worker properties");
+delete $worker2->{properties};
+is(pp($workers_ref->[1]), pp($worker2), "list_workers");
 
 
 # Testing job_create and job_get
@@ -96,7 +100,6 @@ my $job_ref = {
         KVM => "KVM",
         MACHINE => "RainbowPC",
         NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
-        CONNECT_PASSWORD => ''
     },
     assets => {
         iso => ['whatever.iso'],
@@ -155,7 +158,6 @@ my $jobs = [
             KVM => "KVM",
             MACHINE => "RainbowPC",
             NAME => '00000002-OTHER NAME',
-            CONNECT_PASSWORD => ''
         },
         assets => {
             iso => ['whatever.iso'],
@@ -187,7 +189,6 @@ my $jobs = [
             KVM => "KVM",
             MACHINE => "RainbowPC",
             NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
-            CONNECT_PASSWORD => ''
         },
         assets => {
             iso => ['whatever.iso'],
@@ -232,6 +233,12 @@ is_deeply($current_jobs, [], "list_jobs messing two settings up");
 my $rjobs_before = Scheduler::list_jobs(state => 'running');
 my $job = Scheduler::job_grab(%args);
 my $rjobs_after = Scheduler::list_jobs(state => 'running');
+
+is(length($job->{settings}->{CONNECT_PASSWORD}), 32, 'We expect a long string');
+# it's hard to test that we have a valid random string - so remove them from the test
+delete $job->{settings}->{CONNECT_PASSWORD};
+delete $job_ref->{settings}->{CONNECT_PASSWORD};
+
 is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
 ok($job->{t_started} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job start timestamp updated");
 is(scalar(@{$rjobs_before})+1, scalar(@{$rjobs_after}), "number of running jobs");
@@ -253,7 +260,6 @@ $job = Scheduler::job_grab(%args);
 isnt($job_id, $job->{id}, "new job grabbed");
 $job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-Build666-rainbow';
 
-isnt($job->{settings}->{CONNECT_PASSWORD}, '', 'Connect password must be set');
 is(length($job->{settings}->{CONNECT_PASSWORD}), 32, 'We expect a long string');
 
 # it's hard to test that we have a valid random string - so remove them from the test

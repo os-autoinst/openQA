@@ -22,6 +22,7 @@ import JSON;
 use openqa;
 use Mojolicious::Static;
 use Scheduler ();
+use Data::Dump qw(dd);
 
 sub init {
     my $self = shift;
@@ -31,7 +32,6 @@ sub init {
         $self->render_not_found;
         return 0;
     }
-    my $WORKER_PORT_START = 20003;
     $self->stash('job', $job);
 
     my $testdirname = $job->{'settings'}->{'NAME'};
@@ -41,9 +41,10 @@ sub init {
     $self->stash('basepath', $basepath);
     my $workerid = $job->{'worker_id'};
     my $worker = Scheduler::worker_get($workerid);
-    my $workerport = $worker->{'instance'} * 10 + $WORKER_PORT_START;
-    my $workerurl = $worker->{'host'} . ':' . $workerport;
+    my $workerport = $worker->{properties}->{WORKER_PORT};
+    my $workerurl = $worker->{properties}->{WORKER_IP} . ':' . $workerport;
     $self->stash('workerurl', $workerurl);
+    $self->stash('jobpassword', $job->{'settings'}->{'CONNECT_PASSWORD'});
 
     if ($basepath eq '') {
         $self->render_not_found;
@@ -103,7 +104,7 @@ sub livelog {
     $self->res->headers->content_type("text/event-stream");
 
     # prepare connection to worker and get first batch
-    my $livelogurl = $self->stash('workerurl') . '/live_log';
+    my $livelogurl = $self->stash('workerurl') . '/live_log?connect_password=' . $self->stash('jobpassword');
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->get($livelogurl);
     if (!$tx->success) {
@@ -126,7 +127,7 @@ sub livelog {
     };
     $id = Mojo::IOLoop->recurring(
         1 => sub {
-            $tx = $ua->get($livelogurl . '?offset=' . $pos);
+            $tx = $ua->get($livelogurl . '&offset=' . $pos);
             if (!$tx->success) {
                 my $err = $tx->error;
                 $self->write('data: '.encode_json([sprintf("ERROR: (%d) %s\n", $err->{'code'}||-1, $err->{'message'})])."\n\n");

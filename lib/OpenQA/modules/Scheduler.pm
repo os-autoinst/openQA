@@ -22,7 +22,7 @@ use diagnostics;
 
 use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
-use Data::Dump qw/pp/;
+use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
 use DateTime;
 
@@ -161,13 +161,23 @@ sub worker_register {
 # param hash:
 # XXX TODO: Remove HashRefInflator
 sub worker_get {
-    my $workerid = shift;
+  my $workerid = shift;
 
-    my $rs = schema->resultset("Workers");
-    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    my $worker = $rs->find($workerid);
+  my $rs = schema->resultset("Workers");
+  $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+  my $worker = $rs->find($workerid);
 
-    return $worker;
+  # TODO: transfer these from the worker
+  my $WORKER_PORT_START = 20003;
+
+  $worker->{properties}->{WORKER_VNC_PORT} = $worker->{'instance'} + 90;
+  $worker->{properties}->{WORKER_PORT} = $worker->{'instance'} * 10 + $WORKER_PORT_START;
+
+  for my $r (schema->resultset("WorkerProperties")->search({ worker_id => $worker->{id} })) {
+    $worker->{properties}->{$r->key} = $r->value;
+  }
+
+  return $worker;
 }
 
 sub workers_get_dead_worker {
@@ -262,9 +272,6 @@ sub job_create {
         $new_job_args{slug} = $settings{'NAME'};
         delete $settings{NAME};
     }
-
-    # add a dummy password, set to something real in job_grab
-    $settings{CONNECT_PASSWORD} = '';
 
     if ($settings{_START_AFTER_JOBS}) {
         for my $id (@{$settings{_START_AFTER_JOBS}}) {
@@ -478,6 +485,7 @@ sub job_grab {
     my %args = @_;
     my $workerid = $args{workerid};
     my $blocking = int($args{blocking} || 0);
+    my $workerip = $args{workerip};
 
     _validate_workerid($workerid);
     _seen_worker($workerid);
@@ -531,31 +539,55 @@ sub job_grab {
 		    worker_id => $workerid,
 		}
 		)->single->id,
-				});
-	_job_set_connect_password($job_hashref->{id});
+	  });
+	# store a new one time password both in the job and in the worker properties
+	worker_set_property($workerid, 'CONNECT_PASSWORD', _job_set_connect_password($job_hashref));
+	worker_set_property($workerid, 'WORKER_IP', $workerip) if $workerip;
     }
-
     return $job_hashref;
 }
 
 sub _job_set_connect_password($) {
 
-    my $jobid = shift;
+    my ($jobref) = @_;
     my @chars = ("A".."Z", "a".."z", '0'..'9');
     my $password;
     $password .= $chars[rand @chars] for 1..32;
 
     # set a connect password
-    my $r = schema->resultset("JobSettings")->search(
+    my $r = schema->resultset("JobSettings")->find_or_new(
         {
-            job_id => $jobid,
+            job_id => $jobref->{id},
             key => 'CONNECT_PASSWORD'
-        }
-      )->update(
-        {
-            value => $password
-        }
+	  },
       );
+    if (!$r->in_storage) {
+      $r->value($password);
+      $r->insert;
+    } else {
+      $r->update({ value => $password });
+    }
+
+    $jobref->{'settings'}->{'CONNECT_PASSWORD'} = $password;
+    return $password;
+}
+
+sub worker_set_property($$$) {
+
+  my ($workerid, $key, $val) = @_;
+
+    my $r = schema->resultset("WorkerProperties")->find_or_new(
+      {
+	worker_id => $workerid,
+        key => $key
+      });
+
+  if (!$r->in_storage) {
+    $r->value($val);
+    $r->insert;
+  } else {
+    $r->update({ value => $val });
+  }
 }
 
 # parent job failed, handle children - set them to done incomplete immediately

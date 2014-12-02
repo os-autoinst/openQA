@@ -14,26 +14,27 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::Workers;
+package Schema::Result::WorkerProperties;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
 
-__PACKAGE__->table('workers');
+__PACKAGE__->table('worker_properties');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
         is_auto_increment => 1,
     },
-    host => {
+    key => {
         data_type => 'text',
     },
-    instance => {
+    value => {
+        data_type => 'text',
+    },
+    worker_id => {
         data_type => 'integer',
-    },
-    backend => {
-        data_type => 'text',
+        is_foreign_key => 1,
     },
     t_created => {
         data_type => 'timestamp',
@@ -45,18 +46,24 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint(constraint_name => [qw/host instance/]);
-__PACKAGE__->has_many(jobs => 'Schema::Result::Jobs', 'worker_id');
-__PACKAGE__->has_many(commands => 'Schema::Result::Commands', 'worker_id');
-__PACKAGE__->has_many(properties => 'Schema::Result::WorkerProperties', 'worker_id');
-
-# TODO
-# INSERT INTO workers (id, t_created) VALUES(0, datetime('now'));
+__PACKAGE__->belongs_to(
+    "job",
+    "Schema::Result::Jobs",
+    { 'foreign.id' => "self.worker_id" },
+    {
+        is_deferrable => 1,
+        join_type     => "LEFT",
+        on_delete     => "CASCADE",
+        on_update     => "CASCADE",
+    },
+);
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
 
     db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
+
+    $sqlt_table->add_index(name => 'worker_properties_kv_index', fields => [qw/key value/]);
 }
 
 1;
