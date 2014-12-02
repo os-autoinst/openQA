@@ -42,8 +42,9 @@ sub init {
     my $workerid = $job->{'worker_id'};
     my $worker = Scheduler::worker_get($workerid);
     my $workerport = $worker->{'instance'} * 10 + $WORKER_PORT_START;
-    my $workerurl = $worker->{'host'} . ':' . $workerport;
+    my $workerurl = $job->{'settings'}->{'CONNECT_IP'} . ':' . $workerport;
     $self->stash('workerurl', $workerurl);
+    $self->stash('jobpassword', $job->{'settings'}->{'CONNECT_PASSWORD'});
 
     if ($basepath eq '') {
         $self->render_not_found;
@@ -103,7 +104,7 @@ sub livelog {
     $self->res->headers->content_type("text/event-stream");
 
     # prepare connection to worker and get first batch
-    my $livelogurl = $self->stash('workerurl') . '/live_log';
+    my $livelogurl = $self->stash('workerurl') . '/live_log?connect_password=' . $self->stash('jobpassword');
     my $ua = Mojo::UserAgent->new;
     my $tx = $ua->get($livelogurl);
     if (!$tx->success) {
@@ -126,7 +127,7 @@ sub livelog {
     };
     $id = Mojo::IOLoop->recurring(
         1 => sub {
-            $tx = $ua->get($livelogurl . '?offset=' . $pos);
+            $tx = $ua->get($livelogurl . '&offset=' . $pos);
             if (!$tx->success) {
                 my $err = $tx->error;
                 $self->write('data: '.encode_json([sprintf("ERROR: (%d) %s\n", $err->{'code'}||-1, $err->{'message'})])."\n\n");
