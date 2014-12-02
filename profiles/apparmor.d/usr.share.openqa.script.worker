@@ -41,6 +41,7 @@
   /usr/bin/eatmydata rix,
   /usr/bin/mkdir rix,
   /usr/bin/multimon rix,
+  /usr/bin/nice rix,
   /usr/bin/optipng rix,
   /usr/bin/png2theora rix,
   /usr/bin/qemu-img rix,
@@ -60,6 +61,7 @@
   /usr/share/openqa/script/worker r,
   /usr/share/qemu/* r,
   /usr/share/qemu/keymaps/* r,
+  /var/lib/openqa/pool/ r,
   /var/lib/openqa/pool/*/ rw,
   /var/lib/openqa/pool/*/* rw,
   /var/lib/openqa/pool/*/vars.json rwk,
@@ -77,5 +79,5 @@
   /var/lib/openqa/share/factory/iso/* r,
   /var/lib/openqa/share/factory/hdd/* r,
   /var/lib/openqa/share/testresults/** rwk,
-  /var/lib/os-autoinst/tests/** r,
+  /var/lib/openqa/share/tests/** r,
 }

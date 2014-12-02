@@ -486,6 +486,8 @@ sub stop_job {
     }
     warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
     clean_pool($job);
+    # delete os-autoinst.pid in testresults
+    unlink "$testresults/os-autoinst.pid" if -e "$testresults/os-autoinst.pid";
     $job = undef;
     $worker = undef;
     $worker_start_time = undef;
@@ -668,7 +670,7 @@ sub main(){
                     _kill($1);
                 }
             }
-            if (open(my $fh, '<', "$pooldir/os-autoinst.pid")) {
+            if (open(my $fh, '<', "$testresults/os-autoinst.pid")) {
                 local $/;
                 my $pid = <$fh>;
                 close $fh;
