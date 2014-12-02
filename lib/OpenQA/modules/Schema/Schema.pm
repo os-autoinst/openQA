@@ -20,11 +20,8 @@ use IO::Dir;
 use SQL::SplitStatement;
 use Fcntl ':mode';
 
-# after bumping the version ...
-# - run script/initdb --prepare
-# - run script/upgradedb --prepare
-# - edit dbicdh/SQLite/upgrade/$old-$new/001-auto.sql and add missing triggers
-# - optionally add migration script dbicdh/_common/upgrade/$old-$new/...
+# after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
+# on what scripts should be run and how
 our $VERSION = '15';
 
 __PACKAGE__->load_namespaces;
