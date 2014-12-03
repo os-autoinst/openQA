@@ -34,6 +34,7 @@ API
 https://github.com/os-autoinst/os-autoinst[os-autoinst] provides the
 API for the tests. The most commonly used functions are:
 
+* +get_var NAME+ Returns the content of a variable or undef
 * +check_var NAME, CONTENT+ Check content of a variable, treating undef as empty.
 * +send_key KEY[, WAITIDLE]+ Send key to openQA instance. Call +wait_idle+ at the end if WAITIDLE is set. (e.g. +send_key "alt-o", 1+)
 * +type_string STRING+ Typing the given string. (e.g. +type_string "yes\n"+)
@@ -43,6 +44,11 @@ API for the tests. The most commonly used functions are:
 * +wait_idle TIMEOUT+  Wait for max TIMEOUT seconds until system is idle.
 * +wait_serial REGEX[, TIMEOUT]+ Wait until REGEX is seen on serial port. Return 0 if not found after TIMEOUT (default 90s)
 * +upload_logs FILE+ Type in necessary shell commands to save FILE in the test results
+* +assert_and_click NEEDLE[, BUTTON]+ Wait until NEEDLE is seen on the screen and click it in the middle of the smallest defined area
+* +wait_still_screen [TIME]+ Wait for the screen to stop changing for TIME seconds
+* +mouse_hide+ Moves the mouse cursor into the edge of the screen to hide it within needles
+* +script_output SCRIPT[, TIMEOUT]+ Returns the text output of the given bash script. The script is called with bash -xe and STDOUT is returned
+* +validate_script_output SCRIPT, CODE+ Checks the text output of the bash script using the given callback (e.g. +validate_script_output "ls -la $HOME", sub { m/.xsession-errors/ }+)
 
 The following API is distribution specific and subject to change
 
@@ -51,20 +57,26 @@ The following API is distribution specific and subject to change
 * +become_root+ Become root (in a shell)
 * +script_run COMMAND[, TIMEOUT]+ Wrapper for type_string meant to type in shell commands. Waits TIMEOUT until idle (default 9s)
 * +script_sudo COMMAND+ Use sudo to execute COMMAND, handling the optional password prompt.
-* +sendpassword+ Type default root password.
+* +type_password+ Type default password (used for root and user)
 
 How to write tests
 ~~~~~~~~~~~~~~~~~~
 
 openQA tests need to implement at least the *run* subroutine to
-contain the actual test code.
-
-The *is_applicable* subroutines is called by the engine to determine
-whether a test applies and should run. The method can check external
-conditions, like variable settings.
+contain the actual test code and the test needs to be loaded in the distribution's
+main.pm.
 
 The *test_flags* subroutine specifies what happens when the test
 fails.
+
+There are several callbacks defined:
+
+* *post_fail_hook* is called to upload log files or determine the state of
+  the machine
+* *pre_run_hook* is called before the run function - mainly useful for a whole
+  group of tests
+* *post_run_hook* is run after successful run function - mainly useful for a whole
+  group of tests
 
 The following example is a basic test that assumes some live image
 that boots into the desktop when pressing enter at the boot loader:
@@ -73,11 +85,7 @@ that boots into the desktop when pressing enter at the boot loader:
 -------------------------------------------------------------------
 use base "basetest";
 use strict;
-use bmwqemu;
-
-sub is_applicable {
-    return 1; # check for $vars{SOMETHING}
-}
+use testapi; 
 
 sub run {
     # wait for bootloader to appear
@@ -111,16 +119,16 @@ Test Case Examples
 sub run() {
 
     # change to root
-    become_root();
+    become_root;
 
     # output zypper repos to the serial
-    script_run("zypper lr -d > /dev/$serialdev");
+    script_run "zypper lr -d > /dev/$serialdev";
 
     # install xdelta and insert a string 'xdelta_installed' to the serial
-    script_run("zypper --gpg-auto-import-keys -n in xdelta && echo 'xdelta_installed' > /dev/$serialdev");
+    script_run "zypper --gpg-auto-import-keys -n in xdelta && echo 'xdelta_installed' > /dev/$serialdev";
 
     # detecting whether 'xdelta_installed' appears in the serial within 200 seconds
-    wait_serial "xdelta_installed", 200  || die "zypper install failed";
+    die "zypper install failed" unless wait_serial"xdelta_installed", 200;
 
     # capture a screenshot and compare with needle 'test-zypper_in-1'
     assert_screen 'test-zypper_in-1', 3;
@@ -131,19 +139,14 @@ sub run() {
 
 [source,perl]
 --------------------------------------------------------------
-sub is_applicable {
-    # do this test if desktop environment is KDE
-    return ( $vars{DESKTOP} eq "kde" );
-}
-
 sub run() {
 
     # make sure kate was installed
     # if not ensure_installed will try to install it
-    ensure_installed("kate");
+    ensure_installed "kate";
 
     # start kate
-    x11_start_program("kate");
+    x11_start_program "kate";
 
     # check that kate execution succeeded
     assert_screen 'test-kate-1', 10; 
@@ -176,8 +179,7 @@ Check the existing tests at
 https://github.com/os-autoinst/os-autoinst-distri-opensuse[os-autoinst-distri-opensuse
 on GitHub] for examples.
 
-Variables are accessible via the *%vars* hash, e.g
-'$vars{DESKTOP}' or better use the API method 'check_var'.
+Variables are accessible via the *get_var* and *check_var* functions.
 
 Modifying setting of an existing test
 -------------------------------------
