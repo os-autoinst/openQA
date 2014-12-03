@@ -67,10 +67,7 @@
               <td>VNC port: <%= $worker->{properties}->{WORKER_VNC_PORT} %></td>
             </tr>
 	    <tr>
-              <td>Host IP: <%= $worker->{properties}->{WORKER_IP} %></td>
-	    </tr>
-	    <tr>
-              <td>Host IP: <%= $worker->{properties}->{WORKER_PORT} %></td>
+              <td>Worker: <%= $worker->{properties}->{WORKER_IP} %>:<%= $worker->{properties}->{WORKER_PORT} %></td>
 	    </tr>
             % }
             <tr>
