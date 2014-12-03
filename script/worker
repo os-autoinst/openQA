@@ -443,8 +443,11 @@ sub stop_job {
                 warn "can't copy ulog: $uploaded_logfile -> $testresults/ulogs/\n";
             }
         }
-        for my $file (qw(video.ogv stderr.txt stdout.txt vars.json serial0.txt)) {
-            unless (move("$pooldir/$file", join('/', $testresults, $file))) {
+        for my $file (qw(video.ogv stderr.txt stdout.txt vars.json serial0)) {
+            # default serial output file called serial0
+            my $ofile = $file;
+            $ofile =~ s/serial0/serial0.txt/;
+            unless (move("$pooldir/$file", join('/', $testresults, $ofile))) {
                 warn "can't move $file: $!\n";
             }
         }
