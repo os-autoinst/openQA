@@ -310,20 +310,18 @@ sub workit($){
     my $tmpdir = "$pooldir/tmp";
     mkdir($tmpdir) unless (-d $tmpdir);
 
-    $ENV{'TMPDIR'} = $tmpdir;
-
-    local (*INPUT, *ERRLOG, *OUTPUT);
-
-    open(ERRLOG, ">stderr.txt") or die "Can't open error log! $!";
-    open(OUTPUT, ">stdout.txt") or die "Can't open output log! $!";
-
-    my $child = open3(*INPUT, '>&OUTPUT', '>&ERRLOG', $isotovideo);
-    close(INPUT); # we don't need no input
+    my $child = fork();
     die "failed to fork: $!\n" unless defined $child;
 
-    printf "$$: WORKING %d\n", $job->{'id'};
-
-    return { pid => $child };
+    unless ($child) {
+        $ENV{'TMPDIR'} = $tmpdir;
+        printf "$$: WORKING %d\n", $job->{'id'};
+        exec("$isotovideo -d > autoinst-log.txt 2>&1");
+        die "exec failed: $!\n";
+    }
+    else {
+        return { pid => $child };
+    }
 
 }
 
@@ -443,19 +441,19 @@ sub stop_job {
                 warn "can't copy ulog: $uploaded_logfile -> $testresults/ulogs/\n";
             }
         }
-        for my $file (qw(video.ogv stderr.txt stdout.txt vars.json serial0)) {
+        if (open(my $log, '>>', "autoinst-log.txt")) {
+            print $log "+++ worker notes +++\n";
+            printf $log "time: %s\n", strftime("%F %T", gmtime);
+            print $log "overall result: $result\n";
+            close $log;
+        }
+        for my $file (qw(video.ogv autoinst-log.txt vars.json serial0)) {
             # default serial output file called serial0
             my $ofile = $file;
             $ofile =~ s/serial0/serial0.txt/;
             unless (move("$pooldir/$file", join('/', $testresults, $ofile))) {
                 warn "can't move $file: $!\n";
             }
-        }
-        if (open(my $log, '>>', "$testresults/autoinst-log.txt")) {
-            print $log "+++ worker notes +++\n";
-            printf $log "time: %s\n", strftime("%F %T", gmtime);
-            print $log "overall result: $result\n";
-            close $log;
         }
 
         # if there's no results.json start.pl probably died early, e.g. due to configuration
@@ -516,6 +514,12 @@ sub start_job {
         return job_incomplete($job, 'setup failure');
     }
     if (!symlink($testresults, join('/', $pooldir, 'testresults', $name))) {
+        warn "symlink $testresults: $!\n";
+        return job_incomplete($job, 'setup failure');
+    }
+    # not yet there, but we need to point back so that os-autoinst's live_log route finds it
+    # this is just a temporary aid
+    if (!symlink(join('/', $pooldir, 'autoinst-log.txt'), join('/', $testresults, 'autoinst-log.txt'))) {
         warn "symlink $testresults: $!\n";
         return job_incomplete($job, 'setup failure');
     }
