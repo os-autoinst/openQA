@@ -447,8 +447,8 @@ sub stop_job {
             print $log "overall result: $result\n";
             close $log;
         }
-	# unlink the symlink
-	unlink(join('/', $testresults, "autoinst-log.txt"));
+        # unlink the symlink
+        unlink(join('/', $testresults, "autoinst-log.txt"));
         for my $file (qw(video.ogv autoinst-log.txt vars.json serial0)) {
             # default serial output file called serial0
             my $ofile = $file;
