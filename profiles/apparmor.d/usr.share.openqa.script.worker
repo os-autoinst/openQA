@@ -66,7 +66,6 @@
   /var/lib/openqa/pool/*/ rw,
   /var/lib/openqa/pool/*/* rw,
   /var/lib/openqa/pool/*/vars.json rwk,
-  /var/lib/openqa/pool/*/stderr.txt rwk,
   /var/lib/openqa/pool/*/.locked wk,
   /var/lib/openqa/pool/*/qemuscreenshot/ rw,
   /var/lib/openqa/pool/*/qemuscreenshot/* rw,

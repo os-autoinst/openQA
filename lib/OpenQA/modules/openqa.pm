@@ -304,7 +304,7 @@ sub test_resultfile_list($) {
     # get a list of existing resultfiles
     my $testname = shift;
     my $testresdir = testresultdir($testname);
-    my @filelist = qw(video.ogv results.json backend.json serial0.txt stderr.txt autoinst-log.txt);
+    my @filelist = qw(video.ogv results.json vars.json backend.json serial0.txt autoinst-log.txt);
     my @filelist_existing;
     for my $f (@filelist) {
         if(-e "$testresdir/$f") {
