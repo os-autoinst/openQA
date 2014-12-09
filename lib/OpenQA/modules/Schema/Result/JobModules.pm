@@ -122,8 +122,12 @@ sub _insert_tm($$$) {
     $r->update({ result_id => $rid->id });
 }
 
-sub split_results($$) {
-    my ($job, $results) = @_;
+sub split_results($) {
+    my ($job) = @_;
+
+    my $testdirname = $job->{settings}->{NAME};
+    my $results = openqa::test_result($testdirname);
+    return unless $results; # broken test
     for my $tm (@{$results->{testmodules}}) {
         insert_tm($schema, $job, $tm);
     }

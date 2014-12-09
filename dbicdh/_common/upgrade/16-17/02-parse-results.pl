@@ -27,10 +27,7 @@ sub {
     my @jobs = $schema->resultset('Jobs')->all();
     for my $job (@jobs) {
         $job = $job->to_hash();
-        my $testdirname = $job->{settings}->{NAME};
-        my $results = test_result($testdirname);
-        next unless $results; # broken test
-        Schema::Result::JobModules::split_results($job, $results);
+        Schema::Result::JobModules::split_results($job);
     }
 
   }

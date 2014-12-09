@@ -674,6 +674,8 @@ sub job_set_done {
             }
         );
     }
+    Schema::Result::JobModules::split_results(job_get($jobid));
+
     if ($args{result} ne 'passed') {
         _job_skip_children($jobid);
     }
