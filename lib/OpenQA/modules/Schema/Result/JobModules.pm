@@ -74,5 +74,30 @@ sub sqlt_deploy_hook {
     db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
 }
 
+our $result_cache;
+
+sub _count_job_results($$) {
+  my ($job, $result) = @_;
+
+  my $schema = Scheduler::schema();
+
+  $result_cache{$result} ||= $schema->resultset("JobResults")->search({ name => $result })->single->id;
+  my $rid = $result_cache{$result};
+  my $count = $schema->resultset("JobModules")->search(
+    { job_id => $job->{id}, result_id => $rid })->count;
+}
+
+sub job_module_stats($) {
+  my ($job) = @_;
+
+  my $result_stat = {};
+  $result_stat->{'ok'} = _count_job_results($job, 'passed');
+  $result_stat->{'fail'} = _count_job_results($job, 'failed');
+  $result_stat->{'na'} = _count_job_results($job, 'none');
+  $result_stat->{'unk'} = _count_job_results($job, 'incomplete');
+
+  return $result_stat;
+}
+
 1;
 # vim: set sw=4 et:

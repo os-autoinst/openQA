@@ -21,6 +21,7 @@ use Scheduler qw/worker_get/;
 use File::Basename;
 use POSIX qw/strftime/;
 
+
 sub list {
     my $self = shift;
 
@@ -56,28 +57,24 @@ sub list {
     my @slist=();
     my @list=();
 
-    for my $job (
-        @{
-            Scheduler::list_jobs(
-                state => $state,
-                match => $match,
-                limit => $limit,
-                page => $page,
-                ignore_incomplete => $self->param('ignore_incomplete')?1:0,
-                maxage => $hoursfresh*3600,
-                scope => $scope,
+    my $jobs = Scheduler::list_jobs(
+      state => $state,
+      match => $match,
+      limit => $limit,
+      page => $page,
+      ignore_incomplete => $self->param('ignore_incomplete')?1:0,
+      maxage => $hoursfresh*3600,
+      scope => $scope,
                 assetid => $assetid,
-              )
-              ||[]
-        }
-      )
-    {
+    ) ||[];
+
+    for my $job (@$jobs) {
 
         if ($job->{state} =~ /^(?:running|waiting|done)$/) {
 
             my $testdirname = $job->{'settings'}->{'NAME'};
             my $results = test_result($testdirname);
-            my $result_stats = test_result_stats($results);
+            my $result_stats = Schema::Result::JobModules::job_module_stats($job);
             my $backend = $results->{'backend'}->{'backend'} || '';
             $backend =~ s/^.*:://;
 

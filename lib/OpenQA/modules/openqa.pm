@@ -32,8 +32,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &needledir
   &testcasedir
   &test_result
-  &test_result_stats
-  &test_result_hash
   &test_result_module
   &test_resultfile_list
   &testresultdir
@@ -104,32 +102,6 @@ sub test_result($) {
     warn "failed to parse $testresdir/results.json: $@" if $@;
     close(JF);
     return $result_hash;
-}
-
-sub test_result_hash($) {
-    # produce old simple key-val hash of all results
-    my $result_hash = shift;
-    my $result_simple_hash = {};
-    my $module;
-    for $module (@{$result_hash->{'testmodules'}}) {
-        $result_simple_hash->{$module->{'name'}} = $module->{'result'};
-    }
-    for $module ("standstill", "overall") {
-        if(defined $result_hash->{$module}) {
-            $result_simple_hash->{$module} = $result_hash->{$module};
-        }
-    }
-    return $result_simple_hash;
-}
-
-sub test_result_stats($) {
-    my $result_hash = shift;
-    my $result_stat = {'ok' => 0, 'fail' => 0, 'unk' => 0, 'na' => 0};
-    my $result_simple_hash = test_result_hash($result_hash);
-    for my $module (keys %{$result_simple_hash}) {
-        $result_stat->{$result_simple_hash->{$module}}++;
-    }
-    return $result_stat;
 }
 
 sub test_result_module($$) {
