@@ -20,7 +20,7 @@
 
 
 
-  /bin/bash r,
+  /bin/bash rix,
   /dev/ r,
   /dev/bus/usb/ r,
   /dev/kvm rw,
