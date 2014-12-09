@@ -161,23 +161,23 @@ sub worker_register {
 # param hash:
 # XXX TODO: Remove HashRefInflator
 sub worker_get {
-  my $workerid = shift;
+    my $workerid = shift;
 
-  my $rs = schema->resultset("Workers");
-  $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-  my $worker = $rs->find($workerid);
+    my $rs = schema->resultset("Workers");
+    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
+    my $worker = $rs->find($workerid);
 
-  # TODO: transfer these from the worker
-  my $WORKER_PORT_START = 20003;
+    # TODO: transfer these from the worker
+    my $WORKER_PORT_START = 20003;
 
-  $worker->{properties}->{WORKER_VNC_PORT} = $worker->{'instance'} + 90;
-  $worker->{properties}->{WORKER_PORT} = $worker->{'instance'} * 10 + $WORKER_PORT_START;
+    $worker->{properties}->{WORKER_VNC_PORT} = $worker->{'instance'} + 90;
+    $worker->{properties}->{WORKER_PORT} = $worker->{'instance'} * 10 + $WORKER_PORT_START;
 
-  for my $r (schema->resultset("WorkerProperties")->search({ worker_id => $worker->{id} })) {
-    $worker->{properties}->{$r->key} = $r->value;
-  }
+    for my $r (schema->resultset("WorkerProperties")->search({ worker_id => $worker->{id} })) {
+        $worker->{properties}->{$r->key} = $r->value;
+    }
 
-  return $worker;
+    return $worker;
 }
 
 sub workers_get_dead_worker {
@@ -532,17 +532,19 @@ sub job_grab {
 
     my $job_hashref;
     if ($result != 0) {
-	$job_hashref = _job_get({
-	    'me.id' => schema->resultset("Jobs")->search(
-		{
-		    state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
-		    worker_id => $workerid,
-		}
-		)->single->id,
-	  });
-	# store a new one time password both in the job and in the worker properties
-	worker_set_property($workerid, 'CONNECT_PASSWORD', _job_set_connect_password($job_hashref));
-	worker_set_property($workerid, 'WORKER_IP', $workerip) if $workerip;
+        $job_hashref = _job_get(
+            {
+                'me.id' => schema->resultset("Jobs")->search(
+                    {
+                        state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
+                        worker_id => $workerid,
+                    }
+                )->single->id,
+            }
+        );
+        # store a new one time password both in the job and in the worker properties
+        worker_set_property($workerid, 'CONNECT_PASSWORD', _job_set_connect_password($job_hashref));
+        worker_set_property($workerid, 'WORKER_IP', $workerip) if $workerip;
     }
     return $job_hashref;
 }
@@ -559,13 +561,14 @@ sub _job_set_connect_password($) {
         {
             job_id => $jobref->{id},
             key => 'CONNECT_PASSWORD'
-	  },
-      );
+        },
+    );
     if (!$r->in_storage) {
-      $r->value($password);
-      $r->insert;
-    } else {
-      $r->update({ value => $password });
+        $r->value($password);
+        $r->insert;
+    }
+    else {
+        $r->update({ value => $password });
     }
 
     $jobref->{'settings'}->{'CONNECT_PASSWORD'} = $password;
@@ -574,20 +577,22 @@ sub _job_set_connect_password($) {
 
 sub worker_set_property($$$) {
 
-  my ($workerid, $key, $val) = @_;
+    my ($workerid, $key, $val) = @_;
 
     my $r = schema->resultset("WorkerProperties")->find_or_new(
-      {
-	worker_id => $workerid,
-        key => $key
-      });
+        {
+            worker_id => $workerid,
+            key => $key
+        }
+    );
 
-  if (!$r->in_storage) {
-    $r->value($val);
-    $r->insert;
-  } else {
-    $r->update({ value => $val });
-  }
+    if (!$r->in_storage) {
+        $r->value($val);
+        $r->insert;
+    }
+    else {
+        $r->update({ value => $val });
+    }
 }
 
 # parent job failed, handle children - set them to done incomplete immediately

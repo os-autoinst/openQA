@@ -130,23 +130,24 @@ sub edit {
     my $tags = [];
     $tags = $module_detail->{'tags'} if ($module_detail->{'tags'});
     my $screenshot;
-    
+
     if ($module_detail->{'needle'}) {
 
         # First position: the screenshot with all the matching areas (in result)
-	$screenshot = {
-                'name' => 'screenshot',
-                'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
-                'imagename' => $imgname,
-                'area' => [],
-                'matches' => [],
-                'tags' => []
-	};
+        $screenshot = {
+            'name' => 'screenshot',
+            'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
+            'imagename' => $imgname,
+            'area' => [],
+            'matches' => [],
+            'tags' => []
+        };
         for my $tag (@$tags) {
             push(@{$screenshot->{'tags'}}, $tag);
         }
         for my $area (@{$module_detail->{'area'}}) {
-            push(@{$screenshot->{'matches'}},
+            push(
+                @{$screenshot->{'matches'}},
                 {
                     'xpos' => int $area->{'x'},
                     'width' => int $area->{'w'},
@@ -156,25 +157,25 @@ sub edit {
                 }
             );
         }
-	# Second position: the only needle (with the same matches)
+        # Second position: the only needle (with the same matches)
         my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'}, $results->{'version'}||'');
 
         $self->app->log->error(sprintf("Could not find needle: %s for %s %s",$module_detail->{'needle'},$results->{'distribution'},$results->{'version'})) if !defined $needle;
 
         my $matched = {
-                'name' => $module_detail->{'needle'},
-                'suggested_name' => $self->_timestamp($module_detail->{'needle'}),
-                'imageurl' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png',$results->{'version'}),
-                'imagename' => basename($needle->{'image'}),
-                'imagedistri' => $needle->{'distri'},
-                'imageversion' => $needle->{'version'},
-                'area' => $needle->{'area'},
-                'tags' => $needle->{'tags'},
-                'matches' => $screenshot->{'matches'}
-            };
-	calc_min_similarity($matched, $module_detail->{'area'});
-	push(@needles, $matched);
-	
+            'name' => $module_detail->{'needle'},
+            'suggested_name' => $self->_timestamp($module_detail->{'needle'}),
+            'imageurl' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png',$results->{'version'}),
+            'imagename' => basename($needle->{'image'}),
+            'imagedistri' => $needle->{'distri'},
+            'imageversion' => $needle->{'version'},
+            'area' => $needle->{'area'},
+            'tags' => $needle->{'tags'},
+            'matches' => $screenshot->{'matches'}
+        };
+        calc_min_similarity($matched, $module_detail->{'area'});
+        push(@needles, $matched);
+
         for my $t (@{$needle->{'tags'}}) {
             push(@$tags, $t) unless grep(/^$t$/, @$tags);
         }
@@ -183,14 +184,14 @@ sub edit {
     elsif ($module_detail->{'needles'}) {
 
         # First position: the screenshot
-	$screenshot = {
-                'name' => 'screenshot',
-                'imagename' => $imgname,
-                'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
-                'area' => [],
-                'matches' => [],
-                'tags' => []
-	};
+        $screenshot = {
+            'name' => 'screenshot',
+            'imagename' => $imgname,
+            'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
+            'area' => [],
+            'matches' => [],
+            'tags' => []
+        };
         for my $tag (@$tags) {
             push(@{$screenshot->{'tags'}}, $tag);
         }
@@ -242,7 +243,7 @@ sub edit {
                 #push(@{$screenshot->{'matches'}}, $area);
                 push(@{$needles[scalar(@needles)-1]->{'matches'}}, $area);
             }
-	    calc_min_similarity($needles[scalar(@needles)-1], $needle->{'area'});
+            calc_min_similarity($needles[scalar(@needles)-1], $needle->{'area'});
             for my $t (@{$needleinfo->{'tags'}}) {
                 push(@$tags, $t) unless grep(/^$t$/, @$tags);
             }
@@ -251,18 +252,18 @@ sub edit {
     else {
         # Failing with not a single candidate needle
         $screenshot = {
-                'name' => 'screenshot',
-                'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
-                'imagename' => $imgname,
-                'area' => [],
-                'matches' => [],
-                'tags' => $tags
-	};
+            'name' => 'screenshot',
+            'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
+            'imagename' => $imgname,
+            'area' => [],
+            'matches' => [],
+            'tags' => $tags
+        };
     }
-    
+
     # the highest matches first
-    @needles = sort { $b->{min_similarity} cmp $a->{min_similarity} || 
-			  $a->{name} cmp $b->{name} } @needles;
+    @needles =
+      sort { $b->{min_similarity} cmp $a->{min_similarity} ||$a->{name} cmp $b->{name} } @needles;
 
     # Default values
     #  - area: matches from best candidate
@@ -270,14 +271,14 @@ sub edit {
     my $default_needle = {};
     my $default_name;
     if ($needles[0] && ($needles[0]->{min_similarity} || 0) > 70) {
-	$needles[0]->{selected} = 1;
-	$default_needle->{'tags'} = $needles[0]->{'tags'};
+        $needles[0]->{selected} = 1;
+        $default_needle->{'tags'} = $needles[0]->{'tags'};
         $default_needle->{'area'} = $needles[0]->{'matches'};
         $screenshot->{'suggested_name'} = $needles[0]->{'suggested_name'};
     }
     else {
-	$screenshot->{selected} = 1;
-	$default_needle->{'tags'} = $screenshot->{'tags'};
+        $screenshot->{selected} = 1;
+        $default_needle->{'tags'} = $screenshot->{'tags'};
         $default_needle->{'area'} = [];
         $screenshot->{'suggested_name'} = $self->_timestamp($self->param('moduleid'));
     }
@@ -440,18 +441,19 @@ sub calc_matches($$) {
     my ($needle, $areas) = @_;
 
     for my $area (@$areas) {
-	my $sim = int($area->{'similarity'} + 0.5);
-	push(@{$needle->{'matches'}},
-	     {
-		 'xpos' => int $area->{'x'},
-		 'width' => int $area->{'w'},
-		 'ypos' => int $area->{'y'},
-		 'height' => int $area->{'h'},
-		 'type' => $area->{'result'},
-		 'similarity' => $sim
-                }
-            );
-	}
+        my $sim = int($area->{'similarity'} + 0.5);
+        push(
+            @{$needle->{'matches'}},
+            {
+                'xpos' => int $area->{'x'},
+                'width' => int $area->{'w'},
+                'ypos' => int $area->{'y'},
+                'height' => int $area->{'h'},
+                'type' => $area->{'result'},
+                'similarity' => $sim
+            }
+        );
+    }
     calc_min_similarity($needle, $areas);
 }
 
@@ -461,10 +463,10 @@ sub calc_min_similarity($$) {
     my $min_sim;
 
     for my $area (@$areas) {
-	my $sim = int($area->{'similarity'} + 0.5);
-	if (!defined $min_sim || $min_sim > $sim) {
-	   $min_sim = $sim;
-	}
+        my $sim = int($area->{'similarity'} + 0.5);
+        if (!defined $min_sim || $min_sim > $sim) {
+            $min_sim = $sim;
+        }
     }
     $needle->{min_similarity} = $min_sim;
 }
@@ -477,14 +479,14 @@ sub viewimg {
     my @needles;
     if ($module_detail->{'needle'}) {
         my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'}, $results->{'version'}||'');
-	my $info = {
-                'name' => $module_detail->{'needle'},
-                'image' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png', $results->{'version'}),
-                'areas' => $needle->{'area'},
-                'matches' => []
-	};
-	calc_matches($info, $module_detail->{'area'});
-	push(@needles, $info);
+        my $info = {
+            'name' => $module_detail->{'needle'},
+            'image' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png', $results->{'version'}),
+            'areas' => $needle->{'area'},
+            'matches' => []
+        };
+        calc_matches($info, $module_detail->{'area'});
+        push(@needles, $info);
     }
     elsif ($module_detail->{'needles'}) {
         my $needlename;
@@ -493,25 +495,25 @@ sub viewimg {
             $needlename = $needle->{'name'};
             $needleinfo  = needle_info($needlename, $results->{'distribution'}, $results->{'version'}||'');
             next unless $needleinfo;
-	    my $info = {
-                    'name' => $needlename,
-                    'image' => $self->needle_url($results->{'distribution'}, "$needlename.png", $results->{'version'}),
-                    'areas' => $needleinfo->{'area'},
-                    'matches' => []
-	    };
-	    calc_matches($info, $needle->{'area'});
-	    push(@needles, $info);
+            my $info = {
+                'name' => $needlename,
+                'image' => $self->needle_url($results->{'distribution'}, "$needlename.png", $results->{'version'}),
+                'areas' => $needleinfo->{'area'},
+                'matches' => []
+            };
+            calc_matches($info, $needle->{'area'});
+            push(@needles, $info);
         }
     }
 
     # the highest matches first
-    @needles = sort { $b->{min_similarity} cmp $a->{min_similarity} || 
-			  $a->{name} cmp $b->{name} } @needles;
+    @needles =
+      sort { $b->{min_similarity} cmp $a->{min_similarity} ||$a->{name} cmp $b->{name} } @needles;
     # preselect a rather good needle
     if ($needles[0] && $needles[0]->{min_similarity} > 70) {
-	$needles[0]->{selected} = 1;
+        $needles[0]->{selected} = 1;
     }
-    
+
     $self->stash('screenshot', $module_detail->{'screenshot'});
     $self->stash('needles', \@needles);
     $self->stash('img_width', 1024);
