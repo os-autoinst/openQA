@@ -336,28 +336,6 @@ sub jobs_get_dead_worker {
     return \@results;
 }
 
-sub _job_to_hash {
-    my ($job, %args) = @_;
-    return undef unless $job;
-    my $j = _hashref($job, qw/ id name priority worker_id clone_id retry_avbl t_started t_finished test test_branch/);
-    $j->{state} = $job->state->name;
-    $j->{result} = $job->result->name;
-    $j->{settings} = { map { $_->key => $_->value } $job->settings->all() };
-    if ($job->name && !$j->{settings}->{NAME}) {
-        $j->{settings}->{NAME} = sprintf "%08d-%s", $job->id, $job->name;
-    }
-    if ($args{assets}) {
-        for my $a ($job->jobs_assets->all()) {
-            push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
-        }
-    }
-    $j->{parents} = [];
-    for my $p ($job->parents->all()) {
-        push @{$j->{parents}}, $p->parent_job_id;
-    }
-    return $j;
-}
-
 # XXX TODO: Do not expand the Job
 sub _job_get($) {
     my $search = shift;
@@ -367,7 +345,7 @@ sub _job_get($) {
     push @{$attrs{'prefetch'}}, 'settings';
 
     my $job = schema->resultset("Jobs")->search($search, \%attrs)->first;
-    return _job_to_hash($job, assets => 1);
+    return $job->to_hash(assets => 1);
 }
 
 sub job_get_assets {
@@ -474,7 +452,7 @@ sub list_jobs {
 
     my @results = ();
     while( my $job = $jobs->next) {
-        push @results, _job_to_hash($job, assets => 1);
+        push @results, $job->to_hash(assets => 1);
     }
 
     return \@results;

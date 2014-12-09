@@ -97,6 +97,7 @@ __PACKAGE__->has_many(jobs_assets => 'Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(children => 'Schema::Result::JobDependencies', 'parent_job_id');
 __PACKAGE__->has_many(parents => 'Schema::Result::JobDependencies', 'child_job_id');
+__PACKAGE__->has_many(modules => 'Schema::Result::JobModules', 'job_id');
 
 __PACKAGE__->add_unique_constraint(constraint_name => [qw/slug/]);
 
@@ -147,6 +148,40 @@ sub machine{
         }
     }
     return $self->{_machine};
+}
+
+sub _hashref {
+    my $obj = shift;
+    my @fields = @_;
+
+    my %hashref = ();
+    foreach my $field (@fields) {
+        $hashref{$field} = $obj->$field;
+    }
+
+    return \%hashref;
+  }
+
+sub to_hash {
+    my ($job, %args) = @_;
+    return undef unless $job;
+    my $j = _hashref($job, qw/ id name priority worker_id clone_id retry_avbl t_started t_finished test test_branch/);
+    $j->{state} = $job->state->name;
+    $j->{result} = $job->result->name;
+    $j->{settings} = { map { $_->key => $_->value } $job->settings->all() };
+    if ($job->name && !$j->{settings}->{NAME}) {
+        $j->{settings}->{NAME} = sprintf "%08d-%s", $job->id, $job->name;
+    }
+    if ($args{assets}) {
+        for my $a ($job->jobs_assets->all()) {
+            push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
+        }
+    }
+    $j->{parents} = [];
+    for my $p ($job->parents->all()) {
+        push @{$j->{parents}}, $p->parent_job_id;
+    }
+    return $j;
 }
 
 =head2 can_be_duplicated

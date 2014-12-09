@@ -10,20 +10,12 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   $prj
   $basedir
   $resultdir
-  $scheduledir
   $app_title
   $app_subtitle
   @runner
   $res_css
   $res_display
-  &parse_log
-  &parse_log_to_stats
-  &parse_log_to_hash
-  &log_to_scriptpath
   &path_to_url
-  &resultname_to_log
-  &resultname_to_url
-  &is_scheduled
   &running_log
   &path_to_testname
   &cycle
@@ -68,7 +60,6 @@ use JSON "decode_json";
 our $basedir=$ENV{'OPENQA_BASEDIR'}||"/var/lib";
 our $prj="openqa";
 our $resultdir="$basedir/$prj/testresults";
-our $scheduledir="$basedir/$prj/schedule.d";
 our $assetdir="$basedir/$prj/factory";
 our $isodir="$assetdir/iso";
 our $cachedir="$basedir/$prj/cache";
@@ -150,62 +141,6 @@ sub test_result_module($$) {
             return $module;
         }
     }
-}
-
-sub parse_log($) {
-    my($fn)=@_;
-    open(my $fd, "<", $fn) || return;
-    seek($fd, -4095, 2);
-    my $logdata;
-    read($fd,$logdata,100000);
-    close($fd);
-
-    # assume first log line is splashscreen:
-    return () unless $logdata=~s/.*====\n//s;
-    my @lines=map {[split(": ")]} split("\n",$logdata);
-    return @lines;
-}
-
-sub parse_log_to_stats($) {
-    my($lines)=@_;
-    my %stats;
-    foreach my $entry (@$lines) {
-        my $result=$entry->[1];
-        $result=~s/\s.*//;
-        $stats{$result}++;
-    }
-    return \%stats;
-}
-
-sub parse_log_to_hash($) {
-    my($lines)=@_;
-    my %results=();
-    foreach my $entry (@$lines) {
-        $results{$entry->[0]}=$entry->[1];
-    }
-    return \%results;
-}
-
-sub _regexp_parts{
-    my $distri = '(openSUSE|SLE[DS])';
-    my $version = '(\d+(?:\.\d|-SP\d)?|Factory)';
-    my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-)?DVD(?:-BiArch|-OpenSourcePress)?|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO|staging_[^-]+)';
-    my $arch = '(i[356]86(?:-x86_64)?|x86_64|i586-x86_64|ia64|ppc64|s390x)';
-    my $build = '(Build(?:[0-9.]+))';
-
-    return ($distri, $version, $flavor, $arch, $build);
-}
-
-# find the full pathname to a given testrun-logfile and test name
-# FIXME: what a crap
-sub log_to_scriptpath($$){
-    my($fn,$testname)=@_;
-    open(my $fd, "<", $fn) or return undef;
-    while(my $line=<$fd>) {
-        next unless $line=~m/^(?:scheduling|\|\|\| starting|starting) $testname (\S*)/;
-        return $1;
-    }
-    return undef;
 }
 
 sub running_log($) {
@@ -324,18 +259,6 @@ sub test_uploadlog_list($) {
         push(@filelist, $f);
     }
     return @filelist;
-}
-
-sub resultname_to_log($){
-    testresultdir($_[0])."/autoinst-log.txt";
-}
-sub resultname_to_url($){
-    "http://$hostname/results/$_[0]";
-}
-
-sub is_scheduled($){
-    my $testname=shift;
-    return -e "$scheduledir/$testname";
 }
 
 our $table_row_style = 0;
