@@ -21,47 +21,17 @@ use warnings;
 
 use openqa;
 
-use Data::Dump qw(dd pp);
-
-sub insert_tm($$$) {
-  my ($schema, $job, $tm) = @_;
-  $tm->{details} = []; # ignore
-  #print pp($job) . " " . pp($tm) . "\n";
-  my $r = $schema->resultset("JobModules")->find_or_new(
-    {
-      job_id => $job->{id},
-      script => $tm->{script}
-    },
-  );
-  if (!$r->in_storage) {
-    $r->category($tm->{category});
-    $r->name($tm->{name});
-    $r->insert;
-  }
-  my $result = $tm->{result};
-  $result =~ s,fail,failed,;
-  $result =~ s,^na,none,;
-  $result =~ s,^ok,passed,;
-  $result =~ s,^skip,skipped,;
-  my $rid = $schema->resultset("JobResults")->search({ name => $result })->single || die "can't find $result";
-  $r->update({ result_id => $rid->id });
-}
-
 sub {
-  my $schema = shift;
+    my $schema = shift;
 
-  my @jobs = $schema->resultset('Jobs')->all();
-  for my $job (@jobs) {
-    $job = $job->to_hash();
-    my $testdirname = $job->{settings}->{NAME};
-    my $results = test_result($testdirname);
-    next unless $results; # broken test
-    #print $testdirname . " - " . ref($results->{testmodules}) . "\n";
-    for my $tm (@{$results->{testmodules}}) {
-      insert_tm($schema, $job, $tm);
-      #return;
+    my @jobs = $schema->resultset('Jobs')->all();
+    for my $job (@jobs) {
+        $job = $job->to_hash();
+        my $testdirname = $job->{settings}->{NAME};
+        my $results = test_result($testdirname);
+        next unless $results; # broken test
+        Schema::Result::JobModules::split_results($job, $results);
     }
-  }
 
-}
+  }
 

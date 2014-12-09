@@ -58,14 +58,14 @@ sub list {
     my @list=();
 
     my $jobs = Scheduler::list_jobs(
-      state => $state,
-      match => $match,
-      limit => $limit,
-      page => $page,
-      ignore_incomplete => $self->param('ignore_incomplete')?1:0,
-      maxage => $hoursfresh*3600,
-      scope => $scope,
-      assetid => $assetid,
+        state => $state,
+        match => $match,
+        limit => $limit,
+        page => $page,
+        ignore_incomplete => $self->param('ignore_incomplete')?1:0,
+        maxage => $hoursfresh*3600,
+        scope => $scope,
+        assetid => $assetid,
     ) ||[];
 
     for my $job (@$jobs) {
@@ -76,11 +76,11 @@ sub list {
 
             my $run_stat = {};
             if ($job->{state} eq 'running') {
-	      my $testdirname = $job->{'settings'}->{'NAME'};
-	      my $running_basepath = running_log($testdirname);
-	      my $results = test_result($testdirname);
-	      $run_stat = get_running_modinfo($results);
-	      $run_stat->{'run_backend'} = 0;
+                my $testdirname = $job->{'settings'}->{'NAME'};
+                my $running_basepath = running_log($testdirname);
+                my $results = test_result($testdirname);
+                $run_stat = get_running_modinfo($results);
+                $run_stat->{'run_backend'} = 0;
             }
 
             my $settings = {
@@ -92,8 +92,8 @@ sub list {
                 res_overall=>$job->{state}||'unk',
                 res_dents=>$job->{dents}||0,
                 run_stat=>$run_stat
-	      };
-	    if ($job->{state} ne 'done') {
+            };
+            if ($job->{state} ne 'done') {
                 unshift @list, $settings;
             }
             else {
@@ -255,7 +255,7 @@ sub overview {
         my $result;
         if ( $job->{state} eq 'done' ) {
             my $r            = test_result($testname);
-            my $result_stats = test_result_stats($r);
+            my $result_stats = Schema::Result::JobModules::job_module_stats($job);
             my $failures     = get_failed_needles($testname);
             my $overall      = $job->{result};
             if ( $job->{result} eq "passed" && $r->{dents}) {

@@ -22,6 +22,6 @@ use warnings;
 sub {
     my $schema = shift;
 
-    $schema->resultset('JobResults')->populate([[qw/name/],[ 'skipped'],]);
+    $schema->resultset('JobResults')->populate([[qw/name/],['skipped'],]);
 
   }

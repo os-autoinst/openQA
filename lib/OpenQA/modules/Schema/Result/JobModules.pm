@@ -29,15 +29,15 @@ __PACKAGE__->add_columns(
     job_id => {
         data_type => 'integer',
         is_foreign_key => 1,
-      },
+    },
     name => {
-      data_type => 'text',
+        data_type => 'text',
     },
     script => {
-      data_type => 'text',
+        data_type => 'text',
     },
     category => {
-      data_type => 'text',
+        data_type => 'text',
     },
     result_id => {
         data_type => 'integer',
@@ -64,7 +64,7 @@ __PACKAGE__->belongs_to(
         on_delete     => "CASCADE",
         on_update     => "CASCADE",
     },
-  );
+);
 __PACKAGE__->belongs_to(result => 'Schema::Result::JobResults', 'result_id');
 
 
@@ -77,27 +77,56 @@ sub sqlt_deploy_hook {
 our $result_cache;
 
 sub _count_job_results($$) {
-  my ($job, $result) = @_;
+    my ($job, $result) = @_;
 
-  my $schema = Scheduler::schema();
+    my $schema = Scheduler::schema();
 
-  $result_cache{$result} ||= $schema->resultset("JobResults")->search({ name => $result })->single->id;
-  my $rid = $result_cache{$result};
-  my $count = $schema->resultset("JobModules")->search(
-    { job_id => $job->{id}, result_id => $rid })->count;
+    $result_cache{$result} ||= $schema->resultset("JobResults")->search({ name => $result })->single->id;
+    my $rid = $result_cache{$result};
+    my $count = $schema->resultset("JobModules")->search({ job_id => $job->{id}, result_id => $rid })->count;
 }
 
 sub job_module_stats($) {
-  my ($job) = @_;
+    my ($job) = @_;
 
-  # TODO: this can be pretty trivially optimized
-  my $result_stat = {};
-  $result_stat->{'ok'} = _count_job_results($job, 'passed');
-  $result_stat->{'fail'} = _count_job_results($job, 'failed');
-  $result_stat->{'na'} = _count_job_results($job, 'none');
-  $result_stat->{'unk'} = _count_job_results($job, 'incomplete');
+    # TODO: this can be pretty trivially optimized
+    my $result_stat = {};
+    $result_stat->{'ok'} = _count_job_results($job, 'passed');
+    $result_stat->{'fail'} = _count_job_results($job, 'failed');
+    $result_stat->{'na'} = _count_job_results($job, 'none');
+    $result_stat->{'unk'} = _count_job_results($job, 'incomplete');
 
-  return $result_stat;
+    return $result_stat;
+}
+
+sub _insert_tm($$$) {
+    my ($schema, $job, $tm) = @_;
+    $tm->{details} = []; # ignore
+    my $r = $schema->resultset("JobModules")->find_or_new(
+        {
+            job_id => $job->{id},
+            script => $tm->{script}
+        }
+    );
+    if (!$r->in_storage) {
+        $r->category($tm->{category});
+        $r->name($tm->{name});
+        $r->insert;
+    }
+    my $result = $tm->{result};
+    $result =~ s,fail,failed,;
+    $result =~ s,^na,none,;
+    $result =~ s,^ok,passed,;
+    $result =~ s,^skip,skipped,;
+    my $rid = $schema->resultset("JobResults")->search({ name => $result })->single || die "can't find $result";
+    $r->update({ result_id => $rid->id });
+}
+
+sub split_results($$) {
+    my ($job, $results) = @_;
+    for my $tm (@{$results->{testmodules}}) {
+        insert_tm($schema, $job, $tm);
+    }
 }
 
 1;

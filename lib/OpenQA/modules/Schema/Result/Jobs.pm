@@ -160,7 +160,7 @@ sub _hashref {
     }
 
     return \%hashref;
-  }
+}
 
 sub to_hash {
     my ($job, %args) = @_;
