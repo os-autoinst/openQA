@@ -42,6 +42,7 @@ sub insert_tm($$$) {
   $result =~ s,fail,failed,;
   $result =~ s,^na,none,;
   $result =~ s,^ok,passed,;
+  $result =~ s,^skip,skipped,;
   my $rid = $schema->resultset("JobResults")->search({ name => $result })->single || die "can't find $result";
   $r->update({ result_id => $rid->id });
 }

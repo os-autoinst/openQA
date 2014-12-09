@@ -164,7 +164,6 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    return undef unless $job;
     my $j = _hashref($job, qw/ id name priority worker_id clone_id retry_avbl t_started t_finished test test_branch/);
     $j->{state} = $job->state->name;
     $j->{result} = $job->result->name;

@@ -98,7 +98,7 @@
                             % my $ptext = "";
                             %if ($job->{'state'} eq 'waiting') {
                                 % $ptext = "waiting";
-                                % } elsif($test->{'run_stat'}->{'modcount'} > 0) {
+                            % } elsif($test->{'run_stat'}->{'modcount'} > 0) {
                                 % $ptext = int($test->{'run_stat'}->{'moddone'} / $test->{'run_stat'}->{'modcount'} * 100)."%";
                                 % if(!$test->{'run_stat'}->{'run_backend'}) {
                                     % $ptext = "post-processing";

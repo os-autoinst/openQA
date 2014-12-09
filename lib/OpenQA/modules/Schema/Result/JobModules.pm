@@ -90,6 +90,7 @@ sub _count_job_results($$) {
 sub job_module_stats($) {
   my ($job) = @_;
 
+  # TODO: this can be pretty trivially optimized
   my $result_stat = {};
   $result_stat->{'ok'} = _count_job_results($job, 'passed');
   $result_stat->{'fail'} = _count_job_results($job, 'failed');

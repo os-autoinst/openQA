@@ -2,6 +2,8 @@ package openqa;
 use strict;
 require 5.002;
 
+use Carp;
+
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
@@ -22,12 +24,9 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &sortkeys
   &first_run
   &data_name
-  &parse_refimg_path
-  &parse_refimg_name
   &back_log
   &running_state
   &get_running_modinfo
-  &match_title
   &needle_info
   &needledir
   &testcasedir
@@ -95,6 +94,7 @@ sub test_result($) {
     my $testname = shift;
     my $testresdir = testresultdir($testname);
     local $/;
+    #carp "reading json from $testresdir/results.json";
     open(JF, "<", "$testresdir/results.json") || return;
     return unless fcntl(JF, F_SETLKW, pack('ssqql', F_RDLCK, 0, 0, 0, $$));
     my $result_hash;
@@ -276,26 +276,6 @@ sub sortkeys($$) {
 sub data_name($) {
     $_[0]=~m/^.*\/(.*)\.\w\w\w(?:\.gz)?$/;
     return $1;
-}
-
-sub parse_refimg_path($) {
-    $_[0]=~m/.*\/(\w+)-(\d+)-(\d+)-(\w+)-(\w+)\.png/;
-    return ($1,$2,$3,$4,$5);
-}
-sub parse_refimg_name($) {
-    my($testmodule,$screenshot,$n,$result,$match)=parse_refimg_path($_[0]);
-    return {name => "$testmodule-$screenshot-$n-$result-$match", result => $result, match => $match, id => $n};
-}
-
-sub match_title($) {
-    my $match = shift;
-    my %titles = (
-        'strict' => 'The refimg has to match exactly',
-        'diff' => 'Each byte of the refimg may have an offset',
-        'hwfuzzy' => 'Fuzzy matching on hardware-tests, otherwise diff matching',
-        'fuzzy' => 'Vector based fuzzy matching using openCV'
-    );
-    return $titles{$match};
 }
 
 sub needledir($$) {
