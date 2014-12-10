@@ -17,10 +17,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   @runner
   $res_css
   $res_display
-  &path_to_url
   &running_log
-  &path_to_testname
-  &cycle
   &sortkeys
   &first_run
   &data_name
@@ -191,19 +188,8 @@ sub get_running_modinfo($) {
 }
 
 
-# get testname by name or path
-sub path_to_testname($) {
-    my $fn=shift;
-    $fn=~s%\.autoinst\.txt$%%;
-    $fn=~s%\.ogv$%%;
-    $fn=~s%.*/%%;
-    return $fn;
-}
-
 sub testresultdir($) {
     my $fn=shift;
-    $fn=~s%\.autoinst\.txt$%%;
-    $fn=~s%\.ogv$%%;
     "$basedir/$prj/testresults/$fn";
 }
 
@@ -231,19 +217,6 @@ sub test_uploadlog_list($) {
         push(@filelist, $f);
     }
     return @filelist;
-}
-
-our $table_row_style = 0;
-sub cycle(;$) {
-    my $cset = shift||0;
-    if($cset == 1) {
-        $table_row_style = 0;
-        return;
-    }
-    if($cset != 2) { # 2 means read without toggle
-        $table_row_style^=1; # toggle state
-    }
-    return $table_row_style?'odd':'even';
 }
 
 our $loop_first_run = 1;

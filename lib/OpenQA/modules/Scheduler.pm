@@ -22,6 +22,7 @@ use diagnostics;
 
 use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
+use Data::Dumper;
 use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
 use DateTime;
@@ -763,6 +764,29 @@ sub job_update_result {
     );
 
     return $r;
+}
+
+sub _append_log($$) {
+    my ($job, $log) = @_;
+
+    return unless $log->{data};
+
+    my $testdirname = openqa::testresultdir($job->{settings}->{NAME});
+    my $file = "$testdirname/autoinst-log-live.txt";
+    if (open(my $fd, '>:raw', $file)) {
+        sysseek($fd, $log->{offset}, Fcntl::SEEK_SET);
+        syswrite($fd, $log->{data});
+    }
+
+}
+
+sub job_update_status($$) {
+    my ($id, $status) = @_;
+
+    my $job = _job_get({ 'me.id' => $id });
+    print "$id " . Dumper($status) . "\n";
+
+    _append_log($job, $status->{log});
 }
 
 sub _job_find_smart($$$) {
