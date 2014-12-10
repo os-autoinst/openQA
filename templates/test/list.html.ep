@@ -96,23 +96,26 @@
                     <td colspan="4" style="padding: 3px 4px;" class="progress">
                         <div class="pbox">
                             % my $ptext = "";
-                            %if ($job->{'state'} eq 'waiting') {
-                                % $ptext = "waiting";
+                            % my $value;
+                            % if ($job->{'state'} eq 'waiting') {
+				% $ptext = "waiting";
                             % } elsif($test->{'run_stat'}->{'modcount'} > 0) {
-                                % $ptext = int($test->{'run_stat'}->{'moddone'} / $test->{'run_stat'}->{'modcount'} * 100)."%";
-                                % if(!$test->{'run_stat'}->{'run_backend'}) {
-                                    % $ptext = "post-processing";
-                                % }
+			    %   $value = $test->{'run_stat'}->{'moddone'};
+                            %   $ptext = int($value * 100. / $test->{'run_stat'}->{'modcount'}) ."%";
                             % } else {
-                                % $ptext = "pre-processing";
-                            % }
-                            <progress style="width: 100%; height: 100%;" max="<%= $test->{'run_stat'}->{'modcount'} %>" <%= b(($test->{'run_stat'}->{'run_backend'} and $test->{'run_stat'}->{'modcount'} > 0)?"value='".$test->{'run_stat'}->{'moddone'}."'":"") %>>
-                                <%= $ptext %>
+			    %   $ptext = "pre-processing";
+			    % }
+			    <progress style="width: 100%; height: 100%;"
+                                 % if (defined($value)) {
+				   value="<%= $value %>"
+                                 % }
+				 max="<%= $test->{'run_stat'}->{'modcount'} %>">
+				<%= $ptext %>
                             </progress>
                             <%= $ptext %>
                         </div>
                     </td>
-                % } else {
+                  % } else {
                     <td><span class="overview_passed"><%= ($test->{'res_ok'})?$test->{'res_ok'}:'' %></span></td>
                     <td><span class="overview_unknown"><%= ($test->{'res_unknown'}?$test->{'res_unknown'}:'') %></span></td>
 		    <td><span class="overview_dent"><%= ($test->{'res_dents'}?$test->{'res_dents'}:'') %></span></td>

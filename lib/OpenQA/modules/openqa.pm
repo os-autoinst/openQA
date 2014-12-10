@@ -22,7 +22,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &first_run
   &data_name
   &back_log
-  &running_state
   &get_running_modinfo
   &needle_info
   &needledir
@@ -143,17 +142,6 @@ sub back_log($) {
         }
     }
     return "";
-}
-
-sub running_state($) {
-    my ($name) = @_;
-    my $dir = running_log($name);
-    my $pid = file_content("$dir/os-autoinst.pid");
-    chomp($pid);
-    my $state = file_content("/proc/$pid/status") || "";
-    $state=~m/^State:\s+(\w)\s/m;
-    $state = $1;
-    return ($state eq "T")?0:1;
 }
 
 sub get_running_modinfo($) {
