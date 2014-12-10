@@ -320,8 +320,10 @@ sub startup {
     $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show'); # job_get
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy'); # job_delete
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio'); # job_set_prio
+    # NO LONGER USED
     $job_r->post('/result')->name('apiv1_job_result')->to('job#result'); # job_update_result
     $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done'); # job_set_done
+    $job_r->post('/status')->name('apiv1_update_status')->to('job#update_status'); # job_update_status
 
     # job_set_waiting, job_set_continue
     my $command_r = $job_r->route('/set_:command', command => [qw(waiting running)]);

@@ -104,6 +104,7 @@ sub prio {
     $self->render(json => {result => \$res});
 }
 
+# replaced in favor of done
 sub result {
     my $self = shift;
     my $jobid = int($self->stash('jobid'));
@@ -114,13 +115,21 @@ sub result {
     $self->render(json => {result => \$res});
 }
 
+# this is the general worker update call
+sub update_status {
+    my $self = shift;
+    my $jobid = int($self->stash('jobid'));
+    my $status = $self->req->json->{'status'};
+
+    my $res = Scheduler::job_update_status($jobid, $status);
+    $self->render(json => {result => \$res});
+}
+
 sub done {
     my $self = shift;
     my $jobid = int($self->stash('jobid'));
     my $result = $self->param('result');
     my $newbuild = 1 if defined $self->param('newbuild');
-
-    print STDERR "jobid $jobid $result\n";
 
     my $res;
     if ($newbuild) {

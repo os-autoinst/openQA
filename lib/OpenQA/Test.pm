@@ -20,6 +20,7 @@ use openqa;
 use Scheduler qw/worker_get/;
 use File::Basename;
 use POSIX qw/strftime/;
+use Data::Dumper;
 
 sub list {
     my $self = shift;
@@ -56,41 +57,30 @@ sub list {
     my @slist=();
     my @list=();
 
-    for my $job (
-        @{
-            Scheduler::list_jobs(
-                state => $state,
-                match => $match,
-                limit => $limit,
-                page => $page,
-                ignore_incomplete => $self->param('ignore_incomplete')?1:0,
-                maxage => $hoursfresh*3600,
-                scope => $scope,
-                assetid => $assetid,
-              )
-              ||[]
-        }
-      )
-    {
+    my $jobs = Scheduler::list_jobs(
+        state => $state,
+        match => $match,
+        limit => $limit,
+        page => $page,
+        ignore_incomplete => $self->param('ignore_incomplete')?1:0,
+        maxage => $hoursfresh*3600,
+        scope => $scope,
+        assetid => $assetid,
+    ) ||[];
+
+    for my $job (@$jobs) {
 
         if ($job->{state} =~ /^(?:running|waiting|done)$/) {
 
-            my $testdirname = $job->{'settings'}->{'NAME'};
-            my $results = test_result($testdirname);
-            my $result_stats = test_result_stats($results);
-            my $backend = $results->{'backend'}->{'backend'} || '';
-            $backend =~ s/^.*:://;
+            my $result_stats = Schema::Result::JobModules::job_module_stats($job);
 
-            my $run_stat;
+            my $run_stat = {};
             if ($job->{state} eq 'running') {
+                my $testdirname = $job->{'settings'}->{'NAME'};
                 my $running_basepath = running_log($testdirname);
+                my $results = test_result($testdirname);
                 $run_stat = get_running_modinfo($results);
                 $run_stat->{'run_backend'} = 0;
-                if(-e "$running_basepath/os-autoinst.pid") {
-                    my $backpid = file_content("$running_basepath/os-autoinst.pid");
-                    chomp($backpid);
-                    $run_stat->{'run_backend'} = (-e "/proc/$backpid"); # kill 0 does not work with www user
-                }
             }
 
             my $settings = {
@@ -99,10 +89,9 @@ sub list {
                 res_ok=>$result_stats->{ok}||0,
                 res_unknown=>$result_stats->{unk}||0,
                 res_fail=>$result_stats->{fail}||0,
-                res_overall=>$results->{overall},
-                res_dents=>$results->{dents},
-                run_stat=>$run_stat,
-                backend => $backend,
+                res_overall=>$job->{state}||'unk',
+                res_dents=>$job->{dents}||0,
+                run_stat=>$run_stat
             };
             if ($job->{state} ne 'done') {
                 unshift @list, $settings;
@@ -266,7 +255,7 @@ sub overview {
         my $result;
         if ( $job->{state} eq 'done' ) {
             my $r            = test_result($testname);
-            my $result_stats = test_result_stats($r);
+            my $result_stats = Schema::Result::JobModules::job_module_stats($job);
             my $failures     = get_failed_needles($testname);
             my $overall      = $job->{result};
             if ( $job->{result} eq "passed" && $r->{dents}) {

@@ -2,6 +2,8 @@ package openqa;
 use strict;
 require 5.002;
 
+use Carp;
+
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
@@ -10,38 +12,21 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   $prj
   $basedir
   $resultdir
-  $scheduledir
   $app_title
   $app_subtitle
   @runner
   $res_css
   $res_display
-  &parse_log
-  &parse_log_to_stats
-  &parse_log_to_hash
-  &log_to_scriptpath
-  &path_to_url
-  &resultname_to_log
-  &resultname_to_url
-  &is_scheduled
   &running_log
-  &path_to_testname
-  &cycle
   &sortkeys
   &first_run
   &data_name
-  &parse_refimg_path
-  &parse_refimg_name
   &back_log
-  &running_state
   &get_running_modinfo
-  &match_title
   &needle_info
   &needledir
   &testcasedir
   &test_result
-  &test_result_stats
-  &test_result_hash
   &test_result_module
   &test_resultfile_list
   &testresultdir
@@ -68,7 +53,6 @@ use JSON "decode_json";
 our $basedir=$ENV{'OPENQA_BASEDIR'}||"/var/lib";
 our $prj="openqa";
 our $resultdir="$basedir/$prj/testresults";
-our $scheduledir="$basedir/$prj/schedule.d";
 our $assetdir="$basedir/$prj/factory";
 our $isodir="$assetdir/iso";
 our $cachedir="$basedir/$prj/cache";
@@ -106,6 +90,7 @@ sub test_result($) {
     my $testname = shift;
     my $testresdir = testresultdir($testname);
     local $/;
+    #carp "reading json from $testresdir/results.json";
     open(JF, "<", "$testresdir/results.json") || return;
     return unless fcntl(JF, F_SETLKW, pack('ssqql', F_RDLCK, 0, 0, 0, $$));
     my $result_hash;
@@ -113,32 +98,6 @@ sub test_result($) {
     warn "failed to parse $testresdir/results.json: $@" if $@;
     close(JF);
     return $result_hash;
-}
-
-sub test_result_hash($) {
-    # produce old simple key-val hash of all results
-    my $result_hash = shift;
-    my $result_simple_hash = {};
-    my $module;
-    for $module (@{$result_hash->{'testmodules'}}) {
-        $result_simple_hash->{$module->{'name'}} = $module->{'result'};
-    }
-    for $module ("standstill", "overall") {
-        if(defined $result_hash->{$module}) {
-            $result_simple_hash->{$module} = $result_hash->{$module};
-        }
-    }
-    return $result_simple_hash;
-}
-
-sub test_result_stats($) {
-    my $result_hash = shift;
-    my $result_stat = {'ok' => 0, 'fail' => 0, 'unk' => 0, 'na' => 0};
-    my $result_simple_hash = test_result_hash($result_hash);
-    for my $module (keys %{$result_simple_hash}) {
-        $result_stat->{$result_simple_hash->{$module}}++;
-    }
-    return $result_stat;
 }
 
 sub test_result_module($$) {
@@ -150,62 +109,6 @@ sub test_result_module($$) {
             return $module;
         }
     }
-}
-
-sub parse_log($) {
-    my($fn)=@_;
-    open(my $fd, "<", $fn) || return;
-    seek($fd, -4095, 2);
-    my $logdata;
-    read($fd,$logdata,100000);
-    close($fd);
-
-    # assume first log line is splashscreen:
-    return () unless $logdata=~s/.*====\n//s;
-    my @lines=map {[split(": ")]} split("\n",$logdata);
-    return @lines;
-}
-
-sub parse_log_to_stats($) {
-    my($lines)=@_;
-    my %stats;
-    foreach my $entry (@$lines) {
-        my $result=$entry->[1];
-        $result=~s/\s.*//;
-        $stats{$result}++;
-    }
-    return \%stats;
-}
-
-sub parse_log_to_hash($) {
-    my($lines)=@_;
-    my %results=();
-    foreach my $entry (@$lines) {
-        $results{$entry->[0]}=$entry->[1];
-    }
-    return \%results;
-}
-
-sub _regexp_parts{
-    my $distri = '(openSUSE|SLE[DS])';
-    my $version = '(\d+(?:\.\d|-SP\d)?|Factory)';
-    my $flavor = '(Addon-(?:Lang|NonOss)|(?:Promo-)?DVD(?:-BiArch|-OpenSourcePress)?|NET|(?:GNOME|KDE)-Live|Rescue-CD|MINI-ISO|staging_[^-]+)';
-    my $arch = '(i[356]86(?:-x86_64)?|x86_64|i586-x86_64|ia64|ppc64|s390x)';
-    my $build = '(Build(?:[0-9.]+))';
-
-    return ($distri, $version, $flavor, $arch, $build);
-}
-
-# find the full pathname to a given testrun-logfile and test name
-# FIXME: what a crap
-sub log_to_scriptpath($$){
-    my($fn,$testname)=@_;
-    open(my $fd, "<", $fn) or return undef;
-    while(my $line=<$fd>) {
-        next unless $line=~m/^(?:scheduling|\|\|\| starting|starting) $testname (\S*)/;
-        return $1;
-    }
-    return undef;
 }
 
 sub running_log($) {
@@ -241,17 +144,6 @@ sub back_log($) {
     return "";
 }
 
-sub running_state($) {
-    my ($name) = @_;
-    my $dir = running_log($name);
-    my $pid = file_content("$dir/os-autoinst.pid");
-    chomp($pid);
-    my $state = file_content("/proc/$pid/status") || "";
-    $state=~m/^State:\s+(\w)\s/m;
-    $state = $1;
-    return ($state eq "T")?0:1;
-}
-
 sub get_running_modinfo($) {
     my $results = shift;
     return {} unless $results;
@@ -284,19 +176,8 @@ sub get_running_modinfo($) {
 }
 
 
-# get testname by name or path
-sub path_to_testname($) {
-    my $fn=shift;
-    $fn=~s%\.autoinst\.txt$%%;
-    $fn=~s%\.ogv$%%;
-    $fn=~s%.*/%%;
-    return $fn;
-}
-
 sub testresultdir($) {
     my $fn=shift;
-    $fn=~s%\.autoinst\.txt$%%;
-    $fn=~s%\.ogv$%%;
     "$basedir/$prj/testresults/$fn";
 }
 
@@ -324,31 +205,6 @@ sub test_uploadlog_list($) {
         push(@filelist, $f);
     }
     return @filelist;
-}
-
-sub resultname_to_log($){
-    testresultdir($_[0])."/autoinst-log.txt";
-}
-sub resultname_to_url($){
-    "http://$hostname/results/$_[0]";
-}
-
-sub is_scheduled($){
-    my $testname=shift;
-    return -e "$scheduledir/$testname";
-}
-
-our $table_row_style = 0;
-sub cycle(;$) {
-    my $cset = shift||0;
-    if($cset == 1) {
-        $table_row_style = 0;
-        return;
-    }
-    if($cset != 2) { # 2 means read without toggle
-        $table_row_style^=1; # toggle state
-    }
-    return $table_row_style?'odd':'even';
 }
 
 our $loop_first_run = 1;
@@ -381,26 +237,6 @@ sub sortkeys($$) {
 sub data_name($) {
     $_[0]=~m/^.*\/(.*)\.\w\w\w(?:\.gz)?$/;
     return $1;
-}
-
-sub parse_refimg_path($) {
-    $_[0]=~m/.*\/(\w+)-(\d+)-(\d+)-(\w+)-(\w+)\.png/;
-    return ($1,$2,$3,$4,$5);
-}
-sub parse_refimg_name($) {
-    my($testmodule,$screenshot,$n,$result,$match)=parse_refimg_path($_[0]);
-    return {name => "$testmodule-$screenshot-$n-$result-$match", result => $result, match => $match, id => $n};
-}
-
-sub match_title($) {
-    my $match = shift;
-    my %titles = (
-        'strict' => 'The refimg has to match exactly',
-        'diff' => 'Each byte of the refimg may have an offset',
-        'hwfuzzy' => 'Fuzzy matching on hardware-tests, otherwise diff matching',
-        'fuzzy' => 'Vector based fuzzy matching using openCV'
-    );
-    return $titles{$match};
 }
 
 sub needledir($$) {

@@ -22,6 +22,7 @@ use diagnostics;
 
 use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
+use Data::Dumper;
 use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
 use DateTime;
@@ -336,28 +337,6 @@ sub jobs_get_dead_worker {
     return \@results;
 }
 
-sub _job_to_hash {
-    my ($job, %args) = @_;
-    return undef unless $job;
-    my $j = _hashref($job, qw/ id name priority worker_id clone_id retry_avbl t_started t_finished test test_branch/);
-    $j->{state} = $job->state->name;
-    $j->{result} = $job->result->name;
-    $j->{settings} = { map { $_->key => $_->value } $job->settings->all() };
-    if ($job->name && !$j->{settings}->{NAME}) {
-        $j->{settings}->{NAME} = sprintf "%08d-%s", $job->id, $job->name;
-    }
-    if ($args{assets}) {
-        for my $a ($job->jobs_assets->all()) {
-            push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
-        }
-    }
-    $j->{parents} = [];
-    for my $p ($job->parents->all()) {
-        push @{$j->{parents}}, $p->parent_job_id;
-    }
-    return $j;
-}
-
 # XXX TODO: Do not expand the Job
 sub _job_get($) {
     my $search = shift;
@@ -367,7 +346,8 @@ sub _job_get($) {
     push @{$attrs{'prefetch'}}, 'settings';
 
     my $job = schema->resultset("Jobs")->search($search, \%attrs)->first;
-    return _job_to_hash($job, assets => 1);
+    return undef unless $job;
+    return $job->to_hash(assets => 1);
 }
 
 sub job_get_assets {
@@ -474,7 +454,7 @@ sub list_jobs {
 
     my @results = ();
     while( my $job = $jobs->next) {
-        push @results, _job_to_hash($job, assets => 1);
+        push @results, $job->to_hash(assets => 1);
     }
 
     return \@results;
@@ -542,37 +522,9 @@ sub job_grab {
                 )->single->id,
             }
         );
-        # store a new one time password both in the job and in the worker properties
-        worker_set_property($workerid, 'CONNECT_PASSWORD', _job_set_connect_password($job_hashref));
         worker_set_property($workerid, 'WORKER_IP', $workerip) if $workerip;
     }
     return $job_hashref;
-}
-
-sub _job_set_connect_password($) {
-
-    my ($jobref) = @_;
-    my @chars = ("A".."Z", "a".."z", '0'..'9');
-    my $password;
-    $password .= $chars[rand @chars] for 1..32;
-
-    # set a connect password
-    my $r = schema->resultset("JobSettings")->find_or_new(
-        {
-            job_id => $jobref->{id},
-            key => 'CONNECT_PASSWORD'
-        },
-    );
-    if (!$r->in_storage) {
-        $r->value($password);
-        $r->insert;
-    }
-    else {
-        $r->update({ value => $password });
-    }
-
-    $jobref->{'settings'}->{'CONNECT_PASSWORD'} = $password;
-    return $password;
 }
 
 sub worker_set_property($$$) {
@@ -695,6 +647,8 @@ sub job_set_done {
             }
         );
     }
+    Schema::Result::JobModules::split_results(job_get($jobid));
+
     if ($args{result} ne 'passed') {
         _job_skip_children($jobid);
     }
@@ -782,6 +736,32 @@ sub job_update_result {
     );
 
     return $r;
+}
+
+sub _append_log($$) {
+    my ($job, $log) = @_;
+
+    return unless length($log->{data});
+
+    my $testdirname = openqa::testresultdir($job->{settings}->{NAME});
+    my $file = "$testdirname/autoinst-log-live.txt";
+    if (sysopen(my $fd, $file, Fcntl::O_WRONLY|Fcntl::O_CREAT)) {
+        sysseek($fd, $log->{offset}, Fcntl::SEEK_SET);
+        syswrite($fd, $log->{data});
+        close($fd);
+    }
+    else {
+        print STDERR "can't open: $!\n";
+    }
+}
+
+sub job_update_status($$) {
+    my ($id, $status) = @_;
+
+    my $job = _job_get({ 'me.id' => $id });
+    print "$id " . Dumper($status) . "\n";
+
+    _append_log($job, $status->{log});
 }
 
 sub _job_find_smart($$$) {

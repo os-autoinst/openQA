@@ -44,7 +44,6 @@ sub init {
     my $workerport = $worker->{properties}->{WORKER_PORT};
     my $workerurl = $worker->{properties}->{WORKER_IP} . ':' . $workerport;
     $self->stash('workerurl', $workerurl);
-    $self->stash('jobpassword', $job->{'settings'}->{'CONNECT_PASSWORD'});
 
     if ($basepath eq '') {
         $self->render_not_found;
@@ -98,47 +97,71 @@ sub livelog {
     my ($self) = @_;
     return 0 unless $self->init();
 
+    my $logfile = $self->stash('basepath').'autoinst-log-live.txt';
+
+    # We'll open the log file and keep the filehandle.
+    my $log;
+    unless (open($log, '<', $logfile)) {
+        $self->render_not_found;
+        return;
+    }
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     $self->res->code(200);
     $self->res->headers->content_type("text/event-stream");
 
-    # prepare connection to worker and get first batch
-    my $livelogurl = $self->stash('workerurl') . '/live_log?connect_password=' . $self->stash('jobpassword');
-    my $ua = Mojo::UserAgent->new;
-    my $tx = $ua->get($livelogurl);
-    if (!$tx->success) {
-        my $err = $tx->error;
-        $self->write('data: '.encode_json([sprintf("ERROR: (%d) %s\n", $err->{'code'}||-1, $err->{'message'})])."\n\n");
-        return;
+    # Send the last 10KB of data from the logfile, so that
+    # the client sees some data immediately
+    my $ino = (stat $logfile)[1];
+
+    my $size = -s $logfile;
+    if ($size > 10*1024 && seek $log, -10*1024, 2) {
+        # Discard one (probably) partial line
+        my $dummy = <$log>;
     }
-    # now first read from the start and get actual position
-    $self->write('data: '.encode_json([$tx->res->body])."\n\n");
-    my $pos = $tx->res->headers->header('X-New-Offset');
+    while (defined(my $l = <$log>)) {
+        $self->write("data: ".encode_json([$l])."\n\n");
+    }
+    seek $log, 0, 1;
 
     # Now we set up a recurring timer to check for new lines from the
-    # worker and send them to the client, plus a utility function to
+    # logfile and send them to the client, plus a utility function to
     # close the connection if anything goes wrong.
     my $id;
     my $close = sub {
         Mojo::IOLoop->remove($id);
         $self->finish;
+        close $log;
         return;
     };
     $id = Mojo::IOLoop->recurring(
         1 => sub {
-            $tx = $ua->get($livelogurl . '&offset=' . $pos);
-            if (!$tx->success) {
-                my $err = $tx->error;
-                $self->write('data: '.encode_json([sprintf("ERROR: (%d) %s\n", $err->{'code'}||-1, $err->{'message'})])."\n\n");
+            my @st = stat $logfile;
+
+            # Zero tolerance for any shenanigans with the logfile, such as
+            # truncation, rotation, etc.
+            unless (@st
+                && $st[1] == $ino
+                &&$st[3] > 0
+                && $st[7] >= $size)
+            {
                 return $close->();
             }
-            $self->write('data: '.encode_json([$tx->res->body])."\n\n");
-            $pos = $tx->res->headers->header('X-New-Offset');
+
+            # If there's new data, read it all and send it out. Then
+            # seek to the current position to reset EOF.
+            if ($size < $st[7]) {
+                $size = $st[7];
+                while (defined(my $l = <$log>)) {
+                    $self->write("data: ".encode_json([$l])."\n\n");
+                }
+                seek $log, 0, 1;
+            }
         }
     );
 
-    # If the client closes the connection, we can stop polling worker
+    # If the client closes the connection, we can stop monitoring the
+    # logfile.
     $self->on(
         finish => sub {
             Mojo::IOLoop->remove($id);

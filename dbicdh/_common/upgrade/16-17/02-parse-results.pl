@@ -14,17 +14,21 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema;
-use base qw/DBIx::Class::Schema/;
-use IO::Dir;
-use SQL::SplitStatement;
-use Fcntl ':mode';
+#!perl
 
-# after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
-# on what scripts should be run and how
-our $VERSION = 17;
+use strict;
+use warnings;
 
-__PACKAGE__->load_namespaces;
+use openqa;
 
-1;
-# vim: set sw=4 et:
+sub {
+    my $schema = shift;
+
+    my @jobs = $schema->resultset('Jobs')->all();
+    for my $job (@jobs) {
+        $job = $job->to_hash();
+        Schema::Result::JobModules::split_results($job);
+    }
+
+  }
+
