@@ -18,6 +18,7 @@ package Schema::Result::JobModules;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
+use Scheduler;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime/);
