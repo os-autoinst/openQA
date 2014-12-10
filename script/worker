@@ -344,8 +344,6 @@ sub _kill_worker($){
         last unless $got_sigchld || kill(SIGTERM, $worker->{pid});
         sleep 2;
     }
-    $job = undef;
-
     carp "worker didn't want to die!\n" unless $got_sigchld;
 }
 

@@ -127,6 +127,7 @@ sub split_results($;$) {
 
     $results ||= openqa::test_result($job->{settings}->{NAME});
     return unless $results; # broken test
+    my $schema = Scheduler::schema();
     for my $tm (@{$results->{testmodules}}) {
         _insert_tm($schema, $job, $tm);
     }

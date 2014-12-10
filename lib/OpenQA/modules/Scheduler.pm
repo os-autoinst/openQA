@@ -522,37 +522,9 @@ sub job_grab {
                 )->single->id,
             }
         );
-        # store a new one time password both in the job and in the worker properties
-        worker_set_property($workerid, 'CONNECT_PASSWORD', _job_set_connect_password($job_hashref));
         worker_set_property($workerid, 'WORKER_IP', $workerip) if $workerip;
     }
     return $job_hashref;
-}
-
-sub _job_set_connect_password($) {
-
-    my ($jobref) = @_;
-    my @chars = ("A".."Z", "a".."z", '0'..'9');
-    my $password;
-    $password .= $chars[rand @chars] for 1..32;
-
-    # set a connect password
-    my $r = schema->resultset("JobSettings")->find_or_new(
-        {
-            job_id => $jobref->{id},
-            key => 'CONNECT_PASSWORD'
-        },
-    );
-    if (!$r->in_storage) {
-        $r->value($password);
-        $r->insert;
-    }
-    else {
-        $r->update({ value => $password });
-    }
-
-    $jobref->{'settings'}->{'CONNECT_PASSWORD'} = $password;
-    return $password;
 }
 
 sub worker_set_property($$$) {
@@ -769,15 +741,18 @@ sub job_update_result {
 sub _append_log($$) {
     my ($job, $log) = @_;
 
-    return unless $log->{data};
+    return unless length($log->{data});
 
     my $testdirname = openqa::testresultdir($job->{settings}->{NAME});
     my $file = "$testdirname/autoinst-log-live.txt";
-    if (open(my $fd, '>:raw', $file)) {
+    if (sysopen(my $fd, $file, Fcntl::O_WRONLY|Fcntl::O_CREAT)) {
         sysseek($fd, $log->{offset}, Fcntl::SEEK_SET);
         syswrite($fd, $log->{data});
+        close($fd);
     }
-
+    else {
+        print STDERR "can't open: $!\n";
+    }
 }
 
 sub job_update_status($$) {
