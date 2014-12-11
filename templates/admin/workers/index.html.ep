@@ -14,6 +14,7 @@
         <th class="table-sortable:alphanumeric">worker</th>
         <th class="table-sortable:alphanumeric">host</th>
         <th class="table-sortable:alphanumeric">instance</th>
+        <th class="table-sortable:alphanumeric">ip</th>
         <th class="table-sortable:alphanumeric table-filterable">backend</th>
         <th class="table-sortable:alphanumeric">status</th>
         <th class="table-sortable:alphanumeric">current step</th>
@@ -25,6 +26,7 @@
           <td class="worker"><%= $view->{'workerid'} %></td>
           <td class="host"><%= $view->{'host'} %></td>
           <td class="instance"><%= $view->{'instance'} %></td>
+          <td class="ip"><%= $view->{'worker_ip'} %></td>
           <td class="backend"><%= $view->{'backend'} %></td>
 	  <td class="status">
 	    <% if($view->{'status'} eq 'idle') { %>
