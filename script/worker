@@ -359,7 +359,7 @@ sub _kill_worker($){
         kill(SIGTERM, $worker->{pid});
         sleep 2;
         my $pid = waitpid($worker->{pid}, WNOHANG);
-        last if ($pid == $worker->{pid});
+        last if ($pid == -1 || $pid == $worker->{pid});
     }
 
     $worker = undef;
