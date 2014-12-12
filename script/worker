@@ -99,6 +99,7 @@ use File::Copy::Recursive qw(dirmove);
 use FindBin;
 use Mojo::UserAgent;
 use Mojo::URL;
+use Mojo::IOLoop;
 use Carp;
 use lib "$FindBin::Bin/../lib";
 use lib "$FindBin::Bin/../lib/OpenQA/modules";
@@ -117,7 +118,6 @@ my $results_dir = "$openqa_share/testresults";
 
 my $isotovideo = "/usr/bin/isotovideo";
 
-my $keep_running = 1;
 my $log_offset = 0;
 
 use Getopt::Long;
@@ -149,6 +149,20 @@ my $worker;
 my $workerid;
 my $worker_start_time;
 my $testresults;
+
+## Mojo timers ids
+my $timers = {
+    # check for commands from scheduler
+    'handle_commands' => undef,
+    # check for new job
+    'check_job'       => undef,
+    # update status of running job
+    'update_status'   => undef,
+    # check for crashed backend and its running status
+    'check_backend'   => undef,
+    # trigger stop_job if running for > $max_job_time
+    'job_timeout'     => undef
+};
 
 sub read_worker_config($){
     my $instance = shift;
@@ -345,7 +359,7 @@ sub _kill_worker($){
         kill(SIGTERM, $worker->{pid});
         sleep 2;
         my $pid = waitpid($worker->{pid}, WNOHANG);
-        last if ($pid == $worker->{pid});
+        last if ($pid == -1 || $pid == $worker->{pid});
     }
 
     $worker = undef;
@@ -433,13 +447,61 @@ sub save_vars($) {
     close($fd);
 }
 
+sub add_timer {
+    my ($timer, $timeout, $callback, $nonrecurring) = @_;
+    return unless ($timer && $timeout && $callback);
+    return if ($timers->{$timer});
+    print "## adding timer\n" if $verbose;
+    my $timerid;
+    if ($nonrecurring) {
+        $timerid = Mojo::IOLoop->timer( $timeout => $callback);
+    }
+    else {
+        $timerid = Mojo::IOLoop->recurring( $timeout => $callback);
+    }
+    $timers->{$timer} = $timerid;
+    return $timerid;
+}
+
+sub remove_timer {
+    my ($timer) = @_;
+    return unless ($timer && $timers->{$timer});
+    print "## removing timer\n" if $verbose;
+    Mojo::IOLoop->remove($timers->{$timer});
+    $timers->{$timer} = undef;
+}
+
+# function prototypes - needed since following functions interdepend on each other
+sub start_job;
+sub update_status;
+sub check_backend;
+sub verify_workerid;
+
+sub check_job {
+    return unless verify_workerid;
+    if (!$job) {
+        print "checking for job ...\n" if $verbose;
+        my $res = api_call('post', "workers/$workerid/grab_job") || { job => undef };
+        $job = $res->{job};
+        if ($job && $job->{id}) {
+            # stop job check
+            remove_timer('check_job');
+            return start_job;
+        }
+        $job = undef;
+    }
+}
+
 sub stop_job($) {
     my ($aborted) = @_;
-
     _kill_worker($worker) if $worker;
 
     # we call this function in all situations, so better check
     return unless $job;
+    # stop all job related timers
+    remove_timer('update_status');
+    remove_timer('check_backend');
+    remove_timer('job_timeout');
 
     my $name = $job->{'settings'}->{'NAME'};
     $aborted ||= 'done';
@@ -514,7 +576,8 @@ sub stop_job($) {
     $job = undef;
     $worker = undef;
     $worker_start_time = undef;
-
+    # start checking for job
+    add_timer('check_job', 2, \&check_job);
 }
 
 sub start_job {
@@ -554,6 +617,23 @@ sub start_job {
         }
         close($log);
     }
+    # start updating status
+    add_timer('update_status', 1, \&update_status);
+    # start backend checks
+    add_timer('check_backend', 2, \&check_backend);
+    # create job timeout timer
+    add_timer(
+        'job_timeout',
+        $max_job_time,
+        sub {
+            # abort job if it takes too long
+            if ($job) {
+                warn sprintf("max job time exceeded, aborting %s ...\n", $job->{'settings'}->{'NAME'});
+                stop_job('timeout');
+            }
+        },
+        1
+    );
 }
 
 sub log_snippet {
@@ -575,6 +655,8 @@ sub log_snippet {
 
 # uploads current data
 sub update_status {
+    return unless verify_workerid;
+    return unless $job;
     my $status = {};
 
     $status->{'log'} = log_snippet;
@@ -582,6 +664,7 @@ sub update_status {
 }
 
 sub handle_commands {
+    return unless verify_workerid;
     my $cmds; # [[id, command], ... ]
     my $call = api_call('get', "workers/$workerid/commands");
     if (defined($call)) {
@@ -593,7 +676,6 @@ sub handle_commands {
     }
     for my $cmd (@{$cmds||[]}) {
         if ($cmd->[1] eq 'quit') { # quit_worker and reschedule the job
-            $keep_running = 0;
             stop_job('quit');
         }
         elsif ($cmd->[1] eq 'abort') { # the work is live and the job is rescheduled
@@ -675,83 +757,61 @@ sub verify_workerid {
     return $workerid;
 }
 
+sub check_backend {
+    print "checking backend state ...\n" if $verbose;
+    # abort job if backend crashed and reschedule it
+    if(-e "$pooldir/backend.crashed") {
+        unlink("$pooldir/backend.crashed");
+        print STDERR "backend crashed ...\n";
+        stop_job('crashed');
+        if (open(my $fh, '<', "$pooldir/qemu.pid")) {
+            local $/;
+            my $pid = <$fh>;
+            close $fh;
+            if ($pid =~ /(\d+)/) {
+                print STDERR "killing qemu $1\n";
+                _kill($1);
+            }
+        }
+        if (open(my $fh, '<', "$pooldir/os-autoinst.pid")) {
+            local $/;
+            my $pid = <$fh>;
+            close $fh;
+            if ($pid =~ /(\d+)/) {
+                print STDERR "killing os-autoinst $1\n";
+                _kill($1);
+            }
+        }
+    }
+
+    # check if the worker is still running
+    if ($worker) {
+        my $pid = waitpid($worker->{pid}, WNOHANG);
+        if ($pid == $worker->{pid}) {
+            if ($?) {
+                warn "child $pid died with exit status $?\n";
+                stop_job('died');
+            }
+            else {
+                stop_job('done');
+            }
+            $worker = undef;
+        }
+    }
+}
+
 sub main(){
     my $lockfd = lockit();
 
     $SIG{__DIE__} = sub { return if $^S; _kill_worker($worker); exit(1); };
 
-    while($keep_running) {
+    ## initial Mojo::IO timers
+    add_timer('handle_commands', 2, \&handle_commands);
+    add_timer('check_job', 2, \&check_job);
 
-        # if openQA is not yet up, continue - assuming api_call sleeps enough
-        next unless verify_workerid;
-
-        handle_commands;
-        update_status if $job;
-
-        # abort job if backend crashed and reschedule it
-        if(-e "$pooldir/backend.crashed") {
-            unlink("$pooldir/backend.crashed");
-            print STDERR "backend crashed ...\n";
-            stop_job('crashed');
-            if (open(my $fh, '<', "$pooldir/qemu.pid")) {
-                local $/;
-                my $pid = <$fh>;
-                close $fh;
-                if ($pid =~ /(\d+)/) {
-                    print STDERR "killing qemu $1\n";
-                    _kill($1);
-                }
-            }
-            if (open(my $fh, '<', "$pooldir/os-autoinst.pid")) {
-                local $/;
-                my $pid = <$fh>;
-                close $fh;
-                if ($pid =~ /(\d+)/) {
-                    print STDERR "killing os-autoinst $1\n";
-                    _kill($1);
-                }
-            }
-        }
-
-        # abort job if it takes too long
-        if ($job && $worker_start_time && time-$worker_start_time > $max_job_time) {
-            warn sprintf("max job time exceeded, aborting %s ...\n", $job->{'settings'}->{'NAME'});
-            stop_job('timeout');
-        }
-
-        if ($keep_running && !$job && $workerid) {
-            print "waiting for job ...\n" if $verbose;
-            my $res = api_call('post', "workers/$workerid/grab_job") || { job => undef };
-            $job = $res->{job};
-            unless ($job && $job->{id}) {
-                sleep 5;
-                $job = undef;
-                next;
-            }
-            start_job;
-        }
-
-        # check if the worker is still running
-        if ($worker) {
-            my $pid = waitpid($worker->{pid}, WNOHANG);
-            if ($pid == $worker->{pid}) {
-                if ($?) {
-                    warn "child $pid died with exit status $?\n";
-                    $worker = undef;
-                    stop_job('died');
-                }
-                else {
-                    $worker = undef;
-                    stop_job('done');
-                }
-            }
-        }
-
-        last unless $keep_running;
-
-        print "waiting for some action ...\n" if $verbose;
-        sleep 2;
-    }
+    # start event loop - this will block until stop is called
+    Mojo::IOLoop->start;
+    # cleanup on finish if necessary
     if ($job) {
         stop_job('quit');
         unlink($testresults);
@@ -759,7 +819,8 @@ sub main(){
 }
 
 sub catch_exit{
-    $keep_running = 0;
+    # send stop to event loop
+    Mojo::IOLoop->stop;
 }
 
 sub catch_sigchld{
