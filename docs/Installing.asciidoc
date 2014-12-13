@@ -143,8 +143,8 @@ Apache proxy
 
 It's recommended to run openQA behind an apache proxy. See
 +openqa.conf.template+ config file in +/etc/apache2/vhosts.d+. To make
-everything work correctly, you need to enable the 'proxy_http',
-'headers' and 'proxy' modules using 'a2enmod'.
+everything work correctly, you need to enable the 'headers', 'proxy',
+'proxy_http' and 'proxy_wstunnel' modules using 'a2enmod'.
 
 Advanced configuration
 ----------------------
