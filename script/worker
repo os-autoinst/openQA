@@ -338,7 +338,13 @@ sub workit($){
     unless ($child) {
         $ENV{'TMPDIR'} = $tmpdir;
         printf "$$: WORKING %d\n", $job->{'id'};
-        open STDOUT, ">", "autoinst-log.txt";
+        if (open(my $log, '>', "autoinst-log.txt")) {
+            print $log "+++ worker notes +++\n";
+            printf $log "start time: %s\n", strftime("%F %T", gmtime);
+            printf $log "running on $hostname:%d ($sysname $release $version $machine)\n", $options{'instance'};
+            close($log);
+        }
+        open STDOUT, ">>", "autoinst-log.txt";
         open STDERR, ">&STDOUT";
         exec "$isotovideo", '-d';
         die "exec failed: $!\n";
@@ -525,7 +531,7 @@ sub stop_job($) {
         }
         if (open(my $log, '>>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
-            printf $log "time: %s\n", strftime("%F %T", gmtime);
+            printf $log "end time: %s\n", strftime("%F %T", gmtime);
             print $log "result: $aborted\n";
             close $log;
         }
