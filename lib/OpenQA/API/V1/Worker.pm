@@ -29,8 +29,14 @@ sub create {
     my $host = $self->param('host');
     my $instance = $self->param('instance');
     my $backend= $self->param('backend');
+    my $caps = {};
 
-    my $res = Scheduler::worker_register($host, $instance, $backend);
+    $caps->{cpu_modelname} = $self->param('cpu_modelname');
+    $caps->{cpu_arch} = $self->param('cpu_arch');
+    $caps->{cpu_opmode} = $self->param('cpu_opmode');
+    $caps->{mem_max} = $self->param('mem_max');
+
+    my $res = Scheduler::worker_register($host, $instance, $backend, $caps);
     $self->render(json => { id => $res} );
 }
 
