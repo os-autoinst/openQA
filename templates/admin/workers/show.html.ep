@@ -1,0 +1,33 @@
+% layout 'admin';
+% title "Worker $id";
+
+<div class="grid_16 box box-shadow alpha">
+    <h2><%= title %></h2>
+    
+    %= include 'layouts/info'
+    
+    <div><span>Host: </span><%= $worker->{'host'} %></div>
+    <div><span>Instance: </span><%= $worker->{'instance'} %></div>
+    <div><span>Backend: </span><%= $worker->{'backend'} %></div>
+    <div><span>Status: </span><%= $worker->{'status'} %></div>
+    % if($worker->{'status'} eq 'running') {
+        <div>Working on job <a href="/tests/<%= $worker->{'jobid'} %>"><%= $worker->{'jobid'} %></a></div>
+    % } elsif($worker->{'status'} eq 'dead' && defined($worker->{'jobid'})) {
+        <div>Dead with job <a href="/tests/<%= $worker->{'jobid'} %>"><%= $worker->{'jobid'} %></a></div>
+    % } 
+    % if(defined($worker->{'currentstep'}) && $worker->{'status'} eq 'running') { 
+        <div><%= $worker->{'currentstep'} %></div>
+    % }
+    
+    <h3>Properties</h3>
+    <table>
+	<th>Key</th>
+	<th>Value</th>
+	% for my $p (sort keys %{$worker->{properties}}) {
+	    <tr>
+		<td><%= $p %></td>
+		<td><%= $worker->{properties}->{$p} %></td>
+	    </tr>
+	% }
+    </table>
+</div>

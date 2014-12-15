@@ -43,7 +43,6 @@ sub workers_list {
             host => $worker->{host},
             instance => $worker->{instance},
             backend => $worker->{backend},
-            worker_ip => $worker->{properties}->{WORKER_IP},
         };
         # puts job id in status, otherwise is idle
         if($job) {

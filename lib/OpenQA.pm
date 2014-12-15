@@ -297,6 +297,7 @@ sub startup {
     $admin_r->get('/assets')->name('admin_assets')->to('asset#index');
 
     $admin_r->get('/workers')->name('admin_workers')->to('workers#index');
+    $admin_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
 
     # Users list as default option
     $admin_r->get('/')->name('admin')->to('user#index');
