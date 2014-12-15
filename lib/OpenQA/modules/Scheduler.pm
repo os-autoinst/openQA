@@ -111,9 +111,20 @@ sub _hashref {
 # Workers API
 #
 
+# update worker's capabilities
+# param: workerid , workercaps
+sub _update_worker_caps($$) {
+    my $workerid = shift;
+    my $workercaps = shift;
+
+    foreach my $cap (keys %$workercaps) {
+        worker_set_property($workerid, uc $cap, $workercaps->{$cap}) if $workercaps->{$cap};
+    }
+}
+
 # param hash: host, instance, backend
 sub worker_register {
-    my ($host, $instance, $backend) = @_;
+    my ($host, $instance, $backend, $workercaps) = @_;
 
     my $worker = schema->resultset("Workers")->search(
         {
@@ -133,6 +144,8 @@ sub worker_register {
                 backend => $backend,
             }
         );
+        # store worker's capabilities to database
+        _update_worker_caps($worker->id, $workercaps) if $workercaps;
     }
 
     # in case the worker died ...
@@ -219,9 +232,11 @@ sub _validate_workerid($) {
     die "invalid worker id $workerid\n" unless $rs->count;
 }
 
-sub _seen_worker($) {
+sub _seen_worker($;$) {
     my $id = shift;
+    my $workercaps = shift;
     schema->resultset("Workers")->find($id)->update({ t_updated => 0 });
+    _update_worker_caps($id, $workercaps) if $workercaps;
 }
 
 
@@ -466,9 +481,10 @@ sub job_grab {
     my $workerid = $args{workerid};
     my $blocking = int($args{blocking} || 0);
     my $workerip = $args{workerip};
+    my $workercaps = $args{workercaps};
 
     _validate_workerid($workerid);
-    _seen_worker($workerid);
+    _seen_worker($workerid, $workercaps);
 
     my $result;
     while (1) {
