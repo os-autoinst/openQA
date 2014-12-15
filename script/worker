@@ -164,6 +164,40 @@ my $timers = {
     'job_timeout'     => undef
 };
 
+
+sub add_timer {
+    my ($timer, $timeout, $callback, $nonrecurring) = @_;
+    return unless ($timer && $timeout && $callback);
+    return if ($timers->{$timer});
+    print "## adding timer $timer\n" if $verbose;
+    my $timerid;
+    if ($nonrecurring) {
+        $timerid = Mojo::IOLoop->timer( $timeout => $callback);
+    }
+    else {
+        $timerid = Mojo::IOLoop->recurring( $timeout => $callback);
+    }
+    $timers->{$timer} = [$timerid, $callback];
+    return $timerid;
+}
+
+sub remove_timer {
+    my ($timer) = @_;
+    return unless ($timer && $timers->{$timer});
+    print "## removing timer $timer\n" if $verbose;
+    Mojo::IOLoop->remove($timers->{$timer}->[0]);
+    $timers->{$timer} = undef;
+}
+
+sub change_timer {
+    my ($timer, $newtimeout, $callback) = @_;
+    return unless ($timer && $timers->{$timer});
+    print "## changing timer $timer\n" if $verbose;
+    $callback = $timers->{$timer}->[1] unless $callback;
+    remove_timer($timer);
+    add_timer($timer, $newtimeout, $callback);
+}
+
 sub read_worker_config($){
     my $instance = shift;
     my $worker_config = "/etc/openqa/workers.ini";
@@ -451,30 +485,6 @@ sub save_vars($) {
 
     print $fd to_json( \%$vars, { pretty => 1 } );
     close($fd);
-}
-
-sub add_timer {
-    my ($timer, $timeout, $callback, $nonrecurring) = @_;
-    return unless ($timer && $timeout && $callback);
-    return if ($timers->{$timer});
-    print "## adding timer\n" if $verbose;
-    my $timerid;
-    if ($nonrecurring) {
-        $timerid = Mojo::IOLoop->timer( $timeout => $callback);
-    }
-    else {
-        $timerid = Mojo::IOLoop->recurring( $timeout => $callback);
-    }
-    $timers->{$timer} = $timerid;
-    return $timerid;
-}
-
-sub remove_timer {
-    my ($timer) = @_;
-    return unless ($timer && $timers->{$timer});
-    print "## removing timer\n" if $verbose;
-    Mojo::IOLoop->remove($timers->{$timer});
-    $timers->{$timer} = undef;
 }
 
 sub get_capabilities {
