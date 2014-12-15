@@ -477,6 +477,23 @@ sub remove_timer {
     $timers->{$timer} = undef;
 }
 
+sub get_capabilities {
+    my %caps = ();
+    my $query_cmd;
+
+    $query_cmd = (`lscpu | grep 'Model name'` =~ /Model name:\s+(.+)/);
+    $caps{cpu_modelname} = $1 ? $1 : '';
+    $query_cmd = (`lscpu | grep 'Architecture'` =~ /Architecture:\s+(.+)/);
+    $caps{cpu_arch} = $1 ? $1 : '';
+    $query_cmd = (`lscpu | grep 'CPU op-mode'` =~ /CPU op-mode\(s\):\s+(.+)/);
+    $caps{cpu_opmode} = $1 ? $1 : '';
+    $query_cmd = (`cat /proc/meminfo | grep MemTotal` =~ /MemTotal:\s+(\d+).+kB/);
+    my $mem_max = $1 ? $1 : '';
+    $caps{mem_max} = int($mem_max/1024) if $mem_max;
+
+    return %caps;
+}
+
 # function prototypes - needed since following functions interdepend on each other
 sub start_job;
 sub update_status;
@@ -487,7 +504,8 @@ sub check_job {
     return unless verify_workerid;
     if (!$job) {
         print "checking for job ...\n" if $verbose;
-        my $res = api_call('post', "workers/$workerid/grab_job") || { job => undef };
+        my %workercaps = get_capabilities;
+        my $res = api_call('post',"workers/$workerid/grab_job",\%workercaps) || { job => undef };
         $job = $res->{job};
         if ($job && $job->{id}) {
             # stop job check
@@ -746,18 +764,13 @@ sub handle_commands {
 }
 
 sub verify_workerid {
-
     return $workerid if $workerid;
+    my %worker_caps = get_capabilities;
+    $worker_caps{host} = $hostname;
+    $worker_caps{instance} = $options{'instance'};
+    $worker_caps{backend} = $worker_settings->{'BACKEND'};
 
-    my $res = api_call(
-        'post',
-        'workers',
-        {
-            host => $hostname,
-            instance => $options{'instance'},
-            backend => $worker_settings->{'BACKEND'}
-        }
-    );
+    my $res = api_call('post','workers',\%worker_caps);
     return unless $res;
     $ENV{'WORKERID'} = $workerid = $res->{id};
     return $workerid;
