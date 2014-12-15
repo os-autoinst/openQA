@@ -345,6 +345,7 @@ sub startup {
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create'); #command_enqueue
     $worker_r->delete('/commands/:commandid')->name('apiv1_delete_command')->to('command#destroy'); #command_dequeue
     $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab'); # job_grab
+    $worker_r->websocket('/ws')->name('apiv1_worker_ws')->to('worker#websocket_create'); #websocket connection
 
     # api/v1/isos
     $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create'); # iso_new
@@ -358,7 +359,6 @@ sub startup {
     $api_public_r->get('/assets/#type/#name')->name('apiv1_get_asset_name')->to('asset#get');
     $api_r->delete('/assets/#id')->name('apiv1_delete_asset')->to('asset#delete');
     $api_r->delete('/assets/#type/#name')->name('apiv1_delete_asset_name')->to('asset#delete');
-
     # json-rpc methods not migrated to this api: echo, list_commands
     ###
     ## JSON API ends here
