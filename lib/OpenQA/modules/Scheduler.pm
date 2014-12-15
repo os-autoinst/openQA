@@ -114,10 +114,9 @@ sub _hashref {
 # update worker's capabilities
 # param: workerid , workercaps
 sub _update_worker_caps($$) {
-    my $workerid = shift;
-    my $workercaps = shift;
+    my ($workerid, $workercaps) = @_;
 
-    foreach my $cap (keys %$workercaps) {
+    for my $cap (keys %$workercaps) {
         worker_set_property($workerid, uc $cap, $workercaps->{$cap}) if $workercaps->{$cap};
     }
 }

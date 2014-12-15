@@ -478,20 +478,33 @@ sub remove_timer {
 }
 
 sub get_capabilities {
-    my %caps = ();
+    my $caps = {};
     my $query_cmd;
 
-    $query_cmd = (`lscpu | grep 'Model name'` =~ /Model name:\s+(.+)/);
-    $caps{cpu_modelname} = $1 ? $1 : '';
-    $query_cmd = (`lscpu | grep 'Architecture'` =~ /Architecture:\s+(.+)/);
-    $caps{cpu_arch} = $1 ? $1 : '';
-    $query_cmd = (`lscpu | grep 'CPU op-mode'` =~ /CPU op-mode\(s\):\s+(.+)/);
-    $caps{cpu_opmode} = $1 ? $1 : '';
-    $query_cmd = (`cat /proc/meminfo | grep MemTotal` =~ /MemTotal:\s+(\d+).+kB/);
-    my $mem_max = $1 ? $1 : '';
-    $caps{mem_max} = int($mem_max/1024) if $mem_max;
-
-    return %caps;
+    open(LSCPU, "LC_ALL=C lscpu|");
+    while (<LSCPU>) {
+        chomp;
+        if (m/Model name:\s+(.+)$/) {
+            $caps->{cpu_modelname} = $1;
+        }
+        if (m/Architecture:\s+(.+)$/) {
+            $caps->{cpu_arch} = $1;
+        }
+        if (m/CPU op-mode\(s\):\s+(.+)$/) {
+            $caps->{cpu_opmode} = $1;
+        }
+    }
+    close(LSCPU);
+    open(MEMINFO, "/proc/meminfo");
+    while (<MEMINFO>) {
+        chomp;
+        if (m/MemTotal:\s+(\d+).+kB/) {
+            my $mem_max = $1 ? $1 : '';
+            $caps->{mem_max} = int($mem_max/1024) if $mem_max;
+        }
+    }
+    close(MEMINFO);
+    return $caps;
 }
 
 # function prototypes - needed since following functions interdepend on each other
@@ -504,8 +517,8 @@ sub check_job {
     return unless verify_workerid;
     if (!$job) {
         print "checking for job ...\n" if $verbose;
-        my %workercaps = get_capabilities;
-        my $res = api_call('post',"workers/$workerid/grab_job",\%workercaps) || { job => undef };
+        my $workercaps = get_capabilities;
+        my $res = api_call('post',"workers/$workerid/grab_job", $workercaps) || { job => undef };
         $job = $res->{job};
         if ($job && $job->{id}) {
             # stop job check
@@ -765,12 +778,12 @@ sub handle_commands {
 
 sub verify_workerid {
     return $workerid if $workerid;
-    my %worker_caps = get_capabilities;
-    $worker_caps{host} = $hostname;
-    $worker_caps{instance} = $options{'instance'};
-    $worker_caps{backend} = $worker_settings->{'BACKEND'};
+    my $worker_caps = get_capabilities;
+    $worker_caps->{host} = $hostname;
+    $worker_caps->{instance} = $options{'instance'};
+    $worker_caps->{backend} = $worker_settings->{'BACKEND'};
 
-    my $res = api_call('post','workers',\%worker_caps);
+    my $res = api_call('post','workers', $worker_caps);
     return unless $res;
     $ENV{'WORKERID'} = $workerid = $res->{id};
     return $workerid;
@@ -842,14 +855,9 @@ sub catch_exit{
     Mojo::IOLoop->stop;
 }
 
-sub catch_sigchld{
-    print "worker got SIGCHLD\n" if $verbose;
-}
-
 $SIG{HUP} = \*catch_exit;
 $SIG{TERM} = \*catch_exit;
 $SIG{INT} = \*catch_exit;
-$SIG{CHLD} = \*catch_sigchld;
 
 main();
 
