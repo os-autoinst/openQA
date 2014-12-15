@@ -40,6 +40,7 @@ sub init {
     my $basepath = running_log($testdirname);
     $self->stash('basepath', $basepath);
     my $workerid = $job->{'worker_id'};
+    $self->stash('workerid', $workerid);
     my $worker = Scheduler::worker_get($workerid);
     my $workerport = $worker->{properties}->{WORKER_PORT};
     my $workerurl = $worker->{properties}->{WORKER_IP} . ':' . $workerport;
@@ -96,6 +97,15 @@ sub edit {
 sub livelog {
     my ($self) = @_;
     return 0 unless $self->init();
+    # tell worker (if connected) to increase status updates rate for more responsive updates
+    my $worker_ws = Scheduler::ws_get_worker($self->stash('workerid'));
+    if ($worker_ws) {
+        print STDERR "### sending ws message to worker\n";
+        $worker_ws->send('livelog_start');
+    }
+    else {
+        print STDERR "### worker ws not set\n";
+    }
 
     my $logfile = $self->stash('basepath').'autoinst-log-live.txt';
 
@@ -130,6 +140,9 @@ sub livelog {
     my $id;
     my $close = sub {
         Mojo::IOLoop->remove($id);
+        if ($worker_ws) {
+            $worker_ws->send('livelog_stop');
+        }
         $self->finish;
         close $log;
         return;
@@ -165,6 +178,9 @@ sub livelog {
     $self->on(
         finish => sub {
             Mojo::IOLoop->remove($id);
+            if ($worker_ws) {
+                $worker_ws->send('livelog_stop');
+            }
         }
     );
 }

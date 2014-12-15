@@ -108,6 +108,8 @@ use OpenQA::API::V1::Client;
 use IPC::Open3;
 
 my $max_job_time = 2*60*60; # 2h
+my $status_updates_slow = 5;
+my $status_updates_fast = 0.5;
 my $openqa_base = "/var/lib/openqa";
 my $openqa_share = "$openqa_base/share";
 my $pooldir;
@@ -685,8 +687,8 @@ sub start_job {
         }
         close($log);
     }
-    # start updating status
-    add_timer('update_status', 1, \&update_status);
+    # start updating status - slow updates if livelog is not running
+    add_timer('update_status', $status_updates_slow, \&update_status);
     # start backend checks
     add_timer('check_backend', 2, \&check_backend);
     # create job timeout timer
