@@ -27,6 +27,8 @@ install:
 
 	install -D -m 640 etc/openqa/client.conf "$(DESTDIR)"/etc/openqa/client.conf
 	install -D -m 644 etc/openqa/workers.ini "$(DESTDIR)"/etc/openqa/workers.ini
+
+	install -D -m 644 etc/logrotate.d/openqa "$(DESTDIR)"/etc/logrotate.d/openqa
 #
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/{system,system-generators}
 	install -m 644 systemd/openqa-worker@.service "$(DESTDIR)"/usr/lib/systemd/system
