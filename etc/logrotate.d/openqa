@@ -1,0 +1,11 @@
+/var/log/openqa {
+    compress
+    dateext
+    maxage 30
+    rotate 10
+    size=+2000k
+    notifempty
+    missingok
+    copytruncate
+}
+
