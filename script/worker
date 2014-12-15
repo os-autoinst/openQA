@@ -219,6 +219,8 @@ $worker_settings = read_worker_config($options{'instance'});
 
 $options{'host'} ||= $worker_settings->{'HOST'};
 
+# $ws is websocket connection
+my $ws;
 my $url;
 if ($options{'host'} !~ '/') {
     $url = Mojo::URL->new();
@@ -289,6 +291,25 @@ sub api_call{
             return undef;
         }
         sleep 5;
+    }
+}
+
+sub ws_message {
+    my ($tx, $msg) = @_;
+    if ($msg eq 'livelog_start') {
+        # change update_status timer if $job running
+        if ($job) {
+            change_timer('update_status', $status_updates_fast);
+        }
+    }
+    elsif ($msg eq 'livelog_stop') {
+        # change update_status timer
+        if ($job) {
+            change_timer('update_status', $status_updates_slow);
+        }
+    }
+    else {
+        carp "Unknown WebSocket message received: \"$msg\"";
     }
 }
 
@@ -787,15 +808,45 @@ sub handle_commands {
 }
 
 sub verify_workerid {
-    return $workerid if $workerid;
-    my $worker_caps = get_capabilities;
-    $worker_caps->{host} = $hostname;
-    $worker_caps->{instance} = $options{'instance'};
-    $worker_caps->{backend} = $worker_settings->{'BACKEND'};
+    if (!$workerid) {
+        my $worker_caps = get_capabilities;
+        $worker_caps->{host} = $hostname;
+        $worker_caps->{instance} = $options{'instance'};
+        $worker_caps->{backend} = $worker_settings->{'BACKEND'};
 
-    my $res = api_call('post','workers', $worker_caps);
-    return unless $res;
-    $ENV{'WORKERID'} = $workerid = $res->{id};
+        my $res = api_call('post','workers', $worker_caps);
+        return unless $res;
+        $ENV{'WORKERID'} = $workerid = $res->{id};
+        # recreate WebSocket connection, our id may have changed
+        if ($ws) {
+            $ws->finish;
+            $ws = undef;
+        }
+    }
+    if (!$ws) {
+        my $ua_url = $url->clone();
+        $ua_url->scheme('ws');
+        $ua_url->path("workers/$workerid/ws");
+        print "WEBSOCKET $ua_url\n" if $verbose;
+        $ws = $ua->websocket(
+            $ua_url => sub {
+                my ($ua, $tx) = @_;
+                if ($tx->is_websocket) {
+                    $tx->on(message => \&ws_message);
+                    $tx->on(
+                        finish => sub {
+                            print "closing websocket connection\n" if $verbose;
+                            $ws = undef;
+                        }
+                    );
+                }
+                else {
+                    carp 'Unable to upgrade connection to WebSocket';
+                    $ws = undef;
+                }
+            }
+        );
+    }
     return $workerid;
 }
 
