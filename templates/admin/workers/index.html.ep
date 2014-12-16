@@ -2,48 +2,46 @@
 % title 'Workers';
 
 <div class="grid_16 box box-shadow alpha">
-	<h2><%= title %></h2>
+  <h2><%= title %></h2>
 
-    %= include 'layouts/info'
-
-	<p>This page lists the status of <%= $wamount %> workers.</p>
-	<p />
-	<table id="results" class="table-autosort table-autofilter table-autostripe">
-		<thead>
-		  <tr>
+  %= include 'layouts/info'
+  
+  <p>This page lists the status of <%= $wamount %> workers.</p>
+  <p />
+  <table id="results" class="table-autosort table-autofilter table-autostripe">
+    <thead>
+      <tr>
         <th class="table-sortable:alphanumeric">worker</th>
         <th class="table-sortable:alphanumeric">host</th>
         <th class="table-sortable:alphanumeric">instance</th>
-        <th class="table-sortable:alphanumeric">ip</th>
         <th class="table-sortable:alphanumeric table-filterable">backend</th>
         <th class="table-sortable:alphanumeric">status</th>
         <th class="table-sortable:alphanumeric">current step</th>
-		  </tr>
-		</thead>
-		<tbody>
-    % for my $view (@$wlist) {
-       <tr id="worker_<%= $view->{'workerid'} %>">
-          <td class="worker"><%= $view->{'workerid'} %></td>
-          <td class="host"><%= $view->{'host'} %></td>
-          <td class="instance"><%= $view->{'instance'} %></td>
-          <td class="ip"><%= $view->{'worker_ip'} %></td>
-          <td class="backend"><%= $view->{'backend'} %></td>
-	  <td class="status">
-	    <% if($view->{'status'} eq 'idle') { %>
-            Idle
-            <% } elsif($view->{'status'} eq 'running') { %>
-            Working on job <a href="/tests/<%= $view->{'jobid'} %>"><%= $view->{'jobid'} %></a>
-            <% } elsif($view->{'status'} eq 'dead' && defined($view->{'jobid'})) { %>
-            Dead with job <a href="/tests/<%= $view->{'jobid'} %>"><%= $view->{'jobid'} %></a>
-            <% } else { %>
-            Dead
+      </tr>
+    </thead>
+    <tbody>
+      % for my $view (@$wlist) {
+      <tr id="worker_<%= $view->{'workerid'} %>">
+        <td class="worker"><%=  link_to( $view->{'workerid'} => url_for('admin_worker_show', worker_id => $view->{'workerid'}) ) %></td>
+        <td class="host"><%= $view->{'host'} %></td>
+        <td class="instance"><%= $view->{'instance'} %></td>
+        <td class="backend"><%= $view->{'backend'} %></td>
+	<td class="status">
+	  <% if($view->{'status'} eq 'idle') { %>
+          Idle
+          <% } elsif($view->{'status'} eq 'running') { %>
+          Working on job <a href="/tests/<%= $view->{'jobid'} %>"><%= $view->{'jobid'} %></a>
+          <% } elsif($view->{'status'} eq 'dead' && defined($view->{'jobid'})) { %>
+          Dead with job <a href="/tests/<%= $view->{'jobid'} %>"><%= $view->{'jobid'} %></a>
+          <% } else { %>
+          Dead
           <% } %>
-	  </td>
-	  <td class="currentstep">
-            <% if(defined($view->{'currentstep'}) && $view->{'status'} eq 'running') { %>
-            <%= $view->{'currentstep'} %>
+	</td>
+	<td class="currentstep">
+          <% if(defined($view->{'currentstep'}) && $view->{'status'} eq 'running') { %>
+          <%= $view->{'currentstep'} %>
           <% } %>
-	  </td>
-       </tr>
-    % }
+	</td>
+      </tr>
+      % }
 </div>

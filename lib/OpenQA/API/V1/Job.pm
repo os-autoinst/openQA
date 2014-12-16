@@ -59,8 +59,14 @@ sub grab {
     my $workerid = $self->stash('workerid');
     my $blocking = int($self->param('blocking') || 0);
     my $workerip = $self->tx->remote_address;
+    my $caps = {};
 
-    my $res = Scheduler::job_grab(workerid => $workerid, blocking => $blocking, workerip => $workerip);
+    $caps->{cpu_modelname} = $self->param('cpu_modelname');
+    $caps->{cpu_arch} = $self->param('cpu_arch');
+    $caps->{cpu_opmode} = $self->param('cpu_opmode');
+    $caps->{mem_max} = $self->param('mem_max');
+
+    my $res = Scheduler::job_grab(workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps);
     $self->render(json => {job => $res});
 }
 

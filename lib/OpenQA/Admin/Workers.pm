@@ -34,5 +34,15 @@ sub index {
     $self->render('admin/workers/index');
 }
 
+sub show {
+    my $self = shift;
+    my $workerid = $self->param('worker_id');
+    $self->stash('id', $workerid);
+    $self->stash(worker => Scheduler::worker_get($workerid));
+    $self->stash(job => Scheduler::job_get_by_workerid($workerid));
+
+    $self->render('admin/workers/show');
+}
+
 1;
 # vim: set sw=4 et:
