@@ -34,6 +34,8 @@
   /proc/meminfo r,
   /proc/sys/vm/overcommit_memory r,
   /sys/bus/usb/devices/ r,
+  # required by lsub
+  /sys/devices/system/** r,
   /usr/bin/cat rix,
   /usr/bin/cp rix,
   /usr/bin/date rix,
@@ -42,6 +44,7 @@
   /usr/bin/mkdir rix,
   /usr/bin/multimon rix,
   /usr/bin/nice rix,
+  /usr/bin/lscpu rix,
   /usr/bin/optipng rix,
   /usr/bin/png2theora rix,
   /usr/bin/qemu-img rix,
