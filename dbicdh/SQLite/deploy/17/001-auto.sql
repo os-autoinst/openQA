@@ -181,7 +181,7 @@ CREATE TABLE worker_properties (
   worker_id integer NOT NULL,
   t_created timestamp,
   t_updated timestamp,
-  FOREIGN KEY (worker_id) REFERENCES jobs(id) ON DELETE CASCADE ON UPDATE CASCADE
+  FOREIGN KEY (worker_id) REFERENCES workers(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 CREATE INDEX worker_properties_idx_worker_id ON worker_properties (worker_id);
 CREATE INDEX worker_properties_kv_index ON worker_properties (key, value);
