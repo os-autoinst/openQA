@@ -37,6 +37,9 @@ ProxyPass /stylesheets !
 ProxyPass /assets !
 ProxyPass /error !
 
+#web socket proxy pass
+ProxyPassMatch /workers/[0-9]+/ws ws://localhost:9526 keepalive=On
+
 ProxyPass / http://localhost:9526/ keepalive=On
 ProxyPassReverse / http://localhost:9526/
 

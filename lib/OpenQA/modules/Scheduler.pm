@@ -53,6 +53,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   job_set_stop job_stop iso_stop_old_builds
   job_get_assets
   asset_list asset_get asset_delete asset_register
+  ws_add_worker ws_get_worker ws_remove_worker
 );
 
 
@@ -71,6 +72,9 @@ our %worker_commands = map { $_ => 1 } qw/
 # job states, initialized in schema()
 # name => id
 our %job_states;
+
+# worker->websockets mapping
+my $worker_sockets = {};
 
 sub schema{
     CORE::state $schema;
@@ -774,7 +778,7 @@ sub job_update_status($$) {
     my ($id, $status) = @_;
 
     my $job = _job_get({ 'me.id' => $id });
-    print "$id " . Dumper($status) . "\n";
+    #    print "$id " . Dumper($status) . "\n";
 
     _append_log($job, $status->{log});
 }
@@ -1085,6 +1089,24 @@ sub asset_register {
         }
     );
     return $asset;
+}
+
+#
+# websockets helper functions
+#
+sub ws_add_worker {
+    my ($workerid, $ws_connection) = @_;
+    $worker_sockets->{$workerid} = $ws_connection;
+}
+
+sub ws_remove_worker {
+    my ($workerid) = @_;
+    delete $worker_sockets->{$workerid};
+}
+
+sub ws_get_worker {
+    my ($workerid) = @_;
+    return $worker_sockets->{$workerid};
 }
 
 1;

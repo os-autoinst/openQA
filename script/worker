@@ -108,6 +108,8 @@ use OpenQA::API::V1::Client;
 use IPC::Open3;
 
 my $max_job_time = 2*60*60; # 2h
+my $status_updates_slow = 5;
+my $status_updates_fast = 0.5;
 my $openqa_base = "/var/lib/openqa";
 my $openqa_share = "$openqa_base/share";
 my $pooldir;
@@ -164,6 +166,40 @@ my $timers = {
     'job_timeout'     => undef
 };
 
+
+sub add_timer {
+    my ($timer, $timeout, $callback, $nonrecurring) = @_;
+    return unless ($timer && $timeout && $callback);
+    return if ($timers->{$timer});
+    print "## adding timer $timer\n" if $verbose;
+    my $timerid;
+    if ($nonrecurring) {
+        $timerid = Mojo::IOLoop->timer( $timeout => $callback);
+    }
+    else {
+        $timerid = Mojo::IOLoop->recurring( $timeout => $callback);
+    }
+    $timers->{$timer} = [$timerid, $callback];
+    return $timerid;
+}
+
+sub remove_timer {
+    my ($timer) = @_;
+    return unless ($timer && $timers->{$timer});
+    print "## removing timer $timer\n" if $verbose;
+    Mojo::IOLoop->remove($timers->{$timer}->[0]);
+    $timers->{$timer} = undef;
+}
+
+sub change_timer {
+    my ($timer, $newtimeout, $callback) = @_;
+    return unless ($timer && $timers->{$timer});
+    print "## changing timer $timer\n" if $verbose;
+    $callback = $timers->{$timer}->[1] unless $callback;
+    remove_timer($timer);
+    add_timer($timer, $newtimeout, $callback);
+}
+
 sub read_worker_config($){
     my $instance = shift;
     my $worker_config = "/etc/openqa/workers.ini";
@@ -185,6 +221,8 @@ $worker_settings = read_worker_config($options{'instance'});
 
 $options{'host'} ||= $worker_settings->{'HOST'};
 
+# $ws is websocket connection
+my $ws;
 my $url;
 if ($options{'host'} !~ '/') {
     $url = Mojo::URL->new();
@@ -255,6 +293,25 @@ sub api_call{
             return undef;
         }
         sleep 5;
+    }
+}
+
+sub ws_message {
+    my ($tx, $msg) = @_;
+    if ($msg eq 'livelog_start') {
+        # change update_status timer if $job running
+        if ($job) {
+            change_timer('update_status', $status_updates_fast);
+        }
+    }
+    elsif ($msg eq 'livelog_stop') {
+        # change update_status timer
+        if ($job) {
+            change_timer('update_status', $status_updates_slow);
+        }
+    }
+    else {
+        carp "Unknown WebSocket message received: \"$msg\"";
     }
 }
 
@@ -453,30 +510,6 @@ sub save_vars($) {
     close($fd);
 }
 
-sub add_timer {
-    my ($timer, $timeout, $callback, $nonrecurring) = @_;
-    return unless ($timer && $timeout && $callback);
-    return if ($timers->{$timer});
-    print "## adding timer\n" if $verbose;
-    my $timerid;
-    if ($nonrecurring) {
-        $timerid = Mojo::IOLoop->timer( $timeout => $callback);
-    }
-    else {
-        $timerid = Mojo::IOLoop->recurring( $timeout => $callback);
-    }
-    $timers->{$timer} = $timerid;
-    return $timerid;
-}
-
-sub remove_timer {
-    my ($timer) = @_;
-    return unless ($timer && $timers->{$timer});
-    print "## removing timer\n" if $verbose;
-    Mojo::IOLoop->remove($timers->{$timer});
-    $timers->{$timer} = undef;
-}
-
 sub get_capabilities {
     my $caps = {};
     my $query_cmd;
@@ -654,8 +687,8 @@ sub start_job {
         }
         close($log);
     }
-    # start updating status
-    add_timer('update_status', 1, \&update_status);
+    # start updating status - slow updates if livelog is not running
+    add_timer('update_status', $status_updates_slow, \&update_status);
     # start backend checks
     add_timer('check_backend', 2, \&check_backend);
     # create job timeout timer
@@ -777,15 +810,45 @@ sub handle_commands {
 }
 
 sub verify_workerid {
-    return $workerid if $workerid;
-    my $worker_caps = get_capabilities;
-    $worker_caps->{host} = $hostname;
-    $worker_caps->{instance} = $options{'instance'};
-    $worker_caps->{backend} = $worker_settings->{'BACKEND'};
+    if (!$workerid) {
+        my $worker_caps = get_capabilities;
+        $worker_caps->{host} = $hostname;
+        $worker_caps->{instance} = $options{'instance'};
+        $worker_caps->{backend} = $worker_settings->{'BACKEND'};
 
-    my $res = api_call('post','workers', $worker_caps);
-    return unless $res;
-    $ENV{'WORKERID'} = $workerid = $res->{id};
+        my $res = api_call('post','workers', $worker_caps);
+        return unless $res;
+        $ENV{'WORKERID'} = $workerid = $res->{id};
+        # recreate WebSocket connection, our id may have changed
+        if ($ws) {
+            $ws->finish;
+            $ws = undef;
+        }
+    }
+    if (!$ws) {
+        my $ua_url = $url->clone();
+        $ua_url->scheme('ws');
+        $ua_url->path("workers/$workerid/ws");
+        print "WEBSOCKET $ua_url\n" if $verbose;
+        $ws = $ua->websocket(
+            $ua_url => sub {
+                my ($ua, $tx) = @_;
+                if ($tx->is_websocket) {
+                    $tx->on(message => \&ws_message);
+                    $tx->on(
+                        finish => sub {
+                            print "closing websocket connection\n" if $verbose;
+                            $ws = undef;
+                        }
+                    );
+                }
+                else {
+                    carp 'Unable to upgrade connection to WebSocket';
+                    $ws = undef;
+                }
+            }
+        );
+    }
     return $workerid;
 }
 

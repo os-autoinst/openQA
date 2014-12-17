@@ -51,5 +51,29 @@ sub show {
     }
 }
 
+sub websocket_create {
+    my ($self) = @_;
+    my $workerid = $self->stash('workerid');
+    $self->app->log->debug("Worker $workerid requested websocket connection\n");
+    # upgrade connection to websocket by subscribing to events
+    $self->on(message => \&websocket_msg);
+    $self->on(
+        finish  => sub {
+            my ($ws, $code, $reason) = @_;
+            $reason ||= '';
+            $self->app->log->debug("Worker $workerid websocket connection closed - $code - $reason\n");
+            Scheduler::ws_remove_worker($workerid);
+        }
+    );
+    # connection need to be stored somewhere so we can send message to worker when event occur
+    Scheduler::ws_add_worker($workerid, $self->tx);
+}
+
+sub websocket_msg {
+    my ($self, $msg) = @_;
+    my $workerid = $self->stash('workerid');
+    #nothing todo for now
+}
+
 1;
 # vim: set sw=4 et:
