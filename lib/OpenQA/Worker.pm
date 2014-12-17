@@ -28,6 +28,39 @@ sub workers_amount {
     return $workers_amount;
 }
 
+sub worker_info($) {
+    my $workerid = shift;
+
+    my $worker = worker_get($workerid);
+    my $job = job_get_by_workerid($workerid);
+    my $settings = {
+        workerid => $workerid,
+        host => $worker->{host},
+        instance => $worker->{instance},
+        backend => $worker->{backend},
+        properties => $worker->{properties}
+    };
+    # puts job id in status, otherwise is idle
+    if($job) {
+        my $testdirname = $job->{'settings'}->{'NAME'};
+        my $results = test_result($testdirname);
+        my $modinfo = get_running_modinfo($results);
+        $settings->{status} = "running";
+        $settings->{jobid} = $job->{id};
+        $settings->{currentstep} = $modinfo->{running};
+    }
+    else {
+        $settings->{status} = "idle";
+    }
+    my $dead_workers = workers_get_dead_worker();
+    foreach my $dead_worker (@$dead_workers) {
+        if($dead_worker->{id} == $workerid) {
+            $settings->{status} = "dead";
+        }
+    }
+    return $settings;
+}
+
 sub workers_list {
     my $self = shift;
 
@@ -36,33 +69,8 @@ sub workers_list {
     my @wlist=();
 
     for my $workerid (1..$workers_amount) {
-        my $worker = worker_get($workerid);
-        my $job = job_get_by_workerid($workerid);
-        my $settings = {
-            workerid => $workerid,
-            host => $worker->{host},
-            instance => $worker->{instance},
-            backend => $worker->{backend},
-        };
-        # puts job id in status, otherwise is idle
-        if($job) {
-            my $testdirname = $job->{'settings'}->{'NAME'};
-            my $results = test_result($testdirname);
-            my $modinfo = get_running_modinfo($results);
-            $settings->{status} = "running";
-            $settings->{jobid} = $job->{id};
-            $settings->{currentstep} = $modinfo->{running};
-        }
-        else {
-            $settings->{status} = "idle";
-        }
-        my $dead_workers = workers_get_dead_worker();
-        foreach my $dead_worker (@$dead_workers) {
-            if($dead_worker->{id} == $workerid) {
-                $settings->{status} = "dead";
-            }
-        }
-        push @wlist, $settings;
+        my $worker_settings = worker_info($workerid);
+        push @wlist, $worker_settings;
     }
     return @wlist;
 }

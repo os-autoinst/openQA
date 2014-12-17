@@ -9,16 +9,21 @@
     <div><span>Host: </span><%= $worker->{'host'} %></div>
     <div><span>Instance: </span><%= $worker->{'instance'} %></div>
     <div><span>Backend: </span><%= $worker->{'backend'} %></div>
-    <div><span>Status: </span><%= $worker->{'status'} %></div>
-    % if($worker->{'status'} eq 'running') {
-        <div>Working on job <a href="/tests/<%= $worker->{'jobid'} %>"><%= $worker->{'jobid'} %></a></div>
-    % } elsif($worker->{'status'} eq 'dead' && defined($worker->{'jobid'})) {
-        <div>Dead with job <a href="/tests/<%= $worker->{'jobid'} %>"><%= $worker->{'jobid'} %></a></div>
-    % } 
-    % if(defined($worker->{'currentstep'}) && $worker->{'status'} eq 'running') { 
-        <div><%= $worker->{'currentstep'} %></div>
-    % }
-    
+    <div><span>Status: </span>
+        <% if($worker->{'status'} eq 'idle') { %>
+        Idle
+        <% } elsif($worker->{'status'} eq 'running') { %>
+        Working on job <a href="/tests/<%= $worker->{'jobid'} %>"><%= $worker->{'jobid'} %></a>
+        <% } elsif($worker->{'status'} eq 'dead' && defined($worker->{'jobid'})) { %>
+        Dead with job <a href="/tests/<%= $worker->{'jobid'} %>"><%= $worker->{'jobid'} %></a>
+        <% } else { %>
+        Dead
+        <% } %>
+        <% if(defined($worker->{'currentstep'}) && $worker->{'status'} eq 'running') { %>
+        - <%= $worker->{'currentstep'} %>
+        <% } %>
+    </div>
+
     <h3>Properties</h3>
     <table>
 	<th>Key</th>
