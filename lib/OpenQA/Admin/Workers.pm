@@ -38,8 +38,7 @@ sub show {
     my $self = shift;
     my $workerid = $self->param('worker_id');
     $self->stash('id', $workerid);
-    $self->stash(worker => Scheduler::worker_get($workerid));
-    $self->stash(job => Scheduler::job_get_by_workerid($workerid));
+    $self->stash(worker => OpenQA::Worker::worker_info($workerid));
 
     $self->render('admin/workers/show');
 }
