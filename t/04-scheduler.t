@@ -47,14 +47,21 @@ is_deeply($current_jobs, [], "assert database has no jobs to start with")
 
 # Testing worker_register and worker_get
 # New worker
-my $id = worker_register("host", "1", "backend");
+
+my $workercaps = {};
+$workercaps->{cpu_modelname} = 'Rainbow CPU';
+$workercaps->{cpu_arch} = 'x86_64';
+$workercaps->{cpu_opmode} = '32-bit, 64-bit';
+$workercaps->{mem_max} = '4096';
+
+my $id = worker_register("host", "1", "backend", $workercaps);
 ok($id == 1, "New worker registered");
 my $worker = worker_get($id);
 ok($worker->{id} == $id&& $worker->{host} eq "host"&& $worker->{instance} eq "1"&& $worker->{backend} eq "backend", "New worker_get");
 
 # Update worker
 sleep(1);
-my $id2 = worker_register("host", "1", "backend");
+my $id2 = worker_register("host", "1", "backend", $workercaps);
 ok($id == $id2, "Known worker_register");
 my $worker2 = worker_get($id2);
 ok($worker2->{id} == $id2&& $worker2->{host} eq "host"&& $worker2->{instance} eq "1"&& $worker2->{backend} eq "backend"&& $worker2->{t_updated} ne $worker->{t_updated}, "Known worker_get");
@@ -63,7 +70,7 @@ ok($worker2->{id} == $id2&& $worker2->{host} eq "host"&& $worker2->{instance} eq
 my $workers_ref = list_workers();
 is(scalar @$workers_ref, 2, "2 workers");
 # check properties independent, list_workers doesn't return it
-is(pp($worker2->{properties}), "{ WORKER_PORT => 20013, WORKER_VNC_PORT => 91 }", "worker properties");
+is(pp($worker2->{properties}), pp({ CPU_ARCH => 'x86_64', CPU_MODELNAME => 'Rainbow CPU', CPU_OPMODE => '32-bit, 64-bit', MEM_MAX => 4096, WORKER_PORT => 20013, WORKER_VNC_PORT => 91 }), "worker properties");
 delete $worker2->{properties};
 is(pp($workers_ref->[1]), pp($worker2), "list_workers");
 
@@ -79,13 +86,14 @@ my %settings = (
     DESKTOP => 'DESKTOP',
     KVM => 'KVM',
     ISO_MAXSIZE => 1,
-    MACHINE => "RainbowPC"
+    MACHINE => "RainbowPC",
+    ARCH => 'x86_64'
 );
 
 my $job_ref = {
     t_finished => undef,
     id => 1,
-    name => 'Unicorn-42-pink-Build666-rainbow',
+    name => 'Unicorn-42-pink-x86_64-Build666-rainbow',
     priority => 40,
     result => 'none',
     settings => {
@@ -99,7 +107,8 @@ my $job_ref = {
         ISO_MAXSIZE => 1,
         KVM => "KVM",
         MACHINE => "RainbowPC",
-        NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
+        ARCH => 'x86_64',
+        NAME => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow',
     },
     assets => {
         iso => ['whatever.iso'],
@@ -157,6 +166,7 @@ my $jobs = [
             ISO_MAXSIZE => 1,
             KVM => "KVM",
             MACHINE => "RainbowPC",
+            ARCH => 'x86_64',
             NAME => '00000002-OTHER NAME',
         },
         assets => {
@@ -167,7 +177,7 @@ my $jobs = [
     {
         t_finished => undef,
         id => 1,
-        name => 'Unicorn-42-pink-Build666-rainbow',
+        name => 'Unicorn-42-pink-x86_64-Build666-rainbow',
         priority => 40,
         result => 'none',
         t_started => undef,
@@ -188,7 +198,8 @@ my $jobs = [
             ISO_MAXSIZE => 1,
             KVM => "KVM",
             MACHINE => "RainbowPC",
-            NAME => '00000001-Unicorn-42-pink-Build666-rainbow',
+            ARCH => 'x86_64',
+            NAME => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow',
         },
         assets => {
             iso => ['whatever.iso'],
@@ -243,7 +254,7 @@ $job = Scheduler::job_get($job_id);
 ok($job->{state} eq "running", "Job is in running state"); # After job_grab the job is in running state.
 
 # register worker again while it has a running job
-$id2 = worker_register("host", "1", "backend");
+$id2 = worker_register("host", "1", "backend", $workercaps);
 ok($id == $id2, "re-register worker got same id");
 
 # Now it's previous job must be set to done
@@ -253,7 +264,7 @@ is($job->{result}, "incomplete", "result is incomplete");
 
 $job = Scheduler::job_grab(%args);
 isnt($job_id, $job->{id}, "new job grabbed");
-$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-Build666-rainbow';
+$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-x86_64-Build666-rainbow';
 
 is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job_id;

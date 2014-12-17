@@ -506,11 +506,21 @@ sub job_grab {
             }
         );
 
+        my $worker = worker_get($workerid);
+        my $archquery = schema->resultset("JobSettings")->search(
+            {
+                key => "ARCH",
+                value => $worker->{properties}->{'CPU_ARCH'}
+            }
+        );
         $result = schema->resultset("Jobs")->search(
             {
                 state_id => schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
                 worker_id => 0,
-                id => { -not_in => $blocked->get_column('child_job_id')->as_query},
+                id => {
+                    -not_in => $blocked->get_column('child_job_id')->as_query,
+                    -in => $archquery->get_column('job_id')->as_query,
+                },
             },
             { order_by => { -asc => [qw/priority id/] }, rows => 1 }
           )->update(
