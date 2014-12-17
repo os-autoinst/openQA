@@ -47,8 +47,8 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(
-    "job",
-    "Schema::Result::Jobs",
+    "worker",
+    "Schema::Result::Workers",
     { 'foreign.id' => "self.worker_id" },
     {
         is_deferrable => 1,
