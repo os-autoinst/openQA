@@ -827,7 +827,12 @@ sub verify_workerid {
     }
     if (!$ws) {
         my $ua_url = $url->clone();
-        $ua_url->scheme('ws');
+        if ($url->scheme eq 'http') {
+            $ua_url->scheme('ws');
+        }
+        else {
+            $ua_url->scheme('wss');
+        }
         $ua_url->path("workers/$workerid/ws");
         print "WEBSOCKET $ua_url\n" if $verbose;
         $ws = $ua->websocket(
@@ -843,7 +848,8 @@ sub verify_workerid {
                     );
                 }
                 else {
-                    carp 'Unable to upgrade connection to WebSocket';
+                    my $err = $tx->error;
+                    carp "Unable to upgrade connection to WebSocket: ".$err->{code};
                     $ws = undef;
                 }
             }
