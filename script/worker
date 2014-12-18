@@ -260,7 +260,7 @@ $ENV{'OPENQA_HOSTNAME'} = $url->authority;
 $isotovideo = $options{'isotovideo'} if $options{'isotovideo'};
 
 # send a command to openQA API
-sub api_call{
+sub api_call {
     my $method = lc(shift);
     my $path = shift;
     my $params = shift;
@@ -412,7 +412,7 @@ sub workit($){
 
 }
 
-sub _kill_worker($){
+sub _kill_worker($) {
     my ($worker) = @_;
 
     return unless $worker;
@@ -455,7 +455,7 @@ sub job_incomplete($){
     # set result after creating duplicate job so the chained jobs can survive
     api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
 
-    clean_pool($job);
+    clean_pool();
 }
 
 # check if results.json contains an overal result. If the latter is
@@ -473,10 +473,8 @@ sub results_overall($){
     return $ret;
 }
 
-sub clean_pool($){
+sub clean_pool(){
     return if $options{'no-cleanup'};
-    my $job = shift;
-    my $name = $job->{'settings'}->{'NAME'};
     for my $file (<$pooldir/*>) {
         if (-d $file) {
             remove_tree($file);
@@ -642,7 +640,7 @@ sub stop_job($) {
         job_incomplete($job);
     }
     warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
-    clean_pool($job);
+    clean_pool();
     $job = undef;
     $worker = undef;
     $worker_start_time = undef;
@@ -899,6 +897,8 @@ sub main(){
     my $lockfd = lockit();
 
     $SIG{__DIE__} = sub { return if $^S; _kill_worker($worker); exit(1); };
+
+    clean_pool();
 
     ## initial Mojo::IO timers
     add_timer('handle_commands', 2, \&handle_commands);
