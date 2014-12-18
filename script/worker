@@ -581,6 +581,8 @@ sub stop_job($) {
         close($log);
     }
 
+    my $job_done; # undef
+
     if ($aborted ne 'quit' && $aborted ne 'abort') {
         # collect uploaded logs
         my @uploaded_logfiles = <$pooldir/ulogs/*>;
@@ -631,12 +633,10 @@ sub stop_job($) {
             }
             printf "setting job %d to $overall\n", $job->{'id'};
             api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $overall});
-        }
-        else {
-            job_incomplete($job);
+            $job_done = 1;
         }
     }
-    else {
+    unless ($job_done) {
         job_incomplete($job);
     }
     warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
