@@ -18,7 +18,7 @@ package OpenQA;
 use Mojolicious 5.60;
 use Mojo::Base 'Mojolicious';
 use openqa 'connect_db';
-use OpenQA::Helpers;
+use OpenQA::Plugin::Helpers;
 use Scheduler;
 use Mojo::IOLoop;
 use DateTime;
@@ -143,9 +143,9 @@ sub startup {
 
     # Documentation browser under "/perldoc"
     $self->plugin('PODRenderer');
-    $self->plugin('OpenQA::Helpers');
-    $self->plugin('OpenQA::CSRF');
-    $self->plugin('OpenQA::REST');
+    $self->plugin('OpenQA::Plugin::Helpers');
+    $self->plugin('OpenQA::Plugin::CSRF');
+    $self->plugin('OpenQA::Plugin::REST');
 
     # set secure flag on cookies of https connections
     $self->hook(
