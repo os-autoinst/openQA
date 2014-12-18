@@ -73,6 +73,20 @@ our %worker_commands = map { $_ => 1 } qw/
 # name => id
 our %job_states;
 
+# the template noted what architecture are known
+my %cando = (
+    'i586'    => ['i586'],
+    'i686'    => [ 'i586', 'i686' ],
+    'x86_64'  => [ 'x86_64', 'i586', 'i686' ],
+
+    'ppc'     => ['ppc'],
+    'ppc64'   => [ 'ppc64le', 'ppc64', 'ppc' ],
+    'ppc64le' => [ 'ppc64le', 'ppc64', 'ppc' ],
+
+    's390'    => ['s390'],
+    's390x'   => [ 's390x', 's390' ],
+);
+
 # worker->websockets mapping
 my $worker_sockets = {};
 
@@ -510,7 +524,7 @@ sub job_grab {
         my $archquery = schema->resultset("JobSettings")->search(
             {
                 key => "ARCH",
-                value => $worker->{properties}->{'CPU_ARCH'}
+                value => $cando{$worker->{properties}->{'CPU_ARCH'}}
             }
         );
         $result = schema->resultset("Jobs")->search(
