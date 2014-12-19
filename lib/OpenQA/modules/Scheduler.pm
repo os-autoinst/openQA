@@ -33,6 +33,9 @@ use lib $FindBin::Bin;
 use openqa ();
 
 use OpenQA::Variables;
+use OpenQA::WebSockets;
+
+use Mojo::IOLoop;
 
 use Carp;
 
@@ -53,7 +56,6 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   job_set_stop job_stop iso_stop_old_builds
   job_get_assets
   asset_list asset_get asset_delete asset_register
-  ws_add_worker ws_get_worker ws_remove_worker
 );
 
 
@@ -67,6 +69,8 @@ our %worker_commands = map { $_ => 1 } qw/
   enable_interactive_mode
   disable_interactive_mode
   continue_waitforneedle
+  livelog_stop
+  livelog_start
   /;
 
 # job states, initialized in schema()
@@ -86,9 +90,6 @@ my %cando = (
     's390'    => ['s390'],
     's390x'   => [ 's390x', 's390' ],
 );
-
-# worker->websockets mapping
-my $worker_sockets = {};
 
 sub schema{
     CORE::state $schema;
@@ -992,13 +993,17 @@ sub command_enqueue {
 
     die "invalid command\n" unless $worker_commands{$args{command}};
 
-    my $command = schema->resultset("Commands")->create(
-        {
-            worker_id => $args{workerid},
-            command => $args{command},
+    my $res = ws_send($args{workerid}, $args{command});
+    if (!$res) {
+        $args{retries} ||= 0;
+        if ($args{retries} < 3) {
+            $args{retries} += 1;
+            Mojo::IOLoop->timer(2 => sub {command_enqueue(%args);});
         }
-    );
-    return $command->id;
+        else {
+            printf(STDERR "Unable to send command %s to worker %s\n", $args{command}, $args{workerid});
+        }
+    }
 }
 
 sub command_get {
@@ -1113,24 +1118,6 @@ sub asset_register {
         }
     );
     return $asset;
-}
-
-#
-# websockets helper functions
-#
-sub ws_add_worker {
-    my ($workerid, $ws_connection) = @_;
-    $worker_sockets->{$workerid} = $ws_connection;
-}
-
-sub ws_remove_worker {
-    my ($workerid) = @_;
-    delete $worker_sockets->{$workerid};
-}
-
-sub ws_get_worker {
-    my ($workerid) = @_;
-    return $worker_sockets->{$workerid};
 }
 
 1;
