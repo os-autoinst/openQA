@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 55;
+use Test::More tests => 52;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -367,27 +367,6 @@ ok($result == 1 && !defined $no_job_id, "job_delete");
 $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "no jobs listed");
 
-# Testing command_enqueue and list_commands
-%args = (
-    workerid => $id,
-    command => "quit",
-);
-my %command = (
-    id => 1,
-    worker_id => 1,
-    command => "quit",
-);
-my $command_id = Scheduler::command_enqueue(%args);
-my $commands = Scheduler::list_commands();
-ok($command_id == 1 && @$commands == 1, "one command listed");
-
-is_deeply(nots($commands->[0], 't_processed'), \%command,  "command entered correctly");
-
-
-# Testing command_get
-$commands = Scheduler::command_get($command_id);
-ok(scalar @$commands == 1 && pp($commands) eq '[[1, "quit"]]',  "command_get");
-
 my $rs = Scheduler::asset_list();
 $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 is_deeply(nots($rs->all()), { id => 1, name => "whatever.iso", type => "iso" }, "asset list");
@@ -409,9 +388,5 @@ is($asset->id, 1, "asset register returns same");
 
 $asset = Scheduler::asset_delete(type => 'iso', name => $settings{ISO});
 is($asset, 1, "asset delete");
-
-
-# Testing command_dequeue
-# TBD
 
 unlink $iso;

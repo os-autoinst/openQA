@@ -79,35 +79,16 @@ is(@$jobs, @$current_jobs+1, "one more job after restarting done job");
 
 $current_jobs = $jobs;
 
-my $commands = Scheduler::list_commands();
-is_deeply($commands, [], "no commands queued");
-
 Scheduler::job_restart(99963);
 
 $jobs = list_jobs();
 is(@$jobs, @$current_jobs+1, "one more job after restarting running job");
-
-$commands = Scheduler::list_commands();
-is($commands->[0]->{command}, 'abort', "abort command queued");
-is($commands->[0]->{worker_id}, '1', "for worker 1");
-
-Scheduler::command_dequeue(workerid => $commands->[0]->{worker_id}, id => $commands->[0]->{id});
-$commands = Scheduler::list_commands();
-is_deeply($commands, [], "command dequeued");
 
 $job1 = Scheduler::job_get(99963);
 Scheduler::job_cancel(99963);
 $job2 = Scheduler::job_get(99963);
 
 is_deeply($job1, $job2, "running job unchanged after cancel");
-
-$commands = Scheduler::list_commands();
-is($commands->[0]->{command}, 'cancel', "cancel command queued");
-is($commands->[0]->{worker_id}, '1', "for worker 1");
-
-Scheduler::command_dequeue(workerid => $commands->[0]->{worker_id}, id => $commands->[0]->{id});
-$commands = Scheduler::list_commands();
-is_deeply($commands, [], "command dequeued");
 
 my $job3 = Scheduler::job_get(99928);
 is($job3->{retry_avbl}, 3, "the retry counter decreased");
