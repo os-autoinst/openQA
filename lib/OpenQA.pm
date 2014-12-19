@@ -147,6 +147,7 @@ sub startup {
     $self->plugin('OpenQA::Plugin::CSRF');
     $self->plugin('OpenQA::Plugin::REST');
 
+    $self->plugin('HashedParams');
     # set secure flag on cookies of https connections
     $self->hook(
         before_dispatch => sub {
@@ -357,6 +358,34 @@ sub startup {
     $api_public_r->get('/assets/#type/#name')->name('apiv1_get_asset_name')->to('asset#get');
     $api_r->delete('/assets/#id')->name('apiv1_delete_asset')->to('asset#delete');
     $api_r->delete('/assets/#type/#name')->name('apiv1_delete_asset_name')->to('asset#delete');
+
+    # api/v1/test_suites
+    $api_r->get('test_suites')->name('apiv1_test_suites')->to('table#list', table => 'TestSuites');
+    $api_r->post('test_suites')->to('table#create', table => 'TestSuites');
+    $api_r->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
+    $api_r->put('test_suites/:id')->to('table#update', table => 'TestSuites');
+    $api_r->delete('test_suites/:id')->to('table#destroy', table => 'TestSuites');
+
+    # api/v1/machines
+    $api_r->get('machines')->name('apiv1_machines')->to('table#list', table => 'Machines');
+    $api_r->post('machines')->to('table#create', table => 'Machines');
+    $api_r->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
+    $api_r->put('machines/:id')->to('table#update', table => 'Machines');
+    $api_r->delete('machines/:id')->to('table#destroy', table => 'Machines');
+
+    # api/v1/products
+    $api_r->get('products')->name('apiv1_products')->to('table#list', table => 'Products');
+    $api_r->post('products')->to('table#create', table => 'Products');
+    $api_r->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
+    $api_r->put('products/:id')->to('table#update', table => 'Products');
+    $api_r->delete('products/:id')->to('table#destroy', table => 'Products');
+
+    # api/v1/job_templates
+    $api_r->get('job_templates')->name('apiv1_job_templates')->to('job_template#list');
+    $api_r->post('job_templates')->to('job_template#create');
+    $api_r->get('job_templates/:job_template_id')->name('apiv1_job_template')->to('job_template#list');
+    $api_r->delete('job_templates/:job_template_id')->to('job_template#destroy');
+
     # json-rpc methods not migrated to this api: echo, list_commands
     ###
     ## JSON API ends here
