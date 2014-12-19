@@ -52,7 +52,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   job_get job_get_by_workerid jobs_get_dead_worker list_jobs job_grab job_set_done
   job_set_waiting job_set_running job_set_prio
   job_delete job_update_result job_restart job_cancel command_enqueue
-  command_get list_commands command_dequeue iso_cancel_old_builds
+  iso_cancel_old_builds
   job_set_stop job_stop iso_stop_old_builds
   job_get_assets
   asset_list asset_get asset_delete asset_register
@@ -1004,48 +1004,6 @@ sub command_enqueue {
             printf(STDERR "Unable to send command %s to worker %s\n", $args{command}, $args{workerid});
         }
     }
-}
-
-sub command_get {
-    my $workerid = shift;
-
-    _validate_workerid($workerid);
-    _seen_worker($workerid);
-
-    my @commands = schema->resultset("Commands")->search({ worker_id => $workerid });
-
-    my @as_array = ();
-    foreach my $command (@commands) {
-        push @as_array, [$command->id, $command->command];
-    }
-
-    return \@as_array;
-}
-
-sub list_commands {
-    my $rs = schema->resultset("Commands");
-    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    my @commands = $rs->all;
-
-    return \@commands;
-}
-
-sub command_dequeue {
-    my %args = @_;
-
-    die "missing workerid parameter\n" unless $args{workerid};
-    die "missing id parameter\n" unless $args{id};
-
-    _validate_workerid($args{workerid});
-
-    my $r = schema->resultset("Commands")->search(
-        {
-            id => $args{id},
-            worker_id =>$args{workerid},
-        }
-    )->delete;
-
-    return $r;
 }
 
 #
