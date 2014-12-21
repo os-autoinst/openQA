@@ -30,6 +30,7 @@ Allow from all
 ProxyRequests Off
 ProxyPreserveHost On
 
+ProxyPass /robots.txt !
 ProxyPass /favicon.ico !
 ProxyPass /images !
 ProxyPass /javascripts !
