@@ -289,7 +289,7 @@ sub api_call {
         carp "$msg";
         if (!$tries) {
             # abort the current job, we're in trouble - but keep running to grab the next
-            stop_job('abort');
+            stop_job('api-failure');
             return undef;
         }
         sleep 5;
@@ -422,14 +422,18 @@ sub _kill_worker($) {
         kill(SIGTERM, $worker->{pid});
         sleep 2;
         my $pid = waitpid($worker->{pid}, WNOHANG);
-        last if ($pid == -1 || $pid == $worker->{pid});
+        if ($pid == -1) {
+            warn "waitpid returned error: $!\n";
+            last;
+        }
+        last if ($pid == $worker->{pid});
     }
 
     $worker = undef;
 }
 
-sub _kill {
-    my $pid = shift;
+sub _kill($) {
+    my ($pid) = @_;
     my $n = kill(SIGTERM, $pid);
     for (my $i = 0; $n && $i < 5; ++$i) {
         sleep 1;
@@ -475,6 +479,10 @@ sub results_overall($){
 
 sub clean_pool(){
     return if $options{'no-cleanup'};
+    if (-e "$pooldir/qemu.pid") {
+        print "QEMU should be dead - WASUP?\n";
+        exit(1);
+    }
     for my $file (<$pooldir/*>) {
         if (-d $file) {
             remove_tree($file);
