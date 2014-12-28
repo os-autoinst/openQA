@@ -32,30 +32,22 @@ repository. Installation on openSUSE is therefore pretty simple:
 [source,sh]
 --------------------------------------------------------------------------------
 zypper ar -f obs://devel:openQA/openSUSE_13.1 openQA
+# needed for distros that lack some packages from Tumbleweed
 zypper ar -f obs://devel:openQA:13.1/openSUSE_13.1 openQA-perl-modules
 zypper in openQA
-# Start WebUI
-systemctl start openqa-webui
 --------------------------------------------------------------------------------
-
-Now you have the WebUI running. You can take a look at the WebUI at
-http://localhost:9526 but so far it is empty. You need to do a few
-more actions to get it configured in a way that it will be able to
-run tests.
 
 Basic configuration
 -------------------
 [id="basic"]
 
-OpenID
-~~~~~~
+Apache proxy
+~~~~~~~~~~~~
 
-By default openQA uses the opensuse.org OpenID provider to
-authenticate users. If you want to change that, you can do it in
-+/etc/openqa/openqa.ini+. The first user that logs in (if there is
-no admin yet) will automatically get admin and operator rights. As
-admin you need to do some further actions to get your openQA
-instance testing software.
+It's recommended to run openQA behind an apache proxy. See the
++openqa.conf.template+ config file in +/etc/apache2/vhosts.d+. To make
+everything work correctly, you need to enable the 'headers', 'proxy',
+'proxy_http' and 'proxy_wstunnel' modules using 'a2enmod'.
 
 SSL
 ~~~
@@ -70,9 +62,18 @@ that in +/etc/openqa/openqa.ini+:
 httpsonly = 0
 --------------------------------------------------------------------------------
 
+Run the web UI
+~~~~~~~~~~~~~~
+[source,sh]
+--------------------------------------------------------------------------------
+systemctl start openqa-webui
+systemctl restart apache2
+--------------------------------------------------------------------------------
 
-Running workers
-~~~~~~~~~~~~~~~
+The openQA web UI should be available on http://localhost/ now.
+
+Run workers
+~~~~~~~~~~~
 
 Workers are processes running virtual machines to perform the actual
 testing. They are distributed as a separate package and can be installed on
@@ -83,7 +84,7 @@ multiple machines but still using only one WebUI.
 zypper in openQA-worker
 --------------------------------------------------------------------------------
 
-To allow them to access your instance, you need to log into
+To allow workers to access your instance, you need to log into
 openQA as operator and create a pair of API key and secret. Once you
 are logged in, follow the link 'manage API keys' in the top right
 corner. Click the 'create' button to generate +key+ and +secret+.
@@ -115,40 +116,19 @@ installed 'os-autoinst' from packages make sure to pass +--isotovideo+ option
 to point to the checkout dir where isotovideo is, not to +/usr/lib+! Otherwise
 it will have trouble finding its perl modules.
 
-Configuring remote workers
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-There are some additional requirements to get remote worker running. First is to
-ensure shared storage between openQA WebUI and workers.
-Directory +/var/lib/openqa/share+ contains all required data and should be
-shared with read-write access across all nodes present in openQA cluster.
-This step is intentionally left on system administrator to choose proper shared
-storage for her specific needs.
-
-Example of NFS configuration:
-NFS server is where openQA WebUI is running. Content of +/etc/exports+
-[source]
---------------------------------------------------------------------------------
-/var/lib/openqa/share *(fsid=0,rw,no_root_squash,sync,no_subtree_check)
---------------------------------------------------------------------------------
-
-NFS clients are where openQA workers are running. Run following command:
-[source, sh]
---------------------------------------------------------------------------------
-mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share
---------------------------------------------------------------------------------
-
-Apache proxy
-~~~~~~~~~~~~
-
-It's recommended to run openQA behind an apache proxy. See
-+openqa.conf.template+ config file in +/etc/apache2/vhosts.d+. To make
-everything work correctly, you need to enable the 'headers', 'proxy',
-'proxy_http' and 'proxy_wstunnel' modules using 'a2enmod'.
-
 Advanced configuration
 ----------------------
 [id="advanced"]
+
+OpenID
+~~~~~~
+
+By default openQA uses the opensuse.org OpenID provider to
+authenticate users. If you want to change that, you can do it in
++/etc/openqa/openqa.ini+. The first user that logs in (if there is
+no admin yet) will automatically get admin and operator rights. As
+admin you need to do some further actions to get your openQA
+instance testing software.
 
 
 Setting up git support
@@ -206,6 +186,28 @@ Once you got workers running they should show up in the admin section of openQA 
 the workers section as 'idle'. When you get so far, you have your own instance
 of openQA up and running and all that is left is to set up some tests.
 
+Configuring remote workers
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+There are some additional requirements to get remote worker running. First is to
+ensure shared storage between openQA WebUI and workers.
+Directory +/var/lib/openqa/share+ contains all required data and should be
+shared with read-write access across all nodes present in openQA cluster.
+This step is intentionally left on system administrator to choose proper shared
+storage for her specific needs.
+
+Example of NFS configuration:
+NFS server is where openQA WebUI is running. Content of +/etc/exports+
+[source]
+--------------------------------------------------------------------------------
+/var/lib/openqa/share *(fsid=0,rw,no_root_squash,sync,no_subtree_check)
+--------------------------------------------------------------------------------
+
+NFS clients are where openQA workers are running. Run following command:
+[source, sh]
+--------------------------------------------------------------------------------
+mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share
+--------------------------------------------------------------------------------
 
 Filesystem Layout
 -----------------
@@ -222,6 +224,7 @@ directories owned by the user that runs the workers (default 'geekotest'):
 * +factory/iso+
 * +perl/+ (subdirectory 'autoinst' must link to +/usr/lib/os-autoinst+)
 * +pool/1+ (add more for each worker)
+* +share+ (shared directories for remote workers)
 * +testresults+
 * +tools+ (symlink to +/usr/share/openqa/tools/+)
 
@@ -246,3 +249,4 @@ KVM doesn't work
 * make sure you do have virtualization enabled in BIOS
 * make sure the 'geekotest' user can access +/dev/kvm+
 * make sure you are not already running other hypervisors such as VirtualBox
+* when running inside a vm make sure nested virtualization is enabled (pass nested=1 to your kvm module)
