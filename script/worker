@@ -107,7 +107,7 @@ use openqa ();
 use OpenQA::API::V1::Client;
 use IPC::Open3;
 
-my $max_job_time = 2*60*60; # 2h
+my $max_job_time;
 my $status_updates_slow = 5;
 my $status_updates_fast = 0.5;
 my $openqa_base = "/var/lib/openqa";
@@ -661,6 +661,7 @@ sub start_job {
     @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
     my $name = $job->{'settings'}->{'NAME'};
     printf "got job %d: %s\n", $job->{'id'}, $name;
+    $max_job_time = $job->{'settings'}->{'MAX_JOB_TIME'} || 2*60*60; # 2h
     $testresults = join('/', $results_dir, $name);
     if (-l "$testresults") {
         unlink($testresults);
