@@ -619,11 +619,16 @@ sub stop_job($) {
         if ($aborted eq 'obsolete') {
             printf "setting job %d to incomplete (obsolete)\n", $job->{'id'};
             api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete', newbuild => 1});
+            $job_done = 1;
         }
         elsif ($aborted eq 'cancel') {
             # not using job_incomplete here to avoid duplicate
             printf "setting job %d to incomplete (cancel)\n", $job->{'id'};
             api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
+            $job_done = 1;
+        }
+        elsif ($aborted eq 'timeout') {
+            printf "job %d spent more time than MAX_JOB_TIME\n", $job->{'id'};
         }
         elsif ($aborted eq 'done') { # not aborted
             # if there's no results.json start.pl probably died early, e.g. due to configuration
