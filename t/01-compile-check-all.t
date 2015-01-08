@@ -21,13 +21,15 @@ BEGIN {
 
 use strict;
 use warnings;
-use Test::More;
 use Test::Compile;
-my @files = all_pm_files();
+my $test = Test::Compile->new();
+$test->verbose(0);
+
+my @files = $test->all_pm_files();
 for my $file (@files) {
     #TODO: JobModules and Schema fail to compile for some reason
     #error "Attempt to load_namespaces() failed" because of Scheduler in JobModules
     next if ($file =~ /JobModules\.pm|Schema\.pm/);
-    pm_file_ok($file);
+    $test->ok($test->pm_file_compiles($file), "Compile test for $file");
 }
-done_testing();
+$test->done_testing();
