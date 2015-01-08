@@ -60,6 +60,7 @@ Sub::Install
 Sub::Name
 Test::Mojo
 Test::More
+Test::Compile
 Time::HiRes
 URI::Escape
 URI::Heuristic
