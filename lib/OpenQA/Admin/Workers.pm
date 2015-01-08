@@ -17,7 +17,7 @@
 package OpenQA::Admin::Workers;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
-use OpenQA::Worker ();
+use OpenQA::Controller::Worker ();
 
 sub index {
     my $self = shift;
@@ -25,8 +25,8 @@ sub index {
     my $workers_amount = 0;
     my @workers_list = ();
 
-    $workers_amount = OpenQA::Worker::workers_amount();
-    @workers_list = OpenQA::Worker::workers_list();
+    $workers_amount = OpenQA::Controller::Worker::workers_amount();
+    @workers_list = OpenQA::Controller::Worker::workers_list();
 
     $self->stash(wamount => $workers_amount);
     $self->stash(wlist => \@workers_list);
@@ -38,7 +38,7 @@ sub show {
     my $self = shift;
     my $workerid = $self->param('worker_id');
     $self->stash('id', $workerid);
-    $self->stash(worker => OpenQA::Worker::worker_info($workerid));
+    $self->stash(worker => OpenQA::Controller::Worker::worker_info($workerid));
 
     $self->render('admin/workers/show');
 }
