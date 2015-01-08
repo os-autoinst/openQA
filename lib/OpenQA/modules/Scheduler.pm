@@ -33,6 +33,9 @@ use lib $FindBin::Bin;
 use openqa ();
 
 use OpenQA::Variables;
+use OpenQA::WebSockets;
+
+use Mojo::IOLoop;
 
 use Carp;
 
@@ -49,11 +52,10 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   job_get job_get_by_workerid jobs_get_dead_worker list_jobs job_grab job_set_done
   job_set_waiting job_set_running job_set_prio
   job_delete job_update_result job_restart job_cancel command_enqueue
-  command_get list_commands command_dequeue iso_cancel_old_builds
+  iso_cancel_old_builds
   job_set_stop job_stop iso_stop_old_builds
   job_get_assets
   asset_list asset_get asset_delete asset_register
-  ws_add_worker ws_get_worker ws_remove_worker
 );
 
 
@@ -67,6 +69,8 @@ our %worker_commands = map { $_ => 1 } qw/
   enable_interactive_mode
   disable_interactive_mode
   continue_waitforneedle
+  livelog_stop
+  livelog_start
   /;
 
 # job states, initialized in schema()
@@ -86,9 +90,6 @@ my %cando = (
     's390'    => ['s390'],
     's390x'   => [ 's390x', 's390' ],
 );
-
-# worker->websockets mapping
-my $worker_sockets = {};
 
 sub schema{
     CORE::state $schema;
@@ -992,55 +993,17 @@ sub command_enqueue {
 
     die "invalid command\n" unless $worker_commands{$args{command}};
 
-    my $command = schema->resultset("Commands")->create(
-        {
-            worker_id => $args{workerid},
-            command => $args{command},
+    my $res = ws_send($args{workerid}, $args{command});
+    if (!$res) {
+        $args{retries} ||= 0;
+        if ($args{retries} < 3) {
+            $args{retries} += 1;
+            Mojo::IOLoop->timer(2 => sub {command_enqueue(%args);});
         }
-    );
-    return $command->id;
-}
-
-sub command_get {
-    my $workerid = shift;
-
-    _validate_workerid($workerid);
-    _seen_worker($workerid);
-
-    my @commands = schema->resultset("Commands")->search({ worker_id => $workerid });
-
-    my @as_array = ();
-    foreach my $command (@commands) {
-        push @as_array, [$command->id, $command->command];
+        else {
+            printf(STDERR "Unable to send command %s to worker %s\n", $args{command}, $args{workerid});
+        }
     }
-
-    return \@as_array;
-}
-
-sub list_commands {
-    my $rs = schema->resultset("Commands");
-    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    my @commands = $rs->all;
-
-    return \@commands;
-}
-
-sub command_dequeue {
-    my %args = @_;
-
-    die "missing workerid parameter\n" unless $args{workerid};
-    die "missing id parameter\n" unless $args{id};
-
-    _validate_workerid($args{workerid});
-
-    my $r = schema->resultset("Commands")->search(
-        {
-            id => $args{id},
-            worker_id =>$args{workerid},
-        }
-    )->delete;
-
-    return $r;
 }
 
 #
@@ -1113,24 +1076,6 @@ sub asset_register {
         }
     );
     return $asset;
-}
-
-#
-# websockets helper functions
-#
-sub ws_add_worker {
-    my ($workerid, $ws_connection) = @_;
-    $worker_sockets->{$workerid} = $ws_connection;
-}
-
-sub ws_remove_worker {
-    my ($workerid) = @_;
-    delete $worker_sockets->{$workerid};
-}
-
-sub ws_get_worker {
-    my ($workerid) = @_;
-    return $worker_sockets->{$workerid};
 }
 
 1;

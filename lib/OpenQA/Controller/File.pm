@@ -17,7 +17,7 @@
 use strict;
 use warnings;
 
-package OpenQA::File;
+package OpenQA::Controller::File;
 use Mojo::Base 'Mojolicious::Controller';
 BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
 use openqa;

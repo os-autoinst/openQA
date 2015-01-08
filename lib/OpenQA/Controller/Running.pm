@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::Running;
+package OpenQA::Controller::Running;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
 use Mojo::UserAgent;
@@ -97,15 +97,8 @@ sub edit {
 sub livelog {
     my ($self) = @_;
     return 0 unless $self->init();
-    # tell worker (if connected) to increase status updates rate for more responsive updates
-    my $worker_ws = Scheduler::ws_get_worker($self->stash('workerid'));
-    if ($worker_ws) {
-        print STDERR "### sending ws message to worker\n";
-        $worker_ws->send('livelog_start');
-    }
-    else {
-        print STDERR "### worker ws not set\n";
-    }
+    # tell worker to increase status updates rate for more responsive updates
+    Scheduler::command_enqueue(workerid => $self->stash('workerid'), command => 'livelog_start');
 
     my $logfile = $self->stash('basepath').'autoinst-log-live.txt';
 
@@ -140,9 +133,7 @@ sub livelog {
     my $id;
     my $close = sub {
         Mojo::IOLoop->remove($id);
-        if ($worker_ws) {
-            $worker_ws->send('livelog_stop');
-        }
+        Scheduler::command_enqueue(workerid => $self->stash('workerid'), command => 'livelog_stop');
         $self->finish;
         close $log;
         return;
@@ -178,9 +169,10 @@ sub livelog {
     $self->on(
         finish => sub {
             Mojo::IOLoop->remove($id);
-            if ($worker_ws) {
-                $worker_ws->send('livelog_stop');
-            }
+            Scheduler::command_enqueue(
+                workerid => $self->stash('workerid'),
+                command => 'livelog_stop'
+            );
         }
     );
 }

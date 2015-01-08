@@ -38,9 +38,6 @@ is($job->{state}, 'scheduled', "new job is scheduled");
 $job = Scheduler::job_get(99963);
 is($job->{state}, 'running', "old job is running");
 
-my $commands = Scheduler::list_commands();
-is(@$commands, 0, "no commands enqueued yet");
-
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
     my $jobs = list_jobs();
@@ -63,11 +60,6 @@ is($job->{state}, 'cancelled', "new job is cancelled");
 
 $job = Scheduler::job_get(99963);
 is($job->{state}, 'running', "old job still running");
-
-$commands = Scheduler::list_commands();
-is(@$commands, 1, "one command enqueued");
-
-is_deeply($commands->[0]->{command}, "cancel", "cancel command enqued");
 
 $job = Scheduler::job_get(99928);
 is($job->{state}, 'scheduled', "unrelated job 99928 still scheduled");

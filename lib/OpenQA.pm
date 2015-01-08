@@ -18,7 +18,7 @@ package OpenQA;
 use Mojolicious 5.60;
 use Mojo::Base 'Mojolicious';
 use openqa 'connect_db';
-use OpenQA::Helpers;
+use OpenQA::Plugin::Helpers;
 use Scheduler;
 use Mojo::IOLoop;
 use DateTime;
@@ -143,9 +143,9 @@ sub startup {
 
     # Documentation browser under "/perldoc"
     $self->plugin('PODRenderer');
-    $self->plugin('OpenQA::Helpers');
-    $self->plugin('OpenQA::CSRF');
-    $self->plugin('OpenQA::REST');
+    $self->plugin('OpenQA::Plugin::Helpers');
+    $self->plugin('OpenQA::Plugin::CSRF');
+    $self->plugin('OpenQA::Plugin::REST');
 
     # set secure flag on cookies of https connections
     $self->hook(
@@ -341,9 +341,7 @@ sub startup {
     $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create'); # worker_register
     my $worker_r = $api_r->route('/workers/:workerid', workerid => qr/\d+/);
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show'); # worker_get
-    $worker_r->get('/commands/')->name('apiv1_commands')->to('command#list'); #command_get
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create'); #command_enqueue
-    $worker_r->delete('/commands/:commandid')->name('apiv1_delete_command')->to('command#destroy'); #command_dequeue
     $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab'); # job_grab
     $worker_r->websocket('/ws')->name('apiv1_worker_ws')->to('worker#websocket_create'); #websocket connection
 

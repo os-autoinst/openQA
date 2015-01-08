@@ -19,45 +19,12 @@ use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use Scheduler ();
 
-sub list {
-    my $self = shift;
-    my $workerid = $self->stash('workerid');
-    my $commands;
-
-    eval { $commands = Scheduler::command_get($workerid) };
-    if ($@) {
-        # Database error (probably locked)
-        $self->render(text => '', status => 204);
-    }
-    else {
-        $self->render(json => {commands => $commands});
-    }
-}
-
 sub create {
     my $self = shift;
     my $workerid = $self->stash('workerid');
     my $command = $self->param('command');
 
     $self->render(json => {id => Scheduler::command_enqueue_checked(workerid => $workerid, command => $command)});
-}
-
-sub destroy {
-    my $self = shift;
-    my $workerid = $self->stash('workerid');
-    my $id = $self->stash('commandid');
-
-    my $res;
-    eval { $res = Scheduler::command_dequeue(workerid => $workerid, id => $id); };
-    if ($@) {
-        # Database error (probably locked)
-        $self->render(json => {result => Mojo::JSON->false});
-    }
-    else {
-        # Referencing the scalar will result in true or false
-        # (see http://mojolicio.us/perldoc/Mojo/JSON)
-        $self->render(json => {result => \($res == 1)});
-    }
 }
 
 1;

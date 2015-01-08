@@ -155,7 +155,7 @@ my $testresults;
 ## Mojo timers ids
 my $timers = {
     # check for commands from scheduler
-    'handle_commands' => undef,
+    'ws_keepalive' => undef,
     # check for new job
     'check_job'       => undef,
     # update status of running job
@@ -293,25 +293,6 @@ sub api_call {
             return undef;
         }
         sleep 5;
-    }
-}
-
-sub ws_message {
-    my ($tx, $msg) = @_;
-    if ($msg eq 'livelog_start') {
-        # change update_status timer if $job running
-        if ($job) {
-            change_timer('update_status', $status_updates_fast);
-        }
-    }
-    elsif ($msg eq 'livelog_stop') {
-        # change update_status timer
-        if ($job) {
-            change_timer('update_status', $status_updates_slow);
-        }
-    }
-    else {
-        carp "Unknown WebSocket message received: \"$msg\"";
     }
 }
 
@@ -746,78 +727,81 @@ sub update_status {
 }
 
 sub handle_commands {
-    return unless verify_workerid;
-    my $cmds; # [[id, command], ... ]
-    my $call = api_call('get', "workers/$workerid/commands");
-    if (defined($call)) {
-        $cmds = $call->{commands};
+    my ($tx, $msg) = @_;
+    if ($msg eq 'quit') { # quit_worker and reschedule the job
+        stop_job('quit');
+    }
+    elsif ($msg eq 'abort') { # the work is live and the job is rescheduled
+        stop_job('abort');
+    }
+    elsif ($msg eq 'cancel') { # The jobs is droped and the work is still alive
+        stop_job('cancel');
+    }
+    elsif ($msg eq 'obsolete') { # The jobs is droped and a new build job replaced it
+        stop_job('obsolete');
+    }
+    elsif ($msg eq 'stop_waitforneedle') { # Plan: Enable interactive mode -- Now osautoinst decides what that means
+        if ($worker) {
+            if (open(my $f, '>', "$pooldir/stop_waitforneedle")) {
+                close $f;
+                print "waitforneedle will be stopped";
+            }
+            else {
+                warn "can't stop waitforneedle: $!";
+            }
+        }
+    }
+    elsif ($msg eq 'reload_needles_and_retry') { #
+        if ($worker) {
+            if (open(my $f, '>', "$pooldir/reload_needles_and_retry")) {
+                close $f;
+                print "needles will be reloaded";
+            }
+            else {
+                warn "can't reload needles: $!";
+            }
+        }
+    }
+    elsif ($msg eq 'enable_interactive_mode') {
+        if ($worker) {
+            if (open(my $f, '>', "$pooldir/interactive_mode")) {
+                close $f;
+                print "interactive mode enabled\n";
+            }
+            else {
+                warn "can't enable interactive mode: $!";
+            }
+        }
+    }
+    elsif ($msg eq 'disable_interactive_mode') {
+        if ($worker) {
+            unlink("$pooldir/interactive_mode");
+            print "interactive mode disabled\n";
+        }
+    }
+    elsif ($msg eq 'continue_waitforneedle') {
+        if ($worker) {
+            unlink("$pooldir/stop_waitforneedle");
+            print "continuing waitforneedle";
+        }
+    }
+    elsif ($msg eq 'livelog_start') {
+        # change update_status timer if $job running
+        if ($worker) {
+            change_timer('update_status', $status_updates_fast);
+        }
+    }
+    elsif ($msg eq 'livelog_stop') {
+        # change update_status timer
+        if ($worker) {
+            change_timer('update_status', $status_updates_slow);
+        }
+    }
+    elsif ($msg eq 'ok') {
+        # ignore keepalives, but dont' report as unknown
     }
     else {
-        # Server returned an empty response (database locked, most likely)
-        $cmds = [];
-    }
-    for my $cmd (@{$cmds||[]}) {
-        if ($cmd->[1] eq 'quit') { # quit_worker and reschedule the job
-            stop_job('quit');
-        }
-        elsif ($cmd->[1] eq 'abort') { # the work is live and the job is rescheduled
-            stop_job('abort');
-        }
-        elsif ($cmd->[1] eq 'cancel') { # The jobs is droped and the work is still alive
-            stop_job('cancel');
-        }
-        elsif ($cmd->[1] eq 'obsolete') { # The jobs is droped and a new build job replaced it
-            stop_job('obsolete');
-        }
-        elsif ($cmd->[1] eq 'stop_waitforneedle') { # Plan: Enable interactive mode -- Now osautoinst decides what that means
-            if ($worker) {
-                if (open(my $f, '>', "$pooldir/stop_waitforneedle")) {
-                    close $f;
-                    print "waitforneedle will be stopped";
-                }
-                else {
-                    warn "can't stop waitforneedle: $!";
-                }
-            }
-        }
-        elsif ($cmd->[1] eq 'reload_needles_and_retry') { #
-            if ($worker) {
-                if (open(my $f, '>', "$pooldir/reload_needles_and_retry")) {
-                    close $f;
-                    print "needles will be reloaded";
-                }
-                else {
-                    warn "can't reload needles: $!";
-                }
-            }
-        }
-        elsif ($cmd->[1] eq 'enable_interactive_mode') {
-            if ($worker) {
-                if (open(my $f, '>', "$pooldir/interactive_mode")) {
-                    close $f;
-                    print "interactive mode enabled\n";
-                }
-                else {
-                    warn "can't enable interactive mode: $!";
-                }
-            }
-        }
-        elsif ($cmd->[1] eq 'disable_interactive_mode') {
-            if ($worker) {
-                unlink("$pooldir/interactive_mode");
-                print "interactive mode disabled\n";
-            }
-        }
-        elsif ($cmd->[1] eq 'continue_waitforneedle') {
-            if ($worker) {
-                unlink("$pooldir/stop_waitforneedle");
-                print "continuing waitforneedle";
-            }
-        }
-        else {
-            print STDERR "got unknown command $cmd->[1]\n";
-        }
-        api_call('delete', "workers/$workerid/commands/".$cmd->[0]);
+        print STDERR "got unknown command $msg\n";
     }
 }
 
@@ -847,11 +831,12 @@ sub verify_workerid {
         }
         $ua_url->path("workers/$workerid/ws");
         print "WEBSOCKET $ua_url\n" if $verbose;
-        $ws = $ua->websocket(
+        $ua->websocket(
             $ua_url => sub {
                 my ($ua, $tx) = @_;
                 if ($tx->is_websocket) {
-                    $tx->on(message => \&ws_message);
+                    $ws = $tx;
+                    $tx->on(message => \&handle_commands);
                     $tx->on(
                         finish => sub {
                             print "closing websocket connection\n" if $verbose;
@@ -868,6 +853,12 @@ sub verify_workerid {
         );
     }
     return $workerid;
+}
+
+sub ws_keepalive {
+    #send ok keepalive so WebSocket connection is not inactive
+    return unless $ws;
+    $ws->send('ok');
 }
 
 sub check_backend {
@@ -920,8 +911,11 @@ sub main(){
 
     clean_pool();
 
+    ## register worker at startup
+    verify_workerid;
+
     ## initial Mojo::IO timers
-    add_timer('handle_commands', 2, \&handle_commands);
+    add_timer('ws_keepalive', 5, \&ws_keepalive);
     add_timer('check_job', 2, \&check_job);
 
     # start event loop - this will block until stop is called
