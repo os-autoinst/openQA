@@ -396,6 +396,12 @@ sub save_needle {
     }
 
     my $baseneedle = "$needledir/$needlename";
+    # do not overwrite the exist needle
+    if (-e "$baseneedle.png") {
+        $self->stash(error => "Same needle name file already exists!");
+        $success = 0;
+        return $self->edit;
+    }
     unless ($imagepath eq "$baseneedle.png") {
         unless (copy($imagepath, "$baseneedle.png")) {
             $self->app->log->error("Copy $imagepath -> $baseneedle.png failed: $!");
