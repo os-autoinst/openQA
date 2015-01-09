@@ -58,7 +58,7 @@ window.onload=function(){
       </select>
     </div>
     
-    <div style="margin: 5px;">
+    <div style="margin: 5px; min-height: 768px">
       <div id="needle_diff"></div>
     </div>
   </div>
