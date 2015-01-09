@@ -4,7 +4,7 @@
     % my $ref_height=int($ref_width/4*3);
 
     <div class="box box-shadow">
-        <div style="margin: 0 6px; overflow-x: scroll; overflow-y: hidden; overflow: auto; white-space: nowrap;">
+        <div id="module-thumbnails" style="margin: 0 6px; overflow-x: scroll; overflow-y: hidden; overflow: auto; white-space: nowrap;">
         <% for my $refimg (@$imglist) { %>
             <span class="<%= ($img_count == $stepid) ? "thumbnail current" : "thumbnail" %>">
                 % if($refimg->{'screenshot'}) {

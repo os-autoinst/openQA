@@ -17,11 +17,23 @@ function updateModuleslist(modlist, testname, testmodule) {
 	});
 }
 
+function scrollModuleThumbnails() {
+    var area = $("module-thumbnails");
+    var current = $$('#module-thumbnails .current').first();
+
+    if (!(area && current)) then: return;
+    var offset = current.offsetLeft - area.offsetLeft;
+
+    area.scrollLeft = 40 + offset - area.getWidth()/2;
+}
+
 document.observe('dom:loaded', function(evt) {
     var elements = $$('.chosen-select');
     for (var i = 0; i < elements.length; i++) {
         new Chosen(elements[i], {width: "98%"});
     }
+
+    window.scrollModuleThumbnails();
 });
 
 function set_cookie(cname, cvalue, exdays) {
