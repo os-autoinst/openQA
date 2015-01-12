@@ -15,14 +15,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Controller::Running;
+use strict;
+use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
-use Mojo::UserAgent;
 import JSON;
 use openqa;
-use Mojolicious::Static;
 use Scheduler ();
-use Data::Dump qw(dd);
 
 sub init {
     my $self = shift;
@@ -102,30 +101,30 @@ sub livelog {
 
     my $logfile = $self->stash('basepath').'autoinst-log-live.txt';
 
-    # We'll open the log file and keep the filehandle.
-    my $log;
-    unless (open($log, '<', $logfile)) {
-        $self->render_not_found;
-        return;
-    }
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     $self->res->code(200);
     $self->res->headers->content_type("text/event-stream");
 
-    # Send the last 10KB of data from the logfile, so that
-    # the client sees some data immediately
-    my $ino = (stat $logfile)[1];
+    # Try to open the log file and keep the filehandle
+    # if the open fails, continue, well check later
+    my $log;
+    my ($ino, $size);
+    if (open($log, '<', $logfile)) {
+        # Send the last 10KB of data from the logfile, so that
+        # the client sees some data immediately
+        $ino = (stat $logfile)[1];
 
-    my $size = -s $logfile;
-    if ($size > 10*1024 && seek $log, -10*1024, 2) {
-        # Discard one (probably) partial line
-        my $dummy = <$log>;
+        $size = -s $logfile;
+        if ($size > 10*1024 && seek $log, -10*1024, 2) {
+            # Discard one (probably) partial line
+            my $dummy = <$log>;
+        }
+        while (defined(my $l = <$log>)) {
+            $self->write("data: ".encode_json([$l])."\n\n");
+        }
+        seek $log, 0, 1;
     }
-    while (defined(my $l = <$log>)) {
-        $self->write("data: ".encode_json([$l])."\n\n");
-    }
-    seek $log, 0, 1;
 
     # Now we set up a recurring timer to check for new lines from the
     # logfile and send them to the client, plus a utility function to
@@ -140,13 +139,19 @@ sub livelog {
     };
     $id = Mojo::IOLoop->recurring(
         1 => sub {
+            if (!$ino) {
+                # log file was not yet opened
+                return unless (open($log, '<', $logfile));
+                $ino = (stat $logfile)[1];
+                $size = -s $logfile;
+            }
             my @st = stat $logfile;
 
             # Zero tolerance for any shenanigans with the logfile, such as
             # truncation, rotation, etc.
             unless (@st
                 && $st[1] == $ino
-                &&$st[3] > 0
+                && $st[3] > 0
                 && $st[7] >= $size)
             {
                 return $close->();
