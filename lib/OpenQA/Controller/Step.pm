@@ -360,10 +360,11 @@ sub save_needle {
     $validation->optional('imagedistri')->like(qr/^[^.\/]+$/);
     $validation->optional('imageversion')->like(qr/^[^.\/]+$/);
     $validation->required('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
+    $validation->required('overwrite')->in(qw(yes no));
 
     if ($validation->has_error) {
         my $error = "wrong parameters";
-        for my $k (qw/json imagename imagedistri imageversion needlename/) {
+        for my $k (qw/json imagename imagedistri imageversion needlename overwrite/) {
             $self->app->log->error($k.' '. join(' ', @{$validation->error($k)})) if $validation->has_error($k);
             $error .= ' '.$k if $validation->has_error($k);
         }
@@ -379,6 +380,7 @@ sub save_needle {
     my $imagedistri = $validation->param('imagedistri');
     my $imageversion = $validation->param('imageversion');
     my $needlename = $validation->param('needlename');
+    my $overwrite = $validation->param('overwrite');
     my $needledir = needledir($results->{distribution}, $results->{version});
     my $success = 1;
 
@@ -396,9 +398,9 @@ sub save_needle {
     }
 
     my $baseneedle = "$needledir/$needlename";
-    # do not overwrite the exist needle
-    if (-e "$baseneedle.png") {
-        $self->stash(error => "Same needle name file already exists!");
+    # do not overwrite the exist needle if disallow to overwrite
+    if (-e "$baseneedle.png" && $overwrite eq 'no') {
+        $self->stash(warn_overwrite => "Same needle name file already exists! Overwrite it?");
         $success = 0;
         return $self->edit;
     }
