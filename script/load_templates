@@ -95,25 +95,27 @@ else {
     }
 }
 
-my $dbdir = dirname($openqa::dbfile);
-die "$dbdir does not exist\n" unless -d $dbdir;
-my @s = stat(_);
-if (getgid() != $s[5]) {
-    setgid($s[5]) or die "can't change gid to $s[5]: $!\n";
-}
-if (getuid() != $s[4]) {
-    setuid($s[4]) or die "can't change uid to $s[4]: $!\n";
-}
-
 my $schema = openqa::connect_db();
 
-# speed this up a bit
-$schema->storage->dbh_do(
-    sub {
-        my ($storage, $dbh, @args) = @_;
-        $dbh->do("PRAGMA synchronous = OFF");
+if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
+    my $dbdir = dirname($1);
+    die "$dbdir does not exist\n" unless -d $dbdir;
+    my @s = stat(_);
+    if (getgid() != $s[5]) {
+        setgid($s[5]) or die "can't change gid to $s[5]: $!\n";
     }
-);
+    if (getuid() != $s[4]) {
+        setuid($s[4]) or die "can't change uid to $s[4]: $!\n";
+    }
+
+    # speed this up a bit
+    $schema->storage->dbh_do(
+        sub {
+            my ($storage, $dbh, @args) = @_;
+            $dbh->do("PRAGMA synchronous = OFF");
+        }
+    );
+}
 
 my @tables = (qw/Machines TestSuites Products JobTemplates/);
 my %added;

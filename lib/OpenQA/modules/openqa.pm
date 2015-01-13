@@ -32,7 +32,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &testresultdir
   &test_uploadlog_list
   $localstatedir
-  $dbfile
   &get_failed_needles
   &sanitize_testname
   &file_content
@@ -60,8 +59,6 @@ our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
 our $testcasedir = "$basedir/openqa/share/tests";
-
-our $dbfile = $ENV{OPENQA_DB} || "$basedir/$prj/db/db.sqlite";
 
 our @runner = <$basedir/$prj/pool/[0-9]>;
 push(@runner, "$basedir/$prj/pool/manual");
@@ -317,25 +314,14 @@ sub sanitize_testname($){
 }
 
 sub connect_db{
-    my $file = shift || $dbfile;
+    my $mode = shift || $ENV{OPENQA_DATABASE} || 'production';
     use Schema::Schema;
     CORE::state $schema;
     unless ($schema) {
-        $schema = Schema->connect(
-            {
-                dsn => "dbi:SQLite:dbname=$file",
-                on_connect_call => "use_foreign_keys",
-                on_connect_do => [
-                    #    "PRAGMA journal_mode = OFF",
-                    #    "PRAGMA temp_store = MEMORY",
-                    "PRAGMA synchronous = OFF",
-                ],
-            }
-        ) or die "can't conncect db: $!\n";
+        $schema = Schema->connect($mode) or die "can't connect to db: $!\n";
     }
     return $schema;
 }
-
 
 sub file_content($){
     my($fn)=@_;

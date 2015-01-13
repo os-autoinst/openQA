@@ -67,12 +67,23 @@ if ($help) {
 my $schema = openqa::connect_db();
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
+my @databases = qw( MySQL SQLite PostgreSQL );
+
+if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
+    # Some SQLite update scripts do not work correctly with foreign keys on
+    $schema->storage->dbh_do(
+        sub {
+            my ($storage, $dbh, @args) = @_;
+            $dbh->do("PRAGMA foreign_keys = OFF;");
+        }
+    );
+}
 
 my $dh = DH->new(
     {
         schema              => $schema,
         script_directory    => $script_directory,
-        databases           => 'SQLite',
+        databases           => \@databases,
         sql_translator_args => { add_drop_table => 0, producer_args => { sqlite_version => '3.7' } },
         force_overwrite     => $force,
     }
@@ -88,15 +99,16 @@ my $prev_version      = $version - 1;
 my $upgrade_directory = "$prev_version-$version";
 
 my %upgrade_dir;
-tie %upgrade_dir, 'IO::Dir', "$script_directory/SQLite/upgrade";
-my %deploy_dir;
-tie %deploy_dir, 'IO::Dir', "$script_directory/SQLite/deploy";
 
 if ($prepare_upgrades) {
-    if ( exists $upgrade_dir{$upgrade_directory} and not $force) {
-        print "The upgrade directory already contains files to upgrade to the current version ($version)\n";
-        print "Use the --force option if you want to overwrite the contents of the $script_directory/SQLite/upgrade/$upgrade_directory directory\n";
-        exit 1;
+    foreach my $db (@databases) {
+        tie %upgrade_dir, 'IO::Dir', "$script_directory/$db/upgrade";
+
+        if ( exists $upgrade_dir{$upgrade_directory} and not $force) {
+            print "The upgrade directory already contains files to upgrade to the current version ($version)\n";
+            print "Use the --force option if you want to overwrite the contents of the $script_directory/$db/upgrade/$upgrade_directory directory\n";
+            exit 1;
+        }
     }
 
     $dh->prepare_upgrade({ from_version => $prev_version, to_version => $version } );

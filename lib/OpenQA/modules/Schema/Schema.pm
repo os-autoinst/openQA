@@ -15,16 +15,28 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package Schema;
-use base qw/DBIx::Class::Schema/;
+use base qw/DBIx::Class::Schema::Config/;
 use IO::Dir;
+use File::Basename qw/dirname/;
 use SQL::SplitStatement;
 use Fcntl ':mode';
+use FindBin qw($Bin);
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION = 17;
+our $VERSION = 18;
 
 __PACKAGE__->load_namespaces;
+
+my @paths = ( "$Bin/../lib/database", "$Bin/../../lib/database" );
+unshift(@paths, dirname($ENV{OPENQA_CONFIG}).'/database') if ($ENV{OPENQA_CONFIG});
+__PACKAGE__->config_paths(\@paths);
+
+sub dsn {
+    my $self = shift;
+
+    $self->storage->connect_info->[0]->{dsn};
+}
 
 1;
 # vim: set sw=4 et:

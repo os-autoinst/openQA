@@ -23,10 +23,18 @@ sub index {
     my @products = $self->db->resultset("Products")->search(undef, {order_by => 'name'});
     my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});
     my @suites = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
+    # TODO: rethink the SQL in a more cross-database way
+    my $concat;
+    if ($self->db->dsn =~ /:Pg:/) {
+        $concat = { string_agg => ['test_suite_id::text', "','"] };
+    }
+    else {
+        $concat = { group_concat => 'test_suite_id' };
+    }
     my $temps = $self->db->resultset("JobTemplates")->search(
         undef,
         {
-            select => ['product_id', 'machine_id',{ group_concat => 'test_suite_id'}],
+            select => ['product_id', 'machine_id', $concat],
             as => [qw/product_id machine_id ids/],
             group_by => [qw/product_id machine_id/]
         }

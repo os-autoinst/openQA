@@ -25,7 +25,7 @@ sub create {
     );
 
     # New db
-    my $schema = openqa::connect_db(':memory:');
+    my $schema = openqa::connect_db('test');
     my $script_directory = "$FindBin::Bin/../dbicdh";
     if (!-d $script_directory) {
         $script_directory = "$FindBin::Bin/../../dbicdh";  # For tests
@@ -103,19 +103,16 @@ Deploy schema & load fixtures
 
 =head1 USAGE
 
-    # Creates an sqlite3 test.db database from DBIC Schema without fixtures
-    my $schema = Test::Database->new->create(file => 'test.db', skip_fixtures => 1);
-
-    # Creates an in-memory sqlite3 database from DBIC Schema (both are equivalent)
-    my $schema = Test::Database->new->create(file => ':memory:');
+    # Creates an test database from DBIC Schema with or without fixtures
     my $schema = Test::Database->new->create;
+    my $schema = Test::Database->new->create(skip_fixtures => 1);
 
 =head1 METHODS
 
 =head2 create (%args)
 
-Create new sqlite3 database from DBIC schema. Use file to specify the filename
-(or ':memory:') and skip_fixtures to prevent loading fixtures.
+Create new database from DBIC schema.
+Use skip_fixtures to prevent loading fixtures.
 
 =head2 insert_fixtures
 

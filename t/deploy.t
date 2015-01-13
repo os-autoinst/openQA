@@ -26,9 +26,7 @@ use SQL::Translator;
 
 use openqa ();
 
-unlink $openqa::dbfile;
-
-my $schema = openqa::connect_db();
+my $schema = openqa::connect_db('test');
 
 my $dh = DBIx::Class::DeploymentHandler->new(
     {

@@ -20,6 +20,7 @@ use base qw/DBIx::Class::Core/;
 use db_helpers;
 
 __PACKAGE__->table('products');
+__PACKAGE__->load_components(qw/Timestamps/);
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
@@ -45,15 +46,8 @@ __PACKAGE__->add_columns(
     variables => {
         data_type => 'text',
     },
-    t_created => {
-        data_type => 'timestamp',
-        is_nullable => 1,
-    },
-    t_updated => {
-        data_type => 'timestamp',
-        is_nullable => 1,
-    },
 );
+__PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(job_templates => 'Schema::Result::JobTemplates', 'product_id');
 __PACKAGE__->add_unique_constraint([qw/distri version arch flavor/]);
@@ -62,12 +56,6 @@ __PACKAGE__->has_many(settings => 'Schema::Result::ProductSettings', 'product_id
 sub name {
     my ($self) = @_;
     join('-', map { $self->$_ } qw/distri version flavor arch/);
-}
-
-sub sqlt_deploy_hook {
-    my ($self, $sqlt_table) = @_;
-
-    db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
 }
 
 1;

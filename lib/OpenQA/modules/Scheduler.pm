@@ -25,6 +25,7 @@ use Digest::MD5;
 use Data::Dumper;
 use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
+use DBIx::Class::Timestamps qw/now/;
 use DateTime;
 
 use FindBin;
@@ -152,7 +153,7 @@ sub worker_register {
     )->first;
 
     if ($worker) { # worker already known. Update fields and return id
-        $worker->update({ t_updated => 0 });
+        $worker->update({ t_updated => now() });
     }
     else {
         $worker = schema->resultset("Workers")->create(
@@ -253,7 +254,7 @@ sub _validate_workerid($) {
 sub _seen_worker($;$) {
     my $id = shift;
     my $workercaps = shift;
-    schema->resultset("Workers")->find($id)->update({ t_updated => 0 });
+    schema->resultset("Workers")->find($id)->update({ t_updated => now() });
     _update_worker_caps($id, $workercaps) if $workercaps;
 }
 
@@ -506,8 +507,6 @@ sub job_grab {
 
     my $result;
     while (1) {
-        my $now = "datetime('now')";
-
         my $blocked = schema->resultset("JobDependencies")->search(
             {
                 dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
@@ -542,7 +541,7 @@ sub job_grab {
             {
                 state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
                 worker_id => $workerid,
-                t_started => \$now,
+                t_started => now(),
             }
           );
 
@@ -602,8 +601,6 @@ sub _job_skip_children{
         },
     );
 
-    my $now = "datetime('now')";
-
     my $result = schema->resultset("Jobs")->search(
         {
             id => { -in => $children->get_column('child_job_id')->as_query},
@@ -612,8 +609,8 @@ sub _job_skip_children{
         {
             state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
             result_id => schema->resultset("JobResults")->search({ name => "incomplete" })->single->id,
-            t_started => \$now,
-            t_finished => \$now,
+            t_started => now(),
+            t_finished => now(),
         }
       );
 
@@ -669,14 +666,13 @@ sub job_set_done {
 
     die "invalid result string" unless $result;
 
-    my $now = "datetime('now')";
     my $r;
     if ($newbuild) {
         $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
             {
                 state_id => schema->resultset("JobStates")->search({ name => "obsoleted" })->single->id,
                 worker_id => 0,
-                t_finished => \$now,
+                t_finished => now(),
                 result_id => $result->id,
             }
         );
@@ -686,7 +682,7 @@ sub job_set_done {
             {
                 state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
                 worker_id => 0,
-                t_finished => \$now,
+                t_finished => now(),
                 result_id => $result->id,
             }
         );
