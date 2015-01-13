@@ -36,6 +36,12 @@ document.observe('dom:loaded', function(evt) {
     window.scrollModuleThumbnails();
 });
 
+//jquery alternative of the above
+jQuery(function(evt) {
+    $(".chosen-select").chosen({width: "98%"});;
+});
+
+
 function set_cookie(cname, cvalue, exdays) {
     var d = new Date();
     d.setTime(d.getTime()+(exdays*24*60*60*1000));
