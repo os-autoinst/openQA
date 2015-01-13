@@ -59,33 +59,36 @@ if ($help) {
     exit;
 }
 
-my $dbdir = dirname($openqa::dbfile);
-die "$dbdir does not exist\n" unless -d $dbdir;
-my @s = stat(_);
-if (getgid() != $s[5]) {
-    setgid($s[5]) or die "can't change gid to $s[5]: $!\n";
-}
-if (getuid() != $s[4]) {
-    setuid($s[4]) or die "can't change uid to $s[4]: $!\n";
-}
-
 my $script_directory = "$FindBin::Bin/../dbicdh";
+my @databases = qw( MySQL SQLite PostgreSQL );
 my $schema = openqa::connect_db();
 
-# speed this up a bit
-$schema->storage->dbh_do(
-    sub {
-        my ($storage, $dbh, @args) = @_;
-        $dbh->do("PRAGMA synchronous = OFF");
+if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
+    my $dbdir = dirname($1);
+    die "$dbdir does not exist\n" unless -d $dbdir;
+    my @s = stat(_);
+    if (getgid() != $s[5]) {
+        setgid($s[5]) or die "can't change gid to $s[5]: $!\n";
     }
-);
+    if (getuid() != $s[4]) {
+        setuid($s[4]) or die "can't change uid to $s[4]: $!\n";
+    }
+
+    # speed this up a bit
+    $schema->storage->dbh_do(
+        sub {
+            my ($storage, $dbh, @args) = @_;
+            $dbh->do("PRAGMA synchronous = OFF");
+        }
+    );
+}
 
 my $dh = DBIx::Class::DeploymentHandler->new(
     {
         schema              => $schema,
         script_directory    => $script_directory,
-        databases           => 'SQLite',
-        sql_translator_args => { add_drop_table => 1, producer_args => { sqlite_version => '3.7' } },
+        databases           => \@databases,
+        sql_translator_args => { add_drop_table => 0, producer_args => { sqlite_version => '3.7' }},
         force_overwrite     => $force,
     }
 );
@@ -93,13 +96,15 @@ my $dh = DBIx::Class::DeploymentHandler->new(
 my $version    = $dh->schema_version;
 
 my %deploy_dir;
-tie %deploy_dir, 'IO::Dir', "$script_directory/SQLite/deploy";
-
 if ($prepare_init) {
-    if ( exists $deploy_dir{$version} and not $force) {
-        print "The deploy directory already contains the schema for the current version.\n";
-        print "Use the --force option if you want to overwrite the contents of the $script_directory/SQLite/upgrade/$version directory\n";
-        exit 1;
+    foreach my $db (@databases) {
+        tie %deploy_dir, 'IO::Dir', "$script_directory/$db/deploy";
+
+        if ( exists $deploy_dir{$version} and not $force) {
+            print "The deploy directory already contains the schema for the current version.\n";
+            print "Use the --force option if you want to overwrite the contents of the $script_directory/$db/deploy/$version directory\n";
+            exit 1;
+        }
     }
 
     $dh->prepare_install;

@@ -21,7 +21,7 @@ use Try::Tiny;
 use db_helpers;
 
 __PACKAGE__->table('jobs');
-__PACKAGE__->load_components(qw/InflateColumn::DateTime/);
+__PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
@@ -76,16 +76,9 @@ __PACKAGE__->add_columns(
         data_type => 'timestamp',
         is_nullable => 1,
     },
-
-    t_created => {
-        data_type => 'timestamp',
-        is_nullable => 1,
-    },
-    t_updated => {
-        data_type => 'timestamp',
-        is_nullable => 1,
-    },
 );
+__PACKAGE__->add_timestamps;
+
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(settings => 'Schema::Result::JobSettings', 'job_id');
 __PACKAGE__->belongs_to(state => 'Schema::Result::JobStates', 'state_id');
@@ -99,13 +92,7 @@ __PACKAGE__->has_many(children => 'Schema::Result::JobDependencies', 'parent_job
 __PACKAGE__->has_many(parents => 'Schema::Result::JobDependencies', 'child_job_id');
 __PACKAGE__->has_many(modules => 'Schema::Result::JobModules', 'job_id');
 
-__PACKAGE__->add_unique_constraint(constraint_name => [qw/slug/]);
-
-sub sqlt_deploy_hook {
-    my ($self, $sqlt_table) = @_;
-
-    db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
-}
+__PACKAGE__->add_unique_constraint([qw/slug/]);
 
 sub name{
     my $self = shift;

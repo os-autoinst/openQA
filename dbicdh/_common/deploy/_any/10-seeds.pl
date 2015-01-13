@@ -34,7 +34,7 @@ sub {
     $schema->resultset('JobResults')->populate([[qw/id name/],[ 0,'none' ],[ 1,'passed' ],[ 2,'failed' ],[ 3,'incomplete' ],]);
 
     # XXX: get rid of worker zero at some point
-    $schema->resultset('Workers')->populate([[qw/id host instance backend/],[ 0, 'NONE', 0, 'NONE' ],]);
+    $schema->resultset('Workers')->create({id => 0, host => 'NONE', instance => 0, backend => 'NONE'});
 
     $schema->resultset('Dependencies')->populate([[qw/id name/],[ 0,'chained' ],]);
 

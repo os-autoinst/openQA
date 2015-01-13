@@ -20,6 +20,7 @@ use base qw/DBIx::Class::Core/;
 use db_helpers;
 
 __PACKAGE__->table('jobs_assets');
+__PACKAGE__->load_components(qw/Timestamps/);
 __PACKAGE__->add_columns(
     job_id => {
         data_type => 'integer',
@@ -29,25 +30,12 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
         is_foreign_key => 1,
     },
-    t_created => {
-        data_type => 'timestamp',
-        is_nullable => 1,
-    },
-    t_updated => {
-        data_type => 'timestamp',
-        is_nullable => 1,
-    },
 );
+__PACKAGE__->add_timestamps;
 
-__PACKAGE__->add_unique_constraint(constraint_name => [qw/job_id asset_id/]);
+__PACKAGE__->add_unique_constraint([qw/job_id asset_id/]);
 
 __PACKAGE__->belongs_to( job => 'Schema::Result::Jobs', 'job_id' );
 __PACKAGE__->belongs_to( asset => 'Schema::Result::Assets', 'asset_id' );
-
-sub sqlt_deploy_hook {
-    my ($self, $sqlt_table) = @_;
-
-    db_helpers::create_auto_timestamps($sqlt_table->schema, __PACKAGE__->table);
-}
 
 1;
