@@ -16,7 +16,7 @@
 <div class="grid_3 alpha" id="sidebar">
     <div class="box box-shadow alpha" id="actions_box">
 	<div class="box-header aligncenter">Actions</div>
-	%= form_for save_needle => (method => 'POST') => begin
+	%= form_for save_needle => (id => 'save_needle_form') => (method => 'POST') => begin
 	<div class="aligncenter">
             %= link_to url_for('test') => begin
             %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
@@ -24,6 +24,7 @@
             % if (is_operator) {
 		<input type="image" src="/images/floppy.png" alt="Save" />
             % }
+            <input type="hidden" name="overwrite" value="no" id="overwrite_flag" />
 	</div>
 	<div style="margin: 0 3px;">
             <div style="margin-top: 1em;">

@@ -63,10 +63,13 @@ $req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $t
 $test_case->login($t, 'https://openid.camelot.uk/percival');
 
 # post needle based on screenshot
-$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah" })->status_is(200);
+$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => "yes" })->status_is(200);
 $req->element_exists_not('.ui-state-error');
 ok(-f "$dir/isosize-blah.png", "isosize-blah.png created");
 ok(-f "$dir/isosize-blah.json", "isosize-blah.json created");
+# post needle again and diallow to overwrite
+$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => "no" })->status_is(200);
+$req->text_like('.ui-state-highlight' => qr/Same needle name file already exists/);
 
 ok(open(GIT, '-|', @git, 'show'), "git show");
 {
@@ -85,7 +88,8 @@ $req = $t->post_ok(
         json => 'blub',
         imagename => 'isosize-blah.png',
         imagedistri => 'opensuse',
-        needlename => "isosize-blub"
+        needlename => "isosize-blub",
+        overwrite => "yes"
     }
 )->status_is(200);
 $req->element_exists_not('.ui-state-error');
@@ -102,7 +106,7 @@ $req = $t->post_ok(
         imageversion => "/"
     }
 )->status_is(200);
-$req->text_is('.ui-state-error' => 'Error creating/updating needle: wrong parameters imagename imagedistri imageversion needlename');
+$req->text_is('.ui-state-error' => 'Error creating/updating needle: wrong parameters imagename imagedistri imageversion needlename overwrite');
 
 #open (F, '|-', 'w3m -T text/html');
 #open (F, '|-', 'w3m -dump');
