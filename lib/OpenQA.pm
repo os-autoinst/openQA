@@ -146,8 +146,8 @@ sub startup {
     $self->plugin('OpenQA::Plugin::Helpers');
     $self->plugin('OpenQA::Plugin::CSRF');
     $self->plugin('OpenQA::Plugin::REST');
+    $self->plugin('OpenQA::Plugin::HashedParams');
 
-    $self->plugin('HashedParams');
     # set secure flag on cookies of https connections
     $self->hook(
         before_dispatch => sub {
