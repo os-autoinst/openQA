@@ -3,7 +3,7 @@
 
 <div class="box box-shadow list-form">
     <div class="box-header aligncenter">New product</div>
-    %= form_for admin_products => (method => 'post') => begin
+    %= form_for apiv1_admin_products => (method => 'post') => begin
         <p>
             %= label_for name => 'Distri'
             %= text_field 'distri', size => 15
@@ -19,34 +19,26 @@
 </div>
 
 <div class="box box-shadow">
-	<h2><%= title %></h2>
+    <h2><%= title %></h2>
 
     %= include 'layouts/info'
 
-	<table class="table-autostripe" id='products'>
-	    <thead>
-		    <tr>
-                <th>name</th>
-                <th>distri</th>
-                <th>version</th>
-                <th>flavor</th>
-                <th>arch</th>
-                <th>variables</th>
-                <th>action</th>
+    <table class="table-autosort table-autostripe admintable" id='test-suites'>
+        <thead>
+            <tr>
+                <th class="table-sortable:alphanumeric col_value">distri</th>
+                <th class="table-sortable:alphanumeric col_value">version</th>
+                <th class="table-sortable:alphanumeric col_value">flavor</th>
+                <th class="table-sortable:alphanumeric col_value">arch</th>
+                % for my $var (@$col_var_keys) {
+                    <th class="table-sortable:alphanumeric col_settings"><%= $var %></th>
+                %}
+                <th class="col_settings_list">variables</th>
+                <th class="col_action">action</th>
             </tr>
         </thead>
         <tbody>
-            % for my $product (@$products) {
-                <tr id="product_<%= $product->id %>">
-                    <td class="name"><%= $product->name %></td>
-                    <td class="distri"><%= $product->distri %></td>
-                    <td class="version"><%= $product->version %></td>
-                    <td class="flavor"><%= $product->flavor %></td>
-                    <td class="arch"><%= $product->arch %></td>
-                    %= include 'layouts/admin_settings', obj => $product, table => 'product'
-                    <td class="action"><%= link_to 'delete' => url_for('admin_product', product_id => $product->id) => 'data-method' => 'delete' %></td>
-                </tr>
-            % }
         </tbody>
     </table>
+    <input type="hidden" id="admintable_api_url" value="/api/v1/products"/>
 </div>

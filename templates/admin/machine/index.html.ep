@@ -3,7 +3,7 @@
 
 <div class="box box-shadow list-form">
     <div class="box-header aligncenter">New machine</div>
-    %= form_for admin_machines => (method => 'post') => begin
+    %= form_for apiv1_admin_machines => (method => 'post') => begin
         <p>
             %= label_for name => 'Name'
             %= text_field 'name', size => 15
@@ -17,28 +17,24 @@
 </div>
 
 <div class="box box-shadow">
-	<h2><%= title %></h2>
+    <h2><%= title %></h2>
 
     %= include 'layouts/info'
 
-	<table class="table-autostripe" id="machines">
-	    <thead>
-		    <tr>
-                <th>name</th>
-                <th>backend</th>
-                <th>variables</th>
-                <th>action</th>
+    <table class="table-autosort table-autostripe admintable" id='machines'>
+        <thead>
+            <tr>
+                <th class="table-sortable:alphanumeric col_value">name</th>
+                <th class="table-sortable:alphanumeric col_value">backend</th>
+                % for my $var (@$col_var_keys) {
+                    <th class="table-sortable:alphanumeric col_settings"><%= $var %></th>
+                %}
+                <th class="col_settings_list">variables</th>
+                <th class="col_action">action</th>
             </tr>
         </thead>
         <tbody>
-            % for my $machine (@$machines) {
-                <tr id="machine_<%= $machine->id %>">
-                    <td class="name"><%= $machine->name %></td>
-                    <td class="backend"><%= $machine->backend %></td>
-                    %= include 'layouts/admin_settings', obj => $machine, table => 'machine'
-                    <td class="action"><%= link_to 'delete' => url_for('admin_machine', machine_id => $machine->id) => 'data-method' => 'delete' %></td>
-                </tr>
-            % }
         </tbody>
     </table>
+    <input type="hidden" id="admintable_api_url" value="/api/v1/machines"/>
 </div>

@@ -16,3 +16,4 @@
 %= javascript '/javascripts/chosen.jquery.js'
 %= javascript '/javascripts/openqa.js'
 %= javascript '/javascripts/table.js'
+%= javascript '/javascripts/admintable.js'
