@@ -988,18 +988,7 @@ sub command_enqueue {
     my %args = @_;
 
     die "invalid command\n" unless $worker_commands{$args{command}};
-
-    my $res = ws_send($args{workerid}, $args{command});
-    if (!$res) {
-        $args{retries} ||= 0;
-        if ($args{retries} < 3) {
-            $args{retries} += 1;
-            Mojo::IOLoop->timer(2 => sub {command_enqueue(%args);});
-        }
-        else {
-            printf(STDERR "Unable to send command %s to worker %s\n", $args{command}, $args{workerid});
-        }
-    }
+    ws_send($args{workerid}, $args{command});
 }
 
 #
