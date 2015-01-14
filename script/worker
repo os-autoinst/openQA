@@ -398,16 +398,13 @@ sub _kill_worker($) {
 
     return unless $worker;
 
+    warn "killing $worker->{pid}\n";
+    kill(SIGTERM, $worker->{pid});
+
     # don't leave here before the worker is dead
-    while (1) {
-        kill(SIGTERM, $worker->{pid});
-        sleep 2;
-        my $pid = waitpid($worker->{pid}, WNOHANG);
-        if ($pid == -1) {
-            warn "waitpid returned error: $!\n";
-            last;
-        }
-        last if ($pid == $worker->{pid});
+    my $pid = waitpid($worker->{pid}, 0);
+    if ($pid == -1) {
+        warn "waitpid returned error: $!\n";
     }
 
     $worker = undef;
