@@ -12,19 +12,21 @@
     <thead>
       <tr>
         <th class="table-sortable:alphanumeric">worker</th>
-        <th class="table-sortable:alphanumeric">host</th>
-        <th class="table-sortable:alphanumeric">instance</th>
         <th class="table-sortable:alphanumeric table-filterable">backend</th>
         <th class="table-sortable:alphanumeric">status</th>
         <th class="table-sortable:alphanumeric">current step</th>
       </tr>
     </thead>
     <tbody>
+      % my %workers; # for sorting
       % for my $view (@$wlist) {
+        % my $workername = $view->{'host'} . ":" . $view->{'instance'};  
+        % $workers{$workername} = $view;
+      % }
+      % for my $workername (sort keys %workers) {
+      %   my $view = $workers{$workername};
       <tr id="worker_<%= $view->{'workerid'} %>">
-        <td class="worker"><%=  link_to( $view->{'workerid'} => url_for('admin_worker_show', worker_id => $view->{'workerid'}) ) %></td>
-        <td class="host"><%= $view->{'host'} %></td>
-        <td class="instance"><%= $view->{'instance'} %></td>
+        <td class="worker"><%=  link_to( $workername => url_for('admin_worker_show', worker_id => $view->{'workerid'}) ) %></td>
         <td class="backend"><%= $view->{'backend'} %></td>
 	<td class="status">
 	  <% if($view->{'status'} eq 'idle') { %>
