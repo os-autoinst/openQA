@@ -125,7 +125,7 @@ my $job_ref = {
 
 my $iso = sprintf("%s/%s", $openqa::isodir, $settings{ISO});
 open my $fh, ">", $iso;
-my $job_id = Scheduler::job_create(%settings);
+my $job_id = Scheduler::job_create(\%settings);
 is($job_id, 1, "job_create");
 
 my $assets = Scheduler::job_get_assets($job_id);
@@ -134,7 +134,7 @@ is_deeply($assets, [{ id => 1, name => "whatever.iso", type => "iso" }], "job cr
 my %settings2 = %settings;
 $settings2{NAME} = "OTHER NAME";
 $settings2{BUILD} = "44";
-my $job2_id= Scheduler::job_create(%settings2);
+my $job2_id= Scheduler::job_create(\%settings2);
 
 Scheduler::job_set_prio(jobid => $job_id, prio => 40);
 my $new_job = Scheduler::job_get($job_id);

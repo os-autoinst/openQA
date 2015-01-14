@@ -274,7 +274,8 @@ create a job
 
 =cut
 sub job_create {
-    my %settings = @_;
+    my ($settings, $no_notify) = @_;
+    my %settings = %$settings;
 
     if (my $error = OpenQA::Variables->new()->check(%settings)) {
         die "$error\n";
@@ -334,6 +335,8 @@ sub job_create {
     }
 
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
+
+    job_notify_workers() unless $no_notify;
     return $job->id;
 }
 
@@ -870,6 +873,7 @@ sub job_duplicate {
 
         _job_update_parent($job->id, $clone->id);
 
+        job_notify_workers();
         return $clone->id;
     }
     else {
