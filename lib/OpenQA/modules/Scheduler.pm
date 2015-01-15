@@ -216,8 +216,8 @@ sub worker_get {
 
 sub workers_get_dead_worker {
     my $dt = DateTime->now(time_zone=>'UTC');
-    # set the threshold as 00 second
-    $dt->set_second(00);
+    # check for workers active in last 10s (last seen should be updated each 5s)
+    $dt->subtract(seconds => 10);
     my $threshold = join ' ',$dt->ymd, $dt->hms;
 
     my %cond = (
