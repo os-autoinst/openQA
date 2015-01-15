@@ -28,4 +28,28 @@ sub query_end {
     $msg = '';
 }
 
+
+sub enable_sql_debugging($) {
+    my ($app) = @_;
+    my $storage = $app->schema->storage;
+    $storage->debugobj(new db_profiler());
+    $storage->debugfh(MojoDebugHandle->new($app));
+    $storage->debug(1);
+}
+
+package MojoDebugHandle;
+
+sub new {
+    my ($class, $app) = @_;
+
+    return bless { 'app' => $app }, $class;
+}
+
+sub print {
+    my ($self, $line) = @_;
+    chop $line;
+    $self->{'app'}->app->log->debug($line);
+}
+
+
 1;
