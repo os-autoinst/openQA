@@ -25,6 +25,7 @@ use DateTime;
 use Cwd qw/abs_path/;
 
 use Config::IniFiles;
+use db_profiler;
 
 sub _read_config {
     my $self = shift;
@@ -163,15 +164,16 @@ sub startup {
     );
 
     $self->_read_config;
+    my $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{'logging'}->{'file'};
+    $self->log->path($logfile);
 
-    if ($ENV{OPENQA_LOGFILE}) {
-        $self->log->path($ENV{OPENQA_LOGFILE});
-    }
-    elsif ($self->config->{'logging'}->{'file'}) {
-        $self->log->path($self->config->{'logging'}->{'file'});
-    }
-    if ($self->config->{'logging'}->{'level'}) {
+    if ($logfile && $self->config->{'logging'}->{'level'}) {
         $self->log->level($self->config->{'logging'}->{'level'});
+        if ($self->log->is_debug) {
+            # avoid enabling the SQL debug unless we really want to see it
+            # it's rather expensive
+            db_profiler::enable_sql_debugging($self);
+        }
     }
 
     $self->plugin(
