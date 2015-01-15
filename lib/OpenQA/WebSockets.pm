@@ -24,8 +24,8 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
 
 @ISA = qw/Exporter/;
-@EXPORT = qw/ws_add_worker ws_remove_worker ws_send ws_send_all/;
-@EXPORT_OK = qw/ws_create/;
+@EXPORT = qw/ws_send ws_send_all/;
+@EXPORT_OK = qw/ws_create ws_get_connected_workers ws_add_worker ws_remove_worker/;
 
 # worker->websockets mapping
 my $worker_sockets = {};
@@ -77,6 +77,10 @@ sub ws_create {
     $ws->on(message => \&_message);
     $ws->on(finish  => \&_finish);
     ws_add_worker($workerid, $ws->tx);
+}
+
+sub ws_get_connected_workers {
+    return keys(%$worker_sockets);
 }
 
 # internal helpers
