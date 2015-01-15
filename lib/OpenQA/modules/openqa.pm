@@ -319,6 +319,32 @@ sub connect_db{
     CORE::state $schema;
     unless ($schema) {
         $schema = Schema->connect($mode) or die "can't connect to db: $!\n";
+        my $enable_debug = 0;
+        # parsing database.ini for dbix debugging
+        my @config = $schema->config;
+        my $main_cfg = $config[0][0];
+        # TODO improve the ugly code below
+        for my $g (keys %$main_cfg) {
+            if ($g && $g =~ /.+ini$/) {
+                my $h = $main_cfg->{$g};
+                for my $i (keys %$h) {
+                    if ($i =~ m/logging/) {
+                        my $j = $h->{$i};
+                        for my $k (keys %$j) {
+                            if ($k =~ m/debug/) {
+                                $enable_debug = $j->{$k};
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if ($enable_debug) {
+            use db_profiler;
+            $schema->storage->debugobj(new db_profiler());
+            $schema->storage->debugfh(IO::File->new('>> /var/log/openqa'));
+            $schema->storage->debug(1);
+        }
     }
     return $schema;
 }
