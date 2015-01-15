@@ -18,7 +18,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 25;
+use Test::More tests => 27;
 use Test::Mojo;
 use Mojo::URL;
 use OpenQA::Test::Case;
@@ -43,7 +43,7 @@ my $ws = $t->websocket_ok('/api/v1/workers/1/ws');
 #issue valid commands for worker 1
 my @valid_commands = qw/quit abort cancel obsolete
   stop_waitforneedle reload_needles_and_retry continue_waitforneedle
-  enable_interactive_mode disable_interactive_mode
+  enable_interactive_mode disable_interactive_mode job_available
   livelog_stop livelog_start/;
 
 for my $cmd (@valid_commands) {

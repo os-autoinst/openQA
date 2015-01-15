@@ -43,7 +43,7 @@ sub create {
     my $json = {};
     my $status;
     try {
-        my $res = Scheduler::job_create(%up_params);
+        my $res = Scheduler::job_create(\%up_params);
         $json->{id} = $res;
     }
     catch {

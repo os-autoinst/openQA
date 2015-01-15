@@ -635,8 +635,10 @@ sub stop_job($) {
     $job = undef;
     $worker = undef;
     $worker_start_time = undef;
-    # start checking for job
-    add_timer('check_job', 2, \&check_job);
+    # immediatelly check for already scheduled job
+    check_job();
+    # and start backup checking for job
+    add_timer('check_job', 10, \&check_job);
 }
 
 sub start_job {
@@ -797,6 +799,11 @@ sub handle_commands {
     elsif ($msg eq 'ok') {
         # ignore keepalives, but dont' report as unknown
     }
+    elsif ($msg eq 'job_available') {
+        if (!$job) {
+            check_job
+        }
+    }
     else {
         print STDERR "got unknown command $msg\n";
     }
@@ -913,7 +920,8 @@ sub main(){
 
     ## initial Mojo::IO timers
     add_timer('ws_keepalive', 5, \&ws_keepalive);
-    add_timer('check_job', 2, \&check_job);
+    # backup check_job in case notification command does not get through
+    add_timer('check_job', 10, \&check_job);
 
     # start event loop - this will block until stop is called
     Mojo::IOLoop->start;

@@ -51,7 +51,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 @EXPORT = qw(worker_register worker_get workers_get_dead_worker list_workers job_create
   job_get job_get_by_workerid jobs_get_dead_worker list_jobs job_grab job_set_done
-  job_set_waiting job_set_running job_set_prio
+  job_set_waiting job_set_running job_set_prio job_notify_workers
   job_delete job_update_result job_restart job_cancel command_enqueue
   iso_cancel_old_builds
   job_set_stop job_stop iso_stop_old_builds
@@ -70,6 +70,7 @@ our %worker_commands = map { $_ => 1 } qw/
   enable_interactive_mode
   disable_interactive_mode
   continue_waitforneedle
+  job_available
   livelog_stop
   livelog_start
   /;
@@ -262,6 +263,10 @@ sub _seen_worker($;$) {
 #
 # Jobs API
 #
+sub job_notify_workers {
+    # notify workers about new job
+    ws_send_all('job_available');
+}
 
 =item job_create
 
@@ -269,7 +274,8 @@ create a job
 
 =cut
 sub job_create {
-    my %settings = @_;
+    my ($settings, $no_notify) = @_;
+    my %settings = %$settings;
 
     if (my $error = OpenQA::Variables->new()->check(%settings)) {
         die "$error\n";
@@ -329,6 +335,8 @@ sub job_create {
     }
 
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
+
+    job_notify_workers() unless $no_notify;
     return $job->id;
 }
 
@@ -865,6 +873,7 @@ sub job_duplicate {
 
         _job_update_parent($job->id, $clone->id);
 
+        job_notify_workers();
         return $clone->id;
     }
     else {
@@ -988,18 +997,7 @@ sub command_enqueue {
     my %args = @_;
 
     die "invalid command\n" unless $worker_commands{$args{command}};
-
-    my $res = ws_send($args{workerid}, $args{command});
-    if (!$res) {
-        $args{retries} ||= 0;
-        if ($args{retries} < 3) {
-            $args{retries} += 1;
-            Mojo::IOLoop->timer(2 => sub {command_enqueue(%args);});
-        }
-        else {
-            printf(STDERR "Unable to send command %s to worker %s\n", $args{command}, $args{workerid});
-        }
-    }
+    ws_send($args{workerid}, $args{command});
 }
 
 #

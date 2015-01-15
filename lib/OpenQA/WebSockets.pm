@@ -24,7 +24,7 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
 
 @ISA = qw/Exporter/;
-@EXPORT = qw/ws_add_worker ws_remove_worker ws_send/;
+@EXPORT = qw/ws_add_worker ws_remove_worker ws_send ws_send_all/;
 @EXPORT_OK = qw/ws_create/;
 
 # worker->websockets mapping
@@ -46,14 +46,29 @@ sub ws_remove_worker {
 }
 
 sub ws_send {
-    my ($workerid, $msg) = @_;
+    my ($workerid, $msg, $retry) = @_;
+    return unless ($workerid && $msg);
+    my $res;
     my $tx = $worker_sockets->{$workerid};
-    return unless $tx;
-    my $res = $tx->send($msg);
-    if ($res->success) {
-        return 1;
+    if ($tx) {
+        $res = $tx->send($msg);
     }
-    return;
+    unless ($res && $res->success) {
+        $retry ||= 0;
+        if ($retry < 3) {
+            Mojo::IOLoop->timer(2 => sub{ws_send($workerid, $msg, ++$retry);});
+        }
+        else {
+            print STDERR "Unable to send command \"$msg\" to worker $workerid";
+        }
+    }
+}
+
+sub ws_send_all {
+    my ($msg) = @_;
+    foreach my $workerid (keys(%$worker_sockets)) {
+        ws_send($workerid, $msg);
+    }
 }
 
 sub ws_create {

@@ -182,10 +182,10 @@ sub create {
                 $self->app->log->error("START_AFTER_TEST=" . $settings->{START_AFTER_TEST} . " not sorted");
             }
         }
-        # create a new job with these parameters and count if successful
+        # create a new job with these parameters and count if successful, do not send job notifies yet
         my $id;
         try {
-            $id = Scheduler::job_create(%$settings);
+            $id = Scheduler::job_create($settings, 1);
         }
         catch {
             chomp;
@@ -205,6 +205,8 @@ sub create {
             }
         }
     }
+    #notify workers new jobs are available
+    Scheduler::job_notify_workers();
     $self->app->log->debug("created $cnt jobs");
     $self->render(json => {count => $cnt, ids => \@ids });
 }
