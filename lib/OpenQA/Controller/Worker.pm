@@ -18,6 +18,7 @@ package OpenQA::Controller::Worker;
 use Mojo::Base 'Mojolicious::Controller';
 use openqa;
 use Scheduler qw/list_workers worker_get workers_get_dead_worker job_get_by_workerid/;
+use OpenQA::WebSockets qw/ws_get_connected_workers/;
 
 sub workers_amount {
     my $self = shift;
@@ -56,6 +57,12 @@ sub worker_info($) {
     foreach my $dead_worker (@$dead_workers) {
         if($dead_worker->{id} == $workerid) {
             $settings->{status} = "dead";
+        }
+    }
+    my @connected_workers = ws_get_connected_workers();
+    foreach my $connected_worker (@connected_workers) {
+        if($connected_worker == $workerid) {
+            $settings->{connected} = 1;
         }
     }
     return $settings;
