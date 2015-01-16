@@ -63,13 +63,13 @@ $req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $t
 $test_case->login($t, 'https://openid.camelot.uk/percival');
 
 # post needle based on screenshot
-$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => "yes" })->status_is(200);
+$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => 'no' })->status_is(200);
 $req->element_exists_not('.ui-state-error');
 ok(-f "$dir/isosize-blah.png", "isosize-blah.png created");
 ok(-f "$dir/isosize-blah.json", "isosize-blah.json created");
 # post needle again and diallow to overwrite
-$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => "no" })->status_is(200);
-$req->text_like('.ui-state-highlight' => qr/Same needle name file already exists/);
+$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => 'yes' })->status_is(200);
+$req->text_like('.ui-state-highlight' => qr/Needle isosize-blah created/);
 
 ok(open(GIT, '-|', @git, 'show'), "git show");
 {

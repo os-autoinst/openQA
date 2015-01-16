@@ -24,7 +24,7 @@
             % if (is_operator) {
 		<input type="image" src="/images/floppy.png" alt="Save" />
             % }
-            <input type="hidden" name="overwrite" value="no" id="overwrite_flag" />
+            <input type="hidden" name="overwrite" value="<%= ${@$needles[0]}{'overwrite'} %>" id="overwrite_flag" />
 	</div>
 	<div style="margin: 0 3px;">
             <div style="margin-top: 1em;">
