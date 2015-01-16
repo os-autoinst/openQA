@@ -3,7 +3,6 @@
 function do_overwrite()
 {
     saveNeedleForm = document.forms['save_needle_form'];
-    saveNeedleForm.elements["overwrite"].value = 'yes';
     saveNeedleForm.submit();
     return true;
 }
