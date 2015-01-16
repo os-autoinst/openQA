@@ -548,14 +548,18 @@ sub check_job {
 
 sub stop_job($) {
     my ($aborted) = @_;
-    _kill_worker($worker) if $worker;
 
     # we call this function in all situations, so better check
     return unless $job;
+
+    print "stop_job $aborted\n" if $verbose;
+
     # stop all job related timers
     remove_timer('update_status');
     remove_timer('check_backend');
     remove_timer('job_timeout');
+
+    _kill_worker($worker);
 
     my $name = $job->{'settings'}->{'NAME'};
     $aborted ||= 'done';
@@ -893,17 +897,18 @@ sub check_backend {
     }
 
     # check if the worker is still running
-    if ($worker) {
-        my $pid = waitpid($worker->{pid}, WNOHANG);
-        if ($pid == $worker->{pid}) {
-            if ($?) {
-                warn "child $pid died with exit status $?\n";
-                stop_job('died');
-            }
-            else {
-                stop_job('done');
-            }
-            $worker = undef;
+    my $pid = waitpid($worker->{pid}, WNOHANG);
+    if ($verbose) {
+        printf "waitpid %d returned %d\n", $worker->{pid}, $pid;
+    }
+
+    if ($pid == $worker->{pid}) {
+        if ($?) {
+            warn "child $pid died with exit status $?\n";
+            stop_job('died');
+        }
+        else {
+            stop_job('done');
         }
     }
 }
