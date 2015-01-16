@@ -637,8 +637,8 @@ sub stop_job($) {
     $worker_start_time = undef;
     # immediatelly check for already scheduled job
     check_job();
-    # and start backup checking for job
-    add_timer('check_job', 10, \&check_job);
+    # and start backup checking for job if none was acquired
+    add_timer('check_job', 10, \&check_job) unless ($job);
 }
 
 sub start_job {
