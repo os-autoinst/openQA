@@ -17,6 +17,7 @@
 
 
 
+  /etc/openqa/database.ini r,
   /etc/openqa/openqa.ini r,
   /proc/meminfo r,
   /usr/bin/optipng rix,
