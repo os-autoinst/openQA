@@ -141,6 +141,50 @@ sub register {
             return ($user && $user->is_admin);
         }
     );
+
+    $app->helper(
+        # CSS class for a job or module based on its result
+        css_for => sub {
+            my $c = shift;
+            my $hash = shift || return undef;
+            my $res = $hash->{'result'};
+
+            if ($res eq 'na' || $res eq 'incomplete') {
+                return '';
+            }
+            elsif ($res =~ /^fail/) {
+                return 'resultfail';
+            }
+            elsif ($res eq 'passed') {
+                return 'resultok';
+            }
+            elsif ($res eq 'ok') {
+                return $hash->{'dents'} ? 'resultwarning' : 'resultok';
+            }
+            else {
+                return 'resultunknown';
+            }
+        }
+    );
+
+    $app->helper(
+        format_result => sub {
+            my $c = shift;
+            my $module = shift || return undef;
+            my $res = $module->{'result'};
+
+            if ($res eq 'na') {
+                return 'n/a';
+            }
+            elsif ($res eq 'unk') {
+                return 'unknown';
+            }
+            else {
+                return $res;
+            }
+        }
+    );
+
 }
 
 1;

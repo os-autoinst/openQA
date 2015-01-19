@@ -131,10 +131,6 @@ sub show {
     $self->stash(resultdir => $testresultdir);
     $self->stash(assets => Scheduler::job_get_assets($job->{'id'}));
 
-    # FIXME: inherited from the old webUI, should really really really die
-    $self->stash(res_css => $res_css);
-    $self->stash(res_display => $res_display);
-
     #  return $self->render_not_found unless (-e $self->stash('resultdir'));
 
     my $results = test_result($testdirname);
@@ -205,7 +201,6 @@ sub show {
     # uploaded logs box
     my @ulogs = test_uploadlog_list($testdirname);
 
-    $self->stash(overall => $job->{result});
     $self->stash(modlist => \@modlist);
     $self->stash(diskimg => $diskimg);
     $self->stash(backend_info => $results->{backend});
