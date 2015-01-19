@@ -28,6 +28,7 @@ use Date::Format qw/time2str/;
 use DBIx::Class::Timestamps qw/now/;
 use DateTime;
 use Schema::Result::Jobs;
+use Schema::Result::JobDependencies;
 
 use FindBin;
 use lib $FindBin::Bin;
@@ -308,7 +309,7 @@ sub job_create {
             push @{$new_job_args{parents}},
               {
                 parent_job_id => $id,
-                dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+                dependency => Schema::Result::JobDependencies::CHAINED,
               };
         }
         delete $settings{_START_AFTER_JOBS};
@@ -501,7 +502,7 @@ sub job_grab {
     while (1) {
         my $blocked = schema->resultset("JobDependencies")->search(
             {
-                dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+                dependency => Schema::Result::JobDependencies::CHAINED,
                 -or => {
                     state => { '!=', Schema::Result::Jobs::DONE },
                     result => { '!=',  Schema::Result::Jobs::PASSED },
@@ -588,7 +589,7 @@ sub _job_skip_children{
 
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+            dependency => Schema::Result::JobDependencies::CHAINED,
             parent_job_id => $jobid,
         },
     );
@@ -619,7 +620,7 @@ sub _job_update_parent{
 
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+            dependency => Schema::Result::JobDependencies::CHAINED,
             parent_job_id => $jobid,
             state => Schema::Result::Jobs::SCHEDULED,
         },
@@ -630,7 +631,7 @@ sub _job_update_parent{
 
     my $result = schema->resultset("JobDependencies")->search(
         {
-            dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+            dependency => Schema::Result::JobDependencies::CHAINED,
             parent_job_id => $jobid,
             child_job_id => { -in => $children->get_column('child_job_id')->as_query},
         }
