@@ -171,12 +171,6 @@ sub worker_register {
             worker_id => 0,
         }
     );
-    # ... delete pending commands
-    schema->resultset("Commands")->search(
-        {
-            worker_id => $worker->id
-        }
-    )->delete_all();
 
     die "got invalid id" unless $worker->id;
     return $worker->id;
