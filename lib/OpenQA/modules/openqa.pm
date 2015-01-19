@@ -15,8 +15,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   $app_title
   $app_subtitle
   @runner
-  $res_css
-  $res_display
   &running_log
   &sortkeys
   &first_run
@@ -62,26 +60,6 @@ our $testcasedir = "$basedir/openqa/share/tests";
 
 our @runner = <$basedir/$prj/pool/[0-9]>;
 push(@runner, "$basedir/$prj/pool/manual");
-
-our $res_css = {
-    # module results
-    'na' => 'not-autochecked',
-    'unk' => 'unknown',
-    'ok' => 'ok',
-    'fail' => 'fail',
-    # job result
-    'incomplete' => 'not-autochecked',
-    'none' => 'unknown',
-    'passed' => 'ok',
-    'failed' => 'fail'
-};
-
-our $res_display = {
-    'na' => 'n/a',
-    'unk' => 'unknown',
-    'ok' => 'OK',
-    'fail' => 'FAIL'
-};
 
 sub test_result($) {
     my $testname = shift;

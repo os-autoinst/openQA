@@ -87,7 +87,7 @@
             % }
             <tr>
                 <td>Result</td>
-                <td><span style="padding: 0 10%; display: inline-block; text-align: center;" class="<%= "result$res_css->{$overall}" %>"><%= $overall %></span></td>
+                <td><span style="padding: 0 10%; display: inline-block; text-align: center;" class="<%= css_for($job) %>"><%= $job->{'result'} %></span></td>
             </tr>
             <tr>
                 <td style="width: 40%;">State</td>
@@ -184,7 +184,7 @@
 				<th style="width: 1.5em;">Flags</th>
 				<th style="width: 200px;">Test</th>
 				<th style="width: 150px; padding: 2px 25px;">Result</th>
-				<th colspan="3">References</th>
+				<th>References</th>
 			</tr>
 			</thead>
 			<tbody>
@@ -198,24 +198,19 @@
 				<td class="component">
 				  %= link_to $module->{'name'} => url_for('src_step', stepid => 1, moduleid => $module->{'name'})
 				</td>
-				% my $result_class = $res_css->{$module->{'result'}};
-				% if (($result_class eq 'ok') && ($module->{'dents'})) {
-				%   $result_class = 'warning';
-				% }
-				<td class="<%= "result$result_class" %>"><%= $res_display->{$module->{'result'}} %></td>
-				<td class="links" style="width: 60%;">
-                                  % for my $screenshot (@{$module->{'screenshots'}}) {
-                                     %= link_to url_for('step', moduleid => $module->{'name'}, stepid => $screenshot->{'num'}) => (class => 'no_hover') => begin
-                                        %= image url_for('test_thumbnail', 'testid' => $testid, 'filename' => $screenshot->{'name'}), width => $ref_width, height => $ref_height, alt => $screenshot->{'name'}, class => "resborder_\L$screenshot->{'result'}"
-                                     % end
-                                % }
-				</td>
-				<td class="links" style="width: 20%;">
+				<td class="<%= css_for($module) %>"><%= format_result($module) %></td>
+				<td class="links" style="width: 100%;">
+
+					% for my $screenshot (@{$module->{'screenshots'}}) {
+						%= link_to url_for('step', moduleid => $module->{'name'}, stepid => $screenshot->{'num'}) => (class => 'no_hover') => begin
+						%= image url_for('test_thumbnail', 'testid' => $testid, 'filename' => $screenshot->{'name'}), width => $ref_width, height => $ref_height, alt => $screenshot->{'name'}, class => "resborder_\L$screenshot->{'result'}"
+						% end
+					% }
+
 					<% for my $wav (@{$module->{'wavs'}}) { %>
 					<a href="<%= url_for('step', moduleid => $module->{'name'}, stepid => $wav->{'num'}) %>" title="<%= $wav->{'name'} %>"><img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{'name'} %>" class="<%= "resborder_\L$wav->{'result'}" %>" /></a>
 					<% } %>
-				</td>
-				<td class="links" style="width: 20%;">
+
 					<% for my $ocr (@{$module->{'ocrs'}}) { %>
 					<a href="<%= url_for('step', moduleid => $module->{'name'}, stepid => $ocr->{'num'}) %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{'name'} %>.txt" class="<%= "resborder_\L$ocr->{'result'}" %>" /></a>
 					<% } %>
