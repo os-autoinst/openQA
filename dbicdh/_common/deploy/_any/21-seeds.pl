@@ -14,33 +14,23 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::Commands;
-use base qw/DBIx::Class::Core/;
+#!perl
 
-use db_helpers;
+use strict;
+use warnings;
 
-__PACKAGE__->table('commands');
-__PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
-__PACKAGE__->add_columns(
-    id => {
-        data_type => 'integer',
-        is_auto_increment => 1,
-    },
-    command => {
-        data_type => 'text',
-    },
-    t_processed => {
-        data_type => 'timestamp',
-        is_nullable => 1
-    },
-    worker_id => {
-        data_type => 'integer',
-    },
-);
-__PACKAGE__->add_timestamps;
+# no use case for that yet
+#use DBIx::Class::DeploymentHandler::DeployMethod::SQL::Translator::ScriptHelpers 'schema_from_schema_loader';
 
-__PACKAGE__->set_primary_key('id');
-__PACKAGE__->belongs_to(worker => 'Schema::Result::Workers', 'worker_id');
+#schema_from_schema_loader({ naming => 'v4' },
+sub {
+    my $schema = shift;
 
-1;
-# vim: set sw=4 et:
+    # [1] for deploy, [1,2] for upgrade or downgrade, probably used with _any
+    my $versions = shift;
+
+    # XXX: get rid of worker zero at some point
+    $schema->resultset('Workers')->create({id => 0, host => 'NONE', instance => 0, backend => 'NONE'});
+
+  }
+  #);

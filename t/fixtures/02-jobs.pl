@@ -22,10 +22,10 @@
     Jobs => {
         id => 99926,
         priority => 56,
-        result => { name => "incomplete" },
+        result => "incomplete",
         retry_avbl => 3,
         settings => [{ key => 'ARCH', value => 'x86_64'},{ key => 'BUILD', value => 87.5011},{ key => 'DESKTOP', value => 'minimalx'},{ key => 'DISTRI', value => 'opensuse'},{ key => 'FLAVOR', value => 'staging_e'},{ key => 'ISO', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'},{ key => 'ISO_MAXSIZE', value => 737280000},{ key => 'NAME', value => '00000322-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx'},{ key => 'TEST', value => 'minimalx'},{ key => 'VERSION', value => 'Factory'}, { key => 'MACHINE', value => '32bit'},],
-        state => { name => "done"},
+        state => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-3600, 'UTC'), # One hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-7200, 'UTC'),  # Two hours ago
         test => "minimalx",
@@ -37,8 +37,8 @@
     Jobs => {
         id => 99927,
         priority => 45,
-        result => { name => "none"},
-        state => { name => "scheduled"},
+        result => "none",
+        state => "scheduled",
         t_finished => undef,
         t_started => undef,
         test => "RAID0",
@@ -51,8 +51,8 @@
     Jobs => {
         id => 99928,
         priority => 46,
-        result => { name => "none"},
-        state => { name => "scheduled"},
+        result => "none",
+        state => "scheduled",
         t_finished => undef,
         t_started => undef,
         test => "RAID1",
@@ -65,8 +65,8 @@
     Jobs => {
         id => 99937,
         priority => 35,
-        result => { name => "passed"},
-        state => { name => "done"},
+        result => "passed",
+        state => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-536400, 'UTC'), # 149 hours ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-540000, 'UTC'),  # 150 hours ago
         test => "kde",
@@ -79,8 +79,8 @@
     Jobs => {
         id => 99938,
         priority => 36,
-        result => { name => "failed"},
-        state => { name => "done"},
+        result => "failed",
+        state => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-3600, 'UTC'), # One hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-7200, 'UTC'),  # Two hours ago
         test => "doc",
@@ -92,8 +92,8 @@
     Jobs => {
         id => 99946,
         priority => 35,
-        result => { name => "passed"},
-        state => { name => "done"},
+        result => "passed",
+        state => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-10800, 'UTC'), # Three hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-14400, 'UTC'),  # Four hours ago
         test => "textmode",
@@ -107,8 +107,8 @@
         id => 99945,
         clone_id => 99946,
         priority => 35,
-        result => { name => "passed"},
-        state => { name => "done"},
+        result => "passed",
+        state => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-14400, 'UTC'), # Four hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-18000, 'UTC'),  # Five hours ago
         test => "textmode",
@@ -121,8 +121,8 @@
     Jobs => {
         id => 99963,
         priority => 35,
-        result => { name => "none"},
-        state => { name => "running"},
+        result => "none",
+        state => "running",
         t_finished => undef,
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-600, 'UTC'), # 10 minutes ago
         test => "kde",
@@ -136,8 +136,8 @@
         id => 99962,
         clone_id => 99963,
         priority => 35,
-        result => { name => "failed"},
-        state => { name => "done"},
+        result => "failed",
+        state => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-10800, 'UTC'), # Three hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-14400, 'UTC'),  # Four hours ago
         test => "kde",
@@ -150,8 +150,8 @@
     Jobs => {
         id => 99981,
         priority => 50,
-        result => { name => "none"},
-        state => { name => "cancelled"},
+        result => "none",
+        state => "cancelled",
         t_finished => undef,
         t_started => undef,
         test => "RAID0",

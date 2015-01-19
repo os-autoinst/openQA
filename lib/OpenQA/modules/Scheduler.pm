@@ -27,6 +27,8 @@ use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
 use DBIx::Class::Timestamps qw/now/;
 use DateTime;
+use Schema::Result::Jobs;
+use Schema::Result::JobDependencies;
 
 use FindBin;
 use lib $FindBin::Bin;
@@ -75,10 +77,6 @@ our %worker_commands = map { $_ => 1 } qw/
   livelog_start
   /;
 
-# job states, initialized in schema()
-# name => id
-our %job_states;
-
 # the template noted what architecture are known
 my %cando = (
     'i586'    => ['i586'],
@@ -95,15 +93,7 @@ my %cando = (
 
 sub schema{
     CORE::state $schema;
-    return $schema if $schema;
-
-    $schema = openqa::connect_db();
-    if ($schema) {
-        my $rs = $schema->resultset("JobStates")->search(undef, { columns => [qw/id name/], });
-        %job_states = map { $_->name => $_->id } $rs->all() if $rs;
-        die "database schema not initialized properly!\n" unless keys %job_states == 6;
-    }
-
+    $schema = openqa::connect_db() unless $schema;
     return $schema;
 }
 
@@ -176,17 +166,11 @@ sub worker_register {
     # .. set them to incomplete
     $worker->jobs->update_all(
         {
-            state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
-            result_id => schema->resultset("JobResults")->search({ name => 'incomplete' })->single->id,
+            state => Schema::Result::Jobs::DONE,
+            result => Schema::Result::Jobs::INCOMPLETE,
             worker_id => 0,
         }
     );
-    # ... delete pending commands
-    schema->resultset("Commands")->search(
-        {
-            worker_id => $worker->id
-        }
-    )->delete_all();
 
     die "got invalid id" unless $worker->id;
     return $worker->id;
@@ -319,7 +303,7 @@ sub job_create {
             push @{$new_job_args{parents}},
               {
                 parent_job_id => $id,
-                dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+                dependency => Schema::Result::JobDependencies::CHAINED,
               };
         }
         delete $settings{_START_AFTER_JOBS};
@@ -363,7 +347,7 @@ sub jobs_get_dead_worker {
     my $threshold = shift;
 
     my %cond = (
-        'state_id' => 1,
+        'state' => Schema::Result::Jobs::RUNNING,
         'worker.t_updated' => { '<' => $threshold},
     );
     my %attrs = (join => 'worker',);
@@ -372,7 +356,7 @@ sub jobs_get_dead_worker {
 
     my @results = ();
     while( my $job = $dead_jobs->next) {
-        my $j = _hashref($job, qw/ id state_id result_id worker_id/);
+        my $j = _hashref($job, qw/ id state result worker_id/);
         push @results, $j;
     }
 
@@ -384,7 +368,6 @@ sub _job_get($) {
     my $search = shift;
     my %attrs = ();
 
-    push @{$attrs{'prefetch'}}, qw/state result/;
     push @{$attrs{'prefetch'}}, 'settings';
 
     my $job = schema->resultset("Jobs")->search($search, \%attrs)->first;
@@ -411,13 +394,11 @@ sub list_jobs {
     my %attrs;
     my @joins;
 
-    push @{$attrs{'prefetch'}}, qw/state result/;
     push @{$attrs{'prefetch'}}, 'settings';
     push @{$attrs{'prefetch'}}, {'jobs_assets' => 'asset' };
 
     if ($args{state}) {
-        my $states_rs = schema->resultset("JobStates")->search({ name => [split(',', $args{state})] });
-        push(@conds, { 'me.state_id' => {-in => $states_rs->get_column("id")->as_query}});
+        push(@conds, { 'me.state' => [split(',', $args{state})] });
     }
     if ($args{maxage}) {
         my $agecond = { '>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC') };
@@ -433,19 +414,17 @@ sub list_jobs {
         );
     }
     if ($args{ignore_incomplete}) {
-        my $results_rs = schema->resultset("JobResults")->search({ name => 'incomplete' });
-        push(@conds, {'me.result_id' => { '!=' => $results_rs->get_column("id")->as_query }});
+        push(@conds, {'me.result' => { '!=' => Schema::Result::Jobs::INCOMPLETE}});
     }
     my $scope = $args{scope} || '';
     if ($scope eq 'relevant') {
-        my $states_rs = schema->resultset("JobStates")->search({ name => ['running', 'scheduled'] });
         push(@joins, 'clone');
         push(
             @conds,
             {
                 -or => [
                     'me.clone_id' => undef,
-                    'clone.state_id' => {-in => $states_rs->get_column("id")->as_query}
+                    'clone.state' => [Schema::Result::Jobs::PENDING_STATES],
                 ]
             }
         );
@@ -517,10 +496,10 @@ sub job_grab {
     while (1) {
         my $blocked = schema->resultset("JobDependencies")->search(
             {
-                dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+                dependency => Schema::Result::JobDependencies::CHAINED,
                 -or => {
-                    state_id => { '!=', schema->resultset("JobStates")->search({ name => "done" })->single->id },
-                    result_id => { '!=',  schema->resultset("JobResults")->search({ name => "passed" })->single->id },
+                    state => { '!=', Schema::Result::Jobs::DONE },
+                    result => { '!=',  Schema::Result::Jobs::PASSED },
                 },
             },
             {
@@ -537,7 +516,7 @@ sub job_grab {
         );
         $result = schema->resultset("Jobs")->search(
             {
-                state_id => schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
+                state => Schema::Result::Jobs::SCHEDULED,
                 worker_id => 0,
                 id => {
                     -not_in => $blocked->get_column('child_job_id')->as_query,
@@ -547,7 +526,7 @@ sub job_grab {
             { order_by => { -asc => [qw/priority id/] }, rows => 1 }
           )->update(
             {
-                state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
+                state => Schema::Result::Jobs::RUNNING,
                 worker_id => $workerid,
                 t_started => now(),
             }
@@ -567,7 +546,7 @@ sub job_grab {
             {
                 'me.id' => schema->resultset("Jobs")->search(
                     {
-                        state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
+                        state => Schema::Result::Jobs::RUNNING,
                         worker_id => $workerid,
                     }
                 )->single->id,
@@ -604,7 +583,7 @@ sub _job_skip_children{
 
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+            dependency => Schema::Result::JobDependencies::CHAINED,
             parent_job_id => $jobid,
         },
     );
@@ -615,8 +594,8 @@ sub _job_skip_children{
         },
       )->update(
         {
-            state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
-            result_id => schema->resultset("JobResults")->search({ name => "incomplete" })->single->id,
+            state => Schema::Result::Jobs::DONE,
+            result => Schema::Result::Jobs::INCOMPLETE,
             t_started => now(),
             t_finished => now(),
         }
@@ -635,9 +614,9 @@ sub _job_update_parent{
 
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+            dependency => Schema::Result::JobDependencies::CHAINED,
             parent_job_id => $jobid,
-            state_id => schema->resultset("JobStates")->search({ name => "scheduled" })->single->id,
+            state => Schema::Result::Jobs::SCHEDULED,
         },
         {
             join => 'child',
@@ -646,7 +625,7 @@ sub _job_update_parent{
 
     my $result = schema->resultset("JobDependencies")->search(
         {
-            dep_id => schema->resultset("Dependencies")->search({ name => "chained" })->single->id,
+            dependency => Schema::Result::JobDependencies::CHAINED,
             parent_job_id => $jobid,
             child_job_id => { -in => $children->get_column('child_job_id')->as_query},
         }
@@ -670,34 +649,31 @@ sub job_set_done {
     my $jobid = int($args{jobid});
     my $newbuild = 0;
     $newbuild = int($args{newbuild}) if defined $args{newbuild};
-    my $result = schema->resultset("JobResults")->search({ name => $args{result}})->single;
-
-    die "invalid result string" unless $result;
 
     my $r;
     if ($newbuild) {
         $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
             {
-                state_id => schema->resultset("JobStates")->search({ name => "obsoleted" })->single->id,
+                state => Schema::Result::Jobs::OBSOLETED,
                 worker_id => 0,
                 t_finished => now(),
-                result_id => $result->id,
+                result => $args{result},
             }
         );
     }
     else {
         $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
             {
-                state_id => schema->resultset("JobStates")->search({ name => "done" })->single->id,
+                state => Schema::Result::Jobs::DONE,
                 worker_id => 0,
                 t_finished => now(),
-                result_id => $result->id,
+                result => $args{result},
             }
         );
     }
     Schema::Result::JobModules::split_results(job_get($jobid));
 
-    if ($args{result} ne 'passed') {
+    if ($args{result} ne Schema::Result::Jobs::PASSED) {
         _job_skip_children($jobid);
     }
     return $r;
@@ -712,15 +688,14 @@ sub job_set_waiting {
     my $jobid = shift;
 
     # TODO: only allowed for running jobs
-    my $state = schema->resultset("JobStates")->find({name => 'running'})->id;
     my $r = schema->resultset("Jobs")->search(
         {
             id => $jobid,
-            state_id => $state
+            state => Schema::Result::Jobs::RUNNING,
         }
       )->update(
         {
-            state_id => schema->resultset("JobStates")->search({ name => "waiting" })->single->id,
+            state => Schema::Result::Jobs::WAITING,
         }
       );
     return $r;
@@ -734,15 +709,14 @@ mark job as running. No error check. Meant to be called from worker!
 sub job_set_running {
     my $jobid = shift;
 
-    my $states_rs = schema->resultset("JobStates")->search({ name => ['cancelled', 'waiting'] });
     my $r = schema->resultset("Jobs")->search(
         {
             id => $jobid,
-            state_id => { -in => $states_rs->get_column("id")->as_query }
+            state => [Schema::Result::Jobs::CANCELLED, Schema::Result::Jobs::WAITING],
         }
       )->update(
         {
-            state_id => schema->resultset("JobStates")->search({ name => "running" })->single->id,
+            state => Schema::Result::Jobs::RUNNING,
         }
       );
     return $r;
@@ -775,11 +749,10 @@ sub job_update_result {
     my %args = @_;
 
     my $id = int($args{jobid});
-    my $result = schema->resultset("JobResults")->search({ name => $args{result}})->single;
 
     my $r = schema->resultset("Jobs")->search({ id => $id })->update(
         {
-            result_id => $result->id
+            result => $args{result},
         }
     );
 
@@ -892,9 +865,7 @@ sub job_restart {
     my $jobs = schema->resultset("Jobs")->search(
         {
             id => $idqry,
-            state_id => {
-                -in => schema->resultset("JobStates")->search({ name => [qw/running waiting done/] })->get_column("id")->as_query
-            }
+            state => [ Schema::Result::Jobs::EXECUTION_STATES, Schema::Result::Jobs::DONE ],
         },
         {
             columns => [qw/id/]
@@ -910,9 +881,7 @@ sub job_restart {
     $jobs = schema->resultset("Jobs")->search(
         {
             id => $idqry,
-            state_id => {
-                -in => schema->resultset("JobStates")->search({ name => [qw/running waiting/] })->get_column("id")->as_query
-            }
+            state => [Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
             colums => [qw/id worker_id/]
@@ -927,14 +896,12 @@ sub job_restart {
     schema->resultset("Jobs")->search(
         {
             id => $idqry,
-            state_id => {
-                -in => schema->resultset("JobStates")->search({ name => [qw/cancelled/] })->get_column("id")->as_query
-            }
+            state => Schema::Result::Jobs::CANCELLED,
         },
         {}
       )->update(
         {
-            state_id => schema->resultset("JobStates")->search({ name => 'scheduled' })->single->id
+            state => Schema::Result::Jobs::SCHEDULED,
         }
       );
     return @duplicated;
@@ -949,17 +916,17 @@ sub job_cancel($;$) {
 
     _job_find_smart($value, \%cond, \%attrs);
 
-    $cond{state_id} = {-in => schema->resultset("JobStates")->search({ name => [qw/scheduled/] })->get_column("id")->as_query};
+    $cond{state} = Schema::Result::Jobs::SCHEDULED;
 
     # first set all scheduled jobs to cancelled
     my $r = schema->resultset("Jobs")->search(\%cond, \%attrs)->update(
         {
-            state_id => schema->resultset("JobStates")->search({ name => 'cancelled' })->single->id
+            state => Schema::Result::Jobs::CANCELLED
         }
     );
 
     $attrs{columns} = [qw/id worker_id/];
-    $cond{state_id} = {-in => schema->resultset("JobStates")->search({ name => [qw/running waiting/] })->get_column("id")->as_query};
+    $cond{state} = [Schema::Result::Jobs::EXECUTION_STATES];
     # then tell workers to cancel their jobs
     my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
     while (my $j = $jobs->next) {

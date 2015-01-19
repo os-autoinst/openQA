@@ -19,6 +19,7 @@ use base qw/DBIx::Class::Core/;
 
 use db_helpers;
 use Scheduler;
+use Schema::Result::Jobs;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -40,10 +41,9 @@ __PACKAGE__->add_columns(
     category => {
         data_type => 'text',
     },
-    result_id => {
-        data_type => 'integer',
-        default_value => 0,
-        is_foreign_key => 1,
+    result => {
+        data_type => 'varchar',
+        default_value => Schema::Result::Jobs::NONE,
     },
 );
 __PACKAGE__->add_timestamps;
@@ -59,18 +59,20 @@ __PACKAGE__->belongs_to(
         on_update     => "CASCADE",
     },
 );
-__PACKAGE__->belongs_to(result => 'Schema::Result::JobResults', 'result_id');
 
-our $result_cache;
+sub sqlt_deploy_hook {
+    my ($self, $sqlt_table) = @_;
+
+    $sqlt_table->add_index(name => 'idx_job_modules_result', fields => ['result']);
+}
 
 sub _count_job_results($$) {
     my ($job, $result) = @_;
 
     my $schema = Scheduler::schema();
 
-    $result_cache{$result} ||= $schema->resultset("JobResults")->search({ name => $result })->single->id;
     my $rid = $result_cache{$result};
-    my $count = $schema->resultset("JobModules")->search({ job_id => $job->{id}, result_id => $rid })->count;
+    my $count = $schema->resultset("JobModules")->search({ job_id => $job->{id}, result => $result })->count;
 }
 
 sub job_module_stats($) {
@@ -106,8 +108,7 @@ sub _insert_tm($$$) {
     $result =~ s,^ok,passed,;
     $result =~ s,^unk,none,;
     $result =~ s,^skip,skipped,;
-    my $rid = $schema->resultset("JobResults")->search({ name => $result })->single || die "can't find $result";
-    $r->update({ result_id => $rid->id });
+    $r->update({ result => $result });
 }
 
 sub split_results($;$) {

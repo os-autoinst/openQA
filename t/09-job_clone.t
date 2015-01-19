@@ -36,8 +36,8 @@ isnt($clone->id, $minimalx->id, "is not the same job");
 is($clone->test, "minimalx", "but is the same test");
 is($clone->priority, 56, "with the same priority");
 is($clone->retry_avbl, 3, "with the same retry_avbl");
-is($minimalx->state->name, "done", "original test keeps its state");
-is($clone->state->name, "scheduled", "the new job is scheduled");
+is($minimalx->state, "done", "original test keeps its state");
+is($clone->state, "scheduled", "the new job is scheduled");
 
 # Second attempt
 ok($minimalx->can_be_duplicated, "looks cloneable");

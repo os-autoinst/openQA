@@ -19,6 +19,12 @@ use base qw/DBIx::Class::Core/;
 
 use db_helpers;
 
+# Use integers instead of a string labels for DEPENDENCIES because:
+#  - It's part of the primary key
+#  - JobDependencies is an internal table, not exposed in the API
+use constant CHAINED => 1;
+use constant DEPENDENCIES => (CHAINED);
+
 __PACKAGE__->table('job_dependencies');
 __PACKAGE__->add_columns(
     child_job_id => {
@@ -29,17 +35,18 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
         is_foreign_key => 1,
     },
-    dep_id => {
-        data_type => 'integer',
-        is_foreign_key => 1,
-    },
+    dependency => { data_type => 'integer' },
 );
 
-__PACKAGE__->set_primary_key('child_job_id', 'parent_job_id', 'dep_id');
+__PACKAGE__->set_primary_key('child_job_id', 'parent_job_id', 'dependency');
 
 __PACKAGE__->belongs_to( child => 'Schema::Result::Jobs', 'child_job_id' );
 __PACKAGE__->belongs_to( parent => 'Schema::Result::Jobs', 'parent_job_id' );
-__PACKAGE__->belongs_to( dependency => 'Schema::Result::Dependencies', 'dep_id' );
 
+sub sqlt_deploy_hook {
+    my ($self, $sqlt_table) = @_;
+
+    $sqlt_table->add_index(name => 'idx_job_dependencies_dependency', fields => ['dependency']);
+}
 
 1;

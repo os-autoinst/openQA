@@ -20,6 +20,29 @@ use Try::Tiny;
 
 use db_helpers;
 
+# States
+use constant {
+    SCHEDULED => 'scheduled',
+    RUNNING => 'running',
+    CANCELLED => 'cancelled',
+    WAITING => 'waiting',
+    DONE => 'done',
+    OBSOLETED => 'obsoleted',
+};
+use constant STATES => ( SCHEDULED, RUNNING, CANCELLED, WAITING, DONE, OBSOLETED );
+use constant PENDING_STATES => ( SCHEDULED, RUNNING, WAITING );
+use constant EXECUTION_STATES => ( RUNNING, WAITING );
+
+# Results
+use constant {
+    NONE => 'none',
+    PASSED => 'passed',
+    FAILED => 'failed',
+    INCOMPLETE => 'incomplete',
+    SKIPPED => 'skipped',
+};
+use constant RESULTS => ( NONE, PASSED, FAILED, INCOMPLETE, SKIPPED );
+
 __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
 __PACKAGE__->add_columns(
@@ -31,19 +54,17 @@ __PACKAGE__->add_columns(
         data_type => 'text',
         is_nullable => 1,
     },
-    state_id => {
-        data_type => 'integer',
-        is_foreign_key => 1,
-        default_value => 0,
+    state => {
+        data_type => 'varchar',
+        default_value => SCHEDULED,
     },
     priority => {
         data_type => 'integer',
         default_value => 50,
     },
-    result_id => {
-        data_type => 'integer',
-        default_value => 0,
-        is_foreign_key => 1,
+    result => {
+        data_type => 'varchar',
+        default_value => NONE,
     },
     worker_id => {
         data_type => 'integer',
@@ -81,9 +102,7 @@ __PACKAGE__->add_timestamps;
 
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(settings => 'Schema::Result::JobSettings', 'job_id');
-__PACKAGE__->belongs_to(state => 'Schema::Result::JobStates', 'state_id');
 __PACKAGE__->belongs_to(worker => 'Schema::Result::Workers', 'worker_id');
-__PACKAGE__->belongs_to(result => 'Schema::Result::JobResults', 'result_id');
 __PACKAGE__->belongs_to(clone => 'Schema::Result::Jobs', 'clone_id', { join_type => 'left', on_delete => 'SET NULL' });
 __PACKAGE__->might_have(origin => 'Schema::Result::Jobs', 'clone_id', { cascade_delete => 0 });
 __PACKAGE__->has_many(jobs_assets => 'Schema::Result::JobsAssets', 'job_id');
@@ -93,6 +112,13 @@ __PACKAGE__->has_many(parents => 'Schema::Result::JobDependencies', 'child_job_i
 __PACKAGE__->has_many(modules => 'Schema::Result::JobModules', 'job_id');
 
 __PACKAGE__->add_unique_constraint([qw/slug/]);
+
+sub sqlt_deploy_hook {
+    my ($self, $sqlt_table) = @_;
+
+    $sqlt_table->add_index(name => 'idx_jobs_state', fields => ['state']);
+    $sqlt_table->add_index(name => 'idx_jobs_result', fields => ['result']);
+}
 
 sub name{
     my $self = shift;
@@ -151,9 +177,7 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw/ id name priority worker_id clone_id retry_avbl t_started t_finished test test_branch/);
-    $j->{state} = $job->state->name;
-    $j->{result} = $job->result->name;
+    my $j = _hashref($job, qw/ id name priority state result worker_id clone_id retry_avbl t_started t_finished test test_branch/);
     $j->{settings} = { map { $_->key => $_->value } $job->settings->all() };
     if ($job->name && !$j->{settings}->{NAME}) {
         $j->{settings}->{NAME} = sprintf "%08d-%s", $job->id, $job->name;

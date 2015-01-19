@@ -40,7 +40,6 @@ __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/host instance/]);
 __PACKAGE__->has_many(jobs => 'Schema::Result::Jobs', 'worker_id');
-__PACKAGE__->has_many(commands => 'Schema::Result::Commands', 'worker_id');
 __PACKAGE__->has_many(properties => 'Schema::Result::WorkerProperties', 'worker_id');
 
 # TODO
