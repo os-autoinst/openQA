@@ -58,11 +58,6 @@ __PACKAGE__->add_columns(
         data_type => 'varchar',
         default_value => SCHEDULED,
     },
-    state_id => {
-        data_type => 'integer',
-        is_foreign_key => 1,
-        default_value => 0,
-    },
     priority => {
         data_type => 'integer',
         default_value => 50,
@@ -70,11 +65,6 @@ __PACKAGE__->add_columns(
     result => {
         data_type => 'varchar',
         default_value => NONE,
-    },
-    result_id => {
-        data_type => 'integer',
-        default_value => 0,
-        is_foreign_key => 1,
     },
     worker_id => {
         data_type => 'integer',

@@ -45,11 +45,6 @@ __PACKAGE__->add_columns(
         data_type => 'varchar',
         default_value => Schema::Result::Jobs::NONE,
     },
-    result_id => {
-        data_type => 'integer',
-        default_value => 0,
-        is_foreign_key => 1,
-    },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');

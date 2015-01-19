@@ -14,22 +14,25 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::JobResults;
-use base qw/DBIx::Class::Core/;
+#!perl
 
-__PACKAGE__->table('job_results');
-__PACKAGE__->add_columns(
-    id => {
-        data_type => 'integer',
-        is_auto_increment => 1,
-    },
-    name => {
-        data_type => 'text',
-    }
-);
+use strict;
+use warnings;
 
-__PACKAGE__->set_primary_key('id');
-__PACKAGE__->has_many(jobs => 'Schema::Result::Jobs', 'result_id');
+# no use case for that yet
+#use DBIx::Class::DeploymentHandler::DeployMethod::SQL::Translator::ScriptHelpers 'schema_from_schema_loader';
 
-1;
-# vim: set sw=4 et:
+#schema_from_schema_loader({ naming => 'v4' },
+sub {
+    my $schema = shift;
+
+    # [1] for deploy, [1,2] for upgrade or downgrade, probably used with _any
+    my $versions = shift;
+
+    # XXX: get rid of worker zero at some point
+    $schema->resultset('Workers')->create({id => 0, host => 'NONE', instance => 0, backend => 'NONE'});
+
+    $schema->resultset('Dependencies')->populate([[qw/id name/],[ 0,'chained' ],]);
+
+  }
+  #);
