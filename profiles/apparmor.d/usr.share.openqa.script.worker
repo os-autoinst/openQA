@@ -30,6 +30,7 @@
   /etc/openqa/workers.ini r,
   /tmp/* rwk,
   /proc/*/stat r,
+  /proc/*/status r,
   /proc/bus/pci/devices r,
   /proc/filesystems r,
   /proc/meminfo r,
