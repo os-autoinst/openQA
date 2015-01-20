@@ -227,6 +227,11 @@ sub overview {
 
     my %search_args = (distri => $distri, version => $version);
 
+    my $flavor = $self->param('flavor');
+    if ($flavor) {
+        $search_args{flavor} = $flavor;
+    }
+
     my $build = $self->param('build');
     if (!$build) {
         $build = $self->db->resultset("Jobs")->latest_build(%search_args);
