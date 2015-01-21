@@ -499,20 +499,25 @@ sub get_capabilities {
     my $caps = {};
     my $query_cmd;
 
-    open(LSCPU, "LC_ALL=C lscpu|");
-    while (<LSCPU>) {
-        chomp;
-        if (m/Model name:\s+(.+)$/) {
-            $caps->{cpu_modelname} = $1;
-        }
-        if (m/Architecture:\s+(.+)$/) {
-            $caps->{cpu_arch} = $1;
-        }
-        if (m/CPU op-mode\(s\):\s+(.+)$/) {
-            $caps->{cpu_opmode} = $1;
-        }
+    if ($worker_settings->{ARCH}) {
+        $caps->{cpu_arch} = $worker_settings->{ARCH};
     }
-    close(LSCPU);
+    else {
+        open(LSCPU, "LC_ALL=C lscpu|");
+        while (<LSCPU>) {
+            chomp;
+            if (m/Model name:\s+(.+)$/) {
+                $caps->{cpu_modelname} = $1;
+            }
+            if (m/Architecture:\s+(.+)$/) {
+                $caps->{cpu_arch} = $1;
+            }
+            if (m/CPU op-mode\(s\):\s+(.+)$/) {
+                $caps->{cpu_opmode} = $1;
+            }
+        }
+        close(LSCPU);
+    }
     open(MEMINFO, "/proc/meminfo");
     while (<MEMINFO>) {
         chomp;
