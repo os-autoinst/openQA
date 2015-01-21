@@ -44,5 +44,5 @@ To avoid that switch off IPv6 or add a special route that prevents the system
 from trying to use IPv6 with www.opensuse.org:
 
 --------------------------------------------------------------------------------
-ip -6 r a to unreachable 2600:806:310::100/128
+ip -6 r a to unreachable 2620:113:8044:66:130:57:66:6/128
 --------------------------------------------------------------------------------

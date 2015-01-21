@@ -854,7 +854,7 @@ sub verify_workerid {
                 }
                 else {
                     my $err = $tx->error;
-                    carp "Unable to upgrade connection to WebSocket: ".$err->{code} if defined $err;
+                    carp "Unable to upgrade connection to WebSocket: ".$err->{code}.". proxy_wstunnel enabled?" if defined $err;
                     $ws = undef;
                 }
             }
