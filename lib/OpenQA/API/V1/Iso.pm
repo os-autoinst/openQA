@@ -176,7 +176,7 @@ sub create {
 
         if (defined $settings->{START_AFTER_TEST}) {
             if (defined $testsuite_ids{$settings->{START_AFTER_TEST}}) {
-                $settings->{_START_AFTER_JOBS} = $testsuite_ids{$settings->{START_AFTER_TEST}};
+                $settings->{_START_AFTER_JOBS} = $testsuite_ids{$settings->{START_AFTER_TEST}}{$settings->{MACHINE}};
             }
             else {
                 $self->app->log->error("START_AFTER_TEST=" . $settings->{START_AFTER_TEST} . " not sorted");
@@ -196,8 +196,10 @@ sub create {
             push @ids, $id;
 
             my $testsuite = $settings->{TEST};
-            $testsuite_ids{$testsuite} //= [];
-            push @{$testsuite_ids{$testsuite}}, $id;
+            # limit dependencies to individual machines
+            my $machine = $settings->{MACHINE};
+            $testsuite_ids{$testsuite} //= {$machine => []};
+            push @{$testsuite_ids{$testsuite}{$machine}}, $id;
 
             # change prio only if other than defalt prio
             if( $prio && $prio != 50 ) {
