@@ -66,31 +66,27 @@ sub list {
         maxage => $hoursfresh*3600,
         scope => $scope,
         assetid => $assetid,
-    ) ||[];
+    ) || [];
+
+    my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
 
     for my $job (@$jobs) {
 
         if ($job->{state} =~ /^(?:running|waiting|done)$/) {
 
-            my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($job);
-
             my $run_stat = {};
             if ($job->{state} eq 'running') {
                 my $testdirname = $job->{'settings'}->{'NAME'};
                 my $running_basepath = running_log($testdirname);
-                my $results = test_result($testdirname);
-                $run_stat = get_running_modinfo($results);
+                $run_stat = OpenQA::Schema::Result::JobModules::running_modinfo($job);
                 $run_stat->{'run_backend'} = 0;
             }
 
             my $settings = {
                 job => $job,
 
-                res_ok=>$result_stats->{ok}||0,
-                res_unknown=>$result_stats->{unk}||0,
-                res_fail=>$result_stats->{fail}||0,
-                res_overall=>$job->{state}||'unk',
-                res_dents=>$job->{dents}||0,
+                result_stats => $result_stats->{$job->{id}},
+                overall=>$job->{state}||'unk',
                 run_stat=>$run_stat
             };
             if ($job->{state} ne 'done') {
@@ -101,7 +97,7 @@ sub list {
             }
         }
         else {
-            my $settings = {job => $job,};
+            my $settings = {job => $job};
 
             push @slist, $settings;
         }
@@ -135,25 +131,23 @@ sub show {
 
     #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
 
-    my $results = test_result($testdirname);
-
     # If it's running
     if ($job->{state} =~ /^(?:running|waiting)$/) {
         $self->stash(worker => worker_get($job->{'worker_id'}));
-        $self->stash(backend_info => $results->{backend});
+        $self->stash(backend_info => { 'backend' => 'TODO' }); # $results->{backend});
         $self->stash(job => $job);
         $self->render('test/running');
         return;
     }
 
     my @modlist=();
-    foreach my $module (@{$results->{'testmodules'}}) {
-        my $name = $module->{'name'};
+    foreach my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
+        my $name = $module->name();
         # add link to $testresultdir/$name*.png via png CGI
         my @imglist;
         my @wavlist;
         my $num = 1;
-        foreach my $img (@{$module->{'details'}}) {
+        foreach my $img (@{$module->details($testresultdir)}) {
             if( $img->{'screenshot'} ) {
                 push(@imglist, {name => $img->{'screenshot'}, num => $num++, result => $img->{'result'}});
             }
@@ -177,24 +171,17 @@ sub show {
         push(
             @modlist,
             {
-                name => $module->{'name'},
-                result => $module->{'result'},
-                dents => $module->{'dents'},
+                name => $module->name,
+                result => $module->result,
                 screenshots => \@imglist,
                 wavs => \@wavlist,
                 ocrs => \@ocrlist,
-                flags => $module->{'flags'}
+                soft_failure => $module->soft_failure,
+                milestone => $module->milestone,
+                important => $module->important,
+                fatal => $module->fatal
             }
         );
-    }
-
-    # TODO: make better
-    my $backlogpath = back_log($testdirname);
-    my $diskimg = 0;
-    if(-e "$backlogpath/l1") {
-        if((stat("$backlogpath/l1"))[12] && !((stat("$backlogpath/l2"))[12])) { # skip raid
-            $diskimg = 1;
-        }
     }
 
     # result files box
@@ -204,8 +191,7 @@ sub show {
     my @ulogs = test_uploadlog_list($testdirname);
 
     $self->stash(modlist => \@modlist);
-    $self->stash(diskimg => $diskimg);
-    $self->stash(backend_info => $results->{backend});
+    $self->stash(backend_info => {'backend' => 'TODO' });
     $self->stash(resultfiles => \@resultfiles);
     $self->stash(ulogs => \@ulogs);
     $self->stash(job => $job);
@@ -248,7 +234,11 @@ sub overview {
     my %results = ();
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
 
-    for my $job ( @{ OpenQA::Scheduler::list_jobs(%search_args) || [] } ) {
+    my $jobs = OpenQA::Scheduler::list_jobs(%search_args) || [];
+
+    my $all_result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
+
+    for my $job (@$jobs) {
         my $testname = $job->{settings}->{'NAME'};
         my $test     = $job->{test};
         my $flavor   = $job->{settings}->{FLAVOR} || 'sweet';
@@ -256,17 +246,17 @@ sub overview {
 
         my $result;
         if ( $job->{state} eq 'done' ) {
-            my $r            = test_result($testname);
-            my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($job);
+            my $result_stats = $all_result_stats->{$job->{id}};
             my $failures     = get_failed_needles($testname);
             my $overall      = $job->{result};
-            if ( $job->{result} eq "passed" && $r->{dents}) {
+            if ( $job->{result} eq "passed" && $result_stats->{dents}) {
                 $overall = "unknown";
             }
             $result = {
-                ok      => $result_stats->{ok}   || 0,
-                unknown => $result_stats->{unk}  || 0,
-                fail    => $result_stats->{fail} || 0,
+                passed  => $result_stats->{passed},
+                unknown => $result_stats->{unk},
+                failed  => $result_stats->{failed},
+                dents   => $result_stats->{dents},
                 overall => $overall,
                 jobid   => $job->{id},
                 state   => "done",
