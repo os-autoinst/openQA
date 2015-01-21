@@ -41,6 +41,29 @@ __PACKAGE__->add_columns(
     category => {
         data_type => 'text',
     },
+    # flags - not using a bit field and not using a join table
+    # to simplify code. In case we get a much bigger database, we
+    # might reconsider
+    soft_failure => {
+        data_type => 'integer',
+        is_nullable => 0,
+        default_value => 0
+    },
+    milestone => {
+        data_type => 'integer',
+        is_nullable => 0,
+        default_value => 0
+    },
+    important => {
+        data_type => 'integer',
+        is_nullable => 0,
+        default_value => 0
+    },
+    fatal => {
+        data_type => 'integer',
+        is_nullable => 0,
+        default_value => 0
+    },
     result => {
         data_type => 'varchar',
         default_value => Schema::Result::Jobs::NONE,
@@ -102,13 +125,27 @@ sub _insert_tm($$$) {
         $r->name($tm->{name});
         $r->insert;
     }
+    print Dumper($tm);
+
     my $result = $tm->{result};
     $result =~ s,fail,failed,;
     $result =~ s,^na,none,;
     $result =~ s,^ok,passed,;
     $result =~ s,^unk,none,;
     $result =~ s,^skip,skipped,;
-    $r->update({ result => $result });
+    my $soft_failure;
+    $soft_failure = 1 if $tm->{dents}; # it's just a flag
+    $r->update(
+        {
+            result => $result,
+            milestone => $tm->{flags}->{milestone},
+            important => $tm->{flags}->{important},
+            fatal => $tm->{flags}->{fatal},
+            soft_failure => $soft_failure
+        }
+    );
+
+
 }
 
 sub split_results($;$) {
