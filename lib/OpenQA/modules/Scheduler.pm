@@ -89,6 +89,8 @@ my %cando = (
 
     's390'    => ['s390'],
     's390x'   => [ 's390x', 's390' ],
+
+    'aarch64' => ['aarch64'],
 );
 
 sub schema{
