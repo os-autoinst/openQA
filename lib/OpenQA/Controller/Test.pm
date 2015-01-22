@@ -133,25 +133,23 @@ sub show {
 
     #  return $self->render_not_found unless (-e $self->stash('resultdir'));
 
-    my $results = test_result($testdirname);
-
     # If it's running
     if ($job->{state} =~ /^(?:running|waiting)$/) {
         $self->stash(worker => worker_get($job->{'worker_id'}));
-        $self->stash(backend_info => $results->{backend});
+        $self->stash(backend_info => 'TODO'); # $results->{backend});
         $self->stash(job => $job);
         $self->render('test/running');
         return;
     }
 
     my @modlist=();
-    foreach my $module (@{$results->{'testmodules'}}) {
-        my $name = $module->{'name'};
+    foreach my $module (Schema::Result::JobModules::job_modules($job)) {
+        my $name = $module->name();
         # add link to $testresultdir/$name*.png via png CGI
         my @imglist;
         my @wavlist;
         my $num = 1;
-        foreach my $img (@{$module->{'details'}}) {
+        foreach my $img (@{$module->details($testresultdir)}) {
             if( $img->{'screenshot'} ) {
                 push(@imglist, {name => $img->{'screenshot'}, num => $num++, result => $img->{'result'}});
             }
@@ -175,24 +173,17 @@ sub show {
         push(
             @modlist,
             {
-                name => $module->{'name'},
-                result => $module->{'result'},
-                dents => $module->{'dents'},
+                name => $module->name,
+                result => $module->result,
                 screenshots => \@imglist,
                 wavs => \@wavlist,
                 ocrs => \@ocrlist,
-                flags => $module->{'flags'}
+		soft_failure => $module->soft_failure,
+		milestone => $module->milestone,
+                important => $module->important,
+		fatal => $module->fatal
             }
         );
-    }
-
-    # TODO: make better
-    my $backlogpath = back_log($testdirname);
-    my $diskimg = 0;
-    if(-e "$backlogpath/l1") {
-        if((stat("$backlogpath/l1"))[12] && !((stat("$backlogpath/l2"))[12])) { # skip raid
-            $diskimg = 1;
-        }
     }
 
     # result files box
@@ -202,8 +193,7 @@ sub show {
     my @ulogs = test_uploadlog_list($testdirname);
 
     $self->stash(modlist => \@modlist);
-    $self->stash(diskimg => $diskimg);
-    $self->stash(backend_info => $results->{backend});
+    $self->stash(backend_info => {'backend' => 'TODO' });
     $self->stash(resultfiles => \@resultfiles);
     $self->stash(ulogs => \@ulogs);
     $self->stash(job => $job);

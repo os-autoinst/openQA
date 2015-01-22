@@ -159,7 +159,7 @@ sub register {
                 return 'resultok';
             }
             elsif ($res eq 'ok') {
-                return $hash->{'dents'} ? 'resultwarning' : 'resultok';
+                return $hash->{'soft_failure'} ? 'resultwarning' : 'resultok';
             }
             else {
                 return 'resultunknown';
