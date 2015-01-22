@@ -151,6 +151,7 @@ my $worker;
 my $workerid;
 my $worker_start_time;
 my $testresults;
+my $worker_caps;
 
 ## Mojo timers ids
 my $timers = {
@@ -498,20 +499,25 @@ sub get_capabilities {
     my $caps = {};
     my $query_cmd;
 
-    open(LSCPU, "LC_ALL=C lscpu|");
-    while (<LSCPU>) {
-        chomp;
-        if (m/Model name:\s+(.+)$/) {
-            $caps->{cpu_modelname} = $1;
-        }
-        if (m/Architecture:\s+(.+)$/) {
-            $caps->{cpu_arch} = $1;
-        }
-        if (m/CPU op-mode\(s\):\s+(.+)$/) {
-            $caps->{cpu_opmode} = $1;
-        }
+    if ($worker_settings->{ARCH}) {
+        $caps->{cpu_arch} = $worker_settings->{ARCH};
     }
-    close(LSCPU);
+    else {
+        open(LSCPU, "LC_ALL=C lscpu|");
+        while (<LSCPU>) {
+            chomp;
+            if (m/Model name:\s+(.+)$/) {
+                $caps->{cpu_modelname} = $1;
+            }
+            if (m/Architecture:\s+(.+)$/) {
+                $caps->{cpu_arch} = $1;
+            }
+            if (m/CPU op-mode\(s\):\s+(.+)$/) {
+                $caps->{cpu_opmode} = $1;
+            }
+        }
+        close(LSCPU);
+    }
     open(MEMINFO, "/proc/meminfo");
     while (<MEMINFO>) {
         chomp;
@@ -534,8 +540,7 @@ sub check_job {
     return unless verify_workerid;
     if (!$job) {
         print "checking for job ...\n" if $verbose;
-        my $workercaps = get_capabilities;
-        my $res = api_call('post',"workers/$workerid/grab_job", $workercaps) || { job => undef };
+        my $res = api_call('post',"workers/$workerid/grab_job", $worker_caps) || { job => undef };
         $job = $res->{job};
         if ($job && $job->{id}) {
             # stop job check
@@ -815,7 +820,7 @@ sub handle_commands {
 
 sub verify_workerid {
     if (!$workerid) {
-        my $worker_caps = get_capabilities;
+        $worker_caps = get_capabilities;
         $worker_caps->{host} = $hostname;
         $worker_caps->{instance} = $options{'instance'};
         $worker_caps->{backend} = $worker_settings->{'BACKEND'};
