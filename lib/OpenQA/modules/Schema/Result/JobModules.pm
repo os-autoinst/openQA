@@ -125,8 +125,6 @@ sub _insert_tm($$$) {
         $r->name($tm->{name});
         $r->insert;
     }
-    print Dumper($tm);
-
     my $result = $tm->{result};
     $result =~ s,fail,failed,;
     $result =~ s,^na,none,;

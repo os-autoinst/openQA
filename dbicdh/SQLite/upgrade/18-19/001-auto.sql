@@ -4,19 +4,11 @@
 BEGIN;
 
 ;
-DROP INDEX job_modules_idx_result_id;
-
 ;
 ALTER TABLE job_modules ADD COLUMN result varchar NOT NULL DEFAULT 'none';
 
 ;
 CREATE INDEX idx_job_modules_result ON job_modules (result);
-
-;
-DROP INDEX jobs_idx_result_id;
-
-;
-DROP INDEX jobs_idx_state_id;
 
 ;
 ALTER TABLE jobs ADD COLUMN state varchar NOT NULL DEFAULT 'scheduled';
