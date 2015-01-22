@@ -20,6 +20,8 @@ use base qw/DBIx::Class::Core/;
 use db_helpers;
 use OpenQA::Scheduler;
 use OpenQA::Schema::Result::Jobs;
+use JSON ();
+use Data::Dumper;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -89,13 +91,40 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_job_modules_result', fields => ['result']);
 }
 
+# TODO: remove asap - and split the details out of results.json
+sub details($) {
+    my ($self, $testresultdir) = @_;
+
+    my $result = _test_result($testresultdir);
+    foreach my $module (@{$result->{'testmodules'}}) {
+	my $name = $module->{'name'};
+	if ($name eq $self->name) {
+	    return $module->{'details'};
+	}
+    }
+    return [];
+}
+
+sub job_module($$) {
+    my ($job, $name) = @_;
+
+    my $schema = Scheduler::schema();
+    return $schema->resultset("JobModules")->search({ job_id => $job->{id}, name => $name })->first;
+}
+    
+sub job_modules($) {
+    my ($job) = @_;
+
+    my $schema = Scheduler::schema();
+    return $schema->resultset("JobModules")->search({ job_id => $job->{id} })->all;
+}
+
 sub _count_job_results($$) {
     my ($job, $result) = @_;
 
     my $schema = OpenQA::Scheduler::schema();
 
-    my $rid = $result_cache{$result};
-    my $count = $schema->resultset("JobModules")->search({ job_id => $job->{id}, result => $result })->count;
+    return $schema->resultset("JobModules")->search({ job_id => $job->{id}, result => $result })->count;
 }
 
 sub job_module_stats($) {
@@ -142,14 +171,31 @@ sub _insert_tm($$$) {
             soft_failure => $soft_failure
         }
     );
+}
 
 
+sub test_result($) {
+    my ($testname) = @_;
+    _test_result(openqa::testresultdir($testname));
+}
+
+sub _test_result($) {
+    my ($testresdir) = @_;
+    local $/;
+    open(JF, "<", "$testresdir/results.json") || return;
+    use Fcntl;
+    return unless fcntl(JF, F_SETLKW, pack('ssqql', F_RDLCK, 0, 0, 0, $$));
+    my $result_hash;
+    eval {$result_hash = JSON::decode_json(<JF>);};
+    warn "failed to parse $testresdir/results.json: $@" if $@;
+    close(JF);
+    return $result_hash;
 }
 
 sub split_results($;$) {
     my ($job,$results) = @_;
 
-    $results ||= OpenQA::Utils::test_result($job->{settings}->{NAME});
+    $results ||= test_result($job->{settings}->{NAME});
     return unless $results; # broken test
     my $schema = OpenQA::Scheduler::schema();
     for my $tm (@{$results->{testmodules}}) {
