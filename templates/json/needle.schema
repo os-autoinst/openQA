@@ -1,0 +1,27 @@
+{
+    "$schema": "http://json-schema.org/draft-03/schema#",
+    "title": "openQA needle",
+    "description": "JSON representation of a needle data",
+    "type": "object",
+    "properties": {
+        "tags": {
+            "type": "array", "items": { "type": "string", "minLength" :1 },
+            "required": true,
+            "minItems": 1,
+            "uniqueItems": true
+        },
+        "area": {
+            "type": "array", "items": { "type": "object",
+                   "properties": {
+                       "ypos":   {"type": "number", "required": true },
+                       "xpos":   {"type": "number", "required": true },
+                       "width":  {"type": "number", "required": true },
+                       "type":   {"type": "string", "required": true }
+                   }
+                },
+                
+        "required": true,
+        "minItems": 1
+        }
+    }
+}

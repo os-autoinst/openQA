@@ -33,6 +33,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &get_failed_needles
   &sanitize_testname
   &file_content
+  $needleschema
 );
 
 @EXPORT_OK = qw/connect_db/;
@@ -57,6 +58,7 @@ our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
 our $testcasedir = "$basedir/openqa/share/tests";
+our $needleschema = file_content('/usr/share/openqa/templates/json/needle.schema');
 
 our @runner = <$basedir/$prj/pool/[0-9]>;
 push(@runner, "$basedir/$prj/pool/manual");

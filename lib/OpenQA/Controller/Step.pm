@@ -374,6 +374,14 @@ sub _timestamp {
     }
 }
 
+sub _json_validation($) {
+    my $self = shift;
+    my $json = shift;
+    use JSON::Schema;
+    my $validator = JSON::Schema->new($needleschema);
+    return $validator->validate($json);
+}
+
 sub save_needle {
     my $self = shift;
     return 0 unless $self->init();
@@ -408,6 +416,14 @@ sub save_needle {
     my $overwrite = $validation->param('overwrite');
     my $needledir = needledir($results->{distribution}, $results->{version});
     my $success = 1;
+
+    my $jsonvalid=$self->_json_validation($json);
+    if (! $jsonvalid) {
+        my $error=sprintf( "Errors\n");
+        $error.=sprintf( " - $_\n") foreach $jsonvalid->errors;
+        $self->stash(error => "Needle $json parsing failed! : $error");
+        return $self->edit;
+    }
 
     my $imagepath;
     if ($imagedistri) {
