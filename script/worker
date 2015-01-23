@@ -71,7 +71,7 @@ lorem ipsum ...
 
 =head1 CONFIG FILE
 
-L<OpenQA::API::V1::Client> tries to find a config file in
+L<OpenQA::Client> tries to find a config file in
 $OPENQA_CLIENT_CONFIG, ~/.config/openqa/client.conf or
 /etc/openqa/client.conf and reads whatever comes first.
 You can put API key and secret in that config file.
@@ -82,7 +82,7 @@ Example:
   secret = bar
 
 =head1 SEE ALSO
-L<OpenQA::API::V1::Client>
+L<OpenQA::Client>
 
 =cut
 
@@ -102,9 +102,9 @@ use Mojo::URL;
 use Mojo::IOLoop;
 use Carp;
 use lib "$FindBin::Bin/../lib";
-use lib "$FindBin::Bin/../lib/OpenQA/modules";
+use lib "$FindBin::Bin/../lib/OpenQA";
 use openqa ();
-use OpenQA::API::V1::Client;
+use OpenQA::Client;
 use IPC::Open3;
 
 my $max_job_time;
@@ -236,7 +236,7 @@ else {
 # Relative paths are appended to the existing one
 $url->path('/api/v1/');
 
-my $ua = OpenQA::API::V1::Client->new(
+my $ua = OpenQA::Client->new(
     api => $url->host,
     apikey => $options{'apikey'},
     apisecret => $options{'apisecret'}

@@ -87,7 +87,7 @@ die $@ unless $clientclass;
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use OpenQA::API::V1::Client;
+use OpenQA::Client;
 
 my %options;
 
@@ -134,7 +134,7 @@ else {
     $local_url = Mojo::URL->new($options{'host'});
 }
 $local_url->path('/api/v1/jobs');
-$local = OpenQA::API::V1::Client->new(
+$local = OpenQA::Client->new(
     api => $local_url->host,
     apikey => $options{'apikey'},
     apisecret => $options{'apisecret'}
@@ -151,7 +151,7 @@ else {
     $remote_url = Mojo::URL->new($options{'from'});
 }
 $remote_url->path('/api/v1/jobs');
-$remote = OpenQA::API::V1::Client->new(api => $remote_url->host);
+$remote = OpenQA::Client->new(api => $remote_url->host);
 
 if ($jobid) {
     my $job;

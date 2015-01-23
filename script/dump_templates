@@ -51,7 +51,7 @@ JobTemplates e.g. to load them on another instance.
 
 BEGIN {
     use FindBin qw($Bin);
-    use lib "$Bin/../lib", "$Bin/../lib/OpenQA/modules";
+    use lib "$Bin/../lib", "$Bin/../lib/OpenQA";
 }
 
 use strict;

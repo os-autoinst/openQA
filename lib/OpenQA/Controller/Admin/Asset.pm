@@ -14,34 +14,15 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::Admin::Workers;
+package OpenQA::Controller::Admin::Asset;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
-use OpenQA::Controller::Worker ();
 
 sub index {
     my $self = shift;
+    my $assets = $self->db->resultset("Assets")->search(undef, {order_by => 'id'});
 
-    my $workers_amount = 0;
-    my @workers_list = ();
-
-    $workers_amount = OpenQA::Controller::Worker::workers_amount();
-    @workers_list = OpenQA::Controller::Worker::workers_list();
-
-    $self->stash(wamount => $workers_amount);
-    $self->stash(wlist => \@workers_list);
-
-    $self->render('admin/workers/index');
-}
-
-sub show {
-    my $self = shift;
-    my $workerid = $self->param('worker_id');
-    $self->stash('id', $workerid);
-    $self->stash(worker => OpenQA::Controller::Worker::worker_info($workerid));
-
-    $self->render('admin/workers/show');
+    $self->stash('assets', $assets);
+    $self->render('admin/asset/index');
 }
 
 1;
-# vim: set sw=4 et:

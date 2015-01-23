@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA';
 }
 
 use Mojo::Base -strict;
@@ -22,7 +22,7 @@ use Test::More tests => 27;
 use Test::Mojo;
 use Mojo::URL;
 use OpenQA::Test::Case;
-use OpenQA::API::V1::Client;
+use OpenQA::Client;
 use Scheduler;
 
 OpenQA::Test::Case->new->init_data;
@@ -32,7 +32,7 @@ my $t = Test::Mojo->new('OpenQA');
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::API::V1::Client->new()->ioloop(Mojo::IOLoop->singleton));
+$t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 #get websocket connection

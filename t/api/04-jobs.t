@@ -15,14 +15,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA';
 }
 
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
-use OpenQA::API::V1::Client;
+use OpenQA::Client;
 use Mojo::IOLoop;
 use Data::Dump;
 
@@ -33,7 +33,7 @@ my $t = Test::Mojo->new('OpenQA');
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::API::V1::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 # INITIAL JOB LIST (from fixtures)

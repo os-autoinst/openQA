@@ -14,30 +14,34 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::Admin::Machine;
+package OpenQA::Controller::Admin::Workers;
 use Mojo::Base 'Mojolicious::Controller';
+use openqa;
+use OpenQA::Controller::Worker ();
 
 sub index {
     my $self = shift;
 
-    my $rc = $self->db->resultset("MachineSettings")->search(
-        undef,
-        {
-            select   => [ 'key', { count => 'key' } ],
-            as       => [qw/ key var_count /],
-            group_by => [qw/ key /],
-            order_by => { -desc => \'count(key)' }
-        }
-    );
-    my @variables = map { $_->key } $rc->all();
-    $self->stash('variables', \@variables);
+    my $workers_amount = 0;
+    my @workers_list = ();
 
-    my @col_variables = @variables;
-    splice @col_variables, 7;
+    $workers_amount = OpenQA::Controller::Worker::workers_amount();
+    @workers_list = OpenQA::Controller::Worker::workers_list();
 
-    $self->stash('col_var_keys', \@col_variables);
+    $self->stash(wamount => $workers_amount);
+    $self->stash(wlist => \@workers_list);
 
-    $self->render('admin/machine/index');
+    $self->render('admin/workers/index');
+}
+
+sub show {
+    my $self = shift;
+    my $workerid = $self->param('worker_id');
+    $self->stash('id', $workerid);
+    $self->stash(worker => OpenQA::Controller::Worker::worker_info($workerid));
+
+    $self->render('admin/workers/show');
 }
 
 1;
+# vim: set sw=4 et:

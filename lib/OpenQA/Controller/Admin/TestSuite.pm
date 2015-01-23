@@ -14,13 +14,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::Admin::Product;
+package OpenQA::Controller::Admin::TestSuite;
 use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my $self = shift;
 
-    my $rc = $self->db->resultset("ProductSettings")->search(
+    my $rc = $self->db->resultset("TestSuiteSettings")->search(
         undef,
         {
             select   => [ 'key', { count => 'key' } ],
@@ -37,7 +37,7 @@ sub index {
 
     $self->stash('col_var_keys', \@col_variables);
 
-    $self->render('admin/product/index');
+    $self->render('admin/test_suite/index');
 }
 
 1;

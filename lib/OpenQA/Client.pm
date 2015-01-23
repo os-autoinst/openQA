@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::API::V1::Client;
+package OpenQA::Client;
 
 use Mojo::Base 'Mojo::UserAgent';
 use Mojo::Util 'hmac_sha1_sum';
@@ -98,27 +98,27 @@ sub _path_query {
 
 =head1 NAME
 
-OpenQA::API::V1::Client - special version of Mojo::UserAgent that handles authentication
+OpenQA::Client - special version of Mojo::UserAgent that handles authentication
 
 =head1 SYNOPSIS
 
-  use OpenQA::API::V1::Client;
+  use OpenQA::Client;
 
   # create new UserAgent that is meant to talk to localhost. Reads key
   # and secret from config section [localhost]
-  my $ua = OpenQA::API::V1::Client->new(api => 'localhost');
+  my $ua = OpenQA::Client->new(api => 'localhost');
 
   # specify key and secret manually
-  my $ua = OpenQA::API::V1::Client->new(apikey => 'foo', apisecret => 'bar');
+  my $ua = OpenQA::Client->new(apikey => 'foo', apisecret => 'bar');
 
 =head1 DESCRIPTION
 
-L<OpenQA::API::V1::Client> inherits from L<Mojo::UserAgent>. It
+L<OpenQA::Client> inherits from L<Mojo::UserAgent>. It
 automatically sets the correct authentication headers if API key and
 secret are available.
 
 API key and secret can either be set manually in the constructor, via
-attributes or read from a config file. L<OpenQA::API::V1::Client>
+attributes or read from a config file. L<OpenQA::Client>
 tries to find a config file in $OPENQA_CLIENT_CONFIG,
 ~/.config/openqa/client.conf or /etc/openqa/client.conf and reads
 whatever comes first.
@@ -127,7 +127,7 @@ See L<Mojo::UserAgent> for more.
 
 =head1 ATTRIBUTES
 
-L<OpenQA::API::V1::Client> implmements the following attributes.
+L<OpenQA::Client> implmements the following attributes.
 
 =head2 apikey
 
@@ -147,10 +147,10 @@ The API secret key
 
 =head2 new
 
-  my $ua = OpenQA::API::V1::Client->new(api => 'localhost');
-  my $ua = OpenQA::API::V1::Client->new(apikey => 'foo', apisecret => 'bar');
+  my $ua = OpenQA::Client->new(api => 'localhost');
+  my $ua = OpenQA::Client->new(apikey => 'foo', apisecret => 'bar');
 
-Generate the L<OpenQA::API::V1::Client> object.
+Generate the L<OpenQA::Client> object.
 
 =head1 CONFIG FILE FORMAT
 

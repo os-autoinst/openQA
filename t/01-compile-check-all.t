@@ -16,7 +16,7 @@
 # require all modules to check if they even load
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA';
 }
 
 use strict;

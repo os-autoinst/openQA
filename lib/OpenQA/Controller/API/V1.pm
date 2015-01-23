@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::API::V1;
+package OpenQA::Controller::API::V1;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'hmac_sha1_sum';
 

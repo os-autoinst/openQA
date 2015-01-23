@@ -14,15 +14,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::Admin::Asset;
+package OpenQA::Controller::API::V1::Command;
 use Mojo::Base 'Mojolicious::Controller';
+use openqa;
+use Scheduler ();
 
-sub index {
+sub create {
     my $self = shift;
-    my $assets = $self->db->resultset("Assets")->search(undef, {order_by => 'id'});
+    my $workerid = $self->stash('workerid');
+    my $command = $self->param('command');
 
-    $self->stash('assets', $assets);
-    $self->render('admin/asset/index');
+    $self->render(json => {id => Scheduler::command_enqueue_checked(workerid => $workerid, command => $command)});
 }
 
 1;
+# vim: set sw=4 et:

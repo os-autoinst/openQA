@@ -61,7 +61,7 @@ BEGIN { unshift @INC, "$FindBin::Bin/../lib"}
 
 use Data::Dump;
 use Mojo::URL;
-use OpenQA::API::V1::Client;
+use OpenQA::Client;
 use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
@@ -114,7 +114,7 @@ else {
 $url->path($path);
 $url->query(join('&', @params)) if @params;
 
-my $client = OpenQA::API::V1::Client->new(apikey => $options{'apikey'}, apisecret => $options{'apisecret'}, api => $url->host);
+my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $options{'apisecret'}, api => $url->host);
 
 my $res = $client->$method($url)->res;
 if ($res->code == 200) {

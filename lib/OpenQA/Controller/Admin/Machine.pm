@@ -14,18 +14,30 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::API::V1::Command;
+package OpenQA::Controller::Admin::Machine;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
-use Scheduler ();
 
-sub create {
+sub index {
     my $self = shift;
-    my $workerid = $self->stash('workerid');
-    my $command = $self->param('command');
 
-    $self->render(json => {id => Scheduler::command_enqueue_checked(workerid => $workerid, command => $command)});
+    my $rc = $self->db->resultset("MachineSettings")->search(
+        undef,
+        {
+            select   => [ 'key', { count => 'key' } ],
+            as       => [qw/ key var_count /],
+            group_by => [qw/ key /],
+            order_by => { -desc => \'count(key)' }
+        }
+    );
+    my @variables = map { $_->key } $rc->all();
+    $self->stash('variables', \@variables);
+
+    my @col_variables = @variables;
+    splice @col_variables, 7;
+
+    $self->stash('col_var_keys', \@col_variables);
+
+    $self->render('admin/machine/index');
 }
 
 1;
-# vim: set sw=4 et:
