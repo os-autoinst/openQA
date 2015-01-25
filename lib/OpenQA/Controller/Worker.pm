@@ -45,10 +45,9 @@ sub worker_info($) {
     if($job) {
         my $testdirname = $job->{'settings'}->{'NAME'};
         my $results = test_result($testdirname);
-        my $modinfo = get_running_modinfo($results);
-        $settings->{status} = "running";
+	$settings->{status} = "running";
         $settings->{jobid} = $job->{id};
-        $settings->{currentstep} = $modinfo->{running};
+        $settings->{currentstep} = 'TODO';
     }
     else {
         $settings->{status} = "idle";

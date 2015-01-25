@@ -20,7 +20,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &first_run
   &data_name
   &back_log
-  &get_running_modinfo
   &needle_info
   &needledir
   &testcasedir
@@ -92,38 +91,6 @@ sub back_log($) {
     }
     return "";
 }
-
-sub get_running_modinfo($) {
-    my $results = shift;
-    return {} unless $results;
-    my $currentstep = $results->{'running'}||'';
-    my $modlist = [];
-    my $donecount = 0;
-    my $count = @{$results->{'testmodules'}||[]};
-    my $modstate = 'done';
-    my $category;
-    for my $module (@{$results->{'testmodules'}}) {
-        my $name = $module->{'name'};
-        my $result = $module->{'result'};
-        if (!$category || $category ne $module->{'category'}) {
-            $category = $module->{'category'};
-            push(@$modlist, {'category' => $category, 'modules' => []});
-        }
-        if ($name eq $currentstep) {
-            $modstate = 'current';
-        }
-        elsif ($modstate eq 'current') {
-            $modstate = 'todo';
-        }
-        elsif ($modstate eq 'done') {
-            $donecount++;
-        }
-        my $moditem = {'name' => $name, 'state' => $modstate, 'result' => $result};
-        push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
-    }
-    return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $results->{'running'}};
-}
-
 
 sub testresultdir($) {
     my $fn=shift;

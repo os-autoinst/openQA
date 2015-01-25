@@ -61,8 +61,8 @@
 	</div>
 	<% } %>
 	<div class="box box-shadow" id="info_box">
-		<div class="box-header aligncenter">Test Details</div>
-        <table class="infotbl">
+	    <div class="box-header aligncenter">Test Details</div>
+            <table class="infotbl">
             % if ($job->{t_started}) {
                 <tr>
                     <td style="width: 40%;">Start</td>
@@ -145,8 +145,8 @@
 	</div>
 	<% } %>
 	<div class="box box-shadow" id="legend_box">
-		<div class="box-header aligncenter">Flag Legend</div>
-        <table class="infotbl">
+	    <div class="box-header aligncenter">Flag Legend</div>
+            <table class="infotbl">
             <tr>
                 <td class="flags">&#9760;</td>
                 <td title="Testsuite is aborted if this test fails">Fatal</td>
