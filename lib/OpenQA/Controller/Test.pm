@@ -79,7 +79,7 @@ sub list {
                 my $testdirname = $job->{'settings'}->{'NAME'};
                 my $running_basepath = running_log($testdirname);
                 my $results = test_result($testdirname);
-                $run_stat = get_running_modinfo($results);
+                $run_stat = Schema::Result::JobModules::running_modinfo($job);
                 $run_stat->{'run_backend'} = 0;
             }
 

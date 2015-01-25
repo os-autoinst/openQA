@@ -42,10 +42,12 @@ table th.table-sorted-asc i.sort-arrows {
 }
 
 
-.resultok {background-color:#d4f291 ;} /* Lemon */
+.resultok {background-color:#d4f291 ;} 
+.resultpassed {background-color:#d4f291 ;}
 .resultunknown {background-color:#ff9 ;}
 .resultwarning {background-color:#ff9 ;}
 .resultfail {background-color:#faa ;}
+.resultfailed {background-color:#faa ;}
 .resultmissing {background-color: #ddd; }
 .resulttesting {background-color: #9df; }
 .resultscheduled {background-color: #bef; }

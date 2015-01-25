@@ -203,5 +203,38 @@ sub split_results($;$) {
     }
 }
 
+sub running_modinfo($) {
+    my ($job) = @_;
+
+    my @modules = Schema::Result::JobModules::job_modules($job);
+    
+    my $currentstep = $job->{running};
+    my $modlist = [];
+    my $donecount = 0;
+    my $count = int(@modules);
+    my $modstate = 'done';
+    my $category;
+    for my $module (@modules) {
+        my $name = $module->name;
+        my $result = $module->result;
+        if (!$category || $category ne $module->category) {
+            $category = $module->category;
+            push(@$modlist, {'category' => $category, 'modules' => []});
+        }
+        if ($name eq $currentstep) {
+            $modstate = 'current';
+        }
+        elsif ($modstate eq 'current') {
+            $modstate = 'todo';
+        }
+        elsif ($modstate eq 'done') {
+            $donecount++;
+        }
+        my $moditem = {'name' => $name, 'state' => $modstate, 'result' => $result};
+        push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
+    }
+    return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $results->{'running'}};
+}
+
 1;
 # vim: set sw=4 et:

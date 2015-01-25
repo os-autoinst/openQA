@@ -41,7 +41,7 @@ sub init {
     $self->stash('module',  $module);
     $self->stash('imglist', $details);
 
-    my $modinfo = { 'modlist' => [] }; #get_running_modinfo($results);
+    my $modinfo = Schema::Result::JobModules::running_modinfo($job);
     $self->stash('modinfo', $modinfo);
 
     my $tabmode = 'screenshot'; # Default
@@ -74,10 +74,7 @@ sub init {
 
 # Helper function to generate the needle url, with an optional version
 sub needle_url {
-    my $self = shift;
-    my $distri = shift;
-    my $name = shift;
-    my $version = shift;
+    my ($self, $distri, $name, $version) = @_;
 
     if (defined($version) && $version) {
         $self->url_for('needle_file', distri => $distri, name => $name)->query(version => $version);
@@ -89,7 +86,7 @@ sub needle_url {
 
 # Call to viewimg or viewaudio
 sub view {
-    my $self = shift;
+    my ($self) = @_;
     return 0 unless $self->init();
 
     if ('audio' eq $self->stash('tabmode')) {
@@ -102,8 +99,8 @@ sub view {
 
 # Needle editor
 sub edit {
-    my $self = shift;
-    my ($ow_overwrite, $ow_json, $ow_imagename, $ow_imagedistri, $ow_imageversion, $ow_needlename) = @_;
+    my ($self, $ow_overwrite, $ow_json, $ow_imagename, 
+	$ow_imagedistri, $ow_imageversion, $ow_needlename) = @_;
     return 0 unless $self->init();
 
     my $module_detail = $self->stash('module_detail');
@@ -327,7 +324,7 @@ sub edit {
 }
 
 sub src {
-    my $self = shift;
+    my ($self) = @_;
     return 0 unless $self->init();
 
     my $job = $self->stash('job');
@@ -372,8 +369,7 @@ sub _commit_git {
 
 # Adds a timestamp to a needle name or replace the already present timestamp
 sub _timestamp {
-    my $self = shift;
-    my $name = shift;
+    my ($self, $name) = @_;
     my $today = strftime("%Y%m%d", gmtime(time));
 
     if ( $name =~ /(.*)-\d{8}$/ ) {
@@ -385,7 +381,7 @@ sub _timestamp {
 }
 
 sub save_needle {
-    my $self = shift;
+    my ($self) = @_;
     return 0 unless $self->init();
 
     my $validation = $self->validation;

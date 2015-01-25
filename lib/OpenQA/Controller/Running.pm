@@ -24,7 +24,7 @@ use OpenQA::Utils;
 use OpenQA::Scheduler ();
 
 sub init {
-    my $self = shift;
+    my ($self) = @_;
     my $job = OpenQA::Scheduler::job_get($self->param('testid'));
 
     unless (defined $job) {
@@ -57,8 +57,7 @@ sub modlist {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = test_result($self->stash('testdirname'));
-    my $modinfo = get_running_modinfo($results);
+    my $modinfo = Schema::Result::JobModules::running_modinfo($self->stash('job'));
     if (defined $modinfo) {
         $self->render(json => $modinfo->{'modlist'});
     }
