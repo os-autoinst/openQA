@@ -86,11 +86,8 @@ sub list {
             my $settings = {
                 job => $job,
 
-                res_ok=>$result_stats->{ok}||0,
-                res_unknown=>$result_stats->{unk}||0,
-                res_fail=>$result_stats->{fail}||0,
-                res_overall=>$job->{state}||'unk',
-                res_dents=>$job->{dents}||0,
+                result_stats => $result_stats,
+                overall=>$job->{state}||'unk',
                 run_stat=>$run_stat
             };
             if ($job->{state} ne 'done') {
@@ -101,7 +98,7 @@ sub list {
             }
         }
         else {
-            my $settings = {job => $job,};
+            my $settings = {job => $job};
 
             push @slist, $settings;
         }
@@ -178,10 +175,10 @@ sub show {
                 screenshots => \@imglist,
                 wavs => \@wavlist,
                 ocrs => \@ocrlist,
-		soft_failure => $module->soft_failure,
-		milestone => $module->milestone,
+                soft_failure => $module->soft_failure,
+                milestone => $module->milestone,
                 important => $module->important,
-		fatal => $module->fatal
+                fatal => $module->fatal
             }
         );
     }
@@ -248,13 +245,14 @@ sub overview {
             my $result_stats = Schema::Result::JobModules::job_module_stats($job);
             my $failures     = get_failed_needles($testname);
             my $overall      = $job->{result};
-            if ( $job->{result} eq "passed" && $r->{dents}) {
+            if ( $job->{result} eq "passed" && $result_stats->{dents}) {
                 $overall = "unknown";
             }
             $result = {
-                ok      => $result_stats->{ok}   || 0,
-                unknown => $result_stats->{unk}  || 0,
-                fail    => $result_stats->{fail} || 0,
+                passed  => $result_stats->{passed},
+                unknown => $result_stats->{unk},
+                failed  => $result_stats->{failed},
+                dents   => $result_stats->{dents},
                 overall => $overall,
                 jobid   => $job->{id},
                 state   => "done",
