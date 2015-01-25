@@ -97,10 +97,10 @@ sub details($) {
 
     my $result = _test_result($testresultdir);
     foreach my $module (@{$result->{'testmodules'}}) {
-	my $name = $module->{'name'};
-	if ($name eq $self->name) {
-	    return $module->{'details'};
-	}
+        my $name = $module->{'name'};
+        if ($name eq $self->name) {
+            return $module->{'details'};
+        }
     }
     return [];
 }
@@ -111,7 +111,7 @@ sub job_module($$) {
     my $schema = Scheduler::schema();
     return $schema->resultset("JobModules")->search({ job_id => $job->{id}, name => $name })->first;
 }
-    
+
 sub job_modules($) {
     my ($job) = @_;
 
@@ -119,23 +119,31 @@ sub job_modules($) {
     return $schema->resultset("JobModules")->search({ job_id => $job->{id} })->all;
 }
 
-sub _count_job_results($$) {
-    my ($job, $result) = @_;
-
-    my $schema = OpenQA::Scheduler::schema();
-
-    return $schema->resultset("JobModules")->search({ job_id => $job->{id}, result => $result })->count;
-}
-
 sub job_module_stats($) {
     my ($job) = @_;
 
-    # TODO: this can be pretty trivially optimized
-    my $result_stat = {};
-    $result_stat->{'ok'} = _count_job_results($job, 'passed');
-    $result_stat->{'fail'} = _count_job_results($job, 'failed');
-    $result_stat->{'na'} = _count_job_results($job, 'none');
-    $result_stat->{'unk'} = _count_job_results($job, 'incomplete');
+    my $result_stat = { 'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0 };
+
+    my $schema = OpenQA::Scheduler::schema();
+
+    my $query = $schema->resultset("JobModules")->search(
+        { job_id => $job->{id} },
+        {
+            select => ['result', 'soft_failure', { 'count' => 'id' } ],
+            as => [qw/result soft_failure count/],
+            group_by => [qw/result soft_failure/]
+        }
+    );
+
+    while (my $line = $query->next) {
+        if ($line->soft_failure) {
+            $result_stat->{dents} = $line->get_column('count');
+        }
+        else {
+            $result_stat->{$line->result} = $line->get_column(
+                'count');
+        }
+    }
 
     return $result_stat;
 }
@@ -207,7 +215,7 @@ sub running_modinfo($) {
     my ($job) = @_;
 
     my @modules = Schema::Result::JobModules::job_modules($job);
-    
+
     my $currentstep = $job->{running};
     my $modlist = [];
     my $donecount = 0;

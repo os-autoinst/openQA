@@ -45,7 +45,7 @@ sub worker_info($) {
     if($job) {
         my $testdirname = $job->{'settings'}->{'NAME'};
         my $results = test_result($testdirname);
-	$settings->{status} = "running";
+        $settings->{status} = "running";
         $settings->{jobid} = $job->{id};
         $settings->{currentstep} = 'TODO';
     }

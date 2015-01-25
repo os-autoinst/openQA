@@ -34,7 +34,7 @@ sub init {
     $self->stash('testname', $job->{'name'});
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $testresultdir = openqa::testresultdir($testdirname);
-    
+
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
     my $details = $module->details($testresultdir);
     $self->stash('job', $job);
@@ -99,8 +99,7 @@ sub view {
 
 # Needle editor
 sub edit {
-    my ($self, $ow_overwrite, $ow_json, $ow_imagename, 
-	$ow_imagedistri, $ow_imageversion, $ow_needlename) = @_;
+    my ($self, $ow_overwrite, $ow_json, $ow_imagename,$ow_imagedistri, $ow_imageversion, $ow_needlename) = @_;
     return 0 unless $self->init();
 
     my $module_detail = $self->stash('module_detail');
@@ -519,20 +518,20 @@ sub viewimg {
     my $dversion = $job->{settings}->{VERSION} || '';
 
     print Dumper($module_detail);
-    
+
     my @needles;
     if ($module_detail->{'needle'}) {
         my $needle = needle_info($module_detail->{'needle'}, $distribution, $dversion);
-	if ($needle) { # possibly missing/broken file
-	    my $info = {
-		'name' => $module_detail->{'needle'},
-		'image' => $self->needle_url($distribution, $module_detail->{'needle'}.'.png', $dversion),
-		'areas' => $needle->{'area'},
-		'matches' => []
-	    };
-	    calc_matches($info, $module_detail->{'area'});
-	    push(@needles, $info);
-	}
+        if ($needle) { # possibly missing/broken file
+            my $info = {
+                'name' => $module_detail->{'needle'},
+                'image' => $self->needle_url($distribution, $module_detail->{'needle'}.'.png', $dversion),
+                'areas' => $needle->{'area'},
+                'matches' => []
+            };
+            calc_matches($info, $module_detail->{'area'});
+            push(@needles, $info);
+        }
     }
     elsif ($module_detail->{'needles'}) {
         my $needlename;
