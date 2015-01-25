@@ -241,7 +241,6 @@ sub overview {
 
         my $result;
         if ( $job->{state} eq 'done' ) {
-            my $r            = test_result($testname);
             my $result_stats = Schema::Result::JobModules::job_module_stats($job);
             my $failures     = get_failed_needles($testname);
             my $overall      = $job->{result};
