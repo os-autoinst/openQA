@@ -145,6 +145,7 @@ sub edit {
             'imagename' => $imgname,
             'area' => [],
             'matches' => [],
+            'properties' => [],
             'tags' => []
         };
         for my $tag (@$tags) {
@@ -176,6 +177,7 @@ sub edit {
             'imageversion' => $needle->{'version'},
             'area' => $needle->{'area'},
             'tags' => $needle->{'tags'},
+            'properties' => $needle->{'properties'} || [],
             'matches' => $screenshot->{'matches'}
         };
         calc_min_similarity($matched, $module_detail->{'area'});
@@ -195,6 +197,7 @@ sub edit {
             'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
             'area' => [],
             'matches' => [],
+            'properties' => [],
             'tags' => []
         };
         for my $tag (@$tags) {
@@ -233,6 +236,7 @@ sub edit {
                     'imageversion' => $needleinfo->{'version'},
                     'tags' => $needleinfo->{'tags'},
                     'area' => $needleinfo->{'area'},
+                    'properties' => $needleinfo->{'properties'} || [],
                     'matches' => [],
                     'broken' => $needleinfo->{'broken'}
                 }
@@ -262,7 +266,8 @@ sub edit {
             'imagename' => $imgname,
             'area' => [],
             'matches' => [],
-            'tags' => $tags
+            'tags' => $tags,
+            'properties' => []
         };
     }
 
@@ -281,16 +286,20 @@ sub edit {
         my $decode_json;
         my $ow_tags = [];
         my $ow_area = [];
+        my $ow_properties = [];
         $decode_json = decode_json($ow_json);
         $ow_area = $decode_json->{'area'};
         $ow_tags = $decode_json->{'tags'};
+        $ow_properties = $decode_json->{'properties'};
         # replaced tags
         $tags = $ow_tags;
         $screenshot->{selected} = 1;
         $default_needle->{'tags'} = $ow_tags;
         $default_needle->{'area'} = $ow_area;
+        $default_needle->{'properties'} = $ow_properties;
         $screenshot->{'tags'} = $ow_tags;
         $screenshot->{'area'} = $ow_area;
+        $screenshot->{'properties'} = $ow_properties;
         $screenshot->{'suggested_name'} = $ow_needlename;
         $screenshot->{'imagedistri'} = $ow_imagedistri;
         $screenshot->{'imageversion'} = $ow_imageversion;
@@ -299,19 +308,27 @@ sub edit {
         $needles[0]->{selected} = 1;
         $default_needle->{'tags'} = $needles[0]->{'tags'};
         $default_needle->{'area'} = $needles[0]->{'matches'};
+        $default_needle->{'properties'} = $needles[0]->{'properties'};
         $screenshot->{'suggested_name'} = $needles[0]->{'suggested_name'};
     }
     else {
         $screenshot->{selected} = 1;
         $default_needle->{'tags'} = $screenshot->{'tags'};
         $default_needle->{'area'} = [];
+        $default_needle->{'properties'} = [];
         $screenshot->{'suggested_name'} = $self->_timestamp($self->param('moduleid'));
     }
 
     unshift(@needles, $screenshot);
 
+    # stashing the properties
+    my $properties = {};
+    for my $property (@{$default_needle->{'properties'}}) {
+        $properties->{$property} = $property;
+    }
     $self->stash('needles', \@needles);
     $self->stash('tags', $tags);
+    $self->stash('properties', $properties);
     $self->stash('default_needle', $default_needle);
 
     $self->render('step/edit');

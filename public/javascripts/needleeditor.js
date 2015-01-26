@@ -186,7 +186,7 @@ NeedleEditor.prototype.LoadNeedle = function(url) {
       editor.init();
     } else if (this.status == 404)
     {
-      var needle = JSON.parse('{ "area": [], "tags": [] }');
+      var needle = JSON.parse('{ "area": [], "tags": [] , "properties": [] }');
       editor.needle = needle;
       editor.init();
     } else {
@@ -234,6 +234,17 @@ NeedleEditor.prototype.changeTag = function(name, enabled) {
   this.UpdateTextArea();
 }
 
+NeedleEditor.prototype.changeProperty = function(name, enabled) {
+  var properties = this.needle['properties'];
+  if (enabled) {
+    properties.push(name);
+    properties.sort();
+  } else {
+    var idx = properties.indexOf(name);
+    properties.splice(idx, 1);
+  }
+  this.UpdateTextArea();
+}
 // If you dont want to use <body onLoad='init()'>
 // You could uncomment this init() reference and place the script reference inside the body tag
 //init();

@@ -47,6 +47,13 @@
 		<input type="button" onclick="return window.addTag();" style="width: 34px;" class="button" value="Add" />
             </div>
             <div style="margin-top: 1em;">
+                <!-- lists the specific properties -->
+		<label>Properties:</label><br/>
+			<label>
+                        <input type="checkbox" name="workaround" id="property_workaround" <%= 'checked' if $properties->{'workaround'} %> onclick="window.nEditor.changeProperty(this.name, this.checked);">workaround
+			</label><br/>
+            </div>
+            <div style="margin-top: 1em;">
 		<label>JSON:</label><br/>
 		<textarea id="needleeditor_textarea" name="json" readOnly="yes" style="width: calc(100% - 8px); height:300px;"></textarea>
 		<input type="hidden" id="needleeditor_image" name="imagename" value="<%= ${@$needles[0]}{'imagename'} %>"/>
