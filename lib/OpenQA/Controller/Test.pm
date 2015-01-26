@@ -68,7 +68,7 @@ sub list {
         assetid => $assetid,
     ) || [];
 
-    my $result_stats = Schema::Result::JobModules::job_module_stats($jobs);
+    my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
 
     for my $job (@$jobs) {
 
@@ -78,7 +78,7 @@ sub list {
             if ($job->{state} eq 'running') {
                 my $testdirname = $job->{'settings'}->{'NAME'};
                 my $running_basepath = running_log($testdirname);
-                $run_stat = Schema::Result::JobModules::running_modinfo($job);
+                $run_stat = OpenQA::Schema::Result::JobModules::running_modinfo($job);
                 $run_stat->{'run_backend'} = 0;
             }
 
@@ -134,14 +134,14 @@ sub show {
     # If it's running
     if ($job->{state} =~ /^(?:running|waiting)$/) {
         $self->stash(worker => worker_get($job->{'worker_id'}));
-        $self->stash(backend_info => 'TODO'); # $results->{backend});
+        $self->stash(backend_info => { 'backend' => 'TODO' }); # $results->{backend});
         $self->stash(job => $job);
         $self->render('test/running');
         return;
     }
 
     my @modlist=();
-    foreach my $module (Schema::Result::JobModules::job_modules($job)) {
+    foreach my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
         my $name = $module->name();
         # add link to $testresultdir/$name*.png via png CGI
         my @imglist;

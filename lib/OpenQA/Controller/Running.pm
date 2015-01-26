@@ -22,6 +22,7 @@ use Mojo::Util 'b64_encode';
 import JSON;
 use OpenQA::Utils;
 use OpenQA::Scheduler ();
+use Data::Dumper;
 
 sub init {
     my ($self) = @_;
@@ -58,6 +59,7 @@ sub modlist {
     return 0 unless $self->init();
 
     my $modinfo = Schema::Result::JobModules::running_modinfo($self->stash('job'));
+    print Dumper($modinfo);
     if (defined $modinfo) {
         $self->render(json => $modinfo->{'modlist'});
     }
@@ -70,9 +72,7 @@ sub status {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = test_result($self->stash('testdirname'));
-    delete $results->{'testmodules'};
-    delete $results->{'distribution'};
+    my $results = { 'interactive' => 0, 'workerid' => 'TODO', 'running' => 'TODO' };
     $self->render(json => $results);
 }
 
