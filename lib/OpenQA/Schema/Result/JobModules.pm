@@ -223,7 +223,7 @@ sub running_modinfo($) {
 
     my @modules = Schema::Result::JobModules::job_modules($job);
 
-    my $currentstep = $job->{running};
+    my $currentstep = 'TODO';
     my $modlist = [];
     my $donecount = 0;
     my $count = int(@modules);

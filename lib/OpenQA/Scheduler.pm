@@ -397,6 +397,7 @@ sub list_jobs {
     my @joins;
 
     push @{$attrs{'prefetch'}}, 'settings';
+    push @{$attrs{'prefetch'}}, 'parents';
     push @{$attrs{'prefetch'}}, {'jobs_assets' => 'asset' };
 
     if ($args{state}) {

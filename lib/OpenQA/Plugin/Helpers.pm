@@ -172,15 +172,15 @@ sub register {
         module_result => sub {
             my ($c, $result) = @_;
 
-            my $html = "$result->{passed}<i class='fa fa-star'/> ";
+            my $html = "$result->{passed}<i class='fa fa-star'></i>";
             if ($result->{dents}) {
-                $html .=  "$result->{dents}<i class='fa fa-star-half-empty'/> ";
+                $html .=  " $result->{dents}<i class='fa fa-star-half-empty'></i> ";
             }
             if ($result->{failed}) {
-                $html .=  "$result->{failed}<i class='fa fa-star-o'/> ";
+                $html .=  " $result->{failed}<i class='fa fa-star-o' ></i> ";
             }
             if ($result->{none}) {
-                $html .=  "$result->{none}<i class='fa fa-ban'/> ";
+                $html .=  " $result->{none}<i class='fa fa-ban' ></i> ";
             }
             return Mojo::ByteStream->new($html);
         }
