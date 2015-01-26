@@ -120,28 +120,35 @@ sub job_modules($) {
 }
 
 sub job_module_stats($) {
-    my ($job) = @_;
+    my ($jobs) = @_;
 
-    my $result_stat = { 'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0 };
+    my $result_stat = {};
 
     my $schema = OpenQA::Scheduler::schema();
+    my @ids = map { $_->{id} } @$jobs;
+    for my $id (@ids) {
+        $result_stat->{$id} = { 'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0 };
+    }
 
-    my $query = $schema->resultset("JobModules")->search(
-        { job_id => $job->{id} },
-        {
-            select => ['result', 'soft_failure', { 'count' => 'id' } ],
-            as => [qw/result soft_failure count/],
-            group_by => [qw/result soft_failure/]
-        }
-    );
+    # DBIx has a limit for variables in one querey
+    while (my @next_ids = splice @ids, 0, 100) {
+        my $query = $schema->resultset("JobModules")->search(
+            { job_id => { -in => \@next_ids } },
+            {
+                select => ['job_id', 'result', 'soft_failure', { 'count' => 'id' } ],
+                as => [qw/job_id result soft_failure count/],
+                group_by => [qw/job_id result soft_failure/]
+            }
+        );
 
-    while (my $line = $query->next) {
-        if ($line->soft_failure) {
-            $result_stat->{dents} = $line->get_column('count');
-        }
-        else {
-            $result_stat->{$line->result} = $line->get_column(
-                'count');
+        while (my $line = $query->next) {
+            if ($line->soft_failure) {
+                $result_stat->{$line->job_id}->{dents} = $line->get_column('count');
+            }
+            else {
+                $result_stat->{$line->job_id}->{$line->result} =
+                  $line->get_column('count');
+            }
         }
     }
 

@@ -44,7 +44,7 @@
                                 <span class="<%=$css%>" id="res-<%= $jobid %>">
                             % }
                             <% if ($state eq "done") { %>
-                                <a href="<%= url_for('test', 'testid' => $jobid) %>">module_result($res)</a>
+                                <a href="<%= url_for('test', 'testid' => $jobid) %>"><%= module_result($res) %></a>
                             <% } elsif ($state eq "running") { %>
                                 <a href="<%= url_for('test', 'testid' => $jobid) %>">running</a>
                             <% } elsif ($state eq "scheduled") { %>
