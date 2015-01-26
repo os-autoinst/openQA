@@ -108,14 +108,14 @@ sub details($) {
 sub job_module($$) {
     my ($job, $name) = @_;
 
-    my $schema = Scheduler::schema();
+    my $schema = OpenQA::Scheduler::schema();
     return $schema->resultset("JobModules")->search({ job_id => $job->{id}, name => $name })->first;
 }
 
 sub job_modules($) {
     my ($job) = @_;
 
-    my $schema = Scheduler::schema();
+    my $schema = OpenQA::Scheduler::schema();
     return $schema->resultset("JobModules")->search({ job_id => $job->{id} })->all;
 }
 
@@ -175,23 +175,22 @@ sub _insert_tm($$$) {
     $result =~ s,^ok,passed,;
     $result =~ s,^unk,none,;
     $result =~ s,^skip,skipped,;
-    my $soft_failure;
-    $soft_failure = 1 if $tm->{dents}; # it's just a flag
     $r->update(
         {
             result => $result,
-            milestone => $tm->{flags}->{milestone},
-            important => $tm->{flags}->{important},
-            fatal => $tm->{flags}->{fatal},
-            soft_failure => $soft_failure
+            milestone => $tm->{flags}->{milestone}?1:0,
+            important => $tm->{flags}->{important}?1:0,
+            fatal => $tm->{flags}->{fatal}?1:0,
+            soft_failure => $tm->{dents}?1:0,
         }
     );
+    return $r;
 }
 
 
 sub test_result($) {
     my ($testname) = @_;
-    _test_result(openqa::testresultdir($testname));
+    _test_result(OpenQA::Utils::testresultdir($testname));
 }
 
 sub _test_result($) {
@@ -214,16 +213,18 @@ sub split_results($;$) {
     return unless $results; # broken test
     my $schema = OpenQA::Scheduler::schema();
     for my $tm (@{$results->{testmodules}}) {
-        _insert_tm($schema, $job, $tm);
+        my $r = _insert_tm($schema, $job, $tm);
+        if ($r->name eq $results->{running}) {
+            $r->update({ result => 'running'});
+        }
     }
 }
 
 sub running_modinfo($) {
     my ($job) = @_;
 
-    my @modules = Schema::Result::JobModules::job_modules($job);
+    my @modules = OpenQA::Schema::Result::JobModules::job_modules($job);
 
-    my $currentstep = 'TODO';
     my $modlist = [];
     my $donecount = 0;
     my $count = int(@modules);
@@ -236,7 +237,7 @@ sub running_modinfo($) {
             $category = $module->category;
             push(@$modlist, {'category' => $category, 'modules' => []});
         }
-        if ($name eq $currentstep) {
+        if ($result eq 'running') {
             $modstate = 'current';
         }
         elsif ($modstate eq 'current') {

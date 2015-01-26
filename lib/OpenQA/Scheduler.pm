@@ -783,9 +783,11 @@ sub job_update_status($$) {
     my ($id, $status) = @_;
 
     my $job = _job_get({ 'me.id' => $id });
-    #    print "$id " . Dumper($status) . "\n";
+    # print "$id " . Dumper($status) . "\n";
 
     _append_log($job, $status->{log});
+
+    Schema::Result::JobModules::split_results($job, $status->{results});
 }
 
 sub _job_find_smart($$$) {
