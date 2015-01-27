@@ -366,6 +366,7 @@ sub startup {
     $api_r->post('test_suites')->to('table#create', table => 'TestSuites');
     $api_r->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
     $api_r->put('test_suites/:id')->to('table#update', table => 'TestSuites');
+    $api_r->post('test_suites/:id')->to('table#update', table => 'TestSuites'); #in case PUT is not supported
     $api_r->delete('test_suites/:id')->to('table#destroy', table => 'TestSuites');
 
     # api/v1/machines
@@ -373,6 +374,7 @@ sub startup {
     $api_r->post('machines')->to('table#create', table => 'Machines');
     $api_r->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
     $api_r->put('machines/:id')->to('table#update', table => 'Machines');
+    $api_r->post('machines/:id')->to('table#update', table => 'Machines'); #in case PUT is not supported
     $api_r->delete('machines/:id')->to('table#destroy', table => 'Machines');
 
     # api/v1/products
@@ -380,6 +382,7 @@ sub startup {
     $api_r->post('products')->to('table#create', table => 'Products');
     $api_r->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
     $api_r->put('products/:id')->to('table#update', table => 'Products');
+    $api_r->post('products/:id')->to('table#update', table => 'Products'); #in case PUT is not supported
     $api_r->delete('products/:id')->to('table#destroy', table => 'Products');
 
     # api/v1/job_templates

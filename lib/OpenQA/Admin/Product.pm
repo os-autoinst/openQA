@@ -17,85 +17,27 @@
 package OpenQA::Admin::Product;
 use Mojo::Base 'Mojolicious::Controller';
 
-use base 'OpenQA::Admin::VariableHelpers';
-
 sub index {
     my $self = shift;
-    my @products = $self->db->resultset("Products")->search(undef, {order_by => 'name'});
 
-    #    $self->stash('error', undef);
-    $self->stash('products', \@products);
+    my $rc = $self->db->resultset("ProductSettings")->search(
+        undef,
+        {
+            select   => [ 'key', { count => 'key' } ],
+            as       => [qw/ key var_count /],
+            group_by => [qw/ key /],
+            order_by => { -desc => \'count(key)' }
+        }
+    );
+    my @variables = map { $_->key } $rc->all();
+    $self->stash('variables', \@variables);
 
-    my $rc = $self->db->resultset("ProductSettings")->search(undef, { columns => [qw/key/], distinct => 1 } );
-    $self->stash('variables', [ sort map { $_->key } $rc->all() ]);
+    my @col_variables = @variables;
+    splice @col_variables, 7;
+
+    $self->stash('col_var_keys', \@col_variables);
 
     $self->render('admin/product/index');
-}
-
-sub create {
-    my $self = shift;
-    my $error;
-    my $validation = $self->validation;
-    $validation->required('distri');
-    $validation->required('version');
-    $validation->required('arch');
-    $validation->required('flavor');
-
-    my $product;
-    if ($validation->has_error) {
-        $error = "wrong parameter: ";
-        for my $k (qw/distri version arch flavor/) {
-            $error .= $k if $validation->has_error($k);
-        }
-    }
-    else {
-        eval {
-            $product = $self->db->resultset("Products")->create(
-                {
-                    distri => $self->param('distri'),
-                    version => $self->param('version'),
-                    arch => $self->param('arch'),
-                    flavor => $self->param('flavor'),
-                    name => '', # TODO: remove
-                    variables => '', # TODO: remove
-                }
-            );
-        };
-        $error = $@;
-        $error = "unexpected error: \$product undef" unless $error || $product;
-    }
-    if ($error) {
-        $self->stash('error', "Error adding the product: $error");
-        $self->app->log->error($error);
-        return $self->index;
-    }
-    else {
-        $self->flash(info => 'Product '.$product->name.' added');
-        $self->redirect_to($self->url_for('admin_products'));
-    }
-}
-
-sub add_variable {
-    my $self = shift;
-    $self->SUPER::add_variable('product', 'ProductSettings');
-}
-
-sub remove_variable {
-    my $self = shift;
-    $self->SUPER::remove_variable('product', 'ProductSettings');
-}
-
-sub destroy {
-    my $self = shift;
-    my $products = $self->db->resultset('Products');
-
-    if ($products->search({id => $self->param('product_id')})->delete_all) {
-        $self->flash(info => 'Product deleted');
-    }
-    else {
-        $self->flash(error => 'Failed to delete product');
-    }
-    $self->redirect_to($self->url_for('admin_products'));
 }
 
 1;
