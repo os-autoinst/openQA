@@ -35,12 +35,14 @@ my $help=0;
 my $prepare_init=0;
 my $init_database=0;
 my $force=0;
+my $user;
 
 my $result = GetOptions(
     "help"          => \$help,
     "prepare_init"  => \$prepare_init,
     "init_database" => \$init_database,
-    "force"         => \$force
+    "force"         => \$force,
+    "user=s"        => \$user,
 );
 
 if (!$prepare_init and !$init_database) {
@@ -55,8 +57,14 @@ if ($help) {
     print "  --init_database : Use the generated deployment files created with --prepare_init\n";
     print "                    to actually initialize a database.\n";
     print "  --force         : Force overwriting existing data.\n";
+    print "  --user=login    : Change uid before connecting the DB.\n";
     print "  --help          : This help message.\n";
     exit;
+}
+
+if ($user) {
+    my $uid = getpwnam($user) || die "No such login $user";
+    setuid($uid) || die "can't suid to $user";
 }
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
