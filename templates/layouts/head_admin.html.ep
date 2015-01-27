@@ -11,6 +11,7 @@
 %= stylesheet '/stylesheets/chosen.css'
 %= stylesheet '/stylesheets/openqa.css'
 %= stylesheet '/stylesheets/opentip.css'
+%= stylesheet '/stylesheets/font-awesome.min.css'
 %= javascript '/javascripts/jquery-1.11.2.js'
 %= javascript '/javascripts/jquery_ujs.js'
 %= javascript '/javascripts/chosen.jquery.js'

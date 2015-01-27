@@ -11,6 +11,7 @@
 %= stylesheet '/stylesheets/chosen.css'
 %= stylesheet '/stylesheets/openqa.css'
 %= stylesheet '/stylesheets/opentip.css'
+%= stylesheet '/stylesheets/font-awesome.min.css'
 %= javascript '/javascripts/table.js'
 %= javascript '/javascripts/shapes.js'
 %= javascript '/javascripts/needleeditor.js'
