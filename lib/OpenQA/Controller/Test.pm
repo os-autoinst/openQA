@@ -118,7 +118,7 @@ sub list {
 sub show {
     my $self = shift;
 
-    return $self->render_not_found if (!defined $self->param('testid'));
+    return $self->reply->not_found if (!defined $self->param('testid'));
 
     my $job = Scheduler::job_get($self->param('testid'));
 
@@ -131,7 +131,7 @@ sub show {
     $self->stash(resultdir => $testresultdir);
     $self->stash(assets => Scheduler::job_get_assets($job->{'id'}));
 
-    #  return $self->render_not_found unless (-e $self->stash('resultdir'));
+    #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
 
     my $results = test_result($testdirname);
 
@@ -332,7 +332,7 @@ sub overview {
 sub menu {
     my $self = shift;
 
-    return $self->render_not_found if (!defined $self->param('testid'));
+    return $self->reply->not_found if (!defined $self->param('testid'));
 
     my $job = Scheduler::job_get($self->param('testid'));
 

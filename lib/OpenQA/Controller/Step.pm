@@ -36,14 +36,14 @@ sub init {
     my $results = test_result($testdirname);
 
     unless ($results) {
-        $self->render_not_found;
+        $self->reply->not_found;
         return 0;
     }
     $self->stash('results', $results);
 
     my $module = test_result_module($results->{'testmodules'}, $self->param('moduleid'));
     unless ($module) {
-        $self->render_not_found;
+        $self->reply->not_found;
         return 0;
     }
     $self->stash('module', $module);
@@ -66,7 +66,7 @@ sub init {
             # In this case there are details, we simply run out of range
         }
         else {
-            $self->render_not_found;
+            $self->reply->not_found;
             return 0;
         }
     }
@@ -345,7 +345,7 @@ sub src {
     my $scriptpath = "$testcasedir/$module->{'script'}";
     if(!$scriptpath || !-e $scriptpath) {
         $scriptpath||="";
-        return $self->render_not_found;
+        return $self->reply->not_found;
     }
 
     my $script=file_content($scriptpath);

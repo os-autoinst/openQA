@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA;
-use Mojolicious 5.60;
+use Mojolicious 5.74;
 use Mojo::Base 'Mojolicious';
 use openqa 'connect_db';
 use OpenQA::Plugin::Helpers;
@@ -198,7 +198,7 @@ sub startup {
 
     # Router
     my $r = $self->routes;
-    my $auth = $r->bridge('/')->to("session#ensure_operator");
+    my $auth = $r->under('/')->to("session#ensure_operator");
 
     $r->get('/session/new')->to('session#new');
     $r->post('/session')->to('session#create');
@@ -227,7 +227,7 @@ sub startup {
     $test_r->get('/streaming')->name('streaming')->to('running#streaming');
     $test_r->get('/edit')->name('edit_test')->to('running#edit');
 
-    my $log_auth = $r->bridge('/tests/#testid')->to("session#ensure_authorized_ip");
+    my $log_auth = $r->under('/tests/#testid')->to("session#ensure_authorized_ip");
 
     $test_r->get('/images/#filename')->name('test_img')->to('file#test_file');
     $test_r->get('/images/thumb/#filename')->name('test_thumbnail')->to('file#test_thumbnail');
@@ -270,8 +270,8 @@ sub startup {
     #
     ## Admin area starts here
     ###
-    my $admin_auth = $r->bridge('/admin')->to("session#ensure_admin");
-    my $admin_r = $admin_auth->route('/')->to(namespace => 'OpenQA::Admin');
+    my $admin_auth = $r->under('/admin')->to("session#ensure_admin");
+    my $admin_r = $admin_auth->route('/')->to(namespace => 'OpenQA::Controller::Admin');
 
     $admin_r->get('/users')->name('admin_users')->to('user#index');
     $admin_r->post('/users/:userid')->name('admin_user')->to('user#update');
@@ -311,7 +311,7 @@ sub startup {
     #
     ## JSON API starts here
     ###
-    my $api_auth = $r->bridge('/api/v1')->to(controller => 'API::V1', action => 'auth');
+    my $api_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
     my $api_r = $api_auth->route('/')->to(namespace => 'OpenQA::Controller::API::V1');
     my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::Controller::API::V1');
 

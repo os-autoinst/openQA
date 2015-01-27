@@ -28,7 +28,7 @@ sub init {
     my $job = Scheduler::job_get($self->param('testid'));
 
     unless (defined $job) {
-        $self->render_not_found;
+        $self->reply->not_found;
         return 0;
     }
     $self->stash('job', $job);
@@ -46,7 +46,7 @@ sub init {
     $self->stash('workerurl', $workerurl);
 
     if ($basepath eq '') {
-        $self->render_not_found;
+        $self->reply->not_found;
         return 0;
     }
 
@@ -63,7 +63,7 @@ sub modlist {
         $self->render(json => $modinfo->{'modlist'});
     }
     else {
-        $self->render_not_found;
+        $self->reply->not_found;
     }
 }
 
@@ -89,7 +89,7 @@ sub edit {
         $self->redirect_to('edit_step', moduleid => $moduleid, stepid => $stepid);
     }
     else {
-        $self->render_not_found;
+        $self->reply->not_found;
     }
 }
 

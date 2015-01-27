@@ -77,7 +77,7 @@ sub show {
         $self->render(json => {job => $res});
     }
     else {
-        $self->render_not_found;
+        $self->reply->not_found;
     }
 }
 
