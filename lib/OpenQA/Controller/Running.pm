@@ -20,15 +20,15 @@ use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
 import JSON;
-use openqa;
-use Scheduler ();
+use OpenQA::Utils;
+use OpenQA::Scheduler ();
 
 sub init {
     my $self = shift;
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
 
     unless (defined $job) {
-        $self->render_not_found;
+        $self->reply->not_found;
         return 0;
     }
     $self->stash('job', $job);
@@ -40,13 +40,13 @@ sub init {
     $self->stash('basepath', $basepath);
     my $workerid = $job->{'worker_id'};
     $self->stash('workerid', $workerid);
-    my $worker = Scheduler::worker_get($workerid);
+    my $worker = OpenQA::Scheduler::worker_get($workerid);
     my $workerport = $worker->{properties}->{WORKER_PORT};
     my $workerurl = $worker->{properties}->{WORKER_IP} . ':' . $workerport;
     $self->stash('workerurl', $workerurl);
 
     if ($basepath eq '') {
-        $self->render_not_found;
+        $self->reply->not_found;
         return 0;
     }
 
@@ -63,7 +63,7 @@ sub modlist {
         $self->render(json => $modinfo->{'modlist'});
     }
     else {
-        $self->render_not_found;
+        $self->reply->not_found;
     }
 }
 
@@ -89,7 +89,7 @@ sub edit {
         $self->redirect_to('edit_step', moduleid => $moduleid, stepid => $stepid);
     }
     else {
-        $self->render_not_found;
+        $self->reply->not_found;
     }
 }
 
@@ -97,7 +97,7 @@ sub livelog {
     my ($self) = @_;
     return 0 unless $self->init();
     # tell worker to increase status updates rate for more responsive updates
-    Scheduler::command_enqueue(workerid => $self->stash('workerid'), command => 'livelog_start');
+    OpenQA::Scheduler::command_enqueue(workerid => $self->stash('workerid'), command => 'livelog_start');
 
     my $logfile = $self->stash('basepath').'autoinst-log-live.txt';
 
@@ -132,7 +132,7 @@ sub livelog {
     my $id;
     my $close = sub {
         Mojo::IOLoop->remove($id);
-        Scheduler::command_enqueue(workerid => $self->stash('workerid'), command => 'livelog_stop');
+        OpenQA::Scheduler::command_enqueue(workerid => $self->stash('workerid'), command => 'livelog_stop');
         $self->finish;
         close $log;
         return;
@@ -174,7 +174,7 @@ sub livelog {
     $self->on(
         finish => sub {
             Mojo::IOLoop->remove($id);
-            Scheduler::command_enqueue(
+            OpenQA::Scheduler::command_enqueue(
                 workerid => $self->stash('workerid'),
                 command => 'livelog_stop'
             );

@@ -18,7 +18,7 @@ package OpenQA::Test::Case;
 
 use OpenQA::Test::Database;
 use OpenQA::Test::Testresults;
-use Schema::Result::Users;
+use OpenQA::Schema::Result::Users;
 use Mojo::Base -base;
 use Date::Format qw/time2str/;
 use Mojo::JSON 'j';
@@ -66,7 +66,7 @@ sub new {
             my ($value) = split('--', $cookie->value);
             $value = j(b64_decode($value));
             # ..add the user value...
-            Schema::Result::Users->create_user($openid, $schema);
+            OpenQA::Schema::Result::Users->create_user($openid, $schema);
             $value->{user} = $openid;
             # ...and sign the cookie again with the new value
             $value = b64_encode(j($value), '');

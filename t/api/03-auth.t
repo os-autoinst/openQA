@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA';
 }
 
 use Mojo::Base -strict;
@@ -24,7 +24,7 @@ use Test::Mojo;
 use Mojo::URL;
 use Mojo::Util qw(encode);
 use OpenQA::Test::Case;
-use OpenQA::API::V1::Client;
+use OpenQA::Client;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -58,7 +58,7 @@ sub Test::Mojo::websocket_nok{
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::API::V1::Client->new()->ioloop(Mojo::IOLoop->singleton));
+$t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 my $ret;

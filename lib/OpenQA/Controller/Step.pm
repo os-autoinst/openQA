@@ -16,10 +16,10 @@
 
 package OpenQA::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
+use OpenQA::Utils;
 use File::Basename;
 use File::Copy;
-use Scheduler;
+use OpenQA::Scheduler;
 use POSIX qw/strftime/;
 use Try::Tiny;
 use JSON;
@@ -30,20 +30,20 @@ sub init {
     my $testindex = $self->param('stepid');
 
 
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     $self->stash('testname', $job->{'name'});
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $results = test_result($testdirname);
 
     unless ($results) {
-        $self->render_not_found;
+        $self->reply->not_found;
         return 0;
     }
     $self->stash('results', $results);
 
     my $module = test_result_module($results->{'testmodules'}, $self->param('moduleid'));
     unless ($module) {
-        $self->render_not_found;
+        $self->reply->not_found;
         return 0;
     }
     $self->stash('module', $module);
@@ -66,7 +66,7 @@ sub init {
             # In this case there are details, we simply run out of range
         }
         else {
-            $self->render_not_found;
+            $self->reply->not_found;
             return 0;
         }
     }
@@ -117,7 +117,7 @@ sub edit {
     my $module_detail = $self->stash('module_detail');
     my $imgname = $module_detail->{'screenshot'};
     my $results = $self->stash('results');
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     my $testdirname = $job->{'settings'}->{'NAME'};
 
     # Each object in $needles will contain the name, both the url and the local path
@@ -345,7 +345,7 @@ sub src {
     my $scriptpath = "$testcasedir/$module->{'script'}";
     if(!$scriptpath || !-e $scriptpath) {
         $scriptpath||="";
-        return $self->render_not_found;
+        return $self->reply->not_found;
     }
 
     my $script=file_content($scriptpath);
@@ -415,7 +415,7 @@ sub save_needle {
     }
 
     my $results = $self->stash('results');
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $json = $validation->param('json');
     my $imagename = $validation->param('imagename');

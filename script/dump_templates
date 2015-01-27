@@ -51,7 +51,7 @@ JobTemplates e.g. to load them on another instance.
 
 BEGIN {
     use FindBin qw($Bin);
-    use lib "$Bin/../lib", "$Bin/../lib/OpenQA/modules";
+    use lib "$Bin/../lib", "$Bin/../lib/OpenQA";
 }
 
 use strict;
@@ -116,8 +116,8 @@ if ($options{tmp}) {
     $dh->install;
 }
 else {
-    use openqa;
-    $schema = openqa::connect_db();
+    use OpenQA::Utils;
+    $schema = OpenQA::Utils::connect_db();
 }
 
 die unless $schema;

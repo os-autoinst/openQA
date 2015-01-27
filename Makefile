@@ -44,6 +44,6 @@ install:
 
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 test:
-	script/openqa test
+	OPENQA_CONFIG= script/openqa test
 
 .PHONY: all install test

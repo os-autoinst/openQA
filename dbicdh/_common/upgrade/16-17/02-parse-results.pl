@@ -19,7 +19,7 @@
 use strict;
 use warnings;
 
-use openqa;
+use OpenQA::Utils;
 
 sub {
     my $schema = shift;

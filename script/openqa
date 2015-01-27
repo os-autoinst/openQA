@@ -20,7 +20,7 @@ use strict;
 use warnings;
 
 use FindBin;
-BEGIN { unshift @INC, "$FindBin::Bin/../lib", "$FindBin::Bin/../lib/OpenQA/modules"}
+BEGIN { unshift @INC, "$FindBin::Bin/../lib", "$FindBin::Bin/../lib/OpenQA"}
 
 $ENV{'MOJO_LISTEN'} ||= 'http://localhost:9526/';
 
