@@ -16,8 +16,8 @@
 
 package OpenQA::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
-use Scheduler ();
+use OpenQA::Utils;
+use OpenQA::Scheduler ();
 use Try::Tiny;
 
 sub list {
@@ -30,7 +30,7 @@ sub list {
         push @args, $self->param($arg);
     }
 
-    my $res = Scheduler::list_jobs(@args);
+    my $res = OpenQA::Scheduler::list_jobs(@args);
     $self->render(json => {jobs => $res});
 }
 
@@ -43,7 +43,7 @@ sub create {
     my $json = {};
     my $status;
     try {
-        my $res = Scheduler::job_create(\%up_params);
+        my $res = OpenQA::Scheduler::job_create(\%up_params);
         $json->{id} = $res;
     }
     catch {
@@ -66,13 +66,13 @@ sub grab {
     $caps->{cpu_opmode} = $self->param('cpu_opmode');
     $caps->{mem_max} = $self->param('mem_max');
 
-    my $res = Scheduler::job_grab(workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps);
+    my $res = OpenQA::Scheduler::job_grab(workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps);
     $self->render(json => {job => $res});
 }
 
 sub show {
     my $self = shift;
-    my $res = Scheduler::job_get(int($self->stash('jobid')));
+    my $res = OpenQA::Scheduler::job_get(int($self->stash('jobid')));
     if ($res) {
         $self->render(json => {job => $res});
     }
@@ -87,7 +87,7 @@ sub set_command {
     my $jobid = int($self->stash('jobid'));
     my $command = 'job_set_'.$self->stash('command');
 
-    my $res = eval("Scheduler::$command($jobid)");
+    my $res = eval("OpenQA::Scheduler::$command($jobid)");
     # Referencing the scalar will result in true or false
     # (see http://mojolicio.us/perldoc/Mojo/JSON)
     $self->render(json => {result => \$res});
@@ -95,7 +95,7 @@ sub set_command {
 
 sub destroy {
     my $self = shift;
-    my $res = Scheduler::job_delete(int($self->stash('jobid')));
+    my $res = OpenQA::Scheduler::job_delete(int($self->stash('jobid')));
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -105,7 +105,7 @@ sub prio {
     my $jobid = int($self->stash('jobid'));
     my $prio = int($self->param('prio'));
 
-    my $res = Scheduler::job_set_prio(jobid => $jobid, prio => $prio);
+    my $res = OpenQA::Scheduler::job_set_prio(jobid => $jobid, prio => $prio);
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -116,7 +116,7 @@ sub result {
     my $jobid = int($self->stash('jobid'));
     my $result = $self->param('result');
 
-    my $res = Scheduler::job_update_result(jobid => $jobid, result => $result);
+    my $res = OpenQA::Scheduler::job_update_result(jobid => $jobid, result => $result);
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -127,7 +127,7 @@ sub update_status {
     my $jobid = int($self->stash('jobid'));
     my $status = $self->req->json->{'status'};
 
-    my $res = Scheduler::job_update_status($jobid, $status);
+    my $res = OpenQA::Scheduler::job_update_status($jobid, $status);
     $self->render(json => {result => \$res});
 }
 
@@ -139,10 +139,10 @@ sub done {
 
     my $res;
     if ($newbuild) {
-        $res = Scheduler::job_set_done(jobid => $jobid, result => $result, newbuild => $newbuild);
+        $res = OpenQA::Scheduler::job_set_done(jobid => $jobid, result => $result, newbuild => $newbuild);
     }
     else {
-        $res = Scheduler::job_set_done(jobid => $jobid, result => $result);
+        $res = OpenQA::Scheduler::job_set_done(jobid => $jobid, result => $result);
     }
     # See comment in set_command
     $self->render(json => {result => \$res});
@@ -161,7 +161,7 @@ sub restart {
         $target = $jobs;
     }
 
-    my @res = Scheduler::job_restart($target);
+    my @res = OpenQA::Scheduler::job_restart($target);
     $self->render(json => {result => \@res});
 }
 
@@ -169,7 +169,7 @@ sub cancel {
     my $self = shift;
     my $name = $self->param('name');
 
-    my $res = Scheduler::job_cancel($name);
+    my $res = OpenQA::Scheduler::job_cancel($name);
     $self->render(json => {result => $res});
 }
 
@@ -184,7 +184,7 @@ sub duplicate {
         $args{dup_type_auto} = 1;
     }
 
-    my $id = Scheduler::job_duplicate(%args);
+    my $id = OpenQA::Scheduler::job_duplicate(%args);
     $self->render(json => {id => $id});
 }
 

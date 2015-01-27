@@ -16,10 +16,10 @@
 
 package OpenQA::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
+use OpenQA::Utils;
 use File::Basename;
 use File::Copy;
-use Scheduler;
+use OpenQA::Scheduler;
 use POSIX qw/strftime/;
 use Try::Tiny;
 use JSON;
@@ -30,7 +30,7 @@ sub init {
     my $testindex = $self->param('stepid');
 
 
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     $self->stash('testname', $job->{'name'});
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $results = test_result($testdirname);
@@ -117,7 +117,7 @@ sub edit {
     my $module_detail = $self->stash('module_detail');
     my $imgname = $module_detail->{'screenshot'};
     my $results = $self->stash('results');
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     my $testdirname = $job->{'settings'}->{'NAME'};
 
     # Each object in $needles will contain the name, both the url and the local path
@@ -415,7 +415,7 @@ sub save_needle {
     }
 
     my $results = $self->stash('results');
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $json = $validation->param('json');
     my $imagename = $validation->param('imagename');

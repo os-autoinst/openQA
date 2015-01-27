@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::Workers;
+package OpenQA::Schema::Result::Workers;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -39,8 +39,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/host instance/]);
-__PACKAGE__->has_many(jobs => 'Schema::Result::Jobs', 'worker_id');
-__PACKAGE__->has_many(properties => 'Schema::Result::WorkerProperties', 'worker_id');
+__PACKAGE__->has_many(jobs => 'OpenQA::Schema::Result::Jobs', 'worker_id');
+__PACKAGE__->has_many(properties => 'OpenQA::Schema::Result::WorkerProperties', 'worker_id');
 
 # TODO
 # INSERT INTO workers (id, t_created) VALUES(0, datetime('now'));

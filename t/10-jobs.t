@@ -21,7 +21,7 @@ BEGIN {
 }
 
 use strict;
-use openqa;
+use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;
 use Test::Mojo;

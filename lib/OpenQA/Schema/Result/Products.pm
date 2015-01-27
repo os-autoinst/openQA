@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::Products;
+package OpenQA::Schema::Result::Products;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -49,9 +49,9 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->has_many(job_templates => 'Schema::Result::JobTemplates', 'product_id');
+__PACKAGE__->has_many(job_templates => 'OpenQA::Schema::Result::JobTemplates', 'product_id');
 __PACKAGE__->add_unique_constraint([qw/distri version arch flavor/]);
-__PACKAGE__->has_many(settings => 'Schema::Result::ProductSettings', 'product_id', { order_by => { -asc => 'key' } });
+__PACKAGE__->has_many(settings => 'OpenQA::Schema::Result::ProductSettings', 'product_id', { order_by => { -asc => 'key' } });
 
 sub name {
     my ($self) = @_;

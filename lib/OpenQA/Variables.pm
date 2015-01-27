@@ -21,7 +21,7 @@ use warnings;
 
 use Mojo::Base -base;
 
-use openqa qw/testcasedir/;
+use OpenQA::Utils qw/testcasedir/;
 
 use Carp ();
 use Data::Dump;

@@ -14,12 +14,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::JobModules;
+package OpenQA::Schema::Result::JobModules;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
-use Scheduler;
-use Schema::Result::Jobs;
+use OpenQA::Scheduler;
+use OpenQA::Schema::Result::Jobs;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -43,14 +43,14 @@ __PACKAGE__->add_columns(
     },
     result => {
         data_type => 'varchar',
-        default_value => Schema::Result::Jobs::NONE,
+        default_value => OpenQA::Schema::Result::Jobs::NONE,
     },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(
     "job",
-    "Schema::Result::Jobs",
+    "OpenQA::Schema::Result::Jobs",
     { 'foreign.id' => "self.job_id" },
     {
         is_deferrable => 1,
@@ -69,7 +69,7 @@ sub sqlt_deploy_hook {
 sub _count_job_results($$) {
     my ($job, $result) = @_;
 
-    my $schema = Scheduler::schema();
+    my $schema = OpenQA::Scheduler::schema();
 
     my $rid = $result_cache{$result};
     my $count = $schema->resultset("JobModules")->search({ job_id => $job->{id}, result => $result })->count;
@@ -114,9 +114,9 @@ sub _insert_tm($$$) {
 sub split_results($;$) {
     my ($job,$results) = @_;
 
-    $results ||= openqa::test_result($job->{settings}->{NAME});
+    $results ||= OpenQA::Utils::test_result($job->{settings}->{NAME});
     return unless $results; # broken test
-    my $schema = Scheduler::schema();
+    my $schema = OpenQA::Scheduler::schema();
     for my $tm (@{$results->{testmodules}}) {
         _insert_tm($schema, $job, $tm);
     }

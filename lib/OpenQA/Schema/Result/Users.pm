@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::Users;
+package OpenQA::Schema::Result::Users;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -57,7 +57,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/openid/]);
-__PACKAGE__->has_many(api_keys => 'Schema::Result::ApiKeys', 'user_id');
+__PACKAGE__->has_many(api_keys => 'OpenQA::Schema::Result::ApiKeys', 'user_id');
 
 sub name{
     my $self = shift;

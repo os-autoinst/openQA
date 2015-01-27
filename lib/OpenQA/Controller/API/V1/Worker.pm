@@ -16,13 +16,13 @@
 
 package OpenQA::Controller::API::V1::Worker;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
-use Scheduler ();
+use OpenQA::Utils;
+use OpenQA::Scheduler ();
 use OpenQA::WebSockets qw/ws_create/;
 
 sub list {
     my $self = shift;
-    $self->render(json => { workers => Scheduler::list_workers });
+    $self->render(json => { workers => OpenQA::Scheduler::list_workers });
 }
 
 sub create {
@@ -37,13 +37,13 @@ sub create {
     $caps->{cpu_opmode} = $self->param('cpu_opmode');
     $caps->{mem_max} = $self->param('mem_max');
 
-    my $res = Scheduler::worker_register($host, $instance, $backend, $caps);
+    my $res = OpenQA::Scheduler::worker_register($host, $instance, $backend, $caps);
     $self->render(json => { id => $res} );
 }
 
 sub show {
     my $self = shift;
-    my $res = Scheduler::worker_get($self->stash('workerid'));
+    my $res = OpenQA::Scheduler::worker_get($self->stash('workerid'));
     if ($res) {
         $self->render(json => {worker => $res });
     }

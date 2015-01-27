@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::JobSettings;
+package OpenQA::Schema::Result::JobSettings;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -41,7 +41,7 @@ __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(
     "job",
-    "Schema::Result::Jobs",
+    "OpenQA::Schema::Result::Jobs",
     { 'foreign.id' => "self.job_id" },
     {
         is_deferrable => 1,

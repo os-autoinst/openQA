@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::ProductSettings;
+package OpenQA::Schema::Result::ProductSettings;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -43,7 +43,7 @@ __PACKAGE__->add_unique_constraint([qw/product_id key/]);
 
 __PACKAGE__->belongs_to(
     "product",
-    "Schema::Result::Products",
+    "OpenQA::Schema::Result::Products",
     { 'foreign.id' => "self.product_id" },
     {
         is_deferrable => 1,

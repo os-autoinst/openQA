@@ -103,7 +103,7 @@ use Mojo::IOLoop;
 use Carp;
 use lib "$FindBin::Bin/../lib";
 use lib "$FindBin::Bin/../lib/OpenQA";
-use openqa ();
+use OpenQA::Utils ();
 use OpenQA::Client;
 use IPC::Open3;
 
@@ -361,7 +361,7 @@ sub workit($){
         print "setting $k=$v\n" if $verbose;
         $vars{$k} = $v;
     }
-    $vars{CASEDIR} = openqa::testcasedir($vars{DISTRI}, $vars{VERSION});
+    $vars{CASEDIR} = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION});
     save_vars(\%vars);
 
     # create tmpdir for qemu to write here

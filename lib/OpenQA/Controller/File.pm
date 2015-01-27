@@ -20,7 +20,7 @@ use warnings;
 package OpenQA::Controller::File;
 use Mojo::Base 'Mojolicious::Controller';
 BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
-use openqa;
+use OpenQA::Utils;
 use File::Basename;
 
 use Data::Dump qw(pp);
@@ -35,7 +35,7 @@ sub needle {
     my ($name, $dummy, $format) = fileparse($self->param('name'), qw(.png .txt));
     my $distri = $self->param('distri');
     my $version = $self->param('version') || '';
-    my $needle = openqa::needle_info($name, $distri, $version);
+    my $needle = OpenQA::Utils::needle_info($name, $distri, $version);
     return $self->reply->not_found unless $needle;
 
     $self->{static} = Mojolicious::Static->new;
@@ -49,13 +49,13 @@ sub needle {
 sub _set_test($) {
     my $self = shift;
 
-    $self->{job} = Scheduler::job_get($self->param('testid'));
+    $self->{job} = OpenQA::Scheduler::job_get($self->param('testid'));
     return undef unless $self->{job};
 
     $self->{testdirname} = $self->{job}->{'settings'}->{'NAME'};
     $self->{static} = Mojolicious::Static->new;
-    push @{$self->{static}->paths}, openqa::testresultdir($self->{testdirname});
-    push @{$self->{static}->paths}, openqa::testresultdir($self->{testdirname} . '/ulogs');
+    push @{$self->{static}->paths}, OpenQA::Utils::testresultdir($self->{testdirname});
+    push @{$self->{static}->paths}, OpenQA::Utils::testresultdir($self->{testdirname} . '/ulogs');
     return 1;
 }
 
@@ -74,10 +74,10 @@ sub test_asset {
 
     my $asset;
     if ($self->param('assetid')) {
-        $asset = Scheduler::asset_get(id => $self->param('assetid'))->single();
+        $asset = OpenQA::Scheduler::asset_get(id => $self->param('assetid'))->single();
     }
     else {
-        $asset = Scheduler::asset_get(type => $self->param('assettype'), name => $self->param('assetname'))->single();
+        $asset = OpenQA::Scheduler::asset_get(type => $self->param('assettype'), name => $self->param('assetname'))->single();
     }
 
     return $self->reply->not_found unless $asset;
@@ -118,7 +118,7 @@ sub test_isoimage {
     my $self = shift;
 
     return $self->reply->not_found unless $self->_set_test;
-    push @{$self->{static}->paths}, $openqa::isodir;
+    push @{$self->{static}->paths}, $OpenQA::Utils::isodir;
 
     return $self->serve_static_($self->{job}->{settings}->{ISO});
 }

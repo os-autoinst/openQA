@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::Jobs;
+package OpenQA::Schema::Result::Jobs;
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
 
@@ -101,15 +101,15 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->has_many(settings => 'Schema::Result::JobSettings', 'job_id');
-__PACKAGE__->belongs_to(worker => 'Schema::Result::Workers', 'worker_id');
-__PACKAGE__->belongs_to(clone => 'Schema::Result::Jobs', 'clone_id', { join_type => 'left', on_delete => 'SET NULL' });
-__PACKAGE__->might_have(origin => 'Schema::Result::Jobs', 'clone_id', { cascade_delete => 0 });
-__PACKAGE__->has_many(jobs_assets => 'Schema::Result::JobsAssets', 'job_id');
+__PACKAGE__->has_many(settings => 'OpenQA::Schema::Result::JobSettings', 'job_id');
+__PACKAGE__->belongs_to(worker => 'OpenQA::Schema::Result::Workers', 'worker_id');
+__PACKAGE__->belongs_to(clone => 'OpenQA::Schema::Result::Jobs', 'clone_id', { join_type => 'left', on_delete => 'SET NULL' });
+__PACKAGE__->might_have(origin => 'OpenQA::Schema::Result::Jobs', 'clone_id', { cascade_delete => 0 });
+__PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
-__PACKAGE__->has_many(children => 'Schema::Result::JobDependencies', 'parent_job_id');
-__PACKAGE__->has_many(parents => 'Schema::Result::JobDependencies', 'child_job_id');
-__PACKAGE__->has_many(modules => 'Schema::Result::JobModules', 'job_id');
+__PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
+__PACKAGE__->has_many(parents => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
+__PACKAGE__->has_many(modules => 'OpenQA::Schema::Result::JobModules', 'job_id');
 
 __PACKAGE__->add_unique_constraint([qw/slug/]);
 

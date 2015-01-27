@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::WorkerProperties;
+package OpenQA::Schema::Result::WorkerProperties;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -41,7 +41,7 @@ __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(
     "worker",
-    "Schema::Result::Workers",
+    "OpenQA::Schema::Result::Workers",
     { 'foreign.id' => "self.worker_id" },
     {
         is_deferrable => 1,

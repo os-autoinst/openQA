@@ -1,4 +1,4 @@
-package openqa;
+package OpenQA::Utils;
 use strict;
 require 5.002;
 
@@ -293,10 +293,10 @@ sub sanitize_testname($){
 
 sub connect_db{
     my $mode = shift || $ENV{OPENQA_DATABASE} || 'production';
-    use Schema::Schema;
+    use OpenQA::Schema::Schema;
     CORE::state $schema;
     unless ($schema) {
-        $schema = Schema->connect($mode) or die "can't connect to db: $!\n";
+        $schema = OpenQA::Schema->connect($mode) or die "can't connect to db: $!\n";
     }
     return $schema;
 }

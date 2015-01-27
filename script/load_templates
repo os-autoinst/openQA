@@ -52,7 +52,7 @@ BEGIN {
 use strict;
 use File::Basename qw/dirname/;
 use POSIX qw/getuid getgid setuid setgid/;
-use openqa;
+use OpenQA::Utils;
 use Schema::Schema;
 use Try::Tiny;
 use Data::Dump qw/dd pp/;
@@ -95,7 +95,7 @@ else {
     }
 }
 
-my $schema = openqa::connect_db();
+my $schema = OpenQA::Utils::connect_db();
 
 if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
     my $dbdir = dirname($1);

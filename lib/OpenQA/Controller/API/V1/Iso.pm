@@ -16,8 +16,8 @@
 
 package OpenQA::Controller::API::V1::Iso;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
-use Scheduler ();
+use OpenQA::Utils;
+use OpenQA::Scheduler ();
 use Try::Tiny;
 
 sub _sort_dep {
@@ -163,7 +163,7 @@ sub create {
             $cond{$k} = $jobs->[0]->{$k};
         }
         if (%cond) {
-            Scheduler::job_cancel(\%cond, 1); # have new build jobs instead
+            OpenQA::Scheduler::job_cancel(\%cond, 1); # have new build jobs instead
         }
     }
 
@@ -185,7 +185,7 @@ sub create {
         # create a new job with these parameters and count if successful, do not send job notifies yet
         my $id;
         try {
-            $id = Scheduler::job_create($settings, 1);
+            $id = OpenQA::Scheduler::job_create($settings, 1);
         }
         catch {
             chomp;
@@ -203,12 +203,12 @@ sub create {
 
             # change prio only if other than defalt prio
             if( $prio && $prio != 50 ) {
-                Scheduler::job_set_prio(jobid => $id, prio => $prio);
+                OpenQA::Scheduler::job_set_prio(jobid => $id, prio => $prio);
             }
         }
     }
     #notify workers new jobs are available
-    Scheduler::job_notify_workers();
+    OpenQA::Scheduler::job_notify_workers();
     $self->app->log->debug("created $cnt jobs");
     $self->render(json => {count => $cnt, ids => \@ids });
 }
@@ -217,7 +217,7 @@ sub destroy {
     my $self = shift;
     my $iso = $self->stash('name');
 
-    my $res = Scheduler::job_delete($iso);
+    my $res = OpenQA::Scheduler::job_delete($iso);
     $self->render(json => {count => $res});
 }
 
@@ -225,7 +225,7 @@ sub cancel {
     my $self = shift;
     my $iso = $self->stash('name');
 
-    my $res = Scheduler::job_cancel($iso);
+    my $res = OpenQA::Scheduler::job_cancel($iso);
     $self->render(json => {result => $res});
 }
 

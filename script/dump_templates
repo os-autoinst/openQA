@@ -116,8 +116,8 @@ if ($options{tmp}) {
     $dh->install;
 }
 else {
-    use openqa;
-    $schema = openqa::connect_db();
+    use OpenQA::Utils;
+    $schema = OpenQA::Utils::connect_db();
 }
 
 die unless $schema;

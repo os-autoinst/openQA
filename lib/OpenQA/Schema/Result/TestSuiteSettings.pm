@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::TestSuiteSettings;
+package OpenQA::Schema::Result::TestSuiteSettings;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -43,7 +43,7 @@ __PACKAGE__->add_unique_constraint([qw/test_suite_id key/]);
 
 __PACKAGE__->belongs_to(
     "test_suite",
-    "Schema::Result::TestSuites",
+    "OpenQA::Schema::Result::TestSuites",
     { 'foreign.id' => "self.test_suite_id" },
     {
         is_deferrable => 1,

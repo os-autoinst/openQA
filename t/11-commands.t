@@ -23,7 +23,7 @@ use Test::Mojo;
 use Mojo::URL;
 use OpenQA::Test::Case;
 use OpenQA::Client;
-use Scheduler;
+use OpenQA::Scheduler;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -47,13 +47,13 @@ my @valid_commands = qw/quit abort cancel obsolete
   livelog_stop livelog_start/;
 
 for my $cmd (@valid_commands) {
-    Scheduler::command_enqueue(workerid => 1, command => $cmd);
+    OpenQA::Scheduler::command_enqueue(workerid => 1, command => $cmd);
     $ws->message_ok;
     $ws->message_is($cmd);
 }
 
 #issue invalid commands
-eval {Scheduler::command_enqueue(workerid => 1, command => 'foo');};
+eval {OpenQA::Scheduler::command_enqueue(workerid => 1, command => 'foo');};
 ok($@, 'refuse invalid commands');
 
 $ws->finish_ok;

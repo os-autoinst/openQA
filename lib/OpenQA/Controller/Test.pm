@@ -16,8 +16,8 @@
 
 package OpenQA::Controller::Test;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
-use Scheduler qw/worker_get/;
+use OpenQA::Utils;
+use OpenQA::Scheduler qw/worker_get/;
 use File::Basename;
 use POSIX qw/strftime/;
 use Data::Dumper;
@@ -57,7 +57,7 @@ sub list {
     my @slist=();
     my @list=();
 
-    my $jobs = Scheduler::list_jobs(
+    my $jobs = OpenQA::Scheduler::list_jobs(
         state => $state,
         match => $match,
         limit => $limit,
@@ -72,7 +72,7 @@ sub list {
 
         if ($job->{state} =~ /^(?:running|waiting|done)$/) {
 
-            my $result_stats = Schema::Result::JobModules::job_module_stats($job);
+            my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($job);
 
             my $run_stat = {};
             if ($job->{state} eq 'running') {
@@ -120,16 +120,16 @@ sub show {
 
     return $self->reply->not_found if (!defined $self->param('testid'));
 
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
 
     my $testdirname = $job->{'settings'}->{'NAME'};
-    my $testresultdir = openqa::testresultdir($testdirname);
+    my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
 
     return $self->render(text => "Invalid path", status => 403) if ($testdirname=~/(?:\.\.)|[^a-zA-Z0-9._+-:]/);
 
     $self->stash(testname => $job->{'name'});
     $self->stash(resultdir => $testresultdir);
-    $self->stash(assets => Scheduler::job_get_assets($job->{'id'}));
+    $self->stash(assets => OpenQA::Scheduler::job_get_assets($job->{'id'}));
 
     #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
 
@@ -246,7 +246,7 @@ sub overview {
     my %results = ();
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
 
-    for my $job ( @{ Scheduler::list_jobs(%search_args) || [] } ) {
+    for my $job ( @{ OpenQA::Scheduler::list_jobs(%search_args) || [] } ) {
         my $testname = $job->{settings}->{'NAME'};
         my $test     = $job->{test};
         my $flavor   = $job->{settings}->{FLAVOR} || 'sweet';
@@ -255,7 +255,7 @@ sub overview {
         my $result;
         if ( $job->{state} eq 'done' ) {
             my $r            = test_result($testname);
-            my $result_stats = Schema::Result::JobModules::job_module_stats($job);
+            my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($job);
             my $failures     = get_failed_needles($testname);
             my $overall      = $job->{result};
             if ( $job->{result} eq "passed" && $r->{dents}) {
@@ -334,7 +334,7 @@ sub menu {
 
     return $self->reply->not_found if (!defined $self->param('testid'));
 
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
 
     $self->stash(state => $job->{'state'});
     $self->stash(prio => $job->{'priority'});

@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::Assets;
+package OpenQA::Schema::Result::Assets;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -38,7 +38,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/type name/]);
-__PACKAGE__->has_many(jobs_assets => 'Schema::Result::JobsAssets', 'asset_id');
+__PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'asset_id');
 __PACKAGE__->many_to_many(jobs => 'jobs_assets', 'job');
 
 1;

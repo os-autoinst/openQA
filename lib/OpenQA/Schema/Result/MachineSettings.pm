@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::MachineSettings;
+package OpenQA::Schema::Result::MachineSettings;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -43,7 +43,7 @@ __PACKAGE__->add_unique_constraint([qw/machine_id key/]);
 
 __PACKAGE__->belongs_to(
     "machine",
-    "Schema::Result::Machines",
+    "OpenQA::Schema::Result::Machines",
     { 'foreign.id' => "self.machine_id" },
     {
         is_deferrable => 1,

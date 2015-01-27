@@ -1093,7 +1093,7 @@ systemd-ask-password-console.path                                               
 session-1.scope                                                                     loaded active running   Session 1 of user bernhard
 after-local.service                                                                 loaded active exited    /etc/init.d/after.local Compatibility
 apache2.service                                                                     loaded active running   The Apache Webserver
-cron.service                                                                        loaded active running   Command Scheduler
+cron.service                                                                        loaded active running   Command OpenQA::Scheduler
 dbus.service                                                                        loaded active running   D-Bus System Message Bus
 getty@tty1.service                                                                  loaded active running   Getty on tty1
 getty@tty4.service                                                                  loaded active running   Getty on tty4

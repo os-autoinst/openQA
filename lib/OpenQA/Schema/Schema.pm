@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema;
+package OpenQA::Schema;
 use base qw/DBIx::Class::Schema::Config/;
 use IO::Dir;
 use File::Basename qw/dirname/;

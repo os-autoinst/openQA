@@ -16,7 +16,7 @@
 
 package OpenQA::Controller::Admin::Workers;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
+use OpenQA::Utils;
 use OpenQA::Controller::Worker ();
 
 sub index {

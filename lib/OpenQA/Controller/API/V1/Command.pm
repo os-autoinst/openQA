@@ -16,15 +16,15 @@
 
 package OpenQA::Controller::API::V1::Command;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
-use Scheduler ();
+use OpenQA::Utils;
+use OpenQA::Scheduler ();
 
 sub create {
     my $self = shift;
     my $workerid = $self->stash('workerid');
     my $command = $self->param('command');
 
-    $self->render(json => {id => Scheduler::command_enqueue_checked(workerid => $workerid, command => $command)});
+    $self->render(json => {id => OpenQA::Scheduler::command_enqueue_checked(workerid => $workerid, command => $command)});
 }
 
 1;

@@ -24,9 +24,9 @@ use Test::More;
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 
-use openqa ();
+use OpenQA::Utils ();
 
-my $schema = openqa::connect_db('test');
+my $schema = OpenQA::Utils::connect_db('test');
 
 my $dh = DBIx::Class::DeploymentHandler->new(
     {

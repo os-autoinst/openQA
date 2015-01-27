@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::JobsAssets;
+package OpenQA::Schema::Result::JobsAssets;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -35,7 +35,7 @@ __PACKAGE__->add_timestamps;
 
 __PACKAGE__->add_unique_constraint([qw/job_id asset_id/]);
 
-__PACKAGE__->belongs_to( job => 'Schema::Result::Jobs', 'job_id' );
-__PACKAGE__->belongs_to( asset => 'Schema::Result::Assets', 'asset_id' );
+__PACKAGE__->belongs_to( job => 'OpenQA::Schema::Result::Jobs', 'job_id' );
+__PACKAGE__->belongs_to( asset => 'OpenQA::Schema::Result::Assets', 'asset_id' );
 
 1;

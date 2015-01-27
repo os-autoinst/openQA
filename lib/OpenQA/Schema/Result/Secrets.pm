@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::Secrets;
+package OpenQA::Schema::Result::Secrets;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;

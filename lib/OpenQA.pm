@@ -17,9 +17,9 @@
 package OpenQA;
 use Mojolicious 5.74;
 use Mojo::Base 'Mojolicious';
-use openqa 'connect_db';
+use OpenQA::Utils 'connect_db';
 use OpenQA::Plugin::Helpers;
-use Scheduler;
+use OpenQA::Scheduler;
 use Mojo::IOLoop;
 use DateTime;
 use Cwd qw/abs_path/;
@@ -82,15 +82,15 @@ sub _workers_checker {
 
             Mojo::IOLoop->timer(
                 10 => sub {
-                    my $dead_jobs = Scheduler::jobs_get_dead_worker($threshold);
+                    my $dead_jobs = OpenQA::Scheduler::jobs_get_dead_worker($threshold);
                     foreach my $job (@$dead_jobs) {
                         my %args = (
                             jobid => $job->{id},
                             result => 'incomplete',
                         );
-                        my $result = Scheduler::job_set_done(%args);
+                        my $result = OpenQA::Scheduler::job_set_done(%args);
                         if($result) {
-                            Scheduler::job_duplicate(jobid => $job->{id});
+                            OpenQA::Scheduler::job_duplicate(jobid => $job->{id});
                             print STDERR "cancelled dead job $job->{id} and re-duplicated done\n";
                         }
                     }
@@ -114,7 +114,7 @@ sub _init_rand{
 }
 
 has schema => sub {
-    return connect_db();
+    return OpenQA::Utils::connect_db();
 };
 
 has secrets => sub {
@@ -182,7 +182,7 @@ sub startup {
                 driver     => 'CacheCache',
                 cc_class   => 'Cache::FileCache',
                 cc_options => {
-                    cache_root  => abs_path($openqa::cachedir),
+                    cache_root  => abs_path($OpenQA::Utils::cachedir),
                     directory_umask => 077,
                 },
             },

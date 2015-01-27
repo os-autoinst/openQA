@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::ResultSet::Jobs;
+package OpenQA::Schema::ResultSet::Jobs;
 use base qw/DBIx::Class::ResultSet/;
 
 =head2 latest_build

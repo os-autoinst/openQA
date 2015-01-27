@@ -18,7 +18,7 @@ package OpenQA::Test::Testresults;
 
 use File::Copy::Recursive qw/dircopy/;
 use File::Path qw/remove_tree/;
-use openqa;
+use OpenQA::Utils;
 use Mojo::Base -base;
 
 sub create {
@@ -30,12 +30,12 @@ sub create {
 
     if ($options{directory}) {
         # Remove previous
-        remove_tree($openqa::resultdir) if -e $openqa::resultdir;
+        remove_tree($OpenQA::Utils::resultdir) if -e $OpenQA::Utils::resultdir;
         # copy new
-        dircopy($options{directory}, $openqa::resultdir) or die $!;
+        dircopy($options{directory}, $OpenQA::Utils::resultdir) or die $!;
     }
 
-    return $openqa::resultdir;
+    return $OpenQA::Utils::resultdir;
 }
 
 1;

@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package Schema::Result::JobTemplates;
+package OpenQA::Schema::Result::JobTemplates;
 use base qw/DBIx::Class::Core/;
 
 use db_helpers;
@@ -38,9 +38,9 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->belongs_to(product => 'Schema::Result::Products', 'product_id');
-__PACKAGE__->belongs_to(machine => 'Schema::Result::Machines', 'machine_id');
-__PACKAGE__->belongs_to(test_suite => 'Schema::Result::TestSuites', 'test_suite_id');
+__PACKAGE__->belongs_to(product => 'OpenQA::Schema::Result::Products', 'product_id');
+__PACKAGE__->belongs_to(machine => 'OpenQA::Schema::Result::Machines', 'machine_id');
+__PACKAGE__->belongs_to(test_suite => 'OpenQA::Schema::Result::TestSuites', 'test_suite_id');
 __PACKAGE__->add_unique_constraint([qw/product_id machine_id test_suite_id/]);
 
 sub variables {

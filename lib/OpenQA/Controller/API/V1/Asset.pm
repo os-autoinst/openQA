@@ -16,8 +16,8 @@
 
 package OpenQA::Controller::API::V1::Asset;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
-use Scheduler ();
+use OpenQA::Utils;
+use OpenQA::Scheduler ();
 use Data::Dump qw(pp);
 
 sub register {
@@ -26,7 +26,7 @@ sub register {
     my $type = $self->param('type');
     my $name = $self->param('name');
 
-    my $rs = Scheduler::asset_register(type => $type, name => $name);
+    my $rs = OpenQA::Scheduler::asset_register(type => $type, name => $name);
 
     my $status;
     my $json = {};
@@ -42,7 +42,7 @@ sub register {
 sub list {
     my $self = shift;
 
-    my $rs = Scheduler::asset_list();
+    my $rs = OpenQA::Scheduler::asset_list();
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 
     $self->render(json => { assets => [ $rs->all() ] } );
@@ -56,7 +56,7 @@ sub get {
         $args{$arg} = $self->stash($arg);
     }
 
-    my $rs = Scheduler::asset_get(%args);
+    my $rs = OpenQA::Scheduler::asset_get(%args);
 
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 
@@ -77,7 +77,7 @@ sub delete {
         $args{$arg} = $self->stash($arg);
     }
 
-    my $rs = Scheduler::asset_delete(%args);
+    my $rs = OpenQA::Scheduler::asset_delete(%args);
 
     my $status;
     my $json = {};
