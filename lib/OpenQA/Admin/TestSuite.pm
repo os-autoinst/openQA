@@ -33,7 +33,8 @@ sub index {
     my @variables = map { $_->key } $rc->all();
     $self->stash('variables', \@variables);
 
-    my @col_variables = (map { $_->key } $rc->all())[0..6];
+    my @col_variables = @variables;
+    splice @col_variables, 7;
 
     $self->stash('col_var_keys', \@col_variables);
 

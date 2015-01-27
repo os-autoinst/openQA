@@ -1,21 +1,6 @@
 % layout 'admin';
 % title 'Machines';
 
-<div class="box box-shadow list-form">
-    <div class="box-header aligncenter">New machine</div>
-    %= form_for apiv1_admin_machines => (method => 'post') => begin
-        <p>
-            %= label_for name => 'Name'
-            %= text_field 'name', size => 15
-            %= label_for name => 'Backend'
-            %= text_field 'backend', size => 10
-        </p>
-        <p>
-            %= submit_button 'create'
-        </p>
-    % end
-</div>
-
 <div class="box box-shadow">
     <h2><%= title %></h2>
 
@@ -29,12 +14,15 @@
                 % for my $var (@$col_var_keys) {
                     <th class="table-sortable:alphanumeric col_settings"><%= $var %></th>
                 %}
-                <th class="col_settings_list">variables</th>
+                <th class="col_settings_list">other variables</th>
                 <th class="col_action">action</th>
             </tr>
         </thead>
         <tbody>
         </tbody>
     </table>
+    <div class="aligncenter">
+        <input value="New machine" onclick="add_table_row_button( );" type="button"/>
+    </div>
     <input type="hidden" id="admintable_api_url" value="/api/v1/machines"/>
 </div>

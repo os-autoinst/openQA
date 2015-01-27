@@ -1,23 +1,6 @@
 % layout 'admin';
 % title 'Products';
 
-<div class="box box-shadow list-form">
-    <div class="box-header aligncenter">New product</div>
-    %= form_for apiv1_admin_products => (method => 'post') => begin
-        <p>
-            %= label_for name => 'Distri'
-            %= text_field 'distri', size => 15
-            %= label_for name => 'Version'
-            %= text_field 'version', size => 10
-            %= label_for name => 'Flavor'
-            %= text_field 'flavor', size => 15
-            %= label_for name => 'Arch'
-            %= text_field 'arch', size => 10
-            %= submit_button 'create'
-        </p>
-    % end
-</div>
-
 <div class="box box-shadow">
     <h2><%= title %></h2>
 
@@ -33,12 +16,15 @@
                 % for my $var (@$col_var_keys) {
                     <th class="table-sortable:alphanumeric col_settings"><%= $var %></th>
                 %}
-                <th class="col_settings_list">variables</th>
+                <th class="col_settings_list">other variables</th>
                 <th class="col_action">action</th>
             </tr>
         </thead>
         <tbody>
         </tbody>
     </table>
+    <div class="aligncenter">
+        <input value="New product" onclick="add_table_row_button();" type="button"/>
+    </div>
     <input type="hidden" id="admintable_api_url" value="/api/v1/products"/>
 </div>

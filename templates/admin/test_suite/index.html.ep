@@ -1,20 +1,6 @@
 % layout 'admin';
 % title 'Test suites';
 
-<div class="box box-shadow list-form">
-    <div class="box-header aligncenter">New test suite</div>
-    %= form_for apiv1_admin_test_suites => (method => 'post') => begin
-        <p>
-            %= label_for name => 'Name'
-            %= text_field 'name', size => 15
-            %= label_for name => 'Priority'
-            %= text_field 'prio', size => 5
-
-            %= submit_button 'create'
-        </p>
-    % end
-</div>
-
 <div class="box box-shadow">
 	<h2><%= title %></h2>
 
@@ -28,12 +14,15 @@
                 % for my $var (@$col_var_keys) {
                     <th class="table-sortable:alphanumeric col_settings"><%= $var %></th>
                 %}
-                <th class="col_settings_list">variables</th>
+                <th class="col_settings_list">other variables</th>
                 <th class="col_action">action</th>
             </tr>
         </thead>
         <tbody>
         </tbody>
     </table>
+    <div class="aligncenter">
+        <input value="New test suite" onclick="add_table_row_button();" type="button"/>
+    </div>
     <input type="hidden" id="admintable_api_url" value="/api/v1/test_suites"/>
 </div>

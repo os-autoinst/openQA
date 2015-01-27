@@ -8,11 +8,12 @@ function table_row (data, table, edit)
         var name = th.text().trim();
         
         if (th.hasClass("col_value")) {
-            var value = data[name];
+            var value = '';
+            if (data[name]) value = data[name];
             if (edit) {
                 html +=
-                '<td>' +
-                     '<input size="5" type="text" value="' + value + '"/>' +
+                '<td class="editable">' +
+                     '<input type="text" value="' + value + '"/>' +
                  '</td>';
             }
             else {
@@ -21,16 +22,18 @@ function table_row (data, table, edit)
         }
         else if (th.hasClass("col_settings")) {
             var value = '';
-            for (var j = 0; j < data['settings'].length; j++) {
-                if (name === data['settings'][j]['key']) {
-                    value = data['settings'][j]['value'];
-                    break;
+            if (data['settings']) {
+                for (var j = 0; j < data['settings'].length; j++) {
+                    if (name === data['settings'][j]['key']) {
+                        value = data['settings'][j]['value'];
+                        break;
+                    }
                 }
             }
             if (edit) {
                 html +=
-                '<td>' +
-                     '<input size="5" type="text" value="' + value + '"/>' +
+                '<td class="editable">' +
+                     '<input type="text" value="' + value + '"/>' +
                  '</td>';
             }
             else {
@@ -38,41 +41,60 @@ function table_row (data, table, edit)
             }
         }
         else if (th.hasClass("col_settings_list")) {
-            html += '<td><ul>';
-            for (var j = 0; j < data['settings'].length; j++) {
-                var k = data['settings'][j]['key'];
+            if (edit) {
+                html += '<td class="editable">';
+            }
+            else {
+                html += '<td>';
+            }
+            if (data['settings']) {
+                for (var j = 0; j < data['settings'].length; j++) {
+                    var k = data['settings'][j]['key'];
 
-                var col = false;
-                table.find('th.col_settings').each (function() {
-                    if ($(this).text().trim() == k) col = true;
-                });
+                    var col = false;
+                    table.find('th.col_settings').each (function() {
+                        if ($(this).text().trim() == k) col = true;
+                    });
 
-                if (col) continue; /* skip vars in extra columns */
+                    if (col) continue; /* skip vars in extra columns */
 
-                var v = data['settings'][j]['value'];
-                if (edit) {
-                    html += '<span class="key-value-pair"><span class="key">' + k + '</span>=<input size="5" type="text" class="value" value="' + v + '"/></span><br/>'
-                }
-                else {
-                    html += '<span class="key-value-pair"><span class="key">' + k + '</span>=<span class="value">' + v + '</span></span><br/>';
+                    var v = data['settings'][j]['value'];
+                    if (edit) {
+                        html += '<span class="key-value-pair"><span class="key">' + k + '</span>=<input type="text" class="value" value="' + v + '"/></span><br/>'
+                    }
+                    else {
+                        html += '<span class="key-value-pair"><span class="key">' + k + '</span>=<span class="value">' + v + '</span></span><br/>';
+                    }
                 }
             }
             if (edit) {
-                 html += '<span class="key-value-pair"><input size="5" class="key" type="text"/>=<input size="5" type="text" class="value"/></span><br/>';
+                 html += '<span class="key-value-pair"><input class="key" type="text"/>=<input type="text" class="value"/></span><br/>';
             }
-            html += '</ul></td>';
+            html += '</td>';
         } else if (th.hasClass("col_action")) {
             if (edit) {
-                html +=
-                '<td>' +
-                     '<input id="done" value="done" onclick="submit_table_row_button( this, ' + data['id'] + ');" type="button"/>' +
-                     '<input id="cancel" value="cancel" onclick="refresh_table_row_button( this, ' + data['id'] + ' , false );" type="button"/>' +
-                 '</td>';
+                if (data['id']) {
+                    // edit existing
+                    html +=
+                    '<td>' +
+                         '<button type="submit" class="btn" alt="Update" title="Update" onclick="submit_table_row_button( this, ' + data['id'] + ');"><i class="fa fa-floppy-o"></i></button>' +
+                         '<button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="refresh_table_row_button( this, ' + data['id'] + ' , false);"><i class="fa fa-undo"></i></button>' +
+                         '<button type="submit" class="btn" alt="Delete" title="Delete" onclick="delete_table_row_button( this, ' + data['id'] + ');"><i class="fa fa-trash"></i></button>' +
+                     '</td>';
+                }
+                else {
+                    // add new
+                    html +=
+                    '<td>' +
+                         '<button type="submit" class="btn" alt="Add" title="Add" onclick="submit_table_row_button( this );"><i class="fa fa-floppy-o"></i></button>' +
+                         '<button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="delete_table_row_button( this );"><i class="fa fa-undo"></i></button>' +
+                     '</td>';
+                }
             }
             else {
                 html +=
                 '<td>' +
-                     '<input id="edit" value="edit" onclick="refresh_table_row_button( this, ' + data['id'] + ' , true );" type="button"/>' +
+                     '<button type="submit" class="btn" alt="Edit" title="Edit" onclick="refresh_table_row_button( this, ' + data['id'] + ' , true);"><i class="fa fa-pencil-square-o"></i></button>' +
                 '</td>';
             }
         }
@@ -80,6 +102,13 @@ function table_row (data, table, edit)
     html += "</tr>";
 
     return html;
+}
+
+function admintable_api_error(request, status, error) {
+   if (request['responseJSON']['error']) {
+       error += ': ' + request['responseJSON']['error'];
+   }
+   alert(error);
 }
 
 function refresh_table_row (tr, id, edit)
@@ -98,10 +127,7 @@ function refresh_table_row (tr, id, edit)
             var new_tr_html = table_row(json_row, table, edit);
             $(tr).replaceWith(new_tr_html);
         },
-        error: function(request, status, error) {
-           alert(error);
-        }
-
+        error: admintable_api_error
     });
 }
 
@@ -147,23 +173,62 @@ function submit_table_row(tr, id)
 //    alert(JSON.stringify(data));
     var url = $("#admintable_api_url").val();
 
-    $.ajax({
-        url: url + "/" + id,
-        type: "POST",
-        dataType: 'json',
-        data: data,
-        headers: {
-            'X-HTTP-Method-Override': 'PUT'
-        },
-        success: function(resp) {
-            refresh_table_row(tr, id, false);
-        },
-        error: function(request, status, error) {
-           alert(error);
-        }
-
-    });
+    if (id) {
+        // update
+        $.ajax({
+            url: url + "/" + id,
+            type: "POST",
+            dataType: 'json',
+            data: data,
+            headers: {
+                'X-HTTP-Method-Override': 'PUT'
+            },
+            success: function(resp) {
+                refresh_table_row(tr, id, false);
+            },
+            error: admintable_api_error
+        });
+    }
+    else {
+        // create new
+        $.ajax({
+            url: url,
+            type: "POST",
+            dataType: 'json',
+            data: data,
+            success: function(resp) {
+                id = resp['id'];
+                refresh_table_row(tr, id, false);
+            },
+            error: admintable_api_error
+        });
+    }
 }
+
+
+function delete_table_row (tr, id)
+{
+    if (id) {
+        if (!confirm("Really delete?")) return;
+
+        var url = $("#admintable_api_url").val();
+
+        $.ajax({
+            url: url + "/" + id,
+            type: "DELETE",
+            dataType: 'json',
+            success: function(resp) {
+                $(tr).remove();
+            },
+            error: admintable_api_error
+        });
+    }
+    else {
+        // just remove the table row
+        $(tr).remove();
+    }
+}
+
 
 function refresh_table_row_button (button, id, edit)
 {
@@ -175,6 +240,19 @@ function submit_table_row_button (button, id)
 {
     var tr = $(button).closest('tr')[0];
     submit_table_row(tr, id);
+}
+
+function delete_table_row_button (button, id)
+{
+    var tr = $(button).closest('tr')[0];
+    delete_table_row(tr, id);
+}
+
+function add_table_row_button ()
+{
+    var table = $('.admintable');
+    var html = table_row({}, table, true);
+    table.find('tr:last').after(html);
 }
 
 function populate_admin_table ()
@@ -195,9 +273,7 @@ function populate_admin_table ()
                 }
                 table.find('tbody').html(html);
             },
-            error: function(request, status, error) {
-               alert(error);
-            }
+            error: admintable_api_error
         });
     }
 }
