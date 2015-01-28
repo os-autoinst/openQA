@@ -122,6 +122,8 @@ sub show {
 
     my $job = OpenQA::Scheduler::job_get($self->param('testid'));
 
+    return $self->reply->not_found unless $job;
+
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
 
