@@ -61,6 +61,17 @@ NeedleEditor.prototype.init = function() {
       }
     }
   }
+  // define default margin and match value
+  this.defaultmargin = 50;
+  this.defaultmatch = 96;
+  // set the value when load the page
+  if (!this.needle["area"].length) {
+    this.setMatch(this.defaultmatch);
+    this.setMargin(this.defaultmargin);
+  } else {
+    this.setMatch(this.needle["area"][0].match);
+    this.setMargin(this.needle["area"][0].margin);
+  }
   this.DrawAreas();
   this.UpdateTextArea();
 
@@ -205,6 +216,14 @@ NeedleEditor.prototype.LoadAreas = function(areas) {
 
   editor.needle["area"] = JSON.parse(areas);
   cv.delete_shapes();
+  // set the value when clicked the areas or matches
+  if (!editor.needle["area"].length) {
+    this.setMatch(this.defaultmatch);
+    this.setMargin(this.defaultmargin);
+  } else {
+    this.setMatch(this.needle["area"][0].match);
+    this.setMargin(this.needle["area"][0].margin);
+  }
   this.DrawAreas();
   this.UpdateTextArea();
 }
@@ -243,6 +262,85 @@ NeedleEditor.prototype.changeProperty = function(name, enabled) {
     var idx = properties.indexOf(name);
     properties.splice(idx, 1);
   }
+  this.UpdateTextArea();
+}
+
+NeedleEditor.prototype.setMargin = function(value) {
+  var margin = document.getElementById('margin_field');
+  margin.value = value;
+}
+
+NeedleEditor.prototype.changeMargin = function(updown) {
+  var margin = document.getElementById('margin_field');
+
+  if (!this.needle["area"].length) {
+    return;
+  }
+
+  var width = this.needle['area'][0].width;
+  var height = this.needle['area'][0].height;
+  var maxmargin;
+  if (height > width) {
+    maxmargin = width;
+  } else {
+    maxmargin = height;
+  }
+
+  if (updown !== 'up' && updown !== 'down') {
+    margin.value = this.defaultmargin;
+  } else if (margin.value > width && margin.value > height) {
+    if (margin.value == this.defaultmargin) {
+      return;
+    } else {
+      margin.value = this.defaultmargin;
+    }
+  } else if (margin.value > this.defaultmargin || margin.value < maxmargin) {
+    if (updown == 'up') {
+      ++margin.value;
+    } else if (updown == 'down') {
+      --margin.value;
+    }
+  } else if (margin.value == this.defaultmargin && updown == 'up') {
+    ++margin.value;
+  } else if (margin.value == maxmargin && updown == 'down') {
+    --margin.value;
+  } else {
+    return;
+  }
+
+  this.needle['area'][0].margin = parseInt(margin.value);
+  this.UpdateTextArea();
+}
+
+NeedleEditor.prototype.setMatch = function(value) {
+  var match = document.getElementById('match_field');
+  match.value = value;
+}
+
+NeedleEditor.prototype.changeMatch = function(updown) {
+  var match = document.getElementById('match_field');
+
+  if (!this.needle["area"].length) {
+    return;
+  }
+
+  if (updown !== 'up' && updown !== 'down') {
+    match.value = this.defaultmatch;
+  } else if (match.value > this.defaultmatch && match.value < 100) {
+    if (updown == 'up') {
+      ++match.value;
+    } else if (updown == 'down') {
+      --match.value;
+    }
+  } else if (match.value == this.defaultmatch && updown == 'up') {
+    ++match.value;
+  } else if (match.value == 100 && updown == 'down') {
+    --match.value;
+  } else {
+    return;
+  }
+
+  this.needle['area'][0].match = parseInt(match.value);
   this.UpdateTextArea();
 }
 // If you dont want to use <body onLoad='init()'>
