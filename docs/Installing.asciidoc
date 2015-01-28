@@ -26,7 +26,7 @@ Installation
 The easiest way to install openQA is from packages. You can find them in OBS in
 the https://build.opensuse.org/project/show/devel:openQA[openQA] repository or
 the latest development version can also be found in OBS in the
-https://build.opensuse.org/project/show/devel:openQA:devel[openQA:devel]
+https://build.opensuse.org/project/show/devel:openQA[openQA:devel]
 repository. Installation on openSUSE is therefore pretty simple:
 
 [source,sh]
