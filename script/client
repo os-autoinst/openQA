@@ -32,6 +32,19 @@ client [OPTIONS] PATH
 
 connect to specified host, defaults to localhost
 
+=item B<--params> FILE
+
+load get/post parameters from a json file. For example
+
+{
+   "FLAVOR" : "DVD",
+   "BUILD" : "42",
+   "ARCH" : "i586",
+   "DISTRI" : "opensuse",
+   "VERSION" : "26",
+}
+
+
 =item B<--help, -h>
 
 print help
@@ -56,6 +69,7 @@ lorem ipsum ...
 
 =cut
 
+use strict;
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::Bin/../lib"}
 
@@ -75,7 +89,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options,"host=s","apibase=s","verbose|v","apikey:s","apisecret:s","help|?",) or usage(1);
+GetOptions(\%options,"host=s","apibase=s","verbose|v","apikey:s","apisecret:s", "params=s", "help|h|?",) or usage(1);
 
 usage(1) unless @ARGV;
 $options{'host'} ||= 'localhost';
@@ -89,6 +103,15 @@ if ($path !~ m/^\//) {
 
 my $method = 'get';
 my @params;
+
+if ($options{params}) {
+    use JSON;
+    local $/;
+    open(my $fh, '<', $options{params});
+    my $info = JSON->new->relaxed->decode(<$fh>);
+    close $fh;
+    @params = map { "$_=$info->{$_}" } sort keys %$info;
+}
 
 for my $arg (@ARGV) {
     if ($arg =~ /^(?:get|post|delete|put)$/i) {
