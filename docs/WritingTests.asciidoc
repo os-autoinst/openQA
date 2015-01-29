@@ -41,6 +41,7 @@ API for the tests. The most commonly used functions are:
 * +save_screenshot+ Capture and save a screenshot in the test results.
 * +check_screen NEEDLE[, TIMEOUT]+ Wait until NEEDLE is seen on the screen. Return undef if not found within TIMEOUT (default 30s).
 * +assert_screen NEEDLE[, TIMEOUT]+ Wait until NEEDLE is seen on the screen. Abort test and mark as failed if not found within TIMEOUT (default 30s).
+* +record_soft_failure+ Record a workaround applied in the test.
 * +wait_idle TIMEOUT+  Wait for max TIMEOUT seconds until system is idle.
 * +wait_serial REGEX[, TIMEOUT]+ Wait until REGEX is seen on serial port. Return 0 if not found after TIMEOUT (default 90s)
 * +upload_logs FILE+ Type in necessary shell commands to save FILE in the test results
