@@ -26,7 +26,7 @@ Installation
 The easiest way to install openQA is from packages. You can find them in OBS in
 the https://build.opensuse.org/project/show/devel:openQA[openQA] repository or
 the latest development version can also be found in OBS in the
-https://build.opensuse.org/project/show/devel:openQA:devel[openQA:devel]
+https://build.opensuse.org/project/show/devel:openQA[openQA:devel]
 repository. Installation on openSUSE is therefore pretty simple:
 
 [source,sh]
@@ -356,3 +356,33 @@ KVM doesn't work
 * make sure the 'geekotest' user can access +/dev/kvm+
 * make sure you are not already running other hypervisors such as VirtualBox
 * when running inside a vm make sure nested virtualization is enabled (pass nested=1 to your kvm module)
+
+Tests try to access openqa via 'localhost' inside qemu which fails
+==================================================================
+
+The workers needs to be configured to connect to the fully qualified domain
+name of your openqa host. You can do that in +/etc/openqa/workers.ini+ by
+setting the +HOST+ variable, e.g:
+
+  HOST = http://www.example.com
+
+
+However, for that to work, you will need some DNS server to resolve the
+domain name you chose to an IP address. Furthermore, the address of that
+DNS server needs to be listed as the first entry in the host's +/etc/resolv.conf+
+file, since it is the one that QEmu will pick up to set up its "user mode
+networking".
+
+openid login times out
+======================
+
+www.opensuse.org's openid provider may have trouble with IPv6. openQA shows a message like this:
+
+  no_identity_server: Could not determine ID provider from URL.
+
+To avoid that switch off IPv6 or add a special route that prevents the system
+from trying to use IPv6 with www.opensuse.org:
+
+--------------------------------------------------------------------------------
+ip -6 r a to unreachable 2620:113:8044:66:130:57:66:6/128
+--------------------------------------------------------------------------------
