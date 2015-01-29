@@ -62,7 +62,7 @@ lorem ipsum ...
 
 BEGIN {
     use FindBin qw($Bin);
-    use lib "$Bin/../lib", "$Bin/../lib/OpenQA";
+    use lib "$Bin/../lib";
 }
 
 use strict;

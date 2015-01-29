@@ -59,11 +59,11 @@ JobTemplates e.g. to load them on another instance.
 
 BEGIN {
     use FindBin qw($Bin);
-    use lib "$Bin/../lib", "$Bin/../lib/OpenQA";
+    use lib "$Bin/../lib";
 }
 
 use strict;
-use Schema::Schema;
+use OpenQA::Schema::Schema;
 use Data::Dump;
 use v5.10;
 use DBIx::Class::DeploymentHandler;

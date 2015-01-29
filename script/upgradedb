@@ -18,7 +18,7 @@
 
 BEGIN {
     use FindBin qw($Bin);
-    use lib "$Bin/../lib", "$Bin/../lib/OpenQA";
+    use lib "$Bin/../lib";
 }
 
 use strict;
@@ -27,7 +27,7 @@ use aliased 'DBIx::Class::DeploymentHandler' => 'DH';
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use OpenQA::Utils ();
-use Schema::Schema;
+use OpenQA::Schema::Schema;
 use Getopt::Long;
 use IO::Dir;
 use Fcntl ':mode';
