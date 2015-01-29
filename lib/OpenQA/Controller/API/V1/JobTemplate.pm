@@ -25,6 +25,28 @@ sub list {
         if ($self->param("job_template_id")) {
             @templates = $self->db->resultset("JobTemplates")->search({id => $self->param("job_template_id")});
         }
+        elsif ($self->param('machine_name')
+            ||$self->param('machine_id')
+            ||$self->param('test_suite_name')
+            ||$self->param('test_suite_id')
+            ||$self->param('arch') && $self->param('distri') && $self->param('flavor') && $self->param('version')
+            ||$self->param('product_id'))
+        {
+
+            my %params;
+
+            $params{'machine.name'} = $self->param('machine_name') if $self->param('machine_name');
+            $params{'test_suite.name'} = $self->param('test_suite_name') if $self->param('test_suite_name');
+            $params{'product.arch'} = $self->param('arch') if $self->param('arch');
+            $params{'product.distri'} = $self->param('distri') if $self->param('distri');
+            $params{'product.flavor'} = $self->param('flavor') if $self->param('flavor');
+            $params{'product.version'} = $self->param('version') if $self->param('version');
+            $params{'machine_id'} = $self->param('machine_id') if $self->param('machine_id');
+            $params{'test_suite_id'} = $self->param('test_suite_id') if $self->param('test_suite_id');
+            $params{'product_id'} = $self->param('product_id') if $self->param('product_id');
+
+            @templates = $self->db->resultset("JobTemplates")->search(\%params, { join => ['machine', 'test_suite', 'product'] });
+        }
         else {
             @templates = $self->db->resultset("JobTemplates")->all;
         }
