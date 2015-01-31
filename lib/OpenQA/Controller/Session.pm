@@ -80,6 +80,18 @@ sub create {
     my $self = shift;
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base->to_string;
 
+    if ($self->app->config->{auth}->{type} eq 'fake') {
+        my $id = $url.'/user/admin';
+        my $user = OpenQA::Schema::Result::Users->create_user($id, $self->db, email => 'admin@example.com', nickname => 'admin', fullname => 'Admin');
+        unless ($user->is_admin) {
+            $user->is_admin(1);
+            $user->is_operator(1);
+            $user->update({is_admin => 1, is_operator => 1 });
+        }
+        $self->session->{user} = $id;
+        return $self->redirect_to("index");
+    }
+
     # force secure connection after login
     $url =~ s,^http://,https://, if $self->app->config->{openid}->{httpsonly};
 
