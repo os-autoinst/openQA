@@ -87,7 +87,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options, "clean", "update", "help|h",) or usage(1);
+GetOptions(\%options, "host=s", "clean", "update", "help|h",) or usage(1);
 
 usage(1) if $options{help} || $#ARGV;
 
