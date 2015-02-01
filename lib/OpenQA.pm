@@ -46,6 +46,9 @@ sub _read_config {
             level => undef,
             file => "/var/log/openqa",
         },
+        auth => {
+            type => 'openid',
+        },
         openid => {
             provider => 'https://www.opensuse.org/openid/user/',
             httpsonly => '1',
