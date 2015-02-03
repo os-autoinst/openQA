@@ -34,13 +34,13 @@ $get->element_exists_not('#results #job_99928 .cancel a');
 $get->element_exists_not('#results #job_99946 a[data-method=post] img[alt=restart]');
 
 # List with an authorized user
-$test_case->login($t, 'https://openid.camelot.uk/percival');
+$test_case->login($t, 'percival');
 $get = $t->get_ok('/tests')->status_is(200);
 $get->element_exists('#results #job_99928 .cancel a');
 $get->element_exists('#results #job_99946 a[data-method=post] img[alt=restart]');
 
 # List with a not authorized user
-$test_case->login($t, 'https://openid.camelot.uk/lancelot');
+$test_case->login($t, 'lancelot', email => 'lancelot@example.com');
 $get = $t->get_ok('/tests')->status_is(200);
 $get->element_exists_not('#results #job_99928 .cancel a');
 $get->element_exists_not('#results #job_99946 a[data-method=post] img[alt=restart]');

@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA';
+    unshift @INC, 'lib';
 }
 
 use strict;
@@ -30,7 +30,7 @@ OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $t = Test::Mojo->new('OpenQA');
 
 my $mordred_id = 'https://openid.badguys.uk/mordred';
-my $user = $t->app->db->resultset("Users")->create({openid => $mordred_id});
+my $user = $t->app->db->resultset("Users")->create({username => $mordred_id});
 ok(!$user->is_admin, 'new users are not admin by default');
 ok(!$user->is_operator, 'new users are not operator by default');
 
