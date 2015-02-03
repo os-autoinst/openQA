@@ -72,9 +72,7 @@ sub create_user{
     my ($self, $id, $db, %attrs) = @_;
 
     return unless $id;
-    my $user = $db->resultset("Users")->update_or_new(
-        {openid => $id, %attrs}
-    );
+    my $user = $db->resultset("Users")->update_or_new({username => $id, %attrs});
 
     if (!$user->in_storage) {
         if(not $db->resultset("Users")->find({ is_admin => 1 }, { rows => 1 })) {
