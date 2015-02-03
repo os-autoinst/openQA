@@ -101,7 +101,7 @@ sub register {
 
                 my $user = undef;
                 if (my $id = $c->session->{user}) {
-                    $user = $c->db->resultset("Users")->find({openid => $id});
+                    $user = $c->db->resultset("Users")->find({username => $id});
                 }
                 if ($user) {
                     $c->stash('current_user' => { user => $user });

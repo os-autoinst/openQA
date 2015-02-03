@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my $self = shift;
-    my @users = $self->db->resultset("Users")->search(undef, {order_by => 'openid'});
+    my @users = $self->db->resultset("Users")->search(undef, {order_by => 'id'});
 
     $self->stash('users', \@users);
     $self->render('admin/user/index');

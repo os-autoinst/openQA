@@ -53,7 +53,7 @@ sub new {
     }
 
     sub login {
-        my ($self, $test, $openid) = (shift, shift, shift);
+        my ($self, $test, $username) = @_;
         # Used to sign the cookie after modifying it
         my $secret = $test->app->secrets->[0];
 
@@ -66,8 +66,8 @@ sub new {
             my ($value) = split('--', $cookie->value);
             $value = j(b64_decode($value));
             # ..add the user value...
-            OpenQA::Schema::Result::Users->create_user($openid, $schema);
-            $value->{user} = $openid;
+            OpenQA::Schema::Result::Users->create_user($username, $schema);
+            $value->{user} = $username;
             # ...and sign the cookie again with the new value
             $value = b64_encode(j($value), '');
             $value =~ y/=/-/;
