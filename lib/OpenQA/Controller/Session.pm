@@ -11,8 +11,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Controller::Session;
 use Mojo::Base 'Mojolicious::Controller';
@@ -24,29 +23,39 @@ use LWP::UserAgent;
 use OpenQA::Schema::Result::Users;
 
 sub ensure_operator {
-    my $self = shift;
+    my ($self) = @_;
 
-    if ($self->is_operator) {
-        return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
-        $self->render(text => 'Bad CSRF token!', status => 403);
+    if ($self->current_user) {
+        if ($self->is_operator) {
+            return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
+            $self->render(text => 'Bad CSRF token!', status => 403);
+        }
+        else {
+            $self->render(text => "Forbidden", status => 403);
+        }
     }
     else {
-        $self->render(text => "Forbidden", status => 403);
+        $self->redirect_to('login');
     }
-    return undef;
+    return;
 }
 
 sub ensure_admin {
-    my $self = shift;
+    my ($self) = @_;
 
-    if ($self->is_admin) {
-        return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
-        $self->render(text => 'Bad CSRF token!', status => 403);
+    if ($self->current_user) {
+        if ($self->is_admin) {
+            return 1 if $self->req->method eq 'GET' || $self->valid_csrf;
+            $self->render(text => 'Bad CSRF token!', status => 403);
+        }
+        else {
+            $self->render(text => "Forbidden", status => 403);
+        }
     }
     else {
-        $self->render(text => "Forbidden", status => 403);
+        $self->redirect_to('login');
     }
-    return undef;
+    return;
 }
 
 sub ensure_authorized_ip {
