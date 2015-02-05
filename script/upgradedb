@@ -18,7 +18,7 @@
 
 BEGIN {
     use FindBin qw($Bin);
-    use lib "$Bin/../lib", "$Bin/../lib/OpenQA/modules";
+    use lib "$Bin/../lib";
 }
 
 use strict;
@@ -26,23 +26,26 @@ use warnings;
 use aliased 'DBIx::Class::DeploymentHandler' => 'DH';
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use openqa ();
-use Schema::Schema;
+use OpenQA::Utils ();
+use OpenQA::Schema::Schema;
 use Getopt::Long;
 use IO::Dir;
 use Fcntl ':mode';
+use POSIX qw/setuid/;
 
 my $prepare_upgrades            = 0;
 my $upgrade_database            = 0;
 my $help                        = 0;
 my $from_uninitialized_database = 0;
 my $force                       = 0;
+my $user;
 
 my $result = GetOptions(
     "help"                        => \$help,
     "from_uninitialized_database" => \$from_uninitialized_database,
     "prepare_upgrades"            => \$prepare_upgrades,
     "upgrade_database"            => \$upgrade_database,
+    "user=s"                      => \$user,
     "force"                       => \$force
 );
 
@@ -60,11 +63,17 @@ if ($help) {
     print "  --from_uninitialized_database : Create and populate an existing database as if it was\n";
     print "                       initialized with the initdb script.\n";
     print "  --force            : Force overwriting existing data.\n";
+    print "  --user=login       : Change uid before connecting the DB.\n";
     print "  --help             : This help message.\n";
     exit;
 }
 
-my $schema = openqa::connect_db();
+if ($user) {
+    my $uid = getpwnam($user) || die "No such login $user";
+    setuid($uid) || die "can't suid to $user";
+}
+
+my $schema = OpenQA::Utils::connect_db();
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
 my @databases = qw( MySQL SQLite PostgreSQL );

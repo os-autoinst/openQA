@@ -18,7 +18,7 @@ package OpenQA::WebSockets;
 use strict;
 use warnings;
 
-use Scheduler ();
+use OpenQA::Scheduler ();
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
@@ -118,8 +118,8 @@ sub _message {
         $ws->app->log->warn("A message received from unknown worker connection");
         return;
     }
-    Scheduler::_validate_workerid($workerid);
-    Scheduler::_seen_worker($workerid);
+    OpenQA::Scheduler::_validate_workerid($workerid);
+    OpenQA::Scheduler::_seen_worker($workerid);
     if ($msg eq 'ok') {
         $ws->tx->send('ok');
     }

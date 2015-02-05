@@ -1480,7 +1480,7 @@ after-local.service                                                             
 apparmor.service                                                                    loaded active exited    LSB: AppArmor initialization
 avahi-daemon.service                                                                loaded active running   Avahi mDNS/DNS-SD Stack
 bluetooth.service                                                                   loaded active running   Bluetooth service
-cron.service                                                                        loaded active running   Command Scheduler
+cron.service                                                                        loaded active running   Command OpenQA::Scheduler
 cycle.service                                                                       loaded active exited    LSB: Set default boot entry if called
 dbus.service                                                                        loaded active running   D-Bus System Message Bus
 getty@tty1.service                                                                  loaded active running   Getty on tty1

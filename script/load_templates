@@ -28,9 +28,25 @@ load_templates [OPTIONS] FILE
 
 =over 4
 
+=item B<--host> HOST
+
+connect to specified host, defaults to localhost
+
+=item B<--apibase> HOST
+
+=item B<--apikey> HOST
+
+=item B<--apisecret> HOST
+
+override values from config file
+
 =item B<--clean>
 
 delete all job templates before loading new ones. be careful!
+
+=item B<--update>
+
+update existing entries (by default, existing entries are not changed)
 
 =item B<--help, -h>
 
@@ -46,16 +62,16 @@ lorem ipsum ...
 
 BEGIN {
     use FindBin qw($Bin);
-    use lib "$Bin/../lib", "$Bin/../lib/OpenQA/modules";
+    use lib "$Bin/../lib";
 }
 
 use strict;
 use File::Basename qw/dirname/;
-use POSIX qw/getuid getgid setuid setgid/;
-use openqa;
-use Schema::Schema;
 use Try::Tiny;
 use Data::Dump qw/dd pp/;
+use Mojo::Util qw(decamelize);
+use Mojo::URL;
+use OpenQA::Client;
 
 use Getopt::Long;
 
@@ -71,7 +87,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options, "clean", "help|h",) or usage(1);
+GetOptions(\%options, "clean", "update", "help|h",) or usage(1);
 
 usage(1) if $options{help} || $#ARGV;
 
@@ -95,43 +111,114 @@ else {
     }
 }
 
-my $schema = openqa::connect_db();
+$options{'host'} ||= 'localhost';
+$options{'apibase'} ||= '/api/v1';
 
-if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
-    my $dbdir = dirname($1);
-    die "$dbdir does not exist\n" unless -d $dbdir;
-    my @s = stat(_);
-    if (getgid() != $s[5]) {
-        setgid($s[5]) or die "can't change gid to $s[5]: $!\n";
-    }
-    if (getuid() != $s[4]) {
-        setuid($s[4]) or die "can't change uid to $s[4]: $!\n";
-    }
-
-    # speed this up a bit
-    $schema->storage->dbh_do(
-        sub {
-            my ($storage, $dbh, @args) = @_;
-            $dbh->do("PRAGMA synchronous = OFF");
-        }
-    );
+my $url;
+if ($options{'host'} !~ '/') {
+    $url = Mojo::URL->new();
+    $url->host($options{'host'});
+    $url->scheme('http');
+}
+else {
+    $url = Mojo::URL->new($options{'host'});
 }
 
+my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $options{'apisecret'}, api => $url->host);
+
 my @tables = (qw/Machines TestSuites Products JobTemplates/);
+
+sub print_error{
+    my ($res) = @_;
+    printf STDERR "ERROR: %s - %s\n", $res->code, $res->message;
+    if ($res->body) {
+        dd($res->json || $res->body);
+    }
+}
+
+sub post_entry{
+    my ($table, $entry) = @_;
+
+    my %param;
+
+    for my $key (keys %{$entry}) {
+        if ($key eq 'machine' && defined $entry->{machine}{name}) {
+            $param{machine_name} = $entry->{machine}{name};
+        }
+        elsif ($key eq 'test_suite' && $entry->{test_suite}{name}) {
+            $param{test_suite_name} = $entry->{test_suite}{name};
+        }
+        elsif ($key eq 'product' && ref($entry->{product}) eq "HASH") {
+            $param{arch} = $entry->{product}{arch};
+            $param{distri} = $entry->{product}{distri};
+            $param{flavor} = $entry->{product}{flavor};
+            $param{version} = $entry->{product}{version};
+        }
+        elsif ($key eq 'settings' && ref($entry->{settings}) eq "ARRAY") {
+            for my $var (@{$entry->{settings}}) {
+                $param{'settings[' . $var->{key} . ']'} = $var->{value};
+            }
+        }
+        else {
+            $param{$key} = $entry->{$key};
+        }
+    }
+
+    if (!$options{'clean'}) { # with --clean the entry should not exist at this point, no need to check
+        my $res = $client->get($url->path($options{'apibase'} . '/' . decamelize($table))->query(%param))->res;
+        if ($res->code == 200 && @{$res->json->{$table}} == 1 && $res->json->{$table}[0]{id}) {
+            if ($options{'update'} && $table ne 'JobTemplates') { # there is nothing to update in JobTemplates, the entry just exists or not
+                my $id = $res->json->{$table}[0]{id};
+                my $res = $client->put($url->path($options{'apibase'} . '/' . decamelize($table) . "/$id")->query(%param))->res;
+                if ($res->code != 200) {
+                    print_error($res);
+                    return 0;
+                }
+                return 1;
+            }
+            else {
+                return 0; # already exists
+            }
+        }
+    }
+
+    my $res = $client->post($url->path($options{'apibase'} . '/' . decamelize($table))->query(%param))->res;
+
+    if ($res->code != 200) {
+        print_error($res);
+        return 0;
+    }
+    return 1;
+}
+
+if ($options{'clean'}) {
+    for my $table (@tables) {
+        my $res = $client->get($url->path($options{'apibase'} . '/' . decamelize($table)))->res;
+        if ($res->code == 200) {
+            my $result = $res->json;
+            for my $i (0..$#{$result->{$table}}) {
+                my $id = $result->{$table}->[$i]->{id};
+                $res = $client->delete($url->path($options{'apibase'} . '/' . decamelize($table) . "/$id"))->res;
+                last if $res->code != 200;
+            }
+        }
+
+        if ($res->code != 200) {
+            print_error($res);
+            exit(1);
+        }
+    }
+}
+
 my %added;
 for my $table (@tables) {
-    $schema->resultset($table)->delete_all() if $options{'clean'};
     next unless $info->{$table};
     $added{$table}->{of} = @{$info->{$table}};
     $added{$table}->{added} = 0;
     for my $entry (@{$info->{$table}}) {
-        try {
-            $schema->resultset($table)->create($entry);
+        if (post_entry($table, $entry)) {
             ++$added{$table}->{added};
         }
-        catch {
-            warn $_, pp $entry;
-        };
     }
 }
 

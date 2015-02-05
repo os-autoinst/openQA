@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA';
 }
 
 use Mojo::Base -strict;
@@ -23,7 +23,7 @@ use Test::More;
 use Test::Mojo;
 use Mojo::URL;
 use OpenQA::Test::Case;
-use OpenQA::API::V1::Client;
+use OpenQA::Client;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA');
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::API::V1::Client->new->ioloop(Mojo::IOLoop->singleton));
+$t->ua(OpenQA::Client->new->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 my $ret;
@@ -39,7 +39,7 @@ my $ret;
 $ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu' });
 is($ret->tx->res->code, 403, "register worker without API key fails");
 
-$t->ua(OpenQA::API::V1::Client->new(api => 'testapi')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(OpenQA::Client->new(api => 'testapi')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 $ret = $t->get_ok('/api/v1/workers');

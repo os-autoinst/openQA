@@ -26,7 +26,7 @@ Installation
 The easiest way to install openQA is from packages. You can find them in OBS in
 the https://build.opensuse.org/project/show/devel:openQA[openQA] repository or
 the latest development version can also be found in OBS in the
-https://build.opensuse.org/project/show/devel:openQA:devel[openQA:devel]
+https://build.opensuse.org/project/show/devel:openQA[openQA:devel]
 repository. Installation on openSUSE is therefore pretty simple:
 
 [source,sh]
@@ -232,6 +232,112 @@ directories owned by the user that runs the workers (default 'geekotest'):
 the user that runs the web interface ('geekotest'). To initially create this
 database, you need to run +tools/initdb+.
 
+Changing the database engine
+----------------------------
+[id="dbengine"]
+
+openQA is compatible with several database engines and comes with all the needed
+tools to initialize a clean database in any of them. But openQA does not
+include tools to migrate the existing data from a database to another. If you
+are planning, for example, to leave behind SQLite and switch to PostgreSQL in
+your openQA installation, you will need to start with a clean database or
+perform the data conversion by yourself.
+
+Converting databases from one engine to another is far from trivial. There are
+plenty of tools, both commercial and free, that try to address the problem for
+different databases and in different ways. The following example SQL scritps are
+provided just as a starting point for those willing to migrate from SQLite (the
+default engine) to PostgreSQL (successfully backing the biggest openQA
+installations at the time of writing). Keep in mind that the scripts will
+probably need some previous work, since they are based on the version 22 of the
+database schema (likely outdated at the time of reading).
+
+First, run this in the SQLite database to dump the database content into a bunch
+of CSV files.
+[source,sql]
+--------------------------------------------------------------------------------
+.mode csv
+.header ON
+.output assets.csv
+SELECT * FROM assets;
+.output job_settings.csv
+SELECT * FROM job_settings;
+.output machine_settings.csv
+SELECT * FROM machine_settings;
+.output machines.csv
+SELECT * FROM machines;
+.output product_settings.csv
+SELECT * FROM product_settings;
+.output products.csv
+SELECT * FROM products;
+.output secrets.csv
+SELECT * FROM secrets;
+.output test_suite_settings.csv
+SELECT * FROM test_suite_settings;
+.output test_suites.csv
+SELECT * FROM test_suites;
+.output users.csv
+SELECT * FROM users;
+.output worker_properties.csv
+SELECT * FROM worker_properties;
+.output workers.csv
+SELECT * FROM workers WHERE id > 0;
+.output api_keys.csv
+SELECT * FROM api_keys;
+.output job_modules.csv
+SELECT * FROM job_modules;
+.output job_templates.csv
+SELECT * FROM job_templates;
+.output jobs.csv
+SELECT * FROM jobs;
+.output job_dependencies.csv
+SELECT * FROM job_dependencies;
+.output jobs_assets.csv
+SELECT * FROM jobs_assets;     
+--------------------------------------------------------------------------------
+
+Then, initialize the PostgreSQL database using the standard procedure and
+afterwards run this script from the directory containing the CSV files to import
+them into the new database.
+
+[source,sql]
+---------------------------------------------------------------------------------------
+\copy users FROM users.csv WITH csv header NULL AS ''
+\copy api_keys FROM api_keys.csv WITH csv header NULL AS ''
+\copy secrets FROM secrets.csv WITH csv header NULL AS ''
+\copy assets FROM assets.csv WITH csv header NULL AS ''
+\copy workers FROM workers.csv WITH csv header NULL AS ''
+\copy worker_properties FROM worker_properties.csv WITH csv header NULL AS ''
+\copy products FROM products.csv WITH csv header NULL AS ''
+\copy product_settings FROM product_settings.csv WITH csv header NULL AS ''
+\copy machines FROM machines.csv WITH csv header NULL AS ''
+\copy machine_settings FROM machine_settings.csv WITH csv header NULL AS ''
+\copy test_suites FROM test_suites.csv WITH csv header NULL AS ''
+\copy test_suite_settings FROM test_suite_settings.csv WITH csv header NULL AS ''
+\copy job_templates FROM job_templates.csv WITH csv header NULL AS ''
+\copy jobs FROM jobs.csv WITH csv header NULL AS ''
+\copy job_settings FROM job_settings.csv WITH csv header NULL AS ''
+\copy job_modules FROM job_modules.csv WITH csv header NULL AS ''
+\copy job_dependencies FROM job_dependencies.csv WITH csv header NULL AS ''
+\copy jobs_assets FROM jobs_assets.csv WITH csv header NULL AS ''
+SELECT SETVAL('users_id_seq', (SELECT MAX(id) FROM users));
+SELECT SETVAL('api_keys_id_seq', (SELECT MAX(id) FROM api_keys));
+SELECT SETVAL('secrets_id_seq', (SELECT MAX(id) FROM secrets));
+SELECT SETVAL('assets_id_seq', (SELECT MAX(id) FROM assets));
+SELECT SETVAL('workers_id_seq', (SELECT MAX(id) FROM workers));
+SELECT SETVAL('worker_properties_id_seq', (SELECT MAX(id) FROM worker_properties));
+SELECT SETVAL('products_id_seq', (SELECT MAX(id) FROM products));
+SELECT SETVAL('product_settings_id_seq', (SELECT MAX(id) FROM product_settings));
+SELECT SETVAL('machines_id_seq', (SELECT MAX(id) FROM machines));
+SELECT SETVAL('machine_settings_id_seq', (SELECT MAX(id) FROM machine_settings));
+SELECT SETVAL('test_suites_id_seq', (SELECT MAX(id) FROM test_suites));
+SELECT SETVAL('test_suite_settings_id_seq', (SELECT MAX(id) FROM test_suite_settings));
+SELECT SETVAL('job_templates_id_seq', (SELECT MAX(id) FROM job_templates));
+SELECT SETVAL('jobs_id_seq', (SELECT MAX(id) FROM jobs));
+SELECT SETVAL('job_settings_id_seq', (SELECT MAX(id) FROM job_settings));
+SELECT SETVAL('job_modules_id_seq', (SELECT MAX(id) FROM job_modules));
+---------------------------------------------------------------------------------------
+
 Troubleshooting
 ---------------
 [id="troubleshooting"]
@@ -250,3 +356,17 @@ KVM doesn't work
 * make sure the 'geekotest' user can access +/dev/kvm+
 * make sure you are not already running other hypervisors such as VirtualBox
 * when running inside a vm make sure nested virtualization is enabled (pass nested=1 to your kvm module)
+
+openid login times out
+~~~~~~~~~~~~~~~~~~~~~~
+
+www.opensuse.org's openid provider may have trouble with IPv6. openQA shows a message like this:
+
+  no_identity_server: Could not determine ID provider from URL.
+
+To avoid that switch off IPv6 or add a special route that prevents the system
+from trying to use IPv6 with www.opensuse.org:
+
+--------------------------------------------------------------------------------
+ip -6 r a to unreachable 2620:113:8044:66:130:57:66:6/128
+--------------------------------------------------------------------------------

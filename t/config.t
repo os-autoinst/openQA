@@ -1,4 +1,4 @@
-BEGIN { unshift @INC, 'lib', 'lib/OpenQA/modules'; }
+BEGIN { unshift @INC, 'lib', 'lib/OpenQA'; }
 
 # Copyright (C) 2014 SUSE Linux Products GmbH
 #

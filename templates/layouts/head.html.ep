@@ -11,7 +11,7 @@
 %= stylesheet '/stylesheets/chosen.css'
 %= stylesheet '/stylesheets/openqa.css'
 %= stylesheet '/stylesheets/opentip.css'
-<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" /> 
+%= stylesheet '/stylesheets/font-awesome.min.css'
 %= javascript '/javascripts/table.js'
 %= javascript '/javascripts/shapes.js'
 %= javascript '/javascripts/needleeditor.js'

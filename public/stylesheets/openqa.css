@@ -538,4 +538,28 @@ table#job_settings td {
     opacity: 1;
 }
 
+table.admintable td.editable {
+     text-align: right;
+}
+
+table.admintable .key-value-pair {
+     white-space: nowrap;
+}
+
+table.admintable input[type="text"] {
+     width: 100%;
+     box-sizing: border-box;
+     -webkit-box-sizing:border-box;
+     -moz-box-sizing: border-box;
+}
+
+table.admintable input[type="text"].key {
+     width: 8em;
+}
+
+table.admintable input[type="text"].value {
+     width: 10em;
+}
+
+
 /* vim: set sw=4 et: */

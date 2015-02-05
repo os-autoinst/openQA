@@ -27,14 +27,21 @@ function scrollModuleThumbnails() {
     area.scrollLeft = 40 + offset - area.getWidth()/2;
 }
 
-document.observe('dom:loaded', function(evt) {
-    var elements = $$('.chosen-select');
-    for (var i = 0; i < elements.length; i++) {
-        new Chosen(elements[i], {width: "98%"});
-    }
+if (typeof jQuery === "undefined") {
+    document.observe('dom:loaded', function(evt) {
+        var elements = $$('.chosen-select');
+        for (var i = 0; i < elements.length; i++) {
+            new Chosen(elements[i], {width: "98%"});
+        }
 
-    window.scrollModuleThumbnails();
-});
+        window.scrollModuleThumbnails();
+    });
+}
+else {
+    jQuery(function(evt) {
+        $(".chosen-select").chosen({width: "98%"});;
+    });
+}
 
 function set_cookie(cname, cvalue, exdays) {
     var d = new Date();

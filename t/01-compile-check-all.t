@@ -16,7 +16,7 @@
 # require all modules to check if they even load
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA';
 }
 
 use strict;
@@ -28,7 +28,7 @@ $test->verbose(0);
 my @files = $test->all_pm_files();
 for my $file (@files) {
     #TODO: JobModules and Schema fail to compile for some reason
-    #error "Attempt to load_namespaces() failed" because of Scheduler in JobModules
+    #error "Attempt to load_namespaces() failed" because of OpenQA::Scheduler in JobModules
     next if ($file =~ /JobModules\.pm|Schema\.pm/);
     $test->ok($test->pm_file_compiles($file), "Compile test for $file");
 }

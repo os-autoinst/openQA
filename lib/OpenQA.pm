@@ -17,9 +17,9 @@
 package OpenQA;
 use Mojolicious 5.60;
 use Mojo::Base 'Mojolicious';
-use openqa 'connect_db';
+use OpenQA::Utils 'connect_db';
 use OpenQA::Plugin::Helpers;
-use Scheduler;
+use OpenQA::Scheduler;
 use Mojo::IOLoop;
 use DateTime;
 use Cwd qw/abs_path/;
@@ -82,15 +82,15 @@ sub _workers_checker {
 
             Mojo::IOLoop->timer(
                 10 => sub {
-                    my $dead_jobs = Scheduler::jobs_get_dead_worker($threshold);
+                    my $dead_jobs = OpenQA::Scheduler::jobs_get_dead_worker($threshold);
                     foreach my $job (@$dead_jobs) {
                         my %args = (
                             jobid => $job->{id},
                             result => 'incomplete',
                         );
-                        my $result = Scheduler::job_set_done(%args);
+                        my $result = OpenQA::Scheduler::job_set_done(%args);
                         if($result) {
-                            Scheduler::job_duplicate(jobid => $job->{id});
+                            OpenQA::Scheduler::job_duplicate(jobid => $job->{id});
                             print STDERR "cancelled dead job $job->{id} and re-duplicated done\n";
                         }
                     }
@@ -114,7 +114,7 @@ sub _init_rand{
 }
 
 has schema => sub {
-    return connect_db();
+    return OpenQA::Utils::connect_db();
 };
 
 has secrets => sub {
@@ -182,7 +182,7 @@ sub startup {
                 driver     => 'CacheCache',
                 cc_class   => 'Cache::FileCache',
                 cc_options => {
-                    cache_root  => abs_path($openqa::cachedir),
+                    cache_root  => abs_path($OpenQA::Utils::cachedir),
                     directory_umask => 077,
                 },
             },
@@ -198,7 +198,7 @@ sub startup {
 
     # Router
     my $r = $self->routes;
-    my $auth = $r->bridge('/')->to("session#ensure_operator");
+    my $auth = $r->under('/')->to("session#ensure_operator");
 
     $r->get('/session/new')->to('session#new');
     $r->post('/session')->to('session#create');
@@ -227,7 +227,7 @@ sub startup {
     $test_r->get('/streaming')->name('streaming')->to('running#streaming');
     $test_r->get('/edit')->name('edit_test')->to('running#edit');
 
-    my $log_auth = $r->bridge('/tests/#testid')->to("session#ensure_authorized_ip");
+    my $log_auth = $r->under('/tests/#testid')->to("session#ensure_authorized_ip");
 
     $test_r->get('/images/#filename')->name('test_img')->to('file#test_file');
     $test_r->get('/images/thumb/#filename')->name('test_thumbnail')->to('file#test_thumbnail');
@@ -270,8 +270,8 @@ sub startup {
     #
     ## Admin area starts here
     ###
-    my $admin_auth = $r->bridge('/admin')->to("session#ensure_admin");
-    my $admin_r = $admin_auth->route('/')->to(namespace => 'OpenQA::Admin');
+    my $admin_auth = $r->under('/admin')->to("session#ensure_admin");
+    my $admin_r = $admin_auth->route('/')->to(namespace => 'OpenQA::Controller::Admin');
 
     $admin_r->get('/users')->name('admin_users')->to('user#index');
     $admin_r->post('/users/:userid')->name('admin_user')->to('user#update');
@@ -311,9 +311,9 @@ sub startup {
     #
     ## JSON API starts here
     ###
-    my $api_auth = $r->bridge('/api/v1')->to(controller => 'API::V1', action => 'auth');
-    my $api_r = $api_auth->route('/')->to(namespace => 'OpenQA::API::V1');
-    my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::API::V1');
+    my $api_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
+    my $api_r = $api_auth->route('/')->to(namespace => 'OpenQA::Controller::API::V1');
+    my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::Controller::API::V1');
 
     # api/v1/jobs
     $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list'); # list_jobs
@@ -366,6 +366,7 @@ sub startup {
     $api_r->post('test_suites')->to('table#create', table => 'TestSuites');
     $api_r->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
     $api_r->put('test_suites/:id')->to('table#update', table => 'TestSuites');
+    $api_r->post('test_suites/:id')->to('table#update', table => 'TestSuites'); #in case PUT is not supported
     $api_r->delete('test_suites/:id')->to('table#destroy', table => 'TestSuites');
 
     # api/v1/machines
@@ -373,6 +374,7 @@ sub startup {
     $api_r->post('machines')->to('table#create', table => 'Machines');
     $api_r->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
     $api_r->put('machines/:id')->to('table#update', table => 'Machines');
+    $api_r->post('machines/:id')->to('table#update', table => 'Machines'); #in case PUT is not supported
     $api_r->delete('machines/:id')->to('table#destroy', table => 'Machines');
 
     # api/v1/products
@@ -380,6 +382,7 @@ sub startup {
     $api_r->post('products')->to('table#create', table => 'Products');
     $api_r->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
     $api_r->put('products/:id')->to('table#update', table => 'Products');
+    $api_r->post('products/:id')->to('table#update', table => 'Products'); #in case PUT is not supported
     $api_r->delete('products/:id')->to('table#destroy', table => 'Products');
 
     # api/v1/job_templates

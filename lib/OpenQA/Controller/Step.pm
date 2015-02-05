@@ -16,10 +16,10 @@
 
 package OpenQA::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
+use OpenQA::Utils;
 use File::Basename;
 use File::Copy;
-use Scheduler;
+use OpenQA::Scheduler;
 use POSIX qw/strftime/;
 use Try::Tiny;
 use JSON;
@@ -30,18 +30,18 @@ sub init {
 
     my $testindex = $self->param('stepid');
 
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     $self->stash('testname', $job->{'name'});
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $testresultdir = openqa::testresultdir($testdirname);
 
-    my $module = Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
+    my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
     my $details = $module->details($testresultdir);
     $self->stash('job', $job);
     $self->stash('module',  $module);
     $self->stash('imglist', $details);
 
-    my $modinfo = Schema::Result::JobModules::running_modinfo($job);
+    my $modinfo = OpenQA::Schema::Result::JobModules::running_modinfo($job);
     $self->stash('modinfo', $modinfo);
 
     my $tabmode = 'screenshot'; # Default
@@ -58,7 +58,7 @@ sub init {
             # In this case there are details, we simply run out of range
         }
         else {
-            $self->render_not_found;
+            $self->reply->not_found;
             return 0;
         }
     }
@@ -105,7 +105,7 @@ sub edit {
     my $module_detail = $self->stash('module_detail');
     my $imgname = $module_detail->{'screenshot'};
     my $results = $self->stash('results');
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     my $testdirname = $job->{'settings'}->{'NAME'};
 
     # Each object in $needles will contain the name, both the url and the local path
@@ -133,6 +133,7 @@ sub edit {
             'imagename' => $imgname,
             'area' => [],
             'matches' => [],
+            'properties' => [],
             'tags' => []
         };
         for my $tag (@$tags) {
@@ -164,6 +165,7 @@ sub edit {
             'imageversion' => $needle->{'version'},
             'area' => $needle->{'area'},
             'tags' => $needle->{'tags'},
+            'properties' => $needle->{'properties'} || [],
             'matches' => $screenshot->{'matches'}
         };
         calc_min_similarity($matched, $module_detail->{'area'});
@@ -183,6 +185,7 @@ sub edit {
             'imageurl' => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
             'area' => [],
             'matches' => [],
+            'properties' => [],
             'tags' => []
         };
         for my $tag (@$tags) {
@@ -221,6 +224,7 @@ sub edit {
                     'imageversion' => $needleinfo->{'version'},
                     'tags' => $needleinfo->{'tags'},
                     'area' => $needleinfo->{'area'},
+                    'properties' => $needleinfo->{'properties'} || [],
                     'matches' => [],
                     'broken' => $needleinfo->{'broken'}
                 }
@@ -250,7 +254,8 @@ sub edit {
             'imagename' => $imgname,
             'area' => [],
             'matches' => [],
-            'tags' => $tags
+            'tags' => $tags,
+            'properties' => []
         };
     }
 
@@ -269,16 +274,20 @@ sub edit {
         my $decode_json;
         my $ow_tags = [];
         my $ow_area = [];
+        my $ow_properties = [];
         $decode_json = decode_json($ow_json);
         $ow_area = $decode_json->{'area'};
         $ow_tags = $decode_json->{'tags'};
+        $ow_properties = $decode_json->{'properties'};
         # replaced tags
         $tags = $ow_tags;
         $screenshot->{selected} = 1;
         $default_needle->{'tags'} = $ow_tags;
         $default_needle->{'area'} = $ow_area;
+        $default_needle->{'properties'} = $ow_properties;
         $screenshot->{'tags'} = $ow_tags;
         $screenshot->{'area'} = $ow_area;
+        $screenshot->{'properties'} = $ow_properties;
         $screenshot->{'suggested_name'} = $ow_needlename;
         $screenshot->{'imagedistri'} = $ow_imagedistri;
         $screenshot->{'imageversion'} = $ow_imageversion;
@@ -287,19 +296,27 @@ sub edit {
         $needles[0]->{selected} = 1;
         $default_needle->{'tags'} = $needles[0]->{'tags'};
         $default_needle->{'area'} = $needles[0]->{'matches'};
+        $default_needle->{'properties'} = $needles[0]->{'properties'};
         $screenshot->{'suggested_name'} = $needles[0]->{'suggested_name'};
     }
     else {
         $screenshot->{selected} = 1;
         $default_needle->{'tags'} = $screenshot->{'tags'};
         $default_needle->{'area'} = [];
+        $default_needle->{'properties'} = [];
         $screenshot->{'suggested_name'} = $self->_timestamp($self->param('moduleid'));
     }
 
     unshift(@needles, $screenshot);
 
+    # stashing the properties
+    my $properties = {};
+    for my $property (@{$default_needle->{'properties'}}) {
+        $properties->{$property} = $property;
+    }
     $self->stash('needles', \@needles);
     $self->stash('tags', $tags);
+    $self->stash('properties', $properties);
     $self->stash('default_needle', $default_needle);
 
     $self->render('step/edit');
@@ -317,7 +334,7 @@ sub src {
     print "S $scriptpath\n";
     if(!$scriptpath || !-e $scriptpath) {
         $scriptpath||="";
-        return $self->render_not_found;
+        return $self->reply->not_found;
     }
 
     my $script=file_content($scriptpath);
@@ -386,7 +403,7 @@ sub save_needle {
     }
 
     my $results = $self->stash('results');
-    my $job = Scheduler::job_get($self->param('testid'));
+    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $json = $validation->param('json');
     my $imagename = $validation->param('imagename');

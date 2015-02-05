@@ -5,26 +5,22 @@ DocumentRoot /usr/share/openqa/public
 
 <Directory "/usr/share/openqa/public">
     AllowOverride None
-    Order allow,deny
-    Allow from all
+    Require all granted
 </Directory>
 
 <Directory "/var/lib/openqa/share/factory">
     AllowOverride None
-    Order allow,deny
-    Allow from all
+    Require all granted
 </Directory>
 Alias /assets "/var/lib/openqa/share/factory"
 
 <Directory "/var/lib/os-autoinst/tests">
     AllowOverride None
-    Order allow,deny
-    Allow from all
+    Require all granted
 </Directory>
 
 <Proxy *>
-Order deny,allow
-Allow from all
+    Require all granted
 </Proxy>
 
 ProxyRequests Off

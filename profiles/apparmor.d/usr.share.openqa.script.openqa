@@ -1,3 +1,4 @@
+
 # ------------------------------------------------------------------
 #
 #    Copyright (C) 2014 SUSE
@@ -15,11 +16,11 @@
   #include <abstractions/nameservice>
   #include <abstractions/perl>
 
-
-
   /etc/openqa/database.ini r,
   /etc/openqa/openqa.ini r,
   /proc/meminfo r,
+  /tmp/mojo.tmp rw,
+  /tmp/mojo.tmp.* rw,
   /usr/bin/optipng rix,
   /usr/bin/perl ix,
   /usr/bin/ssh rcx,
@@ -35,6 +36,7 @@
   /var/lib/openqa/db/ r,
   /var/lib/openqa/db/db.sqlite rwk,
   /var/lib/openqa/db/db.sqlite-journal rw,
+  /var/lib/openqa/pool/ r,
   /var/lib/openqa/share/ r,
   /var/lib/openqa/share/factory/iso/* r,
   /var/lib/openqa/share/testresults/ r,
@@ -43,11 +45,9 @@
   /var/lib/openqa/share/tests/ r,
   /var/lib/openqa/share/tests/** rw,
   /var/lib/openqa/share/tests/*/needles/.git/objects/*/* rwl,
-
-  /var/log/openqa rkw,
+  /var/log/openqa rwk,
   /var/tmp/* rw,
-  /tmp/mojo.tmp rw,
-  /tmp/mojo.tmp.* rw,
+
 
   profile /usr/bin/ssh {
     #include <abstractions/base>
@@ -60,5 +60,6 @@
     /proc/filesystems r,
     /usr/bin/ssh rix,
     /var/lib/openqa/.ssh/* rw,
+
   }
 }

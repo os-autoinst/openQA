@@ -16,8 +16,8 @@
 
 package OpenQA::Controller::Worker;
 use Mojo::Base 'Mojolicious::Controller';
-use openqa;
-use Scheduler qw/list_workers worker_get workers_get_dead_worker job_get_by_workerid/;
+use OpenQA::Utils;
+use OpenQA::Scheduler qw/list_workers worker_get workers_get_dead_worker job_get_by_workerid/;
 use OpenQA::WebSockets qw/ws_get_connected_workers/;
 
 sub workers_amount {

@@ -59,17 +59,17 @@ JobTemplates e.g. to load them on another instance.
 
 BEGIN {
     use FindBin qw($Bin);
-    use lib "$Bin/../lib", "$Bin/../lib/OpenQA/modules";
+    use lib "$Bin/../lib";
 }
 
 use strict;
-use Schema::Schema;
+use OpenQA::Schema::Schema;
 use Data::Dump;
 use v5.10;
 use DBIx::Class::DeploymentHandler;
 use Getopt::Long;
-use openqa;
-use Scheduler;
+use OpenQA::Utils;
+use OpenQA::Scheduler;
 use JSON "decode_json";
 
 Getopt::Long::Configure("no_ignore_case");
@@ -91,7 +91,7 @@ $options{days} = 60 unless $options{days}//0 > 0;
 
 usage(0) if $options{help};
 
-my $jobs = Scheduler::list_jobs(
+my $jobs = OpenQA::Scheduler::list_jobs(
     state => 'done',
     maxage => $options{days}*24*60*60,
 );
@@ -131,7 +131,7 @@ sub load_needles($$){
 my %seen_tags;
 my %seen_needles;
 for my $j (@{$jobs//[]}) {
-    my $fn = join('/', $openqa::resultdir, $j->{settings}->{NAME}, 'results.json');
+    my $fn = join('/', $OpenQA::Utils::resultdir, $j->{settings}->{NAME}, 'results.json');
     next unless -e $fn;
     open(my $fd, '<', $fn);
     next unless $fd;

@@ -16,7 +16,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-BEGIN { unshift @INC, 'lib', 'lib/OpenQA/modules'; }
+BEGIN { unshift @INC, 'lib', 'lib/OpenQA'; }
 
 use strict;
 
@@ -24,9 +24,9 @@ use Test::More;
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 
-use openqa ();
+use OpenQA::Utils ();
 
-my $schema = openqa::connect_db('test');
+my $schema = OpenQA::Utils::connect_db('test');
 
 my $dh = DBIx::Class::DeploymentHandler->new(
     {

@@ -17,11 +17,11 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA/modules';
+    unshift @INC, 'lib', 'lib/OpenQA';
 }
 
 use strict;
-use openqa;
+use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;
 use Test::Mojo;

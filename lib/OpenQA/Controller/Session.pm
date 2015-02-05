@@ -21,7 +21,7 @@ use Carp;
 use Net::OpenID::Consumer;
 use URI::Escape;
 use LWP::UserAgent;
-use Schema::Result::Users;
+use OpenQA::Schema::Result::Users;
 
 sub ensure_operator {
     my $self = shift;
@@ -190,7 +190,7 @@ sub response {
                 }
             }
 
-            my $user = Schema::Result::Users->create_user($id, $self->db, email => $email, nickname => $nickname, fullname => $fullname);
+            my $user = OpenQA::Schema::Result::Users->create_user($id, $self->db, email => $email, nickname => $nickname, fullname => $fullname);
 
             $msg = 'verified';
             $self->session->{user} = $id;
