@@ -17,7 +17,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA';
+    unshift @INC, 'lib';
 }
 
 use strict;
@@ -30,7 +30,7 @@ OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA');
 
 
-my $arthur = $t->app->db->resultset("Users")->find({openid => 'https://openid.camelot.uk/arthur'});
+my $arthur = $t->app->db->resultset("Users")->find({username => 'arthur'});
 my $key = $t->app->db->resultset("ApiKeys")->create({user_id => $arthur->id});
 like($key->key, qr/[0-9a-fA-F]{16}/, 'new keys have a valid random key attribute');
 like($key->secret, qr/[0-9a-fA-F]{16}/, 'new keys have a valid random secret attribute');

@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA';
+    unshift @INC, 'lib';
 }
 
 use Mojo::Base -strict;
@@ -33,19 +33,19 @@ my $req = $t->ua->get('/tests');
 my $token = $req->res->dom->at('meta[name=csrf-token]')->attr('content');
 
 #
-# No login, no list
-$t->get_ok('/admin/users')->status_is(403);
+# No login, no list, redirect to login
+$t->get_ok('/admin/users')->status_is(302);
 
 #
 # Not even for operators
 $t->delete_ok('/logout')->status_is(302);
-$test_case->login($t, 'https://openid.camelot.uk/percival');
+$test_case->login($t, 'percival');
 $t->get_ok('/admin/users')->status_is(403);
 
 #
 # So let's login as a admin
 $t->delete_ok('/logout')->status_is(302);
-$test_case->login($t, 'https://openid.camelot.uk/arthur');
+$test_case->login($t, 'arthur');
 my $get = $t->get_ok('/admin/users')->status_is(200);
 $get->text_is('#user_99901 .action_operator a' => '- operator');
 $get->text_is('#user_99901 .action_admin a' => '- admin');
@@ -58,7 +58,7 @@ $get->text_is('#user_99903 .action_admin a' => '+ admin');
 $t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => {is_admin => '1'})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
 $get->content_like(qr/User #99902 updated/);
-$get->text_is('#user_99902 .openid' => 'https://openid.camelot.uk/lancelot');
+$get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
 $get->text_is('#user_99902 .action_operator a' => '+ operator');
 $get->text_is('#user_99902 .action_admin a' => '- admin');
 
@@ -66,15 +66,15 @@ $get->text_is('#user_99902 .action_admin a' => '- admin');
 $t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => {is_admin => '0', is_operator => 'yes'})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
 $get->content_like(qr/User #99902 updated/);
-$get->text_is('#user_99902 .openid' => 'https://openid.camelot.uk/lancelot');
+$get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
 $get->text_is('#user_99902 .action_operator a' => '- operator');
 $get->text_is('#user_99902 .action_admin a' => '+ admin');
 
 # But we cannot change other fields
-$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => {openid => "https://openid.camelot.uk/guinevere"})->status_is(302);
+$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => {username => "guinevere"})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
 $get->content_like(qr/User #99902 updated/);
-$get->text_is('#user_99902 .openid' => 'https://openid.camelot.uk/lancelot');
+$get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
 $get->text_is('#user_99902 .action_operator a' => '- operator');
 $get->text_is('#user_99902 .action_admin a' => '+ admin');
 

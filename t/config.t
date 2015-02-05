@@ -39,6 +39,9 @@ is_deeply(
             scm => 'git',
             hsts => '365',
         },
+        auth => {
+            method => 'OpenID',
+        },
         'scm git' => {
             do_push => 'no',
         },

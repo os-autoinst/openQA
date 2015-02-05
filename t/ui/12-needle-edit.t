@@ -56,11 +56,11 @@ $req->element_exists("img[src=/tests/99937/images/thumb/isosize-1.png]");
 #$req->element_exists("input[data-url=\"/tests/99937/images/thumb/isosize-1.png\"]");
 $req->element_exists("input[data-image=isosize-1.png]");
 
-# save needle without auth must fail
-$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { name => 'foo', prio => "foobar"})->status_is(403);
+# save needle without auth must fail with redirect to login
+$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { name => 'foo', prio => "foobar"})->status_is(302);
 
 # log in as operator
-$test_case->login($t, 'https://openid.camelot.uk/percival');
+$test_case->login($t, 'percival');
 
 # post needle based on screenshot
 $req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => 'no' })->status_is(200);
