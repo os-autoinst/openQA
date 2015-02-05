@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA';
+    unshift @INC, 'lib';
 }
 
 use Mojo::Base -strict;
@@ -30,13 +30,13 @@ my $t = Test::Mojo->new('OpenQA');
 
 #
 # No login, no api_keys
-$t->get_ok('/api_keys')->status_is(403);
+$t->get_ok('/api_keys')->status_is(302);
 
 #
 # So let's grab the CSRF token and login as Percival
 my $req = $t->ua->get('/tests');
 my $token = $req->res->dom->at('meta[name=csrf-token]')->attr('content');
-$test_case->login($t, 'https://openid.camelot.uk/percival');
+$test_case->login($t, 'percival');
 
 #
 # And perform some 'legitimate' actions
