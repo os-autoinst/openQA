@@ -140,8 +140,7 @@ sub job_module_stats($) {
             $result_stat->{dents} = $line->get_column('count');
         }
         else {
-            $result_stat->{$line->result} = $line->get_column(
-                'count');
+            $result_stat->{$line->result} = $line->get_column('count');
         }
     }
 
@@ -184,7 +183,7 @@ sub _insert_tm($$$) {
 
 sub test_result($) {
     my ($testname) = @_;
-    _test_result(openqa::testresultdir($testname));
+    _test_result(OpenQA::Utils::testresultdir($testname));
 }
 
 sub _test_result($) {

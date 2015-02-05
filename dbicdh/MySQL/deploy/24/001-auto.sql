@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Wed Jan 21 14:19:46 2015
+-- Created on Thu Feb  5 11:28:29 2015
 -- 
 ;
 SET foreign_key_checks=0;
@@ -154,7 +154,7 @@ CREATE TABLE `test_suites` (
 --
 CREATE TABLE `users` (
   `id` integer NOT NULL auto_increment,
-  `openid` text NOT NULL,
+  `username` text NOT NULL,
   `email` text NULL,
   `fullname` text NULL,
   `nickname` text NULL,
@@ -163,7 +163,7 @@ CREATE TABLE `users` (
   `t_created` timestamp NOT NULL,
   `t_updated` timestamp NOT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE `users_openid` (`openid`)
+  UNIQUE `users_username` (`username`)
 ) ENGINE=InnoDB;
 --
 -- Table: `worker_properties`
@@ -219,9 +219,9 @@ CREATE TABLE `jobs` (
   `result` varchar(255) NOT NULL DEFAULT 'none',
   `worker_id` integer NOT NULL DEFAULT 0,
   `test` text NOT NULL,
-  `test_branch` text NULL,
   `clone_id` integer NULL,
   `retry_avbl` integer NOT NULL DEFAULT 3,
+  `backend_info` text NULL,
   `t_started` timestamp NULL,
   `t_finished` timestamp NULL,
   `t_created` timestamp NOT NULL,

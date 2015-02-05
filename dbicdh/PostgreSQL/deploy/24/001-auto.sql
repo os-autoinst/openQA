@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Jan 21 14:19:46 2015
+-- Created on Thu Feb  5 11:28:30 2015
 -- 
 ;
 --
@@ -168,7 +168,7 @@ CREATE TABLE "test_suites" (
 --
 CREATE TABLE "users" (
   "id" serial NOT NULL,
-  "openid" text NOT NULL,
+  "username" text NOT NULL,
   "email" text,
   "fullname" text,
   "nickname" text,
@@ -177,7 +177,7 @@ CREATE TABLE "users" (
   "t_created" timestamp NOT NULL,
   "t_updated" timestamp NOT NULL,
   PRIMARY KEY ("id"),
-  CONSTRAINT "users_openid" UNIQUE ("openid")
+  CONSTRAINT "users_username" UNIQUE ("username")
 );
 
 ;
@@ -239,9 +239,9 @@ CREATE TABLE "jobs" (
   "result" character varying DEFAULT 'none' NOT NULL,
   "worker_id" integer DEFAULT 0 NOT NULL,
   "test" text NOT NULL,
-  "test_branch" text,
   "clone_id" integer,
   "retry_avbl" integer DEFAULT 3 NOT NULL,
+  "backend_info" text,
   "t_started" timestamp,
   "t_finished" timestamp,
   "t_created" timestamp NOT NULL,

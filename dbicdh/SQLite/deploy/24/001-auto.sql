@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Wed Jan 21 14:19:46 2015
+-- Created on Thu Feb  5 11:28:30 2015
 -- 
 
 ;
@@ -145,7 +145,7 @@ CREATE UNIQUE INDEX test_suites_name ON test_suites (name);
 --
 CREATE TABLE users (
   id INTEGER PRIMARY KEY NOT NULL,
-  openid text NOT NULL,
+  username text NOT NULL,
   email text,
   fullname text,
   nickname text,
@@ -154,7 +154,7 @@ CREATE TABLE users (
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL
 );
-CREATE UNIQUE INDEX users_openid ON users (openid);
+CREATE UNIQUE INDEX users_username ON users (username);
 --
 -- Table: worker_properties
 --
@@ -206,9 +206,9 @@ CREATE TABLE jobs (
   result varchar NOT NULL DEFAULT 'none',
   worker_id integer NOT NULL DEFAULT 0,
   test text NOT NULL,
-  test_branch text,
   clone_id integer,
   retry_avbl integer NOT NULL DEFAULT 3,
+  backend_info text,
   t_started timestamp,
   t_finished timestamp,
   t_created timestamp NOT NULL,

@@ -759,6 +759,16 @@ schema:
           reference_table: workers
           type: FOREIGN KEY
       fields:
+        backend_info:
+          data_type: text
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: backend_info
+          order: 10
+          size:
+            - 0
         clone_id:
           data_type: integer
           default_value: ~
@@ -766,7 +776,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: clone_id
-          order: 9
+          order: 8
           size:
             - 0
         id:
@@ -807,7 +817,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: retry_avbl
-          order: 10
+          order: 9
           size:
             - 0
         slug:
@@ -878,16 +888,6 @@ schema:
           is_unique: 0
           name: test
           order: 7
-          size:
-            - 0
-        test_branch:
-          data_type: text
-          default_value: ~
-          is_nullable: 1
-          is_primary_key: 0
-          is_unique: 0
-          name: test_branch
-          order: 8
           size:
             - 0
         worker_id:
@@ -1751,9 +1751,9 @@ schema:
         - deferrable: 1
           expression: ''
           fields:
-            - openid
+            - username
           match_type: ''
-          name: users_openid
+          name: users_username
           on_delete: ''
           on_update: ''
           options: []
@@ -1822,16 +1822,6 @@ schema:
           order: 5
           size:
             - 0
-        openid:
-          data_type: text
-          default_value: ~
-          is_nullable: 0
-          is_primary_key: 0
-          is_unique: 1
-          name: openid
-          order: 2
-          size:
-            - 0
         t_created:
           data_type: timestamp
           default_value: ~
@@ -1850,6 +1840,16 @@ schema:
           is_unique: 0
           name: t_updated
           order: 9
+          size:
+            - 0
+        username:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: username
+          order: 2
           size:
             - 0
       indices: []
