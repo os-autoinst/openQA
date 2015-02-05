@@ -391,6 +391,58 @@ sub _timestamp {
     }
 }
 
+sub _json_validation($) {
+
+    my $self = shift;
+    my $json = shift;
+    my %errorh;
+    $errorh{'message'}='';
+    my $djson = eval {decode_json($json)};
+    if (!$djson ) {
+        my $message=$@;
+        $message=~s@at /usr/.*$@@; #do not print perl module reference
+        $errorh{'message'}="syntax error: $message";
+        return \%errorh;
+    }
+
+    if (!exists $djson->{'area'} || !exists $djson->{'area'}[0]) {
+        $errorh{'message'}="no area defined";
+        return \%errorh;
+    }
+    if (!exists $djson->{'tags'} || !exists $djson->{'tags'}[0]) {
+        $errorh{'message'}="no tag defined";
+        return \%errorh;
+    }
+    my $areas=$djson->{'area'};
+    foreach my $area (@$areas) {
+
+        if (!exists $area->{'xpos'} ) {
+            $errorh{'message'}="area without xpos";
+            return \%errorh;
+        }
+        if (!exists $area->{'ypos'} ) {
+            $errorh{'message'}="area without ypos";
+            return \%errorh;
+        }
+        if (!exists $area->{'type'} ) {
+            $errorh{'message'}="area without type";
+            return \%errorh;
+        }
+        if (!exists $area->{'height'} ) {
+            $errorh{'message'}="area without height";
+            return \%errorh;
+        }
+        if (!exists $area->{'width'} ) {
+            $errorh{'message'}="area without width";
+            return \%errorh;
+        }
+
+    }
+
+    return undef;
+
+}
+
 sub save_needle {
     my $self = shift;
     return 0 unless $self->init();
@@ -424,8 +476,16 @@ sub save_needle {
     my $needlename = $validation->param('needlename');
     my $overwrite = $validation->param('overwrite');
     my $needledir = needledir($results->{distribution}, $results->{version});
-    my $success = 1;
 
+    my $error=$self->_json_validation($json);
+    if ($error) {
+        my $message='Error validating needle: '.$error->{'message'};
+        $self->app->log->error($message);
+        $self->stash(error => "$message\n");
+        return $self->edit;
+    }
+
+    my $success = 1;
     my $imagepath;
     if ($imagedistri) {
         $imagepath = join('/', needledir($imagedistri, $imageversion), $imagename);
