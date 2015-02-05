@@ -46,7 +46,7 @@ sub worker_info($) {
         my $testdirname = $job->{'settings'}->{'NAME'};
         $settings->{status} = "running";
         $settings->{jobid} = $job->{id};
-        my $schema = Scheduler::schema();
+        my $schema = OpenQA::Scheduler::schema();
         my $r = $schema->resultset("JobModules")->find({ job_id => $job->{id}, result => 'running' });
         $settings->{currentstep} = $r->name if $r;
     }
