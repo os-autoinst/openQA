@@ -44,11 +44,11 @@ sub worker_info($) {
     # puts job id in status, otherwise is idle
     if($job) {
         my $testdirname = $job->{'settings'}->{'NAME'};
-        my $results = test_result($testdirname);
-        my $modinfo = get_running_modinfo($results);
         $settings->{status} = "running";
         $settings->{jobid} = $job->{id};
-        $settings->{currentstep} = $modinfo->{running};
+        my $schema = Scheduler::schema();
+        my $r = $schema->resultset("JobModules")->find({ job_id => $job->{id}, result => 'running' });
+        $settings->{currentstep} = $r->name if $r;
     }
     else {
         $settings->{status} = "idle";
