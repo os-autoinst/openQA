@@ -33,7 +33,7 @@ sub init {
     my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     $self->stash('testname', $job->{'name'});
     my $testdirname = $job->{'settings'}->{'NAME'};
-    my $testresultdir = openqa::testresultdir($testdirname);
+    my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
 
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
     my $details = $module->details($testresultdir);
@@ -411,7 +411,7 @@ sub save_needle {
     my $imageversion = $validation->param('imageversion');
     my $needlename = $validation->param('needlename');
     my $overwrite = $validation->param('overwrite');
-    my $needledir = needledir($results->{distribution}, $results->{version});
+    my $needledir = needledir($job->{'settings'}->{DISTRI}, $job->{'settings'}->{VERSION});
     my $success = 1;
 
     my $imagepath;

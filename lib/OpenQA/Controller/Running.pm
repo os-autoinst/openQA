@@ -22,6 +22,7 @@ use Mojo::Util 'b64_encode';
 import JSON;
 use OpenQA::Utils;
 use OpenQA::Scheduler ();
+use Data::Dumper;
 
 sub init {
     my ($self) = @_;
@@ -70,9 +71,7 @@ sub status {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = test_result($self->stash('testdirname'));
-    delete $results->{'testmodules'};
-    delete $results->{'distribution'};
+    my $results = { 'interactive' => 0, 'workerid' => 'TODO', 'running' => 'TODO' };
     $self->render(json => $results);
 }
 

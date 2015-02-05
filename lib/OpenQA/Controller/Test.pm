@@ -66,13 +66,13 @@ sub list {
         maxage => $hoursfresh*3600,
         scope => $scope,
         assetid => $assetid,
-    ) ||[];
+    ) || [];
+
+    my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
 
     for my $job (@$jobs) {
 
         if ($job->{state} =~ /^(?:running|waiting|done)$/) {
-
-            my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($job);
 
             my $run_stat = {};
             if ($job->{state} eq 'running') {
@@ -85,7 +85,7 @@ sub list {
             my $settings = {
                 job => $job,
 
-                result_stats => $result_stats,
+                result_stats => $result_stats->{$job->{id}},
                 overall=>$job->{state}||'unk',
                 run_stat=>$run_stat
             };
@@ -134,14 +134,14 @@ sub show {
     # If it's running
     if ($job->{state} =~ /^(?:running|waiting)$/) {
         $self->stash(worker => worker_get($job->{'worker_id'}));
-        $self->stash(backend_info => 'TODO'); # $results->{backend});
+        $self->stash(backend_info => { 'backend' => 'TODO' }); # $results->{backend});
         $self->stash(job => $job);
         $self->render('test/running');
         return;
     }
 
     my @modlist=();
-    foreach my $module (Schema::Result::JobModules::job_modules($job)) {
+    foreach my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
         my $name = $module->name();
         # add link to $testresultdir/$name*.png via png CGI
         my @imglist;
@@ -234,7 +234,11 @@ sub overview {
     my %results = ();
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
 
-    for my $job ( @{ OpenQA::Scheduler::list_jobs(%search_args) || [] } ) {
+    my $jobs = OpenQA::Scheduler::list_jobs(%search_args) || [];
+
+    my $all_result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
+
+    for my $job (@$jobs) {
         my $testname = $job->{settings}->{'NAME'};
         my $test     = $job->{test};
         my $flavor   = $job->{settings}->{FLAVOR} || 'sweet';
@@ -242,7 +246,7 @@ sub overview {
 
         my $result;
         if ( $job->{state} eq 'done' ) {
-            my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($job);
+            my $result_stats = $all_result_stats->{$job->{id}};
             my $failures     = get_failed_needles($testname);
             my $overall      = $job->{result};
             if ( $job->{result} eq "passed" && $result_stats->{dents}) {

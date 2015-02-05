@@ -120,27 +120,35 @@ sub job_modules($) {
 }
 
 sub job_module_stats($) {
-    my ($job) = @_;
+    my ($jobs) = @_;
 
-    my $result_stat = { 'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0 };
+    my $result_stat = {};
 
     my $schema = OpenQA::Scheduler::schema();
+    my @ids = map { $_->{id} } @$jobs;
+    for my $id (@ids) {
+        $result_stat->{$id} = { 'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0 };
+    }
 
-    my $query = $schema->resultset("JobModules")->search(
-        { job_id => $job->{id} },
-        {
-            select => ['result', 'soft_failure', { 'count' => 'id' } ],
-            as => [qw/result soft_failure count/],
-            group_by => [qw/result soft_failure/]
-        }
-    );
+    # DBIx has a limit for variables in one querey
+    while (my @next_ids = splice @ids, 0, 100) {
+        my $query = $schema->resultset("JobModules")->search(
+            { job_id => { -in => \@next_ids } },
+            {
+                select => ['job_id', 'result', 'soft_failure', { 'count' => 'id' } ],
+                as => [qw/job_id result soft_failure count/],
+                group_by => [qw/job_id result soft_failure/]
+            }
+        );
 
-    while (my $line = $query->next) {
-        if ($line->soft_failure) {
-            $result_stat->{dents} = $line->get_column('count');
-        }
-        else {
-            $result_stat->{$line->result} = $line->get_column('count');
+        while (my $line = $query->next) {
+            if ($line->soft_failure) {
+                $result_stat->{$line->job_id}->{dents} = $line->get_column('count');
+            }
+            else {
+                $result_stat->{$line->job_id}->{$line->result} =
+                  $line->get_column('count');
+            }
         }
     }
 
@@ -167,17 +175,16 @@ sub _insert_tm($$$) {
     $result =~ s,^ok,passed,;
     $result =~ s,^unk,none,;
     $result =~ s,^skip,skipped,;
-    my $soft_failure;
-    $soft_failure = 1 if $tm->{dents}; # it's just a flag
     $r->update(
         {
             result => $result,
-            milestone => $tm->{flags}->{milestone},
-            important => $tm->{flags}->{important},
-            fatal => $tm->{flags}->{fatal},
-            soft_failure => $soft_failure
+            milestone => $tm->{flags}->{milestone}?1:0,
+            important => $tm->{flags}->{important}?1:0,
+            fatal => $tm->{flags}->{fatal}?1:0,
+            soft_failure => $tm->{dents}?1:0,
         }
     );
+    return $r;
 }
 
 
@@ -206,8 +213,43 @@ sub split_results($;$) {
     return unless $results; # broken test
     my $schema = OpenQA::Scheduler::schema();
     for my $tm (@{$results->{testmodules}}) {
-        _insert_tm($schema, $job, $tm);
+        my $r = _insert_tm($schema, $job, $tm);
+        if ($r->name eq $results->{running}) {
+            $r->update({ result => 'running'});
+        }
     }
+}
+
+sub running_modinfo($) {
+    my ($job) = @_;
+
+    my @modules = OpenQA::Schema::Result::JobModules::job_modules($job);
+
+    my $modlist = [];
+    my $donecount = 0;
+    my $count = int(@modules);
+    my $modstate = 'done';
+    my $category;
+    for my $module (@modules) {
+        my $name = $module->name;
+        my $result = $module->result;
+        if (!$category || $category ne $module->category) {
+            $category = $module->category;
+            push(@$modlist, {'category' => $category, 'modules' => []});
+        }
+        if ($result eq 'running') {
+            $modstate = 'current';
+        }
+        elsif ($modstate eq 'current') {
+            $modstate = 'todo';
+        }
+        elsif ($modstate eq 'done') {
+            $donecount++;
+        }
+        my $moditem = {'name' => $name, 'state' => $modstate, 'result' => $result};
+        push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
+    }
+    return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $results->{'running'}};
 }
 
 sub running_modinfo($) {
