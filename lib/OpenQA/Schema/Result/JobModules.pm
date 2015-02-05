@@ -115,7 +115,7 @@ sub job_module($$) {
 sub job_modules($) {
     my ($job) = @_;
 
-    my $schema = Scheduler::schema();
+    my $schema = OpenQA::Scheduler::schema();
     return $schema->resultset("JobModules")->search({ job_id => $job->{id} })->all;
 }
 
@@ -124,7 +124,7 @@ sub job_module_stats($) {
 
     my $result_stat = { 'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0 };
 
-    my $schema = Scheduler::schema();
+    my $schema = OpenQA::Scheduler::schema();
 
     my $query = $schema->resultset("JobModules")->search(
         { job_id => $job->{id} },
@@ -213,7 +213,7 @@ sub split_results($;$) {
 sub running_modinfo($) {
     my ($job) = @_;
 
-    my @modules = Schema::Result::JobModules::job_modules($job);
+    my @modules = OpenQA::Schema::Result::JobModules::job_modules($job);
 
     my $currentstep = $job->{running};
     my $modlist = [];
@@ -228,6 +228,8 @@ sub running_modinfo($) {
             $category = $module->category;
             push(@$modlist, {'category' => $category, 'modules' => []});
         }
+	print "NAME $name\n";
+	print "CS $currentstep\n";
         if ($name eq $currentstep) {
             $modstate = 'current';
         }

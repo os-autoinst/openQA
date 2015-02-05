@@ -78,8 +78,7 @@ sub list {
             if ($job->{state} eq 'running') {
                 my $testdirname = $job->{'settings'}->{'NAME'};
                 my $running_basepath = running_log($testdirname);
-                my $results = test_result($testdirname);
-                $run_stat = Schema::Result::JobModules::running_modinfo($job);
+                $run_stat = OpenQA::Schema::Result::JobModules::running_modinfo($job);
                 $run_stat->{'run_backend'} = 0;
             }
 
