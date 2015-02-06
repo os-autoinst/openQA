@@ -23,7 +23,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &needle_info
   &needledir
   &testcasedir
-  &test_result_module
   &test_resultfile_list
   &testresultdir
   &test_uploadlog_list

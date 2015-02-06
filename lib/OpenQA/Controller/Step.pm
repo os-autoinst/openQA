@@ -23,7 +23,6 @@ use OpenQA::Scheduler;
 use POSIX qw/strftime/;
 use Try::Tiny;
 use JSON;
-use Data::Dumper;
 
 sub init {
     my $self = shift;
@@ -331,7 +330,6 @@ sub src {
 
     my $testcasedir = testcasedir($job->{settings}->{DISTRI}, $job->{settings}->{VERSION});
     my $scriptpath = "$testcasedir/" . $module->script;
-    print "S $scriptpath\n";
     if(!$scriptpath || !-e $scriptpath) {
         $scriptpath||="";
         return $self->reply->not_found;
@@ -516,8 +514,6 @@ sub viewimg {
     my $job = $self->stash('job');
     my $distribution = $job->{settings}->{DISTRI};
     my $dversion = $job->{settings}->{VERSION} || '';
-
-    print Dumper($module_detail);
 
     my @needles;
     if ($module_detail->{'needle'}) {

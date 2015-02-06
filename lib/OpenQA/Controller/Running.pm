@@ -58,7 +58,7 @@ sub modlist {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $modinfo = Schema::Result::JobModules::running_modinfo($self->stash('job'));
+    my $modinfo = OpenQA::Schema::Result::JobModules::running_modinfo($self->stash('job'));
     if (defined $modinfo) {
         $self->render(json => $modinfo->{'modlist'});
     }
