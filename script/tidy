@@ -1,6 +1,12 @@
 #!/bin/bash
 
-TIDY_ARGS="-l=0 -fws -fbl"
+# don't force line length -l=0
+# don't change blank lines -fbl
+# no spaces before semicolons -nsfs
+# space before and after operators -bbao -baao
+# no spaces around () [] {} -pt=2 -bt=2 -sbt=2
+# stack closing tokens )} -sct
+TIDY_ARGS="-l=0 -fbl -nsfs -baao -bbao -pt=2 -bt=2 -sbt=2 -sct"
 check=
 
 if test "$1"  = '--check'; then
