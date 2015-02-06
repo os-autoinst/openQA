@@ -28,6 +28,7 @@ sub new {
     my $self = shift->SUPER::new;
 
     $ENV{OPENQA_CLIENT_CONFIG} = 't/data/client.conf';
+    $ENV{OPENQA_DATABASE_CONFIG} = 'lib/database.ini';
 
     return $self;
 }

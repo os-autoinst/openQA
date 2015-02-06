@@ -11,6 +11,7 @@ use Date::Format; # To allow fixtures with relative dates
 use DateTime; # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw/ abs_path getcwd /;
+use OpenQA::Schema::Schema;
 use OpenQA::Utils;
 use FindBin qw($Bin);
 use DBIx::Class::DeploymentHandler;
@@ -25,7 +26,7 @@ sub create {
     );
 
     # New db
-    my $schema = OpenQA::Utils::connect_db('test');
+    my $schema = OpenQA::Schema::connect_db('test');
     my $script_directory = "$FindBin::Bin/../dbicdh";
     if (!-d $script_directory) {
         $script_directory = "$FindBin::Bin/../../dbicdh";  # For tests

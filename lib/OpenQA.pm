@@ -17,7 +17,7 @@
 package OpenQA;
 use Mojolicious 5.60;
 use Mojo::Base 'Mojolicious';
-use OpenQA::Utils 'connect_db';
+use OpenQA::Schema::Schema;
 use OpenQA::Plugin::Helpers;
 use OpenQA::Scheduler;
 use Mojo::IOLoop;
@@ -114,7 +114,7 @@ sub _init_rand{
 }
 
 has schema => sub {
-    return OpenQA::Utils::connect_db();
+    return OpenQA::Schema::connect_db();
 };
 
 has secrets => sub {

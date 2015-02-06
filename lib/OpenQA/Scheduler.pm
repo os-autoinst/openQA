@@ -95,7 +95,7 @@ my %cando = (
 
 sub schema{
     CORE::state $schema;
-    $schema = OpenQA::Utils::connect_db() unless $schema;
+    $schema = OpenQA::Schema::connect_db() unless $schema;
     return $schema;
 }
 

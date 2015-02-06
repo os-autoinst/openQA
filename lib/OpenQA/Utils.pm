@@ -35,7 +35,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &file_content
 );
 
-@EXPORT_OK = qw/connect_db/;
 
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
@@ -289,16 +288,6 @@ sub sanitize_testname($){
     $name =~ s/[^a-zA-Z0-9._+-]//g;
     return undef unless $name =~ /^[a-zA-Z]/;
     return $name;
-}
-
-sub connect_db{
-    my $mode = shift || $ENV{OPENQA_DATABASE} || 'production';
-    use OpenQA::Schema::Schema;
-    CORE::state $schema;
-    unless ($schema) {
-        $schema = OpenQA::Schema->connect($mode) or die "can't connect to db: $!\n";
-    }
-    return $schema;
 }
 
 sub file_content($){
