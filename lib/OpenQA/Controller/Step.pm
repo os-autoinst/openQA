@@ -377,6 +377,36 @@ sub _timestamp {
     }
 }
 
+sub _json_validation($) {
+
+    my $self = shift;
+    my $json = shift;
+    my $djson = eval {decode_json($json)};
+    if (!$djson ) {
+        my $err=$@;
+        $err=~s@at /usr/.*$@@; #do not print perl module reference
+        return "syntax error: $err";
+    }
+
+    if (!exists $djson->{'area'} || !exists $djson->{'area'}[0]) {
+        return "no area defined";
+    }
+    if (!exists $djson->{'tags'} || !exists $djson->{'tags'}[0]) {
+        return "no tag defined";
+    }
+    my $areas=$djson->{'area'};
+    foreach my $area (@$areas) {
+        return "area without xpos" unless exists $area->{'xpos'};
+        return "area without ypos" unless exists $area->{'ypos'};
+        return "area without type" unless exists $area->{'type'};
+        return "area without height" unless exists $area->{'height'};
+        return "area without width" unless  exists $area->{'width'};
+    }
+
+    return undef;
+
+}
+
 sub save_needle {
     my ($self) = @_;
     return 0 unless $self->init();
@@ -410,8 +440,16 @@ sub save_needle {
     my $needlename = $validation->param('needlename');
     my $overwrite = $validation->param('overwrite');
     my $needledir = needledir($job->{'settings'}->{DISTRI}, $job->{'settings'}->{VERSION});
-    my $success = 1;
 
+    my $error=$self->_json_validation($json);
+    if ($error) {
+        my $message='Error validating needle: '.$error;
+        $self->app->log->error($message);
+        $self->stash(error => "$message\n");
+        return $self->edit;
+    }
+
+    my $success = 1;
     my $imagepath;
     if ($imagedistri) {
         $imagepath = join('/', needledir($imagedistri, $imageversion), $imagename);

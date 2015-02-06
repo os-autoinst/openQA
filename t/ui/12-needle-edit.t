@@ -63,12 +63,16 @@ $req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $t
 $test_case->login($t, 'percival');
 
 # post needle based on screenshot
-$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => 'no' })->status_is(200);
+my $json='{
+   "area" : [ { "width" : 1024,"xpos" : 0,"type" : "match","ypos" : 0, "height" : 768 } ],
+   "tags" : [  "blah"  ]
+}';
+$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => $json, imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => 'no' })->status_is(200);
 $req->element_exists_not('.ui-state-error');
 ok(-f "$dir/isosize-blah.png", "isosize-blah.png created");
 ok(-f "$dir/isosize-blah.json", "isosize-blah.json created");
 # post needle again and diallow to overwrite
-$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => 'blah', imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => 'yes' })->status_is(200);
+$req = $t->post_ok('/tests/99937/modules/isosize/steps/1',{ 'X-CSRF-Token' => $token },form => { json => $json, imagename => 'isosize-1.png', needlename => "isosize-blah", overwrite => 'yes' })->status_is(200);
 $req->text_like('.ui-state-highlight' => qr/Needle isosize-blah created/);
 
 ok(open(GIT, '-|', @git, 'show'), "git show");
@@ -85,7 +89,7 @@ $req = $t->post_ok(
     '/tests/99937/modules/isosize/steps/1',
     { 'X-CSRF-Token' => $token },
     form => {
-        json => 'blub',
+        json => $json,
         imagename => 'isosize-blah.png',
         imagedistri => 'opensuse',
         needlename => "isosize-blub",
@@ -99,7 +103,7 @@ $req = $t->post_ok(
     '/tests/99937/modules/isosize/steps/1',
     { 'X-CSRF-Token' => $token },
     form => {
-        json => 'blub',
+        json => $json,
         imagename => '../isosize-blah.png',
         imagedistri => 'ope/nsuse',
         needlename => ".isosize-blub",
@@ -107,6 +111,73 @@ $req = $t->post_ok(
     }
 )->status_is(200);
 $req->text_is('.ui-state-error' => 'Error creating/updating needle: wrong parameters imagename imagedistri imageversion needlename overwrite');
+
+# post invalid json
+$req = $t->post_ok(
+    '/tests/99937/modules/isosize/steps/1',
+    { 'X-CSRF-Token' => $token },
+    form => {
+        json => 'blub',
+        imagename => 'isosize-blah.png',
+        imagedistri => 'opensuse',
+        needlename => "isosize-blub",
+        overwrite => "yes"
+    }
+)->status_is(200);
+$req->text_like('.ui-state-error' => '/Error validating needle: syntax error: malformed JSON string/');
+
+# post incomplete json i)
+my $json1='{
+   "area" : [ { "width" : 1024,"xpos" : 0,"type" : "match","ypos" : 0, "height" : 768 } ],
+   "tags" : [  ]
+}';
+$req = $t->post_ok(
+    '/tests/99937/modules/isosize/steps/1',
+    { 'X-CSRF-Token' => $token },
+    form => {
+        json => $json1,
+        imagename => 'isosize-blah.png',
+        imagedistri => 'opensuse',
+        needlename => "isosize-blub",
+        overwrite => "yes"
+    }
+)->status_is(200);
+$req->text_is('.ui-state-error' => 'Error validating needle: no tag defined');
+
+# post incomplete json ii)
+my $json2='{
+   "tags" : [  "blah"  ]
+}';
+$req = $t->post_ok(
+    '/tests/99937/modules/isosize/steps/1',
+    { 'X-CSRF-Token' => $token },
+    form => {
+        json => $json2,
+        imagename => 'isosize-blah.png',
+        imagedistri => 'opensuse',
+        needlename => "isosize-blub",
+        overwrite => "yes"
+    }
+)->status_is(200);
+$req->text_is('.ui-state-error' => 'Error validating needle: no area defined');
+
+# post incomplete json iii)
+my $json3='{
+   "area" : [ { "xpos" : 0,"type" : "match","ypos" : 0, "height" : 768 } ],
+   "tags" : [  "blah"  ]
+}';
+$req = $t->post_ok(
+    '/tests/99937/modules/isosize/steps/1',
+    { 'X-CSRF-Token' => $token },
+    form => {
+        json => $json3,
+        imagename => 'isosize-blah.png',
+        imagedistri => 'opensuse',
+        needlename => "isosize-blub",
+        overwrite => "yes"
+    }
+)->status_is(200);
+$req->text_is('.ui-state-error' => 'Error validating needle: area without width');
 
 #open (F, '|-', 'w3m -T text/html');
 #open (F, '|-', 'w3m -dump');
