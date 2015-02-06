@@ -395,48 +395,26 @@ sub _json_validation($) {
 
     my $self = shift;
     my $json = shift;
-    my %errorh;
-    $errorh{'message'}='';
     my $djson = eval {decode_json($json)};
     if (!$djson ) {
-        my $message=$@;
-        $message=~s@at /usr/.*$@@; #do not print perl module reference
-        $errorh{'message'}="syntax error: $message";
-        return \%errorh;
+        my $err=$@;
+        $err=~s@at /usr/.*$@@; #do not print perl module reference
+        return "syntax error: $err";
     }
 
     if (!exists $djson->{'area'} || !exists $djson->{'area'}[0]) {
-        $errorh{'message'}="no area defined";
-        return \%errorh;
+        return "no area defined";
     }
     if (!exists $djson->{'tags'} || !exists $djson->{'tags'}[0]) {
-        $errorh{'message'}="no tag defined";
-        return \%errorh;
+        return "no tag defined";
     }
     my $areas=$djson->{'area'};
     foreach my $area (@$areas) {
-
-        if (!exists $area->{'xpos'} ) {
-            $errorh{'message'}="area without xpos";
-            return \%errorh;
-        }
-        if (!exists $area->{'ypos'} ) {
-            $errorh{'message'}="area without ypos";
-            return \%errorh;
-        }
-        if (!exists $area->{'type'} ) {
-            $errorh{'message'}="area without type";
-            return \%errorh;
-        }
-        if (!exists $area->{'height'} ) {
-            $errorh{'message'}="area without height";
-            return \%errorh;
-        }
-        if (!exists $area->{'width'} ) {
-            $errorh{'message'}="area without width";
-            return \%errorh;
-        }
-
+        return "area without xpos" unless exists $area->{'xpos'};
+        return "area without ypos" unless exists $area->{'ypos'};
+        return "area without type" unless exists $area->{'type'};
+        return "area without height" unless exists $area->{'height'};
+        return "area without width" unless  exists $area->{'width'};
     }
 
     return undef;
@@ -479,7 +457,7 @@ sub save_needle {
 
     my $error=$self->_json_validation($json);
     if ($error) {
-        my $message='Error validating needle: '.$error->{'message'};
+        my $message='Error validating needle: '.$error;
         $self->app->log->error($message);
         $self->stash(error => "$message\n");
         return $self->edit;
