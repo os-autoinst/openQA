@@ -29,7 +29,6 @@
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-3600, 'UTC'), # One hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-7200, 'UTC'),  # Two hours ago
         test => "minimalx",
-        test_branch => undef,
         worker_id => 0,
         jobs_assets => [{ asset_id => 4 },]
 
@@ -42,7 +41,6 @@
         t_finished => undef,
         t_started => undef,
         test => "RAID0",
-        test_branch => undef,
         worker_id => 0,
         jobs_assets => [{ asset_id => 1 },],
         retry_avbl => 3,
@@ -56,7 +54,6 @@
         t_finished => undef,
         t_started => undef,
         test => "RAID1",
-        test_branch => undef,
         worker_id => 0,
         jobs_assets => [{ asset_id => 1 },],
         retry_avbl => 3,
@@ -70,7 +67,6 @@
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-536400, 'UTC'), # 149 hours ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-540000, 'UTC'),  # 150 hours ago
         test => "kde",
-        test_branch => undef,
         worker_id => 0,
         jobs_assets => [{ asset_id => 1 },],
         retry_avbl => 3,
@@ -84,7 +80,6 @@
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-3600, 'UTC'), # One hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-7200, 'UTC'),  # Two hours ago
         test => "doc",
-        test_branch => undef,
         worker_id => 0,
         retry_avbl => 3,
         settings => [{ key => 'DVD', value => '1'},{ key => 'VERSION', value => 'Factory'},{ key => 'DESKTOP', value => 'kde'},{ key => 'ISO_MAXSIZE', value => '4700372992'},{ key => 'TEST', value => 'doc'},{ key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'},{ key => 'QEMUCPU', value => 'qemu64'},{ key => 'FLAVOR', value => 'DVD'},{ key => 'BUILD', value => '0048'},{ key => 'DISTRI', value => 'opensuse'},{ key => 'ARCH', value => 'x86_64'},{ key => 'MACHINE', value => '64bit'},]
@@ -97,7 +92,6 @@
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-10800, 'UTC'), # Three hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-14400, 'UTC'),  # Four hours ago
         test => "textmode",
-        test_branch => undef,
         worker_id => 0,
         jobs_assets => [{ asset_id => 1 },],
         retry_avbl => 3,
@@ -112,7 +106,6 @@
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-14400, 'UTC'), # Four hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-18000, 'UTC'),  # Five hours ago
         test => "textmode",
-        test_branch => undef,
         worker_id => 0,
         jobs_assets => [{ asset_id => 1 },],
         retry_avbl => 3,
@@ -126,7 +119,6 @@
         t_finished => undef,
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-600, 'UTC'), # 10 minutes ago
         test => "kde",
-        test_branch => undef,
         worker_id => 1,
         jobs_assets => [{ asset_id => 2 },],
         retry_avbl => 3,
@@ -141,7 +133,6 @@
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time-10800, 'UTC'), # Three hour ago
         t_started => time2str('%Y-%m-%d %H:%M:%S', time-14400, 'UTC'),  # Four hours ago
         test => "kde",
-        test_branch => undef,
         worker_id => 0,
         jobs_assets => [{ asset_id => 2 },],
         retry_avbl => 3,
@@ -155,7 +146,6 @@
         t_finished => undef,
         t_started => undef,
         test => "RAID0",
-        test_branch => undef,
         worker_id => 0,
         jobs_assets => [{ asset_id => 3 },],
         retry_avbl => 3,

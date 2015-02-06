@@ -30,7 +30,7 @@ sub auth {
     if ($user = $self->current_user) { # Browser with a logged in user
         unless ($self->valid_csrf) {
             $self->render(json => {error => "Bad CSRF token!"}, status => 403);
-            return undef;
+            return;
         }
     }
     else { # No session (probably not a browser)
@@ -38,14 +38,14 @@ sub auth {
         my $msg = $self->req->url->to_string;
         if ($api_key && $self->_valid_hmac($hash, $msg, $timestamp, $api_key)) {
             $user = $api_key->user;
-            $self->app->log->debug(sprintf "API auth by user: %s, operator: %d", $user->openid, $user->is_operator);
+            $self->app->log->debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
         }
     }
 
     return 1 if $self->is_operator($user);
 
     $self->render(json => {error => "Not authorized"}, status => 403);
-    return undef;
+    return;
 }
 
 sub _valid_hmac {

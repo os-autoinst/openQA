@@ -20,12 +20,9 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &first_run
   &data_name
   &back_log
-  &get_running_modinfo
   &needle_info
   &needledir
   &testcasedir
-  &test_result
-  &test_result_module
   &test_resultfile_list
   &testresultdir
   &test_uploadlog_list
@@ -61,31 +58,6 @@ our $testcasedir = "$basedir/openqa/share/tests";
 our @runner = <$basedir/$prj/pool/[0-9]>;
 push(@runner, "$basedir/$prj/pool/manual");
 
-sub test_result($) {
-    my $testname = shift;
-    my $testresdir = testresultdir($testname);
-    local $/;
-    #carp "reading json from $testresdir/results.json";
-    open(JF, "<", "$testresdir/results.json") || return;
-    return unless fcntl(JF, F_SETLKW, pack('ssqql', F_RDLCK, 0, 0, 0, $$));
-    my $result_hash;
-    eval {$result_hash = decode_json(<JF>);};
-    warn "failed to parse $testresdir/results.json: $@" if $@;
-    close(JF);
-    return $result_hash;
-}
-
-sub test_result_module($$) {
-    # get a certain testmodule subtree
-    my $modules_array = shift;
-    my $query_module = shift;
-    for my $module (@{$modules_array}) {
-        if($module->{'name'} eq $query_module) {
-            return $module;
-        }
-    }
-}
-
 sub running_log($) {
     my ($name) = @_;
     return join('/', $basedir, $prj, 'testresults', $name, '/');
@@ -118,38 +90,6 @@ sub back_log($) {
     }
     return "";
 }
-
-sub get_running_modinfo($) {
-    my $results = shift;
-    return {} unless $results;
-    my $currentstep = $results->{'running'}||'';
-    my $modlist = [];
-    my $donecount = 0;
-    my $count = @{$results->{'testmodules'}||[]};
-    my $modstate = 'done';
-    my $category;
-    for my $module (@{$results->{'testmodules'}}) {
-        my $name = $module->{'name'};
-        my $result = $module->{'result'};
-        if (!$category || $category ne $module->{'category'}) {
-            $category = $module->{'category'};
-            push(@$modlist, {'category' => $category, 'modules' => []});
-        }
-        if ($name eq $currentstep) {
-            $modstate = 'current';
-        }
-        elsif ($modstate eq 'current') {
-            $modstate = 'todo';
-        }
-        elsif ($modstate eq 'done') {
-            $donecount++;
-        }
-        my $moditem = {'name' => $name, 'state' => $modstate, 'result' => $result};
-        push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
-    }
-    return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $results->{'running'}};
-}
-
 
 sub testresultdir($) {
     my $fn=shift;

@@ -76,10 +76,6 @@ __PACKAGE__->add_columns(
     test => {
         data_type => 'text',
     },
-    test_branch => {
-        data_type => 'text',
-        is_nullable => 1,
-    },
     clone_id => {
         data_type => 'integer',
         is_foreign_key => 1,
@@ -88,6 +84,11 @@ __PACKAGE__->add_columns(
     retry_avbl => {
         data_type => 'integer',
         default_value => 3,
+    },
+    backend_info => {
+        # we store free text JSON here - backends might store random data about the job
+        data_type => 'text',
+        is_nullable => 1,
     },
     t_started => {
         data_type => 'timestamp',
@@ -140,9 +141,6 @@ sub name{
             push @a, sprintf(($formats{$c}||'%s'), $s{$c});
         }
         $self->{_name} = join('-', @a);
-        if ($self->test_branch) {
-            $self->{_name} .= '@'.$self->test_branch;
-        }
     }
     return $self->{_name};
 }
@@ -177,7 +175,7 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw/ id name priority state result worker_id clone_id retry_avbl t_started t_finished test test_branch/);
+    my $j = _hashref($job, qw/ id name priority state result worker_id clone_id retry_avbl t_started t_finished test/);
     $j->{settings} = { map { $_->key => $_->value } $job->settings->all() };
     if ($job->name && !$j->{settings}->{NAME}) {
         $j->{settings}->{NAME} = sprintf "%08d-%s", $job->id, $job->name;
@@ -254,7 +252,6 @@ sub duplicate{
             }
         }
         push(@new_settings, {key => 'TEST', value => $self->test});
-        # TODO: test_branch
 
         my $new_job = $rsource->resultset->create(
             {

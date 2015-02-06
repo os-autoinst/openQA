@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA';
+    unshift @INC, 'lib';
 }
 
 use Mojo::Base -strict;
@@ -47,7 +47,7 @@ $t->post_ok('/api/v1/jobs/99928/prio?prio=34' => { 'X-CSRF-Token' => $token } =>
 
 
 # Log in with an authorized user for the rest of the test
-$test_case->login($t, 'https://openid.camelot.uk/percival');
+$test_case->login($t, 'percival');
 
 # Test 99928 is scheduled, so can be canceled. Make sure link contains
 # data-method=post

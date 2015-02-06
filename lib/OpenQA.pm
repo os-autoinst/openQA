@@ -11,8 +11,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA;
 use Mojolicious 5.60;
@@ -38,6 +37,9 @@ sub _read_config {
             suse_mirror => undef,
             scm => 'git',
             hsts => 365,
+        },
+        auth => {
+            method => 'OpenID',
         },
         'scm git' => {
             do_push => 'no',
@@ -175,6 +177,16 @@ sub startup {
             db_profiler::enable_sql_debugging($self);
         }
     }
+
+    # load auth module
+    my $auth_method = $self->config->{'auth'}->{'method'};
+    my $auth_module = "OpenQA::Auth::$auth_method";
+    eval "require $auth_module";
+    if ($@) {
+        die sprintf('Unable to load auth module %s for method %s', $auth_module, $auth_method);
+    }
+    $auth_module->import('auth_config');
+    auth_config($self->config);
 
     $self->plugin(
         CHI => {

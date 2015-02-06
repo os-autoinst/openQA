@@ -1,7 +1,7 @@
 [
     Users => {
         id => 99901,
-        openid => 'https://openid.camelot.uk/arthur',
+        username => 'arthur',
         email => 'arthur@example.com',
         fullname => 'King Arthur',
         nickname => 'artie',
@@ -10,7 +10,8 @@
     },
     Users => {
         id => 99902,
-        openid => 'https://openid.camelot.uk/lancelot',
+        # keep url to test openid compatibility
+        username => 'https://openid.camelot.uk/lancelot',
         email => 'lancelot@example.com',
         fullname => 'Lancelot du Lac',
         nickname => 'lance',
@@ -20,7 +21,7 @@
     },
     Users => {
         id => 99903,
-        openid => 'https://openid.camelot.uk/percival',
+        username => 'percival',
         email => 'percival@example.com',
         fullname => 'Percival',
         nickname => 'perci',

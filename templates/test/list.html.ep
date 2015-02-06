@@ -44,17 +44,13 @@
                 <th class="table-sortable:alphanumeric table-filterable">build</th>
                 <th class="table-sortable:alphanumeric table-filterable">testsuite</th>
                 <th class="table-sortable:alphanumeric">testtime</th>
-                <th class="table-sortable:numeric">OK</th>
-                <th class="table-sortable:numeric">unk</th>
-                <th class="table-sortable:numeric">dents</th>
-                <th class="table-sortable:numeric">fail</th>
+                <th class="table-sortable:numeric">Result</th>
             </tr>
         </thead>
-		<tbody>
+	<tbody>
         % for my $test (@$list) {
             % my $job = $test->{job};
             % my $resultclass = 'overview_'.$job->{result};
-            % $resultclass = 'overview_unknown' if ($job->{result} eq 'passed' && $test->{'res_dents'});
             % my $build = $job->{settings}->{'BUILD'};
             % my $distri = $job->{settings}->{'DISTRI'};
             % my $version = $job->{settings}->{'VERSION'};
@@ -93,7 +89,7 @@
                 <td class="testtime"><time><%= format_time($job->{'t_started'}) %></time></td>
 
                 <% if($job->{'state'} eq 'running' || $job->{'state'} eq 'waiting') { %>
-                    <td colspan="4" style="padding: 3px 4px;" class="progress">
+                    <td style="padding: 3px 4px;" class="progress">
                         <div class="pbox">
                             % my $ptext = "";
                             % my $value;
@@ -116,10 +112,8 @@
                         </div>
                     </td>
                   % } else {
-                    <td><span class="overview_passed"><%= ($test->{'res_ok'})?$test->{'res_ok'}:'' %></span></td>
-                    <td><span class="overview_unknown"><%= ($test->{'res_unknown'}?$test->{'res_unknown'}:'') %></span></td>
-		    <td><span class="overview_dent"><%= ($test->{'res_dents'}?$test->{'res_dents'}:'') %></span></td>
-                    <td><span class="overview_failed"><%= ($test->{'res_fail'}?$test->{'res_fail'}:'') %></span></td>
+                <td><span class="<%= "$resultclass" %>">
+		    <%= module_result($test->{result_stats}) %></span></td>
                 % }
             </tr>
         % }

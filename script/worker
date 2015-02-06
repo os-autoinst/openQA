@@ -443,17 +443,21 @@ sub job_incomplete($){
 
 # check if results.json contains an overal result. If the latter is
 # missing the worker probably crashed.
-sub results_overall($){
-    my $fn = shift;
+sub results {
+    my $fn = "$testresults/results.json";
     my $ret;
     local $/;
     open(my $fh, '<', $fn) or return 0;
-    my $json;
+    my $json = {};
     eval {$json = decode_json(<$fh>);};
     warn "os-autoinst didn't write proper results.json" if $@;
-    $ret = $json->{'overall'} if $json && $json->{'overall'};
     close($fh);
-    return $ret;
+    return $json;
+}
+
+sub results_overall() {
+    my $json = results();
+    return $json->{'overall'};
 }
 
 sub clean_pool(){
@@ -620,7 +624,7 @@ sub stop_job($) {
         elsif ($aborted eq 'done') { # not aborted
             # if there's no results.json start.pl probably died early, e.g. due to configuration
             # problem. Release the job so another worker may grab it.
-            my $overall = results_overall("$testresults/results.json") || '';
+            my $overall = results_overall() || '';
             # FIXME: this needs improvement
             if ($overall eq 'ok') {
                 $overall = 'passed';
@@ -731,6 +735,7 @@ sub update_status {
     my $status = {};
 
     $status->{'log'} = log_snippet;
+    $status->{'results'} = results();
     api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
 }
 

@@ -29,31 +29,22 @@ sub init {
 
     my $testindex = $self->param('stepid');
 
-
     my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     $self->stash('testname', $job->{'name'});
     my $testdirname = $job->{'settings'}->{'NAME'};
-    my $results = test_result($testdirname);
+    my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
 
-    unless ($results) {
-        $self->reply->not_found;
-        return 0;
-    }
-    $self->stash('results', $results);
+    my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
+    my $details = $module->details($testresultdir);
+    $self->stash('job', $job);
+    $self->stash('module',  $module);
+    $self->stash('imglist', $details);
 
-    my $module = test_result_module($results->{'testmodules'}, $self->param('moduleid'));
-    unless ($module) {
-        $self->reply->not_found;
-        return 0;
-    }
-    $self->stash('module', $module);
-    $self->stash('imglist', $module->{'details'});
-
-    my $modinfo = get_running_modinfo($results);
+    my $modinfo = OpenQA::Schema::Result::JobModules::running_modinfo($job);
     $self->stash('modinfo', $modinfo);
 
     my $tabmode = 'screenshot'; # Default
-    if ($testindex > @{$module->{'details'}}) {
+    if ($testindex > @$details) {
         # This means that the module have no details at all
         if ($testindex == 1) {
             if ($self->stash('action') eq 'src') {
@@ -71,7 +62,7 @@ sub init {
         }
     }
     else {
-        my $module_detail = $module->{'details'}->[$testindex-1];
+        my $module_detail = $details->[$testindex-1];
         $tabmode = 'audio' if ($module_detail->{'audio'});
         $self->stash('module_detail', $module_detail);
     }
@@ -82,10 +73,7 @@ sub init {
 
 # Helper function to generate the needle url, with an optional version
 sub needle_url {
-    my $self = shift;
-    my $distri = shift;
-    my $name = shift;
-    my $version = shift;
+    my ($self, $distri, $name, $version) = @_;
 
     if (defined($version) && $version) {
         $self->url_for('needle_file', distri => $distri, name => $name)->query(version => $version);
@@ -97,7 +85,7 @@ sub needle_url {
 
 # Call to viewimg or viewaudio
 sub view {
-    my $self = shift;
+    my ($self) = @_;
     return 0 unless $self->init();
 
     if ('audio' eq $self->stash('tabmode')) {
@@ -110,8 +98,7 @@ sub view {
 
 # Needle editor
 sub edit {
-    my $self = shift;
-    my ($ow_overwrite, $ow_json, $ow_imagename, $ow_imagedistri, $ow_imageversion, $ow_needlename) = @_;
+    my ($self, $ow_overwrite, $ow_json, $ow_imagename,$ow_imagedistri, $ow_imageversion, $ow_needlename) = @_;
     return 0 unless $self->init();
 
     my $module_detail = $self->stash('module_detail');
@@ -335,14 +322,14 @@ sub edit {
 }
 
 sub src {
-    my $self = shift;
+    my ($self) = @_;
     return 0 unless $self->init();
 
-    my $results = $self->stash('results');
+    my $job = $self->stash('job');
     my $module = $self->stash('module');
 
-    my $testcasedir = testcasedir($results->{distribution}, $results->{version});
-    my $scriptpath = "$testcasedir/$module->{'script'}";
+    my $testcasedir = testcasedir($job->{settings}->{DISTRI}, $job->{settings}->{VERSION});
+    my $scriptpath = "$testcasedir/" . $module->script;
     if(!$scriptpath || !-e $scriptpath) {
         $scriptpath||="";
         return $self->reply->not_found;
@@ -379,8 +366,7 @@ sub _commit_git {
 
 # Adds a timestamp to a needle name or replace the already present timestamp
 sub _timestamp {
-    my $self = shift;
-    my $name = shift;
+    my ($self, $name) = @_;
     my $today = strftime("%Y%m%d", gmtime(time));
 
     if ( $name =~ /(.*)-\d{8}$/ ) {
@@ -422,7 +408,7 @@ sub _json_validation($) {
 }
 
 sub save_needle {
-    my $self = shift;
+    my ($self) = @_;
     return 0 unless $self->init();
 
     my $validation = $self->validation;
@@ -453,7 +439,7 @@ sub save_needle {
     my $imageversion = $validation->param('imageversion');
     my $needlename = $validation->param('needlename');
     my $overwrite = $validation->param('overwrite');
-    my $needledir = needledir($results->{distribution}, $results->{version});
+    my $needledir = needledir($job->{'settings'}->{DISTRI}, $job->{'settings'}->{VERSION});
 
     my $error=$self->_json_validation($json);
     if ($error) {
@@ -563,30 +549,34 @@ sub calc_min_similarity($$) {
 sub viewimg {
     my $self = shift;
     my $module_detail = $self->stash('module_detail');
-    my $results = $self->stash('results');
+    my $job = $self->stash('job');
+    my $distribution = $job->{settings}->{DISTRI};
+    my $dversion = $job->{settings}->{VERSION} || '';
 
     my @needles;
     if ($module_detail->{'needle'}) {
-        my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'}, $results->{'version'}||'');
-        my $info = {
-            'name' => $module_detail->{'needle'},
-            'image' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png', $results->{'version'}),
-            'areas' => $needle->{'area'},
-            'matches' => []
-        };
-        calc_matches($info, $module_detail->{'area'});
-        push(@needles, $info);
+        my $needle = needle_info($module_detail->{'needle'}, $distribution, $dversion);
+        if ($needle) { # possibly missing/broken file
+            my $info = {
+                'name' => $module_detail->{'needle'},
+                'image' => $self->needle_url($distribution, $module_detail->{'needle'}.'.png', $dversion),
+                'areas' => $needle->{'area'},
+                'matches' => []
+            };
+            calc_matches($info, $module_detail->{'area'});
+            push(@needles, $info);
+        }
     }
     elsif ($module_detail->{'needles'}) {
         my $needlename;
         my $needleinfo;
         for my $needle (@{$module_detail->{'needles'}}) {
             $needlename = $needle->{'name'};
-            $needleinfo  = needle_info($needlename, $results->{'distribution'}, $results->{'version'}||'');
+            $needleinfo  = needle_info($needlename, $distribution, $dversion);
             next unless $needleinfo;
             my $info = {
                 'name' => $needlename,
-                'image' => $self->needle_url($results->{'distribution'}, "$needlename.png", $results->{'version'}),
+                'image' => $self->needle_url($distribution, "$needlename.png", $dversion),
                 'areas' => $needleinfo->{'area'},
                 'matches' => []
             };

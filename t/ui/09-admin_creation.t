@@ -35,7 +35,7 @@ my $token = $req->res->dom->at('meta[name=csrf-token]')->attr('content');
 #
 # So let's login as a admin
 $t->delete_ok('/logout')->status_is(302);
-$test_case->login($t, 'https://openid.camelot.uk/arthur');
+$test_case->login($t, 'arthur');
 my $get = $t->get_ok('/admin/users')->status_is(200);
 $get->text_is('#user_99901 .action_operator a' => '- operator');
 $get->text_is('#user_99901 .action_admin a' => '- admin');
@@ -50,7 +50,7 @@ $get = $t->get_ok('/admin/users')->status_is(403);
 $t->delete_ok('/logout')->status_is(302);
 
 # Login and claim the kingdom
-$test_case->login($t, 'https://openid.camelot.uk/morgana');
+$test_case->login($t, 'morgana');
 $get = $t->get_ok('/admin/users')->status_is(200);
 $get->text_is('#user_99901 .action_operator a' => '- operator');
 $get->text_is('#user_99901 .action_admin a' => '+ admin');
@@ -63,7 +63,7 @@ $get->text_is('#user_99903 .action_admin a' => '+ admin');
 $t->delete_ok('/logout')->status_is(302);
 
 # No-one else can claim the kingdom
-$test_case->login($t, 'https://openid.camelot.uk/merlin');
+$test_case->login($t, 'merlin');
 $get = $t->get_ok('/admin/users')->status_is(403);
 
 done_testing();
