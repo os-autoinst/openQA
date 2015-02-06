@@ -7,12 +7,6 @@
 	<div class="box box-shadow" id="actions_box">
 		<div class="box-header aligncenter">Actions</div>
 		<div class="aligncenter">
-			<% if($diskimg) { %>
-			%# TODO: l1 should not be hardcoded here
-                        %= link_to url_for('diskimage', testid => $testid, imageid => 'l1') => begin
-                            %= image "/images/floppy.png", width=>"23", height=>"23", alt=>"img", title=>"download disk image"
-                        %= end
-			<% } %>
                         %= link_to tests => begin
                             %= image "/images/back.png", alt=>"back", title=>"back to overview page"
                         %= end
@@ -67,8 +61,8 @@
 	</div>
 	<% } %>
 	<div class="box box-shadow" id="info_box">
-		<div class="box-header aligncenter">Test Details</div>
-        <table class="infotbl">
+	    <div class="box-header aligncenter">Test Details</div>
+            <table class="infotbl">
             % if ($job->{t_started}) {
                 <tr>
                     <td style="width: 40%;">Start</td>
@@ -151,8 +145,8 @@
 	</div>
 	<% } %>
 	<div class="box box-shadow" id="legend_box">
-		<div class="box-header aligncenter">Flag Legend</div>
-        <table class="infotbl">
+	    <div class="box-header aligncenter">Flag Legend</div>
+            <table class="infotbl">
             <tr>
                 <td class="flags">&#9760;</td>
                 <td title="Testsuite is aborted if this test fails">Fatal</td>
@@ -181,7 +175,6 @@
 		<table id="results" class="table-autosort table-autofilter table-autostripe">
 			<thead>
 			<tr>
-				<th style="width: 1.5em;">Flags</th>
 				<th style="width: 200px;">Test</th>
 				<th style="width: 150px; padding: 2px 25px;">Result</th>
 				<th>References</th>
@@ -190,15 +183,21 @@
 			<tbody>
 			<% for my $module (@$modlist) { %>
 			<tr>
-				<td class="flags">
-				%= ($module->{'flags'}->{'fatal'}||0) ? b('&#9760;') : ''
-				%= ($module->{'flags'}->{'important'}||0) ? b('&#9888;') : ''
-				%= ($module->{'flags'}->{'milestone'}||0) ? b('&#9875;') : ''
-				</td>
-				<td class="component">
-				  %= link_to $module->{'name'} => url_for('src_step', stepid => 1, moduleid => $module->{'name'})
-				</td>
-				<td class="<%= css_for($module) %>"><%= format_result($module) %></td>
+			    <td class="component">
+				<div>
+				    %= link_to $module->{'name'} => url_for('src_step', stepid => 1, moduleid => $module->{'name'})
+				</div>
+				<div style="min-height: 1em">
+				    %= ($module->{'fatal'}) ? b('&#9760;') : ''
+				    %= ($module->{'important'}||0) ? b('&#9888;') : ''
+				    %= ($module->{'milestone'}||0) ? b('&#9875;') : ''
+				</div>
+			    </td>
+			    <td class="<%= css_for($module) %>">
+				%= format_result($module)
+			    </td>
+			    
+		    </td>
 				<td class="links" style="width: 100%;">
 
 					% for my $screenshot (@{$module->{'screenshots'}}) {
