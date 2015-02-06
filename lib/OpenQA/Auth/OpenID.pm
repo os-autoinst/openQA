@@ -26,20 +26,8 @@ our (@ISA, @EXPORT_OK);
 
 sub auth_config {
     my ($config) = @_;
-    my $openid = {
-        provider  => 'https://www.opensuse.org/openid/user/',
-        httpsonly => '1',
-    };
-    if ($config->{'openid'}) {
-        for my $k (sort keys %$openid) {
-            my $v = $config->{'openid'}->{$k};
-            $v = $openid->{$k} unless defined $v;
-            $config->{'openid'}->{$k} = $v if defined $v;
-        }
-    }
-    else {
-        $config->{'openid'} = $openid;
-    }
+    # no config needed
+    return;
 }
 
 sub auth_login {
