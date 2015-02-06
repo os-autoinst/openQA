@@ -787,7 +787,7 @@ sub job_update_status($$) {
 
     _append_log($job, $status->{log});
 
-    Schema::Result::JobModules::split_results($job, $status->{results});
+    OpenQA::Schema::Result::JobModules::split_results($job, $status->{results});
 }
 
 sub _job_find_smart($$$) {
