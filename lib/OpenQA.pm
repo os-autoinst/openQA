@@ -48,6 +48,10 @@ sub _read_config {
             level => undef,
             file => "/var/log/openqa",
         },
+        openid => {
+            provider => 'https://www.opensuse.org/openid/user/',
+            httpsonly => '1',
+        },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
             proxy => 1,
