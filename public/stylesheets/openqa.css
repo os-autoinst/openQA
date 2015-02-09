@@ -15,6 +15,13 @@ tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
 tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
 table.table-autostripe tr:nth-of-type(even) { background-color:#f0ffcf; }  /* Lemon ultra-light */
 table.table-autostripe tr:nth-of-type(odd) { background-color:#f9ffeb; }  /* Lemon hyper-light */
+table.dataTable.stripe tbody tr.odd, table.dataTable.display tbody tr.odd {
+  background-color: #f0ffcf;
+}
+table.dataTable.stripe tbody tr.odd.selected, table.dataTable.display tbody tr.odd.selected {
+   background-color: #f9ffeb;
+}
+
 
 table select.table-autofilter { font-size: 9px; }
 table select.table-autofilter option { font-size: 9px; }

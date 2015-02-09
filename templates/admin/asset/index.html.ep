@@ -1,20 +1,27 @@
 % layout 'admin';
 % title 'Assets';
+% stash 'use_jquery' => 1;
+
+% content_for 'ready_function' => begin
+$('#assets').DataTable( {
+"order": [],
+} );
+% end
 
 <div class="box box-shadow omega">
     <h2><%= title %></h2>
 
     %= include 'layouts/info'
 
-    <table class="table-autosort table-autofilter table-autostripe">
+    <table id="assets" class="table-autostripe">
         <thead>
             <tr>
-                <th class="table-sortable:numeric">ID</th>
-                <th class="table-sortable:alphanumeric table-filterable">Type</th>
-                <th class="table-sortable:alphanumeric">Name</th>
-                <th class="table-sortable:numeric">#Jobs</th>
-                <th class="table-sortable:alphanumeric">Created</th>
-                <th class="table-sortable:alphanumeric">Updated</th>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Name</th>
+                <th>#Jobs</th>
+                <th>Created</th>
+                <th>Updated</th>
             </tr>
         </thead>
         <tbody>

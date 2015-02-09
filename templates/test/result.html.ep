@@ -172,7 +172,7 @@
                   <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
                 % }
 
-		<table id="results" class="table-autosort table-autofilter table-autostripe">
+		<table id="results">
 			<thead>
 			<tr>
 				<th style="width: 200px;">Test</th>
