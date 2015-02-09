@@ -29,9 +29,11 @@ sub init {
 
     my $testindex = $self->param('stepid');
 
-    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
-    $self->stash('testname', $job->{'name'});
-    my $testdirname = $job->{'settings'}->{'NAME'};
+    my $job = $self->app->schema->resultset("Jobs")->search({ 'id' => $self->param('testid') },{ 'prefetch' => qw/jobs_assets/ } )->first;
+
+    return $self->reply->not_found unless $job;
+    $self->stash('testname', $job->name);
+    my $testdirname = $job->settings_hash->{NAME};
     my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
 
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));

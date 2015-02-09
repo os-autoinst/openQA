@@ -1,10 +1,10 @@
 <div class="box box-shadow" id="settings_box">
     <div class="box-header aligncenter">Settings</div>
     <table class="infotbl">
-        % for my $k (sort keys %{$job->{settings}}) {
+        % for my $k (sort keys %{$job->settings_hash}) {
         <tr>
             <td style="text-align: left;"><%= $k %></td>
-            <td style="text-align: left;"><%= $job->{settings}->{$k} %></td>
+            <td style="text-align: left;"><%= $job->settings_hash->{$k} %></td>
         </tr>
         % }
     </table>

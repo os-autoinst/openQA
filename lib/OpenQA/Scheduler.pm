@@ -37,7 +37,7 @@ use OpenQA::Schema::Result::JobDependencies;
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils ();
+use OpenQA::Utils qw/log_debug/;
 use db_helpers qw/rndstr/;
 
 use OpenQA::WebSockets;
@@ -56,12 +56,12 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
 @EXPORT = qw(worker_register worker_get workers_get_dead_worker list_workers job_create
-  job_get job_get_by_workerid jobs_get_dead_worker list_jobs job_grab job_set_done
+  job_get job_get_by_workerid jobs_get_dead_worker list_jobs
+  job_grab job_set_done
   job_set_waiting job_set_running job_set_prio job_notify_workers
   job_delete job_update_result job_restart job_cancel command_enqueue
   iso_cancel_old_builds
   job_set_stop job_stop iso_stop_old_builds
-  job_get_assets
   asset_list asset_get asset_delete asset_register
 );
 
@@ -388,28 +388,18 @@ sub _job_get($) {
     return $job->to_hash(assets => 1);
 }
 
-sub job_get_assets {
-    my $id = shift;
-    my $ret = [];
-
-    my $rc = schema->resultset("Jobs")->find({id => $id})->assets();
-    while (my $a = $rc->next()) {
-        push @$ret, { id => $a->id, type => $a->type, name => $a->name };
-    }
-
-    return $ret;
-}
-
-sub list_jobs {
+sub query_jobs {
     my %args = @_;
 
     my @conds;
     my %attrs;
     my @joins;
 
-    push @{$attrs{'prefetch'}}, 'settings';
-    push @{$attrs{'prefetch'}}, 'parents';
-    push @{$attrs{'prefetch'}}, {'jobs_assets' => 'asset' };
+    OpenQA::Utils::log_debug("query_jobs");
+    unless ($args{idsonly}) {
+        push @{$attrs{'prefetch'}}, 'settings';
+        push @{$attrs{'prefetch'}}, 'parents';
+    }
 
     if ($args{state}) {
         push(@conds, { 'me.state' => [split(',', $args{state})] });
@@ -482,15 +472,28 @@ sub list_jobs {
         );
         push(@conds, { 'me.id' => { -in => $subquery->get_column('job_id')->as_query }});
     }
+    if ($args{ids}) {
+        push(@conds, { 'me.id' => { -in => @{$args{ids}} } });
+    }
+
     $attrs{order_by} = ['me.id DESC'];
 
     $attrs{join} = \@joins if @joins;
     my $jobs = schema->resultset("Jobs")->search({-and => \@conds}, \%attrs);
+    OpenQA::Utils::log_debug("query_jobs " . scalar($jobs->all));
+    return $jobs;
+}
 
+sub list_jobs {
+    my %args = @_;
+
+    my $jobs = query_jobs(%args);
+    log_debug("queried");
     my @results = ();
     while( my $job = $jobs->next) {
         push @results, $job->to_hash(assets => 1);
     }
+    log_debug("tohash");
 
     return \@results;
 }

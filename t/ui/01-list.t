@@ -19,94 +19,86 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 44;
+use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
 
+use t::ui::PhantomTest;
+
 my $t = Test::Mojo->new('OpenQA');
+
+my $driver = t::ui::PhantomTest::call_phantom();
+if ($driver) {
+    plan tests => 16;
+}
+else {
+    plan skip_all => 'Install phantomjs to run these tests';
+    exit(0);
+}
 
 #
 # List with no parameters
 #
-my $get = $t->get_ok('/tests')->status_is(200);
-$get->content_like(qr/Test results/i, 'result list is there');
+is($driver->get_title(), "openQA", "on main page");
+my $baseurl = $driver->get_current_url();
+$driver->find_element('div.big-button a', 'css')->click();
+is($driver->get_current_url(), $baseurl . "tests/", "on /tests");
 
-# Test 99946 is successful (30/0/1)
-$get->element_exists('#results #job_99946 .extra');
-$get->text_is('#results #job_99946 .extra span' => 'textmode');
-$get->text_is('#results #job_99946 td:nth-child(11) .overview_passed' => '29 1');
-
-# Test 99963 is still running
-$get->element_exists('#results #job_99963 td:nth-child(11) progress');
-
-# Test 99928 is scheduled (so can be canceled)
-$get->text_is('#results #job_99928 td:nth-child(11)' => 'scheduled');
-$get->element_exists('#results #job_99928 .cancel');
-
-# Test 99938 failed, so it should be displayed in red
-$get->text_is('#results #job_99938 .extra .overview_failed' => 'doc');
-
-
-# Test 99937 is too old to be displayed by default
-$get->element_exists_not('#results #job_99937');
-
-# Test 99926 is displayed
-$get->element_exists('#results #job_99926');
-$get->text_is('#results #job_99926 .extra .overview_incomplete' => 'minimalx');
-
-$get = $t->get_ok('/tests' => form => {ignore_incomplete => 1})->status_is(200);
-
-# Test 99926 not displayed anymore
-$get->element_exists_not('#results #job_99926');
-
-#
-# List with a limit of 200h
-#
-$get = $t->get_ok('/tests' => form => {hoursfresh => 200})->status_is(200);
-
-# Test 99937 is displayed now
-$get->element_exists('#results #job_99937');
-$get->text_is('#results #job_99937 td:nth-child(11) .overview_passed' => '47 3');
-
-#
-# Testing the default scope (relevant)
-#
-$get = $t->get_ok('/tests')->status_is(200);
-$get->content_like(qr/Test results/i, 'result list is there');
-$get->element_exists('#results #job_99946');
-$get->element_exists('#results #job_99963');
-# Test 99945 is not longer relevant (replaced by 99946)
-$get->element_exists_not('#results #job_99945');
-# Test 99962 is still relevant (99963 is still running)
-$get->element_exists('#results #job_99962');
-
-#
-# Testing the scope current
-#
-$get = $t->get_ok('/tests' => form => {scope => 'current'})->status_is(200);
-$get->content_like(qr/Test results/i, 'result list is there');
-$get->element_exists('#results #job_99946');
-$get->element_exists('#results #job_99963');
-# Test 99945 is not current (replaced by 99946)
-$get->element_exists_not('#results #job_99945');
-# Test 99962 is not current (replaced by 99963)
-$get->element_exists_not('#results #job_99962');
-
-#
-# Testing with no scope
-#
-$get = $t->get_ok('/tests' => form => {scope => ''})->status_is(200);
-$get->content_like(qr/Test results/i, 'result list is there');
-$get->element_exists('#results #job_99946');
-$get->element_exists('#results #job_99963');
-$get->element_exists('#results #job_99945');
-$get->element_exists('#results #job_99962');
+my $get;
 
 #
 # Test the legacy redirection
 #
-$t->get_ok('/results')->status_is(302)->header_like(Location => qr/\/tests$/);
+is(1, $driver->get($baseurl . "results"), "/results gets");
+is($driver->get_current_url(), $baseurl . "tests", "/results redirects to /tests ");
 
+# Test 99946 is successful (29/0/1)
+my $job99946 = $driver->find_element('#results #job_99946', 'css');
+my @tds = $driver->find_child_elements($job99946, "td");
+is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', "medium of 99946");
+is((shift @tds)->get_text(), 'textmode@32bit', "test of 99946");
+is((shift @tds)->get_text(), "", "no deps of 99946");
+is((shift @tds)->get_text(), "about an hour ago", "time of 99946");
+is((shift @tds)->get_text(), '29 1', "result of 99946");
+
+# Test 99963 is still running
+isnt(undef, $driver->find_element('#running #job_99963', 'css'), '99963 still running');
+
+# Test 99928 is scheduled
+isnt(undef, $driver->find_element('#scheduled #job_99928', 'css'), '99928 scheduled');
+
+# Test 99938 failed, so it should be displayed in red
+my $job99938 = $driver->find_element('#results #job_99946', 'css');
+
+is('doc@64bit', $driver->find_element('#results #job_99938 .test .overview_failed', 'css')->get_text(), '99938 failed');
+
+# Test 99926 is displayed
+is('minimalx@32bit', $driver->find_element('#results #job_99926 .test .overview_incomplete', 'css')->get_text(), '99926 incomplete');
+
+# first check the relevant jobs
+my @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
+
+is_deeply([qw(job_99962 job_99946 job_99938 job_99937 job_99926)], \@jobs, '5 rows (relevant) displayed');
+$driver->find_element('#relevantfilter', 'css')->click();
+# leave the ajax some time
+while (!$driver->execute_script("return jQuery.active == 0")) {
+    sleep 1;
+}
+# Test 99945 is not longer relevant (replaced by 99946) - but displayed for all
+@jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
+is_deeply([qw(job_99962 job_99946 job_99945 job_99938 job_99937 job_99926)], \@jobs, '6 rows (all) displayed');
+
+# now toggle back
+#print $driver->get_page_source();
+$driver->find_element('#relevantfilter', 'css')->click();
+# leave the ajax some time
+while (!$driver->execute_script("return jQuery.active == 0")) {
+    sleep 1;
+}
+@jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
+is_deeply([qw(job_99962 job_99946 job_99938 job_99937 job_99926)], \@jobs, '5 rows (relevant) again displayed');
+
+t::ui::PhantomTest::kill_phantom();
 done_testing();

@@ -22,6 +22,7 @@ use OpenQA::Scheduler;
 use OpenQA::Schema::Result::Jobs;
 use JSON ();
 use Data::Dumper;
+use Carp;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -109,14 +110,14 @@ sub job_module($$) {
     my ($job, $name) = @_;
 
     my $schema = OpenQA::Scheduler::schema();
-    return $schema->resultset("JobModules")->search({ job_id => $job->{id}, name => $name })->first;
+    return $schema->resultset("JobModules")->search({ job_id => $job->id, name => $name })->first;
 }
 
 sub job_modules($) {
     my ($job) = @_;
 
     my $schema = OpenQA::Scheduler::schema();
-    return $schema->resultset("JobModules")->search({ job_id => $job->{id} }, { order_by => 'id'} )->all;
+    return $schema->resultset("JobModules")->search({ job_id => $job->id }, { order_by => 'id'} )->all;
 }
 
 sub job_module_stats($) {
@@ -125,7 +126,10 @@ sub job_module_stats($) {
     my $result_stat = {};
 
     my $schema = OpenQA::Scheduler::schema();
-    my @ids = map { $_->{id} } @$jobs;
+    my @ids;
+    while (my $j = $jobs->next) { push(@ids, $j->id); }
+    $jobs->reset;
+
     for my $id (@ids) {
         $result_stat->{$id} = { 'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0 };
     }

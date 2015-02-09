@@ -17,6 +17,8 @@
 package OpenQA::Schema::Result::Jobs;
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
+use Carp;
+use Data::Dumper;
 
 use db_helpers;
 
@@ -124,24 +126,19 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_jobs_result', fields => ['result']);
 }
 
-sub name{
+sub name {
     my $self = shift;
     return $self->slug if $self->slug;
 
     if (!$self->{_name}) {
-        my $job_settings = $self->settings;
+        my $job_settings = $self->settings_hash;
         my @a;
 
-        my %s;
-        while(my $js = $job_settings->next) {
-            $s{lc $js->key} = $js->value;
-        }
+        my %formats = ('BUILD' => 'Build%s',);
 
-        my %formats = (build => 'Build%s',);
-
-        for my $c (qw/distri version flavor media arch build test/) {
-            next unless $s{$c};
-            push @a, sprintf(($formats{$c}||'%s'), $s{$c});
+        for my $c (qw/DISTRI VERSION FLAVOR MEDIA ARCH BUILD TEST/) {
+            next unless $job_settings->{$c};
+            push @a, sprintf(($formats{$c}||'%s'), $job_settings->{$c});
         }
         my $name = join('-', @a);
         $name =~ s/[^a-zA-Z0-9._+:-]/_/g;
@@ -150,20 +147,21 @@ sub name{
     return $self->{_name};
 }
 
-sub machine{
-    my $self = shift;
+sub settings_hash {
+    my ($self) = @_;
 
-    if (!defined($self->{_machine})) {
-        my $setting = $self->settings({key => 'MACHINE'})->first;
-
-        if ($setting) {
-            $self->{_machine} = $setting->value;
-        }
-        else {
-            $self->{_machine} = '';
-        }
+    if (!defined($self->{_settings})) {
+        $self->{_settings} = { map { $_->key => $_->value } $self->settings->all() };
+        $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
     }
-    return $self->{_machine};
+
+    return $self->{_settings};
+}
+
+sub machine {
+    my ($self) = @_;
+
+    return $self->settings_hash->{'MACHINE'};
 }
 
 sub _hashref {
@@ -180,11 +178,9 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw/ id name priority state result worker_id clone_id retry_avbl t_started t_finished test/);
-    $j->{settings} = { map { $_->key => $_->value } $job->settings->all() };
-    if ($job->name && !$j->{settings}->{NAME}) {
-        $j->{settings}->{NAME} = sprintf "%08d-%s", $job->id, $job->name;
-    }
+    #carp "to_hash";
+    my $j = _hashref($job, qw/id name priority state result worker_id clone_id retry_avbl t_started t_finished test/);
+    $j->{settings} = $job->settings_hash;
     if ($args{assets}) {
         for my $a ($job->jobs_assets->all()) {
             push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;

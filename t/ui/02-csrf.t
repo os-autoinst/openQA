@@ -22,13 +22,14 @@ use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
+use Data::Dumper;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA');
 
-my $get = $t->ua->get('/tests');
+my $get = $t->ua->get('/session/new');
 my $token = $get->res->dom->at('meta[name=csrf-token]')->attr('content');
 
 ok($token =~ /[0-9a-z]{40}/, "csrf token in meta tag");
@@ -51,7 +52,7 @@ $test_case->login($t, 'percival');
 
 # Test 99928 is scheduled, so can be canceled. Make sure link contains
 # data-method=post
-$t->get_ok('/tests')->element_exists('#results #job_99928 .cancel a[data-method=post]');
+$t->get_ok('/tests')->element_exists('#scheduled #job_99928 a.cancel[data-method=post]');
 
 # test cancel with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/cancel' => form => { csrf_token => 'foobar' })->status_is(403);

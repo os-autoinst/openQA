@@ -193,6 +193,8 @@ sub startup {
         db_profiler::enable_sql_debugging($self);
     }
 
+    $OpenQA::Utils::applog = $self->log;
+
     # load auth module
     my $auth_method = $self->config->{'auth'}->{'method'};
     my $auth_module = "OpenQA::Auth::$auth_method";
@@ -223,6 +225,7 @@ sub startup {
 
     $r->get('/tests')->name('tests')->to('test#list');
     $r->get('/tests/overview')->name('tests_overview')->to('test#overview');
+    $r->post('/tests/list_ajax')->name('tests_ajax')->to('test#list_ajax');
     my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0 );
     $test_r->get('/')->name('test')->to('test#show');

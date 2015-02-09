@@ -43,8 +43,8 @@ thead { background: #eee; }
   color: #444;
 }
 
-.overview_passed {color: #248509 ;}		/* dark Lemon */
-.overview_passed a {color: #248509 ;}
+.overview_passed {color: #248509 !important; }		/* dark Lemon */
+.overview_passed a {color: #248509 !important; }
 .overview_unknown {background-color:#ff9 ;}
 .overview_dent {background-color:#ff0 ;}
 .overview_failed {background-color:#fbb ;}
@@ -188,24 +188,6 @@ div.recent-issues-hide:hover {
   -moz-opacity:1;
   -khtml-opacity: 1;
   opacity: 1;
-}
-
-div.click-location-pointer {
-    position: absolute;
-    width: 6px;
-    height: 6px;
-    line-height: 0.5;
-    cursor: crosshair;
-    display: none;
-}
-
-div.click-location-pointer div {
-    position: relative;
-    top: -4px;
-    left: -4px;
-    color: black;
-    text-size: 13px;
-    text-shadow: white 0px 0px 7px, white 0px 0px 7px;
 }
 
 td img.resborder_ok, td img.resborder_fail, td img.resborder_unk,td img.resborder_na {
@@ -463,6 +445,13 @@ table#job_settings td {
 /* Styles for the checkboxes in the results list */
 #results td.id {
     text-align: right;
+}
+
+table.dataTable td.name {
+    text-align: left;
+}
+table.dataTable td.test {
+    text-align: left;
 }
 
 /* Hide the real checkbox, is too big */

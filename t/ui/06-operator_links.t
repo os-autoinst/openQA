@@ -19,30 +19,46 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 12;
+use Test::More tests => 20;
 use Test::Mojo;
 use OpenQA::Test::Case;
+use Data::Dumper;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA');
 
+# we don't want to test javascript here, so we just test the javascript code
 # List with no login
 my $get = $t->get_ok('/tests')->status_is(200);
-$get->element_exists_not('#results #job_99928 .cancel a');
-$get->element_exists_not('#results #job_99946 a[data-method=post] img[alt=restart]');
+$get->content_like(qr/renderTestsList\([^)]*,\s*0\s*,/, "test list rendered without is_operator");
 
 # List with an authorized user
 $test_case->login($t, 'percival');
 $get = $t->get_ok('/tests')->status_is(200);
-$get->element_exists('#results #job_99928 .cancel a');
-$get->element_exists('#results #job_99946 a[data-method=post] img[alt=restart]');
+$get->content_like(qr/renderTestsList\([^)]*,\s*1\s*,/, "test list rendered with is_operator");
 
 # List with a not authorized user
 $test_case->login($t, 'lancelot', email => 'lancelot@example.com');
 $get = $t->get_ok('/tests')->status_is(200);
-$get->element_exists_not('#results #job_99928 .cancel a');
-$get->element_exists_not('#results #job_99946 a[data-method=post] img[alt=restart]');
+$get->content_like(qr/renderTestsList\([^)]*,\s*0\s*,/, "test list rendered without is_operator");
+
+# now the same for scheduled jobs
+$t->delete_ok('/logout')->status_is(302);
+
+# List with no login
+$get = $t->get_ok('/tests')->status_is(200);
+$get->element_exists_not('#scheduled #job_99928 a.cancel');
+
+# List with an authorized user
+$test_case->login($t, 'percival');
+$get = $t->get_ok('/tests')->status_is(200);
+$get->element_exists('#scheduled #job_99928 a.cancel');
+
+# List with a not authorized user
+$test_case->login($t, 'lancelot', email => 'lancelot@example.com');
+$get = $t->get_ok('/tests')->status_is(200);
+$get->element_exists_not('#scheduled #job_99928 a.cancel');
 
 done_testing();
