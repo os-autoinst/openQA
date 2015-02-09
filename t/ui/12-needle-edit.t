@@ -43,9 +43,6 @@ my $req = $t->ua->get('/tests');
 my $token = $req->res->dom->at('meta[name=csrf-token]')->attr('content');
 
 $req = $t->get_ok('/tests/99937/modules/isosize/steps/1')->status_is(200);
-use Data::Dump;
-select STDERR;
-#dd $req->tx->res->dom;
 
 $req->element_exists("img[src=/tests/99937/images/thumb/isosize-1.png]");
 $req->element_exists("select[id=needlediff_selector]");

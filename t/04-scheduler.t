@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use OpenQA::Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 56;
+use Test::More tests => 55;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -126,9 +126,6 @@ my $iso = sprintf("%s/%s", $OpenQA::Utils::isodir, $settings{ISO});
 open my $fh, ">", $iso;
 my $job_id = OpenQA::Scheduler::job_create(\%settings);
 is($job_id, 1, "job_create");
-
-my $assets = OpenQA::Scheduler::job_get_assets($job_id);
-is_deeply($assets, [{ id => 1, name => "whatever.iso", type => "iso" }], "job created asset");
 
 my %settings2 = %settings;
 $settings2{NAME} = "OTHER NAME";

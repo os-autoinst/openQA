@@ -44,6 +44,8 @@
     %= javascript '/javascripts/opentip-prototype.min.js'
 % }
 
+%= content_for 'head'
+    
 %= javascript begin
   %= content_for 'head_javascript'
 % if ($use_jquery) {
