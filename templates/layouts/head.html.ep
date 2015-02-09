@@ -8,31 +8,42 @@
 % } else {
     %= stylesheet '/stylesheets/bento/style.fluid.css'
 % }
+%= stylesheet '/stylesheets/font-awesome.min.css'
+%= stylesheet '/stylesheets/jquery.dataTables.css'
+
 %= stylesheet '/stylesheets/chosen.css'
 %= stylesheet '/stylesheets/openqa.css'
 %= stylesheet '/stylesheets/opentip.css'
-%= stylesheet '/stylesheets/font-awesome.min.css'
-%= javascript '/javascripts/table.js'
 
 % if ($use_jquery) {
-  %= javascript '/javascripts/jquery-1.11.2.js'
-  %= javascript '/javascripts/jquery_ujs.js'
-  %= javascript '/javascripts/chosen.jquery.js'
-  %= javascript '/javascripts/openqa.js'
-  %= javascript '/javascripts/admintable.js'
-% } else {
-  %= javascript '/javascripts/shapes.js'
-  %= javascript '/javascripts/needleeditor.js'
-  %= javascript '/javascripts/prototype.js'
-  %= javascript '/javascripts/prototype_ujs.js'
-  %= javascript '/javascripts/scriptaculous/scriptaculous.js'
-  %= javascript '/javascripts/cropimg.js'
-  %= javascript '/javascripts/datetime.js'
-  %= javascript '/javascripts/keyevent.js'
-  %= javascript '/javascripts/needlediff.js'
-  %= javascript '/javascripts/running.js'
-  %= javascript '/javascripts/chosen.proto.min.js'
-  %= javascript '/javascripts/openqa.js'
-  %= javascript '/javascripts/scheduler.js'
-  %= javascript '/javascripts/opentip-prototype.min.js'
+    %= javascript '/javascripts/jquery-1.11.2.js'
+    %= javascript '/javascripts/jquery_ujs.js'
+    %= javascript '/javascripts/chosen.jquery.js'
+    %= javascript '/javascripts/openqa.js'
+    %= javascript '/javascripts/jquery.dataTables.js'
+% } else
+% {
+    %= javascript '/javascripts/shapes.js'
+    %= javascript '/javascripts/needleeditor.js'
+    %= javascript '/javascripts/prototype.js'
+    %= javascript '/javascripts/prototype_ujs.js'
+    %= javascript '/javascripts/scriptaculous/scriptaculous.js'
+    %= javascript '/javascripts/cropimg.js'
+    %= javascript '/javascripts/datetime.js'
+    %= javascript '/javascripts/keyevent.js'
+    %= javascript '/javascripts/needlediff.js'
+    %= javascript '/javascripts/running.js'
+    %= javascript '/javascripts/chosen.proto.min.js'
+    %= javascript '/javascripts/openqa.js'
+    %= javascript '/javascripts/scheduler.js'
+    %= javascript '/javascripts/opentip-prototype.min.js'
 % }
+
+%= javascript begin
+  %= content_for 'head_javascript'
+% if ($use_jquery) {
+    $(document).ready(function() {
+    %= content_for 'ready_function'
+    } );
+% }
+% end

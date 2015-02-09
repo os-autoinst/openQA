@@ -2,6 +2,22 @@
 % layout 'default';
 % title 'Test results';
 
+% content_for 'ready_function' => begin
+$('#results').DataTable( {
+"pagingType" : 'simple',
+// 100 tests are a lot
+"pageLength": 100,
+// the additional combo box is disturbing IMO
+"lengthChange": false,
+ // no initial resorting
+"order": [],
+"columnDefs": [
+// the job id is useless
+{ targets: 0, orderable: false }
+],
+} );
+% end
+
 <div class="grid_16 box box-shadow alpha">
     <h2><%= title %></h2>
     <p>This page lists <%= $ntest %> automated tests
@@ -32,20 +48,20 @@
     % end
     <p />
     %= form_for apiv1_restart_jobs => (method => 'POST') => (id => "list-form") => begin
-    <table id="results" class="table-autosort table-autofilter table-autostripe">
+    <table id="results" class="display compact">
         <thead>
             <tr>
-                <th class="table-sortable:numeric">#</th>
-                <th class="table-sortable:alphanumeric">deps</th>
-                <th class="table-sortable:alphanumeric">clone</th>
-                <th class="table-sortable:alphanumeric table-filterable">machine</th>
-                <th class="table-sortable:alphanumeric table-filterable">distri</th>
-                <th class="table-sortable:alphanumeric table-filterable">type</th>
-                <th class="table-sortable:alphanumeric table-filterable">arch</th>
-                <th class="table-sortable:alphanumeric table-filterable">build</th>
-                <th class="table-sortable:alphanumeric table-filterable">testsuite</th>
-                <th class="table-sortable:alphanumeric">testtime</th>
-                <th class="table-sortable:numeric">Result</th>
+                <th>#</th>
+                <th>deps</th>
+                <th>clone</th>
+                <th>machine</th>
+                <th>distri</th>
+                <th>type</th>
+                <th>arch</th>
+                <th>build</th>
+                <th>testsuite</th>
+                <th>testtime</th>
+                <th>Result</th>
             </tr>
         </thead>
 	<tbody>
@@ -71,7 +87,7 @@
                         <a href="<%= url_for('test', 'testid' => $parent_id) %>">#<%= $parent_id %></a>
                     % }
                 </td>
-                <td class="clone">
+                <td class="clone" data-order="<%= $job->{'clone_id'} || 0 %>">
                     % if ($job->{'clone_id'}) {
                         <a href="<%= url_for('test', 'testid' => $job->{'clone_id'}) %>">#<%= $job->{'clone_id'} %></a>
                     % } elsif ($job->{'state'} ne 'running') {

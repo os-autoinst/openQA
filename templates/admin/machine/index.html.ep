@@ -1,18 +1,26 @@
 % layout 'admin';
 % title 'Machines';
 
+% content_for 'ready_function' => begin
+$('#machines').DataTable( {
+"paging" : false,
+"lengthChange": false,
+"order": [],
+} );
+% end
+
 <div class="box box-shadow">
     <h2><%= title %></h2>
 
     %= include 'layouts/info'
 
-    <table class="table-autosort table-autostripe admintable" id='machines'>
+    <table class="admintable" id='machines'>
         <thead>
             <tr>
-                <th class="table-sortable:alphanumeric col_value">name</th>
-                <th class="table-sortable:alphanumeric col_value">backend</th>
+                <th class="col_value">name</th>
+                <th class="col_value">backend</th>
                 % for my $var (@$col_var_keys) {
-                    <th class="table-sortable:alphanumeric col_settings"><%= $var %></th>
+                    <th class="col_settings"><%= $var %></th>
                 %}
                 <th class="col_settings_list">other variables</th>
                 <th class="col_action">action</th>

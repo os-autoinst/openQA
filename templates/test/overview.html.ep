@@ -10,7 +10,7 @@
     </p>
     <% for my $type (@$types) { %>
         <p />
-        <table id="results_<%= $type %>" class="table-autosort table-autofilter table-autostripe">
+        <table id="results_<%= $type %>" class="table-autostripe">
             <thead>
                 <tr id="flavors">
                     <th colspan="3" id="flavor_<%= $type %>"><%= $type %></th>
