@@ -20,6 +20,26 @@ use OpenQA::Utils;
 use OpenQA::Scheduler ();
 use Try::Tiny;
 
+# return settings key for given job settings
+sub _settings_key {
+    my ($settings) = @_;
+    return $settings->{TEST} : $settings->{MACHINE};
+
+}
+
+# parse dependency variable in format like "suite1,suite2,suite3"
+# and return settings key for each entry
+sub _parse_dep_variable {
+    my ($value, $settings) = @_;
+
+    return unless defined value;
+
+    my @after = split(/\s*,\s*/, $value);
+
+    return map { $_ : $settings->{MACHINE} } @after;
+}
+
+# sort the job list so that children are put after parents
 sub _sort_dep {
     my ($self, $list) = @_;
 
@@ -28,8 +48,8 @@ sub _sort_dep {
     my @out;
 
     for my $job (@$list) {
-        $count{$job->{TEST}} //= 0;
-        $count{$job->{TEST}}++;
+        $count{_settings_key($job)} //= 0;
+        $count{_settings_key($job)}++;
     }
 
 
@@ -38,17 +58,25 @@ sub _sort_dep {
         $added = 0;
         for my $job (@$list) {
             next if $done{$job};
-            my $after = $job->{START_AFTER_TEST};
-            if (!defined $after || $count{$after} == 0) {
-                push @out, $job;
+            my @after;
+            push @after, parse_dep_variable($job->{START_AFTER_TEST}, $job->{MACHINE});
+            push @after, parse_dep_variable($job->{PARALLEL_WITH}, $job->{MACHINE});
+
+            my $c = 0; # number of parens that must go to @out before this job
+            foreach my $a (@after) {
+                $c += $count{$a};
+            }
+
+            if ($c == 0) { # no parents, we can do this job
+                push @out, $job; 
                 $done{$job} = 1;
-                $count{$job->{TEST}}--;
+                $count{_settings_key($job)}--;
                 $added = 1;
             }
         }
     } while ($added);
 
-    #cycles, broken dep put at the end of the list
+    #cycles, broken dep, put at the end of the list
     for my $job (@$list) {
         next if $done{$job};
         push @out, $job;
@@ -169,17 +197,33 @@ sub create {
 
     my $cnt = 0;
     my @ids;
-    my %testsuite_ids;
+
+    # the jobs are now sorted parents first
+    # remember ids of created parents and pass them to _START_AFTER_JOBS/_PARALLEL_JOBS of children
+    my %testsuite_ids; # key: "suite:machine", value: array of job ids
+    
     for my $settings (@{$jobs||[]}) {
         my $prio = $settings->{PRIO};
         delete $settings->{PRIO};
 
-        if (defined $settings->{START_AFTER_TEST}) {
-            if (defined $testsuite_ids{$settings->{START_AFTER_TEST}}) {
-                $settings->{_START_AFTER_JOBS} = $testsuite_ids{$settings->{START_AFTER_TEST}}{$settings->{MACHINE}};
+        # convert testsuite names in START_AFTER_TEST/PARALLEL_WITH to job ids
+        my $machine = $settings->{MACHINE};
+        for my $after (parse_dep_variable($settings->{START_AFTER_TEST}, $machine) {
+            if (defined $testsuite_ids{$after}) {
+                $settings->{_START_AFTER_JOBS} //= [];
+                push @{$settings->{_START_AFTER_JOBS}}, @{$testsuite_ids{$after}};
             }
             else {
-                $self->app->log->error("START_AFTER_TEST=" . $settings->{START_AFTER_TEST} . " not sorted");
+                $self->app->log->error("START_AFTER_TEST=" . $after . " not sorted, maybe a typo or a dependency cycle");
+            }
+        }
+        for my $after (parse_dep_variable($settings->{PARALLEL_WITH}, $machine)) {
+            if (defined $testsuite_ids{$after}) {
+                $settings->{_PARALLEL_JOBS} //= [];
+                push @{$settings->{_PARALLEL_JOBS}}, @{$testsuite_ids{$after}};
+            }
+            else {
+                $self->app->log->error("PARALLEL_WITH=" . $after . " not sorted, maybe a typo or a dependency cycle");
             }
         }
         # create a new job with these parameters and count if successful, do not send job notifies yet
@@ -195,11 +239,8 @@ sub create {
             $cnt++;
             push @ids, $id;
 
-            my $testsuite = $settings->{TEST};
-            # limit dependencies to individual machines
-            my $machine = $settings->{MACHINE};
-            $testsuite_ids{$testsuite} //= {$machine => []};
-            push @{$testsuite_ids{$testsuite}{$machine}}, $id;
+            $testsuite_ids{_settings_key($settings)} //= [];
+            push @{$testsuite_ids{_settings_key($settings)}}, $id;
 
             # change prio only if other than defalt prio
             if( $prio && $prio != 50 ) {
