@@ -555,11 +555,12 @@ sub check_job {
     }
 }
 
-sub stop_job($) {
-    my ($aborted) = @_;
+sub stop_job($;$) {
+    my ($aborted, $job_id) = @_;
 
     # we call this function in all situations, so better check
     return unless $job;
+    return if $job_id && $job_id != $job->{'id'};
 
     print "stop_job $aborted\n" if $verbose;
 
@@ -741,17 +742,21 @@ sub update_status {
 
 sub handle_commands {
     my ($tx, $msg) = @_;
-    if ($msg eq 'quit') { # quit_worker and reschedule the job
-        stop_job('quit');
+    if ($msg =~ /^quit(\s*job_id=([0-9]*))?$/) { # quit_worker and reschedule the job
+        my $job_id = $2;
+        stop_job('quit', $job_id);
     }
-    elsif ($msg eq 'abort') { # the work is live and the job is rescheduled
-        stop_job('abort');
+    elsif ($msg =~ /^abort(\s*job_id=([0-9]*))?$/) { # the work is live and the job is rescheduled
+        my $job_id = $2;
+        stop_job('abort', $job_id);
     }
-    elsif ($msg eq 'cancel') { # The jobs is droped and the work is still alive
-        stop_job('cancel');
+    elsif ($msg =~ /^cancel(\s*job_id=([0-9]*))?$/) { # The jobs is droped and the work is still alive
+        my $job_id = $2;
+        stop_job('cancel', $job_id);
     }
-    elsif ($msg eq 'obsolete') { # The jobs is droped and a new build job replaced it
-        stop_job('obsolete');
+    elsif ($msg =~ /^obsolete(\s*job_id=([0-9]*))?$/) { # The jobs is droped and a new build job replaced it
+        my $job_id = $2;
+        stop_job('obsolete', $job_id);
     }
     elsif ($msg eq 'stop_waitforneedle') { # Plan: Enable interactive mode -- Now osautoinst decides what that means
         if ($worker) {
