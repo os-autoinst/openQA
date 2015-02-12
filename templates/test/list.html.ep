@@ -3,19 +3,19 @@
 % title 'Test results';
 
 % content_for 'ready_function' => begin
-$('#results').DataTable( {
-"pagingType" : 'simple',
-// 100 tests are a lot
-"pageLength": 100,
-// the additional combo box is disturbing IMO
-"lengthChange": false,
- // no initial resorting
-"order": [],
-"columnDefs": [
-// the job id is useless
-{ targets: 0, orderable: false }
-],
-} );
+  $('#results').DataTable( {
+    "pagingType" : 'simple',
+    // 100 tests are a lot
+    "pageLength": 100,
+    // the additional combo box is disturbing IMO
+    "lengthChange": false,
+    // no initial resorting
+    "order": [],
+    "columnDefs": [
+        // the job id is useless
+        { targets: 0, orderable: false }
+        ],
+  } );
 % end
 
 <div class="grid_16 box box-shadow alpha">
