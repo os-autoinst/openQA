@@ -4,19 +4,22 @@
 BEGIN;
 
 ;
-ALTER TABLE users ADD COLUMN username text NOT NULL;
+ALTER TABLE users ADD COLUMN username text;
 
 ;
 ALTER TABLE users ADD CONSTRAINT users_username UNIQUE (username);
 
 ;
-UPDATE TABLE users SET username = openid;
+UPDATE users SET username = openid;
 
 ;
 ALTER TABLE users DROP CONSTRAINT users_openid;
 
 ;
 ALTER TABLE users DROP COLUMN openid;
+
+;
+ALTER TABLE users ALTER COLUMN username SET NOT NULL;
 
 ;
 
