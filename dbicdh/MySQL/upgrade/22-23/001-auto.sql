@@ -4,7 +4,7 @@
 BEGIN;
 
 ;
-ALTER TABLE users ADD COLUMN username text NOT NULL,
+ALTER TABLE users ADD COLUMN username text,
                   ADD UNIQUE users_username (username);
 
 ;
@@ -13,6 +13,9 @@ UPDATE TABLE users SET username = openid;
 ;
 ALTER TABLE users DROP INDEX users_openid,
                   DROP COLUMN openid;
+
+ALTER TABLE users CHANGE username text NOT NULL;
+
 ;
 
 COMMIT;
