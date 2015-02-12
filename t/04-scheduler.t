@@ -119,7 +119,6 @@ my $job_ref = {
     clone_id => undef,
     retry_avbl => 3,
     test => 'rainbow',
-    test_branch => undef,
     parents => [],
 };
 
@@ -154,7 +153,6 @@ my $jobs = [
         test => 'rainbow',
         clone_id => undef,
         retry_avbl => 3,
-        test_branch => undef,
         settings => {
             DESKTOP => "DESKTOP",
             DISTRI => 'Unicorn',
@@ -186,7 +184,6 @@ my $jobs = [
         test => 'rainbow',
         clone_id => undef,
         retry_avbl => 3,
-        test_branch => undef,
         settings => {
             DESKTOP => "DESKTOP",
             DISTRI => 'Unicorn',

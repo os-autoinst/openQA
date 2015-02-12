@@ -20,6 +20,7 @@ use strict;
 use warnings;
 use Mojo::ByteStream;
 use db_helpers;
+use Data::Dumper;
 
 use base 'Mojolicious::Plugin';
 
@@ -101,7 +102,7 @@ sub register {
 
                 my $user = undef;
                 if (my $id = $c->session->{user}) {
-                    $user = $c->db->resultset("Users")->find({openid => $id});
+                    $user = $c->db->resultset("Users")->find({username => $id});
                 }
                 if ($user) {
                     $c->stash('current_user' => { user => $user });
@@ -145,8 +146,8 @@ sub register {
     $app->helper(
         # CSS class for a job or module based on its result
         css_for => sub {
-            my $c = shift;
-            my $hash = shift || return undef;
+            my ($c, $hash) = @_;
+            return undef unless $hash;
             my $res = $hash->{'result'};
 
             if ($res eq 'na' || $res eq 'incomplete') {
@@ -159,7 +160,7 @@ sub register {
                 return 'resultok';
             }
             elsif ($res eq 'ok') {
-                return $hash->{'dents'} ? 'resultwarning' : 'resultok';
+                return $hash->{'soft_failure'} ? 'resultwarning' : 'resultok';
             }
             else {
                 return 'resultunknown';
@@ -168,9 +169,27 @@ sub register {
     );
 
     $app->helper(
+        module_result => sub {
+            my ($c, $result) = @_;
+
+            my $html = "$result->{passed}<i class='fa fa-star'></i>";
+            if ($result->{dents}) {
+                $html .=  " $result->{dents}<i class='fa fa-star-half-empty'></i> ";
+            }
+            if ($result->{failed}) {
+                $html .=  " $result->{failed}<i class='fa fa-star-o' ></i> ";
+            }
+            if ($result->{none}) {
+                $html .=  " $result->{none}<i class='fa fa-ban' ></i> ";
+            }
+            return Mojo::ByteStream->new($html);
+        }
+    );
+
+    $app->helper(
         format_result => sub {
-            my $c = shift;
-            my $module = shift || return undef;
+            my ($c, $module) = @_;
+            return undef unless $module;
             my $res = $module->{'result'};
 
             if ($res eq 'na') {

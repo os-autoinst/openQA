@@ -397,6 +397,7 @@ sub list_jobs {
     my @joins;
 
     push @{$attrs{'prefetch'}}, 'settings';
+    push @{$attrs{'prefetch'}}, 'parents';
     push @{$attrs{'prefetch'}}, {'jobs_assets' => 'asset' };
 
     if ($args{state}) {
@@ -782,9 +783,11 @@ sub job_update_status($$) {
     my ($id, $status) = @_;
 
     my $job = _job_get({ 'me.id' => $id });
-    #    print "$id " . Dumper($status) . "\n";
+    # print "$id " . Dumper($status) . "\n";
 
     _append_log($job, $status->{log});
+
+    OpenQA::Schema::Result::JobModules::split_results($job, $status->{results});
 }
 
 sub _job_find_smart($$$) {
@@ -891,7 +894,7 @@ sub job_restart {
     );
     while (my $j = $jobs->next) {
         print STDERR "enqueuing abort for ".$j->id." ".$j->worker_id."\n" if $debug;
-        command_enqueue(workerid => $j->worker_id, command => 'abort');
+        command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
     }
 
     # now set all cancelled jobs to scheduled again
@@ -934,11 +937,11 @@ sub job_cancel($;$) {
     while (my $j = $jobs->next) {
         if ($newbuild) {
             print STDERR "enqueuing obsolete for ".$j->id." ".$j->worker_id."\n" if $debug;
-            command_enqueue(workerid => $j->worker_id, command => 'obsolete');
+            command_enqueue(workerid => $j->worker_id, command => 'obsolete', job_id => $j->id);
         }
         else {
             print STDERR "enqueuing cancel for ".$j->id." ".$j->worker_id."\n" if $debug;
-            command_enqueue(workerid => $j->worker_id, command => 'cancel');
+            command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
         }
         ++$r;
     }
@@ -966,7 +969,9 @@ sub command_enqueue {
     my %args = @_;
 
     die "invalid command\n" unless $worker_commands{$args{command}};
-    ws_send($args{workerid}, $args{command});
+    my $msg = $args{command};
+    $msg .= " job_id=" . $args{job_id} if $args{job_id};
+    ws_send($args{workerid}, $msg);
 }
 
 #

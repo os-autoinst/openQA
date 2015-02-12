@@ -27,7 +27,7 @@ sub {
     my @jobs = $schema->resultset('Jobs')->all();
     for my $job (@jobs) {
         $job = $job->to_hash();
-        Schema::Result::JobModules::split_results($job);
+        OpenQA::Schema::Result::JobModules::split_results($job);
     }
 
   }

@@ -44,7 +44,6 @@ Mojo::IOLoop
 Mojo::JSON
 Mojo::URL
 Mojo::Util
-MojoX::JSON::RPC
 Mojolicious
 Mojolicious::Commands
 Mojolicious::Plugin

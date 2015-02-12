@@ -5,38 +5,38 @@
 % title $moduleid;
 
 <div class="grid_3 alpha" id="sidebar">
-	<div class="box box-shadow alpha" id="actions_box">
-		<div class="box-header aligncenter">Actions</div>
-		<div class="aligncenter">
-      %= link_to url_for('test') => begin
-        %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
-      % end
-      %= link_to url_for('src_step', format => 'txt') => begin
-        %= image '/images/log.png', alt => 'raw test', title => 'raw test'
-      % end
-		</div>
+    <div class="box box-shadow alpha" id="actions_box">
+	<div class="box-header aligncenter">Actions</div>
+	<div class="aligncenter">
+	    %= link_to url_for('test') => begin
+            %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
+	    % end
+	    %= link_to url_for('src_step', format => 'txt') => begin
+            %= image '/images/log.png', alt => 'raw test', title => 'raw test'
+	    % end
 	</div>
-
-	%= include 'step/moduleslist'
+    </div>
+    
+    %= include 'step/moduleslist'
 </div>
 
 <div class="grid_13 omega">
-	%= include 'step/moduleslistthumbnails' unless ($tabmode eq 'onlysrc')
-
-	<div class="box box-shadow">
-	  %= include 'step/moduleslisttabs'
-
-    <p>
-    Test-Module: <tt><%= $scriptpath %></tt>
-    </p>
-<textarea class='code' id='script'>
-%= $script
-</textarea>
-
-<script type="text/javascript">
- var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
-     lineNumbers: true
- });
-</script>
-  </div>
+    %= include 'step/moduleslistthumbnails' unless ($tabmode eq 'onlysrc')
+    
+    <div class="box box-shadow">
+	%= include 'step/moduleslisttabs'
+	
+	<p>
+	    Test-Module: <tt><%= $scriptpath %></tt>
+	</p>
+	<textarea class='code' id='script'>
+	    %= $script
+	</textarea>
+	
+	<script type="text/javascript">
+	 var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
+	     lineNumbers: true
+	 });
+	</script>
+    </div>
 </div>
