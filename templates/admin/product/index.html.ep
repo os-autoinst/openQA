@@ -1,20 +1,12 @@
 % layout 'admin';
 % title 'Products';
 
-% content_for 'ready_function' => begin
-$('#test-suites').DataTable( {
-"paging" : false,
-"lengthChange": false,
-"order": [],
-} );
-% end
-
 <div class="box box-shadow">
     <h2><%= title %></h2>
 
     %= include 'layouts/info'
 
-    <table class="admintable" id='test-suites'>
+    <table class="admintable compact stripe" id='test-suites'>
         <thead>
             <tr>
                 <th class="col_value">distri</th>

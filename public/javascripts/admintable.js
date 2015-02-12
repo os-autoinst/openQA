@@ -272,7 +272,13 @@ function populate_admin_table ()
                     html += table_row(json_table[i], table, false);
                 }
                 table.find('tbody').html(html);
-            },
+		// a really stupid datatable
+		$('.admintable').DataTable( {
+                    "paging" : false,
+                    "lengthChange": false,
+                    "ordering": false
+                } );
+	    },
             error: admintable_api_error
         });
     }
