@@ -30,31 +30,34 @@
                     <td class="email"><%= $user->email %></td>
                     <td class="name"><%= $user->fullname %></td>
                     <td class="nick"><%= $user->nickname %></td>
-                    <td class="is_operator" data-order="<%= $user->is_operator %>">
-			% if ($user->is_operator) {
-                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_operator => '0') => 'data-method' => 'post' => begin
-			    <i class="fa fa-thumbs-up fa-2x"></i>
-			    % end
+		    <td class="is_operator" data-order="<%= $user->is_operator %>">
+                        % if ($user->is_operator) {
+                            <i class="fa fa-check" title="Yes"></i>
+                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_operator => '0') => 'data-method' => 'post' => 'title' => 'Demote' => begin
+                            <i class="fa fa-thumbs-down"></i>
+                            % end
                         % } else
-			% {
-                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_operator => '1') => 'data-method' => 'post' => begin
-			    <i class="fa fa-thumbs-down fa-2x"></i>
-			    % end 
+                        % {
+                            <i class="fa fa-times" title="No"></i>
+                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_operator => '1') => 'data-method' => 'post' => 'title' => 'Promote' => begin
+                            <i class="fa fa-thumbs-up"></i>
+                            % end
                         % }
-		    </td>
+                    </td>
                     <td class="is_admin" data-order="<%= $user->is_admin %>">
-			% if ($user->is_admin) {
-                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_admin => '0') => 'data-method' => 'post' => begin
-			    <i class="fa fa-thumbs-up fa-2x"></i>
-			    % end
+                        % if ($user->is_admin) {
+                            <i class="fa fa-check" title="Yes"></i>
+                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_admin => '0') => 'data-method' => 'post' => 'title' => 'Demote' => begin
+                            <i class="fa fa-thumbs-down"></i>
+                            % end
                         % } else
-			% {
-			    %= link_to url_for('admin_user', userid=> $user->id)->query(is_admin => '1') => 'data-method' => 'post' => begin
-			    <i class="fa fa-thumbs-down fa-2x"></i>
-			    % end
+                        % {
+                            <i class="fa fa-times" title="No"></i>
+                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_admin => '1') => 'data-method' => 'post' => 'title' => 'Promote' => begin
+                            <i class="fa fa-thumbs-up"></i>
+                            % end
                         % }
-
-		    </td>
+                    </td>
 		</tr>
             % }
         </tbody>
