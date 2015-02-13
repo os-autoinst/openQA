@@ -29,6 +29,8 @@ install:
 	install -D -m 644 etc/openqa/workers.ini "$(DESTDIR)"/etc/openqa/workers.ini
 
 	install -D -m 644 etc/logrotate.d/openqa "$(DESTDIR)"/etc/logrotate.d/openqa
+
+	install -D -m 644 etc/modprobe.d/50-openqa.conf "$(DESTDIR)"/etc/modprobe.d/50-openqa.conf
 #
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/{system,system-generators}
 	install -m 644 systemd/openqa-worker@.service "$(DESTDIR)"/usr/lib/systemd/system
