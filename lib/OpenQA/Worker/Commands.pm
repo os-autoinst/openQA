@@ -34,16 +34,13 @@ sub check_authorized {
         $self->render(text => "IP $ip is denied", status => 403);
         return;
     }
+
     # and when we have job
     unless ($job) {
         $self->render(text => 'not accepting backend commands without a job', status => 403);
         return;
     }
-    # and when corret jobid
-    unless ($job->{'id'} eq $self->param('jobid')) {
-        $self->render(text => 'job not assigned to this worker', status => 403);
-        return;
-    }
+
     return 1;
 }
 

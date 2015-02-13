@@ -21,7 +21,7 @@ use Carp;
 use POSIX qw/uname/;
 
 use base qw/Exporter/;
-our @EXPORT = qw/$job $workerid $verbose $instance $worker_settings $pooldir $nocleanup $worker_caps $testresults
+our @EXPORT = qw/$job $workerid $verbose $instance $worker_settings $pooldir $nocleanup $worker_caps $testresults $worker_port
   OPENQA_BASE OPENQA_SHARE RESULTS_DIR ISO_DIR HDD_DIR STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer
   api_call verify_workerid/;
@@ -36,6 +36,7 @@ our $pooldir;
 our $nocleanup = 0;
 our $testresults;
 our $worker_caps;
+our $worker_port = 9620;
 
 # package global variables
 my $url;

@@ -28,17 +28,15 @@ use OpenQA::Worker::Pool qw/lockit clean_pool/;
 use OpenQA::Worker::Jobs;
 
 sub run_daemon {
-    my $port = 9620;
-
     if ($instance eq 'manual') {
-        $port -= 1;
+        $worker_port -= 1;
     }
     else {
-        $port += $instance;
+        $worker_port += $instance;
     }
 
     # we allow only localhost
-    under '/:jobid' => \&OpenQA::Worker::Commands::check_authorized;
+    under \&OpenQA::Worker::Commands::check_authorized;
 
     # lock requests
     get '/lock/:name' => \&OpenQA::Worker::Commands::mutex_lock;
@@ -48,7 +46,7 @@ sub run_daemon {
     # it's unlikely that we will ever use cookies, but we need a secret to shut up mojo
     app->secrets(['notsosecret']);
 
-    my $daemon = Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
+    my $daemon = Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$worker_port"]);
 
     $daemon->run;
 }

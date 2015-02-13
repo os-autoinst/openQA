@@ -107,7 +107,7 @@ sub engine_workit($){
         }
     }
 
-    my %vars = ();
+    my %vars = (WORKER_PORT => $worker_port);
     while (my ($k, $v) = each %{$job->{'settings'}}) {
         print "setting $k=$v\n" if $verbose;
         $vars{$k} = $v;
