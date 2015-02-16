@@ -19,7 +19,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &sortkeys
   &first_run
   &data_name
-  &back_log
   &needle_info
   &needledir
   &testcasedir
@@ -71,24 +70,6 @@ sub testcasedir($$) {
     $dir .= "-$version" if $version && -e "$dir-$version";
 
     return $dir;
-}
-
-sub back_log($) {
-    my ($name) = @_;
-    my $backlogdir = "*";
-    my @backlogs = <$basedir/$prj/backlog/$backlogdir/name>;
-    foreach my $filepath (@backlogs) {
-        my $path = $filepath;
-        $path=~s/\/name$//;
-        open(my $fd, '<', $filepath) || next;
-        my $rnam = <$fd>;
-        chomp($rnam);
-        close($fd);
-        if ($name eq $rnam) {
-            return $path."/";
-        }
-    }
-    return "";
 }
 
 sub testresultdir($) {

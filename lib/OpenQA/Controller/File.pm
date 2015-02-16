@@ -95,25 +95,6 @@ sub test_asset {
 }
 
 
-sub test_diskimage {
-    my $self = shift;
-
-    return $self->reply->not_found unless $self->_set_test;
-
-    my $diskimg = $self->param('imageid');
-
-    my $basepath = back_log($self->{testdirname});
-
-    return $self->reply->not_found if (!-d $basepath);
-
-    my $imgpath = "$basepath/$diskimg";
-    return $self->reply->not_found if (!-e $imgpath);
-
-    # TODO: the original had gzip compression here
-    #print header(-charset=>"UTF-8", -type=>"application/x-gzip", -attachment => $testname.'_'.$diskimg.'.gz', -expires=>'+24h', -max_age=>'86400', -Last_Modified=>awstandard::HTTPdate($mtime));
-    return $self->serve_static_($imgpath);
-}
-
 sub test_isoimage {
     my $self = shift;
 
