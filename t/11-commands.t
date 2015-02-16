@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA';
+    unshift @INC, 'lib';
 }
 
 use Mojo::Base -strict;
