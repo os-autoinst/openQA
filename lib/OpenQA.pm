@@ -172,11 +172,11 @@ sub startup {
 
     if ($logfile && $self->config->{'logging'}->{'level'}) {
         $self->log->level($self->config->{'logging'}->{'level'});
-        if ($self->log->is_debug) {
-            # avoid enabling the SQL debug unless we really want to see it
-            # it's rather expensive
-            db_profiler::enable_sql_debugging($self);
-        }
+    }
+    if ($self->log->is_debug) {
+        # avoid enabling the SQL debug unless we really want to see it
+        # it's rather expensive
+        db_profiler::enable_sql_debugging($self);
     }
 
     # load auth module
