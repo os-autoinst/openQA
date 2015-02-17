@@ -23,6 +23,7 @@ use OpenQA::Worker::Engines::isotovideo;
 
 use POSIX qw/strftime SIGTERM/;
 use File::Copy qw/copy move/;
+use File::Path qw/remove_tree/;
 use JSON qw/decode_json/;
 use Fcntl;
 
