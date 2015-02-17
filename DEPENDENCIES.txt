@@ -14,6 +14,7 @@ DBIx::Class::DynamicDefault
 DBIx::Class::ResultClass::HashRefInflator
 DBIx::Class::Schema
 DBIx::Class::Storage::Statistics
+DBIx::Class::OptimisticLocking
 Data::Dump
 Data::Dumper
 Data::OptList
