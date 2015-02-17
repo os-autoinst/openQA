@@ -39,7 +39,7 @@ sub _read_config {
             hsts => 365,
         },
         auth => {
-            method => 'Fake',
+            method => 'OpenID',
         },
         'scm git' => {
             do_push => 'no',
@@ -58,6 +58,19 @@ sub _read_config {
         },
     );
 
+    # in development mode we use fake auth and log to stderr
+    my %mode_defaults = (
+        development => {
+            auth => {
+                method => 'Fake',
+            },
+            logging => {
+                file => undef,
+                level => 'debug',
+            },
+        }
+    );
+
     # Mojo's built in config plugins suck. JSON for example does not
     # support comments
     my $cfg = Config::IniFiles->new(-file => $ENV{OPENQA_CONFIG} || $self->app->home.'/lib/openqa.ini') || undef;
@@ -65,7 +78,7 @@ sub _read_config {
     for my $section (sort keys %defaults) {
         for my $k (sort keys %{$defaults{$section}}) {
             my $v = $cfg && $cfg->val($section, $k);
-            $v = $defaults{$section}->{$k} unless defined $v;
+            $v //= exists $mode_defaults{$self->mode}{$section}->{$k} ? $mode_defaults{$self->mode}{$section}->{$k} : $defaults{$section}->{$k};
             $self->app->config->{$section}->{$k} = $v if defined $v;
         }
     }

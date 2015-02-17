@@ -46,7 +46,7 @@ is_deeply(
             do_push => 'no',
         },
         logging => {
-            file => '/var/log/openqa'
+            level => 'debug'
         },
         openid => {
             provider => 'https://www.opensuse.org/openid/user/',
