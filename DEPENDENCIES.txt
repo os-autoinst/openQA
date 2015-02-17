@@ -59,6 +59,7 @@ Perl::Tidy
 SQL::Translator
 SQL::SplitStatement
 Scalar::Util
+Selenium::Remote::Driver
 Sub::Install
 Sub::Name
 Test::Mojo

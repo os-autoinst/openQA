@@ -39,7 +39,7 @@ sub _read_config {
             hsts => 365,
         },
         auth => {
-            method => 'OpenID',
+            method => 'Fake',
         },
         'scm git' => {
             do_push => 'no',
