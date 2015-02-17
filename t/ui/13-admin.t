@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 22;
+use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
 use Mojo::IOLoop::Server;
@@ -69,6 +69,10 @@ sub start_app {
 }
 
 sub start_phantomjs {
+    use IPC::Cmd qw[can_run];
+    if (!can_run('phantomjs')) {
+        return undef;
+    }
     my $phantomport = Mojo::IOLoop::Server->generate_port;
 
     $phantompid = fork();
@@ -88,7 +92,6 @@ sub start_phantomjs {
                 Proto    => 'tcp',
             );
             sleep 1 if time - $t < 2;
-            print STDERR "connect " . time . "\n";
             last if $socket;
         }
     }
@@ -97,7 +100,6 @@ sub start_phantomjs {
     # Connect to it
     eval {
         $driver = Selenium::Remote::Driver->new('port' => $phantomport);
-        # (Monkey)patch Selenium::Remote::Driver
         $driver->set_implicit_wait_timeout(5);
     };
 
@@ -111,7 +113,15 @@ sub start_phantomjs {
     return $driver;
 }
 
-my $driver  = start_phantomjs;
+my $driver = start_phantomjs;
+if ($driver) {
+    plan tests => 22;
+}
+else {
+    plan skip_all => 'Install phantomjs to run these tests';
+    exit(0);
+}
+
 $driver->set_window_size(600, 800);
 
 my $mojoport = start_app;
