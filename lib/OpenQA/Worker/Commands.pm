@@ -47,6 +47,7 @@ sub check_authorized {
 ## Synchronization API
 sub _mutex_call {
     my ($self, $action, $name) = @_;
+    $self->render_later;
     my $res = api_call('get',"workers/$workerid/$action/$name", undef, undef, 1);
     if ($res) {
         $self->render(status => 200);
@@ -71,7 +72,7 @@ sub mutex_unlock {
 sub mutex_create {
     my ($self) = @_;
     my $name = $self->param('name');
-    _mutex_call($self, 'create', $name);
+    _mutex_call($self, 'createlock', $name);
 }
 
 ## WEBSOCKET commands
