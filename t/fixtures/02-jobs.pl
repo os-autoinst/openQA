@@ -122,7 +122,7 @@
         worker_id => 1,
         jobs_assets => [{ asset_id => 2 },],
         retry_avbl => 3,
-        settings => [{ key => 'DESKTOP', value => 'kde'},{ key => 'ISO_MAXSIZE', value => '4700372992'},{ key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},{ key => 'TEST', value => 'kde'},{ key => 'VERSION', value => '13.1'},{ key => 'DVD', value => '1'},{ key => 'BUILD', value => '0091'},{ key => 'ARCH', value => 'x86_64'},{ key => 'DISTRI', value => 'opensuse'},{ key => 'FLAVOR', value => 'DVD'},{ key => 'MACHINE', value => '64bit'},]
+        settings => [{ key => 'DESKTOP', value => 'kde'},{ key => 'ISO_MAXSIZE', value => '4700372992'},{ key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},{ key => 'TEST', value => 'kde'},{ key => 'VERSION', value => '13.1'},{ key => 'DVD', value => '1'},{ key => 'BUILD', value => '0091'},{ key => 'ARCH', value => 'x86_64'},{ key => 'DISTRI', value => 'opensuse'},{ key => 'FLAVOR', value => 'DVD'},{ key => 'MACHINE', value => '64bit'}, {key => 'JOBTOKEN', value => 'token99963'}]
     },
     Jobs => {
         id => 99962,
