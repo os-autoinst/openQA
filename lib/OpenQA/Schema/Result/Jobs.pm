@@ -286,5 +286,27 @@ sub duplicate{
     return $res;
 }
 
+sub set_property {
+    my ($self, $key, $value) = @_;
+    my $r = $self->settings->find({key => $key});
+    if (defined $value) {
+        if ($r) {
+            $r->update({value => $value});
+        }
+        else {
+            $self->settings->create(
+                {
+                    job_id => $self->id,
+                    key => $key,
+                    value => $value
+                }
+            );
+        }
+    }
+    elsif ($r) {
+        $r->delete;
+    }
+}
+
 1;
 # vim: set sw=4 et:

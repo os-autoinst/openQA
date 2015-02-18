@@ -38,6 +38,7 @@ use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
 use OpenQA::Utils ();
+use db_helpers qw/rndstr/;
 
 use OpenQA::Variables;
 use OpenQA::WebSockets;
@@ -167,6 +168,7 @@ sub worker_register {
     # in case the worker died ...
     # ... restart jobs assigned to this worker
     for my $j ($worker->jobs->all()) {
+        $j->set_property('JOBTOKEN');
         job_duplicate(jobid => $j->id);
     }
     # .. set them to incomplete
@@ -325,7 +327,6 @@ sub job_create {
         }
         delete $settings{_PARALLEL_JOBS};
     }
-
 
     while(my ($k, $v) = each %settings) {
         push @{$new_job_args{settings}}, { key => $k, value => $v };
@@ -634,20 +635,21 @@ sub job_grab {
         last;
     }
 
-    my $job_hashref;
-    if ($result != 0) {
-        $job_hashref = _job_get(
-            {
-                'me.id' => schema->resultset("Jobs")->search(
-                    {
-                        state => OpenQA::Schema::Result::Jobs::RUNNING,
-                        worker_id => $workerid,
-                    }
-                )->single->id,
-            }
-        );
-        worker_set_property($workerid, 'WORKER_IP', $workerip) if $workerip;
-    }
+    my $job = schema->resultset("Jobs")->search(
+        {
+            state => OpenQA::Schema::Result::Jobs::RUNNING,
+            worker_id => $workerid,
+        }
+    )->single;
+    return {} unless ($job);
+
+    # generate jobtoken for test access
+    $job->set_property('JOBTOKEN', rndstr);
+
+    my $job_hashref = {};
+    $job_hashref = _job_get({'me.id' => $job->id});
+    worker_set_property($workerid, 'WORKER_IP', $workerip) if $workerip;
+
     return $job_hashref;
 }
 
@@ -772,10 +774,13 @@ sub job_set_done {
     my $jobid = int($args{jobid});
     my $newbuild = 0;
     $newbuild = int($args{newbuild}) if defined $args{newbuild};
+    # delete JOBTOKEN
+    my $job = schema->resultset('Jobs')->search({ id => $jobid })->single;
+    $job->set_property('JOBTOKEN');
 
     my $r;
     if ($newbuild) {
-        $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
+        $r = $job->update(
             {
                 state => OpenQA::Schema::Result::Jobs::OBSOLETED,
                 worker_id => 0,
@@ -785,7 +790,7 @@ sub job_set_done {
         );
     }
     else {
-        $r = schema->resultset("Jobs")->search({ id => $jobid })->update(
+        $r = $job->update(
             {
                 state => OpenQA::Schema::Result::Jobs::DONE,
                 worker_id => 0,
@@ -984,10 +989,12 @@ sub job_duplicate {
         if ($j->id == $job->id) {
             #the requested job
             $clone = $to_clone{$j->id}->{clone} = $j->duplicate(\%args);
+            $clone->set_property('JOBTOKEN');
         }
         else {
             #dependencies
-            $to_clone{$j->id}->{clone} = $j->duplicate();
+            my $c = $to_clone{$j->id}->{clone} = $j->duplicate();
+            $c->set_property('JOBTOKEN');
         }
         _job_update_parent($j->id, $to_clone{$j->id}->{clone}->id);
     }
