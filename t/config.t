@@ -59,8 +59,8 @@ is_deeply(
     }
 );
 
-$ENV{OPENQA_CONFIG} = 't/testcfg.ini';
-open(my $fd, '>', $ENV{OPENQA_CONFIG});
+$ENV{OPENQA_CONFIG} = 't';
+open(my $fd, '>', $ENV{OPENQA_CONFIG}.'/openqa.ini');
 print $fd "[global]\n";
 print $fd "allowed_hosts=foo bar\n";
 print $fd "suse_mirror=http://blah/\n";
@@ -70,6 +70,6 @@ $t = Test::Mojo->new('OpenQA');
 ok($t->app->config->{'global'}->{'allowed_hosts'} eq 'foo bar', 'allowed hosts');
 ok($t->app->config->{'global'}->{'suse_mirror'} eq 'http://blah/', 'suse mirror');
 
-unlink($ENV{OPENQA_CONFIG});
+unlink($ENV{OPENQA_CONFIG}.'/openqa.ini');
 
 done_testing();

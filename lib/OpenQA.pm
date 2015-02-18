@@ -60,7 +60,8 @@ sub _read_config {
 
     # Mojo's built in config plugins suck. JSON for example does not
     # support comments
-    my $cfg = Config::IniFiles->new(-file => $ENV{OPENQA_CONFIG} || $self->app->home.'/lib/openqa.ini') || undef;
+    my $cfgpath=$ENV{OPENQA_CONFIG} || $self->app->home.'/etc/openqa';
+    my $cfg = Config::IniFiles->new(-file => $cfgpath.'/openqa.ini') || undef;
 
     for my $section (sort keys %defaults) {
         for my $k (sort keys %{$defaults{$section}}) {

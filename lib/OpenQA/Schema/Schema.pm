@@ -17,7 +17,6 @@ package OpenQA::Schema;
 use base qw/DBIx::Class::Schema/;
 use Config::IniFiles;
 use IO::Dir;
-use File::Basename qw/dirname/;
 use SQL::SplitStatement;
 use Fcntl ':mode';
 use FindBin qw($Bin);
@@ -25,9 +24,10 @@ use FindBin qw($Bin);
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
 our $VERSION = 24;
-our $configname="$Bin/../lib/database.ini";
 
 __PACKAGE__->load_namespaces;
+
+
 
 
 sub connect_db {
@@ -35,8 +35,8 @@ sub connect_db {
     CORE::state $schema;
     unless ($schema) {
         my %ini;
-        #        print("ENV{OPENQA_DATABASE_CONFIG}=$ENV{OPENQA_DATABASE_CONFIG}\n");
-        tie %ini, 'Config::IniFiles', ( -file => $ENV{OPENQA_DATABASE_CONFIG} || $configname );
+        my $cfgpath=$ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
+        tie %ini, 'Config::IniFiles', ( -file => $cfgpath.'/database.ini' );
         $schema=__PACKAGE__->connect($ini{$mode});
     }
     return $schema;

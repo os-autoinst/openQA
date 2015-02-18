@@ -188,20 +188,22 @@ export DBIC_TRACE=1
 How to overwrite config files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It can be necessary during development to change the config files in lib/,
-e.g. to use postgresql or mysql you have to change lib/database.ini or to
-increase the log level it's useful to set the loglevel = debug in
-lib/openqa.ini.
+It can be necessary during development to change the config files in etc/,
+e.g. to use postgresql or mysql you have to change etc/openqa/database.ini 
+or to increase the log level it's useful to set the loglevel = debug in
+etc/openqa/openqa.ini.
 
 To avoid these changes getting in your git workflow, copy them to a new
 directory and set OPENQA_CONFIG in your shell setup files.
 
 --------------------------------------------------------------------------------
 mkdir etc/mine
-cp lib/database.ini etc/mine
-cp lib/openqa.ini etc/mine
-export OPENQA_CONFIG=$PWD/etc/mine/openqa.ini
+cp etc/openqa/database.ini etc/mine
+cp etc/openqa/openqa.ini etc/mine
+cp etc/openqa/client.conf etc/mine
+cp etc/openqa/workers.ini etc/mine
+export OPENQA_CONFIG=$PWD/etc/mine
 --------------------------------------------------------------------------------
 
-Note that OPENQA_CONFIG points to the file path of openqa.ini and database.ini
-is taken from the same path.
+Note that OPENQA_CONFIG points to the directory in which openqa.ini, database.ini,
+client.conf and workers.ini are expected to reside.

@@ -27,8 +27,7 @@ use Mojo::Util qw(b64_decode b64_encode hmac_sha1_sum);
 sub new {
     my $self = shift->SUPER::new;
 
-    $ENV{OPENQA_CLIENT_CONFIG} = 't/data/client.conf';
-    $ENV{OPENQA_DATABASE_CONFIG} = 'lib/database.ini';
+    $ENV{OPENQA_CONFIG} = 't/data';
 
     return $self;
 }
