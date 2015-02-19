@@ -57,12 +57,13 @@ if [ "$updateall" = 1 ]; then
 else
 	cd "$dir/$dist"
 	if [ ! -d .git ]; then
-		git clone -b "$branch" "$giturl"
+		git clone -b "$branch" "$giturl" .
 		git config user.email "$email"
 		git config user.name "$username"
 		if [ "$needles_separate" = 1 ]; then
+			[ -d needles ] || mkdir needles
 			cd needles
-			git clone -b "$needles_branch" "$needles_giturl"
+			git clone -b "$needles_branch" "$needles_giturl" .
 			git config user.email "$email"
 			git config user.name "$username"
 		fi
