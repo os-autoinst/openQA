@@ -71,7 +71,16 @@ sub status {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = { 'interactive' => 0, 'workerid' => 'TODO', 'running' => 'TODO' };
+    my $results = { 'interactive' => 0, 'workerid' => $self->stash('workerid') };
+    my $schema = OpenQA::Scheduler::schema();
+    my $r = $schema->resultset("JobModules")->find(
+        {
+            job_id => $self->stash('job')->{id},
+            result => 'running'
+        }
+    );
+
+    $results->{'running'} = $r->name() if $r;
     $self->render(json => $results);
 }
 
