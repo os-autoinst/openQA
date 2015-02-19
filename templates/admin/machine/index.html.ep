@@ -6,13 +6,13 @@
 
     %= include 'layouts/info'
 
-    <table class="table-autosort table-autostripe admintable" id='machines'>
+    <table class="admintable stripe compact" id='machines'>
         <thead>
             <tr>
-                <th class="table-sortable:alphanumeric col_value">name</th>
-                <th class="table-sortable:alphanumeric col_value">backend</th>
+                <th class="col_value">name</th>
+                <th class="col_value">backend</th>
                 % for my $var (@$col_var_keys) {
-                    <th class="table-sortable:alphanumeric col_settings"><%= $var %></th>
+                    <th class="col_settings"><%= $var %></th>
                 %}
                 <th class="col_settings_list">other variables</th>
                 <th class="col_action">action</th>

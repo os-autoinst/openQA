@@ -116,7 +116,7 @@ sub job_modules($) {
     my ($job) = @_;
 
     my $schema = OpenQA::Scheduler::schema();
-    return $schema->resultset("JobModules")->search({ job_id => $job->{id} })->all;
+    return $schema->resultset("JobModules")->search({ job_id => $job->{id} }, { order_by => 'id'} )->all;
 }
 
 sub job_module_stats($) {

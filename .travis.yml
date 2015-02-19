@@ -10,9 +10,6 @@ install:
   - sudo apt-get install libgmp3-dev
   - cpanm -nq `cat DEPENDENCIES.txt` "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
-  # - cover -test
-  - PERL5OPT=-MDevel::Cover MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log prove -r
-after_success:
-  - cover -report coveralls
+  - MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover -test -report coveralls -ignore_re "t/.*" -coverage default,-pod
 after_failure:
   - cat /tmp/openqa-debug.log

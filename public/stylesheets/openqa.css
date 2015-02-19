@@ -11,36 +11,16 @@ table {
 td { text-align: center; vertical-align: middle; }
 td { padding: 0.3em 0.6em; }
 
-tr.even {background-color:#f0ffcf ;} /* Lemon ultra-light */
-tr.odd {background-color:#f9ffeb ;}  /* Lemon hyper-light */
 table.table-autostripe tr:nth-of-type(even) { background-color:#f0ffcf; }  /* Lemon ultra-light */
 table.table-autostripe tr:nth-of-type(odd) { background-color:#f9ffeb; }  /* Lemon hyper-light */
-
-table select.table-autofilter { font-size: 9px; }
-table select.table-autofilter option { font-size: 9px; }
-
-table th.table-sortable {
-    cursor: pointer;
+table.dataTable.stripe tbody tr.odd, table.dataTable.display tbody tr.odd {
+  background-color: #f0ffcf;
 }
-table th.table-sortable i.sort-arrows {
-    background-image: url(../images/sortable.png);
-    background-position: left top;
-    background-repeat: no-repeat;
-    display: inline-block;
-    width: 7px;
-    height: 16px;
-}
-table th.table-sorted-desc i.sort-arrows {
-    background-image: url(../images/sorted-down.png);
-    background-position: left top;
-    background-repeat: no-repeat;
-}
-table th.table-sorted-asc i.sort-arrows {
-    background-image: url(../images/sorted-up.png);
-    background-position: left top;
-    background-repeat: no-repeat;
+table.dataTable.stripe tbody tr.odd.selected, table.dataTable.display tbody tr.odd.selected {
+   background-color: #f9ffeb;
 }
 
+thead { background: #eee; }
 
 .resultok {background-color:#d4f291 ;} 
 .resultpassed {background-color:#d4f291 ;}

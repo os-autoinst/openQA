@@ -1,10 +1,13 @@
+% stash 'use_jquery' => 1;
+
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html
   PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
   <head>
-      %= include 'layouts/head_admin'
+      %= include 'layouts/head'
+      %= javascript '/javascripts/admintable.js'
   </head>
   <body>
     <div id="header">
@@ -48,7 +51,7 @@
 
     <div class="clear"></div>
     <div id="footer" class="container_16">
-      <div class="box_content grid_16" style="text-align: center;"><%= content_for 'footer' %></div>
+      <div class="box_content grid_16" style="text-align: center; margin-bottom: 12px;"><%= content_for 'footer' %></div>
     </div>
   </body>
 </html>

@@ -1,49 +1,64 @@
 % layout 'admin';
 % title 'Users';
 
+% content_for 'ready_function' => begin
+  $('#users').DataTable( {
+    "order": [[0, 'asc']],
+} );
+% end
+
 <div class="box box-shadow omega">
-	<h2><%= title %></h2>
-
+    <h2><%= title %></h2>
+    
     %= include 'layouts/info'
-
-	<table class="table-autostripe">
-	    <thead>
-		    <tr>
-                <th>id</th>
+    
+    <table id="users" class="stripe compact">
+	<thead>
+	    <tr>
                 <th>username</th>
                 <th>email</th>
                 <th>name</th>
                 <th>nick</th>
                 <th>operator</th>
                 <th>admin</th>
-                <th colspan="2">actions</th>
             </tr>
         </thead>
         <tbody>
             % for my $user (@$users) {
                 <tr id="user_<%= $user->id %>">
-                    <td class="id"><%= $user->id %></td>
                     <td class="username"><%= $user->username %></td>
                     <td class="email"><%= $user->email %></td>
                     <td class="name"><%= $user->fullname %></td>
                     <td class="nick"><%= $user->nickname %></td>
-                    <td class="is_operator"><%= $user->is_operator ? 'yes' : 'no' %></td>
-                    <td class="is_admin"><%= $user->is_admin ? 'yes' : 'no' %></td>
-                    <td class="action action_operator">
+		    <td class="is_operator" data-order="<%= $user->is_operator %>">
                         % if ($user->is_operator) {
-                            %= link_to '- operator' => url_for('admin_user', userid=> $user->id)->query(is_operator => '0') => 'data-method' => 'post'
-                        % } else {
-                            %= link_to '+ operator' => url_for('admin_user', userid=> $user->id)->query(is_operator => '1') => 'data-method' => 'post'
+                            <i class="fa fa-check" title="Yes"></i>
+                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_operator => '0') => 'data-method' => 'post' => 'title' => 'Demote' => begin
+                            <i class="fa fa-thumbs-down"></i>
+                            % end
+                        % } else
+                        % {
+                            <i class="fa fa-times" title="No"></i>
+                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_operator => '1') => 'data-method' => 'post' => 'title' => 'Promote' => begin
+                            <i class="fa fa-thumbs-up"></i>
+                            % end
                         % }
                     </td>
-                    <td class="action action_admin">
+                    <td class="is_admin" data-order="<%= $user->is_admin %>">
                         % if ($user->is_admin) {
-                            %= link_to '- admin' => url_for('admin_user', userid=> $user->id)->query(is_admin => '0') => 'data-method' => 'post'
-                        % } else {
-                            %= link_to '+ admin' => url_for('admin_user', userid=> $user->id)->query(is_admin => '1') => 'data-method' => 'post'
+                            <i class="fa fa-check" title="Yes"></i>
+                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_admin => '0') => 'data-method' => 'post' => 'title' => 'Demote' => begin
+                            <i class="fa fa-thumbs-down"></i>
+                            % end
+                        % } else
+                        % {
+                            <i class="fa fa-times" title="No"></i>
+                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_admin => '1') => 'data-method' => 'post' => 'title' => 'Promote' => begin
+                            <i class="fa fa-thumbs-up"></i>
+                            % end
                         % }
                     </td>
-                </tr>
+		</tr>
             % }
         </tbody>
     </table>

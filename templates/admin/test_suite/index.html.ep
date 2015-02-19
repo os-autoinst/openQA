@@ -2,27 +2,27 @@
 % title 'Test suites';
 
 <div class="box box-shadow">
-	<h2><%= title %></h2>
-
-    %= include 'layouts/info'
-
-	<table class="table-autosort table-autostripe admintable" id='test-suites'>
-	    <thead>
-		    <tr>
-                <th class="table-sortable:alphanumeric col_value">name</th>
-                <th class="table-sortable:numeric col_value">prio</th>
-                % for my $var (@$col_var_keys) {
-                    <th class="table-sortable:alphanumeric col_settings"><%= $var %></th>
-                %}
-                <th class="col_settings_list">other variables</th>
-                <th class="col_action">action</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
-    <div class="aligncenter">
-        <input value="New test suite" onclick="add_table_row_button();" type="button"/>
-    </div>
-    <input type="hidden" id="admintable_api_url" value="/api/v1/test_suites"/>
+  <h2><%= title %></h2>
+  
+  %= include 'layouts/info'
+  
+  <table class="admintable stripe compact" id='test-suites'>
+      <thead>
+	  <tr>
+              <th class="col_value">name</th>
+              <th class="col_value">prio</th>
+              % for my $var (@$col_var_keys) {
+                  <th class="col_settings"><%= $var %></th>
+              %}
+              <th class="col_settings_list">other variables</th>
+              <th class="col_action">action</th>
+          </tr>
+      </thead>
+      <tbody>
+      </tbody>
+  </table>
+  <div class="aligncenter">
+      <input value="New test suite" onclick="add_table_row_button();" type="button"/>
+  </div>
+  <input type="hidden" id="admintable_api_url" value="/api/v1/test_suites"/>
 </div>

@@ -103,9 +103,10 @@ sub edit {
 
     my $module_detail = $self->stash('module_detail');
     my $imgname = $module_detail->{'screenshot'};
-    my $results = $self->stash('results');
     my $job = OpenQA::Scheduler::job_get($self->param('testid'));
     my $testdirname = $job->{'settings'}->{'NAME'};
+    my $distribution = $job->{settings}->{DISTRI};
+    my $dversion = $job->{settings}->{VERSION} || '';
 
     # Each object in $needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -151,14 +152,14 @@ sub edit {
             );
         }
         # Second position: the only needle (with the same matches)
-        my $needle = needle_info($module_detail->{'needle'}, $results->{'distribution'}, $results->{'version'}||'');
+        my $needle = needle_info($module_detail->{'needle'}, $distribution, $dversion);
 
-        $self->app->log->error(sprintf("Could not find needle: %s for %s %s",$module_detail->{'needle'},$results->{'distribution'},$results->{'version'})) if !defined $needle;
+        $self->app->log->error(sprintf("Could not find needle: %s for %s %s",$module_detail->{'needle'},$distribution,$dversion)) if !defined $needle;
 
         my $matched = {
             'name' => $module_detail->{'needle'},
             'suggested_name' => $self->_timestamp($module_detail->{'needle'}),
-            'imageurl' => $self->needle_url($results->{'distribution'}, $module_detail->{'needle'}.'.png',$results->{'version'}),
+            'imageurl' => $self->needle_url($distribution, $module_detail->{'needle'}.'.png',$dversion),
             'imagename' => basename($needle->{'image'}),
             'imagedistri' => $needle->{'distri'},
             'imageversion' => $needle->{'version'},
@@ -201,10 +202,10 @@ sub edit {
         # We also use $area for transforming the match information intro a real area
         for my $needle (@{$module_detail->{'needles'}}) {
             $needlename = $needle->{'name'};
-            $needleinfo = needle_info($needlename, $results->{'distribution'}, $results->{'version'}||'');
+            $needleinfo = needle_info($needlename, $distribution, $dversion||'');
 
             if( !defined $needleinfo ) {
-                $self->app->log->error(sprintf("Could not parse needle: %s for %s %s",$needlename,$results->{'distribution'},$results->{'version'} || ''));
+                $self->app->log->error(sprintf("Could not parse needle: %s for %s %s",$needlename,$distribution,$dversion || ''));
 
                 $needleinfo->{'image'} = [];
                 $needleinfo->{'tags'} = [];
@@ -217,7 +218,7 @@ sub edit {
                 {
                     'name' => $needlename,
                     'suggested_name' => $self->_timestamp($needlename),
-                    'imageurl' => $self->needle_url($results->{'distribution'}, "$needlename.png", $results->{'version'}),
+                    'imageurl' => $self->needle_url($distribution, "$needlename.png", $dversion),
                     'imagename' => basename($needleinfo->{'image'}),
                     'imagedistri' => $needleinfo->{'distri'},
                     'imageversion' => $needleinfo->{'version'},
@@ -430,8 +431,9 @@ sub save_needle {
         return $self->edit;
     }
 
-    my $results = $self->stash('results');
     my $job = OpenQA::Scheduler::job_get($self->param('testid'));
+    my $distribution = $job->{settings}->{DISTRI};
+    my $dversion = $job->{settings}->{VERSION} || '';
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $json = $validation->param('json');
     my $imagename = $validation->param('imagename');

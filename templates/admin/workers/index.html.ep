@@ -1,6 +1,12 @@
 % layout 'admin';
 % title 'Workers';
 
+% content_for 'ready_function' => begin
+$('#assets').DataTable( {
+"order": [],
+} );
+% end
+
 <div class="grid_16 box box-shadow alpha">
   <h2><%= title %></h2>
 
@@ -8,14 +14,14 @@
   
   <p>This page lists the status of <%= $wamount %> workers.</p>
   <p />
-  <table id="results" class="table-autosort table-autofilter table-autostripe">
+  <table id="results">
     <thead>
       <tr>
-        <th class="table-sortable:alphanumeric">worker</th>
-        <th class="table-sortable:alphanumeric table-filterable">backend</th>
-        <th class="table-sortable:alphanumeric">status</th>
-        <th class="table-sortable:alphanumeric">connected</th>
-        <th class="table-sortable:alphanumeric">current step</th>
+        <th>worker</th>
+        <th>backend</th>
+        <th>status</th>
+        <th>connected</th>
+        <th>current step</th>
       </tr>
     </thead>
     <tbody>

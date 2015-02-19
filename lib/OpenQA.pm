@@ -58,6 +58,19 @@ sub _read_config {
         },
     );
 
+    # in development mode we use fake auth and log to stderr
+    my %mode_defaults = (
+        development => {
+            auth => {
+                method => 'Fake',
+            },
+            logging => {
+                file => undef,
+                level => 'debug',
+            },
+        }
+    );
+
     # Mojo's built in config plugins suck. JSON for example does not
     # support comments
     my $cfgpath=$ENV{OPENQA_CONFIG} || $self->app->home.'/etc/openqa';
@@ -66,7 +79,7 @@ sub _read_config {
     for my $section (sort keys %defaults) {
         for my $k (sort keys %{$defaults{$section}}) {
             my $v = $cfg && $cfg->val($section, $k);
-            $v = $defaults{$section}->{$k} unless defined $v;
+            $v //= exists $mode_defaults{$self->mode}{$section}->{$k} ? $mode_defaults{$self->mode}{$section}->{$k} : $defaults{$section}->{$k};
             $self->app->config->{$section}->{$k} = $v if defined $v;
         }
     }
@@ -142,6 +155,7 @@ sub startup {
 
     # Set some application defaults
     $self->defaults( appname => 'openQA' );
+    $self->defaults( use_jquery => 0 );
 
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
@@ -172,11 +186,11 @@ sub startup {
 
     if ($logfile && $self->config->{'logging'}->{'level'}) {
         $self->log->level($self->config->{'logging'}->{'level'});
-        if ($self->log->is_debug) {
-            # avoid enabling the SQL debug unless we really want to see it
-            # it's rather expensive
-            db_profiler::enable_sql_debugging($self);
-        }
+    }
+    if ($self->log->is_debug) {
+        # avoid enabling the SQL debug unless we really want to see it
+        # it's rather expensive
+        db_profiler::enable_sql_debugging($self);
     }
 
     # load auth module
@@ -245,7 +259,6 @@ sub startup {
     $test_r->get('/images/#filename')->name('test_img')->to('file#test_file');
     $test_r->get('/images/thumb/#filename')->name('test_thumbnail')->to('file#test_thumbnail');
     $test_r->get('/file/#filename')->name('test_file')->to('file#test_file');
-    $test_r->get('/diskimages/:imageid')->name('diskimage')->to('file#test_diskimage');
     $test_r->get('/iso')->name('isoimage')->to('file#test_isoimage');
     # adding assetid => qr/\d+/ doesn't work here. wtf?
     $test_r->get('/asset/#assetid')->name('test_asset_id')->to('file#test_asset');

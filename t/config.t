@@ -1,4 +1,4 @@
-BEGIN { unshift @INC, 'lib', 'lib/OpenQA'; }
+BEGIN { unshift @INC, 'lib'; }
 
 # Copyright (C) 2014 SUSE Linux Products GmbH
 #
@@ -40,13 +40,13 @@ is_deeply(
             hsts => '365',
         },
         auth => {
-            method => 'OpenID',
+            method => 'Fake',
         },
         'scm git' => {
             do_push => 'no',
         },
         logging => {
-            file => '/var/log/openqa'
+            level => 'debug'
         },
         openid => {
             provider => 'https://www.opensuse.org/openid/user/',

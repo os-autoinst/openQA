@@ -311,6 +311,17 @@ sub job_create {
         delete $settings{_START_AFTER_JOBS};
     }
 
+    if ($settings{_PARALLEL_JOBS}) {
+        for my $id (@{$settings{_PARALLEL_JOBS}}) {
+            push @{$new_job_args{parents}},
+              {
+                parent_job_id => $id,
+                dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+              };
+        }
+        delete $settings{_PARALLEL_JOBS};
+    }
+
 
     while(my ($k, $v) = each %settings) {
         push @{$new_job_args{settings}}, { key => $k, value => $v };
@@ -484,6 +495,73 @@ sub list_jobs {
     return \@results;
 }
 
+sub _prefer_parallel {
+    my ($blocked) = @_;
+    my $running = schema->resultset("Jobs")->search(
+        {
+            state => OpenQA::Schema::Result::Jobs::RUNNING,
+        }
+    )->get_column('id')->as_query;
+
+    # get scheduled children of running jobs
+    my $children = schema->resultset("JobDependencies")->search(
+        {
+            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            parent_job_id => { -in => $running },
+            state => OpenQA::Schema::Result::Jobs::SCHEDULED
+        },
+        {
+            join => 'child',
+        }
+    );
+
+    return if ($children->count() == 0); # no scheduled children, whole group is running
+
+    my $available_children = $children->search(
+        {
+            child_job_id => { -not_in => $blocked->get_column('child_job_id')->as_query}
+        }
+    );
+
+    return ( '-in' => $available_children->get_column('child_job_id')->as_query) if ($available_children->count() > 0); # we have scheduled children that are not blocked
+
+    # children are blocked, we have to find and start their parents first
+    my $parents = schema->resultset("JobDependencies")->search(
+        {
+            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            child_job_id => { -in => $children->get_column('child_job_id')->as_query },
+            state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+        },
+        {
+            join => 'parent',
+        }
+    );
+
+    while ($parents->count() > 0) {
+
+        my $available_parents = $parents->search(
+            {
+                parent_job_id => { -not_in => $blocked->get_column('child_job_id')->as_query}
+            }
+        );
+
+        return ( '-in' => $available_parents->get_column('parent_job_id')->as_query) if ($available_parents->count() > 0);
+
+        # parents are blocked, lets check grandparents
+        $parents = schema->resultset("JobDependencies")->search(
+            {
+                dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+                child_job_id => { -in => $parents->get_column('parent_job_id')->as_query },
+                state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+            },
+            {
+                join => 'parent',
+            }
+        );
+    }
+    return;
+}
+
 # TODO: add some sanity check so the same host doesn't grab two jobs
 sub job_grab {
     my %args = @_;
@@ -499,11 +577,19 @@ sub job_grab {
     while (1) {
         my $blocked = schema->resultset("JobDependencies")->search(
             {
-                dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
-                -or => {
-                    state => { '!=', OpenQA::Schema::Result::Jobs::DONE },
-                    result => { '!=',  OpenQA::Schema::Result::Jobs::PASSED },
-                },
+                -or => [
+                    -and => {
+                        dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
+                        -or => {
+                            state => { '!=', OpenQA::Schema::Result::Jobs::DONE },
+                            result => { '!=',  OpenQA::Schema::Result::Jobs::PASSED },
+                        },
+                    },
+                    -and => {
+                        dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+                        state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                    },
+                ],
             },
             {
                 join => 'parent',
@@ -524,6 +610,7 @@ sub job_grab {
                 id => {
                     -not_in => $blocked->get_column('child_job_id')->as_query,
                     -in => $archquery->get_column('job_id')->as_query,
+                    _prefer_parallel($blocked)
                 },
             },
             { order_by => { -asc => [qw/priority id/] }, rows => 1 }
@@ -580,13 +667,15 @@ sub worker_set_property($$$) {
     }
 }
 
-# parent job failed, handle children - set them to done incomplete immediately
+# parent job failed, handle scheduled children - set them to done incomplete immediately
 sub _job_skip_children{
     my $jobid = shift;
 
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
+            dependency => {
+                -in => [OpenQA::Schema::Result::JobDependencies::CHAINED,OpenQA::Schema::Result::JobDependencies::PARALLEL],
+            },
             parent_job_id => $jobid,
         },
     );
@@ -594,6 +683,7 @@ sub _job_skip_children{
     my $result = schema->resultset("Jobs")->search(
         {
             id => { -in => $children->get_column('child_job_id')->as_query},
+            state => OpenQA::Schema::Result::Jobs::SCHEDULED,
         },
       )->update(
         {
@@ -610,6 +700,29 @@ sub _job_skip_children{
     }
 }
 
+# parent job failed, handle running children - send stop command
+sub _job_stop_children{
+    my $jobid = shift;
+
+    my $children = schema->resultset("JobDependencies")->search(
+        {
+            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            parent_job_id => $jobid,
+        },
+    );
+    my $jobs = schema->resultset("Jobs")->search(
+        {
+            id => { -in => $children->get_column('child_job_id')->as_query},
+            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+        },
+    );
+    while (my $j = $jobs->next) {
+        print STDERR "enqueuing cancel for ".$j->id." ".$j->worker_id."\n" if $debug;
+        command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
+        _job_stop_children($j->id);
+    }
+}
+
 # parent job has been cloned, move the scheduled children to the new one
 sub _job_update_parent{
     my $jobid = shift;
@@ -617,26 +730,30 @@ sub _job_update_parent{
 
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
+            dependency => [OpenQA::Schema::Result::JobDependencies::CHAINED,OpenQA::Schema::Result::JobDependencies::PARALLEL,],
             parent_job_id => $jobid,
             state => OpenQA::Schema::Result::Jobs::SCHEDULED,
         },
         {
             join => 'child',
         }
-    );
-
-    my $result = schema->resultset("JobDependencies")->search(
-        {
-            dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
-            parent_job_id => $jobid,
-            child_job_id => { -in => $children->get_column('child_job_id')->as_query},
-        }
       )->update(
         {
             parent_job_id => $new_jobid,
         }
       );
+
+    #    my $result = schema->resultset("JobDependencies")->search(
+    #        {
+    #            dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
+    #            parent_job_id => $jobid,
+    #            child_job_id => { -in => $children->get_column('child_job_id')->as_query},
+    #        }
+    #      )->update(
+    #        {
+    #            parent_job_id => $new_jobid,
+    #        }
+    #      );
 }
 
 
@@ -676,8 +793,9 @@ sub job_set_done {
     }
     OpenQA::Schema::Result::JobModules::split_results(job_get($jobid));
 
-    if ($args{result} ne OpenQA::Schema::Result::Jobs::PASSED) {
+    if (  $args{result} ne OpenQA::Schema::Result::Jobs::PASSED){
         _job_skip_children($jobid);
+        _job_stop_children($jobid);
     }
     return $r;
 }
@@ -826,6 +944,7 @@ sub job_duplicate {
 
     my $job = schema->resultset("Jobs")->find({id => $args{jobid}});
     return undef unless $job;
+    return undef if $job->clone; # already cloned
 
     if($args{dup_type_auto}) {
         if ( int($job->retry_avbl) > 0) {
@@ -845,11 +964,65 @@ sub job_duplicate {
         }
     }
 
-    my $clone = $job->duplicate(\%args);
+    # find jobs that must be cloned due to dependencies:
+    # all parents + all running jobs connected with the parents
+    my %to_clone;
+    _job_duplicate_find_parents($job, undef, \%to_clone);
+
+    my $clone;
+
+    # clone the jobs
+    my $jobs = schema->resultset("Jobs")->search(
+        {
+            id => [ keys %to_clone ],
+        }
+    );
+    while (my $j = $jobs->next) {
+        if ($j->id == $job->id) {
+            #the requested job
+            $clone = $to_clone{$j->id}->{clone} = $j->duplicate(\%args);
+        }
+        else {
+            #dependencies
+            $to_clone{$j->id}->{clone} = $j->duplicate();
+        }
+        _job_update_parent($j->id, $to_clone{$j->id}->{clone}->id);
+    }
+
+    # create dependencies for the clones
+    for my $child_id (keys %to_clone) {
+        my $cl_child_id = $to_clone{$child_id}->{clone}->id;
+        for my $parent_id (keys %{$to_clone{$child_id}->{parent}}) {
+            my $cl_parent_id = $parent_id; # scheduled parents were not cloned
+            $cl_parent_id = $to_clone{$parent_id}->{clone}->id if defined $to_clone{$parent_id};
+            schema->resultset("JobDependencies")->create(
+                {
+                    parent_job_id => $cl_parent_id,
+                    child_job_id => $cl_child_id,
+                    dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+                }
+            );
+        }
+    }
+
+    # abort jobs restarted because of dependencies (exclude the original $args{jobid})
+    $jobs = schema->resultset("Jobs")->search(
+        {
+            id => [ keys %to_clone ],
+            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+        },
+        {
+            colums => [qw/id worker_id/]
+        }
+    );
+    while (my $j = $jobs->next) {
+        next if $j->id == $job->id;
+        print STDERR "enqueuing abort for ".$j->id." ".$j->worker_id."\n" if $debug;
+        command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
+    }
+
     if (defined($clone)) {
         print STDERR "new job ".$clone->id."\n" if $debug;
-
-        _job_update_parent($job->id, $clone->id);
 
         job_notify_workers();
         return $clone->id;
@@ -857,6 +1030,90 @@ sub job_duplicate {
     else {
         print STDERR "clone failed\n" if $debug;
         return undef;
+    }
+}
+
+
+sub _job_duplicate_find_parents {
+    my ($job, $child_id, $to_clone) = @_;
+
+    while ($job->clone_id) { # find the most recent clone
+        $job = $job->clone;
+    }
+
+    $to_clone->{$child_id}{parent}{$job->id} = 1 if $child_id;
+
+    # if a parent is already scheduled, we can connect to it without cloning
+    # do not create $to_clone->{$job->id} entry
+    # just link it in $to_clone->{$child_id}{parent}
+    return
+      if (
+        $child_id && # this is a parent
+        $job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED
+      );
+
+    $to_clone->{$job->id} //= { clone => undef, parent => {} };
+
+    my $parents = schema->resultset("JobDependencies")->search(
+        {
+            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            child_job_id => $job->id,
+        },
+        {
+            join => 'parent',
+        }
+    );
+
+    my $have_parents = 0;
+    while (my $j = $parents->next) {
+        $have_parents = 1;
+        my $parent = $j->parent;
+        _job_duplicate_find_parents($parent, $job->id, $to_clone);
+    }
+
+    _job_duplicate_find_running($job, $to_clone) unless $have_parents;
+}
+
+sub _job_duplicate_find_running {
+    my ($job, $to_clone) = @_;
+
+    $to_clone->{$job->id} //= { clone => undef, parent => {} };
+    $to_clone->{$job->id}->{running} = 1;
+
+    my $children = schema->resultset("JobDependencies")->search(
+        {
+            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            parent_job_id => $job->id,
+            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+        },
+        {
+            join => 'child',
+        }
+    );
+
+    while (my $j = $children->next) {
+        my $child = $j->child;
+        next if $to_clone->{$child->id} && $to_clone->{$child->id}->{running}; #already seen
+        _job_duplicate_find_running($child, $to_clone);
+        $to_clone->{$child->id}{parent}{$job->id} = 1;
+    }
+
+    my $parents = schema->resultset("JobDependencies")->search(
+        {
+            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            child_job_id => $job->id,
+            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+        },
+        {
+            join => 'parent',
+        }
+    );
+
+    while (my $j = $parents->next) {
+        my $parent = $j->parent;
+        next if $to_clone->{$parent->id} && $to_clone->{$parent->id}->{running}; #already seen
+        $to_clone->{$job->id}{parent}{$parent->id} = 1;
+        _job_duplicate_find_running($parent, $to_clone);
     }
 }
 
@@ -930,10 +1187,15 @@ sub job_cancel($;$) {
         }
     );
 
+    my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
+    while (my $j = $jobs->next) {
+        _job_skip_children($j->id);
+    }
+
     $attrs{columns} = [qw/id worker_id/];
     $cond{state} = [OpenQA::Schema::Result::Jobs::EXECUTION_STATES];
     # then tell workers to cancel their jobs
-    my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
+    $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
     while (my $j = $jobs->next) {
         if ($newbuild) {
             print STDERR "enqueuing obsolete for ".$j->id." ".$j->worker_id."\n" if $debug;
@@ -943,6 +1205,9 @@ sub job_cancel($;$) {
             print STDERR "enqueuing cancel for ".$j->id." ".$j->worker_id."\n" if $debug;
             command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
         }
+        _job_skip_children($j->id);
+        _job_stop_children($j->id);
+
         ++$r;
     }
     return $r;

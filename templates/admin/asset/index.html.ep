@@ -1,20 +1,27 @@
 % layout 'admin';
 % title 'Assets';
+% stash 'use_jquery' => 1;
+
+% content_for 'ready_function' => begin
+  $('#assets').DataTable( {
+    "order": [[4, 'desc']],
+  } );
+% end
 
 <div class="box box-shadow omega">
     <h2><%= title %></h2>
 
     %= include 'layouts/info'
 
-    <table class="table-autosort table-autofilter table-autostripe">
+    <table id="assets" class="stripe">
         <thead>
             <tr>
-                <th class="table-sortable:numeric">ID</th>
-                <th class="table-sortable:alphanumeric table-filterable">Type</th>
-                <th class="table-sortable:alphanumeric">Name</th>
-                <th class="table-sortable:numeric">#Jobs</th>
-                <th class="table-sortable:alphanumeric">Created</th>
-                <th class="table-sortable:alphanumeric">Updated</th>
+                <th>ID</th>
+                <th>Type</th>
+                <th>Name</th>
+                <th>#Jobs</th>
+                <th>Created</th>
+                <th>Updated</th>
             </tr>
         </thead>
         <tbody>
@@ -23,7 +30,7 @@
             <td class="id"><%= $asset->id %></td>
             <td class="type"><%= $asset->type %></td>
             <td class="name"><%= $asset->name %></td>
-            <td class="nrjobs"><%= link_to $asset->jobs->count() => url_for('tests')->query(assetid => $asset->id, state => 'all', scope => undef, limit => undef ) %></td>
+            <td class="nrjobs"><%= link_to scalar($asset->jobs_assets->all) => url_for('tests')->query(assetid => $asset->id, state => 'all', scope => undef, limit => undef ) %></td>
             <td class="t_created"><%= $asset->t_created %></td>
             <td class="t_updated"><%= $asset->t_updated %></td>
         </tr>

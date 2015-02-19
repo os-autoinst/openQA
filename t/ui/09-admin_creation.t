@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 BEGIN {
-    unshift @INC, 'lib', 'lib/OpenQA';
+    unshift @INC, 'lib';
 }
 
 use Mojo::Base -strict;
@@ -37,12 +37,13 @@ my $token = $req->res->dom->at('meta[name=csrf-token]')->attr('content');
 $t->delete_ok('/logout')->status_is(302);
 $test_case->login($t, 'arthur');
 my $get = $t->get_ok('/admin/users')->status_is(200);
-$get->text_is('#user_99901 .action_operator a' => '- operator');
-$get->text_is('#user_99901 .action_admin a' => '- admin');
-$get->text_is('#user_99902 .action_operator a' => '+ operator');
-$get->text_is('#user_99902 .action_admin a' => '+ admin');
-$get->text_is('#user_99903 .action_operator a' => '- operator');
-$get->text_is('#user_99903 .action_admin a' => '+ admin');
+is('1', $t->tx->res->dom->at('#user_99901 .is_operator')->attr('data-order'));
+is('1', $t->tx->res->dom->at('#user_99901 .is_admin')->attr('data-order'));
+is('0', $t->tx->res->dom->at('#user_99902 .is_operator')->attr('data-order'));
+is('0', $t->tx->res->dom->at('#user_99902 .is_admin')->attr('data-order'));
+is('1', $t->tx->res->dom->at('#user_99903 .is_operator')->attr('data-order'));
+is('0', $t->tx->res->dom->at('#user_99903 .is_admin')->attr('data-order'));
+
 
 # Make only admin leave
 $t->post_ok('/admin/users/99901', { 'X-CSRF-Token' => $token } => form => {is_admin => '0'})->status_is(302);
@@ -52,12 +53,13 @@ $t->delete_ok('/logout')->status_is(302);
 # Login and claim the kingdom
 $test_case->login($t, 'morgana');
 $get = $t->get_ok('/admin/users')->status_is(200);
-$get->text_is('#user_99901 .action_operator a' => '- operator');
-$get->text_is('#user_99901 .action_admin a' => '+ admin');
-$get->text_is('#user_99902 .action_operator a' => '+ operator');
-$get->text_is('#user_99902 .action_admin a' => '+ admin');
-$get->text_is('#user_99903 .action_operator a' => '- operator');
-$get->text_is('#user_99903 .action_admin a' => '+ admin');
+is('1', $t->tx->res->dom->at('#user_99901 .is_operator')->attr('data-order'));
+is('0', $t->tx->res->dom->at('#user_99901 .is_admin')->attr('data-order'));
+is('0', $t->tx->res->dom->at('#user_99902 .is_operator')->attr('data-order'));
+is('0', $t->tx->res->dom->at('#user_99902 .is_admin')->attr('data-order'));
+is('1', $t->tx->res->dom->at('#user_99903 .is_operator')->attr('data-order'));
+is('0', $t->tx->res->dom->at('#user_99903 .is_admin')->attr('data-order'));
+
 
 # Leave
 $t->delete_ok('/logout')->status_is(302);
