@@ -26,7 +26,6 @@ use warnings;
 use aliased 'DBIx::Class::DeploymentHandler' => 'DH';
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use OpenQA::Utils ();
 use OpenQA::Schema::Schema;
 use Getopt::Long;
 use IO::Dir;
@@ -73,7 +72,7 @@ if ($user) {
     setuid($uid) || die "can't suid to $user";
 }
 
-my $schema = OpenQA::Utils::connect_db();
+my $schema = OpenQA::Schema::connect_db();
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
 my @databases = qw( MySQL SQLite PostgreSQL );

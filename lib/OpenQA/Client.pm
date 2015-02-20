@@ -18,7 +18,6 @@ package OpenQA::Client;
 
 use Mojo::Base 'Mojo::UserAgent';
 use Mojo::Util 'hmac_sha1_sum';
-
 use Config::IniFiles;
 use Scalar::Util ();
 
@@ -37,7 +36,10 @@ sub new {
     }
 
     if ($args{api}) {
-        for my $file ($ENV{OPENQA_CLIENT_CONFIG}||undef, glob('~/.config/openqa/client.conf'), '/etc/openqa/client.conf') {
+        my @cfgpaths=(glob('~/.config/openqa'), '/etc/openqa');
+        @cfgpaths=($ENV{OPENQA_CONFIG},@cfgpaths) if defined $ENV{OPENQA_CONFIG};
+        for my $path (@cfgpaths) {
+            my $file=$path.'/client.conf';
             next unless $file && -r $file;
             my $cfg = Config::IniFiles->new(-file => $file) || last;
             last unless $cfg->SectionExists($args{api});

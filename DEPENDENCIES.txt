@@ -4,7 +4,6 @@ Cache::Cache
 Carp
 Clone
 Config::IniFiles
-Config::Tiny
 Crypt::DH::GMP
 Cwd
 DBD::SQLite
@@ -14,7 +13,6 @@ DBIx::Class::DeploymentHandler
 DBIx::Class::DynamicDefault
 DBIx::Class::ResultClass::HashRefInflator
 DBIx::Class::Schema
-DBIx::Class::Schema::Config
 DBIx::Class::Storage::Statistics
 Data::Dump
 Data::Dumper

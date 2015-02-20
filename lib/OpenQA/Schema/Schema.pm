@@ -14,9 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema;
-use base qw/DBIx::Class::Schema::Config/;
+use base qw/DBIx::Class::Schema/;
+use Config::IniFiles;
 use IO::Dir;
-use File::Basename qw/dirname/;
 use SQL::SplitStatement;
 use Fcntl ':mode';
 use FindBin qw($Bin);
@@ -27,9 +27,20 @@ our $VERSION = 24;
 
 __PACKAGE__->load_namespaces;
 
-my @paths = ( "$Bin/../lib/database", "$Bin/../../lib/database" );
-unshift(@paths, dirname($ENV{OPENQA_CONFIG}).'/database') if ($ENV{OPENQA_CONFIG});
-__PACKAGE__->config_paths(\@paths);
+
+
+
+sub connect_db {
+    my $mode = shift || $ENV{OPENQA_DATABASE} || 'production';
+    CORE::state $schema;
+    unless ($schema) {
+        my %ini;
+        my $cfgpath=$ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
+        tie %ini, 'Config::IniFiles', ( -file => $cfgpath.'/database.ini' );
+        $schema=__PACKAGE__->connect($ini{$mode});
+    }
+    return $schema;
+}
 
 sub dsn {
     my $self = shift;

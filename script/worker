@@ -109,8 +109,9 @@ usage(0) if ($options{'help'});
 
 sub read_worker_config($){
     my $instance = shift;
-    my $worker_config = "/etc/openqa/workers.ini";
-    my $cfg = Config::IniFiles->new( -file => "$worker_config" );
+    my $worker_dir = $ENV{OPENQA_CONFIG} || '/etc/openqa';
+    my $cfg = Config::IniFiles->new( -file => $worker_dir.'/workers.ini' );
+
     my $sets = {};
     foreach my $section ('global', $instance) {
         if($cfg && $cfg->SectionExists($section)) {
@@ -121,6 +122,7 @@ sub read_worker_config($){
     }
     $sets->{'BACKEND'} ||= "qemu";
     $sets->{'HOST'} ||= "localhost";
+
     return $sets;
 }
 

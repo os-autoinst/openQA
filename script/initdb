@@ -26,7 +26,6 @@ use warnings;
 use DBIx::Class::DeploymentHandler;
 use File::Basename qw/dirname/;
 use POSIX qw/getuid getgid setuid setgid/;
-use OpenQA::Utils ();
 use OpenQA::Schema::Schema;
 use Getopt::Long;
 use IO::Dir;
@@ -69,7 +68,7 @@ if ($user) {
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
 my @databases = qw( MySQL SQLite PostgreSQL );
-my $schema = OpenQA::Utils::connect_db();
+my $schema = OpenQA::Schema::connect_db();
 
 if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
     my $dbdir = dirname($1);

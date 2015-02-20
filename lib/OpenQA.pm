@@ -16,7 +16,7 @@
 package OpenQA;
 use Mojolicious 5.60;
 use Mojo::Base 'Mojolicious';
-use OpenQA::Utils 'connect_db';
+use OpenQA::Schema::Schema;
 use OpenQA::Plugin::Helpers;
 use OpenQA::Scheduler;
 use Mojo::IOLoop;
@@ -73,7 +73,8 @@ sub _read_config {
 
     # Mojo's built in config plugins suck. JSON for example does not
     # support comments
-    my $cfg = Config::IniFiles->new(-file => $ENV{OPENQA_CONFIG} || $self->app->home.'/lib/openqa.ini') || undef;
+    my $cfgpath=$ENV{OPENQA_CONFIG} || $self->app->home.'/etc/openqa';
+    my $cfg = Config::IniFiles->new(-file => $cfgpath.'/openqa.ini') || undef;
 
     for my $section (sort keys %defaults) {
         for my $k (sort keys %{$defaults{$section}}) {
@@ -129,7 +130,7 @@ sub _init_rand{
 }
 
 has schema => sub {
-    return OpenQA::Utils::connect_db();
+    return OpenQA::Schema::connect_db();
 };
 
 has secrets => sub {
