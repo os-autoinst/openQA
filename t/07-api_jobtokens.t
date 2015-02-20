@@ -27,7 +27,6 @@ use Test::Mojo;
 
 OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA');
-$t->app->log->path(undef);
 
 # test jobtoken login is possible with correct jobtoken
 $t->ua->on(
@@ -39,6 +38,7 @@ $t->ua->on(
 $t->get_ok('/api/v1/whoami')->status_is(200)->json_is({'id' => 99963});
 
 # test jobtoken login is not possible with wrong jobtoken
+$t->ua->unsubscribe('start');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
