@@ -36,7 +36,7 @@ sub new {
     }
 
     if ($args{api}) {
-        my @cfgpaths=('~/.config/openqa', '/etc/openqa');
+        my @cfgpaths=(glob('~/.config/openqa'), '/etc/openqa');
         @cfgpaths=($ENV{OPENQA_CONFIG},@cfgpaths) if defined $ENV{OPENQA_CONFIG};
         for my $path (@cfgpaths) {
             my $file=$path.'/client.conf';
