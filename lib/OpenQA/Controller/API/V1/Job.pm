@@ -188,5 +188,11 @@ sub duplicate {
     $self->render(json => {id => $id});
 }
 
+sub whoami {
+    my ($self) = @_;
+    my $jobid = $self->stash('job_id');
+    $self->render(json => {id => $jobid});
+}
+
 1;
 # vim: set sw=4 et:

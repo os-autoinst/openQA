@@ -143,7 +143,7 @@ is($job->{id}, $jobE, "jobE"); # C and D are now running so we can start E
 
 # jobA failed
 my $result = OpenQA::Scheduler::job_set_done(jobid => $jobA, result => 'failed');
-ok($result == 1, "job_set_done");
+ok($result, "job_set_done");
 
 # then jobD and jobE, workers 5 and 6 must be canceled
 #$ws5->message_ok;
@@ -153,10 +153,10 @@ ok($result == 1, "job_set_done");
 #$ws6->message_is('cancel');
 
 $result = OpenQA::Scheduler::job_set_done(jobid => $jobD, result => 'incomplete');
-ok($result == 1, "job_set_done");
+ok($result, "job_set_done");
 
 $result = OpenQA::Scheduler::job_set_done(jobid => $jobE, result => 'incomplete');
-ok($result == 1, "job_set_done");
+ok($result, "job_set_done");
 
 
 

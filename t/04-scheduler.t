@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use OpenQA::Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 52;
+use Test::More tests => 56;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -242,6 +242,9 @@ my $rjobs_before = OpenQA::Scheduler::list_jobs(state => 'running');
 my $job = OpenQA::Scheduler::job_grab(%args);
 my $rjobs_after = OpenQA::Scheduler::list_jobs(state => 'running');
 
+## test and add JOBTOKEN to job_ref after job_grab
+ok($job->{settings}->{JOBTOKEN}, "job token present");
+$job_ref->{settings}->{JOBTOKEN} = $job->{settings}->{JOBTOKEN};
 is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
 ok($job->{t_started} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job start timestamp updated");
 is(scalar(@{$rjobs_before})+1, scalar(@{$rjobs_after}), "number of running jobs");
@@ -258,21 +261,23 @@ ok($id == $id2, "re-register worker got same id");
 $job = OpenQA::Scheduler::job_get($job_id);
 is($job->{state}, "done", "Previous job is in done state");
 is($job->{result}, "incomplete", "result is incomplete");
+ok(!$job->{settings}->{JOBTOKEN}, "job token no longer present");
 
 $job = OpenQA::Scheduler::job_grab(%args);
 isnt($job_id, $job->{id}, "new job grabbed");
+isnt($job->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs");
 $job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-x86_64-Build666-rainbow';
 
+## update JOBTOKEN for isdeeply compare
+$job_ref->{settings}->{JOBTOKEN} = $job->{settings}->{JOBTOKEN};
 is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job_id;
 $job_id = $job->{id};
-
 
 # Testing job_set_waiting
 $result = OpenQA::Scheduler::job_set_waiting($job_id);
 $job = OpenQA::Scheduler::job_get($job_id);
 ok($result == 1 && $job->{state} eq "waiting", "job_set_waiting");
-
 
 # Testing job_set_running
 $result = OpenQA::Scheduler::job_set_running($job_id);
@@ -290,11 +295,12 @@ sleep 1;
     result => 'passed',
 );
 $result = OpenQA::Scheduler::job_set_done(%args);
-ok($result == 1, "job_set_done");
+ok($result, "job_set_done");
 $job = OpenQA::Scheduler::job_get($job_id);
 is($job->{state}, "done", "job_set_done changed state");
 is($job->{result}, "passed", "job_set_done changed result");
 ok($job->{t_finished} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job end timestamp updated");
+ok(!$job->{settings}->{JOBTOKEN}, "job token not present after job done");
 
 # we cannot test maxage here as it depends too much on too small
 # time slots. The ui tests check maxage instead too

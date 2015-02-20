@@ -48,6 +48,27 @@ sub auth {
     return;
 }
 
+sub auth_jobtoken {
+    my ($self) = @_;
+    my $headers = $self->req->headers;
+    my $token = $headers->header('X-API-JobToken');
+
+    if ($token) {
+        $self->app->log->debug("Received JobToken: $token");
+        my $jobtoken = $self->db->resultset('JobSettings')->find({key => 'JOBTOKEN', value => $token});
+        if ($jobtoken) {
+            $self->stash('job_id', $jobtoken->job_id);
+            $self->app->log->debug(sprintf('Found associated job %u', $jobtoken->job_id));
+            return 1;
+        }
+    }
+    else {
+        $self->app->log->warn('No JobToken received!');
+    }
+    $self->render(json => {error => 'Not authorized'}, status => 403);
+    return;
+}
+
 sub _valid_hmac {
     my $self = shift;
     my ($hash, $request, $timestamp, $api_key) = (shift, shift, shift, shift);
