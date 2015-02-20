@@ -377,7 +377,7 @@ run
 
 [source,sh]
 --------------------------------------------------------------------------------
-/usr/lib/os-autoinst/tools/fetchneedles
+/usr/share/openqa/script/fetchneedles
 --------------------------------------------------------------------------------
 
 Which will download the tests to the correct location and will set the correct

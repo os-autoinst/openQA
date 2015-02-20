@@ -1,0 +1,73 @@
+#!/bin/bash
+set -e
+: ${dist:="opensuse"}
+: ${giturl:="git://github.com/os-autoinst/os-autoinst-distri-opensuse.git"}
+: ${branch:="master"}
+: ${email:="openqa@$HOSTNAME"}
+: ${username:="openQA web UI"}
+
+: ${needles_separate:="1"}
+: ${needles_giturl:="git://github.com/os-autoinst/os-autoinst-needles-opensuse.git"}
+: ${needles_branch:="master"}
+
+: ${updateall:="0"}
+
+dir="/var/lib/openqa/tests"
+if [ -w / ]; then
+	if [ ! -e "$dir/$dist" ]; then
+		mkdir -p "$dir/$dist"
+		chown geekotest:www "$dir/$dist"
+	fi
+	echo "running as root, re-exec as geekotest ..."
+	exec sudo -u geekotest env \
+		dist="$dist" \
+		giturl="$giturl" \
+		branch="$branch" \
+		email="$email" \
+		username="$username" \
+		needles_separate="$needles_separate" \
+		needles_giturl="$needles_giturl" \
+		needles_branch="$needles_branch" \
+		updateall="$updateall" \
+		"$0" "$@"
+	exit 1
+fi
+
+do_fetch()
+{
+	git fetch -q
+	git rebase -q
+	if [ "$needles_separate" = 1 ]; then
+		cd needles
+		git fetch -q
+		git rebase -q
+	fi
+}
+
+if [ "$updateall" = 1 ]; then
+	cd "$dir"
+	fail=0
+	for repo in *; do
+		! [ -L "$dir/$repo" ] || continue
+		[ -d "$dir/$repo/.git" ] || continue
+		cd "$dir/$repo"
+		do_fetch || fail=1
+	done
+	exit "$fail"
+else
+	cd "$dir/$dist"
+	if [ ! -d .git ]; then
+		git clone -b "$branch" "$giturl" .
+		git config user.email "$email"
+		git config user.name "$username"
+		if [ "$needles_separate" = 1 ]; then
+			[ -d needles ] || mkdir needles
+			cd needles
+			git clone -b "$needles_branch" "$needles_giturl" .
+			git config user.email "$email"
+			git config user.name "$username"
+		fi
+	else
+		do_fetch
+	fi
+fi

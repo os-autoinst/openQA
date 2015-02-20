@@ -20,6 +20,10 @@ use strict;
 use warnings;
 use diagnostics;
 
+# we need the critical fix for update
+# see https://github.com/dbsrgits/dbix-class/commit/31160673f390e178ee347e7ebee1f56b3f54ba7a
+use DBIx::Class 0.082801;
+
 use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
 use Data::Dumper;
@@ -689,7 +693,6 @@ sub _job_skip_children{
         {
             state => OpenQA::Schema::Result::Jobs::DONE,
             result => OpenQA::Schema::Result::Jobs::INCOMPLETE,
-            t_started => now(),
             t_finished => now(),
         }
       );
@@ -730,7 +733,7 @@ sub _job_update_parent{
 
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dependency => [OpenQA::Schema::Result::JobDependencies::CHAINED,OpenQA::Schema::Result::JobDependencies::PARALLEL,],
+            dependency => { -in => [ OpenQA::Schema::Result::JobDependencies::CHAINED,OpenQA::Schema::Result::JobDependencies::PARALLEL ]},
             parent_job_id => $jobid,
             state => OpenQA::Schema::Result::Jobs::SCHEDULED,
         },
