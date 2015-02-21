@@ -341,8 +341,8 @@ sub startup {
     my $api_r = $api_auth->route('/')->to(namespace => 'OpenQA::Controller::API::V1');
     my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::Controller::API::V1');
     my $api_job_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_jobtoken');
-    my $api_job = $api_job_auth->route('/')->to(namespace => 'OpenQA::Controller::API::V1');
-    $api_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami'); # primarily for tests
+    my $api_r_job = $api_job_auth->route('/')->to(namespace => 'OpenQA::Controller::API::V1');
+    $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami'); # primarily for tests
 
     # api/v1/jobs
     $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list'); # list_jobs
@@ -376,6 +376,11 @@ sub startup {
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create'); #command_enqueue
     $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab'); # job_grab
     $worker_r->websocket('/ws')->name('apiv1_worker_ws')->to('worker#websocket_create'); #websocket connection
+
+    # api/v1/mutex
+    $api_r_job->post('/mutex/lock/:name')->name('apiv1_mutex_create')->to('locks#mutex_create');
+    $api_r_job->get('/mutex/lock/:name')->name('apiv1_mutex_lock')->to('locks#mutex_lock');
+    $api_r_job->get('/mutex/unlock/:name')->name('apiv1_mutex_unlock')->to('locks#mutex_unlock');
 
     # api/v1/isos
     $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create'); # iso_new

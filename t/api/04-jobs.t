@@ -52,7 +52,7 @@ $t->app($app);
 my $get = $t->get_ok('/api/v1/jobs');
 my @jobs = @{$get->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
-is $jobs_count, 10;
+is $jobs_count, 11;
 my %jobs = map { $_->{id} => $_ } @jobs;
 is $jobs{99981}->{state}, 'cancelled';
 is $jobs{99963}->{state}, 'running';
@@ -60,11 +60,11 @@ is $jobs{99927}->{state}, 'scheduled';
 is $jobs{99946}->{clone_id}, undef;
 is $jobs{99963}->{clone_id}, undef;
 
-# That means that only 8 are current and only 9 are relevant
+# That means that only 9 are current and only 10 are relevant
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is scalar(@{$get->tx->res->json->{jobs}}), 8;
-$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
 is scalar(@{$get->tx->res->json->{jobs}}), 9;
+$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
+is scalar(@{$get->tx->res->json->{jobs}}), 10;
 
 # Test /jobs/restart
 my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927] })->status_is(200);
@@ -80,7 +80,7 @@ isnt $new_jobs{99963}->{clone_id}, undef;
 
 # The number of current jobs doesn't change
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is scalar(@{$get->tx->res->json->{jobs}}), 8;
+is scalar(@{$get->tx->res->json->{jobs}}), 9;
 
 # Test /jobs/X/restart and /jobs/X
 $get = $t->get_ok('/api/v1/jobs/99926')->status_is(200);

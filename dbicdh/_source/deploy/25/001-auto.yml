@@ -1,0 +1,2169 @@
+---
+schema:
+  procedures: {}
+  tables:
+    api_keys:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - key
+          match_type: ''
+          name: api_keys_key
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+        - deferrable: 1
+          expression: ''
+          fields:
+            - user_id
+          match_type: ''
+          name: api_keys_fk_user_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: users
+          type: FOREIGN KEY
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        key:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: key
+          order: 2
+          size:
+            - 0
+        secret:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: secret
+          order: 3
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 6
+          size:
+            - 0
+        t_expiration:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: t_expiration
+          order: 5
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 7
+          size:
+            - 0
+        user_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: user_id
+          order: 4
+          size:
+            - 0
+      indices:
+        - fields:
+            - user_id
+          name: api_keys_idx_user_id
+          options: []
+          type: NORMAL
+      name: api_keys
+      options: []
+      order: 14
+    assets:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - type
+            - name
+          match_type: ''
+          name: assets_type_name
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        name:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: name
+          order: 3
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 4
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 5
+          size:
+            - 0
+        type:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: type
+          order: 2
+          size:
+            - 0
+      indices: []
+      name: assets
+      options: []
+      order: 1
+    job_dependencies:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - child_job_id
+            - parent_job_id
+            - dependency
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - child_job_id
+          match_type: ''
+          name: job_dependencies_fk_child_job_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: jobs
+          type: FOREIGN KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - parent_job_id
+          match_type: ''
+          name: job_dependencies_fk_parent_job_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: jobs
+          type: FOREIGN KEY
+      fields:
+        child_job_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: child_job_id
+          order: 1
+          size:
+            - 0
+        dependency:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: dependency
+          order: 3
+          size:
+            - 0
+        parent_job_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: parent_job_id
+          order: 2
+          size:
+            - 0
+      indices:
+        - fields:
+            - child_job_id
+          name: job_dependencies_idx_child_job_id
+          options: []
+          type: NORMAL
+        - fields:
+            - parent_job_id
+          name: job_dependencies_idx_parent_job_id
+          options: []
+          type: NORMAL
+        - fields:
+            - dependency
+          name: idx_job_dependencies_dependency
+          options: []
+          type: NORMAL
+      name: job_dependencies
+      options: []
+      order: 16
+    job_locks:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - name
+            - owner
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - locked_by
+          match_type: ''
+          name: job_locks_fk_locked_by
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: jobs
+          type: FOREIGN KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - owner
+          match_type: ''
+          name: job_locks_fk_owner
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: jobs
+          type: FOREIGN KEY
+      fields:
+        locked_by:
+          data_type: integer
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: locked_by
+          order: 3
+          size:
+            - 0
+        name:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: name
+          order: 1
+          size:
+            - 0
+        owner:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: owner
+          order: 2
+          size:
+            - 0
+      indices:
+        - fields:
+            - locked_by
+          name: job_locks_idx_locked_by
+          options: []
+          type: NORMAL
+        - fields:
+            - owner
+          name: job_locks_idx_owner
+          options: []
+          type: NORMAL
+      name: job_locks
+      options: []
+      order: 17
+    job_modules:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - job_id
+          match_type: ''
+          name: job_modules_fk_job_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: jobs
+          type: FOREIGN KEY
+      fields:
+        category:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: category
+          order: 5
+          size:
+            - 0
+        fatal:
+          data_type: integer
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: fatal
+          order: 9
+          size:
+            - 0
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        important:
+          data_type: integer
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: important
+          order: 8
+          size:
+            - 0
+        job_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: job_id
+          order: 2
+          size:
+            - 0
+        milestone:
+          data_type: integer
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: milestone
+          order: 7
+          size:
+            - 0
+        name:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: name
+          order: 3
+          size:
+            - 0
+        result:
+          data_type: varchar
+          default_value: none
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: result
+          order: 10
+          size:
+            - 0
+        script:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: script
+          order: 4
+          size:
+            - 0
+        soft_failure:
+          data_type: integer
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: soft_failure
+          order: 6
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 11
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 12
+          size:
+            - 0
+      indices:
+        - fields:
+            - job_id
+          name: job_modules_idx_job_id
+          options: []
+          type: NORMAL
+        - fields:
+            - result
+          name: idx_job_modules_result
+          options: []
+          type: NORMAL
+      name: job_modules
+      options: []
+      order: 2
+    job_settings:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - job_id
+          match_type: ''
+          name: job_settings_fk_job_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: jobs
+          type: FOREIGN KEY
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        job_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: job_id
+          order: 4
+          size:
+            - 0
+        key:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: key
+          order: 2
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 5
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 6
+          size:
+            - 0
+        value:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: value
+          order: 3
+          size:
+            - 0
+      indices:
+        - fields:
+            - job_id
+          name: job_settings_idx_job_id
+          options: []
+          type: NORMAL
+      name: job_settings
+      options: []
+      order: 3
+    job_templates:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - product_id
+            - machine_id
+            - test_suite_id
+          match_type: ''
+          name: job_templates_product_id_machine_id_test_suite_id
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+        - deferrable: 1
+          expression: ''
+          fields:
+            - machine_id
+          match_type: ''
+          name: job_templates_fk_machine_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: machines
+          type: FOREIGN KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - product_id
+          match_type: ''
+          name: job_templates_fk_product_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: products
+          type: FOREIGN KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - test_suite_id
+          match_type: ''
+          name: job_templates_fk_test_suite_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: test_suites
+          type: FOREIGN KEY
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        machine_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: machine_id
+          order: 3
+          size:
+            - 0
+        product_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: product_id
+          order: 2
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 5
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 6
+          size:
+            - 0
+        test_suite_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: test_suite_id
+          order: 4
+          size:
+            - 0
+      indices:
+        - fields:
+            - machine_id
+          name: job_templates_idx_machine_id
+          options: []
+          type: NORMAL
+        - fields:
+            - product_id
+          name: job_templates_idx_product_id
+          options: []
+          type: NORMAL
+        - fields:
+            - test_suite_id
+          name: job_templates_idx_test_suite_id
+          options: []
+          type: NORMAL
+      name: job_templates
+      options: []
+      order: 18
+    jobs:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - slug
+          match_type: ''
+          name: jobs_slug
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+        - deferrable: 1
+          expression: ''
+          fields:
+            - clone_id
+          match_type: ''
+          name: jobs_fk_clone_id
+          on_delete: SET NULL
+          on_update: ''
+          options: []
+          reference_fields:
+            - id
+          reference_table: jobs
+          type: FOREIGN KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - worker_id
+          match_type: ''
+          name: jobs_fk_worker_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: workers
+          type: FOREIGN KEY
+      fields:
+        backend_info:
+          data_type: text
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: backend_info
+          order: 10
+          size:
+            - 0
+        clone_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: clone_id
+          order: 8
+          size:
+            - 0
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        priority:
+          data_type: integer
+          default_value: 50
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: priority
+          order: 4
+          size:
+            - 0
+        result:
+          data_type: varchar
+          default_value: none
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: result
+          order: 5
+          size:
+            - 0
+        retry_avbl:
+          data_type: integer
+          default_value: 3
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: retry_avbl
+          order: 9
+          size:
+            - 0
+        slug:
+          data_type: text
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 1
+          name: slug
+          order: 2
+          size:
+            - 0
+        state:
+          data_type: varchar
+          default_value: scheduled
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: state
+          order: 3
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 13
+          size:
+            - 0
+        t_finished:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: t_finished
+          order: 12
+          size:
+            - 0
+        t_started:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: t_started
+          order: 11
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 14
+          size:
+            - 0
+        test:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: test
+          order: 7
+          size:
+            - 0
+        worker_id:
+          data_type: integer
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: worker_id
+          order: 6
+          size:
+            - 0
+      indices:
+        - fields:
+            - clone_id
+          name: jobs_idx_clone_id
+          options: []
+          type: NORMAL
+        - fields:
+            - worker_id
+          name: jobs_idx_worker_id
+          options: []
+          type: NORMAL
+        - fields:
+            - state
+          name: idx_jobs_state
+          options: []
+          type: NORMAL
+        - fields:
+            - result
+          name: idx_jobs_result
+          options: []
+          type: NORMAL
+      name: jobs
+      options: []
+      order: 15
+    jobs_assets:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - job_id
+            - asset_id
+          match_type: ''
+          name: jobs_assets_job_id_asset_id
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+        - deferrable: 1
+          expression: ''
+          fields:
+            - asset_id
+          match_type: ''
+          name: jobs_assets_fk_asset_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: assets
+          type: FOREIGN KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - job_id
+          match_type: ''
+          name: jobs_assets_fk_job_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: jobs
+          type: FOREIGN KEY
+      fields:
+        asset_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: asset_id
+          order: 2
+          size:
+            - 0
+        job_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: job_id
+          order: 1
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 3
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 4
+          size:
+            - 0
+      indices:
+        - fields:
+            - asset_id
+          name: jobs_assets_idx_asset_id
+          options: []
+          type: NORMAL
+        - fields:
+            - job_id
+          name: jobs_assets_idx_job_id
+          options: []
+          type: NORMAL
+      name: jobs_assets
+      options: []
+      order: 19
+    machine_settings:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - machine_id
+            - key
+          match_type: ''
+          name: machine_settings_machine_id_key
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+        - deferrable: 1
+          expression: ''
+          fields:
+            - machine_id
+          match_type: ''
+          name: machine_settings_fk_machine_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: machines
+          type: FOREIGN KEY
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        key:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: key
+          order: 3
+          size:
+            - 0
+        machine_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: machine_id
+          order: 2
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 5
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 6
+          size:
+            - 0
+        value:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: value
+          order: 4
+          size:
+            - 0
+      indices:
+        - fields:
+            - machine_id
+          name: machine_settings_idx_machine_id
+          options: []
+          type: NORMAL
+      name: machine_settings
+      options: []
+      order: 4
+    machines:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - name
+          match_type: ''
+          name: machines_name
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+      fields:
+        backend:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: backend
+          order: 3
+          size:
+            - 0
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        name:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: name
+          order: 2
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 5
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 6
+          size:
+            - 0
+        variables:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: variables
+          order: 4
+          size:
+            - 0
+      indices: []
+      name: machines
+      options: []
+      order: 5
+    product_settings:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - product_id
+            - key
+          match_type: ''
+          name: product_settings_product_id_key
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+        - deferrable: 1
+          expression: ''
+          fields:
+            - product_id
+          match_type: ''
+          name: product_settings_fk_product_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: products
+          type: FOREIGN KEY
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        key:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: key
+          order: 3
+          size:
+            - 0
+        product_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: product_id
+          order: 2
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 5
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 6
+          size:
+            - 0
+        value:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: value
+          order: 4
+          size:
+            - 0
+      indices:
+        - fields:
+            - product_id
+          name: product_settings_idx_product_id
+          options: []
+          type: NORMAL
+      name: product_settings
+      options: []
+      order: 6
+    products:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - distri
+            - version
+            - arch
+            - flavor
+          match_type: ''
+          name: products_distri_version_arch_flavor
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+      fields:
+        arch:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: arch
+          order: 5
+          size:
+            - 0
+        distri:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: distri
+          order: 3
+          size:
+            - 0
+        flavor:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: flavor
+          order: 6
+          size:
+            - 0
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        name:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: name
+          order: 2
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 8
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 9
+          size:
+            - 0
+        variables:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: variables
+          order: 7
+          size:
+            - 0
+        version:
+          data_type: text
+          default_value: ''
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: version
+          order: 4
+          size:
+            - 0
+      indices: []
+      name: products
+      options: []
+      order: 7
+    secrets:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - secret
+          match_type: ''
+          name: secrets_secret
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        secret:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: secret
+          order: 2
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 3
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 4
+          size:
+            - 0
+      indices: []
+      name: secrets
+      options: []
+      order: 8
+    test_suite_settings:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - test_suite_id
+            - key
+          match_type: ''
+          name: test_suite_settings_test_suite_id_key
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+        - deferrable: 1
+          expression: ''
+          fields:
+            - test_suite_id
+          match_type: ''
+          name: test_suite_settings_fk_test_suite_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: test_suites
+          type: FOREIGN KEY
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        key:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: key
+          order: 3
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 5
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 6
+          size:
+            - 0
+        test_suite_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: test_suite_id
+          order: 2
+          size:
+            - 0
+        value:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: value
+          order: 4
+          size:
+            - 0
+      indices:
+        - fields:
+            - test_suite_id
+          name: test_suite_settings_idx_test_suite_id
+          options: []
+          type: NORMAL
+      name: test_suite_settings
+      options: []
+      order: 9
+    test_suites:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - name
+          match_type: ''
+          name: test_suites_name
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        name:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: name
+          order: 2
+          size:
+            - 0
+        prio:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: prio
+          order: 4
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 5
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 6
+          size:
+            - 0
+        variables:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: variables
+          order: 3
+          size:
+            - 0
+      indices: []
+      name: test_suites
+      options: []
+      order: 10
+    users:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - username
+          match_type: ''
+          name: users_username
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+      fields:
+        email:
+          data_type: text
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: email
+          order: 3
+          size:
+            - 0
+        fullname:
+          data_type: text
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: fullname
+          order: 4
+          size:
+            - 0
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        is_admin:
+          data_type: integer
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: is_admin
+          order: 7
+          size:
+            - 0
+        is_operator:
+          data_type: integer
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: is_operator
+          order: 6
+          size:
+            - 0
+        nickname:
+          data_type: text
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: nickname
+          order: 5
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 8
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 9
+          size:
+            - 0
+        username:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: username
+          order: 2
+          size:
+            - 0
+      indices: []
+      name: users
+      options: []
+      order: 11
+    worker_properties:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - worker_id
+          match_type: ''
+          name: worker_properties_fk_worker_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: workers
+          type: FOREIGN KEY
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        key:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: key
+          order: 2
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 5
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 6
+          size:
+            - 0
+        value:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: value
+          order: 3
+          size:
+            - 0
+        worker_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: worker_id
+          order: 4
+          size:
+            - 0
+      indices:
+        - fields:
+            - worker_id
+          name: worker_properties_idx_worker_id
+          options: []
+          type: NORMAL
+      name: worker_properties
+      options: []
+      order: 12
+    workers:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - host
+            - instance
+          match_type: ''
+          name: workers_host_instance
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+      fields:
+        backend:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: backend
+          order: 4
+          size:
+            - 0
+        host:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: host
+          order: 2
+          size:
+            - 0
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        instance:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: instance
+          order: 3
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 5
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 6
+          size:
+            - 0
+      indices: []
+      name: workers
+      options: []
+      order: 13
+  triggers: {}
+  views: {}
+translator:
+  add_drop_table: 0
+  filename: ~
+  no_comments: 0
+  parser_args:
+    sources:
+      - ApiKeys
+      - Assets
+      - JobDependencies
+      - JobLocks
+      - JobModules
+      - JobSettings
+      - JobTemplates
+      - Jobs
+      - JobsAssets
+      - MachineSettings
+      - Machines
+      - ProductSettings
+      - Products
+      - Secrets
+      - TestSuiteSettings
+      - TestSuites
+      - Users
+      - WorkerProperties
+      - Workers
+  parser_type: SQL::Translator::Parser::DBIx::Class
+  producer_args:
+    sqlite_version: 3.7
+  producer_type: SQL::Translator::Producer::YAML
+  show_warnings: 0
+  trace: 0
+  version: 0.11020

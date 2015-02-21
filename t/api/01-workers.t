@@ -54,6 +54,6 @@ is($ret->tx->res->json->{id}, 1, "worker id is 1");
 
 $ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 42, backend => 'qemu' });
 is($ret->tx->res->code, 200, "register new worker");
-is($ret->tx->res->json->{id}, 2, "new worker id is 2");
+is($ret->tx->res->json->{id}, 3, "new worker id is 3");
 
 done_testing();

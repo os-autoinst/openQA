@@ -150,6 +150,19 @@
         jobs_assets => [{ asset_id => 3 },],
         retry_avbl => 3,
         settings => [{ key => 'DESKTOP', value => 'gnome'},{ key => 'ISO_MAXSIZE', value => '999999999'},{ key => 'LIVECD', value => '1'},{ key => 'ISO', value => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'},{ key => 'TEST', value => 'RAID0'},{ key => 'VERSION', value => '13.1'},{ key => 'RAIDLEVEL', value => '0'},{ key => 'INSTALLONLY', value => '1'},{ key => 'BUILD', value => '0091'},{ key => 'ARCH', value => 'i686'},{ key => 'DISTRI', value => 'opensuse'},{ key => 'GNOME', value => '1'},{ key => 'QEMUCPU', value => 'qemu32'},{ key => 'FLAVOR', value => 'GNOME-Live'},{ key => 'MACHINE', value => '32bit'},]
-    }
+    },
+    Jobs => {
+        id => 99961,
+        priority => 35,
+        result => "none",
+        state => "running",
+        t_finished => undef,
+        t_started => time2str('%Y-%m-%d %H:%M:%S', time-600, 'UTC'), # 10 minutes ago
+        test => "kde",
+        worker_id => 2,
+        jobs_assets => [{ asset_id => 2 },],
+        retry_avbl => 3,
+        settings => [{ key => 'DESKTOP', value => 'kde'},{ key => 'ISO_MAXSIZE', value => '4700372992'},{ key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},{ key => 'TEST', value => 'kde'},{ key => 'VERSION', value => '13.1'},{ key => 'DVD', value => '1'},{ key => 'BUILD', value => '0091'},{ key => 'ARCH', value => 'x86_64'},{ key => 'DISTRI', value => 'opensuse'},{ key => 'FLAVOR', value => 'NET'},{ key => 'MACHINE', value => '64bit'}, {key => 'JOBTOKEN', value => 'token99961'}]
+    },
 ]
 # vim: set sw=4 et:
