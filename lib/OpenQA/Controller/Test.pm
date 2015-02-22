@@ -47,7 +47,7 @@ sub list {
     );
     $self->stash(jobs => $jobs);
 
-    my $running = OpenQA::Scheduler::query_jobs(state => 'running,waiting', assetid => $assetid);
+    my $running = OpenQA::Scheduler::query_jobs(state => 'running,waiting', match => $match, assetid => $assetid);
     my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($running);
     my @list;
     while (my $job = $running->next) {
@@ -60,7 +60,7 @@ sub list {
     }
     $self->stash(running => \@list);
 
-    my $scheduled = OpenQA::Scheduler::query_jobs(state => 'scheduled', assetid => $assetid);
+    my $scheduled = OpenQA::Scheduler::query_jobs(state => 'scheduled', match => $match, assetid => $assetid);
     $self->stash(scheduled => $scheduled);
 
 }
@@ -72,7 +72,7 @@ sub list_ajax {
     my $jobs;
 
     # we have to seperate the initial loading and the reload
-    if ($self->param('jobs[]')) {
+    if ($self->param('initial')) {
         $jobs = OpenQA::Scheduler::query_jobs(ids => [ map { scalar($_) } $self->every_param('jobs[]') ]);
     }
     else {
