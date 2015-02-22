@@ -4,6 +4,7 @@ use Mojo::IOLoop::Server;
 # Start command line interface for application
 require Mojolicious::Commands;
 
+our $driver;
 our $mojopid;
 our $phantompid;
 
@@ -79,8 +80,18 @@ sub start_phantomjs {
     return $driver;
 }
 
+sub make_screenshot($) {
+    my ($fn) = (@_);
+
+    open(my $fh,'>', $fn);
+    binmode($fh);
+    my $png_base64 = $driver->screenshot();
+    print($fh MIME::Base64::decode_base64($png_base64));
+    close($fh);
+}
+
 sub call_phantom() {
-    my $driver = start_phantomjs;
+    $driver = start_phantomjs;
     if ($driver) {
         $driver->set_window_size(600, 800);
 
