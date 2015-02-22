@@ -9,7 +9,7 @@
               "render": function ( data, type, row ) {
                   console.debug(new Date(data));
 		  if (type === 'display')
-		      return jQuery.timeago(new Date(data));
+		      return jQuery.timeago(new Date(data + " UTC"));
 		  else
 		      return data;
 	      }

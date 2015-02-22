@@ -60,7 +60,7 @@ my @tds = $driver->find_child_elements($job99946, "td");
 is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', "medium of 99946");
 is((shift @tds)->get_text(), 'textmode@32bit', "test of 99946");
 is((shift @tds)->get_text(), "", "no deps of 99946");
-is((shift @tds)->get_text(), "about an hour ago", "time of 99946");
+like((shift @tds)->get_text(), qr/a minute ago/, "time of 99946");
 is((shift @tds)->get_text(), '29 1', "result of 99946");
 
 # Test 99963 is still running
