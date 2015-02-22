@@ -20,7 +20,7 @@
     </div>
 % }
 
-% if ($scheduled) {
+% if ($scheduled && $scheduled->all) {
     <div class="grid_16 box box-shadow">
 	<h2><%= $scheduled %> scheduled jobs</h2>
 	

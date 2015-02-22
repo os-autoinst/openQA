@@ -10,8 +10,9 @@ function renderTestsList(jobs, is_operator, restart_url) {
 		var ret = {
 		    "relevant": $('#relevantfilter').prop('checked')
 		};
-		if (jobs) {
+		if (jobs != null) {
 		    ret['jobs'] = jobs;
+		    ret['initial'] = 1;
 		}
 		// reset for reload
 		jobs = null;

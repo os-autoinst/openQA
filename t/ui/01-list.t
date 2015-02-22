@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 16;
+    plan tests => 18;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -99,6 +99,12 @@ while (!$driver->execute_script("return jQuery.active == 0")) {
 }
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 is_deeply([qw(job_99962 job_99946 job_99938 job_99937 job_99926)], \@jobs, '5 rows (relevant) again displayed');
+
+$driver->get($baseurl . "tests?match=staging_e");
+#print $driver->get_page_source();
+@jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
+is_deeply([qw(job_99926)], \@jobs, '1 matching job');
+is(1, @{$driver->find_elements('table.dataTable', 'css')}, 'no scheduled, no running matching');
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();
