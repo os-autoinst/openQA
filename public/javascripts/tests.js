@@ -57,7 +57,7 @@ function renderTestsList(jobs, is_operator, restart_url) {
 	    { targets: 3,
 	      "render": function ( data, type, row ) {
 		  if (type === 'display')
-		      return jQuery.timeago(data);
+		      return jQuery.timeago(data + " UTC");
 		  else
 		      return data;
 	      }
