@@ -143,7 +143,9 @@ sub name{
             next unless $s{$c};
             push @a, sprintf(($formats{$c}||'%s'), $s{$c});
         }
-        $self->{_name} = join('-', @a);
+        my $name = join('-', @a);
+        $name =~ s/[^a-zA-Z0-9._+:-]/_/g;
+        $self->{_name} = $name;
     }
     return $self->{_name};
 }

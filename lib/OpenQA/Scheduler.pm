@@ -40,7 +40,6 @@ use lib $FindBin::Bin;
 use OpenQA::Utils ();
 use db_helpers qw/rndstr/;
 
-use OpenQA::Variables;
 use OpenQA::WebSockets;
 
 use Mojo::IOLoop;
@@ -268,10 +267,6 @@ create a job
 sub job_create {
     my ($settings, $no_notify) = @_;
     my %settings = %$settings;
-
-    if (my $error = OpenQA::Variables->new()->check(%settings)) {
-        die "$error\n";
-    }
 
     my @assets;
     for my $k (keys %settings) {
