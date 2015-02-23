@@ -396,7 +396,7 @@ sub query_jobs {
         );
     }
     if ($args{ignore_incomplete}) {
-        push(@conds, {'me.result' => { '!=' => OpenQA::Schema::Result::Jobs::INCOMPLETE}});
+        push(@conds, {'me.result' => { -not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS] }});
     }
     my $scope = $args{scope} || '';
     if ($scope eq 'relevant') {
