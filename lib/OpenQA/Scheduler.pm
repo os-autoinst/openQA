@@ -677,6 +677,17 @@ sub _job_stop_children{
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
     );
+
+    $jobs->search(
+        {
+            result => OpenQA::Schema::Result::Jobs::NONE,
+        }
+      )->update(
+        {
+            result => OpenQA::Schema::Result::Jobs::PARALLEL_FAILED,
+        }
+      );
+
     while (my $j = $jobs->next) {
         print STDERR "enqueuing cancel for ".$j->id." ".$j->worker_id."\n" if $debug;
         command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
@@ -736,17 +747,19 @@ sub job_set_done {
     $job->set_property('JOBTOKEN');
 
     my $result = $args{result} || $job->calculate_result();
-    my $r;
-    $r = $job->update(
-        {
-            state => OpenQA::Schema::Result::Jobs::DONE,
-            worker_id => 0,
-            t_finished => now(),
-            result => $result,
-        }
+    my %new_val = (
+        state => OpenQA::Schema::Result::Jobs::DONE,
+        worker_id => 0,
+        t_finished => now(),
     );
 
-    if ( $result ne OpenQA::Schema::Result::Jobs::PASSED ){
+    # for cancelled jobs the result is already known
+    $new_val{result} = $result if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
+
+    my $r;
+    $r = $job->update(\%new_val);
+
+    if ( $result ne OpenQA::Schema::Result::Jobs::PASSED){
         _job_skip_children($jobid);
         _job_stop_children($jobid);
     }
@@ -942,6 +955,17 @@ sub job_duplicate {
             colums => [qw/id worker_id/]
         }
     );
+
+    $jobs->search(
+        {
+            result => OpenQA::Schema::Result::Jobs::NONE,
+        }
+      )->update(
+        {
+            result => OpenQA::Schema::Result::Jobs::PARALLEL_RESTARTED,
+        }
+      );
+
     while (my $j = $jobs->next) {
         next if $j->id == $job->id;
         print STDERR "enqueuing abort for ".$j->id." ".$j->worker_id."\n" if $debug;
@@ -1076,6 +1100,17 @@ sub job_restart {
             colums => [qw/id worker_id/]
         }
     );
+
+    $jobs->search(
+        {
+            result => OpenQA::Schema::Result::Jobs::NONE,
+        }
+      )->update(
+        {
+            result => OpenQA::Schema::Result::Jobs::USER_RESTARTED,
+        }
+      );
+
     while (my $j = $jobs->next) {
         print STDERR "enqueuing abort for ".$j->id." ".$j->worker_id."\n" if $debug;
         command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
@@ -1112,6 +1147,17 @@ sub job_cancel($;$) {
     $cond{state} = [OpenQA::Schema::Result::Jobs::EXECUTION_STATES];
     # then tell workers to cancel their jobs
     $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
+
+    $jobs->search(
+        {
+            result => OpenQA::Schema::Result::Jobs::NONE,
+        }
+      )->update(
+        {
+            result => ($newbuild) ? OpenQA::Schema::Result::Jobs::OBSOLETED : OpenQA::Schema::Result::Jobs::USER_CANCELLED,
+        }
+      );
+
     while (my $j = $jobs->next) {
         if ($newbuild) {
             print STDERR "enqueuing obsolete for ".$j->id." ".$j->worker_id."\n" if $debug;

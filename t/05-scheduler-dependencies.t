@@ -173,11 +173,11 @@ is($job->{state}, "running", "job_set_done changed state");
 
 $job = OpenQA::Scheduler::job_get($jobD);
 is($job->{state}, "done", "job_set_done changed state");
-is($job->{result}, "incomplete", "job_set_done changed result");
+is($job->{result}, "parallel_failed", "job_set_done changed result, jobD failed because of jobA");
 
 $job = OpenQA::Scheduler::job_get($jobE);
 is($job->{state}, "done", "job_set_done changed state");
-is($job->{result}, "incomplete", "job_set_done changed result");
+is($job->{result}, "parallel_failed", "job_set_done changed result, jobE failed because of jobD");
 
 $job = OpenQA::Scheduler::job_get($jobF);
 is($job->{state}, "running", "job_set_done changed state");
@@ -204,12 +204,12 @@ my $jobC2 = $job->{clone_id};
 
 $job = OpenQA::Scheduler::job_get($jobD); #unchanged
 is($job->{state}, "done", "no change");
-is($job->{result}, "incomplete", "no change");
+is($job->{result}, "parallel_failed", "no change");
 is($job->{clone_id}, undef, "no clones");
 
 $job = OpenQA::Scheduler::job_get($jobE); #unchanged
 is($job->{state}, "done", "no change");
-is($job->{result}, "incomplete", "no change");
+is($job->{result}, "parallel_failed", "no change");
 is($job->{clone_id}, undef, "no clones");
 
 $job = OpenQA::Scheduler::job_get($jobF); # cloned
@@ -268,13 +268,13 @@ is($job->{clone_id}, $jobC2, "cloned");
 
 $job = OpenQA::Scheduler::job_get($jobD); #cloned
 is($job->{state}, "done", "no change");
-is($job->{result}, "incomplete", "no change");
+is($job->{result}, "parallel_failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobD2 = $job->{clone_id};
 
 $job = OpenQA::Scheduler::job_get($jobE); #cloned
 is($job->{state}, "done", "no change");
-is($job->{result}, "incomplete", "no change");
+is($job->{result}, "parallel_failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobE2 = $job->{clone_id};
 
