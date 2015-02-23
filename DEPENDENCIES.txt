@@ -1,5 +1,4 @@
 CGI
-CHI
 Cache::Cache
 Carp
 Clone
@@ -48,7 +47,6 @@ Mojo::Util
 Mojolicious
 Mojolicious::Commands
 Mojolicious::Plugin
-Mojolicious::Plugin::CHI
 Mojolicious::Static
 Net::OpenID::Consumer
 Package::Stash
