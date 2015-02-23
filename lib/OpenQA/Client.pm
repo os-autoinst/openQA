@@ -90,6 +90,9 @@ sub _path_query {
     my $self  = shift;
     my $url = shift->req->url;
     my $query = $url->query->to_string;
+    # as use this for hashing, we need to make sure the query is escaping
+    # space the same as the mojo url parser.
+    $query =~ s,%20,+,g;
     my $r = $url->path->to_string . (length $query ? "?$query" : '');
     return $r;
 }
