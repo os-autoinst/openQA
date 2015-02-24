@@ -28,6 +28,35 @@ use Test::Mojo;
 my $schema = OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA');
 
+my %settings = (
+    DISTRI => 'Unicorn',
+    FLAVOR => 'pink',
+    VERSION => '42',
+    BUILD => '666',
+    ISO => 'whatever.iso',
+    DESKTOP => 'DESKTOP',
+    KVM => 'KVM',
+    ISO_MAXSIZE => 1,
+    MACHINE => "RainbowPC",
+    ARCH => 'x86_64'
+);
+
+# need some kind of dependency for children lock testing
+
+my %settingsA = %settings;
+my %settingsB = %settings;
+
+$settingsA{JOBTOKEN} = 'tokenA';
+$settingsA{TEST} = 'A';
+$settingsB{JOBTOKEN} = 'tokenB';
+$settingsB{TEST} = 'B';
+
+my $jobA = OpenQA::Scheduler::job_create(\%settingsA);
+
+$settingsB{_PARALLEL_JOBS} = [$jobA];
+my $jobB = OpenQA::Scheduler::job_create(\%settingsB);
+
+
 # mutex API is inaccesible without jobtoken auth
 $t->post_ok('/api/v1/mutex/lock/test_lock')->status_is(403);
 $t->get_ok('/api/v1/mutex/lock/test_lock')->status_is(403);
@@ -36,7 +65,7 @@ $t->get_ok('/api/v1/mutex/unlock/test_lock')->status_is(403);
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => 'token99963');
+        $tx->req->headers->add('X-API-JobToken' => 'tokenA');
     }
 );
 # try locking before mutex is created
@@ -45,7 +74,7 @@ $t->get_ok('/api/v1/mutex/lock/test_lock')->status_is(409);
 # create test mutex
 $t->post_ok('/api/v1/mutex/lock/test_lock')->status_is(200);
 ## lock in DB
-my $res = $schema->resultset('JobLocks')->find({owner => 99963, name => 'test_lock'});
+my $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 ok($res, 'mutex is in database');
 ## mutex is not locked
 ok(!$res->locked_by, 'mutex is not locked');
@@ -53,8 +82,8 @@ ok(!$res->locked_by, 'mutex is not locked');
 # lock mutex
 $t->get_ok('/api/v1/mutex/lock/test_lock')->status_is(200);
 ## mutex is locked
-$res = $schema->resultset('JobLocks')->find({owner => 99963, name => 'test_lock'});
-ok($res->locked_by, 'mutex is locked');
+$res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
+is($res->locked_by->id, $jobA, 'mutex is locked');
 # try double lock
 $t->get_ok('/api/v1/mutex/lock/test_lock')->status_is(200);
 
@@ -62,7 +91,7 @@ $t->ua->unsubscribe('start');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => 'token99961');
+        $tx->req->headers->add('X-API-JobToken' => 'tokenB');
     }
 );
 # try to lock as another job
@@ -74,14 +103,26 @@ $t->ua->unsubscribe('start');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => 'token99963');
+        $tx->req->headers->add('X-API-JobToken' => 'tokenA');
     }
 );
 
 # unlock mutex
 $t->get_ok('/api/v1/mutex/unlock/test_lock')->status_is(200);
 ## mutex unlocked in DB
-$res = $schema->resultset('JobLocks')->find({owner => 99963, name => 'test_lock'});
+$res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 ok(!$res->locked_by, 'mutex is unlocked');
+
+# try to lock unlocked mutex as another job
+$t->ua->unsubscribe('start');
+$t->ua->on(
+    start => sub {
+        my ($ua, $tx) = @_;
+        $tx->req->headers->add('X-API-JobToken' => 'tokenB');
+    }
+);
+$t->get_ok('/api/v1/mutex/lock/test_lock')->status_is(200);
+$res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
+is($res->locked_by->id, $jobB, 'mutex is locked');
 
 done_testing();
