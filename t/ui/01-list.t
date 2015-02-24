@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 18;
+    plan tests => 26;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -54,6 +54,8 @@ my $get;
 is(1, $driver->get($baseurl . "results"), "/results gets");
 is($driver->get_current_url(), $baseurl . "tests", "/results redirects to /tests ");
 
+#print $driver->get_page_source();
+
 # Test 99946 is successful (29/0/1)
 my $job99946 = $driver->find_element('#results #job_99946', 'css');
 my @tds = $driver->find_child_elements($job99946, "td");
@@ -65,14 +67,32 @@ is((shift @tds)->get_text(), '29 1', "result of 99946");
 
 # Test 99963 is still running
 isnt(undef, $driver->find_element('#running #job_99963', 'css'), '99963 still running');
+is($driver->find_element('#running #job_99963 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99963", 'right link');
+#$driver->find_element('#running #job_99963 td.test a', 'css')->click();
+#is($driver->get_title(), 'job 99963');
+
+# return
+is(1, $driver->get($baseurl . "tests"), "/tests gets");
 
 # Test 99928 is scheduled
 isnt(undef, $driver->find_element('#scheduled #job_99928', 'css'), '99928 scheduled');
+is($driver->find_element('#scheduled #job_99928 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99928", 'right link');
+$driver->find_element('#scheduled #job_99928 td.test a', 'css')->click();
+is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-RAID1 test results', 'tests/99928 followed');
+
+# return
+is(1, $driver->get($baseurl . "tests"), "/tests gets");
 
 # Test 99938 failed, so it should be displayed in red
 my $job99938 = $driver->find_element('#results #job_99946', 'css');
 
 is('doc@64bit', $driver->find_element('#results #job_99938 .test .overview_failed', 'css')->get_text(), '99938 failed');
+is($driver->find_element('#results #job_99938 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99938", 'right link');
+$driver->find_element('#results #job_99938 td.test a', 'css')->click();
+is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test results', 'tests/99938 followed');
+
+# return
+is(1, $driver->get($baseurl . "tests"), "/tests gets");
 
 # Test 99926 is displayed
 is('minimalx@32bit', $driver->find_element('#results #job_99926 .test .overview_incomplete', 'css')->get_text(), '99926 incomplete');

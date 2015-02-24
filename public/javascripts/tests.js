@@ -41,7 +41,7 @@ function renderTestsList(jobs, is_operator, restart_url) {
 	      className: "test",
 	      "render": function ( data, type, row ) {
 		  if (type === 'display') {
-		      html = '<a class="overview_' + row['result'] + '" href="tests/' + row['id'] + '">' + data + '</a>';
+		      html = '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + data + '</a>';
 		      if (row['clone']) {
                           html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
                       } else {
@@ -76,7 +76,7 @@ function renderTestsList(jobs, is_operator, restart_url) {
 		      if (data['none']) {
 			  html +=  " " + data['none'] + "<i class='fa fa-ban'></i> ";
 		      }
-                      return '<a class="overview_' + row['result'] + '" href="tests/' + row['id'] + '">' + html + '</a>';
+                      return '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + html + '</a>';
 		  } else {
 		      return (parseInt(data['passed']) * 10000) + (parseInt(data['dents']) * 100) + parseInt(data['failed']);
 		  }

@@ -116,6 +116,7 @@ sub job_module($$) {
 sub job_modules($) {
     my ($job) = @_;
 
+    confess "JOB " if ref($job) eq 'HASH';
     my $schema = OpenQA::Scheduler::schema();
     return $schema->resultset("JobModules")->search({ job_id => $job->id }, { order_by => 'id'} )->all;
 }
