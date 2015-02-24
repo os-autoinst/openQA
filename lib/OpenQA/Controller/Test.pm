@@ -97,7 +97,7 @@ sub list_ajax {
             id => $job->id,
             result_stats => $result_stats->{$job->id},
             overall=>$job->state||'unk',
-            deps => "",
+            deps => join(' ', map { "#" . $_->id } $job->parents),
             clone => $job->clone_id,
             test => $job->test . "@" . $settings->{MACHINE},
             distri => $settings->{DISTRI} . "-" . $settings->{VERSION},

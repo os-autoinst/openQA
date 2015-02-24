@@ -37,8 +37,8 @@
 		</td>
                 <td class="parents">
 		    % my $parents = $job->parents;
-		    % while (my $parent_id = $parents->next) {
-                        <a href="<%= url_for('test', 'testid' => $parent_id) %>">#<%= $parent_id %></a>
+		    % while (my $parent = $parents->next) {
+                        <a href="<%= url_for('test', 'testid' => $parent->id) %>">#<%= $parent->id %></a>
 		    % }
                 </td>
                 % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
