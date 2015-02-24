@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 26;
+    plan tests => 31;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -88,11 +88,13 @@ my $job99938 = $driver->find_element('#results #job_99946', 'css');
 
 is('doc@64bit', $driver->find_element('#results #job_99938 .test .overview_failed', 'css')->get_text(), '99938 failed');
 is($driver->find_element('#results #job_99938 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99938", 'right link');
-$driver->find_element('#results #job_99938 td.test a', 'css')->click();
+$driver->find_element('#results #job_99938 td.test a.overview_failed', 'css')->click();
 is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test results', 'tests/99938 followed');
 
 # return
 is(1, $driver->get($baseurl . "tests"), "/tests gets");
+my @links = $driver->find_elements('#results #job_99946 td.test a', 'css');
+is(@links, 1, 'only one link (no restart)');
 
 # Test 99926 is displayed
 is('minimalx@32bit', $driver->find_element('#results #job_99926 .test .overview_incomplete', 'css')->get_text(), '99926 incomplete');
@@ -125,6 +127,21 @@ $driver->get($baseurl . "tests?match=staging_e");
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 is_deeply([qw(job_99926)], \@jobs, '1 matching job');
 is(1, @{$driver->find_elements('table.dataTable', 'css')}, 'no scheduled, no running matching');
+
+# now login to test restart links
+$driver->find_element('Login', 'link_text')->click();
+is(1, $driver->get($baseurl . "tests"), "/tests gets");
+my $td = $driver->find_element('#results #job_99946 td.test', 'css');
+is($td->get_text(), 'textmode@32bit', 'correct test name');
+
+# click restart
+$driver->find_child_element($td, './a[@data-remote="true"]')->click();
+while (!$driver->execute_script("return jQuery.active == 0")) {
+    sleep 1;
+}
+is('openQA: Test results', $driver->get_title(), 'restart stays on page');
+$td = $driver->find_element('#results #job_99946 td.test', 'css');
+is($td->get_text(), 'textmode@32bit (restarted)', 'restart removes link');
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();

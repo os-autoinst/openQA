@@ -44,9 +44,9 @@ function renderTestsList(jobs, is_operator, restart_url) {
 		      html = '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + data + '</a>';
 		      if (row['clone']) {
                           html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
-                      } else {
+                      } else if (is_operator) {
 			  var url = restart_url.replace('REPLACEIT', row['id']);
-                          html += ' <a data-remote="true" href="' + url + '">' +
+                          html += ' <a data-method="POST" data-remote="true" class="api-restart" href="' + url + '">' +
                               '<i class="fa fa-repeat" title="Restart Job"></i></a>'
 		      }
                       return html;
@@ -93,4 +93,8 @@ function renderTestsList(jobs, is_operator, restart_url) {
 	    $('#relevantbox').css('color', 'inherit');
 	} );
     } );
+    $(document).on("click", '.api-restart', function() {
+	var link = $(this);
+	$.post(link.attr("href")).done( function( data ) { console.log(link); $(link).replaceWith('(restarted)'); });
+    });
 };
