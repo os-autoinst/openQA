@@ -65,7 +65,7 @@ document.observe('dom:loaded', function() {
   if (target = $('restart_running')) {
     target.on('ajax:success', function(event) {
       var jobid = event.memo.responseJSON.result[0];
-      var c = confirm('Job clonned into #'+jobid+'. Confirm to visit that job. Cancel to be redirected to the results of the interrupted one.');
+      var c = confirm('Job cloned into #'+jobid+'. Confirm to visit that job. Cancel to be redirected to the results of the interrupted one.');
       if (c) {
         var url = document.URL.substring(0, document.URL.lastIndexOf("/") + 1) + jobid;
         window.location = url;
