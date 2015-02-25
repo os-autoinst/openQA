@@ -76,6 +76,150 @@ is_deeply(
                     'id' => 1002,
                     'name' => 'kde'
                 }
+            },
+            {
+                'id' => 3,
+                'machine' => {
+                    'id' => 1001,
+                    'name' => '32bit'
+                },
+                'product' => {
+                    'arch' => 'i586',
+                    'distri' => 'opensuse',
+                    'flavor' => 'DVD',
+                    'id' => 1,
+                    'version' => '13.1'
+                },
+                'test_suite' => {
+                    'id' => 1014,
+                    'name' => 'client1'
+                }
+            },
+            {
+                'id' => 4,
+                'machine' => {
+                    'id' => 1001,
+                    'name' => '32bit'
+                },
+                'product' => {
+                    'arch' => 'i586',
+                    'distri' => 'opensuse',
+                    'flavor' => 'DVD',
+                    'id' => 1,
+                    'version' => '13.1'
+                },
+                'test_suite' => {
+                    'id' => 1016,
+                    'name' => 'client2'
+                }
+            },
+            {
+                'id' => 5,
+                'machine' => {
+                    'id' => 1001,
+                    'name' => '32bit'
+                },
+                'product' => {
+                    'arch' => 'i586',
+                    'distri' => 'opensuse',
+                    'flavor' => 'DVD',
+                    'id' => 1,
+                    'version' => '13.1'
+                },
+                'test_suite' => {
+                    'id' => 1015,
+                    'name' => 'server'
+                }
+            },
+            {
+                'id' => 6,
+                'machine' => {
+                    'id' => 1001,
+                    'name' => '32bit'
+                },
+                'product' => {
+                    'arch' => 'i586',
+                    'distri' => 'opensuse',
+                    'flavor' => 'DVD',
+                    'id' => 1,
+                    'version' => '13.1'
+                },
+                'test_suite' => {
+                    'id' => 1017,
+                    'name' => 'advanced_kde'
+                }
+            },
+            {
+                'id' => 7,
+                'machine' => {
+                    'id' => 1002,
+                    'name' => '64bit'
+                },
+                'product' => {
+                    'arch' => 'i586',
+                    'distri' => 'opensuse',
+                    'flavor' => 'DVD',
+                    'id' => 1,
+                    'version' => '13.1'
+                },
+                'test_suite' => {
+                    'id' => 1014,
+                    'name' => 'client1'
+                }
+            },
+            {
+                'id' => 8,
+                'machine' => {
+                    'id' => 1002,
+                    'name' => '64bit'
+                },
+                'product' => {
+                    'arch' => 'i586',
+                    'distri' => 'opensuse',
+                    'flavor' => 'DVD',
+                    'id' => 1,
+                    'version' => '13.1'
+                },
+                'test_suite' => {
+                    'id' => 1016,
+                    'name' => 'client2'
+                }
+            },
+            {
+                'id' => 9,
+                'machine' => {
+                    'id' => 1002,
+                    'name' => '64bit'
+                },
+                'product' => {
+                    'arch' => 'i586',
+                    'distri' => 'opensuse',
+                    'flavor' => 'DVD',
+                    'id' => 1,
+                    'version' => '13.1'
+                },
+                'test_suite' => {
+                    'id' => 1015,
+                    'name' => 'server'
+                }
+            },
+            {
+                'id' => 10,
+                'machine' => {
+                    'id' => 1002,
+                    'name' => '64bit'
+                },
+                'product' => {
+                    'arch' => 'i586',
+                    'distri' => 'opensuse',
+                    'flavor' => 'DVD',
+                    'id' => 1,
+                    'version' => '13.1'
+                },
+                'test_suite' => {
+                    'id' => 1017,
+                    'name' => 'advanced_kde'
+                }
             }
         ]
     },
