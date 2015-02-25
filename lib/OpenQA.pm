@@ -203,26 +203,6 @@ sub startup {
     $auth_module->import('auth_config');
     auth_config($self->config);
 
-    $self->plugin(
-        CHI => {
-            ThumbCache => {
-                driver     => 'CacheCache',
-                cc_class   => 'Cache::FileCache',
-                cc_options => {
-                    cache_root  => abs_path($OpenQA::Utils::cachedir),
-                    directory_umask => 077,
-                },
-            },
-            default => {
-                driver => 'Memory',
-                global => 1
-            },
-            namespaces => 1
-        }
-    );
-    # clear thumbnails cache when openqa started
-    $self->chi('ThumbCache')->clear();
-
     # Router
     my $r = $self->routes;
     my $auth = $r->under('/')->to("session#ensure_operator");

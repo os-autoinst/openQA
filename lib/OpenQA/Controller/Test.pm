@@ -123,8 +123,6 @@ sub show {
     my $testdirname = $job->{'settings'}->{'NAME'};
     my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
 
-    return $self->render(text => "Invalid path", status => 403) if ($testdirname=~/(?:\.\.)|[^a-zA-Z0-9._+-:]/);
-
     $self->stash(testname => $job->{'name'});
     $self->stash(resultdir => $testresultdir);
     $self->stash(assets => OpenQA::Scheduler::job_get_assets($job->{'id'}));
