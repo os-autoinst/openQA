@@ -27,6 +27,7 @@ use File::Temp qw/tempfile/;
 my ($fh, $filename) = tempfile();
 
 $ENV{MOJO_LOG_LEVEL} = 'debug';
+$ENV{OPENQA_SQL_DEBUG} = 'true';
 $ENV{OPENQA_LOGFILE} = $filename;
 
 OpenQA::Test::Case->new->init_data;
