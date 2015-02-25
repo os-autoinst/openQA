@@ -85,6 +85,62 @@ is_deeply(
                         'value' => '0'
                     }
                 ]
+            },
+            {
+                'id' => 1014,
+                'name' => 'client1',
+                'prio' => 40,
+                'settings' => [
+                    {
+                        'key' => 'DESKTOP',
+                        'value' => 'kde'
+                    },
+                    {
+                        'key' => 'PARALLEL_WITH',
+                        'value' => 'server'
+                    }
+                ]
+            },
+            {
+                'id' => 1015,
+                'name' => 'server',
+                'prio' => 40,
+                'settings' => [
+                    {
+                        'key' => 'DESKTOP',
+                        'value' => 'textmode'
+                    }
+                ]
+            },
+            {
+                'id' => 1016,
+                'name' => 'client2',
+                'prio' => 40,
+                'settings' => [
+                    {
+                        'key' => 'DESKTOP',
+                        'value' => 'textmode'
+                    },
+                    {
+                        'key' => 'PARALLEL_WITH',
+                        'value' => 'server'
+                    }
+                ]
+            },
+            {
+                'id' => 1017,
+                'name' => 'advanced_kde',
+                'prio' => 40,
+                'settings' => [
+                    {
+                        'key' => 'DESKTOP',
+                        'value' => 'kde'
+                    },
+                    {
+                        'key' => 'START_AFTER_TEST',
+                        'value' => 'kde,textmode'
+                    }
+                ]
             }
         ]
     },
