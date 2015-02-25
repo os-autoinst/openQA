@@ -67,7 +67,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 );
 
 
-our %worker_commands = map { $_ => 1 } qw/
+our %worker_commands = map { $_ => undef } qw/
   quit
   abort
   cancel
@@ -81,6 +81,26 @@ our %worker_commands = map { $_ => 1 } qw/
   livelog_stop
   livelog_start
   /;
+
+$worker_commands{enable_interactive_mode} = sub {
+    my ($worker) = @_;
+    $worker->set_property("INTERACTIVE_REQUESTED", 1);
+};
+
+$worker_commands{disable_interactive_mode} = sub {
+    my ($worker) = @_;
+    $worker->set_property("INTERACTIVE_REQUESTED", 0);
+};
+
+$worker_commands{stop_waitforneedle} = sub {
+    my ($worker) = @_;
+    $worker->set_property("STOP_WAITFORNEEDLE_REQUESTED", 1);
+};
+
+$worker_commands{continue_waitforneedle} = sub {
+    my ($worker) = @_;
+    $worker->set_property("STOP_WAITFORNEEDLE_REQUESTED", 0);
+};
 
 # the template noted what architecture are known
 my %cando = (
@@ -169,6 +189,11 @@ sub worker_register {
             worker_id => 0,
         }
     );
+
+    $worker->set_property('INTERACTIVE', 0);
+    $worker->set_property('INTERACTIVE_REQUESTED', 0);
+    $worker->set_property('STOP_WAITFORNEEDLE', 0);
+    $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
 
     die "got invalid id" unless $worker->id;
     return $worker->id;
@@ -626,6 +651,9 @@ sub job_grab {
 
     my $job_hashref = {};
     $job_hashref = _job_get({'me.id' => $job->id});
+
+    $worker->set_property('INTERACTIVE_REQUESTED', 0);
+    $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
 
     # JOBTOKEN for test access to API
     my $token = rndstr;
@@ -1200,10 +1228,16 @@ sub command_enqueue_checked {
     return command_enqueue(%args);
 }
 
+# FIXME: pass worker directly
 sub command_enqueue {
     my %args = @_;
 
-    die "invalid command\n" unless $worker_commands{$args{command}};
+    die "invalid command\n" unless exists $worker_commands{$args{command}};
+    if (ref $worker_commands{$args{command}} eq 'CODE') {
+        my $rs = schema->resultset("Workers");
+        my $worker = $rs->find($args{workerid});
+        $worker_commands{$args{command}}->($worker);
+    }
     my $msg = $args{command};
     $msg .= " job_id=" . $args{job_id} if $args{job_id};
     ws_send($args{workerid}, $msg);

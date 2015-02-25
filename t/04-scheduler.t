@@ -70,7 +70,23 @@ ok($worker2->{id} == $id2&& $worker2->{host} eq "host"&& $worker2->{instance} eq
 my $workers_ref = list_workers();
 is(scalar @$workers_ref, 2, "2 workers");
 # check properties independent, list_workers doesn't return it
-is(pp($worker2->{properties}), pp({ CPU_ARCH => 'x86_64', CPU_MODELNAME => 'Rainbow CPU', CPU_OPMODE => '32-bit, 64-bit', MEM_MAX => 4096 }), "worker properties");
+is(
+    pp($worker2->{properties}),
+    pp(
+        {
+            CPU_ARCH => 'x86_64',
+            CPU_MODELNAME => 'Rainbow CPU',
+            CPU_OPMODE => '32-bit, 64-bit',
+            MEM_MAX => 4096,
+            INTERACTIVE => 0,
+            INTERACTIVE_REQUESTED => 0,
+            STOP_WAITFORNEEDLE => 0,
+            STOP_WAITFORNEEDLE_REQUESTED => 0
+        }
+    ),
+    "worker properties"
+);
+
 delete $worker2->{properties};
 is(pp($workers_ref->[1]), pp($worker2), "list_workers");
 
