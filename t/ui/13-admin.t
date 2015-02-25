@@ -38,7 +38,7 @@ use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 76;
+    plan tests => 72;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -76,8 +76,8 @@ sub add_machine() {
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "name",    "1st column");
     is((shift @headers)->get_text(), "backend", "2nd column");
-    is((shift @headers)->get_text(), "QEMUCPU", "3rd column");
-    is((shift @headers)->get_text(), "LAPTOP",  "4th column");
+    is((shift @headers)->get_text(), "LAPTOP",  "3rd column");
+    is((shift @headers)->get_text(), "QEMUCPU", "4th column");
     is((shift @headers)->get_text(), "other variables", "5th column");
     is((shift @headers)->get_text(), "action",  "6th column");
 
@@ -88,8 +88,8 @@ sub add_machine() {
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "Laptop_64",    "name");
     is((shift @headers)->get_text(), "qemu", "backend");
-    is((shift @headers)->get_text(), "qemu64", "cpu");
     is((shift @headers)->get_text(), "1",  "LAPTOP");
+    is((shift @headers)->get_text(), "qemu64", "cpu");
 
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons before");
 
@@ -124,16 +124,14 @@ sub add_test_suite() {
 
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(8, @headers, "8 columns");
+    is(6, @headers, "6 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "name",    "1st column");
     is((shift @headers)->get_text(), "prio", "2nd column");
-    is((shift @headers)->get_text(), "DESKTOP", "3rd column");
-    is((shift @headers)->get_text(), "INSTALLONLY",  "4th column");
-    is((shift @headers)->get_text(), "RAIDLEVEL", "5th column");
-    is((shift @headers)->get_text(), "VIDEOMODE",  "6th column");
-    is((shift @headers)->get_text(), "other variables",  "7th column");
+    is((shift @headers)->get_text(), "INSTALLONLY",  "3rd column");
+    is((shift @headers)->get_text(), "RAIDLEVEL", "4th column");
+    is((shift @headers)->get_text(), "other variables",  "5th column");
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
@@ -142,30 +140,30 @@ sub add_test_suite() {
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "RAID0",    "name");
     is((shift @headers)->get_text(), "50", "prio");
-    is((shift @headers)->get_text(), "kde", "desktop");
     is((shift @headers)->get_text(), "1",  "INSTALLONLY");
     is((shift @headers)->get_text(), "0",  "RAIDLEVEL");
-    is((shift @headers)->get_text(), "",  "VIDEOMODE");
 
-    is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons before");
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 7, "7 edit buttons before");
 
     is($driver->find_element('//input[@value="New test suite"]')->click(), 1, 'new test suite' );
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(8, @fields, "8 fields"); # one column has 2 fields
+    is(6, @fields, "6 fields"); # one column has 2 fields
     (shift @fields)->send_keys('xfce'); # name
     (shift @fields)->send_keys('50'); # backend
-    (shift @fields)->send_keys('xfce'); # desktop
+    (shift @fields)->send_keys(''); # installonly
+    (shift @fields)->send_keys(''); # raid
+    (shift @fields)->send_keys('DESKTOP'); # var
+    (shift @fields)->send_keys('xfce'); # var
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
     # leave the ajax some time
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
     }
-    is(@{$driver->find_elements('//button[@title="Edit"]')}, 4, "4 edit buttons afterwards");
-
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 8, "8 edit buttons afterwards");
 }
 #
 
