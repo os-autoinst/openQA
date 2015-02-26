@@ -219,3 +219,167 @@ $ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --ho
 
 Use qemu-img snapshot -l something.img to find out what snapshots
 are in the image.
+
+Writing multi-machine tests
+---------------------------
+[id="mm-tests"]
+
+Scenarios requiring more than one system under test (SUT), like High Availability testing, are covered as multi-machine tests (MM tests) in this section.
+
+OpenQA approaches multi-machine testing by assigning dependencies between individual jobs. This means the following:
+
+* _everything needed for MM tests must be running as a test job_ (or you are on your own), even support infrastructure (custom DHCP, NFS,
+etc. if required), which in principle is not part of the actual testing, must have a defined test suite so a test job can be created
+* OpenQA scheduler makes sure _tests are started as a group_ and in right order, _cancelled as a group_ if some dependencies are violated and _cloned as
+a group_ if requested.
+* OpenQA _does not synchronize_ individual steps of the tests.
+* OpenQA provides _locking server for basic synchronization_ of tests (e.g. wait until services are ready for failover), but the _correct usage of locks is 
+test designer job_ (beware deadlocks).
+
+In short, writing multi-machine tests adds a few more layers of complexity:
+
+1. documenting the dependencies and order between individual tests
+2. synchronization between individual tests
+3. actual technical realization (i.e. https://github.com/os-autoinst/os-autoinst/blob/master/doc/networking.md[custom networking])
+
+Job dependencies
+~~~~~~~~~~~~~~~~
+
+There are 2 types of dependencies: +CHAINED+ and +PARALLEL+:
+
+* +CHAINED+ describes when one test case depends on another and both are run sequentially, i.e. KDE test suite is run after and only after Installation test suite
+is successfully finished and cancelled if fail.
+
+To define +CHAINED+ dependency add variable +START_AFTER_TEST+ with the name(s) of test suite(s) after which selected test suite is supposed to run.
+Use comma separated list for multiple test suite dependency.
+
+* +PARALLEL+ describes MM test, test suites are scheduled to run at the same time and managed as a group. On top of that, +PARALLEL+ also describes
+test suites dependencies, where some test suites (children) run parallel with other test suites (parents) only when parents are running.
+
+To define +PARALLEL+ dependency, use +PARALLEL_WITH+ variable with the name(s) of test suite(s) which acts as a parent suite(s) to selected test suite.
+In other words, +PARALLEL_WITH+ describes "I need this test suite to be running during my run". Use comma separated list for multiple test suite dependency.
+Keep in mind that parent job _must be running until all children finish_, else scheduler will cancel child jobs once parent is done.
+
+OpenQA worker requirements
+^^^^^^^^^^^^^^^^^^^^^^^^^^
++CHAINED+ dependency requires only one worker, since dependent jobs will run only after the first one finish.
+On the other hand +PARALLEL+ dependency requires at _least 2 workers_ for simple scenarios.
+
+Examples:
+^^^^^^^^^
+
+.+CHAINED+ - i.e. test basic functionality before going advanced - requires 1 worker
+----
+A <- B <- C
+
+Define test suite A,
+then define B with variable START_AFTER_TEST=A and then define C with START_AFTER_TEST=B
+
+-or-
+
+Define test suite A, B
+and then define C with START_AFTER_TEST=A,B
+In this case however the start order of A and B is not specified.
+But C will start only after A, B are successfully done.
+----
+.+PARALLEL+ basic High-Availability
+----
+A
+^
+B
+
+Define test suite A
+and then define B with variable PARALLEL_WITH=A.
+A in this case is parent test suite to B and must be running throughout B run.
+----
+.+PARALLEL+ with multiple parents - i.e. complex support requirements for one test - requires 4 workers
+----
+A B C
+\ | /
+  ^
+  D
+
+Define test suites A,B,C
+and then define D with PARALLEL_WITH=A,B,C.
+A,B,C run in parallel and are parent test suites for D and all must run until D finish.
+----
+.+PARALLEL+ with one parent - i.e. running independent tests against one server - requires at least 2 workers
+----
+   A
+   ^
+  /|\
+ B C D
+
+Define test suite A
+and then define B,C,D with PARALLEL_WITH=A
+A is parent test suite for B, C, D (all can run in parallel). Children B, C, D can run and finish anytime, but A must run until all B, C, D finishes.
+----
+Test synchronization and locking API
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+OpenQA provides locking server through lock API. To use lock API import +lockapi+ package (_use lockapi;_) in your test file.
+Lock API provides three functions: +mutex_create+, +mutex_lock+, +mutex_unlock+. Each of these functions take one parameter: name of the lock.
+Locks are associated with caller`s job - locks can't be unlocked by different job then the one who locked the lock.
+
++mutex_lock+ tries to lock the mutex lock for caller`s job. If lock is unavailable or locked by someone else, +mutex_lock+ call blocks.
+
++mutex_unlock+ tries to unlock the mutex lock. If lock is locked by different job, +mutex_unlock+ call blocks. When lock become available, call
+returns without doing anything.
+
++mutex_create+ create new mutex lock. By default, when mutex lock does not exist it is considered locked. When lock is created by +mutex_create+,
+ lock is automatically unlocked. When mutex lock already exists call returns without doing anything.
+
+Locks are addressed by _their name_. This name is _valid in test group_ defined by their dependencies. If there are more groups running at the
+same time and the same lock name is used, these locks are independent of each other.
+
+Example:
+^^^^^^^^
+
+parent job - wait until login prompt appear, assume services are started
+[source,perl]
+--------------------------------------------------------------------------------
+use base "basetest";
+use strict;
+use testapi;
+use lockapi;
+
+sub run {
+    # wait for bootloader to appear
+    assert_screen "bootloader", 30; # timeout 30 seconds
+
+    # wait for the login to appear
+    assert_screen "login", 300;
+
+    # services start automatically
+    # unlock by creating the lock
+    mutex_create('services_ready');
+
+    # TODO: create API for children check
+    sleep 3000;
+}
+--------------------------------------------------------------------------------
+
+child job - check until parent is ready, then start testing services
+[source,perl]
+--------------------------------------------------------------------------------
+use base "basetest";
+use strict;
+use testapi;
+use lockapi;
+
+sub run {
+    # wait for bootloader to appear
+    assert_screen "bootloader", 30; # timeout 30 seconds
+
+    # wait for the login to appear
+    assert_screen "login", 300;
+
+    # this blocks until lock is available and then does nothing
+    mutex_unlock('services_ready');
+
+    # login to continue
+    type_string("root\n");
+    sleep 1;
+    type_string("secret\n");
+}
+--------------------------------------------------------------------------------
