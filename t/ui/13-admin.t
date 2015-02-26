@@ -22,7 +22,6 @@ use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
-use Mojo::IOLoop::Server;
 use Data::Dumper;
 use IO::Socket::INET;
 
@@ -35,97 +34,17 @@ use File::Path qw/make_path remove_tree/;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-# Start command line interface for application
-require Mojolicious::Commands;
+use t::ui::PhantomTest;
 
-our $mojopid;
-our $phantompid;
-
-sub start_app {
-    my $mojoport = Mojo::IOLoop::Server->generate_port;
-
-    $mojopid = fork();
-    if ($mojopid == 0) {
-        OpenQA::Test::Database->new->create;
-        # TODO: start the server manually - and make it silent
-        Mojolicious::Commands->start_app('OpenQA','daemon', '-l',"http://127.0.0.1:$mojoport/");
-        exit(0);
-    }
-    else {
-        #$SIG{__DIE__} = sub { kill('TERM', $mojopid); };
-        my $wait = time + 5;
-        while ( time < $wait ) {
-            my $t = time;
-            my $socket = IO::Socket::INET->new(
-                PeerHost => '127.0.0.1',
-                PeerPort => $mojoport,
-                Proto    => 'tcp',
-            );
-            last if $socket;
-            sleep 1 if time - $t < 1;
-        }
-    }
-    return $mojoport;
-}
-
-sub start_phantomjs {
-    use IPC::Cmd qw[can_run];
-    if (!can_run('phantomjs')) {
-        return undef;
-    }
-    my $phantomport = Mojo::IOLoop::Server->generate_port;
-
-    $phantompid = fork();
-    if ($phantompid == 0) {
-        exec('phantomjs', "--webdriver=127.0.0.1:$phantomport");
-        die "phantomjs didn't start\n";
-    }
-    else {
-        # borrowed GPL code from WWW::Mechanize::PhantomJS
-        #$SIG{__DIE__} = sub { kill('TERM', $phantompid); };
-        my $wait = time + 20;
-        while ( time < $wait ) {
-            my $t = time;
-            my $socket = IO::Socket::INET->new(
-                PeerHost => '127.0.0.1',
-                PeerPort => $phantomport,
-                Proto    => 'tcp',
-            );
-            sleep 1 if time - $t < 2;
-            last if $socket;
-        }
-    }
-    use Selenium::Remote::Driver;
-    my $driver;
-    # Connect to it
-    eval {
-        $driver = Selenium::Remote::Driver->new('port' => $phantomport);
-        $driver->set_implicit_wait_timeout(5);
-    };
-
-    # if PhantomJS started, but so slow or unresponsive that SRD cannot connect to it,
-    # kill it manually to avoid waiting for it indefinitely
-    if ($@) {
-        kill 9, $phantompid;
-        die $@;
-    }
-
-    return $driver;
-}
-
-my $driver = start_phantomjs;
+my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 22;
+    plan tests => 72;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
     exit(0);
 }
 
-$driver->set_window_size(600, 800);
-
-my $mojoport = start_app;
-$driver->get("http://localhost:$mojoport/");
 is($driver->get_title(), "openQA", "on main page");
 $driver->find_element('Login', 'link_text')->click();
 # we're back on the main page
@@ -139,70 +58,219 @@ $driver->find_element('admin', 'link_text')->click();
 
 is($driver->get_title(), "openQA: Users", "on user overview");
 
-# go to machines first
-$driver->find_element('Machines', 'link_text')->click();
+sub add_machine() {
+    # go to machines first
+    $driver->find_element('Machines', 'link_text')->click();
 
-is($driver->get_title(), "openQA: Machines", "on machines list");
+    is($driver->get_title(), "openQA: Machines", "on machines list");
 
-# leave the ajax some time
-while (!$driver->execute_script("return jQuery.active == 0")) {
-    sleep 1;
+    # leave the ajax some time
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+
+    my $elem = $driver->find_element('.admintable thead tr', 'css');
+    my @headers = $driver->find_child_elements($elem, 'th');
+    is(6, @headers, "6 columns");
+
+    # the headers are specific to our fixtures - if they change, we have to adapt
+    is((shift @headers)->get_text(), "name",    "1st column");
+    is((shift @headers)->get_text(), "backend", "2nd column");
+    is((shift @headers)->get_text(), "LAPTOP",  "3rd column");
+    is((shift @headers)->get_text(), "QEMUCPU", "4th column");
+    is((shift @headers)->get_text(), "other variables", "5th column");
+    is((shift @headers)->get_text(), "action",  "6th column");
+
+    # now check one row by example
+    $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
+    @headers = $driver->find_child_elements($elem, 'td');
+
+    # the headers are specific to our fixtures - if they change, we have to adapt
+    is((shift @headers)->get_text(), "Laptop_64",    "name");
+    is((shift @headers)->get_text(), "qemu", "backend");
+    is((shift @headers)->get_text(), "1",  "LAPTOP");
+    is((shift @headers)->get_text(), "qemu64", "cpu");
+
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons before");
+
+    is($driver->find_element('//input[@value="New machine"]')->click(), 1, 'new machine' );
+
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), '=', "new row empty");
+    my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
+    is(6, @fields, "6 fields"); # one column has 2 fields
+    (shift @fields)->send_keys('HURRA'); # name
+    (shift @fields)->send_keys('ipmi'); # backend
+    (shift @fields)->send_keys('kvm32'); # cpu
+
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
+    # leave the ajax some time
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 4, "4 edit buttons afterwards");
 }
 
-my $elem = $driver->find_element('.admintable thead tr', 'css');
-my @headers = $driver->find_child_elements($elem, 'th');
-is(6, @headers, "6 columns");
+sub add_test_suite() {
+    # go to tests first
+    $driver->find_element('Test suites', 'link_text')->click();
 
-# the headers are specific to our fixtures - if they change, we have to adapt
-is((shift @headers)->get_text(), "name",    "1st column");
-is((shift @headers)->get_text(), "backend", "2nd column");
-is((shift @headers)->get_text(), "QEMUCPU", "3rd column");
-is((shift @headers)->get_text(), "LAPTOP",  "4th column");
-is((shift @headers)->get_text(), "other variables", "5th column");
-is((shift @headers)->get_text(), "action",  "6th column");
+    is($driver->get_title(), "openQA: Test suites", "on test suites");
 
-# now check one row by example
-$elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
-@headers = $driver->find_child_elements($elem, 'td');
+    # leave the ajax some time
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
 
-# the headers are specific to our fixtures - if they change, we have to adapt
-is((shift @headers)->get_text(), "Laptop_64",    "name");
-is((shift @headers)->get_text(), "qemu", "backend");
-is((shift @headers)->get_text(), "qemu64", "cpu");
-is((shift @headers)->get_text(), "1",  "LAPTOP");
+    my $elem = $driver->find_element('.admintable thead tr', 'css');
+    my @headers = $driver->find_child_elements($elem, 'th');
+    is(6, @headers, "6 columns");
 
-is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons before");
+    # the headers are specific to our fixtures - if they change, we have to adapt
+    is((shift @headers)->get_text(), "name",    "1st column");
+    is((shift @headers)->get_text(), "prio", "2nd column");
+    is((shift @headers)->get_text(), "INSTALLONLY",  "3rd column");
+    is((shift @headers)->get_text(), "RAIDLEVEL", "4th column");
+    is((shift @headers)->get_text(), "other variables",  "5th column");
 
-is($driver->find_element('//input[@value="New machine"]')->click(), 1, 'new machine' );
+    # now check one row by example
+    $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
+    @headers = $driver->find_child_elements($elem, 'td');
 
-$elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
-is($elem->get_text(), '=', "new row empty");
-my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-is(6, @fields, "6 fields"); # one column has 2 fields
-(shift @fields)->send_keys('HURRA'); # name
-(shift @fields)->send_keys('ipmi'); # backend
-(shift @fields)->send_keys('kvm32'); # cpu
+    # the headers are specific to our fixtures - if they change, we have to adapt
+    is((shift @headers)->get_text(), "RAID0",    "name");
+    is((shift @headers)->get_text(), "50", "prio");
+    is((shift @headers)->get_text(), "1",  "INSTALLONLY");
+    is((shift @headers)->get_text(), "0",  "RAIDLEVEL");
 
-is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
-# leave the ajax some time
-while (!$driver->execute_script("return jQuery.active == 0")) {
-    sleep 1;
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 7, "7 edit buttons before");
+
+    is($driver->find_element('//input[@value="New test suite"]')->click(), 1, 'new test suite' );
+
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), '=', "new row empty");
+    my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
+    is(6, @fields, "6 fields"); # one column has 2 fields
+    (shift @fields)->send_keys('xfce'); # name
+    (shift @fields)->send_keys('50'); # backend
+    (shift @fields)->send_keys(''); # installonly
+    (shift @fields)->send_keys(''); # raid
+    (shift @fields)->send_keys('DESKTOP'); # var
+    (shift @fields)->send_keys('xfce'); # var
+
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
+    # leave the ajax some time
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 8, "8 edit buttons afterwards");
 }
-is(@{$driver->find_elements('//button[@title="Edit"]')}, 4, "4 edit buttons afterwards");
-
-#print $driver->get_page_source();
-
-#open(my $fh,'>','mojoResults.png');
-#binmode($fh);
-#my $png_base64 = $driver->screenshot();
-#print($fh MIME::Base64::decode_base64($png_base64));
-#close($fh);
-
 #
 
-kill('TERM', $mojopid);
-waitpid($mojopid, 0);
-kill('TERM', $phantompid);
-waitpid($phantompid, 0);
+sub add_product() {
+    #print $driver->get_page_source();
 
+    # go to product first
+    $driver->find_element('Products', 'link_text')->click();
+
+    is($driver->get_title(), "openQA: Products", "on products");
+
+    # leave the ajax some time
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+
+    my $elem = $driver->find_element('.admintable thead tr', 'css');
+    my @headers = $driver->find_child_elements($elem, 'th');
+    is(8, @headers, "8 columns");
+
+    # the headers are specific to our fixtures - if they change, we have to adapt
+    is((shift @headers)->get_text(), "distri",    "1st column");
+    is((shift @headers)->get_text(), "version", "2nd column");
+    is((shift @headers)->get_text(), "flavor", "3rd column");
+    is((shift @headers)->get_text(), "arch",  "4th column");
+    is((shift @headers)->get_text(), "DVD", "5th column");
+    is((shift @headers)->get_text(), "ISO_MAXSIZE",  "6th column");
+    is((shift @headers)->get_text(), "other variables",  "7th column");
+
+    # now check one row by example
+    $elem = $driver->find_element('.admintable tbody tr:nth-child(1)', 'css');
+    @headers = $driver->find_child_elements($elem, 'td');
+
+    # the headers are specific to our fixtures - if they change, we have to adapt
+    is((shift @headers)->get_text(), "opensuse",    "distri");
+    is((shift @headers)->get_text(), "13.1", "version");
+    is((shift @headers)->get_text(), "DVD", "flavor");
+    is((shift @headers)->get_text(), "i586", "arch");
+    is((shift @headers)->get_text(), "1",  "DVD");
+    is((shift @headers)->get_text(), "4700372992",  "MAX SIZE");
+
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 1, "1 edit button before");
+
+    is($driver->find_element('//input[@value="New product"]')->click(), 1, 'new product' );
+
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), '=', "new row empty");
+    my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
+    is(8, @fields, "8 fields"); # one column has 2 fields
+    (shift @fields)->send_keys('sle'); # distri
+    (shift @fields)->send_keys('13'); # version
+    (shift @fields)->send_keys('DVD'); # flavor
+    (shift @fields)->send_keys('arm19'); # arch
+
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
+    # leave the ajax some time
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 2, "2 edit buttons afterwards");
+
+}
+
+add_product();
+add_machine();
+add_test_suite();
+
+# go to product first
+$driver->find_element('Job templates', 'link_text')->click();
+
+is($driver->get_title(), "openQA: Job templates", "on job templates");
+
+# leave the ajax some time
+while (!$driver->execute_script("return jQuery.active == 0")) {
+    sleep 1;
+}
+
+
+# include the WDKeys module
+use Selenium::Remote::WDKeys;
+
+my @fields = $driver->find_elements('tr#product_2 td', 'css');
+is((shift @fields)->get_text(), 'sle-13-DVD-arm19', 'cool product name first');
+
+for my $td (@fields) {
+    is('', $td->get_text(), 'field is empty for product 2');
+    $driver->mouse_move_to_location(element => $td);
+    $driver->button_down();
+    sleep 1;
+
+    #$driver->find_element($td, 'option:last-child', 'css')->set_selected();
+    $driver->send_keys_to_active_element('xfce');
+    $driver->send_keys_to_active_element(KEYS->{'enter'});
+}
+
+$driver->find_element('//input[@type="submit"]')->click();
+
+is($driver->find_element('blockquote.ui-state-highlight', 'css')->get_text(), 'Template matrix updated', 'update message appears');
+
+@fields = $driver->find_elements('tr#product_2 td', 'css');
+is((shift @fields)->get_text(), 'sle-13-DVD-arm19', 'cool product name first');
+
+for my $td (@fields) {
+    is('xfce', $td->get_text(), 'xfce for product 2');
+}
+
+#t::ui::PhantomTest::make_screenshot('mojoResults.png');
+
+t::ui::PhantomTest::kill_phantom();
 done_testing();

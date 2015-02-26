@@ -1,193 +1,63 @@
-% stash 'use_jquery' => 1;
 % layout 'default';
 % title 'Test results';
 
-% content_for 'ready_function' => begin
-  $('#results').DataTable( {
-    "pagingType" : 'simple',
-    // 100 tests are a lot
-    "pageLength": 100,
-    // the additional combo box is disturbing IMO
-    "lengthChange": false,
-    // no initial resorting
-    "order": [],
-    "columnDefs": [
-        // the job id is useless
-        { targets: 0, orderable: false }
-        ],
-  } );
+% content_for 'head' => begin
+  %= javascript '/javascripts/tests.js'
+  %= javascript '/javascripts/jquery.timeago.js'
 % end
 
-<div class="grid_16 box box-shadow alpha">
-    <h2><%= title %></h2>
-    <p>This page lists <%= $ntest %> automated tests
-        %if ($hoursfresh) {
-            from the last <%= $hoursfresh %> hours.
-        %}
-        % if (is_operator) {
-            <a href="#" id="list-select">Select</a>
-            |
-            <a href="#" id="list-unselect">Unselect</a>
-            |
-            <a href="#" id="list-restart">Restart selected</a>
-            (<span id="list-counter">0</span>)
-        % }
-    </p>
+% content_for 'ready_function' => begin
+  renderTestsList([ <%= join(',', map { $_->id } $jobs->all) %> ],
+  <%= (is_operator) ? 1 : 0 %>,
+  "<%= url_for("apiv1_restart", name => 'REPLACEIT') %>");
+% end
 
-    %= form_for tests => (method => 'GET') => (class => "cutofftimeform") => (id => "filterform") => begin
-        %= select_field hoursfresh => [ ['24 h' => '24'], ['96 h' => '96'], ['200 h' => '200'], ['300 h' => '300'] ]
-        %= text_field "match"
-        filter
-        <label>
-            %= check_box "ignore_incomplete" => 1
-            ignore incomplete
-        </label>
-        %= select_field scope => [ ['All' => ''], ['Current (no clone)' => 'current'], ['Relevant (no finished clone)' => 'relevant'] ]
-        %= select_field ob => [ ['All Backends' => ''], ['kvm2usb' => 'kvm2usb'], ['qemu' => 'qemu'], ['vbox' => 'vbox'] ], onchange => "document.getElementById('filterform').submit();"
-        %= submit_button "change", class => "smbutton"
-    % end
-    <p />
-    %= form_for apiv1_restart_jobs => (method => 'POST') => (id => "list-form") => begin
+% if (@$running) {
+    <div class="grid_16 box box-shadow">
+	<h2><%= @$running %> jobs are running</h2>
+	%= include 'test/running_table'
+    </div>
+% }
+
+% if ($scheduled && $scheduled->all) {
+    <div class="grid_16 box box-shadow">
+	<h2><%= $scheduled %> scheduled jobs</h2>
+	
+	%= include 'test/scheduled_table'
+    </div>
+% }
+
+<div class="grid_16 box box-shadow">
+
+  <h2>Last <%= $jobs %> finished jobs</h2>
+  % if (is_operator && 0) {
+    <p>
+      <a href="#" id="list-select">Select</a>
+      |
+      <a href="#" id="list-unselect">Unselect</a>
+      |
+      <a href="#" id="list-restart">Restart selected</a>
+      (<span id="list-counter">0</span>)
+    </p>
+    % }
+
+    <div id="relevantbox" style="display: none">
+	%= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')
+	%= label_for 'relevantfilter' => 'Show only relevant jobs'
+    </div>
+    
     <table id="results" class="display compact">
         <thead>
             <tr>
-                <th>#</th>
-                <th>deps</th>
-                <th>clone</th>
-                <th>machine</th>
-                <th>distri</th>
-                <th>type</th>
-                <th>arch</th>
-                <th>build</th>
-                <th>testsuite</th>
-                <th>testtime</th>
+                <th class="name">Medium</th>
+		<th>Test</th>
+                <th>Deps</th>
+                <th>Testtime</th>
                 <th>Result</th>
             </tr>
         </thead>
 	<tbody>
-        % for my $test (@$list) {
-            % my $job = $test->{job};
-            % my $resultclass = 'overview_'.$job->{result};
-            % my $build = $job->{settings}->{'BUILD'};
-            % my $distri = $job->{settings}->{'DISTRI'};
-            % my $version = $job->{settings}->{'VERSION'};
-
-            <tr id="job_<%= $job->{'id'} %>">
-                <td class="id">
-                    % if (is_operator) {
-                        <div class="checkbox-wrapper">
-                            <input type="checkbox" id="check-<%= $job->{'id'} %>" name="jobs" value="<%= $job->{'id'} %>"/>
-                            <label for="check-<%= $job->{'id'} %>"></label>
-                        </div>
-                    % }
-                    <a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><%= $job->{'id'} %></a>
-                </td>
-                <td class="parents">
-                    % for my $parent_id (@{$job->{'parents'}}) {
-                        <a href="<%= url_for('test', 'testid' => $parent_id) %>">#<%= $parent_id %></a>
-                    % }
-                </td>
-                <td class="clone" data-order="<%= $job->{'clone_id'} || 0 %>">
-                    % if ($job->{'clone_id'}) {
-                        <a href="<%= url_for('test', 'testid' => $job->{'clone_id'}) %>">#<%= $job->{'clone_id'} %></a>
-                    % } elsif ($job->{'state'} ne 'running') {
-                        %= link_post url_for('apiv1_restart', name => $job->{'id'}) => ('data-remote' => 'true') => begin
-                            %= image "/images/toggle.png", alt=>"restart", title=>"Restart Job"
-                        % end
-                    % }
-                </td>
-                <td class="backend"><%= $job->{settings}->{MACHINE} %></td>
-                <td class="distri"><%= "$distri-$version" %></td>
-                <td class="type"><%= $job->{settings}->{FLAVOR} %></td>
-                <td class="arch"><%= $job->{settings}->{ARCH} %></td>
-                % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
-                <td class="build"><span class="textlink <%= $resultclass %>"><a href="<%= $href %>"><%= $build %></a></span></td>
-                <td class="extra"><span class="<%= $resultclass %>"><%= $job->{'test'} %></span></td>
-                <td class="testtime"><time><%= format_time($job->{'t_started'}) %></time></td>
-
-                <% if($job->{'state'} eq 'running' || $job->{'state'} eq 'waiting') { %>
-                    <td style="padding: 3px 4px;" class="progress">
-                        <div class="pbox">
-                            % my $ptext = "";
-                            % my $value;
-                            % if ($job->{'state'} eq 'waiting') {
-				% $ptext = "waiting";
-                            % } elsif($test->{'run_stat'}->{'modcount'} > 0) {
-			    %   $value = $test->{'run_stat'}->{'moddone'};
-                            %   $ptext = int($value * 100. / $test->{'run_stat'}->{'modcount'}) ."%";
-                            % } else {
-			    %   $ptext = "pre-processing";
-			    % }
-			    <progress style="width: 100%; height: 100%;"
-                                 % if (defined($value)) {
-				   value="<%= $value %>"
-                                 % }
-				 max="<%= $test->{'run_stat'}->{'modcount'} %>">
-				<%= $ptext %>
-                            </progress>
-                            <%= $ptext %>
-                        </div>
-                    </td>
-                  % } else {
-                <td><span class="<%= "$resultclass" %>">
-		    <%= module_result($test->{result_stats}) %></span></td>
-                % }
-            </tr>
-        % }
-
-        % for my $test (@$slist) {
-            <%
-            my $job = $test->{job};
-            my $prio = $job->{'priority'};
-            my $state = $job->{'state'};
-            my $build = $job->{settings}->{'BUILD'};
-            my $distri = $job->{settings}->{'DISTRI'};
-            my $version = $job->{settings}->{'VERSION'};
-            %>
-            <tr id="job_<%= $job->{'id'} %>">
-                <td class="id">
-                    % if (is_operator) {
-                        <div class="checkbox-wrapper">
-                            <input type="checkbox" id="check-<%= $job->{'id'} %>" name="jobs" value="<%= $job->{'id'} %>"/>
-                            <label for="check-<%= $job->{'id'} %>"></label>
-                        </div>
-                    % }
-                    <a href="<%= url_for('test', 'testid' => $job->{'id'}) %>"><%= $job->{'id'} %></a>
-                </td>
-                <td class="parents">
-                    % for my $parent_id (@{$job->{'parents'}}) {
-                        <a href="<%= url_for('test', 'testid' => $parent_id) %>">#<%= $parent_id %></a>
-                    % }
-                </td>
-                <td class="clone">
-                    % if ($job->{'clone_id'}) {
-                        <a href="<%= url_for('test', 'testid' => $job->{'clone_id'}) %>">#<%= $job->{'clone_id'} %></a>
-                    % } elsif ($state eq 'cancelled') {
-                        %= link_post url_for('apiv1_restart', name => $job->{'id'}) => ('data-remote' => 'true') => begin
-                            %= image "/images/toggle.png", alt=>"restart", title=>"Restart Job"
-                        % end
-                    % }
-                </td>
-                <td class="backend"><%= $job->{settings}->{MACHINE} %></td>
-                <td class="distri"><%= "$distri-$version" %></td>
-                <td class="type"><%= $job->{settings}->{'FLAVOR'} %></td>
-                <td class="arch"><%= $job->{settings}->{'ARCH'} %></td>
-                % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
-                <td class="build"><span class="textlink"><a href="<%= $href %>"><%= $build %></a></span></td>
-                <td class="extra"><span class=""><%= $job->{'test'} %></span></td>
-                <td class="testtime">
-                    <%= link_post "-" => url_for('apiv1_job_prio', 'jobid' => $job->{'id'})->query(prio => $prio-10) => (class => 'prio-down') %>
-                    <span data-prio="<%= $prio %>"><%= $prio %></span>
-                    <%= link_post "+" => url_for('apiv1_job_prio', 'jobid' => $job->{'id'})->query(prio => $prio+10) => (class => 'prio-up') %>
-                </td>
-                <td class="cancel" colspan="4" style="padding: 3px 4px; font-style: italic;">
-                    <%= $state %>
-                    <%= link_post '[cancel]' => url_for('apiv1_cancel', 'name' => $job->{'id'}) => ('data-remote' => 'true') %>
-                </td>
-            </tr>
-        % }
-        </tbody>
+	</tbody>
     </table>
-    % end
-    <p>Note: times are UTC</p>
 </div>
+

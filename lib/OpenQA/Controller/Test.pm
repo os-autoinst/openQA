@@ -20,7 +20,6 @@ use OpenQA::Utils;
 use OpenQA::Scheduler qw/worker_get/;
 use File::Basename;
 use POSIX qw/strftime/;
-use Data::Dumper;
 
 sub list {
     my $self = shift;
@@ -31,107 +30,110 @@ sub list {
         $match =~ s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g; # sanitize
     }
 
-    my $hoursfresh = $self->param('hoursfresh');
-    $hoursfresh = 4*24 unless defined($hoursfresh);
-    $self->param(hoursfresh => $hoursfresh);
-    my $limit = $self->param('limit');
-    my $page = $self->param('page');
     my $scope = $self->param('scope');
     $scope = 'relevant' unless defined($scope);
     $self->param(scope => $scope);
-    my $state = $self->param('state') // 'scheduled,running,waiting,done';
-    $state = undef if $state eq 'all';
 
     my $assetid = $self->param('assetid');
 
-    if (defined $limit && $limit =~ m/\D/) {
-        $limit = undef;
-    }
-    if ($page && $page =~ m/\D/) {
-        $page = undef;
-    }
-    if ($limit && $limit > 500) {
-        $limit = 500;
-    }
-
-    my @slist=();
-    my @list=();
-
-    my $jobs = OpenQA::Scheduler::list_jobs(
-        state => $state,
+    my $jobs = OpenQA::Scheduler::query_jobs(
+        state => 'done',
         match => $match,
-        limit => $limit,
-        page => $page,
-        ignore_incomplete => $self->param('ignore_incomplete')?1:0,
-        maxage => $hoursfresh*3600,
         scope => $scope,
         assetid => $assetid,
-    ) || [];
+        limit => 500,
+        idsonly => 1
+    );
+    $self->stash(jobs => $jobs);
 
-    my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
-
-    for my $job (@$jobs) {
-
-        if ($job->{state} =~ /^(?:running|waiting|done)$/) {
-
-            my $run_stat = {};
-            if ($job->{state} eq 'running') {
-                my $testdirname = $job->{'settings'}->{'NAME'};
-                my $running_basepath = running_log($testdirname);
-                $run_stat = OpenQA::Schema::Result::JobModules::running_modinfo($job);
-                $run_stat->{'run_backend'} = 0;
-            }
-
-            my $settings = {
-                job => $job,
-
-                result_stats => $result_stats->{$job->{id}},
-                overall=>$job->{state}||'unk',
-                run_stat=>$run_stat
-            };
-            if ($job->{state} ne 'done') {
-                unshift @list, $settings;
-            }
-            else {
-                push @list, $settings;
-            }
-        }
-        else {
-            my $settings = {job => $job};
-
-            push @slist, $settings;
-        }
+    my $running = OpenQA::Scheduler::query_jobs(state => 'running,waiting', match => $match, assetid => $assetid);
+    my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($running);
+    my @list;
+    while (my $job = $running->next) {
+        my $data = {
+            job => $job,
+            result_stats => $result_stats->{$job->id},
+            run_stat => OpenQA::Schema::Result::JobModules::running_modinfo($job)
+        };
+        push @list, $data;
     }
+    $self->stash(running => \@list);
 
-    $self->stash(slist => \@slist);
-    $self->stash(list => \@list);
-    $self->stash(ntest => @list + @slist);
-    $self->stash(prj => $prj);
-    $self->stash(hoursfresh => $hoursfresh);
+    my $scheduled = OpenQA::Scheduler::query_jobs(state => 'scheduled', match => $match, assetid => $assetid);
+    $self->stash(scheduled => $scheduled);
 
 }
 
+sub list_ajax {
+    my ($self) = @_;
+    my $res = {};
+
+    my $jobs;
+
+    # we have to seperate the initial loading and the reload
+    if ($self->param('initial')) {
+        $jobs = OpenQA::Scheduler::query_jobs(ids => [ map { scalar($_) } $self->every_param('jobs[]') ]);
+    }
+    else {
+
+        my $scope = '';
+        $scope = 'relevant' if $self->param('relevant') ne 'false';
+
+        $jobs = OpenQA::Scheduler::query_jobs(
+            state => 'done',
+            scope => $scope,
+            limit => 500,
+        );
+    }
+
+    my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
+
+    my @list;
+    while (my $job = $jobs->next) {
+        my $settings = $job->settings_hash;
+        my $data = {
+            "DT_RowId" => "job_" .  $job->id,
+            id => $job->id,
+            result_stats => $result_stats->{$job->id},
+            overall=>$job->state||'unk',
+            deps => join(' ', map { "#" . $_->id } $job->parents),
+            clone => $job->clone_id,
+            test => $job->test . "@" . $settings->{MACHINE},
+            distri => $settings->{DISTRI} . "-" . $settings->{VERSION},
+            flavor => $settings->{FLAVOR},
+            arch => $settings->{ARCH},
+            build => $settings->{BUILD},
+            testsuite => $job->test,
+            testtime => $job->t_created,
+            name => $job->name,
+            result => $job->result,
+        };
+        push @list, $data;
+    }
+
+    $self->render(json => {data => \@list});
+}
+
 sub show {
-    my $self = shift;
+    my ($self) = @_;
 
     return $self->reply->not_found if (!defined $self->param('testid'));
 
-    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
+    my $job = $self->app->schema->resultset("Jobs")->search({ 'id' => $self->param('testid') },{ 'prefetch' => qw/jobs_assets/ } )->first;
 
     return $self->reply->not_found unless $job;
 
-    my $testdirname = $job->{'settings'}->{'NAME'};
+    my $testdirname = $job->name;
     my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
 
-    $self->stash(testname => $job->{'name'});
+    $self->stash(testname => $job->settings_hash->{NAME});
     $self->stash(resultdir => $testresultdir);
-    $self->stash(assets => OpenQA::Scheduler::job_get_assets($job->{'id'}));
 
     #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
 
     # If it's running
-    if ($job->{state} =~ /^(?:running|waiting)$/) {
-        $self->stash(worker => worker_get($job->{'worker_id'}));
+    if ($job->state =~ /^(?:running|waiting)$/) {
+        $self->stash(worker => worker_get($job->worker_id));
         $self->stash(backend_info => { 'backend' => 'TODO' }); # $results->{backend});
         $self->stash(job => $job);
         $self->render('test/running');
@@ -232,22 +234,23 @@ sub overview {
     my %results = ();
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
 
-    my $jobs = OpenQA::Scheduler::list_jobs(%search_args) || [];
+    my $jobs = OpenQA::Scheduler::query_jobs(%search_args);
 
     my $all_result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
 
-    for my $job (@$jobs) {
-        my $testname = $job->{settings}->{'NAME'};
-        my $test     = $job->{test};
-        my $flavor   = $job->{settings}->{FLAVOR} || 'sweet';
-        my $arch     = $job->{settings}->{ARCH}   || 'noarch';
+    while (my $job = $jobs->next) {
+        my $settings = $job->settings_hash;
+        my $testname = $settings->{NAME};
+        my $test     = $job->test;
+        my $flavor   = $settings->{FLAVOR} || 'sweet';
+        my $arch     = $settings->{ARCH}   || 'noarch';
 
         my $result;
-        if ( $job->{state} eq 'done' ) {
-            my $result_stats = $all_result_stats->{$job->{id}};
+        if ( $job->state eq 'done' ) {
+            my $result_stats = $all_result_stats->{$job->id};
             my $failures     = get_failed_needles($testname);
-            my $overall      = $job->{result};
-            if ( $job->{result} eq "passed" && $result_stats->{dents}) {
+            my $overall      = $job->result;
+            if ( $job->result eq "passed" && $result_stats->{dents}) {
                 $overall = "unknown";
             }
             $result = {
@@ -256,29 +259,29 @@ sub overview {
                 failed  => $result_stats->{failed},
                 dents   => $result_stats->{dents},
                 overall => $overall,
-                jobid   => $job->{id},
+                jobid   => $job->id,
                 state   => "done",
                 testname => $testname,
                 failures => $failures,
             };
             $aggregated->{$overall}++;
         }
-        elsif ( $job->{state} eq 'running' ) {
+        elsif ( $job->state eq 'running' ) {
             $result = {
                 state    => "running",
                 testname => $testname,
-                jobid    => $job->{id},
+                jobid    => $job->id,
             };
             $aggregated->{'running'}++;
         }
         else {
             $result = {
-                state    => $job->{state},
+                state    => $job->state,
                 testname => $testname,
-                jobid    => $job->{id},
-                priority => $job->{priority},
+                jobid    => $job->id,
+                priority => $job->priority,
             };
-            if ( $job->{state} eq 'scheduled' ) {
+            if ( $job->state eq 'scheduled' ) {
                 $aggregated->{'scheduled'}++;
             }
             else {
@@ -287,7 +290,7 @@ sub overview {
         }
 
         # Populate @configs and %archs
-        $test = $test.'@'.$job->{settings}->{MACHINE} unless ( $job->{settings}->{MACHINE} eq '64bit' || $job->{settings}->{MACHINE} eq '32bit' );
+        $test = $test.'@'.$settings->{MACHINE} unless ( $settings->{MACHINE} eq '64bit' || $settings->{MACHINE} eq '32bit' );
         push( @configs, $test ) unless ( grep { $test eq $_ } @configs );
         $archs{$flavor} = [] unless $archs{$flavor};
         push( @{ $archs{$flavor} }, $arch ) unless ( grep { $arch eq $_ } @{ $archs{$flavor} } );
@@ -322,13 +325,15 @@ sub overview {
 sub menu {
     my $self = shift;
 
-    return $self->reply->not_found if (!defined $self->param('testid'));
+    return $self->reply->not_found unless defined $self->param('testid');
 
-    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
+    my $job = $self->app->schema->resultset("Jobs")->search({ 'id' => $self->param('testid') })->first;
 
-    $self->stash(state => $job->{'state'});
-    $self->stash(prio => $job->{'priority'});
-    $self->stash(jobid => $job->{'id'});
+    return $self->reply->not_found unless $job;
+
+    $self->stash(state => $job->state);
+    $self->stash(prio => $job->priority);
+    $self->stash(jobid => $job->id);
 }
 
 1;

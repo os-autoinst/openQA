@@ -1,0 +1,86 @@
+% content_for 'ready_function' => begin
+  $('#running').DataTable( {
+        "pagingType" : 'simple',
+        "order": [],
+	"columnDefs": [
+	    { targets: 0,
+              className: "name" },
+            { targets: 3,
+              "render": function ( data, type, row ) {
+                  console.debug(new Date(data));
+		  if (type === 'display')
+		      return jQuery.timeago(new Date(data + " UTC"));
+		  else
+		      return data;
+	      }
+	    },
+        ],
+  } );
+% end
+
+<table id="running" class="display compact">
+    <thead>
+        <tr>
+	    <th class="name">Medium</th>
+	    <th class="test">Test</th>
+            <th>Deps</th>
+            <th>Testtime</th>
+            <th>Result</th>
+        </tr>
+    </thead>
+    <tbody>
+	% for my $test (@$running) {
+	    % my $job = $test->{job};
+	    % my $settings = $job->settings_hash;
+	    % my $resultclass = 'overview_'.$job->result;
+	    % my $build = $settings->{BUILD};
+	    % my $distri = $settings->{DISTRI};
+	    % my $version = $settings->{VERSION};
+	    
+	    <tr id="job_<%= $job->id %>">
+		% my $testname = $job->test . '@' . $settings->{MACHINE};
+		<td class="name">
+		    % my $text = "Build$build of $settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}";
+		    %= $text
+		</td>
+		<td class="test">
+		    %= link_to $testname => url_for('test', 'testid' => $job->id)
+		</td>
+		<td class="parents">
+		    % my $parents = $job->parents;
+		    % while (my $parent = $parents->next ) {
+			<a href="<%= url_for('test', 'testid' => $parent->id) %>">#<%= $parent->id %></a>
+		    % }
+		</td>
+		
+		% my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
+		<td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started %></td>
+		
+		<td style="padding: 3px 4px;" class="progress">
+		    <div class="pbox">
+			% my $ptext = "";
+			% my $value;
+			% if ($job->state eq 'waiting') {
+			    % $ptext = "waiting";
+			% } elsif($test->{'run_stat'}->{'modcount'} > 0)
+			% {
+			    %   $value = $test->{'run_stat'}->{'moddone'};
+			    %   $ptext = int($value * 100. / $test->{'run_stat'}->{'modcount'}) ."%";
+			% } else
+			% {
+			    %   $ptext = "pre-processing";
+			% }
+			<progress style="width: 100%; height: 100%;"
+				  % if (defined($value)) {
+				      value="<%= $value %>"
+				  % }
+				  max="<%= $test->{'run_stat'}->{'modcount'} %>">
+				  <%= $ptext %>
+			</progress>
+			<%= $ptext %>
+		    </div>
+		</td>
+	    </tr>
+	% }
+    </tbody>
+</table>

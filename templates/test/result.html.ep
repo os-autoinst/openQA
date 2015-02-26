@@ -1,68 +1,73 @@
 % layout 'default';
-% title $job->{name}." test results";
+% title $job->name . " test results";
 % my $ref_width=60;
 % my $ref_height=int($ref_width/4*3);
 
 <div class="grid_2 alpha">
-	<div class="box box-shadow" id="actions_box">
-		<div class="box-header aligncenter">Actions</div>
-		<div class="aligncenter">
-                        %= link_to tests => begin
-                            %= image "/images/back.png", alt=>"back", title=>"back to overview page"
+    <div class="box box-shadow" id="actions_box">
+	<div class="box-header aligncenter">Actions</div>
+	<div class="aligncenter">
+            %= link_to tests => begin
+            %= image "/images/back.png", alt=>"back", title=>"back to overview page"
+            %= end
+            %# TODO: to use can_be_duplicated we have to wait for https://progress.opensuse.org/issues/1393
+            %#       in the meantime, just check clone_id
+            % unless ($job->{'clone_id'}) {
+                %= link_post url_for('apiv1_restart', name => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
+                %= image "/images/toggle.png", alt => "schedule", title => "re-schedule"
+                %= end
+            % }
+	</div>
+    </div>
+    % if(@$resultfiles) {
+	<div class="box box-shadow" id="result_files_box">
+	    <div class="box-header aligncenter">Result Files</div>
+	    <div style="text-align: center;">
+		% for my $resultfile (@$resultfiles) {
+                    % if($resultfile =~ /video.ogv$/) {
+                        %= link_to url_for('test_file', 'testid' => $testid, 'filename' => 'video.ogv') => begin
+                        %= image "/images/video.png", width=>"23", height=>"23", alt=>"ogv", title=>"ogg/theora video of this testrun"
                         %= end
-                        %# TODO: to use can_be_duplicated we have to wait for https://progress.opensuse.org/issues/1393
-                        %#       in the meantime, just check clone_id
-                        % unless ($job->{'clone_id'}) {
-                            %= link_post url_for('apiv1_restart', name => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
-                                %= image "/images/toggle.png", alt => "schedule", title => "re-schedule"
-                            %= end
-                        % }
-		</div>
+                        <br/>
+		    % } else 
+                    % {
+			<a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $resultfile) %>"><%= $resultfile %></a><br />
+		    % }
+		% }
+	    </div>
 	</div>
-	<% if(@$resultfiles) { %>
-	<div class="box box-shadow" id="result_files_box">
-		<div class="box-header aligncenter">Result Files</div>
-		<div style="text-align: center;">
-			<% for my $resultfile (@$resultfiles) { %>
-                                <% if($resultfile =~ /video.ogv$/) { %>
-                                %= link_to url_for('test_file', 'testid' => $testid, 'filename' => 'video.ogv') => begin
-                                %= image "/images/video.png", width=>"23", height=>"23", alt=>"ogv", title=>"ogg/theora video of this testrun"
-                                %= end
-                                <br/>
-                                <% }
-                                else { %>   
-                                <a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $resultfile) %>"><%= $resultfile %></a><br />
-                                <% } %>
-			<% } %>
-		</div>
-	</div>
-	<% } %>
-	<% if(@$assets) { %>
+    % }
+    % my $assets = $job->jobs_assets;
+    % if ($assets->all) {
         <div class="box box-shadow" id="result_files_box">
-                <div class="box-header aligncenter">Assets</div>
-                <div style="text-align: center;">
-                        <% for my $a (@$assets) { %>
-                            <% if ($a->{type} ne 'repo') {  %>
-                                %= link_to "Download ".$a->{type} => url_for('test_asset_id', 'testid' => $testid, assetid => $a->{'id'}), id => "asset_".$a->{id}
-                                <br>
-                            <% } %>
-                        <% } %>
-                </div>
+            <div class="box-header aligncenter">Assets</div>
+            <div style="text-align: center;">
+                % while (my $a = $assets->next) {
+		    % $a = $a->asset;
+                    % if ($a->type ne 'repo') {
+                        %= link_to url_for('test_asset_id', 'testid' => $testid, assetid => $a->id) => (id => "asset_".$a->id) => begin
+			Download <%= $a->type %> 
+			% end
+                        <br>
+                    % }
+                % }
+            </div>
         </div>
-	<% } %>
-	<% if($ulogs and @$ulogs) { %>
+    % }
+    % if($ulogs and @$ulogs) {
 	<div class="box box-shadow" id="result_files_box">
-		<div class="box-header aligncenter">Uploaded Logs</div>
-		<div style="text-align: center;">
-			<% for my $ulog (@$ulogs) { %>
-			<a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $ulog) %>"><%= $ulog %></a><br />
-			<% } %>
-		</div>
+	    <div class="box-header aligncenter">Uploaded Logs</div>
+	    <div style="text-align: center;">
+		% for my $ulog (@$ulogs) {
+		    %= link_to $ulog => url_for('test_file', 'testid' => $testid, 'filename' => $ulog)
+		    <br />
+		% }
+	    </div>
 	</div>
-	<% } %>
-	<div class="box box-shadow" id="info_box">
-	    <div class="box-header aligncenter">Test Details</div>
-            <table class="infotbl">
+    % }
+    <div class="box box-shadow" id="info_box">
+	<div class="box-header aligncenter">Test Details</div>
+        <table class="infotbl">
             % if ($job->{t_started}) {
                 <tr>
                     <td style="width: 40%;">Start</td>
@@ -81,30 +86,34 @@
             % }
             <tr>
                 <td>Result</td>
-                <td><span style="padding: 0 10%; display: inline-block; text-align: center;" class="<%= css_for($job) %>"><%= $job->{'result'} %></span></td>
+                <td>
+		    <span style="padding: 0 10%; display: inline-block;
+			  text-align: center;"
+			  class="<%= css_for({'result' => $job->result}) %>"><%= $job->result %></span>
+		</td>
             </tr>
             <tr>
                 <td style="width: 40%;">State</td>
-                <td><%= $job->{state} %></td>
+                <td><%= $job->state %></td>
             </tr>
             <tr>
                 <td style="width: 40%;">Clone</td>
                 <td id="clone">
-                    % if ($job->{clone_id}) {
-                        <%= link_to $job->{clone_id} => url_for ('test', 'testid' => $job->{clone_id}) %>
+                    % if ($job->clone_id) {
+                        <%= link_to $job->clone_id => url_for ('test', 'testid' => $job->clone_id) %>
                     % } else {
                         -
                     % }
                 </td>
             </tr>
-            <% if ($job->{state} eq 'scheduled') {  %>
+            <% if ($job->state eq 'scheduled') {  %>
             <tr>
                 <td style="width: 40%;">Priority</td>
-                <%  my $prio = $job->{priority}; %>
+                %  my $prio = $job->priority;
                 <td>
-                    <%= link_post "-" => url_for('apiv1_job_prio', 'jobid' => $job->{'id'})->query(prio => $prio-10) => (class => 'prio-down') %>
+                    <%= link_post "-" => url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio-10) => (class => 'prio-down') %>
                     <span data-prio="<%= $prio %>"><%= $prio %></span>
-                    <%= link_post "+" => url_for('apiv1_job_prio', 'jobid' => $job->{'id'})->query(prio => $prio+10) => (class => 'prio-up') %>
+                    <%= link_post "+" => url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio+10) => (class => 'prio-up') %>
                 </td>
             </tr>
             <% }  %>
@@ -165,7 +174,7 @@
 
 <div class="grid_14 omega">
 	<div class="box box-shadow">
-            <h2>Test result for <i><%= $job->{name} %></i></h2>
+            <h2>Test result for <i><%= $job->name %></i></h2>
 		<p />
                 %= include 'layouts/info'
                 % if (my $msg = flash 'code') {

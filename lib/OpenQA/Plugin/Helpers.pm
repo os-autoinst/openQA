@@ -20,7 +20,6 @@ use strict;
 use warnings;
 use Mojo::ByteStream;
 use db_helpers;
-use Data::Dumper;
 
 use base 'Mojolicious::Plugin';
 
@@ -148,7 +147,7 @@ sub register {
         css_for => sub {
             my ($c, $hash) = @_;
             return undef unless $hash;
-            my $res = $hash->{'result'};
+            my $res = $hash->{result};
 
             if ($res eq 'na' || $res eq 'incomplete') {
                 return '';
@@ -160,7 +159,7 @@ sub register {
                 return 'resultok';
             }
             elsif ($res eq 'ok') {
-                return $hash->{'soft_failure'} ? 'resultwarning' : 'resultok';
+                return $hash->{soft_failure} ? 'resultwarning' : 'resultok';
             }
             else {
                 return 'resultunknown';

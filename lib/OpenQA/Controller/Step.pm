@@ -28,10 +28,11 @@ sub init {
     my $self = shift;
 
     my $testindex = $self->param('stepid');
+    my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
 
-    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
-    $self->stash('testname', $job->{'name'});
-    my $testdirname = $job->{'settings'}->{'NAME'};
+    return $self->reply->not_found unless $job;
+    $self->stash('testname', $job->name);
+    my $testdirname = $job->settings_hash->{NAME};
     my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
 
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
@@ -103,10 +104,10 @@ sub edit {
 
     my $module_detail = $self->stash('module_detail');
     my $imgname = $module_detail->{'screenshot'};
-    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
-    my $testdirname = $job->{'settings'}->{'NAME'};
-    my $distribution = $job->{settings}->{DISTRI};
-    my $dversion = $job->{settings}->{VERSION} || '';
+    my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
+    my $testdirname = $job->settings_hash->{NAME};
+    my $distribution = $job->settings_hash->{DISTRI};
+    my $dversion = $job->settings_hash->{VERSION} || '';
 
     # Each object in $needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -329,7 +330,7 @@ sub src {
     my $job = $self->stash('job');
     my $module = $self->stash('module');
 
-    my $testcasedir = testcasedir($job->{settings}->{DISTRI}, $job->{settings}->{VERSION});
+    my $testcasedir = testcasedir($job->settings_hash->{DISTRI}, $job->settings_hash->{VERSION});
     my $scriptpath = "$testcasedir/" . $module->script;
     if(!$scriptpath || !-e $scriptpath) {
         $scriptpath||="";
@@ -344,6 +345,7 @@ sub src {
 
 sub _commit_git {
     my ($self, $job, $dir, $name) = @_;
+
     if ($dir !~ /^\//) {
         use Cwd qw/abs_path/;
         $dir = abs_path($dir);
@@ -353,7 +355,7 @@ sub _commit_git {
     if (system(@git, 'add', @files) != 0) {
         die "failed to git add $name";
     }
-    my @cmd = (@git, 'commit', '-q', '-m',sprintf("%s for %s", $name, $job->{'name'}),sprintf('--author=%s <%s>', $self->current_user->fullname, $self->current_user->email),@files);
+    my @cmd = (@git, 'commit', '-q', '-m',sprintf("%s for %s", $name, $job->name),sprintf('--author=%s <%s>', $self->current_user->fullname, $self->current_user->email),@files);
     $self->app->log->debug(join(' ', @cmd));
     if (system(@cmd) != 0) {
         die "failed to git commit $name";
@@ -431,17 +433,18 @@ sub save_needle {
         return $self->edit;
     }
 
-    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
-    my $distribution = $job->{settings}->{DISTRI};
-    my $dversion = $job->{settings}->{VERSION} || '';
-    my $testdirname = $job->{'settings'}->{'NAME'};
+    my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
+    my $settings = $job->settings_hash;
+    my $distribution = $settings->{DISTRI};
+    my $dversion = $settings->{VERSION} || '';
+    my $testdirname = $settings->{NAME};
     my $json = $validation->param('json');
     my $imagename = $validation->param('imagename');
     my $imagedistri = $validation->param('imagedistri');
     my $imageversion = $validation->param('imageversion');
     my $needlename = $validation->param('needlename');
     my $overwrite = $validation->param('overwrite');
-    my $needledir = needledir($job->{'settings'}->{DISTRI}, $job->{'settings'}->{VERSION});
+    my $needledir = needledir($job->settings_hash->{DISTRI}, $job->settings_hash->{VERSION});
 
     my $error=$self->_json_validation($json);
     if ($error) {
@@ -552,8 +555,8 @@ sub viewimg {
     my $self = shift;
     my $module_detail = $self->stash('module_detail');
     my $job = $self->stash('job');
-    my $distribution = $job->{settings}->{DISTRI};
-    my $dversion = $job->{settings}->{VERSION} || '';
+    my $distribution = $job->settings_hash->{DISTRI};
+    my $dversion = $job->settings_hash->{VERSION} || '';
 
     my @needles;
     if ($module_detail->{'needle'}) {

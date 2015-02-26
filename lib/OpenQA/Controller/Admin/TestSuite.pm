@@ -15,29 +15,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Controller::Admin::TestSuite;
-use Mojo::Base 'Mojolicious::Controller';
+use parent 'OpenQA::Controller::Admin::Table';
 
 sub index {
     my $self = shift;
 
-    my $rc = $self->db->resultset("TestSuiteSettings")->search(
-        undef,
-        {
-            select   => [ 'key', { count => 'key' } ],
-            as       => [qw/ key var_count /],
-            group_by => [qw/ key /],
-            order_by => { -desc => \'count(key)' }
-        }
-    );
-    my @variables = map { $_->key } $rc->all();
-    $self->stash('variables', \@variables);
-
-    my @col_variables = @variables;
-    splice @col_variables, 7;
-
-    $self->stash('col_var_keys', \@col_variables);
-
-    $self->render('admin/test_suite/index');
+    $self->SUPER::admintable('TestSuiteSettings', 'test_suite');
 }
 
 1;

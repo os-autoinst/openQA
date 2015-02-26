@@ -40,9 +40,9 @@ is($job->{state}, 'running', "old job is running");
 
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
-    my $jobs = list_jobs();
+    my $jobs = query_jobs();
     for my $j (@$jobs) {
-        printf "%d %-10s %s\n", $j->{id}, $j->{state}, $j->{name};
+        printf "%d %-10s %s\n", $j->id, $j->state, $j->name;
     }
 }
 

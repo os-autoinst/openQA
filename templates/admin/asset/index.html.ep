@@ -1,6 +1,5 @@
 % layout 'admin';
 % title 'Assets';
-% stash 'use_jquery' => 1;
 
 % content_for 'ready_function' => begin
   $('#assets').DataTable( {

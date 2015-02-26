@@ -14,10 +14,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   $resultdir
   $app_title
   $app_subtitle
-  @runner
   &running_log
-  &sortkeys
-  &first_run
   &data_name
   &needle_info
   &needledir
@@ -27,8 +24,8 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &test_uploadlog_list
   $localstatedir
   &get_failed_needles
-  &sanitize_testname
   &file_content
+  &log_debug
 );
 
 
@@ -52,9 +49,7 @@ our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
 our $testcasedir = "$basedir/openqa/share/tests";
-
-our @runner = <$basedir/$prj/pool/[0-9]>;
-push(@runner, "$basedir/$prj/pool/manual");
+our $applog;
 
 sub running_log($) {
     my ($name) = @_;
@@ -100,33 +95,6 @@ sub test_uploadlog_list($) {
         push(@filelist, $f);
     }
     return @filelist;
-}
-
-our $loop_first_run = 1;
-sub first_run(;$) {
-    if(shift) {
-        $loop_first_run = 1;
-        return;
-    }
-    if($loop_first_run) {
-        $loop_first_run = 0;
-        return 1;
-    }
-    else {
-        return 0;
-    }
-}
-
-sub sortkeys($$) {
-    my $options = shift;
-    my $sortname = shift;
-    my $suffix = "";
-    $suffix .= ".".$options->{'sort'}.(defined($options->{'hours'})?"&amp;hours=".$options->{'hours'}:"");
-    $suffix .= (defined $options->{'match'})?"&amp;match=".$options->{'match'}:"";
-    $suffix .= ($options->{'ib'})?"&amp;ib=on":"";
-    my $dn_url = "?sort=-".$sortname.$suffix;
-    my $up_url = "?sort=".$sortname.$suffix;
-    return '<a rel="nofollow" href="'.$dn_url.'"><img src="/images/ico_arrow_dn.gif" style="border:0" alt="sort dn" /></a><a rel="nofollow" href="'.$up_url.'"><img src="/images/ico_arrow_up.gif" style="border:0" alt="sort up" /></a>';
 }
 
 sub data_name($) {
@@ -204,13 +172,6 @@ sub get_failed_needles($){
     return $failures;
 }
 
-sub sanitize_testname($){
-    my $name = shift;
-    $name =~ s/[^a-zA-Z0-9._+-]//g;
-    return undef unless $name =~ /^[a-zA-Z]/;
-    return $name;
-}
-
 sub file_content($){
     my($fn)=@_;
     open(FCONTENT, "<", $fn) or return undef;
@@ -218,6 +179,11 @@ sub file_content($){
     my $result=<FCONTENT>;
     close(FCONTENT);
     return $result;
+}
+
+sub log_debug {
+    # useful for models, but doesn't work in tests
+    $applog->debug(shift) if $applog;
 }
 
 1;

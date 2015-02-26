@@ -1,3 +1,5 @@
+% stash 'use_prototype' => 1;
+
 % layout 'default';
 % title 'Test summary';
 
