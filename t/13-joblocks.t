@@ -113,7 +113,7 @@ $t->get_ok('/api/v1/mutex/unlock/test_lock')->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 ok(!$res->locked_by, 'mutex is unlocked');
 
-# try to lock unlocked mutex as another job
+# try to unlock & lock unlocked mutex as another job
 $t->ua->unsubscribe('start');
 $t->ua->on(
     start => sub {
@@ -121,6 +121,12 @@ $t->ua->on(
         $tx->req->headers->add('X-API-JobToken' => 'tokenB');
     }
 );
+# try double unlock
+$t->get_ok('/api/v1/mutex/unlock/test_lock')->status_is(200);
+## mutex remains unlocked in DB
+$res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
+ok(!$res->locked_by, 'mutex is unlocked');
+# lock
 $t->get_ok('/api/v1/mutex/lock/test_lock')->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 is($res->locked_by->id, $jobB, 'mutex is locked');

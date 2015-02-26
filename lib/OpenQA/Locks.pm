@@ -44,7 +44,10 @@ sub lock {
     # if no lock so far, there is no lock, return as locked
     return unless $lock;
     # lock is locked and not by us
-    return if ($lock->locked_by && $lock->locked_by->id != $jobid);
+    if ($lock->locked_by) {
+        return if ($lock->locked_by->id != $jobid);
+        return 1;
+    }
     # we're using optimistic locking, if this succeded, we were first
     return 1 if ($lock->update({'locked_by' => $jobid}));
     return;
@@ -55,7 +58,7 @@ sub unlock {
     my $lock = _get_lock($name, $jobid);
     return unless $lock;
     # return if not locked
-    return unless $lock->locked_by;
+    return 1 unless $lock->locked_by;
     # return if not locked by us
     return unless ($lock->locked_by->id == $jobid);
     return 1 if ($lock->update({'locked_by' => undef}));
