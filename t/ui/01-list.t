@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 31;
+    plan tests => 32;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -68,6 +68,8 @@ is((shift @tds)->get_text(), '29 1', "result of 99946");
 # Test 99963 is still running
 isnt(undef, $driver->find_element('#running #job_99963', 'css'), '99963 still running');
 is($driver->find_element('#running #job_99963 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99963", 'right link');
+is($driver->find_element('#running #job_99963 td.time', 'css')->get_text(), "10 minutes ago", 'right time for running');
+
 #$driver->find_element('#running #job_99963 td.test a', 'css')->click();
 #is($driver->get_title(), 'job 99963');
 
