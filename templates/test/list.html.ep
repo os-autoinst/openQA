@@ -1,4 +1,3 @@
-% stash 'use_jquery' => 1;
 % layout 'default';
 % title 'Test results';
 

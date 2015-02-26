@@ -26,7 +26,8 @@ use Data::Dumper;
 
 sub init {
     my ($self) = @_;
-    my $job = OpenQA::Scheduler::job_get($self->param('testid'));
+
+    my $job = $self->app->schema->resultset("Jobs")->search({ 'id' => $self->param('testid') } )->first;
 
     unless (defined $job) {
         $self->reply->not_found;
@@ -34,12 +35,12 @@ sub init {
     }
     $self->stash('job', $job);
 
-    my $testdirname = $job->{'settings'}->{'NAME'};
+    my $testdirname = $job->name;
     $self->stash('testdirname', $testdirname);
 
     my $basepath = running_log($testdirname);
     $self->stash('basepath', $basepath);
-    my $workerid = $job->{'worker_id'};
+    my $workerid = $job->worker_id;
     $self->stash('workerid', $workerid);
     my $worker = OpenQA::Scheduler::worker_get($workerid);
     my $workerport = $worker->{properties}->{WORKER_PORT};

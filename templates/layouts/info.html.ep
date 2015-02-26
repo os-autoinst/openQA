@@ -1,14 +1,3 @@
-<script type="text/javascript">
-
-function do_overwrite()
-{
-    saveNeedleForm = document.forms['save_needle_form'];
-    saveNeedleForm.submit();
-    return true;
-}
-
-</script>
-
 % if (my $msg = stash('error') || flash('error')) {
   <blockquote class="ui-state-error" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
 % }

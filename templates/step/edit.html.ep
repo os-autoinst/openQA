@@ -1,17 +1,21 @@
+% stash 'use_prototype' => 1;
 % layout 'default';
 % title $moduleid;
 
-<script type="text/javascript">
- <!--
+% content_for 'head_javascript' => begin
  // Prototype introduces undesired toJSON definition
  delete Array.prototype.toJSON;
  
  window.onload=function(){
      window.nEditor = new NeedleEditor('<%= ${@$needles[0]}{'imageurl'} %>', '<%= b(JSON::to_json($default_needle)) %>');
  };
-
- -->
-</script>
+ function do_overwrite()
+ {
+    saveNeedleForm = document.forms['save_needle_form'];
+    saveNeedleForm.submit();
+    return true;
+ }
+% end
 
 <div class="grid_3 alpha" id="sidebar">
     <div class="box box-shadow alpha" id="actions_box">
