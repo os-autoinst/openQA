@@ -20,7 +20,6 @@ use OpenQA::Utils;
 use OpenQA::Scheduler qw/worker_get/;
 use File::Basename;
 use POSIX qw/strftime/;
-use Data::Dumper;
 
 sub list {
     my $self = shift;

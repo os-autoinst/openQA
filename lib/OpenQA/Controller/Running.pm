@@ -22,7 +22,6 @@ use Mojo::Util 'b64_encode';
 import JSON;
 use OpenQA::Utils;
 use OpenQA::Scheduler ();
-use Data::Dumper;
 
 sub init {
     my ($self) = @_;

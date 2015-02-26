@@ -20,8 +20,6 @@ use strict;
 use warnings;
 use Mojo::ByteStream;
 use db_helpers;
-use Data::Dumper;
-use Carp;
 
 use base 'Mojolicious::Plugin';
 

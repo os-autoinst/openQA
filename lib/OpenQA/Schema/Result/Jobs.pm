@@ -17,8 +17,6 @@
 package OpenQA::Schema::Result::Jobs;
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
-use Carp;
-use Data::Dumper;
 
 use db_helpers;
 
@@ -178,7 +176,6 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    #carp "to_hash";
     my $j = _hashref($job, qw/id name priority state result worker_id clone_id retry_avbl t_started t_finished test/);
     $j->{settings} = $job->settings_hash;
     if ($args{assets}) {

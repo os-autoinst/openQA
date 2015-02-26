@@ -24,7 +24,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &test_uploadlog_list
   $localstatedir
   &get_failed_needles
-  &sanitize_testname
   &file_content
   &log_debug
 );
