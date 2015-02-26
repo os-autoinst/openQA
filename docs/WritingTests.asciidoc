@@ -312,10 +312,11 @@ A,B,C run in parallel and are parent test suites for D and all must run until D 
 
 Define test suite A
 and then define B,C,D with PARALLEL_WITH=A
-A is parent test suite for B, C, D (all can run in parallel). Children B, C, D can run and finish anytime, but A must run until all B, C, D finishes.
+A is parent test suite for B, C, D (all can run in parallel).
+Children B, C, D can run and finish anytime, but A must run until all B, C, D finishes.
 ----
 Test synchronization and locking API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 OpenQA provides locking server through lock API. To use lock API import +lockapi+ package (_use lockapi;_) in your test file.
 Lock API provides three functions: +mutex_create+, +mutex_lock+, +mutex_unlock+. Each of these functions take one parameter: name of the lock.
