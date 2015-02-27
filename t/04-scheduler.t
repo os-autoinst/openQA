@@ -123,7 +123,6 @@ my $job_ref = {
 };
 
 my $iso = sprintf("%s/%s", $OpenQA::Utils::isodir, $settings{ISO});
-open my $fh, ">", $iso;
 my $job_id = OpenQA::Scheduler::job_create(\%settings);
 is($job_id, 1, "job_create");
 
@@ -388,5 +387,3 @@ is($asset->id, 1, "asset register returns same");
 
 $asset = OpenQA::Scheduler::asset_delete(type => 'iso', name => $settings{ISO});
 is($asset, 1, "asset delete");
-
-unlink $iso;
