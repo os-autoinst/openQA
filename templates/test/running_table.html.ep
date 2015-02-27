@@ -33,9 +33,9 @@
 	    % my $job = $test->{job};
 	    % my $settings = $job->settings_hash;
 	    % my $resultclass = 'overview_'.$job->result;
-	    % my $build = $settings->{BUILD};
-	    % my $distri = $settings->{DISTRI};
-	    % my $version = $settings->{VERSION};
+	    % my $build = $settings->{BUILD} // '';
+	    % my $distri = $settings->{DISTRI} // '';
+	    % my $version = $settings->{VERSION} // '';
 	    
 	    <tr id="job_<%= $job->id %>">
 		% my $testname = $job->test . '@' . $settings->{MACHINE};

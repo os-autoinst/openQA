@@ -100,13 +100,11 @@ sub list_ajax {
             clone => $job->clone_id,
             test => $job->test . "@" . $settings->{MACHINE},
             distri => $settings->{DISTRI} . "-" . $settings->{VERSION},
-            flavor => $settings->{FLAVOR},
-            arch => $settings->{ARCH},
-            build => $settings->{BUILD},
-            testsuite => $job->test,
+            flavor => $settings->{FLAVOR} // '',
+            arch => $settings->{ARCH} // '',
+            build => $settings->{BUILD} // '',
             testtime => $job->t_created,
-            name => $job->name,
-            result => $job->result,
+            result => $job->result
         };
         push @list, $data;
     }
