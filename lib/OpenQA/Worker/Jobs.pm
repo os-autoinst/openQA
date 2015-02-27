@@ -33,6 +33,7 @@ our @EXPORT = qw/start_job stop_job check_job backend_running/;
 my $worker;
 my $log_offset = 0;
 my $max_job_time = 7200; # 2h
+my $current_running;
 
 ## Job management
 sub _kill_worker($) {
@@ -100,14 +101,15 @@ sub stop_job($;$) {
 
     if ($aborted ne 'quit' && $aborted ne 'abort') {
         # collect uploaded logs
-        my @uploaded_logfiles = <$pooldir/ulogs/*>;
-        mkdir("$testresults/ulogs/");
-        for my $uploaded_logfile (@uploaded_logfiles) {
-            next unless -f $uploaded_logfile;
-            unless(copy($uploaded_logfile, "$testresults/ulogs/")) {
-                warn "can't copy ulog: $uploaded_logfile -> $testresults/ulogs/\n";
-            }
-        }
+      my @uploaded_logfiles = <$pooldir/ulogs/*>;
+      print STDERR "TODO: upload logs!\n";
+#        mkdir("$pooldir/testresults/ulogs/");
+#        for my $uploaded_logfile (@uploaded_logfiles) {
+#            next unless -f $uploaded_logfile;
+#            unless(copy($uploaded_logfile, "$testresults/ulogs/")) {
+#                warn "can't copy ulog: $uploaded_logfile -> $testresults/ulogs/\n";
+#            }
+#        }
         if (open(my $log, '>>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
             printf $log "end time: %s\n", strftime("%F %T", gmtime);
@@ -138,21 +140,8 @@ sub stop_job($;$) {
             printf "job %d spent more time than MAX_JOB_TIME\n", $job->{'id'};
         }
         elsif ($aborted eq 'done') { # not aborted
-            # if there's no results.json start.pl probably died early, e.g. due to configuration
-            # problem. Release the job so another worker may grab it.
-            my $overall = results_overall() || '';
-            # FIXME: this needs improvement
-            if ($overall eq 'ok') {
-                $overall = 'passed';
-            }
-            elsif ($overall eq 'fail') {
-                $overall = 'failed';
-            }
-            else {
-                $overall = 'incomplete';
-            }
-            printf "setting job %d to $overall\n", $job->{'id'};
-            api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $overall});
+            printf "setting job %d to done\n", $job->{'id'};
+            api_call('post', 'jobs/'.$job->{'id'}.'/set_done');
             $job_done = 1;
         }
     }
@@ -173,33 +162,15 @@ sub stop_job($;$) {
 
 sub start_job {
     # update settings with worker-specific stuff
-    @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
-    my $name = $job->{'settings'}->{'NAME'};
+  @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
+  my $name = $job->{'settings'}->{'NAME'};
     printf "got job %d: %s\n", $job->{'id'}, $name;
     $max_job_time = $job->{'settings'}->{'MAX_JOB_TIME'} || 2*60*60; # 2h
-    $testresults = join('/', RESULTS_DIR, $name);
-    if (-l "$testresults") {
-        unlink($testresults);
-    }
-    elsif (-e $testresults) {
-        backup_testresults($testresults);
-    }
-    if (!mkdir($testresults)) {
-        warn "mkdir $testresults: $!\n";
-        return stop_job('setup failure');
-    }
-    if (!mkdir(join('/', $pooldir, 'testresults'))) {
-        warn "mkdir $pooldir/testresults: $!\n";
-        return stop_job('setup failure');
-    }
-    if (!symlink($testresults, join('/', $pooldir, 'testresults', $name))) {
-        warn "symlink $testresults: $!\n";
-        return stop_job('setup failure');
-    }
 
     # for the status call
     $log_offset = 0;
-
+  $current_running = undef;
+  
     $worker = engine_workit($job);
     unless ($worker) {
         warn "job is missing files, releasing job\n";
@@ -223,7 +194,7 @@ sub start_job {
         sub {
             # abort job if it takes too long
             if ($job) {
-                warn sprintf("max job time exceeded, aborting %s ...\n", $job->{'settings'}->{'NAME'});
+                warn sprintf("max job time exceeded, aborting %s ...\n", $name);
                 stop_job('timeout');
             }
         },
@@ -254,8 +225,20 @@ sub update_status {
     return unless $job;
     my $status = {};
 
-    $status->{'log'} = log_snippet;
-    $status->{'results'} = results();
+    #$status->{'log'} = log_snippet;
+    my $os_status = read_json_file('status.json');
+    $status->{'status'} = $os_status;
+    if ($os_status->{'running'}) {
+      if (!$current_running) { # first test
+	$status->{'test_order'} = read_json_file('test_order.json');
+
+      } elsif ($current_running ne $os_status->{'running'}) { # new test
+	$status->{'result'} = { $current_running => read_json_file("result-$current_running.json") };
+      }
+      $current_running = $os_status->{'running'};
+    }
+    use Data::Dumper;
+    print STDERR Dumper($status);
     api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
 }
 
@@ -278,8 +261,9 @@ sub job_incomplete($){
 
 # check if results.json contains an overal result. If the latter is
 # missing the worker probably crashed.
-sub results {
-    my $fn = "$testresults/results.json";
+sub read_json_file {
+  my ($name) = @_;
+    my $fn = "$pooldir/testresults/$name";
     my $ret;
     local $/;
     open(my $fh, '<', $fn) or return 0;
@@ -288,21 +272,6 @@ sub results {
     warn "os-autoinst didn't write proper $fn" if $@;
     close($fh);
     return $json;
-}
-
-sub results_overall() {
-    my $json = results();
-    return $json->{'overall'};
-}
-
-sub backup_testresults($){
-    my $testresults = shift;
-    for (my $i = 0; $i < 100; $i++) {
-        if (rename($testresults, $testresults.".$i")) {
-            return;
-        }
-    }
-    remove_tree($testresults);
 }
 
 sub backend_running {

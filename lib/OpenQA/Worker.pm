@@ -59,7 +59,6 @@ sub main {
     # cleanup on finish if necessary
     if ($job) {
         stop_job('quit');
-        unlink($testresults);
     }
 }
 
