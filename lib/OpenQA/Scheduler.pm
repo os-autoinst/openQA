@@ -641,11 +641,11 @@ sub job_grab {
     )->single;
     return {} unless ($job);
 
-    # generate jobtoken for test access
-    $job->set_property('JOBTOKEN', rndstr);
-
     my $job_hashref = {};
     $job_hashref = _job_get({'me.id' => $job->id});
+
+    # JOBTOKEN for test access to API
+    worker_set_property($workerid, 'JOBTOKEN', rndstr);
     worker_set_property($workerid, 'WORKER_IP', $workerip) if $workerip;
 
     return $job_hashref;

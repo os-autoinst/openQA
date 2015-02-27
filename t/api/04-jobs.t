@@ -71,7 +71,7 @@ my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 9
 
 $get = $t->get_ok('/api/v1/jobs');
 my @new_jobs = @{$get->tx->res->json->{jobs}};
-is scalar(@new_jobs), $jobs_count + 2;
+is scalar(@new_jobs), $jobs_count + 3, 'three new jobs - for 63, 46 and 61 from dependency';
 my %new_jobs = map { $_->{id} => $_ } @new_jobs;
 is $new_jobs{99981}->{state}, 'scheduled';
 is $new_jobs{99927}->{state}, 'scheduled';
