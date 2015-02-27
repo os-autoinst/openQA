@@ -59,8 +59,14 @@ sub new {
 
         # Look for the signed cookie
         if (my $jar = $test->ua->cookie_jar) {
-            my @cookies = $jar->all;
-            my $cookie = $cookies[0];
+            my $cookie;
+            if (ref($jar->all) eq 'ARRAY') {
+                $cookie = $jar->all->[0];
+            }
+            else {
+                my @cookies = $jar->all;
+                $cookie = $cookies[0];
+            }
 
             # Extract the information...
             my ($value) = split('--', $cookie->value);
