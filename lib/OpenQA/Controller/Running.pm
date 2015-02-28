@@ -34,7 +34,7 @@ sub init {
     }
     $self->stash('job', $job);
 
-    my $testdirname = $job->name;
+    my $testdirname = $job->settings_hash->{NAME};
     $self->stash('testdirname', $testdirname);
 
     my $basepath = running_log($testdirname);
