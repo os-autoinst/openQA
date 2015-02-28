@@ -335,7 +335,22 @@ sub calculate_result($) {
     return $important_overall || $overall || 'fail';
 }
 
-use Data::Dumper;
+sub append_log($) {
+    my ($self, $log) = @_;
+    return unless length($log->{data});
+
+    my $file = $self->worker->get_property('WORKER_TMPDIR');
+    return unless -d $file; # we can't help
+    $file .= "/autoinst-log-live.txt";
+    if (sysopen(my $fd, $file, Fcntl::O_WRONLY|Fcntl::O_CREAT)) {
+        sysseek($fd, $log->{offset}, Fcntl::SEEK_SET);
+        syswrite($fd, $log->{data});
+        close($fd);
+    }
+    else {
+        print STDERR "can't open $file: $!\n";
+    }
+}
 
 sub update_backend($) {
     my ($self, $backend_info) = @_;
@@ -375,8 +390,6 @@ sub _insert_tm($$) {
 
 sub insert_test_modules($) {
     my ($self, $testmodules) = @_;
-    my $schema = OpenQA::Scheduler::schema();
-    OpenQA::Utils::log_debug(Dumper($testmodules));
     for my $tm (@{$testmodules}) {
         $self->_insert_tm($tm);
     }

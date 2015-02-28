@@ -31,6 +31,7 @@ use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
 use DBIx::Class::Timestamps qw/now/;
 use DateTime;
+use File::Temp qw/tempdir/;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 
@@ -128,16 +129,6 @@ sub _hashref {
 # Workers API
 #
 
-# update worker's capabilities
-# param: workerid , workercaps
-sub _update_worker_caps($$) {
-    my ($workerid, $workercaps) = @_;
-
-    for my $cap (keys %$workercaps) {
-        worker_set_property($workerid, uc $cap, $workercaps->{$cap}) if $workercaps->{$cap};
-    }
-}
-
 # param hash: host, instance, backend
 sub worker_register {
     my ($host, $instance, $backend, $workercaps) = @_;
@@ -161,8 +152,14 @@ sub worker_register {
             }
         );
         # store worker's capabilities to database
-        _update_worker_caps($worker->id, $workercaps) if $workercaps;
+        $worker->update_caps($worker->id, $workercaps) if $workercaps;
     }
+
+    # TODO: transfer these from the worker
+    my $WORKER_PORT_START = 20003;
+
+    $worker->set_property('WORKER_VNC_PORT', $worker->instance + 90);
+    $worker->set_property('WORKER_PORT', $worker->instance * 10 + $WORKER_PORT_START);
 
     # in case the worker died ...
     # ... restart jobs assigned to this worker
@@ -191,12 +188,6 @@ sub worker_get {
     my $rs = schema->resultset("Workers");
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
     my $worker = $rs->find($workerid);
-
-    # TODO: transfer these from the worker
-    my $WORKER_PORT_START = 20003;
-
-    $worker->{properties}->{WORKER_VNC_PORT} = $worker->{'instance'} + 90;
-    $worker->{properties}->{WORKER_PORT} = $worker->{'instance'} * 10 + $WORKER_PORT_START;
 
     for my $r (schema->resultset("WorkerProperties")->search({ worker_id => $worker->{id} })) {
         $worker->{properties}->{$r->key} = $r->value;
@@ -239,17 +230,10 @@ sub list_workers {
 sub _validate_workerid($) {
     my $workerid = shift;
     die "invalid worker id\n" unless $workerid;
-    my $rs = schema->resultset("Workers")->search({ id => $workerid });
-    die "invalid worker id $workerid\n" unless $rs->count;
+    my $rs = schema->resultset("Workers")->find($workerid);
+    die "invalid worker id $workerid\n" unless $rs;
+    return $rs;
 }
-
-sub _seen_worker($;$) {
-    my $id = shift;
-    my $workercaps = shift;
-    schema->resultset("Workers")->find($id)->update({ t_updated => now() });
-    _update_worker_caps($id, $workercaps) if $workercaps;
-}
-
 
 #
 # Jobs API
@@ -573,8 +557,8 @@ sub job_grab {
     my $workerip = $args{workerip};
     my $workercaps = $args{workercaps};
 
-    _validate_workerid($workerid);
-    _seen_worker($workerid, $workercaps);
+    my $worker = _validate_workerid($workerid);
+    $worker->seen($workercaps);
 
     my $result;
     while (1) {
@@ -633,10 +617,9 @@ sub job_grab {
         last;
     }
 
-    my $job = schema->resultset("Jobs")->search(
+    my $job = $worker->jobs->search(
         {
             state => OpenQA::Schema::Result::Jobs::RUNNING,
-            worker_id => $workerid,
         }
     )->single;
     return {} unless ($job);
@@ -645,30 +628,12 @@ sub job_grab {
     $job_hashref = _job_get({'me.id' => $job->id});
 
     # JOBTOKEN for test access to API
-    worker_set_property($workerid, 'JOBTOKEN', rndstr);
-    worker_set_property($workerid, 'WORKER_IP', $workerip) if $workerip;
+    $worker->set_property('JOBTOKEN', rndstr);
+    $worker->set_property('WORKER_IP', $workerip) if $workerip;
+    # TODO: cleanup previous tmpdir
+    $worker->set_property('WORKER_TMPDIR', tempdir());
 
     return $job_hashref;
-}
-
-sub worker_set_property($$$) {
-
-    my ($workerid, $key, $val) = @_;
-
-    my $r = schema->resultset("WorkerProperties")->find_or_new(
-        {
-            worker_id => $workerid,
-            key => $key
-        }
-    );
-
-    if (!$r->in_storage) {
-        $r->value($val);
-        $r->insert;
-    }
-    else {
-        $r->update({ value => $val });
-    }
 }
 
 # parent job failed, handle scheduled children - set them to done incomplete immediately
@@ -886,30 +851,13 @@ sub job_update_result {
     return $r;
 }
 
-sub _append_log($$) {
-    my ($job, $log) = @_;
-
-    return unless length($log->{data});
-
-    my $testdirname = OpenQA::Utils::testresultdir($job->{settings}->{NAME});
-    my $file = "$testdirname/autoinst-log-live.txt";
-    if (sysopen(my $fd, $file, Fcntl::O_WRONLY|Fcntl::O_CREAT)) {
-        sysseek($fd, $log->{offset}, Fcntl::SEEK_SET);
-        syswrite($fd, $log->{data});
-        close($fd);
-    }
-    else {
-        print STDERR "can't open: $!\n";
-    }
-}
-
 sub job_update_status($$) {
     my ($id, $status) = @_;
 
     my $job = schema->resultset("Jobs")->find($id);
     # print "$id " . Dumper($status) . "\n";
 
-    _append_log($job, $status->{log});
+    $job->append_log($status->{log});
     $job->update_backend($status->{backend}) if $status->{backend};
     $job->insert_test_modules($status->{test_order}) if $status->{test_order};
 }

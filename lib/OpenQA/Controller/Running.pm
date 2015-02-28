@@ -26,9 +26,9 @@ use OpenQA::Scheduler ();
 sub init {
     my ($self) = @_;
 
-    my $job = $self->app->schema->resultset("Jobs")->search({ 'id' => $self->param('testid') } )->first;
+    my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
 
-    unless (defined $job) {
+    unless (defined $job && $job->worker_id != 0) {
         $self->reply->not_found;
         return 0;
     }
@@ -39,11 +39,9 @@ sub init {
 
     my $basepath = running_log($testdirname);
     $self->stash('basepath', $basepath);
-    my $workerid = $job->worker_id;
-    $self->stash('workerid', $workerid);
-    my $worker = OpenQA::Scheduler::worker_get($workerid);
-    my $workerport = $worker->{properties}->{WORKER_PORT};
-    my $workerurl = $worker->{properties}->{WORKER_IP} . ':' . $workerport;
+    $self->stash('worker', $job->worker);
+    my $workerport = $job->worker->get_property('WORKER_PORT');
+    my $workerurl = $job->worker->get_property('WORKER_IP') . ':' . $workerport;
     $self->stash('workerurl', $workerurl);
 
     if ($basepath eq '') {
@@ -71,7 +69,7 @@ sub status {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = { 'interactive' => 0, 'workerid' => $self->stash('workerid') };
+    my $results = { 'interactive' => 0, 'workerid' => $self->stash('worker')->id };
     my $schema = OpenQA::Scheduler::schema();
     my $r = $schema->resultset("JobModules")->find(
         {
@@ -103,10 +101,14 @@ sub edit {
 sub livelog {
     my ($self) = @_;
     return 0 unless $self->init();
+    my $worker = $self->stash('worker');
     # tell worker to increase status updates rate for more responsive updates
-    OpenQA::Scheduler::command_enqueue(workerid => $self->stash('workerid'), command => 'livelog_start');
+    OpenQA::Scheduler::command_enqueue(
+        workerid => $worker->id,
+        command => 'livelog_start'
+    );
 
-    my $logfile = $self->stash('basepath').'autoinst-log-live.txt';
+    my $logfile = $worker->get_property('WORKER_TMPDIR').'/autoinst-log-live.txt';
 
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
@@ -139,7 +141,10 @@ sub livelog {
     my $id;
     my $close = sub {
         Mojo::IOLoop->remove($id);
-        OpenQA::Scheduler::command_enqueue(workerid => $self->stash('workerid'), command => 'livelog_stop');
+        OpenQA::Scheduler::command_enqueue(
+            workerid => $worker->id,
+            command => 'livelog_stop'
+        );
         $self->finish;
         close $log;
         return;
@@ -182,7 +187,7 @@ sub livelog {
         finish => sub {
             Mojo::IOLoop->remove($id);
             OpenQA::Scheduler::command_enqueue(
-                workerid => $self->stash('workerid'),
+                workerid => $worker->id,
                 command => 'livelog_stop'
             );
         }

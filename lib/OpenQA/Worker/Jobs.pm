@@ -26,6 +26,7 @@ use File::Copy qw/copy move/;
 use File::Path qw/remove_tree/;
 use JSON qw/decode_json/;
 use Fcntl;
+use MIME::Base64;
 
 use base qw/Exporter/;
 our @EXPORT = qw/start_job stop_job check_job backend_running/;
@@ -220,13 +221,22 @@ sub log_snippet {
     return $ret;
 }
 
+my $lastscreenshot = '';
+
+sub read_last_screen {
+    my $lastlink = readlink("$pooldir/qemuscreenshot/last.png");
+    return undef if !$lastlink || $lastscreenshot eq $lastlink;
+    my $png = OpenQA::Utils::file_content("$pooldir/qemuscreenshot/$lastlink");
+    $lastscreenshot = $lastlink;
+    encode_base64($png);
+}
+
 # uploads current data
 sub update_status {
     return unless verify_workerid;
     return unless $job;
     my $status = {};
 
-    #$status->{'log'} = log_snippet;
     my $os_status = read_json_file('status.json');
     # cherry-pick
     $status->{status} = {};
@@ -243,8 +253,15 @@ sub update_status {
         }
         $current_running = $os_status->{running};
     }
+
     use Data::Dumper;
     print STDERR Dumper($status);
+
+    $status->{'log'} = log_snippet;
+
+    my $png = read_last_screen;
+    $status->{'png'} = $png if $png;
+
     api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
 }
 
