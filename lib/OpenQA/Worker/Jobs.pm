@@ -101,28 +101,29 @@ sub stop_job($;$) {
 
     if ($aborted ne 'quit' && $aborted ne 'abort') {
         # collect uploaded logs
-      my @uploaded_logfiles = <$pooldir/ulogs/*>;
-      print STDERR "TODO: upload logs!\n";
-#        mkdir("$pooldir/testresults/ulogs/");
-#        for my $uploaded_logfile (@uploaded_logfiles) {
-#            next unless -f $uploaded_logfile;
-#            unless(copy($uploaded_logfile, "$testresults/ulogs/")) {
-#                warn "can't copy ulog: $uploaded_logfile -> $testresults/ulogs/\n";
-#            }
-#        }
+        my @uploaded_logfiles = <$pooldir/ulogs/*>;
+        print STDERR "TODO: upload logs!\n";
+        #        mkdir("$pooldir/testresults/ulogs/");
+        #        for my $uploaded_logfile (@uploaded_logfiles) {
+        #            next unless -f $uploaded_logfile;
+        #            unless(copy($uploaded_logfile, "$testresults/ulogs/")) {
+        #                warn "can't copy ulog: $uploaded_logfile -> $testresults/ulogs/\n";
+        #            }
+        #        }
         if (open(my $log, '>>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
             printf $log "end time: %s\n", strftime("%F %T", gmtime);
             print $log "result: $aborted\n";
             close $log;
         }
+        print STDERR "TODO: upload files\n";
         for my $file (qw(video.ogv autoinst-log.txt vars.json serial0)) {
             # default serial output file called serial0
             my $ofile = $file;
             $ofile =~ s/serial0/serial0.txt/;
-            unless (move("$pooldir/$file", join('/', $testresults, $ofile))) {
-                warn "can't move $file: $!\n";
-            }
+            #            unless (move("$pooldir/$file", join('/', $testresults, $ofile))) {
+            #                warn "can't move $file: $!\n";
+            #            }
         }
 
         if ($aborted eq 'obsolete') {
@@ -162,15 +163,15 @@ sub stop_job($;$) {
 
 sub start_job {
     # update settings with worker-specific stuff
-  @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
-  my $name = $job->{'settings'}->{'NAME'};
+    @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
+    my $name = $job->{'settings'}->{'NAME'};
     printf "got job %d: %s\n", $job->{'id'}, $name;
     $max_job_time = $job->{'settings'}->{'MAX_JOB_TIME'} || 2*60*60; # 2h
 
     # for the status call
     $log_offset = 0;
-  $current_running = undef;
-  
+    $current_running = undef;
+
     $worker = engine_workit($job);
     unless ($worker) {
         warn "job is missing files, releasing job\n";
@@ -227,15 +228,20 @@ sub update_status {
 
     #$status->{'log'} = log_snippet;
     my $os_status = read_json_file('status.json');
-    $status->{'status'} = $os_status;
-    if ($os_status->{'running'}) {
-      if (!$current_running) { # first test
-	$status->{'test_order'} = read_json_file('test_order.json');
-
-      } elsif ($current_running ne $os_status->{'running'}) { # new test
-	$status->{'result'} = { $current_running => read_json_file("result-$current_running.json") };
-      }
-      $current_running = $os_status->{'running'};
+    # cherry-pick
+    $status->{status} = {};
+    for my $f (qw/interactive needinput/) {
+        $status->{status}->{$f} = $os_status->{$f};
+    }
+    if ($os_status->{running}) {
+        if (!$current_running) { # first test
+            $status->{test_order} = read_json_file('test_order.json');
+            $status->{backend}    = $os_status->{backend};
+        }
+        elsif ($current_running ne $os_status->{running}) { # new test
+            $status->{result} = { $current_running => read_json_file("result-$current_running.json") };
+        }
+        $current_running = $os_status->{running};
     }
     use Data::Dumper;
     print STDERR Dumper($status);
@@ -262,7 +268,7 @@ sub job_incomplete($){
 # check if results.json contains an overal result. If the latter is
 # missing the worker probably crashed.
 sub read_json_file {
-  my ($name) = @_;
+    my ($name) = @_;
     my $fn = "$pooldir/testresults/$name";
     my $ret;
     local $/;

@@ -773,9 +773,10 @@ sub job_set_done {
     my $newbuild = 0;
     $newbuild = int($args{newbuild}) if defined $args{newbuild};
     # delete JOBTOKEN
-    my $job = schema->resultset('Jobs')->search({ id => $jobid })->single;
+    my $job = schema->resultset('Jobs')->find($jobid);
     $job->set_property('JOBTOKEN');
 
+    my $result = $args{result} || $job->calculate_result();
     my $r;
     if ($newbuild) {
         $r = $job->update(
@@ -783,7 +784,7 @@ sub job_set_done {
                 state => OpenQA::Schema::Result::Jobs::OBSOLETED,
                 worker_id => 0,
                 t_finished => now(),
-                result => $args{result},
+                result => $result,
             }
         );
     }
@@ -793,13 +794,12 @@ sub job_set_done {
                 state => OpenQA::Schema::Result::Jobs::DONE,
                 worker_id => 0,
                 t_finished => now(),
-                result => $args{result},
+                result => $result,
             }
         );
     }
-    OpenQA::Schema::Result::JobModules::split_results(job_get($jobid));
 
-    if (  $args{result} ne OpenQA::Schema::Result::Jobs::PASSED){
+    if ( $result ne OpenQA::Schema::Result::Jobs::PASSED ){
         _job_skip_children($jobid);
         _job_stop_children($jobid);
     }
@@ -906,12 +906,12 @@ sub _append_log($$) {
 sub job_update_status($$) {
     my ($id, $status) = @_;
 
-    my $job = _job_get({ 'me.id' => $id });
+    my $job = schema->resultset("Jobs")->find($id);
     # print "$id " . Dumper($status) . "\n";
 
     _append_log($job, $status->{log});
-
-    OpenQA::Schema::Result::JobModules::split_results($job, $status->{results});
+    $job->update_backend($status->{backend}) if $status->{backend};
+    $job->insert_test_modules($status->{test_order}) if $status->{test_order};
 }
 
 sub _job_find_smart($$$) {

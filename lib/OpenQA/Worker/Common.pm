@@ -168,9 +168,9 @@ sub api_call {
         my $msg = $code ? "$tries: $code response: $err" : "$tries: Connection error: $err->{message}";
         carp "$msg";
         if (!$tries) {
-	  # abort the current job, we're in trouble - but keep running to grab the next
-	  # this lives in Jobs.pm - this is recursive use?
-            stop_job('api-failure');
+            # abort the current job, we're in trouble - but keep running to grab the next
+            # this lives in Jobs.pm - this is recursive use?
+            #stop_job('api-failure');
             return;
         }
         sleep 5;

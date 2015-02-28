@@ -157,39 +157,6 @@ sub job_module_stats($) {
     return $result_stat;
 }
 
-sub _insert_tm($$$) {
-    my ($schema, $job, $tm) = @_;
-    $tm->{details} = []; # ignore
-    my $r = $schema->resultset("JobModules")->find_or_new(
-        {
-            job_id => $job->{id},
-            script => $tm->{script}
-        }
-    );
-    if (!$r->in_storage) {
-        $r->category($tm->{category});
-        $r->name($tm->{name});
-        $r->insert;
-    }
-    my $result = $tm->{result};
-    $result =~ s,fail,failed,;
-    $result =~ s,^na,none,;
-    $result =~ s,^ok,passed,;
-    $result =~ s,^unk,none,;
-    $result =~ s,^skip,skipped,;
-    $r->update(
-        {
-            result => $result,
-            milestone => $tm->{flags}->{milestone}?1:0,
-            important => $tm->{flags}->{important}?1:0,
-            fatal => $tm->{flags}->{fatal}?1:0,
-            soft_failure => $tm->{dents}?1:0,
-        }
-    );
-    return $r;
-}
-
-
 sub test_result($) {
     my ($testname) = @_;
     _test_result(OpenQA::Utils::testresultdir($testname));
@@ -215,7 +182,7 @@ sub split_results($;$) {
     return unless $results; # broken test
     my $schema = OpenQA::Scheduler::schema();
     for my $tm (@{$results->{testmodules}}) {
-        my $r = _insert_tm($schema, $job, $tm);
+        my $r = $job->_insert_tm($schema, $tm);
         if ($r->name eq $results->{running}) {
             $r->update({ result => 'running'});
         }

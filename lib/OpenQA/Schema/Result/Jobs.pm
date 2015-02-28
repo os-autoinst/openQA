@@ -17,6 +17,7 @@
 package OpenQA::Schema::Result::Jobs;
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
+use JSON;
 
 use db_helpers;
 
@@ -303,6 +304,81 @@ sub set_property {
     }
     elsif ($r) {
         $r->delete;
+    }
+}
+
+# calculate overall result looking at the job modules
+sub calculate_result($) {
+    my ($job) = @_;
+
+    my $overall;
+    my $important_overall; # just counting importants
+
+    for my $m ($job->modules->all) {
+        if ( $m->result eq "ok" ) {
+            if ($m->important) {
+                $important_overall ||= 'ok';
+            }
+            else {
+                $overall ||= 'ok';
+            }
+        }
+        else {
+            if ($m->important) {
+                $important_overall = 'fail';
+            }
+            else {
+                $overall = 'fail';
+            }
+        }
+    }
+    return $important_overall || $overall || 'fail';
+}
+
+use Data::Dumper;
+
+sub update_backend($) {
+    my ($self, $backend_info) = @_;
+    $self->update({backend_info => JSON::encode_json($backend_info)});
+}
+
+sub _insert_tm($$) {
+    my ($self, $tm) = @_;
+    my $r = $self->modules->find_or_new(
+        {
+            job_id => $self->id,
+            script => $tm->{script}
+        }
+    );
+    if (!$r->in_storage) {
+        $r->category($tm->{category});
+        $r->name($tm->{name});
+        $r->insert;
+    }
+    my $result = $tm->{result} || 'none';
+    $result =~ s,fail,failed,;
+    $result =~ s,^na,none,;
+    $result =~ s,^ok,passed,;
+    $result =~ s,^unk,none,;
+    $result =~ s,^skip,skipped,;
+    $r->update(
+        {
+            result => $result,
+            milestone => $tm->{flags}->{milestone}?1:0,
+            important => $tm->{flags}->{important}?1:0,
+            fatal => $tm->{flags}->{fatal}?1:0,
+            soft_failure => $tm->{dents}?1:0,
+        }
+    );
+    return $r;
+}
+
+sub insert_test_modules($) {
+    my ($self, $testmodules) = @_;
+    my $schema = OpenQA::Scheduler::schema();
+    OpenQA::Utils::log_debug(Dumper($testmodules));
+    for my $tm (@{$testmodules}) {
+        $self->_insert_tm($tm);
     }
 }
 

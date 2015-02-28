@@ -67,7 +67,8 @@ sub testcasedir($$) {
 }
 
 sub testresultdir($) {
-    my $fn=shift;
+    my ($fn) = @_;
+    confess "FN" unless ($fn);
     "$basedir/$prj/testresults/$fn";
 }
 
