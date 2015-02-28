@@ -20,6 +20,7 @@ use OpenQA::Utils;
 use OpenQA::Scheduler qw/worker_get/;
 use File::Basename;
 use POSIX qw/strftime/;
+use JSON qw/decode_json/;
 
 sub list {
     my $self = shift;
@@ -131,8 +132,8 @@ sub show {
 
     # If it's running
     if ($job->state =~ /^(?:running|waiting)$/) {
-        $self->stash(worker => worker_get($job->worker_id));
-        $self->stash(backend_info => { 'backend' => 'TODO' }); # $results->{backend});
+        $self->stash(worker => $job->worker);
+        $self->stash(backend_info => decode_json($job->backend_info));
         $self->stash(job => $job);
         $self->render('test/running');
         return;
@@ -189,7 +190,7 @@ sub show {
     my @ulogs = test_uploadlog_list($testdirname);
 
     $self->stash(modlist => \@modlist);
-    $self->stash(backend_info => {'backend' => 'TODO' });
+    $self->stash(backend_info => decode_json($job->backend_info));
     $self->stash(resultfiles => \@resultfiles);
     $self->stash(ulogs => \@ulogs);
     $self->stash(job => $job);
