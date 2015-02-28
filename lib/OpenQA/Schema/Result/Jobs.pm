@@ -18,7 +18,7 @@ package OpenQA::Schema::Result::Jobs;
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
 use JSON;
-
+use MIME::Base64 qw/decode_base64/;
 use db_helpers;
 
 # States
@@ -333,6 +333,26 @@ sub calculate_result($) {
         }
     }
     return $important_overall || $overall || 'fail';
+}
+
+sub save_screenshot($) {
+    my ($self, $screen) = @_;
+    return unless length($screen->{name});
+
+    my $tmpdir = $self->worker->get_property('WORKER_TMPDIR');
+    return unless -d $tmpdir; # we can't help
+    my $current = readlink($tmpdir . "/last.png");
+    my $newfile = $screen->{name};
+    # sanitize
+    $newfile =~ s,\.png,,;
+    $newfile =~ tr/a-zA-Z0-9-/_/cs;
+    open(my $fh, ">", $tmpdir . "/$newfile.png");
+    $fh->print(decode_base64($screen->{png}));
+    close($fh);
+    unlink($tmpdir . "/last.png");
+    symlink("$newfile.png", $tmpdir . "/last.png");
+    # remove old file
+    unlink($tmpdir . "/$current") if $current;
 }
 
 sub append_log($) {

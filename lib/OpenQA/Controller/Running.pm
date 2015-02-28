@@ -19,7 +19,7 @@ use strict;
 use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
-import JSON;
+use JSON qw/encode_json/;
 use OpenQA::Utils;
 use OpenQA::Scheduler ();
 
@@ -29,6 +29,7 @@ sub init {
     my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
 
     unless (defined $job && $job->worker_id != 0) {
+        $self->app->log->debug("JOB $job " . $job->worker_id);
         $self->reply->not_found;
         return 0;
     }
@@ -195,7 +196,7 @@ sub livelog {
 }
 
 sub streaming {
-    my $self = shift;
+    my ($self) = @_;
     return 0 unless $self->init();
 
     $self->render_later;
@@ -204,7 +205,7 @@ sub streaming {
     $self->res->headers->content_type('text/event-stream');
 
     my $lastfile = '';
-    my $basepath = $self->stash('basepath');
+    my $basepath = $self->stash('job')->worker->get_property('WORKER_TMPDIR');
 
     # Set up a recurring timer to send the last screenshot to the client,
     # plus a utility function to close the connection if anything goes wrong.

@@ -127,8 +127,15 @@ sub update_status {
     my $jobid = int($self->stash('jobid'));
     my $status = $self->req->json->{'status'};
 
-    my $res = OpenQA::Scheduler::job_update_status($jobid, $status);
-    $self->render(json => {result => \$res});
+    my $job = $self->app->schema->resultset("Jobs")->find($jobid);
+    # print "$id " . Dumper($status) . "\n";
+
+    $job->append_log($status->{log});
+    $job->save_screenshot($status->{screen}) if $status->{screen};
+    $job->update_backend($status->{backend}) if $status->{backend};
+    $job->insert_test_modules($status->{test_order}) if $status->{test_order};
+
+    $self->render(json => {result => 1});
 }
 
 sub done {

@@ -228,7 +228,7 @@ sub read_last_screen {
     return undef if !$lastlink || $lastscreenshot eq $lastlink;
     my $png = OpenQA::Utils::file_content("$pooldir/qemuscreenshot/$lastlink");
     $lastscreenshot = $lastlink;
-    encode_base64($png);
+    return { name => $lastscreenshot, png => encode_base64($png) };
 }
 
 # uploads current data
@@ -259,8 +259,8 @@ sub update_status {
 
     $status->{'log'} = log_snippet;
 
-    my $png = read_last_screen;
-    $status->{'png'} = $png if $png;
+    my $screen = read_last_screen;
+    $status->{'screen'} = $screen if $screen;
 
     api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
 }

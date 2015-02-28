@@ -851,17 +851,6 @@ sub job_update_result {
     return $r;
 }
 
-sub job_update_status($$) {
-    my ($id, $status) = @_;
-
-    my $job = schema->resultset("Jobs")->find($id);
-    # print "$id " . Dumper($status) . "\n";
-
-    $job->append_log($status->{log});
-    $job->update_backend($status->{backend}) if $status->{backend};
-    $job->insert_test_modules($status->{test_order}) if $status->{test_order};
-}
-
 sub _job_find_smart($$$) {
     my ($value, $cond, $attrs) = @_;
 
