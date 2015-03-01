@@ -18,7 +18,6 @@ package OpenQA::Schema::Result::Jobs;
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
 use JSON;
-use MIME::Base64 qw/decode_base64/;
 use db_helpers;
 
 # States
@@ -155,6 +154,11 @@ sub settings_hash {
     }
 
     return $self->{_settings};
+}
+
+sub resultdir() {
+    my ($self) = @_;
+    return $OpenQA::Utils::resultdir . "/" . $self->settings_hash->{NAME};
 }
 
 sub machine {
@@ -342,13 +346,7 @@ sub save_screenshot($) {
     my $tmpdir = $self->worker->get_property('WORKER_TMPDIR');
     return unless -d $tmpdir; # we can't help
     my $current = readlink($tmpdir . "/last.png");
-    my $newfile = $screen->{name};
-    # sanitize
-    $newfile =~ s,\.png,,;
-    $newfile =~ tr/a-zA-Z0-9-/_/cs;
-    open(my $fh, ">", $tmpdir . "/$newfile.png");
-    $fh->print(decode_base64($screen->{png}));
-    close($fh);
+    my $newfile = OpenQA::Utils::save_base64_png($tmpdir, $screen->{name}, $screen->{png});
     unlink($tmpdir . "/last.png");
     symlink("$newfile.png", $tmpdir . "/last.png");
     # remove old file
@@ -379,30 +377,17 @@ sub update_backend($) {
 
 sub _insert_tm($$) {
     my ($self, $tm) = @_;
-    my $r = $self->modules->find_or_new(
-        {
-            job_id => $self->id,
-            script => $tm->{script}
-        }
-    );
+    my $r = $self->modules->find_or_new({script => $tm->{script}});
     if (!$r->in_storage) {
         $r->category($tm->{category});
         $r->name($tm->{name});
         $r->insert;
     }
-    my $result = $tm->{result} || 'none';
-    $result =~ s,fail,failed,;
-    $result =~ s,^na,none,;
-    $result =~ s,^ok,passed,;
-    $result =~ s,^unk,none,;
-    $result =~ s,^skip,skipped,;
     $r->update(
         {
-            result => $result,
             milestone => $tm->{flags}->{milestone}?1:0,
             important => $tm->{flags}->{important}?1:0,
             fatal => $tm->{flags}->{fatal}?1:0,
-            soft_failure => $tm->{dents}?1:0,
         }
     );
     return $r;
@@ -413,6 +398,19 @@ sub insert_test_modules($) {
     for my $tm (@{$testmodules}) {
         $self->_insert_tm($tm);
     }
+}
+
+sub update_module($) {
+    my ($self, $name, $result) = @_;
+    my $mod = $self->modules->find({name => $name});
+    return undef unless $mod;
+    my $dir = $self->resultdir();
+    if (!-d $dir) {
+        mkdir($dir) || die "can't mkdir $dir: $!";
+        $dir .= "/thumbs";
+        mkdir($dir) || die "can't mkdir $dir: $!";
+    }
+    $mod->update_result($result);
 }
 
 1;

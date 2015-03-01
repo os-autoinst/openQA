@@ -184,8 +184,9 @@ sub split_results($;$) {
     for my $tm (@{$results->{testmodules}}) {
         my $r = $job->_insert_tm($schema, $tm);
         if ($r->name eq $results->{running}) {
-            $r->update({ result => 'running'});
+            $tm->{result} = 'running';
         }
+        $r->update_result($tm);
     }
 }
 
@@ -219,6 +220,39 @@ sub running_modinfo($) {
         push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
     }
     return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $results->{'running'}};
+}
+
+sub update_result($) {
+    my ($self, $r) = @_;
+
+    my $result = $r->{result};
+
+    $result ||= 'none';
+    $result =~ s,fail,failed,;
+    $result =~ s,^na,none,;
+    $result =~ s,^ok,passed,;
+    $result =~ s,^unk,none,;
+    $result =~ s,^skip,skipped,;
+    $self->update(
+        {
+            result => $result,
+            soft_failure => $r->{dents}?1:0,
+        }
+    );
+    $self->save_details($r->{details});
+}
+
+sub save_details($) {
+    my ($self, $details) = @_;
+    use Data::Dumper;
+    for my $d (@$details) {
+        OpenQA::Utils::save_base64_png($self->job->resultdir, $d->{screenshot}->{name},$d->{screenshot}->{full});
+        OpenQA::Utils::save_base64_png($self->job->resultdir . "/thumbs",$d->{screenshot}->{name}, $d->{screenshot}->{thumb});
+        $d->{screenshot} = $d->{screenshot}->{name};
+    }
+    open(my $fh, ">", $self->job->resultdir . "/details-" . $self->name . ".json");
+    $fh->print(JSON::encode_json($details));
+    close($fh);
 }
 
 1;

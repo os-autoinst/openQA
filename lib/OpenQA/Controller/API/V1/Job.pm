@@ -134,6 +134,11 @@ sub update_status {
     $job->save_screenshot($status->{screen}) if $status->{screen};
     $job->update_backend($status->{backend}) if $status->{backend};
     $job->insert_test_modules($status->{test_order}) if $status->{test_order};
+    if ($status->{result}) {
+        while (my ($name, $result) = each %{$status->{result}}) {
+            $job->update_module($name, $result);
+        }
+    }
 
     $self->render(json => {result => 1});
 }

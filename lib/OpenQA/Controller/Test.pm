@@ -113,6 +113,67 @@ sub list_ajax {
     $self->render(json => {data => \@list});
 }
 
+
+# actually it's also return failed modules
+sub get_failed_needles($){
+    my $testname = shift;
+    return undef if !defined($testname);
+
+    my $testresdir = testresultdir($testname);
+    my $glob = "$testresdir/results.json";
+    my $failures = {};
+    my @failedneedles = ();
+    my @failedmodules = ();
+    for my $fn (glob $glob) {
+        local $/; # enable localized slurp mode
+        next unless -e $fn;
+        open(my $fd, '<', $fn);
+        next unless $fd;
+        my $results = decode_json(<$fd>);
+        close $fn;
+        for my $module (@{$results->{testmodules}}) {
+            next unless $module->{result} eq 'fail';
+            push( @failedmodules, $module->{name} );
+            for my $detail (@{$module->{details}}) {
+                next unless $detail->{result} eq 'fail';
+                next unless $detail->{needles};
+                for my $needle (@{$detail->{needles}}) {
+                    push( @failedneedles, $needle->{name} );
+                }
+                $failures->{$testname}->{failedneedles} = \@failedneedles;
+            }
+            $failures->{$testname}->{failedmodules} = \@failedmodules;
+        }
+    }
+    return $failures;
+}
+
+sub test_uploadlog_list($) {
+    # get a list of uploaded logs
+    my $testname = shift;
+    my $testresdir = testresultdir($testname);
+    my @filelist;
+    for my $f (<$testresdir/ulogs/*>) {
+        $f=~s#.*/##;
+        push(@filelist, $f);
+    }
+    return @filelist;
+}
+
+sub test_resultfile_list($) {
+    # get a list of existing resultfiles
+    my $testname = shift;
+    my $testresdir = testresultdir($testname);
+    my @filelist = qw(video.ogv results.json vars.json backend.json serial0.txt autoinst-log.txt);
+    my @filelist_existing;
+    for my $f (@filelist) {
+        if(-e "$testresdir/$f") {
+            push(@filelist_existing, $f);
+        }
+    }
+    return @filelist_existing;
+}
+
 sub show {
     my ($self) = @_;
 
@@ -123,7 +184,7 @@ sub show {
     return $self->reply->not_found unless $job;
 
     my $testdirname = $job->settings_hash->{NAME};
-    my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
+    my $testresultdir = $job->resultdir();
 
     $self->stash(testname => $job->settings_hash->{NAME});
     $self->stash(resultdir => $testresultdir);

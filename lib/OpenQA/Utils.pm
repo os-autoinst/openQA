@@ -19,13 +19,10 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &needle_info
   &needledir
   &testcasedir
-  &test_resultfile_list
   &testresultdir
-  &test_uploadlog_list
-  $localstatedir
-  &get_failed_needles
   &file_content
   &log_debug
+  &save_base64_png
 );
 
 
@@ -72,32 +69,6 @@ sub testresultdir($) {
     "$basedir/$prj/testresults/$fn";
 }
 
-sub test_resultfile_list($) {
-    # get a list of existing resultfiles
-    my $testname = shift;
-    my $testresdir = testresultdir($testname);
-    my @filelist = qw(video.ogv results.json vars.json backend.json serial0.txt autoinst-log.txt);
-    my @filelist_existing;
-    for my $f (@filelist) {
-        if(-e "$testresdir/$f") {
-            push(@filelist_existing, $f);
-        }
-    }
-    return @filelist_existing;
-}
-
-sub test_uploadlog_list($) {
-    # get a list of uploaded logs
-    my $testname = shift;
-    my $testresdir = testresultdir($testname);
-    my @filelist;
-    for my $f (<$testresdir/ulogs/*>) {
-        $f=~s#.*/##;
-        push(@filelist, $f);
-    }
-    return @filelist;
-}
-
 sub data_name($) {
     $_[0]=~m/^.*\/(.*)\.\w\w\w(?:\.gz)?$/;
     return $1;
@@ -139,40 +110,6 @@ sub needle_info($$$) {
     return $needle;
 }
 
-# actually it's also return failed modules
-sub get_failed_needles($){
-    my $testname = shift;
-    return undef if !defined($testname);
-
-    my $testresdir = testresultdir($testname);
-    my $glob = "$testresdir/results.json";
-    my $failures = {};
-    my @failedneedles = ();
-    my @failedmodules = ();
-    for my $fn (glob $glob) {
-        local $/; # enable localized slurp mode
-        next unless -e $fn;
-        open(my $fd, '<', $fn);
-        next unless $fd;
-        my $results = decode_json(<$fd>);
-        close $fn;
-        for my $module (@{$results->{testmodules}}) {
-            next unless $module->{result} eq 'fail';
-            push( @failedmodules, $module->{name} );
-            for my $detail (@{$module->{details}}) {
-                next unless $detail->{result} eq 'fail';
-                next unless $detail->{needles};
-                for my $needle (@{$detail->{needles}}) {
-                    push( @failedneedles, $needle->{name} );
-                }
-                $failures->{$testname}->{failedneedles} = \@failedneedles;
-            }
-            $failures->{$testname}->{failedmodules} = \@failedmodules;
-        }
-    }
-    return $failures;
-}
-
 sub file_content($){
     my($fn)=@_;
     open(FCONTENT, "<", $fn) or return undef;
@@ -185,6 +122,18 @@ sub file_content($){
 sub log_debug {
     # useful for models, but doesn't work in tests
     $applog->debug(shift) if $applog;
+}
+
+sub save_base64_png($$$) {
+    my ($dir, $newfile, $png) = @_;
+    # sanitize
+    $newfile =~ s,\.png,,;
+    $newfile =~ tr/a-zA-Z0-9-/_/cs;
+    open(my $fh, ">", $dir . "/$newfile.png") || die "can't open $dir/$newfile.png: $!";
+    use MIME::Base64 qw/decode_base64/;
+    $fh->print(decode_base64($png));
+    close($fh);
+    return $newfile;
 }
 
 1;
