@@ -251,7 +251,12 @@ sub show {
     my @ulogs = test_uploadlog_list($testdirname);
 
     $self->stash(modlist => \@modlist);
-    $self->stash(backend_info => decode_json($job->backend_info));
+    if ($job->backend_info) {
+        $self->stash(backend_info => decode_json($job->backend_info));
+    }
+    else { # TODO: put that as migration
+        $self->stash(backend_info => { 'backend' => 'unk' });
+    }
     $self->stash(resultfiles => \@resultfiles);
     $self->stash(ulogs => \@ulogs);
     $self->stash(job => $job);

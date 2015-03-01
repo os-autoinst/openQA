@@ -74,7 +74,6 @@ is(pp($worker2->{properties}), pp({ CPU_ARCH => 'x86_64', CPU_MODELNAME => 'Rain
 delete $worker2->{properties};
 is(pp($workers_ref->[1]), pp($worker2), "list_workers");
 
-
 # Testing job_create and job_get
 my %settings = (
     DISTRI => 'Unicorn',

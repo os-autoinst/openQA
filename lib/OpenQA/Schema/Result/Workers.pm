@@ -65,8 +65,6 @@ sub update_caps($$) {
 sub get_property($) {
     my ($self, $key) = @_;
 
-    use Carp;
-    confess "get_property" if $self->id == 0;
     my $r = $self->properties->find({key => $key});
     return $r ? $r->value : undef;
 }
