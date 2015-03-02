@@ -35,6 +35,7 @@ my $worker;
 my $log_offset = 0;
 my $max_job_time = 7200; # 2h
 my $current_running;
+my $test_order;
 
 ## Job management
 sub _kill_worker($) {
@@ -157,7 +158,6 @@ sub stop_job($;$) {
     clean_pool();
     $job = undef;
     $worker = undef;
-    exit(0);
 
     return if ($aborted eq 'quit');
     # immediatelly check for already scheduled job
@@ -266,11 +266,12 @@ sub upload_status(;$) {
 
     if ($os_status->{running} || $upload_running) {
         if (!$current_running) { # first test
-            $status->{test_order} = read_json_file('test_order.json');
-            if (!$status->{test_order} ) {
+            $test_order = read_json_file('test_order.json');
+            if (!$test_order ) {
                 stop_job('no tests scheduled');
                 return;
             }
+            $status->{test_order} = $test_order;
             $status->{backend}    = $os_status->{backend};
         }
         elsif ($current_running ne $os_status->{running}) { # new test
@@ -321,19 +322,30 @@ sub read_json_file {
 sub read_result_file($) {
     my ($name) = @_;
 
-    my $result = read_json_file("result-$name.json");
-    if (!$result) {
-        return {};
+    my $ret = {};
+
+    # we need to upload all results not yet uploaded - and stop at $name
+    while (scalar(@$test_order)) {
+        my $test = (shift @$test_order)->{name};
+        my $result = read_json_file("result-$test.json");
+        last unless $result;
+        for my $d (@{$result->{details}}) {
+            my $screen = $d->{screenshot};
+            next unless $screen;
+            $d->{screenshot} = {
+                name => $screen,
+                full => read_base64_file("testresults/$screen"),
+                thumb => read_base64_file("testresults/.thumbs/$screen"),
+            };
+        }
+        $ret->{$test} = $result;
+        last if ($test eq $name);
     }
-    for my $d (@{$result->{details}}) {
-        my $screen = $d->{screenshot};
-        $d->{screenshot} = {
-            name => $screen,
-            full => read_base64_file("testresults/$screen"),
-            thumb => read_base64_file("testresults/.thumbs/$screen"),
-        };
+    if (@$test_order) {
+        # set the next to running
+        $ret->{$test_order->[0]->{name}} = { result => 'running' };
     }
-    return { $name => $result };
+    return $ret;
 }
 
 sub backend_running {

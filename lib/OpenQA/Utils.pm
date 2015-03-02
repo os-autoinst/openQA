@@ -120,6 +120,7 @@ sub log_debug {
 
 sub save_base64_png($$$) {
     my ($dir, $newfile, $png) = @_;
+    return unless $newfile;
     # sanitize
     $newfile =~ s,\.png,,;
     $newfile =~ tr/a-zA-Z0-9-/_/cs;

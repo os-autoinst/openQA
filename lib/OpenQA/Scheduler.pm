@@ -153,12 +153,6 @@ sub worker_register {
         );
         # store worker's capabilities to database
         $worker->update_caps($workercaps) if $workercaps;
-
-        # TODO: transfer these from the worker
-        my $WORKER_PORT_START = 20003;
-
-        $worker->set_property('WORKER_VNC_PORT', $worker->instance + 90);
-        $worker->set_property('WORKER_PORT', $worker->instance * 10 + $WORKER_PORT_START);
     }
 
     # in case the worker died ...
@@ -629,7 +623,7 @@ sub job_grab {
 
     # JOBTOKEN for test access to API
     $worker->set_property('JOBTOKEN', rndstr);
-    $worker->set_property('WORKER_IP', $workerip) if $workerip;
+
     # TODO: cleanup previous tmpdir
     $worker->set_property('WORKER_TMPDIR', tempdir());
 

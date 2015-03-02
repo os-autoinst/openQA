@@ -29,18 +29,10 @@ sub init {
     my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
 
     unless (defined $job && $job->worker_id) {
-        $self->app->log->debug("JOB $job " . $job->worker_id);
         $self->reply->not_found;
         return 0;
     }
     $self->stash('job', $job);
-
-    $self->stash('worker', $job->worker);
-    my $workerport = $job->worker->get_property('WORKER_PORT');
-    if ($workerport) {
-        my $workerurl = $job->worker->get_property('WORKER_IP') . ':' . $workerport;
-        $self->stash('workerurl', $workerurl);
-    }
 
     1;
 }
@@ -62,14 +54,9 @@ sub status {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = { 'interactive' => 0, 'workerid' => $self->stash('worker')->id };
-    my $schema = OpenQA::Scheduler::schema();
-    my $r = $schema->resultset("JobModules")->find(
-        {
-            job_id => $self->stash('job')->{id},
-            result => 'running'
-        }
-    );
+    my $job = $self->stash('job');
+    my $results = { 'interactive' => 0, 'workerid' => $job->worker_id };
+    my $r = $job->modules->find({result => 'running'});
 
     $results->{'running'} = $r->name() if $r;
     $self->render(json => $results);
@@ -79,15 +66,21 @@ sub edit {
     my $self = shift;
     return 0 unless $self->init();
 
-    # TODO
-    #$self->redirect_to('edit_step', moduleid => $moduleid, stepid => $stepid);
-    $self->reply->not_found;
+    my $job = $self->stash('job');
+    my $r = $job->modules->find({result => 'running'});
+    if (!$r) {
+        return $self->reply->not_found;
+    }
+    # TODO: for interactive mode, the worker needs to transfer more, but lnussel is rewriting this, so
+    # avoid making this a bigger mess as necessary and hardcode step 1
+    $self->redirect_to('edit_step', moduleid => $r->name(), stepid => 1);
 }
 
 sub livelog {
     my ($self) = @_;
     return 0 unless $self->init();
-    my $worker = $self->stash('worker');
+    my $job = $self->stash('job');
+    my $worker = $job->worker;
     # tell worker to increase status updates rate for more responsive updates
     OpenQA::Scheduler::command_enqueue(
         workerid => $worker->id,

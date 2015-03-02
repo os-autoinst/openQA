@@ -62,14 +62,11 @@
         <table class="infotbl">
             % if($worker) {
             <tr>
-              <td><%= $worker->{'host'} %>:<%= $worker->{instance} %></td>
+              <td><%= $worker->host %>:<%= $worker->instance %></td>
             </tr>
             <tr>
-              <td>VNC port: <%= $worker->{properties}->{WORKER_VNC_PORT} %></td>
+              <td>VNC port: <%= 90 + $worker->instance %></td>
             </tr>
-	    <tr>
-              <td>Worker: <%= $worker->{properties}->{WORKER_IP} %>:<%= $worker->{properties}->{WORKER_PORT} %></td>
-	    </tr>
             % }
             <tr>
                 <td colspan="2" style="padding: 0 0 <%= ($backend_info->{'backend'} eq 'kvm2usb')?'8px':'0' %> 0;"><%= $backend_info->{'backend'} %></td>
