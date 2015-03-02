@@ -14,7 +14,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   $resultdir
   $app_title
   $app_subtitle
-  &running_log
   &data_name
   &needle_info
   &needledir
@@ -47,11 +46,6 @@ our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
 our $testcasedir = "$basedir/openqa/share/tests";
 our $applog;
-
-sub running_log($) {
-    my ($name) = @_;
-    return join('/', $basedir, $prj, 'testresults', $name, '/');
-}
 
 sub testcasedir($$) {
     my $distri = shift;

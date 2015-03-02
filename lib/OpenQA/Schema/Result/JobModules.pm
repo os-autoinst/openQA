@@ -17,6 +17,7 @@
 package OpenQA::Schema::Result::JobModules;
 use base qw/DBIx::Class::Core/;
 
+use strict;
 use db_helpers;
 use OpenQA::Scheduler;
 use OpenQA::Schema::Result::Jobs;
@@ -90,18 +91,16 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_job_modules_result', fields => ['result']);
 }
 
-# TODO: remove asap - and split the details out of results.json
-sub details($) {
-    my ($self, $testresultdir) = @_;
+sub details() {
+    my ($self) = @_;
 
-    my $result = _test_result($testresultdir);
-    foreach my $module (@{$result->{'testmodules'}}) {
-        my $name = $module->{'name'};
-        if ($name eq $self->name) {
-            return $module->{'details'};
-        }
-    }
-    return [];
+    my $fn = $self->job->resultdir() . "/details-" . $self->name . ".json";
+    OpenQA::Utils::log_debug "reading $fn";
+    open(my $fh, "<", $fn) || return [];
+    local $/;
+    my $ret = JSON::decode_json(<$fh>);
+    close($fh);
+    return $ret;
 }
 
 sub job_module($$) {
@@ -155,71 +154,6 @@ sub job_module_stats($) {
     }
 
     return $result_stat;
-}
-
-sub test_result($) {
-    my ($testname) = @_;
-    _test_result(OpenQA::Utils::testresultdir($testname));
-}
-
-sub _test_result($) {
-    my ($testresdir) = @_;
-    local $/;
-    open(JF, "<", "$testresdir/results.json") || return;
-    use Fcntl;
-    return unless fcntl(JF, F_SETLKW, pack('ssqql', F_RDLCK, 0, 0, 0, $$));
-    my $result_hash;
-    eval {$result_hash = JSON::decode_json(<JF>);};
-    warn "failed to parse $testresdir/results.json: $@" if $@;
-    close(JF);
-    return $result_hash;
-}
-
-sub split_results($;$) {
-    my ($job,$results) = @_;
-
-    $results ||= test_result($job->{settings}->{NAME});
-    return unless $results; # broken test
-    my $schema = OpenQA::Scheduler::schema();
-    for my $tm (@{$results->{testmodules}}) {
-        my $r = $job->_insert_tm($schema, $tm);
-        if ($r->name eq $results->{running}) {
-            $tm->{result} = 'running';
-        }
-        $r->update_result($tm);
-    }
-}
-
-sub running_modinfo($) {
-    my ($job) = @_;
-
-    my @modules = OpenQA::Schema::Result::JobModules::job_modules($job);
-
-    my $modlist = [];
-    my $donecount = 0;
-    my $count = int(@modules);
-    my $modstate = 'done';
-    my $category;
-    for my $module (@modules) {
-        my $name = $module->name;
-        my $result = $module->result;
-        if (!$category || $category ne $module->category) {
-            $category = $module->category;
-            push(@$modlist, {'category' => $category, 'modules' => []});
-        }
-        if ($result eq 'running') {
-            $modstate = 'current';
-        }
-        elsif ($modstate eq 'current') {
-            $modstate = 'todo';
-        }
-        elsif ($modstate eq 'done') {
-            $donecount++;
-        }
-        my $moditem = {'name' => $name, 'state' => $modstate, 'result' => $result};
-        push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
-    }
-    return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $results->{'running'}};
 }
 
 sub update_result($) {

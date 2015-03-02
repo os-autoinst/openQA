@@ -35,20 +35,10 @@ sub init {
     }
     $self->stash('job', $job);
 
-    my $testdirname = $job->settings_hash->{NAME};
-    $self->stash('testdirname', $testdirname);
-
-    my $basepath = running_log($testdirname);
-    $self->stash('basepath', $basepath);
     $self->stash('worker', $job->worker);
     my $workerport = $job->worker->get_property('WORKER_PORT');
     my $workerurl = $job->worker->get_property('WORKER_IP') . ':' . $workerport;
     $self->stash('workerurl', $workerurl);
-
-    if ($basepath eq '') {
-        $self->reply->not_found;
-        return 0;
-    }
 
     1;
 }
@@ -57,7 +47,7 @@ sub modlist {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $modinfo = OpenQA::Schema::Result::JobModules::running_modinfo($self->stash('job'));
+    my $modinfo = $self->stash('job')->running_modinfo();
     if (defined $modinfo) {
         $self->render(json => $modinfo->{'modlist'});
     }
@@ -87,16 +77,9 @@ sub edit {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = test_result($self->stash('testdirname'));
-    my $moduleid = $results->{'running'};
-    my $module = test_result_module($results->{'testmodules'}, $moduleid);
-    if ($module) {
-        my $stepid = scalar(@{$module->{'details'}});
-        $self->redirect_to('edit_step', moduleid => $moduleid, stepid => $stepid);
-    }
-    else {
-        $self->reply->not_found;
-    }
+    # TODO
+    #$self->redirect_to('edit_step', moduleid => $moduleid, stepid => $stepid);
+    $self->reply->not_found;
 }
 
 sub livelog {

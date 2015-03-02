@@ -14,6 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA;
+use strict;
 use Mojolicious 5.60;
 use Mojo::Base 'Mojolicious';
 use OpenQA::Schema::Schema;

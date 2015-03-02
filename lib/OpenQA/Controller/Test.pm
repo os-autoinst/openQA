@@ -54,7 +54,7 @@ sub list {
         my $data = {
             job => $job,
             result_stats => $result_stats->{$job->id},
-            run_stat => OpenQA::Schema::Result::JobModules::running_modinfo($job)
+            run_stat => $job->running_modinfo(),
         };
         push @list, $data;
     }

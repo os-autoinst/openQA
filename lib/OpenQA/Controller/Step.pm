@@ -32,17 +32,14 @@ sub init {
 
     return $self->reply->not_found unless $job;
     $self->stash('testname', $job->name);
-    my $testdirname = $job->settings_hash->{NAME};
-    my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
 
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
-    my $details = $module->details($testresultdir);
+    my $details = $module->details();
     $self->stash('job', $job);
     $self->stash('module',  $module);
     $self->stash('imglist', $details);
 
-    my $modinfo = OpenQA::Schema::Result::JobModules::running_modinfo($job);
-    $self->stash('modinfo', $modinfo);
+    $self->stash('modinfo', $job->running_modinfo());
 
     my $tabmode = 'screenshot'; # Default
     if ($testindex > @$details) {

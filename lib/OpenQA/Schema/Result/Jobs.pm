@@ -18,7 +18,9 @@ package OpenQA::Schema::Result::Jobs;
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
 use JSON;
+use Fcntl;
 use db_helpers;
+use strict;
 
 # States
 use constant {
@@ -238,7 +240,7 @@ sub duplicate{
     my $schema = $rsource->schema;
 
     # If the job already have a clone, none is created
-    return undef unless $self->can_be_duplicated;
+    return unless $self->can_be_duplicated;
 
     # Copied retry_avbl as default value if the input undefined
     $args->{retry_avbl} = $self->retry_avbl unless defined $args->{retry_avbl};
@@ -375,7 +377,7 @@ sub update_backend($) {
     $self->update({backend_info => JSON::encode_json($backend_info)});
 }
 
-sub _insert_tm($$) {
+sub insert_module($$) {
     my ($self, $tm) = @_;
     my $r = $self->modules->find_or_new({script => $tm->{script}});
     if (!$r->in_storage) {
@@ -396,14 +398,14 @@ sub _insert_tm($$) {
 sub insert_test_modules($) {
     my ($self, $testmodules) = @_;
     for my $tm (@{$testmodules}) {
-        $self->_insert_tm($tm);
+        $self->insert_module($tm);
     }
 }
 
 sub update_module($) {
     my ($self, $name, $result) = @_;
     my $mod = $self->modules->find({name => $name});
-    return undef unless $mod;
+    return unless $mod;
     my $dir = $self->resultdir();
     if (!-d $dir) {
         mkdir($dir) || die "can't mkdir $dir: $!";
@@ -411,6 +413,40 @@ sub update_module($) {
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
     $mod->update_result($result);
+}
+
+sub running_modinfo() {
+    my ($self) = @_;
+
+    my @modules = OpenQA::Schema::Result::JobModules::job_modules($self);
+
+    my $modlist = [];
+    my $donecount = 0;
+    my $count = int(@modules);
+    my $modstate = 'done';
+    my $running;
+    my $category;
+    for my $module (@modules) {
+        my $name = $module->name;
+        my $result = $module->result;
+        if (!$category || $category ne $module->category) {
+            $category = $module->category;
+            push(@$modlist, {'category' => $category, 'modules' => []});
+        }
+        if ($result eq 'running') {
+            $modstate = 'current';
+            $running = $name;
+        }
+        elsif ($modstate eq 'current') {
+            $modstate = 'todo';
+        }
+        elsif ($modstate eq 'done') {
+            $donecount++;
+        }
+        my $moditem = {'name' => $name, 'state' => $modstate, 'result' => $result};
+        push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
+    }
+    return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $running};
 }
 
 1;
