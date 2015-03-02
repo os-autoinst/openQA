@@ -24,8 +24,8 @@ use strict;
 use Data::Dump qw/pp dd/;
 use OpenQA::Scheduler;
 use OpenQA::Test::Database;
-#use Test::Mojo;
-use Test::More tests => 76;
+use Test::Mojo;
+use Test::More tests => 85;
 
 OpenQA::Test::Database->new->create();
 
@@ -331,3 +331,20 @@ is_deeply($job->{parents}, [$jobC2], "cloned deps");
 #           v---/
 # B2 <--- C2 <--- F2
 # sch     sch     sch
+
+# check MM API for children status - available only for running jobs
+$job = OpenQA::Scheduler::job_get($jobC);
+
+my $t = Test::Mojo->new('OpenQA');
+$t->ua->on(
+    start => sub {
+        my ($ua, $tx) = @_;
+        $tx->req->headers->add('X-API-JobToken' => $job->{'settings'}->{'JOBTOKEN'});
+    }
+);
+
+$t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF]);
+$t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
+$t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE]);
+
+done_testing();

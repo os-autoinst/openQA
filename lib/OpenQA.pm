@@ -365,6 +365,10 @@ sub startup {
     $api_r_job->get('/mutex/lock/:name')->name('apiv1_mutex_lock')->to('locks#mutex_lock');
     $api_r_job->get('/mutex/unlock/:name')->name('apiv1_mutex_unlock')->to('locks#mutex_unlock');
 
+    # api/v1/mm
+    my $mm_api = $api_r_job->route('/mm');
+    $mm_api->get('/children/:status' => [status => [qw/running scheduled done/] ])->name('apiv1_mm_running_children')->to('mm#get_children_status');
+
     # api/v1/isos
     $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create'); # iso_new
     $api_r->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy'); # iso_delete
