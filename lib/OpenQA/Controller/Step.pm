@@ -102,7 +102,6 @@ sub edit {
     my $module_detail = $self->stash('module_detail');
     my $imgname = $module_detail->{'screenshot'};
     my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
-    my $testdirname = $job->settings_hash->{NAME};
     my $distribution = $job->settings_hash->{DISTRI};
     my $dversion = $job->settings_hash->{VERSION} || '';
 
@@ -434,7 +433,6 @@ sub save_needle {
     my $settings = $job->settings_hash;
     my $distribution = $settings->{DISTRI};
     my $dversion = $settings->{VERSION} || '';
-    my $testdirname = $settings->{NAME};
     my $json = $validation->param('json');
     my $imagename = $validation->param('imagename');
     my $imagedistri = $validation->param('imagedistri');
@@ -457,7 +455,7 @@ sub save_needle {
         $imagepath = join('/', needledir($imagedistri, $imageversion), $imagename);
     }
     else {
-        $imagepath = join('/', $basedir, $prj, 'testresults', $testdirname, $imagename);
+        $imagepath = join('/', $job->result_dir(), $imagename);
     }
     if (!-f $imagepath) {
         $self->stash(error => "Image $imagename could not be found!\n");

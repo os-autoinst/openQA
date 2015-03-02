@@ -20,6 +20,7 @@ use Try::Tiny;
 use JSON;
 use Fcntl;
 use db_helpers;
+use File::Basename qw/basename/;
 use strict;
 
 # States
@@ -46,15 +47,19 @@ use constant {
 use constant RESULTS => ( NONE, PASSED, FAILED, INCOMPLETE, SKIPPED );
 
 __PACKAGE__->table('jobs');
-__PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
+__PACKAGE__->load_components(qw/InflateColumn::DateTime FilterColumn Timestamps/);
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
         is_auto_increment => 1,
     },
-    slug => {
+    slug => { # to be removed?
         data_type => 'text',
-        is_nullable => 1,
+        is_nullable => 1
+    },
+    result_dir => { # this is the directory below testresults
+        data_type => 'text',
+        is_nullable => 1
     },
     state => {
         data_type => 'varchar',
@@ -87,6 +92,10 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
         default_value => 3,
     },
+    backend => {
+        data_type => 'varchar',
+        is_nullable => 1,
+    },
     backend_info => {
         # we store free text JSON here - backends might store random data about the job
         data_type => 'text',
@@ -118,6 +127,13 @@ __PACKAGE__->has_many(owned_locks => 'OpenQA::Schema::Result::JobLocks', 'owner'
 __PACKAGE__->has_many(locked_locks => 'OpenQA::Schema::Result::JobLocks', 'locked_by');
 
 __PACKAGE__->add_unique_constraint([qw/slug/]);
+
+__PACKAGE__->filter_column(
+    result_dir => {
+        filter_to_storage => 'remove_result_dir_prefix',
+        filter_from_storage => 'add_result_dir_prefix',
+    }
+);
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
@@ -158,9 +174,16 @@ sub settings_hash {
     return $self->{_settings};
 }
 
-sub resultdir() {
-    my ($self) = @_;
-    return $OpenQA::Utils::resultdir . "/" . $self->settings_hash->{NAME};
+sub add_result_dir_prefix {
+    my $rd = $_[1];
+    $rd = $OpenQA::Utils::resultdir . "/$rd" if $rd;
+    return $rd;
+}
+
+sub remove_result_dir_prefix {
+    my $rd = $_[1];
+    $rd = basename($_[1]) if $rd;
+    return $rd;
 }
 
 sub machine {
@@ -374,7 +397,12 @@ sub append_log($) {
 
 sub update_backend($) {
     my ($self, $backend_info) = @_;
-    $self->update({backend_info => JSON::encode_json($backend_info)});
+    $self->update(
+        {
+            backend => $backend_info->{backend},
+            backend_info => JSON::encode_json($backend_info->{backend_info})
+        }
+    );
 }
 
 sub insert_module($$) {
@@ -406,13 +434,21 @@ sub update_module($) {
     my ($self, $name, $result) = @_;
     my $mod = $self->modules->find({name => $name});
     return unless $mod;
-    my $dir = $self->resultdir();
+    my $dir = $self->result_dir();
+    if (!$dir) {
+        $dir = sprintf "%08d-%s", $self->id, $self->name;
+        OpenQA::Utils::log_debug("NDIR $dir\n");
+        $self->update({result_dir => $dir});
+        $dir = $self->result_dir();
+    }
+    OpenQA::Utils::log_debug("DIR $dir\n");
     if (!-d $dir) {
         mkdir($dir) || die "can't mkdir $dir: $!";
         $dir .= "/.thumbs";
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
     $mod->update_result($result);
+    $mod->save_details($result->{details});
 }
 
 sub running_modinfo() {

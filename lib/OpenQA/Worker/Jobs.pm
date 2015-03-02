@@ -255,7 +255,7 @@ sub upload_status(;$) {
     return unless $job;
     my $status = {};
 
-    my $os_status = read_json_file('status.json');
+    my $os_status = read_json_file('status.json') || {};
     # cherry-pick
     $status->{status} = {};
     for my $f (qw/interactive needinput/) {
@@ -311,7 +311,7 @@ sub read_json_file {
     my $fn = "$pooldir/testresults/$name";
     my $ret;
     local $/;
-    open(my $fh, '<', $fn) or return {};
+    open(my $fh, '<', $fn) or return undef;
     my $json = {};
     eval {$json = decode_json(<$fh>);};
     warn "os-autoinst didn't write proper $fn" if $@;

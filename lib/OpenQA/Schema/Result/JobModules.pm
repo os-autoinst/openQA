@@ -94,7 +94,7 @@ sub sqlt_deploy_hook {
 sub details() {
     my ($self) = @_;
 
-    my $fn = $self->job->resultdir() . "/details-" . $self->name . ".json";
+    my $fn = $self->job->result_dir() . "/details-" . $self->name . ".json";
     OpenQA::Utils::log_debug "reading $fn";
     open(my $fh, "<", $fn) || return [];
     local $/;
@@ -173,18 +173,16 @@ sub update_result($) {
             soft_failure => $r->{dents}?1:0,
         }
     );
-    $self->save_details($r->{details});
 }
 
 sub save_details($) {
     my ($self, $details) = @_;
-    use Data::Dumper;
     for my $d (@$details) {
-        OpenQA::Utils::save_base64_png($self->job->resultdir, $d->{screenshot}->{name},$d->{screenshot}->{full});
-        OpenQA::Utils::save_base64_png($self->job->resultdir . "/.thumbs",$d->{screenshot}->{name}, $d->{screenshot}->{thumb});
+        OpenQA::Utils::save_base64_png($self->job->result_dir, $d->{screenshot}->{name},$d->{screenshot}->{full});
+        OpenQA::Utils::save_base64_png($self->job->result_dir . "/.thumbs",$d->{screenshot}->{name}, $d->{screenshot}->{thumb});
         $d->{screenshot} = $d->{screenshot}->{name};
     }
-    open(my $fh, ">", $self->job->resultdir . "/details-" . $self->name . ".json");
+    open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");
     $fh->print(JSON::encode_json($details));
     close($fh);
 }

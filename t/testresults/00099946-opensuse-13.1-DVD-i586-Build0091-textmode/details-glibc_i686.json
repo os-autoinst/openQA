@@ -1,0 +1,1 @@
+[{"screenshot":"glibc_i686-1.png","needle":"glibc_i686-1","area":[{"y":"91","similarity":99,"h":22,"x":"0","result":"ok","w":255,"diff":"glibc_i686-1-glibc_i686-1-diff0.png"},{"x":"0","result":"ok","w":198,"y":"0","similarity":100,"h":32}],"tags":["test-glibc_i686-1"],"result":"ok"}]

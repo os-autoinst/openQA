@@ -1,0 +1,1 @@
+[{"tags":["inst-instmode"],"result":"ok","screenshot":"installation_mode-1.png","needle":"installation_mode-text-13M2","area":[{"result":"ok","w":851,"x":"0","h":499,"similarity":100,"y":"0"}]},{"tags":["inst-timezone"],"result":"ok","needle":"inst-timezone-text","screenshot":"installation_mode-2.png","area":[{"w":384,"result":"ok","x":"0","h":217,"similarity":100,"y":"0"}]}]

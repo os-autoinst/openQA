@@ -184,8 +184,7 @@ sub show {
 
     return $self->reply->not_found unless $job;
 
-    my $testdirname = $job->settings_hash->{NAME};
-    my $testresultdir = $job->resultdir();
+    my $testresultdir = $job->result_dir();
 
     $self->stash(testname => $job->settings_hash->{NAME});
     $self->stash(resultdir => $testresultdir);
@@ -195,13 +194,8 @@ sub show {
     # If it's running
     if ($job->state =~ /^(?:running|waiting)$/) {
         $self->stash(worker => $job->worker);
-        if ($job->backend_info) {
-            $self->stash(backend_info => decode_json($job->backend_info));
-        }
-        else {
-            $self->stash(backend_info => { backend => 'unk' });
-        }
         $self->stash(job => $job);
+        $self->stash('backend_info', decode_json($job->backend_info || '{}'));
         $self->render('test/running');
         return;
     }
@@ -248,22 +242,24 @@ sub show {
         );
     }
 
-    # result files box
-    my @resultfiles = test_resultfile_list($testdirname);
-
-    # uploaded logs box
-    my @ulogs = test_uploadlog_list($testdirname);
-
-    $self->stash(modlist => \@modlist);
-    if ($job->backend_info) {
-        $self->stash(backend_info => decode_json($job->backend_info));
-    }
-    else { # TODO: put that as migration
-        $self->stash(backend_info => { 'backend' => 'unk' });
-    }
-    $self->stash(resultfiles => \@resultfiles);
-    $self->stash(ulogs => \@ulogs);
     $self->stash(job => $job);
+    $self->stash(modlist => \@modlist);
+
+    my $rd = $job->result_dir();
+    if ($rd) { # saved anything
+        # result files box
+        my @resultfiles = test_resultfile_list($job->result_dir());
+
+        # uploaded logs box
+        my @ulogs = test_uploadlog_list($job->result_dir());
+
+        $self->stash(resultfiles => \@resultfiles);
+        $self->stash(ulogs => \@ulogs);
+    }
+    else {
+        $self->stash(resultfiles => []);
+        $self->stash(ulogs => []);
+    }
 
     $self->render('test/result');
 }
