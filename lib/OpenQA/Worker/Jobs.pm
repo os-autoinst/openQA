@@ -267,6 +267,10 @@ sub upload_status(;$) {
     if ($os_status->{running} || $upload_running) {
         if (!$current_running) { # first test
             $status->{test_order} = read_json_file('test_order.json');
+            if (!$status->{test_order} ) {
+                stop_job('no tests scheduled');
+                return;
+            }
             $status->{backend}    = $os_status->{backend};
         }
         elsif ($current_running ne $os_status->{running}) { # new test
@@ -301,14 +305,12 @@ sub job_incomplete($){
     clean_pool();
 }
 
-# check if results.json contains an overal result. If the latter is
-# missing the worker probably crashed.
 sub read_json_file {
     my ($name) = @_;
     my $fn = "$pooldir/testresults/$name";
     my $ret;
     local $/;
-    open(my $fh, '<', $fn) or return 0;
+    open(my $fh, '<', $fn) or return {};
     my $json = {};
     eval {$json = decode_json(<$fh>);};
     warn "os-autoinst didn't write proper $fn" if $@;
@@ -331,8 +333,6 @@ sub read_result_file($) {
             thumb => read_base64_file("testresults/.thumbs/$screen"),
         };
     }
-    #use Data::Dumper;
-    #print STDERR Dumper($result);
     return { $name => $result };
 }
 

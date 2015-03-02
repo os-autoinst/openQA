@@ -28,7 +28,7 @@ sub init {
 
     my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
 
-    unless (defined $job && $job->worker_id != 0) {
+    unless (defined $job && $job->worker_id) {
         $self->app->log->debug("JOB $job " . $job->worker_id);
         $self->reply->not_found;
         return 0;
@@ -37,8 +37,10 @@ sub init {
 
     $self->stash('worker', $job->worker);
     my $workerport = $job->worker->get_property('WORKER_PORT');
-    my $workerurl = $job->worker->get_property('WORKER_IP') . ':' . $workerport;
-    $self->stash('workerurl', $workerurl);
+    if ($workerport) {
+        my $workerurl = $job->worker->get_property('WORKER_IP') . ':' . $workerport;
+        $self->stash('workerurl', $workerurl);
+    }
 
     1;
 }

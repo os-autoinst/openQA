@@ -8,10 +8,6 @@ if test "$1"  = '--check'; then
     check=1
 fi
 
-if test -z "$check"; then
-    TIDY_ARGS="-b $TIDY_ARGS";
-fi
-
 if ! which perltidy > /dev/null 2>&1; then
     echo "No perltidy found, install it first!"
     exit 1
@@ -22,19 +18,23 @@ cd "${0%/*}/.."
 # just to make sure we are at the right location
 test -e script/openqa || exit 1
 
+find -name '*.tdy' -delete
+
 find . \( -name '*.p[lm]' -o -name '*.t' \) -print0 | xargs -0 perltidy $TIDY_ARGS
 
 find script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,clean_needles} -print0 | xargs -0 perltidy $TIDY_ARGS
 
-if test -n "$check"; then
-    while read file; do
-        if ! diff -u $file ${file%.tdy}; then
-            echo "RUN tools/tidy script before checkin"
-            exit 1
-        fi
-    done < <(find . -name "*.tdy")
-fi
-
-find -name '*.bak' -delete -or -name '*.tdy' -delete
+while read file; do
+  if ! diff -u $file ${file%.tdy}; then
+      if test -n "$check"; then
+        echo "RUN tools/tidy script before checkin"
+        exit 1
+      else
+        mv -v $file ${file%.tdy}
+      fi
+  else
+    rm $file
+  fi
+done < <(find . -name "*.tdy")
 
 # vim: set ts=4 sw=4 sts=4 et:

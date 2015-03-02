@@ -409,7 +409,7 @@ sub update_module($) {
     my $dir = $self->resultdir();
     if (!-d $dir) {
         mkdir($dir) || die "can't mkdir $dir: $!";
-        $dir .= "/thumbs";
+        $dir .= "/.thumbs";
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
     $mod->update_result($result);

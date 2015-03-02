@@ -181,7 +181,7 @@ sub save_details($) {
     use Data::Dumper;
     for my $d (@$details) {
         OpenQA::Utils::save_base64_png($self->job->resultdir, $d->{screenshot}->{name},$d->{screenshot}->{full});
-        OpenQA::Utils::save_base64_png($self->job->resultdir . "/thumbs",$d->{screenshot}->{name}, $d->{screenshot}->{thumb});
+        OpenQA::Utils::save_base64_png($self->job->resultdir . "/.thumbs",$d->{screenshot}->{name}, $d->{screenshot}->{thumb});
         $d->{screenshot} = $d->{screenshot}->{name};
     }
     open(my $fh, ">", $self->job->resultdir . "/details-" . $self->name . ".json");

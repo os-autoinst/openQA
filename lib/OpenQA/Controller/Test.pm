@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Controller::Test;
+use strict;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Scheduler qw/worker_get/;
@@ -164,7 +165,7 @@ sub test_resultfile_list($) {
     # get a list of existing resultfiles
     my $testname = shift;
     my $testresdir = testresultdir($testname);
-    my @filelist = qw(video.ogv results.json vars.json backend.json serial0.txt autoinst-log.txt);
+    my @filelist = qw(video.ogv vars.json backend.json serial0.txt autoinst-log.txt);
     my @filelist_existing;
     for my $f (@filelist) {
         if(-e "$testresdir/$f") {
@@ -194,7 +195,12 @@ sub show {
     # If it's running
     if ($job->state =~ /^(?:running|waiting)$/) {
         $self->stash(worker => $job->worker);
-        $self->stash(backend_info => decode_json($job->backend_info));
+        if ($job->backend_info) {
+            $self->stash(backend_info => decode_json($job->backend_info));
+        }
+        else {
+            $self->stash(backend_info => { backend => 'unk' });
+        }
         $self->stash(job => $job);
         $self->render('test/running');
         return;
@@ -215,8 +221,6 @@ sub show {
                 push(@wavlist, {name => $img->{'audio'}, num => $num++, result => $img->{'result'}});
             }
         }
-
-        #FIXME: Read ocr also from results.json as soon as we know how it looks like
 
         # add link to $testresultdir/$name*.txt as direct link
         my @ocrlist;
