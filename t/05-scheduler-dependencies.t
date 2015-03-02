@@ -333,13 +333,13 @@ is_deeply($job->{parents}, [$jobC2], "cloned deps");
 # sch     sch     sch
 
 # check MM API for children status - available only for running jobs
-$job = OpenQA::Scheduler::job_get($jobC);
+my $worker = OpenQA::Scheduler::worker_get($w2_id);
 
 my $t = Test::Mojo->new('OpenQA');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => $job->{'settings'}->{'JOBTOKEN'});
+        $tx->req->headers->add('X-API-JobToken' => $worker->{'properties'}->{'JOBTOKEN'});
     }
 );
 

@@ -28,34 +28,11 @@ use Test::Mojo;
 my $schema = OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA');
 
-my %settings = (
-    DISTRI => 'Unicorn',
-    FLAVOR => 'pink',
-    VERSION => '42',
-    BUILD => '666',
-    ISO => 'whatever.iso',
-    DESKTOP => 'DESKTOP',
-    KVM => 'KVM',
-    ISO_MAXSIZE => 1,
-    MACHINE => "RainbowPC",
-    ARCH => 'x86_64'
-);
-
-# need some kind of dependency for children lock testing
-
-my %settingsA = %settings;
-my %settingsB = %settings;
-
-$settingsA{JOBTOKEN} = 'tokenA';
-$settingsA{TEST} = 'A';
-$settingsB{JOBTOKEN} = 'tokenB';
-$settingsB{TEST} = 'B';
-
-my $jobA = OpenQA::Scheduler::job_create(\%settingsA);
-
-$settingsB{_PARALLEL_JOBS} = [$jobA];
-my $jobB = OpenQA::Scheduler::job_create(\%settingsB);
-
+# from fixtures
+my $jobA = 99961;
+my $jobB = 99963;
+my $tokenA = 'token'.$jobA;
+my $tokenB = 'token'.$jobB;
 
 # mutex API is inaccesible without jobtoken auth
 $t->post_ok('/api/v1/mutex/lock/test_lock')->status_is(403);
@@ -65,7 +42,7 @@ $t->get_ok('/api/v1/mutex/unlock/test_lock')->status_is(403);
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => 'tokenA');
+        $tx->req->headers->add('X-API-JobToken' => $tokenA);
     }
 );
 # try locking before mutex is created
@@ -91,7 +68,7 @@ $t->ua->unsubscribe('start');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => 'tokenB');
+        $tx->req->headers->add('X-API-JobToken' => $tokenB);
     }
 );
 # try to lock as another job
@@ -103,7 +80,7 @@ $t->ua->unsubscribe('start');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => 'tokenA');
+        $tx->req->headers->add('X-API-JobToken' => $tokenA);
     }
 );
 
@@ -118,7 +95,7 @@ $t->ua->unsubscribe('start');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => 'tokenB');
+        $tx->req->headers->add('X-API-JobToken' => $tokenB);
     }
 );
 # try double unlock
