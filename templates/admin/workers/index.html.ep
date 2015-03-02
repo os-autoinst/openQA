@@ -2,9 +2,9 @@
 % title 'Workers';
 
 % content_for 'ready_function' => begin
-$('#assets').DataTable( {
-"order": [],
-} );
+   $('#workers').DataTable( {
+     "order": [],
+   } );
 % end
 
 <div class="grid_16 box box-shadow alpha">
@@ -14,7 +14,7 @@ $('#assets').DataTable( {
   
   <p>This page lists the status of <%= $wamount %> workers.</p>
   <p />
-  <table id="results">
+  <table id="workers" class="compact stripe">
     <thead>
       <tr>
         <th>worker</th>
