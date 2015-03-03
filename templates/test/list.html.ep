@@ -9,6 +9,7 @@
 % content_for 'ready_function' => begin
   renderTestsList([ <%= join(',', map { $_->id } $jobs->all) %> ],
   <%= (is_operator) ? 1 : 0 %>,
+  "<%= url_for("test", testid => 'REPLACEIT') %>",
   "<%= url_for("apiv1_restart", name => 'REPLACEIT') %>",
   "<%= url_for("apiv1_job_prio", jobid => 'REPLACEIT') %>",
   "<%= url_for("apiv1_cancel", name => 'REPLACEIT') %>");

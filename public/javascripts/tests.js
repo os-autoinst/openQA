@@ -1,4 +1,4 @@
-function renderTestsList(jobs, is_operator, restart_url, prio_url, cancel_url) {
+function renderTestsList(jobs, is_operator, test_url, restart_url, prio_url, cancel_url) {
 
     var result_table = $('#results').DataTable( {
 	"dom": 'l<"#toolbar">frtip',
@@ -56,6 +56,21 @@ function renderTestsList(jobs, is_operator, restart_url, prio_url, cancel_url) {
 		  }
               },
 	    },
+        { targets: 2,
+            className: "deps",
+            "render": function ( data, type, row ) {
+                if (type === 'display') {
+                    var html = '';
+                    for (index = 0; index < row['deps'].length; index++) {
+                        var url = test_url.replace('REPLACEIT', row['deps'][index]);
+                        html += '<a href="' + url + '">' + row['deps'][index] + '</a>';
+                    }
+                    return html;
+                } else {
+                    return data;
+                }
+            }
+        },
 	    { targets: 3,
 	      "render": function ( data, type, row ) {
 		  if (type === 'display')
@@ -125,7 +140,23 @@ function renderTestsList(jobs, is_operator, restart_url, prio_url, cancel_url) {
                 className: "test",
                 "render": function ( data, type, row ) {
                     if (type === 'display') {
-                        return '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + data + '</a>';
+                        var url = test_url.replace('REPLACEIT', row['id']);
+                        return '<a class="overview_' + row['result'] + '" href="' + url + '">' + data + '</a>';
+                    } else {
+                        return data;
+                    }
+                }
+            },
+            { targets: 2,
+                className: "deps",
+                "render": function ( data, type, row ) {
+                    if (type === 'display') {
+                        var html = '';
+                        for (index = 0; index < row['deps'].length; index++) {
+                            var url = test_url.replace('REPLACEIT', row['deps'][index]);
+                            html += '<a href="' + url + '">' + row['deps'][index] + '</a>';
+                        }
+                        return html;
                     } else {
                         return data;
                     }
@@ -140,7 +171,7 @@ function renderTestsList(jobs, is_operator, restart_url, prio_url, cancel_url) {
                             var url_cancel = cancel_url.replace('REPLACEIT', row['id']);
                             var html = '<a data-method="POST" data-remote="true" class="api-prio" href="' + url_prio + '?prio=' + (row['priority'] - 10) + '"><i class="fa fa-minus-square-o"></i></a>';
                             html += '<span data-prio="' + row['priority'] + '">' + row['priority'] + '</span>';
-                            html += '<a data-method="POST" data-remote="true" class="api-prio" href="' + url_prio + '?prio=' + (row['priority'] + 10) + '"><i class="fa fa-plus-square-o"></i></a>';
+                            html += '<a data-method="POST" data-remote="true" class="api-prio" href="' + url_prio + '?prio=' + (row['priority'] + 10) + '"><i class="fa fa-plus-square-o"></i></a>&nbsp;';
                             html += '<a data-method="POST" data-remote="true" class="api-cancel" href="' + url_cancel + '"><i class="fa fa-times-circle-o"></i></a>';
                             return html;
                         }
@@ -173,6 +204,5 @@ function renderTestsList(jobs, is_operator, restart_url, prio_url, cancel_url) {
     });
     $(document).on("click", '.api-cancel', function() {
         scheduled_table.ajax.reload(null, false);
-        result_tablea.ajax.reload(null, false);
     });
 };
