@@ -80,7 +80,16 @@ sub auth_login {
 
 sub auth_response {
     my ($self) = @_;
-    my %params = @{ $self->req->query_params->params };
+
+    # FIXME: Mojo6 hack, remove after version bump
+    my %params;
+    if ($self->req->query_params->can('params')) {
+        %params = @{ $self->req->query_params->params };
+    }
+    else {
+        %params = @{ $self->req->query_params->pairs };
+    }
+
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base;
 
     if ($self->app->config->{openid}->{httpsonly} && $url !~ /^https:\/\//) {
