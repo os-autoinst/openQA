@@ -114,41 +114,6 @@ sub list_ajax {
     $self->render(json => {data => \@list});
 }
 
-
-# actually it's also return failed modules
-sub get_failed_needles($){
-    my $testname = shift;
-    return undef if !defined($testname);
-
-    my $testresdir = testresultdir($testname);
-    my $glob = "$testresdir/results.json";
-    my $failures = {};
-    my @failedneedles = ();
-    my @failedmodules = ();
-    for my $fn (glob $glob) {
-        local $/; # enable localized slurp mode
-        next unless -e $fn;
-        open(my $fd, '<', $fn);
-        next unless $fd;
-        my $results = decode_json(<$fd>);
-        close $fn;
-        for my $module (@{$results->{testmodules}}) {
-            next unless $module->{result} eq 'fail';
-            push( @failedmodules, $module->{name} );
-            for my $detail (@{$module->{details}}) {
-                next unless $detail->{result} eq 'fail';
-                next unless $detail->{needles};
-                for my $needle (@{$detail->{needles}}) {
-                    push( @failedneedles, $needle->{name} );
-                }
-                $failures->{$testname}->{failedneedles} = \@failedneedles;
-            }
-            $failures->{$testname}->{failedmodules} = \@failedmodules;
-        }
-    }
-    return $failures;
-}
-
 sub test_uploadlog_list($) {
     # get a list of uploaded logs
     my $testname = shift;
@@ -313,9 +278,8 @@ sub overview {
         my $result;
         if ( $job->state eq 'done' ) {
             my $result_stats = $all_result_stats->{$job->id};
-            my $failures     = get_failed_needles($testname);
             my $overall      = $job->result;
-            if ( $job->result eq "passed" && $result_stats->{dents}) {
+            if ( $job->result eq "passed" && $result_stats->{dents} ) {
                 $overall = "unknown";
             }
             $result = {
@@ -326,15 +290,13 @@ sub overview {
                 overall => $overall,
                 jobid   => $job->id,
                 state   => "done",
-                testname => $testname,
-                failures => $failures,
+                failures => $job->failed_modules_with_needles(),
             };
             $aggregated->{$overall}++;
         }
         elsif ( $job->state eq 'running' ) {
             $result = {
                 state    => "running",
-                testname => $testname,
                 jobid    => $job->id,
             };
             $aggregated->{'running'}++;
@@ -342,7 +304,6 @@ sub overview {
         else {
             $result = {
                 state    => $job->state,
-                testname => $testname,
                 jobid    => $job->id,
                 priority => $job->priority,
             };
@@ -355,7 +316,7 @@ sub overview {
         }
 
         # Populate @configs and %archs
-        $test = $test.'@'.$settings->{MACHINE} unless ( $settings->{MACHINE} eq '64bit' || $settings->{MACHINE} eq '32bit' );
+        $test = $test.'@'.$settings->{MACHINE};
         push( @configs, $test ) unless ( grep { $test eq $_ } @configs );
         $archs{$flavor} = [] unless $archs{$flavor};
         push( @{ $archs{$flavor} }, $arch ) unless ( grep { $arch eq $_ } @{ $archs{$flavor} } );

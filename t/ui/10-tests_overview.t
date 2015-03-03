@@ -52,9 +52,9 @@ $get->element_exists_not('#flavor_GNOME-Live_arch_x86_64');
 $get->element_exists_not('#flavor_DVD_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
-$get->text_is('#res_DVD_i586_kde span.overview_passed a' => '47 3');
-$get->text_is('#res_GNOME-Live_i686_RAID0 span' => 'cancelled');
-$get->text_is('#res_DVD_i586_RAID1 span' => 'sched.(46)');
+$get->text_is('#res_DVD_i586_kde@32bit span.overview_passed' => '47 3');
+$get->text_is('#res_GNOME-Live_i686_RAID0@32bit span' => 'cancelled');
+$get->text_is('#res_DVD_i586_RAID1@32bit span' => 'scheduled@46');
 $get->element_exists_not('#res_DVD_x86_64_doc');
 
 #
@@ -70,7 +70,7 @@ $get->element_exists_not('#flavor_DVD_arch_i586');
 $get->element_exists_not('#flavor_GNOME-Live_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
-$get->text_is('#res_DVD_x86_64_doc span.overview_failed a' => '7 1');
+$get->text_is('#res_DVD_x86_64_doc@64bit span.overview_failed' => '7 1');
 $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
 $get->element_exists_not('#res_DVD_x86_64_kde');

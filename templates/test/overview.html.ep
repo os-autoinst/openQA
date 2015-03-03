@@ -33,7 +33,7 @@
                         next if !defined($state);
                     %>
                     <tr>
-                        <td><%= $config %></td>
+                        <td><a href="<%= url_for('test', 'testid' => $jobid) %>"><%= $config %></a></td>
                         <td id="res_<%= $type %>_<%= $arch %>_<%= $config %>">
                         <% if ($res) { %>
                             <%
@@ -46,11 +46,11 @@
                                 <span class="<%=$css%>" id="res-<%= $jobid %>">
                             % }
                             <% if ($state eq "done") { %>
-                                <a href="<%= url_for('test', 'testid' => $jobid) %>"><%= module_result($res) %></a>
+                                <%= module_result($res) %>
                             <% } elsif ($state eq "running") { %>
-                                <a href="<%= url_for('test', 'testid' => $jobid) %>">running</a>
+			        running
                             <% } elsif ($state eq "scheduled") { %>
-                                sched.(<%= $res->{priority} %>)
+                                scheduled@<%= $res->{priority} %>
                             <% } else { %>
                                 <%= $state %>
                             <% } %>
@@ -58,20 +58,23 @@
                         <% } %>
                         </td>
                         <td style="text-align: left; margin: 0px;">
-                            <% if ($state eq "done" && $res->{'failures'}) { %>
-                                <% my $failedmodules = $res->{'failures'}->{$res->{'testname'}}->{'failedmodules'}; %>
-                                <% if ($failedmodules) { %>
-                                    <% for my $failedmodule (@$failedmodules) { %>
-                                        % if (my $failedneedles = $res->{'failures'}->{$res->{'testname'}}->{'failedneedles'}) {
-                                          <span data-ot="<ul><li><%= join('</li><li>', @$failedneedles) %></li></ul>" data-ot-title="Failed needles">
-                                        % } else {
-                                          <span>
-                                        % }
-                                            <a href="<%= url_for('step', 'testid' => $jobid, 'moduleid' => $failedmodule, 'stepid' => 1) %>"><%= $failedmodule %></a>
-                                        </span>
-                                    <% } %>
-                                <% } %>
-                            <% } %>
+                          % if ($state eq "done") {
+                            % my $failedmodules = $res->{'failures'};
+                            % if ($failedmodules) {
+                              % for my $failedmodule (sort keys %$failedmodules) {
+				% my $failedneedles = $failedmodules->{$failedmodule};
+				% my $step = 1;
+  				% if (@$failedneedles) {
+				  % $step = $failedneedles->[0]->[1];
+                                  <span data-ot="<ul><li><%= join('</li><li>', sort map { $_->[0] } @$failedneedles) %></li></ul>" data-ot-title="Failed needles">
+                                % } else {
+                                  <span>
+                                % }
+                                <a href="<%= url_for('step', 'testid' => $jobid, 'moduleid' => $failedmodule, 'stepid' => $step) %>"><%= $failedmodule %></a>
+                                </span>
+                              % }
+                            % }
+                          % }
                         </td>
                     </tr>
                 <% } %>
