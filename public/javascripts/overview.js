@@ -1,42 +1,35 @@
-document.on('ajax:success', 'a', function(event, element) {
-  var span = $('res-' + element.dataset.jobid);
+function setup_overview() {
+    $('.cancel')
+    	.bind("ajax:success", function(event, xhr, status) {
+            $(this).text(''); // hide the icon
+	    var icon = $(this).parents('td').find('.status');
+	    icon.removeClass('state_scheduled').removeClass('state_running');
+	    icon.addClass('state_cancelled');
+	    icon.attr('title', 'Cancelled');
+	    icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
+	});
+    $('.restart')
+	.bind("ajax:success", function(event, xhr, status) {
+	    var oldId = 0;
+	    var newId = xhr['result'][0];
 
-  // Close the dialog
-  span.retrieve('opentips')[0].hide();
+	    $(this).text(''); // hide the icon
+	    var icon = $(this).parents('td').find('.status');
+	    icon.removeClass('state_done').removeClass('state_cancelled');
+	    icon.addClass('state_scheduled');
+	    icon.attr('title', 'Scheduled');
 
-  // After canceling
-  if (element.hasClassName('cancel')) {
-    span.update('cancelled');
-    new Effect.Highlight(span);
+	    // If the API call returns a new id, a new job have been created to replace
+	    // the old one. In other case, the old job is being reused
+	    if (newId) {
+		var link = icon.parents('a');
+		var oldId = $(this).data('jobid');
+		var newUrl = link.attr('href').replace(oldId, newId);
+		link.attr('href', newUrl);
+	    }
 
-  // After adjusting priority
-  } else if (element.hasClassName('prio')) {
-    var prio = element.href.toQueryParams().prio;
-    span.update('sched.('+prio+')');
-    new Effect.Highlight(span);
+	    icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
 
-  // After re-scheduling
-  } else if (element.hasClassName('restart')) {
-    var oldId = span.dataset.ot;
-    var newId = event.memo.responseJSON.result[0];
-    var prio = element.dataset.prio;
+	});
+}
 
-    // If the API call returns a new id, a new job have been created to replace
-    // the old one. In other case, the old job is being reused
-    if (newId) {
-      span.id = 'res-'+newId;
-      span.dataset.ot = newId;
-      var newUrl = span.dataset.otAjax.replace(oldId, newId);
-      span.dataset.otAjax = newUrl; // Not really effective
-      span.retrieve('opentips')[0].options.ajax = newUrl; // This works
-    }
-
-    // Remove all previous styling information
-    var classArray = span.classNames().toArray();
-    for (var index = 0, len = classArray.size(); index < len; ++index) {
-      span.removeClassName(classArray[index]);
-    }
-    span.update('sched.('+prio+')');
-    new Effect.Highlight(span);
-  }
-});

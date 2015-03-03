@@ -281,7 +281,7 @@ sub overview {
             my $result_stats = $all_result_stats->{$job->id};
             my $overall      = $job->result;
             if ( $job->result eq "passed" && $result_stats->{dents} ) {
-                $overall = "unknown";
+                $overall = "softfail";
             }
             $result = {
                 passed  => $result_stats->{passed},
@@ -317,7 +317,7 @@ sub overview {
         }
 
         # Populate @configs and %archs
-        $test = $test.'@'.$settings->{MACHINE};
+        $test = $test; #.'@'.$settings->{MACHINE};
         push( @configs, $test ) unless ( grep { $test eq $_ } @configs );
         $archs{$flavor} = [] unless $archs{$flavor};
         push( @{ $archs{$flavor} }, $arch ) unless ( grep { $arch eq $_ } @{ $archs{$flavor} } );
@@ -347,20 +347,6 @@ sub overview {
         results => \%results,
         aggregated => $aggregated
     );
-}
-
-sub menu {
-    my $self = shift;
-
-    return $self->reply->not_found unless defined $self->param('testid');
-
-    my $job = $self->app->schema->resultset("Jobs")->search({ 'id' => $self->param('testid') })->first;
-
-    return $self->reply->not_found unless $job;
-
-    $self->stash(state => $job->state);
-    $self->stash(prio => $job->priority);
-    $self->stash(jobid => $job->id);
 }
 
 1;

@@ -42,7 +42,7 @@ my $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version
 $get->status_is(200);
 
 $get->content_like(qr/current results for.*opensuse 13\.1 build 0091/i);
-$get->content_like(qr/passed: 2, failed: 0, unknown: 0, incomplete: 0, scheduled: 2, running: 2, none: 1/i);
+$get->content_like(qr/passed: 2,\s*failed: 0,\s*unknown: 0,\s*incomplete: 0,\s*scheduled: 2,\s*running: 2,\s*none: 1/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_i586');
@@ -52,9 +52,9 @@ $get->element_exists_not('#flavor_GNOME-Live_arch_x86_64');
 $get->element_exists_not('#flavor_DVD_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
-$get->text_is('#res_DVD_i586_kde@32bit span.overview_passed' => '47 3');
-$get->text_is('#res_GNOME-Live_i686_RAID0@32bit span' => 'cancelled');
-$get->text_is('#res_DVD_i586_RAID1@32bit span' => 'scheduled@46');
+$get->element_exists('#res_DVD_i586_kde span.result_passed');
+$get->element_exists('#res_GNOME-Live_i686_RAID0 i.state_cancelled');
+$get->element_exists('#res_DVD_i586_RAID1 i.state_scheduled');
 $get->element_exists_not('#res_DVD_x86_64_doc');
 
 #
@@ -62,7 +62,7 @@ $get->element_exists_not('#res_DVD_x86_64_doc');
 #
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
 $get->status_is(200);
-$get->content_like(qr/passed: 0, failed: 1, unknown: 0, incomplete: 0, scheduled: 0, running: 0, none: 0/i);
+$get->content_like(qr/passed: 0,\s*failed: 1,\s*unknown: 0,\s*incomplete: 0,\s*scheduled: 0,\s*running: 0,\s*none: 0/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_x86_64');
@@ -70,7 +70,7 @@ $get->element_exists_not('#flavor_DVD_arch_i586');
 $get->element_exists_not('#flavor_GNOME-Live_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
-$get->text_is('#res_DVD_x86_64_doc@64bit span.overview_failed' => '7 1');
+$get->element_exists('#res_DVD_x86_64_doc span.result_failed');
 $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
 $get->element_exists_not('#res_DVD_x86_64_kde');
@@ -81,7 +81,7 @@ $get->element_exists_not('#res_DVD_x86_64_kde');
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'});
 $get->status_is(200);
 $get->content_like(qr/current results for.*opensuse 13\.1 build 0091/i);
-$get->content_like(qr/passed: 2, failed: 0, unknown: 0, incomplete: 0, scheduled: 2, running: 2, none: 1/i);
+$get->content_like(qr/passed: 2,\s*failed: 0,\s*unknown: 0,\s*incomplete: 0,\s*scheduled: 2,\s*running: 2,\s*none: 1/i);
 
 #
 # Default overview for Factory
@@ -89,7 +89,7 @@ $get->content_like(qr/passed: 2, failed: 0, unknown: 0, incomplete: 0, scheduled
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory'});
 $get->status_is(200);
 $get->content_like(qr/current results for.*opensuse Factory build 0048/i);
-$get->content_like(qr/passed: 0, failed: 1, unknown: 0, incomplete: 0, scheduled: 0, running: 0, none: 0/i);
+$get->content_like(qr/passed: 0,\s*failed: 1,\s*unknown: 0,\s*incomplete: 0,\s*scheduled: 0,\s*running: 0,\s*none: 0/i);
 
 
 #
@@ -98,6 +98,6 @@ $get->content_like(qr/passed: 0, failed: 1, unknown: 0, incomplete: 0, scheduled
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '87.5011'});
 $get->status_is(200);
 $get->content_like(qr/current results for.*opensuse Factory build 87.5011/i);
-$get->content_like(qr/passed: 0, failed: 0, unknown: 0, incomplete: 1, scheduled: 0, running: 0, none: 0/i);
+$get->content_like(qr/passed: 0,\s*failed: 0,\s*unknown: 0,\s*incomplete: 1,\s*scheduled: 0,\s*running: 0,\s*none: 0/i);
 
 done_testing();
