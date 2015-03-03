@@ -38,7 +38,7 @@ use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 72;
+    plan tests => 78;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -225,6 +225,25 @@ sub add_product() {
     }
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 2, "2 edit buttons afterwards");
 
+    # check the distri name will be lowercase after added a new one
+    is($driver->find_element('//input[@value="New product"]')->click(), 1, 'new product' );
+
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), '=', "new row empty");
+    @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
+    is(8, @fields, "8 fields"); # one column has 2 fields
+    (shift @fields)->send_keys('OpeNSusE'); # distri name has capital letter and many upper/lower case combined
+    (shift @fields)->send_keys('13.2'); # version
+    (shift @fields)->send_keys('DVD'); # flavor
+    (shift @fields)->send_keys('ppc64le'); # arch
+
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
+    # leave the ajax some time
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons afterwards");
+
 }
 
 add_product();
@@ -269,6 +288,10 @@ is((shift @fields)->get_text(), 'sle-13-DVD-arm19', 'cool product name first');
 for my $td (@fields) {
     is('xfce', $td->get_text(), 'xfce for product 2');
 }
+
+# confirm that the distri name is lowercase
+@fields = $driver->find_elements('tr#product_3 td', 'css');
+is((shift @fields)->get_text(), 'opensuse-13.2-DVD-ppc64le', 'cool product name first');
 
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
