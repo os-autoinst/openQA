@@ -27,6 +27,7 @@ use File::Path qw/remove_tree/;
 use JSON qw/decode_json/;
 use Fcntl;
 use MIME::Base64;
+use File::Basename qw/basename/;
 
 use base qw/Exporter/;
 our @EXPORT = qw/start_job stop_job check_job backend_running/;
@@ -79,6 +80,7 @@ sub stop_job($;$) {
     # we call this function in all situations, so better check
     return unless $job;
     return if $job_id && $job_id != $job->{'id'};
+    $job_id = $job->{'id'};
 
     print "stop_job $aborted\n" if $verbose;
 
@@ -103,29 +105,37 @@ sub stop_job($;$) {
 
     if ($aborted ne 'quit' && $aborted ne 'abort') {
         # collect uploaded logs
+        my $ua_url = $OpenQA::Worker::Common::url->clone;
+        $ua_url->path("jobs/$job_id/artefact");
+
         my @uploaded_logfiles = <$pooldir/ulogs/*>;
-        print STDERR "TODO: upload logs!\n";
-        #        mkdir("$pooldir/testresults/ulogs/");
-        #        for my $uploaded_logfile (@uploaded_logfiles) {
-        #            next unless -f $uploaded_logfile;
-        #            unless(copy($uploaded_logfile, "$testresults/ulogs/")) {
-        #                warn "can't copy ulog: $uploaded_logfile -> $testresults/ulogs/\n";
-        #            }
-        #        }
+        for my $file (@uploaded_logfiles) {
+            next unless -f $file;
+
+            # don't use api_call as it retries and does not allow form data
+            # (refactor at some point)
+            my $res = $OpenQA::Worker::Common::ua->post(
+                $ua_url => form => {
+                    file => { file => $file, filename => basename($file) },
+                    ulog => 1
+                }
+            );
+        }
         if (open(my $log, '>>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
             printf $log "end time: %s\n", strftime("%F %T", gmtime);
             print $log "result: $aborted\n";
             close $log;
         }
-        print STDERR "TODO: upload files\n";
         for my $file (qw(video.ogv autoinst-log.txt vars.json serial0)) {
             # default serial output file called serial0
             my $ofile = $file;
             $ofile =~ s/serial0/serial0.txt/;
-            #            unless (move("$pooldir/$file", join('/', $testresults, $ofile))) {
-            #                warn "can't move $file: $!\n";
-            #            }
+            my $res = $OpenQA::Worker::Common::ua->post(
+                $ua_url => form => {
+                    file => { file => "$pooldir/$file", filename => $ofile }
+                }
+            );
         }
 
         if ($aborted eq 'obsolete') {

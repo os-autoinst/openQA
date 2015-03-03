@@ -307,6 +307,7 @@ sub duplicate{
     }
     catch {
         my $error = shift;
+        OpenQA::Utils::log_debug("rollback duplicate: $error");
         die "Rollback failed during failed job cloning!"
           if ($error =~ /Rollback failed/);
         $res = undef;
@@ -430,10 +431,8 @@ sub insert_test_modules($) {
     }
 }
 
-sub update_module($) {
-    my ($self, $name, $result) = @_;
-    my $mod = $self->modules->find({name => $name});
-    return unless $mod;
+sub create_result_dir {
+    my ($self) = @_;
     my $dir = $self->result_dir();
     if (!$dir) {
         $dir = sprintf "%08d-%s", $self->id, $self->name;
@@ -444,9 +443,24 @@ sub update_module($) {
     OpenQA::Utils::log_debug("DIR $dir\n");
     if (!-d $dir) {
         mkdir($dir) || die "can't mkdir $dir: $!";
-        $dir .= "/.thumbs";
-        mkdir($dir) || die "can't mkdir $dir: $!";
     }
+    my $sdir = $dir . "/.thumbs";
+    if (!-d $sdir) {
+        mkdir($sdir) || die "can't mkdir $sdir: $!";
+    }
+    $sdir = $dir . "/ulogs";
+    if (!-d $sdir) {
+        mkdir($sdir) || die "can't mkdir $sdir: $!";
+    }
+    return $dir;
+}
+
+sub update_module {
+    my ($self, $name, $result) = @_;
+    my $mod = $self->modules->find({name => $name});
+    return unless $mod;
+    $self->create_result_dir();
+
     $mod->update_result($result);
     $mod->save_details($result->{details});
 }
@@ -490,13 +504,11 @@ sub create_artefact {
 
     $ulog //= 0;
 
-    my $storepath = $self->result_dir();
+    my $storepath = $self->create_result_dir();
     return unless $storepath && -d $storepath;
 
     if ($ulog) {
         $storepath .= "/ulogs";
-        # we might need to create the ulogs subdir ourselves
-        mkdir $storepath unless -d $storepath;
     }
 
     $asset->move_to(join('/', $storepath, $asset->filename));

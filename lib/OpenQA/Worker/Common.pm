@@ -39,8 +39,8 @@ our $worker_caps;
 our $openqa_url;
 
 # package global variables
-my $url;
-my $ua;
+our $url;
+our $ua;
 my $ws;
 my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
 
