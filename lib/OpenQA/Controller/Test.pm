@@ -80,9 +80,10 @@ sub list_ajax {
 
         my $scope = '';
         $scope = 'relevant' if $self->param('relevant') ne 'false';
+        my $state = $self->param('state');
 
         $jobs = OpenQA::Scheduler::query_jobs(
-            state => 'done',
+            state => $state,
             scope => $scope,
             limit => 500,
         );
@@ -106,7 +107,8 @@ sub list_ajax {
             arch => $settings->{ARCH} // '',
             build => $settings->{BUILD} // '',
             testtime => $job->t_created,
-            result => $job->result
+            result => $job->result,
+            priority => $job->priority
         };
         push @list, $data;
     }
