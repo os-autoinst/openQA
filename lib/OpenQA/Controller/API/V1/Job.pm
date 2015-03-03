@@ -101,7 +101,7 @@ sub destroy {
 }
 
 sub prio {
-    my $self = shift;
+    my ($self) = @_;
     my $jobid = int($self->stash('jobid'));
     my $prio = int($self->param('prio'));
 
@@ -112,7 +112,7 @@ sub prio {
 
 # replaced in favor of done
 sub result {
-    my $self = shift;
+    my ($self) = @_;
     my $jobid = int($self->stash('jobid'));
     my $result = $self->param('result');
 
@@ -123,7 +123,7 @@ sub result {
 
 # this is the general worker update call
 sub update_status {
-    my $self = shift;
+    my ($self) = @_;
     my $jobid = int($self->stash('jobid'));
     my $status = $self->req->json->{'status'};
 
@@ -143,8 +143,25 @@ sub update_status {
     $self->render(json => {result => 1});
 }
 
+# used by the worker to upload logs to the test
+sub create_artefact {
+    my ($self) = @_;
+
+    my $jobid = int($self->stash('jobid'));
+    my $job = $self->app->schema->resultset("Jobs")->find($jobid);
+    $self->reply->not_found unless $job;
+
+    if ($job->create_artefact($self->param('file'), $self->param('ulog'))) {
+        $self->render(text => "OK");
+    }
+    else {
+        $self->render(text => "FAILED");
+    }
+}
+
 sub done {
-    my $self = shift;
+    my ($self) = @_;
+
     my $jobid = int($self->stash('jobid'));
     my $result = $self->param('result');
     my $newbuild = 1 if defined $self->param('newbuild');

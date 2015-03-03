@@ -485,5 +485,24 @@ sub running_modinfo() {
     return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $running};
 }
 
+sub create_artefact {
+    my ($self, $asset, $ulog) = @_;
+
+    $ulog //= 0;
+
+    my $storepath = $self->result_dir();
+    return unless $storepath && -d $storepath;
+
+    if ($ulog) {
+        $storepath .= "/ulogs";
+        # we might need to create the ulogs subdir ourselves
+        mkdir $storepath unless -d $storepath;
+    }
+
+    $asset->move_to(join('/', $storepath, $asset->filename));
+    OpenQA::Utils::log_debug("moved to $storepath " .  $asset->filename);
+    1;
+}
+
 1;
 # vim: set sw=4 et:

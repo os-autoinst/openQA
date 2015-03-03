@@ -340,7 +340,8 @@ sub startup {
     # NO LONGER USED
     $job_r->post('/result')->name('apiv1_job_result')->to('job#result'); # job_update_result
     $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done'); # job_set_done
-    $job_r->post('/status')->name('apiv1_update_status')->to('job#update_status'); # job_update_status
+    $job_r->post('/status')->name('apiv1_update_status')->to('job#update_status');
+    $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
 
     # job_set_waiting, job_set_continue
     my $command_r = $job_r->route('/set_:command', command => [qw(waiting running)]);
