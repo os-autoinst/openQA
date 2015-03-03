@@ -141,6 +141,10 @@ function submit_table_row(tr, id)
         
         if (th.hasClass("col_value")) {
             var value = $(this).find("input").val();
+            // distri name must be lowercase
+            if (name == 'distri') {
+                value = value.toLowerCase();
+            }
             data[name] = value;
         }
         else if (th.hasClass("col_settings")) {

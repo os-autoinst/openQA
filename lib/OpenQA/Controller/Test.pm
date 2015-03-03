@@ -121,7 +121,7 @@ sub show {
 
     return $self->reply->not_found unless $job;
 
-    my $testdirname = $job->name;
+    my $testdirname = $job->settings_hash->{NAME};
     my $testresultdir = OpenQA::Utils::testresultdir($testdirname);
 
     $self->stash(testname => $job->settings_hash->{NAME});

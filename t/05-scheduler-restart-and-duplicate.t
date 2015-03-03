@@ -82,7 +82,7 @@ $current_jobs = $jobs;
 OpenQA::Scheduler::job_restart(99963);
 
 $jobs = list_jobs();
-is(@$jobs, @$current_jobs+1, "one more job after restarting running job");
+is(@$jobs, @$current_jobs+2, "two more job after restarting running job with parallel dependency");
 
 $job1 = OpenQA::Scheduler::job_get(99963);
 OpenQA::Scheduler::job_cancel(99963);

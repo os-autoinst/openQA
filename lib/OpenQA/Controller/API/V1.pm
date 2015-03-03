@@ -55,10 +55,10 @@ sub auth_jobtoken {
 
     if ($token) {
         $self->app->log->debug("Received JobToken: $token");
-        my $jobtoken = $self->db->resultset('JobSettings')->find({key => 'JOBTOKEN', value => $token});
-        if ($jobtoken) {
-            $self->stash('job_id', $jobtoken->job_id);
-            $self->app->log->debug(sprintf('Found associated job %u', $jobtoken->job_id));
+        my $job = $self->db->resultset('Jobs')->search({'properties.key' => 'JOBTOKEN', 'properties.value' => $token}, {columns => ['id'], join => { 'worker' => 'properties'}})->single;
+        if ($job) {
+            $self->stash('job_id', $job->id);
+            $self->app->log->debug(sprintf('Found associated job %u', $job->id));
             return 1;
         }
     }

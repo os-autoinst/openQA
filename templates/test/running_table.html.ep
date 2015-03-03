@@ -6,11 +6,11 @@
 	    { targets: 0,
               className: "name" },
             { targets: 3,
+              className: "time",
               "render": function ( data, type, row ) {
-                  console.debug(new Date(data));
-		  if (type === 'display')
-		      return jQuery.timeago(new Date(data + " UTC"));
-		  else
+                    if (type === 'display') {
+		      return jQuery.timeago(new Date(data));
+                  } else
 		      return data;
 	      }
 	    },
@@ -36,7 +36,6 @@
 	    % my $build = $settings->{BUILD} // '';
 	    % my $distri = $settings->{DISTRI} // '';
 	    % my $version = $settings->{VERSION} // '';
-	    
 	    <tr id="job_<%= $job->id %>">
 		% my $testname = $job->test . '@' . $settings->{MACHINE};
 		<td class="name">
@@ -54,7 +53,7 @@
 		</td>
 		
 		% my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
-		<td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started %></td>
+		<td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %></td>
 		
 		<td style="padding: 3px 4px;" class="progress">
 		    <div class="pbox">
