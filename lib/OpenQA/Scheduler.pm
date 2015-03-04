@@ -628,7 +628,9 @@ sub job_grab {
     $job_hashref = _job_get({'me.id' => $job->id});
 
     # JOBTOKEN for test access to API
-    $worker->set_property('JOBTOKEN', rndstr);
+    my $token = rndstr;
+    $worker->set_property('JOBTOKEN', $token);
+    $job_hashref->{settings}->{JOBTOKEN} = $token;
 
     # TODO: cleanup previous tmpdir
     $worker->set_property('WORKER_TMPDIR', tempdir());
