@@ -306,8 +306,6 @@ sub job_incomplete($){
     # make it less attractive so we don't get it again
     api_call('post', 'jobs/'.$job->{'id'}.'/duplicate', \%args);
 
-    # set result after creating duplicate job so the chained jobs can survive
-    upload_status(1);
     api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
 
     clean_pool();
