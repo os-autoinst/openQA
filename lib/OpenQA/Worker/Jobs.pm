@@ -26,6 +26,8 @@ use File::Copy qw/copy move/;
 use File::Path qw/remove_tree/;
 use JSON qw/decode_json/;
 use Fcntl;
+use MIME::Base64;
+use File::Basename qw/basename/;
 
 use base qw/Exporter/;
 our @EXPORT = qw/start_job stop_job check_job backend_running/;
@@ -33,6 +35,8 @@ our @EXPORT = qw/start_job stop_job check_job backend_running/;
 my $worker;
 my $log_offset = 0;
 my $max_job_time = 7200; # 2h
+my $current_running;
+my $test_order;
 
 ## Job management
 sub _kill_worker($) {
@@ -76,6 +80,7 @@ sub stop_job($;$) {
     # we call this function in all situations, so better check
     return unless $job;
     return if $job_id && $job_id != $job->{'id'};
+    $job_id = $job->{'id'};
 
     print "stop_job $aborted\n" if $verbose;
 
@@ -100,13 +105,21 @@ sub stop_job($;$) {
 
     if ($aborted ne 'quit' && $aborted ne 'abort') {
         # collect uploaded logs
+        my $ua_url = $OpenQA::Worker::Common::url->clone;
+        $ua_url->path("jobs/$job_id/artefact");
+
         my @uploaded_logfiles = <$pooldir/ulogs/*>;
-        mkdir("$testresults/ulogs/");
-        for my $uploaded_logfile (@uploaded_logfiles) {
-            next unless -f $uploaded_logfile;
-            unless(copy($uploaded_logfile, "$testresults/ulogs/")) {
-                warn "can't copy ulog: $uploaded_logfile -> $testresults/ulogs/\n";
-            }
+        for my $file (@uploaded_logfiles) {
+            next unless -f $file;
+
+            # don't use api_call as it retries and does not allow form data
+            # (refactor at some point)
+            my $res = $OpenQA::Worker::Common::ua->post(
+                $ua_url => form => {
+                    file => { file => $file, filename => basename($file) },
+                    ulog => 1
+                }
+            );
         }
         if (open(my $log, '>>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
@@ -118,19 +131,23 @@ sub stop_job($;$) {
             # default serial output file called serial0
             my $ofile = $file;
             $ofile =~ s/serial0/serial0.txt/;
-            unless (move("$pooldir/$file", join('/', $testresults, $ofile))) {
-                warn "can't move $file: $!\n";
-            }
+            my $res = $OpenQA::Worker::Common::ua->post(
+                $ua_url => form => {
+                    file => { file => "$pooldir/$file", filename => $ofile }
+                }
+            );
         }
 
         if ($aborted eq 'obsolete') {
             printf "setting job %d to incomplete (obsolete)\n", $job->{'id'};
+            upload_status(1);
             api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete', newbuild => 1});
             $job_done = 1;
         }
         elsif ($aborted eq 'cancel') {
             # not using job_incomplete here to avoid duplicate
             printf "setting job %d to incomplete (cancel)\n", $job->{'id'};
+            upload_status(1);
             api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
             $job_done = 1;
         }
@@ -138,21 +155,9 @@ sub stop_job($;$) {
             printf "job %d spent more time than MAX_JOB_TIME\n", $job->{'id'};
         }
         elsif ($aborted eq 'done') { # not aborted
-            # if there's no results.json start.pl probably died early, e.g. due to configuration
-            # problem. Release the job so another worker may grab it.
-            my $overall = results_overall() || '';
-            # FIXME: this needs improvement
-            if ($overall eq 'ok') {
-                $overall = 'passed';
-            }
-            elsif ($overall eq 'fail') {
-                $overall = 'failed';
-            }
-            else {
-                $overall = 'incomplete';
-            }
-            printf "setting job %d to $overall\n", $job->{'id'};
-            api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => $overall});
+            printf "setting job %d to done\n", $job->{'id'};
+            upload_status(1);
+            api_call('post', 'jobs/'.$job->{'id'}.'/set_done');
             $job_done = 1;
         }
     }
@@ -177,28 +182,10 @@ sub start_job {
     my $name = $job->{'settings'}->{'NAME'};
     printf "got job %d: %s\n", $job->{'id'}, $name;
     $max_job_time = $job->{'settings'}->{'MAX_JOB_TIME'} || 2*60*60; # 2h
-    $testresults = join('/', RESULTS_DIR, $name);
-    if (-l "$testresults") {
-        unlink($testresults);
-    }
-    elsif (-e $testresults) {
-        backup_testresults($testresults);
-    }
-    if (!mkdir($testresults)) {
-        warn "mkdir $testresults: $!\n";
-        return stop_job('setup failure');
-    }
-    if (!mkdir(join('/', $pooldir, 'testresults'))) {
-        warn "mkdir $pooldir/testresults: $!\n";
-        return stop_job('setup failure');
-    }
-    if (!symlink($testresults, join('/', $pooldir, 'testresults', $name))) {
-        warn "symlink $testresults: $!\n";
-        return stop_job('setup failure');
-    }
 
     # for the status call
     $log_offset = 0;
+    $current_running = undef;
 
     $worker = engine_workit($job);
     unless ($worker) {
@@ -223,7 +210,7 @@ sub start_job {
         sub {
             # abort job if it takes too long
             if ($job) {
-                warn sprintf("max job time exceeded, aborting %s ...\n", $job->{'settings'}->{'NAME'});
+                warn sprintf("max job time exceeded, aborting %s ...\n", $name);
                 stop_job('timeout');
             }
         },
@@ -248,14 +235,66 @@ sub log_snippet {
     return $ret;
 }
 
-# uploads current data
+my $lastscreenshot = '';
+
+# reads the base64 encoded content of a file below pooldir
+sub read_base64_file($) {
+    my ($file) = @_;
+    my $c = OpenQA::Utils::file_content("$pooldir/$file");
+    return encode_base64($c);
+}
+
+sub read_last_screen {
+    my $lastlink = readlink("$pooldir/qemuscreenshot/last.png");
+    return undef if !$lastlink || $lastscreenshot eq $lastlink;
+    my $png = read_base64_file("qemuscreenshot/$lastlink");
+    $lastscreenshot = $lastlink;
+    return { name => $lastscreenshot, png => $png };
+}
+
+# timer function ignoring arguments
 sub update_status {
+    upload_status();
+}
+
+# uploads current data
+sub upload_status(;$) {
+    my ($upload_running) = @_;
+
     return unless verify_workerid;
     return unless $job;
     my $status = {};
 
+    my $os_status = read_json_file('status.json') || {};
+    # cherry-pick
+    $status->{status} = {};
+    for my $f (qw/interactive needinput/) {
+        $status->{status}->{$f} = $os_status->{$f};
+    }
+    my $upload_result;
+    $upload_result = $current_running if ($upload_running);
+
+    if ($os_status->{running} || $upload_running) {
+        if (!$current_running) { # first test
+            $test_order = read_json_file('test_order.json');
+            if (!$test_order ) {
+                stop_job('no tests scheduled');
+                return;
+            }
+            $status->{test_order} = $test_order;
+            $status->{backend}    = $os_status->{backend};
+        }
+        elsif ($current_running ne $os_status->{running}) { # new test
+            $upload_result = $current_running;
+        }
+        $current_running = $os_status->{running};
+    }
+    $status->{result} = read_result_file($upload_result) if $upload_result;
     $status->{'log'} = log_snippet;
-    $status->{'results'} = results();
+
+    my $screen = read_last_screen;
+    $status->{'screen'} = $screen if $screen;
+
     api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
 }
 
@@ -271,18 +310,18 @@ sub job_incomplete($){
     api_call('post', 'jobs/'.$job->{'id'}.'/duplicate', \%args);
 
     # set result after creating duplicate job so the chained jobs can survive
+    upload_status(1);
     api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
 
     clean_pool();
 }
 
-# check if results.json contains an overal result. If the latter is
-# missing the worker probably crashed.
-sub results {
-    my $fn = "$testresults/results.json";
+sub read_json_file {
+    my ($name) = @_;
+    my $fn = "$pooldir/testresults/$name";
     my $ret;
     local $/;
-    open(my $fh, '<', $fn) or return 0;
+    open(my $fh, '<', $fn) or return undef;
     my $json = {};
     eval {$json = decode_json(<$fh>);};
     warn "os-autoinst didn't write proper $fn" if $@;
@@ -290,19 +329,33 @@ sub results {
     return $json;
 }
 
-sub results_overall() {
-    my $json = results();
-    return $json->{'overall'};
-}
+sub read_result_file($) {
+    my ($name) = @_;
 
-sub backup_testresults($){
-    my $testresults = shift;
-    for (my $i = 0; $i < 100; $i++) {
-        if (rename($testresults, $testresults.".$i")) {
-            return;
+    my $ret = {};
+
+    # we need to upload all results not yet uploaded - and stop at $name
+    while (scalar(@$test_order)) {
+        my $test = (shift @$test_order)->{name};
+        my $result = read_json_file("result-$test.json");
+        last unless $result;
+        for my $d (@{$result->{details}}) {
+            my $screen = $d->{screenshot};
+            next unless $screen;
+            $d->{screenshot} = {
+                name => $screen,
+                full => read_base64_file("testresults/$screen"),
+                thumb => read_base64_file("testresults/.thumbs/$screen"),
+            };
         }
+        $ret->{$test} = $result;
+        last if ($test eq $name);
     }
-    remove_tree($testresults);
+    if (@$test_order) {
+        # set the next to running
+        $ret->{$test_order->[0]->{name}} = { result => 'running' };
+    }
+    return $ret;
 }
 
 sub backend_running {

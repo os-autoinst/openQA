@@ -118,8 +118,8 @@ sub _message {
         $ws->app->log->warn("A message received from unknown worker connection");
         return;
     }
-    OpenQA::Scheduler::_validate_workerid($workerid);
-    OpenQA::Scheduler::_seen_worker($workerid);
+    my $worker = OpenQA::Scheduler::_validate_workerid($workerid);
+    $worker->seen();
     if ($msg eq 'ok') {
         $ws->tx->send('ok');
     }

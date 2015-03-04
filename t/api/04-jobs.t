@@ -19,14 +19,16 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More tests => 38;
 use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
-use Data::Dump;
 
 OpenQA::Test::Case->new->init_data;
+
+# allow up to 200MB - videos mostly
+$ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
 
 my $t = Test::Mojo->new('OpenQA');
 
@@ -88,5 +90,24 @@ is $get->tx->res->json->{job}->{clone_id}, undef;
 $post = $t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
 $get = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
 isnt $get->tx->res->json->{job}->{clone_id}, undef;
+
+use File::Temp;
+my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
+seek($fh, 20 * 1024 * 1024, 0); # create 200MB quick
+syswrite($fh, "X" );
+close($fh);
+
+my $rp = "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/video.ogv";
+unlink($rp); # make sure previous tests don't fool us
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>{ file => { file => $filename, filename => 'video.ogv' } })->status_is(200);
+
+isnt -e $rp, undef, "video exist after";
+is(`md5sum < $rp`, "feeebd34e507d3a1641c774da135be77  -\n", "md5sum matches");
+
+$rp = "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/y2logs.tar.bz2";
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>{ file => { file => $filename, filename => 'y2logs.tar.bz2' }, ulog => 1 })->status_is(200);
+$post->content_is('OK');
+isnt -e $rp, undef, "logs exist after";
+is(`md5sum < $rp`, "feeebd34e507d3a1641c774da135be77  -\n", "md5sum matches");
 
 done_testing();

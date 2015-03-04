@@ -39,8 +39,8 @@ our $worker_caps;
 our $openqa_url;
 
 # package global variables
-my $url;
-my $ua;
+our $url;
+our $ua;
 my $ws;
 my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
 
@@ -169,7 +169,8 @@ sub api_call {
         carp "$msg";
         if (!$tries) {
             # abort the current job, we're in trouble - but keep running to grab the next
-            stop_job('api-failure');
+            # this lives in Jobs.pm - this is recursive use?
+            #stop_job('api-failure');
             return;
         }
         sleep 5;

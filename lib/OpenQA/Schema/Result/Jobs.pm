@@ -17,8 +17,11 @@
 package OpenQA::Schema::Result::Jobs;
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
-
+use JSON;
+use Fcntl;
 use db_helpers;
+use File::Basename qw/basename/;
+use strict;
 
 # States
 use constant {
@@ -44,15 +47,19 @@ use constant {
 use constant RESULTS => ( NONE, PASSED, FAILED, INCOMPLETE, SKIPPED );
 
 __PACKAGE__->table('jobs');
-__PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
+__PACKAGE__->load_components(qw/InflateColumn::DateTime FilterColumn Timestamps/);
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
         is_auto_increment => 1,
     },
-    slug => {
+    slug => { # to be removed?
         data_type => 'text',
-        is_nullable => 1,
+        is_nullable => 1
+    },
+    result_dir => { # this is the directory below testresults
+        data_type => 'text',
+        is_nullable => 1
     },
     state => {
         data_type => 'varchar',
@@ -85,6 +92,10 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
         default_value => 3,
     },
+    backend => {
+        data_type => 'varchar',
+        is_nullable => 1,
+    },
     backend_info => {
         # we store free text JSON here - backends might store random data about the job
         data_type => 'text',
@@ -116,6 +127,13 @@ __PACKAGE__->has_many(owned_locks => 'OpenQA::Schema::Result::JobLocks', 'owner'
 __PACKAGE__->has_many(locked_locks => 'OpenQA::Schema::Result::JobLocks', 'locked_by');
 
 __PACKAGE__->add_unique_constraint([qw/slug/]);
+
+__PACKAGE__->filter_column(
+    result_dir => {
+        filter_to_storage => 'remove_result_dir_prefix',
+        filter_from_storage => 'add_result_dir_prefix',
+    }
+);
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
@@ -154,6 +172,18 @@ sub settings_hash {
     }
 
     return $self->{_settings};
+}
+
+sub add_result_dir_prefix {
+    my $rd = $_[1];
+    $rd = $OpenQA::Utils::resultdir . "/$rd" if $rd;
+    return $rd;
+}
+
+sub remove_result_dir_prefix {
+    my $rd = $_[1];
+    $rd = basename($_[1]) if $rd;
+    return $rd;
 }
 
 sub machine {
@@ -233,7 +263,7 @@ sub duplicate{
     my $schema = $rsource->schema;
 
     # If the job already have a clone, none is created
-    return undef unless $self->can_be_duplicated;
+    return unless $self->can_be_duplicated;
 
     # Copied retry_avbl as default value if the input undefined
     $args->{retry_avbl} = $self->retry_avbl unless defined $args->{retry_avbl};
@@ -277,6 +307,7 @@ sub duplicate{
     }
     catch {
         my $error = shift;
+        OpenQA::Utils::log_debug("rollback duplicate: $error");
         die "Rollback failed during failed job cloning!"
           if ($error =~ /Rollback failed/);
         $res = undef;
@@ -304,6 +335,185 @@ sub set_property {
     elsif ($r) {
         $r->delete;
     }
+}
+
+# calculate overall result looking at the job modules
+sub calculate_result($) {
+    my ($job) = @_;
+
+    my $overall;
+    my $important_overall; # just counting importants
+
+    for my $m ($job->modules->all) {
+        if ( $m->result eq "ok" ) {
+            if ($m->important) {
+                $important_overall ||= 'ok';
+            }
+            else {
+                $overall ||= 'ok';
+            }
+        }
+        else {
+            if ($m->important) {
+                $important_overall = 'fail';
+            }
+            else {
+                $overall = 'fail';
+            }
+        }
+    }
+    return $important_overall || $overall || 'fail';
+}
+
+sub save_screenshot($) {
+    my ($self, $screen) = @_;
+    return unless length($screen->{name});
+
+    my $tmpdir = $self->worker->get_property('WORKER_TMPDIR');
+    return unless -d $tmpdir; # we can't help
+    my $current = readlink($tmpdir . "/last.png");
+    my $newfile = OpenQA::Utils::save_base64_png($tmpdir, $screen->{name}, $screen->{png});
+    unlink($tmpdir . "/last.png");
+    symlink("$newfile.png", $tmpdir . "/last.png");
+    # remove old file
+    unlink($tmpdir . "/$current") if $current;
+}
+
+sub append_log($) {
+    my ($self, $log) = @_;
+    return unless length($log->{data});
+
+    my $file = $self->worker->get_property('WORKER_TMPDIR');
+    return unless -d $file; # we can't help
+    $file .= "/autoinst-log-live.txt";
+    if (sysopen(my $fd, $file, Fcntl::O_WRONLY|Fcntl::O_CREAT)) {
+        sysseek($fd, $log->{offset}, Fcntl::SEEK_SET);
+        syswrite($fd, $log->{data});
+        close($fd);
+    }
+    else {
+        print STDERR "can't open $file: $!\n";
+    }
+}
+
+sub update_backend($) {
+    my ($self, $backend_info) = @_;
+    $self->update(
+        {
+            backend => $backend_info->{backend},
+            backend_info => JSON::encode_json($backend_info->{backend_info})
+        }
+    );
+}
+
+sub insert_module($$) {
+    my ($self, $tm) = @_;
+    my $r = $self->modules->find_or_new({script => $tm->{script}});
+    if (!$r->in_storage) {
+        $r->category($tm->{category});
+        $r->name($tm->{name});
+        $r->insert;
+    }
+    $r->update(
+        {
+            milestone => $tm->{flags}->{milestone}?1:0,
+            important => $tm->{flags}->{important}?1:0,
+            fatal => $tm->{flags}->{fatal}?1:0,
+        }
+    );
+    return $r;
+}
+
+sub insert_test_modules($) {
+    my ($self, $testmodules) = @_;
+    for my $tm (@{$testmodules}) {
+        $self->insert_module($tm);
+    }
+}
+
+sub create_result_dir {
+    my ($self) = @_;
+    my $dir = $self->result_dir();
+    if (!$dir) {
+        $dir = sprintf "%08d-%s", $self->id, $self->name;
+        OpenQA::Utils::log_debug("NDIR $dir\n");
+        $self->update({result_dir => $dir});
+        $dir = $self->result_dir();
+    }
+    OpenQA::Utils::log_debug("DIR $dir\n");
+    if (!-d $dir) {
+        mkdir($dir) || die "can't mkdir $dir: $!";
+    }
+    my $sdir = $dir . "/.thumbs";
+    if (!-d $sdir) {
+        mkdir($sdir) || die "can't mkdir $sdir: $!";
+    }
+    $sdir = $dir . "/ulogs";
+    if (!-d $sdir) {
+        mkdir($sdir) || die "can't mkdir $sdir: $!";
+    }
+    return $dir;
+}
+
+sub update_module {
+    my ($self, $name, $result) = @_;
+    my $mod = $self->modules->find({name => $name});
+    return unless $mod;
+    $self->create_result_dir();
+
+    $mod->update_result($result);
+    $mod->save_details($result->{details});
+}
+
+sub running_modinfo() {
+    my ($self) = @_;
+
+    my @modules = OpenQA::Schema::Result::JobModules::job_modules($self);
+
+    my $modlist = [];
+    my $donecount = 0;
+    my $count = int(@modules);
+    my $modstate = 'done';
+    my $running;
+    my $category;
+    for my $module (@modules) {
+        my $name = $module->name;
+        my $result = $module->result;
+        if (!$category || $category ne $module->category) {
+            $category = $module->category;
+            push(@$modlist, {'category' => $category, 'modules' => []});
+        }
+        if ($result eq 'running') {
+            $modstate = 'current';
+            $running = $name;
+        }
+        elsif ($modstate eq 'current') {
+            $modstate = 'todo';
+        }
+        elsif ($modstate eq 'done') {
+            $donecount++;
+        }
+        my $moditem = {'name' => $name, 'state' => $modstate, 'result' => $result};
+        push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
+    }
+    return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $running};
+}
+
+sub create_artefact {
+    my ($self, $asset, $ulog) = @_;
+
+    $ulog //= 0;
+
+    my $storepath = $self->create_result_dir();
+    return unless $storepath && -d $storepath;
+
+    if ($ulog) {
+        $storepath .= "/ulogs";
+    }
+
+    $asset->move_to(join('/', $storepath, $asset->filename));
+    OpenQA::Utils::log_debug("moved to $storepath " .  $asset->filename);
+    1;
 }
 
 1;

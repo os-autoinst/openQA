@@ -53,13 +53,14 @@ sub main {
     add_timer('ws_keepalive', 5, \&OpenQA::Worker::Common::ws_keepalive);
     # backup check_job in case notification command does not get through
     add_timer('check_job', 10, \&check_job);
+    # run it once
+    check_job();
 
     # start event loop - this will block until stop is called
     Mojo::IOLoop->start;
     # cleanup on finish if necessary
     if ($job) {
         stop_job('quit');
-        unlink($testresults);
     }
 }
 

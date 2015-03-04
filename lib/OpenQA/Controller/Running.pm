@@ -19,37 +19,20 @@ use strict;
 use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
-import JSON;
+use JSON qw/encode_json decode_json/;
 use OpenQA::Utils;
 use OpenQA::Scheduler ();
 
 sub init {
     my ($self) = @_;
 
-    my $job = $self->app->schema->resultset("Jobs")->search({ 'id' => $self->param('testid') } )->first;
+    my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
 
-    unless (defined $job) {
+    unless (defined $job && $job->worker_id) {
         $self->reply->not_found;
         return 0;
     }
     $self->stash('job', $job);
-
-    my $testdirname = $job->settings_hash->{NAME};
-    $self->stash('testdirname', $testdirname);
-
-    my $basepath = running_log($testdirname);
-    $self->stash('basepath', $basepath);
-    my $workerid = $job->worker_id;
-    $self->stash('workerid', $workerid);
-    my $worker = OpenQA::Scheduler::worker_get($workerid);
-    my $workerport = $worker->{properties}->{WORKER_PORT};
-    my $workerurl = $worker->{properties}->{WORKER_IP} . ':' . $workerport;
-    $self->stash('workerurl', $workerurl);
-
-    if ($basepath eq '') {
-        $self->reply->not_found;
-        return 0;
-    }
 
     1;
 }
@@ -58,7 +41,7 @@ sub modlist {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $modinfo = OpenQA::Schema::Result::JobModules::running_modinfo($self->stash('job'));
+    my $modinfo = $self->stash('job')->running_modinfo();
     if (defined $modinfo) {
         $self->render(json => $modinfo->{'modlist'});
     }
@@ -71,14 +54,9 @@ sub status {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = { 'interactive' => 0, 'workerid' => $self->stash('workerid') };
-    my $schema = OpenQA::Scheduler::schema();
-    my $r = $schema->resultset("JobModules")->find(
-        {
-            job_id => $self->stash('job')->{id},
-            result => 'running'
-        }
-    );
+    my $job = $self->stash('job');
+    my $results = { 'interactive' => 0, 'workerid' => $job->worker_id };
+    my $r = $job->modules->find({result => 'running'});
 
     $results->{'running'} = $r->name() if $r;
     $self->render(json => $results);
@@ -88,25 +66,28 @@ sub edit {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $results = test_result($self->stash('testdirname'));
-    my $moduleid = $results->{'running'};
-    my $module = test_result_module($results->{'testmodules'}, $moduleid);
-    if ($module) {
-        my $stepid = scalar(@{$module->{'details'}});
-        $self->redirect_to('edit_step', moduleid => $moduleid, stepid => $stepid);
+    my $job = $self->stash('job');
+    my $r = $job->modules->find({result => 'running'});
+    if (!$r) {
+        return $self->reply->not_found;
     }
-    else {
-        $self->reply->not_found;
-    }
+    # TODO: for interactive mode, the worker needs to transfer more, but lnussel is rewriting this, so
+    # avoid making this a bigger mess as necessary and hardcode step 1
+    $self->redirect_to('edit_step', moduleid => $r->name(), stepid => 1);
 }
 
 sub livelog {
     my ($self) = @_;
     return 0 unless $self->init();
+    my $job = $self->stash('job');
+    my $worker = $job->worker;
     # tell worker to increase status updates rate for more responsive updates
-    OpenQA::Scheduler::command_enqueue(workerid => $self->stash('workerid'), command => 'livelog_start');
+    OpenQA::Scheduler::command_enqueue(
+        workerid => $worker->id,
+        command => 'livelog_start'
+    );
 
-    my $logfile = $self->stash('basepath').'autoinst-log-live.txt';
+    my $logfile = $worker->get_property('WORKER_TMPDIR').'/autoinst-log-live.txt';
 
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
@@ -139,7 +120,10 @@ sub livelog {
     my $id;
     my $close = sub {
         Mojo::IOLoop->remove($id);
-        OpenQA::Scheduler::command_enqueue(workerid => $self->stash('workerid'), command => 'livelog_stop');
+        OpenQA::Scheduler::command_enqueue(
+            workerid => $worker->id,
+            command => 'livelog_stop'
+        );
         $self->finish;
         close $log;
         return;
@@ -182,7 +166,7 @@ sub livelog {
         finish => sub {
             Mojo::IOLoop->remove($id);
             OpenQA::Scheduler::command_enqueue(
-                workerid => $self->stash('workerid'),
+                workerid => $worker->id,
                 command => 'livelog_stop'
             );
         }
@@ -190,7 +174,7 @@ sub livelog {
 }
 
 sub streaming {
-    my $self = shift;
+    my ($self) = @_;
     return 0 unless $self->init();
 
     $self->render_later;
@@ -199,7 +183,7 @@ sub streaming {
     $self->res->headers->content_type('text/event-stream');
 
     my $lastfile = '';
-    my $basepath = $self->stash('basepath');
+    my $basepath = $self->stash('job')->worker->get_property('WORKER_TMPDIR');
 
     # Set up a recurring timer to send the last screenshot to the client,
     # plus a utility function to close the connection if anything goes wrong.

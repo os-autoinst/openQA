@@ -119,21 +119,20 @@
             <% }  %>
         </table>
 	</div>
-	<% if($backend_info) { %>
-	<% $backend_info->{'backend'} =~s/^.*:://; %>
 	<div class="box box-shadow" id="backend_info_box">
-		<div class="box-header aligncenter">Backend</div>
+	<div class="box-header aligncenter">Backend</div>
         <table class="infotbl">
             <tr>
-                <td colspan="2" style="padding: 0 0 <%= ($backend_info->{'backend'} eq 'kvm2usb')?'8px':'0' %> 0;"><%= $backend_info->{'backend'} %></td>
+              <td colspan="2" style="padding: 0 0 <%= ($job->backend eq
+				       'kvm2usb')?'8px':'0' %> 0;"><%= $job->backend || '' %></td>
             </tr>
-            % if($backend_info->{'backend'} eq 'kvm2usb') {
+            % if($job->backend eq 'kvm2usb') {
                 <tr>
                     <td style="width: 16px;"><img src="/images/hw_icons/slot.svg" width="16" height="16" title="slot" alt="slot"/></td>
-                    <td><%= $backend_info->{'backend_info'}->{'hwslot'} %></td>
+                    <td><%= $job->backend_info->{'hwslot'} %></td>
                 </tr>
-                % if(defined $backend_info->{'backend_info'}->{'hw_info'}) {
-                    % my $hw_info = $backend_info->{'backend_info'}->{'hw_info'};
+                % if(defined $job->backend_info->{'hw_info'}) {
+                    % my $hw_info = $job->backend_info->{'hw_info'};
                     % for my $hw_key ( ('vendor', 'name', 'cpu', 'cpu_cores', 'memory', 'disks') ) { 
                         % unless (defined $hw_info->{$hw_key}) {
                             % next
@@ -152,7 +151,6 @@
             % }
         </table>
 	</div>
-	<% } %>
 	<div class="box box-shadow" id="legend_box">
 	    <div class="box-header aligncenter">Flag Legend</div>
             <table class="infotbl">

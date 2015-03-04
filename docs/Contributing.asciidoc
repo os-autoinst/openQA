@@ -140,11 +140,10 @@ and upgrades include those changes.
    version number at the same time.
 
 .  Then you need to generate the deployment files for new installations,
-   this is done by running +./initdb --prepare_init+ in the +scripts+ directory.
+   this is done by running +./script/initdb --prepare_init+.
 
 .  Afterwards you need to generate the deployment files for new installations,
-   this is done by running +./upgradedb --prepare_upgrade+ in the +scripts+
-   directory. +
+   this is done by running +./script/upgradedb --prepare_upgrade+.
    After doing so, the directories +dbicdh/$ENGINE/deploy/<new version>+ and
    +dbicdh/$ENGINE/upgrade/<prev version>-<new version>+ for SQLite, PosgreSQL
    and MySQL should have been created with some SQL files inside containing
@@ -161,7 +160,7 @@ and upgrades include those changes.
 
 The above steps are executed in the developer's system. Once openQA is
 installed in a production server, you should run either
-+./initdb --init_database+ or +./upgradedb --upgrade_database+ to actually
++./script/initdb --init_database+ or +./script/upgradedb --upgrade_database+ to actually
 create or upgrade a database.
 
 How to add fixtures to the database
@@ -188,22 +187,19 @@ export DBIC_TRACE=1
 How to overwrite config files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It can be necessary during development to change the config files in etc/,
-e.g. to use postgresql or mysql you have to change etc/openqa/database.ini 
-or to increase the log level it's useful to set the loglevel = debug in
+It can be necessary during development to change the config files in +etc/+.
+For example you have to edit etc/openqa/database.ini to use another database.
+Or to increase the log level it's useful to set the loglevel to debug in
 etc/openqa/openqa.ini.
 
 To avoid these changes getting in your git workflow, copy them to a new
 directory and set OPENQA_CONFIG in your shell setup files.
 
 --------------------------------------------------------------------------------
-mkdir etc/mine
-cp etc/openqa/database.ini etc/mine
-cp etc/openqa/openqa.ini etc/mine
-cp etc/openqa/client.conf etc/mine
-cp etc/openqa/workers.ini etc/mine
+cp -ar etc/openqa etc/mine
 export OPENQA_CONFIG=$PWD/etc/mine
 --------------------------------------------------------------------------------
 
-Note that OPENQA_CONFIG points to the directory in which openqa.ini, database.ini,
-client.conf and workers.ini are expected to reside.
+Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
+client.conf and workers.ini.
+

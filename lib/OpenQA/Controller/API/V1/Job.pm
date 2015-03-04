@@ -101,7 +101,7 @@ sub destroy {
 }
 
 sub prio {
-    my $self = shift;
+    my ($self) = @_;
     my $jobid = int($self->stash('jobid'));
     my $prio = int($self->param('prio'));
 
@@ -112,7 +112,7 @@ sub prio {
 
 # replaced in favor of done
 sub result {
-    my $self = shift;
+    my ($self) = @_;
     my $jobid = int($self->stash('jobid'));
     my $result = $self->param('result');
 
@@ -123,16 +123,45 @@ sub result {
 
 # this is the general worker update call
 sub update_status {
-    my $self = shift;
+    my ($self) = @_;
     my $jobid = int($self->stash('jobid'));
     my $status = $self->req->json->{'status'};
 
-    my $res = OpenQA::Scheduler::job_update_status($jobid, $status);
-    $self->render(json => {result => \$res});
+    my $job = $self->app->schema->resultset("Jobs")->find($jobid);
+    # print "$id " . Dumper($status) . "\n";
+
+    $job->append_log($status->{log});
+    $job->save_screenshot($status->{screen}) if $status->{screen};
+    $job->update_backend($status->{backend}) if $status->{backend};
+    $job->insert_test_modules($status->{test_order}) if $status->{test_order};
+    if ($status->{result}) {
+        while (my ($name, $result) = each %{$status->{result}}) {
+            $job->update_module($name, $result);
+        }
+    }
+
+    $self->render(json => {result => 1});
+}
+
+# used by the worker to upload logs to the test
+sub create_artefact {
+    my ($self) = @_;
+
+    my $jobid = int($self->stash('jobid'));
+    my $job = $self->app->schema->resultset("Jobs")->find($jobid);
+    $self->reply->not_found unless $job;
+
+    if ($job->create_artefact($self->param('file'), $self->param('ulog'))) {
+        $self->render(text => "OK");
+    }
+    else {
+        $self->render(text => "FAILED");
+    }
 }
 
 sub done {
-    my $self = shift;
+    my ($self) = @_;
+
     my $jobid = int($self->stash('jobid'));
     my $result = $self->param('result');
     my $newbuild = 1 if defined $self->param('newbuild');

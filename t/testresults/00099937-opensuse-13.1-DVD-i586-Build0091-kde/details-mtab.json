@@ -1,0 +1,1 @@
+[{"needle":"mtab-1-2-good-diff","area":[{"h":32,"similarity":99,"w":345,"result":"ok","x":"0","diff":"mtab-1-mtab-1-2-good-diff-diff0.png","y":"0"}],"result":"ok","tags":["test-mtab-1"],"screenshot":"mtab-1.png"},{"result":"unk","screenshot":"mtab-2.png"}]

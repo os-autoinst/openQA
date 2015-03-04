@@ -16,6 +16,7 @@
 
 package OpenQA::Schema::Result::Workers;
 use base qw/DBIx::Class::Core/;
+use DBIx::Class::Timestamps qw/now/;
 
 use db_helpers;
 
@@ -44,6 +45,48 @@ __PACKAGE__->has_many(properties => 'OpenQA::Schema::Result::WorkerProperties', 
 
 # TODO
 # INSERT INTO workers (id, t_created) VALUES(0, datetime('now'));
+
+sub seen(;$) {
+    my ($self, $workercaps) = @_;
+    $self->update({ t_updated => now() });
+    $self->update_caps($workercaps) if $workercaps;
+}
+
+# update worker's capabilities
+# param: workerid , workercaps
+sub update_caps($$) {
+    my ($self, $workercaps) = @_;
+
+    for my $cap (keys %$workercaps) {
+        $self->set_property(uc $cap, $workercaps->{$cap}) if $workercaps->{$cap};
+    }
+}
+
+sub get_property($) {
+    my ($self, $key) = @_;
+
+    my $r = $self->properties->find({key => $key});
+    return $r ? $r->value : undef;
+}
+
+sub set_property($$) {
+
+    my ($self, $key, $val) = @_;
+
+    my $r = $self->properties->find_or_new(
+        {
+            key => $key
+        }
+    );
+
+    if (!$r->in_storage) {
+        $r->value($val);
+        $r->insert;
+    }
+    else {
+        $r->update({ value => $val });
+    }
+}
 
 1;
 # vim: set sw=4 et:
