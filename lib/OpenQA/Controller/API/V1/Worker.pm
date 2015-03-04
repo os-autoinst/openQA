@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Scheduler ();
 use OpenQA::WebSockets qw/ws_create/;
+use Try::Tiny;
 
 sub list {
     my $self = shift;
@@ -56,7 +57,12 @@ sub websocket_create {
     my ($self) = @_;
     my $workerid = $self->stash('workerid');
     $self->app->log->debug("Worker $workerid requested websocket connection\n");
-    ws_create($workerid, $self);
+    try {
+        ws_create($workerid, $self);
+    }
+    catch {
+        $self->render(json => {error => $_}, status => 404);
+    };
 }
 
 1;
