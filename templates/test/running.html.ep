@@ -11,12 +11,12 @@
             % end
             %# TODO: to use can_be_duplicated we have to wait for https://progress.opensuse.org/issues/1393
             %#       in the meantime, just check clone_id
-            % unless ($job->{'clone_id'}) {
-                %= link_post url_for('apiv1_restart', name => $job->{'id'}) => ('data-remote' => 'true', id => 'restart_running') => begin
+            % unless ($job->clone_id) {
+                %= link_post url_for('apiv1_restart', name => $job->id) => ('data-remote' => 'true', id => 'restart_running') => begin
                     %= image '/images/toggle.png', alt => "restart", title => "Restart job"
                 % end
             % }
-            %= link_post url_for('apiv1_cancel', name => $job->{'id'}) => ('data-remote' => 'true', id => 'cancel_running') => begin
+            %= link_post url_for('apiv1_cancel', name => $job->id) => ('data-remote' => 'true', id => 'cancel_running') => begin
                 %= image '/images/cancel.png', alt => "stop", title => "Stop job"
             % end
         </div>
