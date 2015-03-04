@@ -38,7 +38,7 @@ use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 78;
+    plan tests => 80;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -76,8 +76,8 @@ sub add_machine() {
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "name",    "1st column");
     is((shift @headers)->get_text(), "backend", "2nd column");
-    is((shift @headers)->get_text(), "LAPTOP",  "3rd column");
-    is((shift @headers)->get_text(), "QEMUCPU", "4th column");
+    is((shift @headers)->get_text(), "QEMUCPU",  "3rd column");
+    is((shift @headers)->get_text(), "LAPTOP", "4th column");
     is((shift @headers)->get_text(), "other variables", "5th column");
     is((shift @headers)->get_text(), "action",  "6th column");
 
@@ -88,8 +88,8 @@ sub add_machine() {
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "Laptop_64",    "name");
     is((shift @headers)->get_text(), "qemu", "backend");
-    is((shift @headers)->get_text(), "1",  "LAPTOP");
-    is((shift @headers)->get_text(), "qemu64", "cpu");
+    is((shift @headers)->get_text(), "qemu64",  "cpu");
+    is((shift @headers)->get_text(), "1", "LAPTOP");
 
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons before");
 
@@ -124,14 +124,15 @@ sub add_test_suite() {
 
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(6, @headers, "6 columns");
+    is(7, @headers, "7 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "name",    "1st column");
     is((shift @headers)->get_text(), "prio", "2nd column");
-    is((shift @headers)->get_text(), "INSTALLONLY",  "3rd column");
-    is((shift @headers)->get_text(), "RAIDLEVEL", "4th column");
-    is((shift @headers)->get_text(), "other variables",  "5th column");
+    is((shift @headers)->get_text(), "DESKTOP",  "3rd column");
+    is((shift @headers)->get_text(), "PARALLEL_WITH", "4th column");
+    is((shift @headers)->get_text(), "INSTALLONLY", "5th column");
+    is((shift @headers)->get_text(), "other variables",  "6th column");
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
@@ -140,8 +141,9 @@ sub add_test_suite() {
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "RAID0",    "name");
     is((shift @headers)->get_text(), "50", "prio");
+    is((shift @headers)->get_text(), "kde",  "DESKTOP");
+    is((shift @headers)->get_text(), "",  "PARALLEL_WITH");
     is((shift @headers)->get_text(), "1",  "INSTALLONLY");
-    is((shift @headers)->get_text(), "0",  "RAIDLEVEL");
 
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 7, "7 edit buttons before");
 
@@ -150,13 +152,12 @@ sub add_test_suite() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(6, @fields, "6 fields"); # one column has 2 fields
+    is(7, @fields, "7 fields"); # one column has 2 fields
     (shift @fields)->send_keys('xfce'); # name
-    (shift @fields)->send_keys('50'); # backend
+    (shift @fields)->send_keys('50'); # prio
+    (shift @fields)->send_keys('xfce'); # desktop
+    (shift @fields)->send_keys(''); # parallelwith
     (shift @fields)->send_keys(''); # installonly
-    (shift @fields)->send_keys(''); # raid
-    (shift @fields)->send_keys('DESKTOP'); # var
-    (shift @fields)->send_keys('xfce'); # var
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
     # leave the ajax some time
