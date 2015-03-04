@@ -31,10 +31,8 @@ repository. Installation on openSUSE is therefore pretty simple:
 
 [source,sh]
 --------------------------------------------------------------------------------
-zypper ar -f obs://devel:openQA/openSUSE_13.1 openQA
-# needed for distros that lack some packages from Tumbleweed
-zypper ar -f obs://devel:openQA:13.1/openSUSE_13.1 openQA-perl-modules
-zypper in openQA
+zypper ar -f obs://devel:openQA/openSUSE_13.2 openQA
+zypper in openQA openQA-worker
 --------------------------------------------------------------------------------
 
 Basic configuration
@@ -78,11 +76,6 @@ Run workers
 Workers are processes running virtual machines to perform the actual
 testing. They are distributed as a separate package and can be installed on
 multiple machines but still using only one WebUI.
-
-[source,sh]
---------------------------------------------------------------------------------
-zypper in openQA-worker
---------------------------------------------------------------------------------
 
 To allow workers to access your instance, you need to log into
 openQA as operator and create a pair of API key and secret. Once you
