@@ -23,12 +23,22 @@ use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
 use Data::Dumper;
+use t::ui::PhantomTest;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA');
+my $driver = t::ui::PhantomTest::call_phantom();
+if ($driver) {
+    plan tests => 29;
+}
+else {
+    plan skip_all => 'Install phantomjs to run these tests';
+    exit(0);
+}
 
+my $baseurl = $driver->get_current_url();
 my $get = $t->ua->get('/session/new');
 my $token = $get->res->dom->at('meta[name=csrf-token]')->attr('content');
 
@@ -39,7 +49,8 @@ ok($get->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token',
 is($token, $get->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");
 
 # look for the cancel link without logging in
-$t->get_ok('/tests')->element_exists_not('#results #job_99928 .cancel a');
+$driver->get($baseurl . 'tests');
+ok(!@{$driver->find_elements('#scheduled #job_99928 a.api-cancel', 'css')}, 'cancel button should not exists');
 
 # test cancel and restart without logging in
 $t->post_ok('/api/v1/jobs/99928/cancel' => { 'X-CSRF-Token' => $token } => form => {})->status_is(403);
@@ -50,9 +61,9 @@ $t->post_ok('/api/v1/jobs/99928/prio?prio=34' => { 'X-CSRF-Token' => $token } =>
 # Log in with an authorized user for the rest of the test
 $test_case->login($t, 'percival');
 
-# Test 99928 is scheduled, so can be canceled. Make sure link contains
-# data-method=post
-$t->get_ok('/tests')->element_exists('#scheduled #job_99928 a.cancel[data-method=post]');
+# Test 99928 is scheduled, so can be canceled. Make sure link contains data-method=post
+$driver->get($baseurl . 'tests');
+ok($driver->find_element('#scheduled #job_99928 a.api-cancel[data-method="POST"]', 'css'), 'cancel button exists');
 
 # test cancel with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/cancel' => form => { csrf_token => 'foobar' })->status_is(403);
@@ -69,4 +80,5 @@ $t->post_ok('/api/v1/jobs/99928/prio?prio=33' => form => { csrf_token => 'foobar
 $t->post_ok('/api/v1/jobs/99928/prio?prio=34' => { 'X-CSRF-Token' => $token } => form => {})->status_is(200);
 $t->post_ok('/api/v1/jobs/99928/prio?prio=35' => form => { csrf_token => $token })->status_is(200);
 
+t::ui::PhantomTest::kill_phantom();
 done_testing();
