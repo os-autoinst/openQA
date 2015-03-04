@@ -407,7 +407,13 @@ sub query_jobs {
                 -or => [
                     'me.clone_id' => undef,
                     'clone.state' => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
-                ]
+                ],
+                'me.result' => { # these results should be hidden by default
+                    -not_in => [
+                        OpenQA::Schema::Result::Jobs::OBSOLETED,
+                        # OpenQA::Schema::Result::Jobs::USER_CANCELLED  I think USER_CANCELLED jobs should be available for restart
+                    ]
+                }
             }
         );
     }

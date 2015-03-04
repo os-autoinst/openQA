@@ -65,16 +65,31 @@ function renderTestsList(jobs, is_operator, restart_url) {
 	    },
 	    { targets: 4,
 	      "render": function ( data, type, row ) {
-		  if (type === 'display') {
-		      var html = data['passed'] + "<i class='fa fa-star'></i>";
-		      if (data['dents']) {
-			  html +=  " " + data['dents'] + "<i class='fa fa-star-half-empty'></i> ";
+		    if (type === 'display') {
+		      var html = '' 
+		      if (row['state'] === 'done') {
+		          html += data['passed'] + "<i class='fa fa-star'></i>";
+		          if (data['dents']) {
+			      html +=  " " + data['dents'] + "<i class='fa fa-star-half-empty'></i> ";
+		          }
+		          if (data['failed']) {
+			      html +=  " " + data['failed'] + "<i class='fa fa-star-o'></i> ";
+		          }
+		          if (data['none']) {
+			      html +=  " " + data['none'] + "<i class='fa fa-ban'></i> ";
+		          }
 		      }
-		      if (data['failed']) {
-			  html +=  " " + data['failed'] + "<i class='fa fa-star-o'></i> ";
+		      if (row['state'] === 'cancelled') {
+		          html += "<i class='fa fa-times'></i>";
 		      }
-		      if (data['none']) {
-			  html +=  " " + data['none'] + "<i class='fa fa-ban'></i> ";
+		      if (row['deps']) {
+		          if (row['result'] === 'skipped' ||
+		              row['result'] === 'parallel_failed') {
+		              html += "<i class='fa fa-chain-broken'></i>";
+		          }
+		          else {
+		              html += "<i class='fa fa-link'></i>";
+		          }
 		      }
                       return '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + html + '</a>';
 		  } else {
