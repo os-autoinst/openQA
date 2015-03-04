@@ -19,16 +19,26 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 20;
+use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
 use Data::Dumper;
+use t::ui::PhantomTest;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA');
+my $driver = t::ui::PhantomTest::call_phantom();
+if ($driver) {
+    plan tests => 17;
+}
+else {
+    plan skip_all => 'Install phantomjs to run these tests';
+    exit(0);
+}
 
+my $baseurl = $driver->get_current_url();
 # we don't want to test javascript here, so we just test the javascript code
 # List with no login
 my $get = $t->get_ok('/tests')->status_is(200);
@@ -48,17 +58,18 @@ $get->content_like(qr/renderTestsList\([^)]*,\s*0\s*,/, "test list rendered with
 $t->delete_ok('/logout')->status_is(302);
 
 # List with no login
-$get = $t->get_ok('/tests')->status_is(200);
-$get->element_exists_not('#scheduled #job_99928 a.cancel');
+ok($driver->get($baseurl . 'tests'));
+ok(!@{$driver->find_elements('#scheduled #job_99928 a.api-cancel', 'css')}, 'cancel does not exists for anonymous');
 
 # List with an authorized user
 $test_case->login($t, 'percival');
-$get = $t->get_ok('/tests')->status_is(200);
-$get->element_exists('#scheduled #job_99928 a.cancel');
+ok($driver->get($baseurl . 'tests'));
+ok($driver->find_element('#scheduled #job_99928 a.api-cancel', 'css'), 'cancel does exists for operator');
 
 # List with a not authorized user
 $test_case->login($t, 'lancelot', email => 'lancelot@example.com');
-$get = $t->get_ok('/tests')->status_is(200);
-$get->element_exists_not('#scheduled #job_99928 a.cancel');
+ok($driver->get($baseurl . 'tests'));
+ok(!@{$driver->find_elements('#scheduled #job_99928 a.api-cancel', 'css')}, 'cancel does not exists for unauthorized');
 
+t::ui::PhantomTest::kill_phantom();
 done_testing();

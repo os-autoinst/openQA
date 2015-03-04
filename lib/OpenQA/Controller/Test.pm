@@ -80,9 +80,10 @@ sub list_ajax {
 
         my $scope = '';
         $scope = 'relevant' if $self->param('relevant') ne 'false';
+        my $state = $self->param('state');
 
         $jobs = OpenQA::Scheduler::query_jobs(
-            state => 'done',
+            state => $state,
             scope => $scope,
             limit => 500,
         );
@@ -93,12 +94,13 @@ sub list_ajax {
     my @list;
     while (my $job = $jobs->next) {
         my $settings = $job->settings_hash;
+        my @deps = map { $_->parent_job_id } $job->parents;
         my $data = {
             "DT_RowId" => "job_" .  $job->id,
             id => $job->id,
             result_stats => $result_stats->{$job->id},
-            overall=>$job->state||'unk',
-            deps => join(' ', map { "#" . $_->id } $job->parents),
+            overall => $job->state||'unk',
+            deps => \@deps,
             clone => $job->clone_id,
             test => $job->test . "@" . $settings->{MACHINE},
             distri => $settings->{DISTRI} . "-" . $settings->{VERSION},
@@ -106,7 +108,8 @@ sub list_ajax {
             arch => $settings->{ARCH} // '',
             build => $settings->{BUILD} // '',
             testtime => $job->t_created,
-            result => $job->result
+            result => $job->result,
+            priority => $job->priority
         };
         push @list, $data;
     }

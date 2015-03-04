@@ -9,7 +9,10 @@
 % content_for 'ready_function' => begin
   renderTestsList([ <%= join(',', map { $_->id } $jobs->all) %> ],
   <%= (is_operator) ? 1 : 0 %>,
-  "<%= url_for("apiv1_restart", name => 'REPLACEIT') %>");
+  "<%= url_for("test", testid => 'REPLACEIT') %>",
+  "<%= url_for("apiv1_restart", name => 'REPLACEIT') %>",
+  "<%= url_for("apiv1_job_prio", jobid => 'REPLACEIT') %>",
+  "<%= url_for("apiv1_cancel", name => 'REPLACEIT') %>");
 % end
 
 % if (@$running) {
@@ -23,7 +26,18 @@
     <div class="grid_16 box box-shadow">
 	<h2><%= $scheduled %> scheduled jobs</h2>
 	
-	%= include 'test/scheduled_table'
+    <table id="scheduled" class="display compact">
+        <thead>
+            <tr>
+                <th>Medium</th>
+                <th>Test</th>
+                <th>Deps</th>
+                <th>Priority</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
     </div>
 % }
 
@@ -50,7 +64,7 @@
         <thead>
             <tr>
                 <th class="name">Medium</th>
-		<th>Test</th>
+                <th>Test</th>
                 <th>Deps</th>
                 <th>Testtime</th>
                 <th>Result</th>
