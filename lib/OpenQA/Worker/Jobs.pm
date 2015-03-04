@@ -60,14 +60,13 @@ sub _kill_worker($) {
 sub start_job;
 
 sub check_job {
+    remove_timer('check_job');
     return unless verify_workerid;
     if (!$job) {
         print "checking for job ...\n" if $verbose;
         my $res = api_call('post',"workers/$workerid/grab_job", $worker_caps) || { job => undef };
         $job = $res->{job};
         if ($job && $job->{id}) {
-            # stop job check
-            remove_timer('check_job');
             return start_job;
         }
         $job = undef;
@@ -103,7 +102,7 @@ sub stop_job($;$) {
 
     my $job_done; # undef
 
-    if ($aborted ne 'quit' && $aborted ne 'abort') {
+    if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
         # collect uploaded logs
         my $ua_url = $OpenQA::Worker::Common::url->clone;
         $ua_url->path("jobs/$job_id/artefact");
@@ -171,9 +170,7 @@ sub stop_job($;$) {
 
     return if ($aborted eq 'quit');
     # immediatelly check for already scheduled job
-    check_job();
-    # and start backup checking for job if none was acquired
-    add_timer('check_job', 10, \&check_job) unless ($job);
+    add_timer('check_job', 0, \&check_job, 1) unless ($job);
 }
 
 sub start_job {
