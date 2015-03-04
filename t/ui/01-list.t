@@ -104,7 +104,7 @@ is('minimalx@32bit', $driver->find_element('#results #job_99926 .test .overview_
 # first check the relevant jobs
 my @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 
-is_deeply([qw(job_99962 job_99946 job_99938 job_99937 job_99926)], \@jobs, '5 rows (relevant) displayed');
+is_deeply([qw(job_99981 job_99962 job_99946 job_99938 job_99937 job_99926)], \@jobs, '5 rows (relevant) displayed');
 $driver->find_element('#relevantfilter', 'css')->click();
 # leave the ajax some time
 while (!$driver->execute_script("return jQuery.active == 0")) {
@@ -112,7 +112,7 @@ while (!$driver->execute_script("return jQuery.active == 0")) {
 }
 # Test 99945 is not longer relevant (replaced by 99946) - but displayed for all
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-is_deeply([qw(job_99962 job_99946 job_99945 job_99938 job_99937 job_99926)], \@jobs, '6 rows (all) displayed');
+is_deeply([qw(job_99981 job_99962 job_99946 job_99945 job_99938 job_99937 job_99926)], \@jobs, '6 rows (all) displayed');
 
 # now toggle back
 #print $driver->get_page_source();
@@ -122,7 +122,7 @@ while (!$driver->execute_script("return jQuery.active == 0")) {
     sleep 1;
 }
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-is_deeply([qw(job_99962 job_99946 job_99938 job_99937 job_99926)], \@jobs, '5 rows (relevant) again displayed');
+is_deeply([qw(job_99981 job_99962 job_99946 job_99938 job_99937 job_99926)], \@jobs, '5 rows (relevant) again displayed');
 
 $driver->get($baseurl . "tests?match=staging_e");
 #print $driver->get_page_source();

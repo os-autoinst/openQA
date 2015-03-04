@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 38;
+use Test::More tests => 39;
 use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -73,12 +73,13 @@ my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 9
 
 $get = $t->get_ok('/api/v1/jobs');
 my @new_jobs = @{$get->tx->res->json->{jobs}};
-is scalar(@new_jobs), $jobs_count + 3, 'three new jobs - for 63, 46 and 61 from dependency';
+is scalar(@new_jobs), $jobs_count + 4, '4 new jobs - for 81, 63, 46 and 61 from dependency';
 my %new_jobs = map { $_->{id} => $_ } @new_jobs;
-is $new_jobs{99981}->{state}, 'scheduled';
+is $new_jobs{99981}->{state}, 'cancelled';
 is $new_jobs{99927}->{state}, 'scheduled';
 isnt $new_jobs{99946}->{clone_id}, undef;
 isnt $new_jobs{99963}->{clone_id}, undef;
+isnt $new_jobs{99981}->{clone_id}, undef;
 
 # The number of current jobs doesn't change
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});

@@ -79,6 +79,12 @@ is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99981 is cancelled');
 
 $ret = $t->post_ok('/api/v1/jobs/99981/restart')->status_is(200);
 
+$ret = $t->get_ok('/api/v1/jobs/99981')->status_is(200);
+my $clone99981 = $ret->tx->res->json->{job}->{clone_id};
+
+$ret = $t->get_ok("/api/v1/jobs/$clone99981")->status_is(200);
+is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job $clone99981 is scheduled');
+
 lj;
 
 # schedule the iso, this should not actually be possible. Only isos
@@ -131,8 +137,8 @@ $ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
 is($ret->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
 
 # make sure unrelated jobs are not cancelled
-$ret = $t->get_ok('/api/v1/jobs/99981')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'scheduled', "job 99981 is still scheduled");
+$ret = $t->get_ok("/api/v1/jobs/$clone99981")->status_is(200);
+is($ret->tx->res->json->{job}->{state}, 'scheduled', "job $clone99981 is still scheduled");
 
 # ... and we have a new test
 $ret = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);

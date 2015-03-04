@@ -49,6 +49,12 @@ thead { background: #eee; }
 .overview_dent {background-color:#ff0 ;}
 .overview_failed {background-color:#fbb ;}
 .overview_incomplete {background-color:#bebebe;}
+.overview_skipped {background-color:#eeff5f;}
+.overview_obsoleted {background-color:#b7b7b7;}
+.overview_parallel_failed {background-color:#e08050 ;}
+.overview_parallel_restarted {background-color:#b0c090 ;}
+.overview_user_cancelled {background-color:#d7d7d7;}
+.overview_user_restarted {background-color:#90c090 ;}
 
 .component { text-align: right; }
 .links { text-align: left; padding-top: 0; }

@@ -39,7 +39,7 @@ sub list {
     my $assetid = $self->param('assetid');
 
     my $jobs = OpenQA::Scheduler::query_jobs(
-        state => 'done',
+        state => 'done,cancelled',
         match => $match,
         scope => $scope,
         assetid => $assetid,
@@ -82,7 +82,7 @@ sub list_ajax {
         $scope = 'relevant' if $self->param('relevant') ne 'false';
 
         $jobs = OpenQA::Scheduler::query_jobs(
-            state => 'done',
+            state => 'done,cancelled',
             scope => $scope,
             limit => 500,
         );
@@ -106,7 +106,8 @@ sub list_ajax {
             arch => $settings->{ARCH} // '',
             build => $settings->{BUILD} // '',
             testtime => $job->t_created,
-            result => $job->result
+            result => $job->result,
+            state => $job->state
         };
         push @list, $data;
     }
