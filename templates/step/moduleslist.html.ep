@@ -1,7 +1,14 @@
 <div class="box box-shadow alpha" id="testmodules_box">
 	<div class="box-header aligncenter">Test modules</div>
 	<div id="modlist_content"></div>
+	% if (!$use_prototype) {
+	% content_for 'ready_function' => begin
+	updateModuleslist(JSON.parse('<%= b(JSON::to_json($modinfo->{'modlist'})) %>'), "<%= $testid %>", "<%= $moduleid %>");
+	% end
+	% } else
+	% {
 	<script type="text/javascript">
 		window.updateModuleslist(JSON.parse('<%= b(JSON::to_json($modinfo->{'modlist'})) %>'), "<%= $testid %>", "<%= $moduleid %>");
 	</script>
+	% }
 </div>

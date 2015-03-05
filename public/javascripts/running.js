@@ -38,7 +38,7 @@ function updateTestStatus(newStatus) {
             onSuccess: function(resp) {
                 var modlist = resp.responseJSON;
                 if (modlist.length > 0) {
-                    window.updateModuleslist(modlist, window.testStatus.testname, window.testStatus.running);
+                    window.prototype_updateModuleslist(modlist, window.testStatus.testname, window.testStatus.running);
                     window.testStatus.modlist_initialized = 1;
                 }
             }
