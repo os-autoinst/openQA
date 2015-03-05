@@ -72,11 +72,12 @@ clone_job.pl --from localhost --host localhost 42 MAKETESTSNAPSHOTS=1 FOOBAR=
 
 use strict;
 use warnings;
-use Data::Dump;
+use Data::Dump qw/dd pp/;
 use Getopt::Long;
 use LWP::UserAgent;
 Getopt::Long::Configure("no_ignore_case");
 use Mojo::URL;
+use JSON;
 
 my $clientclass;
 for my $i (qw/JSON::RPC::Legacy::Client JSON::RPC::Client/) {
@@ -172,7 +173,8 @@ if ($jobid) {
         warn "failed to get job: $err->{code} $err->{message}";
         exit 1;
     }
-    dd $job if $options{verbose};
+
+    print JSON->new->pretty->encode($job) if ($options{verbose});
 
     for my $type (keys %{$job->{assets}}) {
         next if $type eq 'repo'; # we can't download repos
@@ -208,7 +210,7 @@ if ($jobid) {
             warn "arg $arg doesn't match";
         }
     }
-    dd \%settings if $options{verbose};
+    print JSON->new->pretty->encode(\%settings) if ($options{verbose});
     $url->query(%settings);
     $tx = $local->post($url);
     if ($tx->success) {
@@ -221,8 +223,7 @@ if ($jobid) {
         }
     }
     else {
-        warn "failed to create job: ", $tx->error->{message};
-        exit(1);
+        die "failed to create job: ", pp( $tx->res->body );
     }
 }
 

@@ -47,14 +47,7 @@ sub main {
     clean_pool();
 
     ## register worker at startup
-    verify_workerid;
-
-    ## initial Mojo::IO timers
-    add_timer('ws_keepalive', 5, \&OpenQA::Worker::Common::ws_keepalive);
-    # backup check_job in case notification command does not get through
-    add_timer('check_job', 10, \&check_job);
-    # run it once
-    check_job();
+    add_timer('register_worker', 0, \&OpenQA::Worker::Common::register_worker, 1);
 
     # start event loop - this will block until stop is called
     Mojo::IOLoop->start;

@@ -43,14 +43,18 @@ sub split_results {
     my $schema = OpenQA::Scheduler::schema();
     for my $tm (@{$results->{testmodules}}) {
         my $r = $job->insert_module($tm);
-        if ($r->name eq $results->{running}) {
+        if ($results->{running} && $r->name eq $results->{running}) {
             $tm->{result} = 'running';
         }
         $r->update_result($tm);
         my $fn = $dir . "/details-" . $r->name . ".json";
-        open(my $fh, ">", $fn);
-        $fh->print(encode_json($tm->{details}));
-        close($fh);
+        if (open(my $fh, ">", $fn)) {
+            $fh->print(encode_json($tm->{details}));
+            close($fh);
+        }
+        else {
+            warn "$fn: $!\n";
+        }
     }
     return $results;
 }

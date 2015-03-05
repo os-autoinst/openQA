@@ -19,6 +19,7 @@ use strict;
 use warnings;
 
 use OpenQA::Scheduler ();
+use OpenQA::Utils qw/log_debug/;
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
@@ -59,7 +60,7 @@ sub ws_send {
             Mojo::IOLoop->timer(2 => sub{ws_send($workerid, $msg, ++$retry);});
         }
         else {
-            print STDERR "Unable to send command \"$msg\" to worker $workerid";
+            log_debug("Unable to send command \"$msg\" to worker $workerid");
         }
     }
 }
@@ -73,6 +74,7 @@ sub ws_send_all {
 
 sub ws_create {
     my ($workerid, $ws) = @_;
+    OpenQA::Scheduler::_validate_workerid($workerid);
     # upgrade connection to websocket by subscribing to events
     $ws->on(message => \&_message);
     $ws->on(finish  => \&_finish);
@@ -104,7 +106,7 @@ sub _finish {
 
     my $workerid = _get_worker($ws->tx);
     unless ($workerid) {
-        $ws->app->log->warn('Worker ID not found for given connection during connection close');
+        $ws->app->log->error('Worker ID not found for given connection during connection close');
         return;
     }
     $ws->app->log->debug("Worker $workerid websocket connection closed - $code\n");
@@ -124,7 +126,7 @@ sub _message {
         $ws->tx->send('ok');
     }
     else{
-        print STDERR "Received unexpected WS message \"$msg\" from worker \"$workerid\"";
+        $ws->app->log->error("Received unexpected WS message \"$msg\" from worker \"$workerid\"");
     }
 }
 

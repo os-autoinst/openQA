@@ -24,7 +24,7 @@ use base qw/Exporter/;
 our @EXPORT = qw/$job $workerid $verbose $instance $worker_settings $pooldir $nocleanup $worker_caps $testresults $openqa_url
   OPENQA_BASE OPENQA_SHARE RESULTS_DIR ISO_DIR HDD_DIR STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer
-  api_call verify_workerid/;
+  api_call verify_workerid register_worker/;
 
 # Exported variables
 our $job;
@@ -60,6 +60,10 @@ use constant {
 
 ## Mojo timers ids
 my $timers = {
+    # register worker with web ui
+    'register_worker' => undef,
+    # set up websocket connection
+    'setup_websocket' => undef,
     # check for commands from scheduler
     'ws_keepalive' => undef,
     # check for new job
@@ -69,14 +73,17 @@ my $timers = {
     # check for crashed backend and its running status
     'check_backend'   => undef,
     # trigger stop_job if running for > $max_job_time
-    'job_timeout'     => undef
+    'job_timeout'     => undef,
+    # app call retry
+    'api_call'        => undef,
 };
 
 sub add_timer {
     my ($timer, $timeout, $callback, $nonrecurring) = @_;
-    return unless ($timer && $timeout && $callback);
+    die "must specify timer\n" unless $timer;
+    die "must specify callback\n" unless $callback && ref $callback eq 'CODE';
     return if ($timers->{$timer});
-    print "## adding timer $timer\n" if $verbose;
+    print "## adding timer $timer $timeout\n" if $verbose;
     my $timerid;
     if ($nonrecurring) {
         $timerid = Mojo::IOLoop->timer( $timeout => $callback);
@@ -138,43 +145,83 @@ sub api_init {
     }
 }
 
+my $call_running;
 # send a command to openQA API
 sub api_call {
     my ($method, $path, $params, $json_data, $ignore_errors) = @_;
-    $method = lc $method;
+
+    return undef unless verify_workerid();
+    if ($call_running) {
+        print "api call in progress, not accepting new one\n" if $verbose;
+        return undef;
+    }
+
+    $call_running = 1;
+
+    $method = uc $method;
     my $ua_url = $url->clone;
 
     $ua_url->path($path =~ s/^\///r);
     $ua_url->query($params) if $params;
 
-    my $tries = 3;
-    while (1) {
-        print uc($method) . " $ua_url\n" if $verbose;
-        my $tx;
-        if ($json_data) {
-            $tx = $ua->$method($ua_url => json => $json_data);
-        }
-        else {
-            $tx = $ua->$method($ua_url);
-        }
+    print $method . " $ua_url\n" if $verbose;
+
+    my @args = ($method, $ua_url);
+
+    if ($json_data) {
+        push @args, 'json', $json_data;
+    }
+
+    my $res;
+    my $done = 0;
+
+    my $tx = $ua->build_tx(@args);
+    my $cb;
+    $cb = sub {
+        my ($ua, $tx, $tries) = @_;
+        remove_timer('api_call');
         if ($tx->success) {
-            return $tx->success->json;
+            $res = $tx->success->json;
+            $done = 1;
+            return;
         }
         elsif ($ignore_errors) {
+            $done = 1;
             return;
         }
         --$tries;
-        my ($err, $code) = $tx->error;
-        my $msg = $code ? "$tries: $code response: $err" : "$tries: Connection error: $err->{message}";
-        carp "$msg";
+        my $err = $tx->error;
+        my $msg = $err->{code} ? "$tries: $err->{code} response: $err->{message}" : "$tries: Connection error: $err->{message}";
+        warn $msg;
         if (!$tries) {
             # abort the current job, we're in trouble - but keep running to grab the next
-            # this lives in Jobs.pm - this is recursive use?
-            #stop_job('api-failure');
+            remove_timer('setup_websocket');
+            $workerid = undef;
+            OpenQA::Worker::Jobs::stop_job('api-failure');
+            add_timer('register_worker', 10, \&register_worker, 1);
+            $done = 1;
             return;
         }
-        sleep 5;
+        $tx = $ua->build_tx(@args);
+        add_timer(
+            'api_call',
+            5,
+            sub {
+                $ua->start($tx => sub { $cb->(@_, $tries) });
+            },
+            1
+        );
+    };
+    $ua->start($tx => sub { $cb->(@_, 3) });
+
+    # This ugly. we need to "block" here so enter ioloop recursively
+    while(!$done && Mojo::IOLoop->is_running) {
+        Mojo::IOLoop->one_tick;
     }
+
+    $call_running = 0;
+
+    return $res;
 }
 
 sub _get_capabilities {
@@ -212,59 +259,97 @@ sub _get_capabilities {
     return $caps;
 }
 
-sub verify_workerid {
-    if (!$workerid) {
-        $worker_caps = _get_capabilities;
-        $worker_caps->{host} = $hostname;
-        $worker_caps->{instance} = $instance;
-        $worker_caps->{backend} = $worker_settings->{'BACKEND'};
+sub setup_websocket {
 
-        my $res = api_call('post','workers', $worker_caps);
-        return unless $res;
-        $ENV{'WORKERID'} = $workerid = $res->{id};
-        # recreate WebSocket connection, our id may have changed
-        if ($ws) {
-            $ws->finish;
-            $ws = undef;
-        }
+    remove_timer('setup_websocket');
+    # if there is an existing web socket connection wait until it finishes.
+    if ($ws) {
+        add_timer('setup_websocket', 2, \&setup_websocket, 1);
+        return;
     }
-    if (!$ws) {
-        my $ua_url = $url->clone();
-        if ($url->scheme eq 'http') {
-            $ua_url->scheme('ws');
-        }
-        else {
-            $ua_url->scheme('wss');
-        }
-        $ua_url->path("workers/$workerid/ws");
-        print "WEBSOCKET $ua_url\n" if $verbose;
-        $ua->websocket(
-            $ua_url => sub {
-                my ($ua, $tx) = @_;
-                if ($tx->is_websocket) {
-                    $ws = $tx;
-                    $tx->on(message => \&OpenQA::Worker::Commands::websocket_commands);
-                    $tx->on(
-                        finish => sub {
-                            print "closing websocket connection\n" if $verbose;
-                            $ws = undef;
-                        }
-                    );
+    my $ua_url = $url->clone();
+    if ($url->scheme eq 'http') {
+        $ua_url->scheme('ws');
+    }
+    else {
+        $ua_url->scheme('wss');
+    }
+    $ua_url->path("workers/$workerid/ws");
+    print "WEBSOCKET $ua_url\n" if $verbose;
+    $ua->websocket(
+        $ua_url => sub {
+            my ($ua, $tx) = @_;
+            if ($tx->is_websocket) {
+                # keep websocket connection busy
+                add_timer('ws_keepalive', 5, sub { $tx->send('ok') });
+                # check for new job immediately
+                add_timer('check_job', 0, \&OpenQA::Worker::Jobs::check_job, 1 );
+                $tx->on(message => \&OpenQA::Worker::Commands::websocket_commands);
+                $tx->on(
+                    finish => sub {
+                        add_timer('setup_websocket', 5, \&setup_websocket, 1);
+                        remove_timer('ws_keepalive');
+                        $ws = undef;
+                    }
+                );
+                $ws = $tx;
+            }
+            else {
+                my $err = $tx->error;
+                $ws = undef;
+                warn "Unable to upgrade connection to WebSocket: ".$err->{code}.". proxy_wstunnel enabled?" if defined $err;
+                if ($err->{code} eq '404') {
+                    # worker id suddenly not known anymore. Abort. If workerid
+                    # is unset we already detected that in api_call
+                    if ($workerid) {
+                        $workerid = undef;
+                        OpenQA::Worker::Jobs::stop_job('api-failure');
+                        add_timer('register_worker', 10, \&register_worker, 1);
+                    }
                 }
                 else {
-                    my $err = $tx->error;
-                    carp "Unable to upgrade connection to WebSocket: ".$err->{code}.". proxy_wstunnel enabled?" if defined $err;
-                    $ws = undef;
+                    add_timer('setup_websocket', 10, \&setup_websocket, 1);
                 }
             }
-        );
+        }
+    );
+}
+
+sub register_worker {
+
+    remove_timer('register_worker');
+
+    $worker_caps = _get_capabilities;
+    $worker_caps->{host} = $hostname;
+    $worker_caps->{instance} = $instance;
+    $worker_caps->{backend} = $worker_settings->{'BACKEND'};
+
+    print "registering worker ...\n" if $verbose;
+
+    my $ua_url = $url->clone;
+    $ua_url->path('workers');
+    $ua_url->query($worker_caps);
+    my $tx = $ua->post($ua_url => json => $worker_caps);
+    unless ($tx->success && $tx->success->json) {
+        print "failed to register worker, retry ...\n" if $verbose;
+        add_timer('register_worker', 10, \&register_worker, 1);
+        return;
     }
+    my $newid = $tx->success->json->{id};
+
+    if ($workerid && $workerid != $newid) {
+        # terminate websocked if our worker id changed
+        $ws->finish() if $ws;
+    }
+    $ENV{'WORKERID'} = $workerid = $newid;
+
+    print "new worker id is $workerid...\n" if $verbose;
+
+    add_timer('setup_websocket', 0, \&setup_websocket, 1);
+}
+
+sub verify_workerid {
     return $workerid;
 }
 
-sub ws_keepalive {
-    #send ok keepalive so WebSocket connection is not inactive
-    return unless $ws;
-    $ws->send('ok');
-}
 1;

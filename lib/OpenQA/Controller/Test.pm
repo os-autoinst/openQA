@@ -117,8 +117,7 @@ sub list_ajax {
 
 sub test_uploadlog_list($) {
     # get a list of uploaded logs
-    my $testname = shift;
-    my $testresdir = testresultdir($testname);
+    my $testresdir = shift;
     my @filelist;
     for my $f (<$testresdir/ulogs/*>) {
         $f=~s#.*/##;
@@ -129,8 +128,7 @@ sub test_uploadlog_list($) {
 
 sub test_resultfile_list($) {
     # get a list of existing resultfiles
-    my $testname = shift;
-    my $testresdir = testresultdir($testname);
+    my $testresdir = shift;
     my @filelist = qw(video.ogv vars.json backend.json serial0.txt autoinst-log.txt);
     my @filelist_existing;
     for my $f (@filelist) {
