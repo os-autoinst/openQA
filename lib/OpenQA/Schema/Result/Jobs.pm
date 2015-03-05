@@ -524,5 +524,29 @@ sub create_artefact {
     1;
 }
 
+sub failed_modules_with_needles {
+
+    my ($self) = @_;
+
+    my $fails = $self->modules->search({result => 'failed'});
+    my $failedmodules = {};
+
+    while (my $module = $fails->next) {
+
+        my @needles;
+
+        my $counter = 0;
+        for my $detail (@{$module->details}) {
+            $counter++;
+            next unless $detail->{result} eq 'fail';
+            for my $needle (@{$detail->{needles}}) {
+                push( @needles, [ $needle->{name}, $counter ] );
+            }
+        }
+        $failedmodules->{$module->name} = \@needles;
+    }
+    return $failedmodules;
+}
+
 1;
 # vim: set sw=4 et:
