@@ -323,6 +323,7 @@ sub register_worker {
     $worker_caps->{host} = $hostname;
     $worker_caps->{instance} = $instance;
     $worker_caps->{backend} = $worker_settings->{'BACKEND'};
+    $worker_caps->{worker_class} = $worker_settings->{'WORKER_CLASS'};
 
     print "registering worker ...\n" if $verbose;
 

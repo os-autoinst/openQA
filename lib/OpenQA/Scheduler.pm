@@ -508,7 +508,7 @@ sub list_jobs {
 }
 
 sub _prefer_parallel {
-    my ($blocked) = @_;
+    my ($available_cond) = @_;
     my $running = schema->resultset("Jobs")->search(
         {
             state => OpenQA::Schema::Result::Jobs::RUNNING,
@@ -531,11 +531,11 @@ sub _prefer_parallel {
 
     my $available_children = $children->search(
         {
-            child_job_id => { -not_in => $blocked->get_column('child_job_id')->as_query}
+            child_job_id => $available_cond
         }
     );
 
-    return ( '-in' => $available_children->get_column('child_job_id')->as_query) if ($available_children->count() > 0); # we have scheduled children that are not blocked
+    return ( { '-in' => $available_children->get_column('child_job_id')->as_query } ) if ($available_children->count() > 0); # we have scheduled children that are not blocked
 
     # children are blocked, we have to find and start their parents first
     my $parents = schema->resultset("JobDependencies")->search(
@@ -553,11 +553,11 @@ sub _prefer_parallel {
 
         my $available_parents = $parents->search(
             {
-                parent_job_id => { -not_in => $blocked->get_column('child_job_id')->as_query}
+                parent_job_id => $available_cond
             }
         );
 
-        return ( '-in' => $available_parents->get_column('parent_job_id')->as_query) if ($available_parents->count() > 0);
+        return ( { '-in' => $available_parents->get_column('parent_job_id')->as_query } ) if ($available_parents->count() > 0);
 
         # parents are blocked, lets check grandparents
         $parents = schema->resultset("JobDependencies")->search(
@@ -615,15 +615,36 @@ sub job_grab {
                 value => $cando{$worker->{properties}->{'CPU_ARCH'}}
             }
         );
+
+        # list of jobs for different worker class
+        my $classquery = schema->resultset("JobSettings")->search(
+            {
+                key => "WORKER_CLASS",
+                value => { '!=', $worker->{properties}->{'WORKER_CLASS'}},
+            },
+        );
+
+        my $available_cond = [ # ids available for this worker
+            '-and',
+            {
+                -not_in => $blocked->get_column('child_job_id')->as_query
+            },
+            {
+                -in => $archquery->get_column('job_id')->as_query
+            },
+            {
+                -not_in => $classquery->get_column('job_id')->as_query
+            },
+        ];
+
+        my $preferred_parallel = _prefer_parallel($available_cond);
+        push @$available_cond, $preferred_parallel if $preferred_parallel;
+
         $result = schema->resultset("Jobs")->search(
             {
                 state => OpenQA::Schema::Result::Jobs::SCHEDULED,
                 worker_id => 0,
-                id => {
-                    -not_in => $blocked->get_column('child_job_id')->as_query,
-                    -in => $archquery->get_column('job_id')->as_query,
-                    _prefer_parallel($blocked)
-                },
+                id => $available_cond,
             },
             { order_by => { -asc => [qw/priority id/] }, rows => 1 }
           )->update(
