@@ -26,7 +26,9 @@
 				<td style="width: 4.5em; padding: 0;" id="interactive_indicator" data-next-status="">Unknown</td>
 				<td style="padding: 0;" id="needinput_buttons">
                     % if (is_operator) {
-					<a href="javascript:window.toggleInteractive()" style="display:none" id="interactive_button"><img src="/images/interactive.png" alt="toggle" title="Toggle mode" /></a>
+					<a href="javascript:window.enableInteractive()" title="enable interactive mode" style="display:none" id="interactive0_button" class="fa fa-wrench fa-2x"></a>
+					<a href="javascript:window.disableInteractive()" title="disable interactive mode" style="display:none" id="interactive1_button" class="fa fa-paper-plane fa-2x"></a>
+                                        <i title="waiting for worker ..." class="fa fa-cog fa-2x fa-spin" id="interactive_spinner"></i>
                     % }
 				</td>
 			</tr>
@@ -35,12 +37,13 @@
 				<td style="width: 4.5em; padding: 0;" id="needinput_indicator">N/A</td>
 				<td style="padding: 0;" id="needinput_buttons">
                     % if (is_operator) {
-					    <a href="javascript:window.sendCommand('continue_waitforneedle')" style="display:none" id="continue_button"><img src="/images/cancel.png" alt="continue" title="Continue" /></a>
-					    <a href="javascript:window.sendCommand('reload_needles_and_retry')" style="display:none" id="retry_button"><img src="/images/play.png" alt="retry" title="Retry" /></a>
-                        %= link_to url_for('edit_test') => (style => 'display:none', id => 'crop_button') => begin
-                            %= image '/images/edit.png', alt => "edit", title => "Needle editor"
+					    <a href="javascript:window.sendCommand('continue_waitforneedle')" style="display:none" id="continue_button" class="fa fa-play fa-2x"></a>
+					    <a href="javascript:window.sendCommand('reload_needles_and_retry')" style="display:none" id="retry_button" class="fa fa-repeat fa-2x"></a>
+                        %= link_to url_for('edit_test') => (style => 'display:none', id => 'crop_button', class => 'fa fa-scissors fa-2x') => begin
                         % end
-					    <a href="javascript:window.sendCommand('stop_waitforneedle')" style="display:none" id="stop_button"><img src="/images/cancel.png" alt="cancel" title="Stop waitforneedle" /></a>
+					    <a href="javascript:window.sendCommand('stop_waitforneedle')" style="display:none" id="stop_button" class="fa fa-edit fa-2x"></a>
+
+                                            <i title="waiting for worker ..." class="fa fa-cog fa-2x fa-spin" id="stop_waitforneedle_spinner" style="display:none"></i>
                     % }
 				</td>
 			</tr>

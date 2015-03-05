@@ -1,27 +1,36 @@
 
 var testStatus = {
-    initialized: 0,
+    modlist_initialized: 0,
     testname: null,
     running: null,
     workerid: null,
     interactive: null,
-    needinput: null
+    needinput: null,
+    interactive_requested: null,
+    stop_waitforneedle_requested: null,
 };
 
 // Update global variable testStatus
 function updateTestStatus(newStatus) {
     window.testStatus.workerid = newStatus.workerid;
-    if (window.testStatus.interactive == null) {
+    if (window.testStatus.interactive != newStatus.interactive
+        || window.testStatus.interactive_requested != newStatus.interactive_requested) {
         window.testStatus.interactive = newStatus.interactive;
+        window.testStatus.interactive_requested = newStatus.interactive_requested;
         window.updateInteractiveIndicator();
     }
-    if (window.testStatus.needinput != newStatus.needinput) {
+    if (window.testStatus.needinput != newStatus.needinput
+        || window.testStatus.stop_waitforneedle_requested != newStatus.stop_waitforneedle_requested) {
         window.testStatus.needinput = newStatus.needinput;
+        window.testStatus.stop_waitforneedle_requested = newStatus.stop_waitforneedle_requested;
         window.updateNeedinputIndicator();
     }
+    if (newStatus.state != 'running' && newStatus.state != 'waiting') {
+          setTimeout(function() {location.reload();}, 2000);
+          return;
+    }
     // If a new module have been started, redraw module list
-    if (window.testStatus.initialized == 0 || window.testStatus.running != newStatus.running) {
-        window.testStatus.initialized = 1;
+    if (window.testStatus.modlist_initialized == 0 || window.testStatus.running != newStatus.running) {
         window.testStatus.running = newStatus.running;
         new Ajax.Request("/tests/" + window.testStatus.testname + "/modlist", {
             method: "get",
@@ -30,6 +39,7 @@ function updateTestStatus(newStatus) {
                 var modlist = resp.responseJSON;
                 if (modlist.length > 0) {
                     window.updateModuleslist(modlist, window.testStatus.testname, window.testStatus.running);
+                    window.testStatus.modlist_initialized = 1;
                 }
             }
         });
@@ -54,68 +64,112 @@ function show(id) {
 
 function updateInteractiveIndicator() {
     var indicator = $("interactive_indicator");
+    console.log("i r "+window.testStatus.interactive+" "+window.testStatus.interactive_requested);
     if (window.testStatus.interactive == null) {
         indicator.innerHTML = "Unknown";
-        indicator.dataset.nextStatus = "";
-        window.hide("interactive_button");
+        window.hide("interactive_spinner");
+        window.hide("interactive0_button");
+        window.hide("interactive1_button");
     }
     else if (window.testStatus.interactive == 1) {
         indicator.innerHTML = "Yes";
-        indicator.dataset.nextStatus = 0;
-        window.show("interactive_button");
-        if (!window.testStatus.needinput) {
-            window.show("stop_button");
+        if (window.testStatus.interactive_requested == 0) {
+            window.show("interactive_spinner");
+            window.hide("interactive0_button");
+            window.hide("interactive1_button");
+        }
+        else {
+            window.hide("interactive_spinner");
+            window.hide("interactive0_button");
+            window.show("interactive1_button");
+            if (!window.testStatus.needinput && !window.testStatus.stop_waitforneedle_requested) {
+ //               window.show("stop_button");
+            }
         }
     }
     else {
         indicator.innerHTML = "No";
-        indicator.dataset.nextStatus = 1;
-        window.show("interactive_button");
+        if (window.testStatus.interactive_requested == 1) {
+            window.show("interactive_spinner");
+            window.hide("interactive0_button");
+            window.hide("interactive1_button");
+        }
+        else {
+            window.hide("interactive_spinner");
+            window.show("interactive0_button");
+            window.hide("interactive1_button");
+//            window.hide("stop_button");
+        }
     }
     indicator.highlight();
+    updateNeedinputIndicator();
 }
 
 function updateNeedinputIndicator() {
+    console.log("n r "+window.testStatus.needinput+" "+window.testStatus.stop_waitforneedle_requested);
     var indicator = $("needinput_indicator");
     if (window.testStatus.interactive != 1 || window.testStatus.needinput == null) {
         indicator.innerHTML = "N/A";
         window.hide("crop_button");
         window.hide("continue_button");
         window.hide("retry_button");
+        window.hide("stop_button");
+        if (window.testStatus.needinput == null) {
+            window.show("stop_waitforneedle_spinner");
+        }
+        else {
+            window.hide("stop_waitforneedle_spinner");
+        }
     }
     else if (window.testStatus.needinput == 1) {
         indicator.innerHTML = "Yes";
-        window.show("crop_button");
-        window.show("continue_button");
-        window.show("retry_button");
-        window.hide("stop_button");
+        if (window.testStatus.stop_waitforneedle_requested == 0) {
+            window.show("stop_waitforneedle_spinner");
+            window.hide("crop_button");
+            window.hide("continue_button");
+            window.hide("retry_button");
+            window.hide("stop_button");
+        }
+        else {
+            window.hide("stop_waitforneedle_spinner");
+            window.show("crop_button");
+            window.show("continue_button");
+            window.show("retry_button");
+            window.hide("stop_button");
+        }
     }
     else {
         indicator.innerHTML = "No";
-        window.hide("crop_button");
-        window.hide("continue_button");
-        window.hide("retry_button");
-        if (window.testStatus.interactive) {
-            window.show("stop_button");
+        if (window.testStatus.stop_waitforneedle_requested == 1) {
+            window.show("stop_waitforneedle_spinner");
+            window.hide("crop_button");
+            window.hide("continue_button");
+            window.hide("retry_button");
+            window.hide("stop_button");
+        }
+        else {
+            window.hide("stop_waitforneedle_spinner");
+            window.hide("crop_button");
+            window.hide("continue_button");
+            window.hide("retry_button");
+            if (window.testStatus.interactive && window.testStatus.interactive == window.testStatus.interactive_requested) {
+                window.show("stop_button");
+            }
+            else {
+                window.hide("stop_button");
+            }
         }
     }
     indicator.highlight();
 }
 
-function toggleInteractive() {
-    var status = $("interactive_indicator").dataset.nextStatus;
-    if (status == "") {
-        return;
-    }
-    window.testStatus.interactive = status;
-    window.updateInteractiveIndicator();
-    window.updateNeedinputIndicator();
-    if (status == 1) {
-        sendCommand("enable_interactive_mode");
-    }
-    else {
-        sendCommand("disable_interactive_mode");
-    }
+function enableInteractive() {
+    sendCommand("enable_interactive_mode");
+}
+
+function disableInteractive() {
+    window.hide("stop_button");
+    sendCommand("disable_interactive_mode");
 }
 
 function sendCommand(command) {
@@ -123,7 +177,10 @@ function sendCommand(command) {
     if (wid == null) return false;
     new Ajax.Request("/api/v1/workers/" + wid + "/commands", {
         method: "post",
-        parameters: { command: command }});
+        parameters: { command: command },
+        onSuccess: function(resp) {
+            window.setTimeout("updateStatus()", 0);
+        }});
 }
 
 function updateStatus() {
@@ -134,6 +191,9 @@ function updateStatus() {
             var status = resp.responseJSON;
             window.updateTestStatus(status);
             window.setTimeout("updateStatus()", 3000);
+        },
+        on404: function(resp) { // no status? probably not running anymore
+          window.setTimeout(function() {location.reload();}, 1000);
         }
     });
 }

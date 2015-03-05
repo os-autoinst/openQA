@@ -128,7 +128,6 @@ sub update_status {
     my $status = $self->req->json->{'status'};
 
     my $job = $self->app->schema->resultset("Jobs")->find($jobid);
-    # print "$id " . Dumper($status) . "\n";
 
     $job->append_log($status->{log});
     $job->save_screenshot($status->{screen}) if $status->{screen};
@@ -137,6 +136,20 @@ sub update_status {
     if ($status->{result}) {
         while (my ($name, $result) = each %{$status->{result}}) {
             $job->update_module($name, $result);
+        }
+    }
+
+    if ($job->worker_id) {
+        $job->worker->set_property("INTERACTIVE", $status->{'status'}->{'interactive'}//0);
+    }
+    if ($status->{'status'}->{'needinput'}) {
+        if ($job->state eq 'running') {
+            OpenQA::Scheduler::job_set_waiting($jobid);
+        }
+    }
+    else {
+        if ($job->state eq 'waiting') {
+            OpenQA::Scheduler::job_set_running($jobid);
         }
     }
 

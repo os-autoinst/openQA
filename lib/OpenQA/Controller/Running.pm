@@ -55,10 +55,18 @@ sub status {
     return 0 unless $self->init();
 
     my $job = $self->stash('job');
-    my $results = { 'interactive' => 0, 'workerid' => $job->worker_id };
+    my $workerid = $job->worker_id;
+    my $results = { 'workerid' => $workerid, 'state' => $job->state };
     my $r = $job->modules->find({result => 'running'});
-
     $results->{'running'} = $r->name() if $r;
+
+    if ($workerid) {
+        $results->{interactive} = $job->worker->get_property('INTERACTIVE')//0;
+        $results->{interactive_requested} = $job->worker->get_property('INTERACTIVE_REQUESTED')//0;
+        $results->{stop_waitforneedle_requested} = $job->worker->get_property('STOP_WAITFORNEEDLE_REQUESTED')//0;
+    }
+
+    $results->{'needinput'} = $results->{state} eq 'waiting'?1:0;
     $self->render(json => $results);
 }
 
@@ -68,12 +76,15 @@ sub edit {
 
     my $job = $self->stash('job');
     my $r = $job->modules->find({result => 'running'});
-    if (!$r) {
-        return $self->reply->not_found;
+
+    if ($r) {
+        my $details = $r->details();
+        my $stepid = scalar(@{$details});
+        $self->redirect_to('edit_step', moduleid => $r->name(), stepid => $stepid);
     }
-    # TODO: for interactive mode, the worker needs to transfer more, but lnussel is rewriting this, so
-    # avoid making this a bigger mess as necessary and hardcode step 1
-    $self->redirect_to('edit_step', moduleid => $r->name(), stepid => 1);
+    else {
+        $self->reply->not_found;
+    }
 }
 
 sub livelog {
