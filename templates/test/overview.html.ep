@@ -79,7 +79,15 @@ setup_overview();
 				    % }
 				    % my $failedmodules = $res->{'failures'};
 				    % if ($failedmodules) {
+                                        % my $count = 0;
 					% for my $failedmodule (sort keys %$failedmodules) {
+                                            % if (++$count > 2) {
+                                              % my $more = (scalar(keys %$failedmodules)) - $count + 1;
+                                              % if ($more > 1) {
+                                                 <%= $more %> more
+                                                 % last;
+                                              % }
+                                            % }
 					    % my $failedneedles = $failedmodules->{$failedmodule};
 					    % my $step = 1;
 					    % my $tooltip = '';
