@@ -18,6 +18,10 @@ function setup_overview() {
 	    icon.removeClass('state_done').removeClass('state_cancelled');
 	    icon.addClass('state_scheduled');
 	    icon.attr('title', 'Scheduled');
+            // remove the result class
+	    $(this).parents('td').find('.result_passed').removeClass('result_passed');
+	    $(this).parents('td').find('.result_failed').removeClass('result_failed');
+            $(this).parents('td').find('.result_softfail').removeClass('result_softfail');
 
 	    // If the API call returns a new id, a new job have been created to replace
 	    // the old one. In other case, the old job is being reused
