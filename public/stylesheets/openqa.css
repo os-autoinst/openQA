@@ -1,5 +1,3 @@
-@import url(perltidy.css);
-
 
 table {
     /* tables have 10px margin on each side
@@ -536,5 +534,26 @@ table.admintable input[type="text"].value {
      width: 10em;
 }
 
+
+/* Hidding the radiobuttons & checkboxes */
+table#users input[type="radio"] {
+    display: none;
+}
+
+/* Styling the "check" status */
+table#users  input[type="radio"]:checked + label .fa-circle {
+    display: block;
+    color: black;
+}
+
+/* Styling radiobuttons */
+table#users  label .fa-circle {
+    color: #C8D4AC;
+}
+
+/* Styling radiobuttons */
+table#users input[type="radio"]:checked + label .fa-circle-o {
+    display: none;
+}
 
 /* vim: set sw=4 et: */

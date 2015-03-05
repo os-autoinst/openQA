@@ -18,29 +18,30 @@ package OpenQA::Controller::Admin::User;
 use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
-    my $self = shift;
-    my @users = $self->db->resultset("Users")->search(undef, {order_by => 'id'});
+    my ($self) = @_;
+    my @users = $self->db->resultset("Users")->search(undef, {order_by => 'id'})->all;
 
     $self->stash('users', \@users);
     $self->render('admin/user/index');
 }
 
 sub update {
-    my $self = shift;
+    my ($self) = @_;
     my $set = $self->db->resultset('Users');
-    my $error;
-    my %values;
+    my $is_admin = 0;
+    my $is_operator = 0;
+    my $role = $self->param('role') // 'user';
 
-    # Ensure a proper value. Not very perlish, sorry
-    if (defined($self->param('is_admin'))) {
-        $values{is_admin} = $self->param('is_admin') ? '1' : '0';
+    if ($role eq 'admin') {
+        $is_admin = 1;
+        $is_operator = 1;
     }
-    if (defined($self->param('is_operator'))) {
-        $values{is_operator} = $self->param('is_operator') ? '1' : '0';
+    elsif ($role eq 'operator') {
+        $is_operator = 1;
     }
 
-    eval { $set->search({id => $self->param('userid')})->update_all(\%values)};
-    $error = $@;
+    eval { $set->find($self->param('userid'))->update({is_admin => $is_admin, is_operator => $is_operator}) };
+    my $error = $@;
 
     if ($error) {
         $self->flash('error', "Error updating the user: $error");
