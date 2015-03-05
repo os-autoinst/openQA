@@ -1,27 +1,29 @@
-% stash 'use_prototype' => 1;
 % layout 'default';
 % title $moduleid;
 
-<script type="text/javascript">
-<!--
+% content_for 'head' => begin
+%= javascript '/javascripts/needlediff.js'
+% end
+
+% content_for 'head_javascript' => begin
+
+var diff;
 
 function setNeedle() {
-	var sel = $('needlediff_selector');
-	var dset = sel.options[sel.selectedIndex].dataset;
-	window.diff.setNeedle(dset.image, JSON.parse(dset.areas), JSON.parse(dset.matches));
+        var sel = $('#needlediff_selector').find('option:selected');
+	diff.setNeedle(sel.data('image'), sel.data('areas'), sel.data('matches'));
 }
+% end
 
-window.onload=function(){
-	window.diff = new NeedleDiff('needle_diff', <%= $img_width %>, <%= $img_height %>);
-	window.diff.setScreenshot('<%= url_for('test_img', filename => $screenshot) %>');
-	window.setNeedle(); // Just in case is a page reload
+% content_for 'ready_function' => begin
+	diff = new NeedleDiff('needle_diff', <%= $img_width %>, <%= $img_height %>);
+        diff.setScreenshot('<%= url_for('test_img', filename => $screenshot) %>');
+	setNeedle(); // Just in case is a page reload
 
-	$('needlediff_selector').onchange = function() {
-		window.setNeedle();
-	};
-};
--->
-</script>
+	$('#needlediff_selector').change(function() {
+            setNeedle();
+        });
+%end
 
 <div class="grid_3 alpha" id="sidebar">
   <div class="box box-shadow alpha" id="actions_box">

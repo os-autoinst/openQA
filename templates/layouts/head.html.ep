@@ -36,7 +36,6 @@
     %= javascript '/javascripts/cropimg.js'
     %= javascript '/javascripts/datetime.js'
     %= javascript '/javascripts/keyevent.js'
-    %= javascript '/javascripts/needlediff.js'
     %= javascript '/javascripts/running.js'
     %= javascript '/javascripts/chosen.proto.min.js'
     %= javascript '/javascripts/openqa.js'

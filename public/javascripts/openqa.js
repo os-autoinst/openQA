@@ -1,4 +1,4 @@
-function updateModuleslist(modlist, testname, testmodule) {
+function prototype_updateModuleslist(modlist, testname, testmodule) {
 	var container = $("modlist_content");
 	container.innerHTML = "";
 	modlist.each(function(category) {
@@ -15,6 +15,30 @@ function updateModuleslist(modlist, testname, testmodule) {
 		container.insert(title);
 		container.insert(ul);
 	});
+}
+
+function updateModuleslist(modlist, testname, testmodule) {
+    var container = $('<div/>');
+    
+    $.each(modlist, function(index, category) {
+	var title = $('<h2 class="box-subheader modcategory">' + category.category + "</h2>");
+	container.append(title);
+
+	var ul = $('<ul class="navigation modcategory"></ul>');
+	$.each(category.modules, function(index, module) {
+	    var li = $('<li/>');
+	    li.addClass("mod-"+module.state);
+	    li.addClass("result"+module.result);
+	    if (testmodule == module.name) { li.addClass("selected"); }
+	    var link = $('<a>' + module.name + '</a>');
+	    li.html(link);
+	    link.attr('href', "/tests/"+testname+"/modules/"+module.name+"/steps/1");
+	    ul.append(li);
+	});
+	
+	container.append(ul);
+    });
+    $("#modlist_content").replaceWith(container);
 }
 
 function scrollModuleThumbnails() {

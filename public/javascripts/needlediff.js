@@ -3,12 +3,12 @@ function NeedleDiff(id, width, height) {
     return new NeedleDiff(id, width, height);
   }
 
-  var canvas = document.createElement('canvas');
-  var container = document.getElementById(id);
+  var canvas = $('<canvas/>');
+  var container = $("#" + id);
   var divide = 0.5;
   
-  canvas.writeAttribute('style','position: absolute;');
-  this.ctx = canvas.getContext('2d');
+  canvas.css('position", "absolute');
+  this.ctx = canvas[0].getContext('2d');
   this.screenshotImg = null;
   this.needleImg = null;
   this.areas = [];
@@ -16,15 +16,15 @@ function NeedleDiff(id, width, height) {
   this.showSimilarity = [];
   
   // Event handlers
-  canvas.addEventListener('mousemove', handler, false);
-  canvas.addEventListener('mousedown', handler, false);
-  canvas.addEventListener('mouseup', handler, false);
+  canvas.on('mousemove', handler);
+  canvas.on('mousedown', handler);
+  canvas.on('mouseup', handler);
 
   var self = this;
 
   function handler(ev) {
-    ev._x = ev.layerX;
-    ev._y = ev.layerY;
+    ev._x = ev.offsetX;
+    ev._y = ev.offsetY;
 
     var eventHandler = self[ev.type];
     if (typeof eventHandler == 'function') {
@@ -33,10 +33,10 @@ function NeedleDiff(id, width, height) {
   }
 
   // Draw canvas into its container
-  canvas.setAttribute('width', width);
-  canvas.setAttribute('height', height);
-  container.writeAttribute('style','border: 1px solid black; margin: 0px; position: relative; width: '+width+'px; height: '+height+'px;');
-  container.appendChild(canvas);
+  canvas.attr('width', width);
+  canvas.attr('height', height);
+  container.css('border: 1px solid black; margin: 0px; position: relative; width: '+width+'px; height: '+height+'px;');
+  container.append(canvas);
 
   Object.defineProperty(this, 'container', {
     get: function() {
@@ -178,11 +178,12 @@ NeedleDiff.prototype.mousemove = function(event) {
     // FIXME: Really ugly
     this.draw();
   }
+
   // Change cursor
   if (Math.abs(this.divide - divide) < 0.01) {
-    this.container.style.cursor = 'col-resize';
+    this.container.css("cursor", "col-resize");
   } else {
-    this.container.style.cursor = 'auto';
+    this.container.css("cursor", "auto");
   }
 };
 
