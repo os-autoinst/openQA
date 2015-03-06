@@ -6,11 +6,11 @@ install:
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
 #
-	for i in backlog cache perl pool ; do \
+	for i in backlog testresults cache perl pool ; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
 # shared dirs between openQA web and workers + compatibility links
-	for i in factory logs testresults tests; do \
+	for i in factory tests; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/share/$$i ;\
 		ln -sfn /var/lib/openqa/share/$$i "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done

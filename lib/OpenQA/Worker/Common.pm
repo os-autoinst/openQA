@@ -22,7 +22,7 @@ use POSIX qw/uname/;
 
 use base qw/Exporter/;
 our @EXPORT = qw/$job $workerid $verbose $instance $worker_settings $pooldir $nocleanup $worker_caps $testresults $openqa_url
-  OPENQA_BASE OPENQA_SHARE RESULTS_DIR ISO_DIR HDD_DIR STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
+  OPENQA_BASE OPENQA_SHARE ISO_DIR HDD_DIR STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer
   api_call verify_workerid register_worker/;
 
@@ -51,7 +51,6 @@ use constant ASSET_DIR => OPENQA_SHARE . '/factory';
 use constant {
     ISO_DIR => ASSET_DIR . '/iso',
     HDD_DIR => ASSET_DIR . '/hdd',
-    RESULTS_DIR => OPENQA_SHARE . '/testresults'
 };
 use constant {
     STATUS_UPDATES_SLOW => 5,
