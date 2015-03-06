@@ -228,6 +228,28 @@ sub show {
     $self->render('test/result');
 }
 
+sub _caclulate_preferred_machines {
+    my ($jobs) = @_;
+    my %machines;
+    while (my $job = $jobs->next()) {
+        my $sh = $job->settings_hash;
+        $machines{$sh->{ARCH}} ||= {};
+        $machines{$sh->{ARCH}}->{$sh->{MACHINE}}++;
+    }
+    my $pms = {};
+    for my $arch (keys %machines) {
+        my $max = 0;
+        for my $machine (keys %{$machines{$arch}}) {
+            if ($machines{$arch}->{$machine} > $max) {
+                $max = $machines{$arch}->{$machine};
+                $pms->{$arch} = $machine;
+            }
+        }
+    }
+    $jobs->reset();
+    return $pms;
+}
+
 # Custom action enabling the openSUSE Release Team
 # to see the quality at a glance
 sub overview {
@@ -266,6 +288,7 @@ sub overview {
     my $jobs = OpenQA::Scheduler::query_jobs(%search_args);
 
     my $all_result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
+    my $preferred_machines = _caclulate_preferred_machines($jobs);
 
     while (my $job = $jobs->next) {
         my $settings = $job->settings_hash;
@@ -279,7 +302,7 @@ sub overview {
             my $result_stats = $all_result_stats->{$job->id};
             my $overall      = $job->result;
             if ( $job->result eq "passed" && $result_stats->{dents} ) {
-                $overall = "unknown";
+                $overall = "softfail";
             }
             $result = {
                 passed  => $result_stats->{passed},
@@ -315,7 +338,9 @@ sub overview {
         }
 
         # Populate @configs and %archs
-        $test = $test.'@'.$settings->{MACHINE};
+        if ($preferred_machines->{$settings->{ARCH}} ne $settings->{MACHINE}) {
+            $test .= "@" . $settings->{MACHINE};
+        }
         push( @configs, $test ) unless ( grep { $test eq $_ } @configs );
         $archs{$flavor} = [] unless $archs{$flavor};
         push( @{ $archs{$flavor} }, $arch ) unless ( grep { $arch eq $_ } @{ $archs{$flavor} } );
@@ -345,20 +370,6 @@ sub overview {
         results => \%results,
         aggregated => $aggregated
     );
-}
-
-sub menu {
-    my $self = shift;
-
-    return $self->reply->not_found unless defined $self->param('testid');
-
-    my $job = $self->app->schema->resultset("Jobs")->search({ 'id' => $self->param('testid') })->first;
-
-    return $self->reply->not_found unless $job;
-
-    $self->stash(state => $job->state);
-    $self->stash(prio => $job->priority);
-    $self->stash(jobid => $job->id);
 }
 
 1;

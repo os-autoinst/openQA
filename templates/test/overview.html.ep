@@ -1,85 +1,115 @@
-% stash 'use_prototype' => 1;
-
 % layout 'default';
 % title 'Test summary';
 
+% content_for 'head' => begin
 %= javascript '/javascripts/overview.js'
+% end
 
+% content_for 'ready_function' => begin
+setup_overview();
+% end
 <div class="grid_16 box box-shadow omega">
     <h2>Test result overview</h2>
     <p>This page displays the current results for <b><%= $distri %> <%= $version %> build <%= $build %></b>, which overall summary is
-    <b>passed: <%= $aggregated->{passed} %>, failed: <%= $aggregated->{failed} %>, unknown: <%= $aggregated->{unknown} %>, incomplete: <%= $aggregated->{incomplete} %>, scheduled: <%= $aggregated->{scheduled} %>, running: <%= $aggregated->{running} %>, none: <%= $aggregated->{none} %></b>
+	<b>passed: <%= $aggregated->{passed} %>,
+	    failed: <%= $aggregated->{failed} %>,
+	    unknown: <%= $aggregated->{unknown} %>,
+	    incomplete: <%= $aggregated->{incomplete} %>,
+	    scheduled: <%= $aggregated->{scheduled} %>,
+	    running: <%= $aggregated->{running} %>,
+	    none: <%= $aggregated->{none} %>
+	</b>
     </p>
-    <% for my $type (@$types) { %>
-        <p />
-        <table id="results_<%= $type %>" class="table-autostripe">
+    % for my $type (@$types) {
+	<h3>Flavor: <%= $type %></h3>
+        <table id="results_<%= $type %>" class="overview table-autostripe">
             <thead>
                 <tr id="flavors">
-                    <th colspan="3" id="flavor_<%= $type %>"><%= $type %></th>
+		    <th>Test</th>
+		    % for my $arch (@{$archs->{$type}}) {
+			<th width="10%" id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
+		    % }
                 </tr>
             </thead>
             <tbody>
-            <% for my $arch (@{$archs->{$type}}) { %>
-                <tr id="archs_<%= $arch %>">
-                    <th width="20%">Test</th>
-                    <th width="10%" id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
-                    <th>Failed Modules</th>
-                </tr>
-                <% for my $config (@$configs) { %>
-                    <% my $res = $results->{$config}{$type}{$arch}; %>
-                    <% my $jobid = $res->{jobid}; %>
-                    <%
-                        my $state = $res->{state};
-                        next if !defined($state);
-                    %>
+		% for my $config (@$configs) {
                     <tr>
-                        <td><a href="<%= url_for('test', 'testid' => $jobid) %>"><%= $config %></a></td>
-                        <td id="res_<%= $type %>_<%= $arch %>_<%= $config %>">
-                        <% if ($res) { %>
-                            <%
-                                my $css = "";
-                                $css = "overview_".$res->{overall} if ($state eq "done");
-                            %>
-                            % if (is_operator) {
-                                <span class="<%=$css%>" id="res-<%= $jobid %>" data-ot="<%= $jobid %>" data-ot-title="Actions (<%= $config %>)" data-ot-ajax="<%= url_for('test_menu', 'testid' => $jobid) %>" data-ot-ajax-error-message="Access denied." data-ot-fixed="true" data-ot-group="scheduler" data-ot-hide-trigger="closeButton" data-ot-cache="false" data-ot-target="true">
-                            % } else {
-                                <span class="<%=$css%>" id="res-<%= $jobid %>">
-                            % }
-                            <% if ($state eq "done") { %>
-                                <%= module_result($res) %>
-                            <% } elsif ($state eq "running") { %>
-			        running
-                            <% } elsif ($state eq "scheduled") { %>
-                                scheduled@<%= $res->{priority} %>
-                            <% } else { %>
-                                <%= $state %>
-                            <% } %>
-                            </span>
-                        <% } %>
-                        </td>
-                        <td style="text-align: left; margin: 0px;">
-                          % if ($state eq "done") {
-                            % my $failedmodules = $res->{'failures'};
-                            % if ($failedmodules) {
-                              % for my $failedmodule (sort keys %$failedmodules) {
-				% my $failedneedles = $failedmodules->{$failedmodule};
-				% my $step = 1;
-  				% if (@$failedneedles) {
-				  % $step = $failedneedles->[0]->[1];
-                                  <span data-ot="<ul><li><%= join('</li><li>', sort map { $_->[0] } @$failedneedles) %></li></ul>" data-ot-title="Failed needles">
-                                % } else {
-                                  <span>
-                                % }
-                                <a href="<%= url_for('step', 'testid' => $jobid, 'moduleid' => $failedmodule, 'stepid' => $step) %>"><%= $failedmodule %></a>
-                                </span>
-                              % }
-                            % }
-                          % }
-                        </td>
+			<td width="10%" class="name"><%= $config %></td>
+			% for my $arch (@{$archs->{$type}}) {
+			    % my $res = $results->{$config}{$type}{$arch};
+			    % my $jobid = $res->{jobid};
+			    % my $state = $res->{state};
+
+			    % if (!$state) {
+				<td>-</td>
+				% next;
+			    % }
+			    <td id="res_<%= $type %>_<%= $arch %>_<%= $config %>">
+				% if ($res) {
+				    % my $css = "";
+				    % $css .= "result_".$res->{overall} if ($state eq "done");
+				    % if ($state eq "done") {
+					<span class="<%=$css%>" id="res-<%= $jobid %>">
+					    <a href="<%= url_for('test', 'testid' => $jobid) %>">
+						<i class="status fa fa-circle" title="Done: <%= $res->{overall} %>"></i>
+					    </a>
+					</span>
+				    % } elsif ($state eq "scheduled")
+				    % {
+					<a href="<%= url_for('test', 'testid' => $jobid) %>">
+					    <i class="status state_scheduled fa fa-circle" title="scheduled@<%= $res->{priority} %>"></i>
+					</a>
+				    % } else
+				    % {
+					<a href="<%= url_for('test', 'testid' => $jobid) %>">
+					    <i class="status state_<%= $state %> fa fa-circle" title="<%= $state %>"></i>
+					</a>
+				    % }
+				    % if (is_operator) {
+					% if ($state eq "done" || $state eq "cancelled") {
+  					    %= link_post url_for('apiv1_restart', 'name' => $jobid) => ('data-remote' => 'true', class => 'restart', 'data-jobid' => $jobid) => begin
+					    <i class="action fa fa-repeat" title="Restart the job"></i>
+					    % end 
+					% } elsif ($state eq "running" || $state eq "scheduled")
+					% {
+					    %= link_post url_for('apiv1_cancel', 'name' => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
+					    <i class="action fa fa-times-circle-o" title="Cancel the job"></i>
+					    % end 
+					% }
+				    % }
+				    % my $failedmodules = $res->{'failures'};
+				    % if ($failedmodules) {
+                                        % my $count = 0;
+					% for my $failedmodule (sort keys %$failedmodules) {
+                                            % if (++$count > 2) {
+                                              % my $more = (scalar(keys %$failedmodules)) - $count + 1;
+                                              % if ($more > 1) {
+                                                 <%= $more %> more
+                                                 % last;
+                                              % }
+                                            % }
+					    % my $failedneedles = $failedmodules->{$failedmodule};
+					    % my $step = 1;
+					    % my $tooltip = '';
+  					    % if (@$failedneedles) {
+						% $step = $failedneedles->[0]->[1];
+						% $tooltip = "title='<ul><li>" . join('</li><li>',
+						% sort map { $_->[0] } @$failedneedles) . "</li></ul>' data-ot-title='Failed needles'>";
+					    % }
+					    <span class="failedmodule" <%= $tooltip %> >
+						<a href="<%= url_for('step', 'testid' => $jobid, 
+								     'moduleid' => $failedmodule, 'stepid' => $step) %>">
+						    <%= $failedmodule %>
+						</a>
+					    </span>
+					% }
+				    % }
+				% }
+                            </td>
+			% }
                     </tr>
-                <% } %>
-            <% } %>
+		% }
             </tbody>
         </table>
-    <% } %>
+    % }
 </div>
