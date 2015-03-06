@@ -4,7 +4,20 @@
 % content_for 'ready_function' => begin
   $('#users').DataTable( {
     "order": [[0, 'asc']],
-} );
+  } );
+
+$('input[name="role"]:radio').change(function() {
+   var username = $(this).parents('tr').find('.name').text();
+   var role = $(this).attr('id');
+   role = $('label[for="' + role + '"]').text();
+   if (confirm("Are you sure to put " + username + " into role: " + $.trim(role) + "?")) {
+     $(this).parent('form').submit();
+   } else {
+     $(this).removeAttr('checked');
+     // we can't re-enable the default without jquery protesting
+     // $(this).parent('form').find('input[class="default"]')
+   }
+});
 % end
 
 <div class="box box-shadow omega">
@@ -15,12 +28,11 @@
     <table id="users" class="stripe compact">
 	<thead>
 	    <tr>
-                <th>username</th>
-                <th>email</th>
-                <th>name</th>
-                <th>nick</th>
-                <th>operator</th>
-                <th>admin</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Name</th>
+                <th>Nick</th>
+                <th>Role</th>
             </tr>
         </thead>
         <tbody>
@@ -30,33 +42,41 @@
                     <td class="email"><%= $user->email %></td>
                     <td class="name"><%= $user->fullname %></td>
                     <td class="nick"><%= $user->nickname %></td>
-		    <td class="is_operator" data-order="<%= $user->is_operator %>">
-                        % if ($user->is_operator) {
-                            <i class="fa fa-check" title="Yes"></i>
-                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_operator => '0') => 'data-method' => 'post' => 'title' => 'Demote' => begin
-                            <i class="fa fa-thumbs-down"></i>
-                            % end
-                        % } else
-                        % {
-                            <i class="fa fa-times" title="No"></i>
-                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_operator => '1') => 'data-method' => 'post' => 'title' => 'Promote' => begin
-                            <i class="fa fa-thumbs-up"></i>
-                            % end
-                        % }
-                    </td>
-                    <td class="is_admin" data-order="<%= $user->is_admin %>">
-                        % if ($user->is_admin) {
-                            <i class="fa fa-check" title="Yes"></i>
-                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_admin => '0') => 'data-method' => 'post' => 'title' => 'Demote' => begin
-                            <i class="fa fa-thumbs-down"></i>
-                            % end
-                        % } else
-                        % {
-                            <i class="fa fa-times" title="No"></i>
-                            %= link_to url_for('admin_user', userid=> $user->id)->query(is_admin => '1') => 'data-method' => 'post' => 'title' => 'Promote' => begin
-                            <i class="fa fa-thumbs-up"></i>
-                            % end
-                        % }
+		    <td class="role" data-order="<%= $user->is_admin %><%= $user->is_operator %>">
+		      %= form_for url_for('admin_user', userid => $user->id) => (method => 'POST') => begin
+			% my @selects = ['', '', ''];
+			% my $select = 0;
+			% if ($user->is_admin) {
+			%   $select = 2;
+			% } elsif ($user->is_operator) {
+			%   $select = 1;
+			% }
+			% $selects[$select] = Mojo::ByteStream->new("checked='checked' class='default'");
+			<input type="radio" name="role" value="user" id="<%= $user->id %>_user" <%= $selects[0] %>/>
+			<label for="<%= $user->id %>_user">
+			  <span class="fa-stack"> <!-- sexy checkboxes! -->
+			    <i class="fa fa-circle-o fa-stack-1x"></i>
+			    <i class="fa fa-circle fa-stack-1x"></i>
+			  </span>
+			  User
+			</label>
+			<input type="radio" name="role" value="operator" id="<%= $user->id %>_operator" <%= $selects[1] %>/>
+			<label for="<%= $user->id %>_operator">
+			  <span class="fa-stack">
+			    <i class="fa fa-circle-o fa-stack-1x"></i>
+			    <i class="fa fa-circle fa-stack-1x"></i>
+			  </span>
+			  Operator
+			</label>
+			<input type="radio" name="role" value="admin" id="<%= $user->id %>_admin" <%= $selects[2] %>/>
+			<label for="<%= $user->id %>_admin">
+			  <span class="fa-stack">
+			    <i class="fa fa-circle-o fa-stack-1x"></i>
+			    <i class="fa fa-circle fa-stack-1x"></i>
+			  </span>
+			  Administrator
+			</label>
+			% end
                     </td>
 		</tr>
             % }

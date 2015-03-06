@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 40;
+use Test::More tests => 34;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -47,37 +47,30 @@ $t->get_ok('/admin/users')->status_is(403);
 $t->delete_ok('/logout')->status_is(302);
 $test_case->login($t, 'arthur');
 my $get = $t->get_ok('/admin/users')->status_is(200);
-is('1', $t->tx->res->dom->at('#user_99901 .is_operator')->attr('data-order'));
-is('1', $t->tx->res->dom->at('#user_99901 .is_admin')->attr('data-order'));
-is('0', $t->tx->res->dom->at('#user_99902 .is_operator')->attr('data-order'));
-is('0', $t->tx->res->dom->at('#user_99902 .is_admin')->attr('data-order'));
-is('1', $t->tx->res->dom->at('#user_99903 .is_operator')->attr('data-order'));
-is('0', $t->tx->res->dom->at('#user_99903 .is_admin')->attr('data-order'));
+is('11', $t->tx->res->dom->at('#user_99901 .role')->attr('data-order'));
+is('00', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
+is('01', $t->tx->res->dom->at('#user_99903 .role')->attr('data-order'));
 
 # Click on "+ admin" for Lancelot
-$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => {is_admin => '1'})->status_is(302);
+$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => { role => 'admin' })->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
-$get->content_like(qr/User #99902 updated/);
+$get->content_like(qr/User lance updated/);
 $get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
-is('0', $t->tx->res->dom->at('#user_99902 .is_operator')->attr('data-order'));
-is('1', $t->tx->res->dom->at('#user_99902 .is_admin')->attr('data-order'));
+is('11', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
 
 
 # We can even update both fields in one request
-$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => {is_admin => '0', is_operator => 'yes'})->status_is(302);
+$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => { role => 'operator'})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
-$get->content_like(qr/User #99902 updated/);
+$get->content_like(qr/User lance updated/);
 $get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
-is('1', $t->tx->res->dom->at('#user_99902 .is_operator')->attr('data-order'));
-is('0', $t->tx->res->dom->at('#user_99902 .is_admin')->attr('data-order'));
+is('01', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
 
-# But we cannot change other fields
-$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => {username => "guinevere"})->status_is(302);
+# not giving a role, makes it a user
+$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => {})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
-$get->content_like(qr/User #99902 updated/);
+$get->content_like(qr/User lance updated/);
 $get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
-is('1', $t->tx->res->dom->at('#user_99902 .is_operator')->attr('data-order'));
-is('0', $t->tx->res->dom->at('#user_99902 .is_admin')->attr('data-order'));
-
+is('00', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
 
 done_testing();
