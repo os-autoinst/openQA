@@ -69,6 +69,7 @@
               <td>VNC port: <%= 90 + $worker->instance %></td>
             </tr>
             % }
+	    % if ($job->backend) {
             <tr>
               <td colspan="2" style="padding: 0 0 <%= ($job->backend eq 'kvm2usb')?'8px':'0' %> 0;"><%= $job->backend %></td>
             </tr>
@@ -92,7 +93,8 @@
                         </tr>
                     % }
                 % }
-            % }
+	     % }
+	    % }
         </table>
 	</div>
 </div>
