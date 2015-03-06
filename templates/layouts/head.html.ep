@@ -28,14 +28,9 @@
     %= javascript '/javascripts/jquery.dataTables.js'
 % } else
 % {
-    %= javascript '/javascripts/shapes.js'
-    %= javascript '/javascripts/needleeditor.js'
     %= javascript '/javascripts/prototype.js'
     %= javascript '/javascripts/prototype_ujs.js'
     %= javascript '/javascripts/scriptaculous/scriptaculous.js'
-    %= javascript '/javascripts/cropimg.js'
-    %= javascript '/javascripts/datetime.js'
-    %= javascript '/javascripts/keyevent.js'
     %= javascript '/javascripts/running.js'
     %= javascript '/javascripts/chosen.proto.min.js'
     %= javascript '/javascripts/openqa.js'
