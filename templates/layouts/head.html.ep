@@ -20,31 +20,17 @@
 %= stylesheet '/stylesheets/openqa.css'
 %= stylesheet '/stylesheets/opentip.css'
 
-% if (!$use_prototype) {
-    %= javascript '/javascripts/jquery-1.11.2.js'
-    %= javascript '/javascripts/jquery_ujs.js'
-    %= javascript '/javascripts/chosen.jquery.js'
-    %= javascript '/javascripts/openqa.js'
-    %= javascript '/javascripts/jquery.dataTables.js'
-% } else
-% {
-    %= javascript '/javascripts/prototype.js'
-    %= javascript '/javascripts/prototype_ujs.js'
-    %= javascript '/javascripts/scriptaculous/scriptaculous.js'
-    %= javascript '/javascripts/running.js'
-    %= javascript '/javascripts/chosen.proto.min.js'
-    %= javascript '/javascripts/openqa.js'
-    %= javascript '/javascripts/scheduler.js'
-    %= javascript '/javascripts/opentip-prototype.min.js'
-% }
+%= javascript '/javascripts/jquery-1.11.2.js'
+%= javascript '/javascripts/jquery_ujs.js'
+%= javascript '/javascripts/chosen.jquery.js'
+%= javascript '/javascripts/openqa.js'
+%= javascript '/javascripts/jquery.dataTables.js'
 
 %= content_for 'head'
     
 %= javascript begin
   %= content_for 'head_javascript'
-% if (!$use_prototype) {
-    $(document).ready(function() {
-    %= content_for 'ready_function'
-    } );
-% }
+  $(document).ready(function() {
+     %= content_for 'ready_function'
+  } );
 % end

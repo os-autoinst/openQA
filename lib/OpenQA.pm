@@ -156,7 +156,6 @@ sub startup {
 
     # Set some application defaults
     $self->defaults( appname => 'openQA' );
-    $self->defaults( use_prototype => 0 );
 
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
