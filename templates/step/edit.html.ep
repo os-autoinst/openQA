@@ -65,6 +65,12 @@
 		<input type="hidden" id="needleeditor_imageversion" name="imageversion" value="<%= ${@$needles[0]}{'imageversion'} %>"/>
             </div>
 	</div>
+        <div style="margin-top: 1em;">
+            Margin: <input type="text" name="margin" id="margin_field" value="" readonly><button id="margin_up" onclick="window.nEditor.changeMargin('up');return false;">+</button><button id="margin_down" onclick="window.nEditor.changeMargin('down');return false;">-</button><button id="match_reset" onclick="window.nEditor.changeMargin('reset');return false;"><</button><br/>
+	</div>
+        <div style="margin-top: 1em;">
+            Match(%): <input type="text" name="match" id="match_field" value="" readonly><button id="match_up" onclick="window.nEditor.changeMatch('up');return false;">+</button><button id="match_down" onclick="window.nEditor.changeMatch('down');return false;">-</button><button id="match_reset" onclick="window.nEditor.changeMatch('reset');return false;"><</button><br/>
+	</div>
 	% end
     </div>
     

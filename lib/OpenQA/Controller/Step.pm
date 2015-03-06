@@ -144,6 +144,8 @@ sub edit {
                     'width' => int $area->{'w'},
                     'ypos' => int $area->{'y'},
                     'height' => int $area->{'h'},
+                    'margin' => int $area->{'margin'},
+                    'match' => int $area->{'match'},
                     'type' => 'match'
                 }
             );
@@ -232,6 +234,8 @@ sub edit {
                     'width' => int $match->{'w'},
                     'ypos' => int $match->{'y'},
                     'height' => int $match->{'h'},
+                    'margin' => int $match->{'margin'},
+                    'match' => int $match->{'match'},
                     'type' => 'match'
                 };
                 #push(@{$screenshot->{'matches'}}, $area);

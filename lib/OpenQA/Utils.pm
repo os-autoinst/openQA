@@ -79,6 +79,8 @@ sub needle_info($$$) {
     local $/;
 
     my $needledir = needledir($distri, $version);
+    my $default_margin = 50; # define in os-autoinst
+    my $default_match = 96; # define in os-autoinst
 
     my $fn = "$needledir/$name.json";
     unless (open(JF, '<', $fn )) {
@@ -94,6 +96,10 @@ sub needle_info($$$) {
         warn "failed to parse $needledir/$name.json: $@";
         return undef;
     }
+
+    # set the value if the needle doesn't have that value
+    @{$needle->{'area'}}[0]->{'margin'} = $default_margin if !defined @{$needle->{'area'}}[0]->{'margin'};
+    @{$needle->{'area'}}[0]->{'match'} = $default_match if !defined @{$needle->{'area'}}[0]->{'match'};
 
     $needle->{'needledir'} = $needledir;
     $needle->{'image'} = "$needledir/$name.png";
