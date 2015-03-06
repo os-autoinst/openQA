@@ -220,6 +220,30 @@ $ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --ho
 Use qemu-img snapshot -l something.img to find out what snapshots
 are in the image.
 
+Assigning jobs to workers
+-------------------------
+
+By default, any worker can get any job with the matching architecture.
+
+This behavior can be changged by setting job variable WORKER_CLASS. Jobs
+with this variable set (typically via machines or test suites configuration) are
+assigned only to workers, which have the same variable in the configuration file.
+
+For example, the following configuration ensures, that jobs with WORKER_CLASS=desktop
+can be assigned _only_ to worker instances 1 and 2.
+
+[workers.ini]
+--------------------------------------------------------------------------------
+[1]
+WORKER_CLASS = desktop
+
+[2]
+WORKER_CLASS = desktop
+
+[3]
+# WORKER_CLASS is not set
+--------------------------------------------------------------------------------
+
 Writing multi-machine tests
 ---------------------------
 [id="mm-tests"]
