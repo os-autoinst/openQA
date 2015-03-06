@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my ($self) = @_;
-    my @users = $self->db->resultset("Users")->search(undef, {order_by => 'id'})->all;
+    my @users = $self->db->resultset("Users")->search(undef)->all;
 
     $self->stash('users', \@users);
     $self->render('admin/user/index');
@@ -40,15 +40,15 @@ sub update {
         $is_operator = 1;
     }
 
-    eval { $set->find($self->param('userid'))->update({is_admin => $is_admin, is_operator => $is_operator}) };
-    my $error = $@;
-
-    if ($error) {
-        $self->flash('error', "Error updating the user: $error");
+    my $user = $set->find($self->param('userid'));
+    if (!$user) {
+        $self->flash('error', "Can't find that user");
     }
     else {
-        $self->flash('info', 'User #'.$self->param('userid').' updated');
+        $user->update({is_admin => $is_admin, is_operator => $is_operator});
+        $self->flash('info', 'User '. $user->nickname .' updated');
     }
+
     $self->redirect_to($self->url_for('admin_users'));
 }
 

@@ -10,7 +10,7 @@ $('input[name="role"]:radio').change(function() {
    var username = $(this).parents('tr').find('.name').text();
    var role = $(this).attr('id');
    role = $('label[for="' + role + '"]').text();
-   if (confirm("Sure to make " + username + " a " + $.trim(role) + "?")) {
+   if (confirm("Are you sure to put " + username + " into role: " + $.trim(role) + "?")) {
      $(this).parent('form').submit();
    } else {
      $(this).removeAttr('checked');
@@ -74,7 +74,7 @@ $('input[name="role"]:radio').change(function() {
 			    <i class="fa fa-circle-o fa-stack-1x"></i>
 			    <i class="fa fa-circle fa-stack-1x"></i>
 			  </span>
-			  Adminstrator
+			  Administrator
 			</label>
 			% end
                     </td>
