@@ -588,6 +588,10 @@ table.overview .state_running.fa {
 .result_incomplete a i.fa { color:#bebebe;}
 
 
+table#users td.role {
+    white-space: nowrap;
+}
+
 /* Hidding the radiobuttons & checkboxes */
 table#users input[type="radio"] {
     display: none;
