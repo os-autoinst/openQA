@@ -1,4 +1,62 @@
-function renderTestsList(jobs, is_operator, restart_url) {
+var is_operator;
+var restart_url;
+
+function renderTestName ( data, type, row ) {
+    if (type === 'display') {
+	html = '<span class="result_' + row['result'] + '">';
+	html += '<a href="/tests/' + row['id'] + '">';
+	html += '<i class="status fa fa-circle" title="Done: ' + row['result'] + '"></i></a> ';
+	html += '<a href="/tests/' + row['id'] + '">';
+	html += data + '</a></span>';
+	
+	if (row['clone']) {
+            html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
+        } else if (is_operator) {
+	    var url = restart_url.replace('REPLACEIT', row['id']);
+            html += ' <a data-method="POST" data-remote="true" class="api-restart"';
+	    html += ' href="' + url + '">';
+            html += '<i class="fa fa-repeat" title="Restart Job"></i></a>'
+	}
+        return html;
+    } else {
+	return data;
+    }
+}
+
+function renderTestResult( data, type, row ) {
+    if (type === 'display') {
+	var html = '' 
+	if (row['state'] === 'done') {
+	    html += data['passed'] + "<i class='fa fa-star'></i>";
+	    if (data['dents']) {
+		html +=  " " + data['dents'] + "<i class='fa fa-star-half-empty'></i> ";
+	    }
+	    if (data['failed']) {
+		html +=  " " + data['failed'] + "<i class='fa fa-star-o'></i> ";
+	    }
+	    if (data['none']) {
+		html +=  " " + data['none'] + "<i class='fa fa-ban'></i> ";
+	    }
+	}
+	if (row['state'] === 'cancelled') {
+	    html += "<i class='fa fa-times'></i>";
+	}
+	if (row['deps']) {
+	    if (row['result'] === 'skipped' ||
+		row['result'] === 'parallel_failed') {
+		html += "<i class='fa fa-chain-broken'></i>";
+	    }
+	    else {
+		html += "<i class='fa fa-link'></i>";
+	    }
+	}
+        return '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + html + '</a>';
+    } else {
+	return (parseInt(data['passed']) * 10000) + (parseInt(data['dents']) * 100) + parseInt(data['failed']);
+    }
+}
+
+function renderTestsList(jobs) {
 
     var table = $('#results').DataTable( {
 	"dom": 'l<"#toolbar">frtip',
@@ -39,21 +97,7 @@ function renderTestsList(jobs, is_operator, restart_url) {
 	    },
 	    { targets: 1,
 	      className: "test",
-	      "render": function ( data, type, row ) {
-		  if (type === 'display') {
-		      html = '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + data + '</a>';
-		      if (row['clone']) {
-                          html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
-                      } else if (is_operator) {
-			  var url = restart_url.replace('REPLACEIT', row['id']);
-                          html += ' <a data-method="POST" data-remote="true" class="api-restart" href="' + url + '">' +
-                              '<i class="fa fa-repeat" title="Restart Job"></i></a>'
-		      }
-                      return html;
-		  } else {
-		      return data;
-		  }
-              },
+	      "render": renderTestName,
 	    },
 	    { targets: 3,
 	      "render": function ( data, type, row ) {
@@ -64,39 +108,8 @@ function renderTestsList(jobs, is_operator, restart_url) {
 	      }
 	    },
 	    { targets: 4,
-	      "render": function ( data, type, row ) {
-		    if (type === 'display') {
-		      var html = '' 
-		      if (row['state'] === 'done') {
-		          html += data['passed'] + "<i class='fa fa-star'></i>";
-		          if (data['dents']) {
-			      html +=  " " + data['dents'] + "<i class='fa fa-star-half-empty'></i> ";
-		          }
-		          if (data['failed']) {
-			      html +=  " " + data['failed'] + "<i class='fa fa-star-o'></i> ";
-		          }
-		          if (data['none']) {
-			      html +=  " " + data['none'] + "<i class='fa fa-ban'></i> ";
-		          }
-		      }
-		      if (row['state'] === 'cancelled') {
-		          html += "<i class='fa fa-times'></i>";
-		      }
-		      if (row['deps']) {
-		          if (row['result'] === 'skipped' ||
-		              row['result'] === 'parallel_failed') {
-		              html += "<i class='fa fa-chain-broken'></i>";
-		          }
-		          else {
-		              html += "<i class='fa fa-link'></i>";
-		          }
-		      }
-                      return '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + html + '</a>';
-		  } else {
-		      return (parseInt(data['passed']) * 10000) + (parseInt(data['dents']) * 100) + parseInt(data['failed']);
-		  }
-              }
-	    },
+	      "render": renderTestResult
+	    }
 	],
     } );
     $("#relevantbox").detach().appendTo('#toolbar');

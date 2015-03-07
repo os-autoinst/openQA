@@ -7,9 +7,9 @@
 % end
 
 % content_for 'ready_function' => begin
-  renderTestsList([ <%= join(',', map { $_->id } $jobs->all) %> ],
-  <%= (is_operator) ? 1 : 0 %>,
-  "<%= url_for("apiv1_restart", name => 'REPLACEIT') %>");
+  is_operator = <%= (is_operator) ? 'true' : 'false' %>;
+  restart_url = "<%= url_for("apiv1_restart", name => 'REPLACEIT') %>";
+  renderTestsList([ <%= join(',', map { $_->id } $jobs->all) %> ]);
 % end
 
 % if (@$running) {

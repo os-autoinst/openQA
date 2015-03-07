@@ -43,7 +43,10 @@
                     of <%= "$settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}" %>
 		</td>
 		<td class="test">
-		    %= link_to $testname => url_for('test', 'testid' => $job->id)
+		    %= link_to url_for('test', 'testid' => $job->id) => begin
+                    <i class="status state_running fa fa-circle" title="Running"></i>
+                    %= $testname
+                    % end
 		</td>
 		<td class="parents">
 		    % my $parents = $job->parents;

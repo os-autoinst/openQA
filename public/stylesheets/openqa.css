@@ -568,16 +568,15 @@ table.overview .failedmodule {
     border: 1px solid #D2DFB5;
 }
     
-table.overview .state_scheduled.fa {
+.state_scheduled.fa {
     color: #CCA66A;
 }
 
-
-table.overview .state_obsolete.fa {
+.state_obsolete.fa {
     color: #615245;
 }
 
-table.overview .state_running.fa {
+.state_running.fa {
     color: #F3F929;
 }
     
