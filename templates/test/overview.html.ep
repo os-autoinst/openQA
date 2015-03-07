@@ -33,6 +33,7 @@ setup_overview();
             </thead>
             <tbody>
 		% for my $config (@$configs) {
+                    % next unless $results->{$config}{$type};
                     <tr>
 			<td width="10%" class="name"><%= $config %></td>
 			% for my $arch (@{$archs->{$type}}) {

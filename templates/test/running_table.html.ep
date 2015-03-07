@@ -39,8 +39,8 @@
 	    <tr id="job_<%= $job->id %>">
 		% my $testname = $job->test . '@' . $settings->{MACHINE};
 		<td class="name">
-		    % my $text = "Build$build of $settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}";
-		    %= $text
+                    %= link_to "Build$build" => url_for('tests_overview')->query(distri => $settings->{DISTRI}, version => $settings->{VERSION}, build => $build);
+                    of <%= "$settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}" %>
 		</td>
 		<td class="test">
 		    %= link_to $testname => url_for('test', 'testid' => $job->id)

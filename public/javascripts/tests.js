@@ -32,9 +32,9 @@ function renderTestsList(jobs, is_operator, restart_url) {
 	    { targets: 0,
 	      className: "name",
 	      "render": function ( data, type, row ) {
-		  var name = 'Build' + row['build'];
+		  var name = "<a href='/tests/overview?build=" + row['build'] + "&distri=" + row['distri'] + "&version=" + row['version'] + "'>" + 'Build' + row['build'] + '</a>';
 		  name += " of ";
-		  return name + row['distri'] + "-" + row['flavor'] + "." + row['arch'];
+		  return name + row['distri'] + "-" + row['version'] + "-" + row['flavor'] + "." + row['arch'];
 	      },
 	    },
 	    { targets: 1,
