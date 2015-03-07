@@ -27,15 +27,15 @@ function renderTestResult( data, type, row ) {
     if (type === 'display') {
 	var html = '' 
 	if (row['state'] === 'done') {
-	    html += data['passed'] + "<i class='fa fa-star'></i>";
+	    html += data['passed'] + "<i class='fa module_passed fa-star'></i>";
 	    if (data['dents']) {
-		html +=  " " + data['dents'] + "<i class='fa fa-star-half-empty'></i> ";
+		html +=  " " + data['dents'] + "<i class='fa module_softfail fa-star-half-empty'></i> ";
 	    }
 	    if (data['failed']) {
-		html +=  " " + data['failed'] + "<i class='fa fa-star-o'></i> ";
+		html +=  " " + data['failed'] + "<i class='fa module_failed fa-star-o'></i> ";
 	    }
 	    if (data['none']) {
-		html +=  " " + data['none'] + "<i class='fa fa-ban'></i> ";
+		html +=  " " + data['none'] + "<i class='fa module_none fa-ban'></i> ";
 	    }
 	}
 	if (row['state'] === 'cancelled') {
@@ -50,7 +50,7 @@ function renderTestResult( data, type, row ) {
 		html += "<i class='fa fa-link'></i>";
 	    }
 	}
-        return '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + html + '</a>';
+        return '<a href="/tests/' + row['id'] + '">' + html + '</a>';
     } else {
 	return (parseInt(data['passed']) * 10000) + (parseInt(data['dents']) * 100) + parseInt(data['failed']);
     }
@@ -82,9 +82,9 @@ function renderTestsList(jobs) {
 	"columns": [
 	    { "data": "name" },
 	    { "data": "test" },
+	    { "data": "result_stats" },
 	    { "data": "deps" },
 	    { "data": "testtime" },
-	    { "data": "result_stats" },
 	],
 	"columnDefs": [
 	    { targets: 0,
@@ -99,7 +99,7 @@ function renderTestsList(jobs) {
 	      className: "test",
 	      "render": renderTestName,
 	    },
-	    { targets: 3,
+	    { targets: 4,
 	      "render": function ( data, type, row ) {
 		  if (type === 'display')
 		      return jQuery.timeago(data + " UTC");
@@ -107,7 +107,7 @@ function renderTestsList(jobs) {
 		      return data;
 	      }
 	    },
-	    { targets: 4,
+	    { targets: 2,
 	      "render": renderTestResult
 	    }
 	],
