@@ -32,17 +32,17 @@ my $t = Test::Mojo->new('OpenQA');
 # we don't want to test javascript here, so we just test the javascript code
 # List with no login
 my $get = $t->get_ok('/tests')->status_is(200);
-$get->content_like(qr/renderTestsList\([^)]*,\s*0\s*,/, "test list rendered without is_operator");
+$get->content_like(qr/is_operator = false;/, "test list rendered without is_operator");
 
 # List with an authorized user
 $test_case->login($t, 'percival');
 $get = $t->get_ok('/tests')->status_is(200);
-$get->content_like(qr/renderTestsList\([^)]*,\s*1\s*,/, "test list rendered with is_operator");
+$get->content_like(qr/is_operator = true;/, "test list rendered with is_operator");
 
 # List with a not authorized user
 $test_case->login($t, 'lancelot', email => 'lancelot@example.com');
 $get = $t->get_ok('/tests')->status_is(200);
-$get->content_like(qr/renderTestsList\([^)]*,\s*0\s*,/, "test list rendered without is_operator");
+$get->content_like(qr/is_operator = false;/, "test list rendered without is_operator");
 
 # now the same for scheduled jobs
 $t->delete_ok('/logout')->status_is(302);
