@@ -25,7 +25,7 @@ function addTag() {
     return false;
 }
 
-function do_overwrite()
+function doOverwrite()
 {
     saveNeedleForm = document.forms['save_needle_form'];
     saveNeedleForm.submit();
