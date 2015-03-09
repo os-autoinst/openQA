@@ -37,6 +37,7 @@ sub create {
     $caps->{cpu_arch} = $self->param('cpu_arch');
     $caps->{cpu_opmode} = $self->param('cpu_opmode');
     $caps->{mem_max} = $self->param('mem_max');
+    $caps->{worker_class} = $self->param('worker_class');
 
     my $res = OpenQA::Scheduler::worker_register($host, $instance, $backend, $caps);
     $self->render(json => { id => $res} );

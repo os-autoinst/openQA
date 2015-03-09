@@ -171,9 +171,9 @@ sub worker_register {
                 backend => $backend,
             }
         );
-        # store worker's capabilities to database
-        $worker->update_caps($workercaps) if $workercaps;
     }
+    # store worker's capabilities to database
+    $worker->update_caps($workercaps) if $workercaps;
 
     # in case the worker died ...
     # ... restart jobs assigned to this worker
