@@ -216,7 +216,7 @@ function initLivelog() {
 var last_event;
 
 // loads a data-url img into a canvas
-function load_canvas(canvas, dataURL) {
+function loadCanvas(canvas, dataURL) {
     var context = canvas[0].getContext('2d');
 
     // load image from data url
@@ -236,7 +236,7 @@ function resizeLivestream(arg) {
     livestream.attr('width', arg.split("x")[0]);
     livestream.attr('height', arg.split("x")[1]);
     if (last_event) {
-        load_canvas(livestream, last_event.data);
+        loadCanvas(livestream, last_event.data);
     }
 }
 
@@ -272,7 +272,7 @@ function initLivestream() {
     var livestream = $('#livestream');
     var events = new EventSource(livestream.data('url'));
     events.addEventListener('message', function(event) {
-        load_canvas(livestream, event.data);
+        loadCanvas(livestream, event.data);
         last_event = event;
     }, false);
 }
