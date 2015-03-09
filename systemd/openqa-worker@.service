@@ -11,7 +11,7 @@ PartOf=openqa-worker.target
 [Service]
 Type=simple
 ExecStart=/usr/share/openqa/script/worker --instance %i
-User=geekotest
+User=_openqa-worker
 KillMode=mixed
 
 [Install]
