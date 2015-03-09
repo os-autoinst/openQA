@@ -77,8 +77,7 @@
   /var/lib/openqa/pool/*/qemuscreenshot/* rw,
   /var/lib/openqa/pool/*/raid/ rw,
   /var/lib/openqa/pool/*/raid/* rw,
-  /var/lib/openqa/pool/*/testresults/ rw,
-  /var/lib/openqa/pool/*/testresults/** rwk,
+  /var/lib/openqa/pool/*/testresults/* rw,
   /var/lib/openqa/pool/*/tmp/ rw,
   /var/lib/openqa/pool/*/tmp/* rw,
   /var/lib/openqa/pool/*/ulogs/ rw,
@@ -87,7 +86,6 @@
   /var/lib/openqa/share/* r,
   /var/lib/openqa/share/factory/hdd/* r,
   /var/lib/openqa/share/factory/iso/* r,
-  /var/lib/openqa/share/testresults/** rwk,
   /var/lib/openqa/share/tests/** r,
 
 }

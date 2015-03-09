@@ -93,13 +93,6 @@ sub stop_job($;$) {
     my $name = $job->{'settings'}->{'NAME'};
     $aborted ||= 'done';
 
-    if (open(my $log, '>>', RESULTS_DIR . '/runlog.txt')) {
-        if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
-            printf $log "%s finished to create %s: %s\n",strftime("%F %T", gmtime),$name, $aborted;
-        }
-        close($log);
-    }
-
     my $job_done; # undef
 
     if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
@@ -188,13 +181,6 @@ sub start_job {
     unless ($worker) {
         warn "job is missing files, releasing job\n";
         return stop_job('setup failure');
-    }
-    if ($job && open(my $log, '>>', RESULTS_DIR . '/runlog.txt')) {
-        if (fcntl($log, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
-            my @s = map { sprintf("%s=%s", $_, $job->{'settings'}->{$_}) } grep { $_ ne 'ISO' && $_ ne 'NAME' } keys %{$job->{'settings'}};
-            printf $log "%s started to create %s %s\n",strftime("%F %T", gmtime), $name, join(' ', @s);
-        }
-        close($log);
     }
     # start updating status - slow updates if livelog is not running
     add_timer('update_status', STATUS_UPDATES_SLOW, \&update_status);
