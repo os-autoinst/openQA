@@ -155,7 +155,8 @@ function disableInteractive() {
 function sendCommand(command) {
     var wid = testStatus.workerid;
     if (wid == null) return false;
-    $.ajax({url: "/api/v1/workers/" + wid + "/commands",
+    var url = $('#actions_box').data('url').replace('WORKERID', wid);
+    $.ajax({url: url,
             type: 'POST',
             data: { command: command },
             success: function(resp) {

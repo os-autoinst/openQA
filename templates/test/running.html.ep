@@ -11,7 +11,7 @@
 % end
 
 <div class="grid_4 live-sidebar alpha">
-    <div class="box box-shadow" id="actions_box">
+    <div class="box box-shadow" id="actions_box" data-url="<%= url_for('apiv1_create_command, workerid => 'WORKERID') %>">
         <div class="box-header aligncenter">Actions</div>
         <div class="aligncenter">
             %= link_to url_for('tests') => begin
