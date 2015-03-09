@@ -543,18 +543,15 @@ table.overview td.name {
     padding-bottom: .5em;
 }
 
-table.overview span.action {
-    display: none;
-}
-
-table.overview span.status .fa {
+span.status .fa {
     font-size: 120%;
 }
 
-table.overview .status.fa {
+.status.fa {
     font-size: 110%;
 }
-table.overview .action.fa {
+
+.action.fa {
     font-size: 90%;
     color: #ccc !important;
 }
@@ -587,7 +584,7 @@ table.overview .failedmodule {
 .fa.module_softfail { color: #A3C16C; }
 .result_failed a i.fa {color: #FF4E46; }
 .fa.module_failed { color: #FF4E46; }
-.result_incomplete a i.fa { color:#bebebe;}
+.result_incomplete a i.fa { color: #AF1E11;}
 .fa.module_none { color:#bebebe;}
 
 /* Hidding the radiobuttons & checkboxes */

@@ -45,6 +45,9 @@
 		<td class="test">
 		    %= link_to url_for('test', 'testid' => $job->id) => begin
                     <i class="status state_running fa fa-circle" title="Running"></i>
+		    %= link_post url_for('apiv1_cancel', 'name' => $job->id) => ('data-remote' => 'true') => (class => 'cancel') => begin
+		      <i class="action fa fa-times-circle-o"></i>
+		    % end
                     %= $testname
                     % end
 		</td>

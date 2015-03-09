@@ -5,18 +5,21 @@ function renderTestName ( data, type, row ) {
     if (type === 'display') {
 	html = '<span class="result_' + row['result'] + '">';
 	html += '<a href="/tests/' + row['id'] + '">';
-	html += '<i class="status fa fa-circle" title="Done: ' + row['result'] + '"></i></a> ';
-	html += '<a href="/tests/' + row['id'] + '">';
-	html += data + '</a></span>';
-	
-	if (row['clone']) {
-            html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
-        } else if (is_operator) {
+	html += '<i class="status fa fa-circle" title="Done: ' + row['result'] + '"></i>';
+	if (is_operator && !row['clone']) {
 	    var url = restart_url.replace('REPLACEIT', row['id']);
-            html += ' <a data-method="POST" data-remote="true" class="api-restart"';
+            html += ' <a data-method="POST" data-remote="true" class="restart"';
 	    html += ' href="' + url + '">';
-            html += '<i class="fa fa-repeat" title="Restart Job"></i></a>'
+            html += '<i class="action fa fa-repeat" title="Restart Job"></i></a>'
 	}
+        html += '</a> ';
+	// the name
+	html += '<a href="/tests/' + row['id'] + '" class="name">' + data + '</a>';
+	html += '</span>';
+	
+	if (row['clone'])
+            html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
+
         return html;
     } else {
 	return data;
@@ -121,8 +124,10 @@ function renderTestsList(jobs) {
 	    $('#relevantbox').css('color', 'inherit');
 	} );
     } );
-    $(document).on("click", '.api-restart', function() {
-	var link = $(this);
-	$.post(link.attr("href")).done( function( data ) { console.log(link); $(link).replaceWith('(restarted)'); });
+    $(document).on("click", '.restart', function() {
+	var restart_link = $(this);
+	var link = $(this).parent('span').find('.name');
+	$.post(restart_link.attr("href")).done( function( data ) { $(link).append(' (restarted)'); });
+	$(this).html('');
     });
 };

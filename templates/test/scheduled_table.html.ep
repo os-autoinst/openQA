@@ -35,6 +35,9 @@
 		<td class="test">
                     %= link_to url_for('test', 'testid' => $job->id) => begin
                     <i class="status state_scheduled fa fa-circle" title="Scheduled"></i>
+		    %= link_post url_for('apiv1_cancel', 'name' => $job->id) => ('data-remote' => 'true') => (class => 'cancel') => begin
+		      <i class="action fa fa-times-circle-o"></i>
+		    % end
                     %= $test
                     % end
 		</td>
@@ -52,10 +55,6 @@
 		    <span data-prio="<%= $prio %>"><%= $prio %></span>
 		    %= link_post url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio+10) => (class => 'prio-up') => ('data-remote' => 'true') => begin
 		    <i class="fa fa-plus-square-o"></i>
-		    % end
-		    
-		    %= link_post url_for('apiv1_cancel', 'name' => $job->id) => ('data-remote' => 'true') => (class => 'cancel') => begin
-		    <i class="fa fa-times-circle-o"></i>
 		    % end
 		</td>
             </tr>

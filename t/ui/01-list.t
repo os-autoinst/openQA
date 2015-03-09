@@ -137,13 +137,15 @@ my $td = $driver->find_element('#results #job_99946 td.test', 'css');
 is($td->get_text(), 'textmode@32bit', 'correct test name');
 
 # click restart
-$driver->find_child_element($td, './a[@data-remote="true"]')->click();
+$driver->find_child_element($td, '.restart', 'css')->click();
 while (!$driver->execute_script("return jQuery.active == 0")) {
     sleep 1;
 }
 is('openQA: Test results', $driver->get_title(), 'restart stays on page');
 $td = $driver->find_element('#results #job_99946 td.test', 'css');
 is($td->get_text(), 'textmode@32bit (restarted)', 'restart removes link');
+
+#t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();
