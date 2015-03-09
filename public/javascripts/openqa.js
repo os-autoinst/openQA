@@ -1,22 +1,3 @@
-function prototype_updateModuleslist(modlist, testname, testmodule) {
-	var container = $("modlist_content");
-	container.innerHTML = "";
-	modlist.each(function(category) {
-		var title = new Element("h2", {'class': "box-subheader modcategory"}).update(category.category);
-		var ul = new Element("ul", {'class': "navigation modcategory" })
-		category.modules.each(function(module) {
-			var li = new Element("li");
-			li.addClassName("mod-"+module.state);
-			li.addClassName("result"+module.result);
-			if (testmodule == module.name) { li.addClassName("selected"); }
-			li.update(new Element("a", {href: "/tests/"+testname+"/modules/"+module.name+"/steps/1"}).update(module.name));
-			ul.insert(li);
-		});
-		container.insert(title);
-		container.insert(ul);
-	});
-}
-
 function updateModuleslist(modlist, testname, testmodule) {
     var container = $('<div/>');
     
@@ -51,30 +32,18 @@ function scrollModuleThumbnails() {
     area.scrollLeft = 40 + offset - area.getWidth()/2;
 }
 
-if (typeof jQuery === "undefined") {
-    document.observe('dom:loaded', function(evt) {
-        var elements = $$('.chosen-select');
-        for (var i = 0; i < elements.length; i++) {
-            new Chosen(elements[i], {width: "98%"});
-        }
+jQuery(function(evt) {
+    $(".chosen-select").chosen({width: "98%"});;
+});
 
-        window.scrollModuleThumbnails();
-    });
-}
-else {
-    jQuery(function(evt) {
-        $(".chosen-select").chosen({width: "98%"});;
-    });
-}
-
-function set_cookie(cname, cvalue, exdays) {
+function setCookie(cname, cvalue, exdays) {
     var d = new Date();
     d.setTime(d.getTime()+(exdays*24*60*60*1000));
     var expires = "expires="+d.toGMTString();
     document.cookie = cname + "=" + cvalue + "; " + expires;
 }
 
-function get_cookie(cname) {
+function getCookie(cname) {
     var name = cname + "=";
     var ca = document.cookie.split(';');
     for(var i=0; i<ca.length; i++) {

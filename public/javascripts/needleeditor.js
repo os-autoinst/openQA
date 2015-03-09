@@ -203,7 +203,7 @@ NeedleEditor.prototype.LoadAreas = function(areas) {
   var editor = this;
   var cv = this.cv;
 
-  editor.needle["area"] = JSON.parse(areas);
+  editor.needle["area"] = areas;
   cv.delete_shapes();
   this.DrawAreas();
   this.UpdateTextArea();
@@ -245,6 +245,32 @@ NeedleEditor.prototype.changeProperty = function(name, enabled) {
   }
   this.UpdateTextArea();
 }
+
+NeedleEditor.prototype.setMargin = function(value) {
+    var idx = this.cv.get_selection_idx();
+    if (idx == -1) {
+	if (!this.needle["area"].length) {
+	    return;
+	}
+	idx = 0;
+    }
+    this.needle['area'][idx].margin = parseInt(value);
+    this.UpdateTextArea();
+}
+
+NeedleEditor.prototype.setMatch = function(value) {
+    var idx = this.cv.get_selection_idx();
+    if (idx == -1) {
+	if (!this.needle["area"].length) {
+	    return;
+	}
+	idx = 0;
+    }
+    
+    this.needle['area'][idx].match = parseFloat(value);
+    this.UpdateTextArea();
+}
+
 // If you dont want to use <body onLoad='init()'>
 // You could uncomment this init() reference and place the script reference inside the body tag
 //init();

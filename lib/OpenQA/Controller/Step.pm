@@ -137,16 +137,14 @@ sub edit {
             push(@{$screenshot->{'tags'}}, $tag);
         }
         for my $area (@{$module_detail->{'area'}}) {
-            push(
-                @{$screenshot->{'matches'}},
-                {
-                    'xpos' => int $area->{'x'},
-                    'width' => int $area->{'w'},
-                    'ypos' => int $area->{'y'},
-                    'height' => int $area->{'h'},
-                    'type' => 'match'
-                }
-            );
+            my $narea = {
+                'xpos' => int $area->{x},
+                'width' => int $area->{w},
+                'ypos' => int $area->{y},
+                'height' => int $area->{h},
+                'type' => 'match'
+            };
+            push(@{$screenshot->{'matches'}}, $narea);
         }
         # Second position: the only needle (with the same matches)
         my $needle = needle_info($module_detail->{'needle'}, $distribution, $dversion);
@@ -234,6 +232,8 @@ sub edit {
                     'height' => int $match->{'h'},
                     'type' => 'match'
                 };
+                $area->{margin} = int($match->{margin}) if defined $match->{margin};
+                $area->{match} = int($match->{match}) if defined $match->{match};
                 #push(@{$screenshot->{'matches'}}, $area);
                 push(@{$needles[scalar(@needles)-1]->{'matches'}}, $area);
             }

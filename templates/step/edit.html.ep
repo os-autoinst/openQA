@@ -1,21 +1,61 @@
-% stash 'use_prototype' => 1;
 % layout 'default';
 % title $moduleid;
 
-% content_for 'head_javascript' => begin
- // Prototype introduces undesired toJSON definition
- delete Array.prototype.toJSON;
- 
- window.onload=function(){
-     window.nEditor = new NeedleEditor('<%= ${@$needles[0]}{'imageurl'} %>', '<%= b(JSON::to_json($default_needle)) %>');
- };
- function do_overwrite()
- {
-    saveNeedleForm = document.forms['save_needle_form'];
-    saveNeedleForm.submit();
-    return true;
- }
+% content_for 'head' => begin
+%= javascript '/javascripts/needleeditor.js'
+%= javascript '/javascripts/needleedit.js'
+%= javascript '/javascripts/shapes.js'
+%= javascript '/javascripts/keyevent.js'
+
+<!-- prep for jquery dialog -->
+%= javascript '/javascripts/jquery-ui.js'
+%= stylesheet '/stylesheets/jquery-ui.css'
 % end
+
+% content_for 'ready_function' => begin
+  setup_needle_editor('<%= ${@$needles[0]}{'imageurl'} %>', '<%= b(JSON::to_json($default_needle)) %>');
+% end
+
+<div id="change-margin-form" title="Change search margin">
+  <div>The search for a needle area begins around its original position in the reference
+    screen to speed up the search time. The search margin is automatically increased over time, but sometimes
+    it's useful to set a larger margin for the initial search. The default is 50, but as an example a value
+    of 500 will always search the full screen avoiding having to wait for timeouts.
+  </div>
+
+  <p></p>
+  <form>
+    <fieldset>
+      <label for="margin">Search Margin:</label>
+      <input type="text" name="margin" id="margin" value="50" class="text ui-widget-content ui-corner-all">
+
+      <!-- Allow form submission with keyboard without duplicating the dialog button -->
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+  </form>
+</div>
+
+<div id="change-match-form" title="Change match level">
+  <div>The needle area is matched using fuzzy image comparision. The pixels don't have to match completely but need to be close enough.
+    The colors are reduced and there is some noise reduction too and the match is calculated in percentages. By default everything
+    above 96% is considered good enough. Sometimes this is too much and you want to lower the limit for noisy areas and sometimes
+    you need to express that every detail matters, so you can change that per area. Note that a 96% for a smaller area is stricter
+    than for a larger area as the error averages. Values between 90% and 100% are useful. If you need values lower than that, consider
+    using exclude areas.
+  </div>
+
+  <p></p>
+    
+  <form>
+    <fieldset>
+      <label for="match">Match Level (%):</label>
+      <input type="text" name="match" id="match" value="96" class="text ui-widget-content ui-corner-all">
+ 
+      <!-- Allow form submission with keyboard without duplicating the dialog button -->
+      <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+  </form>
+</div>
 
 <div class="grid_3 alpha" id="sidebar">
     <div class="box box-shadow alpha" id="actions_box">
@@ -23,7 +63,7 @@
 	%= form_for save_needle => (id => 'save_needle_form') => (method => 'POST') => begin
 	<div class="aligncenter">
             %= link_to url_for('test') => begin
-            %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
+              <i class='fa fa-2x fa-step-backward' title='Back to Test Details'></i>
             % end
             % if (is_operator) {
 		<input type="image" src="/images/floppy.png" alt="Save" />
@@ -33,28 +73,27 @@
 	<div style="margin: 0 3px;">
             <div style="margin-top: 1em;">
 		<label>Name:</label><br/>
-		<input type="input" name="needlename" id="needleeditor_name" value="<%= ${@$needles[0]}{'suggested_name'} %>" style="width: calc(100% - 8px);"/>
+		<input type="input" name="needlename" id="needleeditor_name"
+		       value="<%= ${@$needles[0]}{'suggested_name'} %>" style="width: calc(100% - 8px);"/>
             </div>
             <div style="margin-top: 1em;">
 		<label>Tags:</label><br/>
 		<div id="needleeditor_tags" style="margin: 0 18px 0 0;">
 		    % for my $tag (@$tags) {
 			<label>
-			    <input type="checkbox" name="tags" id="tag_<%= $tag %>"
-				   onclick="window.nEditor.changeTag(this.value, this.checked);"
+			    <input type="checkbox" name="tags" id="tag_<%= $tag %>" class="tag_checkbox"
 				   value="<%= $tag %>"><%= $tag %>
 			</label><br/>
 		    % }
 		</div>
-		<input id="newtag" style="width: calc(100% - 6px - 40px);"
-		       onkeypress="if (event.keyCode==13) { return window.addTag(); }"/>
-		<input type="button" onclick="return window.addTag();" style="width: 34px;" class="button" value="Add" />
+		<input id="newtag" style="width: calc(100% - 6px - 40px);" />
+		<input type="button" style="width: 34px;" class="button" value="Add" id="tag_add_button" />
             </div>
             <div style="margin-top: 1em;">
                 <!-- lists the specific properties -->
 		<label>Properties:</label><br/>
 			<label>
-                        <input type="checkbox" name="workaround" id="property_workaround" <%= 'checked' if $properties->{'workaround'} %> onclick="window.nEditor.changeProperty(this.name, this.checked);">workaround
+                        <input type="checkbox" name="workaround" id="property_workaround" <%= 'checked' if $properties->{'workaround'} %> >workaround
 			</label><br/>
             </div>
             <div style="margin-top: 1em;">
@@ -65,6 +104,8 @@
 		<input type="hidden" id="needleeditor_imageversion" name="imageversion" value="<%= ${@$needles[0]}{'imageversion'} %>"/>
             </div>
 	</div>
+	<button id="change-match"><i class="fa fa-bar-chart"></i> Change Match Level</button>
+	<button id="change-margin"><i class="fa fa-area-chart"></i> Change Margin</button>
 	% end
     </div>
     
@@ -94,32 +135,31 @@
 		
 		<tr <%= 'title=broken' if ($needle->{'broken'}) %> >
 		    <td <%= 'style=color:red;' if ($needle->{'broken'}) %>><%= $title %></td>
-		    <td><input type="radio" name="background_selector"
+		    <td><input type="radio" class="background_selector"
 			       data-image="<%= $needle->{'imagename'} %>"
 			       data-distri="<%= $needle->{'imagedistri'} %>"
 			       data-version="<%= $needle->{'imageversion'} %>"
 			       data-url="<%= $needle->{'imageurl'} %>"
-			       onclick="window.loadBackground(this);"
 			<%= 'checked="checked"' if ($i == 0); %>
 			<%= 'disabled="disabled"' if ($needle->{'broken'}); %> />
 		    </td>
 		    <td>
 			<input type="radio"
 			       name="area_selector"
-			       onclick="window.nEditor.LoadAreas('<%= JSON::to_json($needle->{'area'}) %>');"
+			       class="area_selector"
+			       data-areas="<%= JSON::to_json($needle->{area}) %>"
 			<%= 'disabled="disabled"' if $needle->{'broken'}; %>/>
 		    </td>
 		    <td>
-			<input type="radio" name="area_selector"
-			       onclick="window.nEditor.LoadAreas('<%= JSON::to_json($needle->{'matches'}) %>');"
+		      <input type="radio" name="area_selector" class="area_selector"
+			     data-areas="<%= JSON::to_json($needle->{matches}) %>"
 			<%= 'checked="checked"' if $needle->{selected}; %>
 			<%= 'disabled="disabled"' if ($needle->{'broken'}); %>/>
 		    </td>
 		    <td>
-			<input type="radio" name="tags_selector"
-			       data-tags="<%= JSON::to_json($needle->{'tags'}) %>"
-			       data-suggested="<%= $needle->{'suggested_name'} %>"
-			       onclick="window.loadTagsAndName(this);"
+			<input type="radio" name="tags_selector" class="tags_selector"
+			       data-tags="<%= JSON::to_json($needle->{tags}) %>"
+			       data-suggested="<%= $needle->{suggested_name} %>"
 			<%= 'checked="checked"' if $needle->{selected}; %>
 			<%= 'disabled="disabled"' if $needle->{broken}; %>/>
 		    </td>
