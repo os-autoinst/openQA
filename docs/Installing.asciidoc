@@ -108,7 +108,7 @@ You can also run workers manually from command line.
 
 [source,sh]
 --------------------------------------------------------------------------------
-sudo -u geekotest /usr/share/openqa/script/worker --instance X
+sudo -u _openqa-worker /usr/share/openqa/script/worker --instance X
 --------------------------------------------------------------------------------
 
 This will run a worker manually showing you debug output. If you haven't
@@ -217,20 +217,24 @@ The openQA web interface can be started via +MOJO_REVERSE_PROXY=1 morbo script/o
 development mode.
 
 +/var/lib/openqa/+ must be owned by root and contain several sub
-directories owned by the user that runs the workers (default 'geekotest'):
+directories owned by the user that runs openqa (default 'geekotest'):
 
-* +backlog+
 * +cache+ (cache directory, needs to be owned by the user who runs openqa)
 * +factory/iso+
-* +perl/+ (subdirectory 'autoinst' must link to +/usr/lib/os-autoinst+)
-* +pool/1+ (add more for each worker)
 * +share+ (shared directories for remote workers)
 * +testresults+
 * +tools+ (symlink to +/usr/share/openqa/tools/+)
+* +db+ contains the sqlite database
 
-+/var/lib/openqa/db+ contains the sqlite database and must be owned by
-the user that runs the web interface ('geekotest'). To initially create this
-database, you need to run +tools/initdb+.
+To initially create the database, you need to run +script/initdb+.
+
+The worker needs to own +/var/lib/openqa/pool/$INSTANCE+, e.g.
+* +/var/lib/openqa/pool/1+
+* +/var/lib/openqa/pool/2+
+* .... - add more if you have more CPUs/disks
+
+You can also give the whole pool directory to the +_openqa-worker+ user and let
+the workers create their own instance directories.
 
 Changing the database engine
 ----------------------------
@@ -353,7 +357,7 @@ KVM doesn't work
 * make sure you have a machine with kvm support
 * make sure +kvm_intel+ or +kvm_amd+ modules are loaded
 * make sure you do have virtualization enabled in BIOS
-* make sure the 'geekotest' user can access +/dev/kvm+
+* make sure the '_openqa-worker' user can access +/dev/kvm+
 * make sure you are not already running other hypervisors such as VirtualBox
 * when running inside a vm make sure nested virtualization is enabled (pass nested=1 to your kvm module)
 

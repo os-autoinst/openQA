@@ -6,7 +6,7 @@ install:
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
 #
-	for i in backlog testresults cache perl pool ; do \
+	for i in testresults cache pool ; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
 # shared dirs between openQA web and workers + compatibility links
@@ -18,7 +18,6 @@ install:
 	for i in script; do \
 		ln -sfn /usr/share/openqa/$$i "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
-	ln -sfn /usr/lib/os-autoinst "$(DESTDIR)"/var/lib/openqa/perl/autoinst
 #
 	install -d -m 755 "$(DESTDIR)"/etc/apache2/vhosts.d
 	for i in openqa-common.inc openqa.conf.template openqa-ssl.conf.template; do \
