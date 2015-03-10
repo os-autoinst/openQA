@@ -355,22 +355,22 @@ sub calculate_result($) {
     for my $m ($job->modules->all) {
         if ( $m->result eq "ok" ) {
             if ($m->important) {
-                $important_overall ||= 'ok';
+                $important_overall ||= PASSED;
             }
             else {
-                $overall ||= 'ok';
+                $overall ||= PASSED;
             }
         }
         else {
             if ($m->important) {
-                $important_overall = 'fail';
+                $important_overall = FAILED;
             }
             else {
-                $overall = 'fail';
+                $overall = FAILED;
             }
         }
     }
-    return $important_overall || $overall || 'fail';
+    return $important_overall || $overall || FAILED;
 }
 
 sub save_screenshot($) {
