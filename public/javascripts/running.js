@@ -188,7 +188,8 @@ var scrolldown;
 function setScrolldown(newval) {
     scrolldown = newval;
     if (scrolldown) {
-        $('#livelog')[0].scrollTop = livelog.scrollHeight;
+        var livelog = $('#livelog')[0];
+        $('#livelog').scrollTop = livelog.scrollHeight;
     }
 }
 
@@ -197,9 +198,9 @@ function initLivelog() {
     $('#scrolldown').attr('checked', true);
     
     // start stream
+    var livelog = $('#livelog');
     var events = new EventSource(livelog.data('url'));
     events.addEventListener('message', function(event) {
-        var livelog = $('#livelog');
         livelog[0].innerHTML += JSON.parse(event.data)[0];
         if (scrolldown) {
             livelog[0].scrollTop = livelog[0].scrollHeight;
@@ -261,7 +262,7 @@ function initLivestream() {
     var sel_resolution = $('#sel_resolution');
     
     // initially set canvas size
-    var livestream_size = getGookie("livestream_size");
+    var livestream_size = getCookie("livestream_size");
     if (! livestream_size) {
         livestream_size = "auto";
     }
