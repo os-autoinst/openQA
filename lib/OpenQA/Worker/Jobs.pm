@@ -306,9 +306,12 @@ sub job_incomplete($){
 sub read_json_file {
     my ($name) = @_;
     my $fn = "$pooldir/testresults/$name";
-    my $ret;
     local $/;
-    open(my $fh, '<', $fn) or die "can't open $fn: $!";
+    my $fh;
+    if (!open($fh, '<', $fn)) {
+        warn "can't open $fn: $!";
+        return undef;
+    }
     my $json = {};
     eval {$json = decode_json(<$fh>);};
     warn "os-autoinst didn't write proper $fn" if $@;
