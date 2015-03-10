@@ -221,11 +221,10 @@ directories owned by the user that runs openqa (default 'geekotest'):
 
 * +cache+ (cache directory, needs to be owned by the user who runs openqa)
 * +factory/iso+
-* +perl/+ (subdirectory 'autoinst' must link to +/usr/lib/os-autoinst+)
 * +share+ (shared directories for remote workers)
 * +testresults+
 * +tools+ (symlink to +/usr/share/openqa/tools/+)
-* ++db+ contains the sqlite database
+* +db+ contains the sqlite database
 
 To initially create the database, you need to run +script/initdb+.
 
@@ -233,6 +232,9 @@ The worker needs to own +/var/lib/openqa/pool/$INSTANCE+, e.g.
 * +/var/lib/openqa/pool/1+
 * +/var/lib/openqa/pool/2+
 * .... - add more if you have more CPUs/disks
+
+You can also give the whole pool directory to the +_openqa-worker+ user and let
+the workers create their own instance directories.
 
 Changing the database engine
 ----------------------------
