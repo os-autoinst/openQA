@@ -37,6 +37,7 @@ my $log_offset = 0;
 my $max_job_time = 7200; # 2h
 my $current_running;
 my $test_order;
+my $stop_job_running = 0;
 
 ## Job management
 sub _kill_worker($) {
@@ -78,10 +79,12 @@ sub stop_job($;$) {
 
     # we call this function in all situations, so better check
     return unless $job;
+    return if $stop_job_running;
     return if $job_id && $job_id != $job->{'id'};
     $job_id = $job->{'id'};
 
     print "stop_job $aborted\n" if $verbose;
+    $stop_job_running = 1;
 
     # stop all job related timers
     remove_timer('update_status');
@@ -154,12 +157,20 @@ sub stop_job($;$) {
         }
     }
     unless ($job_done) {
-        job_incomplete($job);
+        # set job to done. if priority is less than threshold duplicate it
+        # with worse priority so it can be picked up again.
+        my %args;
+        $args{dup_type_auto} = 1;
+        printf "duplicating job %d\n", $job->{'id'};
+        # make it less attractive so we don't get it again
+        api_call('post', 'jobs/'.$job->{'id'}.'/duplicate', \%args);
+        api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
     }
     warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
     clean_pool();
     $job = undef;
     $worker = undef;
+    $stop_job_running = 0;
 
     return if ($aborted eq 'quit');
     # immediatelly check for already scheduled job
@@ -237,6 +248,8 @@ sub read_last_screen {
 
 # timer function ignoring arguments
 sub update_status {
+    # skip update if api_call in progress
+    return if $OpenQA::Worker::Common::call_running;
     upload_status();
 }
 
@@ -279,22 +292,6 @@ sub upload_status(;$) {
     $status->{'screen'} = $screen if $screen;
 
     api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
-}
-
-# set job to done. if priority is less than threshold duplicate it
-# with worse priority so it can be picked up again.
-sub job_incomplete($){
-    my ($job) = @_;
-    my %args;
-    $args{dup_type_auto} = 1;
-
-    printf "duplicating job %d\n", $job->{'id'};
-    # make it less attractive so we don't get it again
-    api_call('post', 'jobs/'.$job->{'id'}.'/duplicate', \%args);
-
-    api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
-
-    clean_pool();
 }
 
 sub read_json_file {

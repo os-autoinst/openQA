@@ -20,30 +20,6 @@ use warnings;
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
 
-## REST commands
-# make sure only our local VMs access
-sub check_authorized {
-    my ($self) = @_;
-
-    my $ip = $self->tx->remote_address;
-    $self->app->log->debug("Request from $ip.");
-
-    # accept only localhosts
-    unless ($ip eq "127.0.0.1" || $ip eq "::1") {
-        # forbid all non-localhost
-        $self->render(text => "IP $ip is denied", status => 403);
-        return;
-    }
-
-    # and when we have job
-    unless ($job) {
-        $self->render(text => 'not accepting backend commands without a job', status => 403);
-        return;
-    }
-
-    return 1;
-}
-
 ## WEBSOCKET commands
 sub websocket_commands {
     my ($tx, $msg) = @_;
