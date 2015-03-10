@@ -1,4 +1,65 @@
-function renderTestsList(jobs, is_operator, restart_url) {
+var is_operator;
+var restart_url;
+
+function renderTestName ( data, type, row ) {
+    if (type === 'display') {
+	html = '<span class="result_' + row['result'] + '">';
+	html += '<a href="/tests/' + row['id'] + '">';
+	html += '<i class="status fa fa-circle" title="Done: ' + row['result'] + '"></i>';
+	if (is_operator && !row['clone']) {
+	    var url = restart_url.replace('REPLACEIT', row['id']);
+            html += ' <a data-method="POST" data-remote="true" class="restart"';
+	    html += ' href="' + url + '">';
+            html += '<i class="action fa fa-repeat" title="Restart Job"></i></a>'
+	}
+        html += '</a> ';
+	// the name
+	html += '<a href="/tests/' + row['id'] + '" class="name">' + data + '</a>';
+	html += '</span>';
+	
+	if (row['clone'])
+            html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
+
+        return html;
+    } else {
+	return data;
+    }
+}
+
+function renderTestResult( data, type, row ) {
+    if (type === 'display') {
+	var html = '' 
+	if (row['state'] === 'done') {
+	    html += data['passed'] + "<i class='fa module_passed fa-star'></i>";
+	    if (data['dents']) {
+		html +=  " " + data['dents'] + "<i class='fa module_softfail fa-star-half-empty'></i> ";
+	    }
+	    if (data['failed']) {
+		html +=  " " + data['failed'] + "<i class='fa module_failed fa-star-o'></i> ";
+	    }
+	    if (data['none']) {
+		html +=  " " + data['none'] + "<i class='fa module_none fa-ban'></i> ";
+	    }
+	}
+	if (row['state'] === 'cancelled') {
+	    html += "<i class='fa fa-times'></i>";
+	}
+	if (row['deps']) {
+	    if (row['result'] === 'skipped' ||
+		row['result'] === 'parallel_failed') {
+		html += "<i class='fa fa-chain-broken'></i>";
+	    }
+	    else {
+		html += "<i class='fa fa-link'></i>";
+	    }
+	}
+        return '<a href="/tests/' + row['id'] + '">' + html + '</a>';
+    } else {
+	return (parseInt(data['passed']) * 10000) + (parseInt(data['dents']) * 100) + parseInt(data['failed']);
+    }
+}
+
+function renderTestsList(jobs) {
 
     var table = $('#results').DataTable( {
 	"dom": 'l<"#toolbar">frtip',
@@ -24,38 +85,24 @@ function renderTestsList(jobs, is_operator, restart_url) {
 	"columns": [
 	    { "data": "name" },
 	    { "data": "test" },
+	    { "data": "result_stats" },
 	    { "data": "deps" },
 	    { "data": "testtime" },
-	    { "data": "result_stats" },
 	],
 	"columnDefs": [
 	    { targets: 0,
 	      className: "name",
 	      "render": function ( data, type, row ) {
-		  var name = 'Build' + row['build'];
+		  var name = "<a href='/tests/overview?build=" + row['build'] + "&distri=" + row['distri'] + "&version=" + row['version'] + "'>" + 'Build' + row['build'] + '</a>';
 		  name += " of ";
-		  return name + row['distri'] + "-" + row['flavor'] + "." + row['arch'];
+		  return name + row['distri'] + "-" + row['version'] + "-" + row['flavor'] + "." + row['arch'];
 	      },
 	    },
 	    { targets: 1,
 	      className: "test",
-	      "render": function ( data, type, row ) {
-		  if (type === 'display') {
-		      html = '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + data + '</a>';
-		      if (row['clone']) {
-                          html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
-                      } else if (is_operator) {
-			  var url = restart_url.replace('REPLACEIT', row['id']);
-                          html += ' <a data-method="POST" data-remote="true" class="api-restart" href="' + url + '">' +
-                              '<i class="fa fa-repeat" title="Restart Job"></i></a>'
-		      }
-                      return html;
-		  } else {
-		      return data;
-		  }
-              },
+	      "render": renderTestName,
 	    },
-	    { targets: 3,
+	    { targets: 4,
 	      "render": function ( data, type, row ) {
 		  if (type === 'display')
 		      return jQuery.timeago(data + " UTC");
@@ -63,40 +110,9 @@ function renderTestsList(jobs, is_operator, restart_url) {
 		      return data;
 	      }
 	    },
-	    { targets: 4,
-	      "render": function ( data, type, row ) {
-		    if (type === 'display') {
-		      var html = '' 
-		      if (row['state'] === 'done') {
-		          html += data['passed'] + "<i class='fa fa-star'></i>";
-		          if (data['dents']) {
-			      html +=  " " + data['dents'] + "<i class='fa fa-star-half-empty'></i> ";
-		          }
-		          if (data['failed']) {
-			      html +=  " " + data['failed'] + "<i class='fa fa-star-o'></i> ";
-		          }
-		          if (data['none']) {
-			      html +=  " " + data['none'] + "<i class='fa fa-ban'></i> ";
-		          }
-		      }
-		      if (row['state'] === 'cancelled') {
-		          html += "<i class='fa fa-times'></i>";
-		      }
-		      if (row['deps']) {
-		          if (row['result'] === 'skipped' ||
-		              row['result'] === 'parallel_failed') {
-		              html += "<i class='fa fa-chain-broken'></i>";
-		          }
-		          else {
-		              html += "<i class='fa fa-link'></i>";
-		          }
-		      }
-                      return '<a class="overview_' + row['result'] + '" href="/tests/' + row['id'] + '">' + html + '</a>';
-		  } else {
-		      return (parseInt(data['passed']) * 10000) + (parseInt(data['dents']) * 100) + parseInt(data['failed']);
-		  }
-              }
-	    },
+	    { targets: 2,
+	      "render": renderTestResult
+	    }
 	],
     } );
     $("#relevantbox").detach().appendTo('#toolbar');
@@ -108,8 +124,10 @@ function renderTestsList(jobs, is_operator, restart_url) {
 	    $('#relevantbox').css('color', 'inherit');
 	} );
     } );
-    $(document).on("click", '.api-restart', function() {
-	var link = $(this);
-	$.post(link.attr("href")).done( function( data ) { console.log(link); $(link).replaceWith('(restarted)'); });
+    $(document).on("click", '.restart', function() {
+	var restart_link = $(this);
+	var link = $(this).parent('span').find('.name');
+	$.post(restart_link.attr("href")).done( function( data ) { $(link).append(' (restarted)'); });
+	$(this).html('');
     });
 };

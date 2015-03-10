@@ -543,18 +543,15 @@ table.overview td.name {
     padding-bottom: .5em;
 }
 
-table.overview span.action {
-    display: none;
-}
-
-table.overview span.status .fa {
+span.status .fa {
     font-size: 120%;
 }
 
-table.overview .status.fa {
+.status.fa {
     font-size: 110%;
 }
-table.overview .action.fa {
+
+.action.fa {
     font-size: 90%;
     color: #ccc !important;
 }
@@ -568,25 +565,27 @@ table.overview .failedmodule {
     border: 1px solid #D2DFB5;
 }
     
-table.overview .state_scheduled.fa {
+.state_scheduled.fa {
     color: #CCA66A;
 }
 
-
-table.overview .state_obsolete.fa {
+.state_obsolete.fa {
     color: #615245;
 }
 
-table.overview .state_running.fa {
+.state_running.fa {
     color: #F3F929;
 }
     
 .result_passed a i.fa { color: #75C195 !important; }		/* dark Lemon */
+.fa.module_passed { color: #75C195; }
 .result_unknown a i.fa { color:#ff9 ;}
 .result_softfail a i.fa { color:#A3C16C ;}
+.fa.module_softfail { color: #A3C16C; }
 .result_failed a i.fa {color: #FF4E46; }
-.result_incomplete a i.fa { color:#bebebe;}
-
+.fa.module_failed { color: #FF4E46; }
+.result_incomplete a i.fa { color: #AF1E11;}
+.fa.module_none { color:#bebebe;}
 
 table#users td.role {
     white-space: nowrap;
