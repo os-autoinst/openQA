@@ -128,16 +128,20 @@ sub update_status {
     my $status = $self->req->json->{'status'};
 
     my $job = $self->app->schema->resultset("Jobs")->find($jobid);
+    my $ret = { result => 1 };
 
     $job->append_log($status->{log});
     $job->save_screenshot($status->{screen}) if $status->{screen};
     $job->update_backend($status->{backend}) if $status->{backend};
     $job->insert_test_modules($status->{test_order}) if $status->{test_order};
+    my %known;
     if ($status->{result}) {
         while (my ($name, $result) = each %{$status->{result}}) {
-            $job->update_module($name, $result);
+            my $existant = $job->update_module($name, $result) || [];
+            for (@$existant) { $known{$_} = 1; }
         }
     }
+    $ret->{known_images} = [ sort keys %known ];
 
     if ($job->worker_id) {
         $job->worker->set_property("INTERACTIVE", $status->{'status'}->{'interactive'}//0);
@@ -153,10 +157,10 @@ sub update_status {
         }
     }
 
-    $self->render(json => {result => 1});
+    $self->render(json => $ret);
 }
 
-# used by the worker to upload logs to the test
+# used by the worker to upload files to the test
 sub create_artefact {
     my ($self) = @_;
 
@@ -164,6 +168,11 @@ sub create_artefact {
     my $job = $self->app->schema->resultset("Jobs")->find($jobid);
     $self->reply->not_found unless $job;
 
+    if ($self->param('image')) {
+        $job->store_image($self->param('file'), $self->param('md5'), $self->param('thumb')//0);
+        $self->render(text => "OK");
+        return;
+    }
     if ($job->create_artefact($self->param('file'), $self->param('ulog'))) {
         $self->render(text => "OK");
     }

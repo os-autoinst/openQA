@@ -1,0 +1,54 @@
+#! /usr/bin/perl
+
+# this script is only useful once to deduplicate images
+
+BEGIN {
+    unshift @INC, 'lib';
+}
+
+use strict;
+use Digest::MD5;
+use OpenQA::Utils;
+use File::Basename;
+
+# reads the content of a file below pooldir and returns its md5
+sub calculate_file_md5($) {
+  my ($file) = @_;
+  my $c = OpenQA::Utils::file_content($file);
+  my $md5 = Digest::MD5->new;
+  $md5->add($c);
+  return $md5->clone->hexdigest;
+}
+
+for (glob("/var/lib/openqa/testresults/*/*.png")) {
+  next if m,/.thumbs/,;
+  next unless -f $_;
+  next if -l $_;
+  next if m,/template-,;
+  my $file = $_;
+  my $md5 = calculate_file_md5($file);
+  print "$file " . calculate_file_md5($file) . "\n";
+
+  my $thumbpath = dirname($file) . "/.thumbs/" . basename($file);
+  
+  my ($full, $thumb) = OpenQA::Utils::image_md5_filename($md5);
+  unless (-f $full) {
+    my $dir = dirname($full);
+    mkdir($dir) unless -d $dir;
+    $dir .= "/.thumbs";
+    mkdir($dir) unless -d $dir;
+    rename($file, $full);
+    rename($thumbpath, $thumb);
+    my $fh;
+    open($fh, ">", "$full.unoptimized");
+    close($fh);
+    open($fh, ">", "$thumb.unoptimized");
+    close($fh);
+  } else {
+    unlink($file);
+    unlink($thumbpath);
+  }
+
+  symlink($full, $file);
+  symlink($thumb, $thumbpath);
+}

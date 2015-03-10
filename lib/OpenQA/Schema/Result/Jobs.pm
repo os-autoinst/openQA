@@ -20,7 +20,7 @@ use Try::Tiny;
 use JSON;
 use Fcntl;
 use db_helpers;
-use File::Basename qw/basename/;
+use File::Basename qw/basename dirname/;
 use strict;
 
 # States
@@ -444,11 +444,9 @@ sub create_result_dir {
     my $dir = $self->result_dir();
     if (!$dir) {
         $dir = sprintf "%08d-%s", $self->id, $self->name;
-        OpenQA::Utils::log_debug("NDIR $dir\n");
         $self->update({result_dir => $dir});
         $dir = $self->result_dir();
     }
-    OpenQA::Utils::log_debug("DIR $dir\n");
     if (!-d $dir) {
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
@@ -505,6 +503,22 @@ sub running_modinfo() {
         push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
     }
     return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $running};
+}
+
+sub store_image {
+    my ($self, $asset, $md5, $thumb) = @_;
+
+    my ($storepath, $thumbpath) = OpenQA::Utils::image_md5_filename($md5);
+    $storepath = $thumbpath if ($thumb);
+    my $prefixdir = dirname($storepath);
+    mkdir($prefixdir) unless (-d $prefixdir);
+    $asset->move_to($storepath);
+
+    # create a marker to run optipng later
+    open(my $fh, '>', "$storepath.unoptimized");
+    close($fh);
+
+    OpenQA::Utils::log_debug("store_image: $storepath");
 }
 
 sub create_artefact {
