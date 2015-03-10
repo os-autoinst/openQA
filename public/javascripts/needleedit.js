@@ -4,9 +4,9 @@
 
 function loadBackground() {
     nEditor.LoadBackground($(this).data('url'));
-    $("#needleeditor_image").attr("value", $(this).data('image'));
-    $("#needleeditor_imagedistri").attr("value", $(this).data('distri'));
-    $("#needleeditor_imageversion").attr("value", $(this).data('version'));
+    $("#needleeditor_image").val($(this).data('image'));
+    $("#needleeditor_imagedistri").val($(this).data('distri'));
+    $("#needleeditor_imageversion").val($(this).data('version'));
 }
 
 function loadTagsAndName() {
@@ -65,7 +65,7 @@ function setup_needle_editor(imageurl, default_needle)
     });
 
     $('.background_selector').click(loadBackground);
-    $('.tags_selector').change(loadTagsAndName);
+    $('.tags_selector').click(loadTagsAndName);
 
     var matchdialog = $( "#change-match-form" ).dialog({
 	autoOpen: false,
