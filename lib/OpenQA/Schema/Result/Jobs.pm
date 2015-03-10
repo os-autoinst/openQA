@@ -353,7 +353,7 @@ sub calculate_result($) {
     my $important_overall; # just counting importants
 
     for my $m ($job->modules->all) {
-        if ( $m->result eq "ok" ) {
+        if ( $m->result eq PASSED ) {
             if ($m->important) {
                 $important_overall ||= PASSED;
             }
