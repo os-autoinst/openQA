@@ -272,7 +272,13 @@ sub upload_status(;$) {
         }
         $current_running = $os_status->{running};
     }
-    $status->{result} = read_result_file($upload_result) if $upload_result;
+    if ($upload_result) {
+        $status->{result} = read_result_file($upload_result);
+        if ($os_status->{running}) {
+            $status->{result}->{$os_status->{running}} //= {};
+            $status->{result}->{$os_status->{running}}->{result} = 'running';
+        }
+    }
     $status->{'log'} = log_snippet;
 
     my $screen = read_last_screen;
@@ -302,7 +308,7 @@ sub read_json_file {
     my $fn = "$pooldir/testresults/$name";
     my $ret;
     local $/;
-    open(my $fh, '<', $fn) or return undef;
+    open(my $fh, '<', $fn) or die "can't open $fn: $!";
     my $json = {};
     eval {$json = decode_json(<$fh>);};
     warn "os-autoinst didn't write proper $fn" if $@;
@@ -330,11 +336,8 @@ sub read_result_file($) {
             };
         }
         $ret->{$test} = $result;
+
         last if ($test eq $name);
-    }
-    if (@$test_order) {
-        # set the next to running
-        $ret->{$test_order->[0]->{name}} = { result => 'running' };
     }
     return $ret;
 }
