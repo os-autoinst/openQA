@@ -50,4 +50,12 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_job_dependencies_dependency', fields => ['dependency']);
 }
 
+sub to_string {
+    my ($self) = @_;
+
+    my %deps = ( 1 => "Chained", 2 => "Parallel" );
+
+    return $deps{$self->dependency};
+}
+
 1;
