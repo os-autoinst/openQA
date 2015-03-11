@@ -109,6 +109,12 @@ __PACKAGE__->add_columns(
         data_type => 'text',
         is_nullable => 1,
     },
+    group_id => {
+        data_type => 'integer',
+        is_foreign_key => 1,
+        is_nullable => 1
+    },
+
     t_started => {
         data_type => 'timestamp',
         is_nullable => 1,
@@ -124,6 +130,7 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(settings => 'OpenQA::Schema::Result::JobSettings', 'job_id');
 __PACKAGE__->belongs_to(worker => 'OpenQA::Schema::Result::Workers', 'worker_id');
 __PACKAGE__->belongs_to(clone => 'OpenQA::Schema::Result::Jobs', 'clone_id', { join_type => 'left', on_delete => 'SET NULL' });
+__PACKAGE__->belongs_to(group => 'OpenQA::Schema::Result::JobGroups', 'group_id', { join_type => 'left', on_delete => 'SET NULL' });
 __PACKAGE__->might_have(origin => 'OpenQA::Schema::Result::Jobs', 'clone_id', { cascade_delete => 0 });
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');

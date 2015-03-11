@@ -58,7 +58,22 @@ sub list {
         return;
     }
 
-    $self->render(json => {JobTemplates => [map { { id => $_->id,product => {id => $_->product_id,arch => $_->product->arch,distri => $_->product->distri,flavor => $_->product->flavor,version => $_->product->version},machine => {id => $_->machine_id, name => $_->machine->name},test_suite => {id => $_->test_suite_id, name => $_->test_suite->name}} } @templates]});
+    #<<< do not let perltidy touch this
+    $self->render(json => 
+		  { JobTemplates => 
+			[map { { id => $_->id,
+				 product => {id => $_->product_id,
+					     arch => $_->product->arch,
+					     distri => $_->product->distri,
+					     flavor => $_->product->flavor,
+					     version => $_->product->version},
+				 machine => {id => $_->machine_id, 
+					     name => $_->machine->name},
+				 test_suite => {id => $_->test_suite_id, name => $_->test_suite->name}} 
+			 } @templates
+			]
+		  });
+    #>>>
 }
 
 sub create {
@@ -66,6 +81,8 @@ sub create {
     my $error;
     my $id;
     my $validation = $self->validation;
+
+    $validation->required('prio')->like(qr/^[0-9]+$/);
 
     if ($validation->optional('product_id')->like(qr/^[0-9]+$/)->is_valid) {
         $validation->required('machine_id')->like(qr/^[0-9]+$/);
@@ -78,7 +95,13 @@ sub create {
             }
         }
         else {
-            eval { $id = $self->db->resultset("JobTemplates")->create({product_id => $self->param('product_id'), machine_id => $self->param('machine_id'),test_suite_id => $self->param('test_suite_id')})->id};
+            my $values = {
+                prio => $self->param('prio'),
+                product_id => $self->param('product_id'),
+                machine_id => $self->param('machine_id'),
+                test_suite_id => $self->param('test_suite_id')
+            };
+            eval { $id = $self->db->resultset("JobTemplates")->create($values)->id};
             $error = $@;
         }
     }
@@ -97,7 +120,18 @@ sub create {
             }
         }
         else {
-            eval { $id = $self->db->resultset("JobTemplates")->create({product =>{arch => $self->param('arch'),distri => $self->param('distri'),flavor => $self->param('flavor'),version => $self->param('version')},machine => {name => $self->param('machine_name')},test_suite => {name => $self->param('test_suite_name')},})->id};
+            my $values = {
+                product =>{
+                    arch => $self->param('arch'),
+                    distri => $self->param('distri'),
+                    flavor => $self->param('flavor'),
+                    version => $self->param('version')
+                },
+                machine => {name => $self->param('machine_name')},
+                prio => $self->param('prio'),
+                test_suite => {name => $self->param('test_suite_name')}
+            };
+            eval { $id = $self->db->resultset("JobTemplates")->create($values)->id};
             $error = $@;
         }
     }

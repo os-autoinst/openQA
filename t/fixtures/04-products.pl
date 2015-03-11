@@ -1,3 +1,4 @@
+#<<< do not let perltidy touch this
 [
     Machines => {
         id => 1001,
@@ -24,7 +25,6 @@
     TestSuites => {
         id => 1001,
         name => "textmode",
-        prio => 40,
         variables => '',
         settings => [{ key => "DESKTOP", value => "textmode" },{ key => "VIDEOMODE", value => "text" },],
     },
@@ -32,7 +32,6 @@
     TestSuites => {
         id => 1002,
         name => "kde",
-        prio => 40,
         variables => '',
         settings => [{ key => "DESKTOP", value => "kde" }],
     },
@@ -40,7 +39,6 @@
     TestSuites => {
         id => 1013,
         name => "RAID0",
-        prio => 50,
         variables => '',
         settings => [{ key => "RAIDLEVEL", value => 0 },{ key => "INSTALLONLY", value => 1 },{ key => "DESKTOP", value => "kde" },],
     },
@@ -48,7 +46,6 @@
     TestSuites => {
         id => 1014,
         name => "client1",
-        prio => 40,
         variables => '',
         settings => [{ key => "DESKTOP", value => "kde" }, { key => "PARALLEL_WITH", value => "server" }],
     },
@@ -56,7 +53,6 @@
     TestSuites => {
         id => 1015,
         name => "server",
-        prio => 40,
         variables => '',
         settings => [{ key => "DESKTOP", value => "textmode" }],
     },
@@ -64,7 +60,6 @@
     TestSuites => {
         id => 1016,
         name => "client2",
-        prio => 40,
         variables => '',
         settings => [{ key => "DESKTOP", value => "textmode" }, { key => "PARALLEL_WITH", value => "server" }],
     },
@@ -72,30 +67,35 @@
     TestSuites => {
         id => 1017,
         name => "advanced_kde",
-        prio => 40,
         variables => '',
         settings => [{ key => "DESKTOP", value => "kde" }, { key => "START_AFTER_TEST", value => "kde,textmode" }],
     },
 
-
     Products => {
-        name => '',
-        distri => 'opensuse',
-        version => '13.1',
-        flavor => 'DVD',
-        arch => 'i586',
-        variables => '',
-        settings => [
-            {
-                key => "ISO_MAXSIZE",
-                value => 4_700_372_992
-            },
-            {
-                key => "DVD",
-                value => "1"
-            },
-        ],
-        job_templates => [{ machine => { name => '32bit' }, test_suite => { name => 'textmode' } },{ machine => { name => '64bit' }, test_suite => { name => 'kde' } },{ machine => { name => '32bit' }, test_suite => { name => 'client1' } },{ machine => { name => '32bit' }, test_suite => { name => 'client2' } },{ machine => { name => '32bit' }, test_suite => { name => 'server' } },{ machine => { name => '32bit' }, test_suite => { name => 'advanced_kde' } },{ machine => { name => '64bit' }, test_suite => { name => 'client1' } },{ machine => { name => '64bit' }, test_suite => { name => 'client2' } },{ machine => { name => '64bit' }, test_suite => { name => 'server' } },{ machine => { name => '64bit' }, test_suite => { name => 'advanced_kde' } },],
+		 name => '',
+		 distri => 'opensuse',
+		 version => '13.1',
+		 flavor => 'DVD',
+		 arch => 'i586',
+		 variables => '',
+		 settings => [
+			      { key => "ISO_MAXSIZE",
+			        value => 4_700_372_992 },
+			      { key => "DVD",
+			        value => "1" },
+			     ],
+		 job_templates => [
+				   { machine => { name => '32bit' }, test_suite => { name => 'textmode' }, prio => 40 },
+				   { machine => { name => '64bit' }, test_suite => { name => 'kde' }, prio => 40 },
+				   { machine => { name => '32bit' }, test_suite => { name => 'client1' }, prio => 40 },
+				   { machine => { name => '32bit' }, test_suite => { name => 'client2' }, prio => 40 },
+				   { machine => { name => '32bit' }, test_suite => { name => 'server' }, prio => 40 },
+				   { machine => { name => '32bit' }, test_suite => { name => 'advanced_kde' }, prio => 40 },
+				   { machine => { name => '64bit' }, test_suite => { name => 'client1' }, prio => 40 },
+				   { machine => { name => '64bit' }, test_suite => { name => 'client2' }, prio => 40 },
+				   { machine => { name => '64bit' }, test_suite => { name => 'server' }, prio => 40 },
+				   { machine => { name => '64bit' }, test_suite => { name => 'advanced_kde' }, prio => 40 },],
     },
 ]
+#>>>
 # vim: set sw=4 et:

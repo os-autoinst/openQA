@@ -80,7 +80,7 @@ sub name {
 sub {
     my $schema = shift;
 
-    my $jobs = $schema->resultset('Jobs');
+    my $jobs = $schema->resultset('Jobs')->search({}, {select => 'id'});
     while (my $job = $jobs->next) {
         my $name = sprintf "%08d-%s", $job->id, name($job);
         my $dir = $OpenQA::Utils::resultdir . "/$name";

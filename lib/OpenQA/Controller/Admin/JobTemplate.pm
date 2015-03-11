@@ -79,6 +79,8 @@ sub update {
                 elsif (!$existing && $present{$suite->id}) {
                     $self->db->resultset("JobTemplates")->create(
                         {
+                            # TODO
+                            prio => 50,
                             product_id => $product->id,
                             machine_id => $machine->id,
                             test_suite_id => $suite->id
