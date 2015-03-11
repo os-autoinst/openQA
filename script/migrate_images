@@ -2,14 +2,14 @@
 
 # this script is only useful once to deduplicate images
 
-BEGIN {
-    unshift @INC, 'lib';
-}
-
 use strict;
+use FindBin;
+BEGIN { unshift @INC, "$FindBin::Bin/../lib"}
+
 use Digest::MD5;
 use OpenQA::Utils;
 use File::Basename;
+use File::Find;
 
 # reads the content of a file below pooldir and returns its md5
 sub calculate_file_md5($) {
@@ -20,35 +20,44 @@ sub calculate_file_md5($) {
   return $md5->clone->hexdigest;
 }
 
-for (glob("/var/lib/openqa/testresults/*/*.png")) {
-  next if m,/.thumbs/,;
-  next unless -f $_;
-  next if -l $_;
-  next if m,/template-,;
-  my $file = $_;
+sub migrate() {
+  #print "DIR $File::Find::dir NAME $File::Find::name\n";
+  return if $File::Find::dir =~ m,/.thumbs$,;
+
+  my $file = $File::Find::name;
+
+  return if $file !~ m/\.png$/;
+  return unless -f $file;
+  return if -l $file;
+  return if $file =~ m,/template-,;
+  my $thumbpath = ".thumbs/" . basename($file);
+  # if there is no thumb to it, it can't be that important file
+  return unless -f $thumbpath;
+
   my $md5 = calculate_file_md5($file);
   print "$file " . calculate_file_md5($file) . "\n";
 
-  my $thumbpath = dirname($file) . "/.thumbs/" . basename($file);
-  
   my ($full, $thumb) = OpenQA::Utils::image_md5_filename($md5);
   unless (-f $full) {
     my $dir = dirname($full);
     mkdir($dir) unless -d $dir;
     $dir .= "/.thumbs";
     mkdir($dir) unless -d $dir;
-    rename($file, $full);
-    rename($thumbpath, $thumb);
+    rename($file, $full) or die "rename $file $full: $!";
+    rename($thumbpath, $thumb) or die "rename $thumbpath $thumb: $!";
     my $fh;
-    open($fh, ">", "$full.unoptimized");
+    open($fh, ">", "$full.unoptimized") or die "open $full.unoptimized: $!";
     close($fh);
-    open($fh, ">", "$thumb.unoptimized");
+    open($fh, ">", "$thumb.unoptimized") or die "open $thumb.unoptimized: $!";
     close($fh);
   } else {
-    unlink($file);
-    unlink($thumbpath);
+    unlink($file) or die "unlink $file";
+    unlink($thumbpath) or die "unlink $thumbpath";
   }
 
-  symlink($full, $file);
-  symlink($thumb, $thumbpath);
+  symlink($full, $file) or die"symlink $full $file: $!";
+  symlink($thumb, $thumbpath) or die "symlink $thumb, $thumbpath: $!";
 }
+
+find(\&migrate, "/var/lib/openqa/testresults");
+
