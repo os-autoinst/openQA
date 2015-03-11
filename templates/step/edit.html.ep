@@ -135,7 +135,7 @@
 		
 		<tr <%= 'title=broken' if ($needle->{'broken'}) %> >
 		    <td <%= 'style=color:red;' if ($needle->{'broken'}) %>><%= $title %></td>
-		    <td><input type="radio" class="background_selector"
+		    <td><input type="radio" class="background_selector" name="background_selector"
 			       data-image="<%= $needle->{'imagename'} %>"
 			       data-distri="<%= $needle->{'imagedistri'} %>"
 			       data-version="<%= $needle->{'imageversion'} %>"
