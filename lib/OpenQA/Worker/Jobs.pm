@@ -219,7 +219,6 @@ sub start_job {
     @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
     my $name = $job->{'settings'}->{'NAME'};
     printf "got job %d: %s\n", $job->{'id'}, $name;
-    $max_job_time = $job->{'settings'}->{'MAX_JOB_TIME'} || 2*60*60; # 2h
 
     # for the status call
     $log_offset = 0;
@@ -240,7 +239,7 @@ sub start_job {
     # create job timeout timer
     add_timer(
         'job_timeout',
-        $max_job_time,
+        $job->{'settings'}->{'MAX_JOB_TIME'} || $max_job_time,
         sub {
             # abort job if it takes too long
             if ($job) {
