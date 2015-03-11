@@ -54,7 +54,7 @@ use constant {
     HDD_DIR => ASSET_DIR . '/hdd',
 };
 use constant {
-    STATUS_UPDATES_SLOW => 5,
+    STATUS_UPDATES_SLOW => 10,
     STATUS_UPDATES_FAST => 0.5,
 };
 
