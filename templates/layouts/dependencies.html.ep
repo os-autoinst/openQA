@@ -1,0 +1,42 @@
+% if ($job->parents->first()) {
+<div class="box box-shadow" id="parents_info_box">
+    <div class="box-header aligncenter">Parents</div>
+    <table class="infotbl">
+        <% for my $dep ($job->parents->all()) {  %>
+        <tr>
+            <td style="width: 40%;"><%= link_to $dep->to_string => url_for ('test', 'testid' => $dep->parent->id) => (title => $dep->parent->name ) %></td>
+            <td>
+                %if ($dep->parent->state eq 'cancelled' || $dep->parent->state eq 'done') {
+                    <span style="padding: 0 10%; display: inline-block;
+                        text-align: center;"
+                        class="<%= css_for({'result' => $dep->parent->result}) %>"><%= $dep->parent->result %></span>
+                % } else {
+                    <%= $dep->parent->state %>
+                % }
+            </td>
+        </tr>
+        <% }  %>
+    </table>
+</div>
+% }
+% if ($job->children->first()) {
+<div class="box box-shadow" id="parents_info_box">
+    <div class="box-header aligncenter">Children</div>
+    <table class="infotbl">
+        <% for my $dep ($job->children->all()) {  %>
+        <tr>
+            <td style="width: 40%;"><%= link_to $dep->to_string => url_for ('test', 'testid' => $dep->child->id) => (title => $dep->child->name ) %></td>
+            <td>
+                %if ($dep->child->state eq 'cancelled' || $dep->child->state eq 'done') {
+                    <span style="padding: 0 10%; display: inline-block;
+                        text-align: center;"
+                        class="<%= css_for({'result' => $dep->child->result}) %>"><%= $dep->child->result %></span>
+                % } else {
+                    <%= $dep->child->state %>
+                % }
+            </td>
+        </tr>
+        <% }  %>
+    </table>
+</div>
+% }

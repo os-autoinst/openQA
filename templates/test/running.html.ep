@@ -64,6 +64,7 @@
         <div class="box-header aligncenter">Test modules</div>
         <div id="modlist_content"></div>
     </div>
+    %= include 'layouts/dependencies'
     <div class="box box-shadow">
 	<div class="box-header aligncenter">Backend</div>
         <table class="infotbl">
