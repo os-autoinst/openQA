@@ -47,11 +47,6 @@ use Mojo::IOLoop;
 
 use Carp;
 
-our $debug;
-BEGIN {
-    $debug = $ENV{HARNESS_IS_VERBOSE};
-}
-
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
@@ -746,7 +741,7 @@ sub _job_stop_children{
       );
 
     while (my $j = $jobs->next) {
-        print STDERR "enqueuing cancel for ".$j->id." ".$j->worker_id."\n" if $debug;
+        log_debug("enqueuing cancel for ".$j->id." ".$j->worker_id);
         command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
         _job_stop_children($j->id);
     }
@@ -935,7 +930,7 @@ sub job_duplicate {
     # set this clone was triggered by manually if it's not auto-clone
     $args{dup_type_auto} = 0 unless defined $args{dup_type_auto};
 
-    print STDERR "duplicating $args{jobid}\n" if $debug;
+    log_debug("duplicating $args{jobid}");
 
     my $job = schema->resultset("Jobs")->find({id => $args{jobid}});
     return undef unless $job;
@@ -946,7 +941,7 @@ sub job_duplicate {
             $args{retry_avbl} = int($job->retry_avbl)-1;
         }
         else {
-            print STDERR "Could not auto-duplicated! The job are auto-duplicated too many times.\nPlease restart the job manually.\n" if $debug;
+            log_debug("Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually.");
             return undef;
         }
     }
@@ -1024,18 +1019,18 @@ sub job_duplicate {
       );
 
     while (my $j = $jobs->next) {
-        print STDERR "enqueuing abort for ".$j->id." ".$j->worker_id."\n" if $debug;
+        log_debug("enqueuing abort for ".$j->id." ".$j->worker_id);
         command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
     }
 
     if (defined($clone)) {
-        print STDERR "new job ".$clone->id."\n" if $debug;
+        log_debug("new job ".$clone->id);
 
         job_notify_workers();
         return $clone->id;
     }
     else {
-        print STDERR "clone failed\n" if $debug;
+        log_debug("clone failed");
         return undef;
     }
 }
@@ -1168,7 +1163,7 @@ sub job_restart {
       );
 
     while (my $j = $jobs->next) {
-        print STDERR "enqueuing abort for ".$j->id." ".$j->worker_id."\n" if $debug;
+        log_debug("enqueuing abort for ".$j->id." ".$j->worker_id);
         command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
     }
 
@@ -1216,11 +1211,11 @@ sub job_cancel($;$) {
 
     while (my $j = $jobs->next) {
         if ($newbuild) {
-            print STDERR "enqueuing obsolete for ".$j->id." ".$j->worker_id."\n" if $debug;
+            log_debug("enqueuing obsolete for ".$j->id." ".$j->worker_id);
             command_enqueue(workerid => $j->worker_id, command => 'obsolete', job_id => $j->id);
         }
         else {
-            print STDERR "enqueuing cancel for ".$j->id." ".$j->worker_id."\n" if $debug;
+            log_debug("enqueuing cancel for ".$j->id." ".$j->worker_id);
             command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
         }
         _job_skip_children($j->id);

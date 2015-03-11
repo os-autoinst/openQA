@@ -16,6 +16,7 @@
 package OpenQA::Worker::Jobs;
 use strict;
 use warnings;
+use feature 'state';
 
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Pool qw/clean_pool/;
@@ -37,7 +38,8 @@ my $log_offset = 0;
 my $max_job_time = 7200; # 2h
 my $current_running;
 my $test_order;
-my $stop_job_running = 0;
+my $stop_job_running;
+my $update_status_running;
 
 my $tosend_images = {};
 
@@ -65,19 +67,26 @@ sub _kill_worker($) {
 sub start_job;
 
 sub check_job {
+    state $running;
     remove_timer('check_job');
+    return if $running;
     return unless verify_workerid;
+    $running = 1;
     if (!$job) {
         print "checking for job ...\n" if $verbose;
         my $res = api_call('post',"workers/$workerid/grab_job", $worker_caps) || { job => undef };
         $job = $res->{job};
         if ($job && $job->{id}) {
-            return start_job;
+            Mojo::IOLoop->next_tick(\&start_job);
         }
-        $job = undef;
+        else {
+            $job = undef;
+        }
     }
+    $running = 0;
 }
 
+sub _stop_job($;$);
 sub stop_job($;$) {
     my ($aborted, $job_id) = @_;
 
@@ -96,6 +105,27 @@ sub stop_job($;$) {
     remove_timer('job_timeout');
 
     _kill_worker($worker);
+
+    # XXX: we need to wait if there is an update_status in progress.
+    # we should have an event emitter that subscribes to update_status done
+    my $stop_job_check_status;
+    $stop_job_check_status = sub {
+        if($update_status_running) {
+            print "waiting for update_status to finish\n" if $verbose;
+            Mojo::IOLoop->timer(1 => $stop_job_check_status);
+        }
+        else {
+            _stop_job($aborted, $job_id);
+        }
+    };
+
+    $stop_job_check_status->();
+}
+
+sub _stop_job($;$) {
+    my ($aborted, $job_id) = @_;
+
+    print "stop_job 2nd half\n" if $verbose;
 
     my $name = $job->{'settings'}->{'NAME'};
     $aborted ||= 'done';
@@ -176,7 +206,10 @@ sub stop_job($;$) {
     $worker = undef;
     $stop_job_running = 0;
 
-    return if ($aborted eq 'quit');
+    if ($aborted eq 'quit') {
+        Mojo::IOLoop->stop;
+        return;
+    }
     # immediatelly check for already scheduled job
     add_timer('check_job', 0, \&check_job, 1) unless ($job);
 }
@@ -186,7 +219,6 @@ sub start_job {
     @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
     my $name = $job->{'settings'}->{'NAME'};
     printf "got job %d: %s\n", $job->{'id'}, $name;
-    $max_job_time = $job->{'settings'}->{'MAX_JOB_TIME'} || 2*60*60; # 2h
 
     # for the status call
     $log_offset = 0;
@@ -207,7 +239,7 @@ sub start_job {
     # create job timeout timer
     add_timer(
         'job_timeout',
-        $max_job_time,
+        $job->{'settings'}->{'MAX_JOB_TIME'} || $max_job_time,
         sub {
             # abort job if it takes too long
             if ($job) {
@@ -264,9 +296,11 @@ sub read_last_screen {
 
 # timer function ignoring arguments
 sub update_status {
-    # skip update if api_call in progress
-    return if $OpenQA::Worker::Common::call_running;
+    return if $update_status_running;
+    $update_status_running = 1;
     upload_status();
+    $update_status_running = 0;
+    return;
 }
 
 # uploads current data
