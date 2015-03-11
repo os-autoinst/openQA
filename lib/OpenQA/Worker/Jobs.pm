@@ -39,6 +39,10 @@ my $current_running;
 my $test_order;
 my $stop_job_running = 0;
 
+my $tosend_images = {};
+
+our $do_livelog;
+
 ## Job management
 sub _kill_worker($) {
     my ($worker) = @_;
@@ -187,12 +191,15 @@ sub start_job {
     # for the status call
     $log_offset = 0;
     $current_running = undef;
+    $do_livelog = 0;
+    $tosend_images = {};
 
     $worker = engine_workit($job);
     unless ($worker) {
         warn "job is missing files, releasing job\n";
         return stop_job('setup failure');
     }
+
     # start updating status - slow updates if livelog is not running
     add_timer('update_status', STATUS_UPDATES_SLOW, \&update_status);
     # start backend checks
@@ -238,6 +245,15 @@ sub read_base64_file($) {
     return encode_base64($c);
 }
 
+# reads the content of a file below pooldir and returns its md5
+sub calculate_file_md5($) {
+    my ($file) = @_;
+    my $c = OpenQA::Utils::file_content("$pooldir/$file");
+    my $md5 = Digest::MD5->new;
+    $md5->add($c);
+    return $md5->clone->hexdigest;
+}
+
 sub read_last_screen {
     my $lastlink = readlink("$pooldir/qemuscreenshot/last.png");
     return undef if !$lastlink || $lastscreenshot eq $lastlink;
@@ -263,9 +279,12 @@ sub upload_status(;$) {
 
     my $os_status = read_json_file('status.json') || {};
     # cherry-pick
-    $status->{status} = {};
+
     for my $f (qw/interactive needinput/) {
-        $status->{status}->{$f} = $os_status->{$f};
+        if ($os_status->{$f} || $do_livelog) {
+            $status->{status} //= {};
+            $status->{status}->{$f} = $os_status->{$f};
+        }
     }
     my $upload_result;
     $upload_result = $current_running if ($upload_running);
@@ -292,12 +311,43 @@ sub upload_status(;$) {
             $status->{result}->{$os_status->{running}}->{result} = 'running';
         }
     }
-    $status->{'log'} = log_snippet;
+    if ($do_livelog) {
+        $status->{'log'} = log_snippet;
+        my $screen = read_last_screen;
+        $status->{'screen'} = $screen if $screen;
+    }
 
-    my $screen = read_last_screen;
-    $status->{'screen'} = $screen if $screen;
+    # if there is nothing to say, don't say it (said my mother)
+    return unless %$status;
 
-    api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
+    my $res = api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
+
+    for my $md5 (@{$res->{known_images}}) {
+        delete $tosend_images->{$md5};
+    }
+    my $ua_url = $OpenQA::Worker::Common::url->clone;
+    $ua_url->path("jobs/" . $job->{id} . "/artefact");
+
+    while (my ($md5, $file) = each %$tosend_images) {
+        print "upload $file as $md5\n" if ($verbose);
+
+        my $form = {
+            file => {
+                file => "$pooldir/testresults/$file",
+                filename => $md5
+            },
+            image => 1,
+            thumb => 0,
+            md5 => $md5
+        };
+        # don't use api_call as it retries and does not allow form data
+        # (refactor at some point)
+        $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+        $form->{file}->{file} = "$pooldir/testresults/.thumbs/$file";
+        $form->{thumb} = 1;
+        $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+    }
+    $tosend_images = {};
 }
 
 sub read_json_file {
@@ -329,11 +379,12 @@ sub read_result_file($) {
         for my $d (@{$result->{details}}) {
             my $screen = $d->{screenshot};
             next unless $screen;
-            $d->{screenshot} = {
+            my $md5 = calculate_file_md5("testresults/$screen");
+            $d->{screenshot} ={
                 name => $screen,
-                full => read_base64_file("testresults/$screen"),
-                thumb => read_base64_file("testresults/.thumbs/$screen"),
+                md5 => $md5,
             };
+            $tosend_images->{$md5} = $screen;
         }
         $ret->{$test} = $result;
 

@@ -40,6 +40,8 @@
   /var/lib/openqa/share/factory/iso/* r,
   /var/lib/openqa/testresults/ r,
   /var/lib/openqa/testresults/** rw,
+  /var/lib/openqa/images/ r,
+  /var/lib/openqa/images/** rw,
   /var/lib/openqa/share/tests/ r,
   /var/lib/openqa/share/tests/** rw,
   /var/lib/openqa/share/tests/*/needles/.git/objects/*/* rwl,

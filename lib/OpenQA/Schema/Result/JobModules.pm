@@ -177,14 +177,21 @@ sub update_result($) {
 
 sub save_details($) {
     my ($self, $details) = @_;
+    my $existant_md5 = [];
     for my $d (@$details) {
-        OpenQA::Utils::save_base64_png($self->job->result_dir, $d->{screenshot}->{name},$d->{screenshot}->{full});
-        OpenQA::Utils::save_base64_png($self->job->result_dir . "/.thumbs",$d->{screenshot}->{name}, $d->{screenshot}->{thumb});
+        # create possibly stale symlinks
+        my ($full, $thumb) = OpenQA::Utils::image_md5_filename($d->{screenshot}->{md5});
+        if (-e $full) { # mark existant
+            push(@$existant_md5, $d->{screenshot}->{md5});
+        }
+        symlink($full, $self->job->result_dir . "/" . $d->{screenshot}->{name});
+        symlink($thumb, $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
         $d->{screenshot} = $d->{screenshot}->{name};
     }
     open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");
     $fh->print(JSON::encode_json($details));
     close($fh);
+    return $existant_md5;
 }
 
 1;

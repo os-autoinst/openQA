@@ -1,0 +1,14 @@
+#! /usr/bin/perl
+
+# this script needs to be called periodically to reduce the size of the
+# stored images 
+
+use strict;
+use File::Basename;
+
+for (glob("/var/lib/openqa/images/*/*.unoptimized /var/lib/openqa/images/*/.thumbs/*.unoptimized")) {
+    my ($name,$path,$suffix) = fileparse($_, qw/.unoptimized/);
+    print "NAME $path/$name\n";
+    system("optipng", "-preserve", "-quiet", "$path/$name");
+    unlink("$path/$name$suffix");
+}

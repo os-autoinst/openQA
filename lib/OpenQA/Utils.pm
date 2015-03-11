@@ -40,7 +40,7 @@ our $prj="openqa";
 our $resultdir="$basedir/$prj/testresults";
 our $assetdir="$basedir/$prj/factory";
 our $isodir="$assetdir/iso";
-our $cachedir="$basedir/$prj/cache";
+our $imagesdir="$basedir/$prj/images";
 our $hostname=$ENV{'SERVER_NAME'};
 our $app_title = 'openQA test instance';
 our $app_subtitle = 'openSUSE automated testing';
@@ -129,6 +129,14 @@ sub save_base64_png($$$) {
     $fh->print(decode_base64($png));
     close($fh);
     return $newfile;
+}
+
+sub image_md5_filename($) {
+    my ($md5) = @_;
+
+    my $prefix = substr($md5, 0, 2);
+    $md5 = substr($md5, 2);
+    return ($imagesdir . "/$prefix/$md5.png",$imagesdir . "/$prefix/.thumbs/$md5.png");
 }
 
 1;

@@ -6,7 +6,7 @@ install:
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
 #
-	for i in testresults cache pool ; do \
+	for i in images testresults pool ; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
 # shared dirs between openQA web and workers + compatibility links
