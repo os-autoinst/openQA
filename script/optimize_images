@@ -5,10 +5,16 @@
 
 use strict;
 use File::Basename;
+use File::Find;
 
-for (glob("/var/lib/openqa/images/*/*.unoptimized /var/lib/openqa/images/*/.thumbs/*.unoptimized")) {
-    my ($name,$path,$suffix) = fileparse($_, qw/.unoptimized/);
-    print "NAME $path/$name\n";
-    system("optipng", "-preserve", "-quiet", "$path/$name");
-    unlink("$path/$name$suffix");
+sub optimize() { 
+    return if $File::Find::name !~ m/\.png\.unoptimized$/;
+    my ($name,$path,$suffix) = fileparse($File::Find::name, qw/.unoptimized/);
+    print "NAME $File::Find::dir/$name\n";
+    if(system("optipng", "-preserve", "-quiet", "-o2", "$path/$name") == 0) {
+      unlink("$path/$name$suffix");
+    }
 }
+
+find(\&optimize, "/var/lib/openqa/images");
+
