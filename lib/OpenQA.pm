@@ -168,16 +168,12 @@ sub startup {
     $self->plugin('OpenQA::Plugin::REST');
     $self->plugin('OpenQA::Plugin::HashedParams');
 
-    $self->asset('step_edit.js' => '/javascripts/needleedit.js', '/javascripts/needleeditor.js', '/javascripts/shapes.js', '/javascripts/keyevent.js');
+    $self->asset('step_edit.js' => qw(/javascripts/needleedit.js /javascripts/needleeditor.js /javascripts/shapes.js /javascripts/keyevent.js/));
     $self->asset(
         'app.js' => qw(/javascripts/jquery-1.11.2.js /javascripts/jquery_ujs.js /javascripts/chosen.jquery.js /javascripts/openqa.js
-          /javascripts/jquery.dataTables.js /javascripts/admintable.js /javascripts/jquery.timeago.js /javascripts/tests.js)
+          /javascripts/jquery.dataTables.js /javascripts/admintable.js /javascripts/jquery.timeago.js /javascripts/tests.js /javascripts/job_templates.js)
     );
-    $self->asset(
-        'app.css' => '/stylesheets/font-awesome.css',
-        '/stylesheets/jquery.dataTables.css', '/stylesheets/chosen.css',
-        '/stylesheets/openqa.css', '/stylesheets/opentip.css'
-    );
+    $self->asset('app.css' => qw(/stylesheets/font-awesome.css /stylesheets/jquery.dataTables.css /stylesheets/chosen.css /stylesheets/openqa.css /stylesheets/opentip.css));
 
     # set secure flag on cookies of https connections
     $self->hook(
@@ -302,11 +298,13 @@ sub startup {
     $admin_r->get('/machines')->name('admin_machines')->to('machine#index');
     $admin_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
 
-    $admin_r->get('/job_templates')->name('admin_job_templates')->to('job_template#index');
-    $admin_r->post('/job_templates')->to('job_template#update');
+    $admin_r->get('/job_templates/:groupid')->name('admin_job_templates')->to('job_template#index');
+
 
     $admin_r->get('/groups')->name('admin_groups')->to('job_group#index');
     $admin_r->post('/groups')->name('admin_new_group')->to('job_group#create');
+    $admin_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
+    $admin_r->post('/groups/connect/:groupid')->name('job_group_save_media')->to('job_group#save_connect');
 
     $admin_r->get('/assets')->name('admin_assets')->to('asset#index');
 

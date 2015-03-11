@@ -58,4 +58,13 @@ sub name {
     join('-', map { $self->$_ } qw/distri version flavor arch/);
 }
 
+sub mediagroup {
+    my ($self) = @_;
+    my $mediagroup = $self->distri . "-";
+    if ($self->version ne '*') {
+        $mediagroup .= $self->version . "-";
+    }
+    $mediagroup . $self->flavor;
+}
+
 1;

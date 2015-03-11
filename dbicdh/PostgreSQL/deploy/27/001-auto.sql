@@ -1,10 +1,10 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Mar 11 20:00:47 2015
+-- Created on Sun Mar 15 12:02:00 2015
 -- 
 ;
 --
--- Table: assets.
+-- Table: assets
 --
 CREATE TABLE "assets" (
   "id" serial NOT NULL,
@@ -18,7 +18,7 @@ CREATE TABLE "assets" (
 
 ;
 --
--- Table: job_groups.
+-- Table: job_groups
 --
 CREATE TABLE "job_groups" (
   "id" serial NOT NULL,
@@ -31,7 +31,7 @@ CREATE TABLE "job_groups" (
 
 ;
 --
--- Table: job_modules.
+-- Table: job_modules
 --
 CREATE TABLE "job_modules" (
   "id" serial NOT NULL,
@@ -53,7 +53,7 @@ CREATE INDEX "idx_job_modules_result" on "job_modules" ("result");
 
 ;
 --
--- Table: job_settings.
+-- Table: job_settings
 --
 CREATE TABLE "job_settings" (
   "id" serial NOT NULL,
@@ -68,7 +68,7 @@ CREATE INDEX "job_settings_idx_job_id" on "job_settings" ("job_id");
 
 ;
 --
--- Table: machine_settings.
+-- Table: machine_settings
 --
 CREATE TABLE "machine_settings" (
   "id" serial NOT NULL,
@@ -84,7 +84,7 @@ CREATE INDEX "machine_settings_idx_machine_id" on "machine_settings" ("machine_i
 
 ;
 --
--- Table: machines.
+-- Table: machines
 --
 CREATE TABLE "machines" (
   "id" serial NOT NULL,
@@ -99,7 +99,7 @@ CREATE TABLE "machines" (
 
 ;
 --
--- Table: product_settings.
+-- Table: product_settings
 --
 CREATE TABLE "product_settings" (
   "id" serial NOT NULL,
@@ -115,7 +115,7 @@ CREATE INDEX "product_settings_idx_product_id" on "product_settings" ("product_i
 
 ;
 --
--- Table: products.
+-- Table: products
 --
 CREATE TABLE "products" (
   "id" serial NOT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE "products" (
 
 ;
 --
--- Table: secrets.
+-- Table: secrets
 --
 CREATE TABLE "secrets" (
   "id" serial NOT NULL,
@@ -146,7 +146,7 @@ CREATE TABLE "secrets" (
 
 ;
 --
--- Table: test_suite_settings.
+-- Table: test_suite_settings
 --
 CREATE TABLE "test_suite_settings" (
   "id" serial NOT NULL,
@@ -162,7 +162,7 @@ CREATE INDEX "test_suite_settings_idx_test_suite_id" on "test_suite_settings" ("
 
 ;
 --
--- Table: test_suites.
+-- Table: test_suites
 --
 CREATE TABLE "test_suites" (
   "id" serial NOT NULL,
@@ -176,7 +176,7 @@ CREATE TABLE "test_suites" (
 
 ;
 --
--- Table: users.
+-- Table: users
 --
 CREATE TABLE "users" (
   "id" serial NOT NULL,
@@ -194,7 +194,7 @@ CREATE TABLE "users" (
 
 ;
 --
--- Table: worker_properties.
+-- Table: worker_properties
 --
 CREATE TABLE "worker_properties" (
   "id" serial NOT NULL,
@@ -209,7 +209,7 @@ CREATE INDEX "worker_properties_idx_worker_id" on "worker_properties" ("worker_i
 
 ;
 --
--- Table: workers.
+-- Table: workers
 --
 CREATE TABLE "workers" (
   "id" serial NOT NULL,
@@ -224,7 +224,7 @@ CREATE TABLE "workers" (
 
 ;
 --
--- Table: api_keys.
+-- Table: api_keys
 --
 CREATE TABLE "api_keys" (
   "id" serial NOT NULL,
@@ -241,7 +241,7 @@ CREATE INDEX "api_keys_idx_user_id" on "api_keys" ("user_id");
 
 ;
 --
--- Table: jobs.
+-- Table: jobs
 --
 CREATE TABLE "jobs" (
   "id" serial NOT NULL,
@@ -272,7 +272,7 @@ CREATE INDEX "idx_jobs_result" on "jobs" ("result");
 
 ;
 --
--- Table: job_dependencies.
+-- Table: job_dependencies
 --
 CREATE TABLE "job_dependencies" (
   "child_job_id" integer NOT NULL,
@@ -286,7 +286,7 @@ CREATE INDEX "idx_job_dependencies_dependency" on "job_dependencies" ("dependenc
 
 ;
 --
--- Table: job_locks.
+-- Table: job_locks
 --
 CREATE TABLE "job_locks" (
   "name" text NOT NULL,
@@ -299,7 +299,7 @@ CREATE INDEX "job_locks_idx_owner" on "job_locks" ("owner");
 
 ;
 --
--- Table: job_templates.
+-- Table: job_templates
 --
 CREATE TABLE "job_templates" (
   "id" serial NOT NULL,
@@ -307,7 +307,7 @@ CREATE TABLE "job_templates" (
   "machine_id" integer NOT NULL,
   "test_suite_id" integer NOT NULL,
   "prio" integer NOT NULL,
-  "group_id" integer,
+  "group_id" integer NOT NULL,
   "t_created" timestamp NOT NULL,
   "t_updated" timestamp NOT NULL,
   PRIMARY KEY ("id"),
@@ -320,7 +320,7 @@ CREATE INDEX "job_templates_idx_test_suite_id" on "job_templates" ("test_suite_i
 
 ;
 --
--- Table: jobs_assets.
+-- Table: jobs_assets
 --
 CREATE TABLE "jobs_assets" (
   "job_id" integer NOT NULL,

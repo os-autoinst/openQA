@@ -19,7 +19,9 @@
         <tbody>
         % while (my $group = $groups->next()) {
         <tr id="group_<%= $group->id %>">
-            <td class="name"><%= $group->name %></td>
+            <td class="name">
+		%= link_to $group->name => url_for('admin_job_templates', groupid => $group->id)
+	    </td>
         </tr>
         % }
         </tbody>

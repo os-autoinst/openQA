@@ -43,6 +43,7 @@ is_deeply(
         'JobTemplates' => [
             {
                 'id' => 1,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1001,
                     'name' => '32bit'
@@ -52,7 +53,8 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
-                    'version' => '13.1'
+                    'version' => '13.1',
+                    'group' => 'opensuse-13.1-DVD',
                 },
                 'test_suite' => {
                     'id' => 1001,
@@ -61,6 +63,7 @@ is_deeply(
             },
             {
                 'id' => 2,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1002,
                     'name' => '64bit'
@@ -70,7 +73,8 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
-                    'version' => '13.1'
+                    'version' => '13.1',
+                    'group' => 'opensuse-13.1-DVD',
                 },
                 'test_suite' => {
                     'id' => 1002,
@@ -79,6 +83,7 @@ is_deeply(
             },
             {
                 'id' => 3,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1001,
                     'name' => '32bit'
@@ -88,6 +93,7 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
+                    'group' => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
@@ -97,6 +103,7 @@ is_deeply(
             },
             {
                 'id' => 4,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1001,
                     'name' => '32bit'
@@ -106,6 +113,7 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
+                    'group' => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
@@ -115,6 +123,7 @@ is_deeply(
             },
             {
                 'id' => 5,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1001,
                     'name' => '32bit'
@@ -124,6 +133,7 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
+                    'group' => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
@@ -133,6 +143,7 @@ is_deeply(
             },
             {
                 'id' => 6,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1001,
                     'name' => '32bit'
@@ -142,6 +153,7 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
+                    'group' => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
@@ -151,6 +163,7 @@ is_deeply(
             },
             {
                 'id' => 7,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1002,
                     'name' => '64bit'
@@ -160,6 +173,7 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
+                    'group' => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
@@ -169,6 +183,7 @@ is_deeply(
             },
             {
                 'id' => 8,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1002,
                     'name' => '64bit'
@@ -178,6 +193,7 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
+                    'group' => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
@@ -187,6 +203,7 @@ is_deeply(
             },
             {
                 'id' => 9,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1002,
                     'name' => '64bit'
@@ -196,6 +213,7 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
+                    'group' => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
@@ -205,6 +223,7 @@ is_deeply(
             },
             {
                 'id' => 10,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1002,
                     'name' => '64bit'
@@ -213,6 +232,7 @@ is_deeply(
                     'arch' => 'i586',
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
+                    'group' => 'opensuse-13.1-DVD',
                     'id' => 1,
                     'version' => '13.1'
                 },
@@ -230,6 +250,7 @@ is_deeply(
 my $res = $t->post_ok(
     '/api/v1/job_templates',
     form => {
+        group_id => 1001,
         machine_id => 1001,
         test_suite_id => 1002,
         product_id=>1,
@@ -241,6 +262,7 @@ my $job_template_id1 = $res->tx->res->json->{id};
 $res = $t->post_ok(
     '/api/v1/job_templates',
     form =>{
+        group_name => 'opensuse',
         machine_name => '64bit',
         test_suite_name => 'RAID0',
         arch => 'i586',
@@ -263,12 +285,14 @@ is_deeply(
                     'id' => 1001,
                     'name' => '32bit'
                 },
+                'prio' => 30,
                 'product' => {
                     'arch' => 'i586',
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
-                    'version' => '13.1'
+                    'version' => '13.1',
+                    'group' => 'opensuse-13.1-DVD',
                 },
                 'test_suite' => {
                     'id' => 1002,
@@ -288,6 +312,7 @@ is_deeply(
         'JobTemplates' => [
             {
                 'id' => $job_template_id2,
+                'prio' => 20,
                 'machine' => {
                     'id' => 1002,
                     'name' => '64bit'
@@ -297,6 +322,7 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
+                    'group' => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
@@ -317,6 +343,7 @@ is_deeply(
         'JobTemplates' => [
             {
                 'id' => $job_template_id2,
+                'prio' => 20,
                 'machine' => {
                     'id' => 1002,
                     'name' => '64bit'
@@ -326,7 +353,8 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
-                    'version' => '13.1'
+                    'version' => '13.1',
+                    'group' => 'opensuse-13.1-DVD'
                 },
                 'test_suite' => {
                     'id' => 1013,
@@ -346,6 +374,7 @@ is_deeply(
         'JobTemplates' => [
             {
                 'id' => 2,
+                'prio' => 40,
                 'machine' => {
                     'id' => 1002,
                     'name' => '64bit'
@@ -355,7 +384,8 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
-                    'version' => '13.1'
+                    'version' => '13.1',
+                    'group' => 'opensuse-13.1-DVD',
                 },
                 'test_suite' => {
                     'id' => 1002,
@@ -364,6 +394,7 @@ is_deeply(
             },
             {
                 'id' => $job_template_id1,
+                'prio' => 30,
                 'machine' => {
                     'id' => 1001,
                     'name' => '32bit'
@@ -373,7 +404,8 @@ is_deeply(
                     'distri' => 'opensuse',
                     'flavor' => 'DVD',
                     'id' => 1,
-                    'version' => '13.1'
+                    'version' => '13.1',
+                    'group' => 'opensuse-13.1-DVD',
                 },
                 'test_suite' => {
                     'id' => 1002,

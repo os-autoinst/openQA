@@ -1,51 +1,42 @@
 % layout 'admin';
-% title 'Job templates';
+% title "Jobs for " . $group->name;
 
-<div class="box box-shadow">
-	<h2><%= title %></h2>
+% content_for 'ready_function' => begin
+  setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>);
+% end
 
+<div class="box box-shadow omega">
+    <h2><%= title %></h2>
+    
     %= include 'layouts/info'
-
-    %= form_for admin_job_templates => (method => 'post') => begin
-	<table class="table-autostripe" id="job_settings">
-	    <thead>
-		    <tr>
-                <th>&nbsp;</th>
-                % for my $machine (@$machines) {
-                    <th><%= $machine->name %></th>
-                % }
-            </tr>
-        </thead>
-        <tbody>
-            % for my $product (@$products) {
-                <tr id="product_<%= $product->id %>">
-                    <td><%= $product->name %></td>
-                    % for my $machine (@$machines) {
-                        % my $pid = $product->id;
-                        % my $mid = $machine->id;
-                        % my @ids;
-                        <%
-                        if (my $list = $templates->{$product->id}->{$machine->id}) {
-                            @ids = split(',', $list);
-                        } else {
-                            @ids = [];
-                        } %>
-                        % my %sel = map { $_ => 'selected="true"' } @ids;
-                        <td>
-                        <select class="chosen-select" multiple="true" name="<%= "templates_".$pid."_$mid" %>" data-placeholder="None">
-                            % for my $suite (@$suites) {
-                                <option value="<%= $suite->id %>" <%= $sel{$suite->id} %>><%= $suite->name %></option>
-                            % }
-                        </select>
-                        </td>
-                    % }
-                </tr>
-            % }
-        </tbody>
-    </table>
-    <div style="text-align: center;">
-        <br />
-        %= submit_button 'Update'
+    
+    <div id="media">
+	<p id="loading">Loading... <i class="fa fa-spinner fa-spin"></i></p>
+	
+	<select id="machines-template" multiple="true"
+		data-placeholder="None" style="display: none">
+	    % for my $machine (@$machines) {
+		<option value="<%= $machine->name %>"
+			data-machine-id="<%= $machine->id %>" >
+		    %= $machine->name
+		</option>
+	    % }
+	</select>
+	
+	<select id="tests-template" style="display: none">
+	    <option value="">Select...</option>
+	    % for my $test (@$tests) {
+		<option value="<%= $test->name %>" data-test-id="<%= $test->id %>">
+		    <%= $test->name %>
+		</option>
+	    % }
+	</select>
+	
     </div>
-    % end
+
+    <p>
+	%= link_to url_for('job_group_new_media', groupid => $group->id) => begin
+	<i class="fa fa-plus-square"></i> Test new medium as part of this group
+	% end
+    </p>
 </div>

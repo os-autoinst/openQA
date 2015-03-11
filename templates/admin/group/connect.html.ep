@@ -1,0 +1,43 @@
+% layout 'admin';
+% title 'Join Medium to Group';
+
+<div class="box box-shadow">
+    <h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+    <p>You need to provide an initial test@machine combination for this medium and can
+	add more later</p>
+    
+    %= form_for job_group_save_media => (groupid => $group->id) => (method => 'POST') => begin
+    <p>
+	<label>Medium: 
+	    <select name="medium" id="medium">
+		% while (my $p = $products->next) {
+		    <option value="<%= $p->id %>"><%= $p->name %></option>
+		% }
+	    </select>
+	</label>
+    </p>
+    <p>
+	<label>Test Suite: 
+	    <select name="test" id="test">
+		% while (my $p = $tests->next) {
+		    <option value="<%= $p->id %>"><%= $p->name %></option>
+		% }
+	    </select>
+	</label>
+    </p>
+    <p>
+	<label>Machine: 
+	    <select name="machine" id="machine">
+		% while (my $p = $machines->next) {
+		    <option value="<%= $p->id %>"><%= $p->name %></option>
+		% }
+	    </select>
+	</label>
+    </p>
+    <input type="submit" value="Connect"/>
+    % end
+
+</div>
