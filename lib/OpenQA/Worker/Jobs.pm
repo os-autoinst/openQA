@@ -37,7 +37,8 @@ my $log_offset = 0;
 my $max_job_time = 7200; # 2h
 my $current_running;
 my $test_order;
-my $stop_job_running = 0;
+my $stop_job_running;
+my $update_status_running;
 
 my $tosend_images = {};
 
@@ -78,6 +79,7 @@ sub check_job {
     }
 }
 
+sub stop_job2($;$);
 sub stop_job($;$) {
     my ($aborted, $job_id) = @_;
 
@@ -96,6 +98,27 @@ sub stop_job($;$) {
     remove_timer('job_timeout');
 
     _kill_worker($worker);
+
+    # XXX: we need to wait if there is an update_status in progress.
+    # we should have an event emitter that subscribes to update_status done
+    my $stop_job_check_status;
+    $stop_job_check_status = sub {
+        if($update_status_running) {
+            print "waiting for update_status to finish\n" if $verbose;
+            Mojo::IOLoop->timer(1 => $stop_job_check_status);
+        }
+        else {
+            stop_job2($aborted, $job_id);
+        }
+    };
+
+    $stop_job_check_status->();
+}
+
+sub stop_job2($;$) {
+    my ($aborted, $job_id) = @_;
+
+    print "stop_job 2nd half\n" if $verbose;
 
     my $name = $job->{'settings'}->{'NAME'};
     $aborted ||= 'done';
@@ -264,9 +287,11 @@ sub read_last_screen {
 
 # timer function ignoring arguments
 sub update_status {
-    # skip update if api_call in progress
-    return if $OpenQA::Worker::Common::call_running;
+    return if $update_status_running;
+    $update_status_running = 1;
     upload_status();
+    $update_status_running = 0;
+    return;
 }
 
 # uploads current data

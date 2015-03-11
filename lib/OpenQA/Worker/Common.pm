@@ -16,6 +16,7 @@
 package OpenQA::Worker::Common;
 use strict;
 use warnings;
+use feature 'state';
 
 use Carp;
 use POSIX qw/uname/;
@@ -144,15 +145,19 @@ sub api_init {
     }
 }
 
-my $call_running;
 # send a command to openQA API
 sub api_call {
     my ($method, $path, $params, $json_data, $ignore_errors) = @_;
+    state $call_running;
 
     return undef unless verify_workerid();
+
     if ($call_running) {
-        print "api call in progress, not accepting new one\n" if $verbose;
-        return undef;
+        # quit immediately
+        Mojo::IOLoop->next_tick(sub {} );
+        Mojo::IOLoop->stop;
+        Carp::croak "recursive api_call is fatal";
+        return;
     }
 
     $call_running = 1;
