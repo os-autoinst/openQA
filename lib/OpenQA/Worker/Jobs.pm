@@ -206,7 +206,10 @@ sub stop_job2($;$) {
     $worker = undef;
     $stop_job_running = 0;
 
-    return if ($aborted eq 'quit');
+    if ($aborted eq 'quit') {
+        Mojo::IOLoop->stop;
+        return;
+    }
     # immediatelly check for already scheduled job
     add_timer('check_job', 0, \&check_job, 1) unless ($job);
 }

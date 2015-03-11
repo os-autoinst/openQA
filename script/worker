@@ -137,6 +137,6 @@ $ENV{'VNC'}      = ($options{'instance'})    + 90;
 ($ENV{'OPENQA_HOSTNAME'}) = $options{'host'} =~ m|([^/]+:?\d*)/?$|;
 
 OpenQA::Worker::init($worker_settings, %options);
-return OpenQA::Worker::main();
+OpenQA::Worker::main();
 
 # vim: set sw=4 sts=4 et:

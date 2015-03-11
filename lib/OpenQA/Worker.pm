@@ -42,8 +42,6 @@ sub init {
 sub main {
     my $lockfd = lockit();
 
-    $SIG{__DIE__} = sub { return if $^S; stop_job('quit'); exit(1); };
-
     clean_pool();
 
     ## register worker at startup
@@ -51,15 +49,19 @@ sub main {
 
     # start event loop - this will block until stop is called
     Mojo::IOLoop->start;
-    # cleanup on finish if necessary
-    if ($job) {
-        stop_job('quit');
-    }
+
+    return 0;
 }
 
 sub catch_exit{
-    # send stop to event loop
-    Mojo::IOLoop->stop;
+    my ($sig) = @_;
+    print STDERR "quit due to signal $sig\n";
+    if ($job) {
+        Mojo::IOLoop->next_tick(sub { stop_job('quit') });
+    }
+    else {
+        Mojo::IOLoop->stop;
+    }
 }
 
 $SIG{HUP} = \*catch_exit;
