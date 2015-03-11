@@ -12,7 +12,7 @@ function loadBackground() {
 function loadTagsAndName() {
     var tags = $(this).data('tags');
     $("#needleeditor_tags").find('input').each(function() {
-	$(this).attr('checked', tags.indexOf($(this).val()) != -1);
+	$(this).prop('checked', tags.indexOf($(this).val()) != -1);
     });
     $("#needleeditor_name").val($(this).data('suggested'));
 }
