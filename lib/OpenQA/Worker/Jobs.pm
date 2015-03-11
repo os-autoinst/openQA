@@ -201,7 +201,7 @@ sub start_job {
     }
 
     # start updating status - slow updates if livelog is not running
-    add_timer('update_status', STATUS_UPDATES_SLOW, \&update_status);
+    add_timer('update_status', STATUS_UPDATES_SLOW, \&update_status, 1);
     # start backend checks
     add_timer('check_backend', 2, \&check_backend);
     # create job timeout timer
@@ -264,9 +264,8 @@ sub read_last_screen {
 
 # timer function ignoring arguments
 sub update_status {
-    # skip update if api_call in progress
-    return if $OpenQA::Worker::Common::call_running;
     upload_status();
+    add_timer('update_status', $do_livelog ? STATUS_UPDATES_FAST : STATUS_UPDATES_SLOW, \&update_status, 1);
 }
 
 # uploads current data
