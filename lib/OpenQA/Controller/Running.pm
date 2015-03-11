@@ -163,9 +163,11 @@ sub livelog {
             # seek to the current position to reset EOF.
             if ($size < $st[7]) {
                 $size = $st[7];
+                my $lines = '';
                 while (defined(my $l = <$log>)) {
-                    $self->write("data: ".encode_json([$l])."\n\n");
+                    $lines .= $l;
                 }
+                $self->write("data: ".encode_json([$lines])."\n\n");
                 seek $log, 0, 1;
             }
         }
