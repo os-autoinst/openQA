@@ -1005,7 +1005,7 @@ sub job_duplicate {
     # abort jobs restarted because of dependencies (exclude the original $args{jobid})
     $jobs = schema->resultset("Jobs")->search(
         {
-            id => [ keys %to_clone ],
+            id => { '!=', $job->id, '-in' => [ keys %to_clone ] },
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
@@ -1024,7 +1024,6 @@ sub job_duplicate {
       );
 
     while (my $j = $jobs->next) {
-        next if $j->id == $job->id;
         print STDERR "enqueuing abort for ".$j->id." ".$j->worker_id."\n" if $debug;
         command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
     }
