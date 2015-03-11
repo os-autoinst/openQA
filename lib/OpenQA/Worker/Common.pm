@@ -54,7 +54,7 @@ use constant {
     HDD_DIR => ASSET_DIR . '/hdd',
 };
 use constant {
-    STATUS_UPDATES_SLOW => 5,
+    STATUS_UPDATES_SLOW => 10,
     STATUS_UPDATES_FAST => 0.5,
 };
 
@@ -82,7 +82,8 @@ sub add_timer {
     my ($timer, $timeout, $callback, $nonrecurring) = @_;
     die "must specify timer\n" unless $timer;
     die "must specify callback\n" unless $callback && ref $callback eq 'CODE';
-    return if ($timers->{$timer});
+    # skip if timer already defined, but not if one shot timer (avoid the need to call remove_timer for nonrecurring)
+    return if ($timers->{$timer} && !$nonrecurring);
     print "## adding timer $timer $timeout\n" if $verbose;
     my $timerid;
     if ($nonrecurring) {
