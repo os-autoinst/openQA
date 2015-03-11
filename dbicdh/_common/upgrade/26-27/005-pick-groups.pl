@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,21 +14,29 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::Controller::Admin::JobTemplate;
-use Mojo::Base 'Mojolicious::Controller';
-use DateTime::Format::SQLite;
+#!perl
 
-sub index {
-    my ($self) = @_;
-    $self->validation->required('groupid')->like(qr/^[0-9]+$/);
-    $self->stash('group', $self->db->resultset("JobGroups")->find($self->param('groupid')));
+use strict;
+use warnings;
 
-    my @machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});
-    $self->stash('machines', \@machines);
-    my @tests = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
-    $self->stash('tests', \@tests);
+sub {
+    my $schema = shift;
 
-    $self->render('admin/job_template/index');
-}
+    my $products = $schema->resultset('Products');
+    while (my $r = $products->next) {
+        my $group = $r->distri;
+        if ($r->version ne '*') {
+            $group .= "-" . $r->version;
+        }
+        # now on to some very specific groups :)
+        if ($r->distri eq 'opensuse' && $r->flavor =~ m/Staging/) {
+            $group = 'opensuse-staging';
+        }
+        $group = $schema->resultset('JobGroups')->find_or_create({name => $group});
+        my $jts = $r->job_templates;
+        while (my $j = $jts->next) {
+            $j->update({group_id => $group->id});
+        }
+    }
+  }
 
-1;

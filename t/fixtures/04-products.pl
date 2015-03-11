@@ -70,6 +70,10 @@
         variables => '',
         settings => [{ key => "DESKTOP", value => "kde" }, { key => "START_AFTER_TEST", value => "kde,textmode" }],
     },
+    JobGroups => {
+        id => 1001,
+	name => 'opensuse'
+    },
 
     Products => {
 		 name => '',
@@ -85,16 +89,16 @@
 			        value => "1" },
 			     ],
 		 job_templates => [
-				   { machine => { name => '32bit' }, test_suite => { name => 'textmode' }, prio => 40 },
-				   { machine => { name => '64bit' }, test_suite => { name => 'kde' }, prio => 40 },
-				   { machine => { name => '32bit' }, test_suite => { name => 'client1' }, prio => 40 },
-				   { machine => { name => '32bit' }, test_suite => { name => 'client2' }, prio => 40 },
-				   { machine => { name => '32bit' }, test_suite => { name => 'server' }, prio => 40 },
-				   { machine => { name => '32bit' }, test_suite => { name => 'advanced_kde' }, prio => 40 },
-				   { machine => { name => '64bit' }, test_suite => { name => 'client1' }, prio => 40 },
-				   { machine => { name => '64bit' }, test_suite => { name => 'client2' }, prio => 40 },
-				   { machine => { name => '64bit' }, test_suite => { name => 'server' }, prio => 40 },
-				   { machine => { name => '64bit' }, test_suite => { name => 'advanced_kde' }, prio => 40 },],
+				   { machine => { name => '32bit' }, test_suite => { name => 'textmode' }, prio => 40, group_id => 1001 },
+				   { machine => { name => '64bit' }, test_suite => { name => 'kde' }, prio => 40, group_id => 1001 },
+				   { machine => { name => '32bit' }, test_suite => { name => 'client1' }, prio => 40, group_id => 1001 },
+				   { machine => { name => '32bit' }, test_suite => { name => 'client2' }, prio => 40, group_id => 1001 },
+				   { machine => { name => '32bit' }, test_suite => { name => 'server' }, prio => 40, group_id => 1001 },
+				   { machine => { name => '32bit' }, test_suite => { name => 'advanced_kde' }, prio => 40, group_id => 1001 },
+				   { machine => { name => '64bit' }, test_suite => { name => 'client1' }, prio => 40, group_id => 1001 },
+				   { machine => { name => '64bit' }, test_suite => { name => 'client2' }, prio => 40, group_id => 1001 },
+				   { machine => { name => '64bit' }, test_suite => { name => 'server' }, prio => 40, group_id => 1001 },
+				   { machine => { name => '64bit' }, test_suite => { name => 'advanced_kde' }, prio => 40, group_id => 1001 },],
     },
 ]
 #>>>

@@ -34,7 +34,45 @@ sub create {
         $self->flash('info', 'Group '. $ng->name .' created');
     }
     $self->redirect_to(action => 'index');
+}
 
+sub connect {
+    my ($self) = @_;
+
+    $self->validation->required('groupid')->like(qr/^[0-9]+$/);
+    $self->stash('group', $self->db->resultset("JobGroups")->find($self->param('groupid')));
+
+    my $products = $self->db->resultset("Products")->search(undef, {order_by => 'name'});
+    $self->stash('products', $products);
+    my $tests = $self->db->resultset("TestSuites")->search(undef, {order_by => 'name'});
+    $self->stash('tests', $tests);
+    my $machines = $self->db->resultset("Machines")->search(undef, {order_by => 'name'});
+    $self->stash('machines', $machines);
+
+    $self->render('admin/group/connect');
+}
+
+sub save_connect {
+    my ($self) = @_;
+
+    $self->validation->required('groupid')->like(qr/^[0-9]+$/);
+    my $group = $self->db->resultset("JobGroups")->find($self->param('groupid'));
+
+    my $values = {
+        prio => $self->param('prio')//50,
+        product_id => $self->param('medium'),
+        machine_id => $self->param('machine'),
+        group_id => $group->id,
+        test_suite_id => $self->param('test')
+    };
+    eval { $self->db->resultset("JobTemplates")->create($values)->id };
+    if ($@) {
+        $self->flash(error => $@);
+        $self->redirect_to('job_group_new_media', groupid => $group->id);
+    }
+    else {
+        $self->redirect_to('admin_job_templates', groupid => $group->id);
+    }
 }
 
 1;

@@ -41,7 +41,6 @@ __PACKAGE__->add_columns(
     group_id => {
         data_type => 'integer',
         is_foreign_key => 1,
-        is_nullable => 1
     },
 );
 __PACKAGE__->add_timestamps;

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Wed Mar 11 20:00:47 2015
+-- Created on Sun Mar 15 12:02:00 2015
 -- 
 
 ;
@@ -271,7 +271,7 @@ CREATE TABLE job_templates (
   machine_id integer NOT NULL,
   test_suite_id integer NOT NULL,
   prio integer NOT NULL,
-  group_id integer,
+  group_id integer NOT NULL,
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL,
   FOREIGN KEY (group_id) REFERENCES job_groups(id),

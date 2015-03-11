@@ -1,10 +1,10 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Mar 11 20:00:47 2015
+-- Created on Sun Mar 15 12:02:01 2015
 -- 
 ;
 --
--- Table: dbix_class_deploymenthandler_versions.
+-- Table: dbix_class_deploymenthandler_versions
 --
 CREATE TABLE "dbix_class_deploymenthandler_versions" (
   "id" serial NOT NULL,

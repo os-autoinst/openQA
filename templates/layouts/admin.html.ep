@@ -38,8 +38,6 @@
                     <li><%= link_to('Test suites' => url_for('admin_test_suites')) %></li>
 		    <li><%= link_to('Job groups' => url_for('admin_groups')) %></li>
 
-		    <li><%= link_to('Job templates' => url_for('admin_job_templates')) %></li>
-		    
                     <li><%= link_to('Assets' => url_for('admin_assets')) %></li>
                     <!-- Sure this is not the proper place for the workers view,
                          but the previous one was even more annoying -->
