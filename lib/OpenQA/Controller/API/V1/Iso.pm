@@ -148,7 +148,7 @@ sub _generate_jobs {
             # Makes sure tha the DISTRI is lowercase
             $settings{DISTRI} = lc($settings{DISTRI});
 
-            $settings{PRIO} = $job_template->test_suite->prio;
+            $settings{PRIO} = $job_template->prio;
 
             push @$ret, \%settings;
         }

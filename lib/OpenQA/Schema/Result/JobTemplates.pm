@@ -35,12 +35,21 @@ __PACKAGE__->add_columns(
     test_suite_id => {
         data_type => 'integer',
     },
+    prio => {
+        data_type => 'integer',
+    },
+    group_id => {
+        data_type => 'integer',
+        is_foreign_key => 1,
+        is_nullable => 1
+    },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(product => 'OpenQA::Schema::Result::Products', 'product_id');
 __PACKAGE__->belongs_to(machine => 'OpenQA::Schema::Result::Machines', 'machine_id');
 __PACKAGE__->belongs_to(test_suite => 'OpenQA::Schema::Result::TestSuites', 'test_suite_id');
+__PACKAGE__->belongs_to(group => 'OpenQA::Schema::Result::JobGroups', 'group_id');
 __PACKAGE__->add_unique_constraint([qw/product_id machine_id test_suite_id/]);
 
 sub variables {

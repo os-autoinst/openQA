@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,32 +11,29 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Schema::Result::TestSuites;
+package OpenQA::Schema::Result::JobGroups;
 use base qw/DBIx::Class::Core/;
 
-use db_helpers;
-
-__PACKAGE__->table('test_suites');
+__PACKAGE__->table('job_groups');
 __PACKAGE__->load_components(qw/Timestamps/);
+
 __PACKAGE__->add_columns(
     id => {
         data_type => 'integer',
         is_auto_increment => 1,
     },
-    name => {
+    name  => {
         data_type => 'text',
-    },
-    variables => { # obsolete, kept one rev for migration
-        data_type => 'text',
+        is_nullable => 0,
     },
 );
+
+__PACKAGE__->add_unique_constraint([qw/name/]);
+
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([qw/name/]);
-__PACKAGE__->has_many(job_templates => 'OpenQA::Schema::Result::JobTemplates', 'test_suite_id');
-__PACKAGE__->has_many(settings => 'OpenQA::Schema::Result::TestSuiteSettings', 'test_suite_id', { order_by => { -asc => 'key' } });
+__PACKAGE__->has_many(jobs => 'OpenQA::Schema::Result::Jobs', 'group_id');
 
 1;

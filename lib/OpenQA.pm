@@ -299,25 +299,14 @@ sub startup {
     $admin_r->post('/users/:userid')->name('admin_user')->to('user#update');
 
     $admin_r->get('/products')->name('admin_products')->to('product#index');
-    $admin_r->post('/products')->to('product#create');
-    $admin_r->delete('/products/:product_id')->name('admin_product')->to('product#destroy');
-    $admin_r->post('/products/:product_id')->name('admin_product_setting_post')->to('product#add_variable');
-    $admin_r->delete('/products/:product_id/:settingid')->name('admin_product_setting_delete')->to('product#remove_variable');
-
     $admin_r->get('/machines')->name('admin_machines')->to('machine#index');
-    $admin_r->post('/machines')->to('machine#create');
-    $admin_r->delete('/machines/:machine_id')->name('admin_machine')->to('machine#destroy');
-    $admin_r->post('/machines/:machine_id')->name('admin_machine_setting_post')->to('machine#add_variable');
-    $admin_r->delete('/machines/:machine_id/:settingid')->name('admin_machine_setting_delete')->to('machine#remove_variable');
-
     $admin_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
-    $admin_r->post('/test_suites')->to('test_suite#create');
-    $admin_r->delete('/test_suites/:test_suite_id')->name('admin_test_suite')->to('test_suite#destroy');
-    $admin_r->post('/test_suites/:test_suite_id')->name('admin_test_suite_setting_post')->to('test_suite#add_variable');
-    $admin_r->delete('/test_suites/:test_suite_id/:settingid')->name('admin_test_suite_setting_delete')->to('test_suite#remove_variable');
 
     $admin_r->get('/job_templates')->name('admin_job_templates')->to('job_template#index');
     $admin_r->post('/job_templates')->to('job_template#update');
+
+    $admin_r->get('/groups')->name('admin_groups')->to('job_group#index');
+    $admin_r->post('/groups')->name('admin_new_group')->to('job_group#create');
 
     $admin_r->get('/assets')->name('admin_assets')->to('asset#index');
 

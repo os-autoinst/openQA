@@ -26,8 +26,8 @@ my %tables = (
     },
     'TestSuites' => {
         'keys' => [['id'],['name'],],
-        'cols' => [ 'id', 'name', 'prio' ],
-        'required' => [ 'name', 'prio' ],
+        'cols' => [ 'id', 'name' ],
+        'required' => ['name'],
         'defaults' => { 'variables' => "" },
     },
     'Products' => {

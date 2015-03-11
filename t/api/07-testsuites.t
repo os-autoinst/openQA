@@ -44,7 +44,6 @@ is_deeply(
             {
                 'id' => 1001,
                 'name' => 'textmode',
-                'prio' => 40,
                 'settings' => [
                     {
                         'key' => 'DESKTOP',
@@ -59,7 +58,6 @@ is_deeply(
             {
                 'id' => 1002,
                 'name' => 'kde',
-                'prio' => 40,
                 'settings' => [
                     {
                         'key' => 'DESKTOP',
@@ -70,7 +68,6 @@ is_deeply(
             {
                 'id' => 1013,
                 'name' => 'RAID0',
-                'prio' => 50,
                 'settings' => [
                     {
                         'key' => 'DESKTOP',
@@ -89,7 +86,6 @@ is_deeply(
             {
                 'id' => 1014,
                 'name' => 'client1',
-                'prio' => 40,
                 'settings' => [
                     {
                         'key' => 'DESKTOP',
@@ -104,7 +100,6 @@ is_deeply(
             {
                 'id' => 1015,
                 'name' => 'server',
-                'prio' => 40,
                 'settings' => [
                     {
                         'key' => 'DESKTOP',
@@ -115,7 +110,6 @@ is_deeply(
             {
                 'id' => 1016,
                 'name' => 'client2',
-                'prio' => 40,
                 'settings' => [
                     {
                         'key' => 'DESKTOP',
@@ -130,7 +124,6 @@ is_deeply(
             {
                 'id' => 1017,
                 'name' => 'advanced_kde',
-                'prio' => 40,
                 'settings' => [
                     {
                         'key' => 'DESKTOP',
@@ -147,14 +140,20 @@ is_deeply(
     "Initial test suites"
 ) || diag explain $get->tx->res->json;
 
-$t->post_ok('/api/v1/test_suites', form => { name => "testsuite"})->status_is(400); #no prio
-$t->post_ok('/api/v1/test_suites', form => { prio => "30" })->status_is(400); #no name
+$t->post_ok('/api/v1/test_suites', form => {})->status_is(400); #no name
 
 
-my $res = $t->post_ok('/api/v1/test_suites', form => { name => "testsuite", prio => "30", "settings[TEST]" => "val1", "settings[TEST2]" => "val1" })->status_is(200);
+my $res = $t->post_ok(
+    '/api/v1/test_suites',
+    form => {
+        name => "testsuite",
+        "settings[TEST]" => "val1",
+        "settings[TEST2]" => "val1"
+    }
+)->status_is(200);
 my $test_suite_id = $res->tx->res->json->{id};
 
-$res = $t->post_ok('/api/v1/test_suites', form => { name => "testsuite", prio => "30" })->status_is(400); #already exists
+$res = $t->post_ok('/api/v1/test_suites', form => { name => "testsuite" })->status_is(400); #already exists
 
 $get = $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 is_deeply(
@@ -164,7 +163,6 @@ is_deeply(
             {
                 'id' => $test_suite_id,
                 'name' => 'testsuite',
-                'prio' => 30,
                 'settings' => [
                     {
                         'key' => 'TEST',
@@ -181,7 +179,7 @@ is_deeply(
     "Add test_suite"
 ) || diag explain $get->tx->res->json;
 
-$t->put_ok("/api/v1/test_suites/$test_suite_id", form => { name => "testsuite", prio => "30", "settings[TEST2]" => "val1" })->status_is(200);
+$t->put_ok("/api/v1/test_suites/$test_suite_id", form => { name => "testsuite", "settings[TEST2]" => "val1" })->status_is(200);
 
 $get = $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 is_deeply(
@@ -191,7 +189,6 @@ is_deeply(
             {
                 'id' => $test_suite_id,
                 'name' => 'testsuite',
-                'prio' => 30,
                 'settings' => [
                     {
                         'key' => 'TEST2',

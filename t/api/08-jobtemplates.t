@@ -227,7 +227,15 @@ is_deeply(
 ) || diag explain $get->tx->res->json;
 
 
-my $res = $t->post_ok('/api/v1/job_templates', form => { machine_id => 1001, test_suite_id => 1002, product_id=>1 })->status_is(200);
+my $res = $t->post_ok(
+    '/api/v1/job_templates',
+    form => {
+        machine_id => 1001,
+        test_suite_id => 1002,
+        product_id=>1,
+        prio => 30
+    }
+)->status_is(200);
 my $job_template_id1 = $res->tx->res->json->{id};
 
 $res = $t->post_ok(
@@ -235,10 +243,11 @@ $res = $t->post_ok(
     form =>{
         machine_name => '64bit',
         test_suite_name => 'RAID0',
-        'arch' => 'i586',
-        'distri' => 'opensuse',
-        'flavor' => 'DVD',
-        'version' => '13.1'
+        arch => 'i586',
+        distri => 'opensuse',
+        flavor => 'DVD',
+        version => '13.1',
+        prio => 20
     }
 )->status_is(200);
 my $job_template_id2 = $res->tx->res->json->{id};
