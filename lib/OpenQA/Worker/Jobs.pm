@@ -86,7 +86,7 @@ sub check_job {
     $running = 0;
 }
 
-sub stop_job2($;$);
+sub _stop_job($;$);
 sub stop_job($;$) {
     my ($aborted, $job_id) = @_;
 
@@ -115,14 +115,14 @@ sub stop_job($;$) {
             Mojo::IOLoop->timer(1 => $stop_job_check_status);
         }
         else {
-            stop_job2($aborted, $job_id);
+            _stop_job($aborted, $job_id);
         }
     };
 
     $stop_job_check_status->();
 }
 
-sub stop_job2($;$) {
+sub _stop_job($;$) {
     my ($aborted, $job_id) = @_;
 
     print "stop_job 2nd half\n" if $verbose;
