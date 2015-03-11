@@ -88,15 +88,16 @@ sub websocket_commands {
     elsif ($msg eq 'livelog_start') {
         # change update_status timer if $job running
         if (backend_running) {
-            print "starting livelog\n";
-            $OpenQA::Worker::Jobs::do_livelog = 1;
+            print "starting livelog\n" if $verbose;
+            $OpenQA::Worker::Jobs::do_livelog += 1;
         }
     }
     elsif ($msg eq 'livelog_stop') {
         # change update_status timer
         if (backend_running) {
-            print "stopping livelog\n";
-            $OpenQA::Worker::Jobs::do_livelog = 0;
+            return unless $OpenQA::Worker::Jobs::do_livelog;
+            print "stopping livelog\n" if $verbose;
+            $OpenQA::Worker::Jobs::do_livelog -= 1;
         }
     }
     elsif ($msg eq 'ok') {
