@@ -196,7 +196,7 @@ sub api_call {
         --$tries;
         my $err = $tx->error;
         my $msg = $err->{code} ? "$tries: $err->{code} response: $err->{message}" : "$tries: Connection error: $err->{message}";
-        warn $msg;
+        Carp::carp $msg;
         if (!$tries) {
             # abort the current job, we're in trouble - but keep running to grab the next
             remove_timer('setup_websocket');
