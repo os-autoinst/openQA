@@ -16,6 +16,7 @@
 package OpenQA::Worker::Jobs;
 use strict;
 use warnings;
+use feature 'state';
 
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Pool qw/clean_pool/;
@@ -66,17 +67,23 @@ sub _kill_worker($) {
 sub start_job;
 
 sub check_job {
+    state $running;
     remove_timer('check_job');
+    return if $running;
     return unless verify_workerid;
+    $running = 1;
     if (!$job) {
         print "checking for job ...\n" if $verbose;
         my $res = api_call('post',"workers/$workerid/grab_job", $worker_caps) || { job => undef };
         $job = $res->{job};
         if ($job && $job->{id}) {
-            return start_job;
+            Mojo::IOLoop->next_tick(\&start_job);
         }
-        $job = undef;
+        else {
+            $job = undef;
+        }
     }
+    $running = 0;
 }
 
 sub stop_job2($;$);
