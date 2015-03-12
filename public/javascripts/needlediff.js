@@ -23,8 +23,13 @@ function NeedleDiff(id, width, height) {
   var self = this;
 
   function handler(ev) {
-    ev._x = ev.offsetX;
-    ev._y = ev.offsetY;
+    if (ev.offsetX == undefined) {
+        ev._x = ev.pageX - canvas.offset().left;
+        ev._y = ev.pageY - canvas.offset().top;
+    } else {
+        ev._x = ev.offsetX;
+        ev._y = ev.offsetY;
+    }
 
     var eventHandler = self[ev.type];
     if (typeof eventHandler == 'function') {
