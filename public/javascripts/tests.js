@@ -26,6 +26,19 @@ function renderTestName ( data, type, row ) {
     }
 }
 
+function renderDependencyName ( data, type, row ) {
+    if (type === 'display') {
+        var html = '';
+        for (index = 0; index < row['deps'].length; index++) {
+            html += '<a href="/tests/' + row['deps'][index] + '">#' + row['deps'][index] + '</a> ';
+        }
+        return html;
+    }
+    else {
+        return data;
+    }
+}
+
 function renderTestResult( data, type, row ) {
     if (type === 'display') {
 	var html = '' 
@@ -102,6 +115,10 @@ function renderTestsList(jobs) {
 	      className: "test",
 	      "render": renderTestName,
 	    },
+        { targets: 3,
+          className: "deps",
+          "render": renderDependencyName,
+        },
 	    { targets: 4,
 	      "render": function ( data, type, row ) {
 		  if (type === 'display')
