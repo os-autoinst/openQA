@@ -581,7 +581,6 @@ sub job_grab {
     $worker->seen($workercaps);
 
     my $result;
-    my $preferred_parallel;
     while (1) {
         my $blocked = schema->resultset("JobDependencies")->search(
             {
@@ -633,7 +632,7 @@ sub job_grab {
             },
         ];
 
-        $preferred_parallel = _prefer_parallel($available_cond);
+        my $preferred_parallel = _prefer_parallel($available_cond);
         push @$available_cond, $preferred_parallel if $preferred_parallel;
 
         $result = schema->resultset("Jobs")->search(
@@ -682,7 +681,7 @@ sub job_grab {
 
     # starting one job from parallel group can unblock
     # other jobs from the group
-    job_notify_workers() if $preferred_parallel;
+    job_notify_workers() if $job->children->count();
 
     return $job_hashref;
 }
