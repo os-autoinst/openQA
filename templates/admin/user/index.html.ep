@@ -6,7 +6,7 @@
     "order": [[0, 'asc']],
   } );
 
-$('input[name="role"]:radio').change(function() {
+$('#users').on('change', 'input[name="role"]:radio', function() {
    var username = $(this).parents('tr').find('.name').text();
    var role = $(this).attr('id');
    role = $('label[for="' + role + '"]').text();
