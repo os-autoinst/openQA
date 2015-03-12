@@ -39,8 +39,14 @@ sub list {
             my $modulehash = {
                 name => $module->name,
                 category => $module->category,
-                result => $module->result
+                result => $module->result,
+                flags => []
             };
+            for my $flag (qw/important fatal milestone soft_failure/) {
+                if ($module->get_column($flag)) {
+                    push(@{$modulehash->{flags}}, $flag);
+                }
+            }
             push(@{$jobhash->{modules}}, $modulehash);
         }
         push @results, $jobhash;
