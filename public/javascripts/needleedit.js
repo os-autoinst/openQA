@@ -15,6 +15,7 @@ function loadTagsAndName() {
 	$(this).prop('checked', tags.indexOf($(this).val()) != -1);
     });
     $("#needleeditor_name").val($(this).data('suggested'));
+    nEditor.LoadTags(tags);
 }
 
 function addTag() {

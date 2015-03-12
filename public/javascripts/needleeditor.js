@@ -171,6 +171,11 @@ NeedleEditor.prototype.LoadBackground = function(url) {
   }
 }
 
+NeedleEditor.prototype.LoadTags = function(tags) {
+  this.needle['tags'] = tags;
+  this.UpdateTextArea();
+}
+
 NeedleEditor.prototype.LoadNeedle = function(url) {
   var editor = this;
   var cv = this.cv;
