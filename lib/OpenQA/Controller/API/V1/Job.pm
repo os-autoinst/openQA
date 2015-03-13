@@ -23,15 +23,37 @@ use Try::Tiny;
 sub list {
     my $self = shift;
 
-    my @args;
+    my %args;
     for my $arg (qw/state build iso distri version flavor maxage scope/) {
         next unless defined $self->param($arg);
-        push @args, $arg;
-        push @args, $self->param($arg);
+        $args{$arg} = $self->param($arg);
     }
 
-    my $res = OpenQA::Scheduler::list_jobs(@args);
-    $self->render(json => {jobs => $res});
+    my $jobs = OpenQA::Scheduler::query_jobs(%args);
+    log_debug("queried");
+    my @results;
+    while( my $job = $jobs->next) {
+        my $jobhash = $job->to_hash(assets => 1);
+        $jobhash->{modules} = [];
+        for my $module ($job->modules) {
+            my $modulehash = {
+                name => $module->name,
+                category => $module->category,
+                result => $module->result,
+                flags => []
+            };
+            for my $flag (qw/important fatal milestone soft_failure/) {
+                if ($module->get_column($flag)) {
+                    push(@{$modulehash->{flags}}, $flag);
+                }
+            }
+            push(@{$jobhash->{modules}}, $modulehash);
+        }
+        push @results, $jobhash;
+    }
+    log_debug("tohash");
+
+    $self->render(json => {jobs => \@results});
 }
 
 sub create {

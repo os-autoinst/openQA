@@ -28,6 +28,10 @@ use OpenQA::Test::Database;
 
 use Test::More;
 
+sub list_jobs {
+    [ map { $_->to_hash() } OpenQA::Scheduler::query_jobs()->all ];
+}
+
 ok(OpenQA::Test::Database->new->create(), "create database") || BAIL_OUT("failed to create database");
 
 my $current_jobs = list_jobs();

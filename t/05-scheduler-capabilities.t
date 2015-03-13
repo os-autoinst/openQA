@@ -31,6 +31,10 @@ OpenQA::Test::Database->new->create();
 
 #my $t = Test::Mojo->new('OpenQA');
 
+sub list_jobs {
+    my %args = @_;
+    [ map { $_->to_hash(assets => 1) } OpenQA::Scheduler::query_jobs(%args)->all ];
+}
 
 my $current_jobs = list_jobs();
 #diag explain $current_jobs;

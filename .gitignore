@@ -5,6 +5,7 @@ temp
 /testresults
 /t/data/openqa/db/*.sqlite
 /t/data/openqa/testresults
+/t/data/openqa/share/tests
 /factory
 testrun-cron
 testrun-manual

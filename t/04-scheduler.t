@@ -29,6 +29,11 @@ use Test::More tests => 55;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
+sub list_jobs {
+    my %args = @_;
+    [ map { $_->to_hash(assets => 1) } OpenQA::Scheduler::query_jobs(%args)->all ];
+}
+
 my $result;
 
 sub nots{
@@ -249,9 +254,9 @@ is_deeply($current_jobs, [], "list_jobs messing two settings up");
 
 # Testing job_grab
 %args = (workerid => $worker->{id},);
-my $rjobs_before = OpenQA::Scheduler::list_jobs(state => 'running');
+my $rjobs_before = list_jobs(state => 'running');
 my $job = OpenQA::Scheduler::job_grab(%args);
-my $rjobs_after = OpenQA::Scheduler::list_jobs(state => 'running');
+my $rjobs_after = list_jobs(state => 'running');
 
 ## test and add JOBTOKEN to job_ref after job_grab
 ok($job->{settings}->{JOBTOKEN}, "job token present");
