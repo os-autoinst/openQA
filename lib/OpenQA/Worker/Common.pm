@@ -185,7 +185,7 @@ sub api_call {
     $cb = sub {
         my ($ua, $tx, $tries) = @_;
         remove_timer('api_call');
-        if ($tx->success) {
+        if ($tx->success && $tx->success->json) {
             $res = $tx->success->json;
             $done = 1;
             return;
