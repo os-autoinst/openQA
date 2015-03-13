@@ -148,36 +148,8 @@ sub update_status {
     my ($self) = @_;
     my $jobid = int($self->stash('jobid'));
     my $status = $self->req->json->{'status'};
-
     my $job = $self->app->schema->resultset("Jobs")->find($jobid);
-    my $ret = { result => 1 };
-
-    $job->append_log($status->{log});
-    $job->save_screenshot($status->{screen}) if $status->{screen};
-    $job->update_backend($status->{backend}) if $status->{backend};
-    $job->insert_test_modules($status->{test_order}) if $status->{test_order};
-    my %known;
-    if ($status->{result}) {
-        while (my ($name, $result) = each %{$status->{result}}) {
-            my $existant = $job->update_module($name, $result) || [];
-            for (@$existant) { $known{$_} = 1; }
-        }
-    }
-    $ret->{known_images} = [ sort keys %known ];
-
-    if ($job->worker_id) {
-        $job->worker->set_property("INTERACTIVE", $status->{'status'}->{'interactive'}//0);
-    }
-    if ($status->{'status'}->{'needinput'}) {
-        if ($job->state eq 'running') {
-            OpenQA::Scheduler::job_set_waiting($jobid);
-        }
-    }
-    else {
-        if ($job->state eq 'waiting') {
-            OpenQA::Scheduler::job_set_running($jobid);
-        }
-    }
+    my $ret = $job->update_status($status);
 
     $self->render(json => $ret);
 }

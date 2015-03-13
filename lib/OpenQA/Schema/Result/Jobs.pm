@@ -562,5 +562,40 @@ sub failed_modules_with_needles {
     return $failedmodules;
 }
 
+sub update_status {
+    my ($self, $status) = @_;
+
+    my $ret = { result => 1 };
+
+    $self->append_log($status->{log});
+    $self->save_screenshot($status->{screen}) if $status->{screen};
+    $self->update_backend($status->{backend}) if $status->{backend};
+    $self->insert_test_modules($status->{test_order}) if $status->{test_order};
+    my %known;
+    if ($status->{result}) {
+        while (my ($name, $result) = each %{$status->{result}}) {
+            my $existant = $self->update_module($name, $result) || [];
+            for (@$existant) { $known{$_} = 1; }
+        }
+    }
+    $ret->{known_images} = [ sort keys %known ];
+
+    if ($self->worker_id) {
+        $self->worker->set_property("INTERACTIVE", $status->{'status'}->{'interactive'}//0);
+    }
+    if ($status->{'status'}->{'needinput'}) {
+        if ($self->state eq 'running') {
+            $self->state(WAITING);
+        }
+    }
+    else {
+        if ($self->state eq 'waiting') {
+            $self->state(RUNNING);
+        }
+    }
+
+    return $ret;
+}
+
 1;
 # vim: set sw=4 et:
