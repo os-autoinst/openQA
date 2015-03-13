@@ -47,17 +47,18 @@ sub ws_remove_worker {
 }
 
 sub ws_send {
-    my ($workerid, $msg, $retry) = @_;
+    my ($workerid, $msg, $jobid, $retry) = @_;
     return unless ($workerid && $msg);
+    $jobid ||= '';
     my $res;
     my $tx = $worker_sockets->{$workerid};
     if ($tx) {
-        $res = $tx->send($msg);
+        $res = $tx->send({json => { type => $msg, jobid => $jobid }});
     }
     unless ($res && $res->success) {
         $retry ||= 0;
         if ($retry < 3) {
-            Mojo::IOLoop->timer(2 => sub{ws_send($workerid, $msg, ++$retry);});
+            Mojo::IOLoop->timer(2 => sub{ws_send($workerid, $msg, $jobid, ++$retry);});
         }
         else {
             log_debug("Unable to send command \"$msg\" to worker $workerid");
@@ -78,7 +79,7 @@ sub ws_create {
     # upgrade connection to websocket by subscribing to events
     $ws->on(json => \&_message);
     $ws->on(finish  => \&_finish);
-    ws_add_worker($workerid, $ws->tx);
+    ws_add_worker($workerid, $ws->tx->max_websocket_size(10485760));
 }
 
 sub ws_get_connected_workers {
@@ -129,7 +130,7 @@ sub _message {
     my $worker = OpenQA::Scheduler::_validate_workerid($workerid);
     $worker->seen();
     if ($json->{'type'} eq 'ok') {
-        $ws->tx->send('ok');
+        $ws->tx->send({json => {type => 'ok'}});
     }
     elsif ($json->{'type'} eq 'status') {
         # handle job status update through web socket

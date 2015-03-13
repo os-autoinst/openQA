@@ -290,15 +290,14 @@ sub setup_websocket {
     $ua_url->path("workers/$workerid/ws");
     print "WEBSOCKET $ua_url\n" if $verbose;
     $ua->websocket(
-        $ua_url => sub {
+        $ua_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
             my ($ua, $tx) = @_;
             if ($tx->is_websocket) {
                 # keep websocket connection busy
                 add_timer('ws_keepalive', 5, sub { $tx->send({json => { type => 'ok'}}) });
                 # check for new job immediately
                 add_timer('check_job', 0, \&OpenQA::Worker::Jobs::check_job, 1 );
-                $tx->on(message => \&OpenQA::Worker::Commands::websocket_commands);
-                $tx->on(json => \&OpenQA::Worker::Commands::JSON_commands);
+                $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
                     finish => sub {
                         add_timer('setup_websocket', 5, \&setup_websocket, 1);
@@ -306,8 +305,7 @@ sub setup_websocket {
                         $ws = undef;
                     }
                 );
-                $tx->on(drain => sub {print "WEBSOCKET command sent\n" if $verbose;});
-                $ws = $tx;
+                $ws = $tx->max_websocket_size(10485760);
             }
             else {
                 my $err = $tx->error;

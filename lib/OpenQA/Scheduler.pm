@@ -1244,8 +1244,7 @@ sub command_enqueue {
         $worker_commands{$args{command}}->($worker);
     }
     my $msg = $args{command};
-    $msg .= " job_id=" . $args{job_id} if $args{job_id};
-    ws_send($args{workerid}, $msg);
+    ws_send($args{workerid}, $msg, $args{job_id});
 }
 
 #
