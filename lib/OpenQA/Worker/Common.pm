@@ -25,7 +25,7 @@ use base qw/Exporter/;
 our @EXPORT = qw/$job $workerid $verbose $instance $worker_settings $pooldir $nocleanup $worker_caps $testresults $openqa_url
   OPENQA_BASE OPENQA_SHARE ISO_DIR HDD_DIR STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer
-  api_call verify_workerid register_worker/;
+  api_call verify_workerid register_worker ws_call/;
 
 # Exported variables
 our $job;
@@ -229,6 +229,14 @@ sub api_call {
     return $res;
 }
 
+sub ws_call {
+    my ($type, $data) = @_;
+    my $res;
+    # this call is also non blocking, result and image upload is handled by json handles
+    print "WEBSOCKET: $type\n" if $verbose;
+    $ws->send({json => {type => $type, jobid => $job->{'id'} || '', data => $data}});
+}
+
 sub _get_capabilities {
     my $caps = {};
     my $query_cmd;
@@ -286,10 +294,11 @@ sub setup_websocket {
             my ($ua, $tx) = @_;
             if ($tx->is_websocket) {
                 # keep websocket connection busy
-                add_timer('ws_keepalive', 5, sub { $tx->send('ok') });
+                add_timer('ws_keepalive', 5, sub { $tx->send({json => { type => 'ok'}}) });
                 # check for new job immediately
                 add_timer('check_job', 0, \&OpenQA::Worker::Jobs::check_job, 1 );
                 $tx->on(message => \&OpenQA::Worker::Commands::websocket_commands);
+                $tx->on(json => \&OpenQA::Worker::Commands::JSON_commands);
                 $tx->on(
                     finish => sub {
                         add_timer('setup_websocket', 5, \&setup_websocket, 1);
@@ -297,6 +306,7 @@ sub setup_websocket {
                         $ws = undef;
                     }
                 );
+                $tx->on(drain => sub {print "WEBSOCKET command sent\n" if $verbose;});
                 $ws = $tx;
             }
             else {

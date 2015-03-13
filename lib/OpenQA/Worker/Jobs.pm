@@ -298,6 +298,7 @@ sub read_last_screen {
 sub update_status {
     return if $update_status_running;
     $update_status_running = 1;
+    print "updating status\n" if $verbose;
     upload_status();
     $update_status_running = 0;
     return;
@@ -354,9 +355,19 @@ sub upload_status(;$) {
     # if there is nothing to say, don't say it (said my mother)
     return unless %$status;
 
-    my $res = api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
+    if ($ENV{'WORKER_USE_WEBSOCKETS'}) {
+        ws_call('status', $status);
+    }
+    else {
+        my $res = api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
+        upload_images($res->{known_images});
+    }
+}
 
-    for my $md5 (@{$res->{known_images}}) {
+sub upload_images {
+    my ($known_images) = @_;
+
+    for my $md5 (@$known_images) {
         delete $tosend_images->{$md5};
     }
     my $ua_url = $OpenQA::Worker::Common::url->clone;

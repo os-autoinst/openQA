@@ -23,6 +23,7 @@ use OpenQA::Worker::Jobs;
 ## WEBSOCKET commands
 sub websocket_commands {
     my ($tx, $msg) = @_;
+    return unless $msg;
     if ($msg =~ /^quit(\s*job_id=([0-9]*))?$/) { # quit_worker and reschedule the job
         my $job_id = $2;
         stop_job('quit', $job_id);
@@ -120,4 +121,18 @@ sub websocket_commands {
     }
 }
 
+sub JSON_commands {
+    my ($tx, $json) = @_;
+    # result indicates response to our data
+    if ($json->{'result'}) {
+        if ($json->{'known_images'}) {
+            # response to update_status, filter known images
+            OpenQA::Worker::Jobs::upload_images($json->{'known_images'});
+        }
+    }
+    else {
+        my $type = $json->{'type'};
+        websocket_commands($type);
+    }
+}
 1;
