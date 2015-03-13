@@ -76,7 +76,7 @@ sub ws_create {
     my ($workerid, $ws) = @_;
     OpenQA::Scheduler::_validate_workerid($workerid);
     # upgrade connection to websocket by subscribing to events
-    $ws->on(message => \&_message);
+    $ws->on(json => \&_message);
     $ws->on(finish  => \&_finish);
     ws_add_worker($workerid, $ws->tx);
 }
@@ -114,19 +114,34 @@ sub _finish {
 }
 
 sub _message {
-    my ($ws, $msg) = @_;
+    my ($ws, $json) = @_;
     my $workerid = _get_worker($ws->tx);
     unless ($workerid) {
         $ws->app->log->warn("A message received from unknown worker connection");
         return;
     }
+    unless (ref($json) eq 'HASH') {
+        use Data::Dumper;
+        $ws->app->log->error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $workerid));
+        return;
+    }
+
     my $worker = OpenQA::Scheduler::_validate_workerid($workerid);
     $worker->seen();
-    if ($msg eq 'ok') {
+    if ($json->{'type'} eq 'ok') {
         $ws->tx->send('ok');
     }
+    elsif ($json->{'type'} eq 'status') {
+        # handle job status update through web socket
+        my $jobid = $json->{'jobid'};
+        my $status = $json->{'data'};
+        my $job = $ws->app->schema->resultset("Jobs")->find($jobid);
+        return $ws->tx->send(json => {result => 'nack'}) unless $job;
+        my $ret = $job->update_status($status);
+        $ws->tx->send({json => $ret});
+    }
     else{
-        $ws->app->log->error("Received unexpected WS message \"$msg\" from worker \"$workerid\"");
+        $ws->app->log->error(sprintf('Received unknown message type "%s" from worker %u', $json->{'type'}, $workerid));
     }
 }
 
