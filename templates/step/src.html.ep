@@ -4,6 +4,10 @@
 %= stylesheet '/stylesheets/codemirror.css'
 % title $moduleid;
 
+% content_for 'ready_function' => begin
+  scrollModuleThumbnails();
+% end
+
 <div class="grid_3 alpha" id="sidebar">
     <div class="box box-shadow alpha" id="actions_box">
 	<div class="box-header aligncenter">Actions</div>
