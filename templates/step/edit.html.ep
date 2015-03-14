@@ -2,10 +2,7 @@
 % title $moduleid;
 
 % content_for 'head' => begin
-%= javascript '/javascripts/needleeditor.js'
-%= javascript '/javascripts/needleedit.js'
-%= javascript '/javascripts/shapes.js'
-%= javascript '/javascripts/keyevent.js'
+%= asset 'step_edit.js'
 
 <!-- prep for jquery dialog -->
 %= javascript '/javascripts/jquery-ui.js'

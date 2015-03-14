@@ -7,6 +7,7 @@ temp
 /t/data/openqa/testresults
 /t/data/openqa/share/tests
 /factory
+/public/packed/
 testrun-cron
 testrun-manual
 archive

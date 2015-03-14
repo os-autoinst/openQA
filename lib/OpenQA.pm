@@ -162,10 +162,23 @@ sub startup {
 
     # Documentation browser under "/perldoc"
     $self->plugin('PODRenderer');
+    $self->plugin('AssetPack');
     $self->plugin('OpenQA::Plugin::Helpers');
     $self->plugin('OpenQA::Plugin::CSRF');
     $self->plugin('OpenQA::Plugin::REST');
     $self->plugin('OpenQA::Plugin::HashedParams');
+
+    $self->asset('step_edit.js' => '/javascripts/needleedit.js', '/javascripts/needleeditor.js', '/javascripts/shapes.js', '/javascripts/keyevent.js');
+    $self->asset(
+        'app.js' => '/javascripts/jquery-1.11.2.js',
+        '/javascripts/jquery_ujs.js', '/javascripts/chosen.jquery.js', '/javascripts/openqa.js',
+        '/javascripts/jquery.dataTables.js', '/javascripts/admintable.js'
+    );
+    $self->asset(
+        'app.css' => '/stylesheets/font-awesome.css',
+        '/stylesheets/jquery.dataTables.css', '/stylesheets/chosen.css',
+        '/stylesheets/openqa.css', '/stylesheets/opentip.css'
+    );
 
     # set secure flag on cookies of https connections
     $self->hook(
