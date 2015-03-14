@@ -23,6 +23,7 @@ function setNeedle() {
 	$('#needlediff_selector').change(function() {
             setNeedle();
         });
+        scrollModuleThumbnails();
 %end
 
 <div class="grid_3 alpha" id="sidebar">

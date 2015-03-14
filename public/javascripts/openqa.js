@@ -23,13 +23,13 @@ function updateModuleslist(modlist, testname, testmodule) {
 }
 
 function scrollModuleThumbnails() {
-    var area = $("module-thumbnails");
-    var current = $$('#module-thumbnails .current').first();
+    var area = $("#module-thumbnails");
+    var current = $('#module-thumbnails .current');
 
-    if (!(area && current)) then: return;
-    var offset = current.offsetLeft - area.offsetLeft;
-
-    area.scrollLeft = 40 + offset - area.getWidth()/2;
+    if (!current)
+	return;
+    var offset = current.offset().left - area.offset().left;
+    area.scrollLeft(40 + offset - area.width()/2);
 }
 
 jQuery(function(evt) {

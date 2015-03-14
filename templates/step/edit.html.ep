@@ -13,7 +13,8 @@
 % end
 
 % content_for 'ready_function' => begin
-  setup_needle_editor('<%= ${@$needles[0]}{'imageurl'} %>', '<%= b(JSON::to_json($default_needle)) %>');
+  setup_needle_editor('<%= ${@$needles[0]}{'imageurl'} %>','<%= b(JSON::to_json($default_needle)) %>');
+  scrollModuleThumbnails();
 % end
 
 <div id="change-margin-form" title="Change search margin">
