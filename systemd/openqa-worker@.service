@@ -10,6 +10,8 @@ PartOf=openqa-worker.target
 
 [Service]
 Type=simple
+PermissionsStartOnly=True
+ExecStartPre=/usr/bin/install -d -m 0755 -o %u /var/lib/openqa/pool/%i
 ExecStart=/usr/share/openqa/script/worker --instance %i
 User=_openqa-worker
 KillMode=mixed
