@@ -21,13 +21,12 @@ BEGIN {
 }
 
 use strict;
-use Data::Dump qw/pp dd/;
 use OpenQA::Scheduler;
 use OpenQA::Test::Database;
 
-use Test::More tests => 55;
+use Test::More tests => 52;
 
-OpenQA::Test::Database->new->create(skip_fixtures => 1);
+my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
 sub list_jobs {
     my %args = @_;
@@ -61,39 +60,15 @@ $workercaps->{mem_max} = '4096';
 
 my $id = worker_register("host", "1", "backend", $workercaps);
 ok($id == 1, "New worker registered");
-my $worker = worker_get($id);
+my $worker = $schema->resultset("Workers")->find($id)->info();
 ok($worker->{id} == $id&& $worker->{host} eq "host"&& $worker->{instance} eq "1"&& $worker->{backend} eq "backend", "New worker_get");
 
 # Update worker
 sleep(1);
 my $id2 = worker_register("host", "1", "backend", $workercaps);
 ok($id == $id2, "Known worker_register");
-my $worker2 = worker_get($id2);
-ok($worker2->{id} == $id2&& $worker2->{host} eq "host"&& $worker2->{instance} eq "1"&& $worker2->{backend} eq "backend"&& $worker2->{t_updated} ne $worker->{t_updated}, "Known worker_get");
-
-# Testing list_workers
-my $workers_ref = list_workers();
-is(scalar @$workers_ref, 2, "2 workers");
-# check properties independent, list_workers doesn't return it
-is(
-    pp($worker2->{properties}),
-    pp(
-        {
-            CPU_ARCH => 'x86_64',
-            CPU_MODELNAME => 'Rainbow CPU',
-            CPU_OPMODE => '32-bit, 64-bit',
-            MEM_MAX => 4096,
-            INTERACTIVE => 0,
-            INTERACTIVE_REQUESTED => 0,
-            STOP_WAITFORNEEDLE => 0,
-            STOP_WAITFORNEEDLE_REQUESTED => 0
-        }
-    ),
-    "worker properties"
-);
-
-delete $worker2->{properties};
-is(pp($workers_ref->[1]), pp($worker2), "list_workers");
+my $worker2 = $schema->resultset("Workers")->find($id2)->info();
+ok($worker2->{id} == $id2 && $worker2->{host} eq "host"&& $worker2->{instance} == 1 && $worker2->{backend} eq "backend", "Known worker_get");
 
 # Testing job_create and job_get
 my %settings = (

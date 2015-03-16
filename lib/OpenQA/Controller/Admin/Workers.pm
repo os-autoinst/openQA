@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,28 +17,21 @@
 package OpenQA::Controller::Admin::Workers;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
-use OpenQA::Controller::Worker ();
 
 sub index {
-    my $self = shift;
+    my ($self) = @_;
 
-    my $workers_amount = 0;
-    my @workers_list = ();
-
-    $workers_amount = OpenQA::Controller::Worker::workers_amount();
-    @workers_list = OpenQA::Controller::Worker::workers_list();
-
-    $self->stash(wamount => $workers_amount);
-    $self->stash(wlist => \@workers_list);
+    my $workers = $self->db->resultset('Workers');
+    $self->stash(workers => $workers);
 
     $self->render('admin/workers/index');
 }
 
 sub show {
-    my $self = shift;
-    my $workerid = $self->param('worker_id');
-    $self->stash('id', $workerid);
-    $self->stash(worker => OpenQA::Controller::Worker::worker_info($workerid));
+    my ($self) = @_;
+
+    my $worker = $self->db->resultset('Workers')->find($self->param('worker_id'));
+    $self->stash(worker => $worker);
 
     $self->render('admin/workers/show');
 }

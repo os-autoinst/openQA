@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -367,10 +367,10 @@ sub startup {
     $job_name_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate'); # job_duplicate
 
     # api/v1/workers
-    $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list'); # list_workers
+    $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');
     $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create'); # worker_register
     my $worker_r = $api_r->route('/workers/:workerid', workerid => qr/\d+/);
-    $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show'); # worker_get
+    $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create'); #command_enqueue
     $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab'); # job_grab
     $worker_r->websocket('/ws')->name('apiv1_worker_ws')->to('worker#websocket_create'); #websocket connection

@@ -40,7 +40,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/host instance/]);
-__PACKAGE__->has_many(jobs => 'OpenQA::Schema::Result::Jobs', 'worker_id');
+__PACKAGE__->might_have(job => 'OpenQA::Schema::Result::Jobs', 'worker_id');
 __PACKAGE__->has_many(properties => 'OpenQA::Schema::Result::WorkerProperties', 'worker_id');
 
 # TODO
@@ -86,6 +86,70 @@ sub set_property($$) {
     else {
         $r->update({ value => $val });
     }
+}
+
+sub dead {
+    my ($self) = @_;
+
+    my $dead_workers = OpenQA::Scheduler::workers_get_dead_worker();
+    foreach my $dead_worker (@$dead_workers) {
+        if($dead_worker->{id} == $self->id) {
+            return 1;
+        }
+    }
+    0;
+}
+
+sub currentstep {
+    my ($self) = @_;
+
+    return undef unless ($self->job);
+    my $r = $self->job->modules->find({ result => 'running' });
+    $r->name if $r;
+}
+
+sub status {
+    my ($self) = @_;
+
+    return "dead" if ($self->dead);
+
+    my $job = $self->job;
+    if($job) {
+        return "running";
+    }
+    else {
+        return "idle";
+    }
+}
+
+sub connected {
+    my ($self) = @_;
+    OpenQA::WebSockets::ws_is_worker_connected($self);
+}
+
+sub info() {
+    my ($self) = @_;
+
+    my $settings = {
+        id => $self->id,
+        host => $self->host,
+        instance => $self->instance,
+        backend => $self->backend,
+        status => $self->status
+    };
+    $settings->{properties} = {};
+    for my $p ($self->properties->all) {
+        $settings->{properties}->{$p->key} = $p->value;
+    }
+    # puts job id in status, otherwise is idle
+    my $job = $self->job;
+    if ($job) {
+        $settings->{jobid} = $job->id;
+        my $cs = $self->currentstep;
+        $settings->{currentstep} = $cs if $cs;
+    }
+    $settings->{connected} = $self->connected;
+    return $settings;
 }
 
 1;

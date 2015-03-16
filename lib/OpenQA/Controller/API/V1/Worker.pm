@@ -22,12 +22,20 @@ use OpenQA::WebSockets qw/ws_create/;
 use Try::Tiny;
 
 sub list {
-    my $self = shift;
-    $self->render(json => { workers => OpenQA::Scheduler::list_workers });
+    my ($self) = @_;
+
+    my $workers = $self->db->resultset("Workers");
+    my $ret = [];
+
+    while (my $w = $workers->next) {
+        next unless ($w->id);
+        push(@$ret, $w->info);
+    }
+    $self->render(json => { workers => $ret });
 }
 
 sub create {
-    my $self = shift;
+    my ($self) = @_;
     my $host = $self->param('host');
     my $instance = $self->param('instance');
     my $backend= $self->param('backend');
@@ -44,10 +52,10 @@ sub create {
 }
 
 sub show {
-    my $self = shift;
-    my $res = OpenQA::Scheduler::worker_get($self->stash('workerid'));
-    if ($res) {
-        $self->render(json => {worker => $res });
+    my ($self) = @_;
+    my $worker = $self->db->resultset("Workers")->find($self->param('workerid'));
+    if ($worker) {
+        $self->render(json => {worker => $worker->info });
     }
     else {
         $self->reply->not_found;

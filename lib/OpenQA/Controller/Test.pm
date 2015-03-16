@@ -18,7 +18,6 @@ package OpenQA::Controller::Test;
 use strict;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
-use OpenQA::Scheduler qw/worker_get/;
 use File::Basename;
 use POSIX qw/strftime/;
 use JSON qw/decode_json/;

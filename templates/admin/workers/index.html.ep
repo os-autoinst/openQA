@@ -2,62 +2,68 @@
 % title 'Workers';
 
 % content_for 'ready_function' => begin
-   $('#workers').DataTable( {
-     "order": [],
-   } );
+    $('#workers').DataTable( { "order": [] } );
 % end
 
 <div class="grid_16 box box-shadow alpha">
-  <h2><%= title %></h2>
+    <h2><%= title %></h2>
 
-  %= include 'layouts/info'
-  
-  <p>This page lists the status of <%= $wamount %> workers.</p>
-  <p />
-  <table id="workers" class="compact stripe">
-    <thead>
-      <tr>
-        <th>worker</th>
-        <th>backend</th>
-        <th>status</th>
-        <th>connected</th>
-        <th>current step</th>
-      </tr>
-    </thead>
-    <tbody>
-      % my %workers; # for sorting
-      % for my $view (@$wlist) {
-        % my $workername = $view->{'host'} . ":" . $view->{'instance'};  
-        % $workers{$workername} = $view;
-      % }
-      % for my $workername (sort keys %workers) {
-      %   my $view = $workers{$workername};
-      <tr id="worker_<%= $view->{'workerid'} %>">
-        <td class="worker"><%=  link_to( $workername => url_for('admin_worker_show', worker_id => $view->{'workerid'}) ) %></td>
-        <td class="backend"><%= $view->{'backend'} %></td>
-	<td class="status">
-	  <% if($view->{'status'} eq 'idle') { %>
-          Idle
-          <% } elsif($view->{'status'} eq 'running') { %>
-          Working on job <a href="/tests/<%= $view->{'jobid'} %>"><%= $view->{'jobid'} %></a>
-          <% } elsif($view->{'status'} eq 'dead' && defined($view->{'jobid'})) { %>
-          Dead with job <a href="/tests/<%= $view->{'jobid'} %>"><%= $view->{'jobid'} %></a>
-          <% } else { %>
-          Dead
-          <% } %>
-	</td>
-	<td class="ws_connected">
-        <% if($view->{'connected'}) { %>
-        online
-        <% } else { %>
-        offline
-        <% } %>
-	</td>
-	<td class="currentstep">
-          <% if(defined($view->{'currentstep'}) && $view->{'status'} eq 'running') { %>
-          <%= $view->{'currentstep'} %>
-          <% } %>
-	</td>
-      </tr>
-      % }
+    %= include 'layouts/info'
+
+    <table id="workers" class="compact stripe">
+	<thead>
+	    <tr>
+		<th>worker</th>
+		<th>backend</th>
+		<th>status</th>
+		<th>connected</th>
+		<th>current step</th>
+	    </tr>
+	</thead>
+	<tbody>
+	    % my %workers; # for sorting
+	    % while (my $w = $workers->next) {
+		% next unless $w->id;
+		% my $workername = $w->host . ":" . $w->instance;
+		% $workers{$workername} = $w;
+	    % }
+	    % for my $workername (sort keys %workers) {
+		%   my $view = $workers{$workername};
+		<tr id="worker_<%= $view->id %>" >
+		    <td class="worker">
+			%= link_to( $workername => url_for('admin_worker_show', worker_id => $view->id) )
+		    </td>
+		    <td class="backend">
+			%= $view->backend
+		    </td>
+		    <td class="status">
+			% if($view->status eq 'idle') {
+			    Idle
+			% } elsif($view->status eq 'running')
+			% {
+			    Working on job <a href="/tests/<%= $view->job->id %>"><%= $view->job->id %></a>
+			% } elsif($view->status eq 'dead' && defined($view->job))
+			% {
+			    Dead with job <a href="/tests/<%= $view->job->id %>"><%= $view->job->id %></a>
+			% } else
+			% {
+			    Dead
+			% }
+		    </td>
+		    <td class="ws_connected">
+			% if($view->connected) {
+			    online
+			% } else {
+			    offline
+			% }
+		    </td>
+		    <td class="currentstep">
+			% if(defined($view->currentstep) && $view->status eq 'running') {
+			    %= $view->currentstep
+			% }
+		    </td>
+		</tr>
+	    % }
+	</tbody>
+    </table>
 </div>
