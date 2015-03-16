@@ -1,0 +1,21 @@
+<tr>
+    <td style="width: 16px;"><img src="/images/hw_icons/slot.svg" width="16" height="16" title="slot" alt="slot"/></td>
+    <td><%= $job->backend_info->{'hwslot'} %></td>
+</tr>
+% if(defined $job->backend_info->{'hw_info'}) {
+    % my $hw_info = $job->backend_info->{'hw_info'};
+    % for my $hw_key ( ('vendor', 'name', 'cpu', 'cpu_cores', 'memory', 'disks') ) {
+        % unless (defined $hw_info->{$hw_key}) {
+            % next
+        % }
+        <tr>
+            <td><img src="/images/hw_icons/<%= $hw_key %>.svg" title="<%= $hw_key %>" width="16" height="16" alt="<%= $hw_key %>" /></td>
+            <td><%= $hw_info->{$hw_key} %></td>
+        </tr>
+    % }
+    % if(defined $hw_info->{'comment'}) {
+        <tr>
+            <td colspan="2" style="padding: 8px 0 0 0;"><%= $hw_info->{'comment'} %></td>
+        </tr>
+    % }
+% }

@@ -29,18 +29,23 @@ sub register {
 
     $app->helper(
         format_time => sub {
-            my $c = shift;
-            my $timedate = shift || return undef;
-            my $format = shift || "%Y-%m-%d %H:%M:%S";
+            my ($c, $timedate, $format) = @_;
+            return unless $timedate;
+            $format ||= "%Y-%m-%d %H:%M:%S";
             return $timedate->strftime($format);
         }
     );
 
     $app->helper(
         format_time_duration => sub {
-            my $c = shift;
-            my $timedate = shift || return undef;
-            return sprintf("%02d:%02d:%02d", $timedate->hours(), $timedate->minutes(), $timedate->seconds());
+            my ($c, $timedate) = @_;
+            return unless $timedate;
+            if ($timedate->hours() > 0) {
+                sprintf("%02d:%02d hours", $timedate->hours(), $timedate->minutes(), $timedate->seconds());
+            }
+            else {
+                sprintf("%02d:%02d minutes", $timedate->minutes(), $timedate->seconds());
+            }
         }
     );
 

@@ -3,16 +3,17 @@
 % my $ref_width=60;
 % my $ref_height=int($ref_width/4*3);
 
+% content_for 'ready_function' => begin
+    $('.timeago').timeago();
+% end
+
 <div class="grid_2 alpha">
     <div class="box box-shadow" id="actions_box">
 	<div class="box-header aligncenter">Actions</div>
 	<div class="aligncenter">
-            %= link_to tests => begin
-            %= image "/images/back.png", alt=>"back", title=>"back to overview page"
-            %= end
             %# TODO: to use can_be_duplicated we have to wait for https://progress.opensuse.org/issues/1393
             %#       in the meantime, just check clone_id
-            % unless ($job->{'clone_id'}) {
+            % unless ($job->clone_id) {
                 %= link_post url_for('apiv1_restart', name => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
                 %= image "/images/toggle.png", alt => "schedule", title => "re-schedule"
                 %= end
@@ -22,14 +23,14 @@
     % if(@$resultfiles) {
 	<div class="box box-shadow" id="result_files_box">
 	    <div class="box-header aligncenter">Result Files</div>
-	    <div style="text-align: center;">
+	    <div class="aligncenter">
 		% for my $resultfile (@$resultfiles) {
                     % if($resultfile =~ /video.ogv$/) {
-                        %= link_to url_for('test_file', 'testid' => $testid, 'filename' => 'video.ogv') => begin
-                        %= image "/images/video.png", width=>"23", height=>"23", alt=>"ogv", title=>"ogg/theora video of this testrun"
-                        %= end
-                        <br/>
-		    % } else 
+			%= link_to url_for('test_file', 'testid' => $testid, 'filename' => 'video.ogv') => begin
+                            %= image "/images/video.png", width=>"23", height=>"23", alt=>"ogv", title=>"ogg/theora video of this testrun"
+			%= end
+			<br/>
+		    % } else
                     % {
 			<a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $resultfile) %>"><%= $resultfile %></a><br />
 		    % }
@@ -41,12 +42,12 @@
     % if ($assets->all) {
         <div class="box box-shadow" id="result_files_box">
             <div class="box-header aligncenter">Assets</div>
-            <div style="text-align: center;">
+            <div class="aligncenter">
                 % while (my $a = $assets->next) {
 		    % $a = $a->asset;
                     % if ($a->type ne 'repo') {
                         %= link_to url_for('test_asset_id', 'testid' => $testid, assetid => $a->id) => (id => "asset_".$a->id) => begin
-			Download <%= $a->type %> 
+			Download <%= $a->type %>
 			% end
                         <br>
                     % }
@@ -68,36 +69,38 @@
     <div class="box box-shadow" id="info_box">
 	<div class="box-header aligncenter">Test Details</div>
         <table class="infotbl">
-            % if ($job->{t_started}) {
+            % if ($job->t_started) {
                 <tr>
-                    <td style="width: 40%;">Start</td>
-                    <td><time><%= format_time($job->{t_started}) %></time></td>
+                    <td>Started</td>
+                    <td>
+			<abbr class="timeago" title="<%= $job->t_started->datetime() %>"><%= format_time($job->t_started) %></abbr>
+		    </td>
                 </tr>
-                % if ($job->{t_finished}) {
+                % if ($job->t_finished) {
                     <tr>
-                        <td style="width: 40%;">Finish</td>
-                        <td><time><%= format_time($job->{t_finished}) %></time></td>
+                        <td>Finished</td>
+                        <td>
+			    <abbr class="timeago" title="<%= $job->t_finished->datetime() %>"><%= format_time($job->t_finished) %></abbr>
+			</td>
                     </tr>
                     <tr>
-                        <td style="width: 40%;">Duration</td>
-                        <td><%= format_time_duration($job->{t_finished} - $job->{t_started}) %></td>
+                        <td>Duration</td>
+                        <td><%= format_time_duration($job->t_finished - $job->t_started) %></td>
                     </tr>
                 % }
             % }
             <tr>
                 <td>Result</td>
                 <td>
-		    <span style="padding: 0 10%; display: inline-block;
-			  text-align: center;"
-			  class="<%= css_for({'result' => $job->result}) %>"><%= $job->result %></span>
+		    <span class="<%= css_for({'result' => $job->result}) %>"><%= $job->result %></span>
 		</td>
             </tr>
             <tr>
-                <td style="width: 40%;">State</td>
+                <td>State</td>
                 <td><%= $job->state %></td>
             </tr>
             <tr>
-                <td style="width: 40%;">Clone</td>
+                <td>Clone</td>
                 <td id="clone">
                     % if ($job->clone_id) {
                         <%= link_to $job->clone_id => url_for ('test', 'testid' => $job->clone_id) %>
@@ -116,47 +119,28 @@
                     <%= link_post "+" => url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio+10) => (class => 'prio-up') %>
                 </td>
             </tr>
-            <% }  %>
-        </table>
-    </div>
-    %= include 'layouts/dependencies'
-    % if ($job->backend) {
-    <div class="box box-shadow" id="backend_info_box">
-	<div class="box-header aligncenter">Backend</div>
-        <table class="infotbl">
-            <tr>
-              <td colspan="2" style="padding: 0 0 <%= ($job->backend eq
-				       'kvm2usb')?'8px':'0' %> 0;"><%= $job->backend %></td>
-            </tr>
-            % if($job->backend eq 'kvm2usb') {
-                <tr>
-                    <td style="width: 16px;"><img src="/images/hw_icons/slot.svg" width="16" height="16" title="slot" alt="slot"/></td>
-                    <td><%= $job->backend_info->{'hwslot'} %></td>
-                </tr>
-                % if(defined $job->backend_info->{'hw_info'}) {
-                    % my $hw_info = $job->backend_info->{'hw_info'};
-                    % for my $hw_key ( ('vendor', 'name', 'cpu', 'cpu_cores', 'memory', 'disks') ) { 
-                        % unless (defined $hw_info->{$hw_key}) {
-                            % next
-                        % }
-                        <tr>
-                            <td><img src="/images/hw_icons/<%= $hw_key %>.svg" title="<%= $hw_key %>" width="16" height="16" alt="<%= $hw_key %>" /></td>
-                            <td><%= $hw_info->{$hw_key} %></td>
-                        </tr>
-                    % }
-                    % if(defined $hw_info->{'comment'}) {
-                        <tr>
-                            <td colspan="2" style="padding: 8px 0 0 0;"><%= $hw_info->{'comment'} %></td>
-                        </tr>
-                    % }
-                % }
             % }
         </table>
     </div>
-    % }
-	<div class="box box-shadow" id="legend_box">
-	    <div class="box-header aligncenter">Flag Legend</div>
+    %= include 'layouts/dependencies'
+
+    % if ($job->backend) {
+	<div class="box box-shadow" id="backend_info_box">
+	    <div class="box-header aligncenter">Backend</div>
             <table class="infotbl">
+		<tr>
+		    <td colspan="2" style="padding: 0 0 <%= ($job->backend eq
+							'kvm2usb')?'8px':'0' %> 0;"><%= $job->backend %></td>
+		</tr>
+		% if($job->backend eq 'kvm2usb') {
+		    %= include 'test/running_kvm2usb'
+		% }
+            </table>
+	</div>
+    % }
+    <div class="box box-shadow" id="legend_box">
+	<div class="box-header aligncenter">Flag Legend</div>
+        <table class="infotbl">
             <tr>
                 <td class="flags">&#9760;</td>
                 <td title="Testsuite is aborted if this test fails">Fatal</td>
@@ -206,7 +190,7 @@
 			    <td class="<%= css_for($module) %>">
 				%= format_result($module)
 			    </td>
-			    
+
 		    </td>
 				<td class="links" style="width: 100%;">
 
