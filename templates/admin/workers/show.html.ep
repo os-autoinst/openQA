@@ -1,38 +1,31 @@
 % layout 'admin';
-% title "Worker $id";
+% title "Worker " . $worker->host . ":" . $worker->instance;
 
 <div class="grid_16 box box-shadow alpha">
     <h2><%= title %></h2>
     
     %= include 'layouts/info'
     
-    <div><span>Host: </span><%= $worker->{'host'} %></div>
-    <div><span>Instance: </span><%= $worker->{'instance'} %></div>
-    <div><span>Backend: </span><%= $worker->{'backend'} %></div>
+    <div><span>Host: </span><%= $worker->host %></div>
+    <div><span>Instance: </span><%= $worker->instance %></div>
+    <div><span>Backend: </span><%= $worker->backend %></div>
     <div><span>Status: </span>
-        <% if($worker->{'status'} eq 'idle') { %>
-        Idle
-        <% } elsif($worker->{'status'} eq 'running') { %>
-        Working on job <a href="/tests/<%= $worker->{'jobid'} %>"><%= $worker->{'jobid'} %></a>
-        <% } elsif($worker->{'status'} eq 'dead' && defined($worker->{'jobid'})) { %>
-        Dead with job <a href="/tests/<%= $worker->{'jobid'} %>"><%= $worker->{'jobid'} %></a>
-        <% } else { %>
-        Dead
-        <% } %>
-        <% if(defined($worker->{'currentstep'}) && $worker->{'status'} eq 'running') { %>
-        - <%= $worker->{'currentstep'} %>
-        <% } %>
+	%= include 'admin/workers/worker_status'
     </div>
 
     <h3>Properties</h3>
     <table>
-	<th>Key</th>
-	<th>Value</th>
-	% for my $p (sort keys %{$worker->{properties}}) {
-	    <tr>
-		<td><%= $p %></td>
-		<td><%= $worker->{properties}->{$p} %></td>
-	    </tr>
-	% }
+	<thead>
+	    <th>Key</th>
+	    <th>Value</th>
+	</thead>
+	<tbody>
+	    % for my $p ( sort map { $_->key } $worker->properties->all ) {
+		<tr>
+		    <td><%= $p %></td>
+		    <td><%= $worker->get_property($p) %></td>
+		</tr>
+	    % }
+	</tbody>
     </table>
 </div>
