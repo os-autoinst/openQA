@@ -18,7 +18,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 27;
+use Test::More tests => 39;
 use Test::Mojo;
 use Mojo::URL;
 use OpenQA::Test::Case;
@@ -38,7 +38,7 @@ $t->app($app);
 #get websocket connection
 $t->ua->apikey('PERCIVALKEY02');
 $t->ua->apisecret('PERCIVALSECRET02');
-my $ws = $t->websocket_ok('/api/v1/workers/1/ws');
+my $ws = $t->websocket_ok('/api/v1/workers/1/ws' => {'Sec-WebSocket-Extensions' => 'permessage-deflate'});
 
 #issue valid commands for worker 1
 my @valid_commands = qw/quit abort cancel obsolete
@@ -48,8 +48,7 @@ my @valid_commands = qw/quit abort cancel obsolete
 
 for my $cmd (@valid_commands) {
     OpenQA::Scheduler::command_enqueue(workerid => 1, command => $cmd);
-    $ws->message_ok;
-    $ws->message_is($cmd);
+    $ws->message_ok->json_message_is('/type' => $cmd)->json_message_has('/jobid');
 }
 
 #issue invalid commands

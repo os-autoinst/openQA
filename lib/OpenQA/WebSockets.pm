@@ -47,17 +47,18 @@ sub ws_remove_worker {
 }
 
 sub ws_send {
-    my ($workerid, $msg, $retry) = @_;
+    my ($workerid, $msg, $jobid, $retry) = @_;
     return unless ($workerid && $msg);
+    $jobid ||= '';
     my $res;
     my $tx = $worker_sockets->{$workerid};
     if ($tx) {
-        $res = $tx->send($msg);
+        $res = $tx->send({json => { type => $msg, jobid => $jobid }});
     }
     unless ($res && $res->success) {
         $retry ||= 0;
         if ($retry < 3) {
-            Mojo::IOLoop->timer(2 => sub{ws_send($workerid, $msg, ++$retry);});
+            Mojo::IOLoop->timer(2 => sub{ws_send($workerid, $msg, $jobid, ++$retry);});
         }
         else {
             log_debug("Unable to send command \"$msg\" to worker $workerid");
@@ -76,9 +77,9 @@ sub ws_create {
     my ($workerid, $ws) = @_;
     OpenQA::Scheduler::_validate_workerid($workerid);
     # upgrade connection to websocket by subscribing to events
-    $ws->on(message => \&_message);
+    $ws->on(json => \&_message);
     $ws->on(finish  => \&_finish);
-    ws_add_worker($workerid, $ws->tx);
+    ws_add_worker($workerid, $ws->tx->max_websocket_size(10485760));
 }
 
 sub ws_get_connected_workers {
@@ -114,19 +115,34 @@ sub _finish {
 }
 
 sub _message {
-    my ($ws, $msg) = @_;
+    my ($ws, $json) = @_;
     my $workerid = _get_worker($ws->tx);
     unless ($workerid) {
         $ws->app->log->warn("A message received from unknown worker connection");
         return;
     }
+    unless (ref($json) eq 'HASH') {
+        use Data::Dumper;
+        $ws->app->log->error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $workerid));
+        return;
+    }
+
     my $worker = OpenQA::Scheduler::_validate_workerid($workerid);
     $worker->seen();
-    if ($msg eq 'ok') {
-        $ws->tx->send('ok');
+    if ($json->{'type'} eq 'ok') {
+        $ws->tx->send({json => {type => 'ok'}});
+    }
+    elsif ($json->{'type'} eq 'status') {
+        # handle job status update through web socket
+        my $jobid = $json->{'jobid'};
+        my $status = $json->{'data'};
+        my $job = $ws->app->schema->resultset("Jobs")->find($jobid);
+        return $ws->tx->send(json => {result => 'nack'}) unless $job;
+        my $ret = $job->update_status($status);
+        $ws->tx->send({json => $ret});
     }
     else{
-        $ws->app->log->error("Received unexpected WS message \"$msg\" from worker \"$workerid\"");
+        $ws->app->log->error(sprintf('Received unknown message type "%s" from worker %u', $json->{'type'}, $workerid));
     }
 }
 
