@@ -1,11 +1,6 @@
 % layout 'default';
 % title 'Test results';
 
-% content_for 'head' => begin
-  %= javascript '/javascripts/tests.js'
-  %= javascript '/javascripts/jquery.timeago.js'
-% end
-
 % content_for 'ready_function' => begin
   is_operator = <%= (is_operator) ? 'true' : 'false' %>;
   restart_url = "<%= url_for("apiv1_restart", name => 'REPLACEIT') %>";

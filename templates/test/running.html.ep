@@ -14,9 +14,6 @@
     <div class="box box-shadow" id="actions_box" data-url="<%= url_for('apiv1_create_command', workerid => 'WORKERID') %>">
         <div class="box-header aligncenter">Actions</div>
         <div class="aligncenter">
-            %= link_to url_for('tests') => begin
-              %= image '/images/back.png', alt => 'back', title => 'back to overview page', height => 22
-            % end
             %# TODO: to use can_be_duplicated we have to wait for https://progress.opensuse.org/issues/1393
             %#       in the meantime, just check clone_id
             % unless ($job->clone_id) {

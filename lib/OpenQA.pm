@@ -170,9 +170,8 @@ sub startup {
 
     $self->asset('step_edit.js' => '/javascripts/needleedit.js', '/javascripts/needleeditor.js', '/javascripts/shapes.js', '/javascripts/keyevent.js');
     $self->asset(
-        'app.js' => '/javascripts/jquery-1.11.2.js',
-        '/javascripts/jquery_ujs.js', '/javascripts/chosen.jquery.js', '/javascripts/openqa.js',
-        '/javascripts/jquery.dataTables.js', '/javascripts/admintable.js'
+        'app.js' => qw(/javascripts/jquery-1.11.2.js /javascripts/jquery_ujs.js /javascripts/chosen.jquery.js /javascripts/openqa.js
+          /javascripts/jquery.dataTables.js /javascripts/admintable.js /javascripts/jquery.timeago.js /javascripts/tests.js)
     );
     $self->asset(
         'app.css' => '/stylesheets/font-awesome.css',
