@@ -25,6 +25,12 @@ sub {
     my $products = $schema->resultset('Products');
     while (my $r = $products->next) {
         my $group = $r->distri;
+        if ($r->distri eq 'sle' && $r->flavor =~ m/^Server/) {
+            $group = 'sles';
+        }
+        if ($r->distri eq 'sle' && $r->flavor =~ m/^Desktop/) {
+            $group = 'sled';
+        }
         if ($r->version ne '*') {
             $group .= "-" . $r->version;
         }
