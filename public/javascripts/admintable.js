@@ -288,4 +288,3 @@ function populate_admin_table ()
     }
 }
 
-jQuery(populate_admin_table);
