@@ -27,7 +27,7 @@ use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More tests => 85;
 
-OpenQA::Test::Database->new->create();
+my $schema = OpenQA::Test::Database->new->create();
 
 #my $t = Test::Mojo->new('OpenQA');
 
@@ -337,13 +337,13 @@ is_deeply($job->{parents}, [$jobC2], "cloned deps");
 # sch     sch     sch
 
 # check MM API for children status - available only for running jobs
-my $worker = OpenQA::Scheduler::worker_get($w2_id);
+my $worker = $schema->resultset("Workers")->find($w2_id);
 
 my $t = Test::Mojo->new('OpenQA');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => $worker->{'properties'}->{'JOBTOKEN'});
+        $tx->req->headers->add('X-API-JobToken' => $worker->get_property('JOBTOKEN'));
     }
 );
 

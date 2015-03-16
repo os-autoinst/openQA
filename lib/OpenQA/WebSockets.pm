@@ -26,7 +26,7 @@ our (@ISA, @EXPORT, @EXPORT_OK);
 
 @ISA = qw/Exporter/;
 @EXPORT = qw/ws_send ws_send_all/;
-@EXPORT_OK = qw/ws_create ws_get_connected_workers ws_add_worker ws_remove_worker/;
+@EXPORT_OK = qw/ws_create ws_is_worker_connected ws_add_worker ws_remove_worker/;
 
 # worker->websockets mapping
 my $worker_sockets = {};
@@ -82,8 +82,9 @@ sub ws_create {
     ws_add_worker($workerid, $ws->tx->max_websocket_size(10485760));
 }
 
-sub ws_get_connected_workers {
-    return keys(%$worker_sockets);
+sub ws_is_worker_connected {
+    my ($worker) = @_;
+    defined $worker_sockets->{$worker->id} ? 1 : 0;
 }
 
 # internal helpers

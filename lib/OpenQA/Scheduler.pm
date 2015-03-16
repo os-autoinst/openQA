@@ -1,4 +1,4 @@
-# Copyright (C) 2013,2014 SUSE Linux Products GmbH
+# Copyright (C) 2013-2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -51,8 +51,8 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-@EXPORT = qw(worker_register worker_get workers_get_dead_worker list_workers job_create
-  job_get job_get_by_workerid jobs_get_dead_worker
+@EXPORT = qw(worker_register workers_get_dead_worker job_create
+  job_get jobs_get_dead_worker
   job_grab job_set_done
   job_set_waiting job_set_running job_set_prio job_notify_workers
   job_delete job_update_result job_restart job_cancel command_enqueue
@@ -171,19 +171,19 @@ sub worker_register {
     $worker->update_caps($workercaps) if $workercaps;
 
     # in case the worker died ...
-    # ... restart jobs assigned to this worker
-    for my $j ($worker->jobs->all()) {
-        $j->set_property('JOBTOKEN');
-        job_duplicate(jobid => $j->id);
+    # ... restart job assigned to this worker
+    if (my $job = $worker->job) {
+        $job->set_property('JOBTOKEN');
+        job_duplicate(jobid => $job->id);
+        # .. set it incomplete
+        $job->update(
+            {
+                state => OpenQA::Schema::Result::Jobs::DONE,
+                result => OpenQA::Schema::Result::Jobs::INCOMPLETE,
+                worker_id => 0,
+            }
+        );
     }
-    # .. set them to incomplete
-    $worker->jobs->update_all(
-        {
-            state => OpenQA::Schema::Result::Jobs::DONE,
-            result => OpenQA::Schema::Result::Jobs::INCOMPLETE,
-            worker_id => 0,
-        }
-    );
 
     $worker->set_property('INTERACTIVE', 0);
     $worker->set_property('INTERACTIVE_REQUESTED', 0);
@@ -192,22 +192,6 @@ sub worker_register {
 
     die "got invalid id" unless $worker->id;
     return $worker->id;
-}
-
-# param hash:
-# XXX TODO: Remove HashRefInflator
-sub worker_get {
-    my $workerid = shift;
-
-    my $rs = schema->resultset("Workers");
-    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    my $worker = $rs->find($workerid);
-
-    for my $r (schema->resultset("WorkerProperties")->search({ worker_id => $worker->{id} })) {
-        $worker->{properties}->{$r->key} = $r->value;
-    }
-
-    return $worker;
 }
 
 sub workers_get_dead_worker {
@@ -230,15 +214,6 @@ sub workers_get_dead_worker {
     }
 
     return \@results;
-}
-
-# XXX TODO: Remove HashRefInflator
-sub list_workers {
-    my $rs = schema->resultset("Workers");
-    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    my @workers = $rs->all;
-
-    return \@workers;
 }
 
 sub _validate_workerid($) {
@@ -344,14 +319,6 @@ sub job_get($) {
         return _job_get({ 'me.id' => $value });
     }
     return _job_get({slug => $value });
-}
-
-sub job_get_by_workerid($) {
-    my $workerid = shift;
-
-    return undef if !defined($workerid);
-
-    return _job_get({worker_id => $workerid });
 }
 
 sub jobs_get_dead_worker {
@@ -589,11 +556,11 @@ sub job_grab {
             }
         );
 
-        my $worker = worker_get($workerid);
+        my $worker = schema->resultset("Workers")->find($workerid);
         my $archquery = schema->resultset("JobSettings")->search(
             {
                 key => "ARCH",
-                value => $cando{$worker->{properties}->{'CPU_ARCH'}}
+                value => $cando{$worker->get_property('CPU_ARCH')}
             }
         );
 
@@ -601,7 +568,7 @@ sub job_grab {
         my $classquery = schema->resultset("JobSettings")->search(
             {
                 key => "WORKER_CLASS",
-                value => { '!=', $worker->{properties}->{'WORKER_CLASS'}},
+                value => { '!=', $worker->get_property('WORKER_CLASS')},
             },
         );
 
@@ -644,12 +611,8 @@ sub job_grab {
         last;
     }
 
-    my $job = $worker->jobs->search(
-        {
-            state => OpenQA::Schema::Result::Jobs::RUNNING,
-        }
-    )->single;
-    return {} unless ($job);
+    my $job = $worker->job;
+    return {} unless ($job && $job->state eq OpenQA::Schema::Result::Jobs::RUNNING);
 
     my $job_hashref = {};
     $job_hashref = _job_get({'me.id' => $job->id});

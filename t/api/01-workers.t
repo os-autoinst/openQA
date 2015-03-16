@@ -45,8 +45,36 @@ $t->app($app);
 $ret = $t->get_ok('/api/v1/workers');
 ok($ret->tx->success, 'listing workers works');
 is(ref $ret->tx->res->json, 'HASH', 'workers returned hash');
-# just a random check that the structure is sane
-is($ret->tx->res->json->{workers}->[1]->{host}, 'localhost', 'worker present');
+is_deeply(
+    $ret->tx->res->json,
+    {
+        workers => [
+            {
+                id => 1,
+                instance => 1,
+                connected => 0,
+                backend => 'qemu',
+                jobid => 99963,
+                host => 'localhost',
+                properties => { 'JOBTOKEN' => 'token99963' },
+                status => 'running'
+            },
+            {
+                'jobid' => 99961,
+                'backend' => 'qemu',
+                'properties' => {
+                    'JOBTOKEN' => 'token99961'
+                },
+                'id' => 2,
+                'connected' => 0,
+                'status' => 'running',
+                'host' => 'remotehost',
+                'instance' => 1
+            }
+        ]
+    },
+    'worker present'
+);
 
 $ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu' });
 is($ret->tx->res->code, 200, "register existing worker with token");
