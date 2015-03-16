@@ -36,18 +36,20 @@ sub list {
     $self->param(scope => $scope);
 
     my $assetid = $self->param('assetid');
+    my $groupid = $self->param('groupid');
 
     my $jobs = OpenQA::Scheduler::query_jobs(
         state => 'done,cancelled',
         match => $match,
         scope => $scope,
         assetid => $assetid,
+        groupid => $groupid,
         limit => 500,
         idsonly => 1
     );
     $self->stash(jobs => $jobs);
 
-    my $running = OpenQA::Scheduler::query_jobs(state => 'running,waiting', match => $match, assetid => $assetid);
+    my $running = OpenQA::Scheduler::query_jobs(state => 'running,waiting', match => $match, groupid => $groupid, assetid => $assetid);
     my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($running);
     my @list;
     while (my $job = $running->next) {
@@ -60,7 +62,7 @@ sub list {
     }
     $self->stash(running => \@list);
 
-    my $scheduled = OpenQA::Scheduler::query_jobs(state => 'scheduled', match => $match, assetid => $assetid);
+    my $scheduled = OpenQA::Scheduler::query_jobs(state => 'scheduled', match => $match, groupid => $groupid, assetid => $assetid);
     $self->stash(scheduled => $scheduled);
 
 }

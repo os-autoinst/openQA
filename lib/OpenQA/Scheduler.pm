@@ -420,6 +420,14 @@ sub query_jobs {
             }
         );
     }
+    if ($args{groupid}) {
+        push(
+            @conds,
+            {
+                'me.group_id' => $args{groupid},
+            }
+        );
+    }
 
     # Search into the following job_settings
     for my $setting (qw(build iso distri version flavor)) {
