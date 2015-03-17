@@ -32,14 +32,12 @@ sub {
         $settings->{VERSION} = $jt->product->version if $jt->product->version ne '*';
         $settings->{FLAVOR} = $jt->product->flavor;
         $settings->{ARCH} = $jt->product->arch;
-        for my $s ($jt->product->settings->all) {
-            $settings->{$s->key} = $s->value;
-        }
         for my $s ($jt->test_suite->settings->all) {
-            $settings->{$s->key} = $s->value;
+            # stuff defined in both the machine and the test_suite will actually be "wrong"
+            delete $settings->{$s->key};
         }
 
-        my $searches;
+        my $searches = { 'me.test' => $jt->test_suite->name };
         my @joins;
 
         for my $c (1..20) {
@@ -52,7 +50,7 @@ sub {
             $searches->{"$where.key"} = $key;
             $searches->{"$where.value"} = $value;
         }
-        #print $jt->machine->name, " ", $jt->product->name, " ", $jt->test_suite->name, " ", $schema->resultset("Jobs")->search($searches, { join => \@joins })->count, " ", $jt->group_id, "\n";
+        #print $jt->machine->name, " ", $jt->product->name, " ", $jt->test_suite->name, " ", join(',', map { $_->id } $schema->resultset("Jobs")->search($searches, { join => \@joins })->all), " ", $jt->group_id, "\n";
         $schema->resultset("Jobs")->search($searches, { join => \@joins })->update_all({group_id => $jt->group_id});
     }
   }
