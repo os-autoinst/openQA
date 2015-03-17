@@ -168,16 +168,12 @@ sub startup {
     $self->plugin('OpenQA::Plugin::REST');
     $self->plugin('OpenQA::Plugin::HashedParams');
 
-    $self->asset('step_edit.js' => '/javascripts/needleedit.js', '/javascripts/needleeditor.js', '/javascripts/shapes.js', '/javascripts/keyevent.js');
+    $self->asset('step_edit.js' => qw(/javascripts/needleedit.js /javascripts/needleeditor.js /javascripts/shapes.js /javascripts/keyevent.js/));
     $self->asset(
         'app.js' => qw(/javascripts/jquery-1.11.2.js /javascripts/jquery_ujs.js /javascripts/chosen.jquery.js /javascripts/openqa.js
-          /javascripts/jquery.dataTables.js /javascripts/admintable.js /javascripts/jquery.timeago.js /javascripts/tests.js)
+          /javascripts/jquery.dataTables.js /javascripts/admintable.js /javascripts/jquery.timeago.js /javascripts/tests.js /javascripts/job_templates.js)
     );
-    $self->asset(
-        'app.css' => '/stylesheets/font-awesome.css',
-        '/stylesheets/jquery.dataTables.css', '/stylesheets/chosen.css',
-        '/stylesheets/openqa.css', '/stylesheets/opentip.css'
-    );
+    $self->asset('app.css' => qw(/stylesheets/font-awesome.css /stylesheets/jquery.dataTables.css /stylesheets/chosen.css /stylesheets/openqa.css /stylesheets/opentip.css));
 
     # set secure flag on cookies of https connections
     $self->hook(
@@ -299,25 +295,16 @@ sub startup {
     $admin_r->post('/users/:userid')->name('admin_user')->to('user#update');
 
     $admin_r->get('/products')->name('admin_products')->to('product#index');
-    $admin_r->post('/products')->to('product#create');
-    $admin_r->delete('/products/:product_id')->name('admin_product')->to('product#destroy');
-    $admin_r->post('/products/:product_id')->name('admin_product_setting_post')->to('product#add_variable');
-    $admin_r->delete('/products/:product_id/:settingid')->name('admin_product_setting_delete')->to('product#remove_variable');
-
     $admin_r->get('/machines')->name('admin_machines')->to('machine#index');
-    $admin_r->post('/machines')->to('machine#create');
-    $admin_r->delete('/machines/:machine_id')->name('admin_machine')->to('machine#destroy');
-    $admin_r->post('/machines/:machine_id')->name('admin_machine_setting_post')->to('machine#add_variable');
-    $admin_r->delete('/machines/:machine_id/:settingid')->name('admin_machine_setting_delete')->to('machine#remove_variable');
-
     $admin_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
-    $admin_r->post('/test_suites')->to('test_suite#create');
-    $admin_r->delete('/test_suites/:test_suite_id')->name('admin_test_suite')->to('test_suite#destroy');
-    $admin_r->post('/test_suites/:test_suite_id')->name('admin_test_suite_setting_post')->to('test_suite#add_variable');
-    $admin_r->delete('/test_suites/:test_suite_id/:settingid')->name('admin_test_suite_setting_delete')->to('test_suite#remove_variable');
 
-    $admin_r->get('/job_templates')->name('admin_job_templates')->to('job_template#index');
-    $admin_r->post('/job_templates')->to('job_template#update');
+    $admin_r->get('/job_templates/:groupid')->name('admin_job_templates')->to('job_template#index');
+
+
+    $admin_r->get('/groups')->name('admin_groups')->to('job_group#index');
+    $admin_r->post('/groups')->name('admin_new_group')->to('job_group#create');
+    $admin_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
+    $admin_r->post('/groups/connect/:groupid')->name('job_group_save_media')->to('job_group#save_connect');
 
     $admin_r->get('/assets')->name('admin_assets')->to('asset#index');
 
@@ -348,7 +335,7 @@ sub startup {
     my $job_r = $api_r->route('/jobs/:jobid', jobid => qr/\d+/);
     $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show'); # job_get
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy'); # job_delete
-    $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio'); # job_set_prio
+    $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
     # NO LONGER USED
     $job_r->post('/result')->name('apiv1_job_result')->to('job#result'); # job_update_result
     $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done'); # job_set_done

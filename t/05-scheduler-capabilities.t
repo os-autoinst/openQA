@@ -107,13 +107,13 @@ my $jobE = OpenQA::Scheduler::job_create(\%settingsE);
 my $jobF = OpenQA::Scheduler::job_create(\%settingsF);
 my $jobG = OpenQA::Scheduler::job_create(\%settingsG);
 
-OpenQA::Scheduler::job_set_prio(jobid => $jobA, prio => 3);
-OpenQA::Scheduler::job_set_prio(jobid => $jobB, prio => 2);
-OpenQA::Scheduler::job_set_prio(jobid => $jobC, prio => 7);
-OpenQA::Scheduler::job_set_prio(jobid => $jobD, prio => 6);
-OpenQA::Scheduler::job_set_prio(jobid => $jobE, prio => 5);
-OpenQA::Scheduler::job_set_prio(jobid => $jobF, prio => 4);
-OpenQA::Scheduler::job_set_prio(jobid => $jobG, prio => 1);
+$jobA->set_prio(3);
+$jobB->set_prio(2);
+$jobC->set_prio(7);
+$jobD->set_prio(6);
+$jobE->set_prio(5);
+$jobF->set_prio(4);
+$jobG->set_prio(1);
 
 my $w1_id = worker_register("host", "1", "backend", \%workercaps64_client);
 my $w2_id = worker_register("host", "2", "backend", \%workercaps64_server);
@@ -123,23 +123,22 @@ my $w5_id = worker_register("host", "5", "backend", \%workercaps64_client);
 my $w6_id = worker_register("host", "6", "backend", \%workercaps64);
 
 my $job = OpenQA::Scheduler::job_grab(workerid => $w1_id);
-is($job->{id}, $jobA, "'client' worker should get 'client' job even though 'server' job has higher prio");
+is($job->{id}, $jobA->id, "'client' worker should get 'client' job even though 'server' job has higher prio");
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w2_id);
-is($job->{id}, $jobB, "'server' job for 'server' worker");
+is($job->{id}, $jobB->id, "'server' job for 'server' worker");
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w3_id);
-is($job->{id}, $jobE, "32bit worker gets 32bit job with highest prio");
+is($job->{id}, $jobE->id, "32bit worker gets 32bit job with highest prio");
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w4_id);
-is($job->{id}, $jobF, "next job by prio");
+is($job->{id}, $jobF->id, "next job by prio");
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w5_id);
-is($job->{id}, $jobD, "next job by prio, 'client' worker can do jobs without class");
+is($job->{id}, $jobD->id, "next job by prio, 'client' worker can do jobs without class");
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
-is($job->{id}, $jobC, "next job by prio, 64bit worker can get 32bit job");
-
+is($job->{id}, $jobC->id, "next job by prio, 64bit worker can get 32bit job");
 # job G is not grabbed because there is no worker with class 'special'
 
 done_testing();

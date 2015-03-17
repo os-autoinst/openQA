@@ -36,18 +36,20 @@ sub list {
     $self->param(scope => $scope);
 
     my $assetid = $self->param('assetid');
+    my $groupid = $self->param('groupid');
 
     my $jobs = OpenQA::Scheduler::query_jobs(
         state => 'done,cancelled',
         match => $match,
         scope => $scope,
         assetid => $assetid,
+        groupid => $groupid,
         limit => 500,
         idsonly => 1
     );
     $self->stash(jobs => $jobs);
 
-    my $running = OpenQA::Scheduler::query_jobs(state => 'running,waiting', match => $match, assetid => $assetid);
+    my $running = OpenQA::Scheduler::query_jobs(state => 'running,waiting', match => $match, groupid => $groupid, assetid => $assetid);
     my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($running);
     my @list;
     while (my $job = $running->next) {
@@ -60,7 +62,7 @@ sub list {
     }
     $self->stash(running => \@list);
 
-    my $scheduled = OpenQA::Scheduler::query_jobs(state => 'scheduled', match => $match, assetid => $assetid);
+    my $scheduled = OpenQA::Scheduler::query_jobs(state => 'scheduled', match => $match, groupid => $groupid, assetid => $assetid);
     $self->stash(scheduled => $scheduled);
 
 }
@@ -108,6 +110,7 @@ sub list_ajax {
             build => $settings->{BUILD} // '',
             testtime => $job->t_created,
             result => $job->result,
+            group => $job->group_id,
             state => $job->state
         };
         push @list, $data;
@@ -257,19 +260,31 @@ sub overview {
     my $self  = shift;
     my $validation = $self->validation;
 
-    $validation->required('distri');
-    $validation->required('version');
-    if ($validation->has_error) {
-        return $self->render(text => 'Missing parameters', status => 404);
+    my %search_args;
+    my $group;
+    my $distri;
+    my $version;
+
+    if ($self->param('groupid')) {
+        $group = $self->db->resultset("JobGroups")->find($self->param('groupid'));
+        return $self->reply->not_found if (!$group);
+        $search_args{groupid} = $group->id;
     }
-    my $distri = $self->param('distri');
-    my $version = $self->param('version');
+    else {
+        $validation->required('distri');
+        $validation->required('version');
+        if ($validation->has_error) {
+            return $self->render(text => 'Missing parameters', status => 404);
+        }
+        $distri = $self->param('distri');
+        $version = $self->param('version');
 
-    my %search_args = (distri => $distri, version => $version);
+        %search_args = (distri => $distri, version => $version);
 
-    my $flavor = $self->param('flavor');
-    if ($flavor) {
-        $search_args{flavor} = $flavor;
+        my $flavor = $self->param('flavor');
+        if ($flavor) {
+            $search_args{flavor} = $flavor;
+        }
     }
 
     my $build = $self->param('build');
@@ -365,6 +380,7 @@ sub overview {
         build   => $build,
         version => $version,
         distri => $distri,
+        group => $group,
         configs => \@configs,
         types   => \@types,
         archs   => \%archs,

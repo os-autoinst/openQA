@@ -58,4 +58,15 @@ sub name {
     join('-', map { $self->$_ } qw/distri version flavor arch/);
 }
 
+# give all flavors of a "product" a common name
+# used in the job groups display
+sub mediagroup {
+    my ($self) = @_;
+    my $mediagroup = $self->distri . "-";
+    if ($self->version ne '*') {
+        $mediagroup .= $self->version . "-";
+    }
+    $mediagroup . $self->flavor;
+}
+
 1;

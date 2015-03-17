@@ -86,24 +86,24 @@ my $jobA = OpenQA::Scheduler::job_create(\%settingsA);
 
 my $jobB = OpenQA::Scheduler::job_create(\%settingsB);
 
-$settingsC{_PARALLEL_JOBS} = [$jobB];
+$settingsC{_PARALLEL_JOBS} = [$jobB->id];
 my $jobC = OpenQA::Scheduler::job_create(\%settingsC);
 
-$settingsD{_PARALLEL_JOBS} = [$jobA];
+$settingsD{_PARALLEL_JOBS} = [$jobA->id];
 my $jobD = OpenQA::Scheduler::job_create(\%settingsD);
 
-$settingsE{_PARALLEL_JOBS} = [$jobC, $jobD];
+$settingsE{_PARALLEL_JOBS} = [$jobC->id, $jobD->id];
 my $jobE = OpenQA::Scheduler::job_create(\%settingsE);
 
-$settingsF{_PARALLEL_JOBS} = [$jobC];
+$settingsF{_PARALLEL_JOBS} = [$jobC->id];
 my $jobF = OpenQA::Scheduler::job_create(\%settingsF);
 
-OpenQA::Scheduler::job_set_prio(jobid => $jobA, prio => 3);
-OpenQA::Scheduler::job_set_prio(jobid => $jobB, prio => 2);
-OpenQA::Scheduler::job_set_prio(jobid => $jobC, prio => 4);
-OpenQA::Scheduler::job_set_prio(jobid => $jobD, prio => 1);
-OpenQA::Scheduler::job_set_prio(jobid => $jobE, prio => 1);
-OpenQA::Scheduler::job_set_prio(jobid => $jobF, prio => 1);
+$jobA->set_prio(3);
+$jobB->set_prio(2);
+$jobC->set_prio(4);
+$jobD->set_prio(1);
+$jobE->set_prio(1);
+$jobF->set_prio(1);
 
 #diag "jobA ", $jobA;
 #diag "jobB ", $jobB;
@@ -128,25 +128,25 @@ my $w6_id = worker_register("host", "6", "backend", $workercaps);
 #my $ws6 = $t->websocket_ok("/api/v1/workers/$w6_id/ws");
 
 my $job = OpenQA::Scheduler::job_grab(workerid => $w1_id);
-is($job->{id}, $jobB, "jobB"); #lowest prio of jobs without parents
+is($job->{id}, $jobB->id, "jobB"); #lowest prio of jobs without parents
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w2_id);
-is($job->{id}, $jobC, "jobC"); #direct child of B
+is($job->{id}, $jobC->id, "jobC"); #direct child of B
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w3_id);
-is($job->{id}, $jobF, "jobF"); #direct child of C
+is($job->{id}, $jobF->id, "jobF"); #direct child of C
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w4_id);
-is($job->{id}, $jobA, "jobA"); # E is direct child of C, but A and D must be started first
+is($job->{id}, $jobA->id, "jobA"); # E is direct child of C, but A and D must be started first
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w5_id);
-is($job->{id}, $jobD, "jobD"); # direct child of A
+is($job->{id}, $jobD->id, "jobD"); # direct child of A
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
-is($job->{id}, $jobE, "jobE"); # C and D are now running so we can start E
+is($job->{id}, $jobE->id, "jobE"); # C and D are now running so we can start E
 
 # jobA failed
-my $result = OpenQA::Scheduler::job_set_done(jobid => $jobA, result => 'failed');
+my $result = OpenQA::Scheduler::job_set_done(jobid => $jobA->id, result => 'failed');
 ok($result, "job_set_done");
 
 # then jobD and jobE, workers 5 and 6 must be canceled
@@ -156,67 +156,67 @@ ok($result, "job_set_done");
 #$ws6->message_ok;
 #$ws6->message_is('cancel');
 
-$result = OpenQA::Scheduler::job_set_done(jobid => $jobD, result => 'incomplete');
+$result = OpenQA::Scheduler::job_set_done(jobid => $jobD->id, result => 'incomplete');
 ok($result, "job_set_done");
 
-$result = OpenQA::Scheduler::job_set_done(jobid => $jobE, result => 'incomplete');
+$result = OpenQA::Scheduler::job_set_done(jobid => $jobE->id, result => 'incomplete');
 ok($result, "job_set_done");
 
 
 
 
-$job = OpenQA::Scheduler::job_get($jobA);
+$job = OpenQA::Scheduler::job_get($jobA->id);
 is($job->{state}, "done", "job_set_done changed state");
 is($job->{result}, "failed", "job_set_done changed result");
 
-$job = OpenQA::Scheduler::job_get($jobB);
+$job = OpenQA::Scheduler::job_get($jobB->id);
 is($job->{state}, "running", "job_set_done changed state");
 
-$job = OpenQA::Scheduler::job_get($jobC);
+$job = OpenQA::Scheduler::job_get($jobC->id);
 is($job->{state}, "running", "job_set_done changed state");
 
-$job = OpenQA::Scheduler::job_get($jobD);
+$job = OpenQA::Scheduler::job_get($jobD->id);
 is($job->{state}, "done", "job_set_done changed state");
 is($job->{result}, "parallel_failed", "job_set_done changed result, jobD failed because of jobA");
 
-$job = OpenQA::Scheduler::job_get($jobE);
+$job = OpenQA::Scheduler::job_get($jobE->id);
 is($job->{state}, "done", "job_set_done changed state");
 is($job->{result}, "parallel_failed", "job_set_done changed result, jobE failed because of jobD");
 
-$job = OpenQA::Scheduler::job_get($jobF);
+$job = OpenQA::Scheduler::job_get($jobF->id);
 is($job->{state}, "running", "job_set_done changed state");
 
 # duplicate jobF, parents are duplicated too
-my $id = OpenQA::Scheduler::job_duplicate(jobid => $jobF);
+my $id = OpenQA::Scheduler::job_duplicate(jobid => $jobF->id);
 ok(defined $id, "duplicate works");
 
-$job = OpenQA::Scheduler::job_get($jobA); #unchanged
+$job = OpenQA::Scheduler::job_get($jobA->id); #unchanged
 is($job->{state}, "done", "no change");
 is($job->{result}, "failed", "no change");
 is($job->{clone_id}, undef, "no clones");
 
-$job = OpenQA::Scheduler::job_get($jobB); # cloned
+$job = OpenQA::Scheduler::job_get($jobB->id); # cloned
 is($job->{state}, "running", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobB2 = $job->{clone_id};
 
 
-$job = OpenQA::Scheduler::job_get($jobC); # cloned
+$job = OpenQA::Scheduler::job_get($jobC->id); # cloned
 is($job->{state}, "running", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobC2 = $job->{clone_id};
 
-$job = OpenQA::Scheduler::job_get($jobD); #unchanged
+$job = OpenQA::Scheduler::job_get($jobD->id); #unchanged
 is($job->{state}, "done", "no change");
 is($job->{result}, "parallel_failed", "no change");
 is($job->{clone_id}, undef, "no clones");
 
-$job = OpenQA::Scheduler::job_get($jobE); #unchanged
+$job = OpenQA::Scheduler::job_get($jobE->id); #unchanged
 is($job->{state}, "done", "no change");
 is($job->{result}, "parallel_failed", "no change");
 is($job->{clone_id}, undef, "no clones");
 
-$job = OpenQA::Scheduler::job_get($jobF); # cloned
+$job = OpenQA::Scheduler::job_get($jobF->id); # cloned
 is($job->{state}, "running", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobF2 = $job->{clone_id};
@@ -252,37 +252,37 @@ is_deeply($job->{parents}, [$jobC2], "cloned deps");
 
 # now duplicate jobE, parents A, D have to be duplicated,
 # C2 is scheduled so it can be used as parent of E2 without duplicating
-$id = OpenQA::Scheduler::job_duplicate(jobid => $jobE);
+$id = OpenQA::Scheduler::job_duplicate(jobid => $jobE->id);
 ok(defined $id, "duplicate works");
 
-$job = OpenQA::Scheduler::job_get($jobA); #cloned
+$job = OpenQA::Scheduler::job_get($jobA->id); #cloned
 is($job->{state}, "done", "no change");
 is($job->{result}, "failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobA2 = $job->{clone_id};
 
-$job = OpenQA::Scheduler::job_get($jobB); # unchanged
+$job = OpenQA::Scheduler::job_get($jobB->id); # unchanged
 is($job->{state}, "running", "no change");
 is($job->{clone_id}, $jobB2, "cloned");
 
 
-$job = OpenQA::Scheduler::job_get($jobC); # unchanged
+$job = OpenQA::Scheduler::job_get($jobC->id); # unchanged
 is($job->{state}, "running", "no change");
 is($job->{clone_id}, $jobC2, "cloned");
 
-$job = OpenQA::Scheduler::job_get($jobD); #cloned
+$job = OpenQA::Scheduler::job_get($jobD->id); #cloned
 is($job->{state}, "done", "no change");
 is($job->{result}, "parallel_failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobD2 = $job->{clone_id};
 
-$job = OpenQA::Scheduler::job_get($jobE); #cloned
+$job = OpenQA::Scheduler::job_get($jobE->id); #cloned
 is($job->{state}, "done", "no change");
 is($job->{result}, "parallel_failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobE2 = $job->{clone_id};
 
-$job = OpenQA::Scheduler::job_get($jobF); # unchanged
+$job = OpenQA::Scheduler::job_get($jobF->id); # unchanged
 is($job->{state}, "running", "no change");
 is($job->{clone_id}, $jobF2, "cloned");
 
@@ -347,8 +347,8 @@ $t->ua->on(
     }
 );
 
-$t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF]);
+$t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id]);
 $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
-$t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE]);
+$t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
 
 done_testing();

@@ -32,10 +32,6 @@ function scrollModuleThumbnails() {
     area.scrollLeft(40 + offset - area.width()/2);
 }
 
-jQuery(function(evt) {
-    $(".chosen-select").chosen({width: "98%"});;
-});
-
 function setCookie(cname, cvalue, exdays) {
     var d = new Date();
     d.setTime(d.getTime()+(exdays*24*60*60*1000));

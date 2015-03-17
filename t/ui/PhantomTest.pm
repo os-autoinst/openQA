@@ -44,7 +44,7 @@ sub start_phantomjs {
 
     $phantompid = fork();
     if ($phantompid == 0) {
-        exec('phantomjs', "--webdriver=127.0.0.1:$phantomport");
+        exec('phantomjs', "--webdriver=127.0.0.1:$phantomport", "--debug=false");
         die "phantomjs didn't start\n";
     }
     else {

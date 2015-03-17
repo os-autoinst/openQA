@@ -1,0 +1,37 @@
+% layout 'admin';
+% title 'Job groups';
+
+% content_for 'ready_function' => begin
+  $('#groups').DataTable();
+% end
+
+<div class="box box-shadow">
+    <h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+    <table id="groups" class="stripe">
+        <thead>
+            <tr>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+        % while (my $group = $groups->next()) {
+        <tr id="group_<%= $group->id %>">
+            <td class="name">
+		%= link_to $group->name => url_for('admin_job_templates', groupid => $group->id)
+	    </td>
+        </tr>
+        % }
+        </tbody>
+    </table>
+
+    <p>
+    %= form_for admin_new_group => (id => 'new_group_form') => (method => 'POST') => begin
+      <label for="name">New group:</label>
+      <input type="text" name="name" id="name" value=""></input>
+      <input type="submit" name="submit" value="Create" id="submit"></input>
+    % end
+    </p>
+</div>

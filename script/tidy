@@ -25,7 +25,7 @@ find . \( -name '*.p[lm]' -o -name '*.t' \) -print0 | xargs -0 perltidy $TIDY_AR
 find script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,clean_needles} -print0 | xargs -0 perltidy $TIDY_ARGS
 
 while read file; do
-  if ! diff -u $file ${file%.tdy}; then
+  if ! diff -u ${file%.tdy} $file; then
       if test -n "$check"; then
         echo "RUN tools/tidy script before checkin"
         exit 1

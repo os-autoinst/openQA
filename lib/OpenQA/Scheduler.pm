@@ -53,8 +53,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 @EXPORT = qw(worker_register workers_get_dead_worker job_create
   job_get jobs_get_dead_worker
-  job_grab job_set_done
-  job_set_waiting job_set_running job_set_prio job_notify_workers
+  job_grab job_set_done job_set_waiting job_set_running job_notify_workers
   job_delete job_update_result job_restart job_cancel command_enqueue
   iso_cancel_old_builds
   job_set_stop job_stop iso_stop_old_builds
@@ -307,7 +306,7 @@ sub job_create {
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
 
     job_notify_workers() unless $no_notify;
-    return $job->id;
+    return $job;
 }
 
 sub job_get($) {
@@ -417,6 +416,14 @@ sub query_jobs {
             @conds,
             {
                 'jobs_assets.asset_id' => $args{assetid},
+            }
+        );
+    }
+    if ($args{groupid}) {
+        push(
+            @conds,
+            {
+                'me.group_id' => $args{groupid},
             }
         );
     }
@@ -812,16 +819,6 @@ sub job_set_running {
         }
       );
     return $r;
-}
-
-sub job_set_prio {
-    my %args = @_;
-
-    my $r = schema->resultset("Jobs")->search({ id => $args{jobid} })->update(
-        {
-            priority => $args{prio},
-        }
-    );
 }
 
 sub job_delete {

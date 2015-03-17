@@ -29,6 +29,7 @@ sub list {
             ||$self->param('machine_id')
             ||$self->param('test_suite_name')
             ||$self->param('test_suite_id')
+            ||$self->param('group_id')
             ||$self->param('arch') && $self->param('distri') && $self->param('flavor') && $self->param('version')
             ||$self->param('product_id'))
         {
@@ -41,14 +42,13 @@ sub list {
             $params{'product.distri'} = $self->param('distri') if $self->param('distri');
             $params{'product.flavor'} = $self->param('flavor') if $self->param('flavor');
             $params{'product.version'} = $self->param('version') if $self->param('version');
-            $params{'machine_id'} = $self->param('machine_id') if $self->param('machine_id');
-            $params{'test_suite_id'} = $self->param('test_suite_id') if $self->param('test_suite_id');
-            $params{'product_id'} = $self->param('product_id') if $self->param('product_id');
-
-            @templates = $self->db->resultset("JobTemplates")->search(\%params, { join => ['machine', 'test_suite', 'product'] });
+            for my $id (qw/machine_id test_suite_id product_id group_id/) {
+                $params{$id} = $self->param($id) if $self->param($id);
+            }
+            @templates = $self->db->resultset("JobTemplates")->search(\%params, { join => ['machine', 'test_suite', 'product'], prefetch => [qw/machine test_suite product/] });
         }
         else {
-            @templates = $self->db->resultset("JobTemplates")->all;
+            @templates = $self->db->resultset("JobTemplates")->search({}, { prefetch => [qw/machine test_suite product/] });
         }
     };
     my $error = $@;
@@ -58,7 +58,24 @@ sub list {
         return;
     }
 
-    $self->render(json => {JobTemplates => [map { { id => $_->id,product => {id => $_->product_id,arch => $_->product->arch,distri => $_->product->distri,flavor => $_->product->flavor,version => $_->product->version},machine => {id => $_->machine_id, name => $_->machine->name},test_suite => {id => $_->test_suite_id, name => $_->test_suite->name}} } @templates]});
+    #<<< do not let perltidy touch this
+    $self->render(json => 
+		  { JobTemplates => 
+		        [map { { id => $_->id,
+			         prio => $_->prio,
+				 product => {id => $_->product_id,
+					     arch => $_->product->arch,
+					     distri => $_->product->distri,
+					     flavor => $_->product->flavor,
+					     group => $_->product->mediagroup,
+					     version => $_->product->version},
+				 machine => {id => $_->machine_id,
+					     name => $_->machine->name},
+				 test_suite => {id => $_->test_suite_id, name => $_->test_suite->name}}
+			 } @templates
+			]
+		  });
+    #>>>
 }
 
 sub create {
@@ -67,22 +84,33 @@ sub create {
     my $id;
     my $validation = $self->validation;
 
+    $validation->required('prio')->like(qr/^[0-9]+$/);
+
     if ($validation->optional('product_id')->like(qr/^[0-9]+$/)->is_valid) {
         $validation->required('machine_id')->like(qr/^[0-9]+$/);
+        $validation->required('group_id')->like(qr/^[0-9]+$/);
         $validation->required('test_suite_id')->like(qr/^[0-9]+$/);
 
         if ($validation->has_error) {
             $error = "wrong parameter: ";
-            for my $k (qw/product_id machine_id test_suite_id/) {
+            for my $k (qw/product_id machine_id test_suite_id group_id/) {
                 $error .= $k if $validation->has_error($k);
             }
         }
         else {
-            eval { $id = $self->db->resultset("JobTemplates")->create({product_id => $self->param('product_id'), machine_id => $self->param('machine_id'),test_suite_id => $self->param('test_suite_id')})->id};
+            my $values = {
+                prio => $self->param('prio'),
+                product_id => $self->param('product_id'),
+                machine_id => $self->param('machine_id'),
+                group_id => $self->param('group_id'),
+                test_suite_id => $self->param('test_suite_id')
+            };
+            eval { $id = $self->db->resultset("JobTemplates")->create($values)->id};
             $error = $@;
         }
     }
     else {
+        $validation->required('group_name');
         $validation->required('machine_name');
         $validation->required('test_suite_name');
         $validation->required('arch');
@@ -92,12 +120,24 @@ sub create {
 
         if ($validation->has_error) {
             $error = "wrong parameter: ";
-            for my $k (qw/machine_name test_suite_name arch distri flavor version/) {
+            for my $k (qw/group_name machine_name test_suite_name arch distri flavor version/) {
                 $error .= $k if $validation->has_error($k);
             }
         }
         else {
-            eval { $id = $self->db->resultset("JobTemplates")->create({product =>{arch => $self->param('arch'),distri => $self->param('distri'),flavor => $self->param('flavor'),version => $self->param('version')},machine => {name => $self->param('machine_name')},test_suite => {name => $self->param('test_suite_name')},})->id};
+            my $values = {
+                product =>{
+                    arch => $self->param('arch'),
+                    distri => $self->param('distri'),
+                    flavor => $self->param('flavor'),
+                    version => $self->param('version')
+                },
+                group => { name => $self->param('group_name') },
+                machine => {name => $self->param('machine_name')},
+                prio => $self->param('prio'),
+                test_suite => {name => $self->param('test_suite_name')}
+            };
+            eval { $id = $self->db->resultset("JobTemplates")->create($values)->id};
             $error = $@;
         }
     }
@@ -106,6 +146,7 @@ sub create {
     my $json = {};
 
     if ($error) {
+        $self->app->log->error($error);
         $json->{error} = $error;
         $status = 400;
     }

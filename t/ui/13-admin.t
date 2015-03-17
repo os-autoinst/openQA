@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -38,7 +38,7 @@ use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 80;
+    plan tests => 77;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -57,6 +57,25 @@ like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged as Demo.*
 $driver->find_element('admin', 'link_text')->click();
 
 is($driver->get_title(), "openQA: Users", "on user overview");
+
+sub add_job_group() {
+    $driver->find_element('Job groups', 'link_text')->click();
+
+    is($driver->get_title(), "openQA: Job groups", "on groups");
+
+    # leave the ajax some time
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+
+    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 1 of 1 entries/, 'no groups in fixtures');
+    $driver->find_element('#name', 'css')->send_keys('Cool Group');
+    $driver->find_element('#submit', 'css')->click();
+    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'group created');
+    is($driver->find_element('#group_1002', 'css')->get_text(), 'Cool Group', 'group created');
+    is($driver->find_element('.ui-state-highlight', 'css')->get_text(), 'Group Cool Group created', 'flash shown');
+    #t::ui::PhantomTest::make_screenshot('mojoResults.png');
+}
 
 sub add_machine() {
     # go to machines first
@@ -124,15 +143,14 @@ sub add_test_suite() {
 
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(7, @headers, "7 columns");
+    is(6, @headers, "6 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "name",    "1st column");
-    is((shift @headers)->get_text(), "prio", "2nd column");
-    is((shift @headers)->get_text(), "DESKTOP",  "3rd column");
-    is((shift @headers)->get_text(), "PARALLEL_WITH", "4th column");
-    is((shift @headers)->get_text(), "INSTALLONLY", "5th column");
-    is((shift @headers)->get_text(), "other variables",  "6th column");
+    is((shift @headers)->get_text(), "DESKTOP",  "2nd column");
+    is((shift @headers)->get_text(), "PARALLEL_WITH", "3rd column");
+    is((shift @headers)->get_text(), "INSTALLONLY", "4th column");
+    is((shift @headers)->get_text(), "other variables",  "5th column");
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
@@ -140,7 +158,6 @@ sub add_test_suite() {
 
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "RAID0",    "name");
-    is((shift @headers)->get_text(), "50", "prio");
     is((shift @headers)->get_text(), "kde",  "DESKTOP");
     is((shift @headers)->get_text(), "",  "PARALLEL_WITH");
     is((shift @headers)->get_text(), "1",  "INSTALLONLY");
@@ -152,9 +169,8 @@ sub add_test_suite() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(7, @fields, "7 fields"); # one column has 2 fields
+    is(6, @fields, "6 fields"); # one column has 2 fields
     (shift @fields)->send_keys('xfce'); # name
-    (shift @fields)->send_keys('50'); # prio
     (shift @fields)->send_keys('xfce'); # desktop
     (shift @fields)->send_keys(''); # parallelwith
     (shift @fields)->send_keys(''); # installonly
@@ -172,9 +188,9 @@ sub add_product() {
     #print $driver->get_page_source();
 
     # go to product first
-    $driver->find_element('Products', 'link_text')->click();
+    $driver->find_element('Medium types', 'link_text')->click();
 
-    is($driver->get_title(), "openQA: Products", "on products");
+    is($driver->get_title(), "openQA: Medium types", "on products");
 
     # leave the ajax some time
     while (!$driver->execute_script("return jQuery.active == 0")) {
@@ -208,7 +224,7 @@ sub add_product() {
 
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 1, "1 edit button before");
 
-    is($driver->find_element('//input[@value="New product"]')->click(), 1, 'new product' );
+    is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium' );
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
@@ -227,7 +243,7 @@ sub add_product() {
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 2, "2 edit buttons afterwards");
 
     # check the distri name will be lowercase after added a new one
-    is($driver->find_element('//input[@value="New product"]')->click(), 1, 'new product' );
+    is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium' );
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
@@ -251,49 +267,59 @@ add_product();
 add_machine();
 add_test_suite();
 
-# go to product first
-$driver->find_element('Job templates', 'link_text')->click();
+add_job_group();
 
-is($driver->get_title(), "openQA: Job templates", "on job templates");
+is($driver->get_title(), "openQA: Job groups", "on job groups");
 
-# leave the ajax some time
+$driver->find_element('Cool Group', 'link')->click();
+
 while (!$driver->execute_script("return jQuery.active == 0")) {
     sleep 1;
 }
+
+$driver->find_element('Test new medium as part of this group', 'link')->click();
 
 
 # include the WDKeys module
 use Selenium::Remote::WDKeys;
 
-my @fields = $driver->find_elements('tr#product_2 td', 'css');
-is((shift @fields)->get_text(), 'sle-13-DVD-arm19', 'cool product name first');
+my $select = $driver->find_element('#medium', 'css');
+my $option = $driver->find_child_element($select, './option[contains(text(), "sle-13-DVD-arm19")]');
+$option->click();
+$select = $driver->find_element('#machine', 'css');
+$option = $driver->find_child_element($select, './option[contains(text(), "HURRA")]');
+$option->click();
+$select = $driver->find_element('#test', 'css');
+$option = $driver->find_child_element($select, './option[contains(text(), "xfce")]');
+$option->click();
 
-for my $td (@fields) {
-    is('', $td->get_text(), 'field is empty for product 2');
-    $driver->mouse_move_to_location(element => $td);
-    $driver->button_down();
-    sleep 1;
+$driver->find_element('//input[@type="submit"]')->submit();
 
-    #$driver->find_element($td, 'option:last-child', 'css')->set_selected();
-    $driver->send_keys_to_active_element('xfce');
-    $driver->send_keys_to_active_element(KEYS->{'enter'});
-}
+is($driver->get_title(), "openQA: Jobs for Cool Group", "on job groups");
 
-$driver->find_element('//input[@type="submit"]')->click();
+#print $driver->get_page_source();
+my $td = $driver->find_element('#sle_13_DVD_arm19_xfce_chosen .search-field', 'css');
+is('', $td->get_text(), 'field is empty for product 2');
+$driver->mouse_move_to_location(element => $td);
+$driver->button_down();
+sleep 1;
 
-is($driver->find_element('blockquote.ui-state-highlight', 'css')->get_text(), 'Template matrix updated', 'update message appears');
+#$driver->find_element($td, 'option:last-child', 'css')->set_selected();
+$driver->send_keys_to_active_element('64bit');
+$driver->send_keys_to_active_element(KEYS->{'enter'});
 
-@fields = $driver->find_elements('tr#product_2 td', 'css');
-is((shift @fields)->get_text(), 'sle-13-DVD-arm19', 'cool product name first');
+# now reload the page to see if we succeeded
+$driver->find_element('Job groups', 'link_text')->click();
 
-for my $td (@fields) {
-    is('xfce', $td->get_text(), 'xfce for product 2');
-}
+is($driver->get_title(), "openQA: Job groups", "on groups");
+$driver->find_element('Cool Group', 'link')->click();
 
-# confirm that the distri name is lowercase
-@fields = $driver->find_elements('tr#product_3 td', 'css');
-is((shift @fields)->get_text(), 'opensuse-13.2-DVD-ppc64le', 'cool product name first');
+my @picks = $driver->find_elements('.search-choice', 'css');
+is((shift @picks)->get_text(), '64bit', 'found one');
+is((shift @picks)->get_text(), 'HURRA', 'found two');
+is_deeply(\@picks, [], 'found no three');
 
+#print $driver->get_page_source();
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 t::ui::PhantomTest::kill_phantom();

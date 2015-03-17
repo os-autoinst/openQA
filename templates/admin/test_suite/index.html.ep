@@ -10,7 +10,6 @@
       <thead>
 	  <tr>
               <th class="col_value">name</th>
-              <th class="col_value">prio</th>
               % for my $var (@$col_var_keys) {
                   <th class="col_settings"><%= $var %></th>
               %}

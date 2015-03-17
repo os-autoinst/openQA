@@ -105,11 +105,7 @@ sub _generate_jobs {
         @products = $self->db->resultset('Products')->search(
             {
                 distri => lc($args{DISTRI}),
-                # TODO: add conversion to future migration script?
-                -or => [
-                    version => '',
-                    version => '*',
-                ],
+                version => '*',
                 flavor => $args{FLAVOR},
                 arch => $args{ARCH},
             }
@@ -148,7 +144,8 @@ sub _generate_jobs {
             # Makes sure tha the DISTRI is lowercase
             $settings{DISTRI} = lc($settings{DISTRI});
 
-            $settings{PRIO} = $job_template->test_suite->prio;
+            $settings{PRIO} = $job_template->prio;
+            $settings{GROUP_ID} = $job_template->group_id;
 
             push @$ret, \%settings;
         }
@@ -204,8 +201,8 @@ sub create {
     my %testsuite_ids; # key: "suite:machine", value: array of job ids
 
     for my $settings (@{$jobs||[]}) {
-        my $prio = $settings->{PRIO};
-        delete $settings->{PRIO};
+        my $prio = delete $settings->{PRIO};
+        my $group_id = delete $settings->{GROUP_ID};
 
         # convert testsuite names in START_AFTER_TEST/PARALLEL_WITH to job ids
         for my $after (_parse_dep_variable($settings->{START_AFTER_TEST}, $settings)) {
@@ -227,25 +224,26 @@ sub create {
             }
         }
         # create a new job with these parameters and count if successful, do not send job notifies yet
-        my $id;
+        my $job;
         try {
-            $id = OpenQA::Scheduler::job_create($settings, 1);
+            $job = OpenQA::Scheduler::job_create($settings, 1);
         }
         catch {
             chomp;
             $self->app->log->error("job_create: $_");
         };
-        if ($id) {
+        if ($job) {
             $cnt++;
-            push @ids, $id;
+            push @ids, $job->id;
 
             $testsuite_ids{_settings_key($settings)} //= [];
-            push @{$testsuite_ids{_settings_key($settings)}}, $id;
+            push @{$testsuite_ids{_settings_key($settings)}}, $job->id;
 
-            # change prio only if other than defalt prio
-            if( $prio && $prio != 50 ) {
-                OpenQA::Scheduler::job_set_prio(jobid => $id, prio => $prio);
+            # change prio only if other than default prio
+            if( defined($prio) && $prio != 50 ) {
+                $job->set_prio($prio);
             }
+            $job->update({group_id => $group_id});
         }
     }
     #notify workers new jobs are available

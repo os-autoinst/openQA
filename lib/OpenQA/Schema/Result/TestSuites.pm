@@ -32,9 +32,6 @@ __PACKAGE__->add_columns(
     variables => { # obsolete, kept one rev for migration
         data_type => 'text',
     },
-    prio => {
-        data_type => 'integer',
-    },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');

@@ -1,5 +1,5 @@
 % layout 'admin';
-% title 'Products';
+% title 'Medium types';
 
 <div class="box box-shadow">
     <h2><%= title %></h2>
@@ -24,7 +24,7 @@
         </tbody>
     </table>
     <div class="aligncenter">
-        <input value="New product" onclick="add_table_row_button();" type="button"/>
+        <input value="New medium" onclick="add_table_row_button();" type="button"/>
     </div>
     <input type="hidden" id="admintable_api_url" value="/api/v1/products"/>
 </div>
