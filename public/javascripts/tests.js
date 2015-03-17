@@ -3,14 +3,14 @@ var restart_url;
 
 function renderTestName ( data, type, row ) {
     if (type === 'display') {
-	html = '<span class="result_' + row['result'] + '">';
+	var html = '<span class="result_' + row['result'] + '">';
 	html += '<a href="/tests/' + row['id'] + '">';
 	html += '<i class="status fa fa-circle" title="Done: ' + row['result'] + '"></i>';
 	if (is_operator && !row['clone']) {
 	    var url = restart_url.replace('REPLACEIT', row['id']);
             html += ' <a data-method="POST" data-remote="true" class="restart"';
 	    html += ' href="' + url + '">';
-            html += '<i class="action fa fa-repeat" title="Restart Job"></i></a>'
+            html += '<i class="action fa fa-repeat" title="Restart Job"></i></a>';
 	}
         html += '</a> ';
 	// the name
@@ -29,7 +29,7 @@ function renderTestName ( data, type, row ) {
 function renderDependencyName ( data, type, row ) {
     if (type === 'display') {
         var html = '';
-        for (index = 0; index < row['deps'].length; index++) {
+        for (var index = 0; index < row['deps'].length; index++) {
             html += '<a href="/tests/' + row['deps'][index] + '">#' + row['deps'][index] + '</a> ';
         }
         return html;
@@ -41,7 +41,7 @@ function renderDependencyName ( data, type, row ) {
 
 function renderTestResult( data, type, row ) {
     if (type === 'display') {
-	var html = '' 
+	var html = '';
 	if (row['state'] === 'done') {
 	    html += data['passed'] + "<i class='fa module_passed fa-star' title='modules passed'></i>";
 	    if (data['dents']) {
@@ -109,15 +109,15 @@ function renderTestsList(jobs) {
 		  var name = "<a href='/tests/overview?build=" + row['build'] + "&distri=" + row['distri'] + "&version=" + row['version'] + "'>" + 'Build' + row['build'] + '</a>';
 		  name += " of ";
 		  return name + row['distri'] + "-" + row['version'] + "-" + row['flavor'] + "." + row['arch'];
-	      },
+	      }
 	    },
 	    { targets: 1,
 	      className: "test",
-	      "render": renderTestName,
+	      "render": renderTestName
 	    },
         { targets: 3,
           className: "deps",
-          "render": renderDependencyName,
+          "render": renderDependencyName
         },
 	    { targets: 4,
 	      "render": function ( data, type, row ) {

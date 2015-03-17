@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::ResultSet::Jobs;
+use strict;
 use base qw/DBIx::Class::ResultSet/;
 
 =head2 latest_build
@@ -39,6 +40,11 @@ sub latest_build {
     my %attrs;
     my $rsource = $self->result_source;
     my $schema = $rsource->schema;
+
+    my $groupid = delete $args{groupid};
+    if (defined $groupid) {
+        push(@conds, {'me.group_id' => $groupid } );
+    }
 
     $attrs{join} = 'settings';
     $attrs{rows} = 1;
