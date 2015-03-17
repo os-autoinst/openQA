@@ -207,6 +207,12 @@ sub machine {
     return $self->settings_hash->{'MACHINE'};
 }
 
+sub set_prio {
+    my ($self, $prio) = @_;
+
+    $self->update({priority => $prio});
+}
+
 sub _hashref {
     my $obj = shift;
     my @fields = @_;

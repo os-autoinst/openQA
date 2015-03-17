@@ -335,7 +335,7 @@ sub startup {
     my $job_r = $api_r->route('/jobs/:jobid', jobid => qr/\d+/);
     $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show'); # job_get
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy'); # job_delete
-    $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio'); # job_set_prio
+    $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
     # NO LONGER USED
     $job_r->post('/result')->name('apiv1_job_result')->to('job#result'); # job_update_result
     $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done'); # job_set_done
