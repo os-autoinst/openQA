@@ -186,7 +186,7 @@ var scrolldown;
 
 // checkbox callback
 function setScrolldown(newval) {
-    scrolldown = newval;
+    scrolldown = $(this).prop('checked');
     if (scrolldown) {
         var livelog = $('#livelog')[0];
         $('#livelog').scrollTop = livelog.scrollHeight;
@@ -283,7 +283,7 @@ function initLivestream() {
 function setupRunning() {
     initLivelog();
     initLivestream();
-    
+
     $('#interactive0_button').click(enableInteractive);
     $('#interactive1_button').click(disableInteractive);
 
@@ -300,9 +300,7 @@ function setupRunning() {
     $('#sel_resolution').change(function() {
         setResolution($(this).val());
     });
-    $('#scrolldown').change(function() {
-        setScrolldown($(this).attr('checked') ? true : false);
-    });
+    $('#scrolldown').change(setScrolldown);
 }
 
 // vim: set sw=4 et:
