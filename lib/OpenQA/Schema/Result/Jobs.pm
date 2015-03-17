@@ -189,6 +189,25 @@ sub settings_hash {
     return $self->{_settings};
 }
 
+sub deps_hash {
+    my ($self) = @_;
+
+    if (!defined($self->{_deps_hash})) {
+        $self->{_deps_hash} = {
+            parents => {'Chained' => [], 'Parallel' => []},
+            children => {'Chained' => [], 'Parallel' => []}
+        };
+        for my $dep ($self->parents) {
+            push @{$self->{_deps_hash}->{parents}->{$dep->to_string}}, $dep->parent_job_id;
+        }
+        for my $dep ($self->children) {
+            push @{$self->{_deps_hash}->{children}->{$dep->to_string}}, $dep->child_job_id;
+        }
+    }
+
+    return $self->{_deps_hash};
+}
+
 sub add_result_dir_prefix {
     my $rd = $_[1];
     $rd = $OpenQA::Utils::resultdir . "/$rd" if $rd;

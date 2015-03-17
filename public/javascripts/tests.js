@@ -17,25 +17,55 @@ function renderTestName ( data, type, row ) {
 	html += '<a href="/tests/' + row['id'] + '" class="name">' + data + '</a>';
 	html += '</span>';
 
+        var deps = '';
+        if (row['deps']['parents']['Chained'].length) {
+            if (deps != '') deps += ', ';
+            if (row['deps']['parents']['Chained'].length == 1) {
+                deps += '1 Chained parent';
+            }
+            else {
+                deps += row['deps']['parents']['Chained'].length + ' Chained parents'
+            }
+        }
+        if (row['deps']['parents']['Parallel'].length) {
+            if (deps != '') deps += ', ';
+            if (row['deps']['parents']['Parallel'].length == 1) {
+                deps += '1 Parallel parent';
+            }
+            else {
+                deps += row['deps']['parents']['Parallel'].length + ' Parallel parents'
+            }
+        }
+        if (row['deps']['children']['Chained'].length) {
+            if (deps != '') deps += ', ';
+            if (row['deps']['children']['Chained'].length == 1) {
+                deps += '1 Chained child';
+            }
+            else {
+                deps += row['deps']['children']['Chained'].length + ' Chained children'
+            }
+        }
+        if (row['deps']['children']['Parallel'].length) {
+            if (deps != '') deps += ', ';
+            if (row['deps']['children']['Parallel'].length == 1) {
+                deps += '1 Parallel child';
+            }
+            else {
+                deps += row['deps']['children']['Parallel'].length + ' Parallel children'
+            }
+        }
+
+        if (deps != '') {
+                html += ' <a href="/tests/' + row['id'] + '" title="' + deps + '"' +
+                '><i class="fa fa-plus"></i></a>';
+        }
+
 	if (row['clone'])
             html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
 
         return html;
     } else {
 	return data;
-    }
-}
-
-function renderDependencyName ( data, type, row ) {
-    if (type === 'display') {
-        var html = '';
-        for (var index = 0; index < row['deps'].length; index++) {
-            html += '<a href="/tests/' + row['deps'][index] + '">#' + row['deps'][index] + '</a> ';
-        }
-        return html;
-    }
-    else {
-        return data;
     }
 }
 
@@ -57,7 +87,7 @@ function renderTestResult( data, type, row ) {
 	if (row['state'] === 'cancelled') {
 	    html += "<i class='fa fa-times' title='canceled'></i>";
 	}
-	if (row['deps'].length > 0) {
+	if (row['deps']['parents']['Parallel'].length + row['deps']['parents']['Chained'].length > 0) {
 	    if (row['result'] === 'skipped' ||
 		row['result'] === 'parallel_failed') {
 		html += "<i class='fa fa-chain-broken' title='dependency failed'></i>";
@@ -99,7 +129,6 @@ function renderTestsList(jobs) {
 	    { "data": "name" },
 	    { "data": "test" },
 	    { "data": "result_stats" },
-	    { "data": "deps" },
 	    { "data": "testtime" },
 	],
 	"columnDefs": [
@@ -121,11 +150,7 @@ function renderTestsList(jobs) {
 	      className: "test",
 	      "render": renderTestName
 	    },
-        { targets: 3,
-          className: "deps",
-          "render": renderDependencyName
-        },
-	    { targets: 4,
+	    { targets: 3,
 	      "render": function ( data, type, row ) {
 		  if (type === 'display')
 		      return jQuery.timeago(data + " UTC");
