@@ -118,16 +118,16 @@ my $job_ref = {
 };
 
 my $iso = sprintf("%s/%s", $OpenQA::Utils::isodir, $settings{ISO});
-my $job_id = OpenQA::Scheduler::job_create(\%settings);
-is($job_id, 1, "job_create");
+my $job = OpenQA::Scheduler::job_create(\%settings);
+is($job->id, 1, "job_create");
 
 my %settings2 = %settings;
 $settings2{NAME} = "OTHER NAME";
 $settings2{BUILD} = "44";
-my $job2_id= OpenQA::Scheduler::job_create(\%settings2);
+my $job2= OpenQA::Scheduler::job_create(\%settings2);
 
-OpenQA::Scheduler::job_set_prio(jobid => $job_id, prio => 40);
-my $new_job = OpenQA::Scheduler::job_get($job_id);
+$job->set_prio(40);
+my $new_job = OpenQA::Scheduler::job_get($job->id);
 is_deeply($new_job, $job_ref, "job_get");
 
 # Testing list_jobs
@@ -230,40 +230,40 @@ is_deeply($current_jobs, [], "list_jobs messing two settings up");
 # Testing job_grab
 %args = (workerid => $worker->{id},);
 my $rjobs_before = list_jobs(state => 'running');
-my $job = OpenQA::Scheduler::job_grab(%args);
+my $grabed = OpenQA::Scheduler::job_grab(%args);
 my $rjobs_after = list_jobs(state => 'running');
 
 ## test and add JOBTOKEN to job_ref after job_grab
-ok($job->{settings}->{JOBTOKEN}, "job token present");
-$job_ref->{settings}->{JOBTOKEN} = $job->{settings}->{JOBTOKEN};
-is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
-ok($job->{t_started} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job start timestamp updated");
+ok($grabed->{settings}->{JOBTOKEN}, "job token present");
+$job_ref->{settings}->{JOBTOKEN} = $grabed->{settings}->{JOBTOKEN};
+is_deeply($grabed->{settings}, $job_ref->{settings}, "settings correct");
+ok($grabed->{t_started} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job start timestamp updated");
 is(scalar(@{$rjobs_before})+1, scalar(@{$rjobs_after}), "number of running jobs");
-is($job->{worker_id}, $worker->{id}, "correct worker assigned");
+is($grabed->{worker_id}, $worker->{id}, "correct worker assigned");
 
-$job = OpenQA::Scheduler::job_get($job_id);
-ok($job->{state} eq "running", "Job is in running state"); # After job_grab the job is in running state.
+$grabed = OpenQA::Scheduler::job_get($job->id);
+ok($grabed->{state} eq "running", "Job is in running state"); # After job_grab the job is in running state.
 
 # register worker again while it has a running job
 $id2 = worker_register("host", "1", "backend", $workercaps);
 ok($id == $id2, "re-register worker got same id");
 
 # Now it's previous job must be set to done
-$job = OpenQA::Scheduler::job_get($job_id);
-is($job->{state}, "done", "Previous job is in done state");
-is($job->{result}, "incomplete", "result is incomplete");
-ok(!$job->{settings}->{JOBTOKEN}, "job token no longer present");
+$grabed = OpenQA::Scheduler::job_get($job->id);
+is($grabed->{state}, "done", "Previous job is in done state");
+is($grabed->{result}, "incomplete", "result is incomplete");
+ok(!$grabed->{settings}->{JOBTOKEN}, "job token no longer present");
 
-$job = OpenQA::Scheduler::job_grab(%args);
-isnt($job_id, $job->{id}, "new job grabbed");
-isnt($job->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs");
+$grabed = OpenQA::Scheduler::job_grab(%args);
+isnt($job->id, $grabed->{id}, "new job grabbed");
+isnt($grabed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs");
 $job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-x86_64-Build666-rainbow';
 
 ## update JOBTOKEN for isdeeply compare
-$job_ref->{settings}->{JOBTOKEN} = $job->{settings}->{JOBTOKEN};
-is_deeply($job->{settings}, $job_ref->{settings}, "settings correct");
-my $job3_id = $job_id;
-$job_id = $job->{id};
+$job_ref->{settings}->{JOBTOKEN} = $grabed->{settings}->{JOBTOKEN};
+is_deeply($grabed->{settings}, $job_ref->{settings}, "settings correct");
+my $job3_id = $job->id;
+my $job_id = $grabed->{id};
 
 # Testing job_set_waiting
 $result = OpenQA::Scheduler::job_set_waiting($job_id);
@@ -314,15 +314,10 @@ $result = OpenQA::Scheduler::job_set_running($job_id);
 $job = OpenQA::Scheduler::job_get($job_id);
 ok($result == 0 && $job->{state} eq "done", "job_set_running on done job");
 
-
-# Testing job_set_prio
-%args = (
-    jobid => $job_id,
-    prio => 100,
-);
-$result = OpenQA::Scheduler::job_set_prio(%args);
+# Testing set_prio
+$schema->resultset('Jobs')->find($job_id)->set_prio(100);
 $job = OpenQA::Scheduler::job_get($job_id);
-ok($result == 1 && $job->{priority} == 100, "job_set_prio");
+is($job->{priority}, 100, "job->set_prio");
 
 
 # Testing job_update_result
@@ -350,8 +345,8 @@ $result = OpenQA::Scheduler::job_delete($job_id);
 my $no_job_id = OpenQA::Scheduler::job_get($job_id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
 
-$result = OpenQA::Scheduler::job_delete($job2_id);
-$no_job_id = OpenQA::Scheduler::job_get($job2_id);
+$result = OpenQA::Scheduler::job_delete($job2->id);
+$no_job_id = OpenQA::Scheduler::job_get($job2->id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
 
 $result = OpenQA::Scheduler::job_delete($job3_id);

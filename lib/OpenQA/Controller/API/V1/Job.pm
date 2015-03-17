@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -65,8 +65,8 @@ sub create {
     my $json = {};
     my $status;
     try {
-        my $res = OpenQA::Scheduler::job_create(\%up_params);
-        $json->{id} = $res;
+        my $job = OpenQA::Scheduler::job_create(\%up_params);
+        $json->{id} = $job->id;
     }
     catch {
         $status = 400;
@@ -124,10 +124,9 @@ sub destroy {
 
 sub prio {
     my ($self) = @_;
-    my $jobid = int($self->stash('jobid'));
-    my $prio = int($self->param('prio'));
+    my $job = $self->app->schema->resultset("Jobs")->find($self->stash('jobid'));
+    my $res = $job->set_prio($self->param('prio'));
 
-    my $res = OpenQA::Scheduler::job_set_prio(jobid => $jobid, prio => $prio);
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
