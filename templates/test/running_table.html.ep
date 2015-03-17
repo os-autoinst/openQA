@@ -59,7 +59,7 @@
 		</td>
 		
 		% my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
-		<td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %></td>
+		<td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %>Z</td>
 		
 		<td style="padding: 3px 4px;" class="progress">
 		    <div class="pbox">
