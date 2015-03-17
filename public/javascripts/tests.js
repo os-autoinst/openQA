@@ -16,7 +16,7 @@ function renderTestName ( data, type, row ) {
 	// the name
 	html += '<a href="/tests/' + row['id'] + '" class="name">' + data + '</a>';
 	html += '</span>';
-	
+
 	if (row['clone'])
             html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
 
@@ -106,7 +106,13 @@ function renderTestsList(jobs) {
 	    { targets: 0,
 	      className: "name",
 	      "render": function ( data, type, row ) {
-		  var name = "<a href='/tests/overview?build=" + row['build'] + "&distri=" + row['distri'] + "&version=" + row['version'] + "'>" + 'Build' + row['build'] + '</a>';
+		  var link = '/tests/overview?build=' + row['build'];
+		  if (row['group'])
+		      link += '&groupid=' + row['group'];
+		  else
+		      link += '&distri=' + row['distri'] + '&version=' + row['version'];
+
+		  var name = "<a href='" + link + "'>" + 'Build' + row['build'] + '</a>';
 		  name += " of ";
 		  return name + row['distri'] + "-" + row['version'] + "-" + row['flavor'] + "." + row['arch'];
 	      }

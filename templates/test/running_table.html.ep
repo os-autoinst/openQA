@@ -36,10 +36,18 @@
 	    % my $build = $settings->{BUILD} // '';
 	    % my $distri = $settings->{DISTRI} // '';
 	    % my $version = $settings->{VERSION} // '';
+	    %   my $query = { build => $build };
+	    %   if ($job->group_id) {
+		% $query->{groupid} = $job->group_id;
+	    % } else
+	    % {
+		% $query->{distri} = $settings->{DISTRI};
+		% $query->{version} = $settings->{VERSION};
+	    % }
 	    <tr id="job_<%= $job->id %>">
 		% my $testname = $job->test . '@' . $settings->{MACHINE};
 		<td class="name">
-                    %= link_to "Build$build" => url_for('tests_overview')->query(distri => $settings->{DISTRI}, version => $settings->{VERSION}, build => $build);
+                    %= link_to "Build$build" => url_for('tests_overview')->query(%$query);
                     of <%= "$settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}" %>
 		</td>
 		<td class="test">
@@ -57,10 +65,9 @@
 			<a href="<%= url_for('test', 'testid' => $parent->parent_job_id) %>">#<%= $parent->parent_job_id %></a>
 		    % }
 		</td>
-		
+
 		% my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
 		<td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %>Z</td>
-		
 		<td style="padding: 3px 4px;" class="progress">
 		    <div class="pbox">
 			% my $ptext = "";

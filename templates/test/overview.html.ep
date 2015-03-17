@@ -10,15 +10,14 @@ setup_overview();
 % end
 <div class="grid_16 box box-shadow omega">
     <h2>Test result overview</h2>
-    <p>This page displays the current results for
-	<b>
-	    % if (defined $distri) {
-		<%= $distri %> <%= $version %>
-	    % } else
-	    % {
-		<%= $group->name %>
-	    % }
-	    build <%= $build %></b>, which overall summary is
+    <p id="summary">This page displays the current results for
+	% if (defined $distri) {
+	    <b><%= $distri %> <%= $version %></b>
+	% } else
+	% {
+	    <b><%= $group->name %></b>
+	% }
+	build <%= $build %>, which overall summary is
 	<b>passed: <%= $aggregated->{passed} %>,
 	    failed: <%= $aggregated->{failed} %>,
 	    unknown: <%= $aggregated->{unknown} %>,

@@ -26,10 +26,18 @@
 	    %   my $build = $settings->{BUILD};
 	    %   my $distri = $settings->{DISTRI};
 	    %   my $version = $settings->{VERSION};
+	    %   my $query = { build => $build };
+	    %   if ($job->group_id) {
+		% $query->{groupid} = $job->group_id;
+	    % } else
+	    % {
+		% $query->{distri} = $settings->{DISTRI};
+		% $query->{version} = $settings->{VERSION};
+	    % }
 	    <tr id="job_<%= $job->id %>">
 		% my $test = $job->test . '@' . $settings->{MACHINE};
                 <td class="name">
-                    %= link_to "Build$build" => url_for('tests_overview')->query(distri => $settings->{DISTRI}, version => $settings->{VERSION}, build => $build);
+                    %= link_to "Build$build" => url_for('tests_overview')->query(%$query);
                     of <%= "$settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}" %>
                 </td>
 		<td class="test">
@@ -61,4 +69,3 @@
         % }
     </tbody>
 </table>
-
