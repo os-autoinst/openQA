@@ -4,6 +4,7 @@ perl:
 before_install:
   - echo "deb http://us.archive.ubuntu.com/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/trusty.list
   - sudo apt-get update
+  - sudo npm install -g less
 install:
   - cpanm -nq Perl::Tidy
   - ./script/tidy --check
