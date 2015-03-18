@@ -1,0 +1,144 @@
+// Headings
+// --------------------------
+h1 { font-size: @baseFontSize * 2; }
+h2 { font-size: @baseFontSize * 1.75; }
+h3 { font-size: @baseFontSize * 1.50; }
+h4 { font-size: @baseFontSize * 1.25; }
+
+h1 small { font-size: @baseFontSize * 1.50; }
+h2 small { font-size: @baseFontSize * 1.20; }
+
+
+// Page header
+// -------------------------
+
+.page-header {
+    padding-bottom: (@baseLineHeight / 2) - 1;
+      margin: @baseLineHeight 0 (@baseLineHeight * 1.5);
+        border-bottom: 1px solid @grayLighter;
+}
+
+
+// openSUSE top bar
+// -------------------------
+.navbar-fixed-top, .navbar-static-top, .navbar-fluid-top {
+  margin-bottom: 10px;
+
+  .navbar-inner {
+    min-height: 30px;
+    background-color: @grayDark;
+    #gradient > .vertical(@grayDark, @grayDarkest);
+    border-radius: 0;
+    box-shadow: none;
+
+    li {
+      a {
+        padding-top: 7px;
+        padding-bottom: 7px;
+        text-shadow: none;
+        color: @white;
+        font-weight: bold;
+
+        &:hover {
+          color: @bentoGreen;
+        }
+      }
+    }
+  }
+}
+
+.navbar-brand {
+    padding-top: 1px;
+    padding-bottom: 0px;
+    height: 15px;
+}
+
+.navbar {
+    min-height: 29px;
+}
+
+// Boxes
+// --------------------------
+#main, .well {
+  background-color: @wellBackground;
+  padding: @bentoWellPadding;
+  padding-top: 0px;
+  border: 1px solid @bentoWellBorderColor;
+  border-radius: @baseBorderRadius;
+  box-shadow: 0px 1px 3px @bentoShadowColor;
+
+  a {
+    color: @blueDark;
+
+    &:hover {
+      color: @bentoGreen;
+    }
+
+    // Avoid overwriting good bootstrap defaults
+    &.btn { color: @grayDark; }
+    &.btn-primary, &.btn-warning, &.btn-danger, &.btn-success,
+    &.btn-info, &.btn-inverse {
+      color: @white
+    }
+  }
+
+  .nav-list {
+    padding-left: 5px;
+    padding-right: 5px;
+
+    .nav-header {
+      background:@white image-url('bento/gradient-light.png') repeat-x scroll 0 -25px;
+      color: @grayDarker;
+      margin-bottom: 5px;
+      text-transform: none;
+      font-size: @baseFontSize;
+      font-weight: bold;
+      margin: 1px -14px 5px;
+      border-bottom: 1px solid @bentoWellBorderColor;
+    }
+  }
+}
+
+// Forms
+// --------------------------------------
+select,
+textarea,
+input[type="text"],
+input[type="password"],
+input[type="datetime"],
+input[type="datetime-local"],
+input[type="date"],
+input[type="month"],
+input[type="time"],
+input[type="week"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+input[type="tel"],
+input[type="color"],
+.uneditable-input {
+  color: @grayDarker;
+}
+
+// Breadcrumbs
+// ---------------------------
+.breadcrumb {
+  background:transparent image-url('bento/home_grey.png') no-repeat;
+  margin: 0px;
+  padding: 0px 0px 0px 20px;
+
+  li {
+    color: @grayDarker;
+
+    text-shadow: none;
+
+    &.active {
+      color: @grayDarker;
+    }
+
+    a {
+      color: @grayDark;
+    }
+  }
+}
