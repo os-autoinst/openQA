@@ -18,6 +18,14 @@ thead tr th, thread tr {
     font-weight: 100;
 }
 
+.highlight_parent {
+    background-color:#ffe0e0 !important;
+}
+
+.highlight_child {
+    background-color:#d0f0ff !important;
+}
+
 .resultok {background-color:#d4f291 ;} 
 .resultpassed {background-color:#d4f291 ;}
 .resultunknown {background-color:#ff9 ;}
