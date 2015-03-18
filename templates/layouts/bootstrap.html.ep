@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <!-- Meta, title, CSS, favicons, etc. -->
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="description" content="openQA is a testing framework mainly for distributions">
+      <meta name="keywords" content="Testing, Linux, Qemu">
+      <meta name="author" content="openQA contributors">
+
+      % if ($title) {
+	  <title><%= $appname.": ".title %></title>
+      % } else
+      % {
+	  <title><%= $appname %></title>
+      % }
+
+      <!-- Bootstrap core CSS -->
+      %= asset 'bootstrap.css'
+      %= asset 'bootstrap.js'
+
+      %= content_for 'head'
+
+      %= javascript begin
+	  %= content_for 'head_javascript'
+	  $(document).ready(function() {
+	    %= content_for 'ready_function'
+	  } );
+      % end
+
+      <link rel="icon" href="/favicon.ico">
+
+  </head>
+  <body>
+      <nav class='navbar navbar-default navbar-static-top'>
+	  <div class='container-fluid navbar-inner'>
+	      <div class="navbar-header">
+		  <a class="navbar-brand" href="#">
+		      <img alt="Brand" src="/images/header-logo.png" />
+		  </a>
+	      </div>
+	      <div class='collapse navbar-collapse'>
+		  <ul class='nav navbar-nav' id='global-navigation'>
+		      <li id='item-downloads'><a href="http://en.opensuse.org/openSUSE:Browse#Downloads">Downloads</a></li>
+		      <li id='item-support'><a href="http://en.opensuse.org/openSUSE:Browse#Support">Support</a></li>
+		      <li id='item-community'><a href="http://en.opensuse.org/openSUSE:Browse#Community">Community</a></li>
+		      <li id='item-development'><a href="http://en.opensuse.org/openSUSE:Browse#Development">Development</a></li>
+		  </ul>
+	      </div>
+	  </div>
+      </nav>
+
+      <div class='container'>
+	  <div class='row' id='subheader'>
+	      <div class='col-md-7'>
+		  %= breadcrumbs
+	      </div>
+	      <div class='col-md-5 text-right'>
+		  <div id="user-info">
+		      %# Using a variable to avoid additional whitespaces
+		      % if (current_user) {
+			  %# Using a variable to avoid additional whitespaces
+			  % my $out = 'Logged as '.current_user->name.' (';
+			  % if (is_operator) {
+			      % $out = $out.link_to('manage API keys' => url_for('api_keys')).' | ';
+			  % }
+			  % if (is_admin) {
+			      % $out = $out.link_to('admin' => url_for('admin')).' | ';
+			  % }
+			  %= b($out.link_to('Logout' => url_for('logout') => 'data-method' => 'delete').')');
+		      % } else {
+		      %= link_to('Login' => url_for('login'));
+		      % }
+		  </div>
+	      </div>
+	  </div>
+	  %= content
+      </div>
+
+      <div id='push-footer'></div>
+
+      <footer id='footer'>
+	  <div class='container-fluid'>
+	      <div id='footer-content'></div>
+	      <div id='footer-legal'>
+		  %= content_for 'footer'
+	      </div>
+	  </div>
+      </footer>
+  </body>
+</html>

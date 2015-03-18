@@ -7,7 +7,8 @@ before_install:
 install:
   - cpanm -nq Perl::Tidy
   - ./script/tidy --check
-  - sudo apt-get install libgmp3-dev
+  - sudo apt-get install libgmp3-dev npm
+  - sudo npm install -g less
   - cpanm -nq `cat DEPENDENCIES.txt` "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
   - MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover -test -report coveralls -ignore_re "t/.*" -coverage default,-pod

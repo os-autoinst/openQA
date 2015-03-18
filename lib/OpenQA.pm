@@ -173,7 +173,18 @@ sub startup {
         'app.js' => qw(/javascripts/jquery-1.11.2.js /javascripts/jquery_ujs.js /javascripts/chosen.jquery.js /javascripts/openqa.js
           /javascripts/jquery.dataTables.js /javascripts/admintable.js /javascripts/jquery.timeago.js /javascripts/tests.js /javascripts/job_templates.js)
     );
+    $self->asset(
+        'bootstrap.js' => qw(/javascripts/jquery-1.11.2.js /javascripts/jquery_ujs.js /javascripts/chosen.jquery.js
+          /javascripts/openqa.js  /javascripts/jquery.dataTables.js /javascripts/admintable.js
+          /javascripts/jquery.timeago.js /javascripts/tests.js /javascripts/job_templates.js
+          /javascripts/bootstrap/affix.js /javascripts/bootstrap/alert.js /javascripts/bootstrap/button.js
+          /javascripts/bootstrap/carousel.js /javascripts/bootstrap/collapse.js /javascripts/bootstrap/dropdown.js
+          /javascripts/bootstrap/modal.js /javascripts/bootstrap/tooltip.js
+          /javascripts/bootstrap/popover.js /javascripts/bootstrap/scrollspy.js
+          /javascripts/bootstrap/tab.js /javascripts/bootstrap/transition.js)
+    );
     $self->asset('app.css' => qw(/stylesheets/font-awesome.css /stylesheets/jquery.dataTables.css /stylesheets/chosen.css /stylesheets/openqa.css /stylesheets/opentip.css));
+    $self->asset('bootstrap.css' => qw(/less/bootstrap.css.less /stylesheets/font-awesome.css /stylesheets/jquery.dataTables.css /stylesheets/chosen.css /stylesheets/openqa.css /stylesheets/opentip.css));
 
     # set secure flag on cookies of https connections
     $self->hook(
@@ -270,12 +281,7 @@ sub startup {
     # Favicon
     $r->get('/favicon.ico' => sub {my $c = shift; $c->render_static('favicon.ico') });
     # Default route
-    $r->get(
-        '/' => sub {
-            my $c = shift;
-            $c->render(template => 'pages/index');
-        }
-    )->name('index');
+    $r->get('/')->name('index')->to('main#index');
 
     # Redirection for old links to openQAv1
     $r->get(
