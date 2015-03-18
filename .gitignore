@@ -8,11 +8,13 @@ temp
 /t/data/openqa/share/tests
 /factory
 /public/packed/
+/public/sass/bootstrap.scss
 testrun-cron
 testrun-manual
 archive
 backlog
 video
 *.swp
+.sass-cache/
 www/htdocs/includes/knownissues.html
 *~

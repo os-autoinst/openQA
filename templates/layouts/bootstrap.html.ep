@@ -17,7 +17,9 @@
       % }
 
       <!-- Bootstrap core CSS -->
-      %= asset 'bootstrap.css'
+      %= asset 'app.css'
+      %= asset 'bentostrap.css'
+      %= asset 'app.js'
       %= asset 'bootstrap.js'
 
       %= content_for 'head'

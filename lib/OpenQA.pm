@@ -168,12 +168,41 @@ sub startup {
     $self->plugin('OpenQA::Plugin::REST');
     $self->plugin('OpenQA::Plugin::HashedParams');
 
-    $self->asset('step_edit.js' => qw(/javascripts/needleedit.js /javascripts/needleeditor.js /javascripts/shapes.js /javascripts/keyevent.js/));
     $self->asset(
-        'app.js' => qw(/javascripts/jquery-1.11.2.js /javascripts/jquery_ujs.js /javascripts/chosen.jquery.js /javascripts/openqa.js
-          /javascripts/jquery.dataTables.js /javascripts/admintable.js /javascripts/jquery.timeago.js /javascripts/tests.js /javascripts/job_templates.js)
+        'step_edit.js' =>qw(/javascripts/needleedit.js
+          /javascripts/needleeditor.js
+          /javascripts/shapes.js
+          /javascripts/keyevent.js/)
     );
-    $self->asset('app.css' => qw(/stylesheets/font-awesome.css /stylesheets/jquery.dataTables.css /stylesheets/chosen.css /stylesheets/openqa.css /stylesheets/opentip.css));
+
+    $self->asset(
+        'app.js' =>qw(/javascripts/jquery-1.11.2.js
+          /javascripts/jquery_ujs.js
+          /javascripts/chosen.jquery.js
+          /javascripts/openqa.js
+          /javascripts/jquery.dataTables.js
+          /javascripts/admintable.js
+          /javascripts/jquery.timeago.js
+          /javascripts/tests.js
+          /javascripts/job_templates.js)
+    );
+    $self->asset(
+        'app.css' =>qw(/stylesheets/font-awesome.css
+          /stylesheets/jquery.dataTables.css
+          /stylesheets/chosen.css
+          /stylesheets/openqa.css )
+    );
+    $self->plugin(
+        bootstrap3 => {
+            css => [],
+            jquery => 0,
+            custom => 0,
+            js => [qw( collapse.js )],
+        }
+    );
+    my $path = Mojolicious::Plugin::Bootstrap3->asset_path('sass');
+    $ENV{SASS_PATH} = ".:$path";
+    $self->asset( 'bentostrap.css' => qw(/sass/bentostrap.scss) );
 
     # set secure flag on cookies of https connections
     $self->hook(
