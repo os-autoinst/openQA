@@ -17,10 +17,10 @@
 % end
 
 <div id="change-margin-form" title="Change search margin">
-  <div>The search for a needle area begins around its original position in the reference
-    screen to speed up the search time. The search margin is automatically increased over time, but sometimes
-    it's useful to set a larger margin for the initial search. The default is 50, but as an example a value
-    of 500 will always search the full screen avoiding having to wait for timeouts.
+<div>The search for a needle area begins around its original position in the reference
+screen to speed up the search time. The search margin is automatically increased over time, but sometimes
+it's useful to set a larger margin for the initial search. The default is 50, but as an example a value
+of 500 will always search the full screen avoiding having to wait for timeouts.
   </div>
 
   <p></p>
@@ -119,7 +119,7 @@
 	%= include 'step/moduleslisttabs'
 	%= include 'layouts/info'
 	
-	<table style="width: 97%;">
+	<table style="width: 97%;" id="screens_table">
 	    <tr>
 		<th>Screens./Needle</th>
 		<th>Image</th>
@@ -133,9 +133,10 @@
 		my $title = $needle->{'name'};
 		$title = $needle->{min_similarity} . "%: $title" if (defined $needle->{min_similarity}); %>
 		
-		<tr <%= 'title=broken' if ($needle->{'broken'}) %> >
-		    <td <%= 'style=color:red;' if ($needle->{'broken'}) %>><%= $title %></td>
+		<tr <%= 'title=broken' if ($needle->{'broken'}) %> id="needle_<%= $needle->{'name'} %>">
+		    <td <%= 'style=color:red;' if ($needle->{'broken'}) %> id="title_<%= $needle->{'name'} %>"><%= $title %></td>
 		    <td><input type="radio" class="background_selector" name="background_selector"
+                   id="bg_btn_<%= $needle->{'name'} %>"
 			       data-image="<%= $needle->{'imagename'} %>"
 			       data-distri="<%= $needle->{'imagedistri'} %>"
 			       data-version="<%= $needle->{'imageversion'} %>"
@@ -147,17 +148,20 @@
 			<input type="radio"
 			       name="area_selector"
 			       class="area_selector"
+                   id="area_btn_<%= $needle->{'name'} %>"
 			       data-areas="<%= JSON::to_json($needle->{area}) %>"
 			<%= 'disabled="disabled"' if $needle->{'broken'}; %>/>
 		    </td>
 		    <td>
 		      <input type="radio" name="area_selector" class="area_selector"
+                   id="matches_btn_<%= $needle->{'name'} %>"
 			     data-areas="<%= JSON::to_json($needle->{matches}) %>"
 			<%= 'checked="checked"' if $needle->{selected}; %>
 			<%= 'disabled="disabled"' if ($needle->{'broken'}); %>/>
 		    </td>
 		    <td>
 			<input type="radio" name="tags_selector" class="tags_selector"
+                   id="tags_btn_<%= $needle->{'name'} %>"
 			       data-tags="<%= JSON::to_json($needle->{tags}) %>"
 			       data-suggested="<%= $needle->{suggested_name} %>"
 			<%= 'checked="checked"' if $needle->{selected}; %>
