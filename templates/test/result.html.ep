@@ -73,14 +73,14 @@
                 <tr>
                     <td>Started</td>
                     <td>
-			<abbr class="timeago" title="<%= $job->t_started->datetime() %>"><%= format_time($job->t_started) %></abbr>
+			<abbr class="timeago" title="<%= $job->t_started->datetime() %>Z"><%= format_time($job->t_started) %></abbr>
 		    </td>
                 </tr>
                 % if ($job->t_finished) {
                     <tr>
                         <td>Finished</td>
                         <td>
-			    <abbr class="timeago" title="<%= $job->t_finished->datetime() %>"><%= format_time($job->t_finished) %></abbr>
+			    <abbr class="timeago" title="<%= $job->t_finished->datetime() %>Z"><%= format_time($job->t_finished) %></abbr>
 			</td>
                     </tr>
                     <tr>
