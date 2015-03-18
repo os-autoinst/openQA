@@ -1,6 +1,24 @@
 var is_operator;
 var restart_url;
 
+function highlight_jobs ( enable, children, parents ) {
+    if (enable) {
+        for (i = 0; i < children.length; ++i) $("#job_" + children[i]).addClass('highlight_child');
+        for (i = 0; i < parents.length; ++i) $("#job_" + parents[i]).addClass('highlight_parent');
+    }
+    else {
+        for (i = 0; i < children.length; ++i) $("#job_" + children[i]).removeClass('highlight_child');
+        for (i = 0; i < parents.length; ++i) $("#job_" + parents[i]).removeClass('highlight_parent');
+    }
+}
+
+
+function highlight_jobs_html (children, parents) {
+    return ' onmouseover="highlight_jobs(true, [' + children.toString() + '], [' + parents.toString() + '])" ' +
+           ' onmouseout="highlight_jobs(false, [' + children.toString() + '], [' + parents.toString() + '])" ';
+}
+
+
 function renderTestName ( data, type, row ) {
     if (type === 'display') {
 	var html = '<span class="result_' + row['result'] + '">';
@@ -57,6 +75,8 @@ function renderTestName ( data, type, row ) {
 
         if (deps != '') {
                 html += ' <a href="/tests/' + row['id'] + '" title="' + deps + '"' +
+                highlight_jobs_html(row['deps']['children']['Parallel'].concat(row['deps']['children']['Chained']),
+                                    row['deps']['parents']['Parallel'].concat(row['deps']['parents']['Chained'])) +
                 '><i class="fa fa-plus"></i></a>';
         }
 
