@@ -2,11 +2,11 @@
 % title 'Test summary';
 
 % content_for 'head' => begin
-%= javascript '/javascripts/overview.js'
+  %= javascript '/javascripts/overview.js'
 % end
 
 % content_for 'ready_function' => begin
-setup_overview();
+  setup_overview();
 % end
 <div class="grid_16 box box-shadow omega">
     <h2>Test result overview</h2>
@@ -27,6 +27,7 @@ setup_overview();
 	    none: <%= $aggregated->{none} %>
 	</b>
     </p>
+    % my $failedid;
     % for my $type (@$types) {
 	<h3>Flavor: <%= $type %></h3>
         <table id="results_<%= $type %>" class="overview table-autostripe">
@@ -81,7 +82,7 @@ setup_overview();
 					% } elsif ($state eq "running" || $state eq "scheduled")
 					% {
 					    %= link_post url_for('apiv1_cancel', 'name' => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
-					    <i class="action fa fa-times-circle-o" title="Cancel the job"></i>
+						<i class="action fa fa-times-circle-o" title="Cancel the job"></i>
 					    % end
 					% }
 				    % }
@@ -98,13 +99,20 @@ setup_overview();
                                             % }
 					    % my $failedneedles = $failedmodules->{$failedmodule};
 					    % my $step = 1;
-					    % my $tooltip = '';
-  					    % if (@$failedneedles) {
+					    % ++$failedid;
+					    % if (@$failedneedles) {
 						% $step = $failedneedles->[0]->[1];
-						% $tooltip = "title='<ul><li>" . join('</li><li>',
-						% sort map { $_->[0] } @$failedneedles) . "</li></ul>' data-ot-title='Failed needles'>";
+						% content_for 'ready_function' => begin
+						    var ul<%= $failedid %> = $('<ul/>');
+						    % for my $n (sort map { $_->[0] } @$failedneedles) {
+							ul<%= $failedid %>.append('<li><%= $n %></li>');
+						    % }
+						    ul<%= $failedid %>.prepend('<p>Failed needles:</p>');
+						    $('#fail<%= $failedid %>').tooltipster({ content: ul<%= $failedid %> });
+						% end
 					    % }
-					    <span class="failedmodule" <%= $tooltip %> >
+
+					    <span id="fail<%= $failedid %>" class="failedmodule" >
 						<a href="<%= url_for('step', 'testid' => $jobid,
 								     'moduleid' => $failedmodule, 'stepid' => $step) %>">
 						    <%= $failedmodule %>
