@@ -8,4 +8,11 @@
     text-align: center;
     color: $gray;
   }
+
+  height: $baseFontSize*1.5+15px;
+  background-color: $bodyBackground;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
 }
+   

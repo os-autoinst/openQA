@@ -39,25 +39,8 @@ thead tr th, thread tr {
   color: #444;
 }
 
-.overview_passed {color: #248509 !important; }		/* dark Lemon */
-.overview_passed a {color: #248509 !important; }
-.overview_unknown {background-color:#ff9 ;}
-.overview_dent {background-color:#ff0 ;}
-.overview_failed {background-color:#fbb ;}
-.overview_incomplete {background-color:#bebebe;}
-.overview_skipped {background-color:#eeff5f;}
-.overview_obsoleted {background-color:#b7b7b7;}
-.overview_parallel_failed {background-color:#e08050 ;}
-.overview_parallel_restarted {background-color:#b0c090 ;}
-.overview_user_cancelled {background-color:#d7d7d7;}
-.overview_user_restarted {background-color:#90c090 ;}
-
 .component { text-align: right; }
 .links { text-align: left; padding-top: 0; }
-
-.sponsors {}
-.subresults {font-size: 80%; }
-.cutofftimeform { margin-left: 2em; }
 
 /* Reference Picture delete Button */
 
@@ -199,32 +182,6 @@ a.pauseplay.play {
 .big-button a:link, .big-button a:visited{background-color: #555; margin: 2em; padding: 1.7em 0em; text-align:center; color: #fff; font-size: 1.33em; border-radius: .41em; box-shadow: inset 0px -2em 5px #333, 0px 2px 3px rgba(0,0,0,0.4); text-shadow: 0px -1px 0px #000; text-transform: uppercase; letter-spacing: 1px; font-weight: bold }
 
 .big-button a:hover,.big-button a:focus{background-color:#ccc; color: #222;  box-shadow: inset 0px 2em 5px #eee, 0px 2px 3px rgba(0,0,0,0.4); text-decoration: none !important; text-shadow: 0px 1px 0px #fff}
-
-/* tooltips */
-
-.tooltip {
-  /*cursor: help;*/
-  position: relative;
-}
-.tooltip span.box {
-  margin-left: -999em;
-  position: absolute;
-  padding: 0.8em 1em;
-  opacity: 0.9;
-}
-.tooltip:hover span.box {
-  /*border-radius: 5px 5px; -moz-border-radius: 5px; -webkit-border-radius: 5px;
-  box-shadow: 5px 5px 5px rgba(0, 0, 0, 0.1); -webkit-box-shadow: 5px 5px rgba(0, 0, 0, 0.1); -moz-box-shadow: 5px 5px rgba(0, 0, 0, 0.1);
-  font-family: Calibri, Tahoma, Geneva, sans-serif;*/
-  position: absolute;
-  left: 4.5em;
-  top: 1.3em;
-  z-index: 99;
-  margin-left: 0;
-  width: 150px;
-}
-
-/* tooltips end */
 
 /* progressbar */
 

@@ -1,4 +1,4 @@
-function setup_overview() {
+function setupOverview() {
     $('.cancel')
     	.bind("ajax:success", function(event, xhr, status) {
             $(this).text(''); // hide the icon
@@ -35,5 +35,6 @@ function setup_overview() {
 	    icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
 
 	});
+    $('[data-toggle="tooltip"]').tooltip({html: true});
 }
 

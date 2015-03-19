@@ -185,8 +185,13 @@ sub startup {
       /javascripts/admintable.js
       /javascripts/jquery.timeago.js
       /javascripts/tests.js
-      /javascripts/job_templates.js);
-    my @css = qw(/stylesheets/font-awesome.css /stylesheets/jquery.dataTables.css /stylesheets/chosen.css /stylesheets/openqa.css );
+      /javascripts/job_templates.js
+      /javascripts/overview.js );
+    my @css = qw(/stylesheets/font-awesome.css
+      /stylesheets/jquery.dataTables.css
+      /stylesheets/chosen.css
+      /stylesheets/overview.scss
+      /stylesheets/openqa.css );
 
     $self->asset( 'app.css' => @css );
     $self->asset( 'app.js'  => @js );
@@ -196,7 +201,7 @@ sub startup {
     $ENV{SASS_PATH} = ".:$path";
     unshift(@css, "/sass/bentostrap.scss");
     $self->asset( 'bootstrap.css' => @css);
-    push(@js, "/js/bootstrap/collapse.js");
+    push(@js, qw(/js/bootstrap/collapse.js /js/bootstrap/tooltip.js));
     $self->asset( 'bootstrap.js' => @js);
 
     # set secure flag on cookies of https connections

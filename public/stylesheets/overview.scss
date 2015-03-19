@@ -1,0 +1,16 @@
+.overview {
+    .tooltip ul {
+	text-align: left;
+	white-space: nowrap;
+    }
+    
+    .tooltip-inner {
+	/* we need smoe more space for all the needles */
+	max-width: 400px;
+    }
+
+}
+
+#summary .badge {
+    margin-right: 8px;
+}

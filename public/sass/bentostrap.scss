@@ -1,16 +1,10 @@
 // you need to touch this everytime there is a change in the files below as the hash is calculated
 // only on this file's content
-// 20150319-3
+// 20150319-6
 @import "bootstrap";
 @import "bootstrap_bento";
 
 // Footer overrides for bento compatibility
 #full-page-wrap {
   margin: 0 auto -($baseFontSize*1.5+15px);
-}
-#push-footer, #footer {
-  height: $baseFontSize*1.5+15px;
-}
-#footer {
-  background-color: $bodyBackground;
 }
