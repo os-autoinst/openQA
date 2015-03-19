@@ -1,0 +1,83 @@
+// Variables            
+// --------------------------------------------------
+
+
+// Global values        
+// --------------------------------------------------
+
+
+// Grays
+// -------------------------
+// There were 18 tones of grey (20 including pure black and white) in the original bento theme
+// Let's group them this way:
+$black:                 #000;
+$grayDarkest:           #222; // Also #111 in original bento
+$grayDarker:            #333; // Also #2e2e2e and #444 in original bento
+$grayDark:              #555; // Also #4e4e4e and #666 in original bento
+$gray:                  #999; // Also #888 and #aaa in original bento
+$grayLight:             #bbb; // Also #ccc in original bento
+$grayLighter:           #e6e6e6; // Also #ddd and #eee in original bento
+$grayLightest:          #f6f6f6; // Also #fefefe in original bento
+$white:                 #fff;
+
+// Other colors
+// ------------
+$green:                 #669900;
+$blue:                  #39c;
+$blueDark:              #006699;
+$bentoGreen:            #669900;
+$bentoGreenLight:       #9f3;
+
+// Typography
+// -------------------------
+$sansFontFamily:        "Lucida Grande", Arial, "DejaVu Sans", Verdana, sans-serif;
+// $serifFontFamily:       ;
+// $monoFontFamily:        ;
+
+$baseFontSize:          13px;
+$baseFontFamily:        $sansFontFamily;
+$baseLineHeight:        16px;
+$altFontFamily:         $sansFontFamily;
+
+$headingsFontFamily:    inherit; // empty to use BS default, $baseFontFamily
+$headingsFontWeight:    bold;    // instead of browser default, bold
+$headingsColor:         $bentoGreen; // empty to use BS default, $textColor
+
+
+// Scaffolding
+// -------------------------
+$bodyBackground:        $grayLightest;
+$textColor:             $grayDarker;
+
+
+// Links
+// -------------------------
+$linkColor:             $bentoGreen;
+$linkColorHover:        $blue;
+
+
+// Wells
+// -------------------------
+$wellBackground:        $white;
+$bentoWellPadding:      10px;
+$bentoWellBorderColor:  darken($grayLighter, 10%);
+
+
+// Component sizing
+// -------------------------
+$baseBorderRadius:      5px;
+$borderRadiusLarge:     7px;
+
+
+// Navbar
+// -------------------------
+$navbarCollapseWidth:             600px;
+
+// Dropdowns
+// -------------------------
+$dropdownLinkBackgroundActive:  $grayLighter;
+
+// Misc
+// -------------------------
+$bentoShadowColor:  $grayLight;
+

@@ -70,11 +70,6 @@
         variables => '',
         settings => [{ key => "DESKTOP", value => "kde" }, { key => "START_AFTER_TEST", value => "kde,textmode" }],
     },
-    JobGroups => {
-        id => 1001,
-	name => 'opensuse'
-    },
-
     Products => {
 		 name => '',
 		 distri => 'opensuse',

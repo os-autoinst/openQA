@@ -1,0 +1,132 @@
+#global-navigation {
+  li.selected {
+    background:#666 image-url('bento/gradient-dark-nav.png') repeat-x scroll bottom left;
+  }
+}
+
+.global-navigation-menu, .global-navigation-menu li:last-child {
+  border-bottom-left-radius:5px;
+  border-bottom-right-radius:5px;
+  -moz-border-radius-bottomleft:5px;
+  -moz-border-radius-bottomright:5px;
+  -webkit-border-bottom-left-radius:5px;
+  -webkit-border-bottom-right-radius:5px;
+  -khtml-border-bottom-left-radius:5px;
+  -khtml-border-bottom-right-radius:5px;
+}
+
+
+.navbar-fixed-top, .navbar-static-top, .navbar-fluid-top {
+  .navbar-inner {
+    .global-navigation-menu {
+      background:#fff;
+      border:1px solid #888;
+      border-color:#DDDDDD #CCCCCC #BBBBBB;
+      border-top:none;
+      width:23em;
+      padding:0;
+      display:none;
+      position:absolute;
+      z-index:10;
+      margin:0;
+
+      li{
+        display:block;
+        clear:both;
+        margin:0;
+        padding: 0;
+        
+        &:nth-child(even) { 
+          background-color:#eee;
+          border-top:1px dotted #ddd;
+          border-bottom:1px dotted #ddd;
+        }
+
+        &:last-child { border-bottom:none; }
+
+        a {
+          min-height:56px;
+          display:block;
+          text-decoration:none;
+          color: $bentoGreen;
+          padding-top: 2px;
+          padding-bottom: 2px;
+        }
+
+        &:hover {
+          background:#690;
+          a { color:#fff; }
+        }
+
+        img {
+          float:left;
+          width:48px;
+          height:48px;
+          margin:4px;
+          margin-right:8px;
+        }
+
+        span.global-navigation-icon {
+          float:left;
+          display:block;
+          width:24px;
+          height:24px;
+          margin:4px;
+          margin-right:8px;
+          padding:0;
+          background-image:image-url('bento/globalnav-im.png');
+          background-color:transparent;
+          background-attachment:scroll;
+          background-repeat:no-repeat;
+
+          &.release-stable{background-position:0 0;}
+          &.release-devel{background-position:0 -24px;}
+          &.packages{background-position:0 -48px;}
+          &.derivatives{background-position:0 -72px;}
+          &.help{background-position:-24px 0;}
+          &.wiki{background-position:-24px -24px;}
+          &.video{background-position:-24px -48px;}
+          &.forums{background-position:-24px -72px;}
+          &.lists{background-position:-24px -96px;}
+          &.irc{background-position:-24px -120px;}
+          &.connect{background-position:-48px 0;}
+          &.users{background-position:-48px -24px;}
+          &.planet{background-position:-48px -48px;}
+          &.news{background-position:-48px -72px;}
+          &.lizards{background-position:-48px -96px;}
+          &.spotlight{background-position:-48px -120px;}
+          &.shop{background-position:-48px -144px;}
+          &.events{background-position:-48px -168px;}
+          &.documentation{background-position:-72px 0;}
+          &.features{background-position:-72px -24px;}
+          &.buildservice{background-position:-72px -48px;}
+          &.bugs{background-position:-72px -72px;}
+          &.studio{background-position:-72px -96px;}
+        }
+
+        span {
+          font-weight:bold;
+          padding-top:4px;
+          display:block;
+          margin-left:36px;
+          margin-right:3px;
+        }
+
+        &:hover span { text-shadow:0 1px 2px #666; }
+
+        span.desc{
+          color:#666;
+          letter-spacing:0.1em;
+          line-height:1.5em;
+          font-size:0.8em;
+          font-weight:normal;
+          padding-top:2px;
+          padding-bottom:4px;
+          text-shadow:none;
+        }
+
+        &:hover span.desc { color:#fff; }
+      }
+    }
+  }
+}

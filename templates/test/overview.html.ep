@@ -1,35 +1,60 @@
-% layout 'default';
+% layout 'bootstrap';
 % title 'Test summary';
 
-% content_for 'head' => begin
-%= javascript '/javascripts/overview.js'
+% content_for 'ready_function' => begin
+  setupOverview();
 % end
 
-% content_for 'ready_function' => begin
-setup_overview();
-% end
-<div class="grid_16 box box-shadow omega">
+<div class="container">
     <h2>Test result overview</h2>
-    <p id="summary">This page displays the current results for
-	% if (defined $distri) {
-	    <b><%= $distri %> <%= $version %></b>
-	% } else
-	% {
-	    <b><%= $group->name %></b>
-	% }
-	build <%= $build %>, which overall summary is
-	<b>passed: <%= $aggregated->{passed} %>,
-	    failed: <%= $aggregated->{failed} %>,
-	    unknown: <%= $aggregated->{unknown} %>,
-	    incomplete: <%= $aggregated->{incomplete} %>,
-	    scheduled: <%= $aggregated->{scheduled} %>,
-	    running: <%= $aggregated->{running} %>,
-	    none: <%= $aggregated->{none} %>
-	</b>
-    </p>
+    <div id="summary" class="panel <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'panel-danger' : 'panel-success' %>">
+	<div class="panel-heading">
+	<h3 class="panel-title">
+	    Overall Summary of
+	    % if (defined $distri) {
+		<b><%= $distri %> <%= $version %></b>
+	    % } else
+	    % {
+		<b><%= $group->name %></b>
+	    % }
+	    build <%= $build %>
+	</h3>
+	</div>
+	<div class="panel-body">
+	    Passed: <span class="badge"><%= $aggregated->{passed} %></span>
+
+	    % if ($aggregated->{incomplete}) {
+		Incomplete:
+		<span class="badge"><%= $aggregated->{incomplete} %></span>
+	    % }
+	    % if ($aggregated->{softfail}) {
+		Soft Failure:
+		<span class="badge"><%= $aggregated->{softfail} %></span>
+	    % }
+	    Failed: <span class="badge"><%= $aggregated->{failed} %></span>
+
+	    % if ($aggregated->{scheduled}) {
+		Scheduled:
+		<span class="badge"><%= $aggregated->{scheduled} %></span>
+	    % }
+	    % if ($aggregated->{running}) {
+		Running:
+		<span class="badge"><%= $aggregated->{running} %></span>
+	    % }
+	    % if ($aggregated->{none}) {
+		None:
+		<span class="badge"><%= $aggregated->{none} %></span>
+	    % }
+	    % if ($aggregated->{unknown}) {
+		Unknown:
+		<span class="badge"><%= $aggregated->{unknown} %></span>
+	    % }
+	</div>
+    </div>
+    % my $failedid;
     % for my $type (@$types) {
 	<h3>Flavor: <%= $type %></h3>
-        <table id="results_<%= $type %>" class="overview table-autostripe">
+        <table id="results_<%= $type %>" class="overview table-striped table-hover">
             <thead>
                 <tr id="flavors">
 		    <th>Test</th>
@@ -81,7 +106,7 @@ setup_overview();
 					% } elsif ($state eq "running" || $state eq "scheduled")
 					% {
 					    %= link_post url_for('apiv1_cancel', 'name' => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
-					    <i class="action fa fa-times-circle-o" title="Cancel the job"></i>
+						<i class="action fa fa-times-circle-o" title="Cancel the job"></i>
 					    % end
 					% }
 				    % }
@@ -99,12 +124,13 @@ setup_overview();
 					    % my $failedneedles = $failedmodules->{$failedmodule};
 					    % my $step = 1;
 					    % my $tooltip = '';
-  					    % if (@$failedneedles) {
+					    % if (@$failedneedles) {
 						% $step = $failedneedles->[0]->[1];
-						% $tooltip = "title='<ul><li>" . join('</li><li>',
-						% sort map { $_->[0] } @$failedneedles) . "</li></ul>' data-ot-title='Failed needles'>";
+						% $tooltip = "title='<p>Failed needles:</p><ul><li>" . join('</li><li>',
+						% sort map { $_->[0] } @$failedneedles) . "</li></ul>' data-toggle='tooltip'";
 					    % }
-					    <span class="failedmodule" <%= $tooltip %> >
+
+					    <span <%= Mojo::ByteStream->new($tooltip) %> class="failedmodule" >
 						<a href="<%= url_for('step', 'testid' => $jobid,
 								     'moduleid' => $failedmodule, 'stepid' => $step) %>">
 						    <%= $failedmodule %>

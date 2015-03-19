@@ -1,0 +1,66 @@
+% layout 'bootstrap';
+% title '';
+
+%= include 'layouts/info'
+
+% content_for 'ready_function' => begin
+    $('.timeago').timeago();
+% end
+
+<div class="row">
+  <div class="col-md-10">
+    <div class="box">
+      <h1>Welcome to <%= $appname %></h1>
+      <p>This is instance of openQA - fully automated testing framework.
+	openQA is testing framework that allows you to test GUI applications on
+	one hand and bootloader and kernel on the other. In both cases, it is
+	difficult to script test and verify the output. Output can be popup
+	window or it can be error in early boot even before init is executed.</p>
+
+      <p>Read more on the <a href="http://os-autoinst.github.io/openQA/">github page</a>.</p>
+    </div>
+  </div>
+
+  <div class="col-md-2 hidden-sm hidden-xs">
+      % if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
+	  <div class="text-right" id="sponsorbox">
+	      <a href="http://www.suse.com" title="SUSE">
+		  <img alt="sponsor_suse" class="icons-sponsor_suse" src="images/suse.png" />
+	      </a>
+	  </div>
+	  <div class="text-muted text-center">Sponsor</div>
+      % }
+  </div>
+
+</div>
+
+% for my $groupresults (@$results) {
+    % my $group = delete $groupresults->{_group};
+    <h2><%= link_to $group->name => url_for('tests')->query(groupid => $group->id) %><h2>
+    % my $max = delete $groupresults->{_max};
+    % for my $build (sort { $b <=> $a } keys %$groupresults) {
+	<div class="row">
+	    <div class="col-md-4 text-nowrap">
+		<h4>
+		    <%= link_to "Build$build" => url_for('tests_overview')->query(build => $build, groupid => $group->id ) %>
+		    (<abbr class="timeago" title="<%= $groupresults->{$build}->{oldest}->datetime() %>">
+		    <%= delete $groupresults->{$build}->{oldest} %>
+		    </abbr>)
+		</h4>
+	    </div>
+	    <div class="col-md-8">
+		<div class="progress">
+		    <div class="progress-bar progress-bar-success" style="width: <%= $groupresults->{$build}->{passed} * 100 / $max %>%">
+			<%= $groupresults->{$build}->{passed} %> passed
+		    </div>
+		    <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: <%= $groupresults->{$build}->{inprogress} * 100 / $max %>%">
+			<%= $groupresults->{$build}->{inprogress} %> unfinished
+		    </div>
+		    <div class="progress-bar progress-bar-danger" style="width: <%= $groupresults->{$build}->{failed} * 100 / $max %>%">
+			<%= $groupresults->{$build}->{failed} %> failed
+		    </div>
+		</div>
+	    </div>
+	</div>
+    % }
+% }

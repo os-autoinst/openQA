@@ -48,6 +48,7 @@ Mojolicious
 Mojolicious::Commands
 Mojolicious::Plugin
 Mojolicious::Plugin::AssetPack
+Mojolicious::Plugin::Bootstrap3
 Mojolicious::Static
 Net::OpenID::Consumer
 Package::Stash

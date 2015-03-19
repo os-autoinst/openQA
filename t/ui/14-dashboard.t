@@ -1,5 +1,3 @@
-BEGIN { unshift @INC, 'lib'; }
-
 # Copyright (C) 2014 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
@@ -16,15 +14,41 @@ BEGIN { unshift @INC, 'lib'; }
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-use Mojo::Base -strict;
+BEGIN {
+    unshift @INC, 'lib';
+}
 
+use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
-use OpenQA::Test::Database;
+use OpenQA::Test::Case;
 
-OpenQA::Test::Database->new->create(skip_fixtures => 1);
+OpenQA::Test::Case->new->init_data;
+
+use t::ui::PhantomTest;
 
 my $t = Test::Mojo->new('OpenQA');
-$t->get_ok('/')->status_is(200)->content_like(qr/Welcome to openQA/i);
 
+my $driver = t::ui::PhantomTest::call_phantom();
+if ($driver) {
+    plan tests => 2;
+}
+else {
+    plan skip_all => 'Install phantomjs to run these tests';
+    exit(0);
+}
+
+#
+# List with no parameters
+#
+is($driver->get_title(), "openQA", "on main page");
+my $baseurl = $driver->get_current_url();
+
+$driver->find_element('Build0091', 'link_text')->click();
+
+like($driver->find_element('#summary', 'css')->get_text(),qr/Overall Summary of opensuse build 0091/, 'we are on build 91');
+
+#t::ui::PhantomTest::make_screenshot('mojoResults.png');
+
+t::ui::PhantomTest::kill_phantom();
 done_testing();

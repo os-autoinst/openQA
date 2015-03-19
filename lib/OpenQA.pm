@@ -168,12 +168,41 @@ sub startup {
     $self->plugin('OpenQA::Plugin::REST');
     $self->plugin('OpenQA::Plugin::HashedParams');
 
-    $self->asset('step_edit.js' => qw(/javascripts/needleedit.js /javascripts/needleeditor.js /javascripts/shapes.js /javascripts/keyevent.js/));
+    $self->plugin( bootstrap3 => { css => [], js => [] } );
+
     $self->asset(
-        'app.js' => qw(/javascripts/jquery-1.11.2.js /javascripts/jquery_ujs.js /javascripts/chosen.jquery.js /javascripts/openqa.js
-          /javascripts/jquery.dataTables.js /javascripts/admintable.js /javascripts/jquery.timeago.js /javascripts/tests.js /javascripts/job_templates.js)
+        'step_edit.js' =>qw(/javascripts/needleedit.js
+          /javascripts/needleeditor.js
+          /javascripts/shapes.js
+          /javascripts/keyevent.js/)
     );
-    $self->asset('app.css' => qw(/stylesheets/font-awesome.css /stylesheets/jquery.dataTables.css /stylesheets/chosen.css /stylesheets/openqa.css /stylesheets/opentip.css));
+
+    my @js = qw(/javascripts/jquery-1.11.2.js
+      /javascripts/jquery_ujs.js
+      /javascripts/chosen.jquery.js
+      /javascripts/openqa.js
+      /javascripts/jquery.dataTables.js
+      /javascripts/admintable.js
+      /javascripts/jquery.timeago.js
+      /javascripts/tests.js
+      /javascripts/job_templates.js
+      /javascripts/overview.js );
+    my @css = qw(/stylesheets/font-awesome.css
+      /stylesheets/jquery.dataTables.css
+      /stylesheets/chosen.css
+      /stylesheets/overview.scss
+      /stylesheets/openqa.css );
+
+    $self->asset( 'app.css' => @css );
+    $self->asset( 'app.js'  => @js );
+    my $path = Mojolicious::Plugin::Bootstrap3->asset_path('sass');
+    # the perl binding is just bad it seems
+    $ENV{ENABLE_LIBSASS_BINDINGS} = 0;
+    $ENV{SASS_PATH} = ".:$path";
+    unshift(@css, "/sass/bentostrap.scss");
+    $self->asset( 'bootstrap.css' => @css);
+    push(@js, qw(/js/bootstrap/collapse.js /js/bootstrap/tooltip.js));
+    $self->asset( 'bootstrap.js' => @js);
 
     # set secure flag on cookies of https connections
     $self->hook(
@@ -270,12 +299,7 @@ sub startup {
     # Favicon
     $r->get('/favicon.ico' => sub {my $c = shift; $c->render_static('favicon.ico') });
     # Default route
-    $r->get(
-        '/' => sub {
-            my $c = shift;
-            $c->render(template => 'pages/index');
-        }
-    )->name('index');
+    $r->get('/')->name('index')->to('main#index');
 
     # Redirection for old links to openQAv1
     $r->get(
