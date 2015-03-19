@@ -150,9 +150,10 @@ NeedleEditor.ShapeFromArea = function(a) {
 }
 
 NeedleEditor.prototype.DrawAreas = function() {
-  this.needle['area'].forEach(function(area) {
-    this.cv.addShape(NeedleEditor.ShapeFromArea(area));
-  }.bind(this));
+  var editor = this;
+  jQuery.each(editor.needle['area'], function(index, area) {
+    editor.cv.addShape(NeedleEditor.ShapeFromArea(area));
+  });
   return true;
 }
 
