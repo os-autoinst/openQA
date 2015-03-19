@@ -193,6 +193,14 @@ sub startup {
       /stylesheets/overview.scss
       /stylesheets/openqa.css );
 
+    # preprocessors to expend the url() definitions in the css
+    $self->asset->preprocessors->add(
+        css => sub {
+            my ($assetpack, $text, $file) = @_;
+            $$text =~ s!url\('!url('../images/!g if $file =~ /chosen.css/;
+        }
+    );
+
     $self->asset( 'app.css' => @css );
     $self->asset( 'app.js'  => @js );
     my $path = Mojolicious::Plugin::Bootstrap3->asset_path('sass');
