@@ -77,7 +77,7 @@ function renderTestName ( data, type, row ) {
                 html += ' <a href="/tests/' + row['id'] + '" title="' + deps + '"' +
                 highlight_jobs_html(row['deps']['children']['Parallel'].concat(row['deps']['children']['Chained']),
                                     row['deps']['parents']['Parallel'].concat(row['deps']['parents']['Chained'])) +
-                '><i class="fa fa-plus"></i></a>';
+                '><i class="fa fa-code-fork"></i></a>';
         }
 
 	if (row['clone'])
