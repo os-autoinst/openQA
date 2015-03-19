@@ -34,7 +34,7 @@ use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 48;
+    plan tests => 41;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -71,20 +71,7 @@ sub goto_editpage() {
 
     like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged as Demo.*Logout/, "logged in as demo");
 
-    $driver->find_element('div.big-button a', 'css')->click();
-    is($driver->get_current_url(), $baseurl . "tests/", "on /tests");
-    is($driver->get_title(), "openQA: Test results", "on tests page");
-
-    # Test 99946 is successful (29/0/1)
-    my $job99946 = $driver->find_element('#results #job_99946', 'css');
-    my @tds = $driver->find_child_elements($job99946, "td");
-    is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', "medium of 99946");
-    is((shift @tds)->get_text(), 'textmode@32bit', "test of 99946");
-    is((shift @tds)->get_text(), '29 1', "result of 99946");
-    is((shift @tds)->get_text(), "", "no deps of 99946");
-    like((shift @tds)->get_text(), qr/a minute ago/, "time of 99946");
-
-    $driver->find_element('#results #job_99946 td.test a', 'css')->click();
+    $driver->get($baseurl . "tests/99946");
     is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode test results', 'tests/99946 followed');
 
     $driver->find_element('installer_timezone', 'link_text')->click();
