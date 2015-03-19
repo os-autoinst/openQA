@@ -363,6 +363,7 @@ sub query_jobs {
     unless ($args{idsonly}) {
         push @{$attrs{'prefetch'}}, 'settings';
         push @{$attrs{'prefetch'}}, 'parents';
+        push @{$attrs{'prefetch'}}, 'children';
     }
 
     if ($args{state}) {
