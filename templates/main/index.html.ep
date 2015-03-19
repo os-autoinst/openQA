@@ -8,7 +8,7 @@
 % end
 
 <div class="row">
-  <div class="col-md-9">
+  <div class="col-md-10">
     <div class="box">
       <h1>Welcome to <%= $appname %></h1>
       <p>This is instance of openQA - fully automated testing framework.
@@ -21,31 +21,32 @@
     </div>
   </div>
 
-  <div class="col-md-3 hidden-sm hidden-xs">
-    % if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
-    <div class="box">
-      <h2 class="header">Sponsor</h2>
-      <a href="http://www.suse.com" title="SUSE"><img alt="sponsor_suse" class="icons-sponsor_suse" src="images/suse.png" /></a>
-      <p>
-	<em>Enterprise Linux you can rely on.</em>
-      </p>
-    </div>
-    % }
+  <div class="col-md-2 hidden-sm hidden-xs">
+      % if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
+	  <div class="text-right" id="sponsorbox">
+	      <a href="http://www.suse.com" title="SUSE">
+		  <img alt="sponsor_suse" class="icons-sponsor_suse" src="images/suse.png" />
+	      </a>
+	  </div>
+	  <div class="text-muted text-center">Sponsor</div>
+      % }
   </div>
 
 </div>
 
 % for my $groupresults (@$results) {
     % my $group = delete $groupresults->{_group};
-    <h2><%= $group->name %><h2>
+    <h2><%= link_to $group->name => url_for('tests')->query(groupid => $group->id) %><h2>
     % my $max = delete $groupresults->{_max};
     % for my $build (sort { $b <=> $a } keys %$groupresults) {
 	<div class="row">
 	    <div class="col-md-4 text-nowrap">
-		<h4><%= link_to "Build$build" => url_for('tests_overview')->query(build => $build, groupid => $group->id ) %>
-		(<abbr class="timeago" title="<%= $groupresults->{$build}->{oldest}->datetime() %>">
+		<h4>
+		    <%= link_to "Build$build" => url_for('tests_overview')->query(build => $build, groupid => $group->id ) %>
+		    (<abbr class="timeago" title="<%= $groupresults->{$build}->{oldest}->datetime() %>">
 		    <%= delete $groupresults->{$build}->{oldest} %>
-		</abbr>)</h4>
+		    </abbr>)
+		</h4>
 	    </div>
 	    <div class="col-md-8">
 		<div class="progress">

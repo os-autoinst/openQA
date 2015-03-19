@@ -549,4 +549,8 @@ table#users input[type="radio"]:checked + label .fa-circle-o {
     padding-bottom: 15px;
 }
     
- /* vim: set sw=4 et: */
+#sponsorbox {
+    padding-top: 2em;
+    padding-bottom: 0.5em;
+}
+

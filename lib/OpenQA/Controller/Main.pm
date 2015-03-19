@@ -73,7 +73,10 @@ sub index {
                 {
                     next; # ignore
                 }
-                $jr{inprogress}++;
+                if ( $job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED ) {
+                    $jr{inprogress}++;
+                    next;
+                }
                 $self->app->log->error("MISSING S:" . $job->state . " R:" . $job->result);
             }
             $self->app->log->debug($jr{oldest});

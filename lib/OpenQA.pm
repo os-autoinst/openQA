@@ -168,6 +168,8 @@ sub startup {
     $self->plugin('OpenQA::Plugin::REST');
     $self->plugin('OpenQA::Plugin::HashedParams');
 
+    $self->plugin( bootstrap3 => { css => [], js => [] } );
+
     $self->asset(
         'step_edit.js' =>qw(/javascripts/needleedit.js
           /javascripts/needleeditor.js
@@ -175,36 +177,27 @@ sub startup {
           /javascripts/keyevent.js/)
     );
 
-    $self->asset(
-        'app.js' =>qw(/javascripts/jquery-1.11.2.js
-          /javascripts/jquery_ujs.js
-          /javascripts/chosen.jquery.js
-          /javascripts/openqa.js
-          /javascripts/jquery.dataTables.js
-          /javascripts/admintable.js
-          /javascripts/jquery.timeago.js
-          /javascripts/tests.js
-          /javascripts/job_templates.js)
-    );
-    $self->asset(
-        'app.css' =>qw(/stylesheets/font-awesome.css
-          /stylesheets/jquery.dataTables.css
-          /stylesheets/chosen.css
-          /stylesheets/openqa.css )
-    );
-    $self->plugin(
-        bootstrap3 => {
-            css => [],
-            jquery => 0,
-            custom => 0,
-            js => [qw( collapse.js )],
-        }
-    );
+    my @js = qw(/javascripts/jquery-1.11.2.js
+      /javascripts/jquery_ujs.js
+      /javascripts/chosen.jquery.js
+      /javascripts/openqa.js
+      /javascripts/jquery.dataTables.js
+      /javascripts/admintable.js
+      /javascripts/jquery.timeago.js
+      /javascripts/tests.js
+      /javascripts/job_templates.js);
+    my @css = qw(/stylesheets/font-awesome.css /stylesheets/jquery.dataTables.css /stylesheets/chosen.css /stylesheets/openqa.css );
+
+    $self->asset( 'app.css' => @css );
+    $self->asset( 'app.js'  => @js );
     my $path = Mojolicious::Plugin::Bootstrap3->asset_path('sass');
     # the perl binding is just bad it seems
     $ENV{ENABLE_LIBSASS_BINDINGS} = 0;
     $ENV{SASS_PATH} = ".:$path";
-    $self->asset( 'bentostrap.css' => qw(/sass/bentostrap.scss) );
+    unshift(@css, "/sass/bentostrap.scss");
+    $self->asset( 'bootstrap.css' => @css);
+    push(@js, "/js/bootstrap/collapse.js");
+    $self->asset( 'bootstrap.js' => @js);
 
     # set secure flag on cookies of https connections
     $self->hook(

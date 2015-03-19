@@ -54,8 +54,10 @@ h2 small { font-size: $baseFontSize * 1.20; }
     height: 15px;
 }
 
-.navbar {
+.navbar.container-fluid {
     min-height: 29px;
+    padding-left: 0;
+    padding-right: 0;
 }
 
 // Boxes
