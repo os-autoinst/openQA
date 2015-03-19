@@ -1,21 +1,26 @@
 var is_operator;
 var restart_url;
 
-function highlight_jobs ( enable, children, parents ) {
-    if (enable) {
-        for (i = 0; i < children.length; ++i) $("#job_" + children[i]).addClass('highlight_child');
-        for (i = 0; i < parents.length; ++i) $("#job_" + parents[i]).addClass('highlight_parent');
-    }
-    else {
-        for (i = 0; i < children.length; ++i) $("#job_" + children[i]).removeClass('highlight_child');
-        for (i = 0; i < parents.length; ++i) $("#job_" + parents[i]).removeClass('highlight_parent');
-    }
+function addClassToArray(data, theclass) {
+    for (i = 0; i < data.length; ++i) $("#job_" + data[i]).addClass(theclass);
 }
 
+function removeClassFromArray(data, theclass) {
+    for (i = 0; i < data.length; ++i) $("#job_" + data[i]).removeClass(theclass);
+}
 
-function highlight_jobs_html (children, parents) {
-    return ' onmouseover="highlight_jobs(true, [' + children.toString() + '], [' + parents.toString() + '])" ' +
-           ' onmouseout="highlight_jobs(false, [' + children.toString() + '], [' + parents.toString() + '])" ';
+function highlightJobs () {
+    addClassToArray($(this).data('children'), 'highlight_child');
+    addClassToArray($(this).data('parents'), 'highlight_parent');
+}
+
+function unhighlightJobs( children, parents ) {
+    removeClassFromArray($(this).data('children'), 'highlight_child');
+    removeClassFromArray($(this).data('parents'), 'highlight_parent');
+}
+
+function highlightJobsHtml (children, parents) {
+    return ' data-children="[' + children.toString() + ']" data-parents="[' + parents.toString() + ']" class="parent_child"';
 }
 
 
@@ -42,7 +47,7 @@ function renderTestName ( data, type, row ) {
                 deps += '1 Chained parent';
             }
             else {
-                deps += row['deps']['parents']['Chained'].length + ' Chained parents'
+                deps += row['deps']['parents']['Chained'].length + ' Chained parents';
             }
         }
         if (row['deps']['parents']['Parallel'].length) {
@@ -51,7 +56,7 @@ function renderTestName ( data, type, row ) {
                 deps += '1 Parallel parent';
             }
             else {
-                deps += row['deps']['parents']['Parallel'].length + ' Parallel parents'
+                deps += row['deps']['parents']['Parallel'].length + ' Parallel parents';
             }
         }
         if (row['deps']['children']['Chained'].length) {
@@ -60,7 +65,7 @@ function renderTestName ( data, type, row ) {
                 deps += '1 Chained child';
             }
             else {
-                deps += row['deps']['children']['Chained'].length + ' Chained children'
+                deps += row['deps']['children']['Chained'].length + ' Chained children';
             }
         }
         if (row['deps']['children']['Parallel'].length) {
@@ -69,13 +74,13 @@ function renderTestName ( data, type, row ) {
                 deps += '1 Parallel child';
             }
             else {
-                deps += row['deps']['children']['Parallel'].length + ' Parallel children'
+                deps += row['deps']['children']['Parallel'].length + ' Parallel children';
             }
         }
 
         if (deps != '') {
                 html += ' <a href="/tests/' + row['id'] + '" title="' + deps + '"' +
-                highlight_jobs_html(row['deps']['children']['Parallel'].concat(row['deps']['children']['Chained']),
+                highlightJobsHtml(row['deps']['children']['Parallel'].concat(row['deps']['children']['Chained']),
                                     row['deps']['parents']['Parallel'].concat(row['deps']['parents']['Chained'])) +
                 '><i class="fa fa-code-fork"></i></a>';
         }
@@ -198,4 +203,6 @@ function renderTestsList(jobs) {
 	$.post(restart_link.attr("href")).done( function( data ) { $(link).append(' (restarted)'); });
 	$(this).html('');
     });
+    $(document).on('mouseover', '.parent_child', highlightJobs);
+    $(document).on('mouseout', '.parent_child', unhighlightJobs);
 };
