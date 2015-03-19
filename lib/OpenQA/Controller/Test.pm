@@ -94,13 +94,12 @@ sub list_ajax {
     my @list;
     while (my $job = $jobs->next) {
         my $settings = $job->settings_hash;
-        my @deps = map { $_->parent_job_id } $job->parents;
         my $data = {
             "DT_RowId" => "job_" .  $job->id,
             id => $job->id,
             result_stats => $result_stats->{$job->id},
             overall=>$job->state||'unk',
-            deps => \@deps,
+            deps => $job->deps_hash,
             clone => $job->clone_id,
             test => $job->test . "@" . $settings->{MACHINE},
             distri => $settings->{DISTRI} // '',

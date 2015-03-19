@@ -14,7 +14,6 @@
         <tr>
 	    <th class="name">Medium</th>
 	    <th class="name">Test</th>
-            <th>Deps</th>
             <th>Priority</th>
         </tr>
     </thead>
@@ -49,12 +48,6 @@
                     %= $test
                     % end
 		</td>
-                <td class="parents">
-		    % my $parents = $job->parents;
-		    % while (my $parent = $parents->next) {
-                        <a href="<%= url_for('test', 'testid' => $parent->parent_job_id) %>">#<%= $parent->parent_job_id %></a>
-		    % }
-                </td>
                 % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
                 <td class="actions">
 		    %= link_post url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio-10) => (class => 'prio-down') =>  ('data-remote' => 'true') => begin

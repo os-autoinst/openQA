@@ -47,7 +47,6 @@
                 <th class="name">Medium</th>
 		<th>Test</th>
 		<th>Result</th>
-                <th>Deps</th>
                 <th>Testtime</th>
             </tr>
         </thead>

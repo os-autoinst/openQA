@@ -5,7 +5,7 @@
 	"columnDefs": [
 	    { targets: 0,
               className: "name" },
-            { targets: 3,
+            { targets: 2,
               className: "time",
               "render": function ( data, type, row ) {
                     if (type === 'display') {
@@ -23,7 +23,6 @@
         <tr>
 	    <th class="name">Medium</th>
 	    <th class="test">Test</th>
-            <th>Deps</th>
             <th>Testtime</th>
             <th>Result</th>
         </tr>
@@ -59,13 +58,6 @@
                     %= $testname
                     % end
 		</td>
-		<td class="parents">
-		    % my $parents = $job->parents;
-		    % while (my $parent = $parents->next ) {
-			<a href="<%= url_for('test', 'testid' => $parent->parent_job_id) %>">#<%= $parent->parent_job_id %></a>
-		    % }
-		</td>
-
 		% my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
 		<td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %>Z</td>
 		<td style="padding: 3px 4px;" class="progress">
