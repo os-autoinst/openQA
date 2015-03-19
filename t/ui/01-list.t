@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 32;
+    plan tests => 31;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -43,8 +43,6 @@ else {
 #
 is($driver->get_title(), "openQA", "on main page");
 my $baseurl = $driver->get_current_url();
-$driver->find_element('div.big-button a', 'css')->click();
-is($driver->get_current_url(), $baseurl . "tests/", "on /tests");
 
 my $get;
 

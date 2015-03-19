@@ -19,8 +19,13 @@
         type => 'iso',
         name => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso',
     },
+    JobGroups => {
+        id => 1001,
+        name => 'opensuse'
+    },
     Jobs => {
         id => 99926,
+        group_id => 1001,
         priority => 56,
         result => "incomplete",
         retry_avbl => 3,
@@ -35,6 +40,7 @@
     },
     Jobs => {
         id => 99927,
+        group_id => 1001,
         priority => 45,
         result => "none",
         state => "scheduled",
@@ -63,6 +69,7 @@
     },
     Jobs => {
         id => 99937,
+        group_id => 1001,
         priority => 35,
         result => "passed",
         state => "done",
@@ -77,6 +84,7 @@
     },
     Jobs => {
         id => 99938,
+        group_id => 1001,
         priority => 36,
         result => "failed",
         state => "done",
@@ -91,6 +99,7 @@
     },
     Jobs => {
         id => 99946,
+        group_id => 1001,
         priority => 35,
         result => "passed",
         state => "done",
@@ -106,6 +115,7 @@
     },
     Jobs => {
         id => 99945,
+        group_id => 1001,
         clone_id => 99946,
         priority => 35,
         result => "passed",
@@ -121,6 +131,7 @@
     },
     Jobs => {
         id => 99963,
+        group_id => 1001,
         priority => 35,
         result => "none",
         state => "running",
@@ -136,6 +147,7 @@
     },
     Jobs => {
         id => 99962,
+        group_id => 1001,
         clone_id => 99963,
         priority => 35,
         result => "failed",
@@ -151,6 +163,7 @@
     },
     Jobs => {
         id => 99981,
+        group_id => 1001,
         priority => 50,
         result => "none",
         state => "cancelled",
@@ -164,6 +177,7 @@
     },
     Jobs => {
         id => 99961,
+        group_id => 1001,
         priority => 35,
         result => "none",
         state => "running",

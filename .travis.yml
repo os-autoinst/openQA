@@ -6,6 +6,7 @@ before_install:
   - sudo apt-get update
 install:
   - cpanm -nq Perl::Tidy
+  - gem install sass
   - ./script/tidy --check
   - sudo apt-get install libgmp3-dev
   - cpanm -nq `cat DEPENDENCIES.txt` "Devel::Cover" "Devel::Cover::Report::Coveralls"
