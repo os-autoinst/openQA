@@ -8,6 +8,13 @@ h4 { font-size: $baseFontSize * 1.25; }
 h1 small { font-size: $baseFontSize * 1.50; }
 h2 small { font-size: $baseFontSize * 1.20; }
 
+.jumbotron {
+  h1,
+  .h1 {
+    font-size: $baseFontSize * 4;
+  }
+}
+
 
 // Page header
 // -------------------------
