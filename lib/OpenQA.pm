@@ -204,8 +204,6 @@ sub startup {
     $self->asset( 'app.css' => @css );
     $self->asset( 'app.js'  => @js );
     my $path = Mojolicious::Plugin::Bootstrap3->asset_path('sass');
-    # the perl binding is just bad it seems
-    $ENV{ENABLE_LIBSASS_BINDINGS} = 0;
     $ENV{SASS_PATH} = ".:$path";
     unshift(@css, "/sass/bentostrap.scss");
     $self->asset( 'bootstrap.css' => @css);
