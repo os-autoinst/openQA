@@ -324,6 +324,7 @@ sub duplicate{
         my $new_job = $rsource->resultset->create(
             {
                 test => $self->test,
+                group_id => $self->group_id,
                 settings => \@new_settings,
                 priority => $args->{prio} || $self->priority,
                 jobs_assets => [ map { { asset => { id => $_->asset_id } } } $self->jobs_assets->all() ],
