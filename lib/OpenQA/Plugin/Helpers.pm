@@ -161,9 +161,6 @@ sub register {
                 return 'resultfail';
             }
             elsif ($res eq 'passed') {
-                return 'resultok';
-            }
-            elsif ($res eq 'ok') {
                 return $hash->{soft_failure} ? 'resultwarning' : 'resultok';
             }
             else {
@@ -175,13 +172,16 @@ sub register {
         format_result => sub {
             my ($c, $module) = @_;
             return undef unless $module;
-            my $res = $module->{'result'};
+            my $res = $module->{result};
 
             if ($res eq 'na') {
                 return 'n/a';
             }
             elsif ($res eq 'unk') {
                 return 'unknown';
+            }
+            elsif ($res eq 'passed' && $module->{soft_failure} ) {
+                return 'soft failed';
             }
             else {
                 return $res;
