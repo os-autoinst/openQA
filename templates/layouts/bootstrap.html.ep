@@ -83,7 +83,7 @@
 	  %= content
       </div>
 
-      <footer id='footer'>
+      <footer class='footer'>
 	  <div class='container'>
 	      <div id='footer-content'>
                  %= content_for 'footer'

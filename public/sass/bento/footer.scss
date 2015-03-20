@@ -1,4 +1,13 @@
-#footer {
+html {
+  position: relative;
+  min-height: 100%;
+}
+body {
+  /* Margin bottom by footer height */
+  margin-bottom: $baseFontSize*1.5+15px;
+}
+
+.footer {
   #footer-content {
     margin-top: 10px;
   }
