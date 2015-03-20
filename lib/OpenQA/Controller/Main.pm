@@ -67,13 +67,16 @@ sub index {
                         $jr{failed}++;
                         next;
                     }
+                    if ( grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS ) {
+                        next; # ignore the rest
+                    }
                 }
                 if (  $job->state eq OpenQA::Schema::Result::Jobs::CANCELLED
                     ||$job->state eq OpenQA::Schema::Result::Jobs::OBSOLETED)
                 {
                     next; # ignore
                 }
-                if ( $job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED ) {
+                if ( $job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED || $job->state eq OpenQA::Schema::Result::Jobs::RUNNING ) {
                     $jr{inprogress}++;
                     next;
                 }
