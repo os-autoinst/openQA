@@ -34,7 +34,7 @@ use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 41;
+    plan tests => 51;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -135,11 +135,12 @@ sub add_workaround_property() {
     is($driver->find_element('#property_workaround', 'css')->is_selected(), 1, "workaround property selected");
 }
 
-# change_needle_area($offset)
-sub change_needle_area($$) {
+# change_needle_value($xoffset, $yoffset)
+sub change_needle_value($$) {
     my $xoffset = shift;
     my $yoffset = shift;
     my $pre_offset = 10; # we need this value as first position the cursor moved on
+    my $decode_new_textarea;
 
     $elem = $driver->find_element('#needleeditor_textarea', 'css');
     $decode_textarea = decode_json($elem->get_value());
@@ -153,11 +154,40 @@ sub change_needle_area($$) {
         sleep 1;
     }
 
-    # check the value of textarea again
     $elem = $driver->find_element('#needleeditor_textarea', 'css');
-    my $decode_new_textarea = decode_json($elem->get_value());
+    # check the value of textarea again
+    $decode_new_textarea = decode_json($elem->get_value());
     is($decode_new_textarea->{area}[0]->{xpos}, $xoffset, "new xpos correct");
     is($decode_new_textarea->{area}[0]->{ypos}, $yoffset, "new ypos correct");
+
+    # test match type
+    $decode_new_textarea = decode_json($elem->get_value());
+    is($decode_new_textarea->{area}[0]->{type}, "match", "type is match");
+    $driver->double_click; # the match type change to exclude
+    $decode_new_textarea = decode_json($elem->get_value());
+    is($decode_new_textarea->{area}[0]->{type}, "exclude", "type is exclude");
+    $driver->double_click; # the match type change to ocr
+    $decode_new_textarea = decode_json($elem->get_value());
+    is($decode_new_textarea->{area}[0]->{type}, "ocr", "type is ocr");
+    $driver->double_click; # the match type change back to match
+
+    # test match level
+    $driver->find_element('#change-match', 'css')->click();
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+    is(1, $driver->find_element('#change-match-form', 'css')->is_displayed(), "match level form found");
+    is(1, $driver->find_element('//button[@type="button"]/span[text()="Close"]')->is_displayed(), "match level form close button found");
+    is(1, $driver->find_element('//button[@type="button"]/span[text()="Set"]')->is_displayed(), "found set button");
+    is($driver->find_element('//input[@id="match"]')->get_value(), "96", "default match level is 96");
+    $driver->find_element('//input[@id="match"]')->clear();
+    $driver->find_element('//input[@id="match"]')->send_keys("99");
+    is($driver->find_element('//input[@id="match"]')->get_value(), "99", "set match level to 99");
+    $driver->find_element('//button[@type="button"]/span[text()="Set"]')->click();
+    $driver->find_element('//button[@type="button"]/span[text()="Close"]')->click();
+    is(1, $driver->find_element('#change-match-form', 'css')->is_hidden(), "match level form closed");
+    $decode_new_textarea = decode_json($elem->get_value());
+    is($decode_new_textarea->{area}[0]->{match}, 99, "match level is 99 now");
 }
 
 # overwrite_needle($needlename);
@@ -212,7 +242,7 @@ add_needle_tag('test-overwritetag');
 add_workaround_property();
 # change area
 my $xoffset = my $yoffset = 200;
-change_needle_area($xoffset, $yoffset); # xoffset and yoffset 200
+change_needle_value($xoffset, $yoffset); # xoffset and yoffset 200 for new area
 overwrite_needle($needlename);
 
 # parse new needle json
