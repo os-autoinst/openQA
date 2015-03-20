@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -140,6 +140,25 @@ sub post_entry{
     my ($table, $entry) = @_;
 
     my %param;
+
+    if ($table eq 'JobTemplates') {
+        unless (defined($entry->{prio})) {
+            # we have to migrate the prio from the TestSuite to the JobTemplate
+            for my $ts (@{$info->{TestSuites}}) {
+                if ($ts->{name} eq $entry->{test_suite}{name}) {
+                    $entry->{prio} = $ts->{prio};
+                }
+            }
+        }
+        unless (defined($entry->{group_name})) {
+            # we have to create a group_name from the Product
+            my $gn = $entry->{product}{distri};
+            if ($entry->{product}{version} ne '*') {
+                $gn .= "-" . $entry->{product}{version};
+            }
+            $entry->{group_name} = $gn;
+        }
+    }
 
     for my $key (keys %{$entry}) {
         if ($key eq 'machine' && defined $entry->{machine}{name}) {

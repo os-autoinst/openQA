@@ -44,6 +44,7 @@
 		</h4>
 	    </div>
 	    <div class="col-md-8">
+	        % if ($max) {
 		<div class="progress">
 		    <div class="progress-bar progress-bar-success" style="width: <%= $groupresults->{$build}->{passed} * 100 / $max %>%">
 			<%= $groupresults->{$build}->{passed} %> passed
@@ -55,6 +56,7 @@
 			<%= $groupresults->{$build}->{failed} %> failed
 		    </div>
 		</div>
+                % }
 	    </div>
 	</div>
     % }

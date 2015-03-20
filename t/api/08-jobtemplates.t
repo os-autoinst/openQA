@@ -43,6 +43,7 @@ is_deeply(
         'JobTemplates' => [
             {
                 'id' => 1,
+                'group_name' => 'opensuse',
                 'prio' => 40,
                 'machine' => {
                     'id' => 1001,
@@ -63,6 +64,7 @@ is_deeply(
             },
             {
                 'id' => 2,
+                'group_name' => 'opensuse',
                 'prio' => 40,
                 'machine' => {
                     'id' => 1002,
@@ -83,6 +85,7 @@ is_deeply(
             },
             {
                 'id' => 3,
+                'group_name' => 'opensuse',
                 'prio' => 40,
                 'machine' => {
                     'id' => 1001,
@@ -103,6 +106,7 @@ is_deeply(
             },
             {
                 'id' => 4,
+                'group_name' => 'opensuse',
                 'prio' => 40,
                 'machine' => {
                     'id' => 1001,
@@ -123,6 +127,7 @@ is_deeply(
             },
             {
                 'id' => 5,
+                'group_name' => 'opensuse',
                 'prio' => 40,
                 'machine' => {
                     'id' => 1001,
@@ -143,6 +148,7 @@ is_deeply(
             },
             {
                 'id' => 6,
+                'group_name' => 'opensuse',
                 'prio' => 40,
                 'machine' => {
                     'id' => 1001,
@@ -163,6 +169,7 @@ is_deeply(
             },
             {
                 'id' => 7,
+                'group_name' => 'opensuse',
                 'prio' => 40,
                 'machine' => {
                     'id' => 1002,
@@ -183,6 +190,7 @@ is_deeply(
             },
             {
                 'id' => 8,
+                'group_name' => 'opensuse',
                 'prio' => 40,
                 'machine' => {
                     'id' => 1002,
@@ -203,6 +211,7 @@ is_deeply(
             },
             {
                 'id' => 9,
+                'group_name' => 'opensuse',
                 'prio' => 40,
                 'machine' => {
                     'id' => 1002,
@@ -223,6 +232,7 @@ is_deeply(
             },
             {
                 'id' => 10,
+                'group_name' => 'opensuse',
                 'prio' => 40,
                 'machine' => {
                     'id' => 1002,
@@ -281,6 +291,7 @@ is_deeply(
         'JobTemplates' => [
             {
                 'id' => $job_template_id1,
+                'group_name' => 'opensuse',
                 'machine' => {
                     'id' => 1001,
                     'name' => '32bit'
@@ -312,6 +323,7 @@ is_deeply(
         'JobTemplates' => [
             {
                 'id' => $job_template_id2,
+                'group_name' => 'opensuse',
                 'prio' => 20,
                 'machine' => {
                     'id' => 1002,
@@ -343,6 +355,7 @@ is_deeply(
         'JobTemplates' => [
             {
                 'id' => $job_template_id2,
+                'group_name' => 'opensuse',
                 'prio' => 20,
                 'machine' => {
                     'id' => 1002,
@@ -375,6 +388,7 @@ is_deeply(
             {
                 'id' => 2,
                 'prio' => 40,
+                'group_name' => 'opensuse',
                 'machine' => {
                     'id' => 1002,
                     'name' => '64bit'
@@ -394,6 +408,7 @@ is_deeply(
             },
             {
                 'id' => $job_template_id1,
+                'group_name' => 'opensuse',
                 'prio' => 30,
                 'machine' => {
                     'id' => 1001,

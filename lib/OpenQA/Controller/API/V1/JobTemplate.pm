@@ -63,6 +63,7 @@ sub list {
 		  { JobTemplates => 
 		        [map { { id => $_->id,
 			         prio => $_->prio,
+				 group_name => $_->group->name,
 				 product => {id => $_->product_id,
 					     arch => $_->product->arch,
 					     distri => $_->product->distri,
