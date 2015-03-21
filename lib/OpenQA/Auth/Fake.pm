@@ -44,6 +44,7 @@ sub auth_login {
         $user->is_operator(1);
         $user->update({is_admin => 1, is_operator => 1 });
     }
+    $user->api_keys->find_or_create({key => '1234567890ABCDEF', secret => '1234567890ABCDEF'});
     $self->session->{user} = $username;
     return ( error => 0 );
 }
