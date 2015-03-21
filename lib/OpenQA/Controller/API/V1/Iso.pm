@@ -134,6 +134,7 @@ sub _generate_jobs {
             @settings{keys %tmp_settings} = values %tmp_settings;
             $settings{TEST} = $job_template->test_suite->name;
             $settings{MACHINE} = $job_template->machine->name;
+            $settings{BACKEND} = $job_template->machine->backend;
 
             next if $args{TEST} && $args{TEST} ne $settings{TEST};
             next if $args{MACHINE} && $args{MACHINE} ne $settings{MACHINE};
