@@ -1,7 +1,5 @@
 % layout 'default';
 % title $job->name . " test results";
-% my $ref_width=60;
-% my $ref_height=int($ref_width/4*3);
 
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
@@ -26,7 +24,7 @@
 	    <div class="aligncenter">
 		% for my $resultfile (@$resultfiles) {
                     % if($resultfile =~ /video.ogv$/) {
-			%= link_to url_for('test_file', 'testid' => $testid, 'filename' => 'video.ogv') => begin
+			%= link_to url_for('test_file', testid => $testid, filename => 'video.ogv') => begin
                             %= image "/images/video.png", width=>"23", height=>"23", alt=>"ogv", title=>"ogg/theora video of this testrun"
 			%= end
 			<br/>
@@ -92,7 +90,7 @@
             <tr>
                 <td>Result</td>
                 <td>
-		    <span class="<%= css_for({'result' => $job->result}) %>"><%= $job->result %></span>
+		    <span class="<%= css_for({result => $job->result}) %>"><%= $job->result %></span>
 		</td>
             </tr>
             <tr>
@@ -179,12 +177,12 @@
 			<tr>
 			    <td class="component">
 				<div>
-				    %= link_to $module->{'name'} => url_for('src_step', stepid => 1, moduleid => $module->{'name'})
+				    %= link_to $module->{name} => url_for('src_step', stepid => 1, moduleid => $module->{name})
 				</div>
 				<div style="min-height: 1em">
-				    %= ($module->{'fatal'}) ? b('&#9760;') : ''
-				    %= ($module->{'important'}||0) ? b('&#9888;') : ''
-				    %= ($module->{'milestone'}||0) ? b('&#9875;') : ''
+				    %= ($module->{fatal}) ? b('&#9760;') : ''
+				    %= ($module->{important}||0) ? b('&#9888;') : ''
+				    %= ($module->{milestone}||0) ? b('&#9875;') : ''
 				</div>
 			    </td>
 			    <td class="<%= css_for($module) %>">
@@ -194,18 +192,18 @@
 		    </td>
 				<td class="links" style="width: 100%;">
 
-					% for my $screenshot (@{$module->{'screenshots'}}) {
-						%= link_to url_for('step', moduleid => $module->{'name'}, stepid => $screenshot->{'num'}) => (class => 'no_hover') => begin
-						%= image url_for('test_thumbnail', 'testid' => $testid, 'filename' => $screenshot->{'name'}), width => $ref_width, height => $ref_height, alt => $screenshot->{'name'}, class => "resborder_\L$screenshot->{'result'}"
-						% end
-					% }
+				    % for my $screenshot (@{$module->{screenshots}}) {
+					%= step_thumbnail($screenshot, 60, $testid, $module->{name}, $screenshot->{num})
+				    % }
 
-					<% for my $wav (@{$module->{'wavs'}}) { %>
-					<a href="<%= url_for('step', moduleid => $module->{'name'}, stepid => $wav->{'num'}) %>" title="<%= $wav->{'name'} %>"><img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{'name'} %>" class="<%= "resborder_\L$wav->{'result'}" %>" /></a>
-					<% } %>
+				    % for my $wav (@{$module->{wavs}}) {
+					%= link_to url_for('step', moduleid => $module->{name}, stepid => $wav->{num}) => title => $wav->{name} => begin
+					<img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{name} %>" class="<%= "resborder_\L$wav->{result}" %>" />
+					% end
+				    % }
 
-					<% for my $ocr (@{$module->{'ocrs'}}) { %>
-					<a href="<%= url_for('step', moduleid => $module->{'name'}, stepid => $ocr->{'num'}) %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{'name'} %>.txt" class="<%= "resborder_\L$ocr->{'result'}" %>" /></a>
+				    <% for my $ocr (@{$module->{ocrs}}) { %>
+					<a href="<%= url_for('step', moduleid => $module->{name}, stepid => $ocr->{num}) %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{name} %>.txt" class="<%= "resborder_\L$ocr->{result}" %>" /></a>
 					<% } %>
 				</td>
 			</tr>

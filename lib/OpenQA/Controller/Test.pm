@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -147,14 +147,16 @@ sub show {
 
     return $self->reply->not_found if (!defined $self->param('testid'));
 
-    my $job = $self->app->schema->resultset("Jobs")->search({ 'id' => $self->param('testid') },{ 'prefetch' => qw/jobs_assets/ } )->first;
+    my $job = $self->app->schema->resultset("Jobs")->search(
+        {
+            'id' => $self->param('testid')
+        },
+        { 'prefetch' => qw/jobs_assets/ }
+    )->first;
 
     return $self->reply->not_found unless $job;
 
-    my $testresultdir = $job->result_dir();
-
     $self->stash(testname => $job->settings_hash->{NAME});
-    $self->stash(resultdir => $testresultdir);
 
     #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
 
@@ -167,29 +169,32 @@ sub show {
         return;
     }
 
+    my $testresultdir = $job->result_dir();
+
     my @modlist=();
-    foreach my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
+    for my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
         my $name = $module->name();
         # add link to $testresultdir/$name*.png via png CGI
         my @imglist;
         my @wavlist;
         my $num = 1;
-        foreach my $img (@{$module->details($testresultdir)}) {
-            if( $img->{'screenshot'} ) {
-                push(@imglist, {name => $img->{'screenshot'}, num => $num++, result => $img->{'result'}});
+        for my $img (@{$module->details}) {
+            $img->{num} = $num++;
+            if( $img->{screenshot} ) {
+                push(@imglist, $img);
             }
-            elsif( $img->{'audio'} ) {
-                push(@wavlist, {name => $img->{'audio'}, num => $num++, result => $img->{'result'}});
+            elsif( $img->{audio} ) {
+                push(@wavlist, $img);
             }
         }
 
         # add link to $testresultdir/$name*.txt as direct link
         my @ocrlist;
-        foreach my $ocrpath (<$testresultdir/$name-[0-9]*.txt>) {
+        for my $ocrpath (<$testresultdir/$name-[0-9]*.txt>) {
             $ocrpath = data_name($ocrpath);
             my $ocrscreenshotid = $ocrpath;
             $ocrscreenshotid=~s/^\w+-(\d+)/$1/;
-            my $ocrres = $module->{'screenshots'}->[--$ocrscreenshotid]->{'ocr_result'} || 'na';
+            my $ocrres = $module->{screenshots}->[--$ocrscreenshotid]->{ocr_result} || 'na';
             push(@ocrlist, {name => $ocrpath, result => $ocrres});
         }
 
@@ -336,7 +341,7 @@ sub overview {
                 state    => "running",
                 jobid    => $job->id,
             };
-            $aggregated->{'running'}++;
+            $aggregated->{running}++;
         }
         else {
             $result = {
@@ -345,10 +350,10 @@ sub overview {
                 priority => $job->priority,
             };
             if ( $job->state eq 'scheduled' ) {
-                $aggregated->{'scheduled'}++;
+                $aggregated->{scheduled}++;
             }
             else {
-                $aggregated->{'none'}++;
+                $aggregated->{none}++;
             }
         }
 

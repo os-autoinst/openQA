@@ -7,14 +7,11 @@
         <div id="module-thumbnails" style="margin: 0 6px; overflow-x: scroll; overflow-y: hidden; overflow: auto; white-space: nowrap;">
         <% for my $refimg (@$imglist) { %>
             <span class="<%= ($img_count == $stepid) ? "thumbnail current" : "thumbnail" %>">
-                % if($refimg->{'screenshot'}) {
-                    % my $scr = $refimg->{'screenshot'};
+                % if($refimg->{screenshot}) {
+		    %= step_thumbnail($refimg, $ref_width, $testid, $moduleid, $img_count)
+                % } elsif ($refimg->{audio}) {
                     %= link_to url_for('step', stepid => $img_count) => (class => 'no_hover') => begin
-                        %= image url_for('test_thumbnail', 'testid' => $testid, 'filename' => $scr), width => $ref_width, height => $ref_height, alt => $scr, class => "resborder_\L$refimg->{'result'}", title => $scr
-                    % end
-                % } elsif ($refimg->{'audio'}) {
-                    %= link_to url_for('step', stepid => $img_count) => (class => 'no_hover') => begin
-                        %= image '/images/audio.svg', alt => $refimg->{'audio'}, title => $refimg->{'audio'}, width => $ref_width, height => $ref_height, class=> "resborder_\L$refimg->{'result'}"
+                        %= image '/images/audio.svg', alt => $refimg->{audio}, title => $refimg->{audio}, width => $ref_width, height => $ref_height, class=> "resborder_\L$refimg->{result}"
                     % end
                 % }
             </span>

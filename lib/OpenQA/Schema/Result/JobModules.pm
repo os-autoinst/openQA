@@ -22,6 +22,7 @@ use db_helpers;
 use OpenQA::Scheduler;
 use OpenQA::Schema::Result::Jobs;
 use JSON ();
+use File::Basename qw/dirname basename/;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -94,12 +95,21 @@ sub sqlt_deploy_hook {
 sub details() {
     my ($self) = @_;
 
-    my $fn = $self->job->result_dir() . "/details-" . $self->name . ".json";
+    my $dir = $self->job->result_dir();
+    my $fn =  "$dir/details-" . $self->name . ".json";
     OpenQA::Utils::log_debug "reading $fn";
     open(my $fh, "<", $fn) || return [];
     local $/;
     my $ret = JSON::decode_json(<$fh>);
     close($fh);
+    for my $img (@$ret) {
+        next unless $img->{screenshot};
+        my $link = readlink($dir . "/" . $img->{screenshot});
+        next unless $link;
+        $img->{md5_basename} = basename($link);
+        $img->{md5_dirname} = basename(dirname($link));
+    }
+
     return $ret;
 }
 
