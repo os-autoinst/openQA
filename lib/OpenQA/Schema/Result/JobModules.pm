@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -143,7 +143,7 @@ sub job_module_stats($) {
         );
 
         while (my $line = $query->next) {
-            if ($line->soft_failure) {
+            if ($line->result eq OpenQA::Schema::Result::Jobs::PASSED && $line->soft_failure) {
                 $result_stat->{$line->job_id}->{dents} = $line->get_column('count');
             }
             else {
