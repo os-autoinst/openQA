@@ -1,7 +1,7 @@
 % content_for 'ready_function' => begin
   $('#scheduled').DataTable( {
         "pagingType" : 'simple',
-        "order": [[3, 'asc'], [0, 'asc']],
+        "order": [[2, 'asc'], [0, 'asc']],
 	"columnDefs": [
 	    { targets: 0,
               className: "name" }
