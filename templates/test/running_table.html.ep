@@ -18,7 +18,7 @@
   } );
 % end
 
-<table id="running" class="display compact">
+<table id="running" class="display table table-striped" style="width: 100%">
     <thead>
         <tr>
             <th class="name">Medium</th>

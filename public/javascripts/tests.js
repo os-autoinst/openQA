@@ -130,7 +130,9 @@ function renderTestResult( data, type, row ) {
 function renderTestsList(jobs) {
 
     var table = $('#results').DataTable( {
-        "dom": 'l<"#toolbar">frtip',
+        "dom": "<'row'<'col-sm-3'l><'#toolbar'><'col-sm-4'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-6'i><'col-sm-6'p>>",
         "lengthMenu": [[10, 25, 50], [10, 25, 50]],
         "ajax": {
             "url": "/tests/list_ajax",
@@ -219,7 +221,7 @@ function renderTestsList(jobs) {
 
 function setupResultButtons() {
     $( '#restart-result' ).click( function(event) {
-	event.preventDefault();
+        event.preventDefault();
         $.post($(this).attr("href")).done( function( data, res, xhr ) {
             window.location.replace(xhr.responseJSON.test_url);
         });

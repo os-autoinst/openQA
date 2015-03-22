@@ -188,7 +188,6 @@ sub startup {
       /javascripts/job_templates.js
       /javascripts/overview.js );
     my @css = qw(/stylesheets/font-awesome.css
-      /stylesheets/jquery.dataTables.css
       /stylesheets/chosen.css
       /stylesheets/overview.scss
       /stylesheets/openqa.css );
@@ -201,14 +200,24 @@ sub startup {
         }
     );
 
-    $self->asset( 'app.css' => @css );
+    $self->asset( 'app.css' => (qw(/stylesheets/jquery.dataTables.css), @css) );
     $self->asset( 'app.js'  => @js );
     my $path = Mojolicious::Plugin::Bootstrap3->asset_path('sass');
     $ENV{SASS_PATH} = ".:$path";
-    unshift(@css, "/sass/bentostrap.scss");
-    $self->asset( 'bootstrap.css' => @css);
-    push(@js, qw(/js/bootstrap/collapse.js /js/bootstrap/tooltip.js));
-    $self->asset( 'bootstrap.js' => @js);
+    $self->asset(
+        'bootstrap.css' => (
+            qw(/sass/bentostrap.scss
+              /stylesheets/dataTables.bootstrap.css
+              ), @css
+        )
+    );
+    $self->asset(
+        'bootstrap.js' => (
+            @js, qw(/js/bootstrap/collapse.js
+              /js/bootstrap/tooltip.js
+              /javascripts/dataTables.bootstrap.js)
+        )
+    );
 
     # set secure flag on cookies of https connections
     $self->hook(

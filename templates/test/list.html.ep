@@ -1,4 +1,4 @@
-% layout 'default';
+% layout 'bootstrap';
 % title 'Test results';
 
 % content_for 'ready_function' => begin
@@ -8,21 +8,21 @@
 % end
 
 % if (@$running) {
-    <div class="grid_16 box box-shadow">
+    <div class="container">
 	<h2><%= @$running %> jobs are running</h2>
 	%= include 'test/running_table'
     </div>
 % }
 
 % if ($scheduled && $scheduled->all) {
-    <div class="grid_16 box box-shadow">
+    <div class="container">
 	<h2><%= $scheduled %> scheduled jobs</h2>
 	
 	%= include 'test/scheduled_table'
     </div>
 % }
 
-<div class="grid_16 box box-shadow">
+<div class="container">
 
   <h2>Last <%= $jobs %> finished jobs</h2>
   % if (is_operator && 0) {
@@ -36,12 +36,12 @@
     </p>
     % }
 
-    <div id="relevantbox" style="display: none">
+    <div class="col-sm-5" id="relevantbox" style="display: none">
 	%= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')
 	%= label_for 'relevantfilter' => 'Show only relevant jobs'
     </div>
     
-    <table id="results" class="display compact">
+    <table id="results" class="display table table-striped no-wrap" style="width: 100%">
         <thead>
             <tr>
                 <th class="name">Medium</th>
