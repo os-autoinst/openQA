@@ -359,7 +359,6 @@ sub query_jobs {
     my %attrs;
     my @joins;
 
-    OpenQA::Utils::log_debug("query_jobs");
     unless ($args{idsonly}) {
         push @{$attrs{'prefetch'}}, 'settings';
         push @{$attrs{'prefetch'}}, 'parents';
@@ -452,14 +451,13 @@ sub query_jobs {
         push(@conds, { 'me.id' => { -in => $subquery->get_column('job_id')->as_query }});
     }
     if ($args{ids}) {
-        push(@conds, { 'me.id' => { -in => @{$args{ids}} } });
+        push(@conds, { 'me.id' => { -in => $args{ids} } });
     }
 
     $attrs{order_by} = ['me.id DESC'];
 
     $attrs{join} = \@joins if @joins;
     my $jobs = schema->resultset("Jobs")->search({-and => \@conds}, \%attrs);
-    OpenQA::Utils::log_debug("query_jobs " . scalar($jobs->all));
     return $jobs;
 }
 

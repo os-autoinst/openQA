@@ -133,33 +133,34 @@ sub job_module_stats($) {
     my $result_stat = {};
 
     my $schema = OpenQA::Scheduler::schema();
-    my @ids;
-    while (my $j = $jobs->next) { push(@ids, $j->id); }
-    $jobs->reset;
 
-    for my $id (@ids) {
+    if (ref($jobs) ne 'ARRAY') {
+        my @ids;
+        while (my $j = $jobs->next) { push(@ids, $j->id); }
+        $jobs->reset;
+        $jobs = \@ids;
+    }
+
+    for my $id (@$jobs) {
         $result_stat->{$id} = { 'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0 };
     }
 
-    # DBIx has a limit for variables in one querey
-    while (my @next_ids = splice @ids, 0, 100) {
-        my $query = $schema->resultset("JobModules")->search(
-            { job_id => { -in => \@next_ids } },
-            {
-                select => ['job_id', 'result', 'soft_failure', { 'count' => 'id' } ],
-                as => [qw/job_id result soft_failure count/],
-                group_by => [qw/job_id result soft_failure/]
-            }
-        );
+    my $query = $schema->resultset("JobModules")->search(
+        { job_id => { in => $jobs } },
+        {
+            select => ['job_id', 'result', 'soft_failure', { 'count' => 'id' } ],
+            as => [qw/job_id result soft_failure count/],
+            group_by => [qw/job_id result soft_failure/]
+        }
+    );
 
-        while (my $line = $query->next) {
-            if ($line->result eq OpenQA::Schema::Result::Jobs::PASSED && $line->soft_failure) {
-                $result_stat->{$line->job_id}->{dents} = $line->get_column('count');
-            }
-            else {
-                $result_stat->{$line->job_id}->{$line->result} =
-                  $line->get_column('count');
-            }
+    while (my $line = $query->next) {
+        if ($line->result eq OpenQA::Schema::Result::Jobs::PASSED && $line->soft_failure) {
+            $result_stat->{$line->job_id}->{dents} = $line->get_column('count');
+        }
+        else {
+            $result_stat->{$line->job_id}->{$line->result} =
+              $line->get_column('count');
         }
     }
 

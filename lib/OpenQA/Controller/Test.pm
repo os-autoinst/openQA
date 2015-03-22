@@ -73,12 +73,16 @@ sub list_ajax {
 
     my $jobs;
 
+    my $st = time;
+    my $result_stats;
+    my @ids;
     # we have to seperate the initial loading and the reload
     if ($self->param('initial')) {
-        $jobs = OpenQA::Scheduler::query_jobs(ids => [ map { scalar($_) } $self->every_param('jobs[]') ]);
+        @ids = map { scalar($_) } @{$self->every_param('jobs[]')};
+        $jobs = OpenQA::Scheduler::query_jobs(ids => \@ids);
+        $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats(\@ids);
     }
     else {
-
         my $scope = '';
         $scope = 'relevant' if $self->param('relevant') ne 'false';
 
@@ -87,26 +91,56 @@ sub list_ajax {
             scope => $scope,
             limit => 500,
         );
+        while (my $j = $jobs->next) { push(@ids, $j->id); }
+        $jobs->reset;
+        $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats(\@ids);
     }
 
-    my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
+    my %settings;
+
+    my $query = $self->db->resultset("JobSettings")->search(
+        {
+            job_id => { in => \@ids },
+            key => { in => [qw/DISTRI VERSION ARCH FLAVOR BUILD MACHINE/] }
+        }
+    );
+    while (my $s = $query->next) {
+        $settings{$s->job_id . "-" . $s->key} = $s->value;
+    }
+
+    my %deps;
+
+    for my $id (@ids) {
+        $deps{$id} = {
+            parents => {'Chained' => [], 'Parallel' => []},
+            children => {'Chained' => [], 'Parallel' => []}
+        };
+    }
+
+    $query = $self->db->resultset("JobDependencies")->search({ child_job_id => { in => \@ids } },{ parent_job_id => { in => \@ids } });
+
+    while (my $s = $query->next) {
+        push(@{$deps{$s->parent_job_id}->{children}->{$s->dependency}}, $s->child_job_id);
+        push(@{$deps{$s->child_job_id}->{children}->{$s->dependency}}, $s->parent_job_id);
+    }
+
+    $jobs = $self->db->resultset("Jobs")->search({ id => { in => \@ids } },{ columns => [qw/id state clone_id test result group_id t_created/], order_by => ['me.id DESC'] });
 
     my @list;
     while (my $job = $jobs->next) {
-        my $settings = $job->settings_hash;
         my $data = {
             "DT_RowId" => "job_" .  $job->id,
             id => $job->id,
             result_stats => $result_stats->{$job->id},
             overall=>$job->state||'unk',
-            deps => $job->deps_hash,
+            deps => $deps{$job->id},
             clone => $job->clone_id,
-            test => $job->test . "@" . $settings->{MACHINE},
-            distri => $settings->{DISTRI} // '',
-            version => $settings->{VERSION} // '',
-            flavor => $settings->{FLAVOR} // '',
-            arch => $settings->{ARCH} // '',
-            build => $settings->{BUILD} // '',
+            test => $job->test . "@" . $settings{$job->id . '-MACHINE'} // '',
+            distri => $settings{$job->id . '-DISTRI'} // '',
+            version => $settings{$job->id . '-VERSION'} // '',
+            flavor => $settings{$job->id . '-FLAVOR'} // '',
+            arch => $settings{$job->id . '-ARCH'} // '',
+            build => $settings{$job->id . '-BUILD'} // '',
             testtime => $job->t_created,
             result => $job->result,
             group => $job->group_id,
