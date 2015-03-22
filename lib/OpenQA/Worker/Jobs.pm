@@ -322,9 +322,9 @@ sub upload_status(;$) {
         }
     }
     my $upload_result;
-    $upload_result = $current_running if ($upload_running);
+    $upload_result = $current_running if $upload_running;
 
-    if ($os_status->{running} || $upload_running) {
+    if (defined($os_status->{running}) || $upload_running) {
         if (!$current_running) { # first test
             $test_order = read_json_file('test_order.json');
             if (!$test_order ) {
@@ -339,7 +339,7 @@ sub upload_status(;$) {
         }
         $current_running = $os_status->{running};
     }
-    if ($upload_result) {
+    if (defined($upload_result)) {
         $status->{result} = read_result_file($upload_result);
         if ($os_status->{running}) {
             $status->{result}->{$os_status->{running}} //= {};
