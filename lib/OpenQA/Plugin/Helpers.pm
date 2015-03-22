@@ -189,6 +189,34 @@ sub register {
         }
     );
 
+    $app->helper(step_thumbnail => \&_step_thumbnail);
+
+}
+
+sub _step_thumbnail {
+    my ($c, $screenshot, $ref_width, $testid, $module, $step_num) = @_;
+
+    my $ref_height=int($ref_width/4*3);
+
+    my $imgurl;
+    if ($screenshot->{md5_dirname}) {
+        $imgurl = $c->url_for(
+            'thumb_image',
+            md5_dirname => $screenshot->{md5_dirname},
+            md5_basename => $screenshot->{md5_basename}
+        );
+    }
+    else {
+        $imgurl = $c->url_for('test_thumbnail', 'testid' => $testid, 'filename' => $screenshot->{name});
+    }
+    my $content = $c->image(
+        $imgurl => width => $ref_width,
+        height => $ref_height,
+        alt => $screenshot->{name},
+        class => "resborder_\L$screenshot->{result}"
+    );
+    my $href = $c->url_for('step', moduleid => $module, stepid => $step_num);
+    $c->tag('a', href => $href, class => 'no_hover', sub { $content });
 }
 
 1;

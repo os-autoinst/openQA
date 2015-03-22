@@ -301,6 +301,7 @@ sub startup {
     $step_r->get('/')->name('step')->to(action => 'view');
 
     $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
+    $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
 
     # Favicon
     $r->get('/favicon.ico' => sub {my $c = shift; $c->render_static('favicon.ico') });

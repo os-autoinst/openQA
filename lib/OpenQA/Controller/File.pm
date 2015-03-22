@@ -152,5 +152,16 @@ sub test_thumbnail {
     return $self->serve_static_($asset);
 }
 
+# this is the agnostic route to images - usually served by apache directly
+sub thumb_image {
+    my ($self) = @_;
+
+    $self->{static} = Mojolicious::Static->new;
+    push @{$self->{static}->paths}, $OpenQA::Utils::imagesdir;
+
+    # name is an URL parameter and can't contain slashes, so it should be safe
+    return $self->serve_static_($self->param('md5_dirname') . "/.thumbs/" . $self->param('md5_basename'));
+}
+
 1;
 # vim: set sw=4 et:

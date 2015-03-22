@@ -14,6 +14,19 @@ DocumentRoot /usr/share/openqa/public
 </Directory>
 Alias /assets "/var/lib/openqa/share/factory"
 
+<Directory "/var/lib/openqa/images">
+  AllowOverride None
+  Require all granted
+
+   # Use of ETag is discouraged when Last-Modified is present
+  Header unset ETag
+  FileETag None
+  # RFC says only cache for 1 year
+  ExpiresActive On
+  ExpiresDefault "access plus 1 year"
+</Directory>
+Alias /image "/var/lib/openqa/images"
+
 <Directory "/var/lib/os-autoinst/tests">
     AllowOverride None
     Require all granted
@@ -29,6 +42,7 @@ ProxyPreserveHost On
 ProxyPass /robots.txt !
 ProxyPass /favicon.ico !
 ProxyPass /images !
+ProxyPass /image !
 ProxyPass /javascripts !
 ProxyPass /stylesheets !
 ProxyPass /assets !
