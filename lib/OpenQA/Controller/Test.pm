@@ -117,11 +117,11 @@ sub list_ajax {
         };
     }
 
-    $query = $self->db->resultset("JobDependencies")->search({ child_job_id => { in => \@ids } },{ parent_job_id => { in => \@ids } });
+    $query = $self->db->resultset("JobDependencies")->search([{ child_job_id => { in => \@ids } },{ parent_job_id => { in => \@ids } }]);
 
     while (my $s = $query->next) {
-        push(@{$deps{$s->parent_job_id}->{children}->{$s->dependency}}, $s->child_job_id);
-        push(@{$deps{$s->child_job_id}->{children}->{$s->dependency}}, $s->parent_job_id);
+        push(@{$deps{$s->parent_job_id}->{children}->{$s->to_string}}, $s->child_job_id);
+        push(@{$deps{$s->child_job_id}->{parents}->{$s->to_string}}, $s->parent_job_id);
     }
 
     $jobs = $self->db->resultset("Jobs")->search({ id => { in => \@ids } },{ columns => [qw/id state clone_id test result group_id t_created/], order_by => ['me.id DESC'] });
