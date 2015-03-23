@@ -116,7 +116,7 @@ sub change_timer {
 ## prepare UA and URL for OpenQA-scheduler connection
 sub api_init {
     my ($options) = @_;
-    my $host = $options->{'host'};
+    my $host = $options->{host};
 
     if ($host !~ '/') {
         $url = Mojo::URL->new();
@@ -130,7 +130,7 @@ sub api_init {
     # Relative paths are appended to the existing one
     $url->path('/api/v1/');
 
-    my ($apikey, $apisecret) = ($options->{'apikey'}, $options->{'apisecret'});
+    my ($apikey, $apisecret) = ($options->{apikey}, $options->{apisecret});
     $ua = OpenQA::Client->new(
         api => $url->host,
         apikey => $apikey,
@@ -234,7 +234,7 @@ sub ws_call {
     my $res;
     # this call is also non blocking, result and image upload is handled by json handles
     print "WEBSOCKET: $type\n" if $verbose;
-    $ws->send({json => {type => $type, jobid => $job->{'id'} || '', data => $data}});
+    $ws->send({json => {type => $type, jobid => $job->{id} || '', data => $data}});
 }
 
 sub _get_capabilities {
@@ -335,8 +335,8 @@ sub register_worker {
     $worker_caps = _get_capabilities;
     $worker_caps->{host} = $hostname;
     $worker_caps->{instance} = $instance;
-    $worker_caps->{backend} = $worker_settings->{'BACKEND'};
-    $worker_caps->{worker_class} = $worker_settings->{'WORKER_CLASS'} if $worker_settings->{'WORKER_CLASS'};
+    $worker_caps->{backend} = $worker_settings->{BACKEND} if $worker_settings->{BACKEND};
+    $worker_caps->{worker_class} = $worker_settings->{WORKER_CLASS} if $worker_settings->{WORKER_CLASS};
 
     print "registering worker ...\n" if $verbose;
 
@@ -355,7 +355,7 @@ sub register_worker {
         # terminate websocked if our worker id changed
         $ws->finish() if $ws;
     }
-    $ENV{'WORKERID'} = $workerid = $newid;
+    $ENV{WORKERID} = $workerid = $newid;
 
     print "new worker id is $workerid...\n" if $verbose;
 
