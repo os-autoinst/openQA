@@ -164,7 +164,8 @@ sub test_uploadlog_list($) {
 
 sub test_resultfile_list($) {
     # get a list of existing resultfiles
-    my $testresdir = shift;
+    my ($testresdir) = @_;
+
     my @filelist = qw(video.ogv vars.json backend.json serial0.txt autoinst-log.txt);
     my @filelist_existing;
     for my $f (@filelist) {
@@ -175,36 +176,14 @@ sub test_resultfile_list($) {
     return @filelist_existing;
 }
 
-sub show {
-    my ($self) = @_;
-
-    return $self->reply->not_found if (!defined $self->param('testid'));
-
-    my $job = $self->app->schema->resultset("Jobs")->search(
-        {
-            'id' => $self->param('testid')
-        },
-        { 'prefetch' => qw/jobs_assets/ }
-    )->first;
-
-    return $self->reply->not_found unless $job;
-
-    $self->stash(testname => $job->settings_hash->{NAME});
-
-    #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
-
-    # If it's running
-    if ($job->state =~ /^(?:running|waiting)$/) {
-        $self->stash(worker => $job->worker);
-        $self->stash(job => $job);
-        $self->stash('backend_info', decode_json($job->backend_info || '{}'));
-        $self->render('test/running');
-        return;
-    }
+sub read_test_modules {
+    my ($job) = @_;
 
     my $testresultdir = $job->result_dir();
+    return [] unless $testresultdir;
 
-    my @modlist=();
+    my @modlist;
+
     for my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
         my $name = $module->name();
         # add link to $testresultdir/$name*.png via png CGI
@@ -247,8 +226,39 @@ sub show {
         );
     }
 
+    return \@modlist;
+}
+
+sub show {
+    my ($self) = @_;
+
+    return $self->reply->not_found if (!defined $self->param('testid'));
+
+    my $job = $self->app->schema->resultset("Jobs")->search(
+        {
+            'id' => $self->param('testid')
+        },
+        { 'prefetch' => qw/jobs_assets/ }
+    )->first;
+
+    return $self->reply->not_found unless $job;
+
+    $self->stash(testname => $job->settings_hash->{NAME});
+
+    #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
+
+    # If it's running
+    if ($job->state =~ /^(?:running|waiting)$/) {
+        $self->stash(worker => $job->worker);
+        $self->stash(job => $job);
+        $self->stash('backend_info', decode_json($job->backend_info || '{}'));
+        $self->render('test/running');
+        return;
+    }
+
+    my $modlist = read_test_modules($job);
     $self->stash(job => $job);
-    $self->stash(modlist => \@modlist);
+    $self->stash(modlist => $modlist);
 
     my $rd = $job->result_dir();
     if ($rd) { # saved anything

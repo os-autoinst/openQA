@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -317,7 +317,6 @@ sub upload_status(;$) {
 
     for my $f (qw/interactive needinput/) {
         if ($os_status->{$f} || $do_livelog) {
-            $status->{status} //= {};
             $status->{status}->{$f} = $os_status->{$f};
         }
     }
@@ -339,12 +338,11 @@ sub upload_status(;$) {
         }
         $current_running = $os_status->{running};
     }
-    if (defined($upload_result)) {
+    if ($status->{status}->{needinput}) {
+        $status->{result} = { $os_status->{running} => read_module_result($os_status->{running}) };
+    }
+    elsif (defined($upload_result)) {
         $status->{result} = read_result_file($upload_result);
-        if ($os_status->{running}) {
-            $status->{result}->{$os_status->{running}} //= {};
-            $status->{result}->{$os_status->{running}}->{result} = 'running';
-        }
     }
     if ($do_livelog) {
         $status->{log} = log_snippet;
@@ -354,6 +352,10 @@ sub upload_status(;$) {
 
     # if there is nothing to say, don't say it (said my mother)
     return unless %$status;
+
+    if ($os_status->{running}) {
+        $status->{result}->{$os_status->{running}}->{result} = 'running';
+    }
 
     if ($ENV{WORKER_USE_WEBSOCKETS}) {
         ws_call('status', $status);
@@ -411,6 +413,24 @@ sub read_json_file {
     return $json;
 }
 
+sub read_module_result($) {
+    my ($test) = @_;
+
+    my $result = read_json_file("result-$test.json");
+    return unless $result;
+    for my $d (@{$result->{details}}) {
+        my $screen = $d->{screenshot};
+        next unless $screen;
+        my $md5 = calculate_file_md5("testresults/$screen");
+        $d->{screenshot} ={
+            name => $screen,
+            md5 => $md5,
+        };
+        $tosend_images->{$md5} = $screen;
+    }
+    return $result;
+}
+
 sub read_result_file($) {
     my ($name) = @_;
 
@@ -419,18 +439,8 @@ sub read_result_file($) {
     # we need to upload all results not yet uploaded - and stop at $name
     while (scalar(@$test_order)) {
         my $test = (shift @$test_order)->{name};
-        my $result = read_json_file("result-$test.json");
+        my $result = read_module_result($test);
         last unless $result;
-        for my $d (@{$result->{details}}) {
-            my $screen = $d->{screenshot};
-            next unless $screen;
-            my $md5 = calculate_file_md5("testresults/$screen");
-            $d->{screenshot} ={
-                name => $screen,
-                md5 => $md5,
-            };
-            $tosend_images->{$md5} = $screen;
-        }
         $ret->{$test} = $result;
 
         last if ($test eq $name);
