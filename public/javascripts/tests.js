@@ -197,12 +197,21 @@ function renderTestsList(jobs) {
 	    $('#relevantbox').css('color', 'inherit');
 	} );
     } );
-    $(document).on("click", '.restart', function() {
-	var restart_link = $(this);
-	var link = $(this).parent('span').find('.name');
-	$.post(restart_link.attr("href")).done( function( data ) { $(link).append(' (restarted)'); });
-	$(this).html('');
-    });
-    $(document).on('mouseover', '.parent_child', highlightJobs);
-    $(document).on('mouseout', '.parent_child', unhighlightJobs);
 };
+
+$(document).on("click", '.restart', function() {
+    var restart_link = $(this);
+    var link = $(this).parent('span').find('.name');
+    $.post(restart_link.attr("href")).done( function( data ) { $(link).append(' (restarted)'); });
+    $(this).html('');
+});
+
+$(document).on('click', '.cancel', function() {
+    var cancel_link = $(this);
+    var test = $(this).parent('td');
+    $.post(cancel_link.attr("href")).done( function( data ) { $(test).append(' (cancelled)'); });
+    $(this).html('');
+});
+
+$(document).on('mouseover', '.parent_child', highlightJobs);
+$(document).on('mouseout', '.parent_child', unhighlightJobs);
