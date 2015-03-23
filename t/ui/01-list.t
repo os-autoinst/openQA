@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 30;
+    plan tests => 36;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -97,6 +97,17 @@ is(@links, 2, 'only two links (icon, name, no restart)');
 
 # Test 99926 is displayed
 is('minimalx@32bit', $driver->find_element('#results #job_99926 .test .result_incomplete', 'css')->get_text(), '99926 incomplete');
+
+# parent-child
+my $child_e = $driver->find_element('#results #job_99938 .parent_child', 'css');
+is($child_e->get_attribute('title'), "1 Chained parent", "dep info");
+is($child_e->get_attribute('data-children'), "[]", "no children");
+is($child_e->get_attribute('data-parents'), "[99937]", "parent");
+
+my $parent_e = $driver->find_element('#results #job_99937 .parent_child', 'css');
+is($parent_e->get_attribute('title'), "1 Chained child", "dep info");
+is($parent_e->get_attribute('data-children'), "[99938]", "child");
+is($parent_e->get_attribute('data-parents'), "[]", "no parents");
 
 # first check the relevant jobs
 my @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};

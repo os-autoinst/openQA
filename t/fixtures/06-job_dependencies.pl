@@ -5,5 +5,12 @@
         child_job_id => 99963,
         dependency => 2
     },
+
+    # chained dep, done tests
+    JobDependencies => {
+        parent_job_id => 99937,
+        child_job_id => 99938,
+        dependency => 1
+    },
 ]
 # vim: set sw=4 et:
