@@ -154,6 +154,9 @@ sub worker_register {
         }
     )->first;
 
+    # our schema is broken - backend is no worker core property
+    $backend ||= 'none';
+
     if ($worker) { # worker already known. Update fields and return id
         $worker->update({ t_updated => now() });
     }
