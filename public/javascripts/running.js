@@ -7,7 +7,7 @@ var testStatus = {
     interactive: null,
     needinput: null,
     interactive_requested: null,
-    stop_waitforneedle_requested: null,
+    stop_waitforneedle_requested: null
 };
 
 // Update global variable testStatus
@@ -43,7 +43,7 @@ function updateTestStatus(newStatus) {
 }
 
 function updateInteractiveIndicator() {
-    var indicator = $("interactive_indicator");
+    var indicator = $("#interactive_indicator");
     //console.log("i r "+testStatus.interactive+" "+testStatus.interactive_requested);
     if (testStatus.interactive == null) {
         indicator.html("Unknown");
@@ -87,7 +87,7 @@ function updateInteractiveIndicator() {
 
 function updateNeedinputIndicator() {
     console.log("n r "+testStatus.needinput+" "+testStatus.stop_waitforneedle_requested);
-    var indicator = $("needinput_indicator");
+    var indicator = $("#needinput_indicator");
     if (testStatus.interactive != 1 || testStatus.needinput == null) {
         indicator.text("N/A");
         $("#crop_button").hide();
@@ -103,20 +103,11 @@ function updateNeedinputIndicator() {
     }
     else if (testStatus.needinput == 1) {
         indicator.text("Yes");
-        if (testStatus.stop_waitforneedle_requested == 0) {
-            $("#stop_waitforneedle_spinner").show();
-            $("#crop_button").hide();
-            $("#continue_button").hide();
-            $("#retry_button").hide();
-            $("#stop_button").hide();
-        }
-        else {
-            $("#stop_waitforneedle_spinner").hide();
-            $("#crop_button").show();
-            $("#continue_button").show();
-            $("#retry_button").show();
-            $("#stop_button").hide();
-        }
+        $("#stop_waitforneedle_spinner").hide();
+        $("#crop_button").show();
+        $("#continue_button").show();
+        $("#retry_button").show();
+        $("#stop_button").hide();
     }
     else {
         indicator.text("No");

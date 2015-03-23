@@ -25,7 +25,7 @@
               %= image '/images/cancel.png', alt => "stop", title => "Stop job"
             % end
         </div>
-        <table class="infotbl" style="border-top: 1px dotted rgb(204, 204, 204); 
+        <table class="infotbl" style="border-top: 1px dotted rgb(204, 204, 204);
 	       border-bottom: 1px dotted rgb(204, 204, 204); margin-top: 6px;">
 	    <tr>
 		<td style="width: 8em; padding: 0;">Interactive:</td>
@@ -48,7 +48,8 @@
                     % if (is_operator) {
 			<a href="#" style="display:none" id="continue_button" class="fa fa-play fa-2x"></a>
 			<a href="#" style="display:none" id="retry_button" class="fa fa-repeat fa-2x"></a>
-			%= link_to url_for('edit_test') => (style => 'display:none', id => 'crop_button', class => 'fa fa-scissors fa-2x')
+			%= link_to url_for('edit_test') => (style => 'display:none', id => 'crop_button', class => 'fa fa-scissors fa-2x') => begin
+			% end
 			<a href="#" style="display:none" id="stop_button" class="fa fa-edit fa-2x"></a>
 			<i title="waiting for worker ..." class="fa fa-cog fa-2x fa-spin"
 			   id="stop_waitforneedle_spinner" style="display:none"></i>
@@ -101,7 +102,7 @@
 	    </canvas>
 	</div>
     </div>
-    
+
     <div class="box box-shadow" style="padding: 5px 10px;">
         <table class="infotbl noborder">
             <tr>
@@ -126,7 +127,7 @@
             </tr>
         </table>
     </div>
-    
+
     <div class="box box-shadow">
 	<div class="box-header aligncenter">Live Log</div>
 	<div style="margin: 0 10px;">

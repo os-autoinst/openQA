@@ -56,7 +56,7 @@ sub status {
 
     my $job = $self->stash('job');
     my $workerid = $job->worker_id;
-    my $results = { 'workerid' => $workerid, 'state' => $job->state };
+    my $results = { workerid => $workerid, state => $job->state };
     my $r = $job->modules->find({result => 'running'});
     $results->{'running'} = $r->name() if $r;
 
@@ -66,7 +66,7 @@ sub status {
         $results->{stop_waitforneedle_requested} = $job->worker->get_property('STOP_WAITFORNEEDLE_REQUESTED')//0;
     }
 
-    $results->{'needinput'} = $results->{state} eq 'waiting'?1:0;
+    $results->{needinput} = $results->{state} eq OpenQA::Schema::Result::Jobs::WAITING ? 1 : 0;
     $self->render(json => $results);
 }
 
