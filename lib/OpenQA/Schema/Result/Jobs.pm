@@ -266,17 +266,20 @@ sub to_hash {
 
 =item Arguments: none
 
-=item Return value: 1 if a new clon can be created. 0 otherwise.
+=item Return value: 1 if a new clone can be created. undef otherwise.
 
 =back
 
-Checks if a given job can be duplicated.
+Checks if a given job can be duplicated - not cloned yet and in correct state.
 
 =cut
 sub can_be_duplicated{
-    my $self = shift;
+    my ($self) = @_;
 
-    $self->clone ? 0 : 1;
+    my $state = $self->state;
+    return unless (grep {/$state/} (EXECUTION_STATES, FINAL_STATES) );
+    return if $self->clone;
+    return 1;
 }
 
 =head2 duplicate
