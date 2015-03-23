@@ -43,10 +43,6 @@ sub lockit(){
 
 sub clean_pool(){
     return if $nocleanup;
-    if (-e "$pooldir/qemu.pid") {
-        print "QEMU should be dead - WASUP?\n";
-        exit(1);
-    }
     for my $file (<$pooldir/*>) {
         if (-d $file) {
             remove_tree($file);
