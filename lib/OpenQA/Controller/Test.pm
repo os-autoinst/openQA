@@ -105,7 +105,7 @@ sub list_ajax {
         }
     );
     while (my $s = $query->next) {
-        $settings{$s->job_id . "-" . $s->key} = $s->value;
+        $settings{$s->job_id}->{$s->key} = $s->value;
     }
 
     my %deps;
@@ -132,15 +132,14 @@ sub list_ajax {
             "DT_RowId" => "job_" .  $job->id,
             id => $job->id,
             result_stats => $result_stats->{$job->id},
-            overall=>$job->state||'unk',
             deps => $deps{$job->id},
             clone => $job->clone_id,
-            test => $job->test . "@" . $settings{$job->id . '-MACHINE'} // '',
-            distri => $settings{$job->id . '-DISTRI'} // '',
-            version => $settings{$job->id . '-VERSION'} // '',
-            flavor => $settings{$job->id . '-FLAVOR'} // '',
-            arch => $settings{$job->id . '-ARCH'} // '',
-            build => $settings{$job->id . '-BUILD'} // '',
+            test => $job->test . "@" . $settings{$job->id}->{MACHINE} // '',
+            distri => $settings{$job->id}->{DISTRI} // '',
+            version => $settings{$job->id}->{VERSION} // '',
+            flavor => $settings{$job->id}->{FLAVOR} // '',
+            arch => $settings{$job->id}->{ARCH} // '',
+            build => $settings{$job->id}->{BUILD} // '',
             testtime => $job->t_created,
             result => $job->result,
             group => $job->group_id,
