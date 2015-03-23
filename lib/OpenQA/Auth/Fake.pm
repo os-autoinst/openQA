@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -44,6 +44,9 @@ sub auth_login {
         $user->is_operator(1);
         $user->update({is_admin => 1, is_operator => 1 });
     }
+    my $key = $user->api_keys->find_or_create({key => '1234567890ABCDEF', secret => '1234567890ABCDEF'});
+    # expire in a day after login
+    $key->update({t_expiration => DateTime->from_epoch(epoch => time + 24 * 3600)});
     $self->session->{user} = $username;
     return ( error => 0 );
 }
