@@ -134,19 +134,24 @@ sub job_module_stats($) {
 
     my $schema = OpenQA::Scheduler::schema();
 
+    my $ids;
+
     if (ref($jobs) ne 'ARRAY') {
         my @ids;
         while (my $j = $jobs->next) { push(@ids, $j->id); }
         $jobs->reset;
-        $jobs = \@ids;
+        $ids = \@ids;
+    }
+    else {
+        $ids = $jobs;
     }
 
-    for my $id (@$jobs) {
+    for my $id (@$ids) {
         $result_stat->{$id} = { 'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0 };
     }
 
     my $query = $schema->resultset("JobModules")->search(
-        { job_id => { in => $jobs } },
+        { job_id => { in => $ids } },
         {
             select => ['job_id', 'result', 'soft_failure', { 'count' => 'id' } ],
             as => [qw/job_id result soft_failure count/],
