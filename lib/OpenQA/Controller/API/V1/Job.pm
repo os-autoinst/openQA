@@ -206,7 +206,8 @@ sub restart {
     }
 
     my @res = OpenQA::Scheduler::job_restart($target);
-    $self->render(json => {result => $res[0], test_url => $self->url_for('test', testid => $res[0]) });
+    my @urls = map { $self->url_for('test', testid => $_) } @res;
+    $self->render(json => {result => \@res, test_url => \@urls});
 }
 
 sub cancel {
