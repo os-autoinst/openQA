@@ -194,8 +194,8 @@ sub deps_hash {
 
     if (!defined($self->{_deps_hash})) {
         $self->{_deps_hash} = {
-            parents => {'Chained' => [], 'Parallel' => []},
-            children => {'Chained' => [], 'Parallel' => []}
+            parents => {Chained => [], Parallel => []},
+            children => {Chained => [], Parallel => []}
         };
         for my $dep ($self->parents) {
             push @{$self->{_deps_hash}->{parents}->{$dep->to_string}}, $dep->parent_job_id;
@@ -223,7 +223,7 @@ sub remove_result_dir_prefix {
 sub machine {
     my ($self) = @_;
 
-    return $self->settings_hash->{'MACHINE'};
+    return $self->settings_hash->{MACHINE};
 }
 
 sub set_prio {
@@ -520,7 +520,7 @@ sub running_modinfo() {
         my $result = $module->result;
         if (!$category || $category ne $module->category) {
             $category = $module->category;
-            push(@$modlist, {'category' => $category, 'modules' => []});
+            push(@$modlist, {category => $category, modules => []});
         }
         if ($result eq 'running') {
             $modstate = 'current';
@@ -532,10 +532,10 @@ sub running_modinfo() {
         elsif ($modstate eq 'done') {
             $donecount++;
         }
-        my $moditem = {'name' => $name, 'state' => $modstate, 'result' => $result};
-        push(@{$modlist->[scalar(@$modlist)-1]->{'modules'}}, $moditem);
+        my $moditem = {name => $name, state => $modstate, result => $result};
+        push(@{$modlist->[scalar(@$modlist)-1]->{modules}}, $moditem);
     }
-    return {'modlist' => $modlist, 'modcount' => $count, 'moddone' => $donecount, 'running' => $running};
+    return {modlist => $modlist, modcount => $count, moddone => $donecount, running => $running};
 }
 
 sub store_image {
@@ -601,7 +601,9 @@ sub update_status {
     my $ret = { result => 1 };
 
     $self->append_log($status->{log});
-    $self->save_screenshot($status->{screen}) if $status->{screen};
+    # delete from the hash so it becomes dumpable for debugging
+    my $screen = delete $status->{screen};
+    $self->save_screenshot($screen) if $screen;
     $self->update_backend($status->{backend}) if $status->{backend};
     $self->insert_test_modules($status->{test_order}) if $status->{test_order};
     my %known;
@@ -614,18 +616,19 @@ sub update_status {
     $ret->{known_images} = [ sort keys %known ];
 
     if ($self->worker_id) {
-        $self->worker->set_property("INTERACTIVE", $status->{'status'}->{'interactive'}//0);
+        $self->worker->set_property("INTERACTIVE", $status->{status}->{interactive}//0);
     }
-    if ($status->{'status'}->{'needinput'}) {
-        if ($self->state eq 'running') {
+    if ($status->{status}->{needinput}) {
+        if ($self->state eq RUNNING) {
             $self->state(WAITING);
         }
     }
     else {
-        if ($self->state eq 'waiting') {
+        if ($self->state eq WAITING) {
             $self->state(RUNNING);
         }
     }
+    $self->update();
 
     return $ret;
 }

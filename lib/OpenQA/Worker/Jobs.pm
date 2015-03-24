@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -93,8 +93,8 @@ sub stop_job($;$) {
     # we call this function in all situations, so better check
     return unless $job;
     return if $stop_job_running;
-    return if $job_id && $job_id != $job->{'id'};
-    $job_id = $job->{'id'};
+    return if $job_id && $job_id != $job->{id};
+    $job_id = $job->{id};
 
     print "stop_job $aborted\n" if $verbose;
     $stop_job_running = 1;
@@ -127,7 +127,7 @@ sub _stop_job($;$) {
 
     print "stop_job 2nd half\n" if $verbose;
 
-    my $name = $job->{'settings'}->{'NAME'};
+    my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
 
     my $job_done; # undef
@@ -168,25 +168,25 @@ sub _stop_job($;$) {
         }
 
         if ($aborted eq 'obsolete') {
-            printf "setting job %d to incomplete (obsolete)\n", $job->{'id'};
+            printf "setting job %d to incomplete (obsolete)\n", $job->{id};
             upload_status(1);
-            api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete', newbuild => 1});
+            api_call('post', 'jobs/'.$job->{id}.'/set_done', {result => 'incomplete', newbuild => 1});
             $job_done = 1;
         }
         elsif ($aborted eq 'cancel') {
             # not using job_incomplete here to avoid duplicate
-            printf "setting job %d to incomplete (cancel)\n", $job->{'id'};
+            printf "setting job %d to incomplete (cancel)\n", $job->{id};
             upload_status(1);
-            api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
+            api_call('post', 'jobs/'.$job->{id}.'/set_done', {result => 'incomplete'});
             $job_done = 1;
         }
         elsif ($aborted eq 'timeout') {
-            printf "job %d spent more time than MAX_JOB_TIME\n", $job->{'id'};
+            printf "job %d spent more time than MAX_JOB_TIME\n", $job->{id};
         }
         elsif ($aborted eq 'done') { # not aborted
-            printf "setting job %d to done\n", $job->{'id'};
+            printf "setting job %d to done\n", $job->{id};
             upload_status(1);
-            api_call('post', 'jobs/'.$job->{'id'}.'/set_done');
+            api_call('post', 'jobs/'.$job->{id}.'/set_done');
             $job_done = 1;
         }
     }
@@ -195,12 +195,12 @@ sub _stop_job($;$) {
         # with worse priority so it can be picked up again.
         my %args;
         $args{dup_type_auto} = 1;
-        printf "duplicating job %d\n", $job->{'id'};
+        printf "duplicating job %d\n", $job->{id};
         # make it less attractive so we don't get it again
-        api_call('post', 'jobs/'.$job->{'id'}.'/duplicate', \%args);
-        api_call('post', 'jobs/'.$job->{'id'}.'/set_done', {result => 'incomplete'});
+        api_call('post', 'jobs/'.$job->{id}.'/duplicate', \%args);
+        api_call('post', 'jobs/'.$job->{id}.'/set_done', {result => 'incomplete'});
     }
-    warn sprintf("cleaning up %s...\n", $job->{'settings'}->{'NAME'});
+    warn sprintf("cleaning up %s...\n", $job->{settings}->{NAME});
     clean_pool();
     $job = undef;
     $worker = undef;
@@ -216,9 +216,9 @@ sub _stop_job($;$) {
 
 sub start_job {
     # update settings with worker-specific stuff
-    @{$job->{'settings'}}{keys %$worker_settings} = values %$worker_settings;
-    my $name = $job->{'settings'}->{'NAME'};
-    printf "got job %d: %s\n", $job->{'id'}, $name;
+    @{$job->{settings}}{keys %$worker_settings} = values %$worker_settings;
+    my $name = $job->{settings}->{NAME};
+    printf "got job %d: %s\n", $job->{id}, $name;
 
     # for the status call
     $log_offset = 0;
@@ -239,7 +239,7 @@ sub start_job {
     # create job timeout timer
     add_timer(
         'job_timeout',
-        $job->{'settings'}->{'MAX_JOB_TIME'} || $max_job_time,
+        $job->{settings}->{MAX_JOB_TIME} || $max_job_time,
         sub {
             # abort job if it takes too long
             if ($job) {
@@ -317,7 +317,6 @@ sub upload_status(;$) {
 
     for my $f (qw/interactive needinput/) {
         if ($os_status->{$f} || $do_livelog) {
-            $status->{status} //= {};
             $status->{status}->{$f} = $os_status->{$f};
         }
     }
@@ -339,23 +338,26 @@ sub upload_status(;$) {
         }
         $current_running = $os_status->{running};
     }
-    if (defined($upload_result)) {
+    if ($status->{status}->{needinput}) {
+        $status->{result} = { $os_status->{running} => read_module_result($os_status->{running}) };
+    }
+    elsif (defined($upload_result)) {
         $status->{result} = read_result_file($upload_result);
-        if ($os_status->{running}) {
-            $status->{result}->{$os_status->{running}} //= {};
-            $status->{result}->{$os_status->{running}}->{result} = 'running';
-        }
     }
     if ($do_livelog) {
-        $status->{'log'} = log_snippet;
+        $status->{log} = log_snippet;
         my $screen = read_last_screen;
-        $status->{'screen'} = $screen if $screen;
+        $status->{screen} = $screen if $screen;
     }
 
     # if there is nothing to say, don't say it (said my mother)
     return unless %$status;
 
-    if ($ENV{'WORKER_USE_WEBSOCKETS'}) {
+    if ($os_status->{running}) {
+        $status->{result}->{$os_status->{running}}->{result} = 'running';
+    }
+
+    if ($ENV{WORKER_USE_WEBSOCKETS}) {
         ws_call('status', $status);
     }
     else {
@@ -411,6 +413,24 @@ sub read_json_file {
     return $json;
 }
 
+sub read_module_result($) {
+    my ($test) = @_;
+
+    my $result = read_json_file("result-$test.json");
+    return unless $result;
+    for my $d (@{$result->{details}}) {
+        my $screen = $d->{screenshot};
+        next unless $screen;
+        my $md5 = calculate_file_md5("testresults/$screen");
+        $d->{screenshot} ={
+            name => $screen,
+            md5 => $md5,
+        };
+        $tosend_images->{$md5} = $screen;
+    }
+    return $result;
+}
+
 sub read_result_file($) {
     my ($name) = @_;
 
@@ -419,18 +439,8 @@ sub read_result_file($) {
     # we need to upload all results not yet uploaded - and stop at $name
     while (scalar(@$test_order)) {
         my $test = (shift @$test_order)->{name};
-        my $result = read_json_file("result-$test.json");
+        my $result = read_module_result($test);
         last unless $result;
-        for my $d (@{$result->{details}}) {
-            my $screen = $d->{screenshot};
-            next unless $screen;
-            my $md5 = calculate_file_md5("testresults/$screen");
-            $d->{screenshot} ={
-                name => $screen,
-                md5 => $md5,
-            };
-            $tosend_images->{$md5} = $screen;
-        }
         $ret->{$test} = $result;
 
         last if ($test eq $name);

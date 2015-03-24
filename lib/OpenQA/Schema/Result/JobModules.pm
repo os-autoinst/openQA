@@ -96,6 +96,7 @@ sub details() {
     my ($self) = @_;
 
     my $dir = $self->job->result_dir();
+    return unless $dir;
     my $fn =  "$dir/details-" . $self->name . ".json";
     OpenQA::Utils::log_debug "reading $fn";
     open(my $fh, "<", $fn) || return [];
