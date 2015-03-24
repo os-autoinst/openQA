@@ -67,7 +67,7 @@ following list.
 * *failed* At least one assertion considered to be critical was not satisfied at some
   point.
 * *incomplete* The job is no longer running but no result was provided. Either
-  it was cancelled while running either it crashed.
+  it was cancelled while running or it crashed.
 
 Sometimes, the reason of a failure is not an error in the tested operating system
 itself, but an outdated test or a problem in the execution of the job for some
@@ -127,7 +127,7 @@ virtual machine or one of the existing needles. Once the needles are adjusted,
 the user can command the job to reload the list of needles and continue with the
 execution.
 
-The interactive mode is specially useful when creating needles for a new
+The interactive mode is especially useful when creating needles for a new
 operating system or when the look & feel have changed and several needles need
 to be adjusted accordingly.
 
@@ -223,7 +223,7 @@ Using job templates to automate jobs creation
 The problem
 ~~~~~~~~~~~
 
-When testing an operating system, specially when doing continuous testing,
+When testing an operating system, especially when doing continuous testing,
 there is always a certain combination of jobs, each one with its own
 settings, that needs to be run for every revision. Those combinations can be
 different for different `flavors' of the same revision, like running a different
@@ -427,4 +427,4 @@ not uploaded from the path that you would specify.
 
 Pitfalls
 --------
-take a look at link:Pitfalls.asciidoc[Documented Pitfalls]
+Take a look at link:Pitfalls.asciidoc[Documented Pitfalls]
