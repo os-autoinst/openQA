@@ -3,17 +3,28 @@
 
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
+    $( '#restart-result' ).click( function(event) {
+            event.preventDefault();
+            var doc_url = document.URL.substring(0, document.URL.lastIndexOf("/") + 1);
+            var restart_link = $(this);
+            $.post(restart_link.attr("href")).done( function( data, res, xhr ) {
+                var jobid = xhr.responseJSON.result;
+                if (jobid) {
+                    var url = doc_url + jobid;
+                    window.location = url;
+                }
+            });
+            $(this).html('');
+    });
 % end
 
 <div class="grid_2 alpha">
     <div class="box box-shadow" id="actions_box">
 	<div class="box-header aligncenter">Actions</div>
 	<div class="aligncenter">
-            %# TODO: to use can_be_duplicated we have to wait for https://progress.opensuse.org/issues/1393
-            %#       in the meantime, just check clone_id
-            % unless ($job->clone_id) {
+            % if ($job->can_be_duplicated) {
                 %= link_post url_for('apiv1_restart', name => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
-                %= image "/images/toggle.png", alt => "schedule", title => "re-schedule"
+                %= image "/images/toggle.png", alt => "schedule", title => "restart"
                 %= end
             % }
 	</div>

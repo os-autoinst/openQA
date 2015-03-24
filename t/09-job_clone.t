@@ -66,7 +66,8 @@ is_deeply($m_hashed, $c_hashed, "equivalent job settings (skipping NAME)");
 ok(!$minimalx->can_be_duplicated, "doesn't look cloneable after reloading");
 is($minimalx->duplicate, undef, "cannot clone after reloading");
 
-# But cloning the clone should be possible
+# But cloning the clone should be possible after job state change
+$clone->state(OpenQA::Schema::Result::Jobs::CANCELLED);
 my $second = $clone->duplicate({prio => 35, retry_avbl => 2});
 is($second->test, "minimalx", "same test again");
 is($second->priority, 35, "with adjusted priority");

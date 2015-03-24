@@ -879,11 +879,11 @@ sub job_duplicate {
     # set this clone was triggered by manually if it's not auto-clone
     $args{dup_type_auto} = 0 unless defined $args{dup_type_auto};
 
-    log_debug("duplicating $args{jobid}");
-
     my $job = schema->resultset("Jobs")->find({id => $args{jobid}});
-    return undef unless $job;
-    return undef if $job->clone; # already cloned
+    return unless $job;
+    return unless $job->can_be_duplicated; # already cloned
+
+    log_debug("duplicating $args{jobid}");
 
     if($args{dup_type_auto}) {
         if ( int($job->retry_avbl) > 0) {

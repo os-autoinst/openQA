@@ -39,13 +39,15 @@
                     %= link_to "Build$build" => url_for('tests_overview')->query(%$query);
                     of <%= "$settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}" %>
                 </td>
-		<td class="test">
+                <td class="test">
                     %= link_to url_for('test', 'testid' => $job->id) => begin
-                    <i class="status state_scheduled fa fa-circle" title="Scheduled"></i>
-		    %= link_post url_for('apiv1_cancel', 'name' => $job->id) => ('data-remote' => 'true') => (class => 'cancel') => begin
-		      <i class="action fa fa-times-circle-o"></i>
-		    % end
-                    %= $test
+                        <i class="status state_scheduled fa fa-circle" title="Scheduled"></i>
+                    % end
+                    %= link_post url_for('apiv1_cancel', 'name' => $job->id) => ('data-remote' => 'true') => (class => 'cancel') => begin
+                        <i class="action fa fa-times-circle-o"></i>
+                    % end
+                    %= link_to url_for('test', 'testid' => $job->id) => begin
+                        %= $test
                     % end
 		</td>
                 % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);

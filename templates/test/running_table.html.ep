@@ -49,15 +49,17 @@
                     %= link_to "Build$build" => url_for('tests_overview')->query(%$query);
                     of <%= "$settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}" %>
 		</td>
-		<td class="test">
-		    %= link_to url_for('test', 'testid' => $job->id) => begin
-                    <i class="status state_running fa fa-circle" title="Running"></i>
-		    %= link_post url_for('apiv1_cancel', 'name' => $job->id) => ('data-remote' => 'true') => (class => 'cancel') => begin
-		      <i class="action fa fa-times-circle-o"></i>
-		    % end
-                    %= $testname
-                    % end
-		</td>
+        <td class="test">
+            %= link_to url_for('test', 'testid' => $job->id) => begin
+                <i class="status state_running fa fa-circle" title="Running"></i>
+            % end
+            %= link_post url_for('apiv1_cancel', 'name' => $job->id) => ('data-remote' => 'true') => (class => 'cancel') => begin
+                <i class="action fa fa-times-circle-o"></i>
+            % end
+            %= link_to url_for('test', 'testid' => $job->id) => begin
+                %= $testname
+            % end
+        </td>
 		% my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
 		<td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %>Z</td>
 		<td style="padding: 3px 4px;" class="progress">
