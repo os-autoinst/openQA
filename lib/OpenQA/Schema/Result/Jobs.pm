@@ -387,7 +387,7 @@ sub calculate_result($) {
 
     for my $m ($job->modules->all) {
         if ( $m->result eq PASSED ) {
-            if ($m->important) {
+            if ($m->important || $m->fatal) {
                 $important_overall ||= PASSED;
             }
             else {
@@ -395,7 +395,7 @@ sub calculate_result($) {
             }
         }
         else {
-            if ($m->important) {
+            if ($m->important || $m->fatal) {
                 $important_overall = FAILED;
             }
             else {
