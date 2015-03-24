@@ -256,8 +256,11 @@ sub show {
         return;
     }
 
+    my $clone_of = $self->app->schema->resultset("Jobs")->find({ clone_id => $job->id });
+
     my $modlist = read_test_modules($job);
     $self->stash(job => $job);
+    $self->stash(clone_of => $clone_of);
     $self->stash(modlist => $modlist);
 
     my $rd = $job->result_dir();

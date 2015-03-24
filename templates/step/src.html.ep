@@ -5,42 +5,45 @@
 % title $moduleid;
 
 % content_for 'ready_function' => begin
-  scrollModuleThumbnails();
+    scrollModuleThumbnails();
+    setupResultButtons();
 % end
 
 <div class="grid_3 alpha" id="sidebar">
     <div class="box box-shadow alpha" id="actions_box">
-	<div class="box-header aligncenter">Actions</div>
-	<div class="aligncenter">
-	    %= link_to url_for('test') => begin
-            %= image '/images/back.png', alt => 'back to test details', title => 'back_to_test_details', height => 22
-	    % end
-	    %= link_to url_for('src_step', format => 'txt') => begin
-            %= image '/images/log.png', alt => 'raw test', title => 'raw test'
-	    % end
-	</div>
+        <div class="box-header aligncenter">Actions</div>
+        <div class="aligncenter">
+            % if (is_operator && $job->can_be_duplicated) {
+                %= link_post url_for('apiv1_restart', name => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
+                    <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
+                %= end
+            % }
+        </div>
     </div>
-    
+
     %= include 'step/moduleslist'
 </div>
 
 <div class="grid_13 omega">
     %= include 'step/moduleslistthumbnails' unless ($tabmode eq 'onlysrc')
-    
+
     <div class="box box-shadow">
-	%= include 'step/moduleslisttabs'
-	
-	<p>
-	    Test-Module: <tt><%= $scriptpath %></tt>
-	</p>
-	<textarea class='code' id='script'>
-	    %= $script
-	</textarea>
-	
-	<script type="text/javascript">
-	 var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
-	     lineNumbers: true
-	 });
-	</script>
+        %= include 'step/moduleslisttabs'
+
+        <p>
+            Test-Module:
+            %= link_to url_for('src_step', format => 'txt') => begin
+                <tt><%= $scriptpath %></tt>
+            % end
+        </p>
+        <textarea class='code' id='script'>
+            %= $script
+        </textarea>
+
+        <script type="text/javascript">
+         var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
+             lineNumbers: true
+         });
+        </script>
     </div>
 </div>

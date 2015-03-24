@@ -2,18 +2,18 @@
   $('#running').DataTable( {
         "pagingType" : 'simple',
         "order": [],
-	"columnDefs": [
-	    { targets: 0,
+        "columnDefs": [
+            { targets: 0,
               className: "name" },
             { targets: 2,
               className: "time",
               "render": function ( data, type, row ) {
                     if (type === 'display') {
-		      return jQuery.timeago(new Date(data));
+                      return jQuery.timeago(new Date(data));
                   } else
-		      return data;
-	      }
-	    },
+                      return data;
+              }
+            },
         ],
   } );
 % end
@@ -21,72 +21,72 @@
 <table id="running" class="display compact">
     <thead>
         <tr>
-	    <th class="name">Medium</th>
-	    <th class="test">Test</th>
+            <th class="name">Medium</th>
+            <th class="test">Test</th>
             <th>Testtime</th>
             <th>Result</th>
         </tr>
     </thead>
     <tbody>
-	% for my $test (@$running) {
-	    % my $job = $test->{job};
-	    % my $settings = $job->settings_hash;
-	    % my $resultclass = 'overview_'.$job->result;
-	    % my $build = $settings->{BUILD} // '';
-	    % my $distri = $settings->{DISTRI} // '';
-	    % my $version = $settings->{VERSION} // '';
-	    %   my $query = { build => $build };
-	    %   if ($job->group_id) {
-		% $query->{groupid} = $job->group_id;
-	    % } else
-	    % {
-		% $query->{distri} = $settings->{DISTRI};
-		% $query->{version} = $settings->{VERSION};
-	    % }
-	    <tr id="job_<%= $job->id %>">
-		% my $testname = $job->test . '@' . $settings->{MACHINE};
-		<td class="name">
+        % for my $test (@$running) {
+            % my $job = $test->{job};
+            % my $settings = $job->settings_hash;
+            % my $resultclass = 'overview_'.$job->result;
+            % my $build = $settings->{BUILD} // '';
+            % my $distri = $settings->{DISTRI} // '';
+            % my $version = $settings->{VERSION} // '';
+            %   my $query = { build => $build };
+            %   if ($job->group_id) {
+                % $query->{groupid} = $job->group_id;
+            % } else
+            % {
+                % $query->{distri} = $settings->{DISTRI};
+                % $query->{version} = $settings->{VERSION};
+            % }
+            <tr id="job_<%= $job->id %>">
+                % my $testname = $job->test . '@' . $settings->{MACHINE};
+                <td class="name">
                     %= link_to "Build$build" => url_for('tests_overview')->query(%$query);
                     of <%= "$settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}" %>
-		</td>
-        <td class="test">
-            %= link_to url_for('test', 'testid' => $job->id) => begin
-                <i class="status state_running fa fa-circle" title="Running"></i>
-            % end
-            %= link_post url_for('apiv1_cancel', 'name' => $job->id) => ('data-remote' => 'true') => (class => 'cancel') => begin
-                <i class="action fa fa-times-circle-o"></i>
-            % end
-            %= link_to url_for('test', 'testid' => $job->id) => begin
-                %= $testname
-            % end
-        </td>
-		% my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
-		<td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %>Z</td>
-		<td style="padding: 3px 4px;" class="progress">
-		    <div class="pbox">
-			% my $ptext = "";
-			% my $value;
-			% if ($job->state eq 'waiting') {
-			    % $ptext = "waiting";
-			% } elsif($test->{'run_stat'}->{'modcount'} > 0)
-			% {
-			    %   $value = $test->{'run_stat'}->{'moddone'};
-			    %   $ptext = int($value * 100. / $test->{'run_stat'}->{'modcount'}) ."%";
-			% } else
-			% {
-			    %   $ptext = "pre-processing";
-			% }
-			<progress style="width: 100%; height: 100%;"
-				  % if (defined($value)) {
-				      value="<%= $value %>"
-				  % }
-				  max="<%= $test->{'run_stat'}->{'modcount'} %>">
-				  <%= $ptext %>
-			</progress>
-			<%= $ptext %>
-		    </div>
-		</td>
-	    </tr>
-	% }
+                </td>
+                <td class="test">
+                    %= link_to url_for('test', 'testid' => $job->id) => begin
+                        <i class="status state_running fa fa-circle" title="Running"></i>
+                    % end
+                    %= link_post url_for('apiv1_cancel', 'name' => $job->id) => ('data-remote' => 'true') => (class => 'cancel') => begin
+                        <i class="action fa fa-times-circle-o"></i>
+                    % end
+                    %= link_to url_for('test', 'testid' => $job->id) => begin
+                        %= $testname
+                    % end
+                </td>
+                % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
+                <td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %>Z</td>
+                <td style="padding: 3px 4px;" class="progress">
+                    <div class="pbox">
+                        % my $ptext = "";
+                        % my $value;
+                        % if ($job->state eq 'waiting') {
+                            % $ptext = "waiting";
+                        % } elsif($test->{'run_stat'}->{'modcount'} > 0)
+                        % {
+                            %   $value = $test->{'run_stat'}->{'moddone'};
+                            %   $ptext = int($value * 100. / $test->{'run_stat'}->{'modcount'}) ."%";
+                        % } else
+                        % {
+                            %   $ptext = "pre-processing";
+                        % }
+                        <progress style="width: 100%; height: 100%;"
+                                  % if (defined($value)) {
+                                      value="<%= $value %>"
+                                  % }
+                                  max="<%= $test->{'run_stat'}->{'modcount'} %>">
+                                  <%= $ptext %>
+                        </progress>
+                        <%= $ptext %>
+                    </div>
+                </td>
+            </tr>
+        % }
     </tbody>
 </table>

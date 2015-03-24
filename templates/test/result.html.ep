@@ -3,28 +3,16 @@
 
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
-    $( '#restart-result' ).click( function(event) {
-            event.preventDefault();
-            var doc_url = document.URL.substring(0, document.URL.lastIndexOf("/") + 1);
-            var restart_link = $(this);
-            $.post(restart_link.attr("href")).done( function( data, res, xhr ) {
-                var jobid = xhr.responseJSON.result;
-                if (jobid) {
-                    var url = doc_url + jobid;
-                    window.location = url;
-                }
-            });
-            $(this).html('');
-    });
+    setupResultButtons();
 % end
 
 <div class="grid_2 alpha">
     <div class="box box-shadow" id="actions_box">
 	<div class="box-header aligncenter">Actions</div>
 	<div class="aligncenter">
-            % if ($job->can_be_duplicated) {
+            % if (is_operator && $job->can_be_duplicated) {
                 %= link_post url_for('apiv1_restart', name => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
-                %= image "/images/toggle.png", alt => "schedule", title => "restart"
+		    <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
                 %= end
             % }
 	</div>
@@ -108,16 +96,23 @@
                 <td>State</td>
                 <td><%= $job->state %></td>
             </tr>
-            <tr>
-                <td>Clone</td>
-                <td id="clone">
-                    % if ($job->clone_id) {
-                        <%= link_to $job->clone_id => url_for ('test', 'testid' => $job->clone_id) %>
-                    % } else {
-                        -
-                    % }
-                </td>
-            </tr>
+	    % if ($job->clone_id) {
+		<tr>
+                    <td>Clone</td>
+                    <td id="clone">
+		        <%= link_to $job->clone_id => url_for ('test', 'testid' => $job->clone_id) %>
+		    </td>
+		</tr>
+            % }
+	    % if ($clone_of) {
+		<tr>
+                    <td>Clone of</td>
+                    <td>
+		        <%= link_to $clone_of->id => url_for ('test', 'testid' => $clone_of->id) %>
+		    </td>
+		</tr>
+            % }
+
             <% if ($job->state eq 'scheduled') {  %>
             <tr>
                 <td style="width: 40%;">Priority</td>

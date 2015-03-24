@@ -26,7 +26,7 @@ function scrollModuleThumbnails() {
     var area = $("#module-thumbnails");
     var current = $('#module-thumbnails .current');
 
-    if (!current)
+    if (!current || !area.offset())
 	return;
     var offset = current.offset().left - area.offset().left;
     area.scrollLeft(40 + offset - area.width()/2);

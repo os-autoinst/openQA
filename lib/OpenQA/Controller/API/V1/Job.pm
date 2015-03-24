@@ -194,7 +194,7 @@ sub done {
 
 # Used for both apiv1_restart and apiv1_restart_jobs
 sub restart {
-    my $self = shift;
+    my ($self) = @_;
     my $target = $self->param('name');
     if ($target) {
         $self->app->log->debug("Restarting job $target");
@@ -206,7 +206,8 @@ sub restart {
     }
 
     my @res = OpenQA::Scheduler::job_restart($target);
-    $self->render(json => {result => \@res});
+    my @urls = map { $self->url_for('test', testid => $_) } @res;
+    $self->render(json => {result => \@res, test_url => \@urls});
 }
 
 sub cancel {

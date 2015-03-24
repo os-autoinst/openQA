@@ -5,19 +5,18 @@
 % end
 
 <div class="grid_6 box box-shadow omega">
-  %= t h1 => 'Login to ' . $appname
-  %= form_for login => (method => 'POST') => begin
-    % if (my $err = validation->error('name')) {
-      % if ( $err->[0] eq 'required' ) {
-        <blockquote class="ui-state-error" style="margin-bottom: 0.6em;">User Name is required</blockquote>
-      % }
-      % if ( $err->[0] eq 'like' ) {
-        <blockquote class="ui-state-error" style="margin-bottom: 0.6em;">User Name needs to be alphanumeric ASCII</blockquote>
-      % }
-    % }
-    %= label_for name => 'User Name'
-    %= text_field 'name', id => 'input-name', autofocus => 'true'
-    %= submit_button 'Log in'
-  %= end
+    %= t h1 => 'Login to ' . $appname
+    %= form_for login => (method => 'POST') => begin
+        % if (my $err = validation->error('name')) {
+            % if ( $err->[0] eq 'required' ) {
+                <blockquote class="ui-state-error" style="margin-bottom: 0.6em;">User Name is required</blockquote>
+            % }
+            % if ( $err->[0] eq 'like' ) {
+                <blockquote class="ui-state-error" style="margin-bottom: 0.6em;">User Name needs to be alphanumeric ASCII</blockquote>
+            % }
+        % }
+        %= label_for name => 'User Name'
+        %= text_field 'name', id => 'input-name', autofocus => 'true'
+        %= submit_button 'Log in'
+    %= end
 </div>
-
