@@ -40,14 +40,16 @@
                     of <%= "$settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}" %>
                 </td>
                 <td class="test">
-                    %= link_to url_for('test', 'testid' => $job->id) => begin
-                        <i class="status state_scheduled fa fa-circle" title="Scheduled"></i>
+		    % if (is_operator) {
+		      %= link_to url_for('apiv1_cancel', 'name' => $job->id) => (class => 'cancel') => begin
+                         <i class="action fa fa-fw fa-times-circle-o"></i>
+		      % end
+		    % }
+		    %= link_to url_for('test', 'testid' => $job->id) => begin
+                       <i class="status state_scheduled fa fa-circle" title="Scheduled"></i>
                     % end
-                    %= link_post url_for('apiv1_cancel', 'name' => $job->id) => ('data-remote' => 'true') => (class => 'cancel') => begin
-                        <i class="action fa fa-times-circle-o"></i>
-                    % end
                     %= link_to url_for('test', 'testid' => $job->id) => begin
-                        %= $test
+                       %= $test
                     % end
 		</td>
                 % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);

@@ -50,9 +50,8 @@ $t->post_ok('/api/v1/jobs/99928/prio?prio=34' => { 'X-CSRF-Token' => $token } =>
 # Log in with an authorized user for the rest of the test
 $test_case->login($t, 'percival');
 
-# Test 99928 is scheduled, so can be canceled. Make sure link contains
-# data-method=post
-$t->get_ok('/tests')->element_exists('#scheduled #job_99928 a.cancel[data-method=post]');
+# Test 99928 is scheduled, so can be canceled
+$t->get_ok('/tests')->element_exists('#scheduled #job_99928 a.cancel');
 
 # test cancel with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/cancel' => form => { csrf_token => 'foobar' })->status_is(403);

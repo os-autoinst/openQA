@@ -465,14 +465,14 @@ table.overview .failedmodule {
     color: #F3F929;
 }
     
-.result_passed a i.fa { color: #75C195 !important; }		/* dark Lemon */
-.fa.module_passed { color: #75C195; }
-.result_unknown a i.fa { color:#ff9 ;}
-.result_softfail a i.fa { color:#A3C16C ;}
+.fa.result_passed { color: #75C195 !important; }		/* dark Lemon */
+.fa.module_passed { color: #75C195 !important; }
+.fa.result_unknown { color:#ff9 ;}
+.fa.result_softfail { color:#A3C16C ;}
 .fa.module_softfail { color: #A3C16C; }
-.result_failed a i.fa {color: #FF4E46; }
+.fa.result_failed {color: #FF4E46; }
 .fa.module_failed { color: #FF4E46; }
-.result_incomplete a i.fa { color: #AF1E11;}
+.fa.result_incomplete { color: #AF1E11;}
 .fa.module_none { color:#bebebe;}
 
 table#users td.role {
