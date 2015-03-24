@@ -40,9 +40,10 @@ sub set_engine_exec {
 sub _kill($) {
     my ($pid) = @_;
     my $n = kill(SIGTERM, $pid);
-    for (my $i = 0; $n && $i < 5; ++$i) {
-        sleep 1;
+    for (my $i = 0; $n && $i < 10; ++$i) {
+        sleep 3;
         $n = kill(SIGTERM, $pid);
+        warn "kill TERM resulted in $n";
     }
     if ($n) {
         warn "pid $pid didn't die, sending KILL";
