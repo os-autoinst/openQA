@@ -1,4 +1,4 @@
-% layout 'default';
+% layout 'bootstrap';
 % title $job->name . " test results";
 
 % content_for 'ready_function' => begin
@@ -6,205 +6,194 @@
     setupResultButtons();
 % end
 
-<div class="grid_2 alpha">
-    <div class="box box-shadow" id="actions_box">
-        <div class="box-header aligncenter">Actions</div>
-        <div class="aligncenter">
-            % if (is_operator && $job->can_be_duplicated) {
-                %= link_post url_for('apiv1_restart', name => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
-                    <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
-                %= end
-            % }
-        </div>
-    </div>
-    % if(@$resultfiles) {
-        <div class="box box-shadow" id="result_files_box">
-            <div class="box-header aligncenter">Result Files</div>
-            <div class="aligncenter">
-                % for my $resultfile (@$resultfiles) {
-                    % if($resultfile =~ /video.ogv$/) {
-                        %= link_to url_for('test_file', testid => $testid, filename => 'video.ogv') => begin
-                            %= image "/images/video.png", width=>"23", height=>"23", alt=>"ogv", title=>"ogg/theora video of this testrun"
-                        %= end
-                        <br/>
-                    % } else
-                    % {
-                        <a href="<%= url_for('test_file', 'testid' => $testid, 'filename' => $resultfile) %>"><%= $resultfile %></a><br />
-                    % }
-                % }
-            </div>
-        </div>
-    % }
-    % my $assets = $job->jobs_assets;
-    % if ($assets->all) {
-        <div class="box box-shadow" id="result_files_box">
-            <div class="box-header aligncenter">Assets</div>
-            <div class="aligncenter">
-                % while (my $a = $assets->next) {
-                    % $a = $a->asset;
-                    % if ($a->type ne 'repo') {
-                        %= link_to url_for('test_asset_id', 'testid' => $testid, assetid => $a->id) => (id => "asset_".$a->id) => begin
-                        Download <%= $a->type %>
-                        % end
-                        <br>
-                    % }
-                % }
-            </div>
-        </div>
-    % }
-    % if($ulogs and @$ulogs) {
-        <div class="box box-shadow" id="result_files_box">
-            <div class="box-header aligncenter">Uploaded Logs</div>
-            <div style="text-align: center;">
-                % for my $ulog (@$ulogs) {
-                    %= link_to $ulog => url_for('test_file', 'testid' => $testid, 'filename' => $ulog)
-                    <br />
-                % }
-            </div>
-        </div>
-    % }
-    <div class="box box-shadow" id="info_box">
-        <div class="box-header aligncenter">Test Details</div>
-        <table class="infotbl">
-            % if ($job->t_started) {
-                <tr>
-                    <td>Started</td>
-                    <td>
-                        <abbr class="timeago" title="<%= $job->t_started->datetime() %>Z"><%= format_time($job->t_started) %></abbr>
-                    </td>
-                </tr>
-                % if ($job->t_finished) {
-                    <tr>
-                        <td>Finished</td>
-                        <td>
-                            <abbr class="timeago" title="<%= $job->t_finished->datetime() %>Z"><%= format_time($job->t_finished) %></abbr>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Duration</td>
-                        <td><%= format_time_duration($job->t_finished - $job->t_started) %></td>
-                    </tr>
-                % }
-            % }
-            <tr>
-                <td>Result</td>
-                <td>
-                    <span class="<%= css_for({result => $job->result}) %>"><%= $job->result %></span>
-                </td>
-            </tr>
-            <tr>
-                <td>State</td>
-                <td><%= $job->state %></td>
-            </tr>
-            % if ($job->clone_id) {
-                <tr>
-                    <td>Clone</td>
-                    <td id="clone">
-                        <%= link_to $job->clone_id => url_for ('test', 'testid' => $job->clone_id) %>
-                    </td>
-                </tr>
-            % }
-            % if ($clone_of) {
-                <tr>
-                    <td>Clone of</td>
-                    <td>
-                        <%= link_to $clone_of->id => url_for ('test', 'testid' => $clone_of->id) %>
-                    </td>
-                </tr>
-            % }
-
-            <% if ($job->state eq 'scheduled') {  %>
-            <tr>
-                <td style="width: 40%;">Priority</td>
-                %  my $prio = $job->priority;
-                <td>
-                    <%= link_post "-" => url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio-10) => (class => 'prio-down') %>
-                    <span data-prio="<%= $prio %>"><%= $prio %></span>
-                    <%= link_post "+" => url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio+10) => (class => 'prio-up') %>
-                </td>
-            </tr>
-            % }
-        </table>
-    </div>
-    %= include 'layouts/dependencies'
-
-    % if ($job->backend) {
-        <div class="box box-shadow" id="backend_info_box">
-            <div class="box-header aligncenter">Backend</div>
-            <table class="infotbl">
-                <tr>
-                    <td colspan="2" style="padding: 0 0 <%= ($job->backend eq
-                                                        'kvm2usb')?'8px':'0' %> 0;"><%= $job->backend %></td>
-                </tr>
-                % if($job->backend eq 'kvm2usb') {
-                    %= include 'test/running_kvm2usb'
-                % }
-            </table>
-        </div>
-    % }
-</div>
-
-<div class="grid_14 omega">
-    <div class="box box-shadow">
-        <h2>Test result for <i><%= $job->name %></i></h2>
-        <p />
+<div class="row">
+    <div class="col-sm-push-3 col-sm-9">
         %= include 'layouts/info'
         % if (my $msg = flash 'code') {
-            <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
+            <blockquote class="ui-state-highlight"><%== $msg %></blockquote>
+        % }
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-9 col-sm-push-3">
+
+        % my $panelclass = 'panel-info';
+        % if ($job->state eq 'done') {
+            % if ($job->result eq 'passed') {
+                % $panelclass = 'panel-success';
+            % } else
+            % {
+                % $panelclass = 'panel-danger';
+            % }
+        % }
+        <div class="panel <%= $panelclass %>" id="info_box">
+            <div class="panel-heading">
+                Results for <%= $job->name %>
+            </div>
+            <div class="panel-body">
+                <div>
+                    %if ($job->state eq 'done') {
+                        Result: <b><%= $job->result %></b>
+                    % } else
+                    % {
+                        State:<%= $job->state %>
+                    % }
+                    % if ($job->t_finished) {
+                        finished
+                        <abbr class="timeago" title="<%= $job->t_finished->datetime() %>Z"><%= format_time($job->t_finished) %></abbr>
+                        (
+                        <%= format_time_duration($job->t_finished - $job->t_started) %>
+                        )
+                    % } elsif ($job->t_started)
+                    % {
+                        started
+                        <abbr class="timeago" title="<%= $job->t_started->datetime() %>Z"><%= format_time($job->t_started) %></abbr>
+                    % }
+                    % if (is_operator && $job->can_be_duplicated) {
+                        %= link_post url_for('apiv1_restart', name => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
+                            <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
+                        %= end
+                    % }
+                </div>
+                <div>
+                    % if ($clone_of) {
+                        Clone of
+                        %= link_to $clone_of->id => url_for ('test', 'testid' => $clone_of->id)
+                    % }
+                    % if ($job->clone_id) {
+                        Cloned as
+                        %= link_to $job->clone_id => url_for ('test', 'testid' => $job->clone_id)
+                    % }
+                </div>
+
+                <% if ($job->state eq 'scheduled') {  %>
+                    <tr>
+                        <td style="width: 40%;">Priority</td>
+                        %  my $prio = $job->priority;
+                        <td>
+                            <%= link_post "-" => url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio-10) => (class => 'prio-down') %>
+                            <span data-prio="<%= $prio %>"><%= $prio %></span>
+                            <%= link_post "+" => url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio+10) => (class => 'prio-up') %>
+                        </td>
+                    </tr>
+                % }
+            </div>
+        </div>
+        % if (@$modlist) {
+            <table id="results" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Test</th>
+                        <th>Result</th>
+                        <th style="width: 100%">References</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for my $module (@$modlist) { %>
+                        <tr>
+                            <td class="component">
+                                <div>
+                                    %= link_to $module->{name} => url_for('src_step', stepid => 1, moduleid => $module->{name})
+                                </div>
+                                <div class="flags">
+                                    % if ($module->{fatal}) {
+                                        <i class="flag fa fa-plug" title="Fatal: testsuite is aborted if this test fails"></i>
+                                    % } elsif ($module->{important})
+                                    % {
+                                        <i class="flag fa fa-exclamation" title="Important: overall result is failed if this test fails"></i>
+                                    % }
+                                    % if  ($module->{milestone}) {
+                                        <i class="flag fa fa-anchor" title="Milestone: snapshot the state after this test for restoring"></i>
+                                    % }
+                                </div>
+                            </td>
+                            <td class="<%= css_for($module) %>">
+                                %= format_result($module)
+                            </td>
+
+                        </td>
+                        <td class="links">
+
+                            % for my $screenshot (@{$module->{screenshots}}) {
+                                %= step_thumbnail($screenshot, 60, $testid, $module->{name}, $screenshot->{num})
+                            % }
+
+                            % for my $wav (@{$module->{wavs}}) {
+                                %= link_to url_for('step', moduleid => $module->{name}, stepid => $wav->{num}) => title => $wav->{name} => begin
+                                    <img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{name} %>" class="<%= "resborder_\L$wav->{result}" %>" />
+                                % end
+                            % }
+
+                            <% for my $ocr (@{$module->{ocrs}}) { %>
+                                <a href="<%= url_for('step', moduleid => $module->{name}, stepid => $ocr->{num}) %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{name} %>.txt" class="<%= "resborder_\L$ocr->{result}" %>" /></a>
+                            <% } %>
+                        </td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+
+        % }
+        %= include 'layouts/settings'
+    </div>
+
+<div class="col-sm-3 col-sm-pull-9">
+    <div class="well" id="result_files_box">
+        % if(@$resultfiles) {
+            <div class="h5">Result Files</div>
+            <ul>
+                % for my $resultfile (@$resultfiles) {
+                    <li>
+                        % if($resultfile =~ /video.ogv$/) {
+                            %= link_to url_for('test_file', testid => $testid, filename => 'video.ogv') => begin
+                            <i title="ogg/theora video of this testrun" class="fa fa-file-video-o"></i> Video
+                            %= end
+                        % } else
+                        % {
+                            <a href="<%= url_for('test_file', testid => $testid,
+                                                 filename => $resultfile) %>">
+                                <%= $resultfile %>
+                            </a>
+                        % }
+                    </li>
+                % }
+            </ul>
+        % }
+        % my $assets = $job->jobs_assets;
+        % while (my $a = $assets->next) {
+            % $a = $a->asset;
+            % if ($a->type ne 'repo') {
+                % content_for 'asset_box' => begin
+                    <li>
+                        %= link_to url_for('test_asset_id', 'testid' => $testid, assetid => $a->id) => (id => "asset_".$a->id) => begin
+                            Download <%= $a->type %>
+                        % end
+                    </li>
+                % end
+            % }
         % }
 
-        <table id="results" class="table-autostripe">
-            <thead>
-                <tr>
-                    <th style="width: 200px;">Test</th>
-                    <th style="width: 150px; padding: 2px 25px;">Result</th>
-                    <th>References</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% for my $module (@$modlist) { %>
-                    <tr>
-                        <td class="component">
-                            <div>
-                                %= link_to $module->{name} => url_for('src_step', stepid => 1, moduleid => $module->{name})
-                            </div>
-                            <div style="min-height: 1em">
-                                % if ($module->{fatal}) {
-                                    <i class="flag fa fa-plug" title="Fatal: testsuite is aborted if this test fails"></i>
-                                % } elsif ($module->{important})
-                                % {
-                                    <i class="flag fa fa-exclamation" title="Important: overall result is failed if this test fails"></i>
-                                % }
-                                % if  ($module->{milestone}) {
-                                    <i class="flag fa fa-anchor" title="Milestone: snapshot the state after this test for restoring"></i>
-                                % }
-                            </div>
-                        </td>
-                        <td class="<%= css_for($module) %>">
-                            %= format_result($module)
-                        </td>
+        % if (length(content('asset_box'))) {
+            <div class="h5">Assets</div>
+            <ul>
+                %= content 'asset_box'
+            </ul>
+        % }
+        % for my $ulog (@$ulogs) {
+            % content_for 'log_list' => begin
+                <li>
+                    %= link_to($ulog => url_for('test_file', 'testid' => $testid, 'filename' => $ulog))
+                </li>
+            % end
+        % }
 
-                    </td>
-                    <td class="links" style="width: 100%;">
-
-                        % for my $screenshot (@{$module->{screenshots}}) {
-                            %= step_thumbnail($screenshot, 60, $testid, $module->{name}, $screenshot->{num})
-                        % }
-
-                        % for my $wav (@{$module->{wavs}}) {
-                            %= link_to url_for('step', moduleid => $module->{name}, stepid => $wav->{num}) => title => $wav->{name} => begin
-                                <img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{name} %>" class="<%= "resborder_\L$wav->{result}" %>" />
-                            % end
-                        % }
-
-                        <% for my $ocr (@{$module->{ocrs}}) { %>
-                            <a href="<%= url_for('step', moduleid => $module->{name}, stepid => $ocr->{num}) %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{name} %>.txt" class="<%= "resborder_\L$ocr->{result}" %>" /></a>
-                        <% } %>
-                    </td>
-                    </tr>
-                <% } %>
-            </tbody>
-        </table>
+        % if (length(content('log_list'))) {
+            <div class="h6">Uploaded Logs</div>
+            <ul>
+                %= content 'log_list'
+            </ul>
+        % }
     </div>
-    %= include 'layouts/settings'
+    %= include 'layouts/dependencies'
 </div>

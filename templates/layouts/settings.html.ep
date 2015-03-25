@@ -1,6 +1,6 @@
-<div class="box box-shadow" id="settings_box">
-    <div class="box-header aligncenter">Settings</div>
-    <table class="infotbl">
+<div class="well" id="settings_box">
+    <div class="h4">Settings</div>
+    <table class="infotbl table table-striped">
         % for my $k (sort keys %{$job->settings_hash}) {
         <tr>
             <td style="text-align: left;"><%= $k %></td>
@@ -8,4 +8,20 @@
         </tr>
         % }
     </table>
+
+    % if ($job->backend) {
+        <div class="box box-shadow" id="backend_info_box">
+            <div class="box-header aligncenter">Backend</div>
+            <table class="infotbl">
+                <tr>
+                    <td colspan="2" style="padding: 0 0 <%= ($job->backend eq
+                                                        'kvm2usb')?'8px':'0' %> 0;"><%= $job->backend %></td>
+                </tr>
+                % if($job->backend eq 'kvm2usb') {
+                    %= include 'test/running_kvm2usb'
+                % }
+            </table>
+        </div>
+    % }
+
 </div>

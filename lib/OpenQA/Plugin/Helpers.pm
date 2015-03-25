@@ -31,7 +31,7 @@ sub register {
         format_time => sub {
             my ($c, $timedate, $format) = @_;
             return unless $timedate;
-            $format ||= "%Y-%m-%d %H:%M:%S %Z";
+            $format ||= "%Y-%m-%d %H:%M:%S %z";
             return $timedate->strftime($format);
         });
 

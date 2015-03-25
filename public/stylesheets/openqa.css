@@ -241,11 +241,6 @@ input[type='image'] {
     padding-right: 3px;
 }
 
-td.flags {
-    font-size: 1.5em;
-    width: 1.5em;
-}
-
 .noborder {
     border: none;
 }
@@ -442,6 +437,10 @@ span.status .fa {
 .action.fa {
     font-size: 90%;
     color: #ccc !important;
+}
+
+div.flags {
+    min-height: 1em;
 }
 
 .flag.fa {

@@ -26,36 +26,36 @@
             % end
         </div>
         <table class="infotbl" style="border-top: 1px dotted rgb(204, 204, 204);
-	       border-bottom: 1px dotted rgb(204, 204, 204); margin-top: 6px;">
-	    <tr>
-		<td style="width: 8em; padding: 0;">Interactive:</td>
-		<td style="width: 4.5em; padding: 0;" id="interactive_indicator" data-next-status="">Unknown</td>
-		<td style="padding: 0;" id="needinput_buttons">
+               border-bottom: 1px dotted rgb(204, 204, 204); margin-top: 6px;">
+            <tr>
+                <td style="width: 8em; padding: 0;">Interactive:</td>
+                <td style="width: 4.5em; padding: 0;" id="interactive_indicator" data-next-status="">Unknown</td>
+                <td style="padding: 0;" id="needinput_buttons">
                     % if (is_operator) {
-			<a href="#" title="enable interactive mode" style="display:none"
-			   id="interactive0_button" class="fa fa-wrench fa-2x"></a>
-			<a href="#" title="disable interactive mode" style="display:none"
-			   id="interactive1_button" class="fa fa-paper-plane fa-2x"></a>
-			<i title="waiting for worker ..." class="fa fa-cog fa-2x fa-spin"
-			   id="interactive_spinner"></i>
+                        <a href="#" title="enable interactive mode" style="display:none"
+                           id="interactive0_button" class="fa fa-wrench fa-2x"></a>
+                        <a href="#" title="disable interactive mode" style="display:none"
+                           id="interactive1_button" class="fa fa-paper-plane fa-2x"></a>
+                        <i title="waiting for worker ..." class="fa fa-cog fa-2x fa-spin"
+                           id="interactive_spinner"></i>
                     % }
-		</td>
-	    </tr>
-	    <tr>
-		<td style="width: 8em; padding: 0;">Waiting for input:</td>
-		<td style="width: 4.5em; padding: 0;" id="needinput_indicator">N/A</td>
-		<td style="padding: 0;" id="needinput_buttons">
+                </td>
+            </tr>
+            <tr>
+                <td style="width: 8em; padding: 0;">Waiting for input:</td>
+                <td style="width: 4.5em; padding: 0;" id="needinput_indicator">N/A</td>
+                <td style="padding: 0;" id="needinput_buttons">
                     % if (is_operator) {
-			<a href="#" style="display:none" id="continue_button" class="fa fa-play fa-2x"></a>
-			<a href="#" style="display:none" id="retry_button" class="fa fa-repeat fa-2x"></a>
-			%= link_to url_for('edit_test') => (style => 'display:none', id => 'crop_button', class => 'fa fa-scissors fa-2x') => begin
-			% end
-			<a href="#" style="display:none" id="stop_button" class="fa fa-edit fa-2x"></a>
-			<i title="waiting for worker ..." class="fa fa-cog fa-2x fa-spin"
-			   id="stop_waitforneedle_spinner" style="display:none"></i>
+                        <a href="#" style="display:none" id="continue_button" class="fa fa-play fa-2x"></a>
+                        <a href="#" style="display:none" id="retry_button" class="fa fa-repeat fa-2x"></a>
+                        %= link_to url_for('edit_test') => (style => 'display:none', id => 'crop_button', class => 'fa fa-scissors fa-2x') => begin
+                        % end
+                        <a href="#" style="display:none" id="stop_button" class="fa fa-edit fa-2x"></a>
+                        <i title="waiting for worker ..." class="fa fa-cog fa-2x fa-spin"
+                           id="stop_waitforneedle_spinner" style="display:none"></i>
                     % }
-		</td>
-	    </tr>
+                </td>
+            </tr>
         </table>
     </div>
     <div class="box box-shadow" id="modules_box" style="min-height: 508px;">
@@ -64,26 +64,16 @@
     </div>
     %= include 'layouts/dependencies'
     <div class="box box-shadow">
-	<div class="box-header aligncenter">Backend</div>
+        <div class="box-header aligncenter">Backend</div>
         <table class="infotbl">
             % if($worker) {
-		<tr>
-		    <td><%= $worker->host %>:<%= $worker->instance %></td>
-		</tr>
-		<tr>
-		    <td>VNC port: <%= 90 + $worker->instance %></td>
-		</tr>
+                <tr>
+                    <td><%= $worker->host %>:<%= $worker->instance %></td>
+                </tr>
+                <tr>
+                    <td>VNC port: <%= 90 + $worker->instance %></td>
+                </tr>
             % }
-	    % if ($job->backend) {
-		<tr>
-                    <td colspan="2" style="padding: 0 0 <%= ($job->backend eq 'kvm2usb')?'8px':'0' %> 0;">
-			<%= $job->backend %>
-		    </td>
-		</tr>
-		% if($job->backend eq 'kvm2usb') {
-	            %= include 'running_kvm2usb'
-		% }
-	    % }
         </table>
     </div>
 </div>
@@ -91,16 +81,16 @@
 <div class="grid_12 live-content omega">
     %= include 'layouts/info'
     % if (my $msg = flash 'code') {
-	<blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
+        <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
     % }
     <div class="box box-shadow">
-	<!--<h2>Live view of <i><%= $testname %></i></h2>-->
-	<div class="box-header aligncenter">Live view of <i><%= $testname %></i></div>
-	<div style="margin: 0 10px;" id="canholder">
-	    <canvas id="livestream" width="800" height="600"
-		    data-url='<%= url_for("streaming", testid => $testid) %>'>
-	    </canvas>
-	</div>
+        <!--<h2>Live view of <i><%= $testname %></i></h2>-->
+        <div class="box-header aligncenter">Live view of <i><%= $testname %></i></div>
+        <div style="margin: 0 10px;" id="canholder">
+            <canvas id="livestream" width="800" height="600"
+                    data-url='<%= url_for("streaming", testid => $testid) %>'>
+            </canvas>
+        </div>
     </div>
 
     <div class="box box-shadow" style="padding: 5px 10px;">
@@ -129,10 +119,10 @@
     </div>
 
     <div class="box box-shadow">
-	<div class="box-header aligncenter">Live Log</div>
-	<div style="margin: 0 10px;">
+        <div class="box-header aligncenter">Live Log</div>
+        <div style="margin: 0 10px;">
             <pre id="livelog" data-url='<%= url_for("livelog", testid => $testid) %>'></pre>
-	</div>
+        </div>
     </div>
     %= include 'layouts/settings'
 </div>
