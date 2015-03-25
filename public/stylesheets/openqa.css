@@ -444,6 +444,12 @@ span.status .fa {
     color: #ccc !important;
 }
 
+.flag.fa {
+    font-size: 85%;
+    color: #999;
+    padding: 1px;
+}
+
 table.overview .failedmodule {
     background-color: #E9F7C9;
     padding-left: 3px;
