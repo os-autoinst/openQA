@@ -87,7 +87,13 @@ sub add_timer {
     print "## adding timer $timer $timeout\n" if $verbose;
     my $timerid;
     if ($nonrecurring) {
-        $timerid = Mojo::IOLoop->timer( $timeout => $callback);
+        $timerid = Mojo::IOLoop->timer(
+            $timeout => sub {
+                # automatically clean %$timers for single shot timers
+                remove_timer($timer);
+                $callback->();
+            }
+        );
     }
     else {
         $timerid = Mojo::IOLoop->recurring( $timeout => $callback);
@@ -184,7 +190,6 @@ sub api_call {
     my $cb;
     $cb = sub {
         my ($ua, $tx, $tries) = @_;
-        remove_timer('api_call');
         if ($tx->success && $tx->success->json) {
             $res = $tx->success->json;
             $done = 1;
@@ -273,8 +278,6 @@ sub _get_capabilities {
 }
 
 sub setup_websocket {
-
-    remove_timer('setup_websocket');
     # if there is an existing web socket connection wait until it finishes.
     if ($ws) {
         add_timer('setup_websocket', 2, \&setup_websocket, 1);
@@ -329,9 +332,6 @@ sub setup_websocket {
 }
 
 sub register_worker {
-
-    remove_timer('register_worker');
-
     $worker_caps = _get_capabilities;
     $worker_caps->{host} = $hostname;
     $worker_caps->{instance} = $instance;
