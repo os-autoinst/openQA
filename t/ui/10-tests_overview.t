@@ -53,7 +53,7 @@ $get->element_exists_not('#flavor_GNOME-Live_arch_x86_64');
 $get->element_exists_not('#flavor_DVD_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
-$get->element_exists('#res_DVD_i586_kde span.result_passed');
+$get->element_exists('#res_DVD_i586_kde .result_passed');
 $get->element_exists('#res_GNOME-Live_i686_RAID0 i.state_cancelled');
 $get->element_exists('#res_DVD_i586_RAID1 i.state_scheduled');
 $get->element_exists_not('#res_DVD_x86_64_doc');
@@ -72,7 +72,7 @@ $get->element_exists_not('#flavor_DVD_arch_i586');
 $get->element_exists_not('#flavor_GNOME-Live_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
-$get->element_exists('#res_DVD_x86_64_doc span.result_failed');
+$get->element_exists('#res_DVD_x86_64_doc .result_failed');
 $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
 $get->element_exists_not('#res_DVD_x86_64_kde');

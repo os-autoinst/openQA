@@ -26,19 +26,22 @@ function highlightJobsHtml (children, parents) {
 
 function renderTestName ( data, type, row ) {
     if (type === 'display') {
-        var html = '<span class="result_' + row['result'] + '">';
-        html += '<a href="/tests/' + row['id'] + '">';
-        html += '<i class="status fa fa-circle" title="Done: ' + row['result'] + '"></i>';
-        if (is_operator && !row['clone']) {
+        var html = '';
+	if (is_operator) {
+	    if (!row['clone']) {
             var url = restart_url.replace('REPLACEIT', row['id']);
-            html += ' <a data-method="POST" data-remote="true" class="restart"';
+            html += ' <a class="restart"';
             html += ' href="' + url + '">';
-            html += '<i class="action fa fa-repeat" title="Restart Job"></i></a>';
-        }
+		html += '<i class="action fa fa-fw fa-repeat" title="Restart Job"></i></a>';
+            } else {
+		html += '<i class="fa fa-fw"></i>';
+	    }
+	}
+        html += '<a href="/tests/' + row['id'] + '">';
+        html += '<i class="status fa fa-circle result_' + row['result'] + '" title="Done: ' + row['result'] + '"></i>';
         html += '</a> ';
         // the name
         html += '<a href="/tests/' + row['id'] + '" class="name">' + data + '</a>';
-        html += '</span>';
 
         var deps = '';
         if (row['deps']['parents']['Chained'].length) {
@@ -130,7 +133,9 @@ function renderTestResult( data, type, row ) {
 function renderTestsList(jobs) {
 
     var table = $('#results').DataTable( {
-        "dom": 'l<"#toolbar">frtip',
+        "dom": "<'row'<'col-sm-3'l><'#toolbar'><'col-sm-4'f>>" +
+            "<'row'<'col-sm-12'tr>>" +
+            "<'row'<'col-sm-6'i><'col-sm-6'p>>",
         "lengthMenu": [[10, 25, 50], [10, 25, 50]],
         "ajax": {
             "url": "/tests/list_ajax",
@@ -201,25 +206,30 @@ function renderTestsList(jobs) {
     $(document).on('mouseover', '.parent_child', highlightJobs);
     $(document).on('mouseout', '.parent_child', unhighlightJobs);
 
-
-    $(document).on("click", '.restart', function() {
+    $(document).on("click", '.restart', function(event) {
+	event.preventDefault();
         var restart_link = $(this);
-        var link = $(this).parent('span').find('.name');
-        $.post(restart_link.attr("href")).done( function( data ) { $(link).append(' (restarted)'); });
-        $(this).html('');
+        var link = $(this).parent('td');
+        $.post(restart_link.attr("href")).done( function( data, res, xhr ) {
+	    link.append(' <a href="' + xhr.responseJSON.test_url + '" title="new test">(restarted)</a>');
+	});
+        var i = $(this).find('i').removeClass('fa-repeat');
+	$(this).replaceWith(i);
     });
 
-    $(document).on('click', '.cancel', function() {
+    $(document).on('click', '.cancel', function(event) {
+	event.preventDefault();
         var cancel_link = $(this);
         var test = $(this).parent('td');
         $.post(cancel_link.attr("href")).done( function( data ) { $(test).append(' (cancelled)'); });
-        $(this).html('');
+	var i = $(this).find('i').removeClass('fa-times-circle-o');
+	$(this).replaceWith(i);
     });
 }
 
 function setupResultButtons() {
     $( '#restart-result' ).click( function(event) {
-	event.preventDefault();
+        event.preventDefault();
         $.post($(this).attr("href")).done( function( data, res, xhr ) {
             window.location.replace(xhr.responseJSON.test_url);
         });

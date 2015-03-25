@@ -85,7 +85,7 @@ is(1, $driver->get($baseurl . "tests"), "/tests gets");
 # Test 99938 failed, so it should be displayed in red
 my $job99938 = $driver->find_element('#results #job_99946', 'css');
 
-is('doc@64bit', $driver->find_element('#results #job_99938 .test .result_failed', 'css')->get_text(), '99938 failed');
+is('', $driver->find_element('#results #job_99938 .test .status.result_failed', 'css')->get_text(), '99938 failed');
 is($driver->find_element('#results #job_99938 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99938", 'right link');
 $driver->find_element('#results #job_99938 td.test a', 'css')->click();
 is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test results', 'tests/99938 followed');
@@ -96,7 +96,7 @@ my @links = $driver->find_elements('#results #job_99946 td.test a', 'css');
 is(@links, 2, 'only two links (icon, name, no restart)');
 
 # Test 99926 is displayed
-is('minimalx@32bit', $driver->find_element('#results #job_99926 .test .result_incomplete', 'css')->get_text(), '99926 incomplete');
+is('', $driver->find_element('#results #job_99926 .test .status.result_incomplete', 'css')->get_text(), '99926 incomplete');
 
 # parent-child
 my $child_e = $driver->find_element('#results #job_99938 .parent_child', 'css');
