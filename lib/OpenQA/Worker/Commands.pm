@@ -35,9 +35,15 @@ sub websocket_commands {
         # requests
         my $type = $json->{'type'};
         my $jobid = $json->{'jobid'};
-        if ($jobid && $jobid ne $job->{'id'}) {
-            printf STDERR 'Received command for different job id %u (our %u)%s', $jobid, $job->{'id'}, "\n";
-            return;
+        if ($jobid) {
+            if (!$job) {
+                printf STDERR 'Received command for job %u, but we don not have any assigned. Ignoring!%s', $jobid, "\n";
+                return;
+            }
+            elsif ($jobid ne $job->{'id'}) {
+                printf STDERR 'Received command for different job id %u (our %u). Ignoring!%s', $jobid, $job->{'id'}, "\n";
+                return;
+            }
         }
         if ($type =~ m/quit|abort|cancel|obsolete/) {
             print "received command: $type" if $verbose;
@@ -114,6 +120,7 @@ sub websocket_commands {
             # ignore keepalives, but dont' report as unknown
         }
         elsif ($type eq 'job_available') {
+            print "received job notification" if $verbose;
             if (!$job) {
                 check_job
             }
