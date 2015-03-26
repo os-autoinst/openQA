@@ -320,10 +320,10 @@ sub duplicate{
 
         while(my $js = $settings->next) {
             unless ($js->key eq 'NAME' || $js->key eq 'TEST') {
-                push(@new_settings, { key => $js->key, value => $js->value });
+                push @new_settings, { key => $js->key, value => $js->value };
             }
         }
-        push(@new_settings, {key => 'TEST', value => $self->test});
+        push @new_settings, {key => 'TEST', value => $self->test};
 
         my $new_job = $rsource->resultset->create(
             {
@@ -524,7 +524,7 @@ sub running_modinfo() {
         my $result = $module->result;
         if (!$category || $category ne $module->category) {
             $category = $module->category;
-            push(@$modlist, {category => $category, modules => []});
+            push @$modlist, {category => $category, modules => []};
         }
         if ($result eq 'running') {
             $modstate = 'current';
@@ -537,7 +537,7 @@ sub running_modinfo() {
             $donecount++;
         }
         my $moditem = {name => $name, state => $modstate, result => $result};
-        push(@{$modlist->[scalar(@$modlist)-1]->{modules}}, $moditem);
+        push @{$modlist->[scalar(@$modlist)-1]->{modules}}, $moditem;
     }
     return {modlist => $modlist, modcount => $count, moddone => $donecount, running => $running};
 }
@@ -591,10 +591,10 @@ sub failed_modules_with_needles {
             $counter++;
             next unless $detail->{result} eq 'fail';
             for my $needle (@{$detail->{needles}}) {
-                push( @needles, [ $needle->{name}, $counter ] );
+                push @needles, [ $needle->{name}, $counter ];
             }
             if (!@{$detail->{needles}}) {
-                push(@needles, [ undef, $counter ] );
+                push @needles, [ undef, $counter ];
             }
         }
         $failedmodules->{$module->name} = \@needles;
