@@ -20,6 +20,7 @@ use Try::Tiny;
 use JSON;
 use Fcntl;
 use db_helpers;
+use OpenQA::Utils;
 use File::Basename qw/basename dirname/;
 use strict;
 
@@ -591,6 +592,9 @@ sub failed_modules_with_needles {
             next unless $detail->{result} eq 'fail';
             for my $needle (@{$detail->{needles}}) {
                 push( @needles, [ $needle->{name}, $counter ] );
+            }
+            if (!@{$detail->{needles}}) {
+                push(@needles, [ undef, $counter ] );
             }
         }
         $failedmodules->{$module->name} = \@needles;

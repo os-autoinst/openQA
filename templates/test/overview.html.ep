@@ -127,8 +127,10 @@
                                             % my $tooltip = '';
                                             % if (@$failedneedles) {
                                                 % $step = $failedneedles->[0]->[1];
-                                                % $tooltip = "title='<p>Failed needles:</p><ul><li>" . join('</li><li>',
-                                                % sort map { $_->[0] } @$failedneedles) . "</li></ul>' data-toggle='tooltip'";
+                                                % if ($failedneedles->[0]->[0]) {
+                                                    % $tooltip = "title='<p>Failed needles:</p><ul><li>" . join('</li><li>',
+                                                    % sort map { $_->[0] } @$failedneedles) . "</li></ul>' data-toggle='tooltip'";
+                                                % }
                                             % }
 
                                             <span <%= Mojo::ByteStream->new($tooltip) %> class="failedmodule" >
