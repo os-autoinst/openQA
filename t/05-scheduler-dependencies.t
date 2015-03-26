@@ -112,12 +112,15 @@ $jobF->set_prio(1);
 #diag "jobE ", $jobE;
 #diag "jobF ", $jobF;
 
-my $w1_id = worker_register("host", "1",  $workercaps);
-my $w2_id = worker_register("host", "2",  $workercaps);
-my $w3_id = worker_register("host", "3",  $workercaps);
-my $w4_id = worker_register("host", "4",  $workercaps);
-my $w5_id = worker_register("host", "5",  $workercaps);
-my $w6_id = worker_register("host", "6",  $workercaps);
+use OpenQA::Controller::API::V1::Worker;
+my $c = OpenQA::Controller::API::V1::Worker->new;
+
+my $w1_id = $c->_register($schema, "host", "1",  $workercaps);
+my $w2_id = $c->_register($schema, "host", "2",  $workercaps);
+my $w3_id = $c->_register($schema, "host", "3",  $workercaps);
+my $w4_id = $c->_register($schema, "host", "4",  $workercaps);
+my $w5_id = $c->_register($schema, "host", "5",  $workercaps);
+my $w6_id = $c->_register($schema, "host", "6",  $workercaps);
 
 #websocket
 #my $ws1 = $t->websocket_ok("/api/v1/workers/$w1_id/ws");

@@ -96,22 +96,6 @@ $worker_commands{continue_waitforneedle} = sub {
     $worker->set_property("STOP_WAITFORNEEDLE_REQUESTED", 0);
 };
 
-# the template noted what architecture are known
-my %cando = (
-    'i586'    => ['i586'],
-    'i686'    => [ 'i586', 'i686' ],
-    'x86_64'  => [ 'x86_64', 'i586', 'i686' ],
-
-    'ppc'     => ['ppc'],
-    'ppc64'   => [ 'ppc64le', 'ppc64', 'ppc' ],
-    'ppc64le' => [ 'ppc64le', 'ppc64', 'ppc' ],
-
-    's390'    => ['s390'],
-    's390x'   => [ 's390x', 's390' ],
-
-    'aarch64' => ['aarch64'],
-);
-
 sub schema{
     CORE::state $schema;
     $schema = OpenQA::Schema::connect_db() unless $schema;
@@ -187,7 +171,7 @@ sub job_create {
         }
     }
 
-    my %new_job_args = (test => $settings{TEST},);
+    my %new_job_args = (test => $settings{TEST});
 
     if ($settings{NAME}) {
         my $njobs = schema->resultset("Jobs")->search({ slug => $settings{NAME} })->count;
@@ -220,7 +204,9 @@ sub job_create {
     }
 
     while(my ($k, $v) = each %settings) {
-        push @{$new_job_args{settings}}, { key => $k, value => $v };
+        for my $l (split(m/,/, $v)) { # special case for worker class?
+            push @{$new_job_args{settings}}, { key => $k, value => $l } if $l;
+        }
     }
 
     for my $a (@assets) {
@@ -487,42 +473,53 @@ sub job_grab {
         );
 
         my $worker = schema->resultset("Workers")->find($workerid);
-        my $archquery = schema->resultset("JobSettings")->search(
-            {
-                key => "ARCH",
-                value => $cando{$worker->get_property('CPU_ARCH')}
-            }
-        );
 
-        # list of jobs for different worker class
-        my $classquery = schema->resultset("JobSettings")->search(
-            {
-                key => "WORKER_CLASS",
-                value => { '!=', $worker->get_property('WORKER_CLASS')},
-            },
-        );
-
-        my $available_cond = [ # ids available for this worker
+        my @available_cond = ( # ids available for this worker
             '-and',
             {
                 -not_in => $blocked->get_column('child_job_id')->as_query
             },
-            {
-                -in => $archquery->get_column('job_id')->as_query
-            },
-            {
-                -not_in => $classquery->get_column('job_id')->as_query
-            },
-        ];
+        );
 
-        my $preferred_parallel = _prefer_parallel($available_cond);
-        push @$available_cond, $preferred_parallel if $preferred_parallel;
+        # list of jobs for different worker class
 
-        $result = schema->resultset("Jobs")->search(
+        my $preferred_parallel = _prefer_parallel(\@available_cond);
+        push @available_cond, $preferred_parallel if $preferred_parallel;
+
+        # check the worker's classes
+        my %classes = map { $_ => 1 } split /,/, ($worker->get_property('WORKER_CLASS') || '');
+
+        # now get all the ids of possible jobs
+        # it's a bit stupid to do this manual filtering, but I couldn't find a way
+        # to do this in the database
+        my %ids = map { $_->id => 1 } schema->resultset("Jobs")->search(
             {
-                state => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                worker_id => 0,
-                id => $available_cond,
+                'state' => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                'worker_id' => 0,
+                id => \@available_cond,
+            },
+            { columns => [qw/id/]  }
+        );
+
+        # and remove those with conflicting classes
+        my $result = schema->resultset("JobSettings")->search(
+            {
+                job_id => { -in => [ keys %ids ] },
+                key => 'WORKER_CLASS'
+            },
+            { columns => [qw/id value job_id/]  }
+        );
+
+        while (my $setting = $result->next) {
+            if (!defined $classes{$setting->value}) {
+                delete $ids{$setting->job_id};
+            }
+        }
+
+        # now query for the best
+        my $job = schema->resultset("Jobs")->search(
+            {
+                id => { -in => [ keys %ids ] }
             },
             { order_by => { -asc => [qw/priority id/] }, rows => 1 }
           )->update(

@@ -58,14 +58,18 @@ $workercaps->{cpu_arch} = 'x86_64';
 $workercaps->{cpu_opmode} = '32-bit, 64-bit';
 $workercaps->{mem_max} = '4096';
 
-my $id = worker_register("host", "1", $workercaps);
+use OpenQA::Controller::API::V1::Worker;
+my $c = OpenQA::Controller::API::V1::Worker->new;
+
+# this really should be an integration test
+my $id = $c->_register($schema, "host", "1", $workercaps);
 ok($id == 1, "New worker registered");
 my $worker = $schema->resultset("Workers")->find($id)->info();
 ok($worker->{id} == $id&& $worker->{host} eq "host"&& $worker->{instance} eq "1", "New worker_get");
 
 # Update worker
 sleep(1);
-my $id2 = worker_register("host", "1", "backend", $workercaps);
+my $id2 = $c->_register($schema, "host", "1", "backend", $workercaps);
 ok($id == $id2, "Known worker_register");
 my $worker2 = $schema->resultset("Workers")->find($id2)->info();
 ok($worker2->{id} == $id2 && $worker2->{host} eq "host"&& $worker2->{instance} == 1, "Known worker_get");
@@ -245,7 +249,7 @@ $grabed = OpenQA::Scheduler::job_get($job->id);
 ok($grabed->{state} eq "running", "Job is in running state"); # After job_grab the job is in running state.
 
 # register worker again while it has a running job
-$id2 = worker_register("host", "1", "backend", $workercaps);
+$id2 = $c->_register($schema, "host", "1", "backend", $workercaps);
 ok($id == $id2, "re-register worker got same id");
 
 # Now it's previous job must be set to done

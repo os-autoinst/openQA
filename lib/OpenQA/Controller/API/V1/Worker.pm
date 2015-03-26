@@ -35,20 +35,12 @@ sub list {
     $self->render(json => { workers => $ret });
 }
 
-sub create {
-    my ($self) = @_;
-    my $host = $self->param('host');
-    my $instance = $self->param('instance');
-    my $caps = {};
+# TODO: this function exists purely for unit tests to be able to register
+# workers without fixtures. We need to avoid this
+sub _register {
+    my ($self, $schema, $host, $instance, $caps) = @_;
 
-    $caps->{cpu_modelname} = $self->param('cpu_modelname');
-    $caps->{cpu_arch} = $self->param('cpu_arch');
-    $caps->{cpu_opmode} = $self->param('cpu_opmode');
-    $caps->{mem_max} = $self->param('mem_max');
-    $caps->{worker_class} = $self->param('worker_class');
-
-
-    my $worker = $self->db->resultset("Workers")->search(
+    my $worker = $schema->resultset("Workers")->search(
         {
             host => $host,
             instance => int($instance),
@@ -59,7 +51,7 @@ sub create {
         $worker->update({ t_updated => now() });
     }
     else {
-        $worker = schema->resultset("Workers")->create(
+        $worker = $schema->resultset("Workers")->create(
             {
                 host => $host,
                 instance => $instance
@@ -73,7 +65,7 @@ sub create {
     # ... restart job assigned to this worker
     if (my $job = $worker->job) {
         $job->set_property('JOBTOKEN');
-        job_duplicate(jobid => $job->id);
+        OpenQA::Scheduler::job_duplicate(jobid => $job->id);
         # .. set it incomplete
         $job->update(
             {
@@ -90,7 +82,23 @@ sub create {
     $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
 
     die "got invalid id" unless $worker->id;
-    $self->render(json => { id => $worker->id} );
+    return $worker->id;
+}
+
+sub create {
+    my ($self) = @_;
+    my $host = $self->param('host');
+    my $instance = $self->param('instance');
+    my $caps = {};
+
+    $caps->{cpu_modelname} = $self->param('cpu_modelname');
+    $caps->{cpu_arch} = $self->param('cpu_arch');
+    $caps->{cpu_opmode} = $self->param('cpu_opmode');
+    $caps->{mem_max} = $self->param('mem_max');
+    $caps->{worker_class} = $self->param('worker_class');
+
+    my $id = $self->_register($self->db, $host, $instance, $caps);
+    $self->render(json => { id => $id} );
 
 }
 

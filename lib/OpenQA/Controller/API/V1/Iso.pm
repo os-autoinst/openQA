@@ -127,19 +127,32 @@ sub _generate_jobs {
         for my $job_template (@templates) {
             my %settings = map { $_->key => $_->value } $product->settings;
 
+            # we need to merge worker classes of all 3
+            my @classes;
+            if (my $class = delete $settings{WORKER_CLASS}) {
+                push @classes, $class;
+            }
+
             my %tmp_settings = map { $_->key => $_->value } $job_template->machine->settings;
+            if (my $class = delete $tmp_settings{WORKER_CLASS}) {
+                push @classes, $class;
+            }
             @settings{keys %tmp_settings} = values %tmp_settings;
 
             %tmp_settings = map { $_->key => $_->value } $job_template->test_suite->settings;
+            if (my $class = delete $tmp_settings{WORKER_CLASS}) {
+                push @classes, $class;
+            }
             @settings{keys %tmp_settings} = values %tmp_settings;
             $settings{TEST} = $job_template->test_suite->name;
             $settings{MACHINE} = $job_template->machine->name;
             $settings{BACKEND} = $job_template->machine->backend;
+            $settings{WORKER_CLASS} = join(',', sort(@classes));
 
             next if $args{TEST} && $args{TEST} ne $settings{TEST};
             next if $args{MACHINE} && $args{MACHINE} ne $settings{MACHINE};
 
-            for (keys  %args) {
+            for (keys %args) {
                 $settings{uc $_} = $args{$_};
             }
             # Makes sure tha the DISTRI is lowercase
