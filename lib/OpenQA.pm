@@ -394,7 +394,7 @@ sub startup {
 
     # api/v1/workers
     $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');
-    $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create'); # worker_register
+    $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create');
     my $worker_r = $api_r->route('/workers/:workerid', workerid => qr/\d+/);
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create'); #command_enqueue

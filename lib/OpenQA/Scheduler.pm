@@ -139,59 +139,6 @@ sub _hashref {
 }
 
 
-#
-# Workers API
-#
-
-# param hash: host, instance
-sub worker_register {
-    my ($host, $instance, $workercaps) = @_;
-
-    my $worker = schema->resultset("Workers")->search(
-        {
-            host => $host,
-            instance => int($instance),
-        }
-    )->first;
-
-    if ($worker) { # worker already known. Update fields and return id
-        $worker->update({ t_updated => now() });
-    }
-    else {
-        $worker = schema->resultset("Workers")->create(
-            {
-                host => $host,
-                instance => $instance
-            }
-        );
-    }
-    # store worker's capabilities to database
-    $worker->update_caps($workercaps) if $workercaps;
-
-    # in case the worker died ...
-    # ... restart job assigned to this worker
-    if (my $job = $worker->job) {
-        $job->set_property('JOBTOKEN');
-        job_duplicate(jobid => $job->id);
-        # .. set it incomplete
-        $job->update(
-            {
-                state => OpenQA::Schema::Result::Jobs::DONE,
-                result => OpenQA::Schema::Result::Jobs::INCOMPLETE,
-                worker_id => 0,
-            }
-        );
-    }
-
-    $worker->set_property('INTERACTIVE', 0);
-    $worker->set_property('INTERACTIVE_REQUESTED', 0);
-    $worker->set_property('STOP_WAITFORNEEDLE', 0);
-    $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
-
-    die "got invalid id" unless $worker->id;
-    return $worker->id;
-}
-
 sub _validate_workerid($) {
     my $workerid = shift;
     die "invalid worker id\n" unless $workerid;

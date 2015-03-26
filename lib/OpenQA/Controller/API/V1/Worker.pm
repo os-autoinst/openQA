@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Scheduler ();
 use OpenQA::WebSockets qw/ws_create/;
+use DBIx::Class::Timestamps qw/now/;
 use Try::Tiny;
 
 sub list {
@@ -46,8 +47,51 @@ sub create {
     $caps->{mem_max} = $self->param('mem_max');
     $caps->{worker_class} = $self->param('worker_class');
 
-    my $res = OpenQA::Scheduler::worker_register($host, $instance, $caps);
-    $self->render(json => { id => $res} );
+
+    my $worker = $self->db->resultset("Workers")->search(
+        {
+            host => $host,
+            instance => int($instance),
+        }
+    )->first;
+
+    if ($worker) { # worker already known. Update fields and return id
+        $worker->update({ t_updated => now() });
+    }
+    else {
+        $worker = schema->resultset("Workers")->create(
+            {
+                host => $host,
+                instance => $instance
+            }
+        );
+    }
+    # store worker's capabilities to database
+    $worker->update_caps($caps) if $caps;
+
+    # in case the worker died ...
+    # ... restart job assigned to this worker
+    if (my $job = $worker->job) {
+        $job->set_property('JOBTOKEN');
+        job_duplicate(jobid => $job->id);
+        # .. set it incomplete
+        $job->update(
+            {
+                state => OpenQA::Schema::Result::Jobs::DONE,
+                result => OpenQA::Schema::Result::Jobs::INCOMPLETE,
+                worker_id => 0,
+            }
+        );
+    }
+
+    $worker->set_property('INTERACTIVE', 0);
+    $worker->set_property('INTERACTIVE_REQUESTED', 0);
+    $worker->set_property('STOP_WAITFORNEEDLE', 0);
+    $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
+
+    die "got invalid id" unless $worker->id;
+    $self->render(json => { id => $worker->id} );
+
 }
 
 sub show {

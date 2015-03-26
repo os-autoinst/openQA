@@ -122,7 +122,7 @@ sub connected {
     OpenQA::WebSockets::ws_is_worker_connected($self);
 }
 
-sub info() {
+sub info {
     my ($self) = @_;
 
     my $settings = {
