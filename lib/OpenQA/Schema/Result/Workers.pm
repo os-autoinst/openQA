@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,9 +32,6 @@ __PACKAGE__->add_columns(
     },
     instance => {
         data_type => 'integer',
-    },
-    backend => {
-        data_type => 'text',
     },
 );
 __PACKAGE__->add_timestamps;
@@ -91,13 +88,11 @@ sub set_property($$) {
 sub dead {
     my ($self) = @_;
 
-    my $dead_workers = OpenQA::Scheduler::workers_get_dead_worker();
-    foreach my $dead_worker (@$dead_workers) {
-        if($dead_worker->{id} == $self->id) {
-            return 1;
-        }
-    }
-    0;
+    my $dt = DateTime->now(time_zone=>'UTC');
+    # check for workers active in last 10s (last seen should be updated each 5s)
+    $dt->subtract(seconds => 10);
+
+    $self->t_updated < $dt;
 }
 
 sub currentstep {
@@ -134,7 +129,6 @@ sub info() {
         id => $self->id,
         host => $self->host,
         instance => $self->instance,
-        backend => $self->backend,
         status => $self->status
     };
     $settings->{properties} = {};

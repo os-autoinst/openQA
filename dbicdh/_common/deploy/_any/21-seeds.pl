@@ -30,7 +30,7 @@ sub {
     my $versions = shift;
 
     # XXX: get rid of worker zero at some point
-    $schema->resultset('Workers')->create({id => 0, host => 'NONE', instance => 0, backend => 'NONE'});
+    $schema->resultset('Workers')->create({id => 0, host => 'NONE', instance => 0});
 
   }
   #);

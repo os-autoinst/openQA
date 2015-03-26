@@ -112,12 +112,12 @@ $jobF->set_prio(1);
 #diag "jobE ", $jobE;
 #diag "jobF ", $jobF;
 
-my $w1_id = worker_register("host", "1", "backend", $workercaps);
-my $w2_id = worker_register("host", "2", "backend", $workercaps);
-my $w3_id = worker_register("host", "3", "backend", $workercaps);
-my $w4_id = worker_register("host", "4", "backend", $workercaps);
-my $w5_id = worker_register("host", "5", "backend", $workercaps);
-my $w6_id = worker_register("host", "6", "backend", $workercaps);
+my $w1_id = worker_register("host", "1",  $workercaps);
+my $w2_id = worker_register("host", "2",  $workercaps);
+my $w3_id = worker_register("host", "3",  $workercaps);
+my $w4_id = worker_register("host", "4",  $workercaps);
+my $w5_id = worker_register("host", "5",  $workercaps);
+my $w6_id = worker_register("host", "6",  $workercaps);
 
 #websocket
 #my $ws1 = $t->websocket_ok("/api/v1/workers/$w1_id/ws");

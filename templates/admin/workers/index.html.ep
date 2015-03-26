@@ -11,49 +11,45 @@
     %= include 'layouts/info'
 
     <table id="workers" class="compact stripe">
-	<thead>
-	    <tr>
-		<th>worker</th>
-		<th>backend</th>
-		<th>status</th>
-		<th>connected</th>
-		<th>current step</th>
-	    </tr>
-	</thead>
-	<tbody>
-	    % my %workers; # for sorting
-	    % while (my $w = $workers->next) {
-		% next unless $w->id;
-		% my $workername = $w->host . ":" . $w->instance;
-		% $workers{$workername} = $w;
-	    % }
-	    % for my $workername (sort keys %workers) {
-		%   my $worker = $workers{$workername};
-		<tr id="worker_<%= $worker->id %>" >
-		    <td class="worker">
-			%= link_to( $workername => url_for('admin_worker_show', worker_id => $worker->id) )
-		    </td>
-		    <td class="backend">
-			%= $worker->backend
-		    </td>
-		    <td class="status">
-		      % stash('worker', $worker);
-		      %= include 'admin/workers/worker_status'
-		    </td>
-		    <td class="ws_connected">
-			% if($worker->connected) {
-			    online
-			% } else {
-			    offline
-			% }
-		    </td>
-		    <td class="currentstep">
-			% if(defined($worker->currentstep) && $worker->status eq 'running') {
-			    %= $worker->currentstep
-			% }
-		    </td>
-		</tr>
-	    % }
-	</tbody>
+        <thead>
+            <tr>
+                <th>worker</th>
+                <th>status</th>
+                <th>connected</th>
+                <th>current step</th>
+            </tr>
+        </thead>
+        <tbody>
+            % my %workers; # for sorting
+            % while (my $w = $workers->next) {
+                % next unless $w->id;
+                % my $workername = $w->host . ":" . $w->instance;
+                % $workers{$workername} = $w;
+            % }
+            % for my $workername (sort keys %workers) {
+                %   my $worker = $workers{$workername};
+                <tr id="worker_<%= $worker->id %>" >
+                    <td class="worker">
+                        %= link_to( $workername => url_for('admin_worker_show', worker_id => $worker->id) )
+                    </td>
+                    <td class="status">
+                      % stash('worker', $worker);
+                      %= include 'admin/workers/worker_status'
+                    </td>
+                    <td class="ws_connected">
+                        % if($worker->connected) {
+                            online
+                        % } else {
+                            offline
+                        % }
+                    </td>
+                    <td class="currentstep">
+                        % if(defined($worker->currentstep) && $worker->status eq 'running') {
+                            %= $worker->currentstep
+                        % }
+                    </td>
+                </tr>
+            % }
+        </tbody>
     </table>
 </div>

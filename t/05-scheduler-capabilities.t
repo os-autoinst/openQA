@@ -115,12 +115,12 @@ $jobE->set_prio(5);
 $jobF->set_prio(4);
 $jobG->set_prio(1);
 
-my $w1_id = worker_register("host", "1", "backend", \%workercaps64_client);
-my $w2_id = worker_register("host", "2", "backend", \%workercaps64_server);
-my $w3_id = worker_register("host", "3", "backend", \%workercaps32);
-my $w4_id = worker_register("host", "4", "backend", \%workercaps64);
-my $w5_id = worker_register("host", "5", "backend", \%workercaps64_client);
-my $w6_id = worker_register("host", "6", "backend", \%workercaps64);
+my $w1_id = worker_register("host", "1", \%workercaps64_client);
+my $w2_id = worker_register("host", "2", \%workercaps64_server);
+my $w3_id = worker_register("host", "3", \%workercaps32);
+my $w4_id = worker_register("host", "4", \%workercaps64);
+my $w5_id = worker_register("host", "5", \%workercaps64_client);
+my $w6_id = worker_register("host", "6", \%workercaps64);
 
 my $job = OpenQA::Scheduler::job_grab(workerid => $w1_id);
 is($job->{id}, $jobA->id, "'client' worker should get 'client' job even though 'server' job has higher prio");
