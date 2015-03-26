@@ -65,7 +65,7 @@ like((shift @tds)->get_text(), qr/a minute ago/, "time of 99946");
 # Test 99963 is still running
 isnt(undef, $driver->find_element('#running #job_99963', 'css'), '99963 still running');
 is($driver->find_element('#running #job_99963 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99963", 'right link');
-is($driver->find_element('#running #job_99963 td.time', 'css')->get_text(), "10 minutes ago", 'right time for running');
+like($driver->find_element('#running #job_99963 td.time', 'css')->get_text(), qr/1[01] minutes ago/, 'right time for running');
 
 #$driver->find_element('#running #job_99963 td.test a', 'css')->click();
 #is($driver->get_title(), 'job 99963');

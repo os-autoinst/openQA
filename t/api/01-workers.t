@@ -53,7 +53,6 @@ is_deeply(
                 id => 1,
                 instance => 1,
                 connected => 0,
-                backend => 'qemu',
                 jobid => 99963,
                 host => 'localhost',
                 properties => { 'JOBTOKEN' => 'token99963' },
@@ -61,7 +60,6 @@ is_deeply(
             },
             {
                 'jobid' => 99961,
-                'backend' => 'qemu',
                 'properties' => {
                     'JOBTOKEN' => 'token99961'
                 },
@@ -76,11 +74,11 @@ is_deeply(
     'worker present'
 );
 
-$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu' });
+$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1 });
 is($ret->tx->res->code, 200, "register existing worker with token");
 is($ret->tx->res->json->{id}, 1, "worker id is 1");
 
-$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 42, backend => 'qemu' });
+$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 42 });
 is($ret->tx->res->code, 200, "register new worker");
 is($ret->tx->res->json->{id}, 3, "new worker id is 3");
 

@@ -120,7 +120,6 @@ sub read_worker_config($){
             }
         }
     }
-    $sets->{'BACKEND'} ||= "qemu";
     $sets->{'HOST'} ||= "localhost";
 
     return $sets;

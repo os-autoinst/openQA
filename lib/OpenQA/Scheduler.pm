@@ -51,7 +51,7 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-@EXPORT = qw(worker_register workers_get_dead_worker job_create
+@EXPORT = qw(worker_register job_create
   job_get jobs_get_dead_worker
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
   job_delete job_update_result job_restart job_cancel command_enqueue
@@ -143,9 +143,9 @@ sub _hashref {
 # Workers API
 #
 
-# param hash: host, instance, backend
+# param hash: host, instance
 sub worker_register {
-    my ($host, $instance, $backend, $workercaps) = @_;
+    my ($host, $instance, $workercaps) = @_;
 
     my $worker = schema->resultset("Workers")->search(
         {
@@ -161,8 +161,7 @@ sub worker_register {
         $worker = schema->resultset("Workers")->create(
             {
                 host => $host,
-                instance => $instance,
-                backend => $backend,
+                instance => $instance
             }
         );
     }
@@ -191,28 +190,6 @@ sub worker_register {
 
     die "got invalid id" unless $worker->id;
     return $worker->id;
-}
-
-sub workers_get_dead_worker {
-    my $dt = DateTime->now(time_zone=>'UTC');
-    # check for workers active in last 10s (last seen should be updated each 5s)
-    $dt->subtract(seconds => 10);
-    my $threshold = join ' ',$dt->ymd, $dt->hms;
-
-    my %cond = (
-        'host' => { '!=' => 'NONE'},
-        't_updated' => { '<' => $threshold},
-    );
-
-    my $dead_workers = schema->resultset("Workers")->search(\%cond);
-
-    my @results = ();
-    while( my $worker = $dead_workers->next) {
-        my $j = _hashref($worker, qw/ id host instance backend/);
-        push @results, $j;
-    }
-
-    return \@results;
 }
 
 sub _validate_workerid($) {
@@ -263,13 +240,13 @@ sub job_create {
         }
     }
 
-    my %new_job_args = (test => $settings{'TEST'},);
+    my %new_job_args = (test => $settings{TEST},);
 
     if ($settings{NAME}) {
-        my $njobs = schema->resultset("Jobs")->search({ slug => $settings{'NAME'} })->count;
+        my $njobs = schema->resultset("Jobs")->search({ slug => $settings{NAME} })->count;
         return 0 if $njobs;
 
-        $new_job_args{slug} = $settings{'NAME'};
+        $new_job_args{slug} = $settings{NAME};
         delete $settings{NAME};
     }
 
@@ -345,7 +322,7 @@ sub _job_get($) {
     my $search = shift;
     my %attrs = ();
 
-    push @{$attrs{'prefetch'}}, 'settings';
+    push @{$attrs{prefetch}}, 'settings';
 
     my $job = schema->resultset("Jobs")->search($search, \%attrs)->first;
     return undef unless $job;
@@ -360,9 +337,9 @@ sub query_jobs {
     my @joins;
 
     unless ($args{idsonly}) {
-        push @{$attrs{'prefetch'}}, 'settings';
-        push @{$attrs{'prefetch'}}, 'parents';
-        push @{$attrs{'prefetch'}}, 'children';
+        push @{$attrs{prefetch}}, 'settings';
+        push @{$attrs{prefetch}}, 'parents';
+        push @{$attrs{prefetch}}, 'children';
     }
 
     if ($args{state}) {
