@@ -244,6 +244,9 @@ sub show {
     return $self->reply->not_found unless $job;
 
     $self->stash(testname => $job->settings_hash->{NAME});
+    $self->stash(distri => $job->settings_hash->{DISTRI});
+    $self->stash(version => $job->settings_hash->{VERSION});
+    $self->stash(build => $job->settings_hash->{BUILD});
 
     #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
 
