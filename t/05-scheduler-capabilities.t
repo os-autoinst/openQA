@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use OpenQA::Scheduler;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::More tests => 6;
+use Test::More tests => 9;
 
 my $schema = OpenQA::Test::Database->new->create; #(skip_fixtures => 1);
 
@@ -80,6 +80,9 @@ my %settingsD = %settings;
 my %settingsE = %settings;
 my %settingsF = %settings;
 my %settingsG = %settings;
+my %settingsH = %settings;
+my %settingsI = %settings;
+my %settingsJ = %settings;
 
 $settingsA{TEST} = 'A';
 $settingsA{WORKER_CLASS} = 'client,qemu_x86_64';
@@ -104,6 +107,15 @@ $settingsF{WORKER_CLASS} = 'qemu_x86_64';
 $settingsG{TEST} = 'G';
 $settingsG{WORKER_CLASS} = 'special,qemu_x86_64';
 
+$settingsH{TEST} = 'H';
+$settingsH{WORKER_CLASS} = 'server,qemu_x86_64';
+
+$settingsI{TEST} = 'I';
+$settingsI{WORKER_CLASS} = 'client,qemu_x86_64';
+
+$settingsJ{TEST} = 'J';
+$settingsJ{WORKER_CLASS} = 'qemu_x86_64';
+
 
 my $jobA = OpenQA::Scheduler::job_create(\%settingsA);
 my $jobB = OpenQA::Scheduler::job_create(\%settingsB);
@@ -113,6 +125,11 @@ my $jobE = OpenQA::Scheduler::job_create(\%settingsE);
 my $jobF = OpenQA::Scheduler::job_create(\%settingsF);
 my $jobG = OpenQA::Scheduler::job_create(\%settingsG);
 
+my $jobH = OpenQA::Scheduler::job_create(\%settingsH);
+$settingsI{_PARALLEL_JOBS} = [$jobH->id];
+my $jobI = OpenQA::Scheduler::job_create(\%settingsI);
+my $jobJ = OpenQA::Scheduler::job_create(\%settingsJ);
+
 $jobA->set_prio(3);
 $jobB->set_prio(2);
 $jobC->set_prio(7);
@@ -120,6 +137,9 @@ $jobD->set_prio(6);
 $jobE->set_prio(5);
 $jobF->set_prio(4);
 $jobG->set_prio(1);
+$jobH->set_prio(8);
+$jobI->set_prio(10);
+$jobJ->set_prio(9);
 
 use OpenQA::Controller::API::V1::Worker;
 my $c = OpenQA::Controller::API::V1::Worker->new;
@@ -130,6 +150,9 @@ my $w3_id = $c->_register($schema, "host", "3", \%workercaps32);
 my $w4_id = $c->_register($schema, "host", "4", \%workercaps64);
 my $w5_id = $c->_register($schema, "host", "5", \%workercaps64_client);
 my $w6_id = $c->_register($schema, "host", "6", \%workercaps64);
+my $w7_id = $c->_register($schema, "host", "7", \%workercaps64_server);
+my $w8_id = $c->_register($schema, "host", "8", \%workercaps64);
+my $w9_id = $c->_register($schema, "host", "9", \%workercaps64_client);
 
 my $job = OpenQA::Scheduler::job_grab(workerid => $w1_id);
 is($job->{id}, $jobA->id, "'client' worker should get 'client' job even though 'server' job has higher prio");
@@ -148,6 +171,17 @@ is($job->{id}, $jobD->id, "next job by prio, 'client' worker can do jobs without
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
 is($job->{id}, $jobC->id, "next job by prio, 64bit worker can get 32bit job");
+
+$job = OpenQA::Scheduler::job_grab(workerid => $w7_id);
+is($job->{id}, $jobH->id, "next job by prio, parent - server");
+
+$job = OpenQA::Scheduler::job_grab(workerid => $w8_id);
+is($job->{id}, $jobJ->id, "I is a scheduled child of running H so it should have the highest prio, but this worker can't do it because of class -> take next job by prio instead");
+
+$job = OpenQA::Scheduler::job_grab(workerid => $w9_id);
+is($job->{id}, $jobI->id, "this worker can do jobI, child - client");
+
+
 # job G is not grabbed because there is no worker with class 'special'
 
 done_testing();
