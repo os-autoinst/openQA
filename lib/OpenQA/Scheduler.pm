@@ -483,43 +483,39 @@ sub job_grab {
 
         # list of jobs for different worker class
 
+        # check the worker's classes
+        my @classes = split /,/, ($worker->get_property('WORKER_CLASS') || '');
+
+        if (@classes) {
+            # check all worker classes of scheduled jobs and filter out those not applying
+            my $scheduled = schema->resultset("Jobs")->search(
+                {
+                    'state' => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                    'worker_id' => 0
+                }
+            )->get_column('id');
+
+            my $not_applying_jobs = schema->resultset("JobSettings")->search(
+                {
+                    job_id => { -in => $scheduled->as_query },
+                    key => 'WORKER_CLASS',
+                    value => { -not_in => \@classes },
+                },
+                { distinct => 1 }
+            )->get_column('job_id');
+
+            push @available_cond, { -not_in => $not_applying_jobs->as_query };
+        }
+
         my $preferred_parallel = _prefer_parallel(\@available_cond);
         push @available_cond, $preferred_parallel if $preferred_parallel;
-
-        # check the worker's classes
-        my %classes = map { $_ => 1 } split /,/, ($worker->get_property('WORKER_CLASS') || '');
-
-        # now get all the ids of possible jobs
-        # it's a bit stupid to do this manual filtering, but I couldn't find a way
-        # to do this in the database
-        my %ids = map { $_->id => 1 } schema->resultset("Jobs")->search(
-            {
-                'state' => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                'worker_id' => 0,
-                id => \@available_cond,
-            },
-            { columns => [qw/id/]  }
-        );
-
-        # and remove those with conflicting classes
-        my $result = schema->resultset("JobSettings")->search(
-            {
-                job_id => { -in => [ keys %ids ] },
-                key => 'WORKER_CLASS'
-            },
-            { columns => [qw/id value job_id/]  }
-        );
-
-        while (my $setting = $result->next) {
-            if (!defined $classes{$setting->value}) {
-                delete $ids{$setting->job_id};
-            }
-        }
 
         # now query for the best
         my $job = schema->resultset("Jobs")->search(
             {
-                id => { -in => [ keys %ids ] }
+                'state' => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                'worker_id' => 0,
+                id => \@available_cond,
             },
             { order_by => { -asc => [qw/priority id/] }, rows => 1 }
           )->update(
@@ -530,7 +526,7 @@ sub job_grab {
             }
           );
 
-        last if $result != 0;
+        last if $job;
         last unless $blocking;
         # XXX: do something smarter here
         #print STDERR "no jobs for me, sleeping\n";
