@@ -4,11 +4,6 @@
 BEGIN;
 
 ;
-DROP INDEX jobs_fk_worker_id;
-
-;
-
-;
 CREATE TEMPORARY TABLE workers_temp_alter (
   id INTEGER PRIMARY KEY NOT NULL,
   host text NOT NULL,
