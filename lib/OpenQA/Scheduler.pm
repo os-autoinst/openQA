@@ -96,22 +96,6 @@ $worker_commands{continue_waitforneedle} = sub {
     $worker->set_property("STOP_WAITFORNEEDLE_REQUESTED", 0);
 };
 
-# the template noted what architecture are known
-my %cando = (
-    'i586'    => ['i586'],
-    'i686'    => [ 'i586', 'i686' ],
-    'x86_64'  => [ 'x86_64', 'i586', 'i686' ],
-
-    'ppc'     => ['ppc'],
-    'ppc64'   => [ 'ppc64le', 'ppc64', 'ppc' ],
-    'ppc64le' => [ 'ppc64le', 'ppc64', 'ppc' ],
-
-    's390'    => ['s390'],
-    's390x'   => [ 's390x', 's390' ],
-
-    'aarch64' => ['aarch64'],
-);
-
 sub schema{
     CORE::state $schema;
     $schema = OpenQA::Schema::connect_db() unless $schema;
@@ -138,59 +122,6 @@ sub _hashref {
     return \%hashref;
 }
 
-
-#
-# Workers API
-#
-
-# param hash: host, instance
-sub worker_register {
-    my ($host, $instance, $workercaps) = @_;
-
-    my $worker = schema->resultset("Workers")->search(
-        {
-            host => $host,
-            instance => int($instance),
-        }
-    )->first;
-
-    if ($worker) { # worker already known. Update fields and return id
-        $worker->update({ t_updated => now() });
-    }
-    else {
-        $worker = schema->resultset("Workers")->create(
-            {
-                host => $host,
-                instance => $instance
-            }
-        );
-    }
-    # store worker's capabilities to database
-    $worker->update_caps($workercaps) if $workercaps;
-
-    # in case the worker died ...
-    # ... restart job assigned to this worker
-    if (my $job = $worker->job) {
-        $job->set_property('JOBTOKEN');
-        job_duplicate(jobid => $job->id);
-        # .. set it incomplete
-        $job->update(
-            {
-                state => OpenQA::Schema::Result::Jobs::DONE,
-                result => OpenQA::Schema::Result::Jobs::INCOMPLETE,
-                worker_id => 0,
-            }
-        );
-    }
-
-    $worker->set_property('INTERACTIVE', 0);
-    $worker->set_property('INTERACTIVE_REQUESTED', 0);
-    $worker->set_property('STOP_WAITFORNEEDLE', 0);
-    $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
-
-    die "got invalid id" unless $worker->id;
-    return $worker->id;
-}
 
 sub _validate_workerid($) {
     my $workerid = shift;
@@ -240,7 +171,7 @@ sub job_create {
         }
     }
 
-    my %new_job_args = (test => $settings{TEST},);
+    my %new_job_args = (test => $settings{TEST});
 
     if ($settings{NAME}) {
         my $njobs = schema->resultset("Jobs")->search({ slug => $settings{NAME} })->count;
@@ -273,7 +204,9 @@ sub job_create {
     }
 
     while(my ($k, $v) = each %settings) {
-        push @{$new_job_args{settings}}, { key => $k, value => $v };
+        for my $l (split(m/,/, $v)) { # special case for worker class?
+            push @{$new_job_args{settings}}, { key => $k, value => $l } if $l;
+        }
     }
 
     for my $a (@assets) {
@@ -540,42 +473,49 @@ sub job_grab {
         );
 
         my $worker = schema->resultset("Workers")->find($workerid);
-        my $archquery = schema->resultset("JobSettings")->search(
-            {
-                key => "ARCH",
-                value => $cando{$worker->get_property('CPU_ARCH')}
-            }
-        );
 
-        # list of jobs for different worker class
-        my $classquery = schema->resultset("JobSettings")->search(
-            {
-                key => "WORKER_CLASS",
-                value => { '!=', $worker->get_property('WORKER_CLASS')},
-            },
-        );
-
-        my $available_cond = [ # ids available for this worker
+        my @available_cond = ( # ids available for this worker
             '-and',
             {
                 -not_in => $blocked->get_column('child_job_id')->as_query
             },
-            {
-                -in => $archquery->get_column('job_id')->as_query
-            },
-            {
-                -not_in => $classquery->get_column('job_id')->as_query
-            },
-        ];
+        );
 
-        my $preferred_parallel = _prefer_parallel($available_cond);
-        push @$available_cond, $preferred_parallel if $preferred_parallel;
+        # list of jobs for different worker class
 
-        $result = schema->resultset("Jobs")->search(
+        # check the worker's classes
+        my @classes = split /,/, ($worker->get_property('WORKER_CLASS') || '');
+
+        if (@classes) {
+            # check all worker classes of scheduled jobs and filter out those not applying
+            my $scheduled = schema->resultset("Jobs")->search(
+                {
+                    'state' => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                    'worker_id' => 0
+                }
+            )->get_column('id');
+
+            my $not_applying_jobs = schema->resultset("JobSettings")->search(
+                {
+                    job_id => { -in => $scheduled->as_query },
+                    key => 'WORKER_CLASS',
+                    value => { -not_in => \@classes },
+                },
+                { distinct => 1 }
+            )->get_column('job_id');
+
+            push @available_cond, { -not_in => $not_applying_jobs->as_query };
+        }
+
+        my $preferred_parallel = _prefer_parallel(\@available_cond);
+        push @available_cond, $preferred_parallel if $preferred_parallel;
+
+        # now query for the best
+        my $job = schema->resultset("Jobs")->search(
             {
-                state => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                worker_id => 0,
-                id => $available_cond,
+                'state' => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                'worker_id' => 0,
+                id => \@available_cond,
             },
             { order_by => { -asc => [qw/priority id/] }, rows => 1 }
           )->update(
@@ -586,7 +526,7 @@ sub job_grab {
             }
           );
 
-        last if $result != 0;
+        last if $job;
         last unless $blocking;
         # XXX: do something smarter here
         #print STDERR "no jobs for me, sleeping\n";

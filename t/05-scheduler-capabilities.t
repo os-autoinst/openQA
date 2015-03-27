@@ -27,7 +27,7 @@ use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More tests => 6;
 
-OpenQA::Test::Database->new->create();
+my $schema = OpenQA::Test::Database->new->create; #(skip_fixtures => 1);
 
 #my $t = Test::Mojo->new('OpenQA');
 
@@ -55,18 +55,20 @@ my %settings = (
 my %workercaps64;
 $workercaps64{cpu_modelname} = 'Rainbow CPU';
 $workercaps64{cpu_arch} = 'x86_64';
+$workercaps64{worker_class} = 'qemu_x86_64,qemu_i686';
 $workercaps64{cpu_opmode} = '32-bit, 64-bit';
 $workercaps64{mem_max} = '4096';
 
 my %workercaps64_server = %workercaps64;
-$workercaps64_server{worker_class} = 'server';
+$workercaps64_server{worker_class} = 'server,qemu_x86_64';
 
 my %workercaps64_client = %workercaps64;
-$workercaps64_client{worker_class} = 'client';
+$workercaps64_client{worker_class} = 'client,qemu_x86_64';
 
 my %workercaps32;
 $workercaps32{cpu_modelname} = 'Rainbow CPU';
 $workercaps32{cpu_arch} = 'i686';
+$workercaps32{worker_class} = 'qemu_i686';
 $workercaps32{cpu_opmode} = '32-bit';
 $workercaps32{mem_max} = '4096';
 
@@ -80,23 +82,27 @@ my %settingsF = %settings;
 my %settingsG = %settings;
 
 $settingsA{TEST} = 'A';
-$settingsA{WORKER_CLASS} = 'client';
+$settingsA{WORKER_CLASS} = 'client,qemu_x86_64';
 
 $settingsB{TEST} = 'B';
-$settingsB{WORKER_CLASS} = 'server';
+$settingsB{WORKER_CLASS} = 'server,qemu_x86_64';
 
 $settingsC{TEST} = 'C';
 $settingsC{ARCH} = 'i686';
+$settingsC{WORKER_CLASS} = 'qemu_i686';
 
+# no class for D
 $settingsD{TEST} = 'D';
 
 $settingsE{TEST} = 'E';
 $settingsE{ARCH} = 'i686';
+$settingsE{WORKER_CLASS} = 'qemu_i686';
 
 $settingsF{TEST} = 'F';
+$settingsF{WORKER_CLASS} = 'qemu_x86_64';
 
 $settingsG{TEST} = 'G';
-$settingsG{WORKER_CLASS} = 'special';
+$settingsG{WORKER_CLASS} = 'special,qemu_x86_64';
 
 
 my $jobA = OpenQA::Scheduler::job_create(\%settingsA);
@@ -115,12 +121,15 @@ $jobE->set_prio(5);
 $jobF->set_prio(4);
 $jobG->set_prio(1);
 
-my $w1_id = worker_register("host", "1", \%workercaps64_client);
-my $w2_id = worker_register("host", "2", \%workercaps64_server);
-my $w3_id = worker_register("host", "3", \%workercaps32);
-my $w4_id = worker_register("host", "4", \%workercaps64);
-my $w5_id = worker_register("host", "5", \%workercaps64_client);
-my $w6_id = worker_register("host", "6", \%workercaps64);
+use OpenQA::Controller::API::V1::Worker;
+my $c = OpenQA::Controller::API::V1::Worker->new;
+
+my $w1_id = $c->_register($schema, "host", "1", \%workercaps64_client);
+my $w2_id = $c->_register($schema, "host", "2", \%workercaps64_server);
+my $w3_id = $c->_register($schema, "host", "3", \%workercaps32);
+my $w4_id = $c->_register($schema, "host", "4", \%workercaps64);
+my $w5_id = $c->_register($schema, "host", "5", \%workercaps64_client);
+my $w6_id = $c->_register($schema, "host", "6", \%workercaps64);
 
 my $job = OpenQA::Scheduler::job_grab(workerid => $w1_id);
 is($job->{id}, $jobA->id, "'client' worker should get 'client' job even though 'server' job has higher prio");

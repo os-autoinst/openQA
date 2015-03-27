@@ -335,7 +335,7 @@ sub register_worker {
     $worker_caps = _get_capabilities;
     $worker_caps->{host} = $hostname;
     $worker_caps->{instance} = $instance;
-    $worker_caps->{worker_class} = $worker_settings->{WORKER_CLASS} if $worker_settings->{WORKER_CLASS};
+    $worker_caps->{worker_class} = $worker_settings->{WORKER_CLASS} || "qemu_" .  $worker_caps->{cpu_arch};
 
     print "registering worker ...\n" if $verbose;
 
