@@ -77,13 +77,13 @@ sub register {
                 my $job = $c->stash('job');
                 if ($job->group_id) {
                     $query->{groupid} = $job->group_id;
+                    $crumbs .= ' > '.$c->link_to("Build$build\@" . $job->group->name => $c->url_for('tests_overview')->query(%$query));
                 }
                 else {
                     $query->{distri}  = $distri;
                     $query->{version} = $version;
+                    $crumbs .= ' > '.$c->link_to("Build$build\@$distri $version" => $c->url_for('tests_overview')->query(%$query));
                 }
-                $crumbs .= ' > ' . $c->link_to("Build$build\@$distri $version" => $c->url_for('tests_overview')->query(%$query));
-
                 if ($c->current_route('test')) {
                     $crumbs .= " > Test $test";
                 }
