@@ -31,7 +31,10 @@ sub init {
     my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
 
     return $self->reply->not_found unless $job;
-    $self->stash('testname', $job->name);
+    $self->stash(testname => $job->settings_hash->{NAME});
+    $self->stash(distri => $job->settings_hash->{DISTRI});
+    $self->stash(version => $job->settings_hash->{VERSION});
+    $self->stash(build => $job->settings_hash->{BUILD});
 
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
     my $details = $module->details();

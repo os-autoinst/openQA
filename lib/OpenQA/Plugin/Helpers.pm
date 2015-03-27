@@ -70,12 +70,27 @@ sub register {
             }
 
             if ($test) {
-                my $testname = $c->stash('testname') || $test;
+                my $distri = $c->stash('distri');
+                my $build = $c->stash('build');
+                my $version = $c->stash('version');
+                $distri = 'openSUSE' if ($distri eq 'opensuse');
+
+                my $query = { build => $build };
+                my $job = $c->stash('job');
+                if ($job->group_id) {
+                    $query->{groupid} = $job->group_id;
+                }
+                else{
+                    $query->{distri} = $distri;
+                    $query->{version} = $version;
+                }
+                $crumbs .= ' > '.$c->link_to("Build$build\@$distri $version" => $c->url_for('tests_overview')->query(%$query));
+
                 if ($c->current_route('test')) {
-                    $crumbs .= " > $testname";
+                    $crumbs .= " > Test $test";
                 }
                 else {
-                    $crumbs .= ' > '.$c->link_to($testname => $c->url_for('test'));
+                    $crumbs .= ' > '.$c->link_to("Test $test" => $c->url_for('test'));
                     my $mod = $c->param('moduleid');
                     $crumbs .= " > $mod" if $mod;
                 }
