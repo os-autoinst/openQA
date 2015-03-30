@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 39;
+use Test::More tests => 44;
 use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -76,6 +76,13 @@ $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
 is scalar(@{$get->tx->res->json->{jobs}}), 9;
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
 is scalar(@{$get->tx->res->json->{jobs}}), 10;
+
+# check job group
+$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'opensuse test'});
+is scalar(@{$get->tx->res->json->{jobs}}), 1;
+is $get->tx->res->json->{jobs}->[0]->{id}, 99961;
+$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'foo bar'});
+is scalar(@{$get->tx->res->json->{jobs}}), 0;
 
 # Test /jobs/restart
 my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927] })->status_is(200);

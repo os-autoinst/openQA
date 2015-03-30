@@ -341,6 +341,15 @@ sub query_jobs {
             }
         );
     }
+    elsif ($args{group}) {
+        my $subquery = schema->resultset("JobGroups")->search({'name' => $args{group}})->get_column('id')->as_query;
+        push(
+            @conds,
+            {
+                'me.group_id' => { -in => $subquery }
+            }
+        );
+    }
 
     # Search into the following job_settings
     for my $setting (qw(build iso distri version flavor)) {
