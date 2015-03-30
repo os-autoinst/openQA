@@ -204,6 +204,10 @@ sub job_create {
     }
 
     while(my ($k, $v) = each %settings) {
+        unless ($k eq 'WORKER_CLASS') {
+            push @{$new_job_args{settings}}, { key => $k, value => $v };
+            next;
+        }
         for my $l (split(m/,/, $v)) { # special case for worker class?
             push @{$new_job_args{settings}}, { key => $k, value => $l } if $l;
         }
