@@ -19,21 +19,21 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'hmac_sha1_sum';
 
 sub auth {
-    my $self = shift;
-    my $headers = $self->req->headers;
-    my $key = $headers->header('X-API-Key');
-    my $hash = $headers->header('X-API-Hash');
+    my $self      = shift;
+    my $headers   = $self->req->headers;
+    my $key       = $headers->header('X-API-Key');
+    my $hash      = $headers->header('X-API-Hash');
     my $timestamp = $headers->header('X-API-Microtime');
     my $user;
     $self->app->log->debug($key ? "API key from client: *$key*" : "No API key from client.");
 
-    if ($user = $self->current_user) { # Browser with a logged in user
+    if ($user = $self->current_user) {    # Browser with a logged in user
         unless ($self->valid_csrf) {
             $self->render(json => {error => "Bad CSRF token!"}, status => 403);
             return;
         }
     }
-    else { # No session (probably not a browser)
+    else {                                # No session (probably not a browser)
         my $api_key = $self->db->resultset("ApiKeys")->find({key => $key});
         my $msg = $self->req->url->to_string;
         if ($api_key && $self->_valid_hmac($hash, $msg, $timestamp, $api_key)) {
@@ -49,13 +49,13 @@ sub auth {
 }
 
 sub auth_jobtoken {
-    my ($self) = @_;
+    my ($self)  = @_;
     my $headers = $self->req->headers;
-    my $token = $headers->header('X-API-JobToken');
+    my $token   = $headers->header('X-API-JobToken');
 
     if ($token) {
         $self->app->log->debug("Received JobToken: $token");
-        my $job = $self->db->resultset('Jobs')->search({'properties.key' => 'JOBTOKEN', 'properties.value' => $token}, {columns => ['id'], join => { 'worker' => 'properties'}})->single;
+        my $job = $self->db->resultset('Jobs')->search({'properties.key' => 'JOBTOKEN', 'properties.value' => $token}, {columns => ['id'], join => {'worker' => 'properties'}})->single;
         if ($job) {
             $self->stash('job_id', $job->id);
             $self->app->log->debug(sprintf('Found associated job %u', $job->id));
@@ -78,7 +78,7 @@ sub _valid_hmac {
         # It has no expiration date or it's in the future
         if (!$exp || $exp->epoch > time) {
             if (my $secret = $api_key->secret) {
-                my $sum = hmac_sha1_sum($request.$timestamp, $secret);
+                my $sum = hmac_sha1_sum($request . $timestamp, $secret);
                 return 1 if $sum eq $hash;
             }
         }

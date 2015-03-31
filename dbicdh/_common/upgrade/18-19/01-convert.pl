@@ -23,24 +23,24 @@ sub {
     my $schema = shift;
 
     # Jobs->state
-    $schema->resultset('Jobs')->search({ state_id => 0 })->update({ state => OpenQA::Schema::Result::Jobs::SCHEDULED });
-    $schema->resultset('Jobs')->search({ state_id => 1 })->update({ state => OpenQA::Schema::Result::Jobs::RUNNING });
-    $schema->resultset('Jobs')->search({ state_id => 2 })->update({ state => OpenQA::Schema::Result::Jobs::CANCELLED });
-    $schema->resultset('Jobs')->search({ state_id => 3 })->update({ state => OpenQA::Schema::Result::Jobs::WAITING });
-    $schema->resultset('Jobs')->search({ state_id => 4 })->update({ state => OpenQA::Schema::Result::Jobs::DONE });
-    $schema->resultset('Jobs')->search({ state_id => 5 })->update({ state => OpenQA::Schema::Result::Jobs::OBSOLETED });
+    $schema->resultset('Jobs')->search({state_id => 0})->update({state => OpenQA::Schema::Result::Jobs::SCHEDULED});
+    $schema->resultset('Jobs')->search({state_id => 1})->update({state => OpenQA::Schema::Result::Jobs::RUNNING});
+    $schema->resultset('Jobs')->search({state_id => 2})->update({state => OpenQA::Schema::Result::Jobs::CANCELLED});
+    $schema->resultset('Jobs')->search({state_id => 3})->update({state => OpenQA::Schema::Result::Jobs::WAITING});
+    $schema->resultset('Jobs')->search({state_id => 4})->update({state => OpenQA::Schema::Result::Jobs::DONE});
+    $schema->resultset('Jobs')->search({state_id => 5})->update({state => OpenQA::Schema::Result::Jobs::OBSOLETED});
 
     # Jobs->result
-    $schema->resultset('Jobs')->search({ result_id => 0 })->update({ result => OpenQA::Schema::Result::Jobs::NONE });
-    $schema->resultset('Jobs')->search({ result_id => 1 })->update({ result => OpenQA::Schema::Result::Jobs::PASSED });
-    $schema->resultset('Jobs')->search({ result_id => 2 })->update({ result => OpenQA::Schema::Result::Jobs::FAILED });
-    $schema->resultset('Jobs')->search({ result_id => 3 })->update({ result => OpenQA::Schema::Result::Jobs::INCOMPLETE });
-    $schema->resultset('Jobs')->search({ result_id => 4 })->update({ result => OpenQA::Schema::Result::Jobs::SKIPPED });
+    $schema->resultset('Jobs')->search({result_id => 0})->update({result => OpenQA::Schema::Result::Jobs::NONE});
+    $schema->resultset('Jobs')->search({result_id => 1})->update({result => OpenQA::Schema::Result::Jobs::PASSED});
+    $schema->resultset('Jobs')->search({result_id => 2})->update({result => OpenQA::Schema::Result::Jobs::FAILED});
+    $schema->resultset('Jobs')->search({result_id => 3})->update({result => OpenQA::Schema::Result::Jobs::INCOMPLETE});
+    $schema->resultset('Jobs')->search({result_id => 4})->update({result => OpenQA::Schema::Result::Jobs::SKIPPED});
 
     # JobModules->result
-    $schema->resultset('JobModules')->search({ result_id => 0 })->update({ result => OpenQA::Schema::Result::Jobs::NONE });
-    $schema->resultset('JobModules')->search({ result_id => 1 })->update({ result => OpenQA::Schema::Result::Jobs::PASSED });
-    $schema->resultset('JobModules')->search({ result_id => 2 })->update({ result => OpenQA::Schema::Result::Jobs::FAILED });
-    $schema->resultset('JobModules')->search({ result_id => 3 })->update({ result => OpenQA::Schema::Result::Jobs::INCOMPLETE });
-    $schema->resultset('JobModules')->search({ result_id => 4 })->update({ result => OpenQA::Schema::Result::Jobs::SKIPPED });
+    $schema->resultset('JobModules')->search({result_id => 0})->update({result => OpenQA::Schema::Result::Jobs::NONE});
+    $schema->resultset('JobModules')->search({result_id => 1})->update({result => OpenQA::Schema::Result::Jobs::PASSED});
+    $schema->resultset('JobModules')->search({result_id => 2})->update({result => OpenQA::Schema::Result::Jobs::FAILED});
+    $schema->resultset('JobModules')->search({result_id => 3})->update({result => OpenQA::Schema::Result::Jobs::INCOMPLETE});
+    $schema->resultset('JobModules')->search({result_id => 4})->update({result => OpenQA::Schema::Result::Jobs::SKIPPED});
   }

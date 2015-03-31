@@ -21,11 +21,11 @@ __PACKAGE__->load_components(qw/Timestamps/);
 
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type         => 'integer',
         is_auto_increment => 1,
     },
-    name  => {
-        data_type => 'text',
+    name => {
+        data_type   => 'text',
         is_nullable => 0,
     },
 );

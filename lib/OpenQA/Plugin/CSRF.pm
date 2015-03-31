@@ -22,7 +22,7 @@ use warnings;
 use base 'Mojolicious::Plugin';
 
 use Scalar::Util ();
-use Carp ();
+use Carp         ();
 
 sub register {
 
@@ -35,14 +35,13 @@ sub register {
         form_for => sub {
             my $self = shift;
             my $code = $_[-1];
-            if ( defined $code && ref $code eq 'CODE' ) {
+            if (defined $code && ref $code eq 'CODE') {
                 $_[-1] = sub {
                     $self->csrf_field . $code->();
                 };
             }
             return $self->$form_for(@_);
-        }
-    );
+        });
 
     # require CSRF token for all requests that are not GET or HEAD
     $app->helper(
@@ -55,8 +54,7 @@ sub register {
                 return 0;
             }
             return 1;
-        }
-    );
+        });
 }
 
 1;

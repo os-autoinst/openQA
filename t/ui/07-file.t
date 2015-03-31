@@ -28,13 +28,13 @@ $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA');
 
-$t->get_ok('/tests/99938/images/logpackages-1.png')->status_is(200)->content_type_is('image/png')->header_is('Content-Length' => '48019'); # Exact size of logpackages-1.png
+$t->get_ok('/tests/99938/images/logpackages-1.png')->status_is(200)->content_type_is('image/png')->header_is('Content-Length' => '48019');    # Exact size of logpackages-1.png
 
 $t->get_ok('/tests/99937/../99938/images/logpackages-1.png')->status_is(404);
 
 $t->get_ok('/tests/99938/images/thumb/logpackages-1.png')->status_is(200)->content_type_is('image/png')->header_is('Content-Length' => '6769');
 
-$t->get_ok('/tests/99946/images/logpackages-1.png')->header_is('Content-Length' => '211'); # Not the same logpackages-1.png
+$t->get_ok('/tests/99946/images/logpackages-1.png')->header_is('Content-Length' => '211');                                                    # Not the same logpackages-1.png
 
 $t->get_ok('/tests/99938/images/doesntexist.png')->status_is(404);
 

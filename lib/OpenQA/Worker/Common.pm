@@ -30,7 +30,7 @@ our @EXPORT = qw/$job $workerid $verbose $instance $worker_settings $pooldir $no
 # Exported variables
 our $job;
 our $workerid;
-our $verbose = 0;
+our $verbose  = 0;
 our $instance = 'manual';
 our $worker_settings;
 our $pooldir;
@@ -46,9 +46,9 @@ my $ws;
 my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
 
 # global constants
-use constant OPENQA_BASE => '/var/lib/openqa';
+use constant OPENQA_BASE  => '/var/lib/openqa';
 use constant OPENQA_SHARE => OPENQA_BASE . '/share';
-use constant ASSET_DIR => OPENQA_SHARE . '/factory';
+use constant ASSET_DIR    => OPENQA_SHARE . '/factory';
 use constant {
     ISO_DIR => ASSET_DIR . '/iso',
     HDD_DIR => ASSET_DIR . '/hdd',
@@ -67,15 +67,15 @@ my $timers = {
     # check for commands from scheduler
     'ws_keepalive' => undef,
     # check for new job
-    'check_job'       => undef,
+    'check_job' => undef,
     # update status of running job
-    'update_status'   => undef,
+    'update_status' => undef,
     # check for crashed backend and its running status
-    'check_backend'   => undef,
+    'check_backend' => undef,
     # trigger stop_job if running for > $max_job_time
-    'job_timeout'     => undef,
+    'job_timeout' => undef,
     # app call retry
-    'api_call'        => undef,
+    'api_call' => undef,
 };
 
 sub add_timer {
@@ -92,11 +92,10 @@ sub add_timer {
                 # automatically clean %$timers for single shot timers
                 remove_timer($timer);
                 $callback->();
-            }
-        );
+            });
     }
     else {
-        $timerid = Mojo::IOLoop->recurring( $timeout => $callback);
+        $timerid = Mojo::IOLoop->recurring($timeout => $callback);
     }
     $timers->{$timer} = [$timerid, $callback];
     return $timerid;
@@ -138,8 +137,8 @@ sub api_init {
 
     my ($apikey, $apisecret) = ($options->{apikey}, $options->{apisecret});
     $ua = OpenQA::Client->new(
-        api => $url->host,
-        apikey => $apikey,
+        api       => $url->host,
+        apikey    => $apikey,
         apisecret => $apisecret
     );
 
@@ -161,7 +160,7 @@ sub api_call {
 
     if ($call_running) {
         # quit immediately
-        Mojo::IOLoop->next_tick(sub {} );
+        Mojo::IOLoop->next_tick(sub { });
         Mojo::IOLoop->stop;
         Carp::croak "recursive api_call is fatal";
         return;
@@ -191,7 +190,7 @@ sub api_call {
     $cb = sub {
         my ($ua, $tx, $tries) = @_;
         if ($tx->success && $tx->success->json) {
-            $res = $tx->success->json;
+            $res  = $tx->success->json;
             $done = 1;
             return;
         }
@@ -225,7 +224,7 @@ sub api_call {
     $ua->start($tx => sub { $cb->(@_, 3) });
 
     # This ugly. we need to "block" here so enter ioloop recursively
-    while(!$done && Mojo::IOLoop->is_running) {
+    while (!$done && Mojo::IOLoop->is_running) {
         Mojo::IOLoop->one_tick;
     }
 
@@ -270,7 +269,7 @@ sub _get_capabilities {
         chomp;
         if (m/MemTotal:\s+(\d+).+kB/) {
             my $mem_max = $1 ? $1 : '';
-            $caps->{mem_max} = int($mem_max/1024) if $mem_max;
+            $caps->{mem_max} = int($mem_max / 1024) if $mem_max;
         }
     }
     close(MEMINFO);
@@ -297,23 +296,22 @@ sub setup_websocket {
             my ($ua, $tx) = @_;
             if ($tx->is_websocket) {
                 # keep websocket connection busy
-                add_timer('ws_keepalive', 5, sub { $tx->send({json => { type => 'ok'}}) });
+                add_timer('ws_keepalive', 5, sub { $tx->send({json => {type => 'ok'}}) });
                 # check for new job immediately
-                add_timer('check_job', 0, \&OpenQA::Worker::Jobs::check_job, 1 );
+                add_timer('check_job', 0, \&OpenQA::Worker::Jobs::check_job, 1);
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
                     finish => sub {
                         add_timer('setup_websocket', 5, \&setup_websocket, 1);
                         remove_timer('ws_keepalive');
                         $ws = undef;
-                    }
-                );
+                    });
                 $ws = $tx->max_websocket_size(10485760);
             }
             else {
                 my $err = $tx->error;
                 $ws = undef;
-                warn "Unable to upgrade connection to WebSocket: ".$err->{code}.". proxy_wstunnel enabled?" if defined $err;
+                warn "Unable to upgrade connection to WebSocket: " . $err->{code} . ". proxy_wstunnel enabled?" if defined $err;
                 if ($err->{code} eq '404') {
                     # worker id suddenly not known anymore. Abort. If workerid
                     # is unset we already detected that in api_call
@@ -327,15 +325,14 @@ sub setup_websocket {
                     add_timer('setup_websocket', 10, \&setup_websocket, 1);
                 }
             }
-        }
-    );
+        });
 }
 
 sub register_worker {
-    $worker_caps = _get_capabilities;
-    $worker_caps->{host} = $hostname;
+    $worker_caps             = _get_capabilities;
+    $worker_caps->{host}     = $hostname;
     $worker_caps->{instance} = $instance;
-    $worker_caps->{worker_class} = $worker_settings->{WORKER_CLASS} || "qemu_" .  $worker_caps->{cpu_arch};
+    $worker_caps->{worker_class} = $worker_settings->{WORKER_CLASS} || "qemu_" . $worker_caps->{cpu_arch};
 
     print "registering worker ...\n" if $verbose;
 

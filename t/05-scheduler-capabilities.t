@@ -27,37 +27,37 @@ use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More tests => 9;
 
-my $schema = OpenQA::Test::Database->new->create; #(skip_fixtures => 1);
+my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 
 #my $t = Test::Mojo->new('OpenQA');
 
 sub list_jobs {
     my %args = @_;
-    [ map { $_->to_hash(assets => 1) } OpenQA::Scheduler::query_jobs(%args)->all ];
+    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::query_jobs(%args)->all];
 }
 
 my $current_jobs = list_jobs();
 #diag explain $current_jobs;
 
 my %settings = (
-    DISTRI => 'Unicorn',
-    FLAVOR => 'pink',
-    VERSION => '42',
-    BUILD => '666',
-    ISO => 'whatever.iso',
-    DESKTOP => 'DESKTOP',
-    KVM => 'KVM',
+    DISTRI      => 'Unicorn',
+    FLAVOR      => 'pink',
+    VERSION     => '42',
+    BUILD       => '666',
+    ISO         => 'whatever.iso',
+    DESKTOP     => 'DESKTOP',
+    KVM         => 'KVM',
     ISO_MAXSIZE => 1,
-    MACHINE => "RainbowPC",
-    ARCH => 'x86_64'
+    MACHINE     => "RainbowPC",
+    ARCH        => 'x86_64'
 );
 
 my %workercaps64;
 $workercaps64{cpu_modelname} = 'Rainbow CPU';
-$workercaps64{cpu_arch} = 'x86_64';
-$workercaps64{worker_class} = 'qemu_x86_64,qemu_i686';
-$workercaps64{cpu_opmode} = '32-bit, 64-bit';
-$workercaps64{mem_max} = '4096';
+$workercaps64{cpu_arch}      = 'x86_64';
+$workercaps64{worker_class}  = 'qemu_x86_64,qemu_i686';
+$workercaps64{cpu_opmode}    = '32-bit, 64-bit';
+$workercaps64{mem_max}       = '4096';
 
 my %workercaps64_server = %workercaps64;
 $workercaps64_server{worker_class} = 'server,qemu_x86_64';
@@ -67,10 +67,10 @@ $workercaps64_client{worker_class} = 'client,qemu_x86_64';
 
 my %workercaps32;
 $workercaps32{cpu_modelname} = 'Rainbow CPU';
-$workercaps32{cpu_arch} = 'i686';
-$workercaps32{worker_class} = 'qemu_i686';
-$workercaps32{cpu_opmode} = '32-bit';
-$workercaps32{mem_max} = '4096';
+$workercaps32{cpu_arch}      = 'i686';
+$workercaps32{worker_class}  = 'qemu_i686';
+$workercaps32{cpu_opmode}    = '32-bit';
+$workercaps32{mem_max}       = '4096';
 
 
 my %settingsA = %settings;
@@ -84,36 +84,36 @@ my %settingsH = %settings;
 my %settingsI = %settings;
 my %settingsJ = %settings;
 
-$settingsA{TEST} = 'A';
+$settingsA{TEST}         = 'A';
 $settingsA{WORKER_CLASS} = 'client,qemu_x86_64';
 
-$settingsB{TEST} = 'B';
+$settingsB{TEST}         = 'B';
 $settingsB{WORKER_CLASS} = 'server,qemu_x86_64';
 
-$settingsC{TEST} = 'C';
-$settingsC{ARCH} = 'i686';
+$settingsC{TEST}         = 'C';
+$settingsC{ARCH}         = 'i686';
 $settingsC{WORKER_CLASS} = 'qemu_i686';
 
 # no class for D
 $settingsD{TEST} = 'D';
 
-$settingsE{TEST} = 'E';
-$settingsE{ARCH} = 'i686';
+$settingsE{TEST}         = 'E';
+$settingsE{ARCH}         = 'i686';
 $settingsE{WORKER_CLASS} = 'qemu_i686';
 
-$settingsF{TEST} = 'F';
+$settingsF{TEST}         = 'F';
 $settingsF{WORKER_CLASS} = 'qemu_x86_64';
 
-$settingsG{TEST} = 'G';
+$settingsG{TEST}         = 'G';
 $settingsG{WORKER_CLASS} = 'special,qemu_x86_64';
 
-$settingsH{TEST} = 'H';
+$settingsH{TEST}         = 'H';
 $settingsH{WORKER_CLASS} = 'server,qemu_x86_64';
 
-$settingsI{TEST} = 'I';
+$settingsI{TEST}         = 'I';
 $settingsI{WORKER_CLASS} = 'client,qemu_x86_64';
 
-$settingsJ{TEST} = 'J';
+$settingsJ{TEST}         = 'J';
 $settingsJ{WORKER_CLASS} = 'qemu_x86_64';
 
 

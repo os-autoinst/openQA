@@ -22,27 +22,27 @@ use db_helpers;
 # Use integers instead of a string labels for DEPENDENCIES because:
 #  - It's part of the primary key
 #  - JobDependencies is an internal table, not exposed in the API
-use constant CHAINED => 1;
-use constant PARALLEL => 2;
+use constant CHAINED      => 1;
+use constant PARALLEL     => 2;
 use constant DEPENDENCIES => (CHAINED, PARALLEL);
 
 __PACKAGE__->table('job_dependencies');
 __PACKAGE__->add_columns(
     child_job_id => {
-        data_type => 'integer',
+        data_type      => 'integer',
         is_foreign_key => 1,
     },
     parent_job_id => {
-        data_type => 'integer',
+        data_type      => 'integer',
         is_foreign_key => 1,
     },
-    dependency => { data_type => 'integer' },
+    dependency => {data_type => 'integer'},
 );
 
 __PACKAGE__->set_primary_key('child_job_id', 'parent_job_id', 'dependency');
 
-__PACKAGE__->belongs_to( child => 'OpenQA::Schema::Result::Jobs', 'child_job_id' );
-__PACKAGE__->belongs_to( parent => 'OpenQA::Schema::Result::Jobs', 'parent_job_id' );
+__PACKAGE__->belongs_to(child  => 'OpenQA::Schema::Result::Jobs', 'child_job_id');
+__PACKAGE__->belongs_to(parent => 'OpenQA::Schema::Result::Jobs', 'parent_job_id');
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
@@ -53,7 +53,7 @@ sub sqlt_deploy_hook {
 sub to_string {
     my ($self) = @_;
 
-    my %deps = ( 1 => "Chained", 2 => "Parallel" );
+    my %deps = (1 => "Chained", 2 => "Parallel");
 
     return $deps{$self->dependency};
 }

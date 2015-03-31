@@ -19,22 +19,22 @@ use Mojo::Base 'Mojolicious::Controller';
 
 my %tables = (
     'Machines' => {
-        'keys' => [['id'],['name'],],
-        'cols' => [ 'id', 'name', 'backend' ],
-        'required' => [ 'name', 'backend' ],
-        'defaults' => { 'variables' => "" },
+        'keys' => [['id'], ['name'],],
+        'cols'     => ['id',   'name', 'backend'],
+        'required' => ['name', 'backend'],
+        'defaults' => {'variables' => ""},
     },
     'TestSuites' => {
-        'keys' => [['id'],['name'],],
-        'cols' => [ 'id', 'name' ],
+        'keys' => [['id'], ['name'],],
+        'cols'     => ['id', 'name'],
         'required' => ['name'],
-        'defaults' => { 'variables' => "" },
+        'defaults' => {'variables' => ""},
     },
     'Products' => {
-        'keys' => [['id'],['distri', 'version', 'arch', 'flavor' ],],
-        'cols' => [ 'id', 'distri', 'version', 'arch', 'flavor' ],
-        'required' => [ 'distri', 'version', 'arch', 'flavor' ],
-        'defaults' => { 'variables' => "", 'name' => "" },
+        'keys' => [['id'], ['distri', 'version', 'arch', 'flavor'],],
+        'cols'     => ['id',     'distri',  'version', 'arch', 'flavor'],
+        'required' => ['distri', 'version', 'arch',    'flavor'],
+        'defaults' => {'variables' => "", 'name' => ""},
     },
 );
 
@@ -78,22 +78,20 @@ sub list {
             $table => [
                 map {
                     my $row = $_;
-                    my %hash = (( map { ( $_ => $row->get_column($_) ) } @{$tables{$table}->{'cols'}} ),settings => [ map { { key => $_->key, value => $_->value } } $row->settings ]);
+                    my %hash = ((map { ($_ => $row->get_column($_)) } @{$tables{$table}->{'cols'}}), settings => [map { {key => $_->key, value => $_->value} } $row->settings]);
                     \%hash;
                 } @result
-            ]
-        }
-    );
+            ]});
 }
 
 sub create {
-    my $self = shift;
+    my $self  = shift;
     my $table = $self->param("table");
 
     my $error;
     my $id;
 
-    my %entry = %{$tables{$table}->{'defaults'}};
+    my %entry      = %{$tables{$table}->{'defaults'}};
     my $validation = $self->validation;
 
     for my $par (@{$tables{$table}->{'required'}}) {
@@ -104,7 +102,7 @@ sub create {
     my @settings;
     if ($hp->{'settings'}) {
         for my $k (keys %{$hp->{'settings'}}) {
-            push @settings, {'key' => $k, 'value' => $hp->{'settings'}->{$k} };
+            push @settings, {'key' => $k, 'value' => $hp->{'settings'}->{$k}};
         }
     }
     $entry{'settings'} = \@settings;
@@ -116,7 +114,7 @@ sub create {
         }
     }
     else {
-        eval { $id = $self->db->resultset($table)->create(\%entry)->id};
+        eval { $id = $self->db->resultset($table)->create(\%entry)->id };
         $error = $@;
     }
 
@@ -135,7 +133,7 @@ sub create {
 }
 
 sub update {
-    my $self = shift;
+    my $self  = shift;
     my $table = $self->param("table");
 
     my $error;
@@ -153,7 +151,7 @@ sub update {
     my @keys;
     if ($hp->{'settings'}) {
         for my $k (keys %{$hp->{'settings'}}) {
-            push @settings, {'key' => $k, 'value' => $hp->{'settings'}->{$k} };
+            push @settings, {'key' => $k, 'value' => $hp->{'settings'}->{$k}};
             push @keys, $k;
         }
     }
@@ -174,7 +172,7 @@ sub update {
                 for my $var (@settings) {
                     $rc->update_or_create_related('settings', $var);
                 }
-                $rc->delete_related('settings', {'key' => { 'not in' => [@keys] }});
+                $rc->delete_related('settings', {'key' => {'not in' => [@keys]}});
                 $ret = 1;
             }
             else {
@@ -190,7 +188,7 @@ sub update {
     if ($ret) {
         if ($ret == 0) {
             $status = 404;
-            $error = 'Not found';
+            $error  = 'Not found';
         }
         else {
             $json->{result} = int($ret);
@@ -206,7 +204,7 @@ sub update {
 
 
 sub destroy {
-    my $self = shift;
+    my $self  = shift;
     my $table = $self->param("table");
 
     my $machines = $self->db->resultset('Machines');
@@ -225,7 +223,7 @@ sub destroy {
     if ($ret) {
         if ($ret == 0) {
             $status = 404;
-            $error = 'Not found';
+            $error  = 'Not found';
         }
         else {
             $json->{result} = int($ret);

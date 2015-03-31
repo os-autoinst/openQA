@@ -36,7 +36,7 @@ $t->app($app);
 
 my $ret;
 
-$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu' });
+$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu'});
 is($ret->tx->res->code, 403, "register worker without API key fails");
 
 $t->ua(OpenQA::Client->new(api => 'testapi')->ioloop(Mojo::IOLoop->singleton));
@@ -50,36 +50,35 @@ is_deeply(
     {
         workers => [
             {
-                id => 1,
-                instance => 1,
-                connected => 0,
-                jobid => 99963,
-                host => 'localhost',
-                properties => { 'JOBTOKEN' => 'token99963' },
-                status => 'running'
+                id         => 1,
+                instance   => 1,
+                connected  => 0,
+                jobid      => 99963,
+                host       => 'localhost',
+                properties => {'JOBTOKEN' => 'token99963'},
+                status     => 'running'
             },
             {
-                'jobid' => 99961,
+                'jobid'      => 99961,
                 'properties' => {
                     'JOBTOKEN' => 'token99961'
                 },
-                'id' => 2,
+                'id'        => 2,
                 'connected' => 0,
-                'status' => 'running',
-                'host' => 'remotehost',
-                'instance' => 1
-            }
-        ]
+                'status'    => 'running',
+                'host'      => 'remotehost',
+                'instance'  => 1
+            }]
     },
     'worker present'
 );
 
-$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1 });
-is($ret->tx->res->code, 200, "register existing worker with token");
-is($ret->tx->res->json->{id}, 1, "worker id is 1");
+$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1});
+is($ret->tx->res->code,       200, "register existing worker with token");
+is($ret->tx->res->json->{id}, 1,   "worker id is 1");
 
-$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 42 });
-is($ret->tx->res->code, 200, "register new worker");
-is($ret->tx->res->json->{id}, 3, "new worker id is 3");
+$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 42});
+is($ret->tx->res->code,       200, "register new worker");
+is($ret->tx->res->json->{id}, 3,   "new worker id is 3");
 
 done_testing();

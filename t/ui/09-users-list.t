@@ -29,7 +29,7 @@ $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA');
 
 # First of all, init the session (this should probably be in OpenQA::Test)
-my $req = $t->ua->get('/tests');
+my $req   = $t->ua->get('/tests');
 my $token = $req->res->dom->at('meta[name=csrf-token]')->attr('content');
 
 #
@@ -52,7 +52,7 @@ is('00', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
 is('01', $t->tx->res->dom->at('#user_99903 .role')->attr('data-order'));
 
 # Click on "+ admin" for Lancelot
-$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => { role => 'admin' })->status_is(302);
+$t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {role => 'admin'})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
 $get->content_like(qr/User lance updated/);
 $get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
@@ -60,14 +60,14 @@ is('11', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
 
 
 # We can even update both fields in one request
-$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => { role => 'operator'})->status_is(302);
+$t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {role => 'operator'})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
 $get->content_like(qr/User lance updated/);
 $get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
 is('01', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
 
 # not giving a role, makes it a user
-$t->post_ok('/admin/users/99902', { 'X-CSRF-Token' => $token } => form => {})->status_is(302);
+$t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
 $get->content_like(qr/User lance updated/);
 $get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');

@@ -22,7 +22,7 @@ use warnings;
 use base 'Mojolicious::Plugin';
 
 use Scalar::Util ();
-use Carp ();
+use Carp         ();
 
 sub register {
 
@@ -49,24 +49,21 @@ sub register {
             else {
                 return '';
             }
-        }
-    );
+        });
 
     # special anchor tag for post links
     $app->helper(
         link_post => sub {
             my $self = shift;
             $self->action_link('post', @_);
-        }
-    );
+        });
 
     # special anchor tag for delete links
     $app->helper(
         link_delete => sub {
             my $self = shift;
             $self->action_link('delete', @_);
-        }
-    );
+        });
 
     # Allow "_method" query parameter to override request method
     $app->hook(
@@ -74,8 +71,7 @@ sub register {
             my $c = shift;
             return unless my $method = $c->req->param('_method');
             $c->req->method($method);
-        }
-    );
+        });
 }
 
 1;

@@ -36,8 +36,8 @@ sub get_children_status {
     my $jobid = $self->stash('job_id');
 
     my @res = $self->db->resultset('Jobs')->search({'parents.parent_job_id' => $jobid, state => $status}, {columns => ['id'], join => 'parents'});
-    my @res_ids = map {$_->id} @res;
-    return $self->render(json => { jobs => \@res_ids }, status => 200);
+    my @res_ids = map { $_->id } @res;
+    return $self->render(json => {jobs => \@res_ids}, status => 200);
 }
 
 1;

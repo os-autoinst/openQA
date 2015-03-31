@@ -58,7 +58,7 @@ is($driver->get_title(), "openQA: Users", "on user overview");
 $driver->find_element('Workers', 'link_text')->click();
 
 is($driver->get_title(), 'openQA: Workers', 'on workers');
-is($driver->find_element('tr#worker_1 .worker', 'css')->get_text(), 'localhost:1', 'localhost:1');
+is($driver->find_element('tr#worker_1 .worker', 'css')->get_text(), 'localhost:1',  'localhost:1');
 is($driver->find_element('tr#worker_2 .worker', 'css')->get_text(), 'remotehost:1', 'remotehost:1');
 
 # we can't check if it's "working" as after 10s the worker is 'dead'
@@ -71,7 +71,7 @@ is($driver->get_title(), 'openQA: Worker localhost:1', 'on worker 1');
 
 my $body = $driver->find_element('//body');
 like($body->get_text(), qr/Status: .* job 99963/, 'still on 99963');
-like($body->get_text(), qr/JOBTOKEN token99963/, 'token for 99963');
+like($body->get_text(), qr/JOBTOKEN token99963/,  'token for 99963');
 
 #print $driver->get_page_source();
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');

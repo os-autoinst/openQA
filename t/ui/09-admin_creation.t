@@ -29,7 +29,7 @@ $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA');
 
 # First of all, init the session (this should probably be in OpenQA::Test)
-my $req = $t->ua->get('/tests');
+my $req   = $t->ua->get('/tests');
 my $token = $req->res->dom->at('meta[name=csrf-token]')->attr('content');
 
 #
@@ -43,7 +43,7 @@ is('01', $t->tx->res->dom->at('#user_99903 .role')->attr('data-order'));
 
 
 # Make only admin leave
-$t->post_ok('/admin/users/99901', { 'X-CSRF-Token' => $token } => form => {role => 'operator'})->status_is(302);
+$t->post_ok('/admin/users/99901', {'X-CSRF-Token' => $token} => form => {role => 'operator'})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(403);
 $t->delete_ok('/logout')->status_is(302);
 

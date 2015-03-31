@@ -9,23 +9,23 @@ my $start;
 my $msg;
 
 sub query_start {
-    my $self = shift();
-    my $sql = shift();
+    my $self   = shift();
+    my $sql    = shift();
     my @params = @_;
 
-    $msg = "$sql: ".join(', ', @params);
+    $msg = "$sql: " . join(', ', @params);
     $start = time();
 }
 
 sub query_end {
-    my $self = shift();
-    my $sql = shift();
+    my $self   = shift();
+    my $sql    = shift();
     my @params = @_;
 
     my $elapsed = time() - $start;
     $self->print(sprintf("[DBIx debug] Took %.8f seconds executed: %s.\n", $elapsed, $msg));
     $start = undef;
-    $msg = '';
+    $msg   = '';
 }
 
 
@@ -42,7 +42,7 @@ package MojoDebugHandle;
 sub new {
     my ($class, $app) = @_;
 
-    return bless { 'app' => $app }, $class;
+    return bless {'app' => $app}, $class;
 }
 
 sub print {

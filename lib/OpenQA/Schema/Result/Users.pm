@@ -20,34 +20,34 @@ __PACKAGE__->table('users');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type         => 'integer',
         is_auto_increment => 1,
     },
     username => {
         data_type => 'text',
     },
     email => {
-        data_type => 'text',
+        data_type   => 'text',
         is_nullable => 1,
     },
     fullname => {
-        data_type => 'text',
+        data_type   => 'text',
         is_nullable => 1,
     },
     nickname => {
-        data_type => 'text',
+        data_type   => 'text',
         is_nullable => 1,
     },
     is_operator => {
-        data_type => 'integer',
-        is_boolean => 1,
-        false_id => ['0', '-1'],
+        data_type     => 'integer',
+        is_boolean    => 1,
+        false_id      => ['0', '-1'],
         default_value => '0',
     },
     is_admin => {
-        data_type => 'integer',
-        is_boolean => 1,
-        false_id => ['0', '-1'],
+        data_type     => 'integer',
+        is_boolean    => 1,
+        false_id      => ['0', '-1'],
         default_value => '0',
     },
 );
@@ -56,7 +56,7 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(api_keys => 'OpenQA::Schema::Result::ApiKeys', 'user_id');
 __PACKAGE__->add_unique_constraint([qw/username/]);
 
-sub name{
+sub name {
     my ($self) = @_;
 
     if (!$self->{_name}) {
@@ -68,14 +68,14 @@ sub name{
     return $self->{_name};
 }
 
-sub create_user{
+sub create_user {
     my ($self, $id, $db, %attrs) = @_;
 
     return unless $id;
     my $user = $db->resultset("Users")->update_or_new({username => $id, %attrs});
 
     if (!$user->in_storage) {
-        if(not $db->resultset("Users")->find({ is_admin => 1 }, { rows => 1 })) {
+        if (not $db->resultset("Users")->find({is_admin => 1}, {rows => 1})) {
             $user->is_admin(1);
             $user->is_operator(1);
         }

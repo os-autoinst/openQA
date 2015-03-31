@@ -26,13 +26,13 @@ sub list {
     my ($self) = @_;
 
     my $workers = $self->db->resultset("Workers");
-    my $ret = [];
+    my $ret     = [];
 
     while (my $w = $workers->next) {
         next unless ($w->id);
         push(@$ret, $w->info);
     }
-    $self->render(json => { workers => $ret });
+    $self->render(json => {workers => $ret});
 }
 
 # TODO: this function exists purely for unit tests to be able to register
@@ -42,21 +42,19 @@ sub _register {
 
     my $worker = $schema->resultset("Workers")->search(
         {
-            host => $host,
+            host     => $host,
             instance => int($instance),
-        }
-    )->first;
+        })->first;
 
-    if ($worker) { # worker already known. Update fields and return id
-        $worker->update({ t_updated => now() });
+    if ($worker) {    # worker already known. Update fields and return id
+        $worker->update({t_updated => now()});
     }
     else {
         $worker = $schema->resultset("Workers")->create(
             {
-                host => $host,
+                host     => $host,
                 instance => $instance
-            }
-        );
+            });
     }
     # store worker's capabilities to database
     $worker->update_caps($caps) if $caps;
@@ -69,16 +67,15 @@ sub _register {
         # .. set it incomplete
         $job->update(
             {
-                state => OpenQA::Schema::Result::Jobs::DONE,
-                result => OpenQA::Schema::Result::Jobs::INCOMPLETE,
+                state     => OpenQA::Schema::Result::Jobs::DONE,
+                result    => OpenQA::Schema::Result::Jobs::INCOMPLETE,
                 worker_id => 0,
-            }
-        );
+            });
     }
 
-    $worker->set_property('INTERACTIVE', 0);
-    $worker->set_property('INTERACTIVE_REQUESTED', 0);
-    $worker->set_property('STOP_WAITFORNEEDLE', 0);
+    $worker->set_property('INTERACTIVE',                  0);
+    $worker->set_property('INTERACTIVE_REQUESTED',        0);
+    $worker->set_property('STOP_WAITFORNEEDLE',           0);
     $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
 
     die "got invalid id" unless $worker->id;
@@ -86,19 +83,19 @@ sub _register {
 }
 
 sub create {
-    my ($self) = @_;
-    my $host = $self->param('host');
+    my ($self)   = @_;
+    my $host     = $self->param('host');
     my $instance = $self->param('instance');
-    my $caps = {};
+    my $caps     = {};
 
     $caps->{cpu_modelname} = $self->param('cpu_modelname');
-    $caps->{cpu_arch} = $self->param('cpu_arch');
-    $caps->{cpu_opmode} = $self->param('cpu_opmode');
-    $caps->{mem_max} = $self->param('mem_max');
-    $caps->{worker_class} = $self->param('worker_class');
+    $caps->{cpu_arch}      = $self->param('cpu_arch');
+    $caps->{cpu_opmode}    = $self->param('cpu_opmode');
+    $caps->{mem_max}       = $self->param('mem_max');
+    $caps->{worker_class}  = $self->param('worker_class');
 
     my $id = $self->_register($self->db, $host, $instance, $caps);
-    $self->render(json => { id => $id} );
+    $self->render(json => {id => $id});
 
 }
 
@@ -106,7 +103,7 @@ sub show {
     my ($self) = @_;
     my $worker = $self->db->resultset("Workers")->find($self->param('workerid'));
     if ($worker) {
-        $self->render(json => {worker => $worker->info });
+        $self->render(json => {worker => $worker->info});
     }
     else {
         $self->reply->not_found;

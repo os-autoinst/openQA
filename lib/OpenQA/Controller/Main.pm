@@ -26,31 +26,29 @@ sub index {
 
     my @results;
 
-    my $timecond = { ">" => time2str('%Y-%m-%d %H:%M:%S', time-24*3600*14, 'UTC') };
-    my $groups = $self->db->resultset('JobGroups')->search({}, { order_by => qw/name/ });
+    my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * 14, 'UTC')};
+    my $groups = $self->db->resultset('JobGroups')->search({}, {order_by => qw/name/});
     while (my $group = $groups->next) {
         my %res;
-        my $jobs = $group->jobs->search({"me.t_created" =>  $timecond,});
+        my $jobs = $group->jobs->search({"me.t_created" => $timecond,});
         my $builds = $self->db->resultset('JobSettings')->search(
             {
-                job_id => { -in => $jobs->get_column('id')->as_query },
-                key => 'BUILD'
+                job_id => {-in => $jobs->get_column('id')->as_query},
+                key    => 'BUILD'
             },
-            { columns => qw/value/, distinct => 1 }
-        );
+            {columns => qw/value/, distinct => 1});
         my $max_jobs = 0;
-        my $buildnr = 0;
+        my $buildnr  = 0;
         for my $b (sort { $b <=> $a } map { $_->value } $builds->all) {
             my $jobs = $self->db->resultset('Jobs')->search(
                 {
-                    'settings.key' => 'BUILD',
+                    'settings.key'   => 'BUILD',
                     'settings.value' => $b,
-                    'me.group_id' => $group->id,
-                    'me.clone_id' => undef,
+                    'me.group_id'    => $group->id,
+                    'me.clone_id'    => undef,
                 },
-                { join => qw/settings/ }
-            );
-            my %jr = ( oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0 );
+                {join => qw/settings/});
+            my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0);
 
             my $count = 0;
             while (my $job = $jobs->next) {
@@ -61,22 +59,22 @@ sub index {
                         $jr{passed}++;
                         next;
                     }
-                    if (  $job->result eq OpenQA::Schema::Result::Jobs::FAILED
-                        ||$job->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE)
+                    if (   $job->result eq OpenQA::Schema::Result::Jobs::FAILED
+                        || $job->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE)
                     {
                         $jr{failed}++;
                         next;
                     }
-                    if ( grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS ) {
-                        next; # ignore the rest
+                    if (grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS) {
+                        next;    # ignore the rest
                     }
                 }
-                if (  $job->state eq OpenQA::Schema::Result::Jobs::CANCELLED
-                    ||$job->state eq OpenQA::Schema::Result::Jobs::OBSOLETED)
+                if (   $job->state eq OpenQA::Schema::Result::Jobs::CANCELLED
+                    || $job->state eq OpenQA::Schema::Result::Jobs::OBSOLETED)
                 {
-                    next; # ignore
+                    next;        # ignore
                 }
-                if ( $job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED || $job->state eq OpenQA::Schema::Result::Jobs::RUNNING ) {
+                if ($job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED || $job->state eq OpenQA::Schema::Result::Jobs::RUNNING) {
                     $jr{inprogress}++;
                     next;
                 }
@@ -89,7 +87,7 @@ sub index {
         }
         if (%res) {
             $res{_group} = $group;
-            $res{_max} = $max_jobs;
+            $res{_max}   = $max_jobs;
             push(@results, \%res);
         }
     }

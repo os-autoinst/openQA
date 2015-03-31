@@ -22,9 +22,9 @@ use OpenQA::Utils;
 use Mojo::Base -base;
 
 sub create {
-    my $self        = shift;
-    my %options     = (
-        directory  => undef,
+    my $self    = shift;
+    my %options = (
+        directory => undef,
         @_
     );
 

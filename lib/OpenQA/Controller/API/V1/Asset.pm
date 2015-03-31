@@ -45,7 +45,7 @@ sub list {
     my $rs = OpenQA::Scheduler::asset_list();
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 
-    $self->render(json => { assets => [ $rs->all() ] } );
+    $self->render(json => {assets => [$rs->all()]});
 }
 
 sub get {
@@ -64,9 +64,9 @@ sub get {
     my $json = $rs->single();
     unless ($json) {
         $status = 404;
-        $json = {};
+        $json   = {};
     }
-    $self->render(json => $json, status => $status );
+    $self->render(json => $json, status => $status);
 }
 
 sub delete {

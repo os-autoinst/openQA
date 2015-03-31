@@ -32,16 +32,15 @@ sub list {
     my $jobs = OpenQA::Scheduler::query_jobs(%args);
     log_debug("queried");
     my @results;
-    while( my $job = $jobs->next) {
+    while (my $job = $jobs->next) {
         my $jobhash = $job->to_hash(assets => 1);
         $jobhash->{modules} = [];
         for my $module ($job->modules) {
             my $modulehash = {
-                name => $module->name,
+                name     => $module->name,
                 category => $module->category,
-                result => $module->result,
-                flags => []
-            };
+                result   => $module->result,
+                flags    => []};
             for my $flag (qw/important fatal milestone soft_failure/) {
                 if ($module->get_column($flag)) {
                     push(@{$modulehash->{flags}}, $flag);
@@ -57,7 +56,7 @@ sub list {
 }
 
 sub create {
-    my $self = shift;
+    my $self   = shift;
     my $params = $self->req->params->to_hash;
     # job_create expects upper case keys
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
@@ -81,12 +80,12 @@ sub grab {
     my $workerid = $self->stash('workerid');
     my $blocking = int($self->param('blocking') || 0);
     my $workerip = $self->tx->remote_address;
-    my $caps = {};
+    my $caps     = {};
 
     $caps->{cpu_modelname} = $self->param('cpu_modelname');
-    $caps->{cpu_arch} = $self->param('cpu_arch');
-    $caps->{cpu_opmode} = $self->param('cpu_opmode');
-    $caps->{mem_max} = $self->param('mem_max');
+    $caps->{cpu_arch}      = $self->param('cpu_arch');
+    $caps->{cpu_opmode}    = $self->param('cpu_opmode');
+    $caps->{mem_max}       = $self->param('mem_max');
 
     my $res = OpenQA::Scheduler::job_grab(workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps);
     $self->render(json => {job => $res});
@@ -94,7 +93,7 @@ sub grab {
 
 sub show {
     my $self = shift;
-    my $res = OpenQA::Scheduler::job_get(int($self->stash('jobid')));
+    my $res  = OpenQA::Scheduler::job_get(int($self->stash('jobid')));
     if ($res) {
         $self->render(json => {job => $res});
     }
@@ -105,9 +104,9 @@ sub show {
 
 # set_scheduled set_cancel set_waiting and set_continue
 sub set_command {
-    my $self = shift;
-    my $jobid = int($self->stash('jobid'));
-    my $command = 'job_set_'.$self->stash('command');
+    my $self    = shift;
+    my $jobid   = int($self->stash('jobid'));
+    my $command = 'job_set_' . $self->stash('command');
 
     my $res = eval("OpenQA::Scheduler::$command($jobid)");
     # Referencing the scalar will result in true or false
@@ -117,15 +116,15 @@ sub set_command {
 
 sub destroy {
     my $self = shift;
-    my $res = OpenQA::Scheduler::job_delete(int($self->stash('jobid')));
+    my $res  = OpenQA::Scheduler::job_delete(int($self->stash('jobid')));
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
 
 sub prio {
     my ($self) = @_;
-    my $job = $self->app->schema->resultset("Jobs")->find($self->stash('jobid'));
-    my $res = $job->set_prio($self->param('prio'));
+    my $job    = $self->app->schema->resultset("Jobs")->find($self->stash('jobid'));
+    my $res    = $job->set_prio($self->param('prio'));
 
     # See comment in set_command
     $self->render(json => {result => \$res});
@@ -134,7 +133,7 @@ sub prio {
 # replaced in favor of done
 sub result {
     my ($self) = @_;
-    my $jobid = int($self->stash('jobid'));
+    my $jobid  = int($self->stash('jobid'));
     my $result = $self->param('result');
 
     my $res = OpenQA::Scheduler::job_update_result(jobid => $jobid, result => $result);
@@ -145,10 +144,10 @@ sub result {
 # this is the general worker update call
 sub update_status {
     my ($self) = @_;
-    my $jobid = int($self->stash('jobid'));
+    my $jobid  = int($self->stash('jobid'));
     my $status = $self->req->json->{'status'};
-    my $job = $self->app->schema->resultset("Jobs")->find($jobid);
-    my $ret = $job->update_status($status);
+    my $job    = $self->app->schema->resultset("Jobs")->find($jobid);
+    my $ret    = $job->update_status($status);
 
     $self->render(json => $ret);
 }
@@ -158,11 +157,11 @@ sub create_artefact {
     my ($self) = @_;
 
     my $jobid = int($self->stash('jobid'));
-    my $job = $self->app->schema->resultset("Jobs")->find($jobid);
+    my $job   = $self->app->schema->resultset("Jobs")->find($jobid);
     $self->reply->not_found unless $job;
 
     if ($self->param('image')) {
-        $job->store_image($self->param('file'), $self->param('md5'), $self->param('thumb')//0);
+        $job->store_image($self->param('file'), $self->param('md5'), $self->param('thumb') // 0);
         $self->render(text => "OK");
         return;
     }
@@ -177,8 +176,8 @@ sub create_artefact {
 sub done {
     my ($self) = @_;
 
-    my $jobid = int($self->stash('jobid'));
-    my $result = $self->param('result');
+    my $jobid    = int($self->stash('jobid'));
+    my $result   = $self->param('result');
     my $newbuild = 1 if defined $self->param('newbuild');
 
     my $res;
@@ -219,9 +218,9 @@ sub cancel {
 }
 
 sub duplicate {
-    my $self = shift;
+    my $self  = shift;
     my $jobid = int($self->param('name'));
-    my %args = (jobid => $jobid);
+    my %args  = (jobid => $jobid);
     if (defined $self->param('prio')) {
         $args{prio} = int($self->param('prio'));
     }

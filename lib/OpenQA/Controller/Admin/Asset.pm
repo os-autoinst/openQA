@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my $self = shift;
-    my $assets = $self->db->resultset("Assets")->search(undef, {order_by => 'id', prefetch => 'jobs_assets' });
+    my $assets = $self->db->resultset("Assets")->search(undef, {order_by => 'id', prefetch => 'jobs_assets'});
 
     $self->stash('assets', $assets);
     $self->render('admin/asset/index');

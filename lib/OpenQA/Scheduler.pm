@@ -96,7 +96,7 @@ $worker_commands{continue_waitforneedle} = sub {
     $worker->set_property("STOP_WAITFORNEEDLE_REQUESTED", 0);
 };
 
-sub schema{
+sub schema {
     CORE::state $schema;
     $schema = OpenQA::Schema::connect_db() unless $schema;
     return $schema;
@@ -111,7 +111,7 @@ not ORM objects.
 
 # XXX TODO - Remove this useless function when is not needed anymore
 sub _hashref {
-    my $obj = shift;
+    my $obj    = shift;
     my @fields = @_;
 
     my %hashref = ();
@@ -151,20 +151,20 @@ sub job_create {
     my @assets;
     for my $k (keys %settings) {
         if ($k eq 'ISO') {
-            push @assets, { type => 'iso', name => $settings{$k}};
+            push @assets, {type => 'iso', name => $settings{$k}};
         }
         if ($k =~ /^HDD_\d$/) {
-            push @assets, { type => 'hdd', name => $settings{$k}};
+            push @assets, {type => 'hdd', name => $settings{$k}};
         }
         if ($k =~ /^REPO_\d$/) {
-            push @assets, { type => 'repo', name => $settings{$k}};
+            push @assets, {type => 'repo', name => $settings{$k}};
         }
     }
 
     die "job has no assets\n" unless @assets;
 
     for my $a (@assets) {
-        die "invalid character in $a->{name}\n" if $a->{name} =~ /\//; # TODO: use whitelist?
+        die "invalid character in $a->{name}\n" if $a->{name} =~ /\//;    # TODO: use whitelist?
 
         unless (-e sprintf("%s/%s/%s", $OpenQA::Utils::assetdir, $a->{type}, $a->{name})) {
             die "$a->{name} does not exist\n";
@@ -174,7 +174,7 @@ sub job_create {
     my %new_job_args = (test => $settings{TEST});
 
     if ($settings{NAME}) {
-        my $njobs = schema->resultset("Jobs")->search({ slug => $settings{NAME} })->count;
+        my $njobs = schema->resultset("Jobs")->search({slug => $settings{NAME}})->count;
         return 0 if $njobs;
 
         $new_job_args{slug} = $settings{NAME};
@@ -186,7 +186,7 @@ sub job_create {
             push @{$new_job_args{parents}},
               {
                 parent_job_id => $id,
-                dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
+                dependency    => OpenQA::Schema::Result::JobDependencies::CHAINED,
               };
         }
         delete $settings{_START_AFTER_JOBS};
@@ -197,24 +197,24 @@ sub job_create {
             push @{$new_job_args{parents}},
               {
                 parent_job_id => $id,
-                dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+                dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
               };
         }
         delete $settings{_PARALLEL_JOBS};
     }
 
-    while(my ($k, $v) = each %settings) {
+    while (my ($k, $v) = each %settings) {
         unless ($k eq 'WORKER_CLASS') {
-            push @{$new_job_args{settings}}, { key => $k, value => $v };
+            push @{$new_job_args{settings}}, {key => $k, value => $v};
             next;
         }
-        for my $l (split(m/,/, $v)) { # special case for worker class?
-            push @{$new_job_args{settings}}, { key => $k, value => $l } if $l;
+        for my $l (split(m/,/, $v)) {    # special case for worker class?
+            push @{$new_job_args{settings}}, {key => $k, value => $l} if $l;
         }
     }
 
     for my $a (@assets) {
-        push @{$new_job_args{jobs_assets}}, { asset => $a };
+        push @{$new_job_args{jobs_assets}}, {asset => $a};
     }
 
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
@@ -229,24 +229,24 @@ sub job_get($) {
     return undef if !defined($value);
 
     if ($value =~ /^\d+$/) {
-        return _job_get({ 'me.id' => $value });
+        return _job_get({'me.id' => $value});
     }
-    return _job_get({slug => $value });
+    return _job_get({slug => $value});
 }
 
 sub jobs_get_dead_worker {
     my $threshold = shift;
 
     my %cond = (
-        'state' => OpenQA::Schema::Result::Jobs::RUNNING,
-        'worker.t_updated' => { '<' => $threshold},
+        'state'            => OpenQA::Schema::Result::Jobs::RUNNING,
+        'worker.t_updated' => {'<' => $threshold},
     );
     my %attrs = (join => 'worker',);
 
     my $dead_jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
 
     my @results = ();
-    while( my $job = $dead_jobs->next) {
+    while (my $job = $dead_jobs->next) {
         my $j = _hashref($job, qw/ id state result worker_id/);
         push @results, $j;
     }
@@ -257,7 +257,7 @@ sub jobs_get_dead_worker {
 # XXX TODO: Do not expand the Job
 sub _job_get($) {
     my $search = shift;
-    my %attrs = ();
+    my %attrs  = ();
 
     push @{$attrs{prefetch}}, 'settings';
 
@@ -280,23 +280,21 @@ sub query_jobs {
     }
 
     if ($args{state}) {
-        push(@conds, { 'me.state' => [split(',', $args{state})] });
+        push(@conds, {'me.state' => [split(',', $args{state})]});
     }
     if ($args{maxage}) {
-        my $agecond = { '>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC') };
+        my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC')};
         push(
             @conds,
             {
                 -or => [
-                    'me.t_created' => $agecond,
-                    'me.t_started' => $agecond,
+                    'me.t_created'  => $agecond,
+                    'me.t_started'  => $agecond,
                     'me.t_finished' => $agecond
-                ]
-            }
-        );
+                ]});
     }
     if ($args{ignore_incomplete}) {
-        push(@conds, {'me.result' => { -not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS] }});
+        push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
     }
     my $scope = $args{scope} || '';
     if ($scope eq 'relevant') {
@@ -308,14 +306,11 @@ sub query_jobs {
                     'me.clone_id' => undef,
                     'clone.state' => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
                 ],
-                'me.result' => { # these results should be hidden by default
+                'me.result' => {    # these results should be hidden by default
                     -not_in => [
                         OpenQA::Schema::Result::Jobs::OBSOLETED,
                         # OpenQA::Schema::Result::Jobs::USER_CANCELLED  I think USER_CANCELLED jobs should be available for restart
-                    ]
-                }
-            }
-        );
+                    ]}});
     }
     if ($scope eq 'current') {
         push(@conds, {'me.clone_id' => undef});
@@ -323,32 +318,28 @@ sub query_jobs {
     if ($args{limit}) {
         $attrs{rows} = $args{limit};
     }
-    $attrs{page} = $args{page}||0;
+    $attrs{page} = $args{page} || 0;
     if ($args{assetid}) {
         push(@joins, 'jobs_assets');
         push(
             @conds,
             {
                 'jobs_assets.asset_id' => $args{assetid},
-            }
-        );
+            });
     }
     if ($args{groupid}) {
         push(
             @conds,
             {
                 'me.group_id' => $args{groupid},
-            }
-        );
+            });
     }
     elsif ($args{group}) {
         my $subquery = schema->resultset("JobGroups")->search({'name' => $args{group}})->get_column('id')->as_query;
         push(
             @conds,
             {
-                'me.group_id' => { -in => $subquery }
-            }
-        );
+                'me.group_id' => {-in => $subquery}});
     }
 
     # Search into the following job_settings
@@ -356,11 +347,9 @@ sub query_jobs {
         if ($args{$setting}) {
             my $subquery = schema->resultset("JobSettings")->search(
                 {
-                    key => uc($setting),
-                    value => $args{$setting}
-                }
-            );
-            push(@conds, { 'me.id' => { -in => $subquery->get_column('job_id')->as_query }});
+                    key   => uc($setting),
+                    value => $args{$setting}});
+            push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
         }
     }
     # Text search across some settings
@@ -368,13 +357,12 @@ sub query_jobs {
         my $subquery = schema->resultset("JobSettings")->search(
             {
                 'key' => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST', 'VERSION'],
-                'value' => { '-like' => "%$args{match}%" },
-            }
-        );
-        push(@conds, { 'me.id' => { -in => $subquery->get_column('job_id')->as_query }});
+                'value' => {'-like' => "%$args{match}%"},
+            });
+        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
     if ($args{ids}) {
-        push(@conds, { 'me.id' => { -in => $args{ids} } });
+        push(@conds, {'me.id' => {-in => $args{ids}}});
     }
 
     $attrs{order_by} = ['me.id DESC'];
@@ -389,74 +377,68 @@ sub _prefer_parallel {
     my $running = schema->resultset("Jobs")->search(
         {
             state => OpenQA::Schema::Result::Jobs::RUNNING,
-        }
-    )->get_column('id')->as_query;
+        })->get_column('id')->as_query;
 
     # get scheduled children of running jobs
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-            parent_job_id => { -in => $running },
-            state => OpenQA::Schema::Result::Jobs::SCHEDULED
+            dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            parent_job_id => {-in => $running},
+            state         => OpenQA::Schema::Result::Jobs::SCHEDULED
         },
         {
             join => 'child',
-        }
-    );
+        });
 
-    return if ($children->count() == 0); # no scheduled children, whole group is running
+    return if ($children->count() == 0);    # no scheduled children, whole group is running
 
     my $available_children = $children->search(
         {
             child_job_id => $available_cond
-        }
-    );
+        });
 
-    return ( { '-in' => $available_children->get_column('child_job_id')->as_query } ) if ($available_children->count() > 0); # we have scheduled children that are not blocked
+    return ({'-in' => $available_children->get_column('child_job_id')->as_query}) if ($available_children->count() > 0);    # we have scheduled children that are not blocked
 
     # children are blocked, we have to find and start their parents first
     my $parents = schema->resultset("JobDependencies")->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-            child_job_id => { -in => $children->get_column('child_job_id')->as_query },
-            state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+            dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            child_job_id => {-in => $children->get_column('child_job_id')->as_query},
+            state        => OpenQA::Schema::Result::Jobs::SCHEDULED,
         },
         {
             join => 'parent',
-        }
-    );
+        });
 
     while ($parents->count() > 0) {
 
         my $available_parents = $parents->search(
             {
                 parent_job_id => $available_cond
-            }
-        );
+            });
 
-        return ( { '-in' => $available_parents->get_column('parent_job_id')->as_query } ) if ($available_parents->count() > 0);
+        return ({'-in' => $available_parents->get_column('parent_job_id')->as_query}) if ($available_parents->count() > 0);
 
         # parents are blocked, lets check grandparents
         $parents = schema->resultset("JobDependencies")->search(
             {
-                dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-                child_job_id => { -in => $parents->get_column('parent_job_id')->as_query },
-                state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+                child_job_id => {-in => $parents->get_column('parent_job_id')->as_query},
+                state        => OpenQA::Schema::Result::Jobs::SCHEDULED,
             },
             {
                 join => 'parent',
-            }
-        );
+            });
     }
     return;
 }
 
 # TODO: add some sanity check so the same host doesn't grab two jobs
 sub job_grab {
-    my %args = @_;
-    my $workerid = $args{workerid};
-    my $blocking = int($args{blocking} || 0);
-    my $workerip = $args{workerip};
+    my %args       = @_;
+    my $workerid   = $args{workerid};
+    my $blocking   = int($args{blocking} || 0);
+    my $workerip   = $args{workerip};
     my $workercaps = $args{workercaps};
 
     my $worker = _validate_workerid($workerid);
@@ -469,25 +451,24 @@ sub job_grab {
                 -or => [
                     -and => {
                         dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
-                        -or => {
-                            state => { '!=', OpenQA::Schema::Result::Jobs::DONE },
-                            result => { '!=',  OpenQA::Schema::Result::Jobs::PASSED },
+                        -or        => {
+                            state  => {'!=', OpenQA::Schema::Result::Jobs::DONE},
+                            result => {'!=', OpenQA::Schema::Result::Jobs::PASSED},
                         },
                     },
                     -and => {
                         dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-                        state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                        state      => OpenQA::Schema::Result::Jobs::SCHEDULED,
                     },
                 ],
             },
             {
                 join => 'parent',
-            }
-        );
+            });
 
         my $worker = schema->resultset("Workers")->find($workerid);
 
-        my @available_cond = ( # ids available for this worker
+        my @available_cond = (    # ids available for this worker
             '-and',
             {
                 -not_in => $blocked->get_column('child_job_id')->as_query
@@ -503,21 +484,19 @@ sub job_grab {
             # check all worker classes of scheduled jobs and filter out those not applying
             my $scheduled = schema->resultset("Jobs")->search(
                 {
-                    'state' => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                    'state'     => OpenQA::Schema::Result::Jobs::SCHEDULED,
                     'worker_id' => 0
-                }
-            )->get_column('id');
+                })->get_column('id');
 
             my $not_applying_jobs = schema->resultset("JobSettings")->search(
                 {
-                    job_id => { -in => $scheduled->as_query },
-                    key => 'WORKER_CLASS',
-                    value => { -not_in => \@classes },
+                    job_id => {-in     => $scheduled->as_query},
+                    key    => 'WORKER_CLASS',
+                    value  => {-not_in => \@classes},
                 },
-                { distinct => 1 }
-            )->get_column('job_id');
+                {distinct => 1})->get_column('job_id');
 
-            push @available_cond, { -not_in => $not_applying_jobs->as_query };
+            push @available_cond, {-not_in => $not_applying_jobs->as_query};
         }
 
         my $preferred_parallel = _prefer_parallel(\@available_cond);
@@ -526,18 +505,17 @@ sub job_grab {
         # now query for the best
         my $job = schema->resultset("Jobs")->search(
             {
-                'state' => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                'state'     => OpenQA::Schema::Result::Jobs::SCHEDULED,
                 'worker_id' => 0,
-                id => \@available_cond,
+                id          => \@available_cond,
             },
-            { order_by => { -asc => [qw/priority id/] }, rows => 1 }
+            {order_by => {-asc => [qw/priority id/]}, rows => 1}
           )->update(
             {
-                state => OpenQA::Schema::Result::Jobs::RUNNING,
+                state     => OpenQA::Schema::Result::Jobs::RUNNING,
                 worker_id => $workerid,
                 t_started => now(),
-            }
-          );
+            });
 
         last if $job;
         last unless $blocking;
@@ -553,7 +531,7 @@ sub job_grab {
     my $job_hashref = {};
     $job_hashref = _job_get({'me.id' => $job->id});
 
-    $worker->set_property('INTERACTIVE_REQUESTED', 0);
+    $worker->set_property('INTERACTIVE_REQUESTED',        0);
     $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
 
     # JOBTOKEN for test access to API
@@ -572,13 +550,13 @@ sub job_grab {
 }
 
 # parent job failed, handle scheduled children - set them to done incomplete immediately
-sub _job_skip_children{
+sub _job_skip_children {
     my $jobid = shift;
 
     my $children = schema->resultset("JobDependencies")->search(
         {
             dependency => {
-                -in => [OpenQA::Schema::Result::JobDependencies::CHAINED,OpenQA::Schema::Result::JobDependencies::PARALLEL],
+                -in => [OpenQA::Schema::Result::JobDependencies::CHAINED, OpenQA::Schema::Result::JobDependencies::PARALLEL],
             },
             parent_job_id => $jobid,
         },
@@ -586,15 +564,14 @@ sub _job_skip_children{
 
     my $result = schema->resultset("Jobs")->search(
         {
-            id => { -in => $children->get_column('child_job_id')->as_query},
+            id    => {-in => $children->get_column('child_job_id')->as_query},
             state => OpenQA::Schema::Result::Jobs::SCHEDULED,
         },
       )->update(
         {
-            state => OpenQA::Schema::Result::Jobs::CANCELLED,
+            state  => OpenQA::Schema::Result::Jobs::CANCELLED,
             result => OpenQA::Schema::Result::Jobs::SKIPPED,
-        }
-      );
+        });
 
     while (my $j = $children->next) {
         my $id = $j->child_job_id;
@@ -603,18 +580,18 @@ sub _job_skip_children{
 }
 
 # parent job failed, handle running children - send stop command
-sub _job_stop_children{
+sub _job_stop_children {
     my $jobid = shift;
 
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
             parent_job_id => $jobid,
         },
     );
     my $jobs = schema->resultset("Jobs")->search(
         {
-            id => { -in => $children->get_column('child_job_id')->as_query},
+            id    => {-in => $children->get_column('child_job_id')->as_query},
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
     );
@@ -626,26 +603,25 @@ sub _job_stop_children{
       )->update(
         {
             result => OpenQA::Schema::Result::Jobs::PARALLEL_FAILED,
-        }
-      );
+        });
 
     while (my $j = $jobs->next) {
-        log_debug("enqueuing cancel for ".$j->id." ".$j->worker_id);
+        log_debug("enqueuing cancel for " . $j->id . " " . $j->worker_id);
         command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
         _job_stop_children($j->id);
     }
 }
 
 # parent job has been cloned, move the scheduled children to the new one
-sub _job_update_parent{
-    my $jobid = shift;
+sub _job_update_parent {
+    my $jobid     = shift;
     my $new_jobid = shift;
 
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dependency => { -in => [ OpenQA::Schema::Result::JobDependencies::CHAINED,OpenQA::Schema::Result::JobDependencies::PARALLEL ]},
+            dependency    => {-in => [OpenQA::Schema::Result::JobDependencies::CHAINED, OpenQA::Schema::Result::JobDependencies::PARALLEL]},
             parent_job_id => $jobid,
-            state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+            state         => OpenQA::Schema::Result::Jobs::SCHEDULED,
         },
         {
             join => 'child',
@@ -653,8 +629,7 @@ sub _job_update_parent{
       )->update(
         {
             parent_job_id => $new_jobid,
-        }
-      );
+        });
 
     #    my $result = schema->resultset("JobDependencies")->search(
     #        {
@@ -678,8 +653,8 @@ mark job as done. No error check. Meant to be called from worker!
 =cut
 # XXX TODO Parameters is a hash, check if is better use normal parameters
 sub job_set_done {
-    my %args = @_;
-    my $jobid = int($args{jobid});
+    my %args     = @_;
+    my $jobid    = int($args{jobid});
     my $newbuild = 0;
     $newbuild = int($args{newbuild}) if defined $args{newbuild};
     $args{result} = OpenQA::Schema::Result::Jobs::OBSOLETED if $newbuild;
@@ -689,8 +664,8 @@ sub job_set_done {
 
     my $result = $args{result} || $job->calculate_result();
     my %new_val = (
-        state => OpenQA::Schema::Result::Jobs::DONE,
-        worker_id => 0,
+        state      => OpenQA::Schema::Result::Jobs::DONE,
+        worker_id  => 0,
         t_finished => now(),
     );
 
@@ -700,7 +675,7 @@ sub job_set_done {
     my $r;
     $r = $job->update(\%new_val);
 
-    if ( $result ne OpenQA::Schema::Result::Jobs::PASSED){
+    if ($result ne OpenQA::Schema::Result::Jobs::PASSED) {
         _job_skip_children($jobid);
         _job_stop_children($jobid);
     }
@@ -718,14 +693,13 @@ sub job_set_waiting {
     # TODO: only allowed for running jobs
     my $r = schema->resultset("Jobs")->search(
         {
-            id => $jobid,
+            id    => $jobid,
             state => OpenQA::Schema::Result::Jobs::RUNNING,
         }
       )->update(
         {
             state => OpenQA::Schema::Result::Jobs::WAITING,
-        }
-      );
+        });
     return $r;
 }
 
@@ -739,14 +713,13 @@ sub job_set_running {
 
     my $r = schema->resultset("Jobs")->search(
         {
-            id => $jobid,
+            id    => $jobid,
             state => OpenQA::Schema::Result::Jobs::WAITING,
         }
       )->update(
         {
             state => OpenQA::Schema::Result::Jobs::RUNNING,
-        }
-      );
+        });
     return $r;
 }
 
@@ -768,11 +741,10 @@ sub job_update_result {
 
     my $id = int($args{jobid});
 
-    my $r = schema->resultset("Jobs")->search({ id => $id })->update(
+    my $r = schema->resultset("Jobs")->search({id => $id})->update(
         {
             result => $args{result},
-        }
-    );
+        });
 
     return $r;
 }
@@ -782,7 +754,7 @@ sub _job_find_smart($$$) {
 
     if (ref $value eq '') {
         if ($value =~ /\.iso/) {
-            $value = { ISO => $value };
+            $value = {ISO => $value};
         }
     }
     if (ref $value eq 'HASH') {
@@ -790,9 +762,9 @@ sub _job_find_smart($$$) {
         while (my ($k, $v) = each %$value) {
             ++$i;
             my $t = 'settings';
-            $t .= '_'.$i if $i > 1;
-            $cond->{$t.'.key'} = $k;
-            $cond->{$t.'.value'} = $v;
+            $t .= '_' . $i if $i > 1;
+            $cond->{$t . '.key'}   = $k;
+            $cond->{$t . '.value'} = $v;
         }
         while ($i--) {
             push @{$attrs->{join}}, 'settings';
@@ -811,13 +783,13 @@ sub job_duplicate {
 
     my $job = schema->resultset("Jobs")->find({id => $args{jobid}});
     return unless $job;
-    return unless $job->can_be_duplicated; # already cloned
+    return unless $job->can_be_duplicated;    # already cloned
 
     log_debug("duplicating $args{jobid}");
 
-    if($args{dup_type_auto}) {
-        if ( int($job->retry_avbl) > 0) {
-            $args{retry_avbl} = int($job->retry_avbl)-1;
+    if ($args{dup_type_auto}) {
+        if (int($job->retry_avbl) > 0) {
+            $args{retry_avbl} = int($job->retry_avbl) - 1;
         }
         else {
             log_debug("Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually.");
@@ -825,11 +797,11 @@ sub job_duplicate {
         }
     }
     else {
-        if ( int($job->retry_avbl) > 0) {
+        if (int($job->retry_avbl) > 0) {
             $args{retry_avbl} = int($job->retry_avbl);
         }
         else {
-            $args{retry_avbl} = 1; # set retry_avbl back to 1
+            $args{retry_avbl} = 1;    # set retry_avbl back to 1
         }
     }
 
@@ -843,9 +815,8 @@ sub job_duplicate {
     # clone the jobs
     my $jobs = schema->resultset("Jobs")->search(
         {
-            id => [ keys %to_clone ],
-        }
-    );
+            id => [keys %to_clone],
+        });
     while (my $j = $jobs->next) {
         if ($j->id == $job->id) {
             #the requested job
@@ -864,28 +835,25 @@ sub job_duplicate {
     for my $child_id (keys %to_clone) {
         my $cl_child_id = $to_clone{$child_id}->{clone}->id;
         for my $parent_id (keys %{$to_clone{$child_id}->{parent}}) {
-            my $cl_parent_id = $parent_id; # scheduled parents were not cloned
+            my $cl_parent_id = $parent_id;    # scheduled parents were not cloned
             $cl_parent_id = $to_clone{$parent_id}->{clone}->id if defined $to_clone{$parent_id};
             schema->resultset("JobDependencies")->create(
                 {
                     parent_job_id => $cl_parent_id,
-                    child_job_id => $cl_child_id,
-                    dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-                }
-            );
+                    child_job_id  => $cl_child_id,
+                    dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+                });
         }
     }
 
     # abort jobs restarted because of dependencies (exclude the original $args{jobid})
     $jobs = schema->resultset("Jobs")->search(
         {
-            id => { '!=', $job->id, '-in' => [ keys %to_clone ] },
+            id    => {'!=', $job->id, '-in' => [keys %to_clone]},
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
-            colums => [qw/id worker_id/]
-        }
-    );
+            colums => [qw/id worker_id/]});
 
     $jobs->search(
         {
@@ -894,16 +862,15 @@ sub job_duplicate {
       )->update(
         {
             result => OpenQA::Schema::Result::Jobs::PARALLEL_RESTARTED,
-        }
-      );
+        });
 
     while (my $j = $jobs->next) {
-        log_debug("enqueuing abort for ".$j->id." ".$j->worker_id);
+        log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
         command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
     }
 
     if (defined($clone)) {
-        log_debug("new job ".$clone->id);
+        log_debug("new job " . $clone->id);
 
         job_notify_workers();
         return $clone->id;
@@ -918,7 +885,7 @@ sub job_duplicate {
 sub _job_duplicate_find_parents {
     my ($job, $child_id, $to_clone) = @_;
 
-    while ($job->clone_id) { # find the most recent clone
+    while ($job->clone_id) {    # find the most recent clone
         $job = $job->clone;
     }
 
@@ -929,21 +896,20 @@ sub _job_duplicate_find_parents {
     # just link it in $to_clone->{$child_id}{parent}
     return
       if (
-        $child_id && # this is a parent
+        $child_id &&    # this is a parent
         $job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED
       );
 
-    $to_clone->{$job->id} //= { clone => undef, parent => {} };
+    $to_clone->{$job->id} //= {clone => undef, parent => {}};
 
     my $parents = schema->resultset("JobDependencies")->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
             child_job_id => $job->id,
         },
         {
             join => 'parent',
-        }
-    );
+        });
 
     my $have_parents = 0;
     while (my $j = $parents->next) {
@@ -958,41 +924,39 @@ sub _job_duplicate_find_parents {
 sub _job_duplicate_find_running {
     my ($job, $to_clone) = @_;
 
-    $to_clone->{$job->id} //= { clone => undef, parent => {} };
+    $to_clone->{$job->id} //= {clone => undef, parent => {}};
     $to_clone->{$job->id}->{running} = 1;
 
     my $children = schema->resultset("JobDependencies")->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
             parent_job_id => $job->id,
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+            state         => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
             join => 'child',
-        }
-    );
+        });
 
     while (my $j = $children->next) {
         my $child = $j->child;
-        next if $to_clone->{$child->id} && $to_clone->{$child->id}->{running}; #already seen
+        next if $to_clone->{$child->id} && $to_clone->{$child->id}->{running};    #already seen
         _job_duplicate_find_running($child, $to_clone);
         $to_clone->{$child->id}{parent}{$job->id} = 1;
     }
 
     my $parents = schema->resultset("JobDependencies")->search(
         {
-            dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+            dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
             child_job_id => $job->id,
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+            state        => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
             join => 'parent',
-        }
-    );
+        });
 
     while (my $j = $parents->next) {
         my $parent = $j->parent;
-        next if $to_clone->{$parent->id} && $to_clone->{$parent->id}->{running}; #already seen
+        next if $to_clone->{$parent->id} && $to_clone->{$parent->id}->{running};    #already seen
         $to_clone->{$job->id}{parent}{$parent->id} = 1;
         _job_duplicate_find_running($parent, $to_clone);
     }
@@ -1007,13 +971,11 @@ sub job_restart {
     # first, duplicate all jobs that are either running, waiting or done
     my $jobs = schema->resultset("Jobs")->search(
         {
-            id => $idqry,
-            state => [ OpenQA::Schema::Result::Jobs::EXECUTION_STATES, OpenQA::Schema::Result::Jobs::FINAL_STATES ],
+            id    => $idqry,
+            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES, OpenQA::Schema::Result::Jobs::FINAL_STATES],
         },
         {
-            columns => [qw/id/]
-        }
-    );
+            columns => [qw/id/]});
     my @duplicated;
     while (my $j = $jobs->next) {
         my $id = job_duplicate(jobid => $j->id);
@@ -1023,13 +985,11 @@ sub job_restart {
     # then tell workers to abort
     $jobs = schema->resultset("Jobs")->search(
         {
-            id => $idqry,
+            id    => $idqry,
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
-            colums => [qw/id worker_id/]
-        }
-    );
+            colums => [qw/id worker_id/]});
 
     $jobs->search(
         {
@@ -1038,11 +998,10 @@ sub job_restart {
       )->update(
         {
             result => OpenQA::Schema::Result::Jobs::USER_RESTARTED,
-        }
-      );
+        });
 
     while (my $j = $jobs->next) {
-        log_debug("enqueuing abort for ".$j->id." ".$j->worker_id);
+        log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
         command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
     }
 
@@ -1063,10 +1022,9 @@ sub job_cancel($;$) {
     # first set all scheduled jobs to cancelled
     my $r = schema->resultset("Jobs")->search(\%cond, \%attrs)->update(
         {
-            state => OpenQA::Schema::Result::Jobs::CANCELLED,
+            state  => OpenQA::Schema::Result::Jobs::CANCELLED,
             result => ($newbuild) ? OpenQA::Schema::Result::Jobs::OBSOLETED : OpenQA::Schema::Result::Jobs::USER_CANCELLED
-        }
-    );
+        });
 
     my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
     while (my $j = $jobs->next) {
@@ -1074,7 +1032,7 @@ sub job_cancel($;$) {
     }
 
     $attrs{columns} = [qw/id worker_id/];
-    $cond{state} = [OpenQA::Schema::Result::Jobs::EXECUTION_STATES];
+    $cond{state}    = [OpenQA::Schema::Result::Jobs::EXECUTION_STATES];
     # then tell workers to cancel their jobs
     $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
 
@@ -1085,16 +1043,15 @@ sub job_cancel($;$) {
       )->update(
         {
             result => ($newbuild) ? OpenQA::Schema::Result::Jobs::OBSOLETED : OpenQA::Schema::Result::Jobs::USER_CANCELLED,
-        }
-      );
+        });
 
     while (my $j = $jobs->next) {
         if ($newbuild) {
-            log_debug("enqueuing obsolete for ".$j->id." ".$j->worker_id);
+            log_debug("enqueuing obsolete for " . $j->id . " " . $j->worker_id);
             command_enqueue(workerid => $j->worker_id, command => 'obsolete', job_id => $j->id);
         }
         else {
-            log_debug("enqueuing cancel for ".$j->id." ".$j->worker_id);
+            log_debug("enqueuing cancel for " . $j->id . " " . $j->worker_id);
             command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
         }
         _job_skip_children($j->id);
@@ -1128,7 +1085,7 @@ sub command_enqueue {
 
     die "invalid command\n" unless exists $worker_commands{$args{command}};
     if (ref $worker_commands{$args{command}} eq 'CODE') {
-        my $rs = schema->resultset("Workers");
+        my $rs     = schema->resultset("Workers");
         my $worker = $rs->find($args{workerid});
         $worker_commands{$args{command}}->($worker);
     }
@@ -1149,7 +1106,7 @@ sub asset_list {
     if ($args{limit}) {
         $attrs{rows} = $args{limit};
     }
-    $attrs{page} = $args{page}||0;
+    $attrs{page} = $args{page} || 0;
 
     if ($args{type}) {
         $cond{type} = $args{type};
@@ -1185,13 +1142,13 @@ sub asset_delete {
 sub asset_register {
     my %args = @_;
 
-    my $type = $args{type}//'';
+    my $type = $args{type} // '';
 
     unless ($OpenQA::Schema::Result::Assets::types{$type}) {
         warn "asset type '$type' invalid";
         return undef;
     }
-    my $name = $args{name}//'';
+    my $name = $args{name} // '';
     unless ($name && $name =~ /^[0-9A-Za-z+-._]+$/ && -e join('/', $OpenQA::Utils::assetdir, $type, $name)) {
         warn "asset name '$name' invalid or does not exist";
         return undef;
@@ -1203,8 +1160,7 @@ sub asset_register {
         },
         {
             key => 'assets_type_name',
-        }
-    );
+        });
     return $asset;
 }
 

@@ -34,7 +34,7 @@ SKIP: {
 
     my $get = $t->get_ok("/tests/99938/modules/$test_name/steps/1/src")->status_is(200);
     $get->content_like(qr|inst\.d/.*$test_name.pm|i, "$test_name test source found");
-    $get->content_like(qr/ISO_MAXSIZE/i, "$test_name test source shown");
+    $get->content_like(qr/ISO_MAXSIZE/i,             "$test_name test source shown");
 }
 
 done_testing();

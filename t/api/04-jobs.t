@@ -28,8 +28,8 @@ use Digest::MD5;
 
 sub calculate_file_md5($) {
     my ($file) = @_;
-    my $c = OpenQA::Utils::file_content($file);
-    my $md5 = Digest::MD5->new;
+    my $c      = OpenQA::Utils::file_content($file);
+    my $md5    = Digest::MD5->new;
     $md5->add($c);
     return $md5->hexdigest;
 }
@@ -60,14 +60,14 @@ $t->app($app);
 # 99926 done       no clone
 
 # First, let's try /jobs and ensure the initial state
-my $get = $t->get_ok('/api/v1/jobs');
-my @jobs = @{$get->tx->res->json->{jobs}};
+my $get        = $t->get_ok('/api/v1/jobs');
+my @jobs       = @{$get->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
 is $jobs_count, 11;
 my %jobs = map { $_->{id} => $_ } @jobs;
-is $jobs{99981}->{state}, 'cancelled';
-is $jobs{99963}->{state}, 'running';
-is $jobs{99927}->{state}, 'scheduled';
+is $jobs{99981}->{state},    'cancelled';
+is $jobs{99963}->{state},    'running';
+is $jobs{99927}->{state},    'scheduled';
 is $jobs{99946}->{clone_id}, undef;
 is $jobs{99963}->{clone_id}, undef;
 
@@ -85,14 +85,14 @@ $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'foo b
 is scalar(@{$get->tx->res->json->{jobs}}), 0;
 
 # Test /jobs/restart
-my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927] })->status_is(200);
+my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927]})->status_is(200);
 
 $get = $t->get_ok('/api/v1/jobs');
 my @new_jobs = @{$get->tx->res->json->{jobs}};
 is scalar(@new_jobs), $jobs_count + 4, '4 new jobs - for 81, 63, 46 and 61 from dependency';
 my %new_jobs = map { $_->{id} => $_ } @new_jobs;
-is $new_jobs{99981}->{state}, 'cancelled';
-is $new_jobs{99927}->{state}, 'scheduled';
+is $new_jobs{99981}->{state},      'cancelled';
+is $new_jobs{99927}->{state},      'scheduled';
 isnt $new_jobs{99946}->{clone_id}, undef;
 isnt $new_jobs{99963}->{clone_id}, undef;
 isnt $new_jobs{99981}->{clone_id}, undef;
@@ -105,24 +105,24 @@ is scalar(@{$get->tx->res->json->{jobs}}), 9;
 $get = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
 is $get->tx->res->json->{job}->{clone_id}, undef;
 $post = $t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
-$get = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+$get  = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
 isnt $get->tx->res->json->{job}->{clone_id}, undef;
 
 use File::Temp;
 my ($fh, $filename) = File::Temp::tempfile(UNLINK => 1);
-seek($fh, 20 * 1024 * 1024, 0); # create 200MB quick
-syswrite($fh, "X" );
+seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
+syswrite($fh, "X");
 close($fh);
 
 my $rp = "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/video.ogv";
-unlink($rp); # make sure previous tests don't fool us
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>{ file => { file => $filename, filename => 'video.ogv' } })->status_is(200);
+unlink($rp);                       # make sure previous tests don't fool us
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'video.ogv'}})->status_is(200);
 
 isnt -e $rp, undef, "video exist after";
 is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
 
 $rp = "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/y2logs.tar.bz2";
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>{ file => { file => $filename, filename => 'y2logs.tar.bz2' }, ulog => 1 })->status_is(200);
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'y2logs.tar.bz2'}, ulog => 1})->status_is(200);
 $post->content_is('OK');
 isnt -e $rp, undef, "logs exist after";
 is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");

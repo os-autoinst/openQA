@@ -23,7 +23,7 @@ __PACKAGE__->table('job_templates');
 __PACKAGE__->load_components(qw/Timestamps/);
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type         => 'integer',
         is_auto_increment => 1,
     },
     product_id => {
@@ -39,22 +39,22 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
     },
     group_id => {
-        data_type => 'integer',
+        data_type      => 'integer',
         is_foreign_key => 1,
     },
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->belongs_to(product => 'OpenQA::Schema::Result::Products', 'product_id');
-__PACKAGE__->belongs_to(machine => 'OpenQA::Schema::Result::Machines', 'machine_id');
+__PACKAGE__->belongs_to(product    => 'OpenQA::Schema::Result::Products',   'product_id');
+__PACKAGE__->belongs_to(machine    => 'OpenQA::Schema::Result::Machines',   'machine_id');
 __PACKAGE__->belongs_to(test_suite => 'OpenQA::Schema::Result::TestSuites', 'test_suite_id');
-__PACKAGE__->belongs_to(group => 'OpenQA::Schema::Result::JobGroups', 'group_id');
+__PACKAGE__->belongs_to(group      => 'OpenQA::Schema::Result::JobGroups',  'group_id');
 __PACKAGE__->add_unique_constraint([qw/product_id machine_id test_suite_id/]);
 
 sub variables {
     my $self = shift;
 
-    $self->machine->variables.$self->test_suite->variables.$self->product->variables;
+    $self->machine->variables . $self->test_suite->variables . $self->product->variables;
 }
 
 1;

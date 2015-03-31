@@ -43,13 +43,12 @@ sub new {
 
         # ARGL, we can't fake the current time and the db manages
         # t_started so we have to override it manually
-        my $r = $schema->resultset("Jobs")->search({ id => 99937 })->update(
+        my $r = $schema->resultset("Jobs")->search({id => 99937})->update(
             {
-                t_created => time2str('%Y-%m-%d %H:%M:%S', time-540000, 'UTC'),  # 150 hours ago;
-            }
-        );
+                t_created => time2str('%Y-%m-%d %H:%M:%S', time - 540000, 'UTC'),    # 150 hours ago;
+            });
 
-        OpenQA::Test::Testresults->new->create(directory => $tdirname.'testresults');
+        OpenQA::Test::Testresults->new->create(directory => $tdirname . 'testresults');
     }
 
     sub login {
@@ -81,7 +80,7 @@ sub new {
             # XXX_: we can't do this because the test server runs on
             # http so the Mojo useragent doesn't use the cookie
             #$cookie->secure(1);
-            $cookie->value("$value--".hmac_sha1_sum($value, $secret));
+            $cookie->value("$value--" . hmac_sha1_sum($value, $secret));
         }
 
         return 1;

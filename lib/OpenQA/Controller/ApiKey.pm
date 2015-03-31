@@ -30,7 +30,7 @@ sub create {
     my $user = $self->current_user;
     my $expiration;
     my $validation = $self->validation;
-    my $re = qr/^\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2}(?::\d{2})?)?$/a;
+    my $re         = qr/^\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2}(?::\d{2})?)?$/a;
     $validation->optional('t_expiration')->like($re);
     my $error;
     if ($validation->has_error) {
@@ -55,7 +55,7 @@ sub create {
 sub destroy {
     my $self = shift;
     my $user = $self->current_user;
-    my $key = $user->find_related('api_keys', {id => $self->param('apikeyid')});
+    my $key  = $user->find_related('api_keys', {id => $self->param('apikeyid')});
 
     if ($key) {
         $key->delete;

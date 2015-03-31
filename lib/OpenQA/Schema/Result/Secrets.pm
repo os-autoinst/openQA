@@ -23,7 +23,7 @@ __PACKAGE__->table('secrets');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type         => 'integer',
         is_auto_increment => 1,
     },
     secret => {
@@ -35,7 +35,7 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/secret/]);
 
 sub new {
-    my ( $class, $attrs ) = @_;
+    my ($class, $attrs) = @_;
 
     $attrs->{secret} = db_helpers::rndhexU(32) unless $attrs->{secret};
 

@@ -29,7 +29,7 @@ sub {
     # [1] for deploy, [1,2] for upgrade or downgrade, probably used with _any
     my $versions = shift;
 
-    $schema->resultset('Dependencies')->populate([[qw/id name/],[ 0,'chained' ],]);
+    $schema->resultset('Dependencies')->populate([[qw/id name/], [0, 'chained'],]);
 
   }
   #);

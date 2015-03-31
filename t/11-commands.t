@@ -52,7 +52,7 @@ for my $cmd (@valid_commands) {
 }
 
 #issue invalid commands
-eval {OpenQA::Scheduler::command_enqueue(workerid => 1, command => 'foo');};
+eval { OpenQA::Scheduler::command_enqueue(workerid => 1, command => 'foo'); };
 ok($@, 'refuse invalid commands');
 
 $ws->finish_ok;
