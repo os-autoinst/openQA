@@ -31,29 +31,27 @@ sub {
 
     $schema->resultset('Products')->search(
         {
-            name => 'oS-NET-x86_64',
-            distri => 'opensuse',
-            flavor => 'NET',
-            arch => 'x86_64',
+            name      => 'oS-NET-x86_64',
+            distri    => 'opensuse',
+            flavor    => 'NET',
+            arch      => 'x86_64',
             variables => 'ISO_MAXSIZE=4_700_372_992',
         }
       )->update(
         {
             variables => 'ISO_MAXSIZE=737_280_000;NETBOOT=1',
-        }
-      );
+        });
     $schema->resultset('Products')->search(
         {
-            name => 'oS-NET-i586',
-            distri => 'opensuse',
-            flavor => 'NET',
-            arch => 'i586',
+            name      => 'oS-NET-i586',
+            distri    => 'opensuse',
+            flavor    => 'NET',
+            arch      => 'i586',
             variables => 'ISO_MAXSIZE=4_700_372_992',
         }
       )->update(
         {
             variables => 'ISO_MAXSIZE=737_280_000;NETBOOT=1',
-        }
-      );
+        });
   }
   #);

@@ -36,8 +36,8 @@ is_deeply(
     {
         global => {
             branding => "openSUSE",
-            scm => 'git',
-            hsts => '365',
+            scm      => 'git',
+            hsts     => '365',
         },
         auth => {
             method => 'Fake',
@@ -49,27 +49,26 @@ is_deeply(
             level => 'debug'
         },
         openid => {
-            provider => 'https://www.opensuse.org/openid/user/',
+            provider  => 'https://www.opensuse.org/openid/user/',
             httpsonly => '1',
         },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
-            proxy => 1,
+            proxy  => 1,
         },
-    }
-);
+    });
 
 $ENV{OPENQA_CONFIG} = 't';
-open(my $fd, '>', $ENV{OPENQA_CONFIG}.'/openqa.ini');
+open(my $fd, '>', $ENV{OPENQA_CONFIG} . '/openqa.ini');
 print $fd "[global]\n";
 print $fd "allowed_hosts=foo bar\n";
 print $fd "suse_mirror=http://blah/\n";
 close $fd;
 
 $t = Test::Mojo->new('OpenQA');
-ok($t->app->config->{'global'}->{'allowed_hosts'} eq 'foo bar', 'allowed hosts');
+ok($t->app->config->{'global'}->{'allowed_hosts'} eq 'foo bar',    'allowed hosts');
 ok($t->app->config->{'global'}->{'suse_mirror'} eq 'http://blah/', 'suse mirror');
 
-unlink($ENV{OPENQA_CONFIG}.'/openqa.ini');
+unlink($ENV{OPENQA_CONFIG} . '/openqa.ini');
 
 done_testing();

@@ -26,14 +26,14 @@ sub index {
 }
 
 sub update {
-    my ($self) = @_;
-    my $set = $self->db->resultset('Users');
-    my $is_admin = 0;
+    my ($self)      = @_;
+    my $set         = $self->db->resultset('Users');
+    my $is_admin    = 0;
     my $is_operator = 0;
     my $role = $self->param('role') // 'user';
 
     if ($role eq 'admin') {
-        $is_admin = 1;
+        $is_admin    = 1;
         $is_operator = 1;
     }
     elsif ($role eq 'operator') {
@@ -46,7 +46,7 @@ sub update {
     }
     else {
         $user->update({is_admin => $is_admin, is_operator => $is_operator});
-        $self->flash('info', 'User '. $user->nickname .' updated');
+        $self->flash('info', 'User ' . $user->nickname . ' updated');
     }
 
     $self->redirect_to($self->url_for('admin_users'));

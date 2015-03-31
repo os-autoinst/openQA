@@ -29,7 +29,7 @@ use OpenQA::Test::Database;
 use Test::More;
 
 sub list_jobs {
-    [ map { $_->to_hash() } OpenQA::Scheduler::query_jobs()->all ];
+    [map { $_->to_hash() } OpenQA::Scheduler::query_jobs()->all];
 }
 
 ok(OpenQA::Test::Database->new->create(), "create database") || BAIL_OUT("failed to create database");
@@ -48,7 +48,7 @@ $id = OpenQA::Scheduler::job_duplicate(jobid => 99926);
 ok(defined $id, "duplication works");
 
 my $jobs = list_jobs();
-is(@$jobs, @$current_jobs+1, "one more job after duplicating one job");
+is(@$jobs, @$current_jobs + 1, "one more job after duplicating one job");
 
 $current_jobs = $jobs;
 
@@ -78,11 +78,11 @@ $job1 = OpenQA::Scheduler::job_get(99927);
 is($job1->{state}, 'cancelled', "scheduled job cancelled after cancel");
 
 $job1 = OpenQA::Scheduler::job_get(99937);
-@ret = OpenQA::Scheduler::job_restart(99937);
+@ret  = OpenQA::Scheduler::job_restart(99937);
 $job2 = OpenQA::Scheduler::job_get(99937);
 
 is($job2->{clone_id}, 99983, "clone is tracked");
-$job1->{clone_id} = 99983; # Just for comparing
+$job1->{clone_id} = 99983;    # Just for comparing
 is_deeply($job1, $job2, "done job unchanged after restart");
 
 is(@ret, 1, "one job id returned");
@@ -93,14 +93,14 @@ is($job2->{state}, 'scheduled', "new job is scheduled");
 
 $jobs = list_jobs();
 
-is(@$jobs, @$current_jobs+1, "one more job after restarting done job");
+is(@$jobs, @$current_jobs + 1, "one more job after restarting done job");
 
 $current_jobs = $jobs;
 
 OpenQA::Scheduler::job_restart(99963);
 
 $jobs = list_jobs();
-is(@$jobs, @$current_jobs+2, "two more job after restarting running job with parallel dependency");
+is(@$jobs, @$current_jobs + 2, "two more job after restarting running job with parallel dependency");
 
 $job1 = OpenQA::Scheduler::job_get(99963);
 OpenQA::Scheduler::job_cancel(99963);

@@ -29,7 +29,7 @@ sub {
     # [1] for deploy, [1,2] for upgrade or downgrade, probably used with _any
     my $versions = shift;
 
-    $schema->resultset('JobStates')->populate([[qw/id name/],[ 5,'obsoleted'],]);
+    $schema->resultset('JobStates')->populate([[qw/id name/], [5, 'obsoleted'],]);
 
   }
   #);

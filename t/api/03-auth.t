@@ -31,7 +31,7 @@ OpenQA::Test::Case->new->init_data;
 my $t = Test::Mojo->new('OpenQA');
 
 # monkey-patch custom helper websocket_nok - copied from websocked_ok and altered
-sub Test::Mojo::websocket_nok{
+sub Test::Mojo::websocket_nok {
     my ($self, $url) = @_;
     local $Test::Builder::Level = $Test::Builder::Level + 1;
 
@@ -47,8 +47,7 @@ sub Test::Mojo::websocket_nok{
             $tx->on(binary => sub { push @{$self->{messages}}, [binary => pop] });
             $tx->on(text   => sub { push @{$self->{messages}}, [text   => pop] });
             Mojo::IOLoop->stop;
-        }
-    );
+        });
     Mojo::IOLoop->start;
 
     my $desc = encode 'UTF-8', "WebSocket handshake with $url should fail";

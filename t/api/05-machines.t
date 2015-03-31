@@ -42,58 +42,53 @@ is_deeply(
     {
         'Machines' => [
             {
-                'backend' => 'qemu',
-                'id' => 1001,
-                'name' => '32bit',
+                'backend'  => 'qemu',
+                'id'       => 1001,
+                'name'     => '32bit',
                 'settings' => [
                     {
-                        'key' => 'QEMUCPU',
+                        'key'   => 'QEMUCPU',
                         'value' => 'qemu32'
-                    }
-                ]
+                    }]
             },
             {
-                'backend' => 'qemu',
-                'id' => 1002,
-                'name' => '64bit',
+                'backend'  => 'qemu',
+                'id'       => 1002,
+                'name'     => '64bit',
                 'settings' => [
                     {
-                        'key' => 'QEMUCPU',
+                        'key'   => 'QEMUCPU',
                         'value' => 'qemu64'
-                    }
-                ]
+                    }]
             },
             {
-                'backend' => 'qemu',
-                'id' => 1008,
-                'name' => 'Laptop_64',
+                'backend'  => 'qemu',
+                'id'       => 1008,
+                'name'     => 'Laptop_64',
                 'settings' => [
                     {
-                        'key' => 'LAPTOP',
+                        'key'   => 'LAPTOP',
                         'value' => '1'
                     },
                     {
-                        'key' => 'QEMUCPU',
+                        'key'   => 'QEMUCPU',
                         'value' => 'qemu64'
-                    }
-                ]
-            }
-        ]
+                    }]}]
     },
     "Initial machines"
 ) || diag explain $get->tx->res->json;
 
 
-my $res = $t->post_ok('/api/v1/machines', form => { name => "testmachine" })->status_is(400); # missing backend
-$res = $t->post_ok('/api/v1/machines', form => { backend => "kde/usb" })->status_is(400); #missing name
+my $res = $t->post_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(400);    # missing backend
+$res = $t->post_ok('/api/v1/machines', form => {backend => "kde/usb"})->status_is(400);        #missing name
 
-$res = $t->post_ok('/api/v1/machines', form => { name => "testmachine", backend => "qemu", "settings[TEST]" => "val1", "settings[TEST2]" => "val1" })->status_is(200);
+$res = $t->post_ok('/api/v1/machines', form => {name => "testmachine", backend => "qemu", "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})->status_is(200);
 my $machine_id = $res->tx->res->json->{id};
 
-$res = $t->get_ok('/api/v1/machines', form => { name => "testmachine" })->status_is(200);
+$res = $t->get_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(200);
 is($res->tx->res->json->{Machines}->[0]->{id}, $machine_id);
 
-$res = $t->post_ok('/api/v1/machines', form => { name => "testmachine", backend => "qemu"})->status_is(400); #already exists
+$res = $t->post_ok('/api/v1/machines', form => {name => "testmachine", backend => "qemu"})->status_is(400);    #already exists
 
 $get = $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
 is_deeply(
@@ -101,26 +96,23 @@ is_deeply(
     {
         'Machines' => [
             {
-                'backend' => 'qemu',
-                'id' => $machine_id,
-                'name' => 'testmachine',
+                'backend'  => 'qemu',
+                'id'       => $machine_id,
+                'name'     => 'testmachine',
                 'settings' => [
                     {
-                        'key' => 'TEST',
+                        'key'   => 'TEST',
                         'value' => 'val1'
                     },
                     {
-                        'key' => 'TEST2',
+                        'key'   => 'TEST2',
                         'value' => 'val1'
-                    }
-                ]
-            }
-        ]
+                    }]}]
     },
     "Add machine"
 ) || diag explain $get->tx->res->json;
 
-$res = $t->put_ok("/api/v1/machines/$machine_id", form => { name => "testmachine", backend => "qemu", "settings[TEST2]" => "val1" })->status_is(200);
+$res = $t->put_ok("/api/v1/machines/$machine_id", form => {name => "testmachine", backend => "qemu", "settings[TEST2]" => "val1"})->status_is(200);
 
 $get = $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
 is_deeply(
@@ -128,22 +120,19 @@ is_deeply(
     {
         'Machines' => [
             {
-                'backend' => 'qemu',
-                'id' => $machine_id,
-                'name' => 'testmachine',
+                'backend'  => 'qemu',
+                'id'       => $machine_id,
+                'name'     => 'testmachine',
                 'settings' => [
                     {
-                        'key' => 'TEST2',
+                        'key'   => 'TEST2',
                         'value' => 'val1'
-                    }
-                ]
-            }
-        ]
+                    }]}]
     },
     "Delete machine variable"
 ) || diag explain $get->tx->res->json;
 
 $res = $t->delete_ok("/api/v1/machines/$machine_id")->status_is(200);
-$res = $t->delete_ok("/api/v1/machines/$machine_id")->status_is(404); #not found
+$res = $t->delete_ok("/api/v1/machines/$machine_id")->status_is(404);    #not found
 
 done_testing();

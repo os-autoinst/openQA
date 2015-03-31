@@ -26,9 +26,9 @@ sub list {
     my $self = shift;
 
     my $match;
-    if(defined($self->param('match'))) {
+    if (defined($self->param('match'))) {
         $match = $self->param('match');
-        $match =~ s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g; # sanitize
+        $match =~ s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g;    # sanitize
     }
 
     my $scope = $self->param('scope');
@@ -39,12 +39,12 @@ sub list {
     my $groupid = $self->param('groupid');
 
     my $jobs = OpenQA::Scheduler::query_jobs(
-        state => 'done,cancelled',
-        match => $match,
-        scope => $scope,
+        state   => 'done,cancelled',
+        match   => $match,
+        scope   => $scope,
         assetid => $assetid,
         groupid => $groupid,
-        limit => 500,
+        limit   => 500,
         idsonly => 1
     );
     $self->stash(jobs => $jobs);
@@ -54,9 +54,9 @@ sub list {
     my @list;
     while (my $job = $running->next) {
         my $data = {
-            job => $job,
+            job          => $job,
             result_stats => $result_stats->{$job->id},
-            run_stat => $job->running_modinfo(),
+            run_stat     => $job->running_modinfo(),
         };
         push @list, $data;
     }
@@ -100,10 +100,8 @@ sub list_ajax {
 
     my $query = $self->db->resultset("JobSettings")->search(
         {
-            job_id => { in => \@ids },
-            key => { in => [qw/DISTRI VERSION ARCH FLAVOR BUILD MACHINE/] }
-        }
-    );
+            job_id => {in => \@ids},
+            key    => {in => [qw/DISTRI VERSION ARCH FLAVOR BUILD MACHINE/]}});
     while (my $s = $query->next) {
         $settings{$s->job_id}->{$s->key} = $s->value;
     }
@@ -112,38 +110,37 @@ sub list_ajax {
 
     for my $id (@ids) {
         $deps{$id} = {
-            parents => {'Chained' => [], 'Parallel' => []},
-            children => {'Chained' => [], 'Parallel' => []}
-        };
+            parents  => {'Chained' => [], 'Parallel' => []},
+            children => {'Chained' => [], 'Parallel' => []}};
     }
 
-    $query = $self->db->resultset("JobDependencies")->search([{ child_job_id => { in => \@ids } },{ parent_job_id => { in => \@ids } }]);
+    $query = $self->db->resultset("JobDependencies")->search([{child_job_id => {in => \@ids}}, {parent_job_id => {in => \@ids}}]);
 
     while (my $s = $query->next) {
         push(@{$deps{$s->parent_job_id}->{children}->{$s->to_string}}, $s->child_job_id);
-        push(@{$deps{$s->child_job_id}->{parents}->{$s->to_string}}, $s->parent_job_id);
+        push(@{$deps{$s->child_job_id}->{parents}->{$s->to_string}},   $s->parent_job_id);
     }
 
-    $jobs = $self->db->resultset("Jobs")->search({ id => { in => \@ids } },{ columns => [qw/id state clone_id test result group_id t_created/], order_by => ['me.id DESC'] });
+    $jobs = $self->db->resultset("Jobs")->search({id => {in => \@ids}}, {columns => [qw/id state clone_id test result group_id t_created/], order_by => ['me.id DESC']});
 
     my @list;
     while (my $job = $jobs->next) {
         my $data = {
-            "DT_RowId" => "job_" .  $job->id,
-            id => $job->id,
+            "DT_RowId"   => "job_" . $job->id,
+            id           => $job->id,
             result_stats => $result_stats->{$job->id},
-            deps => $deps{$job->id},
-            clone => $job->clone_id,
-            test => $job->test . "@" . $settings{$job->id}->{MACHINE} // '',
-            distri => $settings{$job->id}->{DISTRI} // '',
-            version => $settings{$job->id}->{VERSION} // '',
-            flavor => $settings{$job->id}->{FLAVOR} // '',
-            arch => $settings{$job->id}->{ARCH} // '',
-            build => $settings{$job->id}->{BUILD} // '',
-            testtime => $job->t_created,
-            result => $job->result,
-            group => $job->group_id,
-            state => $job->state
+            deps         => $deps{$job->id},
+            clone        => $job->clone_id,
+            test         => $job->test . "@" . $settings{$job->id}->{MACHINE} // '',
+            distri       => $settings{$job->id}->{DISTRI} // '',
+            version      => $settings{$job->id}->{VERSION} // '',
+            flavor       => $settings{$job->id}->{FLAVOR} // '',
+            arch         => $settings{$job->id}->{ARCH} // '',
+            build        => $settings{$job->id}->{BUILD} // '',
+            testtime     => $job->t_created,
+            result       => $job->result,
+            group        => $job->group_id,
+            state        => $job->state
         };
         push @list, $data;
     }
@@ -156,7 +153,7 @@ sub test_uploadlog_list($) {
     my $testresdir = shift;
     my @filelist;
     for my $f (<$testresdir/ulogs/*>) {
-        $f=~s#.*/##;
+        $f =~ s#.*/##;
         push(@filelist, $f);
     }
     return @filelist;
@@ -169,7 +166,7 @@ sub test_resultfile_list($) {
     my @filelist = qw(video.ogv vars.json backend.json serial0.txt autoinst-log.txt);
     my @filelist_existing;
     for my $f (@filelist) {
-        if(-e "$testresdir/$f") {
+        if (-e "$testresdir/$f") {
             push(@filelist_existing, $f);
         }
     }
@@ -192,10 +189,10 @@ sub read_test_modules {
         my $num = 1;
         for my $img (@{$module->details}) {
             $img->{num} = $num++;
-            if( $img->{screenshot} ) {
+            if ($img->{screenshot}) {
                 push(@imglist, $img);
             }
-            elsif( $img->{audio} ) {
+            elsif ($img->{audio}) {
                 push(@wavlist, $img);
             }
         }
@@ -205,7 +202,7 @@ sub read_test_modules {
         for my $ocrpath (<$testresultdir/$name-[0-9]*.txt>) {
             $ocrpath = data_name($ocrpath);
             my $ocrscreenshotid = $ocrpath;
-            $ocrscreenshotid=~s/^\w+-(\d+)/$1/;
+            $ocrscreenshotid =~ s/^\w+-(\d+)/$1/;
             my $ocrres = $module->{screenshots}->[--$ocrscreenshotid]->{ocr_result} || 'na';
             push(@ocrlist, {name => $ocrpath, result => $ocrres});
         }
@@ -213,17 +210,16 @@ sub read_test_modules {
         push(
             @modlist,
             {
-                name => $module->name,
-                result => $module->result,
-                screenshots => \@imglist,
-                wavs => \@wavlist,
-                ocrs => \@ocrlist,
+                name         => $module->name,
+                result       => $module->result,
+                screenshots  => \@imglist,
+                wavs         => \@wavlist,
+                ocrs         => \@ocrlist,
                 soft_failure => $module->soft_failure,
-                milestone => $module->milestone,
-                important => $module->important,
-                fatal => $module->fatal
-            }
-        );
+                milestone    => $module->milestone,
+                important    => $module->important,
+                fatal        => $module->fatal
+            });
     }
 
     return \@modlist;
@@ -238,48 +234,47 @@ sub show {
         {
             'id' => $self->param('testid')
         },
-        { 'prefetch' => qw/jobs_assets/ }
-    )->first;
+        {'prefetch' => qw/jobs_assets/})->first;
 
     return $self->reply->not_found unless $job;
 
     $self->stash(testname => $job->settings_hash->{NAME});
-    $self->stash(distri => $job->settings_hash->{DISTRI});
-    $self->stash(version => $job->settings_hash->{VERSION});
-    $self->stash(build => $job->settings_hash->{BUILD});
+    $self->stash(distri   => $job->settings_hash->{DISTRI});
+    $self->stash(version  => $job->settings_hash->{VERSION});
+    $self->stash(build    => $job->settings_hash->{BUILD});
 
     #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
 
     # If it's running
     if ($job->state =~ /^(?:running|waiting)$/) {
         $self->stash(worker => $job->worker);
-        $self->stash(job => $job);
+        $self->stash(job    => $job);
         $self->stash('backend_info', decode_json($job->backend_info || '{}'));
         $self->render('test/running');
         return;
     }
 
-    my $clone_of = $self->app->schema->resultset("Jobs")->find({ clone_id => $job->id });
+    my $clone_of = $self->app->schema->resultset("Jobs")->find({clone_id => $job->id});
 
     my $modlist = read_test_modules($job);
-    $self->stash(job => $job);
+    $self->stash(job      => $job);
     $self->stash(clone_of => $clone_of);
-    $self->stash(modlist => $modlist);
+    $self->stash(modlist  => $modlist);
 
     my $rd = $job->result_dir();
-    if ($rd) { # saved anything
-        # result files box
+    if ($rd) {    # saved anything
+                  # result files box
         my @resultfiles = test_resultfile_list($job->result_dir());
 
         # uploaded logs box
         my @ulogs = test_uploadlog_list($job->result_dir());
 
         $self->stash(resultfiles => \@resultfiles);
-        $self->stash(ulogs => \@ulogs);
+        $self->stash(ulogs       => \@ulogs);
     }
     else {
         $self->stash(resultfiles => []);
-        $self->stash(ulogs => []);
+        $self->stash(ulogs       => []);
     }
 
     $self->render('test/result');
@@ -310,7 +305,7 @@ sub _caclulate_preferred_machines {
 # Custom action enabling the openSUSE Release Team
 # to see the quality at a glance
 sub overview {
-    my $self  = shift;
+    my $self       = shift;
     my $validation = $self->validation;
 
     my %search_args;
@@ -324,7 +319,7 @@ sub overview {
         $search_args{groupid} = $group->id;
     }
     elsif ($self->param('group')) {
-        $group = $self->db->resultset("JobGroups")->find({ name => $self->param('group') });
+        $group = $self->db->resultset("JobGroups")->find({name => $self->param('group')});
         return $self->reply->not_found if (!$group);
         $search_args{groupid} = $group->id;
     }
@@ -334,7 +329,7 @@ sub overview {
         if ($validation->has_error) {
             return $self->render(text => 'Missing parameters', status => 404);
         }
-        $distri = $self->param('distri');
+        $distri  = $self->param('distri');
         $version = $self->param('version');
 
         %search_args = (distri => $distri, version => $version);
@@ -350,18 +345,18 @@ sub overview {
         $build = $self->db->resultset("Jobs")->latest_build(%search_args);
     }
 
-    $search_args{build} = $build;
+    $search_args{build}       = $build;
     $search_args{fulldetails} = 1;
-    $search_args{scope} = 'current';
+    $search_args{scope}       = 'current';
 
-    my @configs = ();
-    my %archs   = ();
-    my %results = ();
+    my @configs    = ();
+    my %archs      = ();
+    my %results    = ();
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
 
     my $jobs = OpenQA::Scheduler::query_jobs(%search_args);
 
-    my $all_result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
+    my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
     my $preferred_machines = _caclulate_preferred_machines($jobs);
 
     while (my $job = $jobs->next) {
@@ -369,31 +364,31 @@ sub overview {
         my $testname = $settings->{NAME};
         my $test     = $job->test;
         my $flavor   = $settings->{FLAVOR} || 'sweet';
-        my $arch     = $settings->{ARCH}   || 'noarch';
+        my $arch     = $settings->{ARCH} || 'noarch';
 
         my $result;
-        if ( $job->state eq 'done' ) {
+        if ($job->state eq 'done') {
             my $result_stats = $all_result_stats->{$job->id};
             my $overall      = $job->result;
-            if ( $job->result eq "passed" && $result_stats->{dents} ) {
+            if ($job->result eq "passed" && $result_stats->{dents}) {
                 $overall = "softfail";
             }
             $result = {
-                passed  => $result_stats->{passed},
-                unknown => $result_stats->{unk},
-                failed  => $result_stats->{failed},
-                dents   => $result_stats->{dents},
-                overall => $overall,
-                jobid   => $job->id,
-                state   => "done",
+                passed   => $result_stats->{passed},
+                unknown  => $result_stats->{unk},
+                failed   => $result_stats->{failed},
+                dents    => $result_stats->{dents},
+                overall  => $overall,
+                jobid    => $job->id,
+                state    => "done",
                 failures => $job->failed_modules_with_needles(),
             };
             $aggregated->{$overall}++;
         }
-        elsif ( $job->state eq 'running' ) {
+        elsif ($job->state eq 'running') {
             $result = {
-                state    => "running",
-                jobid    => $job->id,
+                state => "running",
+                jobid => $job->id,
             };
             $aggregated->{running}++;
         }
@@ -403,7 +398,7 @@ sub overview {
                 jobid    => $job->id,
                 priority => $job->priority,
             };
-            if ( $job->state eq 'scheduled' ) {
+            if ($job->state eq 'scheduled') {
                 $aggregated->{scheduled}++;
             }
             else {
@@ -415,9 +410,9 @@ sub overview {
         if ($preferred_machines->{$settings->{ARCH}} ne $settings->{MACHINE}) {
             $test .= "@" . $settings->{MACHINE};
         }
-        push( @configs, $test ) unless ( grep { $test eq $_ } @configs );
+        push(@configs, $test) unless (grep { $test eq $_ } @configs);
         $archs{$flavor} = [] unless $archs{$flavor};
-        push( @{ $archs{$flavor} }, $arch ) unless ( grep { $arch eq $_ } @{ $archs{$flavor} } );
+        push(@{$archs{$flavor}}, $arch) unless (grep { $arch eq $_ } @{$archs{$flavor}});
 
         # Populate %results
         $results{$test} = {} unless $results{$test};
@@ -430,19 +425,19 @@ sub overview {
     @types   = sort @types;
     @configs = sort @configs;
     for my $flavor (@types) {
-        my @sorted = sort( @{ $archs{$flavor} } );
+        my @sorted = sort(@{$archs{$flavor}});
         $archs{$flavor} = \@sorted;
     }
 
     $self->stash(
-        build   => $build,
-        version => $version,
-        distri => $distri,
-        group => $group,
-        configs => \@configs,
-        types   => \@types,
-        archs   => \%archs,
-        results => \%results,
+        build      => $build,
+        version    => $version,
+        distri     => $distri,
+        group      => $group,
+        configs    => \@configs,
+        types      => \@types,
+        archs      => \%archs,
+        results    => \%results,
         aggregated => $aggregated
     );
 }

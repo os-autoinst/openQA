@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA');
 
 my $mordred_id = 'https://openid.badguys.uk/mordred';
 my $user = $t->app->db->resultset("Users")->create({username => $mordred_id});
-ok(!$user->is_admin, 'new users are not admin by default');
+ok(!$user->is_admin,    'new users are not admin by default');
 ok(!$user->is_operator, 'new users are not operator by default');
 
 done_testing();

@@ -29,26 +29,26 @@ sub {
     # The admin has to change that later but at least jobs won't get
     # created without any class then
     my %worker_name_class_mapping = (
-        '32bit' => 'qemu_i586',
-        "64bit" => 'qemu_x86_64',
-        "uefi" => 'qemu_x86_64',
-        "uefi-suse" => 'qemu_x86_64',
-        "Laptop_32" => 'qemu_i586',
-        "Laptop_64" => 'qemu_x86_64',
+        '32bit'      => 'qemu_i586',
+        "64bit"      => 'qemu_x86_64',
+        "uefi"       => 'qemu_x86_64',
+        "uefi-suse"  => 'qemu_x86_64',
+        "Laptop_32"  => 'qemu_i586',
+        "Laptop_64"  => 'qemu_x86_64',
         "USBboot_32" => 'qemu_i586',
         "USBboot_64" => 'qemu_x86_64',
-        "smp_32" => 'qemu_i586',
-        "smp_64" => 'qemu_x86_64',
+        "smp_32"     => 'qemu_i586',
+        "smp_64"     => 'qemu_x86_64',
     );
-    my $workers_with_class = $schema->resultset('Machines')->search({ 'settings.key' => 'WORKER_CLASS'},{ columns => ['id'], join => ['settings']})->as_query;
-    my $rs = $schema->resultset('Machines')->search({ id => {  -not_in => $workers_with_class } },);
+    my $workers_with_class = $schema->resultset('Machines')->search({'settings.key' => 'WORKER_CLASS'}, {columns => ['id'], join => ['settings']})->as_query;
+    my $rs = $schema->resultset('Machines')->search({id => {-not_in => $workers_with_class}},);
     while (my $r = $rs->next()) {
         my $class;
         if (exists $worker_name_class_mapping{$r->name}) {
             $class = $worker_name_class_mapping{$r->name};
         }
         else {
-            $class = 'qemu_'.$r->name;
+            $class = 'qemu_' . $r->name;
         }
         printf "%s %s: added %s\n", $r->id, $r->name, $class;
         my $result = $r->settings->create({key => 'WORKER_CLASS', value => $class});
@@ -59,13 +59,13 @@ sub {
 
     # set a worker class on all scheduled jobs so they won't suddely get
     # dispatched to any worker.
-    my $jobs_with_class = $schema->resultset('Jobs')->search({ 'settings.key' => 'WORKER_CLASS'},{ columns => ['id'], join => ['settings']})->as_query;
-    $rs = $schema->resultset('Jobs')->search({ id => {  -not_in => $jobs_with_class }, state => 'scheduled' },);
+    my $jobs_with_class = $schema->resultset('Jobs')->search({'settings.key' => 'WORKER_CLASS'}, {columns => ['id'], join => ['settings']})->as_query;
+    $rs = $schema->resultset('Jobs')->search({id => {-not_in => $jobs_with_class}, state => 'scheduled'},);
     while (my $r = $rs->next()) {
         my $arch = $r->settings->find({key => 'ARCH'});
         next unless $arch;
         $arch = $arch->value;
-        my $result = $schema->resultset('JobSettings')->create({ job_id => $r->id, key => 'WORKER_CLASS', value => 'qemu_'.$arch});
+        my $result = $schema->resultset('JobSettings')->create({job_id => $r->id, key => 'WORKER_CLASS', value => 'qemu_' . $arch});
         unless ($result) {
             warn "failed to set WORKER_CLASS on job $r->id";
             next;

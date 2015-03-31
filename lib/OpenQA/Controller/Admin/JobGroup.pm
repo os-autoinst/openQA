@@ -31,7 +31,7 @@ sub create {
 
     my $ng = $self->db->resultset("JobGroups")->create({name => $self->param('name')});
     if ($ng) {
-        $self->flash('info', 'Group '. $ng->name .' created');
+        $self->flash('info', 'Group ' . $ng->name . ' created');
     }
     $self->redirect_to(action => 'index');
 }
@@ -59,12 +59,11 @@ sub save_connect {
     my $group = $self->db->resultset("JobGroups")->find($self->param('groupid'));
 
     my $values = {
-        prio => $self->param('prio')//50,
-        product_id => $self->param('medium'),
-        machine_id => $self->param('machine'),
-        group_id => $group->id,
-        test_suite_id => $self->param('test')
-    };
+        prio => $self->param('prio') // 50,
+        product_id    => $self->param('medium'),
+        machine_id    => $self->param('machine'),
+        group_id      => $group->id,
+        test_suite_id => $self->param('test')};
     eval { $self->db->resultset("JobTemplates")->create($values)->id };
     if ($@) {
         $self->flash(error => $@);

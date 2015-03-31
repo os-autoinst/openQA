@@ -26,7 +26,7 @@ __PACKAGE__->table('assets');
 __PACKAGE__->load_components(qw/Timestamps/);
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type         => 'integer',
         is_auto_increment => 1,
     },
     type => {
@@ -36,10 +36,9 @@ __PACKAGE__->add_columns(
         data_type => 'text',
     },
     size => {
-        data_type => 'bigint',
+        data_type   => 'bigint',
         is_nullable => 1
-    }
-);
+    });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/type name/]);
@@ -48,11 +47,11 @@ __PACKAGE__->many_to_many(jobs => 'jobs_assets', 'job');
 
 
 sub _getDirSize {
-    my ($dir, $size)  = @_;
+    my ($dir, $size) = @_;
     $size //= 0;
 
     opendir(my $dh, $dir) || return 0;
-    for my $dirContent (grep(!/^\.\.?/,readdir($dh))) {
+    for my $dirContent (grep(!/^\.\.?/, readdir($dh))) {
 
         $dirContent = "$dir/$dirContent";
 
@@ -94,7 +93,7 @@ sub ensure_size {
     return $self->size if defined($self->size);
 
     my $size = 0;
-    my @st = stat($self->disk_file);
+    my @st   = stat($self->disk_file);
     if (@st) {
         if ($self->type eq 'iso') {
             $size = $st[7];
@@ -110,7 +109,7 @@ sub ensure_size {
 # this is a GRU task - abusing the namespace
 sub limit_assets {
     my ($app) = @_;
-    my $groups = $app->db->resultset('JobGroups')->search({}, { select => [qw/id size_limit_gb/] });
+    my $groups = $app->db->resultset('JobGroups')->search({}, {select => [qw/id size_limit_gb/]});
     my %toremove;
     my %keep;
 
@@ -120,16 +119,15 @@ sub limit_assets {
     # to the admin to configure the size limit)
     while (my $g = $groups->next) {
         my $sizelimit = $g->size_limit_gb * 1024 * 1024 * 1024;
-        my $assets = $app->db->resultset('JobsAssets')->search(
+        my $assets    = $app->db->resultset('JobsAssets')->search(
             {
-                job_id => { -in => $g->jobs->get_column('id')->as_query },
+                job_id => {-in => $g->jobs->get_column('id')->as_query},
                 'asset.type' => ['iso', 'repo']
             },
             {
                 prefetch => 'asset',
                 order_by => 'asset.t_created desc',
-            }
-        );
+            });
         my %seen_asset;
         while (my $a = $assets->next) {
             # distinct is a bit too tricky
@@ -148,7 +146,7 @@ sub limit_assets {
     for my $id (keys %keep) {
         delete $toremove{$id};
     }
-    my $assets = $app->db->resultset('Assets')->search({ id => { in => [ sort keys %toremove ] }}, { order_by => qw/t_created/ });
+    my $assets = $app->db->resultset('Assets')->search({id => {in => [sort keys %toremove]}}, {order_by => qw/t_created/});
     while (my $a = $assets->next) {
         $a->remove_from_disk;
         $a->delete;

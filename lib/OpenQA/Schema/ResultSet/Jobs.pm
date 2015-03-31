@@ -39,27 +39,26 @@ sub latest_build {
     my @conds;
     my %attrs;
     my $rsource = $self->result_source;
-    my $schema = $rsource->schema;
+    my $schema  = $rsource->schema;
 
     my $groupid = delete $args{groupid};
     if (defined $groupid) {
-        push(@conds, {'me.group_id' => $groupid } );
+        push(@conds, {'me.group_id' => $groupid});
     }
 
-    $attrs{join} = 'settings';
-    $attrs{rows} = 1;
-    $attrs{order_by} = { -desc => 'me.id' }; # More reliable for tests than t_created
-    $attrs{columns} = [ { value => 'settings.value'} ];
+    $attrs{join}     = 'settings';
+    $attrs{rows}     = 1;
+    $attrs{order_by} = {-desc => 'me.id'};              # More reliable for tests than t_created
+    $attrs{columns}  = [{value => 'settings.value'}];
     push(@conds, {'settings.key' => {'=' => 'BUILD'}});
 
-    while (my($k, $v) = each %args) {
+    while (my ($k, $v) = each %args) {
         my $subquery = $schema->resultset("JobSettings")->search(
             {
-                key => uc($k),
+                key   => uc($k),
                 value => $v
-            }
-        );
-        push(@conds, { 'me.id' => { -in => $subquery->get_column('job_id')->as_query }});
+            });
+        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
 
     my $rs = $self->search({-and => \@conds}, \%attrs);

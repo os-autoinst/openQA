@@ -32,8 +32,8 @@ sub _get_lock {
     # We need to get owner of the lock
     # owner can be one of the parents or ourselves if we have no parent
     my $lock;
-    my @maybeowners = map {$_->id} ($job->parents->all, $job);
-    return $schema->resultset('JobLocks')->search({name => $name, owner => { -in => \@maybeowners} })->single;
+    my @maybeowners = map { $_->id } ($job->parents->all, $job);
+    return $schema->resultset('JobLocks')->search({name => $name, owner => {-in => \@maybeowners}})->single;
 }
 
 # returns undef on error, 1 on have lock, 0 on try later (lock unavailable)

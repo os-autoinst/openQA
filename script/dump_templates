@@ -89,18 +89,18 @@ sub usage($) {
     exit $_[0];
 }
 
-GetOptions(\%options, "json", "tmp","host=s","apibase=s","apikey:s","apisecret:s","help|h",) or usage(1);
+GetOptions(\%options, "json", "tmp", "host=s", "apibase=s", "apikey:s", "apisecret:s", "help|h",) or usage(1);
 
 usage(0) if $options{help};
 
 if (@ARGV) {
     my %want = map { $_ => 1 } @ARGV;
     for my $t (keys %tables) {
-        $tables{$t} = $want{$t}?1:0;
+        $tables{$t} = $want{$t} ? 1 : 0;
     }
 }
 
-$options{'host'} ||= 'localhost';
+$options{'host'}    ||= 'localhost';
 $options{'apibase'} ||= '/api/v1';
 
 my $url;
@@ -137,10 +137,10 @@ for my $table (qw/Machines TestSuites Products JobTemplates/) {
 
 
 for my $table (keys %result) {
-    for my $i (0..$#{$result{$table}}) {
+    for my $i (0 .. $#{$result{$table}}) {
         delete $result{$table}->[$i]->{id};
         if ($result{$table}->[$i]->{settings}) {
-            for my $s (0..$#{$result{$table}->[$i]->{settings}}) {
+            for my $s (0 .. $#{$result{$table}->[$i]->{settings}}) {
                 delete $result{$table}->[$i]->{settings}->[$s]->{id};
             }
         }

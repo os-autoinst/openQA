@@ -30,10 +30,10 @@ use OpenQA::Schema::Schema;
 use Getopt::Long;
 use IO::Dir;
 
-my $help=0;
-my $prepare_init=0;
-my $init_database=0;
-my $force=0;
+my $help          = 0;
+my $prepare_init  = 0;
+my $init_database = 0;
+my $force         = 0;
 my $user;
 
 my $result = GetOptions(
@@ -45,7 +45,7 @@ my $result = GetOptions(
 );
 
 if (!$prepare_init and !$init_database) {
-    $help=1;
+    $help = 1;
 }
 
 if ($help) {
@@ -67,8 +67,8 @@ if ($user) {
 }
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
-my @databases = qw( MySQL SQLite PostgreSQL );
-my $schema = OpenQA::Schema::connect_db();
+my @databases        = qw( MySQL SQLite PostgreSQL );
+my $schema           = OpenQA::Schema::connect_db();
 
 if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
     my $dbdir = dirname($1);
@@ -86,8 +86,7 @@ if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
         sub {
             my ($storage, $dbh, @args) = @_;
             $dbh->do("PRAGMA synchronous = OFF");
-        }
-    );
+        });
 }
 
 my $dh = DBIx::Class::DeploymentHandler->new(
@@ -95,19 +94,18 @@ my $dh = DBIx::Class::DeploymentHandler->new(
         schema              => $schema,
         script_directory    => $script_directory,
         databases           => \@databases,
-        sql_translator_args => { add_drop_table => 0, producer_args => { sqlite_version => '3.7' }},
+        sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}},
         force_overwrite     => $force,
-    }
-);
+    });
 
-my $version    = $dh->schema_version;
+my $version = $dh->schema_version;
 
 my %deploy_dir;
 if ($prepare_init) {
     foreach my $db (@databases) {
         tie %deploy_dir, 'IO::Dir', "$script_directory/$db/deploy";
 
-        if ( exists $deploy_dir{$version} and not $force) {
+        if (exists $deploy_dir{$version} and not $force) {
             print "The deploy directory already contains the schema for the current version.\n";
             print "Use the --force option if you want to overwrite the contents of the $script_directory/$db/deploy/$version directory\n";
             exit 1;

@@ -29,8 +29,8 @@ sub {
     # [1] for deploy, [1,2] for upgrade or downgrade, probably used with _any
     my $versions = shift;
 
-    my $rs = $schema->resultset('Products')->search({}, { columns => [qw/id variables/]});
-    my $data = [ [qw/product_id key value/]];
+    my $rs = $schema->resultset('Products')->search({}, {columns => [qw/id variables/]});
+    my $data = [[qw/product_id key value/]];
     while (my $r = $rs->next()) {
         my @vars = split(/;/, $r->variables);
         for (@vars) {
@@ -38,21 +38,21 @@ sub {
             if ($k eq 'ISO_MAXSIZE') {
                 $v =~ s/_//g;
             }
-            push @$data, [ $r->id, $k, $v];
+            push @$data, [$r->id, $k, $v];
         }
     }
-    $schema->resultset('Products')->update({ variables => ''});
+    $schema->resultset('Products')->update({variables => ''});
     $schema->resultset('ProductSettings')->populate($data);
 
-    $rs = $schema->resultset('Machines');
-    $data = [ [qw/machine_id key value/]];
+    $rs   = $schema->resultset('Machines');
+    $data = [[qw/machine_id key value/]];
     while (my $r = $rs->next()) {
         my @vars = split(/;/, $r->variables);
         for (@vars) {
-            push @$data, [ $r->id, split(/=/, $_, 2)];
+            push @$data, [$r->id, split(/=/, $_, 2)];
         }
     }
-    $schema->resultset('Machines')->update({ variables => ''});
+    $schema->resultset('Machines')->update({variables => ''});
     $schema->resultset('MachineSettings')->populate($data);
   }
   #);

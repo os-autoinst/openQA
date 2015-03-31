@@ -27,7 +27,7 @@ use base 'Mojolicious::Plugin';
 
 sub new {
     my $class = shift;
-    my $self = $class->SUPER::new(@_);
+    my $self  = $class->SUPER::new(@_);
     $self->{tasks} = {};
     my $app = shift;
     $self->{app} = $app;
@@ -42,7 +42,7 @@ sub register {
     push @{$app->commands->namespaces}, 'OpenQA::Plugin::Gru::Command';
 
     my $gru = OpenQA::Plugin::Gru->new($app);
-    $app->helper(gru => sub {$gru});
+    $app->helper(gru => sub { $gru });
 }
 
 sub add_task {
@@ -64,11 +64,9 @@ sub enqueue {
     $self->schema->resultset('GruTasks')->create(
         {
             taskname => $task,
-            args => $args,
+            args     => $args,
             priority => $options->{priority} // 0,
-            run_at => $options->{run_at} // now()
-        }
-    );
+            run_at   => $options->{run_at} // now()});
 }
 
 package OpenQA::Plugin::Gru::Command::gru;
@@ -90,9 +88,9 @@ sub cmd_list {
 sub run_first {
     my ($self) = @_;
 
-    my $dtf = $self->app->schema->storage->datetime_parser;
-    my $where = { run_at => { '<=',$dtf->format_datetime(DBIx::Class::Timestamps::now()) } };
-    my $first = $self->app->schema->resultset('GruTasks')->search($where,{ order_by => qw/id/ })->first;
+    my $dtf   = $self->app->schema->storage->datetime_parser;
+    my $where = {run_at => {'<=', $dtf->format_datetime(DBIx::Class::Timestamps::now())}};
+    my $first = $self->app->schema->resultset('GruTasks')->search($where, {order_by => qw/id/})->first;
 
     if ($first) {
         $self->app->log->debug(sprintf("Running Gru task %d(%s)", $first->id, $first->taskname));
@@ -125,7 +123,7 @@ sub cmd_run {
 sub run {
     # only fetch first 2 args
     my $self = shift;
-    my $cmd = shift;
+    my $cmd  = shift;
     if ($cmd eq 'list') {
         $self->cmd_list(@_);
         return;

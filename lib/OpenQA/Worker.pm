@@ -30,10 +30,10 @@ use OpenQA::Worker::Jobs;
 sub init {
     my ($worker_options, %options) = @_;
     $worker_settings = $worker_options;
-    $instance = $options{'instance'} if defined $options{'instance'};
-    $pooldir = OPENQA_BASE . '/pool/' . $instance;
-    $nocleanup = $options{'no-cleanup'};
-    $verbose = $options{'verbose'} if defined $options{'verbose'};
+    $instance        = $options{'instance'} if defined $options{'instance'};
+    $pooldir         = OPENQA_BASE . '/pool/' . $instance;
+    $nocleanup       = $options{'no-cleanup'};
+    $verbose         = $options{'verbose'} if defined $options{'verbose'};
 
     OpenQA::Worker::Common::api_init(\%options);
     OpenQA::Worker::Engines::isotovideo::set_engine_exec($options{'isotovideo'}) if $options{'isotovideo'};
@@ -53,7 +53,7 @@ sub main {
     return 0;
 }
 
-sub catch_exit{
+sub catch_exit {
     my ($sig) = @_;
     print STDERR "quit due to signal $sig\n";
     if ($job) {
@@ -64,8 +64,8 @@ sub catch_exit{
     }
 }
 
-$SIG{HUP} = \*catch_exit;
+$SIG{HUP}  = \*catch_exit;
 $SIG{TERM} = \*catch_exit;
-$SIG{INT} = \*catch_exit;
+$SIG{INT}  = \*catch_exit;
 
 1;

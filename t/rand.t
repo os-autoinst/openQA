@@ -24,42 +24,42 @@ use Test::More;
 my $r;
 my $r2;
 
-$r = rndstr;
+$r  = rndstr;
 $r2 = rndstr;
 is(length($r), 16, "length 16");
 like($r, qr/^\w+$/a, "rndstr only consists of word characters");
 is(length($r), length($r2), "same length");
 isnt($r, $r2, "rndstr produces different results");
 
-$r = rndstr 32;
+$r  = rndstr 32;
 $r2 = rndstr 32;
 is(length($r), 32, "length 32");
 like($r, qr/^\w+$/a, "rndstr only consists of word characters");
 is(length($r), length($r2), "same length");
 isnt($r, $r2, "rndstr produces different results");
 
-$r = rndhex;
+$r  = rndhex;
 $r2 = rndhex;
 is(length($r), 16, "length 16");
 like($r, qr/^[0-9A-F]+$/a, "rndhex only consists of hex characters");
 is(length($r), length($r2), "same length");
 isnt($r, $r2, "rndhex produces different results");
 
-$r = rndhex 32;
+$r  = rndhex 32;
 $r2 = rndhex 32;
 is(length($r), 32, "length 32");
 like($r, qr/^[0-9A-F]+$/a, "rndhex only consists of hex characters");
 is(length($r), length($r2), "same length");
 isnt($r, $r2, "rndhex produces different results");
 
-$r = rndstrU 256;
+$r  = rndstrU 256;
 $r2 = rndstrU 256;
 is(length($r), 256, "length 256");
 like($r, qr/^\w+$/a, "rndstrU only consists of word characters");
 is(length($r), length($r2), "same length");
 isnt($r, $r2, "rndstrU produces different results");
 
-$r = rndhexU 97;
+$r  = rndhexU 97;
 $r2 = rndhexU 97;
 is(length($r), 97, "length 97");
 like($r, qr/^[0-9A-F]+$/a, "rndhexU only consists of hex characters");

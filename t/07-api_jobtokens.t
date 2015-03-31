@@ -33,8 +33,7 @@ $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
         $tx->req->headers->add('X-API-JobToken' => 'token99963');
-    }
-);
+    });
 $t->get_ok('/api/v1/whoami')->status_is(200)->json_is({'id' => 99963});
 
 # test jobtoken login is not possible with wrong jobtoken
@@ -43,8 +42,7 @@ $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
         $tx->req->headers->add('X-API-JobToken' => 'wrongtoken');
-    }
-);
+    });
 $t->get_ok('/api/v1/whoami')->status_is(403);
 
 # and without jobtoken

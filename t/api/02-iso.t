@@ -38,7 +38,7 @@ $t->app($app);
 
 sub lj {
     return unless $ENV{HARNESS_IS_VERBOSE};
-    my $ret = $t->get_ok('/api/v1/jobs')->status_is(200);
+    my $ret  = $t->get_ok('/api/v1/jobs')->status_is(200);
     my @jobs = @{$ret->tx->res->json->{jobs}};
     for my $j (@jobs) {
         printf "%d %-10s %s\n", $j->{id}, $j->{state}, $j->{name};
@@ -89,41 +89,41 @@ lj;
 
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
-$ret = $t->post_ok('/api/v1/isos', form => { ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091' })->status_is(200);
+$ret = $t->post_ok('/api/v1/isos', form => {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'})->status_is(200);
 
 is($ret->tx->res->json->{count}, 10, "10 new jobs created");
 my @newids = @{$ret->tx->res->json->{ids}};
-my $newid = $newids[0];
+my $newid  = $newids[0];
 
 
 $ret = $t->get_ok('/api/v1/jobs');
 my @jobs = @{$ret->tx->res->json->{jobs}};
 
-my $server_32 = find_job(\@jobs, \@newids, 'server', '32bit');
-my $client1_32 = find_job(\@jobs, \@newids, 'client1', '32bit');
-my $client2_32 = find_job(\@jobs, \@newids, 'client2', '32bit');
+my $server_32       = find_job(\@jobs, \@newids, 'server',       '32bit');
+my $client1_32      = find_job(\@jobs, \@newids, 'client1',      '32bit');
+my $client2_32      = find_job(\@jobs, \@newids, 'client2',      '32bit');
 my $advanced_kde_32 = find_job(\@jobs, \@newids, 'advanced_kde', '32bit');
-my $kde_32 = find_job(\@jobs, \@newids, 'kde', '32bit');
-my $textmode_32 = find_job(\@jobs, \@newids, 'textmode', '32bit');
+my $kde_32          = find_job(\@jobs, \@newids, 'kde',          '32bit');
+my $textmode_32     = find_job(\@jobs, \@newids, 'textmode',     '32bit');
 
 is_deeply($client1_32->{parents}, [$server_32->{id}], "server_32 is only parent of client1_32");
 is_deeply($client2_32->{parents}, [$server_32->{id}], "server_32 is only parent of client2_32");
-is_deeply($server_32->{parents}, [], "server_32 has no parents");
+is_deeply($server_32->{parents},  [],                 "server_32 has no parents");
 is($kde_32, undef, "kde is not created for 32bit machine");
-is_deeply($advanced_kde_32->{parents}, [$textmode_32->{id}], "textmode_32 is only parent of advanced_kde_32"); # kde is not defined for 32bit machine
+is_deeply($advanced_kde_32->{parents}, [$textmode_32->{id}], "textmode_32 is only parent of advanced_kde_32");    # kde is not defined for 32bit machine
 
-my $server_64 = find_job(\@jobs, \@newids, 'server', '64bit');
-my $client1_64 = find_job(\@jobs, \@newids, 'client1', '64bit');
-my $client2_64 = find_job(\@jobs, \@newids, 'client2', '64bit');
+my $server_64       = find_job(\@jobs, \@newids, 'server',       '64bit');
+my $client1_64      = find_job(\@jobs, \@newids, 'client1',      '64bit');
+my $client2_64      = find_job(\@jobs, \@newids, 'client2',      '64bit');
 my $advanced_kde_64 = find_job(\@jobs, \@newids, 'advanced_kde', '64bit');
-my $kde_64 = find_job(\@jobs, \@newids, 'kde', '64bit');
-my $textmode_64 = find_job(\@jobs, \@newids, 'textmode', '64bit');
+my $kde_64          = find_job(\@jobs, \@newids, 'kde',          '64bit');
+my $textmode_64     = find_job(\@jobs, \@newids, 'textmode',     '64bit');
 
 is_deeply($client1_64->{parents}, [$server_64->{id}], "server_64 is only parent of client1_64");
 is_deeply($client2_64->{parents}, [$server_64->{id}], "server_64 is only parent of client2_64");
-is_deeply($server_64->{parents}, [], "server_64 has no parents");
+is_deeply($server_64->{parents},  [],                 "server_64 has no parents");
 is($textmode_64, undef, "textmode is not created for 64bit machine");
-is_deeply($advanced_kde_64->{parents}, [$kde_64->{id}], "kde_64 is only parent of advanced_kde_64"); # textmode is not defined for 64bit machine
+is_deeply($advanced_kde_64->{parents}, [$kde_64->{id}], "kde_64 is only parent of advanced_kde_64");    # textmode is not defined for 64bit machine
 
 lj;
 
@@ -151,7 +151,7 @@ $ret = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
 is($ret->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 
 # make sure we can't post invalid parameters
-$ret = $t->post_ok('/api/v1/isos', form => { iso => $iso, tests => "kde/usb" })->status_is(400);
+$ret = $t->post_ok('/api/v1/isos', form => {iso => $iso, tests => "kde/usb"})->status_is(400);
 
 TODO: {
     local $TODO = 'iso delete doesnt seem to work';

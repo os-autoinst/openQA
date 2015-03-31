@@ -29,15 +29,15 @@ sub {
     # [1] for deploy, [1,2] for upgrade or downgrade, probably used with _any
     my $versions = shift;
 
-    my $rs = $schema->resultset('TestSuites');
-    my $data = [ [qw/test_suite_id key value/]];
+    my $rs   = $schema->resultset('TestSuites');
+    my $data = [[qw/test_suite_id key value/]];
     while (my $r = $rs->next()) {
         my @vars = split(/;/, $r->variables);
         for (@vars) {
-            push @$data, [ $r->id, split(/=/, $_, 2)];
+            push @$data, [$r->id, split(/=/, $_, 2)];
         }
     }
-    $schema->resultset('TestSuites')->update({ variables => ''});
+    $schema->resultset('TestSuites')->update({variables => ''});
     $schema->resultset('TestSuiteSettings')->populate($data);
   }
   #);

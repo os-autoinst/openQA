@@ -32,10 +32,9 @@ my $dh = DBIx::Class::DeploymentHandler->new(
         schema              => $schema,
         script_directory    => 'dbicdh',
         databases           => 'SQLite',
-        sql_translator_args => { add_drop_table => 0, producer_args => { sqlite_version => '3.7' } },
+        sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}},
         force_overwrite     => 0,
-    }
-);
+    });
 ok(defined $dh->install, "deployed");
 
 SKIP: {
@@ -47,7 +46,7 @@ SKIP: {
     unlink($fn);
     my $trans = SQL::Translator->new(
         parser        => 'SQL::Translator::Parser::DBIx::Class',
-        parser_args   => { dbic_schema => $schema },
+        parser_args   => {dbic_schema => $schema},
         producer      => 'Diagram',
         producer_args => {
             out_file         => $fn,
@@ -55,12 +54,11 @@ SKIP: {
             show_datatypes   => 1,
             show_sizes       => 1,
             show_fk_only     => 0,
-            title            => 'openQA database schema version '.$schema->VERSION,
-        }
-    );
+            title            => 'openQA database schema version ' . $schema->VERSION,
+        });
 
     ok($trans->translate, "generate graph");
-    ok(-e $fn, "graph png exists");
+    ok(-e $fn,            "graph png exists");
 }
 
 done_testing();

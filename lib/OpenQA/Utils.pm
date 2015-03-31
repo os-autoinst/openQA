@@ -7,8 +7,8 @@ use Carp;
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
-@ISA = qw(Exporter);
-@EXPORT = qw(
+@ISA     = qw(Exporter);
+@EXPORT  = qw(
   $prj
   $basedir
   $resultdir
@@ -26,25 +26,25 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
     my ($tdirname) = $0 =~ qr/((.*\/t\/|^t\/)).+$/;
-    $ENV{OPENQA_BASEDIR} ||= $tdirname.'data';
+    $ENV{OPENQA_BASEDIR} ||= $tdirname . 'data';
 }
 
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use File::Basename;
 use Fcntl;
 use JSON "decode_json";
-our $basedir=$ENV{OPENQA_BASEDIR}||"/var/lib";
-our $prj="openqa";
-our $resultdir="$basedir/$prj/testresults";
-our $assetdir="$basedir/$prj/factory";
-our $isodir="$assetdir/iso";
-our $imagesdir="$basedir/$prj/images";
-our $hostname=$ENV{SERVER_NAME};
+our $basedir     = $ENV{OPENQA_BASEDIR} || "/var/lib";
+our $prj         = "openqa";
+our $resultdir   = "$basedir/$prj/testresults";
+our $assetdir    = "$basedir/$prj/factory";
+our $isodir      = "$assetdir/iso";
+our $imagesdir   = "$basedir/$prj/images";
+our $hostname    = $ENV{SERVER_NAME};
 our $testcasedir = "$basedir/openqa/share/tests";
 our $app;
 
 sub testcasedir($$) {
-    my $distri = shift;
+    my $distri  = shift;
     my $version = shift;
 
     my $dir = "$testcasedir/$distri";
@@ -60,51 +60,51 @@ sub testresultdir($) {
 }
 
 sub data_name($) {
-    $_[0]=~m/^.*\/(.*)\.\w\w\w(?:\.gz)?$/;
+    $_[0] =~ m/^.*\/(.*)\.\w\w\w(?:\.gz)?$/;
     return $1;
 }
 
 sub needledir($$) {
-    return testcasedir($_[0], $_[1]).'/needles';
+    return testcasedir($_[0], $_[1]) . '/needles';
 }
 
 sub needle_info($$$) {
-    my $name = shift;
-    my $distri = shift;
+    my $name    = shift;
+    my $distri  = shift;
     my $version = shift;
     local $/;
 
     my $needledir = needledir($distri, $version);
 
     my $fn = "$needledir/$name.json";
-    unless (open(JF, '<', $fn )) {
+    unless (open(JF, '<', $fn)) {
         warn "$fn: $!";
         return undef;
     }
 
     my $needle;
-    eval {$needle = decode_json(<JF>);};
+    eval { $needle = decode_json(<JF>); };
     close(JF);
 
-    if($@) {
+    if ($@) {
         warn "failed to parse $needledir/$name.json: $@";
         return undef;
     }
 
     $needle->{needledir} = $needledir;
-    $needle->{image} = "$needledir/$name.png";
-    $needle->{json} = "$needledir/$name.json";
-    $needle->{name} = $name;
-    $needle->{distri} = $distri;
-    $needle->{version} = $version;
+    $needle->{image}     = "$needledir/$name.png";
+    $needle->{json}      = "$needledir/$name.json";
+    $needle->{name}      = $name;
+    $needle->{distri}    = $distri;
+    $needle->{version}   = $version;
     return $needle;
 }
 
-sub file_content($){
-    my($fn)=@_;
+sub file_content($) {
+    my ($fn) = @_;
     open(FCONTENT, "<", $fn) or return undef;
     local $/;
-    my $result=<FCONTENT>;
+    my $result = <FCONTENT>;
     close(FCONTENT);
     return $result;
 }
@@ -132,7 +132,7 @@ sub image_md5_filename($) {
 
     my $prefix = substr($md5, 0, 2);
     $md5 = substr($md5, 2);
-    return ($imagesdir . "/$prefix/$md5.png",$imagesdir . "/$prefix/.thumbs/$md5.png");
+    return ($imagesdir . "/$prefix/$md5.png", $imagesdir . "/$prefix/.thumbs/$md5.png");
 }
 
 1;

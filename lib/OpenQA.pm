@@ -32,12 +32,12 @@ sub _read_config {
 
     my %defaults = (
         global => {
-            base_url => undef,
-            branding => "openSUSE",
+            base_url      => undef,
+            branding      => "openSUSE",
             allowed_hosts => undef,
-            suse_mirror => undef,
-            scm => 'git',
-            hsts => 365,
+            suse_mirror   => undef,
+            scm           => 'git',
+            hsts          => 365,
         },
         auth => {
             method => 'OpenID',
@@ -46,17 +46,17 @@ sub _read_config {
             do_push => 'no',
         },
         logging => {
-            level => undef,
-            file => "/var/log/openqa",
+            level     => undef,
+            file      => "/var/log/openqa",
             sql_debug => undef
         },
         openid => {
-            provider => 'https://www.opensuse.org/openid/user/',
+            provider  => 'https://www.opensuse.org/openid/user/',
             httpsonly => '1',
         },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
-            proxy => 1,
+            proxy  => 1,
         },
     );
 
@@ -67,16 +67,15 @@ sub _read_config {
                 method => 'Fake',
             },
             logging => {
-                file => undef,
+                file  => undef,
                 level => 'debug',
             },
-        }
-    );
+        });
 
     # Mojo's built in config plugins suck. JSON for example does not
     # support comments
-    my $cfgpath=$ENV{OPENQA_CONFIG} || $self->app->home.'/etc/openqa';
-    my $cfg = Config::IniFiles->new(-file => $cfgpath.'/openqa.ini') || undef;
+    my $cfgpath = $ENV{OPENQA_CONFIG} || $self->app->home . '/etc/openqa';
+    my $cfg = Config::IniFiles->new(-file => $cfgpath . '/openqa.ini') || undef;
 
     for my $section (sort keys %defaults) {
         for my $k (sort keys %{$defaults{$section}}) {
@@ -95,40 +94,37 @@ sub _workers_checker {
     # Start recurring timer, check workers alive every 20 mins
     my $id = Mojo::IOLoop->recurring(
         1200 => sub {
-            my $dt = DateTime->now(time_zone=>'UTC');
-            my $threshold = join ' ',$dt->ymd, $dt->hms;
+            my $dt = DateTime->now(time_zone => 'UTC');
+            my $threshold = join ' ', $dt->ymd, $dt->hms;
 
             Mojo::IOLoop->timer(
                 10 => sub {
                     my $dead_jobs = OpenQA::Scheduler::jobs_get_dead_worker($threshold);
                     foreach my $job (@$dead_jobs) {
                         my %args = (
-                            jobid => $job->{id},
+                            jobid  => $job->{id},
                             result => 'incomplete',
                         );
                         my $result = OpenQA::Scheduler::job_set_done(%args);
-                        if($result) {
+                        if ($result) {
                             OpenQA::Scheduler::job_duplicate(jobid => $job->{id});
                             print STDERR "cancelled dead job $job->{id} and re-duplicated done\n";
                         }
                     }
-                }
-            );
-        }
-    );
+                });
+        });
 }
 
 # reinit pseudo random number generator in every child to avoid
 # starting off with the same state.
-sub _init_rand{
+sub _init_rand {
     my $self = shift;
     return unless $ENV{HYPNOTOAD_APP};
     Mojo::IOLoop->timer(
         0 => sub {
             srand;
             $self->app->log->debug("initialized random number generator in $$");
-        }
-    );
+        });
 }
 
 has schema => sub {
@@ -147,7 +143,7 @@ has secrets => sub {
         @secrets = $self->schema->resultset('Secrets')->all();
     }
     die "couldn't create secrets\n" unless @secrets;
-    my $ret = [ map { $_->secret } @secrets ];
+    my $ret = [map { $_->secret } @secrets];
     return $ret;
 };
 
@@ -156,7 +152,7 @@ sub startup {
     my $self = shift;
 
     # Set some application defaults
-    $self->defaults( appname => 'openQA' );
+    $self->defaults(appname => 'openQA');
 
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
@@ -169,10 +165,10 @@ sub startup {
     $self->plugin('OpenQA::Plugin::HashedParams');
     $self->plugin('OpenQA::Plugin::Gru');
 
-    $self->plugin( bootstrap3 => { css => [], js => [] } );
+    $self->plugin(bootstrap3 => {css => [], js => []});
 
     $self->asset(
-        'step_edit.js' =>qw(/javascripts/needleedit.js
+        'step_edit.js' => qw(/javascripts/needleedit.js
           /javascripts/needleeditor.js
           /javascripts/shapes.js
           /javascripts/keyevent.js/)
@@ -199,11 +195,10 @@ sub startup {
         css => sub {
             my ($assetpack, $text, $file) = @_;
             $$text =~ s!url\('!url('../images/!g if $file =~ /chosen.css/;
-        }
-    );
+        });
 
-    $self->asset( 'app.css' => (qw(/stylesheets/jquery.dataTables.css), @css) );
-    $self->asset( 'app.js'  => @js );
+    $self->asset('app.css' => (qw(/stylesheets/jquery.dataTables.css), @css));
+    $self->asset('app.js' => @js);
     my $path = Mojolicious::Plugin::Bootstrap3->asset_path('sass');
     $ENV{SASS_PATH} = ".:$path";
     $self->asset(
@@ -211,15 +206,13 @@ sub startup {
             qw(/sass/bentostrap.scss
               /stylesheets/dataTables.bootstrap.css
               ), @css
-        )
-    );
+        ));
     $self->asset(
         'bootstrap.js' => (
             @js, qw(/js/bootstrap/collapse.js
               /js/bootstrap/tooltip.js
               /javascripts/dataTables.bootstrap.js)
-        )
-    );
+        ));
 
     # set secure flag on cookies of https connections
     $self->hook(
@@ -230,10 +223,9 @@ sub startup {
                 $c->app->sessions->secure(1);
             }
             if (my $days = $c->app->config->{global}->{hsts}) {
-                $c->res->headers->header('Strict-Transport-Security', sprintf 'max-age=%d; includeSubDomains', $days*24*60*60);
+                $c->res->headers->header('Strict-Transport-Security', sprintf 'max-age=%d; includeSubDomains', $days * 24 * 60 * 60);
             }
-        }
-    );
+        });
 
     $self->_read_config;
     my $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{logging}->{file};
@@ -242,7 +234,7 @@ sub startup {
     if ($logfile && $self->config->{logging}->{level}) {
         $self->log->level($self->config->{logging}->{level});
     }
-    if ($ENV{OPENQA_SQL_DEBUG}//$self->config->{logging}->{sql_debug}//'false' eq 'true') {
+    if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
         # avoid enabling the SQL debug unless we really want to see it
         # it's rather expensive
         db_profiler::enable_sql_debugging($self);
@@ -261,7 +253,7 @@ sub startup {
     auth_config($self->config);
 
     # Router
-    my $r = $self->routes;
+    my $r    = $self->routes;
     my $auth = $r->under('/')->to("session#ensure_operator");
 
     $r->get('/session/new')->to('session#new');
@@ -282,7 +274,7 @@ sub startup {
     $r->get('/tests/overview')->name('tests_overview')->to('test#overview');
     $r->post('/tests/list_ajax')->name('tests_ajax')->to('test#list_ajax');
     my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
-    my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0 );
+    my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0);
     $test_r->get('/')->name('test')->to('test#show');
     $test_auth->get('/menu')->name('test_menu')->to('test#menu');
 
@@ -315,7 +307,7 @@ sub startup {
     $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
 
     # Favicon
-    $r->get('/favicon.ico' => sub {my $c = shift; $c->render_static('favicon.ico') });
+    $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
     # Default route
     $r->get('/')->name('index')->to('main#index');
 
@@ -324,8 +316,7 @@ sub startup {
         '/results' => sub {
             my $c = shift;
             $c->redirect_to('tests');
-        }
-    );
+        });
 
     #
     ## Admin area starts here
@@ -367,20 +358,20 @@ sub startup {
     my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::Controller::API::V1');
     my $api_job_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_jobtoken');
     my $api_r_job = $api_job_auth->route('/')->to(namespace => 'OpenQA::Controller::API::V1');
-    $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami'); # primarily for tests
+    $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami');    # primarily for tests
 
     # api/v1/jobs
     $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
-    $api_r->post('/jobs')->name('apiv1_create_job')->to('job#create'); # job_create
+    $api_r->post('/jobs')->name('apiv1_create_job')->to('job#create');             # job_create
     $api_r->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
 
     my $job_r = $api_r->route('/jobs/:jobid', jobid => qr/\d+/);
-    $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show'); # job_get
-    $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy'); # job_delete
+    $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show');    # job_get
+    $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');                                       # job_delete
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
     # NO LONGER USED
-    $job_r->post('/result')->name('apiv1_job_result')->to('job#result'); # job_update_result
-    $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done'); # job_set_done
+    $job_r->post('/result')->name('apiv1_job_result')->to('job#result');                                    # job_update_result
+    $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done');                                      # job_set_done
     $job_r->post('/status')->name('apiv1_update_status')->to('job#update_status');
     $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
 
@@ -390,18 +381,18 @@ sub startup {
     # restart and cancel are valid both by job id or by job name (which is
     # exactly the same, but with less restrictive format)
     my $job_name_r = $api_r->route('/jobs/#name');
-    $job_name_r->post('/restart')->name('apiv1_restart')->to('job#restart'); # job_restart
-    $job_name_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel'); # job_cancel
-    $job_name_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate'); # job_duplicate
+    $job_name_r->post('/restart')->name('apiv1_restart')->to('job#restart');          # job_restart
+    $job_name_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');             # job_cancel
+    $job_name_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate');    # job_duplicate
 
     # api/v1/workers
     $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');
     $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create');
     my $worker_r = $api_r->route('/workers/:workerid', workerid => qr/\d+/);
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
-    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create'); #command_enqueue
-    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab'); # job_grab
-    $worker_r->websocket('/ws')->name('apiv1_worker_ws')->to('worker#websocket_create'); #websocket connection
+    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');      #command_enqueue
+    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');                   # job_grab
+    $worker_r->websocket('/ws')->name('apiv1_worker_ws')->to('worker#websocket_create');    #websocket connection
 
     # api/v1/mutex
     $api_r_job->post('/mutex/lock/:name')->name('apiv1_mutex_create')->to('locks#mutex_create');
@@ -410,12 +401,12 @@ sub startup {
 
     # api/v1/mm
     my $mm_api = $api_r_job->route('/mm');
-    $mm_api->get('/children/:status' => [status => [qw/running scheduled done/] ])->name('apiv1_mm_running_children')->to('mm#get_children_status');
+    $mm_api->get('/children/:status' => [status => [qw/running scheduled done/]])->name('apiv1_mm_running_children')->to('mm#get_children_status');
 
     # api/v1/isos
-    $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create'); # iso_new
-    $api_r->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy'); # iso_delete
-    $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel'); # iso_cancel
+    $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create');                      # iso_new
+    $api_r->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');            # iso_delete
+    $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');         # iso_cancel
 
     # api/v1/assets
     $api_r->post('/assets')->name('apiv1_post_asset')->to('asset#register');
@@ -430,7 +421,7 @@ sub startup {
     $api_r->post('test_suites')->to('table#create', table => 'TestSuites');
     $api_r->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
     $api_r->put('test_suites/:id')->to('table#update', table => 'TestSuites');
-    $api_r->post('test_suites/:id')->to('table#update', table => 'TestSuites'); #in case PUT is not supported
+    $api_r->post('test_suites/:id')->to('table#update', table => 'TestSuites');    #in case PUT is not supported
     $api_r->delete('test_suites/:id')->to('table#destroy', table => 'TestSuites');
 
     # api/v1/machines
@@ -438,7 +429,7 @@ sub startup {
     $api_r->post('machines')->to('table#create', table => 'Machines');
     $api_r->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
     $api_r->put('machines/:id')->to('table#update', table => 'Machines');
-    $api_r->post('machines/:id')->to('table#update', table => 'Machines'); #in case PUT is not supported
+    $api_r->post('machines/:id')->to('table#update', table => 'Machines');         #in case PUT is not supported
     $api_r->delete('machines/:id')->to('table#destroy', table => 'Machines');
 
     # api/v1/products
@@ -446,7 +437,7 @@ sub startup {
     $api_r->post('products')->to('table#create', table => 'Products');
     $api_r->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
     $api_r->put('products/:id')->to('table#update', table => 'Products');
-    $api_r->post('products/:id')->to('table#update', table => 'Products'); #in case PUT is not supported
+    $api_r->post('products/:id')->to('table#update', table => 'Products');         #in case PUT is not supported
     $api_r->delete('products/:id')->to('table#destroy', table => 'Products');
 
     # api/v1/job_templates
@@ -460,9 +451,9 @@ sub startup {
     ## JSON API ends here
     #
 
-    $self->gru->add_task(optipng => \&OpenQA::Schema::Result::Jobs::optipng);
+    $self->gru->add_task(optipng       => \&OpenQA::Schema::Result::Jobs::optipng);
     $self->gru->add_task(reduce_result => \&OpenQA::Schema::Result::Jobs::reduce_result);
-    $self->gru->add_task(limit_assets => \&OpenQA::Schema::Result::Assets::limit_assets);
+    $self->gru->add_task(limit_assets  => \&OpenQA::Schema::Result::Assets::limit_assets);
 
     # start workers checker
     $self->_workers_checker;

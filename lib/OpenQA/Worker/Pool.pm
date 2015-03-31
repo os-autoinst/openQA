@@ -26,7 +26,7 @@ use base qw/Exporter/;
 our (@EXPORT_OK);
 @EXPORT_OK = qw/lockit clean_pool/;
 
-sub lockit(){
+sub lockit() {
     if (!-e $pooldir) {
         make_path($pooldir);
     }
@@ -41,7 +41,7 @@ sub lockit(){
     return $lockfd;
 }
 
-sub check_qemu_pid{
+sub check_qemu_pid {
     my $pidfile = "$pooldir/qemu.pid";
     return unless open(my $fh, '<', $pidfile);
 
@@ -59,7 +59,7 @@ sub check_qemu_pid{
 }
 
 
-sub clean_pool(){
+sub clean_pool() {
     return if $nocleanup;
     check_qemu_pid();
     for my $file (<$pooldir/*>) {

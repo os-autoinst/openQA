@@ -23,12 +23,10 @@ sub admintable {
     my $rc = $self->db->resultset($resultset)->search(
         undef,
         {
-            select   => [ 'key', { count => 'key' } ],
+            select   => ['key', {count => 'key'}],
             as       => [qw/ key var_count /],
             group_by => [qw/ key /],
-            order_by => { -desc => 'count(key)' }
-        }
-    );
+            order_by => {-desc => 'count(key)'}});
     my @variables = map { $_->key } $rc->all();
     $self->stash('variables', \@variables);
 
@@ -36,19 +34,18 @@ sub admintable {
     my @col_variables;
     for my $v (@variables) {
         my $line = $self->db->resultset($resultset)->search(
-            { key => $v },
+            {key => $v},
             {
-                select => { 'max' =>{ 'length' => 'value' } },
-                as => 'max'
-            }
-        );
+                select => {'max' => {'length' => 'value'}},
+                as     => 'max'
+            });
         my $max = $line->first->get_column('max');
         # this are purely magic numbers
         if ($max > length($v) * 1.2) {
             # ignore it on first run
             $shortest = undef if ($shortest && $shortest->{len} > $max);
             next if $shortest;
-            $shortest = { len => $max, var => $v };
+            $shortest = {len => $max, var => $v};
             next;
         }
         last if length(join('  ', @col_variables)) > 30;

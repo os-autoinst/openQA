@@ -26,7 +26,7 @@ my $gru;
 
 sub optimize() {
     return if $File::Find::name !~ m/\.png\.unoptimized$/;
-    my ($name,$path,$suffix) = fileparse($File::Find::name, qw/.unoptimized/);
+    my ($name, $path, $suffix) = fileparse($File::Find::name, qw/.unoptimized/);
     $gru->enqueue(optipng => "$File::Find::dir/$name");
     unlink("$path/$name$suffix");
 }

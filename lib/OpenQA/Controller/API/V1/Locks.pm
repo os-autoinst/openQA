@@ -20,8 +20,8 @@ use OpenQA::Locks;
 
 sub mutex_lock {
     my ($self) = @_;
-    my $name = $self->stash('name');
-    my $jobid = $self->stash('job_id');
+    my $name   = $self->stash('name');
+    my $jobid  = $self->stash('job_id');
     my $res = OpenQA::Locks::lock($name, $jobid);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
@@ -29,8 +29,8 @@ sub mutex_lock {
 
 sub mutex_unlock {
     my ($self) = @_;
-    my $name = $self->stash('name');
-    my $jobid = $self->stash('job_id');
+    my $name   = $self->stash('name');
+    my $jobid  = $self->stash('job_id');
     my $res = OpenQA::Locks::unlock($name, $jobid);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
@@ -38,8 +38,8 @@ sub mutex_unlock {
 
 sub mutex_create {
     my ($self) = @_;
-    my $name = $self->stash('name');
-    my $jobid = $self->stash('job_id');
+    my $name   = $self->stash('name');
+    my $jobid  = $self->stash('job_id');
     my $res = OpenQA::Locks::create($name, $jobid);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);

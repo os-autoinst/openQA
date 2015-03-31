@@ -24,36 +24,34 @@ __PACKAGE__->table('gru_tasks');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime FilterColumn Timestamps/);
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type         => 'integer',
         is_auto_increment => 1,
     },
     taskname => {
-        data_type => 'text',
+        data_type   => 'text',
         is_nullable => 0,
     },
     args => {
-        data_type => 'text',
+        data_type   => 'text',
         is_nullable => 0,
     },
     run_at => {
-        data_type => 'datetime',
+        data_type   => 'datetime',
         is_nullable => 0,
     },
     priority => {
-        data_type => 'integer',
+        data_type   => 'integer',
         is_nullable => 0,
-        default => 0
-    }
-);
+        default     => 0
+    });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 
 __PACKAGE__->filter_column(
     args => {
-        filter_to_storage => 'encode_json_to_db',
+        filter_to_storage   => 'encode_json_to_db',
         filter_from_storage => 'decode_json_from_db',
-    }
-);
+    });
 
 sub decode_json_from_db {
     my $ret = JSON::decode_json($_[1]);
@@ -64,7 +62,7 @@ sub decode_json_from_db {
 sub encode_json_to_db {
     my $args = $_[1];
     if (!ref($args)) {
-        $args = { '_' => $args };
+        $args = {'_' => $args};
     }
     JSON::encode_json($args);
 }

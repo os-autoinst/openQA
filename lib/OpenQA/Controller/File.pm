@@ -19,7 +19,7 @@ use warnings;
 
 package OpenQA::Controller::File;
 use Mojo::Base 'Mojolicious::Controller';
-BEGIN { $ENV{MAGICK_THREAD_LIMIT}=1; }
+BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
 use OpenQA::Utils;
 use File::Basename;
 
@@ -33,9 +33,9 @@ sub needle {
     # do the format splitting ourselves instead of using mojo to restrict the suffixes
     # 13.1.png would be format 1.png otherwise
     my ($name, $dummy, $format) = fileparse($self->param('name'), qw(.png .txt));
-    my $distri = $self->param('distri');
+    my $distri  = $self->param('distri');
     my $version = $self->param('version') || '';
-    my $needle = OpenQA::Utils::needle_info($name, $distri, $version);
+    my $needle  = OpenQA::Utils::needle_info($name, $distri, $version);
     return $self->reply->not_found unless $needle;
 
     $self->{static} = Mojolicious::Static->new;
@@ -53,7 +53,7 @@ sub _set_test($) {
     return undef unless $self->{job};
 
     $self->{testdirname} = $self->{job}->{'settings'}->{'NAME'};
-    $self->{static} = Mojolicious::Static->new;
+    $self->{static}      = Mojolicious::Static->new;
     push @{$self->{static}->paths}, OpenQA::Utils::testresultdir($self->{testdirname});
     push @{$self->{static}->paths}, OpenQA::Utils::testresultdir($self->{testdirname} . '/ulogs');
     return 1;
@@ -82,9 +82,9 @@ sub test_asset {
 
     return $self->reply->not_found unless $asset;
 
-    my $path = '/assets/'.$asset->type.'/'.$asset->name;
+    my $path = '/assets/' . $asset->type . '/' . $asset->name;
     if ($self->param('subpath')) {
-        $path .= '/'.$self->param('subpath');
+        $path .= '/' . $self->param('subpath');
         # better safe than sorry. Mojo seems to canonicalize the
         # urls for us already so this is actually not needed
         return $self->render_exception("invalid character in path") if ($path =~ /\/\.\./ || $path =~ /\.\.\//);
@@ -123,7 +123,7 @@ sub serve_static_($$) {
         my $filename = basename($asset->path);
         # guess content type from extension
         if ($filename =~ m/\.([^\.]+)$/) {
-            my $ext = $1;
+            my $ext      = $1;
             my $filetype = $self->app->types->type($ext);
             if ($filetype) {
                 $self->res->headers->content_type($filetype);

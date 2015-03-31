@@ -87,7 +87,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options,"apibase=s","apikey=s","apisecret=s","clean","host=s","update","help|h",) or usage(1);
+GetOptions(\%options, "apibase=s", "apikey=s", "apisecret=s", "clean", "host=s", "update", "help|h",) or usage(1);
 
 usage(1) if $options{help} || $#ARGV;
 
@@ -111,7 +111,7 @@ else {
     }
 }
 
-$options{'host'} ||= 'localhost';
+$options{'host'}    ||= 'localhost';
 $options{'apibase'} ||= '/api/v1';
 
 my $url;
@@ -128,7 +128,7 @@ my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $opt
 
 my @tables = (qw/Machines TestSuites Products JobTemplates/);
 
-sub print_error{
+sub print_error {
     my ($res) = @_;
     printf STDERR "ERROR: %s - %s\n", $res->code, $res->message;
     if ($res->body) {
@@ -136,7 +136,7 @@ sub print_error{
     }
 }
 
-sub post_entry{
+sub post_entry {
     my ($table, $entry) = @_;
 
     my %param;
@@ -168,9 +168,9 @@ sub post_entry{
             $param{test_suite_name} = $entry->{test_suite}{name};
         }
         elsif ($key eq 'product' && ref($entry->{product}) eq "HASH") {
-            $param{arch} = $entry->{product}{arch};
-            $param{distri} = $entry->{product}{distri};
-            $param{flavor} = $entry->{product}{flavor};
+            $param{arch}    = $entry->{product}{arch};
+            $param{distri}  = $entry->{product}{distri};
+            $param{flavor}  = $entry->{product}{flavor};
             $param{version} = $entry->{product}{version};
         }
         elsif ($key eq 'settings' && ref($entry->{settings}) eq "ARRAY") {
@@ -183,11 +183,11 @@ sub post_entry{
         }
     }
 
-    if (!$options{'clean'}) { # with --clean the entry should not exist at this point, no need to check
+    if (!$options{'clean'}) {    # with --clean the entry should not exist at this point, no need to check
         my $res = $client->get($url->path($options{'apibase'} . '/' . decamelize($table))->query(%param))->res;
         if ($res->code == 200 && @{$res->json->{$table}} == 1 && $res->json->{$table}[0]{id}) {
-            if ($options{'update'} && $table ne 'JobTemplates') { # there is nothing to update in JobTemplates, the entry just exists or not
-                my $id = $res->json->{$table}[0]{id};
+            if ($options{'update'} && $table ne 'JobTemplates') {    # there is nothing to update in JobTemplates, the entry just exists or not
+                my $id  = $res->json->{$table}[0]{id};
                 my $res = $client->put($url->path($options{'apibase'} . '/' . decamelize($table) . "/$id")->query(%param))->res;
                 if ($res->code != 200) {
                     print_error($res);
@@ -196,7 +196,7 @@ sub post_entry{
                 return 1;
             }
             else {
-                return 0; # already exists
+                return 0;                                            # already exists
             }
         }
     }
@@ -215,7 +215,7 @@ if ($options{'clean'}) {
         my $res = $client->get($url->path($options{'apibase'} . '/' . decamelize($table)))->res;
         if ($res->code == 200) {
             my $result = $res->json;
-            for my $i (0..$#{$result->{$table}}) {
+            for my $i (0 .. $#{$result->{$table}}) {
                 my $id = $result->{$table}->[$i]->{id};
                 $res = $client->delete($url->path($options{'apibase'} . '/' . decamelize($table) . "/$id"))->res;
                 last if $res->code != 200;
@@ -232,7 +232,7 @@ if ($options{'clean'}) {
 my %added;
 for my $table (@tables) {
     next unless $info->{$table};
-    $added{$table}->{of} = @{$info->{$table}};
+    $added{$table}->{of}    = @{$info->{$table}};
     $added{$table}->{added} = 0;
     for my $entry (@{$info->{$table}}) {
         if (post_entry($table, $entry)) {

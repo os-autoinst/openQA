@@ -29,63 +29,63 @@ use strict;
 # States
 use constant {
     SCHEDULED => 'scheduled',
-    RUNNING => 'running',
+    RUNNING   => 'running',
     CANCELLED => 'cancelled',
-    WAITING => 'waiting',
-    DONE => 'done',
+    WAITING   => 'waiting',
+    DONE      => 'done',
     #    OBSOLETED => 'obsoleted',
 };
-use constant STATES => ( SCHEDULED, RUNNING, CANCELLED, WAITING, DONE );
-use constant PENDING_STATES => ( SCHEDULED, RUNNING, WAITING );
-use constant EXECUTION_STATES => ( RUNNING, WAITING );
-use constant FINAL_STATES => ( DONE, CANCELLED );
+use constant STATES => (SCHEDULED, RUNNING, CANCELLED, WAITING, DONE);
+use constant PENDING_STATES => (SCHEDULED, RUNNING, WAITING);
+use constant EXECUTION_STATES => (RUNNING, WAITING);
+use constant FINAL_STATES     => (DONE,    CANCELLED);
 
 # Results
 use constant {
-    NONE => 'none',
-    PASSED => 'passed',
-    FAILED => 'failed',
-    INCOMPLETE => 'incomplete',                   # worker died or reported some problem
-    SKIPPED => 'skipped',                         # dependencies failed before starting this job
-    OBSOLETED => 'obsoleted',                     # new iso was posted
-    PARALLEL_FAILED => 'parallel_failed',         # parallel job failed, this job can't continue
-    PARALLEL_RESTARTED => 'parallel_restarted',   # parallel job was restarted, this job has to be restarted too
-    USER_CANCELLED => 'user_cancelled',           # cancelled by user via job_cancel
-    USER_RESTARTED => 'user_restarted',           # restarted by user via job_restart
+    NONE               => 'none',
+    PASSED             => 'passed',
+    FAILED             => 'failed',
+    INCOMPLETE         => 'incomplete',            # worker died or reported some problem
+    SKIPPED            => 'skipped',               # dependencies failed before starting this job
+    OBSOLETED          => 'obsoleted',             # new iso was posted
+    PARALLEL_FAILED    => 'parallel_failed',       # parallel job failed, this job can't continue
+    PARALLEL_RESTARTED => 'parallel_restarted',    # parallel job was restarted, this job has to be restarted too
+    USER_CANCELLED     => 'user_cancelled',        # cancelled by user via job_cancel
+    USER_RESTARTED     => 'user_restarted',        # restarted by user via job_restart
 };
-use constant RESULTS => ( NONE, PASSED, FAILED, INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED );
-use constant COMPLETE_RESULTS => ( PASSED, FAILED );
-use constant INCOMPLETE_RESULTS => ( INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED );
+use constant RESULTS => (NONE, PASSED, FAILED, INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
+use constant COMPLETE_RESULTS => (PASSED, FAILED);
+use constant INCOMPLETE_RESULTS => (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
 
 __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime FilterColumn Timestamps/);
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type         => 'integer',
         is_auto_increment => 1,
     },
-    slug => { # to be removed?
-        data_type => 'text',
+    slug => {    # to be removed?
+        data_type   => 'text',
         is_nullable => 1
     },
-    result_dir => { # this is the directory below testresults
-        data_type => 'text',
+    result_dir => {    # this is the directory below testresults
+        data_type   => 'text',
         is_nullable => 1
     },
     state => {
-        data_type => 'varchar',
+        data_type     => 'varchar',
         default_value => SCHEDULED,
     },
     priority => {
-        data_type => 'integer',
+        data_type     => 'integer',
         default_value => 50,
     },
     result => {
-        data_type => 'varchar',
+        data_type     => 'varchar',
         default_value => NONE,
     },
     worker_id => {
-        data_type => 'integer',
+        data_type      => 'integer',
         is_foreign_key => 1,
         # FIXME: get rid of worker 0
         default_value => 0,
@@ -95,35 +95,35 @@ __PACKAGE__->add_columns(
         data_type => 'text',
     },
     clone_id => {
-        data_type => 'integer',
+        data_type      => 'integer',
         is_foreign_key => 1,
-        is_nullable => 1
+        is_nullable    => 1
     },
     retry_avbl => {
-        data_type => 'integer',
+        data_type     => 'integer',
         default_value => 3,
     },
     backend => {
-        data_type => 'varchar',
+        data_type   => 'varchar',
         is_nullable => 1,
     },
     backend_info => {
         # we store free text JSON here - backends might store random data about the job
-        data_type => 'text',
+        data_type   => 'text',
         is_nullable => 1,
     },
     group_id => {
-        data_type => 'integer',
+        data_type      => 'integer',
         is_foreign_key => 1,
-        is_nullable => 1
+        is_nullable    => 1
     },
 
     t_started => {
-        data_type => 'timestamp',
+        data_type   => 'timestamp',
         is_nullable => 1,
     },
     t_finished => {
-        data_type => 'timestamp',
+        data_type   => 'timestamp',
         is_nullable => 1,
     },
 );
@@ -131,32 +131,31 @@ __PACKAGE__->add_timestamps;
 
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(settings => 'OpenQA::Schema::Result::JobSettings', 'job_id');
-__PACKAGE__->belongs_to(worker => 'OpenQA::Schema::Result::Workers', 'worker_id');
-__PACKAGE__->belongs_to(clone => 'OpenQA::Schema::Result::Jobs', 'clone_id', { join_type => 'left', on_delete => 'SET NULL' });
-__PACKAGE__->belongs_to(group => 'OpenQA::Schema::Result::JobGroups', 'group_id', { join_type => 'left', on_delete => 'SET NULL' });
-__PACKAGE__->might_have(origin => 'OpenQA::Schema::Result::Jobs', 'clone_id', { cascade_delete => 0 });
+__PACKAGE__->belongs_to(worker => 'OpenQA::Schema::Result::Workers',   'worker_id');
+__PACKAGE__->belongs_to(clone  => 'OpenQA::Schema::Result::Jobs',      'clone_id', {join_type => 'left', on_delete => 'SET NULL'});
+__PACKAGE__->belongs_to(group  => 'OpenQA::Schema::Result::JobGroups', 'group_id', {join_type => 'left', on_delete => 'SET NULL'});
+__PACKAGE__->might_have(origin => 'OpenQA::Schema::Result::Jobs', 'clone_id', {cascade_delete => 0});
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
-__PACKAGE__->has_many(parents => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
-__PACKAGE__->has_many(modules => 'OpenQA::Schema::Result::JobModules', 'job_id');
+__PACKAGE__->has_many(parents  => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
+__PACKAGE__->has_many(modules  => 'OpenQA::Schema::Result::JobModules',      'job_id');
 # Locks
-__PACKAGE__->has_many(owned_locks => 'OpenQA::Schema::Result::JobLocks', 'owner');
+__PACKAGE__->has_many(owned_locks  => 'OpenQA::Schema::Result::JobLocks', 'owner');
 __PACKAGE__->has_many(locked_locks => 'OpenQA::Schema::Result::JobLocks', 'locked_by');
 
 __PACKAGE__->add_unique_constraint([qw/slug/]);
 
 __PACKAGE__->filter_column(
     result_dir => {
-        filter_to_storage => 'remove_result_dir_prefix',
+        filter_to_storage   => 'remove_result_dir_prefix',
         filter_from_storage => 'add_result_dir_prefix',
-    }
-);
+    });
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
 
-    $sqlt_table->add_index(name => 'idx_jobs_state', fields => ['state']);
+    $sqlt_table->add_index(name => 'idx_jobs_state',  fields => ['state']);
     $sqlt_table->add_index(name => 'idx_jobs_result', fields => ['result']);
 }
 
@@ -172,7 +171,7 @@ sub name {
 
         for my $c (qw/DISTRI VERSION FLAVOR MEDIA ARCH BUILD TEST/) {
             next unless $job_settings->{$c};
-            push @a, sprintf(($formats{$c}||'%s'), $job_settings->{$c});
+            push @a, sprintf(($formats{$c} || '%s'), $job_settings->{$c});
         }
         my $name = join('-', @a);
         $name =~ s/[^a-zA-Z0-9._+:-]/_/g;
@@ -185,7 +184,7 @@ sub settings_hash {
     my ($self) = @_;
 
     if (!defined($self->{_settings})) {
-        $self->{_settings} = { map { $_->key => $_->value } $self->settings->all() };
+        $self->{_settings} = {map { $_->key => $_->value } $self->settings->all()};
         $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
     }
 
@@ -197,9 +196,8 @@ sub deps_hash {
 
     if (!defined($self->{_deps_hash})) {
         $self->{_deps_hash} = {
-            parents => {Chained => [], Parallel => []},
-            children => {Chained => [], Parallel => []}
-        };
+            parents  => {Chained => [], Parallel => []},
+            children => {Chained => [], Parallel => []}};
         for my $dep ($self->parents) {
             push @{$self->{_deps_hash}->{parents}->{$dep->to_string}}, $dep->parent_job_id;
         }
@@ -236,7 +234,7 @@ sub set_prio {
 }
 
 sub _hashref {
-    my $obj = shift;
+    my $obj    = shift;
     my @fields = @_;
 
     my %hashref = ();
@@ -276,11 +274,11 @@ sub to_hash {
 Checks if a given job can be duplicated - not cloned yet and in correct state.
 
 =cut
-sub can_be_duplicated{
+sub can_be_duplicated {
     my ($self) = @_;
 
     my $state = $self->state;
-    return unless (grep {/$state/} (EXECUTION_STATES, FINAL_STATES) );
+    return unless (grep { /$state/ } (EXECUTION_STATES, FINAL_STATES));
     return if $self->clone;
     return 1;
 }
@@ -302,11 +300,11 @@ already have a job or the creation fails (most likely due to a concurrent
 duplication detected by the optimistic locking), the method returns undef.
 
 =cut
-sub duplicate{
-    my $self = shift;
-    my $args = shift || {};
+sub duplicate {
+    my $self    = shift;
+    my $args    = shift || {};
     my $rsource = $self->result_source;
-    my $schema = $rsource->schema;
+    my $schema  = $rsource->schema;
 
     # If the job already have a clone, none is created
     return unless $self->can_be_duplicated;
@@ -320,29 +318,28 @@ sub duplicate{
         my @new_settings;
         my $settings = $self->settings;
 
-        while(my $js = $settings->next) {
+        while (my $js = $settings->next) {
             unless ($js->key eq 'NAME' || $js->key eq 'TEST') {
-                push @new_settings, { key => $js->key, value => $js->value };
+                push @new_settings, {key => $js->key, value => $js->value};
             }
         }
         push @new_settings, {key => 'TEST', value => $self->test};
 
         my $new_job = $rsource->resultset->create(
             {
-                test => $self->test,
-                group_id => $self->group_id,
-                settings => \@new_settings,
-                priority => $args->{prio} || $self->priority,
-                jobs_assets => [ map { { asset => { id => $_->asset_id } } } $self->jobs_assets->all() ],
-                retry_avbl => $args->{retry_avbl},
-            }
-        );
+                test        => $self->test,
+                group_id    => $self->group_id,
+                settings    => \@new_settings,
+                priority    => $args->{prio} || $self->priority,
+                jobs_assets => [map { {asset => {id => $_->asset_id}} } $self->jobs_assets->all()],
+                retry_avbl  => $args->{retry_avbl},
+            });
         # Perform optimistic locking on clone_id. If the job is not longer there
         # or it already has a clone, rollback the transaction (new_job should
         # not be created, somebody else was faster at cloning)
         my $upd = $rsource->resultset->search({clone_id => undef, id => $self->id})->update({clone_id => $new_job->id});
 
-        die('There is already a clone!') unless ($upd == 1); # One row affected
+        die('There is already a clone!') unless ($upd == 1);    # One row affected
         return $new_job;
     };
 
@@ -350,7 +347,7 @@ sub duplicate{
 
     try {
         $res = $schema->txn_do($coderef);
-        $res->discard_changes; # Needed to load default values from DB
+        $res->discard_changes;                                  # Needed to load default values from DB
     }
     catch {
         my $error = shift;
@@ -373,10 +370,9 @@ sub set_property {
             $self->settings->create(
                 {
                     job_id => $self->id,
-                    key => $key,
-                    value => $value
-                }
-            );
+                    key    => $key,
+                    value  => $value
+                });
         }
     }
     elsif ($r) {
@@ -389,10 +385,10 @@ sub calculate_result($) {
     my ($job) = @_;
 
     my $overall;
-    my $important_overall; # just counting importants
+    my $important_overall;    # just counting importants
 
     for my $m ($job->modules->all) {
-        if ( $m->result eq PASSED ) {
+        if ($m->result eq PASSED) {
             if ($m->important || $m->fatal) {
                 $important_overall ||= PASSED;
             }
@@ -417,7 +413,7 @@ sub save_screenshot($) {
     return unless length($screen->{name});
 
     my $tmpdir = $self->worker->get_property('WORKER_TMPDIR');
-    return unless -d $tmpdir; # we can't help
+    return unless -d $tmpdir;    # we can't help
     my $current = readlink($tmpdir . "/last.png");
     my $newfile = OpenQA::Utils::save_base64_png($tmpdir, $screen->{name}, $screen->{png});
     unlink($tmpdir . "/last.png");
@@ -431,9 +427,9 @@ sub append_log($) {
     return unless length($log->{data});
 
     my $file = $self->worker->get_property('WORKER_TMPDIR');
-    return unless -d $file; # we can't help
+    return unless -d $file;    # we can't help
     $file .= "/autoinst-log-live.txt";
-    if (sysopen(my $fd, $file, Fcntl::O_WRONLY|Fcntl::O_CREAT)) {
+    if (sysopen(my $fd, $file, Fcntl::O_WRONLY | Fcntl::O_CREAT)) {
         sysseek($fd, $log->{offset}, Fcntl::SEEK_SET);
         syswrite($fd, $log->{data});
         close($fd);
@@ -447,10 +443,8 @@ sub update_backend($) {
     my ($self, $backend_info) = @_;
     $self->update(
         {
-            backend => $backend_info->{backend},
-            backend_info => JSON::encode_json($backend_info->{backend_info})
-        }
-    );
+            backend      => $backend_info->{backend},
+            backend_info => JSON::encode_json($backend_info->{backend_info})});
 }
 
 sub insert_module($$) {
@@ -463,11 +457,10 @@ sub insert_module($$) {
     }
     $r->update(
         {
-            milestone => $tm->{flags}->{milestone}?1:0,
-            important => $tm->{flags}->{important}?1:0,
-            fatal => $tm->{flags}->{fatal}?1:0,
-        }
-    );
+            milestone => $tm->{flags}->{milestone} ? 1 : 0,
+            important => $tm->{flags}->{important} ? 1 : 0,
+            fatal     => $tm->{flags}->{fatal}     ? 1 : 0,
+        });
     return $r;
 }
 
@@ -501,7 +494,7 @@ sub create_result_dir {
         my $days = 30;
         $days = $self->group->keep_logs_in_days if $self->group;
         my $cleanday = now()->add(days => $days);
-        $openQA::Utils::app->gru->enqueue(reduce_result => $dir, { run_at => $cleanday });
+        $openQA::Utils::app->gru->enqueue(reduce_result => $dir, {run_at => $cleanday});
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
     my $sdir = $dir . "/.thumbs";
@@ -530,14 +523,14 @@ sub running_modinfo() {
 
     my @modules = OpenQA::Schema::Result::JobModules::job_modules($self);
 
-    my $modlist = [];
+    my $modlist   = [];
     my $donecount = 0;
-    my $count = int(@modules);
-    my $modstate = 'done';
+    my $count     = int(@modules);
+    my $modstate  = 'done';
     my $running;
     my $category;
     for my $module (@modules) {
-        my $name = $module->name;
+        my $name   = $module->name;
         my $result = $module->result;
         if (!$category || $category ne $module->category) {
             $category = $module->category;
@@ -545,7 +538,7 @@ sub running_modinfo() {
         }
         if ($result eq 'running') {
             $modstate = 'current';
-            $running = $name;
+            $running  = $name;
         }
         elsif ($modstate eq 'current') {
             $modstate = 'todo';
@@ -554,7 +547,7 @@ sub running_modinfo() {
             $donecount++;
         }
         my $moditem = {name => $name, state => $modstate, result => $result};
-        push @{$modlist->[scalar(@$modlist)-1]->{modules}}, $moditem;
+        push @{$modlist->[scalar(@$modlist) - 1]->{modules}}, $moditem;
     }
     return {modlist => $modlist, modcount => $count, moddone => $donecount, running => $running};
 }
@@ -594,7 +587,7 @@ sub create_artefact {
     }
 
     $asset->move_to(join('/', $storepath, $asset->filename));
-    OpenQA::Utils::log_debug("moved to $storepath " .  $asset->filename);
+    OpenQA::Utils::log_debug("moved to $storepath " . $asset->filename);
     1;
 }
 
@@ -614,10 +607,10 @@ sub failed_modules_with_needles {
             $counter++;
             next unless $detail->{result} eq 'fail';
             for my $needle (@{$detail->{needles}}) {
-                push @needles, [ $needle->{name}, $counter ];
+                push @needles, [$needle->{name}, $counter];
             }
             if (!@{$detail->{needles}}) {
-                push @needles, [ undef, $counter ];
+                push @needles, [undef, $counter];
             }
         }
         $failedmodules->{$module->name} = \@needles;
@@ -628,13 +621,13 @@ sub failed_modules_with_needles {
 sub update_status {
     my ($self, $status) = @_;
 
-    my $ret = { result => 1 };
+    my $ret = {result => 1};
 
     $self->append_log($status->{log});
     # delete from the hash so it becomes dumpable for debugging
     my $screen = delete $status->{screen};
-    $self->save_screenshot($screen) if $screen;
-    $self->update_backend($status->{backend}) if $status->{backend};
+    $self->save_screenshot($screen)                   if $screen;
+    $self->update_backend($status->{backend})         if $status->{backend};
     $self->insert_test_modules($status->{test_order}) if $status->{test_order};
     my %known;
     if ($status->{result}) {
@@ -643,10 +636,10 @@ sub update_status {
             for (@$existant) { $known{$_} = 1; }
         }
     }
-    $ret->{known_images} = [ sort keys %known ];
+    $ret->{known_images} = [sort keys %known];
 
     if ($self->worker_id) {
-        $self->worker->set_property("INTERACTIVE", $status->{status}->{interactive}//0);
+        $self->worker->set_property("INTERACTIVE", $status->{status}->{interactive} // 0);
     }
     if ($status->{status}->{needinput}) {
         if ($self->state eq RUNNING) {

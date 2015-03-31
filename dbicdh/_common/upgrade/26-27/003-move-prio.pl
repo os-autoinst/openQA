@@ -25,7 +25,7 @@ sub {
     my $suites = $schema->resultset('TestSuites')->search({}, {select => [qw/id prio/]});
     while (my $r = $suites->next) {
         my $templates = $r->job_templates;
-        my $prio = $r->get_column('prio');
+        my $prio      = $r->get_column('prio');
         while (my $t = $templates->next) {
             $t->update({prio => $prio});
         }

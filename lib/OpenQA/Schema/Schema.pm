@@ -35,9 +35,9 @@ sub connect_db {
     CORE::state $schema;
     unless ($schema) {
         my %ini;
-        my $cfgpath=$ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
-        tie %ini, 'Config::IniFiles', ( -file => $cfgpath.'/database.ini' );
-        $schema=__PACKAGE__->connect($ini{$mode});
+        my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
+        tie %ini, 'Config::IniFiles', (-file => $cfgpath . '/database.ini');
+        $schema = __PACKAGE__->connect($ini{$mode});
     }
     return $schema;
 }

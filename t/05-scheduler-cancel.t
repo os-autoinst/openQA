@@ -48,7 +48,7 @@ sub lj {
 
 lj;
 
-my $ret = OpenQA::Scheduler::job_cancel({ DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64' });
+my $ret = OpenQA::Scheduler::job_cancel({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
 is($ret, 2, "two jobs cancelled by hash");
 
 $job = OpenQA::Scheduler::job_get($new_job_id);

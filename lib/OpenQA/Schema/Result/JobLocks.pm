@@ -20,26 +20,25 @@ __PACKAGE__->load_components(qw/OptimisticLocking Core/);
 __PACKAGE__->load_components(qw/Core/);
 __PACKAGE__->table('job_locks');
 __PACKAGE__->add_columns(
-    name  => {
-        data_type => 'text',
+    name => {
+        data_type   => 'text',
         is_nullable => 0,
     },
     owner => {
-        data_type => 'integer',
+        data_type      => 'integer',
         is_foreign_key => 1,
-        is_nullable => 0,
+        is_nullable    => 0,
     },
     locked_by => {
-        data_type => 'integer',
+        data_type      => 'integer',
         is_foreign_key => 1,
-        is_nullable => 1,
-        default_value => undef,
-    }
-);
+        is_nullable    => 1,
+        default_value  => undef,
+    });
 
 __PACKAGE__->set_primary_key('name', 'owner');
 
-__PACKAGE__->belongs_to( owner => 'OpenQA::Schema::Result::Jobs', 'owner' );
-__PACKAGE__->belongs_to( locked_by => 'OpenQA::Schema::Result::Jobs', 'locked_by' );
+__PACKAGE__->belongs_to(owner     => 'OpenQA::Schema::Result::Jobs', 'owner');
+__PACKAGE__->belongs_to(locked_by => 'OpenQA::Schema::Result::Jobs', 'locked_by');
 
 1;
