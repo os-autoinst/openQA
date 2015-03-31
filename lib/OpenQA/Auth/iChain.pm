@@ -18,7 +18,7 @@ use OpenQA::Schema::Result::Users;
 
 require Exporter;
 our (@ISA, @EXPORT_OK);
-@ISA = qw(Exporter);
+@ISA       = qw(Exporter);
 @EXPORT_OK = qw/auth_config auth_login auth_logout/;
 
 sub auth_config {
@@ -32,10 +32,10 @@ sub auth_logout {
 }
 
 sub auth_login {
-    my ($self) = @_;
-    my $headers = $self->req->headers;
+    my ($self)   = @_;
+    my $headers  = $self->req->headers;
     my $username = $headers->header('HTTP_X_USERNAME');
-    my $email = $headers->header('HTTP_X_EMAIL');
+    my $email    = $headers->header('HTTP_X_EMAIL');
     my $fullname = sprintf('%s %s', $headers->header('HTTP_X_FISTNAME'), $headers->header('HTTP_X_LASTNAME'));
 
     if ($username) {

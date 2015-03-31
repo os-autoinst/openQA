@@ -3,7 +3,7 @@ use base qw(DBIx::Class);
 use DateTime;
 
 require Exporter;
-@ISA = qw(Exporter);
+@ISA       = qw(Exporter);
 @EXPORT_OK = qw/now/;
 
 sub add_timestamps {
@@ -13,11 +13,11 @@ sub add_timestamps {
 
     $self->add_columns(
         t_created => {
-            data_type => 'timestamp',
+            data_type                 => 'timestamp',
             dynamic_default_on_create => 'now'
         },
         t_updated => {
-            data_type => 'timestamp',
+            data_type                 => 'timestamp',
             dynamic_default_on_create => 'now',
             dynamic_default_on_update => 'now'
         },
@@ -25,7 +25,7 @@ sub add_timestamps {
 }
 
 sub now {
-    DateTime->now(time_zone=>'UTC');
+    DateTime->now(time_zone => 'UTC');
 }
 
 1;

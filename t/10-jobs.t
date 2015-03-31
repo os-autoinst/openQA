@@ -27,11 +27,11 @@ use Test::More;
 use Test::Mojo;
 
 OpenQA::Test::Database->new->create();
-my $t = Test::Mojo->new('OpenQA');
+my $t  = Test::Mojo->new('OpenQA');
 my $rs = $t->app->db->resultset("Jobs");
 
 is($rs->latest_build, "0091");
 is($rs->latest_build(version => 'Factory', distri => 'opensuse'), "0048");
-is($rs->latest_build(version => '13.1', distri => 'opensuse'), "0091");
+is($rs->latest_build(version => '13.1',    distri => 'opensuse'), "0091");
 
 done_testing();

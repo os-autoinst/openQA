@@ -26,7 +26,7 @@ use base qw/Exporter/;
 our (@EXPORT_OK);
 @EXPORT_OK = qw/lockit clean_pool/;
 
-sub lockit(){
+sub lockit() {
     if (!-e $pooldir) {
         make_path($pooldir);
     }
@@ -41,7 +41,7 @@ sub lockit(){
     return $lockfd;
 }
 
-sub clean_pool(){
+sub clean_pool() {
     return if $nocleanup;
     if (-e "$pooldir/qemu.pid") {
         print "QEMU should be dead - WASUP?\n";

@@ -20,9 +20,9 @@ use OpenQA::Utils;
 use OpenQA::Scheduler ();
 
 sub create {
-    my $self = shift;
+    my $self     = shift;
     my $workerid = $self->stash('workerid');
-    my $command = $self->param('command');
+    my $command  = $self->param('command');
 
     $self->render(json => {id => OpenQA::Scheduler::command_enqueue_checked(workerid => $workerid, command => $command)});
 }

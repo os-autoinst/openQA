@@ -87,13 +87,13 @@ sub usage($) {
 
 GetOptions(\%options, "days=i", "debug", "verbose", "dry", "help|h",) or usage(1);
 
-$options{days} = 60 unless $options{days}//0 > 0;
+$options{days} = 60 unless $options{days} // 0 > 0;
 
 usage(0) if $options{help};
 
 my $jobs = OpenQA::Scheduler::list_jobs(
-    state => 'done',
-    maxage => $options{days}*24*60*60,
+    state  => 'done',
+    maxage => $options{days} * 24 * 60 * 60,
 );
 
 if ($options{verbose}) {
@@ -109,10 +109,10 @@ sub map_version($$) {
 
 my %needles_by_name;
 my %needles_by_tag;
-sub load_needles($$){
+sub load_needles($$) {
     my ($distri, $version) = @_;
 
-    return if exists $needles_by_name{$distri}{$version//''};
+    return if exists $needles_by_name{$distri}{$version // ''};
 
     my $needledir = needledir($distri, $version);
 
@@ -121,21 +121,21 @@ sub load_needles($$){
     closedir $dh;
     for my $name (@names) {
         my $needle = needle_info($name, $distri, $version);
-        $needles_by_name{$distri}{$version//''}{$name} = $needle;
+        $needles_by_name{$distri}{$version // ''}{$name} = $needle;
         for my $tag (@{$needle->{tags}}) {
-            push @{$needles_by_tag{$distri}{$version//''}{$tag}}, $needle;
+            push @{$needles_by_tag{$distri}{$version // ''}{$tag}}, $needle;
         }
     }
 }
 
 my %seen_tags;
 my %seen_needles;
-for my $j (@{$jobs//[]}) {
+for my $j (@{$jobs // []}) {
     my $fn = join('/', $OpenQA::Utils::resultdir, $j->{settings}->{NAME}, 'results.json');
     next unless -e $fn;
     open(my $fd, '<', $fn);
     next unless $fd;
-    local $/; # enable localized slurp mode
+    local $/;    # enable localized slurp mode
     my $results;
     eval { $results = decode_json(<$fd>) };
     close $fd;

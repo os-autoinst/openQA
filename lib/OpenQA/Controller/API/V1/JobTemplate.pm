@@ -26,29 +26,29 @@ sub list {
             @templates = $self->db->resultset("JobTemplates")->search({id => $self->param("job_template_id")});
         }
         elsif ($self->param('machine_name')
-            ||$self->param('machine_id')
-            ||$self->param('test_suite_name')
-            ||$self->param('test_suite_id')
-            ||$self->param('group_id')
-            ||$self->param('arch') && $self->param('distri') && $self->param('flavor') && $self->param('version')
-            ||$self->param('product_id'))
+            || $self->param('machine_id')
+            || $self->param('test_suite_name')
+            || $self->param('test_suite_id')
+            || $self->param('group_id')
+            || $self->param('arch') && $self->param('distri') && $self->param('flavor') && $self->param('version')
+            || $self->param('product_id'))
         {
 
             my %params;
 
-            $params{'machine.name'} = $self->param('machine_name') if $self->param('machine_name');
+            $params{'machine.name'}    = $self->param('machine_name')    if $self->param('machine_name');
             $params{'test_suite.name'} = $self->param('test_suite_name') if $self->param('test_suite_name');
-            $params{'product.arch'} = $self->param('arch') if $self->param('arch');
-            $params{'product.distri'} = $self->param('distri') if $self->param('distri');
-            $params{'product.flavor'} = $self->param('flavor') if $self->param('flavor');
-            $params{'product.version'} = $self->param('version') if $self->param('version');
+            $params{'product.arch'}    = $self->param('arch')            if $self->param('arch');
+            $params{'product.distri'}  = $self->param('distri')          if $self->param('distri');
+            $params{'product.flavor'}  = $self->param('flavor')          if $self->param('flavor');
+            $params{'product.version'} = $self->param('version')         if $self->param('version');
             for my $id (qw/machine_id test_suite_id product_id group_id/) {
                 $params{$id} = $self->param($id) if $self->param($id);
             }
-            @templates = $self->db->resultset("JobTemplates")->search(\%params, { join => ['machine', 'test_suite', 'product'], prefetch => [qw/machine test_suite product/] });
+            @templates = $self->db->resultset("JobTemplates")->search(\%params, {join => ['machine', 'test_suite', 'product'], prefetch => [qw/machine test_suite product/]});
         }
         else {
-            @templates = $self->db->resultset("JobTemplates")->search({}, { prefetch => [qw/machine test_suite product/] });
+            @templates = $self->db->resultset("JobTemplates")->search({}, {prefetch => [qw/machine test_suite product/]});
         }
     };
     my $error = $@;
@@ -100,13 +100,12 @@ sub create {
         }
         else {
             my $values = {
-                prio => $self->param('prio'),
-                product_id => $self->param('product_id'),
-                machine_id => $self->param('machine_id'),
-                group_id => $self->param('group_id'),
-                test_suite_id => $self->param('test_suite_id')
-            };
-            eval { $id = $self->db->resultset("JobTemplates")->create($values)->id};
+                prio          => $self->param('prio'),
+                product_id    => $self->param('product_id'),
+                machine_id    => $self->param('machine_id'),
+                group_id      => $self->param('group_id'),
+                test_suite_id => $self->param('test_suite_id')};
+            eval { $id = $self->db->resultset("JobTemplates")->create($values)->id };
             $error = $@;
         }
     }
@@ -127,18 +126,17 @@ sub create {
         }
         else {
             my $values = {
-                product =>{
-                    arch => $self->param('arch'),
-                    distri => $self->param('distri'),
-                    flavor => $self->param('flavor'),
+                product => {
+                    arch    => $self->param('arch'),
+                    distri  => $self->param('distri'),
+                    flavor  => $self->param('flavor'),
                     version => $self->param('version')
                 },
-                group => { name => $self->param('group_name') },
-                machine => {name => $self->param('machine_name')},
-                prio => $self->param('prio'),
-                test_suite => {name => $self->param('test_suite_name')}
-            };
-            eval { $id = $self->db->resultset("JobTemplates")->create($values)->id};
+                group      => {name => $self->param('group_name')},
+                machine    => {name => $self->param('machine_name')},
+                prio       => $self->param('prio'),
+                test_suite => {name => $self->param('test_suite_name')}};
+            eval { $id = $self->db->resultset("JobTemplates")->create($values)->id };
             $error = $@;
         }
     }
@@ -166,25 +164,24 @@ sub create {
             }
             $self->res->code(303);
             $self->redirect_to($self->req->headers->referrer);
-        }
-    );
+        });
 }
 
 sub destroy {
-    my $self = shift;
+    my $self          = shift;
     my $job_templates = $self->db->resultset('JobTemplates');
 
     my $status;
     my $json = {};
 
     my $rs;
-    eval {$rs = $job_templates->search({id => $self->param('job_template_id')})->delete };
+    eval { $rs = $job_templates->search({id => $self->param('job_template_id')})->delete };
     my $error = $@;
 
     if ($rs) {
         if ($rs == 0) {
             $status = 404;
-            $error = 'Not found';
+            $error  = 'Not found';
         }
         else {
             $json->{result} = int($rs);
@@ -205,8 +202,7 @@ sub destroy {
             }
             $self->res->code(303);
             $self->redirect_to($self->req->headers->referrer);
-        }
-    );
+        });
 }
 
 1;

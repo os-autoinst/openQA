@@ -7,8 +7,8 @@ package OpenQA::Test::Database;
 
 use strict;
 use warnings;
-use Date::Format; # To allow fixtures with relative dates
-use DateTime; # To allow fixtures using InflateColumn::DateTime
+use Date::Format;    # To allow fixtures with relative dates
+use DateTime;        # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw/ abs_path getcwd /;
 use OpenQA::Schema::Schema;
@@ -19,19 +19,19 @@ use Mojo::Base -base;
 has fixture_path => 't/fixtures';
 
 sub create {
-    my $self        = shift;
-    my %options     = (
-        skip_fixtures  => 0,
+    my $self    = shift;
+    my %options = (
+        skip_fixtures => 0,
         @_
     );
 
     # New db
-    my $schema = OpenQA::Schema::connect_db('test');
+    my $schema           = OpenQA::Schema::connect_db('test');
     my $script_directory = "$FindBin::Bin/../dbicdh";
     if (!-d $script_directory) {
-        $script_directory = "$FindBin::Bin/../../dbicdh";  # For tests
+        $script_directory = "$FindBin::Bin/../../dbicdh";    # For tests
         if (!-d $script_directory) {
-            $script_directory = "$FindBin::Bin/../../../dbicdh";  # For tests
+            $script_directory = "$FindBin::Bin/../../../dbicdh";    # For tests
             if (!-d $script_directory) {
                 $script_directory = "/usr/share/openqa/dbicdh";
             }
@@ -41,10 +41,9 @@ sub create {
         {
             schema              => $schema,
             script_directory    => $script_directory,
-            sql_translator_args => { add_drop_table => 0 },
+            sql_translator_args => {add_drop_table => 0},
             force_overwrite     => 0,
-        }
-    );
+        });
 
     $dh->install();
 

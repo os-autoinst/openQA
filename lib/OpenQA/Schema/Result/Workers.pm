@@ -24,7 +24,7 @@ __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type         => 'integer',
         is_auto_increment => 1,
     },
     host => {
@@ -45,7 +45,7 @@ __PACKAGE__->has_many(properties => 'OpenQA::Schema::Result::WorkerProperties', 
 
 sub seen(;$) {
     my ($self, $workercaps) = @_;
-    $self->update({ t_updated => now() });
+    $self->update({t_updated => now()});
     $self->update_caps($workercaps) if $workercaps;
 }
 
@@ -73,22 +73,21 @@ sub set_property($$) {
     my $r = $self->properties->find_or_new(
         {
             key => $key
-        }
-    );
+        });
 
     if (!$r->in_storage) {
         $r->value($val);
         $r->insert;
     }
     else {
-        $r->update({ value => $val });
+        $r->update({value => $val});
     }
 }
 
 sub dead {
     my ($self) = @_;
 
-    my $dt = DateTime->now(time_zone=>'UTC');
+    my $dt = DateTime->now(time_zone => 'UTC');
     # check for workers active in last 10s (last seen should be updated each 5s)
     $dt->subtract(seconds => 10);
 
@@ -99,7 +98,7 @@ sub currentstep {
     my ($self) = @_;
 
     return undef unless ($self->job);
-    my $r = $self->job->modules->find({ result => 'running' });
+    my $r = $self->job->modules->find({result => 'running'});
     $r->name if $r;
 }
 
@@ -109,7 +108,7 @@ sub status {
     return "dead" if ($self->dead);
 
     my $job = $self->job;
-    if($job) {
+    if ($job) {
         return "running";
     }
     else {
@@ -126,10 +125,10 @@ sub info {
     my ($self) = @_;
 
     my $settings = {
-        id => $self->id,
-        host => $self->host,
+        id       => $self->id,
+        host     => $self->host,
         instance => $self->instance,
-        status => $self->status
+        status   => $self->status
     };
     $settings->{properties} = {};
     for my $p ($self->properties->all) {

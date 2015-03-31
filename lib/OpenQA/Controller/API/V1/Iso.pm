@@ -61,14 +61,14 @@ sub _sort_dep {
             next if $done{$job};
             my @after;
             push @after, _parse_dep_variable($job->{START_AFTER_TEST}, $job);
-            push @after, _parse_dep_variable($job->{PARALLEL_WITH}, $job);
+            push @after, _parse_dep_variable($job->{PARALLEL_WITH},    $job);
 
-            my $c = 0; # number of parens that must go to @out before this job
+            my $c = 0;    # number of parens that must go to @out before this job
             foreach my $a (@after) {
                 $c += $count{$a} if defined $count{$a};
             }
 
-            if ($c == 0) { # no parents, we can do this job
+            if ($c == 0) {    # no parents, we can do this job
                 push @out, $job;
                 $done{$job} = 1;
                 $count{_settings_key($job)}--;
@@ -93,36 +93,34 @@ sub _generate_jobs {
 
     my @products = $self->db->resultset('Products')->search(
         {
-            distri => lc($args{DISTRI}),
+            distri  => lc($args{DISTRI}),
             version => $args{VERSION},
-            flavor => $args{FLAVOR},
-            arch => $args{ARCH},
-        }
-    );
+            flavor  => $args{FLAVOR},
+            arch    => $args{ARCH},
+        });
 
     unless (@products) {
         $self->app->log->debug("no products found, retrying version wildcard");
         @products = $self->db->resultset('Products')->search(
             {
-                distri => lc($args{DISTRI}),
+                distri  => lc($args{DISTRI}),
                 version => '*',
-                flavor => $args{FLAVOR},
-                arch => $args{ARCH},
-            }
-        );
+                flavor  => $args{FLAVOR},
+                arch    => $args{ARCH},
+            });
     }
 
     if (@products) {
-        $self->app->log->debug("products: ". join(',', map { $_->name } @products));
+        $self->app->log->debug("products: " . join(',', map { $_->name } @products));
     }
     else {
-        $self->app->log->error("no products found for ".join('-', map { $args{$_} } qw/DISTRI VERSION FLAVOR ARCH/));
+        $self->app->log->error("no products found for " . join('-', map { $args{$_} } qw/DISTRI VERSION FLAVOR ARCH/));
     }
 
     for my $product (@products) {
         my @templates = $product->job_templates;
         unless (@templates) {
-            $self->app->log->error("no templates found for ".join('-', map { $args{$_} } qw/DISTRI VERSION FLAVOR ARCH/));
+            $self->app->log->error("no templates found for " . join('-', map { $args{$_} } qw/DISTRI VERSION FLAVOR ARCH/));
         }
         for my $job_template (@templates) {
             my %settings = map { $_->key => $_->value } $product->settings;
@@ -144,12 +142,12 @@ sub _generate_jobs {
                 push @classes, $class;
             }
             @settings{keys %tmp_settings} = values %tmp_settings;
-            $settings{TEST} = $job_template->test_suite->name;
-            $settings{MACHINE} = $job_template->machine->name;
-            $settings{BACKEND} = $job_template->machine->backend;
+            $settings{TEST}               = $job_template->test_suite->name;
+            $settings{MACHINE}            = $job_template->machine->name;
+            $settings{BACKEND}            = $job_template->machine->backend;
             $settings{WORKER_CLASS} = join(',', sort(@classes));
 
-            next if $args{TEST} && $args{TEST} ne $settings{TEST};
+            next if $args{TEST}    && $args{TEST} ne $settings{TEST};
             next if $args{MACHINE} && $args{MACHINE} ne $settings{MACHINE};
 
             for (keys %args) {
@@ -158,7 +156,7 @@ sub _generate_jobs {
             # Makes sure tha the DISTRI is lowercase
             $settings{DISTRI} = lc($settings{DISTRI});
 
-            $settings{PRIO} = $job_template->prio;
+            $settings{PRIO}     = $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 
             push @$ret, \%settings;
@@ -181,7 +179,7 @@ sub create {
         my $error = "Error: missing parameters:";
         for my $k (qw/DISTRI VERSION FLAVOR ARCH/) {
             $self->app->log->debug(@{$validation->error($k)}) if $validation->has_error($k);
-            $error .= ' '.$k if $validation->has_error($k);
+            $error .= ' ' . $k if $validation->has_error($k);
         }
         $self->res->message($error);
         return $self->rendered(400);
@@ -203,7 +201,7 @@ sub create {
             $cond{$k} = $jobs->[0]->{$k};
         }
         if (%cond) {
-            OpenQA::Scheduler::job_cancel(\%cond, 1); # have new build jobs instead
+            OpenQA::Scheduler::job_cancel(\%cond, 1);    # have new build jobs instead
         }
     }
 
@@ -212,10 +210,10 @@ sub create {
 
     # the jobs are now sorted parents first
     # remember ids of created parents and pass them to _START_AFTER_JOBS/_PARALLEL_JOBS of children
-    my %testsuite_ids; # key: "suite:machine", value: array of job ids
+    my %testsuite_ids;    # key: "suite:machine", value: array of job ids
 
-    for my $settings (@{$jobs||[]}) {
-        my $prio = delete $settings->{PRIO};
+    for my $settings (@{$jobs || []}) {
+        my $prio     = delete $settings->{PRIO};
         my $group_id = delete $settings->{GROUP_ID};
 
         # convert testsuite names in START_AFTER_TEST/PARALLEL_WITH to job ids
@@ -254,7 +252,7 @@ sub create {
             push @{$testsuite_ids{_settings_key($settings)}}, $job->id;
 
             # change prio only if other than default prio
-            if( defined($prio) && $prio != 50 ) {
+            if (defined($prio) && $prio != 50) {
                 $job->set_prio($prio);
             }
             $job->update({group_id => $group_id});
@@ -263,12 +261,12 @@ sub create {
     #notify workers new jobs are available
     OpenQA::Scheduler::job_notify_workers();
     $self->app->log->debug("created $cnt jobs");
-    $self->render(json => {count => $cnt, ids => \@ids });
+    $self->render(json => {count => $cnt, ids => \@ids});
 }
 
 sub destroy {
     my $self = shift;
-    my $iso = $self->stash('name');
+    my $iso  = $self->stash('name');
 
     my $res = OpenQA::Scheduler::job_delete($iso);
     $self->render(json => {count => $res});
@@ -276,7 +274,7 @@ sub destroy {
 
 sub cancel {
     my $self = shift;
-    my $iso = $self->stash('name');
+    my $iso  = $self->stash('name');
 
     my $res = OpenQA::Scheduler::job_cancel($iso);
     $self->render(json => {result => $res});

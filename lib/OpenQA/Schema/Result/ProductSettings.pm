@@ -23,11 +23,11 @@ __PACKAGE__->table('product_settings');
 __PACKAGE__->load_components(qw/Timestamps/);
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type         => 'integer',
         is_auto_increment => 1,
     },
     product_id => {
-        data_type => 'integer',
+        data_type      => 'integer',
         is_foreign_key => 1,
     },
     key => {
@@ -44,7 +44,7 @@ __PACKAGE__->add_unique_constraint([qw/product_id key/]);
 __PACKAGE__->belongs_to(
     "product",
     "OpenQA::Schema::Result::Products",
-    { 'foreign.id' => "self.product_id" },
+    {'foreign.id' => "self.product_id"},
     {
         is_deferrable => 1,
         join_type     => "LEFT",

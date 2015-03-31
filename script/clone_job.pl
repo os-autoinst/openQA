@@ -100,7 +100,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options,"from=s","host=s","dir=s","apikey:s","apisecret:s","verbose|v","help|h",) or usage(1);
+GetOptions(\%options, "from=s", "host=s", "dir=s", "apikey:s", "apisecret:s", "verbose|v", "help|h",) or usage(1);
 
 usage(1) unless @ARGV;
 usage(1) unless exists $options{'from'};
@@ -109,16 +109,16 @@ my $jobid = shift @ARGV || die "missing jobid\n";
 
 $options{'dir'} ||= '/var/lib/openqa/factory';
 
-die "can't write $options{dir}\n" unless -w $options{dir}.'/iso';
+die "can't write $options{dir}\n" unless -w $options{dir} . '/iso';
 
 my $ua = LWP::UserAgent->new;
 $ua->timeout(10);
 $ua->env_proxy;
 
-sub fixup_url($){
+sub fixup_url($) {
     my $host = shift;
     $host .= '/jsonrpc' unless $host =~ '/';
-    $host = 'http://'.$host unless $host=~ '://';
+    $host = 'http://' . $host unless $host =~ '://';
     return $host;
 }
 
@@ -136,10 +136,9 @@ else {
 }
 $local_url->path('/api/v1/jobs');
 $local = OpenQA::Client->new(
-    api => $local_url->host,
-    apikey => $options{'apikey'},
-    apisecret => $options{'apisecret'}
-);
+    api       => $local_url->host,
+    apikey    => $options{'apikey'},
+    apisecret => $options{'apisecret'});
 
 my $remote;
 my $remote_url;
@@ -177,7 +176,7 @@ if ($jobid) {
     print JSON->new->pretty->encode($job) if ($options{verbose});
 
     for my $type (keys %{$job->{assets}}) {
-        next if $type eq 'repo'; # we can't download repos
+        next if $type eq 'repo';    # we can't download repos
         for my $file (@{$job->{assets}->{$type}}) {
             my $dst = $file;
             $dst =~ s,.*/,,;
@@ -189,14 +188,14 @@ if ($jobid) {
             print "downloading\n$from\nto\n$dst\n";
             my $r = $ua->mirror($from, $dst);
             unless ($r->is_success || $r->code == 304) {
-                die "$jobid failed: ",$r->status_line, "\n";
+                die "$jobid failed: ", $r->status_line, "\n";
             }
         }
     }
 
     $url = $local_url->clone;
     my %settings = %{$job->{settings}};
-    delete $settings{NAME}; # usually autocreated
+    delete $settings{NAME};    # usually autocreated
     for my $arg (@ARGV) {
         if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
             if ($2) {
@@ -223,7 +222,7 @@ if ($jobid) {
         }
     }
     else {
-        die "failed to create job: ", pp( $tx->res->body );
+        die "failed to create job: ", pp($tx->res->body);
     }
 }
 

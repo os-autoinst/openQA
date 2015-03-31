@@ -33,7 +33,7 @@ sub websocket_commands {
     }
     else {
         # requests
-        my $type = $json->{'type'};
+        my $type  = $json->{'type'};
         my $jobid = $json->{'jobid'};
         if ($jobid) {
             if (!$job) {
@@ -49,7 +49,7 @@ sub websocket_commands {
             print "received command: $type" if $verbose;
             stop_job($type);
         }
-        elsif ($type eq 'stop_waitforneedle') { # Plan: Enable interactive mode -- Now osautoinst decides what that means
+        elsif ($type eq 'stop_waitforneedle') {    # Plan: Enable interactive mode -- Now osautoinst decides what that means
             if (backend_running) {
                 if (open(my $f, '>', "$pooldir/stop_waitforneedle")) {
                     close $f;
@@ -60,7 +60,7 @@ sub websocket_commands {
                 }
             }
         }
-        elsif ($type eq 'reload_needles_and_retry') { #
+        elsif ($type eq 'reload_needles_and_retry') {    #
             if (backend_running) {
                 if (open(my $f, '>', "$pooldir/reload_needles_and_retry")) {
                     close $f;
@@ -122,7 +122,7 @@ sub websocket_commands {
         elsif ($type eq 'job_available') {
             print "received job notification" if $verbose;
             if (!$job) {
-                check_job
+                check_job;
             }
         }
         else {

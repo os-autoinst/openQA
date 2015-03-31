@@ -83,7 +83,7 @@ sub destroy {
 
     my $auth_method = $self->app->config->{'auth'}->{'method'};
     my $auth_module = "OpenQA::Auth::$auth_method";
-    eval {$auth_module->import('auth_logout');};
+    eval { $auth_module->import('auth_logout'); };
     if (!$@) {
         auth_logout($self);
     }
@@ -93,7 +93,7 @@ sub destroy {
 }
 
 sub create {
-    my ($self) = @_;
+    my ($self)      = @_;
     my $auth_method = $self->app->config->{'auth'}->{'method'};
     my $auth_module = "OpenQA::Auth::$auth_method";
     $auth_module->import('auth_login');
@@ -112,7 +112,7 @@ sub create {
 }
 
 sub response {
-    my ($self) = @_;
+    my ($self)      = @_;
     my $auth_method = $self->app->config->{'auth'}->{'method'};
     my $auth_module = "OpenQA::Auth::$auth_method";
     $auth_module->import('auth_response');
@@ -132,7 +132,7 @@ sub response {
 
 sub test {
     my $self = shift;
-    $self->render(text=>"You can see this because you are " . $self->current_user->username);
+    $self->render(text => "You can see this because you are " . $self->current_user->username);
 }
 
 1;

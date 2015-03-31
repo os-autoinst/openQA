@@ -33,30 +33,30 @@ my $schema = OpenQA::Test::Database->new->create();
 
 sub list_jobs {
     my %args = @_;
-    [ map { $_->to_hash(assets => 1) } OpenQA::Scheduler::query_jobs(%args)->all ];
+    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::query_jobs(%args)->all];
 }
 
 my $current_jobs = list_jobs();
 #diag explain $current_jobs;
 
 my %settings = (
-    DISTRI => 'Unicorn',
-    FLAVOR => 'pink',
-    VERSION => '42',
-    BUILD => '666',
-    ISO => 'whatever.iso',
-    DESKTOP => 'DESKTOP',
-    KVM => 'KVM',
+    DISTRI      => 'Unicorn',
+    FLAVOR      => 'pink',
+    VERSION     => '42',
+    BUILD       => '666',
+    ISO         => 'whatever.iso',
+    DESKTOP     => 'DESKTOP',
+    KVM         => 'KVM',
     ISO_MAXSIZE => 1,
-    MACHINE => "RainbowPC",
-    ARCH => 'x86_64'
+    MACHINE     => "RainbowPC",
+    ARCH        => 'x86_64'
 );
 
 my $workercaps = {};
 $workercaps->{cpu_modelname} = 'Rainbow CPU';
-$workercaps->{cpu_arch} = 'x86_64';
-$workercaps->{cpu_opmode} = '32-bit, 64-bit';
-$workercaps->{mem_max} = '4096';
+$workercaps->{cpu_arch}      = 'x86_64';
+$workercaps->{cpu_opmode}    = '32-bit, 64-bit';
+$workercaps->{mem_max}       = '4096';
 
 
 
@@ -115,12 +115,12 @@ $jobF->set_prio(1);
 use OpenQA::Controller::API::V1::Worker;
 my $c = OpenQA::Controller::API::V1::Worker->new;
 
-my $w1_id = $c->_register($schema, "host", "1",  $workercaps);
-my $w2_id = $c->_register($schema, "host", "2",  $workercaps);
-my $w3_id = $c->_register($schema, "host", "3",  $workercaps);
-my $w4_id = $c->_register($schema, "host", "4",  $workercaps);
-my $w5_id = $c->_register($schema, "host", "5",  $workercaps);
-my $w6_id = $c->_register($schema, "host", "6",  $workercaps);
+my $w1_id = $c->_register($schema, "host", "1", $workercaps);
+my $w2_id = $c->_register($schema, "host", "2", $workercaps);
+my $w3_id = $c->_register($schema, "host", "3", $workercaps);
+my $w4_id = $c->_register($schema, "host", "4", $workercaps);
+my $w5_id = $c->_register($schema, "host", "5", $workercaps);
+my $w6_id = $c->_register($schema, "host", "6", $workercaps);
 
 #websocket
 #my $ws1 = $t->websocket_ok("/api/v1/workers/$w1_id/ws");
@@ -131,22 +131,22 @@ my $w6_id = $c->_register($schema, "host", "6",  $workercaps);
 #my $ws6 = $t->websocket_ok("/api/v1/workers/$w6_id/ws");
 
 my $job = OpenQA::Scheduler::job_grab(workerid => $w1_id);
-is($job->{id}, $jobB->id, "jobB"); #lowest prio of jobs without parents
+is($job->{id}, $jobB->id, "jobB");    #lowest prio of jobs without parents
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w2_id);
-is($job->{id}, $jobC->id, "jobC"); #direct child of B
+is($job->{id}, $jobC->id, "jobC");    #direct child of B
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w3_id);
-is($job->{id}, $jobF->id, "jobF"); #direct child of C
+is($job->{id}, $jobF->id, "jobF");    #direct child of C
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w4_id);
-is($job->{id}, $jobA->id, "jobA"); # E is direct child of C, but A and D must be started first
+is($job->{id}, $jobA->id, "jobA");    # E is direct child of C, but A and D must be started first
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w5_id);
-is($job->{id}, $jobD->id, "jobD"); # direct child of A
+is($job->{id}, $jobD->id, "jobD");    # direct child of A
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
-is($job->{id}, $jobE->id, "jobE"); # C and D are now running so we can start E
+is($job->{id}, $jobE->id, "jobE");    # C and D are now running so we can start E
 
 # jobA failed
 my $result = OpenQA::Scheduler::job_set_done(jobid => $jobA->id, result => 'failed');
@@ -169,7 +169,7 @@ ok($result, "job_set_done");
 
 
 $job = OpenQA::Scheduler::job_get($jobA->id);
-is($job->{state}, "done", "job_set_done changed state");
+is($job->{state},  "done",   "job_set_done changed state");
 is($job->{result}, "failed", "job_set_done changed result");
 
 $job = OpenQA::Scheduler::job_get($jobB->id);
@@ -179,11 +179,11 @@ $job = OpenQA::Scheduler::job_get($jobC->id);
 is($job->{state}, "running", "job_set_done changed state");
 
 $job = OpenQA::Scheduler::job_get($jobD->id);
-is($job->{state}, "done", "job_set_done changed state");
+is($job->{state},  "done",            "job_set_done changed state");
 is($job->{result}, "parallel_failed", "job_set_done changed result, jobD failed because of jobA");
 
 $job = OpenQA::Scheduler::job_get($jobE->id);
-is($job->{state}, "done", "job_set_done changed state");
+is($job->{state},  "done",            "job_set_done changed state");
 is($job->{result}, "parallel_failed", "job_set_done changed result, jobE failed because of jobD");
 
 $job = OpenQA::Scheduler::job_get($jobF->id);
@@ -193,49 +193,49 @@ is($job->{state}, "running", "job_set_done changed state");
 my $id = OpenQA::Scheduler::job_duplicate(jobid => $jobF->id);
 ok(defined $id, "duplicate works");
 
-$job = OpenQA::Scheduler::job_get($jobA->id); #unchanged
-is($job->{state}, "done", "no change");
-is($job->{result}, "failed", "no change");
-is($job->{clone_id}, undef, "no clones");
+$job = OpenQA::Scheduler::job_get($jobA->id);    #unchanged
+is($job->{state},    "done",   "no change");
+is($job->{result},   "failed", "no change");
+is($job->{clone_id}, undef,    "no clones");
 
-$job = OpenQA::Scheduler::job_get($jobB->id); # cloned
+$job = OpenQA::Scheduler::job_get($jobB->id);    # cloned
 is($job->{state}, "running", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobB2 = $job->{clone_id};
 
 
-$job = OpenQA::Scheduler::job_get($jobC->id); # cloned
+$job = OpenQA::Scheduler::job_get($jobC->id);    # cloned
 is($job->{state}, "running", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobC2 = $job->{clone_id};
 
-$job = OpenQA::Scheduler::job_get($jobD->id); #unchanged
-is($job->{state}, "done", "no change");
-is($job->{result}, "parallel_failed", "no change");
-is($job->{clone_id}, undef, "no clones");
+$job = OpenQA::Scheduler::job_get($jobD->id);    #unchanged
+is($job->{state},    "done",            "no change");
+is($job->{result},   "parallel_failed", "no change");
+is($job->{clone_id}, undef,             "no clones");
 
-$job = OpenQA::Scheduler::job_get($jobE->id); #unchanged
-is($job->{state}, "done", "no change");
-is($job->{result}, "parallel_failed", "no change");
-is($job->{clone_id}, undef, "no clones");
+$job = OpenQA::Scheduler::job_get($jobE->id);    #unchanged
+is($job->{state},    "done",            "no change");
+is($job->{result},   "parallel_failed", "no change");
+is($job->{clone_id}, undef,             "no clones");
 
-$job = OpenQA::Scheduler::job_get($jobF->id); # cloned
+$job = OpenQA::Scheduler::job_get($jobF->id);    # cloned
 is($job->{state}, "running", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobF2 = $job->{clone_id};
 
 $job = OpenQA::Scheduler::job_get($jobB2);
-is($job->{state}, "scheduled", "cloned jobs are scheduled");
-is($job->{clone_id}, undef, "no clones");
+is($job->{state},    "scheduled", "cloned jobs are scheduled");
+is($job->{clone_id}, undef,       "no clones");
 
 $job = OpenQA::Scheduler::job_get($jobC2);
-is($job->{state}, "scheduled", "cloned jobs are scheduled");
-is($job->{clone_id}, undef, "no clones");
+is($job->{state},    "scheduled", "cloned jobs are scheduled");
+is($job->{clone_id}, undef,       "no clones");
 is_deeply($job->{parents}, [$jobB2], "cloned deps");
 
 $job = OpenQA::Scheduler::job_get($jobF2);
-is($job->{state}, "scheduled", "cloned jobs are scheduled");
-is($job->{clone_id}, undef, "no clones");
+is($job->{state},    "scheduled", "cloned jobs are scheduled");
+is($job->{clone_id}, undef,       "no clones");
 is_deeply($job->{parents}, [$jobC2], "cloned deps");
 
 
@@ -258,66 +258,66 @@ is_deeply($job->{parents}, [$jobC2], "cloned deps");
 $id = OpenQA::Scheduler::job_duplicate(jobid => $jobE->id);
 ok(defined $id, "duplicate works");
 
-$job = OpenQA::Scheduler::job_get($jobA->id); #cloned
-is($job->{state}, "done", "no change");
+$job = OpenQA::Scheduler::job_get($jobA->id);    #cloned
+is($job->{state},  "done",   "no change");
 is($job->{result}, "failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobA2 = $job->{clone_id};
 
-$job = OpenQA::Scheduler::job_get($jobB->id); # unchanged
-is($job->{state}, "running", "no change");
-is($job->{clone_id}, $jobB2, "cloned");
+$job = OpenQA::Scheduler::job_get($jobB->id);    # unchanged
+is($job->{state},    "running", "no change");
+is($job->{clone_id}, $jobB2,    "cloned");
 
 
-$job = OpenQA::Scheduler::job_get($jobC->id); # unchanged
-is($job->{state}, "running", "no change");
-is($job->{clone_id}, $jobC2, "cloned");
+$job = OpenQA::Scheduler::job_get($jobC->id);    # unchanged
+is($job->{state},    "running", "no change");
+is($job->{clone_id}, $jobC2,    "cloned");
 
-$job = OpenQA::Scheduler::job_get($jobD->id); #cloned
-is($job->{state}, "done", "no change");
+$job = OpenQA::Scheduler::job_get($jobD->id);    #cloned
+is($job->{state},  "done",            "no change");
 is($job->{result}, "parallel_failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobD2 = $job->{clone_id};
 
-$job = OpenQA::Scheduler::job_get($jobE->id); #cloned
-is($job->{state}, "done", "no change");
+$job = OpenQA::Scheduler::job_get($jobE->id);    #cloned
+is($job->{state},  "done",            "no change");
 is($job->{result}, "parallel_failed", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobE2 = $job->{clone_id};
 
-$job = OpenQA::Scheduler::job_get($jobF->id); # unchanged
-is($job->{state}, "running", "no change");
-is($job->{clone_id}, $jobF2, "cloned");
+$job = OpenQA::Scheduler::job_get($jobF->id);    # unchanged
+is($job->{state},    "running", "no change");
+is($job->{clone_id}, $jobF2,    "cloned");
 
 $job = OpenQA::Scheduler::job_get($jobA2);
-is($job->{state}, "scheduled", "no change");
-is($job->{clone_id}, undef, "no clones");
+is($job->{state},    "scheduled", "no change");
+is($job->{clone_id}, undef,       "no clones");
 is_deeply($job->{parents}, [], "cloned deps");
 
 $job = OpenQA::Scheduler::job_get($jobB2);
-is($job->{state}, "scheduled", "no change");
-is($job->{clone_id}, undef, "no clones");
+is($job->{state},    "scheduled", "no change");
+is($job->{clone_id}, undef,       "no clones");
 is_deeply($job->{parents}, [], "cloned deps");
 
 $job = OpenQA::Scheduler::job_get($jobC2);
-is($job->{state}, "scheduled", "no change");
-is($job->{clone_id}, undef, "no clones");
+is($job->{state},    "scheduled", "no change");
+is($job->{clone_id}, undef,       "no clones");
 is_deeply($job->{parents}, [$jobB2], "cloned deps");
 
 
 $job = OpenQA::Scheduler::job_get($jobD2);
-is($job->{state}, "scheduled", "no change");
-is($job->{clone_id}, undef, "no clones");
+is($job->{state},    "scheduled", "no change");
+is($job->{clone_id}, undef,       "no clones");
 is_deeply($job->{parents}, [$jobA2], "cloned deps");
 
 $job = OpenQA::Scheduler::job_get($jobE2);
-is($job->{state}, "scheduled", "no change");
-is($job->{clone_id}, undef, "no clones");
-is_deeply([sort @{$job->{parents}}],[sort ($jobC2, $jobD2)], "cloned deps");
+is($job->{state},    "scheduled", "no change");
+is($job->{clone_id}, undef,       "no clones");
+is_deeply([sort @{$job->{parents}}], [sort ($jobC2, $jobD2)], "cloned deps");
 
 $job = OpenQA::Scheduler::job_get($jobF2);
-is($job->{state}, "scheduled", "no change");
-is($job->{clone_id}, undef, "no clones");
+is($job->{state},    "scheduled", "no change");
+is($job->{clone_id}, undef,       "no clones");
 is_deeply($job->{parents}, [$jobC2], "cloned deps");
 
 # now we have
@@ -347,8 +347,7 @@ $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
         $tx->req->headers->add('X-API-JobToken' => $worker->get_property('JOBTOKEN'));
-    }
-);
+    });
 
 $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id]);
 $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);

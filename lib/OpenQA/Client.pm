@@ -36,17 +36,17 @@ sub new {
     }
 
     if ($args{api}) {
-        my @cfgpaths=(glob('~/.config/openqa'), '/etc/openqa');
-        @cfgpaths=($ENV{OPENQA_CONFIG},@cfgpaths) if defined $ENV{OPENQA_CONFIG};
+        my @cfgpaths = (glob('~/.config/openqa'), '/etc/openqa');
+        @cfgpaths = ($ENV{OPENQA_CONFIG}, @cfgpaths) if defined $ENV{OPENQA_CONFIG};
         for my $path (@cfgpaths) {
-            my $file=$path.'/client.conf';
+            my $file = $path . '/client.conf';
             next unless $file && -r $file;
             my $cfg = Config::IniFiles->new(-file => $file) || last;
             last unless $cfg->SectionExists($args{api});
             for my $i (qw/key secret/) {
                 my $attr = "api$i";
                 next if $self->$attr;
-                (my $val = $cfg->val($args{api}, $i)) =~ s/\s+$//; # remove trailing whitespace
+                (my $val = $cfg->val($args{api}, $i)) =~ s/\s+$//;    # remove trailing whitespace
                 $self->$attr($val);
             }
             last;
@@ -59,8 +59,7 @@ sub new {
     $self->on(
         start => sub {
             $self->_add_auth_headers(@_);
-        }
-    );
+        });
 
     return $self;
 }
@@ -74,11 +73,11 @@ sub _add_auth_headers {
     }
 
     my $timestamp = time;
-    my %headers = (
-        Accept => 'application/json',
-        'X-API-Key' => $self->apikey,
+    my %headers   = (
+        Accept            => 'application/json',
+        'X-API-Key'       => $self->apikey,
         'X-API-Microtime' => $timestamp,
-        'X-API-Hash' => hmac_sha1_sum($self->_path_query($tx).$timestamp, $self->apisecret),
+        'X-API-Hash'      => hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret),
     );
 
     while (my ($k, $v) = each %headers) {
@@ -88,7 +87,7 @@ sub _add_auth_headers {
 
 sub _path_query {
     my $self  = shift;
-    my $url = shift->req->url;
+    my $url   = shift->req->url;
     my $query = $url->query->to_string;
     # as use this for hashing, we need to make sure the query is escaping
     # space the same as the mojo url parser.

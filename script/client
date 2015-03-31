@@ -71,7 +71,7 @@ lorem ipsum ...
 
 use strict;
 use FindBin;
-BEGIN { unshift @INC, "$FindBin::Bin/../lib"}
+BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
 
 use Data::Dump;
 use Mojo::URL;
@@ -89,10 +89,10 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options,"host=s","apibase=s","verbose|v","apikey:s","apisecret:s", "params=s", "help|h|?",) or usage(1);
+GetOptions(\%options, "host=s", "apibase=s", "verbose|v", "apikey:s", "apisecret:s", "params=s", "help|h|?",) or usage(1);
 
 usage(1) unless @ARGV;
-$options{'host'} ||= 'localhost';
+$options{'host'}    ||= 'localhost';
 $options{'apibase'} ||= '/api/v1';
 
 my $path = shift @ARGV;

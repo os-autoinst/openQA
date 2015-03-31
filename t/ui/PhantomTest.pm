@@ -15,14 +15,14 @@ sub start_app {
     if ($mojopid == 0) {
         OpenQA::Test::Database->new->create;
         # TODO: start the server manually - and make it silent
-        Mojolicious::Commands->start_app('OpenQA','daemon', '-l',"http://127.0.0.1:$mojoport/");
+        Mojolicious::Commands->start_app('OpenQA', 'daemon', '-l', "http://127.0.0.1:$mojoport/");
         exit(0);
     }
     else {
         #$SIG{__DIE__} = sub { kill('TERM', $mojopid); };
         my $wait = time + 5;
-        while ( time < $wait ) {
-            my $t = time;
+        while (time < $wait) {
+            my $t      = time;
             my $socket = IO::Socket::INET->new(
                 PeerHost => '127.0.0.1',
                 PeerPort => $mojoport,
@@ -51,8 +51,8 @@ sub start_phantomjs {
         # borrowed GPL code from WWW::Mechanize::PhantomJS
         #$SIG{__DIE__} = sub { kill('TERM', $phantompid); };
         my $wait = time + 20;
-        while ( time < $wait ) {
-            my $t = time;
+        while (time < $wait) {
+            my $t      = time;
             my $socket = IO::Socket::INET->new(
                 PeerHost => '127.0.0.1',
                 PeerPort => $phantomport,
@@ -83,7 +83,7 @@ sub start_phantomjs {
 sub make_screenshot($) {
     my ($fn) = (@_);
 
-    open(my $fh,'>', $fn);
+    open(my $fh, '>', $fn);
     binmode($fh);
     my $png_base64 = $driver->screenshot();
     print($fh MIME::Base64::decode_base64($png_base64));

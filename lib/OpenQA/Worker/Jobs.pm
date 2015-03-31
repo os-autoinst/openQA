@@ -34,8 +34,8 @@ use base qw/Exporter/;
 our @EXPORT = qw/start_job stop_job check_job backend_running/;
 
 my $worker;
-my $log_offset = 0;
-my $max_job_time = 7200; # 2h
+my $log_offset   = 0;
+my $max_job_time = 7200;    # 2h
 my $current_running;
 my $test_order;
 my $stop_job_running;
@@ -74,7 +74,7 @@ sub check_job {
     $running = 1;
     if (!$job) {
         print "checking for job ...\n" if $verbose;
-        my $res = api_call('post',"workers/$workerid/grab_job", $worker_caps) || { job => undef };
+        my $res = api_call('post', "workers/$workerid/grab_job", $worker_caps) || {job => undef};
         $job = $res->{job};
         if ($job && $job->{id}) {
             Mojo::IOLoop->next_tick(\&start_job);
@@ -110,7 +110,7 @@ sub stop_job($;$) {
     # we should have an event emitter that subscribes to update_status done
     my $stop_job_check_status;
     $stop_job_check_status = sub {
-        if($update_status_running) {
+        if ($update_status_running) {
             print "waiting for update_status to finish\n" if $verbose;
             Mojo::IOLoop->timer(1 => $stop_job_check_status);
         }
@@ -130,7 +130,7 @@ sub _stop_job($;$) {
     my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
 
-    my $job_done; # undef
+    my $job_done;    # undef
 
     if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
         # collect uploaded logs
@@ -145,10 +145,9 @@ sub _stop_job($;$) {
             # (refactor at some point)
             my $res = $OpenQA::Worker::Common::ua->post(
                 $ua_url => form => {
-                    file => { file => $file, filename => basename($file) },
+                    file => {file => $file, filename => basename($file)},
                     ulog => 1
-                }
-            );
+                });
         }
         if (open(my $log, '>>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
@@ -162,31 +161,29 @@ sub _stop_job($;$) {
             $ofile =~ s/serial0/serial0.txt/;
             my $res = $OpenQA::Worker::Common::ua->post(
                 $ua_url => form => {
-                    file => { file => "$pooldir/$file", filename => $ofile }
-                }
-            );
+                    file => {file => "$pooldir/$file", filename => $ofile}});
         }
 
         if ($aborted eq 'obsolete') {
             printf "setting job %d to incomplete (obsolete)\n", $job->{id};
             upload_status(1);
-            api_call('post', 'jobs/'.$job->{id}.'/set_done', {result => 'incomplete', newbuild => 1});
+            api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete', newbuild => 1});
             $job_done = 1;
         }
         elsif ($aborted eq 'cancel') {
             # not using job_incomplete here to avoid duplicate
             printf "setting job %d to incomplete (cancel)\n", $job->{id};
             upload_status(1);
-            api_call('post', 'jobs/'.$job->{id}.'/set_done', {result => 'incomplete'});
+            api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
             $job_done = 1;
         }
         elsif ($aborted eq 'timeout') {
             printf "job %d spent more time than MAX_JOB_TIME\n", $job->{id};
         }
-        elsif ($aborted eq 'done') { # not aborted
+        elsif ($aborted eq 'done') {    # not aborted
             printf "setting job %d to done\n", $job->{id};
             upload_status(1);
-            api_call('post', 'jobs/'.$job->{id}.'/set_done');
+            api_call('post', 'jobs/' . $job->{id} . '/set_done');
             $job_done = 1;
         }
     }
@@ -197,13 +194,13 @@ sub _stop_job($;$) {
         $args{dup_type_auto} = 1;
         printf "duplicating job %d\n", $job->{id};
         # make it less attractive so we don't get it again
-        api_call('post', 'jobs/'.$job->{id}.'/duplicate', \%args);
-        api_call('post', 'jobs/'.$job->{id}.'/set_done', {result => 'incomplete'});
+        api_call('post', 'jobs/' . $job->{id} . '/duplicate', \%args);
+        api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
     }
     warn sprintf("cleaning up %s...\n", $job->{settings}->{NAME});
     clean_pool();
-    $job = undef;
-    $worker = undef;
+    $job              = undef;
+    $worker           = undef;
     $stop_job_running = 0;
 
     if ($aborted eq 'quit') {
@@ -221,10 +218,10 @@ sub start_job {
     printf "got job %d: %s\n", $job->{id}, $name;
 
     # for the status call
-    $log_offset = 0;
+    $log_offset      = 0;
     $current_running = undef;
-    $do_livelog = 0;
-    $tosend_images = {};
+    $do_livelog      = 0;
+    $tosend_images   = {};
 
     $worker = engine_workit($job);
     unless ($worker) {
@@ -280,8 +277,8 @@ sub read_base64_file($) {
 # reads the content of a file below pooldir and returns its md5
 sub calculate_file_md5($) {
     my ($file) = @_;
-    my $c = OpenQA::Utils::file_content("$pooldir/$file");
-    my $md5 = Digest::MD5->new;
+    my $c      = OpenQA::Utils::file_content("$pooldir/$file");
+    my $md5    = Digest::MD5->new;
     $md5->add($c);
     return $md5->clone->hexdigest;
 }
@@ -291,7 +288,7 @@ sub read_last_screen {
     return undef if !$lastlink || $lastscreenshot eq $lastlink;
     my $png = read_base64_file("qemuscreenshot/$lastlink");
     $lastscreenshot = $lastlink;
-    return { name => $lastscreenshot, png => $png };
+    return {name => $lastscreenshot, png => $png};
 }
 
 # timer function ignoring arguments
@@ -324,22 +321,22 @@ sub upload_status(;$) {
     $upload_result = $current_running if $upload_running;
 
     if (defined($os_status->{running}) || $upload_running) {
-        if (!$current_running) { # first test
+        if (!$current_running) {    # first test
             $test_order = read_json_file('test_order.json');
-            if (!$test_order ) {
+            if (!$test_order) {
                 stop_job('no tests scheduled');
                 return;
             }
             $status->{test_order} = $test_order;
             $status->{backend}    = $os_status->{backend};
         }
-        elsif ($current_running ne $os_status->{running}) { # new test
+        elsif ($current_running ne $os_status->{running}) {    # new test
             $upload_result = $current_running;
         }
         $current_running = $os_status->{running};
     }
     if ($status->{status}->{needinput}) {
-        $status->{result} = { $os_status->{running} => read_module_result($os_status->{running}) };
+        $status->{result} = {$os_status->{running} => read_module_result($os_status->{running})};
     }
     elsif (defined($upload_result)) {
         $status->{result} = read_result_file($upload_result);
@@ -361,7 +358,7 @@ sub upload_status(;$) {
         ws_call('status', $status);
     }
     else {
-        my $res = api_call('post', 'jobs/'.$job->{id}.'/status', undef, {status => $status});
+        my $res = api_call('post', 'jobs/' . $job->{id} . '/status', undef, {status => $status});
         upload_images($res->{known_images});
     }
 }
@@ -380,12 +377,12 @@ sub upload_images {
 
         my $form = {
             file => {
-                file => "$pooldir/testresults/$file",
+                file     => "$pooldir/testresults/$file",
                 filename => $md5
             },
             image => 1,
             thumb => 0,
-            md5 => $md5
+            md5   => $md5
         };
         # don't use api_call as it retries and does not allow form data
         # (refactor at some point)
@@ -407,7 +404,7 @@ sub read_json_file {
         return undef;
     }
     my $json = {};
-    eval {$json = decode_json(<$fh>);};
+    eval { $json = decode_json(<$fh>); };
     warn "os-autoinst didn't write proper $fn" if $@;
     close($fh);
     return $json;
@@ -422,9 +419,9 @@ sub read_module_result($) {
         my $screen = $d->{screenshot};
         next unless $screen;
         my $md5 = calculate_file_md5("testresults/$screen");
-        $d->{screenshot} ={
+        $d->{screenshot} = {
             name => $screen,
-            md5 => $md5,
+            md5  => $md5,
         };
         $tosend_images->{$md5} = $screen;
     }
@@ -438,7 +435,7 @@ sub read_result_file($) {
 
     # we need to upload all results not yet uploaded - and stop at $name
     while (scalar(@$test_order)) {
-        my $test = (shift @$test_order)->{name};
+        my $test   = (shift @$test_order)->{name};
         my $result = read_module_result($test);
         last unless $result;
         $ret->{$test} = $result;

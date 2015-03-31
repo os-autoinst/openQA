@@ -43,37 +43,36 @@ is_deeply(
     {
         'Products' => [
             {
-                'arch' => 'i586',
-                'distri' => 'opensuse',
-                'flavor' => 'DVD',
-                'id' => 1,
+                'arch'     => 'i586',
+                'distri'   => 'opensuse',
+                'flavor'   => 'DVD',
+                'id'       => 1,
                 'settings' => [
                     {
-                        'key' => 'DVD',
+                        'key'   => 'DVD',
                         'value' => '1'
                     },
                     {
-                        'key' => 'ISO_MAXSIZE',
+                        'key'   => 'ISO_MAXSIZE',
                         'value' => '4700372992'
                     }
                 ],
                 'version' => '13.1'
-            }
-        ]
+            }]
     },
     "Initial products"
 ) || diag explain $get->tx->res->json;
 
 
-$t->post_ok('/api/v1/products', form => { distri => "opensuse", flavor => "DVD", version => 13.2 })->status_is(400); #no arch
-$t->post_ok('/api/v1/products', form => { arch => "x86_64", flavor => "DVD", version => 13.2 })->status_is(400); # no distri
-$t->post_ok('/api/v1/products', form => { arch => "x86_64", distri => "opensuse", version => 13.2 })->status_is(400); # no flavor
-$t->post_ok('/api/v1/products', form => { arch => "x86_64", distri => "opensuse", flavor => "DVD" })->status_is(400); # no version
+$t->post_ok('/api/v1/products', form => {distri => "opensuse", flavor => "DVD",      version => 13.2})->status_is(400);     #no arch
+$t->post_ok('/api/v1/products', form => {arch   => "x86_64",   flavor => "DVD",      version => 13.2})->status_is(400);     # no distri
+$t->post_ok('/api/v1/products', form => {arch   => "x86_64",   distri => "opensuse", version => 13.2})->status_is(400);     # no flavor
+$t->post_ok('/api/v1/products', form => {arch   => "x86_64",   distri => "opensuse", flavor  => "DVD"})->status_is(400);    # no version
 
-my $res = $t->post_ok('/api/v1/products', form => { arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2, "settings[TEST]" => "val1", "settings[TEST2]" => "val1" })->status_is(200);
+my $res = $t->post_ok('/api/v1/products', form => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2, "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})->status_is(200);
 my $product_id = $res->tx->res->json->{id};
 
-$res = $t->post_ok('/api/v1/products', form => { arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2 })->status_is(400); #already exists
+$res = $t->post_ok('/api/v1/products', form => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2})->status_is(400);    #already exists
 
 $get = $t->get_ok("/api/v1/products/$product_id")->status_is(200);
 is_deeply(
@@ -81,28 +80,27 @@ is_deeply(
     {
         'Products' => [
             {
-                'arch' => 'x86_64',
-                'distri' => 'opensuse',
-                'flavor' => 'DVD',
-                'id' => $product_id,
+                'arch'     => 'x86_64',
+                'distri'   => 'opensuse',
+                'flavor'   => 'DVD',
+                'id'       => $product_id,
                 'settings' => [
                     {
-                        'key' => 'TEST',
+                        'key'   => 'TEST',
                         'value' => 'val1'
                     },
                     {
-                        'key' => 'TEST2',
+                        'key'   => 'TEST2',
                         'value' => 'val1'
                     }
                 ],
                 'version' => '13.2'
-            }
-        ]
+            }]
     },
     "Add product"
 ) || diag explain $get->tx->res->json;
 
-$t->put_ok("/api/v1/products/$product_id", form => { arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2, "settings[TEST2]" => "val1" })->status_is(200);
+$t->put_ok("/api/v1/products/$product_id", form => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2, "settings[TEST2]" => "val1"})->status_is(200);
 
 $get = $t->get_ok("/api/v1/products/$product_id")->status_is(200);
 is_deeply(
@@ -110,24 +108,23 @@ is_deeply(
     {
         'Products' => [
             {
-                'arch' => 'x86_64',
-                'distri' => 'opensuse',
-                'flavor' => 'DVD',
-                'id' => $product_id,
+                'arch'     => 'x86_64',
+                'distri'   => 'opensuse',
+                'flavor'   => 'DVD',
+                'id'       => $product_id,
                 'settings' => [
                     {
-                        'key' => 'TEST2',
+                        'key'   => 'TEST2',
                         'value' => 'val1'
                     }
                 ],
                 'version' => '13.2'
-            }
-        ]
+            }]
     },
     "Delete product variable"
 ) || diag explain $get->tx->res->json;
 
 $res = $t->delete_ok("/api/v1/products/$product_id")->status_is(200);
-$res = $t->delete_ok("/api/v1/products/$product_id")->status_is(404); #not found
+$res = $t->delete_ok("/api/v1/products/$product_id")->status_is(404);    #not found
 
 done_testing();

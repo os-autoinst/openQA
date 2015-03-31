@@ -29,7 +29,7 @@ sub _test_result($) {
     return unless fcntl(JF, F_SETLKW, pack('ssqql', F_RDLCK, 0, 0, 0, $$));
     my $result_hash;
     local $/;
-    eval {$result_hash = JSON::decode_json(<JF>);};
+    eval { $result_hash = JSON::decode_json(<JF>); };
     warn "failed to parse $testresdir/results.json: $@" if $@;
     close(JF);
     return $result_hash;
@@ -39,7 +39,7 @@ sub split_results {
     my ($job, $dir) = @_;
 
     my $results = _test_result($dir);
-    return unless $results; # broken test
+    return unless $results;    # broken test
     my $schema = OpenQA::Scheduler::schema();
     for my $tm (@{$results->{testmodules}}) {
         my $r = $job->insert_module($tm);
@@ -70,7 +70,7 @@ sub name {
 
     for my $c (qw/DISTRI VERSION FLAVOR MEDIA ARCH BUILD TEST/) {
         next unless $job_settings->{$c};
-        push @a, sprintf(($formats{$c}||'%s'), $job_settings->{$c});
+        push @a, sprintf(($formats{$c} || '%s'), $job_settings->{$c});
     }
     my $name = join('-', @a);
     $name =~ s/[^a-zA-Z0-9._+:-]/_/g;
@@ -90,10 +90,10 @@ sub {
         if (!$bi && $job->backend_info) {
             $bi = decode_json($job->backend_info);
         }
-        $bi ||= { 'backend' => 'qemu', backend_info => {} };
+        $bi ||= {'backend' => 'qemu', backend_info => {}};
         my $backend = $bi->{backend};
         $backend = 'qemu' if $backend eq 'backend::driver';
-        $job->set_column(backend => $backend );
+        $job->set_column(backend      => $backend);
         $job->set_column(backend_info => encode_json($bi->{backend_info}));
         $job->update();
     }

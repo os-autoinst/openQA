@@ -69,7 +69,7 @@ sub add_job_group() {
     }
 
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'two groups in fixtures');
-    $driver->find_element('#name', 'css')->send_keys('Cool Group');
+    $driver->find_element('#name',   'css')->send_keys('Cool Group');
     $driver->find_element('#submit', 'css')->click();
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 3 of 3 entries/, 'group created');
     is($driver->find_element('#group_1003', 'css')->get_text(), 'Cool Group', 'group created');
@@ -93,36 +93,36 @@ sub add_machine() {
     is(6, @headers, "6 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "name",    "1st column");
-    is((shift @headers)->get_text(), "backend", "2nd column");
-    is((shift @headers)->get_text(), "QEMUCPU",  "3rd column");
-    is((shift @headers)->get_text(), "LAPTOP", "4th column");
+    is((shift @headers)->get_text(), "name",            "1st column");
+    is((shift @headers)->get_text(), "backend",         "2nd column");
+    is((shift @headers)->get_text(), "QEMUCPU",         "3rd column");
+    is((shift @headers)->get_text(), "LAPTOP",          "4th column");
     is((shift @headers)->get_text(), "other variables", "5th column");
-    is((shift @headers)->get_text(), "action",  "6th column");
+    is((shift @headers)->get_text(), "action",          "6th column");
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
     @headers = $driver->find_child_elements($elem, 'td');
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "Laptop_64",    "name");
-    is((shift @headers)->get_text(), "qemu", "backend");
-    is((shift @headers)->get_text(), "qemu64",  "cpu");
-    is((shift @headers)->get_text(), "1", "LAPTOP");
+    is((shift @headers)->get_text(), "Laptop_64", "name");
+    is((shift @headers)->get_text(), "qemu",      "backend");
+    is((shift @headers)->get_text(), "qemu64",    "cpu");
+    is((shift @headers)->get_text(), "1",         "LAPTOP");
 
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons before");
 
-    is($driver->find_element('//input[@value="New machine"]')->click(), 1, 'new machine' );
+    is($driver->find_element('//input[@value="New machine"]')->click(), 1, 'new machine');
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(6, @fields, "6 fields"); # one column has 2 fields
-    (shift @fields)->send_keys('HURRA'); # name
-    (shift @fields)->send_keys('ipmi'); # backend
-    (shift @fields)->send_keys('kvm32'); # cpu
+    is(6, @fields, "6 fields");    # one column has 2 fields
+    (shift @fields)->send_keys('HURRA');    # name
+    (shift @fields)->send_keys('ipmi');     # backend
+    (shift @fields)->send_keys('kvm32');    # cpu
 
-    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
@@ -146,36 +146,36 @@ sub add_test_suite() {
     is(6, @headers, "6 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "name",    "1st column");
-    is((shift @headers)->get_text(), "DESKTOP",  "2nd column");
-    is((shift @headers)->get_text(), "PARALLEL_WITH", "3rd column");
-    is((shift @headers)->get_text(), "INSTALLONLY", "4th column");
-    is((shift @headers)->get_text(), "other variables",  "5th column");
+    is((shift @headers)->get_text(), "name",            "1st column");
+    is((shift @headers)->get_text(), "DESKTOP",         "2nd column");
+    is((shift @headers)->get_text(), "PARALLEL_WITH",   "3rd column");
+    is((shift @headers)->get_text(), "INSTALLONLY",     "4th column");
+    is((shift @headers)->get_text(), "other variables", "5th column");
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
     @headers = $driver->find_child_elements($elem, 'td');
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "RAID0",    "name");
-    is((shift @headers)->get_text(), "kde",  "DESKTOP");
-    is((shift @headers)->get_text(), "",  "PARALLEL_WITH");
-    is((shift @headers)->get_text(), "1",  "INSTALLONLY");
+    is((shift @headers)->get_text(), "RAID0", "name");
+    is((shift @headers)->get_text(), "kde",   "DESKTOP");
+    is((shift @headers)->get_text(), "",      "PARALLEL_WITH");
+    is((shift @headers)->get_text(), "1",     "INSTALLONLY");
 
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 7, "7 edit buttons before");
 
-    is($driver->find_element('//input[@value="New test suite"]')->click(), 1, 'new test suite' );
+    is($driver->find_element('//input[@value="New test suite"]')->click(), 1, 'new test suite');
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(6, @fields, "6 fields"); # one column has 2 fields
-    (shift @fields)->send_keys('xfce'); # name
-    (shift @fields)->send_keys('xfce'); # desktop
-    (shift @fields)->send_keys(''); # parallelwith
-    (shift @fields)->send_keys(''); # installonly
+    is(6, @fields, "6 fields");    # one column has 2 fields
+    (shift @fields)->send_keys('xfce');    # name
+    (shift @fields)->send_keys('xfce');    # desktop
+    (shift @fields)->send_keys('');        # parallelwith
+    (shift @fields)->send_keys('');        # installonly
 
-    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
@@ -202,40 +202,40 @@ sub add_product() {
     is(8, @headers, "8 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "distri",    "1st column");
-    is((shift @headers)->get_text(), "version", "2nd column");
-    is((shift @headers)->get_text(), "flavor", "3rd column");
-    is((shift @headers)->get_text(), "arch",  "4th column");
-    is((shift @headers)->get_text(), "DVD", "5th column");
-    is((shift @headers)->get_text(), "ISO_MAXSIZE",  "6th column");
-    is((shift @headers)->get_text(), "other variables",  "7th column");
+    is((shift @headers)->get_text(), "distri",          "1st column");
+    is((shift @headers)->get_text(), "version",         "2nd column");
+    is((shift @headers)->get_text(), "flavor",          "3rd column");
+    is((shift @headers)->get_text(), "arch",            "4th column");
+    is((shift @headers)->get_text(), "DVD",             "5th column");
+    is((shift @headers)->get_text(), "ISO_MAXSIZE",     "6th column");
+    is((shift @headers)->get_text(), "other variables", "7th column");
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(1)', 'css');
     @headers = $driver->find_child_elements($elem, 'td');
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "opensuse",    "distri");
-    is((shift @headers)->get_text(), "13.1", "version");
-    is((shift @headers)->get_text(), "DVD", "flavor");
-    is((shift @headers)->get_text(), "i586", "arch");
-    is((shift @headers)->get_text(), "1",  "DVD");
-    is((shift @headers)->get_text(), "4700372992",  "MAX SIZE");
+    is((shift @headers)->get_text(), "opensuse",   "distri");
+    is((shift @headers)->get_text(), "13.1",       "version");
+    is((shift @headers)->get_text(), "DVD",        "flavor");
+    is((shift @headers)->get_text(), "i586",       "arch");
+    is((shift @headers)->get_text(), "1",          "DVD");
+    is((shift @headers)->get_text(), "4700372992", "MAX SIZE");
 
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 1, "1 edit button before");
 
-    is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium' );
+    is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium');
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(8, @fields, "8 fields"); # one column has 2 fields
-    (shift @fields)->send_keys('sle'); # distri
-    (shift @fields)->send_keys('13'); # version
-    (shift @fields)->send_keys('DVD'); # flavor
-    (shift @fields)->send_keys('arm19'); # arch
+    is(8, @fields, "8 fields");    # one column has 2 fields
+    (shift @fields)->send_keys('sle');      # distri
+    (shift @fields)->send_keys('13');       # version
+    (shift @fields)->send_keys('DVD');      # flavor
+    (shift @fields)->send_keys('arm19');    # arch
 
-    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
@@ -243,18 +243,18 @@ sub add_product() {
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 2, "2 edit buttons afterwards");
 
     # check the distri name will be lowercase after added a new one
-    is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium' );
+    is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium');
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(8, @fields, "8 fields"); # one column has 2 fields
-    (shift @fields)->send_keys('OpeNSusE'); # distri name has capital letter and many upper/lower case combined
-    (shift @fields)->send_keys('13.2'); # version
-    (shift @fields)->send_keys('DVD'); # flavor
-    (shift @fields)->send_keys('ppc64le'); # arch
+    is(8, @fields, "8 fields");    # one column has 2 fields
+    (shift @fields)->send_keys('OpeNSusE');    # distri name has capital letter and many upper/lower case combined
+    (shift @fields)->send_keys('13.2');        # version
+    (shift @fields)->send_keys('DVD');         # flavor
+    (shift @fields)->send_keys('ppc64le');     # arch
 
-    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added' );
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;

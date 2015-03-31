@@ -42,118 +42,108 @@ is_deeply(
     {
         'TestSuites' => [
             {
-                'id' => 1001,
-                'name' => 'textmode',
+                'id'       => 1001,
+                'name'     => 'textmode',
                 'settings' => [
                     {
-                        'key' => 'DESKTOP',
+                        'key'   => 'DESKTOP',
                         'value' => 'textmode'
                     },
                     {
-                        'key' => 'VIDEOMODE',
+                        'key'   => 'VIDEOMODE',
                         'value' => 'text'
-                    }
-                ]
+                    }]
             },
             {
-                'id' => 1002,
-                'name' => 'kde',
+                'id'       => 1002,
+                'name'     => 'kde',
                 'settings' => [
                     {
-                        'key' => 'DESKTOP',
+                        'key'   => 'DESKTOP',
                         'value' => 'kde'
-                    }
-                ]
+                    }]
             },
             {
-                'id' => 1013,
-                'name' => 'RAID0',
+                'id'       => 1013,
+                'name'     => 'RAID0',
                 'settings' => [
                     {
-                        'key' => 'DESKTOP',
+                        'key'   => 'DESKTOP',
                         'value' => 'kde'
                     },
                     {
-                        'key' => 'INSTALLONLY',
+                        'key'   => 'INSTALLONLY',
                         'value' => '1'
                     },
                     {
-                        'key' => 'RAIDLEVEL',
+                        'key'   => 'RAIDLEVEL',
                         'value' => '0'
-                    }
-                ]
+                    }]
             },
             {
-                'id' => 1014,
-                'name' => 'client1',
+                'id'       => 1014,
+                'name'     => 'client1',
                 'settings' => [
                     {
-                        'key' => 'DESKTOP',
+                        'key'   => 'DESKTOP',
                         'value' => 'kde'
                     },
                     {
-                        'key' => 'PARALLEL_WITH',
+                        'key'   => 'PARALLEL_WITH',
                         'value' => 'server'
-                    }
-                ]
+                    }]
             },
             {
-                'id' => 1015,
-                'name' => 'server',
+                'id'       => 1015,
+                'name'     => 'server',
                 'settings' => [
                     {
-                        'key' => 'DESKTOP',
+                        'key'   => 'DESKTOP',
                         'value' => 'textmode'
-                    }
-                ]
+                    }]
             },
             {
-                'id' => 1016,
-                'name' => 'client2',
+                'id'       => 1016,
+                'name'     => 'client2',
                 'settings' => [
                     {
-                        'key' => 'DESKTOP',
+                        'key'   => 'DESKTOP',
                         'value' => 'textmode'
                     },
                     {
-                        'key' => 'PARALLEL_WITH',
+                        'key'   => 'PARALLEL_WITH',
                         'value' => 'server'
-                    }
-                ]
+                    }]
             },
             {
-                'id' => 1017,
-                'name' => 'advanced_kde',
+                'id'       => 1017,
+                'name'     => 'advanced_kde',
                 'settings' => [
                     {
-                        'key' => 'DESKTOP',
+                        'key'   => 'DESKTOP',
                         'value' => 'kde'
                     },
                     {
-                        'key' => 'START_AFTER_TEST',
+                        'key'   => 'START_AFTER_TEST',
                         'value' => 'kde,textmode'
-                    }
-                ]
-            }
-        ]
+                    }]}]
     },
     "Initial test suites"
 ) || diag explain $get->tx->res->json;
 
-$t->post_ok('/api/v1/test_suites', form => {})->status_is(400); #no name
+$t->post_ok('/api/v1/test_suites', form => {})->status_is(400);    #no name
 
 
 my $res = $t->post_ok(
     '/api/v1/test_suites',
     form => {
-        name => "testsuite",
-        "settings[TEST]" => "val1",
+        name              => "testsuite",
+        "settings[TEST]"  => "val1",
         "settings[TEST2]" => "val1"
-    }
-)->status_is(200);
+    })->status_is(200);
 my $test_suite_id = $res->tx->res->json->{id};
 
-$res = $t->post_ok('/api/v1/test_suites', form => { name => "testsuite" })->status_is(400); #already exists
+$res = $t->post_ok('/api/v1/test_suites', form => {name => "testsuite"})->status_is(400);    #already exists
 
 $get = $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 is_deeply(
@@ -161,25 +151,22 @@ is_deeply(
     {
         'TestSuites' => [
             {
-                'id' => $test_suite_id,
-                'name' => 'testsuite',
+                'id'       => $test_suite_id,
+                'name'     => 'testsuite',
                 'settings' => [
                     {
-                        'key' => 'TEST',
+                        'key'   => 'TEST',
                         'value' => 'val1'
                     },
                     {
-                        'key' => 'TEST2',
+                        'key'   => 'TEST2',
                         'value' => 'val1'
-                    }
-                ]
-            }
-        ]
+                    }]}]
     },
     "Add test_suite"
 ) || diag explain $get->tx->res->json;
 
-$t->put_ok("/api/v1/test_suites/$test_suite_id", form => { name => "testsuite", "settings[TEST2]" => "val1" })->status_is(200);
+$t->put_ok("/api/v1/test_suites/$test_suite_id", form => {name => "testsuite", "settings[TEST2]" => "val1"})->status_is(200);
 
 $get = $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 is_deeply(
@@ -187,21 +174,18 @@ is_deeply(
     {
         'TestSuites' => [
             {
-                'id' => $test_suite_id,
-                'name' => 'testsuite',
+                'id'       => $test_suite_id,
+                'name'     => 'testsuite',
                 'settings' => [
                     {
-                        'key' => 'TEST2',
+                        'key'   => 'TEST2',
                         'value' => 'val1'
-                    }
-                ]
-            }
-        ]
+                    }]}]
     },
     "Delete test_suite variable"
 ) || diag explain $get->tx->res->json;
 
 $res = $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
-$res = $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(404); #not found
+$res = $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(404);    #not found
 
 done_testing();

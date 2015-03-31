@@ -42,216 +42,214 @@ is_deeply(
     {
         'JobTemplates' => [
             {
-                'id' => 1,
+                'id'         => 1,
                 'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1001,
+                'prio'       => 40,
+                'machine'    => {
+                    'id'   => 1001,
                     'name' => '32bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
                     'version' => '13.1',
-                    'group' => 'opensuse-13.1-DVD',
+                    'group'   => 'opensuse-13.1-DVD',
                 },
                 'test_suite' => {
-                    'id' => 1001,
+                    'id'   => 1001,
                     'name' => 'textmode'
                 }
             },
             {
-                'id' => 2,
+                'id'         => 2,
                 'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1002,
+                'prio'       => 40,
+                'machine'    => {
+                    'id'   => 1002,
                     'name' => '64bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
                     'version' => '13.1',
-                    'group' => 'opensuse-13.1-DVD',
+                    'group'   => 'opensuse-13.1-DVD',
                 },
                 'test_suite' => {
-                    'id' => 1002,
+                    'id'   => 1002,
                     'name' => 'kde'
                 }
             },
             {
-                'id' => 3,
+                'id'         => 3,
                 'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1001,
+                'prio'       => 40,
+                'machine'    => {
+                    'id'   => 1001,
                     'name' => '32bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
-                    'group' => 'opensuse-13.1-DVD',
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
+                    'group'   => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
-                    'id' => 1014,
+                    'id'   => 1014,
                     'name' => 'client1'
                 }
             },
             {
-                'id' => 4,
+                'id'         => 4,
                 'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1001,
+                'prio'       => 40,
+                'machine'    => {
+                    'id'   => 1001,
                     'name' => '32bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
-                    'group' => 'opensuse-13.1-DVD',
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
+                    'group'   => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
-                    'id' => 1016,
+                    'id'   => 1016,
                     'name' => 'client2'
                 }
             },
             {
-                'id' => 5,
+                'id'         => 5,
                 'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1001,
+                'prio'       => 40,
+                'machine'    => {
+                    'id'   => 1001,
                     'name' => '32bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
-                    'group' => 'opensuse-13.1-DVD',
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
+                    'group'   => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
-                    'id' => 1015,
+                    'id'   => 1015,
                     'name' => 'server'
                 }
             },
             {
-                'id' => 6,
+                'id'         => 6,
                 'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1001,
+                'prio'       => 40,
+                'machine'    => {
+                    'id'   => 1001,
                     'name' => '32bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
-                    'group' => 'opensuse-13.1-DVD',
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
+                    'group'   => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
-                    'id' => 1017,
+                    'id'   => 1017,
                     'name' => 'advanced_kde'
                 }
             },
             {
-                'id' => 7,
+                'id'         => 7,
                 'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1002,
+                'prio'       => 40,
+                'machine'    => {
+                    'id'   => 1002,
                     'name' => '64bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
-                    'group' => 'opensuse-13.1-DVD',
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
+                    'group'   => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
-                    'id' => 1014,
+                    'id'   => 1014,
                     'name' => 'client1'
                 }
             },
             {
-                'id' => 8,
+                'id'         => 8,
                 'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1002,
+                'prio'       => 40,
+                'machine'    => {
+                    'id'   => 1002,
                     'name' => '64bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
-                    'group' => 'opensuse-13.1-DVD',
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
+                    'group'   => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
-                    'id' => 1016,
+                    'id'   => 1016,
                     'name' => 'client2'
                 }
             },
             {
-                'id' => 9,
+                'id'         => 9,
                 'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1002,
+                'prio'       => 40,
+                'machine'    => {
+                    'id'   => 1002,
                     'name' => '64bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
-                    'group' => 'opensuse-13.1-DVD',
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
+                    'group'   => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
-                    'id' => 1015,
+                    'id'   => 1015,
                     'name' => 'server'
                 }
             },
             {
-                'id' => 10,
+                'id'         => 10,
                 'group_name' => 'opensuse',
-                'prio' => 40,
-                'machine' => {
-                    'id' => 1002,
+                'prio'       => 40,
+                'machine'    => {
+                    'id'   => 1002,
                     'name' => '64bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'group' => 'opensuse-13.1-DVD',
-                    'id' => 1,
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'group'   => 'opensuse-13.1-DVD',
+                    'id'      => 1,
                     'version' => '13.1'
                 },
                 'test_suite' => {
-                    'id' => 1017,
+                    'id'   => 1017,
                     'name' => 'advanced_kde'
-                }
-            }
-        ]
+                }}]
     },
     "Initial job templates"
 ) || diag explain $get->tx->res->json;
@@ -260,28 +258,26 @@ is_deeply(
 my $res = $t->post_ok(
     '/api/v1/job_templates',
     form => {
-        group_id => 1001,
-        machine_id => 1001,
+        group_id      => 1001,
+        machine_id    => 1001,
         test_suite_id => 1002,
-        product_id=>1,
-        prio => 30
-    }
-)->status_is(200);
+        product_id    => 1,
+        prio          => 30
+    })->status_is(200);
 my $job_template_id1 = $res->tx->res->json->{id};
 
 $res = $t->post_ok(
     '/api/v1/job_templates',
-    form =>{
-        group_name => 'opensuse',
-        machine_name => '64bit',
+    form => {
+        group_name      => 'opensuse',
+        machine_name    => '64bit',
         test_suite_name => 'RAID0',
-        arch => 'i586',
-        distri => 'opensuse',
-        flavor => 'DVD',
-        version => '13.1',
-        prio => 20
-    }
-)->status_is(200);
+        arch            => 'i586',
+        distri          => 'opensuse',
+        flavor          => 'DVD',
+        version         => '13.1',
+        prio            => 20
+    })->status_is(200);
 my $job_template_id2 = $res->tx->res->json->{id};
 
 $get = $t->get_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
@@ -290,27 +286,25 @@ is_deeply(
     {
         'JobTemplates' => [
             {
-                'id' => $job_template_id1,
+                'id'         => $job_template_id1,
                 'group_name' => 'opensuse',
-                'machine' => {
-                    'id' => 1001,
+                'machine'    => {
+                    'id'   => 1001,
                     'name' => '32bit'
                 },
-                'prio' => 30,
+                'prio'    => 30,
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
                     'version' => '13.1',
-                    'group' => 'opensuse-13.1-DVD',
+                    'group'   => 'opensuse-13.1-DVD',
                 },
                 'test_suite' => {
-                    'id' => 1002,
+                    'id'   => 1002,
                     'name' => 'kde'
-                }
-            }
-          ]
+                }}]
 
     },
     "Initial job templates"
@@ -322,121 +316,115 @@ is_deeply(
     {
         'JobTemplates' => [
             {
-                'id' => $job_template_id2,
+                'id'         => $job_template_id2,
                 'group_name' => 'opensuse',
-                'prio' => 20,
-                'machine' => {
-                    'id' => 1002,
+                'prio'       => 20,
+                'machine'    => {
+                    'id'   => 1002,
                     'name' => '64bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
-                    'group' => 'opensuse-13.1-DVD',
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
+                    'group'   => 'opensuse-13.1-DVD',
                     'version' => '13.1'
                 },
                 'test_suite' => {
-                    'id' => 1013,
+                    'id'   => 1013,
                     'name' => 'RAID0'
-                }
-            }
-        ]
+                }}]
     },
     "Initial job templates"
 ) || diag explain $get->tx->res->json;
 
 # search by name
-$get = $t->get_ok("/api/v1/job_templates", form => { machine_name =>  '64bit', test_suite_name => 'RAID0', 'arch' => 'i586', 'distri' => 'opensuse', 'flavor' => 'DVD', 'version' => '13.1' })->status_is(200);
+$get = $t->get_ok("/api/v1/job_templates", form => {machine_name => '64bit', test_suite_name => 'RAID0', 'arch' => 'i586', 'distri' => 'opensuse', 'flavor' => 'DVD', 'version' => '13.1'})->status_is(200);
 is_deeply(
     $get->tx->res->json,
     {
         'JobTemplates' => [
             {
-                'id' => $job_template_id2,
+                'id'         => $job_template_id2,
                 'group_name' => 'opensuse',
-                'prio' => 20,
-                'machine' => {
-                    'id' => 1002,
+                'prio'       => 20,
+                'machine'    => {
+                    'id'   => 1002,
                     'name' => '64bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
                     'version' => '13.1',
-                    'group' => 'opensuse-13.1-DVD'
+                    'group'   => 'opensuse-13.1-DVD'
                 },
                 'test_suite' => {
-                    'id' => 1013,
+                    'id'   => 1013,
                     'name' => 'RAID0'
-                }
-            }
-        ]
+                }}]
     },
     "Initial job templates"
 ) || diag explain $get->tx->res->json;
 
 #search all job templates with testsuite 'kde'
-$get = $t->get_ok("/api/v1/job_templates", form => { test_suite_name => 'kde' })->status_is(200);
+$get = $t->get_ok("/api/v1/job_templates", form => {test_suite_name => 'kde'})->status_is(200);
 is_deeply(
     $get->tx->res->json,
     {
         'JobTemplates' => [
             {
-                'id' => 2,
-                'prio' => 40,
+                'id'         => 2,
+                'prio'       => 40,
                 'group_name' => 'opensuse',
-                'machine' => {
-                    'id' => 1002,
+                'machine'    => {
+                    'id'   => 1002,
                     'name' => '64bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
                     'version' => '13.1',
-                    'group' => 'opensuse-13.1-DVD',
+                    'group'   => 'opensuse-13.1-DVD',
                 },
                 'test_suite' => {
-                    'id' => 1002,
+                    'id'   => 1002,
                     'name' => 'kde'
                 }
             },
             {
-                'id' => $job_template_id1,
+                'id'         => $job_template_id1,
                 'group_name' => 'opensuse',
-                'prio' => 30,
-                'machine' => {
-                    'id' => 1001,
+                'prio'       => 30,
+                'machine'    => {
+                    'id'   => 1001,
                     'name' => '32bit'
                 },
                 'product' => {
-                    'arch' => 'i586',
-                    'distri' => 'opensuse',
-                    'flavor' => 'DVD',
-                    'id' => 1,
+                    'arch'    => 'i586',
+                    'distri'  => 'opensuse',
+                    'flavor'  => 'DVD',
+                    'id'      => 1,
                     'version' => '13.1',
-                    'group' => 'opensuse-13.1-DVD',
+                    'group'   => 'opensuse-13.1-DVD',
                 },
                 'test_suite' => {
-                    'id' => 1002,
+                    'id'   => 1002,
                     'name' => 'kde'
-                }
-            }
-        ]
+                }}]
     },
     "Initial job templates"
 ) || diag explain $get->tx->res->json;
 
 
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(200);
-$res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404); #not found
+$res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);    #not found
 
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(200);
-$res = $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(404); #not found
+$res = $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(404);    #not found
 
 done_testing();

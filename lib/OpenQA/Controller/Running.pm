@@ -54,16 +54,16 @@ sub status {
     my $self = shift;
     return 0 unless $self->init();
 
-    my $job = $self->stash('job');
+    my $job      = $self->stash('job');
     my $workerid = $job->worker_id;
-    my $results = { workerid => $workerid, state => $job->state };
-    my $r = $job->modules->find({result => 'running'});
+    my $results  = {workerid => $workerid, state => $job->state};
+    my $r        = $job->modules->find({result => 'running'});
     $results->{'running'} = $r->name() if $r;
 
     if ($workerid) {
-        $results->{interactive} = $job->worker->get_property('INTERACTIVE')//0;
-        $results->{interactive_requested} = $job->worker->get_property('INTERACTIVE_REQUESTED')//0;
-        $results->{stop_waitforneedle_requested} = $job->worker->get_property('STOP_WAITFORNEEDLE_REQUESTED')//0;
+        $results->{interactive}                  = $job->worker->get_property('INTERACTIVE')                  // 0;
+        $results->{interactive_requested}        = $job->worker->get_property('INTERACTIVE_REQUESTED')        // 0;
+        $results->{stop_waitforneedle_requested} = $job->worker->get_property('STOP_WAITFORNEEDLE_REQUESTED') // 0;
     }
 
     $results->{needinput} = $results->{state} eq OpenQA::Schema::Result::Jobs::WAITING ? 1 : 0;
@@ -79,7 +79,7 @@ sub edit {
 
     if ($r) {
         my $details = $r->details();
-        my $stepid = scalar(@{$details});
+        my $stepid  = scalar(@{$details});
         $self->redirect_to('edit_step', moduleid => $r->name(), stepid => $stepid);
     }
     else {
@@ -90,15 +90,15 @@ sub edit {
 sub livelog {
     my ($self) = @_;
     return 0 unless $self->init();
-    my $job = $self->stash('job');
+    my $job    = $self->stash('job');
     my $worker = $job->worker;
     # tell worker to increase status updates rate for more responsive updates
     OpenQA::Scheduler::command_enqueue(
         workerid => $worker->id,
-        command => 'livelog_start'
+        command  => 'livelog_start'
     );
 
-    my $logfile = $worker->get_property('WORKER_TMPDIR').'/autoinst-log-live.txt';
+    my $logfile = $worker->get_property('WORKER_TMPDIR') . '/autoinst-log-live.txt';
 
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
@@ -115,12 +115,12 @@ sub livelog {
         $ino = (stat $logfile)[1];
 
         $size = -s $logfile;
-        if ($size > 10*1024 && seek $log, -10*1024, 2) {
+        if ($size > 10 * 1024 && seek $log, -10 * 1024, 2) {
             # Discard one (probably) partial line
             my $dummy = <$log>;
         }
         while (defined(my $l = <$log>)) {
-            $self->write("data: ".encode_json([$l])."\n\n");
+            $self->write("data: " . encode_json([$l]) . "\n\n");
         }
         seek $log, 0, 1;
     }
@@ -133,7 +133,7 @@ sub livelog {
         Mojo::IOLoop->remove($id);
         OpenQA::Scheduler::command_enqueue(
             workerid => $worker->id,
-            command => 'livelog_stop'
+            command  => 'livelog_stop'
         );
         $self->finish;
         close $log;
@@ -144,7 +144,7 @@ sub livelog {
             if (!$ino) {
                 # log file was not yet opened
                 return unless (open($log, '<', $logfile));
-                $ino = (stat $logfile)[1];
+                $ino  = (stat $logfile)[1];
                 $size = -s $logfile;
             }
             my @st = stat $logfile;
@@ -167,11 +167,10 @@ sub livelog {
                 while (defined(my $l = <$log>)) {
                     $lines .= $l;
                 }
-                $self->write("data: ".encode_json([$lines])."\n\n");
+                $self->write("data: " . encode_json([$lines]) . "\n\n");
                 seek $log, 0, 1;
             }
-        }
-    );
+        });
 
     # If the client closes the connection, we can stop monitoring the
     # logfile.
@@ -180,10 +179,9 @@ sub livelog {
             Mojo::IOLoop->remove($id);
             OpenQA::Scheduler::command_enqueue(
                 workerid => $worker->id,
-                command => 'livelog_stop'
+                command  => 'livelog_stop'
             );
-        }
-    );
+        });
 }
 
 sub streaming {
@@ -209,22 +207,21 @@ sub streaming {
 
     $id = Mojo::IOLoop->recurring(
         0.3 => sub {
-            my $newfile = readlink("$basepath/last.png")||'';
+            my $newfile = readlink("$basepath/last.png") || '';
             if ($lastfile ne $newfile) {
-                if ( !-l $newfile || !$lastfile ) {
+                if (!-l $newfile || !$lastfile) {
                     my $data = file_content("$basepath/$newfile");
-                    $self->write("data: data:image/png;base64,".b64_encode($data, '')."\n\n");
+                    $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
                     $lastfile = $newfile;
                 }
-                elsif (!-e $basepath.'backend.run') {
+                elsif (!-e $basepath . 'backend.run') {
                     # Some browsers can't handle mpng (at least after reciving jpeg all the time)
                     my $data = file_content($self->app->static->file('images/suse-tested.png')->path);
-                    $self->write("data: data:image/png;base64,".b64_encode($data, '')."\n\n");
+                    $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
                     $close->();
                 }
             }
-        }
-    );
+        });
 
     $self->on(finish => sub { Mojo::IOLoop->remove($id) });
 }

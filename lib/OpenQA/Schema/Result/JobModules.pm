@@ -28,11 +28,11 @@ __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
 __PACKAGE__->add_columns(
     id => {
-        data_type => 'integer',
+        data_type         => 'integer',
         is_auto_increment => 1,
     },
     job_id => {
-        data_type => 'integer',
+        data_type      => 'integer',
         is_foreign_key => 1,
     },
     name => {
@@ -48,27 +48,27 @@ __PACKAGE__->add_columns(
     # to simplify code. In case we get a much bigger database, we
     # might reconsider
     soft_failure => {
-        data_type => 'integer',
-        is_nullable => 0,
+        data_type     => 'integer',
+        is_nullable   => 0,
         default_value => 0
     },
     milestone => {
-        data_type => 'integer',
-        is_nullable => 0,
+        data_type     => 'integer',
+        is_nullable   => 0,
         default_value => 0
     },
     important => {
-        data_type => 'integer',
-        is_nullable => 0,
+        data_type     => 'integer',
+        is_nullable   => 0,
         default_value => 0
     },
     fatal => {
-        data_type => 'integer',
-        is_nullable => 0,
+        data_type     => 'integer',
+        is_nullable   => 0,
         default_value => 0
     },
     result => {
-        data_type => 'varchar',
+        data_type     => 'varchar',
         default_value => OpenQA::Schema::Result::Jobs::NONE,
     },
 );
@@ -77,7 +77,7 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(
     "job",
     "OpenQA::Schema::Result::Jobs",
-    { 'foreign.id' => "self.job_id" },
+    {'foreign.id' => "self.job_id"},
     {
         is_deferrable => 1,
         join_type     => "LEFT",
@@ -97,7 +97,7 @@ sub details() {
 
     my $dir = $self->job->result_dir();
     return unless $dir;
-    my $fn =  "$dir/details-" . $self->name . ".json";
+    my $fn = "$dir/details-" . $self->name . ".json";
     OpenQA::Utils::log_debug "reading $fn";
     open(my $fh, "<", $fn) || return [];
     local $/;
@@ -108,7 +108,7 @@ sub details() {
         my $link = readlink($dir . "/" . $img->{screenshot});
         next unless $link;
         $img->{md5_basename} = basename($link);
-        $img->{md5_dirname} = basename(dirname($link));
+        $img->{md5_dirname}  = basename(dirname($link));
     }
 
     return $ret;
@@ -118,14 +118,14 @@ sub job_module($$) {
     my ($job, $name) = @_;
 
     my $schema = OpenQA::Scheduler::schema();
-    return $schema->resultset("JobModules")->search({ job_id => $job->id, name => $name })->first;
+    return $schema->resultset("JobModules")->search({job_id => $job->id, name => $name})->first;
 }
 
 sub job_modules($) {
     my ($job) = @_;
 
     my $schema = OpenQA::Scheduler::schema();
-    return $schema->resultset("JobModules")->search({ job_id => $job->id }, { order_by => 'id'} )->all;
+    return $schema->resultset("JobModules")->search({job_id => $job->id}, {order_by => 'id'})->all;
 }
 
 sub job_module_stats($) {
@@ -148,25 +148,22 @@ sub job_module_stats($) {
     }
 
     for my $id (@$ids) {
-        $result_stat->{$id} = { 'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0 };
+        $result_stat->{$id} = {'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0};
     }
 
     my $query = $schema->resultset("JobModules")->search(
-        { job_id => { in => $ids } },
+        {job_id => {in => $ids}},
         {
-            select => ['job_id', 'result', 'soft_failure', { 'count' => 'id' } ],
-            as => [qw/job_id result soft_failure count/],
-            group_by => [qw/job_id result soft_failure/]
-        }
-    );
+            select   => ['job_id', 'result', 'soft_failure', {'count' => 'id'}],
+            as       => [qw/job_id result soft_failure count/],
+            group_by => [qw/job_id result soft_failure/]});
 
     while (my $line = $query->next) {
         if ($line->result eq OpenQA::Schema::Result::Jobs::PASSED && $line->soft_failure) {
             $result_stat->{$line->job_id}->{dents} = $line->get_column('count');
         }
         else {
-            $result_stat->{$line->job_id}->{$line->result} =
-              $line->get_column('count');
+            $result_stat->{$line->job_id}->{$line->result} = $line->get_column('count');
         }
     }
 
@@ -186,10 +183,9 @@ sub update_result($) {
     $result =~ s,^skip,skipped,;
     $self->update(
         {
-            result => $result,
-            soft_failure => $r->{dents}?1:0,
-        }
-    );
+            result       => $result,
+            soft_failure => $r->{dents} ? 1 : 0,
+        });
 }
 
 sub save_details($) {
@@ -198,10 +194,10 @@ sub save_details($) {
     for my $d (@$details) {
         # create possibly stale symlinks
         my ($full, $thumb) = OpenQA::Utils::image_md5_filename($d->{screenshot}->{md5});
-        if (-e $full) { # mark existant
+        if (-e $full) {    # mark existant
             push(@$existant_md5, $d->{screenshot}->{md5});
         }
-        symlink($full, $self->job->result_dir . "/" . $d->{screenshot}->{name});
+        symlink($full,  $self->job->result_dir . "/" . $d->{screenshot}->{name});
         symlink($thumb, $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
         $d->{screenshot} = $d->{screenshot}->{name};
     }

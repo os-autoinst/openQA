@@ -5,18 +5,18 @@ use Mojo::Base 'Mojolicious::Plugin';
 our $VERSION = '0.04';
 
 sub register {
-    my ( $plugin, $app ) = @_;
+    my ($plugin, $app) = @_;
 
     $app->helper(
         hparams => sub {
-            my ( $self, @permit ) = @_;
+            my ($self, @permit) = @_;
 
-            if ( !$self->stash('hparams') ) {
+            if (!$self->stash('hparams')) {
                 my $hprms = $self->req->params->to_hash;
                 my $index = 0;
                 my @array;
 
-                foreach my $p ( keys %$hprms ) {
+                foreach my $p (keys %$hprms) {
                     my $key = $p;
                     my $val = $hprms->{$p};
 
@@ -25,7 +25,7 @@ sub register {
                     $key =~ s/\]{2,}/\]/g;
 
                     my @list;
-                    foreach my $n ( split /[\[\]]/, $key ) {
+                    foreach my $n (split /[\[\]]/, $key) {
                         push @list, $n if length($n) > 0;
                     }
 
@@ -42,27 +42,26 @@ sub register {
                 my $ret = eval $code;
 
                 if ($@) {
-                    $self->stash( hparams       => {} );
-                    $self->stash( hparams_error => $@ );
+                    $self->stash(hparams       => {});
+                    $self->stash(hparams_error => $@);
                     return $self->stash('hparams');
                 }
 
                 if (%$ret) {
                     if (@permit) {
-                        foreach my $k ( keys %$ret ) {
-                            delete $ret->{$k} if grep( /\Q$k/, @permit );
+                        foreach my $k (keys %$ret) {
+                            delete $ret->{$k} if grep(/\Q$k/, @permit);
                         }
                     }
 
-                    $self->stash( hparams => $ret );
+                    $self->stash(hparams => $ret);
                 }
             }
             else {
-                $self->stash( hparams => {} );
+                $self->stash(hparams => {});
             }
             return $self->stash('hparams');
-        }
-    );
+        });
 }
 
 1;

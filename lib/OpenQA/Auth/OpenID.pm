@@ -21,7 +21,7 @@ use Net::OpenID::Consumer;
 
 require Exporter;
 our (@ISA, @EXPORT_OK);
-@ISA = qw(Exporter);
+@ISA       = qw(Exporter);
 @EXPORT_OK = qw/auth_config auth_login auth_response/;
 
 sub auth_config {
@@ -56,26 +56,26 @@ sub auth_login {
     $claimed_id->set_extension_args(
         'http://openid.net/srv/ax/1.0',
         {
-            mode => 'fetch_request',
-            'required' => 'email,fullname,nickname,firstname,lastname',
-            'type.email' => "http://schema.openid.net/contact/email",
-            'type.fullname' => "http://axschema.org/namePerson",
-            'type.nickname' => "http://axschema.org/namePerson/friendly",
+            mode             => 'fetch_request',
+            'required'       => 'email,fullname,nickname,firstname,lastname',
+            'type.email'     => "http://schema.openid.net/contact/email",
+            'type.fullname'  => "http://axschema.org/namePerson",
+            'type.nickname'  => "http://axschema.org/namePerson/friendly",
             'type.firstname' => 'http://axschema.org/namePerson/first',
-            'type.lastname' => 'http://axschema.org/namePerson/last',
+            'type.lastname'  => 'http://axschema.org/namePerson/last',
         },
     );
 
     $check_url = $claimed_id->check_url(
         delayed_return => 1,
-        return_to  => qq{$url/response},
-        trust_root => qq{$url/},
+        return_to      => qq{$url/response},
+        trust_root     => qq{$url/},
     );
 
     if ($check_url) {
-        return ( redirect => $check_url, error => 0 );
+        return (redirect => $check_url, error => 0);
     }
-    return ( error => $csr->err );
+    return (error => $csr->err);
 }
 
 sub auth_response {
@@ -84,24 +84,24 @@ sub auth_response {
     # FIXME: Mojo6 hack, remove after version bump
     my %params;
     if ($self->req->query_params->can('params')) {
-        %params = @{ $self->req->query_params->params };
+        %params = @{$self->req->query_params->params};
     }
     else {
-        %params = @{ $self->req->query_params->pairs };
+        %params = @{$self->req->query_params->pairs};
     }
 
     my $url = $self->app->config->{global}->{base_url} || $self->req->url->base;
 
     if ($self->app->config->{openid}->{httpsonly} && $url !~ /^https:\/\//) {
-        return ( error => 'Got response on http but https is forced. MOJO_REVERSE_PROXY not set?' );
+        return (error => 'Got response on http but https is forced. MOJO_REVERSE_PROXY not set?');
     }
 
-    while ( my ( $k, $v ) = each %params ) {
+    while (my ($k, $v) = each %params) {
         $params{$k} = URI::Escape::uri_unescape($v);
     }
 
     my $csr = Net::OpenID::Consumer->new(
-        debug           => sub { $self->app->log->debug("Net::OpenID::Consumer: ".join(' ', @_)); },
+        debug           => sub { $self->app->log->debug("Net::OpenID::Consumer: " . join(' ', @_)); },
         ua              => LWP::UserAgent->new,
         required_root   => $url,
         consumer_secret => $self->app->config->{_openid_secret},
@@ -124,7 +124,7 @@ sub auth_response {
             $self->app->log->debug(qq{setup_url[$setup_url]});
 
             $msg = q{};
-            return ( redirect => $setup_url, error => 0 );
+            return (redirect => $setup_url, error => 0);
         },
         cancelled => sub {
             # Do something appropriate when the user hits "cancel" at the OP
@@ -132,10 +132,10 @@ sub auth_response {
         },
         verified => sub {
             my $vident = shift;
-            my $sreg = $vident->signed_extension_fields('http://openid.net/extensions/sreg/1.1');
-            my $ax = $vident->signed_extension_fields('http://openid.net/srv/ax/1.0');
+            my $sreg   = $vident->signed_extension_fields('http://openid.net/extensions/sreg/1.1');
+            my $ax     = $vident->signed_extension_fields('http://openid.net/srv/ax/1.0');
 
-            my $email = $sreg->{email} || $ax->{'value.email'} || 'nobody@example.com';
+            my $email    = $sreg->{email}    || $ax->{'value.email'}    || 'nobody@example.com';
             my $nickname = $sreg->{nickname} || $ax->{'value.nickname'} || $ax->{'value.firstname'};
             unless ($nickname) {
                 my @a = split(/\/([^\/]+)$/, $vident->{identity});
@@ -146,7 +146,7 @@ sub auth_response {
                 if ($ax->{'value.firstname'}) {
                     $fullname = $ax->{'value.firstname'};
                     if ($ax->{'value.lastname'}) {
-                        $fullname .= ' '.$ax->{'value.lastname'};
+                        $fullname .= ' ' . $ax->{'value.lastname'};
                     }
                 }
                 else {
@@ -163,11 +163,11 @@ sub auth_response {
             my ($err, $txt) = @_;
             $self->app->log->error($err, $txt);
             $self->flash(error => "$err: $txt");
-            return ( error => 0 );
+            return (error => 0);
         },
     );
 
-    return ( error => 0 );
+    return (error => 0);
 }
 
 1;
