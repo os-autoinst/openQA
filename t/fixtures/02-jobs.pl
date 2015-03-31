@@ -23,6 +23,10 @@
         id => 1001,
         name => 'opensuse'
     },
+    JobGroups => {
+        id => 1002,
+        name => 'opensuse test'
+    },
     Jobs => {
         id => 99926,
         group_id => 1001,
@@ -177,7 +181,7 @@
     },
     Jobs => {
         id => 99961,
-        group_id => 1001,
+        group_id => 1002,
         priority => 35,
         result => "none",
         state => "running",

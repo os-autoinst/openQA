@@ -19,11 +19,20 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 39;
+use Test::More tests => 44;
 use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
+use Digest::MD5;
+
+sub calculate_file_md5($) {
+    my ($file) = @_;
+    my $c = OpenQA::Utils::file_content($file);
+    my $md5 = Digest::MD5->new;
+    $md5->add($c);
+    return $md5->hexdigest;
+}
 
 OpenQA::Test::Case->new->init_data;
 
@@ -68,6 +77,13 @@ is scalar(@{$get->tx->res->json->{jobs}}), 9;
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
 is scalar(@{$get->tx->res->json->{jobs}}), 10;
 
+# check job group
+$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'opensuse test'});
+is scalar(@{$get->tx->res->json->{jobs}}), 1;
+is $get->tx->res->json->{jobs}->[0]->{id}, 99961;
+$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'foo bar'});
+is scalar(@{$get->tx->res->json->{jobs}}), 0;
+
 # Test /jobs/restart
 my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927] })->status_is(200);
 
@@ -103,12 +119,12 @@ unlink($rp); # make sure previous tests don't fool us
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>{ file => { file => $filename, filename => 'video.ogv' } })->status_is(200);
 
 isnt -e $rp, undef, "video exist after";
-is(`md5sum < $rp`, "feeebd34e507d3a1641c774da135be77  -\n", "md5sum matches");
+is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
 
 $rp = "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/y2logs.tar.bz2";
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>{ file => { file => $filename, filename => 'y2logs.tar.bz2' }, ulog => 1 })->status_is(200);
 $post->content_is('OK');
 isnt -e $rp, undef, "logs exist after";
-is(`md5sum < $rp`, "feeebd34e507d3a1641c774da135be77  -\n", "md5sum matches");
+is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
 
 done_testing();
