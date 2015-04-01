@@ -1,6 +1,11 @@
 % layout 'admin';
 % title "Worker " . $worker->host . ":" . $worker->instance;
 
+% content_for 'ready_function' => begin
+    $('.timeago').timeago();
+    setupResultButtons();
+% end
+
 <div class="grid_16 box box-shadow alpha">
     <h2><%= title %></h2>
 
@@ -8,6 +13,7 @@
 
     <div><span>Host: </span><%= $worker->host %></div>
     <div><span>Instance: </span><%= $worker->instance %></div>
+    <div><span>Seen: </span><abbr class="timeago" title="<%= $worker->t_updated->datetime() %>Z"><%= format_time($worker->t_updated) %></abbr></div>
     <div><span>Status: </span>
         %= include 'admin/workers/worker_status'
     </div>
