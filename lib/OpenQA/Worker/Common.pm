@@ -58,6 +58,22 @@ use constant {
     STATUS_UPDATES_FAST => 0.5,
 };
 
+# the template noted what architecture are known
+my %cando = (
+    'i586'    => ['i586'],
+    'i686'    => [ 'i686', 'i586' ],
+    'x86_64'  => [ 'x86_64', 'i686', 'i586' ],
+
+    'ppc'     => ['ppc'],
+    'ppc64'   => [ 'ppc64le', 'ppc64', 'ppc' ],
+    'ppc64le' => [ 'ppc64le', 'ppc64', 'ppc' ],
+
+    's390'    => ['s390'],
+    's390x'   => [ 's390x', 's390' ],
+
+    'aarch64' => ['aarch64'],
+);
+
 ## Mojo timers ids
 my $timers = {
     # register worker with web ui
@@ -335,7 +351,16 @@ sub register_worker {
     $worker_caps = _get_capabilities;
     $worker_caps->{host} = $hostname;
     $worker_caps->{instance} = $instance;
-    $worker_caps->{worker_class} = $worker_settings->{WORKER_CLASS} || "qemu_" .  $worker_caps->{cpu_arch};
+    if ($worker_settings->{WORKER_CLASS}) {
+        $worker_caps->{worker_class} =$worker_settings->{WORKER_CLASS};
+    }
+    elsif ($cando{$worker_caps->{cpu_arch}}) {
+        # TODO: check installed qemu and kvm?
+        $worker_caps->{worker_class} = join(',', map { 'qemu_'.$_ } @{$cando{$worker_caps->{cpu_arch}}});
+    }
+    else {
+        $worker_caps->{worker_class} = 'qemu_'.$worker_caps->{cpu_arch};
+    }
 
     print "registering worker ...\n" if $verbose;
 
