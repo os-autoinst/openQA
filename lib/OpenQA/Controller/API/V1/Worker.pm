@@ -87,6 +87,22 @@ sub _register {
 
 sub create {
     my ($self) = @_;
+
+    my $validation = $self->validation;
+    my @mandatory_params = (qw/host instance cpu_arch mem_max worker_class/);
+    for my $k (@mandatory_params) {
+        $validation->required($k);
+    }
+    if ($validation->has_error) {
+        my $error = "Error: missing parameters:";
+        for my $k (@mandatory_params) {
+            $self->app->log->debug(@{$validation->error($k)}) if $validation->has_error($k);
+            $error .= ' '.$k if $validation->has_error($k);
+        }
+        $self->res->message($error);
+        return $self->rendered(400);
+    }
+
     my $host = $self->param('host');
     my $instance = $self->param('instance');
     my $caps = {};

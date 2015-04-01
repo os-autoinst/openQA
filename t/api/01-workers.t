@@ -74,12 +74,32 @@ is_deeply(
     'worker present'
 );
 
-$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1 });
+my $worker_caps = {
+    host => 'localhost',
+    instance => 1,
+};
+
+$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
+is($ret->tx->res->code, 400, "worker with missing parameters refused");
+
+$worker_caps->{cpu_arch} = 'foo';
+$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
+is($ret->tx->res->code, 400, "worker with missing parameters refused");
+
+$worker_caps->{mem_max} = '4711';
+$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
+is($ret->tx->res->code, 400, "worker with missing parameters refused");
+
+$worker_caps->{worker_class} = 'bar';
+
+$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
 is($ret->tx->res->code, 200, "register existing worker with token");
 is($ret->tx->res->json->{id}, 1, "worker id is 1");
 
-$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 42 });
+$worker_caps->{instance} = 42;
+$ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
 is($ret->tx->res->code, 200, "register new worker");
 is($ret->tx->res->json->{id}, 3, "new worker id is 3");
+
 
 done_testing();
