@@ -344,6 +344,9 @@ sub register_worker {
     $ua_url->query($worker_caps);
     my $tx = $ua->post($ua_url => json => $worker_caps);
     unless ($tx->success && $tx->success->json) {
+        if ($tx->error && $tx->error->{code} && $tx->error->{code} =~ /^4\d\d$/) {
+            die sprintf "server refused with code %s: %s\n", $tx->error->{code}, $tx->res->body;
+        }
         print "failed to register worker, retry ...\n" if $verbose;
         add_timer('register_worker', 10, \&register_worker, 1);
         return;
