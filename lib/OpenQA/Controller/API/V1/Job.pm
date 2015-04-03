@@ -165,6 +165,11 @@ sub create_artefact {
         $self->render(text => "OK");
         return;
     }
+    elsif ($self->param('asset')) {
+        $job->create_asset($self->param('file'), $self->param('asset'));
+        $self->render(text => "OK");
+        return;
+    }
     if ($job->create_artefact($self->param('file'), $self->param('ulog'))) {
         $self->render(text => "OK");
     }

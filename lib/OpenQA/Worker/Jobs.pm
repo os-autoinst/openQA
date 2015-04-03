@@ -149,6 +149,26 @@ sub _stop_job($;$) {
                     ulog => 1
                 });
         }
+
+        if ($aborted eq 'done') {
+            # job succeeded, upload assets created by the job
+            for my $dir (qw(private public)) {
+                my @assets = <$pooldir/assets_$dir/*>;
+                for my $file (@assets) {
+                    next unless -f $file;
+                    warn "uploading asset $file\n";
+
+                    # don't use api_call as it retries and does not allow form data
+                    # (refactor at some point)
+                    my $res = $OpenQA::Worker::Common::ua->post(
+                        $ua_url => form => {
+                            file  => {file => $file, filename => basename($file)},
+                            asset => $dir
+                        });
+                }
+            }
+        }
+
         if (open(my $log, '>>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
             printf $log "end time: %s\n", strftime("%F %T", gmtime);

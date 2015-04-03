@@ -595,6 +595,29 @@ sub create_artefact {
     1;
 }
 
+sub create_asset {
+    my ($self, $asset, $scope) = @_;
+
+    my $fname = $asset->filename;
+
+    my $type;
+    $type = 'iso' if $fname =~ /\.iso$/;
+    $type = 'hdd' if $fname =~ /\.qcow2$/;
+    $type //= 'other';
+
+    $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
+
+    my $fpath = join('/', $OpenQA::Utils::assetdir, $type);
+
+    if (!-d $fpath) {
+        mkdir($fpath) || die "can't mkdir $fpath: $!";
+    }
+
+    $asset->move_to(join('/', $fpath, $fname));
+    OpenQA::Utils::log_debug("moved to $fpath " . $fname);
+    1;
+}
+
 sub failed_modules_with_needles {
 
     my ($self) = @_;
