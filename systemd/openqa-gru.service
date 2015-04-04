@@ -1,0 +1,9 @@
+[Unit]
+Description=The openQA gru daemon
+
+[Service]
+User=geekotest
+ExecStart=/usr/share/openqa/script/openqa gru -m production 
+
+[Install]
+WantedBy=multi-user.target

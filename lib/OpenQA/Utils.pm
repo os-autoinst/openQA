@@ -12,8 +12,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   $prj
   $basedir
   $resultdir
-  $app_title
-  $app_subtitle
   &data_name
   &needle_info
   &needledir
@@ -35,17 +33,15 @@ if ($0 =~ /\.t$/) {
 use File::Basename;
 use Fcntl;
 use JSON "decode_json";
-our $basedir=$ENV{'OPENQA_BASEDIR'}||"/var/lib";
+our $basedir=$ENV{OPENQA_BASEDIR}||"/var/lib";
 our $prj="openqa";
 our $resultdir="$basedir/$prj/testresults";
 our $assetdir="$basedir/$prj/factory";
 our $isodir="$assetdir/iso";
 our $imagesdir="$basedir/$prj/images";
-our $hostname=$ENV{'SERVER_NAME'};
-our $app_title = 'openQA test instance';
-our $app_subtitle = 'openSUSE automated testing';
+our $hostname=$ENV{SERVER_NAME};
 our $testcasedir = "$basedir/openqa/share/tests";
-our $applog;
+our $app;
 
 sub testcasedir($$) {
     my $distri = shift;
@@ -95,12 +91,12 @@ sub needle_info($$$) {
         return undef;
     }
 
-    $needle->{'needledir'} = $needledir;
-    $needle->{'image'} = "$needledir/$name.png";
-    $needle->{'json'} = "$needledir/$name.json";
-    $needle->{'name'} = $name;
-    $needle->{'distri'} = $distri;
-    $needle->{'version'} = $version;
+    $needle->{needledir} = $needledir;
+    $needle->{image} = "$needledir/$name.png";
+    $needle->{json} = "$needledir/$name.json";
+    $needle->{name} = $name;
+    $needle->{distri} = $distri;
+    $needle->{version} = $version;
     return $needle;
 }
 
@@ -115,7 +111,7 @@ sub file_content($){
 
 sub log_debug {
     # useful for models, but doesn't work in tests
-    $applog->debug(shift) if $applog;
+    $app->log->debug(shift) if $app && $app->log;
 }
 
 sub save_base64_png($$$) {

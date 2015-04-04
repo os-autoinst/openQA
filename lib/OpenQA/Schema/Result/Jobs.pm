@@ -22,6 +22,7 @@ use Fcntl;
 use db_helpers;
 use OpenQA::Utils;
 use File::Basename qw/basename dirname/;
+use File::Path ();
 use strict;
 
 # States
@@ -476,6 +477,17 @@ sub insert_test_modules($) {
     }
 }
 
+# gru job
+sub reduce_result {
+    my ($resultdir) = @_;
+
+    $resultdir .= "/";
+    unlink($resultdir . "autoinst-log.txt");
+    unlink($resultdir . "video.ogv");
+    unlink($resultdir . "serial0.txt");
+    File::Path::rmtree($resultdir . "ulogs");
+}
+
 sub create_result_dir {
     my ($self) = @_;
     my $dir = $self->result_dir();
@@ -485,6 +497,8 @@ sub create_result_dir {
         $dir = $self->result_dir();
     }
     if (!-d $dir) {
+        my $cleanday = now()->add(days => 14);
+        $openQA::Utils::app->gru->enqueue(reduce_result => $dir, { run_at => $cleanday });
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
     my $sdir = $dir . "/.thumbs";
@@ -542,6 +556,11 @@ sub running_modinfo() {
     return {modlist => $modlist, modcount => $count, moddone => $donecount, running => $running};
 }
 
+sub optipng {
+    OpenQA::Utils::log_debug("optipng $_[0]");
+    system("optipng", "-preserve", "-o2", $_[0]);
+}
+
 sub store_image {
     my ($self, $asset, $md5, $thumb) = @_;
 
@@ -551,9 +570,7 @@ sub store_image {
     mkdir($prefixdir) unless (-d $prefixdir);
     $asset->move_to($storepath);
 
-    # create a marker to run optipng later
-    open(my $fh, '>', "$storepath.unoptimized");
-    close($fh);
+    $openQA::Utils::app->gru->enqueue(optipng => $storepath);
 
     OpenQA::Utils::log_debug("store_image: $storepath");
 }

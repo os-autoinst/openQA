@@ -167,6 +167,7 @@ sub startup {
     $self->plugin('OpenQA::Plugin::CSRF');
     $self->plugin('OpenQA::Plugin::REST');
     $self->plugin('OpenQA::Plugin::HashedParams');
+    $self->plugin('OpenQA::Plugin::Gru');
 
     $self->plugin( bootstrap3 => { css => [], js => [] } );
 
@@ -234,22 +235,22 @@ sub startup {
     );
 
     $self->_read_config;
-    my $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{'logging'}->{'file'};
+    my $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{logging}->{file};
     $self->log->path($logfile);
 
-    if ($logfile && $self->config->{'logging'}->{'level'}) {
-        $self->log->level($self->config->{'logging'}->{'level'});
+    if ($logfile && $self->config->{logging}->{level}) {
+        $self->log->level($self->config->{logging}->{level});
     }
-    if ($ENV{OPENQA_SQL_DEBUG}//$self->config->{'logging'}->{'sql_debug'}//'false' eq 'true') {
+    if ($ENV{OPENQA_SQL_DEBUG}//$self->config->{logging}->{sql_debug}//'false' eq 'true') {
         # avoid enabling the SQL debug unless we really want to see it
         # it's rather expensive
         db_profiler::enable_sql_debugging($self);
     }
 
-    $OpenQA::Utils::applog = $self->log;
+    $OpenQA::Utils::app = $self;
 
     # load auth module
-    my $auth_method = $self->config->{'auth'}->{'method'};
+    my $auth_method = $self->config->{auth}->{method};
     my $auth_module = "OpenQA::Auth::$auth_method";
     eval "require $auth_module";
     if ($@) {
@@ -457,6 +458,9 @@ sub startup {
     ###
     ## JSON API ends here
     #
+
+    $self->gru->add_task(optipng => \&OpenQA::Schema::Result::Jobs::optipng);
+    $self->gru->add_task(reduce_result => \&OpenQA::Schema::Result::Jobs::reduce_result);
 
     # start workers checker
     $self->_workers_checker;

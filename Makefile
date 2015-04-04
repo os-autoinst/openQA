@@ -35,6 +35,7 @@ install:
 	install -m 644 systemd/openqa-worker@.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-worker.target "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-webui.service "$(DESTDIR)"/usr/lib/systemd/system
+	install -m 644 systemd/openqa-gru.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 755 systemd/systemd-openqa-generator "$(DESTDIR)"/usr/lib/systemd/system-generators
 #
 	install -D -m 640 /dev/null "$(DESTDIR)"/var/lib/openqa/db/db.sqlite

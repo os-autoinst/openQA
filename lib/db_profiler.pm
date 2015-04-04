@@ -48,7 +48,7 @@ sub new {
 sub print {
     my ($self, $line) = @_;
     chop $line;
-    $self->{'app'}->app->log->debug($line);
+    $self->{app}->app->log->debug($line);
 }
 
 

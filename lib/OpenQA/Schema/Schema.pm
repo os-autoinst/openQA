@@ -23,7 +23,7 @@ use FindBin qw($Bin);
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION = 29;
+our $VERSION = 30;
 
 __PACKAGE__->load_namespaces;
 
