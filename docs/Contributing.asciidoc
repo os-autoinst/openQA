@@ -203,3 +203,35 @@ export OPENQA_CONFIG=$PWD/etc/mine
 Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
 client.conf and workers.ini.
 
+Adding new authentication module
+--------------------------------
+
+OpenQA comes with three authentication modules providing authentication methods:
+OpenID, iChain and Fake (see link:Installing.asciidoc[Installation - User authentication]).
+
+All authentication modules reside in +lib/OpenQA/Auth+ directory. During
+OpenQA start, +[auth]/method+ section of +/etc/openqa/openqa.ini+ is read and according
+to its value (or default OpenID) OpenQA tries to require OpenQA::Auth::$method.
+If successful, module for given method is imported or the OpenQA ends with error.
+
+
+Each authentication module is expected to export +auth_config+,
++auth_login+ and +auth_logout+ functions. In case of request-response mechanism (as in 
+OpenID), +auth_response+ is imported on demand.
+
+Currently there is no login page because all implemented methods use either 3rd party
+page or none.
+
+Authentication module is expected to return HASH:
+[source,perl]
+--------------------------------------------------------------------------------
+%res = (
+    # error = 1 signals auth error
+    error => 0|1
+    # where to redirect the user
+    redirect => ''
+);
+--------------------------------------------------------------------------------
+
+Authentication module is expected to create or update user entry in OpenQA database
+after user validation user. See included modules for inspiration.

@@ -120,16 +120,61 @@ Advanced configuration
 ----------------------
 [id="advanced"]
 
+
+User authentication
+~~~~~~~~~~~~~~~~~~~
+
+OpenQA supports three different authentication methods - OpenID (default), iChain
+and Fake. See +auth+ section in +/etc/openqa/openqa.ini+.
+
+[source,ini]
+--------------------------------------------------------------------------------
+[auth]
+# method name is case sensitive!
+method = OpenID|iChain|Fake
+--------------------------------------------------------------------------------
+
+Independently of method used, the first user that logs in (if there is no admin yet)
+will automatically get administrator rights!
+
 OpenID
 ~~~~~~
+By default openQA uses OpenID with opensuse.org as OpenID provider.
+OpenID method has its own +openid+ section in +/etc/openqa/openqa.ini+:
 
-By default openQA uses the opensuse.org OpenID provider to
-authenticate users. If you want to change that, you can do it in
-+/etc/openqa/openqa.ini+. The first user that logs in (if there is
-no admin yet) will automatically get admin and operator rights. As
-admin you need to do some further actions to get your openQA
-instance testing software.
+[source,ini]
+--------------------------------------------------------------------------------
+[openid]
+## base url for openid provider
+provider = https://www.opensuse.org/openid/user/
+## enforce redirect back to https
+httpsonly = 1
+--------------------------------------------------------------------------------
 
+OpenQA supports only OpenID version up to 2.0. Newer OpenID-Connect and OAuth is
+not supported currently.
+
+iChain
+~~~~~~
+Use only if you use iChain (NetIQ Access Manager) proxy on your hosting server.
+
+Fake
+~~~~
+For development purposes only! Fake authentication bypass any authentication and
+automatically allow any login requests as 'Demo user' with administrator privileges
+and without password. To ease worker testing, API key and secret is created (or updated)
+with validity of one day during login.
+You can then use following as +/etc/openqa/client.conf+:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[localhost]
+key = 1234567890ABCDEF
+secret = 1234567890ABCDEF
+--------------------------------------------------------------------------------
+
+If you switch authentication method from Fake to any other, review your API keys!
+You may be vulnerable for up to a day until Fake API key expires.
 
 Setting up git support
 ~~~~~~~~~~~~~~~~~~~~~~
