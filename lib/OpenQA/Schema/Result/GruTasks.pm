@@ -56,7 +56,7 @@ __PACKAGE__->filter_column(
 
 sub decode_json {
     my $ret = JSON::decode_json($_[1]);
-    return $ret->{_} if defined $ret->{_};
+    return $ret->{_} if ref($ret) eq 'HASH' && defined $ret->{_};
     return $ret;
 }
 

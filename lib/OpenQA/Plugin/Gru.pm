@@ -89,14 +89,14 @@ sub run_first {
     my ($self) = @_;
 
     my $dtf = $self->app->schema->storage->datetime_parser;
-    my $where = { run_at => { '<',$dtf->format_datetime(DBIx::Class::Timestamps::now()) } };
+    my $where = { run_at => { '<=',$dtf->format_datetime(DBIx::Class::Timestamps::now()) } };
     my $first = $self->app->schema->resultset('GruTasks')->search($where,{ order_by => qw/id/ })->first;
 
     if ($first) {
         $self->app->log->debug(sprintf("Running Gru task %d(%s)", $first->id, $first->taskname));
         my $subref = $self->app->gru->{tasks}->{$first->taskname};
         if ($subref) {
-            eval { &$subref($first->args) };
+            eval { &$subref($self->app, $first->args) };
             if ($@) {
                 print $@ . "\n";
                 return;
@@ -109,9 +109,10 @@ sub run_first {
 
 sub cmd_run {
     my $self = shift;
+    my $opt = $_[0] || '';
     while (1) {
         if (!$self->run_first) {
-            if ($_[0] eq '-o') {
+            if ($opt eq '-o') {
                 return;
             }
             sleep(5);

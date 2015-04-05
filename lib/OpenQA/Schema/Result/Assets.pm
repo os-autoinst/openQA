@@ -41,4 +41,46 @@ __PACKAGE__->add_unique_constraint([qw/type name/]);
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'asset_id');
 __PACKAGE__->many_to_many(jobs => 'jobs_assets', 'job');
 
+sub limit_assets {
+    my ($app) = @_;
+    my $groups = $app->db->resultset('JobGroups')->search({},{ select => 'id' });
+    my %keep;
+    while (my $g = $groups->next) {
+        my $sizelimit = 20 * 1024 * 1024 * 1024; # 20GB
+        my $assets = $app->db->resultset('JobsAssets')->search(
+            {
+                job_id => { -in => $g->jobs->get_column('id')->as_query },
+                'asset.type' => ['iso']
+            },
+            {
+                join => 'asset',
+                order_by => 'asset.t_created desc',
+                select => [qw/asset.name asset.type asset.id/],
+                as => [qw/asset_name asset_type asset_id/],
+                distinct => 1
+            }
+        );
+        while (my $a = $assets->next) {
+            next if $a->get_column('asset_type') ne 'iso';
+            my $file = sprintf("%s/%s/%s", $OpenQA::Utils::assetdir,$a->get_column('asset_type'),$a->get_column('asset_name'));
+            my @st = stat($file);
+            if (@st && $st[7] > 0) {
+                $keep{$a->asset_id} = 1;
+                $sizelimit -= $st[7];
+            }
+            # check after keeping - so we can be sure to keep at least one even if sizelimit too strict
+            last if $sizelimit < 0;
+        }
+    }
+    if (%keep) {
+        my $assets = $app->db->resultset('Assets')->search({ id => { not_in => [ sort keys %keep ] }});
+        while (my $a = $assets->next) {
+            my $file = sprintf("%s/%s/%s", $OpenQA::Utils::assetdir,$a->type,$a->name);
+            print "RM $file\n";
+            unlink($file);
+            $a->delete;
+        }
+    }
+}
+
 1;

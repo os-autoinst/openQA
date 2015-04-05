@@ -479,7 +479,7 @@ sub insert_test_modules($) {
 
 # gru job
 sub reduce_result {
-    my ($resultdir) = @_;
+    my ($app, $resultdir) = @_;
 
     $resultdir .= "/";
     unlink($resultdir . "autoinst-log.txt");
@@ -557,8 +557,9 @@ sub running_modinfo() {
 }
 
 sub optipng {
-    OpenQA::Utils::log_debug("optipng $_[0]");
-    system("optipng", "-preserve", "-o2", $_[0]);
+    my ($app, $path) = @_;
+    OpenQA::Utils::log_debug("optipng $path");
+    system("optipng", "-preserve", "-o2", $path);
 }
 
 sub store_image {

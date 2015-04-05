@@ -27,8 +27,9 @@ use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
+OpenQA::Test::Database->new->create();
+
 my $t = Test::Mojo->new('OpenQA');
-use Data::Dumper;
 
 my $file = 't/data/7da661d0c3faf37d49d33b6fc308f2.png';
 copy("t/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png", $file);
@@ -46,5 +47,9 @@ like($output, qr,optipng .*'$file';,, 'optipng queued');
 
 $c->run('run', '-o');
 is((stat($file))[7], 286, 'optimized file size');
+
+# now to something completely different
+$t->app->gru->enqueue('limit_assets');
+$c->run('run', '-o');
 
 done_testing();

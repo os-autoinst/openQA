@@ -461,6 +461,7 @@ sub startup {
 
     $self->gru->add_task(optipng => \&OpenQA::Schema::Result::Jobs::optipng);
     $self->gru->add_task(reduce_result => \&OpenQA::Schema::Result::Jobs::reduce_result);
+    $self->gru->add_task(limit_assets => \&OpenQA::Schema::Result::Assets::limit_assets);
 
     # start workers checker
     $self->_workers_checker;
