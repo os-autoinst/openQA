@@ -23,6 +23,7 @@ use db_helpers;
 use OpenQA::Utils;
 use File::Basename qw/basename dirname/;
 use File::Path ();
+use File::Which qw(which);
 use strict;
 
 # States
@@ -558,8 +559,10 @@ sub running_modinfo() {
 
 sub optipng {
     my ($app, $path) = @_;
-    OpenQA::Utils::log_debug("optipng $path");
-    system("optipng", "-preserve", "-o2", $path);
+    if (which('optipng')) {
+        OpenQA::Utils::log_debug("optipng $path");
+        system("optipng", "-preserve", "-o2", $path);
+    }
 }
 
 sub store_image {

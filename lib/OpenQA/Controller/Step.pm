@@ -19,6 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use File::Basename;
 use File::Copy;
+use File::Which qw(which);
 use OpenQA::Scheduler;
 use POSIX qw/strftime/;
 use Try::Tiny;
@@ -481,7 +482,9 @@ sub save_needle {
         }
     }
     if ($success) {
-        system("optipng", "-quiet", "$baseneedle.png");
+        if (which('optipng')) {
+            system("optipng", "-quiet", "$baseneedle.png");
+        }
         open(J, ">", "$baseneedle.json") or $success = 0;
         if ($success) {
             print J $json;

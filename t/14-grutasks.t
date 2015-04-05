@@ -26,6 +26,7 @@ use OpenQA::Test::Database;
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
+use File::Which qw(which);
 
 OpenQA::Test::Database->new->create();
 
@@ -46,7 +47,9 @@ select STDOUT;
 like($output, qr,optipng .*'$file';,, 'optipng queued');
 
 $c->run('run', '-o');
-is((stat($file))[7], 286, 'optimized file size');
+if (which('optipng')) {
+    is((stat($file))[7], 286, 'optimized file size');
+}
 
 # now to something completely different
 $t->app->gru->enqueue('limit_assets');
