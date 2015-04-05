@@ -108,22 +108,27 @@ sub run_first {
 }
 
 sub cmd_run {
-    my ($self) = @_;
+    my $self = shift;
     while (1) {
         if (!$self->run_first) {
+            if ($_[0] eq '-o') {
+                return;
+            }
             sleep(5);
         }
     }
 }
 
 sub run {
+    # only fetch first 2 args
     my $self = shift;
-    if ($_[0] eq 'list') {
-        $self->cmd_list;
+    my $cmd = shift;
+    if ($cmd eq 'list') {
+        $self->cmd_list(@_);
         return;
     }
-    if ($_[0] eq 'run') {
-        $self->cmd_run;
+    if ($cmd eq 'run') {
+        $self->cmd_run(@_);
         return;
     }
 }
