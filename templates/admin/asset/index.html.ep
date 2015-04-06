@@ -2,9 +2,7 @@
 % title 'Assets';
 
 % content_for 'ready_function' => begin
-  $('#assets').DataTable( {
-    "order": [[4, 'desc']],
-  } );
+    setup_asset_table();
 % end
 
 <div class="box box-shadow omega">
@@ -15,23 +13,21 @@
     <table id="assets" class="stripe">
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Type</th>
                 <th>Name</th>
                 <th>#Jobs</th>
                 <th>Created</th>
-                <th>Updated</th>
             </tr>
         </thead>
         <tbody>
         % while (my $asset = $assets->next()) {
         <tr id="asset_<%= $asset->id %>">
-            <td class="id"><%= $asset->id %></td>
             <td class="type"><%= $asset->type %></td>
             <td class="name"><%= $asset->name %></td>
-            <td class="nrjobs"><%= link_to scalar($asset->jobs_assets->all) => url_for('tests')->query(assetid => $asset->id, state => 'all', scope => undef, limit => undef ) %></td>
-            <td class="t_created"><%= $asset->t_created %></td>
-            <td class="t_updated"><%= $asset->t_updated %></td>
+            <td class="nrjobs"><%= link_to scalar($asset->jobs_assets->all) => url_for('tests')->query(assetid => $asset->id ) %></td>
+            <td class="t_created">
+                <%= $asset->t_created %>
+            </td>
         </tr>
         % }
         </tbody>

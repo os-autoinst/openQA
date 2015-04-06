@@ -38,7 +38,7 @@ use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 77;
+    plan tests => 79;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -304,7 +304,6 @@ $driver->mouse_move_to_location(element => $td);
 $driver->button_down();
 sleep 1;
 
-#$driver->find_element($td, 'option:last-child', 'css')->set_selected();
 $driver->send_keys_to_active_element('64bit');
 $driver->send_keys_to_active_element(KEYS->{'enter'});
 
@@ -321,6 +320,21 @@ is_deeply(\@picks, [], 'found no three');
 
 #print $driver->get_page_source();
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
+
+# briefly check the asset list
+$driver->find_element('Assets', 'link_text')->click();
+is($driver->get_title(), "openQA: Assets", "on asset");
+
+while (!$driver->execute_script("return jQuery.active == 0")) {
+    sleep 1;
+}
+
+
+#t::ui::PhantomTest::make_screenshot('mojoResults.png');
+#print $driver->get_page_source();
+
+$td = $driver->find_element('tr#asset_1 td.t_created', 'css');
+is('about 2 hours ago', $td->get_text(), 'timeago 2h');
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();

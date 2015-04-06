@@ -2,7 +2,8 @@
     Assets => {
         id => 1,
         type => 'iso',
-        name => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'
+        name => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso',
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time-7200, 'UTC'),  # Two hours ago
     },
     Assets => {
         id => 2,

@@ -186,6 +186,7 @@ sub startup {
       /javascripts/admintable.js
       /javascripts/jquery.timeago.js
       /javascripts/tests.js
+      /javascripts/assets.js
       /javascripts/job_templates.js
       /javascripts/overview.js );
     my @css = qw(/stylesheets/font-awesome.css

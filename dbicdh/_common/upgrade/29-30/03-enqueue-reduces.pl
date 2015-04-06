@@ -32,4 +32,5 @@ sub {
         my $cleanday = $job->t_created->add(days => 14);
         $gru->enqueue(reduce_result => $job->result_dir, { run_at => $cleanday });
     }
+    $gru->enqueue('limit_assets');
   }
