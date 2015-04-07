@@ -46,7 +46,9 @@ sub register {
 }
 
 sub add_task {
-    ($_[0]->{tasks}->{$_[1]} = $_[2]) and return $_[0];
+    my ($self, $taskname, $coderef) = @_;
+
+    $self->{tasks}->{$taskname} = $coderef;
 }
 
 sub schema {
@@ -72,8 +74,8 @@ sub enqueue {
 package OpenQA::Plugin::Gru::Command::gru;
 use Mojo::Base 'Mojolicious::Command';
 
-has usage       => "usage: $0 gru\n";
-has description => 'Run a gru to process jobs';
+has usage       => "usage: $0 gru [-o]\n";
+has description => 'Run a gru to process jobs - give -o to exit _o_nce everything is done';
 
 sub cmd_list {
     my ($self) = @_;

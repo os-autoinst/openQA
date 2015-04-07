@@ -17,6 +17,7 @@
 package OpenQA::Schema::Result::GruTasks;
 use base qw/DBIx::Class::Core/;
 
+use JSON;
 use db_helpers;
 
 __PACKAGE__->table('gru_tasks');
@@ -49,18 +50,18 @@ __PACKAGE__->set_primary_key('id');
 
 __PACKAGE__->filter_column(
     args => {
-        filter_to_storage => 'encode_json',
-        filter_from_storage => 'decode_json',
+        filter_to_storage => 'encode_json_to_db',
+        filter_from_storage => 'decode_json_from_db',
     }
 );
 
-sub decode_json {
+sub decode_json_from_db {
     my $ret = JSON::decode_json($_[1]);
     return $ret->{_} if ref($ret) eq 'HASH' && defined $ret->{_};
     return $ret;
 }
 
-sub encode_json {
+sub encode_json_to_db {
     my $args = $_[1];
     if (!ref($args)) {
         $args = { '_' => $args };

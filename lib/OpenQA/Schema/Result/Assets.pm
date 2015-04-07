@@ -107,6 +107,7 @@ sub ensure_size {
     return $size;
 }
 
+# this is a GRU task - abusing the namespace
 sub limit_assets {
     my ($app) = @_;
     my $groups = $app->db->resultset('JobGroups')->search({}, { select => 'id' });
