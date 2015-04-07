@@ -41,12 +41,27 @@ sub lockit(){
     return $lockfd;
 }
 
+sub check_qemu_pid{
+    my $pidfile = "$pooldir/qemu.pid";
+    return unless open(my $fh, '<', $pidfile);
+
+    # check if the process is still alive
+    my $pid = <$fh>;
+    chomp $pid;
+    close $fh;
+    return unless $pid;
+    my $link = readlink "/proc/$pid/exe";
+    return unless $link;
+    return unless $link =~ /\/qemu-[^\/]+$/;
+
+    print "QEMU ($pid -> $link) should be dead - WASUP?\n";
+    exit(1);
+}
+
+
 sub clean_pool(){
     return if $nocleanup;
-    if (-e "$pooldir/qemu.pid") {
-        print "QEMU should be dead - WASUP?\n";
-        exit(1);
-    }
+    check_qemu_pid();
     for my $file (<$pooldir/*>) {
         if (-d $file) {
             remove_tree($file);
