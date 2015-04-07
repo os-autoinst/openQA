@@ -153,6 +153,9 @@ sub job_create {
         if ($k eq 'ISO') {
             push @assets, { type => 'iso', name => $settings{$k}};
         }
+        if ($k =~ /^ISO_\d$/) {
+            push @assets, { type => 'iso', name => $settings{$k}};
+        }
         if ($k =~ /^HDD_\d$/) {
             push @assets, { type => 'hdd', name => $settings{$k}};
         }
