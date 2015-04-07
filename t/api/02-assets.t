@@ -77,11 +77,13 @@ my $listing = [
         id => 5,
         name => $iso1,
         type => "iso",
+        size => undef,
     },
     {
         id => 6,
         name => $iso2,
         type => "iso",
+        size => undef,
     },
 ];
 

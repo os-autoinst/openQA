@@ -362,7 +362,7 @@ is_deeply($current_jobs, [], "no jobs listed");
 
 my $rs = OpenQA::Scheduler::asset_list();
 $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-is_deeply(nots($rs->all()), { id => 1, name => "whatever.iso", type => "iso" }, "asset list");
+is_deeply(nots($rs->all()), { id => 1, name => "whatever.iso", type => "iso", size => undef }, "asset list");
 
 my $asset = OpenQA::Scheduler::asset_get(type => 'iso', name => $settings{ISO});
 is($asset->single->id, 1, "asset get");

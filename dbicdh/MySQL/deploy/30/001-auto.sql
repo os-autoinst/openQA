@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Sat Apr  4 21:56:53 2015
+-- Created on Tue Apr  7 16:13:10 2015
 -- 
 ;
 SET foreign_key_checks=0;
@@ -11,6 +11,7 @@ CREATE TABLE `assets` (
   `id` integer NOT NULL auto_increment,
   `type` text NOT NULL,
   `name` text NOT NULL,
+  `size` bigint NULL,
   `t_created` timestamp NOT NULL,
   `t_updated` timestamp NOT NULL,
   PRIMARY KEY (`id`),

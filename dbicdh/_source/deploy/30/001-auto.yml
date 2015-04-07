@@ -171,6 +171,16 @@ schema:
           order: 3
           size:
             - 0
+        size:
+          data_type: bigint
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: size
+          order: 4
+          size:
+            - 0
         t_created:
           data_type: timestamp
           default_value: ~
@@ -178,7 +188,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_created
-          order: 4
+          order: 5
           size:
             - 0
         t_updated:
@@ -188,7 +198,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_updated
-          order: 5
+          order: 6
           size:
             - 0
         type:

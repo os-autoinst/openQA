@@ -55,4 +55,7 @@ if (which('optipng')) {
 $t->app->gru->enqueue('limit_assets');
 $c->run('run', '-o');
 
+ok(-f "t/data/openqa/factory/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso", "iso 1 is still there");
+ok(-f "t/data/openqa/factory/iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso", "iso 2 is still there");
+
 done_testing();

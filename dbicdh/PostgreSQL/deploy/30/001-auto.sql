@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Sat Apr  4 21:56:53 2015
+-- Created on Tue Apr  7 16:13:10 2015
 -- 
 ;
 --
@@ -10,6 +10,7 @@ CREATE TABLE "assets" (
   "id" serial NOT NULL,
   "type" text NOT NULL,
   "name" text NOT NULL,
+  "size" bigint,
   "t_created" timestamp NOT NULL,
   "t_updated" timestamp NOT NULL,
   PRIMARY KEY ("id"),
