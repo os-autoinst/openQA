@@ -323,6 +323,11 @@ sub overview {
         return $self->reply->not_found if (!$group);
         $search_args{groupid} = $group->id;
     }
+    elsif ($self->param('group')) {
+        $group = $self->db->resultset("JobGroups")->find({ name => $self->param('group') });
+        return $self->reply->not_found if (!$group);
+        $search_args{groupid} = $group->id;
+    }
     else {
         $validation->required('distri');
         $validation->required('version');
