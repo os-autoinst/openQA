@@ -211,7 +211,7 @@ sub _step_thumbnail {
             md5_basename => $screenshot->{md5_basename});
     }
     else {
-        $imgurl = $c->url_for('test_thumbnail', 'testid' => $testid, 'filename' => $screenshot->{name});
+        $imgurl = $c->url_for('test_thumbnail', 'testid' => $testid, 'filename' => $screenshot->{screenshot});
     }
     my $content = $c->image(
         $imgurl => width => $ref_width,
