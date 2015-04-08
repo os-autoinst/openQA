@@ -331,11 +331,11 @@ sub query_jobs {
                 'jobs_assets.asset_id' => $args{assetid},
             });
     }
-    if ($args{groupid}) {
+    if (defined $args{groupid}) {
         push(
             @conds,
             {
-                'me.group_id' => $args{groupid},
+                'me.group_id' => $args{groupid} || undef,
             });
     }
     elsif ($args{group}) {
@@ -343,7 +343,8 @@ sub query_jobs {
         push(
             @conds,
             {
-                'me.group_id' => {-in => $subquery}});
+                'me.group_id' => {-in => $subquery},
+            });
     }
 
     # Search into the following job_settings
