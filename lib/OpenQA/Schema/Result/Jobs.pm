@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -498,7 +498,9 @@ sub create_result_dir {
         $dir = $self->result_dir();
     }
     if (!-d $dir) {
-        my $cleanday = now()->add(days => 14);
+        my $days = 14;
+        $days = $self->group->keep_logs_in_days if $self->group;
+        my $cleanday = now()->add(days => $days);
         $openQA::Utils::app->gru->enqueue(reduce_result => $dir, { run_at => $cleanday });
         mkdir($dir) || die "can't mkdir $dir: $!";
     }

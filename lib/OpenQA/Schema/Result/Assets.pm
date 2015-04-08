@@ -110,7 +110,7 @@ sub ensure_size {
 # this is a GRU task - abusing the namespace
 sub limit_assets {
     my ($app) = @_;
-    my $groups = $app->db->resultset('JobGroups')->search({}, { select => 'id' });
+    my $groups = $app->db->resultset('JobGroups')->search({}, { select => [qw/id size_limit_gb/] });
     my %toremove;
     my %keep;
 
@@ -119,7 +119,7 @@ sub limit_assets {
     # (assets can easily be in 2 groups - and both have different update ratios, it's up
     # to the admin to configure the size limit)
     while (my $g = $groups->next) {
-        my $sizelimit = 100 * 1024 * 1024 * 1024; # 100GB
+        my $sizelimit = $g->size_limit_gb * 1024 * 1024 * 1024;
         my $assets = $app->db->resultset('JobsAssets')->search(
             {
                 job_id => { -in => $g->jobs->get_column('id')->as_query },

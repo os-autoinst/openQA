@@ -28,6 +28,14 @@ __PACKAGE__->add_columns(
         data_type => 'text',
         is_nullable => 0,
     },
+    size_limit_gb => {
+        data_type => 'integer',
+        default_value => 100,
+    },
+    keep_logs_in_days => {
+        data_type => 'integer',
+        default_value => 14
+    }
 );
 
 __PACKAGE__->add_unique_constraint([qw/name/]);

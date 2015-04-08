@@ -435,6 +435,16 @@ schema:
           order: 1
           size:
             - 0
+        keep_logs_in_days:
+          data_type: integer
+          default_value: 14
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: keep_logs_in_days
+          order: 4
+          size:
+            - 0
         name:
           data_type: text
           default_value: ~
@@ -445,6 +455,16 @@ schema:
           order: 2
           size:
             - 0
+        size_limit_gb:
+          data_type: integer
+          default_value: 100
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: size_limit_gb
+          order: 3
+          size:
+            - 0
         t_created:
           data_type: timestamp
           default_value: ~
@@ -452,7 +472,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_created
-          order: 3
+          order: 5
           size:
             - 0
         t_updated:
@@ -462,7 +482,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_updated
-          order: 4
+          order: 6
           size:
             - 0
       indices: []

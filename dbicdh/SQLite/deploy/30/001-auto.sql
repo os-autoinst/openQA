@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Tue Apr  7 16:13:10 2015
+-- Created on Wed Apr  8 08:18:02 2015
 -- 
 
 ;
@@ -35,6 +35,8 @@ CREATE TABLE gru_tasks (
 CREATE TABLE job_groups (
   id INTEGER PRIMARY KEY NOT NULL,
   name text NOT NULL,
+  size_limit_gb integer NOT NULL DEFAULT 100,
+  keep_logs_in_days integer NOT NULL DEFAULT 14,
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL
 );
