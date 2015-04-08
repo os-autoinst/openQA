@@ -152,19 +152,26 @@ sub _stop_job($;$) {
 
         if ($aborted eq 'done') {
             # job succeeded, upload assets created by the job
+
             for my $dir (qw(private public)) {
                 my @assets = <$pooldir/assets_$dir/*>;
                 for my $file (@assets) {
                     next unless -f $file;
-                    warn "uploading asset $file\n";
 
                     # don't use api_call as it retries and does not allow form data
                     # (refactor at some point)
-                    my $res = $OpenQA::Worker::Common::ua->post(
-                        $ua_url => form => {
+                    my $tx = $OpenQA::Worker::Common::ua->build_tx(
+                        'POST' => $ua_url => form => {
                             file  => {file => $file, filename => basename($file)},
                             asset => $dir
                         });
+                    # override the default boundary calculation - it reads whole file
+                    # and it can cause various timeouts
+                    my $ct = $tx->req->headers->content_type;
+                    my $boundary = encode_base64 join('', map chr(rand 256), 1 .. 32);
+                    $boundary =~ s/\W/X/g;
+                    $tx->req->headers->content_type("$ct; boundary=$boundary");
+                    my $res = $OpenQA::Worker::Common::ua->start($tx);
                 }
             }
         }
