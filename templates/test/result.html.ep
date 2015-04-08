@@ -111,24 +111,22 @@
                             <td class="<%= css_for($module) %>">
                                 %= format_result($module)
                             </td>
+                            <td class="links">
 
-                        </td>
-                        <td class="links">
+                                % for my $screenshot (@{$module->{screenshots}}) {
+                                    %= step_thumbnail($screenshot, 60, $testid, $module->{name}, $screenshot->{num})
+                                % }
 
-                            % for my $screenshot (@{$module->{screenshots}}) {
-                                %= step_thumbnail($screenshot, 60, $testid, $module->{name}, $screenshot->{num})
-                            % }
+                                % for my $wav (@{$module->{wavs}}) {
+                                    %= link_to url_for('step', moduleid => $module->{name}, stepid => $wav->{num}) => title => $wav->{name} => begin
+                                        <img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{name} %>" class="<%= "resborder_\L$wav->{result}" %>" />
+                                    % end
+                                % }
 
-                            % for my $wav (@{$module->{wavs}}) {
-                                %= link_to url_for('step', moduleid => $module->{name}, stepid => $wav->{num}) => title => $wav->{name} => begin
-                                    <img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{name} %>" class="<%= "resborder_\L$wav->{result}" %>" />
-                                % end
-                            % }
-
-                            <% for my $ocr (@{$module->{ocrs}}) { %>
-                                <a href="<%= url_for('step', moduleid => $module->{name}, stepid => $ocr->{num}) %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{name} %>.txt" class="<%= "resborder_\L$ocr->{result}" %>" /></a>
-                            <% } %>
-                        </td>
+                                <% for my $ocr (@{$module->{ocrs}}) { %>
+                                    <a href="<%= url_for('step', moduleid => $module->{name}, stepid => $ocr->{num}) %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{name} %>.txt" class="<%= "resborder_\L$ocr->{result}" %>" /></a>
+                                <% } %>
+                            </td>
                         </tr>
                     <% } %>
                 </tbody>
@@ -138,62 +136,68 @@
         %= include 'layouts/settings'
     </div>
 
-<div class="col-sm-3 col-sm-pull-9">
-    <div class="well" id="result_files_box">
-        % if(@$resultfiles) {
-            <div class="h5">Result Files</div>
-            <ul>
-                % for my $resultfile (@$resultfiles) {
-                    <li>
-                        % if($resultfile =~ /video.ogv$/) {
-                            %= link_to url_for('test_file', testid => $testid, filename => 'video.ogv') => begin
-                            <i title="ogg/theora video of this testrun" class="fa fa-file-video-o"></i> Video
-                            %= end
-                        % } else
-                        % {
-                            <a href="<%= url_for('test_file', testid => $testid,
-                                                 filename => $resultfile) %>">
-                                <%= $resultfile %>
-                            </a>
+    <div class="col-sm-3 col-sm-pull-9">
+
+        <div class="panel panel-default" id="result_files_box">
+            <div class="panel-heading">Downloads</div>
+            <div class="panel-body">
+                % if(@$resultfiles) {
+                    <div class="h5">Result Files</div>
+                    <ul>
+                        % for my $resultfile (@$resultfiles) {
+                            <li>
+                                % if($resultfile =~ /video.ogv$/) {
+                                    %= link_to url_for('test_file', testid => $testid, filename => 'video.ogv') => begin
+                                        <i title="ogg/theora video of this testrun" class="fa fa-file-video-o"></i> Video
+                                    %= end
+                                % } else
+                                % {
+                                    <a href="<%= url_for('test_file', testid => $testid,
+                                             filename => $resultfile) %>">
+                                        <%= $resultfile %>
+                                    </a>
+                                % }
+                            </li>
                         % }
-                    </li>
+                    </ul>
                 % }
-            </ul>
-        % }
-        % my $assets = $job->jobs_assets;
-        % while (my $a = $assets->next) {
-            % $a = $a->asset;
-            % if ($a->type ne 'repo') {
-                % content_for 'asset_box' => begin
-                    <li>
-                        %= link_to url_for('test_asset_id', 'testid' => $testid, assetid => $a->id) => (id => "asset_".$a->id) => begin
-                            Download <%= $a->type %>
+                % my $assets = $job->jobs_assets;
+                % while (my $a = $assets->next) {
+                    % $a = $a->asset;
+                    % if ($a->type ne 'repo') {
+                        % content_for 'asset_box' => begin
+                            <li>
+                                %= link_to url_for('test_asset_id', 'testid' => $testid, assetid => $a->id) => (id => "asset_".$a->id) => begin
+                                    Download <%= $a->type %>
+                                % end
+                            </li>
                         % end
-                    </li>
-                % end
-            % }
-        % }
+                    % }
+                % }
 
-        % if (length(content('asset_box'))) {
-            <div class="h5">Assets</div>
-            <ul>
-                %= content 'asset_box'
-            </ul>
-        % }
-        % for my $ulog (@$ulogs) {
-            % content_for 'log_list' => begin
-                <li>
-                    %= link_to($ulog => url_for('test_file', 'testid' => $testid, 'filename' => $ulog))
-                </li>
-            % end
-        % }
+                % if (length(content('asset_box'))) {
+                    <div class="h5">Assets</div>
+                    <ul>
+                        %= content 'asset_box'
+                    </ul>
+                % }
+                % for my $ulog (@$ulogs) {
+                    % content_for 'log_list' => begin
+                        <li>
+                            %= link_to($ulog => url_for('test_file', 'testid' => $testid, 'filename' => $ulog))
+                        </li>
+                    % end
+                % }
 
-        % if (length(content('log_list'))) {
-            <div class="h6">Uploaded Logs</div>
-            <ul>
-                %= content 'log_list'
-            </ul>
-        % }
+                % if (length(content('log_list'))) {
+                    <div class="h6">Uploaded Logs</div>
+                    <ul>
+                        %= content 'log_list'
+                    </ul>
+                % }
+            </div>
+
+        </div>
+        %= include 'layouts/dependencies'
     </div>
-    %= include 'layouts/dependencies'
 </div>

@@ -16,9 +16,12 @@ $grayDarker:            #333; // Also #2e2e2e and #444 in original bento
 $grayDark:              #555; // Also #4e4e4e and #666 in original bento
 $gray:                  #999; // Also #888 and #aaa in original bento
 $grayLight:             #bbb; // Also #ccc in original bento
-$grayLighter:           #e6e6e6; // Also #ddd and #eee in original bento
+$grayLighter:           #ddd; // Also #ddd and #eee in original bento
 $grayLightest:          #f6f6f6; // Also #fefefe in original bento
 $white:                 #fff;
+
+$panel-default-border:  $grayLighter;
+$panel-heading-padding: 5px 15px;
 
 // Other colors
 // ------------
@@ -30,14 +33,13 @@ $bentoGreenLight:       #9f3;
 
 // Typography
 // -------------------------
-$sansFontFamily:        "Lucida Grande", Arial, "DejaVu Sans", Verdana, sans-serif;
+$font-family-sans-serif: "Lucida Grande", Arial, "DejaVu Sans", Verdana, sans-serif;
 // $serifFontFamily:       ;
 // $monoFontFamily:        ;
 
 $baseFontSize:          13px;
-$baseFontFamily:        $sansFontFamily;
+$baseFontFamily:        $font-family-sans-serif;
 $baseLineHeight:        16px;
-$altFontFamily:         $sansFontFamily;
 
 $headingsFontFamily:    inherit; // empty to use BS default, $baseFontFamily
 $headingsFontWeight:    bold;    // instead of browser default, bold

@@ -197,7 +197,7 @@ sub startup {
             $$text =~ s!url\('!url('../images/!g if $file =~ /chosen.css/;
         });
 
-    $self->asset('app.css' => (qw(/stylesheets/jquery.dataTables.css), @css));
+    $self->asset('app.css' => (qw(/stylesheets/jquery.dataTables.css /stylesheets/tables.css), @css));
     $self->asset('app.js' => @js);
     my $path = Mojolicious::Plugin::Bootstrap3->asset_path('sass');
     $ENV{SASS_PATH} = ".:$path";

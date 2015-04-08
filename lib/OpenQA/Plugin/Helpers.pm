@@ -52,7 +52,7 @@ sub register {
         breadcrumbs => sub {
             my $c = shift;
 
-            my $crumbs = '<div id="breadcrump" class="grid_10 alpha">';
+            my $crumbs = '<div id="breadcrump" class="breadcrumb grid_10 alpha">';
             $crumbs .= '<a href="' . $c->url_for('/') . '">';
             $crumbs .= $c->image('/images/home_grey.png', alt => "Home");
             $crumbs .= '<b>' . $c->stash('appname') . '</b></a>';
@@ -77,12 +77,12 @@ sub register {
                 my $job = $c->stash('job');
                 if ($job->group_id) {
                     $query->{groupid} = $job->group_id;
-                    $crumbs .= ' > '.$c->link_to("Build$build\@" . $job->group->name => $c->url_for('tests_overview')->query(%$query));
+                    $crumbs .= ' > ' . $c->link_to("Build$build\@" . $job->group->name => $c->url_for('tests_overview')->query(%$query));
                 }
                 else {
                     $query->{distri}  = $distri;
                     $query->{version} = $version;
-                    $crumbs .= ' > '.$c->link_to("Build$build\@$distri $version" => $c->url_for('tests_overview')->query(%$query));
+                    $crumbs .= ' > ' . $c->link_to("Build$build\@$distri $version" => $c->url_for('tests_overview')->query(%$query));
                 }
                 if ($c->current_route('test')) {
                     $crumbs .= " > Test $test";
