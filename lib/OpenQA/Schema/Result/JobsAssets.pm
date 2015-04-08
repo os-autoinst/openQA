@@ -30,6 +30,10 @@ __PACKAGE__->add_columns(
         data_type => 'integer',
         is_foreign_key => 1,
     },
+    created_by => {
+        data_type => 'boolean',
+        default_value => '0',
+    }
 );
 __PACKAGE__->add_timestamps;
 

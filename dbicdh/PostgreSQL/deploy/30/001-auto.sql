@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Apr  8 08:18:02 2015
+-- Created on Wed Apr  8 10:43:10 2015
 -- 
 ;
 --
@@ -342,6 +342,7 @@ CREATE INDEX "job_templates_idx_test_suite_id" on "job_templates" ("test_suite_i
 CREATE TABLE "jobs_assets" (
   "job_id" integer NOT NULL,
   "asset_id" integer NOT NULL,
+  "created_by" boolean DEFAULT '0' NOT NULL,
   "t_created" timestamp NOT NULL,
   "t_updated" timestamp NOT NULL,
   CONSTRAINT "jobs_assets_job_id_asset_id" UNIQUE ("job_id", "asset_id")

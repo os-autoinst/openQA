@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Wed Apr  8 08:18:02 2015
+-- Created on Wed Apr  8 10:43:09 2015
 -- 
 ;
 SET foreign_key_checks=0;
@@ -321,6 +321,7 @@ CREATE TABLE `job_templates` (
 CREATE TABLE `jobs_assets` (
   `job_id` integer NOT NULL,
   `asset_id` integer NOT NULL,
+  `created_by` enum('0','1') NOT NULL DEFAULT '0',
   `t_created` timestamp NOT NULL,
   `t_updated` timestamp NOT NULL,
   INDEX `jobs_assets_idx_asset_id` (`asset_id`),

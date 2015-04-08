@@ -1340,6 +1340,16 @@ schema:
           order: 2
           size:
             - 0
+        created_by:
+          data_type: boolean
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: created_by
+          order: 3
+          size:
+            - 0
         job_id:
           data_type: integer
           default_value: ~
@@ -1357,7 +1367,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_created
-          order: 3
+          order: 4
           size:
             - 0
         t_updated:
@@ -1367,7 +1377,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: t_updated
-          order: 4
+          order: 5
           size:
             - 0
       indices:

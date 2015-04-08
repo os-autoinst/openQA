@@ -1,4 +1,4 @@
--- Convert schema '/home/coolo/prod/openQA/script/../dbicdh/_source/deploy/29/001-auto.yml' to '/home/coolo/prod/openQA/script/../dbicdh/_source/deploy/30/001-auto.yml':;
+-- Convert schema '/space/prod/openQA/script/../dbicdh/_source/deploy/29/001-auto.yml' to '/space/prod/openQA/script/../dbicdh/_source/deploy/30/001-auto.yml':;
 
 ;
 BEGIN;
@@ -22,6 +22,9 @@ ALTER TABLE job_groups ADD COLUMN size_limit_gb integer NOT NULL DEFAULT 100;
 
 ;
 ALTER TABLE job_groups ADD COLUMN keep_logs_in_days integer NOT NULL DEFAULT 14;
+
+;
+ALTER TABLE jobs_assets ADD COLUMN created_by boolean NOT NULL DEFAULT 0;
 
 ;
 

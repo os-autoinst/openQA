@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Wed Apr  8 08:18:02 2015
+-- Created on Wed Apr  8 10:43:09 2015
 -- 
 
 ;
@@ -304,6 +304,7 @@ CREATE UNIQUE INDEX job_templates_product_id_machine_id_test_suite_id ON job_tem
 CREATE TABLE jobs_assets (
   job_id integer NOT NULL,
   asset_id integer NOT NULL,
+  created_by boolean NOT NULL DEFAULT 0,
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL,
   FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE ON UPDATE CASCADE,
