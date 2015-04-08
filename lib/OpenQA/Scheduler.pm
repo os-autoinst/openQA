@@ -148,32 +148,6 @@ sub job_create {
     my ($settings, $no_notify) = @_;
     my %settings = %$settings;
 
-    my @assets;
-    for my $k (keys %settings) {
-        if ($k eq 'ISO') {
-            push @assets, {type => 'iso', name => $settings{$k}};
-        }
-        if ($k =~ /^ISO_\d$/) {
-            push @assets, {type => 'iso', name => $settings{$k}};
-        }
-        if ($k =~ /^HDD_\d$/) {
-            push @assets, {type => 'hdd', name => $settings{$k}};
-        }
-        if ($k =~ /^REPO_\d$/) {
-            push @assets, {type => 'repo', name => $settings{$k}};
-        }
-    }
-
-    die "job has no assets\n" unless @assets;
-
-    for my $a (@assets) {
-        die "invalid character in $a->{name}\n" if $a->{name} =~ /\//;    # TODO: use whitelist?
-
-        unless (-e sprintf("%s/%s/%s", $OpenQA::Utils::assetdir, $a->{type}, $a->{name})) {
-            die "$a->{name} does not exist\n";
-        }
-    }
-
     my %new_job_args = (test => $settings{TEST});
 
     if ($settings{NAME}) {
@@ -218,10 +192,6 @@ sub job_create {
         for my $l (split(m/,/, $v)) {    # special case for worker class?
             push @{$new_job_args{settings}}, {key => $k, value => $l} if $l;
         }
-    }
-
-    for my $a (@assets) {
-        push @{$new_job_args{jobs_assets}}, {asset => $a};
     }
 
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
@@ -547,6 +517,15 @@ sub job_grab {
     my $token = rndstr;
     $worker->set_property('JOBTOKEN', $token);
     $job_hashref->{settings}->{JOBTOKEN} = $token;
+
+    my $updated_settings = $job->assets_from_settings();
+
+    if ($updated_settings) {
+        for my $k (keys %$updated_settings) {
+            $job_hashref->{settings}->{$k} = $updated_settings->{$k};
+        }
+    }
+    # else assets are broken, maybe we could cancel the job right now
 
     # TODO: cleanup previous tmpdir
     $worker->set_property('WORKER_TMPDIR', tempdir());
