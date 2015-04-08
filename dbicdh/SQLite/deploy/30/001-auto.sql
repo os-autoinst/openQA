@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Wed Apr  8 10:43:09 2015
+-- Created on Wed Apr  8 15:20:48 2015
 -- 
 
 ;
@@ -36,7 +36,7 @@ CREATE TABLE job_groups (
   id INTEGER PRIMARY KEY NOT NULL,
   name text NOT NULL,
   size_limit_gb integer NOT NULL DEFAULT 100,
-  keep_logs_in_days integer NOT NULL DEFAULT 14,
+  keep_logs_in_days integer NOT NULL DEFAULT 30,
   t_created timestamp NOT NULL,
   t_updated timestamp NOT NULL
 );

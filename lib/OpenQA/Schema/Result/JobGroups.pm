@@ -34,7 +34,7 @@ __PACKAGE__->add_columns(
     },
     keep_logs_in_days => {
         data_type => 'integer',
-        default_value => 14
+        default_value => 30,
     }
 );
 

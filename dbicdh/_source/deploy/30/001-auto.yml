@@ -437,7 +437,7 @@ schema:
             - 0
         keep_logs_in_days:
           data_type: integer
-          default_value: 14
+          default_value: 30
           is_nullable: 0
           is_primary_key: 0
           is_unique: 0

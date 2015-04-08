@@ -22,7 +22,7 @@ ALTER TABLE assets ADD COLUMN size bigint;
 ALTER TABLE job_groups ADD COLUMN size_limit_gb integer DEFAULT 100 NOT NULL;
 
 ;
-ALTER TABLE job_groups ADD COLUMN keep_logs_in_days integer DEFAULT 14 NOT NULL;
+ALTER TABLE job_groups ADD COLUMN keep_logs_in_days integer DEFAULT 30 NOT NULL;
 
 ;
 ALTER TABLE jobs_assets ADD COLUMN created_by boolean DEFAULT '0' NOT NULL;

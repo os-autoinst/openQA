@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Apr  8 10:43:10 2015
+-- Created on Wed Apr  8 15:20:48 2015
 -- 
 ;
 --
@@ -40,7 +40,7 @@ CREATE TABLE "job_groups" (
   "id" serial NOT NULL,
   "name" text NOT NULL,
   "size_limit_gb" integer DEFAULT 100 NOT NULL,
-  "keep_logs_in_days" integer DEFAULT 14 NOT NULL,
+  "keep_logs_in_days" integer DEFAULT 30 NOT NULL,
   "t_created" timestamp NOT NULL,
   "t_updated" timestamp NOT NULL,
   PRIMARY KEY ("id"),
