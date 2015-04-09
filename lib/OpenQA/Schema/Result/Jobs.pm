@@ -19,6 +19,7 @@ use base qw/DBIx::Class::Core/;
 use Try::Tiny;
 use JSON;
 use Fcntl;
+use DateTime;
 use db_helpers;
 use OpenQA::Utils;
 use File::Basename qw/basename dirname/;
@@ -493,8 +494,8 @@ sub create_result_dir {
     if (!-d $dir) {
         my $days = 30;
         $days = $self->group->keep_logs_in_days if $self->group;
-        my $cleanday = now()->add(days => $days);
-        $openQA::Utils::app->gru->enqueue(reduce_result => $dir, {run_at => $cleanday});
+        my $cleanday = DateTime->now()->add(days => $days);
+        $OpenQA::Utils::app->gru->enqueue(reduce_result => $dir, {run_at => $cleanday});
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
     my $sdir = $dir . "/.thumbs";
