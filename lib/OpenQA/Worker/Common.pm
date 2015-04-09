@@ -172,7 +172,7 @@ sub api_call {
     my ($method, $path, $params, $json_data, $ignore_errors) = @_;
     state $call_running;
 
-    return undef unless verify_workerid();
+    return unless verify_workerid();
 
     if ($call_running) {
         # quit immediately
@@ -293,6 +293,9 @@ sub _get_capabilities {
 }
 
 sub setup_websocket {
+    # no point in trying if we are not registered
+    return unless verify_workerid();
+
     # if there is an existing web socket connection wait until it finishes.
     if ($ws) {
         add_timer('setup_websocket', 2, \&setup_websocket, 1);
@@ -367,7 +370,9 @@ sub register_worker {
     my $tx = $ua->post($ua_url => json => $worker_caps);
     unless ($tx->success && $tx->success->json) {
         if ($tx->error && $tx->error->{code} && $tx->error->{code} =~ /^4\d\d$/) {
-            die sprintf "server refused with code %s: %s\n", $tx->error->{code}, $tx->res->body;
+            # don't retry when 4xx codes are returned. There is problem with scheduler
+            printf "server refused with code %s: %s\n", $tx->error->{code}, $tx->res->body;
+            Mojo::IOLoop->stop;
         }
         print "failed to register worker, retry ...\n" if $verbose;
         add_timer('register_worker', 10, \&register_worker, 1);

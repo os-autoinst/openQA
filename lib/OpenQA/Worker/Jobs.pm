@@ -187,7 +187,7 @@ sub _stop_job($;$) {
             $job_done = 1;
         }
     }
-    unless ($job_done) {
+    unless ($job_done || $aborted eq 'api-failure') {
         # set job to done. if priority is less than threshold duplicate it
         # with worse priority so it can be picked up again.
         my %args;
@@ -208,7 +208,7 @@ sub _stop_job($;$) {
         return;
     }
     # immediatelly check for already scheduled job
-    add_timer('check_job', 0, \&check_job, 1) unless ($job);
+    add_timer('check_job', 0, \&check_job, 1);
 }
 
 sub start_job {
