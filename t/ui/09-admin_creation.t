@@ -37,9 +37,9 @@ my $token = $req->res->dom->at('meta[name=csrf-token]')->attr('content');
 $t->delete_ok('/logout')->status_is(302);
 $test_case->login($t, 'arthur');
 my $get = $t->get_ok('/admin/users')->status_is(200);
-is('11', $t->tx->res->dom->at('#user_99901 .role')->attr('data-order'));
-is('00', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
-is('01', $t->tx->res->dom->at('#user_99903 .role')->attr('data-order'));
+is($t->tx->res->dom->at('#user_99901 .role')->attr('data-order'), '11');
+is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '00');
+is($t->tx->res->dom->at('#user_99903 .role')->attr('data-order'), '01');
 
 
 # Make only admin leave
@@ -50,9 +50,9 @@ $t->delete_ok('/logout')->status_is(302);
 # Login and claim the kingdom
 $test_case->login($t, 'morgana');
 $get = $t->get_ok('/admin/users')->status_is(200);
-is('01', $t->tx->res->dom->at('#user_99901 .role')->attr('data-order'));
-is('00', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
-is('01', $t->tx->res->dom->at('#user_99903 .role')->attr('data-order'));
+is($t->tx->res->dom->at('#user_99901 .role')->attr('data-order'), '01');
+is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '00');
+is($t->tx->res->dom->at('#user_99903 .role')->attr('data-order'), '01');
 
 
 # Leave

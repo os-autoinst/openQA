@@ -195,6 +195,9 @@ if ($jobid) {
 
     $url = $local_url->clone;
     my %settings = %{$job->{settings}};
+    if ($job->{group}) {
+        $settings{_GROUP} = $job->{group};
+    }
     delete $settings{NAME};    # usually autocreated
     for my $arg (@ARGV) {
         if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
