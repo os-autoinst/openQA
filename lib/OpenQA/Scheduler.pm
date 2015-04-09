@@ -184,6 +184,10 @@ sub job_create {
         delete $settings{NAME};
     }
 
+    if ($settings{_GROUP}) {
+        $new_job_args{group} = {name => delete $settings{_GROUP}};
+    }
+
     if ($settings{_START_AFTER_JOBS}) {
         for my $id (@{$settings{_START_AFTER_JOBS}}) {
             push @{$new_job_args{parents}},

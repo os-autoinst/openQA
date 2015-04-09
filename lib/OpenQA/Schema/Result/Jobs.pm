@@ -247,7 +247,10 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw/id name priority state result worker_id clone_id retry_avbl t_started t_finished test/);
+    my $j = _hashref($job, qw/id name priority state result worker_id clone_id retry_avbl t_started t_finished test group_id/);
+    if ($j->{group_id}) {
+        $j->{group} = $job->group->name;
+    }
     $j->{settings} = $job->settings_hash;
     if ($args{assets}) {
         for my $a ($job->jobs_assets->all()) {
