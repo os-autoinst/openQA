@@ -615,6 +615,8 @@ sub create_asset {
 
     $asset->move_to(join('/', $fpath, $fname));
     OpenQA::Utils::log_debug("moved to $fpath " . $fname);
+    $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type, created_by => 1}});
+
     1;
 }
 
