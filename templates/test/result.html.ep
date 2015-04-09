@@ -108,7 +108,7 @@
                                     % }
                                 </div>
                             </td>
-                            <td class="<%= css_for($module) %>">
+                            <td class="result <%= css_for($module) %>">
                                 %= format_result($module)
                             </td>
                             <td class="links">

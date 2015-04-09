@@ -57,7 +57,7 @@ span.refcomppic {
 }
 
 span.refcomppic.match {
-    border: 3px solid #3399CC;
+    border: 2px solid #3399CC;
     padding: 1px;
 }
 
@@ -69,6 +69,15 @@ span.refcomppic span.result-icon {
     -moz-opacity:0.8;
     -khtml-opacity: 0.8;
     opacity: 0.8;
+}
+
+.table tbody tr td.links {
+     padding-top: 3px;
+     padding-bottom: 3px;
+}
+
+.table tbody tr td.result {
+     vertical-align: middle;
 }
 
 span.thumbnail {
@@ -91,17 +100,17 @@ td img.resborder_ok, td img.resborder_fail, td img.resborder_unk,td img.resborde
 }
 
 img.resborder_ok {
-    border: 3px solid green;
+    border: 2px solid green;
     padding: 1px;
 }
 
 img.resborder_fail {
-    border: 3px solid red;
+    border: 2px solid red;
     padding: 1px;
 }
 
 img.resborder_unk {
-    border: 3px solid dimgray;
+    border: 2px solid dimgray;
     padding: 1px;
 }
 
