@@ -9,7 +9,6 @@
     <h2>Test result overview</h2>
     <div id="summary" class="panel <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'panel-danger' : 'panel-success' %>">
         <div class="panel-heading">
-        <h3 class="panel-title">
             Overall Summary of
             % if (defined $distri) {
                 <b><%= $distri %> <%= $version %></b>
@@ -18,7 +17,6 @@
                 <b><%= $group->name %></b>
             % }
             build <%= $build %>
-        </h3>
         </div>
         <div class="panel-body">
             Passed: <span class="badge"><%= $aggregated->{passed} %></span>
@@ -54,7 +52,7 @@
     % my $failedid;
     % for my $type (@$types) {
         <h3>Flavor: <%= $type %></h3>
-        <table id="results_<%= $type %>" class="overview table-striped table-hover">
+        <table id="results_<%= $type %>" class="overview table table-striped table-hover">
             <thead>
                 <tr id="flavors">
                     <th>Test</th>

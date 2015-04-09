@@ -1,0 +1,20 @@
+/* only used for bento routes */
+td {
+    text-align: center;
+    vertical-align: middle;
+    padding: 0.3em 0.6em;
+    border-left: 1px;
+    border-bottom: 0;
+    border-top: 0;
+}
+
+table.table-autostripe tr { border: none }
+table.table-autostripe tr:nth-of-type(odd) { background-color:#f9f9f9; }
+
+thead tr th, thread tr {
+    background-color: #f4f4f4 !important;
+    font-size: 120%;
+    font-weight: 100;
+}
+ 
+

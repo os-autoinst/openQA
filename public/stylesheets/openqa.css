@@ -1,22 +1,4 @@
 
-td {
-    text-align: center;
-    vertical-align: middle;
-    padding: 0.3em 0.6em;
-    border-left: 1px;
-    border-bottom: 0;
-    border-top: 0;
-}
-
-table.table-autostripe tr { border: none }
-table.table-autostripe tr:nth-of-type(odd) { background-color:#f9f9f9; }
-
-thead tr th, thread tr {
-    background-color: #690 !important;
-    color: white;
-    font-size: 120%;
-    font-weight: 100;
-}
 
 .highlight_parent {
     background-color:#ffe0e0 !important;
@@ -241,11 +223,6 @@ input[type='image'] {
     padding-right: 3px;
 }
 
-td.flags {
-    font-size: 1.5em;
-    width: 1.5em;
-}
-
 .noborder {
     border: none;
 }
@@ -442,6 +419,16 @@ span.status .fa {
 .action.fa {
     font-size: 90%;
     color: #ccc !important;
+}
+
+div.flags {
+    min-height: 1em;
+}
+
+.flag.fa {
+    font-size: 85%;
+    color: #999;
+    padding: 1px;
 }
 
 table.overview .failedmodule {
