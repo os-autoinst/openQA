@@ -90,7 +90,7 @@ sub add_machine() {
 
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(6, @headers, "6 columns");
+    is(@headers, 6, "6 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "name",            "1st column");
@@ -117,7 +117,7 @@ sub add_machine() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(6, @fields, "6 fields");    # one column has 2 fields
+    is(@fields, 6, "6 fields");    # one column has 2 fields
     (shift @fields)->send_keys('HURRA');    # name
     (shift @fields)->send_keys('ipmi');     # backend
     (shift @fields)->send_keys('kvm32');    # cpu
@@ -143,7 +143,7 @@ sub add_test_suite() {
 
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(6, @headers, "6 columns");
+    is(@headers, 6, "6 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "name",            "1st column");
@@ -169,7 +169,7 @@ sub add_test_suite() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(6, @fields, "6 fields");    # one column has 2 fields
+    is(@fields, 6, "6 fields");    # one column has 2 fields
     (shift @fields)->send_keys('xfce');    # name
     (shift @fields)->send_keys('xfce');    # desktop
     (shift @fields)->send_keys('');        # parallelwith
@@ -199,7 +199,7 @@ sub add_product() {
 
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(8, @headers, "8 columns");
+    is(@headers, 8, "8 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "distri",          "1st column");
@@ -229,7 +229,7 @@ sub add_product() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(8, @fields, "8 fields");    # one column has 2 fields
+    is(@fields, 8, "8 fields");    # one column has 2 fields
     (shift @fields)->send_keys('sle');      # distri
     (shift @fields)->send_keys('13');       # version
     (shift @fields)->send_keys('DVD');      # flavor
@@ -248,7 +248,7 @@ sub add_product() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(8, @fields, "8 fields");    # one column has 2 fields
+    is(@fields, 8, "8 fields");    # one column has 2 fields
     (shift @fields)->send_keys('OpeNSusE');    # distri name has capital letter and many upper/lower case combined
     (shift @fields)->send_keys('13.2');        # version
     (shift @fields)->send_keys('DVD');         # flavor

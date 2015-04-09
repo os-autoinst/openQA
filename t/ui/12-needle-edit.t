@@ -84,7 +84,7 @@ sub editpage_layout_check() {
     # layout check
     $elem = $driver->find_element('#screens_table tbody tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(5,                            @headers,          "5 columns");
+    is(@headers,                     5,                 "5 columns");
     is((shift @headers)->get_text(), "Screens./Needle", "1st column");
     is((shift @headers)->get_text(), "Image",           "2nd column");
     is((shift @headers)->get_text(), "Areas",           "3rd column");
@@ -124,7 +124,7 @@ sub add_needle_tag(;$) {
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
     }
-    is(1, $driver->find_element("//input[\@value=\"$tagname\"]")->is_selected(), "new tag found and was checked");
+    is($driver->find_element("//input[\@value=\"$tagname\"]")->is_selected(), 1, "new tag found and was checked");
 }
 
 sub add_workaround_property() {
@@ -176,16 +176,16 @@ sub change_needle_value($$) {
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
     }
-    is(1, $driver->find_element('#change-match-form', 'css')->is_displayed(), "match level form found");
-    is(1,                                                          $driver->find_element('//button[@type="button"]/span[text()="Close"]')->is_displayed(), "match level form close button found");
-    is(1,                                                          $driver->find_element('//button[@type="button"]/span[text()="Set"]')->is_displayed(),   "found set button");
-    is($driver->find_element('//input[@id="match"]')->get_value(), "96",                                                                                   "default match level is 96");
+    is($driver->find_element('#change-match-form', 'css')->is_displayed(), 1, "match level form found");
+    is($driver->find_element('//button[@type="button"]/span[text()="Close"]')->is_displayed(), 1,    "match level form close button found");
+    is($driver->find_element('//button[@type="button"]/span[text()="Set"]')->is_displayed(),   1,    "found set button");
+    is($driver->find_element('//input[@id="match"]')->get_value(),                             "96", "default match level is 96");
     $driver->find_element('//input[@id="match"]')->clear();
     $driver->find_element('//input[@id="match"]')->send_keys("99");
     is($driver->find_element('//input[@id="match"]')->get_value(), "99", "set match level to 99");
     $driver->find_element('//button[@type="button"]/span[text()="Set"]')->click();
     $driver->find_element('//button[@type="button"]/span[text()="Close"]')->click();
-    is(1, $driver->find_element('#change-match-form', 'css')->is_hidden(), "match level form closed");
+    is($driver->find_element('#change-match-form', 'css')->is_hidden(), 1, "match level form closed");
     $decode_new_textarea = decode_json($elem->get_value());
     is($decode_new_textarea->{area}[0]->{match}, 99, "match level is 99 now");
 }

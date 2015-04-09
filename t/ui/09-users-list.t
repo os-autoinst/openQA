@@ -47,16 +47,16 @@ $t->get_ok('/admin/users')->status_is(403);
 $t->delete_ok('/logout')->status_is(302);
 $test_case->login($t, 'arthur');
 my $get = $t->get_ok('/admin/users')->status_is(200);
-is('11', $t->tx->res->dom->at('#user_99901 .role')->attr('data-order'));
-is('00', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
-is('01', $t->tx->res->dom->at('#user_99903 .role')->attr('data-order'));
+is($t->tx->res->dom->at('#user_99901 .role')->attr('data-order'), '11');
+is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '00');
+is($t->tx->res->dom->at('#user_99903 .role')->attr('data-order'), '01');
 
 # Click on "+ admin" for Lancelot
 $t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {role => 'admin'})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
 $get->content_like(qr/User lance updated/);
 $get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
-is('11', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
+is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '11');
 
 
 # We can even update both fields in one request
@@ -64,13 +64,13 @@ $t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {role =>
 $get = $t->get_ok('/admin/users')->status_is(200);
 $get->content_like(qr/User lance updated/);
 $get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
-is('01', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
+is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '01');
 
 # not giving a role, makes it a user
 $t->post_ok('/admin/users/99902', {'X-CSRF-Token' => $token} => form => {})->status_is(302);
 $get = $t->get_ok('/admin/users')->status_is(200);
 $get->content_like(qr/User lance updated/);
 $get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
-is('00', $t->tx->res->dom->at('#user_99902 .role')->attr('data-order'));
+is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '00');
 
 done_testing();

@@ -49,7 +49,7 @@ my $get;
 #
 # Test the legacy redirection
 #
-is(1, $driver->get($baseurl . "results"), "/results gets");
+is($driver->get($baseurl . "results"), 1, "/results gets");
 is($driver->get_current_url(), $baseurl . "tests", "/results redirects to /tests ");
 
 #print $driver->get_page_source();
@@ -63,7 +63,7 @@ is((shift @tds)->get_text(), '29 1',                                "result of 9
 like((shift @tds)->get_text(), qr/a minute ago/, "time of 99946");
 
 # Test 99963 is still running
-isnt(undef, $driver->find_element('#running #job_99963', 'css'), '99963 still running');
+isnt($driver->find_element('#running #job_99963', 'css'), undef, '99963 still running');
 is($driver->find_element('#running #job_99963 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99963", 'right link');
 like($driver->find_element('#running #job_99963 td.time', 'css')->get_text(), qr/1[01] minutes ago/, 'right time for running');
 
@@ -71,32 +71,32 @@ like($driver->find_element('#running #job_99963 td.time', 'css')->get_text(), qr
 #is($driver->get_title(), 'job 99963');
 
 # return
-is(1, $driver->get($baseurl . "tests"), "/tests gets");
+is($driver->get($baseurl . "tests"), 1, "/tests gets");
 
 # Test 99928 is scheduled
-isnt(undef, $driver->find_element('#scheduled #job_99928', 'css'), '99928 scheduled');
+isnt($driver->find_element('#scheduled #job_99928', 'css'), undef, '99928 scheduled');
 is($driver->find_element('#scheduled #job_99928 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99928", 'right link');
 $driver->find_element('#scheduled #job_99928 td.test a', 'css')->click();
 is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-RAID1 test results', 'tests/99928 followed');
 
 # return
-is(1, $driver->get($baseurl . "tests"), "/tests gets");
+is($driver->get($baseurl . "tests"), 1, "/tests gets");
 
 # Test 99938 failed, so it should be displayed in red
 my $job99938 = $driver->find_element('#results #job_99946', 'css');
 
-is('', $driver->find_element('#results #job_99938 .test .status.result_failed', 'css')->get_text(), '99938 failed');
+is($driver->find_element('#results #job_99938 .test .status.result_failed', 'css')->get_text(), '', '99938 failed');
 is($driver->find_element('#results #job_99938 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99938", 'right link');
 $driver->find_element('#results #job_99938 td.test a', 'css')->click();
 is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test results', 'tests/99938 followed');
 
 # return
-is(1, $driver->get($baseurl . "tests"), "/tests gets");
+is($driver->get($baseurl . "tests"), 1, "/tests gets");
 my @links = $driver->find_elements('#results #job_99946 td.test a', 'css');
 is(@links, 2, 'only two links (icon, name, no restart)');
 
 # Test 99926 is displayed
-is('', $driver->find_element('#results #job_99926 .test .status.result_incomplete', 'css')->get_text(), '99926 incomplete');
+is($driver->find_element('#results #job_99926 .test .status.result_incomplete', 'css')->get_text(), '', '99926 incomplete');
 
 # parent-child
 my $child_e = $driver->find_element('#results #job_99938 .parent_child', 'css');
@@ -112,7 +112,7 @@ is($parent_e->get_attribute('data-parents'),  "[]",              "no parents");
 # first check the relevant jobs
 my @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 
-is_deeply([qw(job_99981 job_99962 job_99946 job_99938 job_99937 job_99926)], \@jobs, '5 rows (relevant) displayed');
+is_deeply(\@jobs, [qw(job_99981 job_99962 job_99946 job_99938 job_99937 job_99926)], '5 rows (relevant) displayed');
 $driver->find_element('#relevantfilter', 'css')->click();
 # leave the ajax some time
 while (!$driver->execute_script("return jQuery.active == 0")) {
@@ -120,7 +120,7 @@ while (!$driver->execute_script("return jQuery.active == 0")) {
 }
 # Test 99945 is not longer relevant (replaced by 99946) - but displayed for all
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-is_deeply([qw(job_99981 job_99962 job_99946 job_99945 job_99938 job_99937 job_99926)], \@jobs, '6 rows (all) displayed');
+is_deeply(\@jobs, [qw(job_99981 job_99962 job_99946 job_99945 job_99938 job_99937 job_99926)], '6 rows (all) displayed');
 
 # now toggle back
 #print $driver->get_page_source();
@@ -130,17 +130,17 @@ while (!$driver->execute_script("return jQuery.active == 0")) {
     sleep 1;
 }
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-is_deeply([qw(job_99981 job_99962 job_99946 job_99938 job_99937 job_99926)], \@jobs, '5 rows (relevant) again displayed');
+is_deeply(\@jobs, [qw(job_99981 job_99962 job_99946 job_99938 job_99937 job_99926)], '5 rows (relevant) again displayed');
 
 $driver->get($baseurl . "tests?match=staging_e");
 #print $driver->get_page_source();
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-is_deeply([qw(job_99926)], \@jobs, '1 matching job');
-is(1, @{$driver->find_elements('table.dataTable', 'css')}, 'no scheduled, no running matching');
+is_deeply(\@jobs, [qw(job_99926)], '1 matching job');
+is(@{$driver->find_elements('table.dataTable', 'css')}, 1, 'no scheduled, no running matching');
 
 # now login to test restart links
 $driver->find_element('Login', 'link_text')->click();
-is(1, $driver->get($baseurl . "tests"), "/tests gets");
+is($driver->get($baseurl . "tests"), 1, "/tests gets");
 my $td = $driver->find_element('#results #job_99946 td.test', 'css');
 is($td->get_text(), 'textmode@32bit', 'correct test name');
 
@@ -149,7 +149,7 @@ $driver->find_child_element($td, '.restart', 'css')->click();
 while (!$driver->execute_script("return jQuery.active == 0")) {
     sleep 1;
 }
-is('openQA: Test results', $driver->get_title(), 'restart stays on page');
+is($driver->get_title(), 'openQA: Test results', 'restart stays on page');
 $td = $driver->find_element('#results #job_99946 td.test', 'css');
 is($td->get_text(), 'textmode@32bit (restarted)', 'restart removes link');
 
