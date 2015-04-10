@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 44;
+use Test::More tests => 58;
 use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -126,5 +126,24 @@ $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $
 $post->content_is('OK');
 isnt -e $rp, undef, "logs exist after";
 is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
+
+
+$rp = "t/data/openqa/factory/hdd/hdd_image.qcow2";
+unlink($rp);
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
+$post->content_is('OK');
+isnt -e $rp, undef, "asset exist after";
+my $ret = $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200);
+is($ret->tx->res->json->{name}, 'hdd_image.qcow2');
+
+
+
+$rp = "t/data/openqa/factory/hdd/00099963-hdd_image2.qcow2";
+unlink($rp);
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'hdd_image2.qcow2'}, asset => 'private'})->status_is(200);
+$post->content_is('OK');
+isnt -e $rp, undef, "asset exist after";
+$ret = $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(200);
+is($ret->tx->res->json->{name}, '00099963-hdd_image2.qcow2');
 
 done_testing();
