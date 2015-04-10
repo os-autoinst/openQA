@@ -331,12 +331,12 @@ sub duplicate {
 
         my $new_job = $rsource->resultset->create(
             {
-                test        => $self->test,
-                group_id    => $self->group_id,
-                settings    => \@new_settings,
-                priority    => $args->{prio} || $self->priority,
-                jobs_assets => [map { {asset => {id => $_->asset_id}} } $self->jobs_assets->all()],
-                retry_avbl  => $args->{retry_avbl},
+                test     => $self->test,
+                group_id => $self->group_id,
+                settings => \@new_settings,
+                # assets are re-created in job_grab
+                priority => $args->{prio} || $self->priority,
+                retry_avbl => $args->{retry_avbl},
             });
         # Perform optimistic locking on clone_id. If the job is not longer there
         # or it already has a clone, rollback the transaction (new_job should
@@ -595,6 +595,31 @@ sub create_artefact {
     1;
 }
 
+sub create_asset {
+    my ($self, $asset, $scope) = @_;
+
+    my $fname = $asset->filename;
+
+    my $type;
+    $type = 'iso' if $fname =~ /\.iso$/;
+    $type = 'hdd' if $fname =~ /\.qcow2$/;
+    $type //= 'other';
+
+    $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';
+
+    my $fpath = join('/', $OpenQA::Utils::assetdir, $type);
+
+    if (!-d $fpath) {
+        mkdir($fpath) || die "can't mkdir $fpath: $!";
+    }
+
+    $asset->move_to(join('/', $fpath, $fname));
+    OpenQA::Utils::log_debug("moved to $fpath " . $fname);
+    $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type, created_by => 1}});
+
+    1;
+}
+
 sub failed_modules_with_needles {
 
     my ($self) = @_;
@@ -659,6 +684,72 @@ sub update_status {
 
     return $ret;
 }
+
+sub assets_from_settings {
+    my ($self) = @_;
+    my %assets;
+    my $settings = $self->settings_hash;
+
+    for my $k (keys %$settings) {
+        if ($k eq 'ISO') {
+            $assets{$k} = {type => 'iso', name => $settings->{$k}};
+        }
+        if ($k =~ /^ISO_\d$/) {
+            $assets{$k} = {type => 'iso', name => $settings->{$k}};
+        }
+        if ($k =~ /^HDD_\d$/) {
+            $assets{$k} = {type => 'hdd', name => $settings->{$k}};
+        }
+        if ($k =~ /^REPO_\d$/) {
+            $assets{$k} = {type => 'repo', name => $settings->{$k}};
+        }
+    }
+
+    return unless keys %assets;
+
+    for my $a (values %assets) {
+        return if $a->{name} =~ /\//;    # TODO: use whitelist?
+    }
+
+    my @parents_rs = $self->parents->search(
+        {
+            dependency => 1,             #CHAINED # I have no idea how to use the constant from JobDependencies.pm here
+        },
+        {
+            columns => ['parent_job_id'],
+        });
+    my @parents = map { $_->parent_job_id } @parents_rs;
+
+    # updated settings with actual file names
+    my %updated;
+
+    # check assets and fix the file names
+    for my $k (keys %assets) {
+        my $a = $assets{$k};
+        my $f_asset = _asset_find($a->{name}, $a->{type}, \@parents);
+        return unless defined $f_asset;
+        $a->{name} = $f_asset;
+        $updated{$k} = $f_asset;
+    }
+
+    for my $a (values %assets) {
+        $self->jobs_assets->create({job => $self, asset => $a});
+    }
+
+    return \%updated;
+}
+
+sub _asset_find {
+    my ($name, $type, $parents) = @_;
+
+    for my $parent (@$parents, undef) {
+        my $fname = $parent ? sprintf("%08d-%s", $parent, $name) : $name;
+        my $path = join('/', $OpenQA::Utils::assetdir, $type, $fname);
+        return $fname if -e $path;
+    }
+    return;
+}
+
 
 1;
 # vim: set sw=4 et:

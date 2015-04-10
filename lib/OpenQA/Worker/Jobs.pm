@@ -149,6 +149,33 @@ sub _stop_job($;$) {
                     ulog => 1
                 });
         }
+
+        if ($aborted eq 'done') {
+            # job succeeded, upload assets created by the job
+
+            for my $dir (qw(private public)) {
+                my @assets = <$pooldir/assets_$dir/*>;
+                for my $file (@assets) {
+                    next unless -f $file;
+
+                    # don't use api_call as it retries and does not allow form data
+                    # (refactor at some point)
+                    my $tx = $OpenQA::Worker::Common::ua->build_tx(
+                        'POST' => $ua_url => form => {
+                            file  => {file => $file, filename => basename($file)},
+                            asset => $dir
+                        });
+                    # override the default boundary calculation - it reads whole file
+                    # and it can cause various timeouts
+                    my $ct = $tx->req->headers->content_type;
+                    my $boundary = encode_base64 join('', map chr(rand 256), 1 .. 32);
+                    $boundary =~ s/\W/X/g;
+                    $tx->req->headers->content_type("$ct; boundary=$boundary");
+                    my $res = $OpenQA::Worker::Common::ua->start($tx);
+                }
+            }
+        }
+
         if (open(my $log, '>>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
             printf $log "end time: %s\n", strftime("%F %T", gmtime);

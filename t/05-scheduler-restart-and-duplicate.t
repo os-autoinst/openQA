@@ -65,6 +65,7 @@ delete $job1->{t_finished};
 delete $job2->{t_finished};
 delete $job1->{t_started};
 delete $job2->{t_started};
+delete $job1->{assets};
 is_deeply($job1, $job2, "duplicated job equal");
 
 my @ret = OpenQA::Scheduler::job_restart(99926);

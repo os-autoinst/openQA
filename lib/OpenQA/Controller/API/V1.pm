@@ -73,7 +73,7 @@ sub _valid_hmac {
     my $self = shift;
     my ($hash, $request, $timestamp, $api_key) = (shift, shift, shift, shift);
 
-    if (time - $timestamp <= 10) {
+    if (time - $timestamp <= 300) {
         my $exp = $api_key->t_expiration;
         # It has no expiration date or it's in the future
         if (!$exp || $exp->epoch > time) {
