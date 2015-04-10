@@ -573,7 +573,7 @@ sub store_image {
     mkdir($prefixdir) unless (-d $prefixdir);
     $asset->move_to($storepath);
 
-    $openQA::Utils::app->gru->enqueue(optipng => $storepath);
+    $OpenQA::Utils::app->gru->enqueue(optipng => $storepath);
 
     OpenQA::Utils::log_debug("store_image: $storepath");
 }
