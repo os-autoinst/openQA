@@ -81,35 +81,37 @@ sub engine_workit($) {
     # always set proper TAPDEV for os-autoinst when using tap network mode
     # ensure MAC addresses differ, tap devices may be bridged together
     # and allow MAC addresses for more than 256 workers (up to 65535)
-    if (($job->{'settings'}->{'NICTYPE'} // '') eq 'tap') {
-        $job->{'settings'}->{'TAPDEV'} = 'tap' . ($instance - 1);
-        $job->{'settings'}->{'NICMAC'} = sprintf("52:54:00:12:%02x:%02x", int($instance / 256), $instance % 256);
+    if (($job->{settings}->{NICTYPE} // '') eq 'tap') {
+        $job->{settings}->{TAPDEV} = 'tap' . ($instance - 1);
+        $job->{settings}->{NICMAC} = sprintf("52:54:00:12:%02x:%02x", int($instance / 256), $instance % 256);
     }
 
-    if (my $iso = $job->{'settings'}->{'ISO'}) {
-        $iso = join('/', ISO_DIR, $iso);
-        unless (-e $iso) {
-            warn "$iso does not exist!\n";
-            return;
+    for my $isokey (qw/ISO/, map { "ISO_$_" } (1 .. 9)) {
+        if (my $iso = $job->{settings}->{$isokey}) {
+            $iso = join('/', ISO_DIR, $iso);
+            unless (-e $iso) {
+                warn "$iso does not exist!\n";
+                return;
+            }
+            $job->{settings}->{$isokey} = $iso;
         }
-        $job->{'settings'}->{'ISO'} = $iso;
     }
 
-    my $nd = $job->{'settings'}->{'NUMDISKS'} || 2;
+    my $nd = $job->{settings}->{NUMDISKS} || 2;
     for my $i (1 .. $nd) {
-        my $hdd = $job->{'settings'}->{"HDD_$i"} || undef;
+        my $hdd = $job->{settings}->{"HDD_$i"} || undef;
         if ($hdd) {
             $hdd = join('/', HDD_DIR, $hdd);
             unless (-e $hdd) {
                 warn "$hdd does not exist!\n";
                 return;
             }
-            $job->{'settings'}->{"HDD_$i"} = $hdd;
+            $job->{settings}->{"HDD_$i"} = $hdd;
         }
     }
 
     my %vars = (OPENQA_URL => $openqa_url);
-    while (my ($k, $v) = each %{$job->{'settings'}}) {
+    while (my ($k, $v) = each %{$job->{settings}}) {
         print "setting $k=$v\n" if $verbose;
         $vars{$k} = $v;
     }
@@ -124,8 +126,8 @@ sub engine_workit($) {
     die "failed to fork: $!\n" unless defined $child;
 
     unless ($child) {
-        $ENV{'TMPDIR'} = $tmpdir;
-        printf "$$: WORKING %d\n", $job->{'id'};
+        $ENV{TMPDIR} = $tmpdir;
+        printf "$$: WORKING %d\n", $job->{id};
         if (open(my $log, '>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
             printf $log "start time: %s\n", strftime("%F %T", gmtime);
