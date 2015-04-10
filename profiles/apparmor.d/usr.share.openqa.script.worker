@@ -1,4 +1,3 @@
-
 # ------------------------------------------------------------------
 #
 #    Copyright (C) 2014 SUSE
@@ -19,10 +18,14 @@
 
   capability sys_ptrace,
 
+
   /bin/bash rix,
+  /bin/pkill rix,
   /dev/ r,
   /dev/bus/usb/ r,
   /dev/kvm rw,
+  /dev/ptmx rw,
+  /dev/pts/* rw,
   /dev/tty rw,
   /etc/libnl/classid r,
   /etc/openqa/client.conf r,
@@ -37,6 +40,7 @@
   /proc/filesystems r,
   /proc/meminfo r,
   /proc/sys/vm/overcommit_memory r,
+  /run/nscd/group r,
   /run/udev/queue.bin r,
   /sys/bus/ r,
   /sys/bus/usb/devices/ r,
@@ -60,6 +64,7 @@
   /usr/bin/qemu-kvm rix,
   /usr/bin/qemu-system-* rix,
   /usr/bin/rm rix,
+  /usr/bin/script rix,
   /usr/bin/sox rix,
   /usr/bin/tail rix,
   /usr/bin/tee rix,
@@ -68,6 +73,7 @@
   /usr/lib*/qemu/block-rbd.so mr,
   /usr/lib/os-autoinst/tools/absolutize rix,
   /usr/lib/os-autoinst/videoencoder rix,
+  /usr/lib/utempter/utempter rix,
   /usr/share/openqa/lib/DBIx/Class/Timestamps.pm r,
   /usr/share/openqa/lib/OpenQA/** r,
   /usr/share/openqa/lib/db_helpers.pm r,
