@@ -3,7 +3,7 @@ Description=The openQA gru daemon
 
 [Service]
 User=geekotest
-ExecStart=/usr/share/openqa/script/openqa -m production gru run
+ExecStart=/usr/share/openqa/script/openqa gru -m production run
 
 [Install]
 WantedBy=multi-user.target
