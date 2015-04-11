@@ -27,9 +27,11 @@ $test->verbose(0);
 
 my @files = $test->all_pm_files();
 for my $file (@files) {
-    #TODO: JobModules and Schema fail to compile for some reason
-    #error "Attempt to load_namespaces() failed" because of OpenQA::Scheduler in JobModules
-    next if ($file =~ /JobModules\.pm|Schema\.pm/);
     $test->ok($test->pm_file_compiles($file), "Compile test for $file");
+}
+
+@files = $test->all_pl_files();
+for my $file (@files) {
+    $test->ok($test->pl_file_compiles($file), "Compile test for $file");
 }
 $test->done_testing();
