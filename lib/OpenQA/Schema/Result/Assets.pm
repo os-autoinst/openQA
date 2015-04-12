@@ -78,6 +78,7 @@ sub remove_from_disk {
     my $file = $self->disk_file;
     OpenQA::Utils::log_debug("RM $file");
     if ($self->type eq 'iso') {
+        next unless -f $file;
         unlink($file) || die "can't remove $file";
     }
     elsif ($self->type eq 'repo') {
