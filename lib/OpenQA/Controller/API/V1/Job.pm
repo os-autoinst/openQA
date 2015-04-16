@@ -24,7 +24,7 @@ sub list {
     my $self = shift;
 
     my %args;
-    for my $arg (qw/state build iso distri version flavor maxage scope group/) {
+    for my $arg (qw/state build iso distri version flavor maxage scope group limit/) {
         next unless defined $self->param($arg);
         $args{$arg} = $self->param($arg);
     }
