@@ -18,7 +18,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 58;
+use Test::More tests => 60;
 use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -75,6 +75,10 @@ $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
 is(scalar(@{$get->tx->res->json->{jobs}}), 9);
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
 is(scalar(@{$get->tx->res->json->{jobs}}), 10);
+
+# check limit quantity
+$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5});
+is(scalar(@{$get->tx->res->json->{jobs}}), 5);    # 9 jobs for current
 
 # check job group
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'opensuse test'});
