@@ -1,0 +1,9 @@
+#!/bin/bash
+
+echo OpenID provider:
+read OPENID
+
+sed "s/provider =.*/provider = $OPENID/" -i /data/conf/openqa.ini
+
+echo "The file now contains:"
+cat /data/conf/openqa.ini
