@@ -216,8 +216,8 @@ function loadCanvas(canvas, dataURL) {
     scrn.onload = function() {
         context.clearRect(0, 0, canvas.width(), canvas.height());
         context.drawImage(this, 0, 0, width=canvas.width(), height=canvas.height());
-        $('#image_size_x').text(canvas.width());
-        $('#image_size_y').text(canvas.height());
+        $('#image_size_x').text(this.width);
+        $('#image_size_y').text(this.height);
     };
     scrn.src = dataURL;
 }
