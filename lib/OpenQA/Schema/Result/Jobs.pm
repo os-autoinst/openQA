@@ -21,11 +21,12 @@ use JSON;
 use Fcntl;
 use DateTime;
 use db_helpers;
-use OpenQA::Utils;
+use OpenQA::Utils qw/log_debug/;
 use File::Basename qw/basename dirname/;
 use File::Path ();
 use File::Which qw(which);
 use strict;
+use warnings;
 
 # States
 use constant {
@@ -293,7 +294,8 @@ sub can_be_duplicated {
 
 =item Arguments: optional hash reference containing the key 'prio'
 
-=item Return value: the new job if duplication suceeded, undef otherwise
+=item Return value: the new job or array of duplicated jobs if duplication suceeded,
+                    undef otherwise
 
 =back
 
@@ -310,20 +312,106 @@ sub duplicate {
     my $rsource = $self->result_source;
     my $schema  = $rsource->schema;
 
-    # If the job already have a clone, none is created
+    # If the job already has a clone, none is created
     return unless $self->can_be_duplicated;
+    log_debug('duplicating ' . $self->id);
+
+    # store mapping of all duplications for return - need old job IDs for state mangling
+    my %duplicated_ids;
+    my @direct_deps_parents  = ();
+    my @direct_deps_children = ();
+
+    # we can start traversing clone graph anywhere, so first we travers upwards then downwards
+    # since we do this in each duplication, we need to prevent double cloning of ourselves
+    # i.e. to preven cloned parent to clone its children
+
+    ## now go and clone and recreate test dependencies - parents first
+    unless ($args->{ignore_parents_cloning}) {
+        my $parents = $self->parents->search(
+            {
+                dependency => OpenQA::Schema::Result::JobDependencies->PARALLEL
+            });
+        while (my $p = $parents->next) {
+            $p = $p->parent;
+            my %dups = $p->duplicate({ignore_children_cloning => 1});
+            # if duplication failed, either there was a transaction conflict or more likely job failed
+            # can_be_duplicated check.
+            # That is either we are hooked to already cloned parent or
+            # parent is not in proper state - e.g. scheduled.
+            while (!%dups && !$p->can_be_duplicated) {
+                if ($p->state eq SCHEDULED) {
+                    # we use SCHEDULED as is, just route dependencies
+                    %dups = ($p->id => $p->id);
+                    last;
+                }
+                else {
+                    # find the current clone and try to duplicate that one
+                    while ($p->clone) {
+                        $p = $p->clone;
+                    }
+                    %dups = $p->duplicate({ignore_children_cloning => 1});
+                }
+            }
+            # immediate parent is always first entry
+            # we don't have our cloned id yet so store new immediate parents for
+            # dependency recreation
+            push @direct_deps_parents, $dups{$p->id};
+            %duplicated_ids = (%duplicated_ids, %dups);
+        }
+    }
+
+    ## go and clone and recreate test dependencies - running children tests
+    unless ($args->{ignore_children_cloning}) {
+        my $children = $self->children->search(
+            {
+                dependency => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+                state      => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+            },
+            {
+                join => 'child',
+            });
+        while (my $c = $children->next) {
+            $c = $c->child;
+            my %dups = $c->duplicate({ignore_parents_cloning => 1});
+            # immediate child is always first entry
+            # we don't have our cloned id yet so store immediate child for
+            # dependency recreation
+            push @direct_deps_children, $dups{$c->id};
+            %duplicated_ids = (%duplicated_ids, %dups);
+        }
+    }
+
+    ## go and clone asset dependencies
+    # get all assets created by job
+    my $assets = $self->jobs_assets->search(
+        {
+            created_by => 1,
+        },
+        {
+            columns => ['asset_id'],
+        })->as_query;
+    # get all jobs using this asset
+    my $assets_users = $schema->resultset('JobsAssets')->search(
+        {
+            asset_id   => {-in => $assets},
+            created_by => 0,
+        });
+    # and duplicate them
+    while (my $a = $assets_users->next) {
+        %duplicated_ids = (%duplicated_ids, $a->job->duplicate);
+    }
 
     # Copied retry_avbl as default value if the input undefined
     $args->{retry_avbl} = $self->retry_avbl unless defined $args->{retry_avbl};
     # Code to be executed in a transaction to perform optimistic locking on
     # clone_id
     my $coderef = sub {
-        # Duplicate settings (except NAME and TEST)
+        # Duplicate settings (except NAME and TEST and JOBTOKEN)
         my @new_settings;
         my $settings = $self->settings;
 
         while (my $js = $settings->next) {
-            unless ($js->key eq 'NAME' || $js->key eq 'TEST') {
+            unless ($js->key =~ /NAME|TEST|JOBTOKEN/) {
                 push @new_settings, {key => $js->key, value => $js->value};
             }
         }
@@ -360,7 +448,30 @@ sub duplicate {
           if ($error =~ /Rollback failed/);
         $res = undef;
     };
-    return $res;
+    unless ($res) {
+        # if we didn't die, there is already a clone.
+        # TODO: why this wasn't catched by can_be_duplicated? Tests are testing this scenario
+        # return here may leave inconsistent job dependencies
+        return;
+    }
+
+    # recreate dependency if exists
+    for my $p (@direct_deps_parents) {
+        $res->parents->create(
+            {
+                parent_job_id => $p,
+                dependency    => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+            });
+    }
+    for my $c (@direct_deps_children) {
+        $res->children->create(
+            {
+                child_job_id => $c,
+                dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+            });
+    }
+
+    return ($self->id => $res->id, %duplicated_ids);
 }
 
 sub set_property {
@@ -553,7 +664,12 @@ sub running_modinfo() {
         my $moditem = {name => $name, state => $modstate, result => $result};
         push @{$modlist->[scalar(@$modlist) - 1]->{modules}}, $moditem;
     }
-    return {modlist => $modlist, modcount => $count, moddone => $donecount, running => $running};
+    return {
+        modlist  => $modlist,
+        modcount => $count,
+        moddone  => $donecount,
+        running  => $running
+    };
 }
 
 sub optipng {
@@ -713,7 +829,7 @@ sub assets_from_settings {
 
     my @parents_rs = $self->parents->search(
         {
-            dependency => 1,             #CHAINED # I have no idea how to use the constant from JobDependencies.pm here
+            dependency => OpenQA::Schema::Result::JobDependencies->CHAINED,
         },
         {
             columns => ['parent_job_id'],
@@ -749,7 +865,6 @@ sub _asset_find {
     }
     return;
 }
-
 
 1;
 # vim: set sw=4 et:
