@@ -53,10 +53,9 @@ is(@$jobs, @$current_jobs + 1, "one more job after duplicating one job");
 $current_jobs = $jobs;
 
 my $job2 = OpenQA::Scheduler::job_get($id);
+# delete the obviously different fields
 delete $job1->{id};
-delete $job1->{settings}->{NAME};
 delete $job2->{id};
-delete $job2->{settings}->{NAME};
 delete $job1->{state};
 delete $job2->{state};
 delete $job1->{result};
@@ -65,6 +64,10 @@ delete $job1->{t_finished};
 delete $job2->{t_finished};
 delete $job1->{t_started};
 delete $job2->{t_started};
+# the name has job id as prefix, delete that too
+delete $job1->{settings}->{NAME};
+delete $job2->{settings}->{NAME};
+# assets are assigned during job grab and not cloned
 delete $job1->{assets};
 is_deeply($job1, $job2, "duplicated job equal");
 
