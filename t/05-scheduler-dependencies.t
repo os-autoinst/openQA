@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use OpenQA::Scheduler;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::More tests => 85;
+use Test::More tests => 87;
 
 my $schema = OpenQA::Test::Database->new->create();
 
@@ -352,5 +352,23 @@ $t->ua->on(
 $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id]);
 $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
+
+## check CHAINED dependency cloning
+my %settingsX = %settings;
+$settingsX{TEST} = 'X';
+my $jobX = OpenQA::Scheduler::job_create(\%settingsX);
+
+my %settingsY = %settings;
+$settingsY{TEST}              = 'Y';
+$settingsY{_START_AFTER_JOBS} = [$jobX->id];
+my $jobY = OpenQA::Scheduler::job_create(\%settingsY);
+
+ok(job_set_done(jobid => $jobX->id, result => 'passed'), 'jobX set to done');
+# since we are skipping job_grab, reload missing columns from DB
+$jobX->discard_changes;
+# when Y is scheduled and X is duplicated, Y must be rerouted to depend on X now
+$job = OpenQA::Scheduler::job_duplicate(jobid => $jobX->id);
+$jobY->discard_changes;
+is($job, $jobY->parents->single->parent_job_id, 'jobY parent is now jobX clone');
 
 done_testing();

@@ -455,7 +455,7 @@ sub duplicate {
         return;
     }
 
-    # recreate dependency if exists
+    # recreate dependency if exists for cloned parents/children
     for my $p (@direct_deps_parents) {
         $res->parents->create(
             {
@@ -470,6 +470,19 @@ sub duplicate {
                 dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
             });
     }
+
+    # reroute scheduled children
+    my $children = $self->children->search(
+        {
+            'child.state' => SCHEDULED,
+        },
+        {
+            join => 'child',
+        }
+      )->update(
+        {
+            parent_job_id => $res->id,
+        });
 
     return ($self->id => $res->id, %duplicated_ids);
 }

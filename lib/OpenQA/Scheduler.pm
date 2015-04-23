@@ -600,40 +600,6 @@ sub _job_stop_children {
     }
 }
 
-# parent job has been cloned, move the scheduled children to the new one
-sub _job_update_parent {
-    my $jobid     = shift;
-    my $new_jobid = shift;
-
-    my $children = schema->resultset("JobDependencies")->search(
-        {
-            dependency    => {-in => [OpenQA::Schema::Result::JobDependencies::CHAINED, OpenQA::Schema::Result::JobDependencies::PARALLEL]},
-            parent_job_id => $jobid,
-            state         => OpenQA::Schema::Result::Jobs::SCHEDULED,
-        },
-        {
-            join => 'child',
-        }
-      )->update(
-        {
-            parent_job_id => $new_jobid,
-        });
-
-    #    my $result = schema->resultset("JobDependencies")->search(
-    #        {
-    #            dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
-    #            parent_job_id => $jobid,
-    #            child_job_id => { -in => $children->get_column('child_job_id')->as_query},
-    #        }
-    #      )->update(
-    #        {
-    #            parent_job_id => $new_jobid,
-    #        }
-    #      );
-}
-
-
-
 =item job_set_done
 
 mark job as done. No error check. Meant to be called from worker!
