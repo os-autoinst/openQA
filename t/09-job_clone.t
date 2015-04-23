@@ -30,7 +30,8 @@ OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA');
 
 my $minimalx = $t->app->db->resultset("Jobs")->find({id => 99926});
-my $clone = $minimalx->duplicate;
+my %clones   = $minimalx->duplicate();
+my $clone    = $t->app->db->resultset("Jobs")->find({id => $clones{$minimalx->id}});
 
 isnt($clone->id, $minimalx->id, "is not the same job");
 is($clone->test,       "minimalx",  "but is the same test");
@@ -49,26 +50,14 @@ is($minimalx->clone_id,  $clone->id,    "relationship is set");
 is($minimalx->clone->id, $clone->id,    "relationship works");
 is($clone->origin->id,   $minimalx->id, "reverse relationship works");
 
-# Let's check the job_settings (sorry for Perl's antipatterns)
-my @m_settings = $minimalx->settings;
-my $m_hashed   = {};
-for my $i (@m_settings) {
-    $m_hashed->{$i->key} = $i->value unless $i->key eq "NAME";
-}
-my @c_settings = $clone->settings;
-my $c_hashed   = {};
-for my $i (@c_settings) {
-    $c_hashed->{$i->key} = $i->value;
-}
-is_deeply($m_hashed, $c_hashed, "equivalent job settings (skipping NAME)");
-
 # After reloading minimalx, it doesn't look cloneable anymore
 ok(!$minimalx->can_be_duplicated, "doesn't look cloneable after reloading");
 is($minimalx->duplicate, undef, "cannot clone after reloading");
 
 # But cloning the clone should be possible after job state change
 $clone->state(OpenQA::Schema::Result::Jobs::CANCELLED);
-my $second = $clone->duplicate({prio => 35, retry_avbl => 2});
+%clones = $clone->duplicate({prio => 35, retry_avbl => 2});
+my $second = $t->app->db->resultset("Jobs")->find({id => $clones{$clone->id}});
 is($second->test,       "minimalx", "same test again");
 is($second->priority,   35,         "with adjusted priority");
 is($second->retry_avbl, 2,          "with adjusted retry_avbl");

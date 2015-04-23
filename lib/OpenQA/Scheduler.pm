@@ -600,40 +600,6 @@ sub _job_stop_children {
     }
 }
 
-# parent job has been cloned, move the scheduled children to the new one
-sub _job_update_parent {
-    my $jobid     = shift;
-    my $new_jobid = shift;
-
-    my $children = schema->resultset("JobDependencies")->search(
-        {
-            dependency    => {-in => [OpenQA::Schema::Result::JobDependencies::CHAINED, OpenQA::Schema::Result::JobDependencies::PARALLEL]},
-            parent_job_id => $jobid,
-            state         => OpenQA::Schema::Result::Jobs::SCHEDULED,
-        },
-        {
-            join => 'child',
-        }
-      )->update(
-        {
-            parent_job_id => $new_jobid,
-        });
-
-    #    my $result = schema->resultset("JobDependencies")->search(
-    #        {
-    #            dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
-    #            parent_job_id => $jobid,
-    #            child_job_id => { -in => $children->get_column('child_job_id')->as_query},
-    #        }
-    #      )->update(
-    #        {
-    #            parent_job_id => $new_jobid,
-    #        }
-    #      );
-}
-
-
-
 =item job_set_done
 
 mark job as done. No error check. Meant to be called from worker!
@@ -641,7 +607,8 @@ mark job as done. No error check. Meant to be called from worker!
 =cut
 # XXX TODO Parameters is a hash, check if is better use normal parameters
 sub job_set_done {
-    my %args     = @_;
+    my %args = @_;
+    return unless ($args{jobid});
     my $jobid    = int($args{jobid});
     my $newbuild = 0;
     $newbuild = int($args{newbuild}) if defined $args{newbuild};
@@ -764,6 +731,19 @@ sub _job_find_smart($$$) {
     }
 }
 
+=head2 job_duplicate
+
+=over
+
+=item Arguments: HASH { jobid => SCALAR, dup_type_auto => SCALAR, retry_avbl => SCALAR }
+
+=item Return value: ID of new job
+
+=back
+
+Handle individual job restart including associated job and asset dependencies
+
+=cut
 sub job_duplicate {
     my %args = @_;
     # set this clone was triggered by manually if it's not auto-clone
@@ -771,9 +751,6 @@ sub job_duplicate {
 
     my $job = schema->resultset("Jobs")->find({id => $args{jobid}});
     return unless $job;
-    return unless $job->can_be_duplicated;    # already cloned
-
-    log_debug("duplicating $args{jobid}");
 
     if ($args{dup_type_auto}) {
         if (int($job->retry_avbl) > 0) {
@@ -781,7 +758,7 @@ sub job_duplicate {
         }
         else {
             log_debug("Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually.");
-            return undef;
+            return;
         }
     }
     else {
@@ -793,51 +770,16 @@ sub job_duplicate {
         }
     }
 
-    # find jobs that must be cloned due to dependencies:
-    # all parents + all running jobs connected with the parents
-    my %to_clone;
-    _job_duplicate_find_parents($job, undef, \%to_clone);
-
-    my $clone;
-
-    # clone the jobs
+    my %clones = $job->duplicate(\%args);
+    unless (%clones) {
+        log_debug('duplication failed');
+        return;
+    }
+    my @originals = keys %clones;
+    # abort jobs restarted because of dependencies (exclude the original $args{jobid})
     my $jobs = schema->resultset("Jobs")->search(
         {
-            id => [keys %to_clone],
-        });
-    while (my $j = $jobs->next) {
-        if ($j->id == $job->id) {
-            #the requested job
-            $clone = $to_clone{$j->id}->{clone} = $j->duplicate(\%args);
-            $clone->set_property('JOBTOKEN');
-        }
-        else {
-            #dependencies
-            my $c = $to_clone{$j->id}->{clone} = $j->duplicate();
-            $c->set_property('JOBTOKEN');
-        }
-        _job_update_parent($j->id, $to_clone{$j->id}->{clone}->id);
-    }
-
-    # create dependencies for the clones
-    for my $child_id (keys %to_clone) {
-        my $cl_child_id = $to_clone{$child_id}->{clone}->id;
-        for my $parent_id (keys %{$to_clone{$child_id}->{parent}}) {
-            my $cl_parent_id = $parent_id;    # scheduled parents were not cloned
-            $cl_parent_id = $to_clone{$parent_id}->{clone}->id if defined $to_clone{$parent_id};
-            schema->resultset("JobDependencies")->create(
-                {
-                    parent_job_id => $cl_parent_id,
-                    child_job_id  => $cl_child_id,
-                    dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-                });
-        }
-    }
-
-    # abort jobs restarted because of dependencies (exclude the original $args{jobid})
-    $jobs = schema->resultset("Jobs")->search(
-        {
-            id    => {'!=', $job->id, '-in' => [keys %to_clone]},
+            id    => {'!=' => $job->id, '-in' => \@originals},
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
@@ -857,113 +799,38 @@ sub job_duplicate {
         command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
     }
 
-    if (defined($clone)) {
-        log_debug("new job " . $clone->id);
-
-        job_notify_workers();
-        return $clone->id;
-    }
-    else {
-        log_debug("clone failed");
-        return undef;
-    }
+    log_debug('new job ' . $clones{$job->id});
+    job_notify_workers();
+    return $clones{$job->id};
 }
 
+=head2 job_restart
 
-sub _job_duplicate_find_parents {
-    my ($job, $child_id, $to_clone) = @_;
+=over
 
-    while ($job->clone_id) {    # find the most recent clone
-        $job = $job->clone;
-    }
+=item Arguments: SCALAR or ARRAYREF of Job IDs
 
-    $to_clone->{$child_id}{parent}{$job->id} = 1 if $child_id;
+=item Return value: ARRAY of new job ids
 
-    # if a parent is already scheduled, we can connect to it without cloning
-    # do not create $to_clone->{$job->id} entry
-    # just link it in $to_clone->{$child_id}{parent}
-    return
-      if (
-        $child_id &&    # this is a parent
-        $job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED
-      );
+=back
 
-    $to_clone->{$job->id} //= {clone => undef, parent => {}};
+Handle job restart by user (using API or WebUI). Job is only restarted when either running
+or done. Scheduled jobs can't be restarted.
 
-    my $parents = schema->resultset("JobDependencies")->search(
-        {
-            dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-            child_job_id => $job->id,
-        },
-        {
-            join => 'parent',
-        });
-
-    my $have_parents = 0;
-    while (my $j = $parents->next) {
-        $have_parents = 1;
-        my $parent = $j->parent;
-        _job_duplicate_find_parents($parent, $job->id, $to_clone);
-    }
-
-    _job_duplicate_find_running($job, $to_clone) unless $have_parents;
-}
-
-sub _job_duplicate_find_running {
-    my ($job, $to_clone) = @_;
-
-    $to_clone->{$job->id} //= {clone => undef, parent => {}};
-    $to_clone->{$job->id}->{running} = 1;
-
-    my $children = schema->resultset("JobDependencies")->search(
-        {
-            dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-            parent_job_id => $job->id,
-            state         => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
-        },
-        {
-            join => 'child',
-        });
-
-    while (my $j = $children->next) {
-        my $child = $j->child;
-        next if $to_clone->{$child->id} && $to_clone->{$child->id}->{running};    #already seen
-        _job_duplicate_find_running($child, $to_clone);
-        $to_clone->{$child->id}{parent}{$job->id} = 1;
-    }
-
-    my $parents = schema->resultset("JobDependencies")->search(
-        {
-            dependency   => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-            child_job_id => $job->id,
-            state        => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
-        },
-        {
-            join => 'parent',
-        });
-
-    while (my $j = $parents->next) {
-        my $parent = $j->parent;
-        next if $to_clone->{$parent->id} && $to_clone->{$parent->id}->{running};    #already seen
-        $to_clone->{$job->id}{parent}{$parent->id} = 1;
-        _job_duplicate_find_running($parent, $to_clone);
-    }
-}
-
+=cut
 sub job_restart {
-    my $name = shift or die "missing name parameter\n";
-
-    # TODO: support by name and by iso here
-    my $idqry = $name;
+    my ($jobids) = @_ or die "missing name parameter\n";
 
     # first, duplicate all jobs that are either running, waiting or done
     my $jobs = schema->resultset("Jobs")->search(
         {
-            id    => $idqry,
+            id    => $jobids,
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES, OpenQA::Schema::Result::Jobs::FINAL_STATES],
         },
         {
-            columns => [qw/id/]});
+            columns => [qw/id/],
+        });
+
     my @duplicated;
     while (my $j = $jobs->next) {
         my $id = job_duplicate(jobid => $j->id);
@@ -973,11 +840,12 @@ sub job_restart {
     # then tell workers to abort
     $jobs = schema->resultset("Jobs")->search(
         {
-            id    => $idqry,
+            id    => $jobids,
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
-            colums => [qw/id worker_id/]});
+            colums => [qw/id worker_id/],
+        });
 
     $jobs->search(
         {
