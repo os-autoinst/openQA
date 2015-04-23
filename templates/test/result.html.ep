@@ -168,7 +168,7 @@
                         % content_for 'asset_box' => begin
                             <li>
                                 %= link_to url_for('test_asset_id', 'testid' => $testid, assetid => $a->id) => (id => "asset_".$a->id) => begin
-                                    Download <%= $a->type %>
+                                    <%= $a->name %>
                                 % end
                             </li>
                         % end
