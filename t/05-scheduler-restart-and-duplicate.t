@@ -46,6 +46,7 @@ $job1 = OpenQA::Scheduler::job_get(99926);
 is($job1->{state}, OpenQA::Schema::Result::Jobs::DONE, 'trying to duplicate done job');
 $id = OpenQA::Scheduler::job_duplicate(jobid => 99926);
 ok(defined $id, "duplication works");
+isnt($id, $job1->{id}, 'clone id is different than original job id');
 
 my $jobs = list_jobs();
 is(@$jobs, @$current_jobs + 1, "one more job after duplicating one job");

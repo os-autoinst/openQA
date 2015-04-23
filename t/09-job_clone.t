@@ -50,19 +50,6 @@ is($minimalx->clone_id,  $clone->id,    "relationship is set");
 is($minimalx->clone->id, $clone->id,    "relationship works");
 is($clone->origin->id,   $minimalx->id, "reverse relationship works");
 
-# Let's check the job_settings (sorry for Perl's antipatterns)
-my @m_settings = $minimalx->settings;
-my $m_hashed   = {};
-for my $i (@m_settings) {
-    $m_hashed->{$i->key} = $i->value unless $i->key eq "NAME";
-}
-my @c_settings = $clone->settings;
-my $c_hashed   = {};
-for my $i (@c_settings) {
-    $c_hashed->{$i->key} = $i->value;
-}
-is_deeply($m_hashed, $c_hashed, "equivalent job settings (skipping NAME)");
-
 # After reloading minimalx, it doesn't look cloneable anymore
 ok(!$minimalx->can_be_duplicated, "doesn't look cloneable after reloading");
 is($minimalx->duplicate, undef, "cannot clone after reloading");
