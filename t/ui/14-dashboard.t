@@ -46,7 +46,7 @@ my $baseurl = $driver->get_current_url();
 
 $driver->find_element('Build0091', 'link_text')->click();
 
-like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse build 0091/, 'we are on build 91');
+like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse 13.1 build 0091/, 'we are on build 91');
 
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
