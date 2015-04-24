@@ -38,7 +38,7 @@
 	    <div class="col-md-4 text-nowrap">
 		<h4>
 		    <%= link_to "Build$build" => url_for('tests_overview')->query(build => $build, groupid => $group->id ) %>
-		    (<abbr class="timeago" title="<%= $groupresults->{$build}->{oldest}->datetime() %>">
+		    (<abbr class="timeago" title="<%= $groupresults->{$build}->{oldest}->datetime() %>Z">
 		    <%= delete $groupresults->{$build}->{oldest} %>
 		    </abbr>)
 		</h4>
