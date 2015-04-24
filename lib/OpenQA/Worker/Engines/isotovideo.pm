@@ -78,14 +78,6 @@ sub engine_workit($) {
         close $fh;
     }
 
-    # always set proper TAPDEV for os-autoinst when using tap network mode
-    # ensure MAC addresses differ, tap devices may be bridged together
-    # and allow MAC addresses for more than 256 workers (up to 65535)
-    if (($job->{settings}->{NICTYPE} // '') eq 'tap') {
-        $job->{settings}->{TAPDEV} = 'tap' . ($instance - 1);
-        $job->{settings}->{NICMAC} = sprintf("52:54:00:12:%02x:%02x", int($instance / 256), $instance % 256);
-    }
-
     for my $isokey (qw/ISO/, map { "ISO_$_" } (1 .. 9)) {
         if (my $iso = $job->{settings}->{$isokey}) {
             $iso = join('/', ISO_DIR, $iso);
@@ -110,7 +102,10 @@ sub engine_workit($) {
         }
     }
 
-    my %vars = (OPENQA_URL => $openqa_url);
+    # pass worker instance and worker id to isotovideo
+    # both used to create unique MAC and TAP devices if needed
+    # workerid is also used by libvirt backend to identify VMs
+    my %vars = (OPENQA_URL => $openqa_url, WORKER_INSTANCE => $instance, WORKER_ID => $workerid);
     while (my ($k, $v) = each %{$job->{settings}}) {
         print "setting $k=$v\n" if $verbose;
         $vars{$k} = $v;
