@@ -1,0 +1,43 @@
+# Networking in OpenQA
+
+*This overview is valid only when using QEMU backend!*
+
+
+There are three possible network configurations for OpenQA virtual machines (VM).
+The configuration is controlled by +NICTYPE+ and +MULTINET+ variables.
+
+## User mode network
+By default +NICTYPE+ is set to +user+ and +MULTINET+ is not set. In this case, each VM is created
+with one network device, QEMU provided DHCP configuration. +User+ network mode does have a
+limitation - only TCP and UDP are supported. However no additional configuration is needed.
+MAC address is controlled by +NICMAC+ variable, If not set, MAC address will default to +52:54:00:12:34:56+
+
+## multiple network devices
+To assign two NICs to VM, set +MULTINET+ variable to 1. This however is only supported for user mode networking (+NICTYPE+ is +user+).
+
+## TAP based network
+When advanced configurations, routing or better performance is required use TAP based network: +NICTYPE+ is set to +tap+.
+In this case, virtual NIC is interconnected with *existing* TAP device on host system.
+Which TAP device is used depends on +TAPDEV+ variable or if not defined, is automatically set to "tap" + ($worker_instance - 1), i.e. worker1 uses tap0, worker 6 uses tap5.
+This mode requires system administrator to manually manage the network and prepare custom routing or bridging before VM will be able to access network.
+MAC address of virtual NIC is controlled by +NICMAC+ variable or automatically computed from $worker_id.
+
+TAP devices need to be created with proper permissions so VMs can access them:
+
+[source, bash]
+---------------
+tunctl -u _openqa-worker -p -t tap0
+---------------
+or Wicked way:
+[source, xml]
+---------------
+<!-- /etc/wicked/ifconfig/tap0.xml -->
+<interface>
+  <name>tap0</name>
+  <tap>
+    <owner>_openqa-worker</owner>
+  </tap>
+</interface>
+---------------
+
+Then don't forget to route/bridge them as needed.
