@@ -52,6 +52,10 @@ sub index {
 
             my $count = 0;
             while (my $job = $jobs->next) {
+                my $job_info     = OpenQA::Scheduler::job_get($job->id);
+                my $job_settings = $job_info->{settings};
+                $jr{distri}  = $job_settings->{DISTRI};
+                $jr{version} = $job_settings->{VERSION};
                 $count++;
                 $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
                 if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {

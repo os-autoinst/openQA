@@ -307,11 +307,18 @@ sub _caclulate_preferred_machines {
 sub overview {
     my $self       = shift;
     my $validation = $self->validation;
+    $validation->required('distri');
+    $validation->required('version');
+    if ($validation->has_error) {
+        return $self->render(text => 'Missing parameters', status => 404);
+    }
 
     my %search_args;
     my $group;
-    my $distri;
-    my $version;
+    my $distri  = $self->param('distri');
+    my $version = $self->param('version');
+    $search_args{distri}  = $distri;
+    $search_args{version} = $version;
 
     if ($self->param('groupid')) {
         $group = $self->db->resultset("JobGroups")->find($self->param('groupid'));
@@ -323,21 +330,10 @@ sub overview {
         return $self->reply->not_found if (!$group);
         $search_args{groupid} = $group->id;
     }
-    else {
-        $validation->required('distri');
-        $validation->required('version');
-        if ($validation->has_error) {
-            return $self->render(text => 'Missing parameters', status => 404);
-        }
-        $distri  = $self->param('distri');
-        $version = $self->param('version');
 
-        %search_args = (distri => $distri, version => $version);
-
-        my $flavor = $self->param('flavor');
-        if ($flavor) {
-            $search_args{flavor} = $flavor;
-        }
+    my $flavor = $self->param('flavor');
+    if ($flavor) {
+        $search_args{flavor} = $flavor;
     }
 
     my $build = $self->param('build');
