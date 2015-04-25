@@ -195,6 +195,8 @@ sub job_create {
     }
 
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
+    # this will associate currently available assets with job
+    $job->assets_from_settings;
     $OpenQA::Utils::app->gru->enqueue('limit_assets') if $OpenQA::Utils::app;
 
     job_notify_workers() unless $no_notify;

@@ -56,7 +56,9 @@ my $workercaps = {
 
 my $jobA   = job_create(\%settings);
 my @assets = $jobA->jobs_assets;
-ok(!@assets, 'no asset assigned before grabbing');
+@assets = map { $_->asset_id } @assets;
+is(scalar @assets, 1, 'one asset assigned before grabbing');
+my $theasset = $assets[0];
 $jobA->set_prio(1);
 
 ## test asset is assigned after grab_job
@@ -67,7 +69,9 @@ my $w = $c->_register($schema, 'host', '1', $workercaps);
 my $job = job_grab(workerid => $w);
 is($job->{id}, $jobA->id, 'jobA grabbed');
 @assets = $jobA->jobs_assets;
-ok(@assets, 'job has asset assigned after grabbing');
+@assets = map { $_->asset_id } @assets;
+is(scalar @assets, 1,         'job still has only one asset assigned after grabbing');
+is($assets[0],     $theasset, 'the assigned asset is the same');
 
 # test asset is not assigned to scheduled jobs after duping
 my ($cloneA) = job_restart($jobA->id);
@@ -76,33 +80,53 @@ $cloneA = $schema->resultset('Jobs')->find(
         id => $cloneA,
     });
 @assets = $cloneA->jobs_assets;
-ok(!@assets, 'clone does not have asset assigned');
+@assets = map { $_->asset_id } @assets;
+is($assets[0], $theasset, 'clone does have the same asset assigned');
 
-## test job is duped when depends on asset created by duping job
+## test job is assigned all existing assets during creation and the rest during job grab
+# create new job depending on one normal and one job asset
+$settings{_START_AFTER_JOBS} = [$cloneA->id];
+$settings{HDD_1}             = 'jobasset.raw';
+$settings{TEST}              = 'testB';
+my $jobB = job_create(\%settings);
+@assets = $jobB->jobs_assets;
+@assets = map { $_->asset_id } @assets;
+is(scalar @assets, 1, 'one asset assigned before grabbing');
 # set jobA (normally this is done by worker after abort) and cloneA to done
-ok(job_set_done(jobid => $jobA->id,   result => 'passed'), 'jobA set to done');
+# needed for job grab to fulfill dependencies
+ok(job_set_done(jobid => $jobA->id,   result => 'passed'), 'jobA job set to done');
 ok(job_set_done(jobid => $cloneA->id, result => 'passed'), 'cloneA job set to done');
-# register asset as created by cloneA
+
+# register asset and mark as created by cloneA
+my $ja = sprintf('%08d-%s', $cloneA->id, 'jobasset.raw');
+open(my $fh, '>', join('/', $OpenQA::Utils::assetdir, 'hdd', $ja));
+close($fh);
+$ja = $schema->resultset('Assets')->create(
+    {
+        name => $ja,
+        type => 'hdd',
+    });
 $schema->resultset('JobsAssets')->create(
     {
         job_id     => $cloneA->id,
-        asset_id   => 2,             # took one from fictures
+        asset_id   => $ja->id,
         created_by => 1,
     });
-# create new job depending on this asset
-$settings{_START_AFTER_JOBS} = [$cloneA->id];
-$settings{ISO}               = 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso';    # asset_id 2
-$settings{TEST}              = 'testB';
-my $jobB = job_create(\%settings);
+
 # set jobB to running
 $jobB->set_prio(1);
 $job = job_grab(workerid => $w);
-is($job->{id},                           $jobB->id, 'jobB grabbed');
-is($jobB->jobs_assets->single->asset_id, 2,         'using correct asset');
+is($job->{id}, $jobB->id, 'jobB grabbed');
+@assets = $jobB->jobs_assets;
+@assets = map { $_->asset_id } @assets;
+is(scalar @assets, 2, 'two asset assigned after grabbing');
+is_deeply(\@assets, [$theasset, $ja->id], 'using correct assets');
+
+## test job is duped when depends on asset created by duping job
 # clone cloneA
 ($cloneA) = job_restart($cloneA->id);
 # check jobB was also duplicated
 $jobB->discard_changes();
 ok($jobB->clone, 'jobB has a clone after cloning asset creator');
-
+unlink($ja->disk_file);
 done_testing();

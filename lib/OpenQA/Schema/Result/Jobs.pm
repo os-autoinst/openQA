@@ -484,6 +484,8 @@ sub duplicate {
             parent_job_id => $res->id,
         });
 
+    # when dependency network is recreated, associate assets
+    $res->assets_from_settings;
     return ($self->id => $res->id, %duplicated_ids);
 }
 
@@ -856,13 +858,25 @@ sub assets_from_settings {
     for my $k (keys %assets) {
         my $a = $assets{$k};
         my $f_asset = _asset_find($a->{name}, $a->{type}, \@parents);
-        return unless defined $f_asset;
+        unless (defined $f_asset) {
+            # don't register asset not yet available
+            delete $assets{$k};
+            next;
+        }
         $a->{name} = $f_asset;
         $updated{$k} = $f_asset;
     }
 
+    # ignore already registered assets
+    my $registered_assets = $self->jobs_assets;
+    while (my $ja = $registered_assets->next) {
+        for my $k (keys %assets) {
+            delete $assets{$k} if ($updated{$k} eq $ja->asset->name);
+        }
+    }
+
     for my $a (values %assets) {
-        $self->jobs_assets->create({job => $self, asset => $a});
+        $self->jobs_assets->create({asset => $a});
     }
 
     return \%updated;
@@ -871,6 +885,7 @@ sub assets_from_settings {
 sub _asset_find {
     my ($name, $type, $parents) = @_;
 
+    # add undef to parents so that we chek regular assets too
     for my $parent (@$parents, undef) {
         my $fname = $parent ? sprintf("%08d-%s", $parent, $name) : $name;
         my $path = join('/', $OpenQA::Utils::assetdir, $type, $fname);

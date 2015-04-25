@@ -109,6 +109,9 @@ my $job_ref = {
         ARCH        => 'x86_64',
         NAME        => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow',
     },
+    assets => {
+        iso => ['whatever.iso'],
+    },
     t_started  => undef,
     state      => "scheduled",
     worker_id  => 0,
@@ -161,6 +164,9 @@ my $jobs = [
             ARCH        => 'x86_64',
             NAME        => '00000002-OTHER NAME',
         },
+        assets => {
+            iso => ['whatever.iso'],
+        },
         parents => [],
     },
     {
@@ -189,6 +195,9 @@ my $jobs = [
             MACHINE     => "RainbowPC",
             ARCH        => 'x86_64',
             NAME        => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow',
+        },
+        assets => {
+            iso => ['whatever.iso'],
         },
         parents => [],
     },
