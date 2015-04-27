@@ -264,7 +264,7 @@ In short, writing multi-machine tests adds a few more layers of complexity:
 
 1. documenting the dependencies and order between individual tests
 2. synchronization between individual tests
-3. actual technical realization (i.e. https://github.com/os-autoinst/os-autoinst/blob/master/doc/networking.md[custom networking])
+3. actual technical realization (i.e. link:Networking.asciidoc[custom networking])
 
 Job dependencies
 ~~~~~~~~~~~~~~~~
