@@ -26,6 +26,7 @@ use Cwd qw/abs_path/;
 
 use Config::IniFiles;
 use db_profiler;
+use db_helpers;
 
 sub _read_config {
     my $self = shift;
@@ -84,7 +85,7 @@ sub _read_config {
             $self->app->config->{$section}->{$k} = $v if defined $v;
         }
     }
-    $self->app->config->{_openid_secret} = $self->rndstr(16);
+    $self->app->config->{_openid_secret} = db_helpers::rndstr(16);
 }
 
 # check if have worker dead then clean up its job
@@ -153,6 +154,10 @@ sub startup {
 
     # Set some application defaults
     $self->defaults(appname => 'openQA');
+
+    $self->_read_config;
+    my $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{logging}->{file};
+    $self->log->path($logfile);
 
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
@@ -226,10 +231,6 @@ sub startup {
                 $c->res->headers->header('Strict-Transport-Security', sprintf 'max-age=%d; includeSubDomains', $days * 24 * 60 * 60);
             }
         });
-
-    $self->_read_config;
-    my $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{logging}->{file};
-    $self->log->path($logfile);
 
     if ($logfile && $self->config->{logging}->{level}) {
         $self->log->level($self->config->{logging}->{level});
