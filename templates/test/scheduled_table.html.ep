@@ -19,19 +19,15 @@
     </thead>
     <tbody>
 	% while (my $job = $scheduled->next) {
-	    %   my $settings = $job->settings_hash;
-	    %   my $prio = $job->priority;
-	    %   my $state = $job->state;
-	    %   my $build = $settings->{BUILD};
-	    %   my $distri = $settings->{DISTRI};
-	    %   my $version = $settings->{VERSION};
-	    %   my $query = { build => $build };
-	    %   if ($job->group_id) {
-		% $query->{groupid} = $job->group_id;
-	    % } else
-	    % {
-		% $query->{distri} = $settings->{DISTRI};
-		% $query->{version} = $settings->{VERSION};
+	    % my $settings = $job->settings_hash;
+	    % my $prio = $job->priority;
+	    % my $state = $job->state;
+	    % my $build = $settings->{BUILD};
+	    % my $distri = $settings->{DISTRI};
+	    % my $version = $settings->{VERSION};
+	    % my $query = { distri => $distri, version => $version, build => $build };
+	    % if ($job->group_id) {
+            % $query->{groupid} = $job->group_id;
 	    % }
 	    <tr id="job_<%= $job->id %>">
 		% my $test = $job->test . '@' . $settings->{MACHINE};

@@ -35,13 +35,9 @@
             % my $build = $settings->{BUILD} // '';
             % my $distri = $settings->{DISTRI} // '';
             % my $version = $settings->{VERSION} // '';
-            %   my $query = { build => $build };
-            %   if ($job->group_id) {
+            % my $query = { distri => $distri, version => $version, build => $build };
+            % if ($job->group_id) {
                 % $query->{groupid} = $job->group_id;
-            % } else
-            % {
-                % $query->{distri} = $settings->{DISTRI};
-                % $query->{version} = $settings->{VERSION};
             % }
             <tr id="job_<%= $job->id %>">
                 % my $testname = $job->test . '@' . $settings->{MACHINE};
