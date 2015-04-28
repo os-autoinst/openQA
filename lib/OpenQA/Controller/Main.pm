@@ -36,10 +36,15 @@ sub index {
                 job_id => {-in => $jobs->get_column('id')->as_query},
                 key    => 'BUILD'
             },
-            {columns => qw/value/, distinct => 1});
+            {
+                'select' => ['value', {min => 't_created', -as => 'first_hit'}],
+                'as'     => [qw/value first_hit/],
+                order_by => {-desc => 'first_hit'},
+                group_by => [qw/value/]});
         my $max_jobs = 0;
         my $buildnr  = 0;
-        for my $b (sort { $b <=> $a } map { $_->value } $builds->all) {
+        for my $b (map { $_->value } $builds->all) {
+            #print "B $b\n";
             my $jobs = $self->db->resultset('Jobs')->search(
                 {
                     'settings.key'   => 'BUILD',
