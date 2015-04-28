@@ -131,12 +131,6 @@ sub register {
         });
 
     $app->helper(
-        rndstr => sub {
-            my $c = shift;
-            db_helpers::rndstr(@_);
-        });
-
-    $app->helper(
         is_operator => sub {
             my $c = shift;
             my $user = shift || $c->current_user;
