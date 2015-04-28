@@ -158,7 +158,9 @@ sub startup {
 
     # Documentation browser under "/perldoc"
     $self->plugin('PODRenderer');
-    $self->plugin('AssetPack');
+    # just give it some out_dir to generate the assets in
+    # to avoid it trying to guess, which will break on deployment by packages
+    $self->plugin('AssetPack' => {out_dir => $self->static->paths->[0]});
     $self->plugin('OpenQA::Plugin::Helpers');
     $self->plugin('OpenQA::Plugin::CSRF');
     $self->plugin('OpenQA::Plugin::REST');
