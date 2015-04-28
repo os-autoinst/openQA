@@ -186,7 +186,16 @@ sub settings_hash {
     my ($self) = @_;
 
     if (!defined($self->{_settings})) {
-        $self->{_settings} = {map { $_->key => $_->value } $self->settings->all()};
+        $self->{_settings} = {};
+        for my $var ($self->settings->all()) {
+            if (defined $self->{_settings}->{$var->key}) {
+                # handle multi-value WORKER_CLASS
+                $self->{_settings}->{$var->key} .= ',' . $var->value;
+            }
+            else {
+                $self->{_settings}->{$var->key} = $var->value;
+            }
+        }
         $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
     }
 
