@@ -165,11 +165,9 @@ function renderTestsList(jobs) {
             { targets: 0,
               className: "name",
               "render": function ( data, type, row ) {
-                  var link = '/tests/overview?build=' + row['build'];
+                  var link = '/tests/overview?build=' + row['build'] + '&distri=' + row['distri'] + '&version=' + row['version'];
                   if (row['group'])
                       link += '&groupid=' + row['group'];
-                  else
-                      link += '&distri=' + row['distri'] + '&version=' + row['version'];
 
                   var name = "<a href='" + link + "'>" + 'Build' + row['build'] + '</a>';
                   name += " of ";

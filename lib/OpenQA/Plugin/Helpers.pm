@@ -71,7 +71,6 @@ sub register {
                 my $distri  = $c->stash('distri');
                 my $build   = $c->stash('build');
                 my $version = $c->stash('version');
-                $distri = 'openSUSE' if ($distri eq 'opensuse');
 
                 my $query = {build => $build, distri => $distri, version => $version};
                 my $job = $c->stash('job');
