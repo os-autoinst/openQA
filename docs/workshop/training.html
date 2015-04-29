@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Understanding openQA</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <style type="text/css">
+      @import url(http://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
+      @import url(http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic);
+      @import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+      body { font-family: 'Droid Serif'; }
+      h1, h2, h3 {
+        font-family: 'Yanone Kaffeesatz';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .graphic { width: 100%; }
+    </style>
+  </head>
+       <textarea id="source">
+
+class: middle, center
+# OpenQA
+---
+
+name: agenda
+# Agenda
+- Administrator guide
+- Test creator guide
+- OpenQA contributor guide
+---
+
+class: middle, center
+# Administrator Guide
+---
+
+# Architecture
+- OpenQA
+ - WebUI, Scheduler, DB interface
+- Worker
+- os-autoinst
+???
+Overall architecture of OpenQA installation: OpenQA (WebUI + Scheduler), OpenQA-Worker, os-autoinst
+WebUI + Scheduler - in one package, central piece
+Worker - one package, interface between openqa and os-autoinst
+os-autoinst - one package, actual test engine, implements test backend
+
+- TODO: add picture
+---
+
+# Installation - packages
+
+- OBS
+  - devel  devel:openQA
+  - stable devel:openQA:stable
+--
+
+- OpenQA WebUI
+  - openqa-common, openqa (, apache2)
+???
+Apache recommended unless localhost limited installation or routing magic
+--
+
+- OpenQA Worker
+  - openqa-common, openqa-worker, os-autoinst
+--
+
+- Database
+  - sqlite3; postgresql; mariadb
+???
+MysQL, SQlite nad PostgreSQL databases are supported, openSUSE OpenQA runs atop PostgreSQL, dev ususally on sqlite
+--
+
+- Backends
+  - qemu, kvm;
+???
+Different requirements for different backends, but qemu with KVM is the default.
+---
+
+# Installation - configuration
+
+- check `/etc/openqa/database.ini`
+ - default is SQLite
+???
+SQLite by default, check database.ini if want other database than sqlite.
+--
+
+- check `/etc/openqa/openqa.ini`
+ - authentication method
+ - logging
+???
+branding, git integration, debugging - by default debug! and auth method
+--
+
+- start the thing!
+       `systemctl start openqa-webui`
+       `/usr/share/openqa/script/openqa daemon`
+- but not yet!
+???
+production vs. development environment
+---
+
+# User management - before running
+
+- OpenID 2.0
+ - default authentication method
+ - default provider - opensuse.org/openid
+--
+
+- iChain
+ - present, but not tested in production
+--
+
+- Fake
+ - !DANGER!
+ - for development only
+--
+
+- now start the thing!
+???
+fake - for presentations and dev work only, bypass all auth and log in as admin, creates one day API keys
+
+---
+
+# User management - WebUI
+
+.center[.graphic[![OpenQA users](screens/openqa-admin-users.png)]]
+
+- first one to log in becomes administrator
+???
+do not remove rights until you have more admins. OpenQA will not protest!
+--
+
+- set authorizations to individual users
+- operator and administrator levels
+ - operator can restart (clone) tests and create needles
+ - administrator has access to administration
+???
+---
+
+# API keys
+
+.center[.graphic[![OpenQA users](screens/openqa-admin-apikeys.png)]]
+
+- authentication for API access
+- authorization level tied with user
+- HMAC checking
+ - API key
+   - transferred in each authentication header
+ - API secret
+   - used as salt for message checksum
+???
+Used as authentication mechanism for API - CLI tools and worker communication
+API key is there to find appropriate API secret in database for hash check
+---
+
+# Philosophy of OpenQA tests
+
+- one big distribution test
+ - means no individual encapsulated tests
+ - although its simulated
+???
+Before we go forward, take a note how openQA approach tests
+Look at it as distribution test. There is no concept of individual test. Instance of this test is called job. Job has variables
+which influence the testing process.
+--
+
+- instance of distribution test is called job
+--
+
+- testing behaviour influenced by job variables
+---
+
+# Where variables come from?
+
+.center[.graphic[![OpenQA users](screens/openqa-admin-menu.png)]]
+
+- Machines
+- Test suites
+- Job groups
+- Medium types
+
+???
+---
+
+# Machines
+
+.center[.graphic[![OpenQA users](screens/openqa-admin-machines.png)]]
+
+- hypothetical SUT
+- backend specific variables to go here
+ - CPU model
+ - RAM size
+ - RAID
+ - ...
+???
+Backend like QEMU, s390, IPMI, ...
+---
+
+# Test suites
+
+.center[.graphic[![OpenQA users](screens/openqa-admin-testsuites.png)]]
+
+- this is what one would call a test
+- test altering variables
+ - desktop selection
+ - install/upgrade path
+ - ...
+???
+---
+
+# Assets and Media
+
+.center[.graphic[![OpenQA users](screens/openqa-admin-media.png)]]
+
+- Assets are
+ - ISOs, HDDs, AutoYast profiles, ...
+ - everything test needs and is static
+- Media are
+ - assets matching templates
+ - variables related to installation source
+???
+---
+
+# Job Groups
+
+.center[.graphic[![OpenQA users](screens/openqa-admin-jobgroups.png)]]
+
+- semantically divide all possible tests
+  - staging tests, tumbleweed tests, AArch64 tests, ...
+- machines &times; test templates &times; media
+ - instantiation of distribution test to jobs
+ - no machine for test (or test for machine)
+         => no job is generated
+???
+---
+
+# Worker configuration
+
+- `/etc/openqa/client.conf`
+ - API key and secret goes here
+- `/etc/openqa/worker.ini`
+ - backend and openQA hostname
+ - worker class override for special HW or configuration
+- shared storage for remote worker
+ - up to admin, nfs usually
+ - read only mount is sufficient
+- start the worker
+      `systemctl start openqa-worker@1`
+      `/usr/share/openqa/script/worker \
+                               --instance 1 --verbose`
+
+???
+Before test can be started, one last thing. Worker configuration
+And firewall, etc.
+Shared storage - read only is ok. Needed for assets and test distribution
+Run either using systemd or directly, useful for worker debugging, nothing interesting test wise
+---
+
+# Running the test suite
+
+- get new ISO
+- create test jobs
+      `/usr/share/openqa/script/client                 \
+                  isos post ISO=os.iso DISTRI=opensuse \
+                  VERSION=tumbleweed FLAVOR=DVD        \
+                  ARCH=x86_64 BUILD=20150427`
+ - DISTRI, VERSION, ARCH, FLAVOR are mandatory
+   to help match the ISO in media table
+ - output should be like
+         {count => 29, ids => [411 .. 439] }
+ - if count is zero, there were problems
+???
+To run the test suite, we must instantiate test to individual test jobs.
+This is done by `client` script.
+---
+
+# Restarting (cloning) jobs
+
+.center[.graphic[![OpenQA users](screens/openqa-test-restart.png)]]
+
+- individual jobs can be restarted
+  - technically jobs are duplicated to preserve old results
+- using WebUI
+- using client script
+      `/usr/share/openqa/script/client \
+                                jobs/$jobid/restart post`
+???
+As said, Jobs are instances of openQA test, thus when one change variables, this change is not propagated to already existing jobs.
+One needs to recreate jobs in order to propagate this change!
+---
+
+class: middle, center
+# Creating tests
+???
+---
+
+# Simple case 1 - tests exists, update needles
+- find failed test case
+- create new needle
+  - use screenshot as new base image
+  - copy tags, no need to invent new ones
+  - copy match area
+  - save
+???
+---
+
+# Simple case 2 - tests exists, code update
+- find failed test case
+- take a note what should be done differently
+- update the code
+- create PR
+???
+---
+
+# Creating new test
+- use pen and paper
+- manually do what you want to test
+- take notes what are you doing
+- rewrite that in openQA test API
+- profit
+???
+---
+
+# test API
+- part of os-autoinst package
+        use testapi;
+- variable management
+  - get_var, set_var, check_var
+- keyboard and mouse
+  - send_key, type_string, mouse_click, mouse_set, mouse_hide
+- script control
+  - script_run, script_sudo, validate_script_output
+- display control
+  - assert_screen, check_screen
+
+???
+TODO: talk more about each of them?
+TODO: complete overview of API?
+---
+
+# Test relations
+???
+CHAINED: START_AFTER_TEST=testname
+PARALLEL: PARALLEL_WITH=testname
+---
+
+# MultiMachine tests
+- standard part of os-autoinst package
+       use mmapi;
+       use lockapi;
+- locks for synchronization
+  - mutex_create, mutex_lock, mutex_unlock
+- related jobs status querying
+  - get_children_by_state
+???
+---
+
+# Job assets
+- way to use HDD image created by another job
+- for creating, use variable `STORE_ASSET`
+  - value of variable is asset name
+- for usage use HDD variable
+- use CHAINED relation to assure right order
+???
+---
+
+# Tips
+
+???
+MAKESNAPSHOTS=1
+KEEP_HDD=1
+
+---
+
+class: middle, center
+# Contributor Guide
+---
+# Architecture
+???
+---
+# WebUI
+???
+---
+# Controllers
+???
+---
+# Schema
+???
+---
+# JS, jQuery, bootstrap
+???
+---
+# Scheduler
+???
+---
+# Worker
+???
+---
+# JOBTOKEN
+???
+---
+# WORKER_ID
+???
+---
+# WORKER_INSTANCE
+???
+---
+# WebSockets
+???
+---
+# os-autoinst / isotovideo
+???
+---
+# Backends
+
+--
+
+- QEMU backend
+???
+--
+
+- IMPI backend
+???
+--
+
+- s390 backend
+???
+---
+class: middle, center
+# Final notes
+???
+---
+    </textarea>
+    <script src="http://gnab.github.io/remark/downloads/remark-0.5.9.min.js" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+      var slideshow = remark.create();
+    </script>
+  </body>
+</html>
