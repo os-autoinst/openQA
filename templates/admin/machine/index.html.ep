@@ -1,28 +1,37 @@
-% layout 'admin';
+% layout 'bootstrap';
 % title 'Machines';
 
-<div class="box box-shadow">
-    <h2><%= title %></h2>
+% content_for 'ready_function' => begin
+    populate_admin_table();
+% end
 
-    %= include 'layouts/info'
+<div class="row">
+    %= include 'layouts/admin_nav'
 
-    <table class="admintable stripe compact" id='machines'>
-        <thead>
-            <tr>
-                <th class="col_value">name</th>
-                <th class="col_value">backend</th>
-                % for my $var (@$col_var_keys) {
-                    <th class="col_settings"><%= $var %></th>
-                %}
-                <th class="col_settings_list">other variables</th>
-                <th class="col_action">action</th>
-            </tr>
-        </thead>
-        <tbody>
-        </tbody>
-    </table>
-    <div class="aligncenter">
-        <input value="New machine" onclick="add_table_row_button( );" type="button"/>
+    <div class="col-sm-10">
+        <h2><%= title %></h2>
+
+        %= include 'layouts/info'
+
+        <table class="admintable table table-stripe " id='machines'>
+            <thead>
+                <tr>
+                    <th class="col_value">name</th>
+                    <th class="col_value">backend</th>
+                    % for my $var (@$col_var_keys) {
+                        <th class="col_settings"><%= $var %></th>
+                    %}
+                    <th class="col_settings_list">other variables</th>
+                    <th class="col_action">action</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <div class="text-center">
+            <input value="New machine" onclick="add_table_row_button( );" type="button" class="btn btn-default"/>
+        </div>
+        <input type="hidden" id="admintable_api_url" value="/api/v1/machines"/>
     </div>
-    <input type="hidden" id="admintable_api_url" value="/api/v1/machines"/>
+
 </div>

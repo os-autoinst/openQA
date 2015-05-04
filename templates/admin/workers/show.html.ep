@@ -1,4 +1,4 @@
-% layout 'admin';
+% layout 'bootstrap';
 % title "Worker " . $worker->host . ":" . $worker->instance;
 
 % content_for 'ready_function' => begin
@@ -6,8 +6,11 @@
     setupResultButtons();
 % end
 
-<div class="grid_16 box box-shadow alpha">
-    <h2><%= title %></h2>
+<div class="row">
+    %= include 'layouts/admin_nav'
+
+    <div class="col-sm-10">
+        <h2><%= title %></h2>
 
     %= include 'layouts/info'
 
@@ -19,7 +22,7 @@
     </div>
 
     <h3>Properties</h3>
-    <table>
+    <table class="table">
         <thead>
             <th>Key</th>
             <th>Value</th>
@@ -33,4 +36,6 @@
             % }
         </tbody>
     </table>
+</div>
+
 </div>

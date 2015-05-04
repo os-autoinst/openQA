@@ -1,12 +1,20 @@
-% layout 'admin';
+% layout 'bootstrap';
 % title 'Medium types';
 
-<div class="box box-shadow">
+% content_for 'ready_function' => begin
+   populate_admin_table();
+% end
+
+<div class="row">
+    %= include 'layouts/admin_nav'
+
+    <div class="col-sm-10">
+
     <h2><%= title %></h2>
 
     %= include 'layouts/info'
 
-    <table class="admintable compact stripe" id='test-suites'>
+    <table class="admintable table table-stripe" id='test-suites'>
         <thead>
             <tr>
                 <th class="col_value">distri</th>
@@ -23,8 +31,10 @@
         <tbody>
         </tbody>
     </table>
-    <div class="aligncenter">
-        <input value="New medium" onclick="add_table_row_button();" type="button"/>
+    <div class="text-center">
+        <input value="New medium" onclick="add_table_row_button();" type="button" class="btn btn-default"/>
     </div>
     <input type="hidden" id="admintable_api_url" value="/api/v1/products"/>
+</div>
+
 </div>

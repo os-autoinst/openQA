@@ -1,16 +1,19 @@
-% layout 'admin';
+% layout 'bootstrap';
 % title 'Assets';
 
 % content_for 'ready_function' => begin
     setup_asset_table();
 % end
 
-<div class="box box-shadow omega">
-    <h2><%= title %></h2>
+<div class="row">
+    %= include 'layouts/admin_nav'
+
+    <div class="col-sm-10">
+        <h2><%= title %></h2>
 
     %= include 'layouts/info'
 
-    <table id="assets" class="stripe">
+    <table id="assets" class="display table table-stripe">
         <thead>
             <tr>
                 <th>Type</th>
