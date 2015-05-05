@@ -38,7 +38,7 @@ use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 79;
+    plan tests => 81;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -69,6 +69,9 @@ sub add_job_group() {
     }
 
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'two groups in fixtures');
+    $driver->find_element('#submit', 'css')->click();
+    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'still two groups');
+    is($driver->find_element('.ui-state-error', 'css')->get_text(), 'Group name cannot be empty', 'error shown');
     $driver->find_element('#name',   'css')->send_keys('Cool Group');
     $driver->find_element('#submit', 'css')->click();
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 3 of 3 entries/, 'group created');
