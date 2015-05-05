@@ -28,10 +28,19 @@ sub index {
 
 sub create {
     my ($self) = @_;
+    my $groupname = $self->param('name');
 
-    my $ng = $self->db->resultset("JobGroups")->create({name => $self->param('name')});
-    if ($ng) {
-        $self->flash('info', 'Group ' . $ng->name . ' created');
+    if ($groupname) {
+        my $ng = $self->db->resultset("JobGroups")->create({name => $groupname});
+        if ($ng) {
+            $self->flash('info', 'Group ' . $ng->name . ' created');
+        }
+        else {
+            $self->flash('error', 'Creating group ' . $ng->name . ' failed');
+        }
+    }
+    else {
+        $self->flash('error', 'Group name cannot be empty');
     }
     $self->redirect_to(action => 'index');
 }
