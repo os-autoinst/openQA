@@ -65,7 +65,7 @@ To add more workers, increase number that is used in hostname, container name an
 You have to put your tests under `data/tests` directory and ISOs under `data/factory/iso` directory. For example, for testing Fedora, run:
 
     git clone https://bitbucket.org/rajcze/openqa_fedora data/tests/fedora
-    wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3
+    wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3.iso
 
 And set permissions, so any user can read/write the data:
 

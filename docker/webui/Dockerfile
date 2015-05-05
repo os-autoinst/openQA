@@ -1,11 +1,13 @@
 FROM opensuse:13.2
-MAINTAINER Jan Sedlak <jsedlak@redhat.com> Josef Skladanka <jskladan@redhat.com>
+MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>
 
 RUN useradd -m geekotest && \
+    zypper --non-interactive --gpg-auto-import-keys in ca-certificates-mozilla curl && \
     zypper ar -f http://download.opensuse.org/repositories/devel:openQA:stable/openSUSE_13.2/devel:openQA:stable.repo && \
+    zypper ar -f obs://devel:openQA/openSUSE_13.2 openQA && \
     zypper ar -f obs://devel:openQA:13.2/openSUSE_13.2 openQA-perl-modules && \
-    zypper ar -f http://download.opensuse.org/repositories/devel:/languages:/perl/openSUSE_13.2 perl-libs && \
-    zypper --non-interactive --gpg-auto-import-keys in openQA ca-certificates
+    curl https://build.opensuse.org/source/devel:openQA/_pubkey > /tmp/openQA-pubkey && rpm --import /tmp/openQA-pubkey && \
+    zypper --non-interactive in --from devel_openQA_stable openQA
 
 # setup apache
 RUN gensslcert && \
