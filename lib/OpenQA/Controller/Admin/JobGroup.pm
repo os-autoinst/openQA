@@ -36,7 +36,7 @@ sub create {
             $self->flash('info', 'Group ' . $ng->name . ' created');
         }
         else {
-            $self->flash('error', 'Creating group ' . $ng->name . ' failed');
+            $self->flash('error', "Creating group $groupname failed");
         }
     }
     else {
