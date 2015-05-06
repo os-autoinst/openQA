@@ -13,7 +13,7 @@
 
     %= include 'layouts/info'
 
-    <table id="groups" class="table table-stripe">
+    <table id="groups" class="table table-striped">
         <thead>
             <tr>
                 <th>Name</th>

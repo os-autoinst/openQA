@@ -13,7 +13,7 @@
 
     %= include 'layouts/info'
 
-    <table id="assets" class="display table table-stripe">
+    <table id="assets" class="display table table-striped">
         <thead>
             <tr>
                 <th>Type</th>

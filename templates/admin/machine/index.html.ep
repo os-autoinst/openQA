@@ -13,7 +13,7 @@
 
         %= include 'layouts/info'
 
-        <table class="admintable table table-stripe " id='machines'>
+        <table class="admintable table table-striped" id='machines'>
             <thead>
                 <tr>
                     <th class="col_value">name</th>
