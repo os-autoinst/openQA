@@ -55,7 +55,7 @@
         test       => "RAID0",
         worker_id  => 0,
         retry_avbl => 3,
-        settings   => [{key => 'FLAVOR', value => 'DVD'}, {key => 'QEMUCPU', value => 'qemu32'}, {key => 'ARCH', value => 'i586'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'INSTALLONLY', value => '1'}, {key => 'BUILD', value => '0091'}, {key => 'VERSION', value => '13.1'}, {key => 'RAIDLEVEL', value => '0'}, {key => 'DVD', value => '1'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'TEST', value => 'RAID0'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'MACHINE', value => '32bit'},]
+        settings   => [{key => 'FLAVOR', value => 'DVD'}, {key => 'QEMUCPU', value => 'qemu32'}, {key => 'ARCH', value => 'i586'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'INSTALLONLY', value => '1'}, {key => 'BUILD', value => '0091'}, {key => 'VERSION', value => '13.1'}, {key => 'RAIDLEVEL', value => '0'}, {key => 'DVD', value => '1'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'TEST', value => 'RAID0'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'MACHINE', value => '32bit'}, {key => 'LIVETEST', value => '1'},]
     },
     Jobs => {
         id         => 99928,

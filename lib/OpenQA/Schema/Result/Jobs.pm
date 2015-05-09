@@ -420,7 +420,7 @@ sub duplicate {
         my $settings = $self->settings;
 
         while (my $js = $settings->next) {
-            unless ($js->key =~ /NAME|TEST|JOBTOKEN/) {
+            unless ($js->key =~ /^(NAME|TEST|JOBTOKEN)$/) {
                 push @new_settings, {key => $js->key, value => $js->value};
             }
         }
