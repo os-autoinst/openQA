@@ -286,6 +286,7 @@ td .chosen-results {
 /* Menu */
 #actions_box ul {
     list-style: none;
+    padding-left: 0;
 }
 
 #actions_box ul li {

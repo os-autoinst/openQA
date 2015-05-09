@@ -1,85 +1,74 @@
-% layout 'admin';
+% layout 'bootstrap';
 % title 'Users';
 
 % content_for 'ready_function' => begin
-  $('#users').DataTable( {
-    "order": [[0, 'asc']],
-  } );
-
-$('#users').on('change', 'input[name="role"]:radio', function() {
-   var username = $(this).parents('tr').find('.name').text();
-   var role = $(this).attr('id');
-   role = $('label[for="' + role + '"]').text();
-   if (confirm("Are you sure to put " + username + " into role: " + $.trim(role) + "?")) {
-     $(this).parent('form').submit();
-   } else {
-     $(this).removeAttr('checked');
-     // we can't re-enable the default without jquery protesting
-     // $(this).parent('form').find('input[class="default"]')
-   }
-});
+    setup_admin_user();
 % end
 
-<div class="box box-shadow omega">
-    <h2><%= title %></h2>
-    
-    %= include 'layouts/info'
-    
-    <table id="users" class="stripe compact">
-	<thead>
-	    <tr>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Name</th>
-                <th>Nick</th>
-                <th>Role</th>
-            </tr>
-        </thead>
-        <tbody>
-            % for my $user (@$users) {
-                <tr id="user_<%= $user->id %>">
-                    <td class="username"><%= $user->username %></td>
-                    <td class="email"><%= $user->email %></td>
-                    <td class="name"><%= $user->fullname %></td>
-                    <td class="nick"><%= $user->nickname %></td>
-		    <td class="role" data-order="<%= $user->is_admin %><%= $user->is_operator %>">
-		      %= form_for url_for('admin_user', userid => $user->id) => (method => 'POST') => begin
-			% my @selects = ['', '', ''];
-			% my $select = 0;
-			% if ($user->is_admin) {
-			%   $select = 2;
-			% } elsif ($user->is_operator) {
-			%   $select = 1;
-			% }
-			% $selects[$select] = Mojo::ByteStream->new("checked='checked' class='default'");
-			<input type="radio" name="role" value="user" id="<%= $user->id %>_user" <%= $selects[0] %>/>
-			<label for="<%= $user->id %>_user">
-			  <span class="fa-stack"> <!-- sexy checkboxes! -->
-			    <i class="fa fa-circle-o fa-stack-1x"></i>
-			    <i class="fa fa-circle fa-stack-1x"></i>
-			  </span>
-			  User
-			</label>
-			<input type="radio" name="role" value="operator" id="<%= $user->id %>_operator" <%= $selects[1] %>/>
-			<label for="<%= $user->id %>_operator">
-			  <span class="fa-stack">
-			    <i class="fa fa-circle-o fa-stack-1x"></i>
-			    <i class="fa fa-circle fa-stack-1x"></i>
-			  </span>
-			  Operator
-			</label>
-			<input type="radio" name="role" value="admin" id="<%= $user->id %>_admin" <%= $selects[2] %>/>
-			<label for="<%= $user->id %>_admin">
-			  <span class="fa-stack">
-			    <i class="fa fa-circle-o fa-stack-1x"></i>
-			    <i class="fa fa-circle fa-stack-1x"></i>
-			  </span>
-			  Administrator
-			</label>
-			% end
-                    </td>
-		</tr>
+<div class="row">
+    %= include 'layouts/admin_nav'
+
+    <div class="col-sm-10">
+        <h2><%= title %></h2>
+
+        %= include 'layouts/info'
+
+        <table id="users" class="display table table-striped">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Nick</th>
+                    <th>Role</th>
+                </tr>
+            </thead>
+            <tbody>
+                % for my $user (@$users) {
+                    <tr id="user_<%= $user->id %>">
+                        <td class="username"><%= $user->username %></td>
+                        <td class="email"><%= $user->email %></td>
+                        <td class="name"><%= $user->fullname %></td>
+                        <td class="nick"><%= $user->nickname %></td>
+                        <td class="role" data-order="<%= $user->is_admin %><%= $user->is_operator %>">
+                            %= form_for url_for('admin_user', userid => $user->id) => (method => 'POST') => begin
+                                % my @selects = ['', '', ''];
+                                % my $select = 0;
+                                % if ($user->is_admin) {
+                                    %   $select = 2;
+                                % } elsif ($user->is_operator) {
+                                %   $select = 1;
+                % }
+                % $selects[$select] = Mojo::ByteStream->new("checked='checked' class='default'");
+                <input type="radio" name="role" value="user" id="<%= $user->id %>_user" <%= $selects[0] %>/>
+                <label for="<%= $user->id %>_user">
+                    <span class="fa-stack"> <!-- sexy checkboxes! -->
+                        <i class="fa fa-circle-o fa-stack-1x"></i>
+                        <i class="fa fa-circle fa-stack-1x"></i>
+                    </span>
+                    User
+                </label>
+                <input type="radio" name="role" value="operator" id="<%= $user->id %>_operator" <%= $selects[1] %>/>
+                <label for="<%= $user->id %>_operator">
+                    <span class="fa-stack">
+                        <i class="fa fa-circle-o fa-stack-1x"></i>
+                        <i class="fa fa-circle fa-stack-1x"></i>
+                    </span>
+                    Operator
+                </label>
+                <input type="radio" name="role" value="admin" id="<%= $user->id %>_admin" <%= $selects[2] %>/>
+                <label for="<%= $user->id %>_admin">
+                    <span class="fa-stack">
+                        <i class="fa fa-circle-o fa-stack-1x"></i>
+                        <i class="fa fa-circle fa-stack-1x"></i>
+                    </span>
+                    Administrator
+                </label>
+                            % end
+                        </td>
+                    </tr>
             % }
-        </tbody>
-    </table>
+            </tbody>
+        </table>
+    </div>
 </div>

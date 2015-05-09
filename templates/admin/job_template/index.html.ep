@@ -1,42 +1,46 @@
-% layout 'admin';
+% layout 'bootstrap';
 % title "Jobs for " . $group->name;
 
 % content_for 'ready_function' => begin
-  setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>);
+    setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>);
 % end
 
-<div class="box box-shadow omega">
-    <h2><%= title %></h2>
-    
-    %= include 'layouts/info'
-    
-    <div id="media">
-	<p id="loading">Loading... <i class="fa fa-spinner fa-spin"></i></p>
-	
-	<select id="machines-template" multiple="true"
-		data-placeholder="None" style="display: none">
-	    % for my $machine (@$machines) {
-		<option value="<%= $machine->name %>"
-			data-machine-id="<%= $machine->id %>" >
-		    %= $machine->name
-		</option>
-	    % }
-	</select>
-	
-	<select id="tests-template" style="display: none">
-	    <option value="">Select...</option>
-	    % for my $test (@$tests) {
-		<option value="<%= $test->name %>" data-test-id="<%= $test->id %>">
-		    <%= $test->name %>
-		</option>
-	    % }
-	</select>
-	
+<div class="row">
+    %= include 'layouts/admin_nav'
+
+    <div class="col-sm-10">
+        <h2><%= title %></h2>
+        %= include 'layouts/info'
+
+        <div id="media">
+            <p id="loading">Loading... <i class="fa fa-spinner fa-spin"></i></p>
+
+            <select id="machines-template" multiple="true"
+                    data-placeholder="None" style="display: none">
+                % for my $machine (@$machines) {
+                    <option value="<%= $machine->name %>"
+                            data-machine-id="<%= $machine->id %>" >
+                        %= $machine->name
+                    </option>
+                % }
+            </select>
+
+            <select id="tests-template" style="display: none">
+                <option value="">Select...</option>
+                % for my $test (@$tests) {
+                    <option value="<%= $test->name %>" data-test-id="<%= $test->id %>">
+                        <%= $test->name %>
+                    </option>
+                % }
+            </select>
+
+        </div>
+
+        <p>
+            %= link_to url_for('job_group_new_media', groupid => $group->id) => begin
+                <i class="fa fa-plus-square"></i> Test new medium as part of this group
+            % end
+        </p>
     </div>
 
-    <p>
-	%= link_to url_for('job_group_new_media', groupid => $group->id) => begin
-	<i class="fa fa-plus-square"></i> Test new medium as part of this group
-	% end
-    </p>
 </div>

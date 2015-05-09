@@ -185,6 +185,7 @@ sub startup {
       /javascripts/openqa.js
       /javascripts/jquery.dataTables.js
       /javascripts/admintable.js
+      /javascripts/admin_user.js
       /javascripts/jquery.timeago.js
       /javascripts/tests.js
       /javascripts/assets.js
