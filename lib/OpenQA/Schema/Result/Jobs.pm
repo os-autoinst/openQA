@@ -268,9 +268,8 @@ sub to_hash {
             push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
         }
     }
-    $j->{parents} = [];
-    for my $p ($job->parents->all()) {
-        push @{$j->{parents}}, $p->parent_job_id;
+    if ($args{deps}) {
+        $j = {%$j, %{$job->deps_hash}};
     }
     return $j;
 }
