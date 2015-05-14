@@ -374,9 +374,91 @@ ok(job_set_done(jobid => $jobX->id, result => 'passed'), 'jobX set to done');
 # since we are skipping job_grab, reload missing columns from DB
 $jobX->discard_changes;
 
+# current state
+#
+# X <---- Y
+# done    sch.
+
 # when Y is scheduled and X is duplicated, Y must be rerouted to depend on X now
 my $jobX2_id = OpenQA::Scheduler::job_duplicate(jobid => $jobX->id);
 $jobY->discard_changes;
 is($jobX2_id, $jobY->parents->single->parent_job_id, 'jobY parent is now jobX clone');
+my $jobX2 = job_get_deps($jobX2_id);
+is($jobX2->{clone_id}, undef, "no clone");
+is($jobY->{clone_id},  undef, "no clone");
+
+# current state:
+#
+# X
+# done
+#
+# X2 <---- Y
+# sch.    sch.
+
+
+ok(job_set_done(jobid => $jobX2_id, result => 'passed'), 'jobX2 set to done');
+ok(job_set_done(jobid => $jobY->id, result => 'passed'), 'jobY set to done');
+
+# current state:
+#
+# X
+# done
+#
+# X2 <---- Y
+# done    done
+
+my $jobY2_id = OpenQA::Scheduler::job_duplicate(jobid => $jobY->id);
+
+# current state:
+#
+# X
+# done
+#
+#       /-- Y done
+#    <-/
+# X2 <---- Y2
+# done    sch.
+
+
+my $jobY2 = job_get_deps($jobY2_id);
+is_deeply($jobY2->{parents}, {Parallel => [$jobX2_id], Chained => []}, 'jobY2 parent is now jobX2');
+is($jobX2->{clone_id}, undef, "no clone");
+is($jobY2->{clone_id}, undef, "no clone");
+
+ok(job_set_done(jobid => $jobY2_id, result => 'passed'), 'jobY2 set to done');
+
+# current state:
+#
+# X
+# done
+#
+#       /-- Y done
+#    <-/
+# X2 <---- Y2
+# done    done
+
+
+my $jobX3_id = OpenQA::Scheduler::job_duplicate(jobid => $jobX2_id);
+
+# current state:
+#
+# X
+# done
+#
+#       /-- Y done
+#    <-/
+# X2 <---- Y2
+# done    done
+#
+# X3 <---- Y3
+# sch.    sch.
+
+my $jobX3 = job_get_deps($jobX3_id);
+$jobY2 = job_get_deps($jobY2_id);    #refresh
+isnt($jobY2->{clone_id}, undef, "child job Y2 has been cloned together with parent X2");
+
+my $jobY3_id = $jobY2->{clone_id};
+my $jobY3    = job_get_deps($jobY3_id);
+is_deeply($jobY3->{parents}, {Parallel => [$jobX3_id], Chained => []}, 'jobY3 parent is now jobX3');
 
 done_testing();
