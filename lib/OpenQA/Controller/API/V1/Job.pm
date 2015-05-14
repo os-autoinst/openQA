@@ -33,7 +33,7 @@ sub list {
     log_debug("queried");
     my @results;
     while (my $job = $jobs->next) {
-        my $jobhash = $job->to_hash(assets => 1);
+        my $jobhash = $job->to_hash(assets => 1, deps => 1);
         $jobhash->{modules} = [];
         for my $module ($job->modules) {
             my $modulehash = {

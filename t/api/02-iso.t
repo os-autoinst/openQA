@@ -106,11 +106,11 @@ my $advanced_kde_32 = find_job(\@jobs, \@newids, 'advanced_kde', '32bit');
 my $kde_32          = find_job(\@jobs, \@newids, 'kde',          '32bit');
 my $textmode_32     = find_job(\@jobs, \@newids, 'textmode',     '32bit');
 
-is_deeply($client1_32->{parents}, [$server_32->{id}], "server_32 is only parent of client1_32");
-is_deeply($client2_32->{parents}, [$server_32->{id}], "server_32 is only parent of client2_32");
-is_deeply($server_32->{parents},  [],                 "server_32 has no parents");
+is_deeply($client1_32->{parents}, {Parallel => [$server_32->{id}], Chained => []}, "server_32 is only parent of client1_32");
+is_deeply($client2_32->{parents}, {Parallel => [$server_32->{id}], Chained => []}, "server_32 is only parent of client2_32");
+is_deeply($server_32->{parents},  {Parallel => [],                 Chained => []}, "server_32 has no parents");
 is($kde_32, undef, "kde is not created for 32bit machine");
-is_deeply($advanced_kde_32->{parents}, [$textmode_32->{id}], "textmode_32 is only parent of advanced_kde_32");    # kde is not defined for 32bit machine
+is_deeply($advanced_kde_32->{parents}, {Parallel => [], Chained => [$textmode_32->{id}]}, "textmode_32 is only parent of advanced_kde_32");    # kde is not defined for 32bit machine
 
 my $server_64       = find_job(\@jobs, \@newids, 'server',       '64bit');
 my $client1_64      = find_job(\@jobs, \@newids, 'client1',      '64bit');
@@ -119,11 +119,11 @@ my $advanced_kde_64 = find_job(\@jobs, \@newids, 'advanced_kde', '64bit');
 my $kde_64          = find_job(\@jobs, \@newids, 'kde',          '64bit');
 my $textmode_64     = find_job(\@jobs, \@newids, 'textmode',     '64bit');
 
-is_deeply($client1_64->{parents}, [$server_64->{id}], "server_64 is only parent of client1_64");
-is_deeply($client2_64->{parents}, [$server_64->{id}], "server_64 is only parent of client2_64");
-is_deeply($server_64->{parents},  [],                 "server_64 has no parents");
+is_deeply($client1_64->{parents}, {Parallel => [$server_64->{id}], Chained => []}, "server_64 is only parent of client1_64");
+is_deeply($client2_64->{parents}, {Parallel => [$server_64->{id}], Chained => []}, "server_64 is only parent of client2_64");
+is_deeply($server_64->{parents},  {Parallel => [],                 Chained => []}, "server_64 has no parents");
 is($textmode_64, undef, "textmode is not created for 64bit machine");
-is_deeply($advanced_kde_64->{parents}, [$kde_64->{id}], "kde_64 is only parent of advanced_kde_64");    # textmode is not defined for 64bit machine
+is_deeply($advanced_kde_64->{parents}, {Parallel => [], Chained => [$kde_64->{id}]}, "kde_64 is only parent of advanced_kde_64");    # textmode is not defined for 64bit machine
 
 lj;
 
