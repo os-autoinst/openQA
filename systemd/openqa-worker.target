@@ -1,5 +1,6 @@
 [Unit]
 Description=openQA Worker
+Wants=var-lib-openqa-share.mount
 
 [Install]
 WantedBy=multi-user.target
