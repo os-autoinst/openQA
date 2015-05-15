@@ -86,8 +86,9 @@ $job1 = OpenQA::Scheduler::job_get(99937);
 @ret  = OpenQA::Scheduler::job_restart(99937);
 $job2 = OpenQA::Scheduler::job_get(99937);
 
-is($job2->{clone_id}, 99983, "clone is tracked");
-$job1->{clone_id} = 99983;    # Just for comparing
+like($job2->{clone_id}, qr/\d+/, "clone is tracked");
+delete $job1->{clone_id};
+delete $job2->{clone_id};
 is_deeply($job1, $job2, "done job unchanged after restart");
 
 is(@ret, 1, "one job id returned");
@@ -98,7 +99,7 @@ is($job2->{state}, 'scheduled', "new job is scheduled");
 
 $jobs = list_jobs();
 
-is(@$jobs, @$current_jobs + 1, "one more job after restarting done job");
+is(@$jobs, @$current_jobs + 2, "two more job after restarting done job with chained child dependency");
 
 $current_jobs = $jobs;
 
@@ -113,9 +114,11 @@ $job2 = OpenQA::Scheduler::job_get(99963);
 
 is_deeply($job1, $job2, "running job unchanged after cancel");
 
-my $job3 = OpenQA::Scheduler::job_get(99938);
+my $job3 = OpenQA::Scheduler::job_get(99938)->{clone_id};
+OpenQA::Scheduler::job_set_done(jobid => $job3, result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+$job3 = OpenQA::Scheduler::job_get($job3);
 is($job3->{retry_avbl}, 3, "the retry counter setup ");
-my $round1_id = OpenQA::Scheduler::job_duplicate((jobid => 99938, dup_type_auto => 1));
+my $round1_id = OpenQA::Scheduler::job_duplicate((jobid => $job3->{id}, dup_type_auto => 1));
 ok(defined $round1_id, "auto-duplicate works");
 $job3 = OpenQA::Scheduler::job_get($round1_id);
 is($job3->{retry_avbl}, 2, "the retry counter decreased");
