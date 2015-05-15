@@ -39,6 +39,7 @@
   /var/lib/openqa/images/** rw,
   /var/lib/openqa/pool/ r,
   /var/lib/openqa/share/ r,
+  /var/lib/openqa/share/factory/hdd/* rw,
   /var/lib/openqa/share/factory/iso/* rw,
   /var/lib/openqa/share/factory/repo/** rw,
   /var/lib/openqa/share/tests/ r,
