@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use OpenQA::Scheduler;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::More tests => 87;
+use Test::More tests => 115;
 
 my $schema = OpenQA::Test::Database->new->create();
 
@@ -196,6 +196,20 @@ is($job->{result}, "parallel_failed", "job_set_done changed result, jobE failed 
 $job = job_get_deps($jobF->id);
 is($job->{state}, "running", "job_set_done changed state");
 
+# check MM API for children status - available only for running jobs
+my $worker = $schema->resultset("Workers")->find($w2_id);
+
+my $t = Test::Mojo->new('OpenQA');
+$t->ua->on(
+    start => sub {
+        my ($ua, $tx) = @_;
+        $tx->req->headers->add('X-API-JobToken' => $worker->get_property('JOBTOKEN'));
+    });
+
+$t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id]);
+$t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
+$t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
+
 # duplicate jobF, parents are duplicated too
 my $id = OpenQA::Scheduler::job_duplicate(jobid => $jobF->id);
 ok(defined $id, "duplicate works");
@@ -245,6 +259,10 @@ is($job->{state},    "scheduled", "cloned jobs are scheduled");
 is($job->{clone_id}, undef,       "no clones");
 is_deeply($job->{parents}, {Parallel => [$jobC2], Chained => []}, "cloned deps");
 
+# recheck that cloning didn't change MM API results children status
+$t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id]);
+$t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
+$t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
 
 # now we have
 #
@@ -346,16 +364,7 @@ is_deeply($job->{parents}, {Parallel => [$jobC2], Chained => []}, "cloned deps")
 # B2 <--- C2 <--- F2
 # sch     sch     sch
 
-# check MM API for children status - available only for running jobs
-my $worker = $schema->resultset("Workers")->find($w2_id);
-
-my $t = Test::Mojo->new('OpenQA');
-$t->ua->on(
-    start => sub {
-        my ($ua, $tx) = @_;
-        $tx->req->headers->add('X-API-JobToken' => $worker->get_property('JOBTOKEN'));
-    });
-
+# recheck that cloning didn't change MM API results children status
 $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id]);
 $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
@@ -374,9 +383,91 @@ ok(job_set_done(jobid => $jobX->id, result => 'passed'), 'jobX set to done');
 # since we are skipping job_grab, reload missing columns from DB
 $jobX->discard_changes;
 
+# current state
+#
+# X <---- Y
+# done    sch.
+
 # when Y is scheduled and X is duplicated, Y must be rerouted to depend on X now
 my $jobX2_id = OpenQA::Scheduler::job_duplicate(jobid => $jobX->id);
 $jobY->discard_changes;
 is($jobX2_id, $jobY->parents->single->parent_job_id, 'jobY parent is now jobX clone');
+my $jobX2 = job_get_deps($jobX2_id);
+is($jobX2->{clone_id}, undef, "no clone");
+is($jobY->{clone_id},  undef, "no clone");
+
+# current state:
+#
+# X
+# done
+#
+# X2 <---- Y
+# sch.    sch.
+
+
+ok(job_set_done(jobid => $jobX2_id, result => 'passed'), 'jobX2 set to done');
+ok(job_set_done(jobid => $jobY->id, result => 'passed'), 'jobY set to done');
+
+# current state:
+#
+# X
+# done
+#
+# X2 <---- Y
+# done    done
+
+my $jobY2_id = OpenQA::Scheduler::job_duplicate(jobid => $jobY->id);
+
+# current state:
+#
+# X
+# done
+#
+#       /-- Y done
+#    <-/
+# X2 <---- Y2
+# done    sch.
+
+
+my $jobY2 = job_get_deps($jobY2_id);
+is_deeply($jobY2->{parents}, {Chained => [$jobX2_id], Parallel => []}, 'jobY2 parent is now jobX2');
+is($jobX2->{clone_id}, undef, "no clone");
+is($jobY2->{clone_id}, undef, "no clone");
+
+ok(job_set_done(jobid => $jobY2_id, result => 'passed'), 'jobY2 set to done');
+
+# current state:
+#
+# X
+# done
+#
+#       /-- Y done
+#    <-/
+# X2 <---- Y2
+# done    done
+
+
+my $jobX3_id = OpenQA::Scheduler::job_duplicate(jobid => $jobX2_id);
+
+# current state:
+#
+# X
+# done
+#
+#       /-- Y done
+#    <-/
+# X2 <---- Y2
+# done    done
+#
+# X3 <---- Y3
+# sch.    sch.
+
+my $jobX3 = job_get_deps($jobX3_id);
+$jobY2 = job_get_deps($jobY2_id);    #refresh
+isnt($jobY2->{clone_id}, undef, "child job Y2 has been cloned together with parent X2");
+
+my $jobY3_id = $jobY2->{clone_id};
+my $jobY3    = job_get_deps($jobY3_id);
+is_deeply($jobY3->{parents}, {Chained => [$jobX3_id], Parallel => []}, 'jobY3 parent is now jobX3');
 
 done_testing();
