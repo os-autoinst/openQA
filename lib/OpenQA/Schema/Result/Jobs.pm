@@ -871,6 +871,9 @@ sub assets_from_settings {
         if ($k =~ /^REPO_\d$/) {
             $assets{$k} = {type => 'repo', name => $settings->{$k}};
         }
+        if ($k =~ /^ASSET_\d$/) {
+            $assets{$k} = {type => 'other', name => $settings->{$k}};
+        }
     }
 
     return unless keys %assets;
