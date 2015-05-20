@@ -44,7 +44,6 @@ sub index {
         my $max_jobs = 0;
         my $buildnr  = 0;
         for my $b (map { $_->value } $builds->all) {
-            #print "B $b\n";
             my $jobs = $self->db->resultset('Jobs')->search(
                 {
                     'settings.key'   => 'BUILD',
@@ -52,15 +51,20 @@ sub index {
                     'me.group_id'    => $group->id,
                     'me.clone_id'    => undef,
                 },
-                {join => qw/settings/});
+                {join => qw/settings/, order_by => 'me.id DESC'});
             my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0);
 
             my $count = 0;
+            my %seen;
             while (my $job = $jobs->next) {
-                my $job_info     = OpenQA::Scheduler::job_get($job->id);
-                my $job_settings = $job_info->{settings};
-                $jr{distri}  = $job_settings->{DISTRI};
-                $jr{version} = $job_settings->{VERSION};
+                if (!$jr{distri}) {    # we assume it's the same for all
+                    for my $s ($job->settings->search({key => [qw/DISTRI VERSION ARCH FLAVOR/]})) {
+                        $jr{lc $s->key} = $s->value;
+                    }
+                }
+                my $key = $job->test . "-" . $jr{arch} . "-" . $jr{flavor};
+                next if $seen{$key}++;
+
                 $count++;
                 $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
                 if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
@@ -89,7 +93,6 @@ sub index {
                 }
                 $self->app->log->error("MISSING S:" . $job->state . " R:" . $job->result);
             }
-            $self->app->log->debug($jr{oldest});
             $res{$b} = \%jr;
             $max_jobs = $count if ($count > $max_jobs);
             last if (++$buildnr > 2);

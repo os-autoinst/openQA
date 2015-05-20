@@ -345,9 +345,9 @@ sub overview {
     $search_args{fulldetails} = 1;
     $search_args{scope}       = 'current';
 
-    my @configs    = ();
-    my %archs      = ();
-    my %results    = ();
+    my @configs;
+    my %archs;
+    my %results;
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
 
     my $jobs = OpenQA::Scheduler::query_jobs(%search_args);
@@ -355,12 +355,15 @@ sub overview {
     my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
     my $preferred_machines = _caclulate_preferred_machines($jobs);
 
+    my %seen;
     while (my $job = $jobs->next) {
         my $settings = $job->settings_hash;
         my $testname = $settings->{NAME};
         my $test     = $job->test;
         my $flavor   = $settings->{FLAVOR} || 'sweet';
         my $arch     = $settings->{ARCH} || 'noarch';
+        my $key      = "$test-$flavor-$arch";
+        next if $seen{$key}++;
 
         my $result;
         if ($job->state eq 'done') {
