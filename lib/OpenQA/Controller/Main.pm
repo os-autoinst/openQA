@@ -57,10 +57,11 @@ sub index {
 
             my $count = 0;
             while (my $job = $jobs->next) {
-                my $job_info     = OpenQA::Scheduler::job_get($job->id);
-                my $job_settings = $job_info->{settings};
-                $jr{distri}  = $job_settings->{DISTRI};
-                $jr{version} = $job_settings->{VERSION};
+                if (!$jr{distri}) {    # we assume it's the same for all
+                    for my $s ($job->settings->search({key => [qw/DISTRI VERSION/]})) {
+                        $jr{lc $s->key} = $s->value;
+                    }
+                }
                 $count++;
                 $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
                 if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
@@ -89,7 +90,6 @@ sub index {
                 }
                 $self->app->log->error("MISSING S:" . $job->state . " R:" . $job->result);
             }
-            $self->app->log->debug($jr{oldest});
             $res{$b} = \%jr;
             $max_jobs = $count if ($count > $max_jobs);
             last if (++$buildnr > 2);
