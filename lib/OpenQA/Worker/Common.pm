@@ -23,7 +23,7 @@ use POSIX qw/uname/;
 
 use base qw/Exporter/;
 our @EXPORT = qw/$job $workerid $verbose $instance $worker_settings $pooldir $nocleanup $worker_caps $testresults $openqa_url
-  OPENQA_BASE OPENQA_SHARE ISO_DIR HDD_DIR STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
+  OPENQA_BASE OPENQA_SHARE ISO_DIR HDD_DIR ASSET_DIR STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer
   api_call verify_workerid register_worker ws_call/;
 
