@@ -907,16 +907,11 @@ sub assets_from_settings {
         $updated{$k} = $f_asset;
     }
 
-    # ignore already registered assets
-    my $registered_assets = $self->jobs_assets;
-    while (my $ja = $registered_assets->next) {
-        for my $k (keys %assets) {
-            delete $assets{$k} if ($updated{$k} eq $ja->asset->name);
-        }
-    }
-
     for my $a (values %assets) {
-        $self->jobs_assets->create({asset => $a});
+        # avoid plain create or we will get unique constraint problems
+        # in case ISO_1 and ISO_2 point to the same ISO
+        my $aid = $self->result_source->schema->resultset('Assets')->find_or_create($a);
+        $self->jobs_assets->find_or_create({asset_id => $aid->id});
     }
 
     return \%updated;
