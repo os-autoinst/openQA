@@ -56,13 +56,21 @@ sub index {
 
             my $count = 0;
             my %seen;
+            my %settings;
+            my $keys = $self->db->resultset('JobSettings')->search(
+                {
+                    job_id => {-in => [map { $_->id } $jobs->all]},
+                    key    => [qw/DISTRI VERSION ARCH FLAVOR MACHINE/]});
+            while (my $line = $keys->next) {
+                $settings{$line->job_id}->{$line->key} = $line->value;
+            }
+            $jobs->reset;
+
             while (my $job = $jobs->next) {
-                if (!$jr{distri}) {    # we assume it's the same for all
-                    for my $s ($job->settings->search({key => [qw/DISTRI VERSION ARCH FLAVOR/]})) {
-                        $jr{lc $s->key} = $s->value;
-                    }
-                }
-                my $key = $job->test . "-" . $jr{arch} . "-" . $jr{flavor};
+                my $jhash = $settings{$job->id};
+                $jr{distri}  //= $jhash->{DISTRI};
+                $jr{version} //= $jhash->{VERSION};
+                my $key = $job->test . "-" . $jhash->{ARCH} . "-" . $jhash->{FLAVOR} . "-" . $jhash->{MACHINE};
                 next if $seen{$key}++;
 
                 $count++;
