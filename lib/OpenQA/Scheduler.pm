@@ -432,10 +432,7 @@ sub job_grab {
                 -or => [
                     -and => {
                         dependency => OpenQA::Schema::Result::JobDependencies::CHAINED,
-                        -or        => {
-                            state  => {'!=', OpenQA::Schema::Result::Jobs::DONE},
-                            result => {'!=', OpenQA::Schema::Result::Jobs::PASSED},
-                        },
+                        state      => {-not_in => [OpenQA::Schema::Result::Jobs::FINAL_STATES]},
                     },
                     -and => {
                         dependency => OpenQA::Schema::Result::JobDependencies::PARALLEL,
