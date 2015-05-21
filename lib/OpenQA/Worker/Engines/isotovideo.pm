@@ -110,6 +110,7 @@ sub engine_workit($) {
         print "setting $k=$v\n" if $verbose;
         $vars{$k} = $v;
     }
+    $vars{ASSETDIR} = ASSET_DIR;
     $vars{CASEDIR} = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION});
     _save_vars(\%vars);
 
