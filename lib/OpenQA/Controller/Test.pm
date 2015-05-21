@@ -362,7 +362,7 @@ sub overview {
         my $test     = $job->test;
         my $flavor   = $settings->{FLAVOR} || 'sweet';
         my $arch     = $settings->{ARCH} || 'noarch';
-        my $key      = "$test-$flavor-$arch";
+        my $key      = "$test-$flavor-$arch-" . $settings->{MACHINE};
         next if $seen{$key}++;
 
         my $result;
