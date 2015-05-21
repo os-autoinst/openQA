@@ -303,6 +303,22 @@ table#job_settings td {
     padding: 2px;
 }
 
+table#settings_box {
+    padding-top: 9px;
+}
+
+.tab-pane table#results {
+    padding-top: 9px;
+}
+
+.tab-pane .comments {
+    padding-top: 9px;
+}
+
+.comment-body {
+    padding-left: 8px;
+}
+
 /* Opentip tooltips */
 
 /* Green on top of yellow doesn't sound wise */

@@ -143,8 +143,9 @@ __PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobDependencies', 'pa
 __PACKAGE__->has_many(parents  => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
 __PACKAGE__->has_many(modules  => 'OpenQA::Schema::Result::JobModules',      'job_id');
 # Locks
-__PACKAGE__->has_many(owned_locks  => 'OpenQA::Schema::Result::JobLocks', 'owner');
-__PACKAGE__->has_many(locked_locks => 'OpenQA::Schema::Result::JobLocks', 'locked_by');
+__PACKAGE__->has_many(owned_locks  => 'OpenQA::Schema::Result::JobLocks',    'owner');
+__PACKAGE__->has_many(locked_locks => 'OpenQA::Schema::Result::JobLocks',    'locked_by');
+__PACKAGE__->has_many(comments     => 'OpenQA::Schema::Result::JobComments', 'job_id');
 
 __PACKAGE__->has_many(networks => 'OpenQA::Schema::Result::JobNetworks', 'job_id');
 

@@ -1,0 +1,37 @@
+% if (!$job->comments->all) {
+    <i>No comments</i>
+% } else {
+    % for my $comment ($job->comments) {
+        <a class="pull-left" href="#">
+            <img class="media-object img-circle" src="<%= $comment->user->gravatar(60) %>" alt="profile">
+        </a>
+        <div class="media-body comment-body">
+            <div class="well well-lg">
+                <h4 class="media-heading"><%= $comment->user->name %> wrote <abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr></h4>
+                <p class="media-comment">
+                    %= $comment->rendered_markdown
+                </p>
+            </div>
+        </div>
+    % }
+% }
+
+% if (current_user) {
+    %= form_for 'add_comment', method => "post", class => "form-horizontal", id => "commentForm", role => "form" => begin
+        <div class="form-group">
+            <label for="text" class="col-sm-2 control-label">Comment
+                <img class="img-circle" src="<%= current_user->gravatar(60) %>">
+            </label>
+            <div class="col-sm-10">
+                <textarea class="form-control" name="text" id="text" rows="5"></textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button class="btn btn-success btn-circle text-uppercase" type="submit" id="submitComment">
+                    <span class="glyphicon glyphicon-send"></span>
+                    Summit comment</button>
+            </div>
+        </div>
+    % end
+% }

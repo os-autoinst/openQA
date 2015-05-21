@@ -68,6 +68,18 @@ sub name {
     return $self->{_name};
 }
 
+use URI::Escape qw(uri_escape);
+use Digest::MD5 qw(md5_hex);
+
+sub gravatar {
+    my ($self, $size) = @_;
+
+    my $email = $self->email;
+    $size //= 40;
+    "//www.gravatar.com/avatar/" . md5_hex(lc $email) . "?d=monsterid&s=$size";
+}
+
+
 sub create_user {
     my ($self, $id, $db, %attrs) = @_;
 

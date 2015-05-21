@@ -232,4 +232,6 @@ function setupResultButtons() {
             window.location.replace(xhr.responseJSON.test_url);
         });
     });
+   
 }
+
