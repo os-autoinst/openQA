@@ -13,12 +13,12 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Schema::Result::JobComments;
+package OpenQA::Schema::Result::Comments;
 use base qw/DBIx::Class::Core/;
 
 __PACKAGE__->load_components(qw/Core/);
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
-__PACKAGE__->table('job_comments');
+__PACKAGE__->table('comments');
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
@@ -27,6 +27,12 @@ __PACKAGE__->add_columns(
     job_id => {
         data_type      => 'integer',
         is_foreign_key => 1,
+	is_nullable => 1,
+    },
+    group_id => {
+	data_type      => 'integer',
+        is_foreign_key => 1,
+	is_nullable => 1,
     },
     text => {
         data_type => 'text'
@@ -35,11 +41,27 @@ __PACKAGE__->add_columns(
         data_type      => 'integer',
         is_foreign_key => 1,
     },
+    hidden => {
+        data_type     => 'boolean',
+        default_value => '0',
+    },
 );
 
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(user => 'OpenQA::Schema::Result::Users', 'user_id');
+
+__PACKAGE__->belongs_to(
+    "group",
+    "OpenQA::Schema::Result::JobGroups",
+    {'foreign.id' => "self.group_id"},
+    {
+        is_deferrable => 1,
+        join_type     => "LEFT",
+        on_delete     => "CASCADE",
+        on_update     => "CASCADE",
+    },
+);
 
 __PACKAGE__->belongs_to(
     "job",
@@ -56,11 +78,11 @@ __PACKAGE__->belongs_to(
 sub rendered_markdown {
     my ($self) = @_;
 
-    my $m = JobCommentsMarkdownParser->new;
+    my $m = CommentsMarkdownParser->new;
     Mojo::ByteStream->new($m->markdown($self->text));
 }
 
-package JobCommentsMarkdownParser;
+package CommentsMarkdownParser;
 require Text::Markdown;
 our @ISA = qw/Text::Markdown/;
 

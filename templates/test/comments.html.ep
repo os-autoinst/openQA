@@ -1,7 +1,7 @@
 % for my $comment ($job->comments) {
-    <a class="pull-left" href="#">
+    <div class="pull-left">
         <img class="media-object img-circle" src="<%= $comment->user->gravatar(60) %>" alt="profile">
-    </a>
+    </div>
     <div class="media-body comment-body">
         <div class="well well-lg">
             <h4 class="media-heading"><%= $comment->user->name %> wrote <abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr></h4>

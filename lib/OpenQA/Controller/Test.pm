@@ -446,9 +446,11 @@ sub add_comment {
 
     $self->validation->required('text');
 
-    $self->app->schema->resultset("JobComments")->create(
+    my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
+    return $self->reply->not_found unless $job;
+
+    $job->comments->create(
         {
-            job_id  => $self->param('testid'),
             text    => $self->param('text'),
             user_id => $self->current_user->id,
         });

@@ -215,6 +215,160 @@ schema:
       name: assets
       options: []
       order: 1
+    comments:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - group_id
+          match_type: ''
+          name: comments_fk_group_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: job_groups
+          type: FOREIGN KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - job_id
+          match_type: ''
+          name: comments_fk_job_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: jobs
+          type: FOREIGN KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - user_id
+          match_type: ''
+          name: comments_fk_user_id
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields:
+            - id
+          reference_table: users
+          type: FOREIGN KEY
+      fields:
+        group_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: group_id
+          order: 3
+          size:
+            - 0
+        hidden:
+          data_type: boolean
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: hidden
+          order: 6
+          size:
+            - 0
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        job_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 1
+          is_primary_key: 0
+          is_unique: 0
+          name: job_id
+          order: 2
+          size:
+            - 0
+        t_created:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_created
+          order: 7
+          size:
+            - 0
+        t_updated:
+          data_type: timestamp
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: t_updated
+          order: 8
+          size:
+            - 0
+        text:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: text
+          order: 4
+          size:
+            - 0
+        user_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: user_id
+          order: 5
+          size:
+            - 0
+      indices:
+        - fields:
+            - group_id
+          name: comments_idx_group_id
+          options: []
+          type: NORMAL
+        - fields:
+            - job_id
+          name: comments_idx_job_id
+          options: []
+          type: NORMAL
+        - fields:
+            - user_id
+          name: comments_idx_user_id
+          options: []
+          type: NORMAL
+      name: comments
+      options: []
+      order: 17
     gru_tasks:
       constraints:
         - deferrable: 1
@@ -305,122 +459,6 @@ schema:
       name: gru_tasks
       options: []
       order: 2
-    job_comments:
-      constraints:
-        - deferrable: 1
-          expression: ''
-          fields:
-            - id
-          match_type: ''
-          name: ''
-          on_delete: ''
-          on_update: ''
-          options: []
-          reference_fields: []
-          reference_table: ''
-          type: PRIMARY KEY
-        - deferrable: 1
-          expression: ''
-          fields:
-            - user_id
-          match_type: ''
-          name: job_comments_fk_user_id
-          on_delete: ''
-          on_update: ''
-          options: []
-          reference_fields:
-            - id
-          reference_table: users
-          type: FOREIGN KEY
-        - deferrable: 1
-          expression: ''
-          fields:
-            - job_id
-          match_type: ''
-          name: job_comments_fk_job_id
-          on_delete: CASCADE
-          on_update: CASCADE
-          options: []
-          reference_fields:
-            - id
-          reference_table: jobs
-          type: FOREIGN KEY
-      fields:
-        id:
-          data_type: integer
-          default_value: ~
-          is_auto_increment: 1
-          is_nullable: 0
-          is_primary_key: 1
-          is_unique: 0
-          name: id
-          order: 1
-          size:
-            - 0
-        job_id:
-          data_type: integer
-          default_value: ~
-          is_nullable: 0
-          is_primary_key: 0
-          is_unique: 0
-          name: job_id
-          order: 2
-          size:
-            - 0
-        t_created:
-          data_type: timestamp
-          default_value: ~
-          is_nullable: 0
-          is_primary_key: 0
-          is_unique: 0
-          name: t_created
-          order: 5
-          size:
-            - 0
-        t_updated:
-          data_type: timestamp
-          default_value: ~
-          is_nullable: 0
-          is_primary_key: 0
-          is_unique: 0
-          name: t_updated
-          order: 6
-          size:
-            - 0
-        text:
-          data_type: text
-          default_value: ~
-          is_nullable: 0
-          is_primary_key: 0
-          is_unique: 0
-          name: text
-          order: 3
-          size:
-            - 0
-        user_id:
-          data_type: integer
-          default_value: ~
-          is_nullable: 0
-          is_primary_key: 0
-          is_unique: 0
-          name: user_id
-          order: 4
-          size:
-            - 0
-      indices:
-        - fields:
-            - user_id
-          name: job_comments_idx_user_id
-          options: []
-          type: NORMAL
-        - fields:
-            - job_id
-          name: job_comments_idx_job_id
-          options: []
-          type: NORMAL
-      name: job_comments
-      options: []
-      order: 17
     job_dependencies:
       constraints:
         - deferrable: 1
@@ -2595,8 +2633,8 @@ translator:
     sources:
       - ApiKeys
       - Assets
+      - Comments
       - GruTasks
-      - JobComments
       - JobDependencies
       - JobGroups
       - JobLocks
