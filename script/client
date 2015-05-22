@@ -102,7 +102,7 @@ if ($path !~ m/^\//) {
 }
 
 my $method = 'get';
-my @params;
+my %params;
 
 if ($options{params}) {
     use JSON;
@@ -110,15 +110,15 @@ if ($options{params}) {
     open(my $fh, '<', $options{params});
     my $info = JSON->new->relaxed->decode(<$fh>);
     close $fh;
-    @params = map { "$_=$info->{$_}" } sort keys %$info;
+    %params = %{$info};
 }
 
 for my $arg (@ARGV) {
     if ($arg =~ /^(?:get|post|delete|put)$/i) {
         $method = lc $arg;
     }
-    elsif ($arg =~ /^[[:alnum:]_]+=.+/) {
-        push @params, $arg;
+    elsif ($arg =~ /^([[:alnum:]_]+)=(.+)/) {
+        $params{$1} = $2;
     }
     else {
     }
@@ -135,7 +135,7 @@ else {
 }
 
 $url->path($path);
-$url->query(join('&', @params)) if @params;
+$url->query([%params]) if %params;
 
 my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $options{'apisecret'}, api => $url->host);
 
