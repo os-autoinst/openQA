@@ -311,6 +311,9 @@ sub startup {
     $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
     $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
 
+    $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');
+    $r->post('/group_overview/:groupid/add_comment')->name('add_group_comment')->to('main#add_comment');
+
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
     # Default route

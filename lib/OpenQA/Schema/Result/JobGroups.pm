@@ -41,7 +41,7 @@ __PACKAGE__->add_unique_constraint([qw/name/]);
 
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->has_many(jobs => 'OpenQA::Schema::Result::Jobs', 'group_id');
+__PACKAGE__->has_many(jobs     => 'OpenQA::Schema::Result::Jobs',     'group_id');
 __PACKAGE__->has_many(comments => 'OpenQA::Schema::Result::Comments', 'group_id');
 
 1;

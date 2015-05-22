@@ -9,55 +9,30 @@
 
 <div class="jumbotron">
     <div class="container">
-	<div class="col-md-10">
-	     <h1>Welcome to <%= $appname %></h1>
-	     <p>Life is too short for manual testing!</p>
+        <div class="col-md-10">
+             <h1>Welcome to <%= $appname %></h1>
+             <p>Life is too short for manual testing!</p>
 
-	    <a class="btn btn-primary btn-lg" href="http://os-autoinst.github.io/openQA/" role="button">Learn more »</a></p>
-	</div>
+            <a class="btn btn-primary btn-lg" href="http://os-autoinst.github.io/openQA/" role="button">Learn more »</a></p>
+        </div>
 
-	<div class="col-md-2 hidden-sm hidden-xs">
-	    % if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
-		<div class="text-right" id="sponsorbox">
-		    <a href="http://www.suse.com" title="SUSE">
-			<img alt="sponsor_suse" class="icons-sponsor_suse" src="images/suse.png" />
-		    </a>
-		</div>
-		<div class="text-muted text-center">Sponsor</div>
-	    % }
-	</div>
+        <div class="col-md-2 hidden-sm hidden-xs">
+            % if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
+                <div class="text-right" id="sponsorbox">
+                    <a href="http://www.suse.com" title="SUSE">
+                        <img alt="sponsor_suse" class="icons-sponsor_suse" src="images/suse.png" />
+                    </a>
+                </div>
+                <div class="text-muted text-center">Sponsor</div>
+            % }
+        </div>
     </div>
 </div>
 
 % for my $groupresults (@$results) {
     % my $group = delete $groupresults->{_group};
-    <h2><%= link_to $group->name => url_for('tests')->query(groupid => $group->id) %><h2>
-    % my $max = delete $groupresults->{_max};
-    % for my $build (sort { $b <=> $a } keys %$groupresults) {
-	<div class="row">
-	    <div class="col-md-4 text-nowrap">
-		<h4>
-		    <%= link_to "Build$build" => url_for('tests_overview')->query(distri => $groupresults->{$build}->{distri}, version => $groupresults->{$build}->{version}, build => $build, groupid => $group->id ) %>
-		    (<abbr class="timeago" title="<%= $groupresults->{$build}->{oldest}->datetime() %>Z">
-		    <%= delete $groupresults->{$build}->{oldest} %>
-		    </abbr>)
-		</h4>
-	    </div>
-	    <div class="col-md-8">
-	        % if ($max) {
-		<div class="progress">
-		    <div class="progress-bar progress-bar-success" style="width: <%= $groupresults->{$build}->{passed} * 100 / $max %>%">
-			<%= $groupresults->{$build}->{passed} %> passed
-		    </div>
-		    <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: <%= $groupresults->{$build}->{inprogress} * 100 / $max %>%">
-			<%= $groupresults->{$build}->{inprogress} %> unfinished
-		    </div>
-		    <div class="progress-bar progress-bar-danger" style="width: <%= $groupresults->{$build}->{failed} * 100 / $max %>%">
-			<%= $groupresults->{$build}->{failed} %> failed
-		    </div>
-		</div>
-                % }
-	    </div>
-	</div>
-    % }
+    <h2>
+        %= link_to $group->name => url_for('group_overview', groupid => $group->id)
+    </h2>
+    %= include 'main/group_builds', result => $groupresults, group => $group
 % }
