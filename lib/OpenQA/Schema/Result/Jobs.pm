@@ -330,17 +330,18 @@ Rules for dependencies cloning are:
 for PARALLEL dependencies:
 - clone parents
  + if parent state is SCHEDULED, just create dependency
- + if parent is clone, find the latest, not cloned, one
+ + if parent is clone, find the latest clone and clone it
 - clone children
  + if clone state is SCHEDULED, route child to us (remove original dependency)
- + if child is clone, find the latest, not cloned, one
+ + if child is DONE, ignore. Dependency is transitivelly preserved by depending on parent's clone's origin
+ + if child is clone, find the latest clone and clone it
 
 for CHAINED dependencies:
 - do NOT clone parents
  + just route dependency (remove original dependency)
 - clone children
  + if clone state is SCHEDULED, route child to us (remove original dependency)
- + if child is clone, find the latest, not cloned, one
+ + if child is clone, find the latest clone and clone it
 
 =cut
 sub duplicate {
@@ -351,6 +352,9 @@ sub duplicate {
 
     # If the job already has a clone, none is created
     return unless $self->can_be_duplicated;
+    # skip this job if encountered again
+    my $ignores = $args->{ignore_jobs} // [];
+    push @$ignores, $self->id;
     log_debug('duplicating ' . $self->id);
 
     # store mapping of all duplications for return - need old job IDs for state mangling
@@ -365,89 +369,92 @@ sub duplicate {
     # i.e. to preven cloned parent to clone its children
 
     ## now go and clone and recreate test dependencies - parents first
-    unless ($args->{ignore_parents_cloning}) {
-        my $parents = $self->parents->search(
-            {
-                dependency => {-in => [OpenQA::Schema::Result::JobDependencies->PARALLEL, OpenQA::Schema::Result::JobDependencies->CHAINED]},
-            },
-            {
-                join => 'parent',
-            });
-        while (my $pd = $parents->next) {
-            my $p = $pd->parent;
-            if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
-                my %dups = $p->duplicate({ignore_children_cloning => 1});
-                # if duplication failed, either there was a transaction conflict or more likely job failed
-                # can_be_duplicated check.
-                # That is either we are hooked to already cloned parent or
-                # parent is not in proper state - e.g. scheduled.
-                while (!%dups && !$p->can_be_duplicated) {
-                    if ($p->state eq SCHEDULED) {
-                        # we use SCHEDULED as is, just route dependencies
-                        %dups = ($p->id => $p->id);
-                        last;
-                    }
-                    else {
-                        # find the current clone and try to duplicate that one
-                        while ($p->clone) {
-                            $p = $p->clone;
-                        }
-                        %dups = $p->duplicate({ignore_children_cloning => 1});
-                    }
-                }
-                %duplicated_ids = (%duplicated_ids, %dups);
-                # we don't have our cloned id yet so store new immediate parent for
-                # dependency recreation
-                push @direct_deps_parents_parallel, $dups{$p->id};
-            }
-            else {
-                # reroute to CHAINED parents, those are not being cloned when child is restarted
-                push @direct_deps_parents_chained, $p->id;
-                $pd->delete;
-            }
-        }
-    }
-
-    ## go and clone and recreate test dependencies - running children tests, this cover also asset dependencies (use CHAINED dep)
-    unless ($args->{ignore_children_cloning}) {
-        my $children = $self->children->search(
-            {
-                dependency => {-in => [OpenQA::Schema::Result::JobDependencies->PARALLEL, OpenQA::Schema::Result::JobDependencies->CHAINED]},
-            },
-            {
-                join => 'child',
-            });
-        while (my $cd = $children->next) {
-            my $c = $cd->child;
-            # ignore already cloned child, prevent loops in test definition
-            next if $duplicated_ids{$c->id};
-            my %dups = $c->duplicate({ignore_parents_cloning => 1});
-            # the same as in parent cloning, detect SCHEDULED and cloning already cloned child
-            while (!%dups && !$c->can_be_duplicated) {
-                if ($c->state eq SCHEDULED) {
-                    # we use SCHEDULED as is, just route dependencies - create new, remove existing
-                    %dups = ($c->id => $c->id);
-                    $cd->delete;
+    my $parents = $self->parents->search(
+        {
+            dependency => {-in => [OpenQA::Schema::Result::JobDependencies->PARALLEL, OpenQA::Schema::Result::JobDependencies->CHAINED]},
+        },
+        {
+            join => 'parent',
+        });
+    while (my $pd = $parents->next) {
+        my $p = $pd->parent;
+        next if (grep { $_ == $p->id } @$ignores);
+        if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
+            my %dups = $p->duplicate({ignore_jobs => $ignores});
+            # if duplication failed, either there was a transaction conflict or more likely job failed
+            # can_be_duplicated check.
+            # That is either we are hooked to already cloned parent or
+            # parent is not in proper state - e.g. scheduled.
+            while (!%dups && !$p->can_be_duplicated) {
+                if ($p->state eq SCHEDULED) {
+                    # we use SCHEDULED as is, just route dependencies
+                    %dups = ($p->id => $p->id);
                     last;
                 }
                 else {
                     # find the current clone and try to duplicate that one
-                    while ($c->clone) {
-                        $c = $c->clone;
+                    while ($p->clone) {
+                        $p = $p->clone;
                     }
-                    %dups = $c->duplicate({ignore_parents_cloning => 1});
+                    %dups = $p->duplicate({ignore_jobs => $ignores});
                 }
             }
-            # we don't have our cloned id yet so store immediate child for
+            push @$ignores, keys %dups;
+            %duplicated_ids = (%duplicated_ids, %dups);
+            # we don't have our cloned id yet so store new immediate parent for
             # dependency recreation
-            if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
-                push @direct_deps_children_parallel, $dups{$c->id};
+            push @direct_deps_parents_parallel, $dups{$p->id};
+        }
+        else {
+            # reroute to CHAINED parents, those are not being cloned when child is restarted
+            push @direct_deps_parents_chained, $p->id;
+            $pd->delete;
+        }
+    }
+
+    ## go and clone and recreate test dependencies - running children tests, this cover also asset dependencies (use CHAINED dep)
+    my $children = $self->children->search(
+        {
+            dependency => {-in => [OpenQA::Schema::Result::JobDependencies->PARALLEL, OpenQA::Schema::Result::JobDependencies->CHAINED]},
+        },
+        {
+            join => 'child',
+        });
+    while (my $cd = $children->next) {
+        my $c = $cd->child;
+        next if (grep { $_ == $c->id } @$ignores);
+        # ignore already cloned child, prevent loops in test definition
+        next if $duplicated_ids{$c->id};
+        # do not clone DONE children for PARALLEL deps
+        next if ($c->state eq DONE and $cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL);
+
+        my %dups = $c->duplicate({ignore_jobs => $ignores});
+        # the same as in parent cloning, detect SCHEDULED and cloning already cloned child
+        while (!%dups && !$c->can_be_duplicated) {
+            if ($c->state eq SCHEDULED) {
+                # we use SCHEDULED as is, just route dependencies - create new, remove existing
+                %dups = ($c->id => $c->id);
+                $cd->delete;
+                last;
             }
             else {
-                push @direct_deps_children_chained, $dups{$c->id};
+                # find the current clone and try to duplicate that one
+                while ($c->clone) {
+                    $c = $c->clone;
+                }
+                %dups = $c->duplicate({ignore_jobs => $ignores});
             }
-            %duplicated_ids = (%duplicated_ids, %dups);
         }
+        push @$ignores, keys %dups;
+        # we don't have our cloned id yet so store immediate child for
+        # dependency recreation
+        if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
+            push @direct_deps_children_parallel, $dups{$c->id};
+        }
+        else {
+            push @direct_deps_children_chained, $dups{$c->id};
+        }
+        %duplicated_ids = (%duplicated_ids, %dups);
     }
 
     # Copied retry_avbl as default value if the input undefined
