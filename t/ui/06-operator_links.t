@@ -27,7 +27,7 @@ use Data::Dumper;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # we don't want to test javascript here, so we just test the javascript code
 # List with no login

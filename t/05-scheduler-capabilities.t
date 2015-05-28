@@ -29,7 +29,7 @@ use Test::More tests => 9;
 
 my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 
-#my $t = Test::Mojo->new('OpenQA');
+#my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 sub list_jobs {
     my %args = @_;

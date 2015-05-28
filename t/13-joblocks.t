@@ -26,7 +26,7 @@ use Test::More;
 use Test::Mojo;
 
 my $schema = OpenQA::Test::Database->new->create();
-my $t      = Test::Mojo->new('OpenQA');
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
 
 # from fixtures
 my $jobA   = 99961;

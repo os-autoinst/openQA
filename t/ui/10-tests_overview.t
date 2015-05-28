@@ -25,7 +25,7 @@ use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 #
 # Overview with incorrect parameters

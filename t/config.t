@@ -24,7 +24,7 @@ use OpenQA::Test::Database;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $cfg = $t->app->config;
 
@@ -65,7 +65,7 @@ print $fd "allowed_hosts=foo bar\n";
 print $fd "suse_mirror=http://blah/\n";
 close $fd;
 
-$t = Test::Mojo->new('OpenQA');
+$t = Test::Mojo->new('OpenQA::WebAPI');
 ok($t->app->config->{'global'}->{'allowed_hosts'} eq 'foo bar',    'allowed hosts');
 ok($t->app->config->{'global'}->{'suse_mirror'} eq 'http://blah/', 'suse mirror');
 

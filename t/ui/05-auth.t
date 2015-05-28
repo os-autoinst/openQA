@@ -25,7 +25,7 @@ use OpenQA::Test::Case;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 #
 # No login, no user-info and no api_keys

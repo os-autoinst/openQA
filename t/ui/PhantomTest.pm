@@ -15,7 +15,7 @@ sub start_app {
     if ($mojopid == 0) {
         OpenQA::Test::Database->new->create;
         # TODO: start the server manually - and make it silent
-        Mojolicious::Commands->start_app('OpenQA', 'daemon', '-l', "http://127.0.0.1:$mojoport/");
+        Mojolicious::Commands->start_app('OpenQA::WebAPI', 'daemon', '-l', "http://127.0.0.1:$mojoport/");
         exit(0);
     }
     else {

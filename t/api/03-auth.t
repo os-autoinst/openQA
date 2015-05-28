@@ -28,7 +28,7 @@ use OpenQA::Client;
 
 OpenQA::Test::Case->new->init_data;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # monkey-patch custom helper websocket_nok - copied from websocked_ok and altered
 sub Test::Mojo::websocket_nok {

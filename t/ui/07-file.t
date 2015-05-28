@@ -26,7 +26,7 @@ use OpenQA::Test::Case;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 $t->get_ok('/tests/99938/images/logpackages-1.png')->status_is(200)->content_type_is('image/png')->header_is('Content-Length' => '48019');    # Exact size of logpackages-1.png
 

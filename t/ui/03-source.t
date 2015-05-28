@@ -28,7 +28,7 @@ SKIP: {
 
     OpenQA::Test::Case->new->init_data;
 
-    my $t = Test::Mojo->new('OpenQA');
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
 
     my $test_name = 'isosize';
 

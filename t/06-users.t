@@ -27,7 +27,7 @@ use Test::More;
 use Test::Mojo;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $mordred_id = 'https://openid.badguys.uk/mordred';
 my $user = $t->app->db->resultset("Users")->create({username => $mordred_id});

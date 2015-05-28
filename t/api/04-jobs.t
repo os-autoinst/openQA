@@ -38,7 +38,7 @@ OpenQA::Test::Case->new->init_data;
 # allow up to 200MB - videos mostly
 $ENV{MOJO_MAX_MESSAGE_SIZE} = 207741824;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598

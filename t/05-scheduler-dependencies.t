@@ -29,7 +29,7 @@ use Test::More tests => 123;
 
 my $schema = OpenQA::Test::Database->new->create();
 
-#my $t = Test::Mojo->new('OpenQA');
+#my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 sub list_jobs {
     my %args = @_;
@@ -204,7 +204,7 @@ is($job->{state}, "running", "job_set_done changed state");
 # check MM API for children status - available only for running jobs
 my $worker = $schema->resultset("Workers")->find($w2_id);
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
@@ -429,7 +429,7 @@ ok(job_set_done(jobid => $jobY->id, result => 'passed'), 'jobY set to done');
 # X2 <---- Y
 # done    done
 
-my $jobY2_id = OpenQA::Scheduler::job_duplicate(jobid => $jobY->id);
+my $jobY2_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobY->id);
 
 # current state:
 #
@@ -460,7 +460,7 @@ ok(job_set_done(jobid => $jobY2_id, result => 'passed'), 'jobY2 set to done');
 # done    done
 
 
-my $jobX3_id = OpenQA::Scheduler::job_duplicate(jobid => $jobX2_id);
+my $jobX3_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobX2_id);
 
 # current state:
 #

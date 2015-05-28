@@ -27,7 +27,7 @@ use Data::Dumper;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $get   = $t->ua->get('/session/new');
 my $token = $get->res->dom->at('meta[name=csrf-token]')->attr('content');

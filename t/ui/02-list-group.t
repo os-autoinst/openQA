@@ -27,7 +27,7 @@ OpenQA::Test::Case->new->init_data;
 
 use t::ui::PhantomTest;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {

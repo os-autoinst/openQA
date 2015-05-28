@@ -26,7 +26,7 @@ use OpenQA::Test::Case;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # First of all, init the session (this should probably be in OpenQA::Test)
 my $req   = $t->ua->get('/tests');
