@@ -370,6 +370,18 @@ sub startup {
     my $api_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
     my $api_r = $api_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    # this is fallback redirect if one does not use apache
+    $api_public_r->websocket(
+        '/ws/:workerid' => sub {
+            my $c        = shift;
+            my $workerid = $c->param('workerid');
+            # use port one higher than WebAPI
+            my $port = 9527;
+            if ($ENV{'MOJO_LISTEN'} =~ /.*:(\d{1,5})\/?$/) {
+                $port = $1 + 1;
+            }
+            $c->redirect_to("http://localhost:$port/ws/$workerid");
+        });
     my $api_job_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_jobtoken');
     my $api_r_job = $api_job_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami');    # primarily for tests
