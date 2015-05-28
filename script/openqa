@@ -31,5 +31,5 @@ require Mojolicious::Commands;
 $ENV{MOJO_MAX_MESSAGE_SIZE}   = 1024 * 1024 * 1024 * 20;
 $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
 
-Mojolicious::Commands->start_app('OpenQA');
+Mojolicious::Commands->start_app('OpenQA::WebAPI');
 # vim: set sw=4 sts=4 et:

@@ -23,7 +23,7 @@ use Test::Mojo;
 use Mojo::URL;
 use OpenQA::Test::Case;
 use OpenQA::Client;
-use OpenQA::Scheduler;
+use OpenQA::Scheduler::Scheduler;
 
 OpenQA::Test::Case->new->init_data;
 
@@ -47,12 +47,12 @@ my @valid_commands = qw/quit abort cancel obsolete
   livelog_stop livelog_start/;
 
 for my $cmd (@valid_commands) {
-    OpenQA::Scheduler::command_enqueue(workerid => 1, command => $cmd);
+    OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => $cmd);
     $ws->message_ok->json_message_is('/type' => $cmd)->json_message_has('/jobid');
 }
 
 #issue invalid commands
-eval { OpenQA::Scheduler::command_enqueue(workerid => 1, command => 'foo'); };
+eval { OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => 'foo'); };
 ok($@, 'refuse invalid commands');
 
 $ws->finish_ok;

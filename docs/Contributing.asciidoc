@@ -211,7 +211,7 @@ OpenID, iChain and Fake (see link:Installing.asciidoc[Installation - User authen
 
 All authentication modules reside in +lib/OpenQA/Auth+ directory. During
 OpenQA start, +[auth]/method+ section of +/etc/openqa/openqa.ini+ is read and according
-to its value (or default OpenID) OpenQA tries to require OpenQA::Auth::$method.
+to its value (or default OpenID) OpenQA tries to require OpenQA::WebAPI::Auth::$method.
 If successful, module for given method is imported or the OpenQA ends with error.
 
 

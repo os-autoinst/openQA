@@ -118,7 +118,7 @@ sub status {
 
 sub connected {
     my ($self) = @_;
-    OpenQA::WebSockets::ws_is_worker_connected($self);
+    OpenQA::WebSockets::WebSockets::ws_is_worker_connected($self);
 }
 
 sub info {

@@ -1,6 +1,4 @@
-#!/usr/bin/perl -w
-
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2014 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,28 +14,18 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-use strict;
-use warnings;
+package OpenQA::WebAPI::Controller::API::V1::Command;
+use Mojo::Base 'Mojolicious::Controller';
+use OpenQA::Utils;
+use OpenQA::Scheduler::Scheduler ();
 
-use File::Basename;
-use File::Find;
+sub create {
+    my $self     = shift;
+    my $workerid = $self->stash('workerid');
+    my $command  = $self->param('command');
 
-my $gru;
-
-sub optimize() {
-    return if $File::Find::name !~ m/\.png\.unoptimized$/;
-    my ($name, $path, $suffix) = fileparse($File::Find::name, qw/.unoptimized/);
-    $gru->enqueue(optipng => "$File::Find::dir/$name");
-    unlink("$path/$name$suffix");
+    $self->render(json => {id => OpenQA::Scheduler::Scheduler::command_enqueue_checked(workerid => $workerid, command => $command)});
 }
 
-sub {
-    my $schema = shift;
-
-    use OpenQA::WebAPI::Plugin::Gru;
-
-    $gru = OpenQA::WebAPI::Plugin::Gru->new;
-
-    use OpenQA::Utils;
-    find(\&optimize, $OpenQA::Utils::imagesdir);
-  }
+1;
+# vim: set sw=4 et:

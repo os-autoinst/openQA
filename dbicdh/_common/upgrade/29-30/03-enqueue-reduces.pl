@@ -22,9 +22,9 @@ use warnings;
 sub {
     my $schema = shift;
 
-    use OpenQA::Plugin::Gru;
+    use OpenQA::WebAPI::Plugin::Gru;
 
-    my $gru = OpenQA::Plugin::Gru->new;
+    my $gru = OpenQA::WebAPI::Plugin::Gru->new;
 
     my $jobs = $schema->resultset('Jobs');
     while (my $job = $jobs->next) {
