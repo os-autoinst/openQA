@@ -11,8 +11,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Scheduler::Scheduler;
 
@@ -32,6 +31,7 @@ use Date::Format qw/time2str/;
 use DBIx::Class::Timestamps qw/now/;
 use DateTime;
 use File::Temp qw/tempdir/;
+use Try::Tiny;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
 
@@ -41,9 +41,7 @@ use lib $FindBin::Bin;
 use OpenQA::Utils qw/log_debug/;
 use db_helpers qw/rndstr/;
 
-use OpenQA::WebSockets::WebSockets;
-
-use Mojo::IOLoop;
+use OpenQA::IPC;
 
 use Carp;
 
@@ -55,7 +53,6 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   job_get jobs_get_dead_worker
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
   job_delete job_update_result job_restart job_cancel command_enqueue
-  iso_cancel_old_builds
   job_set_stop job_stop iso_stop_old_builds
   asset_list asset_get asset_delete asset_register
 );
@@ -136,7 +133,8 @@ sub _validate_workerid($) {
 #
 sub job_notify_workers {
     # notify workers about new job
-    ws_send_all('job_available');
+    my $ipc = OpenQA::IPC->ipc;
+    $ipc->websockets('ws_send_all', 'job_available');
 }
 
 =item job_create
@@ -507,7 +505,8 @@ sub job_grab {
     return {} unless ($job && $job->state eq OpenQA::Schema::Result::Jobs::RUNNING);
 
     my $job_hashref = {};
-    $job_hashref = _job_get({'me.id' => $job->id});
+    #    $job_hashref = _job_get({'me.id' => $job->id});
+    $job_hashref = $job->to_hash(assets => 1);
 
     $worker->set_property('INTERACTIVE_REQUESTED',        0);
     $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
@@ -693,7 +692,6 @@ sub job_delete {
     my %cond;
 
     _job_find_smart($value, \%cond, \%attrs);
-
     my $cnt = schema->resultset("Jobs")->search(\%cond, \%attrs)->delete;
 
     return $cnt;
@@ -931,30 +929,253 @@ sub job_stop {
     return job_cancel(@_);
 }
 
+# return settings key for given job settings
+sub _settings_key {
+    my ($settings) = @_;
+    return $settings->{TEST} . ':' . $settings->{MACHINE};
+
+}
+
+# parse dependency variable in format like "suite1,suite2,suite3"
+# and return settings key for each entry
+# TODO: allow inter-machine dependency
+sub _parse_dep_variable {
+    my ($value, $settings) = @_;
+
+    return unless defined $value;
+
+    my @after = split(/\s*,\s*/, $value);
+
+    return map { $_ . ':' . $settings->{MACHINE} } @after;
+}
+
+# sort the job list so that children are put after parents
+sub _sort_dep {
+    my ($list) = @_;
+
+    my %done;
+    my %count;
+    my @out;
+
+    for my $job (@$list) {
+        $count{_settings_key($job)} //= 0;
+        $count{_settings_key($job)}++;
+    }
+
+
+    my $added;
+    do {
+        $added = 0;
+        for my $job (@$list) {
+            next if $done{$job};
+            my @after;
+            push @after, _parse_dep_variable($job->{START_AFTER_TEST}, $job);
+            push @after, _parse_dep_variable($job->{PARALLEL_WITH},    $job);
+
+            my $c = 0;    # number of parens that must go to @out before this job
+            foreach my $a (@after) {
+                $c += $count{$a} if defined $count{$a};
+            }
+
+            if ($c == 0) {    # no parents, we can do this job
+                push @out, $job;
+                $done{$job} = 1;
+                $count{_settings_key($job)}--;
+                $added = 1;
+            }
+        }
+    } while ($added);
+
+    #cycles, broken dep, put at the end of the list
+    for my $job (@$list) {
+        next if $done{$job};
+        push @out, $job;
+    }
+
+    return \@out;
+}
+
+sub _generate_jobs {
+    my (%args) = @_;
+
+    my $ret = [];
+
+    my @products = schema->resultset('Products')->search(
+        {
+            distri  => lc($args{DISTRI}),
+            version => $args{VERSION},
+            flavor  => $args{FLAVOR},
+            arch    => $args{ARCH},
+        });
+
+    unless (@products) {
+        warn "no products found, retrying version wildcard";
+        @products = schema->resultset('Products')->search(
+            {
+                distri  => lc($args{DISTRI}),
+                version => '*',
+                flavor  => $args{FLAVOR},
+                arch    => $args{ARCH},
+            });
+    }
+
+    if (!@products) {
+        carp "no products found for " . join('-', map { $args{$_} } qw/DISTRI VERSION FLAVOR ARCH/);
+    }
+
+    for my $product (@products) {
+        my @templates = $product->job_templates;
+        unless (@templates) {
+            carp "no templates found for " . join('-', map { $args{$_} } qw/DISTRI VERSION FLAVOR ARCH/);
+        }
+        for my $job_template (@templates) {
+            my %settings = map { $_->key => $_->value } $product->settings;
+
+            # we need to merge worker classes of all 3
+            my @classes;
+            if (my $class = delete $settings{WORKER_CLASS}) {
+                push @classes, $class;
+            }
+
+            my %tmp_settings = map { $_->key => $_->value } $job_template->machine->settings;
+            if (my $class = delete $tmp_settings{WORKER_CLASS}) {
+                push @classes, $class;
+            }
+            @settings{keys %tmp_settings} = values %tmp_settings;
+
+            %tmp_settings = map { $_->key => $_->value } $job_template->test_suite->settings;
+            if (my $class = delete $tmp_settings{WORKER_CLASS}) {
+                push @classes, $class;
+            }
+            @settings{keys %tmp_settings} = values %tmp_settings;
+            $settings{TEST}               = $job_template->test_suite->name;
+            $settings{MACHINE}            = $job_template->machine->name;
+            $settings{BACKEND}            = $job_template->machine->backend;
+            $settings{WORKER_CLASS} = join(',', sort(@classes));
+
+            next if $args{TEST}    && $args{TEST} ne $settings{TEST};
+            next if $args{MACHINE} && $args{MACHINE} ne $settings{MACHINE};
+
+            for (keys %args) {
+                $settings{uc $_} = $args{$_};
+            }
+            # Makes sure tha the DISTRI is lowercase
+            $settings{DISTRI} = lc($settings{DISTRI});
+
+            $settings{PRIO}     = $job_template->prio;
+            $settings{GROUP_ID} = $job_template->group_id;
+
+            push @$ret, \%settings;
+        }
+    }
+
+    return _sort_dep($ret);
+}
+
+sub job_schedule_iso {
+    my (%args) = @_;
+    my $jobs = _generate_jobs(%args);
+
+    # XXX: take some attributes from the first job to guess what old jobs to
+    # cancel. We should have distri object that decides which attributes are
+    # relevant here.
+    if ($jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
+        my %cond;
+        for my $k (qw/DISTRI VERSION FLAVOR ARCH/) {
+            next unless $jobs->[0]->{$k};
+            $cond{$k} = $jobs->[0]->{$k};
+        }
+        if (%cond) {
+            job_cancel(\%cond, 1);    # have new build jobs instead
+        }
+    }
+
+    my @ids;
+
+    # the jobs are now sorted parents first
+    # remember ids of created parents and pass them to _START_AFTER_JOBS/_PARALLEL_JOBS of children
+    my %testsuite_ids;    # key: "suite:machine", value: array of job ids
+
+    for my $settings (@{$jobs || []}) {
+        my $prio     = delete $settings->{PRIO};
+        my $group_id = delete $settings->{GROUP_ID};
+
+        # convert testsuite names in START_AFTER_TEST/PARALLEL_WITH to job ids
+        for my $after (_parse_dep_variable($settings->{START_AFTER_TEST}, $settings)) {
+            if (defined $testsuite_ids{$after}) {
+                $settings->{_START_AFTER_JOBS} //= [];
+                push @{$settings->{_START_AFTER_JOBS}}, @{$testsuite_ids{$after}};
+            }
+            else {
+                warn "START_AFTER_TEST=" . $after . " not found, maybe a typo or a dependency cycle";
+            }
+        }
+        for my $after (_parse_dep_variable($settings->{PARALLEL_WITH}, $settings)) {
+            if (defined $testsuite_ids{$after}) {
+                $settings->{_PARALLEL_JOBS} //= [];
+                push @{$settings->{_PARALLEL_JOBS}}, @{$testsuite_ids{$after}};
+            }
+            else {
+                warn "PARALLEL_WITH=" . $after . " not found, maybe a typo or a dependency cycle";
+            }
+        }
+        # create a new job with these parameters and count if successful, do not send job notifies yet
+        my $job;
+        try {
+            $job = job_create($settings, 1);
+        }
+        catch {
+            chomp;
+            warn "job_create: $_";
+        };
+        if ($job) {
+            push @ids, $job->id;
+
+            $testsuite_ids{_settings_key($settings)} //= [];
+            push @{$testsuite_ids{_settings_key($settings)}}, $job->id;
+
+            # change prio only if other than default prio
+            if (defined($prio) && $prio != 50) {
+                $job->set_prio($prio);
+            }
+            $job->update({group_id => $group_id});
+        }
+    }
+    #notify workers new jobs are available
+    job_notify_workers;
+    return @ids;
+}
+
 #
 # Commands API
 #
-
-sub command_enqueue_checked {
-    my %args = @_;
-
-    _validate_workerid($args{workerid});
-
-    return command_enqueue(%args);
-}
-
-# FIXME: pass worker directly
 sub command_enqueue {
     my %args = @_;
+    unless (defined $args{command} && defined $args{workerid}) {
+        carp 'missing mandatory options';
+        return;
+    }
 
-    die "invalid command\n" unless exists $worker_commands{$args{command}};
+    unless (exists $worker_commands{$args{command}}) {
+        carp 'invalid command "' . $args{command} . "\"\n";
+        return;
+    }
     if (ref $worker_commands{$args{command}} eq 'CODE') {
         my $rs     = schema->resultset("Workers");
         my $worker = $rs->find($args{workerid});
+        unless ($worker) {
+            carp 'invalid workerid "' . $args{workerid} . "\"\n";
+            return;
+        }
         $worker_commands{$args{command}}->($worker);
     }
     my $msg = $args{command};
-    ws_send($args{workerid}, $msg, $args{job_id});
+    my $res;
+    try {
+        my $ipc = OpenQA::IPC->ipc;
+        $res = $ipc->websockets('ws_send', $args{workerid}, $msg, $args{job_id});
+    };
+    return $res;
 }
 
 #
@@ -981,7 +1202,6 @@ sub asset_list {
 
 sub asset_get {
     my %args = @_;
-
     my %cond;
     my %attrs;
 
@@ -1000,7 +1220,9 @@ sub asset_get {
 }
 
 sub asset_delete {
-    return asset_get(@_)->delete();
+    my $asset = asset_get(@_);
+    return unless $asset;
+    return $asset->delete;
 }
 
 sub asset_register {
@@ -1010,12 +1232,12 @@ sub asset_register {
 
     unless ($OpenQA::Schema::Result::Assets::types{$type}) {
         warn "asset type '$type' invalid";
-        return undef;
+        return;
     }
     my $name = $args{name} // '';
     unless ($name && $name =~ /^[0-9A-Za-z+-._]+$/ && -e join('/', $OpenQA::Utils::assetdir, $type, $name)) {
         warn "asset name '$name' invalid or does not exist";
-        return undef;
+        return;
     }
     my $asset = schema->resultset("Assets")->find_or_create(
         {

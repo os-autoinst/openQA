@@ -58,9 +58,9 @@ dbus_method('asset_get', [['dict', 'string', 'string']], [['dict', 'string', 'st
 sub asset_get {
     my ($self, $args) = @_;
     my $rs = OpenQA::Scheduler::Scheduler::asset_get(%$args);
-    return {} unless $rs;
-    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    return $rs->first;
+    return {} unless $rs && $rs->first;
+    my %rs = $rs->first->get_columns;
+    return \%rs;
 }
 
 dbus_method('asset_list', [['dict', 'string', 'string']], [['array', ['dict', 'string', 'string']]]);
@@ -71,12 +71,12 @@ sub asset_list {
     return [$rs->all];
 }
 
-dbus_method('asset_register', [['dict', 'string', 'string']], [['dict', 'string', 'string']]);
+dbus_method('asset_register', [['dict', 'string', 'string']], ['uint16']);
 sub asset_register {
     my ($self, $args) = @_;
     my $rs = OpenQA::Scheduler::Scheduler::asset_register(%$args);
-    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    return $rs->first;
+    return 0 unless $rs;
+    return $rs->id;
 }
 
 ## Worker commands
@@ -142,7 +142,9 @@ sub job_duplicate {
 dbus_method('job_get', ['uint16'], [['dict', 'string', ['variant']]]);
 sub job_get {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_get($args);
+    my $res = OpenQA::Scheduler::Scheduler::job_get($args);
+    return 0 unless $res;
+    return $res;
 }
 
 dbus_method('job_grab', [['dict', 'string', ['variant']]], [['dict', 'string', ['variant']]]);
@@ -207,6 +209,13 @@ sub job_set_running {
     return OpenQA::Scheduler::Scheduler::job_set_running($args);
 }
 
+dbus_method('job_schedule_iso', [['dict', 'string', ['variant']]], [['array', 'uint16']]);
+sub job_schedule_iso {
+    my ($self, $args) = @_;
+    my @ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(%$args);
+    return \@ids;
+}
+
 ## Worker auth
 dbus_method('validate_workerid', ['uint16'], ['bool']);
 sub validate_workerid {
@@ -220,19 +229,25 @@ sub validate_workerid {
 dbus_method('mutex_create', ['string', 'uint16'], ['bool']);
 sub mutex_create {
     my ($self, @args) = @_;
-    return OpenQA::Scheduler::Locks::create(@args);
+    my $res = OpenQA::Scheduler::Locks::create(@args);
+    return 0 unless $res;
+    return 1;
 }
 
 dbus_method('mutex_lock', ['string', 'uint16'], ['bool']);
 sub mutex_lock {
     my ($self, @args) = @_;
-    return OpenQA::Scheduler::Locks::lock(@args);
+    my $res = OpenQA::Scheduler::Locks::lock(@args);
+    return 0 unless $res;
+    return 1;
 }
 
 dbus_method('mutex_unlock', ['string', 'uint16'], ['bool']);
 sub mutex_unlock {
     my ($self, @args) = @_;
-    return OpenQA::Scheduler::Locks::unlock(@args);
+    my $res = OpenQA::Scheduler::Locks::unlock(@args);
+    return 0 unless $res;
+    return 1;
 
 }
 1;
