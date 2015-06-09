@@ -20,6 +20,7 @@ use warnings;
 package OpenQA::WebAPI::Controller::File;
 use Mojo::Base 'Mojolicious::Controller';
 BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
+use OpenQA::IPC;
 use OpenQA::Utils;
 use File::Basename;
 
@@ -49,7 +50,8 @@ sub needle {
 sub _set_test($) {
     my $self = shift;
 
-    $self->{job} = OpenQA::Scheduler::Scheduler::job_get($self->param('testid'));
+    my $ipc = OpenQA::IPC->ipc;
+    $self->{job} = $ipc->scheduler('job_get', $self->param('testid'));
     return undef unless $self->{job};
 
     $self->{testdirname} = $self->{job}->{'settings'}->{'NAME'};
@@ -72,17 +74,18 @@ sub test_asset {
 
     # FIXME: make sure asset belongs to the job
 
+    my $ipc = OpenQA::IPC->ipc;
     my $asset;
     if ($self->param('assetid')) {
-        $asset = OpenQA::Scheduler::Scheduler::asset_get(id => $self->param('assetid'))->single();
+        $asset = $ipc->scheduler('asset_get', {id => $self->param('assetid')});
     }
     else {
-        $asset = OpenQA::Scheduler::Scheduler::asset_get(type => $self->param('assettype'), name => $self->param('assetname'))->single();
+        $asset = $ipc->scheduler('asset_get', {type => $self->param('assettype'), name => $self->param('assetname')});
     }
 
     return $self->reply->not_found unless $asset;
 
-    my $path = '/assets/' . $asset->type . '/' . $asset->name;
+    my $path = '/assets/' . $asset->{type} . '/' . $asset->{name};
     if ($self->param('subpath')) {
         $path .= '/' . $self->param('subpath');
         # better safe than sorry. Mojo seems to canonicalize the

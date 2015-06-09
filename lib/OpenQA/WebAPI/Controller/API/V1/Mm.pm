@@ -16,9 +16,6 @@
 package OpenQA::WebAPI::Controller::API::V1::Mm;
 use Mojo::Base 'Mojolicious::Controller';
 
-use strict;
-use warnings;
-
 use OpenQA::Schema::Result::Jobs;
 
 sub get_children_status {

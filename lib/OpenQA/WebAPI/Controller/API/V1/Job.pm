@@ -11,13 +11,12 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
-use OpenQA::Scheduler::Scheduler ();
+use OpenQA::IPC;
 use Try::Tiny;
 
 sub list {
@@ -29,8 +28,8 @@ sub list {
         $args{$arg} = $self->param($arg);
     }
 
+    # TODO: convert to DBus call or move query_jobs helper to WebAPI
     my $jobs = OpenQA::Scheduler::Scheduler::query_jobs(%args);
-    log_debug("queried");
     my @results;
     while (my $job = $jobs->next) {
         my $jobhash = $job->to_hash(assets => 1, deps => 1);
@@ -50,22 +49,22 @@ sub list {
         }
         push @results, $jobhash;
     }
-    log_debug("tohash");
-
     $self->render(json => {jobs => \@results});
 }
 
 sub create {
     my $self   = shift;
     my $params = $self->req->params->to_hash;
+    my $ipc    = OpenQA::IPC->ipc;
+
     # job_create expects upper case keys
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
 
     my $json = {};
     my $status;
     try {
-        my $job = OpenQA::Scheduler::Scheduler::job_create(\%up_params);
-        $json->{id} = $job->id;
+        my $job = $ipc->scheduler('job_create', \%up_params);
+        $json->{id} = $job->{id};
     }
     catch {
         $status = 400;
@@ -76,6 +75,7 @@ sub create {
 
 sub grab {
     my $self = shift;
+    my $ipc  = OpenQA::IPC->ipc;
 
     my $workerid = $self->stash('workerid');
     my $blocking = int($self->param('blocking') || 0);
@@ -87,13 +87,15 @@ sub grab {
     $caps->{cpu_opmode}    = $self->param('cpu_opmode');
     $caps->{mem_max}       = $self->param('mem_max');
 
-    my $res = OpenQA::Scheduler::Scheduler::job_grab(workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps);
+    my $res = $ipc->scheduler('job_grab', {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
     $self->render(json => {job => $res});
 }
 
 sub show {
     my $self = shift;
-    my $res  = OpenQA::Scheduler::Scheduler::job_get(int($self->stash('jobid')));
+    my $ipc  = OpenQA::IPC->ipc;
+
+    my $res = $ipc->scheduler('job_get', int($self->stash('jobid')));
     if ($res) {
         $self->render(json => {job => $res});
     }
@@ -102,13 +104,14 @@ sub show {
     }
 }
 
-# set_scheduled set_cancel set_waiting and set_continue
+# set_waiting and set_running
 sub set_command {
     my $self    = shift;
     my $jobid   = int($self->stash('jobid'));
     my $command = 'job_set_' . $self->stash('command');
+    my $ipc     = OpenQA::IPC->ipc;
 
-    my $res = eval("OpenQA::Scheduler::Scheduler::$command($jobid)");
+    my $res = try { $ipc->scheduler($command, $jobid) };
     # Referencing the scalar will result in true or false
     # (see http://mojolicio.us/perldoc/Mojo/JSON)
     $self->render(json => {result => \$res});
@@ -116,7 +119,8 @@ sub set_command {
 
 sub destroy {
     my $self = shift;
-    my $res  = OpenQA::Scheduler::Scheduler::job_delete(int($self->stash('jobid')));
+    my $ipc  = OpenQA::IPC->ipc;
+    my $res  = $ipc->scheduler('job_delete', int($self->stash('jobid')));
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -135,8 +139,8 @@ sub result {
     my ($self) = @_;
     my $jobid  = int($self->stash('jobid'));
     my $result = $self->param('result');
-
-    my $res = OpenQA::Scheduler::Scheduler::job_update_result(jobid => $jobid, result => $result);
+    my $ipc    = OpenQA::IPC->ipc;
+    my $res = $ipc->scheduler('job_update_result', {jobid => $jobid, result => $result});
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -185,12 +189,13 @@ sub done {
     my $result   = $self->param('result');
     my $newbuild = 1 if defined $self->param('newbuild');
 
+    my $ipc = OpenQA::IPC->ipc;
     my $res;
     if ($newbuild) {
-        $res = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobid, result => $result, newbuild => $newbuild);
+        $res = $ipc->scheduler('job_set_done', {jobid => $jobid, result => $result, newbuild => $newbuild});
     }
     else {
-        $res = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobid, result => $result);
+        $res = $ipc->scheduler('job_set_done', {jobid => $jobid, result => $result});
     }
     # See comment in set_command
     $self->render(json => {result => \$res});
@@ -199,26 +204,28 @@ sub done {
 # Used for both apiv1_restart and apiv1_restart_jobs
 sub restart {
     my ($self) = @_;
-    my $target = $self->param('name');
-    if ($target) {
-        $self->app->log->debug("Restarting job $target");
+    my $jobs = $self->param('name');
+    if ($jobs) {
+        $self->app->log->debug("Restarting job $jobs");
+        $jobs = [$jobs];
     }
     else {
-        my $jobs = $self->every_param('jobs');
+        $jobs = $self->every_param('jobs');
         $self->app->log->debug("Restarting jobs @$jobs");
-        $target = $jobs;
     }
 
-    my @res = OpenQA::Scheduler::Scheduler::job_restart($target);
-    my @urls = map { $self->url_for('test', testid => $_) } @res;
-    $self->render(json => {result => \@res, test_url => \@urls});
+    my $ipc  = OpenQA::IPC->ipc;
+    my $res  = $ipc->scheduler('job_restart', $jobs);
+    my @urls = map { $self->url_for('test', testid => $_) } @$res;
+    $self->render(json => {result => $res, test_url => \@urls});
 }
 
 sub cancel {
     my $self = shift;
     my $name = $self->param('name');
 
-    my $res = OpenQA::Scheduler::Scheduler::job_cancel($name);
+    my $ipc = OpenQA::IPC->ipc;
+    my $res = $ipc->scheduler('job_cancel', $name, 0);
     $self->render(json => {result => $res});
 }
 
@@ -233,7 +240,8 @@ sub duplicate {
         $args{dup_type_auto} = 1;
     }
 
-    my $id = OpenQA::Scheduler::Scheduler::job_duplicate(%args);
+    my $ipc = OpenQA::IPC->ipc;
+    my $id = $ipc->scheduler('job_duplicate', \%args);
     $self->render(json => {id => $id});
 }
 

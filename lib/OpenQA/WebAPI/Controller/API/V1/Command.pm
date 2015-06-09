@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,20 +11,35 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Controller::API::V1::Command;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
-use OpenQA::Scheduler::Scheduler ();
+use OpenQA::IPC;
+use Try::Tiny;
 
 sub create {
     my $self     = shift;
     my $workerid = $self->stash('workerid');
     my $command  = $self->param('command');
+    my $ipc      = OpenQA::IPC->ipc;
 
-    $self->render(json => {id => OpenQA::Scheduler::Scheduler::command_enqueue_checked(workerid => $workerid, command => $command)});
+    my $res;
+    try {
+        $res = $ipc->scheduler('command_enqueue', {workerid => $workerid, command => $command});
+    };
+    catch {
+        $self->reply(json => {error => 'DBus error'}, status => 502);
+        $res = -1;
+    };
+
+    if ($res && $res > 1) {
+        $self->reply(status => 200);
+    }
+    else {
+        $self->reply(json => {error => 'Worker not found by WebSockets server'}, status => 404);
+    }
 }
 
 1;

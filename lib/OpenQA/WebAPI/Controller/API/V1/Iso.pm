@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,14 +11,14 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebAPI::Controller::API::V1::Iso;
 use Mojo::Base 'Mojolicious::Controller';
-use OpenQA::Utils;
-use OpenQA::Scheduler::Scheduler ();
 use Try::Tiny;
+
+use OpenQA::Utils;
+use OpenQA::IPC;
 
 # return settings key for given job settings
 sub _settings_key {
@@ -169,6 +169,7 @@ sub _generate_jobs {
 
 sub create {
     my $self = shift;
+    my $ipc  = OpenQA::IPC->ipc;
 
     my $validation = $self->validation;
     $validation->required('DISTRI');
@@ -201,7 +202,7 @@ sub create {
             $cond{$k} = $jobs->[0]->{$k};
         }
         if (%cond) {
-            OpenQA::Scheduler::Scheduler::job_cancel(\%cond, 1);    # have new build jobs instead
+            $ipc->scheduler('job_cancel', \%cond, 1);    # have new build jobs instead
         }
     }
 
@@ -238,7 +239,7 @@ sub create {
         # create a new job with these parameters and count if successful, do not send job notifies yet
         my $job;
         try {
-            $job = OpenQA::Scheduler::Scheduler::job_create($settings, 1);
+            $job = $ipc->scheduler('job_create', $settings, 1);
         }
         catch {
             chomp;
@@ -259,7 +260,7 @@ sub create {
         }
     }
     #notify workers new jobs are available
-    OpenQA::Scheduler::Scheduler::job_notify_workers();
+    $ipc->scheduler('job_notify_workers');
     $self->app->log->debug("created $cnt jobs");
     $self->render(json => {count => $cnt, ids => \@ids});
 }
@@ -267,16 +268,18 @@ sub create {
 sub destroy {
     my $self = shift;
     my $iso  = $self->stash('name');
+    my $ipc  = OpenQA::IPC->ipc;
 
-    my $res = OpenQA::Scheduler::Scheduler::job_delete($iso);
+    my $res = $ipc->('job_delete', $iso);
     $self->render(json => {count => $res});
 }
 
 sub cancel {
     my $self = shift;
     my $iso  = $self->stash('name');
+    my $ipc  = OpenQA::IPC->ipc;
 
-    my $res = OpenQA::Scheduler::Scheduler::job_cancel($iso);
+    my $res = $ipc->('job_cancel', $iso);
     $self->render(json => {result => $res});
 }
 

@@ -20,7 +20,6 @@ use OpenQA::Utils;
 use File::Basename;
 use File::Copy;
 use File::Which qw(which);
-use OpenQA::Scheduler::Scheduler;
 use POSIX qw/strftime/;
 use Try::Tiny;
 use JSON;

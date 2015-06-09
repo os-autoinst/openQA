@@ -16,9 +16,9 @@
 
 package OpenQA::WebAPI::Controller::API::V1::Worker;
 use Mojo::Base 'Mojolicious::Controller';
+use OpenQA::IPC;
 use OpenQA::Utils;
-use OpenQA::Scheduler::Scheduler ();
-use OpenQA::WebSockets::WebSockets qw/ws_create/;
+use OpenQA::Schema::Result::Jobs;
 use DBIx::Class::Timestamps qw/now/;
 use Try::Tiny;
 
@@ -63,7 +63,8 @@ sub _register {
     # ... restart job assigned to this worker
     if (my $job = $worker->job) {
         $job->set_property('JOBTOKEN');
-        OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $job->id);
+        my $ipc = OpenQA::IPC->ipc;
+        $ipc->scheduler('job_duplicate', {jobid => $job->id});
         # .. set it incomplete
         $job->update(
             {
@@ -124,18 +125,6 @@ sub show {
     else {
         $self->reply->not_found;
     }
-}
-
-sub websocket_create {
-    my ($self) = @_;
-    my $workerid = $self->stash('workerid');
-    $self->app->log->debug("Worker $workerid requested websocket connection\n");
-    try {
-        ws_create($workerid, $self);
-    }
-    catch {
-        $self->render(json => {error => $_}, status => 404);
-    };
 }
 
 1;

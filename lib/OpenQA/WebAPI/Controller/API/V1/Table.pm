@@ -17,6 +17,8 @@
 package OpenQA::WebAPI::Controller::API::V1::Table;
 use Mojo::Base 'Mojolicious::Controller';
 
+use Try::Tiny;
+
 my %tables = (
     'Machines' => {
         'keys' => [['id'], ['name'],],
@@ -114,8 +116,8 @@ sub create {
         }
     }
     else {
-        eval { $id = $self->db->resultset($table)->create(\%entry)->id };
-        $error = $@;
+        try { $id = $self->db->resultset($table)->create(\%entry)->id; };
+        catch { $error = shift; };
     }
 
     my $status;
@@ -165,7 +167,7 @@ sub update {
         }
     }
     else {
-        eval {
+        my $update = sub {
             my $rc = $self->db->resultset($table)->find({id => $self->param('id')});
             if ($rc) {
                 $rc->update(\%entry);
@@ -179,7 +181,14 @@ sub update {
                 $ret = 0;
             }
         };
-        $error = $@;
+
+        try {
+            $self->db->txn_do($update);
+        }
+        catch {
+            $error = shift;
+            OpenQA::Utils::log_debug("Table update error: $error");
+        };
     }
 
     my $status;
@@ -213,12 +222,15 @@ sub destroy {
     my $json = {};
 
     my $ret;
+    my $error;
 
-    eval {
+    try {
         my $rs = $self->db->resultset($table);
         $ret = $rs->search({id => $self->param('id')})->delete;
     };
-    my $error = $@;
+    catch {
+        $error = shift;
+    };
 
     if ($ret) {
         if ($ret == 0) {

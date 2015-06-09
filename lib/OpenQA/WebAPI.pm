@@ -19,8 +19,10 @@ use Mojolicious 5.60;
 use Mojo::Base 'Mojolicious';
 use OpenQA::Schema::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::IPC;
+
 use Mojo::IOLoop;
+use Mojolicious::Commands;
 use DateTime;
 use Cwd qw/abs_path/;
 
@@ -100,15 +102,16 @@ sub _workers_checker {
 
             Mojo::IOLoop->timer(
                 10 => sub {
-                    my $dead_jobs = OpenQA::Scheduler::Scheduler::jobs_get_dead_worker($threshold);
+                    my $ipc = OpenQA::IPC->ipc;
+                    my $dead_jobs = $ipc->scheduler('jobs_get_dead_worker', $threshold);
                     foreach my $job (@$dead_jobs) {
                         my %args = (
                             jobid  => $job->{id},
                             result => 'incomplete',
                         );
-                        my $result = OpenQA::Scheduler::Scheduler::job_set_done(%args);
+                        my $result = $ipc->scheduler('job_set_done', \%args);
                         if ($result) {
-                            OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $job->{id});
+                            $ipc->scheduler('job_duplicate', {jobid => $job->{id}});
                             print STDERR "cancelled dead job $job->{id} and re-duplicated done\n";
                         }
                     }
@@ -151,12 +154,6 @@ has secrets => sub {
 # This method will run once at server start
 sub startup {
     my $self = shift;
-    # start Net::DBUS and check for services
-    
-    # start Scheduler & wait for it
-    
-    # start WebSockets & wait for it
-    
 
     # Set some application defaults
     $self->defaults(appname => 'openQA');
@@ -185,7 +182,7 @@ sub startup {
           /javascripts/keyevent.js/)
     );
 
-   my @js = qw(/javascripts/jquery-1.11.2.js
+    my @js = qw(/javascripts/jquery-1.11.2.js
       /javascripts/jquery_ujs.js
       /javascripts/chosen.jquery.js
       /javascripts/openqa.js
@@ -416,9 +413,8 @@ sub startup {
     $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create');
     my $worker_r = $api_r->route('/workers/:workerid', workerid => qr/\d+/);
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
-    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');      #command_enqueue
-    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');                   # job_grab
-    $worker_r->websocket('/ws')->name('apiv1_worker_ws')->to('worker#websocket_create');    #websocket connection
+    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');    #command_enqueue
+    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');                 # job_grab
 
     # api/v1/mutex
     $api_r_job->post('/mutex/:name')->name('apiv1_mutex_create')->to('locks#mutex_create');
@@ -430,9 +426,9 @@ sub startup {
     $mm_api->get('/children/:status' => [status => [qw/running scheduled done/]])->name('apiv1_mm_running_children')->to('mm#get_children_status');
 
     # api/v1/isos
-    $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create');                      # iso_new
-    $api_r->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');            # iso_delete
-    $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');         # iso_cancel
+    $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create');                    # iso_new
+    $api_r->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');          # iso_delete
+    $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');       # iso_cancel
 
     # api/v1/assets
     $api_r->post('/assets')->name('apiv1_post_asset')->to('asset#register');
@@ -484,6 +480,11 @@ sub startup {
     # start workers checker
     $self->_workers_checker;
     $self->_init_rand;
+}
+
+sub run {
+    # Start command line interface for application
+    Mojolicious::Commands->start_app('OpenQA::WebAPI');
 }
 
 1;

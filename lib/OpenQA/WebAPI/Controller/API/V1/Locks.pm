@@ -16,13 +16,14 @@
 package OpenQA::WebAPI::Controller::API::V1::Locks;
 use Mojo::Base 'Mojolicious::Controller';
 
-use OpenQA::Scheduler::Locks;
+use OpenQA::IPC;
 
 sub mutex_lock {
     my ($self) = @_;
     my $name   = $self->stash('name');
     my $jobid  = $self->stash('job_id');
-    my $res = OpenQA::Scheduler::Locks::lock($name, $jobid);
+    my $ipc    = OpenQA::IPC->ipc;
+    my $res = $ipc->scheduler('mutex_create', $name, $jobid);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
 }
@@ -31,7 +32,8 @@ sub mutex_unlock {
     my ($self) = @_;
     my $name   = $self->stash('name');
     my $jobid  = $self->stash('job_id');
-    my $res = OpenQA::Scheduler::Locks::unlock($name, $jobid);
+    my $ipc    = OpenQA::IPC->ipc;
+    my $res = $ipc->scheduler('mutex_unlock', $name, $jobid);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
 }
@@ -40,7 +42,8 @@ sub mutex_create {
     my ($self) = @_;
     my $name   = $self->stash('name');
     my $jobid  = $self->stash('job_id');
-    my $res = OpenQA::Scheduler::Locks::create($name, $jobid);
+    my $ipc    = OpenQA::IPC->ipc;
+    my $res = $ipc->scheduler('mutex_create', $name, $jobid);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
 }

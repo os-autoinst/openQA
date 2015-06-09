@@ -21,7 +21,8 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
 use JSON qw/encode_json decode_json/;
 use OpenQA::Utils;
-use OpenQA::Scheduler::Scheduler ();
+use OpenQA::IPC;
+use OpenQA::Schema::Result::Jobs;
 
 sub init {
     my ($self) = @_;
@@ -93,10 +94,8 @@ sub livelog {
     my $job    = $self->stash('job');
     my $worker = $job->worker;
     # tell worker to increase status updates rate for more responsive updates
-    OpenQA::Scheduler::Scheduler::command_enqueue(
-        workerid => $worker->id,
-        command  => 'livelog_start'
-    );
+    my $ipc = OpenQA::IPC->ipc;
+    $ipc->websockets('ws_send', $worker->id, 'livelog_start', $job->id);
 
     my $logfile = $worker->get_property('WORKER_TMPDIR') . '/autoinst-log-live.txt';
 
@@ -131,10 +130,7 @@ sub livelog {
     my $id;
     my $close = sub {
         Mojo::IOLoop->remove($id);
-        OpenQA::Scheduler::Scheduler::command_enqueue(
-            workerid => $worker->id,
-            command  => 'livelog_stop'
-        );
+        $ipc->websockets('ws_send', $worker->id, 'livelog_stop', $job->id);
         $self->finish;
         close $log;
         return;
@@ -177,10 +173,7 @@ sub livelog {
     $self->on(
         finish => sub {
             Mojo::IOLoop->remove($id);
-            OpenQA::Scheduler::Scheduler::command_enqueue(
-                workerid => $worker->id,
-                command  => 'livelog_stop'
-            );
+            $ipc->websockets('ws_send', $worker->id, 'livelog_stop', $job->id);
         });
 }
 
