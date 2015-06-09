@@ -13,13 +13,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::WebSockets::WebSockets;
+package OpenQA::WebSockets::Server;
+use Mojolicious::Lite;
+use Mojo::Util 'hmac_sha1_sum';
 
-use strict;
-use warnings;
-
-use OpenQA::Scheduler::Scheduler ();
+use OpenQA::IPC;
 use OpenQA::Utils qw/log_debug/;
+use OpenQA::Schema::Schema;
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
@@ -73,24 +73,64 @@ sub ws_send_all {
     }
 }
 
+sub check_authorized {
+    my ($self)    = @_;
+    my $headers   = $self->req->headers;
+    my $key       = $headers->header('X-API-Key');
+    my $hash      = $headers->header('X-API-Hash');
+    my $timestamp = $headers->header('X-API-Microtime');
+    my $user;
+    $self->app->log->debug($key ? "API key from client: *$key*" : "No API key from client.");
+
+    my $schema = OpenQA::Schema::connect_db;
+    my $api_key = $schema->resultset("ApiKeys")->find({key => $key});
+    if ($api_key) {
+        if (time - $timestamp <= 300) {
+            my $exp = $api_key->t_expiration;
+            # It has no expiration date or it's in the future
+            if (!$exp || $exp->epoch > time) {
+                if (my $secret = $api_key->secret) {
+                    my $sum = hmac_sha1_sum($self->req->url->to_string . $timestamp, $secret);
+                    $user = $api_key->user;
+                    $self->app->log->debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
+                }
+            }
+        }
+    }
+    return 1 if ($user && $user->is_operator);
+
+    $self->render(json => {error => "Not authorized"}, status => 403);
+    return;
+}
+
 sub ws_create {
-    my ($workerid, $ws) = @_;
-    OpenQA::Scheduler::Scheduler::_validate_workerid($workerid);
+    my ($self)   = @_;
+    my $workerid = $self->param('workerid');
+    my $worker   = _validate_workerid($workerid);
+    unless ($worker) {
+        return $self->render(text => 'Unauthorized', status =>);
+    }
     # upgrade connection to websocket by subscribing to events
-    $ws->on(json   => \&_message);
-    $ws->on(finish => \&_finish);
-    ws_add_worker($workerid, $ws->tx->max_websocket_size(10485760));
+    $self->on(json   => \&_message);
+    $self->on(finish => \&_finish);
+    ws_add_worker($workerid, $self->tx->max_websocket_size(10485760));
+    return $self->render(text => 'ack', status => 101);
 }
 
 sub ws_is_worker_connected {
-    my ($worker) = @_;
-    defined $worker_sockets->{$worker->id} ? 1 : 0;
+    my ($workerid) = @_;
+    defined $worker_sockets->{$workerid} ? 1 : 0;
 }
 
 # internal helpers
-sub _get_worker {
+sub _validate_workerid {
+    my ($workerid) = @_;
+    my $schema     = OpenQA::Schema::connect_db;
+    my $worker     = $schema->resultset("Workers")->find($workerid);
+}
+
+sub _get_workerid {
     my ($tx) = @_;
-    my $connection1 = $tx->connection;
     my $ret;
     while (my ($id, $stored_tx) = each %$worker_sockets) {
         if ($stored_tx->connection eq $tx->connection) {
@@ -106,7 +146,7 @@ sub _finish {
     my ($ws, $code, $reason) = @_;
     return unless ($ws);
 
-    my $workerid = _get_worker($ws->tx);
+    my $workerid = _get_workerid($ws->tx);
     unless ($workerid) {
         $ws->app->log->error('Worker ID not found for given connection during connection close');
         return;
@@ -117,7 +157,7 @@ sub _finish {
 
 sub _message {
     my ($ws, $json) = @_;
-    my $workerid = _get_worker($ws->tx);
+    my $workerid = _get_workerid($ws->tx);
     unless ($workerid) {
         $ws->app->log->warn("A message received from unknown worker connection");
         return;
@@ -128,7 +168,7 @@ sub _message {
         return;
     }
 
-    my $worker = OpenQA::Scheduler::Scheduler::_validate_workerid($workerid);
+    my $worker = _validate_workerid($workerid);
     $worker->seen();
     if ($json->{'type'} eq 'ok') {
         $ws->tx->send({json => {type => 'ok'}});
@@ -145,6 +185,37 @@ sub _message {
     else {
         $ws->app->log->error(sprintf('Received unknown message type "%s" from worker %u', $json->{'type'}, $workerid));
     }
+}
+
+# Mojolicious startup
+sub setup {
+
+    # TODO: read openQA config
+    #     $self->defaults(appname => 'openQA::WebSockets');
+    #
+    #     $self->_read_config;
+    #     my $logfile = $ENV{OPENQA_WS_LOGFILE} || $self->config->{logging}->{file};
+    #     $self->log->path($logfile);
+    #
+    #     if ($logfile && $self->config->{logging}->{level}) {
+    #         $self->log->level($self->config->{logging}->{level});
+    #     }
+    #     if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
+    #         # avoid enabling the SQL debug unless we really want to see it
+    #         # it's rather expensive
+    #         db_profiler::enable_sql_debugging($self);
+    #     }
+
+    # use port one higher than WebAPI
+    my $port = 9527;
+    if ($ENV{'MOJO_LISTEN'} =~ /.*:(\d{1,5})\/?$/) {
+        $port = $1 + 1;
+    }
+
+    under \&check_authorized;
+    websocket '/ws/:workerid' => [workerid => qr/\d+/] => \&ws_create;
+
+    return Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
 }
 
 
