@@ -526,6 +526,13 @@ sub job_grab {
     }
     # else assets are broken, maybe we could cancel the job right now
 
+    if (   $job_hashref->{settings}->{NICTYPE}
+        && $job_hashref->{settings}->{NICTYPE} ne 'user')
+    {
+        # TODO: use multiple named networks for MULTINET
+        $job_hashref->{settings}->{NICVLAN} = $job->allocate_network('default');
+    }
+
     # TODO: cleanup previous tmpdir
     $worker->set_property('WORKER_TMPDIR', tempdir());
 
@@ -615,6 +622,8 @@ sub job_set_done {
     # delete JOBTOKEN
     my $job = schema->resultset('Jobs')->find($jobid);
     $job->set_property('JOBTOKEN');
+
+    $job->release_networks();
 
     my $result = $args{result} || $job->calculate_result();
     my %new_val = (

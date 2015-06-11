@@ -146,6 +146,8 @@ __PACKAGE__->has_many(modules  => 'OpenQA::Schema::Result::JobModules',      'jo
 __PACKAGE__->has_many(owned_locks  => 'OpenQA::Schema::Result::JobLocks', 'owner');
 __PACKAGE__->has_many(locked_locks => 'OpenQA::Schema::Result::JobLocks', 'locked_by');
 
+__PACKAGE__->has_many(networks => 'OpenQA::Schema::Result::JobNetworks', 'job_id');
+
 __PACKAGE__->add_unique_constraint([qw/slug/]);
 
 __PACKAGE__->filter_column(
@@ -927,6 +929,65 @@ sub _asset_find {
         return $fname if -e $path;
     }
     return;
+}
+
+sub allocate_network {
+    my ($self, $name) = @_;
+
+    my $vlan = $self->_find_network($name);
+    return $vlan if $vlan;
+
+    #allocate new
+    my @used_rs = $self->result_source->schema->resultset('JobNetworks')->search(
+        {},
+        {
+            columns  => ['vlan'],
+            group_by => ['vlan'],
+        });
+    my %used = map { $_->vlan => 1 } @used_rs;
+
+    for ($vlan = 1;; $vlan++) {
+        if (!$used{$vlan}) {
+            $self->networks->find_or_create({name => $name, vlan => $vlan});
+            return $vlan;
+        }
+    }
+}
+
+sub _find_network {
+    my ($self, $name, $seen) = @_;
+
+    $seen //= {};
+
+    return if $seen->{$self->id};
+    $seen->{$self->id} = 1;
+
+    my $net = $self->networks->find({name => $name});
+    return $net->vlan if $net;
+
+    my $parents = $self->parents->search(
+        {
+            dependency => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+        });
+    while (my $pd = $parents->next) {
+        my $vlan = $pd->parent->_find_network($name, $seen);
+        return $vlan if $vlan;
+    }
+
+    my $children = $self->children->search(
+        {
+            dependency => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+        });
+    while (my $cd = $children->next) {
+        my $vlan = $cd->child->_find_network($name, $seen);
+        return $vlan if $vlan;
+    }
+}
+
+sub release_networks {
+    my ($self) = @_;
+
+    $self->networks->delete;
 }
 
 1;

@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use OpenQA::Scheduler;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::More tests => 115;
+use Test::More tests => 123;
 
 my $schema = OpenQA::Test::Database->new->create();
 
@@ -56,7 +56,8 @@ my %settings = (
     KVM         => 'KVM',
     ISO_MAXSIZE => 1,
     MACHINE     => "RainbowPC",
-    ARCH        => 'x86_64'
+    ARCH        => 'x86_64',
+    NICTYPE     => 'tap'
 );
 
 my $workercaps = {};
@@ -138,22 +139,28 @@ my $w6_id = $c->_register($schema, "host", "6", $workercaps);
 #my $ws6 = $t->websocket_ok("/api/v1/workers/$w6_id/ws");
 
 my $job = OpenQA::Scheduler::job_grab(workerid => $w1_id);
-is($job->{id}, $jobB->id, "jobB");    #lowest prio of jobs without parents
+is($job->{id},                  $jobB->id, "jobB");                   #lowest prio of jobs without parents
+is($job->{settings}->{NICVLAN}, 1,         "first available vlan");
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w2_id);
-is($job->{id}, $jobC->id, "jobC");    #direct child of B
+is($job->{id},                  $jobC->id, "jobC");                        #direct child of B
+is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w3_id);
-is($job->{id}, $jobF->id, "jobF");    #direct child of C
+is($job->{id},                  $jobF->id, "jobF");                        #direct child of C
+is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w4_id);
-is($job->{id}, $jobA->id, "jobA");    # E is direct child of C, but A and D must be started first
+is($job->{id},                  $jobA->id, "jobA");                        # E is direct child of C, but A and D must be started first
+is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w5_id);
-is($job->{id}, $jobD->id, "jobD");    # direct child of A
+is($job->{id},                  $jobD->id, "jobD");                        # direct child of A
+is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
 $job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
-is($job->{id}, $jobE->id, "jobE");    # C and D are now running so we can start E
+is($job->{id},                  $jobE->id, "jobE");                        # C and D are now running so we can start E
+is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
 # jobA failed
 my $result = OpenQA::Scheduler::job_set_done(jobid => $jobA->id, result => 'failed');
@@ -368,6 +375,14 @@ is_deeply($job->{parents}, {Parallel => [$jobC2], Chained => []}, "cloned deps")
 $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id]);
 $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
+
+# job_grab now should return jobs from clonned group
+# we already called job_set_done on jobE, so worker 6 is available
+$job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
+is($job->{id},                  $jobB2, "jobB2");            #lowest prio of jobs without parents
+is($job->{settings}->{NICVLAN}, 2,      "different vlan");
+
+
 
 ## check CHAINED dependency cloning
 my %settingsX = %settings;
