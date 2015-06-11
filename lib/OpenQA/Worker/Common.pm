@@ -308,7 +308,7 @@ sub setup_websocket {
     else {
         $ua_url->scheme('wss');
     }
-    $ua_url->path("workers/$workerid/ws");
+    $ua_url->path("ws/$workerid");
     print "WEBSOCKET $ua_url\n" if $verbose;
     $ua->websocket(
         $ua_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
