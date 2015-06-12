@@ -186,6 +186,7 @@ sub read_test_modules {
         # add link to $testresultdir/$name*.png via png CGI
         my @imglist;
         my @wavlist;
+        my @textlist;
         my $num = 1;
         for my $img (@{$module->details}) {
             $img->{num} = $num++;
@@ -195,16 +196,9 @@ sub read_test_modules {
             elsif ($img->{audio}) {
                 push(@wavlist, $img);
             }
-        }
-
-        # add link to $testresultdir/$name*.txt as direct link
-        my @ocrlist;
-        for my $ocrpath (<$testresultdir/$name-[0-9]*.txt>) {
-            $ocrpath = data_name($ocrpath);
-            my $ocrscreenshotid = $ocrpath;
-            $ocrscreenshotid =~ s/^\w+-(\d+)/$1/;
-            my $ocrres = $module->{screenshots}->[--$ocrscreenshotid]->{ocr_result} || 'na';
-            push(@ocrlist, {name => $ocrpath, result => $ocrres});
+            elsif ($img->{text}) {
+                push(@textlist, $img);
+            }
         }
 
         push(
@@ -214,7 +208,7 @@ sub read_test_modules {
                 result       => $module->result,
                 screenshots  => \@imglist,
                 wavs         => \@wavlist,
-                ocrs         => \@ocrlist,
+                texts        => \@textlist,
                 soft_failure => $module->soft_failure,
                 milestone    => $module->milestone,
                 important    => $module->important,

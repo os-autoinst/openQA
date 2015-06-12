@@ -13,6 +13,10 @@
                     %= link_to url_for('step', stepid => $img_count) => (class => 'no_hover') => begin
                         %= image '/images/audio.svg', alt => $refimg->{audio}, title => $refimg->{audio}, width => $ref_width, height => $ref_height, class=> "resborder_\L$refimg->{result}"
                     % end
+                % } elsif ($refimg->{text}) {
+                    %= link_to url_for('step', stepid => $img_count) => (class => 'no_hover') => begin
+                        %= image '/images/text.png', alt => $refimg->{text}, title => $refimg->{text}, width => $ref_width, height => $ref_height, class=> "resborder_\L$refimg->{result}"
+                    % end
                 % }
             </span>
             <% $img_count++; %>

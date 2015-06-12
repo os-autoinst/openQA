@@ -42,6 +42,7 @@ my $stop_job_running;
 my $update_status_running;
 
 my $tosend_images = {};
+my $tosend_files  = [];
 
 our $do_livelog;
 
@@ -249,6 +250,7 @@ sub start_job {
     $current_running = undef;
     $do_livelog      = 0;
     $tosend_images   = {};
+    $tosend_files    = [];
 
     $worker = engine_workit($job);
     unless ($worker) {
@@ -405,7 +407,7 @@ sub upload_images {
         my $form = {
             file => {
                 file     => "$pooldir/testresults/$file",
-                filename => $md5
+                filename => $file
             },
             image => 1,
             thumb => 0,
@@ -414,11 +416,30 @@ sub upload_images {
         # don't use api_call as it retries and does not allow form data
         # (refactor at some point)
         $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
-        $form->{file}->{file} = "$pooldir/testresults/.thumbs/$file";
-        $form->{thumb} = 1;
-        $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+        if (-f "$pooldir/testresults/.thumbs/$file") {
+            $form->{file}->{file} = "$pooldir/testresults/.thumbs/$file";
+            $form->{thumb} = 1;
+            $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+        }
     }
     $tosend_images = {};
+
+    for my $file (@$tosend_files) {
+        print "upload $file\n" if ($verbose);
+
+        my $form = {
+            file => {
+                file     => "$pooldir/testresults/$file",
+                filename => $file
+            },
+            image => 0,
+            thumb => 0,
+        };
+        # don't use api_call as it retries and does not allow form data
+        # (refactor at some point)
+        $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+    }
+    $tosend_files = [];
 }
 
 sub read_json_file {
@@ -443,14 +464,22 @@ sub read_module_result($) {
     my $result = read_json_file("result-$test.json");
     return unless $result;
     for my $d (@{$result->{details}}) {
-        my $screen = $d->{screenshot};
-        next unless $screen;
-        my $md5 = calculate_file_md5("testresults/$screen");
-        $d->{screenshot} = {
-            name => $screen,
-            md5  => $md5,
-        };
-        $tosend_images->{$md5} = $screen;
+        for my $type (qw/screenshot audio text/) {
+            my $file = $d->{$type};
+            next unless $file;
+
+            if ($type eq 'screenshot') {
+                my $md5 = calculate_file_md5("testresults/$file");
+                $d->{$type} = {
+                    name => $file,
+                    md5  => $md5,
+                };
+                $tosend_images->{$md5} = $file;
+            }
+            else {
+                push @$tosend_files, $file;
+            }
+        }
     }
     return $result;
 }

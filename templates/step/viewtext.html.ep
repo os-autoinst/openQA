@@ -1,0 +1,33 @@
+% layout 'default';
+% title $moduleid;
+
+% content_for 'ready_function' => begin
+    setupResultButtons();
+% end
+
+<div class="grid_3 alpha" id="sidebar">
+    <div class="box box-shadow alpha" id="actions_box">
+        <div class="box-header aligncenter">Actions</div>
+        <div class="aligncenter">
+            % if (is_operator && $job->can_be_duplicated) {
+                %= link_post url_for('apiv1_restart', name => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
+                    <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
+                %= end
+            % }
+        </div>
+    </div>
+
+    %= include 'step/moduleslist'
+</div>
+
+<div class="grid_13 omega">
+    %= include 'step/moduleslistthumbnails'
+
+    <div class="box box-shadow">
+        %= include 'step/moduleslisttabs'
+
+        <div style="margin: 6px;">
+            <pre><%= $textresult %></pre>
+        </div>
+    </div>
+</div>
