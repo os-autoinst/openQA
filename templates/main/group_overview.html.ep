@@ -12,7 +12,7 @@
 
 <h1>Comments</h1>
 
-% for my $comment ($group->comments) {
+% for my $comment (reverse $group->comments) {
     <div class="row">
         <div class="col-sm-1">
             <img class="media-object img-circle" src="<%= $comment->user->gravatar(60) %>" alt="profile">
@@ -21,9 +21,9 @@
             <div class="media-body comment-body">
                 <div class="well well-lg">
                     <h4 class="media-heading"><%= $comment->user->name %> wrote <abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr></h4>
-                    <p class="media-comment">
-                    %= $comment->rendered_markdown
-                    </p>
+                    <div class="media-comment">
+                      %= $comment->rendered_markdown
+                    </div>
                 </div>
             </div>
         </div>
