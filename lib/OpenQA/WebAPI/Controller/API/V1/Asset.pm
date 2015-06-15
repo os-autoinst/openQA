@@ -25,12 +25,12 @@ sub register {
     my $name = $self->param('name');
 
     my $ipc = OpenQA::IPC->ipc;
-    my $rs = $ipc->scheduler('asset_register', {type => $type, name => $name});
+    my $id = $ipc->scheduler('asset_register', {type => $type, name => $name});
 
     my $status = 200;
     my $json   = {};
-    if ($rs) {
-        $json->{id} = $rs->{id};
+    if ($id) {
+        $json->{id} = $id;
     }
     else {
         $status = 400;
@@ -53,13 +53,13 @@ sub get {
 
     my %args;
     for my $arg (qw/id type name/) {
-        $args{$arg} = $self->stash($arg);
+        $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
     }
 
     my $rs = $schema->resultset("Assets")->search(\%args);
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 
-    if (@$rs) {
+    if ($rs && $rs->single) {
         $self->render(json => $rs->single, status => 200);
     }
     else {
@@ -72,7 +72,7 @@ sub delete {
 
     my %args;
     for my $arg (qw/id type name/) {
-        $args{$arg} = $self->stash($arg);
+        $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
     }
 
     my $ipc = OpenQA::IPC->ipc;

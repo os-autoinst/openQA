@@ -73,7 +73,6 @@ sub test_asset {
     my $self = shift;
 
     # FIXME: make sure asset belongs to the job
-
     my $ipc = OpenQA::IPC->ipc;
     my $asset;
     if ($self->param('assetid')) {
@@ -83,7 +82,8 @@ sub test_asset {
         $asset = $ipc->scheduler('asset_get', {type => $self->param('assettype'), name => $self->param('assetname')});
     }
 
-    return $self->reply->not_found unless $asset;
+    # Need to check if $asset is HASHref. DBus test bus have issues with empty results due to type guessing
+    return $self->reply->not_found unless ref($asset) eq 'HASH' && %$asset;
 
     my $path = '/assets/' . $asset->{type} . '/' . $asset->{name};
     if ($self->param('subpath')) {

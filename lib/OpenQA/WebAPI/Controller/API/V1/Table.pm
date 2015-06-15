@@ -116,8 +116,8 @@ sub create {
         }
     }
     else {
-        try { $id = $self->db->resultset($table)->create(\%entry)->id; };
-        catch { $error = shift; };
+        $DB::single = 1;
+        try { $id = $self->db->resultset($table)->create(\%entry)->id; } catch { $error = shift; };
     }
 
     my $status;
@@ -227,7 +227,7 @@ sub destroy {
     try {
         my $rs = $self->db->resultset($table);
         $ret = $rs->search({id => $self->param('id')})->delete;
-    };
+    }
     catch {
         $error = shift;
     };

@@ -23,7 +23,7 @@ sub mutex_lock {
     my $name   = $self->stash('name');
     my $jobid  = $self->stash('job_id');
     my $ipc    = OpenQA::IPC->ipc;
-    my $res = $ipc->scheduler('mutex_create', $name, $jobid);
+    my $res = $ipc->scheduler('mutex_lock', $name, $jobid);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);
 }

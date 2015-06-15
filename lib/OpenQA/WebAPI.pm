@@ -415,6 +415,18 @@ sub startup {
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');    #command_enqueue
     $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');                 # job_grab
+                                                                                          # redirect for older workers
+    $worker_r->websocket(
+        '/ws' => sub {
+            my $c        = shift;
+            my $workerid = $c->param('workerid');
+            # use port one higher than WebAPI
+            my $port = 9527;
+            if (defined $ENV{'MOJO_LISTEN'} && $ENV{'MOJO_LISTEN'} =~ /.*:(\d{1,5})\/?$/) {
+                $port = $1 + 1;
+            }
+            $c->redirect_to("http://localhost:$port/ws/$workerid");
+        });
 
     # api/v1/mutex
     $api_r_job->post('/mutex/:name')->name('apiv1_mutex_create')->to('locks#mutex_create');
@@ -426,9 +438,9 @@ sub startup {
     $mm_api->get('/children/:status' => [status => [qw/running scheduled done/]])->name('apiv1_mm_running_children')->to('mm#get_children_status');
 
     # api/v1/isos
-    $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create');                    # iso_new
-    $api_r->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');          # iso_delete
-    $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');       # iso_cancel
+    $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create');                 # iso_new
+    $api_r->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');       # iso_delete
+    $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');    # iso_cancel
 
     # api/v1/assets
     $api_r->post('/assets')->name('apiv1_post_asset')->to('asset#register');
