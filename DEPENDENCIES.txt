@@ -64,6 +64,7 @@ Sub::Name
 Test::Mojo
 Test::More
 Test::Compile
+Text::Markdown
 Time::HiRes
 URI::Escape
 URI::Heuristic

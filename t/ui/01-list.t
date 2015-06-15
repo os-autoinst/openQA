@@ -68,7 +68,7 @@ is($driver->find_element('#running #job_99963 td.test a', 'css')->get_attribute(
 like($driver->find_element('#running #job_99963 td.time', 'css')->get_text(), qr/1[01] minutes ago/, 'right time for running');
 
 $driver->find_element('Build0091', 'link_text')->click();
-like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse 13.1 build 0091/, 'we are on build 91');
+like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse build 0091/, 'we are on build 91');
 
 #$driver->find_element('#running #job_99963 td.test a', 'css')->click();
 #is($driver->get_title(), 'job 99963');

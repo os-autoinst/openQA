@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 2;
+    plan tests => 5;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -41,14 +41,27 @@ else {
 #
 # List with no parameters
 #
+
 is($driver->get_title(), "openQA", "on main page");
 my $baseurl = $driver->get_current_url();
+$driver->find_element('Login', 'link_text')->click();
+# we're back on the main page
+is($driver->get_title(), "openQA", "back on main page");
 
-$driver->find_element('Build0091', 'link_text')->click();
+$driver->find_element('opensuse', 'link_text')->click();
 
-like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse build 0091/, 'we are on build 91');
+is($driver->find_element('h1:first-of-type', 'css')->get_text(), 'Last Builds for Group opensuse', "on group overview");
+
+$driver->find_element('textarea',       'css')->send_keys('This is a cool test');
+$driver->find_element('#submitComment', 'css')->click();
+
+is($driver->find_element('h4.media-heading', 'css')->get_text(), "Demo wrote less than a minute ago", "heading");
 
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
+#print $driver->get_page_source();
+
+is($driver->find_element('div.media-comment', 'css')->get_text(), "This is a cool test", "body");
 
 t::ui::PhantomTest::kill_phantom();
+
 done_testing();

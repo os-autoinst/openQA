@@ -1,0 +1,33 @@
+% for my $comment ($job->comments) {
+    <div class="pull-left">
+        <img class="media-object img-circle" src="<%= $comment->user->gravatar(60) %>" alt="profile">
+    </div>
+    <div class="media-body comment-body">
+        <div class="well well-lg">
+            <h4 class="media-heading"><%= $comment->user->name %> wrote <abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr></h4>
+            <p class="media-comment">
+                %= $comment->rendered_markdown
+            </p>
+        </div>
+    </div>
+% }
+
+% if (current_user) {
+    %= form_for 'add_comment', method => "post", class => "form-horizontal", id => "commentForm", role => "form" => begin
+        <div class="form-group">
+            <label for="text" class="col-sm-1 control-label">Comment
+                <img class="img-circle" src="<%= current_user->gravatar(60) %>">
+            </label>
+            <div class="col-sm-11">
+                <textarea class="form-control" name="text" id="text" rows="5"></textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-1 col-sm-11">
+                <button class="btn btn-success btn-circle" type="submit" id="submitComment">
+                    <span class="glyphicon glyphicon-send"></span>
+                    Submit comment</button>
+            </div>
+        </div>
+    % end
+% }

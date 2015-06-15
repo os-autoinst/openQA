@@ -1,0 +1,28 @@
+% my $max = delete $result->{_max};
+% for my $build (reverse sort keys %$result) {
+    <div class="row">
+        <div class="col-md-4 text-nowrap">
+            <h4>
+                <%= link_to "Build$build" => url_for('tests_overview')->query(distri => $result->{$build}->{distri}, version => $result->{$build}->{version}, build => $build, groupid => $group->id ) %>
+                (<abbr class="timeago" title="<%= $result->{$build}->{oldest}->datetime() %>Z">
+                <%= delete $result->{$build}->{oldest} %>
+                </abbr>)
+            </h4>
+        </div>
+        <div class="col-md-8">
+            % if ($max) {
+                <div class="progress">
+                    <div class="progress-bar progress-bar-success" style="width: <%= $result->{$build}->{passed} * 100 / $max %>%">
+                        <%= $result->{$build}->{passed} %> passed
+                    </div>
+                    <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: <%= $result->{$build}->{inprogress} * 100 / $max %>%">
+                        <%= $result->{$build}->{inprogress} %> unfinished
+                    </div>
+                    <div class="progress-bar progress-bar-danger" style="width: <%= $result->{$build}->{failed} * 100 / $max %>%">
+                        <%= $result->{$build}->{failed} %> failed
+                    </div>
+                </div>
+            % }
+        </div>
+    </div>
+% }

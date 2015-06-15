@@ -6,6 +6,12 @@
     setupResultButtons();
 % end
 
+% if (!@$modlist) {
+    % content_for 'ready_function' => begin
+        $('#result_tabs a[href="#settings"]').tab('show');
+    % end
+% }
+
 <div class="row">
     <div class="col-sm-push-3 col-sm-9">
         %= include 'layouts/info'
@@ -80,60 +86,83 @@
                 % }
             </div>
         </div>
-        % if (@$modlist) {
-            <table id="results" class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Test</th>
-                        <th>Result</th>
-                        <th style="width: 100%">References</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% for my $module (@$modlist) { %>
-                        <tr>
-                            <td class="component">
-                                <div>
-                                    %= link_to $module->{name} => url_for('src_step', stepid => 1, moduleid => $module->{name})
-                                </div>
-                                <div class="flags">
-                                    % if ($module->{fatal}) {
-                                        <i class="flag fa fa-plug" title="Fatal: testsuite is aborted if this test fails"></i>
-                                    % } elsif ($module->{important})
-                                    % {
-                                        <i class="flag fa fa-exclamation" title="Important: overall result is failed if this test fails"></i>
-                                    % }
-                                    % if  ($module->{milestone}) {
-                                        <i class="flag fa fa-anchor" title="Milestone: snapshot the state after this test for restoring"></i>
-                                    % }
-                                </div>
-                            </td>
-                            <td class="result <%= css_for($module) %>">
-                                %= format_result($module)
-                            </td>
-                            <td class="links">
+        <div role="tabpanel">
 
-                                % for my $screenshot (@{$module->{screenshots}}) {
-                                    %= step_thumbnail($screenshot, 60, $testid, $module->{name}, $screenshot->{num})
-                                % }
+            <ul class="nav nav-tabs" role="tablist" id="result_tabs">
+                <li role="presentation" class="active"><a href="#details"" aria-controls="details" role="tab" data-toggle="tab">Details</a></li>
+                <li role="presentation"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Settings</a></li>
+                <li role="presentation"><a href="#comments" aria-controls="comments" role="tab" data-toggle="tab">Comments (<%= scalar($job->comments) %>)</a></li>
+            </ul>
 
-                                % for my $wav (@{$module->{wavs}}) {
-                                    %= link_to url_for('step', moduleid => $module->{name}, stepid => $wav->{num}) => title => $wav->{name} => begin
-                                        <img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{name} %>" class="<%= "resborder_\L$wav->{result}" %>" />
-                                    % end
-                                % }
+            <div class="tab-content">
 
-                                <% for my $ocr (@{$module->{ocrs}}) { %>
-                                    <a href="<%= url_for('step', moduleid => $module->{name}, stepid => $ocr->{num}) %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{name} %>.txt" class="<%= "resborder_\L$ocr->{result}" %>" /></a>
+                <div role="tabpanel" class="tab-pane active" id="details">
+
+                    % if (@$modlist) {
+                        <table id="results" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Test</th>
+                                    <th>Result</th>
+                                    <th style="width: 100%">References</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% for my $module (@$modlist) { %>
+                                    <tr>
+                                        <td class="component">
+                                            <div>
+                                                %= link_to $module->{name} => url_for('src_step', stepid => 1, moduleid => $module->{name})
+                                            </div>
+                                            <div class="flags">
+                                                % if ($module->{fatal}) {
+                                                    <i class="flag fa fa-plug" title="Fatal: testsuite is aborted if this test fails"></i>
+                                                % } elsif ($module->{important})
+                                                % {
+                                                    <i class="flag fa fa-exclamation" title="Important: overall result is failed if this test fails"></i>
+                                                % }
+                                                % if  ($module->{milestone}) {
+                                                    <i class="flag fa fa-anchor" title="Milestone: snapshot the state after this test for restoring"></i>
+                                                % }
+                                            </div>
+                                        </td>
+                                        <td class="result <%= css_for($module) %>">
+                                            %= format_result($module)
+                                        </td>
+                                        <td class="links">
+
+                                            % for my $screenshot (@{$module->{screenshots}}) {
+                                                %= step_thumbnail($screenshot, 60, $testid, $module->{name}, $screenshot->{num})
+                                            % }
+
+                                            % for my $wav (@{$module->{wavs}}) {
+                                                %= link_to url_for('step', moduleid => $module->{name}, stepid => $wav->{num}) => title => $wav->{name} => begin
+                                                    <img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{name} %>" class="<%= "resborder_\L$wav->{result}" %>" />
+                                                % end
+                                            % }
+
+                                            <% for my $ocr (@{$module->{ocrs}}) { %>
+                                                <a href="<%= url_for('step', moduleid => $module->{name}, stepid => $ocr->{num}) %>.txt"><img src="/images/text.png" width="26" height="26" alt="<%= $ocr->{name} %>.txt" class="<%= "resborder_\L$ocr->{result}" %>" /></a>
+                                            <% } %>
+                                        </td>
+                                    </tr>
                                 <% } %>
-                            </td>
-                        </tr>
-                    <% } %>
-                </tbody>
-            </table>
+                            </tbody>
+                        </table>
 
-        % }
-        %= include 'layouts/settings'
+                    % }
+                </div>
+                <div role="tabpanel" class="tab-pane" id="settings">
+                    %= include 'layouts/settings'
+                </div>
+                <div role="tabpanel" class="tab-pane" id="comments">
+                    <div class="comments">
+                        %= include 'test/comments'
+                    </div>
+                </div>
+
+            </div>
+        </div>
     </div>
 
     <div class="col-sm-3 col-sm-pull-9">

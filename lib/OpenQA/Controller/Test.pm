@@ -441,5 +441,22 @@ sub overview {
     );
 }
 
+sub add_comment {
+    my ($self) = @_;
+
+    $self->validation->required('text');
+
+    my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
+    return $self->reply->not_found unless $job;
+
+    $job->comments->create(
+        {
+            text    => $self->param('text'),
+            user_id => $self->current_user->id,
+        });
+    $self->flash('info', 'Comment added');
+    return $self->redirect_to('test');
+}
+
 1;
 # vim: set sw=4 et:
