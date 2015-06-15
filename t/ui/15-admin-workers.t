@@ -24,6 +24,15 @@ use Test::Mojo;
 use OpenQA::Test::Case;
 use Data::Dumper;
 
+use OpenQA::IPC;
+use OpenQA::WebSockets;
+use OpenQA::Scheduler;
+
+# create Test DBus bus and service for fake WebSockets and Scheduler call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
+
 # optional but very useful
 eval 'use Test::More::Color';
 eval 'use Test::More::Color "foreground"';

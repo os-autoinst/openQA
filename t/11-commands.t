@@ -17,28 +17,28 @@ BEGIN {
     unshift @INC, 'lib';
 }
 
-use Mojo::Base -strict;
-use Test::More tests => 39;
-use Test::Mojo;
-use Mojo::URL;
+use Test::More;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::Scheduler::Scheduler;
+use OpenQA::WebSockets;
 
 OpenQA::Test::Case->new->init_data;
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+# create Test DBus bus and service for fake WebSockets call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws = OpenQA::WebSockets->new;
 
-# XXX: Test::Mojo loses it's app when setting a new ua
-# https://github.com/kraih/mojo/issues/598
-my $app = $t->app;
-$t->ua(OpenQA::Client->new()->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
+# monkey patch ws_send of OpenQA::WebSockets::Server to store received command
+package OpenQA::WebSockets::Server;
+no warnings "redefine";
+my $last_command = '';
+sub ws_send {
+    my ($workerid, $command, $jobid) = @_;
+    $OpenQA::WebSockets::Server::last_command = $command;
+}
 
-#get websocket connection
-$t->ua->apikey('PERCIVALKEY02');
-$t->ua->apisecret('PERCIVALSECRET02');
-my $ws = $t->websocket_ok('/api/v1/workers/1/ws' => {'Sec-WebSocket-Extensions' => 'permessage-deflate'});
+package main;
 
 #issue valid commands for worker 1
 my @valid_commands = qw/quit abort cancel obsolete
@@ -47,13 +47,12 @@ my @valid_commands = qw/quit abort cancel obsolete
   livelog_stop livelog_start/;
 
 for my $cmd (@valid_commands) {
-    OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => $cmd);
-    $ws->message_ok->json_message_is('/type' => $cmd)->json_message_has('/jobid');
+    OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => $cmd, job_id => 0);
+    is($OpenQA::WebSockets::Server::last_command, $cmd, "command $cmd received at WS server");
 }
 
 #issue invalid commands
-eval { OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => 'foo'); };
-ok($@, 'refuse invalid commands');
+OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => 'foo', job_id => 0);
+isnt($OpenQA::WebSockets::Server::last_command, 'foo', 'refuse invalid commands');
 
-$ws->finish_ok;
 done_testing();

@@ -26,6 +26,10 @@ use OpenQA::Client;
 use Mojo::IOLoop;
 use Data::Dump;
 
+use OpenQA::IPC;
+use OpenQA::WebSockets;
+use OpenQA::Scheduler;
+
 OpenQA::Test::Case->new->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -62,6 +66,11 @@ sub find_job {
     }
     return undef;
 }
+
+# create Test DBus bus and service for fake WebSockets and Scheduler call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
 
 my $ret;
 
@@ -153,13 +162,9 @@ is($ret->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 # make sure we can't post invalid parameters
 $ret = $t->post_ok('/api/v1/isos', form => {iso => $iso, tests => "kde/usb"})->status_is(400);
 
-TODO: {
-    local $TODO = 'iso delete doesnt seem to work';
-
-    # delete the iso
-    $ret = $t->delete_ok("/api/v1/isos/$iso")->status_is(200);
-    # now the jobs should be gone
-    $ret = $t->get_ok('/api/v1/jobs/99982')->status_is(404);
-}
+# delete the iso
+$ret = $t->delete_ok("/api/v1/isos/$iso")->status_is(200);
+# now the jobs should be gone
+$ret = $t->get_ok('/api/v1/jobs/$newid')->status_is(404);
 
 done_testing();

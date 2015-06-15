@@ -22,7 +22,9 @@ BEGIN {
 
 use strict;
 use Data::Dump qw/pp dd/;
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::IPC;
+use OpenQA::Scheduler;
+use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More tests => 9;
@@ -30,6 +32,10 @@ use Test::More tests => 9;
 my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 
 #my $t = Test::Mojo->new('OpenQA::WebAPI');
+
+# create Test DBus bus and service for fake WebSockets call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws = OpenQA::WebSockets->new;
 
 sub list_jobs {
     my %args = @_;
@@ -117,18 +123,18 @@ $settingsJ{TEST}         = 'J';
 $settingsJ{WORKER_CLASS} = 'qemu_x86_64';
 
 
-my $jobA = OpenQA::Scheduler::Scheduler::job_create(\%settingsA);
-my $jobB = OpenQA::Scheduler::Scheduler::job_create(\%settingsB);
-my $jobC = OpenQA::Scheduler::Scheduler::job_create(\%settingsC);
-my $jobD = OpenQA::Scheduler::Scheduler::job_create(\%settingsD);
-my $jobE = OpenQA::Scheduler::Scheduler::job_create(\%settingsE);
-my $jobF = OpenQA::Scheduler::Scheduler::job_create(\%settingsF);
-my $jobG = OpenQA::Scheduler::Scheduler::job_create(\%settingsG);
+my $jobA = OpenQA::Scheduler::Scheduler::job_create(\%settingsA, 1);
+my $jobB = OpenQA::Scheduler::Scheduler::job_create(\%settingsB, 1);
+my $jobC = OpenQA::Scheduler::Scheduler::job_create(\%settingsC, 1);
+my $jobD = OpenQA::Scheduler::Scheduler::job_create(\%settingsD, 1);
+my $jobE = OpenQA::Scheduler::Scheduler::job_create(\%settingsE, 1);
+my $jobF = OpenQA::Scheduler::Scheduler::job_create(\%settingsF, 1);
+my $jobG = OpenQA::Scheduler::Scheduler::job_create(\%settingsG, 1);
 
-my $jobH = OpenQA::Scheduler::Scheduler::job_create(\%settingsH);
+my $jobH = OpenQA::Scheduler::Scheduler::job_create(\%settingsH, 1);
 $settingsI{_PARALLEL_JOBS} = [$jobH->id];
-my $jobI = OpenQA::Scheduler::Scheduler::job_create(\%settingsI);
-my $jobJ = OpenQA::Scheduler::Scheduler::job_create(\%settingsJ);
+my $jobI = OpenQA::Scheduler::Scheduler::job_create(\%settingsI, 1);
+my $jobJ = OpenQA::Scheduler::Scheduler::job_create(\%settingsJ, 1);
 
 $jobA->set_prio(3);
 $jobB->set_prio(2);

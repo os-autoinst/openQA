@@ -23,11 +23,16 @@ BEGIN {
 use strict;
 use Data::Dump qw/pp dd/;
 use OpenQA::Scheduler::Scheduler;
+use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More tests => 123;
 
 my $schema = OpenQA::Test::Database->new->create();
+
+# create Test DBus bus and service for fake WebSockets call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws = OpenQA::WebSockets->new;
 
 #my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -376,7 +381,7 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 
 # job_grab now should return jobs from clonned group
 # we already called job_set_done on jobE, so worker 6 is available
-$job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w6_id);
 is($job->{id},                  $jobB2, "jobB2");            #lowest prio of jobs without parents
 is($job->{settings}->{NICVLAN}, 2,      "different vlan");
 

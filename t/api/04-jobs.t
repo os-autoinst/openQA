@@ -24,6 +24,14 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
 use Digest::MD5;
+use OpenQA::IPC;
+use OpenQA::WebSockets;
+use OpenQA::Scheduler;
+
+# create Test DBus bus and service for fake WebSockets and Scheduler call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
 
 sub calculate_file_md5($) {
     my ($file) = @_;
@@ -106,7 +114,7 @@ is(scalar(@{$get->tx->res->json->{jobs}}), 9, 'job count stay the same');
 
 # Test /jobs/X/restart and /jobs/X
 $get = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
-is($get->tx->res->json->{job}->{clone_id}, undef, 'job is not a clone');
+ok(!$get->tx->res->json->{job}->{clone_id}, 'job is not a clone');
 $post = $t->post_ok('/api/v1/jobs/99926/restart')->status_is(200);
 $get  = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
 like($get->tx->res->json->{job}->{clone_id}, qr/\d/, 'job cloned');

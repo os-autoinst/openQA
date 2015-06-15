@@ -21,8 +21,12 @@ BEGIN {
 }
 
 use strict;
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::IPC;
+use OpenQA::Scheduler;
+use OpenQA::WebSockets;
 use OpenQA::Test::Database;
+use Net::DBus;
+use Net::DBus::Test::MockObject;
 
 use Test::More tests => 52;
 
@@ -44,6 +48,11 @@ sub nots {
     }
     return $h;
 }
+
+# create Test DBus bus and service for fake WebSockets
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws  = OpenQA::WebSockets->new();
+my $sh  = OpenQA::Scheduler->new();
 
 my $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "assert database has no jobs to start with")
@@ -381,3 +390,5 @@ is($asset->id, 1, "asset register returns same");
 
 $asset = OpenQA::Scheduler::Scheduler::asset_delete(type => 'iso', name => $settings{ISO});
 is($asset, 1, "asset delete");
+
+done_testing;
