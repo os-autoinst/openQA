@@ -65,7 +65,13 @@ sub init {
     }
     else {
         my $module_detail = $details->[$testindex - 1];
-        $tabmode = 'audio' if ($module_detail->{'audio'});
+        if ($module_detail->{audio}) {
+            $tabmode = 'audio';
+        }
+        elsif ($module_detail->{text}) {
+            $self->stash('textresult', file_content(join('/', $job->result_dir(), $module_detail->{text})));
+            $tabmode = 'text';
+        }
         $self->stash('module_detail', $module_detail);
     }
     $self->stash('tabmode', $tabmode);
@@ -92,6 +98,9 @@ sub view {
 
     if ('audio' eq $self->stash('tabmode')) {
         $self->render('step/viewaudio');
+    }
+    elsif ('text' eq $self->stash('tabmode')) {
+        $self->render('step/viewtext');
     }
     else {
         $self->viewimg;

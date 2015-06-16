@@ -4,6 +4,10 @@
 		<li <%= ($action eq 'view') ? 'class=selected' : '' %>>
       %= link_to 'Audio' => url_for('step')
 		</li>
+		<% } elsif ($tabmode eq 'text') { %>
+		<li <%= ($action eq 'view') ? 'class=selected' : '' %>>
+      %= link_to 'Text' => url_for('step')
+		</li>
 		<% } elsif($tabmode eq 'screenshot') { %>
 		<li <%= ($action eq 'view') ? 'class=selected' : '' %>>
       %= link_to 'Screenshot' => url_for('step')
