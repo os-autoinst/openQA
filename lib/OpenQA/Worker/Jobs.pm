@@ -372,7 +372,13 @@ sub upload_status(;$) {
         $status->{result} = {$os_status->{running} => read_module_result($os_status->{running})};
     }
     elsif (defined($upload_up_to)) {
-        $status->{result} = read_result_file($upload_up_to);
+        my $extra_test_order = [];
+        $status->{result} = read_result_file($upload_up_to, $extra_test_order);
+
+        if (@$extra_test_order) {
+            $status->{test_order} //= [];
+            push @{$status->{test_order}}, @$extra_test_order;
+        }
     }
     if ($do_livelog) {
         $status->{log} = log_snippet;
@@ -461,8 +467,8 @@ sub read_module_result($) {
     return $result;
 }
 
-sub read_result_file($) {
-    my ($upload_up_to) = @_;
+sub read_result_file($$) {
+    my ($upload_up_to, $extra_test_order) = @_;
 
     my $ret = {};
 
@@ -473,6 +479,16 @@ sub read_result_file($) {
         my $result = read_module_result($test);
         last unless $result;
         $ret->{$test} = $result;
+
+        if ($result->{extra_test_results}) {
+
+            for my $extra_test (@{$result->{extra_test_results}}) {
+                my $extra_result = read_module_result($extra_test->{name});
+                next unless $extra_result;
+                $ret->{$extra_test->{name}} = $extra_result;
+            }
+            push @{$extra_test_order}, @{$result->{extra_test_results}};
+        }
 
         last if ($test eq $upload_up_to);
     }
