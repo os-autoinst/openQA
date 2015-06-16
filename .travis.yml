@@ -8,7 +8,7 @@ install:
   - cpanm -nq Perl::Tidy
   - gem install sass
   - ./script/tidy --check
-  - sudo apt-get install libgmp3-dev
+  - sudo apt-get install libgmp3-dev libdbus-1-dev
   - cpanm -nq `cat DEPENDENCIES.txt` "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
   - MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover -test -report coveralls -ignore_re "t/.*" -coverage default,-pod
