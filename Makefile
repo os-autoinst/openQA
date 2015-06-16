@@ -37,6 +37,7 @@ install:
 	install -m 644 systemd/openqa-webui.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-gru.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 755 systemd/systemd-openqa-generator "$(DESTDIR)"/usr/lib/systemd/system-generators
+	install -D -m 644 etc/dbus-1/system.d/org.opensuse.openqa.conf "$(DESTDIR)"/etc/dbus-1/system.d/org.opensuse.openqa.conf
 #
 	install -D -m 640 /dev/null "$(DESTDIR)"/var/lib/openqa/db/db.sqlite
 # install openQA apparmor profile
