@@ -123,6 +123,60 @@ sub stop_job($;$) {
     $stop_job_check_status->();
 }
 
+sub upload {
+    my $job_id   = shift;
+    my $form     = shift;
+    my $filename = $form->{file}->{filename};
+
+    # we need to open and close the log here as one of the files
+    # might actually be autoinst-log.txt
+    open(my $log, '>>', "autoinst-log.txt");
+    printf $log "uploading %s\n", $filename;
+    close $log;
+    printf "uploading %s\n", $filename if $verbose;
+
+    my $ua_url = $OpenQA::Worker::Common::url->clone;
+    $ua_url->path("jobs/$job_id/artefact");
+
+    # don't use api_call as it retries and does not allow form data
+    # (refactor at some point)
+    my $tx = $OpenQA::Worker::Common::ua->build_tx('POST' => $ua_url => form => $form);
+
+    # override the default boundary calculation - it reads whole file
+    # and it can cause various timeouts
+    my $ct = $tx->req->headers->content_type;
+    my $boundary = encode_base64 join('', map chr(rand 256), 1 .. 32);
+    $boundary =~ s/\W/X/g;
+    $tx->req->headers->content_type("$ct; boundary=$boundary");
+    my $res;
+    $OpenQA::Worker::Common::ua->start(
+        $tx => sub {
+            my ($ua, $tx) = @_;
+            $res = $tx;
+            return;
+        });
+    # This ugly. we need to "block" here so enter ioloop recursively
+    while (!$res && Mojo::IOLoop->is_running) {
+        Mojo::IOLoop->one_tick;
+    }
+
+    if (my $err = $res->error) {
+        my $msg;
+        if ($err->{code}) {
+            $msg = sprintf "ERROR %s: $err->{code} response: $err->{message}\n", $filename;
+        }
+        else {
+            $msg = sprintf "ERROR %s: Connection error: $err->{message}\n", $filename;
+        }
+        open(my $log, '>>', "autoinst-log.txt");
+        print $log $msg;
+        close $log;
+        print $msg if $verbose;
+        return 0;
+    }
+    return 1;
+}
+
 sub _stop_job($;$) {
     my ($aborted, $job_id) = @_;
 
@@ -133,10 +187,14 @@ sub _stop_job($;$) {
 
     my $job_done;    # undef
 
+    open(my $log, '>>', "autoinst-log.txt");
+    print $log "+++ worker notes +++\n";
+    printf $log "end time: %s\n", strftime("%F %T", gmtime);
+    print $log "result: $aborted\n";
+    close $log;
+
     if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
         # collect uploaded logs
-        my $ua_url = $OpenQA::Worker::Common::url->clone;
-        $ua_url->path("jobs/$job_id/artefact");
 
         my @uploaded_logfiles = <$pooldir/ulogs/*>;
         for my $file (@uploaded_logfiles) {
@@ -144,52 +202,55 @@ sub _stop_job($;$) {
 
             # don't use api_call as it retries and does not allow form data
             # (refactor at some point)
-            my $res = $OpenQA::Worker::Common::ua->post(
-                $ua_url => form => {
-                    file => {file => $file, filename => basename($file)},
-                    ulog => 1
-                });
+            unless (
+                upload(
+                    $job_id,
+                    {
+                        file => {file => $file, filename => basename($file)},
+                        ulog => 1
+                    }))
+            {
+                $aborted = "failed to upload $file";
+                last;
+            }
         }
 
         if ($aborted eq 'done') {
             # job succeeded, upload assets created by the job
 
-            for my $dir (qw(private public)) {
+          ASSET_UPLOAD: for my $dir (qw(private public)) {
                 my @assets = <$pooldir/assets_$dir/*>;
                 for my $file (@assets) {
                     next unless -f $file;
-
-                    # don't use api_call as it retries and does not allow form data
-                    # (refactor at some point)
-                    my $tx = $OpenQA::Worker::Common::ua->build_tx(
-                        'POST' => $ua_url => form => {
-                            file  => {file => $file, filename => basename($file)},
-                            asset => $dir
-                        });
-                    # override the default boundary calculation - it reads whole file
-                    # and it can cause various timeouts
-                    my $ct = $tx->req->headers->content_type;
-                    my $boundary = encode_base64 join('', map chr(rand 256), 1 .. 32);
-                    $boundary =~ s/\W/X/g;
-                    $tx->req->headers->content_type("$ct; boundary=$boundary");
-                    my $res = $OpenQA::Worker::Common::ua->start($tx);
+                    unless (
+                        upload(
+                            $job_id,
+                            {
+                                file  => {file => $file, filename => basename($file)},
+                                asset => $dir
+                            }))
+                    {
+                        $aborted = 'failed to upload asset';
+                        last ASSET_UPLOAD;
+                    }
                 }
             }
         }
 
-        if (open(my $log, '>>', "autoinst-log.txt")) {
-            print $log "+++ worker notes +++\n";
-            printf $log "end time: %s\n", strftime("%F %T", gmtime);
-            print $log "result: $aborted\n";
-            close $log;
-        }
-        for my $file (qw(video.ogv autoinst-log.txt vars.json serial0)) {
+        for my $file (qw(video.ogv vars.json serial0 autoinst-log.txt)) {
+            next unless -e $file;
             # default serial output file called serial0
             my $ofile = $file;
             $ofile =~ s/serial0/serial0.txt/;
-            my $res = $OpenQA::Worker::Common::ua->post(
-                $ua_url => form => {
-                    file => {file => "$pooldir/$file", filename => $ofile}});
+            unless (
+                upload(
+                    $job_id,
+                    {
+                        file => {file => "$pooldir/$file", filename => $ofile}}))
+            {
+                $aborted = "failed to upload $file";
+                last;
+            }
         }
 
         if ($aborted eq 'obsolete') {
@@ -216,6 +277,7 @@ sub _stop_job($;$) {
         }
     }
     unless ($job_done || $aborted eq 'api-failure') {
+        upload_status(1);
         # set job to done. if priority is less than threshold duplicate it
         # with worse priority so it can be picked up again.
         my %args;
