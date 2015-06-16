@@ -22,7 +22,7 @@
 </div>
 
 <div class="row">
-    <div class="col-sm-9 col-sm-push-3">
+    <div class="col-sm-12">
 
         % my $panelclass = 'panel-info';
         % if ($job->state eq 'done') {
@@ -90,6 +90,7 @@
 
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
                 <li role="presentation" class="active"><a href="#details"" aria-controls="details" role="tab" data-toggle="tab">Details</a></li>
+                <li role="presentation"><a href="#downloads" aria-controls="downloads" role="tab" data-toggle="tab">Logs &amp; Assets</a></li>
                 <li role="presentation"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Settings</a></li>
                 <li role="presentation"><a href="#comments" aria-controls="comments" role="tab" data-toggle="tab">Comments (<%= scalar($job->comments) %>)</a></li>
             </ul>
@@ -137,7 +138,7 @@
 
                                             % for my $wav (@{$module->{wavs}}) {
                                                 %= link_to url_for('step', moduleid => $module->{name}, stepid => $wav->{num}) => title => $wav->{name} => begin
-                                                    <img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{name} %>" class="<%= "resborder_\L$wav->{result}" %>" />
+                                                    <img src="/images/audio.png" width="28" height="26" alt="<%= $wav->{name} %>" class="<%= "resborder_\L$wav->{result}" %>"/>
                                                 % end
                                             % }
 
@@ -152,24 +153,7 @@
 
                     % }
                 </div>
-                <div role="tabpanel" class="tab-pane" id="settings">
-                    %= include 'layouts/settings'
-                </div>
-                <div role="tabpanel" class="tab-pane" id="comments">
-                    <div class="comments">
-                        %= include 'test/comments'
-                    </div>
-                </div>
-
-            </div>
-        </div>
-    </div>
-
-    <div class="col-sm-3 col-sm-pull-9">
-
-        <div class="panel panel-default" id="result_files_box">
-            <div class="panel-heading">Downloads</div>
-            <div class="panel-body">
+                <div role="tabpanel" class="tab-pane" id="downloads">
                 % if(@$resultfiles) {
                     <div class="h5">Result Files</div>
                     <ul>
@@ -190,26 +174,6 @@
                         % }
                     </ul>
                 % }
-                % my $assets = $job->jobs_assets;
-                % while (my $a = $assets->next) {
-                    % $a = $a->asset;
-                    % if ($a->type ne 'repo') {
-                        % content_for 'asset_box' => begin
-                            <li>
-                                %= link_to url_for('test_asset_id', 'testid' => $testid, assetid => $a->id) => (id => "asset_".$a->id) => begin
-                                    Download <%= $a->type %>
-                                % end
-                            </li>
-                        % end
-                    % }
-                % }
-
-                % if (length(content('asset_box'))) {
-                    <div class="h5">Assets</div>
-                    <ul>
-                        %= content 'asset_box'
-                    </ul>
-                % }
                 % for my $ulog (@$ulogs) {
                     % content_for 'log_list' => begin
                         <li>
@@ -224,9 +188,43 @@
                         %= content 'log_list'
                     </ul>
                 % }
-            </div>
 
+                % my $assets = $job->jobs_assets;
+                % while (my $a = $assets->next) {
+                    % $a = $a->asset;
+                    % if ($a->type ne 'repo') {
+                        % content_for 'asset_box' => begin
+                            <li>
+                                %= link_to url_for('test_asset_id', 'testid' => $testid, assetid => $a->id) => (id => "asset_".$a->id) => begin
+                                    <%= $a->name %>
+                                % end
+                            </li>
+                        % end
+                    % }
+                % }
+
+                % if (length(content('asset_box'))) {
+                    <div class="h5">Assets</div>
+                    <ul>
+                        %= content 'asset_box'
+                    </ul>
+                % }
+
+                </div>
+
+                <div role="tabpanel" class="tab-pane" id="settings">
+                    %= include 'layouts/settings'
+
+                    %= include 'layouts/dependencies'
+
+                </div>
+                <div role="tabpanel" class="tab-pane" id="comments">
+                    <div class="comments">
+                        %= include 'test/comments'
+                    </div>
+                </div>
+
+            </div>
         </div>
-        %= include 'layouts/dependencies'
     </div>
 </div>
