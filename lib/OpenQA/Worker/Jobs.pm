@@ -153,8 +153,8 @@ sub _stop_job($;$) {
         if ($aborted eq 'done') {
             # job succeeded, upload assets created by the job
 
-            for my $dir (qw(private public)) {
-                my @assets = <$pooldir/assets_$dir/*>;
+            for my $dir (qw(assets_private assets_public)) {
+                my @assets = <$pooldir/$dir/*>;
                 for my $file (@assets) {
                     next unless -f $file;
 
