@@ -394,13 +394,16 @@ sub update_status {
 
 # uploads current data
 sub upload_status(;$) {
-    my ($upload_running) = @_;
+    my ($final_upload) = @_;
 
     return unless verify_workerid;
     return unless $job;
     my $status = {};
 
     my $os_status = read_json_file('status.json') || {};
+    # $os_status->{running} is undef at the beginning or if read_json_file temporary failed
+    # and contains empty string after the last test
+
     # cherry-pick
 
     for my $f (qw/interactive needinput/) {
@@ -408,10 +411,9 @@ sub upload_status(;$) {
             $status->{status}->{$f} = $os_status->{$f};
         }
     }
-    my $upload_result;
-    $upload_result = $current_running if $upload_running;
+    my $upload_up_to;
 
-    if (defined($os_status->{running}) || $upload_running) {
+    if ($os_status->{running} || $final_upload) {
         if (!$current_running) {    # first test
             $test_order = read_json_file('test_order.json');
             if (!$test_order) {
@@ -422,15 +424,25 @@ sub upload_status(;$) {
             $status->{backend}    = $os_status->{backend};
         }
         elsif ($current_running ne $os_status->{running}) {    # new test
-            $upload_result = $current_running;
+            $upload_up_to = $current_running;
         }
         $current_running = $os_status->{running};
     }
+
+    # try to upload everything at the end, in case we missed the last $os_status->{running}
+    $upload_up_to = '' if $final_upload;
+
     if ($status->{status}->{needinput}) {
         $status->{result} = {$os_status->{running} => read_module_result($os_status->{running})};
     }
-    elsif (defined($upload_result)) {
-        $status->{result} = read_result_file($upload_result);
+    elsif (defined($upload_up_to)) {
+        my $extra_test_order = [];
+        $status->{result} = read_result_file($upload_up_to, $extra_test_order);
+
+        if (@$extra_test_order) {
+            $status->{test_order} //= [];
+            push @{$status->{test_order}}, @$extra_test_order;
+        }
     }
     if ($do_livelog) {
         $status->{log} = log_snippet;
@@ -546,19 +558,30 @@ sub read_module_result($) {
     return $result;
 }
 
-sub read_result_file($) {
-    my ($name) = @_;
+sub read_result_file($$) {
+    my ($upload_up_to, $extra_test_order) = @_;
 
     my $ret = {};
 
-    # we need to upload all results not yet uploaded - and stop at $name
+    # we need to upload all results not yet uploaded - and stop at $upload_up_to
+    # if $upload_up_to is empty string, then upload everything
     while (scalar(@$test_order)) {
         my $test   = (shift @$test_order)->{name};
         my $result = read_module_result($test);
         last unless $result;
         $ret->{$test} = $result;
 
-        last if ($test eq $name);
+        if ($result->{extra_test_results}) {
+
+            for my $extra_test (@{$result->{extra_test_results}}) {
+                my $extra_result = read_module_result($extra_test->{name});
+                next unless $extra_result;
+                $ret->{$extra_test->{name}} = $extra_result;
+            }
+            push @{$extra_test_order}, @{$result->{extra_test_results}};
+        }
+
+        last if ($test eq $upload_up_to);
     }
     return $ret;
 }
