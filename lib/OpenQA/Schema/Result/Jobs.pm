@@ -253,7 +253,17 @@ sub _hashref {
 
     my %hashref = ();
     foreach my $field (@fields) {
-        $hashref{$field} = $obj->$field;
+        my $ref = ref($obj->$field);
+        if ($ref =~ /HASH|ARRAY|SCALAR|^$/) {
+            $hashref{$field} = $obj->$field;
+        }
+        elsif ($ref eq 'DateTime') {
+            # non standard ref, try to stringify
+            $hashref{$field} = $obj->$field->datetime();
+        }
+        else {
+            die "unknown field type: $ref";
+        }
     }
 
     return \%hashref;

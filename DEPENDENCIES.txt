@@ -50,6 +50,7 @@ Mojolicious::Plugin
 Mojolicious::Plugin::AssetPack
 Mojolicious::Plugin::Bootstrap3
 Mojolicious::Static
+Net::DBus
 Net::OpenID::Consumer
 Package::Stash
 Params::Util

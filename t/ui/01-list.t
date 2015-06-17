@@ -23,11 +23,20 @@ use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
+use OpenQA::IPC;
+use OpenQA::WebSockets;
+use OpenQA::Scheduler;
+
+# create Test DBus bus and service for fake WebSockets and Scheduler call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
+
 OpenQA::Test::Case->new->init_data;
 
 use t::ui::PhantomTest;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {

@@ -26,7 +26,7 @@ use Test::More;
 use Test::Mojo;
 
 OpenQA::Test::Database->new->create();
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # test jobtoken login is possible with correct jobtoken
 $t->ua->on(

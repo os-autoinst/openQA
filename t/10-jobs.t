@@ -27,7 +27,7 @@ use Test::More;
 use Test::Mojo;
 
 OpenQA::Test::Database->new->create();
-my $t  = Test::Mojo->new('OpenQA');
+my $t  = Test::Mojo->new('OpenQA::WebAPI');
 my $rs = $t->app->db->resultset("Jobs");
 
 is($rs->latest_build, "0091");

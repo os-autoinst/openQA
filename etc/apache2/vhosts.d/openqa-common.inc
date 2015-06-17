@@ -48,8 +48,8 @@ ProxyPass /stylesheets !
 ProxyPass /assets !
 ProxyPass /error !
 
-#web socket proxy pass
-ProxyPassMatch /workers/[0-9]+/ws ws://localhost:9526 keepalive=On
+#webSocket proxy pass to different port
+ProxyPass "/api/v1/ws/" "ws://localhost:9527/ws/" keepalive=On
 
 ProxyPass / http://localhost:9526/ keepalive=On
 ProxyPassReverse / http://localhost:9526/

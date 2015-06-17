@@ -27,7 +27,7 @@ use Test::More;
 use Test::Mojo;
 
 OpenQA::Test::Database->new->create();
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $minimalx = $t->app->db->resultset("Jobs")->find({id => 99926});
 my %clones   = $minimalx->duplicate();

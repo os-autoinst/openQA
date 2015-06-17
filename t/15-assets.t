@@ -23,9 +23,15 @@ use strict;
 use warnings;
 use Data::Dump qw/pp dd/;
 use Test::More;
-use OpenQA::Scheduler qw/job_create job_grab job_get job_restart job_set_done/;
-use OpenQA::Controller::API::V1::Worker;
+use OpenQA::Scheduler::Scheduler qw/job_create job_grab job_get job_restart job_set_done/;
+use OpenQA::WebAPI::Controller::API::V1::Worker;
+use OpenQA::IPC;
+use OpenQA::WebSockets;
 use OpenQA::Test::Database;
+
+# create Test DBus bus and service for fake WebSockets call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws = OpenQA::WebSockets->new;
 
 my $schema;
 ok($schema = OpenQA::Test::Database->new->create(), 'create database') || BAIL_OUT('failed to create database');
@@ -63,7 +69,7 @@ $jobA->set_prio(1);
 
 ## test asset is assigned after grab_job
 # register worker
-my $c = OpenQA::Controller::API::V1::Worker->new;
+my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 my $w = $c->_register($schema, 'host', '1', $workercaps);
 # grab job
 my $job = job_grab(workerid => $w);

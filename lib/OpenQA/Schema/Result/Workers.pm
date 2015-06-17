@@ -18,6 +18,7 @@ package OpenQA::Schema::Result::Workers;
 use base qw/DBIx::Class::Core/;
 use DBIx::Class::Timestamps qw/now/;
 
+use OpenQA::IPC;
 use db_helpers;
 
 __PACKAGE__->table('workers');
@@ -118,7 +119,8 @@ sub status {
 
 sub connected {
     my ($self) = @_;
-    OpenQA::WebSockets::ws_is_worker_connected($self);
+    my $ipc = OpenQA::IPC->ipc;
+    return $ipc->websockets('ws_is_worker_connected', $self->id) ? 1 : 0;
 }
 
 sub info {

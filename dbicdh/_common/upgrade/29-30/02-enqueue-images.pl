@@ -34,9 +34,9 @@ sub optimize() {
 sub {
     my $schema = shift;
 
-    use OpenQA::Plugin::Gru;
+    use OpenQA::WebAPI::Plugin::Gru;
 
-    $gru = OpenQA::Plugin::Gru->new;
+    $gru = OpenQA::WebAPI::Plugin::Gru->new;
 
     use OpenQA::Utils;
     find(\&optimize, $OpenQA::Utils::imagesdir);

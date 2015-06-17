@@ -30,14 +30,14 @@ use File::Which qw(which);
 
 OpenQA::Test::Database->new->create();
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $file = 't/data/7da661d0c3faf37d49d33b6fc308f2.png';
 copy("t/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png", $file);
 is((stat($file))[7], 287, 'original file size');
 $t->app->gru->enqueue(optipng => $file);
 
-my $c = OpenQA::Plugin::Gru::Command::gru->new();
+my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
 $c->app($t->app);
 open(FD, ">", \my $output);
 select FD;

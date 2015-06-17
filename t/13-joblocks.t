@@ -22,11 +22,16 @@ BEGIN {
 use strict;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
+use OpenQA::Scheduler;
 use Test::More;
 use Test::Mojo;
 
+# create Test DBus bus and service for fake WebSockets call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $sh = OpenQA::Scheduler->new;
+
 my $schema = OpenQA::Test::Database->new->create();
-my $t      = Test::Mojo->new('OpenQA');
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
 
 # from fixtures
 my $jobA   = 99961;

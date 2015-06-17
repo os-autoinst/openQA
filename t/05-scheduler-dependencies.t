@@ -22,18 +22,23 @@ BEGIN {
 
 use strict;
 use Data::Dump qw/pp dd/;
-use OpenQA::Scheduler;
+use OpenQA::Scheduler::Scheduler;
+use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More tests => 123;
 
 my $schema = OpenQA::Test::Database->new->create();
 
-#my $t = Test::Mojo->new('OpenQA');
+# create Test DBus bus and service for fake WebSockets call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws = OpenQA::WebSockets->new;
+
+#my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 sub list_jobs {
     my %args = @_;
-    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::query_jobs(%args)->all];
+    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::Scheduler::query_jobs(%args)->all];
 }
 
 sub job_get_deps {
@@ -90,21 +95,21 @@ $settingsD{TEST} = 'D';
 $settingsE{TEST} = 'E';
 $settingsF{TEST} = 'F';
 
-my $jobA = OpenQA::Scheduler::job_create(\%settingsA);
+my $jobA = OpenQA::Scheduler::Scheduler::job_create(\%settingsA);
 
-my $jobB = OpenQA::Scheduler::job_create(\%settingsB);
+my $jobB = OpenQA::Scheduler::Scheduler::job_create(\%settingsB);
 
 $settingsC{_PARALLEL_JOBS} = [$jobB->id];
-my $jobC = OpenQA::Scheduler::job_create(\%settingsC);
+my $jobC = OpenQA::Scheduler::Scheduler::job_create(\%settingsC);
 
 $settingsD{_PARALLEL_JOBS} = [$jobA->id];
-my $jobD = OpenQA::Scheduler::job_create(\%settingsD);
+my $jobD = OpenQA::Scheduler::Scheduler::job_create(\%settingsD);
 
 $settingsE{_PARALLEL_JOBS} = [$jobC->id, $jobD->id];
-my $jobE = OpenQA::Scheduler::job_create(\%settingsE);
+my $jobE = OpenQA::Scheduler::Scheduler::job_create(\%settingsE);
 
 $settingsF{_PARALLEL_JOBS} = [$jobC->id];
-my $jobF = OpenQA::Scheduler::job_create(\%settingsF);
+my $jobF = OpenQA::Scheduler::Scheduler::job_create(\%settingsF);
 
 $jobA->set_prio(3);
 $jobB->set_prio(2);
@@ -120,8 +125,8 @@ $jobF->set_prio(1);
 #diag "jobE ", $jobE;
 #diag "jobF ", $jobF;
 
-use OpenQA::Controller::API::V1::Worker;
-my $c = OpenQA::Controller::API::V1::Worker->new;
+use OpenQA::WebAPI::Controller::API::V1::Worker;
+my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 
 my $w1_id = $c->_register($schema, "host", "1", $workercaps);
 my $w2_id = $c->_register($schema, "host", "2", $workercaps);
@@ -138,32 +143,32 @@ my $w6_id = $c->_register($schema, "host", "6", $workercaps);
 #my $ws5 = $t->websocket_ok("/api/v1/workers/$w5_id/ws");
 #my $ws6 = $t->websocket_ok("/api/v1/workers/$w6_id/ws");
 
-my $job = OpenQA::Scheduler::job_grab(workerid => $w1_id);
+my $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w1_id);
 is($job->{id},                  $jobB->id, "jobB");                   #lowest prio of jobs without parents
 is($job->{settings}->{NICVLAN}, 1,         "first available vlan");
 
-$job = OpenQA::Scheduler::job_grab(workerid => $w2_id);
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w2_id);
 is($job->{id},                  $jobC->id, "jobC");                        #direct child of B
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
-$job = OpenQA::Scheduler::job_grab(workerid => $w3_id);
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w3_id);
 is($job->{id},                  $jobF->id, "jobF");                        #direct child of C
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
-$job = OpenQA::Scheduler::job_grab(workerid => $w4_id);
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w4_id);
 is($job->{id},                  $jobA->id, "jobA");                        # E is direct child of C, but A and D must be started first
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
-$job = OpenQA::Scheduler::job_grab(workerid => $w5_id);
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w5_id);
 is($job->{id},                  $jobD->id, "jobD");                        # direct child of A
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
-$job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w6_id);
 is($job->{id},                  $jobE->id, "jobE");                        # C and D are now running so we can start E
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
 # jobA failed
-my $result = OpenQA::Scheduler::job_set_done(jobid => $jobA->id, result => 'failed');
+my $result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobA->id, result => 'failed');
 ok($result, "job_set_done");
 
 # then jobD and jobE, workers 5 and 6 must be canceled
@@ -173,13 +178,11 @@ ok($result, "job_set_done");
 #$ws6->message_ok;
 #$ws6->message_is('cancel');
 
-$result = OpenQA::Scheduler::job_set_done(jobid => $jobD->id, result => 'incomplete');
+$result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobD->id, result => 'incomplete');
 ok($result, "job_set_done");
 
-$result = OpenQA::Scheduler::job_set_done(jobid => $jobE->id, result => 'incomplete');
+$result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobE->id, result => 'incomplete');
 ok($result, "job_set_done");
-
-
 
 
 $job = job_get_deps($jobA->id);
@@ -206,7 +209,7 @@ is($job->{state}, "running", "job_set_done changed state");
 # check MM API for children status - available only for running jobs
 my $worker = $schema->resultset("Workers")->find($w2_id);
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
@@ -218,7 +221,7 @@ $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => 
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
 
 # duplicate jobF, parents are duplicated too
-my $id = OpenQA::Scheduler::job_duplicate(jobid => $jobF->id);
+my $id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobF->id);
 ok(defined $id, "duplicate works");
 
 $job = job_get_deps($jobA->id);    #unchanged
@@ -287,7 +290,7 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 
 # now duplicate jobE, parents A, D have to be duplicated,
 # C2 is scheduled so it can be used as parent of E2 without duplicating
-$id = OpenQA::Scheduler::job_duplicate(jobid => $jobE->id);
+$id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobE->id);
 ok(defined $id, "duplicate works");
 
 $job = job_get_deps($jobA->id);    #cloned
@@ -378,7 +381,7 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 
 # job_grab now should return jobs from clonned group
 # we already called job_set_done on jobE, so worker 6 is available
-$job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w6_id);
 is($job->{id},                  $jobB2, "jobB2");            #lowest prio of jobs without parents
 is($job->{settings}->{NICVLAN}, 2,      "different vlan");
 
@@ -387,12 +390,12 @@ is($job->{settings}->{NICVLAN}, 2,      "different vlan");
 ## check CHAINED dependency cloning
 my %settingsX = %settings;
 $settingsX{TEST} = 'X';
-my $jobX = OpenQA::Scheduler::job_create(\%settingsX);
+my $jobX = OpenQA::Scheduler::Scheduler::job_create(\%settingsX);
 
 my %settingsY = %settings;
 $settingsY{TEST}              = 'Y';
 $settingsY{_START_AFTER_JOBS} = [$jobX->id];
-my $jobY = OpenQA::Scheduler::job_create(\%settingsY);
+my $jobY = OpenQA::Scheduler::Scheduler::job_create(\%settingsY);
 
 ok(job_set_done(jobid => $jobX->id, result => 'passed'), 'jobX set to done');
 # since we are skipping job_grab, reload missing columns from DB
@@ -404,7 +407,7 @@ $jobX->discard_changes;
 # done    sch.
 
 # when Y is scheduled and X is duplicated, Y must be rerouted to depend on X now
-my $jobX2_id = OpenQA::Scheduler::job_duplicate(jobid => $jobX->id);
+my $jobX2_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobX->id);
 $jobY->discard_changes;
 is($jobX2_id, $jobY->parents->single->parent_job_id, 'jobY parent is now jobX clone');
 my $jobX2 = job_get_deps($jobX2_id);
@@ -431,7 +434,7 @@ ok(job_set_done(jobid => $jobY->id, result => 'passed'), 'jobY set to done');
 # X2 <---- Y
 # done    done
 
-my $jobY2_id = OpenQA::Scheduler::job_duplicate(jobid => $jobY->id);
+my $jobY2_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobY->id);
 
 # current state:
 #
@@ -462,7 +465,7 @@ ok(job_set_done(jobid => $jobY2_id, result => 'passed'), 'jobY2 set to done');
 # done    done
 
 
-my $jobX3_id = OpenQA::Scheduler::job_duplicate(jobid => $jobX2_id);
+my $jobX3_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobX2_id);
 
 # current state:
 #

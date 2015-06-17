@@ -21,8 +21,12 @@ BEGIN {
 }
 
 use strict;
+use OpenQA::IPC;
 use OpenQA::Scheduler;
+use OpenQA::WebSockets;
 use OpenQA::Test::Database;
+use Net::DBus;
+use Net::DBus::Test::MockObject;
 
 use Test::More tests => 52;
 
@@ -30,7 +34,7 @@ my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
 sub list_jobs {
     my %args = @_;
-    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::query_jobs(%args)->all];
+    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::Scheduler::query_jobs(%args)->all];
 }
 
 my $result;
@@ -45,6 +49,11 @@ sub nots {
     return $h;
 }
 
+# create Test DBus bus and service for fake WebSockets
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws  = OpenQA::WebSockets->new();
+my $sh  = OpenQA::Scheduler->new();
+
 my $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "assert database has no jobs to start with")
   or BAIL_OUT("database not properly initialized");
@@ -58,8 +67,8 @@ $workercaps->{cpu_arch}      = 'x86_64';
 $workercaps->{cpu_opmode}    = '32-bit, 64-bit';
 $workercaps->{mem_max}       = '4096';
 
-use OpenQA::Controller::API::V1::Worker;
-my $c = OpenQA::Controller::API::V1::Worker->new;
+use OpenQA::WebAPI::Controller::API::V1::Worker;
+my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 
 # this really should be an integration test
 my $id = $c->_register($schema, "host", "1", $workercaps);
@@ -122,16 +131,16 @@ my $job_ref = {
 };
 
 my $iso = sprintf("%s/%s", $OpenQA::Utils::isodir, $settings{ISO});
-my $job = OpenQA::Scheduler::job_create(\%settings);
+my $job = OpenQA::Scheduler::Scheduler::job_create(\%settings);
 is($job->id, 1, "job_create");
 
 my %settings2 = %settings;
 $settings2{NAME}  = "OTHER NAME";
 $settings2{BUILD} = "44";
-my $job2 = OpenQA::Scheduler::job_create(\%settings2);
+my $job2 = OpenQA::Scheduler::Scheduler::job_create(\%settings2);
 
 $job->set_prio(40);
-my $new_job = OpenQA::Scheduler::job_get($job->id);
+my $new_job = OpenQA::Scheduler::Scheduler::job_get($job->id);
 is_deeply($new_job, $job_ref, "job_get");
 
 # Testing list_jobs
@@ -234,7 +243,7 @@ is_deeply($current_jobs, [], "list_jobs messing two settings up");
 # Testing job_grab
 %args = (workerid => $worker->{id},);
 my $rjobs_before = list_jobs(state => 'running');
-my $grabed       = OpenQA::Scheduler::job_grab(%args);
+my $grabed       = OpenQA::Scheduler::Scheduler::job_grab(%args);
 my $rjobs_after  = list_jobs(state => 'running');
 
 ## test and add JOBTOKEN to job_ref after job_grab
@@ -245,7 +254,7 @@ ok($grabed->{t_started} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job start tim
 is(scalar(@{$rjobs_before}) + 1, scalar(@{$rjobs_after}), "number of running jobs");
 is($grabed->{worker_id},         $worker->{id},           "correct worker assigned");
 
-$grabed = OpenQA::Scheduler::job_get($job->id);
+$grabed = OpenQA::Scheduler::Scheduler::job_get($job->id);
 ok($grabed->{state} eq "running", "Job is in running state");    # After job_grab the job is in running state.
 
 # register worker again while it has a running job
@@ -253,12 +262,12 @@ $id2 = $c->_register($schema, "host", "1", "backend", $workercaps);
 ok($id == $id2, "re-register worker got same id");
 
 # Now it's previous job must be set to done
-$grabed = OpenQA::Scheduler::job_get($job->id);
+$grabed = OpenQA::Scheduler::Scheduler::job_get($job->id);
 is($grabed->{state},  "done",       "Previous job is in done state");
 is($grabed->{result}, "incomplete", "result is incomplete");
 ok(!$grabed->{settings}->{JOBTOKEN}, "job token no longer present");
 
-$grabed = OpenQA::Scheduler::job_grab(%args);
+$grabed = OpenQA::Scheduler::Scheduler::job_grab(%args);
 isnt($job->id, $grabed->{id}, "new job grabbed");
 isnt($grabed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs");
 $job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-x86_64-Build666-rainbow';
@@ -270,16 +279,16 @@ my $job3_id = $job->id;
 my $job_id  = $grabed->{id};
 
 # Testing job_set_waiting
-$result = OpenQA::Scheduler::job_set_waiting($job_id);
-$job    = OpenQA::Scheduler::job_get($job_id);
+$result = OpenQA::Scheduler::Scheduler::job_set_waiting($job_id);
+$job    = OpenQA::Scheduler::Scheduler::job_get($job_id);
 ok($result == 1 && $job->{state} eq "waiting", "job_set_waiting");
 
 # Testing job_set_running
-$result = OpenQA::Scheduler::job_set_running($job_id);
-$job    = OpenQA::Scheduler::job_get($job_id);
+$result = OpenQA::Scheduler::Scheduler::job_set_running($job_id);
+$job    = OpenQA::Scheduler::Scheduler::job_get($job_id);
 ok($result == 1 && $job->{state} eq "running", "job_set_running");
-$result = OpenQA::Scheduler::job_set_running($job_id);
-$job    = OpenQA::Scheduler::job_get($job_id);
+$result = OpenQA::Scheduler::Scheduler::job_set_running($job_id);
+$job    = OpenQA::Scheduler::Scheduler::job_get($job_id);
 ok($result == 0 && $job->{state} eq "running", "Retry job_set_running");
 
 
@@ -289,9 +298,9 @@ sleep 1;
     jobid  => $job_id,
     result => 'passed',
 );
-$result = OpenQA::Scheduler::job_set_done(%args);
+$result = OpenQA::Scheduler::Scheduler::job_set_done(%args);
 ok($result, "job_set_done");
-$job = OpenQA::Scheduler::job_get($job_id);
+$job = OpenQA::Scheduler::Scheduler::job_get($job_id);
 is($job->{state},  "done",   "job_set_done changed state");
 is($job->{result}, "passed", "job_set_done changed result");
 ok($job->{t_finished} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job end timestamp updated");
@@ -308,19 +317,19 @@ ok(!$job->{settings}->{JOBTOKEN},                               "job token not p
 #is_deeply($current_jobs, [], "list_jobs with finish in future");
 
 # Testing job_set_waiting on job not in running state
-$result = OpenQA::Scheduler::job_set_waiting($job_id);
-$job    = OpenQA::Scheduler::job_get($job_id);
+$result = OpenQA::Scheduler::Scheduler::job_set_waiting($job_id);
+$job    = OpenQA::Scheduler::Scheduler::job_get($job_id);
 ok($result == 0 && $job->{state} eq "done", "job_set_waiting on done job");
 
 
 # Testing job_set_running on done job
-$result = OpenQA::Scheduler::job_set_running($job_id);
-$job    = OpenQA::Scheduler::job_get($job_id);
+$result = OpenQA::Scheduler::Scheduler::job_set_running($job_id);
+$job    = OpenQA::Scheduler::Scheduler::job_get($job_id);
 ok($result == 0 && $job->{state} eq "done", "job_set_running on done job");
 
 # Testing set_prio
 $schema->resultset('Jobs')->find($job_id)->set_prio(100);
-$job = OpenQA::Scheduler::job_get($job_id);
+$job = OpenQA::Scheduler::Scheduler::job_get($job_id);
 is($job->{priority}, 100, "job->set_prio");
 
 
@@ -329,9 +338,9 @@ is($job->{priority}, 100, "job->set_prio");
     jobid  => $job_id,
     result => 'passed',
 );
-$result = OpenQA::Scheduler::job_update_result(%args);
+$result = OpenQA::Scheduler::Scheduler::job_update_result(%args);
 ok($result == 1, "job_update_result");
-$job = OpenQA::Scheduler::job_get($job_id);
+$job = OpenQA::Scheduler::Scheduler::job_get($job_id);
 is($job->{result}, $args{result}, "job_get after update");
 
 # Testing job_restart
@@ -345,39 +354,41 @@ is($job->{result}, $args{result}, "job_get after update");
 
 
 # Testing job_delete
-$result = OpenQA::Scheduler::job_delete($job_id);
-my $no_job_id = OpenQA::Scheduler::job_get($job_id);
+$result = OpenQA::Scheduler::Scheduler::job_delete($job_id);
+my $no_job_id = OpenQA::Scheduler::Scheduler::job_get($job_id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
 
-$result    = OpenQA::Scheduler::job_delete($job2->id);
-$no_job_id = OpenQA::Scheduler::job_get($job2->id);
+$result    = OpenQA::Scheduler::Scheduler::job_delete($job2->id);
+$no_job_id = OpenQA::Scheduler::Scheduler::job_get($job2->id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
 
-$result    = OpenQA::Scheduler::job_delete($job3_id);
-$no_job_id = OpenQA::Scheduler::job_get($job3_id);
+$result    = OpenQA::Scheduler::Scheduler::job_delete($job3_id);
+$no_job_id = OpenQA::Scheduler::Scheduler::job_get($job3_id);
 ok($result == 1 && !defined $no_job_id, "job_delete");
 
 $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "no jobs listed");
 
-my $rs = OpenQA::Scheduler::asset_list();
+my $rs = OpenQA::Scheduler::Scheduler::asset_list();
 $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 is_deeply(nots($rs->all()), {id => 1, name => "whatever.iso", type => "iso", size => undef}, "asset list");
 
-my $asset = OpenQA::Scheduler::asset_get(type => 'iso', name => $settings{ISO});
+my $asset = OpenQA::Scheduler::Scheduler::asset_get(type => 'iso', name => $settings{ISO});
 is($asset->single->id, 1, "asset get");
 
-$asset = OpenQA::Scheduler::asset_get(id => 1);
+$asset = OpenQA::Scheduler::Scheduler::asset_get(id => 1);
 is($asset->single->name, "whatever.iso", "asset get by id");
 
-$asset = OpenQA::Scheduler::asset_get(id => 2);
+$asset = OpenQA::Scheduler::Scheduler::asset_get(id => 2);
 is($asset->single, undef, "asset get with unassigned id");
 
-$asset = OpenQA::Scheduler::asset_get(blah => "blub");
+$asset = OpenQA::Scheduler::Scheduler::asset_get(blah => "blub");
 is($asset, undef, "asset get with invalid args");
 
-$asset = OpenQA::Scheduler::asset_register(type => 'iso', name => $settings{ISO});
+$asset = OpenQA::Scheduler::Scheduler::asset_register(type => 'iso', name => $settings{ISO});
 is($asset->id, 1, "asset register returns same");
 
-$asset = OpenQA::Scheduler::asset_delete(type => 'iso', name => $settings{ISO});
+$asset = OpenQA::Scheduler::Scheduler::asset_delete(type => 'iso', name => $settings{ISO});
 is($asset, 1, "asset delete");
+
+done_testing;

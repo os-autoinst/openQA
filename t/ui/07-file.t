@@ -23,10 +23,19 @@ use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
 
+use OpenQA::IPC;
+use OpenQA::WebSockets;
+use OpenQA::Scheduler;
+
+# create Test DBus bus and service for fake WebSockets and Scheduler call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
+
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 $t->get_ok('/tests/99938/images/logpackages-1.png')->status_is(200)->content_type_is('image/png')->header_is('Content-Length' => '48019');    # Exact size of logpackages-1.png
 

@@ -26,6 +26,15 @@ use OpenQA::Client;
 use Mojo::IOLoop;
 use Data::Dump;
 
+use OpenQA::IPC;
+use OpenQA::WebSockets;
+use OpenQA::Scheduler;
+
+# create Test DBus bus and service for fake WebSockets and Scheduler call
+my $ipc = OpenQA::IPC->ipc('', 1);
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
+
 sub nots {
     my $h  = shift;
     my @ts = @_;
@@ -45,7 +54,7 @@ sub nots {
 
 OpenQA::Test::Case->new->init_data;
 
-my $t = Test::Mojo->new('OpenQA');
+my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
