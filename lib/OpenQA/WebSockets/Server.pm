@@ -215,6 +215,9 @@ sub setup {
     under \&check_authorized;
     websocket '/ws/:workerid' => [workerid => qr/\d+/] => \&ws_create;
 
+    # no cookies for worker, no secrets to protect
+    app->secrets(['nosecretshere']);
+
     return Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
 }
 
