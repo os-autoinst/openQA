@@ -127,7 +127,7 @@ sub limit_assets {
             },
             {
                 prefetch => 'asset',
-                order_by => 'asset.t_created desc',
+                order_by => 'me.t_created desc',
             });
         my %seen_asset;
         while (my $a = $assets->next) {
