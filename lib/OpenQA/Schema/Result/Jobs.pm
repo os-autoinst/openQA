@@ -629,10 +629,10 @@ sub update_backend($) {
 
 sub insert_module($$) {
     my ($self, $tm) = @_;
-    my $r = $self->modules->find_or_new({script => $tm->{script}});
+    my $r = $self->modules->find_or_new({name => $tm->{name}});
     if (!$r->in_storage) {
         $r->category($tm->{category});
-        $r->name($tm->{name});
+        $r->script($tm->{script});
         $r->insert;
     }
     $r->update(
