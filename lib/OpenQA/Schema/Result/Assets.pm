@@ -18,6 +18,7 @@ package OpenQA::Schema::Result::Assets;
 use base qw/DBIx::Class::Core/;
 
 use OpenQA::Utils;
+use Date::Format;
 use db_helpers;
 
 our %types = map { $_ => 1 } qw/iso repo hdd/;
@@ -76,7 +77,7 @@ sub remove_from_disk {
     my ($self) = @_;
 
     my $file = $self->disk_file;
-    OpenQA::Utils::log_debug("RM $file");
+    OpenQA::Utils::log_debug("remove_from_disk $file");
     if ($self->type eq 'iso') {
         return unless -f $file;
         unlink($file) || die "can't remove $file";
@@ -111,6 +112,8 @@ sub ensure_size {
 sub limit_assets {
     my ($app) = @_;
     my $groups = $app->db->resultset('JobGroups')->search({}, {select => [qw/id size_limit_gb/]});
+    # keep track of all assets related to jobs
+    my %seen_asset;
     my %toremove;
     my %keep;
 
@@ -129,11 +132,10 @@ sub limit_assets {
                 prefetch => 'asset',
                 order_by => 'me.t_created desc',
             });
-        my %seen_asset;
         while (my $a = $assets->next) {
             # distinct is a bit too tricky
-            next if $seen_asset{$a->asset->id};
-            $seen_asset{$a->asset->id} = 1;
+            next if ($seen_asset{$a->asset->id} // 0) == $g->id;
+            $seen_asset{$a->asset->id} = $g->id;
             my $size = $a->asset->ensure_size;
             if ($size > 0 && $sizelimit > 0) {
                 $keep{$a->asset_id} = 1;
@@ -151,6 +153,44 @@ sub limit_assets {
     while (my $a = $assets->next) {
         $a->remove_from_disk;
         $a->delete;
+    }
+    my $timecond = {"<" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * 2, 'UTC')};
+
+    $assets = $app->db->resultset('Assets')->search({t_created => $timecond, type => ['iso', 'repo'], id => {-not_in => [sort keys %seen_asset]}}, {order_by => [qw/type name/]});
+    while (my $a = $assets->next) {
+        OpenQA::Utils::log_debug("Asset " . $a->type . "/" . $a->name . " is not in any job group, DELETE from assets where id=" . $a->id . ";");
+    }
+    opendir(my $dh, $OpenQA::Utils::assetdir . "/iso") || die "can't open $OpenQA::Utils::assetdir/iso: $!";
+    my %isos;
+    while (readdir($dh)) {
+        next unless $_ =~ m/\.iso$/;
+        $isos{$_} = 0;
+    }
+    closedir($dh);
+    $assets = $app->db->resultset('Assets')->search({type => 'iso', name => {in => [keys %isos]}});
+    while (my $a = $assets->next) {
+        $isos{$a->name} = $a->id;
+    }
+    for my $iso (keys %isos) {
+        if ($isos{$iso} == 0) {
+            OpenQA::Utils::log_debug "File iso/$iso is not a registered asset";
+        }
+    }
+    opendir($dh, $OpenQA::Utils::assetdir . "/repo") || die "can't open $OpenQA::Utils::assetdir/repo: $!";
+    my %repos;
+    while (readdir($dh)) {
+        next unless -d "$OpenQA::Utils::assetdir/repo/$_";
+        $repos{$_} = 0;
+    }
+    closedir($dh);
+    $assets = $app->db->resultset('Assets')->search({type => 'repo', name => {in => [keys %repos]}});
+    while (my $a = $assets->next) {
+        $repos{$a->name} = $a->id;
+    }
+    for my $repo (keys %repos) {
+        if ($repos{$repo} == 0) {
+            OpenQA::Utils::log_debug "Directory repo/$repo is not a registered asset";
+        }
     }
 }
 
