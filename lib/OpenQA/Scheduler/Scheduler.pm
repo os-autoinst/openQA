@@ -526,6 +526,7 @@ sub job_grab {
     # else assets are broken, maybe we could cancel the job right now
 
     if (   $job_hashref->{settings}->{NICTYPE}
+        && !defined $job_hashref->{settings}->{NICVLAN}
         && $job_hashref->{settings}->{NICTYPE} ne 'user')
     {
         # TODO: use multiple named networks for MULTINET
