@@ -44,7 +44,7 @@ sub new {
     my $bus;
     if (!$test) {
         # for WebAPI and WebSockets we use Mojo with its own event loop, so use external reactor if supplied
-        $bus = Net::DBus->find(nomainloop => $reactor ? 0 : 1);
+        $bus = Net::DBus->find(nomainloop => $reactor ? 1 : 0);
     }
     else {
         $bus = Net::DBus->test;
