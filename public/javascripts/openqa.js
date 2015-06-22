@@ -1,6 +1,6 @@
-function updateModuleslist(modlist, testname, testmodule) {
-    var container = $('<div/>');
-    
+function updateModuleslist(modlist, jobid, testmodule) {
+    var container = $('<div id="modlist_content"/>');
+
     $.each(modlist, function(index, category) {
 	var title = $('<h2 class="box-subheader modcategory">' + category.category + "</h2>");
 	container.append(title);
@@ -13,7 +13,7 @@ function updateModuleslist(modlist, testname, testmodule) {
 	    if (testmodule == module.name) { li.addClass("selected"); }
 	    var link = $('<a>' + module.name + '</a>');
 	    li.html(link);
-	    link.attr('href', "/tests/"+testname+"/modules/"+module.name+"/steps/1");
+	    link.attr('href', "/tests/"+jobid+"/modules/"+module.name+"/steps/1");
 	    ul.append(li);
 	});
 	
