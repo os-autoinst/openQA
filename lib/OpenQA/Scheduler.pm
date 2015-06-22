@@ -143,7 +143,7 @@ dbus_method('job_get', ['uint32'], [['dict', 'string', ['variant']]]);
 sub job_get {
     my ($self, $args) = @_;
     my $res = OpenQA::Scheduler::Scheduler::job_get($args);
-    return 0 unless $res;
+    return {} unless $res;
     return $res;
 }
 
