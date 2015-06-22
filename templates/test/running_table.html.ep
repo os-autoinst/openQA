@@ -5,7 +5,7 @@
         "columnDefs": [
             { targets: 0,
               className: "name" },
-            { targets: 2,
+            { targets: 3,
               className: "time",
               "render": function ( data, type, row ) {
                     if (type === 'display') {
@@ -23,8 +23,8 @@
         <tr>
             <th class="name">Medium</th>
             <th class="test">Test</th>
+            <th>Progress</th>
             <th>Testtime</th>
-            <th>Result</th>
         </tr>
     </thead>
     <tbody>
@@ -58,8 +58,6 @@
                         %= $testname
                     % end
                 </td>
-                % my $href = url_for('tests_overview')->query(build => $build, distri => $distri, version => $version);
-                <td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %>Z</td>
                 <td style="padding: 7px 4px;" class="tprogress">
                     <div class="progress" style="margin-bottom: 0;">
                         % my $ptext = "";
@@ -82,6 +80,7 @@
                         </div>
                     </div>
                 </td>
+                <td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %>Z</td>
             </tr>
         % }
     </tbody>
