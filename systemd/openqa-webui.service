@@ -2,6 +2,7 @@
 Description=The openQA web UI
 Wants=apache2.service
 Before=apache2.service
+Requires=openqa-scheduler.service openqa-websockets.service
 
 [Service]
 # TODO: define whether we want to run the web ui with the same user
