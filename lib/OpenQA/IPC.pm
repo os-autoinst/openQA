@@ -20,6 +20,7 @@ use warnings;
 
 use Net::DBus;
 use Net::DBus::Callback;
+use Net::DBus::Binding::Watch;
 
 use Mojo::IOLoop;
 use Data::Dump qw/pp/;
