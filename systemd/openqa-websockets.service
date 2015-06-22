@@ -1,0 +1,15 @@
+[Unit]
+Description=The openQA WebSockets server
+Wants=apache2.service openqa-scheduler.service
+Before=apache2.service openqa-webui.service
+
+[Service]
+# TODO: define whether we want to run the websockets with the same user
+User=geekotest
+Environment="DBUS_STARTER_BUS_TYPE=system"
+ExecStart=/usr/share/openqa/script/openqa-websockets
+BusName=org.opensuse.openqa.WebSockets
+Type=dbus
+
+[Install]
+WantedBy=multi-user.target

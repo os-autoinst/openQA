@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,8 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 
 use strict;
 use warnings;
@@ -22,14 +21,14 @@ use warnings;
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
 
-$ENV{'MOJO_LISTEN'} ||= 'http://localhost:9526/';
+$ENV{'MOJO_LISTEN'} ||= 'http://localhost:9527/';
 
 # allow up to 20GB - hdd images
 $ENV{MOJO_MAX_MESSAGE_SIZE}   = 1024 * 1024 * 1024 * 20;
 $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
 
-use OpenQA::WebAPI;
+use OpenQA::WebSockets;
 
-OpenQA::WebAPI::run;
+OpenQA::WebSockets::run;
 
 # vim: set sw=4 sts=4 et:
