@@ -110,7 +110,7 @@ img.resborder_fail {
 }
 
 img.resborder_unk {
-    border: 2px solid dimgray;
+    border: 2px solid lightgray;
     padding: 1px;
 }
 
