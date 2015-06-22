@@ -47,13 +47,13 @@ sub new {
 }
 
 # WebSockets ABI goes here
-dbus_method('ws_is_worker_connected', ['uint16'], ['bool']);
+dbus_method('ws_is_worker_connected', ['uint32'], ['bool']);
 sub ws_is_worker_connected {
     my ($self, @args) = @_;
     return OpenQA::WebSockets::Server::ws_is_worker_connected(@args);
 }
 
-dbus_method('ws_send', ['uint16', 'string', 'uint16']);
+dbus_method('ws_send', ['uint32', 'string', 'uint32']);
 sub ws_send {
     my ($self, @args) = @_;
     return OpenQA::WebSockets::Server::ws_send(@args);
