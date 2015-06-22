@@ -208,8 +208,8 @@ sub setup {
 
     # use port one higher than WebAPI
     my $port = 9527;
-    if ($ENV{'MOJO_LISTEN'} =~ /.*:(\d{1,5})\/?$/) {
-        $port = $1 + 1;
+    if ($ENV{'MOJO_LISTEN'} && $ENV{'MOJO_LISTEN'} =~ /.*:(\d{1,5})\/?$/) {
+        $port = $1;
     }
 
     under \&check_authorized;
