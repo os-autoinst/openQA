@@ -37,11 +37,11 @@ sub websocket_commands {
         my $jobid = $json->{'jobid'};
         if ($jobid) {
             if (!$job) {
-                printf STDERR 'Received command for job %u, but we don not have any assigned. Ignoring!%s', $jobid, "\n";
+                printf STDERR 'Received command %s for job %u, but we don not have any assigned. Ignoring!%s', $type, $jobid, "\n";
                 return;
             }
             elsif ($jobid ne $job->{'id'}) {
-                printf STDERR 'Received command for different job id %u (our %u). Ignoring!%s', $jobid, $job->{'id'}, "\n";
+                printf STDERR 'Received command %s for different job id %u (our %u). Ignoring!%s', $type, $jobid, $job->{'id'}, "\n";
                 return;
             }
         }
