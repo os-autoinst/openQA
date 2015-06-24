@@ -1,7 +1,7 @@
 
 var testStatus = {
     modlist_initialized: 0,
-    testname: null,
+    jobid: null,
     running: null,
     workerid: null,
     interactive: null,
@@ -32,12 +32,16 @@ function updateTestStatus(newStatus) {
     // If a new module have been started, redraw module list
     if (testStatus.modlist_initialized == 0 || testStatus.running != newStatus.running) {
         testStatus.running = newStatus.running;
-        $.ajax("/tests/" + testStatus.testname + "/modlist").
+        $.ajax("/tests/" + testStatus.jobid + "/modlist").
             done(function(modlist) {
                 if (modlist.length > 0) {
-                    updateModuleslist(modlist, testStatus.testname, testStatus.running);
+                    updateModuleslist(modlist, testStatus.jobid, testStatus.running);
                     testStatus.modlist_initialized = 1;
+                } else {
+                    console.log("ERROR: modlist empty");
                 }
+            }).fail(function() {
+                console.log("ERROR: modlist fail");
             });
     }
 }
@@ -156,7 +160,7 @@ function sendCommand(command) {
 }
 
 function updateStatus() {
-    $.ajax("/tests/" + testStatus.testname + "/status").
+    $.ajax("/tests/" + testStatus.jobid + "/status").
         done(function(status) {
             updateTestStatus(status);
             setTimeout("updateStatus()", 3000);
@@ -165,8 +169,8 @@ function updateStatus() {
         });
 }
 
-function initStatus(tname) {
-    testStatus.testname = tname;
+function initStatus(jobid) {
+    testStatus.jobid = jobid;
     updateStatus();
 }
 

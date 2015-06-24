@@ -513,6 +513,10 @@ table#users input[type="radio"]:checked + label .fa-circle-o {
     width: 3em;
 }
 
+.mediagroup td.prio {
+    text-align: center;
+}
+
 .jobtemplate-header {
     font-size: 2em;
     background: #fff;
