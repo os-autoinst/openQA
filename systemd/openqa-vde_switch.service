@@ -1,0 +1,12 @@
+[Unit]
+Description=openQA VDE switch
+PartOf=openqa-worker.target
+Requires=openqa-vde_switch.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/vde_switch -F -s /run/openqa/vde.ctl -M /run/openqa/vde.mgmt
+User=_openqa-worker
+
+[Install]
+WantedBy=multi-user.target

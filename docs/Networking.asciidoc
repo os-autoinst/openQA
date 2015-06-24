@@ -2,27 +2,39 @@
 
 *This overview is valid only when using QEMU backend!*
 
+Which networking type to use is controlled by the +NICTYPE+
+variable. If unset or empty +NICTYPE+ defaults to +user+, ie qemu
+user networking which requires no further configuration.
 
-There are three possible network configurations for OpenQA virtual machines (VM).
-The configuration is controlled by +NICTYPE+ and +MULTINET+ variables.
+For more advanced setups or tests that require multiple jobs to be
+in the same networking the TAP or VDE based modes can be used.
 
-## User mode network
-By default +NICTYPE+ is set to +user+ and +MULTINET+ is not set. In this case, each VM is created
-with one network device, QEMU provided DHCP configuration. +User+ network mode does have a
-limitation - only TCP and UDP are supported. However no additional configuration is needed.
-MAC address is controlled by +NICMAC+ variable, If not set, MAC address will default to +52:54:00:12:34:56+
+## Qemu user networking
 
-## multiple network devices
-To assign two NICs to VM, set +MULTINET+ variable to 1. This however is only supported for user mode networking (+NICTYPE+ is +user+).
+With Qemu [user
+networking](http://wiki.qemu.org/Documentation/Networking#User_Networking_.28SLIRP.29)
+each jobs gets it's own isolated network with TCP and UDP routed to
+the outside. DHCP is provided by qemu. The MAC address of the
+machine can be controlled with the +NICMAC+ variable. If not set,
+it's +52:54:00:12:34:56+.
 
 ## TAP based network
-When advanced configurations, routing or better performance is required use TAP based network: +NICTYPE+ is set to +tap+.
-In this case, virtual NIC is interconnected with *existing* TAP device on host system.
-Which TAP device is used depends on +TAPDEV+ variable or if not defined, is automatically set to "tap" + ($worker_instance - 1), i.e. worker1 uses tap0, worker 6 uses tap5.
-This mode requires system administrator to manually manage the network and prepare custom routing or bridging before VM will be able to access network.
-MAC address of virtual NIC is controlled by +NICMAC+ variable or automatically computed from $worker_id.
 
-TAP devices need to be created with proper permissions so VMs can access them:
+os-autoinst can connect qemu to *existing* TAP devices of the host system to
+leverage advanced network setups provided by the host by setting +NICTYPE=tap+.
+
+The TAP device to use can be configured with the +TAPDEV+ variable. If not set
+defined, ist's automatically set to "tap" + ($worker_instance - 1), i.e.
+worker1 uses tap0, worker 2 uses tap1 and so on.
+
+MAC address of virtual NIC is controlled by +NICMAC+ variable or
+automatically computed from $worker_id if not set.
+
+In TAP mode the system administrator is expected to configure the
+network, required internet access etc on the host manually.
+
+TAP devices need be owned by the +_openqa-worker+ user for openQA to
+be able to access them.
 
 [source, bash]
 ---------------
@@ -40,4 +52,41 @@ or Wicked way:
 </interface>
 ---------------
 
-Then don't forget to route/bridge them as needed.
+## VDE based network
+
+Virtual Distributed Ethernet provides a software switch that runs in
+user space. It allows to connect several qemu instances without
+affecting the system's network configuration.
+
+The openQA workers need a vde_switch instance running. The workers
+reconfigure the switch as needed by the job.
+
+### Basic, single machine tests
+
+To start with a basic configuration like qemu user mode networking,
+create a machine with the following settings:
+
+- +VDE_SOCKETDIR=/run/openqa+
+- +NICTYPE=vde+
+- +NICVLAN=0+
+
+Start switch and user mode networking:
+
+[source, bash]
+---------------
+systemctl start openqa-vde_switch
+systemctl start openqa-slirpvde
+---------------
+
+With this setting all jobs on the same host would be in the same
+network share the same SLIRP instance though.
+
+### Multi machine tests
+
+Create a machine like above but don't set +NICVLAN+. openQA will
+dynamically allocate a VLAN number for all jobs that have
+dependencies between each other. By default this VLAN is private and
+has no internet access. To enable user mode networking set
++VDE_USE_SLIRP=1+ on one of the machines. The worker running the job
+on such a machine will start slirpvde and put it in the correct VLAN
+then.

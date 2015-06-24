@@ -201,7 +201,7 @@ if ($jobid) {
     delete $settings{NAME};    # usually autocreated
     for my $arg (@ARGV) {
         if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
-            if ($2) {
+            if (defined $2) {
                 $settings{$1} = $2;
             }
             else {

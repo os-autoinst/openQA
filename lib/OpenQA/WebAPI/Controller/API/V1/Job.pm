@@ -63,7 +63,7 @@ sub create {
     my $json = {};
     my $status;
     try {
-        my $job = $ipc->scheduler('job_create', \%up_params);
+        my $job = $ipc->scheduler('job_create', \%up_params, 0);
         $json->{id} = $job->{id};
     }
     catch {

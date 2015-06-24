@@ -50,6 +50,7 @@ API for the tests. The most commonly used functions are:
 * +mouse_hide+ Moves the mouse cursor into the edge of the screen to hide it within needles
 * +script_output SCRIPT[, TIMEOUT]+ Returns the text output of the given bash script. The script is called with bash -xe and STDOUT is returned
 * +validate_script_output SCRIPT, CODE+ Checks the text output of the bash script using the given callback (e.g. +validate_script_output "ls -la $HOME", sub { m/.xsession-errors/ }+)
+* +assert_shutdown [TIMEOUT]+ Wait for max TIMEOUT seconds for system to shut down (default 30s)
 
 The following API is distribution specific and subject to change
 
@@ -275,14 +276,21 @@ There are 2 types of dependencies: +CHAINED+ and +PARALLEL+:
 is successfully finished and cancelled if fail.
 
 To define +CHAINED+ dependency add variable +START_AFTER_TEST+ with the name(s) of test suite(s) after which selected test suite is supposed to run.
-Use comma separated list for multiple test suite dependency.
+Use comma separated list for multiple test suite dependency. E.g. +START_AFTER_TEST="kde,dhcp-server"+
 
 * +PARALLEL+ describes MM test, test suites are scheduled to run at the same time and managed as a group. On top of that, +PARALLEL+ also describes
 test suites dependencies, where some test suites (children) run parallel with other test suites (parents) only when parents are running.
 
 To define +PARALLEL+ dependency, use +PARALLEL_WITH+ variable with the name(s) of test suite(s) which acts as a parent suite(s) to selected test suite.
-In other words, +PARALLEL_WITH+ describes "I need this test suite to be running during my run". Use comma separated list for multiple test suite dependency.
+In other words, +PARALLEL_WITH+ describes "I need this test suite to be running during my run". Use comma separated list for multiple test suite dependency. E.g. +PARALLEL_WITH="web-server,dhcp-server"+
 Keep in mind that parent job _must be running until all children finish_, else scheduler will cancel child jobs once parent is done.
+
+Job dependencies are only resolved when using the iso controller to
+create new jobs from job templates. Posting individual jobs manually
+won't work.
+
+Job dependencies are currently only possible between tests that are
+scheduled for the same machine.
 
 OpenQA worker requirements
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

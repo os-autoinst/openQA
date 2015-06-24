@@ -5,7 +5,7 @@
 [Unit]
 Description=openQA Worker #%i
 Wants=apache2.service openqa-webui.service network.target
-After=apache2.service openqa-webui.service network.target
+After=apache2.service openqa-webui.service network.target openqa-slirpvde.service
 PartOf=openqa-worker.target
 
 [Service]
