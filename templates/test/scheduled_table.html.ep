@@ -4,7 +4,16 @@
         "order": [[2, 'asc'], [0, 'asc']],
 	"columnDefs": [
 	    { targets: 0,
-              className: "name" }
+              className: "name" },
+	    { targets: 3,
+              className: "time",
+              "render": function ( data, type, row ) {
+                    if (type === 'display') {
+                      return jQuery.timeago(new Date(data));
+                  } else
+                      return data;
+              }
+            },
         ],
   } );
 % end
@@ -15,6 +24,7 @@
 	    <th class="name">Medium</th>
 	    <th class="name">Test</th>
             <th>Priority</th>
+            <th>Testtime</th>
         </tr>
     </thead>
     <tbody>
@@ -58,6 +68,7 @@
 		    <i class="fa fa-plus-square-o"></i>
 		    % end
 		</td>
+		<td class="testtime" title="<%= $job->t_created %>"><%= $job->t_created->datetime() %>Z</td>
             </tr>
         % }
     </tbody>
