@@ -26,7 +26,7 @@ use OpenQA::Scheduler::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::More tests => 130;
+use Test::More tests => 144;
 
 my $schema = OpenQA::Test::Database->new->create();
 
@@ -488,7 +488,7 @@ my $jobY3    = job_get_deps($jobY3_id);
 is_deeply($jobY3->{parents}, {Chained => [$jobX3_id], Parallel => []}, 'jobY3 parent is now jobX3');
 
 
-# checking siblinks scenario
+# checking siblings scenario
 
 # original state, all job set as running
 #
@@ -551,5 +551,101 @@ my $jobH2 = job_get_deps($jobJ2)->{parents}->{Parallel}->[0];
 is($jobH2, $jobH->clone->id, 'H2 cloned with parallel parent dep');
 my $jobK2 = job_get_deps($jobH2)->{children}->{Parallel}->[0];
 is($jobK2, $jobK->clone->id, 'K2 cloned with parallel children dep');
+
+# checking all-in mixed scenario
+
+# original state
+#
+# Q <- (chained) W <-\ (parallel)
+#   ^- (chained) U <-- (parallel) T
+#   ^- (chained) R <-/ (parallel) | (chained)
+#   ^-----------------------------/
+#
+# Q is done; W,U,R and T is running
+
+my %settingsQ = %settings;
+my %settingsW = %settings;
+my %settingsU = %settings;
+my %settingsR = %settings;
+my %settingsT = %settings;
+
+$settingsQ{TEST} = 'Q';
+$settingsW{TEST} = 'W';
+$settingsU{TEST} = 'U';
+$settingsR{TEST} = 'R';
+$settingsT{TEST} = 'T';
+
+my $jobQ = OpenQA::Scheduler::Scheduler::job_create(\%settingsQ);
+
+$settingsW{_START_AFTER_JOBS} = [$jobQ->id];
+my $jobW = OpenQA::Scheduler::Scheduler::job_create(\%settingsW);
+$settingsU{_START_AFTER_JOBS} = [$jobQ->id];
+my $jobU = OpenQA::Scheduler::Scheduler::job_create(\%settingsU);
+$settingsR{_START_AFTER_JOBS} = [$jobQ->id];
+my $jobR = OpenQA::Scheduler::Scheduler::job_create(\%settingsR);
+
+$settingsT{_PARALLEL_JOBS} = [$jobW->id, $jobU->id, $jobR->id];
+$settingsT{_START_AFTER_JOBS} = [$jobQ->id];
+my $jobT = OpenQA::Scheduler::Scheduler::job_create(\%settingsT);
+
+# hack jobs to appear to scheduler in desired state
+$jobQ->state(OpenQA::Schema::Result::Jobs::DONE);
+$jobQ->update;
+$jobW->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobW->update;
+$jobU->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobU->update;
+$jobR->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobR->update;
+$jobT->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobT->update;
+
+# duplicate U
+my $jobU2 = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobU->id);
+
+# expected state
+#
+# Q <- (chained) W2 <-\ (parallel)
+#   ^- (chained) E2 <-- (parallel) T2
+#   ^- (chained) R2 <-/ (parallel) | (chained)
+#   ^------------------------------/
+#
+# Q is done; W2,E2,R2 and T2 are scheduled
+
+ok($jobU2, 'jobE duplicated');
+# reload data from DB
+$jobQ->discard_changes;
+$jobW->discard_changes;
+$jobU->discard_changes;
+$jobR->discard_changes;
+$jobT->discard_changes;
+# check other clones
+ok(!$jobQ->clone, 'jobQ not cloned');
+ok($jobW->clone,  'jobW cloned');
+ok($jobU->clone,  'jobE cloned');
+ok($jobR->clone,  'jobR cloned');
+ok($jobT->clone,  'jobT cloned');
+
+$jobU2 = job_get_deps($jobU2);
+$jobQ  = job_get_deps($jobQ->id);
+my $jobW2 = job_get_deps($jobW->clone->id);
+my $jobR2 = job_get_deps($jobR->clone->id);
+my $jobT2 = job_get_deps($jobT->clone->id);
+
+my @sorted_got = sort(@{$jobQ->{children}->{Chained}});
+my @sorted_exp = sort(($jobW2->{id}, $jobU2->{id}, $jobR2->{id}, $jobT2->{id}));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs');
+
+@sorted_got = sort(@{$jobT2->{parents}->{Parallel}});
+@sorted_exp = sort(($jobW2->{id}, $jobU2->{id}, $jobR2->{id}));
+is_deeply(\@sorted_got, \@sorted_exp, 'jobT is parallel child of all jobs except jobQ');
+
+is_deeply($jobW2->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobW2 has no child dependency to sibling');
+is_deeply($jobU2->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobU2 has no child dependency to sibling');
+is_deeply($jobR2->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobR2 has no child dependency to sibling');
+
+is_deeply($jobW2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobW2 has no parent dependency to sibling');
+is_deeply($jobU2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobU2 has no parent dependency to sibling');
+is_deeply($jobR2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobR2 has no parent dependency to sibling');
 
 done_testing();
