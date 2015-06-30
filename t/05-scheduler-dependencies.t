@@ -26,7 +26,7 @@ use OpenQA::Scheduler::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::More tests => 144;
+use Test::More tests => 155;
 
 my $schema = OpenQA::Test::Database->new->create();
 
@@ -612,7 +612,7 @@ my $jobU2 = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobU->id);
 #
 # Q is done; W2,E2,R2 and T2 are scheduled
 
-ok($jobU2, 'jobE duplicated');
+ok($jobU2, 'jobU duplicated');
 # reload data from DB
 $jobQ->discard_changes;
 $jobW->discard_changes;
@@ -622,7 +622,7 @@ $jobT->discard_changes;
 # check other clones
 ok(!$jobQ->clone, 'jobQ not cloned');
 ok($jobW->clone,  'jobW cloned');
-ok($jobU->clone,  'jobE cloned');
+ok($jobU->clone,  'jobU cloned');
 ok($jobR->clone,  'jobR cloned');
 ok($jobT->clone,  'jobT cloned');
 
@@ -647,5 +647,90 @@ is_deeply($jobR2->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobR
 is_deeply($jobW2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobW2 has no parent dependency to sibling');
 is_deeply($jobU2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobU2 has no parent dependency to sibling');
 is_deeply($jobR2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobR2 has no parent dependency to sibling');
+
+# check cloning of clones
+# this is to check whether duplication propely travers clones to find latest clone
+# test is divided into two parts, cloning jobO and then jobI
+
+# original state, all jobs DONE
+#
+# P <-(parallel) O <-(parallel) I
+#
+my %settingsP = %settings;
+my %settingsO = %settings;
+my %settingsI = %settings;
+
+$settingsP{TEST} = 'P';
+$settingsO{TEST} = 'O';
+$settingsI{TEST} = 'I';
+
+my $jobP = OpenQA::Scheduler::Scheduler::job_create(\%settingsP);
+
+$settingsO{_PARALLEL_JOBS} = [$jobP->id];
+my $jobO = OpenQA::Scheduler::Scheduler::job_create(\%settingsO);
+$settingsI{_PARALLEL_JOBS} = [$jobO->id];
+my $jobI = OpenQA::Scheduler::Scheduler::job_create(\%settingsI);
+
+# hack jobs to appear to scheduler in desired state
+$jobP->state(OpenQA::Schema::Result::Jobs::DONE);
+$jobP->update;
+$jobO->state(OpenQA::Schema::Result::Jobs::DONE);
+$jobO->update;
+$jobI->state(OpenQA::Schema::Result::Jobs::DONE);
+$jobI->update;
+
+#
+# cloning O gets to expected state
+#
+# P2 <-(parallel) O2 (clone of) O <-(parallel) I
+#
+my $jobO2 = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobO->id);
+ok($jobO2, 'jobO duplicated');
+# reload data from DB
+$jobP->discard_changes;
+$jobO->discard_changes;
+$jobI->discard_changes;
+# check other clones
+ok($jobP->clone,  'jobP cloned');
+ok($jobO->clone,  'jobO cloned');
+ok(!$jobI->clone, 'jobI not cloned');
+
+$jobO2 = job_get_deps($jobO2);
+$jobI  = job_get_deps($jobI->id);
+my $jobP2 = job_get_deps($jobP->clone->id);
+
+is_deeply($jobI->{parents}->{Parallel},  [$jobO->id],    'jobI retain its original parent');
+is_deeply($jobO2->{parents}->{Parallel}, [$jobP2->{id}], 'clone jobO2 gets new parent jobP2');
+
+# get Jobs RS from ids for cloned jobs
+$jobO2 = OpenQA::Scheduler::Scheduler::query_jobs(ids => $jobO2->{id})->first;
+$jobP2 = OpenQA::Scheduler::Scheduler::query_jobs(ids => $jobP2->{id})->first;
+# set P2 running and O2 done
+$jobP2->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobP2->update;
+$jobO2->state(OpenQA::Schema::Result::Jobs::DONE);
+$jobO2->update;
+
+#
+# cloning I gets to expected state
+#
+# P3 <-(parallel) O3 <-(parallel) I2
+#
+my $jobI2 = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobI->{id});
+ok($jobI2, 'jobI duplicated');
+
+# reload data from DB
+$jobP2->discard_changes;
+$jobO2->discard_changes;
+
+ok($jobP2->clone, 'jobP2 cloned');
+ok($jobO2->clone, 'jobO2 cloned');
+
+$jobI2 = job_get_deps($jobI2);
+my $jobO3 = job_get_deps($jobO2->clone->id);
+my $jobP3 = job_get_deps($jobP2->clone->id);
+
+is_deeply($jobI2->{parents}->{Parallel}, [$jobO3->{id}], 'jobI2 got new parent jobO3');
+is_deeply($jobO3->{parents}->{Parallel}, [$jobP3->{id}], 'clone jobO3 gets new parent jobP3');
 
 done_testing();
