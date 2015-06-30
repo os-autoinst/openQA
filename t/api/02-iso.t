@@ -134,6 +134,9 @@ is_deeply($server_64->{parents},  {Parallel => [],                 Chained => []
 is($textmode_64, undef, "textmode is not created for 64bit machine");
 is_deeply($advanced_kde_64->{parents}, {Parallel => [], Chained => [$kde_64->{id}]}, "kde_64 is only parent of advanced_kde_64");    # textmode is not defined for 64bit machine
 
+is($server_32->{group_id}, 1001, 'server_32 part of opensuse group');
+is($server_64->{group_id}, 1001, 'server_64 part of opensuse group');
+
 lj;
 
 # check that the old tests are cancelled
