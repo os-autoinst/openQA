@@ -633,7 +633,7 @@ my $jobR2 = job_get_deps($jobR->clone->id);
 my $jobT2 = job_get_deps($jobT->clone->id);
 
 my @sorted_got = sort(@{$jobQ->{children}->{Chained}});
-my @sorted_exp = sort(($jobW2->{id}, $jobU2->{id}, $jobR2->{id}, $jobT2->{id}));
+my @sorted_exp = sort(($jobW2->{id}, $jobU2->{id}, $jobR2->{id}, $jobT2->{id}, $jobW->id, $jobU->id, $jobR->id, $jobT->id));
 is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs');
 
 @sorted_got = sort(@{$jobT2->{parents}->{Parallel}});

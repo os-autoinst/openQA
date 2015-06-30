@@ -338,7 +338,7 @@ for PARALLEL dependencies:
 
 for CHAINED dependencies:
 - do NOT clone parents
- + just route dependency (remove original dependency)
+ + create new dependency - duplicit cloning is prevented by ignorelist, webui will show multiple chained deps though
 - clone children
  + if clone state is SCHEDULED, route child to us (remove original dependency)
  + if child is clone, find the latest clone and clone it
@@ -408,7 +408,6 @@ sub duplicate {
         else {
             # reroute to CHAINED parents, those are not being cloned when child is restarted
             push @direct_deps_parents_chained, $p->id;
-            $pd->delete;
         }
     }
 
