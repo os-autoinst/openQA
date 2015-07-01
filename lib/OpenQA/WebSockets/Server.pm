@@ -170,20 +170,20 @@ sub _message {
 
     my $worker = _validate_workerid($workerid);
     $worker->seen();
-    if ($json->{'type'} eq 'ok') {
+    if ($json->{type} eq 'ok') {
         $ws->tx->send({json => {type => 'ok'}});
     }
-    elsif ($json->{'type'} eq 'status') {
+    elsif ($json->{type} eq 'status') {
         # handle job status update through web socket
-        my $jobid  = $json->{'jobid'};
-        my $status = $json->{'data'};
+        my $jobid  = $json->{jobid};
+        my $status = $json->{data};
         my $job    = $ws->app->schema->resultset("Jobs")->find($jobid);
         return $ws->tx->send(json => {result => 'nack'}) unless $job;
         my $ret = $job->update_status($status);
         $ws->tx->send({json => $ret});
     }
     else {
-        $ws->app->log->error(sprintf('Received unknown message type "%s" from worker %u', $json->{'type'}, $workerid));
+        $ws->app->log->error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $workerid));
     }
 }
 
@@ -208,8 +208,8 @@ sub setup {
 
     # use port one higher than WebAPI
     my $port = 9527;
-    if ($ENV{'MOJO_LISTEN'} =~ /.*:(\d{1,5})\/?$/) {
-        $port = $1 + 1;
+    if ($ENV{MOJO_LISTEN} && $ENV{MOJO_LISTEN} =~ /.*:(\d{1,5})\/?$/) {
+        $port = $1;
     }
 
     under \&check_authorized;
