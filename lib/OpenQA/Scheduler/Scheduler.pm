@@ -1131,14 +1131,14 @@ sub job_schedule_iso {
         }
     }
 
-    my @jobs = ();
-
     # the jobs are now sorted parents first
-    # remember ids of created parents and pass them to _START_AFTER_JOBS/_PARALLEL_JOBS of children
-    my %testsuite_ids;    # key: "suite:machine", value: array of job ids
 
     my @ids     = ();
     my $coderef = sub {
+        my @jobs = ();
+        # remember ids of created parents
+        my %testsuite_ids;            # key: "suite:machine", value: array of job ids
+
         for my $settings (@{$jobs || []}) {
             my $prio     = delete $settings->{PRIO};
             my $group_id = delete $settings->{GROUP_ID};
@@ -1174,16 +1174,15 @@ sub job_schedule_iso {
         }
     };
 
-    my $res;
     try {
         schema->txn_do($coderef);
     }
     catch {
         my $error = shift;
         OpenQA::Utils::log_debug("rollback job_schedule_iso: $error");
-        die "Rollback failed during failed job cloning!"
+        die "Rollback failed during failed job_schedule_iso: $error"
           if ($error =~ /Rollback failed/);
-        $res = undef;
+        @ids = ();
     };
 
     #notify workers new jobs are available
