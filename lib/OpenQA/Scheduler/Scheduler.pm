@@ -1074,13 +1074,14 @@ sub _generate_jobs {
 }
 
 sub job_schedule_iso {
-    my (%args) = @_;
-    my $jobs = _generate_jobs(%args);
+    my (%args)     = @_;
+    my $noobsolete = delete $args{_NOOBSOLETEBUILD};
+    my $jobs       = _generate_jobs(%args);
 
     # XXX: take some attributes from the first job to guess what old jobs to
     # cancel. We should have distri object that decides which attributes are
     # relevant here.
-    if ($jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
+    if (!$noobsolete && $jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
         my %cond;
         for my $k (qw/DISTRI VERSION FLAVOR ARCH/) {
             next unless $jobs->[0]->{$k};
