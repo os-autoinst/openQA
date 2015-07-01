@@ -29,35 +29,6 @@ sub admintable {
             order_by => {-desc => 'count(key)'}});
     my @variables = map { $_->key } $rc->all();
     $self->stash('variables', \@variables);
-
-    my $shortest;
-    my @col_variables;
-    for my $v (@variables) {
-        my $line = $self->db->resultset($resultset)->search(
-            {key => $v},
-            {
-                select => {'max' => {'length' => 'value'}},
-                as     => 'max'
-            });
-        my $max = $line->first->get_column('max');
-        # this are purely magic numbers
-        if ($max > length($v) * 1.2) {
-            # ignore it on first run
-            $shortest = undef if ($shortest && $shortest->{len} > $max);
-            next if $shortest;
-            $shortest = {len => $max, var => $v};
-            next;
-        }
-        last if length(join('  ', @col_variables)) > 30;
-        push(@col_variables, $v);
-    }
-    # if we have space left, we can readd the shortest
-    if ($shortest && length(join('  ', @col_variables)) + length($shortest->{var}) < 30) {
-        push(@col_variables, $shortest->{var});
-    }
-
-    $self->stash('col_var_keys', \@col_variables);
-
     $self->render("admin/$template/index");
 }
 

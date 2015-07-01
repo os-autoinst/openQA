@@ -38,7 +38,7 @@ use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 81;
+    plan tests => 71;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -93,25 +93,22 @@ sub add_machine() {
 
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(@headers, 6, "6 columns");
+    is(@headers, 4, "4 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "name",            "1st column");
-    is((shift @headers)->get_text(), "backend",         "2nd column");
-    is((shift @headers)->get_text(), "QEMUCPU",         "3rd column");
-    is((shift @headers)->get_text(), "LAPTOP",          "4th column");
-    is((shift @headers)->get_text(), "other variables", "5th column");
-    is((shift @headers)->get_text(), "action",          "6th column");
+    is((shift @headers)->get_text(), "Name",     "1st column");
+    is((shift @headers)->get_text(), "Backend",  "2nd column");
+    is((shift @headers)->get_text(), "Settings", "3th column");
+    is((shift @headers)->get_text(), "Actions",  "4th column");
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
     @headers = $driver->find_child_elements($elem, 'td');
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "Laptop_64", "name");
-    is((shift @headers)->get_text(), "qemu",      "backend");
-    is((shift @headers)->get_text(), "qemu64",    "cpu");
-    is((shift @headers)->get_text(), "1",         "LAPTOP");
+    is((shift @headers)->get_text(), "Laptop_64",                "name");
+    is((shift @headers)->get_text(), "qemu",                     "backend");
+    is((shift @headers)->get_text(), "LAPTOP=1\nQEMUCPU=qemu64", "cpu");
 
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons before");
 
@@ -120,7 +117,7 @@ sub add_machine() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 6, "6 fields");    # one column has 2 fields
+    is(@fields, 4, "4 fields");    # one column has 2 fields
     (shift @fields)->send_keys('HURRA');    # name
     (shift @fields)->send_keys('ipmi');     # backend
     (shift @fields)->send_keys('kvm32');    # cpu
@@ -146,14 +143,12 @@ sub add_test_suite() {
 
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(@headers, 6, "6 columns");
+    is(@headers, 3, "3 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "name",            "1st column");
-    is((shift @headers)->get_text(), "DESKTOP",         "2nd column");
-    is((shift @headers)->get_text(), "PARALLEL_WITH",   "3rd column");
-    is((shift @headers)->get_text(), "INSTALLONLY",     "4th column");
-    is((shift @headers)->get_text(), "other variables", "5th column");
+    is((shift @headers)->get_text(), "Name",     "1st column");
+    is((shift @headers)->get_text(), "Settings", "2th column");
+    is((shift @headers)->get_text(), "Actions",  "3th column");
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
@@ -161,9 +156,7 @@ sub add_test_suite() {
 
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "RAID0", "name");
-    is((shift @headers)->get_text(), "kde",   "DESKTOP");
-    is((shift @headers)->get_text(), "",      "PARALLEL_WITH");
-    is((shift @headers)->get_text(), "1",     "INSTALLONLY");
+    is((shift @headers)->get_text(), "DESKTOP=kde\nINSTALLONLY=1\nRAIDLEVEL=0", "DESKTOP");
 
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 7, "7 edit buttons before");
 
@@ -172,11 +165,8 @@ sub add_test_suite() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 6, "6 fields");    # one column has 2 fields
+    is(@fields, 3, "3 fields");    # one column has 2 fields
     (shift @fields)->send_keys('xfce');    # name
-    (shift @fields)->send_keys('xfce');    # desktop
-    (shift @fields)->send_keys('');        # parallelwith
-    (shift @fields)->send_keys('');        # installonly
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
@@ -202,28 +192,25 @@ sub add_product() {
 
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(@headers, 8, "8 columns");
+    is(@headers, 6, "6 columns");
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "distri",          "1st column");
-    is((shift @headers)->get_text(), "version",         "2nd column");
-    is((shift @headers)->get_text(), "flavor",          "3rd column");
-    is((shift @headers)->get_text(), "arch",            "4th column");
-    is((shift @headers)->get_text(), "DVD",             "5th column");
-    is((shift @headers)->get_text(), "ISO_MAXSIZE",     "6th column");
-    is((shift @headers)->get_text(), "other variables", "7th column");
+    is((shift @headers)->get_text(), "Distri",   "1st column");
+    is((shift @headers)->get_text(), "Version",  "2nd column");
+    is((shift @headers)->get_text(), "Flavor",   "3rd column");
+    is((shift @headers)->get_text(), "Arch",     "4th column");
+    is((shift @headers)->get_text(), "Settings", "5th column");
+    is((shift @headers)->get_text(), "Actions",  "6th column");
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(1)', 'css');
     @headers = $driver->find_child_elements($elem, 'td');
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "opensuse",   "distri");
-    is((shift @headers)->get_text(), "13.1",       "version");
-    is((shift @headers)->get_text(), "DVD",        "flavor");
-    is((shift @headers)->get_text(), "i586",       "arch");
-    is((shift @headers)->get_text(), "1",          "DVD");
-    is((shift @headers)->get_text(), "4700372992", "MAX SIZE");
+    is((shift @headers)->get_text(), "opensuse", "distri");
+    is((shift @headers)->get_text(), "13.1",     "version");
+    is((shift @headers)->get_text(), "DVD",      "flavor");
+    is((shift @headers)->get_text(), "i586",     "arch");
 
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 1, "1 edit button before");
 
@@ -232,7 +219,7 @@ sub add_product() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 8, "8 fields");    # one column has 2 fields
+    is(@fields, 6, "6 fields");    # one column has 2 fields
     (shift @fields)->send_keys('sle');      # distri
     (shift @fields)->send_keys('13');       # version
     (shift @fields)->send_keys('DVD');      # flavor
@@ -251,7 +238,7 @@ sub add_product() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 8, "8 fields");    # one column has 2 fields
+    is(@fields, 6, "6 fields");    # one column has 2 fields
     (shift @fields)->send_keys('OpeNSusE');    # distri name has capital letter and many upper/lower case combined
     (shift @fields)->send_keys('13.2');        # version
     (shift @fields)->send_keys('DVD');         # flavor
