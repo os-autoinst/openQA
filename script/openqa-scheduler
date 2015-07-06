@@ -21,6 +21,7 @@ use warnings;
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
 
+use OpenQA::Schema::Schema;
 use OpenQA::Scheduler;
 
 OpenQA::Scheduler::run;
