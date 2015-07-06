@@ -4,7 +4,7 @@ use Mojo::IOLoop::Server;
 # Start command line interface for application
 require Mojolicious::Commands;
 
-our $driver;
+our $_driver;
 our $mojopid;
 our $phantompid;
 
@@ -36,10 +36,8 @@ sub start_app {
 }
 
 sub start_phantomjs {
-    use IPC::Cmd qw[can_run];
-    if (!can_run('phantomjs')) {
-        return undef;
-    }
+    my ($mojoport) = @_;
+
     my $phantomport = Mojo::IOLoop::Server->generate_port;
 
     $phantompid = fork();
@@ -68,12 +66,16 @@ sub start_phantomjs {
     eval {
         $driver = Selenium::Remote::Driver->new('port' => $phantomport);
         $driver->set_implicit_wait_timeout(5);
+        $driver->set_window_size(600, 800);
+        $driver->get("http://localhost:$mojoport/");
     };
 
     # if PhantomJS started, but so slow or unresponsive that SRD cannot connect to it,
     # kill it manually to avoid waiting for it indefinitely
     if ($@) {
-        kill 9, $phantompid;
+        kill 'TERM', $mojopid;
+        kill 'KILL', $phantompid;
+        $mojopid = $phantompid = undef;
         die $@;
     }
 
@@ -85,23 +87,23 @@ sub make_screenshot($) {
 
     open(my $fh, '>', $fn);
     binmode($fh);
-    my $png_base64 = $driver->screenshot();
+    my $png_base64 = $_driver->screenshot();
     print($fh MIME::Base64::decode_base64($png_base64));
     close($fh);
 }
 
 sub call_phantom() {
-    $driver = start_phantomjs;
-    if ($driver) {
-        $driver->set_window_size(600, 800);
-
-        my $mojoport = start_app;
-        $driver->get("http://localhost:$mojoport/");
+    use IPC::Cmd qw[can_run];
+    if (!can_run('phantomjs')) {
+        return undef;
     }
-    return $driver;
+
+    my $mojoport = start_app;
+    return $_driver = start_phantomjs($mojoport);
 }
 
 sub kill_phantom() {
+    $_driver->quit();
     kill('TERM', $mojopid);
     waitpid($mojopid, 0);
     kill('TERM', $phantompid);
