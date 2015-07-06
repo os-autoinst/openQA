@@ -747,7 +747,7 @@ sub optipng {
     my ($app, $path) = @_;
     if (which('optipng')) {
         OpenQA::Utils::log_debug("optipng $path");
-        system("optipng", "-preserve", "-o2", $path);
+        system('optipng', '-quiet', '-preserve', '-o2', $path);
     }
 }
 
