@@ -223,18 +223,13 @@ sub job_create_dependencies {
                     die 'Unknown dependency type';
                 }
                 for my $parent (@{$testsuite_mapping->{$testsuite}}) {
-                    try {
-                        schema->resultset('JobDependencies')->create(
-                            {
-                                child_job_id  => $job->id,
-                                parent_job_id => $parent,
-                                dependency    => $dep,
-                            });
-                    }
-                    catch {
-                        chomp;
-                        warn "job_create_dependencies: $_";
-                    };
+
+                    schema->resultset('JobDependencies')->create(
+                        {
+                            child_job_id  => $job->id,
+                            parent_job_id => $parent,
+                            dependency    => $dep,
+                        });
                 }
             }
         }
@@ -1144,14 +1139,8 @@ sub job_schedule_iso {
             my $group_id = delete $settings->{GROUP_ID};
 
             # create a new job with these parameters and count if successful, do not send job notifies yet
-            my $job;
-            try {
-                $job = job_create($settings, 1);
-            }
-            catch {
-                chomp;
-                warn "job_create: $_";
-            };
+            my $job = job_create($settings, 1);
+
             if ($job) {
                 push @jobs, $job;
 
