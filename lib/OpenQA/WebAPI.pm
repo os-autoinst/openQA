@@ -20,6 +20,7 @@ use Mojo::Base 'Mojolicious';
 use OpenQA::Schema::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
+use OpenQA::Worker::Common qw/ASSET_DIR/;
 
 use Mojo::IOLoop;
 use Mojolicious::Commands;
@@ -245,6 +246,11 @@ sub startup {
         # avoid enabling the SQL debug unless we really want to see it
         # it's rather expensive
         db_profiler::enable_sql_debugging($self);
+    }
+
+    unless ($ENV{MOJO_TMPDIR}) {
+        $ENV{MOJO_TMPDIR} = ASSET_DIR . '/tmp';
+        delete $ENV{MOJO_TMPDIR} unless -w $ENV{MOJO_TMPDIR};
     }
 
     $OpenQA::Utils::app = $self;

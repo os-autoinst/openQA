@@ -5,7 +5,7 @@ function table_row (data, table, edit)
     
     table.find('th').each (function() {
         var th = $(this);
-        var name = th.text().trim();
+        var name = th.text().trim().toLowerCase();
         
         if (th.hasClass("col_value")) {
             var value = '';
@@ -137,7 +137,7 @@ function submit_table_row(tr, id)
     $(tr).find('td').each (function() {
         var th = $(this).closest('table').find('th').eq( this.cellIndex );
         
-        var name = th.text().trim();
+        var name = th.text().trim().toLowerCase();
         
         if (th.hasClass("col_value")) {
             var value = $(this).find("input").val();

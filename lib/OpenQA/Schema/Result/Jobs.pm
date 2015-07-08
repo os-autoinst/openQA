@@ -747,7 +747,7 @@ sub optipng {
     my ($app, $path) = @_;
     if (which('optipng')) {
         OpenQA::Utils::log_debug("optipng $path");
-        system("optipng", "-preserve", "-o2", $path);
+        system('optipng', '-quiet', '-preserve', '-o2', $path);
     }
 }
 
@@ -787,9 +787,10 @@ sub create_asset {
 
     my $fname = $asset->filename;
 
+    # FIXME: pass as parameter to avoid guessing
     my $type;
     $type = 'iso' if $fname =~ /\.iso$/;
-    $type = 'hdd' if $fname =~ /\.qcow2$/;
+    $type = 'hdd' if $fname =~ /\.(?:qcow2|raw)$/;
     $type //= 'other';
 
     $fname = sprintf("%08d-%s", $self->id, $fname) if $scope ne 'public';

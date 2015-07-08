@@ -16,12 +16,9 @@
         <table class="admintable table table-striped" id='test-suites'>
             <thead>
                 <tr>
-                    <th class="col_value">name</th>
-                    % for my $var (@$col_var_keys) {
-                        <th class="col_settings"><%= $var %></th>
-                    %}
-                    <th class="col_settings_list">other variables</th>
-                    <th class="col_action">action</th>
+                    <th class="col_value">Name</th>
+                    <th class="col_settings_list">Settings</th>
+                    <th class="col_action">Actions</th>
                 </tr>
             </thead>
             <tbody>
