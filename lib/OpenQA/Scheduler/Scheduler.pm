@@ -201,6 +201,41 @@ sub job_create {
     return $job;
 }
 
+sub job_create_dependencies {
+    my ($job, $testsuite_mapping) = @_;
+
+    my $settings = $job->settings_hash;
+    for my $depname ('START_AFTER_TEST', 'PARALLEL_WITH') {
+        next unless defined $settings->{$depname};
+        for my $testsuite (_parse_dep_variable($settings->{$depname}, $settings)) {
+            if (!defined $testsuite_mapping->{$testsuite}) {
+                warn sprintf('%s=%s not found - check for typos and dependency cycles', $depname, $testsuite);
+            }
+            else {
+                my $dep;
+                if ($depname eq 'START_AFTER_TEST') {
+                    $dep = OpenQA::Schema::Result::JobDependencies::CHAINED;
+                }
+                elsif ($depname eq 'PARALLEL_WITH') {
+                    $dep = OpenQA::Schema::Result::JobDependencies::PARALLEL;
+                }
+                else {
+                    die 'Unknown dependency type';
+                }
+                for my $parent (@{$testsuite_mapping->{$testsuite}}) {
+
+                    schema->resultset('JobDependencies')->create(
+                        {
+                            child_job_id  => $job->id,
+                            parent_job_id => $parent,
+                            dependency    => $dep,
+                        });
+                }
+            }
+        }
+    }
+}
+
 sub job_get($) {
     my $value = shift;
 
@@ -1091,57 +1126,54 @@ sub job_schedule_iso {
         }
     }
 
-    my @ids;
-
     # the jobs are now sorted parents first
-    # remember ids of created parents and pass them to _START_AFTER_JOBS/_PARALLEL_JOBS of children
-    my %testsuite_ids;    # key: "suite:machine", value: array of job ids
 
-    for my $settings (@{$jobs || []}) {
-        my $prio     = delete $settings->{PRIO};
-        my $group_id = delete $settings->{GROUP_ID};
+    my @ids     = ();
+    my $coderef = sub {
+        my @jobs = ();
+        # remember ids of created parents
+        my %testsuite_ids;            # key: "suite:machine", value: array of job ids
 
-        # convert testsuite names in START_AFTER_TEST/PARALLEL_WITH to job ids
-        for my $after (_parse_dep_variable($settings->{START_AFTER_TEST}, $settings)) {
-            if (defined $testsuite_ids{$after}) {
-                $settings->{_START_AFTER_JOBS} //= [];
-                push @{$settings->{_START_AFTER_JOBS}}, @{$testsuite_ids{$after}};
-            }
-            else {
-                warn "START_AFTER_TEST=" . $after . " not found, maybe a typo or a dependency cycle";
+        for my $settings (@{$jobs || []}) {
+            my $prio     = delete $settings->{PRIO};
+            my $group_id = delete $settings->{GROUP_ID};
+
+            # create a new job with these parameters and count if successful, do not send job notifies yet
+            my $job = job_create($settings, 1);
+
+            if ($job) {
+                push @jobs, $job;
+
+                $testsuite_ids{_settings_key($settings)} //= [];
+                push @{$testsuite_ids{_settings_key($settings)}}, $job->id;
+
+                # change prio only if other than default prio
+                if (defined($prio) && $prio != 50) {
+                    $job->priority($prio);
+                }
+                $job->group_id($group_id);
+                $job->update;
             }
         }
-        for my $after (_parse_dep_variable($settings->{PARALLEL_WITH}, $settings)) {
-            if (defined $testsuite_ids{$after}) {
-                $settings->{_PARALLEL_JOBS} //= [];
-                push @{$settings->{_PARALLEL_JOBS}}, @{$testsuite_ids{$after}};
-            }
-            else {
-                warn "PARALLEL_WITH=" . $after . " not found, maybe a typo or a dependency cycle";
-            }
-        }
-        # create a new job with these parameters and count if successful, do not send job notifies yet
-        my $job;
-        try {
-            $job = job_create($settings, 1);
-        }
-        catch {
-            chomp;
-            warn "job_create: $_";
-        };
-        if ($job) {
+
+        # jobs are created, now recreate dependencies and extract ids
+        for my $job (@jobs) {
+            job_create_dependencies($job, \%testsuite_ids);
             push @ids, $job->id;
-
-            $testsuite_ids{_settings_key($settings)} //= [];
-            push @{$testsuite_ids{_settings_key($settings)}}, $job->id;
-
-            # change prio only if other than default prio
-            if (defined($prio) && $prio != 50) {
-                $job->set_prio($prio);
-            }
-            $job->update({group_id => $group_id});
         }
+    };
+
+    try {
+        schema->txn_do($coderef);
     }
+    catch {
+        my $error = shift;
+        OpenQA::Utils::log_debug("rollback job_schedule_iso: $error");
+        die "Rollback failed during failed job_schedule_iso: $error"
+          if ($error =~ /Rollback failed/);
+        @ids = ();
+    };
+
     #notify workers new jobs are available
     job_notify_workers;
     return @ids;
