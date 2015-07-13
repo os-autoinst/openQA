@@ -118,9 +118,11 @@ for my $arg (@ARGV) {
         $method = lc $arg;
     }
     elsif ($arg =~ /^([[:alnum:]_]+)=(.+)/) {
-        $params{$1} = $2;
-    }
-    else {
+        my $key   = $1;
+        my $value = $2;
+        # Mojo::URL no longer escapes / (https://github.com/kraih/mojo/commit/aab2f1f)
+        $value =~ s@/@%2F@g;
+        $params{$key} = $value;
     }
 }
 
