@@ -79,12 +79,14 @@ sub manage_events {
                 my ($object, $watch) = @_;
                 $self->_manage_watch_on($reactor, $watch);
             },
-            sub { return },
-            #             sub {
-            #                 my ($object, $watch) = @_;
-            #                 $self->_manage_watch_off($reactor, $watch);
-            #             },
-            sub { return },
+            sub {
+                my ($object, $watch) = @_;
+                $self->_manage_watch_off($reactor, $watch);
+            },
+            sub {
+                my ($object, $watch) = @_;
+                $self->_manage_watch_toggle($reactor, $watch);
+            },
         );
         # TODO add timeout
         #             $c->set_timeout_callbacks(sub{
@@ -115,18 +117,16 @@ sub _manage_watch_on {
     if ($flags & &Net::DBus::Binding::Watch::READABLE) {
         my $fh = $self->_get_fh_from_fd($watch->get_fileno);
         my $cb = Net::DBus::Callback->new(object => $watch, method => "handle", args => [&Net::DBus::Binding::Watch::READABLE]);
-        weaken $reactor;
-        # this is a hack to dispatch readed messages after they are read.
         # Net::DBus calls dispatch each time some event wakes it up, Mojo::Reactor does not support this kind of hooks
-        $reactor->io($fh => sub { $cb->invoke; $reactor->emit('dbus-dispatch') });
-        $reactor->watch($fh, 1, 0);
+        $reactor->io($fh => sub { my ($self, $writable) = @_; $cb->invoke; $self->emit('dbus-dispatch') });
+        $reactor->watch($fh, $watch->is_enabled, 0);
     }
     if ($flags & &Net::DBus::Binding::Watch::WRITABLE) {
         my $fh = $self->_get_fh_from_fd($watch->get_fileno, 1);
         my $cb = Net::DBus::Callback->new(object => $watch, method => "handle", args => [&Net::DBus::Binding::Watch::WRITABLE]);
-        weaken $reactor;
-        $reactor->io($fh => sub { $cb->invole; $reactor->emit('dbus-flush') });
-        $reactor->watch($fh, 0, 1);
+        # Net::DBus calls flush event each time some event wakes it up, Mojo::Reactor does not support this kind of hooks
+        $reactor->io($fh => sub { my ($self, $writable) = @_; $cb->invoke; $self->emit('dbus-flush') });
+        $reactor->watch($fh, 0, $watch->is_enabled);
     }
 }
 
@@ -149,6 +149,24 @@ sub _manage_watch_off {
     delete $self->{handles}{$rw}{$watch->get_fileno};
 }
 
+sub _manage_watch_toggle {
+    my ($self, $reactor, $watch) = @_;
+    my $flags = $watch->get_flags;
+
+    if ($flags & &Net::DBus::Binding::Watch::READABLE) {
+        my $fh = $self->{handles}{'<'}{$watch->get_fileno};
+        if (defined $fh) {
+            $reactor->watch($fh, $watch->is_enabled, 0);
+        }
+    }
+    if ($flags & &Net::DBus::Binding::Watch::WRITABLE) {
+        my $fh = $self->{handles}{'>'}{$watch->get_fileno};
+        if (defined $fh) {
+            $reactor->watch($fh, 0, $watch->is_enabled);
+        }
+    }
+}
+
 sub _manage_timeout_on {
 
 }
@@ -160,19 +178,19 @@ sub _manage_timeout_off {
 # Mojo::Reactor works with filehandles instead of descriptors
 sub _get_fh_from_fd {
     my ($self, $fd, $write) = @_;
-    my $fh;
+
     if ($write) {
         $write = '>';
     }
     else {
         $write = '<';
     }
+
     if (defined $self->{handles}{$write}{$fd}) {
         return $self->{handles}{$write}{$fd};
     }
-    else {
-        open($fh, $write . '&=', $fd) || die "unable to open fd $fd for $write";
-    }
+    my $fh;
+    open($fh, $write . '&', $fd) || die "unable to open fd $fd for $write";
     $self->{handles}{$write}{$fd} = $fh;
     return $fh;
 }
