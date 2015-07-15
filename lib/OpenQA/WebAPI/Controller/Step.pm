@@ -181,7 +181,7 @@ sub edit {
         }
 
     }
-    elsif ($module_detail->{'needles'}) {
+    if ($module_detail->{'needles'}) {
 
         # First position: the screenshot
         $screenshot = {
@@ -250,7 +250,7 @@ sub edit {
             }
         }
     }
-    else {
+    if (!@needles) {
         # Failing with not a single candidate needle
         $screenshot = {
             'name'       => 'screenshot',
@@ -263,7 +263,7 @@ sub edit {
     }
 
     # the highest matches first
-    @needles = sort { $b->{min_similarity} cmp $a->{min_similarity} || $a->{name} cmp $b->{name} } @needles;
+    @needles = sort { $b->{min_similarity} <=> $a->{min_similarity} || $a->{name} cmp $b->{name} } @needles;
 
     # Default values
     #  - area: matches from best candidate
@@ -572,7 +572,7 @@ sub viewimg {
             push(@needles, $info);
         }
     }
-    elsif ($module_detail->{'needles'}) {
+    if ($module_detail->{'needles'}) {
         my $needlename;
         my $needleinfo;
         for my $needle (@{$module_detail->{'needles'}}) {
@@ -590,7 +590,8 @@ sub viewimg {
     }
 
     # the highest matches first
-    @needles = sort { $b->{min_similarity} cmp $a->{min_similarity} || $a->{name} cmp $b->{name} } @needles;
+    @needles = sort { $b->{min_similarity} <=> $a->{min_similarity} || $a->{name} cmp $b->{name} } @needles;
+
     # preselect a rather good needle
     if ($needles[0] && $needles[0]->{min_similarity} > 70) {
         $needles[0]->{selected} = 1;
