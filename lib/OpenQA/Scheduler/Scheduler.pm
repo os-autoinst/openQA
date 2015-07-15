@@ -143,7 +143,7 @@ create a job
 
 =cut
 sub job_create {
-    my ($settings, $no_notify) = @_;
+    my ($settings, $batch_mode) = @_;
     my %settings = %$settings;
 
     my %new_job_args = (test => $settings{TEST});
@@ -195,9 +195,20 @@ sub job_create {
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
     # this will associate currently available assets with job
     $job->assets_from_settings;
-    $OpenQA::Utils::app->gru->enqueue('limit_assets') if $OpenQA::Utils::app;
 
-    job_notify_workers() unless $no_notify;
+    unless ($batch_mode) {
+        # enqueue gru job
+        schema->resultset('GruTasks')->create(
+            {
+                taskname => 'limit_assets',
+                priority => 0,
+                args     => [],
+                run_at   => now(),
+            });
+
+        job_notify_workers();
+    }
+
     return $job;
 }
 
@@ -1174,6 +1185,15 @@ sub job_schedule_iso {
           if ($error =~ /Rollback failed/);
         @ids = ();
     };
+
+    # enqueue gru job
+    schema->resultset('GruTasks')->create(
+        {
+            taskname => 'limit_assets',
+            priority => 0,
+            args     => [],
+            run_at   => now(),
+        });
 
     #notify workers new jobs are available
     job_notify_workers;
