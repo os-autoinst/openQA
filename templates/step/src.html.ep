@@ -36,9 +36,7 @@
                 <tt><%= $scriptpath %></tt>
             % end
         </p>
-        <textarea class='code' id='script'>
-            %= $script
-        </textarea>
+        <textarea class='code' id='script'><%= $script %></textarea>
 
         <script type="text/javascript">
          var editor = CodeMirror.fromTextArea(document.getElementById("script"), {
