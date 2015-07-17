@@ -90,7 +90,7 @@ sub run_first {
 
     my $dtf   = $self->app->schema->storage->datetime_parser;
     my $where = {run_at => {'<=', $dtf->format_datetime(DBIx::Class::Timestamps::now())}};
-    my $first = $self->app->schema->resultset('GruTasks')->search($where, {order_by => [qw/priority id/], rows => 1})->first;
+    my $first = $self->app->schema->resultset('GruTasks')->search($where, {order_by => [{-desc => 'priority'}, 'id'], rows => 1})->first;
 
     if ($first) {
         $self->app->log->debug(sprintf("Running Gru task %d(%s)", $first->id, $first->taskname));

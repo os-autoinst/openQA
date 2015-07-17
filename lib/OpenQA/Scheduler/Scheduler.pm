@@ -201,7 +201,7 @@ sub job_create {
         schema->resultset('GruTasks')->create(
             {
                 taskname => 'limit_assets',
-                priority => 0,
+                priority => 10,
                 args     => [],
                 run_at   => now(),
             });
@@ -1190,7 +1190,7 @@ sub job_schedule_iso {
     schema->resultset('GruTasks')->create(
         {
             taskname => 'limit_assets',
-            priority => 0,
+            priority => 10,
             args     => [],
             run_at   => now(),
         });
