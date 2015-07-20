@@ -39,6 +39,9 @@
             </div>
             <div class="panel-body">
                 <div>
+                    %if ($job->obs_prj) {
+                        Source Project: <a href="<%= $job->obs_prj_url %>"><%= $job->obs_prj %></a> <br/>
+                    % }
                     %if ($job->state eq 'done') {
                         Result: <b><%= $job->result %></b>
                     % } else
