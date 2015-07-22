@@ -52,6 +52,106 @@ or Wicked way:
 </interface>
 ---------------
 
+## TAP with Open vSwitch
+
+The recomended way to configure the network for TAP devices is using Open vSwitch.
+There is a support service +os-autoinst-openvswitch.service+ which sets vlan number
+of Open vSwitch ports based on +NICVLAN+ variable - this separates the groups of
+tests from each other.
+
++NICVLAN+ variable is dynamically assigned by OpenQA scheduler.
+
+Compared to VDE setup discussed later, Open vSwitch is more complicated to configure,
+but provides more robust and scalable network.
+
+Start Open vSwitch and add TAP devices:
+[source, bash]
+---------------
+
+# start openvswitch.service
+systemctl start openvswitch.service
+systemctl enable openvswitch.service
+
+#create bridge
+ovs-vsctl add-br br0
+
+# add tap devices, use vlan 999 by default, the vlan number is supposed to be changed when the vm starts
+ovs-vsctl add-port br0 tap0 tag=999
+ovs-vsctl add-port br0 tap1 tag=999
+ovs-vsctl add-port br0 tap2 tag=999
+ovs-vsctl add-port br0 tap3 tag=999
+ovs-vsctl add-port br0 tap4 tag=999
+
+---------------
+
+If the workers with TAP capability are spread across multiple hosts, the network must be connected.
+See Open vSwitch http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation] for details.
+
+Example configuration of GRE tunnel:
+[source, bash]
+---------------
+ovs-vsctl add-port br0 gre0 -- set interface gre0 type=gre options:remote_ip=<IP address of other host>
+---------------
+
+The virtual machines need access to os-autoinst webserver acessible
+via IP 10.0.2.2. The IP addresses of VMs are controlled by tests
+and are likely to conflict if more independent tests runs in parallel.
+
+The VMs have unique MAC that differs in the last 16 bits (see /usr/lib/os-autoinst/backend/qemu.pm).
+os-autoinst-openvswitch.service sets up filtering rules for the following translation scheme which
+provide non-conflicting addresses visible from host:
+
+  MAC 52:54:00:12:XX:YY -> IP 10.1.XX.YY
+
+That means that the local port of the bridge must be configured to IP 10.0.2.2
+and netmask /15 that covers 10.0.0.0 and 10.1.0.0 ranges.
+
+[source, bash]
+---------------
+ip addr add 10.0.2.2/15 dev br0
+ip route add 10.0.0.0/15 dev br0
+ip link set br0 up
+---------------
+
+and permanently in /etc/sysconfig/network
+[source, bash]
+---------------
+#/etc/sysconfig/network/ifcfg-br0
+BOOTPROTO='static'
+IPADDR='10.0.2.2/15'
+STARTMODE='auto'
+---------------
+
+The IP 10.0.2.2 can also serve as a gateway to access outside
+network. For this, a NAT between br0 and eth0 must be configured
+with SuSEfirewall or iptables.
+
+Then it is possible to start the os-autoinst-openvswitch.service
+The service uses +br0+ by default. It can be configured for another
+bridge name by setting +/etc/sysconfig/os-autoinst-openvswitch+
+
+[source, bash]
+---------------
+OS_AUTOINST_USE_BRIDGE=bridge_name
+---------------
+
+Then, start the service:
+[source, bash]
+---------------
+systemctl start os-autoinst-openvswitch.service
+systemctl enable os-autoinst-openvswitch.service
+---------------
+
+The configuration can be checked by the following commands:
+
+[source, bash]
+---------------
+# show the configuration
+ovs-vsctl show
+ovs-ofctl show br0
+ovs-ofctl dump-flows br0
+---------------
+
 ## VDE based network
 
 Virtual Distributed Ethernet provides a software switch that runs in
