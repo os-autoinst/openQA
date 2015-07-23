@@ -416,3 +416,59 @@ sub run {
     type_string("secret\n");
 }
 --------------------------------------------------------------------------------
+Support Server based tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The idea is to have a dedicated "helper server" to allow advanced network based testing. 
+
+Support server takes advantage of the basic parallel setup as described in the previous section, with the support server being the parent test 'A' and the test needing it being the child test 'B'. This ensures that the test 'B' always have the support server available.
+
+Preparing the supportserver:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The support server image is created by calling a special test, based on the autoyast test:
+
+[source,sh]
+--------------------------------------------------------------------------------
+/usr/share/openqa/script/client jobs post DISTRI=opensuse VERSION=13.2 \
+    ISO=openSUSE-13.2-DVD-x86_64.iso  ARCH=x86_64 FLAVOR=Server-DVD \
+    TEST=supportserver_generator MACHINE=64bit DESKTOP=textmode  INSTALLONLY=1 \
+    AUTOYAST=supportserver/autoyast_supportserver.xml SUPPORT_SERVER_GENERATOR=1 \    
+    PUBLISH_HDD_1=supporserver.qcow2
+--------------------------------------------------------------------------------
+
+This produces qemu image 'supporserver.qcow2' that contains the supportserver. The 'autoyast_supportserver.xml'
+should define correct user and password, as well as packages and the common configuration.
+
+More specific role the supportserver should take is then selected when the server is run in the actual test scenario.
+
+Using the supportserver:
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the Test suites, the supportserver is defined by setting:
+
+[source,sh]
+--------------------------------------------------------------------------------
+HDD_1=supporserver.qcow2
+SUPPORT_SERVER=1
+SUPPORT_SERVER_ROLES=pxe,qemuproxy
+WORKER_CLASS=server,qemu_autoyast_tap_64
+--------------------------------------------------------------------------------
+
+where the +SUPPORT_SERVER_ROLES+ defines the specific role (see code in 'tests/support_server/setup.pm' for available roles and their definition), and
+ +HDD_1+ variable must be the name of the supportserver image as defined via +PUBLISH_HDD_1+ variable during supportserver generation. If the support server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add +HDDMODEL=virtio-blk+. 
+ 
+
+Then for the 'child' test using this supportserver, the following additional variable must be set:
++PARALLEL_WITH=supportserver-pxe-tftp+
+where 'supportserver-pxe-tftp' is the name given to the supportserver in the test suites screen. 
+Once the tests are defined, they can be added to openQA in the usual way:
+
+[source,sh]
+-----------------
+/usr/share/openqa/script/client isos post DISTRI=opensuse VERSION=13.2 \
+        ISO=openSUSE-13.2-DVD-x86_64.iso ARCH=x86_64 FLAVOR=Server-DVD
+-----------------
+
+where the +DISTRI+, +VERSION+, +FLAVOR+ and +ARCH+ correspond to the job group containing the tests.
+
