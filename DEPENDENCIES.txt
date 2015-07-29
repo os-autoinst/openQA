@@ -32,6 +32,7 @@ FindBin
 Getopt::Long
 IO::Socket::INET6
 IO::Socket::SSL
+IPC::Run
 JSON
 LWP::UserAgent
 List::MoreUtils

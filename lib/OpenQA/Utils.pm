@@ -3,6 +3,7 @@ use strict;
 require 5.002;
 
 use Carp;
+use IPC::Run();
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -20,6 +21,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &file_content
   &log_debug
   &save_base64_png
+  &run_cmd_with_log
 );
 
 
@@ -114,6 +116,21 @@ sub log_debug {
     $app->log->debug(shift) if $app && $app->log;
 }
 
+sub log_info {
+    # useful for models, but doesn't work in tests
+    $app->log->info(shift) if $app && $app->log;
+}
+
+sub log_warning {
+    # useful for models, but doesn't work in tests
+    $app->log->warning(shift) if $app && $app->log;
+}
+
+sub log_error {
+    # useful for models, but doesn't work in tests
+    $app->log->error(shift) if $app && $app->log;
+}
+
 sub save_base64_png($$$) {
     my ($dir, $newfile, $png) = @_;
     return unless $newfile;
@@ -133,6 +150,23 @@ sub image_md5_filename($) {
     my $prefix = substr($md5, 0, 2);
     $md5 = substr($md5, 2);
     return ($imagesdir . "/$prefix/$md5.png", $imagesdir . "/$prefix/.thumbs/$md5.png");
+}
+
+sub run_cmd_with_log($) {
+    my ($cmd) = @_;
+    my ($stdin, $stdout_err, $ret);
+    log_info("Running cmd: " . join(' ', @$cmd));
+    $ret = IPC::Run::run($cmd, \$stdin, '>&', \$stdout_err);
+    chomp $stdout_err;
+    if ($ret) {
+        log_debug($stdout_err);
+        log_info("cmd returned 0");
+    }
+    else {
+        log_warning($stdout_err);
+        log_error("cmd returned non-zero value");
+    }
+    return $ret;
 }
 
 1;
