@@ -23,6 +23,7 @@ use File::Which qw(which);
 use POSIX qw/strftime/;
 use Try::Tiny;
 use JSON;
+use IPC::Open3;
 
 sub init {
     my $self = shift;
@@ -353,16 +354,46 @@ sub _commit_git {
     }
     my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);
     my @files = ($dir . '/' . $name . '.json', $dir . '/' . $name . '.png');
-    if (system(@git, 'add', @files) != 0) {
+    eval{ $pid=open3(\*WRITE, \*READER, \*ERROR, @git, 'add', @files); };
+    die "failed to git add $name";
+    waitpid($pid, 0);
+    my $ret = $? >> 8;
+
+    while( my $output = <ERROR>) {
+        chomp "$output";
+        $self->app->log->deug($output);
+    }
+    unless ($ret) {
         die "failed to git add $name";
     }
+
     my @cmd = (@git, 'commit', '-q', '-m', sprintf("%s for %s", $name, $job->name), sprintf('--author=%s <%s>', $self->current_user->fullname, $self->current_user->email), @files);
     $self->app->log->debug(join(' ', @cmd));
-    if (system(@cmd) != 0) {
-        die "failed to git commit $name";
+
+    eval{ $pid=open3(\*WRITE, \*READER, \*ERROR, @git, 'add', @files); };
+    die "failed to git commit $name";
+    waitpid($pid, 0);
+    my $ret = $? >> 8;
+
+    while( my $output = <ERROR>) {
+        chomp "$output";
+        $self->app->log->deug($output);
     }
+    unless ($ret) {
+        die "failed to git add $name";
+    }
+
     if (($self->app->config->{'scm git'}->{'do_push'} || '') eq 'yes') {
-        if (system(@git, 'push') != 0) {
+        eval{ $pid=open3(\*WRITE, \*READER, \*ERROR, @git, 'push'); };
+        die "failed to git push $name";
+        waitpid($pid, 0);
+        my $ret = $? >> 8;
+
+        while( my $output = <ERROR>) {
+            chomp "$output";
+            $self->app->log->deug($output);
+        }
+        unless ($ret) {
             die "failed to git push $name";
         }
     }
