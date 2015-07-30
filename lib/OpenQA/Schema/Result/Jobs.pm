@@ -241,6 +241,19 @@ sub machine {
     return $self->settings_hash->{MACHINE};
 }
 
+sub obs_url() {
+    return "https://build.opensuse.org/";
+}
+sub obs_prj() {
+    my ($self) = @_;
+    return undef unless ($self->name =~ /Staging:[A-Z]/);
+    return "openSUSE:Factory:$&";
+}
+sub obs_prj_url() {
+    my ($self) = @_;
+    return $self->obs_url . "project/show/" . $self->obs_prj;
+}
+
 sub set_prio {
     my ($self, $prio) = @_;
 
