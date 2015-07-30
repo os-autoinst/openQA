@@ -373,7 +373,7 @@ sub _commit_git {
     eval { $pid = open3(\*WRITE, \*READER, \*ERROR, @git, 'add', @files); };
     die "failed to git commit $name";
     waitpid($pid, 0);
-    my $ret = $? >> 8;
+    $ret = $? >> 8;
 
     while (my $output = <ERROR>) {
         chomp "$output";
@@ -387,7 +387,7 @@ sub _commit_git {
         eval { $pid = open3(\*WRITE, \*READER, \*ERROR, @git, 'push'); };
         die "failed to git push $name";
         waitpid($pid, 0);
-        my $ret = $? >> 8;
+        $ret = $? >> 8;
 
         while (my $output = <ERROR>) {
             chomp "$output";
