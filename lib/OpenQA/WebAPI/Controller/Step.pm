@@ -354,8 +354,8 @@ sub _commit_git {
     }
     my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);
     my @files = ($dir . '/' . $name . '.json', $dir . '/' . $name . '.png');
-    my ($child_in,$child_out,$child_err);
-    eval { $pid = open3($child_in,$child_out,$child_err, @git, 'add', @files); };
+    my ($child_in, $child_out, $child_err);
+    eval { $pid = open3($child_in, $child_out, $child_err, @git, 'add', @files); };
     die "failed to git add $name";
     waitpid($pid, 0);
     my $ret = $? >> 8;
@@ -371,7 +371,7 @@ sub _commit_git {
     my @cmd = (@git, 'commit', '-q', '-m', sprintf("%s for %s", $name, $job->name), sprintf('--author=%s <%s>', $self->current_user->fullname, $self->current_user->email), @files);
     $self->app->log->debug(join(' ', @cmd));
 
-    eval { $pid = open3($child_in,$child_out,$child_err, @git, 'add', @files); };
+    eval { $pid = open3($child_in, $child_out, $child_err, @git, 'add', @files); };
     die "failed to git commit $name";
     waitpid($pid, 0);
     $ret = $? >> 8;
@@ -385,7 +385,7 @@ sub _commit_git {
     }
 
     if (($self->app->config->{'scm git'}->{'do_push'} || '') eq 'yes') {
-        eval { $pid = open3($child_in,$child_out,$child_err, @git, 'push'); };
+        eval { $pid = open3($child_in, $child_out, $child_err, @git, 'push'); };
         die "failed to git push $name";
         waitpid($pid, 0);
         $ret = $? >> 8;
