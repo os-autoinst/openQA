@@ -35,6 +35,7 @@ is_deeply(
     $cfg,
     {
         global => {
+            appname  => 'openQA',
             branding => "openSUSE",
             scm      => 'git',
             hsts     => '365',
