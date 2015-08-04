@@ -50,7 +50,7 @@ sub new {
     else {
         $bus = Net::DBus->test;
     }
-    return unless $bus;
+    die 'Failed to connect to DBus' unless $bus;
     $self->{bus} = $bus;
     return $self;
 }
@@ -66,6 +66,11 @@ sub register_service {
     die "Failed to export service \"$service\"" unless $s;
     $self->{service}{$service} = $s;
     return $s;
+}
+
+sub register_object {
+    my ($self, $objectName, $objectRef) = @_;
+    $self->{objects}{$objectName} = $objectRef;
 }
 
 sub manage_events {
@@ -202,7 +207,7 @@ sub _dispatch {
     return $object->$command(@data);
 }
 
-## Helpers
+## Remote object helpers
 # scheduler - send message to scheduler
 sub scheduler {
     my ($self, @param) = @_;
@@ -221,5 +226,12 @@ sub webapi {
     return $self->_dispatch('webapi', @param);
 }
 
+# Local object helpers
+sub emit_signal {
+    my ($self, $target, $signal, @param) = @_;
+    $target = $self->{objects}{$target};
+    die 'target not defined' unless $target;
+    $target->emit_signal($signal, @param);
+}
 1;
 # vim: set sw=4 et:
