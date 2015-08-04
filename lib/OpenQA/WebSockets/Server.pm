@@ -62,7 +62,11 @@ sub ws_send {
         }
         else {
             log_debug("Unable to send command \"$msg\" to worker $workerid");
+            OpenQA::IPC->ipc->emit_signal('websockets', 'command_failed', $workerid, $msg);
         }
+    }
+    else {
+        OpenQA::IPC->ipc->emit_signal('websockets', 'command_sent', $workerid, $msg);
     }
 }
 
@@ -114,6 +118,19 @@ sub ws_create {
     $self->on(json   => \&_message);
     $self->on(finish => \&_finish);
     ws_add_worker($workerid, $self->tx->max_websocket_size(10485760));
+
+    my $workerinfo = {
+        id       => $worker->id,
+        host     => $worker->host,
+        instance => $worker->instance,
+        status   => $worker->status
+    };
+    $workerinfo->{properties} = {};
+    for my $p ($worker->properties->all) {
+        $workerinfo->{properties}->{$p->key} = $p->value;
+    }
+    OpenQA::IPC->ipc->emit_signal('websockets', 'worker_connected', $workerinfo);
+
     return $self->render(text => 'ack', status => 101);
 }
 
@@ -153,6 +170,7 @@ sub _finish {
     }
     $ws->app->log->debug("Worker $workerid websocket connection closed - $code\n");
     ws_remove_worker($workerid);
+    OpenQA::IPC->ipc->emit_signal('websockets', 'worker_disconnected', $workerid);
 }
 
 sub _message {

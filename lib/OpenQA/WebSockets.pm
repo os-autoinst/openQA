@@ -35,10 +35,10 @@ sub new {
     my ($class, $reactor) = @_;
     $class = ref $class || $class;
     # register @ IPC - we use DBus reactor here for symplicity
-    my $ipc = OpenQA::IPC->ipc($reactor);
-    return unless $ipc;
+    my $ipc     = OpenQA::IPC->ipc($reactor);
     my $service = $ipc->register_service('websockets');
-    my $self = $class->SUPER::new($service, '/WebSockets');
+    my $self    = $class->SUPER::new($service, '/WebSockets');
+    $ipc->register_object('websockets', $self);
     $self->{ipc} = $ipc;
     bless $self, $class;
     # hook DBus to Mojo reactor
@@ -65,4 +65,8 @@ sub ws_send_all {
     return OpenQA::WebSockets::Server::ws_send_all(@args);
 }
 
+dbus_signal('worker_connected', [['dict', 'string', ['variant']]]);
+dbus_signal('worker_disconnected', ['uint32']);
+dbus_signal('command_sent',        ['uint32', ['variant']]);
+dbus_signal('command_failed',      ['uint32', ['variant']]);
 1;
