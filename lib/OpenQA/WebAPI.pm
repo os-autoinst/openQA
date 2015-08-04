@@ -36,6 +36,7 @@ sub _read_config {
 
     my %defaults = (
         global => {
+            appname       => "openQA",
             base_url      => undef,
             branding      => "openSUSE",
             allowed_hosts => undef,
@@ -156,10 +157,11 @@ has secrets => sub {
 sub startup {
     my $self = shift;
 
-    # Set some application defaults
-    $self->defaults(appname => 'openQA');
-
     $self->_read_config;
+
+    # Set some application defaults
+    $self->defaults(appname => $self->app->config->{global}->{appname});
+
     my $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{logging}->{file};
     $self->log->path($logfile);
 
