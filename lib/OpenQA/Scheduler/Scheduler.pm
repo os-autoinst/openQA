@@ -132,9 +132,11 @@ sub _validate_workerid($) {
 # Jobs API
 #
 sub job_notify_workers {
+    my (@ids) = @_;
     # notify workers about new job
     my $ipc = OpenQA::IPC->ipc;
     $ipc->websockets('ws_send_all', 'job_available');
+    $ipc->emit_signal('scheduler', 'job_new', \@ids) if @ids;
 }
 
 =item job_create
@@ -206,7 +208,7 @@ sub job_create {
                 run_at   => now(),
             });
 
-        job_notify_workers();
+        job_notify_workers($job);
     }
 
     return $job;
@@ -581,6 +583,7 @@ sub job_grab {
 
     # TODO: cleanup previous tmpdir
     $worker->set_property('WORKER_TMPDIR', tempdir());
+    OpenQA::IPC->ipc->emit_signal('scheduler', 'job_grab', $job_hashref);
 
     # starting one job from parallel group can unblock
     # other jobs from the group
@@ -666,7 +669,8 @@ sub job_set_done {
     $newbuild = int($args{newbuild}) if defined $args{newbuild};
     $args{result} = OpenQA::Schema::Result::Jobs::OBSOLETED if $newbuild;
     # delete JOBTOKEN
-    my $job = schema->resultset('Jobs')->find($jobid);
+    my $job      = schema->resultset('Jobs')->find($jobid);
+    my $workerid = $job->worker_id;
     $job->set_property('JOBTOKEN');
 
     $job->release_networks();
@@ -688,6 +692,7 @@ sub job_set_done {
         _job_skip_children($jobid);
         _job_stop_children($jobid);
     }
+    OpenQA::IPC->ipc->emit_signal('scheduler', 'job_finish', $jobid, $workerid, $result);
     return $r;
 }
 
@@ -851,9 +856,9 @@ sub job_duplicate {
         log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
         command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
     }
-
     log_debug('new job ' . $clones{$job->id});
-    job_notify_workers();
+    job_notify_workers($clones{$job->id});
+    OpenQA::IPC->ipc->emit_signal('scheduler', 'job_duplicate', $job->id, $clones{$job->id});
     return $clones{$job->id};
 }
 
@@ -884,6 +889,7 @@ sub job_restart {
             columns => [qw/id/],
         });
 
+    OpenQA::IPC->ipc->emit_signal('scheduler', 'job_restart', ref($jobids) eq 'ARRAY' ? $jobids : [$jobids]);
     my @duplicated;
     while (my $j = $jobs->next) {
         my $id = job_duplicate(jobid => $j->id);
@@ -923,20 +929,21 @@ sub job_cancel($;$) {
 
     my %attrs;
     my %cond;
+    my @ids;
 
     _job_find_smart($value, \%cond, \%attrs);
 
     $cond{state} = OpenQA::Schema::Result::Jobs::SCHEDULED;
 
     # first set all scheduled jobs to cancelled
-    my $r = schema->resultset("Jobs")->search(\%cond, \%attrs)->update(
-        {
-            state  => OpenQA::Schema::Result::Jobs::CANCELLED,
-            result => ($newbuild) ? OpenQA::Schema::Result::Jobs::OBSOLETED : OpenQA::Schema::Result::Jobs::USER_CANCELLED
-        });
-
     my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
     while (my $j = $jobs->next) {
+        push @ids, $j->id;
+        $j->update(
+            {
+                state  => OpenQA::Schema::Result::Jobs::CANCELLED,
+                result => ($newbuild) ? OpenQA::Schema::Result::Jobs::OBSOLETED : OpenQA::Schema::Result::Jobs::USER_CANCELLED
+            });
         _job_skip_children($j->id);
     }
 
@@ -966,9 +973,10 @@ sub job_cancel($;$) {
         _job_skip_children($j->id);
         _job_stop_children($j->id);
 
-        ++$r;
+        push @ids, $j->id;
     }
-    return $r;
+    OpenQA::IPC->ipc->emit_signal('scheduler', 'job_cancel', \@ids) if @ids;
+    return scalar(@ids);
 }
 
 sub job_stop {
@@ -1195,8 +1203,9 @@ sub job_schedule_iso {
             run_at   => now(),
         });
 
+    OpenQA::IPC->ipc->emit_signal('scheduler', 'iso_schedule', \%args);
     #notify workers new jobs are available
-    job_notify_workers;
+    job_notify_workers(@ids);
     return @ids;
 }
 
@@ -1274,8 +1283,10 @@ sub asset_get {
 }
 
 sub asset_delete {
-    my $asset = asset_get(@_);
+    my %args  = @_;
+    my $asset = asset_get(%args);
     return unless $asset;
+    OpenQA::IPC->ipc->emit_signal('scheduler', 'asset_delete', \%args);
     return $asset->delete;
 }
 
@@ -1301,6 +1312,7 @@ sub asset_register {
         {
             key => 'assets_type_name',
         });
+    OpenQA::IPC->ipc->emit_signal('scheduler', 'asset_register', \%args);
     return $asset;
 }
 

@@ -35,10 +35,10 @@ sub new {
     my ($class) = @_;
     $class = ref $class || $class;
     # register @ IPC - we use DBus reactor here for symplicity
-    my $ipc = OpenQA::IPC->ipc;
-    return unless $ipc;
+    my $ipc     = OpenQA::IPC->ipc;
     my $service = $ipc->register_service('scheduler');
-    my $self = $class->SUPER::new($service, '/Scheduler');
+    my $self    = $class->SUPER::new($service, '/Scheduler');
+    $ipc->register_object('scheduler', $self);
     $self->{ipc} = $ipc;
     bless $self, $class;
 
@@ -250,4 +250,25 @@ sub mutex_unlock {
     return 1;
 
 }
+
+# Signals
+## job_new (@ids)
+dbus_signal('job_new', [['array', 'uint32']]);
+## job_duplicate ($jobId, $newjobId)
+dbus_signal('job_duplicate', ['uint32', 'uint32']);
+## job_grab ($jobId, $workerId)
+dbus_signal('job_grab', [['dict', 'string', ['variant']]]);
+## job_finish ($jobID, $workerId, $overall_result)
+dbus_signal('job_finish', ['uint32', 'uint32', 'string']);
+## job_cancel
+dbus_signal('job_cancel', [['array', 'uint32']]);
+## job_restart ($jobIDs)
+dbus_signal('job_restart', [['array', 'uint32']]);
+## iso_schedule($isoinfo)
+dbus_signal('iso_schedule', [['dict', 'string', ['variant']]]);
+## asset_register
+dbus_signal('asset_register', [['dict', 'string', ['variant']]]);
+## asset_delete
+dbus_signal('asset_delete', [['dict', 'string', ['variant']]]);
+
 1;
