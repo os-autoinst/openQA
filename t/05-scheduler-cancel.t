@@ -31,9 +31,10 @@ use Net::DBus;
 use Test::More;
 
 OpenQA::Test::Database->new->create();
-# create Test DBus bus and service for fake WebSockets call
+# create Test DBus bus and service for fake WebSockets and Scheduler calls
 my $ipc = OpenQA::IPC->ipc('', 1);
-my $ws = OpenQA::WebSockets->new;
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
 
 my $new_job_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => 99963);
 ok($new_job_id, "got new job id");

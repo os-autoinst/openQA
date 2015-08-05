@@ -33,9 +33,10 @@ my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 
 #my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-# create Test DBus bus and service for fake WebSockets call
+# create Test DBus bus and service for fake WebSockets and Scheduler calls
 my $ipc = OpenQA::IPC->ipc('', 1);
-my $ws = OpenQA::WebSockets->new;
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
 
 sub list_jobs {
     my %args = @_;

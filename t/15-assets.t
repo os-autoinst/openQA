@@ -23,15 +23,17 @@ use strict;
 use warnings;
 use Data::Dump qw/pp dd/;
 use Test::More;
+use OpenQA::Scheduler;
 use OpenQA::Scheduler::Scheduler qw/job_create job_grab job_get job_restart job_set_done/;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::IPC;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 
-# create Test DBus bus and service for fake WebSockets call
+# create Test DBus bus and service for fake WebSockets and Scheduler calls
 my $ipc = OpenQA::IPC->ipc('', 1);
-my $ws = OpenQA::WebSockets->new;
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
 
 my $schema;
 ok($schema = OpenQA::Test::Database->new->create(), 'create database') || BAIL_OUT('failed to create database');

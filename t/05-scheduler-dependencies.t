@@ -22,6 +22,7 @@ BEGIN {
 
 use strict;
 use Data::Dump qw/pp dd/;
+use OpenQA::Scheduler;
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
@@ -30,9 +31,10 @@ use Test::More tests => 155;
 
 my $schema = OpenQA::Test::Database->new->create();
 
-# create Test DBus bus and service for fake WebSockets call
+# create Test DBus bus and service for fake WebSockets and Scheduler calls
 my $ipc = OpenQA::IPC->ipc('', 1);
-my $ws = OpenQA::WebSockets->new;
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
 
 #my $t = Test::Mojo->new('OpenQA::WebAPI');
 

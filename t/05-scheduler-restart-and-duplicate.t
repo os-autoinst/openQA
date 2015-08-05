@@ -22,6 +22,7 @@ BEGIN {
 
 use strict;
 use Data::Dump qw/pp dd/;
+use OpenQA::Scheduler;
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Utils;
@@ -30,9 +31,10 @@ use OpenQA::Test::Database;
 use Test::More;
 
 
-# create Test DBus bus and service for fake WebSockets call
+# create Test DBus bus and service for fake WebSockets and Scheduler calls
 my $ipc = OpenQA::IPC->ipc('', 1);
-my $ws = OpenQA::WebSockets->new;
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
 
 sub list_jobs {
     [map { $_->to_hash() } OpenQA::Scheduler::Scheduler::query_jobs()->all];
