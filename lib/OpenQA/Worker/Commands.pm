@@ -110,7 +110,7 @@ sub websocket_commands {
                 if ($OpenQA::Worker::Jobs::do_livelog) {
                     $OpenQA::Worker::Jobs::do_livelog -= 1;
                 }
-                else {
+                unless ($OpenQA::Worker::Jobs::do_livelog) {
                     print "stopping livelog\n" if $verbose;
                     change_timer('update_status', STATUS_UPDATES_SLOW);
                 }
