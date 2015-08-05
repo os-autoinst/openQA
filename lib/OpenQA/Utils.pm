@@ -112,8 +112,14 @@ sub file_content($) {
 }
 
 sub log_debug {
+    my ($msg) = @_;
     # useful for models, but doesn't work in tests
-    $app->log->debug(shift) if $app && $app->log;
+    if ($app && $app->log) {
+        $app->log->debug($msg);
+    }
+    else {
+        print STDERR "$msg\n";
+    }
 }
 
 sub log_info {
