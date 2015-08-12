@@ -127,6 +127,7 @@ sub ws_create {
     };
     $workerinfo->{properties} = {};
     for my $p ($worker->properties->all) {
+        next if ($p->key eq 'JOBTOKEN');
         $workerinfo->{properties}->{$p->key} = $p->value;
     }
     OpenQA::IPC->ipc->emit_signal('websockets', 'worker_connected', $workerinfo);

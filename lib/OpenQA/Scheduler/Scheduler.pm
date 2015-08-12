@@ -559,11 +559,6 @@ sub job_grab {
     $worker->set_property('INTERACTIVE_REQUESTED',        0);
     $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
 
-    # JOBTOKEN for test access to API
-    my $token = rndstr;
-    $worker->set_property('JOBTOKEN', $token);
-    $job_hashref->{settings}->{JOBTOKEN} = $token;
-
     my $updated_settings = $job->assets_from_settings();
 
     if ($updated_settings) {
@@ -585,6 +580,10 @@ sub job_grab {
     $worker->set_property('WORKER_TMPDIR', tempdir());
     OpenQA::IPC->ipc->emit_signal('scheduler', 'job_grab', $job_hashref);
 
+    # JOBTOKEN for test access to API
+    my $token = rndstr;
+    $worker->set_property('JOBTOKEN', $token);
+    $job_hashref->{settings}->{JOBTOKEN} = $token;
     # starting one job from parallel group can unblock
     # other jobs from the group
     job_notify_workers() if $job->children->count();
