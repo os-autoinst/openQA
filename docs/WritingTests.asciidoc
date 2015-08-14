@@ -456,7 +456,7 @@ WORKER_CLASS=server,qemu_autoyast_tap_64
 --------------------------------------------------------------------------------
 
 where the +SUPPORT_SERVER_ROLES+ defines the specific role (see code in 'tests/support_server/setup.pm' for available roles and their definition), and
- +HDD_1+ variable must be the name of the supportserver image as defined via +PUBLISH_HDD_1+ variable during supportserver generation. If the support server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add +HDDMODEL=virtio-blk+. 
+ +HDD_1+ variable must be the name of the supportserver image as defined via +PUBLISH_HDD_1+ variable during supportserver generation. If the support server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add +HDDMODEL=virtio-blk+. In case of qemu backend, one can also use +BOOTFROM=c+, for faster boot directly from the +HDD_1+ image.
  
 
 Then for the 'child' test using this supportserver, the following additional variable must be set:
