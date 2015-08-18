@@ -65,16 +65,18 @@ sub list {
 
     my $scheduled = OpenQA::Scheduler::Scheduler::query_jobs(state => 'scheduled', match => $match, groupid => $groupid, assetid => $assetid);
     $self->stash(scheduled => $scheduled);
-
 }
 
 sub list_ajax {
     my ($self) = @_;
-    my $res = {};
+    my $match;
+    if (defined($self->param('match'))) {
+        $match = $self->param('match');
+        $match =~ s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g;    # sanitize
+    }
+    my $assetid = $self->param('assetid');
+    my $groupid = $self->param('groupid');
 
-    my $jobs;
-
-    my $st = time;
     my @ids;
     # we have to seperate the initial loading and the reload
     if ($self->param('initial')) {
@@ -83,30 +85,45 @@ sub list_ajax {
     else {
         my $scope = '';
         $scope = 'relevant' if $self->param('relevant') ne 'false';
-
-        $jobs = OpenQA::Scheduler::Scheduler::query_jobs(
+        my $jobs = OpenQA::Scheduler::Scheduler::query_jobs(
             state   => 'done,cancelled',
+            match   => $match,
             scope   => $scope,
+            assetid => $assetid,
+            groupid => $groupid,
             limit   => 500,
-            idsonly => 1,
+            idsonly => 1
         );
         while (my $j = $jobs->next) { push(@ids, $j->id); }
     }
 
-    $jobs = $self->db->resultset("Jobs")->search(
+    # job modules stats
+    my $stats = OpenQA::Schema::Result::JobModules::job_module_stats(\@ids);
+
+    # job settings
+    my $settings;
+    my $js = $self->db->resultset('JobSettings')->search(
+        {
+            job_id => {in => \@ids},
+            key    => {in => [qw/MACHINE DISTRI VERSION FLAVOR ARCH BUILD/]},
+        },
+        {
+            columns => [qw/key value job_id/],
+        });
+    while (my $s = $js->next) {
+        $settings->{$s->job_id}->{$s->key} = $s->value;
+    }
+
+    # complete response
+    my @list;
+    my $jobs = $self->db->resultset("Jobs")->search(
         {'me.id' => {in => \@ids}},
         {
-            columns  => [qw/id state clone_id test result group_id t_created/],
+            columns  => [qw/me.id state clone_id test result group_id t_created/],
             order_by => ['me.id DESC'],
-            prefetch => [qw/settings children parents modules/]});
-    my @list;
+            prefetch => [qw/children parents/],
+        });
     while (my $job = $jobs->next) {
-        # job settings
-        my %settings;
-        my $js = $job->settings;
-        while (my $s = $js->next) {
-            $settings{$s->key} = $s->value;
-        }
         # job dependencies
         my %deps = (
             parents  => {'Chained' => [], 'Parallel' => []},
@@ -119,34 +136,20 @@ sub list_ajax {
         while (my $s = $jc->next) {
             push(@{$deps{children}->{$s->to_string}}, $s->child_job_id);
         }
-        # job modules stats
-        my $stats = {
-            dents                                => 0,
-            OpenQA::Schema::Result::Jobs::PASSED => 0,
-            OpenQA::Schema::Result::Jobs::FAILED => 0
-        };
-        my $query = $job->modules;
-        while (my $r = $query->next) {
-            if ($r->result eq OpenQA::Schema::Result::Jobs::PASSED && $r->soft_failure) {
-                $stats->{dents} += 1;
-            }
-            else {
-                $stats->{$r->result} += 1;
-            }
-        }
+        my $js = $settings->{$job->id};
 
         my $data = {
             "DT_RowId"   => "job_" . $job->id,
             id           => $job->id,
-            result_stats => $stats,
+            result_stats => $stats->{$job->id},
             deps         => \%deps,
             clone        => $job->clone_id,
-            test         => $job->test . "@" . $settings{MACHINE} // '',
-            distri       => $settings{DISTRI} // '',
-            version      => $settings{VERSION} // '',
-            flavor       => $settings{FLAVOR} // '',
-            arch         => $settings{ARCH} // '',
-            build        => $settings{BUILD} // '',
+            test         => $job->test . "@" . $js->{MACHINE} // '',
+            distri       => $js->{DISTRI} // '',
+            version      => $js->{VERSION} // '',
+            flavor       => $js->{FLAVOR} // '',
+            arch         => $js->{ARCH} // '',
+            build        => $js->{BUILD} // '',
             testtime     => $job->t_created,
             result       => $job->result,
             group        => $job->group_id,
