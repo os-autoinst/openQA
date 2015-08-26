@@ -24,7 +24,7 @@
 
 <div class="container">
 
-  <h2>Last <%= $jobs %> finished jobs</h2>
+  <h2>Last <%= $jobs->all %> finished jobs</h2>
   % if (is_operator && 0) {
     <p>
       <a href="#" id="list-select">Select</a>
