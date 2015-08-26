@@ -353,16 +353,17 @@ sub _commit_git {
     }
     my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);
     my @files = ($dir . '/' . $name . '.json', $dir . '/' . $name . '.png');
-    if (system(@git, 'add', @files) != 0) {
+
+    unless (run_cmd_with_log([@git, 'add', @files])) {
         die "failed to git add $name";
     }
-    my @cmd = (@git, 'commit', '-q', '-m', sprintf("%s for %s", $name, $job->name), sprintf('--author=%s <%s>', $self->current_user->fullname, $self->current_user->email), @files);
-    $self->app->log->debug(join(' ', @cmd));
-    if (system(@cmd) != 0) {
+
+    unless (run_cmd_with_log([@git, 'commit', '-q', '-m', sprintf("%s for %s", $name, $job->name), sprintf('--author=%s <%s>', $self->current_user->fullname, $self->current_user->email), @files])) {
         die "failed to git commit $name";
     }
+
     if (($self->app->config->{'scm git'}->{'do_push'} || '') eq 'yes') {
-        if (system(@git, 'push') != 0) {
+        unless (run_cmd_with_log([@git, 'push'])) {
             die "failed to git push $name";
         }
     }
