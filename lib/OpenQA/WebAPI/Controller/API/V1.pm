@@ -19,33 +19,59 @@ use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'hmac_sha1_sum';
 
 sub auth {
-    my $self      = shift;
-    my $headers   = $self->req->headers;
-    my $key       = $headers->header('X-API-Key');
-    my $hash      = $headers->header('X-API-Hash');
-    my $timestamp = $headers->header('X-API-Microtime');
+    my $self = shift;
     my $user;
-    $self->app->log->debug($key ? "API key from client: *$key*" : "No API key from client.");
+
+    my $reason = "Not authorized";
 
     if ($user = $self->current_user) {    # Browser with a logged in user
         unless ($self->valid_csrf) {
-            $self->render(json => {error => "Bad CSRF token!"}, status => 403);
-            return;
+            $reason = "Bad CSRF token!";
+            $user   = undef;
         }
     }
     else {                                # No session (probably not a browser)
-        my $api_key = $self->db->resultset("ApiKeys")->find({key => $key});
-        my $msg = $self->req->url->to_string;
-        if ($api_key && $self->_valid_hmac($hash, $msg, $timestamp, $api_key)) {
-            $user = $api_key->user;
-            $self->app->log->debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
+        my $headers   = $self->req->headers;
+        my $key       = $headers->header('X-API-Key');
+        my $hash      = $headers->header('X-API-Hash');
+        my $timestamp = $headers->header('X-API-Microtime');
+        my $api_key;
+        if ($key) {
+            $self->app->log->debug("API key from client: *$key*");
+            $api_key = $self->db->resultset("ApiKeys")->find({key => $key});
+        }
+        else {
+            $self->app->log->debug("No API key from client.");
+            $reason = "no api key";
+        }
+        if ($api_key) {
+            $self->app->log->debug(sprintf "Key is for user '%s'", $api_key->user->username);
+            my $msg = $self->req->url->to_string;
+            $self->app->log->debug("$hash $msg");
+            if ($self->_valid_hmac($hash, $msg, $timestamp, $api_key)) {
+                $user = $api_key->user;
+            }
+            else {
+                $self->app->log->error("hmac check failed");
+                if (!_is_timestamp_valid($timestamp)) {
+                    $reason = "timestamp mismatch";
+                }
+                elsif (_is_expired($api_key)) {
+                    $reason = "api key expired";
+                }
+            }
+        }
+        elsif ($key) {
+            $self->app->log->error(sprintf "api key '%s' not found", $key);
         }
     }
 
-    return 1 if $self->is_operator($user);
-
-    $self->render(json => {error => "Not authorized"}, status => 403);
-    return;
+    if ($user) {
+        $self->app->log->debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
+        return $self->is_operator($user);
+    }
+    $self->render(json => {error => $reason}, status => 403);
+    return 0;
 }
 
 sub auth_jobtoken {
@@ -65,26 +91,34 @@ sub auth_jobtoken {
     else {
         $self->app->log->warn('No JobToken received!');
     }
-    $self->render(json => {error => 'Not authorized'}, status => 403);
+    $self->render(json => {error => 'invalid jobtoken'}, status => 403);
     return;
+}
+
+sub _is_timestamp_valid {
+    my ($timestamp) = @_;
+    return (time - $timestamp <= 300);
+}
+
+sub _is_expired {
+    my ($api_key) = @_;
+    my $exp = $api_key->t_expiration;
+    # It has no expiration date or it's in the future
+    return 0 if (!$exp || $exp->epoch > time);
+    return 1;
 }
 
 sub _valid_hmac {
     my $self = shift;
     my ($hash, $request, $timestamp, $api_key) = (shift, shift, shift, shift);
 
-    if (time - $timestamp <= 300) {
-        my $exp = $api_key->t_expiration;
-        # It has no expiration date or it's in the future
-        if (!$exp || $exp->epoch > time) {
-            if (my $secret = $api_key->secret) {
-                my $sum = hmac_sha1_sum($request . $timestamp, $secret);
-                return 1 if $sum eq $hash;
-            }
-        }
-    }
+    return 0 unless _is_timestamp_valid($timestamp);
+    return 0 if _is_expired($api_key);
+    return 0 unless $api_key->secret;
 
-    return 0;
+    my $sum = hmac_sha1_sum($request . $timestamp, $api_key->secret);
+
+    return $sum eq $hash;
 }
 
 1;
