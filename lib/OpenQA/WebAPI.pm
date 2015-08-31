@@ -167,8 +167,6 @@ sub startup {
 
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
-    # Documentation browser under "/perldoc"
-    $self->plugin('PODRenderer');
     $self->plugin('AssetPack');
     $self->plugin('OpenQA::WebAPI::Plugin::Helpers');
     $self->plugin('OpenQA::WebAPI::Plugin::CSRF');
