@@ -118,6 +118,36 @@ img.resborder_na {
     padding: 4px;
 }
 
+span.resborder_ok, span.resborder_fail, span.resborder_unk, span.resborder_na {
+    width: 60px;
+    height: 45px;
+    display: inline-block;
+    text-align: center;
+    word-wrap: break-word;
+    white-space: normal;
+    overflow: hidden;
+}
+
+span.resborder_ok {
+    border: 2px solid green;
+    padding: 1px;
+}
+
+span.resborder_fail {
+    border: 2px solid red;
+    padding: 1px;
+}
+
+span.resborder_unk {
+    border: 2px solid lightgray;
+    padding: 1px;
+}
+
+span.resborder_na {
+    overflow: hidden;
+    padding: 4px;
+}
+
 .no_hover:hover {
    text-decoration: none;
 }

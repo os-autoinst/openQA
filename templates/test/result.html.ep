@@ -147,7 +147,9 @@
                                             % }
 
                                             <% for my $text (@{$module->{texts}}) { %>
-                                                <a href="<%= url_for('step', moduleid => $module->{name}, stepid => $text->{num}) %>"><img src="/images/text.png" width="26" height="26" alt="<%= $text->{name} %>.txt" class="<%= "resborder_\L$text->{result}" %>" /></a>
+                                                %= link_to url_for('step', moduleid => $module->{name}, stepid => $text->{num}) => title => $text->{title} => begin
+                                                    <span class="<%= "resborder_\L$text->{result}" %>" ><%= $text->{title} || 'Text' %></span>
+                                                % end
                                             <% } %>
                                         </td>
                                     </tr>
