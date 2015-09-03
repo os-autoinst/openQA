@@ -512,7 +512,7 @@ Here we will use autoyast to setup the system of the test job and the os-autoins
 --------------------------------------------------------------------------------
 HDD_1=supporserver.qcow2
 SUPPORT_SERVER=1
-SUPPORT_SERVER_ROLES=dhcp,tftp,qemuproxy
+SUPPORT_SERVER_ROLES=pxe,qemuproxy
 WORKER_CLASS=server,qemu_autoyast_tap_64
 --------------------------------------------------------------------------------
 
@@ -527,7 +527,8 @@ INSTALLONLY=1
 PARALLEL_WITH=supportserver-opensuse-tftp
 --------------------------------------------------------------------------------
 
-again assuming the support server's name being +supportserver-opensuse-tftp+.
+again assuming the support server's name being +supportserver-opensuse-tftp+. Note that the +pxe+ role already contains +tftp+ and +dhcp+ server role, since they are needed for the pxe boot to work.
+
 The tftp test defined in the +autoyast_opensuse/opensuse_autoyast_tftp.sh+ file could be something like:
 
 --------------------------------------------------------------------------------
