@@ -30,12 +30,12 @@ my $ipc = OpenQA::IPC->ipc('', 1);
 my $ws = OpenQA::WebSockets->new;
 
 # monkey patch ws_send of OpenQA::WebSockets::Server to store received command
-package OpenQA::WebSockets::Server;
+package OpenQA::WebSockets;
 no warnings "redefine";
 my $last_command = '';
 sub ws_send {
     my ($workerid, $command, $jobid) = @_;
-    $OpenQA::WebSockets::Server::last_command = $command;
+    $OpenQA::WebSockets::last_command = $command;
 }
 
 package main;
@@ -48,11 +48,11 @@ my @valid_commands = qw/quit abort cancel obsolete
 
 for my $cmd (@valid_commands) {
     OpenQA::Scheduler::command_enqueue(workerid => 1, command => $cmd, job_id => 0);
-    is($OpenQA::WebSockets::Server::last_command, $cmd, "command $cmd received at WS server");
+    is($OpenQA::WebSockets::last_command, $cmd, "command $cmd received at WS server");
 }
 
 #issue invalid commands
 OpenQA::Scheduler::command_enqueue(workerid => 1, command => 'foo', job_id => 0);
-isnt($OpenQA::WebSockets::Server::last_command, 'foo', 'refuse invalid commands');
+isnt($OpenQA::WebSockets::last_command, 'foo', 'refuse invalid commands');
 
 done_testing();
