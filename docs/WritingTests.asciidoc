@@ -471,4 +471,71 @@ Once the tests are defined, they can be added to openQA in the usual way:
 -----------------
 
 where the +DISTRI+, +VERSION+, +FLAVOR+ and +ARCH+ correspond to the job group containing the tests.
+Note that the networking is provided by tap devices, so both jobs should run on machines defined by (apart from others) having +NICTYPE=tap+, +WORKER_CLASS=qemu_autoyast_tap_64+.
 
+
+Example - a simple tftp test:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Let's assume that we want to test tftp client operation. For this, we setup the supportserver as a tftp server:
+[source,sh]
+--------------------------------------------------------------------------------
+HDD_1=supporserver.qcow2
+SUPPORT_SERVER=1
+SUPPORT_SERVER_ROLES=dhcp,tftp
+WORKER_CLASS=server,qemu_autoyast_tap_64
+--------------------------------------------------------------------------------
+
+with a test-suites name +supportserver-opensuse-tftp+.
+
+The actual test 'child' job, will then have to set +PARALLEL_WITH=supportserver-opensuse-tftp+, and also other variables according to the test requirements. For convenience, we have also started a dhcp server on the supportserver, but even without it, network could be set up manually by assigning a free ip address (e.g. 10.0.2.15) on the system of the test job.
+
+The code in the *.pm module doing the actual tftp test could then look something like this:
+
+--------------------------------------------------------------------------------
+use strict;
+use base 'basetest';
+use testapi;
+
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+Example - autoyast based tftp test:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access qemu provided data, for dowloading autoyast profile and tftp verify script:
+
+--------------------------------------------------------------------------------
+HDD_1=supporserver.qcow2
+SUPPORT_SERVER=1
+SUPPORT_SERVER_ROLES=dhcp,tftp,qemuproxy
+WORKER_CLASS=server,qemu_autoyast_tap_64
+--------------------------------------------------------------------------------
+
+
+The actual test 'child' job, will then be defined as :
+
+--------------------------------------------------------------------------------
+AUTOYAST=autoyast_opensuse/opensuse_autoyast_tftp.xml
+AUTOYAST_VERIFY=autoyast_opensuse/opensuse_autoyast_tftp.sh
+DESKTOP=textmode
+INSTALLONLY=1
+PARALLEL_WITH=supportserver-opensuse-tftp
+--------------------------------------------------------------------------------
+
+again assuming the support server's name being +supportserver-opensuse-tftp+.
+The tftp test defined in the +autoyast_opensuse/opensuse_autoyast_tftp.sh+ file could be something like:
+
+--------------------------------------------------------------------------------
+set -e -x
+echo test >test.txt
+time tftp #SERVER_URL# -c put test.txt test2.txt
+time tftp #SERVER_URL# -c get test.txt
+diff -u test.txt test2.txt && echo "AUTOYAST OK"
+--------------------------------------------------------------------------------
+
+and the rest is done automatically, using already prepared test modules in +tests/autoyast+ subdirectory.
