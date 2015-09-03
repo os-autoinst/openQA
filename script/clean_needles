@@ -69,7 +69,7 @@ use v5.10;
 use DBIx::Class::DeploymentHandler;
 use Getopt::Long;
 use OpenQA::Utils;
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::Scheduler;
 use JSON "decode_json";
 
 Getopt::Long::Configure("no_ignore_case");
@@ -91,7 +91,7 @@ $options{days} = 60 unless $options{days} // 0 > 0;
 
 usage(0) if $options{help};
 
-my $jobs = OpenQA::Scheduler::Scheduler::list_jobs(
+my $jobs = OpenQA::Scheduler::list_jobs(
     state  => 'done',
     maxage => $options{days} * 24 * 60 * 60,
 );

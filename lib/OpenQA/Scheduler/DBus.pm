@@ -50,14 +50,14 @@ sub new {
 dbus_method('asset_delete', [['dict', 'string', 'string']], ['uint32']);
 sub asset_delete {
     my ($self, $args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::asset_delete(%$args);
+    my $rs = OpenQA::Scheduler::asset_delete(%$args);
     return $rs;
 }
 
 dbus_method('asset_get', [['dict', 'string', 'string']], [['dict', 'string', 'string']]);
 sub asset_get {
     my ($self, $args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::asset_get(%$args);
+    my $rs = OpenQA::Scheduler::asset_get(%$args);
     return {} unless $rs && $rs->first;
     my %rs = $rs->first->get_columns;
     return \%rs;
@@ -66,7 +66,7 @@ sub asset_get {
 dbus_method('asset_list', [['dict', 'string', 'string']], [['array', ['dict', 'string', 'string']]]);
 sub asset_list {
     my ($self, $args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::asset_list(%$args);
+    my $rs = OpenQA::Scheduler::asset_list(%$args);
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
     return [$rs->all];
 }
@@ -74,7 +74,7 @@ sub asset_list {
 dbus_method('asset_register', [['dict', 'string', 'string']], ['uint32']);
 sub asset_register {
     my ($self, $args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::asset_register(%$args);
+    my $rs = OpenQA::Scheduler::asset_register(%$args);
     return 0 unless $rs;
     return $rs->id;
 }
@@ -83,58 +83,58 @@ sub asset_register {
 dbus_method('command_enqueue', [['dict', 'string', 'string']], ['bool']);
 sub command_enqueue {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::command_enqueue(%$args);
+    return OpenQA::Scheduler::command_enqueue(%$args);
 }
 
 # this is here for legacy reasons, command_enqueue is the command_enqueue_checked
 dbus_method('command_enqueue_checked', [['dict', 'string', 'uint32']], ['bool']);
 sub command_enqueue_checked {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::command_enqueue(%$args);
+    return OpenQA::Scheduler::command_enqueue(%$args);
 }
 
 ## Jobs
 dbus_method('job_cancel', ['uint32', 'bool'], ['uint32']);
 sub job_cancel {
     my ($self, $jobid, $newbuild) = @_;
-    return OpenQA::Scheduler::Scheduler::job_cancel($jobid, $newbuild);
+    return OpenQA::Scheduler::job_cancel($jobid, $newbuild);
 }
 
 dbus_method('job_cancel_by_iso', ['string', 'bool'], ['uint32']);
 sub job_cancel_by_iso {
     my ($self, $iso, $newbuild) = @_;
-    return OpenQA::Scheduler::Scheduler::job_cancel($iso, $newbuild);
+    return OpenQA::Scheduler::job_cancel($iso, $newbuild);
 }
 
 dbus_method('job_cancel_by_settings', [['dict', 'string', 'string'], 'bool'], ['uint32']);
 sub job_cancel_by_settings {
     my ($self, $settings, $newbuild) = @_;
-    return OpenQA::Scheduler::Scheduler::job_cancel($settings, $newbuild);
+    return OpenQA::Scheduler::job_cancel($settings, $newbuild);
 }
 
 dbus_method('job_create', [['dict', 'string', ['variant']], 'bool'], [['dict', 'string', ['variant']]]);
 sub job_create {
     my ($self, @args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::job_create(@args);
+    my $rs = OpenQA::Scheduler::job_create(@args);
     return $rs->to_hash(assets => 1);
 }
 
 dbus_method('job_delete', ['uint32'], ['uint32']);
 sub job_delete {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_delete($args);
+    return OpenQA::Scheduler::job_delete($args);
 }
 
 dbus_method('job_delete_by_iso', ['string'], ['uint32']);
 sub job_delete_by_iso {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_delete($args);
+    return OpenQA::Scheduler::job_delete($args);
 }
 
 dbus_method('job_duplicate', [['dict', 'string', 'string']], ['uint32']);
 sub job_duplicate {
     my ($self, $args) = @_;
-    my $res = OpenQA::Scheduler::Scheduler::job_duplicate(%$args);
+    my $res = OpenQA::Scheduler::job_duplicate(%$args);
     return 0 unless $res;
     return $res;
 }
@@ -142,7 +142,7 @@ sub job_duplicate {
 dbus_method('job_get', ['uint32'], [['dict', 'string', ['variant']]]);
 sub job_get {
     my ($self, $args) = @_;
-    my $res = OpenQA::Scheduler::Scheduler::job_get($args);
+    my $res = OpenQA::Scheduler::job_get($args);
     return {} unless $res;
     return $res;
 }
@@ -150,38 +150,38 @@ sub job_get {
 dbus_method('job_grab', [['dict', 'string', ['variant']]], [['dict', 'string', ['variant']]]);
 sub job_grab {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_grab(%$args);
+    return OpenQA::Scheduler::job_grab(%$args);
 }
 
 dbus_method('job_notify_workers');
 sub job_notify_workers {
     my ($self) = @_;
-    OpenQA::Scheduler::Scheduler::job_notify_workers;
+    OpenQA::Scheduler::job_notify_workers;
 }
 
 dbus_method('job_restart', [['array', 'uint32']], [['array', 'uint32']]);
 sub job_restart {
     my ($self, $args) = @_;
-    my @res = OpenQA::Scheduler::Scheduler::job_restart($args);
+    my @res = OpenQA::Scheduler::job_restart($args);
     return \@res;
 }
 
 dbus_method('job_set_done', [['dict', 'string', 'string']], ['uint32']);
 sub job_set_done {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_set_done(%$args);
+    return OpenQA::Scheduler::job_set_done(%$args);
 }
 
 dbus_method('jobs_get_dead_worker', ['string'], [['array', ['dict', 'string', ['variant']]]]);
 sub jobs_get_dead_worker {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::jobs_get_dead_worker($args);
+    return OpenQA::Scheduler::jobs_get_dead_worker($args);
 }
 
 dbus_method('job_update_result', [['dict', 'string', ['variant']]], ['uint32']);
 sub job_update_result {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_update_result(%$args);
+    return OpenQA::Scheduler::job_update_result(%$args);
 }
 
 dbus_method('job_update_status', ['uint32', ['dict', 'string', ['variant']]], ['uint32']);
@@ -192,7 +192,7 @@ sub job_update_status {
 dbus_method('query_jobs', [['dict', 'string', 'string']], [['array', ['dict', 'string', ['variant']]]]);
 sub query_jobs {
     my ($self, $args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::query_jobs(%$args);
+    my $rs = OpenQA::Scheduler::query_jobs(%$args);
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
     return [$rs->all];
 }
@@ -200,19 +200,19 @@ sub query_jobs {
 dbus_method('job_set_waiting', ['uint32'], ['uint32']);
 sub job_set_waiting {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_set_waiting($args);
+    return OpenQA::Scheduler::job_set_waiting($args);
 }
 
 dbus_method('job_set_running', ['uint32'], ['uint32']);
 sub job_set_running {
     my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_set_running($args);
+    return OpenQA::Scheduler::job_set_running($args);
 }
 
 dbus_method('job_schedule_iso', [['dict', 'string', ['variant']]], [['array', 'uint32']]);
 sub job_schedule_iso {
     my ($self, $args) = @_;
-    my @ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(%$args);
+    my @ids = OpenQA::Scheduler::job_schedule_iso(%$args);
     return \@ids;
 }
 
@@ -220,7 +220,7 @@ sub job_schedule_iso {
 dbus_method('validate_workerid', ['uint32'], ['bool']);
 sub validate_workerid {
     my ($self, $args) = @_;
-    my $res = OpenQA::Scheduler::Scheduler::_validate_workerid($args);
+    my $res = OpenQA::Scheduler::_validate_workerid($args);
     return 1 if ($res);
     return 0;
 }

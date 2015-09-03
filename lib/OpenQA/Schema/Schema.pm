@@ -14,7 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema;
-use base qw/DBIx::Class::Schema/;
+use strict;
+use warnings;
+use parent qw/Exporter DBIx::Class::Schema/;
 use Config::IniFiles;
 use IO::Dir;
 use SQL::SplitStatement;
@@ -23,12 +25,10 @@ use FindBin qw($Bin);
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION = 32;
+our $VERSION   = 32;
+our @EXPORT_OK = qw/connect_db/;
 
 __PACKAGE__->load_namespaces;
-
-
-
 
 sub connect_db {
     my $mode = shift || $ENV{OPENQA_DATABASE} || 'production';
