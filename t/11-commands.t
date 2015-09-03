@@ -20,7 +20,7 @@ BEGIN {
 use Test::More;
 use OpenQA::Test::Case;
 use OpenQA::Client;
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 
 OpenQA::Test::Case->new->init_data;
@@ -47,12 +47,12 @@ my @valid_commands = qw/quit abort cancel obsolete
   livelog_stop livelog_start/;
 
 for my $cmd (@valid_commands) {
-    OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => $cmd, job_id => 0);
+    OpenQA::Scheduler::command_enqueue(workerid => 1, command => $cmd, job_id => 0);
     is($OpenQA::WebSockets::Server::last_command, $cmd, "command $cmd received at WS server");
 }
 
 #issue invalid commands
-OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => 'foo', job_id => 0);
+OpenQA::Scheduler::command_enqueue(workerid => 1, command => 'foo', job_id => 0);
 isnt($OpenQA::WebSockets::Server::last_command, 'foo', 'refuse invalid commands');
 
 done_testing();
