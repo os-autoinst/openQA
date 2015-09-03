@@ -13,35 +13,57 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Scheduler;
+package OpenQA::Scheduler::DBus;
 
 use strict;
 use warnings;
-use base qw/Net::DBus::Object/;
-use Net::DBus::Exporter qw/org.opensuse.openqa.Scheduler/;
-use Net::DBus::Reactor;
-use Data::Dump qw/pp/;
+use parent qw/Mojolicious::Plugin/;
 
 use OpenQA::IPC;
-use OpenQA::Scheduler::Scheduler qw//;
-use OpenQA::Scheduler::Locks qw//;
 
-sub run {
-    OpenQA::Scheduler->new();
-    Net::DBus::Reactor->main->run;
+sub register {
+    my ($self, $reactor) = @_;
+    my $dbus = OpenQA::Scheduler::DBus::Object->new($reactor);
+    # register Mojo listeners
+    my $ipc = $dbus->{ipc};
+    $self->{DBUS} = $dbus;
+    return unless ($reactor && ref($reactor) =~ /Mojo::Reactor/);
+    $reactor->on('job_new'        => sub { my ($e, @args) = @_; $ipc->emit_signal('scheduler', 'job_new',        @args) });
+    $reactor->on('job_duplicate'  => sub { my ($e, @args) = @_; $ipc->emit_signal('scheduler', 'job_duplicate',  @args) });
+    $reactor->on('job_grab'       => sub { my ($e, @args) = @_; $ipc->emit_signal('scheduler', 'job_grab',       @args) });
+    $reactor->on('job_finish'     => sub { my ($e, @args) = @_; $ipc->emit_signal('scheduler', 'job_finish',     @args) });
+    $reactor->on('job_cancel'     => sub { my ($e, @args) = @_; $ipc->emit_signal('scheduler', 'job_cancel',     @args) });
+    $reactor->on('job_restart'    => sub { my ($e, @args) = @_; $ipc->emit_signal('scheduler', 'job_restart',    @args) });
+    $reactor->on('iso_schedule'   => sub { my ($e, @args) = @_; $ipc->emit_signal('scheduler', 'iso_schedule',   @args) });
+    $reactor->on('asset_register' => sub { my ($e, @args) = @_; $ipc->emit_signal('scheduler', 'asset_register', @args) });
+    $reactor->on('asset_delete'   => sub { my ($e, @args) = @_; $ipc->emit_signal('scheduler', 'asset_delete',   @args) });
+
+    return $self;
 }
 
+package OpenQA::Scheduler::DBus::Object;
+
+use strict;
+use warnings;
+use parent qw/Net::DBus::Object/;
+
+use Net::DBus::Exporter qw/org.opensuse.openqa.Scheduler/;
+use OpenQA::IPC;
+use OpenQA::Scheduler qw//;
+use OpenQA::Scheduler::Locks qw//;
+
 sub new {
-    my ($class) = @_;
+    my ($class, $reactor) = @_;
     $class = ref $class || $class;
     # register @ IPC - we use DBus reactor here for symplicity
-    my $ipc     = OpenQA::IPC->ipc;
+    my $ipc     = OpenQA::IPC->ipc($reactor);
     my $service = $ipc->register_service('scheduler');
-    my $self    = $class->SUPER::new($service, '/Scheduler');
+    my $self    = $class->Net::DBus::Object::new($service, '/Scheduler');
     $ipc->register_object('scheduler', $self);
     $self->{ipc} = $ipc;
     bless $self, $class;
-
+    # hook DBus to Mojo reactor
+    $ipc->manage_events($reactor, $self);
     return $self;
 }
 

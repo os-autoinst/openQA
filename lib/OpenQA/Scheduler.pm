@@ -53,9 +53,10 @@ our @EXPORT;
   job_delete job_update_result job_restart job_cancel command_enqueue
   job_set_stop job_stop iso_stop_old_builds
   asset_list asset_get asset_delete asset_register
+  query_jobs
 );
 
-
+my $plugins;
 our %worker_commands = map { $_ => undef } qw/
   quit
   abort
@@ -133,7 +134,7 @@ sub job_notify_workers {
     # notify workers about new job
     my $ipc = OpenQA::IPC->ipc;
     $ipc->websockets('ws_send_all', 'job_available');
-    $ipc->emit_signal('scheduler', 'job_new', \@ids) if @ids;
+    Mojo::IOLoop->singleton->emit('job_new', \@ids) if @ids;
 }
 
 =item job_create
@@ -575,7 +576,7 @@ sub job_grab {
 
     # TODO: cleanup previous tmpdir
     $worker->set_property('WORKER_TMPDIR', tempdir());
-    OpenQA::IPC->ipc->emit_signal('scheduler', 'job_grab', $job_hashref);
+    Mojo::IOLoop->singleton->emit('job_grab', $job_hashref);
 
     # JOBTOKEN for test access to API
     my $token = rndstr;
@@ -688,7 +689,7 @@ sub job_set_done {
         _job_skip_children($jobid);
         _job_stop_children($jobid);
     }
-    OpenQA::IPC->ipc->emit_signal('scheduler', 'job_finish', $jobid, $workerid, $result);
+    Mojo::IOLoop->singleton->emit('job_finish', $jobid, $workerid, $result);
     return $r;
 }
 
@@ -854,7 +855,7 @@ sub job_duplicate {
     }
     log_debug('new job ' . $clones{$job->id});
     job_notify_workers($clones{$job->id});
-    OpenQA::IPC->ipc->emit_signal('scheduler', 'job_duplicate', $job->id, $clones{$job->id});
+    Mojo::IOLoop->singleton->emit('job_duplicate', $job->id, $clones{$job->id});
     return $clones{$job->id};
 }
 
@@ -885,7 +886,7 @@ sub job_restart {
             columns => [qw/id/],
         });
 
-    OpenQA::IPC->ipc->emit_signal('scheduler', 'job_restart', ref($jobids) eq 'ARRAY' ? $jobids : [$jobids]);
+    Mojo::IOLoop->singleton->emit('job_restart', ref($jobids) eq 'ARRAY' ? $jobids : [$jobids]);
     my @duplicated;
     while (my $j = $jobs->next) {
         my $id = job_duplicate(jobid => $j->id);
@@ -971,7 +972,7 @@ sub job_cancel($;$) {
 
         push @ids, $j->id;
     }
-    OpenQA::IPC->ipc->emit_signal('scheduler', 'job_cancel', \@ids) if @ids;
+    Mojo::IOLoop->singleton->emit('job_cancel', \@ids) if @ids;
     return scalar(@ids);
 }
 
@@ -1199,7 +1200,7 @@ sub job_schedule_iso {
             run_at   => now(),
         });
 
-    OpenQA::IPC->ipc->emit_signal('scheduler', 'iso_schedule', \%args);
+    Mojo::IOLoop->singleton->emit('iso_schedule', \%args);
     #notify workers new jobs are available
     job_notify_workers(@ids);
     return @ids;
@@ -1282,7 +1283,7 @@ sub asset_delete {
     my %args  = @_;
     my $asset = asset_get(%args);
     return unless $asset;
-    OpenQA::IPC->ipc->emit_signal('scheduler', 'asset_delete', \%args);
+    Mojo::IOLoop->singleton->emit('asset_delete', \%args);
     return $asset->delete;
 }
 
@@ -1308,8 +1309,26 @@ sub asset_register {
         {
             key => 'assets_type_name',
         });
-    OpenQA::IPC->ipc->emit_signal('scheduler', 'asset_register', \%args);
+    Mojo::IOLoop->singleton->emit('asset_register', \%args);
     return $asset;
+}
+
+############################################################################
+# MAIN
+sub new {
+    my ($class, $reactor) = @_;
+    $plugins = Mojolicious::Plugins->new;
+    push @{$plugins->namespaces}, 'OpenQA::Scheduler';
+    # always load DBus plugin, need for OpenQA IPC
+    $plugins->register_plugin('DBus', $reactor);
+    # go through config file and load enabled plugins
+    # FIXME ^
+}
+
+sub run {
+    # supply reactor from run, so when in tests only new is run we don't use reactor
+    OpenQA::Scheduler->new(Mojo::IOLoop->singleton->reactor);
+    Mojo::IOLoop->start unless Mojo::IOLoop->is_running;
 }
 
 1;
