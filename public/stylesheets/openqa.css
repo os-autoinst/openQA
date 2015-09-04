@@ -95,7 +95,7 @@ span.thumbnail.current {
     box-shadow: 0 0 3px 4px #666;
 }
 
-td img.resborder_ok, td img.resborder_fail, td img.resborder_unk,td img.resborder_na {
+td img.resborder_ok, td img.resborder_fail, td img.resborder_unk,td img.resborder_na, td span.resborder_ok, td span.resborder_fail, td span.resborder_unk, td span.resborder_na {
     margin-top: 3px;
 }
 
@@ -126,6 +126,9 @@ span.resborder_ok, span.resborder_fail, span.resborder_unk, span.resborder_na {
     word-wrap: break-word;
     white-space: normal;
     overflow: hidden;
+    vertical-align: top;
+    background: #dfffff;
+    font-size: small;
 }
 
 span.resborder_ok {
