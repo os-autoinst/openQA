@@ -1112,6 +1112,24 @@ sub _generate_jobs {
             $settings{PRIO}     = $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 
+            # variable expansion
+            # replace %NAME% with $settings{NAME}
+            my $expanded;
+            do {
+                $expanded = 0;
+                for my $var (keys %settings) {
+                    if ((my $val = $settings{$var}) =~ /(%\w+%)/) {
+                        my $replace_var = $1;
+                        $replace_var =~ s/^%(\w+)%$/$1/;
+                        my $replace_val = $settings{$replace_var};
+                        $replace_val = '' if $replace_var eq $var;    #stop infinite recursion
+                        $val =~ s/%${replace_var}%/$replace_val/g;
+                        $settings{$var} = $val;
+                        $expanded = 1;
+                    }
+                }
+            } while ($expanded);
+
             push @$ret, \%settings;
         }
     }
