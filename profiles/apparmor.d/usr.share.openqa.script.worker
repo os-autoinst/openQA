@@ -60,6 +60,7 @@
   /usr/bin/mkdir rix,
   /usr/bin/multimon rix,
   /usr/bin/nice rix,
+  /usr/bin/ionice rix,
   /usr/bin/python3.4 r,
   /usr/bin/qemu-img rix,
   /usr/bin/qemu-kvm rix,
