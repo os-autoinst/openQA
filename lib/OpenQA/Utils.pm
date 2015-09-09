@@ -1,15 +1,16 @@
 package OpenQA::Utils;
 use strict;
+use warnings;
 require 5.002;
 
 use Carp;
 use IPC::Run();
+use Try::Tiny;
 
-require Exporter;
-our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
+use parent qw/Exporter/;
+our ($VERSION, @EXPORT);
 $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
-@ISA     = qw(Exporter);
-@EXPORT  = qw(
+@EXPORT = qw(
   $prj
   $basedir
   $resultdir
@@ -124,17 +125,32 @@ sub log_debug {
 
 sub log_info {
     # useful for models, but doesn't work in tests
-    $app->log->info(shift) if $app && $app->log;
+    if ($app && $app->log) {
+        $app->log->info(shift);
+    }
+    else {
+        log_debug('[INFO] ' . shift);
+    }
 }
 
 sub log_warning {
     # useful for models, but doesn't work in tests
-    $app->log->warning(shift) if $app && $app->log;
+    if ($app && $app->log) {
+        $app->log->warning(shift);
+    }
+    else {
+        log_debug('[WARNING] ' . shift);
+    }
 }
 
 sub log_error {
     # useful for models, but doesn't work in tests
-    $app->log->error(shift) if $app && $app->log;
+    if ($app && $app->log) {
+        $app->log->error(shift);
+    }
+    else {
+        log_debug('[ERROR] ' . shift);
+    }
 }
 
 sub save_base64_png($$$) {
@@ -173,6 +189,37 @@ sub run_cmd_with_log($) {
         log_error("cmd returned non-zero value");
     }
     return $ret;
+}
+
+sub load_plugins {
+    my ($namespace, @options) = @_;
+    die 'Missing plugin namespace' unless $namespace;
+
+    require Mojolicious::Plugins;
+    use Mojo::Home;
+    use Config::IniFiles;
+
+    my $home = Mojo::Home->new;
+
+    my $plugins = Mojolicious::Plugins->new;
+    push @{$plugins->namespaces}, "OpenQA::$namespace";
+    # go through config file and load enabled plugins
+    my $cfgpath = $ENV{OPENQA_CONFIG} || $home->detect('OpenQA::Utils') . '/etc/openqa';
+    my $cfg = Config::IniFiles->new(-file => $cfgpath . '/openqa.ini') || undef;
+    # always load DBus plugin, need for OpenQA IPC
+    my @plugins = ('DBus');
+    if ($cfg) {
+        push @plugins, split(/,/, $cfg->val($namespace, 'plugins', ''));
+    }
+    for (@plugins) {
+        try {
+            $plugins->register_plugin($_, @options);
+        }
+        catch {
+            log_error("Unable to load plugin: $_");
+        };
+    }
+    return $plugins;
 }
 
 1;

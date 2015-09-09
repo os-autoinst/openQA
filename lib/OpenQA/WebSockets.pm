@@ -210,29 +210,7 @@ sub _message {
 no warnings 'redefine';
 sub new {
     my ($class, $reactor) = @_;
-    # load pligns
-    $plugins = Mojolicious::Plugins->new;
-    push @{$plugins->namespaces}, 'OpenQA::WebSockets';
-    # always load DBus plugin, need for OpenQA IPC
-    $plugins->register_plugin('DBus', $reactor);
-    # go through config file and load enabled plugins
-    # FIXME ^
-
-    # TODO: read openQA config
-    #     $self->defaults(appname => 'openQA::WebSockets');
-    #
-    #     $self->_read_config;
-    #     my $logfile = $ENV{OPENQA_WS_LOGFILE} || $self->config->{logging}->{file};
-    #     $self->log->path($logfile);
-    #
-    #     if ($logfile && $self->config->{logging}->{level}) {
-    #         $self->log->level($self->config->{logging}->{level});
-    #     }
-    #     if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
-    #         # avoid enabling the SQL debug unless we really want to see it
-    #         # it's rather expensive
-    #         db_profiler::enable_sql_debugging($self);
-    #     }
+    $plugins = OpenQA::Utils::load_plugins('WebSockets', $reactor);
 
     # Mojolicious startup
     # use port one higher than WebAPI
@@ -247,7 +225,10 @@ sub new {
 
     # no cookies for worker, no secrets to protect
     app->secrets(['nosecretshere']);
-    return Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
+    my $server = Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
+    die 'Unable to start websockets server' unless $server;
+    $server->app->defaults(appname => 'openQA WebSockets server');
+    return $server;
 }
 
 sub run {

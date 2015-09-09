@@ -1317,12 +1317,7 @@ sub asset_register {
 # MAIN
 sub new {
     my ($class, $reactor) = @_;
-    $plugins = Mojolicious::Plugins->new;
-    push @{$plugins->namespaces}, 'OpenQA::Scheduler';
-    # always load DBus plugin, need for OpenQA IPC
-    $plugins->register_plugin('DBus', $reactor);
-    # go through config file and load enabled plugins
-    # FIXME ^
+    $plugins = OpenQA::Utils::load_plugins('Scheduler', $reactor);
 }
 
 sub run {
