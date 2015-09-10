@@ -358,6 +358,25 @@ Few important examples:
    emulated USB stick.
 ** +SMP+ enables smp when set to 1, disables when set to 0.
 
+Variable expansion
+~~~~~~~~~~~~~~~~~~
+Any variable defined in Test Suite, Machine or Product table can refer to another
+variable using this syntax: %NAME%
+
+For example this variable defined for Test Suite:
+
+[source,sh]
+--------------------------------------------------------------------------------
+PUBLISH_HDD_1 = %DISTRI%-%VERSION%-%ARCH%-%DESKTOP%.qcow2
+--------------------------------------------------------------------------------
+
+is expanded to this job variable:
+
+[source,sh]
+--------------------------------------------------------------------------------
+PUBLISH_HDD_1 = opensuse-13.1-i586-kde.qcow2
+--------------------------------------------------------------------------------
+
 Testing openSUSE
 ----------------
 
