@@ -133,6 +133,10 @@ is_deeply(
                         'value' => 'kde'
                     },
                     {
+                        'key'   => 'PUBLISH_HDD_1',
+                        'value' => '%DISTRI%-%VERSION%-%ARCH%-%DESKTOP%-%QEMUCPU%.qcow2'
+                    },
+                    {
                         'key'   => 'START_AFTER_TEST',
                         'value' => 'kde,textmode'
                     }]}]
