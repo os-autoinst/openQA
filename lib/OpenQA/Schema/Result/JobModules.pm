@@ -19,7 +19,7 @@ use base qw/DBIx::Class::Core/;
 
 use strict;
 use db_helpers;
-use OpenQA::Scheduler::Scheduler;
+#use OpenQA::Schema::Schema;
 use OpenQA::Schema::Result::Jobs;
 use JSON ();
 use File::Basename qw/dirname basename/;
@@ -117,14 +117,14 @@ sub details() {
 sub job_module($$) {
     my ($job, $name) = @_;
 
-    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $schema = OpenQA::Schema::connect_db();
     return $schema->resultset("JobModules")->search({job_id => $job->id, name => $name})->first;
 }
 
 sub job_modules($) {
     my ($job) = @_;
 
-    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $schema = OpenQA::Schema::connect_db();
     return $schema->resultset("JobModules")->search({job_id => $job->id}, {order_by => 'id'})->all;
 }
 
@@ -133,7 +133,7 @@ sub job_module_stats($) {
 
     my $result_stat = {};
 
-    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $schema = OpenQA::Schema::connect_db();
 
     my $ids;
 

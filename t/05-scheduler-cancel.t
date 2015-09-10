@@ -31,17 +31,18 @@ use Net::DBus;
 use Test::More;
 
 OpenQA::Test::Database->new->create();
-# create Test DBus bus and service for fake WebSockets call
+# create Test DBus bus and service for fake WebSockets and Scheduler calls
 my $ipc = OpenQA::IPC->ipc('', 1);
-my $ws = OpenQA::WebSockets->new;
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
 
-my $new_job_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => 99963);
+my $new_job_id = OpenQA::Scheduler::job_duplicate(jobid => 99963);
 ok($new_job_id, "got new job id");
 
-my $job = OpenQA::Scheduler::Scheduler::job_get($new_job_id);
+my $job = OpenQA::Scheduler::job_get($new_job_id);
 is($job->{state}, 'scheduled', "new job is scheduled");
 
-$job = OpenQA::Scheduler::Scheduler::job_get(99963);
+$job = OpenQA::Scheduler::job_get(99963);
 is($job->{state}, 'running', "old job is running");
 
 sub lj {
@@ -54,45 +55,45 @@ sub lj {
 
 lj;
 
-my $ret = OpenQA::Scheduler::Scheduler::job_cancel({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
+my $ret = OpenQA::Scheduler::job_cancel({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
 is($ret, 2, "two jobs cancelled by hash");
 
-$job = OpenQA::Scheduler::Scheduler::job_get($new_job_id);
+$job = OpenQA::Scheduler::job_get($new_job_id);
 
 lj;
 
-$job = OpenQA::Scheduler::Scheduler::job_get($new_job_id);
+$job = OpenQA::Scheduler::job_get($new_job_id);
 is($job->{state}, 'cancelled', "new job is cancelled");
 
-$job = OpenQA::Scheduler::Scheduler::job_get(99963);
+$job = OpenQA::Scheduler::job_get(99963);
 is($job->{state}, 'running', "old job still running");
 
-$job = OpenQA::Scheduler::Scheduler::job_get(99928);
+$job = OpenQA::Scheduler::job_get(99928);
 is($job->{state}, 'scheduled', "unrelated job 99928 still scheduled");
-$job = OpenQA::Scheduler::Scheduler::job_get(99927);
+$job = OpenQA::Scheduler::job_get(99927);
 is($job->{state}, 'scheduled', "unrelated job 99927 still scheduled");
 
-$ret = OpenQA::Scheduler::Scheduler::job_cancel(99928);
+$ret = OpenQA::Scheduler::job_cancel(99928);
 is($ret, 1, "one job cancelled by id");
 
-$job = OpenQA::Scheduler::Scheduler::job_get(99928);
+$job = OpenQA::Scheduler::job_get(99928);
 is($job->{state}, 'cancelled', "job 99928 cancelled");
-$job = OpenQA::Scheduler::Scheduler::job_get(99927);
+$job = OpenQA::Scheduler::job_get(99927);
 is($job->{state}, 'scheduled', "unrelated job 99927 still scheduled");
 
 
-$new_job_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => 99981);
+$new_job_id = OpenQA::Scheduler::job_duplicate(jobid => 99981);
 ok($new_job_id, "duplicate new job for iso test");
 
-$job = OpenQA::Scheduler::Scheduler::job_get($new_job_id);
+$job = OpenQA::Scheduler::job_get($new_job_id);
 is($job->{state}, 'scheduled', "new job is scheduled");
 
 lj;
 
-$ret = OpenQA::Scheduler::Scheduler::job_cancel('openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso');
+$ret = OpenQA::Scheduler::job_cancel('openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso');
 is($ret, 1, "one job cancelled by iso");
 
-$job = OpenQA::Scheduler::Scheduler::job_get(99927);
+$job = OpenQA::Scheduler::job_get(99927);
 is($job->{state}, 'scheduled', "unrelated job 99927 still scheduled");
 
 done_testing();

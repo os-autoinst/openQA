@@ -17,6 +17,7 @@ package OpenQA::WebAPI::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::IPC;
+use OpenQA::Scheduler qw/query_jobs/;
 use Try::Tiny;
 
 sub list {
@@ -29,7 +30,7 @@ sub list {
     }
 
     # TODO: convert to DBus call or move query_jobs helper to WebAPI
-    my $jobs = OpenQA::Scheduler::Scheduler::query_jobs(%args);
+    my $jobs = OpenQA::Scheduler::query_jobs(%args);
     my @results;
     while (my $job = $jobs->next) {
         my $jobhash = $job->to_hash(assets => 1, deps => 1);

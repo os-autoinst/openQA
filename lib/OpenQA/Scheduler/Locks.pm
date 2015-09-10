@@ -18,14 +18,14 @@ package OpenQA::Scheduler::Locks;
 use strict;
 use warnings;
 
+use OpenQA::Schema::Schema;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobLocks;
-use OpenQA::Scheduler::Scheduler;
 
 sub _get_lock {
     my ($name, $jobid) = @_;
     return unless defined $name && defined $jobid;
-    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $schema = OpenQA::Schema::connect_db();
     my $job = $schema->resultset('Jobs')->single({id => $jobid});
     return unless $job;
 
@@ -73,7 +73,7 @@ sub create {
     return unless defined $name && defined $jobid;
 
     # if no lock so far, there is no lock, create one as unlocked
-    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $schema = OpenQA::Schema::connect_db();
     $lock = $schema->resultset('JobLocks')->create({name => $name, owner => $jobid});
     return unless $lock;
     return 1;

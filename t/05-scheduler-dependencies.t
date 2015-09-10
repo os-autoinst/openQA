@@ -22,7 +22,8 @@ BEGIN {
 
 use strict;
 use Data::Dump qw/pp dd/;
-use OpenQA::Scheduler::Scheduler;
+use OpenQA::Scheduler;
+use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
@@ -30,15 +31,16 @@ use Test::More tests => 155;
 
 my $schema = OpenQA::Test::Database->new->create();
 
-# create Test DBus bus and service for fake WebSockets call
+# create Test DBus bus and service for fake WebSockets and Scheduler calls
 my $ipc = OpenQA::IPC->ipc('', 1);
-my $ws = OpenQA::WebSockets->new;
+my $ws  = OpenQA::WebSockets->new;
+my $sh  = OpenQA::Scheduler->new;
 
 #my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 sub list_jobs {
     my %args = @_;
-    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::Scheduler::query_jobs(%args)->all];
+    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::query_jobs(%args)->all];
 }
 
 sub job_get_deps {
@@ -95,21 +97,21 @@ $settingsD{TEST} = 'D';
 $settingsE{TEST} = 'E';
 $settingsF{TEST} = 'F';
 
-my $jobA = OpenQA::Scheduler::Scheduler::job_create(\%settingsA);
+my $jobA = OpenQA::Scheduler::job_create(\%settingsA);
 
-my $jobB = OpenQA::Scheduler::Scheduler::job_create(\%settingsB);
+my $jobB = OpenQA::Scheduler::job_create(\%settingsB);
 
 $settingsC{_PARALLEL_JOBS} = [$jobB->id];
-my $jobC = OpenQA::Scheduler::Scheduler::job_create(\%settingsC);
+my $jobC = OpenQA::Scheduler::job_create(\%settingsC);
 
 $settingsD{_PARALLEL_JOBS} = [$jobA->id];
-my $jobD = OpenQA::Scheduler::Scheduler::job_create(\%settingsD);
+my $jobD = OpenQA::Scheduler::job_create(\%settingsD);
 
 $settingsE{_PARALLEL_JOBS} = [$jobC->id, $jobD->id];
-my $jobE = OpenQA::Scheduler::Scheduler::job_create(\%settingsE);
+my $jobE = OpenQA::Scheduler::job_create(\%settingsE);
 
 $settingsF{_PARALLEL_JOBS} = [$jobC->id];
-my $jobF = OpenQA::Scheduler::Scheduler::job_create(\%settingsF);
+my $jobF = OpenQA::Scheduler::job_create(\%settingsF);
 
 $jobA->set_prio(3);
 $jobB->set_prio(2);
@@ -143,32 +145,32 @@ my $w6_id = $c->_register($schema, "host", "6", $workercaps);
 #my $ws5 = $t->websocket_ok("/api/v1/workers/$w5_id/ws");
 #my $ws6 = $t->websocket_ok("/api/v1/workers/$w6_id/ws");
 
-my $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w1_id);
+my $job = OpenQA::Scheduler::job_grab(workerid => $w1_id);
 is($job->{id},                  $jobB->id, "jobB");                   #lowest prio of jobs without parents
 is($job->{settings}->{NICVLAN}, 1,         "first available vlan");
 
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w2_id);
+$job = OpenQA::Scheduler::job_grab(workerid => $w2_id);
 is($job->{id},                  $jobC->id, "jobC");                        #direct child of B
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w3_id);
+$job = OpenQA::Scheduler::job_grab(workerid => $w3_id);
 is($job->{id},                  $jobF->id, "jobF");                        #direct child of C
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w4_id);
+$job = OpenQA::Scheduler::job_grab(workerid => $w4_id);
 is($job->{id},                  $jobA->id, "jobA");                        # E is direct child of C, but A and D must be started first
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w5_id);
+$job = OpenQA::Scheduler::job_grab(workerid => $w5_id);
 is($job->{id},                  $jobD->id, "jobD");                        # direct child of A
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w6_id);
+$job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
 is($job->{id},                  $jobE->id, "jobE");                        # C and D are now running so we can start E
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
 # jobA failed
-my $result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobA->id, result => 'failed');
+my $result = OpenQA::Scheduler::job_set_done(jobid => $jobA->id, result => 'failed');
 ok($result, "job_set_done");
 
 # then jobD and jobE, workers 5 and 6 must be canceled
@@ -178,10 +180,10 @@ ok($result, "job_set_done");
 #$ws6->message_ok;
 #$ws6->message_is('cancel');
 
-$result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobD->id, result => 'incomplete');
+$result = OpenQA::Scheduler::job_set_done(jobid => $jobD->id, result => 'incomplete');
 ok($result, "job_set_done");
 
-$result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobE->id, result => 'incomplete');
+$result = OpenQA::Scheduler::job_set_done(jobid => $jobE->id, result => 'incomplete');
 ok($result, "job_set_done");
 
 
@@ -221,7 +223,7 @@ $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => 
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
 
 # duplicate jobF, parents are duplicated too
-my $id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobF->id);
+my $id = OpenQA::Scheduler::job_duplicate(jobid => $jobF->id);
 ok(defined $id, "duplicate works");
 
 $job = job_get_deps($jobA->id);    #unchanged
@@ -290,7 +292,7 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 
 # now duplicate jobE, parents A, D have to be duplicated,
 # C2 is scheduled so it can be used as parent of E2 without duplicating
-$id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobE->id);
+$id = OpenQA::Scheduler::job_duplicate(jobid => $jobE->id);
 ok(defined $id, "duplicate works");
 
 $job = job_get_deps($jobA->id);    #cloned
@@ -381,7 +383,7 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 
 # job_grab now should return jobs from clonned group
 # we already called job_set_done on jobE, so worker 6 is available
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w6_id);
+$job = OpenQA::Scheduler::job_grab(workerid => $w6_id);
 is($job->{id},                  $jobB2, "jobB2");            #lowest prio of jobs without parents
 is($job->{settings}->{NICVLAN}, 2,      "different vlan");
 
@@ -389,12 +391,12 @@ is($job->{settings}->{NICVLAN}, 2,      "different vlan");
 ## check CHAINED dependency cloning
 my %settingsX = %settings;
 $settingsX{TEST} = 'X';
-my $jobX = OpenQA::Scheduler::Scheduler::job_create(\%settingsX);
+my $jobX = OpenQA::Scheduler::job_create(\%settingsX);
 
 my %settingsY = %settings;
 $settingsY{TEST}              = 'Y';
 $settingsY{_START_AFTER_JOBS} = [$jobX->id];
-my $jobY = OpenQA::Scheduler::Scheduler::job_create(\%settingsY);
+my $jobY = OpenQA::Scheduler::job_create(\%settingsY);
 
 ok(job_set_done(jobid => $jobX->id, result => 'passed'), 'jobX set to done');
 # since we are skipping job_grab, reload missing columns from DB
@@ -406,7 +408,7 @@ $jobX->discard_changes;
 # done    sch.
 
 # when Y is scheduled and X is duplicated, Y must be rerouted to depend on X now
-my $jobX2_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobX->id);
+my $jobX2_id = OpenQA::Scheduler::job_duplicate(jobid => $jobX->id);
 $jobY->discard_changes;
 is($jobX2_id, $jobY->parents->single->parent_job_id, 'jobY parent is now jobX clone');
 my $jobX2 = job_get_deps($jobX2_id);
@@ -433,7 +435,7 @@ ok(job_set_done(jobid => $jobY->id, result => 'passed'), 'jobY set to done');
 # X2 <---- Y
 # done    done
 
-my $jobY2_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobY->id);
+my $jobY2_id = OpenQA::Scheduler::job_duplicate(jobid => $jobY->id);
 
 # current state:
 #
@@ -464,7 +466,7 @@ ok(job_set_done(jobid => $jobY2_id, result => 'passed'), 'jobY2 set to done');
 # done    done
 
 
-my $jobX3_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobX2_id);
+my $jobX3_id = OpenQA::Scheduler::job_duplicate(jobid => $jobX2_id);
 
 # current state:
 #
@@ -506,16 +508,16 @@ $settingsJ{TEST} = 'J';
 $settingsK{TEST} = 'K';
 $settingsL{TEST} = 'L';
 
-my $jobH = OpenQA::Scheduler::Scheduler::job_create(\%settingsH);
+my $jobH = OpenQA::Scheduler::job_create(\%settingsH);
 
 $settingsK{_PARALLEL_JOBS} = [$jobH->id];
-my $jobK = OpenQA::Scheduler::Scheduler::job_create(\%settingsK);
+my $jobK = OpenQA::Scheduler::job_create(\%settingsK);
 
 $settingsJ{_PARALLEL_JOBS} = [$jobH->id];
-my $jobJ = OpenQA::Scheduler::Scheduler::job_create(\%settingsJ);
+my $jobJ = OpenQA::Scheduler::job_create(\%settingsJ);
 
 $settingsL{_PARALLEL_JOBS} = [$jobJ->id];
-my $jobL = OpenQA::Scheduler::Scheduler::job_create(\%settingsL);
+my $jobL = OpenQA::Scheduler::job_create(\%settingsL);
 
 # hack jobs to appear running to scheduler
 $jobH->state(OpenQA::Schema::Result::Jobs::RUNNING);
@@ -533,7 +535,7 @@ $jobL->update;
 # | (parallel)   | (parallel)
 # K2             L2
 
-my $jobL2 = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobL->id);
+my $jobL2 = OpenQA::Scheduler::job_duplicate(jobid => $jobL->id);
 ok($jobL2, 'jobL duplicated');
 # reload data from DB
 $jobH->discard_changes;
@@ -575,18 +577,18 @@ $settingsU{TEST} = 'U';
 $settingsR{TEST} = 'R';
 $settingsT{TEST} = 'T';
 
-my $jobQ = OpenQA::Scheduler::Scheduler::job_create(\%settingsQ);
+my $jobQ = OpenQA::Scheduler::job_create(\%settingsQ);
 
 $settingsW{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobW = OpenQA::Scheduler::Scheduler::job_create(\%settingsW);
+my $jobW = OpenQA::Scheduler::job_create(\%settingsW);
 $settingsU{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobU = OpenQA::Scheduler::Scheduler::job_create(\%settingsU);
+my $jobU = OpenQA::Scheduler::job_create(\%settingsU);
 $settingsR{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobR = OpenQA::Scheduler::Scheduler::job_create(\%settingsR);
+my $jobR = OpenQA::Scheduler::job_create(\%settingsR);
 
 $settingsT{_PARALLEL_JOBS} = [$jobW->id, $jobU->id, $jobR->id];
 $settingsT{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobT = OpenQA::Scheduler::Scheduler::job_create(\%settingsT);
+my $jobT = OpenQA::Scheduler::job_create(\%settingsT);
 
 # hack jobs to appear to scheduler in desired state
 $jobQ->state(OpenQA::Schema::Result::Jobs::DONE);
@@ -601,7 +603,7 @@ $jobT->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobT->update;
 
 # duplicate U
-my $jobU2 = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobU->id);
+my $jobU2 = OpenQA::Scheduler::job_duplicate(jobid => $jobU->id);
 
 # expected state
 #
@@ -664,12 +666,12 @@ $settingsP{TEST} = 'P';
 $settingsO{TEST} = 'O';
 $settingsI{TEST} = 'I';
 
-my $jobP = OpenQA::Scheduler::Scheduler::job_create(\%settingsP);
+my $jobP = OpenQA::Scheduler::job_create(\%settingsP);
 
 $settingsO{_PARALLEL_JOBS} = [$jobP->id];
-my $jobO = OpenQA::Scheduler::Scheduler::job_create(\%settingsO);
+my $jobO = OpenQA::Scheduler::job_create(\%settingsO);
 $settingsI{_PARALLEL_JOBS} = [$jobO->id];
-my $jobI = OpenQA::Scheduler::Scheduler::job_create(\%settingsI);
+my $jobI = OpenQA::Scheduler::job_create(\%settingsI);
 
 # hack jobs to appear to scheduler in desired state
 $jobP->state(OpenQA::Schema::Result::Jobs::DONE);
@@ -684,7 +686,7 @@ $jobI->update;
 #
 # P2 <-(parallel) O2 (clone of) O <-(parallel) I
 #
-my $jobO2 = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobO->id);
+my $jobO2 = OpenQA::Scheduler::job_duplicate(jobid => $jobO->id);
 ok($jobO2, 'jobO duplicated');
 # reload data from DB
 $jobP->discard_changes;
@@ -703,8 +705,8 @@ is_deeply($jobI->{parents}->{Parallel},  [$jobO->id],    'jobI retain its origin
 is_deeply($jobO2->{parents}->{Parallel}, [$jobP2->{id}], 'clone jobO2 gets new parent jobP2');
 
 # get Jobs RS from ids for cloned jobs
-$jobO2 = OpenQA::Scheduler::Scheduler::query_jobs(ids => $jobO2->{id})->first;
-$jobP2 = OpenQA::Scheduler::Scheduler::query_jobs(ids => $jobP2->{id})->first;
+$jobO2 = OpenQA::Scheduler::query_jobs(ids => $jobO2->{id})->first;
+$jobP2 = OpenQA::Scheduler::query_jobs(ids => $jobP2->{id})->first;
 # set P2 running and O2 done
 $jobP2->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobP2->update;
@@ -716,7 +718,7 @@ $jobO2->update;
 #
 # P3 <-(parallel) O3 <-(parallel) I2
 #
-my $jobI2 = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobI->{id});
+my $jobI2 = OpenQA::Scheduler::job_duplicate(jobid => $jobI->{id});
 ok($jobI2, 'jobI duplicated');
 
 # reload data from DB
