@@ -1122,6 +1122,7 @@ sub _generate_jobs {
                         my $replace_var = $1;
                         $replace_var =~ s/^%(\w+)%$/$1/;
                         my $replace_val = $settings{$replace_var};
+                        next unless defined $replace_val;
                         $replace_val = '' if $replace_var eq $var;    #stop infinite recursion
                         $val =~ s/%${replace_var}%/$replace_val/g;
                         $settings{$var} = $val;
