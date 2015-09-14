@@ -36,6 +36,7 @@
 
   </head>
   <body>
+    <div id="wrapper">
       <nav class='container-fluid navbar navbar-default navbar-static-top'>
 	  <div class='navbar-inner'>
 	      <div class='container'>
@@ -93,5 +94,6 @@
 	      </div>
 	  </div>
       </footer>
+    </div>
   </body>
 </html>
