@@ -292,6 +292,12 @@ sub _job_get($) {
 
 sub query_jobs {
     my %args = @_;
+    # For args where we accept a list of values, allow passing either an
+    # array ref or a comma-separated list
+    for my $arg (qw/state ids/) {
+        next unless $args{$arg};
+        $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
+    }
 
     my @conds;
     my %attrs;
@@ -304,7 +310,7 @@ sub query_jobs {
     }
 
     if ($args{state}) {
-        push(@conds, {'me.state' => [split(',', $args{state})]});
+        push(@conds, {'me.state' => $args{state}});
     }
     if ($args{maxage}) {
         my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC')};
