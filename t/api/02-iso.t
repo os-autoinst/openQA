@@ -137,6 +137,9 @@ is_deeply($advanced_kde_64->{parents}, {Parallel => [], Chained => [$kde_64->{id
 is($server_32->{group_id}, 1001, 'server_32 part of opensuse group');
 is($server_64->{group_id}, 1001, 'server_64 part of opensuse group');
 
+is($advanced_kde_32->{settings}->{PUBLISH_HDD_1}, 'opensuse-13.1-i586-kde-qemu32.qcow2', "variable expansion");
+is($advanced_kde_64->{settings}->{PUBLISH_HDD_1}, 'opensuse-13.1-i586-kde-qemu64.qcow2', "variable expansion");
+
 lj;
 
 # check that the old tests are cancelled

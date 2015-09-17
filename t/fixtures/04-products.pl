@@ -68,7 +68,7 @@
         id => 1017,
         name => "advanced_kde",
         variables => '',
-        settings => [{ key => "DESKTOP", value => "kde" }, { key => "START_AFTER_TEST", value => "kde,textmode" }],
+        settings => [{ key => "DESKTOP", value => "kde" }, { key => "START_AFTER_TEST", value => "kde,textmode" }, { key => "PUBLISH_HDD_1", value => "%DISTRI%-%VERSION%-%ARCH%-%DESKTOP%-%QEMUCPU%.qcow2" }],
     },
     Products => {
 		 name => '',
