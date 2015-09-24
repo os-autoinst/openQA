@@ -74,7 +74,7 @@
         <div style="margin: 0 3px;">
             <div style="margin-top: 1em;">
                 <label>Name:</label><br/>
-                <input type="input" name="needlename" id="needleeditor_name"
+                <input type="input" name="needlename" id="needleeditor_name" <%= 'readonly="readonly"' unless (is_operator) %>
                        value="<%= ${@$needles[0]}{'suggested_name'} %>" style="width: calc(100% - 8px);"/>
             </div>
             <div style="margin-top: 1em;">
@@ -83,18 +83,20 @@
                     % for my $tag (@$tags) {
                         <label>
                             <input type="checkbox" name="tags" id="tag_<%= $tag %>" class="tag_checkbox"
-                                   value="<%= $tag %>"><%= $tag %>
+                                   value="<%= $tag %>" <%= 'readonly="readonly" disabled="disabled"' unless (is_operator) %> ><%= $tag %>
                         </label><br/>
                     % }
                 </div>
-                <input id="newtag" style="width: calc(100% - 6px - 40px);" />
-                <input type="button" style="width: 34px;" class="button" value="Add" id="tag_add_button" />
+                % if (is_operator) {
+                    <input id="newtag" style="width: calc(100% - 6px - 40px);" />
+                    <input type="button" style="width: 34px;" class="button" value="Add" id="tag_add_button" />
+                % }
             </div>
             <div style="margin-top: 1em;">
                 <!-- lists the specific properties -->
                 <label>Properties:</label><br/>
                         <label>
-                        <input type="checkbox" name="workaround" id="property_workaround" <%= 'checked' if $properties->{'workaround'} %> >workaround
+                        <input type="checkbox" name="workaround" id="property_workaround" <%= 'checked' if $properties->{'workaround'} %> <%= 'readonly="readonly" disabled="disabled"' unless (is_operator) %> >workaround
                         </label><br/>
             </div>
             <div style="margin-top: 1em;">
@@ -105,8 +107,10 @@
                 <input type="hidden" id="needleeditor_imageversion" name="imageversion" value="<%= ${@$needles[0]}{'imageversion'} %>"/>
             </div>
         </div>
-        <button id="change-match"><i class="fa fa-bar-chart"></i> Change Match Level</button>
-        <button id="change-margin"><i class="fa fa-area-chart"></i> Change Margin</button>
+        % if (is_operator) {
+            <button id="change-match"><i class="fa fa-bar-chart"></i> Change Match Level</button>
+            <button id="change-margin"><i class="fa fa-area-chart"></i> Change Margin</button>
+        % }
         % end
     </div>
 
@@ -151,14 +155,16 @@
                                class="area_selector"
                    id="area_btn_<%= $needle->{'name'} %>"
                                data-areas="<%= JSON::to_json($needle->{area}) %>"
-                        <%= 'disabled="disabled"' if $needle->{'broken'}; %>/>
+                        <%= 'readonly="readonly"' unless (is_operator) %>
+                        <%= 'disabled="disabled"' if ($needle->{'broken'} || !is_operator); %>/>
                     </td>
                     <td>
                       <input type="radio" name="area_selector" class="area_selector"
                    id="matches_btn_<%= $needle->{'name'} %>"
                              data-areas="<%= JSON::to_json($needle->{matches}) %>"
                         <%= 'checked="checked"' if $needle->{selected}; %>
-                        <%= 'disabled="disabled"' if ($needle->{'broken'}); %>/>
+                        <%= 'readonly="readonly"' unless (is_operator) %>
+                        <%= 'disabled="disabled"' if ($needle->{'broken'} || !is_operator); %>/>
                     </td>
                     <td>
                         <input type="radio" name="tags_selector" class="tags_selector"
@@ -166,13 +172,17 @@
                                data-tags="<%= JSON::to_json($needle->{tags}) %>"
                                data-suggested="<%= $needle->{suggested_name} %>"
                         <%= 'checked="checked"' if $needle->{selected}; %>
-                        <%= 'disabled="disabled"' if $needle->{broken}; %>/>
+                        <%= 'readonly="readonly"' unless (is_operator) %>
+                        <%= 'disabled="disabled"' if ($needle->{'broken'} || !is_operator); %>/>
                     </td>
                 </tr>
             % }
         </table>
         <div style="margin: 0 10px; position: relative; width: 1024px; padding: 1px; border: 0px; background-color: black;">
             <canvas tabindex="1" id="needleeditor_canvas" width="1024" height="768" style="border: 0px;">This text is displayed if your browser does not support HTML5 Canvas.</canvas>
+            % unless (is_operator) {
+                <div style="margin: 0; padding: 0; border: 0; width: 1024px; height: 768px; position: absolute; top: 0; left: 0;"></div>
+            % }
         </div>
     </div>
 </div>
