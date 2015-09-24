@@ -28,7 +28,7 @@ use OpenQA::Test::Database;
 use Net::DBus;
 use Net::DBus::Test::MockObject;
 
-use Test::More tests => 52;
+use Test::More tests => 54;
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -239,6 +239,14 @@ is_deeply($current_jobs, [$jobs->[1]], "list_jobs combining two settings (ISO an
 %args = (build => "whatever.iso", iso => "666");
 $current_jobs = list_jobs(%args);
 is_deeply($current_jobs, [], "list_jobs messing two settings up");
+
+%args = (ids => [1, 2], state => ["scheduled", "done"]);
+$current_jobs = list_jobs(%args);
+is_deeply($current_jobs, $jobs, "jobs with specified IDs and states (array ref)");
+
+%args = (ids => "2,3", state => "scheduled,done");
+$current_jobs = list_jobs(%args);
+is_deeply($current_jobs, [$jobs->[0]], "jobs with specified IDs (comma list)");
 
 # Testing job_grab
 %args = (workerid => $worker->{id},);

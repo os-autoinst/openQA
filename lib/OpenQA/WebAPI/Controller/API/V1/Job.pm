@@ -23,9 +23,23 @@ sub list {
     my $self = shift;
 
     my %args;
-    for my $arg (qw/state build iso distri version flavor maxage scope group limit/) {
+    for my $arg (qw/build iso distri version flavor maxage scope group limit/) {
         next unless defined $self->param($arg);
         $args{$arg} = $self->param($arg);
+    }
+    # For these, we accept a single value, a single instance of the arg
+    # with a comma-separated list of values, or multiple instances of the
+    # arg. In all cases we're going to convert to an array ref of values:
+    # we could let query_jobs do the string splitting for us, but this is
+    # clearer.
+    for my $arg (qw/state ids/) {
+        next unless defined $self->param($arg);
+        if (index($self->param($arg), ',') != -1) {
+            $args{$arg} = [split(',', $self->param($arg))];
+        }
+        else {
+            $args{$arg} = $self->every_param($arg);
+        }
     }
 
     # TODO: convert to DBus call or move query_jobs helper to WebAPI
