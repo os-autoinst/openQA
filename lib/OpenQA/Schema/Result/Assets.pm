@@ -18,7 +18,10 @@ package OpenQA::Schema::Result::Assets;
 use base qw/DBIx::Class::Core/;
 
 use OpenQA::Utils;
+use OpenQA::Scheduler::Scheduler 'job_notify_workers';
 use Date::Format;
+use Mojo::UserAgent;
+
 use db_helpers;
 
 our %types = map { $_ => 1 } qw/iso repo hdd/;
@@ -106,6 +109,35 @@ sub ensure_size {
     }
     $self->update({size => $size}) if $size;
     return $size;
+}
+
+# A GRU task...arguments are the URL to grab and the full path to save
+# it in. scheduled in job_schedule_iso()
+sub download_iso {
+    my ($app, $args)      = @_;
+    my ($url, $isodlpath) = @{$args};
+    # Bail if the dest file exists (in case multiple downloads of same ISO
+    # are scheduled)
+    return if (-e $isodlpath);
+
+    OpenQA::Utils::log_debug("Downloading " . $url . " to " . $isodlpath . "...");
+    my $ua = Mojo::UserAgent->new(max_redirects => 5);
+    my $tx = $ua->build_tx(GET => $url);
+    # Allow >16MiB downloads
+    # http://mojolicio.us/perldoc/Mojolicious/Guides/Cookbook#Large-file-downloads
+    $tx->res->max_message_size(0);
+    $tx = $ua->start($tx);
+    if ($tx->success) {
+        $tx->res->content->asset->move_to($isodlpath);
+    }
+    else {
+        # Clean up after ourselves. Probably won't exist, but just in case
+        OpenQA::Utils::log_debug("Downloading failed! Deleting files");
+        unlink($isodlpath);
+    }
+    # We want to notify workers either way: if we failed to download the ISO,
+    # we want the jobs to run and fail.
+    job_notify_workers();
 }
 
 # this is a GRU task - abusing the namespace

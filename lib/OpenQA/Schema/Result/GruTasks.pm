@@ -47,6 +47,8 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 
+__PACKAGE__->has_many(jobs => 'OpenQA::Schema::Result::GruDependencies', 'gru_task_id');
+
 __PACKAGE__->filter_column(
     args => {
         filter_to_storage   => 'encode_json_to_db',

@@ -30,7 +30,9 @@ use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
 use DBIx::Class::Timestamps qw/now/;
 use DateTime;
+use File::Spec::Functions qw/catfile/;
 use File::Temp qw/tempdir/;
+use Mojo::Util 'url_unescape';
 use Try::Tiny;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobDependencies;
@@ -502,6 +504,10 @@ sub job_grab {
                 -not_in => $blocked->get_column('child_job_id')->as_query
             },
         );
+
+        # Don't kick off jobs if GRU task they depend on is running
+        my $waiting_jobs = schema->resultset("GruDependencies")->get_column('job_id')->as_query;
+        push @available_cond, {-not_in => $waiting_jobs};
 
         # list of jobs for different worker class
 
@@ -1149,6 +1155,19 @@ sub job_schedule_iso {
     my $noobsolete = delete $args{_NOOBSOLETEBUILD};
     my $jobs       = _generate_jobs(%args);
 
+    # ISOURL == ISO download. If the ISO already exists, skip the
+    # download step (below) entirely by leaving $isodlpath unset.
+    my $isodlpath;
+    if ($args{ISOURL}) {
+        # As this comes in from an API call, URL will be URI-encoded
+        # This obviously creates a vuln if untrusted users can POST ISOs
+        $args{ISOURL} = url_unescape($args{ISOURL});
+        my $fulliso = catfile($OpenQA::Utils::isodir, $args{ISO});
+        unless (-s $fulliso) {
+            $isodlpath = $fulliso;
+        }
+    }
+
     # XXX: take some attributes from the first job to guess what old jobs to
     # cancel. We should have distri object that decides which attributes are
     # relevant here.
@@ -1211,7 +1230,20 @@ sub job_schedule_iso {
         @ids = ();
     };
 
-    # enqueue gru job
+    # enqueue gru jobs
+    if ($isodlpath and @ids) {
+        # array of hashrefs job_id => id; this is what create needs
+        # to create entries in a related table (gru_dependencies)
+        my @jobsarray = map +{job_id => $_}, @ids;
+        schema->resultset('GruTasks')->create(
+            {
+                taskname => 'download_iso',
+                priority => 20,
+                args     => [$args{ISOURL}, $isodlpath],
+                run_at   => now(),
+                jobs     => \@jobsarray,
+            });
+    }
     schema->resultset('GruTasks')->create(
         {
             taskname => 'limit_assets',

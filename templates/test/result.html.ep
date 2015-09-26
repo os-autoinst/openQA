@@ -44,6 +44,14 @@
                     % } else
                     % {
                         State:<%= $job->state %>
+                        % if (scalar($job->gru_dependencies) > 0) {
+                            % my $grutext = '';
+                            % for my $grudep ($job->gru_dependencies) {
+                                % $grutext .= join(",", $grudep->gru_task->id, $grudep->gru_task->taskname);
+                                % $grutext .= " ";
+                            % }
+                            waiting for background (GRU) tasks: <%= $grutext %>
+                        % }
                     % }
                     % if ($job->t_finished) {
                         finished
