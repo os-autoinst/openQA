@@ -8,7 +8,7 @@
   </head>
   <body>
     <div id="header">
-      %= include 'layouts/header'
+      %= include_branding 'header'
     </div>
 
     <div id="subheader" class="container_16">
