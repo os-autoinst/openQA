@@ -143,7 +143,7 @@ sub download_iso {
 # this is a GRU task - abusing the namespace
 sub limit_assets {
     my ($app) = @_;
-    my $groups = $app->db->resultset('JobGroups')->search({}, {select => [qw/id size_limit_gb/]});
+    my $groups = $app->db->resultset('JobGroups');
     # keep track of all assets related to jobs
     my %seen_asset;
     my %toremove;
@@ -157,14 +157,15 @@ sub limit_assets {
         my $sizelimit = $g->size_limit_gb * 1024 * 1024 * 1024;
         my $assets    = $app->db->resultset('JobsAssets')->search(
             {
-                job_id => {-in => $g->jobs->get_column('id')->as_query},
-                'asset.type' => ['iso', 'repo']
+                job_id => {-in => $g->jobs->get_column('id')->as_query}
             },
             {
                 prefetch => 'asset',
                 order_by => 'me.t_created desc',
             });
         while (my $a = $assets->next) {
+            # ignore predefined images
+            next if ($a->asset->type eq 'hdd' && $a->created_by == 0);
             # distinct is a bit too tricky
             next if ($seen_asset{$a->asset->id} // 0) == $g->id;
             $seen_asset{$a->asset->id} = $g->id;
@@ -192,8 +193,7 @@ sub limit_assets {
     while (my $a = $assets->next) {
         OpenQA::Utils::log_debug("Asset " . $a->type . "/" . $a->name . " is not in any job group, DELETE from assets where id=" . $a->id . ";");
     }
-    if (-e $OpenQA::Utils::assetdir . "/iso") {
-        opendir(my $dh, $OpenQA::Utils::assetdir . "/iso") || die "can't open $OpenQA::Utils::assetdir/iso: $!";
+    if (opendir(my $dh, $OpenQA::Utils::assetdir . "/iso")) {
         my %isos;
         while (readdir($dh)) {
             next unless $_ =~ m/\.iso$/;
@@ -210,8 +210,7 @@ sub limit_assets {
             }
         }
     }
-    if (-e $OpenQA::Utils::assetdir . "/repo") {
-        opendir($dh, $OpenQA::Utils::assetdir . "/repo") || die "can't open $OpenQA::Utils::assetdir/repo: $!";
+    if (opendir($dh, $OpenQA::Utils::assetdir . "/repo")) {
         my %repos;
         while (readdir($dh)) {
             next unless -d "$OpenQA::Utils::assetdir/repo/$_";
