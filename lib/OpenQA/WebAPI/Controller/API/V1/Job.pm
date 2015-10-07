@@ -43,12 +43,43 @@ sub list {
     }
 
     # TODO: convert to DBus call or move query_jobs helper to WebAPI
-    my $jobs = OpenQA::Scheduler::Scheduler::query_jobs(%args);
+    my $jobquery = OpenQA::Scheduler::Scheduler::query_jobs(%args);
+    my %jobs;
+    while (my $job = $jobquery->next) {
+        $jobs{$job->id} = $job;
+    }
+
+    # we can't prefetch too much at once as the resulting JOIN will kill our performance horribly
+    # (not so much the JOIN itself, but parsing the result containing duplicated information)
+    # so we fetch some fields in a second step
+
+    # fetch job assets
+    my $jas = $self->app->db->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
+    while (my $ja = $jas->next) {
+        my $job = $jobs{$ja->job_id};
+        $job->{_assets} ||= [];
+        push(@{$job->{_assets}}, $ja->asset);
+    }
+
+    # prefetch groups
+    my %groups;
+    for my $job (values %jobs) {
+        $groups{$job->group_id} ||= $job->group;
+        $job->group($groups{$job->group_id});
+    }
+
+    my $modules = $self->app->db->resultset('JobModules')->search({job_id => {in => [keys %jobs]}}, {order_by => 'id'});
+    while (my $m = $modules->next) {
+        my $job = $jobs{$m->job_id};
+        $job->{_modules} ||= [];
+        push(@{$job->{_modules}}, $m);
+    }
+
     my @results;
-    while (my $job = $jobs->next) {
+    for my $job (values %jobs) {
         my $jobhash = $job->to_hash(assets => 1, deps => 1);
         $jobhash->{modules} = [];
-        for my $module ($job->modules) {
+        for my $module (@{$job->{_modules}}) {
             my $modulehash = {
                 name     => $module->name,
                 category => $module->category,

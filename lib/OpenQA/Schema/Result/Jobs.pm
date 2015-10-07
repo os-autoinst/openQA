@@ -279,8 +279,15 @@ sub to_hash {
     }
     $j->{settings} = $job->settings_hash;
     if ($args{assets}) {
-        for my $a ($job->jobs_assets->all()) {
-            push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
+        if (defined $job->{_assets}) {
+            for my $a (@{$job->{_assets}}) {
+                push @{$j->{assets}->{$a->type}}, $a->name;
+            }
+        }
+        else {
+            for my $a ($job->jobs_assets->all()) {
+                push @{$j->{assets}->{$a->asset->type}}, $a->asset->name;
+            }
         }
     }
     if ($args{deps}) {
