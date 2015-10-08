@@ -1,0 +1,12 @@
+[Unit]
+Description=OpenQA datacontainer
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/docker start -a openqa_data
+ExecStop=/usr/bin/docker stop -t 2 openqa_data
+
+[Install]
+WantedBy=multi-user.target

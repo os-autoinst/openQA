@@ -3,7 +3,11 @@
 echo OpenID provider:
 read OPENID
 
-sed "s/provider =.*/provider = $OPENID/" -i /data/conf/openqa.ini
+awk -v openid="$OPENID" '
+/^provider/ {$0 = "provider = " openid}
+{print}
+' /data/conf/openqa.ini > /tmp/openqa.ini.new
+mv /tmp/openqa.ini.new /data/conf/openqa.ini
 
 echo "The file now contains:"
 cat /data/conf/openqa.ini

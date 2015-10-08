@@ -1,4 +1,14 @@
-# Build docker images
+# Get docker images
+
+You can either build the images locally, or get our "latest" version from the Docker hub. We recommend using the Docker hub option.
+
+## Download images from the Docker hub
+
+    docker pull fedoraqa/openqa_data
+    docker pull fedoraqa/openqa_webui
+    docker pull fedoraqa/openqa_worker
+
+## Build images locally
 
     docker build -t fedoraqa/openqa_webui ./webui
     docker build -t fedoraqa/openqa_worker ./worker
@@ -60,14 +70,23 @@ To add more workers, increase number that is used in hostname, container name an
 
     docker run -h openqa_worker_2 --name openqa_worker_2 -d --link openqa_webui:openqa_webui --volumes-from openqa_data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker 2
 
-## Get tests and ISOs
+## Enable services
 
-You have to put your tests under `data/tests` directory and ISOs under `data/factory/iso` directory. For example, for testing Fedora, run:
+Some systemd services are provided to start up the containers, so you don't have to keep doing it manually. To install and enable them:
 
-    git clone https://bitbucket.org/rajcze/openqa_fedora data/tests/fedora
-    wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3.iso
+    sudo cp systemd/*.service /etc/systemd/system
+    sudo systemctl daemon-reload
+    sudo systemctl enable openqa-data.service
+    sudo systemctl enable openqa-webui.service
+    sudo systemctl enable openqa-worker@1.service
 
-And set permissions, so any user can read/write the data:
+Of course, if you set up two workers, also do `sudo systemctl enable openqa-worker@2.service`, and so on.
+
+## Get tests, ISOs and create disks
+
+You have to put your tests under `data/tests` directory, disk images under `data/factory/hdd` directory and ISOs under `data/factory/iso` directory.
+
+You also need to give all permissions to everyone, so any user can read/write the data:
 
     chmod -R 777 data
 
@@ -75,16 +94,15 @@ This step is unfortunately necessary because Docker [can't mount volume with spe
 
 If you wish to keep the tests (for example) separate from the shared directory, for any reason (we do, in our development scenario) refer to the [Developing tests with Container setup] section at the end of this document.
 
-Populate the OpenQA's database:
+To populate the OpenQA's database, run:
 
-    docker exec openqa_webui /var/lib/openqa/tests/fedora/templates
-
+    docker exec openqa_webui /var/lib/openqa/tests/<your path to tests inside data/tests>/templates
 
 # Running jobs
 
 After performing the "setup" tasks above - do not forget about tests and ISOs - you can schedule a test like this:
 
-    docker exec openqa_webui /var/lib/openqa/script/client isos post ISO=Fedora-Server-netinst-x86_64-22_Beta_RC3.iso DISTRI=fedora VERSION=rawhide FLAVOR=generic_boot ARCH=x86_64 BUILD=22_Beta_RC3
+    docker exec openqa_webui /var/lib/openqa/script/client isos post ISO=image.iso DISTRI=distribution VERSION=version FLAVOR=flavor ARCH=x86_64 BUILD=foobar
 
 # Other specific cases
 
@@ -101,8 +119,7 @@ In the [Run the Data & WebUI containers] section run the `openqa_data` container
 
 And finally, download the tests and ISOs directly into the container:
 
-    docker exec openqa_data git clone https://bitbucket.org/rajcze/openqa_fedora /data/tests/fedora
-    docker exec openqa_data wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O /data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3
+    docker exec openqa_data git clone <url to git repo of your tests> /data/tests/<name of your tests>
 
 The rest of the steps should be the same.
 
