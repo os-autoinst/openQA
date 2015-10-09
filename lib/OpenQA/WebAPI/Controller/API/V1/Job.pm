@@ -64,6 +64,7 @@ sub list {
     # prefetch groups
     my %groups;
     for my $job (values %jobs) {
+        next unless $job->group_id;
         $groups{$job->group_id} ||= $job->group;
         $job->group($groups{$job->group_id});
     }
@@ -76,7 +77,8 @@ sub list {
     }
 
     my @results;
-    for my $job (values %jobs) {
+    for my $id (sort keys %jobs) {
+        my $job = $jobs{$id};
         my $jobhash = $job->to_hash(assets => 1, deps => 1);
         $jobhash->{modules} = [];
         for my $module (@{$job->{_modules}}) {
