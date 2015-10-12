@@ -54,8 +54,8 @@ sub find_job {
     my $ret;
     for my $j (@$jobs) {
         if ($j->{settings}->{TEST} eq $name && $j->{settings}->{MACHINE} eq $machine) {
+            # take the last if there are more than one
             $ret = $j;
-            last;
         }
     }
 
