@@ -41,8 +41,10 @@ sub create {
     my $params = $self->req->params->to_hash;
     # job_create expects upper case keys
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
+    # restore URL encoded /
+    my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
 
-    my $ids = $ipc->scheduler('job_schedule_iso', \%up_params);
+    my $ids = $ipc->scheduler('job_schedule_iso', \%params);
     my $cnt = scalar(@$ids);
 
     $self->app->log->debug("created $cnt jobs");

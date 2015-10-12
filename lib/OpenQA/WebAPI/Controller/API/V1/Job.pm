@@ -106,11 +106,13 @@ sub create {
 
     # job_create expects upper case keys
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
+    # restore URL encoded /
+    my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
 
     my $json = {};
     my $status;
     try {
-        my $job = $ipc->scheduler('job_create', \%up_params, 0);
+        my $job = $ipc->scheduler('job_create', \%params, 0);
         $json->{id} = $job->{id};
     }
     catch {
