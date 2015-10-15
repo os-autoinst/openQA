@@ -69,8 +69,11 @@ if ($user) {
 my $script_directory = "$FindBin::Bin/../dbicdh";
 my @databases        = qw( MySQL SQLite PostgreSQL );
 my $schema           = OpenQA::Schema::connect_db();
+my $dbfile           = "";
 
 if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
+    # store this so we can set its permissions after creating it
+    $dbfile = $1;
     my $dbdir = dirname($1);
     die "$dbdir does not exist\n" unless -d $dbdir;
     my @s = stat(_);
@@ -117,6 +120,9 @@ if ($prepare_init) {
 if ($init_database) {
     # Create the schema
     $dh->install;
+    if ($dbfile) {
+        chmod 0640, $dbfile;
+    }
 }
 
 # vim: set sw=4 sts=4 et:
