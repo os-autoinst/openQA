@@ -2,7 +2,7 @@
 % title 'Workers';
 
 % content_for 'ready_function' => begin
-    $('#workers').DataTable( { "order": [] } );
+    $('#workers').DataTable( { "order": [[2, "desc"],[0, "asc"]] } );
 % end
 
 <div class="row">
