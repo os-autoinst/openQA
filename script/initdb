@@ -66,6 +66,9 @@ if ($user) {
     setuid($uid) || die "can't suid to $user";
 }
 
+# the sqlite database should be only readable by the owner.
+umask 027;
+
 my $script_directory = "$FindBin::Bin/../dbicdh";
 my @databases        = qw( MySQL SQLite PostgreSQL );
 my $schema           = OpenQA::Schema::connect_db();
