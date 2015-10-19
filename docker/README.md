@@ -1,6 +1,6 @@
 # Get docker images
 
-You can either build the images locally, or get our "latest" version from the Docker hub. We recommend using the Docker hub option.
+You can either build the images locally, or get our "latest stable" version from the Docker hub. We recommend using the Docker hub option.
 
 ## Download images from the Docker hub
 
@@ -10,9 +10,9 @@ You can either build the images locally, or get our "latest" version from the Do
 
 ## Build images locally
 
-    docker build -t fedoraqa/openqa_webui ./webui
-    docker build -t fedoraqa/openqa_worker ./worker
-    docker build -t fedoraqa/openqa_data ./openqa_data
+    docker build -t fedoraqa/openqa_webui:latest ./webui
+    docker build -t fedoraqa/openqa_worker:latest ./worker
+    docker build -t fedoraqa/openqa_data:latest ./openqa_data
 
 # Running OpenQA
 
@@ -28,6 +28,15 @@ It's also possible to use `tests` and `factory` from within the `openqa_data` co
 to ditch `openqa_data` container altogether (so you have only `webui` and `worker` containers and data is loaded and saved completely into your host
 system). If this is what you want, refer to [Keeping all data in the Data Volume Container] and [Keeping all data on the host system] sections respectively.
 
+## Update firewall rules
+There is a [bug in Fedora](https://bugzilla.redhat.com/show_bug.cgi?id=1244124) with `docker-1.7.0-6` package that prevents
+containers to communicate with each other - it prevents worker to connect to WebUI. As a workaround, run:
+
+    sudo iptables -A DOCKER --source 0.0.0.0/0 --destination 172.17.0.0/16 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    sudo iptables -A DOCKER --destination 0.0.0.0/0 --source 172.17.0.0/16 -j ACCEPT
+
+on host machine.
+
 ## Create directory structure
 
     mkdir -p data/factory/{iso,hdd} data/tests
@@ -39,7 +48,9 @@ It is also necessary to either run all containers in privileged mode, or set sel
 ## Run the Data & WebUI containers
 
     docker run -d -h openqa_data --name openqa_data -v `pwd`/data/factory:/data/factory -v `pwd`/data/tests:/data/tests fedoraqa/openqa_data
-    docker run -d -h openqa_webui --volumes-from openqa_data --name openqa_webui -p 8080:443 fedoraqa/openqa_webui
+    docker run -d -h openqa_webui --volumes-from openqa_data --name openqa_webui -p 80:80 -p 443:443 fedoraqa/openqa_webui
+
+You can change the `-p` parameters if you do not want the openQA instance to own ports 80 and 443, e.g. `-p 8080:80 -p 8043:443`, but this will cause problems if you wish to set up workers on other hosts (see below). You do need root privileges to bind ports 80 and 443 in this way.
 
 It is now necessary to create and store the client keys for OpenQA. In the next two steps, you will set an OpenID provider (if necessary),
 create the API keys in the OpenQA's web interface, and store the configuration in the Data Container.
@@ -54,21 +65,19 @@ and enter the Provider's URL.
 
 ### Set API keys
 
-Go to https://localhost:8080/api_keys, generate key and secret. Then run:
+Go to https://localhost/api_keys, generate key and secret. Then run:
 
-    docker exec -ti openqa_data /scripts/set_keys
-
-and enter the Key and Secret.
+    docker exec -ti openqa_data /scripts/client-conf set -l (KEY) (SECRET)
 
 ## Run the Worker container
 
-    docker run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui --volumes-from openqa_data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker 1
+    docker run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
 Check whether the worker connected in the WebUI's administration interface.
 
-To add more workers, increase number that is used in hostname, container name and at the end of command, so to add worker 2 use:
+To add more workers, increase number that is used in hostname and container name, so to add worker 2 use:
 
-    docker run -h openqa_worker_2 --name openqa_worker_2 -d --link openqa_webui:openqa_webui --volumes-from openqa_data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker 2
+    docker run -h openqa_worker_2 --name openqa_worker_2 -d --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
 ## Enable services
 
@@ -84,9 +93,12 @@ Of course, if you set up two workers, also do `sudo systemctl enable openqa-work
 
 ## Get tests, ISOs and create disks
 
-You have to put your tests under `data/tests` directory, disk images under `data/factory/hdd` directory and ISOs under `data/factory/iso` directory.
+You have to put your tests under `data/tests` directory and ISOs under `data/factory/iso` directory. For example, for testing Fedora, run:
 
-You also need to give all permissions to everyone, so any user can read/write the data:
+    git clone https://bitbucket.org/rajcze/openqa_fedora data/tests/fedora
+    wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3.iso
+
+And set permissions, so any user can read/write the data:
 
     chmod -R 777 data
 
@@ -94,17 +106,52 @@ This step is unfortunately necessary because Docker [can't mount volume with spe
 
 If you wish to keep the tests (for example) separate from the shared directory, for any reason (we do, in our development scenario) refer to the [Developing tests with Container setup] section at the end of this document.
 
-To populate the OpenQA's database, run:
+Populate the OpenQA's database:
 
-    docker exec openqa_webui /var/lib/openqa/tests/<your path to tests inside data/tests>/templates
+    docker exec openqa_webui /var/lib/openqa/tests/fedora/templates
+
+Create all necessary disk images:
+
+    cd data/factory/hdd && createhdds.sh VERSION
+
+where `VERSION` is current stable Fedora version (its images will be created for upgrade tests) and createhdds.sh is in `openqa_fedora_tools` repository in `/tools` directory. Note that you have to have `libguestfs-tools` and `libguestfs-xfs` installed.
+
 
 # Running jobs
 
 After performing the "setup" tasks above - do not forget about tests and ISOs - you can schedule a test like this:
 
-    docker exec openqa_webui /var/lib/openqa/script/client isos post ISO=image.iso DISTRI=distribution VERSION=version FLAVOR=flavor ARCH=x86_64 BUILD=foobar
+    docker exec openqa_webui /var/lib/openqa/script/client isos post ISO=Fedora-Server-netinst-x86_64-22_Beta_RC3.iso DISTRI=fedora VERSION=rawhide FLAVOR=generic_boot ARCH=x86_64 BUILD=22_Beta_RC3
 
 # Other specific cases
+
+## Adding workers on other hosts
+
+You may want to add workers on other hosts, so you don't need one powerful host to run the UI and all the workers.
+
+Let's assume you're setting up a new 'worker host', and it can see the web UI host system with the hostname `openqa_webui`.
+
+You must somehow share the `data` directory from the web UI host to each host on which you want to run workers. For instance, to use sshfs, on the new worker host, run:
+
+    sshfs -o context=unconfined_u:object_r:svirt_sandbox_file_t:s0 openqa_webui:/path/to/data /path/to/data
+
+Of course, the worker host must have an ssh key the web UI host will accept. You can add this mount to `/etc/fstab` to make it permanent.
+
+Then check `openqa_fedora_tools` out on the worker host and run the data container, as described above:
+
+    docker run -d -h openqa_data --name openqa_data -v /path/to/data/factory:/data/factory -v /path/to/data/tests:/data/tests fedoraqa/openqa_data
+
+and set up the API key with `docker exec -ti openqa_data /scripts/set_keys`.
+
+Finally create a worker container, but omit the use of `--link`.  Ensure you use a hostname which is different from all other worker instances on all other hosts. The container name only has to be unique on this host, but it probably makes sense to always match the hostname to the container name:
+
+    docker run -h openqa_worker_3 --name openqa_worker_3 -d --volumes-from openqa_data --privileged fedoraqa/openqa_worker
+
+If the container will not be able to resolve the `openqa_webui` hostname (this depends on your network setup) you can use `--add-host` to add a line to `/etc/hosts` when running the container:
+
+    docker run -h openqa_worker_3 --name openqa_worker_3 -d --add-host="openqa_webui:10.0.0.1" --volumes-from openqa_data --privileged fedoraqa/openqa_worker
+
+Worker instances always expect to find the server as `openqa_webui`; if this will not work you must adjust the `/data/conf/client.conf` and `/data/conf/workers.ini` files in the data container. You will also need to adjust these files if you use non-standard ports (see above).
 
 ## Keeping all data in the Data Volume Container
 
@@ -119,7 +166,8 @@ In the [Run the Data & WebUI containers] section run the `openqa_data` container
 
 And finally, download the tests and ISOs directly into the container:
 
-    docker exec openqa_data git clone <url to git repo of your tests> /data/tests/<name of your tests>
+    docker exec openqa_data git clone https://bitbucket.org/rajcze/openqa_fedora /data/tests/fedora
+    docker exec openqa_data wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O /data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3
 
 The rest of the steps should be the same.
 
@@ -132,14 +180,14 @@ If you want to keep all the data in the host system and you don't want to use Vo
 
 In the [Run the Data & WebUI containers] section don't run `openqa_data` container and run the `webui` container like this instead:
 
-    docker run -d -h openqa_webui -v `pwd`/data:/data --name openqa_webui -p 8080:443 fedoraqa/openqa_webui
+    docker run -d -h openqa_webui -v `pwd`/data:/data --name openqa_webui -p 443:443 -p 80:80 fedoraqa/openqa_webui:4.1-3.12
 
 Change OpenID provider in `data/conf/openqa.ini` under `provider` in `[openid]` section and then put Key and Secret under
 both sections in `data/conf/client.conf`.
 
 In the [Run the Worker container] section, run worker as:
 
-    docker run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui -v `pwd`/data:/data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker 1
+    docker run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui -v `pwd`/data:/data --volumes-from openqa_webui --privileged fedoraqa/openqa_worker:4.1-3.12 1
 
 Then continue with tests and ISOs downloading as before.
 

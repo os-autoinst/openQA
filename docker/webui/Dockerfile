@@ -2,7 +2,7 @@ FROM opensuse:13.2
 MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>
 
 RUN zypper --non-interactive in ca-certificates-mozilla curl && \
-    zypper ar -f obs://devel:openQA/openSUSE_13.2 openQA && \
+    zypper ar -f obs://devel:openQA:stable/openSUSE_13.2 openQA && \
     zypper ar -f obs://devel:openQA:13.2/openSUSE_13.2 openQA-perl-modules && \
     curl https://build.opensuse.org/source/devel:openQA/_pubkey > /tmp/openQA-pubkey && rpm --import /tmp/openQA-pubkey && \
     zypper --non-interactive in openQA
