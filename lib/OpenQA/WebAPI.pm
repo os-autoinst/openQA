@@ -442,6 +442,8 @@ sub startup {
     # api/v1/mm
     my $mm_api = $api_r_job->route('/mm');
     $mm_api->get('/children/:status' => [status => [qw/running scheduled done/]])->name('apiv1_mm_running_children')->to('mm#get_children_status');
+    $mm_api->get('/children')->name('apiv1_mm_children')->to('mm#get_children');
+    $mm_api->get('/parents')->name('apiv1_mm_parents')->to('mm#get_parents');
 
     # api/v1/isos
     $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create');                 # iso_new

@@ -19,12 +19,19 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::IPC;
 
 sub mutex_lock {
-    my ($self) = @_;
-    my $name   = $self->stash('name');
-    my $jobid  = $self->stash('job_id');
-    my $ipc    = OpenQA::IPC->ipc;
-    my $res = $ipc->scheduler('mutex_lock', $name, $jobid);
-    return $self->render(text => 'ack', status => 200) if $res;
+    my ($self)     = @_;
+    my $name       = $self->stash('name');
+    my $jobid      = $self->stash('job_id');
+    my $validation = $self->validation;
+
+    $validation->optional('where')->like(qr/^[0-9]+$/);
+    my $where = $validation->param('where');
+
+    my $ipc = OpenQA::IPC->ipc;
+
+    my $res = $ipc->scheduler('mutex_lock', $name, $jobid, $where);
+    return $self->render(text => 'ack',  status => 200) if $res > 0;
+    return $self->render(text => 'nack', status => 410) if $res < 0;
     return $self->render(text => 'nack', status => 409);
 }
 
