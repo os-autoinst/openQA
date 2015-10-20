@@ -683,6 +683,9 @@ sub job_set_done {
 
     $job->release_networks();
 
+    $job->owned_locks->delete;
+    $job->locked_locks->update({locked_by => undef});
+
     my $result = $args{result} || $job->calculate_result();
     my %new_val = (
         state      => OpenQA::Schema::Result::Jobs::DONE,
