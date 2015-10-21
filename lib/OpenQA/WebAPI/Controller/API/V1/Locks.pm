@@ -18,38 +18,44 @@ use Mojo::Base 'Mojolicious::Controller';
 
 use OpenQA::IPC;
 
-sub mutex_lock {
+sub mutex_action {
     my ($self)     = @_;
     my $name       = $self->stash('name');
     my $jobid      = $self->stash('job_id');
     my $validation = $self->validation;
 
+    $validation->required('action')->in(qw(lock unlock));
     $validation->optional('where')->like(qr/^[0-9]+$/);
-    my $where = $validation->param('where');
+    return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
 
-    my $ipc = OpenQA::IPC->ipc;
+    my $action = $validation->param('action');
+    my $where  = $validation->param('where');
+    my $ipc    = OpenQA::IPC->ipc;
 
-    my $res = $ipc->scheduler('mutex_lock', $name, $jobid, $where);
+    my $res;
+    if ($action eq 'lock') {
+        $res = $ipc->scheduler('mutex_lock', $name, $jobid, $where);
+    }
+    else {
+        $res = $ipc->scheduler('mutex_unlock', $name, $jobid);
+    }
     return $self->render(text => 'ack',  status => 200) if $res > 0;
     return $self->render(text => 'nack', status => 410) if $res < 0;
     return $self->render(text => 'nack', status => 409);
 }
 
-sub mutex_unlock {
-    my ($self) = @_;
-    my $name   = $self->stash('name');
-    my $jobid  = $self->stash('job_id');
-    my $ipc    = OpenQA::IPC->ipc;
-    my $res = $ipc->scheduler('mutex_unlock', $name, $jobid);
-    return $self->render(text => 'ack', status => 200) if $res;
-    return $self->render(text => 'nack', status => 409);
-}
-
 sub mutex_create {
     my ($self) = @_;
-    my $name   = $self->stash('name');
-    my $jobid  = $self->stash('job_id');
-    my $ipc    = OpenQA::IPC->ipc;
+    my $jobid = $self->stash('job_id');
+
+    my $validation = $self->validation;
+
+    $validation->required('name')->like(qr/^[0-9a-zA-Z_]+$/);
+    return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
+
+    my $name = $validation->param('name');
+
+    my $ipc = OpenQA::IPC->ipc;
     my $res = $ipc->scheduler('mutex_create', $name, $jobid);
     return $self->render(text => 'ack', status => 200) if $res;
     return $self->render(text => 'nack', status => 409);

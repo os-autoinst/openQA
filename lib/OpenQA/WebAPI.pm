@@ -435,9 +435,8 @@ sub startup {
         });
 
     # api/v1/mutex
-    $api_r_job->post('/mutex/:name')->name('apiv1_mutex_create')->to('locks#mutex_create');
-    $api_r_job->post('/mutex/:name/lock')->name('apiv1_mutex_lock')->to('locks#mutex_lock');
-    $api_r_job->post('/mutex/:name/unlock')->name('apiv1_mutex_unlock')->to('locks#mutex_unlock');
+    $api_r_job->post('/mutex')->name('apiv1_mutex_create')->to('locks#mutex_create');
+    $api_r_job->post('/mutex/:name')->name('apiv1_mutex_action')->to('locks#mutex_action');
 
     # api/v1/mm
     my $mm_api = $api_r_job->route('/mm');
