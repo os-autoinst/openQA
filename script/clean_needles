@@ -91,13 +91,15 @@ $options{days} = 60 unless $options{days} // 0 > 0;
 
 usage(0) if $options{help};
 
-my $jobs = OpenQA::Scheduler::Scheduler::list_jobs(
-    state  => 'done',
-    maxage => $options{days} * 24 * 60 * 60,
-);
+sub list_jobs {
+    my %args = (state => 'done', maxage => $options{days} * 24 * 60 * 60,);
+    return OpenQA::Scheduler::Scheduler::query_jobs(%args);
+}
+
+my $jobs = list_jobs();
 
 if ($options{verbose}) {
-    printf "%d jobs in %d days\n", scalar @$jobs, $options{days};
+    printf "%d jobs in %d days\n", scalar keys %$jobs, $options{days};
 }
 
 # FIXME: actually determine which distros share needles
@@ -130,26 +132,27 @@ sub load_needles($$) {
 
 my %seen_tags;
 my %seen_needles;
-for my $j (@{$jobs // []}) {
-    my $fn = join('/', $OpenQA::Utils::resultdir, $j->{settings}->{NAME}, 'results.json');
-    next unless -e $fn;
-    open(my $fd, '<', $fn);
-    next unless $fd;
-    local $/;    # enable localized slurp mode
-    my $results;
-    eval { $results = decode_json(<$fd>) };
-    close $fd;
-    if ($@ || !$results) {
-        warn "failed to parse $fn";
-        next;
-    }
-    my $distri = $results->{distribution};
-    my $version = map_version($distri, $results->{version});
+while (my $j = $jobs->next) {
+    for my $module (OpenQA::Schema::Result::JobModules::job_modules($j)) {
+        my $job = OpenQA::Scheduler::Scheduler::job_get($j->id);
+        my $fn = join('/', $OpenQA::Utils::resultdir, $job->{settings}->{NAME}, 'details-' . $module->name . '.json');
+        next unless -e $fn;
+        open(my $fd, '<', $fn);
+        next unless $fd;
+        local $/;    # enable localized slurp mode
+        my $details;
+        eval { $details = decode_json(<$fd>) };
+        close $fd;
+        if ($@ || !$details) {
+            warn "failed to parse $fn";
+            next;
+        }
+        my $distri = $job->{settings}->{DISTRI};
+        my $version = map_version($distri, $job->{settings}->{VERSION});
 
-    load_needles($distri, $version);
+        load_needles($distri, $version);
 
-    for my $module (@{$results->{testmodules}}) {
-        for my $detail (@{$module->{details}}) {
+        for my $detail (@{$details}) {
             next unless $detail->{result} eq 'ok';
             next unless $detail->{needle};
             next unless $detail->{tags};
