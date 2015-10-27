@@ -1,0 +1,174 @@
+#!/usr/bin/python
+
+# Copyright (C) 2015 Red Hat
+#
+# This script is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Author: Adam Williamson <awilliam@redhat.com>
+
+# Convenience tool for fiddling with the config files in Docker-ized
+# openQA data containers. client.conf stores the API key/secret pairs,
+# workers.ini specifies which server workers using that data container
+# will try to connect to.
+
+import argparse
+import sys
+# Avoiding six for now, but let's be py3-compatible
+try:
+    import ConfigParser as configparser
+except ImportError:
+    import configparser
+
+# HELPER FUNCTIONS
+
+def _read_configs():
+    """Read the config files."""
+    cliconf = configparser.ConfigParser()
+    cliconf.read('/data/conf/client.conf')
+    workconf = configparser.ConfigParser()
+    # This makes the parser case-sensitive - the HOST value is
+    # upper-case
+    workconf.optionxform = str
+    workconf.read('/data/conf/workers.ini')
+    return (cliconf, workconf)
+
+def _workers(workconf, hostname, secure):
+    """Change the workers.ini HOST setting. All the subcommands
+    may need to use this, so sharing it.
+    """
+    if secure:
+        url = "https://{0}".format(hostname)
+    else:
+        url = "http://{0}".format(hostname)
+    try:
+        workconf.add_section('global')
+    except configparser.DuplicateSectionError:
+        pass
+    workconf.set('global', 'HOST', url)
+    with open('/data/conf/workers.ini', 'w') as fout:
+        workconf.write(fout)
+
+# SUB-COMMAND FUNCTIONS
+
+def set_key(args, cliconf, workconf):
+    """Add or update a client.conf entry and change workers.ini to
+    point to it unless args.nodefault is set.
+    """
+    sections = [args.hostname]
+    if args.localhost:
+        sections.append('localhost')
+    for section in sections:
+        try:
+            cliconf.add_section(section)
+        except configparser.DuplicateSectionError:
+            pass
+        cliconf.set(section, 'key', args.key)
+        cliconf.set(section, 'secret', args.secret)
+    with open('/data/conf/client.conf', 'w') as fout:
+        cliconf.write(fout)
+    if not args.nodefault:
+        _workers(workconf, args.hostname, args.secure)
+
+def remove(args, cliconf, workconf):
+    """Remove an entry from client.conf and update workers.ini to
+    point to another one, if it was pointing to this one and there
+    are any others left to use.
+    """
+    if not cliconf.remove_section(args.hostname):
+        sys.exit("Specified server not found in config!")
+    with open('/data/conf/client.conf', 'w') as fout:
+        cliconf.write(fout)
+    if len(cliconf.sections()) < 1:
+        print("WARNING: no servers remain in config!")
+        sys.exit()
+    try:
+        curr = workconf.get('global', 'HOST').split('//')[1]
+    except (configparser.NoOptionError, configparser.NoSectionError):
+        sys.exit()
+    # If we just removed the server that workers are supposed to
+    # connect to, pick another.
+    if curr == args.hostname:
+        host = cliconf.sections()[0]
+        if len(cliconf.sections()) > 1:
+            print("WARNING: more than one server remains in config! "
+                  "Guessing which to use for workers!")
+            # We'll prefer 'localhost' then 'openqa_webui' then just
+            # pick the first one.
+            if 'localhost' in cliconf.sections():
+                host = 'localhost'
+            elif 'openqa_webui' in cliconf.sections():
+                host = 'openqa_webui'
+        _workers(workconf, host, args.secure)
+
+def workers(args, cliconf, workconf):
+    """Update workers.ini to point to the specified host."""
+    if args.hostname not in cliconf.sections():
+        print("WARNING: specified hostname not in client.conf!")
+    _workers(workconf, args.hostname, args.secure)
+
+# ARG PARSING AND MAIN LOOP
+
+def parse_args():
+    """Argument parsing."""
+    parser = argparse.ArgumentParser(description=(
+        "Set openQA client configuration in a data container."))
+    subparsers = parser.add_subparsers()
+
+    parser_set = subparsers.add_parser(
+        'set', description="Set a server key/secret. Server will be added "
+        "if it does not exist, modified if it does.")
+    parser_set.add_argument(
+        '-t', '--hostname', help="The hostname", default="openqa_webui")
+    parser_set.add_argument(
+        '-l', '--localhost', help="Set same key/secret for 'localhost'",
+        action='store_true')
+    parser_set.add_argument(
+        '-n', '--nodefault', help="Do not make this entry the default for "
+        "workers", action='store_true')
+    parser_set.add_argument(
+        'key', help="The key", metavar="KEY")
+    parser_set.add_argument(
+        'secret', help="The secret", metavar="SECRET")
+    parser_set.set_defaults(func=set_key)
+
+    parser_remove = subparsers.add_parser(
+        'remove', description="Remove a server.")
+    parser_remove.add_argument(
+        'hostname', help="The hostname")
+    parser_remove.set_defaults(func=remove)
+
+    parser_workers = subparsers.add_parser(
+        'workers', description="Set the server workers will connect to.")
+    parser_workers.add_argument(
+        'hostname', help="The hostname")
+    parser_workers.set_defaults(func=workers)
+
+    parser.add_argument(
+        '-s', '--secure', help="Use HTTPS for worker connections",
+        action='store_true')
+
+    return parser.parse_args()
+
+def main():
+    """Main loop."""
+    try:
+        args = parse_args()
+        (cliconf, workconf) = _read_configs()
+        args.func(args, cliconf, workconf)
+    except KeyboardInterrupt:
+        sys.stderr.write("Interrupted, exiting...\n")
+        sys.exit(1)
+
+if __name__ == '__main__':
+    main()

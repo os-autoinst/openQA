@@ -1,13 +1,11 @@
 FROM opensuse:13.2
 MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>
 
-RUN useradd -m geekotest && \
-    zypper --non-interactive --gpg-auto-import-keys in ca-certificates-mozilla curl && \
-    zypper ar -f http://download.opensuse.org/repositories/devel:openQA:stable/openSUSE_13.2/devel:openQA:stable.repo && \
-    zypper ar -f obs://devel:openQA/openSUSE_13.2 openQA && \
+RUN zypper --non-interactive in ca-certificates-mozilla curl && \
+    zypper ar -f obs://devel:openQA:stable/openSUSE_13.2 openQA && \
     zypper ar -f obs://devel:openQA:13.2/openSUSE_13.2 openQA-perl-modules && \
     curl https://build.opensuse.org/source/devel:openQA/_pubkey > /tmp/openQA-pubkey && rpm --import /tmp/openQA-pubkey && \
-    zypper --non-interactive in --from devel_openQA_stable openQA
+    zypper --non-interactive in openQA
 
 # setup apache
 RUN gensslcert && \
@@ -19,12 +17,15 @@ RUN gensslcert && \
     a2enflag SSL
 ADD openqa-ssl.conf /etc/apache2/vhosts.d/openqa-ssl.conf
 ADD openqa.conf /etc/apache2/vhosts.d/openqa.conf
+ADD run_openqa.sh /root/
 
 # set-up shared data and configuration
 RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \
       /var/lib/openqa/share/factory /var/lib/openqa/share/tests \
       /var/lib/openqa/db/db.sqlite /var/lib/openqa/testresults && \
+    chmod +x /root/run_openqa.sh && \
     mkdir -p /var/lib/openqa/pool && \
+    mkdir -p /run/dbus && \
     ln -s /data/conf/openqa.ini /etc/openqa/openqa.ini && \
     ln -s /data/conf/client.conf /etc/openqa/client.conf && \
     ln -s /data/factory /var/lib/openqa/share/factory && \
@@ -36,4 +37,4 @@ RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \
 VOLUME ["/var/lib/openqa/pool"]
 
 EXPOSE 80 443
-CMD rcapache2 start && /usr/share/openqa/script/openqa daemon -m production --proxy
+CMD ["/root/run_openqa.sh"]

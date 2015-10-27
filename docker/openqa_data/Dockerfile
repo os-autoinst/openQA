@@ -1,7 +1,7 @@
 FROM opensuse:13.2
 MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>
 
-RUN zypper --non-interactive --gpg-auto-import-keys in ca-certificates-mozilla git wget
+RUN zypper --non-interactive in ca-certificates-mozilla git wget
 
 ADD data.template /data
 ADD scripts /scripts
