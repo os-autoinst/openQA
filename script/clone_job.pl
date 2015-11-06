@@ -41,7 +41,7 @@ get job from specified host
 
 =item B<--dir> DIR
 
-specify directory where the iso is stored (default /var/lib/openqa/factory/iso/)
+specify directory where the iso is stored (default /var/lib/openqa/factory)
 
 =item B<--apikey> <value>
 
@@ -108,8 +108,6 @@ usage(1) unless exists $options{'from'};
 my $jobid = shift @ARGV || die "missing jobid\n";
 
 $options{'dir'} ||= '/var/lib/openqa/factory';
-
-die "can't write $options{dir}\n" unless -w $options{dir} . '/iso';
 
 my $ua = LWP::UserAgent->new;
 $ua->timeout(10);
@@ -184,6 +182,8 @@ if ($jobid) {
             my $from = $remote_url->clone;
             $from->path(sprintf '/tests/%d/asset/%s/%s', $jobid, $type, $file);
             $from = $from->to_string;
+
+            die "can't write $options{dir}/$type\n" unless -w "$options{dir}/$type";
 
             print "downloading\n$from\nto\n$dst\n";
             my $r = $ua->mirror($from, $dst);
