@@ -363,6 +363,7 @@ sub startup {
     $admin_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
 
     $admin_r->get('/needles')->name('admin_needles')->to('needle#index');
+    $admin_r->get('/needles/:module_id/:needle_id')->name('admin_needle_module')->to('needle#module');
 
     # Users list as default option
     $admin_r->get('/')->name('admin')->to('user#index');

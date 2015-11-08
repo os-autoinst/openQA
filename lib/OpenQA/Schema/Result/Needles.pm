@@ -16,6 +16,7 @@
 
 package OpenQA::Schema::Result::Needles;
 use base qw/DBIx::Class::Core/;
+use File::Basename;
 
 use db_helpers;
 
@@ -68,6 +69,12 @@ sub update_needle($$$) {
         $needle->update;
     }
     $guard->commit;
+}
+
+sub name() {
+    my ($self) = @_;
+
+    return fileparse($self->filename, qw/.json/);
 }
 
 1;

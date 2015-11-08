@@ -27,5 +27,22 @@ sub index {
     $self->render('admin/needle/index');
 }
 
+sub module {
+    my ($self) = @_;
+
+    my $module = $self->db->resultset('JobModules')->find($self->param('module_id'));
+    my $needle = $self->db->resultset('Needles')->find($self->param('needle_id'))->name;
+
+    use Data::Dumper;
+    my $index = 1;
+    for my $detail (@{$module->details}) {
+        print "NEEDLE $needle - $detail->{needle}\n";
+        last if $detail->{needle} eq $needle;
+        last if grep { $needle eq $_->{name} } @{$detail->{needles} || []};
+        $index++;
+    }
+    $self->redirect_to('step', testid => $module->job_id, moduleid => $module->name(), stepid => $index);
+}
+
 1;
 # vim: set sw=4 et:
