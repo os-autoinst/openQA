@@ -1,0 +1,42 @@
+% layout 'bootstrap';
+% title 'Needles';
+
+% content_for 'ready_function' => begin
+   setupAdminNeedles();
+% end
+
+<div class="row">
+    %= include 'layouts/admin_nav'
+
+    <div class="col-sm-10">
+        <h2><%= title %></h2>
+
+        %= include 'layouts/info'
+
+        <table id="needles" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Last Use</th>
+                    <th>Last Match</th>
+                </tr>
+            </thead>
+            <tbody>
+                % while (my $needle = $needles->next) {
+                    <tr id="needle_<%= $needle->id %>" >
+                        <td class="filename" title="<%= $needle->filename %>">
+                            %= $needle->filename
+                        </td>
+			<td class="testtime" title="<%= $needle->last_seen->t_created->datetime() %>Z"><%= $needle->last_seen->t_created->datetime() %>Z</td>
+			% if ($needle->last_match) {
+			    <td class="testtime" title="<%= $needle->last_match->t_created->datetime() %>Z"><%= $needle->last_match->t_created->datetime() %>Z</td>
+			% } else {
+			    <td>never</td>
+			% }
+                    </tr>
+                % }
+            </tbody>
+        </table>
+    </div>
+
+</div>

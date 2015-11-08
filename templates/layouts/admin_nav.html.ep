@@ -14,6 +14,7 @@
                 <!-- Sure this is not the proper place for the workers view,
                 but the previous one was even more annoying -->
                 <li><%= link_to('Workers' => url_for('admin_workers')) %></li>
+                <li><%= link_to('Needles' => url_for('admin_needles')) %></li>
 
             </ul>
         </div>

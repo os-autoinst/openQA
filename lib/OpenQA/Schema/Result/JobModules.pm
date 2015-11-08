@@ -204,7 +204,7 @@ sub store_needle_infos($) {
     my ($self, $detail) = @_;
 
     if ($detail->{needle}) {
-	my $nfn = sprintf("%s/%s.json", $self->needle_dir(), $detail->{needle});
+        my $nfn = sprintf("%s/%s.json", $self->needle_dir(), $detail->{needle});
         OpenQA::Schema::Result::Needles::update_needle($nfn, $self->id, 1);
     }
     for my $needle (@{$detail->{needles} || []}) {

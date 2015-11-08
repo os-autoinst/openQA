@@ -190,6 +190,7 @@ sub startup {
       /javascripts/jquery.dataTables.js
       /javascripts/admintable.js
       /javascripts/admin_user.js
+      /javascripts/admin_needle.js
       /javascripts/jquery.timeago.js
       /javascripts/tests.js
       /javascripts/assets.js
@@ -360,6 +361,8 @@ sub startup {
 
     $admin_r->get('/workers')->name('admin_workers')->to('workers#index');
     $admin_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
+
+    $admin_r->get('/needles')->name('admin_needles')->to('needle#index');
 
     # Users list as default option
     $admin_r->get('/')->name('admin')->to('user#index');
