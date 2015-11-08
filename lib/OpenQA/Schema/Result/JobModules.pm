@@ -23,6 +23,7 @@ use OpenQA::Scheduler::Scheduler;
 use OpenQA::Schema::Result::Jobs;
 use JSON ();
 use File::Basename qw/dirname basename/;
+use Cwd qw/realpath/;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -188,6 +189,30 @@ sub update_result($) {
         });
 }
 
+sub needle_dir() {
+    my ($self) = @_;
+    unless ($self->{_needle_dir}) {
+        my $distri  = $self->job->settings_hash->{DISTRI};
+        my $version = $self->job->settings_hash->{VERSION};
+        my $dir     = OpenQA::Utils::testcasedir($distri, $version);
+        $self->{_needle_dir} = realpath("$dir/needles");
+    }
+    return $self->{_needle_dir};
+}
+
+sub store_needle_infos($) {
+    my ($self, $detail) = @_;
+
+    if ($detail->{needle}) {
+	my $nfn = sprintf("%s/%s.json", $self->needle_dir(), $detail->{needle});
+        OpenQA::Schema::Result::Needles::update_needle($nfn, $self->id, 1);
+    }
+    for my $needle (@{$detail->{needles} || []}) {
+        my $nfn = sprintf("%s/%s.json", $self->needle_dir(), $needle->{name});
+        OpenQA::Schema::Result::Needles::update_needle($nfn, $self->id, 0);
+    }
+}
+
 sub save_details($) {
     my ($self, $details) = @_;
     my $existant_md5 = [];
@@ -200,6 +225,8 @@ sub save_details($) {
         symlink($full,  $self->job->result_dir . "/" . $d->{screenshot}->{name});
         symlink($thumb, $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
         $d->{screenshot} = $d->{screenshot}->{name};
+
+        $self->store_needle_infos($d);
     }
     open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");
     $fh->print(JSON::encode_json($details));
