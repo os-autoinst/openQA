@@ -41,7 +41,7 @@ get job from specified host
 
 =item B<--dir> DIR
 
-specify directory where the iso is stored (default /var/lib/openqa/factory)
+specify directory where test assets are stored (default /var/lib/openqa/factory)
 
 =item B<--apikey> <value>
 
