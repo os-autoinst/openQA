@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Sun Nov  8 12:17:38 2015
+-- Created on Wed Nov 11 16:55:24 2015
 -- 
 ;
 SET foreign_key_checks=0;
@@ -270,6 +270,19 @@ CREATE TABLE `needles` (
   CONSTRAINT `needles_fk_first_seen_module_id` FOREIGN KEY (`first_seen_module_id`) REFERENCES `job_modules` (`id`),
   CONSTRAINT `needles_fk_last_matched_module_id` FOREIGN KEY (`last_matched_module_id`) REFERENCES `job_modules` (`id`),
   CONSTRAINT `needles_fk_last_seen_module_id` FOREIGN KEY (`last_seen_module_id`) REFERENCES `job_modules` (`id`)
+) ENGINE=InnoDB;
+--
+-- Table: `job_module_needles`
+--
+CREATE TABLE `job_module_needles` (
+  `needle_id` integer NOT NULL,
+  `job_module_id` integer NOT NULL,
+  `failed` enum('0','1') NOT NULL DEFAULT '0',
+  INDEX `job_module_needles_idx_job_module_id` (`job_module_id`),
+  INDEX `job_module_needles_idx_needle_id` (`needle_id`),
+  UNIQUE `job_module_needles_needle_id_job_module_id` (`needle_id`, `job_module_id`),
+  CONSTRAINT `job_module_needles_fk_job_module_id` FOREIGN KEY (`job_module_id`) REFERENCES `job_modules` (`id`),
+  CONSTRAINT `job_module_needles_fk_needle_id` FOREIGN KEY (`needle_id`) REFERENCES `needles` (`id`)
 ) ENGINE=InnoDB;
 --
 -- Table: `jobs`

@@ -444,7 +444,7 @@ schema:
           type: NORMAL
       name: gru_dependencies
       options: []
-      order: 23
+      order: 24
     gru_tasks:
       constraints:
         - deferrable: 1
@@ -626,7 +626,7 @@ schema:
           type: NORMAL
       name: job_dependencies
       options: []
-      order: 20
+      order: 21
     job_groups:
       constraints:
         - deferrable: 1
@@ -804,7 +804,93 @@ schema:
           type: NORMAL
       name: job_locks
       options: []
-      order: 21
+      order: 22
+    job_module_needles:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - needle_id
+            - job_module_id
+          match_type: ''
+          name: job_module_needles_needle_id_job_module_id
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+        - deferrable: 1
+          expression: ''
+          fields:
+            - job_module_id
+          match_type: ''
+          name: job_module_needles_fk_job_module_id
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields:
+            - id
+          reference_table: job_modules
+          type: FOREIGN KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - needle_id
+          match_type: ''
+          name: job_module_needles_fk_needle_id
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields:
+            - id
+          reference_table: needles
+          type: FOREIGN KEY
+      fields:
+        failed:
+          data_type: boolean
+          default_value: 0
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: failed
+          order: 3
+          size:
+            - 0
+        job_module_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: job_module_id
+          order: 2
+          size:
+            - 0
+        needle_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: needle_id
+          order: 1
+          size:
+            - 0
+      indices:
+        - fields:
+            - job_module_id
+          name: job_module_needles_idx_job_module_id
+          options: []
+          type: NORMAL
+        - fields:
+            - needle_id
+          name: job_module_needles_idx_needle_id
+          options: []
+          type: NORMAL
+      name: job_module_needles
+      options: []
+      order: 19
     job_modules:
       constraints:
         - deferrable: 1
@@ -1035,7 +1121,7 @@ schema:
           type: NORMAL
       name: job_networks
       options: []
-      order: 22
+      order: 23
     job_settings:
       constraints:
         - deferrable: 1
@@ -1319,7 +1405,7 @@ schema:
           type: NORMAL
       name: job_templates
       options: []
-      order: 24
+      order: 25
     jobs:
       constraints:
         - deferrable: 1
@@ -1585,7 +1671,7 @@ schema:
           type: NORMAL
       name: jobs
       options: []
-      order: 19
+      order: 20
     jobs_assets:
       constraints:
         - deferrable: 1
@@ -1691,7 +1777,7 @@ schema:
           type: NORMAL
       name: jobs_assets
       options: []
-      order: 25
+      order: 26
     machine_settings:
       constraints:
         - deferrable: 1
@@ -2851,6 +2937,7 @@ translator:
       - JobDependencies
       - JobGroups
       - JobLocks
+      - JobModuleNeedles
       - JobModules
       - JobNetworks
       - JobSettings
