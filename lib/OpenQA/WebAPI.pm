@@ -364,6 +364,7 @@ sub startup {
 
     $admin_r->get('/needles')->name('admin_needles')->to('needle#index');
     $admin_r->get('/needles/:module_id/:needle_id')->name('admin_needle_module')->to('needle#module');
+    $admin_r->get('/needles/ajax')->name('admin_needle_ajax')->to('needle#ajax');
 
     # Users list as default option
     $admin_r->get('/')->name('admin')->to('user#index');

@@ -2,7 +2,7 @@
 % title 'Needles';
 
 % content_for 'ready_function' => begin
-   setupAdminNeedles();
+    setupAdminNeedles();
 % end
 
 <div class="row">
@@ -11,43 +11,52 @@
     <div class="col-sm-10">
         <h2><%= title %></h2>
 
+        <div class="row">
+            <div class="col-sm-4">
+                <label for="last_seen_filter">
+                    Limit Use:
+                </label>
+                <form>
+                    <select id="last_seen_filter" name="last_seen_filter" class="form-control input-sm">
+                        <option value="none">All time</option>
+                        <option value="min14">Last 2 weeks</option>
+                        <option value="min28">Last 4 weeks</option>
+                        <option value="min61">Last 2 months</option>
+                        <option value="max14">Not last 2 weeks</option>
+                        <option value="max28">Not last 4 weeks</option>
+                        <option value="max61">Not last 2 months</option>
+                    </select>
+                </form>
+            </div>
+            <div class="col-sm-4">
+                <label for="last_match_filter">
+                    Limit Match:
+                </label>
+                <form>
+                    <select id="last_match_filter" name="last_match_filter" class="form-control input-sm">
+                        <option value="none">All time</option>
+                        <option value="min14">Last 2 weeks</option>
+                        <option value="min28">Last 4 weeks</option>
+                        <option value="min61">Last 2 months</option>
+                        <option value="max14">Not last 2 weeks</option>
+                        <option value="max28">Not last 4 weeks</option>
+                        <option value="max61">Not last 2 months</option>
+                    </select>
+                </form>
+            </div>
+        </div>
         %= include 'layouts/info'
 
-        <table id="needles" class="table table-striped">
+        <p></p>
+
+        <table id="needles" class="table table-striped" data-ajax-url="<%= url_for('admin_needle_ajax') %>">
             <thead>
                 <tr>
                     <th>Filename</th>
                     <th>Last Use</th>
-                    <th>Use Link</th>
                     <th>Last Match</th>
-                    <th>Match Link</th>
                 </tr>
             </thead>
-            <tbody>
-                % while (my $needle = $needles->next) {
-                    <tr id="needle_<%= $needle->id %>" >
-                        <td class="filename" title="<%= $needle->filename %>">
-                            %= $needle->filename
-                        </td>
-                        <td class="testtime" title="<%= $needle->last_seen->t_created->datetime() %>Z">
-                             %= $needle->last_seen->t_created->datetime() . "Z"
-                        </td>
-                        <td>
-                            %= url_for ('admin_needle_module', module_id => $needle->last_seen->id, needle_id => $needle->id)
-                        </td>
-                        % if ($needle->last_match) {
-                            <td class="testtime" title="<%= $needle->last_match->t_created->datetime() %>Z"><%= $needle->last_match->t_created->datetime() %>Z</td>
-                            <td>
-                                %= url_for ('admin_needle_module', module_id => $needle->last_match->id, needle_id => $needle->id)
-                            </td>
-
-                        % } else {
-                            <td>never</td>
-                            <td></td>
-                        % }
-                    </tr>
-                % }
-            </tbody>
         </table>
     </div>
 

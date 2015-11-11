@@ -1,33 +1,36 @@
 function setupAdminNeedles() {
-    $('#needles').hide();
-    $('#needles').DataTable( { "order": [[2, "desc"],[0, "asc"]] ,
-			       "columnDefs": [
-				   { targets: [1, 3],
-				     className: "time",
-				     "render": function ( data, type, row ) {
-					 if (type === 'display' && data != 'never') {
-					     var ri = 2;
-					     if (data == row[3])
-						 ri = 4;
-					     return "<a href='" + row[ri] + "'>" + jQuery.timeago(new Date(data)) + "</a>";
-					 } else
-					     return data;
-				     }
-				   },
-				   {  "targets": [ 2, 4 ],
-				      "visible": false,
-				   },
-				   { targets: 0,
-				     className: "filename",
-				     "render": function ( data, type, row ) {
-					 if (type === 'display') {
-					     return data.split('/').pop().slice(0, -5);
-					 } else
-					     return data;
-				     }
-				   }
-			       ]
-			     }
-			   );
-    $('#needles').show();
+    var table = $('#needles').DataTable(
+	{ "ajax": $('#needles').data('ajax-url'),
+	  deferRender: true,
+	  "columns": [
+	      { "data": "filename" },
+	      { "data": "last_seen" },
+	      { "data": "last_match" }
+	  ],
+	  
+	  "order": [[0, "asc"]] ,
+          "columnDefs": [
+              { targets: [1,2],
+                className: "time",
+		"render": function ( data, type, row ) {
+                    if (type === 'display' && data != 'never') {
+                        var ri = 'last_seen_link';
+                        if (data == row['last_match'])
+                            ri = 'last_match_link';
+                        return "<a href='" + row[ri] + "'>" + jQuery.timeago(new Date(data)) + "</a>";
+                    } else
+                        return data;
+                }
+              },
+          ]
+        }
+    );
+    function reloadNeedlesTable() {
+	var url = $('#needles').data('ajax-url');
+	url = url + "?last_match=" + $('#last_match_filter').val() + "&last_seen=" + $('#last_seen_filter').val();
+	table.ajax.url(url);
+	table.ajax.reload();
+    }
+    $('#last_seen_filter').change(reloadNeedlesTable);
+    $('#last_match_filter').change(reloadNeedlesTable);
 }
