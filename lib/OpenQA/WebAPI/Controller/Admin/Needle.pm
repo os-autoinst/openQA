@@ -70,12 +70,13 @@ sub ajax {
             push(@conds, {last_matched_module_id => {'>=', $query->min}});
         }
     }
-    my $needles = $self->db->resultset("Needles")->search({-and => \@conds}, {order_by => 'filename'});
+    my $needles = $self->db->resultset("Needles")->search({-and => \@conds}, {prefetch => qw/directory/, order_by => 'filename'});
 
     my @data;
     my %modules;
     while (my $n = $needles->next) {
         my $hash = {
+            directory      => $n->directory->name,
             filename       => $n->filename,
             last_seen      => $n->last_seen_module_id,
             last_seen_link => $self->url_for(

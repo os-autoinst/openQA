@@ -52,6 +52,7 @@
         <table id="needles" class="table table-striped" data-ajax-url="<%= url_for('admin_needle_ajax') %>">
             <thead>
                 <tr>
+                    <th>Directory</th>
                     <th>Filename</th>
                     <th>Last Use</th>
                     <th>Last Match</th>

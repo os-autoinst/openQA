@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Nov 11 16:55:24 2015
+-- Created on Thu Nov 12 16:23:39 2015
 -- 
 ;
 --
@@ -113,6 +113,18 @@ CREATE TABLE "machines" (
   "t_updated" timestamp NOT NULL,
   PRIMARY KEY ("id"),
   CONSTRAINT "machines_name" UNIQUE ("name")
+);
+
+;
+--
+-- Table: needle_dirs
+--
+CREATE TABLE "needle_dirs" (
+  "id" serial NOT NULL,
+  "path" text NOT NULL,
+  "name" text NOT NULL,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "needle_dirs_path" UNIQUE ("path")
 );
 
 ;
@@ -277,36 +289,6 @@ CREATE INDEX "comments_idx_user_id" on "comments" ("user_id");
 
 ;
 --
--- Table: needles
---
-CREATE TABLE "needles" (
-  "id" serial NOT NULL,
-  "filename" text NOT NULL,
-  "first_seen_module_id" integer NOT NULL,
-  "last_seen_module_id" integer NOT NULL,
-  "last_matched_module_id" integer,
-  PRIMARY KEY ("id"),
-  CONSTRAINT "needles_filename" UNIQUE ("filename")
-);
-CREATE INDEX "needles_idx_first_seen_module_id" on "needles" ("first_seen_module_id");
-CREATE INDEX "needles_idx_last_matched_module_id" on "needles" ("last_matched_module_id");
-CREATE INDEX "needles_idx_last_seen_module_id" on "needles" ("last_seen_module_id");
-
-;
---
--- Table: job_module_needles
---
-CREATE TABLE "job_module_needles" (
-  "needle_id" integer NOT NULL,
-  "job_module_id" integer NOT NULL,
-  "failed" boolean DEFAULT '0' NOT NULL,
-  CONSTRAINT "job_module_needles_needle_id_job_module_id" UNIQUE ("needle_id", "job_module_id")
-);
-CREATE INDEX "job_module_needles_idx_job_module_id" on "job_module_needles" ("job_module_id");
-CREATE INDEX "job_module_needles_idx_needle_id" on "job_module_needles" ("needle_id");
-
-;
---
 -- Table: jobs
 --
 CREATE TABLE "jobs" (
@@ -338,6 +320,25 @@ CREATE INDEX "idx_jobs_result" on "jobs" ("result");
 
 ;
 --
+-- Table: needles
+--
+CREATE TABLE "needles" (
+  "id" serial NOT NULL,
+  "dir_id" integer NOT NULL,
+  "filename" text NOT NULL,
+  "first_seen_module_id" integer NOT NULL,
+  "last_seen_module_id" integer NOT NULL,
+  "last_matched_module_id" integer,
+  PRIMARY KEY ("id"),
+  CONSTRAINT "needles_dir_id_filename" UNIQUE ("dir_id", "filename")
+);
+CREATE INDEX "needles_idx_dir_id" on "needles" ("dir_id");
+CREATE INDEX "needles_idx_first_seen_module_id" on "needles" ("first_seen_module_id");
+CREATE INDEX "needles_idx_last_matched_module_id" on "needles" ("last_matched_module_id");
+CREATE INDEX "needles_idx_last_seen_module_id" on "needles" ("last_seen_module_id");
+
+;
+--
 -- Table: job_dependencies
 --
 CREATE TABLE "job_dependencies" (
@@ -362,6 +363,19 @@ CREATE TABLE "job_locks" (
 );
 CREATE INDEX "job_locks_idx_locked_by" on "job_locks" ("locked_by");
 CREATE INDEX "job_locks_idx_owner" on "job_locks" ("owner");
+
+;
+--
+-- Table: job_module_needles
+--
+CREATE TABLE "job_module_needles" (
+  "needle_id" integer NOT NULL,
+  "job_module_id" integer NOT NULL,
+  "matched" boolean DEFAULT '1' NOT NULL,
+  CONSTRAINT "job_module_needles_needle_id_job_module_id" UNIQUE ("needle_id", "job_module_id")
+);
+CREATE INDEX "job_module_needles_idx_job_module_id" on "job_module_needles" ("job_module_id");
+CREATE INDEX "job_module_needles_idx_needle_id" on "job_module_needles" ("needle_id");
 
 ;
 --
@@ -469,26 +483,6 @@ ALTER TABLE "comments" ADD CONSTRAINT "comments_fk_user_id" FOREIGN KEY ("user_i
   REFERENCES "users" ("id") DEFERRABLE;
 
 ;
-ALTER TABLE "needles" ADD CONSTRAINT "needles_fk_first_seen_module_id" FOREIGN KEY ("first_seen_module_id")
-  REFERENCES "job_modules" ("id") DEFERRABLE;
-
-;
-ALTER TABLE "needles" ADD CONSTRAINT "needles_fk_last_matched_module_id" FOREIGN KEY ("last_matched_module_id")
-  REFERENCES "job_modules" ("id") DEFERRABLE;
-
-;
-ALTER TABLE "needles" ADD CONSTRAINT "needles_fk_last_seen_module_id" FOREIGN KEY ("last_seen_module_id")
-  REFERENCES "job_modules" ("id") DEFERRABLE;
-
-;
-ALTER TABLE "job_module_needles" ADD CONSTRAINT "job_module_needles_fk_job_module_id" FOREIGN KEY ("job_module_id")
-  REFERENCES "job_modules" ("id") DEFERRABLE;
-
-;
-ALTER TABLE "job_module_needles" ADD CONSTRAINT "job_module_needles_fk_needle_id" FOREIGN KEY ("needle_id")
-  REFERENCES "needles" ("id") DEFERRABLE;
-
-;
 ALTER TABLE "jobs" ADD CONSTRAINT "jobs_fk_clone_id" FOREIGN KEY ("clone_id")
   REFERENCES "jobs" ("id") ON DELETE SET NULL DEFERRABLE;
 
@@ -499,6 +493,22 @@ ALTER TABLE "jobs" ADD CONSTRAINT "jobs_fk_group_id" FOREIGN KEY ("group_id")
 ;
 ALTER TABLE "jobs" ADD CONSTRAINT "jobs_fk_worker_id" FOREIGN KEY ("worker_id")
   REFERENCES "workers" ("id") ON DELETE CASCADE DEFERRABLE;
+
+;
+ALTER TABLE "needles" ADD CONSTRAINT "needles_fk_dir_id" FOREIGN KEY ("dir_id")
+  REFERENCES "needle_dirs" ("id") ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE;
+
+;
+ALTER TABLE "needles" ADD CONSTRAINT "needles_fk_first_seen_module_id" FOREIGN KEY ("first_seen_module_id")
+  REFERENCES "job_modules" ("id") DEFERRABLE;
+
+;
+ALTER TABLE "needles" ADD CONSTRAINT "needles_fk_last_matched_module_id" FOREIGN KEY ("last_matched_module_id")
+  REFERENCES "job_modules" ("id") DEFERRABLE;
+
+;
+ALTER TABLE "needles" ADD CONSTRAINT "needles_fk_last_seen_module_id" FOREIGN KEY ("last_seen_module_id")
+  REFERENCES "job_modules" ("id") DEFERRABLE;
 
 ;
 ALTER TABLE "job_dependencies" ADD CONSTRAINT "job_dependencies_fk_child_job_id" FOREIGN KEY ("child_job_id")
@@ -515,6 +525,14 @@ ALTER TABLE "job_locks" ADD CONSTRAINT "job_locks_fk_locked_by" FOREIGN KEY ("lo
 ;
 ALTER TABLE "job_locks" ADD CONSTRAINT "job_locks_fk_owner" FOREIGN KEY ("owner")
   REFERENCES "jobs" ("id") ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE;
+
+;
+ALTER TABLE "job_module_needles" ADD CONSTRAINT "job_module_needles_fk_job_module_id" FOREIGN KEY ("job_module_id")
+  REFERENCES "job_modules" ("id") DEFERRABLE;
+
+;
+ALTER TABLE "job_module_needles" ADD CONSTRAINT "job_module_needles_fk_needle_id" FOREIGN KEY ("needle_id")
+  REFERENCES "needles" ("id") ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE;
 
 ;
 ALTER TABLE "job_networks" ADD CONSTRAINT "job_networks_fk_job_id" FOREIGN KEY ("job_id")

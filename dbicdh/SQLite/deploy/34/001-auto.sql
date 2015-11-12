@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Wed Nov 11 16:55:24 2015
+-- Created on Thu Nov 12 16:23:39 2015
 -- 
 
 ;
@@ -100,6 +100,15 @@ CREATE TABLE machines (
   t_updated timestamp NOT NULL
 );
 CREATE UNIQUE INDEX machines_name ON machines (name);
+--
+-- Table: needle_dirs
+--
+CREATE TABLE needle_dirs (
+  id INTEGER PRIMARY KEY NOT NULL,
+  path text NOT NULL,
+  name text NOT NULL
+);
+CREATE UNIQUE INDEX needle_dirs_path ON needle_dirs (path);
 --
 -- Table: product_settings
 --
@@ -238,36 +247,6 @@ CREATE INDEX comments_idx_group_id ON comments (group_id);
 CREATE INDEX comments_idx_job_id ON comments (job_id);
 CREATE INDEX comments_idx_user_id ON comments (user_id);
 --
--- Table: needles
---
-CREATE TABLE needles (
-  id INTEGER PRIMARY KEY NOT NULL,
-  filename text NOT NULL,
-  first_seen_module_id integer NOT NULL,
-  last_seen_module_id integer NOT NULL,
-  last_matched_module_id integer,
-  FOREIGN KEY (first_seen_module_id) REFERENCES job_modules(id),
-  FOREIGN KEY (last_matched_module_id) REFERENCES job_modules(id),
-  FOREIGN KEY (last_seen_module_id) REFERENCES job_modules(id)
-);
-CREATE INDEX needles_idx_first_seen_module_id ON needles (first_seen_module_id);
-CREATE INDEX needles_idx_last_matched_module_id ON needles (last_matched_module_id);
-CREATE INDEX needles_idx_last_seen_module_id ON needles (last_seen_module_id);
-CREATE UNIQUE INDEX needles_filename ON needles (filename);
---
--- Table: job_module_needles
---
-CREATE TABLE job_module_needles (
-  needle_id integer NOT NULL,
-  job_module_id integer NOT NULL,
-  failed boolean NOT NULL DEFAULT 0,
-  FOREIGN KEY (job_module_id) REFERENCES job_modules(id),
-  FOREIGN KEY (needle_id) REFERENCES needles(id)
-);
-CREATE INDEX job_module_needles_idx_job_module_id ON job_module_needles (job_module_id);
-CREATE INDEX job_module_needles_idx_needle_id ON job_module_needles (needle_id);
-CREATE UNIQUE INDEX job_module_needles_needle_id_job_module_id ON job_module_needles (needle_id, job_module_id);
---
 -- Table: jobs
 --
 CREATE TABLE jobs (
@@ -299,6 +278,26 @@ CREATE INDEX idx_jobs_state ON jobs (state);
 CREATE INDEX idx_jobs_result ON jobs (result);
 CREATE UNIQUE INDEX jobs_slug ON jobs (slug);
 --
+-- Table: needles
+--
+CREATE TABLE needles (
+  id INTEGER PRIMARY KEY NOT NULL,
+  dir_id integer NOT NULL,
+  filename text NOT NULL,
+  first_seen_module_id integer NOT NULL,
+  last_seen_module_id integer NOT NULL,
+  last_matched_module_id integer,
+  FOREIGN KEY (dir_id) REFERENCES needle_dirs(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (first_seen_module_id) REFERENCES job_modules(id),
+  FOREIGN KEY (last_matched_module_id) REFERENCES job_modules(id),
+  FOREIGN KEY (last_seen_module_id) REFERENCES job_modules(id)
+);
+CREATE INDEX needles_idx_dir_id ON needles (dir_id);
+CREATE INDEX needles_idx_first_seen_module_id ON needles (first_seen_module_id);
+CREATE INDEX needles_idx_last_matched_module_id ON needles (last_matched_module_id);
+CREATE INDEX needles_idx_last_seen_module_id ON needles (last_seen_module_id);
+CREATE UNIQUE INDEX needles_dir_id_filename ON needles (dir_id, filename);
+--
 -- Table: job_dependencies
 --
 CREATE TABLE job_dependencies (
@@ -325,6 +324,19 @@ CREATE TABLE job_locks (
 );
 CREATE INDEX job_locks_idx_locked_by ON job_locks (locked_by);
 CREATE INDEX job_locks_idx_owner ON job_locks (owner);
+--
+-- Table: job_module_needles
+--
+CREATE TABLE job_module_needles (
+  needle_id integer NOT NULL,
+  job_module_id integer NOT NULL,
+  matched boolean NOT NULL DEFAULT 1,
+  FOREIGN KEY (job_module_id) REFERENCES job_modules(id),
+  FOREIGN KEY (needle_id) REFERENCES needles(id) ON DELETE CASCADE ON UPDATE CASCADE
+);
+CREATE INDEX job_module_needles_idx_job_module_id ON job_module_needles (job_module_id);
+CREATE INDEX job_module_needles_idx_needle_id ON job_module_needles (needle_id);
+CREATE UNIQUE INDEX job_module_needles_needle_id_job_module_id ON job_module_needles (needle_id, job_module_id);
 --
 -- Table: job_networks
 --

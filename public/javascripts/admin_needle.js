@@ -3,14 +3,15 @@ function setupAdminNeedles() {
 	{ "ajax": $('#needles').data('ajax-url'),
 	  deferRender: true,
 	  "columns": [
+	      { "data": "directory" },
 	      { "data": "filename" },
 	      { "data": "last_seen" },
 	      { "data": "last_match" }
 	  ],
 	  
-	  "order": [[0, "asc"]] ,
+	  "order": [[0, "asc"], [1, "asc"]] ,
           "columnDefs": [
-              { targets: [1,2],
+              { targets: [2,3],
                 className: "time",
 		"render": function ( data, type, row ) {
                     if (type === 'display' && data != 'never') {

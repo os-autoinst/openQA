@@ -121,7 +121,7 @@ schema:
           type: NORMAL
       name: api_keys
       options: []
-      order: 16
+      order: 17
     assets:
       constraints:
         - deferrable: 1
@@ -368,7 +368,7 @@ schema:
           type: NORMAL
       name: comments
       options: []
-      order: 17
+      order: 18
     gru_dependencies:
       constraints:
         - deferrable: 1
@@ -444,7 +444,7 @@ schema:
           type: NORMAL
       name: gru_dependencies
       options: []
-      order: 24
+      order: 25
     gru_tasks:
       constraints:
         - deferrable: 1
@@ -839,24 +839,14 @@ schema:
             - needle_id
           match_type: ''
           name: job_module_needles_fk_needle_id
-          on_delete: ''
-          on_update: ''
+          on_delete: CASCADE
+          on_update: CASCADE
           options: []
           reference_fields:
             - id
           reference_table: needles
           type: FOREIGN KEY
       fields:
-        failed:
-          data_type: boolean
-          default_value: 0
-          is_nullable: 0
-          is_primary_key: 0
-          is_unique: 0
-          name: failed
-          order: 3
-          size:
-            - 0
         job_module_id:
           data_type: integer
           default_value: ~
@@ -865,6 +855,16 @@ schema:
           is_unique: 1
           name: job_module_id
           order: 2
+          size:
+            - 0
+        matched:
+          data_type: boolean
+          default_value: 1
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: matched
+          order: 3
           size:
             - 0
         needle_id:
@@ -890,7 +890,7 @@ schema:
           type: NORMAL
       name: job_module_needles
       options: []
-      order: 19
+      order: 23
     job_modules:
       constraints:
         - deferrable: 1
@@ -1121,7 +1121,7 @@ schema:
           type: NORMAL
       name: job_networks
       options: []
-      order: 23
+      order: 24
     job_settings:
       constraints:
         - deferrable: 1
@@ -1405,7 +1405,7 @@ schema:
           type: NORMAL
       name: job_templates
       options: []
-      order: 25
+      order: 26
     jobs:
       constraints:
         - deferrable: 1
@@ -1671,7 +1671,7 @@ schema:
           type: NORMAL
       name: jobs
       options: []
-      order: 20
+      order: 19
     jobs_assets:
       constraints:
         - deferrable: 1
@@ -1777,7 +1777,7 @@ schema:
           type: NORMAL
       name: jobs_assets
       options: []
-      order: 26
+      order: 27
     machine_settings:
       constraints:
         - deferrable: 1
@@ -1981,6 +1981,68 @@ schema:
       name: machines
       options: []
       order: 7
+    needle_dirs:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - id
+          match_type: ''
+          name: ''
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: PRIMARY KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - path
+          match_type: ''
+          name: needle_dirs_path
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields: []
+          reference_table: ''
+          type: UNIQUE
+      fields:
+        id:
+          data_type: integer
+          default_value: ~
+          is_auto_increment: 1
+          is_nullable: 0
+          is_primary_key: 1
+          is_unique: 0
+          name: id
+          order: 1
+          size:
+            - 0
+        name:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: name
+          order: 3
+          size:
+            - 0
+        path:
+          data_type: text
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: path
+          order: 2
+          size:
+            - 0
+      indices: []
+      name: needle_dirs
+      options: []
+      order: 8
     needles:
       constraints:
         - deferrable: 1
@@ -1998,15 +2060,29 @@ schema:
         - deferrable: 1
           expression: ''
           fields:
+            - dir_id
             - filename
           match_type: ''
-          name: needles_filename
+          name: needles_dir_id_filename
           on_delete: ''
           on_update: ''
           options: []
           reference_fields: []
           reference_table: ''
           type: UNIQUE
+        - deferrable: 1
+          expression: ''
+          fields:
+            - dir_id
+          match_type: ''
+          name: needles_fk_dir_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: needle_dirs
+          type: FOREIGN KEY
         - deferrable: 1
           expression: ''
           fields:
@@ -2047,6 +2123,16 @@ schema:
           reference_table: job_modules
           type: FOREIGN KEY
       fields:
+        dir_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 1
+          name: dir_id
+          order: 2
+          size:
+            - 0
         filename:
           data_type: text
           default_value: ~
@@ -2054,7 +2140,7 @@ schema:
           is_primary_key: 0
           is_unique: 1
           name: filename
-          order: 2
+          order: 3
           size:
             - 0
         first_seen_module_id:
@@ -2064,7 +2150,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: first_seen_module_id
-          order: 3
+          order: 4
           size:
             - 0
         id:
@@ -2085,7 +2171,7 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: last_matched_module_id
-          order: 5
+          order: 6
           size:
             - 0
         last_seen_module_id:
@@ -2095,10 +2181,15 @@ schema:
           is_primary_key: 0
           is_unique: 0
           name: last_seen_module_id
-          order: 4
+          order: 5
           size:
             - 0
       indices:
+        - fields:
+            - dir_id
+          name: needles_idx_dir_id
+          options: []
+          type: NORMAL
         - fields:
             - first_seen_module_id
           name: needles_idx_first_seen_module_id
@@ -2116,7 +2207,7 @@ schema:
           type: NORMAL
       name: needles
       options: []
-      order: 18
+      order: 20
     product_settings:
       constraints:
         - deferrable: 1
@@ -2227,7 +2318,7 @@ schema:
           type: NORMAL
       name: product_settings
       options: []
-      order: 8
+      order: 9
     products:
       constraints:
         - deferrable: 1
@@ -2352,7 +2443,7 @@ schema:
       indices: []
       name: products
       options: []
-      order: 9
+      order: 10
     secrets:
       constraints:
         - deferrable: 1
@@ -2424,7 +2515,7 @@ schema:
       indices: []
       name: secrets
       options: []
-      order: 10
+      order: 11
     test_suite_settings:
       constraints:
         - deferrable: 1
@@ -2535,7 +2626,7 @@ schema:
           type: NORMAL
       name: test_suite_settings
       options: []
-      order: 11
+      order: 12
     test_suites:
       constraints:
         - deferrable: 1
@@ -2617,7 +2708,7 @@ schema:
       indices: []
       name: test_suites
       options: []
-      order: 12
+      order: 13
     users:
       constraints:
         - deferrable: 1
@@ -2739,7 +2830,7 @@ schema:
       indices: []
       name: users
       options: []
-      order: 13
+      order: 14
     worker_properties:
       constraints:
         - deferrable: 1
@@ -2837,7 +2928,7 @@ schema:
           type: NORMAL
       name: worker_properties
       options: []
-      order: 14
+      order: 15
     workers:
       constraints:
         - deferrable: 1
@@ -2920,7 +3011,7 @@ schema:
       indices: []
       name: workers
       options: []
-      order: 15
+      order: 16
   triggers: {}
   views: {}
 translator:
@@ -2946,6 +3037,7 @@ translator:
       - JobsAssets
       - MachineSettings
       - Machines
+      - NeedleDirs
       - Needles
       - ProductSettings
       - Products

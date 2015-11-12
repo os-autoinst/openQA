@@ -189,28 +189,39 @@ sub update_result($) {
         });
 }
 
-sub needle_dir() {
-    my ($self) = @_;
-    unless ($self->{_needle_dir}) {
-        my $distri  = $self->job->settings_hash->{DISTRI};
-        my $version = $self->job->settings_hash->{VERSION};
-        my $dir     = OpenQA::Utils::testcasedir($distri, $version);
-        $self->{_needle_dir} = realpath("$dir/needles");
-    }
-    return $self->{_needle_dir};
-}
+# if you give a needle_cache, make sure to call
+# OpenQA::Schema::Result::Needles::update_needle_cache
+sub store_needle_infos($;$) {
+    my ($self, $details, $needle_cache) = @_;
 
-sub store_needle_infos($) {
-    my ($self, $detail) = @_;
+    # we often see the same needles in the same test, so avoid duplicated work
+    my %hash;
+    $needle_cache ||= \%hash;
 
-    if ($detail->{needle}) {
-        my $nfn = sprintf("%s/%s.json", $self->needle_dir(), $detail->{needle});
-        OpenQA::Schema::Result::Needles::update_needle($nfn, $self->id, 1);
+    my %needles;
+
+    for my $detail (@{$details}) {
+        if ($detail->{needle}) {
+            my $nfn = sprintf("%s/%s.json", $self->job->needle_dir(), $detail->{needle});
+            my $needle = OpenQA::Schema::Result::Needles::update_needle($nfn, $self, 1, $needle_cache);
+            $needles{$needle->id} ||= 1;
+        }
+        for my $needle (@{$detail->{needles} || []}) {
+            my $nfn = sprintf("%s/%s.json", $self->job->needle_dir(), $needle->{name});
+            my $needle = OpenQA::Schema::Result::Needles::update_needle($nfn, $self, 0, $needle_cache);
+            # failing needles are more interesting than succeeding, so ignore previous values
+            $needles{$needle->id} = -1;
+        }
     }
-    for my $needle (@{$detail->{needles} || []}) {
-        my $nfn = sprintf("%s/%s.json", $self->needle_dir(), $needle->{name});
-        OpenQA::Schema::Result::Needles::update_needle($nfn, $self->id, 0);
+
+    my @val;
+    for my $nid (keys %needles) {
+        push(@val, {job_module_id => $self->id, needle_id => $nid, matched => $needles{$nid} > 1 ? 1 : 0});
     }
+    $self->result_source->schema->resultset('JobModuleNeedles')->populate(\@val);
+
+    # if it's someone else's cache, he has to be aware
+    OpenQA::Schema::Result::Needles::update_needle_cache(\%hash);
 }
 
 sub save_details($) {
@@ -226,8 +237,8 @@ sub save_details($) {
         symlink($thumb, $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
         $d->{screenshot} = $d->{screenshot}->{name};
 
-        $self->store_needle_infos($d);
     }
+    $self->store_needle_infos($details);
     open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");
     $fh->print(JSON::encode_json($details));
     close($fh);

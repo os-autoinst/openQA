@@ -11,30 +11,31 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, see <http://www.gnu.org/licenses/>.
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-package OpenQA::Schema::Result::JobModuleNeedles;
+package OpenQA::Schema::Result::NeedleDirs;
 use base qw/DBIx::Class::Core/;
 
-__PACKAGE__->table('job_module_needles');
+use db_helpers;
 
+__PACKAGE__->table('needle_dirs');
 __PACKAGE__->add_columns(
-    needle_id => {
-        data_type   => 'integer',
-        is_nullable => 0,
+    id => {
+        data_type         => 'integer',
+        is_auto_increment => 1,
     },
-    job_module_id => {
-        data_type   => 'integer',
-        is_nullable => 0,
+    path => {
+        data_type   => 'text',
+        is_nullable => 0
     },
-    matched => {
-        data_type     => 'boolean',
-        default_value => 1
-    });
+    name => {
+        data_type => 'text'
+    },
+);
+__PACKAGE__->set_primary_key('id');
+__PACKAGE__->add_unique_constraint([qw/path/]);
 
-__PACKAGE__->add_unique_constraint([qw/needle_id job_module_id/]);
-
-__PACKAGE__->belongs_to(job_module => 'OpenQA::Schema::Result::JobModules', 'job_module_id');
-__PACKAGE__->belongs_to(needle     => 'OpenQA::Schema::Result::Needles',    'needle_id');
+__PACKAGE__->has_many(needles => 'OpenQA::Schema::Result::Needles', 'dir_id');
 
 1;

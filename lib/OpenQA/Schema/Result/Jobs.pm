@@ -1017,5 +1017,16 @@ sub release_networks {
     $self->networks->delete;
 }
 
+sub needle_dir() {
+    my ($self) = @_;
+    unless ($self->{_needle_dir}) {
+        my $distri  = $self->settings_hash->{DISTRI};
+        my $version = $self->settings_hash->{VERSION};
+        my $dir     = OpenQA::Utils::testcasedir($distri, $version);
+        $self->{_needle_dir} = "$dir/needles";
+    }
+    return $self->{_needle_dir};
+}
+
 1;
 # vim: set sw=4 et:
