@@ -21,6 +21,7 @@ use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
 use OpenQA::Worker::Common qw/ASSET_DIR/;
+use Data::Dump qw/pp/;
 
 use Mojo::IOLoop;
 use Mojolicious::Commands;
@@ -517,6 +518,11 @@ sub startup {
     # start workers checker
     $self->_workers_checker;
     $self->_init_rand;
+
+    # load extensions
+    push @{$self->plugins->namespaces}, 'OpenQA::WebAPI::Extensions';
+    # TODO: use config, for now always load auditing plugin
+    $self->plugin('AuditLog', Mojo::IOLoop->singleton);
 }
 
 sub run {
