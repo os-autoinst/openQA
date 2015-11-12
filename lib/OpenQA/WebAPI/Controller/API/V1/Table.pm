@@ -1,4 +1,5 @@
 # Copyright (C) 2014 SUSE Linux Products GmbH
+#           (C) 2015 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -116,7 +117,6 @@ sub create {
         }
     }
     else {
-        $DB::single = 1;
         try { $id = $self->db->resultset($table)->create(\%entry)->id; } catch { $error = shift; };
     }
 
@@ -124,10 +124,12 @@ sub create {
     my $json = {};
 
     if ($error) {
+        $self->emit_event('table_create_req', {table => $table, result => 'failure', %entry});
         $json->{error} = $error;
         $status = 400;
     }
     else {
+        $self->emit_event('table_create_req', {table => $table, result => 'success', %entry});
         $json->{id} = $id;
     }
 
@@ -198,12 +200,15 @@ sub update {
         if ($ret == 0) {
             $status = 404;
             $error  = 'Not found';
+            $self->emit_event('table_update_req', {table => $table, result => 'failure', name => $entry{name}, settings => \@settings});
         }
         else {
             $json->{result} = int($ret);
+            $self->emit_event('table_update_req', {table => $table, result => 'success', name => $entry{name}, settings => \@settings});
         }
     }
     else {
+        # no need for emiting here, this is called in case of wrong parameters -> not emitting req part
         $json->{error} = $error;
         $status = 400;
     }
@@ -224,9 +229,12 @@ sub destroy {
     my $ret;
     my $error;
 
+    my $res;
+
     try {
         my $rs = $self->db->resultset($table);
-        $ret = $rs->search({id => $self->param('id')})->delete;
+        $res = $rs->search({id => $self->param('id')});
+        $ret = $res->delete;
     }
     catch {
         $error = shift;
@@ -236,14 +244,17 @@ sub destroy {
         if ($ret == 0) {
             $status = 404;
             $error  = 'Not found';
+            $self->emit_event('table_delete_req', {table => $table, result => 'failure', id => $self->param('id')});
         }
         else {
             $json->{result} = int($ret);
+            $self->emit_event('table_delete_req', {table => $table, name => $res->single->name});
         }
     }
     else {
         $json->{error} = $error;
         $status = 400;
+        $self->emit_event('table_delete_req', {result => 'failure'});
     }
 
     $self->render(json => $json, status => $status);

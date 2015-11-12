@@ -108,6 +108,7 @@ sub create {
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
     # restore URL encoded /
     my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
+    $self->emit_event('job_create_req', \%params);
 
     my $json = {};
     my $status;
@@ -136,6 +137,7 @@ sub grab {
     $caps->{cpu_opmode}    = $self->param('cpu_opmode');
     $caps->{mem_max}       = $self->param('mem_max');
 
+    $self->emit_event('job_grab_req', {workerid => $workerid, blocking => $blocking, workerip => $workerip});
     my $res = $ipc->scheduler('job_grab', {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
     $self->render(json => {job => $res});
 }
@@ -159,6 +161,7 @@ sub set_command {
     my $jobid   = int($self->stash('jobid'));
     my $command = 'job_set_' . $self->stash('command');
     my $ipc     = OpenQA::IPC->ipc;
+    $self->emit_event('job_set_command_reg', {jobid => $jobid, command => $self->stash('command')});
 
     my $res = try { $ipc->scheduler($command, $jobid) };
     # Referencing the scalar will result in true or false
@@ -169,7 +172,8 @@ sub set_command {
 sub destroy {
     my $self = shift;
     my $ipc  = OpenQA::IPC->ipc;
-    my $res  = $ipc->scheduler('job_delete', int($self->stash('jobid')));
+    $self->emit_event('job_delete_req', {jobid => $self->stash('jobid')});
+    my $res = $ipc->scheduler('job_delete', int($self->stash('jobid')));
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -189,6 +193,7 @@ sub result {
     my $jobid  = int($self->stash('jobid'));
     my $result = $self->param('result');
     my $ipc    = OpenQA::IPC->ipc;
+    $self->emit_event('job_update_result_req', {jobid => $jobid, result => $result});
     my $res = $ipc->scheduler('job_update_result', {jobid => $jobid, result => $result});
     # See comment in set_command
     $self->render(json => {result => \$res});

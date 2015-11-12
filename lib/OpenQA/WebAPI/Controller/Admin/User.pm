@@ -47,6 +47,7 @@ sub update {
     else {
         $user->update({is_admin => $is_admin, is_operator => $is_operator});
         $self->flash('info', 'User ' . $user->nickname . ' updated');
+        $self->emit_event('user_update_success', {nickname => $user->nickname, role => $role});
     }
 
     $self->redirect_to($self->url_for('admin_users'));
