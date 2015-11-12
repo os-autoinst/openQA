@@ -498,7 +498,7 @@ sub save_needle {
     }
 
     if ($success) {
-        if ($self->app->config->{global}->{scm} || '' eq 'git') {
+        if (($self->app->config->{global}->{scm} || '') eq 'git') {
             if ($needledir && -d "$needledir/.git") {
                 try {
                     $self->_commit_git($job, $needledir, $needlename);

@@ -37,7 +37,6 @@ is_deeply(
         global => {
             appname  => 'openQA',
             branding => "openSUSE",
-            scm      => 'git',
             hsts     => '365',
         },
         auth => {

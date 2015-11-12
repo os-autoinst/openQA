@@ -41,7 +41,7 @@ sub _read_config {
             branding      => "openSUSE",
             allowed_hosts => undef,
             suse_mirror   => undef,
-            scm           => 'git',
+            scm           => undef,
             hsts          => 365,
         },
         auth => {
