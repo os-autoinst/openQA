@@ -26,6 +26,7 @@ use Mojo::IOLoop;
 use Mojolicious::Commands;
 use DateTime;
 use Cwd qw/abs_path/;
+use File::Path qw/make_path/;
 
 use Config::IniFiles;
 use db_profiler;
@@ -251,6 +252,13 @@ sub startup {
 
     unless ($ENV{MOJO_TMPDIR}) {
         $ENV{MOJO_TMPDIR} = ASSET_DIR . '/tmp';
+        # Try to create tmpdir if it doesn't exist but don't die if failed to create
+        if (!-e $ENV{MOJO_TMPDIR}) {
+            eval { make_path($ENV{MOJO_TMPDIR}); };
+            if ($@) {
+                print STDERR "Can not create MOJO_TMPDIR : $@\n";
+            }
+        }
         delete $ENV{MOJO_TMPDIR} unless -w $ENV{MOJO_TMPDIR};
     }
 
