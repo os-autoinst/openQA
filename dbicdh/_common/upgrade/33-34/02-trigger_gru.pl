@@ -16,29 +16,24 @@
 
 use strict;
 use OpenQA::Schema::Schema;
-use v5.10;
 use DBIx::Class::DeploymentHandler;
+use DBIx::Class::Timestamps qw/now/;
 
 sub {
     my $schema = shift;
 
-    my $query = undef;
-    #$query = { id => { '>', 155000 } };
-    my $jobs = $schema->resultset("Jobs")->search($query, {order_by => 'me.id ASC'});
+    my $maxid = $schema->resultset("Jobs")->get_column('id')->max();
 
-    my %needle_cache;
+    while ($maxid > 0) {
 
-    while (my $job = $jobs->next) {
-        my $modules = $job->modules->search({"me.result" => {'!=', OpenQA::Schema::Result::Jobs::NONE}}, {order_by => 'me.id ASC'});
-        while (my $module = $modules->next) {
-
-            $module->job($job);
-            my $details = $module->details();
-            next unless $details;
-
-            $module->store_needle_infos($details, \%needle_cache);
-        }
+        $schema->resultset('GruTasks')->create(
+            {
+                taskname => 'scan_old_jobs',
+                priority => 1,
+                args     => [$maxid, $maxid - 1000],
+                run_at   => now(),
+            });
+        $maxid -= 1000;
     }
-    OpenQA::Schema::Result::Needles::update_needle_cache(\%needle_cache);
   }
 

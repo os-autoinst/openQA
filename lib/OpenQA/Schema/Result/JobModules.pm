@@ -218,7 +218,8 @@ sub store_needle_infos($;$) {
     for my $nid (keys %needles) {
         push(@val, {job_module_id => $self->id, needle_id => $nid, matched => $needles{$nid} > 1 ? 1 : 0});
     }
-    $self->result_source->schema->resultset('JobModuleNeedles')->populate(\@val);
+    my $schema = $self->result_source->schema;
+    $schema->resultset('JobModuleNeedles')->populate(\@val);
 
     # if it's someone else's cache, he has to be aware
     OpenQA::Schema::Result::Needles::update_needle_cache(\%hash);
