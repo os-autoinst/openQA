@@ -500,6 +500,7 @@ sub startup {
     $self->gru->add_task(reduce_result => \&OpenQA::Schema::Result::Jobs::reduce_result);
     $self->gru->add_task(limit_assets  => \&OpenQA::Schema::Result::Assets::limit_assets);
     $self->gru->add_task(download_iso  => \&OpenQA::Schema::Result::Assets::download_iso);
+    $self->gru->add_task(scan_old_jobs => \&OpenQA::Schema::Result::Needles::scan_old_jobs);
 
     # start workers checker
     $self->_workers_checker;
