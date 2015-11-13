@@ -1,0 +1,64 @@
+% layout 'bootstrap';
+% title 'Needles';
+
+% content_for 'ready_function' => begin
+    setupAdminNeedles();
+% end
+
+<div class="row">
+    %= include 'layouts/admin_nav'
+
+    <div class="col-sm-10">
+        <h2><%= title %></h2>
+
+        <div class="row">
+            <div class="col-sm-4">
+                <label for="last_seen_filter">
+                    Limit Use:
+                </label>
+                <form>
+                    <select id="last_seen_filter" name="last_seen_filter" class="form-control input-sm">
+                        <option value="none">All time</option>
+                        <option value="min14">Last 2 weeks</option>
+                        <option value="min28">Last 4 weeks</option>
+                        <option value="min61">Last 2 months</option>
+                        <option value="max14">Not last 2 weeks</option>
+                        <option value="max28">Not last 4 weeks</option>
+                        <option value="max61">Not last 2 months</option>
+                    </select>
+                </form>
+            </div>
+            <div class="col-sm-4">
+                <label for="last_match_filter">
+                    Limit Match:
+                </label>
+                <form>
+                    <select id="last_match_filter" name="last_match_filter" class="form-control input-sm">
+                        <option value="none">All time</option>
+                        <option value="min14">Last 2 weeks</option>
+                        <option value="min28">Last 4 weeks</option>
+                        <option value="min61">Last 2 months</option>
+                        <option value="max14">Not last 2 weeks</option>
+                        <option value="max28">Not last 4 weeks</option>
+                        <option value="max61">Not last 2 months</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+        %= include 'layouts/info'
+
+        <p></p>
+
+        <table id="needles" class="table table-striped" data-ajax-url="<%= url_for('admin_needle_ajax') %>">
+            <thead>
+                <tr>
+                    <th>Directory</th>
+                    <th>Filename</th>
+                    <th>Last Use</th>
+                    <th>Last Match</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+
+</div>

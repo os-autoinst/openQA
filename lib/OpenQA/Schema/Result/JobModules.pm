@@ -23,6 +23,7 @@ use OpenQA::Scheduler::Scheduler;
 use OpenQA::Schema::Result::Jobs;
 use JSON ();
 use File::Basename qw/dirname basename/;
+use Cwd qw/realpath/;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -188,6 +189,41 @@ sub update_result($) {
         });
 }
 
+# if you give a needle_cache, make sure to call
+# OpenQA::Schema::Result::Needles::update_needle_cache
+sub store_needle_infos($;$) {
+    my ($self, $details, $needle_cache) = @_;
+
+    # we often see the same needles in the same test, so avoid duplicated work
+    my %hash;
+    $needle_cache ||= \%hash;
+
+    my %needles;
+
+    for my $detail (@{$details}) {
+        if ($detail->{needle}) {
+            my $nfn = sprintf("%s/%s.json", $self->job->needle_dir(), $detail->{needle});
+            my $needle = OpenQA::Schema::Result::Needles::update_needle($nfn, $self, 1, $needle_cache);
+            $needles{$needle->id} ||= 1;
+        }
+        for my $needle (@{$detail->{needles} || []}) {
+            my $nfn = sprintf("%s/%s.json", $self->job->needle_dir(), $needle->{name});
+            my $needle = OpenQA::Schema::Result::Needles::update_needle($nfn, $self, 0, $needle_cache);
+            # failing needles are more interesting than succeeding, so ignore previous values
+            $needles{$needle->id} = -1;
+        }
+    }
+
+    my @val;
+    for my $nid (keys %needles) {
+        push(@val, {job_module_id => $self->id, needle_id => $nid, matched => $needles{$nid} > 1 ? 1 : 0});
+    }
+    $self->result_source->schema->resultset('JobModuleNeedles')->populate(\@val);
+
+    # if it's someone else's cache, he has to be aware
+    OpenQA::Schema::Result::Needles::update_needle_cache(\%hash);
+}
+
 sub save_details($) {
     my ($self, $details) = @_;
     my $existant_md5 = [];
@@ -200,7 +236,9 @@ sub save_details($) {
         symlink($full,  $self->job->result_dir . "/" . $d->{screenshot}->{name});
         symlink($thumb, $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
         $d->{screenshot} = $d->{screenshot}->{name};
+
     }
+    $self->store_needle_infos($details);
     open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");
     $fh->print(JSON::encode_json($details));
     close($fh);
