@@ -76,6 +76,7 @@ sub ajax {
     my %modules;
     while (my $n = $needles->next) {
         my $hash = {
+            id             => $n->id,
             directory      => $n->directory->name,
             filename       => $n->filename,
             last_seen      => $n->last_seen_module_id,
@@ -121,6 +122,15 @@ sub module {
         $index++;
     }
     $self->redirect_to('step', testid => $module->job_id, moduleid => $module->name(), stepid => $index);
+}
+
+sub delete {
+    my ($self) = @_;
+
+    for my $p (@{$self->every_param('id[]')}) {
+        $self->app->db->resultset('Needles')->find($p)->remove;
+    }
+    $self->render(text => 'ok');
 }
 
 1;

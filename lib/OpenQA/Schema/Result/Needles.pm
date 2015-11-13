@@ -154,4 +154,17 @@ sub scan_old_jobs() {
     $guard->commit;
 }
 
+sub remove {
+    my ($self) = @_;
+
+    my $fname = $self->directory->path . "/" . $self->filename;
+    print "deleting $fname\n";
+    unlink($fname);
+    $fname =~ s,.json$,.png,;
+    print "deleting $fname\n";
+    unlink($fname);
+    # go away
+    $self->delete;
+}
+
 1;
