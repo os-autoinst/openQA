@@ -46,6 +46,11 @@ __PACKAGE__->add_columns(
         data_type   => 'integer',
         is_nullable => 1,
     },
+    file_present => {
+        data_type     => 'boolean',
+        is_nullable   => 0,
+        default_value => 1,
+    },
 );
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/dir_id filename/]);
@@ -105,11 +110,13 @@ sub update_needle($$$;$) {
     if ($matched && ($needle->last_matched_module_id // 0) < $module->id) {
         $needle->last_matched_module_id($module->id);
     }
+
     if ($needle->in_storage) {
         # if a cache is given, the caller needs to update all needles after the call
         $needle->update unless $needle_cache;
     }
     else {
+        $needle->check_file;
         $needle->insert;
     }
     $needle_cache->{$filename} = $needle;
@@ -154,17 +161,43 @@ sub scan_old_jobs() {
     $guard->commit;
 }
 
+sub path {
+    my ($self) = @_;
+
+    return $self->directory->path . "/" . $self->filename;
+}
+
 sub remove {
     my ($self) = @_;
 
-    my $fname = $self->directory->path . "/" . $self->filename;
-    print "deleting $fname\n";
+    my $fname = $self->path;
+    $OpenQA::Utils::app->log->debug("remove needle $fname");
     unlink($fname);
     $fname =~ s,.json$,.png,;
-    print "deleting $fname\n";
     unlink($fname);
-    # go away
-    $self->delete;
+    $self->check_file;
+    $self->update;
+}
+
+sub check_file {
+    my ($self) = @_;
+
+    $self->file_present(-e $self->path ? 1 : 0);
+}
+
+# gru task to see if all needles are present
+sub scan_needles {
+    my ($app, $args) = @_;
+
+    my $dirs = $app->db->resultset("NeedleDirs");
+
+    while (my $dir = $dirs->next) {
+        my $needles = $dir->needles;
+        while (my $needle = $needles->next) {
+            $needle->check_file;
+            $needle->update;
+        }
+    }
 }
 
 1;

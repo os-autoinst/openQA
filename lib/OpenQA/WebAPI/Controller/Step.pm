@@ -500,6 +500,7 @@ sub save_needle {
     }
 
     if ($success) {
+        $self->app->gru->enqueue('scan_needles');
         if (($self->app->config->{global}->{scm} || '') eq 'git') {
             if ($needledir && -d "$needledir/.git") {
                 try {

@@ -69,13 +69,14 @@ function setupAdminNeedles() {
 	});
 	$.ajax({ url: $('#confirm_delete').data('delete-url'),
 		 type: 'DELETE',
+		 success: reloadNeedlesTable,
 		 data: { 'id': ids } });
         return false;
     });
     
     function reloadNeedlesTable() {
 	table.ajax.url(ajaxUrl());
-	table.ajax.reload();
+	table.ajax.reload(function() { $('#confirm_delete').modal('hide'); } );
     }
     $('#last_seen_filter').change(reloadNeedlesTable);
     $('#last_match_filter').change(reloadNeedlesTable);

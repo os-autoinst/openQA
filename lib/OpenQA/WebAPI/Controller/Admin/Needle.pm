@@ -70,6 +70,7 @@ sub ajax {
             push(@conds, {last_matched_module_id => {'>=', $query->min}});
         }
     }
+    push(@conds, {file_present => 1});
     my $needles = $self->db->resultset("Needles")->search({-and => \@conds}, {prefetch => qw/directory/, order_by => 'filename'});
 
     my @data;
