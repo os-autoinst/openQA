@@ -587,8 +587,13 @@ sub job_grab {
         && !defined $job_hashref->{settings}->{NICVLAN}
         && $job_hashref->{settings}->{NICTYPE} ne 'user')
     {
-        # TODO: use multiple named networks for MULTINET
-        $job_hashref->{settings}->{NICVLAN} = $job->allocate_network('default');
+        my @networks = ('fixed');
+        @networks = split /\s*,\s*/, $job_hashref->{settings}->{NETWORKS} if $job_hashref->{settings}->{NETWORKS};
+        my @vlans;
+        for my $net (@networks) {
+            push @vlans, $job->allocate_network($net);
+        }
+        $job_hashref->{settings}->{NICVLAN} = join(',', @vlans);
     }
 
     # TODO: cleanup previous tmpdir
