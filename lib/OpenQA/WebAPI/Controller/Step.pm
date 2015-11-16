@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014,2015 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -112,10 +112,11 @@ sub edit {
     return 0 unless $self->init();
 
     my $module_detail = $self->stash('module_detail');
-    my $imgname       = $module_detail->{'screenshot'};
+    my $imgname       = $module_detail->{screenshot};
     my $job           = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
-    my $distribution  = $job->settings_hash->{DISTRI};
-    my $dversion      = $job->settings_hash->{VERSION} || '';
+    return $self->reply->not_found unless $job;
+    my $distribution = $job->settings_hash->{DISTRI};
+    my $dversion = $job->settings_hash->{VERSION} || '';
 
     # Each object in $needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -127,27 +128,27 @@ sub edit {
     my @needles;
     # All tags (from all needles)
     my $tags = [];
-    $tags = $module_detail->{'tags'} if ($module_detail->{'tags'});
+    $tags = $module_detail->{tags} if ($module_detail->{tags});
     my $screenshot;
     my $overwrite = 'no';
     $overwrite = $ow_overwrite if $ow_overwrite;
     $imgname   = $ow_imagename if $overwrite eq 'yes';
 
-    if ($module_detail->{'needle'}) {
+    if ($module_detail->{needle}) {
 
         # First position: the screenshot with all the matching areas (in result)
         $screenshot = {
             'name'       => 'screenshot',
-            'imageurl'   => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
+            'imageurl'   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
             'imagename'  => $imgname,
             'area'       => [],
             'matches'    => [],
             'properties' => [],
             'tags'       => []};
         for my $tag (@$tags) {
-            push(@{$screenshot->{'tags'}}, $tag);
+            push(@{$screenshot->{tags}}, $tag);
         }
-        for my $area (@{$module_detail->{'area'}}) {
+        for my $area (@{$module_detail->{area}}) {
             my $narea = {
                 'xpos'   => int $area->{x},
                 'width'  => int $area->{w},
@@ -155,45 +156,45 @@ sub edit {
                 'height' => int $area->{h},
                 'type'   => 'match'
             };
-            push(@{$screenshot->{'matches'}}, $narea);
+            push(@{$screenshot->{matches}}, $narea);
         }
         # Second position: the only needle (with the same matches)
-        my $needle = needle_info($module_detail->{'needle'}, $distribution, $dversion);
+        my $needle = needle_info($module_detail->{needle}, $distribution, $dversion);
 
-        $self->app->log->error(sprintf("Could not find needle: %s for %s %s", $module_detail->{'needle'}, $distribution, $dversion)) if !defined $needle;
+        $self->app->log->error(sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion)) if !defined $needle;
 
         my $matched = {
-            'name'           => $module_detail->{'needle'},
-            'suggested_name' => $self->_timestamp($module_detail->{'needle'}),
-            'imageurl'       => $self->needle_url($distribution, $module_detail->{'needle'} . '.png', $dversion),
-            'imagename'      => basename($needle->{'image'}),
-            'imagedistri'    => $needle->{'distri'},
-            'imageversion'   => $needle->{'version'},
-            'area'           => $needle->{'area'},
-            'tags'           => $needle->{'tags'},
-            'properties' => $needle->{'properties'} || [],
-            'matches' => $screenshot->{'matches'}};
-        calc_min_similarity($matched, $module_detail->{'area'});
+            'name'           => $module_detail->{needle},
+            'suggested_name' => $self->_timestamp($module_detail->{needle}),
+            'imageurl'       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion),
+            'imagename'      => basename($needle->{image}),
+            'imagedistri'    => $needle->{distri},
+            'imageversion'   => $needle->{version},
+            'area'           => $needle->{area},
+            'tags'           => $needle->{tags},
+            'properties' => $needle->{properties} || [],
+            'matches' => $screenshot->{matches}};
+        calc_min_similarity($matched, $module_detail->{area});
         push(@needles, $matched);
 
-        for my $t (@{$needle->{'tags'}}) {
+        for my $t (@{$needle->{tags}}) {
             push(@$tags, $t) unless grep(/^$t$/, @$tags);
         }
 
     }
-    if ($module_detail->{'needles'}) {
+    if ($module_detail->{needles}) {
 
         # First position: the screenshot
         $screenshot = {
             'name'       => 'screenshot',
             'imagename'  => $imgname,
-            'imageurl'   => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
+            'imageurl'   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
             'area'       => [],
             'matches'    => [],
             'properties' => [],
             'tags'       => []};
         for my $tag (@$tags) {
-            push(@{$screenshot->{'tags'}}, $tag);
+            push(@{$screenshot->{tags}}, $tag);
         }
         # Afterwards, all the candidate needles
         my $needleinfo;
@@ -204,17 +205,17 @@ sub edit {
         # $needlename: read from the above
         # $needleinfo: actual definition of the needle, with the original areas
         # We also use $area for transforming the match information intro a real area
-        for my $needle (@{$module_detail->{'needles'}}) {
-            $needlename = $needle->{'name'};
+        for my $needle (@{$module_detail->{needles}}) {
+            $needlename = $needle->{name};
             $needleinfo = needle_info($needlename, $distribution, $dversion || '');
 
             if (!defined $needleinfo) {
                 $self->app->log->error(sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || ''));
 
-                $needleinfo->{'image'}  = [];
-                $needleinfo->{'tags'}   = [];
-                $needleinfo->{'area'}   = [];
-                $needleinfo->{'broken'} = 1;
+                $needleinfo->{image}  = [];
+                $needleinfo->{tags}   = [];
+                $needleinfo->{area}   = [];
+                $needleinfo->{broken} = 1;
             }
 
             push(
@@ -223,29 +224,29 @@ sub edit {
                     'name'           => $needlename,
                     'suggested_name' => $self->_timestamp($needlename),
                     'imageurl'       => $self->needle_url($distribution, "$needlename.png", $dversion),
-                    'imagename'      => basename($needleinfo->{'image'}),
-                    'imagedistri'    => $needleinfo->{'distri'},
-                    'imageversion'   => $needleinfo->{'version'},
-                    'tags'           => $needleinfo->{'tags'},
-                    'area'           => $needleinfo->{'area'},
-                    'properties' => $needleinfo->{'properties'} || [],
+                    'imagename'      => basename($needleinfo->{image}),
+                    'imagedistri'    => $needleinfo->{distri},
+                    'imageversion'   => $needleinfo->{version},
+                    'tags'           => $needleinfo->{tags},
+                    'area'           => $needleinfo->{area},
+                    'properties' => $needleinfo->{properties} || [],
                     'matches'    => [],
-                    'broken'     => $needleinfo->{'broken'}});
-            for my $match (@{$needle->{'area'}}) {
+                    'broken'     => $needleinfo->{broken}});
+            for my $match (@{$needle->{area}}) {
                 $area = {
-                    'xpos'   => int $match->{'x'},
-                    'width'  => int $match->{'w'},
-                    'ypos'   => int $match->{'y'},
-                    'height' => int $match->{'h'},
+                    'xpos'   => int $match->{x},
+                    'width'  => int $match->{w},
+                    'ypos'   => int $match->{y},
+                    'height' => int $match->{h},
                     'type'   => 'match'
                 };
                 $area->{margin} = int($match->{margin}) if defined $match->{margin};
                 $area->{match}  = int($match->{match})  if defined $match->{match};
-                #push(@{$screenshot->{'matches'}}, $area);
-                push(@{$needles[scalar(@needles) - 1]->{'matches'}}, $area);
+                #push(@{$screenshot->{matches}}, $area);
+                push(@{$needles[scalar(@needles) - 1]->{matches}}, $area);
             }
-            calc_min_similarity($needles[scalar(@needles) - 1], $needle->{'area'});
-            for my $t (@{$needleinfo->{'tags'}}) {
+            calc_min_similarity($needles[scalar(@needles) - 1], $needle->{area});
+            for my $t (@{$needleinfo->{tags}}) {
                 push(@$tags, $t) unless grep(/^$t$/, @$tags);
             }
         }
@@ -254,7 +255,7 @@ sub edit {
         # Failing with not a single candidate needle
         $screenshot = {
             'name'       => 'screenshot',
-            'imageurl'   => $self->url_for('test_img', filename => $module_detail->{'screenshot'}),
+            'imageurl'   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
             'imagename'  => $imgname,
             'area'       => [],
             'matches'    => [],
@@ -270,7 +271,7 @@ sub edit {
     #  - tags: tags from the screenshot
     my $default_needle = {};
     my $default_name;
-    $screenshot->{'overwrite'} = $overwrite;
+    $screenshot->{overwrite} = $overwrite;
     if ($overwrite eq 'yes') {
         # decode original json to perl
         my $decode_json;
@@ -278,42 +279,42 @@ sub edit {
         my $ow_area       = [];
         my $ow_properties = [];
         $decode_json   = decode_json($ow_json);
-        $ow_area       = $decode_json->{'area'};
-        $ow_tags       = $decode_json->{'tags'};
-        $ow_properties = $decode_json->{'properties'};
+        $ow_area       = $decode_json->{area};
+        $ow_tags       = $decode_json->{tags};
+        $ow_properties = $decode_json->{properties};
         # replaced tags
-        $tags                           = $ow_tags;
-        $screenshot->{selected}         = 1;
-        $default_needle->{'tags'}       = $ow_tags;
-        $default_needle->{'area'}       = $ow_area;
-        $default_needle->{'properties'} = $ow_properties;
-        $screenshot->{'tags'}           = $ow_tags;
-        $screenshot->{'area'}           = $ow_area;
-        $screenshot->{'properties'}     = $ow_properties;
-        $screenshot->{'suggested_name'} = $ow_needlename;
-        $screenshot->{'imagedistri'}    = $ow_imagedistri;
-        $screenshot->{'imageversion'}   = $ow_imageversion;
+        $tags                         = $ow_tags;
+        $screenshot->{selected}       = 1;
+        $default_needle->{tags}       = $ow_tags;
+        $default_needle->{area}       = $ow_area;
+        $default_needle->{properties} = $ow_properties;
+        $screenshot->{tags}           = $ow_tags;
+        $screenshot->{area}           = $ow_area;
+        $screenshot->{properties}     = $ow_properties;
+        $screenshot->{suggested_name} = $ow_needlename;
+        $screenshot->{imagedistri}    = $ow_imagedistri;
+        $screenshot->{imageversion}   = $ow_imageversion;
     }
     elsif ($needles[0] && ($needles[0]->{min_similarity} || 0) > 70) {
-        $needles[0]->{selected}         = 1;
-        $default_needle->{'tags'}       = $needles[0]->{'tags'};
-        $default_needle->{'area'}       = $needles[0]->{'matches'};
-        $default_needle->{'properties'} = $needles[0]->{'properties'};
-        $screenshot->{'suggested_name'} = $needles[0]->{'suggested_name'};
+        $needles[0]->{selected}       = 1;
+        $default_needle->{tags}       = $needles[0]->{tags};
+        $default_needle->{area}       = $needles[0]->{matches};
+        $default_needle->{properties} = $needles[0]->{properties};
+        $screenshot->{suggested_name} = $needles[0]->{suggested_name};
     }
     else {
-        $screenshot->{selected}         = 1;
-        $default_needle->{'tags'}       = $screenshot->{'tags'};
-        $default_needle->{'area'}       = [];
-        $default_needle->{'properties'} = [];
-        $screenshot->{'suggested_name'} = $self->_timestamp($self->param('moduleid'));
+        $screenshot->{selected}       = 1;
+        $default_needle->{tags}       = $screenshot->{tags};
+        $default_needle->{area}       = [];
+        $default_needle->{properties} = [];
+        $screenshot->{suggested_name} = $self->_timestamp($self->param('moduleid'));
     }
 
     unshift(@needles, $screenshot);
 
     # stashing the properties
     my $properties = {};
-    for my $property (@{$default_needle->{'properties'}}) {
+    for my $property (@{$default_needle->{properties}}) {
         $properties->{$property} = $property;
     }
     $self->stash('needles',        \@needles);
@@ -330,6 +331,7 @@ sub src {
 
     my $job    = $self->stash('job');
     my $module = $self->stash('module');
+    return $self->reply->not_found unless ($job && $module);
 
     my $testcasedir = testcasedir($job->settings_hash->{DISTRI}, $job->settings_hash->{VERSION});
     my $scriptpath = "$testcasedir/" . $module->script;
@@ -362,7 +364,7 @@ sub _commit_git {
         die "failed to git commit $name";
     }
 
-    if (($self->app->config->{'scm git'}->{'do_push'} || '') eq 'yes') {
+    if (($self->app->config->{scm git}->{do_push} || '') eq 'yes') {
         unless (run_cmd_with_log([@git, 'push'])) {
             die "failed to git push $name";
         }
@@ -393,19 +395,19 @@ sub _json_validation($) {
         return "syntax error: $err";
     }
 
-    if (!exists $djson->{'area'} || !exists $djson->{'area'}[0]) {
+    if (!exists $djson->{area} || !exists $djson->{area}[0]) {
         return "no area defined";
     }
-    if (!exists $djson->{'tags'} || !exists $djson->{'tags'}[0]) {
+    if (!exists $djson->{tags} || !exists $djson->{tags}[0]) {
         return "no tag defined";
     }
-    my $areas = $djson->{'area'};
+    my $areas = $djson->{area};
     foreach my $area (@$areas) {
-        return "area without xpos"   unless exists $area->{'xpos'};
-        return "area without ypos"   unless exists $area->{'ypos'};
-        return "area without type"   unless exists $area->{'type'};
-        return "area without height" unless exists $area->{'height'};
-        return "area without width"  unless exists $area->{'width'};
+        return "area without xpos"   unless exists $area->{xpos};
+        return "area without ypos"   unless exists $area->{ypos};
+        return "area without type"   unless exists $area->{type};
+        return "area without height" unless exists $area->{height};
+        return "area without width"  unless exists $area->{width};
     }
 
     return undef;
@@ -524,16 +526,16 @@ sub calc_matches($$) {
     my ($needle, $areas) = @_;
 
     for my $area (@$areas) {
-        my $sim = int($area->{'similarity'} + 0.5);
+        my $sim = int($area->{similarity} + 0.5);
         push(
-            @{$needle->{'matches'}},
+            @{$needle->{matches}},
             {
-                'xpos'       => int $area->{'x'},
-                'width'      => int $area->{'w'},
-                'ypos'       => int $area->{'y'},
-                'height'     => int $area->{'h'},
-                'type'       => $area->{'result'},
-                'similarity' => $sim
+                xpos       => int $area->{x},
+                width      => int $area->{w},
+                ypos       => int $area->{y},
+                height     => int $area->{h},
+                type       => $area->{result},
+                similarity => $sim
             });
     }
     calc_min_similarity($needle, $areas);
@@ -545,7 +547,7 @@ sub calc_min_similarity($$) {
     my $min_sim;
 
     for my $area (@$areas) {
-        my $sim = int($area->{'similarity'} + 0.5);
+        my $sim = int($area->{similarity} + 0.5);
         if (!defined $min_sim || $min_sim > $sim) {
             $min_sim = $sim;
         }
@@ -557,35 +559,36 @@ sub viewimg {
     my $self          = shift;
     my $module_detail = $self->stash('module_detail');
     my $job           = $self->stash('job');
-    my $distribution  = $job->settings_hash->{DISTRI};
-    my $dversion      = $job->settings_hash->{VERSION} || '';
+    return $self->reply->not_found unless $job;
+    my $distribution = $job->settings_hash->{DISTRI};
+    my $dversion = $job->settings_hash->{VERSION} || '';
 
     my @needles;
-    if ($module_detail->{'needle'}) {
-        my $needle = needle_info($module_detail->{'needle'}, $distribution, $dversion);
+    if ($module_detail->{needle}) {
+        my $needle = needle_info($module_detail->{needle}, $distribution, $dversion);
         if ($needle) {    # possibly missing/broken file
             my $info = {
-                'name'    => $module_detail->{'needle'},
-                'image'   => $self->needle_url($distribution, $module_detail->{'needle'} . '.png', $dversion),
-                'areas'   => $needle->{'area'},
-                'matches' => []};
-            calc_matches($info, $module_detail->{'area'});
+                name    => $module_detail->{needle},
+                image   => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion),
+                areas   => $needle->{area},
+                matches => []};
+            calc_matches($info, $module_detail->{area});
             push(@needles, $info);
         }
     }
-    if ($module_detail->{'needles'}) {
+    if ($module_detail->{needles}) {
         my $needlename;
         my $needleinfo;
-        for my $needle (@{$module_detail->{'needles'}}) {
-            $needlename = $needle->{'name'};
+        for my $needle (@{$module_detail->{needles}}) {
+            $needlename = $needle->{name};
             $needleinfo = needle_info($needlename, $distribution, $dversion);
             next unless $needleinfo;
             my $info = {
                 'name'    => $needlename,
                 'image'   => $self->needle_url($distribution, "$needlename.png", $dversion),
-                'areas'   => $needleinfo->{'area'},
+                'areas'   => $needleinfo->{area},
                 'matches' => []};
-            calc_matches($info, $needle->{'area'});
+            calc_matches($info, $needle->{area});
             push(@needles, $info);
         }
     }
@@ -598,7 +601,7 @@ sub viewimg {
         $needles[0]->{selected} = 1;
     }
 
-    $self->stash('screenshot', $module_detail->{'screenshot'});
+    $self->stash('screenshot', $module_detail->{screenshot});
     $self->stash('needles',    \@needles);
     $self->stash('img_width',  1024);
     $self->stash('img_height', 768);
