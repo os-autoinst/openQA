@@ -43,6 +43,8 @@
   /var/lib/openqa/share/factory/hdd/* rw,
   /var/lib/openqa/share/factory/iso/ r,
   /var/lib/openqa/share/factory/iso/* rw,
+  /var/lib/openqa/share/factory/other/ rw,
+  /var/lib/openqa/share/factory/other/** rw,
   /var/lib/openqa/share/factory/repo/ r,
   /var/lib/openqa/share/factory/repo/** rw,
   /var/lib/openqa/share/factory/tmp/ rw,
