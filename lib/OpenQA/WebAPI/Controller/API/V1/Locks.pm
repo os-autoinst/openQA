@@ -29,7 +29,7 @@ sub mutex_action {
     return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
 
     my $action = $validation->param('action');
-    my $where  = $validation->param('where');
+    my $where  = $validation->param('where') // '';
     my $ipc    = OpenQA::IPC->ipc;
 
     my $res;
