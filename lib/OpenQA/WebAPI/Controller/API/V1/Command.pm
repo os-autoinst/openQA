@@ -28,7 +28,7 @@ sub create {
     my $res;
     try {
         $res = $ipc->scheduler('command_enqueue', {workerid => $workerid, command => $command});
-    };
+    }
     catch {
         $self->reply(json => {error => 'DBus error'}, status => 502);
         $res = -1;
