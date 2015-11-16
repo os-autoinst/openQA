@@ -194,9 +194,15 @@ sub update_result($) {
 sub store_needle_infos($;$) {
     my ($self, $details, $needle_cache) = @_;
 
+    my $schema = $self->result_source->schema;
+
     # we often see the same needles in the same test, so avoid duplicated work
     my %hash;
-    $needle_cache ||= \%hash;
+    if (!$needle_cache) {
+        # if this is run outside of a global context, we need to avoid duplicates ourself
+        $schema->resultset('JobModuleNeedles')->search({job_module_id => $self->id})->delete;
+        $needle_cache = \%hash;
+    }
 
     my %needles;
 
@@ -218,7 +224,6 @@ sub store_needle_infos($;$) {
     for my $nid (keys %needles) {
         push(@val, {job_module_id => $self->id, needle_id => $nid, matched => $needles{$nid} > 1 ? 1 : 0});
     }
-    my $schema = $self->result_source->schema;
     $schema->resultset('JobModuleNeedles')->populate(\@val);
 
     # if it's someone else's cache, he has to be aware
