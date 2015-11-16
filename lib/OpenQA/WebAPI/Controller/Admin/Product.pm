@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::Admin::Product;
 use parent 'OpenQA::WebAPI::Controller::Admin::Table';
+use strict;
 
 sub index {
     my $self = shift;

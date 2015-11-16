@@ -15,6 +15,7 @@
 
 package OpenQA::Schema::Result::Comments;
 use base qw/DBIx::Class::Core/;
+use strict;
 
 __PACKAGE__->load_components(qw/Core/);
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);

@@ -16,6 +16,7 @@
 
 package OpenQA::Schema::Result::MachineSettings;
 use base qw/DBIx::Class::Core/;
+use strict;
 
 use db_helpers;
 

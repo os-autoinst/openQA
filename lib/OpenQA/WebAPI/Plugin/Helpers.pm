@@ -149,7 +149,7 @@ sub register {
         # CSS class for a job or module based on its result
         css_for => sub {
             my ($c, $hash) = @_;
-            return undef unless $hash;
+            return unless $hash;
             my $res = $hash->{result};
 
             if ($res eq 'na' || $res eq 'incomplete') {
@@ -168,7 +168,7 @@ sub register {
     $app->helper(
         format_result => sub {
             my ($c, $module) = @_;
-            return undef unless $module;
+            return unless $module;
             my $res = $module->{result};
 
             if ($res eq 'na') {

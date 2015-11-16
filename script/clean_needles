@@ -63,7 +63,7 @@ BEGIN {
 }
 
 use strict;
-use OpenQA::Schema::Schema;
+use OpenQA::Schema;
 use Data::Dump;
 use v5.10;
 use DBIx::Class::DeploymentHandler;

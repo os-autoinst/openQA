@@ -252,7 +252,7 @@ sub job_create_dependencies {
 sub job_get($) {
     my $value = shift;
 
-    return undef if !defined($value);
+    return if !defined($value);
 
     if ($value =~ /^\d+$/) {
         return _job_get({'me.id' => $value});
@@ -288,7 +288,7 @@ sub _job_get($) {
     push @{$attrs{prefetch}}, 'settings';
 
     my $job = schema->resultset("Jobs")->search($search, \%attrs)->first;
-    return undef unless $job;
+    return unless $job;
     return $job->to_hash(assets => 1);
 }
 
@@ -1329,7 +1329,7 @@ sub asset_get {
         $cond{type} = $args{type};
     }
     else {
-        return undef;
+        return;
     }
 
     return schema->resultset("Assets")->search(\%cond, \%attrs);

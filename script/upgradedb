@@ -26,7 +26,7 @@ use warnings;
 use aliased 'DBIx::Class::DeploymentHandler' => 'DH';
 use FindBin;
 use lib "$FindBin::Bin/../lib";
-use OpenQA::Schema::Schema;
+use OpenQA::Schema;
 use Getopt::Long;
 use IO::Dir;
 use Fcntl ':mode';

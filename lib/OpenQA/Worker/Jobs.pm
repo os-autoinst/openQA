@@ -196,7 +196,7 @@ sub _stop_job($;$) {
     if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
         # collect uploaded logs
 
-        my @uploaded_logfiles = <$pooldir/ulogs/*>;
+        my @uploaded_logfiles = glob "$pooldir/ulogs/*";
         for my $file (@uploaded_logfiles) {
             next unless -f $file;
 
@@ -219,7 +219,7 @@ sub _stop_job($;$) {
             # job succeeded, upload assets created by the job
 
           ASSET_UPLOAD: for my $dir (qw(private public)) {
-                my @assets = <$pooldir/assets_$dir/*>;
+                my @assets = glob "$pooldir/assets_$dir/*";
                 for my $file (@assets) {
                     next unless -f $file;
                     unless (
@@ -376,7 +376,7 @@ sub calculate_file_md5($) {
 
 sub read_last_screen {
     my $lastlink = readlink("$pooldir/qemuscreenshot/last.png");
-    return undef if !$lastlink || $lastscreenshot eq $lastlink;
+    return if !$lastlink || $lastscreenshot eq $lastlink;
     my $png = read_base64_file("qemuscreenshot/$lastlink");
     $lastscreenshot = $lastlink;
     return {name => $lastscreenshot, png => $png};
@@ -523,7 +523,7 @@ sub read_json_file {
     my $fh;
     if (!open($fh, '<', $fn)) {
         warn "can't open $fn: $!";
-        return undef;
+        return;
     }
     my $json = {};
     eval { $json = decode_json(<$fh>); };

@@ -15,6 +15,7 @@
 
 package OpenQA::Schema::Result::JobModuleNeedles;
 use base qw/DBIx::Class::Core/;
+use strict;
 
 __PACKAGE__->table('job_module_needles');
 

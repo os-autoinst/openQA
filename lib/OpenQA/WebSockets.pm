@@ -17,6 +17,7 @@ package OpenQA::WebSockets;
 use base qw/Net::DBus::Object/;
 use Net::DBus::Exporter qw/org.opensuse.openqa.WebSockets/;
 use Mojo::IOLoop;
+use strict;
 
 use OpenQA::IPC;
 use OpenQA::WebSockets::Server qw//;

@@ -15,6 +15,7 @@
 
 package OpenQA::Schema::Result::JobNetworks;
 use base qw/DBIx::Class::Core/;
+use strict;
 
 __PACKAGE__->table('job_networks');
 __PACKAGE__->add_columns(

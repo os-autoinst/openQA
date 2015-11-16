@@ -265,8 +265,8 @@ sub _get_capabilities {
         $caps->{cpu_arch} = $worker_settings->{ARCH};
     }
     else {
-        open(LSCPU, "LC_ALL=C lscpu|");
-        while (<LSCPU>) {
+        open(my $LSCPU, "LC_ALL=C lscpu", "|");
+        while (<$LSCPU>) {
             chomp;
             if (m/Model name:\s+(.+)$/) {
                 $caps->{cpu_modelname} = $1;
@@ -278,17 +278,17 @@ sub _get_capabilities {
                 $caps->{cpu_opmode} = $1;
             }
         }
-        close(LSCPU);
+        close($LSCPU);
     }
-    open(MEMINFO, "/proc/meminfo");
-    while (<MEMINFO>) {
+    open(my $MEMINFO, "<", "/proc/meminfo");
+    while (<$MEMINFO>) {
         chomp;
         if (m/MemTotal:\s+(\d+).+kB/) {
             my $mem_max = $1 ? $1 : '';
             $caps->{mem_max} = int($mem_max / 1024) if $mem_max;
         }
     }
-    close(MEMINFO);
+    close($MEMINFO);
     return $caps;
 }
 

@@ -79,18 +79,19 @@ sub needle_info($$$) {
     my $needledir = needledir($distri, $version);
 
     my $fn = "$needledir/$name.json";
-    unless (open(JF, '<', $fn)) {
+    my $JF;
+    unless (open($JF, '<', $fn)) {
         warn "$fn: $!";
-        return undef;
+        return;
     }
 
     my $needle;
-    eval { $needle = decode_json(<JF>); };
-    close(JF);
+    eval { $needle = decode_json(<$JF>); };
+    close($JF);
 
     if ($@) {
         warn "failed to parse $needledir/$name.json: $@";
-        return undef;
+        return;
     }
 
     $needle->{needledir} = $needledir;
@@ -104,10 +105,10 @@ sub needle_info($$$) {
 
 sub file_content($) {
     my ($fn) = @_;
-    open(FCONTENT, "<", $fn) or return undef;
+    open(my $FCONTENT, "<", $fn) or return;
     local $/;
-    my $result = <FCONTENT>;
-    close(FCONTENT);
+    my $result = <$FCONTENT>;
+    close($FCONTENT);
     return $result;
 }
 

@@ -25,7 +25,7 @@ use strict;
 use warnings;
 use OpenQA::Schema::Result::ApiKeys;
 use OpenQA::Schema::Result::Users;
-use OpenQA::Schema::Schema;
+use OpenQA::Schema;
 use Getopt::Long;
 
 my $email       = 'admin@example.com';

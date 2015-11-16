@@ -15,6 +15,7 @@
 
 package OpenQA::WebAPI::Auth::iChain;
 use OpenQA::Schema::Result::Users;
+use strict;
 
 require Exporter;
 our (@ISA, @EXPORT_OK);

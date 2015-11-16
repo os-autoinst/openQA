@@ -21,6 +21,7 @@
 
 package OpenQA::Schema::Result::GruDependencies;
 use base qw/DBIx::Class::Core/;
+use strict;
 
 use db_helpers;
 
