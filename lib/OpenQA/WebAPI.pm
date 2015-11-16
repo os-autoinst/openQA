@@ -17,7 +17,7 @@ package OpenQA::WebAPI;
 use strict;
 use Mojolicious 5.60;
 use Mojo::Base 'Mojolicious';
-use OpenQA::Schema::Schema;
+use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
 use OpenQA::Worker::Common qw/ASSET_DIR/;
@@ -267,7 +267,7 @@ sub startup {
     # load auth module
     my $auth_method = $self->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
-    eval "require $auth_module";
+    eval "require $auth_module";    ## no critic
     if ($@) {
         die sprintf('Unable to load auth module %s for method %s', $auth_module, $auth_method);
     }

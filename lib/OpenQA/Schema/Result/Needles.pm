@@ -18,6 +18,8 @@ package OpenQA::Schema::Result::Needles;
 use base qw/DBIx::Class::Core/;
 use File::Basename;
 use Cwd "realpath";
+use strict;
+use OpenQA::Schema::Result::Jobs;
 
 use db_helpers;
 

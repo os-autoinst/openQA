@@ -164,7 +164,7 @@ sub test_uploadlog_list($) {
     # get a list of uploaded logs
     my $testresdir = shift;
     my @filelist;
-    for my $f (<$testresdir/ulogs/*>) {
+    for my $f (glob "$testresdir/ulogs/*") {
         $f =~ s#.*/##;
         push(@filelist, $f);
     }

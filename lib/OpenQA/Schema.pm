@@ -15,6 +15,7 @@
 
 package OpenQA::Schema;
 use base qw/DBIx::Class::Schema/;
+use strict;
 use Config::IniFiles;
 use IO::Dir;
 use SQL::SplitStatement;

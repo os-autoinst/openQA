@@ -1,8 +1,10 @@
 package DBIx::Class::Timestamps;
 use base qw(DBIx::Class);
 use DateTime;
+use strict;
 
 require Exporter;
+our (@ISA, @EXPORT_OK);
 @ISA       = qw(Exporter);
 @EXPORT_OK = qw/now/;
 

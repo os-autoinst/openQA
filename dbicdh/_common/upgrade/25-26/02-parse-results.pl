@@ -24,14 +24,14 @@ use OpenQA::Utils;
 
 sub _test_result($) {
     my ($testresdir) = @_;
-    open(JF, "<", "$testresdir/results.json") || return;
+    open(my $JF, "<", "$testresdir/results.json") || return;
     use Fcntl;
-    return unless fcntl(JF, F_SETLKW, pack('ssqql', F_RDLCK, 0, 0, 0, $$));
+    return unless fcntl($JF, F_SETLKW, pack('ssqql', F_RDLCK, 0, 0, 0, $$));
     my $result_hash;
     local $/;
-    eval { $result_hash = JSON::decode_json(<JF>); };
+    eval { $result_hash = JSON::decode_json(<$JF>); };
     warn "failed to parse $testresdir/results.json: $@" if $@;
-    close(JF);
+    close($JF);
     return $result_hash;
 }
 

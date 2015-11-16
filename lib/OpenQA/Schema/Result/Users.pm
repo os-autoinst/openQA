@@ -15,6 +15,7 @@
 
 package OpenQA::Schema::Result::Users;
 use base qw/DBIx::Class::Core/;
+use strict;
 
 __PACKAGE__->table('users');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);

@@ -62,7 +62,7 @@ sub check_qemu_pid {
 sub clean_pool() {
     return if $nocleanup;
     check_qemu_pid();
-    for my $file (<$pooldir/*>) {
+    for my $file (glob "$pooldir/*") {
         if (-d $file) {
             remove_tree($file);
         }

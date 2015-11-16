@@ -17,6 +17,7 @@
 package OpenQA::Schema::Result::Workers;
 use base qw/DBIx::Class::Core/;
 use DBIx::Class::Timestamps qw/now/;
+use strict;
 
 use OpenQA::IPC;
 use db_helpers;
@@ -55,7 +56,7 @@ sub seen(;$) {
 sub update_caps($$) {
     my ($self, $workercaps) = @_;
 
-    for my $cap (keys %$workercaps) {
+    for my $cap (keys %{$workercaps}) {
         $self->set_property(uc $cap, $workercaps->{$cap}) if $workercaps->{$cap};
     }
 }
@@ -98,7 +99,7 @@ sub dead {
 sub currentstep {
     my ($self) = @_;
 
-    return undef unless ($self->job);
+    return unless ($self->job);
     my $r = $self->job->modules->find({result => 'running'});
     $r->name if $r;
 }

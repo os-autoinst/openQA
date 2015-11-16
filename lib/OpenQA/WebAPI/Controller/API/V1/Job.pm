@@ -234,9 +234,11 @@ sub create_artefact {
 sub done {
     my ($self) = @_;
 
-    my $jobid    = int($self->stash('jobid'));
-    my $result   = $self->param('result');
-    my $newbuild = 1 if defined $self->param('newbuild');
+    my $jobid  = int($self->stash('jobid'));
+    my $result = $self->param('result');
+    my $newbuild;
+    $newbuild = 1 if defined $self->param('newbuild');
+
 
     my $ipc = OpenQA::IPC->ipc;
     my $res;

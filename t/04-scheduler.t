@@ -78,7 +78,7 @@ ok($worker->{id} == $id && $worker->{host} eq "host" && $worker->{instance} eq "
 
 # Update worker
 sleep(1);
-my $id2 = $c->_register($schema, "host", "1", "backend", $workercaps);
+my $id2 = $c->_register($schema, "host", "1", $workercaps);
 ok($id == $id2, "Known worker_register");
 my $worker2 = $schema->resultset("Workers")->find($id2)->info();
 ok($worker2->{id} == $id2 && $worker2->{host} eq "host" && $worker2->{instance} == 1, "Known worker_get");
@@ -266,7 +266,7 @@ $grabed = OpenQA::Scheduler::Scheduler::job_get($job->id);
 ok($grabed->{state} eq "running", "Job is in running state");    # After job_grab the job is in running state.
 
 # register worker again while it has a running job
-$id2 = $c->_register($schema, "host", "1", "backend", $workercaps);
+$id2 = $c->_register($schema, "host", "1", $workercaps);
 ok($id == $id2, "re-register worker got same id");
 
 # Now it's previous job must be set to done

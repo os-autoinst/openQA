@@ -52,10 +52,10 @@ sub _set_test($) {
 
     my $ipc = OpenQA::IPC->ipc;
     $self->{job} = $ipc->scheduler('job_get', $self->param('testid'));
-    return undef unless $self->{job};
+    return unless $self->{job};
 
     $self->{testdirname} = $self->{job}->{settings}->{NAME};
-    return undef unless $self->{testdirname};
+    return unless $self->{testdirname};
     $self->{static} = Mojolicious::Static->new;
     my $dir = OpenQA::Utils::testresultdir($self->{testdirname});
     push @{$self->{static}->paths}, $dir;

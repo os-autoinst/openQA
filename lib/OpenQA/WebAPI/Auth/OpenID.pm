@@ -15,6 +15,7 @@
 
 package OpenQA::WebAPI::Auth::OpenID;
 use OpenQA::Schema::Result::Users;
+use strict;
 
 use LWP::UserAgent;
 use Net::OpenID::Consumer;

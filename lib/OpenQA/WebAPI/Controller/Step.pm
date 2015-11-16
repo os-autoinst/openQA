@@ -410,7 +410,7 @@ sub _json_validation($) {
         return "area without width"  unless exists $area->{width};
     }
 
-    return undef;
+    return;
 
 }
 
@@ -489,10 +489,10 @@ sub save_needle {
         if (which('optipng')) {
             system("optipng", "-quiet", "$baseneedle.png");
         }
-        open(J, ">", "$baseneedle.json") or $success = 0;
+        open(my $J, ">", "$baseneedle.json") or $success = 0;
         if ($success) {
-            print J $json;
-            close(J);
+            print $J $json;
+            close($J);
         }
         else {
             $self->app->log->error("Writing needle $baseneedle.json failed: $!");

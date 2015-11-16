@@ -16,6 +16,7 @@
 
 package OpenQA::Schema::Result::Assets;
 use base qw/DBIx::Class::Core/;
+use strict;
 
 use OpenQA::Utils;
 use OpenQA::Scheduler::Scheduler 'job_notify_workers';
@@ -193,7 +194,8 @@ sub limit_assets {
     while (my $a = $assets->next) {
         OpenQA::Utils::log_debug("Asset " . $a->type . "/" . $a->name . " is not in any job group, DELETE from assets where id=" . $a->id . ";");
     }
-    if (opendir(my $dh, $OpenQA::Utils::assetdir . "/iso")) {
+    my $dh;
+    if (opendir($dh, $OpenQA::Utils::assetdir . "/iso")) {
         my %isos;
         while (readdir($dh)) {
             next unless $_ =~ m/\.iso$/;

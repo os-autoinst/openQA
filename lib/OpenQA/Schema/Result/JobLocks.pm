@@ -15,6 +15,7 @@
 
 package OpenQA::Schema::Result::JobLocks;
 use base qw/DBIx::Class::Core/;
+use strict;
 
 __PACKAGE__->load_components(qw/OptimisticLocking Core/);
 __PACKAGE__->load_components(qw/Core/);

@@ -23,7 +23,7 @@ use strict;
 use Test::More;
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
-use OpenQA::Schema::Schema;
+use OpenQA::Schema;
 
 my $schema = OpenQA::Schema::connect_db('test');
 

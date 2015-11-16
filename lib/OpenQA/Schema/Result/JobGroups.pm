@@ -15,6 +15,7 @@
 
 package OpenQA::Schema::Result::JobGroups;
 use base qw/DBIx::Class::Core/;
+use strict;
 
 __PACKAGE__->table('job_groups');
 __PACKAGE__->load_components(qw/Timestamps/);

@@ -11,7 +11,7 @@ use Date::Format;    # To allow fixtures with relative dates
 use DateTime;        # To allow fixtures using InflateColumn::DateTime
 use Carp;
 use Cwd qw/ abs_path getcwd /;
-use OpenQA::Schema::Schema;
+use OpenQA::Schema;
 use OpenQA::Utils;
 use FindBin qw($Bin);
 use DBIx::Class::DeploymentHandler;
@@ -61,9 +61,9 @@ sub insert_fixtures {
 
     chdir $self->fixture_path;
 
-    foreach my $fixture (<*.pl>) {
+    foreach my $fixture (glob "*.pl") {
 
-        my $info = eval file_content $fixture;
+        my $info = eval file_content $fixture;    ## no critic
         chdir $cwd, croak "Could not insert fixture $fixture: $@" if $@;
 
         # Arrayrefs of rows, (dbic syntax) table defined by fixture filename

@@ -75,7 +75,7 @@ sub ensure_authorized_ip {
         }
     }
     $self->render(text => "Forbidden", status => 403);
-    return undef;
+    return;
 }
 
 sub destroy {

@@ -19,7 +19,7 @@ use Mojo::Util 'hmac_sha1_sum';
 
 use OpenQA::IPC;
 use OpenQA::Utils qw/log_debug/;
-use OpenQA::Schema::Schema;
+use OpenQA::Schema;
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);

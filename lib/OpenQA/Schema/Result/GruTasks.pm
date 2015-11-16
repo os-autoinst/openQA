@@ -16,6 +16,7 @@
 
 package OpenQA::Schema::Result::GruTasks;
 use base qw/DBIx::Class::Core/;
+use strict;
 
 use JSON;
 use db_helpers;

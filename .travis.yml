@@ -5,9 +5,10 @@ before_install:
   - echo "deb http://us.archive.ubuntu.com/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/trusty.list
   - sudo apt-get update
 install:
-  - cpanm -nq Perl::Tidy
+  - cpanm -nq Perl::Tidy Perl::Critic
   - gem install sass
   - ./script/tidy --check
+  - perlcritic --gentle lib
   - sudo apt-get install libgmp3-dev libdbus-1-dev
   - cpanm -nq `cat DEPENDENCIES.txt` "Devel::Cover" "Devel::Cover::Report::Coveralls"
 script:
