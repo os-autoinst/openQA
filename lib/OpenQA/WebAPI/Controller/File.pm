@@ -54,10 +54,12 @@ sub _set_test($) {
     $self->{job} = $ipc->scheduler('job_get', $self->param('testid'));
     return undef unless $self->{job};
 
-    $self->{testdirname} = $self->{job}->{'settings'}->{'NAME'};
-    $self->{static}      = Mojolicious::Static->new;
-    push @{$self->{static}->paths}, OpenQA::Utils::testresultdir($self->{testdirname});
-    push @{$self->{static}->paths}, OpenQA::Utils::testresultdir($self->{testdirname} . '/ulogs');
+    $self->{testdirname} = $self->{job}->{settings}->{NAME};
+    return undef unless $self->{testdirname};
+    $self->{static} = Mojolicious::Static->new;
+    my $dir = OpenQA::Utils::testresultdir($self->{testdirname});
+    push @{$self->{static}->paths}, $dir;
+    push @{$self->{static}->paths}, "$dir/ulogs";
     return 1;
 }
 
