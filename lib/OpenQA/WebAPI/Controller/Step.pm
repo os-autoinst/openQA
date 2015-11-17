@@ -364,7 +364,7 @@ sub _commit_git {
         die "failed to git commit $name";
     }
 
-    if (($self->app->config->{scm git}->{do_push} || '') eq 'yes') {
+    if (($self->app->config->{'scm git'}->{do_push} || '') eq 'yes') {
         unless (run_cmd_with_log([@git, 'push'])) {
             die "failed to git push $name";
         }
