@@ -376,7 +376,7 @@ sub query_jobs {
     }
 
     # Search into the following job_settings
-    for my $setting (qw(build iso distri version flavor)) {
+    for my $setting (qw(build iso distri version flavor arch)) {
         if ($args{$setting}) {
             my $subquery = schema->resultset("JobSettings")->search(
                 {
