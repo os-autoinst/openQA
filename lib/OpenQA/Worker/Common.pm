@@ -265,7 +265,7 @@ sub _get_capabilities {
         $caps->{cpu_arch} = $worker_settings->{ARCH};
     }
     else {
-        open(my $LSCPU, "LC_ALL=C lscpu", "|");
+        open(my $LSCPU, "-|", "LC_ALL=C lscpu");
         while (<$LSCPU>) {
             chomp;
             if (m/Model name:\s+(.+)$/) {
