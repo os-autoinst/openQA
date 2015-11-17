@@ -307,7 +307,19 @@ sub edit {
         $default_needle->{tags}       = $screenshot->{tags};
         $default_needle->{area}       = [];
         $default_needle->{properties} = [];
-        $screenshot->{suggested_name} = $self->_timestamp($self->param('moduleid'));
+        my $name = $self->param('moduleid');
+        if (@{$screenshot->{tags}}) {
+            my $ftag = $screenshot->{tags}->[0];
+            # concat the module name and the tag unless the tag already starts
+            # with the module name
+            if ($ftag =~ m/^$name/) {
+                $name = $ftag;
+            }
+            else {
+                $name .= "-$ftag";
+            }
+        }
+        $screenshot->{suggested_name} = $self->_timestamp($name);
     }
 
     unshift(@needles, $screenshot);
