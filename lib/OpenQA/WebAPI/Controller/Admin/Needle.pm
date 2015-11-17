@@ -129,7 +129,10 @@ sub delete {
     my ($self) = @_;
 
     for my $p (@{$self->every_param('id[]')}) {
-        $self->app->db->resultset('Needles')->find($p)->remove;
+        if (!$self->app->db->resultset('Needles')->find($p)->remove($self->current_user)) {
+            $self->stash(error => "Error removing $p");
+            last;
+        }
     }
     $self->render(text => 'ok');
 }

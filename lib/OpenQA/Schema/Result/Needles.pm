@@ -20,6 +20,7 @@ use File::Basename;
 use Cwd "realpath";
 use strict;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Utils qw(commit_git);
 
 use db_helpers;
 
@@ -168,28 +169,42 @@ sub path {
 }
 
 sub remove {
-    my ($self) = @_;
+    my ($self, $user) = @_;
 
-    my $fname = $self->path;
-    $OpenQA::Utils::app->log->debug("remove needle $fname");
-    unlink($fname);
-    $fname =~ s,.json$,.png,;
-    unlink($fname);
+    my $fname      = $self->path;
+    my $screenshot = $fname =~ s/.json$/.png/r;
+    $OpenQA::Utils::app->log->debug("remove needle $fname and $screenshot");
+
+    if (($OpenQA::Utils::app->config->{global}->{scm} || '') eq 'git') {
+        my $args = {
+            dir     => $self->directory->path,
+            rm      => [$fname, $screenshot],
+            user    => $user,
+            message => sprintf("admin remove of %s/%s", $self->directory->name, $self->filename)};
+        if (!commit_git($args)) {
+            return;
+        }
+    }
+    else {
+        unlink($fname);
+        unlink($screenshot);
+    }
     $self->check_file;
     $self->update;
+    return 1;
 }
 
 sub check_file {
     my ($self) = @_;
 
-    $self->file_present(-e $self->path ? 1 : 0);
+    return $self->file_present(-e $self->path ? 1 : 0);
 }
 
 # gru task to see if all needles are present
 sub scan_needles {
     my ($app, $args) = @_;
 
-    my $dirs = $app->db->resultset("NeedleDirs");
+    my $dirs = $app->db->resultset('NeedleDirs');
 
     while (my $dir = $dirs->next) {
         my $needles = $dir->needles;
@@ -198,6 +213,7 @@ sub scan_needles {
             $needle->update;
         }
     }
+    return;
 }
 
 1;

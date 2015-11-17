@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use strict;
-use OpenQA::Schema::Schema;
+use OpenQA::Schema;
 use DBIx::Class::DeploymentHandler;
 use DBIx::Class::Timestamps qw/now/;
 
