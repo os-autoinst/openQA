@@ -40,9 +40,25 @@ connect to specified host, defaults to localhost
 
 override values from config file
 
-=item B<--tmp>
+=item B<--group> GROUP
 
-obsolete, not used
+dump only specified job group
+
+=item B<--test> NAME
+
+dump only testsuite with specified name
+
+=item B<--machine> NAME
+
+dump only machine with specified name
+
+=item B<--product> NAME
+
+dump only product with specified name
+
+=item B<--full>
+
+when dumping a specific job group also dump related test suites, products and machines
 
 =item B<--json>
 
@@ -53,6 +69,30 @@ dump as json
 print help
 
 =back
+
+=head1 TABLES
+
+=over 4
+
+=item B<Machines>
+
+=item B<TestSuites>
+
+=item B<Products>
+
+=item B<JobTemplates>
+
+=back
+
+=head1 SYNOPSIS
+
+=item dump_templates --host openqa.example.com Products
+
+=item dump_templates --host openqa.example.com --group "openSUSE Tumbleweed" --full
+
+=item dump_templates --host openqa.example.com --test "gnome"
+
+=item dump_templates --host openqa.example.com --machine "64bit"
 
 =head1 DESCRIPTION
 
@@ -89,7 +129,7 @@ sub usage($) {
     exit $_[0];
 }
 
-GetOptions(\%options, "json", "tmp", "host=s", "apibase=s", "apikey:s", "apisecret:s", "help|h",) or usage(1);
+GetOptions(\%options, "json", "host=s", "apibase=s", "apikey:s", "apisecret:s", "group=s@", "name=s@", "test=s@", "product=s@", "machine=s@", "full", "help|h",) or usage(1);
 
 usage(0) if $options{help};
 
@@ -98,6 +138,23 @@ if (@ARGV) {
     for my $t (keys %tables) {
         $tables{$t} = $want{$t} ? 1 : 0;
     }
+}
+
+if ($options{group}) {
+    $options{group} = {map { $_ => 1 } @{$options{group}}};
+    $tables{JobTemplates} = 1;
+}
+if ($options{test}) {
+    $options{test} = {map { $_ => 1 } @{$options{test}}};
+    $tables{TestSuites} = 1;
+}
+if ($options{machine}) {
+    $options{machine} = {map { $_ => 1 } @{$options{machine}}};
+    $tables{Machines} = 1;
+}
+if ($options{product}) {
+    $options{product} = {map { $_ => 1 } @{$options{product}}};
+    $tables{Products} = 1;
 }
 
 $options{'host'}    ||= 'localhost';
@@ -135,25 +192,58 @@ for my $table (qw/Machines TestSuites Products JobTemplates/) {
     }
 }
 
+# special trick to dump all TestSuites used by specific JobTemplates
+if ($tables{JobTemplates} && $options{full}) {
+    for my $r (@{$result{JobTemplates}}) {
+        if ($options{group}) {
+            next unless $options{group}->{$r->{group_name}};
+        }
+        $options{test}->{$r->{test_suite}->{name}} = 1;
+        $options{machine}->{$r->{machine}->{name}} = 1;
+        my $k = join('-', map { $r->{product}->{$_} } qw/distri version flavor arch/);
+        $options{product}->{$k} = 1;
+    }
+}
 
 for my $table (keys %result) {
-    for my $i (0 .. $#{$result{$table}}) {
-        delete $result{$table}->[$i]->{id};
-        if ($result{$table}->[$i]->{settings}) {
-            for my $s (0 .. $#{$result{$table}->[$i]->{settings}}) {
-                delete $result{$table}->[$i]->{settings}->[$s]->{id};
+    my @r;
+    while (my $r = shift @{$result{$table}}) {
+        if ($table eq 'JobTemplates') {
+            next if $options{group} && $r->{group_name} && !$options{group}->{$r->{group_name}};
+            if ($options{product}) {
+                my $k = join('-', map { $r->{product}->{$_} } qw/distri version flavor arch/);
+                next unless $options{product}->{$k};
             }
         }
-        if ($result{$table}->[$i]->{product}) {
-            delete $result{$table}->[$i]->{product}->{id};
+        if ($table eq 'TestSuites' && $options{test} && $r->{name} && !$options{test}->{$r->{name}}) {
+            next;
         }
-        if ($result{$table}->[$i]->{machine}) {
-            delete $result{$table}->[$i]->{machine}->{id};
+        if ($table eq 'Machines' && $options{machine} && $r->{name} && !$options{machine}->{$r->{name}}) {
+            next;
         }
-        if ($result{$table}->[$i]->{test_suite}) {
-            delete $result{$table}->[$i]->{test_suite}->{id};
+        if ($table eq 'Products' && $options{product}) {
+            my $k = join('-', map { $r->{$_} } qw/distri version flavor arch/);
+            next unless $options{product}->{$k};
         }
+
+        delete $r->{id};
+        if ($r->{settings}) {
+            for my $s (0 .. $#{$r->{settings}}) {
+                delete $r->{settings}->[$s]->{id};
+            }
+        }
+        if ($r->{product}) {
+            delete $r->{product}->{id};
+        }
+        if ($r->{machine}) {
+            delete $r->{machine}->{id};
+        }
+        if ($r->{test_suite}) {
+            delete $r->{test_suite}->{id};
+        }
+        push @r, $r;
     }
+    $result{$table} = [@r];
 }
 
 if ($options{json}) {
