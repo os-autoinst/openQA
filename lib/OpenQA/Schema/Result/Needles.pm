@@ -20,6 +20,7 @@ use File::Basename;
 use Cwd "realpath";
 use strict;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Utils qw(commit_git);
 
 use db_helpers;
 
@@ -45,6 +46,11 @@ __PACKAGE__->add_columns(
     last_matched_module_id => {
         data_type   => 'integer',
         is_nullable => 1,
+    },
+    file_present => {
+        data_type     => 'boolean',
+        is_nullable   => 0,
+        default_value => 1,
     },
 );
 __PACKAGE__->set_primary_key('id');
@@ -105,11 +111,13 @@ sub update_needle($$$;$) {
     if ($matched && ($needle->last_matched_module_id // 0) < $module->id) {
         $needle->last_matched_module_id($module->id);
     }
+
     if ($needle->in_storage) {
         # if a cache is given, the caller needs to update all needles after the call
         $needle->update unless $needle_cache;
     }
     else {
+        $needle->check_file;
         $needle->insert;
     }
     $needle_cache->{$filename} = $needle;
@@ -152,6 +160,60 @@ sub scan_old_jobs() {
     }
     OpenQA::Schema::Result::Needles::update_needle_cache(\%needle_cache);
     $guard->commit;
+}
+
+sub path {
+    my ($self) = @_;
+
+    return $self->directory->path . "/" . $self->filename;
+}
+
+sub remove {
+    my ($self, $user) = @_;
+
+    my $fname      = $self->path;
+    my $screenshot = $fname =~ s/.json$/.png/r;
+    $OpenQA::Utils::app->log->debug("remove needle $fname and $screenshot");
+
+    if (($OpenQA::Utils::app->config->{global}->{scm} || '') eq 'git') {
+        my $args = {
+            dir     => $self->directory->path,
+            rm      => [$fname, $screenshot],
+            user    => $user,
+            message => sprintf("admin remove of %s/%s", $self->directory->name, $self->filename)};
+        if (!commit_git($args)) {
+            return;
+        }
+    }
+    else {
+        unlink($fname);
+        unlink($screenshot);
+    }
+    $self->check_file;
+    $self->update;
+    return 1;
+}
+
+sub check_file {
+    my ($self) = @_;
+
+    return $self->file_present(-e $self->path ? 1 : 0);
+}
+
+# gru task to see if all needles are present
+sub scan_needles {
+    my ($app, $args) = @_;
+
+    my $dirs = $app->db->resultset('NeedleDirs');
+
+    while (my $dir = $dirs->next) {
+        my $needles = $dir->needles;
+        while (my $needle = $needles->next) {
+            $needle->check_file;
+            $needle->update;
+        }
+    }
+    return;
 }
 
 1;

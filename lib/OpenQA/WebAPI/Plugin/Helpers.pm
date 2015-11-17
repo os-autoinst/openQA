@@ -40,7 +40,7 @@ sub register {
             my ($c, $timedate) = @_;
             return unless $timedate;
             if ($timedate->hours() > 0) {
-                sprintf("%02d:%02d hours", $timedate->hours(), $timedate->minutes(), $timedate->seconds());
+                sprintf("%02d:%02d hours", $timedate->hours(), $timedate->minutes());
             }
             else {
                 sprintf("%02d:%02d minutes", $timedate->minutes(), $timedate->seconds());

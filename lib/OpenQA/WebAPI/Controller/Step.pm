@@ -28,7 +28,7 @@ sub init {
     my $self = shift;
 
     my $testindex = $self->param('stepid');
-    my $job       = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
+    my $job       = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
 
     return $self->reply->not_found unless $job;
     $self->stash(testname => $job->settings_hash->{NAME});
@@ -113,7 +113,7 @@ sub edit {
 
     my $module_detail = $self->stash('module_detail');
     my $imgname       = $module_detail->{screenshot};
-    my $job           = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
+    my $job           = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     return $self->reply->not_found unless $job;
     my $distribution = $job->settings_hash->{DISTRI};
     my $dversion = $job->settings_hash->{VERSION} || '';
@@ -164,16 +164,16 @@ sub edit {
         $self->app->log->error(sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion)) if !defined $needle;
 
         my $matched = {
-            'name'           => $module_detail->{needle},
-            'suggested_name' => $self->_timestamp($module_detail->{needle}),
-            'imageurl'       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion),
-            'imagename'      => basename($needle->{image}),
-            'imagedistri'    => $needle->{distri},
-            'imageversion'   => $needle->{version},
-            'area'           => $needle->{area},
-            'tags'           => $needle->{tags},
-            'properties' => $needle->{properties} || [],
-            'matches' => $screenshot->{matches}};
+            name           => $module_detail->{needle},
+            suggested_name => $self->_timestamp($module_detail->{needle}),
+            imageurl       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion),
+            imagename      => basename($needle->{image}),
+            imagedistri    => $needle->{distri},
+            imageversion   => $needle->{version},
+            area           => $needle->{area},
+            tags           => $needle->{tags},
+            properties => $needle->{properties} || [],
+            matches => $screenshot->{matches}};
         calc_min_similarity($matched, $module_detail->{area});
         push(@needles, $matched);
 
@@ -186,13 +186,13 @@ sub edit {
 
         # First position: the screenshot
         $screenshot = {
-            'name'       => 'screenshot',
-            'imagename'  => $imgname,
-            'imageurl'   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
-            'area'       => [],
-            'matches'    => [],
-            'properties' => [],
-            'tags'       => []};
+            name       => 'screenshot',
+            imagename  => $imgname,
+            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
+            area       => [],
+            matches    => [],
+            properties => [],
+            tags       => []};
         for my $tag (@$tags) {
             push(@{$screenshot->{tags}}, $tag);
         }
@@ -221,24 +221,24 @@ sub edit {
             push(
                 @needles,
                 {
-                    'name'           => $needlename,
-                    'suggested_name' => $self->_timestamp($needlename),
-                    'imageurl'       => $self->needle_url($distribution, "$needlename.png", $dversion),
-                    'imagename'      => basename($needleinfo->{image}),
-                    'imagedistri'    => $needleinfo->{distri},
-                    'imageversion'   => $needleinfo->{version},
-                    'tags'           => $needleinfo->{tags},
-                    'area'           => $needleinfo->{area},
-                    'properties' => $needleinfo->{properties} || [],
-                    'matches'    => [],
-                    'broken'     => $needleinfo->{broken}});
+                    name           => $needlename,
+                    suggested_name => $self->_timestamp($needlename),
+                    imageurl       => $self->needle_url($distribution, "$needlename.png", $dversion),
+                    imagename      => basename($needleinfo->{image}),
+                    imagedistri    => $needleinfo->{distri},
+                    imageversion   => $needleinfo->{version},
+                    tags           => $needleinfo->{tags},
+                    area           => $needleinfo->{area},
+                    properties => $needleinfo->{properties} || [],
+                    matches    => [],
+                    broken     => $needleinfo->{broken}});
             for my $match (@{$needle->{area}}) {
                 $area = {
-                    'xpos'   => int $match->{x},
-                    'width'  => int $match->{w},
-                    'ypos'   => int $match->{y},
-                    'height' => int $match->{h},
-                    'type'   => 'match'
+                    xpos   => int $match->{x},
+                    width  => int $match->{w},
+                    ypos   => int $match->{y},
+                    height => int $match->{h},
+                    type   => 'match'
                 };
                 $area->{margin} = int($match->{margin}) if defined $match->{margin};
                 $area->{match}  = int($match->{match})  if defined $match->{match};
@@ -254,13 +254,13 @@ sub edit {
     if (!@needles) {
         # Failing with not a single candidate needle
         $screenshot = {
-            'name'       => 'screenshot',
-            'imageurl'   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
-            'imagename'  => $imgname,
-            'area'       => [],
-            'matches'    => [],
-            'tags'       => $tags,
-            'properties' => []};
+            name       => 'screenshot',
+            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
+            imagename  => $imgname,
+            area       => [],
+            matches    => [],
+            tags       => $tags,
+            properties => []};
     }
 
     # the highest matches first
@@ -361,32 +361,23 @@ sub src {
 sub _commit_git {
     my ($self, $job, $dir, $name) = @_;
 
-    if ($dir !~ /^\//) {
-        use Cwd qw/abs_path/;
-        $dir = abs_path($dir);
-    }
-    my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);
     my @files = ($dir . '/' . $name . '.json', $dir . '/' . $name . '.png');
 
-    unless (run_cmd_with_log([@git, 'add', @files])) {
-        die "failed to git add $name";
-    }
-
-    unless (run_cmd_with_log([@git, 'commit', '-q', '-m', sprintf("%s for %s", $name, $job->name), sprintf('--author=%s <%s>', $self->current_user->fullname, $self->current_user->email), @files])) {
+    my $args = {
+        dir     => $dir,
+        add     => \@files,
+        user    => $self->current_user,
+        message => sprintf("%s for %s", $name, $job->name)};
+    if (!commit_git($args)) {
         die "failed to git commit $name";
     }
-
-    if (($self->app->config->{'scm git'}->{do_push} || '') eq 'yes') {
-        unless (run_cmd_with_log([@git, 'push'])) {
-            die "failed to git push $name";
-        }
-    }
+    return;
 }
 
 # Adds a timestamp to a needle name or replace the already present timestamp
 sub _timestamp {
     my ($self, $name) = @_;
-    my $today = strftime("%Y%m%d", gmtime(time));
+    my $today = strftime('%Y%m%d', gmtime(time));
 
     if ($name =~ /(.*)-\d{8}$/) {
         return $1 . "-" . $today;
@@ -408,18 +399,18 @@ sub _json_validation($) {
     }
 
     if (!exists $djson->{area} || !exists $djson->{area}[0]) {
-        return "no area defined";
+        return 'no area defined';
     }
     if (!exists $djson->{tags} || !exists $djson->{tags}[0]) {
-        return "no tag defined";
+        return 'no tag defined';
     }
     my $areas = $djson->{area};
     foreach my $area (@$areas) {
-        return "area without xpos"   unless exists $area->{xpos};
-        return "area without ypos"   unless exists $area->{ypos};
-        return "area without type"   unless exists $area->{type};
-        return "area without height" unless exists $area->{height};
-        return "area without width"  unless exists $area->{width};
+        return 'area without xpos'   unless exists $area->{xpos};
+        return 'area without ypos'   unless exists $area->{ypos};
+        return 'area without type'   unless exists $area->{type};
+        return 'area without height' unless exists $area->{height};
+        return 'area without width'  unless exists $area->{width};
     }
 
     return;
@@ -440,7 +431,7 @@ sub save_needle {
     $validation->required('overwrite')->in(qw(yes no));
 
     if ($validation->has_error) {
-        my $error = "wrong parameters";
+        my $error = 'wrong parameters';
         for my $k (qw/json imagename imagedistri imageversion needlename overwrite/) {
             $self->app->log->error($k . ' ' . join(' ', @{$validation->error($k)})) if $validation->has_error($k);
             $error .= ' ' . $k if $validation->has_error($k);
@@ -512,6 +503,7 @@ sub save_needle {
     }
 
     if ($success) {
+        $self->app->gru->enqueue('scan_needles');
         if (($self->app->config->{global}->{scm} || '') eq 'git') {
             if ($needledir && -d "$needledir/.git") {
                 try {
@@ -550,7 +542,7 @@ sub calc_matches($$) {
                 similarity => $sim
             });
     }
-    calc_min_similarity($needle, $areas);
+    return calc_min_similarity($needle, $areas);
 }
 
 sub calc_min_similarity($$) {
@@ -564,7 +556,7 @@ sub calc_min_similarity($$) {
             $min_sim = $sim;
         }
     }
-    $needle->{min_similarity} = $min_sim;
+    return $needle->{min_similarity} = $min_sim;
 }
 
 sub viewimg {
@@ -596,10 +588,10 @@ sub viewimg {
             $needleinfo = needle_info($needlename, $distribution, $dversion);
             next unless $needleinfo;
             my $info = {
-                'name'    => $needlename,
-                'image'   => $self->needle_url($distribution, "$needlename.png", $dversion),
-                'areas'   => $needleinfo->{area},
-                'matches' => []};
+                name    => $needlename,
+                image   => $self->needle_url($distribution, "$needlename.png", $dversion),
+                areas   => $needleinfo->{area},
+                matches => []};
             calc_matches($info, $needle->{area});
             push(@needles, $info);
         }
@@ -617,7 +609,7 @@ sub viewimg {
     $self->stash('needles',    \@needles);
     $self->stash('img_width',  1024);
     $self->stash('img_height', 768);
-    $self->render('step/viewimg');
+    return $self->render('step/viewimg');
 }
 
 1;

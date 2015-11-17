@@ -22,6 +22,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &log_debug
   &save_base64_png
   &run_cmd_with_log
+  &commit_git
 );
 
 
@@ -124,7 +125,7 @@ sub log_info {
 
 sub log_warning {
     # useful for models, but doesn't work in tests
-    $app->log->warning(shift) if $app && $app->log;
+    $app->log->warn(shift) if $app && $app->log;
 }
 
 sub log_error {
@@ -156,18 +157,52 @@ sub image_md5_filename($) {
 sub run_cmd_with_log($) {
     my ($cmd) = @_;
     my ($stdin, $stdout_err, $ret);
-    log_info("Running cmd: " . join(' ', @$cmd));
+    log_info('Running cmd: ' . join(' ', @$cmd));
     $ret = IPC::Run::run($cmd, \$stdin, '>&', \$stdout_err);
     chomp $stdout_err;
     if ($ret) {
         log_debug($stdout_err);
-        log_info("cmd returned 0");
+        log_info('cmd returned 0');
     }
     else {
         log_warning($stdout_err);
-        log_error("cmd returned non-zero value");
+        log_error('cmd returned non-zero value');
     }
     return $ret;
+}
+
+sub commit_git {
+    my ($args) = @_;
+
+    my $dir = $args->{dir};
+    if ($dir !~ /^\//) {
+        use Cwd qw/abs_path/;
+        $dir = abs_path($dir);
+    }
+    my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);
+    my @files;
+
+    for my $cmd (qw(add rm)) {
+        next unless $args->{$cmd};
+        push(@files, @{$args->{$cmd}});
+        unless (run_cmd_with_log([@git, $cmd, @{$args->{$cmd}}])) {
+            return;
+        }
+    }
+
+    my $message = $args->{message};
+    my $user    = $args->{user};
+    my $author  = sprintf('--author=%s <%s>', $user->fullname, $user->email);
+    unless (run_cmd_with_log([@git, 'commit', '-q', '-m', $message, $author, @files])) {
+        return;
+    }
+
+    if (($app->config->{'scm git'}->{do_push} || '') eq 'yes') {
+        unless (run_cmd_with_log([@git, 'push'])) {
+            return;
+        }
+    }
+    return 1;
 }
 
 1;

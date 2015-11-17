@@ -70,12 +70,14 @@ sub ajax {
             push(@conds, {last_matched_module_id => {'>=', $query->min}});
         }
     }
+    push(@conds, {file_present => 1});
     my $needles = $self->db->resultset("Needles")->search({-and => \@conds}, {prefetch => qw/directory/, order_by => 'filename'});
 
     my @data;
     my %modules;
     while (my $n = $needles->next) {
         my $hash = {
+            id             => $n->id,
             directory      => $n->directory->name,
             filename       => $n->filename,
             last_seen      => $n->last_seen_module_id,
@@ -121,6 +123,18 @@ sub module {
         $index++;
     }
     $self->redirect_to('step', testid => $module->job_id, moduleid => $module->name(), stepid => $index);
+}
+
+sub delete {
+    my ($self) = @_;
+
+    for my $p (@{$self->every_param('id[]')}) {
+        if (!$self->app->db->resultset('Needles')->find($p)->remove($self->current_user)) {
+            $self->stash(error => "Error removing $p");
+            last;
+        }
+    }
+    $self->render(text => 'ok');
 }
 
 1;
