@@ -55,7 +55,9 @@ if [ "$updateall" = 1 ]; then
 	done
 	exit "$fail"
 else
-	cd "$dir/$dist"
+	target="$dir/$dist"
+	mkdir -p "$target"
+	cd "$target"
 	if [ ! -d .git ]; then
 		git clone -b "$branch" "$giturl" .
 		git config user.email "$email"
