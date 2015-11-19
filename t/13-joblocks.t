@@ -40,9 +40,9 @@ my $tokenA = 'token' . $jobA;
 my $tokenB = 'token' . $jobB;
 
 # mutex API is inaccesible without jobtoken auth
-$t->post_ok('/api/v1/mutex/test_lock')->status_is(403);
-$t->post_ok('/api/v1/mutex/test_lock/lock')->status_is(403);
-$t->post_ok('/api/v1/mutex/test_lock/unlock')->status_is(403);
+$t->post_ok('/api/v1/mutex',           form => {name   => 'test_lock'})->status_is(403);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(403);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(403);
 
 $t->ua->on(
     start => sub {
@@ -50,23 +50,29 @@ $t->ua->on(
         $tx->req->headers->add('X-API-JobToken' => $tokenA);
     });
 # try locking before mutex is created
-$t->post_ok('/api/v1/mutex/test_lock/lock')->status_is(409);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(409);
+
+$t->post_ok('/api/v1/mutex')->status_is(400);    # missing name
+$t->post_ok('/api/v1/mutex', form => {name => 'a/b'})->status_is(400);    # invalid name
 
 # create test mutex
-$t->post_ok('/api/v1/mutex/test_lock')->status_is(200);
+$t->post_ok('/api/v1/mutex', form => {name => 'test_lock'})->status_is(200);
 ## lock in DB
 my $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 ok($res, 'mutex is in database');
 ## mutex is not locked
 ok(!$res->locked_by, 'mutex is not locked');
 
+$t->post_ok('/api/v1/mutex/test_lock')->status_is(400);                   # missing action
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'invalid'})->status_is(400);    # invalid action
+
 # lock mutex
-$t->post_ok('/api/v1/mutex/test_lock/lock')->status_is(200);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 ## mutex is locked
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 is($res->locked_by->id, $jobA, 'mutex is locked');
 # try double lock
-$t->post_ok('/api/v1/mutex/test_lock/lock')->status_is(200);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 
 $t->ua->unsubscribe('start');
 $t->ua->on(
@@ -75,9 +81,9 @@ $t->ua->on(
         $tx->req->headers->add('X-API-JobToken' => $tokenB);
     });
 # try to lock as another job
-$t->post_ok('/api/v1/mutex/test_lock/lock')->status_is(409);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(409);
 # try to unlock as another job
-$t->post_ok('/api/v1/mutex/test_lock/unlock')->status_is(409);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(409);
 
 $t->ua->unsubscribe('start');
 $t->ua->on(
@@ -87,7 +93,7 @@ $t->ua->on(
     });
 
 # unlock mutex
-$t->post_ok('/api/v1/mutex/test_lock/unlock')->status_is(200);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(200);
 ## mutex unlocked in DB
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 ok(!$res->locked_by, 'mutex is unlocked');
@@ -100,12 +106,12 @@ $t->ua->on(
         $tx->req->headers->add('X-API-JobToken' => $tokenB);
     });
 # try double unlock
-$t->post_ok('/api/v1/mutex/test_lock/unlock')->status_is(200);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'unlock'})->status_is(200);
 ## mutex remains unlocked in DB
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 ok(!$res->locked_by, 'mutex is unlocked');
 # lock
-$t->post_ok('/api/v1/mutex/test_lock/lock')->status_is(200);
+$t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 is($res->locked_by->id, $jobB, 'mutex is locked');
 

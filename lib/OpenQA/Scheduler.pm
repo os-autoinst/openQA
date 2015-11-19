@@ -234,20 +234,17 @@ sub mutex_create {
     return 1;
 }
 
-dbus_method('mutex_lock', ['string', 'uint32'], ['bool']);
+dbus_method('mutex_lock', ['string', 'uint32', 'string'], ['int32']);
 sub mutex_lock {
     my ($self, @args) = @_;
     my $res = OpenQA::Scheduler::Locks::lock(@args);
-    return 0 unless $res;
-    return 1;
+    return $res;
 }
 
-dbus_method('mutex_unlock', ['string', 'uint32'], ['bool']);
+dbus_method('mutex_unlock', ['string', 'uint32'], ['int32']);
 sub mutex_unlock {
     my ($self, @args) = @_;
     my $res = OpenQA::Scheduler::Locks::unlock(@args);
-    return 0 unless $res;
-    return 1;
-
+    return $res;
 }
 1;

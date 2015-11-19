@@ -22,8 +22,18 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Schema::Result::JobLocks;
 use OpenQA::Scheduler::Scheduler;
 
+# In normal situation the lock is created by the parent (server)
+# and released when a service becomes available and the child (client)
+# can lock and use it. That's why the lock are checked for self and parent
+# by default.
+#
+# Sometimes it is useful to let the parent wait for child. The child job
+# can be however killed at any time, while the parent will be still running.
+# So we have to specify, which child job is supposed to create the lock
+# and watch it's state.
+#
 sub _get_lock {
-    my ($name, $jobid) = @_;
+    my ($name, $jobid, $where) = @_;
     return unless defined $name && defined $jobid;
     my $schema = OpenQA::Scheduler::Scheduler::schema();
     my $job = $schema->resultset('Jobs')->single({id => $jobid});
@@ -32,42 +42,59 @@ sub _get_lock {
     # We need to get owner of the lock
     # owner can be one of the parents or ourselves if we have no parent
     my $lock;
-    my @maybeowners = map { $_->id } ($job->parents->all, $job);
+    my @maybeowners;
+    if ($where eq 'all') {
+        push @maybeowners, map { $_->id } ($job, $job->parents->all, $job->children->all);
+    }
+    elsif ($where =~ /^\d+$/) {
+        push @maybeowners, $where;
+    }
+    else {
+        push @maybeowners, map { $_->id } ($job, $job->parents->all);
+    }
     return $schema->resultset('JobLocks')->search({name => $name, owner => {-in => \@maybeowners}})->single;
 }
 
-# returns undef on error, 1 on have lock, 0 on try later (lock unavailable)
+# returns -1 on unrecoverable error, 1 on have lock, 0 on try later (lock unavailable)
 sub lock {
-    my ($name, $jobid) = @_;
-    my $lock = _get_lock($name, $jobid);
+    my ($name, $jobid, $where) = @_;
+
+    my $lock = _get_lock($name, $jobid, $where);
+
+    if (!$lock and $where =~ /^\d+$/) {
+        my $schema = OpenQA::Scheduler::Scheduler::schema();
+        # prevent deadlock - job that is supposed to create the lock already finished
+        return -1 if $schema->resultset("Jobs")->count({id => $where, state => [OpenQA::Schema::Result::Jobs::FINAL_STATES]});
+    }
 
     # if no lock so far, there is no lock, return as locked
-    return unless $lock;
+    return 0 unless $lock;
+
     # lock is locked and not by us
     if ($lock->locked_by) {
-        return if ($lock->locked_by->id != $jobid);
+        return 0 if ($lock->locked_by->id != $jobid);
         return 1;
     }
     # we're using optimistic locking, if this succeded, we were first
     return 1 if ($lock->update({'locked_by' => $jobid}));
-    return;
+    return 0;
 }
 
 sub unlock {
     my ($name, $jobid) = @_;
-    my $lock = _get_lock($name, $jobid);
-    return unless $lock;
+    my $lock = _get_lock($name, $jobid, 'all');
+    return 0 unless $lock;
     # return if not locked
     return 1 unless $lock->locked_by;
     # return if not locked by us
-    return unless ($lock->locked_by->id == $jobid);
+    return 0 unless ($lock->locked_by->id == $jobid);
     return 1 if ($lock->update({'locked_by' => undef}));
-    return;
+    return 0;
 }
 
 sub create {
     my ($name, $jobid) = @_;
-    my $lock = _get_lock($name, $jobid);
+    my $lock = _get_lock($name, $jobid, 'all');
     # nothing if lock already exist
     return if $lock;
     return unless defined $name && defined $jobid;
