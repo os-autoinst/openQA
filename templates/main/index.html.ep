@@ -17,14 +17,7 @@
         </div>
 
         <div class="col-md-2 hidden-sm hidden-xs">
-            % if ($self->app->config->{'global'}->{'branding'} eq "openSUSE") {
-                <div class="text-right" id="sponsorbox">
-                    <a href="http://www.suse.com" title="SUSE">
-                        <img alt="sponsor_suse" class="icons-sponsor_suse" src="images/suse.png" />
-                    </a>
-                </div>
-                <div class="text-muted text-center">Sponsor</div>
-            % }
+            %= include_branding 'sponsorbox'
         </div>
     </div>
 </div>

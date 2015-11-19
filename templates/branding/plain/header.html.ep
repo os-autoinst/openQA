@@ -1,0 +1,8 @@
+<div id="header-content" class="container_16">
+    <%= link_to 'http://www.opensuse.org' => (id => 'header-logo') => begin %>
+        <%= image '/images/header-logo.png', alt => 'Header Logo', height => "26", width => "46" %>
+    <% end %>
+    <ul id="global-navigation">
+        <li id="item-support"><a href="http://github.com/openSUSE/openQA">openQA</a></li>
+    </ul>
+</div>

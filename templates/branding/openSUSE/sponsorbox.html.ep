@@ -1,0 +1,6 @@
+<div class="text-right" id="sponsorbox">
+    <a href="http://www.suse.com" title="SUSE">
+        <img alt="sponsor_suse" class="icons-sponsor_suse" src="images/suse.png" />
+    </a>
+</div>
+<div class="text-muted text-center">Sponsor</div>

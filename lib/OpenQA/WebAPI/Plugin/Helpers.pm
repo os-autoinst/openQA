@@ -185,6 +185,24 @@ sub register {
             }
         });
 
+    $app->helper(
+        # Just like 'include', but includes the template with the given
+        # name from the correct directory for the 'branding' config setting
+        # falls back to 'plain' if brand doesn't include the template, so
+        # allowing partial brands
+        include_branding => sub {
+            my ($c, $name) = @_;
+            my $path = "branding/" . $c->app->config->{'global'}->{'branding'} . "/$name";
+            my $ret  = $c->render_to_string($path);
+            if (defined($ret)) {
+                return $ret;
+            }
+            else {
+                $path = "branding/plain/$name";
+                return $c->render_to_string($path);
+            }
+        });
+
     $app->helper(step_thumbnail => \&_step_thumbnail);
 
 }
