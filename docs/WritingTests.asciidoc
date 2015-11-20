@@ -447,7 +447,7 @@ Using the supportserver:
 
 In the Test suites, the supportserver is defined by setting:
 
-[source,sh]
+[source,ini]
 --------------------------------------------------------------------------------
 HDD_1=supporserver.qcow2
 SUPPORT_SERVER=1
@@ -478,7 +478,7 @@ Example - a simple tftp test:
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Let's assume that we want to test tftp client operation. For this, we setup the supportserver as a tftp server:
-[source,sh]
+[source,ini]
 --------------------------------------------------------------------------------
 HDD_1=supporserver.qcow2
 SUPPORT_SERVER=1
@@ -492,16 +492,26 @@ The actual test 'child' job, will then have to set +PARALLEL_WITH=supportserver-
 
 The code in the *.pm module doing the actual tftp test could then look something like this:
 
+[source,perl]
 --------------------------------------------------------------------------------
 use strict;
 use base 'basetest';
 use testapi;
 
+sub run {
 
+  my $script="set -e -x\n";
+  $script.="echo test >test.txt\n";
+  $script.="time tftp ".$server_ip." -c put test.txt test2.txt\n";
+  $script.="time tftp ".$server_ip." -c get test2.txt\n";
+  $script.="diff -u test.txt test2.txt\n";
+  script_output($script);
 
+}
 
 --------------------------------------------------------------------------------
 
+assuming of course, that the tested machine was already set up with necessary infrastructure for tftp, e.g. network was set up, tftp rpm installed and tftp service started, etc. All of this could be conveniently achieved using the autoyast installation, as shown in the next section.
 
 
 Example - autoyast based tftp test:
@@ -509,6 +519,7 @@ Example - autoyast based tftp test:
 
 Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access qemu provided data, for dowloading autoyast profile and tftp verify script:
 
+[source,ini]
 --------------------------------------------------------------------------------
 HDD_1=supporserver.qcow2
 SUPPORT_SERVER=1
@@ -519,6 +530,7 @@ WORKER_CLASS=server,qemu_autoyast_tap_64
 
 The actual test 'child' job, will then be defined as :
 
+[source,ini]
 --------------------------------------------------------------------------------
 AUTOYAST=autoyast_opensuse/opensuse_autoyast_tftp.xml
 AUTOYAST_VERIFY=autoyast_opensuse/opensuse_autoyast_tftp.sh
@@ -531,11 +543,12 @@ again assuming the support server's name being +supportserver-opensuse-tftp+. No
 
 The tftp test defined in the +autoyast_opensuse/opensuse_autoyast_tftp.sh+ file could be something like:
 
+[source,sh]
 --------------------------------------------------------------------------------
 set -e -x
 echo test >test.txt
 time tftp #SERVER_URL# -c put test.txt test2.txt
-time tftp #SERVER_URL# -c get test.txt
+time tftp #SERVER_URL# -c get test2.txt
 diff -u test.txt test2.txt && echo "AUTOYAST OK"
 --------------------------------------------------------------------------------
 
