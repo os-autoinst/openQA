@@ -54,7 +54,7 @@ sub append_auditlog {
     my $self = shift;
     die 'Wrong append call' unless $self;
     my $auditfh;
-    die "Can't open " . $self->{audit_log} . "\n" unless open($auditfh, '>>', $self->{audit_log});
+    return unless open($auditfh, '>>', $self->{audit_log});
     my $line = '[' . localtime(time) . '] ' . join "\n", @_, '';
     flock $auditfh, LOCK_EX;
     print $auditfh $line;
