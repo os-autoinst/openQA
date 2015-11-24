@@ -191,7 +191,7 @@
                 % for my $ulog (@$ulogs) {
                     % content_for 'log_list' => begin
                         <li>
-                            %= link_to($ulog => url_for('test_file', 'testid' => $testid, 'filename' => $ulog))
+                            %= link_to($ulog => url_for('test_file', testid => $testid, filename => $ulog))
                         </li>
                     % end
                 % }
@@ -209,7 +209,7 @@
                     % if ($a->type ne 'repo') {
                         % content_for 'asset_box' => begin
                             <li>
-                                %= link_to url_for('test_asset_id', 'testid' => $testid, assetid => $a->id) => (id => "asset_".$a->id) => begin
+                                %= link_to url_for('test_asset_name', testid => $testid, assettype => $a->type, assetname => $a->name) => (id => "asset_".$a->id) => begin
                                     <%= $a->name %>
                                 % end
                             </li>
