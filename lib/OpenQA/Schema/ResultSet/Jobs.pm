@@ -65,5 +65,39 @@ sub latest_build {
     return $rs->get_column('value')->first;
 }
 
+=head2 latest_jobs
+
+=over
+
+=item Return value: array of only the most recent jobs in the resultset
+
+=back
+
+De-duplicates the jobs in the result set. Jobs are considered 'duplicates'
+if they are for the same DISTRI, VERSION, BUILD, TEST, FLAVOR, ARCH and
+MACHINE. For each set of dupes, only the latest job found is included in
+the return array.
+
+=cut
+sub latest_jobs {
+    my $self = shift;
+    my @jobs = $self->search(undef, {order_by => ['me.id DESC']});
+    my @latest;
+    my %seen;
+    foreach my $job (@jobs) {
+        my $settings = $job->settings_hash;
+        my $distri   = $settings->{DISTRI};
+        my $version  = $settings->{VERSION};
+        my $build    = $settings->{BUILD};
+        my $test     = $settings->{TEST};
+        my $flavor   = $settings->{FLAVOR} || 'sweet';
+        my $arch     = $settings->{ARCH} || 'noarch';
+        my $machine  = $settings->{MACHINE};
+        my $key      = "$distri-$version-$build-$test-$flavor-$arch-$machine";
+        next if $seen{$key}++;
+        push(@latest, $job);
+    }
+    return @latest;
+}
 1;
 # vim: set sw=4 et:

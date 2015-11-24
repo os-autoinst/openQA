@@ -34,4 +34,12 @@ is($rs->latest_build, "0091");
 is($rs->latest_build(version => 'Factory', distri => 'opensuse'), "0048");
 is($rs->latest_build(version => '13.1',    distri => 'opensuse'), "0091");
 
+my @latest = $t->app->db->resultset("Jobs")->latest_jobs;
+my @ids = map { $_->id } @latest;
+# These two jobs have later clones in the fixture set, so should not appear
+ok(grep(!/^(99962|99945)$/, @ids));
+# These are the later clones, they should appear
+ok(grep(/^99963$/, @ids));
+ok(grep(/^99946$/, @ids));
+
 done_testing();
