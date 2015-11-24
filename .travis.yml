@@ -5,13 +5,12 @@ before_install:
   - echo "deb http://us.archive.ubuntu.com/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/trusty.list
   - sudo apt-get update
 install:
-  - cpanm -nq Perl::Tidy Perl::Critic
+  - sudo apt-get install libgmp3-dev libdbus-1-dev
+  - cpanm -nq --installdeps --with-feature=coverage .
   - gem install sass
+script:
   - ./script/tidy --check
   - perlcritic --gentle lib
-  - sudo apt-get install libgmp3-dev libdbus-1-dev
-  - cpanm -nq `cat DEPENDENCIES.txt` "Devel::Cover" "Devel::Cover::Report::Coveralls"
-script:
   - MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover -test -report coveralls -ignore_re "t/.*" -coverage default,-pod
 after_failure:
   - cat /tmp/openqa-debug.log
