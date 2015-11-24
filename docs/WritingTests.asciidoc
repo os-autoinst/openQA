@@ -416,3 +416,140 @@ sub run {
     type_string("secret\n");
 }
 --------------------------------------------------------------------------------
+Support Server based tests
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The idea is to have a dedicated "helper server" to allow advanced network based testing. 
+
+Support server takes advantage of the basic parallel setup as described in the previous section, with the support server being the parent test 'A' and the test needing it being the child test 'B'. This ensures that the test 'B' always have the support server available.
+
+Preparing the supportserver:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The support server image is created by calling a special test, based on the autoyast test:
+
+[source,sh]
+--------------------------------------------------------------------------------
+/usr/share/openqa/script/client jobs post DISTRI=opensuse VERSION=13.2 \
+    ISO=openSUSE-13.2-DVD-x86_64.iso  ARCH=x86_64 FLAVOR=Server-DVD \
+    TEST=supportserver_generator MACHINE=64bit DESKTOP=textmode  INSTALLONLY=1 \
+    AUTOYAST=supportserver/autoyast_supportserver.xml SUPPORT_SERVER_GENERATOR=1 \    
+    PUBLISH_HDD_1=supporserver.qcow2
+--------------------------------------------------------------------------------
+
+This produces qemu image 'supporserver.qcow2' that contains the supportserver. The 'autoyast_supportserver.xml'
+should define correct user and password, as well as packages and the common configuration.
+
+More specific role the supportserver should take is then selected when the server is run in the actual test scenario.
+
+Using the supportserver:
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the Test suites, the supportserver is defined by setting:
+
+[source,ini]
+--------------------------------------------------------------------------------
+HDD_1=supporserver.qcow2
+SUPPORT_SERVER=1
+SUPPORT_SERVER_ROLES=pxe,qemuproxy
+WORKER_CLASS=server,qemu_autoyast_tap_64
+--------------------------------------------------------------------------------
+
+where the +SUPPORT_SERVER_ROLES+ defines the specific role (see code in 'tests/support_server/setup.pm' for available roles and their definition), and
+ +HDD_1+ variable must be the name of the supportserver image as defined via +PUBLISH_HDD_1+ variable during supportserver generation. If the support server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add +HDDMODEL=virtio-blk+. In case of qemu backend, one can also use +BOOTFROM=c+, for faster boot directly from the +HDD_1+ image.
+ 
+
+Then for the 'child' test using this supportserver, the following additional variable must be set:
++PARALLEL_WITH=supportserver-pxe-tftp+
+where 'supportserver-pxe-tftp' is the name given to the supportserver in the test suites screen. 
+Once the tests are defined, they can be added to openQA in the usual way:
+
+[source,sh]
+-----------------
+/usr/share/openqa/script/client isos post DISTRI=opensuse VERSION=13.2 \
+        ISO=openSUSE-13.2-DVD-x86_64.iso ARCH=x86_64 FLAVOR=Server-DVD
+-----------------
+
+where the +DISTRI+, +VERSION+, +FLAVOR+ and +ARCH+ correspond to the job group containing the tests.
+Note that the networking is provided by tap devices, so both jobs should run on machines defined by (apart from others) having +NICTYPE=tap+, +WORKER_CLASS=qemu_autoyast_tap_64+.
+
+
+Example - a simple tftp test:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Let's assume that we want to test tftp client operation. For this, we setup the supportserver as a tftp server:
+[source,ini]
+--------------------------------------------------------------------------------
+HDD_1=supporserver.qcow2
+SUPPORT_SERVER=1
+SUPPORT_SERVER_ROLES=dhcp,tftp
+WORKER_CLASS=server,qemu_autoyast_tap_64
+--------------------------------------------------------------------------------
+
+with a test-suites name +supportserver-opensuse-tftp+.
+
+The actual test 'child' job, will then have to set +PARALLEL_WITH=supportserver-opensuse-tftp+, and also other variables according to the test requirements. For convenience, we have also started a dhcp server on the supportserver, but even without it, network could be set up manually by assigning a free ip address (e.g. 10.0.2.15) on the system of the test job.
+
+The code in the *.pm module doing the actual tftp test could then look something like this:
+
+[source,perl]
+--------------------------------------------------------------------------------
+use strict;
+use base 'basetest';
+use testapi;
+
+sub run {
+
+  my $script="set -e -x\n";
+  $script.="echo test >test.txt\n";
+  $script.="time tftp ".$server_ip." -c put test.txt test2.txt\n";
+  $script.="time tftp ".$server_ip." -c get test2.txt\n";
+  $script.="diff -u test.txt test2.txt\n";
+  script_output($script);
+
+}
+
+--------------------------------------------------------------------------------
+
+assuming of course, that the tested machine was already set up with necessary infrastructure for tftp, e.g. network was set up, tftp rpm installed and tftp service started, etc. All of this could be conveniently achieved using the autoyast installation, as shown in the next section.
+
+
+Example - autoyast based tftp test:
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access qemu provided data, for dowloading autoyast profile and tftp verify script:
+
+[source,ini]
+--------------------------------------------------------------------------------
+HDD_1=supporserver.qcow2
+SUPPORT_SERVER=1
+SUPPORT_SERVER_ROLES=pxe,qemuproxy
+WORKER_CLASS=server,qemu_autoyast_tap_64
+--------------------------------------------------------------------------------
+
+
+The actual test 'child' job, will then be defined as :
+
+[source,ini]
+--------------------------------------------------------------------------------
+AUTOYAST=autoyast_opensuse/opensuse_autoyast_tftp.xml
+AUTOYAST_VERIFY=autoyast_opensuse/opensuse_autoyast_tftp.sh
+DESKTOP=textmode
+INSTALLONLY=1
+PARALLEL_WITH=supportserver-opensuse-tftp
+--------------------------------------------------------------------------------
+
+again assuming the support server's name being +supportserver-opensuse-tftp+. Note that the +pxe+ role already contains +tftp+ and +dhcp+ server role, since they are needed for the pxe boot to work.
+
+The tftp test defined in the +autoyast_opensuse/opensuse_autoyast_tftp.sh+ file could be something like:
+
+[source,sh]
+--------------------------------------------------------------------------------
+set -e -x
+echo test >test.txt
+time tftp #SERVER_URL# -c put test.txt test2.txt
+time tftp #SERVER_URL# -c get test2.txt
+diff -u test.txt test2.txt && echo "AUTOYAST OK"
+--------------------------------------------------------------------------------
+
+and the rest is done automatically, using already prepared test modules in +tests/autoyast+ subdirectory.
