@@ -52,7 +52,10 @@ install:
 	install -m 644 profiles/apparmor.d/usr.share.openqa.script.worker "$(DESTDIR)"/etc/apparmor.d
 
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
+
 test:
 	OPENQA_CONFIG= prove -r
+	./script/tidy --check
+	perlcritic --gentle lib
 
 .PHONY: all install test
