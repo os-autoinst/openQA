@@ -63,7 +63,7 @@ $t->get_ok('/tests/99946/iso')->status_is(200)->header_is('Content-Disposition' 
 my $req = $t->get_ok('/tests/99946')->status_is(200);
 $req->element_exists('#downloads #asset_1');
 $req->text_is('#downloads #asset_1' => "openSUSE-13.1-DVD-i586-Build0091-Media.iso");
-is($req->tx->res->dom->at('#downloads #asset_1')->{'href'}, '/tests/99946/asset/1');
+is($req->tx->res->dom->at('#downloads #asset_1')->{'href'}, '/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso');
 
 # downloads are currently redirects
 $req = $t->get_ok('/tests/99946/asset/1')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
