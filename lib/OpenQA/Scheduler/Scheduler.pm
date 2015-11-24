@@ -56,7 +56,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
   job_delete job_update_result job_restart job_cancel command_enqueue
   job_set_stop job_stop iso_stop_old_builds
-  asset_list asset_get asset_delete asset_register
+  asset_list asset_get asset_delete asset_register query_jobs
 );
 
 

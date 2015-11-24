@@ -19,6 +19,7 @@ use strict;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Scheduler::Scheduler qw/query_jobs/;
 use File::Basename;
 use POSIX qw/strftime/;
 use JSON qw/decode_json/;
@@ -39,7 +40,7 @@ sub list {
     my $assetid = $self->param('assetid');
     my $groupid = $self->param('groupid');
 
-    my $jobs = OpenQA::Scheduler::Scheduler::query_jobs(
+    my $jobs = query_jobs(
         state   => 'done,cancelled',
         match   => $match,
         scope   => $scope,
@@ -50,7 +51,12 @@ sub list {
     );
     $self->stash(jobs => $jobs);
 
-    my $running = OpenQA::Scheduler::Scheduler::query_jobs(state => 'running,waiting', match => $match, groupid => $groupid, assetid => $assetid);
+    my $running = query_jobs(
+        state   => 'running,waiting',
+        match   => $match,
+        groupid => $groupid,
+        assetid => $assetid
+    );
     my $result_stats = OpenQA::Schema::Result::JobModules::job_module_stats($running);
     my @list;
     while (my $job = $running->next) {
@@ -63,7 +69,12 @@ sub list {
     }
     $self->stash(running => \@list);
 
-    my $scheduled = OpenQA::Scheduler::Scheduler::query_jobs(state => 'scheduled', match => $match, groupid => $groupid, assetid => $assetid);
+    my $scheduled = query_jobs(
+        state   => 'scheduled',
+        match   => $match,
+        groupid => $groupid,
+        assetid => $assetid
+    );
     $self->stash(scheduled => $scheduled);
 }
 
@@ -85,7 +96,7 @@ sub list_ajax {
     else {
         my $scope = '';
         $scope = 'relevant' if $self->param('relevant') ne 'false';
-        my $jobs = OpenQA::Scheduler::Scheduler::query_jobs(
+        my $jobs = query_jobs(
             state   => 'done,cancelled',
             match   => $match,
             scope   => $scope,
@@ -356,7 +367,7 @@ sub overview {
     my %results;
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
 
-    my $jobs = OpenQA::Scheduler::Scheduler::query_jobs(%search_args);
+    my $jobs = query_jobs(%search_args);
 
     my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
     my $preferred_machines = _caclulate_preferred_machines($jobs);
