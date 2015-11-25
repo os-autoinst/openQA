@@ -32,6 +32,34 @@ become a happy user. More advanced topics like installation, administration or
 development of new tests are covered by further documents available in the
 https://github.com/os-autoinst/openQA[official repository].
 
+Architecture
+------------
+[id="architecture"]
+
+Although the project as a whole is referred to as openQA, there are in fact
+several components that are hosted in separate repositories as shown in
+<<arch_img,the following figure>>.
+
+[[arch_img]]
+.openQA architecture
+image::images/openqa_architecture.png[openQA architecture]
+
+The heart of the test engine is a standalone application called
+'os-autoinst' (blue). In each execution, this application creates a
+virtual machine and uses it to run a set of test scripts (red).
+'os-autoinst' generates a video, screenshots and a JSON file with
+detailed results.
+
+'openQA' (green) on the other hand provides a web based user
+interface and infrastructure to run 'os-autoinst' in a distributed
+way. The web interface also provides a JSON based REST-like API for
+external scripting and for use by the worker program. Workers
+fetch data and input files from openQA for os-autoinst to run the
+tests. A host system can run serveral workers. The openQA web
+application takes care of distributing test jobs among workers. Web
+application and workers don't have to run on the same machine but
+can be connected via network instead.
+
 Basic concepts
 --------------
 [id="concepts"]
@@ -131,51 +159,6 @@ The interactive mode is especially useful when creating needles for a new
 operating system or when the look & feel have changed and several needles need
 to be adjusted accordingly.
 
-
-Architecture: openQA and os-autoinst
-------------------------------------
-[id="architecture"]
-
-Although the project as a whole is referred to as openQA, there are in fact two
-different components that are hosted in separate repositories and are available as
-two different packages, as shown in <<arch_img,the following figure>>.
-
-[[arch_img]]
-.openQA architecture
-image::images/arch.png[openQA architecture]
-
-The base of the system is a
-standalone application called 'os-autoinst'. In each execution, this application
-creates a virtual machine and uses it to run the tests located in a certain
-directory, generating a video, screenshots and a JSON file with detailed results. In its
-first stage, os-autoinst reads several configuration variables that have an
-influence on the configuration of the machine, the exact behavior of the tests
-and the set of needles used in every check.
-
-The rest of the infrastructure is located in the openQA package, which main
-component is the server that offers two interfaces: a web-based one for human
-beings and a JSON based REST-like API. That server -in light gray in
-<<arch_img,the figure>>-
-relies on a SQLite database to store the list of jobs and all the associated
-information.
-
-The openQA package also includes some smaller components that make
-use of the REST-like API for several tasks. The most important one is the
-'worker'. An openQA worker is a small piece of software that runs a continuous
-loop. In each iteration it asks the server for the next job to execute, places
-all the related information in a pool directory and calls os-autoinst with the
-proper configuration values. Then os-autoinst uses the pool directory to read
-and write all the relevant information and results. When os-autoinst finishes
-its execution, the worker reports the result back to the server. In fact, during
-the execution of os-autoinst the worker is not idle, since it keeps constantly
-querying the server for commands (like `cancel execution' or `go into interactive
-mode') that are partially processed by the worker itself and partially forwarded
-to the underlying instance of os-autoinst.
-
-Obviously, every instance of openQA hosts several workers, every one with its
-own pool directory. They can be run manually or managed using systemd. The
-only limit to the number of workers is the one defined by the free resources of
-the host machine.
 
 Access management
 -----------------
