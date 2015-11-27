@@ -25,7 +25,7 @@ use Mojo::UserAgent;
 
 use db_helpers;
 
-our %types = map { $_ => 1 } qw/iso repo hdd/;
+our %types = map { $_ => 1 } qw/iso repo hdd other/;
 
 __PACKAGE__->table('assets');
 __PACKAGE__->load_components(qw/Timestamps/);

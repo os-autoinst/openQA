@@ -21,7 +21,7 @@ use JSON;
 use Fcntl;
 use DateTime;
 use db_helpers;
-use OpenQA::Utils qw/log_debug/;
+use OpenQA::Utils qw/log_debug parse_assets_from_settings/;
 use File::Basename qw/basename dirname/;
 use File::Path ();
 use File::Which qw(which);
@@ -550,7 +550,7 @@ sub duplicate {
     }
 
     # when dependency network is recreated, associate assets
-    $res->assets_from_settings;
+    $res->register_assets_from_settings;
     return ($self->id => $res->id, %duplicated_ids);
 }
 
@@ -882,28 +882,11 @@ sub update_status {
     return $ret;
 }
 
-sub assets_from_settings {
+sub register_assets_from_settings {
     my ($self) = @_;
-    my %assets;
     my $settings = $self->settings_hash;
 
-    for my $k (keys %$settings) {
-        if ($k eq 'ISO') {
-            $assets{$k} = {type => 'iso', name => $settings->{$k}};
-        }
-        if ($k =~ /^ISO_\d$/) {
-            $assets{$k} = {type => 'iso', name => $settings->{$k}};
-        }
-        if ($k =~ /^HDD_\d$/) {
-            $assets{$k} = {type => 'hdd', name => $settings->{$k}};
-        }
-        if ($k =~ /^REPO_\d$/) {
-            $assets{$k} = {type => 'repo', name => $settings->{$k}};
-        }
-        if ($k =~ /^ASSET_\d$/) {
-            $assets{$k} = {type => 'other', name => $settings->{$k}};
-        }
-    }
+    my %assets = %{parse_assets_from_settings($settings)};
 
     return unless keys %assets;
 
