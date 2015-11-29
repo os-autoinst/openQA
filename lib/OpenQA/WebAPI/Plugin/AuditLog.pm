@@ -13,7 +13,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::WebAPI::Extensions::AuditLog;
+package OpenQA::WebAPI::Plugin::AuditLog;
 
 use strict;
 use warnings;

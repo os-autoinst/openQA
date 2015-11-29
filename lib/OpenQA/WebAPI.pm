@@ -176,6 +176,7 @@ sub startup {
     $self->plugin('OpenQA::WebAPI::Plugin::REST');
     $self->plugin('OpenQA::WebAPI::Plugin::HashedParams');
     $self->plugin('OpenQA::WebAPI::Plugin::Gru');
+    $self->plugin('OpenQA::WebAPI::Plugin::AuditLog', Mojo::IOLoop->singleton);
 
     $self->plugin(bootstrap3 => {css => [], js => []});
 
@@ -521,11 +522,6 @@ sub startup {
     # start workers checker
     $self->_workers_checker;
     $self->_init_rand;
-
-    # load extensions
-    push @{$self->plugins->namespaces}, 'OpenQA::WebAPI::Extensions';
-    # TODO: use config, for now always load auditing plugin
-    $self->plugin('AuditLog', Mojo::IOLoop->singleton);
 }
 
 sub run {
