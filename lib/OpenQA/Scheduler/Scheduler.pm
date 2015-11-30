@@ -40,7 +40,7 @@ use OpenQA::Schema::Result::JobDependencies;
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw/log_debug/;
+use OpenQA::Utils qw/log_debug parse_assets_from_settings/;
 use db_helpers qw/rndstr/;
 
 use OpenQA::IPC;
@@ -196,7 +196,7 @@ sub job_create {
 
     my $job = schema->resultset("Jobs")->create(\%new_job_args);
     # this will associate currently available assets with job
-    $job->assets_from_settings;
+    $job->register_assets_from_settings;
 
     unless ($batch_mode) {
         # enqueue gru job
@@ -574,7 +574,7 @@ sub job_grab {
     $worker->set_property('JOBTOKEN', $token);
     $job_hashref->{settings}->{JOBTOKEN} = $token;
 
-    my $updated_settings = $job->assets_from_settings();
+    my $updated_settings = $job->register_assets_from_settings();
 
     if ($updated_settings) {
         for my $k (keys %$updated_settings) {
@@ -1159,7 +1159,12 @@ sub _generate_jobs {
 }
 
 sub job_schedule_iso {
-    my (%args)     = @_;
+    my (%args) = @_;
+    # register assets posted here right away, in case no job
+    # templates produce jobs.
+    for my $a (values %{parse_assets_from_settings(\%args)}) {
+        asset_register(%$a);
+    }
     my $noobsolete = delete $args{_NOOBSOLETEBUILD};
     my $jobs       = _generate_jobs(%args);
 

@@ -23,6 +23,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &save_base64_png
   &run_cmd_with_log
   &commit_git
+  &parse_assets_from_settings
 );
 
 
@@ -204,6 +205,32 @@ sub commit_git {
     }
     return 1;
 }
+
+sub parse_assets_from_settings {
+    my ($settings) = (@_);
+    my $assets = {};
+
+    for my $k (keys %$settings) {
+        if ($k eq 'ISO') {
+            $assets->{$k} = {type => 'iso', name => $settings->{$k}};
+        }
+        if ($k =~ /^ISO_\d$/) {
+            $assets->{$k} = {type => 'iso', name => $settings->{$k}};
+        }
+        if ($k =~ /^HDD_\d$/) {
+            $assets->{$k} = {type => 'hdd', name => $settings->{$k}};
+        }
+        if ($k =~ /^REPO_\d$/) {
+            $assets->{$k} = {type => 'repo', name => $settings->{$k}};
+        }
+        if ($k =~ /^ASSET_\d$/) {
+            $assets->{$k} = {type => 'other', name => $settings->{$k}};
+        }
+    }
+
+    return $assets;
+}
+
 
 1;
 # vim: set sw=4 et:
