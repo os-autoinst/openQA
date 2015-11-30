@@ -22,17 +22,22 @@ use parent qw/Mojolicious::Plugin/;
 use Mojo::IOLoop;
 use Data::Dump qw/pp/;
 use Fcntl qw/:flock/;
-use Scalar::Util qw/weaken/;
 
-our @table_events = qw/table_create_req table_create_res table_update_req table_update_res table_delete_req table_delete_res/;
+my @table_events    = qw/table_create_req table_update_req table_delete_req/;
+my @job_events      = qw/job_create_req job_delete_req job_grab_req/;
+my @jobgroup_events = qw/jobgroup_create_req jobgroup_connect_req/;
+my @user_events     = qw/user_update_res/;
+my @asset_events    = qw/asset_register_req asset_delete_req/;
+my @iso_events      = qw/iso_create_req iso_cancel/;
+
 
 sub register {
     my ($self, $app, $reactor) = @_;
     $self->{audit_log} = $app->config->{logging}->{audit_log};
 
     # add table events
-    for my $event (@table_events) {
-        $reactor->on($event => sub { $self->on_table_event($event, @_) });
+    for my $event (@table_events, @job_events, @jobgroup_events, @user_events, @asset_events, @iso_events) {
+        $reactor->on($event => sub { shift; $self->on_event($event, @_) });
     }
 
     # add global mojolicious events
@@ -41,14 +46,12 @@ sub register {
 }
 
 # table events
-sub on_table_event {
-    my ($self, $table_event, $e, $args) = @_;
+sub on_event {
+    my ($self,    $event,         $args)       = @_;
     my ($user_id, $connection_id, $event_data) = @$args;
     #$self->db->resultset('AuditLog')->create( {user_id => $user_id, connection_id => $connection_id, event => $event, event_data => pp($event_data)} );
-    $self->append_auditlog("${user_id}:${connection_id} - $table_event - " . pp($event_data));
+    $self->append_auditlog("${user_id}:${connection_id} - $event - " . pp($event_data));
 }
-
-# job events
 
 sub append_auditlog {
     my $self = shift;
