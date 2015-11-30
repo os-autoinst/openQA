@@ -37,7 +37,7 @@ sub register {
 
     # add table events
     for my $event (@table_events, @job_events, @jobgroup_events, @user_events, @asset_events, @iso_events) {
-        $reactor->on($event => sub { shift; $self->on_event($event, @_) });
+        $reactor->on($event => sub { shift; $self->on_event(@_) });
     }
 
     # add global mojolicious events
@@ -47,8 +47,8 @@ sub register {
 
 # table events
 sub on_event {
-    my ($self,    $event,         $args)       = @_;
-    my ($user_id, $connection_id, $event_data) = @$args;
+    my ($self, $args) = @_;
+    my ($user_id, $connection_id, $event, $event_data) = @$args;
     #$self->db->resultset('AuditLog')->create( {user_id => $user_id, connection_id => $connection_id, event => $event, event_data => pp($event_data)} );
     $self->append_auditlog("${user_id}:${connection_id} - $event - " . pp($event_data));
 }
@@ -62,7 +62,7 @@ sub append_auditlog {
     flock $auditfh, LOCK_EX;
     print $auditfh $line;
     flock $auditfh, LOCK_UN;
-    close($auditfh);
+    close $auditfh;
 }
 
 1;
