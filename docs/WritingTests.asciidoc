@@ -434,10 +434,10 @@ The support server image is created by calling a special test, based on the auto
     ISO=openSUSE-13.2-DVD-x86_64.iso  ARCH=x86_64 FLAVOR=Server-DVD \
     TEST=supportserver_generator MACHINE=64bit DESKTOP=textmode  INSTALLONLY=1 \
     AUTOYAST=supportserver/autoyast_supportserver.xml SUPPORT_SERVER_GENERATOR=1 \    
-    PUBLISH_HDD_1=supporserver.qcow2
+    PUBLISH_HDD_1=supportserver.qcow2
 --------------------------------------------------------------------------------
 
-This produces qemu image 'supporserver.qcow2' that contains the supportserver. The 'autoyast_supportserver.xml'
+This produces qemu image 'supportserver.qcow2' that contains the supportserver. The 'autoyast_supportserver.xml'
 should define correct user and password, as well as packages and the common configuration.
 
 More specific role the supportserver should take is then selected when the server is run in the actual test scenario.
@@ -449,7 +449,7 @@ In the Test suites, the supportserver is defined by setting:
 
 [source,ini]
 --------------------------------------------------------------------------------
-HDD_1=supporserver.qcow2
+HDD_1=supportserver.qcow2
 SUPPORT_SERVER=1
 SUPPORT_SERVER_ROLES=pxe,qemuproxy
 WORKER_CLASS=server,qemu_autoyast_tap_64
@@ -480,7 +480,7 @@ Example - a simple tftp test:
 Let's assume that we want to test tftp client operation. For this, we setup the supportserver as a tftp server:
 [source,ini]
 --------------------------------------------------------------------------------
-HDD_1=supporserver.qcow2
+HDD_1=supportserver.qcow2
 SUPPORT_SERVER=1
 SUPPORT_SERVER_ROLES=dhcp,tftp
 WORKER_CLASS=server,qemu_autoyast_tap_64
@@ -521,7 +521,7 @@ Here we will use autoyast to setup the system of the test job and the os-autoins
 
 [source,ini]
 --------------------------------------------------------------------------------
-HDD_1=supporserver.qcow2
+HDD_1=supportserver.qcow2
 SUPPORT_SERVER=1
 SUPPORT_SERVER_ROLES=pxe,qemuproxy
 WORKER_CLASS=server,qemu_autoyast_tap_64
