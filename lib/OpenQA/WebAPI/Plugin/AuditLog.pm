@@ -23,12 +23,15 @@ use Mojo::IOLoop;
 use Data::Dump qw/pp/;
 use Fcntl qw/:flock/;
 
-my @table_events    = qw/table_create_req table_update_req table_delete_req/;
-my @job_events      = qw/job_create_req job_delete_req job_grab_req/;
-my @jobgroup_events = qw/jobgroup_create_req jobgroup_connect_req/;
-my @user_events     = qw/user_update_res/;
-my @asset_events    = qw/asset_register_req asset_delete_req/;
-my @iso_events      = qw/iso_create_req iso_cancel/;
+my @table_events       = qw/table_create table_update table_delete/;
+my @job_events         = qw/job_create job_delete job_grab job_cancel job_duplicate job_restart jobs_restart job_update_result job_set_waiting job_set_running job_done/;
+my @jobgroup_events    = qw/jobgroup_create jobgroup_connect/;
+my @jobtemplate_events = qw/jobtemplate_create jobtemplate_delete/;
+my @user_events        = qw/user_update user_login user_comment/;
+my @asset_events       = qw/asset_register asset_delete/;
+my @iso_events         = qw/iso_create iso_delete iso_cancel/;
+my @worker_events      = qw/command_enqueue worker_register/;
+my @needle_events      = qw/needle_modify needle_delete/;
 
 
 sub register {
@@ -36,8 +39,8 @@ sub register {
     $self->{audit_log} = $app->config->{logging}->{audit_log};
 
     # add table events
-    for my $event (@table_events, @job_events, @jobgroup_events, @user_events, @asset_events, @iso_events) {
-        $reactor->on($event => sub { shift; $self->on_event(@_) });
+    for my $event (@table_events, @job_events, @jobgroup_events, @jobtemplate_events, @user_events, @asset_events, @iso_events, @worker_events, @needle_events) {
+        $reactor->on("openqa_$event" => sub { shift; $self->on_event(@_) });
     }
 
     # add global mojolicious events
@@ -49,8 +52,10 @@ sub register {
 sub on_event {
     my ($self, $args) = @_;
     my ($user_id, $connection_id, $event, $event_data) = @$args;
-    #$self->db->resultset('AuditLog')->create( {user_id => $user_id, connection_id => $connection_id, event => $event, event_data => pp($event_data)} );
-    $self->append_auditlog("${user_id}:${connection_id} - $event - " . pp($event_data));
+    # no need to log openqa_ prefix in openqa log
+    $event =~ s/^openqa_//;
+    #$self->db->resultset('AuditEvents')->create( {user_id => $user_id, connection_id => $connection_id, event => $event, event_data => pp($event_data)} );
+    $self->append_auditlog("${user_id}:${connection_id} - $event - " . pp($event_data || ''));
 }
 
 sub append_auditlog {

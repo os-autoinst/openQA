@@ -151,6 +151,7 @@ sub create {
     }
     else {
         $json->{id} = $id;
+        $self->emit_event('openqa_jobtemplate_create', {id => $id});
     }
 
     $self->respond_to(
@@ -185,6 +186,7 @@ sub destroy {
         }
         else {
             $json->{result} = int($rs);
+            $self->emit_event('openqa_jobtemplate_delete', {id => $self->param('job_template_id')});
         }
     }
     else {

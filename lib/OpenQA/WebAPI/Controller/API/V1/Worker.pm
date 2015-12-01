@@ -112,6 +112,7 @@ sub create {
     $caps->{worker_class}  = $self->param('worker_class');
 
     my $id = $self->_register($self->db, $host, $instance, $caps);
+    $self->emit_event('openqa_worker_register', {id => $id, host => $host, instance => $instance, caps => $caps});
     $self->render(json => {id => $id});
 
 }

@@ -23,7 +23,6 @@ sub register {
 
     my $type = $self->param('type');
     my $name = $self->param('name');
-    $self->emit_event('asset_register_req', {type => $type, name => $name});
 
     my $ipc = OpenQA::IPC->ipc;
     my $id = $ipc->scheduler('asset_register', {type => $type, name => $name});
@@ -32,6 +31,7 @@ sub register {
     my $json   = {};
     if ($id) {
         $json->{id} = $id;
+        $self->emit_event('openqa_asset_register', {id => $id, type => $type, name => $name});
     }
     else {
         $status = 400;
@@ -75,10 +75,10 @@ sub delete {
     for my $arg (qw/id type name/) {
         $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
     }
-    $self->emit_event('asset_delete_req', \%args);
 
     my $ipc = OpenQA::IPC->ipc;
     my $rs = $ipc->scheduler('asset_delete', \%args);
+    $self->emit_event('openqa_asset_delete', \%args);
 
     $self->render(json => {count => $rs});
 }

@@ -466,11 +466,12 @@ sub add_comment {
     my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
     return $self->reply->not_found unless $job;
 
-    $job->comments->create(
+    my $rs = $job->comments->create(
         {
             text    => $self->param('text'),
             user_id => $self->current_user->id,
         });
+    $self->emit_event('openqa_user_comment', {id => $rs->id});
     $self->flash('info', 'Comment added');
     return $self->redirect_to('test');
 }

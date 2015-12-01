@@ -21,7 +21,6 @@ use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
 use OpenQA::Worker::Common qw/ASSET_DIR/;
-use Data::Dump qw/pp/;
 
 use Mojo::IOLoop;
 use Mojolicious::Commands;

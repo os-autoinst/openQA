@@ -108,12 +108,12 @@ sub create {
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
     # restore URL encoded /
     my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
-    $self->emit_event('job_create_req', \%params);
 
     my $json = {};
     my $status;
     try {
         my $job = $ipc->scheduler('job_create', \%params, 0);
+        $self->emit_event('openqa_job_create', {id => $job->{id}, %params});
         $json->{id} = $job->{id};
     }
     catch {
@@ -137,8 +137,8 @@ sub grab {
     $caps->{cpu_opmode}    = $self->param('cpu_opmode');
     $caps->{mem_max}       = $self->param('mem_max');
 
-    $self->emit_event('job_grab_req', {workerid => $workerid, blocking => $blocking, workerip => $workerip});
     my $res = $ipc->scheduler('job_grab', {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
+    $self->emit_event('openqa_job_grab', {workerid => $workerid, blocking => $blocking, workerip => $workerip, id => $res->{id}});
     $self->render(json => {job => $res});
 }
 
@@ -161,9 +161,9 @@ sub set_command {
     my $jobid   = int($self->stash('jobid'));
     my $command = 'job_set_' . $self->stash('command');
     my $ipc     = OpenQA::IPC->ipc;
-    $self->emit_event('job_set_command_reg', {jobid => $jobid, command => $self->stash('command')});
 
     my $res = try { $ipc->scheduler($command, $jobid) };
+    $self->emit_event('openqa_' . $command, {id => $jobid}) if ($res);
     # Referencing the scalar will result in true or false
     # (see http://mojolicio.us/perldoc/Mojo/JSON)
     $self->render(json => {result => \$res});
@@ -172,8 +172,9 @@ sub set_command {
 sub destroy {
     my $self = shift;
     my $ipc  = OpenQA::IPC->ipc;
-    $self->emit_event('job_delete_req', {jobid => $self->stash('jobid')});
+
     my $res = $ipc->scheduler('job_delete', int($self->stash('jobid')));
+    $self->emit_event('openqa_job_delete', {id => $self->stash('jobid')}) if ($res);
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -193,8 +194,9 @@ sub result {
     my $jobid  = int($self->stash('jobid'));
     my $result = $self->param('result');
     my $ipc    = OpenQA::IPC->ipc;
-    $self->emit_event('job_update_result_req', {jobid => $jobid, result => $result});
+
     my $res = $ipc->scheduler('job_update_result', {jobid => $jobid, result => $result});
+    $self->emit_event('openqa_job_update_result', {id => $jobid, result => $result}) if ($res);
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -253,6 +255,7 @@ sub done {
     else {
         $res = $ipc->scheduler('job_set_done', {jobid => $jobid, result => $result});
     }
+    $self->emit_event('openqa_job_done', {id => $jobid, result => $result, newbuild => $newbuild}) if ($res);
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -270,8 +273,14 @@ sub restart {
         $self->app->log->debug("Restarting jobs @$jobs");
     }
 
-    my $ipc  = OpenQA::IPC->ipc;
-    my $res  = $ipc->scheduler('job_restart', $jobs);
+    my $ipc = OpenQA::IPC->ipc;
+    my $res = $ipc->scheduler('job_restart', $jobs);
+    if (@$res > 1) {
+        $self->emit_event('openqa_jobs_restart', {ids => $jobs, results => $res});
+    }
+    elsif (@$res == 1) {
+        $self->emit_event('openqa_job_restart', {id => $jobs->[0], result => $res->[0]});
+    }
     my @urls = map { $self->url_for('test', testid => $_) } @$res;
     $self->render(json => {result => $res, test_url => \@urls});
 }
@@ -282,6 +291,7 @@ sub cancel {
 
     my $ipc = OpenQA::IPC->ipc;
     my $res = $ipc->scheduler('job_cancel', $name, 0);
+    $self->emit_event('openqa_job_cancel', {id => $name}) if ($res);
     $self->render(json => {result => $res});
 }
 
@@ -298,6 +308,7 @@ sub duplicate {
 
     my $ipc = OpenQA::IPC->ipc;
     my $id = $ipc->scheduler('job_duplicate', \%args);
+    $self->emit_event('openqa_job_duplicate', {id => $jobid, auto => $args{dup_type_auto}, result => $id}) if ($id);
     $self->render(json => {id => $id});
 }
 

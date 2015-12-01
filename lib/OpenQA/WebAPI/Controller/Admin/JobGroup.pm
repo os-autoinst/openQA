@@ -31,15 +31,13 @@ sub create {
     my $groupname = $self->param('name');
 
     if ($groupname) {
-        $self->emit_event('jobgroup_create_req', {groupname => $groupname});
         my $ng = $self->db->resultset("JobGroups")->create({name => $groupname});
         if ($ng) {
+            $self->emit_event('openqa_jobgroup_create', {groupname => $ng->name, id => $ng->id});
             $self->flash('info', 'Group ' . $ng->name . ' created');
-            $self->emit_event('jobgroup_create_res', {result => 'success'});
         }
         else {
             $self->flash('error', "Creating group $groupname failed");
-            $self->emit_event('jobgroup_create_res', {result => 'failure'});
         }
     }
     else {
@@ -76,15 +74,13 @@ sub save_connect {
         machine_id    => $self->param('machine'),
         group_id      => $group->id,
         test_suite_id => $self->param('test')};
-    $self->emit_event('jobgroup_connect_req', $values);
     eval { $self->db->resultset("JobTemplates")->create($values)->id };
     if ($@) {
         $self->flash(error => $@);
-        $self->emit_event('jobgroup_connect_res', {result => 'failure'});
         $self->redirect_to('job_group_new_media', groupid => $group->id);
     }
     else {
-        $self->emit_event('jobgroup_connect_res', {result => 'success'});
+        $self->emit_event('openqa_jobgroup_connect', $values);
         $self->redirect_to('admin_job_templates', groupid => $group->id);
     }
 }

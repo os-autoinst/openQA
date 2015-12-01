@@ -106,6 +106,7 @@ sub create {
         elsif ($res{'error'}) {
             return $self->render(text => $res{'error'}, status => 403);
         }
+        $self->emit_event('openqa_user_login');
         return $self->redirect_to('index');
     }
     return $self->render(text => 'Forbidden', status => 403);

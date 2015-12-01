@@ -21,7 +21,7 @@ use Fcntl qw/SEEK_CUR SEEK_END/;
 
 sub index {
     my $self = shift;
-    #my $assets = $self->db->resultset("AuditLog")->search(undef, {order_by => 'id', prefetch => 'user', limit => 100});
+    #my $assets = $self->db->resultset("AuditEvents")->search(undef, {order_by => 'id', prefetch => 'user', limit => 100});
 
     my $auditfh;
     return unless open($auditfh, '<', $self->app->config->{logging}->{audit_log});

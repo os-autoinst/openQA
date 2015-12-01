@@ -124,12 +124,11 @@ sub create {
     my $json = {};
 
     if ($error) {
-        $self->emit_event('table_create_req', {table => $table, result => 'failure', %entry});
         $json->{error} = $error;
         $status = 400;
     }
     else {
-        $self->emit_event('table_create_req', {table => $table, result => 'success', %entry});
+        $self->emit_event('openqa_table_create', {table => $table, %entry});
         $json->{id} = $id;
     }
 
@@ -200,11 +199,10 @@ sub update {
         if ($ret == 0) {
             $status = 404;
             $error  = 'Not found';
-            $self->emit_event('table_update_req', {table => $table, result => 'failure', name => $entry{name}, settings => \@settings});
         }
         else {
             $json->{result} = int($ret);
-            $self->emit_event('table_update_req', {table => $table, result => 'success', name => $entry{name}, settings => \@settings});
+            $self->emit_event('openqa_table_update', {table => $table, name => $entry{name}, settings => \@settings});
         }
     }
     else {
@@ -231,9 +229,14 @@ sub destroy {
 
     my $res;
 
+    my $entry_name;
+
     try {
         my $rs = $self->db->resultset($table);
         $res = $rs->search({id => $self->param('id')});
+        if ($res && $res->single) {
+            $entry_name = $res->single->name;
+        }
         $ret = $res->delete;
     }
     catch {
@@ -244,17 +247,15 @@ sub destroy {
         if ($ret == 0) {
             $status = 404;
             $error  = 'Not found';
-            $self->emit_event('table_delete_req', {table => $table, result => 'failure', id => $self->param('id')});
         }
         else {
             $json->{result} = int($ret);
-            $self->emit_event('table_delete_req', {table => $table, name => $res->single->name});
+            $self->emit_event('openqa_table_delete', {table => $table, name => $entry_name});
         }
     }
     else {
         $json->{error} = $error;
         $status = 400;
-        $self->emit_event('table_delete_req', {result => 'failure'});
     }
 
     $self->render(json => $json, status => $status);

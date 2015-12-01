@@ -43,7 +43,7 @@ sub create {
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
     # restore URL encoded /
     my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
-    $self->emit_event('iso_create_req', \%params);
+    $self->emit_event('openqa_iso_create', \%params);
 
     my $ids = $ipc->scheduler('job_schedule_iso', \%params);
     my $cnt = scalar(@$ids);
@@ -56,7 +56,7 @@ sub destroy {
     my $self = shift;
     my $iso  = $self->stash('name');
     my $ipc  = OpenQA::IPC->ipc;
-    $self->emit_event('iso_delete_req', {iso => $iso});
+    $self->emit_event('openqa_iso_delete', {iso => $iso});
 
     my $res = $ipc->scheduler('job_delete_by_iso', $iso);
     $self->render(json => {count => $res});
@@ -66,7 +66,7 @@ sub cancel {
     my $self = shift;
     my $iso  = $self->stash('name');
     my $ipc  = OpenQA::IPC->ipc;
-    $self->emit_event('iso_cancel_req', {iso => $iso});
+    $self->emit_event('openqa_iso_cancel', {iso => $iso});
 
     my $res = $ipc->scheduler('job_cancel_by_iso', $iso, 0);
     $self->render(json => {result => $res});

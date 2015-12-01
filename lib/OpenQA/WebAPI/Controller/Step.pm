@@ -395,25 +395,25 @@ sub _json_validation($) {
     if (!$djson) {
         my $err = $@;
         $err =~ s@at /usr/.*$@@;    #do not print perl module reference
-        return "syntax error: $err";
+        die "syntax error: $err";
     }
 
     if (!exists $djson->{area} || !exists $djson->{area}[0]) {
-        return 'no area defined';
+        die 'no area defined';
     }
     if (!exists $djson->{tags} || !exists $djson->{tags}[0]) {
-        return 'no tag defined';
+        die 'no tag defined';
     }
     my $areas = $djson->{area};
     foreach my $area (@$areas) {
-        return 'area without xpos'   unless exists $area->{xpos};
-        return 'area without ypos'   unless exists $area->{ypos};
-        return 'area without type'   unless exists $area->{type};
-        return 'area without height' unless exists $area->{height};
-        return 'area without width'  unless exists $area->{width};
+        die 'area without xpos'   unless exists $area->{xpos};
+        die 'area without ypos'   unless exists $area->{ypos};
+        die 'area without type'   unless exists $area->{type};
+        die 'area without height' unless exists $area->{height};
+        die 'area without width'  unless exists $area->{width};
     }
 
-    return;
+    return $djson;
 
 }
 
@@ -452,9 +452,10 @@ sub save_needle {
     my $overwrite    = $validation->param('overwrite');
     my $needledir    = needledir($job->settings_hash->{DISTRI}, $job->settings_hash->{VERSION});
 
-    my $error = $self->_json_validation($json);
-    if ($error) {
-        my $message = 'Error validating needle: ' . $error;
+    my $json_data;
+    eval { $json_data = $self->_json_validation($json); };
+    if ($@) {
+        my $message = 'Error validating needle: ' . $@;
         $self->app->log->error($message);
         $self->stash(error => "$message\n");
         return $self->edit;
@@ -518,6 +519,7 @@ sub save_needle {
                 $self->stash(error => "$needledir is not a git repo");
             }
         }
+        $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => $overwrite});
         $self->stash(info => "Needle $needlename created/updated.");
     }
     else {

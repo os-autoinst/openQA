@@ -127,13 +127,15 @@ sub module {
 
 sub delete {
     my ($self) = @_;
-
+    my @removed_ids;
     for my $p (@{$self->every_param('id[]')}) {
         if (!$self->app->db->resultset('Needles')->find($p)->remove($self->current_user)) {
             $self->stash(error => "Error removing $p");
             last;
         }
+        push @removed_ids, $p;
     }
+    $self->emit_event('openqa_needle_delete', {id => \@removed_ids});
     $self->render(text => 'ok');
 }
 
