@@ -29,36 +29,36 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 #
 # No login, no user-info and no api_keys
-$t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged as/);
+$t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged in as/);
 $t->get_ok('/api_keys')->status_is(302);
 
 # So let's log in as an unpriviledged user
 $test_case->login($t, 'https://openid.camelot.uk/lancelot');
 # ...who should see a logout option but no link to API keys
-$t->get_ok('/tests')->status_is(200)->content_like(qr/Logged as lance (.*logout.*)/);
+$t->get_ok('/tests')->status_is(200)->content_like(qr/Logged in as lance (.*logout.*)/);
 $t->get_ok('/api_keys')->status_is(403);
 
 #
 # Then logout
 $t->delete_ok('/logout')->status_is(302);
-$t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged as/);
+$t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged in as/);
 
 #
 # Try creating new user by logging in
 $test_case->login($t, 'morgana');
 # ...who should see a logout option but no link to API keys
-$t->get_ok('/tests')->status_is(200)->content_like(qr/Logged as morgana (.*logout.*)/);
+$t->get_ok('/tests')->status_is(200)->content_like(qr/Logged in as morgana (.*logout.*)/);
 $t->get_ok('/api_keys')->status_is(403);
 
 #
 # Then logout
 $t->delete_ok('/logout')->status_is(302);
-$t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged as/);
+$t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged in as/);
 
 #
 # And log in as operator
 $test_case->login($t, 'percival');
-$t->get_ok('/tests')->status_is(200)->content_like(qr/Logged as perci (.*manage API keys.* | .*logout.*)/);
+$t->get_ok('/tests')->status_is(200)->content_like(qr/Logged in as perci (.*manage API keys.* | .*logout.*)/);
 $t->get_ok('/api_keys')->status_is(200);
 
 done_testing();

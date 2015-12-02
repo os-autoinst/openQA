@@ -51,7 +51,7 @@ $driver->find_element('Login', 'link_text')->click();
 is($driver->get_title(), "openQA", "back on main page");
 # but ...
 
-like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged as Demo.*Logout/, "logged in as demo");
+like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
 
 # Demo is admin, so go there
 $driver->find_element('admin', 'link_text')->click();
