@@ -55,7 +55,8 @@ sub _read_config {
         logging => {
             level     => undef,
             file      => "/var/log/openqa",
-            sql_debug => undef
+            sql_debug => undef,
+            audit_log => "/var/log/openqa-audit",
         },
         openid => {
             provider  => 'https://www.opensuse.org/openid/user/',
@@ -376,6 +377,8 @@ sub startup {
     $admin_r->get('/needles/:module_id/:needle_id')->name('admin_needle_module')->to('needle#module');
     $admin_r->get('/needles/ajax')->name('admin_needle_ajax')->to('needle#ajax');
     $admin_r->delete('/needles/delete')->name('admin_needle_delete')->to('needle#delete');
+
+    $admin_r->get('/auditlog')->name('audit_log')->to('audit_log#index');
 
     # Users list as default option
     $admin_r->get('/')->name('admin')->to('user#index');

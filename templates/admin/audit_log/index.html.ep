@@ -1,0 +1,15 @@
+% layout 'bootstrap';
+% title 'Audit log';
+
+<div class="row">
+    %= include 'layouts/admin_nav'
+
+    <div class="col-sm-10">
+        <h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+    <div style="margin: 0 10px;">
+        <pre id="auditlog"><%= $log %></pre>
+    </div>
+</div>
