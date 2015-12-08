@@ -90,6 +90,8 @@ BEGIN {
     $ENV{MOJO_MAX_MESSAGE_SIZE}   = 1024 * 1024 * 1024 * 20;
     $ENV{MOJO_INACTIVITY_TIMEOUT} = 300;
     $ENV{MOJO_CONNECT_TIMEOUT}    = 300;
+    # the default is EV, and this heavily screws with our children handling
+    $ENV{MOJO_REACTOR} = 'Mojo::Reactor::Poll';
     #$ENV{MOJO_LOG_LEVEL} = 'debug';
     #$ENV{MOJO_USERAGENT_DEBUG} = 1;
     #$ENV{MOJO_IOLOOP_DEBUG} = 1;
