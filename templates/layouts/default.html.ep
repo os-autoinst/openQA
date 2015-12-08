@@ -17,7 +17,7 @@
             %# Using a variable to avoid additional whitespaces
             % if (current_user) {
                 %# Using a variable to avoid additional whitespaces
-                % my $out = 'Logged as '.current_user->name.' (';
+                % my $out = 'Logged in as '.current_user->name.' (';
                 % if (is_operator) {
                     % $out = $out.link_to('manage API keys' => url_for('api_keys')).' | ';
                 % }
