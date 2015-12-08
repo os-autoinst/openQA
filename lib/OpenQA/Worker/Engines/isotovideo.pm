@@ -23,6 +23,7 @@ use OpenQA::Utils qw//;
 use POSIX qw/:sys_wait_h strftime SIGTERM SIGKILL uname/;
 use JSON qw/to_json/;
 use Fcntl;
+use Errno;
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -173,6 +174,10 @@ sub engine_check {
     my $pid = waitpid($workerpid, WNOHANG);
     if ($verbose) {
         printf "waitpid %d returned %d\n", $workerpid, $pid;
+    }
+    if ($pid == -1 && $!{ECHILD}) {
+        warn "we lost our child\n";
+        return 'died';
     }
 
     if ($pid == $workerpid) {
