@@ -53,27 +53,22 @@
   /usr/bin/date rix,
   /usr/bin/dirname rix,
   /usr/bin/eatmydata rix,
-  /usr/bin/icewm-default rcx,
   /usr/bin/ipmitool rix,
   /usr/bin/isotovideo rix,
   /usr/bin/lscpu rix,
   /usr/bin/mkdir rix,
-  /usr/bin/multimon rix,
+  /usr/bin/snd2png rix,
   /usr/bin/nice rix,
   /usr/bin/ionice rix,
-  /usr/bin/python3.4 r,
   /usr/bin/qemu-img rix,
   /usr/bin/qemu-kvm rix,
   /usr/bin/qemu-system-* rix,
   /usr/bin/rm rix,
-  /usr/bin/script rix,
-  /usr/bin/sox rix,
   /usr/bin/ssh-keygen rix,
   /usr/bin/tail rix,
   /usr/bin/tee rix,
   /usr/bin/uname rix,
   /usr/bin/x3270 cx,
-  /usr/bin/xdotool rix,
   /usr/lib*/qemu/block-curl.so rix,
   /usr/lib*/qemu/block-rbd.so mr,
   /usr/lib/os-autoinst/backend/s390x/vars.json.py rcx,
@@ -111,25 +106,6 @@
 
   }
 
-  profile /usr/bin/icewm-default {
-    #include <abstractions/base>
-    #include <abstractions/fonts>
-    #include <abstractions/freedesktop.org>
-
-    /etc/icewm/keys r,
-    /etc/icewm/preferences r,
-    /etc/icewm/preferences.yast2 r,
-    /etc/icewm/yast2/* r,
-    /usr/bin/icewm-default mr,
-    /usr/share/cantarell-fonts/conf.avail/* r,
-    /usr/share/fonts-config/conf.avail/* r,
-    /usr/share/ghostscript/fonts/ r,
-    /usr/share/icewm/themes/** r,
-    /usr/share/locale-bundle/*/LC_MESSAGES/gdk-pixbuf.mo r,
-    /var/lib/openqa/pool/*/autoinst-log.txt w,
-
-  }
-
   profile /usr/bin/x3270 {
     #include <abstractions/X>
     #include <abstractions/base>
@@ -153,14 +129,4 @@
 
   }
 
-  profile /usr/lib/os-autoinst/backend/s390x/vars.json.py {
-    #include <abstractions/base>
-    #include <abstractions/nameservice>
-    #include <abstractions/python>
-
-    /usr/bin/python3* rix,
-    /var/lib/openqa/pool/*/autoinst-log.txt w,
-    /var/lib/openqa/pool/*/vars.json r,
-
-  }
 }
