@@ -55,7 +55,6 @@ sub _read_config {
             level     => undef,
             file      => "/var/log/openqa",
             sql_debug => undef,
-            audit_log => "/var/log/openqa-audit",
         },
         openid => {
             provider  => 'https://www.opensuse.org/openid/user/',
