@@ -21,7 +21,6 @@ use warnings;
 use parent qw/Mojolicious::Plugin/;
 use Mojo::IOLoop;
 use Data::Dump qw/pp/;
-use Fcntl qw/:flock/;
 
 my @table_events       = qw/table_create table_update table_delete/;
 my @job_events         = qw/job_create job_delete job_grab job_cancel job_duplicate job_restart jobs_restart job_update_result job_set_waiting job_set_running job_done/;
@@ -33,41 +32,25 @@ my @iso_events         = qw/iso_create iso_delete iso_cancel/;
 my @worker_events      = qw/command_enqueue worker_register/;
 my @needle_events      = qw/needle_modify needle_delete/;
 
-
 sub register {
     my ($self, $app, $reactor) = @_;
     $self->{audit_log} = $app->config->{logging}->{audit_log};
 
-    # add table events
+    # register for events
     for my $event (@table_events, @job_events, @jobgroup_events, @jobtemplate_events, @user_events, @asset_events, @iso_events, @worker_events, @needle_events) {
-        $reactor->on("openqa_$event" => sub { shift; $self->on_event(@_) });
+        $reactor->on("openqa_$event" => sub { shift; $self->on_event($app, @_) });
     }
 
-    # add global mojolicious events
-    $reactor->on('finish' => sub { $self->append_auditlog('exiting openQA') });
-    $self->append_auditlog('openQA started, auditing initialized');
+    $app->db->resultset('AuditEvents')->create({user_id => 0, connection_id => 0, event => 'startup', event_data => 'openQA restarted'});
 }
 
 # table events
 sub on_event {
-    my ($self, $args) = @_;
+    my ($self, $app, $args) = @_;
     my ($user_id, $connection_id, $event, $event_data) = @$args;
     # no need to log openqa_ prefix in openqa log
     $event =~ s/^openqa_//;
-    #$self->db->resultset('AuditEvents')->create( {user_id => $user_id, connection_id => $connection_id, event => $event, event_data => pp($event_data)} );
-    $self->append_auditlog("${user_id}:${connection_id} - $event - " . pp($event_data || ''));
-}
-
-sub append_auditlog {
-    my $self = shift;
-    die 'Wrong append call' unless $self;
-    my $auditfh;
-    return unless open($auditfh, '>>', $self->{audit_log});
-    my $line = '[' . localtime(time) . '] ' . join "\n", @_, '';
-    flock $auditfh, LOCK_EX;
-    print $auditfh $line;
-    flock $auditfh, LOCK_UN;
-    close $auditfh;
+    $app->db->resultset('AuditEvents')->create({user_id => $user_id, connection_id => $connection_id, event => $event, event_data => pp($event_data)});
 }
 
 1;

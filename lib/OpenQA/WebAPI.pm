@@ -194,11 +194,12 @@ sub startup {
       /javascripts/admintable.js
       /javascripts/admin_user.js
       /javascripts/admin_needle.js
+      /javascripts/audit_log.js
       /javascripts/jquery.timeago.js
       /javascripts/tests.js
       /javascripts/assets.js
       /javascripts/job_templates.js
-      /javascripts/overview.js );
+      /javascripts/overview.js);
     my @css = qw(/stylesheets/font-awesome.css
       /stylesheets/chosen.css
       /stylesheets/overview.scss
@@ -379,6 +380,7 @@ sub startup {
     $admin_r->delete('/needles/delete')->name('admin_needle_delete')->to('needle#delete');
 
     $admin_r->get('/auditlog')->name('audit_log')->to('audit_log#index');
+    $admin_r->get('/auditlog/ajax')->name('audit_ajax')->to('audit_log#ajax');
 
     # Users list as default option
     $admin_r->get('/')->name('admin')->to('user#index');

@@ -17,31 +17,28 @@
 package OpenQA::WebAPI::Controller::Admin::AuditLog;
 use strict;
 use parent 'Mojolicious::Controller';
-use Fcntl qw/SEEK_CUR SEEK_END/;
 
 sub index {
-    my $self = shift;
-    #my $assets = $self->db->resultset("AuditEvents")->search(undef, {order_by => 'id', prefetch => 'user', limit => 100});
-
-    my $auditfh;
-    return unless open($auditfh, '<', $self->app->config->{logging}->{audit_log});
-    my $log;
-    my $size = -s $self->app->config->{logging}->{audit_log};
-    if ($size > 10 * 1024 && seek $auditfh, -10 * 1024, SEEK_END) {
-        # Discard one (probably) partial line
-        my $dummy = <$auditfh>;
-    }
-    while (defined(my $l = <$auditfh>)) {
-        $log .= $l;
-    }
-    seek $auditfh, 0, SEEK_CUR;
-    close($auditfh);
-    $self->stash('log' => $log);
+    my ($self) = @_;
     $self->render('admin/audit_log/index');
 }
 
 sub ajax {
-    # follow audit log
+    my ($self) = @_;
+    my $events_rs = $self->app->db->resultset("AuditEvents")->search(undef, {order_by => 'me.id', prefetch => 'user', limit => 100});
+    my @events;
+    while (my $event = $events_rs->next) {
+        my $data = {
+            id         => $event->id,
+            user       => $event->user ? $event->user->nickname : 'system',
+            connection => $event->connection_id,
+            event      => $event->event,
+            event_data => $event->event_data,
+            event_time => $event->t_created,
+        };
+        push @events, $data;
+    }
+    $self->render(json => {data => \@events});
 }
 
 1;
