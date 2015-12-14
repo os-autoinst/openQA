@@ -96,15 +96,15 @@ sub remove_from_disk {
 sub ensure_size {
     my ($self) = @_;
 
-    return $self->size if defined($self->size);
-
     my $size = 0;
     my @st   = stat($self->disk_file);
     if (@st) {
         if ($self->type eq 'iso') {
             $size = $st[7];
+            return $self->size if defined($self->size) && $size == $self->size;
         }
         elsif ($self->type eq 'repo') {
+            return $self->size if defined($self->size);
             $size = _getDirSize($self->disk_file);
         }
     }
@@ -150,6 +150,8 @@ sub limit_assets {
     my %toremove;
     my %keep;
 
+    my $debug_keep = 0;
+
     # we go through the group and keep the last X GB of it in %keep and the others
     # in toremove. After that we remove all in %toremove that no other group put in %keep
     # (assets can easily be in 2 groups - and both have different update ratios, it's up
@@ -172,15 +174,16 @@ sub limit_assets {
             $seen_asset{$a->asset->id} = $g->id;
             my $size = $a->asset->ensure_size;
             if ($size > 0 && $sizelimit > 0) {
-                $keep{$a->asset_id} = 1;
+                $keep{$a->asset_id} = sprintf "%s: %s/%s", $g->name, $a->asset->type, $a->asset->name;
             }
             else {
-                $toremove{$a->asset_id} = 1;
+                $toremove{$a->asset_id} = sprintf "%s/%s", $a->asset->type, $a->asset->name;
             }
             $sizelimit -= $size;
         }
     }
     for my $id (keys %keep) {
+        OpenQA::Utils::log_debug("KEEP $toremove{$id} $keep{$id}") if $debug_keep;
         delete $toremove{$id};
     }
     my $assets = $app->db->resultset('Assets')->search({id => {in => [sort keys %toremove]}}, {order_by => qw/t_created/});
@@ -198,6 +201,7 @@ sub limit_assets {
     if (opendir($dh, $OpenQA::Utils::assetdir . "/iso")) {
         my %isos;
         while (readdir($dh)) {
+            next if $_ =~ m/CURRENT/;
             next unless $_ =~ m/\.iso$/;
             $isos{$_} = 0;
         }
@@ -215,6 +219,8 @@ sub limit_assets {
     if (opendir($dh, $OpenQA::Utils::assetdir . "/repo")) {
         my %repos;
         while (readdir($dh)) {
+            next if $_ eq '.' || $_ eq '..';
+            next if -l "$OpenQA::Utils::assetdir/repo/$_";
             next unless -d "$OpenQA::Utils::assetdir/repo/$_";
             $repos{$_} = 0;
         }
