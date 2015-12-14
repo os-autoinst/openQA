@@ -26,8 +26,8 @@ install:
 
 	install -D -m 640 etc/openqa/client.conf "$(DESTDIR)"/etc/openqa/client.conf
 	install -D -m 644 etc/openqa/workers.ini "$(DESTDIR)"/etc/openqa/workers.ini
-	install -D -m 640 etc/openqa/openqa.ini "$(DESTDIR)"/etc/openqa/openqa.ini
-	install -D -m 644 etc/openqa/database.ini "$(DESTDIR)"/etc/openqa/database.ini
+	install -D -m 644 etc/openqa/openqa.ini "$(DESTDIR)"/etc/openqa/openqa.ini
+	install -D -m 640 etc/openqa/database.ini "$(DESTDIR)"/etc/openqa/database.ini
 
 	install -D -m 644 etc/logrotate.d/openqa "$(DESTDIR)"/etc/logrotate.d/openqa
 #
