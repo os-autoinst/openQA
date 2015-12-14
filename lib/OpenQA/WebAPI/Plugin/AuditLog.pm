@@ -41,7 +41,7 @@ sub register {
         $reactor->on("openqa_$event" => sub { shift; $self->on_event($app, @_) });
     }
 
-    $app->db->resultset('AuditEvents')->create({user_id => 0, connection_id => 0, event => 'startup', event_data => 'openQA restarted'});
+    $app->db->resultset('AuditEvents')->create({user_id => undef, connection_id => 0, event => 'startup', event_data => 'openQA restarted'});
 }
 
 # table events
