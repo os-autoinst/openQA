@@ -222,7 +222,7 @@ revision of your operating system that needs to be tested. If you are starting
 from scratch, you should probably go through the following order:
 
 . Define machines in 'Machines' menu
-. Define products you have in 'Products' menu
+. Define medium types (products) you have in 'Medium Types' menu
 . Specify various collections of tests you want to run in the 'Test suites'
   menu
 . Go to the template matrix in 'Job templates' menu and decide what
@@ -248,10 +248,10 @@ triples, we can create a list like this to characterize KDE tests:
 For every triplet, we need to configure a different instance of
 os-autoinst with a different set of parameters.
 
-Products
+Medium Types (products)
 ~~~~~~~~
 
-A product in openQA is a simple description without any concrete
+A medium type (product) in openQA is a simple description without any concrete
 meaning. It basically consists of a name and a set of variables that
 define or characterize this product in os-autoinst.
 
