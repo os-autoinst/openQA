@@ -143,11 +143,12 @@ sub add_comment {
     my $group = $self->app->schema->resultset("JobGroups")->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    $group->comments->create(
+    my $rs = $group->comments->create(
         {
             text    => $self->param('text'),
             user_id => $self->current_user->id,
         });
+    $self->emit_event('openqa_user_comment', {id => $rs->id});
     $self->flash('info', 'Comment added');
     return $self->redirect_to('group_overview');
 }

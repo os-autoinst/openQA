@@ -15,7 +15,7 @@
                 but the previous one was even more annoying -->
                 <li><%= link_to('Workers' => url_for('admin_workers')) %></li>
                 <li><%= link_to('Needles' => url_for('admin_needles')) %></li>
-
+                <li><%= link_to('Audit log' => url_for('audit_log')) %></li>
             </ul>
         </div>
     </div>

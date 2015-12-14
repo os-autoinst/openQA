@@ -31,6 +31,7 @@ sub register {
     my $json   = {};
     if ($id) {
         $json->{id} = $id;
+        $self->emit_event('openqa_asset_register', {id => $id, type => $type, name => $name});
     }
     else {
         $status = 400;
@@ -77,6 +78,7 @@ sub delete {
 
     my $ipc = OpenQA::IPC->ipc;
     my $rs = $ipc->scheduler('asset_delete', \%args);
+    $self->emit_event('openqa_asset_delete', \%args);
 
     $self->render(json => {count => $rs});
 }

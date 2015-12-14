@@ -1,4 +1,5 @@
 # Copyright (C) 2014 SUSE Linux Products GmbH
+#           (C) 2015 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -116,7 +117,6 @@ sub create {
         }
     }
     else {
-        $DB::single = 1;
         try { $id = $self->db->resultset($table)->create(\%entry)->id; } catch { $error = shift; };
     }
 
@@ -128,6 +128,7 @@ sub create {
         $status = 400;
     }
     else {
+        $self->emit_event('openqa_table_create', {table => $table, %entry});
         $json->{id} = $id;
     }
 
@@ -201,9 +202,11 @@ sub update {
         }
         else {
             $json->{result} = int($ret);
+            $self->emit_event('openqa_table_update', {table => $table, name => $entry{name}, settings => \@settings});
         }
     }
     else {
+        # no need for emiting here, this is called in case of wrong parameters -> not emitting req part
         $json->{error} = $error;
         $status = 400;
     }
@@ -224,9 +227,17 @@ sub destroy {
     my $ret;
     my $error;
 
+    my $res;
+
+    my $entry_name;
+
     try {
         my $rs = $self->db->resultset($table);
-        $ret = $rs->search({id => $self->param('id')})->delete;
+        $res = $rs->search({id => $self->param('id')});
+        if ($res && $res->single) {
+            $entry_name = $res->single->name;
+        }
+        $ret = $res->delete;
     }
     catch {
         $error = shift;
@@ -239,6 +250,7 @@ sub destroy {
         }
         else {
             $json->{result} = int($ret);
+            $self->emit_event('openqa_table_delete', {table => $table, name => $entry_name});
         }
     }
     else {

@@ -24,6 +24,7 @@ sub create {
     my $workerid = $self->stash('workerid');
     my $command  = $self->param('command');
     my $ipc      = OpenQA::IPC->ipc;
+    $self->emit_event('openqa_command_enqueue', {workerid => $workerid, command => $command});
 
     my $res;
     try {

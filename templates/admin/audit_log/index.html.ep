@@ -1,0 +1,33 @@
+% layout 'bootstrap';
+% title 'Audit log';
+
+% content_for 'ready_function' => begin
+    audit_url = "<%= url_for('audit_log') %>";
+    ajax_url  = "<%= url_for('audit_ajax') %>";
+    loadAuditLogTable();
+% end
+
+<div class="row">
+    %= include 'layouts/admin_nav'
+
+    <div class="col-sm-10">
+        <h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+    <table id="audit_log_table" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Time</th>
+                    <th>ID</th>
+                    <th>User</th>
+                    <th>Connection</th>
+                    <th>Event</th>
+                    <th>Event data</th>
+                </tr>
+            </thead>
+            <tbody>
+             </tbody>
+        </table>
+    </div>
+</div>

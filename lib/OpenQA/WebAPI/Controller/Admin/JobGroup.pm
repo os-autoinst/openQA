@@ -33,6 +33,7 @@ sub create {
     if ($groupname) {
         my $ng = $self->db->resultset("JobGroups")->create({name => $groupname});
         if ($ng) {
+            $self->emit_event('openqa_jobgroup_create', {groupname => $ng->name, id => $ng->id});
             $self->flash('info', 'Group ' . $ng->name . ' created');
         }
         else {
@@ -79,6 +80,7 @@ sub save_connect {
         $self->redirect_to('job_group_new_media', groupid => $group->id);
     }
     else {
+        $self->emit_event('openqa_jobgroup_connect', $values);
         $self->redirect_to('admin_job_templates', groupid => $group->id);
     }
 }

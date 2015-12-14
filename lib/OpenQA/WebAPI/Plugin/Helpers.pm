@@ -205,6 +205,13 @@ sub register {
 
     $app->helper(step_thumbnail => \&_step_thumbnail);
 
+    $app->helper(
+        # emit_event helper, adds user, connection to events
+        emit_event => sub {
+            my ($self, $event, $data) = @_;
+            die 'Missing event name' unless $event;
+            return Mojo::IOLoop->singleton->emit($event, [$self->current_user->id, $self->tx->connection, $event, $data]);
+        });
 }
 
 sub _step_thumbnail {
