@@ -44,7 +44,7 @@ __PACKAGE__->add_columns(
     });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->belongs_to(user => 'OpenQA::Schema::Result::Users', 'user_id', {join_type => 'left'});
+__PACKAGE__->belongs_to(owner => 'OpenQA::Schema::Result::Users', 'user_id', {join_type => 'left'});
 
 1;
 # vim: set sw=4 et:

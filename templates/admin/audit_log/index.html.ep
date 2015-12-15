@@ -19,7 +19,6 @@
             <thead>
                 <tr>
                     <th>Time</th>
-                    <th>ID</th>
                     <th>User</th>
                     <th>Connection</th>
                     <th>Event</th>

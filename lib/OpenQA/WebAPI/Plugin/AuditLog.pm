@@ -23,7 +23,7 @@ use Mojo::IOLoop;
 use Data::Dump qw/pp/;
 
 my @table_events       = qw/table_create table_update table_delete/;
-my @job_events         = qw/job_create job_delete job_grab job_cancel job_duplicate job_restart jobs_restart job_update_result job_set_waiting job_set_running job_done/;
+my @job_events         = qw/job_create job_delete job_cancel job_duplicate job_restart jobs_restart job_update_result job_set_waiting job_set_running job_done/;
 my @jobgroup_events    = qw/jobgroup_create jobgroup_connect/;
 my @jobtemplate_events = qw/jobtemplate_create jobtemplate_delete/;
 my @user_events        = qw/user_update user_login user_comment/;
@@ -31,6 +31,9 @@ my @asset_events       = qw/asset_register asset_delete/;
 my @iso_events         = qw/iso_create iso_delete iso_cancel/;
 my @worker_events      = qw/command_enqueue worker_register/;
 my @needle_events      = qw/needle_modify needle_delete/;
+
+# disabled events:
+# job_grab
 
 sub register {
     my ($self, $app, $reactor) = @_;

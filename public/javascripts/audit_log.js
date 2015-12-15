@@ -35,36 +35,25 @@ function loadAuditLogTable ()
     },
     columns: [
         { data: 'event_time' },
-        { data: 'id' },
         { data: 'user' },
         { data: 'connection' },
         { data: 'event' },
         { data: 'event_data' }
     ],
-    order: [[1, 'desc']],
+    order: [[0, 'desc']],
     columnDefs: [
         { 
             targets: 0,
             render: function ( data, type, row ) {
                 if (type === 'display')
-                    return jQuery.timeago(data + " UTC");
-                else
-                    return data;
-            }
-        },
-        {
-            targets: 1,
-            className: "event_id",
-            render: function ( data, type, row ) {
-                // I want to have a link to events for cases when one wants to share interesing event
-                if (type === 'display')
-                    return '<a href="' + audit_url + '?eventid=' + data + '">' + data + '</a>';
+                    // I want to have a link to events for cases when one wants to share interesing event
+                    return '<a href="' + audit_url + '?eventid=' + row.id + '">' + jQuery.timeago(data + " UTC") + '</a>';
                 else
                     return data;
             }
         },
         { 
-            targets: 5,
+            targets: 4,
             render: function ( data, type, row ) {
                 // Limit length of displayed event data, expand on click
                 if (type === 'display' && data.length > 40)
