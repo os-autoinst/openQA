@@ -25,12 +25,12 @@ sub index {
 
 sub ajax {
     my ($self) = @_;
-    my $events_rs = $self->app->db->resultset("AuditEvents")->search(undef, {order_by => 'me.id', prefetch => 'user', limit => 100});
+    my $events_rs = $self->app->db->resultset("AuditEvents")->search(undef, {order_by => 'me.id', prefetch => 'owner', limit => 100});
     my @events;
     while (my $event = $events_rs->next) {
         my $data = {
             id         => $event->id,
-            user       => $event->user ? $event->user->nickname : 'system',
+            user       => $event->owner ? $event->owner->nickname : 'system',
             connection => $event->connection_id,
             event      => $event->event,
             event_data => $event->event_data,
