@@ -90,6 +90,10 @@ our @ISA = qw/Text::Markdown/;
 sub _DoAutoLinks {
     my ($self, $text) = @_;
 
+    # auto-replace every http(s) reference which is not already either html
+    # 'a href...' or markdown link '[link](url)'
+    $text =~ s{(?<!['"(])(http[s]?://[^\s]*)}{<a href="$1">$1</a>}gi;
+
     $text =~ s{(bnc#(\d+))}{<a href="https://bugzilla.novell.com/show_bug.cgi?id=$2">$1</a>}gi;
     $text =~ s{(bsc#(\d+))}{<a href="https://bugzilla.suse.com/show_bug.cgi?id=$2">$1</a>}gi;
     $text =~ s{(boo#(\d+))}{<a href="https://bugzilla.opensuse.org/show_bug.cgi?id=$2">$1</a>}gi;
