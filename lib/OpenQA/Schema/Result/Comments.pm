@@ -94,6 +94,7 @@ sub _DoAutoLinks {
     $text =~ s{(bsc#(\d+))}{<a href="https://bugzilla.suse.com/show_bug.cgi?id=$2">$1</a>}gi;
     $text =~ s{(boo#(\d+))}{<a href="https://bugzilla.opensuse.org/show_bug.cgi?id=$2">$1</a>}gi;
     $text =~ s{(poo#(\d+))}{<a href="https://progress.opensuse.org/issues/$2">$1</a>}gi;
+    $text =~ s{(t#(\d+))}{<a href="/tests/$2">$1</a>}gi;
 
     $text =~ s{(http://\S*\.gif$)}{<img src="$1"/>}gi;
     $self->SUPER::_DoAutoLinks($text);
