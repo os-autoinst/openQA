@@ -37,7 +37,6 @@ my @needle_events      = qw/needle_modify needle_delete/;
 
 sub register {
     my ($self, $app, $reactor) = @_;
-    $self->{audit_log} = $app->config->{logging}->{audit_log};
 
     # register for events
     for my $event (@table_events, @job_events, @jobgroup_events, @jobtemplate_events, @user_events, @asset_events, @iso_events, @worker_events, @needle_events) {
