@@ -94,26 +94,34 @@ sub destroy {
 
 sub create {
     my ($self)      = @_;
+    my $ref         = $self->req->headers->referrer;
     my $auth_method = $self->app->config->{'auth'}->{'method'};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
     $auth_module->import('auth_login');
 
+    # prevent redirecting loop when referrer is login page
+    if ($ref eq $self->url_for('login')) {
+        $ref = 'index';
+    }
+
     my %res = auth_login($self);
     if (%res) {
         if ($res{'redirect'}) {
+            $self->flash(ref => $ref);
             return $self->redirect_to($res{'redirect'});
         }
         elsif ($res{'error'}) {
             return $self->render(text => $res{'error'}, status => 403);
         }
         $self->emit_event('openqa_user_login');
-        return $self->redirect_to('index');
+        return $self->redirect_to($ref);
     }
     return $self->render(text => 'Forbidden', status => 403);
 }
 
 sub response {
     my ($self)      = @_;
+    my $ref         = $self->flash('ref');
     my $auth_method = $self->app->config->{'auth'}->{'method'};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
     $auth_module->import('auth_response');
@@ -121,12 +129,13 @@ sub response {
     my %res = auth_response($self);
     if (%res) {
         if ($res{'redirect'}) {
+            $self->flash(ref => $ref);
             return $self->redirect_to($res{'redirect'});
         }
         elsif ($res{'error'}) {
             return $self->render(text => $res{'error'}, status => 403);
         }
-        return $self->redirect_to('index');
+        return $self->redirect_to($ref);
     }
     return $self->render(text => 'Forbidden', status => 403);
 }
