@@ -44,6 +44,7 @@ sub _read_config {
             suse_mirror   => undef,
             scm           => undef,
             hsts          => 365,
+            audit_enabled => 1,
         },
         auth => {
             method => 'OpenID',
@@ -63,6 +64,9 @@ sub _read_config {
         hypnotoad => {
             listen => ['http://localhost:9526/'],
             proxy  => 1,
+        },
+        audit => {
+            blacklist => '',
         },
     );
 
@@ -174,7 +178,9 @@ sub startup {
     $self->plugin('OpenQA::WebAPI::Plugin::REST');
     $self->plugin('OpenQA::WebAPI::Plugin::HashedParams');
     $self->plugin('OpenQA::WebAPI::Plugin::Gru');
-    $self->plugin('OpenQA::WebAPI::Plugin::AuditLog', Mojo::IOLoop->singleton);
+    if ($self->config->{global}{audit_enabled}) {
+        $self->plugin('OpenQA::WebAPI::Plugin::AuditLog', Mojo::IOLoop->singleton);
+    }
 
     $self->plugin(bootstrap3 => {css => [], js => []});
 

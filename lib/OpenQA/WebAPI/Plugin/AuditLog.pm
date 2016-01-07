@@ -23,7 +23,7 @@ use Mojo::IOLoop;
 use Data::Dump qw/pp/;
 
 my @table_events       = qw/table_create table_update table_delete/;
-my @job_events         = qw/job_create job_delete job_cancel job_duplicate job_restart jobs_restart job_update_result job_set_waiting job_set_running job_done/;
+my @job_events         = qw/job_create job_delete job_cancel job_duplicate job_restart jobs_restart job_update_result job_set_waiting job_set_running job_done job_grab/;
 my @jobgroup_events    = qw/jobgroup_create jobgroup_connect/;
 my @jobtemplate_events = qw/jobtemplate_create jobtemplate_delete/;
 my @user_events        = qw/user_update user_login user_comment/;
@@ -39,8 +39,14 @@ sub register {
     my ($self, $app, $reactor) = @_;
 
     # register for events
-    for my $event (@table_events, @job_events, @jobgroup_events, @jobtemplate_events, @user_events, @asset_events, @iso_events, @worker_events, @needle_events) {
-        $reactor->on("openqa_$event" => sub { shift; $self->on_event($app, @_) });
+    my @events = (@table_events, @job_events, @jobgroup_events, @jobtemplate_events, @user_events, @asset_events, @iso_events, @worker_events, @needle_events);
+    # filter out blacklisted events
+    my @blacklist = split / /, $app->config->{audit}{blacklist};
+    for my $e (@blacklist) {
+        @events = grep { $_ ne $e } @events;
+    }
+    for my $e (@events) {
+        $reactor->on("openqa_$e" => sub { shift; $self->on_event($app, @_) });
     }
 
     $app->db->resultset('AuditEvents')->create({user_id => undef, connection_id => 0, event => 'startup', event_data => 'openQA restarted'});
