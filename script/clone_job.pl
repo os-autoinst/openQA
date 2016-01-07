@@ -79,13 +79,6 @@ Getopt::Long::Configure("no_ignore_case");
 use Mojo::URL;
 use JSON;
 
-my $clientclass;
-for my $i (qw/JSON::RPC::Legacy::Client JSON::RPC::Client/) {
-    eval "use $i;";
-    $clientclass = $i unless $@;
-}
-die $@ unless $clientclass;
-
 use FindBin;
 use lib "$FindBin::Bin/../lib";
 use OpenQA::Client;
@@ -112,13 +105,6 @@ $options{'dir'} ||= '/var/lib/openqa/factory';
 my $ua = LWP::UserAgent->new;
 $ua->timeout(10);
 $ua->env_proxy;
-
-sub fixup_url($) {
-    my $host = shift;
-    $host .= '/jsonrpc' unless $host =~ '/';
-    $host = 'http://' . $host unless $host =~ '://';
-    return $host;
-}
 
 $options{'host'} ||= 'localhost';
 
