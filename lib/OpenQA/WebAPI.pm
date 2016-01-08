@@ -37,9 +37,9 @@ sub _read_config {
 
     my %defaults = (
         global => {
-            appname       => "openQA",
+            appname       => 'openQA',
             base_url      => undef,
-            branding      => "openSUSE",
+            branding      => 'openSUSE',
             allowed_hosts => undef,
             suse_mirror   => undef,
             scm           => undef,
@@ -54,12 +54,12 @@ sub _read_config {
         },
         logging => {
             level     => undef,
-            file      => "/var/log/openqa",
+            file      => '/var/log/openqa',
             sql_debug => undef,
         },
         openid => {
             provider  => 'https://www.opensuse.org/openid/user/',
-            httpsonly => '1',
+            httpsonly => 1,
         },
         hypnotoad => {
             listen => ['http://localhost:9526/'],

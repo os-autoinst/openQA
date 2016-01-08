@@ -36,8 +36,8 @@ is_deeply(
     {
         global => {
             appname       => 'openQA',
-            branding      => "openSUSE",
-            hsts          => '365',
+            branding      => 'openSUSE',
+            hsts          => 365,
             audit_enabled => 1,
         },
         auth => {
@@ -51,7 +51,7 @@ is_deeply(
         },
         openid => {
             provider  => 'https://www.opensuse.org/openid/user/',
-            httpsonly => '1',
+            httpsonly => 1,
         },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
