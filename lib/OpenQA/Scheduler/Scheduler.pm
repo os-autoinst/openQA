@@ -1090,6 +1090,8 @@ sub _generate_jobs {
         carp "no products found for " . join('-', map { $args{$_} } qw/DISTRI VERSION FLAVOR ARCH/);
     }
 
+    my %wanted;    # jobs specified by $args{TEST} or $args{MACHINE} or their parents
+
     for my $product (@products) {
         my @templates = $product->job_templates;
         unless (@templates) {
@@ -1120,10 +1122,8 @@ sub _generate_jobs {
             $settings{BACKEND}            = $job_template->machine->backend;
             $settings{WORKER_CLASS} = join(',', sort(@classes));
 
-            next if $args{TEST}    && $args{TEST} ne $settings{TEST};
-            next if $args{MACHINE} && $args{MACHINE} ne $settings{MACHINE};
-
             for (keys %args) {
+                next if $_ eq 'TEST' || $_ eq 'MACHINE';
                 $settings{uc $_} = $args{$_};
             }
             # Makes sure tha the DISTRI is lowercase
@@ -1151,11 +1151,33 @@ sub _generate_jobs {
                 }
             } while ($expanded);
 
+            if (   (!$args{TEST} || $args{TEST} eq $settings{TEST})
+                && (!$args{MACHINE} || $args{MACHINE} eq $settings{MACHINE}))
+            {
+                $wanted{_settings_key(\%settings)} = 1;
+            }
+
             push @$ret, \%settings;
         }
     }
 
-    return _sort_dep($ret);
+    $ret = _sort_dep($ret);
+    # the array is sorted parents first - iterate it backward
+    for (my $i = $#{$ret}; $i >= 0; $i--) {
+        if ($wanted{_settings_key($ret->[$i])}) {
+            # add parents to wanted list
+            my @parents;
+            push @parents, _parse_dep_variable($ret->[$i]->{START_AFTER_TEST}, $ret->[$i]);
+            push @parents, _parse_dep_variable($ret->[$i]->{PARALLEL_WITH},    $ret->[$i]);
+            for my $p (@parents) {
+                $wanted{$p} = 1;
+            }
+        }
+        else {
+            splice @$ret, $i, 1;    # not wanted - delete
+        }
+    }
+    return $ret;
 }
 
 sub job_schedule_iso {
