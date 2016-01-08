@@ -43,11 +43,14 @@ sub list {
     }
 
     # TODO: convert to DBus call or move query_jobs helper to WebAPI
-    my $jobquery = OpenQA::Scheduler::Scheduler::query_jobs(%args);
-    my %jobs;
-    while (my $job = $jobquery->next) {
-        $jobs{$job->id} = $job;
+    my @jobarray;
+    if (defined $self->param('latest')) {
+        @jobarray = OpenQA::Scheduler::Scheduler::query_jobs(%args)->latest_jobs;
     }
+    else {
+        @jobarray = OpenQA::Scheduler::Scheduler::query_jobs(%args)->all;
+    }
+    my %jobs = map { $_->id => $_ } @jobarray;
 
     # we can't prefetch too much at once as the resulting JOIN will kill our performance horribly
     # (not so much the JOIN itself, but parsing the result containing duplicated information)

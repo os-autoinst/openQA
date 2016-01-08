@@ -372,15 +372,12 @@ sub overview {
     my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
     my $preferred_machines = _caclulate_preferred_machines($jobs);
 
-    my %seen;
-    while (my $job = $jobs->next) {
+    my @latest_jobs = $jobs->latest_jobs;
+    foreach my $job (@latest_jobs) {
         my $settings = $job->settings_hash;
-        my $testname = $settings->{NAME};
         my $test     = $job->test;
         my $flavor   = $settings->{FLAVOR} || 'sweet';
         my $arch     = $settings->{ARCH} || 'noarch';
-        my $key      = "$test-$flavor-$arch-" . $settings->{MACHINE};
-        next if $seen{$key}++;
 
         my $result;
         if ($job->state eq 'done') {
