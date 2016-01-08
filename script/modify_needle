@@ -21,7 +21,11 @@ modify_needle - manipulate needle (tags) on command line
 
 =head1 SYNOPSIS
 
-modify_needle [OPTIONS] FILE.json
+modify_needle [OPTIONS] FILE.json [FILEs...]
+
+You can pass multiple files to e.g. 
+
+modify_needle --add-tags COOLTHING *the-cool-needle*.json
 
 =head1 OPTIONS
 
