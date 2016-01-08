@@ -35,9 +35,10 @@ is_deeply(
     $cfg,
     {
         global => {
-            appname  => 'openQA',
-            branding => "openSUSE",
-            hsts     => '365',
+            appname       => 'openQA',
+            branding      => 'openSUSE',
+            hsts          => 365,
+            audit_enabled => 1,
         },
         auth => {
             method => 'Fake',
@@ -50,13 +51,15 @@ is_deeply(
         },
         openid => {
             provider  => 'https://www.opensuse.org/openid/user/',
-            httpsonly => '1',
+            httpsonly => 1,
         },
         hypnotoad => {
             listen => ['http://localhost:9526/'],
             proxy  => 1,
         },
-    });
+        audit => {
+            blacklist => 'job_grab job_done',
+        }});
 
 $ENV{OPENQA_CONFIG} = 't';
 open(my $fd, '>', $ENV{OPENQA_CONFIG} . '/openqa.ini');
