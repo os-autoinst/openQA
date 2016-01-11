@@ -229,11 +229,13 @@ sub _step_thumbnail {
     else {
         $imgurl = $c->url_for('test_thumbnail', testid => $testid, filename => $screenshot->{screenshot});
     }
+    my $result = lc $screenshot->{result};
+    $result = 'softfail' if grep { $_ eq 'workaround' } (@{$screenshot->{properties} || []});
     my $content = $c->image(
         $imgurl => width => $ref_width,
         height  => $ref_height,
         alt     => $screenshot->{name},
-        class   => "resborder_\L$screenshot->{result}"
+        class   => "resborder_$result"
     );
     my $href = $c->url_for('step', moduleid => $module, stepid => $step_num);
     $c->tag('a', href => $href, class => 'no_hover', sub { $content });
