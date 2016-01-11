@@ -60,38 +60,38 @@ use constant {
 
 # the template noted what architecture are known
 my %cando = (
-    'i586'   => ['i586'],
-    'i686'   => ['i686', 'i586'],
-    'x86_64' => ['x86_64', 'i686', 'i586'],
+    i586   => ['i586'],
+    i686   => ['i686', 'i586'],
+    x86_64 => ['x86_64', 'i686', 'i586'],
 
-    'ppc'     => ['ppc'],
-    'ppc64'   => ['ppc64le', 'ppc64', 'ppc'],
-    'ppc64le' => ['ppc64le', 'ppc64', 'ppc'],
+    ppc     => ['ppc'],
+    ppc64   => ['ppc64le', 'ppc64', 'ppc'],
+    ppc64le => ['ppc64le', 'ppc64', 'ppc'],
 
-    's390'  => ['s390'],
-    's390x' => ['s390x', 's390'],
+    s390  => ['s390'],
+    s390x => ['s390x', 's390'],
 
-    'aarch64' => ['aarch64'],
+    aarch64 => ['aarch64'],
 );
 
 ## Mojo timers ids
 my $timers = {
     # register worker with web ui
-    'register_worker' => undef,
+    register_worker => undef,
     # set up websocket connection
-    'setup_websocket' => undef,
+    setup_websocket => undef,
     # check for commands from scheduler
-    'ws_keepalive' => undef,
+    ws_keepalive => undef,
     # check for new job
-    'check_job' => undef,
+    check_job => undef,
     # update status of running job
-    'update_status' => undef,
+    update_status => undef,
     # check for crashed backend and its running status
-    'check_backend' => undef,
+    check_backend => undef,
     # trigger stop_job if running for > $max_job_time
-    'job_timeout' => undef,
+    job_timeout => undef,
     # app call retry
-    'api_call' => undef,
+    api_call => undef,
 };
 
 sub add_timer {

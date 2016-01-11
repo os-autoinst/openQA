@@ -63,7 +63,7 @@ sub register {
                 $crumbs .= ' > ' . $c->link_to('Test results' => $c->url_for('tests'));
             }
             elsif ($c->current_route =~ /^admin/) {
-                $crumbs .= ' > ' . $c->link_to('Admin' => $c->url_for('admin'));
+                $crumbs .= ' > ' . $c->link_to(Admin => $c->url_for('admin'));
                 $crumbs .= ' > ' . $c->stash('title');
             }
 
@@ -117,10 +117,10 @@ sub register {
                     $user = $c->db->resultset("Users")->find({username => $id});
                 }
                 if ($user) {
-                    $c->stash('current_user' => {user => $user});
+                    $c->stash(current_user => {user => $user});
                 }
                 else {
-                    $c->stash('current_user' => {no_user => 1});
+                    $c->stash(current_user => {no_user => 1});
                 }
             }
             my $is_user_def = defined($c->stash('current_user'))
@@ -192,7 +192,7 @@ sub register {
         # allowing partial brands
         include_branding => sub {
             my ($c, $name) = @_;
-            my $path = "branding/" . $c->app->config->{'global'}->{'branding'} . "/$name";
+            my $path = "branding/" . $c->app->config->{global}->{branding} . "/$name";
             my $ret  = $c->render_to_string($path);
             if (defined($ret)) {
                 return $ret;
@@ -227,7 +227,7 @@ sub _step_thumbnail {
             md5_basename => $screenshot->{md5_basename});
     }
     else {
-        $imgurl = $c->url_for('test_thumbnail', 'testid' => $testid, 'filename' => $screenshot->{screenshot});
+        $imgurl = $c->url_for('test_thumbnail', testid => $testid, filename => $screenshot->{screenshot});
     }
     my $content = $c->image(
         $imgurl => width => $ref_width,

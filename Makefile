@@ -56,6 +56,6 @@ install:
 test:
 	OPENQA_CONFIG= prove -r
 	./script/tidy --check
-	perlcritic --gentle lib
+	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle --include Perl::Critic::Policy::HashKeyQuote lib
 
 .PHONY: all install test

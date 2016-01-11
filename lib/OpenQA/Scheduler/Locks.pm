@@ -76,7 +76,7 @@ sub lock {
         return 1;
     }
     # we're using optimistic locking, if this succeded, we were first
-    return 1 if ($lock->update({'locked_by' => $jobid}));
+    return 1 if ($lock->update({locked_by => $jobid}));
     return 0;
 }
 
@@ -88,7 +88,7 @@ sub unlock {
     return 1 unless $lock->locked_by;
     # return if not locked by us
     return 0 unless ($lock->locked_by->id == $jobid);
-    return 1 if ($lock->update({'locked_by' => undef}));
+    return 1 if ($lock->update({locked_by => undef}));
     return 0;
 }
 

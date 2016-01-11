@@ -174,7 +174,7 @@ sub name {
         my $job_settings = $self->settings_hash;
         my @a;
 
-        my %formats = ('BUILD' => 'Build%s',);
+        my %formats = (BUILD => 'Build%s',);
 
         for my $c (qw/DISTRI VERSION FLAVOR MEDIA ARCH BUILD TEST/) {
             next unless $job_settings->{$c};
@@ -886,6 +886,9 @@ sub update_status {
         }
     }
     $self->update();
+
+    # result=1 for the call, job_result for the current state
+    $ret->{job_result} = $self->calculate_result();
 
     return $ret;
 }

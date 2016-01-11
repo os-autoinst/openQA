@@ -42,7 +42,7 @@ package MojoDebugHandle;
 sub new {
     my ($class, $app) = @_;
 
-    return bless {'app' => $app}, $class;
+    return bless {app => $app}, $class;
 }
 
 sub print {

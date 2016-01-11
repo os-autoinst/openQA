@@ -34,8 +34,8 @@ sub _group_result {
             key    => 'BUILD'
         },
         {
-            'select' => ['value', {min => 't_created', -as => 'first_hit'}],
-            'as'     => [qw/value first_hit/],
+            select => ['value', {min => 't_created', -as => 'first_hit'}],
+            as     => [qw/value first_hit/],
             order_by => {-desc => 'first_hit'},
             group_by => [qw/value/]});
     my $max_jobs = 0;

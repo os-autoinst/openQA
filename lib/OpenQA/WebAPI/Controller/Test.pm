@@ -137,8 +137,8 @@ sub list_ajax {
     while (my $job = $jobs->next) {
         # job dependencies
         my %deps = (
-            parents  => {'Chained' => [], 'Parallel' => []},
-            children => {'Chained' => [], 'Parallel' => []});
+            parents  => {Chained => [], Parallel => []},
+            children => {Chained => [], Parallel => []});
         my $jp = $job->parents;
         while (my $s = $jp->next) {
             push(@{$deps{parents}->{$s->to_string}}, $s->parent_job_id);
@@ -150,7 +150,7 @@ sub list_ajax {
         my $js = $settings->{$job->id};
 
         my $data = {
-            "DT_RowId"   => "job_" . $job->id,
+            DT_RowId     => "job_" . $job->id,
             id           => $job->id,
             result_stats => $stats->{$job->id},
             deps         => \%deps,
@@ -249,9 +249,9 @@ sub show {
 
     my $job = $self->app->schema->resultset("Jobs")->search(
         {
-            'id' => $self->param('testid')
+            id => $self->param('testid')
         },
-        {'prefetch' => qw/jobs_assets/})->first;
+        {prefetch => qw/jobs_assets/})->first;
 
     return $self->reply->not_found unless $job;
 

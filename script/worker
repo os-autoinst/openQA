@@ -118,7 +118,7 @@ sub usage($) {
 
 GetOptions(\%options, "no-cleanup", "instance=i", "isotovideo=s", "host=s", "apikey:s", "apisecret:s", "verbose|v", "help|h",) or usage(1);
 
-usage(0) if ($options{'help'});
+usage(0) if ($options{help});
 
 sub read_worker_config($) {
     my $instance   = shift;
@@ -138,15 +138,15 @@ sub read_worker_config($) {
     return $sets;
 }
 
-$worker_settings = read_worker_config($options{'instance'});
+$worker_settings = read_worker_config($options{instance});
 
-$options{'instance'} ||= 0;
-$options{'host'} ||= $worker_settings->{'HOST'};
+$options{instance} ||= 0;
+$options{host} ||= $worker_settings->{'HOST'};
 
 # XXX: this should be sent to the scheduler to be included in the worker's table
-$ENV{'QEMUPORT'} = ($options{'instance'}) * 10 + 20002;
-$ENV{'VNC'}      = ($options{'instance'}) + 90;
-($ENV{'OPENQA_HOSTNAME'}) = $options{'host'} =~ m|([^/]+:?\d*)/?$|;
+$ENV{QEMUPORT} = ($options{instance}) * 10 + 20002;
+$ENV{VNC}      = ($options{instance}) + 90;
+($ENV{OPENQA_HOSTNAME}) = $options{host} =~ m|([^/]+:?\d*)/?$|;
 
 OpenQA::Worker::init($worker_settings, %options);
 OpenQA::Worker::main();

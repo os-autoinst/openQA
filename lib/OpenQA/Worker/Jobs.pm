@@ -140,7 +140,7 @@ sub upload {
 
     # don't use api_call as it retries and does not allow form data
     # (refactor at some point)
-    my $tx = $OpenQA::Worker::Common::ua->build_tx('POST' => $ua_url => form => $form);
+    my $tx = $OpenQA::Worker::Common::ua->build_tx(POST => $ua_url => form => $form);
 
     # override the default boundary calculation - it reads whole file
     # and it can cause various timeouts
