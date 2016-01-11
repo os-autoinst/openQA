@@ -887,6 +887,9 @@ sub update_status {
     }
     $self->update();
 
+    # result=1 for the call, job_result for the current state
+    $ret->{job_result} = $self->calculate_result();
+
     return $ret;
 }
 
