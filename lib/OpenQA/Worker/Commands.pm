@@ -24,24 +24,24 @@ use OpenQA::Worker::Jobs;
 sub websocket_commands {
     my ($tx, $json) = @_;
     # result indicates response to our data
-    if ($json->{'result'}) {
+    if ($json->{result}) {
         # responses
-        if ($json->{'known_images'}) {
+        if ($json->{known_images}) {
             # response to update_status, filter known images
-            OpenQA::Worker::Jobs::upload_images($json->{'known_images'});
+            OpenQA::Worker::Jobs::upload_images($json->{known_images});
         }
     }
     else {
         # requests
-        my $type  = $json->{'type'};
-        my $jobid = $json->{'jobid'};
+        my $type  = $json->{type};
+        my $jobid = $json->{jobid};
         if ($jobid) {
             if (!$job) {
                 printf STDERR 'Received command %s for job %u, but we don not have any assigned. Ignoring!%s', $type, $jobid, "\n";
                 return;
             }
-            elsif ($jobid ne $job->{'id'}) {
-                printf STDERR 'Received command %s for different job id %u (our %u). Ignoring!%s', $type, $jobid, $job->{'id'}, "\n";
+            elsif ($jobid ne $job->{id}) {
+                printf STDERR 'Received command %s for different job id %u (our %u). Ignoring!%s', $type, $jobid, $job->{id}, "\n";
                 return;
             }
         }

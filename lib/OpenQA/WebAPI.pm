@@ -406,7 +406,7 @@ sub startup {
             my $workerid = $c->param('workerid');
             # use port one higher than WebAPI
             my $port = 9527;
-            if ($ENV{'MOJO_LISTEN'} =~ /.*:(\d{1,5})\/?$/) {
+            if ($ENV{MOJO_LISTEN} =~ /.*:(\d{1,5})\/?$/) {
                 $port = $1 + 1;
             }
             $c->redirect_to("http://localhost:$port/ws/$workerid");
@@ -454,7 +454,7 @@ sub startup {
             my $workerid = $c->param('workerid');
             # use port one higher than WebAPI
             my $port = 9527;
-            if (defined $ENV{'MOJO_LISTEN'} && $ENV{'MOJO_LISTEN'} =~ /.*:(\d{1,5})\/?$/) {
+            if (defined $ENV{MOJO_LISTEN} && $ENV{MOJO_LISTEN} =~ /.*:(\d{1,5})\/?$/) {
                 $port = $1 + 1;
             }
             $c->redirect_to("http://localhost:$port/ws/$workerid");

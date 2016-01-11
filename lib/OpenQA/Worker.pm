@@ -30,13 +30,13 @@ use OpenQA::Worker::Jobs;
 sub init {
     my ($worker_options, %options) = @_;
     $worker_settings = $worker_options;
-    $instance        = $options{'instance'} if defined $options{'instance'};
+    $instance        = $options{instance} if defined $options{instance};
     $pooldir         = OPENQA_BASE . '/pool/' . $instance;
-    $nocleanup       = $options{'no-cleanup'};
-    $verbose         = $options{'verbose'} if defined $options{'verbose'};
+    $nocleanup       = $options{"no-cleanup"};
+    $verbose         = $options{verbose} if defined $options{verbose};
 
     OpenQA::Worker::Common::api_init(\%options);
-    OpenQA::Worker::Engines::isotovideo::set_engine_exec($options{'isotovideo'}) if $options{'isotovideo'};
+    OpenQA::Worker::Engines::isotovideo::set_engine_exec($options{isotovideo}) if $options{isotovideo};
 }
 
 sub main {

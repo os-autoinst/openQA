@@ -138,23 +138,23 @@ sub edit {
 
         # First position: the screenshot with all the matching areas (in result)
         $screenshot = {
-            'name'       => 'screenshot',
-            'imageurl'   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
-            'imagename'  => $imgname,
-            'area'       => [],
-            'matches'    => [],
-            'properties' => [],
-            'tags'       => []};
+            name       => 'screenshot',
+            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
+            imagename  => $imgname,
+            area       => [],
+            matches    => [],
+            properties => [],
+            tags       => []};
         for my $tag (@$tags) {
             push(@{$screenshot->{tags}}, $tag);
         }
         for my $area (@{$module_detail->{area}}) {
             my $narea = {
-                'xpos'   => int $area->{x},
-                'width'  => int $area->{w},
-                'ypos'   => int $area->{y},
-                'height' => int $area->{h},
-                'type'   => 'match'
+                xpos   => int $area->{x},
+                width  => int $area->{w},
+                ypos   => int $area->{y},
+                height => int $area->{h},
+                type   => 'match'
             };
             push(@{$screenshot->{matches}}, $narea);
         }

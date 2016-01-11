@@ -149,13 +149,13 @@ sub job_module_stats($) {
     }
 
     for my $id (@$ids) {
-        $result_stat->{$id} = {'passed' => 0, 'failed' => 0, 'dents' => 0, 'none' => 0};
+        $result_stat->{$id} = {passed => 0, failed => 0, dents => 0, none => 0};
     }
 
     my $query = $schema->resultset("JobModules")->search(
         {job_id => {in => $ids}},
         {
-            select   => ['job_id', 'result', 'soft_failure', {'count' => 'id'}],
+            select   => ['job_id', 'result', 'soft_failure', {count => 'id'}],
             as       => [qw/job_id result soft_failure count/],
             group_by => [qw/job_id result soft_failure/]});
 

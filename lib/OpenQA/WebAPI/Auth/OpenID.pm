@@ -58,7 +58,7 @@ sub auth_login {
         'http://openid.net/srv/ax/1.0',
         {
             mode             => 'fetch_request',
-            'required'       => 'email,fullname,nickname,firstname,lastname',
+            required         => 'email,fullname,nickname,firstname,lastname',
             'type.email'     => "http://schema.openid.net/contact/email",
             'type.fullname'  => "http://axschema.org/namePerson",
             'type.nickname'  => "http://axschema.org/namePerson/friendly",

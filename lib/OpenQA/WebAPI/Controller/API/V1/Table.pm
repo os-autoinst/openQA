@@ -21,23 +21,23 @@ use Mojo::Base 'Mojolicious::Controller';
 use Try::Tiny;
 
 my %tables = (
-    'Machines' => {
-        'keys' => [['id'], ['name'],],
-        'cols'     => ['id',   'name', 'backend'],
-        'required' => ['name', 'backend'],
-        'defaults' => {'variables' => ""},
+    Machines => {
+        keys => [['id'], ['name'],],
+        cols     => ['id',   'name', 'backend'],
+        required => ['name', 'backend'],
+        defaults => {variables => ""},
     },
-    'TestSuites' => {
-        'keys' => [['id'], ['name'],],
-        'cols'     => ['id', 'name'],
-        'required' => ['name'],
-        'defaults' => {'variables' => ""},
+    TestSuites => {
+        keys => [['id'], ['name'],],
+        cols     => ['id', 'name'],
+        required => ['name'],
+        defaults => {variables => ""},
     },
-    'Products' => {
-        'keys' => [['id'], ['distri', 'version', 'arch', 'flavor'],],
-        'cols'     => ['id',     'distri',  'version', 'arch', 'flavor'],
-        'required' => ['distri', 'version', 'arch',    'flavor'],
-        'defaults' => {'variables' => "", 'name' => ""},
+    Products => {
+        keys => [['id'], ['distri', 'version', 'arch', 'flavor'],],
+        cols     => ['id',     'distri',  'version', 'arch', 'flavor'],
+        required => ['distri', 'version', 'arch',    'flavor'],
+        defaults => {variables => "", name => ""},
     },
 );
 
@@ -48,7 +48,7 @@ sub list {
     my $table = $self->param("table");
     my %search;
 
-    for my $key (@{$tables{$table}->{'keys'}}) {
+    for my $key (@{$tables{$table}->{keys}}) {
         my $have = 1;
         for my $par (@$key) {
             $have &&= $self->param($par);
@@ -81,7 +81,7 @@ sub list {
             $table => [
                 map {
                     my $row = $_;
-                    my %hash = ((map { ($_ => $row->get_column($_)) } @{$tables{$table}->{'cols'}}), settings => [map { {key => $_->key, value => $_->value} } $row->settings]);
+                    my %hash = ((map { ($_ => $row->get_column($_)) } @{$tables{$table}->{cols}}), settings => [map { {key => $_->key, value => $_->value} } $row->settings]);
                     \%hash;
                 } @result
             ]});
@@ -94,25 +94,25 @@ sub create {
     my $error;
     my $id;
 
-    my %entry      = %{$tables{$table}->{'defaults'}};
+    my %entry      = %{$tables{$table}->{defaults}};
     my $validation = $self->validation;
 
-    for my $par (@{$tables{$table}->{'required'}}) {
+    for my $par (@{$tables{$table}->{required}}) {
         $validation->required($par);
         $entry{$par} = $self->param($par);
     }
     my $hp = $self->hparams();
     my @settings;
-    if ($hp->{'settings'}) {
-        for my $k (keys %{$hp->{'settings'}}) {
-            push @settings, {'key' => $k, 'value' => $hp->{'settings'}->{$k}};
+    if ($hp->{settings}) {
+        for my $k (keys %{$hp->{settings}}) {
+            push @settings, {key => $k, value => $hp->{settings}->{$k}};
         }
     }
-    $entry{'settings'} = \@settings;
+    $entry{settings} = \@settings;
 
     if ($validation->has_error) {
         $error = "wrong parameter: ";
-        for my $par (@{$tables{$table}->{'required'}}) {
+        for my $par (@{$tables{$table}->{required}}) {
             $error .= " $par" if $validation->has_error($par);
         }
     }
@@ -144,7 +144,7 @@ sub update {
     my %entry;
     my $validation = $self->validation;
 
-    for my $par (@{$tables{$table}->{'required'}}) {
+    for my $par (@{$tables{$table}->{required}}) {
         $validation->required($par);
         $entry{$par} = $self->param($par);
     }
@@ -152,18 +152,18 @@ sub update {
     my $hp = $self->hparams();
     my @settings;
     my @keys;
-    if ($hp->{'settings'}) {
-        for my $k (keys %{$hp->{'settings'}}) {
-            push @settings, {'key' => $k, 'value' => $hp->{'settings'}->{$k}};
+    if ($hp->{settings}) {
+        for my $k (keys %{$hp->{settings}}) {
+            push @settings, {key => $k, value => $hp->{settings}->{$k}};
             push @keys, $k;
         }
     }
 
-    $entry{'variables'} = '';
+    $entry{variables} = '';
 
     if ($validation->has_error) {
         $error = "wrong parameter: ";
-        for my $par (@{$tables{$table}->{'required'}}) {
+        for my $par (@{$tables{$table}->{required}}) {
             $error .= " $par" if $validation->has_error($par);
         }
     }
@@ -175,7 +175,7 @@ sub update {
                 for my $var (@settings) {
                     $rc->update_or_create_related('settings', $var);
                 }
-                $rc->delete_related('settings', {'key' => {'not in' => [@keys]}});
+                $rc->delete_related('settings', {key => {'not in' => [@keys]}});
                 $ret = 1;
             }
             else {

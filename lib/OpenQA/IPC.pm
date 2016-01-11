@@ -29,9 +29,9 @@ use Scalar::Util qw/weaken/;
 
 my $openqa_prefix = 'org.opensuse.openqa';
 my %services      = (
-    'scheduler'  => 'Scheduler',
-    'websockets' => 'WebSockets',
-    'webapi'     => 'WebAPI',
+    scheduler  => 'Scheduler',
+    websockets => 'WebSockets',
+    webapi     => 'WebAPI',
 );
 
 my %handles;

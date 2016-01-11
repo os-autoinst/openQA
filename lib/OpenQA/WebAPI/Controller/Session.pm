@@ -63,8 +63,8 @@ sub ensure_authorized_ip {
 
     my $addr = $self->tx->remote_address;
     my @auth_ips;
-    if ($self->app->config->{'global'}->{'allowed_hosts'}) {
-        @auth_ips = split(/ /, $self->app->config->{'global'}->{'allowed_hosts'});
+    if ($self->app->config->{global}->{allowed_hosts}) {
+        @auth_ips = split(/ /, $self->app->config->{global}->{allowed_hosts});
     }
     else {
         @auth_ips = ('127.0.0.1', '::1');
@@ -81,7 +81,7 @@ sub ensure_authorized_ip {
 sub destroy {
     my ($self) = @_;
 
-    my $auth_method = $self->app->config->{'auth'}->{'method'};
+    my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
     eval { $auth_module->import('auth_logout'); };
     if (!$@) {
@@ -95,7 +95,7 @@ sub destroy {
 sub create {
     my ($self)      = @_;
     my $ref         = $self->req->headers->referrer;
-    my $auth_method = $self->app->config->{'auth'}->{'method'};
+    my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
     $auth_module->import('auth_login');
 
@@ -106,12 +106,12 @@ sub create {
 
     my %res = auth_login($self);
     if (%res) {
-        if ($res{'redirect'}) {
+        if ($res{redirect}) {
             $self->flash(ref => $ref);
-            return $self->redirect_to($res{'redirect'});
+            return $self->redirect_to($res{redirect});
         }
-        elsif ($res{'error'}) {
-            return $self->render(text => $res{'error'}, status => 403);
+        elsif ($res{error}) {
+            return $self->render(text => $res{error}, status => 403);
         }
         $self->emit_event('openqa_user_login');
         return $self->redirect_to($ref);
@@ -122,18 +122,18 @@ sub create {
 sub response {
     my ($self)      = @_;
     my $ref         = $self->flash('ref');
-    my $auth_method = $self->app->config->{'auth'}->{'method'};
+    my $auth_method = $self->app->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
     $auth_module->import('auth_response');
 
     my %res = auth_response($self);
     if (%res) {
-        if ($res{'redirect'}) {
+        if ($res{redirect}) {
             $self->flash(ref => $ref);
-            return $self->redirect_to($res{'redirect'});
+            return $self->redirect_to($res{redirect});
         }
-        elsif ($res{'error'}) {
-            return $self->render(text => $res{'error'}, status => 403);
+        elsif ($res{error}) {
+            return $self->render(text => $res{error}, status => 403);
         }
         $self->emit_event('openqa_user_login');
         return $self->redirect_to($ref);

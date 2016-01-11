@@ -208,7 +208,7 @@ sub result {
 sub update_status {
     my ($self) = @_;
     my $jobid  = int($self->stash('jobid'));
-    my $status = $self->req->json->{'status'};
+    my $status = $self->req->json->{status};
     my $job    = $self->app->schema->resultset("Jobs")->find($jobid);
     my $ret    = $job->update_status($status);
 

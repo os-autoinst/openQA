@@ -20,7 +20,7 @@ use parent 'Mojolicious::Controller';
 
 sub index {
     my ($self) = @_;
-    $self->stash('audit_enabled' => $self->app->config->{global}{audit_enabled});
+    $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
     $self->render('admin/audit_log/index');
 }
 

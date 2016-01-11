@@ -264,7 +264,7 @@ sub jobs_get_dead_worker {
     my $threshold = shift;
 
     my %cond = (
-        'state'            => OpenQA::Schema::Result::Jobs::RUNNING,
+        state              => OpenQA::Schema::Result::Jobs::RUNNING,
         'worker.t_updated' => {'<' => $threshold},
     );
     my %attrs = (join => 'worker',);
@@ -367,7 +367,7 @@ sub query_jobs {
             });
     }
     elsif ($args{group}) {
-        my $subquery = schema->resultset("JobGroups")->search({'name' => $args{group}})->get_column('id')->as_query;
+        my $subquery = schema->resultset("JobGroups")->search({name => $args{group}})->get_column('id')->as_query;
         push(
             @conds,
             {
@@ -389,8 +389,8 @@ sub query_jobs {
     if ($args{match}) {
         my $subquery = schema->resultset("JobSettings")->search(
             {
-                'key' => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST', 'VERSION'],
-                'value' => {'-like' => "%$args{match}%"},
+                key => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST', 'VERSION'],
+                value => {'-like' => "%$args{match}%"},
             });
         push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
@@ -518,8 +518,8 @@ sub job_grab {
             # check all worker classes of scheduled jobs and filter out those not applying
             my $scheduled = schema->resultset("Jobs")->search(
                 {
-                    'state'     => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                    'worker_id' => 0
+                    state     => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                    worker_id => 0
                 })->get_column('id');
 
             my $not_applying_jobs = schema->resultset("JobSettings")->search(
@@ -539,9 +539,9 @@ sub job_grab {
         # now query for the best
         my $job = schema->resultset("Jobs")->search(
             {
-                'state'     => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                'worker_id' => 0,
-                id          => \@available_cond,
+                state     => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                worker_id => 0,
+                id        => \@available_cond,
             },
             {order_by => {-asc => [qw/priority id/]}, rows => 1}
           )->update(

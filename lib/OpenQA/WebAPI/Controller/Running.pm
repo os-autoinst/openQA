@@ -44,7 +44,7 @@ sub modlist {
 
     my $modinfo = $self->stash('job')->running_modinfo();
     if (defined $modinfo) {
-        $self->render(json => $modinfo->{'modlist'});
+        $self->render(json => $modinfo->{modlist});
     }
     else {
         $self->reply->not_found;
@@ -59,7 +59,7 @@ sub status {
     my $workerid = $job->worker_id;
     my $results  = {workerid => $workerid, state => $job->state};
     my $r        = $job->modules->find({result => 'running'});
-    $results->{'running'} = $r->name() if $r;
+    $results->{running} = $r->name() if $r;
 
     if ($workerid) {
         $results->{interactive}                  = $job->worker->get_property('INTERACTIVE')                  // 0;
