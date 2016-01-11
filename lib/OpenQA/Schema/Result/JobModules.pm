@@ -230,14 +230,27 @@ sub store_needle_infos($;$) {
     OpenQA::Schema::Result::Needles::update_needle_cache(\%hash);
 }
 
-sub save_details($) {
-    my ($self, $details) = @_;
+sub save_details($;$) {
+    my ($self, $details, $cleanup) = @_;
     my $existant_md5 = [];
     for my $d (@$details) {
         # create possibly stale symlinks
         my ($full, $thumb) = OpenQA::Utils::image_md5_filename($d->{screenshot}->{md5});
         if (-e $full) {    # mark existant
             push(@$existant_md5, $d->{screenshot}->{md5});
+        }
+        if ($cleanup) {
+            # interactive mode, recreate the symbolic link of screenshot if it was changed
+            my $full_link  = readlink($self->job->result_dir . "/" . $d->{screenshot}->{name})         || '';
+            my $thumb_link = readlink($self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name}) || '';
+            if ($full ne $full_link) {
+                OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/" . $d->{screenshot}->{name};
+                unlink($self->job->result_dir . "/" . $d->{screenshot}->{name});
+            }
+            if ($thumb ne $thumb_link) {
+                OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name};
+                unlink($self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
+            }
         }
         symlink($full,  $self->job->result_dir . "/" . $d->{screenshot}->{name});
         symlink($thumb, $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
