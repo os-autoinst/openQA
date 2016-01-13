@@ -207,21 +207,13 @@ sub read_test_modules {
     for my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
         my $name = $module->name();
         # add link to $testresultdir/$name*.png via png CGI
-        my @imglist;
-        my @wavlist;
-        my @textlist;
+        my @details;
+
         my $num = 1;
-        for my $img (@{$module->details}) {
-            $img->{num} = $num++;
-            if ($img->{screenshot}) {
-                push(@imglist, $img);
-            }
-            elsif ($img->{audio}) {
-                push(@wavlist, $img);
-            }
-            elsif ($img->{text}) {
-                push(@textlist, $img);
-            }
+
+        for my $step (@{$module->details}) {
+            $step->{num} = $num++;
+            push(@details, $step);
         }
 
         push(
@@ -229,9 +221,7 @@ sub read_test_modules {
             {
                 name         => $module->name,
                 result       => $module->result,
-                screenshots  => \@imglist,
-                wavs         => \@wavlist,
-                texts        => \@textlist,
+                details      => \@details,
                 soft_failure => $module->soft_failure,
                 milestone    => $module->milestone,
                 important    => $module->important,
