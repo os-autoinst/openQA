@@ -195,31 +195,67 @@ settings:
 /usr/share/openqa/script/clone_job.pl --from localhost --host localhost 42 FOO=bar BAZ=
 --------------------------------------------------------------------------------
 
-Using Snapshots to speed up development of tests
+Using snapshots to speed up development of tests
 ------------------------------------------------
 [id="snapshots"]
 
 Sometimes it's annoying to run the full installation to adjust some
-test. It would be nice to have the VM jump to a certain point. There
-is an experimental hidden feature that allows to start from a
-snapshot that might help in that situation:
+test. It would be nice to have the VM jump to a certain point. +QEMU
+backend+ provides feature that allows a job to start from a snapshot that might
+help in this situation.
 
+Depending on the use case, there are two options to help:
+
+* create and *preserve* snapshots for *every test* module run (+MAKETESTSNAPSHOTS+)
+- offers more flexibility as test can be resumed almost at any point, however
+  disk space requirements are high (expect more than 30GB for one job)
+- this mode is useful for fixing non fatal issues in tests and debugging SUT
+
+* create snapshot *after every successful* test module, *always overwrite* to preserve only latest (+TESTDEBUG+)
+- allows to skip just before the start of first failed test module, which can be limiting, but there are
+  no additional hardware requirements.
+- this mode is useful for iterative test development
+
+In both modes there is no need to modify tests (i.e. adding +milestone+ test flag, it is implied).
+In later mode, every test module is also considered +fatal+. This means the job is aborted after first failed test module.
+
+
+.Steps to enable snapshots for each test module (former mode):
+----
 1. run the worker with --no-cleanup parameter. This will preserve the hard
 disks after test runs.
 
-2. set MAKETESTSNAPSHOTS=1 on a job. This will make openQA save a
-snapshot for every test run. One way to do that is by cloning an
+2. set +MAKETESTSNAPSHOTS=1+ on a job. This will make openQA save a
+snapshot for every test module run. One way to do that is by cloning an
 existing job and adding the setting:
 
 $ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 MAKETESTSNAPSHOTS=1
 
-3. create a job again, this time setting the SKIPTO variable to the snapshot
+3. create a job again, this time setting the +SKIPTO+ variable to the snapshot
 you need. Again, clone_job.pl comes handy here:
 
 $ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 SKIPTO=consoletest-yast2_i
 
 Use qemu-img snapshot -l something.img to find out what snapshots
-are in the image.
+are in the image. Snapshots are named `"test module category"-"test module name"` (e.g. `installation-start_install`)
+----
+
+.Steps to enable storing only last successful snapshot (latter mode):
+----
+1. run the worker with --no-cleanup parameter. This will preserve the hard
+disks after test runs.
+
+2. set +TESTDEBUG=1+ on a job. This will make openQA save a
+snapshot after each successful test module run. Snapshots are overwritten.
+
+$ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1
+
+3. create a job again, this time setting the +SKIPTO+ variable to the snapshot
+which failed on previous run. If clone_job script is not used, +TESTDEBUG=1+
+variable must be also included:
+
+$ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1 SKIPTO=consoletest-yast2_i
+----
 
 Assigning jobs to workers
 -------------------------
