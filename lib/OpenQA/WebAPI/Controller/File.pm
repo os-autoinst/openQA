@@ -50,16 +50,14 @@ sub needle {
 sub _set_test($) {
     my $self = shift;
 
-    my $ipc = OpenQA::IPC->ipc;
-    $self->{job} = $ipc->scheduler('job_get', $self->param('testid'));
+    $self->{job} = $self->db->resultset("Jobs")->find({'me.id' => $self->param('testid')});
     return unless $self->{job};
 
-    $self->{testdirname} = $self->{job}->{settings}->{NAME};
+    $self->{testdirname} = $self->{job}->result_dir;
     return unless $self->{testdirname};
     $self->{static} = Mojolicious::Static->new;
-    my $dir = OpenQA::Utils::testresultdir($self->{testdirname});
-    push @{$self->{static}->paths}, $dir;
-    push @{$self->{static}->paths}, "$dir/ulogs";
+    push @{$self->{static}->paths}, $self->{testdirname};
+    push @{$self->{static}->paths}, $self->{testdirname} . "/ulogs";
     return 1;
 }
 
@@ -106,7 +104,7 @@ sub test_isoimage {
     return $self->reply->not_found unless $self->_set_test;
     push @{$self->{static}->paths}, $OpenQA::Utils::isodir;
 
-    return $self->serve_static_($self->{job}->{settings}->{ISO});
+    return $self->serve_static_($self->{job}->settings_hash->{ISO});
 }
 
 sub serve_static_($$) {
