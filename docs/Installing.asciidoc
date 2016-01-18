@@ -254,6 +254,55 @@ NFS clients are where openQA workers are running. Run following command:
 mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share
 --------------------------------------------------------------------------------
 
+Auditing - tracking openQA changes
+----------------------------------
+[id="auditing"]
+
+Auditing plugin enables openQA administrators to maintain overview about what is happening with the system.
+Plugin records what event was triggered by whom, when and what the request looked like. Actions done by openQA
+workers are tracked under user whose API keys are workers using.
+
+Audit log is directly accessible from +Admin menu+.
+
+Auditing, by default enabled, can be disabled by global configuration option in +/etc/openqa/openqa.ini+:
+[source, ini]
+--------------------------------------------------------------------------------
+[global]
+audit_enabled = 0
+--------------------------------------------------------------------------------
+
+The audit section of +/etc/openqa/openqa.ini+ allows to exclude some events from logging using
+a space separated blacklist:
+[source, ini]
+--------------------------------------------------------------------------------
+[audit]
+blacklist = job_grab job_done
+--------------------------------------------------------------------------------
+
+List of events tracked by the auditing plugin:
+----
+Assets:
+  asset_register asset_delete
+Workers:
+  worker_register command_enqueue
+Jobs:
+  iso_create iso_delete iso_cancel
+  jobtemplate_create jobtemplate_delete
+  job_create job_grab job_delete job_update_result job_done jobs_restart job_restart job_cancel job_duplicate
+  jobgroup_create jobgroup_connect 
+Tables:
+  table_create table_update table_delete
+Users:
+  user_comment user_login
+Needles:
+  needle_delete needle_modify
+----
+
+Some of these events are very common and may clutter audit database. For this reason +job_grab+ and +job_done+
+events are blacklisted by default.
+[NOTE]
+Upgrading openQA does not automatically update +/etc/openqa/openqa.ini+. Review your configuration after upgrade.
+
 Filesystem Layout
 -----------------
 [id="filesystem"]
