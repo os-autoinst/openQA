@@ -26,7 +26,7 @@ sub index {
 
 sub ajax {
     my ($self) = @_;
-    my $events_rs = $self->app->db->resultset("AuditEvents")->search(undef, {order_by => 'me.id', prefetch => 'owner', rows => 300});
+    my $events_rs = $self->app->db->resultset("AuditEvents")->search(undef, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 300});
     my @events;
     while (my $event = $events_rs->next) {
         my $data = {
