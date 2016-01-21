@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 5;
+    plan tests => 21;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -43,7 +43,6 @@ else {
 #
 
 is($driver->get_title(), "openQA", "on main page");
-my $baseurl = $driver->get_current_url();
 $driver->find_element('Login', 'link_text')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
@@ -61,6 +60,35 @@ is($driver->find_element('h4.media-heading', 'css')->get_text(), "Demo wrote les
 #print $driver->get_page_source();
 
 is($driver->find_element('div.media-comment', 'css')->get_text(), "This is a cool test", "body");
+
+# URL auto-replace
+$driver->find_element('textarea', 'css')->send_keys('
+    foo@bar foo#bar
+    <a href="https://openqa.example.com/foo/bar">https://openqa.example.com/foo/bar</a>: http://localhost:9562
+    https://openqa.example.com/tests/181148 (reference http://localhost/foo/bar )
+    bsc#1234 boo#2345 poo#3456 t#4567'
+);
+$driver->find_element('#submitComment', 'css')->click();
+
+my @urls = $driver->find_elements('div.media-comment a', 'css');
+is((shift @urls)->get_text(), 'https://openqa.example.com/foo/bar',      "url1");
+is((shift @urls)->get_text(), 'http://localhost:9562',                   "url2");
+is((shift @urls)->get_text(), 'https://openqa.example.com/tests/181148', "url3");
+is((shift @urls)->get_text(), 'http://localhost/foo/bar',                "url4");
+is((shift @urls)->get_text(), 'bsc#1234',                                "url5");
+is((shift @urls)->get_text(), 'boo#2345',                                "url6");
+is((shift @urls)->get_text(), 'poo#3456',                                "url7");
+is((shift @urls)->get_text(), 't#4567',                                  "url8");
+
+my @urls2 = $driver->find_elements('div.media-comment a', 'css');
+is((shift @urls2)->get_attribute('href'), 'https://openqa.example.com/foo/bar',                 "url1-href");
+is((shift @urls2)->get_attribute('href'), 'http://localhost:9562/',                             "url2-href");
+is((shift @urls2)->get_attribute('href'), 'https://openqa.example.com/tests/181148',            "url3-href");
+is((shift @urls2)->get_attribute('href'), 'http://localhost/foo/bar',                           "url4-href");
+is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234',     "url5-href");
+is((shift @urls2)->get_attribute('href'), 'https://bugzilla.opensuse.org/show_bug.cgi?id=2345', "url6-href");
+is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/3456',          "url7-href");
+like((shift @urls2)->get_attribute('href'), qr{/tests/4567}, "url8-href");
 
 t::ui::PhantomTest::kill_phantom();
 

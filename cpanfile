@@ -57,6 +57,7 @@ requires 'Package::Stash';
 requires 'Params::Util';
 requires 'Params::Validate';
 requires 'Perl::Tidy';
+requires 'Regexp::Common';
 requires 'SQL::Translator';
 requires 'SQL::SplitStatement';
 requires 'Scalar::Util';
