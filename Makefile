@@ -1,5 +1,7 @@
+.PHONY: all
 all:
 
+.PHONY: install
 install:
 	for i in lib public script templates; do \
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
@@ -54,11 +56,11 @@ install:
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 
 
+.PHONY: checkstyle
 checkstyle:
 	./script/tidy --check
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle --include Perl::Critic::Policy::HashKeyQuote lib
 
+.PHONY: test
 test: checkstyle
 	OPENQA_CONFIG= prove -r
-
-.PHONY: all install checkstyle test
