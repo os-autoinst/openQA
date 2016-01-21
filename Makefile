@@ -1,3 +1,5 @@
+COVERAGE_REPORT ?= html
+
 .PHONY: all
 all:
 
@@ -63,3 +65,7 @@ checkstyle:
 .PHONY: test
 test: checkstyle
 	OPENQA_CONFIG= prove -r
+
+.PHONY: coverage
+coverage:
+	MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover -test -report ${COVERAGE_REPORT} -ignore_re "t/.*" -coverage default,-pod

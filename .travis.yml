@@ -10,6 +10,6 @@ install:
   - gem install sass
 script:
   - make checkstyle
-  - MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover -test -report coveralls -ignore_re "t/.*" -coverage default,-pod
+  - COVERAGE_REPORT=coveralls make coverage
 after_failure:
   - cat /tmp/openqa-debug.log
