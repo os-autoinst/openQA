@@ -58,7 +58,6 @@ install:
 
 .PHONY: checkstyle
 checkstyle:
-	./script/tidy --check
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle --include Perl::Critic::Policy::HashKeyQuote lib
 
 .PHONY: test
