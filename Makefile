@@ -53,9 +53,12 @@ install:
 
 	cp -Ra dbicdh "$(DESTDIR)"/usr/share/openqa/dbicdh
 
-test:
-	OPENQA_CONFIG= prove -r
+
+checkstyle:
 	./script/tidy --check
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle --include Perl::Critic::Policy::HashKeyQuote lib
 
-.PHONY: all install test
+test: checkstyle
+	OPENQA_CONFIG= prove -r
+
+.PHONY: all install checkstyle test
