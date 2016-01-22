@@ -9,8 +9,7 @@ install:
   - cpanm -nq --installdeps --with-feature=coverage .
   - gem install sass
 script:
-  - ./script/tidy --check
-  - perlcritic --gentle lib
+  - make checkstyle
   - MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover -test -report coveralls -ignore_re "t/.*" -coverage default,-pod
 after_failure:
   - cat /tmp/openqa-debug.log

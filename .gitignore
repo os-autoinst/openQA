@@ -19,3 +19,8 @@ video
 .sass-cache/
 www/htdocs/includes/knownissues.html
 *~
+mojoResults.png
+openqa.log
+t/data/openqa/factory/hdd/00099963-hdd_image2.qcow2
+t/data/openqa/factory/hdd/hdd_image.qcow2
+t/diagram-v*.png

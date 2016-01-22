@@ -86,19 +86,22 @@ sub rendered_markdown {
 package CommentsMarkdownParser;
 require Text::Markdown;
 our @ISA = qw/Text::Markdown/;
+use Regexp::Common qw/URI/;
 
 sub _DoAutoLinks {
     my ($self, $text) = @_;
 
     # auto-replace every http(s) reference which is not already either html
-    # 'a href...' or markdown link '[link](url)'
-    $text =~ s{(?<!['"(])(http[s]?://[^\s]*)}{<a href="$1">$1</a>}gi;
+    # 'a href...' or markdown link '[link](url)' or enclosed by Text::Markdown
+    # URL markers '<>'
+    $text =~ s@(?<!['"(<>])($RE{URI})@<$1>@gi;
 
     $text =~ s{(bnc#(\d+))}{<a href="https://bugzilla.novell.com/show_bug.cgi?id=$2">$1</a>}gi;
     $text =~ s{(bsc#(\d+))}{<a href="https://bugzilla.suse.com/show_bug.cgi?id=$2">$1</a>}gi;
     $text =~ s{(boo#(\d+))}{<a href="https://bugzilla.opensuse.org/show_bug.cgi?id=$2">$1</a>}gi;
     $text =~ s{(poo#(\d+))}{<a href="https://progress.opensuse.org/issues/$2">$1</a>}gi;
-    $text =~ s{(t#(\d+))}{<a href="/tests/$2">$1</a>}gi;
+    # For tests make sure that references into test modules and needling steps also work
+    $text =~ s{(t#([\w/]+))}{<a href="/tests/$2">$1</a>}gi;
 
     $text =~ s{(http://\S*\.gif$)}{<img src="$1"/>}gi;
     $self->SUPER::_DoAutoLinks($text);

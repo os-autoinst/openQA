@@ -200,7 +200,7 @@ sub edit {
         my $needleinfo;
         my $needlename;
         my $area;
-        # For each candidate we will use theee variables:
+        # For each candidate we will use the following variables:
         # $needle: needle information from result, in which 'areas' refers to the best matches
         # $needlename: read from the above
         # $needleinfo: actual definition of the needle, with the original areas
