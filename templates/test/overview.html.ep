@@ -143,7 +143,7 @@
                                         <span id="comment-<%= $jobid %>">
                                             %# TODO link to #comments tab on result page does not currently work
                                             <a href="<%= url_for('test', 'testid' => $jobid).'#comments' %>">
-                                                <i class="comment fa fa-comment" title="Comment available"></i>
+                                                <i class="comment fa fa-comment" title="<%= $res->{comments} %> <%= $res->{comments} > 1 ? "comments" : "comment" %> available"></i>
                                             </a>
                                         </span>
                                     % }
