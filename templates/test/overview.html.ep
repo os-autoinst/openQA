@@ -139,6 +139,14 @@
                                             </span>
                                         % }
                                     % }
+                                    % if ($res->{comments}) {
+                                        <span id="comment-<%= $jobid %>">
+                                            %# TODO link to #comments tab on result page does not currently work
+                                            <a href="<%= url_for('test', 'testid' => $jobid).'#comments' %>">
+                                                <i class="comment fa fa-comment" title="Comment available"></i>
+                                            </a>
+                                        </span>
+                                    % }
                                 % }
                             </td>
                         % }
