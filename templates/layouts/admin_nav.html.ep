@@ -4,11 +4,11 @@
         <div class="panel-body">
             <ul>
                 <li><%= link_to('Users' => url_for('admin_users')) %></li>
-
                 <li><%= link_to('Medium types' => url_for('admin_products')) %></li>
                 <li><%= link_to('Machines' => url_for('admin_machines')) %></li>
                 <li><%= link_to('Test suites' => url_for('admin_test_suites')) %></li>
                 <li><%= link_to('Job groups' => url_for('admin_groups')) %></li>
+                <li><%= link_to('Scheduled products' => url_for('admin_product_log')) %></li>
 
                 <li><%= link_to('Assets' => url_for('admin_assets')) %></li>
                 <!-- Sure this is not the proper place for the workers view,

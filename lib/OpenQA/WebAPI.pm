@@ -409,6 +409,7 @@ sub startup {
 
     $admin_r->get('/auditlog')->name('audit_log')->to('audit_log#index');
     $admin_r->get('/auditlog/ajax')->name('audit_ajax')->to('audit_log#ajax');
+    $admin_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
 
     # Users list as default option
     $admin_r->get('/')->name('admin')->to('user#index');

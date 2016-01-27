@@ -57,11 +57,56 @@ function loadAuditLogTable ()
             render: function ( data, type, row ) {
                 // Limit length of displayed event data, expand on click
                 if (type === 'display' && data.length > 40)
-                    return '<span id="audit_event_data" title="'+htmlEscape(data)+'">' + htmlEscape(data.substr( 0, 38 )) + '...</span>';
+                    return '<span id="audit_event_data" title="' + htmlEscape(data) + '">' + htmlEscape(data.substr( 0, 38 )) + '...</span>';
                 else
                     return data;
             }
         },
     ],
+    });
+}
+
+function loadProductLogTable ()
+{
+    $('#product_log_table').DataTable( {
+        lengthMenu: [10, 25, 50],
+        order: [[1, 'desc']],
+        columnDefs: [
+        {
+            targets: 0,
+            visible: false,
+            searchable: false
+        },
+        {
+            targets: 1,
+            render: function ( data, type, row ) {
+                if (type === 'display')
+                    return '<a href="' + audit_url + '?eventid=' + row.id + '">' + jQuery.timeago(data + " UTC") + '</a>';
+                else
+                    return data;
+            }
+        },
+        {
+            targets: 4,
+            render: function ( data, type, row ) {
+                if (type === 'display' && data.length > 40)
+                    return '<span id="audit_event_data" title="'+ data +'">' + data.substr( 0, 38 ) + '...</span>';
+                else
+                    return data;
+            },
+        },
+        ],
+    });
+
+    $(document).on('click', '.iso_restart', function(event) {
+        event.preventDefault();
+        var restart_link = $(this);
+        var link = $(this).parent('td');
+        var settings
+        $.post(restart_link.attr("href")).done( function( data, res, xhr ) {
+            link.append('ISO rescheduled - ' + xhr.responseJSON.count + ' new jobs');
+        });
+        var i = $(this).find('i').removeClass('fa-repeat');
+        $(this).replaceWith(i);
     });
 }
