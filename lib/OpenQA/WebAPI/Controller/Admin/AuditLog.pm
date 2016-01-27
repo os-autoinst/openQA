@@ -24,9 +24,32 @@ sub index {
     $self->render('admin/audit_log/index');
 }
 
+sub productlog {
+    my ($self) = @_;
+    $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
+    my $events_rs = $self->app->db->resultset("AuditEvents")->search({event => 'iso_create'}, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 100});
+    my @events;
+    while (my $event = $events_rs->next) {
+        my $data = {
+            id         => $event->id,
+            user       => $event->owner ? $event->owner->nickname : 'system',
+            event_data => $event->event_data,
+            event_time => $event->t_created,
+        };
+        push @events, $data;
+    }
+    $self->stash(isos => \@events);
+    $self->render('admin/audit_log/productlog');
+}
+
 sub ajax {
     my ($self) = @_;
-    my $events_rs = $self->app->db->resultset("AuditEvents")->search(undef, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 300});
+    my $query;
+    my $event_type_filter = $self->param('eventType');
+    if ($event_type_filter) {
+        $query = {event => $event_type_filter};
+    }
+    my $events_rs = $self->app->db->resultset("AuditEvents")->search($query, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 300});
     my @events;
     while (my $event = $events_rs->next) {
         my $data = {
