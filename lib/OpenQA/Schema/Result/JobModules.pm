@@ -24,6 +24,7 @@ use OpenQA::Schema::Result::Jobs;
 use JSON ();
 use File::Basename qw/dirname basename/;
 use Cwd qw/realpath/;
+use Try::Tiny;
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -102,8 +103,18 @@ sub details() {
     OpenQA::Utils::log_debug "reading $fn";
     open(my $fh, "<", $fn) || return [];
     local $/;
-    my $ret = JSON::decode_json(<$fh>);
-    close($fh);
+    my $ret;
+    # decode_json dies if JSON is malformed, so handle that
+    try {
+        $ret = JSON::decode_json(<$fh>);
+    }
+    catch {
+        OpenQA::Utils::log_debug "malformed JSON file $fn";
+        $ret = [];
+    }
+    finally {
+        close($fh);
+    };
     for my $img (@$ret) {
         next unless $img->{screenshot};
         my $link = readlink($dir . "/" . $img->{screenshot});
