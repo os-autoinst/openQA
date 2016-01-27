@@ -1,3 +1,4 @@
+COVERAGE_THRESHOLD ?= 59.4
 
 .PHONY: all
 all:
@@ -83,3 +84,7 @@ cover_db/coverage.html: cover_db/
 
 .PHONY: coverage-html
 coverage-html: cover_db/coverage.html
+
+.PHONY: coverage-check
+coverage-check: cover_db/coverage.html
+	./script/check_coverage ${COVERAGE_THRESHOLD}

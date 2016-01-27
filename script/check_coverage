@@ -1,0 +1,23 @@
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+use autodie;
+
+
+die "Need threshold as argument" unless @ARGV;
+
+my $filename = 'cover_db/coverage.html';
+
+open (my $fh, '<', $filename);
+my @log = <$fh>;
+close($fh);
+my @summary = grep { /Total/ } @log;
+chomp @summary;
+my $summary_line = $summary[0];
+
+my @matches = $summary_line =~ /(?<=>)[0-9.]+(?=<)/g;
+# for now just compare the last number, i.e. the total coverage against a
+# threshold
+die "No coverage found" unless scalar @matches > 0;
+die "Coverage is below threshold: $matches[-1] < $ARGV[0]" if ($matches[-1] < $ARGV[0]);
