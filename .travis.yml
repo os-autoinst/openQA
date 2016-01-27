@@ -9,7 +9,8 @@ install:
   - cpanm -nq --installdeps --with-feature=coverage .
   - gem install sass
 script:
-  - make checkstyle
-  - COVERAGE_REPORT=coveralls make coverage
+  # 'coverage-coveralls' calls checkstyle, tests and coverage analysis in
+  # coveralls format
+  - make coverage-coveralls
 after_failure:
   - cat /tmp/openqa-debug.log
