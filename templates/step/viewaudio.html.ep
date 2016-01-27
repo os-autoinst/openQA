@@ -2,6 +2,7 @@
 % title $moduleid;
 
 % content_for 'ready_function' => begin
+    scrollModuleThumbnails();
     setupResultButtons();
 % end
 
