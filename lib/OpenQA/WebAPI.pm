@@ -538,8 +538,8 @@ sub startup {
     $api_r->delete('job_templates/:job_template_id')->to('job_template#destroy');
 
     # api/v1/admin
-    my $audit = $api_r->under('/audit');
-    $audit->post('replayEvent/:eventId')->name('apiv1_audit_replayevent')->to('audit#replayEvent');
+    my $audit = $api_r->route('/audit');
+    $audit->post('/replayEvent/:eventId')->name('apiv1_audit_replayevent')->to('audit#replayEvent');
 
     # json-rpc methods not migrated to this api: echo, list_commands
     ###

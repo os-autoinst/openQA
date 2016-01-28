@@ -17,6 +17,8 @@
 package OpenQA::WebAPI::Controller::Admin::AuditLog;
 use strict;
 use parent 'Mojolicious::Controller';
+use JSON ();
+use OpenQA::Utils qw/log_warning/;
 
 sub index {
     my ($self) = @_;
@@ -29,11 +31,20 @@ sub productlog {
     $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
     my $events_rs = $self->app->db->resultset("AuditEvents")->search({event => 'iso_create'}, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 100});
     my @events;
+    my $json = JSON->new();
+    $json->allow_nonref(1);
     while (my $event = $events_rs->next) {
+        my $event_data = $event->event_data;
+        eval { $event_data = $json->decode($event_data); };
+        if (ref($event_data) ne 'HASH') {
+            log_warning("'found non-hash 'iso_create' event. Probably error with JSON decoding: $event_data");
+            next;
+        }
+        delete $event_data->{id};
         my $data = {
             id         => $event->id,
             user       => $event->owner ? $event->owner->nickname : 'system',
-            event_data => $event->event_data,
+            event_data => $event_data,
             event_time => $event->t_created,
         };
         push @events, $data;

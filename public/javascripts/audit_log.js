@@ -56,10 +56,13 @@ function loadAuditLogTable ()
             targets: 4,
             render: function ( data, type, row ) {
                 // Limit length of displayed event data, expand on click
-                if (type === 'display' && data.length > 40)
-                    return '<span id="audit_event_data" title="' + htmlEscape(data) + '">' + htmlEscape(data.substr( 0, 38 )) + '...</span>';
-                else
+                if (type === 'display' && data.length > 40) {
+                    var parsed_data = JSON.stringify(JSON.parse(data), null, 2);
+                    return '<span id="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 38 )) + '...</span>';
+                }
+                else {
                     return data;
+                }
             }
         },
     ],
@@ -81,7 +84,7 @@ function loadProductLogTable ()
             targets: 1,
             render: function ( data, type, row ) {
                 if (type === 'display')
-                    return '<a href="' + audit_url + '?eventid=' + row.id + '">' + jQuery.timeago(data + " UTC") + '</a>';
+                    return '<a href="' + audit_url + '?eventid=' + row[0] + '">' + jQuery.timeago(data + " UTC") + '</a>';
                 else
                     return data;
             }

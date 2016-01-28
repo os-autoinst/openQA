@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2016 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
 
 package OpenQA::WebAPI::Controller::API::V1::Audit;
 use Mojo::Base 'Mojolicious::Controller';
+use JSON ();
+use Try::Tiny;
 
 sub replayEvent {
     my ($self) = @_;
@@ -26,11 +28,18 @@ sub replayEvent {
     }
 
     my $event_type = $event->event;
+    my $json       = JSON->new();
+    $json->allow_nonref(1);
     if ($event_type eq 'iso_create') {
-        my $settings = eval $event->event_data;
-        if (exists $settings->{id}) {
-            delete $settings->{id};
+        my $settings;
+        try {
+            $settings = $json->decode($event->event_data);
         }
+        catch {
+            return $self->rendered(500);
+        };
+
+        delete $settings->{id};
         require OpenQA::WebAPI::Controller::API::V1::Iso;
         my ($cnt, $ids) = $self->OpenQA::WebAPI::Controller::API::V1::Iso::schedule_iso($settings);
         return $self->render(json => {count => $cnt, ids => $ids});

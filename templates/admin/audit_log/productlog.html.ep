@@ -36,8 +36,7 @@
                     <td><%= $iso->{id} %></td>
                     <td><%= $iso->{event_time} %></td>
                     <td><%= $iso->{user} %></td>
-                    % my $data = eval $iso->{event_data};
-                    % delete $data->{id};
+                    % my $data = $iso->{event_data};
                     <td><%= $data->{ISO} %></td>
                     <td>
                     % for my $key (sort(keys(%$data))) {
