@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 23;
+    plan tests => 24;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -70,6 +70,10 @@ $driver->find_element('textarea', 'css')->send_keys('
     t#5678/modules/welcome/steps/1'
 );
 $driver->find_element('#submitComment', 'css')->click();
+
+my @comments = $driver->find_elements('div.media-comment p', 'css');
+# the first made comment needs to be 2nd now
+is($comments[1]->get_text(), 'This is a cool test');
 
 my @urls = $driver->find_elements('div.media-comment a', 'css');
 is((shift @urls)->get_text(), 'https://openqa.example.com/foo/bar',      "url1");

@@ -145,7 +145,7 @@ __PACKAGE__->has_many(modules  => 'OpenQA::Schema::Result::JobModules',      'jo
 # Locks
 __PACKAGE__->has_many(owned_locks  => 'OpenQA::Schema::Result::JobLocks', 'owner');
 __PACKAGE__->has_many(locked_locks => 'OpenQA::Schema::Result::JobLocks', 'locked_by');
-__PACKAGE__->has_many(comments     => 'OpenQA::Schema::Result::Comments', 'job_id');
+__PACKAGE__->has_many(comments     => 'OpenQA::Schema::Result::Comments', 'job_id', {order_by => 'id'});
 
 __PACKAGE__->has_many(networks => 'OpenQA::Schema::Result::JobNetworks', 'job_id');
 
