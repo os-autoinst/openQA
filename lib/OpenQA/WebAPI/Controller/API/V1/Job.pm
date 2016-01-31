@@ -23,7 +23,7 @@ sub list {
     my $self = shift;
 
     my %args;
-    for my $arg (qw/build iso distri version flavor maxage scope group limit arch/) {
+    for my $arg (qw/build iso distri version flavor maxage scope group groupid limit arch/) {
         next unless defined $self->param($arg);
         $args{$arg} = $self->param($arg);
     }

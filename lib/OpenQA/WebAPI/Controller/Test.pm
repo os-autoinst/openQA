@@ -314,18 +314,19 @@ sub _caclulate_preferred_machines {
 sub overview {
     my $self       = shift;
     my $validation = $self->validation;
-    $validation->required('distri');
-    $validation->required('version');
+    for my $arg (qw/distri version/) {
+        $validation->required($arg);
+    }
     if ($validation->has_error) {
         return $self->render(text => 'Missing parameters', status => 404);
     }
 
     my %search_args;
     my $group;
-    my $distri  = $self->param('distri');
-    my $version = $self->param('version');
-    $search_args{distri}  = $distri;
-    $search_args{version} = $version;
+    for my $arg (qw/distri version flavor build/) {
+        next unless defined $self->param($arg);
+        $search_args{$arg} = $self->param($arg);
+    }
 
     if ($self->param('groupid')) {
         $group = $self->db->resultset("JobGroups")->find($self->param('groupid'));
@@ -338,17 +339,9 @@ sub overview {
         $search_args{groupid} = $group->id;
     }
 
-    my $flavor = $self->param('flavor');
-    if ($flavor) {
-        $search_args{flavor} = $flavor;
+    if (!$search_args{build}) {
+        $search_args{build} = $self->db->resultset("Jobs")->latest_build(%search_args);
     }
-
-    my $build = $self->param('build');
-    if (!$build) {
-        $build = $self->db->resultset("Jobs")->latest_build(%search_args);
-    }
-
-    $search_args{build} = $build;
     $search_args{scope} = 'current';
 
     my @configs;
@@ -432,9 +425,9 @@ sub overview {
     }
 
     $self->stash(
-        build      => $build,
-        version    => $version,
-        distri     => $distri,
+        build      => $search_args{build},
+        version    => $search_args{version},
+        distri     => $search_args{distri},
         group      => $group,
         configs    => \@configs,
         types      => \@types,
