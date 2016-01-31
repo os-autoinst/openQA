@@ -59,23 +59,24 @@ sub list {
     }
 
     #<<< do not let perltidy touch this
-    $self->render(json => 
-		  { JobTemplates => 
-		        [map { { id => $_->id,
-			         prio => $_->prio,
-				 group_name => $_->group->name,
-				 product => {id => $_->product_id,
-					     arch => $_->product->arch,
-					     distri => $_->product->distri,
-					     flavor => $_->product->flavor,
-					     group => $_->product->mediagroup,
-					     version => $_->product->version},
-				 machine => {id => $_->machine_id,
-					     name => $_->machine->name},
-				 test_suite => {id => $_->test_suite_id, name => $_->test_suite->name}}
-			 } @templates
-			]
-		  });
+    $self->render(json =>
+                 { JobTemplates =>
+                     [map { { id => $_->id,
+                              prio => $_->prio,
+                              group_name => $_->group ? $_->group->name : '',
+                              product => {id => $_->product_id,
+                                          arch => $_->product->arch,
+                                          distri => $_->product->distri,
+                                          flavor => $_->product->flavor,
+                                          group => $_->product->mediagroup,
+                                          version => $_->product->version},
+                              machine => {id => $_->machine_id,
+                                          name => $_->machine ? $_->machine->name : ''},
+                              test_suite => {id => $_->test_suite_id,
+                                             name => $_->test_suite->name}}
+             } @templates
+            ]
+          });
     #>>>
 }
 
