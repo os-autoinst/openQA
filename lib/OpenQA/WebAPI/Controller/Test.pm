@@ -155,16 +155,16 @@ sub list_ajax {
             result_stats => $stats->{$job->id},
             deps         => \%deps,
             clone        => $job->clone_id,
-            test         => $job->test . "@" . $js->{MACHINE} // '',
-            distri       => $js->{DISTRI} // '',
-            version      => $js->{VERSION} // '',
-            flavor       => $js->{FLAVOR} // '',
-            arch         => $js->{ARCH} // '',
-            build        => $js->{BUILD} // '',
-            testtime     => $job->t_created,
-            result       => $job->result,
-            group        => $job->group_id,
-            state        => $job->state
+            test         => $job->test . "@" . ($js->{MACHINE} // ''),
+            distri  => $js->{DISTRI}  // '',
+            version => $js->{VERSION} // '',
+            flavor  => $js->{FLAVOR}  // '',
+            arch    => $js->{ARCH}    // '',
+            build   => $js->{BUILD}   // '',
+            testtime => $job->t_created,
+            result   => $job->result,
+            group    => $job->group_id,
+            state    => $job->state
         };
         push @list, $data;
     }
