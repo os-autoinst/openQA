@@ -328,13 +328,9 @@ sub overview {
         $search_args{$arg} = $self->param($arg);
     }
 
-    if ($self->param('groupid')) {
-        $group = $self->db->resultset("JobGroups")->find($self->param('groupid'));
-        return $self->reply->not_found if (!$group);
-        $search_args{groupid} = $group->id;
-    }
-    elsif ($self->param('group')) {
-        $group = $self->db->resultset("JobGroups")->find({name => $self->param('group')});
+    if ($self->param('groupid') or $self->param('group')) {
+        my $search_term = $self->param('groupid') ? $self->param('groupid') : {name => $self->param('group')};
+        $group = $self->db->resultset("JobGroups")->find($search_term);
         return $self->reply->not_found if (!$group);
         $search_args{groupid} = $group->id;
     }
