@@ -348,9 +348,8 @@ sub overview {
         $build = $self->db->resultset("Jobs")->latest_build(%search_args);
     }
 
-    $search_args{build}       = $build;
-    $search_args{fulldetails} = 1;
-    $search_args{scope}       = 'current';
+    $search_args{build} = $build;
+    $search_args{scope} = 'current';
 
     my @configs;
     my %archs;

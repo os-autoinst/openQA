@@ -316,11 +316,11 @@ ok(!$job->{settings}->{JOBTOKEN},                               "job token not p
 
 # we cannot test maxage here as it depends too much on too small
 # time slots. The ui tests check maxage instead too
-#%args = (maxage => 2, fulldetails => 1);
+#%args = (maxage => 2);
 #$current_jobs = list_jobs(%args);
 #is_deeply($current_jobs, [$job], "list_jobs with finish in past");
 #sleep 1;
-#%args = (maxage => 1, fulldetails => 1);
+#%args = (maxage => 1);
 #$current_jobs = list_jobs(%args);
 #is_deeply($current_jobs, [], "list_jobs with finish in future");
 
