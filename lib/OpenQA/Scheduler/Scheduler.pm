@@ -32,6 +32,7 @@ use DBIx::Class::Timestamps qw/now/;
 use DateTime;
 use File::Spec::Functions qw/catfile/;
 use File::Temp qw/tempdir/;
+use Mojo::URL;
 use Mojo::Util 'url_unescape';
 use Try::Tiny;
 use OpenQA::Schema::Result::Jobs;
@@ -1188,8 +1189,6 @@ sub job_schedule_iso {
         asset_register(%$a);
     }
     my $noobsolete = delete $args{_NOOBSOLETEBUILD};
-    my $jobs       = _generate_jobs(%args);
-
     # ISOURL == ISO download. If the ISO already exists, skip the
     # download step (below) entirely by leaving $isodlpath unset.
     my $isodlpath;
@@ -1197,11 +1196,19 @@ sub job_schedule_iso {
         # As this comes in from an API call, URL will be URI-encoded
         # This obviously creates a vuln if untrusted users can POST ISOs
         $args{ISOURL} = url_unescape($args{ISOURL});
+        # set $args{ISO} to the URL filename if we only got ISOURL.
+        # This has to happen *before* _generate_jobs so the jobs have
+        # ISO set
+        if (!$args{ISO}) {
+            $args{ISO} = Mojo::URL->new($args{ISOURL})->path->parts->[-1];
+        }
+        # full path to download target location
         my $fulliso = catfile($OpenQA::Utils::isodir, $args{ISO});
         unless (-s $fulliso) {
             $isodlpath = $fulliso;
         }
     }
+    my $jobs = _generate_jobs(%args);
 
     # XXX: take some attributes from the first job to guess what old jobs to
     # cancel. We should have distri object that decides which attributes are
