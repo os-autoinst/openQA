@@ -345,6 +345,10 @@ sub overview {
     my %results;
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
 
+    # Forward all query parameters to query_jobs to allow specifying additional
+    # query parameters which are then properly shown on the overview.
+    my $req_params = $self->req->params->to_hash;
+    %search_args = (%search_args, %$req_params);
     my $jobs = query_jobs(%search_args);
 
     my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
