@@ -16,6 +16,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &data_name
   &needle_info
   &needledir
+  &productdir
   &testcasedir
   &testresultdir
   &file_content
@@ -47,10 +48,33 @@ our $hostname    = $ENV{SERVER_NAME};
 our $testcasedir = "$basedir/openqa/share/tests";
 our $app;
 
+sub productdir {
+    my ($distri, $version, $test_variant) = @_;
+
+    my $dir = "$testcasedir/$distri";
+    if ($test_variant && -e "$dir/products/$test_variant") {
+        $dir .= "/products/$test_variant";
+    }
+    elsif (-e "$dir/products/$distri") {
+        $dir .= "/products/$distri";
+    }
+    elsif ($version && -e "$dir/products/$distri/$version") {
+        $dir .= "/products/$distri/$version";
+    }
+    # @deprecated old structure
+    else {
+        $dir .= "-$version" if $version && -e "$dir-$version";
+    }
+
+    return $dir;
+}
+
+
 sub testcasedir($$) {
     my $distri  = shift;
     my $version = shift;
-
+    # TODO actually "distri" is misused here. It should rather be something
+    # like the name of the repository with all tests
     my $dir = "$testcasedir/$distri";
     $dir .= "-$version" if $version && -e "$dir-$version";
 
@@ -69,7 +93,7 @@ sub data_name($) {
 }
 
 sub needledir($$) {
-    return testcasedir($_[0], $_[1]) . '/needles';
+    return productdir($_[0], $_[1]) . '/needles';
 }
 
 sub needle_info($$$) {
