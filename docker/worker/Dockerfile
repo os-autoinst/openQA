@@ -5,8 +5,8 @@ RUN zypper --non-interactive in ca-certificates-mozilla curl && \
     zypper ar -f obs://devel:openQA:stable/openSUSE_13.2 openQA && \
     zypper ar -f obs://devel:openQA:13.2/openSUSE_13.2 openQA-perl-modules && \
     zypper ar -f obs://Virtualization/openSUSE_13.2 Virtualization && \
-    curl https://build.opensuse.org/source/devel:openQA/_pubkey > /tmp/pubkey && rpm --import /tmp/pubkey && \
-    curl https://build.opensuse.org/source/Virtualization/_pubkey > /tmp/virt_pubkey && rpm --import /tmp/virt_pubkey && \
+    curl https://api.opensuse.org/public/source/devel:openQA/_pubkey > /tmp/pubkey && rpm --import /tmp/pubkey && \
+    curl https://api.opensuse.org/public/source/Virtualization/_pubkey > /tmp/virt_pubkey && rpm --import /tmp/virt_pubkey && \
     zypper --non-interactive in openQA-worker qemu-kvm && \
     zypper --non-interactive in kmod && \
     zypper --non-interactive in --from Virtualization qemu-ovmf-x86_64
