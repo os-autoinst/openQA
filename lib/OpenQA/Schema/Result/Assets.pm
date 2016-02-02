@@ -99,13 +99,13 @@ sub ensure_size {
     my $size = 0;
     my @st   = stat($self->disk_file);
     if (@st) {
-        if ($self->type eq 'iso') {
-            $size = $st[7];
-            return $self->size if defined($self->size) && $size == $self->size;
-        }
-        elsif ($self->type eq 'repo') {
+        if ($self->type eq 'repo') {
             return $self->size if defined($self->size);
             $size = _getDirSize($self->disk_file);
+        }
+        else {
+            $size = $st[7];
+            return $self->size if defined($self->size) && $size == $self->size;
         }
     }
     $self->update({size => $size}) if $size;
