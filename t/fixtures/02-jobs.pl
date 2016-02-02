@@ -101,6 +101,22 @@
         settings   => [{key => 'DVD', value => '1'}, {key => 'VERSION', value => 'Factory'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'TEST', value => 'doc'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}, {key => 'FLAVOR', value => 'DVD'}, {key => 'BUILD', value => '0048'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'ARCH', value => 'x86_64'}, {key => 'MACHINE', value => '64bit'},]
     },
     Jobs => {
+        id         => 99939,
+        group_id   => 1001,
+        priority   => 36,
+        result     => "passed",
+        state      => "done",
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),    # One hour ago
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
+        test       => "kde",
+        backend    => 'qemu',
+        worker_id  => 0,
+        retry_avbl => 3,
+        # no result dir, let us assume that this is an old test that has
+        # already be pruned
+        settings => [{key => 'DVD', value => '1'}, {key => 'VERSION', value => 'Factory'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'TEST', value => 'kde'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}, {key => 'FLAVOR', value => 'DVD'}, {key => 'BUILD', value => '0048'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'ARCH', value => 'x86_64'}, {key => 'MACHINE', value => '64bit'},]
+    },
+    Jobs => {
         id         => 99946,
         group_id   => 1001,
         priority   => 35,
