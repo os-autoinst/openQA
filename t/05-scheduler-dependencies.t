@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -737,5 +737,215 @@ my $jobP3 = job_get_deps($jobP2->clone->id);
 
 is_deeply($jobI2->{parents}->{Parallel}, [$jobO3->{id}], 'jobI2 got new parent jobO3');
 is_deeply($jobO3->{parents}->{Parallel}, [$jobP3->{id}], 'clone jobO3 gets new parent jobP3');
+
+# https://progress.opensuse.org/issues/10456
+
+%settingsA = %settings;
+%settingsB = %settings;
+%settingsC = %settings;
+%settingsD = %settings;
+
+$settingsA{TEST} = '116539';
+$settingsB{TEST} = '116569';
+$settingsC{TEST} = '116570';
+$settingsD{TEST} = '116571';
+
+$jobA                         = _job_create(\%settingsA);
+$settingsB{_START_AFTER_JOBS} = [$jobA->id];
+$jobB                         = _job_create(\%settingsB);
+$settingsC{_START_AFTER_JOBS} = [$jobA->id];
+$jobC                         = _job_create(\%settingsC);
+$settingsD{_START_AFTER_JOBS} = [$jobA->id];
+$jobD                         = _job_create(\%settingsD);
+
+# hack jobs to appear done to scheduler
+for ($jobA, $jobB, $jobC, $jobD) {
+    $_->state(OpenQA::Schema::Result::Jobs::DONE);
+    $_->result(OpenQA::Schema::Result::Jobs::PASSED);
+    $_->update;
+}
+
+# only job B failed as incomplete
+$jobB->result(OpenQA::Schema::Result::Jobs::INCOMPLETE);
+$jobB->update;
+
+# situation, all chained and done, B is incomplete:
+
+# A <- B
+#   |- C
+#   \- D
+
+# B failed, auto clone it
+my $jobBc_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobB->id, dup_type_auto => 1);
+ok($jobBc_id, 'jobB duplicated');
+
+# update local copy from DB
+$_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
+
+
+use Data::Dump qw/pp/;
+# expected situation
+# A <- B' (clone of B)
+#   |- C
+#   \- D
+my $jobBc_h = job_get_deps($jobBc_id);
+is_deeply($jobBc_h->{parents}->{Chained}, [$jobA->id], 'jobBc has jobA as chained parent');
+is($jobBc_h->{settings}{TEST}, $jobB->test, 'jobBc test and jobB test are equal');
+
+ok(!$jobC->clone, 'jobC was not cloned');
+my $jobC_h = job_get_deps($jobC->id);
+is_deeply($jobC_h->{parents}->{Chained}, [$jobA->id], 'jobC has jobA as chained parent');
+is($jobC_h->{settings}{TEST}, $jobC->test, 'jobBc test and jobB test are equal');
+
+ok(!$jobD->clone, 'jobD was not cloned');
+my $jobD_h = job_get_deps($jobD->id);
+is_deeply($jobD_h->{parents}->{Chained}, [$jobA->id], 'jobD has jobA as chained parent');
+is($jobD_h->{settings}{TEST}, $jobD->test, 'jobBc test and jobB test are equal');
+
+# hack jobs to appear running to scheduler
+$jobB->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobB->clone->update;
+
+# clone A
+my $jobA2_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobA->id);
+ok($jobA2_id, 'jobA duplicated');
+$jobA->discard_changes;
+
+$jobA->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobA->clone->update;
+$jobA2_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobA->clone->id);
+ok($jobA2_id, 'jobA->clone duplicated');
+
+# update local copy from DB
+$_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
+
+# expected situation, all chained:
+
+# A2 <- B2 (clone of Bc)
+#    |- C2
+#    \- D2
+ok($jobB->clone->clone, 'jobB clone jobBc was cloned');
+my $jobB2_h = job_get_deps($jobB->clone->clone->id);
+is_deeply($jobB2_h->{parents}->{Chained}, [$jobA2_id], 'jobB2 has jobA2 as chained parent');
+is($jobB2_h->{settings}{TEST}, $jobB->test, 'jobB2 test and jobB test are equal');
+
+ok($jobC->clone, 'jobC was cloned');
+my $jobC2_h = job_get_deps($jobC->clone->id);
+is_deeply($jobC2_h->{parents}->{Chained}, [$jobA2_id], 'jobC2 has jobA2 as chained parent');
+is($jobC2_h->{settings}{TEST}, $jobC->test, 'jobC2 test and jobC test are equal');
+
+ok($jobD->clone, 'jobD was cloned');
+my $jobD2_h = job_get_deps($jobD->clone->id);
+is_deeply($jobD2_h->{parents}->{Chained}, [$jobA2_id], 'jobD2 has jobA2 as chained parent');
+is($jobD2_h->{settings}{TEST}, $jobD->test, 'jobD2 test and jobD test are equal');
+
+my $jobA2_h = job_get_deps($jobA2_id);
+is_deeply($jobA2_h->{children}->{Chained}, [$jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id}], 'jobA2 has jobB2, jobC2 and jobD2 as children');
+
+# situation parent is done, children running -> parent is cloned -> parent is running -> parent is cloned. Check all children has new parent
+# A <- B
+#   |- C
+#   \- D
+%settingsA = %settings;
+%settingsB = %settings;
+%settingsC = %settings;
+%settingsD = %settings;
+
+$settingsA{TEST} = '116539A';
+$settingsB{TEST} = '116569A';
+$settingsC{TEST} = '116570A';
+$settingsD{TEST} = '116571A';
+
+$jobA                         = _job_create(\%settingsA);
+$settingsB{_START_AFTER_JOBS} = [$jobA->id];
+$jobB                         = _job_create(\%settingsB);
+$settingsC{_START_AFTER_JOBS} = [$jobA->id];
+$jobC                         = _job_create(\%settingsC);
+$settingsD{_START_AFTER_JOBS} = [$jobA->id];
+$jobD                         = _job_create(\%settingsD);
+
+# hack jobs to appear done to scheduler
+$jobA->state(OpenQA::Schema::Result::Jobs::DONE);
+$jobA->result(OpenQA::Schema::Result::Jobs::PASSED);
+$jobA->update;
+for ($jobB, $jobC, $jobD) {
+    $_->state(OpenQA::Schema::Result::Jobs::RUNNING);
+    $_->update;
+}
+
+$jobA2_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobA->id);
+$_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
+# check all children were cloned and has $jobA as parent
+for ($jobB, $jobC, $jobD) {
+    ok($_->clone, 'job cloned');
+    my $h = job_get_deps($_->clone->id);
+    is_deeply($h->{parents}{Chained}, [$jobA2_id], 'job has jobA2 as parent');
+}
+
+# set jobA2 as running and clone it
+$jobA2 = $jobA->clone;
+is($jobA2->id, $jobA2_id, 'jobA2 is indeed jobA clone');
+$jobA2->state(OpenQA::Schema::Result::Jobs::RUNNING);
+$jobA2->update;
+my $jobA3_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobA2->id);
+$_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
+
+# check all children were cloned anymore and has $jobA3 as parent
+for ($jobB, $jobC, $jobD) {
+    ok(!$_->clone->clone, 'job correctly not cloned');
+    my $h = job_get_deps($_->clone->id);
+    is_deeply($h->{parents}{Chained}, [$jobA3_id], 'job has jobA3 as parent');
+}
+
+# situation: chanied parent is done, children are all failed and has parallel dependency to the first sibling
+#    /- C
+#    |  |
+# A <-- B
+#    |  |
+#    \- D
+%settingsA = %settings;
+%settingsB = %settings;
+%settingsC = %settings;
+%settingsD = %settings;
+
+$settingsA{TEST} = '360-A';
+$settingsB{TEST} = '360-B';
+$settingsC{TEST} = '360-C';
+$settingsD{TEST} = '360-D';
+
+$jobA                         = _job_create(\%settingsA);
+$settingsB{_START_AFTER_JOBS} = [$jobA->id];
+$jobB                         = _job_create(\%settingsB);
+$settingsC{_START_AFTER_JOBS} = [$jobA->id];
+$settingsC{_PARALLEL_JOBS}    = [$jobB->id];
+$jobC                         = _job_create(\%settingsC);
+$settingsD{_START_AFTER_JOBS} = [$jobA->id];
+$settingsD{_PARALLEL_JOBS}    = [$jobB->id];
+$jobD                         = _job_create(\%settingsD);
+
+# hack jobs to appear done to scheduler
+$jobA->state(OpenQA::Schema::Result::Jobs::DONE);
+$jobA->result(OpenQA::Schema::Result::Jobs::PASSED);
+$jobA->update;
+for ($jobB, $jobC, $jobD) {
+    $_->state(OpenQA::Schema::Result::Jobs::DONE);
+    $_->result(OpenQA::Schema::Result::Jobs::FAILED);
+    $_->update;
+}
+
+$jobA2_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobA->id);
+$_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
+
+# check all children were cloned and has $jobA as parent
+for ($jobB, $jobC, $jobD) {
+    ok($_->clone, 'job cloned');
+    my $h = job_get_deps($_->clone->id);
+    is_deeply($h->{parents}{Chained}, [$jobA2_id], 'job has jobA2 as parent');
+}
+
+for ($jobC, $jobD) {
+    my $h = job_get_deps($_->clone->id);
+    is_deeply($h->{parents}{Parallel}, [$jobB->clone->id], 'job has jobB2 as parallel parent');
+}
 
 done_testing();
