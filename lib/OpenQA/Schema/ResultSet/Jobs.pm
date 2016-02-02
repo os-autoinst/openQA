@@ -92,7 +92,7 @@ sub latest_jobs {
         my $test     = $settings->{TEST};
         my $flavor   = $settings->{FLAVOR} || 'sweet';
         my $arch     = $settings->{ARCH} || 'noarch';
-        my $machine  = $settings->{MACHINE};
+        my $machine  = $settings->{MACHINE} || 'nomachine';
         my $key      = "$distri-$version-$build-$test-$flavor-$arch-$machine";
         next if $seen{$key}++;
         push(@latest, $job);

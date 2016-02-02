@@ -292,6 +292,7 @@ sub _calculate_preferred_machines {
     my %machines;
     while (my $job = $jobs->next()) {
         my $sh = $job->settings_hash;
+        next unless $sh->{MACHINE};
         $machines{$sh->{ARCH}} ||= {};
         $machines{$sh->{ARCH}}->{$sh->{MACHINE}}++;
     }
@@ -402,7 +403,7 @@ sub overview {
         }
 
         # Populate @configs and %archs
-        if ($preferred_machines->{$settings->{ARCH}} ne $settings->{MACHINE}) {
+        if ($settings->{MACHINE} && $preferred_machines->{$settings->{ARCH}} && $preferred_machines->{$settings->{ARCH}} ne $settings->{MACHINE}) {
             $test .= "@" . $settings->{MACHINE};
         }
         push(@configs, $test) unless (grep { $test eq $_ } @configs);
