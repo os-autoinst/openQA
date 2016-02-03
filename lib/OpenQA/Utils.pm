@@ -16,6 +16,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &data_name
   &needle_info
   &needledir
+  &productdir
   &testcasedir
   &testresultdir
   &file_content
@@ -47,10 +48,30 @@ our $hostname    = $ENV{SERVER_NAME};
 our $testcasedir = "$basedir/openqa/share/tests";
 our $app;
 
+# the desired new folder structure is
+# $testcasedir/<testrepository>
+# with "main.pm" and needles being in a productdir under <testrepository>
+# defined by $distri forming the full path of
+#  $testcasedir/<testrepository>/products/$distri
+# with a fallback to searching for the main.pm in the <testrepository> top
+# folder. <testrepository> is formed by $distri and $version with path lookup
+# but could later on also be defined with a variable if necessary.
+# To be backwards compatible we need to search for all combinations of "old/new
+# testrepository name" and "old/new folder structure" within the
+# testrepository.
+sub productdir {
+    my ($distri, $version) = @_;
+
+    my $dir = testcasedir($distri, $version);
+    return $dir . "/products/$distri" if -e "$dir/products/$distri";
+    return $dir;
+}
+
 sub testcasedir($$) {
     my $distri  = shift;
     my $version = shift;
-
+    # TODO actually "distri" is misused here. It should rather be something
+    # like the name of the repository with all tests
     my $dir = "$testcasedir/$distri";
     $dir .= "-$version" if $version && -e "$dir-$version";
 
@@ -68,8 +89,9 @@ sub data_name($) {
     return $1;
 }
 
-sub needledir($$) {
-    return testcasedir($_[0], $_[1]) . '/needles';
+sub needledir {
+    my ($distri, $version) = @_;
+    return productdir($distri, $version) . '/needles';
 }
 
 sub needle_info($$$) {
