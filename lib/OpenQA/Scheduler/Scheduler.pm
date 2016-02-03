@@ -30,7 +30,7 @@ use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
 use DBIx::Class::Timestamps qw/now/;
 use DateTime;
-use File::Spec::Functions qw/catfile/;
+use File::Spec::Functions qw/catfile catdir/;
 use File::Temp qw/tempdir/;
 use Mojo::URL;
 use Mojo::Util 'url_unescape';
@@ -41,7 +41,7 @@ use OpenQA::Schema::Result::JobDependencies;
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw/log_debug parse_assets_from_settings/;
+use OpenQA::Utils qw/log_debug parse_assets_from_settings asset_type_from_setting/;
 use db_helpers qw/rndstr/;
 
 use OpenQA::IPC;
@@ -1179,23 +1179,39 @@ sub job_schedule_iso {
         asset_register(%$a);
     }
     my $noobsolete = delete $args{_NOOBSOLETEBUILD};
-    # ISOURL == ISO download. If the ISO already exists, skip the
-    # download step (below) entirely by leaving $isodlpath unset.
-    my $isodlpath;
-    if ($args{ISOURL}) {
+    # Any arg name ending in _URL is special: it tells us to download
+    # the file at that URL before running the job
+    my %downloads = ();
+    for my $arg (keys %args) {
+        next unless ($arg =~ /_URL$/);
         # As this comes in from an API call, URL will be URI-encoded
-        # This obviously creates a vuln if untrusted users can POST ISOs
-        $args{ISOURL} = url_unescape($args{ISOURL});
-        # set $args{ISO} to the URL filename if we only got ISOURL.
-        # This has to happen *before* _generate_jobs so the jobs have
-        # ISO set
-        if (!$args{ISO}) {
-            $args{ISO} = Mojo::URL->new($args{ISOURL})->path->parts->[-1];
+        # This obviously creates a vuln if untrusted users can POST
+        $args{$arg} = url_unescape($args{$arg});
+        my $url = $args{$arg};
+        # if $args{FOO_URL} is set but $args{FOO} is not, we will
+        # set $args{FOO} (the filename of the downloaded asset) to
+        # the URL filename. This has to happen *before*
+        # generate_jobs so the jobs have FOO set
+        my $short = substr($arg, 0, -4);
+        if (!$args{$short}) {
+            $args{$short} = Mojo::URL->new($url)->path->parts->[-1];
         }
-        # full path to download target location
-        my $fulliso = catfile($OpenQA::Utils::isodir, $args{ISO});
-        unless (-s $fulliso) {
-            $isodlpath = $fulliso;
+        # full path to download target location. We need to guess
+        # the asset type to know where to put it, using the same
+        # subroutine as parse_assets_from_settings
+        my $assettype = asset_type_from_setting($short);
+        # We're only going to allow downloading of asset types
+        unless ($assettype) {
+            OpenQA::Utils::log_warning("_URL downloading only allowed for asset types! $short is not an asset type");
+            next;
+        }
+        my $dir = catdir($OpenQA::Utils::assetdir, $assettype);
+        my $fullpath = catfile($dir, $args{$short});
+
+        unless (-s $fullpath) {
+            # if the file doesn't exist, add the url/target path
+            # as a key/value pair to the %downloads hash
+            $downloads{$url} = $fullpath;
         }
     }
     my $jobs = _generate_jobs(%args);
@@ -1263,18 +1279,21 @@ sub job_schedule_iso {
     };
 
     # enqueue gru jobs
-    if ($isodlpath and @ids) {
+    if (%downloads and @ids) {
         # array of hashrefs job_id => id; this is what create needs
         # to create entries in a related table (gru_dependencies)
         my @jobsarray = map +{job_id => $_}, @ids;
-        schema->resultset('GruTasks')->create(
-            {
-                taskname => 'download_iso',
-                priority => 20,
-                args     => [$args{ISOURL}, $isodlpath],
-                run_at   => now(),
-                jobs     => \@jobsarray,
-            });
+        for my $url (keys %downloads) {
+            my $path = $downloads{$url};
+            schema->resultset('GruTasks')->create(
+                {
+                    taskname => 'download_asset',
+                    priority => 20,
+                    args     => [$url, $path],
+                    run_at   => now(),
+                    jobs     => \@jobsarray,
+                });
+        }
     }
     schema->resultset('GruTasks')->create(
         {

@@ -90,6 +90,17 @@ sub engine_workit($) {
         }
     }
 
+    for my $otherkey (qw/KERNEL INITRD/) {
+        if (my $file = $job->{settings}->{$otherkey}) {
+            $file = join('/', OTHER_DIR, $file);
+            unless (-e $file) {
+                warn "$file does not exist!\n";
+                return;
+            }
+            $job->{settings}->{$otherkey} = $file;
+        }
+    }
+
     my $nd = $job->{settings}->{NUMDISKS} || 2;
     for my $i (1 .. $nd) {
         my $hdd = $job->{settings}->{"HDD_$i"} || undef;
