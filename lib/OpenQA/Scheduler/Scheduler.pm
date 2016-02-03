@@ -297,7 +297,7 @@ sub query_jobs {
     my %args = @_;
     # For args where we accept a list of values, allow passing either an
     # array ref or a comma-separated list
-    for my $arg (qw/state ids/) {
+    for my $arg (qw/state ids result/) {
         next unless $args{$arg};
         $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
     }
@@ -325,6 +325,10 @@ sub query_jobs {
                     'me.t_started'  => $agecond,
                     'me.t_finished' => $agecond
                 ]});
+    }
+    # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
+    if ($args{result}) {
+        push(@conds, {'me.result' => {-in => $args{result}}});
     }
     if ($args{ignore_incomplete}) {
         push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
