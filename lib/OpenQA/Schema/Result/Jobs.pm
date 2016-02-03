@@ -1016,8 +1016,7 @@ sub needle_dir() {
     unless ($self->{_needle_dir}) {
         my $distri  = $self->settings_hash->{DISTRI};
         my $version = $self->settings_hash->{VERSION};
-        my $dir     = OpenQA::Utils::testcasedir($distri, $version);
-        $self->{_needle_dir} = "$dir/needles";
+        $self->{_needle_dir} = OpenQA::Utils::needledir($distri, $version);
     }
     return $self->{_needle_dir};
 }
