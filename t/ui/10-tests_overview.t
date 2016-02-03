@@ -77,6 +77,9 @@ $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
 $get->element_exists_not('#res_DVD_x86_64_kde');
 
+my $failedmodules = $t->tx->res->dom->at('#res_DVD_x86_64_doc .failedmodule a')->all_text;
+like($failedmodules, qr/logpackages/i, "failed modules are listed");
+
 #
 # Default overview for 13.1
 #

@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 24;
+    plan tests => 27;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -44,7 +44,7 @@ else {
 
 is($driver->get_title(), "openQA", "on main page");
 $driver->find_element('Login', 'link_text')->click();
-# we're back on the main page
+# we are back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 
 $driver->find_element('opensuse', 'link_text')->click();
@@ -97,6 +97,19 @@ is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/
 like((shift @urls2)->get_attribute('href'), qr{/tests/4567}, "url8-href");
 like((shift @urls2)->get_attribute('href'), qr{/tests/5678/modules/welcome/steps}, "url9-href");
 
+# check commenting in test results
+$driver->find_element('Build0048', 'link_text')->click();
+$driver->find_element('.status',   'css')->click();
+is($driver->get_title(), "openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test results", "on test result page");
+$driver->find_element('Comments (0)',   'link_text')->click();
+$driver->find_element('textarea',       'css')->send_keys('Comments also work within test results');
+$driver->find_element('#submitComment', 'css')->click();
+
+is($driver->find_element('blockquote.ui-state-highlight', 'css')->get_text(), "Comment added", "comment added highlight");
+
+# go back to test result overview and check comment availability sign
+$driver->find_element('Build0048@opensuse', 'link_text')->click();
+is($driver->get_title(), "openQA: Test summary", "back on test group overview");
 t::ui::PhantomTest::kill_phantom();
 
 done_testing();
