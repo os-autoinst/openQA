@@ -41,8 +41,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->belongs_to(
-    "job",
-    "OpenQA::Schema::Result::Jobs",
+    job => "OpenQA::Schema::Result::Jobs",
     {'foreign.id' => "self.job_id"},
     {
         is_deferrable => 1,
@@ -51,6 +50,9 @@ __PACKAGE__->belongs_to(
         on_update     => "CASCADE",
     },
 );
+__PACKAGE__->has_many(
+    siblings => "OpenQA::Schema::Result::JobSettings",
+    {"foreign.job_id" => "self.job_id"});
 
 1;
 # vim: set sw=4 et:

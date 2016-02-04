@@ -380,18 +380,11 @@ sub query_jobs {
             });
     }
 
-    # Search into the following job_settings
-    for my $setting (qw(build iso distri version flavor arch)) {
-        if ($args{$setting}) {
-            my $subquery = schema->resultset("JobSettings")->search(
-                {
-                    key   => uc($setting),
-                    value => $args{$setting}});
-            push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
-        }
+    if ($args{ids}) {
+        push(@conds, {'me.id' => {-in => $args{ids}}});
     }
-    # Text search across some settings
-    if ($args{match}) {
+    elsif ($args{match}) {
+        # Text search across some settings
         my $subquery = schema->resultset("JobSettings")->search(
             {
                 key => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST', 'VERSION'],
@@ -399,8 +392,30 @@ sub query_jobs {
             });
         push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
-    if ($args{ids}) {
-        push(@conds, {'me.id' => {-in => $args{ids}}});
+    else {
+        my @js_joins;
+        my @js_conds;
+        # Search into the following job_settings
+        for my $setting (qw(build iso distri version flavor arch)) {
+            if ($args{$setting}) {
+                # for dynamic self joins we need to be creative ;(
+                my $tname = 'me';
+                if (@js_conds) {
+                    $tname = "siblings";
+                    if (@js_joins) {
+                        $tname = "siblings_" . (int(@js_joins) + 1);
+                    }
+                    push(@js_joins, 'siblings');
+                }
+                push(
+                    @js_conds,
+                    {
+                        "$tname.key"   => uc($setting),
+                        "$tname.value" => $args{$setting}});
+            }
+        }
+        my $subquery = schema->resultset("JobSettings")->search({-and => \@js_conds}, {join => \@js_joins});
+        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
 
     $attrs{order_by} = ['me.id DESC'];
