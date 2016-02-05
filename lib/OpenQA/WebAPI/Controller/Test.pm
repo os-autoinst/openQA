@@ -287,7 +287,7 @@ sub show {
     $self->render('test/result');
 }
 
-sub _caclulate_preferred_machines {
+sub _calculate_preferred_machines {
     my ($jobs) = @_;
     my %machines;
     while (my $job = $jobs->next()) {
@@ -352,7 +352,7 @@ sub overview {
     my $jobs = query_jobs(%search_args);
 
     my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
-    my $preferred_machines = _caclulate_preferred_machines($jobs);
+    my $preferred_machines = _calculate_preferred_machines($jobs);
 
     my @latest_jobs = $jobs->latest_jobs;
     foreach my $job (@latest_jobs) {
