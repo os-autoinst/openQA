@@ -310,6 +310,17 @@ sub _calculate_preferred_machines {
     return $pms;
 }
 
+sub _job_comments {
+    my ($self, $jobs) = @_;
+
+    my %comments;
+    my $c = $self->db->resultset("Comments")->search({job_id => {in => [map { $_->id } @$jobs]}});
+    while (my $comment = $c->next()) {
+        $comments{$comment->job_id}++;
+    }
+    return \%comments;
+}
+
 # Custom action enabling the openSUSE Release Team
 # to see the quality at a glance
 sub overview {
@@ -352,10 +363,14 @@ sub overview {
     %search_args = (%search_args, %$req_params);
     my $jobs = query_jobs(%search_args);
 
+    my @latest_jobs = $jobs->latest_jobs;
+
     my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
     my $preferred_machines = _calculate_preferred_machines($jobs);
 
-    my @latest_jobs = $jobs->latest_jobs;
+    # prefetch the number of available comments for those jobs
+    my $job_comments = $self->_job_comments(\@latest_jobs);
+
     foreach my $job (@latest_jobs) {
         my $settings = $job->settings_hash;
         my $test     = $job->test;
@@ -378,7 +393,7 @@ sub overview {
                 jobid    => $job->id,
                 state    => "done",
                 failures => $job->failed_modules_with_needles(),
-                comments => scalar $job->comments,
+                comments => $job_comments->{$job->id},
             };
             $aggregated->{$overall}++;
         }
