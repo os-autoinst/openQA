@@ -57,7 +57,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
   job_delete job_update_result job_restart job_cancel command_enqueue
   job_set_stop job_stop iso_stop_old_builds
-  asset_list asset_get asset_delete asset_register query_jobs
+  asset_list asset_get asset_delete asset_register query_jobs job_settings_subquery
 );
 
 
@@ -293,6 +293,33 @@ sub _job_get($) {
     return $job->to_hash(assets => 1);
 }
 
+sub job_settings_subquery {
+    my (%args) = @_;
+
+    my @joins;
+    my @conds;
+    # Search into the following job_settings
+    for my $setting (keys %args) {
+        if ($args{$setting}) {
+            # for dynamic self joins we need to be creative ;(
+            my $tname = 'me';
+            if (@conds) {
+                $tname = "siblings";
+                if (@joins) {
+                    $tname = "siblings_" . (int(@joins) + 1);
+                }
+                push(@joins, 'siblings');
+            }
+            push(
+                @conds,
+                {
+                    "$tname.key"   => $setting,
+                    "$tname.value" => $args{$setting}});
+        }
+    }
+    return schema->resultset("JobSettings")->search({-and => \@conds}, {join => \@joins});
+}
+
 sub query_jobs {
     my %args = @_;
     # For args where we accept a list of values, allow passing either an
@@ -393,28 +420,8 @@ sub query_jobs {
         push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
     else {
-        my @js_joins;
-        my @js_conds;
-        # Search into the following job_settings
-        for my $setting (qw(build iso distri version flavor arch)) {
-            if ($args{$setting}) {
-                # for dynamic self joins we need to be creative ;(
-                my $tname = 'me';
-                if (@js_conds) {
-                    $tname = "siblings";
-                    if (@js_joins) {
-                        $tname = "siblings_" . (int(@js_joins) + 1);
-                    }
-                    push(@js_joins, 'siblings');
-                }
-                push(
-                    @js_conds,
-                    {
-                        "$tname.key"   => uc($setting),
-                        "$tname.value" => $args{$setting}});
-            }
-        }
-        my $subquery = schema->resultset("JobSettings")->search({-and => \@js_conds}, {join => \@js_joins});
+        my %js_settings = map { uc($_) => $args{$_} } qw(build iso distri version flavor arch);
+        my $subquery = job_settings_subquery(%js_settings);
         push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
 
