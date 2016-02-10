@@ -245,10 +245,14 @@ sub show {
 
     return $self->reply->not_found unless $job;
 
+    my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
+    my $scenario = join('-', map { $job->settings_hash->{$_} } @scenario_keys);
+
     $self->stash(testname => $job->settings_hash->{NAME});
     $self->stash(distri   => $job->settings_hash->{DISTRI});
     $self->stash(version  => $job->settings_hash->{VERSION});
     $self->stash(build    => $job->settings_hash->{BUILD});
+    $self->stash(scenario => $scenario);
 
     #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
 
@@ -283,6 +287,28 @@ sub show {
         $self->stash(resultfiles => []);
         $self->stash(ulogs       => []);
     }
+
+    # search for previous jobs
+    my @conds;
+    push(@conds, {'me.state'  => 'done'});
+    push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
+    push(@conds, {id          => {'<', $job->id}});
+    my %js_settings = map { $_ => $job->settings_hash->{$_} } @scenario_keys;
+    my $subquery = $self->db->resultset("JobSettings")->query_for_settings(\%js_settings);
+    push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+
+    my $limit_previous = $self->param('limit_previous') // 10;    # arbitrary limit of previous results to show
+    my %attrs = (
+        rows     => $limit_previous,
+        order_by => ['me.id DESC']);
+    my $previous_jobs_rs = $self->db->resultset("Jobs")->search({-and => \@conds}, \%attrs);
+    my @previous_jobs;
+    while (my $prev = $previous_jobs_rs->next) {
+        $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->settings_hash->{$_} } @scenario_keys));
+        push(@previous_jobs, $prev);
+    }
+    $self->stash(previous       => \@previous_jobs);
+    $self->stash(limit_previous => $limit_previous);
 
     $self->render('test/result');
 }

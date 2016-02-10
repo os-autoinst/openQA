@@ -115,6 +115,7 @@
                 <li role="presentation"><a href="#downloads" aria-controls="downloads" role="tab" data-toggle="tab">Logs &amp; Assets</a></li>
                 <li role="presentation"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Settings</a></li>
                 <li role="presentation"><a href="#comments" aria-controls="comments" role="tab" data-toggle="tab">Comments (<%= scalar($job->comments) %>)</a></li>
+                <li role="presentation"><a href="#previous" aria-controls="previous" role="tab" data-toggle="tab">Previous results (<%= scalar(@$previous) %>)</a></li>
             </ul>
 
             <div class="tab-content">
@@ -243,6 +244,11 @@
                 <div role="tabpanel" class="tab-pane" id="comments">
                     <div class="comments">
                         %= include 'test/comments'
+                    </div>
+                </div>
+                <div role="tabpanel" class="tab-pane" id="previous">
+                    <div class="previous">
+                        %= include 'test/previous'
                     </div>
                 </div>
 
