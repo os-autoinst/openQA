@@ -54,7 +54,7 @@ sub _read_config {
         },
         logging => {
             level     => undef,
-            file      => '/var/log/openqa',
+            file      => undef,
             sql_debug => undef,
         },
         openid => {
