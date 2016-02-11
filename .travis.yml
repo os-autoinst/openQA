@@ -11,6 +11,6 @@ install:
 script:
   # 'coverage-coveralls' calls checkstyle, tests and coverage analysis in
   # coveralls format
-  - make coverage-coveralls
+  - make coverage-coveralls coverage-check
 after_failure:
   - cat /tmp/openqa-debug.log
