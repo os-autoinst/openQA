@@ -81,7 +81,7 @@ sub remove_from_disk {
     my ($self) = @_;
 
     my $file = $self->disk_file;
-    OpenQA::Utils::log_debug("remove_from_disk $file");
+    OpenQA::Utils::log_info("GRU: removing $file");
     if ($self->type eq 'iso' || $self->type eq 'hdd') {
         return unless -f $file;
         unlink($file) || die "can't remove $file";
