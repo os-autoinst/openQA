@@ -40,7 +40,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 37;
+    plan tests => 40;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -76,11 +76,13 @@ isnt($driver->find_element('#running #job_99963', 'css'), undef, '99963 still ru
 is($driver->find_element('#running #job_99963 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99963", 'right link');
 like($driver->find_element('#running #job_99963 td.time', 'css')->get_text(), qr/1[01] minutes ago/, 'right time for running');
 
+$get = $t->get_ok('/tests/99963')->status_is(200);
+my @header = $t->tx->res->dom->find('.box-header')->map('text')->each;
+my @expected = ('Actions', 'Test modules', 'Parents', 'Backend', 'Live view of', 'Live Log');
+is_deeply(\@header, \@expected, 'all page modules for running jobs are visible');
+
 $driver->find_element('Build0091', 'link_text')->click();
 like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse build 0091/, 'we are on build 91');
-
-#$driver->find_element('#running #job_99963 td.test a', 'css')->click();
-#is($driver->get_title(), 'job 99963');
 
 # return
 is($driver->get($baseurl . "tests"), 1, "/tests gets");

@@ -1,4 +1,4 @@
-COVERAGE_THRESHOLD ?= 59.4
+COVERAGE_THRESHOLD ?= 59.8
 
 .PHONY: all
 all:
@@ -66,8 +66,10 @@ checkstyle:
 test: checkstyle
 	OPENQA_CONFIG= prove -r
 
+# ignore tests and test related addons in coverage analysis
+COVER_OPTS ?= -ignore_re "t/.*" -ignore lib/perlcritic/Perl/Critic/Policy/HashKeyQuotes.pm
 cover_db/:
-	MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover -test -ignore_re "t/.*" -coverage default,-pod
+	MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover ${COVER_OPTS} -test -coverage default,-pod
 
 .PHONY: coverage-test
 coverage-test: cover_db/
@@ -77,10 +79,10 @@ coverage: coverage-html
 
 .PHONY: coverage-coveralls
 coverage-coveralls: cover_db/
-	cover -report coveralls
+	cover ${COVER_OPTS} -report coveralls
 
 cover_db/coverage.html: cover_db/
-	cover -report html
+	cover ${COVER_OPTS} -report html
 
 .PHONY: coverage-html
 coverage-html: cover_db/coverage.html

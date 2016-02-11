@@ -25,17 +25,6 @@
 <div class="container">
 
   <h2>Last <%= $jobs->all %> finished jobs</h2>
-  % if (is_operator && 0) {
-    <p>
-      <a href="#" id="list-select">Select</a>
-      |
-      <a href="#" id="list-unselect">Unselect</a>
-      |
-      <a href="#" id="list-restart">Restart selected</a>
-      (<span id="list-counter">0</span>)
-    </p>
-    % }
-
     <div class="col-sm-5" id="relevantbox" style="display: none">
 	%= check_box relevant => '1', 'checked' => 'checked' => (id => 'relevantfilter')
 	%= label_for 'relevantfilter' => 'Show only relevant jobs'
