@@ -139,6 +139,13 @@
                                             </span>
                                         % }
                                     % }
+                                    % if ($res->{comments}) {
+                                        <span id="comment-<%= $jobid %>">
+                                            <a href="<%= url_for('test', 'testid' => $jobid).'#comments' %>">
+                                                <i class="comment fa fa-comment" title="<%= $res->{comments} %> <%= $res->{comments} > 1 ? "comments" : "comment" %> available"></i>
+                                            </a>
+                                        </span>
+                                    % }
                                 % }
                             </td>
                         % }

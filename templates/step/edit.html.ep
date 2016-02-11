@@ -35,7 +35,7 @@
 </div>
 
 <div id="change-match-form" title="Change match level">
-    <div>The needle area is matched using fuzzy image comparision. The pixels don't have to match completely but need to be close enough.
+    <div>The needle area is matched using fuzzy image comparison. The pixels don't have to match completely but need to be close enough.
         The colors are reduced and there is some noise reduction too and the match is calculated in percentages. By default everything
         above 96% is considered good enough. Sometimes this is too much and you want to lower the limit for noisy areas and sometimes
         you need to express that every detail matters, so you can change that per area. Note that a 96% for a smaller area is stricter

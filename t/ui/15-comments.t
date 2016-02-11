@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 27;
+    plan tests => 28;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -110,6 +110,9 @@ is($driver->find_element('blockquote.ui-state-highlight', 'css')->get_text(), "C
 # go back to test result overview and check comment availability sign
 $driver->find_element('Build0048@opensuse', 'link_text')->click();
 is($driver->get_title(), "openQA: Test summary", "back on test group overview");
+is($driver->find_element('#res_DVD_x86_64_doc .fa-comment', 'css')->get_attribute('title'), '1 comment available', "test results show available comment(s)");
+
+
 t::ui::PhantomTest::kill_phantom();
 
 done_testing();

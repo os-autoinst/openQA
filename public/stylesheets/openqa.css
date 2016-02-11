@@ -533,6 +533,8 @@ table.overview .failedmodule {
 .fa.result_incomplete { color: #AF1E11;}
 .fa.module_none { color:#bebebe;}
 
+.fa.comment { color: Grey; }
+
 table#users td.role {
     white-space: nowrap;
 }

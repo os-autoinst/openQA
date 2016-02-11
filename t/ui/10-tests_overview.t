@@ -64,7 +64,7 @@ $get->element_exists_not('#res_DVD_x86_64_doc');
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
 $get->status_is(200);
 $summary = $t->tx->res->dom->at('#summary')->all_text;
-like($summary, qr/Passed: 0 Failed: 1/i);
+like($summary, qr/Passed: 1 Failed: 1/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_x86_64');
@@ -73,9 +73,9 @@ $get->element_exists_not('#flavor_GNOME-Live_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
 $get->element_exists('#res_DVD_x86_64_doc .result_failed');
+$get->element_exists('#res_DVD_x86_64_kde .result_passed');
 $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
-$get->element_exists_not('#res_DVD_x86_64_kde');
 
 my $failedmodules = $t->tx->res->dom->at('#res_DVD_x86_64_doc .failedmodule a')->all_text;
 like($failedmodules, qr/logpackages/i, "failed modules are listed");
@@ -96,7 +96,7 @@ $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version =>
 $get->status_is(200);
 $summary = $t->tx->res->dom->at('#summary')->all_text;
 like($summary, qr/Summary of opensuse Factory build 0048/i);
-like($summary, qr/Passed: 0 Failed: 1/i);
+like($summary, qr/Passed: 1 Failed: 1/i);
 
 
 #
@@ -120,5 +120,12 @@ $get->element_exists_not('#res_DVD_x86_64_kde .state_running');
 $get->element_exists_not('#res_GNOME-Live_i686_RAID0 .state_cancelled');
 $get->element_exists_not('.result_failed');
 $get->element_exists_not('.state_cancelled');
+
+# this time show only failed
+$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', result => 'failed'})->status_is(200);
+$summary = $t->tx->res->dom->at('#summary')->all_text;
+like($summary, qr/Passed: 0 Failed: 1/i);
+$get->element_exists('#res_DVD_x86_64_doc .result_failed');
+$get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 
 done_testing();
