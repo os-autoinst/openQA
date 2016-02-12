@@ -63,6 +63,10 @@ if ($help) {
 
 if ($user) {
     my $uid = getpwnam($user) || die "No such login $user";
+    my $gid = getgrnam($user);
+    if ($gid) {
+        setgid($gid) || die "can't sgid to $user group";
+    }
     setuid($uid) || die "can't suid to $user";
 }
 
@@ -76,12 +80,15 @@ my $schema           = OpenQA::Schema::connect_db();
 if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
     my $dbdir = dirname($1);
     die "$dbdir does not exist\n" unless -d $dbdir;
-    my @s = stat(_);
-    if (getgid() != $s[5]) {
-        setgid($s[5]) or die "can't change gid to $s[5]: $!\n";
-    }
-    if (getuid() != $s[4]) {
-        setuid($s[4]) or die "can't change uid to $s[4]: $!\n";
+    unless ($user) {
+        # if --user wasn't set, try to guess appropriate owner for db
+        my @s = stat(_);
+        if (getgid() != $s[5]) {
+            setgid($s[5]) or die "can't change gid to $s[5]: $!\n";
+        }
+        if (getuid() != $s[4]) {
+            setuid($s[4]) or die "can't change uid to $s[4]: $!\n";
+        }
     }
 
     # speed this up a bit
