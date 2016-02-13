@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 31;
+    plan tests => 34;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -126,6 +126,8 @@ $driver->find_element('Build0048@opensuse', 'link_text')->click();
 is($driver->find_element('#res_DVD_x86_64_doc .fa-bug', 'css')->get_attribute('title'), 'Bug(s) referenced: bsc#1234');
 my @labels = $driver->find_elements('#res_DVD_x86_64_doc .test-label', 'css');
 is(scalar @labels, 1, 'Only one label is shown at a time');
+my $get = $t->get_ok($driver->get_current_url())->status_is(200);
+is($get->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href}, 'https://bugzilla.suse.com/show_bug.cgi?id=1234');
 
 t::ui::PhantomTest::kill_phantom();
 

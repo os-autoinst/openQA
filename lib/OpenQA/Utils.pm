@@ -25,6 +25,8 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &run_cmd_with_log
   &commit_git
   &parse_assets_from_settings
+  &bugurl
+  &bugref_to_href
 );
 
 
@@ -253,6 +255,24 @@ sub parse_assets_from_settings {
     return $assets;
 }
 
+sub bugurl {
+    my ($bugref) = @_;
+    my %bugrefs = (
+        bnc => 'https://bugzilla.novell.com/show_bug.cgi?id=',
+        bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
+        boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
+        poo => 'https://progress.opensuse.org/issues/',
+    );
+    return $bugrefs{$bugref};
+}
+
+sub bugref_to_href {
+    my ($text) = @_;
+
+    $text =~ s{((bnc|bsc|boo|poo)#(\d+))}{<a href="@{[bugurl($2)]}$3">$1</a>}gi;
+
+    return $text;
+}
 
 1;
 # vim: set sw=4 et:
