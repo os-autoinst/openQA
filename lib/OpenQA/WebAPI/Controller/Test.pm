@@ -310,15 +310,28 @@ sub _calculate_preferred_machines {
     return $pms;
 }
 
-sub _job_comments {
+sub _job_labels {
     my ($self, $jobs) = @_;
 
-    my %comments;
+    my %labels;
     my $c = $self->db->resultset("Comments")->search({job_id => {in => [map { $_->id } @$jobs]}});
+    # previous occurences of bug or label are overwritten here so the
+    # behaviour for multiple bugs or label references within one job is
+    # undefined.
     while (my $comment = $c->next()) {
-        $comments{$comment->job_id}++;
+        if ($comment->text =~ /\b[^t]+#\d+\b/) {
+            $self->app->log->debug('found bug ticket reference ' . $& . ' for job ' . $comment->job_id);
+            $labels{$comment->job_id}{bug} = $&;
+        }
+        elsif ($comment->text =~ /\blabel:(\w+)\b/) {
+            $self->app->log->debug('found label ' . $1 . ' for job ' . $comment->job_id);
+            $labels{$comment->job_id}{label} = $1;
+        }
+        else {
+            $labels{$comment->job_id}{comments}++;
+        }
     }
-    return \%comments;
+    return \%labels;
 }
 
 # Custom action enabling the openSUSE Release Team
@@ -368,8 +381,8 @@ sub overview {
     my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
     my $preferred_machines = _calculate_preferred_machines($jobs);
 
-    # prefetch the number of available comments for those jobs
-    my $job_comments = $self->_job_comments(\@latest_jobs);
+    # prefetch the number of available labels for those jobs
+    my $job_labels = $self->_job_labels(\@latest_jobs);
 
     foreach my $job (@latest_jobs) {
         my $settings = $job->settings_hash;
@@ -393,7 +406,9 @@ sub overview {
                 jobid    => $job->id,
                 state    => "done",
                 failures => $job->failed_modules_with_needles(),
-                comments => $job_comments->{$job->id},
+                bug      => $job_labels->{$job->id}{bug},
+                label    => $job_labels->{$job->id}{label},
+                comments => $job_labels->{$job->id}{comments},
             };
             $aggregated->{$overall}++;
         }
