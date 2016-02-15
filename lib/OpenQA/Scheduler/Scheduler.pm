@@ -393,28 +393,8 @@ sub query_jobs {
         push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
     else {
-        my @js_joins;
-        my @js_conds;
-        # Search into the following job_settings
-        for my $setting (qw(build iso distri version flavor arch)) {
-            if ($args{$setting}) {
-                # for dynamic self joins we need to be creative ;(
-                my $tname = 'me';
-                if (@js_conds) {
-                    $tname = "siblings";
-                    if (@js_joins) {
-                        $tname = "siblings_" . (int(@js_joins) + 1);
-                    }
-                    push(@js_joins, 'siblings');
-                }
-                push(
-                    @js_conds,
-                    {
-                        "$tname.key"   => uc($setting),
-                        "$tname.value" => $args{$setting}});
-            }
-        }
-        my $subquery = schema->resultset("JobSettings")->search({-and => \@js_conds}, {join => \@js_joins});
+        my %js_settings = map { uc($_) => $args{$_} } qw(build iso distri version flavor arch);
+        my $subquery = schema->resultset("JobSettings")->query_for_settings(\%js_settings);
         push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
 
@@ -806,17 +786,8 @@ sub _job_find_smart($$$) {
         }
     }
     if (ref $value eq 'HASH') {
-        my $i = 0;
-        while (my ($k, $v) = each %$value) {
-            ++$i;
-            my $t = 'settings';
-            $t .= '_' . $i if $i > 1;
-            $cond->{$t . '.key'}   = $k;
-            $cond->{$t . '.value'} = $v;
-        }
-        while ($i--) {
-            push @{$attrs->{join}}, 'settings';
-        }
+        my $subquery = schema->resultset("JobSettings")->query_for_settings($value);
+        $cond->{id} = {-in => $subquery->get_column('job_id')->as_query};
     }
     else {
         # TODO: support by name and by iso here
