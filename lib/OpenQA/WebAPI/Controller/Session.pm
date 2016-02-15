@@ -100,7 +100,7 @@ sub create {
     $auth_module->import('auth_login');
 
     # prevent redirecting loop when referrer is login page
-    if ($ref eq $self->url_for('login')) {
+    if (!$ref or $ref eq $self->url_for('login')) {
         $ref = 'index';
     }
 
