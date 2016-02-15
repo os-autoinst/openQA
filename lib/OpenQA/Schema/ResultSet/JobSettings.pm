@@ -31,13 +31,13 @@ Given a perl hash, will create a ResultSet of job_settings
 
 =cut
 sub query_for_settings {
-    my ($self, %args) = @_;
+    my ($self, $args) = @_;
 
     my @joins;
     my @conds;
     # Search into the following job_settings
-    for my $setting (keys %args) {
-        if ($args{$setting}) {
+    for my $setting (keys %$args) {
+        if ($args->{$setting}) {
             # for dynamic self joins we need to be creative ;(
             my $tname = 'me';
             if (@conds) {
@@ -51,7 +51,7 @@ sub query_for_settings {
                 @conds,
                 {
                     "$tname.key"   => $setting,
-                    "$tname.value" => $args{$setting}});
+                    "$tname.value" => $args->{$setting}});
         }
     }
     return $self->search({-and => \@conds}, {join => \@joins});

@@ -394,7 +394,7 @@ sub query_jobs {
     }
     else {
         my %js_settings = map { uc($_) => $args{$_} } qw(build iso distri version flavor arch);
-        my $subquery = schema->resultset("JobSettings")->query_for_settings(%js_settings);
+        my $subquery = schema->resultset("JobSettings")->query_for_settings(\%js_settings);
         push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
 
@@ -786,17 +786,8 @@ sub _job_find_smart($$$) {
         }
     }
     if (ref $value eq 'HASH') {
-        my $i = 0;
-        while (my ($k, $v) = each %$value) {
-            ++$i;
-            my $t = 'settings';
-            $t .= '_' . $i if $i > 1;
-            $cond->{$t . '.key'}   = $k;
-            $cond->{$t . '.value'} = $v;
-        }
-        while ($i--) {
-            push @{$attrs->{join}}, 'settings';
-        }
+        my $subquery = schema->resultset("JobSettings")->query_for_settings($value);
+        $cond->{id} = {-in => $subquery->get_column('job_id')->as_query};
     }
     else {
         # TODO: support by name and by iso here
