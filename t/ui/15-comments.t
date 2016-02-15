@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 28;
+    plan tests => 34;
 }
 else {
     plan skip_all => 'Install phantomjs to run these tests';
@@ -43,6 +43,7 @@ else {
 #
 
 is($driver->get_title(), "openQA", "on main page");
+my $baseurl = $driver->get_current_url();
 $driver->find_element('Login', 'link_text')->click();
 # we are back on the main page
 is($driver->get_title(), "openQA", "back on main page");
@@ -112,6 +113,21 @@ $driver->find_element('Build0048@opensuse', 'link_text')->click();
 is($driver->get_title(), "openQA: Test summary", "back on test group overview");
 is($driver->find_element('#res_DVD_x86_64_doc .fa-comment', 'css')->get_attribute('title'), '1 comment available', "test results show available comment(s)");
 
+# add label and bug and check availability sign
+$driver->get($baseurl . 'tests/99938#comments');
+$driver->find_element('textarea',           'css')->send_keys('label:true_positive');
+$driver->find_element('#submitComment',     'css')->click();
+$driver->find_element('Build0048@opensuse', 'link_text')->click();
+is($driver->find_element('#res_DVD_x86_64_doc .fa-bookmark', 'css')->get_attribute('title'), 'true_positive');
+$driver->get($baseurl . 'tests/99938#comments');
+$driver->find_element('textarea',           'css')->send_keys('bsc#1234');
+$driver->find_element('#submitComment',     'css')->click();
+$driver->find_element('Build0048@opensuse', 'link_text')->click();
+is($driver->find_element('#res_DVD_x86_64_doc .fa-bug', 'css')->get_attribute('title'), 'Bug(s) referenced: bsc#1234');
+my @labels = $driver->find_elements('#res_DVD_x86_64_doc .test-label', 'css');
+is(scalar @labels, 1, 'Only one label is shown at a time');
+my $get = $t->get_ok($driver->get_current_url())->status_is(200);
+is($get->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href}, 'https://bugzilla.suse.com/show_bug.cgi?id=1234');
 
 t::ui::PhantomTest::kill_phantom();
 

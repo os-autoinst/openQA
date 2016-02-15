@@ -87,6 +87,7 @@ package CommentsMarkdownParser;
 require Text::Markdown;
 our @ISA = qw/Text::Markdown/;
 use Regexp::Common qw/URI/;
+use OpenQA::Utils qw/bugref_to_href/;
 
 sub _DoAutoLinks {
     my ($self, $text) = @_;
@@ -96,10 +97,7 @@ sub _DoAutoLinks {
     # URL markers '<>'
     $text =~ s@(?<!['"(<>])($RE{URI})@<$1>@gi;
 
-    $text =~ s{(bnc#(\d+))}{<a href="https://bugzilla.novell.com/show_bug.cgi?id=$2">$1</a>}gi;
-    $text =~ s{(bsc#(\d+))}{<a href="https://bugzilla.suse.com/show_bug.cgi?id=$2">$1</a>}gi;
-    $text =~ s{(boo#(\d+))}{<a href="https://bugzilla.opensuse.org/show_bug.cgi?id=$2">$1</a>}gi;
-    $text =~ s{(poo#(\d+))}{<a href="https://progress.opensuse.org/issues/$2">$1</a>}gi;
+    $text = bugref_to_href($text);
     # For tests make sure that references into test modules and needling steps also work
     $text =~ s{(t#([\w/]+))}{<a href="/tests/$2">$1</a>}gi;
 

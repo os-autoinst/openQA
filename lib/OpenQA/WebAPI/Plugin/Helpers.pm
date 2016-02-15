@@ -19,6 +19,7 @@ package OpenQA::WebAPI::Plugin::Helpers;
 use strict;
 use warnings;
 use Mojo::ByteStream;
+use OpenQA::Utils qw(bugurl);
 use db_helpers;
 
 use base 'Mojolicious::Plugin';
@@ -45,6 +46,13 @@ sub register {
             else {
                 sprintf("%02d:%02d minutes", $timedate->minutes(), $timedate->seconds());
             }
+        });
+
+    $app->helper(
+        bugurl_for => sub {
+            my ($c, $text) = @_;
+            $text =~ /(.*)#(.*)/;
+            return bugurl($1) . $2;
         });
 
     # Breadcrumbs generation can be centralized, since it's really simple
