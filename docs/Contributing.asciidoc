@@ -42,22 +42,51 @@ repositories can be found:
   creating the corresponding needles) from scratch for a new operating system.
 
 As in most projects hosted on GitHub, pull request are always welcome and
-are the right way to contribute improvements and fixes. But developers
-willing to get really involved into the development of openQA or people
-interested in following the always-changing roadmap should take a look at the
-https://progress.opensuse.org/projects/openqav3[openQAv2 project] in
-openSUSE's project management tool. This Redmine instance is used to
-coordinate the main development effort organizing the existing issues (bugs and
-desired features) into `target versions'.
+are the right way to contribute improvements and fixes.
 
-In general, the development is arranged in short sprints with a duration of around
-two weeks, with a previous kickoff meeting and a wrap up meeting at the end. Both
-meetings are done using http://www.google.com/hangouts/[Google Hangout]. During
-the kickoff meeting a new version is created in the management tool (with an
-agreed due date) and several issues are assigned to it. The
-https://progress.opensuse.org/projects/stagings/roadmap[roadmap view] is the
-most convenient way to see which features and bug fixes are being addressed at a
-given point in time.
+Rules for commits
+~~~~~~~~~~~~~~~~~
+[id="rules_for_commits"]
+
+* Every commit is checked by https://travis-ci.org/travis[Travis CI] as soon as
+you create a pull request but you *should* run the openQA tests locally,
+i.e. before every commit call
+----
+./script/tidy
+----
+to ensure your perl code changes are consistent with the style rules
+
+* You *may* also run local tests on your machine or in your own development
+environment to verify everything works as expected. Call
+----
+make test
+----
+for unit and integration tests.
+
+* For git commit messages use the rules stated on
+http://chris.beams.io/posts/git-commit/[How to Write a Git Commit Message] as
+a reference
+
+* Every pull request is reviewed in a peer review to give feedback on possible
+implications and how we can help each other to improve
+
+If this is too much hassle for you feel free to provide incomplete pull
+requests for consideration or create an issue with a code change proposal.
+
+Getting involved into development
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[id="getting_involved"]
+
+But developers willing to get really involved into the development of openQA or
+people interested in following the always-changing roadmap should take a look
+at the https://progress.opensuse.org/projects/openqav3[openQAv3 project] in
+openSUSE's project management tool. This Redmine instance is used to coordinate
+the main development effort organizing the existing issues (bugs and desired
+features) into `target versions'.
+
+Currently developers meet in IRC channel
+irc://chat.freenode.net/opensuse-factory[#opensuse-factory] and in a daily
+https://github.com/jangouts/jangouts[jangouts] call of the core developer team.
 
 In addition to the ones representing development sprints, two other versions are
 always open. https://progress.opensuse.org/versions/73[Easy hacks] lists issues
