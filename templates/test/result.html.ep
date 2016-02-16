@@ -4,12 +4,6 @@
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     setupResultButtons();
-    %# Enable links into tabs and show same tab again on page reload
-    %# ref: https://github.com/twbs/bootstrap/issues/2415
-    %# Does not yet redirect to same tab on login.
-    var hash = window.location.hash || '#details';
-    var link = $('[href=' + hash + ']');
-    link && link.tab('show');
 % end
 
 % if (!@$modlist) {
@@ -17,6 +11,16 @@
         $('#result_tabs a[href="#settings"]').tab('show');
     % end
 % }
+
+%# order after reverting to '#settings' not to overwrite tab selection
+% content_for 'ready_function' => begin
+    %# Enable links into tabs and show same tab again on page reload
+    %# ref: https://github.com/twbs/bootstrap/issues/2415
+    %# Does not yet redirect to same tab on login.
+    var hash = window.location.hash || '#details';
+    var link = $('[href=' + hash + ']');
+    link && link.tab('show');
+% end
 
 <div class="row">
     <div class="col-sm-push-3 col-sm-9">
