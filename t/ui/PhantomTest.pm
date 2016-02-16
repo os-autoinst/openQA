@@ -60,7 +60,6 @@ sub start_phantomjs {
             last if $socket;
         }
     }
-    use Selenium::Remote::Driver;
     my $driver;
     # Connect to it
     eval {
@@ -93,8 +92,10 @@ sub make_screenshot($) {
 }
 
 sub call_phantom() {
+    # fail if phantomjs or Selenium::Remote::Driver are unavailable
     use IPC::Cmd qw[can_run];
-    if (!can_run('phantomjs')) {
+    use Module::Load::Conditional qw/can_load/;
+    if (!can_run('phantomjs') || !can_load(modules => {'Selenium::Remote::Driver' => undef,})) {
         return undef;
     }
 

@@ -43,7 +43,7 @@ if ($driver) {
     plan tests => 40;
 }
 else {
-    plan skip_all => 'Install phantomjs to run these tests';
+    plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
 }
 
