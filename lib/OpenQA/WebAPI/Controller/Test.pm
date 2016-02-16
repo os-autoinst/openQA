@@ -307,8 +307,11 @@ sub show {
         $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->settings_hash->{$_} } @scenario_keys));
         push(@previous_jobs, $prev);
     }
-    $self->stash(previous       => \@previous_jobs);
-    $self->stash(limit_previous => $limit_previous);
+    my $job_labels = $self->_job_labels(\@previous_jobs);
+
+    $self->stash(previous        => \@previous_jobs);
+    $self->stash(previous_labels => $job_labels);
+    $self->stash(limit_previous  => $limit_previous);
 
     $self->render('test/result');
 }

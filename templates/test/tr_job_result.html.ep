@@ -1,0 +1,40 @@
+<td id="res_<%= $resultid %>">
+     % if ($res) {
+         % if (is_operator) {
+             % if ($state eq "done" || $state eq "cancelled") {
+                 %= link_post url_for('apiv1_restart', 'name' => $jobid) => ('data-remote' => 'true', class => 'restart', 'data-jobid' => $jobid) => begin
+                 <i class="action fa fa-repeat" title="Restart the job"></i>
+                 % end
+             % } elsif ($state eq "running" || $state eq "scheduled")
+             % {
+                 %= link_post url_for('apiv1_cancel', 'name' => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
+                     <i class="action fa fa-times-circle-o" title="Cancel the job"></i>
+                 % end
+             % }
+         % }
+
+         % my $css = "";
+         % $css .= " result_".$res->{overall} if ($state eq "done");
+         % if ($state eq "done") {
+             <span id="res-<%= $jobid %>">
+                 <a href="<%= url_for('test', 'testid' => $jobid) %>">
+                     <i class="status fa fa-circle<%=  $css %>" title="Done: <%= $res->{overall} %>"></i>
+                 </a>
+             </span>
+         % } elsif ($state eq "scheduled")
+         % {
+             <a href="<%= url_for('test', 'testid' => $jobid) %>">
+                 <i class="status state_scheduled fa fa-circle" title="scheduled@<%= $res->{priority} %>"></i>
+             </a>
+         % } else
+         % {
+             <a href="<%= url_for('test', 'testid' => $jobid) %>">
+                 <i class="status state_<%= $state %> fa fa-circle" title="<%= $state %>"></i>
+             </a>
+         % }
+         % if ($res->{failures}) {
+            %= include 'test/tr_job_result_failedmodules', jobid => $jobid, failedmodules => $res->{failures}
+         % }
+         %= include 'test/tr_job_result_details', jobid => $jobid, res => $res
+     % }
+</td>
