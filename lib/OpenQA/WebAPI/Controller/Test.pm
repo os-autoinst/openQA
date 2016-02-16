@@ -265,7 +265,7 @@ sub show {
         return;
     }
 
-    my $clone_of = $self->app->schema->resultset("Jobs")->find({clone_id => $job->id});
+    my $clone_of = $self->db->resultset("Jobs")->find({clone_id => $job->id});
 
     my $modlist = read_test_modules($job);
     $self->stash(job      => $job);
