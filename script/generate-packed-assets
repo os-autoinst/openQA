@@ -1,0 +1,73 @@
+#!/bin/bash
+
+# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016 Red Hat
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+# this script runs a minimal openQA codepath with a predefined config.
+# The purpose is to trigger the creation of the packed web assets by
+# the AssetPack plugin, if you do not wish to allow openQA write
+# access to the packed asset directory in normal use (thus this script
+# is expected to execute with higher permissions than openQA would
+# have when run normally; if openQA has write access to the packed
+# asset directory, there is no need to use this at all).
+
+# It is expected to be run by a package trigger on initial install of
+# the package and whenever there is a change to the packages involved
+# in producing the generated assets (so AssetPack, Bootstrap3, and any
+# packages they source from), or alternatively, run once during
+# package build with the generated assets included in the package.
+# There are advantages and disadvantages to each of the three ways
+# to do this generation.
+
+# By default the script will run and generate assets for a system
+# install of openQA; for use during package build, one optional
+# argument can be specified, an alternative path to the top level
+# openQA directory. e.g.:
+# ./script/generate-packed-assets ./
+# would be appropriate if running from the top level of an openQA
+# source tree.
+
+set -e
+
+DIR=$(mktemp -d -t openqa.XXXXXXXXXX)
+function finish {
+    rm -rf "$DIR"
+}
+trap finish EXIT
+mkdir "$DIR/db" "$DIR/tmp"
+
+touch "$DIR/openqa.ini"
+cat >>$DIR/database.ini <<EOF
+[production]
+dsn = dbi:SQLite:dbname=$DIR/db/db.sqlite
+on_connect_call = use_foreign_keys
+on_connect_do = PRAGMA synchronous = OFF
+EOF
+
+export OPENQA_CONFIG="$DIR"
+export OPENQA_LOGFILE="$DIR/logfile"
+export MOJO_TMPDIR="$DIR/tmp"
+
+# handle alternate paths
+test $1 && PREFIX=$1 || PREFIX="/usr/share/openqa"
+"$PREFIX/script/initdb" --init_database > /dev/null
+# 'version' is the smallest codepath we can hit to produce the assets
+"$PREFIX/script/openqa" version -m production > /dev/null
+# we don't want this hanging around
+rm -rf "$PREFIX/public/sass/.sass-cache"
+
+# /usr/share/openqa/public/packed should be now generated
