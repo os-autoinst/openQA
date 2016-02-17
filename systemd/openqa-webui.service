@@ -2,6 +2,7 @@
 Description=The openQA web UI
 Wants=apache2.service
 Before=apache2.service
+After=postgresql.service mariadb.service
 Requires=openqa-scheduler.service openqa-websockets.service
 
 [Service]

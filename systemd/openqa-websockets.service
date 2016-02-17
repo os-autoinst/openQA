@@ -2,7 +2,7 @@
 Description=The openQA WebSockets server
 Wants=apache2.service
 Before=apache2.service openqa-webui.service
-After=openqa-scheduler.service
+After=openqa-scheduler.service postgresql.service mariadb.service
 Requires=openqa-scheduler.service
 
 [Service]
