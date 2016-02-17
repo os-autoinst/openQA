@@ -9,6 +9,10 @@ install:
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
+# we didn't actually want to install these...
+	for i in tidy check_coverage; do \
+		rm "$(DESTDIR)"/usr/share/openqa/script/$$i ;\
+	done
 #
 	for i in images testresults pool ; do \
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/$$i ;\
