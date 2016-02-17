@@ -4,6 +4,7 @@ require 5.002;
 
 use Carp;
 use IPC::Run();
+use Mojo::URL;
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -27,6 +28,9 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &parse_assets_from_settings
   &bugurl
   &bugref_to_href
+  &asset_type_from_setting
+  &check_download_url
+  &check_download_whitelist
 );
 
 
@@ -230,25 +234,32 @@ sub commit_git {
     return 1;
 }
 
+sub asset_type_from_setting {
+    my ($setting) = @_;
+    if ($setting eq 'ISO' || $setting =~ /^ISO_\d$/) {
+        return 'iso';
+    }
+    if ($setting =~ /^HDD_\d$/) {
+        return 'hdd';
+    }
+    if ($setting =~ /^REPO_\d$/) {
+        return 'repo';
+    }
+    if ($setting =~ /^ASSET_\d$/ || $setting eq 'KERNEL' || $setting eq 'INITRD') {
+        return 'other';
+    }
+    # empty string if this doesn't look like an asset type
+    return '';
+}
+
 sub parse_assets_from_settings {
     my ($settings) = (@_);
     my $assets = {};
 
     for my $k (keys %$settings) {
-        if ($k eq 'ISO') {
-            $assets->{$k} = {type => 'iso', name => $settings->{$k}};
-        }
-        if ($k =~ /^ISO_\d$/) {
-            $assets->{$k} = {type => 'iso', name => $settings->{$k}};
-        }
-        if ($k =~ /^HDD_\d$/) {
-            $assets->{$k} = {type => 'hdd', name => $settings->{$k}};
-        }
-        if ($k =~ /^REPO_\d$/) {
-            $assets->{$k} = {type => 'repo', name => $settings->{$k}};
-        }
-        if ($k =~ /^ASSET_\d$/) {
-            $assets->{$k} = {type => 'other', name => $settings->{$k}};
+        my $type = asset_type_from_setting($k);
+        if ($type) {
+            $assets->{$k} = {type => $type, name => $settings->{$k}};
         }
     }
 
@@ -272,6 +283,67 @@ sub bugref_to_href {
     $text =~ s{((bnc|bsc|boo|poo)#(\d+))}{<a href="@{[bugurl($2)]}$3">$1</a>}gi;
 
     return $text;
+}
+
+sub check_download_url {
+    # Passed a URL and the download_domains whitelist from openqa.ini.
+    # Checks if the host of the URL is in the whitelist. Returns an
+    # array: (1, host) if there is a whitelist and the host is not in
+    # it, (2, host) if there is no whitelist, and () if we pass. This
+    # is used by check_download_whitelist below (and so indirectly by
+    # the Iso controller) and directly by the download_asset() Gru
+    # task subroutine.
+    my ($url, $whitelist) = @_;
+    my @okdomains;
+    if (defined $whitelist) {
+        @okdomains = split(/ /, $whitelist);
+    }
+    my $host = Mojo::URL->new($url)->host;
+    unless (@okdomains) {
+        return (2, $host);
+    }
+    my $ok = 0;
+    for my $okdomain (@okdomains) {
+        my $quoted = qr/$okdomain/;
+        $ok = 1 if ($host =~ /${quoted}$/);
+    }
+    if ($ok) {
+        return ();
+    }
+    else {
+        return (1, $host);
+    }
+}
+
+sub check_download_whitelist {
+    # Passed the params hash ref for a job and the download_domains
+    # whitelist read from openqa.ini. Checks that all params ending
+    # in _URL (i.e. requesting asset download) specify URLs that are
+    # whitelisted. It's provided here so that we can run the check
+    # twice, once to return immediately and conveniently from the Iso
+    # controller, once again directly in the Gru asset download sub
+    # just in case someone somehow manages to bypass the API and
+    # create a gru task directly. On failure, returns an array of 4
+    # items: the first is 1 if there was a whitelist at all or 2 if
+    # there was not, the second is the name of the param for which the
+    # check failed, the third is the URL, and the fourth is the host.
+    # On success, returns an empty array.
+
+    my ($params, $whitelist) = @_;
+    my @okdomains;
+    if (defined $whitelist) {
+        @okdomains = split(/ /, $whitelist);
+    }
+    for my $param (keys %$params) {
+        next unless ($param =~ /_URL$/);
+        my $url = $$params{$param};
+        my @check = check_download_url($url, $whitelist);
+        next unless (@check);
+        # if we get here, we got a failure
+        return ($check[0], $param, $url, $check[1]);
+    }
+    # empty list signals caller that check passed
+    return ();
 }
 
 1;

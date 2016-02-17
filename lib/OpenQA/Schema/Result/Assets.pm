@@ -22,6 +22,8 @@ use OpenQA::Utils;
 use OpenQA::Scheduler::Scheduler 'job_notify_workers';
 use Date::Format;
 use Mojo::UserAgent;
+use File::Spec::Functions 'splitpath';
+use Try::Tiny;
 
 use db_helpers;
 
@@ -114,14 +116,42 @@ sub ensure_size {
 
 # A GRU task...arguments are the URL to grab and the full path to save
 # it in. scheduled in job_schedule_iso()
-sub download_iso {
-    my ($app, $args)      = @_;
-    my ($url, $isodlpath) = @{$args};
+sub download_asset {
+    my ($app, $args)   = @_;
+    my ($url, $dlpath) = @{$args};
     # Bail if the dest file exists (in case multiple downloads of same ISO
     # are scheduled)
-    return if (-e $isodlpath);
+    return if (-e $dlpath);
 
-    OpenQA::Utils::log_debug("Downloading " . $url . " to " . $isodlpath . "...");
+    my $dldir = (splitpath($dlpath))[1];
+    unless (-w $dldir) {
+        OpenQA::Utils::log_error("download_asset: cannot write to $dldir");
+        # we're not going to die because this is a gru task and we don't
+        # want to cause the Endless Gru Loop Of Despair, just return and
+        # let the jobs fail
+        job_notify_workers();
+        return;
+    }
+
+    # check URL is whitelisted for download. this should never fail;
+    # if it does, it means this task has been created without going
+    # through the ISO API controller, and that means either a code
+    # change we didn't think through or someone being evil
+    my @check = check_download_url($url, $app->config->{global}->{download_domains});
+    if (@check) {
+        my ($status, $host) = @check;
+        if ($status == 2) {
+            OpenQA::Utils::log_error("download_asset: no hosts are whitelisted for asset download!");
+        }
+        else {
+            OpenQA::Utils::log_error("download_asset: URL $url host $host is blacklisted!");
+        }
+        OpenQA::Utils::log_error("**API MAY HAVE BEEN BYPASSED TO CREATE THIS TASK!**");
+        job_notify_workers();
+        return;
+    }
+
+    OpenQA::Utils::log_debug("Downloading " . $url . " to " . $dlpath . "...");
     my $ua = Mojo::UserAgent->new(max_redirects => 5);
     my $tx = $ua->build_tx(GET => $url);
     # Allow >16MiB downloads
@@ -129,12 +159,20 @@ sub download_iso {
     $tx->res->max_message_size(0);
     $tx = $ua->start($tx);
     if ($tx->success) {
-        $tx->res->content->asset->move_to($isodlpath);
+        try {
+            $tx->res->content->asset->move_to($dlpath);
+        }
+        catch {
+            # again, we're trying not to die here, but log and return on fail
+            OpenQA::Utils::log_error("Error renaming temporary file to $dlpath: $_");
+            job_notify_workers();
+            return;
+        };
     }
     else {
         # Clean up after ourselves. Probably won't exist, but just in case
-        OpenQA::Utils::log_debug("Downloading failed! Deleting files");
-        unlink($isodlpath);
+        OpenQA::Utils::log_error("Downloading failed! Deleting files");
+        unlink($dlpath);
     }
     # We want to notify workers either way: if we failed to download the ISO,
     # we want the jobs to run and fail.
