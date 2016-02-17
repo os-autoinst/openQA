@@ -1,0 +1,41 @@
+<div id="scenario">
+    Results for <i><%= $scenario %></i>, limited to <%= $limit_previous %>
+</div>
+<div id="results">
+<table id="results" class="overview table table-striped no-wrap" style="width: 100%">
+    <thead>
+        <tr>
+            <th class="job">Result</th>
+            <th>Build</th>
+            <th>Finished</th>
+        </tr>
+    </thead>
+    % for my $prev (@$previous) {
+        <tr>
+            % my $res = $prev->result;
+            %# partially recreate the 'res' hash as used in 'overview' route
+            <td id="res_<%= $prev->id %>">
+                % my $css = "";
+                % next unless ($prev->state eq "done");
+                % $css .= " result_" . $res;
+                <span id="res-<%= $prev->id %>">
+                    <a href="<%= url_for('test', 'testid' => $prev->id) %>">
+                        <i class="status fa fa-circle<%=  $css %>" title="Done: <%= $res %>"></i>
+                    </a>
+                </span>
+                %= include 'test/tr_job_result_failedmodules', jobid => $prev->id, failedmodules => $prev->failed_modules_with_needles()
+                %= include 'test/tr_job_result_details', jobid => $prev->id, res => $previous_labels->{$prev->id}
+            </td>
+            <td class="build"><%= $prev->settings_hash->{BUILD} %></td>
+            <td class="t_finished">
+                <abbr class="timeago" title="<%= $prev->t_finished->datetime() %>Z"><%= format_time($prev->t_finished) %></abbr>
+                (
+                <%= format_time_duration($prev->t_finished - $prev->t_started) %>
+                )
+            </td>
+        </tr>
+    % }
+<tbody>
+</tbody>
+</table>
+</div>

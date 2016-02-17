@@ -1,0 +1,27 @@
+% my $count = 0;
+% for my $failedmodule (sort keys %$failedmodules) {
+    % if (++$count > 2) {
+      % my $more = (scalar(keys %$failedmodules)) - $count + 1;
+      % if ($more > 1) {
+         <%= $more %> more
+         % last;
+      % }
+    % }
+    % my $failedneedles = $failedmodules->{$failedmodule};
+    % my $step = 1;
+    % my $tooltip = '';
+    % if (@$failedneedles) {
+        % $step = $failedneedles->[0]->[1];
+        % if ($failedneedles->[0]->[0]) {
+            % $tooltip = "title='<p>Failed needles:</p><ul><li>" . join('</li><li>',
+            % sort map { $_->[0] } @$failedneedles) . "</li></ul>' data-toggle='tooltip'";
+        % }
+    % }
+
+    <span <%= Mojo::ByteStream->new($tooltip) %> class="failedmodule" >
+        <a href="<%= url_for('step', 'testid' => $jobid,
+                             'moduleid' => $failedmodule, 'stepid' => $step) %>">
+            <%= $failedmodule %>
+        </a>
+    </span>
+% }
