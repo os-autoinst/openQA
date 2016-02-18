@@ -84,6 +84,7 @@ requires 'warnings';
 on 'test' => sub {
   requires 'Perl::Tidy';
   requires 'Perl::Critic';
+  requires 'Test::Output';
 };
 
 feature 'coverage', 'coverage for travis' => sub {

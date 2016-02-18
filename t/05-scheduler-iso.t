@@ -31,7 +31,8 @@ use OpenQA::Test::Database;
 use Net::DBus;
 use Net::DBus::Test::MockObject;
 
-use Test::More tests => 4;
+use Test::More;
+use Test::Output;
 
 # We need the fixtures so we have job templates
 my $schema = OpenQA::Test::Database->new->create;
@@ -41,20 +42,22 @@ my $ipc = OpenQA::IPC->ipc('', 1);
 my $ws  = OpenQA::WebSockets->new();
 my $sh  = OpenQA::Scheduler->new();
 
-# check we have no gru download tasks to start with
-my @tasks = $schema->resultset("GruTasks")->search({taskname => 'download_asset'});
-ok(scalar @tasks == 0);
 
-# check a regular ISO post creates the expected number of jobs
-my $ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso');
-ok($ids == 10);
-
-# Schedule download of an existing ISO; gru task should not be created
-$ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+my @tasks;
 @tasks = $schema->resultset("GruTasks")->search({taskname => 'download_asset'});
-ok(scalar @tasks == 0);
+is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 
-# Schedule download of a non-existing ISO; gru task should be created
-$ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'nonexistent.iso');
-@tasks = $schema->resultset("GruTasks")->search({taskname => 'download_asset'});
-ok(scalar @tasks == 1);
+my $warning = qr/START_AFTER_TEST=.* not found - check for typos and dependency cycles/;
+stderr_like { @tasks = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso') } $warning, 'warnings expected about test dependencies';
+is(scalar @tasks, 10, 'a regular ISO post creates the expected number of jobs');
+
+# Schedule download of an existing ISO
+my $ids;
+stderr_like { $ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso') } $warning, 'expected warnings';
+is($schema->resultset("GruTasks")->search({taskname => 'download_asset'}), 0, 'gru task should not be created');
+
+# Schedule download of a non-existing ISO
+stderr_like { $ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'nonexistent.iso') } $warning, 'expected warnings';
+is($schema->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'gru task should be created');
+
+done_testing();
