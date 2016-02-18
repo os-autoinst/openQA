@@ -49,7 +49,7 @@ sub _group_result {
                 'me.clone_id'    => undef,
             },
             {join => qw/settings/, order_by => 'me.id DESC'});
-        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0);
+        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0, labeled => 0);
 
         my $count = 0;
         my %seen;
@@ -81,6 +81,7 @@ sub _group_result {
                     || $job->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE)
                 {
                     $jr{failed}++;
+                    $jr{labeled}++ if $job->comments > 0;
                     next;
                 }
                 if (grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS) {
@@ -98,6 +99,7 @@ sub _group_result {
             }
             $self->app->log->error("MISSING S:" . $job->state . " R:" . $job->result);
         }
+        $jr{reviewed} = $jr{failed} > 0 && $jr{labeled} == $jr{failed};
         $res{$b} = \%jr;
         $max_jobs = $count if ($count > $max_jobs);
         last if (++$buildnr >= $limit);

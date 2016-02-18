@@ -7,6 +7,13 @@
                 (<abbr class="timeago" title="<%= $result->{$build}->{oldest}->datetime() %>Z">
                 <%= delete $result->{$build}->{oldest} %>
                 </abbr>)
+            % my $reviewed = $result->{$build}->{reviewed};
+            % if ($reviewed) {
+                <span id="review-<%= $group->id . '-' . $build %>">
+                    <i class="review fa fa-certificate" title="Reviewed (<%= $result->{$build}->{labeled}; %> comments)"></i>
+                </span>
+            % }
+
             </h4>
         </div>
         <div class="col-md-8">
