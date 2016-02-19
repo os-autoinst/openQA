@@ -76,6 +76,27 @@ __PACKAGE__->belongs_to(
     },
 );
 
+
+=head2 bugref
+
+Returns bugref if C<$self> is bugref, e.g. 'bug#1234'.
+=cut
+sub bugref {
+    my ($self) = @_;
+    $self->text =~ /\b([^t]+#\d+)\b/;
+    return $1;
+}
+
+=head2 label
+
+Returns label value if C<$self> is label, e.g. 'label:my_label' returns 'my_label'
+=cut
+sub label {
+    my ($self) = @_;
+    $self->text =~ /\blabel:(\w+)\b/;
+    return $1;
+}
+
 sub rendered_markdown {
     my ($self) = @_;
 
