@@ -31,9 +31,17 @@ repository. Installation on openSUSE is therefore pretty simple:
 
 [source,sh]
 --------------------------------------------------------------------------------
+# 13.2
 zypper ar -f obs://devel:openQA/openSUSE_13.2 openQA
-# needed for distros that lack some packages from Tumbleweed
 zypper ar -f obs://devel:openQA:13.2/openSUSE_13.2 openQA-perl-modules
+
+# Leap 42.1
+zypper ar -f obs://devel:openQA/openSUSE_Leap_42.1 openQA
+zypper ar -f obs://devel:openQA:Leap:42.1/openSUSE_Leap_42.1 openQA-perl-modules
+
+# Tumbleweed
+zypper ar -f obs://devel:openQA/openSUSE_Factory openQA
+
 zypper in openQA
 --------------------------------------------------------------------------------
 
