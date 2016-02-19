@@ -21,6 +21,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &testcasedir
   &file_content
   &log_debug
+  &log_warning
   &save_base64_png
   &run_cmd_with_log
   &commit_git

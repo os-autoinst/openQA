@@ -21,6 +21,7 @@ use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
 use OpenQA::Worker::Common qw/ASSET_DIR/;
+use OpenQA::Utils qw/log_warning/;
 
 use Mojo::IOLoop;
 use Mojolicious::Commands;
@@ -74,6 +75,15 @@ sub _read_config {
     # in development mode we use fake auth and log to stderr
     my %mode_defaults = (
         development => {
+            auth => {
+                method => 'Fake',
+            },
+            logging => {
+                file  => undef,
+                level => 'debug',
+            },
+        },
+        test => {
             auth => {
                 method => 'Fake',
             },
@@ -556,6 +566,16 @@ sub startup {
     # start workers checker
     $self->_workers_checker;
     $self->_init_rand;
+
+    # run fake dbus services in case of test mode
+    if ($self->mode eq 'test') {
+        log_warning('Running in test mode - dbus services mocked');
+        require OpenQA::WebSockets;
+        require OpenQA::Scheduler;
+        OpenQA::IPC->ipc('', 1);
+        OpenQA::WebSockets->new;
+        OpenQA::Scheduler->new;
+    }
 }
 
 sub run {
