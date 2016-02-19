@@ -348,13 +348,13 @@ sub _job_labels {
     # behaviour for multiple bugs or label references within one job is
     # undefined.
     while (my $comment = $c->next()) {
-        if ($comment->text =~ /\b[^t]+#\d+\b/) {
-            $self->app->log->debug('found bug ticket reference ' . $& . ' for job ' . $comment->job_id);
-            $labels{$comment->job_id}{bug} = $&;
+        if (my $bugref = $comment->bugref) {
+            $self->app->log->debug('found bug ticket reference ' . $bugref . ' for job ' . $comment->job_id);
+            $labels{$comment->job_id}{bug} = $bugref;
         }
-        elsif ($comment->text =~ /\blabel:(\w+)\b/) {
-            $self->app->log->debug('found label ' . $1 . ' for job ' . $comment->job_id);
-            $labels{$comment->job_id}{label} = $1;
+        elsif (my $label = $comment->label) {
+            $self->app->log->debug('found label ' . $label . ' for job ' . $comment->job_id);
+            $labels{$comment->job_id}{label} = $label;
         }
         else {
             $labels{$comment->job_id}{comments}++;
