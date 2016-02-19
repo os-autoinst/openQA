@@ -30,18 +30,21 @@ eval 'use Test::More::Color';
 eval 'use Test::More::Color "foreground"';
 
 use File::Path qw/make_path remove_tree/;
+use Module::Load::Conditional qw/can_load/;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
 use t::ui::PhantomTest;
 
+# skip if phantomjs or Selenium::Remote::WDKeys isn't available
 my $driver = t::ui::PhantomTest::call_phantom();
-if ($driver) {
+if ($driver && can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
+    # for some reason, loading the module this way doesn't import the constant
     plan tests => 71;
 }
 else {
-    plan skip_all => 'Install phantomjs to run these tests';
+    plan skip_all => 'Install phantomjs, Selenium::Remote::Driver, and Selenium::Remote::WDKeys to run these tests';
     exit(0);
 }
 
@@ -269,10 +272,6 @@ while (!$driver->execute_script("return jQuery.active == 0")) {
 
 $driver->find_element('Test new medium as part of this group', 'link')->click();
 
-
-# include the WDKeys module
-use Selenium::Remote::WDKeys;
-
 my $select = $driver->find_element('#medium', 'css');
 my $option = $driver->find_child_element($select, './option[contains(text(), "sle-13-DVD-arm19")]');
 $option->click();
@@ -295,7 +294,9 @@ $driver->button_down();
 sleep 1;
 
 $driver->send_keys_to_active_element('64bit');
-$driver->send_keys_to_active_element(KEYS->{'enter'});
+# as we load this at runtime rather than `use`ing it, we have to
+# access it explicitly like this
+$driver->send_keys_to_active_element(Selenium::Remote::WDKeys->KEYS->{'enter'});
 
 # now reload the page to see if we succeeded
 $driver->find_element('Job groups', 'link_text')->click();
