@@ -533,7 +533,7 @@ table.overview .failedmodule {
 .fa.result_incomplete { color: #AF1E11;}
 .fa.module_none { color:#bebebe;}
 
-.fa.comment, .fa.bookmark, .fa.bug { color: Grey; }
+.fa.comment, .fa.bookmark, .fa.bug, .fa.certificate { color: Grey; }
 
 table#users td.role {
     white-space: nowrap;

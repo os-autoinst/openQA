@@ -31,7 +31,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
 if ($driver) {
-    plan tests => 34;
+    plan tests => 38;
 }
 else {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
@@ -47,6 +47,10 @@ my $baseurl = $driver->get_current_url();
 $driver->find_element('Login', 'link_text')->click();
 # we are back on the main page
 is($driver->get_title(), "openQA", "back on main page");
+
+# make sure no build is marked as 'reviewed' as there are no comments yet
+my $get = $t->get_ok($driver->get_current_url())->status_is(200);
+$get->element_exists_not('.fa-certificate');
 
 $driver->find_element('opensuse', 'link_text')->click();
 
@@ -118,16 +122,18 @@ $driver->get($baseurl . 'tests/99938#comments');
 $driver->find_element('textarea',           'css')->send_keys('label:true_positive');
 $driver->find_element('#submitComment',     'css')->click();
 $driver->find_element('Build0048@opensuse', 'link_text')->click();
-is($driver->find_element('#res_DVD_x86_64_doc .fa-bookmark', 'css')->get_attribute('title'), 'true_positive');
+is($driver->find_element('#res_DVD_x86_64_doc .fa-bookmark', 'css')->get_attribute('title'), 'true_positive', 'label icon shown');
 $driver->get($baseurl . 'tests/99938#comments');
 $driver->find_element('textarea',           'css')->send_keys('bsc#1234');
 $driver->find_element('#submitComment',     'css')->click();
 $driver->find_element('Build0048@opensuse', 'link_text')->click();
-is($driver->find_element('#res_DVD_x86_64_doc .fa-bug', 'css')->get_attribute('title'), 'Bug(s) referenced: bsc#1234');
+is($driver->find_element('#res_DVD_x86_64_doc .fa-bug', 'css')->get_attribute('title'), 'Bug(s) referenced: bsc#1234', 'bug icon shown');
 my @labels = $driver->find_elements('#res_DVD_x86_64_doc .test-label', 'css');
 is(scalar @labels, 1, 'Only one label is shown at a time');
-my $get = $t->get_ok($driver->get_current_url())->status_is(200);
+$get = $t->get_ok($driver->get_current_url())->status_is(200);
 is($get->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href}, 'https://bugzilla.suse.com/show_bug.cgi?id=1234');
+$driver->find_element('opensuse', 'link_text')->click();
+is($driver->find_element('.fa-certificate', 'css')->get_attribute('title'), 'Reviewed (1 comments)', 'build should be marked as labeled');
 
 t::ui::PhantomTest::kill_phantom();
 
