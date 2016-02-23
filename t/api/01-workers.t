@@ -21,6 +21,7 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
+use Test::Output;
 use Mojo::URL;
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -44,7 +45,7 @@ $t->app($app);
 
 my $ret;
 
-$ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu'});
+stderr_like { $ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu'}) } qr/missing apisecret/;
 is($ret->tx->res->code, 403, "register worker without API key fails");
 
 $t->ua(OpenQA::Client->new(api => 'testapi')->ioloop(Mojo::IOLoop->singleton));

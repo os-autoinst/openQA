@@ -21,6 +21,7 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
+use Test::Output;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
@@ -98,7 +99,8 @@ lj;
 
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
-$ret = $t->post_ok('/api/v1/isos', form => {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'})->status_is(200);
+my $warning = qr/START_AFTER_TEST=kde:32bit not found - check for typos and dependency cycles/;
+stderr_like { $ret = $t->post_ok('/api/v1/isos', form => {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'})->status_is(200) } $warning;
 
 is($ret->tx->res->json->{count}, 10, "10 new jobs created");
 my @newids = @{$ret->tx->res->json->{ids}};

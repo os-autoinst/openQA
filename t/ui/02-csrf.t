@@ -21,6 +21,7 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
+use Test::Output;
 use OpenQA::Test::Case;
 use Data::Dumper;
 
@@ -70,7 +71,9 @@ $t->post_ok('/api/v1/jobs/99928/cancel' => form => {csrf_token => $token})->stat
 # test restart with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/restart' => form => {csrf_token => 'foobar'})->status_is(403);
 $t->post_ok('/api/v1/jobs/99928/restart' => {'X-CSRF-Token' => $token} => form => {})->status_is(200);
-$t->post_ok('/api/v1/jobs/99928/restart' => form => {csrf_token => $token})->status_is(200);
+# TODO why is this warning acceptable?
+my $warning = qr/Use of uninitialized value \$array_type in numeric eq/;
+stderr_like { $t->post_ok('/api/v1/jobs/99928/restart' => form => {csrf_token => $token})->status_is(200) } $warning;
 
 # test prio with and without CSRF token
 $t->post_ok('/api/v1/jobs/99928/prio?prio=33' => form => {csrf_token => 'foobar'})->status_is(403);
