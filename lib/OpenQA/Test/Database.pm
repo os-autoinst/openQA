@@ -13,8 +13,6 @@ use Carp;
 use Cwd qw/ abs_path getcwd /;
 use OpenQA::Schema;
 use OpenQA::Utils;
-use FindBin qw($Bin);
-use DBIx::Class::DeploymentHandler;
 use Mojo::Base -base;
 has fixture_path => 't/fixtures';
 
@@ -26,27 +24,10 @@ sub create {
     );
 
     # New db
-    my $schema           = OpenQA::Schema::connect_db('test');
-    my $script_directory = "$FindBin::Bin/../dbicdh";
-    if (!-d $script_directory) {
-        $script_directory = "$FindBin::Bin/../../dbicdh";    # For tests
-        if (!-d $script_directory) {
-            $script_directory = "$FindBin::Bin/../../../dbicdh";    # For tests
-            if (!-d $script_directory) {
-                $script_directory = "/usr/share/openqa/dbicdh";
-            }
-        }
-    }
-    my $dh = DBIx::Class::DeploymentHandler->new(
-        {
-            schema              => $schema,
-            script_directory    => $script_directory,
-            sql_translator_args => {add_drop_table => 0},
-            force_overwrite     => 0,
-        });
-
-    $dh->install();
-
+    my $schema = OpenQA::Schema::connect_db('test');
+    # when testing UI, new openQA instance is forked. CORE::state $schema is not going to be reinitialized
+    # but the database is actually empty now. Explicitely call check to initialize it.
+    OpenQA::Schema::deployment_check($schema);
     $self->insert_fixtures($schema) unless $options{skip_fixtures};
 
     return $schema;

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -36,7 +36,8 @@ my $dh = DBIx::Class::DeploymentHandler->new(
         sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}},
         force_overwrite     => 0,
     });
-ok(defined $dh->install, "deployed");
+ok($dh->version_storage->database_version, 'DB deployed');
+is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 
 SKIP: {
     eval { require SQL::Translator::Producer::Diagram; };
