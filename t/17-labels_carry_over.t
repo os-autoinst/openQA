@@ -59,20 +59,20 @@ sub restart_with_result {
 }
 set_up;
 
-subtest '"happy path": failed->failed carries over label' => sub {
+subtest '"happy path": failed->failed carries over last label' => sub {
     my $label          = 'label:false_positive';
-    my $simple_comment = 'just another simple comment';
     my $second_label   = 'bsc#1234';
-    for my $comment ($label, $simple_comment, $second_label) {
+    my $simple_comment = 'just another simple comment';
+    for my $comment ($label, $second_label, $simple_comment) {
         $t->post_ok('/tests/99962/add_comment', $auth => form => {text => $comment})->status_is(302);
     }
     my @comments_previous = @{comments('/tests/99962')};
     is(scalar @comments_previous, 3,               'all entered comments found');
     is($comments_previous[0],     $label,          'comment present on previous test result');
-    is($comments_previous[1],     $simple_comment, 'another comment present');
+    is($comments_previous[2],     $simple_comment, 'another comment present');
     $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
     my @comments_current = @{comments('/tests/99963')};
-    is(scalar @comments_current, 1, 'only labels are carried over');
+    is(scalar @comments_current, 1, 'only one label is carried over');
     like($comments_current[0], qr/\Q$second_label/, 'last entered label found, it is expanded');
 };
 
@@ -86,8 +86,25 @@ subtest 'failed->passed discards the label' => sub {
 
 subtest 'passed->failed does not carry over old label' => sub {
     my $res = restart_with_result($job, 'failed');
+    $job = $res->{result}[0];
     my @comments_new = @{comments($res->{test_url}[0])};
     is(scalar @comments_new, 0, 'no old labels on new failure');
+};
+
+subtest 'failed->failed without labels does not fail' => sub {
+    my $res = restart_with_result($job, 'failed');
+    $job = $res->{result}[0];
+    my @comments_new = @{comments($res->{test_url}[0])};
+    is(scalar @comments_new, 0, 'nothing there, nothing appears');
+};
+
+subtest 'failed->failed labels which are not bugrefs are also carried over' => sub {
+    my $label = 'label:any_label';
+    $t->post_ok("/tests/$job/add_comment", $auth => form => {text => $label})->status_is(302);
+    my $res = restart_with_result($job, 'failed');
+    my @comments_new = @{comments($res->{test_url}[0])};
+    is(scalar @comments_new, 1,      'also simple labels are carried over');
+    is($comments_new[0],     $label, 'simple label present in new result');
 };
 
 done_testing;
