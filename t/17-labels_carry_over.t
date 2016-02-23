@@ -24,17 +24,24 @@ use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::IPC;
 use OpenQA::Scheduler;
+use OpenQA::WebSockets;
+use JSON qw/decode_json/;
 
 my $ipc = OpenQA::IPC->ipc('', 1);
-my $sh = OpenQA::Scheduler->new;
+my $sh  = OpenQA::Scheduler->new;
+my $ws  = OpenQA::WebSockets->new;
 
-my $test_case = OpenQA::Test::Case->new;
-$test_case->init_data;
+my $test_case;
+my $t;
+my $auth;
 
-my $t    = Test::Mojo->new('OpenQA::WebAPI');
-my $req  = $t->ua->get('/tests');
-my $auth = {'X-CSRF-Token' => $req->res->dom->at('meta[name=csrf-token]')->attr('content')};
-$test_case->login($t, 'percival');
+sub set_up {
+    $test_case = OpenQA::Test::Case->new;
+    $test_case->init_data;
+    $t = Test::Mojo->new('OpenQA::WebAPI');
+    $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
+    $test_case->login($t, 'percival');
+}
 
 sub comments {
     my ($url) = @_;
@@ -42,19 +49,45 @@ sub comments {
     return $get->tx->res->dom->find('div.comments .media-comment ~ p')->map('content');
 }
 
-my $label          = 'label:false_positive';
-my $simple_comment = 'just another simple comment';
-my $second_label   = 'bsc#1234';
-for my $comment ($label, $simple_comment, $second_label) {
-    $t->post_ok('/tests/99962/add_comment', $auth => form => {text => $comment})->status_is(302);
+sub restart_with_result {
+    my ($old_job, $result) = @_;
+    my $get     = $t->post_ok("/api/v1/jobs/$old_job/restart", $auth)->status_is(200);
+    my $res     = decode_json($get->tx->res->body);
+    my $new_job = $res->{result}[0];
+    $t->post_ok("/api/v1/jobs/$new_job/set_done", $auth => form => {result => $result})->status_is(200);
+    return $res;
 }
-my @comments_previous = @{comments('/tests/99962')};
-is(scalar @comments_previous, 3,               'all entered comments found');
-is($comments_previous[0],     $label,          'comment present on previous test result');
-is($comments_previous[1],     $simple_comment, 'another comment present');
-$t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
-my @comments_current = @{comments('/tests/99963')};
-is(scalar @comments_current, 1, 'only labels are carried over');
-like($comments_current[0], qr/\Q$second_label/, 'last entered label found, it is expanded');
+set_up;
+
+subtest '"happy path": failed->failed carries over label' => sub {
+    my $label          = 'label:false_positive';
+    my $simple_comment = 'just another simple comment';
+    my $second_label   = 'bsc#1234';
+    for my $comment ($label, $simple_comment, $second_label) {
+        $t->post_ok('/tests/99962/add_comment', $auth => form => {text => $comment})->status_is(302);
+    }
+    my @comments_previous = @{comments('/tests/99962')};
+    is(scalar @comments_previous, 3,               'all entered comments found');
+    is($comments_previous[0],     $label,          'comment present on previous test result');
+    is($comments_previous[1],     $simple_comment, 'another comment present');
+    $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
+    my @comments_current = @{comments('/tests/99963')};
+    is(scalar @comments_current, 1, 'only labels are carried over');
+    like($comments_current[0], qr/\Q$second_label/, 'last entered label found, it is expanded');
+};
+
+my $job;
+subtest 'failed->passed discards the label' => sub {
+    my $res = restart_with_result(99963, 'passed');
+    $job = $res->{result}[0];
+    my @comments_new = @{comments($res->{test_url}[0])};
+    is(scalar @comments_new, 0, 'no labels carried over to passed');
+};
+
+subtest 'passed->failed does not carry over old label' => sub {
+    my $res = restart_with_result($job, 'failed');
+    my @comments_new = @{comments($res->{test_url}[0])};
+    is(scalar @comments_new, 0, 'no old labels on new failure');
+};
 
 done_testing;
