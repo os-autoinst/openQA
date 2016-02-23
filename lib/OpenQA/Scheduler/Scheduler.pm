@@ -541,6 +541,7 @@ sub _carry_over_labels {
     # loop through all comments on all previous jobs in same scenario
     # if comment is label OR bug carry over comment to current_job
     while (my $prev = $previous_jobs->next) {
+        last if ($prev->result eq 'passed');    # do not carry over labels over passes
         my $comments = schema->resultset('Comments')->search({job_id => $prev->id}, {order_by => {-desc => 'me.id'}});
         while (my $comment = $comments->next) {
             if ($comment->bugref or $comment->label) {
