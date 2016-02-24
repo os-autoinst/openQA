@@ -19,8 +19,9 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
@@ -426,5 +427,3 @@ $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);
 
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(200);
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(404);    #not found
-
-done_testing();

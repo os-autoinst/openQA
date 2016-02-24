@@ -18,13 +18,12 @@ BEGIN { unshift @INC, 'lib'; }
 
 use Mojo::Base -strict;
 
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Database;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->get_ok('/')->status_is(200)->content_like(qr/Welcome to openQA/i);
-
-done_testing();

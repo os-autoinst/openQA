@@ -19,8 +19,9 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
@@ -135,5 +136,3 @@ is_deeply(
 
 $res = $t->delete_ok("/api/v1/products/$product_id")->status_is(200);
 $res = $t->delete_ok("/api/v1/products/$product_id")->status_is(404);    #not found
-
-done_testing();

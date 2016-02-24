@@ -24,8 +24,9 @@ BEGIN {
 
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 
 OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -35,5 +36,3 @@ my $arthur = $t->app->db->resultset("Users")->find({username => 'arthur'});
 my $key = $t->app->db->resultset("ApiKeys")->create({user_id => $arthur->id});
 like($key->key,    qr/[0-9a-fA-F]{16}/, 'new keys have a valid random key attribute');
 like($key->secret, qr/[0-9a-fA-F]{16}/, 'new keys have a valid random secret attribute');
-
-done_testing();

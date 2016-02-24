@@ -18,8 +18,9 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 60;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
@@ -156,5 +157,3 @@ $post->content_is('OK');
 ok(-e $rp, 'asset exist after');
 $ret = $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(200);
 is($ret->tx->res->json->{name}, '00099963-hdd_image2.qcow2');
-
-done_testing();

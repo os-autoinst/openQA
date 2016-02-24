@@ -19,8 +19,9 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
@@ -127,5 +128,3 @@ $summary = $t->tx->res->dom->at('#summary')->all_text;
 like($summary, qr/Passed: 0 Failed: 1/i);
 $get->element_exists('#res_DVD_x86_64_doc .result_failed');
 $get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
-
-done_testing();

@@ -23,8 +23,9 @@ BEGIN {
 use strict;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $t = Test::Mojo->new('OpenQA::WebAPI');
@@ -33,5 +34,3 @@ my $mordred_id = 'https://openid.badguys.uk/mordred';
 my $user = $t->app->db->resultset("Users")->create({username => $mordred_id});
 ok(!$user->is_admin,    'new users are not admin by default');
 ok(!$user->is_operator, 'new users are not operator by default');
-
-done_testing();

@@ -19,8 +19,9 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
@@ -98,7 +99,9 @@ lj;
 
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
-$ret = $t->post_ok('/api/v1/isos', form => {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'})->status_is(200);
+my $expected = qr/START_AFTER_TEST=.* not found - check for typos and dependency cycles/;
+my @warnings = warnings { $ret = $t->post_ok('/api/v1/isos', form => {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'})->status_is(200) };
+map { like($_, $expected) } @warnings;
 
 is($ret->tx->res->json->{count}, 10, "10 new jobs created");
 my @newids = @{$ret->tx->res->json->{ids}};
@@ -172,5 +175,3 @@ $ret = $t->post_ok('/api/v1/isos', form => {iso => $iso, tests => "kde/usb"})->s
 $ret = $t->delete_ok("/api/v1/isos/$iso")->status_is(200);
 # now the jobs should be gone
 $ret = $t->get_ok('/api/v1/jobs/$newid')->status_is(404);
-
-done_testing();

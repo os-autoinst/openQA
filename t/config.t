@@ -18,8 +18,9 @@ BEGIN { unshift @INC, 'lib'; }
 
 use Mojo::Base -strict;
 
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Database;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
@@ -73,5 +74,3 @@ ok($t->app->config->{'global'}->{'allowed_hosts'} eq 'foo bar',    'allowed host
 ok($t->app->config->{'global'}->{'suse_mirror'} eq 'http://blah/', 'suse mirror');
 
 unlink($ENV{OPENQA_CONFIG} . '/openqa.ini');
-
-done_testing();

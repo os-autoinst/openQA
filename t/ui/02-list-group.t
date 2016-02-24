@@ -19,8 +19,9 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
@@ -30,10 +31,7 @@ use t::ui::PhantomTest;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
-if ($driver) {
-    plan tests => 7;
-}
-else {
+unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
 }
@@ -64,4 +62,3 @@ t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 
 t::ui::PhantomTest::kill_phantom();
-done_testing();

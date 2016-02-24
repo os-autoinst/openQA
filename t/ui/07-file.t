@@ -19,8 +19,9 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings ':all';
 use OpenQA::Test::Case;
 
 use OpenQA::IPC;
@@ -69,7 +70,10 @@ is($req->tx->res->dom->at('#downloads #asset_1')->{'href'}, '/tests/99946/asset/
 $req = $t->get_ok('/tests/99946/asset/1')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
 $req = $t->get_ok('/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
 # verify error on invalid downloads
-$req = $t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404);
+# TODO why is this warning acceptable?
+my $expected = qr/Use of uninitialized value \$(array_type|type) in numeric (eq|ne)/;
+my @warnings = warnings { $req = $t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404) };
+map { like($_, $expected) } @warnings;
 
 # TODO: also test repos
 
@@ -90,5 +94,3 @@ SKIP: {
     $t->get_ok('/needles/opensuse/doesntexist.png')->status_is(404);
 
 }
-
-done_testing();

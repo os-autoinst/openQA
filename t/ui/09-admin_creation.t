@@ -19,8 +19,9 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;
@@ -61,5 +62,3 @@ $t->delete_ok('/logout')->status_is(302);
 # No-one else can claim the kingdom
 $test_case->login($t, 'merlin');
 $get = $t->get_ok('/admin/users')->status_is(403);
-
-done_testing();

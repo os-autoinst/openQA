@@ -16,8 +16,7 @@ BEGIN { unshift @INC, 'lib'; }
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-use Test::More;
+use Test::More 'no_plan';
+use Test::Warnings;
 
 is(system('script/tidy', '--check'), 0, "tidy");
-
-done_testing();

@@ -23,8 +23,9 @@ use strict;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use OpenQA::Scheduler;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 
 # create Test DBus bus and service for fake WebSockets call
 my $ipc = OpenQA::IPC->ipc('', 1);
@@ -114,5 +115,3 @@ ok(!$res->locked_by, 'mutex is unlocked');
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
 is($res->locked_by->id, $jobB, 'mutex is locked');
-
-done_testing();

@@ -20,7 +20,8 @@ BEGIN { unshift @INC, 'lib'; }
 
 use strict;
 
-use Test::More;
+use Test::More 'no_plan';
+use Test::Warnings;
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 use OpenQA::Schema;
@@ -60,5 +61,3 @@ SKIP: {
     ok($trans->translate, "generate graph");
     ok(-e $fn,            "graph png exists");
 }
-
-done_testing();

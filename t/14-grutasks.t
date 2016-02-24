@@ -23,8 +23,9 @@ use strict;
 use OpenQA::Utils;
 use File::Copy;
 use OpenQA::Test::Database;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 use File::Which qw(which);
 
@@ -57,5 +58,3 @@ $c->run('run', '-o');
 
 ok(-f "t/data/openqa/factory/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso",   "iso 1 is still there");
 ok(-f "t/data/openqa/factory/iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso", "iso 2 is still there");
-
-done_testing();

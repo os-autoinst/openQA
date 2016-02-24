@@ -19,8 +19,9 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
@@ -41,5 +42,3 @@ is($build, '0091', 'build of previous job is shown');
 $get                     = $t->get_ok('/tests/99946?limit_previous=1#previous')->status_is(200);
 $previous_results_header = $t->tx->res->dom->at('#previous #scenario')->all_text;
 is($previous_results_header, q/Results for opensuse-13.1-DVD-i586-textmode, limited to 1/, 'can be limited with query parameter');
-
-done_testing();

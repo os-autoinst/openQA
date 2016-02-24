@@ -28,7 +28,8 @@ use OpenQA::Test::Database;
 use Net::DBus;
 use Net::DBus::Test::MockObject;
 
-use Test::More tests => 55;
+use Test::More 'no_plan';
+use Test::Warnings;
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -402,5 +403,3 @@ is($asset->id, 1, "asset register returns same");
 
 $asset = OpenQA::Scheduler::Scheduler::asset_delete(type => 'iso', name => $settings{ISO});
 is($asset, 1, "asset delete");
-
-done_testing;
