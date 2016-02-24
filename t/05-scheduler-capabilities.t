@@ -28,6 +28,7 @@ use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
 use Test::More 'no_plan';
+use Test::Warnings;
 
 my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 

@@ -17,5 +17,6 @@ BEGIN { unshift @INC, 'lib'; }
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use Test::More 'no_plan';
+use Test::Warnings;
 
 is(system('script/tidy', '--check'), 0, "tidy");

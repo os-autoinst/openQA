@@ -21,6 +21,7 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;

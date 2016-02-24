@@ -23,6 +23,7 @@ BEGIN {
 use strict;
 use OpenQA::Utils;
 use Test::More 'no_plan';
+use Test::Warnings;
 
 ok(run_cmd_with_log(['echo', 'Hallo', 'Welt']));
 is(run_cmd_with_log(['false']), "");

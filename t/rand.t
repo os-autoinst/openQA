@@ -20,6 +20,7 @@ use Mojo::Base -strict;
 use db_helpers qw/rndstr rndhex rndstrU rndhexU/;
 
 use Test::More 'no_plan';
+use Test::Warnings;
 
 my $r;
 my $r2;

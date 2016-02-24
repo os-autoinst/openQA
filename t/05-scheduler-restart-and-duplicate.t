@@ -28,6 +28,7 @@ use OpenQA::Utils;
 use OpenQA::Test::Database;
 
 use Test::More 'no_plan';
+use Test::Warnings;
 
 
 # create Test DBus bus and service for fake WebSockets call

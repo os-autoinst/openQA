@@ -29,6 +29,7 @@ use Net::DBus;
 use Net::DBus::Test::MockObject;
 
 use Test::More 'no_plan';
+use Test::Warnings;
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 

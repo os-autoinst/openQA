@@ -25,6 +25,7 @@ use File::Copy;
 use OpenQA::Test::Database;
 use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 use File::Which qw(which);
 

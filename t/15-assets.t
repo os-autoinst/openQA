@@ -23,6 +23,7 @@ use strict;
 use warnings;
 use Data::Dump qw/pp dd/;
 use Test::More 'no_plan';
+use Test::Warnings;
 use OpenQA::Scheduler::Scheduler qw/job_create job_grab job_get job_restart job_set_done/;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::IPC;

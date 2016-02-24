@@ -25,6 +25,7 @@ use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More 'no_plan';
 use Test::Mojo;
+use Test::Warnings;
 
 OpenQA::Test::Database->new->create();
 my $t = Test::Mojo->new('OpenQA::WebAPI');
