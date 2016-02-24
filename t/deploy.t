@@ -21,6 +21,7 @@ BEGIN { unshift @INC, 'lib'; }
 use strict;
 
 use Test::More;
+use Test::Warnings;
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 use OpenQA::Schema;

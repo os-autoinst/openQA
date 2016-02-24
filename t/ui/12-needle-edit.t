@@ -21,6 +21,7 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 
 use File::Path qw/make_path remove_tree/;

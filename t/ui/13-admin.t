@@ -21,6 +21,7 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 use Data::Dumper;
 use IO::Socket::INET;

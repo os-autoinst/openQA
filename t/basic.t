@@ -20,6 +20,7 @@ use Mojo::Base -strict;
 
 use Test::More;
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Database;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
