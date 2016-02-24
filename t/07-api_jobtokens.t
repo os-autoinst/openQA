@@ -22,7 +22,7 @@ BEGIN {
 use strict;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 
 OpenQA::Test::Database->new->create();
@@ -48,5 +48,3 @@ $t->get_ok('/api/v1/whoami')->status_is(403);
 # and without jobtoken
 $t->ua->unsubscribe('start');
 $t->get_ok('/api/v1/whoami')->status_is(403);
-
-done_testing();

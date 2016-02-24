@@ -18,7 +18,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -60,5 +60,3 @@ $t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged in as/);
 $test_case->login($t, 'percival');
 $t->get_ok('/tests')->status_is(200)->content_like(qr/Logged in as perci (.*manage API keys.* | .*logout.*)/);
 $t->get_ok('/api_keys')->status_is(200);
-
-done_testing();

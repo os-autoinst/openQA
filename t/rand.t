@@ -19,7 +19,7 @@ BEGIN { unshift @INC, 'lib'; }
 use Mojo::Base -strict;
 use db_helpers qw/rndstr rndhex rndstrU rndhexU/;
 
-use Test::More;
+use Test::More 'no_plan';
 
 my $r;
 my $r2;
@@ -65,5 +65,3 @@ is(length($r), 97, "length 97");
 like($r, qr/^[0-9A-F]+$/a, "rndhexU only consists of hex characters");
 is(length($r), length($r2), "same length");
 isnt($r, $r2, "rndhexU produces different results");
-
-done_testing();

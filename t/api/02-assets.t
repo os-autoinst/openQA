@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -162,5 +162,3 @@ $ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})
 for my $i ($iso1, $iso2) {
     ok(unlink("t/data/openqa/factory/iso/$i"), "rm $i");
 }
-
-done_testing();

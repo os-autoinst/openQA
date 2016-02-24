@@ -23,7 +23,7 @@ BEGIN {
 use strict;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 
 OpenQA::Test::Database->new->create();
@@ -61,5 +61,3 @@ my $second = $t->app->db->resultset("Jobs")->find({id => $clones{$clone->id}});
 is($second->test,       "minimalx", "same test again");
 is($second->priority,   35,         "with adjusted priority");
 is($second->retry_avbl, 2,          "with adjusted retry_avbl");
-
-done_testing();

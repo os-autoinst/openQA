@@ -22,7 +22,7 @@ BEGIN {
 use strict;
 use warnings;
 use Data::Dump qw/pp dd/;
-use Test::More;
+use Test::More 'no_plan';
 use OpenQA::Scheduler::Scheduler qw/job_create job_grab job_get job_restart job_set_done/;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::IPC;
@@ -135,4 +135,3 @@ is_deeply(\@assets, [$theasset, $ja->id], 'using correct assets');
 $jobB->discard_changes();
 ok($jobB->clone, 'jobB has a clone after cloning asset creator');
 unlink($ja->disk_file);
-done_testing();

@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use Mojo::URL;
 use Mojo::Util qw(encode);
@@ -104,5 +104,3 @@ SKIP: {
     $t->ua->apisecret('MANYPEOPLEKNOW');
     $ret = $t->websocket_nok('/api/v1/workers/1/ws');
 }
-
-done_testing();

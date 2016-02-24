@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -200,5 +200,3 @@ is_deeply(
 
 $res = $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 $res = $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(404);    #not found
-
-done_testing();

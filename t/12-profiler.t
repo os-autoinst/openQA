@@ -18,7 +18,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 3;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -42,5 +42,3 @@ my @lines = <FILE>;
 close(FILE);
 
 like(join('', @lines), qr/.*\[debug\] \[DBIx debug\] Took .* seconds executed: SELECT.*/, "seconds in log file");
-
-done_testing();

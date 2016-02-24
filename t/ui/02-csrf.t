@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 use Data::Dumper;
@@ -76,5 +76,3 @@ $t->post_ok('/api/v1/jobs/99928/restart' => form => {csrf_token => $token})->sta
 $t->post_ok('/api/v1/jobs/99928/prio?prio=33' => form => {csrf_token => 'foobar'})->status_is(403);
 $t->post_ok('/api/v1/jobs/99928/prio?prio=34' => {'X-CSRF-Token' => $token} => form => {})->status_is(200);
 $t->post_ok('/api/v1/jobs/99928/prio?prio=35' => form => {csrf_token => $token})->status_is(200);
-
-done_testing();

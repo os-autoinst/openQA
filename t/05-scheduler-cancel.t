@@ -28,7 +28,7 @@ use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Net::DBus;
 
-use Test::More;
+use Test::More 'no_plan';
 
 OpenQA::Test::Database->new->create();
 # create Test DBus bus and service for fake WebSockets call
@@ -94,5 +94,3 @@ is($ret, 1, "one job cancelled by iso");
 
 $job = OpenQA::Scheduler::Scheduler::job_get(99927);
 is($job->{state}, 'scheduled', "unrelated job 99927 still scheduled");
-
-done_testing();

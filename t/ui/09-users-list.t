@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 34;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -72,5 +72,3 @@ $get = $t->get_ok('/admin/users')->status_is(200);
 $get->content_like(qr/User lance updated/);
 $get->text_is('#user_99902 .username' => 'https://openid.camelot.uk/lancelot');
 is($t->tx->res->dom->at('#user_99902 .role')->attr('data-order'), '00');
-
-done_testing();

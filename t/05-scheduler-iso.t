@@ -31,8 +31,8 @@ use OpenQA::Test::Database;
 use Net::DBus;
 use Net::DBus::Test::MockObject;
 
-use Test::More;
 use Test::Output;
+use Test::More 'no_plan';
 
 # We need the fixtures so we have job templates
 my $schema = OpenQA::Test::Database->new->create;
@@ -59,5 +59,3 @@ is($schema->resultset("GruTasks")->search({taskname => 'download_asset'}), 0, 'g
 # Schedule download of a non-existing ISO
 stderr_like { $ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'nonexistent.iso') } $warning, 'expected warnings';
 is($schema->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'gru task should be created');
-
-done_testing();

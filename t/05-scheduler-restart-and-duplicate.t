@@ -27,7 +27,7 @@ use OpenQA::WebSockets;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 
-use Test::More;
+use Test::More 'no_plan';
 
 
 # create Test DBus bus and service for fake WebSockets call
@@ -150,5 +150,3 @@ my $round5_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $round3_id)
 ok(defined $round5_id, "manual-duplicate works");
 $job3 = OpenQA::Scheduler::Scheduler::job_get($round5_id);
 is($job3->{retry_avbl}, 1, "the retry counter increased");
-
-done_testing;

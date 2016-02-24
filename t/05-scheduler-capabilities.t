@@ -27,7 +27,7 @@ use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::More tests => 9;
+use Test::More 'no_plan';
 
 my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 
@@ -189,5 +189,3 @@ is($job->{id}, $jobI->id, "this worker can do jobI, child - client");
 
 
 # job G is not grabbed because there is no worker with class 'special'
-
-done_testing();

@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -90,5 +90,3 @@ SKIP: {
     $t->get_ok('/needles/opensuse/doesntexist.png')->status_is(404);
 
 }
-
-done_testing();

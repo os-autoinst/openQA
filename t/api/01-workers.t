@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use Mojo::URL;
 use OpenQA::Test::Case;
@@ -107,6 +107,3 @@ $worker_caps->{instance} = 42;
 $ret = $t->post_ok('/api/v1/workers', form => $worker_caps);
 is($ret->tx->res->code,       200, "register new worker");
 is($ret->tx->res->json->{id}, 3,   "new worker id is 3");
-
-
-done_testing();

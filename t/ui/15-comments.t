@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -30,10 +30,7 @@ use t::ui::PhantomTest;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
-if ($driver) {
-    plan tests => 38;
-}
-else {
+unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
 }
@@ -136,5 +133,3 @@ $driver->find_element('opensuse', 'link_text')->click();
 is($driver->find_element('.fa-certificate', 'css')->get_attribute('title'), 'Reviewed (1 comments)', 'build should be marked as labeled');
 
 t::ui::PhantomTest::kill_phantom();
-
-done_testing();

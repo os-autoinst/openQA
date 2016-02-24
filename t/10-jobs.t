@@ -23,7 +23,7 @@ BEGIN {
 use strict;
 use OpenQA::Utils;
 use OpenQA::Test::Database;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 
 OpenQA::Test::Database->new->create();
@@ -41,5 +41,3 @@ ok(grep(!/^(99962|99945)$/, @ids));
 # These are the later clones, they should appear
 ok(grep(/^99963$/, @ids));
 ok(grep(/^99946$/, @ids));
-
-done_testing();

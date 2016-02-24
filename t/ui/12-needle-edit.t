@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -42,10 +42,7 @@ $test_case->init_data;
 use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
-if ($driver) {
-    plan tests => 51;
-}
-else {
+unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
 }
@@ -276,4 +273,3 @@ is($decode_json->{'area'}[0]->{xpos}, $decode_textarea->{'area'}[0]->{xpos} + $x
 is($decode_json->{'area'}[0]->{ypos}, $decode_textarea->{'area'}[0]->{ypos} + $yoffset, "new ypos stored to new needle");
 
 t::ui::PhantomTest::kill_phantom();
-done_testing();

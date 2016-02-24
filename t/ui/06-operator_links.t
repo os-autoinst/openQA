@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 20;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 use Data::Dumper;
@@ -60,5 +60,3 @@ $get->element_exists('#scheduled #job_99928 a.cancel');
 $test_case->login($t, 'lancelot', email => 'lancelot@example.com');
 $get = $t->get_ok('/tests')->status_is(200);
 $get->element_exists_not('#scheduled #job_99928 a.cancel');
-
-done_testing();

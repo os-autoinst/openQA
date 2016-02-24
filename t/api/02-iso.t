@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::Client;
@@ -172,5 +172,3 @@ $ret = $t->post_ok('/api/v1/isos', form => {iso => $iso, tests => "kde/usb"})->s
 $ret = $t->delete_ok("/api/v1/isos/$iso")->status_is(200);
 # now the jobs should be gone
 $ret = $t->get_ok('/api/v1/jobs/$newid')->status_is(404);
-
-done_testing();

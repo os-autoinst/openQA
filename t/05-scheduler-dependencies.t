@@ -26,7 +26,7 @@ use OpenQA::Scheduler::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::More tests => 155;
+use Test::More 'no_plan';
 
 my $schema = OpenQA::Test::Database->new->create();
 
@@ -732,5 +732,3 @@ my $jobP3 = job_get_deps($jobP2->clone->id);
 
 is_deeply($jobI2->{parents}->{Parallel}, [$jobO3->{id}], 'jobI2 got new parent jobO3');
 is_deeply($jobO3->{parents}->{Parallel}, [$jobP3->{id}], 'clone jobO3 gets new parent jobP3');
-
-done_testing();

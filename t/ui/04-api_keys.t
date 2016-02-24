@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -87,5 +87,3 @@ $req = $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {user_id =
 $req = $t->get_ok('/api_keys')->status_is(200);
 $req->element_exists('#api_key_99902', 'Percival keys are there');
 $req->element_exists('#api_key_99907', 'and the new one belongs to Percival, not Lancelot');
-
-done_testing();

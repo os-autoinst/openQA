@@ -19,7 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 4;
+use Test::More 'no_plan';
 use Test::Mojo;
 use OpenQA::Test::Case;
 
@@ -36,5 +36,3 @@ SKIP: {
     $get->content_like(qr|inst\.d/.*$test_name.pm|i, "$test_name test source found");
     $get->content_like(qr/ISO_MAXSIZE/i,             "$test_name test source shown");
 }
-
-done_testing();
