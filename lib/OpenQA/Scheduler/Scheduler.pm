@@ -102,7 +102,7 @@ sub schema {
     return $schema;
 }
 
-=item _hashref()
+=head2 _hashref()
 
 Convert an ORM object into a hashref. The API only export hashes and
 not ORM objects.
@@ -140,7 +140,7 @@ sub job_notify_workers {
     $ipc->websockets('ws_send_all', 'job_available');
 }
 
-=item job_create
+=head2 job_create
 
 create a job
 
@@ -669,7 +669,7 @@ sub _job_stop_children {
     }
 }
 
-=item job_set_done
+=head2 job_set_done
 
 mark job as done. No error check. Meant to be called from worker!
 
@@ -711,7 +711,7 @@ sub job_set_done {
     return $r;
 }
 
-=item job_set_waiting
+=head2 job_set_waiting
 
 mark job as waiting. No error check. Meant to be called from worker!
 
@@ -732,7 +732,7 @@ sub job_set_waiting {
     return $r;
 }
 
-=item job_set_running
+=head2 job_set_running
 
 mark job as running. No error check. Meant to be called from worker!
 

@@ -87,6 +87,7 @@ on 'test' => sub {
   requires 'Perl::Tidy';
   requires 'Perl::Critic';
   requires 'Test::Output';
+  requires 'Test::Pod';
 };
 
 feature 'coverage', 'coverage for travis' => sub {
