@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -11,16 +11,14 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
+
+package OpenQA::WebAPI::Controller::File;
 
 use strict;
 use warnings;
-
-package OpenQA::WebAPI::Controller::File;
 use Mojo::Base 'Mojolicious::Controller';
 BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
-use OpenQA::IPC;
 use OpenQA::Utils;
 use File::Basename;
 
@@ -70,27 +68,35 @@ sub test_file {
 }
 
 sub test_asset {
-    my $self = shift;
-
-    # FIXME: make sure asset belongs to the job
-    my $ipc = OpenQA::IPC->ipc;
-    my $asset;
+    my $self  = shift;
+    my $jobid = $self->param('testid');
+    my %cond  = ('me.id' => $jobid);
     if ($self->param('assetid')) {
-        $asset = $ipc->scheduler('asset_get', {id => $self->param('assetid')});
+        $cond{'asset.id'} = $self->param('assetid');
+    }
+    elsif ($self->param('assettype') and $self->param('assetname')) {
+        $cond{name} = $self->param('assetname');
+        $cond{type} = $self->param('assettype');
     }
     else {
-        $asset = $ipc->scheduler('asset_get', {type => $self->param('assettype'), name => $self->param('assetname')});
+        return $self->render(text => 'Missing or wrong parameters provided', status => 400);
     }
 
-    # Need to check if $asset is HASHref. DBus test bus have issues with empty results due to type guessing
-    return $self->reply->not_found unless ref($asset) eq 'HASH' && %$asset;
+    my %asset;
+    my $res = $self->db->resultset('Jobs')->search(\%cond, {join => {jobs_assets => 'asset'}, +select => [qw/asset.name asset.type/], +as => ['name', 'type']});
+    if ($res and $res->first) {
+        %asset = $res->first->get_columns;
+    }
+    else {
+        return $self->reply->not_found;
+    }
 
-    my $path = '/assets/' . $asset->{type} . '/' . $asset->{name};
+    my $path = '/assets/' . $asset{type} . '/' . $asset{name};
     if ($self->param('subpath')) {
         $path .= '/' . $self->param('subpath');
         # better safe than sorry. Mojo seems to canonicalize the
         # urls for us already so this is actually not needed
-        return $self->render_exception("invalid character in path") if ($path =~ /\/\.\./ || $path =~ /\.\.\//);
+        return $self->render_exception('invalid character in path') if ($path =~ /\/\.\./ || $path =~ /\.\.\//);
     }
 
     $self->app->log->debug("redirect to $path");
