@@ -45,9 +45,10 @@ $job = OpenQA::Scheduler::Scheduler::job_get(99963);
 is($job->{state}, 'running', "old job is running");
 
 sub lj {
+    # check the call succeeds every time, only output if verbose
+    my @jobs = OpenQA::Scheduler::Scheduler::query_jobs->all;
     return unless $ENV{HARNESS_IS_VERBOSE};
-    my $jobs = query_jobs();
-    for my $j (@$jobs) {
+    for my $j (@jobs) {
         printf "%d %-10s %s\n", $j->id, $j->state, $j->name;
     }
 }
