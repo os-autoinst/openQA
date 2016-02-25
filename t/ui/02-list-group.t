@@ -51,8 +51,6 @@ is($driver->get($baseurl . "tests?groupid=0"), 1, "list jobs without group");
 
 my @rows = $driver->find_child_elements($driver->find_element('#scheduled tbody', 'css'), "tr");
 is(@rows, 1, 'one sheduled job without group');
-# TODO: needs v0.24
-#is(undef, $driver->find_element_by_css('#running #job_99963'), '99963 not listed');
 
 ok($driver->get($baseurl . "tests?groupid=1001"), "list jobs without group 1001");
 @rows = $driver->find_child_elements($driver->find_element('#running tbody', 'css'), "tr");
