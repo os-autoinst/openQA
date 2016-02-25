@@ -1195,6 +1195,7 @@ sub job_schedule_iso {
         my $short = substr($arg, 0, -4);
         if (!$args{$short}) {
             $args{$short} = Mojo::URL->new($url)->path->parts->[-1];
+            delete $args{$short} unless $args{$short};
         }
         # full path to download target location. We need to guess
         # the asset type to know where to put it, using the same
