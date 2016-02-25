@@ -142,24 +142,47 @@ sub file_content($) {
     return $result;
 }
 
+# logging helpers
+# Withing Mojo openQA $app is defined and Mojo::Log is used
+# Scheduler prints to stdout&stderr -> journal
 sub log_debug {
-    # useful for models, but doesn't work in tests
-    $app->log->debug(shift) if $app && $app->log;
+    my ($msg) = @_;
+    if ($app && $app->log) {
+        $app->log->debug($msg);
+    }
+    else {
+        print "[DEBUG] $msg\n";
+    }
 }
 
 sub log_info {
-    # useful for models, but doesn't work in tests
-    $app->log->info(shift) if $app && $app->log;
+    my ($msg) = @_;
+    if ($app && $app->log) {
+        $app->log->info($msg);
+    }
+    else {
+        print "[INFO] $msg\n";
+    }
 }
 
 sub log_warning {
-    # useful for models, but doesn't work in tests
-    $app->log->warn(shift) if $app && $app->log;
+    my ($msg) = @_;
+    if ($app && $app->log) {
+        $app->log->warn($msg);
+    }
+    else {
+        print STDERR "[WARN] $msg\n";
+    }
 }
 
 sub log_error {
-    # useful for models, but doesn't work in tests
-    $app->log->error(shift) if $app && $app->log;
+    my ($msg) = @_;
+    if ($app && $app->log) {
+        $app->log->error($msg);
+    }
+    else {
+        print STDERR "[ERROR] $msg\n";
+    }
 }
 
 sub save_base64_png($$$) {
