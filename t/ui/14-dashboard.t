@@ -42,9 +42,19 @@ unless ($driver) {
 is($driver->get_title(), "openQA", "on main page");
 my $baseurl = $driver->get_current_url();
 
+is(scalar @{$driver->find_elements('h4', 'css')}, 4);
+
 $driver->find_element('Build0091', 'link_text')->click();
 
 like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse build 0091/, 'we are on build 91');
+
+is($driver->get($baseurl . '?time_limit_days=1&limit_builds=1'), 1, 'index page accepts query parameters');
+is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only one build per group shown');
+
+$driver->find_element('opensuse', 'link_text')->click();
+
+is(scalar @{$driver->find_elements('h4', 'css')}, 3, 'default number of builds shown');
+is($driver->get($baseurl . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
 
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
