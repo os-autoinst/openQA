@@ -39,6 +39,7 @@ sub list {
 
     my $assetid = $self->param('assetid');
     my $groupid = $self->param('groupid');
+    my $limit   = $self->param('limit') // 500;
 
     my $jobs = query_jobs(
         state   => 'done,cancelled',
@@ -46,7 +47,7 @@ sub list {
         scope   => $scope,
         assetid => $assetid,
         groupid => $groupid,
-        limit   => 500,
+        limit   => $limit,
         idsonly => 1
     );
     $self->stash(jobs => $jobs);
