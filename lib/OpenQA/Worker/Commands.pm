@@ -53,7 +53,9 @@ sub websocket_commands {
             if (backend_running) {
                 if (open(my $f, '>', "$pooldir/stop_waitforneedle")) {
                     close $f;
-                    print "waitforneedle will be stopped\n" if $verbose;
+                    # clean up continue_waitforneedle control file before a new waitforneedle round
+                    unlink("$pooldir/continue_waitforneedle") if -e "$pooldir/continue_waitforneedle";
+                    print "waitforneedle will be stopped\n"   if $verbose;
                 }
                 else {
                     warn "can't stop waitforneedle: $!";
@@ -90,6 +92,12 @@ sub websocket_commands {
         }
         elsif ($type eq 'continue_waitforneedle') {
             if (backend_running) {
+                if (open(my $f, '>', "$pooldir/continue_waitforneedle")) {
+                    close $f;
+                }
+                else {
+                    warn "can't continue waitforneedle: $!";
+                }
                 unlink("$pooldir/stop_waitforneedle");
                 print "continuing waitforneedle\n" if $verbose;
             }
