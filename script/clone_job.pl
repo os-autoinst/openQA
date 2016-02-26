@@ -25,7 +25,14 @@ clone_job.pl - clone job from remote QA instance
 
 =head1 SYNOPSIS
 
-clone_job.pl [OPTIONS] JOBID [KEY=[VALUE] ...]
+  clone_job.pl [OPTIONS] JOBID [KEY=[VALUE] ...]
+
+  clone_job.pl --from https://openqa.opensuse.org 42
+
+  clone_job.pl --from https://openqa.opensuse.org --host openqa.example.com 42
+
+  clone_job.pl --from localhost --host localhost 42 MAKETESTSNAPSHOTS=1 FOOBAR=
+
 
 =head1 OPTIONS
 
