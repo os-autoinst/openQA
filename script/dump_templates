@@ -116,7 +116,8 @@ use OpenQA::Client;
 
 Getopt::Long::Configure("no_ignore_case");
 
-my %tables = map { $_ => 1 } qw(Machines TestSuites Products JobTemplates);
+my %tables;
+my @all_tables = qw/Machines TestSuites Products JobTemplates/;
 
 my %options;
 
@@ -137,9 +138,11 @@ GetOptions(
 
 usage(0) if $options{help};
 
+%tables = map { $_ => 1 } @all_tables if $options{full};
+
 if (@ARGV) {
     my %want = map { $_ => 1 } @ARGV;
-    for my $t (keys %tables) {
+    for my $t (@all_tables) {
         $tables{$t} = $want{$t} ? 1 : 0;
     }
 }
@@ -161,6 +164,8 @@ if ($options{product}) {
     $tables{Products} = 1;
 }
 
+%tables = map { $_ => 1 } @all_tables unless %tables;
+
 $options{'host'}    ||= 'localhost';
 $options{'apibase'} ||= '/api/v1';
 
@@ -178,7 +183,7 @@ my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $opt
 
 my %result;
 
-for my $table (qw(Machines TestSuites Products JobTemplates)) {
+for my $table (@all_tables) {
     if ($tables{$table}) {
         $url->path($options{'apibase'} . '/' . decamelize($table));
         my $res = $client->get($url)->res;
