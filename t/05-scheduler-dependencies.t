@@ -26,7 +26,7 @@ use OpenQA::Scheduler::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::More tests => 155;
+use Test::More;
 
 my $schema = OpenQA::Test::Database->new->create();
 

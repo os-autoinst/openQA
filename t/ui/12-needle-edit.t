@@ -42,10 +42,7 @@ $test_case->init_data;
 use t::ui::PhantomTest;
 
 my $driver = t::ui::PhantomTest::call_phantom();
-if ($driver) {
-    plan tests => 51;
-}
-else {
+unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
 }

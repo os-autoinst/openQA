@@ -27,7 +27,7 @@ use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use Test::Mojo;
-use Test::More tests => 9;
+use Test::More;
 
 my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 

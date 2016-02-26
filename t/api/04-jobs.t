@@ -18,7 +18,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 60;
+use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
 use OpenQA::Client;

@@ -28,7 +28,7 @@ use OpenQA::Test::Database;
 use Net::DBus;
 use Net::DBus::Test::MockObject;
 
-use Test::More tests => 55;
+use Test::More;
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
