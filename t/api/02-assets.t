@@ -21,6 +21,7 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
+use Test::Warnings ':all';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
@@ -153,10 +154,10 @@ $ret = $t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200)
 la;
 
 # try to register with invalid type
-$ret = $t->post_ok('/api/v1/assets', form => {type => 'foo', name => $iso1})->status_is(400);
+like(warning { $ret = $t->post_ok('/api/v1/assets', form => {type => 'foo', name => $iso1})->status_is(400) }, qr/asset type \'foo\' invalid/);
 
 # try to register non existing asset
-$ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})->status_is(400);
+like(warning { $ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})->status_is(400) }, qr/asset name \'foo.iso\' invalid/);
 
 
 for my $i ($iso1, $iso2) {

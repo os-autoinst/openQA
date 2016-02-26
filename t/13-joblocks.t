@@ -25,6 +25,7 @@ use OpenQA::Test::Database;
 use OpenQA::Scheduler;
 use Test::More;
 use Test::Mojo;
+use Test::Warnings;
 
 # create Test DBus bus and service for fake WebSockets call
 my $ipc = OpenQA::IPC->ipc('', 1);

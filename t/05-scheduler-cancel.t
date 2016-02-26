@@ -29,6 +29,7 @@ use OpenQA::Test::Database;
 use Net::DBus;
 
 use Test::More;
+use Test::Warnings;
 
 OpenQA::Test::Database->new->create();
 # create Test DBus bus and service for fake WebSockets call

@@ -19,8 +19,9 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
-use Test::More tests => 20;
+use Test::More;
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 use Data::Dumper;
 

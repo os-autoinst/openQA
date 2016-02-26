@@ -21,6 +21,7 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
+use Test::Warnings;
 use OpenQA::Test::Case;
 use Data::Dumper;
 use IO::Socket::INET;
@@ -39,11 +40,7 @@ use t::ui::PhantomTest;
 
 # skip if phantomjs or Selenium::Remote::WDKeys isn't available
 my $driver = t::ui::PhantomTest::call_phantom();
-if ($driver && can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
-    # for some reason, loading the module this way doesn't import the constant
-    plan tests => 71;
-}
-else {
+unless ($driver && can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
     plan skip_all => 'Install phantomjs, Selenium::Remote::Driver, and Selenium::Remote::WDKeys to run these tests';
     exit(0);
 }

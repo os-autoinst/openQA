@@ -25,6 +25,7 @@ use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;
 use Test::Mojo;
+use Test::Warnings;
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 my $t = Test::Mojo->new('OpenQA::WebAPI');

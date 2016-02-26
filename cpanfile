@@ -86,8 +86,8 @@ requires 'warnings';
 on 'test' => sub {
   requires 'Perl::Tidy';
   requires 'Perl::Critic';
-  requires 'Test::Output';
   requires 'Test::Pod';
+  requires 'Test::Warnings';
 };
 
 feature 'coverage', 'coverage for travis' => sub {
