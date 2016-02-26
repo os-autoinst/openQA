@@ -196,26 +196,34 @@ sub limit_assets {
     # to the admin to configure the size limit)
     while (my $g = $groups->next) {
         my $sizelimit = $g->size_limit_gb * 1024 * 1024 * 1024;
-        my $assets    = $app->db->resultset('JobsAssets')->search(
+        # we need to find a distinct set of assets per job group ordered by
+        # their last use. Need to do this in 2 steps
+        my @job_assets = $app->db->resultset('JobsAssets')->search(
             {
-                job_id => {-in => $g->jobs->get_column('id')->as_query}
+                job_id => {-in => $g->jobs->get_column('id')->as_query},
             },
             {
-                prefetch => 'asset',
-                order_by => 'me.t_created desc',
-            });
+                select   => ['asset_id', 'created_by', {max => 't_created', -as => 'latest'},],
+                group_by => 'asset_id,created_by',
+                order_by => {-desc => 'latest'}})->all;
+        my %assets;
+        my $assets = $app->db->resultset('Assets')->search(
+            {
+                id => {-in => [map { $_->asset_id } @job_assets]}});
         while (my $a = $assets->next) {
+            $assets{$a->id} = $a;
+        }
+        for my $a (@job_assets) {
+            my $asset = $assets{$a->asset_id};
             # ignore predefined images
-            next if ($a->asset->type eq 'hdd' && $a->created_by == 0);
-            # distinct is a bit too tricky
-            next if ($seen_asset{$a->asset->id} // 0) == $g->id;
-            $seen_asset{$a->asset->id} = $g->id;
-            my $size = $a->asset->ensure_size;
+            next if ($asset->type eq 'hdd' && $a->created_by == 0);
+            $seen_asset{$asset->id} = $g->id;
+            my $size = $asset->ensure_size;
             if ($size > 0 && $sizelimit > 0) {
-                $keep{$a->asset_id} = sprintf "%s: %s/%s", $g->name, $a->asset->type, $a->asset->name;
+                $keep{$a->asset_id} = sprintf "%s: %s/%s", $g->name, $asset->type, $asset->name;
             }
             else {
-                $toremove{$a->asset_id} = sprintf "%s/%s", $a->asset->type, $a->asset->name;
+                $toremove{$a->asset_id} = sprintf "%s/%s", $asset->type, $asset->name;
             }
             $sizelimit -= $size;
         }
