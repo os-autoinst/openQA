@@ -18,6 +18,7 @@ BEGIN {
 }
 
 use Test::More;
+use Test::Output;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::Scheduler::Scheduler;
@@ -52,7 +53,7 @@ for my $cmd (@valid_commands) {
 }
 
 #issue invalid commands
-OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => 'foo', job_id => 0);
+stderr_like { OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => 'foo', job_id => 0) } qr/invalid command "foo"/;
 isnt($OpenQA::WebSockets::Server::last_command, 'foo', 'refuse invalid commands');
 
 done_testing();

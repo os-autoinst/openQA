@@ -21,6 +21,7 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
+use Test::Output;
 use OpenQA::Test::Case;
 
 use OpenQA::IPC;
@@ -69,7 +70,9 @@ is($req->tx->res->dom->at('#downloads #asset_1')->{'href'}, '/tests/99946/asset/
 $req = $t->get_ok('/tests/99946/asset/1')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
 $req = $t->get_ok('/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
 # verify error on invalid downloads
-$req = $t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404);
+# TODO why is this warning acceptable?
+my $warning = qr/Use of uninitialized value \$array_type in numeric eq/;
+stderr_like { $req = $t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404) } $warning;
 
 # TODO: also test repos
 
