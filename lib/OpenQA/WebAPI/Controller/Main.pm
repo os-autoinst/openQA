@@ -61,6 +61,15 @@ sub _group_result {
         while (my $line = $keys->next) {
             $settings{$line->job_id}->{$line->key} = $line->value;
         }
+        # prefetch comments to count. Any comment is considered a label here
+        # so a build is considered as 'reviewed' if all failures have at least
+        # a comment. This could be improved to distinguish between
+        # "only-labels", "mixed" and such
+        my $c = $self->db->resultset("Comments")->search({job_id => {in => [map { $_->id } $jobs->all]}});
+        my %labels;
+        while (my $comment = $c->next) {
+            $labels{$comment->job_id}++;
+        }
         $jobs->reset;
 
         while (my $job = $jobs->next) {
@@ -81,7 +90,7 @@ sub _group_result {
                     || $job->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE)
                 {
                     $jr{failed}++;
-                    $jr{labeled}++ if $job->comments > 0;
+                    $jr{labeled}++ if $labels{$job->id};
                     next;
                 }
                 if (grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS) {
