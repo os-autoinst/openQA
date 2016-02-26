@@ -34,6 +34,7 @@ use Net::DBus::Test::MockObject;
 use Test::More;
 use Test::Deep;
 use Test::Warnings ':all';
+use Test::Output qw/stdout_like stderr_like/;
 
 # We need the fixtures so we have job templates
 my $schema = OpenQA::Test::Database->new->create;
@@ -49,7 +50,6 @@ my @tasks;
 is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 
 my $expected = qr/START_AFTER_TEST=.* not found - check for typos and dependency cycles/;
-like(warning { warn "START_AFTER_TEST=kde:32bit not found - check for typos and dependency cycles at lib/OpenQA/Scheduler/Scheduler.pm line 226" }, $expected);
 my @warnings = warnings { @tasks = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso') };
 map { like($_, $expected, 'warning expected about test dependencies') } @warnings;
 is(scalar @tasks, 10, 'a regular ISO post creates the expected number of jobs');
@@ -63,5 +63,21 @@ is($schema->resultset("GruTasks")->search({taskname => 'download_asset'}), 0, 'g
 @warnings = warnings { my $ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'nonexistent.iso') };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($schema->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'gru task should be created');
+
+# Using non-asset _URL does not create gru job and schedule jobs
+stdout_like {
+    warnings { my $ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', NO_ASSET_URL => 'nonexistent.iso') }
+}
+qr/_URL downloading only allowed for asset types!/, 'expected info about non-asset type';
+is(scalar @tasks, 10, 'a regular ISO post creates the expected number of jobs');
+is($schema->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'no additional gru task should be created');
+
+# Using asset _URL but without filename extractable from URL create warning, jobs, but no gru job
+stderr_like {
+    warnings { my $ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost') }
+}
+qr/Unable to get filename from/, 'expected warnings include filename warning';
+is(scalar @tasks, 10, 'a regular ISO post creates the expected number of jobs');
+is($schema->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'no additional gru task should be created');
 
 done_testing();
