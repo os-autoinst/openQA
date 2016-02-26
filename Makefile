@@ -1,4 +1,5 @@
 COVERAGE_THRESHOLD ?= 59.8
+PROVE_ARGS ?= -r
 
 .PHONY: all
 all:
@@ -68,7 +69,7 @@ checkstyle:
 
 .PHONY: test
 test: checkstyle
-	OPENQA_CONFIG= prove -r
+	OPENQA_CONFIG= prove ${PROVE_ARGS}
 
 # ignore tests and test related addons in coverage analysis
 COVER_OPTS ?= -ignore_re "t/.*" -ignore lib/perlcritic/Perl/Critic/Policy/HashKeyQuotes.pm
