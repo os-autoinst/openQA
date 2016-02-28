@@ -24,9 +24,15 @@ use OpenQA::Schema::Result::Jobs;
 sub _group_result {
     my ($self, $group, $limit) = @_;
 
+    my %res;
+    # WORKAROUND for https://progress.opensuse.org/issues/10960
+    if ($group->name =~ /^(~)/) {
+        $self->app->log->warn("job group '" . $group->name . "' matching '~' skipped, see poo#10960 for reason");
+        return \%res;
+    }
+
     my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * 14, 'UTC')};
 
-    my %res;
     my $jobs = $group->jobs->search({"me.t_created" => $timecond,});
     my $builds = $self->db->resultset('JobSettings')->search(
         {
