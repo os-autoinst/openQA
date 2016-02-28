@@ -319,7 +319,8 @@ sub show {
 sub _calculate_preferred_machines {
     my ($jobs) = @_;
     my %machines;
-    while (my $job = $jobs->next()) {
+
+    foreach my $job (@$jobs) {
         my $sh = $job->settings_hash;
         next unless $sh->{MACHINE};
         $machines{$sh->{ARCH}} ||= {};
@@ -335,7 +336,6 @@ sub _calculate_preferred_machines {
             }
         }
     }
-    $jobs->reset();
     return $pms;
 }
 
@@ -403,12 +403,10 @@ sub overview {
     # query parameters which are then properly shown on the overview.
     my $req_params = $self->req->params->to_hash;
     %search_args = (%search_args, %$req_params);
-    my $jobs = query_jobs(%search_args);
-
-    my @latest_jobs = $jobs->latest_jobs;
-
-    my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats($jobs);
-    my $preferred_machines = _calculate_preferred_machines($jobs);
+    my @latest_jobs        = query_jobs(%search_args)->latest_jobs;
+    my $preferred_machines = _calculate_preferred_machines(\@latest_jobs);
+    my @latest_jobs_ids    = map { $_->id } @latest_jobs;
+    my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats(\@latest_jobs_ids);
 
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels(\@latest_jobs);
