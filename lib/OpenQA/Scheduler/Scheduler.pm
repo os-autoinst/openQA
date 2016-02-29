@@ -1193,18 +1193,23 @@ sub job_schedule_iso {
         # the URL filename. This has to happen *before*
         # generate_jobs so the jobs have FOO set
         my $short = substr($arg, 0, -4);
+        my $assettype = asset_type_from_setting($short);
+        # We're only going to allow downloading of asset types
+        unless ($assettype) {
+            OpenQA::Utils::log_debug("_URL downloading only allowed for asset types! $short is not an asset type");
+            next;
+        }
         if (!$args{$short}) {
             $args{$short} = Mojo::URL->new($url)->path->parts->[-1];
+            if (!$args{$short}) {
+                OpenQA::Utils::log_warning("Unable to get filename from $url. Ignoring $arg");
+                delete $args{$short} unless $args{$short};
+                next;
+            }
         }
         # full path to download target location. We need to guess
         # the asset type to know where to put it, using the same
         # subroutine as parse_assets_from_settings
-        my $assettype = asset_type_from_setting($short);
-        # We're only going to allow downloading of asset types
-        unless ($assettype) {
-            OpenQA::Utils::log_warning("_URL downloading only allowed for asset types! $short is not an asset type");
-            next;
-        }
         my $dir = catdir($OpenQA::Utils::assetdir, $assettype);
         my $fullpath = catfile($dir, $args{$short});
 
