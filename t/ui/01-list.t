@@ -74,9 +74,19 @@ isnt($driver->find_element('#running #job_99963', 'css'), undef, '99963 still ru
 is($driver->find_element('#running #job_99963 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99963", 'right link');
 like($driver->find_element('#running #job_99963 td.time', 'css')->get_text(), qr/1[01] minutes ago/, 'right time for running');
 
-$get = $t->get_ok('/tests/99963')->status_is(200);
-my @header = $t->tx->res->dom->find('.box-header')->map('text')->each;
-my @expected = ('Actions', 'Test modules', 'Parents', 'Backend', 'Live view of', 'Live Log');
+$get = $t->get_ok('/tests')->status_is(200);
+my @header = $t->tx->res->dom->find('h2')->map('text')->each;
+my @expected = ('2 jobs are running', '2 scheduled jobs', 'Last 7 finished jobs');
+is_deeply(\@header, \@expected, 'all job summaries correct with defaults');
+
+$get      = $t->get_ok('/tests?limit=1')->status_is(200);
+@header   = $t->tx->res->dom->find('h2')->map('text')->each;
+@expected = ('2 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
+is_deeply(\@header, \@expected, 'test report can be adjusted with query parameter');
+
+$get      = $t->get_ok('/tests/99963')->status_is(200);
+@header   = $t->tx->res->dom->find('.box-header')->map('text')->each;
+@expected = ('Actions', 'Test modules', 'Parents', 'Backend', 'Live view of', 'Live Log');
 is_deeply(\@header, \@expected, 'all page modules for running jobs are visible');
 
 $driver->find_element('Build0091', 'link_text')->click();

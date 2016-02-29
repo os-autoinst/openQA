@@ -24,7 +24,9 @@ use OpenQA::Schema::Result::Jobs;
 sub _group_result {
     my ($self, $group, $limit) = @_;
 
-    my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * 14, 'UTC')};
+    my $time_limit_days = $self->param('time_limit_days') // 14;
+    $self->app->log->debug("Retrieving results for up to $limit builds up to $time_limit_days days old");
+    my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
 
     my %res;
     my $jobs = $group->jobs->search({"me.t_created" => $timecond,});
@@ -113,11 +115,12 @@ sub _group_result {
 sub index {
     my ($self) = @_;
 
+    my $limit_builds = $self->param('limit_builds') // 3;
     my @results;
 
     my $groups = $self->db->resultset('JobGroups')->search({}, {order_by => qw/name/});
     while (my $group = $groups->next) {
-        my $res = $self->_group_result($group, 3);
+        my $res = $self->_group_result($group, $limit_builds);
         if (%$res) {
             $res->{_group} = $group;
             push(@results, $res);
@@ -129,10 +132,11 @@ sub index {
 sub group_overview {
     my ($self) = @_;
 
+    my $limit_builds = $self->param('limit_builds') // 10;
     my $group = $self->db->resultset('JobGroups')->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    my $res = $self->_group_result($group, 10);
+    my $res = $self->_group_result($group, $limit_builds);
     $self->stash('result', $res);
     $self->stash('group',  $group);
 }
