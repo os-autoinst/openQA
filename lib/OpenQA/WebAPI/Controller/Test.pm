@@ -600,5 +600,37 @@ sub remove_comment {
     return $self->redirect_to('test');
 }
 
+sub export {
+    my ($self) = @_;
+    $self->res->headers->content_type('text/plain');
+
+    my @groups = $self->app->schema->resultset("JobGroups")->search(undef, {order_by => 'name'});
+
+    for my $group (@groups) {
+        $self->write_chunk(sprintf("Jobs of Group '%s'\n", $group->name));
+        my @conds;
+        if ($self->param('from')) {
+            push(@conds, {id => {'>=' => $self->param('from')}});
+        }
+        if ($self->param('to')) {
+            push(@conds, {id => {'<' => $self->param('to')}});
+        }
+        my $jobs = $group->jobs->search({-and => \@conds}, {order_by => 'id'});
+        while (my $job = $jobs->next) {
+            next if ($job->result eq OpenQA::Schema::Result::Jobs::OBSOLETED);
+            $self->write_chunk(sprintf("Job %d: %s is %s\n", $job->id, $job->name, $job->result));
+            my $modules = $job->modules->search(undef, {order_by => 'id'});
+            while (my $m = $modules->next) {
+                my $result = $m->result;
+                next if ($result eq OpenQA::Schema::Result::Jobs::NONE);
+                $result = 'softfail' if ($m->soft_failure);
+                $self->write_chunk(sprintf("  %s/%s: %s\n", $m->category, $m->name, $result));
+            }
+        }
+        $self->write_chunk("\n\n");
+    }
+    $self->finish('END');
+}
+
 1;
 # vim: set sw=4 et:

@@ -351,6 +351,7 @@ sub startup {
 
     $r->get('/tests')->name('tests')->to('test#list');
     $r->get('/tests/overview')->name('tests_overview')->to('test#overview');
+    $r->get('/tests/export')->name('tests_export')->to('test#export');
     $r->post('/tests/list_ajax')->name('tests_ajax')->to('test#list_ajax');
     my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0);
