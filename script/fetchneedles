@@ -5,6 +5,7 @@ set -e
 : ${branch:="master"}
 : ${email:="openqa@$HOSTNAME"}
 : ${username:="openQA web UI"}
+: ${product:="$dist"}
 
 : ${needles_separate:="1"}
 : ${needles_giturl:="git://github.com/os-autoinst/os-autoinst-needles-opensuse.git"}
@@ -33,12 +34,23 @@ if [ -w / ]; then
 	exit 1
 fi
 
+needlesdir()
+{
+    # new layout since
+    # https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/920
+    if [ -d "$dir/$dist/products" ]; then
+        echo "$dir/$dist/products/$product/needles"
+    else
+        echo "needles"
+    fi
+}
+
 do_fetch()
 {
 	git fetch -q
 	git rebase -q
 	if [ "$needles_separate" = 1 ]; then
-		cd needles
+        cd $(needlesdir)
 		git fetch -q
 		git rebase -q
 	fi
@@ -63,8 +75,8 @@ else
 		git config user.email "$email"
 		git config user.name "$username"
 		if [ "$needles_separate" = 1 ]; then
-			[ -d needles ] || mkdir needles
-			cd needles
+            [ -d $(needlesdir) ] || mkdir $(needlesdir)
+            cd $(needlesdir)
 			git clone -b "$needles_branch" "$needles_giturl" .
 			git config user.email "$email"
 			git config user.name "$username"
