@@ -51,8 +51,8 @@ ProxyPass /error !
 #webSocket proxy pass to different port
 ProxyPass "/api/v1/ws/" "ws://localhost:9527/ws/" keepalive=On
 
-ProxyPass / http://localhost:9526/ keepalive=On timeout=600
-ProxyPassReverse / http://localhost:9526/ timeout=600
+ProxyPass / http://localhost:9526/ keepalive=On
+ProxyPassReverse / http://localhost:9526/
 
 <If "%{HTTPS} == 'on'">
 RequestHeader set X-Forwarded-HTTPS "1"
