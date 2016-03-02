@@ -151,12 +151,20 @@ sub group_overview {
     my $group = $self->db->resultset('JobGroups')->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    my $res      = $self->_group_result($group, $limit_builds);
+    my $res = $self->_group_result($group, $limit_builds);
     my @comments = $group->comments->all;
-    my @tags     = grep { defined $_->tag } @comments;
-    for (@tags) {
-        my @tag = $_->tag;
-        $res->{$tag[0]}->{tag} = {type => $tag[1], description => $tag[2]};
+    for my $comment (@comments) {
+        my @tag   = $comment->tag;
+        my $build = $tag[0];
+        next unless $build;
+        $self->app->log->debug('Tag found on build ' . $tag[0] . ' of type ' . $tag[1]);
+        $self->app->log->debug('description: ' . $tag[2]) if $tag[2];
+        if ($tag[1] eq '-important') {
+            $self->app->log->debug('Deleting tag on build ' . $build);
+            delete $res->{$build}->{tag};
+            next;
+        }
+        $res->{$build}->{tag} = {type => $tag[1], description => $tag[2]};
     }
     $self->stash('result',   $res);
     $self->stash('group',    $group);

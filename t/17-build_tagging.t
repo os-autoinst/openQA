@@ -42,6 +42,11 @@ sub set_up {
     $test_case->login($t, 'percival');
 }
 
+sub post_comment_1001 {
+    my ($comment) = @_;
+    $t->post_ok('/group_overview/1001/add_comment', $auth => form => {text => $comment})->status_is(302);
+}
+
 set_up;
 
 =pod
@@ -53,12 +58,24 @@ subtest 'tag icon on group overview on important build' => sub {
     my $tag               = 'tag:0048:important:GM';
     my $unrelated_comment = 'something_else';
     for my $comment ($tag, $unrelated_comment) {
-        $t->post_ok('/group_overview/1001/add_comment', $auth => form => {text => $comment})->status_is(302);
+        post_comment_1001 $comment;
     }
     my $get  = $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
     is(scalar @tags, 1,    'one build tagged');
     is($tags[0],     'GM', 'tag description shown');
+};
+
+=pod
+Given a comment C<tag:<build_ref>:important> exists on a job group comments
+When user creates another comment with C<tag:<build_ref>:-important>
+Then on page 'group_overview' build C<<build_ref>> is not shown as important
+=cut
+subtest 'mark build as non-important build' => sub {
+    post_comment_1001 'tag:0048:-important';
+    my $get  = $t->get_ok('/group_overview/1001')->status_is(200);
+    my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    is(scalar @tags, 0, 'no build tagged anymore');
 };
 
 done_testing;
