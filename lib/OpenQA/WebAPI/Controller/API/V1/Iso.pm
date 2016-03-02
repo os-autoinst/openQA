@@ -347,6 +347,24 @@ sub schedule_iso {
             $self->job_create_dependencies($job, \%testsuite_ids);
             push @ids, $job->id;
         }
+
+        # enqueue gru jobs
+        if (%downloads and @ids) {
+            # array of hashrefs job_id => id; this is what create needs
+            # to create entries in a related table (gru_dependencies)
+            my @jobsarray = map +{job_id => $_}, @ids;
+            for my $url (keys %downloads) {
+                my $path = $downloads{$url};
+                $self->app->db->resultset('GruTasks')->create(
+                    {
+                        taskname => 'download_asset',
+                        priority => 20,
+                        args     => [$url, $path],
+                        run_at   => now(),
+                        jobs     => \@jobsarray,
+                    });
+            }
+        }
     };
 
     try {
@@ -360,23 +378,6 @@ sub schedule_iso {
         @ids = ();
     };
 
-    # enqueue gru jobs
-    if (%downloads and @ids) {
-        # array of hashrefs job_id => id; this is what create needs
-        # to create entries in a related table (gru_dependencies)
-        my @jobsarray = map +{job_id => $_}, @ids;
-        for my $url (keys %downloads) {
-            my $path = $downloads{$url};
-            $self->app->db->resultset('GruTasks')->create(
-                {
-                    taskname => 'download_asset',
-                    priority => 20,
-                    args     => [$url, $path],
-                    run_at   => now(),
-                    jobs     => \@jobsarray,
-                });
-        }
-    }
     $self->app->db->resultset('GruTasks')->create(
         {
             taskname => 'limit_assets',
@@ -385,8 +386,14 @@ sub schedule_iso {
             run_at   => now(),
         });
 
-    #notify workers new jobs are available
-    job_notify_workers;
+    # if the notification fails
+    try {
+        #notify workers new jobs are available
+        job_notify_workers;
+    }
+    catch {
+        $self->app->log->warn("Failed to notify workers");
+    };
     return @ids;
 }
 
