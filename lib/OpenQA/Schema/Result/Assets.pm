@@ -115,7 +115,7 @@ sub ensure_size {
 }
 
 # A GRU task...arguments are the URL to grab and the full path to save
-# it in. scheduled in job_schedule_iso()
+# it in. scheduled in ISO controller
 sub download_asset {
     my ($app, $args)   = @_;
     my ($url, $dlpath) = @{$args};
