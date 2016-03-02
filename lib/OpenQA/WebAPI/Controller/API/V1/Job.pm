@@ -115,9 +115,20 @@ sub create {
     my $json = {};
     my $status;
     try {
-        my $job = $ipc->scheduler('job_create', \%params, 0);
+        my $job = $ipc->scheduler('job_create', \%params);
         $self->emit_event('openqa_job_create', {id => $job->{id}, %params});
         $json->{id} = $job->{id};
+
+        # enqueue gru job
+        $self->result_source->schema->resultset('GruTasks')->create(
+            {
+                taskname => 'limit_assets',
+                priority => 10,
+                args     => [],
+                run_at   => now(),
+            });
+
+        OpenQA::Scheduler::Scheduler::job_notify_workers();
     }
     catch {
         $status = 400;

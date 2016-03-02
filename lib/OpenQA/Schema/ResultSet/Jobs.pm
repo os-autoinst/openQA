@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +17,8 @@
 package OpenQA::Schema::ResultSet::Jobs;
 use strict;
 use base qw/DBIx::Class::ResultSet/;
+use DBIx::Class::Timestamps qw/now/;
+use OpenQA::Schema::Result::JobDependencies;
 
 =head2 latest_build
 
@@ -80,7 +82,8 @@ the return array.
 
 =cut
 sub latest_jobs {
-    my $self = shift;
+    my ($self) = @_;
+
     my @jobs = $self->search(undef, {order_by => ['me.id DESC']});
     my @latest;
     my %seen;
@@ -99,5 +102,69 @@ sub latest_jobs {
     }
     return @latest;
 }
+
+sub create_from_settings {
+    my ($self, $settings) = @_;
+    my %settings = %$settings;
+
+    my %new_job_args = (test => $settings{TEST});
+
+    if ($settings{NAME}) {
+        my $njobs = $self->search({slug => $settings{NAME}})->count;
+        return 0 if $njobs;
+
+        $new_job_args{slug} = $settings{NAME};
+        delete $settings{NAME};
+    }
+
+    if ($settings{_GROUP}) {
+        $new_job_args{group} = {name => delete $settings{_GROUP}};
+    }
+
+    if ($settings{_START_AFTER_JOBS}) {
+        for my $id (@{$settings{_START_AFTER_JOBS}}) {
+            push @{$new_job_args{parents}},
+              {
+                parent_job_id => $id,
+                dependency    => OpenQA::Schema::Result::JobDependencies::CHAINED,
+              };
+        }
+        delete $settings{_START_AFTER_JOBS};
+    }
+
+    if ($settings{_PARALLEL_JOBS}) {
+        for my $id (@{$settings{_PARALLEL_JOBS}}) {
+            push @{$new_job_args{parents}},
+              {
+                parent_job_id => $id,
+                dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
+              };
+        }
+        delete $settings{_PARALLEL_JOBS};
+    }
+
+    my $job = $self->create(\%new_job_args);
+    my @job_settings;
+
+    # prepare the settings for bulk insert
+    while (my ($k, $v) = each %settings) {
+        my @values = ($v);
+        if ($k eq 'WORKER_CLASS') {    # special case
+            @values = split(m/,/, $v);
+        }
+        my $now = now;
+        for my $l (@values) {
+            next unless $l;
+            push @job_settings, {job_id => $job->id, t_created => $now, t_updated => $now, key => $k, value => $l};
+        }
+    }
+
+    $self->result_source->schema->resultset("JobSettings")->populate(\@job_settings);
+    # this will associate currently available assets with job
+    $job->register_assets_from_settings;
+
+    return $job;
+}
+
 1;
 # vim: set sw=4 et:

@@ -24,7 +24,7 @@ use warnings;
 use Data::Dump qw/pp dd/;
 use Test::More;
 use Test::Warnings;
-use OpenQA::Scheduler::Scheduler qw/job_create job_grab job_get job_restart job_set_done/;
+use OpenQA::Scheduler::Scheduler qw/job_grab job_get job_restart job_set_done/;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::IPC;
 use OpenQA::WebSockets;
@@ -61,7 +61,7 @@ my $workercaps = {
     WORKER_CLASS  => 'testAworker',
 };
 
-my $jobA   = job_create(\%settings);
+my $jobA   = $schema->resultset('Jobs')->create_from_settings(\%settings);
 my @assets = $jobA->jobs_assets;
 @assets = map { $_->asset_id } @assets;
 is(scalar @assets, 1, 'one asset assigned before grabbing');
@@ -95,7 +95,7 @@ is($assets[0], $theasset, 'clone does have the same asset assigned');
 $settings{_START_AFTER_JOBS} = [$cloneA->id];
 $settings{HDD_1}             = 'jobasset.raw';
 $settings{TEST}              = 'testB';
-my $jobB = job_create(\%settings);
+my $jobB = $schema->resultset('Jobs')->create_from_settings(\%settings);
 @assets = $jobB->jobs_assets;
 @assets = map { $_->asset_id } @assets;
 is(scalar @assets, 1, 'one asset assigned before grabbing');
