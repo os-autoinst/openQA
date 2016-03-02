@@ -151,9 +151,16 @@ sub group_overview {
     my $group = $self->db->resultset('JobGroups')->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    my $res = $self->_group_result($group, $limit_builds);
-    $self->stash('result', $res);
-    $self->stash('group',  $group);
+    my $res      = $self->_group_result($group, $limit_builds);
+    my @comments = $group->comments->all;
+    my @tags     = grep { defined $_->tag } @comments;
+    for (@tags) {
+        my @tag = $_->tag;
+        $res->{$tag[0]}->{tag} = {type => $tag[1], description => $tag[2]};
+    }
+    $self->stash('result',   $res);
+    $self->stash('group',    $group);
+    $self->stash('comments', \@comments);
 }
 
 sub add_comment {
