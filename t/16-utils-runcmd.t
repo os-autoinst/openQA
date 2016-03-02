@@ -24,8 +24,12 @@ use strict;
 use OpenQA::Utils;
 use Test::More;
 use Test::Warnings;
+use Test::Output qw/stderr_like/;
 
 ok(run_cmd_with_log(['echo', 'Hallo', 'Welt']));
-is(run_cmd_with_log(['false']), "");
+stderr_like {
+    is(run_cmd_with_log(['false']), "");
+}
+qr/[WARN].*[ERROR]/;
 
 done_testing();

@@ -19,7 +19,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &needledir
   &productdir
   &testcasedir
-  &testresultdir
   &file_content
   &log_debug
   &save_base64_png
@@ -82,17 +81,6 @@ sub testcasedir($$) {
     $dir .= "-$version" if $version && -e "$dir-$version";
 
     return $dir;
-}
-
-sub testresultdir($) {
-    my ($fn) = @_;
-    confess "FN" unless ($fn);
-    "$basedir/$prj/testresults/$fn";
-}
-
-sub data_name($) {
-    $_[0] =~ m/^.*\/(.*)\.\w\w\w(?:\.gz)?$/;
-    return $1;
 }
 
 sub needledir {
