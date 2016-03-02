@@ -52,9 +52,9 @@ sub new {
             last;
         }
     }
-    # When database locking arises, the server takes some time to reply.
-    # We could also adjust sqlite_busy_timeout in DBI server side.
-    $self->inactivity_timeout(40);
+    # Scheduling a couple of hundred jobs takes quite some time - so we better wait a couple of minutes
+    # (default is 20 seconds)
+    $self->inactivity_timeout(600);
 
     $self->on(
         start => sub {
