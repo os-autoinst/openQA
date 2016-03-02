@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -308,7 +308,13 @@ sub schedule_iso {
             $cond{$k} = $jobs->[0]->{$k};
         }
         if (%cond) {
-            OpenQA::Scheduler::Scheduler::job_cancel(\%cond, 1);    # have new build jobs instead
+            try {
+                OpenQA::Scheduler::Scheduler::job_cancel(\%cond, 1);    # have new build jobs instead
+            }
+            catch {
+                my $error = shift;
+                $self->app->log->warn("Failed to cancel old jobs: $error");
+            };
         }
     }
 
@@ -318,7 +324,7 @@ sub schedule_iso {
     my $coderef = sub {
         my @jobs = ();
         # remember ids of created parents
-        my %testsuite_ids;                                          # key: "suite:machine", value: array of job ids
+        my %testsuite_ids;    # key: "suite:machine", value: array of job ids
 
         for my $settings (@{$jobs || []}) {
             my $prio     = delete $settings->{PRIO};
@@ -372,9 +378,7 @@ sub schedule_iso {
     }
     catch {
         my $error = shift;
-        OpenQA::Utils::log_debug("rollback job_schedule_iso: $error");
-        die "Rollback failed during failed job_schedule_iso: $error"
-          if ($error =~ /Rollback failed/);
+        $self->app->log->warn("Failed to schedule ISO: $error");
         @ids = ();
     };
 
