@@ -70,8 +70,8 @@ print $fd "suse_mirror=http://blah/\n";
 close $fd;
 
 $t = Test::Mojo->new('OpenQA::WebAPI');
-ok($t->app->config->{'global'}->{'allowed_hosts'} eq 'foo bar',    'allowed hosts');
-ok($t->app->config->{'global'}->{'suse_mirror'} eq 'http://blah/', 'suse mirror');
+ok($t->app->config->{global}->{allowed_hosts} eq 'foo bar',    'allowed hosts');
+ok($t->app->config->{global}->{suse_mirror} eq 'http://blah/', 'suse mirror');
 
 unlink($ENV{OPENQA_CONFIG} . '/openqa.ini');
 

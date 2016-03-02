@@ -209,13 +209,6 @@ sub job_set_running {
     return OpenQA::Scheduler::Scheduler::job_set_running($args);
 }
 
-dbus_method('job_schedule_iso', [['dict', 'string', ['variant']]], [['array', 'uint32']]);
-sub job_schedule_iso {
-    my ($self, $args) = @_;
-    my @ids = OpenQA::Scheduler::Scheduler::job_schedule_iso(%$args);
-    return \@ids;
-}
-
 ## Worker auth
 dbus_method('validate_workerid', ['uint32'], ['bool']);
 sub validate_workerid {
