@@ -22,6 +22,7 @@ use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings ':all';
+use Test::Output qw/stdout_like stderr_like/;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
@@ -68,6 +69,13 @@ sub find_job {
     return undef;
 }
 
+sub schedule_iso {
+    my ($args, $status) = @_;
+    $status //= 200;
+    my $ret = $t->post_ok('/api/v1/isos', form => $args)->status_is($status);
+    return $ret->tx->res;
+}
+
 # create Test DBus bus and service for fake WebSockets and Scheduler call
 my $ipc = OpenQA::IPC->ipc('', 1);
 my $ws  = OpenQA::WebSockets->new;
@@ -96,6 +104,10 @@ $ret = $t->get_ok("/api/v1/jobs/$clone99981")->status_is(200);
 is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job $clone99981 is scheduled');
 
 lj;
+
+my @tasks;
+@tasks = $t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'});
+is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
@@ -176,5 +188,39 @@ $ret = $t->post_ok('/api/v1/isos', form => {iso => $iso, tests => "kde/usb"})->s
 $ret = $t->delete_ok("/api/v1/isos/$iso")->status_is(200);
 # now the jobs should be gone
 $ret = $t->get_ok('/api/v1/jobs/$newid')->status_is(404);
+
+$t->app->config->{global}->{download_domains} = 'localhost';
+
+my $rsp;
+
+# Schedule download of an existing ISO
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso'}) };
+map { like($_, $expected, 'expected warning') } @warnings;
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 0, 'gru task should not be created');
+
+# Schedule download of a non-existing ISO
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost/nonexistent.iso'}) };
+is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
+map { like($_, $expected, 'expected warning') } @warnings;
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'gru task should be created');
+
+# Using non-asset _URL does not create gru job and schedule jobs
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', NO_ASSET_URL => 'http://localhost/nonexistent.iso'}) };
+map { like($_, $expected, 'expected warning') } @warnings;
+is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'no additional gru task should be created');
+
+# Using asset _URL but without filename extractable from URL create warning in log file, jobs, but no gru job
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost'}) };
+map { like($_, $expected, 'expected warning') } @warnings;
+is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'no additional gru task should be created');
+
+# Using asset _URL outside of whitelist will yield 403
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://adamshost/nonexistant.iso'}, 403) };
+
+map { like($_, $expected, 'expected warning') } @warnings;
+is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'no additional gru task should be created');
 
 done_testing();
