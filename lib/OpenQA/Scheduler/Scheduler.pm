@@ -101,27 +101,6 @@ sub schema {
     return $schema;
 }
 
-=head2 _hashref()
-
-Convert an ORM object into a hashref. The API only export hashes and
-not ORM objects.
-
-=cut
-
-# XXX TODO - Remove this useless function when is not needed anymore
-sub _hashref {
-    my $obj    = shift;
-    my @fields = @_;
-
-    my %hashref = ();
-    foreach my $field (@fields) {
-        $hashref{$field} = $obj->$field;
-    }
-
-    return \%hashref;
-}
-
-
 sub _validate_workerid($) {
     my $workerid = shift;
     die "invalid worker id\n" unless $workerid;
