@@ -172,6 +172,11 @@ has secrets => sub {
     return $ret;
 };
 
+sub _log_format {
+    my ($time, $level, @lines) = @_;
+    return '[' . localtime($time) . "] [$$:$level] " . join "\n", @lines, '';
+}
+
 # This method will run once at server start
 sub startup {
     my $self = shift;
@@ -183,6 +188,7 @@ sub startup {
 
     my $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{logging}->{file};
     $self->log->path($logfile);
+    $self->log->format(\&_log_format);
 
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
