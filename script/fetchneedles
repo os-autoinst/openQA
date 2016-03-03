@@ -47,12 +47,23 @@ needlesdir()
 
 do_fetch()
 {
+	local target=$1
 	git fetch -q
 	git rebase -q
 	if [ "$needles_separate" = 1 ]; then
-        cd $(needlesdir)
-		git fetch -q
+	    if test -d products; then
+		for nd in products/*/needles; do
+		    cd $target/$nd && (
+			git fetch -q
+			git rebase -q
+		    )
+		done
+            else
+		cd $target/needles
+                git fetch -q
 		git rebase -q
+		cd ../..
+            fi
 	fi
 }
 
@@ -60,10 +71,11 @@ if [ "$updateall" = 1 ]; then
 	cd "$dir"
 	fail=0
 	for repo in *; do
-		! [ -L "$dir/$repo" ] || continue
-		[ -d "$dir/$repo/.git" ] || continue
-		cd "$dir/$repo"
-		do_fetch || fail=1
+		target="$dir/$repo"
+		! [ -L "$target" ] || continue
+		[ -d "$target/.git" ] || continue
+		cd "$target"
+		do_fetch "$target" || fail=1
 	done
 	exit "$fail"
 else
@@ -75,13 +87,13 @@ else
 		git config user.email "$email"
 		git config user.name "$username"
 		if [ "$needles_separate" = 1 ]; then
-            [ -d $(needlesdir) ] || mkdir $(needlesdir)
-            cd $(needlesdir)
-			git clone -b "$needles_branch" "$needles_giturl" .
-			git config user.email "$email"
-			git config user.name "$username"
+		    [ -d $(needlesdir) ] || mkdir $(needlesdir)
+		    cd $(needlesdir)
+		    git clone -b "$needles_branch" "$needles_giturl" .
+		    git config user.email "$email"
+		    git config user.name "$username"
 		fi
 	else
-		do_fetch
+		do_fetch "$target"
 	fi
 fi
