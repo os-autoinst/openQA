@@ -198,7 +198,7 @@ sub result {
     my $result = $self->param('result');
     my $ipc    = OpenQA::IPC->ipc;
 
-    my $res = $ipc->scheduler('job_update_result', {jobid => $jobid, result => $result});
+    my $res = $self->app->schema->resultset("Jobs")->find($jobid)->update({result => $result});
     $self->emit_event('openqa_job_update_result', {id => $jobid, result => $result}) if ($res);
     # See comment in set_command
     $self->render(json => {result => \$res});

@@ -52,9 +52,9 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
 @EXPORT = qw(worker_register job_create
-  job_get jobs_get_dead_worker
+  job_get
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
-  job_delete job_update_result job_restart job_cancel command_enqueue
+  job_delete job_restart job_cancel command_enqueue
   job_set_stop job_stop iso_stop_old_builds
   asset_list asset_get asset_delete asset_register query_jobs
 );
@@ -100,27 +100,6 @@ sub schema {
     $schema = OpenQA::Schema::connect_db() unless $schema;
     return $schema;
 }
-
-=head2 _hashref()
-
-Convert an ORM object into a hashref. The API only export hashes and
-not ORM objects.
-
-=cut
-
-# XXX TODO - Remove this useless function when is not needed anymore
-sub _hashref {
-    my $obj    = shift;
-    my @fields = @_;
-
-    my %hashref = ();
-    foreach my $field (@fields) {
-        $hashref{$field} = $obj->$field;
-    }
-
-    return \%hashref;
-}
-
 
 sub _validate_workerid($) {
     my $workerid = shift;
@@ -224,26 +203,6 @@ sub job_get($) {
         return _job_get({'me.id' => $value});
     }
     return _job_get({slug => $value});
-}
-
-sub jobs_get_dead_worker {
-    my $threshold = shift;
-
-    my %cond = (
-        state              => OpenQA::Schema::Result::Jobs::RUNNING,
-        'worker.t_updated' => {'<' => $threshold},
-    );
-    my %attrs = (join => 'worker',);
-
-    my $dead_jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
-
-    my @results = ();
-    while (my $job = $dead_jobs->next) {
-        my $j = _hashref($job, qw/ id state result worker_id/);
-        push @results, $j;
-    }
-
-    return \@results;
 }
 
 # XXX TODO: Do not expand the Job
@@ -727,19 +686,6 @@ sub job_delete {
     my $cnt = schema->resultset("Jobs")->search(\%cond, \%attrs)->delete;
 
     return $cnt;
-}
-
-sub job_update_result {
-    my %args = @_;
-
-    my $id = int($args{jobid});
-
-    my $r = schema->resultset("Jobs")->search({id => $id})->update(
-        {
-            result => $args{result},
-        });
-
-    return $r;
 }
 
 sub _job_find_smart($$$) {

@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -98,9 +98,22 @@ sub _read_config {
     $self->app->config->{_openid_secret} = db_helpers::rndstr(16);
 }
 
+sub _get_dead_worker {
+    my ($self, $threshold) = @_;
+
+    my %cond = (
+        state              => OpenQA::Schema::Result::Jobs::RUNNING,
+        'worker.t_updated' => {'<' => $threshold},
+    );
+    my %attrs = (join => 'worker',);
+
+    return $self->app->db->resultset("Jobs")->search(\%cond, \%attrs);
+}
+
 # check if have worker dead then clean up its job
+# TODO: this really should live in websockets service, not in webapi
 sub _workers_checker {
-    my $self = shift;
+    my ($self) = @_;
 
     # Start recurring timer, check workers alive every 20 mins
     my $id = Mojo::IOLoop->recurring(
@@ -110,17 +123,17 @@ sub _workers_checker {
 
             Mojo::IOLoop->timer(
                 10 => sub {
-                    my $ipc = OpenQA::IPC->ipc;
-                    my $dead_jobs = $ipc->scheduler('jobs_get_dead_worker', $threshold);
-                    foreach my $job (@$dead_jobs) {
+                    my $dead_jobs = $self->_get_dead_worker_jobs($threshold);
+                    my $ipc       = OpenQA::IPC->ipc;
+                    for my $job ($dead_jobs->all) {
                         my %args = (
-                            jobid  => $job->{id},
+                            jobid  => $job->id,
                             result => 'incomplete',
                         );
                         my $result = $ipc->scheduler('job_set_done', \%args);
                         if ($result) {
-                            $ipc->scheduler('job_duplicate', {jobid => $job->{id}});
-                            print STDERR "cancelled dead job $job->{id} and re-duplicated done\n";
+                            $ipc->scheduler('job_duplicate', {jobid => $job->id});
+                            $self->app->log->error(sprintf("cancelled dead job %d and re-duplicated done\n", $job->id));
                         }
                     }
                 });

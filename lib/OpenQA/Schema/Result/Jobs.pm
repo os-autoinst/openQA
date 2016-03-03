@@ -789,6 +789,10 @@ sub create_artefact {
 
     $asset->move_to(join('/', $storepath, $asset->filename));
     OpenQA::Utils::log_debug("moved to $storepath " . $asset->filename);
+
+    # mark the worker as alive
+    $self->worker->seen;
+
     1;
 }
 
@@ -814,6 +818,9 @@ sub create_asset {
     $asset->move_to(join('/', $fpath, $fname));
     OpenQA::Utils::log_debug("moved to $fpath " . $fname);
     $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
+
+    # mark the worker as alive
+    $self->worker->seen;
 
     1;
 }
@@ -886,6 +893,8 @@ sub update_status {
         }
     }
     $self->update();
+    # mark the worker as alive
+    $self->worker->seen;
 
     # result=1 for the call, job_result for the current state
     $ret->{job_result} = $self->calculate_result();

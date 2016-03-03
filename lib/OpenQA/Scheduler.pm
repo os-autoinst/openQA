@@ -172,18 +172,6 @@ sub job_set_done {
     return OpenQA::Scheduler::Scheduler::job_set_done(%$args);
 }
 
-dbus_method('jobs_get_dead_worker', ['string'], [['array', ['dict', 'string', ['variant']]]]);
-sub jobs_get_dead_worker {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::jobs_get_dead_worker($args);
-}
-
-dbus_method('job_update_result', [['dict', 'string', ['variant']]], ['uint32']);
-sub job_update_result {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_update_result(%$args);
-}
-
 dbus_method('job_update_status', ['uint32', ['dict', 'string', ['variant']]], ['uint32']);
 sub job_update_status {
     my ($self, $jobid, $status) = @_;
