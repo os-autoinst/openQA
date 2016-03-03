@@ -123,19 +123,22 @@ $settingsI{WORKER_CLASS} = 'client,qemu_x86_64';
 $settingsJ{TEST}         = 'J';
 $settingsJ{WORKER_CLASS} = 'qemu_x86_64';
 
+sub job_create {
+    return $schema->resultset('Jobs')->create_from_settings(@_);
+}
 
-my $jobA = OpenQA::Scheduler::Scheduler::job_create(\%settingsA, 1);
-my $jobB = OpenQA::Scheduler::Scheduler::job_create(\%settingsB, 1);
-my $jobC = OpenQA::Scheduler::Scheduler::job_create(\%settingsC, 1);
-my $jobD = OpenQA::Scheduler::Scheduler::job_create(\%settingsD, 1);
-my $jobE = OpenQA::Scheduler::Scheduler::job_create(\%settingsE, 1);
-my $jobF = OpenQA::Scheduler::Scheduler::job_create(\%settingsF, 1);
-my $jobG = OpenQA::Scheduler::Scheduler::job_create(\%settingsG, 1);
+my $jobA = job_create(\%settingsA);
+my $jobB = job_create(\%settingsB);
+my $jobC = job_create(\%settingsC);
+my $jobD = job_create(\%settingsD);
+my $jobE = job_create(\%settingsE);
+my $jobF = job_create(\%settingsF);
+my $jobG = job_create(\%settingsG);
 
-my $jobH = OpenQA::Scheduler::Scheduler::job_create(\%settingsH, 1);
+my $jobH = job_create(\%settingsH);
 $settingsI{_PARALLEL_JOBS} = [$jobH->id];
-my $jobI = OpenQA::Scheduler::Scheduler::job_create(\%settingsI, 1);
-my $jobJ = OpenQA::Scheduler::Scheduler::job_create(\%settingsJ, 1);
+my $jobI = job_create(\%settingsI);
+my $jobJ = job_create(\%settingsJ);
 
 $jobA->set_prio(3);
 $jobB->set_prio(2);

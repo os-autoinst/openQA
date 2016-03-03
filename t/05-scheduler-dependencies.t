@@ -96,21 +96,25 @@ $settingsD{TEST} = 'D';
 $settingsE{TEST} = 'E';
 $settingsF{TEST} = 'F';
 
-my $jobA = OpenQA::Scheduler::Scheduler::job_create(\%settingsA);
+sub _job_create {
+    return $schema->resultset('Jobs')->create_from_settings(@_);
+}
 
-my $jobB = OpenQA::Scheduler::Scheduler::job_create(\%settingsB);
+my $jobA = _job_create(\%settingsA);
+
+my $jobB = _job_create(\%settingsB);
 
 $settingsC{_PARALLEL_JOBS} = [$jobB->id];
-my $jobC = OpenQA::Scheduler::Scheduler::job_create(\%settingsC);
+my $jobC = _job_create(\%settingsC);
 
 $settingsD{_PARALLEL_JOBS} = [$jobA->id];
-my $jobD = OpenQA::Scheduler::Scheduler::job_create(\%settingsD);
+my $jobD = _job_create(\%settingsD);
 
 $settingsE{_PARALLEL_JOBS} = [$jobC->id, $jobD->id];
-my $jobE = OpenQA::Scheduler::Scheduler::job_create(\%settingsE);
+my $jobE = _job_create(\%settingsE);
 
 $settingsF{_PARALLEL_JOBS} = [$jobC->id];
-my $jobF = OpenQA::Scheduler::Scheduler::job_create(\%settingsF);
+my $jobF = _job_create(\%settingsF);
 
 $jobA->set_prio(3);
 $jobB->set_prio(2);
@@ -390,12 +394,12 @@ is($job->{settings}->{NICVLAN}, 2,      "different vlan");
 ## check CHAINED dependency cloning
 my %settingsX = %settings;
 $settingsX{TEST} = 'X';
-my $jobX = OpenQA::Scheduler::Scheduler::job_create(\%settingsX);
+my $jobX = _job_create(\%settingsX);
 
 my %settingsY = %settings;
 $settingsY{TEST}              = 'Y';
 $settingsY{_START_AFTER_JOBS} = [$jobX->id];
-my $jobY = OpenQA::Scheduler::Scheduler::job_create(\%settingsY);
+my $jobY = _job_create(\%settingsY);
 
 ok(job_set_done(jobid => $jobX->id, result => 'passed'), 'jobX set to done');
 # since we are skipping job_grab, reload missing columns from DB
@@ -507,16 +511,16 @@ $settingsJ{TEST} = 'J';
 $settingsK{TEST} = 'K';
 $settingsL{TEST} = 'L';
 
-my $jobH = OpenQA::Scheduler::Scheduler::job_create(\%settingsH);
+my $jobH = _job_create(\%settingsH);
 
 $settingsK{_PARALLEL_JOBS} = [$jobH->id];
-my $jobK = OpenQA::Scheduler::Scheduler::job_create(\%settingsK);
+my $jobK = _job_create(\%settingsK);
 
 $settingsJ{_PARALLEL_JOBS} = [$jobH->id];
-my $jobJ = OpenQA::Scheduler::Scheduler::job_create(\%settingsJ);
+my $jobJ = _job_create(\%settingsJ);
 
 $settingsL{_PARALLEL_JOBS} = [$jobJ->id];
-my $jobL = OpenQA::Scheduler::Scheduler::job_create(\%settingsL);
+my $jobL = _job_create(\%settingsL);
 
 # hack jobs to appear running to scheduler
 $jobH->state(OpenQA::Schema::Result::Jobs::RUNNING);
@@ -576,18 +580,18 @@ $settingsU{TEST} = 'U';
 $settingsR{TEST} = 'R';
 $settingsT{TEST} = 'T';
 
-my $jobQ = OpenQA::Scheduler::Scheduler::job_create(\%settingsQ);
+my $jobQ = _job_create(\%settingsQ);
 
 $settingsW{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobW = OpenQA::Scheduler::Scheduler::job_create(\%settingsW);
+my $jobW = _job_create(\%settingsW);
 $settingsU{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobU = OpenQA::Scheduler::Scheduler::job_create(\%settingsU);
+my $jobU = _job_create(\%settingsU);
 $settingsR{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobR = OpenQA::Scheduler::Scheduler::job_create(\%settingsR);
+my $jobR = _job_create(\%settingsR);
 
 $settingsT{_PARALLEL_JOBS} = [$jobW->id, $jobU->id, $jobR->id];
 $settingsT{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobT = OpenQA::Scheduler::Scheduler::job_create(\%settingsT);
+my $jobT = _job_create(\%settingsT);
 
 # hack jobs to appear to scheduler in desired state
 $jobQ->state(OpenQA::Schema::Result::Jobs::DONE);
@@ -665,12 +669,12 @@ $settingsP{TEST} = 'P';
 $settingsO{TEST} = 'O';
 $settingsI{TEST} = 'I';
 
-my $jobP = OpenQA::Scheduler::Scheduler::job_create(\%settingsP);
+my $jobP = _job_create(\%settingsP);
 
 $settingsO{_PARALLEL_JOBS} = [$jobP->id];
-my $jobO = OpenQA::Scheduler::Scheduler::job_create(\%settingsO);
+my $jobO = _job_create(\%settingsO);
 $settingsI{_PARALLEL_JOBS} = [$jobO->id];
-my $jobI = OpenQA::Scheduler::Scheduler::job_create(\%settingsI);
+my $jobI = _job_create(\%settingsI);
 
 # hack jobs to appear to scheduler in desired state
 $jobP->state(OpenQA::Schema::Result::Jobs::DONE);

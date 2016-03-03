@@ -331,7 +331,7 @@ sub schedule_iso {
             my $group_id = delete $settings->{GROUP_ID};
 
             # create a new job with these parameters and count if successful, do not send job notifies yet
-            my $job = OpenQA::Scheduler::Scheduler::job_create($settings, 1);
+            my $job = $self->app->db->resultset('Jobs')->create_from_settings($settings);
 
             if ($job) {
                 push @jobs, $job;

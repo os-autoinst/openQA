@@ -132,13 +132,13 @@ my $job_ref = {
 };
 
 my $iso = sprintf("%s/%s", $OpenQA::Utils::isodir, $settings{ISO});
-my $job = OpenQA::Scheduler::Scheduler::job_create(\%settings);
+my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
 is($job->id, 1, "job_create");
 
 my %settings2 = %settings;
 $settings2{NAME}  = "OTHER NAME";
 $settings2{BUILD} = "44";
-my $job2 = OpenQA::Scheduler::Scheduler::job_create(\%settings2);
+my $job2 = $schema->resultset('Jobs')->create_from_settings(\%settings2);
 
 $job->set_prio(40);
 my $new_job = OpenQA::Scheduler::Scheduler::job_get($job->id);
