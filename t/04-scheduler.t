@@ -345,17 +345,6 @@ $schema->resultset('Jobs')->find($job_id)->set_prio(100);
 $job = OpenQA::Scheduler::Scheduler::job_get($job_id);
 is($job->{priority}, 100, "job->set_prio");
 
-
-# Testing job_update_result
-%args = (
-    jobid  => $job_id,
-    result => 'passed',
-);
-$result = OpenQA::Scheduler::Scheduler::job_update_result(%args);
-ok($result == 1, "job_update_result");
-$job = OpenQA::Scheduler::Scheduler::job_get($job_id);
-is($job->{result}, $args{result}, "job_get after update");
-
 # Testing job_restart
 # TBD
 
