@@ -98,7 +98,7 @@ sub _read_config {
     $self->app->config->{_openid_secret} = db_helpers::rndstr(16);
 }
 
-sub _get_dead_worker {
+sub _get_dead_worker_jobs {
     my ($self, $threshold) = @_;
 
     my %cond = (
