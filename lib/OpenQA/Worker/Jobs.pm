@@ -302,6 +302,10 @@ sub _stop_job($;$) {
 }
 
 sub start_job {
+    # block the job from having dangerous settings (isotovideo specific though)
+    # it needs to come from worker_settings
+    delete $job->{settings}->{GENERAL_HW_CMD_DIR};
+
     # update settings with worker-specific stuff
     @{$job->{settings}}{keys %$worker_settings} = values %$worker_settings;
     my $name = $job->{settings}->{NAME};
