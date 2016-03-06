@@ -76,7 +76,7 @@ if ($user) {
     setuid($uid) || die "can't suid to $user";
 }
 
-my $schema = OpenQA::Schema::connect_db('prepare_production');
+my $schema = OpenQA::Schema::connect_db;
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
 my @databases        = qw( MySQL SQLite PostgreSQL );

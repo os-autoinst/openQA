@@ -31,25 +31,29 @@ our @databases = qw/MySQL SQLite PostgreSQL/;
 
 __PACKAGE__->load_namespaces;
 
+sub _get_schema {
+    CORE::state $schema;
+    return \$schema;
+}
+
 sub connect_db {
     my $mode = shift || $ENV{OPENQA_DATABASE} || 'production';
-    my $prepare_mode;
-    if ($mode eq 'prepare_production') {
-        $prepare_mode = 1;
-        $mode         = 'production';
-    }
-    CORE::state $schema;
-    unless ($schema) {
+    my $schema = _get_schema;
+    unless ($$schema) {
         my %ini;
         my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
         tie %ini, 'Config::IniFiles', (-file => $cfgpath . '/database.ini');
-        $schema = __PACKAGE__->connect($ini{$mode});
-
-        if (!$prepare_mode) {
-            deployment_check($schema);
-        }
+        $$schema = __PACKAGE__->connect($ini{$mode});
     }
-    return $schema;
+    return $$schema;
+}
+
+sub disconnect_db {
+    my $schema = _get_schema;
+    if ($$schema) {
+        $$schema->storage->disconnect;
+        undef $$schema;
+    }
 }
 
 sub dsn {

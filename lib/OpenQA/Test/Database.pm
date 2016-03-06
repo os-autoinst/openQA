@@ -25,8 +25,6 @@ sub create {
 
     # New db
     my $schema = OpenQA::Schema::connect_db('test');
-    # when testing UI, new openQA instance is forked. CORE::state $schema is not going to be reinitialized
-    # but the database is actually empty now. Explicitely call check to initialize it.
     OpenQA::Schema::deployment_check($schema);
     $self->insert_fixtures($schema) unless $options{skip_fixtures};
 
