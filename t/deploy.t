@@ -25,10 +25,10 @@ use Test::Warnings;
 use DBIx::Class::DeploymentHandler;
 use SQL::Translator;
 use OpenQA::Schema;
+use Try::Tiny;
 
 my $schema = OpenQA::Schema::connect_db('test');
-
-my $dh = DBIx::Class::DeploymentHandler->new(
+my $dh     = DBIx::Class::DeploymentHandler->new(
     {
         schema              => $schema,
         script_directory    => 'dbicdh',
@@ -36,6 +36,45 @@ my $dh = DBIx::Class::DeploymentHandler->new(
         sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}},
         force_overwrite     => 0,
     });
+my $deployed_version;
+try {
+    $deployed_version = $dh->version_storage->database_version;
+};
+ok(!$deployed_version, 'DB not deployed by plain schema connection');
+
+OpenQA::Schema::deployment_check($schema);
+ok($dh->version_storage->database_version, 'DB deployed');
+is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
+
+$schema->storage->with_deferred_fk_checks(
+    sub {
+        for my $source ($schema->sources) {
+            try {
+                $schema->storage->dbh->do('DROP TABLE ' . $source);
+            };
+        }
+    });
+
+OpenQA::Schema::disconnect_db;
+$schema = OpenQA::Schema::connect_db('test');
+# redeploy DB to older version and check if deployment_check upgrades the DB
+$dh = DBIx::Class::DeploymentHandler->new(
+    {
+        schema              => $schema,
+        script_directory    => 'dbicdh',
+        databases           => 'SQLite',
+        sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}},
+        force_overwrite     => 1,
+    });
+$dh->install({version => $dh->schema_version - 2});
+ok($dh->version_storage->database_version, 'DB deployed');
+is($dh->version_storage->database_version, $dh->schema_version - 2, 'Schema at correct, old, version');
+OpenQA::Schema::deployment_check($schema);
+ok($dh->version_storage->database_version, 'DB deployed');
+is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
+
+# check another deployment_check call doesn't do a thing
+OpenQA::Schema::deployment_check($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 
