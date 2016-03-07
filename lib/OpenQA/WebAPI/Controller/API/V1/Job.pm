@@ -18,6 +18,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::IPC;
 use Try::Tiny;
+use DBIx::Class::Timestamps qw/now/;
 
 sub list {
     my $self = shift;
@@ -120,7 +121,7 @@ sub create {
         $json->{id} = $job->{id};
 
         # enqueue gru job
-        $self->result_source->schema->resultset('GruTasks')->create(
+        $self->app->db->resultset('GruTasks')->create(
             {
                 taskname => 'limit_assets',
                 priority => 10,
