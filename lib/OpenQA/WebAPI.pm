@@ -293,6 +293,10 @@ sub startup {
 
     $OpenQA::Utils::app = $self;
 
+    # take care of DB deployment or migration before starting the main app
+    my $schema = OpenQA::Schema::connect_db;
+    OpenQA::Schema::deployment_check($schema);
+
     # load auth module
     my $auth_method = $self->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
