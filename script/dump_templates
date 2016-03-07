@@ -214,14 +214,18 @@ if ($tables{JobTemplates} && $options{full}) {
     }
 }
 
+sub productkey {
+    my $p = shift;
+    return join('-', map { $p->{$_} } qw/distri version flavor arch/);
+}
+
 for my $table (keys %result) {
     my @r;
     while (my $r = shift @{$result{$table}}) {
         if ($table eq 'JobTemplates') {
             next if $options{group} && $r->{group_name} && !$options{group}->{$r->{group_name}};
             if ($options{product}) {
-                my $k = join('-', map { $r->{product}->{$_} } qw(distri version flavor arch));
-                next unless $options{product}->{$k};
+                next unless $options{product}->{productkey($r->{product})};
             }
         }
         if ($table eq 'TestSuites' && $options{test} && $r->{name} && !$options{test}->{$r->{name}}) {
@@ -231,8 +235,7 @@ for my $table (keys %result) {
             next;
         }
         if ($table eq 'Products' && $options{product}) {
-            my $k = join('-', map { $r->{$_} } qw(distri version flavor arch));
-            next unless $options{product}->{$k};
+            next unless $options{product}->{productkey($r)};
         }
 
         delete $r->{id};
@@ -252,7 +255,22 @@ for my $table (keys %result) {
         }
         push @r, $r;
     }
-    $result{$table} = [@r];
+
+    if ($table eq 'Products') {
+        $result{$table} = [sort { productkey($a) cmp productkey($b) } @r];
+    }
+    elsif ($table eq 'JobTemplates') {
+        $result{$table} = [
+            sort {
+                productkey($a->{product})
+                  cmp productkey($b->{product} || $a->{testsuite}->{name} cmp $b->{testsuite}->{name})
+                  || $a->{machine}->{name} cmp $b->{machine}->{name}
+            } @r
+        ];
+    }
+    else {
+        $result{$table} = [sort { $a->{name} cmp $b->{name} } @r];
+    }
 }
 
 if ($options{json}) {
