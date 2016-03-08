@@ -154,7 +154,6 @@ sub create_from_settings {
         }
         my $now = now;
         for my $l (@values) {
-            next unless $l;
             push @job_settings, {job_id => $job->id, t_created => $now, t_updated => $now, key => $k, value => $l};
         }
     }
