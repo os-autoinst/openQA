@@ -69,7 +69,7 @@ $driver->find_element('textarea', 'css')->send_keys('
     foo@bar foo#bar
     <a href="https://openqa.example.com/foo/bar">https://openqa.example.com/foo/bar</a>: http://localhost:9562
     https://openqa.example.com/tests/181148 (reference http://localhost/foo/bar )
-    bsc#1234 boo#2345 poo#3456 t#4567
+    bsc#1234 boo#2345 poo#3456 t#4567 ghi#5678 ghp#6789 
     t#5678/modules/welcome/steps/1'
 );
 $driver->find_element('#submitComment', 'css')->click();
@@ -87,7 +87,9 @@ is((shift @urls)->get_text(), 'bsc#1234',                                "url5")
 is((shift @urls)->get_text(), 'boo#2345',                                "url6");
 is((shift @urls)->get_text(), 'poo#3456',                                "url7");
 is((shift @urls)->get_text(), 't#4567',                                  "url8");
-is((shift @urls)->get_text(), 't#5678/modules/welcome/steps/1',          "url9");
+is((shift @urls)->get_text(), 'ghi#5678',                                "url9");
+is((shift @urls)->get_text(), 'ghp#6789',                                "url10");
+is((shift @urls)->get_text(), 't#5678/modules/welcome/steps/1',          "url11");
 
 my @urls2 = $driver->find_elements('div.media-comment a', 'css');
 is((shift @urls2)->get_attribute('href'), 'https://openqa.example.com/foo/bar',                 "url1-href");
@@ -98,7 +100,9 @@ is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cg
 is((shift @urls2)->get_attribute('href'), 'https://bugzilla.opensuse.org/show_bug.cgi?id=2345', "url6-href");
 is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/3456',          "url7-href");
 like((shift @urls2)->get_attribute('href'), qr{/tests/4567}, "url8-href");
-like((shift @urls2)->get_attribute('href'), qr{/tests/5678/modules/welcome/steps}, "url9-href");
+is((shift @urls2)->get_attribute('href'), 'https://github.com/os-autoinst/os-autoinst/issues/5678', "url9-href");
+is((shift @urls2)->get_attribute('href'), 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/6789', "url10-href");
+like((shift @urls2)->get_attribute('href'), qr{/tests/5678/modules/welcome/steps}, "url11-href");
 
 # check commenting in test results
 $driver->find_element('Build0048', 'link_text')->click();
