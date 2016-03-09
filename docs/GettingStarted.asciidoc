@@ -55,7 +55,7 @@ interface and infrastructure to run 'os-autoinst' in a distributed
 way. The web interface also provides a JSON based REST-like API for
 external scripting and for use by the worker program. Workers
 fetch data and input files from openQA for os-autoinst to run the
-tests. A host system can run serveral workers. The openQA web
+tests. A host system can run several workers. The openQA web
 application takes care of distributing test jobs among workers. Web
 application and workers don't have to run on the same machine but
 can be connected via network instead.
@@ -228,6 +228,17 @@ from scratch, you should probably go through the following order:
 . Go to the template matrix in 'Job templates' menu and decide what
   combinations do make sense and need to be tested
 
+Machines, mediums and test suites can all set various configuration variables.
+Job templates define how the test suites, mediums and machines should be
+combined in various ways to produce individual 'jobs'. All the variables
+from the test suite, medium and machine for the 'job' are combined and made
+available to the actual test code run by the 'job', along with variables
+specified as part of the job creation request. Certain variables also influence
+openQA's and/or os-autoinst's own behavior in terms of how it configures the
+environment for the job. Variables that influence os-autoinst's behavior
+are documented in the file +doc/backend_vars.asciidoc+ in the os-autoinst
+repository.
+
 In openQA we can parametrize a test to describe for what product it will
 run and for what kind of machines it will be executed. For example, a
 test like KDE can be run for any product that has KDE installed, and
@@ -249,18 +260,13 @@ For every triplet, we need to configure a different instance of
 os-autoinst with a different set of parameters.
 
 Medium Types (products)
-~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
 A medium type (product) in openQA is a simple description without any concrete
 meaning. It basically consists of a name and a set of variables that
 define or characterize this product in os-autoinst.
 
-For example, the product openSUSE-DVD-x86_64 requires the variables
-+ISO_MAXSIZE+ and +DVD+ to be set up.
-
-The list of variables is dynamic. The semantic of a variable is defined
-by the tests using it. Some usual
-variables are:
+Some example variables used by openSUSE are:
 
 * +ISO_MAXSIZE+ contains the maximum size of the product. There is a
   test that checks that the current size of the product is less or
@@ -273,7 +279,6 @@ variables are:
 * +PROMO+ marks the promotional product.
 * +RESCUECD+ is set to 1 for rescue CD images.
 
-
 Test Suites
 ~~~~~~~~~~~
 
@@ -282,8 +287,7 @@ for openQA. A test consists of a name, a priority (used in the
 scheduler to choose the next job) and a set of variables that are used
 inside this particular test.
 
-Again, the list of variables is not complete, because they are
-test-dependent, but some of the usual ones are:
+Some sample variables used by openSUSE are:
 
 * +BTRFS+ if set, the file system will be BtrFS.
 * +DESKTOP+ possible values are 'kde' 'gnome' 'lxde' 'xfce' or
@@ -292,11 +296,8 @@ test-dependent, but some of the usual ones are:
 * +DOCRUN+ used for documentation tests.
 * +DUALBOOT+ dual boot testing, needs HDD_1 and HDDVERSION.
 * +ENCRYPT+ encrypt the home directory via YaST.
-* +HDDMODEL+ variable to set the HDD hardware model.
-* +HDDSIZEGB+ hard disk size in GB. Used together with BtrFS variable.
 * +HDDVERSION+ used together with HDD_1 to set the operating system
   previously installed on the hard disk.
-* +HDD_1+ path for the pre-created hard disk.
 * +INSTALLONLY+ only basic installation.
 * +INSTLANG+ installation language. Actually used only in documentation
   tests.
@@ -306,8 +307,6 @@ test-dependent, but some of the usual ones are:
   skipping ugly and boring tests.
 * +NOAUTOLOGIN+ unmark autologin in YaST
 * +NUMDISKS+ total number of disks in QEMU.
-* +QEMUVGA+ parameter to declare the video hardware configuration in QEMU.
-* +RAIDLEVEL+ RAID configuration variable
 * +REBOOTAFTERINSTALL+ if set to 1, will reboot after the installation.
 * +SCREENSHOTINTERVAL+ used with NICEVIDEO to improve the video quality.
 * +SPLITUSR+ a YaST configuration option.
@@ -315,6 +314,15 @@ test-dependent, but some of the usual ones are:
 * +UPGRADE+ upgrade testing, need HDD_1 and HDDVERSION.
 * +VIDEOMODE+ if the value is 'text', the installation will be done in
   text mode.
+
+Some of the variables usually set in test suites that influence openQA
+and/or os-autoinst's own behavior are:
+
+* +HDDMODEL+ variable to set the HDD hardware model
+* +HDDSIZEGB+ hard disk size in GB. Used together with BtrFS variable
+* +HDD_1+ path for the pre-created hard disk
+* +RAIDLEVEL+ RAID configuration variable
+* +QEMUVGA+ parameter to declare the video hardware configuration in QEMU
 
 Machines
 ~~~~~~~~
@@ -331,20 +339,20 @@ configuration.
 +qemu+ as it is the most tested one, but other options (such as +kvm2usb+ or +vbox+)
 are also possible.
 
-* *Variables* Variables represent a way how to influence backend behaviour.
-Few important examples:
+* *Variables* Most machine variables influence os-autoinst's behavior in terms
+of how the test machine is set up. A few important examples:
 ** +QEMUCPU+ can be 'qemu32' or 'qemu64' and specifies the architecture of the
    virtual CPU.
 ** +QEMUCPUS+ is an integer that specifies the number of cores you wish for.
 ** +LAPTOP+ if set to 1, QEMU will create a laptop profile.
 ** +USBBOOT+ when set to 1, the image will be loaded through an
    emulated USB stick.
-** +SMP+ enables smp when set to 1, disables when set to 0.
 
 Variable expansion
 ~~~~~~~~~~~~~~~~~~
 Any variable defined in Test Suite, Machine or Product table can refer to another
-variable using this syntax: %NAME%
+variable using this syntax: +%NAME%+. When the test job is created, the string
+will be substituted with the value of the specified variable at that time.
 
 For example this variable defined for Test Suite:
 
@@ -353,20 +361,20 @@ For example this variable defined for Test Suite:
 PUBLISH_HDD_1 = %DISTRI%-%VERSION%-%ARCH%-%DESKTOP%.qcow2
 --------------------------------------------------------------------------------
 
-is expanded to this job variable:
+may be expanded to this job variable:
 
 [source,sh]
 --------------------------------------------------------------------------------
 PUBLISH_HDD_1 = opensuse-13.1-i586-kde.qcow2
 --------------------------------------------------------------------------------
 
-Testing openSUSE
-----------------
+Testing openSUSE or Fedora
+--------------------------
 
-Easiest way to start using openQA is to start testing openSUSE as we have
-everything setup and prepared to ease the initial deployment. If you want to
-play deeper, you can configure the whole openQA manually from scratch, but this
-document should help you to get started faster.
+An easy way to start using openQA is to start testing openSUSE or Fedora as they
+have everything setup and prepared to ease the initial deployment. If you want
+to play deeper, you can configure the whole openQA manually from scratch, but
+this document should help you to get started faster.
 
 Getting tests
 ~~~~~~~~~~~~~
@@ -385,6 +393,19 @@ run
 Which will download the tests to the correct location and will set the correct
 rights as well.
 
+Fedora's tests are also in https://bitbucket.org/rajcze/openqa_fedora[git]. To
+use them, you may do:
+
+[source,sh]
+--------------------------------------------------------------------------------
+cd /var/lib/openqa/share/tests
+mkdir fedora
+cd fedora
+git clone https://bitbucket.org/rajcze/openqa_fedora_tools.git
+cd ..
+chown -R geekotest fedora/
+--------------------------------------------------------------------------------
+
 Getting openQA configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -395,7 +416,7 @@ following command:
 
 [source,sh]
 --------------------------------------------------------------------------------
-/var/lib/openqa/tests/opensuse/templates [--apikey API_KEY] [--apisecret API_SECRET]
+/var/lib/openqa/share/tests/opensuse/templates [--apikey API_KEY] [--apisecret API_SECRET]
 --------------------------------------------------------------------------------
 
 This will load some default settings that were used at some point of time in
@@ -403,10 +424,23 @@ openSUSE production openQA. Therefore those should work reasonably well with
 openSUSE tests and needles. This script uses +/usr/share/openqa/script/load_templates+, 
 consider reading its help page (+--help+) for documentation on possible extra arguments.
 
-Adding a new iso to test
+For Fedora, similarly, you can call:
+
+[source,sh]
+--------------------------------------------------------------------------------
+/var/lib/openqa/share/tests/fedora/templates [--apikey API_KEY] [--apisecret API_SECRET]
+--------------------------------------------------------------------------------
+
+Some Fedora tests require special hard disk images to be present in
++/var/lib/openqa/share/factory/hdd+. The +createhdds.py+ script in the
+https://bitbucket.org/rajcze/openqa_fedora_tools.git[openqa_fedora_tools]
+repository can be used to create these. See the documentation in that repo
+for more information.
+
+Adding a new ISO to test
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-To start testing a new ISO put it in +/var/lib/openqa/factory/iso+ and call
+To start testing a new ISO put it in +/var/lib/openqa/share/factory/iso+ and call
 the following commands:
 
 [source,sh]
@@ -424,9 +458,23 @@ the following commands:
 If your openQA is not running on port 80 on 'localhost', you can add option
 +--host=http://otherhost:9526+ to specify a different port or host.
 
-WARNING: Using only iso name in 'client' command and saving it in
-+/var/lib/openqa/factory/iso+ is recommended as is using Factory isos. ISOs are
-not uploaded from the path that you would specify.
+WARNING: Use only the ISO filename in the 'client' command. You must place the
+file in +/var/lib/openqa/factory/iso+. You cannot place the file elsewhere and
+specify its path in the command.
+
+For Fedora, a sample run might be:
+
+[source,sh]
+--------------------------------------------------------------------------------
+# Run the first test
+/usr/share/openqa/script/client isos post \
+         ISO=Fedora-Everything-boot-x86_64-Rawhide-20160308.n.0.iso \
+         DISTRI=fedora \
+         VERSION=Rawhide \
+         FLAVOR=Everything-boot-iso \
+         ARCH=x86_64 \
+         BUILD=Rawhide-20160308.n.0
+--------------------------------------------------------------------------------
 
 Pitfalls
 --------
