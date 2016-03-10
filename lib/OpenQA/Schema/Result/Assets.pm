@@ -20,6 +20,7 @@ use strict;
 
 use OpenQA::Utils;
 use OpenQA::Scheduler::Scheduler 'job_notify_workers';
+use OpenQA::Schema::Result::Jobs;
 use Date::Format;
 use Mojo::UserAgent;
 use File::Spec::Functions 'splitpath';
@@ -196,11 +197,20 @@ sub limit_assets {
     # to the admin to configure the size limit)
     while (my $g = $groups->next) {
         my $sizelimit = $g->size_limit_gb * 1024 * 1024 * 1024;
+        # we never want to delete assets associated with running or scheduled
+        # jobs, so find those first so we can exclude their assets next.
+        my $activejobs = $app->db->resultset('Jobs')->search(
+            {
+                state => {-in => OpenQA::Schema::Result::Jobs::PENDING_STATES},
+            })->get_column('id');
         # we need to find a distinct set of assets per job group ordered by
         # their last use. Need to do this in 2 steps
         my @job_assets = $app->db->resultset('JobsAssets')->search(
             {
-                job_id => {-in => $g->jobs->get_column('id')->as_query},
+                -and => [
+                    job_id => {-in     => $g->jobs->get_column('id')->as_query},
+                    job_id => {-not_in => $activejobs->as_query},
+                ],
             },
             {
                 select   => ['asset_id', 'created_by', {max => 't_created', -as => 'latest'},],
