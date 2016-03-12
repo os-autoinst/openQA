@@ -416,7 +416,7 @@ following command:
 
 [source,sh]
 --------------------------------------------------------------------------------
-/var/lib/openqa/share/tests/opensuse/templates [--apikey API_KEY] [--apisecret API_SECRET]
+/var/lib/openqa/share/tests/opensuse/products/opensuse/templates [--apikey API_KEY] [--apisecret API_SECRET]
 --------------------------------------------------------------------------------
 
 This will load some default settings that were used at some point of time in
