@@ -78,6 +78,13 @@ subtest 'mark build as non-important build' => sub {
     is(scalar @tags, 0, 'no build tagged anymore');
 };
 
+subtest 'tag on non-existant build does not show up' => sub {
+    post_comment_1001 'tag:0066:important';
+    my $get  = $t->get_ok('/group_overview/1001')->status_is(200);
+    my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    is(scalar @tags, 0, 'no builds tagged');
+};
+
 =pod
 Given a comment C<tag:<build_ref>:important> exists on a job group comments
 When GRU cleanup task is run

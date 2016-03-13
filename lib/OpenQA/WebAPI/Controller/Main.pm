@@ -164,7 +164,11 @@ sub group_overview {
             delete $res->{$build}->{tag};
             next;
         }
-        $res->{$build}->{tag} = {type => $tag[1], description => $tag[2]};
+
+        # ignore tags on non-existing builds
+        if ($res->{$build}) {
+            $res->{$build}->{tag} = {type => $tag[1], description => $tag[2]};
+        }
     }
     $self->stash('result',   $res);
     $self->stash('group',    $group);
