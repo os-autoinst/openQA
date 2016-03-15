@@ -34,17 +34,10 @@ sub productlog {
     my $json = JSON->new();
     $json->allow_nonref(1);
     while (my $event = $events_rs->next) {
-        my $event_data = $event->event_data;
-        eval { $event_data = $json->decode($event_data); };
-        if (ref($event_data) ne 'HASH') {
-            log_warning("'found non-hash 'iso_create' event. Probably error with JSON decoding: $event_data");
-            next;
-        }
-        delete $event_data->{id};
         my $data = {
             id         => $event->id,
             user       => $event->owner ? $event->owner->nickname : 'system',
-            event_data => $event_data,
+            event_data => $event->event_data,
             event_time => $event->t_created,
         };
         push @events, $data;

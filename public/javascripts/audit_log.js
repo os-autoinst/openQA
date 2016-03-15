@@ -71,7 +71,7 @@ function loadAuditLogTable ()
 
 function loadProductLogTable ()
 {
-    $('#product_log_table').DataTable( {
+    var table = $('#product_log_table').DataTable( {
         lengthMenu: [10, 25, 50],
         order: [[1, 'desc']],
         columnDefs: [
@@ -90,10 +90,48 @@ function loadProductLogTable ()
             }
         },
         {
+            targets: 2,
+            render: function ( data, type, row ) {
+                return jQuery.parseJSON(row[8]).DISTRI;
+            }
+        },
+        {
+            targets: 3,
+            render: function ( data, type, row ) {
+                return jQuery.parseJSON(row[8]).VERSION;
+            }
+        },
+        {
             targets: 4,
             render: function ( data, type, row ) {
-                if (type === 'display' && data.length > 40)
-                    return '<span id="audit_event_data" title="'+ data +'">' + data.substr( 0, 38 ) + '...</span>';
+                return jQuery.parseJSON(row[8]).FLAVOR;
+            }
+        },
+        {
+            targets: 5,
+            render: function ( data, type, row ) {
+                return jQuery.parseJSON(row[8]).ARCH;
+            }
+        },
+        {
+            targets: 6,
+            render: function ( data, type, row ) {
+                return jQuery.parseJSON(row[8]).BUILD;
+            }
+        },
+        {
+            targets: 7,
+            render: function ( data, type, row ) {
+                return jQuery.parseJSON(row[8]).ISO;
+            }
+        },
+        {
+            targets: 8,
+            render: function ( data, type, row ) {
+                if (type === 'display' && data.length > 40) {
+                    var parsed_data = JSON.stringify(JSON.parse(data), null, 2);
+                    return '<span class="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 38 )) + '...</span>';
+                }
                 else
                     return data;
             },
@@ -103,11 +141,12 @@ function loadProductLogTable ()
 
     $(document).on('click', '.iso_restart', function(event) {
         event.preventDefault();
-        var restart_link = $(this);
-        var link = $(this).parent('td');
-        var settings
-        $.post(restart_link.attr("href")).done( function( data, res, xhr ) {
-            link.append('ISO rescheduled - ' + xhr.responseJSON.count + ' new jobs');
+        var restart_link = $(this).attr('href');
+        var action_cell = $(this).parent('td');
+        var event_data = table.rows(action_cell.parent('tr')).cell('.event_data').data();
+        event_data = jQuery.parseJSON(event_data);
+        $.post(restart_link, event_data).done( function( data, res, xhr ) {
+            action_cell.append('ISO rescheduled - ' + xhr.responseJSON.count + ' new jobs');
         });
         var i = $(this).find('i').removeClass('fa-repeat');
         $(this).replaceWith(i);

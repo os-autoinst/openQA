@@ -24,7 +24,11 @@
                 <tr>
                     <th>Event ID</th>
                     <th>Time</th>
-                    <th>User</th>
+                    <th>Distri</th>
+                    <th>Version</th>
+                    <th>Flavor</th>
+                    <th>Arch</th>
+                    <th>Build</th>
                     <th>ISO</th>
                     <th>Settings</th>
                     <th>Actions</th>
@@ -35,16 +39,16 @@
                 <tr>
                     <td><%= $iso->{id} %></td>
                     <td><%= $iso->{event_time} %></td>
-                    <td><%= $iso->{user} %></td>
+                    <td>DISTRI</td>
+                    <td>VERSION</td>
+                    <td>FLAVOR/td>
+                    <td>ARCH</td>
+                    <td>BUILD</td>
+                    <td>ISO</td>
                     % my $data = $iso->{event_data};
-                    <td><%= $data->{ISO} %></td>
+                    <td class="event_data"><%= $data %></td>
                     <td>
-                    % for my $key (sort(keys(%$data))) {
-                    <%= $key %>: <%= $data->{$key} %>
-                    % }
-                    </td>
-                    <td>
-                        %= link_post url_for('apiv1_audit_replayevent', eventId => $iso->{id}) => ('data-remote' => 'true', class => 'iso_restart') => begin
+                        %= link_post url_for('apiv1_create_iso') => ('data-remote' => 'true', class => 'iso_restart') => begin
                             <i class="action fa fa-repeat" title="Reschedule product tests"></i>
                         % end
                     </td>
