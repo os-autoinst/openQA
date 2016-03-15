@@ -250,7 +250,7 @@ sub job_create_dependencies {
 # internal function not exported - but called by create
 sub schedule_iso {
     my ($self, $args) = @_;
-    $self->emit_event('openqa_iso_create', $params);
+    $self->emit_event('openqa_iso_create', $args);
     # register assets posted here right away, in case no job
     # templates produce jobs.
     for my $a (values %{parse_assets_from_settings($args)}) {
