@@ -29,10 +29,7 @@ use t::ui::PhantomTest;
 OpenQA::Test::Case->new->init_data;
 
 my $driver = t::ui::PhantomTest::call_phantom();
-if ($driver) {
-    plan tests => 22;
-}
-else {
+if (!$driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
 }
@@ -74,23 +71,25 @@ my @rows  = $driver->find_child_elements($table, './tbody/tr[./td[text() = "what
 my $nrows = scalar @rows;
 my $row   = shift @rows;
 my $cell  = $driver->find_child_element($row, './td[2]');
-is($cell->get_text, 'perci', 'ISO scheduled by perci');
-$cell = $driver->find_child_element($row, './td[4]');
-like($cell->get_text, qr/ARCH: i586/, 'ISO data present');
+is($cell->get_text, 'opensuse', 'ISO scheduled for opensuse distri');
+$cell = $driver->find_child_element($row, './td[8]/span');
+like($cell->get_attribute('title'), qr/"ARCH": "i586"/, 'ISO data present');
 $cell = $driver->find_child_element($row, './td[1]/a');
 my ($id) = $cell->get_attribute('href') =~ m{$url/admin/auditlog\?eventid=(\d)};
-ok($id, 'time is actually link to event id') or BAIL_OUT('we need event id for next tests');
+ok($id, 'time is actually link to event id');
 
 # Replay works for operator (perci)
-$t->post_ok($url . '/api/v1/audit/replayEvent/' . $id)->status_is(200);
+$cell = $driver->find_child_element($row, './td[9]/a');
+like($cell->get_attribute('href'), qr{$url/api/v1/isos}, 'replay action poinst to isos api route');
+$cell->click();
 $driver->refresh;
+# refresh page
+$driver->find_element('Scheduled products', 'link_text')->click();
+like($driver->get_title(), qr/Scheduled products log/, 'on product log');
 $table = $driver->find_element('#product_log_table', 'css');
+ok($table, 'products tables found');
 @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]');
 is(scalar @rows, $nrows + 1, 'iso rescheduled by replay action');
-# but not for regular user
-$t->ua(OpenQA::Client->new(apikey => 'LANCELOTKEY01', apisecret => 'MANYPEOPLEKNOW')->ioloop(Mojo::IOLoop->singleton));
-$t->app($app);
-$t->post_ok($url . '/api/v1/audit/replayEvent/' . $id)->status_is(403);
 
 t::ui::PhantomTest::kill_phantom();
 
