@@ -20,7 +20,7 @@ it's +52:54:00:12:34:56+.
 
 ## TAP based network
 
-os-autoinst can connect qemu to *existing* TAP devices of the host system to
+os-autoinst can connect qemu to TAP devices of the host system to
 leverage advanced network setups provided by the host by setting +NICTYPE=tap+.
 
 The TAP device to use can be configured with the +TAPDEV+ variable. If not set
@@ -50,6 +50,27 @@ or Wicked way:
     <owner>_openqa-worker</owner>
   </tap>
 </interface>
+---------------
+
+If you want to use TAP device which doesn't exist on the system,
+you need to set CAP_NET_ADMIN capability on qemu binary file:
+
+[source, bash]
+---------------
+zypper in libcap-progs
+setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
+---------------
+
+Network setup can be changed after qemu is started using network configure script
+specified in TAPSCRIPT variable.
+
+Sample script to add TAP device to existing bridge br0:
+[source, bash]
+---------------
+#!/bin/sh
+
+sudo brctl addif br0 $1
+sudo ip link set $1 up
 ---------------
 
 ## TAP with Open vSwitch
