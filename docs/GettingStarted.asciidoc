@@ -155,6 +155,16 @@ virtual machine or one of the existing needles. Once the needles are adjusted,
 the user can command the job to reload the list of needles and continue with the
 execution.
 
+* *enable interactive mode* Get into waiting for input automatically(ie. waitforneedle)
+  in case it can not find the matched needle and timeout.
+* *stop waiting for needle* Stop the waitforneedle call immediately without timeout.
+* *continue waiting for needle* Continue testing but will get into waitforneedle
+  in case it can not find the matched needle and timeout.
+* *reload needles and retry* Retry in 5 seconds and reloaded needles, it helps if
+  there is new needle is created before retry.
+* *open needle editor* Open needle editor then user can creating new needle or
+  modifing existing needle.
+
 The interactive mode is especially useful when creating needles for a new
 operating system or when the look & feel have changed and several needles need
 to be adjusted accordingly.
