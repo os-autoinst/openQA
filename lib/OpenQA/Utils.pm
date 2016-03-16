@@ -88,15 +88,22 @@ sub needledir {
     return productdir($distri, $version) . '/needles';
 }
 
-sub needle_info($$$) {
+sub needle_info($$$$) {
     my $name    = shift;
     my $distri  = shift;
     my $version = shift;
+    my $jsonfile= shift;
     local $/;
 
     my $needledir = needledir($distri, $version);
 
-    my $fn = "$needledir/$name.json";
+    if (! $jsonfile){
+        $jsonfile = "$needledir/$name.json";
+    } else {
+        $needledir = dirname($jsonfile);
+    }
+
+    my $fn = $jsonfile;
     my $JF;
     unless (open($JF, '<', $fn)) {
         warn "$fn: $!";
@@ -112,9 +119,12 @@ sub needle_info($$$) {
         return;
     }
 
+    my $fname = basename($jsonfile, '.json') . ".png";
+    my $pngfile = File::Spec->catpath('', dirname($jsonfile), $fname);
+
     $needle->{needledir} = $needledir;
-    $needle->{image}     = "$needledir/$name.png";
-    $needle->{json}      = "$needledir/$name.json";
+    $needle->{image}     = $pngfile;
+    $needle->{json}      = $jsonfile;
     $needle->{name}      = $name;
     $needle->{distri}    = $distri;
     $needle->{version}   = $version;

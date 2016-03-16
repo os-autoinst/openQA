@@ -34,7 +34,8 @@ sub needle {
     my ($name, $dummy, $format) = fileparse($self->param('name'), qw(.png .txt));
     my $distri  = $self->param('distri');
     my $version = $self->param('version') || '';
-    my $needle  = OpenQA::Utils::needle_info($name, $distri, $version);
+    my $jsonfile = $self->param('jsonfile') || '';
+    my $needle  = OpenQA::Utils::needle_info($name, $distri, $version, $jsonfile);
     return $self->reply->not_found unless $needle;
 
     $self->{static} = Mojolicious::Static->new;

@@ -7,6 +7,7 @@ function loadBackground() {
     $("#needleeditor_image").val($(this).data('image'));
     $("#needleeditor_imagedistri").val($(this).data('distri'));
     $("#needleeditor_imageversion").val($(this).data('version'));
+    $("#needleeditor_imagedir").val($(this).data('imagedir'));
 }
 
 function loadTagsAndName() {

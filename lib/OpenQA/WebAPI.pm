@@ -358,7 +358,7 @@ sub startup {
     $step_auth->post('/')->name('save_needle')->to('step#save_needle');
     $step_r->get('/')->name('step')->to(action => 'view');
 
-    $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
+    $r->get('/needles/:distri/*name')->name('needle_file')->to('file#needle');
     $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
 
     $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');
