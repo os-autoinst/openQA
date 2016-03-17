@@ -116,13 +116,21 @@ function loadProductLogTable ()
         {
             targets: 6,
             render: function ( data, type, row ) {
-                return jQuery.parseJSON(row[8]).BUILD;
+                var data_o = jQuery.parseJSON(row[8]);
+                if (data_o.hasOwnProperty('BUILD')) {
+                    return data_o.BUILD;
+                }
+                return '';
             }
         },
         {
             targets: 7,
             render: function ( data, type, row ) {
-                return jQuery.parseJSON(row[8]).ISO;
+                var data_o = jQuery.parseJSON(row[8]);
+                if (data_o.hasOwnProperty('ISO')) {
+                    return data_o.ISO;
+                }
+                return '';
             }
         },
         {
