@@ -6,6 +6,7 @@ use Cwd;
 use Carp;
 use IPC::Run();
 use Mojo::URL;
+use Try::Tiny;
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -118,13 +119,21 @@ sub needle_info {
     }
 
     my $needle;
-    eval { $needle = decode_json(<$JF>); };
-    close($JF);
-
-    if ($@) {
-        warn "failed to parse $fn: $@";
-        return;
+    # try-catch actually resolves functions, so we can not "return from needle_info"
+    #   while inside the catch clause
+    # thus `return unless` aborts the needle_info method when the `return undef` in
+    #   the catch clause is evaluated
+    return unless try {
+        $needle = decode_json(<$JF>);
+        return 1;
     }
+    catch {
+        warn "failed to parse $fn: $_";
+        return 0;
+    }
+    finally {
+        close($JF);
+    };
 
     my $png_fname = basename($fn, '.json') . ".png";
     my $pngfile = File::Spec->catpath('', $needledir, $png_fname);
