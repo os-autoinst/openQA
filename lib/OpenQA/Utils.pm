@@ -2,6 +2,7 @@ package OpenQA::Utils;
 use strict;
 require 5.002;
 
+use Cwd;
 use Carp;
 use IPC::Run();
 use Mojo::URL;
@@ -102,6 +103,12 @@ sub needle_info {
     }
     else {
         $needledir = dirname($fn);
+    }
+
+    # make sure needledir is a subdir of testcasedir
+    if (index(Cwd::realpath($needledir), Cwd::realpath($testcasedir)) != 0) {
+        warn "$needledir is not a subdir of $testcasedir";
+        return;
     }
 
     my $JF;
