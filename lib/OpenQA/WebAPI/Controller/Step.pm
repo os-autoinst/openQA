@@ -82,21 +82,22 @@ sub init {
 sub needle_url {
     my ($self, $distri, $name, $version, $jsonfile) = @_;
 
-    if(defined($jsonfile) && $jsonfile) {
+    if (defined($jsonfile) && $jsonfile) {
         if (defined($version) && $version) {
             $self->url_for('needle_file', distri => $distri, name => $name)->query(version => $version, jsonfile => $jsonfile);
         }
         else {
             $self->url_for('needle_file', distri => $distri, name => $name)->query(jsonfile => $jsonfile);
         }
-    } else {
+    }
+    else {
         if (defined($version) && $version) {
             $self->url_for('needle_file', distri => $distri, name => $name)->query(version => $version);
         }
         else {
             $self->url_for('needle_file', distri => $distri, name => $name);
         }
-     }
+    }
 }
 
 # Call to viewimg or viewaudio
@@ -154,7 +155,7 @@ sub edit {
             area       => [],
             matches    => [],
             properties => [],
-            file       => "",
+            json       => "",
             tags       => []};
         for my $tag (@$tags) {
             push(@{$screenshot->{tags}}, $tag);
@@ -170,7 +171,7 @@ sub edit {
             push(@{$screenshot->{matches}}, $narea);
         }
         # Second position: the only needle (with the same matches)
-        my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{file});
+        my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
 
         $self->app->log->error(sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion)) if !defined $needle;
 
@@ -184,9 +185,9 @@ sub edit {
             imageversion   => $needle->{version},
             area           => $needle->{area},
             tags           => $needle->{tags},
-            file           => $needle->{json} || "",
+            json       => $needle->{json}       || "",
             properties => $needle->{properties} || [],
-            matches => $screenshot->{matches}};
+            matches    => $screenshot->{matches}};
         calc_min_similarity($matched, $module_detail->{area});
         push(@needles, $matched);
 
@@ -206,7 +207,7 @@ sub edit {
             area       => [],
             matches    => [],
             properties => [],
-            file       => "",
+            json       => "",
             tags       => []};
         for my $tag (@$tags) {
             push(@{$screenshot->{tags}}, $tag);
@@ -222,7 +223,7 @@ sub edit {
         # We also use $area for transforming the match information intro a real area
         for my $needle (@{$module_detail->{needles}}) {
             $needlename = $needle->{name};
-            $needleinfo = needle_info($needlename, $distribution, $dversion || '', $needle->{file});
+            $needleinfo = needle_info($needlename, $distribution, $dversion || '', $needle->{json});
 
             if (!defined $needleinfo) {
                 $self->app->log->error(sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || ''));
@@ -245,7 +246,7 @@ sub edit {
                     imageversion   => $needleinfo->{version},
                     tags           => $needleinfo->{tags},
                     area           => $needleinfo->{area},
-                    file           => $needleinfo->{json} || "",
+                    json       => $needleinfo->{json}       || "",
                     properties => $needleinfo->{properties} || [],
                     matches    => [],
                     broken     => $needleinfo->{broken}});
@@ -278,7 +279,7 @@ sub edit {
             area       => [],
             matches    => [],
             tags       => $tags,
-            file       => "",
+            json       => "",
             properties => []};
     }
 
@@ -467,7 +468,7 @@ sub save_needle {
     my $imagename    = $validation->param('imagename');
     my $imagedistri  = $validation->param('imagedistri');
     my $imageversion = $validation->param('imageversion');
-    my $imagedir     = $self->param('imagedir') }|| "";
+    my $imagedir     = $self->param('imagedir') || "";
     my $needlename   = $validation->param('needlename');
     my $overwrite    = $validation->param('overwrite');
     my $needledir    = needledir($job->settings_hash->{DISTRI}, $job->settings_hash->{VERSION});
@@ -594,7 +595,7 @@ sub viewimg {
 
     my @needles;
     if ($module_detail->{needle}) {
-        my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{file});
+        my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
         if ($needle) {    # possibly missing/broken file
             my $info = {
                 name    => $module_detail->{needle},
@@ -610,7 +611,7 @@ sub viewimg {
         my $needleinfo;
         for my $needle (@{$module_detail->{needles}}) {
             $needlename = $needle->{name};
-            $needleinfo = needle_info($needlename, $distribution, $dversion, $needle->{file});
+            $needleinfo = needle_info($needlename, $distribution, $dversion, $needle->{json});
             next unless $needleinfo;
             my $info = {
                 name    => $needlename,

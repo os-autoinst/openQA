@@ -32,10 +32,10 @@ sub needle {
     # do the format splitting ourselves instead of using mojo to restrict the suffixes
     # 13.1.png would be format 1.png otherwise
     my ($name, $dummy, $format) = fileparse($self->param('name'), qw(.png .txt));
-    my $distri  = $self->param('distri');
-    my $version = $self->param('version') || '';
+    my $distri   = $self->param('distri');
+    my $version  = $self->param('version') || '';
     my $jsonfile = $self->param('jsonfile') || '';
-    my $needle  = OpenQA::Utils::needle_info($name, $distri, $version, $jsonfile);
+    my $needle   = OpenQA::Utils::needle_info($name, $distri, $version, $jsonfile);
     return $self->reply->not_found unless $needle;
 
     $self->{static} = Mojolicious::Static->new;
