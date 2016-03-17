@@ -1325,6 +1325,19 @@ schema:
           name: job_settings_idx_job_id
           options: []
           type: NORMAL
+        - fields:
+            - key
+            - value
+          name: idx_value_settings
+          options: []
+          type: NORMAL
+        - fields:
+            - id
+            - key
+            - value
+          name: idx_job_value_settings
+          options: []
+          type: NORMAL
       name: job_settings
       options: []
       order: 5

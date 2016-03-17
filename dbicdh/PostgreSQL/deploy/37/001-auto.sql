@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Thu Jan 28 14:46:55 2016
+-- Created on Thu Mar 17 21:50:48 2016
 -- 
 ;
 --
@@ -83,6 +83,8 @@ CREATE TABLE "job_settings" (
   PRIMARY KEY ("id")
 );
 CREATE INDEX "job_settings_idx_job_id" on "job_settings" ("job_id");
+CREATE INDEX "idx_value_settings" on "job_settings" ("key", "value");
+CREATE INDEX "idx_job_value_settings" on "job_settings" ("id", "key", "value");
 
 ;
 --

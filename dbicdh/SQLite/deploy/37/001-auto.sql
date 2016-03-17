@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Thu Jan 28 14:46:54 2016
+-- Created on Thu Mar 17 21:50:48 2016
 -- 
 
 ;
@@ -74,6 +74,8 @@ CREATE TABLE job_settings (
   FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 CREATE INDEX job_settings_idx_job_id ON job_settings (job_id);
+CREATE INDEX idx_value_settings ON job_settings (key, value);
+CREATE INDEX idx_job_value_settings ON job_settings (id, key, value);
 --
 -- Table: machine_settings
 --
