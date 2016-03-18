@@ -66,11 +66,12 @@ sub auth {
         }
     }
 
-    if ($user) {
+    if ($user && ($self->is_operator($user) || $self->is_admin($user))) {
         $self->app->log->debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
         $self->stash(current_user => {user => $user});
-        return $self->is_operator($user);
+        return 1;
     }
+
     $self->render(json => {error => $reason}, status => 403);
     return 0;
 }

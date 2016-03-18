@@ -7,14 +7,17 @@ require Mojolicious::Commands;
 our $_driver;
 our $mojopid;
 our $phantompid;
+our $mojoport;
 
 sub start_app {
-    my $mojoport = Mojo::IOLoop::Server->generate_port;
+    $mojoport = Mojo::IOLoop::Server->generate_port;
 
     $mojopid = fork();
     if ($mojopid == 0) {
         OpenQA::Test::Database->new->create;
         # TODO: start the server manually - and make it silent
+        # Run openQa in test mode - it will mock Scheduler and Websockets DBus services
+        $ENV{MOJO_MODE} = 'test';
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'daemon', '-l', "http://127.0.0.1:$mojoport/");
         exit(0);
     }
@@ -109,6 +112,10 @@ sub kill_phantom() {
     waitpid($mojopid, 0);
     kill('TERM', $phantompid);
     waitpid($phantompid, 0);
+}
+
+sub get_mojoport {
+    return $mojoport;
 }
 
 1;

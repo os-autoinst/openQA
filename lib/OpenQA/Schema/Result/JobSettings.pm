@@ -54,5 +54,11 @@ __PACKAGE__->has_many(
     siblings => "OpenQA::Schema::Result::JobSettings",
     {"foreign.job_id" => "self.job_id"});
 
+sub sqlt_deploy_hook {
+    my ($self, $sqlt_table) = @_;
+    $sqlt_table->add_index(name => 'idx_value_settings', fields => ['key', 'value']);
+    $sqlt_table->add_index(name => 'idx_job_value_settings', fields => ['id', 'key', 'value']);
+}
+
 1;
 # vim: set sw=4 et:
