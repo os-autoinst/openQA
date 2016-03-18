@@ -12,7 +12,7 @@
 
 <h1>Comments</h1>
 
-% for my $comment (reverse $group->comments) {
+% for my $comment (reverse @$comments) {
     <div class="row">
         <div class="col-sm-1">
             <img class="media-object img-circle" src="<%= $comment->user->gravatar(60) %>" alt="profile">

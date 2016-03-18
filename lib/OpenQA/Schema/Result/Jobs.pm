@@ -668,8 +668,29 @@ sub insert_test_modules($) {
 
 # gru job
 sub reduce_result {
-    my ($app, $resultdir) = @_;
+    my ($app, $args) = @_;
 
+    my $job = $app->db->resultset('Jobs')->find({id => $args->{jobid}});
+    my $build = $job->settings_hash->{BUILD};
+
+    my $comments  = $job->group->comments;
+    my $important = 0;
+    while (my $comment = $comments->next) {
+        my @tag = $comment->tag;
+        next unless $tag[0] and ($tag[0] eq $build);
+        if ($tag[1] eq 'important') {
+            $important = 1;
+        }
+        elsif ($tag[1] eq '-important') {
+            $important = 0;
+        }
+    }
+    if ($important) {
+        $app->log->debug('Job ' . $job->id . ' is part of build ' . $build . ' considered as important, skip cleanup');
+        return;
+    }
+
+    my $resultdir = $args->{resultdir};
     $resultdir .= "/";
     unlink($resultdir . "autoinst-log.txt");
     unlink($resultdir . "video.ogv");
@@ -689,7 +710,8 @@ sub create_result_dir {
         my $days = 30;
         $days = $self->group->keep_logs_in_days if $self->group;
         my $cleanday = DateTime->now()->add(days => $days);
-        $OpenQA::Utils::app->gru->enqueue(reduce_result => $dir, {run_at => $cleanday});
+        my %args = (resultdir => $dir, jobid => $self->id);
+        $OpenQA::Utils::app->gru->enqueue(reduce_result => %args, {run_at => $cleanday});
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
     my $sdir = $dir . "/.thumbs";

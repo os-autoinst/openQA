@@ -1,16 +1,24 @@
 % my $max = delete $result->{_max};
 % for my $build (reverse sort keys %$result) {
+    % my $build_res = $result->{$build};
     <div class="row">
         <div class="col-md-4 text-nowrap">
             <h4>
-                <%= link_to "Build$build" => url_for('tests_overview')->query(distri => $result->{$build}->{distri}, version => $result->{$build}->{version}, build => $build, groupid => $group->id ) %>
-                (<abbr class="timeago" title="<%= $result->{$build}->{oldest}->datetime() %>Z">
-                <%= delete $result->{$build}->{oldest} %>
+                <%= link_to "Build$build" => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $group->id ) %>
+                (<abbr class="timeago" title="<%= $build_res->{oldest}->datetime() %>Z">
+                <%= delete $build_res->{oldest} %>
                 </abbr>)
-            % my $reviewed = $result->{$build}->{reviewed};
+            % my $group_build_id = $group->id . '-' . $build;
+            % my $tag = $build_res->{tag};
+            % if ($tag) {
+                <span id="tag-<%= $group_build_id %>">
+                    <i class="tag fa fa-tag" title="<%= $tag->{type}; %>"><%= $tag->{description} %></i>
+                </span>
+            % }
+            % my $reviewed = $build_res->{reviewed};
             % if ($reviewed) {
-                <span id="review-<%= $group->id . '-' . $build %>">
-                    <i class="review fa fa-certificate" title="Reviewed (<%= $result->{$build}->{labeled}; %> comments)"></i>
+                <span id="review-<%= $group_build_id %>">
+                    <i class="review fa fa-certificate" title="Reviewed (<%= $build_res->{labeled}; %> comments)"></i>
                 </span>
             % }
 
@@ -19,14 +27,14 @@
         <div class="col-md-8">
             % if ($max) {
                 <div class="progress">
-                    <div class="progress-bar progress-bar-success" style="width: <%= $result->{$build}->{passed} * 100 / $max %>%">
-                        <%= $result->{$build}->{passed} %> passed
+                    <div class="progress-bar progress-bar-success" style="width: <%= $build_res->{passed} * 100 / $max %>%">
+                        <%= $build_res->{passed} %> passed
                     </div>
-                    <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: <%= $result->{$build}->{inprogress} * 100 / $max %>%">
-                        <%= $result->{$build}->{inprogress} %> unfinished
+                    <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: <%= $build_res->{inprogress} * 100 / $max %>%">
+                        <%= $build_res->{inprogress} %> unfinished
                     </div>
-                    <div class="progress-bar progress-bar-danger" style="width: <%= $result->{$build}->{failed} * 100 / $max %>%">
-                        <%= $result->{$build}->{failed} %> failed
+                    <div class="progress-bar progress-bar-danger" style="width: <%= $build_res->{failed} * 100 / $max %>%">
+                        <%= $build_res->{failed} %> failed
                     </div>
                 </div>
             % }

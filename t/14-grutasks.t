@@ -40,6 +40,14 @@ $t->app->gru->enqueue(optipng => $file);
 
 my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
 $c->app($t->app);
+
+sub run_gru {
+    my ($task, $args) = @_;
+
+    $t->app->gru->enqueue($task => $args);
+    $c->run('run', '-o');
+}
+
 open(FD, ">", \my $output);
 select FD;
 $c->run('list');
@@ -53,10 +61,30 @@ if (which('optipng')) {
 }
 
 # now to something completely different
-$t->app->gru->enqueue('limit_assets');
-$c->run('run', '-o');
+run_gru('limit_assets');
 
 ok(-f "t/data/openqa/factory/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso",   "iso 1 is still there");
 ok(-f "t/data/openqa/factory/iso/openSUSE-13.1-DVD-x86_64-Build0091-Media.iso", "iso 2 is still there");
+
+sub create_temp_job_result_file {
+    my ($resultdir) = @_;
+
+    my $filename = $resultdir . '/autoinst-log.txt';
+    open my $fh, ">>$filename" or die "touch $filename: $!\n";
+    close $fh;
+    die 'temporary file could not be created' unless -e $filename;
+    return $filename;
+}
+
+my @jobs      = $t->app->db->resultset('Jobs')->search({state => 'done'})->all;
+my $resultdir = $jobs[1]->result_dir;
+my $jobid     = $jobs[1]->id;
+my %args      = (resultdir => $resultdir, jobid => $jobid);
+
+subtest 'reduce_result gru task cleans up logs' => sub {
+    my $filename = create_temp_job_result_file($resultdir);
+    run_gru('reduce_result' => \%args);
+    ok(!-e $filename, 'file got cleaned');
+};
 
 done_testing();

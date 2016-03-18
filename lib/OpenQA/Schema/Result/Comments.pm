@@ -76,6 +76,42 @@ __PACKAGE__->belongs_to(
     },
 );
 
+
+=head2 bugref
+
+Returns bugref if C<$self> is bugref, e.g. 'bug#1234'.
+=cut
+sub bugref {
+    my ($self) = @_;
+    $self->text =~ /\b([^t]+#\d+)\b/;
+    return $1;
+}
+
+=head2 label
+
+Returns label value if C<$self> is label, e.g. 'label:my_label' returns 'my_label'
+=cut
+sub label {
+    my ($self) = @_;
+    $self->text =~ /\blabel:(\w+)\b/;
+    return $1;
+}
+
+=head2 tag
+
+Parses a comment and checks for a C<tag> mark. A tag is written as
+C<tag:<build_nr>:<type>[:<description>]>. A tag is only accepted on group
+comments not on test comments. The description is optional.
+
+Returns C<build_nr>, C<type> and optionally C<description> if C<$self> is tag,
+e.g. 'tag:0123:important:GM' returns a list of '0123', 'important' and 'GM'.
+=cut
+sub tag {
+    my ($self) = @_;
+    $self->text =~ /\btag:(\d+):([-\w]+)(:(\w+))?\b/;
+    return $1, $2, $4;
+}
+
 sub rendered_markdown {
     my ($self) = @_;
 
