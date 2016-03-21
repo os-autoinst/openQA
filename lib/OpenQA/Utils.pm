@@ -119,21 +119,18 @@ sub needle_info {
     }
 
     my $needle;
-    # try-catch actually resolves functions, so we can not "return from needle_info"
-    #   while inside the catch clause
-    # thus `return unless` aborts the needle_info method when the `return undef` in
-    #   the catch clause is evaluated
-    return unless try {
+    try {
         $needle = decode_json(<$JF>);
-        return 1;
     }
     catch {
         warn "failed to parse $fn: $_";
-        return 0;
+        # technically not required, $needle should remain undefined. Being superstitious human I add:
+        undef $needle;
     }
     finally {
         close($JF);
     };
+    return unless $needle;
 
     my $png_fname = basename($fn, '.json') . ".png";
     my $pngfile = File::Spec->catpath('', $needledir, $png_fname);
