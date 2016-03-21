@@ -711,7 +711,7 @@ sub create_result_dir {
         $days = $self->group->keep_logs_in_days if $self->group;
         my $cleanday = DateTime->now()->add(days => $days);
         my %args = (resultdir => $dir, jobid => $self->id);
-        $OpenQA::Utils::app->gru->enqueue(reduce_result => %args, {run_at => $cleanday});
+        $OpenQA::Utils::app->gru->enqueue(reduce_result => \%args, {run_at => $cleanday});
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
     my $sdir = $dir . "/.thumbs";
