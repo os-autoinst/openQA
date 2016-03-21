@@ -47,6 +47,7 @@ sub _read_config {
             scm              => undef,
             hsts             => 365,
             audit_enabled    => 1,
+            plugins          => undef,
         },
         auth => {
             method => 'OpenID',
@@ -210,6 +211,13 @@ sub startup {
     $self->plugin('OpenQA::WebAPI::Plugin::Gru');
     if ($self->config->{global}{audit_enabled}) {
         $self->plugin('OpenQA::WebAPI::Plugin::AuditLog', Mojo::IOLoop->singleton);
+    }
+    if (defined $self->config->{global}->{plugins}) {
+        my @plugins = split(' ', $self->config->{global}->{plugins});
+        for my $plugin (@plugins) {
+            $self->log->info("Loading external plugin $plugin");
+            $self->plugin("OpenQA::WebAPI::Plugin::$plugin");
+        }
     }
 
     $self->plugin(bootstrap3 => {css => [], js => []});
