@@ -56,9 +56,6 @@ $driver->find_element('opensuse', 'link_text')->click();
 is(scalar @{$driver->find_elements('h4', 'css')}, 3, 'default number of builds shown');
 is($driver->get($baseurl . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
 
-is($driver->get($baseurl . '?limit_jobs=1'), 1, 'we can limit the jobs, mainly used as error recovery');
-is(scalar @{$driver->find_elements('.progress-bar', 'css')}, 9, 'less/incomplete build results are shown');
-
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 t::ui::PhantomTest::kill_phantom();
