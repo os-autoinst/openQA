@@ -670,24 +670,30 @@ sub insert_test_modules($) {
 sub reduce_result {
     my ($app, $args) = @_;
 
-    my $job = $app->db->resultset('Jobs')->find({id => $args->{jobid}});
-    my $build = $job->settings_hash->{BUILD};
-
-    my $comments  = $job->group->comments;
-    my $important = 0;
-    while (my $comment = $comments->next) {
-        my @tag = $comment->tag;
-        next unless $tag[0] and ($tag[0] eq $build);
-        if ($tag[1] eq 'important') {
-            $important = 1;
-        }
-        elsif ($tag[1] eq '-important') {
-            $important = 0;
-        }
+    if (!ref($args)) {
+        $args = {resultdir => $args};
     }
-    if ($important) {
-        $app->log->debug('Job ' . $job->id . ' is part of build ' . $build . ' considered as important, skip cleanup');
-        return;
+
+    if ($args->{jobid}) {
+        my $job = $app->db->resultset('Jobs')->find({id => $args->{jobid}});
+        my $build = $job->settings_hash->{BUILD};
+
+        my $comments  = $job->group->comments;
+        my $important = 0;
+        while (my $comment = $comments->next) {
+            my @tag = $comment->tag;
+            next unless $tag[0] and ($tag[0] eq $build);
+            if ($tag[1] eq 'important') {
+                $important = 1;
+            }
+            elsif ($tag[1] eq '-important') {
+                $important = 0;
+            }
+        }
+        if ($important) {
+            $app->log->debug('Job ' . $job->id . ' is part of build ' . $build . ' considered as important, skip cleanup');
+            return;
+        }
     }
 
     my $resultdir = $args->{resultdir};
