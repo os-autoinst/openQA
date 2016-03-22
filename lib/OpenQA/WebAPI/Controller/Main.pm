@@ -30,12 +30,6 @@ sub _group_result {
 
     my %res;
     my $jobs = $group->jobs->search({"me.t_created" => $timecond,});
-    # arbitrary default limit
-    my $limit_jobs = $self->param('limit_jobs') // 4000;
-    if ($jobs->all > $limit_jobs) {
-        $self->app->log->error('too many jobs for group ' . $group->id . ', ' . $group->name . ', truncating search from ' . $jobs->all . ' to ' . $limit_jobs);
-        $jobs = $jobs->slice(0, $limit_jobs);
-    }
     my $builds = $self->db->resultset('JobSettings')->search(
         {
             job_id => {-in => $jobs->get_column('id')->as_query},
@@ -56,7 +50,7 @@ sub _group_result {
                 'me.group_id'    => $group->id,
                 'me.clone_id'    => undef,
             },
-            {join => qw/settings/, order_by => 'me.id DESC', rows => $limit_jobs});
+            {join => qw/settings/, order_by => 'me.id DESC'});
         my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0, labeled => 0);
 
         my $count = 0;
