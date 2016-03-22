@@ -201,6 +201,31 @@ sub startup {
     $self->log->path($logfile);
     $self->log->format(\&_log_format);
 
+    if ($logfile && $self->config->{logging}->{level}) {
+        $self->log->level($self->config->{logging}->{level});
+    }
+    if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
+        # avoid enabling the SQL debug unless we really want to see it
+        # it's rather expensive
+        db_profiler::enable_sql_debugging($self);
+    }
+
+    unless ($ENV{MOJO_TMPDIR}) {
+        $ENV{MOJO_TMPDIR} = ASSET_DIR . '/tmp';
+        # Try to create tmpdir if it doesn't exist but don't die if failed to create
+        if (!-e $ENV{MOJO_TMPDIR}) {
+            eval { make_path($ENV{MOJO_TMPDIR}); };
+            if ($@) {
+                print STDERR "Can not create MOJO_TMPDIR : $@\n";
+            }
+        }
+        delete $ENV{MOJO_TMPDIR} unless -w $ENV{MOJO_TMPDIR};
+    }
+
+    # take care of DB deployment or migration before starting the main app
+    my $schema = OpenQA::Schema::connect_db;
+    OpenQA::Schema::deployment_check($schema);
+
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
     $self->plugin('AssetPack');
@@ -288,32 +313,7 @@ sub startup {
             }
         });
 
-    if ($logfile && $self->config->{logging}->{level}) {
-        $self->log->level($self->config->{logging}->{level});
-    }
-    if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
-        # avoid enabling the SQL debug unless we really want to see it
-        # it's rather expensive
-        db_profiler::enable_sql_debugging($self);
-    }
-
-    unless ($ENV{MOJO_TMPDIR}) {
-        $ENV{MOJO_TMPDIR} = ASSET_DIR . '/tmp';
-        # Try to create tmpdir if it doesn't exist but don't die if failed to create
-        if (!-e $ENV{MOJO_TMPDIR}) {
-            eval { make_path($ENV{MOJO_TMPDIR}); };
-            if ($@) {
-                print STDERR "Can not create MOJO_TMPDIR : $@\n";
-            }
-        }
-        delete $ENV{MOJO_TMPDIR} unless -w $ENV{MOJO_TMPDIR};
-    }
-
     $OpenQA::Utils::app = $self;
-
-    # take care of DB deployment or migration before starting the main app
-    my $schema = OpenQA::Schema::connect_db;
-    OpenQA::Schema::deployment_check($schema);
 
     # load auth module
     my $auth_method = $self->config->{auth}->{method};
