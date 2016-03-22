@@ -1,3 +1,5 @@
+#!/usr/bin/env perl
+
 # Copyright (C) 2015 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
