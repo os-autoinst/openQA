@@ -1,9 +1,8 @@
 <div class="col-sm-2">
     <div class="panel panel-default" id="actions_box">
-        <div class="panel-heading">Menu</div>
+        <div class="panel-heading">Operators Menu</div>
         <div class="panel-body">
             <ul>
-                <li><%= link_to('Users' => url_for('admin_users')) %></li>
                 <li><%= link_to('Medium types' => url_for('admin_products')) %></li>
                 <li><%= link_to('Machines' => url_for('admin_machines')) %></li>
                 <li><%= link_to('Test suites' => url_for('admin_test_suites')) %></li>
@@ -14,9 +13,17 @@
                 <!-- Sure this is not the proper place for the workers view,
                 but the previous one was even more annoying -->
                 <li><%= link_to('Workers' => url_for('admin_workers')) %></li>
+            </ul>
+        </div>
+            % if (is_admin) {
+        <div class="panel-heading">Administrators Menu</div>
+        <div class="panel-body">
+            <ul>
+                <li><%= link_to('Users' => url_for('admin_users')) %></li>
                 <li><%= link_to('Needles' => url_for('admin_needles')) %></li>
                 <li><%= link_to('Audit log' => url_for('audit_log')) %></li>
             </ul>
         </div>
+            % }
     </div>
 </div>

@@ -397,40 +397,42 @@ sub startup {
     #
     ## Admin area starts here
     ###
-    my $admin_auth = $r->under('/admin')->to("session#ensure_admin");
-    my $admin_r = $admin_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
+    my $admin_auth = $r->under('/admin')->to('session#ensure_admin');
+    my $admin_r    = $admin_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
+    my $op_auth    = $r->under('/admin')->to('session#ensure_operator');
+    my $op_r       = $op_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
 
+    # operators accessible tables
+    $op_r->get('/products')->name('admin_products')->to('product#index');
+    $op_r->get('/machines')->name('admin_machines')->to('machine#index');
+    $op_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
+
+    $op_r->get('/job_templates/:groupid')->name('admin_job_templates')->to('job_template#index');
+
+    $op_r->get('/groups')->name('admin_groups')->to('job_group#index');
+    $op_r->post('/groups')->name('admin_new_group')->to('job_group#create');
+    $op_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
+    $op_r->post('/groups/connect/:groupid')->name('job_group_save_media')->to('job_group#save_connect');
+
+    $op_r->get('/assets')->name('admin_assets')->to('asset#index');
+
+    $op_r->get('/workers')->name('admin_workers')->to('workers#index');
+    $op_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
+
+    $op_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
+
+    # admins accessible tables
     $admin_r->get('/users')->name('admin_users')->to('user#index');
     $admin_r->post('/users/:userid')->name('admin_user')->to('user#update');
-
-    $admin_r->get('/products')->name('admin_products')->to('product#index');
-    $admin_r->get('/machines')->name('admin_machines')->to('machine#index');
-    $admin_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
-
-    $admin_r->get('/job_templates/:groupid')->name('admin_job_templates')->to('job_template#index');
-
-
-    $admin_r->get('/groups')->name('admin_groups')->to('job_group#index');
-    $admin_r->post('/groups')->name('admin_new_group')->to('job_group#create');
-    $admin_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
-    $admin_r->post('/groups/connect/:groupid')->name('job_group_save_media')->to('job_group#save_connect');
-
-    $admin_r->get('/assets')->name('admin_assets')->to('asset#index');
-
-    $admin_r->get('/workers')->name('admin_workers')->to('workers#index');
-    $admin_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
-
     $admin_r->get('/needles')->name('admin_needles')->to('needle#index');
     $admin_r->get('/needles/:module_id/:needle_id')->name('admin_needle_module')->to('needle#module');
     $admin_r->get('/needles/ajax')->name('admin_needle_ajax')->to('needle#ajax');
     $admin_r->delete('/needles/delete')->name('admin_needle_delete')->to('needle#delete');
-
     $admin_r->get('/auditlog')->name('audit_log')->to('audit_log#index');
     $admin_r->get('/auditlog/ajax')->name('audit_ajax')->to('audit_log#ajax');
-    $admin_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
 
-    # Users list as default option
-    $admin_r->get('/')->name('admin')->to('user#index');
+    # Workers list as default option
+    $op_r->get('/')->name('admin')->to('workers#index');
     ###
     ## Admin area ends here
     #
