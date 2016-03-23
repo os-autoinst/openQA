@@ -28,6 +28,7 @@ use Digest::MD5;
 use OpenQA::IPC;
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
+require OpenQA::Schema::Result::Jobs;
 
 # create Test DBus bus and service for fake WebSockets and Scheduler call
 my $ipc = OpenQA::IPC->ipc('', 1);
@@ -157,5 +158,45 @@ $post->content_is('OK');
 ok(-e $rp, 'asset exist after');
 $ret = $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(200);
 is($ret->tx->res->json->{name}, '00099963-hdd_image2.qcow2');
+
+# /api/v1/jobs supports filtering by state, result
+my $query = Mojo::URL->new('/api/v1/jobs');
+for my $state (OpenQA::Schema::Result::Jobs->STATES) {
+    $query->query(state => $state);
+    $get = $t->get_ok($query->path_query)->status_is(200);
+    my $res = $get->tx->res->json;
+    for my $job (@{$res->{jobs}}) {
+        is($job->{state}, $state);
+    }
+}
+
+for my $result (OpenQA::Schema::Result::Jobs->RESULTS) {
+    $query->query(result => $result);
+    $get = $t->get_ok($query->path_query)->status_is(200);
+    my $res = $get->tx->res->json;
+    for my $job (@{$res->{jobs}}) {
+        is($job->{result}, $result);
+    }
+}
+
+for my $result ('failed,none', 'passed,none', 'failed,passed') {
+    $query->query(result => $result);
+    $get = $t->get_ok($query->path_query)->status_is(200);
+    my $res  = $get->tx->res->json;
+    my $cond = $result =~ s/,/|/r;
+    for my $job (@{$res->{jobs}}) {
+        like($job->{result}, qr/$cond/);
+    }
+}
+
+$query->query(result => 'nonexistent_result');
+$get = $t->get_ok($query->path_query)->status_is(200);
+my $res = $get->tx->res->json;
+ok(!@{$res->{jobs}}, 'no result for nonexising result');
+
+$query->query(state => 'nonexistent_state');
+$get = $t->get_ok($query->path_query)->status_is(200);
+$res = $get->tx->res->json;
+ok(!@{$res->{jobs}}, 'no result for nonexising state');
 
 done_testing();

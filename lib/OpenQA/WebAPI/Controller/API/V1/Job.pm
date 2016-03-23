@@ -33,7 +33,7 @@ sub list {
     # arg. In all cases we're going to convert to an array ref of values:
     # we could let query_jobs do the string splitting for us, but this is
     # clearer.
-    for my $arg (qw/state ids/) {
+    for my $arg (qw/state ids result/) {
         next unless defined $self->param($arg);
         if (index($self->param($arg), ',') != -1) {
             $args{$arg} = [split(',', $self->param($arg))];
