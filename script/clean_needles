@@ -122,7 +122,7 @@ sub load_needles($$) {
     my @names = grep { s/\.json$// } readdir($dh);
     closedir $dh;
     for my $name (@names) {
-        my $needle = needle_info($name, $distri, $version);
+        my $needle = needle_info($name, $distri, $version, "");
         $needles_by_name{$distri}{$version // ''}{$name} = $needle;
         for my $tag (@{$needle->{tags}}) {
             push @{$needles_by_tag{$distri}{$version // ''}{$tag}}, $needle;
