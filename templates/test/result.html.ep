@@ -133,6 +133,14 @@
                             </thead>
                             <tbody>
                                 <% for my $module (@$modlist) { %>
+                                    % if ($module->{category}) {
+                                        <tr>
+                                            <td colspan="3">
+                                                <span class="glyphicon glyphicon-folder-open"></span>&nbsp;
+                                                %= $module->{category}
+                                            </td>
+                                        </tr>
+                                    % }
                                     <tr>
                                         <td class="component">
                                             <div>
