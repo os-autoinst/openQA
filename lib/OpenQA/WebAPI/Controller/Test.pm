@@ -203,6 +203,7 @@ sub read_test_modules {
     my $testresultdir = $job->result_dir();
     return [] unless $testresultdir;
 
+    my $category;
     my @modlist;
 
     for my $module (OpenQA::Schema::Result::JobModules::job_modules($job)) {
@@ -228,6 +229,12 @@ sub read_test_modules {
                 important    => $module->important,
                 fatal        => $module->fatal
             });
+
+        if (!$category || $category ne $module->category) {
+            $category = $module->category;
+            $modlist[-1]->{category} = $category;
+        }
+
     }
 
     return \@modlist;
