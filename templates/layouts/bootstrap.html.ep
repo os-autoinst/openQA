@@ -51,8 +51,6 @@
               % my $out = 'Logged in as '. current_user->name.' (';
               % if (is_operator) {
                   % $out = $out.link_to('manage API keys' => url_for('api_keys')).' | ';
-              % }
-              % if (is_admin) {
                   % $out = $out.link_to('admin' => url_for('admin')).' | ';
               % }
               %= b($out.link_to('Logout' => url_for('logout') => 'data-method' => 'delete').')');
