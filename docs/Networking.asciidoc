@@ -27,6 +27,17 @@ The TAP device to use can be configured with the +TAPDEV+ variable. If not set
 defined, ist's automatically set to "tap" + ($worker_instance - 1), i.e.
 worker1 uses tap0, worker 2 uses tap1 and so on.
 
+For multiple networks per job (see +NETWORKS+ variable), the following numbering
+scheme is used:
+
+[source, bash]
+---------------
+worker1: tap0 tap64 tap128 ...
+worker2: tap1 tap65 tap129 ...
+worker3: tap2 tap66 tap130 ...
+...
+---------------
+
 MAC address of virtual NIC is controlled by +NICMAC+ variable or
 automatically computed from $worker_id if not set.
 
@@ -143,9 +154,35 @@ IPADDR='10.0.2.2/15'
 STARTMODE='auto'
 ---------------
 
+wicked 0.6.23 and later has enhanced support for the creation and configuration of OpenvSwitch bridges,
+so the permanent configuration should look like this:
+
+[source, bash]
+---------------
+#/etc/sysconfig/network/ifcfg-br0
+BOOTPROTO='static'
+IPADDR='10.0.2.2/15'
+STARTMODE='auto'
+OVS_BRIDGE='yes'
+OVS_BRIDGE_PORT_DEVICE_1='tap0'
+OVS_BRIDGE_PORT_DEVICE_2='tap1'
+OVS_BRIDGE_PORT_DEVICE_3='tap2'
+---------------
+
 The IP 10.0.2.2 can also serve as a gateway to access outside
 network. For this, a NAT between br0 and eth0 must be configured
 with SuSEfirewall or iptables.
+
+[source, bash]
+---------------
+# configuration options for NAT with SuSEfirewall
+# /etc/sysconfig/SuSEfirewall
+
+FW_ROUTE="yes"
+FW_MASQUERADE="yes"
+FW_DEV_INT="br0"
+---------------
+
 
 Then it is possible to start the os-autoinst-openvswitch.service
 The service uses +br0+ by default. It can be configured for another
@@ -163,15 +200,45 @@ systemctl start os-autoinst-openvswitch.service
 systemctl enable os-autoinst-openvswitch.service
 ---------------
 
-The configuration can be checked by the following commands:
+### Debugging Open vSwitch configuration
 
-[source, bash]
----------------
-# show the configuration
+Boot sequence with wicked < 0.6.23:
+
+1. wicked - creates tap devices
+2. openvswitch - creates the bridge +br0+, adds tap devices to it
+3. wicked handles +br0+ as hotplugged device, assignd the IP 10.0.2.2 to it, updates SuSEFirewall
+4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
+
+Boot sequence with wicked 0.6.23 and newer:
+
+1. openvswitch
+2. wicked - creates the bridge +br0+ and tap devices, add tap devices to the bridge,
+3. SuSEFirewall
+4. os-autoinst-openvswitch - installs openflow rules, handles vlan assignment
+
+
+The configuration and operation can be checked by the following commands:
+
 ovs-vsctl show
-ovs-ofctl show br0
+
+shows the bridge br0, the tap devices are assigned to it
+
+
 ovs-ofctl dump-flows br0
----------------
+
+shows the rules installed by os-autoinst-openvswitch in table=0
+
+* packets from tapX to br0 create additional rules in table=1
+* packets from br0 to tapX increase packet counts in table=1
+* empty output indicates a problem with os-autoinst-openvswitch service
+* zero packet count or missing rules in table=1 indicate problem with tap devices
+
+ipables -L -v
+
+As long as the SUT has access to external network, there should be
+nonzero packet count in the forward chain between br0 and external
+interface.
+
 
 ## VDE based network
 
