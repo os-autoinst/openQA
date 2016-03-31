@@ -84,13 +84,13 @@ for my $i ($iso1, $iso2) {
 
 my $listing = [
     {
-        id   => 5,
+        id   => 6,
         name => $iso1,
         type => "iso",
         size => undef,
     },
     {
-        id   => 6,
+        id   => 7,
         name => $iso2,
         type => "iso",
         size => undef,
@@ -128,7 +128,7 @@ is_deeply(nots($ret->tx->res->json), $listing->[1], "asset correctly entered by 
 
 # check listing
 $ret = $t->get_ok('/api/v1/assets')->status_is(200);
-is_deeply(nots($ret->tx->res->json->{assets}->[4]), $listing->[0], "listing ok");
+is_deeply(nots($ret->tx->res->json->{assets}->[5]), $listing->[0], "listing ok");
 
 la;
 

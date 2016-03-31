@@ -205,29 +205,45 @@ my $rsp;
 map { like($_, $expected, 'expected warning') } @warnings;
 is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 0, 'gru task should not be created');
 
+# Schedule download of an existing HDD for extraction
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://localhost/openSUSE-13.1-x86_64.hda.xz'}) };
+map { like($_, $expected, 'expected warning') } @warnings;
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 0, 'gru task should not be created');
+
 # Schedule download of a non-existing ISO
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost/nonexistent.iso'}) };
 is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
 map { like($_, $expected, 'expected warning') } @warnings;
 is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'gru task should be created');
 
+# Schedule download of a non-existing HDD
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://localhost/nonexistent.hda.xz'}) };
+is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
+map { like($_, $expected, 'expected warning') } @warnings;
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'gru task should be created');
+
 # Using non-asset _URL does not create gru job and schedule jobs
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', NO_ASSET_URL => 'http://localhost/nonexistent.iso'}) };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'no additional gru task should be created');
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
 
 # Using asset _URL but without filename extractable from URL create warning in log file, jobs, but no gru job
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost'}) };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'no additional gru task should be created');
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
 
 # Using asset _URL outside of whitelist will yield 403
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://adamshost/nonexistant.iso'}, 403) };
-
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'no additional gru task should be created');
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
+
+# Using asset _DECOMPRESS_URL outside of whitelist will yield 403
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexistant.hda.xz'}, 403) };
+map { like($_, $expected, 'expected warning') } @warnings;
+is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
+is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
 
 done_testing();

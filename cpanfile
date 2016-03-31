@@ -1,3 +1,4 @@
+requires 'Archive::Extract';
 requires 'CGI';
 requires 'Cache::Cache';
 requires 'Carp';

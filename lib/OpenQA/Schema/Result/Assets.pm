@@ -21,6 +21,9 @@ use strict;
 use OpenQA::Utils;
 use OpenQA::Scheduler::Scheduler 'job_notify_workers';
 use Date::Format;
+use Archive::Extract;
+use File::Basename;
+use File::Spec::Functions 'catdir';
 use Mojo::UserAgent;
 use File::Spec::Functions 'splitpath';
 use Try::Tiny;
@@ -117,8 +120,8 @@ sub ensure_size {
 # A GRU task...arguments are the URL to grab and the full path to save
 # it in. scheduled in ISO controller
 sub download_asset {
-    my ($app, $args)   = @_;
-    my ($url, $dlpath) = @{$args};
+    my ($app, $args) = @_;
+    my ($url, $dlpath, $do_extract) = @{$args};
     # Bail if the dest file exists (in case multiple downloads of same ISO
     # are scheduled)
     return if (-e $dlpath);
@@ -173,7 +176,27 @@ sub download_asset {
         # Clean up after ourselves. Probably won't exist, but just in case
         OpenQA::Utils::log_error("Downloading failed! Deleting files");
         unlink($dlpath);
+        job_notify_workers();
+        return;
     }
+
+    # Extract downloaded file when required
+    if ($do_extract) {
+        my $ae = Archive::Extract->new(archive => $dlpath);
+        # Remove last extension from the end of filename
+        my ($filename, $dirs, $suffix) = fileparse($dlpath, qr/\.[^.]*/);
+        $filename = catdir($dirs, $filename);
+
+        OpenQA::Utils::log_debug("Extracting to $filename");
+
+        my $ok = $ae->extract(to => $filename);
+
+        if (!$ok) {
+            OpenQA::Utils::log_error("Extracting failed! Deleting files");
+            unlink($dlpath);
+        }
+    }
+
     # We want to notify workers either way: if we failed to download the ISO,
     # we want the jobs to run and fail.
     job_notify_workers();
