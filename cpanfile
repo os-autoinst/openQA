@@ -50,7 +50,7 @@ requires 'Mojo::Util';
 requires 'Mojolicious';
 requires 'Mojolicious::Commands';
 requires 'Mojolicious::Plugin';
-requires 'Mojolicious::Plugin::AssetPack';
+requires 'Mojolicious::Plugin::AssetPack', '<= 0.69';
 requires 'Mojolicious::Plugin::Bootstrap3';
 requires 'Mojolicious::Static';
 requires 'Net::DBus';
