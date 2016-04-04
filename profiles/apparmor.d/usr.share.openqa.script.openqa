@@ -1,7 +1,7 @@
 
 # ------------------------------------------------------------------
 #
-#    Copyright (C) 2014 SUSE
+#    Copyright (C) 2014-2016 SUSE LLC
 #
 #    This program is free software; you can redistribute it and/or
 #    modify it under the terms of version 2 of the GNU General Public
@@ -24,6 +24,7 @@
   /usr/bin/perl ix,
   /usr/bin/ssh rcx,
   /usr/lib/git/git rix,
+  /usr/share/openqa/dbicdh/** r,
   /usr/share/openqa/lib/** r,
   /usr/share/openqa/public/** r,
   /usr/share/openqa/script/openqa r,
