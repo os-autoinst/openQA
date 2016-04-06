@@ -186,6 +186,12 @@ is($ret->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 $ret = $t->post_ok('/api/v1/isos', form => {iso => $iso, tests => "kde/usb"})->status_is(400);
 
 # delete the iso
+# can not do as operator
+$ret = $t->delete_ok("/api/v1/isos/$iso")->status_is(403);
+# switch to admin and continue
+$app = $t->app;
+$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
+$t->app($app);
 $ret = $t->delete_ok("/api/v1/isos/$iso")->status_is(200);
 # now the jobs should be gone
 $ret = $t->get_ok('/api/v1/jobs/$newid')->status_is(404);

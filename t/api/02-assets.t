@@ -60,7 +60,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 sub la {
@@ -159,6 +159,17 @@ like(warning { $ret = $t->post_ok('/api/v1/assets', form => {type => 'foo', name
 # try to register non existing asset
 like(warning { $ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})->status_is(400) }, qr/asset name \'foo.iso\' invalid/);
 
+# switch to operator (percival) and try some modifications
+$app = $t->app;
+$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->app($app);
+
+# test delete operation
+$ret = $t->delete_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(403, 'asset deletion forbidden for operator');
+# delete by name
+$ret = $t->delete_ok('/api/v1/assets/iso/' . $iso1)->status_is(403, 'asset deletion forbidden for operator');
+# asset must be still there
+$ret = $t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200);
 
 for my $i ($iso1, $iso2) {
     ok(unlink("t/data/openqa/factory/iso/$i"), "rm $i");

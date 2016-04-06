@@ -43,7 +43,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 
@@ -136,5 +136,13 @@ is_deeply(
 
 $res = $t->delete_ok("/api/v1/products/$product_id")->status_is(200);
 $res = $t->delete_ok("/api/v1/products/$product_id")->status_is(404);    #not found
+
+# switch to operator (percival) and try some modifications
+$app = $t->app;
+$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->app($app);
+$t->post_ok('/api/v1/products', form => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2, "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})->status_is(403);
+$t->put_ok("/api/v1/products/$product_id", form => {arch => "x86_64", distri => "opensuse", flavor => "DVD", version => 13.2, "settings[TEST2]" => "val1"})->status_is(403);
+$res = $t->delete_ok("/api/v1/products/$product_id")->status_is(403);
 
 done_testing();

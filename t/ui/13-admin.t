@@ -127,6 +127,7 @@ sub add_machine() {
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
     }
+    $driver->capture_screenshot('add_machine.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 4, "4 edit buttons afterwards");
 }
 
@@ -173,6 +174,7 @@ sub add_test_suite() {
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
     }
+    $driver->capture_screenshot('add_test.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 8, "8 edit buttons afterwards");
 }
 #
@@ -230,6 +232,7 @@ sub add_product() {
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
     }
+    $driver->capture_screenshot('add_product.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 2, "2 edit buttons afterwards");
 
     # check the distri name will be lowercase after added a new one
@@ -249,6 +252,7 @@ sub add_product() {
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
     }
+    $driver->capture_screenshot('add_product2.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons afterwards");
 
 }
