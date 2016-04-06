@@ -30,6 +30,7 @@
         </tbody>
     </table>
 
+    % if (is_admin) {
     <p>
     %= form_for admin_new_group => (id => 'new_group_form') => (method => 'POST') => begin
       <label for="name">New group:</label>
@@ -37,6 +38,7 @@
       <input type="submit" name="submit" value="Create" id="submit" class="btn btn-default">
     % end
     </p>
+    % }
 </div>
 
 </div>

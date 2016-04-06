@@ -1,12 +1,12 @@
 
-function table_row (data, table, edit)
+function table_row (data, table, edit, is_admin)
 {
     var html = "<tr>";
-    
+
     table.find('th').each (function() {
         var th = $(this);
         var name = th.text().trim().toLowerCase();
-        
+
         if (th.hasClass("col_value")) {
             var value = '';
             if (data[name]) value = data[name];
@@ -72,31 +72,27 @@ function table_row (data, table, edit)
             }
             html += '</td>';
         } else if (th.hasClass("col_action")) {
+            html += '<td>';
             if (edit) {
                 if (data['id']) {
                     // edit existing
                     html +=
-                    '<td>' +
                          '<button type="submit" class="btn" alt="Update" title="Update" onclick="submit_table_row_button( this, ' + data['id'] + ');"><i class="fa fa-floppy-o"></i></button>' +
                          '<button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="refresh_table_row_button( this, ' + data['id'] + ' , false);"><i class="fa fa-undo"></i></button>' +
-                         '<button type="submit" class="btn" alt="Delete" title="Delete" onclick="delete_table_row_button( this, ' + data['id'] + ');"><i class="fa fa-trash"></i></button>' +
-                     '</td>';
+                         '<button type="submit" class="btn" alt="Delete" title="Delete" onclick="delete_table_row_button( this, ' + data['id'] + ');"><i class="fa fa-trash"></i></button>';
                 }
                 else {
                     // add new
                     html +=
-                    '<td>' +
                          '<button type="submit" class="btn" alt="Add" title="Add" onclick="submit_table_row_button( this );"><i class="fa fa-floppy-o"></i></button>' +
-                         '<button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="delete_table_row_button( this );"><i class="fa fa-undo"></i></button>' +
-                     '</td>';
+                         '<button type="submit" class="btn" alt="Cancel" title="Cancel" onclick="delete_table_row_button( this );"><i class="fa fa-undo"></i></button>';
                 }
             }
-            else {
+            else if (is_admin) {
                 html +=
-                '<td>' +
-                     '<button type="submit" class="btn" alt="Edit" title="Edit" onclick="refresh_table_row_button( this, ' + data['id'] + ' , true);"><i class="fa fa-pencil-square-o"></i></button>' +
-                '</td>';
+                     '<button type="submit" class="btn" alt="Edit" title="Edit" onclick="refresh_table_row_button( this, ' + data['id'] + ' , true);"><i class="fa fa-pencil-square-o"></i></button>';
             }
+            html += '</td>';
         }
     });
     html += "</tr>";
@@ -124,7 +120,7 @@ function refresh_table_row (tr, id, edit)
             var db_table = Object.keys(resp)[0];
             var json_row = resp[db_table][0];
             var table = $(tr).closest('table');
-            var new_tr_html = table_row(json_row, table, edit);
+            var new_tr_html = table_row(json_row, table, edit, 1);
             $(tr).replaceWith(new_tr_html);
         },
         error: admintable_api_error
@@ -259,7 +255,7 @@ function add_table_row_button ()
     table.find('tr:last').after(html);
 }
 
-function populate_admin_table ()
+function populate_admin_table (is_admin)
 {
     var url = $("#admintable_api_url").val();
     if (url) {
@@ -273,7 +269,7 @@ function populate_admin_table ()
                 var table = $('.admintable');
                 var html = '';
                 for (var i = 0; i < json_table.length; i++) {
-                    html += table_row(json_table[i], table, false);
+                    html += table_row(json_table[i], table, false, is_admin);
                 }
                 table.find('tbody').html(html);
 		// a really stupid datatable
