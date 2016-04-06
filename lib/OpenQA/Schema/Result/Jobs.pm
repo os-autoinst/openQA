@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +15,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::Jobs;
+use strict;
+use warnings;
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
 use JSON;
@@ -25,8 +27,6 @@ use OpenQA::Utils qw/log_debug parse_assets_from_settings/;
 use File::Basename qw/basename dirname/;
 use File::Path ();
 use File::Which qw(which);
-use strict;
-use warnings;
 
 # States
 use constant {
@@ -362,8 +362,8 @@ sub duplicate {
     # If the job already has a clone, none is created
     return unless $self->can_be_duplicated;
     # skip this job if encountered again
-    my $ignores = $args->{ignore_jobs} // [];
-    push @$ignores, $self->id;
+    my $jobs_map = $args->{jobs_map} // {};
+    $jobs_map->{$self->id} = 0;
     log_debug('duplicating ' . $self->id);
 
     # store mapping of all duplications for return - need old job IDs for state mangling
@@ -387,37 +387,48 @@ sub duplicate {
         });
     while (my $pd = $parents->next) {
         my $p = $pd->parent;
-        next if (grep { $_ == $p->id } @$ignores);
-        if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
-            my %dups = $p->duplicate({ignore_jobs => $ignores});
-            # if duplication failed, either there was a transaction conflict or more likely job failed
-            # can_be_duplicated check.
-            # That is either we are hooked to already cloned parent or
-            # parent is not in proper state - e.g. scheduled.
-            while (!%dups && !$p->can_be_duplicated) {
-                if ($p->state eq SCHEDULED) {
-                    # we use SCHEDULED as is, just route dependencies
-                    %dups = ($p->id => $p->id);
-                    last;
-                }
-                else {
-                    # find the current clone and try to duplicate that one
-                    while ($p->clone) {
-                        $p = $p->clone;
+        if (!exists $jobs_map->{$p->id}) {
+            # if jobs_map->{$p->id} doesn't exists, the job processing wasnt started yet, do it now
+            if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
+                my %dups = $p->duplicate({jobs_map => $jobs_map});
+                # if duplication failed, either there was a transaction conflict or more likely job failed
+                # can_be_duplicated check.
+                # That is either we are hooked to already cloned parent or
+                # parent is not in proper state - e.g. scheduled.
+                while (!%dups && !$p->can_be_duplicated) {
+                    if ($p->state eq SCHEDULED) {
+                        # we use SCHEDULED as is, just route dependencies
+                        %dups = ($p->id => $p->id);
+                        last;
                     }
-                    %dups = $p->duplicate({ignore_jobs => $ignores});
+                    else {
+                        # find the current clone and try to duplicate that one
+                        while ($p->clone) {
+                            $p = $p->clone;
+                        }
+                        %dups = $p->duplicate({jobs_map => $jobs_map});
+                    }
                 }
+                %duplicated_ids = (%duplicated_ids, %dups);
+                # we don't have our cloned id yet so store new immediate parent for
+                # dependency recreation
+                push @direct_deps_parents_parallel, $dups{$p->id};
             }
-            push @$ignores, keys %dups;
-            %duplicated_ids = (%duplicated_ids, %dups);
-            # we don't have our cloned id yet so store new immediate parent for
-            # dependency recreation
-            push @direct_deps_parents_parallel, $dups{$p->id};
+            else {
+                # reroute to CHAINED parents, those are not being cloned when child is restarted
+                push @direct_deps_parents_chained, $p->id;
+            }
         }
-        else {
-            # reroute to CHAINED parents, those are not being cloned when child is restarted
-            push @direct_deps_parents_chained, $p->id;
+        elsif ($jobs_map->{$p->id}) {
+            # if $jobs_map->{$p->id} is true, job was already clones, lets create the relationship
+            if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
+                push @direct_deps_parents_parallel, $jobs_map->{$p->id};
+            }
+            else {
+                push @direct_deps_parents_chained, $p->id;
+            }
         }
+        # else ignore since the jobs is being processed and we are also indirect descendand
     }
 
     ## go and clone and recreate test dependencies - running children tests, this cover also asset dependencies (use CHAINED dep)
@@ -430,39 +441,48 @@ sub duplicate {
         });
     while (my $cd = $children->next) {
         my $c = $cd->child;
-        next if (grep { $_ == $c->id } @$ignores);
         # ignore already cloned child, prevent loops in test definition
         next if $duplicated_ids{$c->id};
         # do not clone DONE children for PARALLEL deps
         next if ($c->state eq DONE and $cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL);
 
-        my %dups = $c->duplicate({ignore_jobs => $ignores});
-        # the same as in parent cloning, detect SCHEDULED and cloning already cloned child
-        while (!%dups && !$c->can_be_duplicated) {
-            if ($c->state eq SCHEDULED) {
-                # we use SCHEDULED as is, just route dependencies - create new, remove existing
-                %dups = ($c->id => $c->id);
-                $cd->delete;
-                last;
+        if (!exists $jobs_map->{$c->id}) {
+            # if jobs_map->{$p->id} doesn't exists, the job processing wasnt started yet, do it now
+            my %dups = $c->duplicate({jobs_map => $jobs_map});
+            # the same as in parent cloning, detect SCHEDULED and cloning already cloned child
+            while (!%dups && !$c->can_be_duplicated) {
+                if ($c->state eq SCHEDULED) {
+                    # we use SCHEDULED as is, just route dependencies - create new, remove existing
+                    %dups = ($c->id => $c->id);
+                    $cd->delete;
+                    last;
+                }
+                else {
+                    # find the current clone and try to duplicate that one
+                    while ($c->clone) {
+                        $c = $c->clone;
+                    }
+                    %dups = $c->duplicate({jobs_map => $jobs_map});
+                }
+            }
+            # we don't have our cloned id yet so store immediate child for
+            # dependency recreation
+            if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
+                push @direct_deps_children_parallel, $dups{$c->id};
             }
             else {
-                # find the current clone and try to duplicate that one
-                while ($c->clone) {
-                    $c = $c->clone;
-                }
-                %dups = $c->duplicate({ignore_jobs => $ignores});
+                push @direct_deps_children_chained, $dups{$c->id};
+            }
+            %duplicated_ids = (%duplicated_ids, %dups);
+        }
+        elsif ($jobs_map->{$c->id}) {
+            if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
+                push @direct_deps_children_parallel, $jobs_map->{$c->id};
+            }
+            else {
+                push @direct_deps_children_chained, $jobs_map->{$c->id};
             }
         }
-        push @$ignores, keys %dups;
-        # we don't have our cloned id yet so store immediate child for
-        # dependency recreation
-        if ($cd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
-            push @direct_deps_children_parallel, $dups{$c->id};
-        }
-        else {
-            push @direct_deps_children_chained, $dups{$c->id};
-        }
-        %duplicated_ids = (%duplicated_ids, %dups);
     }
 
     # Copied retry_avbl as default value if the input undefined
@@ -551,6 +571,8 @@ sub duplicate {
 
     # when dependency network is recreated, associate assets
     $res->register_assets_from_settings;
+    # we are done, mark it in jobs_map
+    $jobs_map->{$self->id} = $res->id;
     return ($self->id => $res->id, %duplicated_ids);
 }
 
@@ -668,8 +690,35 @@ sub insert_test_modules($) {
 
 # gru job
 sub reduce_result {
-    my ($app, $resultdir) = @_;
+    my ($app, $args) = @_;
 
+    if (!ref($args)) {
+        $args = {resultdir => $args};
+    }
+
+    if ($args->{jobid}) {
+        my $job = $app->db->resultset('Jobs')->find({id => $args->{jobid}});
+        my $build = $job->settings_hash->{BUILD};
+
+        my $comments  = $job->group->comments;
+        my $important = 0;
+        while (my $comment = $comments->next) {
+            my @tag = $comment->tag;
+            next unless $tag[0] and ($tag[0] eq $build);
+            if ($tag[1] eq 'important') {
+                $important = 1;
+            }
+            elsif ($tag[1] eq '-important') {
+                $important = 0;
+            }
+        }
+        if ($important) {
+            $app->log->debug('Job ' . $job->id . ' is part of build ' . $build . ' considered as important, skip cleanup');
+            return;
+        }
+    }
+
+    my $resultdir = $args->{resultdir};
     $resultdir .= "/";
     unlink($resultdir . "autoinst-log.txt");
     unlink($resultdir . "video.ogv");
@@ -689,7 +738,8 @@ sub create_result_dir {
         my $days = 30;
         $days = $self->group->keep_logs_in_days if $self->group;
         my $cleanday = DateTime->now()->add(days => $days);
-        $OpenQA::Utils::app->gru->enqueue(reduce_result => $dir, {run_at => $cleanday});
+        my %args = (resultdir => $dir, jobid => $self->id);
+        $OpenQA::Utils::app->gru->enqueue(reduce_result => \%args, {run_at => $cleanday});
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
     my $sdir = $dir . "/.thumbs";

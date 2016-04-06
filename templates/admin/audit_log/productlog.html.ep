@@ -1,0 +1,60 @@
+% layout 'bootstrap';
+% title 'Scheduled products log';
+
+% content_for 'ready_function' => begin
+    audit_url = "<%= url_for('audit_log') %>";
+    ajax_url  = "<%= url_for('audit_ajax') %>";
+    loadProductLogTable();
+% end
+
+<div class="row">
+    %= include 'layouts/admin_nav'
+
+    <div class="col-sm-10">
+        <h2><%= title %>
+            % if (!$audit_enabled) {
+                <em class="text-warning">(auditing disabled)</em>
+            % }
+        </h2>
+
+    %= include 'layouts/info'
+
+    <table id="product_log_table" class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Event ID</th>
+                    <th>Time</th>
+                    <th>Distri</th>
+                    <th>Version</th>
+                    <th>Flavor</th>
+                    <th>Arch</th>
+                    <th>Build</th>
+                    <th>ISO</th>
+                    <th>Settings</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+            % for my $iso (@$isos) {
+                <tr>
+                    <td><%= $iso->{id} %></td>
+                    <td><%= $iso->{event_time} %></td>
+                    <td>DISTRI</td>
+                    <td>VERSION</td>
+                    <td>FLAVOR/td>
+                    <td>ARCH</td>
+                    <td>BUILD</td>
+                    <td>ISO</td>
+                    % my $data = $iso->{event_data};
+                    <td class="event_data"><%= $data %></td>
+                    <td>
+                        %= link_post url_for('apiv1_create_iso') => ('data-remote' => 'true', class => 'iso_restart') => begin
+                            <i class="action fa fa-repeat" title="Reschedule product tests"></i>
+                        % end
+                    </td>
+                 </tr>
+            % }
+            </tbody>
+        </table>
+    </div>
+</div>

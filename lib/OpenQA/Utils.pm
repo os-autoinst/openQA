@@ -2,9 +2,11 @@ package OpenQA::Utils;
 use strict;
 require 5.002;
 
+use Cwd;
 use Carp;
 use IPC::Run();
 use Mojo::URL;
+use Try::Tiny;
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -21,6 +23,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &testcasedir
   &file_content
   &log_debug
+  &log_warning
   &save_base64_png
   &run_cmd_with_log
   &commit_git
@@ -88,15 +91,28 @@ sub needledir {
     return productdir($distri, $version) . '/needles';
 }
 
-sub needle_info($$$) {
+sub needle_info {
     my $name    = shift;
     my $distri  = shift;
     my $version = shift;
+    my $fn      = shift;
     local $/;
 
     my $needledir = needledir($distri, $version);
 
-    my $fn = "$needledir/$name.json";
+    if (!$fn) {
+        $fn = "$needledir/$name.json";
+    }
+    else {
+        $needledir = dirname($fn);
+    }
+
+    # make sure needledir is a subdir of testcasedir
+    if (index(Cwd::realpath($needledir), Cwd::realpath($testcasedir)) != 0) {
+        warn "$needledir is not a subdir of $testcasedir";
+        return;
+    }
+
     my $JF;
     unless (open($JF, '<', $fn)) {
         warn "$fn: $!";
@@ -104,17 +120,25 @@ sub needle_info($$$) {
     }
 
     my $needle;
-    eval { $needle = decode_json(<$JF>); };
-    close($JF);
-
-    if ($@) {
-        warn "failed to parse $needledir/$name.json: $@";
-        return;
+    try {
+        $needle = decode_json(<$JF>);
     }
+    catch {
+        warn "failed to parse $fn: $_";
+        # technically not required, $needle should remain undefined. Being superstitious human I add:
+        undef $needle;
+    }
+    finally {
+        close($JF);
+    };
+    return unless $needle;
+
+    my $png_fname = basename($fn, '.json') . ".png";
+    my $pngfile = File::Spec->catpath('', $needledir, $png_fname);
 
     $needle->{needledir} = $needledir;
-    $needle->{image}     = "$needledir/$name.png";
-    $needle->{json}      = "$needledir/$name.json";
+    $needle->{image}     = $pngfile;
+    $needle->{json}      = $fn;
     $needle->{name}      = $name;
     $needle->{distri}    = $distri;
     $needle->{version}   = $version;

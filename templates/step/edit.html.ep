@@ -105,6 +105,7 @@
                 <input type="hidden" id="needleeditor_image" name="imagename" value="<%= ${@$needles[0]}{'imagename'} %>"/>
                 <input type="hidden" id="needleeditor_imagedistri" name="imagedistri" value="<%= ${@$needles[0]}{'imagedistri'} %>"/>
                 <input type="hidden" id="needleeditor_imageversion" name="imageversion" value="<%= ${@$needles[0]}{'imageversion'} %>"/>
+                <input type="hidden" id="needleeditor_imagedir" name="imagedir" value="<%= ${@$needles[0]}{'imagedir'} %>"/>
             </div>
         </div>
         % if (is_operator) {
@@ -146,6 +147,7 @@
                                data-distri="<%= $needle->{'imagedistri'} %>"
                                data-version="<%= $needle->{'imageversion'} %>"
                                data-url="<%= $needle->{'imageurl'} %>"
+                               data-imagedir="<%= $needle->{'imagedir'} %>"
                         <%= 'checked="checked"' if ($i == 0); %>
                         <%= 'disabled="disabled"' if ($needle->{'broken'}); %> />
                     </td>

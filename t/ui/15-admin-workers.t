@@ -60,7 +60,7 @@ like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Dem
 # Demo is admin, so go there
 $driver->find_element('admin', 'link_text')->click();
 
-is($driver->get_title(), "openQA: Users", "on user overview");
+is($driver->get_title(), "openQA: Workers", "on workers overview");
 
 $driver->find_element('Workers', 'link_text')->click();
 

@@ -1,6 +1,6 @@
 openQA installation guide
 =========================
-:author: openSUSE Team at SUSE
+:author: openQA developers
 :toc:
 
 Introduction
@@ -23,26 +23,33 @@ Installation
 ------------
 [id="installation"]
 
-The easiest way to install openQA is from packages. You can find them in OBS in
-the https://build.opensuse.org/project/show/devel:openQA[openQA] repository or
+The easiest way to install openQA is from packages. You can find openSUSE
+packages in OBS in the
+https://build.opensuse.org/project/show/devel:openQA[openQA] repository or
 the latest development version can also be found in OBS in the
 https://build.opensuse.org/project/show/devel:openQA[openQA:devel]
-repository. Installation on openSUSE is therefore pretty simple:
+repository. For Fedora, packages are available in the official repositories
+for Fedora 23 and later. Installation on these distributions is therefore
+pretty simple:
 
 [source,sh]
 --------------------------------------------------------------------------------
-# 13.2
+# openSUSE 13.2
 zypper ar -f obs://devel:openQA/openSUSE_13.2 openQA
 zypper ar -f obs://devel:openQA:13.2/openSUSE_13.2 openQA-perl-modules
 
-# Leap 42.1
+# openSUSE Leap 42.1
 zypper ar -f obs://devel:openQA/openSUSE_Leap_42.1 openQA
 zypper ar -f obs://devel:openQA:Leap:42.1/openSUSE_Leap_42.1 openQA-perl-modules
 
-# Tumbleweed
+# openSUSE Tumbleweed
 zypper ar -f obs://devel:openQA/openSUSE_Factory openQA
 
+# all openSUSE
 zypper in openQA
+
+# Fedora 23+
+dnf install openqa openqa-httpd
 --------------------------------------------------------------------------------
 
 Basic configuration
@@ -53,16 +60,23 @@ Apache proxy
 ~~~~~~~~~~~~
 
 It's recommended to run openQA behind an apache proxy. See the
-+openqa.conf.template+ config file in +/etc/apache2/vhosts.d+. To make
-everything work correctly, you need to enable the 'headers', 'proxy',
-'proxy_http' and 'proxy_wstunnel' modules using 'a2enmod'.
++openqa.conf.template+ config file in +/etc/apache2/vhosts.d+ (openSUSE) or
++/etc/httpd/conf.d+ (Fedora). To make everything work correctly on openSUSE,
+you need to enable the 'headers', 'proxy', 'proxy_http' and 'proxy_wstunnel'
+modules using 'a2enmod'. This is not necessary on Fedora. For a basic setup,
+you can copy +openqa.conf.template+ to +openqa.conf+ and modify the
++ServerName+ setting. This will direct all HTTP traffic to openQA.
 
-SSL
-~~~
+TLS/SSL
+~~~~~~~
 
-By default openQA expects to be run with HTTPS. If you don't have an
-SSL certificate for your host you need to turn HTTPS off. You can do
-that in +/etc/openqa/openqa.ini+:
+By default openQA expects to be run with HTTPS. The +openqa-ssl.conf.template+
+Apache config file is available as a base for creating the Apache config; you
+can copy it to +openqa-ssl.conf+ and uncomment any lines you like, then
+ensure a key and certificate are installed to the appropriate location
+(depending on distribution and whether you uncommented the lines for key and
+cert location in the config file). If you don't have a TLS/SSL certificate for
+your host you must turn HTTPS off. You can do that in +/etc/openqa/openqa.ini+:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -74,11 +88,20 @@ Run the web UI
 ~~~~~~~~~~~~~~
 [source,sh]
 --------------------------------------------------------------------------------
+systemctl start openqa-scheduler
+systemctl start openqa-gru
+systemctl start openqa-websockets
 systemctl start openqa-webui
+# openSUSE
 systemctl restart apache2
+# Fedora
+# for now this is necessary to allow Apache to connect to openQA
+setsebool -P httpd_can_network_connect 1
+systemctl restart httpd
 --------------------------------------------------------------------------------
 
-The openQA web UI should be available on http://localhost/ now.
+The openQA web UI should be available on http://localhost/ now. To ensure
+openQA runs on each boot, you should also +systemctl enable+ the same services.
 
 Run workers
 ~~~~~~~~~~~
@@ -89,16 +112,22 @@ multiple machines but still using only one WebUI.
 
 [source,sh]
 --------------------------------------------------------------------------------
+# openSUSE
 zypper in openQA-worker
+# Fedora
+dnf install openqa-worker
 --------------------------------------------------------------------------------
 
 To allow workers to access your instance, you need to log into
 openQA as operator and create a pair of API key and secret. Once you
 are logged in, follow the link 'manage API keys' in the top right
-corner. Click the 'create' button to generate +key+ and +secret+.
-Copy&Paste them into +/etc/openqa/client.conf+ on machine where openQA-worker
+corner. Click the 'create' button to generate +key+ and +secret+. There is
+also a script available for creating an admin user and an API key+secret
+pair non-interactively, +/usr/share/openqa/script/create_admin+, which can
+be useful for scripted deployments of openQA. Copy and paste the key and
+secrent into +/etc/openqa/client.conf+ on the machine(s) where the worker
 is installed. Make sure to put in a section reflecting your webserver URL.
-In the simplemost case, your +client.conf+ may look like this:
+In the simplest case, your +client.conf+ may look like this:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -106,6 +135,7 @@ In the simplemost case, your +client.conf+ may look like this:
 key = 0123456789ABCDEF
 secret = 0123456789ABCDEF
 --------------------------------------------------------------------------------
+
 
 To start the workers you can use the provided systemd files via +systemctl
 start openqa-worker@1+. This will start worker number one. You can start as
@@ -223,7 +253,7 @@ ssh keys for user 'geekotest' to be able to push.
 Worker settings
 ~~~~~~~~~~~~~~~
 
-Default behaviour for all workers is to use the 'Qemu' backend and connect to
+Default behavior for all workers is to use the 'Qemu' backend and connect to
 'http://localhost'. If you want to change some of those options, you can do so
 in +/etc/openqa/workers.ini+. For example to point the workers to the FQDN of
 your host (needed if test cases need to access files of the host) use the
@@ -319,16 +349,40 @@ The openQA web interface can be started via +MOJO_REVERSE_PROXY=1 morbo script/o
 development mode.
 
 +/var/lib/openqa/+ must be owned by root and contain several sub
-directories owned by the user that runs openqa (default 'geekotest'):
+directories, most of which must be owned by the user that runs openQA
+(default 'geekotest'):
 
-* +cache+ (cache directory, needs to be owned by the user who runs openqa)
-* +factory/iso+
-* +share+ (shared directories for remote workers)
-* +testresults+
-* +tools+ (symlink to +/usr/share/openqa/tools/+)
 * +db+ contains the sqlite database
+* +images+ is where the server stores test screenshots and thumbnails
+* +share+ contains shared directories for remote workers, can be owned by root
+* +share/factory+ contains test assets and temp directory, can be owned by root but sysadmin must create subdirs
+* +share/factory/iso+ contains ISOs for tests
+* +share/factory/hdd+ contains hard disk images for tests
+* +share/factory/repo+ contains repositories for tests
+* +share/factory/other+ contains miscellaneous test assets (e.g. kernels and initrds)
+* +share/factory/tmp+ is used as a temporary directory (openQA will create it if it owns +share/factory+)
+* +share/tests+ contains the tests themselves
+* +testresults+ is where the server stores test logs and test-generated assets
 
-To initially create the database, you need to run +script/initdb+.
+It also contains several symlinks which are necessary due to various things
+moving around over the course of openQA's development. All the symlinks
+can of course be owned by root:
+
+* +script+ (symlink to +/usr/share/openqa/script/+)
+* +tests+ (symlink to +share/tests+)
+* +factory+ (symlink to +share/factory+)
+
+It is always best to use the canonical locations, not the compatibility
+symlinks - so run scripts from +/usr/share/openqa/script+, not
++/var/lib/openqa/script+.
+
+You only need the asset directories for the asset types you will actually use,
+e.g. if none of your tests refer to openQA-stored repositories, you will need
+no +factory/repo+ directory. The distribution packages may not create all
+asset directories, so make sure the ones you need are created if necessary.
+Packages will likewise usually not contain any tests; you must create your
+own tests, or use existing tests for some distribution or other piece of
+software.
 
 The worker needs to own +/var/lib/openqa/pool/$INSTANCE+, e.g.
 * +/var/lib/openqa/pool/1+
@@ -337,6 +391,41 @@ The worker needs to own +/var/lib/openqa/pool/$INSTANCE+, e.g.
 
 You can also give the whole pool directory to the +_openqa-worker+ user and let
 the workers create their own instance directories.
+
+Other database engines
+----------------------
+[id="otherdb"]
+
+By default, openQA will use an SQLite database: +/var/lib/openqa/db/db.sqlite+.
+This will be automatically created on first access to the openQA web UI, if it
+does not exist.
+
+It is possible to use PostgreSQL or MariaDB / MySQL instead of SQLite, and
+indeed this is recommended for production deployments of openQA. You should
+create a database and a dedicated user account with full access to it. To
+configure access to the chosen database in openQA, edit +/etc/openqa/database.ini+
+and change the settings in the +[production]+ section. Here is an example for
+connecting to a remote PostgreSQL database with a username and password:
+[source, ini]
+--------------------------------------------------------------------------------
+[production]
+dsn = dbi:Pg:dbname=openqa;host=db.example.org
+user = openqa
+password = somepassword
+--------------------------------------------------------------------------------
+The +dsn+ value format technically depends on the database type (though at
+time of writing it's in fact identical for both supported databases). For
+PostgreSQL it's documented at
+http://search.cpan.org/~rudy/DBD-Pg/Pg.pm#DBI_Class_Methods ,
+for MySQL / MariaDB it's documented at
+http://search.cpan.org/~capttofu/DBD-mysql/lib/DBD/mysql.pm#Class_Methods
+
+If you intend to use a different database, it is best to create the database
+and configuration file before starting the services and connecting to the
+web UI for the first time, otherwise openQA will set itself up with an SQLite
+database and may get confused when you try to switch to a different one. See
+the following section if you want to migrate an existing openQA-on-SQLite
+deployment to a different database.
 
 Changing the database engine
 ----------------------------
