@@ -34,7 +34,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 my $get = $t->get_ok('/api/v1/job_templates')->status_is(200);
@@ -427,5 +427,20 @@ $res = $t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(404);
 
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(200);
 $res = $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(404);    #not found
+
+# switch to operator (percival) and try some modifications
+$app = $t->app;
+$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->app($app);
+$t->post_ok(
+    '/api/v1/job_templates',
+    form => {
+        group_id      => 1001,
+        machine_id    => 1001,
+        test_suite_id => 1002,
+        product_id    => 1,
+        prio          => 30
+    })->status_is(403);
+$t->delete_ok("/api/v1/job_templates/$job_template_id1")->status_is(403);
 
 done_testing();

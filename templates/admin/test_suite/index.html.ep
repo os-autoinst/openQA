@@ -2,7 +2,7 @@
 % title 'Test suites';
 
 % content_for 'ready_function' => begin
-    populate_admin_table();
+    populate_admin_table(<%= is_admin %>);
 % end
 
 <div class="row">
@@ -24,9 +24,11 @@
             <tbody>
             </tbody>
         </table>
+        % if (is_admin) {
         <div class="text-center">
             <input value="New test suite" onclick="add_table_row_button();" type="button" class="btn btn-default"/>
         </div>
+        % }
         <input type="hidden" id="admintable_api_url" value="/api/v1/test_suites"/>
     </div>
 

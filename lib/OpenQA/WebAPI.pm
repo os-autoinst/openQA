@@ -410,9 +410,7 @@ sub startup {
     $op_r->get('/job_templates/:groupid')->name('admin_job_templates')->to('job_template#index');
 
     $op_r->get('/groups')->name('admin_groups')->to('job_group#index');
-    $op_r->post('/groups')->name('admin_new_group')->to('job_group#create');
     $op_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
-    $op_r->post('/groups/connect/:groupid')->name('job_group_save_media')->to('job_group#save_connect');
 
     $op_r->get('/assets')->name('admin_assets')->to('asset#index');
 
@@ -430,6 +428,8 @@ sub startup {
     $admin_r->delete('/needles/delete')->name('admin_needle_delete')->to('needle#delete');
     $admin_r->get('/auditlog')->name('audit_log')->to('audit_log#index');
     $admin_r->get('/auditlog/ajax')->name('audit_ajax')->to('audit_log#ajax');
+    $admin_r->post('/groups')->name('admin_new_group')->to('job_group#create');
+    $admin_r->post('/groups/connect/:groupid')->name('job_group_save_media')->to('job_group#save_connect');
 
     # Workers list as default option
     $op_r->get('/')->name('admin')->to('workers#index');
@@ -440,8 +440,10 @@ sub startup {
     #
     ## JSON API starts here
     ###
-    my $api_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
+    my $api_auth  = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
+    my $api_admin = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_admin');
     my $api_r = $api_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ra = $api_admin->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     # this is fallback redirect if one does not use apache
     $api_public_r->websocket(
@@ -516,7 +518,7 @@ sub startup {
 
     # api/v1/isos
     $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create');                 # iso_new
-    $api_r->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');       # iso_delete
+    $api_ra->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');      # iso_delete
     $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');    # iso_cancel
 
     # api/v1/assets
@@ -524,38 +526,38 @@ sub startup {
     $api_public_r->get('/assets')->name('apiv1_get_asset')->to('asset#list');
     $api_public_r->get('/assets/#id')->name('apiv1_get_asset_id')->to('asset#get');
     $api_public_r->get('/assets/#type/#name')->name('apiv1_get_asset_name')->to('asset#get');
-    $api_r->delete('/assets/#id')->name('apiv1_delete_asset')->to('asset#delete');
-    $api_r->delete('/assets/#type/#name')->name('apiv1_delete_asset_name')->to('asset#delete');
+    $api_ra->delete('/assets/#id')->name('apiv1_delete_asset')->to('asset#delete');
+    $api_ra->delete('/assets/#type/#name')->name('apiv1_delete_asset_name')->to('asset#delete');
 
     # api/v1/test_suites
     $api_r->get('test_suites')->name('apiv1_test_suites')->to('table#list', table => 'TestSuites');
-    $api_r->post('test_suites')->to('table#create', table => 'TestSuites');
+    $api_ra->post('test_suites')->to('table#create', table => 'TestSuites');
     $api_r->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
-    $api_r->put('test_suites/:id')->to('table#update', table => 'TestSuites');
-    $api_r->post('test_suites/:id')->to('table#update', table => 'TestSuites');    #in case PUT is not supported
-    $api_r->delete('test_suites/:id')->to('table#destroy', table => 'TestSuites');
+    $api_ra->put('test_suites/:id')->to('table#update', table => 'TestSuites');
+    $api_ra->post('test_suites/:id')->to('table#update', table => 'TestSuites');    #in case PUT is not supported
+    $api_ra->delete('test_suites/:id')->to('table#destroy', table => 'TestSuites');
 
     # api/v1/machines
     $api_r->get('machines')->name('apiv1_machines')->to('table#list', table => 'Machines');
-    $api_r->post('machines')->to('table#create', table => 'Machines');
+    $api_ra->post('machines')->to('table#create', table => 'Machines');
     $api_r->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
-    $api_r->put('machines/:id')->to('table#update', table => 'Machines');
-    $api_r->post('machines/:id')->to('table#update', table => 'Machines');         #in case PUT is not supported
-    $api_r->delete('machines/:id')->to('table#destroy', table => 'Machines');
+    $api_ra->put('machines/:id')->to('table#update', table => 'Machines');
+    $api_ra->post('machines/:id')->to('table#update', table => 'Machines');         #in case PUT is not supported
+    $api_ra->delete('machines/:id')->to('table#destroy', table => 'Machines');
 
     # api/v1/products
     $api_r->get('products')->name('apiv1_products')->to('table#list', table => 'Products');
-    $api_r->post('products')->to('table#create', table => 'Products');
+    $api_ra->post('products')->to('table#create', table => 'Products');
     $api_r->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
-    $api_r->put('products/:id')->to('table#update', table => 'Products');
-    $api_r->post('products/:id')->to('table#update', table => 'Products');         #in case PUT is not supported
-    $api_r->delete('products/:id')->to('table#destroy', table => 'Products');
+    $api_ra->put('products/:id')->to('table#update', table => 'Products');
+    $api_ra->post('products/:id')->to('table#update', table => 'Products');         #in case PUT is not supported
+    $api_ra->delete('products/:id')->to('table#destroy', table => 'Products');
 
     # api/v1/job_templates
     $api_r->get('job_templates')->name('apiv1_job_templates')->to('job_template#list');
-    $api_r->post('job_templates')->to('job_template#create');
+    $api_ra->post('job_templates')->to('job_template#create');
     $api_r->get('job_templates/:job_template_id')->name('apiv1_job_template')->to('job_template#list');
-    $api_r->delete('job_templates/:job_template_id')->to('job_template#destroy');
+    $api_ra->delete('job_templates/:job_template_id')->to('job_template#destroy');
 
     # json-rpc methods not migrated to this api: echo, list_commands
     ###

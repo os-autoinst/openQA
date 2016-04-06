@@ -76,6 +76,15 @@ sub auth {
     return 0;
 }
 
+sub auth_admin {
+    my ($self) = @_;
+    return 0 if (!$self->auth);
+    return 1 if ($self->is_admin);
+
+    $self->render(json => {error => 'Administrator level required'}, status => 403);
+    return 0;
+}
+
 sub auth_jobtoken {
     my ($self)  = @_;
     my $headers = $self->req->headers;

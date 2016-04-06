@@ -7,6 +7,7 @@
         nickname    => 'artie',
         is_operator => 1,
         is_admin    => 1,
+        api_keys    => [{key => 'ARTHURKEY01', secret => 'EXCALIBUR', id => 99905},]
     },
     Users => {
         id => 99902,
