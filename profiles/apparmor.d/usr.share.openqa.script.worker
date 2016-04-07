@@ -59,6 +59,7 @@
   /usr/bin/dirname rix,
   /usr/bin/eatmydata rix,
   /usr/bin/ipmitool rix,
+  /usr/sbin/ipmiconsole rix,
   /usr/bin/isotovideo rix,
   /usr/bin/lscpu rix,
   /usr/bin/mkdir rix,
