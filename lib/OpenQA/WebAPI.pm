@@ -479,21 +479,18 @@ sub startup {
     # job_set_waiting, job_set_continue
     my $command_r = $job_r->route('/set_:command', command => [qw(waiting running)]);
     $command_r->post('/')->name('apiv1_set_command')->to('job#set_command');
-    # restart and cancel are valid both by job id or by job name (which is
-    # exactly the same, but with less restrictive format)
-    my $job_name_r = $api_r->route('/jobs/#name');
-    $job_name_r->post('/restart')->name('apiv1_restart')->to('job#restart');          # job_restart
-    $job_name_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');             # job_cancel
-    $job_name_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate');    # job_duplicate
+    $job_r->post('/restart')->name('apiv1_restart')->to('job#restart');                                     # job_restart
+    $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');                                        # job_cancel
+    $job_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate');                               # job_duplicate
 
     # api/v1/workers
     $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');
     $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create');
     my $worker_r = $api_r->route('/workers/:workerid', workerid => qr/\d+/);
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
-    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');    #command_enqueue
-    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');                 # job_grab
-                                                                                          # redirect for older workers
+    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');                      #command_enqueue
+    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');                                   # job_grab
+                                                                                                            # redirect for older workers
     $worker_r->websocket(
         '/ws' => sub {
             my $c        = shift;
