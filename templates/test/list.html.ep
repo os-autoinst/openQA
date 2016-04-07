@@ -3,7 +3,7 @@
 
 % content_for 'ready_function' => begin
   is_operator = <%= (is_operator) ? 'true' : 'false' %>;
-  restart_url = "<%= url_for("apiv1_restart", name => 'REPLACEIT') %>";
+  restart_url = "<%= url_for("apiv1_restart", jobid => 'REPLACEIT') %>";
   renderTestsList([ <%= join(',', map { $_->id } $jobs->all) %> ]);
 % end
 
