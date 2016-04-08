@@ -156,8 +156,19 @@ IPADDR='10.0.2.2/15'
 STARTMODE='auto'
 ---------------
 
-wicked 0.6.23 and later has enhanced support for the creation and configuration of OpenvSwitch bridges,
-so the permanent configuration should look like this:
+wicked 0.6.23 and later has enhanced support for the creation and configuration of OpenvSwitch bridges. 
+But ensure that the OpenvSwitch service starts before the Network service by verifying/editing the OpenvSwitch service file: 
+
+[source, bash]
+---------------
+ #/usr/lib/systemd/system/openvswitch.service
+ [Unit]
+ Description=Open vSwitch
+ Before=network.service
+ ...
+---------------
+
+Then the permanent configuration for wicked 0.6.23 and later should look like this:
 
 [source, bash]
 ---------------
