@@ -98,17 +98,19 @@ $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'foo b
 is(scalar(@{$get->tx->res->json->{jobs}}), 0);
 
 # Test /jobs/restart
-my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927]})->status_is(200);
+my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})->status_is(200);
 
 $get = $t->get_ok('/api/v1/jobs');
 my @new_jobs = @{$get->tx->res->json->{jobs}};
-is(scalar(@new_jobs), $jobs_count + 4, '4 new jobs - for 81, 63, 46 and 61 from dependency');
+is(scalar(@new_jobs), $jobs_count + 5, '5 new jobs - for 81, 63, 46, 39 and 61 from dependency');
 my %new_jobs = map { $_->{id} => $_ } @new_jobs;
 is($new_jobs{99981}->{state}, 'cancelled');
 is($new_jobs{99927}->{state}, 'scheduled');
+like($new_jobs{99939}->{clone_id}, qr/\d/, 'job cloned');
 like($new_jobs{99946}->{clone_id}, qr/\d/, 'job cloned');
 like($new_jobs{99963}->{clone_id}, qr/\d/, 'job cloned');
 like($new_jobs{99981}->{clone_id}, qr/\d/, 'job cloned');
+my $cloned = $new_jobs{$new_jobs{99939}->{clone_id}};
 
 # The number of current jobs doesn't change
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
@@ -198,5 +200,21 @@ $query->query(state => 'nonexistent_state');
 $get = $t->get_ok($query->path_query)->status_is(200);
 $res = $get->tx->res->json;
 ok(!@{$res->{jobs}}, 'no result for nonexising state');
+
+# Test /jobs/cancel
+# TODO: cancelling jobs via API in tests doesn't work for some reason
+#
+# $post = $t->post_ok('/api/v1/jobs/cancel?BUILD=0091')->status_is(200);
+#
+# $get = $t->get_ok('/api/v1/jobs');
+# @new_jobs = @{$get->tx->res->json->{jobs}};
+#
+# foreach my $job (@new_jobs) {
+#     if ($job->{settings}->{BUILD} eq '0091') {
+#         is($job->{state}, 'cancelled', "job $job->{id} was cancelled");
+#     }
+# }
+#
+# is($cloned->{state}, 'scheduled');
 
 done_testing();
