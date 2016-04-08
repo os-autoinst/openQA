@@ -157,18 +157,11 @@ STARTMODE='auto'
 ---------------
 
 wicked 0.6.23 and later has enhanced support for the creation and configuration of OpenvSwitch bridges. 
-But ensure that the OpenvSwitch service starts before the Network service by verifying/editing the OpenvSwitch service file: 
 
-[source, bash]
----------------
- #/usr/lib/systemd/system/openvswitch.service
- [Unit]
- Description=Open vSwitch
- Before=network.service
- ...
----------------
+[NOTE]
+In some cases (e.g. on Leap) can be needed to start the OpenvSwitch service before the Network service by modifying the OpenvSwitch service file /usr/lib/systemd/system/openvswitch.service, where create an entry `Before=network.service` and remove network.service from `After=network.service`. For reference see https://en.opensuse.org/Portal:Wicked/OpenvSwitch#Wicked_0.6.23.2B[this].
 
-Then the permanent configuration for wicked 0.6.23 and later should look like this:
+The permanent configuration for wicked 0.6.23 and later should look like this:
 
 [source, bash]
 ---------------
