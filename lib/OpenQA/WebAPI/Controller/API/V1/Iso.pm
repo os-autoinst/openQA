@@ -16,6 +16,7 @@
 package OpenQA::WebAPI::Controller::API::V1::Iso;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'url_unescape';
+use File::Basename;
 use File::Spec::Functions qw/catfile catdir/;
 
 use OpenQA::Utils;
@@ -265,12 +266,21 @@ sub schedule_iso {
         # As this comes in from an API call, URL will be URI-encoded
         # This obviously creates a vuln if untrusted users can POST
         $args->{$arg} = url_unescape($args->{$arg});
-        my $url = $args->{$arg};
-        # if $args{FOO_URL} is set but $args{FOO} is not, we will
-        # set $args{FOO} (the filename of the downloaded asset) to
-        # the URL filename. This has to happen *before*
+        my $url        = $args->{$arg};
+        my $do_extract = 0;
+        my $short;
+        my $filename;
+        # if $args{FOO_URL} or $args{FOO_DECOMPRESS_URL} is set but $args{FOO}
+        # is not, we will set $args{FOO} (the filename of the downloaded asset)
+        # to the URL filename. This has to happen *before*
         # generate_jobs so the jobs have FOO set
-        my $short = substr($arg, 0, -4);
+        if ($arg =~ /_DECOMPRESS_URL$/) {
+            $do_extract = 1;
+            $short = substr($arg, 0, -15);    # remove whole _DECOMPRESS_URL substring
+        }
+        else {
+            $short = substr($arg, 0, -4);    # remove _URL substring
+        }
         my $assettype = asset_type_from_setting($short);
         # We're only going to allow downloading of asset types
         unless ($assettype) {
@@ -278,7 +288,14 @@ sub schedule_iso {
             next;
         }
         if (!$args->{$short}) {
-            $args->{$short} = Mojo::URL->new($url)->path->parts->[-1];
+            $filename = Mojo::URL->new($url)->path->parts->[-1];
+            $args->{$short} = $filename;
+            if ($do_extract) {
+                # if user wants to extract downloaded file, parameter itself
+                # will point to uncompressed file with the same filename, but
+                # with last extension removed
+                $args->{$short} = fileparse($filename, qr/\.[^.]*/);
+            }
             if (!$args->{$short}) {
                 OpenQA::Utils::log_warning("Unable to get filename from $url. Ignoring $arg");
                 delete $args->{$short} unless $args->{$short};
@@ -289,12 +306,12 @@ sub schedule_iso {
         # the asset type to know where to put it, using the same
         # subroutine as parse_assets_from_settings
         my $dir = catdir($OpenQA::Utils::assetdir, $assettype);
-        my $fullpath = catfile($dir, $args->{$short});
+        my $fullpath = catfile($dir, $filename);
 
         unless (-s $fullpath) {
-            # if the file doesn't exist, add the url/target path
-            # as a key/value pair to the %downloads hash
-            $downloads{$url} = $fullpath;
+            # if the file doesn't exist, add the url/target path and extraction
+            # flag as a key/value pair to the %downloads hash
+            $downloads{$url} = [$fullpath, $do_extract];
         }
     }
     my $jobs = $self->_generate_jobs($args);
@@ -361,12 +378,12 @@ sub schedule_iso {
             # to create entries in a related table (gru_dependencies)
             my @jobsarray = map +{job_id => $_}, @ids;
             for my $url (keys %downloads) {
-                my $path = $downloads{$url};
+                my ($path, $do_extract) = @{$downloads{$url}};
                 $self->app->db->resultset('GruTasks')->create(
                     {
                         taskname => 'download_asset',
                         priority => 20,
-                        args     => [$url, $path],
+                        args     => [$url, $path, $do_extract],
                         run_at   => now(),
                         jobs     => \@jobsarray,
                     });

@@ -20,6 +20,11 @@
         type => 'iso',
         name => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso',
     },
+    Assets => {
+        id   => 5,
+        type => 'hdd',
+        name => 'openSUSE-13.1-x86_64.hda.xz',
+    },
     JobGroups => {
         id   => 1001,
         name => 'opensuse'
