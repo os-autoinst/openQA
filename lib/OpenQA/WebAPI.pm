@@ -237,6 +237,9 @@ sub startup {
     if ($self->config->{global}{audit_enabled}) {
         $self->plugin('OpenQA::WebAPI::Plugin::AuditLog', Mojo::IOLoop->singleton);
     }
+    # Load arbitrary plugins defined in config: 'plugins' in section
+    # '[global]' can be a space-separated list of plugins to load, by
+    # module name under OpenQA::WebAPI::Plugin::
     if (defined $self->config->{global}->{plugins}) {
         my @plugins = split(' ', $self->config->{global}->{plugins});
         for my $plugin (@plugins) {
