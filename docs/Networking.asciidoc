@@ -52,15 +52,17 @@ be able to access them.
 tunctl -u _openqa-worker -p -t tap0
 ---------------
 or Wicked way:
-[source, xml]
+[source, bash]
 ---------------
-<!-- /etc/wicked/ifconfig/tap0.xml -->
-<interface>
-  <name>tap0</name>
-  <tap>
-    <owner>_openqa-worker</owner>
-  </tap>
-</interface>
+#/etc/sysconfig/network/ifcfg-tap0
+BOOTPROTO='none'
+IPADDR=''
+NETMASK=''
+PREFIXLEN=''
+STARTMODE='auto'
+TUNNEL='tap'
+TUNNEL_SET_GROUP='nogroup'
+TUNNEL_SET_OWNER='_openqa-worker'
 ---------------
 
 If you want to use TAP device which doesn't exist on the system,
