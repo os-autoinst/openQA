@@ -63,7 +63,7 @@
         <div class="aligncenter">
             % if (is_operator) {
                 % if ($job->can_be_duplicated) {
-                    %= link_post url_for('apiv1_restart', name => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
+                    %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
                         <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
                     %= end
                 % }

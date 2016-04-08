@@ -278,7 +278,7 @@ sub done {
 # Used for both apiv1_restart and apiv1_restart_jobs
 sub restart {
     my ($self) = @_;
-    my $jobs = $self->param('name');
+    my $jobs = $self->param('jobid');
     if ($jobs) {
         $self->app->log->debug("Restarting job $jobs");
         $jobs = [$jobs];
@@ -301,19 +301,19 @@ sub restart {
 }
 
 sub cancel {
-    my $self = shift;
-    my $name = $self->param('name');
+    my ($self) = @_;
+    my $jobid = int($self->param('jobid'));
 
     my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->scheduler('job_cancel', $name, 0);
-    $self->emit_event('openqa_job_cancel', {id => $name}) if ($res);
+    my $res = $ipc->scheduler('job_cancel', $jobid, 0);
+    $self->emit_event('openqa_job_cancel', {id => $jobid}) if ($res);
     $self->render(json => {result => $res});
 }
 
 sub duplicate {
-    my $self  = shift;
-    my $jobid = int($self->param('name'));
-    my %args  = (jobid => $jobid);
+    my ($self) = @_;
+    my $jobid = int($self->param('jobid'));
+    my %args = (jobid => $jobid);
     if (defined $self->param('prio')) {
         $args{prio} = int($self->param('prio'));
     }

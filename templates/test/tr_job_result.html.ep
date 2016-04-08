@@ -2,12 +2,12 @@
      % if ($res) {
          % if (is_operator) {
              % if ($state eq "done" || $state eq "cancelled") {
-                 %= link_post url_for('apiv1_restart', 'name' => $jobid) => ('data-remote' => 'true', class => 'restart', 'data-jobid' => $jobid) => begin
+                 %= link_post url_for('apiv1_restart', jobid => $jobid) => ('data-remote' => 'true', class => 'restart', 'data-jobid' => $jobid) => begin
                  <i class="action fa fa-repeat" title="Restart the job"></i>
                  % end
              % } elsif ($state eq "running" || $state eq "scheduled")
              % {
-                 %= link_post url_for('apiv1_cancel', 'name' => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
+                 %= link_post url_for('apiv1_cancel', jobid => $jobid) => ('data-remote' => 'true', class => 'cancel', 'data-jobid' => $jobid) => begin
                      <i class="action fa fa-times-circle-o" title="Cancel the job"></i>
                  % end
              % }
