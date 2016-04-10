@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -255,6 +255,10 @@ sub show {
 
     my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
     my $scenario = join('-', map { $job->settings_hash->{$_} } @scenario_keys);
+
+    # append the MACHINE
+    push(@scenario_keys, 'MACHINE');
+    $scenario .= "@" . $job->settings_hash->{MACHINE};
 
     $self->stash(testname => $job->settings_hash->{NAME});
     $self->stash(distri   => $job->settings_hash->{DISTRI});
