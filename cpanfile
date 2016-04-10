@@ -90,6 +90,7 @@ on 'test' => sub {
   requires 'Test::Output';
   requires 'Test::Pod';
   requires 'Test::Warnings';
+  requires 'Test::MockModule';
 };
 
 feature 'coverage', 'coverage for travis' => sub {
