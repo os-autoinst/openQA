@@ -52,15 +52,17 @@ be able to access them.
 tunctl -u _openqa-worker -p -t tap0
 ---------------
 or Wicked way:
-[source, xml]
+[source, bash]
 ---------------
-<!-- /etc/wicked/ifconfig/tap0.xml -->
-<interface>
-  <name>tap0</name>
-  <tap>
-    <owner>_openqa-worker</owner>
-  </tap>
-</interface>
+#/etc/sysconfig/network/ifcfg-tap0
+BOOTPROTO='none'
+IPADDR=''
+NETMASK=''
+PREFIXLEN=''
+STARTMODE='auto'
+TUNNEL='tap'
+TUNNEL_SET_GROUP='nogroup'
+TUNNEL_SET_OWNER='_openqa-worker'
 ---------------
 
 If you want to use TAP device which doesn't exist on the system,
@@ -154,8 +156,12 @@ IPADDR='10.0.2.2/15'
 STARTMODE='auto'
 ---------------
 
-wicked 0.6.23 and later has enhanced support for the creation and configuration of OpenvSwitch bridges,
-so the permanent configuration should look like this:
+wicked 0.6.23 and later has enhanced support for the creation and configuration of OpenvSwitch bridges. 
+
+[NOTE]
+In some cases (e.g. on Leap) can be needed to start the OpenvSwitch service before the Network service by modifying the OpenvSwitch service. For reference see https://en.opensuse.org/Portal:Wicked/OpenvSwitch#Wicked_0.6.23.2B[this].
+
+The permanent configuration for wicked 0.6.23 and later should look like this:
 
 [source, bash]
 ---------------
