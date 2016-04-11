@@ -34,13 +34,13 @@ my $get       = $t->get_ok('/tests/99946#previous')->status_is(200);
 my $tab_label = $t->tx->res->dom->at('li a[href=#previous]')->all_text;
 is($tab_label, q/Previous results (1)/, 'previous results with number is shown');
 my $previous_results_header = $t->tx->res->dom->at('#previous #scenario')->all_text;
-is($previous_results_header, q/Results for opensuse-13.1-DVD-i586-textmode, limited to 10/, 'header for previous results with scenario');
+is($previous_results_header, q/Results for opensuse-13.1-DVD-i586-textmode@32bit, limited to 10/, 'header for previous results with scenario');
 $get->element_exists('#res_99945',                'result from previous job');
 $get->element_exists('#res_99945 .result_passed', 'previous job was passed');
 my $build = $t->tx->res->dom->at('#previous #results .build')->all_text;
 is($build, '0091', 'build of previous job is shown');
 $get                     = $t->get_ok('/tests/99946?limit_previous=1#previous')->status_is(200);
 $previous_results_header = $t->tx->res->dom->at('#previous #scenario')->all_text;
-is($previous_results_header, q/Results for opensuse-13.1-DVD-i586-textmode, limited to 1/, 'can be limited with query parameter');
+is($previous_results_header, q/Results for opensuse-13.1-DVD-i586-textmode@32bit, limited to 1/, 'can be limited with query parameter');
 
 done_testing();
