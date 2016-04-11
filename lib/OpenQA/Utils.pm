@@ -308,6 +308,8 @@ sub bugurl {
         bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
         boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
         poo => 'https://progress.opensuse.org/issues/',
+        ghi => 'https://github.com/os-autoinst/os-autoinst/issues/',
+        ghp => 'https://github.com/os-autoinst/os-autoinst-distri-opensuse/pull/',
     );
     return $bugrefs{$bugref};
 }
@@ -315,7 +317,7 @@ sub bugurl {
 sub bugref_to_href {
     my ($text) = @_;
 
-    $text =~ s{((bnc|bsc|boo|poo)#(\d+))}{<a href="@{[bugurl($2)]}$3">$1</a>}gi;
+    $text =~ s{((bnc|bsc|boo|poo|ghi|ghp)#(\d+))}{<a href="@{[bugurl($2)]}$3">$1</a>}gi;
 
     return $text;
 }
