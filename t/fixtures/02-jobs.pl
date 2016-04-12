@@ -119,7 +119,7 @@
         retry_avbl => 3,
         # no result dir, let us assume that this is an old test that has
         # already be pruned
-        settings => [{key => 'DVD', value => '1'}, {key => 'VERSION', value => 'Factory'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'TEST', value => 'kde'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}, {key => 'FLAVOR', value => 'DVD'}, {key => 'BUILD', value => '0048'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'ARCH', value => 'x86_64'}, {key => 'MACHINE', value => '64bit'},]
+        settings => [{key => 'DVD', value => '1'}, {key => 'VERSION', value => 'Factory'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'TEST', value => 'kde'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}, {key => 'FLAVOR', value => 'DVD'}, {key => 'BUILD', value => '0048'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'ARCH', value => 'x86_64'}, {key => 'MACHINE', value => '64bit'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
     },
     Jobs => {
         id         => 99946,
@@ -135,7 +135,7 @@
         jobs_assets => [{asset_id => 1},],
         retry_avbl  => 3,
         result_dir  => '00099946-opensuse-13.1-DVD-i586-Build0091-textmode',
-        settings => [{key => 'FLAVOR', value => 'DVD'}, {key => 'QEMUCPU', value => 'qemu32'}, {key => 'ARCH', value => 'i586'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'BUILD', value => '0091'}, {key => 'VERSION', value => '13.1'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'TEST', value => 'textmode'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'MACHINE', value => '32bit'},]
+        settings => [{key => 'FLAVOR', value => 'DVD'}, {key => 'QEMUCPU', value => 'qemu32'}, {key => 'ARCH', value => 'i586'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'BUILD', value => '0091'}, {key => 'VERSION', value => '13.1'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'TEST', value => 'textmode'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'MACHINE', value => '32bit'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
     },
     Jobs => {
         id         => 99945,

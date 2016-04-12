@@ -241,7 +241,7 @@ sub query_jobs {
         push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }
     else {
-        my %js_settings = map { uc($_) => $args{$_} } qw(build iso distri version flavor arch);
+        my %js_settings = map { uc($_) => $args{$_} } qw(build iso distri version flavor arch hdd_1);
         my $subquery = schema->resultset("JobSettings")->query_for_settings(\%js_settings);
         push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
     }

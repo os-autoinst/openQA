@@ -97,6 +97,20 @@ is($get->tx->res->json->{jobs}->[0]->{id}, 99961);
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', group => 'foo bar'});
 is(scalar(@{$get->tx->res->json->{jobs}}), 0);
 
+# Test restricting list
+
+# query for existing jobs by iso
+$get = $t->get_ok('/api/v1/jobs?iso=openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+is(scalar(@{$get->tx->res->json->{jobs}}), 5);
+
+# query for existing jobs by build
+$get = $t->get_ok('/api/v1/jobs?build=0091');
+is(scalar(@{$get->tx->res->json->{jobs}}), 9);
+
+# query for existing jobs by hdd_1
+$get = $t->get_ok('/api/v1/jobs?hdd_1=openSUSE-13.1-x86_64.hda');
+is(scalar(@{$get->tx->res->json->{jobs}}), 2);
+
 # Test /jobs/restart
 my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927]})->status_is(200);
 
