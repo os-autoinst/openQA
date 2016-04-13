@@ -1,4 +1,4 @@
-# Copyright (C) 2013-2015 SUSE Linux GmbH
+# Copyright (C) 2013-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -517,48 +517,6 @@ sub _job_stop_children {
     }
 }
 
-=head2 _carry_over_labels
-
-carry over labels (i.e. special comments) from previous jobs to current result
-in the same scenario.
-
-=cut
-sub _carry_over_labels {
-    my ($job) = @_;
-
-    # search for previous jobs
-    my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
-    my %js_settings = map { $_ => $job->settings_hash->{$_} } @scenario_keys;
-    # arbitrary limit not to search all jobs
-    my $limit_previous = 200;
-    my $subquery       = schema->resultset("JobSettings")->query_for_settings(\%js_settings);
-    my @conds          = [{'me.state' => 'done'}, {id => {'<', $job->id}}, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}}];
-    my %attrs          = (
-        rows     => $limit_previous,
-        order_by => ['me.id DESC']);
-    my $previous_jobs = schema->resultset("Jobs")->search({-and => \@conds}, \%attrs);
-
-    # loop through all comments on all previous jobs in same scenario
-    # if comment is label OR bug carry over comment to current_job
-    while (my $prev = $previous_jobs->next) {
-        last if ($prev->result eq 'passed');    # do not carry over labels over passes
-        my $comments = schema->resultset('Comments')->search({job_id => $prev->id}, {order_by => {-desc => 'me.id'}});
-        while (my $comment = $comments->next) {
-            if ($comment->bugref or $comment->label) {
-                my $rs = $job->comments->create(
-                    {
-                        text => $comment->text,
-                        # TODO can we also use another user id to tell that
-                        # this comment was created automatically and not by a
-                        # human user?
-                        user_id => $comment->user_id,
-                    });
-                return;
-            }
-        }
-    }
-}
-
 =head2 job_set_done
 
 mark job as done. No error check. Meant to be called from worker!
@@ -598,7 +556,7 @@ sub job_set_done {
         _job_skip_children($jobid);
         _job_stop_children($jobid);
         # labels are there to mark reasons of failure
-        _carry_over_labels($job);
+        $job->carry_over_labels;
     }
     return $r;
 }

@@ -1080,5 +1080,59 @@ sub needle_dir() {
     return $self->{_needle_dir};
 }
 
+
+sub _previous_scenario_job {
+    my ($self) = @_;
+
+    my $schema        = $self->result_source->schema;
+    my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST MACHINE/;
+    my %js_settings   = map { $_ => $self->settings_hash->{$_} } @scenario_keys;
+    # arbitrary limit not to search all jobs
+    my $limit_previous = 20;
+    my $subquery       = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
+    my $conds          = [{'me.state' => 'done'}, {'me.id' => {'<', $self->id}}, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}}];
+    my %attrs          = (
+        rows     => $limit_previous,
+        order_by => ['me.id DESC']);
+    my $previous_jobs = $schema->resultset("Jobs")->search({-and => $conds}, \%attrs);
+
+    # loop through all comments on all previous jobs in same scenario
+    # if comment is label OR bug carry over comment to current_job
+    while (my $prev = $previous_jobs->next) {
+        last if ($prev->result eq 'passed');    # do not carry over labels over passes
+        return $prev;
+    }
+    return;
+}
+
+=head2 carry_over_labels
+
+carry over labels (i.e. special comments) from previous jobs to current result
+in the same scenario.
+
+=cut
+sub carry_over_labels {
+    my ($self) = @_;
+
+    # search for previous jobs
+    my $prev = $self->_previous_scenario_job;
+    return if !$prev;
+
+    my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
+
+    while (my $comment = $comments->next) {
+        next if !($comment->bugref or $comment->label);
+        my %newone = (text => $comment->text);
+        # TODO can we also use another user id to tell that
+        # this comment was created automatically and not by a
+        # human user?
+        $newone{user_id} = $comment->user_id;
+        $self->comments->create(\%newone);
+        last;
+    }
+    return;
+}
+
+
 1;
 # vim: set sw=4 et:
