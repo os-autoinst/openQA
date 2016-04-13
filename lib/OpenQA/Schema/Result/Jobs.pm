@@ -1087,22 +1087,13 @@ sub _previous_scenario_job {
     my $schema        = $self->result_source->schema;
     my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST MACHINE/;
     my %js_settings   = map { $_ => $self->settings_hash->{$_} } @scenario_keys;
-    # arbitrary limit not to search all jobs
-    my $limit_previous = 20;
-    my $subquery       = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
-    my $conds          = [{'me.state' => 'done'}, {'me.id' => {'<', $self->id}}, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}}];
-    my %attrs          = (
-        rows     => $limit_previous,
-        order_by => ['me.id DESC']);
-    my $previous_jobs = $schema->resultset("Jobs")->search({-and => $conds}, \%attrs);
-
-    # loop through all comments on all previous jobs in same scenario
-    # if comment is label OR bug carry over comment to current_job
-    while (my $prev = $previous_jobs->next) {
-        last if ($prev->result eq 'passed');    # do not carry over labels over passes
-        return $prev;
-    }
-    return;
+    my $subquery      = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
+    my $conds         = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}}];
+    my %attrs         = (
+        order_by => ['me.id DESC'],
+        rows     => 1
+    );
+    return $schema->resultset("Jobs")->search({-and => $conds}, \%attrs)->single;
 }
 
 =head2 carry_over_labels
@@ -1114,9 +1105,14 @@ in the same scenario.
 sub carry_over_labels {
     my ($self) = @_;
 
+    # the carry over makes only sense for failed jobs
+    return if $self->result ne FAILED;
+
     # search for previous jobs
     my $prev = $self->_previous_scenario_job;
     return if !$prev;
+
+    return if $prev->result eq PASSED;
 
     my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
 
