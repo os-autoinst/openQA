@@ -1096,6 +1096,19 @@ sub _previous_scenario_job {
     return $schema->resultset("Jobs")->search({-and => $conds}, \%attrs)->single;
 }
 
+# internal function to compare two failure reasons
+sub module_causing_failure {
+    my ($self) = @_;
+
+    my $modules = $self->modules;
+    while (my $m = $modules->next) {
+        if (($m->important || $m->fatal) && $m->result eq FAILED) {
+            return $m->name;
+        }
+    }
+    return '';
+}
+
 =head2 carry_over_labels
 
 carry over labels (i.e. special comments) from previous jobs to current result
@@ -1110,9 +1123,9 @@ sub carry_over_labels {
 
     # search for previous jobs
     my $prev = $self->_previous_scenario_job;
-    return if !$prev;
+    return if !$prev || $prev->result ne FAILED;
 
-    return if $prev->result eq PASSED;
+    return if $prev->module_causing_failure ne $self->module_causing_failure;
 
     my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
 
