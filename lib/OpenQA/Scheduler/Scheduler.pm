@@ -1,4 +1,4 @@
-# Copyright (C) 2013-2015 SUSE Linux GmbH
+# Copyright (C) 2013-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -555,6 +555,8 @@ sub job_set_done {
     if ($result ne OpenQA::Schema::Result::Jobs::PASSED) {
         _job_skip_children($jobid);
         _job_stop_children($jobid);
+        # labels are there to mark reasons of failure
+        $job->carry_over_labels;
     }
     return $r;
 }

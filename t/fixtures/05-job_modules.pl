@@ -1043,11 +1043,12 @@
         result   => 'passed',
     },
     JobModules => {
-        script   => 'tests/console/aplay.pm',
-        job_id   => 99963,
-        category => 'console',
-        name     => 'aplay',
-        result   => 'none',
+        script    => 'tests/console/aplay.pm',
+        job_id    => 99963,
+        category  => 'console',
+        important => 1,
+        name      => 'aplay',
+        result    => 'failed',
     },
     JobModules => {
         script   => 'tests/console/glibc_i686.pm',
@@ -1259,4 +1260,13 @@
         name     => 'shutdown',
         result   => 'none',
     },
+    JobModules => {
+        script    => 'tests/console/aplay.pm',
+        job_id    => 99962,
+        category  => 'console',
+        important => 1,
+        name      => 'aplay',
+        result    => 'failed',
+    },
+
 ]
