@@ -183,10 +183,20 @@ sub _generate_jobs {
                 }
             } while ($expanded);
 
-            if (   (!$args->{TEST} || $args->{TEST} eq $settings{TEST})
-                && (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}))
-            {
-                $wanted{_settings_key(\%settings)} = 1;
+            if (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}) {
+                if (!$args->{TEST}) {
+                    $wanted{_settings_key(\%settings)} = 1;
+                }
+                else {
+                    # Allow a comma separated list of tests here; whitespaces allowed
+                    my @tests = split(/\s*,\s*/, $args->{TEST});
+
+                    foreach my $test (@tests) {
+                        if ($test eq $settings{TEST}) {
+                            $wanted{_settings_key(\%settings)} = 1;
+                        }
+                    }
+                }
             }
 
             push @$ret, \%settings;
