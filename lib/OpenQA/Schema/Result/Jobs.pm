@@ -1100,13 +1100,22 @@ sub _previous_scenario_job {
 sub module_causing_failure {
     my ($self) = @_;
 
+    my $failed_module;
     my $modules = $self->modules;
     while (my $m = $modules->next) {
-        if (($m->important || $m->fatal) && $m->result eq FAILED) {
-            return $m->name;
+        if ($m->result eq FAILED) {
+            # in case we don't see an important module, we return the first failure
+            # if the backend can't rollback, the first failed module will actually
+            # be the reason for the failure. If it can, we should see an important module
+            # later on
+            $failed_module ||= $m->name;
+
+            if ($m->important || $m->fatal) {
+                return $m->name;
+            }
         }
     }
-    return '';
+    return $failed_module || 'NONE';
 }
 
 =head2 carry_over_labels
