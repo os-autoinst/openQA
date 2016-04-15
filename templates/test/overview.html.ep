@@ -57,7 +57,7 @@
                 <tr id="flavors">
                     <th>Test</th>
                     % for my $arch (@{$archs->{$type}}) {
-                        <th width="10%" id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
+                        <th id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
                     % }
                 </tr>
             </thead>
@@ -65,7 +65,7 @@
                 % for my $config (@$configs) {
                     % next unless $results->{$config}{$type};
                     <tr>
-                        <td width="10%" class="name"><%= $config %></td>
+                        <td class="name"><%= trim_text($config, 30) %></td>
                         % for my $arch (@{$archs->{$type}}) {
                             % my $res = $results->{$config}{$type}{$arch};
                             % my $jobid = $res->{jobid};

@@ -51,8 +51,10 @@ sub register {
     $app->helper(
         bugurl_for => sub {
             my ($c, $text) = @_;
-            $text =~ /(.*)#(.*)/;
-            return bugurl($1) . $2;
+            if ($text =~ /(.*)#(.*)/) {
+                return bugurl($1) . $2;
+            }
+            return;
         });
 
     # Breadcrumbs generation can be centralized, since it's really simple
@@ -219,6 +221,15 @@ sub register {
             my ($self, $event, $data) = @_;
             die 'Missing event name' unless $event;
             return Mojo::IOLoop->singleton->emit($event, [$self->current_user->id, $self->tx->connection, $event, $data]);
+        });
+
+    $app->helper(
+        trim_text => sub {
+            my ($c, $text, $length) = @_;
+            $length //= 10;
+            return $text if (length($text) < $length);
+
+            return $c->tag('span', title => $text, sub { substr($text, 0, $length - 4) . " ..." });
         });
 }
 
