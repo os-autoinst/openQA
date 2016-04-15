@@ -1,9 +1,11 @@
 % my $count = 0;
+% my $limit = 25;
+
 % for my $failedmodule (sort keys %$failedmodules) {
-    % if (++$count > 2) {
+    % if ($count++) {
       % my $more = (scalar(keys %$failedmodules)) - $count + 1;
-      % if ($more > 1) {
-         <%= $more %> more
+      % if ($more > 0 && $limit < 12) {
+         +<%= $more %>
          % last;
       % }
     % }
@@ -21,7 +23,8 @@
     <span <%= Mojo::ByteStream->new($tooltip) %> class="failedmodule" >
         <a href="<%= url_for('step', 'testid' => $jobid,
                              'moduleid' => $failedmodule, 'stepid' => $step) %>">
-            <%= $failedmodule %>
+            <%= trim_text($failedmodule, $limit) %>
+            % $limit -= length($failedmodule) > $limit ? $limit : length($failedmodule) + 2;
         </a>
     </span>
 % }
