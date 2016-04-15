@@ -72,7 +72,8 @@ subtest '"happy path": failed->failed carries over last label' => sub {
     is($comments_previous[2],     $simple_comment, 'another comment present');
     $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
     my @comments_current = @{comments('/tests/99963')};
-    is(scalar @comments_current, 1, 'only one label is carried over');
+    my $comment_must     = '<a href="https://bugzilla.suse.com/show_bug.cgi?id=1234">bsc#1234</a>(Automatic takeover from <a href="/tests/99962">t#99962</a>)';
+    is(join('', @comments_current), $comment_must, 'only one label is carried over');
     like($comments_current[0], qr/\Q$second_label/, 'last entered label found, it is expanded');
 };
 
@@ -101,10 +102,11 @@ subtest 'failed->failed without labels does not fail' => sub {
 subtest 'failed->failed labels which are not bugrefs are also carried over' => sub {
     my $label = 'label:any_label';
     $t->post_ok("/tests/$job/add_comment", $auth => form => {text => $label})->status_is(302);
-    my $res = restart_with_result($job, 'failed');
+    my $res          = restart_with_result($job, 'failed');
     my @comments_new = @{comments($res->{test_url}[0])};
-    is(scalar @comments_new, 1,      'also simple labels are carried over');
-    is($comments_new[0],     $label, 'simple label present in new result');
+    my $comment_must = 'label:any_label(Automatic takeover from <a href="/tests/99985">t#99985</a>)';
+    is(join('', @comments_new), $comment_must, 'also simple labels are carried over');
+    is($comments_new[0], $label, 'simple label present in new result');
 };
 
 done_testing;

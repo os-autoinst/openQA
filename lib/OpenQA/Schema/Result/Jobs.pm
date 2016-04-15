@@ -1080,9 +1080,9 @@ sub needle_dir() {
     return $self->{_needle_dir};
 }
 
-
-sub _previous_scenario_job {
-    my ($self) = @_;
+# return the last X complete jobs of the same scenario
+sub _previous_scenario_jobs {
+    my ($self, $rows) = @_;
 
     my $schema        = $self->result_source->schema;
     my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST MACHINE/;
@@ -1091,14 +1091,16 @@ sub _previous_scenario_job {
     my $conds         = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}}];
     my %attrs         = (
         order_by => ['me.id DESC'],
-        rows     => 1
+        rows     => $rows
     );
-    return $schema->resultset("Jobs")->search({-and => $conds}, \%attrs)->single;
+    return $schema->resultset("Jobs")->search({-and => $conds}, \%attrs)->all;
 }
 
 # internal function to compare two failure reasons
-sub module_causing_failure {
+sub _failure_reason {
     my ($self) = @_;
+
+    return 'GOOD' if $self->result ne FAILED;
 
     my $failed_module;
     my $modules = $self->modules;
@@ -1115,7 +1117,34 @@ sub module_causing_failure {
             }
         }
     }
-    return $failed_module || 'NONE';
+    return $failed_module || 'BAD';
+}
+
+sub _carry_over_candidate {
+    my ($self) = @_;
+
+    my $current_failure_reason = $self->_failure_reason;
+    my $prev_failure_reason    = '';
+    my $state_changes          = 0;
+
+    # search for previous jobs
+    for my $job ($self->_previous_scenario_jobs(20)) {
+        my $job_fr = $job->_failure_reason;
+
+        # we found a good candidate
+        return $job if $job_fr eq $current_failure_reason;
+
+        # ignore jobs with repeated problems
+        next if ($job_fr eq $prev_failure_reason);
+
+        $prev_failure_reason = $job_fr;
+        $state_changes++;
+
+        # if the job changed failures more often, we assume
+        # that the carry over is pointless
+        return if $state_changes > 4;
+    }
+    return;
 }
 
 =head2 carry_over_labels
@@ -1130,17 +1159,19 @@ sub carry_over_labels {
     # the carry over makes only sense for failed jobs
     return if $self->result ne FAILED;
 
-    # search for previous jobs
-    my $prev = $self->_previous_scenario_job;
-    return if !$prev || $prev->result ne FAILED;
-
-    return if $prev->module_causing_failure ne $self->module_causing_failure;
+    my $prev = $self->_carry_over_candidate;
+    return if !$prev;
 
     my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
 
     while (my $comment = $comments->next) {
         next if !($comment->bugref or $comment->label);
-        my %newone = (text => $comment->text);
+
+        my $text = $comment->text;
+        if ($text !~ "Automatic takeover") {
+            $text .= "\n\n(Automatic takeover from t#" . $prev->id . ")\n";
+        }
+        my %newone = (text => $text);
         # TODO can we also use another user id to tell that
         # this comment was created automatically and not by a
         # human user?
