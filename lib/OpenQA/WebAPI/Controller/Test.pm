@@ -433,8 +433,14 @@ sub overview {
         if ($job->state eq 'done') {
             my $result_stats = $all_result_stats->{$job->id};
             my $overall      = $job->result;
-            if ($job->result eq "passed" && $result_stats->{dents}) {
-                $overall = "softfail";
+            if ($job->result eq "passed") {
+                next if $self->param('todo');
+                if ($result_stats->{dents}) {
+                    $overall = "softfail";
+                }
+            }
+            if ($self->param('todo')) {
+                next if $job_labels->{$job->id}{bug} || $job_labels->{$job->id}{label};
             }
             $result = {
                 passed   => $result_stats->{passed},
@@ -452,6 +458,7 @@ sub overview {
             $aggregated->{$overall}++;
         }
         elsif ($job->state eq 'running') {
+            next if $self->param('todo');
             $result = {
                 state => "running",
                 jobid => $job->id,
@@ -459,6 +466,7 @@ sub overview {
             $aggregated->{running}++;
         }
         else {
+            next if $self->param('todo');
             $result = {
                 state    => $job->state,
                 jobid    => $job->id,
