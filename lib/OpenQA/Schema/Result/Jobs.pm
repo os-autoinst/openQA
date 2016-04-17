@@ -28,6 +28,9 @@ use File::Basename qw/basename dirname/;
 use File::Path ();
 use File::Which qw(which);
 
+# The state and results constants are duplicated in the Python client:
+# if you change them or add any, please also update const.py.
+
 # States
 use constant {
     SCHEDULED => 'scheduled',
