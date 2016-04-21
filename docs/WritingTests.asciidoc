@@ -262,7 +262,7 @@ Assigning jobs to workers
 
 By default, any worker can get any job with the matching architecture.
 
-This behavior can be changged by setting job variable WORKER_CLASS. Jobs
+This behavior can be changed by setting job variable WORKER_CLASS. Jobs
 with this variable set (typically via machines or test suites configuration) are
 assigned only to workers, which have the same variable in the configuration file.
 
