@@ -122,7 +122,9 @@ sub create_from_settings {
     }
 
     if ($settings{_START_AFTER_JOBS}) {
-        for my $id (@{$settings{_START_AFTER_JOBS}}) {
+        my $ids = $settings{_START_AFTER_JOBS};    # support array ref or comma separated values
+        $ids = [split(/\s,\s/, $ids)] if (ref($ids) ne 'ARRAY');
+        for my $id (@$ids) {
             push @{$new_job_args{parents}},
               {
                 parent_job_id => $id,
@@ -133,7 +135,9 @@ sub create_from_settings {
     }
 
     if ($settings{_PARALLEL_JOBS}) {
-        for my $id (@{$settings{_PARALLEL_JOBS}}) {
+        my $ids = $settings{_PARALLEL_JOBS};    # support array ref or comma separated values
+        $ids = [split(/\s,\s/, $ids)] if (ref($ids) ne 'ARRAY');
+        for my $id (@$ids) {
             push @{$new_job_args{parents}},
               {
                 parent_job_id => $id,
