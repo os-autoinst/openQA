@@ -392,14 +392,16 @@ Locks are associated with caller`s job - locks can't be unlocked by different jo
 
 +mutex_lock+ tries to lock the mutex lock for caller`s job. If lock is unavailable or locked by someone else, +mutex_lock+ call blocks.
 
-+mutex_unlock+ tries to unlock the mutex lock. If lock is locked by different job, +mutex_unlock+ call blocks. When lock become available, call
++mutex_unlock+ tries to unlock the mutex lock. If lock is locked by different job, +mutex_unlock+ call blocks. When lock become available or if lock does not exist, call
 returns without doing anything.
 
-+mutex_create+ create new mutex lock. By default, when mutex lock does not exist it is considered locked. When lock is created by +mutex_create+,
++mutex_create+ create new mutex lock. When lock is created by +mutex_create+,
  lock is automatically unlocked. When mutex lock already exists call returns without doing anything.
 
 Locks are addressed by _their name_. This name is _valid in test group_ defined by their dependencies. If there are more groups running at the
 same time and the same lock name is used, these locks are independent of each other.
+
+The +mmapi+ package provides +wait_for_children+, which the parent can use to wait for the children to complete.
 
 Example:
 ^^^^^^^^
@@ -444,7 +446,8 @@ sub run {
     # wait for the login to appear
     assert_screen "login", 300;
 
-    # this blocks until lock is available and then does nothing
+    # this blocks until lock is created then locks and immediately unlocks
+    mutex_lock('services_ready');
     mutex_unlock('services_ready');
 
     # login to continue
