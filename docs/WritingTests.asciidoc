@@ -411,6 +411,7 @@ use base "basetest";
 use strict;
 use testapi;
 use lockapi;
+use mmapi;
 
 sub run {
     # wait for bootloader to appear
@@ -423,8 +424,8 @@ sub run {
     # unlock by creating the lock
     mutex_create('services_ready');
 
-    # TODO: create API for children check
-    sleep 3000;
+    # wait until all children finish
+    wait_for_children;
 }
 --------------------------------------------------------------------------------
 
@@ -452,6 +453,79 @@ sub run {
     type_string("secret\n");
 }
 --------------------------------------------------------------------------------
+
+
+Sometimes it is useful to let a parent wait for certain action on a child, for example to verify
+server state after completed request. In this scenario the child creates
+a mutex and the parent unlocks it.
+
+The child can however die at any time. To prevent parent deadlock in this situation,
+parent has to pass child ID as a second parameter to mutex_lock(). If a child job
+with given ID already finished, mutex_lock() calls die.
+
+parent job - wait until the child reaches given point
+[source,perl]
+--------------------------------------------------------------------------------
+use base "basetest";
+use strict;
+use testapi;
+use lockapi;
+use mmapi;
+
+sub run {
+    my $children = get_children();
+
+    # let's suppose there is only one child
+    my $child_id = (keys %$children)[0];
+
+    # this blocks until lock is available and then does nothing
+    mutex_unlock('child_reached_given_point', $child_id);
+
+    # continue with the test
+}
+--------------------------------------------------------------------------------
+
+Getting info about parents / children
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+[source,perl]
+--------------------------------------------------------------------------------
+use base "basetest";
+use strict;
+use testapi;
+use mmapi;
+
+sub run {
+
+    # returns a hash ref containing (id => state) for all children
+    my $children = get_children();
+
+    for my $job_id (keys %$children) {
+      print "$job_id is cancelled\n" if $children->{$job_id} eq 'cancelled';
+    }
+
+    # returns an array with parent ids, all parents are in running state (see Job dependencies above)
+    my $parents = get_parents();
+
+    # let's suppose there is only one parent
+    my $parent_id = $parents->[0];
+
+    # any job id can be queried for details with get_job_info()
+    # it returns a hash ref containing these keys:
+    #   name priority state result worker_id
+    #   retry_avbl t_started t_finished test
+    #   group_id group settings
+    my $parent_info = get_job_info($parent_id);
+
+    # it is possible to query variables set by openqa frontend,
+    # this does not work for variables set by backend or by the job at runtime
+    my $parent_name = $parent_info->{settings}->{NAME}
+    my $parent_desktop = $parent_info->{settings}->{DESKTOP}
+    # !!! this does not work, VNC is set by backend !!!
+    # my $parent_vnc = $parent_info->{settings}->{VNC}
+}
+--------------------------------------------------------------------------------
+
 Support Server based tests
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
