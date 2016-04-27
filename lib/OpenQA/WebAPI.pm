@@ -270,10 +270,12 @@ sub startup {
       /javascripts/tests.js
       /javascripts/assets.js
       /javascripts/job_templates.js
-      /javascripts/overview.js);
+      /javascripts/overview.js
+      /javascripts/comments.js);
     my @css = qw(/stylesheets/font-awesome.css
       /stylesheets/chosen.css
       /stylesheets/overview.scss
+      /stylesheets/comments.css
       /stylesheets/openqa.css );
 
     # preprocessors to expend the url() definitions in the css
@@ -384,6 +386,8 @@ sub startup {
 
     $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');
     $r->post('/group_overview/:groupid/add_comment')->name('add_group_comment')->to('main#add_comment');
+    $r->post('/group_overview/:groupid/edit_comment')->name('edit_group_comment')->to('main#edit_comment');
+    $r->post('/group_overview/:groupid/remove_comment')->name('remove_group_comment')->to('main#remove_comment');
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });

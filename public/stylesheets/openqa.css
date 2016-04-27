@@ -579,3 +579,14 @@ table#users input[type="radio"]:checked + label .fa-circle-o {
     padding-bottom: 0.5em;
 }
 
+/* Comment editor */
+.comment-editor {
+    margin-bottom: 20px;
+}
+
+.comment-editor button {
+
+}
+
+
+

@@ -187,5 +187,39 @@ sub add_comment {
     return $self->redirect_to('group_overview');
 }
 
+sub edit_comment {
+    my ($self) = @_;
+
+    $self->validation->required('text');
+    $self->validation->required('comment_id');
+
+    my $group = $self->app->schema->resultset("JobGroups")->find($self->param('groupid'));
+    return $self->reply->not_found unless $group;
+    
+    my $rs = $group->comments->search({id => $self->param("comment_id"), user_id => $self->current_user->id})->update(
+        {
+            text      => $self->param('text'),
+            t_updated => DateTime->now(time_zone => 'floating')
+            
+        });
+    $self->emit_event('openqa_user_comment', {id => $self->current_user->id});
+    $self->flash('info', 'Comment changed');
+    return $self->redirect_to('group_overview');
+}
+
+sub remove_comment {
+    my ($self) = @_;
+
+    $self->validation->required('comment_id');
+
+    my $group = $self->app->schema->resultset("JobGroups")->find($self->param('groupid'));
+    return $self->reply->not_found unless $group;
+
+    my $rs = $group->comments->search({id => $self->param("comment_id"), user_id => $self->current_user->id})->delete();
+    $self->emit_event('openqa_user_comment', {id => $self->current_user->id});
+    $self->flash('info', 'Comment deletion');
+    return $self->redirect_to('group_overview');
+}
+
 1;
 # vim: set sw=4 et:
