@@ -300,13 +300,23 @@ sub restart {
     $self->render(json => {result => $res, test_url => \@urls});
 }
 
+# Used for both apiv1_cancel and apiv1_cancel_jobs
 sub cancel {
     my ($self) = @_;
-    my $jobid = int($self->param('jobid'));
+    my $jobid = $self->param('jobid');
 
     my $ipc = OpenQA::IPC->ipc;
-    my $res = $ipc->scheduler('job_cancel', $jobid, 0);
-    $self->emit_event('openqa_job_cancel', {id => $jobid}) if ($res);
+    my $res;
+    if ($jobid) {
+        $res = $ipc->scheduler('job_cancel', int($jobid), 0);
+        $self->emit_event('openqa_job_cancel', {id => int($jobid)}) if ($res);
+    }
+    else {
+        my $params = $self->req->params->to_hash;
+        $res = $ipc->scheduler('job_cancel_by_settings', $params, 0);
+        $self->emit_event('openqa_job_cancel_by_settings', $params) if ($res);
+    }
+
     $self->render(json => {result => $res});
 }
 

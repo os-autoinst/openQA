@@ -467,6 +467,7 @@ sub startup {
     # api/v1/jobs
     $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
     $api_r->post('/jobs')->name('apiv1_create_job')->to('job#create');             # job_create
+    $api_r->post('/jobs/cancel')->name('apiv1_cancel_jobs')->to('job#cancel');
     $api_r->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
 
     my $job_r = $api_r->route('/jobs/:jobid', jobid => qr/\d+/);
