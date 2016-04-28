@@ -50,6 +50,14 @@ get job from specified host
 
 specify directory where test assets are stored (default /var/lib/openqa/factory)
 
+=item B<--skip-deps>
+
+do not clone parent jobs.
+
+=item B<--skip-chained-deps>
+
+do not clone parent jobs of type chained. This makes the job use the downloaded hdd image instead of running the generator job again.
+
 =item B<--apikey> <value>
 
 specify the public key needed for API authentication
@@ -57,6 +65,10 @@ specify the public key needed for API authentication
 =item B<--apisecret> <value>
 
 specify the secret key needed for API authentication
+
+=item B<--verbose, -v>
+
+increase verbosity
 
 =item B<--help, -h>
 
@@ -100,7 +112,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options, "from=s", "host=s", "dir=s", "apikey:s", "apisecret:s", "verbose|v", "help|h",) or usage(1);
+GetOptions(\%options, "from=s", "host=s", "dir=s", "apikey:s", "apisecret:s", "verbose|v", "skip-deps", "skip-chained-deps", "help|h",) or usage(1);
 
 usage(1) unless @ARGV;
 usage(1) unless exists $options{'from'};
@@ -144,7 +156,12 @@ else {
 $remote_url->path('/api/v1/jobs');
 $remote = OpenQA::Client->new(api => $remote_url->host);
 
-if ($jobid) {
+sub clone_job {
+    my ($jobid, $clone_map, $depth) = @_;
+    $clone_map //= {};
+    $depth //= 0;
+    return $clone_map->{$jobid} if defined $clone_map->{$jobid};
+
     my $job;
     my $url = $remote_url->clone;
     $url->path("jobs/$jobid");
@@ -165,6 +182,25 @@ if ($jobid) {
     }
 
     print JSON->new->pretty->encode($job) if ($options{verbose});
+
+    if ($job->{parents}) {
+        my $chained = $job->{parents}->{Chained} unless ($options{'skip-deps'} || $options{'skip-chained-deps'});
+        $chained //= [];
+        my $parallel = $job->{parents}->{Parallel} unless ($options{'skip-deps'});
+        $parallel //= [];
+
+        print "Clonning dependencies of $job->{name}\n" if (@$chained || @$parallel);
+
+        for my $p (@$chained, @$parallel) {
+            clone_job($p, $clone_map, $depth + 1);
+        }
+
+        my @new_chained  = map { $clone_map->{$_} } @$chained;
+        my @new_parallel = map { $clone_map->{$_} } @$parallel;
+
+        $job->{settings}->{_PARALLEL_JOBS}    = join(',', @new_parallel) if @new_parallel;
+        $job->{settings}->{_START_AFTER_JOBS} = join(',', @new_chained)  if @new_chained;
+    }
 
     for my $type (keys %{$job->{assets}}) {
         next if $type eq 'repo';    # we can't download repos
@@ -192,17 +228,19 @@ if ($jobid) {
         $settings{_GROUP} = $job->{group};
     }
     delete $settings{NAME};    # usually autocreated
-    for my $arg (@ARGV) {
-        if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
-            if (defined $2) {
-                $settings{$1} = $2;
+    if ($depth == 0) {
+        for my $arg (@ARGV) {
+            if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
+                if (defined $2) {
+                    $settings{$1} = $2;
+                }
+                else {
+                    delete $settings{$1};
+                }
             }
             else {
-                delete $settings{$1};
+                warn "arg $arg doesn't match";
             }
-        }
-        else {
-            warn "arg $arg doesn't match";
         }
     }
     print JSON->new->pretty->encode(\%settings) if ($options{verbose});
@@ -211,10 +249,12 @@ if ($jobid) {
     if ($tx->success) {
         my $r = $tx->success->json->{id};
         if ($r) {
-            print "Created job #$r\n";
+            print "Created job #$r: $job->{name}\n";
+            $clone_map->{$jobid} = $r;
+            return $r;
         }
         else {
-            print "job not created. duplicate?\n";
+            die "job not created. duplicate? ", pp($tx->res->body);
         }
     }
     else {
@@ -222,5 +262,8 @@ if ($jobid) {
     }
 }
 
+if ($jobid) {
+    clone_job($jobid);
+}
 1;
 # vim: set sw=4 et:

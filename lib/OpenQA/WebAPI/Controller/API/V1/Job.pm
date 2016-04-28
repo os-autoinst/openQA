@@ -158,12 +158,11 @@ sub grab {
 }
 
 sub show {
-    my $self = shift;
-    my $ipc  = OpenQA::IPC->ipc;
-
-    my $res = $ipc->scheduler('job_get', int($self->stash('jobid')));
-    if ($res) {
-        $self->render(json => {job => $res});
+    my $self   = shift;
+    my $job_id = int($self->stash('jobid'));
+    my $job    = $self->app->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
+    if ($job) {
+        $self->render(json => {job => $job->to_hash(assets => 1, deps => 1)});
     }
     else {
         $self->reply->not_found;
