@@ -11,28 +11,29 @@
     <div class="col-sm-10">
         <h2><%= title %></h2>
 
-    %= include 'layouts/info'
+        %= include 'layouts/info'
 
-    <table id="assets" class="display table table-striped">
-        <thead>
-            <tr>
-                <th>Type</th>
-                <th>Name</th>
-                <th>#Jobs</th>
-                <th>Created</th>
+        <table id="assets" class="display table table-striped">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>#Jobs</th>
+                    <th>Created</th>
+                </tr>
+            </thead>
+            <tbody>
+            % while (my $asset = $assets->next()) {
+            <tr id="asset_<%= $asset->id %>">
+                <td class="type"><%= $asset->type %></td>
+                <td class="name"><%= $asset->name %></td>
+                <td class="nrjobs"><%= link_to scalar($asset->jobs_assets->all) => url_for('tests')->query(assetid => $asset->id ) %></td>
+                <td class="t_created">
+                    <%= $asset->t_created %>
+                </td>
             </tr>
-        </thead>
-        <tbody>
-        % while (my $asset = $assets->next()) {
-        <tr id="asset_<%= $asset->id %>">
-            <td class="type"><%= $asset->type %></td>
-            <td class="name"><%= $asset->name %></td>
-            <td class="nrjobs"><%= link_to scalar($asset->jobs_assets->all) => url_for('tests')->query(assetid => $asset->id ) %></td>
-            <td class="t_created">
-                <%= $asset->t_created %>
-            </td>
-        </tr>
-        % }
-        </tbody>
-    </table>
+            % }
+            </tbody>
+        </table>
+    </div>
 </div>

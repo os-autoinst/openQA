@@ -8,21 +8,21 @@
 % end
 
 % if (@$running) {
-    <div class="container">
+    <div>
 	<h2><%= @$running %> jobs are running</h2>
 	%= include 'test/running_table'
     </div>
 % }
 
 % if ($scheduled && $scheduled->all) {
-    <div class="container">
+    <div>
 	<h2><%= $scheduled %> scheduled jobs</h2>
 	
 	%= include 'test/scheduled_table'
     </div>
 % }
 
-<div class="container">
+<div>
 
   <h2>Last <%= $jobs->all %> finished jobs</h2>
     <div class="col-sm-5" id="relevantbox" style="display: none">

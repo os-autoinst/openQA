@@ -390,10 +390,6 @@ table.dataTable td.test {
     text-align: left;
 }
 
-div.dataTables_info {
-    margin-left: 20px;
-}
-
 /* Hide the real checkbox, is too big */
 #results td.id input[type=checkbox] {
     display: none;
