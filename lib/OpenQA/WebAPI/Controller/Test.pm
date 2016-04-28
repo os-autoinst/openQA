@@ -529,8 +529,55 @@ sub add_comment {
             text    => $self->param('text'),
             user_id => $self->current_user->id,
         });
+
     $self->emit_event('openqa_user_comment', {id => $rs->id});
     $self->flash('info', 'Comment added');
+    return $self->redirect_to('test');
+}
+
+sub edit_comment {
+    my ($self) = @_;
+
+    $self->validation->required('text');
+    $self->validation->required('comment_id');
+
+    my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
+    return $self->reply->not_found unless $job;
+
+    my $rs = $job->comments->search(
+        {
+            id => $self->param("comment_id"),
+            user_id => $self->current_user->id
+        })->update(
+        {
+            text      => $self->param('text'),
+            t_updated => DateTime->now(time_zone => 'floating')
+        });
+
+    $self->emit_event('openqa_user_comment', {id => $self->param("comment_id")});
+    $self->flash('info', 'Comment changed');
+    return $self->redirect_to('test');
+}
+
+sub remove_comment {
+    my ($self) = @_;
+
+    $self->validation->required('comment_id');
+
+    my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
+    return $self->reply->not_found unless $job;
+
+    # only admins are allowed to delete comments
+    return $self->reply->not_found unless $self->current_user->is_admin;
+
+    my $rs = $job->comments->search(
+        {
+            id => $self->param("comment_id"),
+            user_id => $self->current_user->id
+        })->delete();
+
+    $self->emit_event('openqa_user_comment', {id => $self->param("comment_id")});
+    $self->flash('info', 'Comment removed');
     return $self->redirect_to('test');
 }
 

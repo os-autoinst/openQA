@@ -355,6 +355,8 @@ sub startup {
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0);
     $test_r->get('/')->name('test')->to('test#show');
     $test_auth->post('/add_comment')->name('add_comment')->to('test#add_comment');
+    $test_auth->post('/edit_comment')->name('edit_comment')->to('test#edit_comment');
+    $test_auth->post('/remove_comment')->name('remove_comment')->to('test#remove_comment');
 
     $test_r->get('/modlist')->name('modlist')->to('running#modlist');
     $test_r->get('/status')->name('status')->to('running#status');

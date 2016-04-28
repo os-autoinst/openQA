@@ -20,8 +20,16 @@
         </div>
         <div class="col-sm-11">
             <div class="media-body comment-body">
-                %= form_for 'edit_group_comment', method => "post", class => "form-horizontal", role => "form" => begin
-                    <div class="well well-lg">
+                <div class="well well-lg">
+                    % if (current_user && current_user->is_admin) {
+                        %= form_for 'remove_group_comment', method => "post", class => "form-horizontal", role => "form" => begin
+                            <button class="btn btn-danger btn-circle btn-sm trigger-edit-button" type="submit" name="removeComment" onclick="return confirmCommentRemoval('<%= $comment->user->name %>');">
+                                <span class="glyphicon glyphicon glyphicon-remove"></span>
+                            </button>
+                            <input type="hidden" name="comment_id" value="<%= $comment->id %>">
+                        % end
+                    % }
+                    %= form_for 'edit_group_comment', method => "post", class => "form-horizontal", role => "form" => begin
                         % if (current_user && ((current_user->id eq $comment->user->id))) { # TODO: test also for || current_user->is_admin
                             <button class="btn btn-info btn-circle btn-sm trigger-edit-button" type="button" name="editComment" onclick="showCommentEditor(<%= $comment->id %>, this.form);">
                                 <span class="glyphicon glyphicon glyphicon-pencil"></span>
@@ -48,8 +56,8 @@
                             </button>
                             <input type="hidden" name="comment_id" value="<%= $comment->id %>">
                         % }
-                    </div>
-                % end
+                    % end
+                </div>
             </div>
         </div>
     </div>
