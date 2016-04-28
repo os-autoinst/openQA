@@ -5,7 +5,7 @@
   setupOverview();
 % end
 
-<div class="container">
+<div>
     <h2>Test result overview</h2>
     <div id="summary" class="panel <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'panel-danger' : 'panel-success' %>">
         <div class="panel-heading">
