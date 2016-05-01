@@ -286,6 +286,7 @@ $option->click();
 $driver->find_element('//input[@type="submit"]')->submit();
 
 is($driver->get_title(), "openQA: Jobs for Cool Group", "on job groups");
+t::ui::PhantomTest::wait_for_ajax;
 
 #print $driver->get_page_source();
 my $td = $driver->find_element('#sle_13_DVD_arm19_xfce_chosen .search-field', 'css');

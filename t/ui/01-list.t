@@ -1,3 +1,4 @@
+
 # Copyright (C) 2014 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
@@ -114,6 +115,8 @@ is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test
 
 # return
 is($driver->get($baseurl . "tests"), 1, "/tests gets");
+t::ui::PhantomTest::wait_for_ajax();
+
 my @links = $driver->find_elements('#results #job_99946 td.test a', 'css');
 is(@links, 2, 'only two links (icon, name, no restart)');
 
@@ -136,10 +139,8 @@ my @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tb
 
 is_deeply(\@jobs, [qw(job_99981 job_99962 job_99946 job_99939 job_99938 job_99937 job_99926)], '6 rows (relevant) displayed');
 $driver->find_element('#relevantfilter', 'css')->click();
-# leave the ajax some time
-while (!$driver->execute_script("return jQuery.active == 0")) {
-    sleep 1;
-}
+t::ui::PhantomTest::wait_for_ajax();
+
 # Test 99945 is not longer relevant (replaced by 99946) - but displayed for all
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 is_deeply(\@jobs, [qw(job_99981 job_99962 job_99946 job_99945 job_99939 job_99938 job_99937 job_99926)], '7 rows (all) displayed');
@@ -147,14 +148,14 @@ is_deeply(\@jobs, [qw(job_99981 job_99962 job_99946 job_99945 job_99939 job_9993
 # now toggle back
 #print $driver->get_page_source();
 $driver->find_element('#relevantfilter', 'css')->click();
-# leave the ajax some time
-while (!$driver->execute_script("return jQuery.active == 0")) {
-    sleep 1;
-}
+t::ui::PhantomTest::wait_for_ajax();
+
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 is_deeply(\@jobs, [qw(job_99981 job_99962 job_99946 job_99939 job_99938 job_99937 job_99926)], '6 rows (relevant) again displayed');
 
 $driver->get($baseurl . "tests?match=staging_e");
+t::ui::PhantomTest::wait_for_ajax();
+
 #print $driver->get_page_source();
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 is_deeply(\@jobs, [qw(job_99926)], '1 matching job');
@@ -163,14 +164,15 @@ is(@{$driver->find_elements('table.dataTable', 'css')}, 1, 'no scheduled, no run
 # now login to test restart links
 $driver->find_element('Login', 'link_text')->click();
 is($driver->get($baseurl . "tests"), 1, "/tests gets");
+t::ui::PhantomTest::wait_for_ajax();
+
 my $td = $driver->find_element('#results #job_99946 td.test', 'css');
 is($td->get_text(), 'textmode@32bit', 'correct test name');
 
 # click restart
 $driver->find_child_element($td, '.restart', 'css')->click();
-while (!$driver->execute_script("return jQuery.active == 0")) {
-    sleep 1;
-}
+t::ui::PhantomTest::wait_for_ajax();
+
 is($driver->get_title(), 'openQA: Test results', 'restart stays on page');
 $td = $driver->find_element('#results #job_99946 td.test', 'css');
 is($td->get_text(), 'textmode@32bit (restarted)', 'restart removes link');
