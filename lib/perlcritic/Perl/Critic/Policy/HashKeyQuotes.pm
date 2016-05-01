@@ -10,7 +10,7 @@ our $VERSION = '0.0.1';
 
 sub default_severity { return $SEVERITY_HIGH }
 sub default_themes   { return qw(openqa) }
-sub applies_to       { return 'PPI::Token::Quote::Single' }
+sub applies_to       { return qw/PPI::Token::Quote::Single PPI::Token::Quote::Double/ }
 
 # check that hashes are not overly using quotes
 # (os-autoinst coding style)
@@ -23,7 +23,7 @@ sub violates {
 
     my $c = $elem->content;
     # special characters
-    return if $c =~ m/[- \/<>.=_]/;
+    return if $c =~ m/[- \/<>.=_:\\\$]/;
 
     my $desc = q{Hash key with quotes};
     my $expl = q{Avoid useless quotes};
