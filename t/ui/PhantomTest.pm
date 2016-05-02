@@ -106,6 +106,12 @@ sub call_phantom() {
     return $_driver = start_phantomjs($mojoport);
 }
 
+sub wait_for_ajax() {
+    while (!$_driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+}
+
 sub kill_phantom() {
     $_driver->quit();
     kill('TERM', $mojopid);
