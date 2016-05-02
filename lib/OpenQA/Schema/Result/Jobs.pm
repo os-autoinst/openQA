@@ -691,6 +691,32 @@ sub insert_test_modules($) {
     }
 }
 
+# check the group comments for tags
+sub part_of_important_build {
+    my ($self) = @_;
+
+    my $build = $self->settings_hash->{BUILD};
+
+    # if there is no group, it can't be important
+    if (!$self->group) {
+        return;
+    }
+
+    my $comments = $self->group->comments;
+    my $important;
+    while (my $comment = $comments->next) {
+        my @tag = $comment->tag;
+        next unless $tag[0] and ($tag[0] eq $build);
+        if ($tag[1] eq 'important') {
+            $important = 1;
+        }
+        elsif ($tag[1] eq '-important') {
+            $important = 0;
+        }
+    }
+    return $important;
+}
+
 # gru job
 sub reduce_result {
     my ($app, $args) = @_;
@@ -701,22 +727,8 @@ sub reduce_result {
 
     if ($args->{jobid}) {
         my $job = $app->db->resultset('Jobs')->find({id => $args->{jobid}});
-        my $build = $job->settings_hash->{BUILD};
-
-        my $comments  = $job->group->comments;
-        my $important = 0;
-        while (my $comment = $comments->next) {
-            my @tag = $comment->tag;
-            next unless $tag[0] and ($tag[0] eq $build);
-            if ($tag[1] eq 'important') {
-                $important = 1;
-            }
-            elsif ($tag[1] eq '-important') {
-                $important = 0;
-            }
-        }
-        if ($important) {
-            $app->log->debug('Job ' . $job->id . ' is part of build ' . $build . ' considered as important, skip cleanup');
+        if ($job->part_of_important_build) {
+            $app->log->debug('Job ' . $job->id . ' is part of important build, skip cleanup');
             return;
         }
     }
