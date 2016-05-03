@@ -125,8 +125,9 @@ corner. Click the 'create' button to generate +key+ and +secret+. There is
 also a script available for creating an admin user and an API key+secret
 pair non-interactively, +/usr/share/openqa/script/create_admin+, which can
 be useful for scripted deployments of openQA. Copy and paste the key and
-secrent into +/etc/openqa/client.conf+ on the machine(s) where the worker
+secret into +/etc/openqa/client.conf+ on the machine(s) where the worker
 is installed. Make sure to put in a section reflecting your webserver URL.
+If you face write issues, +chmod +w client.conf+ can solve the issue.
 In the simplest case, your +client.conf+ may look like this:
 
 [source,ini]
