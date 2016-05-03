@@ -127,7 +127,6 @@ pair non-interactively, +/usr/share/openqa/script/create_admin+, which can
 be useful for scripted deployments of openQA. Copy and paste the key and
 secret into +/etc/openqa/client.conf+ on the machine(s) where the worker
 is installed. Make sure to put in a section reflecting your webserver URL.
-If you face write issues, +chmod +w client.conf+ can solve the issue.
 In the simplest case, your +client.conf+ may look like this:
 
 [source,ini]
