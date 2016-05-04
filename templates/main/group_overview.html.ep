@@ -1,4 +1,3 @@
-% use Data::Dumper;
 % layout 'bootstrap';
 % title '';
 

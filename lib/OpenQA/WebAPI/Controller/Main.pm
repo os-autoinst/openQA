@@ -193,17 +193,18 @@ sub edit_comment {
 
     $self->validation->required('text');
     $self->validation->required('comment_id');
+    my $comment_id = int($self->param("comment_id"));
 
     my $group = $self->app->schema->resultset("JobGroups")->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    my $rs = $group->comments->search({id => $self->param("comment_id"), user_id => $self->current_user->id})->update(
+    my $rs = $group->comments->search({id => $comment_id, user_id => $self->current_user->id})->update(
         {
             text      => $self->param('text'),
             t_updated => DateTime->now(time_zone => 'floating')
         });
 
-    $self->emit_event('openqa_user_comment', {id => $self->param("comment_id")});
+    $self->emit_event('openqa_user_comment', {id => $comment_id});
     $self->flash('info', 'Comment changed');
     return $self->redirect_to('group_overview');
 }
@@ -212,6 +213,7 @@ sub remove_comment {
     my ($self) = @_;
 
     $self->validation->required('comment_id');
+    my $comment_id = int($self->param("comment_id"));
 
     my $group = $self->app->schema->resultset("JobGroups")->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
@@ -221,11 +223,11 @@ sub remove_comment {
 
     my $rs = $group->comments->search(
         {
-            id => $self->param("comment_id"),
+            id => $comment_id,
             user_id => $self->current_user->id
         })->delete();
 
-    $self->emit_event('openqa_user_comment', {id => $self->param("comment_id")});
+    $self->emit_event('openqa_user_comment', {id => $comment_id});
     $self->flash('info', 'Comment removed');
     return $self->redirect_to('group_overview');
 }
