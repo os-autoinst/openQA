@@ -145,9 +145,13 @@ sub needle_info {
     return $needle;
 }
 
-sub file_content($) {
-    my ($fn) = @_;
-    open(my $FCONTENT, "<", $fn) or return;
+sub file_content($;$) {
+    my ($fn, $enc) = @_;
+    my $mode = "<";
+    if ($enc) {
+        $mode = "$mode:encoding($enc)";
+    }
+    open(my $FCONTENT, $mode, $fn) or return;
     local $/;
     my $result = <$FCONTENT>;
     close($FCONTENT);

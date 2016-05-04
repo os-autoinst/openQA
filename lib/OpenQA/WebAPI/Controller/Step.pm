@@ -68,7 +68,7 @@ sub init {
             $tabmode = 'audio';
         }
         elsif ($module_detail->{text}) {
-            $self->stash('textresult', file_content(join('/', $job->result_dir(), $module_detail->{text})));
+            $self->stash('textresult', file_content(join('/', $job->result_dir(), $module_detail->{text}), "UTF-8"));
             $tabmode = 'text';
         }
         $self->stash('module_detail', $module_detail);
@@ -372,7 +372,7 @@ sub src {
         return $self->reply->not_found;
     }
 
-    my $script = file_content($scriptpath);
+    my $script = file_content($scriptpath, "UTF-8");
 
     $self->stash('script',     $script);
     $self->stash('scriptpath', $scriptpath);
