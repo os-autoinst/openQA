@@ -546,13 +546,13 @@ sub edit_comment {
 
     my $rs = $job->comments->search(
         {
-            id => $self->param("comment_id"),
+            id      => $self->param("comment_id"),
             user_id => $self->current_user->id
-        })->update(
+        }
+      )->update(
         {
             text      => $self->param('text'),
-            t_updated => DateTime->now(time_zone => 'floating')
-        });
+            t_updated => DateTime->now(time_zone => 'floating')});
 
     $self->emit_event('openqa_user_comment', {id => $self->param("comment_id")});
     $self->flash('info', 'Comment changed');
@@ -572,7 +572,7 @@ sub remove_comment {
 
     my $rs = $job->comments->search(
         {
-            id => $self->param("comment_id"),
+            id      => $self->param("comment_id"),
             user_id => $self->current_user->id
         })->delete();
 

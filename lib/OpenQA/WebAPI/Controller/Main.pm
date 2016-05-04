@@ -201,8 +201,7 @@ sub edit_comment {
     my $rs = $group->comments->search({id => $comment_id, user_id => $self->current_user->id})->update(
         {
             text      => $self->param('text'),
-            t_updated => DateTime->now(time_zone => 'floating')
-        });
+            t_updated => DateTime->now(time_zone => 'floating')});
 
     $self->emit_event('openqa_user_comment', {id => $comment_id});
     $self->flash('info', 'Comment changed');
@@ -223,7 +222,7 @@ sub remove_comment {
 
     my $rs = $group->comments->search(
         {
-            id => $comment_id,
+            id      => $comment_id,
             user_id => $self->current_user->id
         })->delete();
 

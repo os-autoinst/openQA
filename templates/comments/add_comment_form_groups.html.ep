@@ -1,0 +1,15 @@
+<div class="form-group">
+    <label for="text" class="col-sm-1 control-label">Comment
+        <img class="img-circle" src="<%= current_user->gravatar(60) %>">
+    </label>
+    <div class="col-sm-11">
+        <textarea class="form-control" name="text" id="text" rows="5"></textarea>
+    </div>
+</div>
+<div class="form-group">
+    <div class="col-sm-offset-1 col-sm-11">
+        <button class="btn btn-success btn-circle" type="submit" id="submitComment">
+            <span class="glyphicon glyphicon-send"></span>
+            Submit comment</button>
+    </div>
+</div>
