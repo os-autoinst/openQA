@@ -48,6 +48,7 @@ sub _read_config {
             hsts             => 365,
             audit_enabled    => 1,
             plugins          => undef,
+            hide_asset_types => 'repo',
         },
         auth => {
             method => 'OpenID',
