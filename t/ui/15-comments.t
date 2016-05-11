@@ -31,6 +31,7 @@ use t::ui::PhantomTest;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = t::ui::PhantomTest::call_phantom();
+
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -39,7 +40,6 @@ unless ($driver) {
 #
 # List with no parameters
 #
-
 is($driver->get_title(), "openQA", "on main page");
 my $baseurl = $driver->get_current_url();
 $driver->find_element('Login', 'link_text')->click();
@@ -54,18 +54,71 @@ $driver->find_element('opensuse', 'link_text')->click();
 
 is($driver->find_element('h1:first-of-type', 'css')->get_text(), 'Last Builds for Group opensuse', "on group overview");
 
-$driver->find_element('textarea',       'css')->send_keys('This is a cool test');
+# disable warning about printing UTF-8 characters
+binmode STDOUT, ':utf8';
+
+# define test message with UTF-8 character
+my $test_message = "This is a cool test";
+my $another_test_message = " - this message will be appended if editing works";
+my $edited_test_message = $test_message . $another_test_message;
+
+# submit a comment in the group overview
+$driver->find_element('#text',          'css')->send_keys($test_message);
 $driver->find_element('#submitComment', 'css')->click();
 
-is($driver->find_element('h4.media-heading', 'css')->get_text(), "Demo wrote less than a minute ago", "heading");
+# check whether heading and comment text is displayed correctly
+is($driver->find_element('h4.media-heading',  'css')->get_text(), "Demo wrote less than a minute ago", "heading");
+is($driver->find_element('div.media-comment', 'css')->get_text(), $test_message, "body");
 
-#t::ui::PhantomTest::make_screenshot('mojoResults.png');
-#print $driver->get_page_source();
+# trigger editor
+$driver->find_element('button.trigger-edit-button',       'css')->click();
 
-is($driver->find_element('div.media-comment', 'css')->get_text(), "This is a cool test", "body");
+# wait 1 second to ensure initial time and last update time differ
+sleep 1;
+
+# try to edit the first displayed comment (the one which has just been added)
+$driver->find_element('textarea.comment-editing-control', 'css')->send_keys($another_test_message);
+$driver->find_element('button.comment-editing-control',   'css')->click();
+
+# check whether the changeings have been applied
+is($driver->find_element('h4.media-heading', 'css')->get_text(), "Demo wrote less than a minute ago (last edited less than a minute ago)", "heading after editing");
+is($driver->find_element('div.media-comment', 'css')->get_text(), $edited_test_message, "body after editing");
+
+# try to remove the first displayed comment (wthe one which has just been edited)
+$driver->find_element('button.remove-edit-button', 'css')->click();
+
+# check confirmation and dismiss in the first place
+# FIXME: simulate dismiss, $driver->dismiss_alert and get_alert_text don't work
+$driver->execute_script("window.confirm = function() { return false; }");
+#is($driver->get_alert_text, "Do you really want to delete the comment written by Demo?", "confirmation is shown before removal");
+#$driver->dismiss_alert;
+
+# the comment musn't be deleted yet
+is($driver->find_element('div.media-comment', 'css')->get_text(), $edited_test_message, "comment is still there after dismissing removal");
+
+# try to remove the first displayed comment again (and accept this time);
+# FIXME: simulate acception, $driver->accept_alert doesn't work
+$driver->execute_script("window.confirm = function() { return true; };");
+$driver->find_element('button.remove-edit-button', 'css')->click();
+##$driver->accept_alert;
+
+# check whether the comment is gone
+my @comments = $driver->find_elements('div.media-comment', 'css');
+is(scalar @comments, 0, "removed comment is actually gone");
+
+# re-add a comment with the original message
+$driver->find_element('#text',          'css')->send_keys($test_message);
+$driver->find_element('#submitComment', 'css')->click();
+
+# check whether heading and comment text is displayed correctly
+is($driver->find_element('h4.media-heading',  'css')->get_text(), "Demo wrote less than a minute ago", "heading after re-adding");
+is($driver->find_element('div.media-comment', 'css')->get_text(), $test_message, "body after re-adding");
+
+# TODO: check whether only admins can remove comments
+# TODO: check whether only own comments can be edited
 
 # URL auto-replace
-$driver->find_element('textarea', 'css')->send_keys('
+$driver->find_element('#text', 'css')->send_keys('
     foo@bar foo#bar
     <a href="https://openqa.example.com/foo/bar">https://openqa.example.com/foo/bar</a>: http://localhost:9562
     https://openqa.example.com/tests/181148 (reference http://localhost/foo/bar )
@@ -74,9 +127,9 @@ $driver->find_element('textarea', 'css')->send_keys('
 );
 $driver->find_element('#submitComment', 'css')->click();
 
-my @comments = $driver->find_elements('div.media-comment p', 'css');
 # the first made comment needs to be 2nd now
-is($comments[1]->get_text(), 'This is a cool test');
+@comments = $driver->find_elements('div.media-comment p', 'css');
+is($comments[1]->get_text(), $test_message, "body of first comment after adding another");
 
 my @urls = $driver->find_elements('div.media-comment a', 'css');
 is((shift @urls)->get_text(), 'https://openqa.example.com/foo/bar',      "url1");
@@ -105,10 +158,13 @@ $driver->find_element('Build0048', 'link_text')->click();
 $driver->find_element('.status',   'css')->click();
 is($driver->get_title(), "openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test results", "on test result page");
 $driver->find_element('Comments (0)',   'link_text')->click();
-$driver->find_element('textarea',       'css')->send_keys('Comments also work within test results');
+$driver->find_element('#text',          'css')->send_keys($test_message);
 $driver->find_element('#submitComment', 'css')->click();
 
+# check whether flash appears
 is($driver->find_element('blockquote.ui-state-highlight', 'css')->get_text(), "Comment added", "comment added highlight");
+
+# TODO: Do the same tests for editable comments in the test results as in the group overview.
 
 # go back to test result overview and check comment availability sign
 $driver->find_element('Build0048@opensuse', 'link_text')->click();
@@ -117,12 +173,12 @@ is($driver->find_element('#res_DVD_x86_64_doc .fa-comment', 'css')->get_attribut
 
 # add label and bug and check availability sign
 $driver->get($baseurl . 'tests/99938#comments');
-$driver->find_element('textarea',           'css')->send_keys('label:true_positive');
+$driver->find_element('#text',              'css')->send_keys('label:true_positive');
 $driver->find_element('#submitComment',     'css')->click();
 $driver->find_element('Build0048@opensuse', 'link_text')->click();
 is($driver->find_element('#res_DVD_x86_64_doc .fa-bookmark', 'css')->get_attribute('title'), 'true_positive', 'label icon shown');
 $driver->get($baseurl . 'tests/99938#comments');
-$driver->find_element('textarea',           'css')->send_keys('bsc#1234');
+$driver->find_element('#text',              'css')->send_keys('bsc#1234');
 $driver->find_element('#submitComment',     'css')->click();
 $driver->find_element('Build0048@opensuse', 'link_text')->click();
 is($driver->find_element('#res_DVD_x86_64_doc .fa-bug', 'css')->get_attribute('title'), 'Bug(s) referenced: bsc#1234', 'bug icon shown');

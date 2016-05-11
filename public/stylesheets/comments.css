@@ -15,7 +15,7 @@
     margin-bottom: 15px;
  }
 
- .comment-body .trigger-edit-button {
+ .comment-body .trigger-edit-button, .comment-body .remove-edit-button {
     float: right;
     margin-top: 8px;
     margin-left: 4px;

@@ -7,7 +7,7 @@
             <div class="well well-lg">
                 % if (current_user && current_user->is_admin) {
                     %= form_for $remove_action, method => "post", class => "form-horizontal", role => "form" => begin
-                        <button class="btn btn-danger btn-circle btn-sm trigger-edit-button" type="submit" name="removeComment" id="removeComment_<%= $comment->id %>" onclick="return confirmCommentRemoval('<%= $comment->user->name %>');">
+                        <button class="btn btn-danger btn-circle btn-sm remove-edit-button" type="submit" name="removeComment" id="removeComment_<%= $comment->id %>" onclick="return confirmCommentRemoval('<%= $comment->user->name %>');">
                             <span class="glyphicon glyphicon glyphicon-remove"></span>
                         </button>
                         <input type="hidden" name="comment_id" value="<%= $comment->id %>">
