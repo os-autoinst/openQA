@@ -105,12 +105,13 @@ sub needle_info {
     }
     else {
         $needledir = dirname($fn);
-    }
-
-    # make sure needledir is a subdir of testcasedir
-    if (index(Cwd::realpath($needledir), Cwd::realpath($testcasedir)) != 0) {
-        warn "$needledir is not a subdir of $testcasedir";
-        return;
+        # make sure the directory of the file parameter is a real subdir of
+        # testcasedir when applying it as needledir to prevent access
+        # outside of the zoo
+        if (index(Cwd::realpath($needledir), Cwd::realpath($testcasedir)) != 0) {
+            warn "$needledir is not a subdir of $testcasedir";
+            return;
+        }
     }
 
     my $JF;
