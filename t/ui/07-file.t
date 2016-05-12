@@ -79,16 +79,4 @@ SKIP: {
     $req = $t->get_ok('/tests/99946/asset/2')->status_is(400);
 }
 
-#XXX this test assumes the opensuse needles are there
-SKIP: {
-    skip "We need to fake tests are needles before running these tests", 7;
-
-    $t->get_ok('/needles/opensuse/inst-timezone.png')->status_is(200)->content_type_is('image/png');
-
-    $t->get_ok('/needles/opensuse/inst-timezone.json')->status_is(200)->content_type_is('application/json');
-
-    $t->get_ok('/needles/opensuse/doesntexist.png')->status_is(404);
-
-}
-
 done_testing();

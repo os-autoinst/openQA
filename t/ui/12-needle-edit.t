@@ -21,7 +21,8 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':all';
+#use Test::Output qw/stdout_like stderr_like/;
 use OpenQA::Test::Case;
 
 use File::Path qw/make_path remove_tree/;
@@ -274,4 +275,16 @@ is($decode_json->{'area'}[0]->{xpos}, $decode_textarea->{'area'}[0]->{xpos} + $x
 is($decode_json->{'area'}[0]->{ypos}, $decode_textarea->{'area'}[0]->{ypos} + $yoffset, "new ypos stored to new needle");
 
 t::ui::PhantomTest::kill_phantom();
+
+subtest '(created) needles can be accessed over API' => sub {
+    my $t = Test::Mojo->new('OpenQA::WebAPI');
+    $t->get_ok('/needles/opensuse/test-newneedle.png')->status_is(200)->content_type_is('image/png');
+    my @warnings = warnings { $t->get_ok('/needles/opensuse/doesntexist.png')->status_is(404) };
+    map { like($_, qr/No such file or directory/, 'expected warning') } @warnings;
+
+    $t->get_ok('/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/test-newneedle.json')->status_is(200)->content_type_is('image/png');
+    @warnings = warnings { $t->get_ok('/needles/opensuse/test-newneedle.png?jsonfile=/try/to/break_out.json')->status_is(403) };
+    map { like($_, qr/is not in a subdir of/, 'expected warning') } @warnings;
+};
+
 done_testing();
