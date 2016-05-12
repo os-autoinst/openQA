@@ -21,6 +21,7 @@ use Mojo::Base 'Mojolicious::Controller';
 BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
 use OpenQA::Utils;
 use File::Basename;
+use Cwd;
 
 use Data::Dump qw(pp);
 
@@ -35,7 +36,14 @@ sub needle {
     my $distri   = $self->param('distri');
     my $version  = $self->param('version') || '';
     my $jsonfile = $self->param('jsonfile') || '';
-    my $needle   = OpenQA::Utils::needle_info($name, $distri, $version, $jsonfile);
+    # make sure the directory of the file parameter is a real subdir of
+    # testcasedir before applying it as needledir to prevent access
+    # outside of the zoo
+    if ($jsonfile && index(Cwd::realpath($jsonfile), Cwd::realpath($OpenQA::Utils::testcasedir)) != 0) {
+        warn "$jsonfile is not in a subdir of $OpenQA::Utils::testcasedir";
+        return $self->render(text => "Forbidden", status => 403);
+    }
+    my $needle = OpenQA::Utils::needle_info($name, $distri, $version, $jsonfile);
     return $self->reply->not_found unless $needle;
 
     $self->{static} = Mojolicious::Static->new;
