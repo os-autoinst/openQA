@@ -23,7 +23,9 @@ install:
 		mkdir -p "$(DESTDIR)"/var/lib/openqa/share/$$i ;\
 		ln -sfn /var/lib/openqa/share/$$i "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
-	mkdir -p "$(DESTDIR)"/var/lib/openqa/share/factory/iso
+	for i in iso hdd repo other; do \
+		mkdir -p "$(DESTDIR)"/var/lib/openqa/share/factory/$$i ;\
+	done
 	for i in script; do \
 		ln -sfn /usr/share/openqa/$$i "$(DESTDIR)"/var/lib/openqa/$$i ;\
 	done
