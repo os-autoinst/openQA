@@ -29,6 +29,7 @@ requires 'File::Basename';
 requires 'File::Copy';
 requires 'File::Copy::Recursive';
 requires 'File::Path';
+requires 'File::Spec';
 requires 'FindBin';
 requires 'Getopt::Long';
 requires 'IO::Socket::INET6';
