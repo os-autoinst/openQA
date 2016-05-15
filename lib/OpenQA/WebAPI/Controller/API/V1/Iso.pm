@@ -106,7 +106,7 @@ sub _generate_jobs {
         });
 
     unless (@products) {
-        warn "no products found, retrying version wildcard";
+        OpenQA::Utils::log_warning('no products found, retrying version wildcard');
         @products = $self->db->resultset('Products')->search(
             {
                 distri  => lc($args->{DISTRI}),
@@ -229,7 +229,7 @@ sub job_create_dependencies {
         next unless defined $settings->{$depname};
         for my $testsuite (_parse_dep_variable($settings->{$depname}, $settings)) {
             if (!defined $testsuite_mapping->{$testsuite}) {
-                warn sprintf('%s=%s not found - check for typos and dependency cycles', $depname, $testsuite);
+                OpenQA::Utils::log_warning("$depname=$testsuite not found - check for typos and dependency cycles");
             }
             else {
                 my $dep;
