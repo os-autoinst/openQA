@@ -98,6 +98,16 @@ my $machine_id = $res->tx->res->json->{id};
 $res = $t->get_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(200);
 is($res->tx->res->json->{Machines}->[0]->{id}, $machine_id);
 
+$res = $t->post_ok('/api/v1/machines', form => {name => "testmachineQ", backend => "qemu", "settings[TEST]" => "'v'al1", "settings[TEST2]" => "va'l\'1"})->status_is(200);
+$res = $t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
+is($res->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
+is($res->tx->res->json->{Machines}->[0]->{settings}->[1]->{value}, "va'l\'1");
+
+$t->post_ok('/api/v1/machines', form => {name => "testmachineZ", backend => "qemu", "settings[TE'S\'T]" => "'v'al1"})->status_is(200);
+$res = $t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
+is($res->tx->res->json->{Machines}->[0]->{settings}->[0]->{key},   "TEST");
+is($res->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
+
 $res = $t->post_ok('/api/v1/machines', form => {name => "testmachine", backend => "qemu"})->status_is(400);    #already exists
 
 $get = $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);

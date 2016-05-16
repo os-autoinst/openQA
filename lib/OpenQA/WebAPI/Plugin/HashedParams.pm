@@ -21,10 +21,14 @@ sub register {
                 foreach my $p (keys %$hprms) {
                     my $key = $p;
                     my $val = $hprms->{$p};
+                    $val =~ s/\\/\\\\/g;
+                    $val =~ s/\'/\\\'/g;
 
                     $key =~ s/[^\]\[0-9a-zA-Z_]//g;
                     $key =~ s/\[{2,}/\[/g;
                     $key =~ s/\]{2,}/\]/g;
+                    $key =~ s/\\//g;
+                    $key =~ s/\'//g;
 
                     my @list;
                     foreach my $n (split /[\[\]]/, $key) {
