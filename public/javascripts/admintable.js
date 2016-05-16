@@ -1,3 +1,11 @@
+function htmlEscape(str) {
+    return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
 
 function table_row (data, table, edit, is_admin)
 {
@@ -9,7 +17,7 @@ function table_row (data, table, edit, is_admin)
 
         if (th.hasClass("col_value")) {
             var value = '';
-            if (data[name]) value = data[name];
+            if (data[name]) value = htmlEscape(data[name]);
             if (edit) {
                 html +=
                 '<td class="editable">' +
@@ -25,7 +33,7 @@ function table_row (data, table, edit, is_admin)
             if (data['settings']) {
                 for (var j = 0; j < data['settings'].length; j++) {
                     if (name === data['settings'][j]['key']) {
-                        value = data['settings'][j]['value'];
+                        value = htmlEscape(data['settings'][j]['value']);
                         break;
                     }
                 }
@@ -49,7 +57,7 @@ function table_row (data, table, edit, is_admin)
             }
             if (data['settings']) {
                 for (var j = 0; j < data['settings'].length; j++) {
-                    var k = data['settings'][j]['key'];
+                    var k = htmlEscape(data['settings'][j]['key']);
 
                     var col = false;
                     table.find('th.col_settings').each (function() {
@@ -58,7 +66,7 @@ function table_row (data, table, edit, is_admin)
 
                     if (col) continue; /* skip vars in extra columns */
 
-                    var v = data['settings'][j]['value'];
+                    var v = htmlEscape(data['settings'][j]['value']);
                     if (edit) {
                         html += '<span class="key-value-pair"><span class="key">' + k + '</span>=<input type="text" class="value" value="' + v + '"/></span><br/>'
                     }
