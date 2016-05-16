@@ -290,4 +290,20 @@ map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
 is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
 
+# Using asset _URL will automatically create parameter without _URL
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO => $iso, KERNEL_URL => 'http://localhost/vmlinuz'}) };
+map { like($_, $expected, 'expected warning') } @warnings;
+
+$newid = @{$ret->tx->res->json->{ids}}[0];
+$ret   = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
+is($ret->tx->res->json->{job}->{settings}->{KERNEL}, 'vmlinuz', "parameter KERNEL is correctly set from KERNEL_URL");
+
+# Having parameter without _URL and the same with _URL will not overwrite it
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO => $iso, KERNEL => 'vmlinuz.img.20160516', KERNEL_URL => 'http://localhost/vmlinuz'}) };
+map { ok($_ =~ $expected, 'expected warning') } @warnings;
+
+$newid = @{$ret->tx->res->json->{ids}}[0];
+$ret   = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
+is($ret->tx->res->json->{job}->{settings}->{KERNEL}, 'vmlinuz.img.20160516', "parameter KERNEL is not overwritten when KERNEL_URL is set");
+
 done_testing();
