@@ -255,8 +255,9 @@ $ret   = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
 is($ret->tx->res->json->{job}->{settings}->{KERNEL}, 'vmlinuz', "parameter KERNEL is correctly set from KERNEL_URL");
 
 # Having parameter without _URL and the same with _URL will not overwrite it
+my $expected_missing = qr/asset name '.*' invalid or does not exist/; # posting both KERNEL and KERNEL_URL results in warning about missing file from KERNEL parameter
 @warnings = warnings { $rsp = $t->post_ok('/api/v1/isos', form => {ISO => $iso, KERNEL => 'vmlinuz.img.20160516', KERNEL_URL => 'http://localhost/vmlinuz', DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'})->status_is(200) };
-map { like($_, $expected, 'expected warning') } @warnings;
+map { ok($_ =~ $expected || $_ =~ $expected_missing , 'expected warning') } @warnings;
 
 $newid = @{$ret->tx->res->json->{ids}}[0];
 $ret   = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
