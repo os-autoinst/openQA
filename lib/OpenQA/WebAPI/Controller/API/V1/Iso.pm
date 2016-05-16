@@ -301,7 +301,9 @@ sub schedule_iso {
                 delete $args->{$short} unless $args->{$short};
                 next;
             }
-        }
+        } else {
+	    $filename = $args->{$short};
+	}
         # full path to download target location. We need to guess
         # the asset type to know where to put it, using the same
         # subroutine as parse_assets_from_settings
