@@ -176,6 +176,45 @@ sub add_test_suite() {
     }
     #$driver->capture_screenshot('add_test.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 8, "8 edit buttons afterwards");
+
+    # can add entry with single, double quotes, special chars
+    my ($suiteName, $suiteKey, $suiteValue) = qw/t"e\\st'Suite\' te\'\\st"Ke"y; te'\""stVa;l%&ue/;
+
+    is($driver->find_element('//input[@value="New test suite"]')->click(), 1, 'new test suite');
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), '=', "new row empty");
+    my ($name, $key, $value) = $driver->find_child_elements($elem, '//input[@type="text"]');
+    $name->send_keys($suiteName);
+    $key->send_keys($suiteKey);
+    $value->send_keys($suiteValue);
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
+    # leave the ajax some time
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+    # now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
+    # try to edit and save
+    ok($driver->find_child_element($elem, './td/button[@title="Edit"]')->click(), 'editing enabled');
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    $name  = $driver->find_child_element($elem, './td/input[@type="text"]');
+    $key   = $driver->find_child_element($elem, './td/span/span[@class="key"]');
+    $value = $driver->find_child_element($elem, './td/span/input[@class="value"]');
+    is($name->get_value,  $suiteName,  'suite name edit box match');
+    is($key->get_text,    'testKey',   'key edit box matched sanitized key');
+    is($value->get_value, $suiteValue, 'value edit box matched sanitized key');
+    ok($driver->find_child_element($elem, '//button[@title="Update"]')->click(), 'editing saved');
+
+    # reread and compare to original
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
 }
 #
 
