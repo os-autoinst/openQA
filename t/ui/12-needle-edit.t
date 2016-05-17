@@ -128,18 +128,13 @@ sub add_needle_tag(;$) {
     $elem = $driver->find_element('#newtag', 'css');
     $elem->send_keys($tagname);
     $driver->find_element('#tag_add_button', 'css')->click();
-    # leave the ajax some time
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     is($driver->find_element("//input[\@value=\"$tagname\"]")->is_selected(), 1, "new tag found and was checked");
 }
 
 sub add_workaround_property() {
     $driver->find_element('#property_workaround', 'css')->click();
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     is($driver->find_element('#property_workaround', 'css')->is_selected(), 1, "workaround property selected");
 }
 
@@ -158,10 +153,7 @@ sub change_needle_value($$) {
     $driver->button_down();
     $driver->mouse_move_to_location(element => $elem, xoffset => $decode_textarea->{area}[0]->{xpos} + $xoffset + $pre_offset, yoffset => $decode_textarea->{area}[0]->{ypos} + $yoffset + $pre_offset);
     $driver->button_up();
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
-
+    t::ui::PhantomTest::wait_for_ajax;
     $elem = $driver->find_element('#needleeditor_textarea', 'css');
     # check the value of textarea again
     $decode_new_textarea = decode_json($elem->get_value());
@@ -181,9 +173,7 @@ sub change_needle_value($$) {
 
     # test match level
     $driver->find_element('#change-match', 'css')->click();
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     is($driver->find_element('#change-match-form', 'css')->is_displayed(), 1, "match level form found");
     is($driver->find_element('//button[@type="button"]/span[text()="Close"]')->is_displayed(), 1,    "match level form close button found");
     is($driver->find_element('//button[@type="button"]/span[text()="Set"]')->is_displayed(),   1,    "found set button");
@@ -206,15 +196,11 @@ sub overwrite_needle($) {
     $driver->find_element('#needleeditor_name', 'css')->send_keys($needlename);
     is($driver->find_element('#needleeditor_name', 'css')->get_value(), "$needlename", "new needle name inputed");
     $driver->find_element('//input[@alt="Save"]')->click();
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     # check the state highlight changed and click Yes do overwrite then
     is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Same needle name file already exists! Overwrite it? Yes / No", "highlight appears correct");
     $driver->find_element('Yes', 'link_text')->click();
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
     ok(-f "$dir/$needlename.json", "$needlename.json overwrited");
 }
@@ -236,9 +222,7 @@ is($driver->find_element('#needleeditor_name', 'css')->get_value(), "$needlename
 
 # create new needle by clicked save button
 $driver->find_element('//input[@alt="Save"]')->click();
-while (!$driver->execute_script("return jQuery.active == 0")) {
-    sleep 1;
-}
+t::ui::PhantomTest::wait_for_ajax;
 # check state highlight appears with valid content
 is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
 # check files are exists
