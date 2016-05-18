@@ -23,7 +23,7 @@
 % end
 
 <div class="row">
-    <div class="col-sm-push-3 col-sm-9">
+    <div>
         %= include 'layouts/info'
         % if (my $msg = flash 'code') {
             <blockquote class="ui-state-highlight"><%== $msg %></blockquote>

@@ -1,0 +1,47 @@
+<div class="row">
+    <div class="col-sm-1">
+        <img class="media-object img-circle" src="<%= $comment->user->gravatar(60) %>" alt="profile">
+    </div>
+    <div class="col-sm-11">
+        <div class="media-body comment-body">
+            <div class="well well-lg">
+                % if (current_user && current_user->is_admin) {
+                    %= form_for $remove_action, method => "post", class => "form-horizontal", role => "form" => begin
+                        <button class="btn btn-danger btn-circle btn-sm remove-edit-button" type="submit" name="removeComment" id="removeComment_<%= $comment->id %>" onclick="return confirmCommentRemoval('<%= $comment->user->name %>');">
+                            <span class="glyphicon glyphicon glyphicon-remove"></span>
+                        </button>
+                        <input type="hidden" name="comment_id" value="<%= $comment->id %>">
+                    % end
+                % }
+                %= form_for $edit_action, method => "post", class => "form-horizontal", role => "form" => begin
+                    % if (current_user && ((current_user->id eq $comment->user->id))) { # TODO: test also for || current_user->is_admin
+                        <button class="btn btn-info btn-circle btn-sm trigger-edit-button" type="button" name="editComment" onclick="showCommentEditor(<%= $comment->id %>, this.form);">
+                            <span class="glyphicon glyphicon glyphicon-pencil"></span>
+                        </button>
+                    % }
+                    <h4 class="media-heading">
+                        <%= $comment->user->name %> wrote <abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr>
+                        % if ($comment->t_created != $comment->t_updated) {
+                            (last edited <abbr class="timeago" title="<%= $comment->t_updated->datetime() %>Z"><%= format_time($comment->t_updated) %></abbr>)
+                        % }
+                    </h4>
+                    <div class="media-comment" id="commentMd_<%= $comment->id %>">
+                        %= $comment->rendered_markdown
+                    </div>
+                    % if (current_user && ((current_user->id eq $comment->user->id))) { # TODO: test also for || current_user->is_admin
+                        <textarea class="form-control comment-editing-control" name="text" rows="5"><%= $comment->text %></textarea>
+                        <button class="btn btn-success btn-circle comment-editing-control" type="submit" name="applyChanges">
+                            <span class="glyphicon glyphicon glyphicon-ok"></span>
+                            Apply changes
+                        </button>
+                        <button class="btn btn-warning btn-circle comment-editing-control" type="reset" name="discardChanges" onclick="hideCommentEditor(<%= $comment->id %>, this.form); return true;">
+                            <span class="glyphicon glyphicon glyphicon-remove"></span>
+                            Discard changes
+                        </button>
+                        <input type="hidden" name="comment_id" value="<%= $comment->id %>">
+                    % }
+                % end
+            </div>
+        </div>
+    </div>
+</div>

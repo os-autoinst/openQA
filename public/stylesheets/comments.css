@@ -1,0 +1,22 @@
+ .comment-body .comment-editing-control {
+     display: none;
+ }
+ 
+ .comment-body textarea.comment-editing-control {
+    outline: none;
+    border: none;
+    padding: 0px;
+    margin: 0px;
+    color: #000;
+ }
+ 
+ .comment-body .comment-buttons {
+    margin-top: -10px;
+    margin-bottom: 15px;
+ }
+
+ .comment-body .trigger-edit-button, .comment-body .remove-edit-button {
+    float: right;
+    margin-top: 8px;
+    margin-left: 4px;
+}
