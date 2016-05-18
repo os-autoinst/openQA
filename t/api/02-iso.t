@@ -48,7 +48,7 @@ sub lj {
     my $ret  = $t->get_ok('/api/v1/jobs')->status_is(200);
     my @jobs = @{$ret->tx->res->json->{jobs}};
     for my $j (@jobs) {
-        printf "%d %-10s %s\n", $j->{id}, $j->{state}, $j->{name};
+        printf "%d %-10s %s@%s\n", $j->{id}, $j->{state}, $j->{name}, $j->{settings}->{MACHINE};
     }
 }
 
@@ -184,6 +184,22 @@ is($ret->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 
 # make sure we can't post invalid parameters
 $ret = $t->post_ok('/api/v1/isos', form => {iso => $iso, tests => "kde/usb"})->status_is(400);
+
+# handle list of tests
+my $iso2 = 'openSUSE-13.1-DVD-i586-Build0091-Media.iso';
+$ret = $t->post_ok(
+    '/api/v1/isos',
+    form => {
+        ISO     => $iso2,
+        DISTRI  => 'opensuse',
+        VERSION => '13.1',
+        FLAVOR  => 'DVD',
+        ARCH    => 'i586',
+        TEST    => 'server,kde,textmode',
+        BUILD   => '0091'
+    })->status_is(200);
+
+is($ret->tx->res->json->{count}, 4, "4 new jobs created (one twice for both machine types)");
 
 # delete the iso
 # can not do as operator
