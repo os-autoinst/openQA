@@ -189,7 +189,7 @@ sub clone_job {
         my $parallel = $job->{parents}->{Parallel} unless ($options{'skip-deps'});
         $parallel //= [];
 
-        print "Clonning dependencies of $job->{name}\n" if (@$chained || @$parallel);
+        print "Cloning dependencies of $job->{name}\n" if (@$chained || @$parallel);
 
         for my $p (@$chained, @$parallel) {
             clone_job($p, $clone_map, $depth + 1);
