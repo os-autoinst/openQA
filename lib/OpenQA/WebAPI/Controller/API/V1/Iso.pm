@@ -124,6 +124,9 @@ sub _generate_jobs {
 
     my %wanted;    # jobs specified by $args->{TEST} or $args->{MACHINE} or their parents
 
+    # Allow a comma separated list of tests here; whitespaces allowed
+    my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();
+
     for my $product (@products) {
         my @templates = $product->job_templates;
         unless (@templates) {
@@ -183,10 +186,18 @@ sub _generate_jobs {
                 }
             } while ($expanded);
 
-            if (   (!$args->{TEST} || $args->{TEST} eq $settings{TEST})
-                && (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}))
-            {
-                $wanted{_settings_key(\%settings)} = 1;
+            if (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}) {
+                if (!@tests) {
+                    $wanted{_settings_key(\%settings)} = 1;
+                }
+                else {
+                    foreach my $test (@tests) {
+                        if ($test eq $settings{TEST}) {
+                            $wanted{_settings_key(\%settings)} = 1;
+                            last;
+                        }
+                    }
+                }
             }
 
             push @$ret, \%settings;
