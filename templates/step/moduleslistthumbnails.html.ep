@@ -11,11 +11,15 @@
 		    %= step_thumbnail($refimg, $ref_width, $testid, $moduleid, $img_count)
                 % } elsif ($refimg->{audio}) {
                     %= link_to url_for('step', stepid => $img_count) => (class => 'no_hover') => begin
-                        %= image '/images/audio.svg', alt => $refimg->{audio}, title => $refimg->{audio}, width => $ref_width, height => $ref_height, class=> "resborder_\L$refimg->{result}"
+                        %= image '/images/audio.svg', alt => $refimg->{audio}, title => $refimg->{audio}, width => $ref_width, height => $ref_height, class => "resborder_\L$refimg->{result}"
                     % end
                 % } elsif ($refimg->{text}) {
                     %= link_to url_for('step', stepid => $img_count) => (class => 'no_hover') => title => $refimg->{title} => begin
-                        <span class="<%= "resborder_\L$refimg->{result}" %>" style="width:<%= $ref_width %>px;height:<%= $ref_height %>px;" ><%= $refimg->{title} || 'Text' %></span>
+                        % if($refimg->{title} == "wait_serial") {
+                            %= image '/images/terminal.svg', alt => $refimg->{name}, width => $ref_width, height => $ref_height, class => "resborder_\L$refimg->{result}"
+                        % } else {
+                            <span class="<%= "resborder_\L$refimg->{result}" %>" style="width:<%= $ref_width %>px;height:<%= $ref_height %>px;" ><%= $refimg->{title} || 'Text' %></span>
+                        % }
                     % end
                 % }
             </span>

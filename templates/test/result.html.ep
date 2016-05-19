@@ -172,7 +172,11 @@
                                                     % end
                                                 % } elsif ($step->{text}) {
                                                     %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{title} => begin
-                                                        <span class="<%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
+                                                        % if($step->{title} == "wait_serial") {
+                                                            <img src="/images/terminal.svg" width="60" height="45" alt="<%= $step->{name} %>" class="<%= "resborder_\L$step->{result}" %>"/>
+                                                        % } else {
+                                                            <span class="<%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
+                                                        % }
                                                     % end
                                                 % }
                                             % }
