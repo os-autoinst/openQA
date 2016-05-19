@@ -168,7 +168,7 @@
                                                     %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
                                                 % } elsif ($step->{audio}) {
                                                     %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{name} => begin
-                                                        <img src="/images/audio.png" width="28" height="26" alt="<%= $step->{name} %>" class="<%= "resborder_\L$step->{result}" %>"/>
+                                                        <img src="/images/audio.svg" width="60" height="45" alt="<%= $step->{name} %>" class="<%= "resborder_\L$step->{result}" %>"/>
                                                     % end
                                                 % } elsif ($step->{text}) {
                                                     %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{title} => begin
