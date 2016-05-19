@@ -139,8 +139,9 @@ NeedleDiff.prototype.draw = function() {
     this.ctx.strokeRect(x, a['ypos'], a['width'], a['height']);
     // And the similarity, if needed
     if (this.showSimilarity[idx]) {
-      this.ctx.fillStyle = "rgb(255, 255, 255)";
-      this.ctx.fillRect(x+2, a['ypos']+2, 50, 20);
+      this.ctx.strokeStyle = "rgb(0, 0, 0)";
+      this.ctx.lineWidth = 3;
+      this.ctx.strokeText(a['similarity']+"%", x+4, a['ypos']+20);
       this.ctx.fillStyle = NeedleDiff.shapecolor(a['type']);
       this.ctx.font = "bold 24px Arial";
       this.ctx.fillText(a['similarity']+"%", x+4, a['ypos']+20);
