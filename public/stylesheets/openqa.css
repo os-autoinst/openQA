@@ -481,6 +481,7 @@ span.status .fa {
 
 .status.fa {
     font-size: 110%;
+    padding-left: 1em;
 }
 
 .action.fa {
