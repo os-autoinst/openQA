@@ -1,17 +1,4 @@
-// Two possible ways of calling it:
-// 1) new NeedleEditor(baseurl)
-// 2) new NeedleEditor(background, needlestring)
-function NeedleEditor() {
-  var baseurl;
-  var background, needlestring;
-
-  if (arguments.length == 1) {
-    baseurl = arguments[0];
-  } else {
-    background = arguments[0];
-    needlestring = arguments[1];
-  }
-
+function NeedleEditor(needle) {
   this.textarea = document.getElementById("needleeditor_textarea");
   this.tags = document.getElementById("needleeditor_tags");
   this.canvas = document.getElementById("needleeditor_canvas");
@@ -21,14 +8,7 @@ function NeedleEditor() {
   }
   this.bgImage = null;
   this.cv = null;
-  if (needlestring) {
-    this.LoadBackground(background);
-    this.needle = JSON.parse(needlestring);
-  } else {
-    this.LoadBackground(baseurl + ".png");
-    this.needle = null;
-    this.LoadNeedle(baseurl + ".json");
-  }
+  this.needle = needle;
   this.init();
 }
 
@@ -47,14 +27,14 @@ NeedleEditor.prototype.init = function() {
     // If tags is empty, we must populate it with a checkbox for every tag
     if (this.tags.getElementsByTagName('input').length == 0) {
       this.needle['tags'].forEach(function(tag) {
-        this.AddTag(tag, true);
+	this.AddTag(tag, true);
       }.bind(this));
-    // If the checkboxes are already there, we simply check them all
+      // If the checkboxes are already there, we simply check them all
     } else {
       var inputs = this.tags.getElementsByTagName('input');
       for (var i = 0; i < inputs.length; i++) {
-        if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
-          inputs[i].checked = true;
+	if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
+	  inputs[i].checked = true;
 	} else {
 	  inputs[i].checked = false;
 	}
@@ -137,12 +117,12 @@ NeedleEditor.prototype.AddTag = function(tag, checked) {
 }
 
 NeedleEditor.nexttype = function(type) {
-    if (type == 'match') {
-      return 'exclude';
-    } else if (type == 'exclude') {
-      return 'ocr';
-    }
-    return 'match';
+  if (type == 'match') {
+    return 'exclude';
+  } else if (type == 'exclude') {
+    return 'ocr';
+  }
+  return 'match';
 }
 
 NeedleEditor.ShapeFromArea = function(a) {
@@ -183,7 +163,7 @@ NeedleEditor.prototype.LoadNeedle = function(url) {
   var x = new XMLHttpRequest();
   x.onreadystatechange = function() {
     if (this.readyState != 4) {
-     return;
+      return;
     }
     if (this.status == 200)
     {
@@ -253,40 +233,154 @@ NeedleEditor.prototype.changeProperty = function(name, enabled) {
 }
 
 NeedleEditor.prototype.setMargin = function(value) {
-    var idx = this.cv.get_selection_idx();
-    if (idx == -1) {
-	if (!this.needle["area"].length) {
-	    return;
-	}
-	idx = 0;
+  var idx = this.cv.get_selection_idx();
+  if (idx == -1) {
+    if (!this.needle["area"].length) {
+      return;
     }
-    this.needle['area'][idx].margin = parseInt(value);
-    this.UpdateTextArea();
+    idx = 0;
+  }
+  this.needle['area'][idx].margin = parseInt(value);
+  this.UpdateTextArea();
 }
 
 NeedleEditor.prototype.setMatch = function(value) {
-    var idx = this.cv.get_selection_idx();
-    if (idx == -1) {
-	if (!this.needle["area"].length) {
-	    return;
-	}
-	idx = 0;
+  var idx = this.cv.get_selection_idx();
+  if (idx == -1) {
+    if (!this.needle["area"].length) {
+      return;
     }
-    
-    this.needle['area'][idx].match = parseFloat(value);
-    this.UpdateTextArea();
+    idx = 0;
+  }
+  
+  this.needle['area'][idx].match = parseFloat(value);
+  this.UpdateTextArea();
 }
 
-// If you dont want to use <body onLoad='init()'>
-// You could uncomment this init() reference and place the script reference inside the body tag
-//init();
-
-/*
-function init() {
-  var n = new NeedleEditor("canvas1", "inst-welcome");
+function loadBackground() {
+  var needle = window.needles[$('#image_select option:selected').data('needle')];
+  nEditor.LoadBackground(needle['imageurl']);
+  $("#needleeditor_image").val(needle['imagename']);
+  $("#needleeditor_imagedistri").val(needle['imagedistri']);
+  $("#needleeditor_imageversion").val(needle['imageversion']);
+  $("#needleeditor_imagedir").val(needle['imagedir']);
 }
 
-window.addEventListener('load', init, true);
-*/
+function loadTagsAndName() {
+  var needle = window.needles[$('#tags_select option:selected').data('needle')];
+  console.log(needle);
+  var tags = needle['tags'];
+  $("#needleeditor_tags").find('input').each(function() {
+    $(this).prop('checked', tags.indexOf($(this).val()) != -1);
+  });
+  $("#needleeditor_name").val(needle['suggested_name']);
+  nEditor.LoadTags(tags);
+}
+
+function addTag() {
+  var input = $('#newtag');
+  var checkbox = nEditor.AddTag(input.val(), false);
+  input.val('');
+  checkbox.click();
+  return false;
+}
+
+function doOverwrite()
+{
+  saveNeedleForm = document.forms['save_needle_form'];
+  saveNeedleForm.submit();
+  return true;
+}
+
+function setMargin() {
+  console.log("SETMAR");
+  console.log($('#margin'));
+  console.log($('#margin').val());
+  nEditor.setMargin($('#margin').val());
+}
+
+function setMatch() {
+  nEditor.setMatch($('#match').val());
+}
+
+var nEditor;
+
+function setup_needle_editor(imageurl, default_needle)
+{
+  nEditor = new NeedleEditor(imageurl, default_needle);
+
+  $('.tag_checkbox').click(function() {
+    nEditor.changeTag(this.value, this.checked);
+  });
+
+  $('#tag_add_button').click(addTag);
+  $('#newtag').keypress(function() {
+    if (event.keyCode==13)
+      return addTag();
+  });
+  
+  $('#property_workaround').click(function() { nEditor.changeProperty(this.name, this.checked) });
+  $('.area_selector').click(function() {
+    nEditor.LoadAreas($(this).data('areas'));
+  });
+
+  $('#image_select').change(loadBackground);
+  // load default
+  loadBackground();
+  $('#tags_select').click(loadTagsAndName);
+  loadTagsAndName();
+  
+  return;
+  
+  var matchdialog = $( "#change-match-form" ).dialog({
+    autoOpen: false,
+    width: '40%',
+    modal: true,
+    buttons: {
+      "Set": setMatch,
+      Cancel: function() {
+        matchdialog.dialog( "close" );
+      }
+    },
+    close: function() {
+      form[ 0 ].reset();
+    }
+  });
+  
+  form = matchdialog.find( "form" ).on( "submit", function( event ) {
+    event.preventDefault();
+    setMatch();
+  });
+
+  $('#change-match').button().on("click", function(event) {
+    event.preventDefault();
+    matchdialog.dialog("open");
+  });
+
+  var margindialog = $( "#change-margin-form" ).dialog({
+    autoOpen: false,
+    width: '40%',
+    modal: true,
+    buttons: {
+      "Set": setMargin,
+      Cancel: function() {
+        margindialog.dialog( "close" );
+      }
+    },
+    close: function() {
+      form[ 0 ].reset();
+    }
+  });
+
+  form = matchdialog.find( "form" ).on( "submit", function( event ) {
+    event.preventDefault();
+    setMargin();
+  });
+  
+  $('#change-margin').button().on("click", function(event) {
+    event.preventDefault();
+    margindialog.dialog("open");
+  });
+}
 
 // Now go make something amazing!

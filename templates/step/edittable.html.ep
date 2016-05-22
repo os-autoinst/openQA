@@ -1,0 +1,39 @@
+                <tr <%= 'title=broken' if ($needle->{broken}) %> id="needle_<%= $needle->{name} %>">
+                    <td <%= 'style=color:red;' if ($needle->{broken}) %> id="title_<%= $needle->{name} %>"><%= $title %></td>
+                    <td><input type="radio" class="background_selector" name="background_selector"
+                                id="bg_btn_<%= $needle->{name} %>"
+                                data-image="<%= $needle->{imagename} %>"
+                                data-distri="<%= $needle->{imagedistri} %>"
+                                data-version="<%= $needle->{imageversion} %>"
+                                data-url="<%= $needle->{imageurl} %>"
+                                data-imagedir="<%= $needle->{imagedir} %>"
+                                <%= 'checked="checked"' if ($i == 0); %>
+                                <%= 'disabled="disabled"' if ($needle->{broken}); %> />
+                    </td>
+                    <td>
+                        <input type="radio"
+                                name="area_selector"
+                                class="area_selector"
+                                id="area_btn_<%= $needle->{name} %>"
+                                data-areas="<%= JSON::to_json($needle->{area}) %>"
+                                <%= 'readonly="readonly"' unless (is_operator) %>
+                                <%= 'disabled="disabled"' if ($needle->{broken} || !is_operator); %>/>
+                    </td>
+                    <td>
+                        <input type="radio" name="area_selector" class="area_selector"
+                                id="matches_btn_<%= $needle->{name} %>"
+                                data-areas="<%= JSON::to_json($needle->{matches}) %>"
+                                <%= 'checked="checked"' if $needle->{selected}; %>
+                                <%= 'readonly="readonly"' unless (is_operator) %>
+                                <%= 'disabled="disabled"' if ($needle->{broken} || !is_operator); %>/>
+                    </td>
+                    <td>
+                        <input type="radio" name="tags_selector" class="tags_selector"
+                                id="tags_btn_<%= $needle->{name} %>"
+                                data-tags="<%= JSON::to_json($needle->{tags}) %>"
+                                data-suggested="<%= $needle->{suggested_name} %>"
+                                <%= 'checked="checked"' if $needle->{selected}; %>
+                                <%= 'readonly="readonly"' unless (is_operator) %>
+                                <%= 'disabled="disabled"' if ($needle->{broken} || !is_operator); %>/>
+                    </td>
+                </tr>

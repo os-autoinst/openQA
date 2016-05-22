@@ -149,7 +149,7 @@ sub edit {
         # First position: the screenshot with all the matching areas (in result)
         $screenshot = {
             name       => 'screenshot',
-            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
+            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string,
             imagename  => $imgname,
             imagedir   => "",
             area       => [],
@@ -178,7 +178,7 @@ sub edit {
         my $matched = {
             name           => $module_detail->{needle},
             suggested_name => $self->_timestamp($module_detail->{needle}),
-            imageurl       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json}),
+            imageurl       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json})->to_string,
             imagename      => basename($needle->{image}),
             imagedir       => dirname($needle->{image}),
             imagedistri    => $needle->{distri},
@@ -189,6 +189,7 @@ sub edit {
             properties => $needle->{properties} || [],
             matches    => $screenshot->{matches}};
         calc_min_similarity($matched, $module_detail->{area});
+        $matched->{title} = $matched->{min_similarity} . "%: " . $matched->{name};
         push(@needles, $matched);
 
         for my $t (@{$needle->{tags}}) {
@@ -203,7 +204,7 @@ sub edit {
             name       => 'screenshot',
             imagename  => $imgname,
             imagedir   => "",
-            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
+            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string,
             area       => [],
             matches    => [],
             properties => [],
@@ -234,22 +235,22 @@ sub edit {
                 $needleinfo->{broken} = 1;
             }
 
-            push(
-                @needles,
-                {
-                    name           => $needlename,
-                    suggested_name => $self->_timestamp($needlename),
-                    imageurl       => $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json}),
-                    imagename      => basename($needleinfo->{image}),
-                    imagedir       => dirname($needleinfo->{image}),
-                    imagedistri    => $needleinfo->{distri},
-                    imageversion   => $needleinfo->{version},
-                    tags           => $needleinfo->{tags},
-                    area           => $needleinfo->{area},
-                    json       => $needleinfo->{json}       || "",
-                    properties => $needleinfo->{properties} || [],
-                    matches    => [],
-                    broken     => $needleinfo->{broken}});
+            my $needlehash = {
+                name           => $needlename,
+                title          => $needlename,
+                suggested_name => $self->_timestamp($needlename),
+                imageurl       => $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json})->to_string,
+                imagename      => basename($needleinfo->{image}),
+                imagedir       => dirname($needleinfo->{image}),
+                imagedistri    => $needleinfo->{distri},
+                imageversion   => $needleinfo->{version},
+                tags           => $needleinfo->{tags},
+                area           => $needleinfo->{area},
+                json       => $needleinfo->{json}       || "",
+                properties => $needleinfo->{properties} || [],
+                matches    => [],
+                broken     => $needleinfo->{broken}};
+            push(@needles, $needlehash);
             for my $match (@{$needle->{area}}) {
                 $area = {
                     xpos   => int $match->{x},
@@ -261,9 +262,10 @@ sub edit {
                 $area->{margin} = int($match->{margin}) if defined $match->{margin};
                 $area->{match}  = int($match->{match})  if defined $match->{match};
                 #push(@{$screenshot->{matches}}, $area);
-                push(@{$needles[scalar(@needles) - 1]->{matches}}, $area);
+                push(@{$needlehash->{matches}}, $area);
             }
-            calc_min_similarity($needles[scalar(@needles) - 1], $needle->{area});
+            calc_min_similarity($needlehash, $needle->{area});
+            $needlehash->{title} = $needlehash->{min_similarity} . "%: " . $needlehash->{name};
             for my $t (@{$needleinfo->{tags}}) {
                 push(@$tags, $t) unless grep(/^$t$/, @$tags);
             }
@@ -273,7 +275,7 @@ sub edit {
         # Failing with not a single candidate needle
         $screenshot = {
             name       => 'screenshot',
-            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
+            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string,
             imagename  => $imgname,
             imagedir   => "",
             area       => [],
@@ -342,6 +344,7 @@ sub edit {
         $screenshot->{suggested_name} = $self->_timestamp($name);
     }
 
+    $screenshot->{title} = 'Screenshot';
     unshift(@needles, $screenshot);
 
     # stashing the properties
@@ -349,6 +352,8 @@ sub edit {
     for my $property (@{$default_needle->{properties}}) {
         $properties->{$property} = $property;
     }
+    use Data::Dumper;
+    print Dumper(\@needles);
     $self->stash('needles',        \@needles);
     $self->stash('tags',           $tags);
     $self->stash('properties',     $properties);

@@ -32,7 +32,6 @@
 < javascripts/needlediff.js
 
 ! step_edit.js
-< javascripts/needleedit.js
 < javascripts/needleeditor.js
 < javascripts/shapes.js
 < javascripts/keyevent.js

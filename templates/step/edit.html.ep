@@ -1,190 +1,155 @@
-% layout 'default';
+% layout 'bootstrap';
 % title $moduleid;
 
 % content_for 'head' => begin
-%= asset 'step_edit.js'
+    %= asset 'step_edit.js'
 
-<!-- prep for jquery dialog -->
-%= javascript '/javascripts/jquery-ui.js'
-%= stylesheet '/stylesheets/jquery-ui.css'
+    <!-- prep for jquery dialog -->
 % end
 
 % content_for 'ready_function' => begin
-    setup_needle_editor('<%= ${@$needles[0]}{'imageurl'} %>','<%= b(JSON::to_json($default_needle)) %>');
-    scrollModuleThumbnails();
+    window.needles = {};
+    % for my $needle (@$needles) {
+        window.needles['<%= $needle->{name} %>'] = <%= b(JSON::XS->new->pretty->encode($needle)) %>;
+    % }
+    setup_needle_editor( <%= b(JSON::to_json($default_needle)) %> );
     setupResultButtons();
 % end
 
-<div id="change-margin-form" title="Change search margin">
-    <div>The search for a needle area begins around its original position in the reference
-        screen to speed up the search time. The search margin is automatically increased over time, but sometimes
-        it's useful to set a larger margin for the initial search. The default is 50, but as an example a value
-        of 500 will always search the full screen avoiding having to wait for timeouts.
-    </div>
+% #= include 'editdialogs'
 
-    <p></p>
-    <form>
-        <fieldset>
-            <label for="margin">Search Margin:</label>
-            <input type="text" name="margin" id="margin" value="50" class="text ui-widget-content ui-corner-all">
+<div class="container-fluid">
+    <div class="row">
 
-            <!-- Allow form submission with keyboard without duplicating the dialog button -->
-            <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
-        </fieldset>
-    </form>
-</div>
-
-<div id="change-match-form" title="Change match level">
-    <div>The needle area is matched using fuzzy image comparison. The pixels don't have to match completely but need to be close enough.
-        The colors are reduced and there is some noise reduction too and the match is calculated in percentages. By default everything
-        above 96% is considered good enough. Sometimes this is too much and you want to lower the limit for noisy areas and sometimes
-        you need to express that every detail matters, so you can change that per area. Note that a 96% for a smaller area is stricter
-        than for a larger area as the error averages. Values between 90% and 100% are useful. If you need values lower than that, consider
-        using exclude areas.
-    </div>
-
-    <p></p>
-
-    <form>
-        <fieldset>
-            <label for="match">Match Level (%):</label>
-            <input type="text" name="match" id="match" value="96" class="text ui-widget-content ui-corner-all">
-
-            <!-- Allow form submission with keyboard without duplicating the dialog button -->
-            <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
-        </fieldset>
-    </form>
-</div>
-
-<div class="grid_3 alpha" id="sidebar">
-    <div class="box box-shadow alpha" id="actions_box">
-        <div class="box-header aligncenter">Actions</div>
-        %= form_for save_needle => (id => 'save_needle_form') => (method => 'POST') => begin
-        <div class="aligncenter">
-            % if (is_operator) {
-                % if ($job->can_be_duplicated) {
-                    %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
-                        <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
-                    %= end
-                % }
-                <input type="image" src="/images/floppy.png" alt="Save" />
-            % }
-            <input type="hidden" name="overwrite" value="<%= ${@$needles[0]}{'overwrite'} %>" id="overwrite_flag" />
-        </div>
-        <div style="margin: 0 3px;">
-            <div style="margin-top: 1em;">
-                <label>Name:</label><br/>
-                <input type="input" name="needlename" id="needleeditor_name" <%= 'readonly="readonly"' unless (is_operator) %>
-                       value="<%= ${@$needles[0]}{'suggested_name'} %>" style="width: calc(100% - 8px);"/>
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                Basics of Needle
             </div>
-            <div style="margin-top: 1em;">
-                <label>Tags:</label><br/>
-                <div id="needleeditor_tags" style="margin: 0 18px 0 0;">
-                    % for my $tag (@$tags) {
-                        <label>
-                            <input type="checkbox" name="tags" id="tag_<%= $tag %>" class="tag_checkbox"
-                                   value="<%= $tag %>" <%= 'readonly="readonly" disabled="disabled"' unless (is_operator) %> ><%= $tag %>
-                        </label><br/>
+            <div class="panel-body">
+                %= include 'layouts/info'
+
+                <div class="col-md-6">
+                    %= form_for save_needle => (id => 'save_needle_form') => (method => 'POST') => begin
+                        <div>
+                            % if (is_operator) {
+                                % if ($job->can_be_duplicated) {
+                                    %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
+                                        <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
+                                    %= end
+                                % }
+                                <input type="image" src="/images/floppy.png" alt="Save" />
+                            % }
+                            <!-- TODO -->
+                            <input type="hidden" name="overwrite" value="" id="overwrite_flag" />
+                        </div>
+                        <div class="hidden">
+                            <label>JSON:</label><br/>
+                            <textarea id="needleeditor_textarea" name="json" readOnly="yes" style="width: calc(100% - 8px); height:300px;"></textarea>
+                            <input type="hidden" id="needleeditor_image" name="imagename"/>
+                            <input type="hidden" id="needleeditor_imagedistri" name="imagedistri"/>
+                            <input type="hidden" id="needleeditor_imageversion" name="imageversion"/>
+                            <input type="hidden" id="needleeditor_imagedir" name="imagedir"/>
+                        </div>
+                    % end
+                    <div>
+                        <div>
+                            <label>Name:</label>
+                            <input type="input" name="needlename" id="needleeditor_name"
+                                    %= 'readonly="readonly"' unless (is_operator)
+                                    >
+                        </div>
+                        <div>
+                            <!-- lists the specific properties -->
+                            <input type="checkbox" name="workaround" id="property_workaround"
+                                    %= 'checked' if $properties->{workaround}
+                                    %= 'readonly="readonly" disabled="disabled"' unless (is_operator)
+                                    >workaround
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    Copy tags from:
+                    <select id="tags_select">
+                        <option data-needle="screenshot">None</option>
+                        % for my $needle (@$needles) {
+                            % next if $needle->{name} eq 'screenshot';
+                            <option data-needle="<%= $needle->{name} %>">
+                                <%= $needle->{title} %>
+                            </option>
+                        % }
+                    </select>
+
+                    <div>
+                        <label>Tags:</label>
+                        <div id="needleeditor_tags">
+                            % for my $tag (@$tags) {
+                                <div>
+                                    <input type="checkbox" name="tags" id="tag_<%= $tag %>" class="tag_checkbox"
+                                            value="<%= $tag %>" <%= 'readonly="readonly" disabled="disabled"' unless (is_operator) %> >
+                                    <%= $tag %>
+                                </div>
+                            % }
+                        </div>
+                        % if (is_operator) {
+                            <input id="newtag" style="width: calc(100% - 6px - 40px);" />
+                            <input type="button" style="width: 34px;" class="button" value="Add" id="tag_add_button" />
+                        % }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+
+    <div class="panel panel-default">
+        <div class="panel-heading">Screenshot and Areas</div>
+        <div class="panel-body">
+
+                <div class="col-lg-9">
+                    <div>
+                        Take image from:
+                        <select id="image_select">
+                            % for my $needle (@$needles) {
+                                <option data-needle="<%= $needle->{name} %>">
+                                    <%= $needle->{title} %>
+                                </option>
+                            % }
+                        </select>
+                    </div>
+
+                    <div>
+                        Copy areas from:
+                        <select id="area_select">
+                            <option data-needle="screenshot">None</option>
+                            % for my $needle (@$needles) {
+                                % next if $needle->{name} eq 'screenshot';
+                                <option data-needle="<%= $needle->{name} %>">
+                                    <%= $needle->{title} %>
+                                </option>
+                            % }
+                        </select>
+                        <input type="checkbox">Take matches</input>
+                    </div>
+                </div>
+
+                <div class="col-lg-3">
+                    % if (is_operator) {
+                        <div>
+                            <button id="change-match"><i class="fa fa-bar-chart"></i> Change Match Level</button>
+                        </div>
+                        <div>
+                            <button id="change-margin"><i class="fa fa-area-chart"></i> Change Margin</button>
+                        </div>
                     % }
                 </div>
-                % if (is_operator) {
-                    <input id="newtag" style="width: calc(100% - 6px - 40px);" />
-                    <input type="button" style="width: 34px;" class="button" value="Add" id="tag_add_button" />
+            </div>
+            <div style="margin: 0 10px; position: relative; width: 1024px; padding: 1px; border: 0px; background-color: black; margin: 10px auto">
+                <canvas tabindex="1" id="needleeditor_canvas" width="1024" height="768" style="border: 0px;">This text is displayed if your browser does not support HTML5 Canvas.</canvas>
+                % unless (is_operator) {
+                    <div style="margin: 0; padding: 0; border: 0; width: 1024px; height: 768px; position: absolute; top: 0; left: 0;"></div>
                 % }
             </div>
-            <div style="margin-top: 1em;">
-                <!-- lists the specific properties -->
-                <label>Properties:</label><br/>
-                        <label>
-                        <input type="checkbox" name="workaround" id="property_workaround" <%= 'checked' if $properties->{'workaround'} %> <%= 'readonly="readonly" disabled="disabled"' unless (is_operator) %> >workaround
-                        </label><br/>
-            </div>
-            <div style="margin-top: 1em;">
-                <label>JSON:</label><br/>
-                <textarea id="needleeditor_textarea" name="json" readOnly="yes" style="width: calc(100% - 8px); height:300px;"></textarea>
-                <input type="hidden" id="needleeditor_image" name="imagename" value="<%= ${@$needles[0]}{'imagename'} %>"/>
-                <input type="hidden" id="needleeditor_imagedistri" name="imagedistri" value="<%= ${@$needles[0]}{'imagedistri'} %>"/>
-                <input type="hidden" id="needleeditor_imageversion" name="imageversion" value="<%= ${@$needles[0]}{'imageversion'} %>"/>
-                <input type="hidden" id="needleeditor_imagedir" name="imagedir" value="<%= ${@$needles[0]}{'imagedir'} %>"/>
-            </div>
-        </div>
-        % if (is_operator) {
-            <button id="change-match"><i class="fa fa-bar-chart"></i> Change Match Level</button>
-            <button id="change-margin"><i class="fa fa-area-chart"></i> Change Margin</button>
-        % }
-        % end
-    </div>
-
-    %= include 'step/moduleslist'
-</div>
-
-<div class="grid_13 omega">
-    %= include 'step/moduleslistthumbnails'
-
-    <div class="box box-shadow">
-        %= include 'step/moduleslisttabs'
-        %= include 'layouts/info'
-
-        <table style="width: 97%;" id="screens_table">
-            <tr>
-                <th>Screens./Needle</th>
-                <th>Image</th>
-                <th>Areas</th>
-                <th>Matches</th>
-                <th>Tags</th>
-            </tr>
-
-            % for (my $i = 0; $i < scalar(@$needles); $i++) {
-                <% my $needle = $needles->[$i];
-                my $title = $needle->{'name'};
-                $title = $needle->{min_similarity} . "%: $title" if (defined $needle->{min_similarity}); %>
-
-                <tr <%= 'title=broken' if ($needle->{'broken'}) %> id="needle_<%= $needle->{'name'} %>">
-                    <td <%= 'style=color:red;' if ($needle->{'broken'}) %> id="title_<%= $needle->{'name'} %>"><%= $title %></td>
-                    <td><input type="radio" class="background_selector" name="background_selector"
-                   id="bg_btn_<%= $needle->{'name'} %>"
-                               data-image="<%= $needle->{'imagename'} %>"
-                               data-distri="<%= $needle->{'imagedistri'} %>"
-                               data-version="<%= $needle->{'imageversion'} %>"
-                               data-url="<%= $needle->{'imageurl'} %>"
-                               data-imagedir="<%= $needle->{'imagedir'} %>"
-                        <%= 'checked="checked"' if ($i == 0); %>
-                        <%= 'disabled="disabled"' if ($needle->{'broken'}); %> />
-                    </td>
-                    <td>
-                        <input type="radio"
-                               name="area_selector"
-                               class="area_selector"
-                   id="area_btn_<%= $needle->{'name'} %>"
-                               data-areas="<%= JSON::to_json($needle->{area}) %>"
-                        <%= 'readonly="readonly"' unless (is_operator) %>
-                        <%= 'disabled="disabled"' if ($needle->{'broken'} || !is_operator); %>/>
-                    </td>
-                    <td>
-                      <input type="radio" name="area_selector" class="area_selector"
-                   id="matches_btn_<%= $needle->{'name'} %>"
-                             data-areas="<%= JSON::to_json($needle->{matches}) %>"
-                        <%= 'checked="checked"' if $needle->{selected}; %>
-                        <%= 'readonly="readonly"' unless (is_operator) %>
-                        <%= 'disabled="disabled"' if ($needle->{'broken'} || !is_operator); %>/>
-                    </td>
-                    <td>
-                        <input type="radio" name="tags_selector" class="tags_selector"
-                   id="tags_btn_<%= $needle->{'name'} %>"
-                               data-tags="<%= JSON::to_json($needle->{tags}) %>"
-                               data-suggested="<%= $needle->{suggested_name} %>"
-                        <%= 'checked="checked"' if $needle->{selected}; %>
-                        <%= 'readonly="readonly"' unless (is_operator) %>
-                        <%= 'disabled="disabled"' if ($needle->{'broken'} || !is_operator); %>/>
-                    </td>
-                </tr>
-            % }
-        </table>
-        <div style="margin: 0 10px; position: relative; width: 1024px; padding: 1px; border: 0px; background-color: black;">
-            <canvas tabindex="1" id="needleeditor_canvas" width="1024" height="768" style="border: 0px;">This text is displayed if your browser does not support HTML5 Canvas.</canvas>
-            % unless (is_operator) {
-                <div style="margin: 0; padding: 0; border: 0; width: 1024px; height: 768px; position: absolute; top: 0; left: 0;"></div>
-            % }
         </div>
     </div>
 </div>

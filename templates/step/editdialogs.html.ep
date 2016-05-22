@@ -1,0 +1,40 @@
+<div id="change-margin-form" title="Change search margin">
+    <div>The search for a needle area begins around its original position in the reference
+        screen to speed up the search time. The search margin is automatically increased over time, but sometimes
+        it's useful to set a larger margin for the initial search. The default is 50, but as an example a value
+        of 500 will always search the full screen avoiding having to wait for timeouts.
+    </div>
+
+    <p></p>
+    <form>
+        <fieldset>
+            <label for="margin">Search Margin:</label>
+            <input type="text" name="margin" id="margin" value="50" class="text ui-widget-content ui-corner-all">
+
+            <!-- Allow form submission with keyboard without duplicating the dialog button -->
+            <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+        </fieldset>
+    </form>
+</div>
+
+<div id="change-match-form" title="Change match level">
+    <div>The needle area is matched using fuzzy image comparison. The pixels don't have to match completely but need to be close enough.
+        The colors are reduced and there is some noise reduction too and the match is calculated in percentages. By default everything
+        above 96% is considered good enough. Sometimes this is too much and you want to lower the limit for noisy areas and sometimes
+        you need to express that every detail matters, so you can change that per area. Note that a 96% for a smaller area is stricter
+        than for a larger area as the error averages. Values between 90% and 100% are useful. If you need values lower than that, consider
+        using exclude areas.
+    </div>
+
+    <p></p>
+
+    <form>
+        <fieldset>
+            <label for="match">Match Level (%):</label>
+            <input type="text" name="match" id="match" value="96" class="text ui-widget-content ui-corner-all">
+
+            <!-- Allow form submission with keyboard without duplicating the dialog button -->
+            <input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+        </fieldset>
+    </form>
+</div>
