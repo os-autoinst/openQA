@@ -151,6 +151,8 @@ sub group_overview {
         my @tag   = $comment->tag;
         my $build = $tag[0];
         next unless $build;
+        # Next line fixes poo#12028
+        next unless $res->{$build};
         $self->app->log->debug('Tag found on build ' . $tag[0] . ' of type ' . $tag[1]);
         $self->app->log->debug('description: ' . $tag[2]) if $tag[2];
         if ($tag[1] eq '-important') {
