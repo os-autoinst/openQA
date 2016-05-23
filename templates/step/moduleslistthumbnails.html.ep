@@ -15,7 +15,7 @@
                     % end
                 % } elsif ($refimg->{text}) {
                     %= link_to url_for('step', stepid => $img_count) => (class => 'no_hover') => title => $refimg->{title} => begin
-                        % if($refimg->{title} == "wait_serial") {
+                        % if($refimg->{title} eq "wait_serial") {
                             %= image '/images/terminal.svg', alt => $refimg->{name}, width => $ref_width, height => $ref_height, class => "resborder_\L$refimg->{result}"
                         % } else {
                             <span class="<%= "resborder_\L$refimg->{result}" %>" style="width:<%= $ref_width %>px;height:<%= $ref_height %>px;" ><%= $refimg->{title} || 'Text' %></span>
