@@ -117,6 +117,14 @@ sub ensure_size {
     return $size;
 }
 
+sub hidden {
+    # 1 if asset should not be linked from the web UI (as set by
+    # 'hide_asset_types' config setting), otherwise 0
+    my ($self) = @_;
+    my @types = split(/ /, $OpenQA::Utils::app->config->{global}->{hide_asset_types});
+    return grep { $_ eq $self->type } @types;
+}
+
 # A GRU task...arguments are the URL to grab and the full path to save
 # it in. scheduled in ISO controller
 sub download_asset {

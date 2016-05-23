@@ -227,7 +227,7 @@
                 % my $assets = $job->jobs_assets;
                 % while (my $a = $assets->next) {
                     % $a = $a->asset;
-                    % if ($a->type ne 'repo') {
+                    % unless ($a->hidden) {
                         % content_for 'asset_box' => begin
                             <li>
                                 %= link_to url_for('test_asset_name', testid => $testid, assettype => $a->type, assetname => $a->name) => (id => "asset_".$a->id) => begin
