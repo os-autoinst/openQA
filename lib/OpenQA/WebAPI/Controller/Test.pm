@@ -589,9 +589,7 @@ sub remove_comment {
 
     my $rs = $job->comments->search(
         {
-            id      => $self->param("comment_id"),
-            user_id => $self->current_user->id
-        });
+            id => $self->param("comment_id")});
 
     if ($rs) {
         $rs->delete();
