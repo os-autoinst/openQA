@@ -10,9 +10,7 @@ function setup_admin_user() {
 	if (confirm("Are you sure to put " + username + " into role: " + $.trim(role) + "?")) {
 	    $(this).parent('form').submit();
 	} else {
-	    $(this).removeAttr('checked');
-	    // we can't re-enable the default without jquery protesting
-	    // $(this).parent('form').find('input[class="default"]')
+            $(this).parent('form').find('input[class="default"]').first().prop('checked', 'checked');
 	}
     });
 
