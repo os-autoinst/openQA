@@ -246,8 +246,7 @@ sub remove_comment {
 
     my $rs = $group->comments->search(
         {
-            id      => $comment_id,
-            user_id => $self->current_user->id
+            id => $comment_id
         })->delete();
 
     $self->emit_event('openqa_user_comment', {id => $comment_id});
