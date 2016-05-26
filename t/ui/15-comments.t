@@ -57,9 +57,8 @@ $driver->find_element('opensuse', 'link_text')->click();
 is($driver->find_element('h1:first-of-type', 'css')->get_text(), 'Last Builds for Group opensuse', "on group overview");
 
 # define test message
-# TODO: break it by adding UTF-8 character
-my $test_message         = "This is a cool test";
-my $another_test_message = " - this message will be appended if editing works";
+my $test_message         = "This is a cool test ☠";
+my $another_test_message = " - this message will be appended if editing works ☠";
 my $edited_test_message  = $test_message . $another_test_message;
 my $user_name            = 'Demo';
 
