@@ -14,9 +14,7 @@
     <div class="box box-shadow" id="actions_box" data-url="<%= url_for('apiv1_create_command', workerid => 'WORKERID') %>">
         <div class="box-header aligncenter">Actions</div>
         <div class="aligncenter">
-            %# TODO: to use can_be_duplicated we have to wait for https://progress.opensuse.org/issues/1393
-            %#       in the meantime, just check clone_id
-            % unless ($job->clone_id) {
+            % if ($job->can_be_duplicated) {
                 %= link_post url_for('apiv1_restart', jobid => $job->id) => ('data-remote' => 'true', id => 'restart_running') => begin
                   %= image '/images/toggle.png', alt => "restart", title => "Restart job"
                 % end
