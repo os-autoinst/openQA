@@ -50,7 +50,7 @@ our $do_livelog;
 sub _kill_worker($) {
     my ($worker) = @_;
 
-    return unless $worker;
+    return unless $worker->{pid};
 
     warn "killing $worker->{pid}\n";
     kill(SIGTERM, $worker->{pid});
@@ -319,9 +319,9 @@ sub start_job {
     $tosend_files    = [];
 
     $worker = engine_workit($job);
-    unless ($worker) {
+    if ($worker->{error}) {
         warn "job is missing files, releasing job\n";
-        return stop_job('setup failure');
+        return stop_job("setup failure: $worker->{error}");
     }
 
     # start updating status - slow updates if livelog is not running

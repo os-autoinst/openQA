@@ -144,7 +144,7 @@ is($job3->{retry_avbl}, 0, "the retry counter decreased");
 # need to change state from scheduled
 OpenQA::Scheduler::Scheduler::job_set_done(jobid => $round3_id, result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 my $round4_id = OpenQA::Scheduler::Scheduler::job_duplicate((jobid => $round3_id, dup_type_auto => 1));
-ok(!defined $round4_id, "no logner auto-duplicating");
+ok(!defined $round4_id, "no longer auto-duplicating");
 # need to change state from scheduled
 OpenQA::Scheduler::Scheduler::job_set_done(jobid => $round3_id, result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 my $round5_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $round3_id);
