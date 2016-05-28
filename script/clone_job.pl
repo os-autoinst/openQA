@@ -177,6 +177,8 @@ sub clone_job {
     }
     else {
         my $err = $tx->error;
+        # there is no code for some error reasons, e.g. 'connection refused'
+        $err->{code} //= '';
         warn "failed to get job: $err->{code} $err->{message}";
         exit 1;
     }
