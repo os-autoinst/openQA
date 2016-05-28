@@ -83,8 +83,8 @@ sub engine_workit($) {
         if (my $iso = $job->{settings}->{$isokey}) {
             $iso = join('/', ISO_DIR, $iso);
             unless (-e $iso) {
-                warn "$iso does not exist!\n";
-                return;
+                my $error = "$iso does not exist!";
+                return {error => $error};
             }
             $job->{settings}->{$isokey} = $iso;
         }
@@ -94,8 +94,8 @@ sub engine_workit($) {
         if (my $file = $job->{settings}->{$otherkey}) {
             $file = join('/', OTHER_DIR, $file);
             unless (-e $file) {
-                warn "$file does not exist!\n";
-                return;
+                my $error = "$file does not exist!";
+                return {error => $error};
             }
             $job->{settings}->{$otherkey} = $file;
         }
@@ -107,8 +107,8 @@ sub engine_workit($) {
         if ($hdd) {
             $hdd = join('/', HDD_DIR, $hdd);
             unless (-e $hdd) {
-                warn "$hdd does not exist!\n";
-                return;
+                my $error = "$hdd does not exist!";
+                return {error => $error};
             }
             $job->{settings}->{"HDD_$i"} = $hdd;
         }
