@@ -210,7 +210,7 @@ subtest 'commenting in test results including labels' => sub {
     # navigate to comments tab of test result page
     $driver->find_element('Build0048', 'link_text')->click();
     $driver->find_element('.status',   'css')->click();
-    is($driver->get_title(), "openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test results", "on test result page");
+    is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results', "on test result page");
     switch_to_comments_tab(0);
 
     # do the same tests for comments as in the group overview

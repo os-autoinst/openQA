@@ -80,7 +80,7 @@ sub goto_editpage() {
     like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
 
     $driver->get($baseurl . "tests/99946");
-    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode test results', 'tests/99946 followed');
+    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
 
     $driver->find_element('installer_timezone', 'link_text')->click();
     is($driver->get_current_url(), $baseurl . "tests/99946/modules/installer_timezone/steps/1/src", "on src page for nstaller_timezone test");

@@ -102,7 +102,7 @@ my %settings = (
 my $job_ref = {
     t_finished => undef,
     id         => 1,
-    name       => 'Unicorn-42-pink-x86_64-Build666-rainbow',
+    name       => 'Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
     priority   => 40,
     result     => 'none',
     settings   => {
@@ -117,7 +117,7 @@ my $job_ref = {
         KVM         => "KVM",
         MACHINE     => "RainbowPC",
         ARCH        => 'x86_64',
-        NAME        => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow',
+        NAME        => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
     },
     assets => {
         iso => ['whatever.iso'],
@@ -180,7 +180,7 @@ my $jobs = [
     {
         t_finished => undef,
         id         => 1,
-        name       => 'Unicorn-42-pink-x86_64-Build666-rainbow',
+        name       => 'Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
         priority   => 40,
         result     => 'none',
         t_started  => undef,
@@ -202,7 +202,7 @@ my $jobs = [
             KVM         => "KVM",
             MACHINE     => "RainbowPC",
             ARCH        => 'x86_64',
-            NAME        => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow',
+            NAME        => '00000001-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC',
         },
         assets => {
             iso => ['whatever.iso'],
@@ -279,7 +279,7 @@ ok(!$grabed->{settings}->{JOBTOKEN}, "job token no longer present");
 $grabed = OpenQA::Scheduler::Scheduler::job_grab(%args);
 isnt($job->id, $grabed->{id}, "new job grabbed");
 isnt($grabed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs");
-$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-x86_64-Build666-rainbow';
+$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC';
 
 ## update JOBTOKEN for isdeeply compare
 $job_ref->{settings}->{JOBTOKEN} = $grabed->{settings}->{JOBTOKEN};

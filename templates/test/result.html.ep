@@ -53,7 +53,7 @@
         % }
         <div class="panel <%= $panelclass %>" id="info_box">
             <div class="panel-heading">
-                Results for <%= $job->name %>@<%= $job->settings_hash->{MACHINE} %>
+                Results for <%= $job->name %>
             </div>
             <div class="panel-body">
                 <div>
