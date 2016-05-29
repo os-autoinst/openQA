@@ -123,7 +123,7 @@ secret are available.
 
 API key and secret can either be set manually in the constructor, via
 attributes or read from a config file. L<OpenQA::Client>
-tries to find a config file in $OPENQA_CLIENT_CONFIG,
+tries to find a config file in $OPENQA_CONFIG,
 ~/.config/openqa/client.conf or /etc/openqa/client.conf and reads
 whatever comes first.
 
