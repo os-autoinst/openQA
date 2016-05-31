@@ -30,9 +30,9 @@ NeedleEditor.prototype.init = function() {
       for (var i = 0; i < inputs.length; i++) {
         if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
           inputs[i].checked = true;
-        } else {
-          inputs[i].checked = false;
-        }
+	} else {
+	  inputs[i].checked = false;
+	}
       }
     }
   }
@@ -58,9 +58,9 @@ NeedleEditor.prototype.init = function() {
     if (e.keyCode == KeyEvent.DOM_VK_DELETE) {
       var idx = cv.get_selection_idx();
       if (idx != -1) {
-        editor.needle['area'].splice(idx, 1);
-        cv.delete_shape_idx(idx);
-        editor.UpdateTextArea();
+	editor.needle['area'].splice(idx, 1);
+	cv.delete_shape_idx(idx);
+	editor.UpdateTextArea();
       }
     } else if (e.keyCode == KeyEvent.DOM_VK_INSERT) {
       var a = { 'xpos': 0, 'ypos': 0, 'width': MINSIZE, 'height': MINSIZE, 'type': 'match' };
@@ -344,7 +344,7 @@ function setup_needle_editor(imageurl, default_needle)
     buttons: {
       "Set": setMatch,
       Cancel: function() {
-        matchdialog.dialog( "close" );
+	matchdialog.dialog( "close" );
       }
     },
     close: function() {
@@ -369,7 +369,7 @@ function setup_needle_editor(imageurl, default_needle)
     buttons: {
       "Set": setMargin,
       Cancel: function() {
-        margindialog.dialog( "close" );
+	margindialog.dialog( "close" );
       }
     },
     close: function() {
