@@ -2,7 +2,7 @@
 % title $moduleid;
 
 % content_for 'head' => begin
-%= javascript '/javascripts/needlediff.js'
+%= asset 'needlediff.js'
 % end
 
 % content_for 'head_javascript' => begin

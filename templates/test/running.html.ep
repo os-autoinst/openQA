@@ -2,7 +2,7 @@
 % title $testname;
 
 % content_for 'head' => begin
-  %= javascript '/javascripts/running.js'
+  %= asset 'running.js'
 % end
 
 % content_for 'ready_function' => begin

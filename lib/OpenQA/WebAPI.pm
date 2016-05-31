@@ -229,7 +229,7 @@ sub startup {
 
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
-    $self->plugin('AssetPack');
+    $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Combine Fetch)]});
     $self->plugin('OpenQA::WebAPI::Plugin::Helpers');
     $self->plugin('OpenQA::WebAPI::Plugin::CSRF');
     $self->plugin('OpenQA::WebAPI::Plugin::REST');
@@ -249,62 +249,51 @@ sub startup {
         }
     }
 
-    $self->plugin(bootstrap3 => {css => [], js => []});
-
-    $self->asset(
-        'step_edit.js' => qw(/javascripts/needleedit.js
-          /javascripts/needleeditor.js
-          /javascripts/shapes.js
-          /javascripts/keyevent.js/)
+    $self->asset->process(
+        'step_edit.js' => qw(javascripts/needleedit.js
+          javascripts/needleeditor.js
+          javascripts/shapes.js
+          javascripts/keyevent.js/)
     );
 
-    my @js = qw(/javascripts/jquery-1.11.2.js
-      /javascripts/jquery_ujs.js
-      /javascripts/chosen.jquery.js
-      /javascripts/openqa.js
-      /javascripts/jquery.dataTables.js
-      /javascripts/admintable.js
-      /javascripts/admin_user.js
-      /javascripts/admin_needle.js
-      /javascripts/audit_log.js
-      /javascripts/jquery.timeago.js
-      /javascripts/tests.js
-      /javascripts/assets.js
-      /javascripts/job_templates.js
-      /javascripts/overview.js
-      /javascripts/comments.js);
-    my @css = qw(/stylesheets/font-awesome.css
-      /stylesheets/chosen.css
-      /stylesheets/overview.scss
-      /stylesheets/comments.css
-      /stylesheets/openqa.css );
+    my @js = qw(http://code.jquery.com/jquery-1.11.2.js
+      javascripts/jquery_ujs.js
+      javascripts/chosen.jquery.js
+      javascripts/openqa.js
+      javascripts/jquery.dataTables.js
+      javascripts/admintable.js
+      javascripts/admin_user.js
+      javascripts/admin_needle.js
+      javascripts/audit_log.js
+      javascripts/jquery.timeago.js
+      javascripts/tests.js
+      javascripts/assets.js
+      javascripts/job_templates.js
+      javascripts/overview.js
+      javascripts/comments.js);
+    my @css = qw(https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css
+      stylesheets/chosen.css
+      stylesheets/overview.scss
+      stylesheets/comments.css
+      stylesheets/openqa.css );
 
-    # preprocessors to expend the url() definitions in the css
-    $self->asset->preprocessors->add(
-        css => sub {
-            my ($assetpack, $text, $file) = @_;
-            $$text =~ s!url\('!url('../images/!g if $file =~ /chosen.css/;
-        });
+    # preprocessors to expend the url() definitions in the css - TODO: reenable chosen in job group
+    # $self->asset->preprocessors->add(
+    #    css => sub {
+    #        my ($assetpack, $text, $file) = @_;
+    #        $$text =~ s!url\('!url('../images/!g if $file =~ /chosen.css/;
+    #    });
 
-    $self->asset('app.css' => (qw(/stylesheets/jquery.dataTables.css /stylesheets/tables.css), @css));
-    $self->asset('app.js' => @js);
-    my $path = Mojolicious::Plugin::Bootstrap3->asset_path('sass');
-    $ENV{SASS_PATH} = ".:$path";
-    $self->asset(
-        'bootstrap.css' => (
-            qw(/sass/bentostrap.scss
-              /stylesheets/dataTables.bootstrap.css
-              ), @css
-        ));
-    $self->asset(
-        'bootstrap.js' => (
-            @js, qw(/js/bootstrap/collapse.js
-              /js/bootstrap/tooltip.js
-              /js/bootstrap/tab.js
-              /js/bootstrap/bootstrap.js
-              /js/bootstrap/transition.js
-              /javascripts/dataTables.bootstrap.js)
-        ));
+    my $bootstrap_url = "https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets";
+    $self->asset->process('app.css' => (qw(stylesheets/jquery.dataTables.css stylesheets/tables.css), @css));
+    $self->asset->process('app.js' => @js);
+    $self->asset->process('bootstrap.css' => ("$bootstrap_url/stylesheets/_bootstrap.scss", "sass/bentostrap.scss", "stylesheets/dataTables.bootstrap.css", @css));
+    $self->asset->process('codemirror.css' => qw(stylesheets/codemirror.css));
+    $self->asset->process('codemirror.js'  => qw(javascripts/lib/codemirror.js javascripts/mode/perl/perl.js));
+    $self->asset->process('needlediff.js'  => qw(javascripts/needlediff.js));
+    $self->asset->process('running.js'     => qw(javascripts/running.js));
+    $self->asset->process('bootstrap.js'   => (@js, ("$bootstrap_url/javascripts/bootstrap/collapse.js", "$bootstrap_url/javascripts/bootstrap/tooltip.js", "$bootstrap_url/javascripts/bootstrap/tab.js", "$bootstrap_url/javascripts/bootstrap.js", "$bootstrap_url/javascripts/bootstrap/transition.js", "javascripts/dataTables.bootstrap.js")));
+    $self->asset->store;
 
     # set secure flag on cookies of https connections
     $self->hook(
