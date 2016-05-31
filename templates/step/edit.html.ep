@@ -68,13 +68,13 @@
                     </div>
                 </div>
                 <div class="col-md-6">
-                    Copy tags from:
+                    Needle based on:
                     <select id="tags_select">
                         <option data-needle="screenshot">None</option>
                         % for my $needle (@$needles) {
                             % next if $needle->{name} eq 'screenshot';
                             <option data-needle="<%= $needle->{name} %>">
-                                <%= $needle->{title} %>
+                                %= $needle->{title}
                             </option>
                         % }
                     </select>
@@ -86,13 +86,13 @@
                                 <div>
                                     <input type="checkbox" name="tags" id="tag_<%= $tag %>" class="tag_checkbox"
                                             value="<%= $tag %>" <%= 'readonly="readonly" disabled="disabled"' unless (is_operator) %> >
-                                    <%= $tag %>
+                                    %= $tag
                                 </div>
                             % }
                         </div>
                         % if (is_operator) {
-                            <input id="newtag" style="width: calc(100% - 6px - 40px);" />
-                            <input type="button" style="width: 34px;" class="button" value="Add" id="tag_add_button" />
+                            <input id="newtag"" />
+                            <input type="button" class="button" value="Add" id="tag_add_button" />
                         % }
                     </div>
                 </div>

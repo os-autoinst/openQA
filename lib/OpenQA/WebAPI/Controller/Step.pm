@@ -250,7 +250,7 @@ sub edit {
                 properties => $needleinfo->{properties} || [],
                 matches    => [],
                 broken     => $needleinfo->{broken}};
-            push(@needles, $needlehash);
+            push(@needles, $needlehash) unless $needlehash->{broken};
             for my $match (@{$needle->{area}}) {
                 $area = {
                     xpos   => int $match->{x},
