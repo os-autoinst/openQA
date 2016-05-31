@@ -9,14 +9,9 @@ function NeedleEditor(needle) {
   this.bgImage = null;
   this.cv = null;
   this.needle = needle;
-  this.init();
 }
 
 NeedleEditor.prototype.init = function() {
-  if (!this.bgImage || !this.needle) {
-    return;
-  }
-
   var editor = this;
 
   var cv = this.cv = new CanvasState(this.canvas);
@@ -27,17 +22,17 @@ NeedleEditor.prototype.init = function() {
     // If tags is empty, we must populate it with a checkbox for every tag
     if (this.tags.getElementsByTagName('input').length == 0) {
       this.needle['tags'].forEach(function(tag) {
-	this.AddTag(tag, true);
+        this.AddTag(tag, true);
       }.bind(this));
       // If the checkboxes are already there, we simply check them all
     } else {
       var inputs = this.tags.getElementsByTagName('input');
       for (var i = 0; i < inputs.length; i++) {
-	if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
-	  inputs[i].checked = true;
-	} else {
-	  inputs[i].checked = false;
-	}
+        if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
+          inputs[i].checked = true;
+        } else {
+          inputs[i].checked = false;
+        }
       }
     }
   }
@@ -63,9 +58,9 @@ NeedleEditor.prototype.init = function() {
     if (e.keyCode == KeyEvent.DOM_VK_DELETE) {
       var idx = cv.get_selection_idx();
       if (idx != -1) {
-	editor.needle['area'].splice(idx, 1);
-	cv.delete_shape_idx(idx);
-	editor.UpdateTextArea();
+        editor.needle['area'].splice(idx, 1);
+        cv.delete_shape_idx(idx);
+        editor.UpdateTextArea();
       }
     } else if (e.keyCode == KeyEvent.DOM_VK_INSERT) {
       var a = { 'xpos': 0, 'ypos': 0, 'width': MINSIZE, 'height': MINSIZE, 'type': 'match' };
@@ -188,7 +183,7 @@ NeedleEditor.prototype.LoadNeedle = function(url) {
 NeedleEditor.prototype.LoadAreas = function(areas) {
   var editor = this;
   var cv = this.cv;
-
+  
   editor.needle["area"] = areas;
   cv.delete_shapes();
   this.DrawAreas();
@@ -258,7 +253,7 @@ NeedleEditor.prototype.setMatch = function(value) {
 }
 
 function loadBackground() {
-  var needle = window.needles[$('#image_select option:selected').data('needle')];
+  var needle = window.needles[$('#image_select option:selected').val()];
   nEditor.LoadBackground(needle['imageurl']);
   $("#needleeditor_image").val(needle['imagename']);
   $("#needleeditor_imagedistri").val(needle['imagedistri']);
@@ -267,14 +262,24 @@ function loadBackground() {
 }
 
 function loadTagsAndName() {
-  var needle = window.needles[$('#tags_select option:selected').data('needle')];
-  console.log(needle);
+  var needle = window.needles[$('#tags_select option:selected').val()];
   var tags = needle['tags'];
   $("#needleeditor_tags").find('input').each(function() {
     $(this).prop('checked', tags.indexOf($(this).val()) != -1);
   });
   $("#needleeditor_name").val(needle['suggested_name']);
+  $("#area_select").val(needle['name']);
+  loadAreas();
   nEditor.LoadTags(tags);
+}
+
+function loadAreas() {
+  var needle = window.needles[$('#area_select option:selected').val()];
+  if ($('#take_matches').prop('checked')) {
+    nEditor.LoadAreas(needle['matches']);
+  } else {
+    nEditor.LoadAreas(needle['area']);
+  }
 }
 
 function addTag() {
@@ -320,15 +325,15 @@ function setup_needle_editor(imageurl, default_needle)
   });
   
   $('#property_workaround').click(function() { nEditor.changeProperty(this.name, this.checked) });
-  $('.area_selector').click(function() {
-    nEditor.LoadAreas($(this).data('areas'));
-  });
 
   $('#image_select').change(loadBackground);
   // load default
   loadBackground();
-  $('#tags_select').click(loadTagsAndName);
+  nEditor.init();
+  $('#tags_select').change(loadTagsAndName);
   loadTagsAndName();
+  $('#area_select').change(loadAreas);
+  $('#take_matches').change(loadAreas);
   
   return;
   

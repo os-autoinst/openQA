@@ -344,7 +344,10 @@ sub edit {
         $screenshot->{suggested_name} = $self->_timestamp($name);
     }
 
-    $screenshot->{title} = 'Screenshot';
+    $screenshot->{title}   = 'Screenshot';
+    $screenshot->{tags}    = [];
+    $screenshot->{area}    = [];
+    $screenshot->{matches} = [];
     unshift(@needles, $screenshot);
 
     # stashing the properties

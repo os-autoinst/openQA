@@ -35,7 +35,7 @@
                                 % if ($job->can_be_duplicated) {
                                     %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
                                         <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
-                                    %= end
+                                    % end
                                 % }
                                 <input type="image" src="/images/floppy.png" alt="Save" />
                             % }
@@ -70,12 +70,12 @@
                 <div class="col-md-6">
                     Needle based on:
                     <select id="tags_select">
-                        <option data-needle="screenshot">None</option>
+                        <option value="screenshot">None</option>
                         % for my $needle (@$needles) {
                             % next if $needle->{name} eq 'screenshot';
-                            <option data-needle="<%= $needle->{name} %>">
-                                %= $needle->{title}
-                            </option>
+                            % my %attrs = ( value => $needle->{name} );
+                            % $attrs{selected} = undef if $needle->{selected};
+                            %= tag option => %attrs => $needle->{title}
                         % }
                     </select>
 
@@ -111,7 +111,7 @@
                         Take image from:
                         <select id="image_select">
                             % for my $needle (@$needles) {
-                                <option data-needle="<%= $needle->{name} %>">
+                                <option value="<%= $needle->{name} %>">
                                     <%= $needle->{title} %>
                                 </option>
                             % }
@@ -121,15 +121,15 @@
                     <div>
                         Copy areas from:
                         <select id="area_select">
-                            <option data-needle="screenshot">None</option>
+                            <option value="screenshot">None</option>
                             % for my $needle (@$needles) {
                                 % next if $needle->{name} eq 'screenshot';
-                                <option data-needle="<%= $needle->{name} %>">
+                                <option value="<%= $needle->{name} %>">
                                     <%= $needle->{title} %>
                                 </option>
                             % }
                         </select>
-                        <input type="checkbox">Take matches</input>
+                        <input type="checkbox" id="take_matches" checked>Take matches</input>
                     </div>
                 </div>
 
