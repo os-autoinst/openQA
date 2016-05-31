@@ -154,18 +154,20 @@ function CanvasState(canvas) {
       myState.dragoffx = mx - shape.x;
       myState.dragoffy = my - shape.y;
       myState.selection = shape;
+      $(myState).trigger('shape.selected');
       myState.dirty = true;
       myState.resizing = shape.is_resize(mx, my, myState.selectionWidth)
       if (myState.resizing == 0) {
-	myState.dragging = true;
+					myState.dragging = true;
       }
       return;
     }
     // havent returned means we have failed to select anything.
     // If there was an object selected, we deselect it
     if (myState.selection) {
-      myState.selection = null;
-      myState.dirty = true; // Need to clear the old selection border
+	myState.selection = null;
+	$(myState).trigger('shape.unselected');
+	myState.dirty = true; // Need to clear the old selection border
     }
     myState.mousedown = true;
   }, true);
@@ -177,9 +179,9 @@ function CanvasState(canvas) {
       myState.selection.x = mouse.x - myState.dragoffx;
       myState.selection.y = mouse.y - myState.dragoffy;   
       if (myState.selection.x < 0) {
-	myState.selection.x = 0;
+	  myState.selection.x = 0;
       } else if (myState.selection.x + myState.selection.w > this.width) {
-	myState.selection.x = this.width - myState.selection.w;
+	  myState.selection.x = this.width - myState.selection.w;
       }
       if (myState.selection.y < 0) {
 	myState.selection.y = 0;
@@ -326,20 +328,6 @@ CanvasState.prototype.draw = function() {
 
     if (this.bgImage) {
       this.ctx.drawImage(this.bgImage, 0, 0);
-    } else {
-      if (!this.noImgPattern) {
-	var pattern = document.createElement("canvas");
-	pattern.width = 100;
-	pattern.height = 100;
-	var pctx = pattern.getContext("2d");
-	pctx.fillStyle = '#E8E8E8';
-	pctx.fillRect(0, 0, pattern.width/2, pattern.height/2);
-	pctx.fillRect(pattern.width/2, pattern.height/2, pattern.width, pattern.height);
-	this.noImgPattern = ctx.createPattern(pattern, "repeat");
-      }
-      ctx.rect(0, 0, this.width, this.height);
-      ctx.fillStyle = this.noImgPattern;
-      ctx.fill();
     }
     
     // ** Add stuff you want drawn in the background all the time here **
@@ -356,12 +344,15 @@ CanvasState.prototype.draw = function() {
     
     // draw selection
     // right now this is just a stroke along the edge of the selected Shape
-    if (this.selection != null) {
-      ctx.strokeStyle = this.selectionColor;
-      ctx.lineWidth = this.selectionWidth;
-      var mySel = this.selection;
-      ctx.strokeRect(mySel.x,mySel.y,mySel.w,mySel.h);
-    }
+      if (this.selection != null) {
+	  var lineWidth = 1;
+	  ctx.strokeStyle = 'white';
+	  ctx.lineWidth = lineWidth;;
+	  ctx.setLineDash([10, 15]);
+	  var mySel = this.selection;
+	  ctx.strokeRect(mySel.x - lineWidth, mySel.y - lineWidth,
+			 mySel.w + lineWidth * 2, mySel.h + lineWidth * 2);
+      }
     
     // ** Add stuff you want drawn on top all the time here **
     
@@ -393,11 +384,12 @@ CanvasState.prototype.get_shape = function(idx) {
 }
 
 CanvasState.prototype.delete_shape_idx = function(idx) {
-  if (this.shapes[idx] == this.selection) {
-    this.selection = null;
-  }
-  this.shapes.splice(idx, 1);
-  this.dirty = true;
+    if (this.shapes[idx] == this.selection) {
+	$(this).trigger('shape.unselected');
+	this.selection = null;
+    }
+    this.shapes.splice(idx, 1);
+    this.dirty = true;
 }
 
 CanvasState.prototype.delete_shapes = function() {
@@ -406,6 +398,7 @@ CanvasState.prototype.delete_shapes = function() {
   for (var i = l-1; i >= 0; i--) {
     this.shapes.splice(i, 1);
   }
+  $(this).trigger('shape.unselected');
   this.selection = null;
   this.dirty = true;
 }

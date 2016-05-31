@@ -355,8 +355,6 @@ sub edit {
     for my $property (@{$default_needle->{properties}}) {
         $properties->{$property} = $property;
     }
-    use Data::Dumper;
-    print Dumper(\@needles);
     $self->stash('needles',        \@needles);
     $self->stash('tags',           $tags);
     $self->stash('properties',     $properties);

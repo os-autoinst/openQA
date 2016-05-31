@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -85,24 +85,19 @@ sub goto_editpage() {
     $driver->find_element('installer_timezone', 'link_text')->click();
     is($driver->get_current_url(), $baseurl . "tests/99946/modules/installer_timezone/steps/1/src", "on src page for nstaller_timezone test");
 
-    $driver->find_element('Needles editor', 'link_text')->click();
+    $driver->find_element('Screenshot', 'link_text')->click();
+
+    $driver->find_element('Create new needle', 'link_text')->click();
 }
 
 sub editpage_layout_check() {
+    t::ui::PhantomTest::wait_for_ajax;
+
     # layout check
-    $elem = $driver->find_element('#screens_table tbody tr', 'css');
-    my @headers = $driver->find_child_elements($elem, 'th');
-    is(@headers,                     5,                 "5 columns");
-    is((shift @headers)->get_text(), "Screens./Needle", "1st column");
-    is((shift @headers)->get_text(), "Image",           "2nd column");
-    is((shift @headers)->get_text(), "Areas",           "3rd column");
-    is((shift @headers)->get_text(), "Matches",         "4th column");
-    is((shift @headers)->get_text(), "Tags",            "5th column");
-    is($driver->find_element('#bg_btn_screenshot',              'css')->is_selected(), 1, "background selected");
-    is($driver->find_element('#bg_btn_inst-timezone-text',      'css')->is_selected(), 0, "background unselected");
-    is($driver->find_element('#tags_btn_screenshot',            'css')->is_selected(), 0, "tag btn unselected");
-    is($driver->find_element('#tags_btn_inst-timezone-text',    'css')->is_selected(), 1, "tag btn selected");
-    is($driver->find_element('#matches_btn_inst-timezone-text', 'css')->is_selected(), 1, "matches btn selected");
+    is($driver->find_element('#tags_select',  'css')->get_value(),   'inst-timezone-text', "inst-timezone tags selected");
+    is($driver->find_element('#image_select', 'css')->get_value(),   'screenshot',         "Screenshot background selected");
+    is($driver->find_element('#area_select',  'css')->get_value(),   'inst-timezone-text', "inst-timezone areas selected");
+    is($driver->find_element('#take_matches', 'css')->is_selected(), 1,                    "Matches selected");
 
     # check needle suggested name
     my $today = strftime("%Y%m%d", gmtime(time));
@@ -129,6 +124,7 @@ sub add_needle_tag(;$) {
     $elem->send_keys($tagname);
     $driver->find_element('#tag_add_button', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
+    t::ui::PhantomTest::make_screenshot('mojoResults.png');
     is($driver->find_element("//input[\@value=\"$tagname\"]")->is_selected(), 1, "new tag found and was checked");
 }
 

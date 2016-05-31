@@ -22,14 +22,14 @@ NeedleEditor.prototype.init = function() {
     // If tags is empty, we must populate it with a checkbox for every tag
     if (this.tags.getElementsByTagName('input').length == 0) {
       this.needle['tags'].forEach(function(tag) {
-        this.AddTag(tag, true);
+	this.AddTag(tag, true);
       }.bind(this));
       // If the checkboxes are already there, we simply check them all
     } else {
       var inputs = this.tags.getElementsByTagName('input');
       for (var i = 0; i < inputs.length; i++) {
-        if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
-          inputs[i].checked = true;
+	if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
+	  inputs[i].checked = true;
 	} else {
 	  inputs[i].checked = false;
 	}
@@ -77,7 +77,7 @@ NeedleEditor.prototype.init = function() {
     a['width'] = shape.w;
     a['height'] = shape.h;
     editor.UpdateTextArea();
-  }
+  };
   cv.new_shape_cb = function(x, y) {
     var a = { 'xpos': x, 'ypos': y, 'width': MINSIZE, 'height': MINSIZE, 'type': 'match' };
     var shape = NeedleEditor.ShapeFromArea(a);
@@ -85,10 +85,20 @@ NeedleEditor.prototype.init = function() {
     editor.needle.area.push(a);
     editor.UpdateTextArea();
     return shape;
-  }
-}
+  };
+  $(cv).on('shape.selected', function() {
+    $('#change-match').removeClass('disabled').removeAttr('disabled');
+    $('#change-margin').removeClass('disabled').removeAttr('disabled');
+  });
+  $(cv).on('shape.unselected', function() {
+    $('#change-match').addClass('disabled').attr('disabled', 1);
+    $('#change-margin').addClass('disabled').attr('disabled', 1);
+  });
+};
 
 NeedleEditor.prototype.UpdateTextArea = function() {
+  console.log(JSON.stringify(this.needle, null, "  "));
+  console.log(this.textarea);
   if (this.textarea) {
     this.textarea.value = JSON.stringify(this.needle, null, "  ");
   }
@@ -118,34 +128,33 @@ NeedleEditor.nexttype = function(type) {
     return 'ocr';
   }
   return 'match';
-}
+};
 
 NeedleEditor.ShapeFromArea = function(a) {
   return new Shape(a['xpos'], a['ypos'], a['width'], a['height'], NeedleEditor.areacolor(a['type']));
-}
+};
 
 NeedleEditor.prototype.DrawAreas = function() {
   var editor = this;
+  // not yet there 
+  if (!editor.cv)
+    return false;
+  
   jQuery.each(editor.needle['area'], function(index, area) {
     editor.cv.addShape(NeedleEditor.ShapeFromArea(area));
   });
   return true;
-}
+};
 
 NeedleEditor.prototype.LoadBackground = function(url) {
   var editor = this;
-  var cv = this.cv;
   var image = new Image();
   image.src = url;
   image.onload = function() {
     editor.bgImage = image;
-    if (cv) {
-      cv.set_bgImage(editor.bgImage);
-    } else {
-      editor.init();
-    }
-  }
-}
+    editor.init();
+  };
+};
 
 NeedleEditor.prototype.LoadTags = function(tags) {
   this.needle['tags'] = tags;
@@ -182,10 +191,11 @@ NeedleEditor.prototype.LoadNeedle = function(url) {
 
 NeedleEditor.prototype.LoadAreas = function(areas) {
   var editor = this;
-  var cv = this.cv;
   
   editor.needle["area"] = areas;
-  cv.delete_shapes();
+  if (this.cv) {
+    this.cv.delete_shapes();
+  }
   this.DrawAreas();
   this.UpdateTextArea();
 }
@@ -298,9 +308,6 @@ function doOverwrite()
 }
 
 function setMargin() {
-  console.log("SETMAR");
-  console.log($('#margin'));
-  console.log($('#margin').val());
   nEditor.setMargin($('#margin').val());
 }
 
@@ -322,6 +329,7 @@ function setup_needle_editor(imageurl, default_needle)
   $('#newtag').keypress(function() {
     if (event.keyCode==13)
       return addTag();
+    return false;
   });
   
   $('#property_workaround').click(function() { nEditor.changeProperty(this.name, this.checked) });
@@ -329,63 +337,38 @@ function setup_needle_editor(imageurl, default_needle)
   $('#image_select').change(loadBackground);
   // load default
   loadBackground();
-  nEditor.init();
   $('#tags_select').change(loadTagsAndName);
   loadTagsAndName();
   $('#area_select').change(loadAreas);
   $('#take_matches').change(loadAreas);
-  
-  return;
-  
-  var matchdialog = $( "#change-match-form" ).dialog({
-    autoOpen: false,
-    width: '40%',
-    modal: true,
-    buttons: {
-      "Set": setMatch,
-      Cancel: function() {
-	matchdialog.dialog( "close" );
+
+  $('#set_margin').click(function() { setMargin(); $('#change-margin-form').modal('hide'); } );
+  $('#set_match').click(function() { setMatch(); $('#change-match-form').modal('hide'); } );
+  $('#change-margin-form').on('show.bs.modal', function() {
+    var idx = nEditor.cv.get_selection_idx();
+    if (idx == -1) {
+      if (!this.needle["area"].length) {
+	return;
       }
-    },
-    close: function() {
-      form[ 0 ].reset();
+      idx = 0;
     }
+    $('#margin').val(nEditor.needle['area'][idx].margin || 50);
   });
-  
-  form = matchdialog.find( "form" ).on( "submit", function( event ) {
-    event.preventDefault();
-    setMatch();
-  });
-
-  $('#change-match').button().on("click", function(event) {
-    event.preventDefault();
-    matchdialog.dialog("open");
-  });
-
-  var margindialog = $( "#change-margin-form" ).dialog({
-    autoOpen: false,
-    width: '40%',
-    modal: true,
-    buttons: {
-      "Set": setMargin,
-      Cancel: function() {
-	margindialog.dialog( "close" );
+  $('#change-match-form').on('show.bs.modal', function() {
+    var idx = nEditor.cv.get_selection_idx();
+    if (idx == -1) {
+      if (!this.needle["area"].length) {
+	return;
       }
-    },
-    close: function() {
-      form[ 0 ].reset();
+      idx = 0;
     }
-  });
-
-  form = matchdialog.find( "form" ).on( "submit", function( event ) {
-    event.preventDefault();
-    setMargin();
+    $('#match').val(nEditor.needle['area'][idx].match || 96);
   });
   
-  $('#change-margin').button().on("click", function(event) {
-    event.preventDefault();
-    margindialog.dialog("open");
-  });
+  $('#review_json').popover({ content: function() { return $('#needleeditor_textarea').val(); },
+			      template: '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><pre class="popover-content"></pre></div>'
+			    } );
+  
 }
 
 // Now go make something amazing!
