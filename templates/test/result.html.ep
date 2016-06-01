@@ -2,6 +2,7 @@
 % title $job->name . " test results";
 
 % content_for 'ready_function' => begin
+    $('[data-toggle="tooltip"]').tooltip({html: true});
     $('.timeago').timeago();
     setupResultButtons();
 % end
