@@ -1,25 +1,21 @@
 function showCommentEditor(commentId, form) {
-    form.text.style.display = "block";
-    form.editComment.style.display = "none";
-    var removeCommentElement = document.getElementById("removeComment_" + commentId);
-    if(removeCommentElement) {
-        removeCommentElement.style.display = "none";
-    }
-    form.applyChanges.style.display = "inline";
-    form.discardChanges.style.display = "inline";
-    document.getElementById("commentMd_" + commentId).style.display = "none";
+    var jform = $(form);
+    jform.find('[name="text"]').show();
+    jform.find('[name="applyChanges"]').show();
+    jform.find('[name="discardChanges"]').show();
+    jform.find('[name="editComment"]').hide();
+    jform.find('#commentMd_' + commentId).hide();
+    jform.find('#removeComment_' + commentId).hide();
 }
 
 function hideCommentEditor(commentId, form) {
-    form.text.style.display = "none";
-    form.editComment.style.display = "inline";
-    var removeCommentElement = document.getElementById("removeComment_" + commentId);
-    if(removeCommentElement) {
-        removeCommentElement.style.display = "inline";
-    }
-    form.applyChanges.style.display = "none";
-    form.discardChanges.style.display = "none";
-    document.getElementById("commentMd_" + commentId).style.display = "block";
+    var jform = $(form);
+    jform.find('[name="text"]').hide();
+    jform.find('[name="applyChanges"]').hide();
+    jform.find('[name="discardChanges"]').hide();
+    jform.find('[name="editComment"]').show();
+    jform.find('#commentMd_' + commentId).show();
+    jform.find('#removeComment_' + commentId).show();
 }
 
 function confirmCommentRemoval(author) {
