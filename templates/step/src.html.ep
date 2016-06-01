@@ -1,7 +1,6 @@
 % layout 'default';
-%= javascript '/javascripts/lib/codemirror.js'
-%= javascript '/javascripts/mode/perl/perl.js'
-%= stylesheet '/stylesheets/codemirror.css'
+%= asset 'codemirror.js'
+%= asset 'codemirror.css'
 % title $moduleid;
 
 % content_for 'ready_function' => begin

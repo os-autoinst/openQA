@@ -6,12 +6,14 @@ all:
 
 .PHONY: install
 install:
-	for i in lib public script templates; do \
+	./script/generate-packed-assets
+	for i in lib public script templates assets; do \
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
+
 # we didn't actually want to install these...
-	for i in tidy check_coverage; do \
+	for i in tidy check_coverage generate-packed-assets; do \
 		rm "$(DESTDIR)"/usr/share/openqa/script/$$i ;\
 	done
 #

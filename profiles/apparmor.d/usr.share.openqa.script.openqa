@@ -27,6 +27,7 @@
   /usr/share/openqa/dbicdh/** r,
   /usr/share/openqa/lib/** r,
   /usr/share/openqa/public/** r,
+  /usr/share/openqa/assets/** r,
   /usr/share/openqa/script/openqa r,
   /usr/share/openqa/templates/ r,
   /usr/share/openqa/templates/** r,
