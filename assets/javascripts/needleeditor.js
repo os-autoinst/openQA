@@ -329,7 +329,7 @@ function setup_needle_editor(imageurl, default_needle)
   $('#newtag').keypress(function() {
     if (event.keyCode==13)
       return addTag();
-    return false;
+    return true;
   });
   
   $('#property_workaround').click(function() { nEditor.changeProperty(this.name, this.checked) });

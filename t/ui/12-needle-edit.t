@@ -124,7 +124,8 @@ sub add_needle_tag(;$) {
     $elem->send_keys($tagname);
     $driver->find_element('#tag_add_button', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
-    t::ui::PhantomTest::make_screenshot('mojoResults.png');
+    #t::ui::PhantomTest::make_screenshot('mojoResults.png');
+    #print $driver->get_page_source();
     is($driver->find_element("//input[\@value=\"$tagname\"]")->is_selected(), 1, "new tag found and was checked");
 }
 

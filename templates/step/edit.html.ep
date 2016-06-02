@@ -172,7 +172,7 @@
                             % }
                         </div>
                         % if (is_operator) {
-                            <input id="newtag"" />
+                            <input type="text" class="form-control" id="newtag">
                             <input type="button" class="button" value="Add" id="tag_add_button" />
                         % }
                     </div>
