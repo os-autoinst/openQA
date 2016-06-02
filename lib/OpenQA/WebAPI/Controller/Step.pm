@@ -118,7 +118,7 @@ sub view {
 
 # Needle editor
 sub edit {
-    my ($self, $ow_overwrite, $ow_json, $ow_imagename, $ow_imagedistri, $ow_imageversion, $ow_needlename) = @_;
+    my ($self, $ow_json, $ow_imagename, $ow_imagedistri, $ow_imageversion, $ow_needlename) = @_;
     return 0 unless $self->init();
 
     my $module_detail = $self->stash('module_detail');
@@ -140,9 +140,6 @@ sub edit {
     my $tags = [];
     $tags = $module_detail->{tags} if ($module_detail->{tags});
     my $screenshot;
-    my $overwrite = 'no';
-    $overwrite = $ow_overwrite if $ow_overwrite;
-    $imgname   = $ow_imagename if $overwrite eq 'yes';
 
     if ($module_detail->{needle}) {
 
@@ -293,31 +290,7 @@ sub edit {
     #  - tags: tags from the screenshot
     my $default_needle = {};
     my $default_name;
-    $screenshot->{overwrite} = $overwrite;
-    if ($overwrite eq 'yes') {
-        # decode original json to perl
-        my $decode_json;
-        my $ow_tags       = [];
-        my $ow_area       = [];
-        my $ow_properties = [];
-        $decode_json   = decode_json($ow_json);
-        $ow_area       = $decode_json->{area};
-        $ow_tags       = $decode_json->{tags};
-        $ow_properties = $decode_json->{properties};
-        # replaced tags
-        $tags                         = $ow_tags;
-        $screenshot->{selected}       = 1;
-        $default_needle->{tags}       = $ow_tags;
-        $default_needle->{area}       = $ow_area;
-        $default_needle->{properties} = $ow_properties;
-        $screenshot->{tags}           = $ow_tags;
-        $screenshot->{area}           = $ow_area;
-        $screenshot->{properties}     = $ow_properties;
-        $screenshot->{suggested_name} = $ow_needlename;
-        $screenshot->{imagedistri}    = $ow_imagedistri;
-        $screenshot->{imageversion}   = $ow_imageversion;
-    }
-    elsif ($needles[0] && ($needles[0]->{min_similarity} || 0) > 70) {
+    if ($needles[0] && ($needles[0]->{min_similarity} || 0) > 70) {
         $needles[0]->{selected}       = 1;
         $default_needle->{tags}       = $needles[0]->{tags};
         $default_needle->{area}       = $needles[0]->{matches};
@@ -454,11 +427,10 @@ sub save_needle {
     $validation->optional('imagedistri')->like(qr/^[^.\/]+$/);
     $validation->optional('imageversion')->like(qr/^[^.\/]+$/);
     $validation->required('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
-    $validation->required('overwrite')->in(qw(yes no));
 
     if ($validation->has_error) {
         my $error = 'wrong parameters';
-        for my $k (qw/json imagename imagedistri imageversion needlename overwrite/) {
+        for my $k (qw/json imagename imagedistri imageversion needlename/) {
             $self->app->log->error($k . ' ' . join(' ', @{$validation->error($k)})) if $validation->has_error($k);
             $error .= ' ' . $k if $validation->has_error($k);
         }
@@ -476,7 +448,6 @@ sub save_needle {
     my $imageversion = $validation->param('imageversion');
     my $imagedir     = $self->param('imagedir') || "";
     my $needlename   = $validation->param('needlename');
-    my $overwrite    = $validation->param('overwrite');
     my $needledir    = needledir($job->settings_hash->{DISTRI}, $job->settings_hash->{VERSION});
 
     my $json_data;
@@ -507,11 +478,10 @@ sub save_needle {
 
     my $baseneedle = "$needledir/$needlename";
     # do not overwrite the exist needle if disallow to overwrite
-    if (-e "$baseneedle.png" && $overwrite eq 'no') {
+    if (-e "$baseneedle.png") {
         $self->stash(warn_overwrite => "Same needle name file already exists! Overwrite it?");
         $success   = 0;
-        $overwrite = 'yes';
-        return $self->edit($overwrite, $json, $imagename, $imagedistri, $imageversion, $needlename);
+        return $self->edit($json, $imagename, $imagedistri, $imageversion, $needlename);
     }
     unless ($imagepath eq "$baseneedle.png") {
         unless (copy($imagepath, "$baseneedle.png")) {
@@ -549,7 +519,7 @@ sub save_needle {
                 $self->stash(error => "$needledir is not a git repo");
             }
         }
-        $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => $overwrite});
+        $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
         $self->stash(info => "Needle $needlename created/updated.");
     }
     else {

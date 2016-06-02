@@ -365,9 +365,11 @@ function setup_needle_editor(imageurl, default_needle)
     $('#match').val(nEditor.needle['area'][idx].match || 96);
   });
   
-  $('#review_json').popover({ content: function() { return $('#needleeditor_textarea').val(); },
-			      template: '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><pre class="popover-content"></pre></div>'
-			    } );
+  $('#review_json').popover({
+    trigger: 'focus',
+    content: function() { return $('#needleeditor_textarea').val(); },
+    template: '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><pre class="popover-content"></pre></div>'
+  } );
   
 }
 

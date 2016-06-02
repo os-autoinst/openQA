@@ -8,13 +8,13 @@
 % content_for 'ready_function' => begin
     window.needles = {};
     % for my $needle (@$needles) {
-        window.needles['<%= $needle->{name} %>'] = <%= b(JSON::XS->new->pretty->encode($needle)) %>;
+        window.needles['<%= $needle->{name} %>'] = <%= b(JSON->new->pretty->encode($needle)) %>;
     % }
     setup_needle_editor( <%= b(JSON::to_json($default_needle)) %> );
     setupResultButtons();
 % end
 
-<div id="change-margin-form" title="Change search margin" class="modal fade" role="dialog">
+<div id="change-margin-form" title="Change search margin" class="modal" role="dialog">
     <div class="modal-dialog">
 
         <!-- Modal content-->
@@ -43,7 +43,7 @@
 
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-default" id="cancel_margin" data-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="set_margin">Set</button>
             </div>
         </div>
@@ -52,7 +52,7 @@
 
 </div>
 
-<div id="change-match-form" title="Change match level" class="modal fade" role="dialog">
+<div id="change-match-form" title="Change match level" class="modal" role="dialog">
     <div class="modal-dialog">
 
         <!-- Modal content-->
@@ -88,7 +88,7 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-default" id="cancel_match" data-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="set_match">Set</button>
             </div>
         </div>
@@ -109,19 +109,6 @@
 
                 <div class="col-md-6">
                     %= form_for save_needle => (id => 'save_needle_form') => (method => 'POST') => begin
-                        <div>
-                            % if (is_operator) {
-                                % if ($job->can_be_duplicated) {
-                                    %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
-                                        <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
-                                    % end
-                                % }
-                                <input type="image" src="/images/floppy.png" alt="Save" />
-                            % }
-                            <!-- TODO -->
-                            <input type="hidden" name="overwrite" value="" id="overwrite_flag" />
-
-                        </div>
                         <div class="hidden">
                             <label>JSON:</label><br/>
                             <textarea id="needleeditor_textarea" name="json" readOnly="yes"></textarea>
@@ -130,23 +117,22 @@
                             <input type="hidden" id="needleeditor_imageversion" name="imageversion"/>
                             <input type="hidden" id="needleeditor_imagedir" name="imagedir"/>
                         </div>
+                        <div>
+                            <div>
+                                <label for="needlename">Name:</label>
+                                <input type="input" name="needlename" id="needleeditor_name" class="form-control">
+                            </div>
+                            <div>
+                                <!-- lists the specific properties -->
+                                <input type="checkbox" name="workaround" id="property_workaround"
+                                        %= 'checked' if $properties->{workaround}
+                                        >
+                                <label for="workaround">workaround</label>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-default" id="review_json" title="Review JSON">Review JSON</button>
+                        <button type="submit" class="btn btn-primary" id="save" title="Save">Save</button>
                     % end
-                    <div>
-                        <div>
-                            <label>Name:</label>
-                            <input type="input" name="needlename" id="needleeditor_name"
-                                    %= 'readonly="readonly"' unless (is_operator)
-                                    >
-                        </div>
-                        <div>
-                            <!-- lists the specific properties -->
-                            <input type="checkbox" name="workaround" id="property_workaround"
-                                    %= 'checked' if $properties->{workaround}
-                                    %= 'readonly="readonly" disabled="disabled"' unless (is_operator)
-                                    >workaround
-                        </div>
-                    </div>
-                    <button type="button" class="btn btn-lg btn-danger" id="review_json" title="Review JSON">Review JSON</button>
                 </div>
                 <div class="col-md-6">
                     Needle based on:
@@ -172,8 +158,14 @@
                             % }
                         </div>
                         % if (is_operator) {
-                            <input type="text" class="form-control" id="newtag">
-                            <input type="button" class="button" value="Add" id="tag_add_button" />
+                            <div class="form-group row">
+                                <div class="col-sm-10">
+                                    <input type="text" class="form-control" id="newtag">
+                                </div>
+                                <div class="col-sm-2">
+                                    <button type="button" class="btn btn-default form-control" id="tag_add_button">Add</button>
+                                </div>
+                            </div>
                         % }
                     </div>
                 </div>
