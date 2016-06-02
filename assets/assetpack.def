@@ -1,0 +1,82 @@
+! bootstrap.css
+# we need to download sass to customize it
+<< https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/stylesheets/_bootstrap.scss
+# download the fonts (plus some css we dont need)
+<< https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.css
+< sass/bentostrap.scss
+< stylesheets/dataTables.bootstrap.css
+< http://fontawesome.io/assets/font-awesome/css/font-awesome.css
+< stylesheets/chosen.css
+< stylesheets/overview.scss
+< stylesheets/comments.css
+< stylesheets/openqa.css
+
+# old bento 'default' layout
+! app.css
+< stylesheets/jquery.dataTables.css
+< stylesheets/tables.css
+< http://fontawesome.io/assets/font-awesome/css/font-awesome.css
+< stylesheets/chosen.css
+< stylesheets/overview.scss
+< stylesheets/comments.css
+< stylesheets/openqa.css 
+
+! codemirror.css
+< stylesheets/codemirror.css
+
+! codemirror.js
+< javascripts/lib/codemirror.js
+< javascripts/mode/perl/perl.js
+
+! needlediff.js
+< javascripts/needlediff.js
+
+! step_edit.js
+< javascripts/needleedit.js
+< javascripts/needleeditor.js
+< javascripts/shapes.js
+< javascripts/keyevent.js
+
+! running.js
+< javascripts/running.js
+
+! app.js
+< http://code.jquery.com/jquery-1.11.2.js
+< javascripts/jquery_ujs.js
+< javascripts/chosen.jquery.js
+< javascripts/openqa.js
+< javascripts/jquery.dataTables.js
+< javascripts/admintable.js
+< javascripts/admin_user.js
+< javascripts/admin_needle.js
+< javascripts/audit_log.js
+< javascripts/jquery.timeago.js
+< javascripts/tests.js
+< javascripts/assets.js
+< javascripts/job_templates.js
+< javascripts/overview.js
+< javascripts/comments.js
+
+! bootstrap.js
+< http://code.jquery.com/jquery-1.11.2.js
+< javascripts/jquery_ujs.js
+< javascripts/chosen.jquery.js
+< javascripts/openqa.js
+< javascripts/jquery.dataTables.js
+< javascripts/admintable.js
+< javascripts/admin_user.js
+< javascripts/admin_needle.js
+< javascripts/audit_log.js
+< javascripts/jquery.timeago.js
+< javascripts/tests.js
+< javascripts/assets.js
+< javascripts/job_templates.js
+< javascripts/overview.js
+< javascripts/comments.js
+< https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/collapse.js
+< https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/tooltip.js
+< https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/tab.js
+< https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap.js
+< https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/transition.js
+< javascripts/dataTables.bootstrap.js
+

@@ -25,3 +25,4 @@ t/data/openqa/factory/hdd/00099963-hdd_image2.qcow2
 t/data/openqa/factory/hdd/hdd_image.qcow2
 t/diagram-v*.png
 assets/cache/
+assets/assetpack.db
