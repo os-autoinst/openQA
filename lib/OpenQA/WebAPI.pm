@@ -145,7 +145,7 @@ sub _workers_checker {
                         my $result = $ipc->scheduler('job_set_done', \%args);
                         if ($result) {
                             $ipc->scheduler('job_duplicate', {jobid => $job->id});
-                            $self->app->log->error(sprintf("cancelled dead job %d and re-duplicated done\n", $job->id));
+                            $self->app->log->error(sprintf("cancelled dead job %d and re-duplicated done", $job->id));
                         }
                     }
                 });
