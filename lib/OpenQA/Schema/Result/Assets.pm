@@ -272,7 +272,7 @@ sub limit_assets {
 
     $assets = $app->db->resultset('Assets')->search({t_created => $timecond, type => ['iso', 'repo'], id => {-not_in => [sort keys %seen_asset]}}, {order_by => [qw/type name/]});
     while (my $a = $assets->next) {
-        OpenQA::Utils::log_debug("Asset " . $a->type . "/" . $a->name . " is not in any job group, DELETE from assets where id=" . $a->id . ";");
+        OpenQA::Utils::log_error("Asset " . $a->type . "/" . $a->name . " is not in any job group, DELETE from assets where id=" . $a->id . ";");
     }
     my $dh;
     if (opendir($dh, $OpenQA::Utils::assetdir . "/iso")) {
@@ -289,7 +289,7 @@ sub limit_assets {
         }
         for my $iso (keys %isos) {
             if ($isos{$iso} == 0) {
-                OpenQA::Utils::log_debug "File iso/$iso is not a registered asset";
+                OpenQA::Utils::log_error "File iso/$iso is not a registered asset";
             }
         }
     }
@@ -308,7 +308,7 @@ sub limit_assets {
         }
         for my $repo (keys %repos) {
             if ($repos{$repo} == 0) {
-                OpenQA::Utils::log_debug "Directory repo/$repo is not a registered asset";
+                OpenQA::Utils::log_error "Directory repo/$repo is not a registered asset";
             }
         }
     }
