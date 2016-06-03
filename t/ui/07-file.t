@@ -71,12 +71,4 @@ $req = $t->get_ok('/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media
 # verify error on invalid downloads
 $req = $t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404);
 
-# TODO: also test repos
-
-SKIP: {
-    skip "FIXME: allow to download only assets related to a test", 1;
-
-    $req = $t->get_ok('/tests/99946/asset/2')->status_is(400);
-}
-
 done_testing();

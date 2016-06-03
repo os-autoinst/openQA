@@ -82,7 +82,6 @@ sub auth_login {
 sub auth_response {
     my ($self) = @_;
 
-    # FIXME: Mojo6 hack, remove after version bump
     my %params;
     if ($self->req->query_params->can('params')) {
         %params = @{$self->req->query_params->params};

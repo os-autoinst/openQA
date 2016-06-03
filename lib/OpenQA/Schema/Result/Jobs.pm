@@ -92,7 +92,6 @@ __PACKAGE__->add_columns(
     worker_id => {
         data_type      => 'integer',
         is_foreign_key => 1,
-        # FIXME: get rid of worker 0
         default_value => 0,
         #        is_nullable => 1,
     },
@@ -866,7 +865,6 @@ sub create_asset {
 
     my $fname = $asset->filename;
 
-    # FIXME: pass as parameter to avoid guessing
     my $type;
     $type = 'iso' if $fname =~ /\.iso$/;
     $type = 'hdd' if $fname =~ /\.(?:qcow2|raw)$/;

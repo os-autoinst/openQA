@@ -102,7 +102,6 @@ if ($options{verbose}) {
     printf "%d jobs in %d days\n", scalar keys %$jobs, $options{days};
 }
 
-# FIXME: actually determine which distros share needles
 sub map_version($$) {
     my ($distri, $version) = @_;
 

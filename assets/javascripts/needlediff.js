@@ -181,7 +181,6 @@ NeedleDiff.prototype.mousemove = function(event) {
   if (this.dragstart === true) {
     this.divide = divide;
   } else if (redraw) {
-    // FIXME: Really ugly
     this.draw();
   }
 
