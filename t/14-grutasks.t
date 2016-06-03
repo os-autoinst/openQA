@@ -20,6 +20,7 @@ BEGIN {
 }
 
 use strict;
+use autodie qw(:all);
 use OpenQA::Utils;
 use File::Copy;
 use OpenQA::Test::Database;
@@ -70,7 +71,7 @@ sub create_temp_job_result_file {
     my ($resultdir) = @_;
 
     my $filename = $resultdir . '/autoinst-log.txt';
-    open my $fh, ">>$filename" or die "touch $filename: $!\n";
+    open my $fh, ">>$filename";
     close $fh;
     die 'temporary file could not be created' unless -e $filename;
     return $filename;

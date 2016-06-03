@@ -17,6 +17,7 @@
 package OpenQA::Schema::Result::Jobs;
 use strict;
 use warnings;
+use autodie qw(unlink);
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
 use JSON;
@@ -758,15 +759,15 @@ sub create_result_dir {
         my $cleanday = DateTime->now()->add(days => $days);
         my %args = (resultdir => $dir, jobid => $self->id);
         $OpenQA::Utils::app->gru->enqueue(reduce_result => \%args, {run_at => $cleanday});
-        mkdir($dir) || die "can't mkdir $dir: $!";
+        mkdir($dir);
     }
     my $sdir = $dir . "/.thumbs";
     if (!-d $sdir) {
-        mkdir($sdir) || die "can't mkdir $sdir: $!";
+        mkdir($sdir);
     }
     $sdir = $dir . "/ulogs";
     if (!-d $sdir) {
-        mkdir($sdir) || die "can't mkdir $sdir: $!";
+        mkdir($sdir);
     }
     return $dir;
 }
@@ -879,7 +880,7 @@ sub create_asset {
     my $fpath = join('/', $OpenQA::Utils::assetdir, $type);
 
     if (!-d $fpath) {
-        mkdir($fpath) || die "can't mkdir $fpath: $!";
+        mkdir($fpath);
     }
 
     $asset->move_to(join('/', $fpath, $fname));

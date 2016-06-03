@@ -1,6 +1,6 @@
 #! /usr/bin/env perl
 
-# Copyright © 2015 SUSE LLC
+# Copyright © 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -43,6 +43,7 @@ print help
 
 use strict;
 use warnings;
+use autodie qw(:all);
 use JSON;
 use Getopt::Long;
 
@@ -64,7 +65,7 @@ my @add_tags = split(q{,}, $options{'add-tags'});
 for my $needle (@ARGV) {
 
     local $/;
-    open(my $fh, '<', $needle) || die "can't open $needle";
+    open(my $fh, '<', $needle);
     my $info = JSON->new->relaxed->decode(<$fh>);
     close $fh;
 
@@ -77,7 +78,7 @@ for my $needle (@ARGV) {
     $info->{tags} = [ sort keys %tags ];
     next unless $changed;
     
-    open($fh, '>', $needle) || die "can't open $needle";
+    open($fh, '>', $needle);
     print $fh JSON->new->pretty->encode($info);
     close $fh;
 }

@@ -3,6 +3,7 @@
 # this script is only useful once to deduplicate images
 
 use strict;
+use autodie qw(:all);
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::Bin/../lib"}
 
@@ -43,20 +44,20 @@ sub migrate() {
     mkdir($dir) unless -d $dir;
     $dir .= "/.thumbs";
     mkdir($dir) unless -d $dir;
-    rename($file, $full) or die "rename $file $full: $!";
-    rename($thumbpath, $thumb) or die "rename $thumbpath $thumb: $!";
+    rename($file, $full);
+    rename($thumbpath, $thumb);
     my $fh;
-    open($fh, ">", "$full.unoptimized") or die "open $full.unoptimized: $!";
+    open($fh, ">", "$full.unoptimized");
     close($fh);
-    open($fh, ">", "$thumb.unoptimized") or die "open $thumb.unoptimized: $!";
+    open($fh, ">", "$thumb.unoptimized");
     close($fh);
   } else {
-    unlink($file) or die "unlink $file";
-    unlink($thumbpath) or die "unlink $thumbpath";
+    unlink($file);
+    unlink($thumbpath);
   }
 
-  symlink($full, $file) or die"symlink $full $file: $!";
-  symlink($thumb, $thumbpath) or die "symlink $thumb, $thumbpath: $!";
+  symlink($full, $file);
+  symlink($thumb, $thumbpath);
 }
 
 find(\&migrate, "/var/lib/openqa/testresults");

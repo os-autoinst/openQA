@@ -1,4 +1,5 @@
 # Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +18,7 @@ package OpenQA::IPC;
 
 use strict;
 use warnings;
+use autodie qw(open);
 
 use Net::DBus;
 use Net::DBus::Callback;
@@ -190,7 +192,7 @@ sub _get_fh_from_fd {
         return $self->{handles}{$write}{$fd};
     }
     my $fh;
-    open($fh, $write . '&', $fd) || die "unable to open fd $fd for $write";
+    open($fh, $write . '&', $fd);
     $self->{handles}{$write}{$fd} = $fh;
     return $fh;
 }

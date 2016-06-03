@@ -1,4 +1,5 @@
 # Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -17,6 +18,7 @@
 package OpenQA::Schema::Result::Assets;
 use base qw/DBIx::Class::Core/;
 use strict;
+use autodie qw(unlink);
 
 use OpenQA::Utils;
 use OpenQA::Scheduler::Scheduler 'job_notify_workers';
@@ -89,7 +91,7 @@ sub remove_from_disk {
     OpenQA::Utils::log_info("GRU: removing $file");
     if ($self->type eq 'iso' || $self->type eq 'hdd') {
         return unless -f $file;
-        unlink($file) || die "can't remove $file";
+        unlink($file);
     }
     elsif ($self->type eq 'repo') {
         use File::Path qw(remove_tree);
