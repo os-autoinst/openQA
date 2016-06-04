@@ -19,7 +19,7 @@
     %# ref: https://github.com/twbs/bootstrap/issues/2415
     %# Does not yet redirect to same tab on login.
     var hash = window.location.hash || '#details';
-    var link = $('[href=' + hash + ']');
+    var link = $('[href="' + hash + '"]');
     link && link.tab('show');
 % end
 
