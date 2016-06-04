@@ -206,55 +206,6 @@ a.pauseplay.play {
     background-position: -23px 0;
 }
 
-#recent-issues a{colo}
-#recent-issues li{padding: 0.73em 0px ; list-style: none;  border-bottom: 1px solid #eee}
-#recent-issues  p{font-style: italic; text-align: center;}
-
-/*.omega{position: relative !important;}*/
-
-.omega img{}
-
-.omega h3{ padding-top: 2em}
-
-.big-button a:link, .big-button a:visited{background-color: #555; margin: 2em; padding: 1.7em 0em; text-align:center; color: #fff; font-size: 1.33em; border-radius: .41em; box-shadow: inset 0px -2em 5px #333, 0px 2px 3px rgba(0,0,0,0.4); text-shadow: 0px -1px 0px #000; text-transform: uppercase; letter-spacing: 1px; font-weight: bold }
-
-.big-button a:hover,.big-button a:focus{background-color:#ccc; color: #222;  box-shadow: inset 0px 2em 5px #eee, 0px 2px 3px rgba(0,0,0,0.4); text-decoration: none !important; text-shadow: 0px 1px 0px #fff}
-
-/* progressbar */
-
-/* thanks to http://www.useragentman.com/blog/2012/01/03/cross-browser-html5-progress-bars-in-depth/ */
-
-.pbox {
-    position: relative;
-    z-index: +1;
-}
-
-.pbox progress {
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    z-index: -1;
-    overflow: hidden;
-}
-
-/* progressbar end */
-
-
-/* bento theme fixes */
-ul.navigation {
-    width: calc(100% - 20px); /* subtract margin (which is 10px on each side) */
-}
-
-input[type='image'] {
-    border: 0;
-    background-color: none;
-    padding: 0;
-}
-/* bento theme fixes end */
-
-
 /* special table stuff */
 
 .infotbl {
@@ -319,19 +270,6 @@ input[type='image'] {
     text-align: right;
 }
 
-/* Code view */
-
-tt, pre {
-    font-family: "monospace", monospace;
-    font-size: 90%;
-}
-
-/* Fix chosen incompability */
-
-td .chosen-results {
-    text-align: left;
-}
-
 /* Menu */
 #actions_box ul {
     list-style: none;
@@ -388,59 +326,6 @@ table.dataTable td.name {
 }
 table.dataTable td.test {
     text-align: left;
-}
-
-/* Hide the real checkbox, is too big */
-#results td.id input[type=checkbox] {
-    display: none;
-}
-
-#results td.id .checkbox-wrapper {
-    width: 20px;
-    margin: 0px;
-    position: relative;
-}
-
-/* Drawing the box with pure CSS */
-#results td.id label {
-    cursor: pointer;
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    top: 2px;
-    left: -5px;
-    background: #eee;
-    border:1px solid #ddd;
-}
-
-/* Let's draw the tick in the same way */
-#results td.id label:after {
-    opacity: 0.1;
-    content: '';
-    position: absolute;
-    width: 4px;
-    height: 2px;
-    background: transparent;
-    top: 1px;
-    left: 1px;
-    border: 2px solid #333;
-    border-top: none;
-    border-right: none;
-
-    -webkit-transform: rotate(-45deg);
-    -moz-transform: rotate(-45deg);
-    -o-transform: rotate(-45deg);
-    -ms-transform: rotate(-45deg);
-    transform: rotate(-45deg);
-}
-
-/* And change the opacity of the tick based on the state */
-#results td.id label:hover::after {
-    opacity: 0.4;
-}
-
-#results td.id input[type=checkbox]:checked + label:after {
-    opacity: 1;
 }
 
 table.admintable td.editable {
