@@ -204,6 +204,11 @@ function renderTestsList(jobs) {
     $(document).on('mouseover', '.parent_child', highlightJobs);
     $(document).on('mouseout', '.parent_child', unhighlightJobs);
 
+    $.ajaxSetup({
+        headers:
+        { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+    });
+
     $(document).on("click", '.restart', function(event) {
 	event.preventDefault();
         var restart_link = $(this);
