@@ -454,8 +454,7 @@ sub save_needle_ajax {
     if ($@) {
         my $message = 'Error validating needle: ' . $@;
         $self->app->log->error($message);
-        $self->stash(error => "$message\n");
-        return $self->edit;
+        return $self->render(json => {error => $message});
     }
 
     my $success = 1;

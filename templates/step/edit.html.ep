@@ -1,5 +1,5 @@
 % layout 'bootstrap';
-% title $moduleid;
+% title "Needle Editor";
 
 % content_for 'head' => begin
     %= asset 'step_edit.js'
@@ -102,7 +102,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-                <h4 class="modal-title"">Modal title</h4>
+                <h4 class="modal-title">title</h4>
             </div>
             <div class="modal-body">
                 <p>There is already a needle with that name, be careful not to overwrite someone else's work.</p>
@@ -116,6 +116,8 @@
 </div>
 
 <div class="container-fluid">
+    %= include 'layouts/info'
+
     <div class="row">
 
         <div class="panel panel-default">
@@ -123,8 +125,6 @@
                 Basics of Needle
             </div>
             <div class="panel-body">
-                %= include 'layouts/info'
-
                 <div class="col-md-6">
                     %= form_for save_needle_ajax => (id => 'save_needle_form') => (method => 'POST') => begin
                         <div class="hidden">

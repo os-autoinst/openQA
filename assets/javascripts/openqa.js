@@ -57,3 +57,12 @@ function setupForAll() {
         { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
     });
 }
+
+function addFlash(status, text) {
+    // keep design in line with the static in layouts/info
+    var flash = $('#flash-messages');
+    var div = $('<div class="alert fade in"><button class="close" data-dismiss="alert">x</button></div>');
+    div.append($("<span>" + text + "</span>"));
+    div.addClass('alert-' + status);
+    flash.append(div);
+}

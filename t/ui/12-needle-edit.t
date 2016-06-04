@@ -176,9 +176,6 @@ sub change_needle_value($$) {
 
     my $dialog = $driver->find_element('#change-match-form', 'css');
 
-    #t::ui::PhantomTest::make_screenshot('mojoResults.png');
-    #print $driver->get_page_source();
-
     is($driver->find_element('#set_match', 'css')->is_displayed(), 1, "found set button");
     is($driver->find_element('//input[@id="match"]')->get_value(), "96", "default match level is 96");
     $driver->find_element('//input[@id="match"]')->clear();
@@ -199,12 +196,19 @@ sub overwrite_needle($) {
     is($driver->find_element('#needleeditor_name', 'css')->get_value(), "$needlename", "new needle name inputed");
     $driver->find_element('#save', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
-    # check the state highlight changed and click Yes do overwrite then
-    is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Same needle name file already exists! Overwrite it? Yes / No", "highlight appears correct");
-    $driver->find_element('Yes', 'link_text')->click();
+
+    #t::ui::PhantomTest::make_screenshot('mojoResults.png');
+    #print $driver->get_page_source();
+
+    my $diag = $driver->find_element('#modal-overwrite', 'css');
+    is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "We can see the overwrite dialog");
+    is($driver->find_child_element($diag, '.modal-title', 'css')->get_text(), "Sure to overwrite test-newneedle?", "Needle part of the title");
+
+    $driver->find_element('#modal-overwrite-confirm', 'css')->click();
+
     t::ui::PhantomTest::wait_for_ajax;
-    is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
-    ok(-f "$dir/$needlename.json", "$needlename.json overwrited");
+    is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
+    ok(-f "$dir/$needlename.json", "$needlename.json overwritten");
 }
 
 # start testing
@@ -225,8 +229,9 @@ is($driver->find_element('#needleeditor_name', 'css')->get_value(), "$needlename
 # create new needle by clicked save button
 $driver->find_element('#save', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
+
 # check state highlight appears with valid content
-is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
+is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
 # check files are exists
 ok(-f "$dir/$needlename.json", "$needlename.json created");
 ok(-f "$dir/$needlename.png",  "$needlename.png created");

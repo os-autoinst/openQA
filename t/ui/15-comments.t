@@ -91,7 +91,7 @@ sub test_comment_editing {
     $driver->find_element('#submitComment', 'css')->click();
 
     # check whether flash appears
-    is($driver->find_element('blockquote.ui-state-highlight', 'css')->get_text(), "Comment added", "comment added highlight");
+    is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), "Comment added", "comment added highlight");
 
     if ($in_test_results) {
         switch_to_comments_tab(1);
@@ -110,7 +110,7 @@ sub test_comment_editing {
     $driver->find_element('button.comment-editing-control',   'css')->click();
 
     # check whether flash appears
-    is($driver->find_element('blockquote.ui-state-highlight', 'css')->get_text(), "Comment changed", "comment changed highlight");
+    is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), "Comment changed", "comment changed highlight");
 
     if ($in_test_results) {
         switch_to_comments_tab(1);
@@ -138,7 +138,7 @@ sub test_comment_editing {
     #$driver->accept_alert;
 
     # check whether flash appears
-    is($driver->find_element('blockquote.ui-state-highlight', 'css')->get_text(), "Comment removed", "comment removed highlight");
+    is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), "Comment removed", "comment removed highlight");
 
     # check whether the comment is gone
     my @comments = $driver->find_elements('div.media-comment', 'css');

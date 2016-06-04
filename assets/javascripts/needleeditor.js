@@ -309,10 +309,20 @@ function setMatch() {
 function reactToSaveNeedle(data) {
   if (data.status != 200) {
     alert("Fatal error on saving needle");
+    $('#save').removeProp('disabled');
     return;
   }
   data = data.responseJSON;
-  console.log(data); // show response
+  if (data.info) {
+    addFlash('info', data.info);
+    $('#save').removeProp('disabled');
+    return;
+  }
+  if (data.error) {
+    addFlash('warning', data.error);
+    $('#save').removeProp('disabled');
+    return;
+  }
   if (data.requires_overwrite) {
     delete data.requires_overwrite;
     $('#modal-overwrite .modal-title').text("Sure to overwrite " + data.needlename + "?");
@@ -320,7 +330,6 @@ function reactToSaveNeedle(data) {
     $('#modal-overwrite').modal();
   } else {
     $('#save').removeProp('disabled');
-    alert(data.info);
   }
 }
 

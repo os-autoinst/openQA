@@ -25,8 +25,6 @@ sub process {
             my $attr    = $asset->TO_JSON;
             my $content = $asset->content;
 
-            print $content;
-
             # Private name to load/save meta data under
             $attr->{key} = "openqapipe3";
 
