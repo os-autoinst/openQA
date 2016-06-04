@@ -336,7 +336,7 @@ sub startup {
     $step_r->get('/view')->to(action => 'view');
     $step_r->get('/edit')->name('edit_step')->to(action => 'edit');
     $step_r->get('/src')->name('src_step')->to(action => 'src');
-    $step_auth->post('/')->name('save_needle')->to('step#save_needle');
+    $step_auth->post('/')->name('save_needle_ajax')->to('step#save_needle_ajax');
     $step_r->get('/')->name('step')->to(action => 'view');
 
     $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');

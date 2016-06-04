@@ -97,8 +97,6 @@ NeedleEditor.prototype.init = function() {
 };
 
 NeedleEditor.prototype.UpdateTextArea = function() {
-  console.log(JSON.stringify(this.needle, null, "  "));
-  console.log(this.textarea);
   if (this.textarea) {
     this.textarea.value = JSON.stringify(this.needle, null, "  ");
   }
@@ -300,19 +298,44 @@ function addTag() {
   return false;
 }
 
-function doOverwrite()
-{
-  saveNeedleForm = document.forms['save_needle_form'];
-  saveNeedleForm.submit();
-  return true;
-}
-
 function setMargin() {
   nEditor.setMargin($('#margin').val());
 }
 
 function setMatch() {
   nEditor.setMatch($('#match').val());
+}
+
+function reactToSaveNeedle(data) {
+  if (data.status != 200) {
+    alert("Fatal error on saving needle");
+    return;
+  }
+  data = data.responseJSON;
+  console.log(data); // show response
+  if (data.requires_overwrite) {
+    delete data.requires_overwrite;
+    $('#modal-overwrite .modal-title').text("Sure to overwrite " + data.needlename + "?");
+    $('#modal-overwrite').data('formdata', data);
+    $('#modal-overwrite').modal();
+  } else {
+    $('#save').removeProp('disabled');
+    alert(data.info);
+  }
+}
+
+function saveNeedle(e) {
+  var form = $("#save_needle_form");
+  var fdata = form.serialize();
+  var url = form.attr('action');
+  $('#save').prop('disabled', 'disable');
+  $.ajax({
+    type: "POST",
+    url: url,
+    data: fdata,
+    complete: function(data, status) { reactToSaveNeedle(data); }
+  });
+  return false;
 }
 
 var nEditor;
@@ -370,7 +393,21 @@ function setup_needle_editor(imageurl, default_needle)
     content: function() { return $('#needleeditor_textarea').val(); },
     template: '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><pre class="popover-content"></pre></div>'
   } );
-  
+
+  $('#modal-overwrite').on('hidden.bs.modal', function() { $('#save').removeProp('disabled'); });
+  $('#modal-overwrite-confirm').click(function() {
+    var data = $('#modal-overwrite').data('formdata');
+    data.overwrite = 1;
+    $.ajax({
+      type: "POST",
+      url: $("#save_needle_form").attr('action'),
+      data: data,
+      complete: function(data2, status) { $('#modal-overwrite').modal('hide'); reactToSaveNeedle(data2); }
+    });
+    return false;
+  });
+
+  $('#save_needle_form').submit(saveNeedle);
 }
 
 // Now go make something amazing!

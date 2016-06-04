@@ -118,7 +118,7 @@ sub view {
 
 # Needle editor
 sub edit {
-    my ($self, $ow_json, $ow_imagename, $ow_imagedistri, $ow_imageversion, $ow_needlename) = @_;
+    my ($self) = @_;
     return 0 unless $self->init();
 
     my $module_detail = $self->stash('module_detail');
@@ -416,7 +416,7 @@ sub _json_validation($) {
 
 }
 
-sub save_needle {
+sub save_needle_ajax {
     my ($self) = @_;
     return 0 unless $self->init();
 
@@ -434,8 +434,7 @@ sub save_needle {
             $self->app->log->error($k . ' ' . join(' ', @{$validation->error($k)})) if $validation->has_error($k);
             $error .= ' ' . $k if $validation->has_error($k);
         }
-        $self->stash(error => "Error creating/updating needle: $error");
-        return $self->edit;
+        return $self->render(json => {error => "Error creating/updating needle: $error"});
     }
 
     my $job          = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
@@ -471,17 +470,17 @@ sub save_needle {
         $imagepath = join('/', $job->result_dir(), $imagename);
     }
     if (!-f $imagepath) {
-        $self->stash(error => "Image $imagename could not be found!\n");
         $self->app->log->error("$imagepath is not a file");
-        return $self->edit;
+        return $self->render(json => {error => "Image $imagename could not be found!"});
     }
 
     my $baseneedle = "$needledir/$needlename";
     # do not overwrite the exist needle if disallow to overwrite
-    if (-e "$baseneedle.png") {
-        $self->stash(warn_overwrite => "Same needle name file already exists! Overwrite it?");
-        $success   = 0;
-        return $self->edit($json, $imagename, $imagedistri, $imageversion, $needlename);
+    if (-e "$baseneedle.png" && !$self->param('overwrite')) {
+        $success = 0;
+        my $returned_data = $self->req->params->to_hash;
+        $returned_data->{requires_overwrite} = 1;
+        return $self->render(json => $returned_data);
     }
     unless ($imagepath eq "$baseneedle.png") {
         unless (copy($imagepath, "$baseneedle.png")) {
@@ -512,20 +511,21 @@ sub save_needle {
                 }
                 catch {
                     $self->app->log->error($_);
-                    $self->stash(error => $_);
+                    return $self->render(json => {error => $_});
                 };
             }
             else {
-                $self->stash(error => "$needledir is not a git repo");
+                return $self->render(json => {error => "$needledir is not a git repo"});
             }
         }
         $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
-        $self->stash(info => "Needle $needlename created/updated.");
+        return $self->render(json => {info => "Needle $needlename created/updated."});
     }
     else {
-        $self->stash(error => "Error creating/updating needle: $!.");
+        return $self->render(json => {error => "Error creating/updating needle: $!."});
     }
-    return $self->edit;
+    # not reached
+    return;
 }
 
 sub calc_matches($$) {

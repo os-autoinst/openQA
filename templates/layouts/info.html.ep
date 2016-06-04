@@ -4,9 +4,3 @@
 % if (my $msg = stash('info') || flash('info')) {
   <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%= $msg %></blockquote>
 % }
-% if (my $msg = stash('warn_overwrite') || flash('warn_overwrite')) {
-  <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;">
-    <%= $msg." " %>
-    <a href="javascript:{}" onclick="doOverwrite()">Yes</a> / <%= link_to No => 'edit_step' %>
-  </blockquote>
-% }

@@ -179,12 +179,12 @@ sub change_needle_value($$) {
     #t::ui::PhantomTest::make_screenshot('mojoResults.png');
     #print $driver->get_page_source();
 
-    is($driver->find_element('#set_match', 'css')->is_displayed(), 1,    "found set button");
-    is($driver->find_element('//input[@id="match"]')->get_value(),      "96", "default match level is 96");
+    is($driver->find_element('#set_match', 'css')->is_displayed(), 1, "found set button");
+    is($driver->find_element('//input[@id="match"]')->get_value(), "96", "default match level is 96");
     $driver->find_element('//input[@id="match"]')->clear();
     $driver->find_element('//input[@id="match"]')->send_keys("99");
     is($driver->find_element('//input[@id="match"]')->get_value(), "99", "set match level to 99");
-    $driver->find_element('#set_match','css')->click();
+    $driver->find_element('#set_match', 'css')->click();
     is($driver->find_element('#change-match-form', 'css')->is_hidden(), 1, "match level form closed");
     $decode_new_textarea = decode_json($elem->get_value());
     is($decode_new_textarea->{area}[0]->{match}, 99, "match level is 99 now");

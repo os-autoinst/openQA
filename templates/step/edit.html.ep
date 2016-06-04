@@ -14,7 +14,7 @@
     setupResultButtons();
 % end
 
-<div id="change-margin-form" title="Change search margin" class="modal" role="dialog">
+<div id="change-margin-form" title="Change search margin" class="modal" role="dialog" tabindex="-1">
     <div class="modal-dialog">
 
         <!-- Modal content-->
@@ -52,7 +52,7 @@
 
 </div>
 
-<div id="change-match-form" title="Change match level" class="modal" role="dialog">
+<div id="change-match-form" title="Change match level" class="modal" role="dialog" tabindex="-1">
     <div class="modal-dialog">
 
         <!-- Modal content-->
@@ -97,6 +97,24 @@
 
 </div>
 
+<div id="modal-overwrite" title="Overwrite needle" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"">Modal title</h4>
+            </div>
+            <div class="modal-body">
+                <p>There is already a needle with that name, be careful not to overwrite someone else's work.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="modal-overwrite-confirm">Save and Overwrite</button>
+                <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid">
     <div class="row">
 
@@ -108,7 +126,7 @@
                 %= include 'layouts/info'
 
                 <div class="col-md-6">
-                    %= form_for save_needle => (id => 'save_needle_form') => (method => 'POST') => begin
+                    %= form_for save_needle_ajax => (id => 'save_needle_form') => (method => 'POST') => begin
                         <div class="hidden">
                             <label>JSON:</label><br/>
                             <textarea id="needleeditor_textarea" name="json" readOnly="yes"></textarea>
@@ -131,7 +149,7 @@
                             </div>
                         </div>
                         <button type="button" class="btn btn-default" id="review_json" title="Review JSON">Review JSON</button>
-                        <button type="submit" class="btn btn-primary" id="save" title="Save">Save</button>
+                        <button type="submit" class="btn btn-primary" id="save">Save</button>
                     % end
                 </div>
                 <div class="col-md-6">
