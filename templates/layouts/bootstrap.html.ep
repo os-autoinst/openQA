@@ -26,10 +26,11 @@
       %= content_for 'head'
 
       %= javascript begin
-      %= content_for 'head_javascript'
-      $(document).ready(function() {
-        %= content_for 'ready_function'
-      } );
+          %= content_for 'head_javascript'
+          $(document).ready(function() {
+          setupForAll();
+          %= content_for 'ready_function'
+          } );
       % end
 
       <link rel="icon" href="/favicon.ico">

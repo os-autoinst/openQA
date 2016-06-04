@@ -9,6 +9,7 @@
 < stylesheets/overview.scss
 < stylesheets/comments.css
 < stylesheets/openqa.css
+< http://harvesthq.github.io/chosen/chosen.css
 
 # old bento 'default' layout
 ! app.css
@@ -72,4 +73,5 @@
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/tab.js
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap.js
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/transition.js
+< http://harvesthq.github.io/chosen/chosen.jquery.js
 

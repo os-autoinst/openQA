@@ -48,3 +48,12 @@ function getCookie(cname) {
     }
     return false;
 }
+
+function setupForAll() {
+    $('[data-toggle="tooltip"]').tooltip({html: true});
+
+    $.ajaxSetup({
+        headers:
+        { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') }
+    });
+}

@@ -229,7 +229,7 @@ sub startup {
 
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
-    $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch Combine)]});
+    $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
     $self->plugin('OpenQA::WebAPI::Plugin::Helpers');
     $self->plugin('OpenQA::WebAPI::Plugin::CSRF');
     $self->plugin('OpenQA::WebAPI::Plugin::REST');
@@ -248,13 +248,6 @@ sub startup {
             $self->plugin("OpenQA::WebAPI::Plugin::$plugin");
         }
     }
-
-    # preprocessors to expend the url() definitions in the css - TODO: reenable chosen in job group
-    # $self->asset->preprocessors->add(
-    #    css => sub {
-    #        my ($assetpack, $text, $file) = @_;
-    #        $$text =~ s!url\('!url('../images/!g if $file =~ /chosen.css/;
-    #    });
 
     # read assets/assetpack.def
     $self->asset->process;
