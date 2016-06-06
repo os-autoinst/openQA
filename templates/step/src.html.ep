@@ -1,6 +1,8 @@
 % layout 'default';
-%= asset 'codemirror.js'
-%= asset 'codemirror.css'
+% content_for 'head' => begin
+  %= asset 'codemirror.js'
+  %= asset 'codemirror.css'
+% end
 % title $moduleid;
 
 % content_for 'ready_function' => begin

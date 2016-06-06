@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -85,24 +85,19 @@ sub goto_editpage() {
     $driver->find_element('installer_timezone', 'link_text')->click();
     is($driver->get_current_url(), $baseurl . "tests/99946/modules/installer_timezone/steps/1/src", "on src page for nstaller_timezone test");
 
-    $driver->find_element('Needles editor', 'link_text')->click();
+    $driver->find_element('Screenshot', 'link_text')->click();
+
+    $driver->find_element('Create new needle', 'link_text')->click();
 }
 
 sub editpage_layout_check() {
+    t::ui::PhantomTest::wait_for_ajax;
+
     # layout check
-    $elem = $driver->find_element('#screens_table tbody tr', 'css');
-    my @headers = $driver->find_child_elements($elem, 'th');
-    is(@headers,                     5,                 "5 columns");
-    is((shift @headers)->get_text(), "Screens./Needle", "1st column");
-    is((shift @headers)->get_text(), "Image",           "2nd column");
-    is((shift @headers)->get_text(), "Areas",           "3rd column");
-    is((shift @headers)->get_text(), "Matches",         "4th column");
-    is((shift @headers)->get_text(), "Tags",            "5th column");
-    is($driver->find_element('#bg_btn_screenshot',              'css')->is_selected(), 1, "background selected");
-    is($driver->find_element('#bg_btn_inst-timezone-text',      'css')->is_selected(), 0, "background unselected");
-    is($driver->find_element('#tags_btn_screenshot',            'css')->is_selected(), 0, "tag btn unselected");
-    is($driver->find_element('#tags_btn_inst-timezone-text',    'css')->is_selected(), 1, "tag btn selected");
-    is($driver->find_element('#matches_btn_inst-timezone-text', 'css')->is_selected(), 1, "matches btn selected");
+    is($driver->find_element('#tags_select',  'css')->get_value(),   'inst-timezone-text', "inst-timezone tags selected");
+    is($driver->find_element('#image_select', 'css')->get_value(),   'screenshot',         "Screenshot background selected");
+    is($driver->find_element('#area_select',  'css')->get_value(),   'inst-timezone-text', "inst-timezone areas selected");
+    is($driver->find_element('#take_matches', 'css')->is_selected(), 1,                    "Matches selected");
 
     # check needle suggested name
     my $today = strftime("%Y%m%d", gmtime(time));
@@ -171,18 +166,22 @@ sub change_needle_value($$) {
     is($decode_new_textarea->{area}[0]->{type}, "ocr", "type is ocr");
     $driver->double_click;    # the match type change back to match
 
+    unlike($driver->find_element('#change-match', 'css')->get_attribute('class'), qr/disabled/, "match level now enabled");
+
     # test match level
     $driver->find_element('#change-match', 'css')->click();
+    # wait for the fade
+    sleep 1;
     t::ui::PhantomTest::wait_for_ajax;
-    is($driver->find_element('#change-match-form', 'css')->is_displayed(), 1, "match level form found");
-    is($driver->find_element('//button[@type="button"]/span[text()="Close"]')->is_displayed(), 1,    "match level form close button found");
-    is($driver->find_element('//button[@type="button"]/span[text()="Set"]')->is_displayed(),   1,    "found set button");
-    is($driver->find_element('//input[@id="match"]')->get_value(),                             "96", "default match level is 96");
+
+    my $dialog = $driver->find_element('#change-match-form', 'css');
+
+    is($driver->find_element('#set_match', 'css')->is_displayed(), 1, "found set button");
+    is($driver->find_element('//input[@id="match"]')->get_value(), "96", "default match level is 96");
     $driver->find_element('//input[@id="match"]')->clear();
     $driver->find_element('//input[@id="match"]')->send_keys("99");
     is($driver->find_element('//input[@id="match"]')->get_value(), "99", "set match level to 99");
-    $driver->find_element('//button[@type="button"]/span[text()="Set"]')->click();
-    $driver->find_element('//button[@type="button"]/span[text()="Close"]')->click();
+    $driver->find_element('#set_match', 'css')->click();
     is($driver->find_element('#change-match-form', 'css')->is_hidden(), 1, "match level form closed");
     $decode_new_textarea = decode_json($elem->get_value());
     is($decode_new_textarea->{area}[0]->{match}, 99, "match level is 99 now");
@@ -195,14 +194,21 @@ sub overwrite_needle($) {
     is($driver->find_element('#needleeditor_name', 'css')->get_value(), "", "needle name input clean up");
     $driver->find_element('#needleeditor_name', 'css')->send_keys($needlename);
     is($driver->find_element('#needleeditor_name', 'css')->get_value(), "$needlename", "new needle name inputed");
-    $driver->find_element('//input[@alt="Save"]')->click();
+    $driver->find_element('#save', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
-    # check the state highlight changed and click Yes do overwrite then
-    is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Same needle name file already exists! Overwrite it? Yes / No", "highlight appears correct");
-    $driver->find_element('Yes', 'link_text')->click();
+
+    #t::ui::PhantomTest::make_screenshot('mojoResults.png');
+    #print $driver->get_page_source();
+
+    my $diag = $driver->find_element('#modal-overwrite', 'css');
+    is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "We can see the overwrite dialog");
+    is($driver->find_child_element($diag, '.modal-title', 'css')->get_text(), "Sure to overwrite test-newneedle?", "Needle part of the title");
+
+    $driver->find_element('#modal-overwrite-confirm', 'css')->click();
+
     t::ui::PhantomTest::wait_for_ajax;
-    is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
-    ok(-f "$dir/$needlename.json", "$needlename.json overwrited");
+    is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated. (restart job)", "highlight appears correct");
+    ok(-f "$dir/$needlename.json", "$needlename.json overwritten");
 }
 
 # start testing
@@ -221,10 +227,11 @@ $driver->find_element('#needleeditor_name', 'css')->send_keys($needlename);
 is($driver->find_element('#needleeditor_name', 'css')->get_value(), "$needlename", "new needle name inputed");
 
 # create new needle by clicked save button
-$driver->find_element('//input[@alt="Save"]')->click();
+$driver->find_element('#save', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
+
 # check state highlight appears with valid content
-is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
+is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated. (restart job)", "highlight appears correct");
 # check files are exists
 ok(-f "$dir/$needlename.json", "$needlename.json created");
 ok(-f "$dir/$needlename.png",  "$needlename.png created");
@@ -232,6 +239,9 @@ ok(-f "$dir/$needlename.png",  "$needlename.png created");
 # test overwrite needle
 add_needle_tag('test-overwritetag');
 add_workaround_property();
+
+like($driver->find_element('#change-match', 'css')->get_attribute('class'), qr/disabled/, "match level disabled");
+
 # change area
 my $xoffset = my $yoffset = 200;
 change_needle_value($xoffset, $yoffset);    # xoffset and yoffset 200 for new area

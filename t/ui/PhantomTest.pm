@@ -113,15 +113,28 @@ sub wait_for_ajax() {
 }
 
 sub kill_phantom() {
-    $_driver->quit();
-    kill('TERM', $mojopid);
-    waitpid($mojopid, 0);
-    kill('TERM', $phantompid);
-    waitpid($phantompid, 0);
+    if ($_driver) {
+        $_driver->quit();
+        $_driver = undef;
+    }
+    if ($mojopid) {
+        kill('TERM', $mojopid);
+        waitpid($mojopid, 0);
+        $mojopid = undef;
+    }
+    if ($phantompid) {
+        kill('TERM', $phantompid);
+        waitpid($phantompid, 0);
+        $phantompid = undef;
+    }
 }
 
 sub get_mojoport {
     return $mojoport;
+}
+
+END {
+    kill_phantom;
 }
 
 1;

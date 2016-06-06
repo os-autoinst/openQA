@@ -66,12 +66,12 @@ sub add_job_group() {
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'two groups in fixtures');
     $driver->find_element('#submit', 'css')->click();
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'still two groups');
-    is($driver->find_element('.ui-state-error', 'css')->get_text(), 'Group name cannot be empty', 'error shown');
+    is($driver->find_element('#flash-messages .alert-warning span', 'css')->get_text(), 'Group name cannot be empty', 'error shown');
     $driver->find_element('#name',   'css')->send_keys('Cool Group');
     $driver->find_element('#submit', 'css')->click();
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 3 of 3 entries/, 'group created');
     is($driver->find_element('#group_1003', 'css')->get_text(), 'Cool Group', 'group created');
-    is($driver->find_element('.ui-state-highlight', 'css')->get_text(), 'Group Cool Group created', 'flash shown');
+    is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), 'Group Cool Group created', 'flash shown');
     #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 }
 

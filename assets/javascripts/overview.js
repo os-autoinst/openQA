@@ -35,6 +35,5 @@ function setupOverview() {
 	    icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
 
 	});
-    $('[data-toggle="tooltip"]').tooltip({html: true});
 }
 

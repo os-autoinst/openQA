@@ -26,10 +26,11 @@
       %= content_for 'head'
 
       %= javascript begin
-      %= content_for 'head_javascript'
-      $(document).ready(function() {
-        %= content_for 'ready_function'
-      } );
+          %= content_for 'head_javascript'
+          $(document).ready(function() {
+          setupForAll();
+          %= content_for 'ready_function'
+          } );
       % end
 
       <link rel="icon" href="/favicon.ico">
@@ -39,28 +40,28 @@
     <div id="wrapper">
       %= include_branding 'navbar'
       <div class='container'>
-      <div class='row' id='subheader'>
-          <div class='col-md-7'>
-          %= breadcrumbs
+        <div class='row' id='subheader'>
+          <div class='col-md-8'>
+            %= breadcrumbs
           </div>
-          <div class='col-md-5 text-right'>
-          <div id="user-info">
+          <div class='col-md-4 text-right'>
+            <div id="user-info">
               %= include 'layouts/subheader_user'
+            </div>
           </div>
-          </div>
-      </div>
+        </div>
       %= content
       </div>
 
       <footer class='footer'>
-      <div class='container'>
+        <div class='container'>
           <div id='footer-content'>
-                 %= content_for 'footer'
-              </div>
-          <div id='footer-legal'>
-                  openQA is licensed <%= link_to 'GPL-2.0' => 'https://github.com/os-autoinst/openQA' %>
+            %= content_for 'footer'
           </div>
-      </div>
+          <div id='footer-legal'>
+             openQA is licensed <%= link_to 'GPL-2.0' => 'https://github.com/os-autoinst/openQA' %>
+          </div>
+        </div>
       </footer>
     </div>
   </body>

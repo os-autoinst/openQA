@@ -38,6 +38,7 @@ requires 'IO::Socket::SSL';
 requires 'IPC::Cmd';
 requires 'IPC::Run';
 requires 'JSON';
+requires 'JSON::XS';
 requires 'JavaScript::Minifier::XS', '>= 0.11';
 requires 'LWP::UserAgent';
 requires 'List::MoreUtils';

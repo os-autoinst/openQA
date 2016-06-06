@@ -1,17 +1,4 @@
-// Two possible ways of calling it:
-// 1) new NeedleEditor(baseurl)
-// 2) new NeedleEditor(background, needlestring)
-function NeedleEditor() {
-  var baseurl;
-  var background, needlestring;
-
-  if (arguments.length == 1) {
-    baseurl = arguments[0];
-  } else {
-    background = arguments[0];
-    needlestring = arguments[1];
-  }
-
+function NeedleEditor(needle) {
   this.textarea = document.getElementById("needleeditor_textarea");
   this.tags = document.getElementById("needleeditor_tags");
   this.canvas = document.getElementById("needleeditor_canvas");
@@ -21,22 +8,10 @@ function NeedleEditor() {
   }
   this.bgImage = null;
   this.cv = null;
-  if (needlestring) {
-    this.LoadBackground(background);
-    this.needle = JSON.parse(needlestring);
-  } else {
-    this.LoadBackground(baseurl + ".png");
-    this.needle = null;
-    this.LoadNeedle(baseurl + ".json");
-  }
-  this.init();
+  this.needle = needle;
 }
 
 NeedleEditor.prototype.init = function() {
-  if (!this.bgImage || !this.needle) {
-    return;
-  }
-
   var editor = this;
 
   var cv = this.cv = new CanvasState(this.canvas);
@@ -49,15 +24,15 @@ NeedleEditor.prototype.init = function() {
       this.needle['tags'].forEach(function(tag) {
         this.AddTag(tag, true);
       }.bind(this));
-    // If the checkboxes are already there, we simply check them all
+      // If the checkboxes are already there, we simply check them all
     } else {
       var inputs = this.tags.getElementsByTagName('input');
       for (var i = 0; i < inputs.length; i++) {
         if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
           inputs[i].checked = true;
-	} else {
-	  inputs[i].checked = false;
-	}
+        } else {
+          inputs[i].checked = false;
+        }
       }
     }
   }
@@ -83,9 +58,9 @@ NeedleEditor.prototype.init = function() {
     if (e.keyCode == KeyEvent.DOM_VK_DELETE) {
       var idx = cv.get_selection_idx();
       if (idx != -1) {
-	editor.needle['area'].splice(idx, 1);
-	cv.delete_shape_idx(idx);
-	editor.UpdateTextArea();
+        editor.needle['area'].splice(idx, 1);
+        cv.delete_shape_idx(idx);
+        editor.UpdateTextArea();
       }
     } else if (e.keyCode == KeyEvent.DOM_VK_INSERT) {
       var a = { 'xpos': 0, 'ypos': 0, 'width': MINSIZE, 'height': MINSIZE, 'type': 'match' };
@@ -102,7 +77,7 @@ NeedleEditor.prototype.init = function() {
     a['width'] = shape.w;
     a['height'] = shape.h;
     editor.UpdateTextArea();
-  }
+  };
   cv.new_shape_cb = function(x, y) {
     var a = { 'xpos': x, 'ypos': y, 'width': MINSIZE, 'height': MINSIZE, 'type': 'match' };
     var shape = NeedleEditor.ShapeFromArea(a);
@@ -110,8 +85,16 @@ NeedleEditor.prototype.init = function() {
     editor.needle.area.push(a);
     editor.UpdateTextArea();
     return shape;
-  }
-}
+  };
+  $(cv).on('shape.selected', function() {
+    $('#change-match').removeClass('disabled').removeAttr('disabled');
+    $('#change-margin').removeClass('disabled').removeAttr('disabled');
+  });
+  $(cv).on('shape.unselected', function() {
+    $('#change-match').addClass('disabled').attr('disabled', 1);
+    $('#change-margin').addClass('disabled').attr('disabled', 1);
+  });
+};
 
 NeedleEditor.prototype.UpdateTextArea = function() {
   if (this.textarea) {
@@ -137,40 +120,39 @@ NeedleEditor.prototype.AddTag = function(tag, checked) {
 }
 
 NeedleEditor.nexttype = function(type) {
-    if (type == 'match') {
-      return 'exclude';
-    } else if (type == 'exclude') {
-      return 'ocr';
-    }
-    return 'match';
-}
+  if (type == 'match') {
+    return 'exclude';
+  } else if (type == 'exclude') {
+    return 'ocr';
+  }
+  return 'match';
+};
 
 NeedleEditor.ShapeFromArea = function(a) {
   return new Shape(a['xpos'], a['ypos'], a['width'], a['height'], NeedleEditor.areacolor(a['type']));
-}
+};
 
 NeedleEditor.prototype.DrawAreas = function() {
   var editor = this;
+  // not yet there 
+  if (!editor.cv)
+    return false;
+  
   jQuery.each(editor.needle['area'], function(index, area) {
     editor.cv.addShape(NeedleEditor.ShapeFromArea(area));
   });
   return true;
-}
+};
 
 NeedleEditor.prototype.LoadBackground = function(url) {
   var editor = this;
-  var cv = this.cv;
   var image = new Image();
   image.src = url;
   image.onload = function() {
     editor.bgImage = image;
-    if (cv) {
-      cv.set_bgImage(editor.bgImage);
-    } else {
-      editor.init();
-    }
-  }
-}
+    editor.init();
+  };
+};
 
 NeedleEditor.prototype.LoadTags = function(tags) {
   this.needle['tags'] = tags;
@@ -183,7 +165,7 @@ NeedleEditor.prototype.LoadNeedle = function(url) {
   var x = new XMLHttpRequest();
   x.onreadystatechange = function() {
     if (this.readyState != 4) {
-     return;
+      return;
     }
     if (this.status == 200)
     {
@@ -207,10 +189,11 @@ NeedleEditor.prototype.LoadNeedle = function(url) {
 
 NeedleEditor.prototype.LoadAreas = function(areas) {
   var editor = this;
-  var cv = this.cv;
-
+  
   editor.needle["area"] = areas;
-  cv.delete_shapes();
+  if (this.cv) {
+    this.cv.delete_shapes();
+  }
   this.DrawAreas();
   this.UpdateTextArea();
 }
@@ -253,40 +236,192 @@ NeedleEditor.prototype.changeProperty = function(name, enabled) {
 }
 
 NeedleEditor.prototype.setMargin = function(value) {
-    var idx = this.cv.get_selection_idx();
-    if (idx == -1) {
-	if (!this.needle["area"].length) {
-	    return;
-	}
-	idx = 0;
+  var idx = this.cv.get_selection_idx();
+  if (idx == -1) {
+    if (!this.needle["area"].length) {
+      return;
     }
-    this.needle['area'][idx].margin = parseInt(value);
-    this.UpdateTextArea();
+    idx = 0;
+  }
+  this.needle['area'][idx].margin = parseInt(value);
+  this.UpdateTextArea();
 }
 
 NeedleEditor.prototype.setMatch = function(value) {
-    var idx = this.cv.get_selection_idx();
-    if (idx == -1) {
-	if (!this.needle["area"].length) {
-	    return;
-	}
-	idx = 0;
+  var idx = this.cv.get_selection_idx();
+  if (idx == -1) {
+    if (!this.needle["area"].length) {
+      return;
     }
-    
-    this.needle['area'][idx].match = parseFloat(value);
-    this.UpdateTextArea();
+    idx = 0;
+  }
+  
+  this.needle['area'][idx].match = parseFloat(value);
+  this.UpdateTextArea();
 }
 
-// If you dont want to use <body onLoad='init()'>
-// You could uncomment this init() reference and place the script reference inside the body tag
-//init();
-
-/*
-function init() {
-  var n = new NeedleEditor("canvas1", "inst-welcome");
+function loadBackground() {
+  var needle = window.needles[$('#image_select option:selected').val()];
+  nEditor.LoadBackground(needle['imageurl']);
+  $("#needleeditor_image").val(needle['imagename']);
+  $("#needleeditor_imagedistri").val(needle['imagedistri']);
+  $("#needleeditor_imageversion").val(needle['imageversion']);
+  $("#needleeditor_imagedir").val(needle['imagedir']);
 }
 
-window.addEventListener('load', init, true);
-*/
+function loadTagsAndName() {
+  var needle = window.needles[$('#tags_select option:selected').val()];
+  var tags = needle['tags'];
+  $("#needleeditor_tags").find('input').each(function() {
+    $(this).prop('checked', tags.indexOf($(this).val()) != -1);
+  });
+  $("#needleeditor_name").val(needle['suggested_name']);
+  $("#area_select").val(needle['name']);
+  loadAreas();
+  nEditor.LoadTags(tags);
+}
+
+function loadAreas() {
+  var needle = window.needles[$('#area_select option:selected').val()];
+  if ($('#take_matches').prop('checked')) {
+    nEditor.LoadAreas(needle['matches']);
+  } else {
+    nEditor.LoadAreas(needle['area']);
+  }
+}
+
+function addTag() {
+  var input = $('#newtag');
+  var checkbox = nEditor.AddTag(input.val(), false);
+  input.val('');
+  checkbox.click();
+  return false;
+}
+
+function setMargin() {
+  nEditor.setMargin($('#margin').val());
+}
+
+function setMatch() {
+  nEditor.setMatch($('#match').val());
+}
+
+function reactToSaveNeedle(data) {
+  if (data.status != 200) {
+    alert("Fatal error on saving needle");
+    $('#save').removeProp('disabled');
+    return;
+  }
+  data = data.responseJSON;
+  if (data.info) {
+    var info = data.info;
+    if (data.restart) {
+      info += " (<a href='#' data-url='" + data.restart + "' class='restart-link'>restart job</a>)";
+    }
+    addFlash('info', info);
+    $('#save').removeProp('disabled');
+    return;
+  }
+  if (data.error) {
+    addFlash('warning', data.error);
+    $('#save').removeProp('disabled');
+    return;
+  }
+  if (data.requires_overwrite) {
+    delete data.requires_overwrite;
+    $('#modal-overwrite .modal-title').text("Sure to overwrite " + data.needlename + "?");
+    $('#modal-overwrite').data('formdata', data);
+    $('#modal-overwrite').modal();
+  } else {
+    $('#save').removeProp('disabled');
+  }
+}
+
+function saveNeedle(e) {
+  var form = $("#save_needle_form");
+  var fdata = form.serialize();
+  var url = form.attr('action');
+  $('#save').prop('disabled', 'disable');
+  $.ajax({
+    type: "POST",
+    url: url,
+    data: fdata,
+    complete: function(data, status) { reactToSaveNeedle(data); }
+  });
+  return false;
+}
+
+var nEditor;
+
+function setup_needle_editor(imageurl, default_needle)
+{
+  nEditor = new NeedleEditor(imageurl, default_needle);
+
+  $('.tag_checkbox').click(function() {
+    nEditor.changeTag(this.value, this.checked);
+  });
+
+  $('#tag_add_button').click(addTag);
+  $('#newtag').keypress(function() {
+    if (event.keyCode==13)
+      return addTag();
+    return true;
+  });
+  
+  $('#property_workaround').click(function() { nEditor.changeProperty(this.name, this.checked) });
+
+  $('#image_select').change(loadBackground);
+  // load default
+  loadBackground();
+  $('#tags_select').change(loadTagsAndName);
+  loadTagsAndName();
+  $('#area_select').change(loadAreas);
+  $('#take_matches').change(loadAreas);
+
+  $('#set_margin').click(function() { setMargin(); $('#change-margin-form').modal('hide'); } );
+  $('#set_match').click(function() { setMatch(); $('#change-match-form').modal('hide'); } );
+  $('#change-margin-form').on('show.bs.modal', function() {
+    var idx = nEditor.cv.get_selection_idx();
+    if (idx == -1) {
+      if (!this.needle["area"].length) {
+        return;
+      }
+      idx = 0;
+    }
+    $('#margin').val(nEditor.needle['area'][idx].margin || 50);
+  });
+  $('#change-match-form').on('show.bs.modal', function() {
+    var idx = nEditor.cv.get_selection_idx();
+    if (idx == -1) {
+      if (!this.needle["area"].length) {
+        return;
+      }
+      idx = 0;
+    }
+    $('#match').val(nEditor.needle['area'][idx].match || 96);
+  });
+  
+  $('#review_json').popover({
+    trigger: 'focus',
+    content: function() { return $('#needleeditor_textarea').val(); },
+    template: '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><pre class="popover-content"></pre></div>'
+  } );
+
+  $('#modal-overwrite').on('hidden.bs.modal', function() { $('#save').removeProp('disabled'); });
+  $('#modal-overwrite-confirm').click(function() {
+    var data = $('#modal-overwrite').data('formdata');
+    data.overwrite = 1;
+    $.ajax({
+      type: "POST",
+      url: $("#save_needle_form").attr('action'),
+      data: data,
+      complete: function(data2, status) { $('#modal-overwrite').modal('hide'); reactToSaveNeedle(data2); }
+    });
+    return false;
+  });
+
+  $('#save_needle_form').submit(saveNeedle);
+  $(document).on('click', '.restart-link', function() { $.post($(this).data('url')); });
+}
 
 // Now go make something amazing!
