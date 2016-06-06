@@ -416,6 +416,7 @@ table.overview .failedmodule {
 .fa.module_none { color:#bebebe;}
 
 .fa.comment, .fa.bookmark, .fa.bug, .fa.certificate, .fa.tag { color: Grey; }
+.fa-bolt { color: #FFBF00; } /* Amber */
 
 table#users td.role {
     white-space: nowrap;

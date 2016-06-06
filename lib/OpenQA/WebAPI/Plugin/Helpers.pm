@@ -57,6 +57,12 @@ sub register {
             return;
         });
 
+    $app->helper(
+        bugicon_for => sub {
+            my ($c, $text) = @_;
+            return ($text =~ /poo#/) ? 'label_bug fa fa-bolt' : 'label_bug fa fa-bug';
+        });
+
     # Breadcrumbs generation can be centralized, since it's really simple
     $app->helper(
         breadcrumbs => sub {
