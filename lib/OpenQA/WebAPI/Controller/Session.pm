@@ -22,6 +22,18 @@ use URI::Escape;
 use LWP::UserAgent;
 use OpenQA::Schema::Result::Users;
 
+sub ensure_user {
+    my ($self) = @_;
+
+    if (!$self->current_user) {
+        $self->redirect_to('login');
+    }
+    else {
+        return 1;
+    }
+    return;
+}
+
 sub ensure_operator {
     my ($self) = @_;
 

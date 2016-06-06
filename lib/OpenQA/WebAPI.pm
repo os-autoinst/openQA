@@ -279,8 +279,9 @@ sub startup {
     auth_config($self->config);
 
     # Router
-    my $r    = $self->routes;
-    my $auth = $r->under('/')->to("session#ensure_operator");
+    my $r         = $self->routes;
+    my $logged_in = $r->under('/')->to("session#ensure_user");
+    my $auth      = $r->under('/')->to("session#ensure_operator");
 
     $r->get('/session/new')->to('session#new');
     $r->post('/session')->to('session#create');
@@ -303,9 +304,10 @@ sub startup {
     my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0);
     $test_r->get('/')->name('test')->to('test#show');
-    $test_auth->post('/add_comment')->name('add_comment')->to('test#add_comment');
-    $test_auth->post('/edit_comment')->name('edit_comment')->to('test#edit_comment');
-    $test_auth->post('/remove_comment')->name('remove_comment')->to('test#remove_comment');
+    my $test_logged_in = $logged_in->route('/tests/:testid', testid => qr/\d+/);
+    $test_logged_in->post('/add_comment')->name('add_comment')->to('test#add_comment');
+    $test_logged_in->post('/edit_comment')->name('edit_comment')->to('test#edit_comment');
+    $test_logged_in->post('/remove_comment')->name('remove_comment')->to('test#remove_comment');
 
     $test_r->get('/modlist')->name('modlist')->to('running#modlist');
     $test_r->get('/status')->name('status')->to('running#status');
@@ -336,9 +338,9 @@ sub startup {
     $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
 
     $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');
-    $r->post('/group_overview/:groupid/add_comment')->name('add_group_comment')->to('main#add_comment');
-    $r->post('/group_overview/:groupid/edit_comment')->name('edit_group_comment')->to('main#edit_comment');
-    $r->post('/group_overview/:groupid/remove_comment')->name('remove_group_comment')->to('main#remove_comment');
+    $logged_in->post('/group_overview/:groupid/add_comment')->name('add_group_comment')->to('main#add_comment');
+    $logged_in->post('/group_overview/:groupid/edit_comment')->name('edit_group_comment')->to('main#edit_comment');
+    $logged_in->post('/group_overview/:groupid/remove_comment')->name('remove_group_comment')->to('main#remove_comment');
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });

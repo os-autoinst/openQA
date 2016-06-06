@@ -524,12 +524,6 @@ sub add_comment {
     my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
     return $self->reply->not_found unless $job;
 
-    # only logged in users can add comments
-    if (!$self->current_user) {
-        $self->flash('info', 'The comment couldn\'t be added because you\'re not logged in anymore');
-        return $self->redirect_to('test');
-    }
-
     my $rs = $job->comments->create(
         {
             text    => $self->param('text'),
@@ -549,12 +543,6 @@ sub edit_comment {
 
     my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
     return $self->reply->not_found unless $job;
-
-    # only logged in users can edit comments
-    if (!$self->current_user) {
-        $self->flash('info', 'The comment couldn\'t be edited because you\'re not logged in anymore');
-        return $self->redirect_to('test');
-    }
 
     my $rs = $job->comments->search(
         {
@@ -582,7 +570,7 @@ sub remove_comment {
     return $self->reply->not_found unless $job;
 
     # only admins are allowed to delete comments
-    if (!$self->current_user || !$self->current_user->is_admin) {
+    if (!$self->current_user->is_admin) {
         $self->flash('info', 'The comment couldn\'t be deleted because you\'re not logged in as administrator');
         return $self->redirect_to('test');
     }
