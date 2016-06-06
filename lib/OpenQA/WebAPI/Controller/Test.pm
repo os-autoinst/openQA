@@ -253,18 +253,11 @@ sub show {
 
     return $self->reply->not_found unless $job;
 
-    my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
-    my $scenario = join('-', map { $job->settings_hash->{$_} } @scenario_keys);
-
-    # append the MACHINE
-    push(@scenario_keys, 'MACHINE');
-    $scenario .= "@" . $job->settings_hash->{MACHINE};
-
     $self->stash(testname => $job->settings_hash->{NAME});
     $self->stash(distri   => $job->settings_hash->{DISTRI});
     $self->stash(version  => $job->settings_hash->{VERSION});
     $self->stash(build    => $job->settings_hash->{BUILD});
-    $self->stash(scenario => $scenario);
+    $self->stash(scenario => $job->scenario);
 
     #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
 
@@ -305,7 +298,7 @@ sub show {
     push(@conds, {'me.state'  => 'done'});
     push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
     push(@conds, {id          => {'<', $job->id}});
-    my %js_settings = map { $_ => $job->settings_hash->{$_} } @scenario_keys;
+    my %js_settings = map { $_ => $job->settings_hash->{$_} } OpenQA::Schema::Result::Jobs::SCENARIO_KEYS;
     my $subquery = $self->db->resultset("JobSettings")->query_for_settings(\%js_settings);
     push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
 
@@ -316,7 +309,7 @@ sub show {
     my $previous_jobs_rs = $self->db->resultset("Jobs")->search({-and => \@conds}, \%attrs);
     my @previous_jobs;
     while (my $prev = $previous_jobs_rs->next) {
-        $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->settings_hash->{$_} } @scenario_keys));
+        $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->settings_hash->{$_} } OpenQA::Schema::Result::Jobs::SCENARIO_KEYS));
         push(@previous_jobs, $prev);
     }
     my $job_labels = $self->_job_labels(\@previous_jobs);

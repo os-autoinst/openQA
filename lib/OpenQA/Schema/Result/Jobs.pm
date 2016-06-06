@@ -62,6 +62,10 @@ use constant RESULTS => (NONE, PASSED, FAILED, INCOMPLETE, SKIPPED, OBSOLETED, P
 use constant COMPLETE_RESULTS => (PASSED, FAILED);
 use constant INCOMPLETE_RESULTS => (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
 
+# scenario keys w/o MACHINE. Add MACHINE when desired, commonly joined on
+# other keys with the '@' character
+use constant SCENARIO_KEYS => (qw/DISTRI VERSION FLAVOR ARCH TEST/);
+
 __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime FilterColumn Timestamps/);
 __PACKAGE__->add_columns(
@@ -169,6 +173,31 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_jobs_result', fields => ['result']);
 }
 
+
+=head2 scenario
+
+The full scenario including MACHINE
+
+Also see https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Glossary
+for the naming convention used.
+=cut
+sub scenario {
+    my ($self) = @_;
+    return $self->{_scenario} if $self->{_scenario};
+    my $job_settings = $self->settings_hash;
+    my $scenario = join('-', map { $job_settings->{$_} } SCENARIO_KEYS);
+
+    # append the MACHINE
+    $scenario .= ('@' . $job_settings->{MACHINE}) if $job_settings->{MACHINE};
+    $self->{_scenario} = $scenario;
+    return $self->{_scenario};
+}
+
+
+=head2 name
+
+Like C<scenario> but including flavor, media and build to be unambigous
+=cut
 sub name {
     my $self = shift;
     return $self->slug if $self->slug;

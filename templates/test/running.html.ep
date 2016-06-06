@@ -81,6 +81,7 @@
     % if (my $msg = flash 'code') {
         <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
     % }
+    <div id="scenario">Scenario: <%= $job->scenario %></div>
     <div class="box box-shadow">
         <!--<h2>Live view of <i><%= $testname %></i></h2>-->
         <div class="box-header aligncenter">Live view of <i><%= $testname %></i></div>

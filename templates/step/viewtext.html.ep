@@ -22,6 +22,7 @@
 </div>
 
 <div class="grid_13 omega">
+    <div id="scenario">Scenario: <%= $job->scenario %></div>
     %= include 'step/moduleslistthumbnails'
 
     <div class="box box-shadow">
