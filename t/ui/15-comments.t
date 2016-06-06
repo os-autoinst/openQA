@@ -252,24 +252,31 @@ subtest 'commenting in test results including labels' => sub {
 };
 
 subtest 'editing when logged in as regular user' => sub {
-    subtest 'group overview' => sub {
-        plan skip_all => 'TODO: login as another user which is no admin';
+    sub no_edit_no_remove_on_other_comments_expected {
+        is(@{$driver->find_elements('button.trigger-edit-button', 'css')}, 0, "edit not displayed for other users comments");
+        is(@{$driver->find_elements('button.remove-edit-button',  'css')}, 0, "removal not displayed for regular user");
+    }
+    sub only_edit_for_own_comments_expected {
+        is(@{$driver->find_elements('button.trigger-edit-button', 'css')}, 1, "own comments can be edited");
+        is(@{$driver->find_elements('button.remove-edit-button',  'css')}, 0, "no comments can be removed, even not own");
+    }
 
-        # TODO: check whether removal of comments is possible (should not be possible)
-
-        # the removal button shouldn't be displayed when not logged in as admin
-        #is(@{$driver->find_elements('button.remove-edit-button', 'css')}, 0, "removal not displayed for regular user");
-
-        # TODO: check whether only own comments can be edited
+    $driver->get($baseurl . 'login?user=nobody');
+    subtest 'test results' => sub {
+        $driver->get($baseurl . 'tests/99938#comments');
+        no_edit_no_remove_on_other_comments_expected;
+        $driver->find_element('#text',          'css')->send_keys('test by nobody');
+        $driver->find_element('#submitComment', 'css')->click();
+        switch_to_comments_tab(5);
+        only_edit_for_own_comments_expected;
     };
 
-    subtest 'test results' => sub {
-        # navigate to test results (again)
-        $driver->find_element('Build0048', 'link_text')->click();
-        $driver->find_element('.status',   'css')->click();
-        is($driver->get_title(), "openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test results", "on test result page");
-        switch_to_comments_tab(4);
-        #test_comment_editing_as_regular_user;
+    subtest 'group overview' => sub {
+        $driver->get($baseurl . 'group_overview/1001');
+        no_edit_no_remove_on_other_comments_expected;
+        $driver->find_element('#text',          'css')->send_keys('test by nobody');
+        $driver->find_element('#submitComment', 'css')->click();
+        only_edit_for_own_comments_expected;
     };
 };
 
