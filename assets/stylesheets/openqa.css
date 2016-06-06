@@ -474,3 +474,7 @@ table#users input[type="radio"]:checked + label .fa-circle-o {
 
 }
 
+/* needle editor */
+a.restart-link {
+    color: blue;
+}

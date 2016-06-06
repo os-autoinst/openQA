@@ -207,7 +207,7 @@ sub overwrite_needle($) {
     $driver->find_element('#modal-overwrite-confirm', 'css')->click();
 
     t::ui::PhantomTest::wait_for_ajax;
-    is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
+    is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated. (restart job)", "highlight appears correct");
     ok(-f "$dir/$needlename.json", "$needlename.json overwritten");
 }
 
@@ -231,7 +231,7 @@ $driver->find_element('#save', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
 
 # check state highlight appears with valid content
-is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
+is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated. (restart job)", "highlight appears correct");
 # check files are exists
 ok(-f "$dir/$needlename.json", "$needlename.json created");
 ok(-f "$dir/$needlename.png",  "$needlename.png created");

@@ -22,17 +22,17 @@ NeedleEditor.prototype.init = function() {
     // If tags is empty, we must populate it with a checkbox for every tag
     if (this.tags.getElementsByTagName('input').length == 0) {
       this.needle['tags'].forEach(function(tag) {
-	this.AddTag(tag, true);
+        this.AddTag(tag, true);
       }.bind(this));
       // If the checkboxes are already there, we simply check them all
     } else {
       var inputs = this.tags.getElementsByTagName('input');
       for (var i = 0; i < inputs.length; i++) {
-	if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
-	  inputs[i].checked = true;
-	} else {
-	  inputs[i].checked = false;
-	}
+        if (this.needle['tags'].indexOf(inputs[i].value) >= 0) {
+          inputs[i].checked = true;
+        } else {
+          inputs[i].checked = false;
+        }
       }
     }
   }
@@ -58,9 +58,9 @@ NeedleEditor.prototype.init = function() {
     if (e.keyCode == KeyEvent.DOM_VK_DELETE) {
       var idx = cv.get_selection_idx();
       if (idx != -1) {
-	editor.needle['area'].splice(idx, 1);
-	cv.delete_shape_idx(idx);
-	editor.UpdateTextArea();
+        editor.needle['area'].splice(idx, 1);
+        cv.delete_shape_idx(idx);
+        editor.UpdateTextArea();
       }
     } else if (e.keyCode == KeyEvent.DOM_VK_INSERT) {
       var a = { 'xpos': 0, 'ypos': 0, 'width': MINSIZE, 'height': MINSIZE, 'type': 'match' };
@@ -314,7 +314,11 @@ function reactToSaveNeedle(data) {
   }
   data = data.responseJSON;
   if (data.info) {
-    addFlash('info', data.info);
+    var info = data.info;
+    if (data.restart) {
+      info += " (<a href='#' data-url='" + data.restart + "' class='restart-link'>restart job</a>)";
+    }
+    addFlash('info', info);
     $('#save').removeProp('disabled');
     return;
   }
@@ -380,7 +384,7 @@ function setup_needle_editor(imageurl, default_needle)
     var idx = nEditor.cv.get_selection_idx();
     if (idx == -1) {
       if (!this.needle["area"].length) {
-	return;
+        return;
       }
       idx = 0;
     }
@@ -390,7 +394,7 @@ function setup_needle_editor(imageurl, default_needle)
     var idx = nEditor.cv.get_selection_idx();
     if (idx == -1) {
       if (!this.needle["area"].length) {
-	return;
+        return;
       }
       idx = 0;
     }
@@ -417,6 +421,7 @@ function setup_needle_editor(imageurl, default_needle)
   });
 
   $('#save_needle_form').submit(saveNeedle);
+  $(document).on('click', '.restart-link', function() { $.post($(this).data('url')); });
 }
 
 // Now go make something amazing!

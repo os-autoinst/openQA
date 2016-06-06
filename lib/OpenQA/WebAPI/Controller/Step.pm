@@ -1,4 +1,4 @@
-# Copyright (C) 2014,2015 SUSE LLC
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -518,7 +518,11 @@ sub save_needle_ajax {
             }
         }
         $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
-        return $self->render(json => {info => "Needle $needlename created/updated."});
+        my $info = {info => "Needle $needlename created/updated."};
+        if ($job->can_be_duplicated) {
+            $info->{restart} = $self->url_for('apiv1_restart', jobid => $job->id);
+        }
+        return $self->render(json => $info);
     }
     else {
         return $self->render(json => {error => "Error creating/updating needle: $!."});
