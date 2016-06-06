@@ -240,6 +240,12 @@ $get = $t->get_ok($driver->get_current_url())->status_is(200);
 is($get->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href}, 'https://bugzilla.suse.com/show_bug.cgi?id=1234');
 $driver->find_element('opensuse', 'link_text')->click();
 is($driver->find_element('.fa-certificate', 'css')->get_attribute('title'), 'Reviewed (1 comments)', 'build should be marked as labeled');
+$driver->get($baseurl . 'tests/99926#comments');
+$driver->find_element('#text',                 'css')->send_keys('poo#9876');
+$driver->find_element('#submitComment',        'css')->click();
+$driver->find_element('Build87.5011@opensuse', 'link_text')->click();
+is($driver->find_element('#res_staging_e_x86_64_minimalx .fa-bolt', 'css')->get_attribute('title'), 'Bug(s) referenced: poo#9876', 'bolt icon shown for progress issues');
+$driver->find_element('opensuse', 'link_text')->click();
 
 #
 # do tests for editing when logged in as regular user(group overview)
