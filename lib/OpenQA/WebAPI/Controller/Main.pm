@@ -179,12 +179,6 @@ sub add_comment {
     my $group = $self->app->schema->resultset("JobGroups")->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    # only logged in users can add comments
-    if (!$self->current_user) {
-        $self->flash('info', 'The comment couldn\'t be added because you\'re not logged in anymore');
-        return $self->redirect_to('group_overview');
-    }
-
     my $rs = $group->comments->create(
         {
             text    => $self->param('text'),
@@ -205,12 +199,6 @@ sub edit_comment {
 
     my $group = $self->app->schema->resultset("JobGroups")->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
-
-    # only logged in users can edit comments
-    if (!$self->current_user) {
-        $self->flash('info', 'The comment couldn\'t be edited because you\'re not logged in anymore');
-        return $self->redirect_to('group_overview');
-    }
 
     my $rs = $group->comments->search(
         {
@@ -239,7 +227,7 @@ sub remove_comment {
     return $self->reply->not_found unless $group;
 
     # only admins are allowed to delete comments
-    if (!$self->current_user || !$self->current_user->is_admin) {
+    if (!$self->current_user->is_admin) {
         $self->flash('info', 'The comment couldn\'t be deleted because you\'re not logged in as administrator');
         return $self->redirect_to('group_overview');
     }
