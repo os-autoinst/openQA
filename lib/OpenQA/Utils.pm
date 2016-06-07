@@ -2,6 +2,7 @@ package OpenQA::Utils;
 use strict;
 require 5.002;
 
+use autodie qw(open);
 use Carp;
 use IPC::Run();
 use Mojo::URL;
@@ -200,7 +201,7 @@ sub save_base64_png($$$) {
     # sanitize
     $newfile =~ s,\.png,,;
     $newfile =~ tr/a-zA-Z0-9-/_/cs;
-    open(my $fh, ">", $dir . "/$newfile.png") || die "can't open $dir/$newfile.png: $!";
+    open(my $fh, ">", $dir . "/$newfile.png");
     use MIME::Base64 qw/decode_base64/;
     $fh->print(decode_base64($png));
     close($fh);

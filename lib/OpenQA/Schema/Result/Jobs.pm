@@ -17,6 +17,7 @@
 package OpenQA::Schema::Result::Jobs;
 use strict;
 use warnings;
+use autodie qw(unlink);
 use base qw/DBIx::Class::Core/;
 use Try::Tiny;
 use JSON;
@@ -92,7 +93,6 @@ __PACKAGE__->add_columns(
     worker_id => {
         data_type      => 'integer',
         is_foreign_key => 1,
-        # FIXME: get rid of worker 0
         default_value => 0,
         #        is_nullable => 1,
     },
@@ -169,24 +169,26 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_jobs_result', fields => ['result']);
 }
 
-sub name {
-    my $self = shift;
-    return $self->slug if $self->slug;
+sub _name {
+    my ($self) = @_;
+    my $job_settings = $self->settings_hash;
+    my @a;
 
-    if (!$self->{_name}) {
-        my $job_settings = $self->settings_hash;
-        my @a;
+    my %formats = (BUILD => 'Build%s',);
 
-        my %formats = (BUILD => 'Build%s',);
-
-        for my $c (qw/DISTRI VERSION FLAVOR MEDIA ARCH BUILD TEST/) {
-            next unless $job_settings->{$c};
-            push @a, sprintf(($formats{$c} || '%s'), $job_settings->{$c});
-        }
-        my $name = join('-', @a);
-        $name =~ s/[^a-zA-Z0-9._+:-]/_/g;
-        $self->{_name} = $name;
+    for my $c (qw/DISTRI VERSION FLAVOR MEDIA ARCH BUILD TEST/) {
+        next unless $job_settings->{$c};
+        push @a, sprintf(($formats{$c} || '%s'), $job_settings->{$c});
     }
+    my $name = join('-', @a);
+    $name =~ s/[^a-zA-Z0-9._+:-]/_/g;
+    return $name;
+}
+
+sub name {
+    my ($self) = @_;;
+    return $self->slug if $self->slug;
+    $self->{_name} //= $self->_name;
     return $self->{_name};
 }
 
@@ -210,21 +212,23 @@ sub settings_hash {
     return $self->{_settings};
 }
 
+sub _deps_hash {
+    my ($self) = @_;
+    my $deps_hash = {
+        parents  => {Chained => [], Parallel => []},
+        children => {Chained => [], Parallel => []}};
+    for my $dep ($self->parents) {
+        push @{$self->{_deps_hash}->{parents}->{$dep->to_string}}, $dep->parent_job_id;
+    }
+    for my $dep ($self->children) {
+        push @{$self->{_deps_hash}->{children}->{$dep->to_string}}, $dep->child_job_id;
+    }
+    return $deps_hash;
+}
+
 sub deps_hash {
     my ($self) = @_;
-
-    if (!defined($self->{_deps_hash})) {
-        $self->{_deps_hash} = {
-            parents  => {Chained => [], Parallel => []},
-            children => {Chained => [], Parallel => []}};
-        for my $dep ($self->parents) {
-            push @{$self->{_deps_hash}->{parents}->{$dep->to_string}}, $dep->parent_job_id;
-        }
-        for my $dep ($self->children) {
-            push @{$self->{_deps_hash}->{children}->{$dep->to_string}}, $dep->child_job_id;
-        }
-    }
-
+    $self->{_deps_hash} //= $self->_deps_hash;
     return $self->{_deps_hash};
 }
 
@@ -755,15 +759,15 @@ sub create_result_dir {
         my $cleanday = DateTime->now()->add(days => $days);
         my %args = (resultdir => $dir, jobid => $self->id);
         $OpenQA::Utils::app->gru->enqueue(reduce_result => \%args, {run_at => $cleanday});
-        mkdir($dir) || die "can't mkdir $dir: $!";
+        mkdir($dir);
     }
     my $sdir = $dir . "/.thumbs";
     if (!-d $sdir) {
-        mkdir($sdir) || die "can't mkdir $sdir: $!";
+        mkdir($sdir);
     }
     $sdir = $dir . "/ulogs";
     if (!-d $sdir) {
-        mkdir($sdir) || die "can't mkdir $sdir: $!";
+        mkdir($sdir);
     }
     return $dir;
 }
@@ -866,7 +870,6 @@ sub create_asset {
 
     my $fname = $asset->filename;
 
-    # FIXME: pass as parameter to avoid guessing
     my $type;
     $type = 'iso' if $fname =~ /\.iso$/;
     $type = 'hdd' if $fname =~ /\.(?:qcow2|raw)$/;
@@ -877,7 +880,7 @@ sub create_asset {
     my $fpath = join('/', $OpenQA::Utils::assetdir, $type);
 
     if (!-d $fpath) {
-        mkdir($fpath) || die "can't mkdir $fpath: $!";
+        mkdir($fpath);
     }
 
     $asset->move_to(join('/', $fpath, $fname));
@@ -1087,11 +1090,11 @@ sub release_networks {
 
 sub needle_dir() {
     my ($self) = @_;
-    unless ($self->{_needle_dir}) {
+    $self->{_needle_dir} //= sub {
         my $distri  = $self->settings_hash->{DISTRI};
         my $version = $self->settings_hash->{VERSION};
-        $self->{_needle_dir} = OpenQA::Utils::needledir($distri, $version);
-    }
+        return OpenQA::Utils::needledir($distri, $version);
+    };
     return $self->{_needle_dir};
 }
 

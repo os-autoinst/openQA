@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE Linux GmbH
+# Copyright (C) 2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@ BEGIN {
 }
 
 use Mojo::Base -strict;
+use autodie qw(:all);
 use Test::More;
 use Test::Mojo;
 use OpenQA::Test::Case;
@@ -109,7 +110,7 @@ subtest 'no cleanup of important builds' => sub {
     my $job           = $jobs_in_build[0];
     my %args          = (resultdir => $job->result_dir, jobid => $job->id);
     my $filename      = $job->result_dir . '/autoinst-log.txt';
-    open my $fh, ">>$filename" or die "touch $filename: $!\n";
+    open my $fh, ">>$filename";
     close $fh;
 
     post_comment_1001 'tag:0048:important';

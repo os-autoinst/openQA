@@ -63,6 +63,7 @@ BEGIN {
 }
 
 use strict;
+use autodie qw(:all);
 use OpenQA::Schema;
 use Data::Dump;
 use v5.10;
@@ -102,7 +103,6 @@ if ($options{verbose}) {
     printf "%d jobs in %d days\n", scalar keys %$jobs, $options{days};
 }
 
-# FIXME: actually determine which distros share needles
 sub map_version($$) {
     my ($distri, $version) = @_;
 
@@ -118,7 +118,7 @@ sub load_needles($$) {
 
     my $needledir = needledir($distri, $version);
 
-    opendir(my $dh, $needledir) || die "$needledir\n";
+    opendir(my $dh, $needledir);
     my @names = grep { s/\.json$// } readdir($dh);
     closedir $dh;
     for my $name (@names) {

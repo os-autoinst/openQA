@@ -16,6 +16,7 @@
 package OpenQA::Worker::Pool;
 use strict;
 use warnings;
+use autodie qw(chdir open fcntl);
 
 use Fcntl;
 use File::Path qw/make_path remove_tree/;
@@ -30,11 +31,9 @@ sub lockit() {
     if (!-e $pooldir) {
         make_path($pooldir);
     }
-    chdir $pooldir || die "cannot change directory to $pooldir: $!\n";
-    open(my $lockfd, '>>', '.locked') or die "cannot open lock file: $!\n";
-    unless (fcntl($lockfd, F_SETLK, pack('ssqql', F_WRLCK, 0, 0, 0, $$))) {
-        die "$pooldir already locked\n";
-    }
+    chdir $pooldir;
+    open(my $lockfd, '>>', '.locked');
+    fcntl($lockfd, F_SETLK, pack('ssqql', F_WRLCK, 0, 0, 0, $$));
     $lockfd->autoflush(1);
     truncate($lockfd, 0);
     print $lockfd "$$\n";

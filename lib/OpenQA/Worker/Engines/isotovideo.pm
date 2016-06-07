@@ -1,4 +1,5 @@
 # Copyright (C) 2015 SUSE Linux Products GmbH
+# Copyright (C) 2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +17,7 @@
 package OpenQA::Worker::Engines::isotovideo;
 use strict;
 use warnings;
+use autodie qw(unlink fcntl truncate fork);
 
 use OpenQA::Worker::Common;
 use OpenQA::Utils qw//;
@@ -57,9 +59,9 @@ sub _save_vars($) {
     die "cannot get environment variables!\n" unless $vars;
     my $fn = $pooldir . "/vars.json";
     unlink "$pooldir/vars.json" if -e "$pooldir/vars.json";
-    open(my $fd, ">", $fn) or die "can not write vars.json: $!\n";
-    fcntl($fd, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$)) or die "cannot lock vars.json: $!\n";
-    truncate($fd, 0) or die "cannot truncate vars.json: $!\n";
+    open(my $fd, ">", $fn);
+    fcntl($fd, F_SETLKW, pack('ssqql', F_WRLCK, 0, 0, 0, $$));
+    truncate($fd, 0);
 
     print $fd to_json(\%$vars, {pretty => 1});
     close($fd);
@@ -132,7 +134,6 @@ sub engine_workit($) {
     mkdir($tmpdir) unless (-d $tmpdir);
 
     my $child = fork();
-    die "failed to fork: $!\n" unless defined $child;
 
     unless ($child) {
         $ENV{TMPDIR} = $tmpdir;
