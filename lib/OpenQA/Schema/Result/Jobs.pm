@@ -908,9 +908,9 @@ sub failed_modules_with_needles {
             for my $needle (@{$detail->{needles}}) {
                 push @needles, [$needle->{name}, $counter];
             }
-            if (!@{$detail->{needles}}) {
-                push @needles, [undef, $counter];
-            }
+        }
+        if (!@needles) {
+            push @needles, [undef, $counter];
         }
         $failedmodules->{$module->name} = \@needles;
     }
