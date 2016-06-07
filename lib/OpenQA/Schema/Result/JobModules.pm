@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -241,32 +241,40 @@ sub store_needle_infos($;$) {
     OpenQA::Schema::Result::Needles::update_needle_cache(\%hash);
 }
 
-sub save_details($;$) {
+sub _save_details_screenshot {
+    my ($self, $screenshot, $existant_md5, $cleanup) = @_;
+
+    my ($full, $thumb) = OpenQA::Utils::image_md5_filename($screenshot->{md5});
+    if (-e $full) {    # mark existant
+        push(@$existant_md5, $screenshot->{md5});
+    }
+    if ($cleanup) {
+        # interactive mode, recreate the symbolic link of screenshot if it was changed
+        my $full_link  = readlink($self->job->result_dir . "/" . $screenshot->{name})         || '';
+        my $thumb_link = readlink($self->job->result_dir . "/.thumbs/" . $screenshot->{name}) || '';
+        if ($full ne $full_link) {
+            OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/" . $screenshot->{name};
+            unlink($self->job->result_dir . "/" . $screenshot->{name});
+        }
+        if ($thumb ne $thumb_link) {
+            OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/.thumbs/" . $screenshot->{name};
+            unlink($self->job->result_dir . "/.thumbs/" . $screenshot->{name});
+        }
+    }
+    symlink($full,  $self->job->result_dir . "/" . $screenshot->{name});
+    symlink($thumb, $self->job->result_dir . "/.thumbs/" . $screenshot->{name});
+    return $screenshot->{name};
+}
+
+sub save_details {
     my ($self, $details, $cleanup) = @_;
     my $existant_md5 = [];
     for my $d (@$details) {
-        # create possibly stale symlinks
-        my ($full, $thumb) = OpenQA::Utils::image_md5_filename($d->{screenshot}->{md5});
-        if (-e $full) {    # mark existant
-            push(@$existant_md5, $d->{screenshot}->{md5});
+        # avoid creating symlinks for text results
+        if ($d->{screenshot}) {
+            # create possibly stale symlinks
+            $d->{screenshot} = $self->_save_details_screenshot($d->{screenshot}, $existant_md5, $cleanup);
         }
-        if ($cleanup) {
-            # interactive mode, recreate the symbolic link of screenshot if it was changed
-            my $full_link  = readlink($self->job->result_dir . "/" . $d->{screenshot}->{name})         || '';
-            my $thumb_link = readlink($self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name}) || '';
-            if ($full ne $full_link) {
-                OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/" . $d->{screenshot}->{name};
-                unlink($self->job->result_dir . "/" . $d->{screenshot}->{name});
-            }
-            if ($thumb ne $thumb_link) {
-                OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name};
-                unlink($self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
-            }
-        }
-        symlink($full,  $self->job->result_dir . "/" . $d->{screenshot}->{name});
-        symlink($thumb, $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
-        $d->{screenshot} = $d->{screenshot}->{name};
-
     }
     $self->store_needle_infos($details);
     open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");
