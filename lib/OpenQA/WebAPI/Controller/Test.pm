@@ -131,7 +131,7 @@ sub list_ajax {
     my $jobs = $self->db->resultset("Jobs")->search(
         {'me.id' => {in => \@ids}},
         {
-            columns  => [qw/me.id state clone_id test result group_id t_created/],
+            columns  => [qw/me.id state clone_id test result group_id t_finished/],
             order_by => ['me.id DESC'],
             prefetch => [qw/children parents/],
         });
@@ -162,7 +162,7 @@ sub list_ajax {
             flavor  => $js->{FLAVOR}  // '',
             arch    => $js->{ARCH}    // '',
             build   => $js->{BUILD}   // '',
-            testtime => $job->t_created,
+            testtime => $job->t_finished,
             result   => $job->result,
             group    => $job->group_id,
             state    => $job->state
