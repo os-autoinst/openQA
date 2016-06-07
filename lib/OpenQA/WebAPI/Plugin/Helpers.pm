@@ -260,7 +260,7 @@ sub _step_thumbnail {
         $imgurl => width => $ref_width,
         height  => $ref_height,
         alt     => $screenshot->{name},
-        class   => "resborder_$result"
+        class   => "resborder resborder_$result"
     );
     my $href = $c->url_for('step', moduleid => $module, stepid => $step_num);
     $c->tag('a', href => $href, class => 'no_hover', sub { $content });

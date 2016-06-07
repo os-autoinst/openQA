@@ -168,14 +168,14 @@
                                                     %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
                                                 % } elsif ($step->{audio}) {
                                                     %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{name} => begin
-                                                        <img src="/images/audio.svg" width="60" height="45" alt="<%= $step->{name} %>" class="<%= "resborder_\L$step->{result}" %>"/>
+                                                        <img src="/images/audio.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
                                                     % end
                                                 % } elsif ($step->{text}) {
                                                     %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{title} => begin
                                                         % if($step->{title} eq "wait_serial") {
-                                                            <img src="/images/terminal.svg" width="60" height="45" alt="<%= $step->{name} %>" class="<%= "resborder_\L$step->{result}" %>"/>
+                                                            <img src="/images/terminal.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
                                                         % } else {
-                                                            <span class="<%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
+                                                            <span class="resborder <%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
                                                         % }
                                                     % end
                                                 % }
