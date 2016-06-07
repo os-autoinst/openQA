@@ -347,7 +347,7 @@ CanvasState.prototype.draw = function() {
       if (this.selection != null) {
 	  var lineWidth = 1;
 	  ctx.strokeStyle = 'white';
-	  ctx.lineWidth = lineWidth;;
+	  ctx.lineWidth = lineWidth;
 	  ctx.setLineDash([10, 15]);
 	  var mySel = this.selection;
 	  ctx.strokeRect(mySel.x - lineWidth, mySel.y - lineWidth,
