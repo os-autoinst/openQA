@@ -344,8 +344,6 @@ sub job_grab {
                 join => 'parent',
             });
 
-        my $worker = schema->resultset("Workers")->find($workerid);
-
         my @available_cond = (    # ids available for this worker
             '-and',
             {
@@ -366,8 +364,7 @@ sub job_grab {
             # check all worker classes of scheduled jobs and filter out those not applying
             my $scheduled = schema->resultset("Jobs")->search(
                 {
-                    state     => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                    worker_id => 0
+                    state => OpenQA::Schema::Result::Jobs::SCHEDULED
                 })->get_column('id');
 
             my $not_applying_jobs = schema->resultset("JobSettings")->search(
@@ -387,19 +384,33 @@ sub job_grab {
         # now query for the best
         my $job = schema->resultset("Jobs")->search(
             {
-                state     => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                worker_id => 0,
-                id        => \@available_cond,
+                state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                id    => \@available_cond,
             },
-            {order_by => {-asc => [qw/priority id/]}, rows => 1}
-          )->update(
-            {
-                state     => OpenQA::Schema::Result::Jobs::RUNNING,
-                worker_id => $workerid,
-                t_started => now(),
-            });
-
-        last if $job;
+            {order_by => {-asc => [qw/priority id/]}})->first;
+        if ($job) {
+            # we do this in a transaction to avoid the same job being assigned
+            # to two workers - the 2nd worker will fail the unique constraint in
+            # the workers table and the throw an exception - and re-grab
+            try {
+                schema->txn_do(
+                    sub {
+                        $job->update(
+                            {
+                                state     => OpenQA::Schema::Result::Jobs::RUNNING,
+                                t_started => now(),
+                            });
+                        $worker->job($job);
+                        $worker->update;
+                    });
+            }
+            catch {
+                # this job is most likely already taken
+                warn "Failed to grab job: $_";
+                next;
+            };
+            last;
+        }
         last unless $blocking;
         # XXX: do something smarter here
         #print STDERR "no jobs for me, sleeping\n";
@@ -542,15 +553,17 @@ sub job_set_done {
     my $result = $args{result} || $job->calculate_result();
     my %new_val = (
         state      => OpenQA::Schema::Result::Jobs::DONE,
-        worker_id  => 0,
         t_finished => now(),
     );
 
     # for cancelled jobs the result is already known
     $new_val{result} = $result if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
 
-    my $r;
-    $r = $job->update(\%new_val);
+    if ($job->worker) {
+        # free the worker
+        $job->worker->update({job_id => undef});
+    }
+    my $r = $job->update(\%new_val);
 
     if ($result ne OpenQA::Schema::Result::Jobs::PASSED) {
         _job_skip_children($jobid);
@@ -684,7 +697,7 @@ sub job_duplicate {
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
-            colums => [qw/id worker_id/]});
+            colums => [qw/id/]});
 
     $jobs->search(
         {
@@ -745,7 +758,7 @@ sub job_restart {
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
-            colums => [qw/id worker_id/],
+            colums => [qw/id/],
         });
 
     $jobs->search(
@@ -788,7 +801,7 @@ sub job_cancel($;$) {
         _job_skip_children($j->id);
     }
 
-    $attrs{columns} = [qw/id worker_id/];
+    $attrs{columns} = [qw/id/];
     $cond{state}    = [OpenQA::Schema::Result::Jobs::EXECUTION_STATES];
     # then tell workers to cancel their jobs
     $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);

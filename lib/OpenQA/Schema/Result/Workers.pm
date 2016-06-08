@@ -35,11 +35,17 @@ __PACKAGE__->add_columns(
     instance => {
         data_type => 'integer',
     },
-);
+    job_id => {
+        data_type      => 'integer',
+        is_foreign_key => 1,
+        is_nullable    => 1
+    });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/host instance/]);
-__PACKAGE__->might_have(job => 'OpenQA::Schema::Result::Jobs', 'worker_id');
+# only one worker can work on a job
+__PACKAGE__->add_unique_constraint([qw/job_id/]);
+__PACKAGE__->belongs_to(job => 'OpenQA::Schema::Result::Jobs', 'job_id');
 __PACKAGE__->has_many(properties => 'OpenQA::Schema::Result::WorkerProperties', 'worker_id');
 
 # TODO

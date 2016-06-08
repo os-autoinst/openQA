@@ -53,7 +53,8 @@ sub _register {
         $worker = $schema->resultset("Workers")->create(
             {
                 host     => $host,
-                instance => $instance
+                instance => $instance,
+                job_id   => undef
             });
     }
     # store worker's capabilities to database
@@ -68,10 +69,10 @@ sub _register {
         # .. set it incomplete
         $job->update(
             {
-                state     => OpenQA::Schema::Result::Jobs::DONE,
-                result    => OpenQA::Schema::Result::Jobs::INCOMPLETE,
-                worker_id => 0,
+                state  => OpenQA::Schema::Result::Jobs::DONE,
+                result => OpenQA::Schema::Result::Jobs::INCOMPLETE,
             });
+        $worker->update({job_id => undef});
     }
 
     $worker->set_property('INTERACTIVE',                  0);

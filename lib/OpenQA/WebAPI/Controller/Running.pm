@@ -29,7 +29,7 @@ sub init {
 
     my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
 
-    unless (defined $job && $job->worker_id) {
+    unless (defined $job && $job->worker) {
         $self->reply->not_found;
         return 0;
     }
