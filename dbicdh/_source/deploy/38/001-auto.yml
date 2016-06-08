@@ -1332,10 +1332,10 @@ schema:
           options: []
           type: NORMAL
         - fields:
-            - id
+            - job_id
             - key
             - value
-          name: idx_job_value_settings
+          name: idx_job_id_value_settings
           options: []
           type: NORMAL
       name: job_settings

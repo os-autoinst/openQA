@@ -4,6 +4,12 @@
 BEGIN;
 
 ;
+DROP INDEX idx_job_value_settings;
+
+;
+CREATE INDEX idx_job_id_value_settings ON job_settings (job_id, key, value);
+
+;
 CREATE TEMPORARY TABLE jobs_temp_alter (
   id INTEGER PRIMARY KEY NOT NULL,
   slug text,

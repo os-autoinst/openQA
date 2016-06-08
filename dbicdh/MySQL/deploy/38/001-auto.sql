@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Wed Jun  8 09:52:52 2016
+-- Created on Wed Jun  8 10:23:11 2016
 -- 
 ;
 SET foreign_key_checks=0;
@@ -76,7 +76,7 @@ CREATE TABLE `job_settings` (
   `t_updated` timestamp NOT NULL,
   INDEX `job_settings_idx_job_id` (`job_id`),
   INDEX `idx_value_settings` (`key`, `value`),
-  INDEX `idx_job_value_settings` (`id`, `key`, `value`),
+  INDEX `idx_job_id_value_settings` (`job_id`, `key`, `value`),
   PRIMARY KEY (`id`),
   CONSTRAINT `job_settings_fk_job_id` FOREIGN KEY (`job_id`) REFERENCES `jobs` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB;

@@ -57,7 +57,7 @@ __PACKAGE__->has_many(
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
     $sqlt_table->add_index(name => 'idx_value_settings', fields => ['key', 'value']);
-    $sqlt_table->add_index(name => 'idx_job_value_settings', fields => ['id', 'key', 'value']);
+    $sqlt_table->add_index(name => 'idx_job_id_value_settings', fields => ['job_id', 'key', 'value']);
 }
 
 1;

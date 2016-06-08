@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Wed Jun  8 09:52:52 2016
+-- Created on Wed Jun  8 10:23:11 2016
 -- 
 
 ;
@@ -75,7 +75,7 @@ CREATE TABLE job_settings (
 );
 CREATE INDEX job_settings_idx_job_id ON job_settings (job_id);
 CREATE INDEX idx_value_settings ON job_settings (key, value);
-CREATE INDEX idx_job_value_settings ON job_settings (id, key, value);
+CREATE INDEX idx_job_id_value_settings ON job_settings (job_id, key, value);
 --
 -- Table: machine_settings
 --
