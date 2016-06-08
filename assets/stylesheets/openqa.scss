@@ -1,20 +1,35 @@
-$color-softfail: #A3C16C;
-$color-ok: #d4f291;
+$color-softfail: #EEB560;
+$color-ok: #CDFFB9;
 $color-warning: #ff9;
-$color-scheduled: #CCA66A;
 $color-failed: #FF4E46;
-$color-result-failed: #faa;
+$color-result-failed: #FF9E9B;
 $color-incomplete: #AF1E11;
 $color-result-missing: #ddd;
-$color-result-scheduled: #bef;
 $color-result-testing: #9df;
-$color-resborder-ok: green;
-$color-resborder-fail: red;
-$color-resborder-unk: lightgray;
+$color-module-passed: #59DF24;
+$color-module-none: #aaaaaa;
+$color-resborder-ok: $color-module-passed;
+$color-resborder-fail: $color-failed;
+$color-resborder-unk: $color-module-none;
 $color-highlight-parent: #ffe0e0;
 $color-highlight-child: #d0f0ff;
 $color-labels: gray;
 $color-bolt: #ffbf00; /* amber */
+$color-state-scheduled: #67A2B7;
+$color-state-cancelled: $color-module-none;
+$color-state-running: #8BDFFF;
+
+.progress-bar-success {
+    background-color: $color-module-passed;
+}
+
+.progress-bar-warning {
+    background-color: $color-state-running;
+}
+
+.progress-bar-danger {
+    background-color: $color-failed;
+}
 
 .highlight_parent {
     background-color: $color-highlight-parent !important;
@@ -24,15 +39,13 @@ $color-bolt: #ffbf00; /* amber */
     background-color: $color-highlight-child !important;
 }
 
-.resultok { background-color: $color-ok; }
+.resultok { background-color: $color-ok;  }
 .resultpassed { background-color: $color-ok; }
-.resultunknown { background-color: $color-warning; }
+.resultunknown { background-color: $color-result-missing; }
 .resultwarning { background-color: $color-warning; }
 .resultfail { background-color: $color-result-failed; }
 .resultfailed { background-color: $color-result-failed; }
 .resultmissing { background-color: $color-result-missing; }
-.resulttesting { background-color: $color-result-testing; }
-.resultscheduled { background-color: $color-result-scheduled; }
 
 .component {
         text-align: right;
@@ -85,37 +98,33 @@ span.thumbnail.current {
         box-shadow: 0 0 3px 4px #666;
 }
 
-td span.resborder {
+td .resborder {
         margin-top: 3px;
 }
 
-img.resborder {
-        border: solid 2px;
-        padding: 1px;
+.resborder {
+        border: solid 3px;
+        padding: 0px;
 }
 
-img.resborder_ok {
-        @extend img.resborder;
+.resborder_ok {
         border-color: $color-resborder-ok;
 }
 
-img.resborder_fail {
-        @extend img.resborder;
+.resborder_fail {
         border-color: $color-resborder-fail;
 }
 
-img.resborder_unk {
-        @extend img.resborder;
+.resborder_unk, .resborder_missing {
         border-color: $color-resborder-unk;
 }
 
-img.resborder_softfail {
-        @extend img.resborder;
+.resborder_softfail {
         border-color: $color-softfail;
 }
 
 img.resborder_na {
-    padding: 4px;
+        padding: 4px;
 }
 
 span.resborder {
@@ -130,25 +139,10 @@ span.resborder {
         background: #dfffff;
         font-size: small;
         padding: 1px;
-}
-
-span.resborder_ok {
-        @extend span.resborder;
-        border: 2px solid $color-resborder-ok;
-}
-
-span.resborder_fail {
-        @extend span.resborder;
-        border: 2px solid $color-resborder-fail;
-}
-
-span.resborder_unk {
-        @extend span.resborder;
-        border: 2px solid $color-resborder-unk;
+        border: 2px solid;
 }
 
 span.resborder_na {
-        @extend span.resborder;
         overflow: hidden;
         padding: 4px;
 }
@@ -391,26 +385,26 @@ div.flags {
 }
 
 .state_scheduled.fa {
-    color: $color-scheduled;
+    color: $color-state-scheduled;
 }
 
-.state_obsolete.fa {
-    color: #615245;
+.state_obsolete.fa, .state_cancelled.fa {
+    color: $color-state-cancelled;
 }
 
 .state_running.fa {
-    color: #F3F929;
+    color: $color-state-running;
 }
 
-.fa.result_passed { color: #75C195 !important; }                /* dark Lemon */
-.fa.module_passed { color: #75C195 !important; }
+.fa.result_passed { color: $color-module-passed !important; }                /* dark Lemon */
+.fa.module_passed { color: $color-module-passed !important; }
 .fa.result_unknown { color:$color-warning ;}
 .fa.result_softfail { color: $color-softfail ;}
 .fa.module_softfail { color: $color-softfail; }
 .fa.result_failed {color: $color-failed; }
 .fa.module_failed { color: $color-failed; }
 .fa.result_incomplete { color: $color-incomplete; }
-.fa.module_none { color: #bebebe;}
+.fa.module_none { color: $color-module-none;}
 
 .fa.comment, .fa.bookmark, .fa.bug, .fa.certificate, .fa.tag { color: $color-labels; }
 .fa-bolt { color: $color-bolt; }
