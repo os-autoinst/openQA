@@ -1,0 +1,70 @@
+#preview_container_out {
+    height: 768px;
+    position: relative;
+    display: none;
+    margin-top: 10px;
+    margin-bottom: 7px;
+}
+
+#preview_container_in {
+    position: absolute;
+    right: 0;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+#preview_container_in.nobg {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+#preview_container_in > * {
+    max-width: 100%;
+}
+
+.links > div {
+    display: inline-block;
+}
+
+.current_preview {
+    position: relative;
+}
+
+.links .fa-caret-down {
+    display: none;
+    position: absolute;
+    color: black;
+    bottom: -12px;
+    left: 26px;
+}
+
+.links_a {
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.current_preview > .fa-caret-down {
+    display: inline-block;
+}
+
+#preview_container_in canvas {
+    max-width: 100%;
+}
+
+#preview_container_in pre {
+    text-align: left;
+    margin-bottom: 0;
+}
+
+#preview_container_in audio {
+    width: calc(100% - 20px);
+}
+
+#preview_container_in #audiodiv {
+    padding-top: 10px;
+    margin-bottom: 0;
+}
+
+#dummy_space {
+    display: none;
+    height: 768px;
+}

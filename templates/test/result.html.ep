@@ -1,9 +1,17 @@
 % layout 'bootstrap';
 % title $job->name . " test results";
 
+% content_for 'head' => begin
+%= asset 'result_preview.js'
+% end
+
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     setupResultButtons();
+    $('.links_a > a').on('click', function() {
+        preview($(this).parent());
+        return false;
+    });
 % end
 
 % if (!@$modlist) {
@@ -111,7 +119,7 @@
         <div role="tabpanel">
 
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
-                <li role="presentation" class="active"><a href="#details"" aria-controls="details" role="tab" data-toggle="tab">Details</a></li>
+                <li role="presentation" class="active"><a href="#details" aria-controls="details" role="tab" data-toggle="tab">Details</a></li>
                 <li role="presentation"><a href="#downloads" aria-controls="downloads" role="tab" data-toggle="tab">Logs &amp; Assets</a></li>
                 <li role="presentation"><a href="#settings" aria-controls="settings" role="tab" data-toggle="tab">Settings</a></li>
                 <li role="presentation"><a href="#comments" aria-controls="comments" role="tab" data-toggle="tab">Comments (<%= scalar($job->comments) %>)</a></li>
@@ -162,23 +170,25 @@
                                             %= format_result($module)
                                         </td>
                                         <td class="links">
-
                                             % for my $step (@{$module->{details}}) {
-                                                % if($step->{screenshot}) {
-                                                    %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
-                                                % } elsif ($step->{audio}) {
-                                                    %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{name} => begin
-                                                        <img src="/images/audio.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
-                                                    % end
-                                                % } elsif ($step->{text}) {
-                                                    %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{title} => begin
-                                                        % if($step->{title} eq "wait_serial") {
-                                                            <img src="/images/terminal.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
-                                                        % } else {
-                                                            <span class="resborder <%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
-                                                        % }
-                                                    % end
-                                                % }
+                                                <div class="links_a">
+                                                    <div class="fa fa-caret-down"></div>
+                                                    % if($step->{screenshot}) {
+                                                            %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
+                                                    % } elsif ($step->{audio}) {
+                                                        %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{name} => begin
+                                                            <img src="/images/audio.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
+                                                        % end
+                                                    % } elsif ($step->{text}) {
+                                                        %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{title} => begin
+                                                            % if($step->{title} eq "wait_serial") {
+                                                                <img src="/images/terminal.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
+                                                            % } else {
+                                                                <span class="resborder <%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
+                                                            % }
+                                                        % end
+                                                    % }
+                                                </div>
                                             % }
                                         </td>
                                     </tr>
@@ -268,3 +278,9 @@
         </div>
     </div>
 </div>
+
+<div id="preview_container_out">
+    <div id="preview_container_in">
+    </div>
+</div>
+<div id="dummy_space"></div>

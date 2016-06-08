@@ -10,6 +10,7 @@
 < stylesheets/comments.css
 < stylesheets/openqa.scss
 < http://harvesthq.github.io/chosen/chosen.css
+< stylesheets/result_preview.css
 
 # old bento 'default' layout
 ! app.css
@@ -26,9 +27,6 @@
 ! codemirror.js
 < https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/lib/codemirror.js
 < https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/mode/perl/perl.js
-
-! needlediff.js
-< javascripts/needlediff.js
 
 ! step_edit.js
 < javascripts/needleeditor.js
@@ -68,3 +66,6 @@
 < http://harvesthq.github.io/chosen/chosen.jquery.js
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
 
+! result_preview.js
+< javascripts/result_preview.js
+< javascripts/needlediff.js
