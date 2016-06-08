@@ -19,16 +19,20 @@ $color-state-scheduled: #67A2B7;
 $color-state-cancelled: $color-module-none;
 $color-state-running: #8BDFFF;
 
-.progress-bar-success {
-    background-color: $color-module-passed;
-}
+.build-dashboard {
 
-.progress-bar-warning {
-    background-color: $color-state-running;
-}
-
-.progress-bar-danger {
-    background-color: $color-failed;
+        .progress-bar-passed {
+                background-color: $color-module-passed;
+        }
+        .progress-bar-softfailed {
+                background-color: $color-softfail;
+        }
+        .progress-bar-running {
+                background-color: $color-state-running;
+        }
+        .progress-bar-failed {
+                background-color: $color-failed;
+        }
 }
 
 .highlight_parent {
@@ -43,6 +47,7 @@ $color-state-running: #8BDFFF;
 .resultpassed { background-color: $color-ok; }
 .resultunknown { background-color: $color-result-missing; }
 .resultwarning { background-color: $color-warning; }
+.resultsoftfailed { background-color: $color-softfail; }
 .resultfail { background-color: $color-result-failed; }
 .resultfailed { background-color: $color-result-failed; }
 .resultmissing { background-color: $color-result-missing; }
