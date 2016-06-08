@@ -110,6 +110,10 @@ my @tasks;
 @tasks = $t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'});
 is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 
+# add a random comment on a scheduled but not started job so that this one
+# later on is found as important and handled accordingly
+$t->app->db->resultset("Jobs")->find(99928)->comments->create({text => 'any text', user_id => 99901});
+
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
 my $expected = qr/START_AFTER_TEST=.* not found - check for typos and dependency cycles/;
@@ -159,14 +163,14 @@ is($advanced_kde_64->{settings}->{PUBLISH_HDD_1}, 'opensuse-13.1-i586-kde-qemu64
 
 lj;
 
-# check that the old tests are cancelled
-$ret = $t->get_ok('/api/v1/jobs/99927')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99927 is cancelled');
-
-$ret = $t->get_ok('/api/v1/jobs/99928')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99928 is cancelled');
-$ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
+subtest 'old tests are cancelled unless they are marked as important' => sub {
+    $ret = $t->get_ok('/api/v1/jobs/99927')->status_is(200);
+    is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99927 is cancelled');
+    $ret = $t->get_ok('/api/v1/jobs/99928')->status_is(200);
+    is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job 99928 is marked as important and therefore preserved');
+    $ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
+    is($ret->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
+};
 
 # make sure unrelated jobs are not cancelled
 $ret = $t->get_ok("/api/v1/jobs/$clone99981")->status_is(200);

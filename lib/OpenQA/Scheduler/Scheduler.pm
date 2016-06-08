@@ -784,52 +784,51 @@ sub job_cancel($;$) {
 
     my %attrs;
     my %cond;
-
     _job_find_smart($value, \%cond, \%attrs);
-
     $cond{state} = OpenQA::Schema::Result::Jobs::SCHEDULED;
-
-    # first set all scheduled jobs to cancelled
-    my $r = schema->resultset("Jobs")->search(\%cond, \%attrs)->update(
+    my $scheduled_jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
+    my $jobs_to_cancel;
+    my $new_result;
+    if ($newbuild) {
+        $new_result = OpenQA::Schema::Result::Jobs::OBSOLETED;
+        # 'monkey patch' cond to be useable in chained search
+        $cond{'me.id'} = delete $cond{id};
+        # filter out all that have any comment (they are considered 'important')
+        $jobs_to_cancel = $scheduled_jobs->search({'comments.job_id' => undef}, {join => 'comments'});
+    }
+    else {
+        $new_result     = OpenQA::Schema::Result::Jobs::USER_CANCELLED;
+        $jobs_to_cancel = $scheduled_jobs;
+    }
+    # first cancel scheduled jobs
+    my $cancelled_jobs = $jobs_to_cancel->update(
         {
             state  => OpenQA::Schema::Result::Jobs::CANCELLED,
-            result => ($newbuild) ? OpenQA::Schema::Result::Jobs::OBSOLETED : OpenQA::Schema::Result::Jobs::USER_CANCELLED
+            result => $new_result,
         });
-
-    my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
-    while (my $j = $jobs->next) {
-        _job_skip_children($j->id);
-    }
 
     $attrs{columns} = [qw/id/];
     $cond{state}    = [OpenQA::Schema::Result::Jobs::EXECUTION_STATES];
     # then tell workers to cancel their jobs
-    $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
-
-    $jobs->search(
+    $jobs_to_cancel->search(
         {
             result => OpenQA::Schema::Result::Jobs::NONE,
         }
       )->update(
         {
-            result => ($newbuild) ? OpenQA::Schema::Result::Jobs::OBSOLETED : OpenQA::Schema::Result::Jobs::USER_CANCELLED,
+            result => $new_result,
         });
 
-    while (my $j = $jobs->next) {
-        if ($newbuild) {
-            log_debug("enqueuing obsolete for " . $j->id . " " . $j->worker_id);
-            command_enqueue(workerid => $j->worker_id, command => 'obsolete', job_id => $j->id);
-        }
-        else {
-            log_debug("enqueuing cancel for " . $j->id . " " . $j->worker_id);
-            command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
-        }
+    while (my $j = $jobs_to_cancel->next) {
+        my $command = $newbuild ? 'obsolete' : 'cancel';
+        log_debug("enqueuing $command for " . $j->id . " " . $j->worker_id);
+        command_enqueue(workerid => $j->worker_id, command => $command, job_id => $j->id);
         _job_skip_children($j->id);
         _job_stop_children($j->id);
 
-        ++$r;
+        ++$cancelled_jobs;
     }
-    return $r;
+    return $cancelled_jobs;
 }
 
 sub job_stop {
