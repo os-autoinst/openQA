@@ -89,13 +89,6 @@ __PACKAGE__->add_columns(
         data_type     => 'varchar',
         default_value => NONE,
     },
-    worker_id => {
-        data_type      => 'integer',
-        is_foreign_key => 1,
-        # FIXME: get rid of worker 0
-        default_value => 0,
-        #        is_nullable => 1,
-    },
     test => {
         data_type => 'text',
     },
@@ -122,7 +115,6 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable    => 1
     },
-
     t_started => {
         data_type   => 'timestamp',
         is_nullable => 1,
@@ -136,9 +128,9 @@ __PACKAGE__->add_timestamps;
 
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(settings => 'OpenQA::Schema::Result::JobSettings', 'job_id');
-__PACKAGE__->belongs_to(worker => 'OpenQA::Schema::Result::Workers',   'worker_id');
-__PACKAGE__->belongs_to(clone  => 'OpenQA::Schema::Result::Jobs',      'clone_id', {join_type => 'left', on_delete => 'SET NULL'});
-__PACKAGE__->belongs_to(group  => 'OpenQA::Schema::Result::JobGroups', 'group_id', {join_type => 'left', on_delete => 'SET NULL'});
+__PACKAGE__->has_one(worker => 'OpenQA::Schema::Result::Workers', 'job_id');
+__PACKAGE__->belongs_to(clone => 'OpenQA::Schema::Result::Jobs',      'clone_id', {join_type => 'left', on_delete => 'SET NULL'});
+__PACKAGE__->belongs_to(group => 'OpenQA::Schema::Result::JobGroups', 'group_id', {join_type => 'left', on_delete => 'SET NULL'});
 __PACKAGE__->might_have(origin => 'OpenQA::Schema::Result::Jobs', 'clone_id', {cascade_delete => 0});
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
@@ -188,6 +180,15 @@ sub name {
         $self->{_name} = $name;
     }
     return $self->{_name};
+}
+
+# return 0 if we have no worker
+sub worker_id {
+    my ($self) = @_;
+    if ($self->worker) {
+        return $self->worker->id;
+    }
+    return 0;
 }
 
 sub settings_hash {
@@ -276,7 +277,7 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw/id name priority state result worker_id clone_id retry_avbl t_started t_finished test group_id/);
+    my $j = _hashref($job, qw/id name priority state result clone_id retry_avbl t_started t_finished test group_id worker_id/);
     if ($j->{group_id}) {
         $j->{group} = $job->group->name;
     }
@@ -944,7 +945,7 @@ sub update_status {
     }
     $ret->{known_images} = [sort keys %known];
 
-    if ($self->worker_id) {
+    if ($self->worker) {
         $self->worker->set_property("INTERACTIVE", $status->{status}->{interactive} // 0);
     }
     if ($status->{status}->{needinput}) {
