@@ -51,14 +51,15 @@ sub _group_result {
                 'me.clone_id'    => undef,
             },
             {join => qw/settings/, order_by => 'me.id DESC'});
-        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0, labeled => 0);
+        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0, labeled => 0, softfailed => 0);
 
         my $count = 0;
         my %seen;
         my %settings;
+        my @ids = map { $_->id } $jobs->all;
         my $keys = $self->db->resultset('JobSettings')->search(
             {
-                job_id => {-in => [map { $_->id } $jobs->all]},
+                job_id => {-in => \@ids},
                 key    => [qw/DISTRI VERSION ARCH FLAVOR MACHINE/]});
         while (my $line = $keys->next) {
             $settings{$line->job_id}->{$line->key} = $line->value;
@@ -67,12 +68,21 @@ sub _group_result {
         # so a build is considered as 'reviewed' if all failures have at least
         # a comment. This could be improved to distinguish between
         # "only-labels", "mixed" and such
-        my $c = $self->db->resultset("Comments")->search({job_id => {in => [map { $_->id } $jobs->all]}});
+        my $c = $self->db->resultset("Comments")->search({job_id => {in => \@ids}});
         my %labels;
         while (my $comment = $c->next) {
             $labels{$comment->job_id}++;
         }
         $jobs->reset;
+
+        my $dents = $self->db->resultset('JobModules')->search(
+            {
+                job_id       => {-in  => \@ids},
+                soft_failure => {'!=' => 0}});
+        my %soft_fails;
+        while (my $jm = $dents->next) {
+            $soft_fails{$jm->job_id}++;
+        }
 
         while (my $job = $jobs->next) {
             my $jhash = $settings{$job->id};
@@ -85,7 +95,12 @@ sub _group_result {
             $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
             if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
                 if ($job->result eq OpenQA::Schema::Result::Jobs::PASSED) {
-                    $jr{passed}++;
+                    if (!$soft_fails{$job->id}) {
+                        $jr{passed}++;
+                    }
+                    else {
+                        $jr{softfailed}++;
+                    }
                     next;
                 }
                 if (   $job->result eq OpenQA::Schema::Result::Jobs::FAILED
