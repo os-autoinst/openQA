@@ -144,7 +144,6 @@ span.resborder {
         background: #dfffff;
         font-size: small;
         padding: 1px;
-        border: 2px solid;
 }
 
 span.resborder_na {
@@ -403,13 +402,14 @@ div.flags {
 
 .fa.result_passed { color: $color-module-passed !important; }                /* dark Lemon */
 .fa.module_passed { color: $color-module-passed !important; }
-.fa.result_unknown { color:$color-warning ;}
-.fa.result_softfail { color: $color-softfail ;}
+.fa.result_unknown { color:$color-warning; }
+.fa.result_softfail { color: $color-softfail; }
 .fa.module_softfail { color: $color-softfail; }
+.fa.result_obsoleted { color: $color-module-none; }
 .fa.result_failed {color: $color-failed; }
 .fa.module_failed { color: $color-failed; }
 .fa.result_incomplete { color: $color-incomplete; }
-.fa.module_none { color: $color-module-none;}
+.fa.module_none { color: $color-module-none; }
 
 .fa.comment, .fa.bookmark, .fa.bug, .fa.certificate, .fa.tag { color: $color-labels; }
 .fa-bolt { color: $color-bolt; }
