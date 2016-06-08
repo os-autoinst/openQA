@@ -254,6 +254,8 @@ NeedleDiff.prototype.draw = function() {
 }
 
 NeedleDiff.prototype.mousedown = function(event) {
+  event._x *= (this.width/event.currentTarget.clientWidth)
+  event._y *= (this.height/event.currentTarget.clientHeight)
   var divide = event._x / this.width;
   // To prevent the cursor change in chrome/chromium
   event.preventDefault();
@@ -263,6 +265,8 @@ NeedleDiff.prototype.mousedown = function(event) {
 };
 
 NeedleDiff.prototype.mousemove = function(event) {
+  event._x *= (this.width/event.currentTarget.clientWidth)
+  event._y *= (this.height/event.currentTarget.clientHeight)
   var divide = event._x / this.width;
   var redraw = false;
 
