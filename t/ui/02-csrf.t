@@ -39,14 +39,8 @@ $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $get   = $t->ua->get('/session/new');
+my $get   = $t->ua->get('/');
 my $token = $get->res->dom->at('meta[name=csrf-token]')->attr('content');
-
-ok($token =~ /[0-9a-z]{40}/,                                                     "csrf token in meta tag");
-ok($get->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token', "csrf param in meta tag");
-#say "csrf token is $token";
-
-is($token, $get->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");
 
 # look for the cancel link without logging in
 $t->get_ok('/tests')->element_exists_not('#results #job_99928 .cancel a');
@@ -59,6 +53,14 @@ $t->post_ok('/api/v1/jobs/99928/prio?prio=34' => {'X-CSRF-Token' => $token} => f
 
 # Log in with an authorized user for the rest of the test
 $test_case->login($t, 'percival');
+
+$get = $t->ua->get('/api_keys');
+
+ok($token =~ /[0-9a-z]{40}/,                                                     "csrf token in meta tag");
+ok($get->res->dom->at('meta[name=csrf-param]')->attr('content') eq 'csrf_token', "csrf param in meta tag");
+#say "csrf token is $token";
+
+is($token, $get->res->dom->at('form input[name=csrf_token]')->{value}, "token is the same in form");
 
 # Test 99928 is scheduled, so can be canceled
 $t->get_ok('/tests')->element_exists('#scheduled #job_99928 a.cancel');
