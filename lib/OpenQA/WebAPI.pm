@@ -283,7 +283,6 @@ sub startup {
     my $logged_in = $r->under('/')->to("session#ensure_user");
     my $auth      = $r->under('/')->to("session#ensure_operator");
 
-    $r->get('/session/new')->to('session#new');
     $r->post('/session')->to('session#create');
     $r->delete('/session')->to('session#destroy');
     $r->get('/login')->name('login')->to('session#create');
