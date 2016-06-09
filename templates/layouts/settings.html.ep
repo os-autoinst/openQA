@@ -12,17 +12,5 @@
         </tr>
         % }
     </tbody>
-    </table>
+</table>
 
-    % if ($job->backend && $job->backend eq 'kvm2usb') {
-        <div class="box box-shadow" id="backend_info_box">
-            <div class="box-header aligncenter">Backend</div>
-            <table class="infotbl">
-                <tr>
-                    <td colspan="2" style="padding: 0 0 <%= ($job->backend eq
-                                                        'kvm2usb')?'8px':'0' %> 0;"><%= $job->backend %></td>
-                </tr>
-                %= include 'test/running_kvm2usb'
-            </table>
-        </div>
-    % }

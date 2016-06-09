@@ -4,7 +4,27 @@
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en-US" xml:lang="en-US">
   <head>
-      %= include 'layouts/head'
+% if ($title) {
+  <title><%= $appname.": ".title %></title>
+% } else
+% {
+  <title><%= $appname %></title>
+% }
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="csrf-token" content="<%= csrf_token %>" />
+<meta name="csrf-param" content="csrf_token" />
+%= include_branding 'head_stylesheet'
+%= asset 'running.css'
+%= asset 'running.js'
+
+%= content_for 'head'
+    
+%= javascript begin
+  %= content_for 'head_javascript'
+  $(document).ready(function() {
+     %= content_for 'ready_function'
+  } );
+% end
   </head>
   <body>
     <div id="header">

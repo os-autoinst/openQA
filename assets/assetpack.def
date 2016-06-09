@@ -12,13 +12,20 @@
 < http://harvesthq.github.io/chosen/chosen.css
 < stylesheets/result_preview.css
 
-# old bento 'default' layout
-! app.css
+! running.css
 < stylesheets/tables.css
 < http://fontawesome.io/assets/font-awesome/css/font-awesome.css
 < stylesheets/overview.scss
 < stylesheets/comments.css
 < stylesheets/openqa.scss
+
+! running.js
+< javascripts/running.js
+< http://code.jquery.com/jquery-1.12.4.js
+< javascripts/openqa.js
+< https://cdn.datatables.net/1.10.12/js/jquery.dataTables.js
+< http://timeago.yarp.com/jquery.timeago.js
+< javascripts/tests.js
 
 ! codemirror.css
 < https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/lib/codemirror.css
@@ -32,16 +39,6 @@
 < javascripts/needleeditor.js
 < javascripts/shapes.js
 < javascripts/keyevent.js
-
-! running.js
-< javascripts/running.js
-
-! app.js
-< http://code.jquery.com/jquery-1.12.4.js
-< javascripts/openqa.js
-< https://cdn.datatables.net/1.10.12/js/jquery.dataTables.js
-< http://timeago.yarp.com/jquery.timeago.js
-< javascripts/tests.js
 
 ! bootstrap.js
 < http://code.jquery.com/jquery-1.12.4.js
