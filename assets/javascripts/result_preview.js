@@ -16,7 +16,10 @@ function preview(a, force) {
             preview_offset = as_count;
         }
 
-        $('#preview_container_in').load(a.find('a').attr('href'), function() {
+        var href = a.find('a').attr('href');
+        $('#preview_container_in').load(href, function() {
+            var hotlink = location.href.split('#')[0].split('?')[0] + '?' + href.replace(/\/tests\/[0-9]+\/modules\//, '');
+            window.history.replaceState({}, 'preview', hotlink);
             $('#dummy_space').show();
             $('#preview_container_out').insertAfter(td.children('.links_a').eq(preview_offset));
             if ($('#preview_container_in').find('pre').length > 0 || $('#preview_container_in').find('audio').length > 0) {
@@ -37,6 +40,7 @@ function preview(a, force) {
         $('#dummy_space').hide();
         $('#preview_container_out').css('display', 'none');
         $('.current_preview').removeClass('current_preview');
+        window.history.replaceState({}, 'testresult', location.href.split('#')[0].split('?')[0]);
     }
 
 }

@@ -12,6 +12,10 @@
         preview($(this).parent());
         return false;
     });
+    var lhrs = location.href.split('?');
+    if (lhrs.length > 1 && lhrs[1].search('step') != -1) {
+        preview($("a[href$='"+lhrs[1]+"']").parent());
+    }
 % end
 
 % if (!@$modlist) {

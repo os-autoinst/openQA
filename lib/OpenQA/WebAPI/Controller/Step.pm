@@ -103,6 +103,13 @@ sub needle_url {
 # Call to viewimg or viewaudio
 sub view {
     my ($self) = @_;
+
+    # Redirect users with the old preview link
+    if (!$self->req->is_xhr) {
+        my $target_url = $self->url_for('test', 'testid' => $self->param('testid'))."?".$self->param('moduleid')."/steps/".$self->param('stepid');
+        return $self->redirect_to($target_url);
+    }
+
     return 0 unless $self->init();
 
     if ('audio' eq $self->stash('tabmode')) {
