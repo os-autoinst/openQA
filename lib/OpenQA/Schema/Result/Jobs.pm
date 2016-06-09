@@ -176,7 +176,8 @@ sub name {
             push @a, sprintf(($formats{$c} || '%s'), $job_settings->{$c});
         }
         my $name = join('-', @a);
-        $name =~ s/[^a-zA-Z0-9._+:-]/_/g;
+        $name .= ('@' . $job_settings->{MACHINE}) if $job_settings->{MACHINE};
+        $name =~ s/[^a-zA-Z0-9@._+:-]/_/g;
         $self->{_name} = $name;
     }
     return $self->{_name};

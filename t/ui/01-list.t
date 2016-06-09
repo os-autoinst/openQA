@@ -100,7 +100,7 @@ is($driver->get($baseurl . "tests"), 1, "/tests gets");
 isnt($driver->find_element('#scheduled #job_99928', 'css'), undef, '99928 scheduled');
 is($driver->find_element('#scheduled #job_99928 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99928", 'right link');
 $driver->find_element('#scheduled #job_99928 td.test a', 'css')->click();
-is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-RAID1 test results', 'tests/99928 followed');
+is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-RAID1@32bit test results', 'tests/99928 followed');
 
 # return
 is($driver->get($baseurl . "tests"), 1, "/tests gets");
@@ -111,7 +111,7 @@ my $job99938 = $driver->find_element('#results #job_99946', 'css');
 is($driver->find_element('#results #job_99938 .test .status.result_failed', 'css')->get_text(), '', '99938 failed');
 is($driver->find_element('#results #job_99938 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99938", 'right link');
 $driver->find_element('#results #job_99938 td.test a', 'css')->click();
-is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test results', 'tests/99938 followed');
+is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results', 'tests/99938 followed');
 
 # return
 is($driver->get($baseurl . "tests"), 1, "/tests gets");
