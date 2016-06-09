@@ -1,9 +1,5 @@
-% layout 'default';
+% layout 'running';
 % title $testname;
-
-% content_for 'head' => begin
-  %= asset 'running.js'
-% end
 
 % content_for 'ready_function' => begin
    initStatus("<%= $testid %>");
