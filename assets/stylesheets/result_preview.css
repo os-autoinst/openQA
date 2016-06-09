@@ -37,11 +37,6 @@
     left: 26px;
 }
 
-.links_a {
-    margin-top: 2px;
-    margin-bottom: 2px;
-}
-
 .current_preview > .fa-caret-down {
     display: inline-block;
 }
