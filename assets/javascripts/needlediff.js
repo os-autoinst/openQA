@@ -13,7 +13,6 @@ function NeedleDiff(id, width, height) {
   this.needleImg = null;
   this.areas = [];
   this.matches = [];
-  this.showSimilarity = [];
 
   // Event handlers
   canvas.on('mousemove', handler);
@@ -75,59 +74,6 @@ function NeedleDiff(id, width, height) {
     }
   });
 
-}
-
-NeedleDiff.prototype.setScreenshot = function(screenshotSrc) {
-  var image = new Image();
-  image.src = screenshotSrc;
-  image.addEventListener('load', function(ev) {
-    this.screenshotImg = image;
-
-    // create gray version of it in off screen canvas
-    var gray_canvas = document.createElement('canvas');
-    gray_canvas.width = image.width;
-    gray_canvas.height = image.height;
-    
-    var gray_context = gray_canvas.getContext('2d');
-    
-    gray_context.drawImage(image, 0, 0);
-    var imageData = gray_context.getImageData(0, 0, image.width, image.height);
-    var data = imageData.data;
-
-    for(var i = 0; i < data.length; i += 4) {
-      var brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
-      brightness *= 0.6;
-      // red
-      data[i] = brightness;
-      // green
-      data[i + 1] = brightness;
-      // blue
-      data[i + 2] = brightness;
-    }
-
-    // overwrite original image
-    gray_context.putImageData(imageData, 0, 0);
-    this.gray_canvas = gray_canvas;
-
-    this.draw();
-  }.bind(this));
-}
-
-NeedleDiff.prototype.setNeedle = function(src, areas, matches) {
-  this.areas = areas;
-  this.matches = matches;
-  this.showSimilarity = new Array(matches.length);
-  if (src) {
-    var image = new Image();
-    image.src = src;
-    image.addEventListener('load', function(ev) {
-      this.needleImg = image;
-      this.draw();
-    }.bind(this));
-  } else {
-    this.needleImg = null;
-    this.draw();
-  }
 }
 
 NeedleDiff.prototype.draw = function() {
@@ -254,8 +200,8 @@ NeedleDiff.prototype.draw = function() {
 }
 
 NeedleDiff.prototype.mousedown = function(event) {
-  event._x *= (this.width/event.currentTarget.clientWidth)
-  event._y *= (this.height/event.currentTarget.clientHeight)
+  event._x *= (this.width/event.currentTarget.clientWidth);
+  event._y *= (this.height/event.currentTarget.clientHeight);
   var divide = event._x / this.width;
   // To prevent the cursor change in chrome/chromium
   event.preventDefault();
@@ -265,22 +211,10 @@ NeedleDiff.prototype.mousedown = function(event) {
 };
 
 NeedleDiff.prototype.mousemove = function(event) {
-  event._x *= (this.width/event.currentTarget.clientWidth)
-  event._y *= (this.height/event.currentTarget.clientHeight)
+  event._x *= (this.width/event.currentTarget.clientWidth);
+  event._y *= (this.height/event.currentTarget.clientHeight);
   var divide = event._x / this.width;
   var redraw = false;
-
-  // Show match percentage if the cursor is over the match
-  this.matches.forEach(function(a, idx) {
-    if (event._x > a['xpos'] && event._x < a['xpos'] + a['width'] &&
-        event._y > a['ypos'] && event._y < a['ypos'] + a['height']) {
-      if (!this.showSimilarity[idx]) redraw = true;
-      this.showSimilarity[idx] = true;
-    } else {
-      if (this.showSimilarity[idx]) redraw = true;
-      this.showSimilarity[idx] = false;
-    }
-  }.bind(this));
 
   // Drag
   if (this.dragstart === true) {
@@ -313,3 +247,58 @@ NeedleDiff.shapecolor = function(type) {
   }
   return "pink";
 };
+
+function setDiffScreenshot(differ, screenshotSrc) {
+  $('<img src="' + screenshotSrc + '">').load(function() {
+    var image = $(this).get(0);
+    differ.screenshotImg = image;
+
+    // create gray version of it in off screen canvas
+    var gray_canvas = document.createElement('canvas');
+    gray_canvas.width = image.width;
+    gray_canvas.height = image.height;
+    
+    var gray_context = gray_canvas.getContext('2d');
+    
+    gray_context.drawImage(image, 0, 0);
+    var imageData = gray_context.getImageData(0, 0, image.width, image.height);
+    var data = imageData.data;
+
+    for(var i = 0; i < data.length; i += 4) {
+      var brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+      brightness *= 0.6;
+      // red
+      data[i] = brightness;
+      // green
+      data[i + 1] = brightness;
+      // blue
+      data[i + 2] = brightness;
+    }
+
+    // overwrite original image
+    gray_context.putImageData(imageData, 0, 0);
+    differ.gray_canvas = gray_canvas;
+
+    differ.draw();
+  });
+}
+
+function setNeedle() {
+  var sel = $('#needlediff_selector').find('option:selected');
+
+  window.differ.areas = sel.data('areas');
+  window.differ.matches = sel.data('matches');
+  
+  var src = sel.data('image');
+
+  if (src) {
+    $('<img src="' + src + '">').load(function() {
+      var image = $(this).get(0);
+      window.differ.needleImg = image;
+      window.differ.draw();
+    });
+  } else {
+    window.differ.needleImg = null;
+    window.differ.draw();
+  }
+}
