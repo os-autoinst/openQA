@@ -24,6 +24,8 @@ use Net::DBus::Binding::Watch;
 
 use Mojo::IOLoop;
 use Data::Dump qw/pp/;
+use Try::Tiny;
+use Carp;
 
 use Scalar::Util qw/weaken/;
 
@@ -197,7 +199,14 @@ sub _get_fh_from_fd {
 
 sub _dispatch {
     my ($self, $target, $command, @data) = @_;
-    my $service = $self->{bus}->get_service(join('.', $openqa_prefix, $services{$target}));
+    my $service_name = join('.', $openqa_prefix, $services{$target});
+    my $service;
+    try {
+        $service = $self->{bus}->get_service($service_name);
+    }
+    catch {
+        confess "error getting ipc service: $_";
+    };
     my $object = $service->get_object('/' . $services{$target}, join('.', $openqa_prefix, $services{$target}));
     return $object->$command(@data);
 }

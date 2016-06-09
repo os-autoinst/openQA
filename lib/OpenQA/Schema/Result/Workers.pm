@@ -51,6 +51,11 @@ __PACKAGE__->has_many(properties => 'OpenQA::Schema::Result::WorkerProperties', 
 # TODO
 # INSERT INTO workers (id, t_created) VALUES(0, datetime('now'));
 
+sub name {
+    my ($self) = @_;
+    return $self->host . ":" . $self->instance;
+}
+
 sub seen(;$) {
     my ($self, $workercaps) = @_;
     $self->update({t_updated => now()});
@@ -137,7 +142,7 @@ sub info {
         id       => $self->id,
         host     => $self->host,
         instance => $self->instance,
-        status   => $self->status
+        status   => $self->status,
     };
     $settings->{properties} = {};
     for my $p ($self->properties->all) {

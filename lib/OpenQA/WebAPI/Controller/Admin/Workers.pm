@@ -18,11 +18,24 @@ package OpenQA::WebAPI::Controller::Admin::Workers;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 
+sub _extend_info {
+    my ($w) = @_;
+    my $info = $w->info;
+    $info->{name}      = $w->name;
+    $info->{t_updated} = $w->t_updated;
+    return $info;
+}
+
 sub index {
     my ($self) = @_;
 
     my $workers = $self->db->resultset('Workers');
-    $self->stash(workers => $workers);
+    my %workers;
+    while (my $w = $workers->next) {
+        next unless $w->id;
+        $workers{$w->name} = _extend_info($w);
+    }
+    $self->stash(workers => \%workers);
 
     $self->render('admin/workers/index');
 }
@@ -30,8 +43,8 @@ sub index {
 sub show {
     my ($self) = @_;
 
-    my $worker = $self->db->resultset('Workers')->find($self->param('worker_id'));
-    $self->stash(worker => $worker);
+    my $w = $self->db->resultset('Workers')->find($self->param('worker_id'));
+    $self->stash(worker => _extend_info($w));
 
     $self->render('admin/workers/show');
 }
