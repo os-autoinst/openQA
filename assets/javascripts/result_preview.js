@@ -16,7 +16,10 @@ function setCurrentPreview(a, force) {
             preview_offset = as_count;
         }
 
-        $('#preview_container_in').load(a.find('a').attr('href'), function() {
+        var href = a.find('a').attr('href');
+        $('#preview_container_in').load(href, function() {
+            var hotlink = location.href.split('#')[0].split('?')[0] + '?' + href.replace(/\/tests\/[0-9]+\/modules\//, '');
+            window.history.replaceState({}, 'preview', hotlink);
             $('#dummy_space').show();
             $('#preview_container_out').insertAfter(td.children('.links_a').eq(preview_offset));
             if ($('#preview_container_in').find('pre').length > 0 || $('#preview_container_in').find('audio').length > 0) {
@@ -41,6 +44,7 @@ function setCurrentPreview(a, force) {
       $('#dummy_space').hide(300);
       $('#preview_container_out').hide();
       $('.current_preview').removeClass('current_preview');
+      window.history.replaceState({}, 'testresult', location.href.split('#')[0].split('?')[0]);
     }
 
 }
@@ -103,6 +107,10 @@ function setupPreview() {
     setCurrentPreview($(this).parent());
     return false;
   });
+  var lhrs = location.href.split('?');
+  if (lhrs.length > 1 && lhrs[1].search('step') != -1) {
+     setCurrentPreview($("a[href$='"+lhrs[1]+"']").parent());
+  }
 
   $(document).on('change', '#needlediff_selector', setNeedle);
 
