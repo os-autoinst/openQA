@@ -785,7 +785,8 @@ sub job_cancel($;$) {
     my %attrs;
     my %cond;
     _job_find_smart($value, \%cond, \%attrs);
-    $cond{state} = OpenQA::Schema::Result::Jobs::SCHEDULED;
+    $cond{state}    = OpenQA::Schema::Result::Jobs::SCHEDULED;
+    $attrs{columns} = [qw/id/];
     my $scheduled_jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
     my $jobs_to_cancel;
     my $new_result;
@@ -793,8 +794,21 @@ sub job_cancel($;$) {
         $new_result = OpenQA::Schema::Result::Jobs::OBSOLETED;
         # 'monkey patch' cond to be useable in chained search
         $cond{'me.id'} = delete $cond{id};
-        # filter out all that have any comment (they are considered 'important')
+        # filter out all jobs that have any comment (they are considered 'important') ...
         $jobs_to_cancel = $scheduled_jobs->search({'comments.job_id' => undef}, {join => 'comments'});
+        # ... or belong to a tagged build, i.e. is considered important
+        # this might be even the tag 'not important' but not much is lost if
+        # we still not cancel these builds
+        my $groups_query = $scheduled_jobs->get_column('group_id')->as_query;
+        my @important_builds = grep defined, map { ($_->tag)[0] } schema->resultset("Comments")->search($groups_query);
+        my @unimportant_jobs;
+        while (my $j = $jobs_to_cancel->next) {
+            next if grep ($j->settings_hash->{BUILD} eq $_, @important_builds);
+            push @unimportant_jobs, $j->id;
+        }
+        # if there are only important jobs there is nothing left for us to do
+        return 0 unless @unimportant_jobs;
+        $jobs_to_cancel = $jobs_to_cancel->search({'me.id' => {-in => \@unimportant_jobs}});
     }
     else {
         $new_result     = OpenQA::Schema::Result::Jobs::USER_CANCELLED;
@@ -807,8 +821,7 @@ sub job_cancel($;$) {
             result => $new_result,
         });
 
-    $attrs{columns} = [qw/id/];
-    $cond{state}    = [OpenQA::Schema::Result::Jobs::EXECUTION_STATES];
+    $cond{state} = [OpenQA::Schema::Result::Jobs::EXECUTION_STATES];
     # then tell workers to cancel their jobs
     $jobs_to_cancel->search(
         {
