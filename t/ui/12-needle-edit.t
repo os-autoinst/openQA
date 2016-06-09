@@ -82,10 +82,13 @@ sub goto_editpage() {
     $driver->get($baseurl . "tests/99946");
     is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
 
-    $driver->find_element('installer_timezone', 'link_text')->click();
-    is($driver->get_current_url(), $baseurl . "tests/99946/modules/installer_timezone/steps/1/src", "on src page for nstaller_timezone test");
+    # init the preview
+    t::ui::PhantomTest::wait_for_ajax;
 
-    $driver->find_element('Screenshot', 'link_text')->click();
+    $driver->find_element('//a[@href="/tests/99946/modules/installer_timezone/steps/1"]')->click();
+
+    # init the diff
+    t::ui::PhantomTest::wait_for_ajax;
 
     $driver->find_element('Create new needle', 'link_text')->click();
 }
@@ -196,9 +199,6 @@ sub overwrite_needle($) {
     is($driver->find_element('#needleeditor_name', 'css')->get_value(), "$needlename", "new needle name inputed");
     $driver->find_element('#save', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
-
-    #t::ui::PhantomTest::make_screenshot('mojoResults.png');
-    #print $driver->get_page_source();
 
     my $diag = $driver->find_element('#modal-overwrite', 'css');
     is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "We can see the overwrite dialog");

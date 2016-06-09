@@ -251,7 +251,6 @@ sub startup {
 
     # read assets/assetpack.def
     $self->asset->process;
-    #$self->asset->store;
 
     # set secure flag on cookies of https connections
     $self->hook(
