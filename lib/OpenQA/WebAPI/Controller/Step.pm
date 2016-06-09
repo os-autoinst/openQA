@@ -612,8 +612,6 @@ sub viewimg {
 
     $self->stash('screenshot', $module_detail->{screenshot});
     $self->stash('needles',    \@needles);
-    $self->stash('img_width',  1024);
-    $self->stash('img_height', 768);
     return $self->render('step/viewimg');
 }
 

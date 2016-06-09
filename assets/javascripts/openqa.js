@@ -22,16 +22,6 @@ function updateModuleslist(modlist, jobid, testmodule) {
     $("#modlist_content").replaceWith(container);
 }
 
-function scrollModuleThumbnails() {
-    var area = $("#module-thumbnails");
-    var current = $('#module-thumbnails .current');
-
-    if (!current || !area.offset())
-	return;
-    var offset = current.offset().left - area.offset().left;
-    area.scrollLeft(40 + offset - area.width()/2);
-}
-
 function setCookie(cname, cvalue, exdays) {
     var d = new Date();
     d.setTime(d.getTime()+(exdays*24*60*60*1000));

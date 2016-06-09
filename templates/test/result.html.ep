@@ -8,10 +8,7 @@
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     setupResultButtons();
-    $('.links_a > a').on('click', function() {
-        preview($(this).parent());
-        return false;
-    });
+    setupPreview();
 % end
 
 % if (!@$modlist) {

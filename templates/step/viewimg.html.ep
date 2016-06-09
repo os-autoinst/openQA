@@ -1,4 +1,4 @@
-<div class="aligncenter">
+<div class="aligncenter" data-image="<%= url_for('test_img', filename => $screenshot) %>" id="step_view">
     Candidate needle:
     <select id="needlediff_selector">
         <option data-areas="[]" data-matches="[]">-None-</option>
@@ -22,22 +22,3 @@
 <div style="margin: 5px;">
     <div id="needle_diff"></div>
 </div>
-
-
-<script type="text/javascript">
-
-    var diff;
-
-    function setNeedle() {
-        var sel = $('#needlediff_selector').find('option:selected');
-        diff.setNeedle(sel.data('image'), sel.data('areas'), sel.data('matches'));
-    }
-
-    diff = new NeedleDiff('needle_diff', <%= $img_width %>, <%= $img_height %>);
-    diff.setScreenshot('<%= url_for('test_img', filename => $screenshot) %>');
-    setNeedle(); // Just in case is a page reload
-
-    $('#needlediff_selector').change(setNeedle);
-    scrollModuleThumbnails();
-    setupResultButtons();
-</script>
