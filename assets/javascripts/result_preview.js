@@ -29,12 +29,12 @@ function preview(a, force) {
                 $('#preview_container_in').removeClass('nobg');
             }
             $('#preview_container_out').css('display', 'block').css('height', $('#preview_container_in').height());
-            $('body, html').stop(true, true).animate({scrollTop: a.offset().top-3, queue: false}, 0);
+            $('body, html').stop(true, true).animate({scrollTop: a.offset().top-3, queue: false}, 250);
         });
     }
     else {
         // hide
-        $('#dummy_space').hide();
+        $('#dummy_space').hide(300);
         $('#preview_container_out').css('display', 'none');
         $('.current_preview').removeClass('current_preview');
     }
