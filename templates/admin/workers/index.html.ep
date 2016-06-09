@@ -23,32 +23,26 @@
                 </tr>
             </thead>
             <tbody>
-                % my %workers; # for sorting
-                % while (my $w = $workers->next) {
-                    % next unless $w->id;
-                    % my $workername = $w->host . ":" . $w->instance;
-                    % $workers{$workername} = $w;
-                % }
-                % for my $workername (sort keys %workers) {
-                    %   my $worker = $workers{$workername};
-                    <tr id="worker_<%= $worker->id %>" >
+                % for my $workername (sort keys $workers) {
+                    %   my $worker = $workers->{$workername};
+                    <tr id="worker_<%= $worker->{id} %>" >
                         <td class="worker">
-                            %= link_to( $workername => url_for('admin_worker_show', worker_id => $worker->id) )
+                            %= link_to( $workername => url_for('admin_worker_show', worker_id => $worker->{id}) )
                         </td>
                         <td class="status">
-                            % stash('worker', $worker);
+                            % stash(workername => $workername, worker => $worker);
                             %= include 'admin/workers/worker_status'
                         </td>
                         <td class="ws_connected">
-                            % if($worker->connected) {
+                            % if($worker->{connected}) {
                                 online
                             % } else {
                                 offline
                             % }
                         </td>
                         <td class="currentstep">
-                            % if(defined($worker->currentstep) && $worker->status eq 'running') {
-                                %= $worker->currentstep
+                            % if(defined($worker->{currentstep}) && $worker->{status} eq 'running') {
+                                %= $worker->{currentstep}
                             % }
                         </td>
                     </tr>
