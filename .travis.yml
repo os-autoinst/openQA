@@ -1,6 +1,8 @@
 language: perl
 perl:
   - "5.18"
+rvm:
+  - 2.3
 before_install:
   - echo "deb http://us.archive.ubuntu.com/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/trusty.list
   - sudo apt-get update

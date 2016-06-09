@@ -344,15 +344,17 @@ CanvasState.prototype.draw = function() {
     
     // draw selection
     // right now this is just a stroke along the edge of the selected Shape
-      if (this.selection != null) {
-	  var lineWidth = 1;
-	  ctx.strokeStyle = 'white';
-	  ctx.lineWidth = lineWidth;
-	  ctx.setLineDash([10, 15]);
-	  var mySel = this.selection;
-	  ctx.strokeRect(mySel.x - lineWidth, mySel.y - lineWidth,
-			 mySel.w + lineWidth * 2, mySel.h + lineWidth * 2);
-      }
+    if (this.selection != null) {
+      var lineWidth = 1;
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = lineWidth;
+      // plainly ignore in phantomjs
+      if (typeof ctx.setLineDash === "function")
+	ctx.setLineDash([10, 15]);
+      var mySel = this.selection;
+      ctx.strokeRect(mySel.x - lineWidth, mySel.y - lineWidth,
+		     mySel.w + lineWidth * 2, mySel.h + lineWidth * 2);
+    }
     
     // ** Add stuff you want drawn on top all the time here **
     
