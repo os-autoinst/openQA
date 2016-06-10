@@ -262,9 +262,7 @@ sub _step_thumbnail {
         alt     => $screenshot->{name},
         class   => "resborder resborder_$result"
     );
-    my $href = "#step/$module/$step_num";
-    my $url = $c->url_for('step', moduleid => $module, stepid => $step_num);
-    $c->tag('a', (href => $href) => (class => 'no_hover') => (data => {url => $url}), sub { $content });
+    return $content;
 }
 
 1;
