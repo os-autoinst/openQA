@@ -8,7 +8,6 @@
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     setupResultButtons();
-    setupPreview();
 % end
 
 % if (!@$modlist) {
@@ -19,20 +18,12 @@
 
 %# order after reverting to '#settings' not to overwrite tab selection
 % content_for 'ready_function' => begin
-    %# Enable links into tabs and show same tab again on page reload
-    %# ref: https://github.com/twbs/bootstrap/issues/2415
-    %# Does not yet redirect to same tab on login.
-    var hash = window.location.hash || '#details';
-    var link = $('[href="' + hash + '"]');
-    link && link.tab('show');
+    setupPreview();
 % end
 
 <div class="row">
     <div>
         %= include 'layouts/info'
-        % if (my $msg = flash 'code') {
-            <blockquote class="ui-state-highlight"><%== $msg %></blockquote>
-        % }
     </div>
 </div>
 
@@ -88,11 +79,11 @@
                 <div>
                     % if ($clone_of) {
                         Clone of
-                        %= link_to $clone_of->id => url_for ('test', 'testid' => $clone_of->id)
+                        %= link_to $clone_of->id => url_for ('test', testid => $clone_of->id)
                     % }
                     % if ($job->clone_id) {
                         Cloned as
-                        %= link_to $job->clone_id => url_for ('test', 'testid' => $job->clone_id)
+                        %= link_to $job->clone_id => url_for ('test', testid => $job->clone_id)
                     % }
                 </div>
 
@@ -170,8 +161,8 @@
                                             % for my $step (@{$module->{details}}) {
                                                 <div class="links_a">
                                                     <div class="fa fa-caret-down"></div>
-                                                    % if($step->{screenshot}) {
-                                                            %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
+                                                    % if ($step->{screenshot}) {
+                                                        %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
                                                     % } elsif ($step->{audio}) {
                                                         %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{name} => begin
                                                             <img src="/images/audio.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>

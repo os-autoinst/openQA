@@ -74,9 +74,6 @@
 
 <div class="grid_12 live-content omega">
     %= include 'layouts/info'
-    % if (my $msg = flash 'code') {
-        <blockquote class="ui-state-highlight" style="margin-bottom: 0.6em;"><%== $msg %></blockquote>
-    % }
     <div class="box box-shadow">
         <!--<h2>Live view of <i><%= $testname %></i></h2>-->
         <div class="box-header aligncenter">Live view of <i><%= $testname %></i></div>

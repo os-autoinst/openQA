@@ -85,7 +85,7 @@ sub goto_editpage() {
     # init the preview
     t::ui::PhantomTest::wait_for_ajax;
 
-    $driver->find_element('//a[@href="/tests/99946/modules/installer_timezone/steps/1"]')->click();
+    $driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
 
     # init the diff
     t::ui::PhantomTest::wait_for_ajax;

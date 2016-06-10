@@ -47,20 +47,8 @@ sub init {
     my $tabmode = 'screenshot';    # Default
     if ($testindex > @$details) {
         # This means that the module have no details at all
-        if ($testindex == 1) {
-            if ($self->stash('action') eq 'src') {
-                $tabmode = 'onlysrc';
-            }
-            else {
-                $self->redirect_to('src_step');
-                return 0;
-            }
-            # In this case there are details, we simply run out of range
-        }
-        else {
-            $self->reply->not_found;
-            return 0;
-        }
+        $self->reply->not_found;
+        return 0;
     }
     else {
         my $module_detail = $details->[$testindex - 1];
@@ -103,6 +91,14 @@ sub needle_url {
 # Call to viewimg or viewaudio
 sub view {
     my ($self) = @_;
+
+    # Redirect users with the old preview link
+    if (!$self->req->is_xhr) {
+        my $anchor = "#step/" . $self->param('moduleid') . "/" . $self->param('stepid');
+        my $target_url = $self->url_for('test', testid => $self->param('testid'));
+        return $self->redirect_to($target_url . $anchor);
+    }
+
     return 0 unless $self->init();
 
     if ('audio' eq $self->stash('tabmode')) {
