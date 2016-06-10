@@ -1,8 +1,7 @@
 function previewSuccess(data) {
   $('#preview_container_in').html(data);
-  var hotlink = location.hash.replace(/\/tests\/[0-9]+\/modules\//, '');
-  window.history.replaceState({}, 'preview', hotlink);
-  $('#dummy_space').show();
+  /* var hotlink = location.hash.replace(/\/tests\/[0-9]+\/modules\//, '');
+  window.history.replaceState({}, 'preview', hotlink); */
   var a = $('.current_preview');
   var td = a.parent();
 
@@ -51,7 +50,6 @@ function setCurrentPreview(a, force) {
   else {
     window.location.hash = '';
     // hide
-    $('#dummy_space').hide(300);
     $('#preview_container_out').hide();
     $('.current_preview').removeClass('current_preview');
   }

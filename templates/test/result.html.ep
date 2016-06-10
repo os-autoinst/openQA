@@ -161,21 +161,23 @@
                                             % for my $step (@{$module->{details}}) {
                                                 <div class="links_a">
                                                     <div class="fa fa-caret-down"></div>
-                                                    % if ($step->{screenshot}) {
-                                                        %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
-                                                    % } elsif ($step->{audio}) {
-                                                        %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{name} => begin
+                                                    % my $url   = url_for('step', moduleid => $module->{name}, stepid => $step->{num});
+                                                    % my $href  = "#step/$module->{name}/$step->{num}";
+                                                    % my $title = $step->{text} ? $step->{title} : $step->{name};
+                                                    %= link_to $href => (class => 'no_hover') => (data => { url => $url }) => (title => $title) => begin
+                                                        % if ($step->{screenshot}) {
+                                                            %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
+                                                        % } elsif ($step->{audio}) {
                                                             <img src="/images/audio.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
-                                                        % end
-                                                    % } elsif ($step->{text}) {
-                                                        %= link_to url_for('step', moduleid => $module->{name}, stepid => $step->{num}) => class => 'no_hover' => title => $step->{title} => begin
+                                                        % } elsif ($step->{text}) {
                                                             % if($step->{title} eq "wait_serial") {
                                                                 <img src="/images/terminal.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
                                                             % } else {
                                                                 <span class="resborder <%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
                                                             % }
-                                                        % end
-                                                    % }
+                                                        % }
+                                                    % end
+
                                                 </div>
                                             % }
                                         </td>
@@ -271,4 +273,3 @@
     <div id="preview_container_in">
     </div>
 </div>
-<div id="dummy_space"></div>
