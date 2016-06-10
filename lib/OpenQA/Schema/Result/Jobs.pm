@@ -858,7 +858,12 @@ sub create_artefact {
     OpenQA::Utils::log_debug("moved to $storepath " . $asset->filename);
 
     # mark the worker as alive
-    $self->worker->seen;
+    if ($self->worker) {
+        $self->worker->seen;
+    }
+    else {
+        OpenQA::Utils::log_warn(printf("%d got an artefact but has no worker. huh?", $self->id));
+    }
 
     1;
 }
@@ -887,7 +892,12 @@ sub create_asset {
     $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
 
     # mark the worker as alive
-    $self->worker->seen;
+    if ($self->worker) {
+        $self->worker->seen;
+    }
+    else {
+        OpenQA::Utils::log_warn(printf("%d got an asset but has no worker. huh?", $self->id));
+    }
 
     1;
 }
@@ -948,6 +958,11 @@ sub update_status {
 
     if ($self->worker) {
         $self->worker->set_property("INTERACTIVE", $status->{status}->{interactive} // 0);
+        # mark the worker as alive
+        $self->worker->seen;
+    }
+    else {
+        OpenQA::Utils::log_warn(printf("%d got a status update but has no worker. huh?", $self->id));
     }
     if ($status->{status}->{needinput}) {
         if ($self->state eq RUNNING) {
@@ -960,8 +975,6 @@ sub update_status {
         }
     }
     $self->update();
-    # mark the worker as alive
-    $self->worker->seen;
 
     # result=1 for the call, job_result for the current state
     $ret->{job_result} = $self->calculate_result();
