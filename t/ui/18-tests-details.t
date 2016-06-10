@@ -51,6 +51,15 @@ is($driver->get_current_url(), $baseurl . "tests/99946/modules/installer_timezon
 
 is($driver->find_element('.cm-comment', 'css')->get_text(), '#!/usr/bin/perl -w', "we have a perl comment");
 
+$driver->get($baseurl . "tests/99937");
+$driver->find_element('[title="wait_serial"]', 'css')->click();
+t::ui::PhantomTest::wait_for_ajax;
+ok($driver->find_element('#preview_container_out', 'css')->is_displayed(), "preview window opens on click");
+like($driver->find_element('#preview_container_in', 'css')->get_text(), qr/wait_serial expected/, "Preview text with wait_serial output shown");
+$driver->find_element('[title="wait_serial"]', 'css')->click();
+t::ui::PhantomTest::wait_for_ajax;
+ok($driver->find_element('#preview_container_out', 'css')->is_hidden(), "preview window closed after clicking again");
+
 #print $driver->get_page_source();
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 

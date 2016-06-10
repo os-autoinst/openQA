@@ -1,0 +1,5 @@
+# wait_serial expected: 'dBeHb-\\d+-'
+
+# Result:
+dBeHb-0-
+

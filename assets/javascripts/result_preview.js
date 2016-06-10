@@ -1,8 +1,5 @@
 function previewSuccess(data) {
   $('#preview_container_in').html(data);
-  var hotlink = location.hash.replace(/\/tests\/[0-9]+\/modules\//, '');
-  window.history.replaceState({}, 'preview', hotlink);
-  $('#dummy_space').show();
   var a = $('.current_preview');
   var td = a.parent();
 
@@ -32,7 +29,9 @@ function previewSuccess(data) {
     setNeedle();
   }
   $('#preview_container_out').css('display', 'block').css('height', $('#preview_container_in').height());
-  $('body, html').stop(true, true).animate({scrollTop: a.offset().top-3, queue: false}, 250);
+  /* disable scrolling for now - it's too confusing
+   $('body, html').stop(true, true).animate({scrollTop: a.offset().top-3, queue: false}, 250);
+   */
 }
 
 function setCurrentPreview(a, force) {
@@ -49,9 +48,7 @@ function setCurrentPreview(a, force) {
     $.get({ url: link.data('url'), success: previewSuccess}).fail(function() { setCurrentPreview(); alert("foo"); });
   }
   else {
-    window.location.hash = '';
     // hide
-    $('#dummy_space').hide(300);
     $('#preview_container_out').hide();
     $('.current_preview').removeClass('current_preview');
   }
@@ -116,11 +113,14 @@ function setupPreview() {
       return;
     }
     if (e.which == 37) { // left
-      prev();
+      prevPreview();
       e.preventDefault();
     }
     else if (e.which == 39) { // right
-      next();
+      nextPreview();
+      e.preventDefault();
+    } else if (e.which == 27) { // esc
+      setCurrentPreview();
       e.preventDefault();
     }
   });
