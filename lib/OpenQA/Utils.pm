@@ -90,6 +90,8 @@ sub needledir {
     return productdir($distri, $version) . '/needles';
 }
 
+sub log_warning;
+
 sub needle_info {
     my $name    = shift;
     my $distri  = shift;
@@ -108,7 +110,7 @@ sub needle_info {
 
     my $JF;
     unless (open($JF, '<', $fn)) {
-        warn "$fn: $!";
+        log_warning("$fn: $!");
         return;
     }
 
@@ -117,7 +119,7 @@ sub needle_info {
         $needle = decode_json(<$JF>);
     }
     catch {
-        warn "failed to parse $fn: $_";
+        log_warning("failed to parse $fn: $_");
         # technically not required, $needle should remain undefined. Being superstitious human I add:
         undef $needle;
     }
