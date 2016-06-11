@@ -173,8 +173,6 @@ sub change_needle_value($$) {
 
     # test match level
     $driver->find_element('#change-match', 'css')->click();
-    # wait for the fade
-    sleep 1;
     t::ui::PhantomTest::wait_for_ajax;
 
     my $dialog = $driver->find_element('#change-match-form', 'css');

@@ -62,6 +62,7 @@
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/transition.js
 < http://harvesthq.github.io/chosen/chosen.jquery.js
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
+< javascripts/disable_animations.js [mode==test]
 
 ! result_preview.js
 < javascripts/result_preview.js
