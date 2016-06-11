@@ -38,7 +38,6 @@
 ! step_edit.js
 < javascripts/needleeditor.js
 < javascripts/shapes.js
-< javascripts/keyevent.js
 
 ! bootstrap.js
 < http://code.jquery.com/jquery-1.12.4.js
@@ -55,6 +54,7 @@
 < javascripts/job_templates.js
 < javascripts/overview.js
 < javascripts/comments.js
+< javascripts/keyevent.js
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/collapse.js
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/tooltip.js
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/tab.js

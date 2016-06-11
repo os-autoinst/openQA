@@ -29,6 +29,7 @@ function previewSuccess(data) {
     setNeedle();
   }
   $('#preview_container_out').css('display', 'block').css('height', $('#preview_container_in').height());
+  $('#preview_container_out').css('width', $('.current_preview').parents('td').width()).hide().fadeIn(150);
   /* disable scrolling for now - it's too confusing
    $('body, html').stop(true, true).animate({scrollTop: a.offset().top-3, queue: false}, 250);
    */
@@ -49,7 +50,7 @@ function setCurrentPreview(a, force) {
   }
   else {
     // hide
-    $('#preview_container_out').hide();
+    $('#preview_container_out').fadeOut(150);
     $('.current_preview').removeClass('current_preview');
   }
 }
@@ -112,14 +113,14 @@ function setupPreview() {
     if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) {
       return;
     }
-    if (e.which == 37) { // left
+    if (e.which == KeyEvent.DOM_VK_LEFT) {
       prevPreview();
       e.preventDefault();
     }
-    else if (e.which == 39) { // right
+    else if (e.which == KeyEvent.DOM_VK_RIGHT) {
       nextPreview();
       e.preventDefault();
-    } else if (e.which == 27) { // esc
+    } else if (e.which == KeyEvent.DOM_VK_ESCAPE) {
       setCurrentPreview();
       e.preventDefault();
     }

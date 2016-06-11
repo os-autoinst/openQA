@@ -1,6 +1,7 @@
 #preview_container_out {
     height: 768px;
-    position: relative;
+    position: absolute;
+    z-index: 4;
     display: none;
     margin-top: 10px;
     margin-bottom: 7px;
@@ -10,15 +11,15 @@
     position: absolute;
     right: 0;
     text-align: center;
-    background-color: rgba(0, 0, 0, 0.2);
-}
-
-#preview_container_in.nobg {
-    background-color: rgba(0, 0, 0, 0);
+    background-color: white;
 }
 
 #preview_container_in > * {
     max-width: 100%;
+}
+
+#preview_container_in.nobg {
+    background-color: rgba(0, 0, 0, 0);
 }
 
 .links > div {
@@ -59,7 +60,10 @@
     margin-bottom: 0;
 }
 
-#dummy_space {
-    display: none;
-    height: 768px;
+#step_view {
+    margin: 1em;
+}
+
+#needle_diff {
+    margin: 5px;
 }
