@@ -1,0 +1,71 @@
+#preview_container_out {
+    position: absolute;
+    z-index: 4;
+    display: none;
+    margin-top: 10px;
+    margin-bottom: 7px;
+}
+
+#preview_container_in {
+    position: absolute;
+    right: 0;
+    text-align: center;
+    background-color: #f5f5f5;
+
+    // screenshot
+    canvas {
+        max-width: 100%;
+        border: #ddd 1px solid;
+    }
+
+    pre {
+        text-align: left;
+        margin-bottom: 0;
+        border: none;
+        background-color: inherit;
+    }
+
+    audio {
+        width: calc(100% - 20px);
+    }
+
+    #audiodiv {
+        padding-top: 10px;
+        margin-bottom: 0;
+	border: none;
+        background-color: inherit;
+    }
+
+}
+
+#preview_container_in > * {
+    max-width: 100%;
+}
+
+.links > div {
+    display: inline-block;
+}
+
+.links .fa-caret-down {
+    display: none;
+    position: absolute;
+    color: black;
+    bottom: -12px;
+    left: 26px;
+}
+
+.current_preview {
+    position: relative;
+
+   .fa-caret-down {
+      display: inline-block;
+   }
+}
+
+#step_view {
+    margin: 1em;
+}
+
+#needle_diff {
+    margin: 5px;
+}

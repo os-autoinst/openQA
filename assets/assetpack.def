@@ -10,7 +10,7 @@
 < stylesheets/comments.css
 < stylesheets/openqa.scss
 < http://harvesthq.github.io/chosen/chosen.css
-< stylesheets/result_preview.css
+< stylesheets/result_preview.scss
 
 ! running.css
 < stylesheets/tables.css

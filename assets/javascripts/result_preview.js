@@ -40,11 +40,9 @@ function previewSuccess(data) {
   if (pin.find('pre').length || pin.find('audio').length ) {
     pin.find('pre, div').css('width', $('.links').width());
     pin.css('left', 0);
-    pin.addClass('nobg');
   }
   else {
     pin.css('left', -($('.result').width()+$('.component').width()+2*16));
-    pin.removeClass('nobg');
 
     window.differ = new NeedleDiff('needle_diff', 1024, 768);
     setDiffScreenshot(window.differ, $('#preview_container_in #step_view').data('image'));
