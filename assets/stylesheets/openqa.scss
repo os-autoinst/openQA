@@ -19,6 +19,8 @@ $color-state-scheduled: #67A2B7;
 $color-state-cancelled: $color-module-none;
 $color-state-running: #8BDFFF;
 
+$border-style-fail: dashed;
+
 .build-dashboard {
 
         .progress-bar-passed {
@@ -118,6 +120,7 @@ td .resborder {
 
 .resborder_fail {
         border-color: $color-resborder-fail;
+        border-style: $border-style-fail;
 }
 
 .resborder_unk, .resborder_missing {
@@ -126,6 +129,7 @@ td .resborder {
 
 .resborder_softfail {
         border-color: $color-softfail;
+        border-style: $border-style-fail;
 }
 
 img.resborder_na {
