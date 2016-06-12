@@ -249,7 +249,7 @@ NeedleDiff.shapecolor = function(type) {
 };
 
 function setDiffScreenshot(differ, screenshotSrc) {
-  $('<img src="' + screenshotSrc + '">').load(function() {
+  $('<img src="' + screenshotSrc + '">').on('load', function() {
     var image = $(this).get(0);
     differ.screenshotImg = image;
 
@@ -292,7 +292,7 @@ function setNeedle() {
   var src = sel.data('image');
 
   if (src) {
-    $('<img src="' + src + '">').load(function() {
+    $('<img src="' + src + '">').on('load', function() {
       var image = $(this).get(0);
       window.differ.needleImg = image;
       window.differ.draw();

@@ -21,10 +21,8 @@
 
 ! running.js
 < javascripts/running.js
-< http://code.jquery.com/jquery-1.12.4.js
+< https://code.jquery.com/jquery-2.2.4.js
 < javascripts/openqa.js
-< https://cdn.datatables.net/1.10.12/js/jquery.dataTables.js
-< http://timeago.yarp.com/jquery.timeago.js
 < javascripts/tests.js
 
 ! codemirror.css
@@ -40,7 +38,7 @@
 < javascripts/shapes.js
 
 ! bootstrap.js
-< http://code.jquery.com/jquery-1.12.4.js
+< https://code.jquery.com/jquery-2.2.4.js
 < javascripts/openqa.js
 < https://cdn.datatables.net/1.10.12/js/jquery.dataTables.js
 < https://cdn.datatables.net/1.10.12/js/dataTables.bootstrap.js
