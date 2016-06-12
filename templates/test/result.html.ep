@@ -27,7 +27,7 @@
     </div>
 </div>
 
-<div class="row">
+<div class="row" id="result-row">
     <div class="col-sm-12">
 
         % my $panelclass = 'panel-info';
