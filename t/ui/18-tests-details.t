@@ -57,7 +57,6 @@ t::ui::PhantomTest::wait_for_ajax;
 ok($driver->find_element('#preview_container_out', 'css')->is_displayed(), "preview window opens on click");
 like($driver->find_element('#preview_container_in', 'css')->get_text(), qr/wait_serial expected/, "Preview text with wait_serial output shown");
 $driver->find_element('[title="wait_serial"]', 'css')->click();
-t::ui::PhantomTest::wait_for_ajax;
 ok($driver->find_element('#preview_container_out', 'css')->is_hidden(), "preview window closed after clicking again");
 
 #print $driver->get_page_source();

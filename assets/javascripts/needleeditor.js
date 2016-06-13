@@ -182,7 +182,7 @@ NeedleEditor.prototype.LoadNeedle = function(url) {
       ctx.font = "20pt Verdana";
       ctx.fillText("Failed to load Needle, Code " + this.status, 10, 50);
     }
-  }
+  };
   x.open("GET", url, true);
   x.send();
 }
@@ -309,7 +309,7 @@ function setMatch() {
 function reactToSaveNeedle(data) {
   if (data.status != 200) {
     alert("Fatal error on saving needle");
-    $('#save').removeProp('disabled');
+    $('#save').prop('disabled', false);
     return;
   }
   data = data.responseJSON;
@@ -319,12 +319,12 @@ function reactToSaveNeedle(data) {
       info += " (<a href='#' data-url='" + data.restart + "' class='restart-link'>restart job</a>)";
     }
     addFlash('info', info);
-    $('#save').removeProp('disabled');
+    $('#save').prop('disabled', false);
     return;
   }
   if (data.error) {
     addFlash('warning', data.error);
-    $('#save').removeProp('disabled');
+    $('#save').prop('disabled', false);
     return;
   }
   if (data.requires_overwrite) {
@@ -333,7 +333,7 @@ function reactToSaveNeedle(data) {
     $('#modal-overwrite').data('formdata', data);
     $('#modal-overwrite').modal();
   } else {
-    $('#save').removeProp('disabled');
+    $('#save').prop('disabled', false);
   }
 }
 
@@ -341,7 +341,7 @@ function saveNeedle(e) {
   var form = $("#save_needle_form");
   var fdata = form.serialize();
   var url = form.attr('action');
-  $('#save').prop('disabled', 'disable');
+  $('#save').prop('disabled', true);
   $.ajax({
     type: "POST",
     url: url,
@@ -421,7 +421,7 @@ function setup_needle_editor(imageurl, default_needle)
     template: '<div class="popover" role="tooltip"><div class="arrow"></div><h3 class="popover-title"></h3><pre class="popover-content"></pre></div>'
   } );
 
-  $('#modal-overwrite').on('hidden.bs.modal', function() { $('#save').removeProp('disabled'); });
+  $('#modal-overwrite').on('hidden.bs.modal', function() { $('#save').prop('disabled', false); });
   $('#modal-overwrite-confirm').click(function() {
     var data = $('#modal-overwrite').data('formdata');
     data.overwrite = 1;

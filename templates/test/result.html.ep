@@ -27,7 +27,7 @@
     </div>
 </div>
 
-<div class="row">
+<div class="row" id="result-row">
     <div class="col-sm-12">
 
         % my $panelclass = 'panel-info';
@@ -270,6 +270,6 @@
 </div>
 
 <div id="preview_container_out">
-    <div id="preview_container_in">
+    <div id="preview_container_in" class="well well-lg">
     </div>
 </div>

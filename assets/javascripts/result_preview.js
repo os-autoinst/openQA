@@ -1,3 +1,21 @@
+function checkPreviewVisible(a, preview) {
+  // scroll the element to the top if the preview is not in view
+  if (a.offset().top + preview.height() > $(window).scrollTop() + $(window).height()) {
+    $('body, html').animate({
+      scrollTop: a.offset().top-3
+    }, 250);
+  }
+
+  var rrow = $('#result-row');
+  var extraMargin = 40;
+  var endOfPreview =  a.offset().top + preview.height() + extraMargin;
+  var endOfRow = rrow.height() + rrow.offset().top;
+  if (endOfPreview > endOfRow) {
+    // only enlarge the margin - otherwise the page scrolls back
+    rrow.css('margin-bottom', endOfPreview - endOfRow + extraMargin);
+  }
+}
+
 function previewSuccess(data) {
   $('#preview_container_in').html(data);
   var a = $('.current_preview');
@@ -14,24 +32,27 @@ function previewSuccess(data) {
     preview_offset = as_count;
   }
 
-  $('#preview_container_out').insertAfter(td.children('.links_a').eq(preview_offset));
-  if ($('#preview_container_in').find('pre').length > 0 || $('#preview_container_in').find('audio').length > 0) {
-    $('#preview_container_in').find('pre, div').css('width', $('.links').width());
-    $('#preview_container_in').css('left', 0);
-    $('#preview_container_in').addClass('nobg');
-  }
-  else {
-    $('#preview_container_in').css('left', -($('.result').width()+$('.component').width()+2*16));
-    $('#preview_container_in').removeClass('nobg');
-    
+  var pout = $('#preview_container_out');
+  // make it visible so jquery gets the props right
+  pout.insertAfter(td.children('.links_a').eq(preview_offset));
+
+  var pin = $('#preview_container_in');
+  if (pin.find('pre').length || pin.find('audio').length ) {
+    pin.find('pre, div').css('width', $('.links').width());
+  } else {
     window.differ = new NeedleDiff('needle_diff', 1024, 768);
     setDiffScreenshot(window.differ, $('#preview_container_in #step_view').data('image'));
     setNeedle();
   }
-  $('#preview_container_out').css('display', 'block').css('height', $('#preview_container_in').height());
-  /* disable scrolling for now - it's too confusing
-   $('body, html').stop(true, true).animate({scrollTop: a.offset().top-3, queue: false}, 250);
-   */
+  pin.css('left', -($('.result').width()+$('.component').width()+2*16));
+  var tdWidth = $('.current_preview').parents('td').width();
+  pout.width(tdWidth).hide().fadeIn(
+    {
+      duration: 150,
+      complete: function() {
+	checkPreviewVisible(a, pin);
+      }
+    });
 }
 
 function setCurrentPreview(a, force) {
@@ -45,11 +66,11 @@ function setCurrentPreview(a, force) {
     }
     a.addClass('current_preview');
     window.location.hash = link.attr('href');
-    $.get({ url: link.data('url'), success: previewSuccess}).fail(function() { setCurrentPreview(); alert("foo"); });
+    $.get({ url: link.data('url'), success: previewSuccess}).fail(function() { setCurrentPreview(); });
   }
   else {
     // hide
-    $('#preview_container_out').hide();
+    $('#preview_container_out').fadeOut(150);
     $('.current_preview').removeClass('current_preview');
   }
 }
@@ -112,14 +133,14 @@ function setupPreview() {
     if (e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) {
       return;
     }
-    if (e.which == 37) { // left
+    if (e.which == KeyEvent.DOM_VK_LEFT) {
       prevPreview();
       e.preventDefault();
     }
-    else if (e.which == 39) { // right
+    else if (e.which == KeyEvent.DOM_VK_RIGHT) {
       nextPreview();
       e.preventDefault();
-    } else if (e.which == 27) { // esc
+    } else if (e.which == KeyEvent.DOM_VK_ESCAPE) {
       setCurrentPreview();
       e.preventDefault();
     }
