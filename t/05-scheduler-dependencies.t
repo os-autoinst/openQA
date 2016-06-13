@@ -110,7 +110,7 @@ my $jobC = _job_create(\%settingsC);
 $settingsD{_PARALLEL_JOBS} = [$jobA->id];
 my $jobD = _job_create(\%settingsD);
 
-$settingsE{_PARALLEL_JOBS} = [$jobC->id, $jobD->id];
+$settingsE{_PARALLEL_JOBS} = $jobC->id . ',' . $jobD->id;    # test also IDs passed as comma separated string
 my $jobE = _job_create(\%settingsE);
 
 $settingsF{_PARALLEL_JOBS} = [$jobC->id];
