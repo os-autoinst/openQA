@@ -351,6 +351,20 @@ function saveNeedle(e) {
   return false;
 }
 
+function restartJobSuccess(data, res, xhr) {
+  window.location.replace(xhr.responseJSON.test_url);
+}
+
+// restart-link in flash message
+function restartJob(event) {
+  $.ajax({
+    type: 'POST',
+    url: $(this).data('url'),
+    success: restartJobSuccess
+  });
+  event.preventDefault();
+}
+
 var nEditor;
 
 function setup_needle_editor(imageurl, default_needle)
@@ -368,7 +382,7 @@ function setup_needle_editor(imageurl, default_needle)
     return true;
   });
   
-  $('#property_workaround').click(function() { nEditor.changeProperty(this.name, this.checked) });
+  $('#property_workaround').click(function() { nEditor.changeProperty(this.name, this.checked); });
 
   $('#image_select').change(loadBackground);
   // load default
@@ -421,7 +435,8 @@ function setup_needle_editor(imageurl, default_needle)
   });
 
   $('#save_needle_form').submit(saveNeedle);
-  $(document).on('click', '.restart-link', function() { $.post($(this).data('url')); });
+  $(document).on('click', '.restart-link', restartJob);
 }
+
 
 // Now go make something amazing!
