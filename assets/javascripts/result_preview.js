@@ -39,15 +39,12 @@ function previewSuccess(data) {
   var pin = $('#preview_container_in');
   if (pin.find('pre').length || pin.find('audio').length ) {
     pin.find('pre, div').css('width', $('.links').width());
-    pin.css('left', 0);
-  }
-  else {
-    pin.css('left', -($('.result').width()+$('.component').width()+2*16));
-
+  } else {
     window.differ = new NeedleDiff('needle_diff', 1024, 768);
     setDiffScreenshot(window.differ, $('#preview_container_in #step_view').data('image'));
     setNeedle();
   }
+  pin.css('left', -($('.result').width()+$('.component').width()+2*16));
   var tdWidth = $('.current_preview').parents('td').width();
   pout.width(tdWidth).hide().fadeIn(
     {
