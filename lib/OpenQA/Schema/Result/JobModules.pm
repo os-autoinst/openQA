@@ -134,8 +134,11 @@ sub details {
         next unless $img->{screenshot};
         my $link = readlink($dir . "/" . $img->{screenshot});
         next unless $link;
-        $img->{md5_basename} = basename($link);
-        $img->{md5_dirname}  = basename(dirname($link));
+        my $base = basename($link);
+        my $dir  = dirname($link);
+        $dir =~ s,^.*/images/,,;
+        $img->{md5_dirname}  = $dir;
+        $img->{md5_basename} = $base;
     }
 
     return $ret;
