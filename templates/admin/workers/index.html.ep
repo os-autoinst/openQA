@@ -23,7 +23,7 @@
                 </tr>
             </thead>
             <tbody>
-                % for my $workername (sort keys $workers) {
+                % for my $workername (sort keys %$workers) {
                     %   my $worker = $workers->{$workername};
                     <tr id="worker_<%= $worker->{id} %>" >
                         <td class="worker">
