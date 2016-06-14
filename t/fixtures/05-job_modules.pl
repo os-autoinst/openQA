@@ -28,6 +28,14 @@
         result   => 'passed',
     },
     JobModules => {
+        script       => 'tests/installation/installation_mode.pm',
+        job_id       => 99939,
+        category     => 'installation',
+        name         => 'installation_mode',
+        result       => 'passed',
+        soft_failure => 1,
+    },
+    JobModules => {
         script   => 'tests/installation/installer_timezone.pm',
         job_id   => 99937,
         category => 'installation',

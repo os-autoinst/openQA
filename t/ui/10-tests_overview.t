@@ -65,7 +65,7 @@ $get->element_exists_not('#res_DVD_x86_64_doc');
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
 $get->status_is(200);
 $summary = $t->tx->res->dom->at('#summary')->all_text;
-like($summary, qr/Passed: 1 Failed: 1/i);
+like($summary, qr/\QPassed: 0 Soft Failure: 1 Failed: 1\E/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_x86_64');
@@ -74,7 +74,7 @@ $get->element_exists_not('#flavor_GNOME-Live_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
 $get->element_exists('#res_DVD_x86_64_doc .result_failed');
-$get->element_exists('#res_DVD_x86_64_kde .result_passed');
+$get->element_exists('#res_DVD_x86_64_kde .result_softfail');
 $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
 
@@ -96,8 +96,8 @@ like($summary, qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory'});
 $get->status_is(200);
 $summary = $t->tx->res->dom->at('#summary')->all_text;
-like($summary, qr/Summary of opensuse Factory build 0048/i);
-like($summary, qr/Passed: 1 Failed: 1/i);
+like($summary, qr/\QSummary of opensuse Factory build 0048\E/i);
+like($summary, qr/\QPassed: 0 Soft Failure: 1 Failed: 1\E/i);
 
 
 #
