@@ -35,7 +35,7 @@ my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
 sub list_jobs {
     my %args = @_;
-    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::Scheduler::query_jobs(%args)->all];
+    [map { $_->to_hash(assets => 1) } $schema->resultset('Jobs')->complex_query(%args)->all];
 }
 
 my $result;

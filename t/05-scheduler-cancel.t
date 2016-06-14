@@ -31,7 +31,7 @@ use Net::DBus;
 use Test::More;
 use Test::Warnings;
 
-OpenQA::Test::Database->new->create();
+my $schema = OpenQA::Test::Database->new->create();
 # create Test DBus bus and service for fake WebSockets call
 my $ipc = OpenQA::IPC->ipc('', 1);
 my $ws = OpenQA::WebSockets->new;
@@ -47,7 +47,7 @@ is($job->{state}, 'running', "old job is running");
 
 sub lj {
     # check the call succeeds every time, only output if verbose
-    my @jobs = OpenQA::Scheduler::Scheduler::query_jobs->all;
+    my @jobs = $schema->resultset('Jobs')->all;
     return unless $ENV{HARNESS_IS_VERBOSE};
     for my $j (@jobs) {
         printf "%d %-10s %s\n", $j->id, $j->state, $j->name;

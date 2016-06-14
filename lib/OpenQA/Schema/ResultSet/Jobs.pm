@@ -169,5 +169,120 @@ sub create_from_settings {
     return $job;
 }
 
+sub complex_query {
+    my ($self, %args) = @_;
+    # For args where we accept a list of values, allow passing either an
+    # array ref or a comma-separated list
+    for my $arg (qw/state ids result/) {
+        next unless $args{$arg};
+        $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
+    }
+
+    my @conds;
+    my %attrs;
+    my @joins;
+
+    unless ($args{idsonly}) {
+        push @{$attrs{prefetch}}, 'settings';
+        push @{$attrs{prefetch}}, 'parents';
+        push @{$attrs{prefetch}}, 'children';
+    }
+
+    if ($args{state}) {
+        push(@conds, {'me.state' => $args{state}});
+    }
+    if ($args{maxage}) {
+        my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC')};
+        push(
+            @conds,
+            {
+                -or => [
+                    'me.t_created'  => $agecond,
+                    'me.t_started'  => $agecond,
+                    'me.t_finished' => $agecond
+                ]});
+    }
+    # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
+    if ($args{result}) {
+        push(@conds, {'me.result' => {-in => $args{result}}});
+    }
+    if ($args{ignore_incomplete}) {
+        push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
+    }
+    my $scope = $args{scope} || '';
+    if ($scope eq 'relevant') {
+        push(@joins, 'clone');
+        push(
+            @conds,
+            {
+                -or => [
+                    'me.clone_id' => undef,
+                    'clone.state' => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
+                ],
+                'me.result' => {    # these results should be hidden by default
+                    -not_in => [
+                        OpenQA::Schema::Result::Jobs::OBSOLETED,
+                        # OpenQA::Schema::Result::Jobs::USER_CANCELLED  I think USER_CANCELLED jobs should be available for restart
+                    ]}});
+    }
+    if ($scope eq 'current') {
+        push(@conds, {'me.clone_id' => undef});
+    }
+    if ($args{limit}) {
+        $attrs{rows} = $args{limit};
+    }
+    $attrs{page} = $args{page} || 0;
+    if ($args{assetid}) {
+        push(@joins, 'jobs_assets');
+        push(
+            @conds,
+            {
+                'jobs_assets.asset_id' => $args{assetid},
+            });
+    }
+    my $rsource = $self->result_source;
+    my $schema  = $rsource->schema;
+
+    if (defined $args{groupid}) {
+        push(
+            @conds,
+            {
+                'me.group_id' => $args{groupid} || undef,
+            });
+    }
+    elsif ($args{group}) {
+        my $subquery = $schema->resultset("JobGroups")->search({name => $args{group}})->get_column('id')->as_query;
+        push(
+            @conds,
+            {
+                'me.group_id' => {-in => $subquery},
+            });
+    }
+
+    if ($args{ids}) {
+        push(@conds, {'me.id' => {-in => $args{ids}}});
+    }
+    elsif ($args{match}) {
+        # Text search across some settings
+        my $subquery = $schema->resultset("JobSettings")->search(
+            {
+                key => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST', 'VERSION'],
+                value => {'-like' => "%$args{match}%"},
+            });
+        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+    }
+    else {
+        my %js_settings = map { uc($_) => $args{$_} } qw(build iso distri version flavor arch hdd_1);
+        my $subquery = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
+        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+    }
+
+    $attrs{order_by} = ['me.id DESC'];
+
+    $attrs{join} = \@joins if @joins;
+    my $jobs = $self->search({-and => \@conds}, \%attrs);
+    return $jobs;
+}
+
 1;
 # vim: set sw=4 et:

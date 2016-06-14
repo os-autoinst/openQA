@@ -43,13 +43,13 @@ sub list {
         }
     }
 
-    # TODO: convert to DBus call or move query_jobs helper to WebAPI
+    my $rs = $self->app->db->resultset('Jobs')->complex_query(%args);
     my @jobarray;
     if (defined $self->param('latest')) {
-        @jobarray = OpenQA::Scheduler::Scheduler::query_jobs(%args)->latest_jobs;
+        @jobarray = $rs->latest_jobs;
     }
     else {
-        @jobarray = OpenQA::Scheduler::Scheduler::query_jobs(%args)->all;
+        @jobarray = $rs->all;
     }
     my %jobs = map { $_->id => $_ } @jobarray;
 

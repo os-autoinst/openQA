@@ -177,14 +177,6 @@ sub job_update_status {
     my ($self, $jobid, $status) = @_;
 }
 
-dbus_method('query_jobs', [['dict', 'string', 'string']], [['array', ['dict', 'string', ['variant']]]]);
-sub query_jobs {
-    my ($self, $args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::query_jobs(%$args);
-    $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
-    return [$rs->all];
-}
-
 dbus_method('job_set_waiting', ['uint32'], ['uint32']);
 sub job_set_waiting {
     my ($self, $args) = @_;

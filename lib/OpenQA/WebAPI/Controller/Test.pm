@@ -19,13 +19,12 @@ use strict;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Scheduler::Scheduler qw/query_jobs/;
 use File::Basename;
 use POSIX qw/strftime/;
 use JSON qw/decode_json/;
 
 sub list {
-    my $self = shift;
+    my ($self) = @_;
 
     my $match;
     if (defined($self->param('match'))) {
@@ -41,7 +40,7 @@ sub list {
     my $groupid = $self->param('groupid');
     my $limit   = $self->param('limit') // 500;
 
-    my $jobs = query_jobs(
+    my $jobs = $self->db->resultset("Jobs")->complex_query(
         state   => 'done,cancelled',
         match   => $match,
         scope   => $scope,
@@ -52,7 +51,7 @@ sub list {
     );
     $self->stash(jobs => $jobs);
 
-    my $running = query_jobs(
+    my $running = $self->db->resultset("Jobs")->complex_query(
         state   => 'running,waiting',
         match   => $match,
         groupid => $groupid,
@@ -70,7 +69,7 @@ sub list {
     }
     $self->stash(running => \@list);
 
-    my $scheduled = query_jobs(
+    my $scheduled = $self->db->resultset("Jobs")->complex_query(
         state   => 'scheduled',
         match   => $match,
         groupid => $groupid,
@@ -97,7 +96,7 @@ sub list_ajax {
     else {
         my $scope = '';
         $scope = 'relevant' if $self->param('relevant') ne 'false';
-        my $jobs = query_jobs(
+        my $jobs = $self->db->resultset("Jobs")->complex_query(
             state   => 'done,cancelled',
             match   => $match,
             scope   => $scope,
@@ -411,11 +410,11 @@ sub overview {
     my %results;
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
 
-    # Forward all query parameters to query_jobs to allow specifying additional
+    # Forward all query parameters to jobs query to allow specifying additional
     # query parameters which are then properly shown on the overview.
     my $req_params = $self->req->params->to_hash;
     %search_args = (%search_args, %$req_params);
-    my @latest_jobs        = query_jobs(%search_args)->latest_jobs;
+    my @latest_jobs        = $self->db->resultset("Jobs")->complex_query(%search_args)->latest_jobs;
     my $preferred_machines = _calculate_preferred_machines(\@latest_jobs);
     my @latest_jobs_ids    = map { $_->id } @latest_jobs;
     my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats(\@latest_jobs_ids);

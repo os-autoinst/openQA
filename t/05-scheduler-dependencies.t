@@ -39,7 +39,7 @@ my $ws = OpenQA::WebSockets->new;
 
 sub list_jobs {
     my %args = @_;
-    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::Scheduler::query_jobs(%args)->all];
+    [map { $_->to_hash(assets => 1) } $schema->resultset('Jobs')->complex_query(%args)->all];
 }
 
 sub job_get_deps {
@@ -708,8 +708,8 @@ is_deeply($jobI->{parents}->{Parallel},  [$jobO->id],    'jobI retain its origin
 is_deeply($jobO2->{parents}->{Parallel}, [$jobP2->{id}], 'clone jobO2 gets new parent jobP2');
 
 # get Jobs RS from ids for cloned jobs
-$jobO2 = OpenQA::Scheduler::Scheduler::query_jobs(ids => $jobO2->{id})->first;
-$jobP2 = OpenQA::Scheduler::Scheduler::query_jobs(ids => $jobP2->{id})->first;
+$jobO2 = $schema->resultset('Jobs')->search({id => $jobO2->{id}})->single;
+$jobP2 = $schema->resultset('Jobs')->search({id => $jobP2->{id}})->single;
 # set P2 running and O2 done
 $jobP2->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobP2->update;
