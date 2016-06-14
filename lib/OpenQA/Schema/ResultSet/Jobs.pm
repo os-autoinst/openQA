@@ -93,15 +93,14 @@ sub latest_jobs {
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
-        my $settings = $job->settings_hash;
-        my $distri   = $settings->{DISTRI};
-        my $version  = $settings->{VERSION};
-        my $build    = $settings->{BUILD};
-        my $test     = $settings->{TEST};
-        my $flavor   = $settings->{FLAVOR} || 'sweet';
-        my $arch     = $settings->{ARCH} || 'noarch';
-        my $machine  = $settings->{MACHINE} || 'nomachine';
-        my $key      = "$distri-$version-$build-$test-$flavor-$arch-$machine";
+        my $distri  = $job->DISTRI;
+        my $version = $job->VERSION;
+        my $build   = $job->BUILD;
+        my $test    = $job->TEST;
+        my $flavor  = $job->FLAVOR || 'sweet';
+        my $arch    = $job->ARCH || 'noarch';
+        my $machine = $job->MACHINE || 'nomachine';
+        my $key     = "$distri-$version-$build-$test-$flavor-$arch-$machine";
         next if $seen{$key}++;
         push(@latest, $job);
     }

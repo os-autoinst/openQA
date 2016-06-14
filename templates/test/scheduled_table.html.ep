@@ -29,21 +29,22 @@
     </thead>
     <tbody>
 	% while (my $job = $scheduled->next) {
-	    % my $settings = $job->settings_hash;
 	    % my $prio = $job->priority;
 	    % my $state = $job->state;
-	    % my $build = $settings->{BUILD};
-	    % my $distri = $settings->{DISTRI};
-	    % my $version = $settings->{VERSION};
+	    % my $build = $job->BUILD;
+	    % my $distri = $job->DISTRI;
+	    % my $version = $job->VERSION;
+	    % my $flavor = $job->FLAVOR;
+	    % my $arch = $job->ARCH;
 	    % my $query = { distri => $distri, version => $version, build => $build };
 	    % if ($job->group_id) {
             % $query->{groupid} = $job->group_id;
 	    % }
 	    <tr id="job_<%= $job->id %>">
-		% my $test = $settings->{TEST} . '@' . $settings->{MACHINE};
+		% my $test = $job->TEST . '@' . $job->MACHINE;
                 <td class="name">
                     %= link_to "Build$build" => url_for('tests_overview')->query(%$query);
-                    of <%= "$settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}" %>
+                    of <%= "$distri-$version-$flavor.$arch" %>
                 </td>
                 <td class="test">
 		    % if (is_operator) {

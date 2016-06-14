@@ -89,7 +89,7 @@ sub update_needle($$$;$) {
         my $dir = $schema->resultset('NeedleDirs')->find_or_new({path => dirname($realpath)});
         if (!$dir->in_storage) {
             # first job seen defines the name
-            my $name = sprintf "%s-%s", $module->job->settings_hash->{DISTRI}, $module->job->settings_hash->{VERSION};
+            my $name = sprintf "%s-%s", $module->job->DISTRI, $module->job->VERSION;
             $dir->name($name);
             $dir->insert;
         }

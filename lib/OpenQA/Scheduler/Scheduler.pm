@@ -698,7 +698,7 @@ sub job_cancel {
         my @important_builds = grep defined, map { ($_->tag)[0] } schema->resultset("Comments")->search($groups_query);
         my @unimportant_jobs;
         while (my $j = $jobs_to_cancel->next) {
-            next if grep ($j->settings_hash->{BUILD} eq $_, @important_builds);
+            next if grep ($j->BUILD eq $_, @important_builds);
             push @unimportant_jobs, $j->id;
         }
         # if there are only important jobs there is nothing left for us to do

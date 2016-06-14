@@ -47,7 +47,7 @@ sub on_event {
     # find count of pending jobs for the same build
     # this is so we can tell when all tests for a build are done
     my $job = $app->db->resultset('Jobs')->find({id => $event_data->{id}});
-    my $build = $job->settings_hash->{BUILD};
+    my $build = $job->BUILD;
     $event_data->{remaining} = $app->db->resultset('Jobs')->search(
         {
             'me.BUILD' => $build,

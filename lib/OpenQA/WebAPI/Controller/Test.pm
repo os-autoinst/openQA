@@ -238,16 +238,16 @@ sub show {
     return $self->reply->not_found unless $job;
 
     my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
-    my $scenario = join('-', map { $job->settings_hash->{$_} } @scenario_keys);
+    my $scenario = join('-', map { $job->get_column($_) } @scenario_keys);
 
     # append the MACHINE
     push(@scenario_keys, 'MACHINE');
-    $scenario .= "@" . $job->settings_hash->{MACHINE};
+    $scenario .= "@" . $job->MACHINE;
 
-    $self->stash(testname => $job->settings_hash->{NAME});
-    $self->stash(distri   => $job->settings_hash->{DISTRI});
-    $self->stash(version  => $job->settings_hash->{VERSION});
-    $self->stash(build    => $job->settings_hash->{BUILD});
+    $self->stash(testname => $job->name);
+    $self->stash(distri   => $job->DISTRI);
+    $self->stash(version  => $job->VERSION);
+    $self->stash(build    => $job->BUILD);
     $self->stash(scenario => $scenario);
 
     #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
@@ -290,7 +290,7 @@ sub show {
     push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
     push(@conds, {id          => {'<', $job->id}});
     for my $key (@scenario_keys) {
-        push(@conds, {"me.$key" => $job->settings_hash->{$key}});
+        push(@conds, {"me.$key" => $job->get_column($key)});
     }
     my $limit_previous = $self->param('limit_previous') // 10;    # arbitrary limit of previous results to show
     my %attrs = (
@@ -299,7 +299,7 @@ sub show {
     my $previous_jobs_rs = $self->db->resultset("Jobs")->search({-and => \@conds}, \%attrs);
     my @previous_jobs;
     while (my $prev = $previous_jobs_rs->next) {
-        $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->settings_hash->{$_} } @scenario_keys));
+        $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->get_column($_) } @scenario_keys));
         push(@previous_jobs, $prev);
     }
     my $job_labels = $self->_job_labels(\@previous_jobs);

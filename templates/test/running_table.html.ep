@@ -30,11 +30,12 @@
     <tbody>
         % for my $test (@$running) {
             % my $job = $test->{job};
-            % my $settings = $job->settings_hash;
             % my $resultclass = 'overview_'.$job->result;
-            % my $build = $settings->{BUILD} // '';
-            % my $distri = $settings->{DISTRI} // '';
-            % my $version = $settings->{VERSION} // '';
+            % my $build = $job->BUILD // '';
+            % my $distri = $job->DISTRI // '';
+            % my $version = $job->VERSION // '';
+            % my $flavor = $job->FLAVOR // '';
+	    % my $arch = $job->ARCH // '';
             % my $query = { distri => $distri, version => $version, build => $build };
             % if ($job->group_id) {
                 % $query->{groupid} = $job->group_id;
@@ -43,7 +44,7 @@
                 % my $testname = $job->TEST . '@' . $job->MACHINE;
                 <td class="name">
                     %= link_to "Build$build" => url_for('tests_overview')->query(%$query);
-                    of <%= "$settings->{DISTRI}-$settings->{VERSION}-$settings->{FLAVOR}.$settings->{ARCH}" %>
+                    of <%= "$distri-$version-$flavor.$arch" %>
                 </td>
                 <td class="test">
 		    % if (is_operator) {

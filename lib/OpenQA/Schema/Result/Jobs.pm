@@ -193,17 +193,16 @@ sub name {
     return $self->slug if $self->slug;
 
     if (!$self->{_name}) {
-        my $job_settings = $self->settings_hash;
         my @a;
 
         my %formats = (BUILD => 'Build%s',);
 
         for my $c (qw/DISTRI VERSION FLAVOR ARCH BUILD TEST/) {
-            next unless $job_settings->{$c};
-            push @a, sprintf(($formats{$c} || '%s'), $job_settings->{$c});
+            next unless $self->get_column($c);
+            push @a, sprintf(($formats{$c} || '%s'), $self->get_column($c));
         }
         my $name = join('-', @a);
-        $name .= ('@' . $job_settings->{MACHINE}) if $job_settings->{MACHINE};
+        $name .= ('@' . $self->get_column('MACHINE')) if $self->get_column('MACHINE');
         $name =~ s/[^a-zA-Z0-9@._+:-]/_/g;
         $self->{_name} = $name;
     }
@@ -272,12 +271,6 @@ sub remove_result_dir_prefix {
     return $rd;
 }
 
-sub machine {
-    my ($self) = @_;
-
-    return $self->settings_hash->{MACHINE};
-}
-
 sub set_prio {
     my ($self, $prio) = @_;
 
@@ -313,8 +306,8 @@ sub to_hash {
         $j->{group} = $job->group->name;
     }
     $j->{settings} = $job->settings_hash;
-    # to be removed - lowercase is schema version 38
-    $j->{test} = $job->settings_hash->{TEST};
+    # hashes are left for script compatibility with schema version 38
+    $j->{test} = $job->TEST;
     if ($args{assets}) {
         if (defined $job->{_assets}) {
             for my $a (@{$job->{_assets}}) {
@@ -734,7 +727,7 @@ sub insert_test_modules($) {
 sub part_of_important_build {
     my ($self) = @_;
 
-    my $build = $self->settings_hash->{BUILD};
+    my $build = $self->BUILD;
 
     # if there is no group, it can't be important
     if (!$self->group) {
@@ -1140,8 +1133,8 @@ sub release_networks {
 sub needle_dir() {
     my ($self) = @_;
     unless ($self->{_needle_dir}) {
-        my $distri  = $self->settings_hash->{DISTRI};
-        my $version = $self->settings_hash->{VERSION};
+        my $distri  = $self->DISTRI;
+        my $version = $self->VERSION;
         $self->{_needle_dir} = OpenQA::Utils::needledir($distri, $version);
     }
     return $self->{_needle_dir};
