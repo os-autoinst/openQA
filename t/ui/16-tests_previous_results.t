@@ -42,5 +42,9 @@ is($build, '0091', 'build of previous job is shown');
 $get                     = $t->get_ok('/tests/99946?limit_previous=1#previous')->status_is(200);
 $previous_results_header = $t->tx->res->dom->at('#previous #scenario')->all_text;
 is($previous_results_header, q/Results for opensuse-13.1-DVD-i586-textmode@32bit, limited to 1/, 'can be limited with query parameter');
+my $more_results = $t->tx->res->dom->at('#previous #more_results');
+is($more_results->all_text, q{Show 20 / 50 / 100 / 400 previous results}, 'more results can be requested');
+$get = $t->get_ok($more_results->find('a[href]')->last->{href})->status_is(200);
+is($t->tx->res->dom->at('#previous #scenario')->all_text, q/Results for opensuse-13.1-DVD-i586-textmode@32bit, limited to 400/, 'limited to the selected number');
 
 done_testing();

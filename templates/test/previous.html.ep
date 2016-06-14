@@ -39,3 +39,8 @@
 </tbody>
 </table>
 </div>
+<div id="more_results">
+    Show
+    %= b join(' / ', map { link_to($_ => url_with->query(limit_previous => $_) . '#previous') } (20, 50, 100, 400));
+    previous results
+</div>
