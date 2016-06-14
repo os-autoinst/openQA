@@ -182,8 +182,10 @@ __PACKAGE__->filter_column(
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
 
-    $sqlt_table->add_index(name => 'idx_jobs_state',  fields => ['state']);
-    $sqlt_table->add_index(name => 'idx_jobs_result', fields => ['result']);
+    $sqlt_table->add_index(name => 'idx_jobs_state',       fields => ['state']);
+    $sqlt_table->add_index(name => 'idx_jobs_result',      fields => ['result']);
+    $sqlt_table->add_index(name => 'idx_jobs_build_group', fields => [qw/BUILD group_id/]);
+    $sqlt_table->add_index(name => 'idx_jobs_scenario',    fields => [qw/VERSION DISTRI FLAVOR TEST MACHINE ARCH/]);
 }
 
 sub name {

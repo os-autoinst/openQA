@@ -1822,6 +1822,22 @@ schema:
           name: idx_jobs_result
           options: []
           type: NORMAL
+        - fields:
+            - BUILD
+            - group_id
+          name: idx_jobs_build_group
+          options: []
+          type: NORMAL
+        - fields:
+            - VERSION
+            - DISTRI
+            - FLAVOR
+            - TEST
+            - MACHINE
+            - ARCH
+          name: idx_jobs_scenario
+          options: []
+          type: NORMAL
       name: jobs
       options: []
       order: 19

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::MySQL
--- Created on Tue Jun 14 13:32:15 2016
+-- Created on Tue Jun 14 21:06:59 2016
 -- 
 ;
 SET foreign_key_checks=0;
@@ -298,6 +298,8 @@ CREATE TABLE `jobs` (
   INDEX `jobs_idx_group_id` (`group_id`),
   INDEX `idx_jobs_state` (`state`),
   INDEX `idx_jobs_result` (`result`),
+  INDEX `idx_jobs_build_group` (`BUILD`, `group_id`),
+  INDEX `idx_jobs_scenario` (`VERSION`, `DISTRI`, `FLAVOR`, `TEST`, `MACHINE`, `ARCH`),
   PRIMARY KEY (`id`),
   UNIQUE `jobs_slug` (`slug`),
   CONSTRAINT `jobs_fk_clone_id` FOREIGN KEY (`clone_id`) REFERENCES `jobs` (`id`) ON DELETE SET NULL,

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Tue Jun 14 13:32:16 2016
+-- Created on Tue Jun 14 21:06:59 2016
 -- 
 
 ;
@@ -284,6 +284,8 @@ CREATE INDEX jobs_idx_clone_id ON jobs (clone_id);
 CREATE INDEX jobs_idx_group_id ON jobs (group_id);
 CREATE INDEX idx_jobs_state ON jobs (state);
 CREATE INDEX idx_jobs_result ON jobs (result);
+CREATE INDEX idx_jobs_build_group ON jobs (BUILD, group_id);
+CREATE INDEX idx_jobs_scenario ON jobs (VERSION, DISTRI, FLAVOR, TEST, MACHINE, ARCH);
 CREATE UNIQUE INDEX jobs_slug ON jobs (slug);
 --
 -- Table: job_dependencies

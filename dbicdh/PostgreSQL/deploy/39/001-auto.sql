@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Tue Jun 14 13:32:16 2016
+-- Created on Tue Jun 14 21:06:59 2016
 -- 
 ;
 --
@@ -325,6 +325,8 @@ CREATE INDEX "jobs_idx_clone_id" on "jobs" ("clone_id");
 CREATE INDEX "jobs_idx_group_id" on "jobs" ("group_id");
 CREATE INDEX "idx_jobs_state" on "jobs" ("state");
 CREATE INDEX "idx_jobs_result" on "jobs" ("result");
+CREATE INDEX "idx_jobs_build_group" on "jobs" ("BUILD", "group_id");
+CREATE INDEX "idx_jobs_scenario" on "jobs" ("VERSION", "DISTRI", "FLAVOR", "TEST", "MACHINE", "ARCH");
 
 ;
 --
