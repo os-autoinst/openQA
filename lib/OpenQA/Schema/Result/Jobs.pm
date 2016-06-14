@@ -23,7 +23,7 @@ use JSON;
 use Fcntl;
 use DateTime;
 use db_helpers;
-use OpenQA::Utils qw/log_debug parse_assets_from_settings/;
+use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings/;
 use File::Basename qw/basename dirname/;
 use File::Path ();
 use File::Which qw(which);
@@ -571,7 +571,7 @@ sub duplicate {
     }
     catch {
         my $error = shift;
-        OpenQA::Utils::log_debug("rollback duplicate: $error");
+        log_debug("rollback duplicate: $error");
         die "Rollback failed during failed job cloning!"
           if ($error =~ /Rollback failed/);
         $res = undef;
@@ -862,7 +862,7 @@ sub running_modinfo() {
 sub optipng {
     my ($app, $path) = @_;
     if (which('optipng')) {
-        OpenQA::Utils::log_debug("optipng $path");
+        log_debug("optipng $path");
         system('optipng', '-quiet', '-preserve', '-o2', $path);
     }
 }
@@ -878,7 +878,7 @@ sub store_image {
 
     $OpenQA::Utils::app->gru->enqueue(optipng => $storepath);
 
-    OpenQA::Utils::log_debug("store_image: $storepath");
+    log_debug("store_image: $storepath");
 }
 
 sub create_artefact {
@@ -894,14 +894,14 @@ sub create_artefact {
     }
 
     $asset->move_to(join('/', $storepath, $asset->filename));
-    OpenQA::Utils::log_debug("moved to $storepath " . $asset->filename);
+    log_debug("moved to $storepath " . $asset->filename);
 
     # mark the worker as alive
     if ($self->worker) {
         $self->worker->seen;
     }
     else {
-        OpenQA::Utils::log_warn(printf("%d got an artefact but has no worker. huh?", $self->id));
+        log_warning($self->id . " got an artefact but has no worker. huh?");
     }
 
     1;
@@ -927,7 +927,7 @@ sub create_asset {
     }
 
     $asset->move_to(join('/', $fpath, $fname));
-    OpenQA::Utils::log_debug("moved to $fpath " . $fname);
+    log_debug("moved to $fpath/$fname");
     $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
 
     # mark the worker as alive
@@ -935,7 +935,7 @@ sub create_asset {
         $self->worker->seen;
     }
     else {
-        OpenQA::Utils::log_warn(printf("%d got an asset but has no worker. huh?", $self->id));
+        log_warning($self->id . " got an asset but has no worker. huh?");
     }
 
     1;
@@ -1001,7 +1001,7 @@ sub update_status {
         $self->worker->seen;
     }
     else {
-        OpenQA::Utils::log_warn(printf("%d got a status update but has no worker. huh?", $self->id));
+        log_warning($self->id . " got a status update but has no worker. huh?");
     }
     if ($status->{status}->{needinput}) {
         if ($self->state eq RUNNING) {
