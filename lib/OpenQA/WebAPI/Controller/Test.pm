@@ -111,26 +111,12 @@ sub list_ajax {
     # job modules stats
     my $stats = OpenQA::Schema::Result::JobModules::job_module_stats(\@ids);
 
-    # job settings
-    my $settings;
-    my $js = $self->db->resultset('JobSettings')->search(
-        {
-            job_id => {in => \@ids},
-            key    => {in => [qw/MACHINE DISTRI VERSION FLAVOR ARCH BUILD/]},
-        },
-        {
-            columns => [qw/key value job_id/],
-        });
-    while (my $s = $js->next) {
-        $settings->{$s->job_id}->{$s->key} = $s->value;
-    }
-
     # complete response
     my @list;
     my $jobs = $self->db->resultset("Jobs")->search(
         {'me.id' => {in => \@ids}},
         {
-            columns  => [qw/me.id state clone_id test result group_id t_finished/],
+            columns  => [qw/me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST state clone_id test result group_id t_finished/],
             order_by => ['me.id DESC'],
             prefetch => [qw/children parents/],
         });
@@ -147,7 +133,6 @@ sub list_ajax {
         while (my $s = $jc->next) {
             push(@{$deps{children}->{$s->to_string}}, $s->child_job_id);
         }
-        my $js = $settings->{$job->id};
 
         my $data = {
             DT_RowId     => "job_" . $job->id,
@@ -155,12 +140,12 @@ sub list_ajax {
             result_stats => $stats->{$job->id},
             deps         => \%deps,
             clone        => $job->clone_id,
-            test         => $job->test . "@" . ($js->{MACHINE} // ''),
-            distri  => $js->{DISTRI}  // '',
-            version => $js->{VERSION} // '',
-            flavor  => $js->{FLAVOR}  // '',
-            arch    => $js->{ARCH}    // '',
-            build   => $js->{BUILD}   // '',
+            test         => $job->TEST . "@" . ($job->MACHINE // ''),
+            distri  => $job->DISTRI  // '',
+            version => $job->VERSION // '',
+            flavor  => $job->FLAVOR  // '',
+            arch    => $job->ARCH    // '',
+            build   => $job->BUILD   // '',
             testtime => $job->t_finished,
             result   => $job->result,
             group    => $job->group_id,
@@ -304,10 +289,9 @@ sub show {
     push(@conds, {'me.state'  => 'done'});
     push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
     push(@conds, {id          => {'<', $job->id}});
-    my %js_settings = map { $_ => $job->settings_hash->{$_} } @scenario_keys;
-    my $subquery = $self->db->resultset("JobSettings")->query_for_settings(\%js_settings);
-    push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
-
+    for my $key (@scenario_keys) {
+        push(@conds, {"me.$key" => $job->settings_hash->{$key}});
+    }
     my $limit_previous = $self->param('limit_previous') // 10;    # arbitrary limit of previous results to show
     my %attrs = (
         rows     => $limit_previous,
@@ -332,10 +316,9 @@ sub _calculate_preferred_machines {
     my %machines;
 
     foreach my $job (@$jobs) {
-        my $sh = $job->settings_hash;
-        next unless $sh->{MACHINE};
-        $machines{$sh->{ARCH}} ||= {};
-        $machines{$sh->{ARCH}}->{$sh->{MACHINE}}++;
+        next unless $job->MACHINE;
+        $machines{$job->ARCH} ||= {};
+        $machines{$job->ARCH}->{$job->MACHINE}++;
     }
     my $pms = {};
     for my $arch (keys %machines) {
@@ -423,10 +406,9 @@ sub overview {
     my $job_labels = $self->_job_labels(\@latest_jobs);
 
     foreach my $job (@latest_jobs) {
-        my $settings = $job->settings_hash;
-        my $test     = $job->test;
-        my $flavor   = $settings->{FLAVOR} || 'sweet';
-        my $arch     = $settings->{ARCH} || 'noarch';
+        my $test   = $job->TEST;
+        my $flavor = $job->FLAVOR || 'sweet';
+        my $arch   = $job->ARCH || 'noarch';
 
         my $result;
         if ($job->state eq 'done') {
@@ -480,8 +462,8 @@ sub overview {
         }
 
         # Populate @configs and %archs
-        if ($settings->{MACHINE} && $preferred_machines->{$settings->{ARCH}} && $preferred_machines->{$settings->{ARCH}} ne $settings->{MACHINE}) {
-            $test .= "@" . $settings->{MACHINE};
+        if ($job->MACHINE && $preferred_machines->{$job->ARCH} && $preferred_machines->{$job->ARCH} ne $job->MACHINE) {
+            $test .= "@" . $job->MACHINE;
         }
         push(@configs, $test) unless (grep { $test eq $_ } @configs);
         $archs{$flavor} = [] unless $archs{$flavor};

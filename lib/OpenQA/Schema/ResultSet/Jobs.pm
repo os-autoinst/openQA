@@ -36,8 +36,7 @@ latest build for a given pair of distri and version.
 
 =cut
 sub latest_build {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     my @conds;
     my %attrs;
     my $rsource = $self->result_source;
@@ -50,21 +49,27 @@ sub latest_build {
 
     $attrs{join}     = 'settings';
     $attrs{rows}     = 1;
-    $attrs{order_by} = {-desc => 'me.id'};              # More reliable for tests than t_created
-    $attrs{columns}  = [{value => 'settings.value'}];
-    push(@conds, {'settings.key' => {'=' => 'BUILD'}});
+    $attrs{order_by} = {-desc => 'me.id'};    # More reliable for tests than t_created
+    $attrs{columns}  = qw/BUILD/;
 
     while (my ($k, $v) = each %args) {
-        my $subquery = $schema->resultset("JobSettings")->search(
-            {
-                key   => uc($k),
-                value => $v
-            });
-        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+
+        if (grep { $k eq $_ } qw/distri version flavor machine arch build test/) {
+            push(@conds, {"me." . uc($k) => $v});
+        }
+        else {
+
+            my $subquery = $schema->resultset("JobSettings")->search(
+                {
+                    key   => uc($k),
+                    value => $v
+                });
+            push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+        }
     }
 
     my $rs = $self->search({-and => \@conds}, \%attrs);
-    return $rs->get_column('value')->first;
+    return $rs->get_column('BUILD')->first;
 }
 
 =head2 latest_jobs
@@ -107,7 +112,7 @@ sub create_from_settings {
     my ($self, $settings) = @_;
     my %settings = %$settings;
 
-    my %new_job_args = (test => $settings{TEST});
+    my %new_job_args = (TEST => $settings{TEST});
 
     if ($settings{NAME}) {
         my $njobs = $self->search({slug => $settings{NAME}})->count;
@@ -145,6 +150,11 @@ sub create_from_settings {
               };
         }
         delete $settings{_PARALLEL_JOBS};
+    }
+
+    # migrate the important keys
+    for my $key (qw/DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD/) {
+        $new_job_args{$key} = delete $settings{$key};
     }
 
     my $job = $self->create(\%new_job_args);
@@ -263,18 +273,23 @@ sub complex_query {
         push(@conds, {'me.id' => {-in => $args{ids}}});
     }
     elsif ($args{match}) {
+        my @likes;
         # Text search across some settings
-        my $subquery = $schema->resultset("JobSettings")->search(
-            {
-                key => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST', 'VERSION'],
-                value => {'-like' => "%$args{match}%"},
-            });
-        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+        for my $key (qw/DISTRI FLAVOR BUILD TEST VERSION/) {
+            push(@likes, {"me.$key" => {'-like' => "%$args{match}%"}});
+        }
+        push(@conds, -or => \@likes);
     }
     else {
-        my %js_settings = map { uc($_) => $args{$_} } qw(build iso distri version flavor arch hdd_1);
+        my %js_settings = map { uc($_) => $args{$_} } qw(iso hdd_1);
         my $subquery = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
         push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+
+        for my $key (qw/build distri version flavor arch/) {
+            if ($args{$key}) {
+                push(@conds, {"me." . uc($key) => $args{$key}});
+            }
+        }
     }
 
     $attrs{order_by} = ['me.id DESC'];

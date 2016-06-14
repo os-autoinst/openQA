@@ -128,7 +128,8 @@ my $job_ref = {
     clone_id   => undef,
     group_id   => undef,
     retry_avbl => 3,
-    test       => 'rainbow',
+    # to be removed
+    test => 'rainbow'
 };
 
 my $iso = sprintf("%s/%s", $OpenQA::Utils::isodir, $settings{ISO});
@@ -283,6 +284,7 @@ $job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-x86_64-Build666-rainbow
 
 ## update JOBTOKEN for isdeeply compare
 $job_ref->{settings}->{JOBTOKEN} = $grabed->{settings}->{JOBTOKEN};
+
 is_deeply($grabed->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job->id;
 my $job_id  = $grabed->{id};

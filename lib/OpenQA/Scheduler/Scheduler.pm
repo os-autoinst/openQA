@@ -524,8 +524,15 @@ sub _job_find_smart($$$) {
         }
     }
     if (ref $value eq 'HASH') {
-        my $subquery = schema->resultset("JobSettings")->query_for_settings($value);
-        $cond->{id} = {-in => $subquery->get_column('job_id')->as_query};
+        for my $key (qw/DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST/) {
+            if (defined $value->{$key}) {
+                $cond->{$key} = delete $value->{$key};
+            }
+        }
+        if (%$value) {
+            my $subquery = schema->resultset("JobSettings")->query_for_settings($value);
+            $cond->{id} = {-in => $subquery->get_column('job_id')->as_query};
+        }
     }
     else {
         # TODO: support by name and by iso here
@@ -666,22 +673,22 @@ sub job_restart {
     return @duplicated;
 }
 
-sub job_cancel($;$) {
-    my $value = shift or die "missing name parameter\n";
-    my $newbuild = shift || 0;
+sub job_cancel {
+    my ($value, $newbuild) = @_;
+    die "missing name parameter" unless $value;
+    $newbuild //= 0;
 
     my %attrs;
     my %cond;
     _job_find_smart($value, \%cond, \%attrs);
-    $cond{state}    = OpenQA::Schema::Result::Jobs::SCHEDULED;
-    $attrs{columns} = [qw/id/];
+    $cond{state} = OpenQA::Schema::Result::Jobs::SCHEDULED;
     my $scheduled_jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
     my $jobs_to_cancel;
     my $new_result;
     if ($newbuild) {
         $new_result = OpenQA::Schema::Result::Jobs::OBSOLETED;
         # 'monkey patch' cond to be useable in chained search
-        $cond{'me.id'} = delete $cond{id};
+        $cond{'me.id'} = delete $cond{id} if $cond{id};
         # filter out all jobs that have any comment (they are considered 'important') ...
         $jobs_to_cancel = $scheduled_jobs->search({'comments.job_id' => undef}, {join => 'comments'});
         # ... or belong to a tagged build, i.e. is considered important
@@ -730,11 +737,6 @@ sub job_cancel($;$) {
         ++$cancelled_jobs;
     }
     return $cancelled_jobs;
-}
-
-sub job_stop {
-    carp "job_stop is deprecated, use job_cancel instead";
-    return job_cancel(@_);
 }
 
 #

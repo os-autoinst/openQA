@@ -39,11 +39,17 @@
         priority   => 56,
         result     => "incomplete",
         retry_avbl => 3,
-        settings   => [{key => 'ARCH', value => 'x86_64'}, {key => 'BUILD', value => 87.5011}, {key => 'DESKTOP', value => 'minimalx'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'FLAVOR', value => 'staging_e'}, {key => 'ISO', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'}, {key => 'ISO_MAXSIZE', value => 737280000}, {key => 'NAME', value => '00000322-opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx'}, {key => 'TEST', value => 'minimalx'}, {key => 'VERSION', value => 'Factory'}, {key => 'MACHINE', value => '32bit'}, {key => 'ISO_1', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'}],
+        settings   => [{key => 'DESKTOP', value => 'minimalx'}, {key => 'ISO', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'}, {key => 'ISO_MAXSIZE', value => 737280000}, {key => 'ISO_1', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'}],
+        ARCH       => 'x86_64',
+        BUILD      => '87.5011',
+        DISTRI     => 'opensuse',
+        FLAVOR     => 'staging_e',
+        TEST       => 'minimalx',
+        VERSION    => 'Factory',
+        MACHINE    => '32bit',
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),    # One hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
-        test       => "minimalx",
         jobs_assets => [{asset_id => 4},]
 
     },
@@ -56,9 +62,15 @@
         backend    => 'qemu',
         t_finished => undef,
         t_started  => undef,
-        test       => "RAID0",
+        TEST       => "RAID0",
         retry_avbl => 3,
-        settings   => [{key => 'FLAVOR', value => 'DVD'}, {key => 'QEMUCPU', value => 'qemu32'}, {key => 'ARCH', value => 'i586'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'INSTALLONLY', value => '1'}, {key => 'BUILD', value => '0091'}, {key => 'VERSION', value => '13.1'}, {key => 'RAIDLEVEL', value => '0'}, {key => 'DVD', value => '1'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'TEST', value => 'RAID0'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'MACHINE', value => '32bit'}, {key => 'LIVETEST', value => '1'},]
+        ARCH       => 'i586',
+        FLAVOR     => 'DVD',
+        DISTRI     => 'opensuse',
+        MACHINE    => '32bit',
+        BUILD      => '0091',
+        VERSION    => '13.1',
+        settings   => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'INSTALLONLY', value => '1'}, {key => 'RAIDLEVEL', value => '0'}, {key => 'DVD', value => '1'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'LIVETEST', value => '1'},]
     },
     Jobs => {
         id         => 99928,
@@ -68,9 +80,15 @@
         t_finished => undef,
         t_started  => undef,
         backend    => 'qemu',
-        test       => "RAID1",
+        TEST       => "RAID1",
         retry_avbl => 3,
-        settings   => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'FLAVOR', value => 'DVD'}, {key => 'INSTALLONLY', value => '1'}, {key => 'BUILD', value => '0091'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'ARCH', value => 'i586'}, {key => 'RAIDLEVEL', value => '1'}, {key => 'DVD', value => '1'}, {key => 'VERSION', value => '13.1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'TEST', value => 'RAID1'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'MACHINE', value => '32bit'},]
+        FLAVOR     => 'DVD',
+        BUILD      => '0091',
+        DISTRI     => 'opensuse',
+        ARCH       => 'i586',
+        VERSION    => '13.1',
+        MACHINE    => '32bit',
+        settings   => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'INSTALLONLY', value => '1'}, {key => 'RAIDLEVEL', value => '1'}, {key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},]
     },
     Jobs => {
         id         => 99937,
@@ -80,11 +98,17 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 536400, 'UTC'),    # 149 hours ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 540000, 'UTC'),    # 150 hours ago
-        test       => "kde",
+        TEST       => "kde",
         jobs_assets => [{asset_id => 1},],
         retry_avbl  => 3,
+        ARCH        => 'i586',
+        VERSION     => '13.1',
+        FLAVOR      => 'DVD',
+        BUILD       => '0091',
+        DISTRI      => 'opensuse',
+        MACHINE     => '32bit',
         result_dir  => '00099937-opensuse-13.1-DVD-i586-Build0091-kde',
-        settings => [{key => 'DVD', value => '1'}, {key => 'VERSION', value => '13.1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'TEST', value => 'kde'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'QEMUCPU', value => 'qemu32'}, {key => 'FLAVOR', value => 'DVD'}, {key => 'BUILD', value => '0091'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'ARCH', value => 'i586'}, {key => 'MACHINE', value => '32bit'},]
+        settings => [{key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'QEMUCPU', value => 'qemu32'}]
     },
     Jobs => {
         id         => 99938,
@@ -92,13 +116,19 @@
         priority   => 36,
         result     => "failed",
         state      => "done",
-        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),                                                                                                                                                                                                                                                                                                                                                                                                                                                       # One hour ago
-        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),                                                                                                                                                                                                                                                                                                                                                                                                                                                       # Two hours ago
-        test       => "doc",
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),                                                                                                                                                                                     # One hour ago
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),                                                                                                                                                                                     # Two hours ago
+        TEST       => "doc",
+        ARCH       => 'x86_64',
+        VERSION    => 'Factory',
+        FLAVOR     => 'DVD',
+        BUILD      => '0048',
+        DISTRI     => 'opensuse',
+        MACHINE    => '64bit',
         backend    => 'qemu',
         retry_avbl => 3,
         result_dir => '00099938-opensuse-Factory-DVD-x86_64-Build0048-doc',
-        settings   => [{key => 'DVD', value => '1'}, {key => 'VERSION', value => 'Factory'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'TEST', value => 'doc'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}, {key => 'FLAVOR', value => 'DVD'}, {key => 'BUILD', value => '0048'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'ARCH', value => 'x86_64'}, {key => 'MACHINE', value => '64bit'},]
+        settings   => [{key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}]
     },
     Jobs => {
         id         => 99939,
@@ -108,12 +138,18 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),    # One hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
-        test       => "kde",
+        TEST       => "kde",
+        ARCH       => 'x86_64',
+        VERSION    => 'Factory',
         backend    => 'qemu',
+        FLAVOR     => 'DVD',
+        BUILD      => '0048',
+        DISTRI     => 'opensuse',
+        MACHINE    => '64bit',
         retry_avbl => 3,
         # no result dir, let us assume that this is an old test that has
         # already be pruned
-        settings => [{key => 'DVD', value => '1'}, {key => 'VERSION', value => 'Factory'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'TEST', value => 'kde'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}, {key => 'FLAVOR', value => 'DVD'}, {key => 'BUILD', value => '0048'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'ARCH', value => 'x86_64'}, {key => 'MACHINE', value => '64bit'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
+        settings => [{key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
     },
     Jobs => {
         id         => 99946,
@@ -123,12 +159,18 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 10800, 'UTC'),    # Three hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hours ago
-        test       => "textmode",
+        TEST       => "textmode",
+        ARCH       => 'i586',
+        FLAVOR     => 'DVD',
+        DISTRI     => 'opensuse',
+        BUILD      => '0091',
+        VERSION    => '13.1',
+        MACHINE    => '32bit',
         backend    => 'qemu',
         jobs_assets => [{asset_id => 1},],
         retry_avbl  => 3,
         result_dir  => '00099946-opensuse-13.1-DVD-i586-Build0091-textmode',
-        settings => [{key => 'FLAVOR', value => 'DVD'}, {key => 'QEMUCPU', value => 'qemu32'}, {key => 'ARCH', value => 'i586'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'BUILD', value => '0091'}, {key => 'VERSION', value => '13.1'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'TEST', value => 'textmode'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'MACHINE', value => '32bit'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
+        settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
     },
     Jobs => {
         id         => 99945,
@@ -140,10 +182,16 @@
         backend    => 'qemu',
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),    # Five hours ago
-        test       => "textmode",
+        TEST       => "textmode",
+        FLAVOR     => 'DVD',
+        DISTRI     => 'opensuse',
+        BUILD      => '0091',
+        VERSION    => '13.1',
+        MACHINE    => '32bit',
+        ARCH       => 'i586',
         jobs_assets => [{asset_id => 1},],
         retry_avbl  => 3,
-        settings => [{key => 'FLAVOR', value => 'DVD'}, {key => 'QEMUCPU', value => 'qemu32'}, {key => 'ARCH', value => 'i586'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'BUILD', value => '0091'}, {key => 'VERSION', value => '13.1'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'TEST', value => 'textmode'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'MACHINE', value => '32bit'},]
+        settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}]
     },
     Jobs => {
         id         => 99963,
@@ -153,11 +201,17 @@
         state      => "running",
         t_finished => undef,
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),    # 10 minutes ago
-        test       => "kde",
+        TEST       => "kde",
+        BUILD      => '0091',
+        DISTRI     => 'opensuse',
+        FLAVOR     => 'DVD',
+        MACHINE    => '64bit',
+        VERSION    => '13.1',
         backend    => 'qemu',
         jobs_assets => [{asset_id => 2},],
         retry_avbl  => 3,
-        settings   => [{key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'}, {key => 'TEST', value => 'kde'}, {key => 'VERSION', value => '13.1'}, {key => 'DVD', value => '1'}, {key => 'BUILD', value => '0091'}, {key => 'ARCH', value => 'x86_64'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'FLAVOR', value => 'DVD'}, {key => 'MACHINE', value => '64bit'},],
+        ARCH        => 'x86_64',
+        settings   => [{key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'}, {key => 'DVD', value => '1'}],
         result_dir => '00099963-opensuse-13.1-DVD-x86_64-Build0091-kde',
     },
     Jobs => {
@@ -169,12 +223,18 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 10800, 'UTC'),    # Three hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hours ago
-        test       => "kde",
+        TEST       => "kde",
+        BUILD      => '0091',
+        DISTRI     => 'opensuse',
+        FLAVOR     => 'DVD',
+        MACHINE    => '64bit',
+        VERSION    => '13.1',
         backend    => 'qemu',
         jobs_assets => [{asset_id => 2},],
         retry_avbl  => 3,
+        ARCH        => 'x86_64',
         result_dir  => '00099962-opensuse-13.1-DVD-x86_64-Build0091-kde',
-        settings => [{key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'}, {key => 'TEST', value => 'kde'}, {key => 'VERSION', value => '13.1'}, {key => 'DVD', value => '1'}, {key => 'BUILD', value => '0091'}, {key => 'ARCH', value => 'x86_64'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'FLAVOR', value => 'DVD'}, {key => 'MACHINE', value => '64bit'},]
+        settings => [{key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'}, {key => 'DVD', value => '1'},]
     },
     Jobs => {
         id          => 99981,
@@ -184,10 +244,16 @@
         state       => "cancelled",
         t_finished  => undef,
         t_started   => undef,
-        test        => "RAID0",
+        TEST        => "RAID0",
+        VERSION     => '13.1',
+        ARCH        => 'i686',
+        FLAVOR      => 'GNOME-Live',
+        MACHINE     => '32bit',
+        BUILD       => '0091',
+        DISTRI      => 'opensuse',
         jobs_assets => [{asset_id => 3},],
         retry_avbl  => 3,
-        settings    => [{key => 'DESKTOP', value => 'gnome'}, {key => 'ISO_MAXSIZE', value => '999999999'}, {key => 'LIVECD', value => '1'}, {key => 'ISO', value => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'}, {key => 'TEST', value => 'RAID0'}, {key => 'VERSION', value => '13.1'}, {key => 'RAIDLEVEL', value => '0'}, {key => 'INSTALLONLY', value => '1'}, {key => 'BUILD', value => '0091'}, {key => 'ARCH', value => 'i686'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'GNOME', value => '1'}, {key => 'QEMUCPU', value => 'qemu32'}, {key => 'FLAVOR', value => 'GNOME-Live'}, {key => 'MACHINE', value => '32bit'},]
+        settings    => [{key => 'DESKTOP', value => 'gnome'}, {key => 'ISO_MAXSIZE', value => '999999999'}, {key => 'LIVECD', value => '1'}, {key => 'ISO', value => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'}, {key => 'RAIDLEVEL', value => '0'}, {key => 'INSTALLONLY', value => '1'}, {key => 'GNOME', value => '1'}, {key => 'QEMUCPU', value => 'qemu32'},]
     },
     Jobs => {
         id         => 99961,
@@ -198,10 +264,16 @@
         t_finished => undef,
         backend    => 'qemu',
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),    # 10 minutes ago
-        test       => "kde",
+        TEST       => "kde",
+        ARCH       => 'x86_64',
+        BUILD      => '0091',
+        DISTRI     => 'opensuse',
+        FLAVOR     => 'NET',
+        MACHINE    => '64bit',
+        VERSION    => '13.1',
         jobs_assets => [{asset_id => 2},],
         retry_avbl  => 3,
-        settings => [{key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'}, {key => 'TEST', value => 'kde'}, {key => 'VERSION', value => '13.1'}, {key => 'DVD', value => '1'}, {key => 'BUILD', value => '0091'}, {key => 'ARCH', value => 'x86_64'}, {key => 'DISTRI', value => 'opensuse'}, {key => 'FLAVOR', value => 'NET'}, {key => 'MACHINE', value => '64bit'},]
+        settings => [{key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'}, {key => 'DVD', value => '1'},]
     },
 ]
 # vim: set sw=4 et:

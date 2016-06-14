@@ -129,7 +129,7 @@ sub delete {
     my ($self) = @_;
     my @removed_ids;
     for my $p (@{$self->every_param('id[]')}) {
-        if (!$self->app->db->resultset('Needles')->find($p)->remove($self->current_user)) {
+        if (!$self->db->resultset('Needles')->find($p)->remove($self->current_user)) {
             last;
         }
         push @removed_ids, $p;

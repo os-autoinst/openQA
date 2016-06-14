@@ -89,9 +89,6 @@ __PACKAGE__->add_columns(
         data_type     => 'varchar',
         default_value => NONE,
     },
-    test => {
-        data_type => 'text',
-    },
     clone_id => {
         data_type      => 'integer',
         is_foreign_key => 1,
@@ -109,6 +106,34 @@ __PACKAGE__->add_columns(
         # we store free text JSON here - backends might store random data about the job
         data_type   => 'text',
         is_nullable => 1,
+    },
+    TEST => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    DISTRI => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    VERSION => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    FLAVOR => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    ARCH => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    BUILD => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    MACHINE => {
+        data_type   => 'text',
+        is_nullable => 1
     },
     group_id => {
         data_type      => 'integer',
@@ -171,7 +196,7 @@ sub name {
 
         my %formats = (BUILD => 'Build%s',);
 
-        for my $c (qw/DISTRI VERSION FLAVOR MEDIA ARCH BUILD TEST/) {
+        for my $c (qw/DISTRI VERSION FLAVOR ARCH BUILD TEST/) {
             next unless $job_settings->{$c};
             push @a, sprintf(($formats{$c} || '%s'), $job_settings->{$c});
         }
@@ -205,6 +230,9 @@ sub settings_hash {
             else {
                 $self->{_settings}->{$var->key} = $var->value;
             }
+        }
+        for my $c (qw/DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST/) {
+            $self->{_settings}->{$c} = $self->get_column($c);
         }
         $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
     }
@@ -278,11 +306,13 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw/id name priority state result clone_id retry_avbl t_started t_finished test group_id worker_id/);
+    my $j = _hashref($job, qw/id name priority state result clone_id retry_avbl t_started t_finished group_id worker_id/);
     if ($j->{group_id}) {
         $j->{group} = $job->group->name;
     }
     $j->{settings} = $job->settings_hash;
+    # to be removed - lowercase is schema version 38
+    $j->{test} = $job->settings_hash->{TEST};
     if ($args{assets}) {
         if (defined $job->{_assets}) {
             for my $a (@{$job->{_assets}}) {
@@ -504,11 +534,16 @@ sub duplicate {
                 push @new_settings, {key => $js->key, value => $js->value};
             }
         }
-        push @new_settings, {key => 'TEST', value => $self->test};
 
         my $new_job = $rsource->resultset->create(
             {
-                test     => $self->test,
+                TEST     => $self->TEST,
+                VERSION  => $self->VERSION,
+                ARCH     => $self->ARCH,
+                FLAVOR   => $self->FLAVOR,
+                MACHINE  => $self->MACHINE,
+                BUILD    => $self->BUILD,
+                DISTRI   => $self->DISTRI,
                 group_id => $self->group_id,
                 settings => \@new_settings,
                 # assets are re-created in job_grab
@@ -1115,11 +1150,12 @@ sub _previous_scenario_jobs {
     my ($self, $rows) = @_;
 
     my $schema        = $self->result_source->schema;
+    my $conds         = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
     my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST MACHINE/;
-    my %js_settings   = map { $_ => $self->settings_hash->{$_} } @scenario_keys;
-    my $subquery      = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
-    my $conds         = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}}];
-    my %attrs         = (
+    for my $key (@scenario_keys) {
+        push(@$conds, {"me.$key" => $self->get_column($key)});
+    }
+    my %attrs = (
         order_by => ['me.id DESC'],
         rows     => $rows
     );

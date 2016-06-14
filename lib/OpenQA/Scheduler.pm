@@ -112,13 +112,6 @@ sub job_cancel_by_settings {
     return OpenQA::Scheduler::Scheduler::job_cancel($settings, $newbuild);
 }
 
-dbus_method('job_create', [['dict', 'string', ['variant']]], [['dict', 'string', ['variant']]]);
-sub job_create {
-    my ($self, $settings) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::schema->resultset("Jobs")->create_from_settings($settings);
-    return $rs->to_hash(assets => 1);
-}
-
 dbus_method('job_delete', ['uint32'], ['uint32']);
 sub job_delete {
     my ($self, $args) = @_;

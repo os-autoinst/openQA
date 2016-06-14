@@ -790,17 +790,17 @@ use Data::Dump qw/pp/;
 #   \- D
 my $jobBc_h = job_get_deps($jobBc_id);
 is_deeply($jobBc_h->{parents}->{Chained}, [$jobA->id], 'jobBc has jobA as chained parent');
-is($jobBc_h->{settings}{TEST}, $jobB->test, 'jobBc test and jobB test are equal');
+is($jobBc_h->{settings}{TEST}, $jobB->TEST, 'jobBc test and jobB test are equal');
 
 ok(!$jobC->clone, 'jobC was not cloned');
 my $jobC_h = job_get_deps($jobC->id);
 is_deeply($jobC_h->{parents}->{Chained}, [$jobA->id], 'jobC has jobA as chained parent');
-is($jobC_h->{settings}{TEST}, $jobC->test, 'jobBc test and jobB test are equal');
+is($jobC_h->{settings}{TEST}, $jobC->TEST, 'jobBc test and jobB test are equal');
 
 ok(!$jobD->clone, 'jobD was not cloned');
 my $jobD_h = job_get_deps($jobD->id);
 is_deeply($jobD_h->{parents}->{Chained}, [$jobA->id], 'jobD has jobA as chained parent');
-is($jobD_h->{settings}{TEST}, $jobD->test, 'jobBc test and jobB test are equal');
+is($jobD_h->{settings}{TEST}, $jobD->TEST, 'jobBc test and jobB test are equal');
 
 # hack jobs to appear running to scheduler
 $jobB->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
@@ -827,17 +827,17 @@ $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 ok($jobB->clone->clone, 'jobB clone jobBc was cloned');
 my $jobB2_h = job_get_deps($jobB->clone->clone->id);
 is_deeply($jobB2_h->{parents}->{Chained}, [$jobA2_id], 'jobB2 has jobA2 as chained parent');
-is($jobB2_h->{settings}{TEST}, $jobB->test, 'jobB2 test and jobB test are equal');
+is($jobB2_h->{settings}{TEST}, $jobB->TEST, 'jobB2 test and jobB test are equal');
 
 ok($jobC->clone, 'jobC was cloned');
 my $jobC2_h = job_get_deps($jobC->clone->id);
 is_deeply($jobC2_h->{parents}->{Chained}, [$jobA2_id], 'jobC2 has jobA2 as chained parent');
-is($jobC2_h->{settings}{TEST}, $jobC->test, 'jobC2 test and jobC test are equal');
+is($jobC2_h->{settings}{TEST}, $jobC->TEST, 'jobC2 test and jobC test are equal');
 
 ok($jobD->clone, 'jobD was cloned');
 my $jobD2_h = job_get_deps($jobD->clone->id);
 is_deeply($jobD2_h->{parents}->{Chained}, [$jobA2_id], 'jobD2 has jobA2 as chained parent');
-is($jobD2_h->{settings}{TEST}, $jobD->test, 'jobD2 test and jobD test are equal');
+is($jobD2_h->{settings}{TEST}, $jobD->TEST, 'jobD2 test and jobD test are equal');
 
 my $jobA2_h = job_get_deps($jobA2_id);
 is_deeply($jobA2_h->{children}->{Chained}, [$jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id}], 'jobA2 has jobB2, jobC2 and jobD2 as children');

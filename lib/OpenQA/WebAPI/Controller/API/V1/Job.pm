@@ -43,7 +43,7 @@ sub list {
         }
     }
 
-    my $rs = $self->app->db->resultset('Jobs')->complex_query(%args);
+    my $rs = $self->db->resultset('Jobs')->complex_query(%args);
     my @jobarray;
     if (defined $self->param('latest')) {
         @jobarray = $rs->latest_jobs;
@@ -58,7 +58,7 @@ sub list {
     # so we fetch some fields in a second step
 
     # fetch job assets
-    my $jas = $self->app->db->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
+    my $jas = $self->db->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
     while (my $ja = $jas->next) {
         my $job = $jobs{$ja->job_id};
         $job->{_assets} ||= [];
@@ -73,7 +73,7 @@ sub list {
         $job->group($groups{$job->group_id});
     }
 
-    my $modules = $self->app->db->resultset('JobModules')->search({job_id => {in => [keys %jobs]}}, {order_by => 'id'});
+    my $modules = $self->db->resultset('JobModules')->search({job_id => {in => [keys %jobs]}}, {order_by => 'id'});
     while (my $m = $modules->next) {
         my $job = $jobs{$m->job_id};
         $job->{_modules} ||= [];
@@ -116,12 +116,12 @@ sub create {
     my $json = {};
     my $status;
     try {
-        my $job = $ipc->scheduler('job_create', \%params);
-        $self->emit_event('openqa_job_create', {id => $job->{id}, %params});
-        $json->{id} = $job->{id};
+        my $job = $self->db->resultset('Jobs')->create_from_settings(\%params);
+        $self->emit_event('openqa_job_create', {id => $job->id, %params});
+        $json->{id} = $job->id;
 
         # enqueue gru job
-        $self->app->db->resultset('GruTasks')->create(
+        $self->db->resultset('GruTasks')->create(
             {
                 taskname => 'limit_assets',
                 priority => 10,
@@ -160,7 +160,7 @@ sub grab {
 sub show {
     my $self   = shift;
     my $job_id = int($self->stash('jobid'));
-    my $job    = $self->app->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
+    my $job    = $self->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
     if ($job) {
         $self->render(json => {job => $job->to_hash(assets => 1, deps => 1)});
     }
