@@ -28,7 +28,7 @@
             <th>Value</th>
         </thead>
         <tbody>
-            % for my $k (sort keys $worker->{properties}) {
+            % for my $k (sort keys %{$worker->{properties}}) {
                 <tr>
                     <td><%= $k %></td>
                     <td><%= $worker->{properties}->{$k} %></td>
