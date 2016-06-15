@@ -128,7 +128,7 @@ sub module {
 sub delete {
     my ($self) = @_;
     my @removed_ids;
-    for my $p (@{$self->every_param('id[]')}) {
+    for my $p (@{$self->every_param('id')}) {
         if (!$self->db->resultset('Needles')->find($p)->remove($self->current_user)) {
             last;
         }
