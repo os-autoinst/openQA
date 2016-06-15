@@ -86,9 +86,9 @@
                             <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
                         %= end
                     % }
-                    % if (is_operator && $running) {
+                    % if (is_operator && ($job->state eq 'running' || $job->state eq 'scheduled')) {
                         %= link_post url_for('apiv1_cancel', jobid => $job->id) => ('data-remote' => 'true', id => 'cancel_running') => begin
-                            <i class="fa fa-2 fa-stop" title="Stop Job"></i>
+                            <i class="fa fa-2 fa-times-circle-o" title="Cancel Job"></i>
                         % end
                     % }
                 </div>
