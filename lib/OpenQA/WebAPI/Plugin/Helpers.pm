@@ -177,6 +177,9 @@ sub register {
             elsif ($res eq 'passed') {
                 return $hash->{soft_failure} ? 'resultsoftfailed' : 'resultok';
             }
+            elsif ($res eq 'running') {
+                return 'resultrunning';
+            }
             else {
                 return 'resultunknown';
             }

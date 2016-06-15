@@ -8,6 +8,17 @@
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     setupResultButtons();
+    if ($('#livestream').length > 0) {
+        var running_td = $('td.resultrunning');
+        if (running_td.length > 0) {
+            var tr = $('<tr id="canrow"></tr>');
+            var td = $('<td colspan="3"></td>');
+            td.append($('#canholder'));
+            tr.append(td);
+            tr.insertAfter(running_td.parent());
+        }
+        setupRunning();
+    }
 % end
 
 % if (!@$modlist) {
@@ -74,6 +85,11 @@
                         %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
                             <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
                         %= end
+                    % }
+                    % if (is_operator && $running) {
+                        %= link_post url_for('apiv1_cancel', jobid => $job->id) => ('data-remote' => 'true', id => 'cancel_running') => begin
+                            <i class="fa fa-2 fa-stop" title="Stop Job"></i>
+                        % end
                     % }
                 </div>
                 <div>
@@ -187,6 +203,12 @@
                         </table>
 
                     % }
+                    % if ($running) {
+                        <div style="margin: 0 10px;" id="canholder">
+                            <canvas id="livestream" width="1024" height="768" data-url='<%= url_for("streaming", testid => $testid) %>'>
+                            </canvas>
+                        </div>
+                    % }
                 </div>
                 <div role="tabpanel" class="tab-pane" id="downloads">
                 % if(@$resultfiles) {
@@ -243,6 +265,15 @@
                     <ul>
                         %= content 'asset_box'
                     </ul>
+                % }
+
+                % if ($running) {
+                    <div class="h5">Live Log</div>
+                    <div class="panel panel-default">
+                        <pre id="livelog" data-url='<%= url_for("livelog", testid => $testid) %>'></pre>
+                    </div>
+                    <input type="checkbox" id="scrolldown" checked="checked" />
+                    <label for="scrolldown">Autoscroll log</label>
                 % }
 
                 </div>
