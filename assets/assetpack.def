@@ -65,3 +65,4 @@
 ! result_preview.js
 < javascripts/result_preview.js
 < javascripts/needlediff.js
+< javascripts/running.js

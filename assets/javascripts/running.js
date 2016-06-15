@@ -254,6 +254,7 @@ function setResolution(arg) {
 }
 
 function initLivestream() {
+    /*
     var sel_resolution = $('#sel_resolution');
     
     // initially set canvas size
@@ -263,6 +264,7 @@ function initLivestream() {
     }
     setResolution(livestream_size);
     sel_resolution.value = livestream_size;
+    */
     
     // start stream
     var livestream = $('#livestream');
@@ -279,6 +281,7 @@ function setupRunning() {
     initLivelog();
     initLivestream();
 
+    /*
     $('#interactive0_button').click(enableInteractive);
     $('#interactive1_button').click(disableInteractive);
 
@@ -295,6 +298,7 @@ function setupRunning() {
     $('#sel_resolution').change(function() {
         setResolution($(this).val());
     });
+    */
     $('#scrolldown').change(setScrolldown);
 }
 

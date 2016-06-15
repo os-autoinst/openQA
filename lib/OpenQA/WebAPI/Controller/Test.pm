@@ -249,6 +249,7 @@ sub show {
     $self->stash(version  => $job->VERSION);
     $self->stash(build    => $job->BUILD);
     $self->stash(scenario => $scenario);
+    $self->stash(running => 0);
 
     #  return $self->reply->not_found unless (-e $self->stash('resultdir'));
 
@@ -257,8 +258,9 @@ sub show {
         $self->stash(worker => $job->worker);
         $self->stash(job    => $job);
         $self->stash('backend_info', decode_json($job->backend_info || '{}'));
-        $self->render('test/running');
-        return;
+        $self->stash(running => 1);
+        #$self->render('test/running');
+        #return;
     }
 
     my $clone_of = $self->db->resultset("Jobs")->find({clone_id => $job->id});
