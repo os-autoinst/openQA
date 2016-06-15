@@ -7,6 +7,7 @@
         result   => 'passed',
     },
     JobModules => {
+        id       => 2,
         script   => 'tests/installation/bootloader.pm',
         job_id   => 99937,
         category => 'installation',
@@ -14,13 +15,16 @@
         result   => 'passed',
     },
     JobModules => {
-        script   => 'tests/installation/welcome.pm',
-        job_id   => 99937,
-        category => 'installation',
-        name     => 'welcome',
-        result   => 'passed',
+        id        => 3,
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 10000, 'UTC'),
+        script    => 'tests/installation/welcome.pm',
+        job_id    => 99937,
+        category  => 'installation',
+        name      => 'welcome',
+        result    => 'passed',
     },
     JobModules => {
+        id       => 4,
         script   => 'tests/installation/installation_mode.pm',
         job_id   => 99937,
         category => 'installation',
@@ -28,6 +32,7 @@
         result   => 'passed',
     },
     JobModules => {
+        id           => 5,
         script       => 'tests/installation/installation_mode.pm',
         job_id       => 99939,
         category     => 'installation',
@@ -36,6 +41,7 @@
         soft_failure => 1,
     },
     JobModules => {
+        id       => 6,
         script   => 'tests/installation/installer_timezone.pm',
         job_id   => 99937,
         category => 'installation',
@@ -43,6 +49,7 @@
         result   => 'passed',
     },
     JobModules => {
+        id       => 7,
         script   => 'tests/installation/logpackages.pm',
         job_id   => 99937,
         category => 'installation',
@@ -50,6 +57,7 @@
         result   => 'passed',
     },
     JobModules => {
+        id       => 8,
         script   => 'tests/installation/installer_desktopselection.pm',
         job_id   => 99937,
         category => 'installation',
@@ -57,13 +65,18 @@
         result   => 'passed',
     },
     JobModules => {
-        script   => 'tests/installation/partitioning.pm',
-        job_id   => 99937,
-        category => 'installation',
-        name     => 'partitioning',
-        result   => 'passed',
+        id        => 9,
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 50000, 'UTC'),
+        script    => 'tests/installation/partitioning.pm',
+        job_id    => 99937,
+        category  => 'installation',
+        name      => 'partitioning',
+        result    => 'passed',
     },
     JobModules => {
+        id        => 10,
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 100000, 'UTC'),
+
         script   => 'tests/installation/partitioning_finish.pm',
         job_id   => 99937,
         category => 'installation',
@@ -71,6 +84,7 @@
         result   => 'passed',
     },
     JobModules => {
+        id       => 11,
         script   => 'tests/installation/user_settings.pm',
         job_id   => 99937,
         category => 'installation',
@@ -78,6 +92,7 @@
         result   => 'passed',
     },
     JobModules => {
+        id       => 12,
         script   => 'tests/installation/installation_overview.pm',
         job_id   => 99937,
         category => 'installation',
@@ -85,6 +100,7 @@
         result   => 'passed',
     },
     JobModules => {
+        id       => 13,
         script   => 'tests/installation/start_install.pm',
         job_id   => 99937,
         category => 'installation',
@@ -92,6 +108,7 @@
         result   => 'passed',
     },
     JobModules => {
+        id       => 14,
         script   => 'tests/installation/livecdreboot.pm',
         job_id   => 99937,
         category => 'installation',
@@ -99,6 +116,7 @@
         result   => 'passed',
     },
     JobModules => {
+        id       => 15,
         script   => 'tests/installation/second_stage.pm',
         job_id   => 99937,
         category => 'installation',

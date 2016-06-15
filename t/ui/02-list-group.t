@@ -56,7 +56,7 @@ ok($driver->get($baseurl . "tests?groupid=1001"), "list jobs without group 1001"
 @rows = $driver->find_child_elements($driver->find_element('#running tbody', 'css'), "tr");
 is(@rows, 1, 'one running job with this group');
 isnt($driver->find_element('#running #job_99963', 'css'), undef, '99963 listed');
-t::ui::PhantomTest::make_screenshot('mojoResults.png');
+#t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 
 t::ui::PhantomTest::kill_phantom();
