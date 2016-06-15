@@ -46,6 +46,7 @@ $color-state-running: #8BDFFF;
 .resultok { background-color: $color-ok;  }
 .resultpassed { background-color: $color-ok; }
 .resultunknown { background-color: $color-result-missing; }
+.resultrunning { background-color: $color-result-testing; }
 .resultwarning { background-color: $color-warning; }
 .resultsoftfailed { background-color: $color-softfail; }
 .resultfail { background-color: $color-result-failed; }
