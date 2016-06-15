@@ -35,7 +35,7 @@ my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
 sub list_jobs {
     my %args = @_;
-    [map { $_->to_hash(assets => 1) } OpenQA::Scheduler::Scheduler::query_jobs(%args)->all];
+    [map { $_->to_hash(assets => 1) } $schema->resultset('Jobs')->complex_query(%args)->all];
 }
 
 my $result;
@@ -128,7 +128,8 @@ my $job_ref = {
     clone_id   => undef,
     group_id   => undef,
     retry_avbl => 3,
-    test       => 'rainbow',
+    # to be removed
+    test => 'rainbow'
 };
 
 my $iso = sprintf("%s/%s", $OpenQA::Utils::isodir, $settings{ISO});
@@ -283,6 +284,7 @@ $job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-x86_64-Build666-rainbow
 
 ## update JOBTOKEN for isdeeply compare
 $job_ref->{settings}->{JOBTOKEN} = $grabed->{settings}->{JOBTOKEN};
+
 is_deeply($grabed->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job->id;
 my $job_id  = $grabed->{id};
@@ -355,18 +357,17 @@ is($job->{priority}, 100, "job->set_prio");
 # TBD
 
 
-# Testing job_delete
-$result = OpenQA::Scheduler::Scheduler::job_delete($job_id);
+$result = $schema->resultset('Jobs')->find($job_id)->delete;
 my $no_job_id = OpenQA::Scheduler::Scheduler::job_get($job_id);
-ok($result == 1 && !defined $no_job_id, "job_delete");
+ok($result && !defined $no_job_id, "job_delete");
 
-$result    = OpenQA::Scheduler::Scheduler::job_delete($job2->id);
+$result    = $schema->resultset('Jobs')->find($job2->id)->delete;
 $no_job_id = OpenQA::Scheduler::Scheduler::job_get($job2->id);
-ok($result == 1 && !defined $no_job_id, "job_delete");
+ok($result && !defined $no_job_id, "job_delete");
 
-$result    = OpenQA::Scheduler::Scheduler::job_delete($job3_id);
+$result    = $schema->resultset('Jobs')->find($job3_id)->delete;
 $no_job_id = OpenQA::Scheduler::Scheduler::job_get($job3_id);
-ok($result == 1 && !defined $no_job_id, "job_delete");
+ok($result && !defined $no_job_id, "job_delete");
 
 $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "no jobs listed");

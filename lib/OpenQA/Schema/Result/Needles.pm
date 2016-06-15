@@ -62,7 +62,7 @@ __PACKAGE__->belongs_to(directory  => 'OpenQA::Schema::Result::NeedleDirs', 'dir
 
 __PACKAGE__->has_many(job_modules => 'OpenQA::Schema::Result::JobModuleNeedles', 'needle_id');
 
-sub update_needle_cache($) {
+sub update_needle_cache {
     my ($needle_cache) = @_;
 
     for my $needle (values %$needle_cache) {
@@ -73,7 +73,7 @@ sub update_needle_cache($) {
 # save the needle informations
 # be aware that giving the optional needle_cache hash ref, makes you responsible
 # to call update_needle_cache after a loop
-sub update_needle($$$;$) {
+sub update_needle {
     my ($filename, $module, $matched, $needle_cache) = @_;
 
     my $schema = OpenQA::Scheduler::Scheduler::schema();
@@ -89,7 +89,7 @@ sub update_needle($$$;$) {
         my $dir = $schema->resultset('NeedleDirs')->find_or_new({path => dirname($realpath)});
         if (!$dir->in_storage) {
             # first job seen defines the name
-            my $name = sprintf "%s-%s", $module->job->settings_hash->{DISTRI}, $module->job->settings_hash->{VERSION};
+            my $name = sprintf "%s-%s", $module->job->DISTRI, $module->job->VERSION;
             $dir->name($name);
             $dir->insert;
         }
@@ -160,6 +160,21 @@ sub scan_old_jobs() {
     }
     OpenQA::Schema::Result::Needles::update_needle_cache(\%needle_cache);
     $guard->commit;
+}
+
+sub recalculate_matches {
+    my ($self) = @_;
+
+    $self->last_matched_module_id($self->job_modules->search({matched => 1})->get_column('job_module_id')->max());
+    $self->first_seen_module_id($self->job_modules->get_column('job_module_id')->min());
+    $self->last_seen_module_id($self->job_modules->get_column('job_module_id')->max());
+    if ($self->first_seen_module_id) {
+        $self->update;
+    }
+    else {
+        # there is no point in having this
+        $self->delete;
+    }
 }
 
 sub path {

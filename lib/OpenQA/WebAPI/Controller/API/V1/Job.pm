@@ -43,13 +43,13 @@ sub list {
         }
     }
 
-    # TODO: convert to DBus call or move query_jobs helper to WebAPI
+    my $rs = $self->db->resultset('Jobs')->complex_query(%args);
     my @jobarray;
     if (defined $self->param('latest')) {
-        @jobarray = OpenQA::Scheduler::Scheduler::query_jobs(%args)->latest_jobs;
+        @jobarray = $rs->latest_jobs;
     }
     else {
-        @jobarray = OpenQA::Scheduler::Scheduler::query_jobs(%args)->all;
+        @jobarray = $rs->all;
     }
     my %jobs = map { $_->id => $_ } @jobarray;
 
@@ -58,7 +58,7 @@ sub list {
     # so we fetch some fields in a second step
 
     # fetch job assets
-    my $jas = $self->app->db->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
+    my $jas = $self->db->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
     while (my $ja = $jas->next) {
         my $job = $jobs{$ja->job_id};
         $job->{_assets} ||= [];
@@ -73,7 +73,7 @@ sub list {
         $job->group($groups{$job->group_id});
     }
 
-    my $modules = $self->app->db->resultset('JobModules')->search({job_id => {in => [keys %jobs]}}, {order_by => 'id'});
+    my $modules = $self->db->resultset('JobModules')->search({job_id => {in => [keys %jobs]}}, {order_by => 'id'});
     while (my $m = $modules->next) {
         my $job = $jobs{$m->job_id};
         $job->{_modules} ||= [];
@@ -116,12 +116,12 @@ sub create {
     my $json = {};
     my $status;
     try {
-        my $job = $ipc->scheduler('job_create', \%params);
-        $self->emit_event('openqa_job_create', {id => $job->{id}, %params});
-        $json->{id} = $job->{id};
+        my $job = $self->db->resultset('Jobs')->create_from_settings(\%params);
+        $self->emit_event('openqa_job_create', {id => $job->id, %params});
+        $json->{id} = $job->id;
 
         # enqueue gru job
-        $self->app->db->resultset('GruTasks')->create(
+        $self->db->resultset('GruTasks')->create(
             {
                 taskname => 'limit_assets',
                 priority => 10,
@@ -160,7 +160,7 @@ sub grab {
 sub show {
     my $self   = shift;
     my $job_id = int($self->stash('jobid'));
-    my $job    = $self->app->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
+    my $job    = $self->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
     if ($job) {
         $self->render(json => {job => $job->to_hash(assets => 1, deps => 1)});
     }
@@ -185,12 +185,15 @@ sub set_command {
 
 sub destroy {
     my $self = shift;
-    my $ipc  = OpenQA::IPC->ipc;
 
-    my $res = $ipc->scheduler('job_delete', int($self->stash('jobid')));
-    $self->emit_event('openqa_job_delete', {id => $self->stash('jobid')}) if ($res);
-    # See comment in set_command
-    $self->render(json => {result => \$res});
+    my $job = $self->app->schema->resultset("Jobs")->find($self->stash('jobid'));
+    if (!$job) {
+        $self->reply->not_found unless $job;
+        return;
+    }
+    $self->emit_event('openqa_job_delete', {id => $job->id});
+    $job->delete;
+    $self->render(json => {result => 1});
 }
 
 sub prio {
@@ -232,7 +235,10 @@ sub create_artefact {
 
     my $jobid = int($self->stash('jobid'));
     my $job   = $self->app->schema->resultset("Jobs")->find($jobid);
-    $self->reply->not_found unless $job;
+    if (!$job) {
+        $self->reply->not_found;
+        return;
+    }
 
     if ($self->param('image')) {
         $job->store_image($self->param('file'), $self->param('md5'), $self->param('thumb') // 0);

@@ -89,9 +89,6 @@ __PACKAGE__->add_columns(
         data_type     => 'varchar',
         default_value => NONE,
     },
-    test => {
-        data_type => 'text',
-    },
     clone_id => {
         data_type      => 'integer',
         is_foreign_key => 1,
@@ -109,6 +106,34 @@ __PACKAGE__->add_columns(
         # we store free text JSON here - backends might store random data about the job
         data_type   => 'text',
         is_nullable => 1,
+    },
+    TEST => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    DISTRI => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    VERSION => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    FLAVOR => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    ARCH => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    BUILD => {
+        data_type   => 'text',
+        is_nullable => 1
+    },
+    MACHINE => {
+        data_type   => 'text',
+        is_nullable => 1
     },
     group_id => {
         data_type      => 'integer',
@@ -136,7 +161,7 @@ __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
 __PACKAGE__->has_many(parents  => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
-__PACKAGE__->has_many(modules  => 'OpenQA::Schema::Result::JobModules',      'job_id');
+__PACKAGE__->has_many(modules  => 'OpenQA::Schema::Result::JobModules',      'job_id', {cascade_delete => 0});
 # Locks
 __PACKAGE__->has_many(owned_locks  => 'OpenQA::Schema::Result::JobLocks', 'owner');
 __PACKAGE__->has_many(locked_locks => 'OpenQA::Schema::Result::JobLocks', 'locked_by');
@@ -157,8 +182,19 @@ __PACKAGE__->filter_column(
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
 
-    $sqlt_table->add_index(name => 'idx_jobs_state',  fields => ['state']);
-    $sqlt_table->add_index(name => 'idx_jobs_result', fields => ['result']);
+    $sqlt_table->add_index(name => 'idx_jobs_state',       fields => ['state']);
+    $sqlt_table->add_index(name => 'idx_jobs_result',      fields => ['result']);
+    $sqlt_table->add_index(name => 'idx_jobs_build_group', fields => [qw/BUILD group_id/]);
+    $sqlt_table->add_index(name => 'idx_jobs_scenario',    fields => [qw/VERSION DISTRI FLAVOR TEST MACHINE ARCH/]);
+}
+
+# overload to straighten out job modules
+sub delete {
+    my ($self) = @_;
+    # we need to remove the modules one by one to get their delete functions called
+    # otherwise dbix leaves this to the database
+    $self->modules->delete_all;
+    return $self->SUPER::delete;
 }
 
 sub name {
@@ -166,17 +202,16 @@ sub name {
     return $self->slug if $self->slug;
 
     if (!$self->{_name}) {
-        my $job_settings = $self->settings_hash;
         my @a;
 
         my %formats = (BUILD => 'Build%s',);
 
-        for my $c (qw/DISTRI VERSION FLAVOR MEDIA ARCH BUILD TEST/) {
-            next unless $job_settings->{$c};
-            push @a, sprintf(($formats{$c} || '%s'), $job_settings->{$c});
+        for my $c (qw/DISTRI VERSION FLAVOR ARCH BUILD TEST/) {
+            next unless $self->get_column($c);
+            push @a, sprintf(($formats{$c} || '%s'), $self->get_column($c));
         }
         my $name = join('-', @a);
-        $name .= ('@' . $job_settings->{MACHINE}) if $job_settings->{MACHINE};
+        $name .= ('@' . $self->get_column('MACHINE')) if $self->get_column('MACHINE');
         $name =~ s/[^a-zA-Z0-9@._+:-]/_/g;
         $self->{_name} = $name;
     }
@@ -205,6 +240,9 @@ sub settings_hash {
             else {
                 $self->{_settings}->{$var->key} = $var->value;
             }
+        }
+        for my $c (qw/DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST/) {
+            $self->{_settings}->{$c} = $self->get_column($c);
         }
         $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
     }
@@ -242,12 +280,6 @@ sub remove_result_dir_prefix {
     return $rd;
 }
 
-sub machine {
-    my ($self) = @_;
-
-    return $self->settings_hash->{MACHINE};
-}
-
 sub set_prio {
     my ($self, $prio) = @_;
 
@@ -278,11 +310,13 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw/id name priority state result clone_id retry_avbl t_started t_finished test group_id worker_id/);
+    my $j = _hashref($job, qw/id name priority state result clone_id retry_avbl t_started t_finished group_id worker_id/);
     if ($j->{group_id}) {
         $j->{group} = $job->group->name;
     }
     $j->{settings} = $job->settings_hash;
+    # hashes are left for script compatibility with schema version 38
+    $j->{test} = $job->TEST;
     if ($args{assets}) {
         if (defined $job->{_assets}) {
             for my $a (@{$job->{_assets}}) {
@@ -504,11 +538,16 @@ sub duplicate {
                 push @new_settings, {key => $js->key, value => $js->value};
             }
         }
-        push @new_settings, {key => 'TEST', value => $self->test};
 
         my $new_job = $rsource->resultset->create(
             {
-                test     => $self->test,
+                TEST     => $self->TEST,
+                VERSION  => $self->VERSION,
+                ARCH     => $self->ARCH,
+                FLAVOR   => $self->FLAVOR,
+                MACHINE  => $self->MACHINE,
+                BUILD    => $self->BUILD,
+                DISTRI   => $self->DISTRI,
                 group_id => $self->group_id,
                 settings => \@new_settings,
                 # assets are re-created in job_grab
@@ -697,7 +736,7 @@ sub insert_test_modules($) {
 sub part_of_important_build {
     my ($self) = @_;
 
-    my $build = $self->settings_hash->{BUILD};
+    my $build = $self->BUILD;
 
     # if there is no group, it can't be important
     if (!$self->group) {
@@ -1103,8 +1142,8 @@ sub release_networks {
 sub needle_dir() {
     my ($self) = @_;
     unless ($self->{_needle_dir}) {
-        my $distri  = $self->settings_hash->{DISTRI};
-        my $version = $self->settings_hash->{VERSION};
+        my $distri  = $self->DISTRI;
+        my $version = $self->VERSION;
         $self->{_needle_dir} = OpenQA::Utils::needledir($distri, $version);
     }
     return $self->{_needle_dir};
@@ -1115,11 +1154,12 @@ sub _previous_scenario_jobs {
     my ($self, $rows) = @_;
 
     my $schema        = $self->result_source->schema;
+    my $conds         = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
     my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST MACHINE/;
-    my %js_settings   = map { $_ => $self->settings_hash->{$_} } @scenario_keys;
-    my $subquery      = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
-    my $conds         = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}}];
-    my %attrs         = (
+    for my $key (@scenario_keys) {
+        push(@$conds, {"me.$key" => $self->get_column($key)});
+    }
+    my %attrs = (
         order_by => ['me.id DESC'],
         rows     => $rows
     );

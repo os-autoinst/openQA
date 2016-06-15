@@ -29,41 +29,29 @@ sub _group_result {
     my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
 
     my %res;
-    my $jobs = $group->jobs->search({"me.t_created" => $timecond,});
-    my $builds = $self->db->resultset('JobSettings')->search(
+    my $jobs = $group->jobs->search({"me.t_created" => $timecond});
+    my $builds = $jobs->search(
+        {},
         {
-            job_id => {-in => $jobs->get_column('id')->as_query},
-            key    => 'BUILD'
-        },
-        {
-            select => ['value', {min => 't_created', -as => 'first_hit'}],
-            as     => [qw/value first_hit/],
+            select => ['BUILD', {min => 't_created', -as => 'first_hit'}],
+            as     => [qw/BUILD first_hit/],
             order_by => {-desc => 'first_hit'},
-            group_by => [qw/value/]});
+            group_by => [qw/BUILD/]});
     my $max_jobs = 0;
     my $buildnr  = 0;
-    for my $b (map { $_->value } $builds->all) {
+    for my $b (map { $_->BUILD } $builds->all) {
         my $jobs = $self->db->resultset('Jobs')->search(
             {
-                'settings.key'   => 'BUILD',
-                'settings.value' => $b,
-                'me.group_id'    => $group->id,
-                'me.clone_id'    => undef,
+                'me.BUILD'    => $b,
+                'me.group_id' => $group->id,
+                'me.clone_id' => undef,
             },
-            {join => qw/settings/, order_by => 'me.id DESC'});
+            {order_by => 'me.id DESC'});
         my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0, labeled => 0, softfailed => 0);
 
         my $count = 0;
         my %seen;
-        my %settings;
         my @ids = map { $_->id } $jobs->all;
-        my $keys = $self->db->resultset('JobSettings')->search(
-            {
-                job_id => {-in => \@ids},
-                key    => [qw/DISTRI VERSION ARCH FLAVOR MACHINE/]});
-        while (my $line = $keys->next) {
-            $settings{$line->job_id}->{$line->key} = $line->value;
-        }
         # prefetch comments to count. Any comment is considered a label here
         # so a build is considered as 'reviewed' if all failures have at least
         # a comment. This could be improved to distinguish between
@@ -85,10 +73,9 @@ sub _group_result {
         }
 
         while (my $job = $jobs->next) {
-            my $jhash = $settings{$job->id};
-            $jr{distri}  //= $jhash->{DISTRI};
-            $jr{version} //= $jhash->{VERSION};
-            my $key = $job->test . "-" . $jhash->{ARCH} . "-" . $jhash->{FLAVOR} . "-" . $jhash->{MACHINE};
+            $jr{distri}  //= $job->DISTRI;
+            $jr{version} //= $job->VERSION;
+            my $key = $job->TEST . "-" . $job->ARCH . "-" . $job->FLAVOR . "-" . $job->MACHINE;
             next if $seen{$key}++;
 
             $count++;

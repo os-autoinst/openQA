@@ -36,8 +36,7 @@ latest build for a given pair of distri and version.
 
 =cut
 sub latest_build {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
     my @conds;
     my %attrs;
     my $rsource = $self->result_source;
@@ -50,21 +49,27 @@ sub latest_build {
 
     $attrs{join}     = 'settings';
     $attrs{rows}     = 1;
-    $attrs{order_by} = {-desc => 'me.id'};              # More reliable for tests than t_created
-    $attrs{columns}  = [{value => 'settings.value'}];
-    push(@conds, {'settings.key' => {'=' => 'BUILD'}});
+    $attrs{order_by} = {-desc => 'me.id'};    # More reliable for tests than t_created
+    $attrs{columns}  = qw/BUILD/;
 
     while (my ($k, $v) = each %args) {
-        my $subquery = $schema->resultset("JobSettings")->search(
-            {
-                key   => uc($k),
-                value => $v
-            });
-        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+
+        if (grep { $k eq $_ } qw/distri version flavor machine arch build test/) {
+            push(@conds, {"me." . uc($k) => $v});
+        }
+        else {
+
+            my $subquery = $schema->resultset("JobSettings")->search(
+                {
+                    key   => uc($k),
+                    value => $v
+                });
+            push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+        }
     }
 
     my $rs = $self->search({-and => \@conds}, \%attrs);
-    return $rs->get_column('value')->first;
+    return $rs->get_column('BUILD')->first;
 }
 
 =head2 latest_jobs
@@ -88,15 +93,14 @@ sub latest_jobs {
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
-        my $settings = $job->settings_hash;
-        my $distri   = $settings->{DISTRI};
-        my $version  = $settings->{VERSION};
-        my $build    = $settings->{BUILD};
-        my $test     = $settings->{TEST};
-        my $flavor   = $settings->{FLAVOR} || 'sweet';
-        my $arch     = $settings->{ARCH} || 'noarch';
-        my $machine  = $settings->{MACHINE} || 'nomachine';
-        my $key      = "$distri-$version-$build-$test-$flavor-$arch-$machine";
+        my $distri  = $job->DISTRI;
+        my $version = $job->VERSION;
+        my $build   = $job->BUILD;
+        my $test    = $job->TEST;
+        my $flavor  = $job->FLAVOR || 'sweet';
+        my $arch    = $job->ARCH || 'noarch';
+        my $machine = $job->MACHINE || 'nomachine';
+        my $key     = "$distri-$version-$build-$test-$flavor-$arch-$machine";
         next if $seen{$key}++;
         push(@latest, $job);
     }
@@ -107,7 +111,7 @@ sub create_from_settings {
     my ($self, $settings) = @_;
     my %settings = %$settings;
 
-    my %new_job_args = (test => $settings{TEST});
+    my %new_job_args = (TEST => $settings{TEST});
 
     if ($settings{NAME}) {
         my $njobs = $self->search({slug => $settings{NAME}})->count;
@@ -147,6 +151,11 @@ sub create_from_settings {
         delete $settings{_PARALLEL_JOBS};
     }
 
+    # migrate the important keys
+    for my $key (qw/DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD/) {
+        $new_job_args{$key} = delete $settings{$key};
+    }
+
     my $job = $self->create(\%new_job_args);
     my @job_settings;
 
@@ -167,6 +176,126 @@ sub create_from_settings {
     $job->register_assets_from_settings;
 
     return $job;
+}
+
+sub complex_query {
+    my ($self, %args) = @_;
+    # For args where we accept a list of values, allow passing either an
+    # array ref or a comma-separated list
+    for my $arg (qw/state ids result/) {
+        next unless $args{$arg};
+        $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
+    }
+
+    my @conds;
+    my %attrs;
+    my @joins;
+
+    unless ($args{idsonly}) {
+        push @{$attrs{prefetch}}, 'settings';
+        push @{$attrs{prefetch}}, 'parents';
+        push @{$attrs{prefetch}}, 'children';
+    }
+
+    if ($args{state}) {
+        push(@conds, {'me.state' => $args{state}});
+    }
+    if ($args{maxage}) {
+        my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC')};
+        push(
+            @conds,
+            {
+                -or => [
+                    'me.t_created'  => $agecond,
+                    'me.t_started'  => $agecond,
+                    'me.t_finished' => $agecond
+                ]});
+    }
+    # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
+    if ($args{result}) {
+        push(@conds, {'me.result' => {-in => $args{result}}});
+    }
+    if ($args{ignore_incomplete}) {
+        push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
+    }
+    my $scope = $args{scope} || '';
+    if ($scope eq 'relevant') {
+        push(@joins, 'clone');
+        push(
+            @conds,
+            {
+                -or => [
+                    'me.clone_id' => undef,
+                    'clone.state' => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
+                ],
+                'me.result' => {    # these results should be hidden by default
+                    -not_in => [
+                        OpenQA::Schema::Result::Jobs::OBSOLETED,
+                        # OpenQA::Schema::Result::Jobs::USER_CANCELLED  I think USER_CANCELLED jobs should be available for restart
+                    ]}});
+    }
+    if ($scope eq 'current') {
+        push(@conds, {'me.clone_id' => undef});
+    }
+    if ($args{limit}) {
+        $attrs{rows} = $args{limit};
+    }
+    $attrs{page} = $args{page} || 0;
+    if ($args{assetid}) {
+        push(@joins, 'jobs_assets');
+        push(
+            @conds,
+            {
+                'jobs_assets.asset_id' => $args{assetid},
+            });
+    }
+    my $rsource = $self->result_source;
+    my $schema  = $rsource->schema;
+
+    if (defined $args{groupid}) {
+        push(
+            @conds,
+            {
+                'me.group_id' => $args{groupid} || undef,
+            });
+    }
+    elsif ($args{group}) {
+        my $subquery = $schema->resultset("JobGroups")->search({name => $args{group}})->get_column('id')->as_query;
+        push(
+            @conds,
+            {
+                'me.group_id' => {-in => $subquery},
+            });
+    }
+
+    if ($args{ids}) {
+        push(@conds, {'me.id' => {-in => $args{ids}}});
+    }
+    elsif ($args{match}) {
+        my @likes;
+        # Text search across some settings
+        for my $key (qw/DISTRI FLAVOR BUILD TEST VERSION/) {
+            push(@likes, {"me.$key" => {'-like' => "%$args{match}%"}});
+        }
+        push(@conds, -or => \@likes);
+    }
+    else {
+        my %js_settings = map { uc($_) => $args{$_} } qw(iso hdd_1);
+        my $subquery = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
+        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+
+        for my $key (qw/build distri version flavor arch/) {
+            if ($args{$key}) {
+                push(@conds, {"me." . uc($key) => $args{$key}});
+            }
+        }
+    }
+
+    $attrs{order_by} = ['me.id DESC'];
+
+    $attrs{join} = \@joins if @joins;
+    my $jobs = $self->search({-and => \@conds}, \%attrs);
+    return $jobs;
 }
 
 1;

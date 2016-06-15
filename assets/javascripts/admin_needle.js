@@ -67,10 +67,16 @@ function setupAdminNeedles() {
 	$('#confirm_delete .modal-body ul li').each(function(index) {
 	    ids.push(parseInt($(this).data('id')));
 	});
-	$.ajax({ url: $('#confirm_delete').data('delete-url'),
+	// delete requests don't support data in the body
+	var url = $('#confirm_delete').data('delete-url');
+	if (ids.length) {
+	   url += "?";
+	   $.each(ids, function(index) { url += "id=" + ids[index]; });
+	}
+	$.ajax({ url: url,
 		 type: 'DELETE',
-		 success: reloadNeedlesTable,
-		 data: { 'id': ids } });
+		 success: reloadNeedlesTable
+               });
         return false;
     });
     

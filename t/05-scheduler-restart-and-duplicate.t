@@ -35,11 +35,13 @@ use Test::Warnings;
 my $ipc = OpenQA::IPC->ipc('', 1);
 my $ws = OpenQA::WebSockets->new;
 
+my $schema = OpenQA::Test::Database->new->create();
+
 sub list_jobs {
-    [map { $_->to_hash() } OpenQA::Scheduler::Scheduler::query_jobs()->all];
+    [map { $_->to_hash() } $schema->resultset('Jobs')->all];
 }
 
-ok(OpenQA::Test::Database->new->create(), "create database") || BAIL_OUT("failed to create database");
+ok($schema, "create database") || BAIL_OUT("failed to create database");
 
 my $current_jobs = list_jobs();
 ok(@$current_jobs, "have jobs");

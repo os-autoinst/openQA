@@ -41,12 +41,18 @@ $driver->find_element('Login', 'link_text')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 
+#print $driver->get_page_source();
+
+my @texts = map { $_->get_text() } $driver->find_elements('.progress-bar-softfailed', 'css');
+is_deeply(\@texts, ['0 softfailed', '0 softfailed', '1 softfailed', ''], 'Progress bars show soft fails');
+
 like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
 
 # follow a build to overview page
 $driver->find_element('Build0048', 'link_text')->click();
 is($driver->get_title(), "openQA: Test summary", "on overview page");
 
+is($driver->find_element('.result_softfail', 'css')->get_text(), '', 'We see one softfail');
 # follow a build to the step page
 $driver->find_element('logpackages', 'link_text')->click();
 is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results', 'on test page');

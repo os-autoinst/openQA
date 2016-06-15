@@ -51,10 +51,9 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-@EXPORT = qw(worker_register job_create
-  job_get
+@EXPORT = qw(worker_register job_create job_get
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
-  job_delete job_restart job_cancel command_enqueue
+  job_restart job_cancel command_enqueue
   job_set_stop job_stop iso_stop_old_builds
   asset_list asset_get asset_delete asset_register query_jobs
 );
@@ -139,118 +138,6 @@ sub _job_get($) {
     my $job = schema->resultset("Jobs")->search($search, \%attrs)->first;
     return unless $job;
     return $job->to_hash(assets => 1);
-}
-
-sub query_jobs {
-    my %args = @_;
-    # For args where we accept a list of values, allow passing either an
-    # array ref or a comma-separated list
-    for my $arg (qw/state ids result/) {
-        next unless $args{$arg};
-        $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
-    }
-
-    my @conds;
-    my %attrs;
-    my @joins;
-
-    unless ($args{idsonly}) {
-        push @{$attrs{prefetch}}, 'settings';
-        push @{$attrs{prefetch}}, 'parents';
-        push @{$attrs{prefetch}}, 'children';
-    }
-
-    if ($args{state}) {
-        push(@conds, {'me.state' => $args{state}});
-    }
-    if ($args{maxage}) {
-        my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC')};
-        push(
-            @conds,
-            {
-                -or => [
-                    'me.t_created'  => $agecond,
-                    'me.t_started'  => $agecond,
-                    'me.t_finished' => $agecond
-                ]});
-    }
-    # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
-    if ($args{result}) {
-        push(@conds, {'me.result' => {-in => $args{result}}});
-    }
-    if ($args{ignore_incomplete}) {
-        push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
-    }
-    my $scope = $args{scope} || '';
-    if ($scope eq 'relevant') {
-        push(@joins, 'clone');
-        push(
-            @conds,
-            {
-                -or => [
-                    'me.clone_id' => undef,
-                    'clone.state' => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
-                ],
-                'me.result' => {    # these results should be hidden by default
-                    -not_in => [
-                        OpenQA::Schema::Result::Jobs::OBSOLETED,
-                        # OpenQA::Schema::Result::Jobs::USER_CANCELLED  I think USER_CANCELLED jobs should be available for restart
-                    ]}});
-    }
-    if ($scope eq 'current') {
-        push(@conds, {'me.clone_id' => undef});
-    }
-    if ($args{limit}) {
-        $attrs{rows} = $args{limit};
-    }
-    $attrs{page} = $args{page} || 0;
-    if ($args{assetid}) {
-        push(@joins, 'jobs_assets');
-        push(
-            @conds,
-            {
-                'jobs_assets.asset_id' => $args{assetid},
-            });
-    }
-    if (defined $args{groupid}) {
-        push(
-            @conds,
-            {
-                'me.group_id' => $args{groupid} || undef,
-            });
-    }
-    elsif ($args{group}) {
-        my $subquery = schema->resultset("JobGroups")->search({name => $args{group}})->get_column('id')->as_query;
-        push(
-            @conds,
-            {
-                'me.group_id' => {-in => $subquery},
-            });
-    }
-
-    if ($args{ids}) {
-        push(@conds, {'me.id' => {-in => $args{ids}}});
-    }
-    elsif ($args{match}) {
-        # Text search across some settings
-        my $subquery = schema->resultset("JobSettings")->search(
-            {
-                key => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST', 'VERSION'],
-                value => {'-like' => "%$args{match}%"},
-            });
-        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
-    }
-    else {
-        my %js_settings = map { uc($_) => $args{$_} } qw(build iso distri version flavor arch hdd_1);
-        my $subquery = schema->resultset("JobSettings")->query_for_settings(\%js_settings);
-        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
-    }
-
-    $attrs{order_by} = ['me.id DESC'];
-
-    $attrs{join} = \@joins if @joins;
-    my $jobs = schema->resultset("Jobs")->search({-and => \@conds}, \%attrs);
-    return $jobs;
 }
 
 sub _prefer_parallel {
@@ -615,29 +502,19 @@ sub job_set_running {
     return $r;
 }
 
-sub job_delete {
-    my $value = shift;
-
-    my %attrs;
-    my %cond;
-
-    _job_find_smart($value, \%cond, \%attrs);
-    my $cnt = schema->resultset("Jobs")->search(\%cond, \%attrs)->delete;
-
-    return $cnt;
-}
-
 sub _job_find_smart($$$) {
     my ($value, $cond, $attrs) = @_;
 
-    if (ref $value eq '') {
-        if ($value =~ /\.iso/) {
-            $value = {ISO => $value};
-        }
-    }
     if (ref $value eq 'HASH') {
-        my $subquery = schema->resultset("JobSettings")->query_for_settings($value);
-        $cond->{id} = {-in => $subquery->get_column('job_id')->as_query};
+        for my $key (qw/DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST/) {
+            if (defined $value->{$key}) {
+                $cond->{$key} = delete $value->{$key};
+            }
+        }
+        if (%$value) {
+            my $subquery = schema->resultset("JobSettings")->query_for_settings($value);
+            $cond->{id} = {-in => $subquery->get_column('job_id')->as_query};
+        }
     }
     else {
         # TODO: support by name and by iso here
@@ -778,22 +655,22 @@ sub job_restart {
     return @duplicated;
 }
 
-sub job_cancel($;$) {
-    my $value = shift or die "missing name parameter\n";
-    my $newbuild = shift || 0;
+sub job_cancel {
+    my ($value, $newbuild) = @_;
+    die "missing name parameter" unless $value;
+    $newbuild //= 0;
 
     my %attrs;
     my %cond;
     _job_find_smart($value, \%cond, \%attrs);
-    $cond{state}    = OpenQA::Schema::Result::Jobs::SCHEDULED;
-    $attrs{columns} = [qw/id/];
+    $cond{state} = OpenQA::Schema::Result::Jobs::SCHEDULED;
     my $scheduled_jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
     my $jobs_to_cancel;
     my $new_result;
     if ($newbuild) {
         $new_result = OpenQA::Schema::Result::Jobs::OBSOLETED;
         # 'monkey patch' cond to be useable in chained search
-        $cond{'me.id'} = delete $cond{id};
+        $cond{'me.id'} = delete $cond{id} if $cond{id};
         # filter out all jobs that have any comment (they are considered 'important') ...
         $jobs_to_cancel = $scheduled_jobs->search({'comments.job_id' => undef}, {join => 'comments'});
         # ... or belong to a tagged build, i.e. is considered important
@@ -803,7 +680,7 @@ sub job_cancel($;$) {
         my @important_builds = grep defined, map { ($_->tag)[0] } schema->resultset("Comments")->search($groups_query);
         my @unimportant_jobs;
         while (my $j = $jobs_to_cancel->next) {
-            next if grep ($j->settings_hash->{BUILD} eq $_, @important_builds);
+            next if grep ($j->BUILD eq $_, @important_builds);
             push @unimportant_jobs, $j->id;
         }
         # if there are only important jobs there is nothing left for us to do
@@ -842,11 +719,6 @@ sub job_cancel($;$) {
         ++$cancelled_jobs;
     }
     return $cancelled_jobs;
-}
-
-sub job_stop {
-    carp "job_stop is deprecated, use job_cancel instead";
-    return job_cancel(@_);
 }
 
 #

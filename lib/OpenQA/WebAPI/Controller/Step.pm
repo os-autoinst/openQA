@@ -31,10 +31,10 @@ sub init {
     my $job       = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
 
     return $self->reply->not_found unless $job;
-    $self->stash(testname => $job->settings_hash->{NAME});
-    $self->stash(distri   => $job->settings_hash->{DISTRI});
-    $self->stash(version  => $job->settings_hash->{VERSION});
-    $self->stash(build    => $job->settings_hash->{BUILD});
+    $self->stash(testname => $job->name);
+    $self->stash(distri   => $job->DISTRI);
+    $self->stash(version  => $job->VERSION);
+    $self->stash(build    => $job->BUILD);
 
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
     my $details = $module->details();
@@ -121,8 +121,8 @@ sub edit {
     my $imgname       = $module_detail->{screenshot};
     my $job           = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     return $self->reply->not_found unless $job;
-    my $distribution = $job->settings_hash->{DISTRI};
-    my $dversion = $job->settings_hash->{VERSION} || '';
+    my $distribution = $job->DISTRI;
+    my $dversion = $job->VERSION || '';
 
     # Each object in $needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -340,7 +340,7 @@ sub src {
     my $module = $self->stash('module');
     return $self->reply->not_found unless ($job && $module);
 
-    my $testcasedir = testcasedir($job->settings_hash->{DISTRI}, $job->settings_hash->{VERSION});
+    my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     my $scriptpath = "$testcasedir/" . $module->script;
     if (!$scriptpath || !-e $scriptpath) {
         $scriptpath ||= "";
@@ -434,16 +434,15 @@ sub save_needle_ajax {
     }
 
     my $job          = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
-    my $settings     = $job->settings_hash;
-    my $distribution = $settings->{DISTRI};
-    my $dversion     = $settings->{VERSION} || '';
+    my $distribution = $job->DISTRI;
+    my $dversion     = $job->VERSION || '';
     my $json         = $validation->param('json');
     my $imagename    = $validation->param('imagename');
     my $imagedistri  = $validation->param('imagedistri');
     my $imageversion = $validation->param('imageversion');
     my $imagedir     = $self->param('imagedir') || "";
     my $needlename   = $validation->param('needlename');
-    my $needledir    = needledir($job->settings_hash->{DISTRI}, $job->settings_hash->{VERSION});
+    my $needledir    = needledir($job->DISTRI, $job->VERSION);
 
     my $json_data;
     eval { $json_data = $self->_json_validation($json); };
@@ -565,8 +564,8 @@ sub viewimg {
     my $module_detail = $self->stash('module_detail');
     my $job           = $self->stash('job');
     return $self->reply->not_found unless $job;
-    my $distribution = $job->settings_hash->{DISTRI};
-    my $dversion = $job->settings_hash->{VERSION} || '';
+    my $distribution = $job->DISTRI;
+    my $dversion = $job->VERSION || '';
 
     my @needles;
     if ($module_detail->{needle}) {
