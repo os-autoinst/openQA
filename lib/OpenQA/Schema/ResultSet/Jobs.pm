@@ -18,6 +18,7 @@ package OpenQA::Schema::ResultSet::Jobs;
 use strict;
 use base qw/DBIx::Class::ResultSet/;
 use DBIx::Class::Timestamps qw/now/;
+use Date::Format qw/time2str/;
 use OpenQA::Schema::Result::JobDependencies;
 
 =head2 latest_build
