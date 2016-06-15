@@ -54,7 +54,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @EXPORT = qw(worker_register job_create
   job_get
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
-  job_delete job_restart job_cancel command_enqueue
+  job_restart job_cancel command_enqueue
   job_set_stop job_stop iso_stop_old_builds
   asset_list asset_get asset_delete asset_register query_jobs
 );
@@ -503,26 +503,9 @@ sub job_set_running {
     return $r;
 }
 
-sub job_delete {
-    my $value = shift;
-
-    my %attrs;
-    my %cond;
-
-    _job_find_smart($value, \%cond, \%attrs);
-    my $cnt = schema->resultset("Jobs")->search(\%cond, \%attrs)->delete;
-
-    return $cnt;
-}
-
 sub _job_find_smart($$$) {
     my ($value, $cond, $attrs) = @_;
 
-    if (ref $value eq '') {
-        if ($value =~ /\.iso/) {
-            $value = {ISO => $value};
-        }
-    }
     if (ref $value eq 'HASH') {
         for my $key (qw/DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST/) {
             if (defined $value->{$key}) {

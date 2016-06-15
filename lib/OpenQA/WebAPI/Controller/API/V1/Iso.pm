@@ -482,11 +482,16 @@ sub create {
 sub destroy {
     my $self = shift;
     my $iso  = $self->stash('name');
-    my $ipc  = OpenQA::IPC->ipc;
     $self->emit_event('openqa_iso_delete', {iso => $iso});
 
-    my $res = $ipc->scheduler('job_delete_by_iso', $iso);
-    $self->render(json => {count => $res});
+    my $subquery = $schema->resultset("JobSettings")->query_for_settings({ISO => $iso});
+    my @jobs = $schema->resultset("Jobs")->search({'me.id' => {-in => $subquery->get_column('job_id')->as_query}})->all;
+
+    for my $job (@jobs) {
+        $self->emit_event('openqa_job_delete', {id => $job->id});
+        $job->delete;
+    }
+    $self->render(json => {count => scalar(@jobs)});
 }
 
 sub cancel {

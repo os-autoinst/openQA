@@ -112,18 +112,6 @@ sub job_cancel_by_settings {
     return OpenQA::Scheduler::Scheduler::job_cancel($settings, $newbuild);
 }
 
-dbus_method('job_delete', ['uint32'], ['uint32']);
-sub job_delete {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_delete($args);
-}
-
-dbus_method('job_delete_by_iso', ['string'], ['uint32']);
-sub job_delete_by_iso {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_delete($args);
-}
-
 dbus_method('job_duplicate', [['dict', 'string', 'string']], ['uint32']);
 sub job_duplicate {
     my ($self, $args) = @_;

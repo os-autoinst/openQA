@@ -185,12 +185,15 @@ sub set_command {
 
 sub destroy {
     my $self = shift;
-    my $ipc  = OpenQA::IPC->ipc;
 
-    my $res = $ipc->scheduler('job_delete', int($self->stash('jobid')));
-    $self->emit_event('openqa_job_delete', {id => $self->stash('jobid')}) if ($res);
-    # See comment in set_command
-    $self->render(json => {result => \$res});
+    my $job = $self->app->schema->resultset("Jobs")->find($self->stash('jobid'));
+    if (!$job) {
+        $self->reply->not_found unless $job;
+        return;
+    }
+    $self->emit_event('openqa_job_delete', {id => $job->id});
+    $job->delete;
+    $self->render(json => {result => 1});
 }
 
 sub prio {
@@ -232,7 +235,10 @@ sub create_artefact {
 
     my $jobid = int($self->stash('jobid'));
     my $job   = $self->app->schema->resultset("Jobs")->find($jobid);
-    $self->reply->not_found unless $job;
+    if (!$job) {
+        $self->reply->not_found;
+        return;
+    }
 
     if ($self->param('image')) {
         $job->store_image($self->param('file'), $self->param('md5'), $self->param('thumb') // 0);
