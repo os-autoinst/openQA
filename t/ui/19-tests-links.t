@@ -41,8 +41,6 @@ $driver->find_element('Login', 'link_text')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 
-#print $driver->get_page_source();
-
 my @texts = map { $_->get_text() } $driver->find_elements('.progress-bar-softfailed', 'css');
 is_deeply(\@texts, ['0 softfailed', '0 softfailed', '1 softfailed', ''], 'Progress bars show soft fails');
 
@@ -63,6 +61,17 @@ is($driver->find_element('#step_view', 'css')->get_attribute('data-image'), '/te
 # now navigate back
 $driver->find_element('openQA', 'link_text')->click();
 is($driver->get_title(), "openQA", "on main page");
+
+$driver->get($baseurl . "tests/99938#previous");
+
+is($driver->find_element('#scenario', 'css')->is_displayed(), 1, "Scenario header displayed");
+like($driver->find_element('#scenario', 'css')->get_text(), qr/Results.*limited to 10/, "Scenario header text");
+
+$driver->find_element('Settings', 'link_text')->click();
+like($driver->get_current_url(), qr(\Qtests/99938#settings\E$), "hash marks tab");
+
+$driver->find_element('Details', 'link_text')->click();
+like($driver->get_current_url(), qr(\Qtests/99938#\E$), "hash marks tab 2");
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();
