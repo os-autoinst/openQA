@@ -91,7 +91,7 @@ is($job->{state}, 'scheduled', "new job is scheduled");
 
 lj;
 
-$ret = OpenQA::Scheduler::Scheduler::job_cancel('openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso');
+$ret = OpenQA::Scheduler::Scheduler::job_cancel({ISO => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'});
 is($ret, 1, "one job cancelled by iso");
 
 $job = OpenQA::Scheduler::Scheduler::job_get(99927);

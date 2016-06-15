@@ -83,10 +83,10 @@ __PACKAGE__->belongs_to(
     {
         is_deferrable => 1,
         join_type     => "LEFT",
-        on_delete     => "CASCADE",
         on_update     => "CASCADE",
     },
 );
+__PACKAGE__->has_many(needle_hits => 'OpenQA::Schema::Result::JobModuleNeedles', 'job_module_id');
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
@@ -94,7 +94,27 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_job_modules_result', fields => ['result']);
 }
 
-sub details() {
+# overload to straighten out needle references
+sub delete {
+    my ($self) = @_;
+
+    # those are just there for tracking
+    $self->needle_hits->delete;
+
+    my $schema = $self->result_source->schema;
+    my @ors;
+    push(@ors, {last_seen_module_id    => $self->id});
+    push(@ors, {first_seen_module_id   => $self->id});
+    push(@ors, {last_matched_module_id => $self->id});
+
+    my $needles = $schema->resultset('Needles')->search({-or => \@ors});
+    while (my $needle = $needles->next) {
+        $needle->recalculate_matches;
+    }
+    return $self->SUPER::delete;
+}
+
+sub details {
     my ($self) = @_;
 
     my $dir = $self->job->result_dir();

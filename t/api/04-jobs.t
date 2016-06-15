@@ -231,4 +231,8 @@ ok(!@{$res->{jobs}}, 'no result for nonexising state');
 #
 # is($cloned->{state}, 'scheduled');
 
+# delete the job with a registered job module
+my $delete = $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
+$t->get_ok('/api/v1/jobs/99937')->status_is(404);
+
 done_testing();

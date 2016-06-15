@@ -357,18 +357,17 @@ is($job->{priority}, 100, "job->set_prio");
 # TBD
 
 
-# Testing job_delete
-$result = OpenQA::Scheduler::Scheduler::job_delete($job_id);
+$result = $schema->resultset('Jobs')->find($job_id)->delete;
 my $no_job_id = OpenQA::Scheduler::Scheduler::job_get($job_id);
-ok($result == 1 && !defined $no_job_id, "job_delete");
+ok($result && !defined $no_job_id, "job_delete");
 
-$result    = OpenQA::Scheduler::Scheduler::job_delete($job2->id);
+$result    = $schema->resultset('Jobs')->find($job2->id)->delete;
 $no_job_id = OpenQA::Scheduler::Scheduler::job_get($job2->id);
-ok($result == 1 && !defined $no_job_id, "job_delete");
+ok($result && !defined $no_job_id, "job_delete");
 
-$result    = OpenQA::Scheduler::Scheduler::job_delete($job3_id);
+$result    = $schema->resultset('Jobs')->find($job3_id)->delete;
 $no_job_id = OpenQA::Scheduler::Scheduler::job_get($job3_id);
-ok($result == 1 && !defined $no_job_id, "job_delete");
+ok($result && !defined $no_job_id, "job_delete");
 
 $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "no jobs listed");

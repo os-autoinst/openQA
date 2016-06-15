@@ -100,12 +100,6 @@ sub job_cancel {
     return OpenQA::Scheduler::Scheduler::job_cancel($jobid, $newbuild);
 }
 
-dbus_method('job_cancel_by_iso', ['string', 'bool'], ['uint32']);
-sub job_cancel_by_iso {
-    my ($self, $iso, $newbuild) = @_;
-    return OpenQA::Scheduler::Scheduler::job_cancel($iso, $newbuild);
-}
-
 dbus_method('job_cancel_by_settings', [['dict', 'string', 'string'], 'bool'], ['uint32']);
 sub job_cancel_by_settings {
     my ($self, $settings, $newbuild) = @_;

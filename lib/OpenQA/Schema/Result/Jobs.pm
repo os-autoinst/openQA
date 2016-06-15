@@ -161,7 +161,7 @@ __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
 __PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobDependencies', 'parent_job_id');
 __PACKAGE__->has_many(parents  => 'OpenQA::Schema::Result::JobDependencies', 'child_job_id');
-__PACKAGE__->has_many(modules  => 'OpenQA::Schema::Result::JobModules',      'job_id');
+__PACKAGE__->has_many(modules  => 'OpenQA::Schema::Result::JobModules',      'job_id', {cascade_delete => 0});
 # Locks
 __PACKAGE__->has_many(owned_locks  => 'OpenQA::Schema::Result::JobLocks', 'owner');
 __PACKAGE__->has_many(locked_locks => 'OpenQA::Schema::Result::JobLocks', 'locked_by');
@@ -186,6 +186,15 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_jobs_result',      fields => ['result']);
     $sqlt_table->add_index(name => 'idx_jobs_build_group', fields => [qw/BUILD group_id/]);
     $sqlt_table->add_index(name => 'idx_jobs_scenario',    fields => [qw/VERSION DISTRI FLAVOR TEST MACHINE ARCH/]);
+}
+
+# overload to straighten out job modules
+sub delete {
+    my ($self) = @_;
+    # we need to remove the modules one by one to get their delete functions called
+    # otherwise dbix leaves this to the database
+    $self->modules->delete_all;
+    return $self->SUPER::delete;
 }
 
 sub name {
