@@ -1,0 +1,67 @@
+% if (@$modlist) {
+    <table id="results" class="table table-striped">
+        <thead>
+            <tr>
+                <th>Test</th>
+                <th>Result</th>
+                <th style="width: 100%">References</th>
+            </tr>
+        </thead>
+        <tbody>
+            % for my $module (@$modlist) {
+                % if ($module->{category}) {
+                    <tr>
+                        <td colspan="3">
+                            <span class="glyphicon glyphicon-folder-open"></span>&nbsp;
+                            %= $module->{category}
+                        </td>
+                    </tr>
+                % }
+                <tr>
+                    <td class="component">
+                        <div>
+                            %= link_to $module->{name} => url_for('src_step', stepid => 1, moduleid => $module->{name})
+                        </div>
+                        <div class="flags">
+                            % if ($module->{fatal}) {
+                                <i class="flag fa fa-plug" title="Fatal: testsuite is aborted if this test fails"></i>
+                            % } elsif ($module->{important})
+                            % {
+                                <i class="flag fa fa-exclamation" title="Important: overall result is failed if this test fails"></i>
+                            % }
+                            % if  ($module->{milestone}) {
+                                <i class="flag fa fa-anchor" title="Milestone: snapshot the state after this test for restoring"></i>
+                            % }
+                        </div>
+                    </td>
+                    <td class="result <%= css_for($module) %>">
+                        %= format_result($module)
+                    </td>
+                    <td class="links">
+                        % for my $step (@{$module->{details}}) {
+                            <div class="links_a">
+                                <div class="fa fa-caret-down"></div>
+                                % my $url   = url_for('step', moduleid => $module->{name}, stepid => $step->{num});
+                                % my $href  = "#step/$module->{name}/$step->{num}";
+                                % my $title = $step->{text} ? $step->{title} : $step->{name};
+                                %= link_to $href => (class => 'no_hover') => (data => { url => $url }) => (title => $title) => begin
+                                    % if ($step->{screenshot}) {
+                                        %= step_thumbnail($step, 60, $testid, $module->{name}, $step->{num})
+                                    % } elsif ($step->{audio}) {
+                                        <img src="/images/audio.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
+                                    % } elsif ($step->{text}) {
+                                       % if($step->{title} eq "wait_serial") {
+                                           <img src="/images/terminal.svg" width="60" height="45" alt="<%= $step->{name} %>" class="resborder <%= "resborder_\L$step->{result}" %>"/>
+                                       % } else {
+                                           <span class="resborder <%= "resborder_\L$step->{result}" %>" ><%= $step->{title} || 'Text' %></span>
+                                       % }
+                                   % }
+                                % end
+                          </div>
+                     % }
+                   </td>
+                </tr>
+             % }
+        </tbody>
+    </table>
+% }

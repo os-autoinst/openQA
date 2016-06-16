@@ -49,7 +49,7 @@
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
 < javascripts/disable_animations.js [mode==test]
 
-! result_preview.js
-< javascripts/result_preview.js
+! test_result.js
+< javascripts/test_result.js
 < javascripts/needlediff.js
 < javascripts/running.js

@@ -137,7 +137,7 @@ function checkResultHash() {
   }
 }
 
-function setupPreview() {
+function setupResult(state) {
 
   $('.current_preview').removeClass('current_preview');
   
@@ -173,6 +173,12 @@ function setupPreview() {
     return false;
   });
 
+  if (state == 'scheduled') {
+    $('#result_tabs a[href="#settings"]').tab('show');
+  } else if (state == 'running') {
+    $('#result_tabs a[href="#live"]').tab('show');
+    setupRunning();
+  }
   $(window).on('hashchange', checkResultHash);
   checkResultHash();
   

@@ -220,52 +220,11 @@ function loadCanvas(canvas, dataURL) {
     scrn.onload = function() {
         context.clearRect(0, 0, canvas.width(), canvas.height());
         context.drawImage(this, 0, 0, width=canvas.width(), height=canvas.height());
-        $('#image_size_x').text(this.width);
-        $('#image_size_y').text(this.height);
     };
     scrn.src = dataURL;
 }
 
-// canvas size
-function resizeLivestream(arg) {
-    var livestream = $('#livestream');
-    livestream.attr('width', arg.split("x")[0]);
-    livestream.attr('height', arg.split("x")[1]);
-    if (last_event) {
-        loadCanvas(livestream, last_event.data);
-    }
-}
-
-// select callback
-function setResolution(arg) {
-    if (arg == "auto") {
-        setCookie("livestream_size", arg, -5);
-        if ($('#canholder').innerWidth() >= 1024) {
-            resizeLivestream("1024x768");
-        }
-        else {
-            resizeLivestream("800x600");
-        }
-    }
-    else {
-        setCookie("livestream_size", arg, 365);
-        resizeLivestream(arg);
-    }
-}
-
 function initLivestream() {
-    /*
-    var sel_resolution = $('#sel_resolution');
-    
-    // initially set canvas size
-    var livestream_size = getCookie("livestream_size");
-    if (! livestream_size) {
-        livestream_size = "auto";
-    }
-    setResolution(livestream_size);
-    sel_resolution.value = livestream_size;
-    */
-    
     // start stream
     var livestream = $('#livestream');
     var events = new EventSource(livestream.data('url'));
@@ -278,8 +237,8 @@ function initLivestream() {
 /********* LIVE STREAM END *********/
 
 function setupRunning() {
-    initLivelog();
-    initLivestream();
+  initLivelog();
+  initLivestream();
 
     /*
     $('#interactive0_button').click(enableInteractive);
@@ -295,9 +254,6 @@ function setupRunning() {
         sendCommand('stop_waitforneedle');
     });
 
-    $('#sel_resolution').change(function() {
-        setResolution($(this).val());
-    });
     */
     $('#scrolldown').change(setScrolldown);
 }
