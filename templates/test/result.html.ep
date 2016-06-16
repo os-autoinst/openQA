@@ -8,7 +8,7 @@
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     setupResultButtons();
-    setupResult('<%= $job->state %>');
+    setupResult('<%= $job->state %>', <%= $job->id %>);
 % end
 
 <div class="row">
@@ -40,16 +40,7 @@
 
                 % if ($job->state eq 'running') {
                     <div role="tabpanel" class="tab-pane active" id="live">
-                        <div style="margin: 0 10px;" id="canholder">
-                            <canvas id="livestream" width="1024" height="768" data-url='<%= url_for("streaming", testid => $testid) %>'>
-                            </canvas>
-                        </div>
-                        <div class="h5">Live Log</div>
-                        <div class="panel panel-default">
-                            <pre id="livelog" data-url='<%= url_for("livelog", testid => $testid) %>'></pre>
-                        </div>
-                        <input type="checkbox" id="scrolldown" checked="checked" />
-                        <label for="scrolldown">Autoscroll log</label>
+                        %= include 'test/live'
                     </div>
                 % }
 

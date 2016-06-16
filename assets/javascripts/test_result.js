@@ -137,7 +137,7 @@ function checkResultHash() {
   }
 }
 
-function setupResult(state) {
+function setupResult(state, jobid) {
 
   $('.current_preview').removeClass('current_preview');
   
@@ -173,11 +173,14 @@ function setupResult(state) {
     return false;
   });
 
-  if (state == 'scheduled') {
+  // don't overwrite the tab if coming from the URL (ignore '#')
+  if (state == 'scheduled' && location.hash.length < 2 ) {
     $('#result_tabs a[href="#settings"]').tab('show');
   } else if (state == 'running') {
-    $('#result_tabs a[href="#live"]').tab('show');
-    setupRunning();
+    if (location.hash.length < 2) {
+      $('#result_tabs a[href="#live"]').tab('show');
+    }
+    setupRunning(jobid);
   }
   $(window).on('hashchange', checkResultHash);
   checkResultHash();
