@@ -55,6 +55,17 @@ function previewSuccess(data) {
     });
 }
 
+function setResultHash(hash) {
+  // the details tab is the real page
+  if (hash == '#details')
+    hash = '#';
+  if(history.pushState) {
+    history.pushState(null, null, hash);
+  } else {
+    location.hash = hash;
+  }
+}
+
 function setCurrentPreview(a, force) {
   if ((a && a.length && !a.is('.current_preview')) || force) {
     // show
@@ -65,7 +76,7 @@ function setCurrentPreview(a, force) {
       return;
     }
     a.addClass('current_preview');
-    window.location.hash = link.attr('href');
+    setResultHash(link.attr('href'));
     $.get({ url: link.data('url'), success: previewSuccess}).fail(function() { setCurrentPreview(); });
   }
   else {
@@ -107,7 +118,12 @@ function checkResultHash() {
   var hash = window.location.hash;
   if (hash) {
     var link = $('[href="' + hash + '"]');
-    if (link && link.attr('role') === 'tab') { link.tab('show'); };
+    if (link && link.attr('role') === 'tab') {
+      if (!link.prop('aria-expanded') && link.attr('href') != '#details' ) {
+	link.tab('show');
+      }
+      return;
+    };
     if (hash.search('#step/') == 0) {
       if (link && !link.parent().is('.current_preview')) {
 	setCurrentPreview(link.parent());
@@ -161,6 +177,8 @@ function setupPreview() {
   checkResultHash();
   
   $(document).on('change', '#needlediff_selector', setNeedle);
-
+  $('a[data-toggle="tab"]').on('show.bs.tab', function(e) {
+    setResultHash($(e.target).attr('href'));
+  });
 }
 
