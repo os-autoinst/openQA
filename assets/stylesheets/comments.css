@@ -17,6 +17,13 @@
 
  .comment-body .trigger-edit-button, .comment-body .remove-edit-button {
     float: right;
-    margin-top: 8px;
+    margin-top: -2px;
     margin-left: 4px;
+    border-radius: 100px;
+    height: 32px;
+    opacity: 0.6;
+}
+
+.comment-body .trigger-edit-button:hover, .comment-body .remove-edit-button:hover {
+    opacity: 1;
 }

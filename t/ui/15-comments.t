@@ -71,8 +71,8 @@ sub switch_to_comments_tab {
 
 # checks comment heading and text for recently added comment
 sub check_comment {
-    my $supposed_text = shift;
-    my $edited        = shift;
+    my ($supposed_text, $edited) = @_;
+
     if ($edited) {
         is($driver->find_element('h4.media-heading', 'css')->get_text(), "$user_name wrote less than a minute ago (last edited less than a minute ago)", "heading");
     }
@@ -84,14 +84,19 @@ sub check_comment {
 
 # tests adding, editing and removing comments
 sub test_comment_editing {
-    my $in_test_results = shift;
+    my ($in_test_results) = @_;
 
     subtest 'add' => sub {
-        $driver->find_element('#text',          'css')->send_keys($test_message);
+        $driver->find_element('#text', 'css')->send_keys($test_message);
+
         $driver->find_element('#submitComment', 'css')->click();
 
         # check whether flash appears
-        is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), "Comment added", "comment added highlight");
+        #is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), "Comment added", "comment added highlight");
+        # FIXME: either show flash (like in the current version) or prevent page reload at all
+
+        # FIXME: find a better way than sleep
+        sleep 3;
 
         if ($in_test_results) {
             switch_to_comments_tab(1);
@@ -110,8 +115,10 @@ sub test_comment_editing {
         $driver->find_element('textarea.comment-editing-control', 'css')->send_keys($another_test_message);
         $driver->find_element('button.comment-editing-control',   'css')->click();
 
-        # check whether flash appears
-        is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), "Comment changed", "comment changed highlight");
+        # the updated comment is loaded asynchronously, hence we need to wait
+        # FIXME: find a better way to wait
+        # maybe $driver->execute_async_script(...);
+        sleep 1;
 
         if ($in_test_results) {
             switch_to_comments_tab(1);
@@ -140,8 +147,8 @@ sub test_comment_editing {
         $driver->find_element('button.remove-edit-button', 'css')->click();
         #$driver->accept_alert;
 
-        # check whether flash appears
-        is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), "Comment removed", "comment removed highlight");
+        # FIXME: find better way to wait
+        sleep 1;
 
         # check whether the comment is gone
         my @comments = $driver->find_elements('div.media-comment', 'css');
@@ -160,6 +167,9 @@ sub test_comment_editing {
             switch_to_comments_tab(1);
         }
 
+        # FIXME: find better way to wait
+        sleep 1;
+
         check_comment($test_message, 0);
     };
 }
@@ -177,6 +187,8 @@ subtest 'URL auto-replace' => sub {
         t#5678/modules/welcome/steps/1'
     );
     $driver->find_element('#submitComment', 'css')->click();
+    # FIXME: find a better way to wait
+    sleep 3;
 
     # the first made comment needs to be 2nd now
     my @comments = $driver->find_elements('div.media-comment p', 'css');
@@ -276,7 +288,10 @@ subtest 'editing when logged in as regular user' => sub {
         no_edit_no_remove_on_other_comments_expected;
         $driver->find_element('#text',          'css')->send_keys('test by nobody');
         $driver->find_element('#submitComment', 'css')->click();
+        # FIXME: find a better way to wait
+        sleep 5;
         switch_to_comments_tab(5);
+        t::ui::PhantomTest::make_screenshot('/home/martchus/screenshots/test.png');
         only_edit_for_own_comments_expected;
     };
 
@@ -285,6 +300,9 @@ subtest 'editing when logged in as regular user' => sub {
         no_edit_no_remove_on_other_comments_expected;
         $driver->find_element('#text',          'css')->send_keys('test by nobody');
         $driver->find_element('#submitComment', 'css')->click();
+        # FIXME: find a better way to wait
+        sleep 5;
+        t::ui::PhantomTest::make_screenshot('/home/martchus/screenshots/test2.png');
         only_edit_for_own_comments_expected;
     };
 };

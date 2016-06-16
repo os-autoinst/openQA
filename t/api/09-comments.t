@@ -60,7 +60,7 @@ sub test_create_comment {
 }
 
 my $test_message         = 'This is a cool test ☠';
-my $another_test_message = ' - this message will be appended if editing works ☠';
+my $another_test_message = ' - this message will be\nappended if editing works ☠';
 my $edited_test_message  = $test_message . $another_test_message;
 
 sub test_comments {

@@ -32,7 +32,7 @@ sub comments {
     return $job->comments;
 }
 
-# Returns the text for a comment specified by job/group id and comment id (including rendered markdown).
+# Returns the text and properties for a comment specified by job/group id and comment id (including rendered markdown).
 sub text {
     my ($self) = @_;
     my $comments = $self->comments();
@@ -43,8 +43,11 @@ sub text {
 
     $self->render(
         json => {
-            text              => $comment->text,
-            rendered_markdown => $comment->rendered_markdown
+            text             => $comment->text,
+            renderedMarkdown => $comment->rendered_markdown,
+            created          => $comment->t_created->strftime("%Y-%m-%d %H:%M:%S %z"),
+            updated          => $comment->t_updated->strftime("%Y-%m-%d %H:%M:%S %z"),
+            userName         => $comment->user->name
         });
 }
 
@@ -62,6 +65,7 @@ sub create {
             ,
             user_id => $self->current_user->id
         });
+    $self->emit_event('openqa_user_comment', {id => $res->id});
     $self->render(json => {id => $res->id});
 }
 
@@ -79,6 +83,7 @@ sub update {
         {
             text => $text,
             t_updated => DateTime->now(time_zone => 'floating')});
+    $self->emit_event('openqa_user_comment', {id => $comment->id});
     $self->render(json => {id => $res->id});
 }
 

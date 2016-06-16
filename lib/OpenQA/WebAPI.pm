@@ -517,13 +517,13 @@ sub startup {
 
     # api/v1/comments
     $api_public_r->get('/jobs/:job_id/comments/:comment_id')->name('apiv1_get_comment')->to('comment#text');
-    $api_r->post('/jobs/:job_id/comments')->to('comment#create');
-    $api_r->put('/jobs/:job_id/comments/:comment_id')->to('comment#update');
-    $api_ra->delete('/jobs/:job_id/comments/:comment_id')->to('comment#delete');
+    $api_r->post('/jobs/:job_id/comments')->name('apiv1_post_comment')->to('comment#create');
+    $api_r->put('/jobs/:job_id/comments/:comment_id')->name('apiv1_put_comment')->to('comment#update');
+    $api_ra->delete('/jobs/:job_id/comments/:comment_id')->name('apiv1_delete_comment')->to('comment#delete');
     $api_public_r->get('/groups/:group_id/comments/:comment_id')->name('apiv1_get_group_comment')->to('comment#text');
-    $api_r->post('/groups/:group_id/comments')->to('comment#create');
-    $api_r->put('/groups/:group_id/comments/:comment_id')->to('comment#update');
-    $api_ra->delete('/groups/:group_id/comments/:comment_id')->to('comment#delete');
+    $api_r->post('/groups/:group_id/comments')->name('apiv1_post_group_comment')->to('comment#create');
+    $api_r->put('/groups/:group_id/comments/:comment_id')->name('apiv1_put_group_comment')->to('comment#update');
+    $api_ra->delete('/groups/:group_id/comments/:comment_id')->name('apiv1_delete_group_comment')->to('comment#delete');
 
     # json-rpc methods not migrated to this api: echo, list_commands
     ###
