@@ -188,7 +188,7 @@ sub destroy {
 
     my $job = $self->app->schema->resultset("Jobs")->find($self->stash('jobid'));
     if (!$job) {
-        $self->reply->not_found unless $job;
+        $self->reply->not_found;
         return;
     }
     $self->emit_event('openqa_job_delete', {id => $job->id});
