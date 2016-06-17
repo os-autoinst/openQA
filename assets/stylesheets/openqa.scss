@@ -46,6 +46,7 @@ $color-state-running: #8BDFFF;
 .resultok { background-color: $color-ok;  }
 .resultpassed { background-color: $color-ok; }
 .resultunknown { background-color: $color-result-missing; }
+.resultrunning { background-color: $color-result-testing; }
 .resultwarning { background-color: $color-warning; }
 .resultsoftfailed { background-color: $color-softfail; }
 .resultfail { background-color: $color-result-failed; }
@@ -183,38 +184,17 @@ ul.modcategory {
    text-decoration: none;
 }
 
-li.mod-done,li.mod-current,li.mod-todo {
-    margin: 1px 0 0px 20px;
-    padding: 0 3px;
-    list-style-position: outside;
-}
-
-li.mod-done {
-    list-style-image:url(../images/step-done.png);
-}
-
-li.mod-current {
-    list-style-image:url(../images/step-current.png);
-    font-weight: bold;
-}
-
-li.mod-todo {
-    list-style-image:url(../images/step-todo.png);
-}
-
 a.pauseplay {
     background: url("../images/pauseplay.png") 0 0 no-repeat;
     width: 23px;
     height: 23px;
     display: inline-block;
-}
-
-a.pauseplay.pause {
-    background-position: 0 0;
-}
-
-a.pauseplay.play {
-    background-position: -23px 0;
+    &.pause {
+        background-position: 0 0;
+    }
+    &.play {
+        background-position: -23px 0;
+    }
 }
 
 /* special table stuff */
@@ -482,4 +462,12 @@ table#users {
 /* needle editor */
 a.restart-link {
     color: blue;
+}
+
+#canholder {
+    margin-top: 10pt;
+}
+
+.table-nonfluid {
+    width: auto;
 }

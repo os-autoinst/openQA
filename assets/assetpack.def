@@ -12,19 +12,6 @@
 < http://harvesthq.github.io/chosen/chosen.css
 < stylesheets/result_preview.scss
 
-! running.css
-< stylesheets/tables.css
-< http://fontawesome.io/assets/font-awesome/css/font-awesome.css
-< stylesheets/overview.scss
-< stylesheets/comments.css
-< stylesheets/openqa.scss
-
-! running.js
-< javascripts/running.js
-< https://code.jquery.com/jquery-2.2.4.js
-< javascripts/openqa.js
-< javascripts/tests.js
-
 ! codemirror.css
 < https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/lib/codemirror.css
 < stylesheets/codemirror_customization.css
@@ -62,6 +49,7 @@
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
 < javascripts/disable_animations.js [mode==test]
 
-! result_preview.js
-< javascripts/result_preview.js
+! test_result.js
+< javascripts/test_result.js
 < javascripts/needlediff.js
+< javascripts/running.js

@@ -1,0 +1,55 @@
+% if(@$resultfiles) {
+    <div class="h5">Result Files</div>
+    <ul>
+        % for my $resultfile (@$resultfiles) {
+            <li>
+                % if($resultfile =~ /video.ogv$/) {
+                    %= link_to url_for('test_file', testid => $testid, filename => 'video.ogv') => begin
+                        <i title="ogg/theora video of this testrun" class="fa fa-file-video-o"></i> Video
+                    %= end
+                % } else
+                % {
+                    <a href="<%= url_for('test_file', testid => $testid,
+                             filename => $resultfile) %>">
+                        <%= $resultfile %>
+                    </a>
+                % }
+            </li>
+        % }
+    </ul>
+% }
+% for my $ulog (@$ulogs) {
+    % content_for 'log_list' => begin
+        <li>
+            %= link_to($ulog => url_for('test_file', testid => $testid, filename => $ulog))
+        </li>
+    % end
+% }
+
+% if (length(content('log_list'))) {
+    <div class="h6">Uploaded Logs</div>
+    <ul>
+        %= content 'log_list'
+    </ul>
+% }
+
+% my $assets = $job->jobs_assets;
+% while (my $a = $assets->next) {
+    % $a = $a->asset;
+    % unless ($a->hidden) {
+        % content_for 'asset_box' => begin
+            <li>
+                %= link_to url_for('test_asset_name', testid => $testid, assettype => $a->type, assetname => $a->name) => (id => "asset_".$a->id) => begin
+                    <%= $a->name %>
+                % end
+            </li>
+        % end
+    % }
+% }
+
+% if (length(content('asset_box'))) {
+    <div class="h5">Assets</div>
+    <ul>
+        %= content 'asset_box'
+    </ul>
+% }

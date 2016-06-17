@@ -85,10 +85,8 @@ $get      = $t->get_ok('/tests?limit=1')->status_is(200);
 @expected = ('2 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
 is_deeply(\@header, \@expected, 'test report can be adjusted with query parameter');
 
-$get      = $t->get_ok('/tests/99963')->status_is(200);
-@header   = $t->tx->res->dom->find('.box-header')->map('text')->each;
-@expected = ('Actions', 'Test modules', 'Parents', 'Backend', 'Live view of', 'Live Log');
-is_deeply(\@header, \@expected, 'all page modules for running jobs are visible');
+$get = $t->get_ok('/tests/99963')->status_is(200);
+$t->content_like(qr/State.*running/, "Running jobs are marked");
 
 $driver->find_element('Build0091', 'link_text')->click();
 like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse build 0091/, 'we are on build 91');

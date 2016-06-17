@@ -29,6 +29,8 @@ function updateTestStatus(newStatus) {
           setTimeout(function() {location.reload();}, 2000);
           return;
     }
+    $('#running_module').text(newStatus.running);
+  
     // If a new module have been started, redraw module list
     if (testStatus.modlist_initialized == 0 || testStatus.running != newStatus.running) {
         testStatus.running = newStatus.running;
@@ -150,7 +152,7 @@ function disableInteractive() {
 function sendCommand(command) {
     var wid = testStatus.workerid;
     if (wid == null) return false;
-    var url = $('#actions_box').data('url').replace('WORKERID', wid);
+    var url = $('#canholder').data('url').replace('WORKERID', wid);
     $.ajax({url: url,
             type: 'POST',
             data: { command: command },
@@ -163,7 +165,7 @@ function updateStatus() {
     $.ajax("/tests/" + testStatus.jobid + "/status").
         done(function(status) {
             updateTestStatus(status);
-            setTimeout("updateStatus()", 3000);
+            setTimeout("updateStatus()", 1000);
         }).fail(function() {
             setTimeout(function() {location.reload();}, 1000);
         });
@@ -220,50 +222,11 @@ function loadCanvas(canvas, dataURL) {
     scrn.onload = function() {
         context.clearRect(0, 0, canvas.width(), canvas.height());
         context.drawImage(this, 0, 0, width=canvas.width(), height=canvas.height());
-        $('#image_size_x').text(this.width);
-        $('#image_size_y').text(this.height);
     };
     scrn.src = dataURL;
 }
 
-// canvas size
-function resizeLivestream(arg) {
-    var livestream = $('#livestream');
-    livestream.attr('width', arg.split("x")[0]);
-    livestream.attr('height', arg.split("x")[1]);
-    if (last_event) {
-        loadCanvas(livestream, last_event.data);
-    }
-}
-
-// select callback
-function setResolution(arg) {
-    if (arg == "auto") {
-        setCookie("livestream_size", arg, -5);
-        if ($('#canholder').innerWidth() >= 1024) {
-            resizeLivestream("1024x768");
-        }
-        else {
-            resizeLivestream("800x600");
-        }
-    }
-    else {
-        setCookie("livestream_size", arg, 365);
-        resizeLivestream(arg);
-    }
-}
-
 function initLivestream() {
-    var sel_resolution = $('#sel_resolution');
-    
-    // initially set canvas size
-    var livestream_size = getCookie("livestream_size");
-    if (! livestream_size) {
-        livestream_size = "auto";
-    }
-    setResolution(livestream_size);
-    sel_resolution.value = livestream_size;
-    
     // start stream
     var livestream = $('#livestream');
     var events = new EventSource(livestream.data('url'));
@@ -275,27 +238,25 @@ function initLivestream() {
 
 /********* LIVE STREAM END *********/
 
-function setupRunning() {
-    initLivelog();
-    initLivestream();
-
-    $('#interactive0_button').click(enableInteractive);
-    $('#interactive1_button').click(disableInteractive);
-
-    $('#continue_button').click(function() {
-        sendCommand('continue_waitforneedle');
-    });
-    $('#retry_button').click(function() {
-        sendCommand('reload_needles_and_retry');
-    });
-    $('#stop_button').click(function() {
-        sendCommand('stop_waitforneedle');
-    });
-
-    $('#sel_resolution').change(function() {
-        setResolution($(this).val());
-    });
-    $('#scrolldown').change(setScrolldown);
+function setupRunning(jobid) {
+  initLivelog();
+  initLivestream();
+  initStatus(jobid);
+  
+  $('#interactive0_button').click(enableInteractive);
+  $('#interactive1_button').click(disableInteractive);
+  
+  $('#continue_button').click(function() {
+    sendCommand('continue_waitforneedle');
+  });
+  $('#retry_button').click(function() {
+    sendCommand('reload_needles_and_retry');
+  });
+  $('#stop_button').click(function() {
+    sendCommand('stop_waitforneedle');
+  });
+  
+  $('#scrolldown').change(setScrolldown);
 }
 
 // vim: set sw=4 et:
