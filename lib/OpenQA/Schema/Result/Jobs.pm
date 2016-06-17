@@ -1252,6 +1252,10 @@ sub carry_over_labels {
     return;
 }
 
+sub running_or_waiting {
+    my ($self) = @_;
+    return ($self->state eq 'running' || $self->state eq 'waiting');
+}
 
 1;
 # vim: set sw=4 et:

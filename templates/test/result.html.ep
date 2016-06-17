@@ -24,7 +24,7 @@
 
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">
                 <li role="presentation" class="active"><a href="#details" aria-controls="details" role="tab" data-toggle="tab">Details</a></li>
-                % if ($job->state eq 'running') {
+                % if ($job->running_or_waiting) {
                     <li role="presentation"><a href="#live" aria-controls="live" role="tab" data-toggle="tab">Live View</a></li>
                 % }
                 <li role="presentation"><a href="#downloads" aria-controls="downloads" role="tab" data-toggle="tab">Logs &amp; Assets</a></li>
@@ -38,7 +38,7 @@
                     %= include 'test/details'
                 </div>
 
-                % if ($job->state eq 'running') {
+                % if ($job->running_or_waiting) {
                     <div role="tabpanel" class="tab-pane active" id="live">
                         %= include 'test/live'
                     </div>

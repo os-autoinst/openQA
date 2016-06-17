@@ -176,7 +176,7 @@ function setupResult(state, jobid) {
   // don't overwrite the tab if coming from the URL (ignore '#')
   if (state == 'scheduled' && location.hash.length < 2 ) {
     $('#result_tabs a[href="#settings"]').tab('show');
-  } else if (state == 'running') {
+  } else if (state == 'running' || state == 'waiting') {
     if (location.hash.length < 2) {
       $('#result_tabs a[href="#live"]').tab('show');
     }
