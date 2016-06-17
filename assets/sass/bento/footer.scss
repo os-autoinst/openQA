@@ -1,35 +1,29 @@
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-}
-
-#wrapper {
-  min-height: 100%;
+html {
   position: relative;
+  min-height: 100%;
 }
-
-#wrapper > :nth-last-child(2) {
+body {
   /* Margin bottom by footer height */
-  padding-bottom: $baseFontSize*1.5+15px;
+  margin-bottom: 30px;
 }
-
 .footer {
-  #footer-content {
-    margin-top: 10px;
-  }
-  #footer-legal {
-    margin-top: 5px;
-    border-top: 1px dotted $gray;
-    text-align: center;
-    color: $gray;
-  }
-
-  height: $baseFontSize*1.5+15px;
-  background-color: $bodyBackground;
   position: absolute;
   bottom: 0;
-  left: 0;
   width: 100%;
+  /* Set the fixed height of the footer here */
+  height: 30px;
+  background-color: #f5f5f5;
 }
-   
+
+.navbar-brand {
+  padding: 0px;
+}
+.navbar-brand>img {
+  height: 100%;
+  padding: 8px;
+  width: auto;
+}
+// always show a scrollbar not to flicker on tabs / long drop downs
+body    {
+  overflow-y:scroll;
+}

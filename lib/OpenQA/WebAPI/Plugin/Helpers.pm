@@ -63,56 +63,41 @@ sub register {
             return ($text =~ /poo#/) ? 'label_bug fa fa-bolt' : 'label_bug fa fa-bug';
         });
 
-    # Breadcrumbs generation can be centralized, since it's really simple
     $app->helper(
-        breadcrumbs => sub {
-            my $c = shift;
-
-            my $crumbs = '<div id="breadcrump" class="breadcrumb grid_10 alpha">';
-            $crumbs .= '<a href="' . $c->url_for('/') . '">';
-            $crumbs .= $c->image('/images/home_grey.png', alt => "Home");
-            $crumbs .= '<b>' . $c->stash('appname') . '</b></a>';
+        current_job_group => sub {
+            my ($c) = @_;
 
             my $test = $c->param('testid');
 
-            if ($test || $c->current_route =~ /^tests/) {
-                $crumbs .= ' > ' . $c->link_to('Test results' => $c->url_for('tests'));
-            }
-            elsif ($c->current_route =~ /^admin/) {
-                $crumbs .= ' > ' . $c->link_to(Admin => $c->url_for('admin'));
-                $crumbs .= ' > ' . $c->stash('title');
-            }
-
             if ($test) {
+                my $crumbs;
                 my $distri  = $c->stash('distri');
                 my $build   = $c->stash('build');
                 my $version = $c->stash('version');
 
                 my $query = {build => $build, distri => $distri, version => $version};
                 my $job = $c->stash('job');
+
+                my $overview_text;
                 if ($job->group_id) {
                     $query->{groupid} = $job->group_id;
-                    $crumbs .= ' > ' . $c->link_to("Build$build\@" . $job->group->name => $c->url_for('tests_overview')->query(%$query));
+                    $crumbs .= "<li>";
+                    $crumbs .= $c->link_to(($job->group->name . ' (current)') => $c->url_for('group_overview', groupid => $job->group_id));
+                    $crumbs .= "</li>";
+                    $overview_text = "Build " . $job->BUILD;
                 }
                 else {
-                    $crumbs .= ' > ' . $c->link_to("Build$build\@$distri $version" => $c->url_for('tests_overview')->query(%$query));
+                    $overview_text = "Build $build\@$distri $version";
                 }
-                if ($c->current_route('test')) {
-                    $crumbs .= " > Test $test";
-                }
-                else {
-                    $crumbs .= ' > ' . $c->link_to("Test $test" => $c->url_for('test'));
-                    my $mod = $c->param('moduleid');
-                    $crumbs .= " > $mod" if $mod;
-                }
-            }
-            elsif ($c->current_route('tests_overview')) {
-                $crumbs .= ' > Build overview';
-            }
+                my $overview_url = $c->url_for('tests_overview')->query(%$query);
 
-            $crumbs .= '</div>';
-
-            Mojo::ByteStream->new($crumbs);
+                $crumbs .= "<li>";
+                $crumbs .= $c->link_to($overview_url => sub { '<i class="glyphicon glyphicon-arrow-right"></i> ' . $overview_text });
+                $crumbs .= "</li>";
+                $crumbs .= '<li role="separator" class="divider"></li>';
+                return Mojo::ByteStream->new($crumbs);
+            }
+            return;
         });
 
     $app->helper(
@@ -143,6 +128,12 @@ sub register {
               && defined($c->stash('current_user')->{user});
 
             return $is_user_def ? $c->stash('current_user')->{user} : undef;
+        });
+
+    $app->helper(
+        current_job => sub {
+            my ($c) = @_;
+            return $c->stash('job');
         });
 
     $app->helper(
