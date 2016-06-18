@@ -33,7 +33,9 @@
           } );
       % end
 
-      <link rel="icon" href="/favicon.ico">
+      <link rel="icon" 
+            type="image/png" sizes="24x24"
+	    href="/images/logo.png" />
 
   </head>
   <body>
