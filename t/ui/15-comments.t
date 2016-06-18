@@ -208,8 +208,9 @@ subtest 'URL auto-replace' => sub {
 subtest 'commenting in test results including labels' => sub {
 
     # navigate to comments tab of test result page
-    $driver->find_element('Build0048', 'link_text')->click();
-    $driver->find_element('.status',   'css')->click();
+    $driver->find_element('Job Groups', 'link_text')->click();
+    $driver->find_element('Build0048',  'link_text')->click();
+    $driver->find_element('.status',    'css')->click();
     is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results', "on test result page");
     switch_to_comments_tab(0);
 
@@ -220,21 +221,26 @@ subtest 'commenting in test results including labels' => sub {
     $driver->find_element('#submitComment', 'css')->click();
 
     subtest 'check comment availability sign on test result overview' => sub {
-        $driver->find_element('Build0048@opensuse', 'link_text')->click();
+        $driver->find_element('Job Groups', 'link_text')->click();
+        like($driver->find_element('#current-build-overview', 'css')->get_text(), qr/\QBuild 0048\E/, 'on the right build');
+        $driver->find_element('#current-build-overview a', 'css')->click();
+
         is($driver->get_title(), "openQA: Test summary", "back on test group overview");
         is($driver->find_element('#res_DVD_x86_64_doc .fa-comment', 'css')->get_attribute('title'), '2 comments available', "test results show available comment(s)");
     };
 
     subtest 'add label and bug and check availability sign' => sub {
         $driver->get($baseurl . 'tests/99938#comments');
-        $driver->find_element('#text',              'css')->send_keys('label:true_positive');
-        $driver->find_element('#submitComment',     'css')->click();
-        $driver->find_element('Build0048@opensuse', 'link_text')->click();
+        $driver->find_element('#text',                     'css')->send_keys('label:true_positive');
+        $driver->find_element('#submitComment',            'css')->click();
+        $driver->find_element('Job Groups',                'link_text')->click();
+        $driver->find_element('#current-build-overview a', 'css')->click();
         is($driver->find_element('#res_DVD_x86_64_doc .fa-bookmark', 'css')->get_attribute('title'), 'true_positive', 'label icon shown');
         $driver->get($baseurl . 'tests/99938#comments');
-        $driver->find_element('#text',              'css')->send_keys('bsc#1234');
-        $driver->find_element('#submitComment',     'css')->click();
-        $driver->find_element('Build0048@opensuse', 'link_text')->click();
+        $driver->find_element('#text',                     'css')->send_keys('bsc#1234');
+        $driver->find_element('#submitComment',            'css')->click();
+        $driver->find_element('Job Groups',                'link_text')->click();
+        $driver->find_element('#current-build-overview a', 'css')->click();
         is($driver->find_element('#res_DVD_x86_64_doc .fa-bug', 'css')->get_attribute('title'), 'Bug(s) referenced: bsc#1234', 'bug icon shown');
         my @labels = $driver->find_elements('#res_DVD_x86_64_doc .test-label', 'css');
         is(scalar @labels, 1, 'Only one label is shown at a time');
@@ -243,9 +249,12 @@ subtest 'commenting in test results including labels' => sub {
         $driver->find_element('opensuse', 'link_text')->click();
         is($driver->find_element('.fa-certificate', 'css')->get_attribute('title'), 'Reviewed (1 comments)', 'build should be marked as labeled');
         $driver->get($baseurl . 'tests/99926#comments');
-        $driver->find_element('#text',                 'css')->send_keys('poo#9876');
-        $driver->find_element('#submitComment',        'css')->click();
-        $driver->find_element('Build87.5011@opensuse', 'link_text')->click();
+        $driver->find_element('#text',          'css')->send_keys('poo#9876');
+        $driver->find_element('#submitComment', 'css')->click();
+        $driver->find_element('Job Groups',     'link_text')->click();
+        like($driver->find_element('#current-build-overview', 'css')->get_text(), qr/\QBuild 87.5011\E/, 'on the right build');
+        $driver->find_element('#current-build-overview a', 'css')->click();
+
         is($driver->find_element('#res_staging_e_x86_64_minimalx .fa-bolt', 'css')->get_attribute('title'), 'Bug(s) referenced: poo#9876', 'bolt icon shown for progress issues');
         $driver->find_element('opensuse', 'link_text')->click();
     };

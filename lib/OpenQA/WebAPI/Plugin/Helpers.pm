@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -81,7 +81,7 @@ sub register {
                 my $overview_text;
                 if ($job->group_id) {
                     $query->{groupid} = $job->group_id;
-                    $crumbs .= "<li>";
+                    $crumbs .= "\n<li id='current-group-overview'>";
                     $crumbs .= $c->link_to(($job->group->name . ' (current)') => $c->url_for('group_overview', groupid => $job->group_id));
                     $crumbs .= "</li>";
                     $overview_text = "Build " . $job->BUILD;
@@ -91,10 +91,10 @@ sub register {
                 }
                 my $overview_url = $c->url_for('tests_overview')->query(%$query);
 
-                $crumbs .= "<li>";
+                $crumbs .= "\n<li id='current-build-overview'>";
                 $crumbs .= $c->link_to($overview_url => sub { '<i class="glyphicon glyphicon-arrow-right"></i> ' . $overview_text });
                 $crumbs .= "</li>";
-                $crumbs .= '<li role="separator" class="divider"></li>';
+                $crumbs .= "\n<li role='separator' class='divider'></li>\n";
                 return Mojo::ByteStream->new($crumbs);
             }
             return;

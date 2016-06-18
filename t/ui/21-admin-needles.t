@@ -49,11 +49,11 @@ $driver->find_element('Login', 'link_text')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 
-like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
+is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # Demo is admin, so go there
-$driver->find_element('admin',   'link_text')->click();
-$driver->find_element('Needles', 'link_text')->click();
+$driver->find_element('#user-action a', 'css')->click();
+$driver->find_element('Needles',        'link_text')->click();
 t::ui::PhantomTest::wait_for_ajax;
 
 my @trs = $driver->find_elements('tr', 'css');
@@ -69,16 +69,16 @@ $driver->find_element('a day ago', 'link_text')->click();
 like($driver->execute_script("return window.location.href"), qr(\Q/tests/99937#step/partitioning_finish/2\E), "redirected to right module");
 
 # go back to needles
-$driver->find_element('admin',   'link_text')->click();
-$driver->find_element('Needles', 'link_text')->click();
+$driver->find_element('#user-action a', 'css')->click();
+$driver->find_element('Needles',        'link_text')->click();
 t::ui::PhantomTest::wait_for_ajax;
 
 $driver->find_element('about 14 hours ago', 'link_text')->click();
 like($driver->execute_script("return window.location.href"), qr(\Q/tests/99937#step/partitioning/2\E), "redirected to right module too");
 
 # go back to needles
-$driver->find_element('admin',   'link_text')->click();
-$driver->find_element('Needles', 'link_text')->click();
+$driver->find_element('#user-action a', 'css')->click();
+$driver->find_element('Needles',        'link_text')->click();
 t::ui::PhantomTest::wait_for_ajax;
 
 $driver->find_element('td input', 'css')->click();

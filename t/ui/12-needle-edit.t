@@ -77,7 +77,7 @@ sub goto_editpage() {
     # we're back on the main page
     is($driver->get_title(), "openQA", "back on main page");
 
-    like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
+    is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
 
     $driver->get($baseurl . "tests/99946");
     is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');

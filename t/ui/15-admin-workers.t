@@ -55,16 +55,14 @@ $driver->find_element('Login', 'link_text')->click();
 is($driver->get_title(), "openQA", "back on main page");
 # but ...
 
-like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
+is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # Demo is admin, so go there
-$driver->find_element('admin', 'link_text')->click();
+$driver->find_element('#user-action a', 'css')->click();
+$driver->find_element('Workers',        'link_text')->click();
 
 is($driver->get_title(), "openQA: Workers", "on workers overview");
 
-$driver->find_element('Workers', 'link_text')->click();
-
-is($driver->get_title(), 'openQA: Workers', 'on workers');
 is($driver->find_element('tr#worker_1 .worker', 'css')->get_text(), 'localhost:1',  'localhost:1');
 is($driver->find_element('tr#worker_2 .worker', 'css')->get_text(), 'remotehost:1', 'remotehost:1');
 

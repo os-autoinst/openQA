@@ -75,14 +75,11 @@ $driver->find_element('Login', 'link_text')->click();
 is($driver->get_title(), "openQA", "back on main page");
 # but ...
 
-like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
-
-# Demo is admin, so go there
-$driver->find_element('admin', 'link_text')->click();
-is($driver->get_title(), "openQA: Workers", "on workers overview");
+is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # now hack ourselves to be just operator - this is stupid procedure, but we don't have API for user management
-$driver->find_element('Users', 'link_text')->click;
+$driver->find_element('#user-action a', 'css')->click();
+$driver->find_element('Users',          'link_text')->click;
 $driver->execute_script('$("#users").off("change")');
 $driver->execute_script('$("#users").on("change", "input[name=\"role\"]:radio", function() {$(this).parent("form").submit();})');
 $driver->find_element('//tr[./td[@class="nick" and text()="Demo"]]/td[@class="role"]//label[2]')->click;
@@ -90,8 +87,8 @@ $driver->find_element('//tr[./td[@class="nick" and text()="Demo"]]/td[@class="ro
 # refresh and return to admin pages
 $driver->refresh;
 $driver->get($driver->get_current_url =~ s/users//r);
-$driver->find_element('admin', 'link_text')->click();
 
+$driver->find_element('#user-action a', 'css')->click();
 # we should see test templates, groups, machines
 for my $item ('Medium types', 'Machines', 'Workers', 'Assets', 'Scheduled products') {
     ok($driver->find_element($item, 'link_text'), "can see $item");

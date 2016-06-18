@@ -54,7 +54,7 @@
                   <ul class="nav navbar-nav">
 
                       <li>
-                          %= link_to 'Jobs' => url_for('tests')
+                          %= link_to 'All Tests' => url_for('tests')
                       </li>
 
                       <li class="dropdown">
@@ -71,14 +71,12 @@
                   </ul>
                   <ul class="nav navbar-nav navbar-right">
                       % if (current_user) {
-                          <li class="dropdown">
+                          <li class="dropdown" id="user-action">
                               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" >Logged in as
                                   %= current_user->name
                                   <span class="caret"></span>
                               </a>
                               <ul class="dropdown-menu">
-                                  %# Using a variable to avoid additional whitespaces
-                                  % my $out = 'Logged in as '. current_user->name.' (';
                                   % if (is_operator) {
                                       <li class="dropdown-header">Operators Menu</li>
                                       <li><%= link_to('Medium types' => url_for('admin_products')) %></li>
@@ -100,17 +98,17 @@
                                           <li><%= link_to('Audit log' => url_for('audit_log')) %></li>
                                       % }
                                       <li role="separator" class="divider"></li>
-                                  % }
-                                  <li>
-                                      %= link_to "Manage API keys" => url_for('api_keys')
-                                  </li>
+                                      <li>
+                                         %= link_to "Manage API keys" => url_for('api_keys')
+                                      </li>
+				  % }
                                   <li>
                                       %= link_to('Logout' => url_for('logout') => 'data-method' => 'delete');
                                   </li>
                               </ul>
                           </li>
                       % } else {
-                          <li>
+                          <li id="user-action">
                               %= link_to('Login' => url_for('login'));
                           </li>
                       % }
@@ -118,7 +116,7 @@
               </div><!-- /.navbar-collapse -->
           </div>
       </nav>
-      <div class="container">
+      <div class="container" id="content">
           %= content
       </div>
 
