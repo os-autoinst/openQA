@@ -58,10 +58,10 @@ is($driver->get_title(), "openQA", "on main page");
 $driver->find_element('Login', 'link_text')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
-like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
+is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # Test Scheduled isos are displayed
-$driver->find_element('admin',              'link_text')->click();
+$driver->find_element('#user-action a',     'css')->click();
 $driver->find_element('Scheduled products', 'link_text')->click();
 like($driver->get_title(), qr/Scheduled products log/, 'on product log');
 my $table = $driver->find_element('#product_log_table', 'css');
@@ -84,6 +84,7 @@ like($cell->get_attribute('href'), qr{$url/api/v1/isos}, 'replay action poinst t
 $cell->click();
 $driver->refresh;
 # refresh page
+$driver->find_element('#user-action a',     'css')->click();
 $driver->find_element('Scheduled products', 'link_text')->click();
 like($driver->get_title(), qr/Scheduled products log/, 'on product log');
 $table = $driver->find_element('#product_log_table', 'css');

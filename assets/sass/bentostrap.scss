@@ -5,7 +5,3 @@
 @import "../cache/raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/stylesheets/_bootstrap.scss";
 @import "bootstrap_bento";
 
-// Footer overrides for bento compatibility
-#full-page-wrap {
-  margin: 0 auto -($baseFontSize*1.5+15px);
-}

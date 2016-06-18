@@ -46,20 +46,27 @@ unless ($driver && can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) 
 }
 
 is($driver->get_title(), "openQA", "on main page");
+is($driver->find_element('#user-action', 'css')->get_text(), 'Login', "noone logged in");
 $driver->find_element('Login', 'link_text')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 # but ...
 
-like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
+is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
+
+# expand user menu
+$driver->find_element('#user-action a', 'css')->click();
+like($driver->find_element('#user-action', 'css')->get_text(), qr/Operators Menu/,      'demo is operator');
+like($driver->find_element('#user-action', 'css')->get_text(), qr/Administrators Menu/, 'demo is admin');
 
 # Demo is admin, so go there
-$driver->find_element('admin', 'link_text')->click();
+$driver->find_element('Workers', 'link_text')->click();
 
 is($driver->get_title(), "openQA: Workers", "on workers overview");
 
 sub add_job_group() {
-    $driver->find_element('Job groups', 'link_text')->click();
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Job groups',     'link_text')->click();
 
     is($driver->get_title(), "openQA: Job groups", "on groups");
     t::ui::PhantomTest::wait_for_ajax;
@@ -77,7 +84,8 @@ sub add_job_group() {
 
 sub add_machine() {
     # go to machines first
-    $driver->find_element('Machines', 'link_text')->click();
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Machines',       'link_text')->click();
 
     is($driver->get_title(), "openQA: Machines", "on machines list");
     t::ui::PhantomTest::wait_for_ajax;
@@ -120,7 +128,8 @@ sub add_machine() {
 
 sub add_test_suite() {
     # go to tests first
-    $driver->find_element('Test suites', 'link_text')->click();
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Test suites',    'link_text')->click();
 
     is($driver->get_title(), "openQA: Test suites", "on test suites");
     t::ui::PhantomTest::wait_for_ajax;
@@ -201,7 +210,8 @@ sub add_product() {
     #print $driver->get_page_source();
 
     # go to product first
-    $driver->find_element('Medium types', 'link_text')->click();
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Medium types',   'link_text')->click();
 
     is($driver->get_title(), "openQA: Medium types", "on products");
     t::ui::PhantomTest::wait_for_ajax;
@@ -304,7 +314,8 @@ $driver->send_keys_to_active_element('64bit');
 $driver->send_keys_to_active_element(Selenium::Remote::WDKeys->KEYS->{'enter'});
 
 # now reload the page to see if we succeeded
-$driver->find_element('Job groups', 'link_text')->click();
+$driver->find_element('#user-action a', 'css')->click();
+$driver->find_element('Job groups',     'link_text')->click();
 
 is($driver->get_title(), "openQA: Job groups", "on groups");
 $driver->find_element('Cool Group', 'link')->click();
@@ -318,7 +329,8 @@ is_deeply(\@picks, [], 'found no three');
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 # briefly check the asset list
-$driver->find_element('Assets', 'link_text')->click();
+$driver->find_element('#user-action a', 'css')->click();
+$driver->find_element('Assets',         'link_text')->click();
 is($driver->get_title(), "openQA: Assets", "on asset");
 t::ui::PhantomTest::wait_for_ajax;
 

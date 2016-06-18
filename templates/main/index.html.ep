@@ -29,7 +29,3 @@
     </h2>
     %= include 'main/group_builds', result => $groupresults, group => $group
 % }
-
-<h2>
-%= link_to 'All Test Results' => url_for('tests')
-</h2>
