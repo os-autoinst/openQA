@@ -125,7 +125,7 @@ function addTestRow() {
 function buildMediumGroup(group, media) {
     var div = $('<div class="jobtemplate-medium"/>').appendTo('#media');
     div.append('<div class="jobtemplate-header">' + group + '</div>');
-    var table = $('<table class="table-autostripe mediagroup" id="' + group + '"/>').appendTo(div);
+    var table = $('<table class="table table-striped mediagroup" id="' + group + '"/>').appendTo(div);
     var thead = $('<thead/>').appendTo(table);
     var tr = $('<tr/>').appendTo(thead);
     var tname = tr.append($('<th class="name">Test <a href="#" class="plus-sign"><i class="fa fa-plus"></i></a></th>'));
