@@ -7,10 +7,10 @@
     $('.timeago').timeago();
 % end
 
-<h1>Last Builds for Group <%= $group->name %></h1>
+<h2>Last Builds for Group <%= $group->name %></h2>
 %= include 'main/group_builds', result => $result
 
-<h1>Comments</h1>
+<h2>Comments</h2>
 % for my $comment (reverse @$comments) {
     %= include 'comments/comment_row', comment => $comment, edit_action => 'edit_group_comment', remove_action => 'remove_group_comment'
 % }
