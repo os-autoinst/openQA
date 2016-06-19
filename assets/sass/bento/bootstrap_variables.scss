@@ -1,11 +1,3 @@
-// Variables            
-// --------------------------------------------------
-
-
-// Global values        
-// --------------------------------------------------
-
-
 // Grays
 // -------------------------
 // There were 18 tones of grey (20 including pure black and white) in the original bento theme
@@ -19,68 +11,5 @@ $grayLight:             #bbb; // Also #ccc in original bento
 $grayLighter:           #ddd; // Also #ddd and #eee in original bento
 $grayLightest:          #f6f6f6; // Also #fefefe in original bento
 $white:                 #fff;
-
-$panel-default-border:  $grayLighter;
-$panel-heading-padding: 5px 15px;
-
-// Other colors
-// ------------
-$green:                 #669900;
-$blue:                  #39c;
-$blueDark:              #006699;
-$bentoGreen:            #669900;
-$bentoGreenLight:       #9f3;
-
-// Typography
-// -------------------------
-$font-family-sans-serif: "Lucida Grande", Arial, "DejaVu Sans", Verdana, sans-serif;
-// $serifFontFamily:       ;
-// $monoFontFamily:        ;
-
-$baseFontSize:          13px;
-$baseFontFamily:        $font-family-sans-serif;
-$baseLineHeight:        16px;
-
-$headingsFontFamily:    inherit; // empty to use BS default, $baseFontFamily
-$headingsFontWeight:    bold;    // instead of browser default, bold
-$headingsColor:         $bentoGreen; // empty to use BS default, $textColor
-
-
-// Scaffolding
-// -------------------------
-$bodyBackground:        $grayLightest;
-$textColor:             $grayDarker;
-
-
-// Links
-// -------------------------
-$linkColor:             $bentoGreen;
-$linkColorHover:        $blue;
-
-
-// Wells
-// -------------------------
-$wellBackground:        $white;
-$bentoWellPadding:      10px;
-$bentoWellBorderColor:  darken($grayLighter, 10%);
-
-
-// Component sizing
-// -------------------------
-$baseBorderRadius:      5px;
-$borderRadiusLarge:     7px;
-
-
-// Navbar
-// -------------------------
-$navbarCollapseWidth:             600px;
-
-// Dropdowns
-// -------------------------
-$dropdownLinkBackgroundActive:  $grayLighter;
-
-// Misc
-// -------------------------
-$bentoShadowColor:  $grayLight;
 
 $icon-font-path: '/fonts/';

@@ -9,6 +9,8 @@
 < stylesheets/overview.scss
 < stylesheets/comments.css
 < stylesheets/openqa.scss
+< sass/rounded_tables.scss
+< sass/footer.scss
 < http://harvesthq.github.io/chosen/chosen.css
 < stylesheets/result_preview.scss
 
