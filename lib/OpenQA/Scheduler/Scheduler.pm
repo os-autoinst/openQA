@@ -51,7 +51,7 @@ require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
-@EXPORT = qw(worker_register job_create job_get
+@EXPORT = qw(worker_register job_create
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
   job_restart job_cancel command_enqueue
   job_set_stop job_stop iso_stop_old_builds
@@ -115,29 +115,6 @@ sub job_notify_workers {
     # notify workers about new job
     my $ipc = OpenQA::IPC->ipc;
     $ipc->websockets('ws_send_all', 'job_available');
-}
-
-sub job_get($) {
-    my $value = shift;
-
-    return if !defined($value);
-
-    if ($value =~ /^\d+$/) {
-        return _job_get({'me.id' => $value});
-    }
-    return _job_get({slug => $value});
-}
-
-# XXX TODO: Do not expand the Job
-sub _job_get($) {
-    my $search = shift;
-    my %attrs  = ();
-
-    push @{$attrs{prefetch}}, 'settings';
-
-    my $job = schema->resultset("Jobs")->search($search, \%attrs)->first;
-    return unless $job;
-    return $job->to_hash(assets => 1);
 }
 
 sub _prefer_parallel {
@@ -309,7 +286,6 @@ sub job_grab {
     return {} unless ($job && $job->state eq OpenQA::Schema::Result::Jobs::RUNNING);
 
     my $job_hashref = {};
-    #    $job_hashref = _job_get({'me.id' => $job->id});
     $job_hashref = $job->to_hash(assets => 1);
 
     $worker->set_property('INTERACTIVE_REQUESTED',        0);

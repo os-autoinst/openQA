@@ -282,10 +282,12 @@ sub complex_query {
     }
     else {
         my %js_settings = map { uc($_) => $args{$_} } qw(iso hdd_1);
-        my $subquery = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
-        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+        if (%js_settings) {
+            my $subquery = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
+            push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
+        }
 
-        for my $key (qw/build distri version flavor arch/) {
+        for my $key (qw/build distri version flavor arch test machine/) {
             if ($args{$key}) {
                 push(@conds, {"me." . uc($key) => $args{$key}});
             }

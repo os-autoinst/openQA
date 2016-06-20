@@ -114,14 +114,6 @@ sub job_duplicate {
     return $res;
 }
 
-dbus_method('job_get', ['uint32'], [['dict', 'string', ['variant']]]);
-sub job_get {
-    my ($self, $args) = @_;
-    my $res = OpenQA::Scheduler::Scheduler::job_get($args);
-    return {} unless $res;
-    return $res;
-}
-
 dbus_method('job_grab', [['dict', 'string', ['variant']]], [['dict', 'string', ['variant']]]);
 sub job_grab {
     my ($self, $args) = @_;

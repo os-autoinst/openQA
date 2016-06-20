@@ -24,7 +24,7 @@ sub list {
     my $self = shift;
 
     my %args;
-    for my $arg (qw/build iso distri version flavor maxage scope group groupid limit arch hdd_1/) {
+    for my $arg (qw/build iso distri version flavor maxage scope group groupid limit arch hdd_1 test machine/) {
         next unless defined $self->param($arg);
         $args{$arg} = $self->param($arg);
     }
@@ -58,10 +58,12 @@ sub list {
     # so we fetch some fields in a second step
 
     # fetch job assets
+    for my $job (values %jobs) {
+        $job->{_assets} = [];
+    }
     my $jas = $self->db->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
     while (my $ja = $jas->next) {
         my $job = $jobs{$ja->job_id};
-        $job->{_assets} ||= [];
         push(@{$job->{_assets}}, $ja->asset);
     }
 

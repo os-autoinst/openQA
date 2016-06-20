@@ -310,7 +310,7 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw/id name priority state result clone_id retry_avbl t_started t_finished group_id worker_id/);
+    my $j = _hashref($job, qw/id name priority state result clone_id retry_avbl t_started t_finished group_id/);
     if ($j->{group_id}) {
         $j->{group} = $job->group->name;
     }
