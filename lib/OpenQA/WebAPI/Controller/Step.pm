@@ -25,10 +25,9 @@ use Try::Tiny;
 use JSON;
 
 sub init {
-    my $self = shift;
+    my ($self) = @_;
 
-    my $testindex = $self->param('stepid');
-    my $job       = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
+    my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
 
     return $self->reply->not_found unless $job;
     $self->stash(testname => $job->name);
@@ -37,12 +36,21 @@ sub init {
     $self->stash(build    => $job->BUILD);
 
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
-    my $details = $module->details();
-    $self->stash('job',     $job);
-    $self->stash('module',  $module);
-    $self->stash('imglist', $details);
+    $self->stash('job',    $job);
+    $self->stash('module', $module);
 
     $self->stash('modinfo', $job->running_modinfo());
+}
+
+sub check_tabmode {
+    my ($self) = @_;
+
+    my $job       = $self->stash('job');
+    my $module    = $self->stash('module');
+    my $details   = $module->details();
+    my $testindex = $self->param('stepid');
+
+    $self->stash('imglist', $details);
 
     my $tabmode = 'screenshot';    # Default
     if ($testindex > @$details) {
@@ -99,7 +107,7 @@ sub view {
         return $self->redirect_to($target_url . $anchor);
     }
 
-    return 0 unless $self->init();
+    return 0 unless $self->init() && $self->check_tabmode();
 
     if ('audio' eq $self->stash('tabmode')) {
         $self->render('step/viewaudio');
@@ -115,7 +123,7 @@ sub view {
 # Needle editor
 sub edit {
     my ($self) = @_;
-    return 0 unless $self->init();
+    return 0 unless $self->init() && $self->check_tabmode();
 
     my $module_detail = $self->stash('module_detail');
     my $imgname       = $module_detail->{screenshot};
@@ -334,11 +342,11 @@ sub edit {
 
 sub src {
     my ($self) = @_;
+
     return 0 unless $self->init();
 
     my $job    = $self->stash('job');
     my $module = $self->stash('module');
-    return $self->reply->not_found unless ($job && $module);
 
     my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     my $scriptpath = "$testcasedir/" . $module->script;
