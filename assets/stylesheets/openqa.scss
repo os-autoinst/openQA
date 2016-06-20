@@ -4,6 +4,9 @@ $color-warning: #ff9;
 $color-failed: #FF4E46;
 $color-result-failed: #FF9E9B;
 $color-incomplete: #AF1E11;
+// foreground
+$color-result: #3c3c3c;
+// backgrounds
 $color-result-missing: #ddd;
 $color-result-testing: #9df;
 $color-module-passed: #59DF24;
@@ -23,15 +26,19 @@ $color-state-running: #8BDFFF;
 
         .progress-bar-passed {
                 background-color: $color-module-passed;
+                color: $color-result;
         }
         .progress-bar-softfailed {
                 background-color: $color-softfail;
+                color: $color-result;
         }
         .progress-bar-running {
                 background-color: $color-state-running;
+                color: $color-result;
         }
         .progress-bar-failed {
                 background-color: $color-failed;
+                color: white;
         }
 }
 
@@ -43,15 +50,15 @@ $color-state-running: #8BDFFF;
     background-color: $color-highlight-child !important;
 }
 
-.resultok { background-color: $color-ok;  }
-.resultpassed { background-color: $color-ok; }
-.resultunknown { background-color: $color-result-missing; }
-.resultrunning { background-color: $color-result-testing; }
-.resultwarning { background-color: $color-warning; }
-.resultsoftfailed { background-color: $color-softfail; }
-.resultfail { background-color: $color-result-failed; }
-.resultfailed { background-color: $color-result-failed; }
-.resultmissing { background-color: $color-result-missing; }
+.resultok { background-color: $color-ok; color: $color-result; }
+.resultpassed { background-color: $color-ok; color: $color-result; }
+.resultunknown { background-color: $color-result-missing; color: $color-result; }
+.resultrunning { background-color: $color-result-testing; color: $color-result; }
+.resultwarning { background-color: $color-warning; color: $color-result; }
+.resultsoftfailed { background-color: $color-softfail; color: $color-result; }
+.resultfail { background-color: $color-result-failed; color: $color-result; }
+.resultfailed { background-color: $color-result-failed; color: $color-result; }
+.resultmissing { background-color: $color-result-missing; color: $color-result; }
 
 .component {
         text-align: right;
@@ -329,6 +336,7 @@ table.admintable {
 table.overview {
         td {
                 text-align: left;
+		overflow-x: hidden;
         }
         td.name {
                 padding-top: .5em;
@@ -380,16 +388,21 @@ div.flags {
     color: $color-state-running;
 }
 
-.fa.result_passed { color: $color-module-passed !important; }                /* dark Lemon */
-.fa.module_passed { color: $color-module-passed !important; }
-.fa.result_unknown { color:$color-warning; }
-.fa.result_softfail { color: $color-softfail; }
-.fa.module_softfail { color: $color-softfail; }
-.fa.result_obsoleted { color: $color-module-none; }
-.fa.result_failed {color: $color-failed; }
 .fa.module_failed { color: $color-failed; }
-.fa.result_incomplete { color: $color-incomplete; }
 .fa.module_none { color: $color-module-none; }
+.fa.module_passed { color: $color-module-passed !important; }
+.fa.module_softfail { color: $color-softfail; }
+.fa.result_failed {color: $color-failed; }
+.fa.result_incomplete { color: $color-incomplete; }
+.fa.result_none { color: $color-module-none; }
+.fa.result_obsoleted { color: $color-module-none; }
+.fa.result_parallel_failed { color: $color-module-none; }
+.fa.result_parallel_restarted { color: $color-module-none; }
+.fa.result_passed { color: $color-module-passed !important; }
+.fa.result_skipped { color: $color-module-none; }
+.fa.result_softfail { color: $color-softfail; }
+.fa.result_unknown { color:$color-warning; }
+.fa.result_user_cancelled { color: $color-module-none; }
 
 .fa.comment, .fa.bookmark, .fa.bug, .fa.certificate, .fa.tag { color: $color-labels; }
 .fa-bolt { color: $color-bolt; }

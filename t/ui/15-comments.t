@@ -54,7 +54,7 @@ $get->element_exists_not('.fa-certificate');
 
 $driver->find_element('opensuse', 'link_text')->click();
 
-is($driver->find_element('h1:first-of-type', 'css')->get_text(), 'Last Builds for Group opensuse', "on group overview");
+is($driver->find_element('h2:first-of-type', 'css')->get_text(), 'Last Builds for Group opensuse', "on group overview");
 
 # define test message
 my $test_message         = "This is a cool test ☠";
