@@ -426,30 +426,30 @@ sub startup {
     $api_r->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
 
     my $job_r = $api_r->route('/jobs/:jobid', jobid => qr/\d+/);
-    $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show');    # job_get
-    $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');                                       # job_delete
+    $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show');
+    $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');              # job_delete
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
     # NO LONGER USED
-    $job_r->post('/result')->name('apiv1_job_result')->to('job#result');                                    # job_update_result
-    $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done');                                      # job_set_done
+    $job_r->post('/result')->name('apiv1_job_result')->to('job#result');           # job_update_result
+    $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done');             # job_set_done
     $job_r->post('/status')->name('apiv1_update_status')->to('job#update_status');
     $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
 
     # job_set_waiting, job_set_continue
     my $command_r = $job_r->route('/set_:command', command => [qw(waiting running)]);
     $command_r->post('/')->name('apiv1_set_command')->to('job#set_command');
-    $job_r->post('/restart')->name('apiv1_restart')->to('job#restart');                                     # job_restart
-    $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');                                        # job_cancel
-    $job_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate');                               # job_duplicate
+    $job_r->post('/restart')->name('apiv1_restart')->to('job#restart');            # job_restart
+    $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');               # job_cancel
+    $job_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate');      # job_duplicate
 
     # api/v1/workers
     $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');
     $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create');
     my $worker_r = $api_r->route('/workers/:workerid', workerid => qr/\d+/);
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
-    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');                      #command_enqueue
-    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');                                   # job_grab
-                                                                                                            # redirect for older workers
+    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');    #command_enqueue
+    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');                 # job_grab
+                                                                                          # redirect for older workers
     $worker_r->websocket(
         '/ws' => sub {
             my $c        = shift;
