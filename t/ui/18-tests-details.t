@@ -59,6 +59,13 @@ like($driver->find_element('#preview_container_in', 'css')->get_text(), qr/wait_
 $driver->find_element('[title="wait_serial"]', 'css')->click();
 ok($driver->find_element('#preview_container_out', 'css')->is_hidden(), "preview window closed after clicking again");
 
+# test running view with Test::Mojo as phantomjs would get stuck on the
+# liveview/livelog forever
+my $t               = Test::Mojo->new('OpenQA::WebAPI');
+my $get             = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
+my $href_to_isosize = $t->tx->res->dom->at('.component a[href*=installer_timezone]')->{href};
+$t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
+
 #print $driver->get_page_source();
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
