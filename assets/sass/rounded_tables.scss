@@ -3,20 +3,20 @@
 }
 
 .table thead:first-child tr:first-child th {
-        background: #f4f4f4;
-        @include gradient-vertical(#f4f4f4, #e7e7e7);
+        background: $table-border-color;
+        @include gradient-vertical(lighten($table-border-color, 8%), darken($table-border-color, 8%));
         box-shadow: inset 0 1px 0 0 #fff;
-        border-bottom: 1px solid $grayLighter;
-        border-right: 0 solid $grayLighter;
-        border-top: 1px solid $grayLighter;
+        border-bottom: 1px solid $table-border-color;
+        border-right: 0 solid $table-border-color;
+        border-top: 1px solid $table-border-color;
 }
 
 .table tbody td:first-child, .table thead th:first-child {
-        border-left: 1px solid $grayLighter;
+        border-left: 1px solid $table-border-color;
 }
 
 .table tbody td:last-child, .table thead:first-child tr:first-child th:last-child {
-        border-right: 1px solid $grayLighter;
+        border-right: 1px solid $table-border-color;
 }
 
 .table thead:first-child tr:first-child {
@@ -44,6 +44,6 @@
                 border-radius: 0 0 6px 0;
         }
         td {
-                border-bottom: 1px solid $grayLighter;
+                border-bottom: 1px solid $table-border-color;
         }
 }
