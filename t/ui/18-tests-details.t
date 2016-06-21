@@ -52,6 +52,15 @@ is($driver->get_current_url(), $baseurl . "tests/99946/modules/installer_timezon
 is($driver->find_element('.cm-comment', 'css')->get_text(), '#!/usr/bin/perl -w', "we have a perl comment");
 
 $driver->get($baseurl . "tests/99937");
+sub current_tab {
+    return $driver->find_element('.nav.nav-tabs .active', 'css')->get_text;
+}
+is(current_tab, 'Details', 'starting on Details tab for completed job');
+$driver->find_element('Settings', 'link_text')->click();
+is(current_tab, 'Settings', 'switched to settings tab');
+$driver->go_back();
+is(current_tab, 'Details', 'back to details tab');
+
 $driver->find_element('[title="wait_serial"]', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
 ok($driver->find_element('#preview_container_out', 'css')->is_displayed(), "preview window opens on click");
