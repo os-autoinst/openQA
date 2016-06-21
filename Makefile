@@ -76,7 +76,7 @@ test: checkstyle
 	OPENQA_CONFIG= prove ${PROVE_ARGS}
 
 # ignore tests and test related addons in coverage analysis
-COVER_OPTS ?= -ignore_re "t/.*" -ignore lib/perlcritic/Perl/Critic/Policy/HashKeyQuotes.pm
+COVER_OPTS ?= -ignore_re "^t/.*" -ignore lib/perlcritic/Perl/Critic/Policy/HashKeyQuotes.pm
 cover_db/:
 	MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover ${COVER_OPTS} -test -coverage default,-pod
 
