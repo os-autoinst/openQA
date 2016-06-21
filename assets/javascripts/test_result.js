@@ -116,20 +116,20 @@ function prevPreview() {
 
 function checkResultHash() {
   var hash = window.location.hash;
-  if (hash) {
-    var link = $('[href="' + hash + '"]');
-    if (link && link.attr('role') === 'tab') {
-      if (!link.prop('aria-expanded') && link.attr('href') != '#details' ) {
-	link.tab('show');
-      }
-      return;
-    };
-    if (hash.search('#step/') == 0) {
-      if (link && !link.parent().is('.current_preview')) {
-	setCurrentPreview(link.parent());
-      } else if (!link) {
-	setCurrentPreview();
-      }
+  if (!hash || hash == '#') {
+    hash = '#details';
+  }
+  var link = $('[href="' + hash + '"]');
+  if (link && link.attr('role') === 'tab') {
+    if (!link.prop('aria-expanded')) {
+      link.tab('show');
+    }
+  }
+  if (hash.search('#step/') == 0) {
+    if (link && !link.parent().is('.current_preview')) {
+      setCurrentPreview(link.parent());
+    } else if (!link) {
+      setCurrentPreview();
     }
   } else {
     // reset
@@ -174,12 +174,14 @@ function setupResult(state, jobid) {
   });
 
   // don't overwrite the tab if coming from the URL (ignore '#')
-  if (state == 'scheduled' && location.hash.length < 2 ) {
-    $('#result_tabs a[href="#settings"]').tab('show');
-  } else if (state == 'running' || state == 'waiting') {
-    if (location.hash.length < 2) {
+  if (location.hash.length < 2) {
+    if (state == 'scheduled') {
+      $('#result_tabs a[href="#settings"]').tab('show');
+    } else if (state == 'running' || state == 'waiting') {
       $('#result_tabs a[href="#live"]').tab('show');
     }
+  }
+  if (state == 'running' || state == 'waiting') {
     setupRunning(jobid);
   }
   $(window).on('hashchange', checkResultHash);
