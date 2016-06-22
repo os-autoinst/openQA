@@ -16,7 +16,7 @@ function checkPreviewVisible(a, preview) {
   }
 }
 
-function previewSuccess(data) {
+function previewSuccess(data, force) {
   $('#preview_container_in').html(data);
   var a = $('.current_preview');
   var td = a.parent();
@@ -37,22 +37,19 @@ function previewSuccess(data) {
   pout.insertAfter(td.children('.links_a').eq(preview_offset));
 
   var pin = $('#preview_container_in');
-  if (pin.find('pre').length || pin.find('audio').length ) {
-    pin.find('pre, div').css('width', $('.links').width());
-  } else {
+  if (!(pin.find('pre').length || pin.find('audio').length)) {
     window.differ = new NeedleDiff('needle_diff', 1024, 768);
     setDiffScreenshot(window.differ, $('#preview_container_in #step_view').data('image'));
     setNeedle();
   }
   pin.css('left', -($('.result').width()+$('.component').width()+2*16));
   var tdWidth = $('.current_preview').parents('td').width();
-  pout.width(tdWidth).hide().fadeIn(
-    {
-      duration: 150,
-      complete: function() {
-	checkPreviewVisible(a, pin);
-      }
-    });
+  pout.width(tdWidth).hide().fadeIn({
+    duration: (force?0:150),
+    complete: function() {
+      checkPreviewVisible(a, pin);
+    }
+  });
 }
 
 function setResultHash(hash) {
@@ -77,7 +74,7 @@ function setCurrentPreview(a, force) {
     }
     a.addClass('current_preview');
     setResultHash(link.attr('href'));
-    $.get({ url: link.data('url'), success: previewSuccess}).fail(function() { setCurrentPreview(); });
+    $.get({ url: link.data('url'), success: function(data) { previewSuccess(data, force); }}).fail(function() { setCurrentPreview(); });
   }
   else {
     // hide

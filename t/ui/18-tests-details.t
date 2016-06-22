@@ -70,8 +70,13 @@ ok($driver->find_element('#preview_container_out', 'css')->is_hidden(), "preview
 
 # test running view with Test::Mojo as phantomjs would get stuck on the
 # liveview/livelog forever
-my $t               = Test::Mojo->new('OpenQA::WebAPI');
-my $get             = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
+my $t   = Test::Mojo->new('OpenQA::WebAPI');
+my $get = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
+
+# test that only one tab is active when using step url
+my $num_active_tabs = $t->tx->res->dom->find('.tab-pane.active')->size;
+is($num_active_tabs, 1, 'only one tab visible at the same time');
+
 my $href_to_isosize = $t->tx->res->dom->at('.component a[href*=installer_timezone]')->{href};
 $t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
 

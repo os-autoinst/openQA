@@ -1,3 +1,1 @@
-<div class="panel panel-default" id="audiodiv">
-    <audio style="margin: 0 10px;" src="<%= url_for('test_file', filename => $module_detail->{'audio'}) %>" controls="controls"></audio>
-</div>
+<audio style="margin: 0 10px; padding-top: 10px;" src="<%= url_for('test_file', filename => $module_detail->{'audio'}) %>" controls="controls"></audio>
