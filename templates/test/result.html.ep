@@ -39,7 +39,7 @@
                 </div>
 
                 % if ($job->running_or_waiting) {
-                    <div role="tabpanel" class="tab-pane active" id="live">
+                    <div role="tabpanel" class="tab-pane" id="live">
                         %= include 'test/live'
                     </div>
                 % }

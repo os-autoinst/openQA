@@ -7,7 +7,7 @@
 }
 
 #preview_container_in {
-    padding-top: 7px;
+    padding: 5px;
     position: absolute;
     right: 0;
     text-align: center;
@@ -33,7 +33,7 @@
     #audiodiv {
         padding-top: 10px;
         margin-bottom: 0;
-	border: none;
+        border: none;
         background-color: inherit;
     }
 
@@ -74,4 +74,10 @@
 #canholder {
     text-align: center;
     width: 100%;
+
+    // live view
+    canvas {
+        max-width: 100%;
+        border: #ddd 1px solid;
+    }
 }
