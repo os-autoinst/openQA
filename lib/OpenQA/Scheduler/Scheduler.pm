@@ -30,6 +30,8 @@ use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
 use DBIx::Class::Timestamps qw/now/;
 use DateTime;
+use File::Path qw/rmtree/;
+use File::Spec::Functions qw/catfile catdir/;
 use File::Temp qw/tempdir/;
 use Mojo::URL;
 use Try::Tiny;
@@ -39,7 +41,7 @@ use OpenQA::Schema::Result::JobDependencies;
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw/log_debug log_warning notify_workers/;
+use OpenQA::Utils qw/log_debug log_info log_warning notify_workers/;
 use db_helpers qw/rndstr/;
 
 use OpenQA::IPC;
@@ -283,7 +285,10 @@ sub job_grab {
         $job_hashref->{settings}->{NICVLAN} = join(',', @vlans);
     }
 
-    # TODO: cleanup previous tmpdir
+    if (-e $worker->get_property('WORKER_TMPDIR')) {
+        log_info('Deleting previous tmpdir ' . $worker->get_property('WORKER_TMPDIR'));
+        rmtree($worker->get_property('WORKER_TMPDIR'));
+    }
     $worker->set_property('WORKER_TMPDIR', tempdir());
 
     # starting one job from parallel group can unblock
