@@ -653,7 +653,7 @@ sub job_cancel {
         # this might be even the tag 'not important' but not much is lost if
         # we still not cancel these builds
         my $groups_query = $scheduled_jobs->get_column('group_id')->as_query;
-        my @important_builds = grep defined, map { ($_->tag)[0] } schema->resultset("Comments")->search($groups_query);
+        my @important_builds = grep defined, map { ($_->tag)[0] } schema->resultset("Comments")->search({"me.group_id" => {-in => $groups_query}});
         my @unimportant_jobs;
         while (my $j = $jobs_to_cancel->next) {
             next if grep ($j->BUILD eq $_, @important_builds);
