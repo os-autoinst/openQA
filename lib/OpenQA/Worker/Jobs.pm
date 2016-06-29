@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015,2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -404,7 +404,9 @@ sub upload_status(;$) {
     return unless $job;
     my $status = {};
 
-    my $os_status = read_json_file('status.json') || {};
+    my $ua        = Mojo::UserAgent->new;
+    my $os_status = $ua->get($job->{URL} . "/isotovideo/status")->res->json;
+
     # $os_status->{running} is undef at the beginning or if read_json_file temporary failed
     # and contains empty string after the last test
 

@@ -127,6 +127,9 @@ sub engine_workit($) {
     $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION});
     _save_vars(\%vars);
 
+    # os-autoinst's commands server
+    $job->{URL} = "http://localhost:" . ($job->{settings}->{QEMUPORT} + 1) . "/" . $job->{settings}->{JOBTOKEN};
+
     # create tmpdir for qemu to write here
     my $tmpdir = "$pooldir/tmp";
     mkdir($tmpdir) unless (-d $tmpdir);
