@@ -221,7 +221,7 @@ function loadCanvas(canvas, dataURL) {
     var scrn = new Image();
     scrn.onload = function() {
         context.clearRect(0, 0, canvas.width(), canvas.height());
-        context.drawImage(this, 0, 0, width=canvas.width(), height=canvas.height());
+        context.drawImage(this, 0, 0);
     };
     scrn.src = dataURL;
 }
