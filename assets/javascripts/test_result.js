@@ -53,7 +53,7 @@ function previewSuccess(data, force) {
 }
 
 function mapHash(hash) {
-  return (hash === "#details") ? "#" : hash;
+  return (hash === "#details" || hash.length < 2) ? "#" : hash;
 }
 
 function setResultHash(hash, replace) {
