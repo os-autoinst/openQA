@@ -58,8 +58,12 @@ sub current_tab {
 is(current_tab, 'Details', 'starting on Details tab for completed job');
 $driver->find_element('Settings', 'link_text')->click();
 is(current_tab, 'Settings', 'switched to settings tab');
-$driver->go_back();
+$driver->find_element('Details', 'link_text')->click();
 is(current_tab, 'Details', 'back to details tab');
+
+$driver->go_back();
+is(scalar @{$driver->find_elements('.nav.nav-tabs .active', 'css')}, 0, 'verify history integrity');
+$driver->go_forward();
 
 $driver->find_element('[title="wait_serial"]', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;

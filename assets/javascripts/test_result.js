@@ -56,8 +56,8 @@ function setResultHash(hash) {
   // the details tab is the real page
   if (hash == '#details')
     hash = '#';
-  if(history.pushState) {
-    history.pushState(null, null, hash);
+  if(history.replaceState) {
+    history.replaceState(null, null, hash);
   } else {
     location.hash = hash;
   }
