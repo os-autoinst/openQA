@@ -140,13 +140,15 @@ function updateNeedinputIndicator() {
     //indicator.highlight();
 }
 
-function enableInteractive() {
-    sendCommand("enable_interactive_mode");
+function enableInteractive(e) {
+  e.preventDefault();
+  sendCommand("enable_interactive_mode");
 }
 
-function disableInteractive() {
-    $("#stop_button").hide();
-    sendCommand("disable_interactive_mode");
+function disableInteractive(e) {
+  e.preventDefault();
+  $("#stop_button").hide();
+  sendCommand("disable_interactive_mode");
 }
 
 function sendCommand(command) {
@@ -246,13 +248,16 @@ function setupRunning(jobid) {
   $('#interactive0_button').click(enableInteractive);
   $('#interactive1_button').click(disableInteractive);
   
-  $('#continue_button').click(function() {
+  $('#continue_button').click(function(e) {
+    e.preventDefault();
     sendCommand('continue_waitforneedle');
   });
-  $('#retry_button').click(function() {
+  $('#retry_button').click(function(e) {
+    e.preventDefault();
     sendCommand('reload_needles_and_retry');
   });
-  $('#stop_button').click(function() {
+  $('#stop_button').click(function(e) {
+    e.preventDefault();
     sendCommand('stop_waitforneedle');
   });
   
