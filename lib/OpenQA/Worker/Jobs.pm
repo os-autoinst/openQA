@@ -429,7 +429,7 @@ sub upload_status(;$) {
             $status->{test_order} = $test_order;
             $status->{backend}    = $os_status->{backend};
         }
-        elsif ($current_running ne $os_status->{running}) {    # new test
+        elsif ($current_running ne ($os_status->{running} || '')) {    # new test
             $upload_up_to = $current_running;
         }
         $current_running = $os_status->{running};
@@ -439,7 +439,7 @@ sub upload_status(;$) {
     $upload_up_to = '' if $final_upload;
 
     if ($status->{status}->{needinput}) {
-        $status->{result} = {$os_status->{running} => read_module_result($os_status->{running})};
+        $status->{result} = {$current_running => read_module_result($os_status->{running})};
     }
     elsif (defined($upload_up_to)) {
         my $extra_test_order = [];
