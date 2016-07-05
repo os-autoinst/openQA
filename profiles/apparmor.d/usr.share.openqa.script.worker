@@ -70,6 +70,7 @@
   /usr/bin/qemu-kvm rix,
   /usr/bin/qemu-system-* rix,
   /usr/bin/rm rix,
+  /usr/bin/sha1sum rix,
   /usr/bin/slirpvde rix,
   /usr/bin/ssh-keygen rix,
   /usr/bin/tail rix,
