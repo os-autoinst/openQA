@@ -30,12 +30,13 @@ sub create {
     my $user = $self->current_user;
     my $expiration;
     my $validation = $self->validation;
-    my $re         = qr/^\d{4}-\d{2}-\d{2}(?: \d{2}:\d{2}(?::\d{2})?)?$/a;
-    $validation->optional('t_expiration')->like($re);
+    $validation->optional('t_expiration')->datetime;
+
     my $error;
     if ($validation->has_error) {
-        $error = "Date must be in format $re";
+        $error = "Date must be in format " . DateTime::Format::SQLite->format_datetime(DateTime->now());
     }
+
     if (!$error && $validation->is_valid('t_expiration')) {
         eval { $expiration = DateTime::Format::SQLite->parse_datetime($self->param('t_expiration')) };
         $error = $@;
