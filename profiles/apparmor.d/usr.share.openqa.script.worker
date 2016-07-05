@@ -58,6 +58,7 @@
   /usr/bin/date rix,
   /usr/bin/dirname rix,
   /usr/bin/eatmydata rix,
+  /usr/bin/git rix,
   /usr/bin/ipmitool rix,
   /usr/sbin/ipmiconsole rix,
   /usr/bin/isotovideo rix,
