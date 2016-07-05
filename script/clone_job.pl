@@ -58,6 +58,10 @@ do not clone parent jobs.
 
 do not clone parent jobs of type chained. This makes the job use the downloaded hdd image instead of running the generator job again.
 
+=item B<--skip-download>
+
+do not try any download. You need to ensure all required assets are provided yourself.
+
 =item B<--apikey> <value>
 
 specify the public key needed for API authentication
@@ -117,7 +121,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options, "from=s", "host=s", "dir=s", "apikey:s", "apisecret:s", "verbose|v", "skip-deps", "skip-chained-deps", "help|h",) or usage(1);
+GetOptions(\%options, "from=s", "host=s", "dir=s", "apikey:s", "apisecret:s", "verbose|v", "skip-deps", "skip-chained-deps", "skip-download", "help|h",) or usage(1);
 
 usage(1) unless @ARGV;
 usage(1) unless exists $options{'from'};
@@ -189,6 +193,36 @@ sub get_job {
     return $job;
 }
 
+sub download_assets {
+    my ($job, $remote_url, $ua, %options) = @_;
+    my @parents = map { get_job($_) } @{$job->{parents}->{Chained}};
+  ASSET:
+    for my $type (keys %{$job->{assets}}) {
+        next if $type eq 'repo';    # we can't download repos
+        for my $file (@{$job->{assets}->{$type}}) {
+            my $dst = $file;
+            unless ($options{'skip-deps'} || $options{'skip-chained-deps'}) {
+                for my $j (@parents, $job) {
+                    next ASSET if $j->{settings}->{PUBLISH_HDD_1} && $file eq $j->{settings}->{PUBLISH_HDD_1};
+                }
+            }
+            $dst =~ s,.*/,,;
+            $dst = join('/', $options{dir}, $type, $dst);
+            my $from = $remote_url->clone;
+            $from->path(sprintf '/tests/%d/asset/%s/%s', $jobid, $type, $file);
+            $from = $from->to_string;
+
+            die "can't write $options{dir}/$type\n" unless -w "$options{dir}/$type";
+
+            print "downloading\n$from\nto\n$dst\n";
+            my $r = $ua->mirror($from, $dst);
+            unless ($r->is_success || $r->code == 304) {
+                die "$jobid failed: ", $r->status_line, "\n";
+            }
+        }
+    }
+}
+
 sub clone_job {
     my ($jobid, $clone_map, $depth) = @_;
     $clone_map //= {};
@@ -215,32 +249,7 @@ sub clone_job {
         $job->{settings}->{_START_AFTER_JOBS} = join(',', @new_chained)  if @new_chained;
     }
 
-    my @parents = map { get_job($_) } @{$job->{parents}->{Chained}};
-  ASSET:
-    for my $type (keys %{$job->{assets}}) {
-        next if $type eq 'repo';    # we can't download repos
-        for my $file (@{$job->{assets}->{$type}}) {
-            my $dst = $file;
-            unless ($options{'skip-deps'} || $options{'skip-chained-deps'}) {
-                for my $j (@parents, $job) {
-                    next ASSET if $file eq $j->{settings}->{PUBLISH_HDD_1};
-                }
-            }
-            $dst =~ s,.*/,,;
-            $dst = join('/', $options{dir}, $type, $dst);
-            my $from = $remote_url->clone;
-            $from->path(sprintf '/tests/%d/asset/%s/%s', $jobid, $type, $file);
-            $from = $from->to_string;
-
-            die "can't write $options{dir}/$type\n" unless -w "$options{dir}/$type";
-
-            print "downloading\n$from\nto\n$dst\n";
-            my $r = $ua->mirror($from, $dst);
-            unless ($r->is_success || $r->code == 304) {
-                die "$jobid failed: ", $r->status_line, "\n";
-            }
-        }
-    }
+    download_assets($job, $remote_url, $ua, %options) unless $options{'skip-download'};
 
     my $url      = $local_url->clone;
     my %settings = %{$job->{settings}};
