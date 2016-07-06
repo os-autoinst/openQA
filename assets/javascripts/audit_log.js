@@ -151,7 +151,8 @@ function loadProductLogTable ()
         event.preventDefault();
         var restart_link = $(this).attr('href');
         var action_cell = $(this).parent('td');
-        var event_data = table.rows(action_cell.parent('tr')).cell('.event_data').data();
+        var action_row = $(this).closest('tr');
+        var event_data = table.row(action_row).data()[8];
         event_data = jQuery.parseJSON(event_data);
         $.post(restart_link, event_data).done( function( data, res, xhr ) {
             action_cell.append('ISO rescheduled - ' + xhr.responseJSON.count + ' new jobs');
