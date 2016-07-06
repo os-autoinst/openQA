@@ -527,6 +527,16 @@ sub startup {
     $self->gru->add_task(scan_old_jobs  => \&OpenQA::Schema::Result::Needles::scan_old_jobs);
     $self->gru->add_task(scan_needles   => \&OpenQA::Schema::Result::Needles::scan_needles);
 
+    $self->validator->add_check(
+        datetime => sub {
+            my ($validation, $name, $value) = @_;
+            eval { DateTime::Format::SQLite->parse_datetime($value); };
+            if ($@) {
+                return 1;
+            }
+            return;
+        });
+
     # start workers checker
     $self->_workers_checker;
     $self->_init_rand;

@@ -13,7 +13,8 @@
                 <span class="input-group-addon">
                     %= label_for t_expiration => 'Expiration'
                 </span>
-                %= datetime_field 't_expiration', (size => 14) => (class => 'form-control')
+                % my $deftime = DateTime->now()->add(years => 1);
+                %= datetime_field 't_expiration', (size => 14) => (class => 'form-control') => (value => $deftime)
                 <span class="input-group-btn">
                     %= submit_button 'create' => (class => 'btn btn-primary')
                 </span>
