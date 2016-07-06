@@ -31,7 +31,7 @@ function loadAuditLogTable ()
     ajax: {
         url: ajax_url,
         type: "GET",
-        dataType: 'json',
+        dataType: 'json'
     },
     columns: [
         { data: 'event_time' },
@@ -142,9 +142,9 @@ function loadProductLogTable ()
                 }
                 else
                     return data;
-            },
+            }
         },
-        ],
+        ]
     });
 
     $(document).on('click', '.iso_restart', function(event) {
@@ -158,5 +158,6 @@ function loadProductLogTable ()
         });
         var i = $(this).find('i').removeClass('fa-repeat');
         $(this).replaceWith(i);
+        return false;
     });
 }
