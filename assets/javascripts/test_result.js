@@ -177,7 +177,7 @@ function setupResult(state, jobid) {
     }
   });
 
-  $(".links_a > a").on("click", function() {
+  $(document).on('click', '.links_a > a', function() {
     setCurrentPreview($(this).parent());
     return false;
   });
@@ -206,4 +206,3 @@ function setupResult(state, jobid) {
     setResultHash(tabshown);
   });
 }
-

@@ -307,7 +307,7 @@ sub startup {
     $test_logged_in->post('/edit_comment')->name('edit_comment')->to('test#edit_comment');
     $test_logged_in->post('/remove_comment')->name('remove_comment')->to('test#remove_comment');
 
-    $test_r->get('/modlist')->name('modlist')->to('running#modlist');
+    $test_r->get('/details')->name('details')->to('test#details');
     $test_r->get('/status')->name('status')->to('running#status');
     $test_r->get('/livelog')->name('livelog')->to('running#livelog');
     $test_r->get('/streaming')->name('streaming')->to('running#streaming');

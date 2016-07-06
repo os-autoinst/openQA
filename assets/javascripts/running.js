@@ -32,13 +32,19 @@ function updateTestStatus(newStatus) {
     $('#running_module').text(newStatus.running);
   
     // If a new module have been started, redraw module list
-    if (testStatus.modlist_initialized == 0 || testStatus.running != newStatus.running) {
+    if (testStatus.running != newStatus.running) {
         testStatus.running = newStatus.running;
-        $.ajax("/tests/" + testStatus.jobid + "/modlist").
-            done(function(modlist) {
-                if (modlist.length > 0) {
-                    updateModuleslist(modlist, testStatus.jobid, testStatus.running);
-                    testStatus.modlist_initialized = 1;
+        $.ajax("/tests/" + testStatus.jobid + "/details").
+            done(function(data) {
+                if (data.length > 0) {
+                    var running_tr = $('td.result.resultrunning').parent();
+                    var result_tbody = running_tr.parent();
+                    var first_tr_to_update = running_tr.index();
+                    var new_trs = $(data).find("tbody > tr");
+                    result_tbody.children().slice(first_tr_to_update).each(function() {
+                        var tr = $(this);
+                        tr.replaceWith(new_trs.eq(tr.index()));
+                    });
                 } else {
                     console.log("ERROR: modlist empty");
                 }

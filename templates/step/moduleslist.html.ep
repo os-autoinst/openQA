@@ -1,9 +1,0 @@
-% content_for 'ready_function' => begin
-  updateModuleslist(<%= Mojo::ByteStream->new(JSON::to_json($modinfo->{'modlist'})) %>,
-                    "<%= $testid %>", "<%= $moduleid %>");
-% end
-
-<div class="box box-shadow alpha" id="testmodules_box">
-	<div class="box-header aligncenter">Test modules</div>
-	<div id="modlist_content"></div>
-</div>

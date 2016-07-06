@@ -227,6 +227,24 @@ sub read_test_modules {
     return \@modlist;
 }
 
+sub details {
+    my ($self) = @_;
+
+    return $self->reply->not_found if (!defined $self->param('testid'));
+
+    my $job = $self->app->schema->resultset("Jobs")->search(
+        {
+            id => $self->param('testid')
+        },
+        {prefetch => qw/jobs_assets/})->first;
+    return $self->reply->not_found unless $job;
+
+    my $modlist = read_test_modules($job);
+    $self->stash(modlist => $modlist);
+
+    $self->render('test/details');
+}
+
 sub show {
     my ($self) = @_;
 
