@@ -99,3 +99,9 @@ coverage-html: cover_db/coverage.html
 .PHONY: coverage-check
 coverage-check: cover_db/coverage.html
 	./script/check_coverage ${COVERAGE_THRESHOLD}
+
+public/favicon.ico: public/images/logo.svg
+	for w in 16 32 64 128; do \
+		inkscape -e public/images/logo-$$w.png -w $$w public/images/logo.svg ; \
+	done
+	convert public/images/logo-16.png public/images/logo-32.png public/images/logo-64.png public/images/logo-128.png -background white -alpha remove public/favicon.ico

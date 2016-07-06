@@ -34,8 +34,9 @@
       % end
 
       <link rel="icon"
-            type="image/png" sizes="24x24"
-            href="/images/logo.png" />
+            type="image/png" sizes="16x16"
+            href="/images/logo-16.png" />
+      <link rel="icon" href="/images/logo.svg" sizes="any" type="image/svg+xml">
 
   </head>
   <body>
