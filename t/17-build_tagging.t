@@ -78,7 +78,7 @@ subtest 'mark build as non-important build' => sub {
     is(scalar @tags, 0, 'no build tagged anymore');
 };
 
-subtest 'tag on non-existant build does not show up' => sub {
+subtest 'tag on non-existent build does not show up' => sub {
     post_comment_1001 'tag:0066:important';
     my $get  = $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;

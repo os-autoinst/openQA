@@ -984,8 +984,8 @@ sub update_status {
     if ($status->{result}) {
         while (my ($name, $result) = each %{$status->{result}}) {
             # in interactive mode, updating the symbolic link if needed
-            my $existant = $self->update_module($name, $result, $status->{status}->{needinput}) || [];
-            for (@$existant) { $known{$_} = 1; }
+            my $existent = $self->update_module($name, $result, $status->{status}->{needinput}) || [];
+            for (@$existent) { $known{$_} = 1; }
         }
     }
     $ret->{known_images} = [sort keys %known];

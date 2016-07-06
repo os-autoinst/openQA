@@ -279,13 +279,13 @@ is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of j
 is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
 
 # Using asset _URL outside of whitelist will yield 403
-@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://adamshost/nonexistant.iso'}, 403) };
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://adamshost/nonexistent.iso'}, 403) };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
 is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
 
 # Using asset _DECOMPRESS_URL outside of whitelist will yield 403
-@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexistant.hda.xz'}, 403) };
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexistent.hda.xz'}, 403) };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
 is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
