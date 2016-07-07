@@ -28,7 +28,7 @@ packages in OBS in the
 https://build.opensuse.org/project/show/devel:openQA:stable[openQA:stable]
 repository.
 
-The the latest development version can also be found in OBS in the
+The latest development version can also be found in OBS in the
 https://build.opensuse.org/project/show/devel:openQA[openQA:devel] repository.
 
 For Fedora, packages are available in the official repositories for Fedora 23
@@ -279,7 +279,7 @@ ensure shared storage between openQA WebUI and workers.
 Directory +/var/lib/openqa/share+ contains all required data and should be
 shared with read-write access across all nodes present in openQA cluster.
 This step is intentionally left on system administrator to choose proper shared
-storage for her specific needs.
+storage for his specific needs.
 
 Example of NFS configuration:
 NFS server is where openQA WebUI is running. Content of +/etc/exports+
