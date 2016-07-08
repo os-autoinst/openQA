@@ -27,7 +27,7 @@
 
       %= javascript begin
           %= content_for 'head_javascript'
-          $(document).ready(function() {
+          $(function() {
           setupForAll();
           %= content_for 'ready_function'
           } );

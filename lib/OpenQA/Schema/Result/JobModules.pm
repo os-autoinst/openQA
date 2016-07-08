@@ -262,11 +262,11 @@ sub store_needle_infos($;$) {
 }
 
 sub _save_details_screenshot {
-    my ($self, $screenshot, $existant_md5, $cleanup) = @_;
+    my ($self, $screenshot, $existent_md5, $cleanup) = @_;
 
     my ($full, $thumb) = OpenQA::Utils::image_md5_filename($screenshot->{md5});
-    if (-e $full) {    # mark existant
-        push(@$existant_md5, $screenshot->{md5});
+    if (-e $full) {    # mark existent
+        push(@$existent_md5, $screenshot->{md5});
     }
     if ($cleanup) {
         # interactive mode, recreate the symbolic link of screenshot if it was changed
@@ -288,19 +288,19 @@ sub _save_details_screenshot {
 
 sub save_details {
     my ($self, $details, $cleanup) = @_;
-    my $existant_md5 = [];
+    my $existent_md5 = [];
     for my $d (@$details) {
         # avoid creating symlinks for text results
         if ($d->{screenshot}) {
             # create possibly stale symlinks
-            $d->{screenshot} = $self->_save_details_screenshot($d->{screenshot}, $existant_md5, $cleanup);
+            $d->{screenshot} = $self->_save_details_screenshot($d->{screenshot}, $existent_md5, $cleanup);
         }
     }
     $self->store_needle_infos($details);
     open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");
     $fh->print(JSON::encode_json($details));
     close($fh);
-    return $existant_md5;
+    return $existent_md5;
 }
 
 1;

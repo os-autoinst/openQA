@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015,2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -404,7 +404,9 @@ sub upload_status(;$) {
     return unless $job;
     my $status = {};
 
-    my $os_status = read_json_file('status.json') || {};
+    my $ua        = Mojo::UserAgent->new;
+    my $os_status = $ua->get($job->{URL} . "/isotovideo/status")->res->json;
+
     # $os_status->{running} is undef at the beginning or if read_json_file temporary failed
     # and contains empty string after the last test
 
@@ -427,7 +429,7 @@ sub upload_status(;$) {
             $status->{test_order} = $test_order;
             $status->{backend}    = $os_status->{backend};
         }
-        elsif ($current_running ne $os_status->{running}) {    # new test
+        elsif ($current_running ne ($os_status->{running} || '')) {    # new test
             $upload_up_to = $current_running;
         }
         $current_running = $os_status->{running};
@@ -437,7 +439,7 @@ sub upload_status(;$) {
     $upload_up_to = '' if $final_upload;
 
     if ($status->{status}->{needinput}) {
-        $status->{result} = {$os_status->{running} => read_module_result($os_status->{running})};
+        $status->{result} = {$current_running => read_module_result($os_status->{running})};
     }
     elsif (defined($upload_up_to)) {
         my $extra_test_order = [];

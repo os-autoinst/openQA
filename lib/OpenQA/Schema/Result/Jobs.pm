@@ -811,13 +811,14 @@ sub create_result_dir {
 
 sub update_module {
     my ($self, $name, $result, $cleanup) = @_;
+
     $cleanup //= 0;
     my $mod = $self->modules->find({name => $name});
     return unless $mod;
     $self->create_result_dir();
 
     $mod->update_result($result);
-    $mod->save_details($result->{details}, $cleanup);
+    return $mod->save_details($result->{details}, $cleanup);
 }
 
 sub running_modinfo() {
@@ -982,15 +983,9 @@ sub update_status {
     my %known;
     if ($status->{result}) {
         while (my ($name, $result) = each %{$status->{result}}) {
-            my $existant;
-            if ($status->{status}->{needinput}) {
-                # in interactive mode, updating the symbolic link if needed
-                $existant = $self->update_module($name, $result, 1) || [];
-            }
-            else {
-                $existant = $self->update_module($name, $result) || [];
-            }
-            for (@$existant) { $known{$_} = 1; }
+            # in interactive mode, updating the symbolic link if needed
+            my $existent = $self->update_module($name, $result, $status->{status}->{needinput}) || [];
+            for (@$existent) { $known{$_} = 1; }
         }
     }
     $ret->{known_images} = [sort keys %known];
