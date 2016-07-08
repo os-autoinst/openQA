@@ -31,7 +31,7 @@ function loadAuditLogTable ()
     ajax: {
         url: ajax_url,
         type: "GET",
-        dataType: 'json',
+        dataType: 'json'
     },
     columns: [
         { data: 'event_time' },
@@ -142,21 +142,23 @@ function loadProductLogTable ()
                 }
                 else
                     return data;
-            },
+            }
         },
-        ],
+        ]
     });
 
     $(document).on('click', '.iso_restart', function(event) {
         event.preventDefault();
         var restart_link = $(this).attr('href');
         var action_cell = $(this).parent('td');
-        var event_data = table.rows(action_cell.parent('tr')).cell('.event_data').data();
+        var action_row = $(this).closest('tr');
+        var event_data = table.row(action_row).data()[8];
         event_data = jQuery.parseJSON(event_data);
         $.post(restart_link, event_data).done( function( data, res, xhr ) {
             action_cell.append('ISO rescheduled - ' + xhr.responseJSON.count + ' new jobs');
         });
         var i = $(this).find('i').removeClass('fa-repeat');
         $(this).replaceWith(i);
+        return false;
     });
 }
