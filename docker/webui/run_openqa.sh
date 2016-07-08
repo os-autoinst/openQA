@@ -9,5 +9,5 @@ dbus-daemon --system --fork
 start_daemon -u geekotest /usr/share/openqa/script/openqa-scheduler &
 start_daemon -u geekotest /usr/share/openqa/script/openqa-websockets &
 start_daemon -u geekotest /usr/share/openqa/script/openqa gru -m production run &
-rcapache2 start
+apache2ctl start
 start_daemon -u geekotest /usr/share/openqa/script/openqa prefork -m production --proxy
