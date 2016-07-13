@@ -113,14 +113,15 @@ sub list_ajax {
 
     # complete response
     my @list;
-    my $jobs = $self->db->resultset("Jobs")->search(
+    my @jobs = $self->db->resultset("Jobs")->search(
         {'me.id' => {in => \@ids}},
         {
             columns  => [qw/me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST state clone_id test result group_id t_finished/],
-            order_by => ['me.id DESC'],
+            order_by => ['me.t_finished DESC, me.id DESC'],
             prefetch => [qw/children parents/],
-        });
-    while (my $job = $jobs->next) {
+        })->all;
+    # need to use all as the order is too complex for a cursor
+    for my $job (@jobs) {
         # job dependencies
         my %deps = (
             parents  => {Chained => [], Parallel => []},
