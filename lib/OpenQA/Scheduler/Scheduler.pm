@@ -346,7 +346,7 @@ sub _job_skip_children {
             id    => {-in => $children->get_column('child_job_id')->as_query},
             state => OpenQA::Schema::Result::Jobs::SCHEDULED,
         },
-      )->update(
+      )->update_all(
         {
             state  => OpenQA::Schema::Result::Jobs::CANCELLED,
             result => OpenQA::Schema::Result::Jobs::SKIPPED,
@@ -414,10 +414,7 @@ sub job_set_done {
     $job->locked_locks->update({locked_by => undef});
 
     my $result = $args{result} || $job->calculate_result();
-    my %new_val = (
-        state      => OpenQA::Schema::Result::Jobs::DONE,
-        t_finished => now(),
-    );
+    my %new_val = (state => OpenQA::Schema::Result::Jobs::DONE);
 
     # for cancelled jobs the result is already known
     $new_val{result} = $result if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
@@ -668,7 +665,7 @@ sub job_cancel {
         $jobs_to_cancel = $scheduled_jobs;
     }
     # first cancel scheduled jobs
-    my $cancelled_jobs = $jobs_to_cancel->update(
+    my $cancelled_jobs = $jobs_to_cancel->update_all(
         {
             state  => OpenQA::Schema::Result::Jobs::CANCELLED,
             result => $new_result,
