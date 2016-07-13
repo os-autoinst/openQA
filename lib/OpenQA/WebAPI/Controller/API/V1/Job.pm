@@ -277,7 +277,10 @@ sub done {
     else {
         $res = $ipc->scheduler('job_set_done', {jobid => $jobid, result => $result});
     }
-    $self->emit_event('openqa_job_done', {id => $jobid, result => $result, newbuild => $newbuild}) if ($res);
+
+    # use $res as a result, it is recomputed result by scheduler
+    $self->emit_event('openqa_job_done', {id => $jobid, result => $res, newbuild => $newbuild});
+
     # See comment in set_command
     $self->render(json => {result => \$res});
 }

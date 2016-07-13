@@ -89,7 +89,7 @@ is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.creat
 # set the job as done via API
 $post = $t->post_ok("/api/v1/jobs/" . $job . "/set_done")->status_is(200);
 # check plugin called fedmsg-logger correctly
-is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.done --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","id":' . $job . ',"newbuild":null,"remaining":0,"result":null}', "job done triggers fedmsg");
+is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.done --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","id":' . $job . ',"newbuild":null,"remaining":0,"result":"failed"}', "job done triggers fedmsg");
 
 # we don't test update_results as comment indicates it's obsolete
 

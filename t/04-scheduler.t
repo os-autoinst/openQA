@@ -318,7 +318,7 @@ sleep 1;
     result => 'passed',
 );
 $result = OpenQA::Scheduler::Scheduler::job_set_done(%args);
-ok($result, "job_set_done");
+is($result, 'passed', "job_set_done");
 $job = job_get($job_id);
 is($job->{state},  "done",   "job_set_done changed state");
 is($job->{result}, "passed", "job_set_done changed result");

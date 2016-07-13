@@ -133,7 +133,7 @@ sub job_restart {
     return \@res;
 }
 
-dbus_method('job_set_done', [['dict', 'string', 'string']], ['uint32']);
+dbus_method('job_set_done', [['dict', 'string', 'string']], ['string']);
 sub job_set_done {
     my ($self, $args) = @_;
     return OpenQA::Scheduler::Scheduler::job_set_done(%$args);

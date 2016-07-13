@@ -423,7 +423,8 @@ sub job_set_done {
         # free the worker
         $job->worker->update({job_id => undef});
     }
-    my $r = $job->update(\%new_val);
+
+    $job->update(\%new_val);
 
     if ($result ne OpenQA::Schema::Result::Jobs::PASSED) {
         _job_skip_children($jobid);
@@ -431,7 +432,8 @@ sub job_set_done {
         # labels are there to mark reasons of failure
         $job->carry_over_labels;
     }
-    return $r;
+
+    return $result;
 }
 
 =head2 job_set_waiting

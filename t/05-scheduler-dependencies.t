@@ -174,7 +174,7 @@ is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
 # jobA failed
 my $result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobA->id, result => 'failed');
-ok($result, "job_set_done");
+is($result, 'failed', 'job_set_done');
 
 # then jobD and jobE, workers 5 and 6 must be canceled
 #$ws5->message_ok;
@@ -184,10 +184,10 @@ ok($result, "job_set_done");
 #$ws6->message_is('cancel');
 
 $result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobD->id, result => 'incomplete');
-ok($result, "job_set_done");
+is($result, 'incomplete', 'job_set_done');
 
 $result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobE->id, result => 'incomplete');
-ok($result, "job_set_done");
+is($result, 'incomplete', 'job_set_done');
 
 
 $job = job_get_deps($jobA->id);
