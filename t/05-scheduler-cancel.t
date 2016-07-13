@@ -51,7 +51,8 @@ my $job = job_get($new_job_id);
 is($job->{state}, 'scheduled', "new job is scheduled");
 
 $job = job_get(99963);
-is($job->{state}, 'running', "old job is running");
+is($job->{state},      'running', "old job is running");
+is($job->{t_finished}, undef,     "There is a no finish time yet");
 
 sub lj {
     # check the call succeeds every time, only output if verbose
@@ -73,6 +74,7 @@ lj;
 
 $job = job_get($new_job_id);
 is($job->{state}, 'cancelled', "new job is cancelled");
+ok($job->{t_finished}, "There is a finish time");
 
 $job = job_get(99963);
 is($job->{state}, 'running', "old job still running");

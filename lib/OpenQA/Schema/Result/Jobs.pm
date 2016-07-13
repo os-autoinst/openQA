@@ -27,6 +27,7 @@ use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings/;
 use File::Basename qw/basename dirname/;
 use File::Path ();
 use File::Which qw(which);
+use DBIx::Class::Timestamps qw/now/;
 
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
@@ -1250,6 +1251,22 @@ sub carry_over_labels {
 sub running_or_waiting {
     my ($self) = @_;
     return ($self->state eq 'running' || $self->state eq 'waiting');
+}
+
+# extend to finish
+sub store_column {
+    my ($self, %args) = @_;
+    if ($args{state} && grep { $args{state} eq $_ } FINAL_STATES) {
+        if (!$self->t_finished) {
+            # make sure we do not overwrite a t_finished from fixtures
+            # in normal operation it should be impossible to finish
+            # twice
+            $self->t_finished(now());
+        }
+        # make sure no modules are left running
+        $self->modules->search({result => RUNNING})->update({result => NONE});
+    }
+    return $self->SUPER::store_column(%args);
 }
 
 1;
