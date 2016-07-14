@@ -69,13 +69,14 @@ sub list {
     }
     $self->stash(running => \@list);
 
-    my $scheduled = $self->db->resultset("Jobs")->complex_query(
+    my @scheduled = $self->db->resultset("Jobs")->complex_query(
         state   => 'scheduled',
         match   => $match,
         groupid => $groupid,
         assetid => $assetid
-    );
-    $self->stash(scheduled => $scheduled);
+    )->all;
+    @scheduled = sort { $a->t_created < $b->t_created } @scheduled;
+    $self->stash(scheduled => \@scheduled);
 }
 
 sub list_ajax {
