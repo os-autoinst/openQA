@@ -20,7 +20,7 @@ use warnings;
 use OpenQA::Worker::Common;
 use OpenQA::Utils qw//;
 
-use POSIX qw/:sys_wait_h strftime SIGTERM SIGKILL uname/;
+use POSIX qw/:sys_wait_h strftime uname/;
 use JSON qw/to_json/;
 use Fcntl;
 use Errno;
@@ -40,15 +40,9 @@ sub set_engine_exec {
 
 sub _kill($) {
     my ($pid) = @_;
-    my $n = kill(SIGTERM, $pid);
-    for (my $i = 0; $n && $i < 10; ++$i) {
-        sleep 3;
-        $n = kill(SIGTERM, $pid);
-        warn "kill TERM resulted in $n";
-    }
-    if ($n) {
-        warn "pid $pid didn't die, sending KILL";
-        kill(SIGKILL, $pid);
+    if (kill('TERM', $pid)) {
+        warn "killed $pid - waiting for exit";
+        waitpid($pid, 0);
     }
 }
 
@@ -164,21 +158,21 @@ sub engine_check {
     if (-e "$pooldir/backend.crashed") {
         unlink("$pooldir/backend.crashed");
         print STDERR "backend crashed ...\n";
-        if (open(my $fh, '<', "$pooldir/qemu.pid")) {
-            local $/;
-            my $pid = <$fh>;
-            close $fh;
-            if ($pid =~ /(\d+)/) {
-                print STDERR "killing qemu $1\n";
-                _kill($1);
-            }
-        }
         if (open(my $fh, '<', "$pooldir/os-autoinst.pid")) {
             local $/;
             my $pid = <$fh>;
             close $fh;
             if ($pid =~ /(\d+)/) {
                 print STDERR "killing os-autoinst $1\n";
+                _kill($1);
+            }
+        }
+        if (open(my $fh, '<', "$pooldir/qemu.pid")) {
+            local $/;
+            my $pid = <$fh>;
+            close $fh;
+            if ($pid =~ /(\d+)/) {
+                print STDERR "killing qemu $1\n";
                 _kill($1);
             }
         }
