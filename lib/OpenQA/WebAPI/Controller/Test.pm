@@ -67,6 +67,7 @@ sub list {
         };
         push @list, $data;
     }
+    @list = sort { $b->{job}->t_started <=> $a->{job}->t_started || $b->{job}->id <=> $a->{job}->id } @list;
     $self->stash(running => \@list);
 
     my @scheduled = $self->db->resultset("Jobs")->complex_query(
@@ -75,7 +76,7 @@ sub list {
         groupid => $groupid,
         assetid => $assetid
     )->all;
-    @scheduled = sort { $a->t_created < $b->t_created } @scheduled;
+    @scheduled = sort { $b->t_created <=> $a->t_created || $b->id <=> $a->id } @scheduled;
     $self->stash(scheduled => \@scheduled);
 }
 
