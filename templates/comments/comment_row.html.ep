@@ -1,32 +1,40 @@
 <div class="row comment-row">
     <div class="col-sm-1">
-        <img class="media-object img-circle" src="<%= $comment->user->gravatar(60) %>" alt="profile">
+        <img class="media-object img-circle" src="<%= $user->gravatar(60) %>" alt="profile">
     </div>
     <div class="col-sm-11">
         <div class="media-body comment-body">
             <div class="well well-lg">
-                <form onsubmit="updateComment(this); return false;" onreset="hideCommentEditor(this); return true;" data-put-url="<%= url_for($put_action => ($context->{type}.'_id' => $context->{id}, comment_id => $comment->id)) %>">
+                <form onsubmit="updateComment(this); return false;" onreset="hideCommentEditor(this); return true;" data-put-url="<%= url_for($put_action => ($context->{type}.'_id' => $context->{id}, comment_id => $comment_id)) %>">
                     % if (current_user && current_user->is_admin) {
-                        <button class="btn btn-danger btn-circle btn-sm remove-edit-button" type="button" name="removeComment" onclick="deleteComment(this);" data-author="<%= $comment->user->name %>" data-delete-url="<%= url_for($delete_action => ($context->{type}.'_id' => $context->{id}, comment_id => $comment->id)) %>">
+                        <button class="btn btn-danger btn-circle btn-sm remove-edit-button" type="button" name="removeComment" onclick="deleteComment(this);" data-author="<%= $user->name %>" data-delete-url="<%= url_for($delete_action => ($context->{type}.'_id' => $context->{id}, comment_id => $comment_id)) %>">
                             <span class="glyphicon glyphicon glyphicon-remove"></span>
                         </button>
                     % }
-                    % if (current_user && ((current_user->id eq $comment->user->id))) {
+                    % if (current_user && (current_user->id eq $user->id)) {
                         <button class="btn btn-info btn-circle btn-sm trigger-edit-button" type="button" name="editComment" onclick="showCommentEditor(this.form);">
                             <span class="glyphicon glyphicon glyphicon-pencil"></span>
                         </button>
                     % }
                     <h4 class="media-heading">
-                        <%= $comment->user->name %> wrote <abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr>
-                        % if ($comment->t_created != $comment->t_updated) {
-                            (last edited <abbr class="timeago" title="<%= $comment->t_updated->datetime() %>Z"><%= format_time($comment->t_updated) %></abbr>)
+                        % if($comment) {
+                            <%= $user->name %> wrote <abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr>
+                                % if ($comment->t_created != $comment->t_updated) {
+                                    (last edited <abbr class="timeago" title="<%= $comment->t_updated->datetime() %>Z"><%= format_time($comment->t_updated) %></abbr>)
+                                % }
                         % }
                     </h4>
                     <div class="media-comment" name="markdown">
-                        %= $comment->rendered_markdown
+                        % if($comment) {
+                            %= $comment->rendered_markdown
+                        % }
                     </div>
-                    % if (current_user && ((current_user->id eq $comment->user->id))) {
-                        <textarea class="form-control comment-editing-control" name="text" rows="5"><%= $comment->text %></textarea>
+                    % if (current_user && ((current_user->id eq $user->id))) {
+                        <textarea class="form-control comment-editing-control" name="text" rows="5">
+                            % if($comment) {
+                                %= $comment->text
+                            % }
+                        </textarea>
                         <button class="btn btn-success btn-circle comment-editing-control" type="submit" name="applyChanges">
                             <span class="glyphicon glyphicon glyphicon-ok"></span> Apply changes
                         </button>

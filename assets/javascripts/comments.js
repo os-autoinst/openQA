@@ -36,36 +36,6 @@ function renderCommentHeading(comment) {
     return heading;
 }
 
-function renderCommentRow(comment) {
-    var form = $('<form>');
-    form.on('submit', function() {
-        updateComment(this);
-        return false;
-    });
-    form.on('reset', function() {
-        hideCommentEditor(this);
-        return true;
-    });
-    
-    // TODO
-    
-    var row = $('<div>');
-    
-    var avatar = $('<div class="col-sm-1">', {
-        'html': '<img class="media-object img-circle" src="'
-            + $('#commentForm .img-circle').prop('src')
-            + '" alt="profile">'
-    }).appendTo(row);
-    
-    $('<div class="col-sm-11">')
-        .append($('<div class="media-body comment-body">')
-            .append($('<div class="well well-lg">')
-                .append(form)
-    )).appendTo(row);
-
-    return row;
-}
-
 function deleteComment(deleteButton) {    
     var deleteButton = $(deleteButton);
     var author = deleteButton.data('author');
@@ -132,20 +102,51 @@ function updateComment(form) {
     }
 }
 
-function addComment(form) {
+function addComment(form, insertAtBottom) {
     var editorForm = $(form);
-    var url = form.action;
-    $.ajax({
-        url: url,
-        method: 'POST',
-        data: editorForm.serialize(),
-        success: function() {
-            location.reload();
-        },
-        error: function(xhr, ajaxOptions, thrownError) {
-            window.alert('The comment couldn\'t be added: ' + thrownError);
-        }
-    });
+    var textElement = editorForm.find('[name="text"]');
+    var text = textElement.val();
     
-    
+    if(text.length) {
+        var url = form.action;
+        $.ajax({
+            url: url,
+            method: 'POST',
+            data: editorForm.serialize(),
+            success: function(response) {
+                var commentId = response.id;
+                // get rendered markdown
+                $.ajax({
+                    url: (url + '/' + commentId),
+                    method: 'GET',
+                    success: function(response) {
+                        var commentRow = $($('#comment-row-template').html().replace(/@comment_id@/g, commentId));
+                        commentRow.find('h4').replaceWith(renderCommentHeading(response));
+                        commentRow.find('[name="text"]').val(response.text);
+                        commentRow.find('[name="markdown"]').html(response.renderedMarkdown);
+                        var nextElement;
+                        if(!insertAtBottom) {
+                            nextElement = $('.comment-row').first();
+                        }
+                        if(!nextElement || !nextElement.length) {
+                            nextElement = $('#comment-row-template');
+                        }
+                        commentRow.insertBefore(nextElement);
+                        $('html, body').animate({scrollTop: commentRow.offset().top}, 1000);
+                        textElement.val('');
+                        $('a[href="#comments"]').html('Comments (' + $('.comment-row').length + ')');
+                    },
+                    error: function() {
+                        location.reload();
+                    }
+                });
+            },
+            error: function(xhr, ajaxOptions, thrownError) {
+                window.alert('The comment couldn\'t be added: ' + thrownError);
+            }
+        });
+    } else {
+        window.alert('The comment text mustn\'t be empty.');
+    }
+
 }

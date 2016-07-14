@@ -19,17 +19,25 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::IPC;
 
+sub obj_comments {
+    my ($self, $param, $table, $label) = @_;
+    my $id  = int($self->param($param));
+    my $obj = $self->app->schema->resultset($table)->find($id);
+    if (!$obj) {
+        $self->render(json => {error => "$label $id does not exist"}, status => 404);
+        return;
+    }
+    return $obj->comments;
+}
+
 sub comments {
     my ($self) = @_;
-
-    my $table = $self->param('job_id') ? "Jobs" : "JobGroups";
-    my $id = int($self->param('job_id') // $self->param('group_id'));
-    my $job = $self->app->schema->resultset($table)->find($id);
-    if (!$job) {
-        $self->render(json => {error => "Job $id does not exist"}, status => 404);
-        return 0;
+    if ($self->param('job_id')) {
+        return $self->obj_comments('job_id', 'Jobs', 'Job');
     }
-    return $job->comments;
+    else {
+        return $self->obj_comments('group_id', 'JobGroups', 'Job group');
+    }
 }
 
 # Returns the text and properties for a comment specified by job/group id and comment id (including rendered markdown).
@@ -61,8 +69,7 @@ sub create {
 
     my $res = $comments->create(
         {
-            text => $text,
-            ,
+            text    => $text,
             user_id => $self->current_user->id
         });
     $self->emit_event('openqa_user_comment', {id => $res->id});

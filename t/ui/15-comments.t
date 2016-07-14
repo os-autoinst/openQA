@@ -82,6 +82,8 @@ sub check_comment {
     is($driver->find_element('div.media-comment', 'css')->get_text(), $supposed_text, "body");
 }
 
+#$driver->execute_script('location.reload = function(callback) { if(callback instanceof Function) { callback(); } };');
+
 # tests adding, editing and removing comments
 sub test_comment_editing {
     my ($in_test_results) = @_;
@@ -92,11 +94,7 @@ sub test_comment_editing {
         $driver->find_element('#submitComment', 'css')->click();
 
         # check whether flash appears
-        #is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), "Comment added", "comment added highlight");
-        # FIXME: either show flash (like in the current version) or prevent page reload at all
-
-        # FIXME: find a better way than sleep
-        sleep 3;
+        t::ui::PhantomTest::wait_for_ajax;
 
         if ($in_test_results) {
             switch_to_comments_tab(1);
@@ -107,18 +105,13 @@ sub test_comment_editing {
 
     subtest 'edit' => sub {
         $driver->find_element('button.trigger-edit-button', 'css')->click();
-
         # wait 1 second to ensure initial time and last update time differ
         sleep 1;
 
         # try to edit the first displayed comment (the one which has just been added)
         $driver->find_element('textarea.comment-editing-control', 'css')->send_keys($another_test_message);
         $driver->find_element('button.comment-editing-control',   'css')->click();
-
-        # the updated comment is loaded asynchronously, hence we need to wait
-        # FIXME: find a better way to wait
-        # maybe $driver->execute_async_script(...);
-        sleep 1;
+        t::ui::PhantomTest::wait_for_ajax;
 
         if ($in_test_results) {
             switch_to_comments_tab(1);
@@ -146,9 +139,7 @@ sub test_comment_editing {
         $driver->execute_script("window.confirm = function() { return true; };");
         $driver->find_element('button.remove-edit-button', 'css')->click();
         #$driver->accept_alert;
-
-        # FIXME: find better way to wait
-        sleep 1;
+        t::ui::PhantomTest::wait_for_ajax;
 
         # check whether the comment is gone
         my @comments = $driver->find_elements('div.media-comment', 'css');
@@ -162,13 +153,12 @@ sub test_comment_editing {
         $driver->find_element('#text',          'css')->send_keys($test_message);
         $driver->find_element('#submitComment', 'css')->click();
 
+        t::ui::PhantomTest::wait_for_ajax;
+
         # check whether heading and comment text is displayed correctly
         if ($in_test_results) {
             switch_to_comments_tab(1);
         }
-
-        # FIXME: find better way to wait
-        sleep 1;
 
         check_comment($test_message, 0);
     };
@@ -187,8 +177,7 @@ subtest 'URL auto-replace' => sub {
         t#5678/modules/welcome/steps/1'
     );
     $driver->find_element('#submitComment', 'css')->click();
-    # FIXME: find a better way to wait
-    sleep 3;
+    t::ui::PhantomTest::wait_for_ajax;
 
     # the first made comment needs to be 2nd now
     my @comments = $driver->find_elements('div.media-comment p', 'css');
@@ -231,6 +220,7 @@ subtest 'commenting in test results including labels' => sub {
 
     $driver->find_element('#text',          'css')->send_keys($test_message);
     $driver->find_element('#submitComment', 'css')->click();
+    t::ui::PhantomTest::wait_for_ajax;
 
     subtest 'check comment availability sign on test result overview' => sub {
         $driver->find_element('Job Groups', 'link_text')->click();
@@ -243,14 +233,16 @@ subtest 'commenting in test results including labels' => sub {
 
     subtest 'add label and bug and check availability sign' => sub {
         $driver->get($baseurl . 'tests/99938#comments');
-        $driver->find_element('#text',                     'css')->send_keys('label:true_positive');
-        $driver->find_element('#submitComment',            'css')->click();
+        $driver->find_element('#text',          'css')->send_keys('label:true_positive');
+        $driver->find_element('#submitComment', 'css')->click();
+        t::ui::PhantomTest::wait_for_ajax;
         $driver->find_element('Job Groups',                'link_text')->click();
         $driver->find_element('#current-build-overview a', 'css')->click();
         is($driver->find_element('#res_DVD_x86_64_doc .fa-bookmark', 'css')->get_attribute('title'), 'true_positive', 'label icon shown');
         $driver->get($baseurl . 'tests/99938#comments');
-        $driver->find_element('#text',                     'css')->send_keys('bsc#1234');
-        $driver->find_element('#submitComment',            'css')->click();
+        $driver->find_element('#text',          'css')->send_keys('bsc#1234');
+        $driver->find_element('#submitComment', 'css')->click();
+        t::ui::PhantomTest::wait_for_ajax;
         $driver->find_element('Job Groups',                'link_text')->click();
         $driver->find_element('#current-build-overview a', 'css')->click();
         is($driver->find_element('#res_DVD_x86_64_doc .fa-bug', 'css')->get_attribute('title'), 'Bug(s) referenced: bsc#1234', 'bug icon shown');
@@ -263,7 +255,8 @@ subtest 'commenting in test results including labels' => sub {
         $driver->get($baseurl . 'tests/99926#comments');
         $driver->find_element('#text',          'css')->send_keys('poo#9876');
         $driver->find_element('#submitComment', 'css')->click();
-        $driver->find_element('Job Groups',     'link_text')->click();
+        t::ui::PhantomTest::wait_for_ajax;
+        $driver->find_element('Job Groups', 'link_text')->click();
         like($driver->find_element('#current-build-overview', 'css')->get_text(), qr/\QBuild 87.5011\E/, 'on the right build');
         $driver->find_element('#current-build-overview a', 'css')->click();
 
@@ -288,10 +281,10 @@ subtest 'editing when logged in as regular user' => sub {
         no_edit_no_remove_on_other_comments_expected;
         $driver->find_element('#text',          'css')->send_keys('test by nobody');
         $driver->find_element('#submitComment', 'css')->click();
-        # FIXME: find a better way to wait
-        sleep 5;
+        t::ui::PhantomTest::wait_for_ajax;
+        # FIXME: nobody can not add a comment via API yet so the test fails here (403 error)
+        # (However, as mkittler I'm able to add comments via API)
         switch_to_comments_tab(5);
-        t::ui::PhantomTest::make_screenshot('/home/martchus/screenshots/test.png');
         only_edit_for_own_comments_expected;
     };
 
@@ -300,9 +293,7 @@ subtest 'editing when logged in as regular user' => sub {
         no_edit_no_remove_on_other_comments_expected;
         $driver->find_element('#text',          'css')->send_keys('test by nobody');
         $driver->find_element('#submitComment', 'css')->click();
-        # FIXME: find a better way to wait
-        sleep 5;
-        t::ui::PhantomTest::make_screenshot('/home/martchus/screenshots/test2.png');
+        t::ui::PhantomTest::wait_for_ajax;
         only_edit_for_own_comments_expected;
     };
 };
