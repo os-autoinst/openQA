@@ -24,7 +24,7 @@
             <th class="name">Medium</th>
             <th class="test">Test</th>
             <th>Progress</th>
-            <th>Testtime</th>
+            <th>Started</th>
         </tr>
     </thead>
     <tbody>
@@ -67,9 +67,9 @@
                         % if ($job->state eq 'waiting') {
                             % $ptext = "waiting";
                             % $classes = " progress-bar-striped active";
-                        % } elsif($test->{'run_stat'}->{'modcount'} > 0)
+                        % } elsif($test->{run_stat}->{modcount} > 0)
                         % {
-                            %   $value = int($test->{'run_stat'}->{'moddone'} * 100. / $test->{'run_stat'}->{'modcount'});
+                            %   $value = int($test->{run_stat}->{moddone} * 100. / $test->{run_stat}->{modcount});
                             %   $ptext = $value."%";
                         % } else
                         % {

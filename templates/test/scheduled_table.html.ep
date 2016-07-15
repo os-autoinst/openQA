@@ -1,7 +1,7 @@
 % content_for 'ready_function' => begin
   $('#scheduled').DataTable( {
         "pagingType" : 'simple',
-        "order": [[2, 'asc'], [0, 'asc']],
+        "order": [],
 	"columnDefs": [
 	    { targets: 0,
               className: "name" },
@@ -24,11 +24,11 @@
 	    <th class="name">Medium</th>
 	    <th class="name">Test</th>
             <th>Priority</th>
-            <th>Testtime</th>
+            <th>Created</th>
         </tr>
     </thead>
     <tbody>
-	% while (my $job = $scheduled->next) {
+	% for my $job (@$scheduled) {
 	    % my $prio = $job->priority;
 	    % my $state = $job->state;
 	    % my $build = $job->BUILD;

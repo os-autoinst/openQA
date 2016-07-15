@@ -67,15 +67,17 @@ sub list {
         };
         push @list, $data;
     }
+    @list = sort { $b->{job}->t_started <=> $a->{job}->t_started || $b->{job}->id <=> $a->{job}->id } @list;
     $self->stash(running => \@list);
 
-    my $scheduled = $self->db->resultset("Jobs")->complex_query(
+    my @scheduled = $self->db->resultset("Jobs")->complex_query(
         state   => 'scheduled',
         match   => $match,
         groupid => $groupid,
         assetid => $assetid
-    );
-    $self->stash(scheduled => $scheduled);
+    )->all;
+    @scheduled = sort { $b->t_created <=> $a->t_created || $b->id <=> $a->id } @scheduled;
+    $self->stash(scheduled => \@scheduled);
 }
 
 sub list_ajax {
