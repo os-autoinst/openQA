@@ -35,8 +35,8 @@
 
       <link rel="icon"
             type="image/png" sizes="16x16"
-            href="/images/logo-16.png" />
-      <link rel="icon" href="/images/logo.svg" sizes="any" type="image/svg+xml">
+            href="<%= icon_url 'logo-16.png' %>">
+      <link rel="icon" href="<%= icon_url 'logo.svg'%>" sizes="any" type="image/svg+xml">
 
   </head>
   <body>
@@ -50,7 +50,7 @@
                       <span class="icon-bar"></span>
                       <span class="icon-bar"></span>
                   </button>
-                  <a class="navbar-brand" href="/"><img src="/images/logo.svg" alt="openQA"></a>
+                  <a class="navbar-brand" href="/"><img src="<%= icon_url 'logo.svg'%>" alt="openQA"></a>
               </div>
               <!-- Collect the nav links, forms, and other content for toggling -->
               <div class="collapse navbar-collapse" id="navbar-collapse-1">

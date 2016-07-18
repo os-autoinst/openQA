@@ -100,8 +100,10 @@ coverage-html: cover_db/coverage.html
 coverage-check: cover_db/coverage.html
 	./script/check_coverage ${COVERAGE_THRESHOLD}
 
-public/favicon.ico: public/images/logo.svg
+public/favicon.ico: assets/images/logo.svg
 	for w in 16 32 64 128; do \
-		inkscape -e public/images/logo-$$w.png -w $$w public/images/logo.svg ; \
+		inkscape -e assets/images/logo-$$w.png -w $$w assets/images/logo.svg ; \
 	done
-	convert public/images/logo-16.png public/images/logo-32.png public/images/logo-64.png public/images/logo-128.png -background white -alpha remove public/favicon.ico
+	convert assets/images/logo-16.png assets/images/logo-32.png assets/images/logo-64.png assets/images/logo-128.png -background white -alpha remove public/favicon.ico
+	rm assets/images/logo-128.png assets/images/logo-32.png assets/images/logo-64.png
+

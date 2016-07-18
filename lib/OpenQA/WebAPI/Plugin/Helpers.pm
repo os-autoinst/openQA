@@ -216,6 +216,13 @@ sub register {
     $app->helper(step_thumbnail => \&_step_thumbnail);
 
     $app->helper(
+        icon_url => sub {
+            my ($c, $icon) = @_;
+            my $json = $c->app->asset->processed($icon)->[0]->TO_JSON;
+            return $c->url_for(assetpack => $json);
+        });
+
+    $app->helper(
         # emit_event helper, adds user, connection to events
         emit_event => sub {
             my ($self, $event, $data) = @_;

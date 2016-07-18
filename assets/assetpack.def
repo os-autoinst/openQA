@@ -52,3 +52,19 @@
 < javascripts/test_result.js
 < javascripts/needlediff.js
 < javascripts/running.js
+
+! logo-16.png
+< images/logo-16.png
+
+! logo.svg
+< images/logo.svg
+
+! terminal.svg
+< images/terminal.svg
+
+! suse.png
+< images/suse.png
+
+! audio.svg
+< images/audio.svg
+
