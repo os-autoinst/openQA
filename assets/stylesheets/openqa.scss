@@ -191,19 +191,6 @@ ul.modcategory {
    text-decoration: none;
 }
 
-a.pauseplay {
-    background: url("../images/pauseplay.png") 0 0 no-repeat;
-    width: 23px;
-    height: 23px;
-    display: inline-block;
-    &.pause {
-        background-position: 0 0;
-    }
-    &.play {
-        background-position: -23px 0;
-    }
-}
-
 /* special table stuff */
 
 .infotbl {
