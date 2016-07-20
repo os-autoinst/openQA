@@ -30,11 +30,7 @@
                         % }
                     </div>
                     % if (current_user && ((current_user->id eq $user->id))) {
-                        <textarea class="form-control comment-editing-control" name="text" rows="5">
-                            % if($comment) {
-                                %= $comment->text
-                            % }
-                        </textarea>
+                        <textarea class="form-control comment-editing-control" name="text" rows="5"><%= $comment ? $comment->text : '' %></textarea>
                         <button class="btn btn-success btn-circle comment-editing-control" type="submit" name="applyChanges">
                             <span class="glyphicon glyphicon glyphicon-ok"></span> Apply changes
                         </button>

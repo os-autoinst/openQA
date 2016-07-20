@@ -89,11 +89,8 @@ sub test_comment_editing {
     my ($in_test_results) = @_;
 
     subtest 'add' => sub {
-        $driver->find_element('#text', 'css')->send_keys($test_message);
-
+        $driver->find_element('#text',          'css')->send_keys($test_message);
         $driver->find_element('#submitComment', 'css')->click();
-
-        # check whether flash appears
         t::ui::PhantomTest::wait_for_ajax;
 
         if ($in_test_results) {
@@ -282,8 +279,6 @@ subtest 'editing when logged in as regular user' => sub {
         $driver->find_element('#text',          'css')->send_keys('test by nobody');
         $driver->find_element('#submitComment', 'css')->click();
         t::ui::PhantomTest::wait_for_ajax;
-        # FIXME: nobody can not add a comment via API yet so the test fails here (403 error)
-        # (However, as mkittler I'm able to add comments via API)
         switch_to_comments_tab(5);
         only_edit_for_own_comments_expected;
     };

@@ -62,9 +62,11 @@ sub text {
 # Adds a new comment to the specified job/group.
 sub create {
     my ($self) = @_;
+    $self->app->log->debug('create comment');
     my $comments = $self->comments();
+    return unless $comments;
 
-    my $text = $self->hparams()->{'text'};
+    my $text = $self->param('text');
     return $self->render(json => {error => 'No/invalid text specified'}, status => 400) unless $text;
 
     my $res = $comments->create(
@@ -80,16 +82,16 @@ sub create {
 sub update {
     my ($self) = @_;
     my $comments = $self->comments();
+    return unless $comments;
 
-    my $text = $self->hparams()->{'text'};
+    my $text = $self->param('text');
     return $self->render(json => {error => "No/invalid text specified"}, status => 400) unless $text;
 
-    my $comment = $comments->find($self->param('comment_id'));
-    return $self->render(json => {error => "Forbidden (must be author)"}, status => 403) unless ($comment->user_id == $self->current_user->id);
-    my $res = $comment->update(
-        {
-            text => $text,
-            t_updated => DateTime->now(time_zone => 'floating')});
+    my $comment_id = $self->param('comment_id');
+    my $comment    = $comments->find($self->param('comment_id'));
+    return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
+    return $self->render(json => {error => "Forbidden (must be author)"},         status => 403) unless ($comment->user_id == $self->current_user->id);
+    my $res = $comment->update({text => $text});
     $self->emit_event('openqa_user_comment', {id => $comment->id});
     $self->render(json => {id => $res->id});
 }
@@ -98,8 +100,13 @@ sub update {
 sub delete {
     my ($self) = @_;
     my $comments = $self->comments();
+    return unless $comments;
 
-    my $res = $comments->find($self->param('comment_id'))->delete();
+    my $comment_id = $self->param('comment_id');
+    my $comment    = $comments->find($self->param('comment_id'));
+    return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
+    my $res = $comment->delete();
+    $self->emit_event('openqa_user_comment', {id => $res->id});
     $self->render(json => {id => $res->id});
 }
 
