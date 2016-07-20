@@ -96,8 +96,8 @@ like($summary, qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory'});
 $get->status_is(200);
 $summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/\QSummary of opensuse Factory build 0048\E/i);
-like($summary, qr/\QPassed: 0 Soft Failure: 1 Failed: 1\E/i);
+like($summary, qr/Summary of opensuse Factory build 0048\@0815/i);
+like($summary, qr/\QPassed: 0 Failed: 1\E/i);
 
 
 #

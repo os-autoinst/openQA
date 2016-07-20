@@ -66,23 +66,31 @@ subtest 'tag icon on group overview on important build' => sub {
     is($tags[0],     'GM', 'tag description shown');
 };
 
+subtest 'test whether tags with @ work, too' => sub {
+    post_comment_1001 'tag:0048@0815:important:GM';
+    my $get  = $t->get_ok('/group_overview/1001')->status_is(200);
+    my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    is(scalar @tags, 2,    'one build tagged');
+    is($tags[0],     'GM', 'tag description shown');
+};
+
 =pod
 Given a comment C<tag:<build_ref>:important> exists on a job group comments
 When user creates another comment with C<tag:<build_ref>:-important>
 Then on page 'group_overview' build C<<build_ref>> is not shown as important
 =cut
 subtest 'mark build as non-important build' => sub {
-    post_comment_1001 'tag:0048:-important';
+    post_comment_1001 'tag:0048@0815:-important';
     my $get  = $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 0, 'no build tagged anymore');
+    is(scalar @tags, 1, 'only first build tagged');
 };
 
 subtest 'tag on non-existent build does not show up' => sub {
     post_comment_1001 'tag:0066:important';
     my $get  = $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 0, 'no builds tagged');
+    is(scalar @tags, 1, 'only first build tagged');
 };
 
 subtest 'builds first tagged important, then unimportant dissappear (poo#12028)' => sub {
