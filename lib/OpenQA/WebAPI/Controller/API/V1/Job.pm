@@ -269,13 +269,17 @@ sub done {
     $newbuild = 1 if defined $self->param('newbuild');
 
 
-    my $ipc = OpenQA::IPC->ipc;
+    my $job = $self->db->resultset('Jobs')->find($jobid);
+    if (!$job) {
+        $self->reply->not_found;
+        return;
+    }
     my $res;
     if ($newbuild) {
-        $res = $ipc->scheduler('job_set_done', {jobid => $jobid, result => $result, newbuild => $newbuild});
+        $res = $job->done(result => $result, newbuild => $newbuild);
     }
     else {
-        $res = $ipc->scheduler('job_set_done', {jobid => $jobid, result => $result});
+        $res = $job->done(result => $result);
     }
 
     # use $res as a result, it is recomputed result by scheduler
@@ -318,12 +322,12 @@ sub cancel {
     my $ipc = OpenQA::IPC->ipc;
     my $res;
     if ($jobid) {
-        $res = $ipc->scheduler('job_cancel', int($jobid), 0);
-        $self->emit_event('openqa_job_cancel', {id => int($jobid)}) if ($res);
+        $self->db->resultset('Jobs')->find($jobid)->cancel;
+        $self->emit_event('openqa_job_cancel', {id => int($jobid)});
     }
     else {
         my $params = $self->req->params->to_hash;
-        $res = $ipc->scheduler('job_cancel_by_settings', $params, 0);
+        $res = $self->db->resultset('Jobs')->cancel_by_settings($params, 0);
         $self->emit_event('openqa_job_cancel_by_settings', $params) if ($res);
     }
 

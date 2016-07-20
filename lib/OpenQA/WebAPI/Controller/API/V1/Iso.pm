@@ -339,7 +339,7 @@ sub schedule_iso {
         }
         if (%cond) {
             try {
-                OpenQA::Scheduler::Scheduler::job_cancel(\%cond, 1);    # have new build jobs instead
+                $self->db->resultset('Jobs')->cancel_by_settings(\%cond, 1);    # have new build jobs instead
             }
             catch {
                 my $error = shift;
@@ -500,7 +500,7 @@ sub cancel {
     my $ipc  = OpenQA::IPC->ipc;
     $self->emit_event('openqa_iso_cancel', {iso => $iso});
 
-    my $res = OpenQA::Scheduler::Scheduler::job_cancel({ISO => $iso}, 0);
+    my $res = $self->db->resultset('Jobs')->cancel_by_settings({ISO => $iso}, 0);
     $self->render(json => {result => $res});
 }
 
