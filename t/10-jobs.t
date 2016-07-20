@@ -31,9 +31,9 @@ OpenQA::Test::Database->new->create();
 my $t  = Test::Mojo->new('OpenQA::WebAPI');
 my $rs = $t->app->db->resultset("Jobs");
 
-is($rs->latest_build, "0091");
-is($rs->latest_build(version => 'Factory', distri => 'opensuse'), "0048");
-is($rs->latest_build(version => '13.1',    distri => 'opensuse'), "0091");
+is($rs->latest_build, '0091');
+is($rs->latest_build(version => 'Factory', distri => 'opensuse'), '0048@0815');
+is($rs->latest_build(version => '13.1',    distri => 'opensuse'), '0091');
 
 my @latest = $t->app->db->resultset("Jobs")->latest_jobs;
 my @ids = map { $_->id } @latest;

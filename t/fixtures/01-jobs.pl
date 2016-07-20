@@ -152,6 +152,26 @@
         settings => [{key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
     },
     Jobs => {
+        id         => 99940,
+        group_id   => 1001,
+        priority   => 36,
+        result     => "failed",
+        state      => "done",
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),                                                                                                                                                                                     # One hour ago
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),                                                                                                                                                                                     # Two hours ago
+        TEST       => "doc",
+        ARCH       => 'x86_64',
+        VERSION    => 'Factory',
+        FLAVOR     => 'DVD',
+        BUILD      => '0048@0815',
+        DISTRI     => 'opensuse',
+        MACHINE    => '64bit',
+        backend    => 'qemu',
+        retry_avbl => 3,
+        result_dir => '00099938-opensuse-Factory-DVD-x86_64-Build0048-doc',
+        settings   => [{key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}]
+    },
+    Jobs => {
         id         => 99946,
         group_id   => 1001,
         priority   => 35,

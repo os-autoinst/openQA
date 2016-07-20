@@ -53,7 +53,7 @@ is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only one build per group s
 
 $driver->find_element('opensuse', 'link_text')->click();
 
-is(scalar @{$driver->find_elements('h4', 'css')}, 3, 'default number of builds shown');
+is(scalar @{$driver->find_elements('h4', 'css')}, 4, 'default number of builds shown');
 is($driver->get($baseurl . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
 
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
