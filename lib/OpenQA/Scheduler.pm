@@ -94,18 +94,6 @@ sub command_enqueue_checked {
 }
 
 ## Jobs
-dbus_method('job_cancel', ['uint32', 'bool'], ['uint32']);
-sub job_cancel {
-    my ($self, $jobid, $newbuild) = @_;
-    return OpenQA::Scheduler::Scheduler::job_cancel($jobid, $newbuild);
-}
-
-dbus_method('job_cancel_by_settings', [['dict', 'string', 'string'], 'bool'], ['uint32']);
-sub job_cancel_by_settings {
-    my ($self, $settings, $newbuild) = @_;
-    return OpenQA::Scheduler::Scheduler::job_cancel($settings, $newbuild);
-}
-
 dbus_method('job_duplicate', [['dict', 'string', 'string']], ['uint32']);
 sub job_duplicate {
     my ($self, $args) = @_;
@@ -131,12 +119,6 @@ sub job_restart {
     my ($self, $args) = @_;
     my @res = OpenQA::Scheduler::Scheduler::job_restart($args);
     return \@res;
-}
-
-dbus_method('job_set_done', [['dict', 'string', 'string']], ['string']);
-sub job_set_done {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::job_set_done(%$args);
 }
 
 dbus_method('job_update_status', ['uint32', ['dict', 'string', ['variant']]], ['uint32']);

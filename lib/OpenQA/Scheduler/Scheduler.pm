@@ -53,7 +53,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 @EXPORT = qw(worker_register job_create
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
-  job_restart job_cancel command_enqueue
+  job_restart command_enqueue
   job_set_stop job_stop iso_stop_old_builds
   asset_list asset_get asset_delete asset_register
 );
@@ -328,114 +328,6 @@ sub job_grab {
     return $job_hashref;
 }
 
-# parent job failed, handle scheduled children - set them to done incomplete immediately
-sub _job_skip_children {
-    my $jobid = shift;
-
-    my $children = schema->resultset("JobDependencies")->search(
-        {
-            dependency => {
-                -in => [OpenQA::Schema::Result::JobDependencies::CHAINED, OpenQA::Schema::Result::JobDependencies::PARALLEL],
-            },
-            parent_job_id => $jobid,
-        },
-    );
-
-    my $result = schema->resultset("Jobs")->search(
-        {
-            id    => {-in => $children->get_column('child_job_id')->as_query},
-            state => OpenQA::Schema::Result::Jobs::SCHEDULED,
-        },
-      )->update_all(
-        {
-            state  => OpenQA::Schema::Result::Jobs::CANCELLED,
-            result => OpenQA::Schema::Result::Jobs::SKIPPED,
-        });
-
-    while (my $j = $children->next) {
-        my $id = $j->child_job_id;
-        _job_skip_children($id);
-    }
-}
-
-# parent job failed, handle running children - send stop command
-sub _job_stop_children {
-    my $jobid = shift;
-
-    my $children = schema->resultset("JobDependencies")->search(
-        {
-            dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-            parent_job_id => $jobid,
-        },
-    );
-    my $jobs = schema->resultset("Jobs")->search(
-        {
-            id    => {-in => $children->get_column('child_job_id')->as_query},
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
-        },
-    );
-
-    $jobs->search(
-        {
-            result => OpenQA::Schema::Result::Jobs::NONE,
-        }
-      )->update(
-        {
-            result => OpenQA::Schema::Result::Jobs::PARALLEL_FAILED,
-        });
-
-    while (my $j = $jobs->next) {
-        log_debug("enqueuing cancel for " . $j->id . " " . $j->worker_id);
-        command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
-        _job_stop_children($j->id);
-    }
-}
-
-=head2 job_set_done
-
-mark job as done. No error check. Meant to be called from worker!
-
-=cut
-# XXX TODO Parameters is a hash, check if is better use normal parameters
-sub job_set_done {
-    my %args = @_;
-    return unless ($args{jobid});
-    my $jobid    = int($args{jobid});
-    my $newbuild = 0;
-    $newbuild = int($args{newbuild}) if defined $args{newbuild};
-    $args{result} = OpenQA::Schema::Result::Jobs::OBSOLETED if $newbuild;
-    # delete JOBTOKEN
-    my $job = schema->resultset('Jobs')->find($jobid);
-    $job->set_property('JOBTOKEN');
-
-    $job->release_networks();
-
-    $job->owned_locks->delete;
-    $job->locked_locks->update({locked_by => undef});
-
-    my $result = $args{result} || $job->calculate_result();
-    my %new_val = (state => OpenQA::Schema::Result::Jobs::DONE);
-
-    # for cancelled jobs the result is already known
-    $new_val{result} = $result if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
-
-    if ($job->worker) {
-        # free the worker
-        $job->worker->update({job_id => undef});
-    }
-
-    $job->update(\%new_val);
-
-    if ($result ne OpenQA::Schema::Result::Jobs::PASSED) {
-        _job_skip_children($jobid);
-        _job_stop_children($jobid);
-        # labels are there to mark reasons of failure
-        $job->carry_over_labels;
-    }
-
-    return $result;
-}
-
 =head2 job_set_waiting
 
 mark job as waiting. No error check. Meant to be called from worker!
@@ -475,26 +367,6 @@ sub job_set_running {
             state => OpenQA::Schema::Result::Jobs::RUNNING,
         });
     return $r;
-}
-
-sub _job_find_smart($$$) {
-    my ($value, $cond, $attrs) = @_;
-
-    if (ref $value eq 'HASH') {
-        for my $key (qw/DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST/) {
-            if (defined $value->{$key}) {
-                $cond->{$key} = delete $value->{$key};
-            }
-        }
-        if (%$value) {
-            my $subquery = schema->resultset("JobSettings")->query_for_settings($value);
-            $cond->{id} = {-in => $subquery->get_column('job_id')->as_query};
-        }
-    }
-    else {
-        # TODO: support by name and by iso here
-        $cond->{id} = $value;
-    }
 }
 
 =head2 job_duplicate
@@ -628,72 +500,6 @@ sub job_restart {
     }
 
     return @duplicated;
-}
-
-sub job_cancel {
-    my ($value, $newbuild) = @_;
-    die "missing name parameter" unless $value;
-    $newbuild //= 0;
-
-    my %attrs;
-    my %cond;
-    _job_find_smart($value, \%cond, \%attrs);
-    $cond{state} = OpenQA::Schema::Result::Jobs::SCHEDULED;
-    my $scheduled_jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
-    my $jobs_to_cancel;
-    my $new_result;
-    if ($newbuild) {
-        $new_result = OpenQA::Schema::Result::Jobs::OBSOLETED;
-        # 'monkey patch' cond to be useable in chained search
-        $cond{'me.id'} = delete $cond{id} if $cond{id};
-        # filter out all jobs that have any comment (they are considered 'important') ...
-        $jobs_to_cancel = $scheduled_jobs->search({'comments.job_id' => undef}, {join => 'comments'});
-        # ... or belong to a tagged build, i.e. is considered important
-        # this might be even the tag 'not important' but not much is lost if
-        # we still not cancel these builds
-        my $groups_query = $scheduled_jobs->get_column('group_id')->as_query;
-        my @important_builds = grep defined, map { ($_->tag)[0] } schema->resultset("Comments")->search({"me.group_id" => {-in => $groups_query}});
-        my @unimportant_jobs;
-        while (my $j = $jobs_to_cancel->next) {
-            next if grep ($j->BUILD eq $_, @important_builds);
-            push @unimportant_jobs, $j->id;
-        }
-        # if there are only important jobs there is nothing left for us to do
-        return 0 unless @unimportant_jobs;
-        $jobs_to_cancel = $jobs_to_cancel->search({'me.id' => {-in => \@unimportant_jobs}});
-    }
-    else {
-        $new_result     = OpenQA::Schema::Result::Jobs::USER_CANCELLED;
-        $jobs_to_cancel = $scheduled_jobs;
-    }
-    # first cancel scheduled jobs
-    my $cancelled_jobs = $jobs_to_cancel->update_all(
-        {
-            state  => OpenQA::Schema::Result::Jobs::CANCELLED,
-            result => $new_result,
-        });
-
-    $cond{state} = [OpenQA::Schema::Result::Jobs::EXECUTION_STATES];
-    # then tell workers to cancel their jobs
-    $jobs_to_cancel->search(
-        {
-            result => OpenQA::Schema::Result::Jobs::NONE,
-        }
-      )->update(
-        {
-            result => $new_result,
-        });
-
-    while (my $j = $jobs_to_cancel->next) {
-        my $command = $newbuild ? 'obsolete' : 'cancel';
-        log_debug("enqueuing $command for " . $j->id . " " . $j->worker_id);
-        command_enqueue(workerid => $j->worker_id, command => $command, job_id => $j->id);
-        _job_skip_children($j->id);
-        _job_stop_children($j->id);
-
-        ++$cancelled_jobs;
-    }
-    return $cancelled_jobs;
 }
 
 #
