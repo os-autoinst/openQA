@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -40,19 +40,18 @@ sub job_get {
     my ($id) = @_;
 
     my $job = $schema->resultset("Jobs")->find({id => $id});
-    return unless $job;
-    return $job->to_hash;
+    return $job;
 }
 
 my $new_job_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => 99963);
 ok($new_job_id, "got new job id");
 
 my $job = job_get($new_job_id);
-is($job->{state}, 'scheduled', "new job is scheduled");
+is($job->state, 'scheduled', "new job is scheduled");
 
 $job = job_get(99963);
-is($job->{state},      'running', "old job is running");
-is($job->{t_finished}, undef,     "There is a no finish time yet");
+is($job->state,      'running', "old job is running");
+is($job->t_finished, undef,     "There is a no finish time yet");
 
 sub lj {
     # check the call succeeds every time, only output if verbose
@@ -65,7 +64,7 @@ sub lj {
 
 lj;
 
-my $ret = OpenQA::Scheduler::Scheduler::job_cancel({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
+my $ret = $schema->resultset('Jobs')->cancel_by_settings({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
 is($ret, 2, "two jobs cancelled by hash");
 
 $job = job_get($new_job_id);
@@ -73,38 +72,39 @@ $job = job_get($new_job_id);
 lj;
 
 $job = job_get($new_job_id);
-is($job->{state}, 'cancelled', "new job is cancelled");
-ok($job->{t_finished}, "There is a finish time");
+is($job->state, 'cancelled', "new job is cancelled");
+ok($job->t_finished, "There is a finish time");
 
 $job = job_get(99963);
-is($job->{state}, 'running', "old job still running");
+is($job->state, 'running', "old job still running");
 
 $job = job_get(99928);
-is($job->{state}, 'scheduled', "unrelated job 99928 still scheduled");
+is($job->state, 'scheduled', "unrelated job 99928 still scheduled");
 $job = job_get(99927);
-is($job->{state}, 'scheduled', "unrelated job 99927 still scheduled");
+is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
 
-$ret = OpenQA::Scheduler::Scheduler::job_cancel(99928);
+$job = job_get(99928);
+$ret = $job->cancel;
 is($ret, 1, "one job cancelled by id");
 
 $job = job_get(99928);
-is($job->{state}, 'cancelled', "job 99928 cancelled");
+is($job->state, 'cancelled', "job 99928 cancelled");
 $job = job_get(99927);
-is($job->{state}, 'scheduled', "unrelated job 99927 still scheduled");
+is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
 
 
 $new_job_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => 99981);
 ok($new_job_id, "duplicate new job for iso test");
 
 $job = job_get($new_job_id);
-is($job->{state}, 'scheduled', "new job is scheduled");
+is($job->state, 'scheduled', "new job is scheduled");
 
 lj;
 
-$ret = OpenQA::Scheduler::Scheduler::job_cancel({ISO => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'});
+$ret = $schema->resultset('Jobs')->cancel_by_settings({ISO => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'});
 is($ret, 1, "one job cancelled by iso");
 
 $job = job_get(99927);
-is($job->{state}, 'scheduled', "unrelated job 99927 still scheduled");
+is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
 
 done_testing();

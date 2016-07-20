@@ -42,11 +42,19 @@ sub list_jobs {
     [map { $_->to_hash(assets => 1) } $schema->resultset('Jobs')->complex_query(%args)->all];
 }
 
-sub job_get_deps {
+sub job_get {
     my ($id) = @_;
+    return $schema->resultset('Jobs')->find($id);
+}
 
+sub job_get_deps_rs {
+    my ($id) = @_;
     my $job = $schema->resultset("Jobs")->search({'me.id' => $id}, {prefetch => ['settings', 'parents', 'children']})->first;
-    return $job->to_hash(deps => 1);
+    return $job;
+}
+
+sub job_get_deps {
+    return job_get_deps_rs(@_)->to_hash(deps => 1);
 }
 
 my $current_jobs = list_jobs();
@@ -97,7 +105,10 @@ $settingsE{TEST} = 'E';
 $settingsF{TEST} = 'F';
 
 sub _job_create {
-    return $schema->resultset('Jobs')->create_from_settings(@_);
+    my $job = $schema->resultset('Jobs')->create_from_settings(@_);
+    # reload all values from database so we can check against default values
+    $job->discard_changes;
+    return $job;
 }
 
 my $jobA = _job_create(\%settingsA);
@@ -173,7 +184,7 @@ is($job->{id},                  $jobE->id, "jobE");                        # C a
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
 # jobA failed
-my $result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobA->id, result => 'failed');
+my $result = $jobA->done(result => 'failed');
 is($result, 'failed', 'job_set_done');
 
 # then jobD and jobE, workers 5 and 6 must be canceled
@@ -183,12 +194,14 @@ is($result, 'failed', 'job_set_done');
 #$ws6->message_ok;
 #$ws6->message_is('cancel');
 
-$result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobD->id, result => 'incomplete');
+# reload changes from DB - jobs should be cancelled by failed jobA
+$jobD->discard_changes;
+$jobE->discard_changes;
+# this should not change the result which is parallel_failed due to failed jobA
+$result = $jobD->done(result => 'incomplete');
 is($result, 'incomplete', 'job_set_done');
-
-$result = OpenQA::Scheduler::Scheduler::job_set_done(jobid => $jobE->id, result => 'incomplete');
+$result = $jobE->done(result => 'incomplete');
 is($result, 'incomplete', 'job_set_done');
-
 
 $job = job_get_deps($jobA->id);
 is($job->{state},  "done",   "job_set_done changed state");
@@ -401,7 +414,7 @@ $settingsY{TEST}              = 'Y';
 $settingsY{_START_AFTER_JOBS} = [$jobX->id];
 my $jobY = _job_create(\%settingsY);
 
-ok(job_set_done(jobid => $jobX->id, result => 'passed'), 'jobX set to done');
+is($jobX->done(result => 'passed'), 'passed', 'jobX set to done');
 # since we are skipping job_grab, reload missing columns from DB
 $jobX->discard_changes;
 
@@ -414,9 +427,9 @@ $jobX->discard_changes;
 my $jobX2_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $jobX->id);
 $jobY->discard_changes;
 is($jobX2_id, $jobY->parents->single->parent_job_id, 'jobY parent is now jobX clone');
-my $jobX2 = job_get_deps($jobX2_id);
-is($jobX2->{clone_id}, undef, "no clone");
-is($jobY->{clone_id},  undef, "no clone");
+my $jobX2 = job_get_deps_rs($jobX2_id);
+is($jobX2->clone, undef, "no clone");
+is($jobY->clone,  undef, "no clone");
 
 # current state:
 #
@@ -426,9 +439,8 @@ is($jobY->{clone_id},  undef, "no clone");
 # X2 <---- Y
 # sch.    sch.
 
-
-ok(job_set_done(jobid => $jobX2_id, result => 'passed'), 'jobX2 set to done');
-ok(job_set_done(jobid => $jobY->id, result => 'passed'), 'jobY set to done');
+ok($jobX2->done(result => 'passed'), 'jobX2 set to done');
+ok($jobY->done(result => 'passed'), 'jobY set to done');
 
 # current state:
 #
@@ -456,7 +468,7 @@ is_deeply($jobY2->{parents}, {Chained => [$jobX2_id], Parallel => []}, 'jobY2 pa
 is($jobX2->{clone_id}, undef, "no clone");
 is($jobY2->{clone_id}, undef, "no clone");
 
-ok(job_set_done(jobid => $jobY2_id, result => 'passed'), 'jobY2 set to done');
+ok(job_get($jobY2_id)->done(result => 'passed'), 'jobY2 set to done');
 
 # current state:
 #

@@ -25,7 +25,7 @@ use Data::Dump qw/pp dd/;
 use File::Path qw/remove_tree/;
 use Test::More;
 use Test::Warnings;
-use OpenQA::Scheduler::Scheduler qw/job_grab job_restart job_set_done/;
+use OpenQA::Scheduler::Scheduler qw/job_grab job_restart/;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::IPC;
 use OpenQA::WebSockets;
@@ -102,8 +102,9 @@ my $jobB = $schema->resultset('Jobs')->create_from_settings(\%settings);
 is(scalar @assets, 1, 'one asset assigned before grabbing');
 # set jobA (normally this is done by worker after abort) and cloneA to done
 # needed for job grab to fulfill dependencies
-ok(job_set_done(jobid => $jobA->id,   result => 'passed'), 'jobA job set to done');
-ok(job_set_done(jobid => $cloneA->id, result => 'passed'), 'cloneA job set to done');
+$jobA->discard_changes;
+is($jobA->done(result => 'passed'), 'passed', 'jobA job set to done');
+is($cloneA->done(result => 'passed'), 'passed', 'cloneA job set to done');
 
 # register asset and mark as created by cloneA
 my $ja = sprintf('%08d-%s', $cloneA->id, 'jobasset.raw');
