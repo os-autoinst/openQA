@@ -23,17 +23,14 @@ sub create {
     my $self     = shift;
     my $workerid = $self->stash('workerid');
     my $command  = $self->param('command');
-    my $ipc      = OpenQA::IPC->ipc;
-    $self->emit_event('openqa_command_enqueue', {workerid => $workerid, command => $command});
+    my $worker   = $self->db->resultset('Workers')->find($workerid);
 
-    my $res;
-    try {
-        $res = $ipc->scheduler('command_enqueue', {workerid => $workerid, command => $command});
+    if (!$worker) {
+        log_warning("Trying to send command \'$command\' to unknown worker id $workerid");
+        $self->reply->not_found;
     }
-    catch {
-        $self->reply(json => {error => 'DBus error'}, status => 502);
-        $res = -1;
-    };
+
+    my $res = $worker->send_command(command => $command);
 
     if ($res && $res > 1) {
         $self->reply(status => 200);

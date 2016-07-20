@@ -1,4 +1,5 @@
 # Copyright (C) 2015 SUSE Linux GmbH
+#               2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,12 +16,19 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::Workers;
+use strict;
+use warnings;
 use base qw/DBIx::Class::Core/;
 use DBIx::Class::Timestamps qw/now/;
-use strict;
-
+use Try::Tiny;
+use OpenQA::Utils qw/log_error/;
 use OpenQA::IPC;
 use db_helpers;
+
+use constant COMMANDS => qw/quit abort cancel obsolete job_available
+  enable_interactive_mode disable_interactive_mode
+  stop_waitforneedle reload_needles_and_retry continue_waitforneedle
+  livelog_stop livelog_start/;
 
 __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -157,6 +165,27 @@ sub info {
     }
     $settings->{connected} = $self->connected;
     return $settings;
+}
+
+sub send_command {
+    my ($self, %args) = @_;
+    return if (!defined $args{command});
+
+    if (!grep { /^$args{command}$/ } COMMANDS) {
+        log_error(sprintf('Trying to issue unknown command "%s" for worker "%s:%n"', $args{command}, $self->host, $self->instance));
+        return;
+    }
+
+    # somehow tests doesnt have this set up
+    if (defined $OpenQA::Utils::app) {
+        $OpenQA::Utils::app->emit_event('openqa_command_enqueue', {workerid => $self->id, command => $args{command}});
+    }
+    my $res;
+    try {
+        my $ipc = OpenQA::IPC->ipc;
+        $res = $ipc->websockets('ws_send', $self->id, $args{command}, $args{job_id});
+    };
+    return $res;
 }
 
 1;

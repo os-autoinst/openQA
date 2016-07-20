@@ -182,6 +182,19 @@ sub _message {
         my $ret = $job->update_status($status);
         $ws->tx->send({json => $ret});
     }
+    elsif ($json->{type} eq 'property_change') {
+        my $prop = $json->{propery};
+        my $value = $json->{value} ? 1 : 0;
+        if ($prop eq 'interactive_mode') {
+            $worker->set_property('INTERACTIVE_REQUESTED', $value);
+        }
+        elsif ($prop eq 'waitforneedle') {
+            $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', $value);
+        }
+        else {
+            $ws->app->log->error(sprintf('Unknown worker property "%s"', $prop));
+        }
+    }
     else {
         $ws->app->log->error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $workerid));
     }
