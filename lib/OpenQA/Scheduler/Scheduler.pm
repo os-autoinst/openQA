@@ -53,46 +53,10 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 
 @EXPORT = qw(worker_register job_create
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
-  job_restart command_enqueue
+  job_restart
   job_set_stop job_stop iso_stop_old_builds
   asset_list asset_get asset_delete asset_register
 );
-
-
-our %worker_commands = map { $_ => undef } qw/
-  quit
-  abort
-  cancel
-  obsolete
-  stop_waitforneedle
-  reload_needles_and_retry
-  enable_interactive_mode
-  disable_interactive_mode
-  continue_waitforneedle
-  job_available
-  livelog_stop
-  livelog_start
-  /;
-
-$worker_commands{enable_interactive_mode} = sub {
-    my ($worker) = @_;
-    $worker->set_property("INTERACTIVE_REQUESTED", 1);
-};
-
-$worker_commands{disable_interactive_mode} = sub {
-    my ($worker) = @_;
-    $worker->set_property("INTERACTIVE_REQUESTED", 0);
-};
-
-$worker_commands{stop_waitforneedle} = sub {
-    my ($worker) = @_;
-    $worker->set_property("STOP_WAITFORNEEDLE_REQUESTED", 1);
-};
-
-$worker_commands{continue_waitforneedle} = sub {
-    my ($worker) = @_;
-    $worker->set_property("STOP_WAITFORNEEDLE_REQUESTED", 0);
-};
 
 sub schema {
     CORE::state $schema;
@@ -433,8 +397,9 @@ sub job_duplicate {
         });
 
     while (my $j = $jobs->next) {
+        next unless $job->worker;
         log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
-        command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
+        $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
 
     log_debug('new job ' . $clones{$job->id});
@@ -496,42 +461,10 @@ sub job_restart {
 
     while (my $j = $jobs->next) {
         log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
-        command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
+        $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
 
     return @duplicated;
-}
-
-#
-# Commands API
-#
-sub command_enqueue {
-    my %args = @_;
-    unless (defined $args{command} && defined $args{workerid}) {
-        carp 'missing mandatory options';
-        return;
-    }
-
-    unless (exists $worker_commands{$args{command}}) {
-        carp 'invalid command "' . $args{command} . "\"\n";
-        return;
-    }
-    if (ref $worker_commands{$args{command}} eq 'CODE') {
-        my $rs     = schema->resultset("Workers");
-        my $worker = $rs->find($args{workerid});
-        unless ($worker) {
-            carp 'invalid workerid "' . $args{workerid} . "\"\n";
-            return;
-        }
-        $worker_commands{$args{command}}->($worker);
-    }
-    my $msg = $args{command};
-    my $res;
-    try {
-        my $ipc = OpenQA::IPC->ipc;
-        $res = $ipc->websockets('ws_send', $args{workerid}, $msg, $args{job_id});
-    };
-    return $res;
 }
 
 #

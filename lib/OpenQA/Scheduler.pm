@@ -79,20 +79,6 @@ sub asset_register {
     return $rs->id;
 }
 
-## Worker commands
-dbus_method('command_enqueue', [['dict', 'string', 'string']], ['bool']);
-sub command_enqueue {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::command_enqueue(%$args);
-}
-
-# this is here for legacy reasons, command_enqueue is the command_enqueue_checked
-dbus_method('command_enqueue_checked', [['dict', 'string', 'uint32']], ['bool']);
-sub command_enqueue_checked {
-    my ($self, $args) = @_;
-    return OpenQA::Scheduler::Scheduler::command_enqueue(%$args);
-}
-
 ## Jobs
 dbus_method('job_duplicate', [['dict', 'string', 'string']], ['uint32']);
 sub job_duplicate {
