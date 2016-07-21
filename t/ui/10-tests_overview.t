@@ -42,7 +42,7 @@ $t->get_ok('/tests/overview' => form => {build => '0091', version => '13.1'})->s
 my $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'});
 $get->status_is(200);
 
-my $summary = $t->tx->res->dom->at('#summary')->all_text;
+my $summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
 like($summary, qr/Overall Summary of opensuse 13\.1 build 0091/i);
 like($summary, qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 
@@ -64,7 +64,7 @@ $get->element_exists_not('#res_DVD_x86_64_doc');
 #
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
 $get->status_is(200);
-$summary = $t->tx->res->dom->at('#summary')->all_text;
+$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
 like($summary, qr/\QPassed: 0 Soft Failure: 1 Failed: 1\E/i);
 
 # Check the headers
@@ -78,7 +78,7 @@ $get->element_exists('#res_DVD_x86_64_kde .result_softfail');
 $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
 
-my $failedmodules = $t->tx->res->dom->at('#res_DVD_x86_64_doc .failedmodule a')->all_text;
+my $failedmodules = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#res_DVD_x86_64_doc .failedmodule a')->all_text);
 like($failedmodules, qr/logpackages/i, "failed modules are listed");
 
 #
@@ -86,7 +86,7 @@ like($failedmodules, qr/logpackages/i, "failed modules are listed");
 #
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'});
 $get->status_is(200);
-$summary = $t->tx->res->dom->at('#summary')->all_text;
+$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i);
 like($summary, qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 
@@ -95,7 +95,7 @@ like($summary, qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 #
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory'});
 $get->status_is(200);
-$summary = $t->tx->res->dom->at('#summary')->all_text;
+$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
 like($summary, qr/\QSummary of opensuse Factory build 0048\E/i);
 like($summary, qr/\QPassed: 0 Soft Failure: 1 Failed: 1\E/i);
 
@@ -105,13 +105,13 @@ like($summary, qr/\QPassed: 0 Soft Failure: 1 Failed: 1\E/i);
 #
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '87.5011'});
 $get->status_is(200);
-$summary = $t->tx->res->dom->at('#summary')->all_text;
+$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
 like($summary, qr/Summary of opensuse Factory build 87.5011/);
 like($summary, qr/Passed: 0 Incomplete: 1 Failed: 0/);
 
 # Advanced query parameters can be forwarded
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', result => 'passed'})->status_is(200);
-$summary = $t->tx->res->dom->at('#summary')->all_text;
+$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
 like($summary, qr/Passed: 2 Failed: 0/i, "Only passed are shown");
 $get->element_exists('#res_DVD_i586_kde .result_passed');
@@ -124,7 +124,7 @@ $get->element_exists_not('.state_cancelled');
 
 # this time show only failed
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', result => 'failed'})->status_is(200);
-$summary = $t->tx->res->dom->at('#summary')->all_text;
+$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
 like($summary, qr/Passed: 0 Failed: 1/i);
 $get->element_exists('#res_DVD_x86_64_doc .result_failed');
 $get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
