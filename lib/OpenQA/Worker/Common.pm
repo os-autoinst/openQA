@@ -148,7 +148,14 @@ sub api_init {
     else {
         $url = Mojo::URL->new($host);
     }
-    $openqa_url = $url->authority;
+
+    # Mojo7 does not have authority anymore, can be removed once we say Mojo6- is no longer supported
+    if ($url->can('authority')) {
+        $openqa_url = $url->authority;
+    }
+    else {
+        $openqa_url = $url->host_port;
+    }
     # Relative paths are appended to the existing one
     $url->path('/api/v1/');
 
