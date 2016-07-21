@@ -227,7 +227,8 @@ sub register {
         emit_event => sub {
             my ($self, $event, $data) = @_;
             die 'Missing event name' unless $event;
-            return Mojo::IOLoop->singleton->emit($event, [$self->current_user->id, $self->tx->connection, $event, $data]);
+            my $user = $self->current_user ? $self->current_user->id : undef;
+            return Mojo::IOLoop->singleton->emit($event, [$user, $self->tx->connection, $event, $data]);
         });
 
     $app->helper(
