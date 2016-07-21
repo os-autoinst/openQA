@@ -62,7 +62,8 @@ $t->get_ok('/tests/99946/iso')->status_is(200)->header_is('Content-Disposition' 
 # check the download links
 my $req = $t->get_ok('/tests/99946')->status_is(200);
 $req->element_exists('#downloads #asset_1');
-$req->text_is('#downloads #asset_1' => "openSUSE-13.1-DVD-i586-Build0091-Media.iso");
+my $res = OpenQA::Test::Case::trim_whitespace($req->tx->res->dom->at('#downloads #asset_1')->text);
+is($res,                                                    "openSUSE-13.1-DVD-i586-Build0091-Media.iso");
 is($req->tx->res->dom->at('#downloads #asset_1')->{'href'}, '/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso');
 
 # downloads are currently redirects

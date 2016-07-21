@@ -88,5 +88,11 @@ sub new {
 
 }
 
+## test helpers
+sub trim_whitespace {
+    my ($str) = @_;
+    return $str =~ s/\s+/ /gr =~ s/(^\s)|(\s$)//gr;
+}
+
 1;
 # vim: set sw=4 et:
