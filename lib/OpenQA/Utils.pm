@@ -26,7 +26,9 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &log_error
   &save_base64_png
   &run_cmd_with_log
+  &run_cmd_with_log_return_error
   &commit_git
+  &commit_git_return_error
   &parse_assets_from_settings
   &find_bugref
   &bugurl
@@ -221,6 +223,11 @@ sub image_md5_filename($) {
 
 sub run_cmd_with_log($) {
     my ($cmd) = @_;
+    return run_cmd_with_log_return_error($cmd)->{status};
+}
+
+sub run_cmd_with_log_return_error($) {
+    my ($cmd) = @_;
     my ($stdin, $stdout_err, $ret);
     log_info('Running cmd: ' . join(' ', @$cmd));
     $ret = IPC::Run::run($cmd, \$stdin, '>&', \$stdout_err);
@@ -233,7 +240,10 @@ sub run_cmd_with_log($) {
         log_warning($stdout_err);
         log_error('cmd returned non-zero value');
     }
-    return $ret;
+    return {
+        status => $ret,
+        stderr => $stdout_err
+    };
 }
 
 sub commit_git {
@@ -268,6 +278,43 @@ sub commit_git {
         }
     }
     return 1;
+}
+
+sub commit_git_return_error {
+    my ($args) = @_;
+
+    my $dir = $args->{dir};
+    if ($dir !~ /^\//) {
+        use Cwd qw/abs_path/;
+        $dir = abs_path($dir);
+    }
+    my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);
+    my @files;
+
+    for my $cmd (qw(add rm)) {
+        next unless $args->{$cmd};
+        push(@files, @{$args->{$cmd}});
+        my $error = run_cmd_with_log_return_error([@git, $cmd, @{$args->{$cmd}}]);
+        if ($error) {
+            return $error;
+        }
+    }
+
+    my $message = $args->{message};
+    my $user    = $args->{user};
+    my $author  = sprintf('--author=%s <%s>', $user->fullname, $user->email);
+    my $res     = run_cmd_with_log_return_error([@git, 'commit', '-q', '-m', $message, $author, @files]);
+    if ($res->{status} != 0) {
+        return 'Unable to commit: ' . ($res->{stderr} ? $res->{stderr} : 'Git returned ' . $res->{status});
+    }
+
+    if (($app->config->{'scm git'}->{do_push} || '') eq 'yes') {
+        $res = run_cmd_with_log_return_error([@git, 'push']);
+        if ($res->{status} != 0) {
+            return 'Unable to push commit: ' . ($res->{stderr} ? $res->{stderr} : 'Git returned ' . $res->{status});
+        }
+    }
+    return 0;
 }
 
 sub asset_type_from_setting {
