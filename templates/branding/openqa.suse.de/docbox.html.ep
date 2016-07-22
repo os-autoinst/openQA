@@ -1,0 +1,6 @@
+<h2>Welcome to <%= $appname %> at SUSE</h2>
+
+<p><a href="http://os-autoinst.github.io/openQA/">» More information regarding openQA</a></p>
+<p><a href="https://wiki.microfocus.net/index.php/OpenQA">» Description of internal setup and administration</a></p>
+<p><a href="irc://irc.suse.de/testing">» IRC channel</a></p>
+<p><a href="https://build.suse.de/project/staging_projects/SUSE:SLE-12-SP2:GA">» SLE staging dashboard</a></p>
