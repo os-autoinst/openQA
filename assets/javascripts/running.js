@@ -7,7 +7,8 @@ var testStatus = {
     interactive: null,
     needinput: null,
     interactive_requested: null,
-    stop_waitforneedle_requested: null
+    stop_waitforneedle_requested: null,
+    img_reload_time: 0
 };
 
 // Update global variable testStatus
@@ -30,6 +31,21 @@ function updateTestStatus(newStatus) {
           return;
     }
     $('#running_module').text(newStatus.running);
+
+    // Reload broken thumbnails (that didn't exist yet when being requested) every 7 sec
+    if (testStatus.img_reload_time++ % 7 == 0) {
+        $(".links img").each(function() {
+            if (this.naturalWidth < 1) {
+                if (!this.retries) {
+                    this.retries = 0;
+                }
+                if (this.retries <= 3) {
+                    this.retries++;
+                    this.src = this.src.split("?")[0]+"?"+Date.now();
+                }
+            }
+        });
+    }
   
     // If a new module have been started, redraw module list
     if (testStatus.running != newStatus.running) {
