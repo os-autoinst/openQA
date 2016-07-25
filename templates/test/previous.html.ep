@@ -15,9 +15,12 @@
             % my $res = $prev->result;
             %# partially recreate the 'res' hash as used in 'overview' route
             <td id="res_<%= $prev->id %>">
-                % my $css = "";
-                % next unless ($prev->state eq "done");
-                % $css .= " result_" . $res;
+                % my $css = '';
+                % next unless ($prev->state eq OpenQA::Schema::Result::Jobs::DONE);
+                % if($res eq OpenQA::Schema::Result::Jobs::PASSED && $soft_fails->{$prev->id}) {
+                %    $res = 'softfail';
+                % }
+                % $css .= ' result_' . $res;
                 <span id="res-<%= $prev->id %>">
                     <a href="<%= url_for('test', 'testid' => $prev->id) %>">
                         <i class="status fa fa-circle<%=  $css %>" title="Done: <%= $res %>"></i>

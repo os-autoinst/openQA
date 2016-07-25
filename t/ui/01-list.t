@@ -141,7 +141,7 @@ t::ui::PhantomTest::wait_for_ajax();
 
 # Test 99945 is not longer relevant (replaced by 99946) - but displayed for all
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-is_deeply(\@jobs, [qw(job_99939 job_99938 job_99926 job_99962 job_99946 job_99945 job_99937 job_99981)], 'all rows displayed');
+is_deeply(\@jobs, [qw(job_99939 job_99938 job_99926 job_99962 job_99946 job_99945 job_99944 job_99937 job_99981)], 'all rows displayed');
 
 # now toggle back
 #print $driver->get_page_source();
