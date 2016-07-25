@@ -38,30 +38,38 @@ function updateTestStatus(newStatus) {
                 if (data.length > 0) {
                     // the result table must have a running row
                     if ($(data).find('.resultrunning').length > 0) {
-                        var running_tr = $('td.result.resultrunning').parent();
-                        var result_tbody = running_tr.parent();
-                        var first_tr_to_update = running_tr.index();
-                        var new_trs = $(data).find("tbody > tr");
-                        var printed_running = false;
-                        var missing_results = false;
-                        result_tbody.children().slice(first_tr_to_update).each(function() {
-                            var tr = $(this);
-                            var new_tr = new_trs.eq(tr.index());
-                            if (new_tr.find('.resultrunning').length == 1) {
-                                printed_running = true;
-                            }
-                            // every row above running must have results
-                            if (!printed_running && new_tr.find('.links').length > 0 && new_tr.find('.links').children().length == 0) {
-                                missing_results = true;
-                                console.log("Missing results in row - trying again");
-                            }
-                        });
-                        if (!missing_results) {
+                        // results table doesn't exist yet
+                        if ($("#results").length == 0) {
+                            $("#details").html(data);
+                            console.log("Missing results table created");
+                            testStatus.running = newStatus.running;
+                        }
+                        else {
+                            var running_tr = $('td.result.resultrunning').parent();
+                            var result_tbody = running_tr.parent();
+                            var first_tr_to_update = running_tr.index();
+                            var new_trs = $(data).find("tbody > tr");
+                            var printed_running = false;
+                            var missing_results = false;
                             result_tbody.children().slice(first_tr_to_update).each(function() {
                                 var tr = $(this);
-                                tr.replaceWith(new_trs.eq(tr.index()));
+                                var new_tr = new_trs.eq(tr.index());
+                                if (new_tr.find('.resultrunning').length == 1) {
+                                    printed_running = true;
+                                }
+                                // every row above running must have results
+                                if (!printed_running && new_tr.find('.links').length > 0 && new_tr.find('.links').children().length == 0) {
+                                    missing_results = true;
+                                    console.log("Missing results in row - trying again");
+                                }
                             });
-                            testStatus.running = newStatus.running;
+                            if (!missing_results) {
+                                result_tbody.children().slice(first_tr_to_update).each(function() {
+                                    var tr = $(this);
+                                    tr.replaceWith(new_trs.eq(tr.index()));
+                                });
+                                testStatus.running = newStatus.running;
+                            }
                         }
                     }
                 } else {
