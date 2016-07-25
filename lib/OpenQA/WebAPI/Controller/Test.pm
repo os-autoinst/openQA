@@ -297,8 +297,20 @@ sub show {
     }
     my $job_labels = $self->_job_labels(\@previous_jobs);
 
+    # find softfailures
+    my @previous_job_ids = map { $_->id } @previous_jobs;
+    my $dents = $self->db->resultset('JobModules')->search(
+        {
+            job_id       => {-in  => \@previous_job_ids},
+            soft_failure => {'!=' => 0}});
+    my %soft_fails;
+    while (my $jm = $dents->next) {
+        $soft_fails{$jm->job_id}++;
+    }
+
     $self->stash(previous        => \@previous_jobs);
     $self->stash(previous_labels => $job_labels);
+    $self->stash(soft_fails      => \%soft_fails);
     $self->stash(limit_previous  => $limit_previous);
 
     $self->render('test/result');
