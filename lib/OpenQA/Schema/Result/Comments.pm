@@ -108,7 +108,7 @@ e.g. 'tag:0123:important:GM' returns a list of '0123', 'important' and 'GM'.
 =cut
 sub tag {
     my ($self) = @_;
-    $self->text =~ /\btag:(\d+):([-\w]+)(:(\w+))?\b/;
+    $self->text =~ /\btag:([@\d]+):([-\w]+)(:(\w+))?\b/;
     return $1, $2, $4;
 }
 
