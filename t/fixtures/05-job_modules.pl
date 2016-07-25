@@ -935,6 +935,13 @@
         result   => 'passed',
     },
     JobModules => {
+        script   => 'tests/console/consoletest_finish.pm',
+        job_id   => 99944,
+        category => 'console',
+        name     => 'consoletest_finish',
+        result   => 'softfailed',
+    },
+    JobModules => {
         script   => 'tests/installation/isosize.pm',
         job_id   => 99963,
         category => 'installation',
