@@ -390,6 +390,7 @@ div.flags {
 .fa.result_softfailed { color: $color-softfail; }
 .fa.result_unknown { color:$color-warning; }
 .fa.result_user_cancelled { color: $color-module-none; }
+.fa.result_user_restarted { color: $color-module-none; }
 
 .fa.comment, .fa.bookmark, .fa.bug, .fa.certificate, .fa.tag { color: $color-labels; }
 .fa-bolt { color: $color-bolt; }
