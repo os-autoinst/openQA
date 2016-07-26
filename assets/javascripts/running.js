@@ -7,7 +7,8 @@ var testStatus = {
     interactive: null,
     needinput: null,
     interactive_requested: null,
-    stop_waitforneedle_requested: null
+    stop_waitforneedle_requested: null,
+    img_reload_time: 0
 };
 
 // Update global variable testStatus
@@ -30,15 +31,63 @@ function updateTestStatus(newStatus) {
           return;
     }
     $('#running_module').text(newStatus.running);
+
+    // Reload broken thumbnails (that didn't exist yet when being requested) every 7 sec
+    if (testStatus.img_reload_time++ % 7 == 0) {
+        $(".links img").each(function() {
+            if (this.naturalWidth < 1) {
+                if (!this.retries) {
+                    this.retries = 0;
+                }
+                if (this.retries <= 3) {
+                    this.retries++;
+                    this.src = this.src.split("?")[0]+"?"+Date.now();
+                }
+            }
+        });
+    }
   
     // If a new module have been started, redraw module list
-    if (testStatus.modlist_initialized == 0 || testStatus.running != newStatus.running) {
-        testStatus.running = newStatus.running;
-        $.ajax("/tests/" + testStatus.jobid + "/modlist").
-            done(function(modlist) {
-                if (modlist.length > 0) {
-                    updateModuleslist(modlist, testStatus.jobid, testStatus.running);
-                    testStatus.modlist_initialized = 1;
+    if (testStatus.running != newStatus.running) {
+        $.ajax("/tests/" + testStatus.jobid + "/details").
+            done(function(data) {
+                if (data.length > 0) {
+                    // the result table must have a running row
+                    if ($(data).find('.resultrunning').length > 0) {
+                        // results table doesn't exist yet
+                        if ($("#results").length == 0) {
+                            $("#details").html(data);
+                            console.log("Missing results table created");
+                            testStatus.running = newStatus.running;
+                        }
+                        else {
+                            var running_tr = $('td.result.resultrunning').parent();
+                            var result_tbody = running_tr.parent();
+                            var first_tr_to_update = running_tr.index();
+                            var new_trs = $(data).find("tbody > tr");
+                            var printed_running = false;
+                            var missing_results = false;
+                            result_tbody.children().slice(first_tr_to_update).each(function() {
+                                var tr = $(this);
+                                var new_tr = new_trs.eq(tr.index());
+                                if (new_tr.find('.resultrunning').length == 1) {
+                                    printed_running = true;
+                                }
+                                // every row above running must have results
+                                if (!printed_running && new_tr.find('.links').length > 0 && new_tr.find('.links').children().length == 0) {
+                                    missing_results = true;
+                                    console.log("Missing results in row - trying again");
+                                }
+                            });
+                            if (!missing_results) {
+                                result_tbody.children().slice(first_tr_to_update).each(function() {
+                                    var tr = $(this);
+                                    tr.replaceWith(new_trs.eq(tr.index()));
+                                });
+                                testStatus.running = newStatus.running;
+                            }
+                        }
+                    }
                 } else {
                     console.log("ERROR: modlist empty");
                 }

@@ -38,19 +38,6 @@ sub init {
     1;
 }
 
-sub modlist {
-    my $self = shift;
-    return 0 unless $self->init();
-
-    my $modinfo = $self->stash('job')->running_modinfo();
-    if (defined $modinfo) {
-        $self->render(json => $modinfo->{modlist});
-    }
-    else {
-        $self->reply->not_found;
-    }
-}
-
 sub status {
     my $self = shift;
     return 0 unless $self->init();
