@@ -49,11 +49,6 @@ __PACKAGE__->add_columns(
     # flags - not using a bit field and not using a join table
     # to simplify code. In case we get a much bigger database, we
     # might reconsider
-    soft_failure => {
-        data_type     => 'integer',
-        is_nullable   => 0,
-        default_value => 0
-    },
     milestone => {
         data_type     => 'integer',
         is_nullable   => 0,
@@ -180,23 +175,18 @@ sub job_module_stats($) {
     }
 
     for my $id (@$ids) {
-        $result_stat->{$id} = {passed => 0, failed => 0, dents => 0, none => 0};
+        $result_stat->{$id} = {passed => 0, failed => 0, softfailed => 0, none => 0};
     }
 
     my $query = $schema->resultset("JobModules")->search(
         {job_id => {in => $ids}},
         {
-            select   => ['job_id', 'result', 'soft_failure', {count => 'id'}],
-            as       => [qw/job_id result soft_failure count/],
-            group_by => [qw/job_id result soft_failure/]});
+            select   => ['job_id', 'result', {count => 'id'}],
+            as       => [qw/job_id result count/],
+            group_by => [qw/job_id result/]});
 
     while (my $line = $query->next) {
-        if ($line->result eq OpenQA::Schema::Result::Jobs::PASSED && $line->soft_failure) {
-            $result_stat->{$line->job_id}->{dents} = $line->get_column('count');
-        }
-        else {
-            $result_stat->{$line->job_id}->{$line->result} = $line->get_column('count');
-        }
+        $result_stat->{$line->job_id}->{$line->result} = $line->get_column('count');
     }
 
     return $result_stat;
@@ -213,10 +203,12 @@ sub update_result($) {
     $result =~ s,^ok,passed,;
     $result =~ s,^unk,none,;
     $result =~ s,^skip,skipped,;
+    if ($r->{dents} && $result eq 'passed') {
+        $result = 'softfailed';
+    }
     $self->update(
         {
-            result       => $result,
-            soft_failure => $r->{dents} ? 1 : 0,
+            result => $result,
         });
 }
 

@@ -50,6 +50,7 @@ use constant FINAL_STATES     => (DONE,    CANCELLED);
 use constant {
     NONE               => 'none',
     PASSED             => 'passed',
+    SOFTFAILED         => 'softfailed',
     FAILED             => 'failed',
     INCOMPLETE         => 'incomplete',            # worker died or reported some problem
     SKIPPED            => 'skipped',               # dependencies failed before starting this job
@@ -59,8 +60,8 @@ use constant {
     USER_CANCELLED     => 'user_cancelled',        # cancelled by user via job_cancel
     USER_RESTARTED     => 'user_restarted',        # restarted by user via job_restart
 };
-use constant RESULTS => (NONE, PASSED, FAILED, INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
-use constant COMPLETE_RESULTS => (PASSED, FAILED);
+use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
+use constant COMPLETE_RESULTS => (PASSED, SOFTFAILED, FAILED);
 use constant INCOMPLETE_RESULTS => (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
 
 __PACKAGE__->table('jobs');

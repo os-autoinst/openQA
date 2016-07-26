@@ -72,7 +72,7 @@ $t->app($app);
 my $get        = $t->get_ok('/api/v1/jobs');
 my @jobs       = @{$get->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
-is($jobs_count, 13);
+is($jobs_count, 14);
 my %jobs = map { $_->{id} => $_ } @jobs;
 is($jobs{99981}->{state},    'cancelled');
 is($jobs{99963}->{state},    'running');
@@ -101,11 +101,11 @@ is(scalar(@{$get->tx->res->json->{jobs}}), 0);
 
 # query for existing jobs by iso
 $get = $t->get_ok('/api/v1/jobs?iso=openSUSE-13.1-DVD-i586-Build0091-Media.iso');
-is(scalar(@{$get->tx->res->json->{jobs}}), 5);
+is(scalar(@{$get->tx->res->json->{jobs}}), 6);
 
 # query for existing jobs by build
 $get = $t->get_ok('/api/v1/jobs?build=0091');
-is(scalar(@{$get->tx->res->json->{jobs}}), 9);
+is(scalar(@{$get->tx->res->json->{jobs}}), 10);
 
 # query for existing jobs by hdd_1
 $get = $t->get_ok('/api/v1/jobs?hdd_1=openSUSE-13.1-x86_64.hda');
@@ -115,9 +115,13 @@ is(scalar(@{$get->tx->res->json->{jobs}}), 2);
 $get = $t->get_ok('/api/v1/jobs?test=kde');
 is(scalar(@{$get->tx->res->json->{jobs}}), 5);
 $get = $t->get_ok('/api/v1/jobs?test=kde&result=passed');
-is(scalar(@{$get->tx->res->json->{jobs}}), 2);
-$get = $t->get_ok('/api/v1/jobs?test=kde&result=passed&machine=64bit');
 is(scalar(@{$get->tx->res->json->{jobs}}), 1);
+$get = $t->get_ok('/api/v1/jobs?test=kde&result=softfailed');
+is(scalar(@{$get->tx->res->json->{jobs}}), 1);
+$get = $t->get_ok('/api/v1/jobs?test=kde&result=softfailed&machine=64bit');
+is(scalar(@{$get->tx->res->json->{jobs}}), 1);
+$get = $t->get_ok('/api/v1/jobs?test=kde&result=passed&machine=64bit');
+is(scalar(@{$get->tx->res->json->{jobs}}), 0);
 
 # Test /jobs/restart
 my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})->status_is(200);

@@ -74,7 +74,7 @@ $get->element_exists_not('#flavor_GNOME-Live_arch_i686');
 
 # Check some results (and it's overview_xxx classes)
 $get->element_exists('#res_DVD_x86_64_doc .result_failed');
-$get->element_exists('#res_DVD_x86_64_kde .result_softfail');
+$get->element_exists('#res_DVD_x86_64_kde .result_softfailed');
 $get->element_exists_not('#res_DVD_i586_doc');
 $get->element_exists_not('#res_DVD_i686_doc');
 

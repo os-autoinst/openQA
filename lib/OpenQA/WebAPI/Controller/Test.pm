@@ -208,13 +208,12 @@ sub read_test_modules {
         push(
             @modlist,
             {
-                name         => $module->name,
-                result       => $module->result,
-                details      => \@details,
-                soft_failure => $module->soft_failure,
-                milestone    => $module->milestone,
-                important    => $module->important,
-                fatal        => $module->fatal
+                name      => $module->name,
+                result    => $module->result,
+                details   => \@details,
+                milestone => $module->milestone,
+                important => $module->important,
+                fatal     => $module->fatal
             });
 
         if (!$category || $category ne $module->category) {
@@ -427,9 +426,6 @@ sub overview {
             my $overall      = $job->result;
             if ($job->result eq "passed") {
                 next if $self->param('todo');
-                if ($result_stats->{dents}) {
-                    $overall = "softfail";
-                }
             }
             if ($self->param('todo')) {
                 next if $job_labels->{$job->id}{bug} || $job_labels->{$job->id}{label};
@@ -438,7 +434,6 @@ sub overview {
                 passed   => $result_stats->{passed},
                 unknown  => $result_stats->{unk},
                 failed   => $result_stats->{failed},
-                dents    => $result_stats->{dents},
                 overall  => $overall,
                 jobid    => $job->id,
                 state    => "done",
@@ -601,10 +596,8 @@ sub export {
             $self->write_chunk(sprintf("Job %d: %s is %s\n", $job->id, $job->name, $job->result));
             my $modules = $job->modules->search(undef, {order_by => 'id'});
             while (my $m = $modules->next) {
-                my $result = $m->result;
-                next if ($result eq OpenQA::Schema::Result::Jobs::NONE);
-                $result = 'softfail' if ($m->soft_failure);
-                $self->write_chunk(sprintf("  %s/%s: %s\n", $m->category, $m->name, $result));
+                next if ($m->result eq OpenQA::Schema::Result::Jobs::NONE);
+                $self->write_chunk(sprintf("  %s/%s: %s\n", $m->category, $m->name, $m->result));
             }
         }
         $self->write_chunk("\n\n");

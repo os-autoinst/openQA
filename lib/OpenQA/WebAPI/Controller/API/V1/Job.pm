@@ -93,7 +93,7 @@ sub list {
                 category => $module->category,
                 result   => $module->result,
                 flags    => []};
-            for my $flag (qw/important fatal milestone soft_failure/) {
+            for my $flag (qw/important fatal milestone/) {
                 if ($module->get_column($flag)) {
                     push(@{$modulehash->{flags}}, $flag);
                 }
