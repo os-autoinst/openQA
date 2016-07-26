@@ -80,6 +80,11 @@ is($num_active_tabs, 1, 'only one tab visible at the same time');
 my $href_to_isosize = $t->tx->res->dom->at('.component a[href*=installer_timezone]')->{href};
 $t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
 
+subtest 'static scenario routes to test' => sub {
+    $driver->get($baseurl . 'tests/opensuse-13.1-DVD-i586-textmode@32bit');
+    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'scenario link shows tests/99946');
+};
+
 #print $driver->get_page_source();
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 

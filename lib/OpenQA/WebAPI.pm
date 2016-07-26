@@ -332,6 +332,8 @@ sub startup {
     $step_auth->post('/')->name('save_needle_ajax')->to('step#save_needle_ajax');
     $step_r->get('/')->name('step')->to(action => 'view');
 
+    $r->route('/tests/:scenario', scenario => qr/[^\d].*/)->to('test#scenario');
+
     $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
     $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
 
