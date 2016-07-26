@@ -1271,20 +1271,20 @@ sub store_column {
 
 # parent job failed, handle scheduled children - set them to done incomplete immediately
 sub _job_skip_children {
-    my ($self)   = @_;
-    my $children = $self->children;
-    my $count    = $children->search(
+    my ($self) = @_;
+    my $jobs = $self->children->search(
         {
             'child.state' => SCHEDULED,
         },
-        {join => 'child'}
-      )->update_all(
-        {
-            'child.state'  => CANCELLED,
-            'child.result' => SKIPPED,
-        });
+        {join => 'child'});
 
-    while (my $j = $children->next) {
+    my $count = 0;
+    while (my $j = $jobs->next) {
+        $j->update(
+            {
+                'child.state'  => CANCELLED,
+                'child.result' => SKIPPED,
+            });
         $count += $j->child->_job_skip_children;
     }
     return $count;
