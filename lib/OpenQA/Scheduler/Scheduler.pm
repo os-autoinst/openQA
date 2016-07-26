@@ -397,7 +397,7 @@ sub job_duplicate {
         });
 
     while (my $j = $jobs->next) {
-        next unless $job->worker;
+        next unless $j->worker;
         log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
         $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
