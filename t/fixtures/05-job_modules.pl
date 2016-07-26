@@ -32,13 +32,12 @@
         result   => 'passed',
     },
     JobModules => {
-        id           => 5,
-        script       => 'tests/installation/installation_mode.pm',
-        job_id       => 99939,
-        category     => 'installation',
-        name         => 'installation_mode',
-        result       => 'passed',
-        soft_failure => 1,
+        id       => 5,
+        script   => 'tests/installation/installation_mode.pm',
+        job_id   => 99939,
+        category => 'installation',
+        name     => 'installation_mode',
+        result   => 'softfailed'
     },
     JobModules => {
         id       => 6,

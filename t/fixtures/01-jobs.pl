@@ -134,7 +134,7 @@
         id         => 99939,
         group_id   => 1001,
         priority   => 36,
-        result     => "passed",
+        result     => "softfailed",
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),    # One hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago

@@ -63,15 +63,6 @@ sub _group_result {
         }
         $jobs->reset;
 
-        my $dents = $self->db->resultset('JobModules')->search(
-            {
-                job_id       => {-in  => \@ids},
-                soft_failure => {'!=' => 0}});
-        my %soft_fails;
-        while (my $jm = $dents->next) {
-            $soft_fails{$jm->job_id}++;
-        }
-
         while (my $job = $jobs->next) {
             $jr{distri}  //= $job->DISTRI;
             $jr{version} //= $job->VERSION;
@@ -82,14 +73,14 @@ sub _group_result {
             $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
             if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
                 if ($job->result eq OpenQA::Schema::Result::Jobs::PASSED) {
-                    if (!$soft_fails{$job->id}) {
-                        $jr{passed}++;
-                    }
-                    else {
-                        $jr{softfailed}++;
-                    }
+                    $jr{passed}++;
                     next;
                 }
+                if ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED) {
+                    $jr{softfailed}++;
+                    next;
+                }
+
                 if (   $job->result eq OpenQA::Schema::Result::Jobs::FAILED
                     || $job->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE)
                 {

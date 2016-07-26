@@ -50,7 +50,7 @@ is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo'
 $driver->find_element('Build0048', 'link_text')->click();
 is($driver->get_title(), "openQA: Test summary", "on overview page");
 
-is($driver->find_element('.result_softfail', 'css')->get_text(), '', 'We see one softfail');
+is($driver->find_element('.result_softfailed', 'css')->get_text(), '', 'We see one softfail');
 # follow a build to the step page
 $driver->find_element('logpackages', 'link_text')->click();
 is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results', 'on test page');

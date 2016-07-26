@@ -165,8 +165,11 @@ sub register {
             elsif ($res =~ /^fail/) {
                 return 'resultfail';
             }
+            elsif ($res eq 'softfailed') {
+                return 'resultsoftfailed';
+            }
             elsif ($res eq 'passed') {
-                return $hash->{soft_failure} ? 'resultsoftfailed' : 'resultok';
+                return 'resultok';
             }
             elsif ($res eq 'running') {
                 return 'resultrunning';
@@ -187,7 +190,7 @@ sub register {
             elsif ($res eq 'unk') {
                 return 'unknown';
             }
-            elsif ($res eq 'passed' && $module->{soft_failure}) {
+            elsif ($res eq 'softfailed') {
                 return 'soft failed';
             }
             else {

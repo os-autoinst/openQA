@@ -25,9 +25,9 @@
                 Incomplete:
                 <span class="badge"><%= $aggregated->{incomplete} %></span>
             % }
-            % if ($aggregated->{softfail}) {
+            % if ($aggregated->{softfailed}) {
                 Soft Failure:
-                <span class="badge"><%= $aggregated->{softfail} %></span>
+                <span class="badge"><%= $aggregated->{softfailed} %></span>
             % }
             Failed: <span class="badge"><%= $aggregated->{failed} %></span>
 
