@@ -76,7 +76,7 @@ is($job->state, 'cancelled', "new job is cancelled");
 ok($job->t_finished, "There is a finish time");
 
 $job = job_get(99963);
-is($job->state, 'running', "old job still running");
+is($job->state, 'cancelled', "old job cancelled as well");
 
 $job = job_get(99928);
 is($job->state, 'scheduled', "unrelated job 99928 still scheduled");

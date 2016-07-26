@@ -1368,18 +1368,20 @@ sub done {
 }
 
 sub cancel {
-    my ($self) = @_;
-
-    my $count = 1;
+    my ($self, $obsoleted) = @_;
+    $obsoleted //= 0;
+    my $result = $obsoleted ? OBSOLETED : USER_CANCELLED;
     return if ($self->result ne NONE);
+    my $state = $self->state;
     $self->update(
         {
             state  => CANCELLED,
-            result => USER_CANCELLED
+            result => $result
         });
 
-    if (grep { $self->state eq $_ } EXECUTION_STATES) {
-        $self->worker(command => 'cancel', job_id => $self->id);
+    my $count = 1;
+    if (grep { $state eq $_ } EXECUTION_STATES) {
+        $self->worker->send_command(command => 'cancel', job_id => $self->id);
         $count += $self->_job_skip_children;
         $count += $self->_job_stop_children;
     }
