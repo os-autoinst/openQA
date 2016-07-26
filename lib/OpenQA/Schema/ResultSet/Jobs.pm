@@ -301,5 +301,62 @@ sub complex_query {
     return $jobs;
 }
 
+sub cancel_by_settings {
+    my ($self, $settings, $newbuild) = @_;
+    my $rsource = $self->result_source;
+    my $schema  = $rsource->schema;
+    $newbuild //= 0;
+    # preserve original settings by deep copy
+    my %precond = %{$settings};
+    my %cond;
+
+    for my $key (qw/DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST/) {
+        if (defined $precond{$key}) {
+            $cond{$key} = delete $precond{$key};
+        }
+    }
+    if (%precond) {
+        my $subquery = $schema->resultset('JobSettings')->query_for_settings(\%precond);
+        $cond{id} = {-in => $subquery->get_column('job_id')->as_query};
+    }
+    $cond{state} = [OpenQA::Schema::Result::Jobs::PENDING_STATES];
+    my $jobs = $schema->resultset('Jobs')->search(\%cond);
+    my $jobs_to_cancel;
+    if ($newbuild) {
+        # 'monkey patch' cond to be useable in chained search
+        $cond{'me.id'} = delete $cond{id} if $cond{id};
+        # filter out all jobs that have any comment (they are considered 'important') ...
+        $jobs_to_cancel = $jobs->search({'comments.job_id' => undef}, {join => 'comments'});
+        # ... or belong to a tagged build, i.e. is considered important
+        # this might be even the tag 'not important' but not much is lost if
+        # we still not cancel these builds
+        my $groups_query = $jobs->get_column('group_id')->as_query;
+        my @important_builds = grep defined, map { ($_->tag)[0] } $schema->resultset('Comments')->search({'me.group_id' => {-in => $groups_query}});
+        my @unimportant_jobs;
+        while (my $j = $jobs_to_cancel->next) {
+            next if grep ($j->BUILD eq $_, @important_builds);
+            push @unimportant_jobs, $j->id;
+        }
+        # if there are only important jobs there is nothing left for us to do
+        return 0 unless @unimportant_jobs;
+        $jobs_to_cancel = $jobs_to_cancel->search({'me.id' => {-in => \@unimportant_jobs}});
+    }
+    else {
+        $jobs_to_cancel = $jobs;
+    }
+    my $cancelled_jobs = 0;
+    # first scheduled to avoid worker grab
+    $jobs = $jobs_to_cancel->search({state => OpenQA::Schema::Result::Jobs::SCHEDULED});
+    while (my $j = $jobs->next) {
+        $cancelled_jobs += $j->cancel($newbuild);
+    }
+    # then the rest
+    $jobs = $jobs_to_cancel->search({state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES]});
+    while (my $j = $jobs->next) {
+        $cancelled_jobs += $j->cancel($newbuild);
+    }
+    return $cancelled_jobs;
+}
+
 1;
 # vim: set sw=4 et:

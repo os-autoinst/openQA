@@ -40,10 +40,13 @@ sub list_jobs {
     [map { $_->to_hash() } $schema->resultset('Jobs')->all];
 }
 
-sub job_get {
+sub job_get_rs {
     my ($id) = @_;
+    return $schema->resultset("Jobs")->find({id => $id});
+}
 
-    my $job = $schema->resultset("Jobs")->find({id => $id});
+sub job_get {
+    my $job = job_get_rs(@_);
     return unless $job;
     return $job->to_hash;
 }
@@ -94,7 +97,8 @@ is(@ret, 0, "no job ids returned");
 $jobs = list_jobs();
 is_deeply($jobs, $current_jobs, "jobs unchanged after restarting scheduled job");
 
-OpenQA::Scheduler::Scheduler::job_cancel(99927);
+$job1 = job_get(99927);
+job_get_rs(99927)->cancel;
 $job1 = job_get(99927);
 is($job1->{state}, 'cancelled', "scheduled job cancelled after cancel");
 
@@ -125,13 +129,13 @@ $jobs = list_jobs();
 is(@$jobs, @$current_jobs + 2, "two more job after restarting running job with parallel dependency");
 
 $job1 = job_get(99963);
-OpenQA::Scheduler::Scheduler::job_cancel(99963);
+job_get_rs(99963)->cancel;
 $job2 = job_get(99963);
 
 is_deeply($job1, $job2, "running job unchanged after cancel");
 
 my $job3 = job_get(99938)->{clone_id};
-OpenQA::Scheduler::Scheduler::job_set_done(jobid => $job3, result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+job_get_rs($job3)->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 $job3 = job_get($job3);
 is($job3->{retry_avbl}, 3, "the retry counter setup ");
 my $round1_id = OpenQA::Scheduler::Scheduler::job_duplicate((jobid => $job3->{id}, dup_type_auto => 1));
@@ -139,23 +143,25 @@ ok(defined $round1_id, "auto-duplicate works");
 $job3 = job_get($round1_id);
 is($job3->{retry_avbl}, 2, "the retry counter decreased");
 # need to change state from scheduled
-OpenQA::Scheduler::Scheduler::job_set_done(jobid => $round1_id, result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+$job3 = job_get($round1_id);
+job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 my $round2_id = OpenQA::Scheduler::Scheduler::job_duplicate((jobid => $round1_id, dup_type_auto => 1));
 ok(defined $round2_id, "auto-duplicate works");
 $job3 = job_get($round2_id);
 is($job3->{retry_avbl}, 1, "the retry counter decreased");
 # need to change state from scheduled
-OpenQA::Scheduler::Scheduler::job_set_done(jobid => $round2_id, result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 my $round3_id = OpenQA::Scheduler::Scheduler::job_duplicate((jobid => $round2_id, dup_type_auto => 1));
 ok(defined $round3_id, "auto-duplicate works");
 $job3 = job_get($round3_id);
 is($job3->{retry_avbl}, 0, "the retry counter decreased");
 # need to change state from scheduled
-OpenQA::Scheduler::Scheduler::job_set_done(jobid => $round3_id, result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 my $round4_id = OpenQA::Scheduler::Scheduler::job_duplicate((jobid => $round3_id, dup_type_auto => 1));
 ok(!defined $round4_id, "no longer auto-duplicating");
 # need to change state from scheduled
-OpenQA::Scheduler::Scheduler::job_set_done(jobid => $round3_id, result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+$job3 = job_get($round3_id);
+job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
 my $round5_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => $round3_id);
 ok(defined $round5_id, "manual-duplicate works");
 $job3 = job_get($round5_id);

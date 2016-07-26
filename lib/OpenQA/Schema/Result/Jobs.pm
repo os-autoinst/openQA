@@ -1269,5 +1269,123 @@ sub store_column {
     return $self->SUPER::store_column(%args);
 }
 
+# parent job failed, handle scheduled children - set them to done incomplete immediately
+sub _job_skip_children {
+    my ($self) = @_;
+    my $jobs = $self->children->search(
+        {
+            'child.state' => SCHEDULED,
+        },
+        {join => 'child'});
+
+    my $count = 0;
+    while (my $j = $jobs->next) {
+        $j->update(
+            {
+                'child.state'  => CANCELLED,
+                'child.result' => SKIPPED,
+            });
+        $count += $j->child->_job_skip_children;
+    }
+    return $count;
+}
+
+# parent job failed, handle running children - send stop command
+sub _job_stop_children {
+    my ($self) = @_;
+
+    my $children = $self->children->search(
+        {
+            dependency    => OpenQA::Schema::Result::JobDependencies->PARALLEL,
+            'child.state' => [EXECUTION_STATES],
+        },
+        {join => 'child'});
+
+    my $count = 0;
+    my $jobs  = $children->search(
+        {
+            result => NONE,
+        });
+    while (my $j = $jobs->next) {
+        $j->child->update(
+            {
+                result => PARALLEL_FAILED,
+            });
+        $count += 1;
+    }
+
+    while (my $j = $children->next) {
+        $j->child->worker->send_command(command => 'cancel', job_id => $j->child->id);
+        $count += $j->child->_job_stop_children;
+    }
+    return $count;
+}
+
+=head2 done
+
+Finalize job by setting it as DONE.
+
+Accepted optional arguments:
+  newbuild => 0/1
+  result   => see RESULTS
+
+newbuild set marks build as OBSOLETED
+if result is not set (expected default situation) result is computed from the results of individual
+test modules
+
+=cut
+sub done {
+    my ($self, %args) = @_;
+    my $newbuild = 0;
+    $newbuild = int($args{newbuild}) if defined $args{newbuild};
+    $args{result} = OBSOLETED if $newbuild;
+
+    # cleanup
+    $self->set_property('JOBTOKEN');
+    $self->release_networks();
+    $self->owned_locks->delete;
+    $self->locked_locks->update({locked_by => undef});
+    if ($self->worker) {
+        # free the worker
+        $self->worker->update({job_id => undef});
+    }
+
+    # update result if not provided
+    my $result = $args{result} || $self->calculate_result();
+    my %new_val = (state => DONE);
+    # for cancelled jobs the result is already known
+    $new_val{result} = $result if $self->result eq NONE;
+
+    $self->update(\%new_val);
+
+    if ($result ne PASSED) {
+        $self->_job_skip_children;
+        $self->_job_stop_children;
+        # labels are there to mark reasons of failure
+        $self->carry_over_labels;
+    }
+    return $result;
+}
+
+sub cancel {
+    my ($self, $obsoleted) = @_;
+    $obsoleted //= 0;
+    my $result = $obsoleted ? OBSOLETED : USER_CANCELLED;
+    return if ($self->result ne NONE);
+    my $state = $self->state;
+    $self->update(
+        {
+            state  => CANCELLED,
+            result => $result
+        });
+
+    my $count = 1;
+    if (grep { $state eq $_ } EXECUTION_STATES) {
+        $self->worker->send_command(command => 'cancel', job_id => $self->id);
+        $count += $self->_job_skip_children;
+        $count += $self->_job_stop_children;
+    }
+    return $count;
+}
 1;
 # vim: set sw=4 et:

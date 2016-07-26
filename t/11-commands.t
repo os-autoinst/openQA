@@ -19,6 +19,7 @@ BEGIN {
 
 use Test::More;
 use Test::Warnings ':all';
+use Test::Output qw/stderr_like/;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::Scheduler::Scheduler;
@@ -41,19 +42,22 @@ sub ws_send {
 
 package main;
 
+my $schema = OpenQA::Schema::connect_db('test');
 #issue valid commands for worker 1
 my @valid_commands = qw/quit abort cancel obsolete
   stop_waitforneedle reload_needles_and_retry continue_waitforneedle
   enable_interactive_mode disable_interactive_mode job_available
   livelog_stop livelog_start/;
 
+my $worker = $schema->resultset('Workers')->find(1);
+
 for my $cmd (@valid_commands) {
-    OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => $cmd, job_id => 0);
+    $worker->send_command(command => $cmd, job_id => 0);
     is($OpenQA::WebSockets::Server::last_command, $cmd, "command $cmd received at WS server");
 }
 
 #issue invalid commands
-like(warning { OpenQA::Scheduler::Scheduler::command_enqueue(workerid => 1, command => 'foo', job_id => 0) }, qr/invalid command "foo"/);
+stderr_like { $worker->send_command(command => 'foo', job_id => 0); } qr/\[ERROR\] Trying to issue unknown command "foo" for worker "localhost:"/;
 isnt($OpenQA::WebSockets::Server::last_command, 'foo', 'refuse invalid commands');
 
 done_testing();

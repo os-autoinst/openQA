@@ -58,9 +58,10 @@ sub websocket_commands {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/stop_waitforneedle");
                 print "stop_waitforneedle triggered\n" if $verbose;
+                ws_call('property_change', {waitforneedle => 1});
             }
         }
-        elsif ($type eq 'reload_needles_and_retry') {    #
+        elsif ($type eq 'reload_needles_and_retry') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/reload_needles");
                 print "needles will be reloaded\n" if $verbose;
@@ -70,18 +71,21 @@ sub websocket_commands {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/interactive?state=1");
                 print "interactive mode enabled\n" if $verbose;
+                ws_call('property_change', {interactive_mode => 1});
             }
         }
         elsif ($type eq 'disable_interactive_mode') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/interactive?state=0");
                 print "interactive mode disabled\n" if $verbose;
+                ws_call('property_change', {interactive_mode => 0});
             }
         }
         elsif ($type eq 'continue_waitforneedle') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/continue_waitforneedle");
                 print "waitforneedle will continue\n" if $verbose;
+                ws_call('property_change', {waitforneedle => 0});
             }
         }
         elsif ($type eq 'livelog_start') {
