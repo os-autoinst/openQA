@@ -74,7 +74,7 @@ if ($user) {
 umask 027;
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
-my @databases        = qw( MySQL SQLite PostgreSQL );
+my @databases        = qw( SQLite PostgreSQL );
 my $schema           = OpenQA::Schema::connect_db;
 
 if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {

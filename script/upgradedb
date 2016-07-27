@@ -79,7 +79,7 @@ if ($user) {
 my $schema = OpenQA::Schema::connect_db;
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
-my @databases        = qw( MySQL SQLite PostgreSQL );
+my @databases        = qw( SQLite PostgreSQL );
 
 if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
     # Some SQLite update scripts do not work correctly with foreign keys on
