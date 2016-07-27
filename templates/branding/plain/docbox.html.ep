@@ -1,0 +1,4 @@
+<h1>Welcome to <%= $appname %></h1>
+<p>Life is too short for manual testing!</p>
+
+<a class="btn btn-primary btn-lg" href="http://os-autoinst.github.io/openQA/" role="button">Learn more »</a></p>

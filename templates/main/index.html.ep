@@ -10,10 +10,7 @@
 <div class="jumbotron">
     <div class="container">
         <div class="col-md-10">
-             <h1>Welcome to <%= $appname %></h1>
-             <p>Life is too short for manual testing!</p>
-
-            <a class="btn btn-primary btn-lg" href="http://os-autoinst.github.io/openQA/" role="button">Learn more »</a></p>
+            %= include_branding 'docbox'
         </div>
 
         <div class="col-md-2 hidden-sm hidden-xs">
