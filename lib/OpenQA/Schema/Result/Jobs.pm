@@ -1281,10 +1281,10 @@ sub _job_skip_children {
 
     my $count = 0;
     while (my $j = $jobs->next) {
-        $j->update(
+        $j->child->update(
             {
-                'child.state'  => CANCELLED,
-                'child.result' => SKIPPED,
+                state  => CANCELLED,
+                result => SKIPPED,
             });
         $count += $j->child->_job_skip_children;
     }
