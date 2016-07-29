@@ -132,6 +132,7 @@ sub engine_workit($) {
     die "failed to fork: $!\n" unless defined $child;
 
     unless ($child) {
+        setpgrp(0, 0);
         $ENV{TMPDIR} = $tmpdir;
         printf "$$: WORKING %d\n", $job->{id};
         if (open(my $log, '>', "autoinst-log.txt")) {

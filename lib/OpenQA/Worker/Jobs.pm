@@ -56,7 +56,15 @@ sub _kill_worker($) {
     kill(SIGTERM, $worker->{pid});
 
     # don't leave here before the worker is dead
+    local $SIG{ALRM} = sub {
+        warn "sending KILL signal to everyone in the child process group\n";
+        kill KILL => -$worker->{pid};
+    };
+    # if still running when the alarm hits, we try harder to pull the worker
+    # processes down
+    alarm 40;
     my $pid = waitpid($worker->{pid}, 0);
+    alarm 0;
     if ($pid == -1) {
         warn "waitpid returned error: $!\n";
     }
