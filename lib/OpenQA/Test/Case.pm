@@ -49,6 +49,7 @@ sub new {
             });
 
         OpenQA::Test::Testresults->new->create(directory => $tdirname . 'testresults');
+        return $schema;
     }
 
     sub login {

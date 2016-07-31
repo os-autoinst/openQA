@@ -659,6 +659,18 @@ sub calculate_result($) {
                 $overall ||= PASSED;
             }
         }
+        elsif ($m->result eq SOFTFAILED) {
+            if ($m->important || $m->fatal) {
+                if (!defined $important_overall || $important_overall eq PASSED) {
+                    $important_overall = SOFTFAILED;
+                }
+            }
+            else {
+                if (!defined $overall || $overall eq PASSED) {
+                    $overall = SOFTFAILED;
+                }
+            }
+        }
         else {
             if ($m->important || $m->fatal) {
                 $important_overall = FAILED;
@@ -1359,7 +1371,7 @@ sub done {
 
     $self->update(\%new_val);
 
-    if ($result ne PASSED) {
+    if (!grep { $result eq $_ } (PASSED, SOFTFAILED)) {
         $self->_job_skip_children;
         $self->_job_stop_children;
         # labels are there to mark reasons of failure
