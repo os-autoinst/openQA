@@ -79,6 +79,7 @@
   /usr/bin/uname rix,
   /usr/bin/unixcmd rix,
   /usr/bin/x3270 cx,
+  /usr/lib/git/git rix,
   /usr/lib*/qemu/block-curl.so rix,
   /usr/lib*/qemu/block-rbd.so mr,
   /usr/lib/os-autoinst/backend/s390x/vars.json.py rcx,
