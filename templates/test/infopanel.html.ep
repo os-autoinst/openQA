@@ -2,8 +2,9 @@
         % if ($job->state eq 'done') {
             % if ($job->result eq 'passed') {
                 % $panelclass = 'panel-success';
-            % } else
-            % {
+            % } elsif ($job->result eq 'softfailed') {
+                % $panelclass = 'panel-warning';
+            % } else {
                 % $panelclass = 'panel-danger';
             % }
         % }
