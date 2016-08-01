@@ -225,7 +225,7 @@ subtest 'job with at least one softfailed => overall is softfailed' => sub {
 
 subtest 'job with no modules => overall is failed' => sub {
     my %_settings = %settings;
-    $_settings{TEST} = 'I';
+    $_settings{TEST} = 'J';
     my $job = _job_create(\%_settings);
     $job->update;
     $job->discard_changes;
@@ -234,6 +234,55 @@ subtest 'job with no modules => overall is failed' => sub {
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+};
+
+subtest 'carry over for soft fails' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'K';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    $job->update_module('a', {result => 'fail', details => []});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {important => 1}});
+    $job->update_module('b', {result => 'ok', details => []});
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+    $job->comments->create({text => 'bsc#101', user_id => 99901});
+
+    $_settings{BUILD} = '667';
+    $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    $job->update_module('a', {result => 'fail', details => []});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {important => 1}});
+    $job->update_module('b', {result => 'ok', details => []});
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is(0, $job->comments, 'no comment');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+    is(1, $job->comments, 'one comment');
+    like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
+
+    $_settings{BUILD} = '668';
+    $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    $job->update_module('a', {result => 'fail', details => []});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {important => 1}});
+    $job->update_module('b', {result => 'fail', details => []});
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is(0, $job->comments, 'no comment');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is(0, $job->comments, 'no takeover');
+
 };
 
 done_testing();
