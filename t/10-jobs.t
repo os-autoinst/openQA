@@ -131,7 +131,7 @@ subtest 'job with at least one failed module and one softfailed => overall is fa
     is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
 };
 
-subtest 'job with all important modules passed and at least one unimportant failed => overall passed' => sub {
+subtest 'job with all important modules passed and at least one unimportant failed => overall softfailed' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'E';
     my $job = _job_create(\%_settings);
@@ -146,7 +146,7 @@ subtest 'job with all important modules passed and at least one unimportant fail
     is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
 };
 
 subtest 'job with important modules passed and at least one softfailed and at least one unimportant failed => overall softfailed' => sub {

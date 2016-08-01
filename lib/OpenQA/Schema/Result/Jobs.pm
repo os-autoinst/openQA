@@ -676,6 +676,10 @@ sub calculate_result($) {
                 $important_overall = FAILED;
             }
             else {
+                # override important if it's passed
+                if ($important_overall && $important_overall eq PASSED) {
+                    $important_overall = SOFTFAILED;
+                }
                 $overall = FAILED;
             }
         }
