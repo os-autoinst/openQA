@@ -42,6 +42,13 @@ $color-state-running: #8BDFFF;
         }
 }
 
+#info_box {
+        &.panel-warning .panel-heading {
+                background-color: $color-softfail;
+                color: $color-result;
+        }
+}
+
 .highlight_parent {
     background-color: $color-highlight-parent !important;
 }
@@ -323,7 +330,7 @@ table.admintable {
 table.overview {
         td {
                 text-align: left;
-		overflow-x: hidden;
+                overflow-x: hidden;
         }
         td.name {
                 padding-top: .5em;
