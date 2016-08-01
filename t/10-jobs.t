@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -102,6 +102,22 @@ subtest 'job with at least one softfailed and rest passed => overall is softfail
     }
     $job->insert_module({name => 'd', category => 'd', script => 'd', flags => {}});
     $job->update_module('d', {result => 'ok', details => [], dents => 1});
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+};
+
+subtest 'job with first unimportant and rest passed => overall is softfailed' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'C';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    $job->update_module('a', {result => 'fail', details => []});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {important => 1}});
+    $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
