@@ -129,4 +129,8 @@ like($summary, qr/Passed: 0 Failed: 1/i);
 $get->element_exists('#res_DVD_x86_64_doc .result_failed');
 $get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 
+$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})->status_is(200);
+$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
+like($summary, qr/Passed: 0 Soft Failure: 1 Failed: 1/i, 'todo=1 shows all unlabeled failed');
+
 done_testing();
