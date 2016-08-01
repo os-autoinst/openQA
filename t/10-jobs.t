@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -124,14 +124,13 @@ subtest 'job with at least one failed module and one softfailed => overall is fa
     $job->update_module('d', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
-
     is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
 };
 
-subtest 'job with all important modules passed and at least one unimportant failed => overall passed' => sub {
+subtest 'job with all important modules passed and at least one unimportant failed => overall softfailed' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'E';
     my $job = _job_create(\%_settings);
@@ -146,7 +145,7 @@ subtest 'job with all important modules passed and at least one unimportant fail
     is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
 };
 
 subtest 'job with important modules passed and at least one softfailed and at least one unimportant failed => overall softfailed' => sub {
@@ -186,4 +185,55 @@ subtest 'job with one important module failed and at least one unimportant passe
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
 };
+
+subtest 'job with first unimportant and rest softfails => overall is softfailed' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'H';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    $job->update_module('a', {result => 'fail', details => []});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {important => 1}});
+    $job->update_module('b', {result => 'ok', details => []});
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+};
+
+subtest 'job with at least one softfailed => overall is softfailed' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'I';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {important => 1}});
+    $job->update_module('a', {result => 'ok', details => []});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {}});
+    $job->update_module('b', {result => 'ok', details => []});
+    $job->insert_module({name => 'c', category => 'c', script => 'c', flags => {}});
+    $job->update_module('c', {result => 'ok', details => [], dents => 1});
+    $job->insert_module({name => 'd', category => 'd', script => 'd', flags => {}});
+    $job->update_module('d', {result => 'ok', details => []});
+    $job->update;
+    $job->discard_changes;
+
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+};
+
+subtest 'job with no modules => overall is failed' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'I';
+    my $job = _job_create(\%_settings);
+    $job->update;
+    $job->discard_changes;
+
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+};
+
 done_testing();

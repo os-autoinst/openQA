@@ -680,6 +680,11 @@ sub calculate_result($) {
             }
         }
     }
+    # don't let go with overall PASSED if there were fails
+    if (($overall || FAILED) ne PASSED && ($important_overall || '') eq PASSED) {
+        $important_overall = SOFTFAILED;
+    }
+
     return $important_overall || $overall || FAILED;
 }
 
