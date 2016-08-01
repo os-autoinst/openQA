@@ -503,6 +503,20 @@ sub overview {
     );
 }
 
+sub latest {
+    my ($self) = @_;
+    my %search_args;
+    my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
+    for my $arg (@scenario_keys) {
+        my $key = lc $arg;
+        next unless defined $self->param($key);
+        $search_args{$key} = $self->param($key);
+    }
+    my $job = $self->db->resultset("Jobs")->complex_query(%search_args)->first;
+    return $self->render(text => 'No matching job found', status => 404) unless $job;
+    return $self->redirect_to('test', testid => $job->id);
+}
+
 sub add_comment {
     my ($self) = @_;
 
