@@ -649,7 +649,6 @@ sub calculate_result($) {
 
     my $overall;
     my $important_overall;    # just counting importants
-    my $unimportant_fails;
 
     for my $m ($job->modules->all) {
         if ($m->result eq PASSED) {
@@ -677,13 +676,12 @@ sub calculate_result($) {
                 $important_overall = FAILED;
             }
             else {
-                $unimportant_fails = 1;
-                $overall           = FAILED;
+                $overall = FAILED;
             }
         }
     }
-    # override important if it's passed
-    if ($unimportant_fails && $important_overall && $important_overall eq PASSED) {
+    # don't let go with overall PASSED if there were fails
+    if (($overall || FAILED) ne PASSED && ($important_overall || '') eq PASSED) {
         $important_overall = SOFTFAILED;
     }
 
