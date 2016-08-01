@@ -244,6 +244,33 @@ sub details {
     $self->render('test/details');
 }
 
+sub scenario {
+    my ($self) = @_;
+    my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
+    push(@scenario_keys, 'MACHINE');
+
+    # TODO we actually need the inverse here so the idea was to split on '@'
+    #  ($pre, $machine) = split('@', $scenario)
+    # and then '-'
+    #  @tags = split('-', $pre)
+    # , which would work for cases like
+    # http://localhost:9526/tests/opensuse-tumbleweed-DVD-x86_64-awesome
+    # but not for equally allowed
+    # sle-12-SP2-Server-DVD-x86_64-autoyast_sle12_gnome@64bit
+    # so maybe better match with complex query on any combination, e.g. for
+    # every key in scenario_keys match each split token against scenario keys
+
+    my @conds;
+    #for my $key (@scenario_keys) {
+    #    push(@conds, {"me.$key" => $job->get_column($key)});
+    #}
+    #    for my $key (qw/DISTRI FLAVOR BUILD TEST VERSION/) {
+    #        push(@likes, {"me.$key" => {'-like' => "%$args{match}%"}});
+    #    }
+    my $scenario_rs = $self->db->resultset("Jobs")->find({-and => \@conds});
+    return 'TODO: something with url to self with testid being what the previous rs returned';
+}
+
 sub show {
     my ($self) = @_;
 
