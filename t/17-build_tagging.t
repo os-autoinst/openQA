@@ -102,6 +102,13 @@ subtest 'builds first tagged important, then unimportant dissappear (poo#12028)'
     is($tags[0],     'Build0048', 'only youngest build present');
 };
 
+subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {
+    my $get = $t->get_ok('/group_overview/1001?only_tagged=1')->status_is(200);
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 1, 'only one tagged build is shown');
+    $get = $t->get_ok('/group_overview/1001?only_tagged=0')->status_is(200);
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 4, 'all builds shown again');
+};
+
 =pod
 Given a comment C<tag:<build_ref>:important> exists on a job group comments
 When GRU cleanup task is run
