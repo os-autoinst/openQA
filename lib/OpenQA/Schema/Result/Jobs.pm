@@ -64,6 +64,11 @@ use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED, 
 use constant COMPLETE_RESULTS => (PASSED, SOFTFAILED, FAILED);
 use constant INCOMPLETE_RESULTS => (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
 
+# scenario keys w/o MACHINE. Add MACHINE when desired, commonly joined on
+# other keys with the '@' character
+use constant SCENARIO_KEYS => (qw/DISTRI VERSION FLAVOR ARCH TEST/);
+use constant SCENARIO_WITH_MACHINE_KEYS => (SCENARIO_KEYS, 'MACHINE');
+
 __PACKAGE__->table('jobs');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime FilterColumn Timestamps/);
 __PACKAGE__->add_columns(
@@ -218,6 +223,12 @@ sub name {
         $self->{_name} = $name;
     }
     return $self->{_name};
+}
+
+sub scenario_hash {
+    my ($self) = @_;
+    my %scenario = map { lc $_ => $self->get_column($_) } SCENARIO_WITH_MACHINE_KEYS;
+    return %scenario;
 }
 
 # return 0 if we have no worker
@@ -1163,10 +1174,9 @@ sub needle_dir() {
 sub _previous_scenario_jobs {
     my ($self, $rows) = @_;
 
-    my $schema        = $self->result_source->schema;
-    my $conds         = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
-    my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST MACHINE/;
-    for my $key (@scenario_keys) {
+    my $schema = $self->result_source->schema;
+    my $conds = [{'me.state' => 'done'}, {'me.result' => [COMPLETE_RESULTS]}, {'me.id' => {'<', $self->id}}];
+    for my $key (SCENARIO_WITH_MACHINE_KEYS) {
         push(@$conds, {"me.$key" => $self->get_column($key)});
     }
     my %attrs = (

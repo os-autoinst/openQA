@@ -261,11 +261,8 @@ sub _show {
     my ($self, $job) = @_;
     return $self->reply->not_found unless $job;
 
-    my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
-    my $scenario = join('-', map { $job->get_column($_) } @scenario_keys);
+    my $scenario = join('-', map { $job->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_KEYS);
 
-    # append the MACHINE
-    push(@scenario_keys, 'MACHINE');
     $scenario .= "@" . $job->MACHINE;
 
     $self->stash(testname => $job->name);
@@ -303,7 +300,7 @@ sub _show {
     push(@conds, {'me.state'  => 'done'});
     push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
     push(@conds, {id          => {'<', $job->id}});
-    for my $key (@scenario_keys) {
+    for my $key (OpenQA::Schema::Result::Jobs::SCENARIO_KEYS) {
         push(@conds, {"me.$key" => $job->get_column($key)});
     }
     my $limit_previous = $self->param('limit_previous') // 10;    # arbitrary limit of previous results to show
@@ -313,7 +310,7 @@ sub _show {
     my $previous_jobs_rs = $self->db->resultset("Jobs")->search({-and => \@conds}, \%attrs);
     my @previous_jobs;
     while (my $prev = $previous_jobs_rs->next) {
-        $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->get_column($_) } @scenario_keys));
+        $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_KEYS));
         push(@previous_jobs, $prev);
     }
     my $job_labels = $self->_job_labels(\@previous_jobs);
@@ -510,8 +507,7 @@ sub overview {
 sub latest {
     my ($self) = @_;
     my %search_args = (limit => 1);
-    my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
-    for my $arg (@scenario_keys) {
+    for my $arg (OpenQA::Schema::Result::Jobs::SCENARIO_KEYS) {
         my $key = lc $arg;
         next unless defined $self->param($key);
         $search_args{$key} = $self->param($key);
