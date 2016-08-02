@@ -1,5 +1,5 @@
 <div id="scenario">
-    Results for <i><%= $scenario %></i>, limited to <%= $limit_previous %>
+    <div class="h5">Results for <i><%= $scenario %></i>, limited to <%= $limit_previous %></div>
 </div>
 <div>
 <table id="previous_results" class="overview table table-striped no-wrap" style="width: 100%">
