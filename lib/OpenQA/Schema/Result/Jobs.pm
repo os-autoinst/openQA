@@ -1184,24 +1184,22 @@ sub _previous_scenario_jobs {
 sub _failure_reason {
     my ($self) = @_;
 
-    return 'GOOD' if $self->result ne FAILED;
+    if (!grep { $_ eq $self->result } (FAILED, SOFTFAILED, INCOMPLETE)) {
+        return 'GOOD';
+    }
 
-    my $failed_module;
+    my @failed_modules;
     my $modules = $self->modules;
     while (my $m = $modules->next) {
-        if ($m->result eq FAILED) {
-            # in case we don't see an important module, we return the first failure
-            # if the backend can't rollback, the first failed module will actually
-            # be the reason for the failure. If it can, we should see an important module
-            # later on
-            $failed_module ||= $m->name;
-
-            if ($m->important || $m->fatal) {
-                return $m->name;
-            }
+        if ($m->result eq FAILED || $m->result eq SOFTFAILED) {
+            # in case we don't see an important module, we return all modules
+            push(@failed_modules, $m->name);
+        }
+        if ($m->result eq FAILED && ($m->important || $m->fatal)) {
+            return $m->name;
         }
     }
-    return $failed_module || 'BAD';
+    return join('', @failed_modules) || $self->result;
 }
 
 sub _carry_over_candidate {
@@ -1215,6 +1213,7 @@ sub _carry_over_candidate {
     for my $job ($self->_previous_scenario_jobs(20)) {
         my $job_fr = $job->_failure_reason;
 
+        log_debug(sprintf("checking take over from %d: %s vs %s", $job->id, $job_fr, $current_failure_reason));
         # we found a good candidate
         return $job if $job_fr eq $current_failure_reason;
 
@@ -1240,8 +1239,8 @@ in the same scenario.
 sub carry_over_labels {
     my ($self) = @_;
 
-    # the carry over makes only sense for failed jobs
-    return if $self->result ne FAILED;
+    # the carry over makes only sense for some jobs
+    return if !grep { $_ eq $self->result } (FAILED, SOFTFAILED, INCOMPLETE);
 
     my $prev = $self->_carry_over_candidate;
     return if !$prev;
@@ -1379,9 +1378,10 @@ sub done {
     if (!grep { $result eq $_ } (PASSED, SOFTFAILED)) {
         $self->_job_skip_children;
         $self->_job_stop_children;
-        # labels are there to mark reasons of failure
-        $self->carry_over_labels;
     }
+    # labels are there to mark reasons of failure - the function checks itself though
+    $self->carry_over_labels;
+
     return $result;
 }
 
