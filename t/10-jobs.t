@@ -285,4 +285,25 @@ subtest 'carry over for soft fails' => sub {
 
 };
 
+subtest 'job with only important passes => overall is passed' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'L';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {important => 1}});
+    $job->update_module('a', {result => 'ok', details => []});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {important => 1}});
+    $job->update_module('b', {result => 'ok', details => []});
+    $job->insert_module({name => 'c', category => 'c', script => 'c', flags => {important => 1}});
+    $job->update_module('c', {result => 'ok', details => []});
+    $job->insert_module({name => 'd', category => 'd', script => 'd', flags => {important => 1}});
+    $job->update_module('d', {result => 'ok', details => []});
+    $job->update;
+    $job->discard_changes;
+
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+};
+
 done_testing();
