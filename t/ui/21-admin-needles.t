@@ -66,7 +66,7 @@ is((shift @tds)->get_text(), 'a day ago',          "last use is right");
 is((shift @tds)->get_text(), 'about 14 hours ago', "last match is right");
 
 $driver->find_element('a day ago', 'link_text')->click();
-like($driver->execute_script("return window.location.href"), qr(\Q/tests/99937#step/partitioning_finish/2\E), "redirected to right module");
+like($driver->execute_script("return window.location.href"), qr(\Q/tests/99937#step/partitioning_finish/1\E), "redirected to right module");
 
 # go back to needles
 $driver->find_element('#user-action a', 'css')->click();
@@ -74,7 +74,7 @@ $driver->find_element('Needles',        'link_text')->click();
 t::ui::PhantomTest::wait_for_ajax;
 
 $driver->find_element('about 14 hours ago', 'link_text')->click();
-like($driver->execute_script("return window.location.href"), qr(\Q/tests/99937#step/partitioning/2\E), "redirected to right module too");
+like($driver->execute_script("return window.location.href"), qr(\Q/tests/99937#step/partitioning/1\E), "redirected to right module too");
 
 # go back to needles
 $driver->find_element('#user-action a', 'css')->click();

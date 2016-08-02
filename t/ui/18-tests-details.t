@@ -65,8 +65,10 @@ $driver->find_element('[title="wait_serial"]', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
 ok($driver->find_element('#preview_container_out', 'css')->is_displayed(), "preview window opens on click");
 like($driver->find_element('#preview_container_in', 'css')->get_text(), qr/wait_serial expected/, "Preview text with wait_serial output shown");
+like($driver->get_current_url(), qr/#step/, "current url contains #step hash");
 $driver->find_element('[title="wait_serial"]', 'css')->click();
 ok($driver->find_element('#preview_container_out', 'css')->is_hidden(), "preview window closed after clicking again");
+unlike($driver->get_current_url(), qr/#step/, "current url doesn't contain #step hash anymore");
 
 # test running view with Test::Mojo as phantomjs would get stuck on the
 # liveview/livelog forever

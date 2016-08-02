@@ -91,6 +91,7 @@ function setCurrentPreview(a, replace, force) {
     // hide
     $("#preview_container_out").fadeOut(150);
     $(".current_preview").removeClass("current_preview");
+    setResultHash("", replace);
   }
 }
 
@@ -187,7 +188,9 @@ function setupResult(state, jobid) {
     if (state == "scheduled") {
       setResultHash("#settings", true);
     } else if (state == "running" || state == "waiting") {
-      setResultHash("#live", true);
+      if (!window.location.href.endsWith("#")) {
+        setResultHash("#live", true);
+      }
     }
   }
   if (state == "running" || state == "waiting") {
