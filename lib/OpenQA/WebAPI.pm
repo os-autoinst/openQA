@@ -304,8 +304,6 @@ sub startup {
     $test_r->get('/')->name('test')->to('test#show');
     my $test_logged_in = $logged_in->route('/tests/:testid', testid => qr/\d+/);
     $test_logged_in->post('/add_comment')->name('add_comment')->to('test#add_comment');
-    $test_logged_in->post('/edit_comment')->name('edit_comment')->to('test#edit_comment');
-    $test_logged_in->post('/remove_comment')->name('remove_comment')->to('test#remove_comment');
 
     $test_r->get('/details')->name('details')->to('test#details');
     $test_r->get('/status')->name('status')->to('running#status');
@@ -337,8 +335,6 @@ sub startup {
 
     $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');
     $logged_in->post('/group_overview/:groupid/add_comment')->name('add_group_comment')->to('main#add_comment');
-    $logged_in->post('/group_overview/:groupid/edit_comment')->name('edit_group_comment')->to('main#edit_comment');
-    $logged_in->post('/group_overview/:groupid/remove_comment')->name('remove_group_comment')->to('main#remove_comment');
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });

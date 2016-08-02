@@ -183,57 +183,5 @@ sub add_comment {
     return $self->redirect_to('group_overview');
 }
 
-sub edit_comment {
-    my ($self) = @_;
-
-    $self->validation->required('text');
-    $self->validation->required('comment_id');
-    my $comment_id = int($self->param("comment_id"));
-
-    my $group = $self->app->schema->resultset("JobGroups")->find($self->param('groupid'));
-    return $self->reply->not_found unless $group;
-
-    my $rs = $group->comments->search(
-        {
-            id      => $comment_id,
-            user_id => $self->current_user->id
-        });
-    return $self->reply->not_found unless $rs;
-
-    $rs->update(
-        {
-            text      => $self->param('text'),
-            t_updated => DateTime->now(time_zone => 'floating')});
-
-    $self->emit_event('openqa_user_comment', {id => $comment_id});
-    $self->flash('info', 'Comment changed');
-    return $self->redirect_to('group_overview');
-}
-
-sub remove_comment {
-    my ($self) = @_;
-
-    $self->validation->required('comment_id');
-    my $comment_id = int($self->param("comment_id"));
-
-    my $group = $self->app->schema->resultset("JobGroups")->find($self->param('groupid'));
-    return $self->reply->not_found unless $group;
-
-    # only admins are allowed to delete comments
-    if (!$self->current_user->is_admin) {
-        $self->flash('info', 'The comment couldn\'t be deleted because you\'re not logged in as administrator');
-        return $self->redirect_to('group_overview');
-    }
-
-    my $rs = $group->comments->search(
-        {
-            id => $comment_id
-        })->delete();
-
-    $self->emit_event('openqa_user_comment', {id => $comment_id});
-    $self->flash('info', 'Comment removed');
-    return $self->redirect_to('group_overview');
-}
-
 1;
 # vim: set sw=4 et:
