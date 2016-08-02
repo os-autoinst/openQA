@@ -90,6 +90,10 @@ subtest 'route to latest' => sub {
     $get = $t->get_ok($baseurl . 'tests/latest?version=13.1')->status_is(302);
     is($t->tx->res->headers->location, '/tests/99981', 'returns highest job nr of ambiguous group');
     $get = $t->get_ok($baseurl . 'tests/latest?test=foobar')->status_is(404);
+
+    $get = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
+    $get = $t->get_ok($t->tx->res->dom->find('#info_box .panel-body #relation a')->last->{href})->status_is(302);
+    is($t->tx->res->headers->location, '/tests/99963', 'latest link points to last in scenario');
 };
 
 #print $driver->get_page_source();
