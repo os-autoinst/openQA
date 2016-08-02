@@ -91,6 +91,7 @@ function setCurrentPreview(a, replace, force) {
     // hide
     $("#preview_container_out").fadeOut(150);
     $(".current_preview").removeClass("current_preview");
+    setResultHash("", replace);
   }
 }
 
