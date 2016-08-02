@@ -655,9 +655,7 @@ sub calculate_result($) {
             if ($m->important || $m->fatal) {
                 $important_overall ||= PASSED;
             }
-            else {
-                $overall ||= PASSED;
-            }
+            $overall ||= PASSED;
         }
         elsif ($m->result eq SOFTFAILED) {
             if ($m->important || $m->fatal) {
@@ -665,19 +663,15 @@ sub calculate_result($) {
                     $important_overall = SOFTFAILED;
                 }
             }
-            else {
-                if (!defined $overall || $overall eq PASSED) {
-                    $overall = SOFTFAILED;
-                }
+            if (!defined $overall || $overall eq PASSED) {
+                $overall = SOFTFAILED;
             }
         }
         else {
             if ($m->important || $m->fatal) {
                 $important_overall = FAILED;
             }
-            else {
-                $overall = FAILED;
-            }
+            $overall = FAILED;
         }
     }
     # don't let go with overall PASSED if there were fails
