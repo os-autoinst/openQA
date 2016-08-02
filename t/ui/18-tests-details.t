@@ -82,6 +82,16 @@ is($num_active_tabs, 1, 'only one tab visible at the same time');
 my $href_to_isosize = $t->tx->res->dom->at('.component a[href*=installer_timezone]')->{href};
 $t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
 
+subtest 'route to latest' => sub {
+    $get = $t->get_ok($baseurl . 'tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')->status_is(302);
+    is($t->tx->res->headers->location, '/tests/99963', 'latest link shows tests/99963');
+    $get = $t->get_ok($baseurl . 'tests/latest?flavor=DVD&arch=x86_64&test=kde')->status_is(302);
+    is($t->tx->res->headers->location, '/tests/99963', '... as long as it is unique');
+    $get = $t->get_ok($baseurl . 'tests/latest?version=13.1')->status_is(302);
+    is($t->tx->res->headers->location, '/tests/99981', 'returns highest job nr of ambiguous group');
+    $get = $t->get_ok($baseurl . 'tests/latest?test=foobar')->status_is(404);
+};
+
 #print $driver->get_page_source();
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
