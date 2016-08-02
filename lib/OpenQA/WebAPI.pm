@@ -304,8 +304,6 @@ sub startup {
     $test_r->get('/')->name('test')->to('test#show');
     my $test_logged_in = $logged_in->route('/tests/:testid', testid => qr/\d+/);
     $test_logged_in->post('/add_comment')->name('add_comment')->to('test#add_comment');
-    $test_logged_in->post('/edit_comment')->name('edit_comment')->to('test#edit_comment');
-    $test_logged_in->post('/remove_comment')->name('remove_comment')->to('test#remove_comment');
 
     $test_r->get('/details')->name('details')->to('test#details');
     $test_r->get('/status')->name('status')->to('running#status');
@@ -337,8 +335,6 @@ sub startup {
 
     $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');
     $logged_in->post('/group_overview/:groupid/add_comment')->name('add_group_comment')->to('main#add_comment');
-    $logged_in->post('/group_overview/:groupid/edit_comment')->name('edit_group_comment')->to('main#edit_comment');
-    $logged_in->post('/group_overview/:groupid/remove_comment')->name('remove_group_comment')->to('main#remove_comment');
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
@@ -398,10 +394,12 @@ sub startup {
     #
     ## JSON API starts here
     ###
-    my $api_auth  = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
-    my $api_admin = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_admin');
-    my $api_r = $api_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
-    my $api_ra = $api_admin->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_auth_any_user = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth');
+    my $api_auth_operator = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_operator');
+    my $api_auth_admin    = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_admin');
+    my $api_ru = $api_auth_any_user->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ro = $api_auth_operator->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
+    my $api_ra = $api_auth_admin->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     my $api_public_r = $r->route('/api/v1')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     # this is fallback redirect if one does not use apache
     $api_public_r->websocket(
@@ -421,11 +419,11 @@ sub startup {
 
     # api/v1/jobs
     $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
-    $api_r->post('/jobs')->name('apiv1_create_job')->to('job#create');             # job_create
-    $api_r->post('/jobs/cancel')->name('apiv1_cancel_jobs')->to('job#cancel');
-    $api_r->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
+    $api_ro->post('/jobs')->name('apiv1_create_job')->to('job#create');            # job_create
+    $api_ro->post('/jobs/cancel')->name('apiv1_cancel_jobs')->to('job#cancel');
+    $api_ro->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
 
-    my $job_r = $api_r->route('/jobs/:jobid', jobid => qr/\d+/);
+    my $job_r = $api_ro->route('/jobs/:jobid', jobid => qr/\d+/);
     $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');              # job_delete
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
@@ -444,8 +442,8 @@ sub startup {
 
     # api/v1/workers
     $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');
-    $api_r->post('/workers')->name('apiv1_create_worker')->to('worker#create');
-    my $worker_r = $api_r->route('/workers/:workerid', workerid => qr/\d+/);
+    $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');
+    my $worker_r = $api_ro->route('/workers/:workerid', workerid => qr/\d+/);
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
     $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');    #command_enqueue
     $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');                 # job_grab
@@ -473,12 +471,12 @@ sub startup {
     $mm_api->get('/parents')->name('apiv1_mm_parents')->to('mm#get_parents');
 
     # api/v1/isos
-    $api_r->post('/isos')->name('apiv1_create_iso')->to('iso#create');                 # iso_new
-    $api_ra->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');      # iso_delete
-    $api_r->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');    # iso_cancel
+    $api_ro->post('/isos')->name('apiv1_create_iso')->to('iso#create');                 # iso_new
+    $api_ra->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');       # iso_delete
+    $api_ro->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');    # iso_cancel
 
     # api/v1/assets
-    $api_r->post('/assets')->name('apiv1_post_asset')->to('asset#register');
+    $api_ro->post('/assets')->name('apiv1_post_asset')->to('asset#register');
     $api_public_r->get('/assets')->name('apiv1_get_asset')->to('asset#list');
     $api_public_r->get('/assets/#id')->name('apiv1_get_asset_id')->to('asset#get');
     $api_public_r->get('/assets/#type/#name')->name('apiv1_get_asset_name')->to('asset#get');
@@ -486,34 +484,44 @@ sub startup {
     $api_ra->delete('/assets/#type/#name')->name('apiv1_delete_asset_name')->to('asset#delete');
 
     # api/v1/test_suites
-    $api_r->get('test_suites')->name('apiv1_test_suites')->to('table#list', table => 'TestSuites');
+    $api_ro->get('test_suites')->name('apiv1_test_suites')->to('table#list', table => 'TestSuites');
     $api_ra->post('test_suites')->to('table#create', table => 'TestSuites');
-    $api_r->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
+    $api_ro->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
     $api_ra->put('test_suites/:id')->to('table#update', table => 'TestSuites');
     $api_ra->post('test_suites/:id')->to('table#update', table => 'TestSuites');    #in case PUT is not supported
     $api_ra->delete('test_suites/:id')->to('table#destroy', table => 'TestSuites');
 
     # api/v1/machines
-    $api_r->get('machines')->name('apiv1_machines')->to('table#list', table => 'Machines');
+    $api_ro->get('machines')->name('apiv1_machines')->to('table#list', table => 'Machines');
     $api_ra->post('machines')->to('table#create', table => 'Machines');
-    $api_r->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
+    $api_ro->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
     $api_ra->put('machines/:id')->to('table#update', table => 'Machines');
     $api_ra->post('machines/:id')->to('table#update', table => 'Machines');         #in case PUT is not supported
     $api_ra->delete('machines/:id')->to('table#destroy', table => 'Machines');
 
     # api/v1/products
-    $api_r->get('products')->name('apiv1_products')->to('table#list', table => 'Products');
+    $api_ro->get('products')->name('apiv1_products')->to('table#list', table => 'Products');
     $api_ra->post('products')->to('table#create', table => 'Products');
-    $api_r->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
+    $api_ro->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
     $api_ra->put('products/:id')->to('table#update', table => 'Products');
     $api_ra->post('products/:id')->to('table#update', table => 'Products');         #in case PUT is not supported
     $api_ra->delete('products/:id')->to('table#destroy', table => 'Products');
 
     # api/v1/job_templates
-    $api_r->get('job_templates')->name('apiv1_job_templates')->to('job_template#list');
+    $api_ro->get('job_templates')->name('apiv1_job_templates')->to('job_template#list');
     $api_ra->post('job_templates')->to('job_template#create');
-    $api_r->get('job_templates/:job_template_id')->name('apiv1_job_template')->to('job_template#list');
+    $api_ro->get('job_templates/:job_template_id')->name('apiv1_job_template')->to('job_template#list');
     $api_ra->delete('job_templates/:job_template_id')->to('job_template#destroy');
+
+    # api/v1/comments
+    $api_public_r->get('/jobs/:job_id/comments/:comment_id')->name('apiv1_get_comment')->to('comment#text');
+    $api_ru->post('/jobs/:job_id/comments')->name('apiv1_post_comment')->to('comment#create');
+    $api_ru->put('/jobs/:job_id/comments/:comment_id')->name('apiv1_put_comment')->to('comment#update');
+    $api_ra->delete('/jobs/:job_id/comments/:comment_id')->name('apiv1_delete_comment')->to('comment#delete');
+    $api_public_r->get('/groups/:group_id/comments/:comment_id')->name('apiv1_get_group_comment')->to('comment#text');
+    $api_ru->post('/groups/:group_id/comments')->name('apiv1_post_group_comment')->to('comment#create');
+    $api_ru->put('/groups/:group_id/comments/:comment_id')->name('apiv1_put_group_comment')->to('comment#update');
+    $api_ra->delete('/groups/:group_id/comments/:comment_id')->name('apiv1_delete_group_comment')->to('comment#delete');
 
     # json-rpc methods not migrated to this api: echo, list_commands
     ###

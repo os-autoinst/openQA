@@ -50,6 +50,7 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),    # One hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
         jobs_assets => [{asset_id => 4},]
 
     },
@@ -59,6 +60,7 @@
         priority   => 45,
         result     => "none",
         state      => "scheduled",
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),                                                                                                                                                                                                                                                                                              # Two hours ago
         backend    => 'qemu',
         t_finished => undef,
         t_started  => undef,
@@ -77,6 +79,7 @@
         priority   => 46,
         result     => "none",
         state      => "scheduled",
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),                                                                                                                                                                                                                                                           # Two hours ago
         t_finished => undef,
         t_started  => undef,
         backend    => 'qemu',
@@ -98,6 +101,7 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 536400, 'UTC'),    # 149 hours ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 540000, 'UTC'),    # 150 hours ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),      # Two hours ago
         TEST       => "kde",
         jobs_assets => [{asset_id => 1},],
         retry_avbl  => 3,
@@ -118,6 +122,7 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),                                                                                                                                                                                     # One hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),                                                                                                                                                                                     # Two hours ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),                                                                                                                                                                                     # One hours ago
         TEST       => "doc",
         ARCH       => 'x86_64',
         VERSION    => 'Factory',
@@ -138,6 +143,7 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),    # One hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),    # One hours ago
         TEST       => "kde",
         ARCH       => 'x86_64',
         VERSION    => 'Factory',
@@ -159,6 +165,7 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),                                                                                                                                                                                     # One hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),                                                                                                                                                                                     # Two hours ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),                                                                                                                                                                                     # Two hours ago
         TEST       => "doc",
         ARCH       => 'x86_64',
         VERSION    => 'Factory',
@@ -179,6 +186,7 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 10800, 'UTC'),    # Three hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hours ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
         TEST       => "textmode",
         ARCH       => 'i586',
         FLAVOR     => 'DVD',
@@ -202,6 +210,7 @@
         backend    => 'qemu',
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),    # Five hours ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
         TEST       => "textmode",
         FLAVOR     => 'DVD',
         DISTRI     => 'opensuse',
@@ -223,6 +232,7 @@
         backend    => 'qemu',
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),    # Five hours ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
         TEST       => "textmode",
         FLAVOR     => 'DVD',
         DISTRI     => 'opensuse',
@@ -241,7 +251,8 @@
         result     => "none",
         state      => "running",
         t_finished => undef,
-        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),    # 10 minutes ago
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),     # 10 minutes ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
         TEST       => "kde",
         BUILD      => '0091',
         DISTRI     => 'opensuse',
@@ -264,6 +275,7 @@
         state      => "done",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 10800, 'UTC'),    # Three hour ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hours ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
         TEST       => "kde",
         BUILD      => '0091',
         DISTRI     => 'opensuse',
@@ -285,6 +297,7 @@
         state      => "cancelled",
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3000100, 'UTC'),
         t_started  => undef,
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),      # Two hours ago
         TEST       => "RAID0",
         VERSION    => '13.1',
         ARCH       => 'i686',
@@ -304,7 +317,8 @@
         state      => "running",
         t_finished => undef,
         backend    => 'qemu',
-        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),    # 10 minutes ago
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),     # 10 minutes ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
         TEST       => "kde",
         ARCH       => 'x86_64',
         BUILD      => '0091',
