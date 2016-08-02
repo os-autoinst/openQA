@@ -65,7 +65,7 @@ is($driver->get_title(), "openQA", "on main page");
 $driver->get($baseurl . "tests/99938#previous");
 
 is($driver->find_element('#scenario', 'css')->is_displayed(), 1, "Scenario header displayed");
-like($driver->find_element('#scenario', 'css')->get_text(), qr/Results.*limited to 10/, "Scenario header text");
+like($driver->find_element('#scenario', 'css')->get_text(), qr/Results for.*/, "Scenario header text");
 
 $driver->find_element('Settings', 'link_text')->click();
 like($driver->get_current_url(), qr(\Qtests/99938#settings\E$), "hash marks tab");
