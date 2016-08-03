@@ -70,7 +70,7 @@ function setResultHash(hash, replace) {
   }
 }
 
-function setCurrentPreview(a, replace, force) {
+function setCurrentPreview(a, force) {
   if ((a && a.length && !a.is(".current_preview")) || force) {
     // show
     $(".current_preview").removeClass("current_preview");
@@ -80,18 +80,20 @@ function setCurrentPreview(a, replace, force) {
       return;
     }
     a.addClass("current_preview");
-    setResultHash(link.attr("href"), replace);
+    setResultHash(link.attr("href"), true);
     $.get({ url: link.data("url"),
             success: function(data) {
               previewSuccess(data, force);
             }
-          }).fail(function() { setCurrentPreview(null, true); });
+          }).fail(function() { setCurrentPreview(null); });
   }
   else {
     // hide
-    $("#preview_container_out").fadeOut(150);
-    $(".current_preview").removeClass("current_preview");
-    setResultHash("", replace);
+    if ($("#preview_container_out").is(":visible")) {
+      $("#preview_container_out").fadeOut(150);
+      $(".current_preview").removeClass("current_preview");
+      setResultHash("", true);
+    }
   }
 }
 
@@ -103,7 +105,7 @@ function nextPreview() {
     var next_a = a_index + 1;
     var b = table.find(".links_a").eq(next_a);
     if (b.length) {
-      setCurrentPreview(b, true);
+      setCurrentPreview(b);
     }
   }
 }
@@ -117,7 +119,7 @@ function prevPreview() {
     if (next_a >= 0) {
       var b = table.find(".links_a").eq(next_a);
       if (b.length) {
-        setCurrentPreview(b, true);
+        setCurrentPreview(b);
       }
     }
   }
@@ -138,13 +140,13 @@ function checkResultHash() {
     var detailstab = $("[href='#details']");
     detailstab.tab("show");
     if (link && !link.parent().is(".current_preview")) {
-      setCurrentPreview(link.parent(), true);
+      setCurrentPreview(link.parent());
     } else if (!link) {
-      setCurrentPreview(null, true);
+      setCurrentPreview(null);
     }
   } else {
     // reset
-    setCurrentPreview(null, true);
+    setCurrentPreview(null);
   }
 }
 
@@ -167,14 +169,14 @@ function setupResult(state, jobid) {
       nextPreview();
       e.preventDefault();
     } else if (e.which == KeyEvent.DOM_VK_ESCAPE) {
-      setCurrentPreview(null, true);
+      setCurrentPreview(null);
       e.preventDefault();
     }
   });
 
   $(window).resize(function() {
     if ($(".current_preview")) {
-      setCurrentPreview($(".current_preview"), true, true);
+      setCurrentPreview($(".current_preview"), true);
     }
   });
 
