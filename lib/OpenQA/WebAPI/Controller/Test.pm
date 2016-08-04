@@ -254,7 +254,11 @@ sub show {
             id => $self->param('testid')
         },
         {prefetch => qw/jobs_assets/})->first;
+    return $self->_show($job);
+}
 
+sub _show {
+    my ($self, $job) = @_;
     return $self->reply->not_found unless $job;
 
     my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
@@ -514,7 +518,8 @@ sub latest {
     }
     my $job = $self->db->resultset("Jobs")->complex_query(%search_args)->first;
     return $self->render(text => 'No matching job found', status => 404) unless $job;
-    return $self->redirect_to('test', testid => $job->id);
+    $self->stash(testid => $job->id);
+    return $self->_show($job);
 }
 
 sub add_comment {

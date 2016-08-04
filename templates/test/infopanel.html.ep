@@ -10,7 +10,11 @@
         % }
         <div class="panel <%= $panelclass %>" id="info_box">
             <div class="panel-heading">
-                Results for <%= $job->name %>
+                Results for
+                % if (current_route 'latest') {
+                    <%= link_to $job->id => url_for ('test', testid => $job->id) %>:
+                % }
+                <%= $job->name %>
             </div>
             <div class="panel-body">
                 <div>
