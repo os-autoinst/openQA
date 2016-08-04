@@ -18,7 +18,7 @@ use Mojolicious::Lite;
 use Mojo::Util 'hmac_sha1_sum';
 
 use OpenQA::IPC;
-use OpenQA::Utils qw/log_debug/;
+use OpenQA::Utils qw/log_debug log_warning/;
 use OpenQA::Schema;
 
 require Exporter;
@@ -199,6 +199,41 @@ sub _message {
     }
 }
 
+sub _get_dead_worker_jobs {
+    my ($threshold) = @_;
+
+    my %cond = (
+        state              => OpenQA::Schema::Result::Jobs::RUNNING,
+        'worker.t_updated' => {'<' => $threshold},
+    );
+    my %attrs = (join => 'worker',);
+
+    my $schema = OpenQA::Schema::connect_db;
+    return $schema->resultset("Jobs")->search(\%cond, \%attrs);
+}
+
+# Running as recurring timer, each 20minutes check if worker with job has been updated in last 10s
+sub _workers_checker {
+    my $dt = DateTime->now(time_zone => 'UTC');
+    my $threshold = join ' ', $dt->ymd, $dt->hms;
+
+    Mojo::IOLoop->timer(
+        10 => sub {
+            my $dead_jobs = _get_dead_worker_jobs($threshold);
+            my $ipc       = OpenQA::IPC->ipc;
+            for my $job ($dead_jobs->all) {
+                $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+                my $res = $ipc->scheduler('job_duplicate', {jobid => $job->id});
+                if ($res) {
+                    log_warning(sprintf('dead job %d aborted and duplicated', $job->id));
+                }
+                else {
+                    log_warning(sprintf('dead job %d aborted as incomplete', $job->id));
+                }
+            }
+        });
+}
+
 # Mojolicious startup
 sub setup {
 
@@ -229,6 +264,9 @@ sub setup {
 
     # no cookies for worker, no secrets to protect
     app->secrets(['nosecretshere']);
+
+    # start worker checker - check workers each 20minutes
+    Mojo::IOLoop->recurring(1200 => _workers_checker);
 
     return Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
 }
