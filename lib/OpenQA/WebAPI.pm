@@ -138,15 +138,9 @@ sub _workers_checker {
                     my $dead_jobs = $self->_get_dead_worker_jobs($threshold);
                     my $ipc       = OpenQA::IPC->ipc;
                     for my $job ($dead_jobs->all) {
-                        my %args = (
-                            jobid  => $job->id,
-                            result => 'incomplete',
-                        );
-                        my $result = $ipc->scheduler('job_set_done', \%args);
-                        if ($result) {
-                            $ipc->scheduler('job_duplicate', {jobid => $job->id});
-                            $self->app->log->error(sprintf("cancelled dead job %d and re-duplicated done", $job->id));
-                        }
+                        $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+                        $ipc->scheduler('job_duplicate', {jobid => $job->id});
+                        $self->app->log->error(sprintf("cancelled dead job %d and re-duplicated done", $job->id));
                     }
                 });
         });
