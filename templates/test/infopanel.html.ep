@@ -13,7 +13,7 @@
                 Results for <%= $job->name %>
             </div>
             <div class="panel-body">
-                <div>
+                <div id="status">
                     %if ($job->state eq 'done') {
                         Result: <b><%= $job->result %></b>
                     % } else
@@ -50,7 +50,7 @@
                         % end
                     % }
                 </div>
-                <div>
+                <div id="relation">
                     % if ($clone_of) {
                         Clone of
                         %= link_to $clone_of->id => url_for ('test', testid => $clone_of->id)
@@ -59,6 +59,8 @@
                         Cloned as
                         %= link_to $job->clone_id => url_for ('test', testid => $job->clone_id)
                     % }
+                    %= link_to Latest => url_for ('latest')->query($job->scenario_hash)
+                    in same scenario
                 </div>
 
                 <% if ($job->state eq 'scheduled') {  %>
