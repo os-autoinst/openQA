@@ -38,6 +38,7 @@ is($previous_results_header, q/Results for opensuse-13.1-DVD-i586-textmode@32bit
 $get->element_exists('#res_99945',                    'result from previous job');
 $get->element_exists('#res_99945 .result_passed',     'previous job was passed');
 $get->element_exists('#res_99944 .result_softfailed', 'previous job was passed (softfailed)');
+like($t->tx->res->dom->at('#res_99944 ~ .build a')->{href}, qr{/tests/overview?}, 'build links to overview page');
 my $build = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#previous_results .build')->all_text);
 is($build, '0091', 'build of previous job is shown');
 $get                     = $t->get_ok('/tests/99946?limit_previous=1#previous')->status_is(200);

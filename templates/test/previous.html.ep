@@ -26,7 +26,8 @@
                 %= include 'test/tr_job_result_failedmodules', jobid => $prev->id, failedmodules => $prev->failed_modules_with_needles()
                 %= include 'test/tr_job_result_details', jobid => $prev->id, res => $previous_labels->{$prev->id}
             </td>
-            <td class="build"><%= $prev->BUILD %></td>
+            % my $query = {build => $prev->BUILD, distri => $distri, version => $version};
+            <td class="build"><%= link_to $prev->BUILD => url_for('tests_overview')->query(%$query) %></td>
             <td class="t_finished">
                 <abbr class="timeago" title="<%= $prev->t_finished->datetime() %>Z"><%= format_time($prev->t_finished) %></abbr>
                 (
