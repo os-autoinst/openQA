@@ -110,48 +110,6 @@ sub _read_config {
     $self->app->config->{_openid_secret} = db_helpers::rndstr(16);
 }
 
-sub _get_dead_worker_jobs {
-    my ($self, $threshold) = @_;
-
-    my %cond = (
-        state              => OpenQA::Schema::Result::Jobs::RUNNING,
-        'worker.t_updated' => {'<' => $threshold},
-    );
-    my %attrs = (join => 'worker',);
-
-    return $self->app->db->resultset("Jobs")->search(\%cond, \%attrs);
-}
-
-# check if have worker dead then clean up its job
-# TODO: this really should live in websockets service, not in webapi
-sub _workers_checker {
-    my ($self) = @_;
-
-    # Start recurring timer, check workers alive every 20 mins
-    my $id = Mojo::IOLoop->recurring(
-        1200 => sub {
-            my $dt = DateTime->now(time_zone => 'UTC');
-            my $threshold = join ' ', $dt->ymd, $dt->hms;
-
-            Mojo::IOLoop->timer(
-                10 => sub {
-                    my $dead_jobs = $self->_get_dead_worker_jobs($threshold);
-                    my $ipc       = OpenQA::IPC->ipc;
-                    for my $job ($dead_jobs->all) {
-                        my %args = (
-                            jobid  => $job->id,
-                            result => 'incomplete',
-                        );
-                        my $result = $ipc->scheduler('job_set_done', \%args);
-                        if ($result) {
-                            $ipc->scheduler('job_duplicate', {jobid => $job->id});
-                            $self->app->log->error(sprintf("cancelled dead job %d and re-duplicated done", $job->id));
-                        }
-                    }
-                });
-        });
-}
-
 # reinit pseudo random number generator in every child to avoid
 # starting off with the same state.
 sub _init_rand {
@@ -547,8 +505,6 @@ sub startup {
             return;
         });
 
-    # start workers checker
-    $self->_workers_checker;
     $self->_init_rand;
 
     # run fake dbus services in case of test mode
