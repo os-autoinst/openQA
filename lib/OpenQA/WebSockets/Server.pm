@@ -266,7 +266,7 @@ sub setup {
     app->secrets(['nosecretshere']);
 
     # start worker checker - check workers each 20minutes
-    Mojo::IOLoop->recurring(1200 => _workers_checker);
+    Mojo::IOLoop->recurring(1200 => \&_workers_checker);
 
     return Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
 }
