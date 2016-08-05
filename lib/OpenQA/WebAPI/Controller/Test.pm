@@ -505,7 +505,7 @@ sub overview {
 
 sub latest {
     my ($self) = @_;
-    my %search_args;
+    my %search_args = (limit => 1);
     my @scenario_keys = qw/DISTRI VERSION FLAVOR ARCH TEST/;
     for my $arg (@scenario_keys) {
         my $key = lc $arg;
