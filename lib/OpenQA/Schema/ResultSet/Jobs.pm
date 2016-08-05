@@ -181,6 +181,7 @@ sub create_from_settings {
 
 sub complex_query {
     my ($self, %args) = @_;
+
     # For args where we accept a list of values, allow passing either an
     # array ref or a comma-separated list
     for my $arg (qw/state ids result/) {
@@ -281,7 +282,10 @@ sub complex_query {
         push(@conds, -or => \@likes);
     }
     else {
-        my %js_settings = map { uc($_) => $args{$_} } qw(iso hdd_1);
+        my %js_settings;
+        for my $key (qw/ISO HDD_1/) {
+            $js_settings{$key} = $args{lc $key} if defined $args{lc $key};
+        }
         if (%js_settings) {
             my $subquery = $schema->resultset("JobSettings")->query_for_settings(\%js_settings);
             push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
