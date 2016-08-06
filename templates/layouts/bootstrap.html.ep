@@ -112,7 +112,7 @@
                           </li>
                       % } else {
                           <li id="user-action">
-                              %= link_to('Login' => url_for('login'));
+                              %= link_to('Login' => url_for('login'))
                           </li>
                       % }
                   </ul>

@@ -43,7 +43,7 @@
             <tr id="job_<%= $job->id %>">
                 % my $testname = $job->TEST . '@' . $job->MACHINE;
                 <td class="name">
-                    %= link_to "Build$build" => url_for('tests_overview')->query(%$query);
+                    %= link_to "Build$build" => url_for('tests_overview')->query(%$query)
                     of <%= "$distri-$version-$flavor.$arch" %>
                 </td>
                 <td class="test">
@@ -77,7 +77,7 @@
                             %   $classes = " progress-bar-striped active";
                         % }
                         <div class="progress-bar <%= $classes %>" role="progressbar" style="width: <%= $value %>%; min-width: 2em;" aria-valuemax="100" aria-valuemin="0" aria-valuenow="<%= $value %>">
-                            <%= $ptext %>
+                            %= $ptext
                         </div>
                     </div>
                 </td>

@@ -14,7 +14,7 @@
                 % if (current_route 'latest') {
                     <%= link_to $job->id => url_for ('test', testid => $job->id) %>:
                 % }
-                <%= $job->name %>
+                %= $job->name
             </div>
             <div class="panel-body">
                 <div>
@@ -36,7 +36,7 @@
                         finished
                         <abbr class="timeago" title="<%= $job->t_finished->datetime() %>Z"><%= format_time($job->t_finished) %></abbr>
                         (
-                        <%= $job->t_started ? format_time_duration($job->t_finished - $job->t_started) : 0 %>
+                        %= $job->t_started ? format_time_duration($job->t_finished - $job->t_started) : 0
                         )
                     % } elsif ($job->t_started)
                     % {

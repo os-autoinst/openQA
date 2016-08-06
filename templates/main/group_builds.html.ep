@@ -6,7 +6,7 @@
             <h4>
                 <%= link_to "Build$build" => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $group->id ) %>
                 (<abbr class="timeago" title="<%= $build_res->{oldest}->datetime() %>Z">
-                <%= delete $build_res->{oldest} %>
+                %= delete $build_res->{oldest}
                 </abbr>)
             % my $group_build_id = $group->id . '-' . $build;
             % my $tag = $build_res->{tag};

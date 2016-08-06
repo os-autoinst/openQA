@@ -31,7 +31,7 @@
             <td class="t_finished">
                 <abbr class="timeago" title="<%= $prev->t_finished->datetime() %>Z"><%= format_time($prev->t_finished) %></abbr>
                 (
-                <%= $job->t_started ? format_time_duration($prev->t_finished - $prev->t_started) : 0 %>
+                %= $job->t_started ? format_time_duration($prev->t_finished - $prev->t_started) : 0
                 )
             </td>
         </tr>
@@ -42,6 +42,6 @@
 </div>
 <div id="more_results">
     Show
-    %= b join(' / ', map { link_to($_ => url_with->query(limit_previous => $_) . '#previous') } (20, 50, 100, 400));
+    %= b join(' / ', map { link_to($_ => url_with->query(limit_previous => $_) . '#previous') } (20, 50, 100, 400))
     previous results
 </div>
