@@ -27,7 +27,7 @@
                 <td class="name"><%= $asset->name %></td>
                 <td class="nrjobs"><%= link_to scalar($asset->jobs_assets->all) => url_for('tests')->query(assetid => $asset->id ) %></td>
                 <td class="t_created">
-                    <%= $asset->t_created %>
+                    %= $asset->t_created
                 </td>
             </tr>
             % }

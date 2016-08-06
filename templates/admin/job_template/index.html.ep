@@ -34,7 +34,7 @@
                 <option value="">Select...</option>
                 % for my $test (@$tests) {
                     <option value="<%= $test->name %>" data-test-id="<%= $test->id %>">
-                        <%= $test->name %>
+                        %= $test->name
                     </option>
                 % }
             </select>

@@ -22,7 +22,7 @@
             </thead>
             <tbody>
                 % for my $workername (sort keys %$workers) {
-                    %   my $worker = $workers->{$workername};
+                    % my $worker = $workers->{$workername};
                     <tr id="worker_<%= $worker->{id} %>" >
                         <td class="worker">
                             %= link_to( $workername => url_for('admin_worker_show', worker_id => $worker->{id}) )
@@ -48,5 +48,4 @@
             </tbody>
         </table>
     </div>
-
 </div>

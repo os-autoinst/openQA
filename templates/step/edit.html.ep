@@ -203,7 +203,7 @@
                         <select id="image_select">
                             % for my $needle (@$needles) {
                                 <option value="<%= $needle->{name} %>">
-                                    <%= $needle->{title} %>
+                                    %= $needle->{title}
                                 </option>
                             % }
                         </select>
@@ -216,7 +216,7 @@
                             % for my $needle (@$needles) {
                                 % next if $needle->{name} eq 'screenshot';
                                 <option value="<%= $needle->{name} %>">
-                                    <%= $needle->{title} %>
+                                    %= $needle->{title}
                                 </option>
                             % }
                         </select>
