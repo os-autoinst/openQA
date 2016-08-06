@@ -20,7 +20,7 @@
                 <tr>
                     <td class="component">
                         <div>
-                            %= link_to $module->{name} => url_for('src_step', stepid => 1, moduleid => $module->{name})
+                            %= link_to $module->{name} => url_for('src_step', stepid => 1, moduleid => $module->{name}, testid => $testid)
                         </div>
                         <div class="flags">
                             % if ($module->{fatal}) {
@@ -41,7 +41,7 @@
                         % for my $step (@{$module->{details}}) {
                             <div class="links_a">
                                 <div class="fa fa-caret-down"></div>
-                                % my $url   = url_for('step', moduleid => $module->{name}, stepid => $step->{num});
+                                % my $url   = url_for('step', moduleid => $module->{name}, stepid => $step->{num}, testid => $testid);
                                 % my $href  = "#step/$module->{name}/$step->{num}";
                                 % my $title = $step->{text} ? $step->{title} : $step->{name};
                                 %= link_to $href => (class => 'no_hover') => (data => { url => $url }) => (title => $title) => begin
