@@ -198,8 +198,18 @@ sub overwrite_needle($) {
     $driver->find_element('#save', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
 
-    my $diag = $driver->find_element('#modal-overwrite', 'css');
-    is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "We can see the overwrite dialog");
+    my $diag;
+    my $is_displayed = 0;
+    # sometimes the overwrite warning is not there yet after the first call to
+    # 'wait_for_ajax' which has been observed only in tests so far
+    for my $retry (1 .. 10) {
+        $diag = $driver->find_element('#modal-overwrite', 'css');
+        $is_displayed = $driver->find_child_element($diag, '.modal-title', 'css')->is_displayed();
+        last if $is_displayed;
+        note("overwrite warning not found in retry $retry\n");
+        t::ui::PhantomTest::wait_for_ajax;
+    }
+    is($is_displayed, 1, "We can see the overwrite dialog");
     is($driver->find_child_element($diag, '.modal-title', 'css')->get_text(), "Sure to overwrite test-newneedle?", "Needle part of the title");
 
     $driver->find_element('#modal-overwrite-confirm', 'css')->click();
