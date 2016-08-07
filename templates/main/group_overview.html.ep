@@ -10,6 +10,12 @@
 <h2>Last Builds for Group <%= $group->name %></h2>
 %= include 'main/group_builds', result => $result
 
+<div id="more_builds">
+    Limit to
+    %= b join(' / ', map { $_ == $limit_builds ? "<b>$_</b>" : link_to($_ => url_with->query(time_limit_days => 1000, limit_builds => $_)) } (10, 20, 50, 100, 400));
+    builds
+</div>
+
 <h2>Comments</h2>
 % for my $comment (reverse @$comments) {
     %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => 'group', id => $group->id}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'

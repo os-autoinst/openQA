@@ -56,6 +56,13 @@ $driver->find_element('opensuse', 'link_text')->click();
 is(scalar @{$driver->find_elements('h4', 'css')}, 4, 'number of builds for opensuse');
 is($driver->get($baseurl . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
 
+my $more_builds = $t->get_ok($baseurl . 'group_overview/1001')->tx->res->dom->at('#more_builds');
+my $res         = OpenQA::Test::Case::trim_whitespace($more_builds->all_text);
+is($res, q{Limit to 10 / 20 / 50 / 100 / 400 builds}, 'more builds can be requested');
+my $get = $t->get_ok($more_builds->find('a[href]')->last->{href})->status_is(200);
+$res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#more_builds b')->all_text);
+like($res, qr/400/, 'limited to the selected number');
+
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 t::ui::PhantomTest::kill_phantom();

@@ -159,9 +159,10 @@ sub group_overview {
             $res->{$build}->{tag} = {type => $tag[1], description => $tag[2]};
         }
     }
-    $self->stash('result',   $res);
-    $self->stash('group',    $group);
-    $self->stash('comments', \@comments);
+    $self->stash('result',       $res);
+    $self->stash('group',        $group);
+    $self->stash('limit_builds', $limit_builds);
+    $self->stash('comments',     \@comments);
 }
 
 sub add_comment {
