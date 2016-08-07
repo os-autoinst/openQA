@@ -1,5 +1,5 @@
 <div id="scenario">
-    Results for <i><%= $scenario %></i>, limited to <%= $limit_previous %>
+    <div class="h5">Results for <i><%= $scenario %></i></div>
 </div>
 <div>
 <table id="previous_results" class="overview table table-striped no-wrap" style="width: 100%">
@@ -10,6 +10,7 @@
             <th>Finished</th>
         </tr>
     </thead>
+    <tbody>
     % for my $prev (@$previous) {
         <tr>
             % my $res = $prev->result;
@@ -36,12 +37,11 @@
             </td>
         </tr>
     % }
-<tbody>
-</tbody>
+    </tbody>
 </table>
 </div>
 <div id="more_results">
-    Show
-    %= b join(' / ', map { link_to($_ => url_with->query(limit_previous => $_) . '#previous') } (20, 50, 100, 400))
+    Limit to
+    %= b join(' / ', map { $_ == $limit_previous ? "<b>$_</b>" : link_to($_ => url_with->query(limit_previous => $_) . '#previous') } (10, 20, 50, 100, 400))
     previous results
 </div>
