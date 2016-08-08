@@ -54,7 +54,15 @@ is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only one build per group s
 $driver->find_element('opensuse', 'link_text')->click();
 
 is(scalar @{$driver->find_elements('h4', 'css')}, 4, 'number of builds for opensuse');
-is($driver->get($baseurl . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
+is($driver->get($driver->get_current_url() . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
+
+my $more_builds = $t->get_ok($baseurl . 'group_overview/1001')->tx->res->dom->at('#more_builds');
+my $res         = OpenQA::Test::Case::trim_whitespace($more_builds->all_text);
+is($res, q{Limit to 10 / 20 / 50 / 100 / 400 builds, only tagged / all}, 'more builds can be requested');
+$driver->find_element('400', 'link_text')->click();
+is($driver->find_element('#more_builds b', 'css')->get_text(), 400, 'limited to the selected number');
+$driver->find_element('tagged', 'link_text')->click();
+is(scalar @{$driver->find_elements('h4', 'css')}, 0, 'no tagged builds exist');
 
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 

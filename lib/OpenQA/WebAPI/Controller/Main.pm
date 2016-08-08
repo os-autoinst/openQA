@@ -135,7 +135,8 @@ sub group_overview {
     my ($self) = @_;
 
     my $limit_builds = $self->param('limit_builds') // 10;
-    my $group = $self->db->resultset('JobGroups')->find($self->param('groupid'));
+    my $only_tagged  = $self->param('only_tagged')  // 0;
+    my $group        = $self->db->resultset('JobGroups')->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
     my $res = $self->_group_result($group, $limit_builds);
@@ -159,9 +160,18 @@ sub group_overview {
             $res->{$build}->{tag} = {type => $tag[1], description => $tag[2]};
         }
     }
-    $self->stash('result',   $res);
-    $self->stash('group',    $group);
-    $self->stash('comments', \@comments);
+    if ($only_tagged) {
+        for my $build (keys %$res) {
+            next if ($build eq '_max');
+            next unless $build;
+            delete $res->{$build} unless $res->{$build}->{tag};
+        }
+    }
+    $self->stash('result',       $res);
+    $self->stash('group',        $group);
+    $self->stash('limit_builds', $limit_builds);
+    $self->stash('only_tagged',  $only_tagged);
+    $self->stash('comments',     \@comments);
 }
 
 sub add_comment {
