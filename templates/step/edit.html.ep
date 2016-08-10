@@ -145,7 +145,7 @@
                                 <input type="checkbox" name="workaround" id="property_workaround"
                                         %= 'checked' if $properties->{workaround}
                                         >
-                                <label for="workaround">workaround</label>
+                                <label for="property_workaround">workaround</label>
                             </div>
                         </div>
                         <button type="button" class="btn btn-default" id="review_json" title="Review JSON">Review JSON</button>
