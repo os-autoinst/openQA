@@ -280,6 +280,7 @@ function loadTagsAndName() {
   $("#needleeditor_tags").find('input').each(function() {
     $(this).prop('checked', tags.indexOf($(this).val()) != -1);
   });
+  $("#property_workaround").prop('checked', $.inArray('workaround', needle.properties) !== -1);
   $("#needleeditor_name").val(needle['suggested_name']);
   $("#area_select").val(needle['name']);
   loadAreas();
