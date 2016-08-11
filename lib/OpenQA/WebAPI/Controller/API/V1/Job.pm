@@ -248,8 +248,8 @@ sub create_artefact {
         return;
     }
     elsif ($self->param('asset')) {
-        $job->create_asset($self->param('file'), $self->param('asset'));
-        $self->render(text => "OK");
+        my $abs = $job->create_asset($self->param('file'), $self->param('asset'));
+        $self->render(json => {temporary => $abs});
         return;
     }
     if ($job->create_artefact($self->param('file'), $self->param('ulog'))) {
@@ -258,6 +258,22 @@ sub create_artefact {
     else {
         $self->render(text => "FAILED");
     }
+}
+
+sub ack_temporary {
+    my ($self) = @_;
+
+    my $temp = $self->param('temporary');
+    if (-f $temp) {
+        $self->app->log->debug("ACK $temp");
+        if ($temp =~ /^(.*)\.TEMP-[^\/]*$/) {
+            my $asset = $1;
+            $self->app->log->debug("RENAME $temp to $asset");
+            rename($temp, $asset);
+        }
+    }
+    $self->render(text => "OK");
+
 }
 
 sub done {

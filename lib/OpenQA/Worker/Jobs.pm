@@ -126,6 +126,7 @@ sub stop_job($;$) {
 sub upload {
     my ($job_id, $form) = @_;
     my $filename = $form->{file}->{filename};
+    my $file     = $form->{file}->{file};
 
     # we need to open and close the log here as one of the files
     # might actually be autoinst-log.txt
@@ -138,6 +139,7 @@ sub upload {
     $ua_url->path("jobs/$job_id/artefact");
 
     my $res = $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+
     if (my $err = $res->error) {
         my $msg;
         if ($err->{code}) {
@@ -149,8 +151,36 @@ sub upload {
         open(my $log, '>>', "autoinst-log.txt");
         print $log $msg;
         close $log;
-        print $msg if $verbose;
+        print STDERR $msg;
         return 0;
+    }
+
+    # double check uploads if the webui asks us to
+    if ($res->res->json && $res->res->json->{temporary}) {
+        my $csum1 = '1';
+        my $size1;
+        if (open(my $cfd, "-|", "cksum", $res->res->json->{temporary})) {
+            ($csum1, $size1) = split(/ /, <$cfd>);
+            close($cfd);
+        }
+        my $csum2 = '2';
+        my $size2;
+        if (open(my $cfd, "-|", "cksum", $file)) {
+            ($csum2, $size2) = split(/ /, <$cfd>);
+            close($cfd);
+        }
+        open(my $log, '>>', "autoinst-log.txt");
+        print $log "Checksum $csum1:$csum2 Sizes:$size1:$size2\n";
+        close $log;
+        if ($csum1 eq $csum2 && $size1 eq $size2) {
+            my $ua_url = $OpenQA::Worker::Common::url->clone;
+            $ua_url->path("jobs/$job_id/ack_temporary");
+
+            $OpenQA::Worker::Common::ua->post($ua_url => form => {temporary => $res->res->json->{temporary}});
+        }
+        else {
+            return 0;
+        }
     }
     return 1;
 }
