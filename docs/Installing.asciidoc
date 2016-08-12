@@ -28,7 +28,7 @@ packages in OBS in the
 https://build.opensuse.org/project/show/devel:openQA:stable[openQA:stable]
 repository.
 
-The the latest development version can also be found in OBS in the
+The latest development version can also be found in OBS in the
 https://build.opensuse.org/project/show/devel:openQA[openQA:devel] repository.
 
 For Fedora, packages are available in the official repositories for Fedora 23
