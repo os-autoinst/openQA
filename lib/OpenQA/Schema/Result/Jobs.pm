@@ -940,8 +940,10 @@ sub create_asset {
         mkdir($fpath) || die "can't mkdir $fpath: $!";
     }
 
-    $asset->move_to(join('/', $fpath, $fname));
-    log_debug("moved to $fpath/$fname");
+    my $suffix = '.TEMP-' . db_helpers::rndstr(8);
+    my $abs = join('/', $fpath, $fname . $suffix);
+    $asset->move_to($abs);
+    log_debug("moved to $abs");
     $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
 
     # mark the worker as alive
@@ -952,7 +954,7 @@ sub create_asset {
         log_warning($self->id . " got an asset but has no worker. huh?");
     }
 
-    1;
+    return $abs;
 }
 
 sub failed_modules_with_needles {

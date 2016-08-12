@@ -172,17 +172,22 @@ is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches"
 $rp = "t/data/openqa/factory/hdd/hdd_image.qcow2";
 unlink($rp);
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
-$post->content_is('OK');
-ok(-e $rp, 'asset exist after');
+my $temp = $post->tx->res->json->{temporary};
+like($temp, qr,t/data/openqa/factory/hdd/hdd_image\.qcow2\.TEMP.*,);
+ok(-e $temp, "temporary exists");
+ok(!-e $rp,  "asset doesn't exist after");
+$t->post_ok('/api/v1/jobs/99963/ack_temporary' => form => {temporary => $temp});
+ok(!-e $temp, "temporary is gone");
+ok(-e $rp,    "asset exist after ACK");
 my $ret = $t->get_ok('/api/v1/assets/hdd/hdd_image.qcow2')->status_is(200);
 is($ret->tx->res->json->{name}, 'hdd_image.qcow2');
-
-
 
 $rp = "t/data/openqa/factory/hdd/00099963-hdd_image2.qcow2";
 unlink($rp);
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'hdd_image2.qcow2'}, asset => 'private'})->status_is(200);
-$post->content_is('OK');
+$temp = $post->tx->res->json->{temporary};
+like($temp, qr,t/data/openqa/factory/hdd/00099963-hdd_image2\.qcow2\.TEMP.*,);
+$t->post_ok('/api/v1/jobs/99963/ack_temporary' => form => {temporary => $temp});
 ok(-e $rp, 'asset exist after');
 $ret = $t->get_ok('/api/v1/assets/hdd/00099963-hdd_image2.qcow2')->status_is(200);
 is($ret->tx->res->json->{name}, '00099963-hdd_image2.qcow2');

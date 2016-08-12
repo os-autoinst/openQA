@@ -124,9 +124,9 @@ sub stop_job($;$) {
 }
 
 sub upload {
-    my $job_id   = shift;
-    my $form     = shift;
+    my ($job_id, $form) = @_;
     my $filename = $form->{file}->{filename};
+    my $file     = $form->{file}->{file};
 
     # we need to open and close the log here as one of the files
     # might actually be autoinst-log.txt
@@ -138,27 +138,7 @@ sub upload {
     my $ua_url = $OpenQA::Worker::Common::url->clone;
     $ua_url->path("jobs/$job_id/artefact");
 
-    # don't use api_call as it retries and does not allow form data
-    # (refactor at some point)
-    my $tx = $OpenQA::Worker::Common::ua->build_tx(POST => $ua_url => form => $form);
-
-    # override the default boundary calculation - it reads whole file
-    # and it can cause various timeouts
-    my $ct = $tx->req->headers->content_type;
-    my $boundary = encode_base64 join('', map chr(rand 256), 1 .. 32);
-    $boundary =~ s/\W/X/g;
-    $tx->req->headers->content_type("$ct; boundary=$boundary");
-    my $res;
-    $OpenQA::Worker::Common::ua->start(
-        $tx => sub {
-            my ($ua, $tx) = @_;
-            $res = $tx;
-            return;
-        });
-    # This ugly. we need to "block" here so enter ioloop recursively
-    while (!$res && Mojo::IOLoop->is_running) {
-        Mojo::IOLoop->one_tick;
-    }
+    my $res = $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
 
     if (my $err = $res->error) {
         my $msg;
@@ -171,8 +151,36 @@ sub upload {
         open(my $log, '>>', "autoinst-log.txt");
         print $log $msg;
         close $log;
-        print $msg if $verbose;
+        print STDERR $msg;
         return 0;
+    }
+
+    # double check uploads if the webui asks us to
+    if ($res->res->json && $res->res->json->{temporary}) {
+        my $csum1 = '1';
+        my $size1;
+        if (open(my $cfd, "-|", "cksum", $res->res->json->{temporary})) {
+            ($csum1, $size1) = split(/ /, <$cfd>);
+            close($cfd);
+        }
+        my $csum2 = '2';
+        my $size2;
+        if (open(my $cfd, "-|", "cksum", $file)) {
+            ($csum2, $size2) = split(/ /, <$cfd>);
+            close($cfd);
+        }
+        open(my $log, '>>', "autoinst-log.txt");
+        print $log "Checksum $csum1:$csum2 Sizes:$size1:$size2\n";
+        close $log;
+        if ($csum1 eq $csum2 && $size1 eq $size2) {
+            my $ua_url = $OpenQA::Worker::Common::url->clone;
+            $ua_url->path("jobs/$job_id/ack_temporary");
+
+            $OpenQA::Worker::Common::ua->post($ua_url => form => {temporary => $res->res->json->{temporary}});
+        }
+        else {
+            return 0;
+        }
     }
     return 1;
 }
