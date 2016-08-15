@@ -410,6 +410,7 @@ sub upload_status(;$) {
 
     return unless verify_workerid;
     return unless $job;
+    return unless $job->{URL};
     my $status = {};
 
     my $ua        = Mojo::UserAgent->new;
