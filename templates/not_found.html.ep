@@ -1,0 +1,8 @@
+% layout 'error';
+% title 'Page not found';
+
+<div class="container" id="content">
+    <h1>Page not found</h1>
+    <p>If you believe this is a bug you can <a href="https://progress.opensuse.org/projects/openqav3/issues/new" target="blank">open an issue</a>.</p>
+    <p>If the URL is self-crafted, ensure it is correct and properly encoded.</p>
+</div>
