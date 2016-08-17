@@ -14,6 +14,12 @@
     setupResultButtons();
 % end
 
+% if(@$error_messages) {
+    <div class="alert-warning alert fade in" id="editor_warnings"><button class="close" data-dismiss="alert">x</button>
+        <span><%== '<ul><li>'.join('</li><li>', @$error_messages).'</li></ul>' %></span>
+    </div>
+% }
+
 <div id="change-margin-form" title="Change search margin" class="modal" role="dialog" tabindex="-1">
     <div class="modal-dialog">
 

@@ -140,6 +140,7 @@ sub edit {
     # 'areas' (there is no needle associated to the screenshot) and with all matching
     # areas in 'matches'.
     my @needles;
+    my @error_messages;
     # All tags (from all needles)
     my $tags = [];
     $tags = $module_detail->{tags} if ($module_detail->{tags});
@@ -174,24 +175,29 @@ sub edit {
         # Second position: the only needle (with the same matches)
         my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
 
-        $self->app->log->error(sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion)) if !defined $needle;
-
-        my $matched = {
-            name           => $module_detail->{needle},
-            suggested_name => $self->_timestamp($module_detail->{needle}),
-            imageurl       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json})->to_string,
-            imagename      => basename($needle->{image}),
-            imagedir       => dirname($needle->{image}),
-            imagedistri    => $needle->{distri},
-            imageversion   => $needle->{version},
-            area           => $needle->{area},
-            tags           => $needle->{tags},
-            json       => $needle->{json}       || "",
-            properties => $needle->{properties} || [],
-            matches    => $screenshot->{matches}};
-        calc_min_similarity($matched, $module_detail->{area});
-        $matched->{title} = $matched->{min_similarity} . "%: " . $matched->{name};
-        push(@needles, $matched);
+        if (!$needle) {
+            my $error_message = sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion);
+            $self->app->log->error($error_message);
+            push(@error_messages, $error_message);
+        }
+        else {
+            my $matched = {
+                name           => $module_detail->{needle},
+                suggested_name => $self->_timestamp($module_detail->{needle}),
+                imageurl       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json})->to_string,
+                imagename      => basename($needle->{image}),
+                imagedir       => dirname($needle->{image}),
+                imagedistri    => $needle->{distri},
+                imageversion   => $needle->{version},
+                area           => $needle->{area},
+                tags           => $needle->{tags},
+                json       => $needle->{json}       || "",
+                properties => $needle->{properties} || [],
+                matches    => $screenshot->{matches}};
+            calc_min_similarity($matched, $module_detail->{area});
+            $matched->{title} = $matched->{min_similarity} . "%: " . $matched->{name};
+            push(@needles, $matched);
+        }
 
         for my $t (@{$needle->{tags}}) {
             push(@$tags, $t) unless grep(/^$t$/, @$tags);
@@ -228,7 +234,9 @@ sub edit {
             $needleinfo = needle_info($needlename, $distribution, $dversion || '', $needle->{json});
 
             if (!defined $needleinfo) {
-                $self->app->log->error(sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || ''));
+                my $error_message = sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || '');
+                $self->app->log->error($error_message);
+                push(@error_messages, $error_message);
 
                 $needleinfo->{image}  = [];
                 $needleinfo->{tags}   = [];
@@ -336,6 +344,7 @@ sub edit {
     $self->stash('tags',           $tags);
     $self->stash('properties',     $properties);
     $self->stash('default_needle', $default_needle);
+    $self->stash('error_messages', \@error_messages);
 
     $self->render('step/edit');
 }

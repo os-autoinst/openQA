@@ -94,10 +94,7 @@ sub needledir {
 sub log_warning;
 
 sub needle_info {
-    my $name    = shift;
-    my $distri  = shift;
-    my $version = shift;
-    my $fn      = shift;
+    my ($name, $distri, $version, $fn) = @_;
     local $/;
 
     my $needledir = needledir($distri, $version);
@@ -129,7 +126,7 @@ sub needle_info {
     };
     return unless $needle;
 
-    my $png_fname = basename($fn, '.json') . ".png";
+    my $png_fname = basename($fn, '.json') . '.png';
     my $pngfile = File::Spec->catpath('', $needledir, $png_fname);
 
     $needle->{needledir} = $needledir;
