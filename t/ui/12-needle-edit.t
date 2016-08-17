@@ -91,6 +91,10 @@ sub goto_editpage() {
     t::ui::PhantomTest::wait_for_ajax;
 
     $driver->find_element('Create new needle', 'link_text')->click();
+
+    # no warnings about missing/bad needles present (yet)
+    my @warnings = $driver->find_elements('#editor_warnings', 'css');
+    is(scalar @warnings, 0, 'no warnings');
 }
 
 sub editpage_layout_check() {
@@ -291,6 +295,7 @@ subtest 'Deletion of needle is handled gracefully' => sub {
     t::ui::PhantomTest::wait_for_ajax;
     $driver->find_element('Create new needle', 'link_text')->click();
     is($driver->get_title(), 'openQA: Needle Editor', 'needle editor still shows up');
+    is($driver->find_element('#editor_warnings span', 'css')->get_text(), 'Could not find needle: inst-timezone-text for opensuse 13.1', 'warning about deleted needle is displayed');
 };
 
 t::ui::PhantomTest::kill_phantom();

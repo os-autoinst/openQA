@@ -140,6 +140,7 @@ sub edit {
     # 'areas' (there is no needle associated to the screenshot) and with all matching
     # areas in 'matches'.
     my @needles;
+    my @error_messages;
     # All tags (from all needles)
     my $tags = [];
     $tags = $module_detail->{tags} if ($module_detail->{tags});
@@ -175,7 +176,9 @@ sub edit {
         my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
 
         if (!$needle) {
-            $self->app->log->error(sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion));
+            my $error_message = sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion);
+            $self->app->log->error($error_message);
+            push(@error_messages, $error_message);
         }
         else {
             my $matched = {
@@ -231,7 +234,9 @@ sub edit {
             $needleinfo = needle_info($needlename, $distribution, $dversion || '', $needle->{json});
 
             if (!defined $needleinfo) {
-                $self->app->log->error(sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || ''));
+                my $error_message = sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || '');
+                $self->app->log->error($error_message);
+                push(@error_messages, $error_message);
 
                 $needleinfo->{image}  = [];
                 $needleinfo->{tags}   = [];
@@ -339,6 +344,7 @@ sub edit {
     $self->stash('tags',           $tags);
     $self->stash('properties',     $properties);
     $self->stash('default_needle', $default_needle);
+    $self->stash('error_messages', \@error_messages);
 
     $self->render('step/edit');
 }
