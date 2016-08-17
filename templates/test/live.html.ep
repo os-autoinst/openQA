@@ -25,7 +25,7 @@
             % if (is_operator) {
                 <a href="#" title="continue waiting for needle" style="display:none" id="continue_button" class="fa fa-play fa-2x"></a>
                 <a href="#" title="reload needles and retry" style="display:none" id="retry_button" class="fa fa-repeat fa-2x"></a>
-                %= link_to url_for('edit_test') => (title => 'open needle editor', style => 'display:none', id => 'crop_button', class => 'fa fa-scissors fa-2x') => begin
+                %= link_to url_for('edit_test', testid => $testid) => (title => 'open needle editor', style => 'display:none', id => 'crop_button', class => 'fa fa-scissors fa-2x') => begin
                 % end
                 <a href="#" title="stop waiting for needle" style="display:none" id="stop_button" class="fa fa-edit fa-2x"></a>
                 <i title="waiting for worker ..." class="fa fa-cog fa-2x fa-spin"
