@@ -174,24 +174,27 @@ sub edit {
         # Second position: the only needle (with the same matches)
         my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
 
-        $self->app->log->error(sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion)) if !defined $needle;
-
-        my $matched = {
-            name           => $module_detail->{needle},
-            suggested_name => $self->_timestamp($module_detail->{needle}),
-            imageurl       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json})->to_string,
-            imagename      => basename($needle->{image}),
-            imagedir       => dirname($needle->{image}),
-            imagedistri    => $needle->{distri},
-            imageversion   => $needle->{version},
-            area           => $needle->{area},
-            tags           => $needle->{tags},
-            json       => $needle->{json}       || "",
-            properties => $needle->{properties} || [],
-            matches    => $screenshot->{matches}};
-        calc_min_similarity($matched, $module_detail->{area});
-        $matched->{title} = $matched->{min_similarity} . "%: " . $matched->{name};
-        push(@needles, $matched);
+        if (!$needle) {
+            $self->app->log->error(sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion));
+        }
+        else {
+            my $matched = {
+                name           => $module_detail->{needle},
+                suggested_name => $self->_timestamp($module_detail->{needle}),
+                imageurl       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json})->to_string,
+                imagename      => basename($needle->{image}),
+                imagedir       => dirname($needle->{image}),
+                imagedistri    => $needle->{distri},
+                imageversion   => $needle->{version},
+                area           => $needle->{area},
+                tags           => $needle->{tags},
+                json       => $needle->{json}       || "",
+                properties => $needle->{properties} || [],
+                matches    => $screenshot->{matches}};
+            calc_min_similarity($matched, $module_detail->{area});
+            $matched->{title} = $matched->{min_similarity} . "%: " . $matched->{name};
+            push(@needles, $matched);
+        }
 
         for my $t (@{$needle->{tags}}) {
             push(@$tags, $t) unless grep(/^$t$/, @$tags);
