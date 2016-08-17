@@ -286,13 +286,7 @@ sub _stop_job($;$) {
     }
     unless ($job_done || $aborted eq 'api-failure') {
         upload_status(1);
-        # set job to done. if priority is less than threshold duplicate it
-        # with worse priority so it can be picked up again.
-        my %args;
-        $args{dup_type_auto} = 1;
-        printf "duplicating job %d\n", $job->{id};
-        # make it less attractive so we don't get it again
-        api_call('post', 'jobs/' . $job->{id} . '/duplicate', \%args);
+        printf "job %d incomplete\n", $job->{id};
         api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
     }
     warn sprintf("cleaning up %s...\n", $job->{settings}->{NAME});
@@ -410,6 +404,7 @@ sub upload_status(;$) {
 
     return unless verify_workerid;
     return unless $job;
+    return unless $job->{URL};
     my $status = {};
 
     my $ua        = Mojo::UserAgent->new;
