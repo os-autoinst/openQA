@@ -281,6 +281,18 @@ is($match,                            1,                                        
 is($decode_json->{'area'}[0]->{xpos}, $decode_textarea->{'area'}[0]->{xpos} + $xoffset, "new xpos stored to new needle");
 is($decode_json->{'area'}[0]->{ypos}, $decode_textarea->{'area'}[0]->{ypos} + $yoffset, "new ypos stored to new needle");
 
+subtest 'Deletion of needle is handled gracefully' => sub {
+    # re-open the needle editor after deleting needle
+    unlink $filen;
+    $driver->get($baseurl . "tests/99946");
+    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
+    t::ui::PhantomTest::wait_for_ajax;
+    $driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
+    t::ui::PhantomTest::wait_for_ajax;
+    $driver->find_element('Create new needle', 'link_text')->click();
+    is($driver->get_title(), 'openQA: Needle Editor', 'needle editor still shows up');
+};
+
 t::ui::PhantomTest::kill_phantom();
 
 subtest '(created) needles can be accessed over API' => sub {
