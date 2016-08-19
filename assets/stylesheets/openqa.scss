@@ -311,8 +311,8 @@ table.admintable {
         td.editable {
                 text-align: right;
         }
-        .key-value-pair {
-                white-space: nowrap;
+        .key-value-pair .key {
+            font-weight: bold;
         }
         input[type="text"] {
                 width: 100%;
