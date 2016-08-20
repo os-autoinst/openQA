@@ -507,7 +507,7 @@ sub overview {
 sub latest {
     my ($self) = @_;
     my %search_args = (limit => 1);
-    for my $arg (OpenQA::Schema::Result::Jobs::SCENARIO_KEYS) {
+    for my $arg (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
         my $key = lc $arg;
         next unless defined $self->param($key);
         $search_args{$key} = $self->param($key);
