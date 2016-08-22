@@ -1,8 +1,14 @@
-<div class="row comment-row">
-    <div class="col-sm-1">
-        <img class="media-object img-circle" src="<%= $user->gravatar(60) %>" alt="profile">
-    </div>
+% if (!$context->{pinned}) {
+    <div class="row comment-row">
+        <div class="col-sm-1">
+            <img class="media-object img-circle" src="<%= $user->gravatar(60) %>" alt="profile">
+        </div>
     <div class="col-sm-11">
+% }
+% else {
+    <div class="row pinned-comment-row">
+        <div class="col-sm-12">
+% }
         <div class="media-body comment-body">
             <div class="well well-lg">
                 <form onsubmit="updateComment(this); return false;" onreset="hideCommentEditor(this); return true;" data-put-url="<%= url_for($put_action => ($context->{type}.'_id' => $context->{id}, comment_id => $comment_id)) %>">

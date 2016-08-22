@@ -47,6 +47,7 @@ function deleteComment(deleteButton) {
             method: 'DELETE',
             success: function() {
                 deleteButton.parents('.comment-row').remove();
+                deleteButton.parents('.pinned-comment-row').remove();
                 $('a[href="#comments"]').html('Comments (' + $('.comment-row').length + ')');
             },
             error: function(xhr, ajaxOptions, thrownError) {

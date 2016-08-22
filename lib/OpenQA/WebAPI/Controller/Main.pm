@@ -140,8 +140,17 @@ sub group_overview {
     return $self->reply->not_found unless $group;
 
     my $res = $self->_group_result($group, $limit_builds);
-    my @comments = $group->comments->all;
-    for my $comment (@comments) {
+    my @comments;
+    my @pinned_comments;
+    for my $comment ($group->comments->all) {
+        # find pinned comments
+        if ($comment->user->is_operator && CORE::index($comment->text, 'pinned-description') >= 0) {
+            push(@pinned_comments, $comment);
+        }
+        else {
+            push(@comments, $comment);
+        }
+
         my @tag   = $comment->tag;
         my $build = $tag[0];
         next unless $build;
@@ -167,11 +176,12 @@ sub group_overview {
             delete $res->{$build} unless $res->{$build}->{tag};
         }
     }
-    $self->stash('result',       $res);
-    $self->stash('group',        $group);
-    $self->stash('limit_builds', $limit_builds);
-    $self->stash('only_tagged',  $only_tagged);
-    $self->stash('comments',     \@comments);
+    $self->stash('result',          $res);
+    $self->stash('group',           $group);
+    $self->stash('limit_builds',    $limit_builds);
+    $self->stash('only_tagged',     $only_tagged);
+    $self->stash('comments',        \@comments);
+    $self->stash('pinned_comments', \@pinned_comments);
 }
 
 sub add_comment {
