@@ -15,6 +15,7 @@ DocumentRoot /usr/share/openqa/public
 Alias /assets "/var/lib/openqa/share/factory"
 
 <Directory "/var/lib/openqa/images">
+  Options SymLinksIfOwnerMatch
   AllowOverride None
   Require all granted
 
