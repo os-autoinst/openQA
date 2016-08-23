@@ -23,7 +23,7 @@ function loadJobTemplates(data) {
     $.each(groups, function(i, group) {
 	buildMediumGroup(group, mediagroups[group]);
     });
-    var width = alignCols() - 10;
+    var width = alignCols() - 16;
     $('#loading').remove();
     $('.chosen-select').chosen({"width": width + "px"});
     $('a.plus-sign').click(addTestRow);
@@ -157,7 +157,11 @@ function buildMediumGroup(group, media) {
     $.each(testnames, function(ti, test) {
 	var tr = $('<tr class="test_' + test + '"/>').appendTo(tbody);
 	tr.data('test-id', tests[test]['id']);
-	$('<td class="name">' + test + '</td>').appendTo(tr);
+	var shortname = test;
+	if (test.length >= 70) {
+		shortname = '<span title='+test+'>' + test.substr(0,67) + '...</span>';
+	}
+	$('<td class="name">' + shortname + '</td>').appendTo(tr);
 	$('<td class="prio">' + tests[test]['prio'] + '</td>').appendTo(tr);
 	
 	$.each(archnames, function(ai, arch) {
@@ -177,29 +181,60 @@ function buildMediumGroup(group, media) {
     });
 }
 
-function alignCols() {
-    var maxwidth = 0;
-    $('td.name').each(function(index, test) {
-	if ($(this).width() > maxwidth) 
-	    maxwidth = $(this).outerWidth();
-    });
-    maxwidth = Math.ceil(maxwidth);
-    $('th.name').width(maxwidth);
-    maxarchs = 0;
-    $("table.mediagroup thead").each(function(index, th) {
-	var archs = $(this).find('th.arch').length;
-	if (archs > maxarchs) {
-	    maxarchs = archs;
-	}
-    });
-    var leftwidth = $('.jobtemplate-header').innerWidth() - $('th.name').outerWidth() - $('th.prio').outerWidth();
+function addArchSpacer(table, position, method) {
+	$(table).find('thead th.arch').eq(position)[method]('<th class="arch">&nbsp;</th>');
+	$(table).find('tbody tr').each(function(){
+		$(this).find('td.arch').eq(position)[method]('<td class="arch">&nbsp;</td>');
+	});
+}
 
-    leftwidth = Math.floor(leftwidth / maxarchs) - 1;
-    $('th.arch').outerWidth(leftwidth);
-    leftwidth = Math.floor($('th.arch').width());
-    // round
-    $('th.arch').width(leftwidth);
-    return leftwidth;
-   
+function alignCols() {
+	// Set minimal width
+	$('th.name').width('0');
+	$('th.prio').width('0');
+	
+	// Find biggest minimal width
+	var namewidth = 450;
+	$('td.name').each(function(index, test) {
+		if ($(this).outerWidth() > namewidth) 
+			namewidth = $(this).outerWidth();
+	});
+	namewidth = Math.ceil(namewidth);
+
+    // Find header with all architectures
+    var ths_all = [];
+    $("table.mediagroup thead").each(function() {
+    	var archs = $(this).find('th.arch');
+    	if (archs.length > ths_all.length)
+    		ths_all = archs;
+    });
+
+	// Fill empty space
+	$("table.mediagroup").each(function(index, table) {
+		var ths = $(this).find('thead th.arch');
+		if (ths.length < ths_all.length) {
+			ths_all.each(function(i) {
+				// Used all ths, fill the rest
+				if (ths.length == i) {
+					for(var j = i; j < ths_all.length; j++) {
+						addArchSpacer(table, j-1, 'after');
+					}
+					return false;
+				} else if (this.innerHTML != ths.get(i).innerHTML) {
+					addArchSpacer(table, i, 'before');
+					ths = $(table).find('thead th.arch');
+				}
+			});
+		}
+	});
+
+	// Compute arch width
+	var archwidth = $('.jobtemplate-header').outerWidth() - namewidth - $('th.prio').outerWidth();
+	archwidth = Math.floor(archwidth / ths_all.length) - 1;
+
+	$('th.name').outerWidth(namewidth);
+	$('th.arch').outerWidth(archwidth);
+
+	return archwidth;
 }
 
