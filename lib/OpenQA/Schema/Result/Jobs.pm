@@ -773,7 +773,7 @@ sub part_of_important_build {
 
 # gru job
 sub reduce_result {
-    my ($app, $args) = @_;
+    my ($self, $app, $args) = @_;
 
     if (!ref($args)) {
         $args = {resultdir => $args};
