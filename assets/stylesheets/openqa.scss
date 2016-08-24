@@ -434,13 +434,15 @@ table#users {
 }
 
 .mediagroup {
-        th.prio {
-                width: 3em;
-        }
-
-        td.prio {
-                text-align: center;
-        }
+    th.arch, td.arch {
+        text-align: center;
+    }
+    th.prio {
+        width: 3em;
+    }
+    th.prio, td.prio {
+        text-align: center;
+    }
 }
 
 .jobtemplate-header {
