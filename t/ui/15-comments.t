@@ -57,10 +57,11 @@ $driver->find_element('opensuse', 'link_text')->click();
 is($driver->find_element('h2:first-of-type', 'css')->get_text(), 'Last Builds for Group opensuse', "on group overview");
 
 # define test message
-my $test_message         = "This is a cool test ☠";
-my $another_test_message = " - this message will be appended if editing works ☠";
-my $edited_test_message  = $test_message . $another_test_message;
-my $user_name            = 'Demo';
+my $test_message             = "This is a cool test ☠";
+my $another_test_message     = " - this message will be appended if editing works ☠";
+my $edited_test_message      = $test_message . $another_test_message;
+my $description_test_message = "pinned-description ... The description";
+my $user_name                = 'Demo';
 
 # switches to comments tab (required when editing comments in test results)
 # expects the current number of comments as argument (currently the easiest way to find the tab button)
@@ -149,7 +150,6 @@ sub test_comment_editing {
         # re-add a comment with the original message
         $driver->find_element('#text',          'css')->send_keys($test_message);
         $driver->find_element('#submitComment', 'css')->click();
-
         t::ui::PhantomTest::wait_for_ajax;
 
         # check whether heading and comment text is displayed correctly
@@ -272,6 +272,14 @@ subtest 'editing when logged in as regular user' => sub {
         is(@{$driver->find_elements('button.remove-edit-button',  'css')}, 0, "no comments can be removed, even not own");
     }
 
+    subtest 'test pinned comments' => sub {
+        $driver->get($baseurl . 'group_overview/1001');
+        $driver->find_element('#text',          'css')->send_keys($description_test_message);
+        $driver->find_element('#submitComment', 'css')->click();
+        $driver->get($baseurl . 'group_overview/1001');
+        is($driver->find_element('#group_descriptions .media-comment', 'css')->get_text(), $description_test_message, 'comment is pinned');
+    };
+
     $driver->get($baseurl . 'login?user=nobody');
     subtest 'test results' => sub {
         $driver->get($baseurl . 'tests/99938#comments');
@@ -290,6 +298,13 @@ subtest 'editing when logged in as regular user' => sub {
         $driver->find_element('#submitComment', 'css')->click();
         t::ui::PhantomTest::wait_for_ajax;
         only_edit_for_own_comments_expected;
+
+        # pinned comments are not shown (pinning is only possible when commentator is operator)
+        $driver->find_element('#text',          'css')->send_keys($description_test_message);
+        $driver->find_element('#submitComment', 'css')->click();
+        $driver->get($baseurl . 'group_overview/1001');
+        my @comments = $driver->find_elements('.pinned-comment-row', 'css');
+        is(scalar @comments, 1, 'there shouldn\'t appear more pinned comments');
     };
 };
 
