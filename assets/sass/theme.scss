@@ -9,3 +9,8 @@ table a:not(.btn),
 .table a:not(.btn) {
 	  text-decoration: inherit;
 }
+
+div.progress {
+    margin-top: $line-height-computed / 2;
+    margin-bottom: $line-height-computed / 2;
+}
