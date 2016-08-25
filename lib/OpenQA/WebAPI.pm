@@ -298,6 +298,14 @@ sub startup {
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
+
+    $auth->get(
+        '/routes' => sub {
+            my $c = shift;
+            $c->stash(snapshot => '');
+            $c->render('mojo/debug');
+        })->name('api_help');
+
     # Default route
     $r->get('/')->name('index')->to('main#index');
 
