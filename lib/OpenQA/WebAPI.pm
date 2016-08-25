@@ -224,6 +224,8 @@ sub startup {
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
     $r->get('/index' => [format => ['html', 'json']])->to('main#index');
+    $auth->get('/api_help' => sub { shift->render('admin/api_help') })->name('api_help');
+
     # Default route
     $r->get('/')->name('index')->to('main#index');
 

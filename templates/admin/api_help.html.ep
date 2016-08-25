@@ -1,0 +1,17 @@
+% layout 'bootstrap';
+% title 'API help';
+<div>
+    <h2><%= title %></h2>
+
+    %= include 'layouts/info'
+
+    <p>For developers, devops, and similar folks to get routes is easy. Call
+    <code>script/openqa routes</code>. Even with matching regexes (with
+    <code>-v</code> option).
+    </p>
+
+    <p><b>Hint:</b> Calling any non-existant route from your browser will show an
+    error page with all available routes as help. E.g. try <%= link_to 'this
+    link' => url_for('not_found') %>.
+    </p>
+</div>

@@ -115,6 +115,7 @@
                                       <li role="separator" class="divider"></li>
                                       <li>
                                          %= link_to "Manage API keys" => url_for('api_keys')
+                                         %= link_to "API help" => url_for('api_help')
                                       </li>
                                   % }
                                   <li>
