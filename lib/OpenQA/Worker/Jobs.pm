@@ -138,7 +138,15 @@ sub upload {
     my $ua_url = $OpenQA::Worker::Common::url->clone;
     $ua_url->path("jobs/$job_id/artefact");
 
-    my $res = $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+    my $tx = $OpenQA::Worker::Common::ua->build_tx(POST => $ua_url => form => $form);
+    # override the default boundary calculation - it reads whole file
+    # and it can cause various timeouts
+    my $ct = $tx->req->headers->content_type;
+    my $boundary = encode_base64 join('', map chr(rand 256), 1 .. 32);
+    $boundary =~ s/\W/X/g;
+    $tx->req->headers->content_type("$ct; boundary=$boundary");
+
+    my $res = $OpenQA::Worker::Common::ua->start($tx);
 
     if (my $err = $res->error) {
         my $msg;
