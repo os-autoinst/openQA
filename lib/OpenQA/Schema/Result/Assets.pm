@@ -48,6 +48,11 @@ __PACKAGE__->add_columns(
     size => {
         data_type   => 'bigint',
         is_nullable => 1
+    },
+    checksum => {
+        data_type     => 'text',
+        is_nullable   => 1,
+        default_value => undef
     });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
