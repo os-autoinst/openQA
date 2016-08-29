@@ -425,6 +425,10 @@ sub startup {
     # api/v1/mutex
     $api_r_job->post('/mutex')->name('apiv1_mutex_create')->to('locks#mutex_create');
     $api_r_job->post('/mutex/:name')->name('apiv1_mutex_action')->to('locks#mutex_action');
+    # api/v1/barriers/
+    $api_r_job->post('/barrier')->name('apiv1_barrier_create')->to('locks#barrier_create');
+    $api_r_job->post('/barrier/:name', [name => qr/[0-9a-zA-Z_]+/])->name('apiv1_barrier_wait')->to('locks#barrier_wait');
+    $api_r_job->delete('/barrier/:name', [name => qr/[0-9a-zA-Z_]+/])->name('apiv1_barrier_destroy')->to('locks#barrier_destroy');
 
     # api/v1/mm
     my $mm_api = $api_r_job->route('/mm');

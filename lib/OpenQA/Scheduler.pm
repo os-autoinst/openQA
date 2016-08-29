@@ -155,4 +155,28 @@ sub mutex_unlock {
     my $res = OpenQA::Scheduler::Locks::unlock(@args);
     return $res;
 }
+
+dbus_method('barrier_create', ['string', 'uint32', 'uint32'], ['bool']);
+sub barrier_create {
+    my ($self, @args) = @_;
+    my $res = OpenQA::Scheduler::Locks::barrier_create(@args);
+    return 0 unless $res;
+    return 1;
+}
+
+dbus_method('barrier_wait', ['string', 'uint32', 'string'], ['int32']);
+sub barrier_wait {
+    my ($self, @args) = @_;
+    my $res = OpenQA::Scheduler::Locks::barrier_wait(@args);
+    return $res;
+}
+
+dbus_method('barrier_destroy', ['string', 'uint32', 'string'], ['bool']);
+sub barrier_destroy {
+    my ($self, @args) = @_;
+    my $res = OpenQA::Scheduler::Locks::barrier_destroy(@args);
+    return 0 unless $res;
+    return 1;
+}
+
 1;

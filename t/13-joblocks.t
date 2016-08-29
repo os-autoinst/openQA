@@ -71,7 +71,7 @@ $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'invalid'})->status_is
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 ## mutex is locked
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
-is($res->locked_by->id, $jobA, 'mutex is locked');
+is($res->locked_by->[0], $jobA, 'mutex is locked');
 # try double lock
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 
@@ -114,6 +114,6 @@ ok(!$res->locked_by, 'mutex is unlocked');
 # lock
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
-is($res->locked_by->id, $jobB, 'mutex is locked');
+is($res->locked_by->[0], $jobB, 'mutex is locked');
 
 done_testing();
