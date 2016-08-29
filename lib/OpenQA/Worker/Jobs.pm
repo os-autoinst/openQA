@@ -145,7 +145,22 @@ sub upload {
     $boundary =~ s/\W/X/g;
     $tx->req->headers->content_type("$ct; boundary=$boundary");
 
-    my $res = $OpenQA::Worker::Common::ua->start($tx);
+    my $res;
+    # We start the request in non-blocking fashion - with a callback -
+    # so that while it's running, which can take several minutes for
+    # large files, the update_status timer will continue to fire, so
+    # the server will know this worker is not dead
+    $OpenQA::Worker::Common::ua->start(
+        $tx => sub {
+            my ($ua, $tx) = @_;
+            $res = $tx;
+            return;
+        });
+    # We now 'block' until the result shows up (blocking in this way
+    # allows timers to run)
+    while (!$res && Mojo::IOLoop->is_running) {
+        Mojo::IOLoop->one_tick;
+    }
 
     if (my $err = $res->error) {
         my $msg;
