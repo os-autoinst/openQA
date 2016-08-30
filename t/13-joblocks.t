@@ -71,7 +71,7 @@ $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'invalid'})->status_is
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 ## mutex is locked
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
-is($res->locked_by->[0], $jobA, 'mutex is locked');
+is($res->locked_by, $jobA, 'mutex is locked');
 # try double lock
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 
@@ -114,6 +114,121 @@ ok(!$res->locked_by, 'mutex is unlocked');
 # lock
 $t->post_ok('/api/v1/mutex/test_lock', form => {action => 'lock'})->status_is(200);
 $res = $schema->resultset('JobLocks')->find({owner => $jobA, name => 'test_lock'});
-is($res->locked_by->[0], $jobB, 'mutex is locked');
+is($res->locked_by, $jobB, 'mutex is locked');
+
+### barriers
+my $last_worker_instance = 1;
+my $b_prefix             = '/api/v1/barrier';
+
+sub job_create_with_worker {
+    my ($test, $parent) = @_;
+    my %settings = (
+        DISTRI      => 'Unicorn',
+        FLAVOR      => 'pink',
+        VERSION     => '42',
+        BUILD       => '666',
+        ISO         => 'whatever.iso',
+        DESKTOP     => 'DESKTOP',
+        KVM         => 'KVM',
+        ISO_MAXSIZE => 1,
+        MACHINE     => 'RainbowPC',
+        ARCH        => 'x86_64',
+        TEST        => $test,
+    );
+    $settings{_PARALLEL_JOBS} = $parent if $parent;
+    my $job = $schema->resultset('Jobs')->create_from_settings(\%settings);
+    ok($job, "Job $test created with id " . $job->id);
+    is($job->parents->single->parent_job_id, $parent, 'Job has correct parent') if $parent;
+    my %worker = (
+        cpu_modelname => 'Rainbow CPU',
+        cpu_arch      => 'x86_64',
+        worker_class  => 'qemu_x86_64,qemu_i686',
+        cpu_opmode    => '32-bit, 64-bit',
+        mem_max       => '4096'
+    );
+
+    use OpenQA::WebAPI::Controller::API::V1::Worker;
+    my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
+    my $w_id = $c->_register($schema, "host", $last_worker_instance, \%worker);
+    ok($w_id, "Worker instance $last_worker_instance created");
+    $last_worker_instance++;
+
+    #assign worker to the job, create job token
+    my $worker = $schema->resultset('Workers')->find($w_id);
+    $worker->job($job);
+    $worker->update;
+    $worker->set_property(JOBTOKEN => 'token' . $job->id);
+    return $job->id;
+}
+
+sub set_token_header {
+    my ($ua, $token) = @_;
+    $ua->unsubscribe('start');
+    $ua->on(
+        start => sub {
+            my ($ua, $tx) = @_;
+            $tx->req->headers->add('X-API-JobToken' => $token);
+        });
+}
+
+# create jobs we'll use
+my $jid = job_create_with_worker('test');
+
+# create barrier without job_id fails with 403 - forbidden
+$t->ua->unsubscribe('start');
+$t->post_ok($b_prefix)->status_is(403);
+set_token_header($t->ua, 'token' . $jid);
+# create barrier without name fails with 400 - wrong request
+$t->post_ok($b_prefix)->status_is(400);
+# create barrier without number of expected tasks fails
+$t->post_ok($b_prefix, form => {name => 'barrier1'})->status_is(400);
+# create barrier succeeds with 1 expected task
+$t->post_ok($b_prefix, form => {name => 'barrier1', tasks => 1},)->status_is(200);
+# barrier is unlocked after one task
+$t->post_ok($b_prefix . '/barrier1', form => {action => 'wait'})->status_is(200);
+# barrier is still unlocked for the same task
+$t->post_ok($b_prefix . '/barrier1', form => {action => 'wait'})->status_is(200);
+
+# create barrier succeeds with 3 expected tasks
+my $jA = job_create_with_worker('testA');
+my $jB = job_create_with_worker('testB', $jA);
+my $jC = job_create_with_worker('testC', $jA);
+set_token_header($t->ua, 'token' . $jA);
+$t->post_ok($b_prefix, form => {name => 'barrier2', tasks => 3},)->status_is(200);
+# barrier is not unlocked after one task
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(409);
+# barrier is not unlocked after two tasks
+set_token_header($t->ua, 'token' . $jB);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(409);
+# barrier is not unlocked after trying already tried task
+set_token_header($t->ua, 'token' . $jA);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(409);
+# barrier is unlocked after three tasks
+set_token_header($t->ua, 'token' . $jC);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(200);
+# barrier is unlocked for task one and two
+set_token_header($t->ua, 'token' . $jA);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(200);
+set_token_header($t->ua, 'token' . $jB);
+$t->post_ok($b_prefix . '/barrier2', form => {action => 'wait'})->status_is(200);
+
+# test deletes
+$res = $schema->resultset('JobLocks')->find({owner => $jid, name => 'barrier1'});
+ok($res, 'barrier1 is present');
+$res = $schema->resultset('JobLocks')->find({owner => $jA, name => 'barrier2'});
+ok($res, 'barrier2 is present');
+# can not delete without barrier name
+$t->delete_ok($b_prefix)->status_is(404);
+# delete barrier2 and check it was removed
+$t->delete_ok($b_prefix . '/barrier2')->status_is(200);
+$res = $schema->resultset('JobLocks')->find({owner => $jA, name => 'barrier2'});
+ok(!$res, 'barrier2 removed');
+# can not delete others barrier - status is fine, but barrier is still there
+$t->delete_ok($b_prefix . '/barrier1')->status_is(200);
+$res = $schema->resultset('JobLocks')->find({owner => $jid, name => 'barrier1'});
+ok($res, 'barrier1 is still there');
+# can not delete without jobtoken
+$t->ua->unsubscribe('start');
+$t->delete_ok($b_prefix . '/barrier1')->status_is(403);
 
 done_testing();
