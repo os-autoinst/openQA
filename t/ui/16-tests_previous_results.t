@@ -34,7 +34,7 @@ my $get       = $t->get_ok('/tests/99946#previous')->status_is(200);
 my $tab_label = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('li a[href=#previous]')->all_text);
 is($tab_label, q/Previous results (2)/, 'previous results with number is shown');
 my $previous_results_header = $t->tx->res->dom->at('#previous #scenario .h5');
-is(OpenQA::Test::Case::trim_whitespace($previous_results_header->all_text), q/Results for opensuse-13.1-DVD-i586-textmode@32bit/, 'header for previous results with scenario');
+like(OpenQA::Test::Case::trim_whitespace($previous_results_header->all_text), qr/Results for opensuse-13.1-DVD-i586-textmode/, 'header for previous results with scenario');
 $get->element_exists('#res_99945',                    'result from previous job');
 $get->element_exists('#res_99945 .result_passed',     'previous job was passed');
 $get->element_exists('#res_99944 .result_softfailed', 'previous job was passed (softfailed)');
