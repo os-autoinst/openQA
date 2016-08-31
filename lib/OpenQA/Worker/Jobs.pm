@@ -100,8 +100,7 @@ sub stop_job($;$) {
     print "stop_job $aborted\n" if $verbose;
     $stop_job_running = 1;
 
-    # stop all job related timers
-    remove_timer('update_status');
+    # stop all job related timers except update_status
     remove_timer('check_backend');
     remove_timer('job_timeout');
 
@@ -298,6 +297,10 @@ sub _stop_job($;$) {
         api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
     }
     warn sprintf("cleaning up %s...\n", $job->{settings}->{NAME});
+    # now we're actually done, remove the update_status timer (we have
+    # to do this as late as possible to prevent the dead job checker
+    # from deciding we're dead)
+    remove_timer('update_status');
     clean_pool();
     $job              = undef;
     $worker           = undef;
