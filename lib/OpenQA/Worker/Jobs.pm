@@ -122,6 +122,26 @@ sub stop_job($;$) {
     $stop_job_check_status->();
 }
 
+sub _chunk_checksum {
+    my ($fh) = @_;
+    my $ctx = Digest::MD5->new;
+    my $data;
+    # do an initial status update
+    update_status();
+    my $time = time;
+    # read 100MB at a time so we don't block reading a huge file,
+    # update status every ~5 seconds as we are blocking the timer
+    while (read($fh, $data, 100000000)) {
+        my $newtime = time;
+        if ($newtime - $time > 5) {
+            $time = $newtime;
+            update_status();
+        }
+        $ctx->add($data);
+    }
+    return $ctx->hexdigest();
+}
+
 sub upload {
     my ($job_id, $form) = @_;
     my $filename = $form->{file}->{filename};
@@ -181,15 +201,17 @@ sub upload {
     if ($res->res->json && $res->res->json->{temporary}) {
         my $csum1 = '1';
         my $size1;
-        if (open(my $cfd, "-|", "cksum", $res->res->json->{temporary})) {
-            ($csum1, $size1) = split(/ /, <$cfd>);
-            close($cfd);
+        if (open(my $tempfh, "<", $res->res->json->{temporary})) {
+            $csum1 = _chunk_checksum($tempfh);
+            $size1 = -s $res->res->json->{temporary};
+            close($tempfh);
         }
         my $csum2 = '2';
         my $size2;
-        if (open(my $cfd, "-|", "cksum", $file)) {
-            ($csum2, $size2) = split(/ /, <$cfd>);
-            close($cfd);
+        if (open(my $filefh, "<", $file)) {
+            $csum2 = _chunk_checksum($filefh);
+            $size2 = -s $file;
+            close($filefh);
         }
         open(my $log, '>>', "autoinst-log.txt");
         print $log "Checksum $csum1:$csum2 Sizes:$size1:$size2\n";
