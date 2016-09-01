@@ -304,40 +304,42 @@ sub _stop_job($;$) {
                 last;
             }
         }
-
-        if ($aborted eq 'obsolete') {
-            printf "setting job %d to incomplete (obsolete)\n", $job->{id};
-            upload_status(1);
-            api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete', newbuild => 1});
-            $job_done = 1;
-        }
-        elsif ($aborted eq 'cancel') {
-            # not using job_incomplete here to avoid duplicate
-            printf "setting job %d to incomplete (cancel)\n", $job->{id};
-            upload_status(1);
-            api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
-            $job_done = 1;
-        }
-        elsif ($aborted eq 'timeout') {
-            printf "job %d spent more time than MAX_JOB_TIME\n", $job->{id};
-        }
-        elsif ($aborted eq 'done') {    # not aborted
-            printf "setting job %d to done\n", $job->{id};
-            upload_status(1);
-            api_call('post', 'jobs/' . $job->{id} . '/set_done');
-            $job_done = 1;
-        }
     }
+
+    # now we're actually done, remove the update_status timer (we have
+    # to do this as late as possible to prevent the dead job checker
+    # from deciding we're dead)
+    remove_timer('update_status');
+
+    if ($aborted eq 'obsolete') {
+        printf "setting job %d to incomplete (obsolete)\n", $job->{id};
+        upload_status(1);
+        api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete', newbuild => 1});
+        $job_done = 1;
+    }
+    elsif ($aborted eq 'cancel') {
+        # not using job_incomplete here to avoid duplicate
+        printf "setting job %d to incomplete (cancel)\n", $job->{id};
+        upload_status(1);
+        api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
+        $job_done = 1;
+    }
+    elsif ($aborted eq 'timeout') {
+        printf "job %d spent more time than MAX_JOB_TIME\n", $job->{id};
+    }
+    elsif ($aborted eq 'done') {    # not aborted
+        printf "setting job %d to done\n", $job->{id};
+        upload_status(1);
+        api_call('post', 'jobs/' . $job->{id} . '/set_done');
+        $job_done = 1;
+    }
+
     unless ($job_done || $aborted eq 'api-failure') {
         upload_status(1);
         printf "job %d incomplete\n", $job->{id};
         api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
     }
     warn sprintf("cleaning up %s...\n", $job->{settings}->{NAME});
-    # now we're actually done, remove the update_status timer (we have
-    # to do this as late as possible to prevent the dead job checker
-    # from deciding we're dead)
-    remove_timer('update_status');
     clean_pool();
     $job              = undef;
     $worker           = undef;
