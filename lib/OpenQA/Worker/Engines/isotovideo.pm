@@ -182,7 +182,7 @@ sub engine_check {
     # check if the worker is still running
     my $pid = waitpid($workerpid, WNOHANG);
     if ($verbose) {
-        printf "waitpid %d returned %d\n", $workerpid, $pid;
+        printf "waitpid %d returned %d with status $?\n", $workerpid, $pid;
     }
     if ($pid == -1 && $!{ECHILD}) {
         warn "we lost our child\n";

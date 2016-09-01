@@ -105,8 +105,6 @@ sub stop_job($;$) {
     remove_timer('check_backend');
     remove_timer('job_timeout');
 
-    _kill_worker($worker);
-
     # XXX: we need to wait if there is an update_status in progress.
     # we should have an event emitter that subscribes to update_status done
     my $stop_job_check_status;
@@ -196,7 +194,20 @@ sub upload {
 sub _stop_job($;$) {
     my ($aborted, $job_id) = @_;
 
-    print "stop_job 2nd half\n" if $verbose;
+    # now tell the webui that we're about to finish, but the following
+    # process of killing the backend process and checksums uploads and
+    # checksums again can take a long while, so the webui needs to know
+    print "stop_job 2nd part\n" if $verbose;
+
+    # the update_status timers and such are gone by now (1st part), so we're
+    # basically "single threaded" and can block
+
+    my $status = {state => 'uploading'};
+    api_call('post', "jobs/$job_id/status", undef, {status => $status});
+
+    _kill_worker($worker);
+
+    print "stop_job 3rd part\n" if $verbose;
 
     my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
