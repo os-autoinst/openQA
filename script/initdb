@@ -104,7 +104,7 @@ my $dh = DBIx::Class::DeploymentHandler->new(
         schema              => $schema,
         script_directory    => $script_directory,
         databases           => \@databases,
-        sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}},
+        sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
         force_overwrite     => $force,
     });
 

@@ -26,8 +26,8 @@ use FindBin qw/$Bin/;
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION   = 42;
-our @databases = qw/MySQL SQLite PostgreSQL/;
+our $VERSION   = 43;
+our @databases = qw/SQLite PostgreSQL/;
 
 __PACKAGE__->load_namespaces;
 
