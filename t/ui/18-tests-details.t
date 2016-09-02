@@ -96,6 +96,9 @@ subtest 'route to latest' => sub {
     $get    = $t->get_ok($baseurl . 'tests/latest?version=13.1')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .panel-heading a');
     is($header->{href}, '/tests/99981', 'returns highest job nr of ambiguous group');
+    $get    = $t->get_ok($baseurl . 'tests/latest?test=kde&machine=32bit')->status_is(200);
+    $header = $t->tx->res->dom->at('#info_box .panel-heading a');
+    is($header->{href}, '/tests/99937', 'also filter on machine');
     $get = $t->get_ok($baseurl . 'tests/latest?test=foobar')->status_is(404);
 };
 

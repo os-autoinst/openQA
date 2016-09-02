@@ -1,5 +1,5 @@
 <div id="scenario">
-    <div class="h5">Results for <i><%= $scenario %></i></div>
+    <div class="h5">Results for <i><%= $scenario %></i> (<%= link_to('latest job for this scenario' => url_for('latest')->query($job->scenario_hash)) %>)</div>
 </div>
 <div>
 <table id="previous_results" class="overview table table-striped no-wrap" style="width: 100%">
