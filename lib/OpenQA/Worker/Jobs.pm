@@ -202,7 +202,7 @@ sub _stop_job($;$) {
     # the update_status timers and such are gone by now (1st part), so we're
     # basically "single threaded" and can block
 
-    my $status = {state => 'uploading'};
+    my $status = {uploading => 1};
     api_call('post', "jobs/$job_id/status", undef, {status => $status});
 
     _kill_worker($worker);

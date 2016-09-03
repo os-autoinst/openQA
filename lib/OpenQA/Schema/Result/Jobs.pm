@@ -1004,7 +1004,7 @@ sub update_status {
     # that is a bit of an abuse as we don't have anything of the
     # other payload
     if ($status->{uploading}) {
-        $self->update(state => UPLOADING);
+        $self->update({state => UPLOADING});
         return $ret;
     }
 

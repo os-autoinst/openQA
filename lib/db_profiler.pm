@@ -29,9 +29,9 @@ sub query_end {
 }
 
 
-sub enable_sql_debugging($) {
-    my ($app) = @_;
-    my $storage = $app->schema->storage;
+sub enable_sql_debugging {
+    my ($app, $schema) = @_;
+    my $storage = $schema->storage;
     $storage->debugobj(new db_profiler());
     $storage->debugfh(MojoDebugHandle->new($app));
     $storage->debug(1);
