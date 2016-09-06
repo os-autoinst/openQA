@@ -1,11 +1,12 @@
 FROM opensuse:42.1
 MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz(@github)
 
+# Add 'bash' to be able to run 'CMD'
 RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_42.1 openQA && \
     zypper ar -f obs://devel:openQA:Leap:42.1/openSUSE_Leap_42.1 openQA-perl-modules && \
     zypper ar -f obs://Virtualization/openSUSE_Leap_42.1 Virtualization && \
     zypper --gpg-auto-import-keys ref && \
-    zypper --non-interactive in ca-certificates-mozilla curl && \
+    zypper --non-interactive in ca-certificates-mozilla curl bash && \
     zypper --non-interactive in openQA-worker qemu-kvm && \
     zypper --non-interactive in kmod && \
     zypper --non-interactive in --from Virtualization qemu-ovmf-x86_64
