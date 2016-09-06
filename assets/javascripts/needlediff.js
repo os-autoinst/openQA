@@ -109,6 +109,15 @@ NeedleDiff.prototype.draw = function() {
     var orig;
     var lineWidth = 1;
 
+    var y_start = a['ypos'] - lineWidth;
+    var y_end = a['ypos'] + a['height'] + lineWidth;
+    if (y_start < 0) {
+      y_start = 0;
+    }
+    if (y_end > this.height) {
+      y_end = this.height;
+    }
+
     if (split > x) {
 
       // ...fill that left part with the original needle's area
@@ -127,11 +136,11 @@ NeedleDiff.prototype.draw = function() {
 
       this.ctx.lineWidth = lineWidth;
       this.ctx.beginPath();
-      this.ctx.moveTo(x + width, a['ypos'] - lineWidth);
-      this.ctx.lineTo(x, a['ypos'] - lineWidth);
-      this.ctx.lineTo(x, a['ypos'] + a['height'] + lineWidth);
-      this.ctx.lineTo(x + width, a['ypos'] + a['height'] + lineWidth);
-      this.ctx.lineTo(x + width, a['ypos'] - lineWidth);
+      this.ctx.moveTo(x + width, y_start);
+      this.ctx.lineTo(x, y_start);
+      this.ctx.lineTo(x, y_end);
+      this.ctx.lineTo(x + width, y_end);
+      this.ctx.lineTo(x + width, y_start);
       this.ctx.stroke();
     }
 
@@ -155,11 +164,11 @@ NeedleDiff.prototype.draw = function() {
 
       this.ctx.lineWidth = lineWidth;
       this.ctx.beginPath();
-      this.ctx.moveTo(start, a['ypos'] - lineWidth);
-      this.ctx.lineTo(a['xpos'] + a['width'] + lineWidth, a['ypos'] - lineWidth);
-      this.ctx.lineTo(a['xpos'] + a['width'] + lineWidth, a['ypos'] + a['height'] + lineWidth);
-      this.ctx.lineTo(start, a['ypos'] + a['height'] + lineWidth);
-      this.ctx.lineTo(start, a['ypos'] - lineWidth);
+      this.ctx.moveTo(start, y_start);
+      this.ctx.lineTo(a['xpos'] + a['width'] + lineWidth, y_start);
+      this.ctx.lineTo(a['xpos'] + a['width'] + lineWidth, y_end);
+      this.ctx.lineTo(start, y_end);
+      this.ctx.lineTo(start, y_start);
       this.ctx.stroke();
     }
   }.bind(this));
