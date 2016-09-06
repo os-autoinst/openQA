@@ -21,3 +21,23 @@
 #summary .badge {
     margin-right: 8px;
 }
+
+#filter-form {
+    strong {
+        display: block;
+    }
+
+    .form-group {
+        label {
+            margin-left: 0px;
+            padding-left: 0px;
+            margin-right: 20px;
+            font-weight: normal;
+        }
+
+        input {
+            margin-right: 2px;
+            padding-right: 0px;
+        }
+    }
+}

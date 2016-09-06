@@ -83,4 +83,28 @@
             </tbody>
         </table>
     % }
+    <div class="panel panel-default">
+            <div class="panel-heading">Filter</div>
+            <div class="panel-body">
+                <form action="#" type="get" id="filter-form">
+                    <div class="form-group">
+                        <strong>Result</strong>
+                        <label><input value="passed" name="result" type="checkbox" id="filter-passed"> Passed</label>
+                        <label><input value="incomplete" name="result" type="checkbox" id="filter-incomplete"> Incomplete</label>
+                        <label><input value="softfailed" name="result" type="checkbox" id="filter-softfailed"> Softfailed</label>
+                        <label><input value="failed" name="result" type="checkbox" id="filter-failed"> Failed</label>
+                        <label><input value="running" name="result" type="checkbox" id="filter-running"> Running</label>
+                    </div>
+                    <div class="form-group">
+                        <strong>Architecture</strong>
+                        <input type="text" class="form-control" name="arch" placeholder="any" id="filter-arch">
+                    </div>
+                    <div class="form-group">
+                        <strong>Misc</strong>
+                        <label><input value="1" name="todo" type="checkbox" id="filter-todo"> TODO</label>
+                    </div>
+                    <button type="submit" class="btn btn-default">Apply</button>
+                </form>
+            </div>
+    </div>
 </div>
