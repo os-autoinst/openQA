@@ -184,8 +184,13 @@ NeedleDiff.prototype.draw = function() {
       var textSize = this.ctx.measureText(text);
       var tx;
       var ty = a['ypos'] + a['height'] + 19;
-      if (ty > this.screenshotImg.height) {
-        ty = a['ypos'] - 4;
+      if (ty > this.height) {
+        // Place text above match box
+        ty = a['ypos'] - 10;
+      }
+      if (ty < 14) {
+        // Place text in match box (text is 14px large)
+        ty = a['ypos'] + a['height'] - 10;
       }
       if (split + textSize.width < a['xpos'] + a['width']) {
         tx = a['xpos'] + a['width'] - textSize.width - 1;
