@@ -99,7 +99,7 @@ NeedleDiff.prototype.draw = function() {
     split = 1;
   }
 
-  // Draw all matches
+  // Draw all match boxes
   this.matches.forEach(function(a, idx) {
 
     // If some part of the match is at the left of the handle...
@@ -162,7 +162,10 @@ NeedleDiff.prototype.draw = function() {
       this.ctx.lineTo(start, a['ypos'] - lineWidth);
       this.ctx.stroke();
     }
+  }.bind(this));
 
+  // Draw all match labels
+  this.matches.forEach(function(a, idx) {
     // And the similarity, if needed
     if (split > a['xpos'] && split < a['xpos'] + a['width']) {
       this.ctx.strokeStyle = "rgb(0, 0, 0)";
