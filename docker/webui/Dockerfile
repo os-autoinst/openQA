@@ -1,13 +1,12 @@
 FROM opensuse:42.1
 MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz(@github)
 
-# Add 'hostname' as the dependence for apache2
-# Add 'which' and 'w3m' to suppress the error message
+# Add 'bash' to be able to run 'CMD'
 RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_42.1 openQA && \
     zypper ar -f obs://devel:openQA:Leap:42.1/openSUSE_Leap_42.1 openQA-perl-modules && \
     zypper --gpg-auto-import-keys ref && \
     zypper --non-interactive in ca-certificates-mozilla curl && \
-    zypper --non-interactive in openQA apache2 hostname which w3m
+    zypper --non-interactive in openQA apache2 hostname which w3m bash
 
 
 # setup apache
