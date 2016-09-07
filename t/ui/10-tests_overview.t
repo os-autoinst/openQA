@@ -23,10 +23,19 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
+use t::ui::PhantomTest;
 
-OpenQA::Test::Case->new->init_data;
+my $test_case = OpenQA::Test::Case->new;
+$test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+
+my $driver = t::ui::PhantomTest::call_phantom();
+
+unless ($driver) {
+    plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
+    exit(0);
+}
 
 #
 # Overview with incorrect parameters
@@ -122,7 +131,7 @@ $get->element_exists_not('#res_GNOME-Live_i686_RAID0 .state_cancelled');
 $get->element_exists_not('.result_failed');
 $get->element_exists_not('.state_cancelled');
 
-# this time show only failed
+# This time show only failed
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', result => 'failed'})->status_is(200);
 $summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
 like($summary, qr/Passed: 0 Failed: 1/i);
@@ -132,5 +141,30 @@ $get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})->status_is(200);
 $summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
 like($summary, qr/Passed: 0 Soft Failure: 1 Failed: 1/i, 'todo=1 shows all unlabeled failed');
+
+
+#
+# Test filter form
+#
+
+# Test initial state or architecture text box
+$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', result => 'passed', arch => 'i686'})->status_is(200);
+# FIXME: works when testing manually, but accessing the value via Mojo doesn't work
+#is($t->tx->res->dom->at('#filter-arch')->val, 'i686', 'default state of architecture');
+
+is($driver->get_title(), "openQA", "on main page");
+my $baseurl = $driver->get_current_url();
+
+# Test initial state of form and applying changes
+$driver->get($baseurl . 'tests/overview?distri=opensuse&version=Factory&build=0048&todo=1&result=passed');
+$driver->find_element('#filter-todo',        'css')->click();
+$driver->find_element('#filter-passed',      'css')->click();
+$driver->find_element('#filter-failed',      'css')->click();
+$driver->find_element('#filter-form button', 'css')->click();
+$driver->find_element('#res_DVD_x86_64_doc', 'css');
+my @filtered_out = $driver->find_elements('#res_DVD_x86_64_kde', 'css');
+is(scalar @filtered_out, 0, 'result filter not correctly applied');
+
+t::ui::PhantomTest::kill_phantom();
 
 done_testing();
