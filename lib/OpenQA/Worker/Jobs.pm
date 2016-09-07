@@ -30,6 +30,8 @@ use Fcntl;
 use MIME::Base64;
 use File::Basename qw/basename/;
 
+use POSIX ':sys_wait_h';
+
 use base qw/Exporter/;
 our @EXPORT = qw/start_job stop_job check_job backend_running/;
 
@@ -52,15 +54,30 @@ sub _kill_worker($) {
 
     return unless $worker->{pid};
 
-    warn "killing $worker->{pid}\n";
-    kill(SIGTERM, $worker->{pid});
-
-    # don't leave here before the worker is dead
-    my $pid = waitpid($worker->{pid}, 0);
-    if ($pid == -1) {
-        warn "waitpid returned error: $!\n";
+    if (kill('TERM', $worker->{pid})) {
+        warn "killed $worker->{pid}\n";
+        my $deadline = time + 40;
+        # don't leave here before the worker is dead
+        while ($worker) {
+            my $pid = waitpid($worker->{pid}, WNOHANG);
+            if ($pid == -1) {
+                warn "waitpid returned error: $!\n";
+            }
+            elsif ($pid == 0) {
+                sleep(.5);
+                if (time > $deadline) {
+                    # if still running after the deadline, try harder
+                    # to kill the worker
+                    kill('KILL', -$worker->{pid});
+                    # now loop again
+                    $deadline = time + 20;
+                }
+            }
+            else {
+                last;
+            }
+        }
     }
-
     $worker = undef;
 }
 
