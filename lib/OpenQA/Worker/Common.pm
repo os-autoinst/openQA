@@ -165,6 +165,10 @@ sub api_init {
         apikey    => $apikey,
         apisecret => $apisecret
     );
+    # disable keep alive to avoid time outs in strange places - we only reach the
+    # webapi once in a while so take the price of reopening the connection every time
+    # we do
+    $ua->max_connections(0);
 
     unless ($ua->apikey && $ua->apisecret) {
         unless ($apikey && $apisecret) {
