@@ -213,7 +213,7 @@ sub _get_dead_worker_jobs {
         state              => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         'worker.t_updated' => {'<' => $dtf->format_datetime($dt)},
     );
-    my %attrs = (join => 'worker', select => [qw/id state/]);
+    my %attrs = (join => 'worker',);
 
     return $schema->resultset("Jobs")->search(\%cond, \%attrs);
 }
