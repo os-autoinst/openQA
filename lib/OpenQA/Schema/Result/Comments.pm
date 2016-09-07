@@ -42,8 +42,9 @@ __PACKAGE__->add_columns(
         data_type      => 'integer',
         is_foreign_key => 1,
     },
-    hidden => {
-        data_type     => 'boolean',
+    flags => {
+        data_type     => 'integer',
+        is_nullable   => 1,
         default_value => '0',
     },
 );
