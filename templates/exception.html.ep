@@ -1,0 +1,7 @@
+% layout 'error';
+% title 'Error';
+
+<div class="container" id="content">
+    <h1>Internal server error</h1>
+    <p>If you believe this is a bug you can <a href="https://progress.opensuse.org/projects/openqav3/issues/new" target="blank">open an issue</a>.</p>
+</div>

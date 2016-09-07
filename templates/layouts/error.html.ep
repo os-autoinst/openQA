@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+      <!-- Meta, title, CSS, favicons, etc. -->
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <meta name="description" content="openQA is a testing framework mainly for distributions">
+      <meta name="keywords" content="Testing, Linux, Qemu">
+      <meta name="author" content="openQA contributors">
+
+      % if ($title) {
+      <title><%= $appname . ": " . title %></title>
+      % } else
+      % {
+      <title><%= $appname %></title>
+      % }
+
+      <!-- Bootstrap core CSS -->
+      %= asset 'bootstrap.css'
+      %= asset 'bootstrap.js'
+
+      %= content_for 'head'
+
+      %= javascript begin
+          %= content_for 'head_javascript'
+          $(function() {
+          setupForAll();
+          %= content_for 'ready_function'
+          } );
+      % end
+
+      <link rel="icon"
+            type="image/png" sizes="16x16"
+            href="<%= icon_url 'logo-16.png' %>">
+      <link rel="icon" href="<%= icon_url 'logo.svg'%>" sizes="any" type="image/svg+xml">
+
+  </head>
+  <body>
+      <nav class="navbar navbar-static-top navbar-default">
+          <div class="container">
+              <!-- Brand and toggle get grouped for better mobile display -->
+              <div class="navbar-header">
+                  <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
+                      <span class="sr-only">Toggle navigation</span>
+                      <span class="icon-bar"></span>
+                      <span class="icon-bar"></span>
+                      <span class="icon-bar"></span>
+                  </button>
+                  <a class="navbar-brand" href="/"><img src="<%= icon_url 'logo.svg'%>" alt="openQA"></a>
+              </div>
+          </div>
+      </nav>
+      <div class="container" id="content">
+          %= content
+      </div>
+      <footer class='footer'>
+        <div class='container'>
+          <div id='footer-legal' class="text-center">
+              openQA is licensed
+              %= link_to 'GPL-2.0' => 'https://github.com/os-autoinst/openQA'
+          </div>
+        </div>
+      </footer>
+    </div>
+  </body>
+</html>
