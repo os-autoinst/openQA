@@ -35,5 +35,41 @@ function setupOverview() {
 	    icon.fadeTo('slow', 0.5).fadeTo('slow', 1.0);
 
 	});
+
+    // ensure TODO is false by default because the Browser auto remembers previous state
+    $('#filter-todo').prop('checked', false);
+    
+    // find specified results
+    var varPairs = window.location.search.substring(1).split('&');
+    var results = {};
+    for (var j = 0; j < varPairs.length; ++j) {
+        var pair = varPairs[j].split('=');
+        if(pair.length > 1) {
+            var key = pair[0];
+            var val = pair[1];
+            if (key === 'result') {
+                results[val] = true;
+            } else if (key === 'todo') {
+                $('#filter-todo').prop('checked', val !== '0');
+            } else if (key === 'arch') {
+                $('#filter-arch').prop('value', val);
+            } else {
+                var input = $('<input/>');
+                input.attr('value', val);
+                input.attr('name', key);
+                input.attr('hidden', true);
+                $('#filter-form').append(input);
+            }
+        }
+    }
+    
+    // set enabled/disabled state of checkboxes (according to current filter)
+    var badges = ['passed', 'incomplete', 'softfailed', 'failed', 'scheduled', 'running', 'none', 'unknown'];
+    for(var i = 0; i < badges.length; ++i) {
+        var badge = badges[i];
+        var filterEnabled = results[badge];
+        var badgeElement = $('#filter-' + badge);
+        badgeElement.prop('checked', filterEnabled);
+    }
 }
 
