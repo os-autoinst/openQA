@@ -221,16 +221,14 @@ sub _get_dead_worker_jobs {
 sub _is_job_considered_dead {
     my ($job) = @_;
 
-    # running jobs have the default timeout
-    if ($job->state eq OpenQA::Schema::Result::Jobs::RUNNING) {
-        return 1;
-    }
     # much bigger timeout for uploading jobs
     if ($job->state eq OpenQA::Schema::Result::Jobs::UPLOADING) {
         my $delta = DateTime->now()->epoch() - $job->worker->t_updated->epoch();
         return if $delta > 1000;
     }
-    return 0;
+
+    # default timeout for the rest
+    return 1;
 }
 
 # Running as recurring timer, each 20minutes check if worker with job has been updated in last 10s
