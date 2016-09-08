@@ -19,6 +19,7 @@ BEGIN {
 
 use strict;
 use warnings;
+use DateTime;
 use Test::More;
 use Test::Warnings;
 use OpenQA::IPC;
@@ -50,13 +51,12 @@ sub _check_job_incomplete {
 
 subtest 'worker with job and not updated in last 10s is considered dead' => sub {
     _check_job_running($_) for (99961, 99963);
-    # wait a second to be sure we fit into 10s check
-    sleep 1;
-    # now we can start the workers check
-    OpenQA::WebSockets::Server::_workers_checker();
-    # and wait for timer to kick in
-    Mojo::IOLoop->one_tick;
+    # move the updated timestamp of the workers to avoid sleeping
+    my $dtf = $schema->storage->datetime_parser;
+    my $dt = DateTime->from_epoch(epoch => time() - 20, time_zone => 'UTC');
 
+    $schema->resultset('Workers')->update_all({t_updated => $dtf->format_datetime($dt)});
+    OpenQA::WebSockets::Server::_workers_checker();
     _check_job_incomplete($_) for (99961, 99963);
 };
 

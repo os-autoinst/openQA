@@ -39,12 +39,13 @@ use constant {
     CANCELLED => 'cancelled',
     WAITING   => 'waiting',
     DONE      => 'done',
+    UPLOADING => 'uploading',
     #    OBSOLETED => 'obsoleted',
 };
-use constant STATES => (SCHEDULED, RUNNING, CANCELLED, WAITING, DONE);
-use constant PENDING_STATES => (SCHEDULED, RUNNING, WAITING);
-use constant EXECUTION_STATES => (RUNNING, WAITING);
-use constant FINAL_STATES     => (DONE,    CANCELLED);
+use constant STATES => (SCHEDULED, RUNNING, CANCELLED, WAITING, DONE, UPLOADING);
+use constant PENDING_STATES => (SCHEDULED, RUNNING, WAITING, UPLOADING);
+use constant EXECUTION_STATES => (RUNNING, WAITING, UPLOADING);
+use constant FINAL_STATES => (DONE, CANCELLED);
 
 # Results
 use constant {
@@ -999,6 +1000,13 @@ sub update_status {
     my ($self, $status) = @_;
 
     my $ret = {result => 1};
+
+    # that is a bit of an abuse as we don't have anything of the
+    # other payload
+    if ($status->{uploading}) {
+        $self->update({state => UPLOADING});
+        return $ret;
+    }
 
     $self->append_log($status->{log});
     # delete from the hash so it becomes dumpable for debugging

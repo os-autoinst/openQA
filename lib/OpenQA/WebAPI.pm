@@ -166,7 +166,7 @@ sub startup {
     if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
         # avoid enabling the SQL debug unless we really want to see it
         # it's rather expensive
-        db_profiler::enable_sql_debugging($self);
+        db_profiler::enable_sql_debugging($self, $self->schema);
     }
 
     unless ($ENV{MOJO_TMPDIR}) {

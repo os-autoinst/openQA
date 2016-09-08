@@ -378,7 +378,7 @@ div.flags {
     color: $color-state-cancelled;
 }
 
-.state_running.fa {
+.state_running.fa, .state_waiting.fa, .state_uploading.fa {
     color: $color-state-running;
 }
 

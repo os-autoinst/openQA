@@ -30,6 +30,8 @@ use Fcntl;
 use MIME::Base64;
 use File::Basename qw/basename/;
 
+use POSIX ':sys_wait_h';
+
 use base qw/Exporter/;
 our @EXPORT = qw/start_job stop_job check_job backend_running/;
 
@@ -52,15 +54,30 @@ sub _kill_worker($) {
 
     return unless $worker->{pid};
 
-    warn "killing $worker->{pid}\n";
-    kill(SIGTERM, $worker->{pid});
-
-    # don't leave here before the worker is dead
-    my $pid = waitpid($worker->{pid}, 0);
-    if ($pid == -1) {
-        warn "waitpid returned error: $!\n";
+    if (kill('TERM', $worker->{pid})) {
+        warn "killed $worker->{pid}\n";
+        my $deadline = time + 40;
+        # don't leave here before the worker is dead
+        while ($worker) {
+            my $pid = waitpid($worker->{pid}, WNOHANG);
+            if ($pid == -1) {
+                warn "waitpid returned error: $!\n";
+            }
+            elsif ($pid == 0) {
+                sleep(.5);
+                if (time > $deadline) {
+                    # if still running after the deadline, try harder
+                    # to kill the worker
+                    kill('KILL', -$worker->{pid});
+                    # now loop again
+                    $deadline = time + 20;
+                }
+            }
+            else {
+                last;
+            }
+        }
     }
-
     $worker = undef;
 }
 
@@ -104,8 +121,6 @@ sub stop_job($;$) {
     remove_timer('update_status');
     remove_timer('check_backend');
     remove_timer('job_timeout');
-
-    _kill_worker($worker);
 
     # XXX: we need to wait if there is an update_status in progress.
     # we should have an event emitter that subscribes to update_status done
@@ -196,7 +211,20 @@ sub upload {
 sub _stop_job($;$) {
     my ($aborted, $job_id) = @_;
 
-    print "stop_job 2nd half\n" if $verbose;
+    # now tell the webui that we're about to finish, but the following
+    # process of killing the backend process and checksums uploads and
+    # checksums again can take a long while, so the webui needs to know
+    print "stop_job 2nd part\n" if $verbose;
+
+    # the update_status timers and such are gone by now (1st part), so we're
+    # basically "single threaded" and can block
+
+    my $status = {uploading => 1};
+    api_call('post', "jobs/$job_id/status", undef, {status => $status});
+
+    _kill_worker($worker);
+
+    print "stop_job 3rd part\n" if $verbose;
 
     my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';

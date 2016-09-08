@@ -132,6 +132,8 @@ sub engine_workit($) {
     die "failed to fork: $!\n" unless defined $child;
 
     unless ($child) {
+        # create new process group
+        setpgrp(0, 0);
         $ENV{TMPDIR} = $tmpdir;
         printf "$$: WORKING %d\n", $job->{id};
         if (open(my $log, '>', "autoinst-log.txt")) {
@@ -182,7 +184,7 @@ sub engine_check {
     # check if the worker is still running
     my $pid = waitpid($workerpid, WNOHANG);
     if ($verbose) {
-        printf "waitpid %d returned %d\n", $workerpid, $pid;
+        printf "waitpid %d returned %d with status $?\n", $workerpid, $pid;
     }
     if ($pid == -1 && $!{ECHILD}) {
         warn "we lost our child\n";
