@@ -35,6 +35,7 @@ function previewSuccess(data, force) {
   var pout = $("#preview_container_out");
   // make it visible so jquery gets the props right
   pout.insertAfter(td.children(".links_a").eq(preview_offset));
+  pout.show();
 
   var pin = $("#preview_container_in");
   if (!(pin.find("pre").length || pin.find("audio").length)) {
