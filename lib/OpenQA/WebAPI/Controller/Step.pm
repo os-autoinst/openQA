@@ -500,9 +500,6 @@ sub save_needle_ajax {
         }
     }
     if ($success) {
-        if (which('optipng')) {
-            system("optipng", "-quiet", "$baseneedle.png");
-        }
         open(my $J, ">", "$baseneedle.json") or $success = 0;
         if ($success) {
             print $J $json;
