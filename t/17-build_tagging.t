@@ -44,7 +44,7 @@ sub set_up {
 
 sub post_comment_1001 {
     my ($comment) = @_;
-    $t->post_ok('/group_overview/1001/add_comment', $auth => form => {text => $comment})->status_is(302);
+    $t->post_ok('/api/v1/groups/1001/comments', $auth => form => {text => $comment})->status_is(200);
 }
 
 set_up;

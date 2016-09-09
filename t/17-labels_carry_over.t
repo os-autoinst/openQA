@@ -64,7 +64,7 @@ subtest '"happy path": failed->failed carries over last label' => sub {
     my $second_label   = 'bsc#1234';
     my $simple_comment = 'just another simple comment';
     for my $comment ($label, $second_label, $simple_comment) {
-        $t->post_ok('/tests/99962/add_comment', $auth => form => {text => $comment})->status_is(302);
+        $t->post_ok('/api/v1/jobs/99962/comments', $auth => form => {text => $comment})->status_is(200);
     }
     my @comments_previous = @{comments('/tests/99962')};
     is(scalar @comments_previous, 3,               'all entered comments found');
@@ -101,7 +101,7 @@ subtest 'failed->failed without labels does not fail' => sub {
 
 subtest 'failed->failed labels which are not bugrefs are also carried over' => sub {
     my $label = 'label:any_label';
-    $t->post_ok("/tests/$job/add_comment", $auth => form => {text => $label})->status_is(302);
+    $t->post_ok("/api/v1/jobs/$job/comments", $auth => form => {text => $label})->status_is(200);
     my $res          = restart_with_result($job, 'failed');
     my @comments_new = @{comments($res->{test_url}[0])};
     my $comment_must = 'label:any_label(Automatic takeover from <a href="/tests/99985">t#99985</a>)';

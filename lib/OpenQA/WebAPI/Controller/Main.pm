@@ -185,24 +185,5 @@ sub group_overview {
     $self->stash('pinned_comments', \@pinned_comments);
 }
 
-sub add_comment {
-    my ($self) = @_;
-
-    $self->validation->required('text');
-
-    my $group = $self->app->schema->resultset("JobGroups")->find($self->param('groupid'));
-    return $self->reply->not_found unless $group;
-
-    my $rs = $group->comments->create(
-        {
-            text    => $self->param('text'),
-            user_id => $self->current_user->id,
-        });
-
-    $self->emit_event('openqa_user_comment', {id => $rs->id});
-    $self->flash('info', 'Comment added');
-    return $self->redirect_to('group_overview');
-}
-
 1;
 # vim: set sw=4 et:
