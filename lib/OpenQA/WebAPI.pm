@@ -491,7 +491,6 @@ sub startup {
     ## JSON API ends here
     #
 
-    $self->gru->add_task(optipng        => \&OpenQA::Schema::Result::Jobs::optipng);
     $self->gru->add_task(reduce_result  => \&OpenQA::Schema::Result::Jobs::reduce_result);
     $self->gru->add_task(limit_assets   => \&OpenQA::Schema::Result::Assets::limit_assets);
     $self->gru->add_task(download_asset => \&OpenQA::Schema::Result::Assets::download_asset);

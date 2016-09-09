@@ -26,7 +26,6 @@ use db_helpers;
 use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings/;
 use File::Basename qw/basename dirname/;
 use File::Path ();
-use File::Which qw(which);
 use DBIx::Class::Timestamps qw/now/;
 
 # The state and results constants are duplicated in the Python client:
@@ -885,14 +884,6 @@ sub running_modinfo() {
     };
 }
 
-sub optipng {
-    my ($app, $path) = @_;
-    if (which('optipng')) {
-        log_debug("optipng $path");
-        system('optipng', '-quiet', '-preserve', '-o2', $path);
-    }
-}
-
 sub store_image {
     my ($self, $asset, $md5, $thumb) = @_;
 
@@ -901,9 +892,6 @@ sub store_image {
     my $prefixdir = dirname($storepath);
     mkdir($prefixdir) unless (-d $prefixdir);
     $asset->move_to($storepath);
-
-    $OpenQA::Utils::app->gru->enqueue(optipng => $storepath);
-
     log_debug("store_image: $storepath");
 }
 

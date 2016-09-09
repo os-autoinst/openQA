@@ -74,11 +74,8 @@ my $schema = OpenQA::Test::Database->new->create();
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $file = 't/data/7da661d0c3faf37d49d33b6fc308f2.png';
-copy("t/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png", $file);
-is((stat($file))[7], 287, 'original file size');
-$t->app->gru->enqueue(optipng => $file);
 
+# now to something completely different: testing limit_assets
 my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
 $c->app($t->app);
 
@@ -88,20 +85,6 @@ sub run_gru {
     $t->app->gru->enqueue($task => $args);
     $c->run('run', '-o');
 }
-
-open(FD, ">", \my $output);
-select FD;
-$c->run('list');
-close(FD);
-select STDOUT;
-like($output, qr,optipng .*'$file';,, 'optipng queued');
-
-$c->run('run', '-o');
-if (which('optipng')) {
-    is((stat($file))[7], 286, 'optimized file size');
-}
-
-# now to something completely different: testing limit_assets
 
 # default asset size limit is 100GiB. In our fixtures, we wind up with
 # four JobsAssets, but one is the only one in its JobGroup and so will

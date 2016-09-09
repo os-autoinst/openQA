@@ -68,6 +68,7 @@
   /usr/bin/snd2png rix,
   /usr/bin/nice rix,
   /usr/bin/ionice rix,
+  /usr/bin/optipng rix,
   /usr/bin/qemu-img rix,
   /usr/bin/qemu-kvm rix,
   /usr/bin/qemu-system-* rix,

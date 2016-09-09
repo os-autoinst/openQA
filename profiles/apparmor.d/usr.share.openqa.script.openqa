@@ -20,7 +20,6 @@
   /etc/openqa/openqa.ini r,
   /proc/meminfo r,
   /tmp/** rw,
-  /usr/bin/optipng rix,
   /usr/bin/perl ix,
   /usr/bin/ssh rcx,
   /usr/lib/git/git rix,

@@ -29,6 +29,7 @@ use JSON qw/decode_json/;
 use Fcntl;
 use MIME::Base64;
 use File::Basename qw/basename/;
+use File::Which qw(which);
 
 use POSIX ':sys_wait_h';
 
@@ -511,6 +512,18 @@ sub upload_status(;$) {
     }
 }
 
+sub optimize_image {
+    my ($image) = @_;
+
+    if (which('optipng')) {
+        print("optipng $image\n") if $verbose;
+        # be careful not to be too eager optimizing, this needs to be quick
+        # or we will be considered a dead worker
+        system('optipng', '-quiet', '-o2', $image);
+    }
+    return;
+}
+
 sub upload_images {
     my ($known_images) = @_;
 
@@ -520,12 +533,14 @@ sub upload_images {
     my $ua_url = $OpenQA::Worker::Common::url->clone;
     $ua_url->path("jobs/" . $job->{id} . "/artefact");
 
+    my $fileprefix = "$pooldir/testresults";
     while (my ($md5, $file) = each %$tosend_images) {
         print "upload $file as $md5\n" if ($verbose);
 
+        optimize_image("$fileprefix/$file");
         my $form = {
             file => {
-                file     => "$pooldir/testresults/$file",
+                file     => "$fileprefix/$file",
                 filename => $file
             },
             image => 1,
@@ -535,8 +550,11 @@ sub upload_images {
         # don't use api_call as it retries and does not allow form data
         # (refactor at some point)
         $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
-        if (-f "$pooldir/testresults/.thumbs/$file") {
-            $form->{file}->{file} = "$pooldir/testresults/.thumbs/$file";
+
+        $file = "$fileprefix/.thumbs/$file";
+        if (-f $file) {
+            optimize_image($file);
+            $form->{file}->{file} = $file;
             $form->{thumb} = 1;
             $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
         }
