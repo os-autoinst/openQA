@@ -99,7 +99,7 @@ sub _generate_jobs {
 
     my $ret = [];
 
-    my @products = $self->app->db->resultset('Products')->search(
+    my @products = $self->db->resultset('Products')->search(
         {
             distri  => lc($args->{DISTRI}),
             version => $args->{VERSION},
@@ -109,7 +109,7 @@ sub _generate_jobs {
 
     unless (@products) {
         warn "no products found, retrying version wildcard";
-        @products = $self->app->db->resultset('Products')->search(
+        @products = $self->db->resultset('Products')->search(
             {
                 distri  => lc($args->{DISTRI}),
                 version => '*',
@@ -123,6 +123,9 @@ sub _generate_jobs {
     }
 
     my %wanted;    # jobs specified by $args->{TEST} or $args->{MACHINE} or their parents
+
+    # Allow a comma separated list of tests here; whitespaces allowed
+    my @tests = $args->{TEST} ? split(/\s*,\s*/, $args->{TEST}) : ();
 
     for my $product (@products) {
         my @templates = $product->job_templates;
@@ -183,10 +186,18 @@ sub _generate_jobs {
                 }
             } while ($expanded);
 
-            if (   (!$args->{TEST} || $args->{TEST} eq $settings{TEST})
-                && (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}))
-            {
-                $wanted{_settings_key(\%settings)} = 1;
+            if (!$args->{MACHINE} || $args->{MACHINE} eq $settings{MACHINE}) {
+                if (!@tests) {
+                    $wanted{_settings_key(\%settings)} = 1;
+                }
+                else {
+                    foreach my $test (@tests) {
+                        if ($test eq $settings{TEST}) {
+                            $wanted{_settings_key(\%settings)} = 1;
+                            last;
+                        }
+                    }
+                }
             }
 
             push @$ret, \%settings;
@@ -235,7 +246,7 @@ sub job_create_dependencies {
                 }
                 for my $parent (@{$testsuite_mapping->{$testsuite}}) {
 
-                    $self->app->db->resultset('JobDependencies')->create(
+                    $self->db->resultset('JobDependencies')->create(
                         {
                             child_job_id  => $job->id,
                             parent_job_id => $parent,
@@ -251,13 +262,13 @@ sub job_create_dependencies {
 # internal function not exported - but called by create
 sub schedule_iso {
     my ($self, $args) = @_;
-    $self->emit_event('openqa_iso_create', $args);
     # register assets posted here right away, in case no job
     # templates produce jobs.
     for my $a (values %{parse_assets_from_settings($args)}) {
         OpenQA::Scheduler::Scheduler::asset_register(%$a);
     }
     my $noobsolete = delete $args->{_NOOBSOLETEBUILD};
+    $noobsolete //= 0;
     # Any arg name ending in _URL is special: it tells us to download
     # the file at that URL before running the job
     my %downloads = ();
@@ -330,7 +341,8 @@ sub schedule_iso {
         }
         if (%cond) {
             try {
-                OpenQA::Scheduler::Scheduler::job_cancel(\%cond, 1);    # have new build jobs instead
+                $self->emit_event('openqa_iso_cancel', \%cond);
+                $self->db->resultset('Jobs')->cancel_by_settings(\%cond, 1);    # have new build jobs instead
             }
             catch {
                 my $error = shift;
@@ -352,7 +364,7 @@ sub schedule_iso {
             my $group_id = delete $settings->{GROUP_ID};
 
             # create a new job with these parameters and count if successful, do not send job notifies yet
-            my $job = $self->app->db->resultset('Jobs')->create_from_settings($settings);
+            my $job = $self->db->resultset('Jobs')->create_from_settings($settings);
 
             if ($job) {
                 push @jobs, $job;
@@ -382,7 +394,7 @@ sub schedule_iso {
             my @jobsarray = map +{job_id => $_}, @ids;
             for my $url (keys %downloads) {
                 my ($path, $do_extract) = @{$downloads{$url}};
-                $self->app->db->resultset('GruTasks')->create(
+                $self->db->resultset('GruTasks')->create(
                     {
                         taskname => 'download_asset',
                         priority => 20,
@@ -395,7 +407,7 @@ sub schedule_iso {
     };
 
     try {
-        $self->app->db->txn_do($coderef);
+        $self->db->txn_do($coderef);
     }
     catch {
         my $error = shift;
@@ -403,7 +415,7 @@ sub schedule_iso {
         @ids = ();
     };
 
-    $self->app->db->resultset('GruTasks')->create(
+    $self->db->resultset('GruTasks')->create(
         {
             taskname => 'limit_assets',
             priority => 10,
@@ -419,6 +431,7 @@ sub schedule_iso {
     catch {
         $self->app->log->warn("Failed to notify workers");
     };
+    $self->emit_event('openqa_iso_create', $args);
     return @ids;
 }
 
@@ -473,11 +486,16 @@ sub create {
 sub destroy {
     my $self = shift;
     my $iso  = $self->stash('name');
-    my $ipc  = OpenQA::IPC->ipc;
     $self->emit_event('openqa_iso_delete', {iso => $iso});
 
-    my $res = $ipc->scheduler('job_delete_by_iso', $iso);
-    $self->render(json => {count => $res});
+    my $subquery = $self->db->resultset("JobSettings")->query_for_settings({ISO => $iso});
+    my @jobs = $self->db->resultset("Jobs")->search({'me.id' => {-in => $subquery->get_column('job_id')->as_query}})->all;
+
+    for my $job (@jobs) {
+        $self->emit_event('openqa_job_delete', {id => $job->id});
+        $job->delete;
+    }
+    $self->render(json => {count => scalar(@jobs)});
 }
 
 sub cancel {
@@ -486,7 +504,7 @@ sub cancel {
     my $ipc  = OpenQA::IPC->ipc;
     $self->emit_event('openqa_iso_cancel', {iso => $iso});
 
-    my $res = $ipc->scheduler('job_cancel_by_iso', $iso, 0);
+    my $res = $self->db->resultset('Jobs')->cancel_by_settings({ISO => $iso}, 0);
     $self->render(json => {result => $res});
 }
 

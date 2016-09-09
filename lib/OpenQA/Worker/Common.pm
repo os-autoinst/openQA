@@ -148,7 +148,14 @@ sub api_init {
     else {
         $url = Mojo::URL->new($host);
     }
-    $openqa_url = $url->authority;
+
+    # Mojo7 does not have authority anymore, can be removed once we say Mojo6- is no longer supported
+    if ($url->can('authority')) {
+        $openqa_url = $url->authority;
+    }
+    else {
+        $openqa_url = $url->host_port;
+    }
     # Relative paths are appended to the existing one
     $url->path('/api/v1/');
 
@@ -158,6 +165,10 @@ sub api_init {
         apikey    => $apikey,
         apisecret => $apisecret
     );
+    # disable keep alive to avoid time outs in strange places - we only reach the
+    # webapi once in a while so take the price of reopening the connection every time
+    # we do
+    $ua->max_connections(0);
 
     unless ($ua->apikey && $ua->apisecret) {
         unless ($apikey && $apisecret) {

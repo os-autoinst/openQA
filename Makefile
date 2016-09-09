@@ -1,4 +1,4 @@
-COVERAGE_THRESHOLD ?= 62.6
+COVERAGE_THRESHOLD ?= 68.6
 PROVE_ARGS ?= -r
 
 .PHONY: all
@@ -6,12 +6,14 @@ all:
 
 .PHONY: install
 install:
-	for i in lib public script templates; do \
+	./script/generate-packed-assets
+	for i in lib public script templates assets; do \
 		mkdir -p "$(DESTDIR)"/usr/share/openqa/$$i ;\
 		cp -a $$i/* "$(DESTDIR)"/usr/share/openqa/$$i ;\
 	done
+
 # we didn't actually want to install these...
-	for i in tidy check_coverage; do \
+	for i in tidy check_coverage generate-packed-assets; do \
 		rm "$(DESTDIR)"/usr/share/openqa/script/$$i ;\
 	done
 #
@@ -74,7 +76,7 @@ test: checkstyle
 	OPENQA_CONFIG= prove ${PROVE_ARGS}
 
 # ignore tests and test related addons in coverage analysis
-COVER_OPTS ?= -ignore_re "t/.*" -ignore lib/perlcritic/Perl/Critic/Policy/HashKeyQuotes.pm
+COVER_OPTS ?= -ignore_re "^t/.*" -ignore lib/perlcritic/Perl/Critic/Policy/HashKeyQuotes.pm
 cover_db/:
 	MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover ${COVER_OPTS} -test -coverage default,-pod
 
@@ -97,3 +99,11 @@ coverage-html: cover_db/coverage.html
 .PHONY: coverage-check
 coverage-check: cover_db/coverage.html
 	./script/check_coverage ${COVERAGE_THRESHOLD}
+
+public/favicon.ico: assets/images/logo.svg
+	for w in 16 32 64 128; do \
+		inkscape -e assets/images/logo-$$w.png -w $$w assets/images/logo.svg ; \
+	done
+	convert assets/images/logo-16.png assets/images/logo-32.png assets/images/logo-64.png assets/images/logo-128.png -background white -alpha remove public/favicon.ico
+	rm assets/images/logo-128.png assets/images/logo-32.png assets/images/logo-64.png
+

@@ -6,7 +6,7 @@
             <h4>
                 <%= link_to "Build$build" => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $group->id ) %>
                 (<abbr class="timeago" title="<%= $build_res->{oldest}->datetime() %>Z">
-                <%= delete $build_res->{oldest} %>
+                %= delete $build_res->{oldest}
                 </abbr>)
             % my $group_build_id = $group->id . '-' . $build;
             % my $tag = $build_res->{tag};
@@ -26,14 +26,17 @@
         </div>
         <div class="col-md-8">
             % if ($max) {
-                <div class="progress">
-                    <div class="progress-bar progress-bar-success" style="width: <%= $build_res->{passed} * 100 / $max %>%">
+                <div class="progress build-dashboard">
+                    <div class="progress-bar progress-bar-passed" style="width: <%= $build_res->{passed} * 100 / $max %>%">
                         <%= $build_res->{passed} %> passed
                     </div>
-                    <div class="progress-bar progress-bar-warning progress-bar-striped" style="width: <%= $build_res->{inprogress} * 100 / $max %>%">
+                    <div class="progress-bar progress-bar-running progress-bar-striped" style="width: <%= $build_res->{inprogress} * 100 / $max %>%">
                         <%= $build_res->{inprogress} %> unfinished
                     </div>
-                    <div class="progress-bar progress-bar-danger" style="width: <%= $build_res->{failed} * 100 / $max %>%">
+                    <div class="progress-bar progress-bar-softfailed" style="width: <%= $build_res->{softfailed} * 100 / $max %>%">
+                        <%= $build_res->{softfailed} %> softfailed
+                    </div>
+                    <div class="progress-bar progress-bar-failed" style="width: <%= $build_res->{failed} * 100 / $max %>%">
                         <%= $build_res->{failed} %> failed
                     </div>
                 </div>

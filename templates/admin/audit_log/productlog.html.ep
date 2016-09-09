@@ -8,9 +8,7 @@
 % end
 
 <div class="row">
-    %= include 'layouts/admin_nav'
-
-    <div class="col-sm-10">
+    <div class="col-sm-12">
         <h2><%= title %>
             % if (!$audit_enabled) {
                 <em class="text-warning">(auditing disabled)</em>
@@ -48,7 +46,7 @@
                     % my $data = $iso->{event_data};
                     <td class="event_data"><%= $data %></td>
                     <td>
-                        %= link_post url_for('apiv1_create_iso') => ('data-remote' => 'true', class => 'iso_restart') => begin
+                        %= link_to url_for('apiv1_create_iso') => (class => 'iso_restart') => begin
                             <i class="action fa fa-repeat" title="Reschedule product tests"></i>
                         % end
                     </td>

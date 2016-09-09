@@ -47,20 +47,18 @@ sub on_event {
     # find count of pending jobs for the same build
     # this is so we can tell when all tests for a build are done
     my $job = $app->db->resultset('Jobs')->find({id => $event_data->{id}});
-    my $build = $job->settings_hash->{BUILD};
+    my $build = $job->BUILD;
     $event_data->{remaining} = $app->db->resultset('Jobs')->search(
         {
-            'settings.key'   => 'BUILD',
-            'settings.value' => $build,
-            state            => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
-        },
-        {join => qw/settings/})->count;
+            'me.BUILD' => $build,
+            state      => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
+        })->count;
     # add various useful properties for consumers if not there already
     $event_data->{BUILD}   //= $build;
-    $event_data->{TEST}    //= $job->test;
-    $event_data->{ARCH}    //= $job->settings_hash->{ARCH};
-    $event_data->{MACHINE} //= $job->settings_hash->{MACHINE};
-    $event_data->{FLAVOR}  //= $job->settings_hash->{FLAVOR};
+    $event_data->{TEST}    //= $job->TEST;
+    $event_data->{ARCH}    //= $job->ARCH;
+    $event_data->{MACHINE} //= $job->MACHINE;
+    $event_data->{FLAVOR}  //= $job->FLAVOR;
     $event_data->{ISO}     //= $job->settings_hash->{ISO} if ($job->settings_hash->{ISO});
     $event_data->{HDD_1}   //= $job->settings_hash->{HDD_1} if ($job->settings_hash->{HDD_1});
     # convert data to JSON, with reliable key ordering (helps the tests)

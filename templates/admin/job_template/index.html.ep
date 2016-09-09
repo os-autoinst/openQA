@@ -6,9 +6,7 @@
 % end
 
 <div class="row">
-    %= include 'layouts/admin_nav'
-
-    <div class="col-sm-10">
+    <div class="col-sm-12"">
         <h2><%= title %></h2>
         %= include 'layouts/info'
 
@@ -36,7 +34,7 @@
                 <option value="">Select...</option>
                 % for my $test (@$tests) {
                     <option value="<%= $test->name %>" data-test-id="<%= $test->id %>">
-                        <%= $test->name %>
+                        %= $test->name
                     </option>
                 % }
             </select>

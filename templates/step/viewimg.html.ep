@@ -1,71 +1,23 @@
-% layout 'default';
-% title $moduleid;
+<div class="aligncenter" data-image="<%= url_for('test_img', filename => $screenshot) %>" id="step_view">
+    Candidate needle:
+    <select id="needlediff_selector">
+        <option data-areas="[]" data-matches="[]">-None-</option>
+        % for my $needle (@$needles) {
+            % my $title = $needle->{min_similarity} . "%: " . $needle->{name};
+            <option data-image="<%= $needle->{image} %>"
+                    data-areas="<%= JSON::to_json($needle->{areas})%>"
+                    % if ($needle->{selected}) {
+                    selected="selected"
+                    % }
+                    data-matches="<%= JSON::to_json($needle->{matches}) %>">
+                <%= $title %></option>
+        % }
+    </select>
 
-% content_for 'head' => begin
-%= javascript '/javascripts/needlediff.js'
-% end
-
-% content_for 'head_javascript' => begin
-
-var diff;
-
-function setNeedle() {
-    var sel = $('#needlediff_selector').find('option:selected');
-    diff.setNeedle(sel.data('image'), sel.data('areas'), sel.data('matches'));
-}
-% end
-
-% content_for 'ready_function' => begin
-    diff = new NeedleDiff('needle_diff', <%= $img_width %>, <%= $img_height %>);
-    diff.setScreenshot('<%= url_for('test_img', filename => $screenshot) %>');
-    setNeedle(); // Just in case is a page reload
-
-    $('#needlediff_selector').change(setNeedle);
-    scrollModuleThumbnails();
-    setupResultButtons();
-%end
-
-<div class="grid_3 alpha" id="sidebar">
-    <div class="box box-shadow alpha" id="actions_box">
-        <div class="box-header aligncenter">Actions</div>
-        <div class="aligncenter">
-            % if (is_operator && $job->can_be_duplicated) {
-                %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
-                    <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
-                %= end
-            % }
-        </div>
-    </div>
-
-    %= include 'step/moduleslist'
+    % if (is_operator) {
+        %= link_to 'Create new needle' => url_for('edit_step')
+    % }
 </div>
 
-<div class="grid_13 omega">
-    %= include 'step/moduleslistthumbnails'
-
-    <div class="box box-shadow">
-        %= include 'step/moduleslisttabs'
-
-        <div class="aligncenter">
-            Candidate needle:
-            <select id="needlediff_selector">
-                <option data-areas="[]" data-matches="[]">-None-</option>
-                % for my $needle (@$needles) {
-                    % my $title = $needle->{'min_similarity'} . "%: " . $needle->{'name'};
-                    <option data-image="<%= $needle->{'image'} %>"
-                            data-areas="<%= JSON::to_json($needle->{'areas'})%>"
-                            % if ($needle->{selected}) {
-                            selected="selected"
-                            % }
-                            data-matches="<%= JSON::to_json($needle->{'matches'}) %>">
-                        <%= $title %></option>
-                % }
-            </select>
-        </div>
-
-        <div style="margin: 5px; min-height: 768px">
-            <div id="needle_diff"></div>
-        </div>
-    </div>
-
+<div id="needle_diff">
 </div>

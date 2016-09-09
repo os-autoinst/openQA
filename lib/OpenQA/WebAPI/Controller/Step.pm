@@ -1,4 +1,4 @@
-# Copyright (C) 2014,2015 SUSE LLC
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -25,42 +25,38 @@ use Try::Tiny;
 use JSON;
 
 sub init {
-    my $self = shift;
+    my ($self) = @_;
 
-    my $testindex = $self->param('stepid');
-    my $job       = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
+    my $job = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
 
     return $self->reply->not_found unless $job;
-    $self->stash(testname => $job->settings_hash->{NAME});
-    $self->stash(distri   => $job->settings_hash->{DISTRI});
-    $self->stash(version  => $job->settings_hash->{VERSION});
-    $self->stash(build    => $job->settings_hash->{BUILD});
+    $self->stash(testname => $job->name);
+    $self->stash(distri   => $job->DISTRI);
+    $self->stash(version  => $job->VERSION);
+    $self->stash(build    => $job->BUILD);
 
     my $module = OpenQA::Schema::Result::JobModules::job_module($job, $self->param('moduleid'));
-    my $details = $module->details();
-    $self->stash('job',     $job);
-    $self->stash('module',  $module);
-    $self->stash('imglist', $details);
+    $self->stash('job',    $job);
+    $self->stash('module', $module);
 
     $self->stash('modinfo', $job->running_modinfo());
+}
+
+sub check_tabmode {
+    my ($self) = @_;
+
+    my $job       = $self->stash('job');
+    my $module    = $self->stash('module');
+    my $details   = $module->details();
+    my $testindex = $self->param('stepid');
+
+    $self->stash('imglist', $details);
 
     my $tabmode = 'screenshot';    # Default
     if ($testindex > @$details) {
         # This means that the module have no details at all
-        if ($testindex == 1) {
-            if ($self->stash('action') eq 'src') {
-                $tabmode = 'onlysrc';
-            }
-            else {
-                $self->redirect_to('src_step');
-                return 0;
-            }
-            # In this case there are details, we simply run out of range
-        }
-        else {
-            $self->reply->not_found;
-            return 0;
-        }
+        $self->reply->not_found;
+        return 0;
     }
     else {
         my $module_detail = $details->[$testindex - 1];
@@ -103,7 +99,15 @@ sub needle_url {
 # Call to viewimg or viewaudio
 sub view {
     my ($self) = @_;
-    return 0 unless $self->init();
+
+    # Redirect users with the old preview link
+    if (!$self->req->is_xhr) {
+        my $anchor = "#step/" . $self->param('moduleid') . "/" . $self->param('stepid');
+        my $target_url = $self->url_for('test', testid => $self->param('testid'));
+        return $self->redirect_to($target_url . $anchor);
+    }
+
+    return 0 unless $self->init() && $self->check_tabmode();
 
     if ('audio' eq $self->stash('tabmode')) {
         $self->render('step/viewaudio');
@@ -118,15 +122,15 @@ sub view {
 
 # Needle editor
 sub edit {
-    my ($self, $ow_overwrite, $ow_json, $ow_imagename, $ow_imagedistri, $ow_imageversion, $ow_needlename) = @_;
-    return 0 unless $self->init();
+    my ($self) = @_;
+    return 0 unless $self->init() && $self->check_tabmode();
 
     my $module_detail = $self->stash('module_detail');
     my $imgname       = $module_detail->{screenshot};
     my $job           = $self->app->schema->resultset('Jobs')->find($self->param('testid'));
     return $self->reply->not_found unless $job;
-    my $distribution = $job->settings_hash->{DISTRI};
-    my $dversion = $job->settings_hash->{VERSION} || '';
+    my $distribution = $job->DISTRI;
+    my $dversion = $job->VERSION || '';
 
     # Each object in $needles will contain the name, both the url and the local path
     # of the image and 2 lists of areas: 'area' and 'matches'.
@@ -136,20 +140,18 @@ sub edit {
     # 'areas' (there is no needle associated to the screenshot) and with all matching
     # areas in 'matches'.
     my @needles;
+    my @error_messages;
     # All tags (from all needles)
     my $tags = [];
     $tags = $module_detail->{tags} if ($module_detail->{tags});
     my $screenshot;
-    my $overwrite = 'no';
-    $overwrite = $ow_overwrite if $ow_overwrite;
-    $imgname   = $ow_imagename if $overwrite eq 'yes';
 
     if ($module_detail->{needle}) {
 
         # First position: the screenshot with all the matching areas (in result)
         $screenshot = {
             name       => 'screenshot',
-            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
+            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string,
             imagename  => $imgname,
             imagedir   => "",
             area       => [],
@@ -173,23 +175,29 @@ sub edit {
         # Second position: the only needle (with the same matches)
         my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
 
-        $self->app->log->error(sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion)) if !defined $needle;
-
-        my $matched = {
-            name           => $module_detail->{needle},
-            suggested_name => $self->_timestamp($module_detail->{needle}),
-            imageurl       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json}),
-            imagename      => basename($needle->{image}),
-            imagedir       => dirname($needle->{image}),
-            imagedistri    => $needle->{distri},
-            imageversion   => $needle->{version},
-            area           => $needle->{area},
-            tags           => $needle->{tags},
-            json       => $needle->{json}       || "",
-            properties => $needle->{properties} || [],
-            matches    => $screenshot->{matches}};
-        calc_min_similarity($matched, $module_detail->{area});
-        push(@needles, $matched);
+        if (!$needle) {
+            my $error_message = sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion);
+            $self->app->log->error($error_message);
+            push(@error_messages, $error_message);
+        }
+        else {
+            my $matched = {
+                name           => $module_detail->{needle},
+                suggested_name => $self->_timestamp($module_detail->{needle}),
+                imageurl       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json})->to_string,
+                imagename      => basename($needle->{image}),
+                imagedir       => dirname($needle->{image}),
+                imagedistri    => $needle->{distri},
+                imageversion   => $needle->{version},
+                area           => $needle->{area},
+                tags           => $needle->{tags},
+                json       => $needle->{json}       || "",
+                properties => $needle->{properties} || [],
+                matches    => $screenshot->{matches}};
+            calc_min_similarity($matched, $module_detail->{area});
+            $matched->{title} = $matched->{min_similarity} . "%: " . $matched->{name};
+            push(@needles, $matched);
+        }
 
         for my $t (@{$needle->{tags}}) {
             push(@$tags, $t) unless grep(/^$t$/, @$tags);
@@ -203,7 +211,7 @@ sub edit {
             name       => 'screenshot',
             imagename  => $imgname,
             imagedir   => "",
-            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
+            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string,
             area       => [],
             matches    => [],
             properties => [],
@@ -226,7 +234,9 @@ sub edit {
             $needleinfo = needle_info($needlename, $distribution, $dversion || '', $needle->{json});
 
             if (!defined $needleinfo) {
-                $self->app->log->error(sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || ''));
+                my $error_message = sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || '');
+                $self->app->log->error($error_message);
+                push(@error_messages, $error_message);
 
                 $needleinfo->{image}  = [];
                 $needleinfo->{tags}   = [];
@@ -234,22 +244,22 @@ sub edit {
                 $needleinfo->{broken} = 1;
             }
 
-            push(
-                @needles,
-                {
-                    name           => $needlename,
-                    suggested_name => $self->_timestamp($needlename),
-                    imageurl       => $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json}),
-                    imagename      => basename($needleinfo->{image}),
-                    imagedir       => dirname($needleinfo->{image}),
-                    imagedistri    => $needleinfo->{distri},
-                    imageversion   => $needleinfo->{version},
-                    tags           => $needleinfo->{tags},
-                    area           => $needleinfo->{area},
-                    json       => $needleinfo->{json}       || "",
-                    properties => $needleinfo->{properties} || [],
-                    matches    => [],
-                    broken     => $needleinfo->{broken}});
+            my $needlehash = {
+                name           => $needlename,
+                title          => $needlename,
+                suggested_name => $self->_timestamp($needlename),
+                imageurl       => $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json})->to_string,
+                imagename      => basename($needleinfo->{image}),
+                imagedir       => dirname($needleinfo->{image}),
+                imagedistri    => $needleinfo->{distri},
+                imageversion   => $needleinfo->{version},
+                tags           => $needleinfo->{tags},
+                area           => $needleinfo->{area},
+                json       => $needleinfo->{json}       || "",
+                properties => $needleinfo->{properties} || [],
+                matches    => [],
+                broken     => $needleinfo->{broken}};
+            push(@needles, $needlehash) unless $needlehash->{broken};
             for my $match (@{$needle->{area}}) {
                 $area = {
                     xpos   => int $match->{x},
@@ -261,9 +271,10 @@ sub edit {
                 $area->{margin} = int($match->{margin}) if defined $match->{margin};
                 $area->{match}  = int($match->{match})  if defined $match->{match};
                 #push(@{$screenshot->{matches}}, $area);
-                push(@{$needles[scalar(@needles) - 1]->{matches}}, $area);
+                push(@{$needlehash->{matches}}, $area);
             }
-            calc_min_similarity($needles[scalar(@needles) - 1], $needle->{area});
+            calc_min_similarity($needlehash, $needle->{area});
+            $needlehash->{title} = $needlehash->{min_similarity} . "%: " . $needlehash->{name};
             for my $t (@{$needleinfo->{tags}}) {
                 push(@$tags, $t) unless grep(/^$t$/, @$tags);
             }
@@ -273,7 +284,7 @@ sub edit {
         # Failing with not a single candidate needle
         $screenshot = {
             name       => 'screenshot',
-            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot}),
+            imageurl   => $self->url_for('test_img', filename => $module_detail->{screenshot})->to_string,
             imagename  => $imgname,
             imagedir   => "",
             area       => [],
@@ -291,31 +302,7 @@ sub edit {
     #  - tags: tags from the screenshot
     my $default_needle = {};
     my $default_name;
-    $screenshot->{overwrite} = $overwrite;
-    if ($overwrite eq 'yes') {
-        # decode original json to perl
-        my $decode_json;
-        my $ow_tags       = [];
-        my $ow_area       = [];
-        my $ow_properties = [];
-        $decode_json   = decode_json($ow_json);
-        $ow_area       = $decode_json->{area};
-        $ow_tags       = $decode_json->{tags};
-        $ow_properties = $decode_json->{properties};
-        # replaced tags
-        $tags                         = $ow_tags;
-        $screenshot->{selected}       = 1;
-        $default_needle->{tags}       = $ow_tags;
-        $default_needle->{area}       = $ow_area;
-        $default_needle->{properties} = $ow_properties;
-        $screenshot->{tags}           = $ow_tags;
-        $screenshot->{area}           = $ow_area;
-        $screenshot->{properties}     = $ow_properties;
-        $screenshot->{suggested_name} = $ow_needlename;
-        $screenshot->{imagedistri}    = $ow_imagedistri;
-        $screenshot->{imageversion}   = $ow_imageversion;
-    }
-    elsif ($needles[0] && ($needles[0]->{min_similarity} || 0) > 70) {
+    if ($needles[0] && ($needles[0]->{min_similarity} || 0) > 70) {
         $needles[0]->{selected}       = 1;
         $default_needle->{tags}       = $needles[0]->{tags};
         $default_needle->{area}       = $needles[0]->{matches};
@@ -342,6 +329,10 @@ sub edit {
         $screenshot->{suggested_name} = $self->_timestamp($name);
     }
 
+    $screenshot->{title}   = 'Screenshot';
+    $screenshot->{tags}    = [];
+    $screenshot->{area}    = [];
+    $screenshot->{matches} = [];
     unshift(@needles, $screenshot);
 
     # stashing the properties
@@ -353,19 +344,20 @@ sub edit {
     $self->stash('tags',           $tags);
     $self->stash('properties',     $properties);
     $self->stash('default_needle', $default_needle);
+    $self->stash('error_messages', \@error_messages);
 
     $self->render('step/edit');
 }
 
 sub src {
     my ($self) = @_;
+
     return 0 unless $self->init();
 
     my $job    = $self->stash('job');
     my $module = $self->stash('module');
-    return $self->reply->not_found unless ($job && $module);
 
-    my $testcasedir = testcasedir($job->settings_hash->{DISTRI}, $job->settings_hash->{VERSION});
+    my $testcasedir = testcasedir($job->DISTRI, $job->VERSION);
     my $scriptpath = "$testcasedir/" . $module->script;
     if (!$scriptpath || !-e $scriptpath) {
         $scriptpath ||= "";
@@ -437,7 +429,7 @@ sub _json_validation($) {
 
 }
 
-sub save_needle {
+sub save_needle_ajax {
     my ($self) = @_;
     return 0 unless $self->init();
 
@@ -448,38 +440,33 @@ sub save_needle {
     $validation->optional('imagedistri')->like(qr/^[^.\/]+$/);
     $validation->optional('imageversion')->like(qr/^[^.\/]+$/);
     $validation->required('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
-    $validation->required('overwrite')->in(qw(yes no));
 
     if ($validation->has_error) {
         my $error = 'wrong parameters';
-        for my $k (qw/json imagename imagedistri imageversion needlename overwrite/) {
+        for my $k (qw/json imagename imagedistri imageversion needlename/) {
             $self->app->log->error($k . ' ' . join(' ', @{$validation->error($k)})) if $validation->has_error($k);
             $error .= ' ' . $k if $validation->has_error($k);
         }
-        $self->stash(error => "Error creating/updating needle: $error");
-        return $self->edit;
+        return $self->render(json => {error => "Error creating/updating needle: $error"});
     }
 
     my $job          = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
-    my $settings     = $job->settings_hash;
-    my $distribution = $settings->{DISTRI};
-    my $dversion     = $settings->{VERSION} || '';
+    my $distribution = $job->DISTRI;
+    my $dversion     = $job->VERSION || '';
     my $json         = $validation->param('json');
     my $imagename    = $validation->param('imagename');
     my $imagedistri  = $validation->param('imagedistri');
     my $imageversion = $validation->param('imageversion');
     my $imagedir     = $self->param('imagedir') || "";
     my $needlename   = $validation->param('needlename');
-    my $overwrite    = $validation->param('overwrite');
-    my $needledir    = needledir($job->settings_hash->{DISTRI}, $job->settings_hash->{VERSION});
+    my $needledir    = needledir($job->DISTRI, $job->VERSION);
 
     my $json_data;
     eval { $json_data = $self->_json_validation($json); };
     if ($@) {
         my $message = 'Error validating needle: ' . $@;
         $self->app->log->error($message);
-        $self->stash(error => "$message\n");
-        return $self->edit;
+        return $self->render(json => {error => $message});
     }
 
     my $success = 1;
@@ -494,18 +481,17 @@ sub save_needle {
         $imagepath = join('/', $job->result_dir(), $imagename);
     }
     if (!-f $imagepath) {
-        $self->stash(error => "Image $imagename could not be found!\n");
         $self->app->log->error("$imagepath is not a file");
-        return $self->edit;
+        return $self->render(json => {error => "Image $imagename could not be found!"});
     }
 
     my $baseneedle = "$needledir/$needlename";
     # do not overwrite the exist needle if disallow to overwrite
-    if (-e "$baseneedle.png" && $overwrite eq 'no') {
-        $self->stash(warn_overwrite => "Same needle name file already exists! Overwrite it?");
-        $success   = 0;
-        $overwrite = 'yes';
-        return $self->edit($overwrite, $json, $imagename, $imagedistri, $imageversion, $needlename);
+    if (-e "$baseneedle.png" && !$self->param('overwrite')) {
+        $success = 0;
+        my $returned_data = $self->req->params->to_hash;
+        $returned_data->{requires_overwrite} = 1;
+        return $self->render(json => $returned_data);
     }
     unless ($imagepath eq "$baseneedle.png") {
         unless (copy($imagepath, "$baseneedle.png")) {
@@ -536,20 +522,25 @@ sub save_needle {
                 }
                 catch {
                     $self->app->log->error($_);
-                    $self->stash(error => $_);
+                    return $self->render(json => {error => $_});
                 };
             }
             else {
-                $self->stash(error => "$needledir is not a git repo");
+                return $self->render(json => {error => "$needledir is not a git repo"});
             }
         }
-        $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => $overwrite});
-        $self->stash(info => "Needle $needlename created/updated.");
+        $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
+        my $info = {info => "Needle $needlename created/updated."};
+        if ($job->can_be_duplicated) {
+            $info->{restart} = $self->url_for('apiv1_restart', jobid => $job->id);
+        }
+        return $self->render(json => $info);
     }
     else {
-        $self->stash(error => "Error creating/updating needle: $!.");
+        return $self->render(json => {error => "Error creating/updating needle: $!."});
     }
-    return $self->edit;
+    # not reached
+    return;
 }
 
 sub calc_matches($$) {
@@ -590,8 +581,8 @@ sub viewimg {
     my $module_detail = $self->stash('module_detail');
     my $job           = $self->stash('job');
     return $self->reply->not_found unless $job;
-    my $distribution = $job->settings_hash->{DISTRI};
-    my $dversion = $job->settings_hash->{VERSION} || '';
+    my $distribution = $job->DISTRI;
+    my $dversion = $job->VERSION || '';
 
     my @needles;
     if ($module_detail->{needle}) {
@@ -633,8 +624,6 @@ sub viewimg {
 
     $self->stash('screenshot', $module_detail->{screenshot});
     $self->stash('needles',    \@needles);
-    $self->stash('img_width',  1024);
-    $self->stash('img_height', 768);
     return $self->render('step/viewimg');
 }
 

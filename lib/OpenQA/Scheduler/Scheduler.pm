@@ -52,48 +52,11 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
 @EXPORT = qw(worker_register job_create
-  job_get
   job_grab job_set_done job_set_waiting job_set_running job_notify_workers
-  job_delete job_restart job_cancel command_enqueue
+  job_restart
   job_set_stop job_stop iso_stop_old_builds
-  asset_list asset_get asset_delete asset_register query_jobs
+  asset_list asset_get asset_delete asset_register
 );
-
-
-our %worker_commands = map { $_ => undef } qw/
-  quit
-  abort
-  cancel
-  obsolete
-  stop_waitforneedle
-  reload_needles_and_retry
-  enable_interactive_mode
-  disable_interactive_mode
-  continue_waitforneedle
-  job_available
-  livelog_stop
-  livelog_start
-  /;
-
-$worker_commands{enable_interactive_mode} = sub {
-    my ($worker) = @_;
-    $worker->set_property("INTERACTIVE_REQUESTED", 1);
-};
-
-$worker_commands{disable_interactive_mode} = sub {
-    my ($worker) = @_;
-    $worker->set_property("INTERACTIVE_REQUESTED", 0);
-};
-
-$worker_commands{stop_waitforneedle} = sub {
-    my ($worker) = @_;
-    $worker->set_property("STOP_WAITFORNEEDLE_REQUESTED", 1);
-};
-
-$worker_commands{continue_waitforneedle} = sub {
-    my ($worker) = @_;
-    $worker->set_property("STOP_WAITFORNEEDLE_REQUESTED", 0);
-};
 
 sub schema {
     CORE::state $schema;
@@ -116,141 +79,6 @@ sub job_notify_workers {
     # notify workers about new job
     my $ipc = OpenQA::IPC->ipc;
     $ipc->websockets('ws_send_all', 'job_available');
-}
-
-sub job_get($) {
-    my $value = shift;
-
-    return if !defined($value);
-
-    if ($value =~ /^\d+$/) {
-        return _job_get({'me.id' => $value});
-    }
-    return _job_get({slug => $value});
-}
-
-# XXX TODO: Do not expand the Job
-sub _job_get($) {
-    my $search = shift;
-    my %attrs  = ();
-
-    push @{$attrs{prefetch}}, 'settings';
-
-    my $job = schema->resultset("Jobs")->search($search, \%attrs)->first;
-    return unless $job;
-    return $job->to_hash(assets => 1);
-}
-
-sub query_jobs {
-    my %args = @_;
-    # For args where we accept a list of values, allow passing either an
-    # array ref or a comma-separated list
-    for my $arg (qw/state ids result/) {
-        next unless $args{$arg};
-        $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
-    }
-
-    my @conds;
-    my %attrs;
-    my @joins;
-
-    unless ($args{idsonly}) {
-        push @{$attrs{prefetch}}, 'settings';
-        push @{$attrs{prefetch}}, 'parents';
-        push @{$attrs{prefetch}}, 'children';
-    }
-
-    if ($args{state}) {
-        push(@conds, {'me.state' => $args{state}});
-    }
-    if ($args{maxage}) {
-        my $agecond = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - $args{maxage}, 'UTC')};
-        push(
-            @conds,
-            {
-                -or => [
-                    'me.t_created'  => $agecond,
-                    'me.t_started'  => $agecond,
-                    'me.t_finished' => $agecond
-                ]});
-    }
-    # allows explicit filtering, e.g. in query url "...&result=failed&result=incomplete"
-    if ($args{result}) {
-        push(@conds, {'me.result' => {-in => $args{result}}});
-    }
-    if ($args{ignore_incomplete}) {
-        push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
-    }
-    my $scope = $args{scope} || '';
-    if ($scope eq 'relevant') {
-        push(@joins, 'clone');
-        push(
-            @conds,
-            {
-                -or => [
-                    'me.clone_id' => undef,
-                    'clone.state' => [OpenQA::Schema::Result::Jobs::PENDING_STATES],
-                ],
-                'me.result' => {    # these results should be hidden by default
-                    -not_in => [
-                        OpenQA::Schema::Result::Jobs::OBSOLETED,
-                        # OpenQA::Schema::Result::Jobs::USER_CANCELLED  I think USER_CANCELLED jobs should be available for restart
-                    ]}});
-    }
-    if ($scope eq 'current') {
-        push(@conds, {'me.clone_id' => undef});
-    }
-    if ($args{limit}) {
-        $attrs{rows} = $args{limit};
-    }
-    $attrs{page} = $args{page} || 0;
-    if ($args{assetid}) {
-        push(@joins, 'jobs_assets');
-        push(
-            @conds,
-            {
-                'jobs_assets.asset_id' => $args{assetid},
-            });
-    }
-    if (defined $args{groupid}) {
-        push(
-            @conds,
-            {
-                'me.group_id' => $args{groupid} || undef,
-            });
-    }
-    elsif ($args{group}) {
-        my $subquery = schema->resultset("JobGroups")->search({name => $args{group}})->get_column('id')->as_query;
-        push(
-            @conds,
-            {
-                'me.group_id' => {-in => $subquery},
-            });
-    }
-
-    if ($args{ids}) {
-        push(@conds, {'me.id' => {-in => $args{ids}}});
-    }
-    elsif ($args{match}) {
-        # Text search across some settings
-        my $subquery = schema->resultset("JobSettings")->search(
-            {
-                key => ['DISTRI', 'FLAVOR', 'BUILD', 'TEST', 'VERSION'],
-                value => {'-like' => "%$args{match}%"},
-            });
-        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
-    }
-    else {
-        my %js_settings = map { uc($_) => $args{$_} } qw(build iso distri version flavor arch hdd_1);
-        my $subquery = schema->resultset("JobSettings")->query_for_settings(\%js_settings);
-        push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
-    }
-
-    $attrs{order_by} = ['me.id DESC'];
-
-    $attrs{join} = \@joins if @joins;
-    my $jobs = schema->resultset("Jobs")->search({-and => \@conds}, \%attrs);
-    return $jobs;
 }
 
 sub _prefer_parallel {
@@ -344,8 +172,6 @@ sub job_grab {
                 join => 'parent',
             });
 
-        my $worker = schema->resultset("Workers")->find($workerid);
-
         my @available_cond = (    # ids available for this worker
             '-and',
             {
@@ -366,8 +192,7 @@ sub job_grab {
             # check all worker classes of scheduled jobs and filter out those not applying
             my $scheduled = schema->resultset("Jobs")->search(
                 {
-                    state     => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                    worker_id => 0
+                    state => OpenQA::Schema::Result::Jobs::SCHEDULED
                 })->get_column('id');
 
             my $not_applying_jobs = schema->resultset("JobSettings")->search(
@@ -387,19 +212,33 @@ sub job_grab {
         # now query for the best
         my $job = schema->resultset("Jobs")->search(
             {
-                state     => OpenQA::Schema::Result::Jobs::SCHEDULED,
-                worker_id => 0,
-                id        => \@available_cond,
+                state => OpenQA::Schema::Result::Jobs::SCHEDULED,
+                id    => \@available_cond,
             },
-            {order_by => {-asc => [qw/priority id/]}, rows => 1}
-          )->update(
-            {
-                state     => OpenQA::Schema::Result::Jobs::RUNNING,
-                worker_id => $workerid,
-                t_started => now(),
-            });
-
-        last if $job;
+            {order_by => {-asc => [qw/priority id/]}})->first;
+        if ($job) {
+            # we do this in a transaction to avoid the same job being assigned
+            # to two workers - the 2nd worker will fail the unique constraint in
+            # the workers table and the throw an exception - and re-grab
+            try {
+                schema->txn_do(
+                    sub {
+                        $job->update(
+                            {
+                                state     => OpenQA::Schema::Result::Jobs::RUNNING,
+                                t_started => now(),
+                            });
+                        $worker->job($job);
+                        $worker->update;
+                    });
+            }
+            catch {
+                # this job is most likely already taken
+                warn "Failed to grab job: $_";
+                next;
+            };
+            last;
+        }
         last unless $blocking;
         # XXX: do something smarter here
         #print STDERR "no jobs for me, sleeping\n";
@@ -411,7 +250,6 @@ sub job_grab {
     return {} unless ($job && $job->state eq OpenQA::Schema::Result::Jobs::RUNNING);
 
     my $job_hashref = {};
-    #    $job_hashref = _job_get({'me.id' => $job->id});
     $job_hashref = $job->to_hash(assets => 1);
 
     $worker->set_property('INTERACTIVE_REQUESTED',        0);
@@ -454,113 +292,6 @@ sub job_grab {
     return $job_hashref;
 }
 
-# parent job failed, handle scheduled children - set them to done incomplete immediately
-sub _job_skip_children {
-    my $jobid = shift;
-
-    my $children = schema->resultset("JobDependencies")->search(
-        {
-            dependency => {
-                -in => [OpenQA::Schema::Result::JobDependencies::CHAINED, OpenQA::Schema::Result::JobDependencies::PARALLEL],
-            },
-            parent_job_id => $jobid,
-        },
-    );
-
-    my $result = schema->resultset("Jobs")->search(
-        {
-            id    => {-in => $children->get_column('child_job_id')->as_query},
-            state => OpenQA::Schema::Result::Jobs::SCHEDULED,
-        },
-      )->update(
-        {
-            state  => OpenQA::Schema::Result::Jobs::CANCELLED,
-            result => OpenQA::Schema::Result::Jobs::SKIPPED,
-        });
-
-    while (my $j = $children->next) {
-        my $id = $j->child_job_id;
-        _job_skip_children($id);
-    }
-}
-
-# parent job failed, handle running children - send stop command
-sub _job_stop_children {
-    my $jobid = shift;
-
-    my $children = schema->resultset("JobDependencies")->search(
-        {
-            dependency    => OpenQA::Schema::Result::JobDependencies::PARALLEL,
-            parent_job_id => $jobid,
-        },
-    );
-    my $jobs = schema->resultset("Jobs")->search(
-        {
-            id    => {-in => $children->get_column('child_job_id')->as_query},
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
-        },
-    );
-
-    $jobs->search(
-        {
-            result => OpenQA::Schema::Result::Jobs::NONE,
-        }
-      )->update(
-        {
-            result => OpenQA::Schema::Result::Jobs::PARALLEL_FAILED,
-        });
-
-    while (my $j = $jobs->next) {
-        log_debug("enqueuing cancel for " . $j->id . " " . $j->worker_id);
-        command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
-        _job_stop_children($j->id);
-    }
-}
-
-=head2 job_set_done
-
-mark job as done. No error check. Meant to be called from worker!
-
-=cut
-# XXX TODO Parameters is a hash, check if is better use normal parameters
-sub job_set_done {
-    my %args = @_;
-    return unless ($args{jobid});
-    my $jobid    = int($args{jobid});
-    my $newbuild = 0;
-    $newbuild = int($args{newbuild}) if defined $args{newbuild};
-    $args{result} = OpenQA::Schema::Result::Jobs::OBSOLETED if $newbuild;
-    # delete JOBTOKEN
-    my $job = schema->resultset('Jobs')->find($jobid);
-    $job->set_property('JOBTOKEN');
-
-    $job->release_networks();
-
-    $job->owned_locks->delete;
-    $job->locked_locks->update({locked_by => undef});
-
-    my $result = $args{result} || $job->calculate_result();
-    my %new_val = (
-        state      => OpenQA::Schema::Result::Jobs::DONE,
-        worker_id  => 0,
-        t_finished => now(),
-    );
-
-    # for cancelled jobs the result is already known
-    $new_val{result} = $result if $job->result eq OpenQA::Schema::Result::Jobs::NONE;
-
-    my $r;
-    $r = $job->update(\%new_val);
-
-    if ($result ne OpenQA::Schema::Result::Jobs::PASSED) {
-        _job_skip_children($jobid);
-        _job_stop_children($jobid);
-        # labels are there to mark reasons of failure
-        $job->carry_over_labels;
-    }
-    return $r;
-}
-
 =head2 job_set_waiting
 
 mark job as waiting. No error check. Meant to be called from worker!
@@ -600,36 +331,6 @@ sub job_set_running {
             state => OpenQA::Schema::Result::Jobs::RUNNING,
         });
     return $r;
-}
-
-sub job_delete {
-    my $value = shift;
-
-    my %attrs;
-    my %cond;
-
-    _job_find_smart($value, \%cond, \%attrs);
-    my $cnt = schema->resultset("Jobs")->search(\%cond, \%attrs)->delete;
-
-    return $cnt;
-}
-
-sub _job_find_smart($$$) {
-    my ($value, $cond, $attrs) = @_;
-
-    if (ref $value eq '') {
-        if ($value =~ /\.iso/) {
-            $value = {ISO => $value};
-        }
-    }
-    if (ref $value eq 'HASH') {
-        my $subquery = schema->resultset("JobSettings")->query_for_settings($value);
-        $cond->{id} = {-in => $subquery->get_column('job_id')->as_query};
-    }
-    else {
-        # TODO: support by name and by iso here
-        $cond->{id} = $value;
-    }
 }
 
 =head2 job_duplicate
@@ -684,7 +385,7 @@ sub job_duplicate {
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
-            colums => [qw/id worker_id/]});
+            colums => [qw/id/]});
 
     $jobs->search(
         {
@@ -696,8 +397,9 @@ sub job_duplicate {
         });
 
     while (my $j = $jobs->next) {
+        next unless $j->worker;
         log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
-        command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
+        $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
 
     log_debug('new job ' . $clones{$job->id});
@@ -745,7 +447,7 @@ sub job_restart {
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         },
         {
-            colums => [qw/id worker_id/],
+            colums => [qw/id/],
         });
 
     $jobs->search(
@@ -759,101 +461,10 @@ sub job_restart {
 
     while (my $j = $jobs->next) {
         log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
-        command_enqueue(workerid => $j->worker_id, command => 'abort', job_id => $j->id);
+        $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
 
     return @duplicated;
-}
-
-sub job_cancel($;$) {
-    my $value = shift or die "missing name parameter\n";
-    my $newbuild = shift || 0;
-
-    my %attrs;
-    my %cond;
-
-    _job_find_smart($value, \%cond, \%attrs);
-
-    $cond{state} = OpenQA::Schema::Result::Jobs::SCHEDULED;
-
-    # first set all scheduled jobs to cancelled
-    my $r = schema->resultset("Jobs")->search(\%cond, \%attrs)->update(
-        {
-            state  => OpenQA::Schema::Result::Jobs::CANCELLED,
-            result => ($newbuild) ? OpenQA::Schema::Result::Jobs::OBSOLETED : OpenQA::Schema::Result::Jobs::USER_CANCELLED
-        });
-
-    my $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
-    while (my $j = $jobs->next) {
-        _job_skip_children($j->id);
-    }
-
-    $attrs{columns} = [qw/id worker_id/];
-    $cond{state}    = [OpenQA::Schema::Result::Jobs::EXECUTION_STATES];
-    # then tell workers to cancel their jobs
-    $jobs = schema->resultset("Jobs")->search(\%cond, \%attrs);
-
-    $jobs->search(
-        {
-            result => OpenQA::Schema::Result::Jobs::NONE,
-        }
-      )->update(
-        {
-            result => ($newbuild) ? OpenQA::Schema::Result::Jobs::OBSOLETED : OpenQA::Schema::Result::Jobs::USER_CANCELLED,
-        });
-
-    while (my $j = $jobs->next) {
-        if ($newbuild) {
-            log_debug("enqueuing obsolete for " . $j->id . " " . $j->worker_id);
-            command_enqueue(workerid => $j->worker_id, command => 'obsolete', job_id => $j->id);
-        }
-        else {
-            log_debug("enqueuing cancel for " . $j->id . " " . $j->worker_id);
-            command_enqueue(workerid => $j->worker_id, command => 'cancel', job_id => $j->id);
-        }
-        _job_skip_children($j->id);
-        _job_stop_children($j->id);
-
-        ++$r;
-    }
-    return $r;
-}
-
-sub job_stop {
-    carp "job_stop is deprecated, use job_cancel instead";
-    return job_cancel(@_);
-}
-
-#
-# Commands API
-#
-sub command_enqueue {
-    my %args = @_;
-    unless (defined $args{command} && defined $args{workerid}) {
-        carp 'missing mandatory options';
-        return;
-    }
-
-    unless (exists $worker_commands{$args{command}}) {
-        carp 'invalid command "' . $args{command} . "\"\n";
-        return;
-    }
-    if (ref $worker_commands{$args{command}} eq 'CODE') {
-        my $rs     = schema->resultset("Workers");
-        my $worker = $rs->find($args{workerid});
-        unless ($worker) {
-            carp 'invalid workerid "' . $args{workerid} . "\"\n";
-            return;
-        }
-        $worker_commands{$args{command}}->($worker);
-    }
-    my $msg = $args{command};
-    my $res;
-    try {
-        my $ipc = OpenQA::IPC->ipc;
-        $res = $ipc->websockets('ws_send', $args{workerid}, $msg, $args{job_id});
-    };
-    return $res;
 }
 
 #

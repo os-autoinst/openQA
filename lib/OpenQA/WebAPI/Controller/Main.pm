@@ -29,45 +29,34 @@ sub _group_result {
     my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
 
     my %res;
-    my $jobs = $group->jobs->search({"me.t_created" => $timecond,});
-    my $builds = $self->db->resultset('JobSettings')->search(
+    my $jobs = $group->jobs->search({"me.t_created" => $timecond});
+    my $builds = $jobs->search(
+        {},
         {
-            job_id => {-in => $jobs->get_column('id')->as_query},
-            key    => 'BUILD'
-        },
-        {
-            select => ['value', {min => 't_created', -as => 'first_hit'}],
-            as     => [qw/value first_hit/],
+            select => ['BUILD', {min => 't_created', -as => 'first_hit'}],
+            as     => [qw/BUILD first_hit/],
             order_by => {-desc => 'first_hit'},
-            group_by => [qw/value/]});
+            group_by => [qw/BUILD/]});
     my $max_jobs = 0;
     my $buildnr  = 0;
-    for my $b (map { $_->value } $builds->all) {
+    for my $b (map { $_->BUILD } $builds->all) {
         my $jobs = $self->db->resultset('Jobs')->search(
             {
-                'settings.key'   => 'BUILD',
-                'settings.value' => $b,
-                'me.group_id'    => $group->id,
-                'me.clone_id'    => undef,
+                'me.BUILD'    => $b,
+                'me.group_id' => $group->id,
+                'me.clone_id' => undef,
             },
-            {join => qw/settings/, order_by => 'me.id DESC'});
-        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0, labeled => 0);
+            {order_by => 'me.id DESC'});
+        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0, labeled => 0, softfailed => 0);
 
         my $count = 0;
         my %seen;
-        my %settings;
-        my $keys = $self->db->resultset('JobSettings')->search(
-            {
-                job_id => {-in => [map { $_->id } $jobs->all]},
-                key    => [qw/DISTRI VERSION ARCH FLAVOR MACHINE/]});
-        while (my $line = $keys->next) {
-            $settings{$line->job_id}->{$line->key} = $line->value;
-        }
+        my @ids = map { $_->id } $jobs->all;
         # prefetch comments to count. Any comment is considered a label here
         # so a build is considered as 'reviewed' if all failures have at least
         # a comment. This could be improved to distinguish between
         # "only-labels", "mixed" and such
-        my $c = $self->db->resultset("Comments")->search({job_id => {in => [map { $_->id } $jobs->all]}});
+        my $c = $self->db->resultset("Comments")->search({job_id => {in => \@ids}});
         my %labels;
         while (my $comment = $c->next) {
             $labels{$comment->job_id}++;
@@ -75,10 +64,9 @@ sub _group_result {
         $jobs->reset;
 
         while (my $job = $jobs->next) {
-            my $jhash = $settings{$job->id};
-            $jr{distri}  //= $jhash->{DISTRI};
-            $jr{version} //= $jhash->{VERSION};
-            my $key = $job->test . "-" . $jhash->{ARCH} . "-" . $jhash->{FLAVOR} . "-" . $jhash->{MACHINE};
+            $jr{distri}  //= $job->DISTRI;
+            $jr{version} //= $job->VERSION;
+            my $key = $job->TEST . "-" . $job->ARCH . "-" . $job->FLAVOR . "-" . $job->MACHINE;
             next if $seen{$key}++;
 
             $count++;
@@ -88,6 +76,11 @@ sub _group_result {
                     $jr{passed}++;
                     next;
                 }
+                if ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED) {
+                    $jr{softfailed}++;
+                    next;
+                }
+
                 if (   $job->result eq OpenQA::Schema::Result::Jobs::FAILED
                     || $job->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE)
                 {
@@ -104,7 +97,8 @@ sub _group_result {
             {
                 next;        # ignore
             }
-            if ($job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED || $job->state eq OpenQA::Schema::Result::Jobs::RUNNING) {
+            my $state = $job->state;
+            if (grep { /$state/ } (OpenQA::Schema::Result::Jobs::EXECUTION_STATES)) {
                 $jr{inprogress}++;
                 next;
             }
@@ -142,15 +136,27 @@ sub group_overview {
     my ($self) = @_;
 
     my $limit_builds = $self->param('limit_builds') // 10;
-    my $group = $self->db->resultset('JobGroups')->find($self->param('groupid'));
+    my $only_tagged  = $self->param('only_tagged')  // 0;
+    my $group        = $self->db->resultset('JobGroups')->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
     my $res = $self->_group_result($group, $limit_builds);
-    my @comments = $group->comments->all;
-    for my $comment (@comments) {
+    my @comments;
+    my @pinned_comments;
+    for my $comment ($group->comments->all) {
+        # find pinned comments
+        if ($comment->user->is_operator && CORE::index($comment->text, 'pinned-description') >= 0) {
+            push(@pinned_comments, $comment);
+        }
+        else {
+            push(@comments, $comment);
+        }
+
         my @tag   = $comment->tag;
         my $build = $tag[0];
         next unless $build;
+        # Next line fixes poo#12028
+        next unless $res->{$build};
         $self->app->log->debug('Tag found on build ' . $tag[0] . ' of type ' . $tag[1]);
         $self->app->log->debug('description: ' . $tag[2]) if $tag[2];
         if ($tag[1] eq '-important') {
@@ -164,9 +170,19 @@ sub group_overview {
             $res->{$build}->{tag} = {type => $tag[1], description => $tag[2]};
         }
     }
-    $self->stash('result',   $res);
-    $self->stash('group',    $group);
-    $self->stash('comments', \@comments);
+    if ($only_tagged) {
+        for my $build (keys %$res) {
+            next if ($build eq '_max');
+            next unless $build;
+            delete $res->{$build} unless $res->{$build}->{tag};
+        }
+    }
+    $self->stash('result',          $res);
+    $self->stash('group',           $group);
+    $self->stash('limit_builds',    $limit_builds);
+    $self->stash('only_tagged',     $only_tagged);
+    $self->stash('comments',        \@comments);
+    $self->stash('pinned_comments', \@pinned_comments);
 }
 
 sub add_comment {
@@ -182,6 +198,7 @@ sub add_comment {
             text    => $self->param('text'),
             user_id => $self->current_user->id,
         });
+
     $self->emit_event('openqa_user_comment', {id => $rs->id});
     $self->flash('info', 'Comment added');
     return $self->redirect_to('group_overview');

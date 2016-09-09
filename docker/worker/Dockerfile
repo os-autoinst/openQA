@@ -1,12 +1,12 @@
-FROM opensuse:13.2
-MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>
+FROM opensuse:42.1
+MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz(@github)
 
-RUN zypper --non-interactive in ca-certificates-mozilla curl && \
-    zypper ar -f obs://devel:openQA:stable/openSUSE_13.2 openQA && \
-    zypper ar -f obs://devel:openQA:13.2/openSUSE_13.2 openQA-perl-modules && \
-    zypper ar -f obs://Virtualization/openSUSE_13.2 Virtualization && \
-    curl https://api.opensuse.org/public/source/devel:openQA/_pubkey > /tmp/pubkey && rpm --import /tmp/pubkey && \
-    curl https://api.opensuse.org/public/source/Virtualization/_pubkey > /tmp/virt_pubkey && rpm --import /tmp/virt_pubkey && \
+# Add 'bash' to be able to run 'CMD'
+RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_42.1 openQA && \
+    zypper ar -f obs://devel:openQA:Leap:42.1/openSUSE_Leap_42.1 openQA-perl-modules && \
+    zypper ar -f obs://Virtualization/openSUSE_Leap_42.1 Virtualization && \
+    zypper --gpg-auto-import-keys ref && \
+    zypper --non-interactive in ca-certificates-mozilla curl bash && \
     zypper --non-interactive in openQA-worker qemu-kvm && \
     zypper --non-interactive in kmod && \
     zypper --non-interactive in --from Virtualization qemu-ovmf-x86_64

@@ -58,6 +58,10 @@ do not clone parent jobs.
 
 do not clone parent jobs of type chained. This makes the job use the downloaded hdd image instead of running the generator job again.
 
+=item B<--skip-download>
+
+do not try any download. You need to ensure all required assets are provided yourself.
+
 =item B<--apikey> <value>
 
 specify the public key needed for API authentication
@@ -87,6 +91,11 @@ clone_job.pl --from https://openqa.opensuse.org --host openqa.example.com 42
 
 clone_job.pl --from localhost --host localhost 42 MAKETESTSNAPSHOTS=1 FOOBAR=
 
+Any parent jobs (chained or parallel) are also cloned unless C<--skip-deps> or
+C<--skip-chained-deps> is specified. If C<--skip-chained-deps> is not
+specified, it does not download any published HDD assets as they are generated
+by the parent.
+
 =cut
 
 use strict;
@@ -112,7 +121,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options, "from=s", "host=s", "dir=s", "apikey:s", "apisecret:s", "verbose|v", "skip-deps", "skip-chained-deps", "help|h",) or usage(1);
+GetOptions(\%options, "from=s", "host=s", "dir=s", "apikey:s", "apisecret:s", "verbose|v", "skip-deps", "skip-chained-deps", "skip-download", "help|h",) or usage(1);
 
 usage(1) unless @ARGV;
 usage(1) unless exists $options{'from'};
@@ -156,11 +165,8 @@ else {
 $remote_url->path('/api/v1/jobs');
 $remote = OpenQA::Client->new(api => $remote_url->host);
 
-sub clone_job {
-    my ($jobid, $clone_map, $depth) = @_;
-    $clone_map //= {};
-    $depth //= 0;
-    return $clone_map->{$jobid} if defined $clone_map->{$jobid};
+sub get_job {
+    my ($jobid) = @_;
 
     my $job;
     my $url = $remote_url->clone;
@@ -177,35 +183,29 @@ sub clone_job {
     }
     else {
         my $err = $tx->error;
+        # there is no code for some error reasons, e.g. 'connection refused'
+        $err->{code} //= '';
         warn "failed to get job: $err->{code} $err->{message}";
         exit 1;
     }
 
     print JSON->new->pretty->encode($job) if ($options{verbose});
+    return $job;
+}
 
-    if ($job->{parents}) {
-        my $chained = $job->{parents}->{Chained} unless ($options{'skip-deps'} || $options{'skip-chained-deps'});
-        $chained //= [];
-        my $parallel = $job->{parents}->{Parallel} unless ($options{'skip-deps'});
-        $parallel //= [];
-
-        print "Clonning dependencies of $job->{name}\n" if (@$chained || @$parallel);
-
-        for my $p (@$chained, @$parallel) {
-            clone_job($p, $clone_map, $depth + 1);
-        }
-
-        my @new_chained  = map { $clone_map->{$_} } @$chained;
-        my @new_parallel = map { $clone_map->{$_} } @$parallel;
-
-        $job->{settings}->{_PARALLEL_JOBS}    = join(',', @new_parallel) if @new_parallel;
-        $job->{settings}->{_START_AFTER_JOBS} = join(',', @new_chained)  if @new_chained;
-    }
-
+sub download_assets {
+    my ($job, $remote_url, $ua, %options) = @_;
+    my @parents = map { get_job($_) } @{$job->{parents}->{Chained}};
+  ASSET:
     for my $type (keys %{$job->{assets}}) {
         next if $type eq 'repo';    # we can't download repos
         for my $file (@{$job->{assets}->{$type}}) {
             my $dst = $file;
+            unless ($options{'skip-deps'} || $options{'skip-chained-deps'}) {
+                for my $j (@parents, $job) {
+                    next ASSET if $j->{settings}->{PUBLISH_HDD_1} && $file eq $j->{settings}->{PUBLISH_HDD_1};
+                }
+            }
             $dst =~ s,.*/,,;
             $dst = join('/', $options{dir}, $type, $dst);
             my $from = $remote_url->clone;
@@ -221,8 +221,37 @@ sub clone_job {
             }
         }
     }
+}
 
-    $url = $local_url->clone;
+sub clone_job {
+    my ($jobid, $clone_map, $depth) = @_;
+    $clone_map //= {};
+    $depth //= 0;
+    return $clone_map->{$jobid} if defined $clone_map->{$jobid};
+
+    my $job = get_job($jobid);
+    if ($job->{parents}) {
+        my $chained = $job->{parents}->{Chained} unless ($options{'skip-deps'} || $options{'skip-chained-deps'});
+        $chained //= [];
+        my $parallel = $job->{parents}->{Parallel} unless ($options{'skip-deps'});
+        $parallel //= [];
+
+        print "Cloning dependencies of $job->{name}\n" if (@$chained || @$parallel);
+
+        for my $p (@$chained, @$parallel) {
+            clone_job($p, $clone_map, $depth + 1);
+        }
+
+        my @new_chained  = map { $clone_map->{$_} } @$chained;
+        my @new_parallel = map { $clone_map->{$_} } @$parallel;
+
+        $job->{settings}->{_PARALLEL_JOBS}    = join(',', @new_parallel) if @new_parallel;
+        $job->{settings}->{_START_AFTER_JOBS} = join(',', @new_chained)  if @new_chained;
+    }
+
+    download_assets($job, $remote_url, $ua, %options) unless $options{'skip-download'};
+
+    my $url      = $local_url->clone;
     my %settings = %{$job->{settings}};
     if ($job->{group}) {
         $settings{_GROUP} = $job->{group};
@@ -245,7 +274,7 @@ sub clone_job {
     }
     print JSON->new->pretty->encode(\%settings) if ($options{verbose});
     $url->query(%settings);
-    $tx = $local->post($url);
+    my $tx = $local->post($url);
     if ($tx->success) {
         my $r = $tx->success->json->{id};
         if ($r) {

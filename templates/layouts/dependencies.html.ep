@@ -11,7 +11,7 @@
                         text-align: center;"
                         class="<%= css_for({'result' => $dep->parent->result}) %>"><%= $dep->parent->result %></span>
                 % } else {
-                    <%= $dep->parent->state %>
+                    %= $dep->parent->state
                 % }
             </td>
         </tr>
@@ -32,7 +32,7 @@
                         text-align: center;"
                         class="<%= css_for({'result' => $dep->child->result}) %>"><%= $dep->child->result %></span>
                 % } else {
-                    <%= $dep->child->state %>
+                    %= $dep->child->state
                 % }
             </td>
         </tr>

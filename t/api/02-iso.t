@@ -48,7 +48,7 @@ sub lj {
     my $ret  = $t->get_ok('/api/v1/jobs')->status_is(200);
     my @jobs = @{$ret->tx->res->json->{jobs}};
     for my $j (@jobs) {
-        printf "%d %-10s %s\n", $j->{id}, $j->{state}, $j->{name};
+        printf "%d %-10s %s@%s\n", $j->{id}, $j->{state}, $j->{name}, $j->{settings}->{MACHINE};
     }
 }
 
@@ -110,15 +110,20 @@ my @tasks;
 @tasks = $t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'});
 is(scalar @tasks, 0, 'we have no gru download tasks to start with');
 
+# add a random comment on a scheduled but not started job so that this one
+# later on is found as important and handled accordingly
+$t->app->db->resultset("Jobs")->find(99928)->comments->create({text => 'any text', user_id => 99901});
+
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
 my $expected = qr/START_AFTER_TEST=.* not found - check for typos and dependency cycles/;
-my @warnings = warnings { $ret = $t->post_ok('/api/v1/isos', form => {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'})->status_is(200) };
+my $res;
+my @warnings = warnings { $res = schedule_iso({ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'}) };
 is(scalar @warnings, 2, 'two warnings expected');
 map { like($_, $expected) } @warnings;
 
-is($ret->tx->res->json->{count}, 10, "10 new jobs created");
-my @newids = @{$ret->tx->res->json->{ids}};
+is($res->json->{count}, 10, "10 new jobs created");
+my @newids = @{$res->json->{ids}};
 my $newid  = $newids[0];
 
 
@@ -159,14 +164,14 @@ is($advanced_kde_64->{settings}->{PUBLISH_HDD_1}, 'opensuse-13.1-i586-kde-qemu64
 
 lj;
 
-# check that the old tests are cancelled
-$ret = $t->get_ok('/api/v1/jobs/99927')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99927 is cancelled');
-
-$ret = $t->get_ok('/api/v1/jobs/99928')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99928 is cancelled');
-$ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
-is($ret->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
+subtest 'old tests are cancelled unless they are marked as important' => sub {
+    $ret = $t->get_ok('/api/v1/jobs/99927')->status_is(200);
+    is($ret->tx->res->json->{job}->{state}, 'cancelled', 'job 99927 is cancelled');
+    $ret = $t->get_ok('/api/v1/jobs/99928')->status_is(200);
+    is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job 99928 is marked as important and therefore preserved');
+    $ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
+    is($ret->tx->res->json->{job}->{state}, 'running', 'job 99963 is running');
+};
 
 # make sure unrelated jobs are not cancelled
 $ret = $t->get_ok("/api/v1/jobs/$clone99981")->status_is(200);
@@ -183,7 +188,23 @@ $ret = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
 is($ret->tx->res->json->{job}->{state}, 'cancelled', "job $newid is cancelled");
 
 # make sure we can't post invalid parameters
-$ret = $t->post_ok('/api/v1/isos', form => {iso => $iso, tests => "kde/usb"})->status_is(400);
+$res = schedule_iso({iso => $iso, tests => "kde/usb"}, 400);
+
+# handle list of tests
+$res = schedule_iso(
+    {
+        ISO     => $iso,
+        DISTRI  => 'opensuse',
+        VERSION => '13.1',
+        FLAVOR  => 'DVD',
+        ARCH    => 'i586',
+        TEST    => 'server,kde,textmode',
+        BUILD   => '0091'
+    },
+    200
+);
+
+is($res->json->{count}, 4, "4 new jobs created (one twice for both machine types)");
 
 # delete the iso
 # can not do as operator
@@ -195,6 +216,29 @@ $t->app($app);
 $ret = $t->delete_ok("/api/v1/isos/$iso")->status_is(200);
 # now the jobs should be gone
 $ret = $t->get_ok('/api/v1/jobs/$newid')->status_is(404);
+
+subtest 'jobs belonging to important builds are not cancelled by new iso post' => sub {
+    $ret = $t->get_ok('/api/v1/jobs/99963')->status_is(200);
+    is($ret->tx->res->json->{job}->{state}, 'running', 'job in build 0091 running');
+    my $tag = 'tag:0091:important';
+    $t->app->db->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
+    @warnings = warnings { $res = schedule_iso({ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'}) };
+    is(scalar @warnings,    2,  'two warnings expected');
+    is($res->json->{count}, 10, '10 jobs created');
+    $ret = $t->get_ok('/api/v1/jobs/99992')->status_is(200);
+    is($ret->tx->res->json->{job}->{state}, 'scheduled');
+    @warnings = warnings { $res = schedule_iso({ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0092'}) };
+    is(scalar @warnings, 2, 'two warnings expected');
+    $ret = $t->get_ok('/api/v1/jobs/99992')->status_is(200);
+    is($ret->tx->res->json->{job}->{state}, 'scheduled', 'job in old important build still scheduled');
+    @warnings = warnings { $res = schedule_iso({ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0093'}) };
+    is(scalar @warnings, 2, 'two warnings expected');
+    $ret = $t->get_ok('/api/v1/jobs?state=scheduled');
+    my @jobs = @{$ret->tx->res->json->{jobs}};
+    lj;
+    ok(!grep({ $_->{settings}->{BUILD} =~ '009[2]' } @jobs), 'no jobs from intermediate, not-important build');
+    is(scalar @jobs, 21, 'only the important jobs, jobs from the current build and the important build are scheduled');
+};
 
 $t->app->config->{global}->{download_domains} = 'localhost';
 
@@ -235,13 +279,13 @@ is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of j
 is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
 
 # Using asset _URL outside of whitelist will yield 403
-@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://adamshost/nonexistant.iso'}, 403) };
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://adamshost/nonexistent.iso'}, 403) };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
 is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
 
 # Using asset _DECOMPRESS_URL outside of whitelist will yield 403
-@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexistant.hda.xz'}, 403) };
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexistent.hda.xz'}, 403) };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
 is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');

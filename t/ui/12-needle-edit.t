@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -77,32 +77,34 @@ sub goto_editpage() {
     # we're back on the main page
     is($driver->get_title(), "openQA", "back on main page");
 
-    like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
+    is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
 
     $driver->get($baseurl . "tests/99946");
-    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode test results', 'tests/99946 followed');
+    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
 
-    $driver->find_element('installer_timezone', 'link_text')->click();
-    is($driver->get_current_url(), $baseurl . "tests/99946/modules/installer_timezone/steps/1/src", "on src page for nstaller_timezone test");
+    # init the preview
+    t::ui::PhantomTest::wait_for_ajax;
 
-    $driver->find_element('Needles editor', 'link_text')->click();
+    $driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
+
+    # init the diff
+    t::ui::PhantomTest::wait_for_ajax;
+
+    $driver->find_element('Create new needle', 'link_text')->click();
+
+    # no warnings about missing/bad needles present (yet)
+    my @warnings = $driver->find_elements('#editor_warnings', 'css');
+    is(scalar @warnings, 0, 'no warnings');
 }
 
 sub editpage_layout_check() {
+    t::ui::PhantomTest::wait_for_ajax;
+
     # layout check
-    $elem = $driver->find_element('#screens_table tbody tr', 'css');
-    my @headers = $driver->find_child_elements($elem, 'th');
-    is(@headers,                     5,                 "5 columns");
-    is((shift @headers)->get_text(), "Screens./Needle", "1st column");
-    is((shift @headers)->get_text(), "Image",           "2nd column");
-    is((shift @headers)->get_text(), "Areas",           "3rd column");
-    is((shift @headers)->get_text(), "Matches",         "4th column");
-    is((shift @headers)->get_text(), "Tags",            "5th column");
-    is($driver->find_element('#bg_btn_screenshot',              'css')->is_selected(), 1, "background selected");
-    is($driver->find_element('#bg_btn_inst-timezone-text',      'css')->is_selected(), 0, "background unselected");
-    is($driver->find_element('#tags_btn_screenshot',            'css')->is_selected(), 0, "tag btn unselected");
-    is($driver->find_element('#tags_btn_inst-timezone-text',    'css')->is_selected(), 1, "tag btn selected");
-    is($driver->find_element('#matches_btn_inst-timezone-text', 'css')->is_selected(), 1, "matches btn selected");
+    is($driver->find_element('#tags_select',  'css')->get_value(),   'inst-timezone-text', "inst-timezone tags selected");
+    is($driver->find_element('#image_select', 'css')->get_value(),   'screenshot',         "Screenshot background selected");
+    is($driver->find_element('#area_select',  'css')->get_value(),   'inst-timezone-text', "inst-timezone areas selected");
+    is($driver->find_element('#take_matches', 'css')->is_selected(), 1,                    "Matches selected");
 
     # check needle suggested name
     my $today = strftime("%Y%m%d", gmtime(time));
@@ -128,18 +130,13 @@ sub add_needle_tag(;$) {
     $elem = $driver->find_element('#newtag', 'css');
     $elem->send_keys($tagname);
     $driver->find_element('#tag_add_button', 'css')->click();
-    # leave the ajax some time
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     is($driver->find_element("//input[\@value=\"$tagname\"]")->is_selected(), 1, "new tag found and was checked");
 }
 
 sub add_workaround_property() {
     $driver->find_element('#property_workaround', 'css')->click();
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     is($driver->find_element('#property_workaround', 'css')->is_selected(), 1, "workaround property selected");
 }
 
@@ -158,10 +155,7 @@ sub change_needle_value($$) {
     $driver->button_down();
     $driver->mouse_move_to_location(element => $elem, xoffset => $decode_textarea->{area}[0]->{xpos} + $xoffset + $pre_offset, yoffset => $decode_textarea->{area}[0]->{ypos} + $yoffset + $pre_offset);
     $driver->button_up();
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
-
+    t::ui::PhantomTest::wait_for_ajax;
     $elem = $driver->find_element('#needleeditor_textarea', 'css');
     # check the value of textarea again
     $decode_new_textarea = decode_json($elem->get_value());
@@ -179,20 +173,20 @@ sub change_needle_value($$) {
     is($decode_new_textarea->{area}[0]->{type}, "ocr", "type is ocr");
     $driver->double_click;    # the match type change back to match
 
+    unlike($driver->find_element('#change-match', 'css')->get_attribute('class'), qr/disabled/, "match level now enabled");
+
     # test match level
     $driver->find_element('#change-match', 'css')->click();
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
-    is($driver->find_element('#change-match-form', 'css')->is_displayed(), 1, "match level form found");
-    is($driver->find_element('//button[@type="button"]/span[text()="Close"]')->is_displayed(), 1,    "match level form close button found");
-    is($driver->find_element('//button[@type="button"]/span[text()="Set"]')->is_displayed(),   1,    "found set button");
-    is($driver->find_element('//input[@id="match"]')->get_value(),                             "96", "default match level is 96");
+    t::ui::PhantomTest::wait_for_ajax;
+
+    my $dialog = $driver->find_element('#change-match-form', 'css');
+
+    is($driver->find_element('#set_match', 'css')->is_displayed(), 1, "found set button");
+    is($driver->find_element('//input[@id="match"]')->get_value(), "96", "default match level is 96");
     $driver->find_element('//input[@id="match"]')->clear();
     $driver->find_element('//input[@id="match"]')->send_keys("99");
     is($driver->find_element('//input[@id="match"]')->get_value(), "99", "set match level to 99");
-    $driver->find_element('//button[@type="button"]/span[text()="Set"]')->click();
-    $driver->find_element('//button[@type="button"]/span[text()="Close"]')->click();
+    $driver->find_element('#set_match', 'css')->click();
     is($driver->find_element('#change-match-form', 'css')->is_hidden(), 1, "match level form closed");
     $decode_new_textarea = decode_json($elem->get_value());
     is($decode_new_textarea->{area}[0]->{match}, 99, "match level is 99 now");
@@ -205,18 +199,33 @@ sub overwrite_needle($) {
     is($driver->find_element('#needleeditor_name', 'css')->get_value(), "", "needle name input clean up");
     $driver->find_element('#needleeditor_name', 'css')->send_keys($needlename);
     is($driver->find_element('#needleeditor_name', 'css')->get_value(), "$needlename", "new needle name inputed");
-    $driver->find_element('//input[@alt="Save"]')->click();
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
+    $driver->find_element('#save', 'css')->click();
+    t::ui::PhantomTest::wait_for_ajax;
+
+    my $diag;
+    my $is_displayed = 0;
+    # sometimes the overwrite warning is not there yet after the first call to
+    # 'wait_for_ajax' which has been observed only in tests so far
+    for my $retry (1 .. 10) {
+        $diag = $driver->find_element('#modal-overwrite', 'css');
+        $is_displayed = $driver->find_child_element($diag, '.modal-title', 'css')->is_displayed();
+        last if $is_displayed;
+        note("overwrite warning not found in retry $retry\n");
+        t::ui::PhantomTest::wait_for_ajax;
     }
-    # check the state highlight changed and click Yes do overwrite then
-    is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Same needle name file already exists! Overwrite it? Yes / No", "highlight appears correct");
-    $driver->find_element('Yes', 'link_text')->click();
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
-    is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
-    ok(-f "$dir/$needlename.json", "$needlename.json overwrited");
+    is($is_displayed, 1, "We can see the overwrite dialog");
+    is($driver->find_child_element($diag, '.modal-title', 'css')->get_text(), "Sure to overwrite test-newneedle?", "Needle part of the title");
+
+    $driver->find_element('#modal-overwrite-confirm', 'css')->click();
+
+    t::ui::PhantomTest::wait_for_ajax;
+    is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated. (restart job)", "highlight appears correct");
+    ok(-f "$dir/$needlename.json", "$needlename.json overwritten");
+
+    $driver->find_element('#flash-messages span a', 'css')->click();
+    # restart is an ajax call
+    t::ui::PhantomTest::wait_for_ajax;
+    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', "no longer on needle editor");
 }
 
 # start testing
@@ -235,12 +244,11 @@ $driver->find_element('#needleeditor_name', 'css')->send_keys($needlename);
 is($driver->find_element('#needleeditor_name', 'css')->get_value(), "$needlename", "new needle name inputed");
 
 # create new needle by clicked save button
-$driver->find_element('//input[@alt="Save"]')->click();
-while (!$driver->execute_script("return jQuery.active == 0")) {
-    sleep 1;
-}
+$driver->find_element('#save', 'css')->click();
+t::ui::PhantomTest::wait_for_ajax;
+
 # check state highlight appears with valid content
-is($driver->find_element('ui-state-highlight', 'class')->get_text(), "Needle test-newneedle created/updated.", "highlight appears correct");
+is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated. (restart job)", "highlight appears correct");
 # check files are exists
 ok(-f "$dir/$needlename.json", "$needlename.json created");
 ok(-f "$dir/$needlename.png",  "$needlename.png created");
@@ -248,6 +256,9 @@ ok(-f "$dir/$needlename.png",  "$needlename.png created");
 # test overwrite needle
 add_needle_tag('test-overwritetag');
 add_workaround_property();
+
+like($driver->find_element('#change-match', 'css')->get_attribute('class'), qr/disabled/, "match level disabled");
+
 # change area
 my $xoffset = my $yoffset = 200;
 change_needle_value($xoffset, $yoffset);    # xoffset and yoffset 200 for new area
@@ -273,6 +284,19 @@ for my $tag (@$new_tags) {
 is($match,                            1,                                                "found new tag in new needle");
 is($decode_json->{'area'}[0]->{xpos}, $decode_textarea->{'area'}[0]->{xpos} + $xoffset, "new xpos stored to new needle");
 is($decode_json->{'area'}[0]->{ypos}, $decode_textarea->{'area'}[0]->{ypos} + $yoffset, "new ypos stored to new needle");
+
+subtest 'Deletion of needle is handled gracefully' => sub {
+    # re-open the needle editor after deleting needle
+    unlink $filen;
+    $driver->get($baseurl . "tests/99946");
+    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
+    t::ui::PhantomTest::wait_for_ajax;
+    $driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
+    t::ui::PhantomTest::wait_for_ajax;
+    $driver->find_element('Create new needle', 'link_text')->click();
+    is($driver->get_title(), 'openQA: Needle Editor', 'needle editor still shows up');
+    is($driver->find_element('#editor_warnings span', 'css')->get_text(), 'Could not find needle: inst-timezone-text for opensuse 13.1', 'warning about deleted needle is displayed');
+};
 
 t::ui::PhantomTest::kill_phantom();
 

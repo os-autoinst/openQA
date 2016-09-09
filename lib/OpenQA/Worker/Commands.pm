@@ -35,9 +35,11 @@ sub websocket_commands {
         # requests
         my $type  = $json->{type};
         my $jobid = $json->{jobid};
+        my $joburl;
+        my $ua = Mojo::UserAgent->new;
         if ($jobid) {
             if (!$job) {
-                printf STDERR 'Received command %s for job %u, but we don not have any assigned. Ignoring!%s', $type, $jobid, "\n";
+                printf STDERR 'Received command %s for job %u, but we do not have any assigned. Ignoring!%s', $type, $jobid, "\n";
                 return;
             }
             elsif ($jobid ne $job->{id}) {
@@ -45,59 +47,45 @@ sub websocket_commands {
                 return;
             }
         }
+        if ($job) {
+            $joburl = $job->{URL};
+        }
         if ($type =~ m/quit|abort|cancel|obsolete/) {
             print "received command: $type" if $verbose;
             stop_job($type);
         }
-        elsif ($type eq 'stop_waitforneedle') {    # Plan: Enable interactive mode -- Now osautoinst decides what that means
+        elsif ($type eq 'stop_waitforneedle') {
             if (backend_running) {
-                if (open(my $f, '>', "$pooldir/stop_waitforneedle")) {
-                    close $f;
-                    print "waitforneedle will be stopped\n" if $verbose;
-                }
-                else {
-                    warn "can't stop waitforneedle: $!";
-                }
+                $ua->post("$joburl/isotovideo/stop_waitforneedle");
+                print "stop_waitforneedle triggered\n" if $verbose;
+                ws_call('property_change', {waitforneedle => 1});
             }
         }
-        elsif ($type eq 'reload_needles_and_retry') {    #
+        elsif ($type eq 'reload_needles_and_retry') {
             if (backend_running) {
-                if (open(my $f, '>', "$pooldir/reload_needles_and_retry")) {
-                    close $f;
-                    print "needles will be reloaded\n" if $verbose;
-                }
-                else {
-                    warn "can't reload needles: $!";
-                }
+                $ua->post("$joburl/isotovideo/reload_needles");
+                print "needles will be reloaded\n" if $verbose;
             }
         }
         elsif ($type eq 'enable_interactive_mode') {
             if (backend_running) {
-                if (open(my $f, '>', "$pooldir/interactive_mode")) {
-                    close $f;
-                    print "interactive mode enabled\n" if $verbose;
-                }
-                else {
-                    warn "can't enable interactive mode: $!";
-                }
+                $ua->post("$joburl/isotovideo/interactive?state=1");
+                print "interactive mode enabled\n" if $verbose;
+                ws_call('property_change', {interactive_mode => 1});
             }
         }
         elsif ($type eq 'disable_interactive_mode') {
             if (backend_running) {
-                unlink("$pooldir/interactive_mode");
+                $ua->post("$joburl/isotovideo/interactive?state=0");
                 print "interactive mode disabled\n" if $verbose;
+                ws_call('property_change', {interactive_mode => 0});
             }
         }
         elsif ($type eq 'continue_waitforneedle') {
             if (backend_running) {
-                if (open(my $f, '>', "$pooldir/continue_waitforneedle")) {
-                    close $f;
-                    print "waitforneedle will be continue\n" if $verbose;
-                }
-                else {
-                    warn "can't continue waitforneedle: $!";
-                }
-                print "continuing waitforneedle\n" if $verbose;
+                $ua->post("$joburl/isotovideo/continue_waitforneedle");
+                print "waitforneedle will continue\n" if $verbose;
+                ws_call('property_change', {waitforneedle => 0});
             }
         }
         elsif ($type eq 'livelog_start') {

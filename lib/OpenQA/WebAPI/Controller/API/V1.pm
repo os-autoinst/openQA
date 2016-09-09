@@ -66,13 +66,22 @@ sub auth {
         }
     }
 
-    if ($user && ($self->is_operator($user) || $self->is_admin($user))) {
+    if ($user) {
         $self->app->log->debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
         $self->stash(current_user => {user => $user});
         return 1;
     }
 
     $self->render(json => {error => $reason}, status => 403);
+    return 0;
+}
+
+sub auth_operator {
+    my ($self) = @_;
+    return 0 if (!$self->auth);
+    return 1 if ($self->is_operator || $self->is_admin);
+
+    $self->render(json => {error => 'Administrator level required'}, status => 403);
     return 0;
 }
 

@@ -1,5 +1,5 @@
-openQA image:https://api.travis-ci.org/os-autoinst/openQA.svg?branch=master[link=https://travis-ci.org/os-autoinst/openQA] image:https://coveralls.io/repos/os-autoinst/openQA/badge.png[link=https://coveralls.io/r/os-autoinst/openQA]
-========================================================================================================================================================================================================================================
+openQA image:https://api.travis-ci.org/os-autoinst/openQA.svg?branch=master[link=https://travis-ci.org/os-autoinst/openQA] image:https://coveralls.io/repos/github/os-autoinst/openQA/badge.svg?branch=master[link=https://coveralls.io/github/os-autoinst/openQA?branch=master]
+================================================================================================================================================================================================================================================================================
 
 openQA is a testing framework that allows you to test GUI applications on one
 hand and bootloader and kernel on the other. In both cases, it is difficult to

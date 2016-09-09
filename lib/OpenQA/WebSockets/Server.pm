@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -18,8 +18,10 @@ use Mojolicious::Lite;
 use Mojo::Util 'hmac_sha1_sum';
 
 use OpenQA::IPC;
-use OpenQA::Utils qw/log_debug/;
+use OpenQA::Utils qw/log_debug log_warning/;
 use OpenQA::Schema;
+
+use db_profiler;
 
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
@@ -182,8 +184,69 @@ sub _message {
         my $ret = $job->update_status($status);
         $ws->tx->send({json => $ret});
     }
+    elsif ($json->{type} eq 'property_change') {
+        my $prop = $json->{data};
+        if (defined $prop->{interactive_mode}) {
+            $worker->set_property('INTERACTIVE_REQUESTED', $prop->{interactive_mode} ? 1 : 0);
+        }
+        elsif (defined $prop->{waitforneedle}) {
+            $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', $prop->{waitforneedle} ? 1 : 0);
+        }
+        else {
+            $ws->app->log->error("Unknown property received from worker $workerid");
+        }
+    }
     else {
         $ws->app->log->error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $workerid));
+    }
+}
+
+sub _get_dead_worker_jobs {
+    my ($threshold) = @_;
+
+    my $schema = OpenQA::Schema::connect_db;
+
+    my $dtf = $schema->storage->datetime_parser;
+    my $dt = DateTime->from_epoch(epoch => time() - $threshold, time_zone => 'UTC');
+
+    my %cond = (
+        state              => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+        'worker.t_updated' => {'<' => $dtf->format_datetime($dt)},
+    );
+    my %attrs = (join => 'worker',);
+
+    return $schema->resultset("Jobs")->search(\%cond, \%attrs);
+}
+
+sub _is_job_considered_dead {
+    my ($job) = @_;
+
+    # much bigger timeout for uploading jobs
+    if ($job->state eq OpenQA::Schema::Result::Jobs::UPLOADING) {
+        my $delta = DateTime->now()->epoch() - $job->worker->t_updated->epoch();
+        return if $delta > 1000;
+    }
+
+    # default timeout for the rest
+    return 1;
+}
+
+# Running as recurring timer, each 20minutes check if worker with job has been updated in last 10s
+sub _workers_checker {
+
+    my $dead_jobs = _get_dead_worker_jobs(10);
+    my $ipc       = OpenQA::IPC->ipc;
+    for my $job ($dead_jobs->all) {
+        next unless _is_job_considered_dead($job);
+
+        $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
+        my $res = $ipc->scheduler('job_duplicate', {jobid => $job->id});
+        if ($res) {
+            log_warning(sprintf('dead job %d aborted and duplicated', $job->id));
+        }
+        else {
+            log_warning(sprintf('dead job %d aborted as incomplete', $job->id));
+        }
     }
 }
 
@@ -200,11 +263,9 @@ sub setup {
     #     if ($logfile && $self->config->{logging}->{level}) {
     #         $self->log->level($self->config->{logging}->{level});
     #     }
-    #     if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
-    #         # avoid enabling the SQL debug unless we really want to see it
-    #         # it's rather expensive
-    #         db_profiler::enable_sql_debugging($self);
-    #     }
+
+    # db_profiler::enable_sql_debugging(app, OpenQA::Schema::connect_db);
+    # app->log->level('debug');
 
     # use port one higher than WebAPI
     my $port = 9527;
@@ -217,6 +278,9 @@ sub setup {
 
     # no cookies for worker, no secrets to protect
     app->secrets(['nosecretshere']);
+
+    # start worker checker - check workers each 2 minutes
+    Mojo::IOLoop->recurring(120 => \&_workers_checker);
 
     return Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
 }

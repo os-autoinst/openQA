@@ -62,19 +62,21 @@ print help
 
 =head1 DESCRIPTION
 
-lorem ipsum ...
+(no content)
 
 =head1 CONFIG FILE
 
-L<OpenQA::Client> tries to find a config file in
-$OPENQA_CLIENT_CONFIG, ~/.config/openqa/client.conf or
-/etc/openqa/client.conf and reads whatever comes first.
-You can put API key and secret in that config file.
+L<worker> relies on credentials provided by L<OpenQA::Client>, i.e. tries to
+find a config file C<client.conf> resolving C<$OPENQA_CONFIG> or
+C<~/.config/openqa> or C</etc/openqa/> in this order of preference.
+Additionally L<worker> uses a config file C<workers.ini> to configure worker
+settings.
 
 Example:
-  [openqa.example.com]
-  key = foo
-  secret = bar
+  [global]
+  BACKEND = qemu
+  HOST = http://openqa.example.com
+
 
 =head1 SEE ALSO
 L<OpenQA::Client>

@@ -1,12 +1,12 @@
-FROM opensuse:13.2
-MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>
+FROM opensuse:42.1
+MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz(@github)
 
-# apache2 was added, otherwise it can not installed as dependecy and following setup steps will fail.
-RUN zypper --non-interactive in ca-certificates-mozilla curl && \
-    zypper ar -f obs://devel:openQA:stable/openSUSE_13.2 openQA && \
-    zypper ar -f obs://devel:openQA:13.2/openSUSE_13.2 openQA-perl-modules && \
-    curl https://api.opensuse.org/public/source/devel:openQA/_pubkey > /tmp/openQA-pubkey && rpm --import /tmp/openQA-pubkey && \
-    zypper --non-interactive in openQA apache2
+# Add 'bash' to be able to run 'CMD'
+RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_42.1 openQA && \
+    zypper ar -f obs://devel:openQA:Leap:42.1/openSUSE_Leap_42.1 openQA-perl-modules && \
+    zypper --gpg-auto-import-keys ref && \
+    zypper --non-interactive in ca-certificates-mozilla curl && \
+    zypper --non-interactive in openQA apache2 hostname which w3m bash
 
 
 # setup apache

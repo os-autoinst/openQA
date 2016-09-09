@@ -1,5 +1,5 @@
 % layout 'bootstrap';
-% title "Worker " . $worker->host . ":" . $worker->instance;
+% title "Worker " . $worker->{name};
 
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
@@ -7,16 +7,14 @@
 % end
 
 <div class="row">
-    %= include 'layouts/admin_nav'
-
-    <div class="col-sm-10">
+    <div class="col-sm-12">
         <h2><%= title %></h2>
 
     %= include 'layouts/info'
 
-    <div><span>Host: </span><%= $worker->host %></div>
-    <div><span>Instance: </span><%= $worker->instance %></div>
-    <div><span>Seen: </span><abbr class="timeago" title="<%= $worker->t_updated->datetime() %>Z"><%= format_time($worker->t_updated) %></abbr></div>
+    <div><span>Host: </span><%= $worker->{host} %></div>
+    <div><span>Instance: </span><%= $worker->{instance} %></div>
+    <div><span>Seen: </span><abbr class="timeago" title="<%= $worker->{t_updated}->datetime() %>Z"><%= format_time($worker->{t_updated}) %></abbr></div>
     <div><span>Status: </span>
         %= include 'admin/workers/worker_status'
     </div>
@@ -28,10 +26,10 @@
             <th>Value</th>
         </thead>
         <tbody>
-            % for my $p ( sort map { $_->key } $worker->properties->all ) {
+            % for my $k (sort keys %{$worker->{properties}}) {
                 <tr>
-                    <td><%= $p %></td>
-                    <td><%= $worker->get_property($p) %></td>
+                    <td><%= $k %></td>
+                    <td><%= $worker->{properties}->{$k} %></td>
                 </tr>
             % }
         </tbody>

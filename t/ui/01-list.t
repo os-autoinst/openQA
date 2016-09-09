@@ -68,7 +68,7 @@ my @tds = $driver->find_child_elements($job99946, "td");
 is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', "medium of 99946");
 is((shift @tds)->get_text(), 'textmode@32bit',                      "test of 99946");
 is((shift @tds)->get_text(), '29 1',                                "result of 99946");
-like((shift @tds)->get_text(), qr/a minute ago/, "time of 99946");
+like((shift @tds)->get_text(), qr/about 3 hours ago/, "finish time of 99946");
 
 # Test 99963 is still running
 isnt($driver->find_element('#running #job_99963', 'css'), undef, '99963 still running');
@@ -77,7 +77,7 @@ like($driver->find_element('#running #job_99963 td.time', 'css')->get_text(), qr
 
 $get = $t->get_ok('/tests')->status_is(200);
 my @header = $t->tx->res->dom->find('h2')->map('text')->each;
-my @expected = ('2 jobs are running', '2 scheduled jobs', 'Last 7 finished jobs');
+my @expected = ('2 jobs are running', '2 scheduled jobs', 'Last 8 finished jobs');
 is_deeply(\@header, \@expected, 'all job summaries correct with defaults');
 
 $get      = $t->get_ok('/tests?limit=1')->status_is(200);
@@ -85,10 +85,8 @@ $get      = $t->get_ok('/tests?limit=1')->status_is(200);
 @expected = ('2 jobs are running', '2 scheduled jobs', 'Last 1 finished jobs');
 is_deeply(\@header, \@expected, 'test report can be adjusted with query parameter');
 
-$get      = $t->get_ok('/tests/99963')->status_is(200);
-@header   = $t->tx->res->dom->find('.box-header')->map('text')->each;
-@expected = ('Actions', 'Test modules', 'Parents', 'Backend', 'Live view of', 'Live Log');
-is_deeply(\@header, \@expected, 'all page modules for running jobs are visible');
+$get = $t->get_ok('/tests/99963')->status_is(200);
+$t->content_like(qr/State.*running/, "Running jobs are marked");
 
 $driver->find_element('Build0091', 'link_text')->click();
 like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse build 0091/, 'we are on build 91');
@@ -100,7 +98,7 @@ is($driver->get($baseurl . "tests"), 1, "/tests gets");
 isnt($driver->find_element('#scheduled #job_99928', 'css'), undef, '99928 scheduled');
 is($driver->find_element('#scheduled #job_99928 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99928", 'right link');
 $driver->find_element('#scheduled #job_99928 td.test a', 'css')->click();
-is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-RAID1 test results', 'tests/99928 followed');
+is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-RAID1@32bit test results', 'tests/99928 followed');
 
 # return
 is($driver->get($baseurl . "tests"), 1, "/tests gets");
@@ -111,7 +109,7 @@ my $job99938 = $driver->find_element('#results #job_99946', 'css');
 is($driver->find_element('#results #job_99938 .test .status.result_failed', 'css')->get_text(), '', '99938 failed');
 is($driver->find_element('#results #job_99938 td.test a', 'css')->get_attribute('href'), "$baseurl" . "tests/99938", 'right link');
 $driver->find_element('#results #job_99938 td.test a', 'css')->click();
-is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc test results', 'tests/99938 followed');
+is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results', 'tests/99938 followed');
 
 # return
 is($driver->get($baseurl . "tests"), 1, "/tests gets");
@@ -137,13 +135,13 @@ is($parent_e->get_attribute('data-parents'),  "[]",              "no parents");
 # first check the relevant jobs
 my @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 
-is_deeply(\@jobs, [qw(job_99981 job_99962 job_99946 job_99939 job_99938 job_99937 job_99926)], '6 rows (relevant) displayed');
+is_deeply(\@jobs, [qw(job_99940 job_99939 job_99938 job_99926 job_99962 job_99946 job_99937 job_99981)], '99945 is not displayed');
 $driver->find_element('#relevantfilter', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax();
 
 # Test 99945 is not longer relevant (replaced by 99946) - but displayed for all
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-is_deeply(\@jobs, [qw(job_99981 job_99962 job_99946 job_99945 job_99939 job_99938 job_99937 job_99926)], '7 rows (all) displayed');
+is_deeply(\@jobs, [qw(job_99940 job_99939 job_99938 job_99926 job_99962 job_99946 job_99945 job_99944 job_99937 job_99981)], 'all rows displayed');
 
 # now toggle back
 #print $driver->get_page_source();
@@ -151,7 +149,7 @@ $driver->find_element('#relevantfilter', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax();
 
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
-is_deeply(\@jobs, [qw(job_99981 job_99962 job_99946 job_99939 job_99938 job_99937 job_99926)], '6 rows (relevant) again displayed');
+is_deeply(\@jobs, [qw(job_99940 job_99939 job_99938 job_99926 job_99962 job_99946 job_99937 job_99981)], '99945 again hidden');
 
 $driver->get($baseurl . "tests?match=staging_e");
 t::ui::PhantomTest::wait_for_ajax();

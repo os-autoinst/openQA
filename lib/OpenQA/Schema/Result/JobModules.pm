@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -49,11 +49,6 @@ __PACKAGE__->add_columns(
     # flags - not using a bit field and not using a join table
     # to simplify code. In case we get a much bigger database, we
     # might reconsider
-    soft_failure => {
-        data_type     => 'integer',
-        is_nullable   => 0,
-        default_value => 0
-    },
     milestone => {
         data_type     => 'integer',
         is_nullable   => 0,
@@ -83,10 +78,10 @@ __PACKAGE__->belongs_to(
     {
         is_deferrable => 1,
         join_type     => "LEFT",
-        on_delete     => "CASCADE",
         on_update     => "CASCADE",
     },
 );
+__PACKAGE__->has_many(needle_hits => 'OpenQA::Schema::Result::JobModuleNeedles', 'job_module_id');
 
 sub sqlt_deploy_hook {
     my ($self, $sqlt_table) = @_;
@@ -94,7 +89,27 @@ sub sqlt_deploy_hook {
     $sqlt_table->add_index(name => 'idx_job_modules_result', fields => ['result']);
 }
 
-sub details() {
+# overload to straighten out needle references
+sub delete {
+    my ($self) = @_;
+
+    # those are just there for tracking
+    $self->needle_hits->delete;
+
+    my $schema = $self->result_source->schema;
+    my @ors;
+    push(@ors, {last_seen_module_id    => $self->id});
+    push(@ors, {first_seen_module_id   => $self->id});
+    push(@ors, {last_matched_module_id => $self->id});
+
+    my $needles = $schema->resultset('Needles')->search({-or => \@ors});
+    while (my $needle = $needles->next) {
+        $needle->recalculate_matches;
+    }
+    return $self->SUPER::delete;
+}
+
+sub details {
     my ($self) = @_;
 
     my $dir = $self->job->result_dir();
@@ -160,23 +175,18 @@ sub job_module_stats($) {
     }
 
     for my $id (@$ids) {
-        $result_stat->{$id} = {passed => 0, failed => 0, dents => 0, none => 0};
+        $result_stat->{$id} = {passed => 0, failed => 0, softfailed => 0, none => 0};
     }
 
     my $query = $schema->resultset("JobModules")->search(
         {job_id => {in => $ids}},
         {
-            select   => ['job_id', 'result', 'soft_failure', {count => 'id'}],
-            as       => [qw/job_id result soft_failure count/],
-            group_by => [qw/job_id result soft_failure/]});
+            select   => ['job_id', 'result', {count => 'id'}],
+            as       => [qw/job_id result count/],
+            group_by => [qw/job_id result/]});
 
     while (my $line = $query->next) {
-        if ($line->result eq OpenQA::Schema::Result::Jobs::PASSED && $line->soft_failure) {
-            $result_stat->{$line->job_id}->{dents} = $line->get_column('count');
-        }
-        else {
-            $result_stat->{$line->job_id}->{$line->result} = $line->get_column('count');
-        }
+        $result_stat->{$line->job_id}->{$line->result} = $line->get_column('count');
     }
 
     return $result_stat;
@@ -193,10 +203,12 @@ sub update_result($) {
     $result =~ s,^ok,passed,;
     $result =~ s,^unk,none,;
     $result =~ s,^skip,skipped,;
+    if ($r->{dents} && $result eq 'passed') {
+        $result = 'softfailed';
+    }
     $self->update(
         {
-            result       => $result,
-            soft_failure => $r->{dents} ? 1 : 0,
+            result => $result,
         });
 }
 
@@ -241,38 +253,46 @@ sub store_needle_infos($;$) {
     OpenQA::Schema::Result::Needles::update_needle_cache(\%hash);
 }
 
-sub save_details($;$) {
-    my ($self, $details, $cleanup) = @_;
-    my $existant_md5 = [];
-    for my $d (@$details) {
-        # create possibly stale symlinks
-        my ($full, $thumb) = OpenQA::Utils::image_md5_filename($d->{screenshot}->{md5});
-        if (-e $full) {    # mark existant
-            push(@$existant_md5, $d->{screenshot}->{md5});
-        }
-        if ($cleanup) {
-            # interactive mode, recreate the symbolic link of screenshot if it was changed
-            my $full_link  = readlink($self->job->result_dir . "/" . $d->{screenshot}->{name})         || '';
-            my $thumb_link = readlink($self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name}) || '';
-            if ($full ne $full_link) {
-                OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/" . $d->{screenshot}->{name};
-                unlink($self->job->result_dir . "/" . $d->{screenshot}->{name});
-            }
-            if ($thumb ne $thumb_link) {
-                OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name};
-                unlink($self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
-            }
-        }
-        symlink($full,  $self->job->result_dir . "/" . $d->{screenshot}->{name});
-        symlink($thumb, $self->job->result_dir . "/.thumbs/" . $d->{screenshot}->{name});
-        $d->{screenshot} = $d->{screenshot}->{name};
+sub _save_details_screenshot {
+    my ($self, $screenshot, $existent_md5, $cleanup) = @_;
 
+    my ($full, $thumb) = OpenQA::Utils::image_md5_filename($screenshot->{md5});
+    if (-e $full) {    # mark existent
+        push(@$existent_md5, $screenshot->{md5});
+    }
+    if ($cleanup) {
+        # interactive mode, recreate the symbolic link of screenshot if it was changed
+        my $full_link  = readlink($self->job->result_dir . "/" . $screenshot->{name})         || '';
+        my $thumb_link = readlink($self->job->result_dir . "/.thumbs/" . $screenshot->{name}) || '';
+        if ($full ne $full_link) {
+            OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/" . $screenshot->{name};
+            unlink($self->job->result_dir . "/" . $screenshot->{name});
+        }
+        if ($thumb ne $thumb_link) {
+            OpenQA::Utils::log_debug "cleaning up " . $self->job->result_dir . "/.thumbs/" . $screenshot->{name};
+            unlink($self->job->result_dir . "/.thumbs/" . $screenshot->{name});
+        }
+    }
+    symlink($full,  $self->job->result_dir . "/" . $screenshot->{name});
+    symlink($thumb, $self->job->result_dir . "/.thumbs/" . $screenshot->{name});
+    return $screenshot->{name};
+}
+
+sub save_details {
+    my ($self, $details, $cleanup) = @_;
+    my $existent_md5 = [];
+    for my $d (@$details) {
+        # avoid creating symlinks for text results
+        if ($d->{screenshot}) {
+            # create possibly stale symlinks
+            $d->{screenshot} = $self->_save_details_screenshot($d->{screenshot}, $existent_md5, $cleanup);
+        }
     }
     $self->store_needle_infos($details);
     open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");
     $fh->print(JSON::encode_json($details));
     close($fh);
-    return $existant_md5;
+    return $existent_md5;
 }
 
 1;

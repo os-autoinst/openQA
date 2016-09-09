@@ -21,10 +21,7 @@
     % }
 
     <span <%= Mojo::ByteStream->new($tooltip) %> class="failedmodule" >
-        <a href="<%= url_for('step', 'testid' => $jobid,
-                             'moduleid' => $failedmodule, 'stepid' => $step) %>">
-            <%= trim_text($failedmodule, $limit) %>
-            % $limit -= length($failedmodule) > $limit ? $limit : length($failedmodule) + 2;
-        </a>
+        %= link_to trim_text($failedmodule, $limit) => url_for('test', 'testid' => $jobid) . "#step/$failedmodule/$step"
+	% $limit -= length($failedmodule) > $limit ? $limit : length($failedmodule) + 2;
     </span>
 % }

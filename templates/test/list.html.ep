@@ -14,9 +14,9 @@
     </div>
 % }
 
-% if ($scheduled && $scheduled->all) {
+% if (@$scheduled) {
     <div>
-	<h2><%= $scheduled %> scheduled jobs</h2>
+	<h2><%= @$scheduled %> scheduled jobs</h2>
 	
 	%= include 'test/scheduled_table'
     </div>
@@ -36,7 +36,7 @@
                 <th class="name">Medium</th>
 		<th>Test</th>
 		<th>Result</th>
-                <th>Testtime</th>
+                <th>Finished</th>
             </tr>
         </thead>
 	<tbody>

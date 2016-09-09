@@ -36,10 +36,11 @@ is_deeply(
     $cfg,
     {
         global => {
-            appname       => 'openQA',
-            branding      => 'openSUSE',
-            hsts          => 365,
-            audit_enabled => 1,
+            appname          => 'openQA',
+            branding         => 'openSUSE',
+            hsts             => 365,
+            audit_enabled    => 1,
+            hide_asset_types => 'repo',
         },
         auth => {
             method => 'Fake',

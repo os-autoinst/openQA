@@ -22,9 +22,10 @@ BEGIN {
 use strict;
 use warnings;
 use Data::Dump qw/pp dd/;
+use File::Path qw/remove_tree/;
 use Test::More;
 use Test::Warnings;
-use OpenQA::Scheduler::Scheduler qw/job_grab job_get job_restart job_set_done/;
+use OpenQA::Scheduler::Scheduler qw/job_grab job_restart/;
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::IPC;
 use OpenQA::WebSockets;
@@ -101,12 +102,15 @@ my $jobB = $schema->resultset('Jobs')->create_from_settings(\%settings);
 is(scalar @assets, 1, 'one asset assigned before grabbing');
 # set jobA (normally this is done by worker after abort) and cloneA to done
 # needed for job grab to fulfill dependencies
-ok(job_set_done(jobid => $jobA->id,   result => 'passed'), 'jobA job set to done');
-ok(job_set_done(jobid => $cloneA->id, result => 'passed'), 'cloneA job set to done');
+$jobA->discard_changes;
+is($jobA->done(result => 'passed'), 'passed', 'jobA job set to done');
+is($cloneA->done(result => 'passed'), 'passed', 'cloneA job set to done');
 
 # register asset and mark as created by cloneA
 my $ja = sprintf('%08d-%s', $cloneA->id, 'jobasset.raw');
 open(my $fh, '>', join('/', $OpenQA::Utils::assetdir, 'hdd', $ja));
+# give it some content to test ensure_size
+print $fh "foobar";
 close($fh);
 $ja = $schema->resultset('Assets')->create(
     {
@@ -135,5 +139,39 @@ is_deeply(\@assets, [$theasset, $ja->id], 'using correct assets');
 # check jobB was also duplicated
 $jobB->discard_changes();
 ok($jobB->clone, 'jobB has a clone after cloning asset creator');
+
+# create a repo asset for the following tests
+my $repo = join('/', $OpenQA::Utils::assetdir, 'repo', 'testrepo');
+# ensure no leftovers from previous testing
+remove_tree($repo);
+# create the dir
+mkdir($repo);
+# create some test content to test nested dir size discovery
+my $testdir = join('/', $repo, 'testdir');
+mkdir($testdir);
+open($fh, '>', join('/', $repo, 'testfile'));
+print $fh 'foobar';
+close($fh);
+open($fh, '>', join('/', $testdir, 'testfile2'));
+print $fh 'meep';
+close($fh);
+$repo = $schema->resultset('Assets')->create(
+    {
+        name => 'testrepo',
+        type => 'repo',
+    });
+
+# test ensure_size
+is($ja->ensure_size(),   6,  'ja asset size should be 6');
+is($repo->ensure_size(), 10, 'repo asset size should be 10');
+
+# test remove_from_disk
+$ja->remove_from_disk();
+$repo->remove_from_disk();
+ok(!-e $ja,   "ja asset should have been removed");
+ok(!-e $repo, "repo asset should have been removed");
+
+# for safety
 unlink($ja->disk_file);
+remove_tree($repo->disk_file);
 done_testing();

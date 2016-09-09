@@ -4,7 +4,7 @@
 % if ($bug) {
     <span id="bug-<%= $jobid %>">
         <a href="<%= bugurl_for $bug %>">
-            <i class="test-label label_bug fa fa-bug" title="Bug(s) referenced: <%= $bug %>"></i>
+            <i class="test-label <%= bugicon_for $bug %>" title="Bug(s) referenced: <%= $bug %>"></i>
         </a>
     </span>
 % }

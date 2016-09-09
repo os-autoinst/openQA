@@ -67,7 +67,7 @@ $req->text_like('#api_key_99907 .expiration' => qr/2016-01-05/);
 $req = $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {t_expiration => 'asdlfj'})->status_is(302);
 $req = $t->get_ok('/api_keys')->status_is(200);
 $req->element_exists_not('#api_key_99908', "No invalid key created");
-$req->element_exists('.ui-state-error', "Error message displayed");
+$req->element_exists('#flash-messages .alert-warning', "Error message displayed");
 
 # And to delete keys
 $req = $t->delete_ok('/api_keys/99906', {'X-CSRF-Token' => $token})->status_is(302);

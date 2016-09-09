@@ -48,6 +48,11 @@ __PACKAGE__->add_columns(
     size => {
         data_type   => 'bigint',
         is_nullable => 1
+    },
+    checksum => {
+        data_type     => 'text',
+        is_nullable   => 1,
+        default_value => undef
     });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
@@ -115,6 +120,14 @@ sub ensure_size {
     }
     $self->update({size => $size}) if $size;
     return $size;
+}
+
+sub hidden {
+    # 1 if asset should not be linked from the web UI (as set by
+    # 'hide_asset_types' config setting), otherwise 0
+    my ($self) = @_;
+    my @types = split(/ /, $OpenQA::Utils::app->config->{global}->{hide_asset_types});
+    return grep { $_ eq $self->type } @types;
 }
 
 # A GRU task...arguments are the URL to grab and the full path to save
@@ -210,15 +223,23 @@ sub limit_assets {
     my %seen_asset;
     my %toremove;
     my %keep;
+    my $doremove = 0;
 
     my $debug_keep = 0;
 
-    # we go through the group and keep the last X GB of it in %keep and the others
-    # in toremove. After that we remove all in %toremove that no other group put in %keep
-    # (assets can easily be in 2 groups - and both have different update ratios, it's up
-    # to the admin to configure the size limit)
+    # to avoid perpetually being on the very edge of the size limit and prone
+    # to edge cases while multiple jobs that may upload images are running,
+    # we take a number 80% of the size limit. we go through the group and keep
+    # all assets that fit within that number in %keep and the others in
+    # toremove. Once we exceed the actual size limit, we set doremove to 1 to
+    # indicate that removal should occur (so we don't do any removal if total
+    # size is between reduceto and sizelimit).
+    # If $doremove is 1 we remove all in %toremove that no other group put in
+    # %keep (assets can easily be in 2 groups - and both have different update
+    # ratios, it's up to the admin to configure the size limit)
     while (my $g = $groups->next) {
         my $sizelimit = $g->size_limit_gb * 1024 * 1024 * 1024;
+        my $reduceto  = $sizelimit * 0.8;
         # we need to find a distinct set of assets per job group ordered by
         # their last use. Need to do this in 2 steps
         my @job_assets = $app->db->resultset('JobsAssets')->search(
@@ -242,29 +263,33 @@ sub limit_assets {
             next if ($asset->type eq 'hdd' && $a->created_by == 0);
             $seen_asset{$asset->id} = $g->id;
             my $size = $asset->ensure_size;
-            if ($size > 0 && $sizelimit > 0) {
+            if ($size > 0 && $reduceto > 0) {
                 $keep{$a->asset_id} = sprintf "%s: %s/%s", $g->name, $asset->type, $asset->name;
             }
             else {
                 $toremove{$a->asset_id} = sprintf "%s/%s", $asset->type, $asset->name;
+                $doremove = 1 if ($sizelimit <= 0);
             }
             $sizelimit -= $size;
+            $reduceto  -= $size;
         }
     }
     for my $id (keys %keep) {
         OpenQA::Utils::log_debug("KEEP $toremove{$id} $keep{$id}") if $debug_keep;
         delete $toremove{$id};
     }
-    my $assets = $app->db->resultset('Assets')->search({id => {in => [sort keys %toremove]}}, {order_by => qw/t_created/});
-    while (my $a = $assets->next) {
-        $a->remove_from_disk;
-        $a->delete;
+    if ($doremove) {
+        my $removes = $app->db->resultset('Assets')->search({id => {in => [sort keys %toremove]}}, {order_by => qw/t_created/});
+        while (my $a = $removes->next) {
+            $a->remove_from_disk;
+            $a->delete;
+        }
     }
     my $timecond = {"<" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * 2, 'UTC')};
 
-    $assets = $app->db->resultset('Assets')->search({t_created => $timecond, type => ['iso', 'repo'], id => {-not_in => [sort keys %seen_asset]}}, {order_by => [qw/type name/]});
+    my $assets = $app->db->resultset('Assets')->search({t_created => $timecond, type => ['iso', 'repo'], id => {-not_in => [sort keys %seen_asset]}}, {order_by => [qw/type name/]});
     while (my $a = $assets->next) {
-        OpenQA::Utils::log_debug("Asset " . $a->type . "/" . $a->name . " is not in any job group, DELETE from assets where id=" . $a->id . ";");
+        OpenQA::Utils::log_error("Asset " . $a->type . "/" . $a->name . " is not in any job group, DELETE from assets where id=" . $a->id . ";");
     }
     my $dh;
     if (opendir($dh, $OpenQA::Utils::assetdir . "/iso")) {
@@ -281,7 +306,7 @@ sub limit_assets {
         }
         for my $iso (keys %isos) {
             if ($isos{$iso} == 0) {
-                OpenQA::Utils::log_debug "File iso/$iso is not a registered asset";
+                OpenQA::Utils::log_error "File iso/$iso is not a registered asset";
             }
         }
     }
@@ -300,7 +325,7 @@ sub limit_assets {
         }
         for my $repo (keys %repos) {
             if ($repos{$repo} == 0) {
-                OpenQA::Utils::log_debug "Directory repo/$repo is not a registered asset";
+                OpenQA::Utils::log_error "Directory repo/$repo is not a registered asset";
             }
         }
     }

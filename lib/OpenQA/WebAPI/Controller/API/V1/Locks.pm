@@ -61,5 +61,56 @@ sub mutex_create {
     return $self->render(text => 'nack', status => 409);
 }
 
+sub barrier_wait {
+    my ($self) = @_;
+    my $jobid  = $self->stash('job_id');
+    my $name   = $self->stash('name');
+
+    my $validation = $self->validation;
+    $validation->optional('where')->like(qr/^[0-9]+$/);
+    return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
+    my $where = $validation->param('where') // '';
+
+    my $ipc = OpenQA::IPC->ipc;
+    my $res = $ipc->scheduler('barrier_wait', $name, $jobid, $where);
+
+    return $self->render(text => 'ack',  status => 200) if $res > 0;
+    return $self->render(text => 'nack', status => 410) if $res < 0;
+    return $self->render(text => 'nack', status => 409);
+}
+
+sub barrier_create {
+    my ($self) = @_;
+    my $jobid = $self->stash('job_id');
+
+    my $validation = $self->validation;
+    $validation->required('name')->like(qr/^[0-9a-zA-Z_]+$/);
+    $validation->required('tasks')->like(qr/^[0-9]+$/);
+    return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
+    my $tasks = $validation->param('tasks');
+    my $name  = $validation->param('name');
+
+    my $ipc = OpenQA::IPC->ipc;
+    my $res = $ipc->scheduler('barrier_create', $name, $jobid, $tasks);
+    return $self->render(text => 'ack', status => 200) if $res;
+    return $self->render(text => 'nack', status => 409);
+}
+
+sub barrier_destroy {
+    my ($self) = @_;
+    my $jobid  = $self->stash('job_id');
+    my $name   = $self->stash('name');
+
+    my $validation = $self->validation;
+    $validation->optional('where')->like(qr/^[0-9]+$/);
+    return $self->render(text => 'Bad request', status => 400) if ($validation->has_error);
+    my $where = $validation->param('where') // '';
+
+    my $ipc = OpenQA::IPC->ipc;
+    my $res = $ipc->scheduler('barrier_destroy', $name, $jobid, $where);
+
+    return $self->render(text => 'ack', status => 200);
+}
+
 1;
 # vim: set sw=4 et:

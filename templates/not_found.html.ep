@@ -1,0 +1,42 @@
+% layout 'error';
+% title 'Page not found';
+
+<style type="text/css">
+table pre {
+    border: none;
+    background-color: transparent;
+    margin: 0px;
+    padding: 0px;
+}
+</style>
+<div class="container" id="content">
+    <h1>Page not found</h1>
+    <p>If you believe this is a bug you can <a href="https://progress.opensuse.org/projects/openqav3/issues/new" target="blank">open an issue</a>.</p>
+    <p>If the URL is self-crafted, ensure it is correct and properly encoded.</p>
+
+    <h2>Available routes</h2>
+    % my $walk = begin
+    % my ($walk, $route, $depth) = @_;
+    <tr>
+        <td>
+            % my $pattern = $route->pattern->unparsed || '/';
+            % $pattern = "+$pattern" if $depth;
+            <pre><%= '  ' x $depth %><%= $pattern %></pre>
+        </td>
+        <td><%= uc(join ',', @{$route->via || []}) || '*' %></td>
+        <td>
+            % my $name = $route->name;
+            <%= $route->has_custom_name ? qq{"$name"} : $name %>
+        </td>
+    </tr>
+    % $depth++;
+    %= $walk->($walk, $_, $depth) for @{$route->children};
+    % $depth--;
+    % end
+    <table class="table">
+        <thead>
+            <tr><th>Pattern</th><th>Methods</th><th>Name</th></tr>
+        </thead>
+        %= $walk->($walk, $_, 0) for @{app->routes->children};
+    </table>
+</div>

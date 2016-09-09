@@ -46,7 +46,7 @@ sub set_up {
 sub comments {
     my ($url) = @_;
     my $get = $t->get_ok($url)->status_is(200);
-    return $get->tx->res->dom->find('div.comments .media-comment ~ p')->map('content');
+    return $get->tx->res->dom->find('div.comments .media-comment > p')->map('content');
 }
 
 sub restart_with_result {

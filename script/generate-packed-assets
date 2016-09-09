@@ -48,26 +48,21 @@ function finish {
     rm -rf "$DIR"
 }
 trap finish EXIT
-mkdir "$DIR/db" "$DIR/tmp"
+mkdir "$DIR/tmp"
 
 touch "$DIR/openqa.ini"
-cat >>$DIR/database.ini <<EOF
-[production]
-dsn = dbi:SQLite:dbname=$DIR/db/db.sqlite
-on_connect_call = use_foreign_keys
-on_connect_do = PRAGMA synchronous = OFF
-EOF
+cp etc/openqa/database.ini $DIR
 
-export OPENQA_CONFIG="$DIR"
+export OPENQA_CONFIG=etc/openqa
 export OPENQA_LOGFILE="$DIR/logfile"
 export MOJO_TMPDIR="$DIR/tmp"
+export OPENQA_DATABASE=test
 
-# handle alternate paths
-test $1 && PREFIX=$1 || PREFIX="/usr/share/openqa"
-"$PREFIX/script/initdb" --init_database > /dev/null
 # 'version' is the smallest codepath we can hit to produce the assets
-"$PREFIX/script/openqa" version -m production > /dev/null
+./script/openqa version -m test > /dev/null
+./script/openqa version -m development > /dev/null
 # we don't want this hanging around
 rm -rf "$PREFIX/public/sass/.sass-cache"
 
-# /usr/share/openqa/public/packed should be now generated
+# asset/cache is now generated
+

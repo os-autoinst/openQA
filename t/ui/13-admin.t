@@ -46,51 +46,49 @@ unless ($driver && can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) 
 }
 
 is($driver->get_title(), "openQA", "on main page");
+is($driver->find_element('#user-action', 'css')->get_text(), 'Login', "noone logged in");
 $driver->find_element('Login', 'link_text')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 # but ...
 
-like($driver->find_element('#user-info', 'css')->get_text(), qr/Logged in as Demo.*Logout/, "logged in as demo");
+is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
+
+# expand user menu
+$driver->find_element('#user-action a', 'css')->click();
+like($driver->find_element('#user-action', 'css')->get_text(), qr/Operators Menu/,      'demo is operator');
+like($driver->find_element('#user-action', 'css')->get_text(), qr/Administrators Menu/, 'demo is admin');
 
 # Demo is admin, so go there
-$driver->find_element('admin', 'link_text')->click();
+$driver->find_element('Workers', 'link_text')->click();
 
 is($driver->get_title(), "openQA: Workers", "on workers overview");
 
 sub add_job_group() {
-    $driver->find_element('Job groups', 'link_text')->click();
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Job groups',     'link_text')->click();
 
     is($driver->get_title(), "openQA: Job groups", "on groups");
-
-    # leave the ajax some time
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
-
+    t::ui::PhantomTest::wait_for_ajax;
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'two groups in fixtures');
     $driver->find_element('#submit', 'css')->click();
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'still two groups');
-    is($driver->find_element('.ui-state-error', 'css')->get_text(), 'Group name cannot be empty', 'error shown');
+    is($driver->find_element('#flash-messages .alert-warning span', 'css')->get_text(), 'Group name cannot be empty', 'error shown');
     $driver->find_element('#name',   'css')->send_keys('Cool Group');
     $driver->find_element('#submit', 'css')->click();
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 3 of 3 entries/, 'group created');
     is($driver->find_element('#group_1003', 'css')->get_text(), 'Cool Group', 'group created');
-    is($driver->find_element('.ui-state-highlight', 'css')->get_text(), 'Group Cool Group created', 'flash shown');
+    is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), 'Group Cool Group created', 'flash shown');
     #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 }
 
 sub add_machine() {
     # go to machines first
-    $driver->find_element('Machines', 'link_text')->click();
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Machines',       'link_text')->click();
 
     is($driver->get_title(), "openQA: Machines", "on machines list");
-
-    # leave the ajax some time
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
-
+    t::ui::PhantomTest::wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
     is(@headers, 4, "4 columns");
@@ -123,25 +121,18 @@ sub add_machine() {
     (shift @fields)->send_keys('kvm32');    # cpu
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
-    # leave the ajax some time
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     #$driver->capture_screenshot('add_machine.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 4, "4 edit buttons afterwards");
 }
 
 sub add_test_suite() {
     # go to tests first
-    $driver->find_element('Test suites', 'link_text')->click();
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Test suites',    'link_text')->click();
 
     is($driver->get_title(), "openQA: Test suites", "on test suites");
-
-    # leave the ajax some time
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
-
+    t::ui::PhantomTest::wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
     is(@headers, 3, "3 columns");
@@ -170,12 +161,48 @@ sub add_test_suite() {
     (shift @fields)->send_keys('xfce');    # name
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
+    t::ui::PhantomTest::wait_for_ajax;
+    #$driver->capture_screenshot('add_test.png');
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 8, "8 edit buttons afterwards");
+
+    # can add entry with single, double quotes, special chars
+    my ($suiteName, $suiteKey, $suiteValue) = qw/t"e\\st'Suite\' te\'\\st"Ke"y; te'\""stVa;l%&ue/;
+
+    is($driver->find_element('//input[@value="New test suite"]')->click(), 1, 'new test suite');
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), '=', "new row empty");
+    my ($name, $key, $value) = $driver->find_child_elements($elem, '//input[@type="text"]');
+    $name->send_keys($suiteName);
+    $key->send_keys($suiteKey);
+    $value->send_keys($suiteValue);
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
     while (!$driver->execute_script("return jQuery.active == 0")) {
         sleep 1;
     }
-    #$driver->capture_screenshot('add_test.png');
-    is(@{$driver->find_elements('//button[@title="Edit"]')}, 8, "8 edit buttons afterwards");
+    # now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
+    # try to edit and save
+    ok($driver->find_child_element($elem, './td/button[@title="Edit"]')->click(), 'editing enabled');
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    $name  = $driver->find_child_element($elem, './td/input[@type="text"]');
+    $key   = $driver->find_child_element($elem, './td/span/span[@class="key"]');
+    $value = $driver->find_child_element($elem, './td/span/input[@class="value"]');
+    is($name->get_value,  $suiteName,  'suite name edit box match');
+    is($key->get_text,    'testKey',   'key edit box matched sanitized key');
+    is($value->get_value, $suiteValue, 'value edit box matched sanitized key');
+    ok($driver->find_child_element($elem, '//button[@title="Update"]')->click(), 'editing saved');
+
+    # reread and compare to original
+    while (!$driver->execute_script("return jQuery.active == 0")) {
+        sleep 1;
+    }
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
 }
 #
 
@@ -183,15 +210,11 @@ sub add_product() {
     #print $driver->get_page_source();
 
     # go to product first
-    $driver->find_element('Medium types', 'link_text')->click();
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Medium types',   'link_text')->click();
 
     is($driver->get_title(), "openQA: Medium types", "on products");
-
-    # leave the ajax some time
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
-
+    t::ui::PhantomTest::wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
     is(@headers, 6, "6 columns");
@@ -228,10 +251,7 @@ sub add_product() {
     (shift @fields)->send_keys('arm19');    # arch
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
-    # leave the ajax some time
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     #$driver->capture_screenshot('add_product.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 2, "2 edit buttons afterwards");
 
@@ -248,10 +268,7 @@ sub add_product() {
     (shift @fields)->send_keys('ppc64le');     # arch
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
-    # leave the ajax some time
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     #$driver->capture_screenshot('add_product2.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons afterwards");
 
@@ -266,11 +283,7 @@ add_job_group();
 is($driver->get_title(), "openQA: Job groups", "on job groups");
 
 $driver->find_element('Cool Group', 'link')->click();
-
-while (!$driver->execute_script("return jQuery.active == 0")) {
-    sleep 1;
-}
-
+t::ui::PhantomTest::wait_for_ajax;
 $driver->find_element('Test new medium as part of this group', 'link')->click();
 
 my $select = $driver->find_element('#medium', 'css');
@@ -301,7 +314,8 @@ $driver->send_keys_to_active_element('64bit');
 $driver->send_keys_to_active_element(Selenium::Remote::WDKeys->KEYS->{'enter'});
 
 # now reload the page to see if we succeeded
-$driver->find_element('Job groups', 'link_text')->click();
+$driver->find_element('#user-action a', 'css')->click();
+$driver->find_element('Job groups',     'link_text')->click();
 
 is($driver->get_title(), "openQA: Job groups", "on groups");
 $driver->find_element('Cool Group', 'link')->click();
@@ -315,13 +329,10 @@ is_deeply(\@picks, [], 'found no three');
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 # briefly check the asset list
-$driver->find_element('Assets', 'link_text')->click();
+$driver->find_element('#user-action a', 'css')->click();
+$driver->find_element('Assets',         'link_text')->click();
 is($driver->get_title(), "openQA: Assets", "on asset");
-
-while (!$driver->execute_script("return jQuery.active == 0")) {
-    sleep 1;
-}
-
+t::ui::PhantomTest::wait_for_ajax;
 
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 #print $driver->get_page_source();

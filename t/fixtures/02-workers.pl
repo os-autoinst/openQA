@@ -1,0 +1,16 @@
+[
+    Workers => {
+        id         => 1,
+        host       => 'localhost',
+        instance   => 1,
+        properties => [{key => 'JOBTOKEN', value => 'token99963'}],
+        job_id     => 99963,
+    },
+    Workers => {
+        id         => 2,
+        host       => 'remotehost',
+        instance   => 1,
+        properties => [{key => 'JOBTOKEN', value => 'token99961'}],
+        job_id     => 99961,
+    }]
+# vim: set sw=4 et:

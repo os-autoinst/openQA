@@ -7,45 +7,38 @@
     $('.timeago').timeago();
 % end
 
-<h1>Last Builds for Group <%= $group->name %></h1>
-%= include 'main/group_builds', result => $result
+<h2>Last Builds for Group <%= $group->name %></h2>
 
-<h1>Comments</h1>
-
-% for my $comment (reverse @$comments) {
-    <div class="row">
-        <div class="col-sm-1">
-            <img class="media-object img-circle" src="<%= $comment->user->gravatar(60) %>" alt="profile">
-        </div>
-        <div class="col-sm-11">
-            <div class="media-body comment-body">
-                <div class="well well-lg">
-                    <h4 class="media-heading"><%= $comment->user->name %> wrote <abbr class="timeago" title="<%= $comment->t_created->datetime() %>Z"><%= format_time($comment->t_created) %></abbr></h4>
-                    <div class="media-comment">
-                      %= $comment->rendered_markdown
-                    </div>
-                </div>
-            </div>
-        </div>
+% if ($pinned_comments) {
+    <div id="group_descriptions">
+    % for my $comment (@$pinned_comments) {
+        %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => 'group', id => $group->id, pinned => 1}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
+    % }
     </div>
 % }
 
+%= include 'main/group_builds', result => $result
+
+<div id="more_builds">
+    Limit to
+    %= b join(' / ', map { $_ == $limit_builds ? "<b>$_</b>" : link_to($_ => url_with->query([time_limit_days => 1000, limit_builds => $_])) } (10, 20, 50, 100, 400));
+    builds, only
+    % my %tagged = (tagged => 1, all => 0);
+    % my %rtagged = reverse %tagged;
+    % my $selected = $rtagged{$only_tagged};
+    %= b join(' / ', map { $_ eq $selected ? "<b>$_</b>" : link_to($_ => url_with->query([only_tagged => $tagged{$_}])) } reverse sort keys %tagged);
+</div>
+
+<h2>Comments</h2>
+% for my $comment (reverse @$comments) {
+    %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => 'group', id => $group->id}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
+% }
+
 % if (current_user) {
-    %= form_for 'add_group_comment', method => "post", class => "form-horizontal", id => "commentForm", role => "form" => begin
-        <div class="form-group">
-            <label for="text" class="col-sm-1 control-label">Comment
-                <img class="img-circle" src="<%= current_user->gravatar(60) %>">
-            </label>
-            <div class="col-sm-11">
-                <textarea class="form-control" name="text" id="text" rows="5"></textarea>
-            </div>
-        </div>
-        <div class="form-group">
-            <div class="col-sm-offset-1 col-sm-11">
-                <button class="btn btn-success btn-circle" type="submit" id="submitComment">
-                    <span class="glyphicon glyphicon-send"></span>
-                    Submit comment</button>
-            </div>
-        </div>
+    <script id="comment-row-template" type="text/template">
+        %= include 'comments/comment_row', comment_id => '@comment_id@', comment => 0, user => current_user, context => {type => 'group', id => $group->id}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
+    </script>
+    %= form_for url_for('apiv1_post_group_comment', group_id => $group->id) => (method => "post", class => "form-horizontal", id => "commentForm", role => "form", onsubmit => "addComment(this, false); return false;") => begin
+        %= include 'comments/add_comment_form_groups'
     % end
 % }

@@ -23,6 +23,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &file_content
   &log_debug
   &log_warning
+  &log_error
   &save_base64_png
   &run_cmd_with_log
   &commit_git
@@ -90,11 +91,10 @@ sub needledir {
     return productdir($distri, $version) . '/needles';
 }
 
+sub log_warning;
+
 sub needle_info {
-    my $name    = shift;
-    my $distri  = shift;
-    my $version = shift;
-    my $fn      = shift;
+    my ($name, $distri, $version, $fn) = @_;
     local $/;
 
     my $needledir = needledir($distri, $version);
@@ -108,7 +108,7 @@ sub needle_info {
 
     my $JF;
     unless (open($JF, '<', $fn)) {
-        warn "$fn: $!";
+        log_warning("$fn: $!");
         return;
     }
 
@@ -117,7 +117,7 @@ sub needle_info {
         $needle = decode_json(<$JF>);
     }
     catch {
-        warn "failed to parse $fn: $_";
+        log_warning("failed to parse $fn: $_");
         # technically not required, $needle should remain undefined. Being superstitious human I add:
         undef $needle;
     }
@@ -126,7 +126,7 @@ sub needle_info {
     };
     return unless $needle;
 
-    my $png_fname = basename($fn, '.json') . ".png";
+    my $png_fname = basename($fn, '.json') . '.png';
     my $pngfile = File::Spec->catpath('', $needledir, $png_fname);
 
     $needle->{needledir} = $needledir;

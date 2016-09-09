@@ -49,6 +49,7 @@ sub new {
             });
 
         OpenQA::Test::Testresults->new->create(directory => $tdirname . 'testresults');
+        return $schema;
     }
 
     sub login {
@@ -86,6 +87,12 @@ sub new {
         return 1;
     }
 
+}
+
+## test helpers
+sub trim_whitespace {
+    my ($str) = @_;
+    return $str =~ s/\s+/ /gr =~ s/(^\s)|(\s$)//gr;
 }
 
 1;

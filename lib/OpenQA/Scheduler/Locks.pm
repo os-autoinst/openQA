@@ -72,7 +72,7 @@ sub lock {
 
     # lock is locked and not by us
     if ($lock->locked_by) {
-        return 0 if ($lock->locked_by->id != $jobid);
+        return 0 if ($lock->locked_by != $jobid);
         return 1;
     }
     # we're using optimistic locking, if this succeded, we were first
@@ -87,7 +87,7 @@ sub unlock {
     # return if not locked
     return 1 unless $lock->locked_by;
     # return if not locked by us
-    return 0 unless ($lock->locked_by->id == $jobid);
+    return 0 unless ($lock->locked_by == $jobid);
     return 1 if ($lock->update({locked_by => undef}));
     return 0;
 }
@@ -104,6 +104,44 @@ sub create {
     $lock = $schema->resultset('JobLocks')->create({name => $name, owner => $jobid});
     return unless $lock;
     return 1;
+}
+
+## Barriers
+# barriers are created with number of expected jobs. Then wait call waits until the expected number of jobs is waiting
+
+sub barrier_create {
+    my ($name, $jobid, $expected_jobs) = @_;
+    return unless $name && $jobid && $expected_jobs;
+    my $barrier = _get_lock($name, $jobid, 'all');
+    return if $barrier;
+
+    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    $barrier = $schema->resultset('JobLocks')->create({name => $name, owner => $jobid, count => $expected_jobs});
+    return $barrier;
+}
+
+sub barrier_wait {
+    my ($name, $jobid, $where) = @_;
+    return -1 unless $name && $jobid;
+    my $barrier = _get_lock($name, $jobid, $where);
+    return -1 unless $barrier;
+    my @jobs = split(/,/, $barrier->locked_by // '');
+    if (grep { $_ eq $jobid } @jobs) {
+        return 1 if (scalar @jobs eq $barrier->count);
+        return 0;
+    }
+    push @jobs, $jobid;
+    $barrier->update({locked_by => join(',', @jobs)});
+    return 1 if (scalar @jobs eq $barrier->count);
+    return 0;
+}
+
+sub barrier_destroy {
+    my ($name, $jobid, $where) = @_;
+    return unless $name && $jobid;
+    my $barrier = _get_lock($name, $jobid, $where);
+    return unless $barrier;
+    $barrier->delete;
 }
 
 1;

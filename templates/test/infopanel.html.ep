@@ -1,0 +1,86 @@
+        % my $panelclass = 'panel-info';
+        % if ($job->state eq 'done') {
+            % if ($job->result eq 'passed') {
+                % $panelclass = 'panel-success';
+            % } elsif ($job->result eq 'softfailed') {
+                % $panelclass = 'panel-warning';
+            % } else {
+                % $panelclass = 'panel-danger';
+            % }
+        % }
+        <div class="panel <%= $panelclass %>" id="info_box">
+            <div class="panel-heading">
+                Results for
+                % if (current_route 'latest') {
+                    <%= link_to $job->id => url_for ('test', testid => $job->id) %>:
+                % }
+                %= $job->name
+            </div>
+            <div class="panel-body">
+                <div>
+                    %if ($job->state eq 'done') {
+                        Result: <b><%= $job->result %></b>
+                    % } else
+                    % {
+                        State: <b><%= $job->state %></b>
+                        % if (scalar($job->gru_dependencies) > 0) {
+                            % my $grutext = '';
+                            % for my $grudep ($job->gru_dependencies) {
+                                % $grutext .= join(",", $grudep->gru_task->id, $grudep->gru_task->taskname);
+                                % $grutext .= " ";
+                            % }
+                            waiting for background (GRU) tasks: <%= $grutext %>
+                        % }
+                    % }
+                    % if ($job->t_finished) {
+                        finished
+                        <abbr class="timeago" title="<%= $job->t_finished->datetime() %>Z"><%= format_time($job->t_finished) %></abbr>
+                        (
+                        %= $job->t_started ? format_time_duration($job->t_finished - $job->t_started) : 0
+                        )
+                    % } elsif ($job->t_started)
+                    % {
+                        started
+                        <abbr class="timeago" title="<%= $job->t_started->datetime() %>Z"><%= format_time($job->t_started) %></abbr>
+                    % }
+                    % if (is_operator && $job->can_be_duplicated) {
+                        %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
+                            <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
+                        %= end
+                    % }
+                    % if (is_operator && ($job->running_or_waiting || $job->state eq 'scheduled')) {
+                        %= link_post url_for('apiv1_cancel', jobid => $job->id) => ('data-remote' => 'true', id => 'cancel_running') => begin
+                            <i class="fa fa-2 fa-times-circle-o" title="Cancel Job"></i>
+                        % end
+                    % }
+                </div>
+                <div>
+                    % if ($clone_of) {
+                        Clone of
+                        %= link_to $clone_of->id => url_for ('test', testid => $clone_of->id)
+                    % }
+                    % if ($job->clone_id) {
+                        Cloned as
+                        %= link_to $job->clone_id => url_for ('test', testid => $job->clone_id)
+                    % }
+                </div>
+
+                <% if ($job->state eq 'scheduled') {  %>
+                    Priority:
+                        %  my $prio = $job->priority;
+                        <span>
+                            %= link_post url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio-10) => (class => 'prio-down') =>  ('data-remote' => 'true') => begin
+                                <i class="fa fa-minus-square-o"></i>
+                            % end
+                            <span data-prio="<%= $prio %>"><%= $prio %></span>
+                            %= link_post url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio+10) => (class => 'prio-up') => ('data-remote' => 'true') => begin
+                                <i class="fa fa-plus-square-o"></i>
+                            % end
+                        </span>
+                % }
+
+                % if ($worker) {
+                    Assigned worker: <span title="VNC port: <%= 90 + $worker->instance %>"><%= $worker->host %>:<%= $worker->instance %></span>
+                % }
+            </div>
+        </div>

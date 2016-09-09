@@ -1,4 +1,5 @@
 # Copyright (C) 2015 SUSE Linux GmbH
+#               2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,12 +16,19 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::Workers;
+use strict;
+use warnings;
 use base qw/DBIx::Class::Core/;
 use DBIx::Class::Timestamps qw/now/;
-use strict;
-
+use Try::Tiny;
+use OpenQA::Utils qw/log_error/;
 use OpenQA::IPC;
 use db_helpers;
+
+use constant COMMANDS => qw/quit abort cancel obsolete job_available
+  enable_interactive_mode disable_interactive_mode
+  stop_waitforneedle reload_needles_and_retry continue_waitforneedle
+  livelog_stop livelog_start/;
 
 __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -35,15 +43,26 @@ __PACKAGE__->add_columns(
     instance => {
         data_type => 'integer',
     },
-);
+    job_id => {
+        data_type      => 'integer',
+        is_foreign_key => 1,
+        is_nullable    => 1
+    });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/host instance/]);
-__PACKAGE__->might_have(job => 'OpenQA::Schema::Result::Jobs', 'worker_id');
+# only one worker can work on a job
+__PACKAGE__->add_unique_constraint([qw/job_id/]);
+__PACKAGE__->belongs_to(job => 'OpenQA::Schema::Result::Jobs', 'job_id');
 __PACKAGE__->has_many(properties => 'OpenQA::Schema::Result::WorkerProperties', 'worker_id');
 
 # TODO
 # INSERT INTO workers (id, t_created) VALUES(0, datetime('now'));
+
+sub name {
+    my ($self) = @_;
+    return $self->host . ":" . $self->instance;
+}
 
 sub seen(;$) {
     my ($self, $workercaps) = @_;
@@ -131,7 +150,7 @@ sub info {
         id       => $self->id,
         host     => $self->host,
         instance => $self->instance,
-        status   => $self->status
+        status   => $self->status,
     };
     $settings->{properties} = {};
     for my $p ($self->properties->all) {
@@ -146,6 +165,27 @@ sub info {
     }
     $settings->{connected} = $self->connected;
     return $settings;
+}
+
+sub send_command {
+    my ($self, %args) = @_;
+    return if (!defined $args{command});
+
+    if (!grep { /^$args{command}$/ } COMMANDS) {
+        log_error(sprintf('Trying to issue unknown command "%s" for worker "%s:%n"', $args{command}, $self->host, $self->instance));
+        return;
+    }
+
+    # somehow tests doesnt have this set up
+    if (defined $OpenQA::Utils::app) {
+        $OpenQA::Utils::app->emit_event('openqa_command_enqueue', {workerid => $self->id, command => $args{command}});
+    }
+    my $res;
+    try {
+        my $ipc = OpenQA::IPC->ipc;
+        $res = $ipc->websockets('ws_send', $self->id, $args{command}, $args{job_id});
+    };
+    return $res;
 }
 
 1;

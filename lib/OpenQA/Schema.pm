@@ -26,8 +26,8 @@ use FindBin qw/$Bin/;
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION   = 37;
-our @databases = qw/MySQL SQLite PostgreSQL/;
+our $VERSION   = 44;
+our @databases = qw/SQLite PostgreSQL/;
 
 __PACKAGE__->load_namespaces;
 
@@ -42,7 +42,9 @@ sub connect_db {
     unless ($$schema) {
         my %ini;
         my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
-        tie %ini, 'Config::IniFiles', (-file => $cfgpath . '/database.ini');
+        my $database_file = $cfgpath . '/database.ini';
+        tie %ini, 'Config::IniFiles', (-file => $database_file);
+        die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
         $$schema = __PACKAGE__->connect($ini{$mode});
     }
     return $$schema;

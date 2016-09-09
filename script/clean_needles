@@ -91,9 +91,11 @@ $options{days} = 60 unless $options{days} // 0 > 0;
 
 usage(0) if $options{help};
 
+my $schema = OpenQA::Schema::connect_db;
+
 sub list_jobs {
     my %args = (state => 'done', maxage => $options{days} * 24 * 60 * 60,);
-    return OpenQA::Scheduler::Scheduler::query_jobs(%args);
+    return $schema->resultset('Jobs')->complex_query(%args);
 }
 
 my $jobs = list_jobs();

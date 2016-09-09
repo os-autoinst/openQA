@@ -1,0 +1,49 @@
+.table {
+        border-collapse: separate;
+}
+
+.table thead:first-child tr:first-child th {
+        background: $table-border-color;
+        @include gradient-vertical(lighten($table-border-color, 8%), darken($table-border-color, 8%));
+        box-shadow: inset 0 1px 0 0 #fff;
+        border-bottom: 1px solid $table-border-color;
+        border-right: 0 solid $table-border-color;
+        border-top: 1px solid $table-border-color;
+}
+
+.table tbody td:first-child, .table thead th:first-child {
+        border-left: 1px solid $table-border-color;
+}
+
+.table tbody td:last-child, .table thead:first-child tr:first-child th:last-child {
+        border-right: 1px solid $table-border-color;
+}
+
+.table thead:first-child tr:first-child {
+        th:last-child {
+                border-radius: 0 6px 0 0;
+        }
+        th:first-child
+        {
+                border-radius: 6px 0 0 0;
+        }
+        th:only-child
+        {
+                border-radius: 6px 6px 0 0;
+        }
+}
+
+.table tbody tr:last-child {
+        td:first-child {
+                border-radius: 0 0 0 6px;
+        }
+        td:only-child {
+                border-radius: 0 0 6px 6px;
+        }
+        td:last-child {
+                border-radius: 0 0 6px 0;
+        }
+        td {
+                border-bottom: 1px solid $table-border-color;
+        }
+}

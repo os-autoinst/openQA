@@ -20,7 +20,7 @@ use warnings;
 use OpenQA::Worker::Common;
 use OpenQA::Utils qw//;
 
-use POSIX qw/:sys_wait_h strftime SIGTERM SIGKILL uname/;
+use POSIX qw/:sys_wait_h strftime uname/;
 use JSON qw/to_json/;
 use Fcntl;
 use Errno;
@@ -40,15 +40,9 @@ sub set_engine_exec {
 
 sub _kill($) {
     my ($pid) = @_;
-    my $n = kill(SIGTERM, $pid);
-    for (my $i = 0; $n && $i < 10; ++$i) {
-        sleep 3;
-        $n = kill(SIGTERM, $pid);
-        warn "kill TERM resulted in $n";
-    }
-    if ($n) {
-        warn "pid $pid didn't die, sending KILL";
-        kill(SIGKILL, $pid);
+    if (kill('TERM', $pid)) {
+        warn "killed $pid - waiting for exit";
+        waitpid($pid, 0);
     }
 }
 
@@ -83,8 +77,8 @@ sub engine_workit($) {
         if (my $iso = $job->{settings}->{$isokey}) {
             $iso = join('/', ISO_DIR, $iso);
             unless (-e $iso) {
-                warn "$iso does not exist!\n";
-                return;
+                my $error = "$iso does not exist!";
+                return {error => $error};
             }
             $job->{settings}->{$isokey} = $iso;
         }
@@ -94,8 +88,8 @@ sub engine_workit($) {
         if (my $file = $job->{settings}->{$otherkey}) {
             $file = join('/', OTHER_DIR, $file);
             unless (-e $file) {
-                warn "$file does not exist!\n";
-                return;
+                my $error = "$file does not exist!";
+                return {error => $error};
             }
             $job->{settings}->{$otherkey} = $file;
         }
@@ -107,8 +101,8 @@ sub engine_workit($) {
         if ($hdd) {
             $hdd = join('/', HDD_DIR, $hdd);
             unless (-e $hdd) {
-                warn "$hdd does not exist!\n";
-                return;
+                my $error = "$hdd does not exist!";
+                return {error => $error};
             }
             $job->{settings}->{"HDD_$i"} = $hdd;
         }
@@ -127,6 +121,9 @@ sub engine_workit($) {
     $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION});
     _save_vars(\%vars);
 
+    # os-autoinst's commands server
+    $job->{URL} = "http://localhost:" . ($job->{settings}->{QEMUPORT} + 1) . "/" . $job->{settings}->{JOBTOKEN};
+
     # create tmpdir for qemu to write here
     my $tmpdir = "$pooldir/tmp";
     mkdir($tmpdir) unless (-d $tmpdir);
@@ -135,6 +132,8 @@ sub engine_workit($) {
     die "failed to fork: $!\n" unless defined $child;
 
     unless ($child) {
+        # create new process group
+        setpgrp(0, 0);
         $ENV{TMPDIR} = $tmpdir;
         printf "$$: WORKING %d\n", $job->{id};
         if (open(my $log, '>', "autoinst-log.txt")) {
@@ -161,15 +160,6 @@ sub engine_check {
     if (-e "$pooldir/backend.crashed") {
         unlink("$pooldir/backend.crashed");
         print STDERR "backend crashed ...\n";
-        if (open(my $fh, '<', "$pooldir/qemu.pid")) {
-            local $/;
-            my $pid = <$fh>;
-            close $fh;
-            if ($pid =~ /(\d+)/) {
-                print STDERR "killing qemu $1\n";
-                _kill($1);
-            }
-        }
         if (open(my $fh, '<', "$pooldir/os-autoinst.pid")) {
             local $/;
             my $pid = <$fh>;
@@ -179,13 +169,22 @@ sub engine_check {
                 _kill($1);
             }
         }
+        if (open(my $fh, '<', "$pooldir/qemu.pid")) {
+            local $/;
+            my $pid = <$fh>;
+            close $fh;
+            if ($pid =~ /(\d+)/) {
+                print STDERR "killing qemu $1\n";
+                _kill($1);
+            }
+        }
         return 'crashed';
     }
 
     # check if the worker is still running
     my $pid = waitpid($workerpid, WNOHANG);
     if ($verbose) {
-        printf "waitpid %d returned %d\n", $workerpid, $pid;
+        printf "waitpid %d returned %d with status $?\n", $workerpid, $pid;
     }
     if ($pid == -1 && $!{ECHILD}) {
         warn "we lost our child\n";

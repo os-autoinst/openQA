@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -57,56 +57,47 @@ sub register {
             return;
         });
 
-    # Breadcrumbs generation can be centralized, since it's really simple
     $app->helper(
-        breadcrumbs => sub {
-            my $c = shift;
+        bugicon_for => sub {
+            my ($c, $text) = @_;
+            return ($text =~ /poo#/) ? 'label_bug fa fa-bolt' : 'label_bug fa fa-bug';
+        });
 
-            my $crumbs = '<div id="breadcrump" class="breadcrumb grid_10 alpha">';
-            $crumbs .= '<a href="' . $c->url_for('/') . '">';
-            $crumbs .= $c->image('/images/home_grey.png', alt => "Home");
-            $crumbs .= '<b>' . $c->stash('appname') . '</b></a>';
+    $app->helper(
+        current_job_group => sub {
+            my ($c) = @_;
 
             my $test = $c->param('testid');
 
-            if ($test || $c->current_route =~ /^tests/) {
-                $crumbs .= ' > ' . $c->link_to('Test results' => $c->url_for('tests'));
-            }
-            elsif ($c->current_route =~ /^admin/) {
-                $crumbs .= ' > ' . $c->link_to(Admin => $c->url_for('admin'));
-                $crumbs .= ' > ' . $c->stash('title');
-            }
-
             if ($test) {
+                my $crumbs;
                 my $distri  = $c->stash('distri');
                 my $build   = $c->stash('build');
                 my $version = $c->stash('version');
 
                 my $query = {build => $build, distri => $distri, version => $version};
                 my $job = $c->stash('job');
+
+                my $overview_text;
                 if ($job->group_id) {
                     $query->{groupid} = $job->group_id;
-                    $crumbs .= ' > ' . $c->link_to("Build$build\@" . $job->group->name => $c->url_for('tests_overview')->query(%$query));
+                    $crumbs .= "\n<li id='current-group-overview'>";
+                    $crumbs .= $c->link_to(($job->group->name . ' (current)') => $c->url_for('group_overview', groupid => $job->group_id));
+                    $crumbs .= "</li>";
+                    $overview_text = "Build " . $job->BUILD;
                 }
                 else {
-                    $crumbs .= ' > ' . $c->link_to("Build$build\@$distri $version" => $c->url_for('tests_overview')->query(%$query));
+                    $overview_text = "Build $build\@$distri $version";
                 }
-                if ($c->current_route('test')) {
-                    $crumbs .= " > Test $test";
-                }
-                else {
-                    $crumbs .= ' > ' . $c->link_to("Test $test" => $c->url_for('test'));
-                    my $mod = $c->param('moduleid');
-                    $crumbs .= " > $mod" if $mod;
-                }
-            }
-            elsif ($c->current_route('tests_overview')) {
-                $crumbs .= ' > Build overview';
-            }
+                my $overview_url = $c->url_for('tests_overview')->query(%$query);
 
-            $crumbs .= '</div>';
-
-            Mojo::ByteStream->new($crumbs);
+                $crumbs .= "\n<li id='current-build-overview'>";
+                $crumbs .= $c->link_to($overview_url => sub { '<i class="glyphicon glyphicon-arrow-right"></i> ' . $overview_text });
+                $crumbs .= "</li>";
+                $crumbs .= "\n<li role='separator' class='divider'></li>\n";
+                return Mojo::ByteStream->new($crumbs);
+            }
+            return;
         });
 
     $app->helper(
@@ -140,6 +131,12 @@ sub register {
         });
 
     $app->helper(
+        current_job => sub {
+            my ($c) = @_;
+            return $c->stash('job');
+        });
+
+    $app->helper(
         is_operator => sub {
             my $c = shift;
             my $user = shift || $c->current_user;
@@ -168,8 +165,14 @@ sub register {
             elsif ($res =~ /^fail/) {
                 return 'resultfail';
             }
+            elsif ($res eq 'softfailed') {
+                return 'resultsoftfailed';
+            }
             elsif ($res eq 'passed') {
-                return $hash->{soft_failure} ? 'resultwarning' : 'resultok';
+                return 'resultok';
+            }
+            elsif ($res eq 'running') {
+                return 'resultrunning';
             }
             else {
                 return 'resultunknown';
@@ -187,7 +190,7 @@ sub register {
             elsif ($res eq 'unk') {
                 return 'unknown';
             }
-            elsif ($res eq 'passed' && $module->{soft_failure}) {
+            elsif ($res eq 'softfailed') {
                 return 'soft failed';
             }
             else {
@@ -216,11 +219,19 @@ sub register {
     $app->helper(step_thumbnail => \&_step_thumbnail);
 
     $app->helper(
+        icon_url => sub {
+            my ($c, $icon) = @_;
+            my $json = $c->app->asset->processed($icon)->[0]->TO_JSON;
+            return $c->url_for(assetpack => $json);
+        });
+
+    $app->helper(
         # emit_event helper, adds user, connection to events
         emit_event => sub {
             my ($self, $event, $data) = @_;
             die 'Missing event name' unless $event;
-            return Mojo::IOLoop->singleton->emit($event, [$self->current_user->id, $self->tx->connection, $event, $data]);
+            my $user = $self->current_user ? $self->current_user->id : undef;
+            return Mojo::IOLoop->singleton->emit($event, [$user, $self->tx->connection, $event, $data]);
         });
 
     $app->helper(
@@ -254,10 +265,9 @@ sub _step_thumbnail {
         $imgurl => width => $ref_width,
         height  => $ref_height,
         alt     => $screenshot->{name},
-        class   => "resborder_$result"
+        class   => "resborder resborder_$result"
     );
-    my $href = $c->url_for('step', moduleid => $module, stepid => $step_num);
-    $c->tag('a', href => $href, class => 'no_hover', sub { $content });
+    return $content;
 }
 
 1;

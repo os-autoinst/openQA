@@ -30,36 +30,44 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 #
 # No login, no user-info and no api_keys
-$t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged in as/);
+my $res = OpenQA::Test::Case::trim_whitespace($t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
+is($res, 'Login', 'no-one logged in');
 $t->get_ok('/api_keys')->status_is(302);
 
 # So let's log in as an unpriviledged user
 $test_case->login($t, 'https://openid.camelot.uk/lancelot');
 # ...who should see a logout option but no link to API keys
-$t->get_ok('/tests')->status_is(200)->content_like(qr/Logged in as lance (.*logout.*)/);
+$res = OpenQA::Test::Case::trim_whitespace($t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
+is($res, 'Logged in as lance Logout', 'lance is logged in');
 $t->get_ok('/api_keys')->status_is(403);
 
 #
 # Then logout
 $t->delete_ok('/logout')->status_is(302);
-$t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged in as/);
+$res = OpenQA::Test::Case::trim_whitespace($t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
+is($res, 'Login', 'no-one logged in');
 
 #
 # Try creating new user by logging in
 $test_case->login($t, 'morgana');
 # ...who should see a logout option but no link to API keys
-$t->get_ok('/tests')->status_is(200)->content_like(qr/Logged in as morgana (.*logout.*)/);
+$res = OpenQA::Test::Case::trim_whitespace($t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
+is($res, 'Logged in as morgana Logout', 'morgana as no api keys');
 $t->get_ok('/api_keys')->status_is(403);
 
 #
 # Then logout
 $t->delete_ok('/logout')->status_is(302);
-$t->get_ok('/tests')->status_is(200)->content_unlike(qr/Logged in as/);
+$res = OpenQA::Test::Case::trim_whitespace($t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
+is($res, 'Login', 'no-one logged in');
 
 #
 # And log in as operator
 $test_case->login($t, 'percival');
-$t->get_ok('/tests')->status_is(200)->content_like(qr/Logged in as perci (.*manage API keys.* | .*logout.*)/);
+my $actions = OpenQA::Test::Case::trim_whitespace($t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
+like($actions, qr/Logged in as perci Operators Menu.*Manage API keys Logout/, 'perci has operator links');
+unlike($actions, qr/Administrators Menu/, 'perci has no admin links');
+
 $t->get_ok('/api_keys')->status_is(200);
 
 done_testing();

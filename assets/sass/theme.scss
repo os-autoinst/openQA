@@ -1,0 +1,16 @@
+$icon-font-path: '/fonts/';
+@import "theme_variables.scss";
+@import "../cache/raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/stylesheets/_bootstrap.scss";
+@import "theme_overwrites.scss";
+@import "rounded_tables.scss";
+@import "footer.scss";
+
+table a:not(.btn),
+.table a:not(.btn) {
+	  text-decoration: inherit;
+}
+
+div.progress {
+    margin-top: $line-height-computed / 2;
+    margin-bottom: $line-height-computed / 2;
+}

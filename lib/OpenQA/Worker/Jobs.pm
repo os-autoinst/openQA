@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015,2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,6 +30,8 @@ use Fcntl;
 use MIME::Base64;
 use File::Basename qw/basename/;
 
+use POSIX ':sys_wait_h';
+
 use base qw/Exporter/;
 our @EXPORT = qw/start_job stop_job check_job backend_running/;
 
@@ -50,17 +52,32 @@ our $do_livelog;
 sub _kill_worker($) {
     my ($worker) = @_;
 
-    return unless $worker;
+    return unless $worker->{pid};
 
-    warn "killing $worker->{pid}\n";
-    kill(SIGTERM, $worker->{pid});
-
-    # don't leave here before the worker is dead
-    my $pid = waitpid($worker->{pid}, 0);
-    if ($pid == -1) {
-        warn "waitpid returned error: $!\n";
+    if (kill('TERM', $worker->{pid})) {
+        warn "killed $worker->{pid}\n";
+        my $deadline = time + 40;
+        # don't leave here before the worker is dead
+        while ($worker) {
+            my $pid = waitpid($worker->{pid}, WNOHANG);
+            if ($pid == -1) {
+                warn "waitpid returned error: $!\n";
+            }
+            elsif ($pid == 0) {
+                sleep(.5);
+                if (time > $deadline) {
+                    # if still running after the deadline, try harder
+                    # to kill the worker
+                    kill('KILL', -$worker->{pid});
+                    # now loop again
+                    $deadline = time + 20;
+                }
+            }
+            else {
+                last;
+            }
+        }
     }
-
     $worker = undef;
 }
 
@@ -105,8 +122,6 @@ sub stop_job($;$) {
     remove_timer('check_backend');
     remove_timer('job_timeout');
 
-    _kill_worker($worker);
-
     # XXX: we need to wait if there is an update_status in progress.
     # we should have an event emitter that subscribes to update_status done
     my $stop_job_check_status;
@@ -124,9 +139,9 @@ sub stop_job($;$) {
 }
 
 sub upload {
-    my $job_id   = shift;
-    my $form     = shift;
+    my ($job_id, $form) = @_;
     my $filename = $form->{file}->{filename};
+    my $file     = $form->{file}->{file};
 
     # we need to open and close the log here as one of the files
     # might actually be autoinst-log.txt
@@ -138,27 +153,15 @@ sub upload {
     my $ua_url = $OpenQA::Worker::Common::url->clone;
     $ua_url->path("jobs/$job_id/artefact");
 
-    # don't use api_call as it retries and does not allow form data
-    # (refactor at some point)
     my $tx = $OpenQA::Worker::Common::ua->build_tx(POST => $ua_url => form => $form);
-
     # override the default boundary calculation - it reads whole file
     # and it can cause various timeouts
     my $ct = $tx->req->headers->content_type;
     my $boundary = encode_base64 join('', map chr(rand 256), 1 .. 32);
     $boundary =~ s/\W/X/g;
     $tx->req->headers->content_type("$ct; boundary=$boundary");
-    my $res;
-    $OpenQA::Worker::Common::ua->start(
-        $tx => sub {
-            my ($ua, $tx) = @_;
-            $res = $tx;
-            return;
-        });
-    # This ugly. we need to "block" here so enter ioloop recursively
-    while (!$res && Mojo::IOLoop->is_running) {
-        Mojo::IOLoop->one_tick;
-    }
+
+    my $res = $OpenQA::Worker::Common::ua->start($tx);
 
     if (my $err = $res->error) {
         my $msg;
@@ -171,8 +174,36 @@ sub upload {
         open(my $log, '>>', "autoinst-log.txt");
         print $log $msg;
         close $log;
-        print $msg if $verbose;
+        print STDERR $msg;
         return 0;
+    }
+
+    # double check uploads if the webui asks us to
+    if ($res->res->json && $res->res->json->{temporary}) {
+        my $csum1 = '1';
+        my $size1;
+        if (open(my $cfd, "-|", "cksum", $res->res->json->{temporary})) {
+            ($csum1, $size1) = split(/ /, <$cfd>);
+            close($cfd);
+        }
+        my $csum2 = '2';
+        my $size2;
+        if (open(my $cfd, "-|", "cksum", $file)) {
+            ($csum2, $size2) = split(/ /, <$cfd>);
+            close($cfd);
+        }
+        open(my $log, '>>', "autoinst-log.txt");
+        print $log "Checksum $csum1:$csum2 Sizes:$size1:$size2\n";
+        close $log;
+        if ($csum1 eq $csum2 && $size1 eq $size2) {
+            my $ua_url = $OpenQA::Worker::Common::url->clone;
+            $ua_url->path("jobs/$job_id/ack_temporary");
+
+            $OpenQA::Worker::Common::ua->post($ua_url => form => {temporary => $res->res->json->{temporary}});
+        }
+        else {
+            return 0;
+        }
     }
     return 1;
 }
@@ -180,7 +211,20 @@ sub upload {
 sub _stop_job($;$) {
     my ($aborted, $job_id) = @_;
 
-    print "stop_job 2nd half\n" if $verbose;
+    # now tell the webui that we're about to finish, but the following
+    # process of killing the backend process and checksums uploads and
+    # checksums again can take a long while, so the webui needs to know
+    print "stop_job 2nd part\n" if $verbose;
+
+    # the update_status timers and such are gone by now (1st part), so we're
+    # basically "single threaded" and can block
+
+    my $status = {uploading => 1};
+    api_call('post', "jobs/$job_id/status", undef, {status => $status});
+
+    _kill_worker($worker);
+
+    print "stop_job 3rd part\n" if $verbose;
 
     my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
@@ -278,13 +322,7 @@ sub _stop_job($;$) {
     }
     unless ($job_done || $aborted eq 'api-failure') {
         upload_status(1);
-        # set job to done. if priority is less than threshold duplicate it
-        # with worse priority so it can be picked up again.
-        my %args;
-        $args{dup_type_auto} = 1;
-        printf "duplicating job %d\n", $job->{id};
-        # make it less attractive so we don't get it again
-        api_call('post', 'jobs/' . $job->{id} . '/duplicate', \%args);
+        printf "job %d incomplete\n", $job->{id};
         api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
     }
     warn sprintf("cleaning up %s...\n", $job->{settings}->{NAME});
@@ -319,9 +357,9 @@ sub start_job {
     $tosend_files    = [];
 
     $worker = engine_workit($job);
-    unless ($worker) {
+    if ($worker->{error}) {
         warn "job is missing files, releasing job\n";
-        return stop_job('setup failure');
+        return stop_job("setup failure: $worker->{error}");
     }
 
     # start updating status - slow updates if livelog is not running
@@ -402,9 +440,12 @@ sub upload_status(;$) {
 
     return unless verify_workerid;
     return unless $job;
+    return unless $job->{URL};
     my $status = {};
 
-    my $os_status = read_json_file('status.json') || {};
+    my $ua        = Mojo::UserAgent->new;
+    my $os_status = $ua->get($job->{URL} . "/isotovideo/status")->res->json;
+
     # $os_status->{running} is undef at the beginning or if read_json_file temporary failed
     # and contains empty string after the last test
 
@@ -427,7 +468,7 @@ sub upload_status(;$) {
             $status->{test_order} = $test_order;
             $status->{backend}    = $os_status->{backend};
         }
-        elsif ($current_running ne $os_status->{running}) {    # new test
+        elsif ($current_running ne ($os_status->{running} || '')) {    # new test
             $upload_up_to = $current_running;
         }
         $current_running = $os_status->{running};
@@ -437,7 +478,7 @@ sub upload_status(;$) {
     $upload_up_to = '' if $final_upload;
 
     if ($status->{status}->{needinput}) {
-        $status->{result} = {$os_status->{running} => read_module_result($os_status->{running})};
+        $status->{result} = {$current_running => read_module_result($os_status->{running})};
     }
     elsif (defined($upload_up_to)) {
         my $extra_test_order = [];

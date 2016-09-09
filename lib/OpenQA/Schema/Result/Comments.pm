@@ -42,8 +42,9 @@ __PACKAGE__->add_columns(
         data_type      => 'integer',
         is_foreign_key => 1,
     },
-    hidden => {
-        data_type     => 'boolean',
+    flags => {
+        data_type     => 'integer',
+        is_nullable   => 1,
         default_value => '0',
     },
 );
@@ -108,7 +109,7 @@ e.g. 'tag:0123:important:GM' returns a list of '0123', 'important' and 'GM'.
 =cut
 sub tag {
     my ($self) = @_;
-    $self->text =~ /\btag:(\d+):([-\w]+)(:(\w+))?\b/;
+    $self->text =~ /\btag:([@\d]+):([-\w]+)(:(\w+))?\b/;
     return $1, $2, $4;
 }
 

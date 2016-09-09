@@ -24,7 +24,7 @@ sub list {
     my $self = shift;
 
     my %args;
-    for my $arg (qw/build iso distri version flavor maxage scope group groupid limit arch hdd_1/) {
+    for my $arg (qw/build iso distri version flavor maxage scope group groupid limit arch hdd_1 test machine/) {
         next unless defined $self->param($arg);
         $args{$arg} = $self->param($arg);
     }
@@ -43,13 +43,13 @@ sub list {
         }
     }
 
-    # TODO: convert to DBus call or move query_jobs helper to WebAPI
+    my $rs = $self->db->resultset('Jobs')->complex_query(%args);
     my @jobarray;
     if (defined $self->param('latest')) {
-        @jobarray = OpenQA::Scheduler::Scheduler::query_jobs(%args)->latest_jobs;
+        @jobarray = $rs->latest_jobs;
     }
     else {
-        @jobarray = OpenQA::Scheduler::Scheduler::query_jobs(%args)->all;
+        @jobarray = $rs->all;
     }
     my %jobs = map { $_->id => $_ } @jobarray;
 
@@ -58,10 +58,12 @@ sub list {
     # so we fetch some fields in a second step
 
     # fetch job assets
-    my $jas = $self->app->db->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
+    for my $job (values %jobs) {
+        $job->{_assets} = [];
+    }
+    my $jas = $self->db->resultset('JobsAssets')->search({job_id => {in => [keys %jobs]}}, {prefetch => ['asset']});
     while (my $ja = $jas->next) {
         my $job = $jobs{$ja->job_id};
-        $job->{_assets} ||= [];
         push(@{$job->{_assets}}, $ja->asset);
     }
 
@@ -73,7 +75,7 @@ sub list {
         $job->group($groups{$job->group_id});
     }
 
-    my $modules = $self->app->db->resultset('JobModules')->search({job_id => {in => [keys %jobs]}}, {order_by => 'id'});
+    my $modules = $self->db->resultset('JobModules')->search({job_id => {in => [keys %jobs]}}, {order_by => 'id'});
     while (my $m = $modules->next) {
         my $job = $jobs{$m->job_id};
         $job->{_modules} ||= [];
@@ -91,7 +93,7 @@ sub list {
                 category => $module->category,
                 result   => $module->result,
                 flags    => []};
-            for my $flag (qw/important fatal milestone soft_failure/) {
+            for my $flag (qw/important fatal milestone/) {
                 if ($module->get_column($flag)) {
                     push(@{$modulehash->{flags}}, $flag);
                 }
@@ -116,12 +118,12 @@ sub create {
     my $json = {};
     my $status;
     try {
-        my $job = $ipc->scheduler('job_create', \%params);
-        $self->emit_event('openqa_job_create', {id => $job->{id}, %params});
-        $json->{id} = $job->{id};
+        my $job = $self->db->resultset('Jobs')->create_from_settings(\%params);
+        $self->emit_event('openqa_job_create', {id => $job->id, %params});
+        $json->{id} = $job->id;
 
         # enqueue gru job
-        $self->app->db->resultset('GruTasks')->create(
+        $self->db->resultset('GruTasks')->create(
             {
                 taskname => 'limit_assets',
                 priority => 10,
@@ -160,7 +162,7 @@ sub grab {
 sub show {
     my $self   = shift;
     my $job_id = int($self->stash('jobid'));
-    my $job    = $self->app->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
+    my $job    = $self->db->resultset("Jobs")->search({'me.id' => $job_id}, {prefetch => 'settings'})->first;
     if ($job) {
         $self->render(json => {job => $job->to_hash(assets => 1, deps => 1)});
     }
@@ -185,12 +187,15 @@ sub set_command {
 
 sub destroy {
     my $self = shift;
-    my $ipc  = OpenQA::IPC->ipc;
 
-    my $res = $ipc->scheduler('job_delete', int($self->stash('jobid')));
-    $self->emit_event('openqa_job_delete', {id => $self->stash('jobid')}) if ($res);
-    # See comment in set_command
-    $self->render(json => {result => \$res});
+    my $job = $self->app->schema->resultset("Jobs")->find($self->stash('jobid'));
+    if (!$job) {
+        $self->reply->not_found;
+        return;
+    }
+    $self->emit_event('openqa_job_delete', {id => $job->id});
+    $job->delete;
+    $self->render(json => {result => 1});
 }
 
 sub prio {
@@ -232,7 +237,10 @@ sub create_artefact {
 
     my $jobid = int($self->stash('jobid'));
     my $job   = $self->app->schema->resultset("Jobs")->find($jobid);
-    $self->reply->not_found unless $job;
+    if (!$job) {
+        $self->reply->not_found;
+        return;
+    }
 
     if ($self->param('image')) {
         $job->store_image($self->param('file'), $self->param('md5'), $self->param('thumb') // 0);
@@ -240,8 +248,8 @@ sub create_artefact {
         return;
     }
     elsif ($self->param('asset')) {
-        $job->create_asset($self->param('file'), $self->param('asset'));
-        $self->render(text => "OK");
+        my $abs = $job->create_asset($self->param('file'), $self->param('asset'));
+        $self->render(json => {temporary => $abs});
         return;
     }
     if ($job->create_artefact($self->param('file'), $self->param('ulog'))) {
@@ -250,6 +258,22 @@ sub create_artefact {
     else {
         $self->render(text => "FAILED");
     }
+}
+
+sub ack_temporary {
+    my ($self) = @_;
+
+    my $temp = $self->param('temporary');
+    if (-f $temp) {
+        $self->app->log->debug("ACK $temp");
+        if ($temp =~ /^(.*)\.TEMP-[^\/]*$/) {
+            my $asset = $1;
+            $self->app->log->debug("RENAME $temp to $asset");
+            rename($temp, $asset);
+        }
+    }
+    $self->render(text => "OK");
+
 }
 
 sub done {
@@ -261,15 +285,22 @@ sub done {
     $newbuild = 1 if defined $self->param('newbuild');
 
 
-    my $ipc = OpenQA::IPC->ipc;
+    my $job = $self->db->resultset('Jobs')->find($jobid);
+    if (!$job) {
+        $self->reply->not_found;
+        return;
+    }
     my $res;
     if ($newbuild) {
-        $res = $ipc->scheduler('job_set_done', {jobid => $jobid, result => $result, newbuild => $newbuild});
+        $res = $job->done(result => $result, newbuild => $newbuild);
     }
     else {
-        $res = $ipc->scheduler('job_set_done', {jobid => $jobid, result => $result});
+        $res = $job->done(result => $result);
     }
-    $self->emit_event('openqa_job_done', {id => $jobid, result => $result, newbuild => $newbuild}) if ($res);
+
+    # use $res as a result, it is recomputed result by scheduler
+    $self->emit_event('openqa_job_done', {id => $jobid, result => $res, newbuild => $newbuild});
+
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -307,12 +338,12 @@ sub cancel {
     my $ipc = OpenQA::IPC->ipc;
     my $res;
     if ($jobid) {
-        $res = $ipc->scheduler('job_cancel', int($jobid), 0);
-        $self->emit_event('openqa_job_cancel', {id => int($jobid)}) if ($res);
+        $self->db->resultset('Jobs')->find($jobid)->cancel;
+        $self->emit_event('openqa_job_cancel', {id => int($jobid)});
     }
     else {
         my $params = $self->req->params->to_hash;
-        $res = $ipc->scheduler('job_cancel_by_settings', $params, 0);
+        $res = $self->db->resultset('Jobs')->cancel_by_settings($params, 0);
         $self->emit_event('openqa_job_cancel_by_settings', $params) if ($res);
     }
 

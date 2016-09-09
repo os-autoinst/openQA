@@ -1,35 +1,15 @@
-% layout 'default';
-%= javascript '/javascripts/lib/codemirror.js'
-%= javascript '/javascripts/mode/perl/perl.js'
-%= stylesheet '/stylesheets/codemirror.css'
+% layout 'bootstrap';
+% content_for 'head' => begin
+  %= asset 'codemirror.js'
+  %= asset 'codemirror.css'
+% end
 % title $moduleid;
 
 % content_for 'ready_function' => begin
-    scrollModuleThumbnails();
     setupResultButtons();
 % end
 
-<div class="grid_3 alpha" id="sidebar">
-    <div class="box box-shadow alpha" id="actions_box">
-        <div class="box-header aligncenter">Actions</div>
-        <div class="aligncenter">
-            % if (is_operator && $job->can_be_duplicated) {
-                %= link_post url_for('apiv1_restart', jobid => $testid) => ('data-remote' => 'true', id => 'restart-result') => begin
-                    <i class="fa fa-2 fa-repeat" title="Restart Job"></i>
-                %= end
-            % }
-        </div>
-    </div>
-
-    %= include 'step/moduleslist'
-</div>
-
-<div class="grid_13 omega">
-    %= include 'step/moduleslistthumbnails' unless ($tabmode eq 'onlysrc')
-
-    <div class="box box-shadow">
-        %= include 'step/moduleslisttabs'
-
+<div class="container">
         <p>
             Test-Module:
             %= link_to url_for('src_step', format => 'txt') => begin
@@ -43,5 +23,4 @@
              lineNumbers: true
          });
         </script>
-    </div>
 </div>

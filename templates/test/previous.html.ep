@@ -1,8 +1,8 @@
 <div id="scenario">
-    Results for <i><%= $scenario %></i>, limited to <%= $limit_previous %>
+    <div class="h5">Results for <i><%= $scenario %></i> (<%= link_to('latest job for this scenario' => url_for('latest')->query($job->scenario_hash)) %>)</div>
 </div>
-<div id="results">
-<table id="results" class="overview table table-striped no-wrap" style="width: 100%">
+<div>
+<table id="previous_results" class="overview table table-striped no-wrap" style="width: 100%">
     <thead>
         <tr>
             <th class="job">Result</th>
@@ -10,6 +10,7 @@
             <th>Finished</th>
         </tr>
     </thead>
+    <tbody>
     % for my $prev (@$previous) {
         <tr>
             % my $res = $prev->result;
@@ -26,16 +27,21 @@
                 %= include 'test/tr_job_result_failedmodules', jobid => $prev->id, failedmodules => $prev->failed_modules_with_needles()
                 %= include 'test/tr_job_result_details', jobid => $prev->id, res => $previous_labels->{$prev->id}
             </td>
-            <td class="build"><%= $prev->settings_hash->{BUILD} %></td>
+            % my $query = {build => $prev->BUILD, distri => $distri, version => $version};
+            <td class="build"><%= link_to $prev->BUILD => url_for('tests_overview')->query(%$query) %></td>
             <td class="t_finished">
                 <abbr class="timeago" title="<%= $prev->t_finished->datetime() %>Z"><%= format_time($prev->t_finished) %></abbr>
                 (
-                <%= $job->t_started ? format_time_duration($prev->t_finished - $prev->t_started) : 0 %>
+                %= $prev->t_started ? format_time_duration($prev->t_finished - $prev->t_started) : 0
                 )
             </td>
         </tr>
     % }
-<tbody>
-</tbody>
+    </tbody>
 </table>
+</div>
+<div id="more_results">
+    Limit to
+    %= b join(' / ', map { $_ == $limit_previous ? "<b>$_</b>" : link_to($_ => url_with->query(limit_previous => $_) . '#previous') } (10, 20, 50, 100, 400))
+    previous results
 </div>
