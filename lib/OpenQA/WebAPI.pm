@@ -262,8 +262,6 @@ sub startup {
     my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0);
     $test_r->get('/')->name('test')->to('test#show');
-    my $test_logged_in = $logged_in->route('/tests/:testid', testid => qr/\d+/);
-    $test_logged_in->post('/add_comment')->name('add_comment')->to('test#add_comment');
 
     $test_r->get('/details')->name('details')->to('test#details');
     $test_r->get('/status')->name('status')->to('running#status');
@@ -294,7 +292,6 @@ sub startup {
     $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
 
     $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');
-    $logged_in->post('/group_overview/:groupid/add_comment')->name('add_group_comment')->to('main#add_comment');
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
