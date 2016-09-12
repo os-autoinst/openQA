@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ use Try::Tiny;
 use Carp;
 
 use Scalar::Util qw/weaken/;
+use OpenQA::Utils qw/log_debug/;
 
 my $openqa_prefix = 'org.opensuse.openqa';
 my %services      = (
@@ -208,7 +209,10 @@ sub _dispatch {
         confess "error getting ipc service: $_";
     };
     my $object = $service->get_object('/' . $services{$target}, join('.', $openqa_prefix, $services{$target}));
-    return $object->$command(@data);
+    log_debug("dispatching IPC $command to $target: " . pp(\@data));
+    my $ret = $object->$command(@data);
+    log_debug("IPC finished");
+    return $ret;
 }
 
 ## Helpers

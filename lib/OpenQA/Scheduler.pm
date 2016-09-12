@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,11 +23,31 @@ use Net::DBus::Reactor;
 use Data::Dump qw/pp/;
 
 use OpenQA::IPC;
+use OpenQA::Scheduler::FakeApp;
 use OpenQA::Scheduler::Scheduler qw//;
 use OpenQA::Scheduler::Locks qw//;
+use OpenQA::Utils qw/log_debug/;
+use OpenQA::ServerStartup;
 
+# monkey patching for debugging IPC
+sub _is_method_allowed {
+    my ($self, $method) = @_;
+
+    my $ret = $self->SUPER::_is_method_allowed($method);
+    if ($ret) {
+        log_debug "scheduler IPC calling $method";
+    }
+    return $ret;
+}
+
+our $fakeapp;
 sub run {
+    $fakeapp = OpenQA::Scheduler::FakeApp->new;
+    OpenQA::ServerStartup::read_config($fakeapp);
+    OpenQA::ServerStartup::setup_logging($fakeapp);
+
     OpenQA::Scheduler->new();
+    log_debug("Scheduler started");
     Net::DBus::Reactor->main->run;
 }
 
