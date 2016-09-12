@@ -93,7 +93,21 @@
                         <label><input value="incomplete" name="result" type="checkbox" id="filter-incomplete"> Incomplete</label>
                         <label><input value="softfailed" name="result" type="checkbox" id="filter-softfailed"> Softfailed</label>
                         <label><input value="failed" name="result" type="checkbox" id="filter-failed"> Failed</label>
-                        <label><input value="running" name="result" type="checkbox" id="filter-running"> Running</label>
+                        <label><input value="skipped" name="result" type="checkbox" id="filter-skipped"> Skipped</label>
+                        <label><input value="obsoleted" name="result" type="checkbox" id="filter-obsoleted"> Obsoleted</label>
+                        <label><input value="parallel_failed" name="result" type="checkbox" id="filter-parallel_failed"> Parallel failed</label>
+                        <label><input value="parallel_restarted" name="result" type="checkbox" id="filter-parallel_restarted"> Parallel restarted</label>
+                        <label><input value="user_cancelled" name="result" type="checkbox" id="filter-user_cancelled"> User cancelled</label>
+                        <label><input value="user_restarted" name="result" type="checkbox" id="filter-user_restarted"> User restarted</label>
+                    </div>
+                    <div class="form-group">
+                        <strong>State</strong>
+                        <label><input value="scheduled" name="state" type="checkbox" id="filter-scheduled"> Scheduled</label>
+                        <label><input value="running" name="state" type="checkbox" id="filter-running"> Running</label>
+                        <label><input value="cancelled" name="state" type="checkbox" id="filter-cancelled"> Cancelled</label>
+                        <label><input value="waiting" name="state" type="checkbox" id="filter-waiting"> Waiting</label>
+                        <label><input value="done" name="state" type="checkbox" id="filter-done"> Done</label>
+                        <label><input value="uploading" name="state" type="checkbox" id="filter-uploading"> Uploading</label>
                     </div>
                     <div class="form-group">
                         <strong>Architecture</strong>
