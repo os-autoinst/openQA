@@ -989,6 +989,11 @@ sub update_status {
 
     my $ret = {result => 1};
 
+    if (!$self->worker) {
+        log_warning($self->id . " got a status update but has no worker. huh?");
+        return $ret;
+    }
+
     # that is a bit of an abuse as we don't have anything of the
     # other payload
     if ($status->{uploading}) {
@@ -1012,14 +1017,10 @@ sub update_status {
     }
     $ret->{known_images} = [sort keys %known];
 
-    if ($self->worker) {
-        $self->worker->set_property("INTERACTIVE", $status->{status}->{interactive} // 0);
-        # mark the worker as alive
-        $self->worker->seen;
-    }
-    else {
-        log_warning($self->id . " got a status update but has no worker. huh?");
-    }
+    $self->worker->set_property("INTERACTIVE", $status->{status}->{interactive} // 0);
+    # mark the worker as alive
+    $self->worker->seen;
+
     if ($status->{status}->{needinput}) {
         if ($self->state eq RUNNING) {
             $self->state(WAITING);
