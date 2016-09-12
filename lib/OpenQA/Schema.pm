@@ -37,9 +37,9 @@ sub _get_schema {
 }
 
 sub connect_db {
-    my $mode = shift || $ENV{OPENQA_DATABASE} || 'production';
     my $schema = _get_schema;
     unless ($$schema) {
+        my $mode = shift || $ENV{OPENQA_DATABASE} || 'production';
         my %ini;
         my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
         my $database_file = $cfgpath . '/database.ini';

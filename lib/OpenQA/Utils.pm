@@ -152,8 +152,6 @@ sub file_content($;$) {
 }
 
 # logging helpers
-# Withing Mojo openQA $app is defined and Mojo::Log is used
-# Scheduler prints to stdout&stderr -> journal
 sub log_debug {
     my ($msg) = @_;
     if ($app && $app->log) {

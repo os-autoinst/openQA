@@ -20,6 +20,7 @@ use Mojo::Util 'hmac_sha1_sum';
 use OpenQA::IPC;
 use OpenQA::Utils qw/log_debug log_warning/;
 use OpenQA::Schema;
+use OpenQA::ServerStartup;
 
 use db_profiler;
 
@@ -121,14 +122,13 @@ sub ws_create {
 
 sub ws_is_worker_connected {
     my ($workerid) = @_;
-    defined $worker_sockets->{$workerid} ? 1 : 0;
+    return (defined $worker_sockets->{$workerid} ? 1 : 0);
 }
 
 # internal helpers
 sub _validate_workerid {
     my ($workerid) = @_;
-    my $schema     = OpenQA::Schema::connect_db;
-    my $worker     = $schema->resultset("Workers")->find($workerid);
+    return app->schema->resultset("Workers")->find($workerid);
 }
 
 sub _get_workerid {
@@ -252,20 +252,12 @@ sub _workers_checker {
 
 # Mojolicious startup
 sub setup {
-
-    # TODO: read openQA config
-    #     $self->defaults(appname => 'openQA::WebSockets');
-    #
-    #     $self->_read_config;
-    #     my $logfile = $ENV{OPENQA_WS_LOGFILE} || $self->config->{logging}->{file};
-    #     $self->log->path($logfile);
-    #
-    #     if ($logfile && $self->config->{logging}->{level}) {
-    #         $self->log->level($self->config->{logging}->{level});
-    #     }
-
-    # db_profiler::enable_sql_debugging(app, OpenQA::Schema::connect_db);
-    # app->log->level('debug');
+    app->helper(schema => sub { return OpenQA::Schema::connect_db; });
+    # not really meaningful for websockets, but required for mode defaults
+    app->helper(mode     => sub { return 'production' });
+    app->helper(log_name => sub { return 'websockets' });
+    OpenQA::ServerStartup::read_config(app);
+    OpenQA::ServerStartup::setup_logging(app);
 
     # use port one higher than WebAPI
     my $port = 9527;

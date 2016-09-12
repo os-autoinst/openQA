@@ -20,95 +20,15 @@ use Mojo::Base 'Mojolicious';
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
-use OpenQA::Worker::Common qw/ASSET_DIR/;
 use OpenQA::Utils qw/log_warning/;
+use OpenQA::ServerStartup;
 
 use Mojo::IOLoop;
 use Mojolicious::Commands;
 use DateTime;
 use Cwd qw/abs_path/;
 use File::Path qw/make_path/;
-
-use Config::IniFiles;
-use db_profiler;
-use db_helpers;
-
-sub _read_config {
-    my $self = shift;
-
-    my %defaults = (
-        global => {
-            appname          => 'openQA',
-            base_url         => undef,
-            branding         => 'openSUSE',
-            allowed_hosts    => undef,
-            download_domains => undef,
-            suse_mirror      => undef,
-            scm              => undef,
-            hsts             => 365,
-            audit_enabled    => 1,
-            plugins          => undef,
-            hide_asset_types => 'repo',
-        },
-        auth => {
-            method => 'OpenID',
-        },
-        'scm git' => {
-            do_push => 'no',
-        },
-        logging => {
-            level     => undef,
-            file      => undef,
-            sql_debug => undef,
-        },
-        openid => {
-            provider  => 'https://www.opensuse.org/openid/user/',
-            httpsonly => 1,
-        },
-        hypnotoad => {
-            listen => ['http://localhost:9526/'],
-            proxy  => 1,
-        },
-        audit => {
-            blacklist => '',
-        },
-    );
-
-    # in development mode we use fake auth and log to stderr
-    my %mode_defaults = (
-        development => {
-            auth => {
-                method => 'Fake',
-            },
-            logging => {
-                file  => undef,
-                level => 'debug',
-            },
-        },
-        test => {
-            auth => {
-                method => 'Fake',
-            },
-            logging => {
-                file  => undef,
-                level => 'debug',
-            },
-        });
-
-    # Mojo's built in config plugins suck. JSON for example does not
-    # support comments
-    my $cfgpath = $ENV{OPENQA_CONFIG} || $self->app->home . '/etc/openqa';
-    my $cfg = Config::IniFiles->new(-file => $cfgpath . '/openqa.ini') || undef;
-
-    for my $section (sort keys %defaults) {
-        for my $k (sort keys %{$defaults{$section}}) {
-            my $v = $cfg && $cfg->val($section, $k);
-            $v //= exists $mode_defaults{$self->mode}{$section}->{$k} ? $mode_defaults{$self->mode}{$section}->{$k} : $defaults{$section}->{$k};
-            $self->app->config->{$section}->{$k} = $v if defined $v;
-        }
-    }
-    $self->app->config->{_openid_secret} = db_helpers::rndstr(16);
-}
+use OpenQA::Worker::Common qw/ASSET_DIR/;
 
 # reinit pseudo random number generator in every child to avoid
 # starting off with the same state.
@@ -142,32 +62,20 @@ has secrets => sub {
     return $ret;
 };
 
-sub _log_format {
-    my ($time, $level, @lines) = @_;
-    return '[' . localtime($time) . "] [$$:$level] " . join "\n", @lines, '';
-}
+has log_name => sub {
+    return $$;
+};
 
 # This method will run once at server start
 sub startup {
     my $self = shift;
 
-    $self->_read_config;
+    OpenQA::ServerStartup::read_config($self);
 
     # Set some application defaults
     $self->defaults(appname => $self->app->config->{global}->{appname});
 
-    my $logfile = $ENV{OPENQA_LOGFILE} || $self->config->{logging}->{file};
-    $self->log->path($logfile);
-    $self->log->format(\&_log_format);
-
-    if ($logfile && $self->config->{logging}->{level}) {
-        $self->log->level($self->config->{logging}->{level});
-    }
-    if ($ENV{OPENQA_SQL_DEBUG} // $self->config->{logging}->{sql_debug} // 'false' eq 'true') {
-        # avoid enabling the SQL debug unless we really want to see it
-        # it's rather expensive
-        db_profiler::enable_sql_debugging($self, $self->schema);
-    }
+    OpenQA::ServerStartup::setup_logging($self);
 
     unless ($ENV{MOJO_TMPDIR}) {
         $ENV{MOJO_TMPDIR} = ASSET_DIR . '/tmp';
@@ -222,8 +130,6 @@ sub startup {
                 $c->res->headers->header('Strict-Transport-Security', sprintf 'max-age=%d; includeSubDomains', $days * 24 * 60 * 60);
             }
         });
-
-    $OpenQA::Utils::app = $self;
 
     # load auth module
     my $auth_method = $self->config->{auth}->{method};
