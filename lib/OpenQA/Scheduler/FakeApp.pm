@@ -52,4 +52,10 @@ sub log_name {
     return 'scheduler';
 }
 
+# only needed to get $HOME/etc/openqa - so take /etc for scheduler
+sub home {
+    my ($self) = @_;
+    return '/';
+}
+
 1;
