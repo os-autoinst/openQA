@@ -333,7 +333,7 @@ Jobs:
 Tables:
   table_create table_update table_delete
 Users:
-  user_comment user_login
+  user_new_comment user_update_comment user_delete_comment user_login
 Needles:
   needle_delete needle_modify
 ----
