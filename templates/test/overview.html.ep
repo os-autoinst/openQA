@@ -1,5 +1,6 @@
 % layout 'bootstrap';
 % title 'Test summary';
+% use OpenQA::Schema::Result::Jobs;
 
 % content_for 'ready_function' => begin
   setupOverview();
@@ -87,27 +88,17 @@
             <div class="panel-heading">Filter</div>
             <div class="panel-body">
                 <form action="#" type="get" id="filter-form">
-                    <div class="form-group">
+                    <div class="form-group" id="filter-results">
                         <strong>Result</strong>
-                        <label><input value="passed" name="result" type="checkbox" id="filter-passed"> Passed</label>
-                        <label><input value="incomplete" name="result" type="checkbox" id="filter-incomplete"> Incomplete</label>
-                        <label><input value="softfailed" name="result" type="checkbox" id="filter-softfailed"> Softfailed</label>
-                        <label><input value="failed" name="result" type="checkbox" id="filter-failed"> Failed</label>
-                        <label><input value="skipped" name="result" type="checkbox" id="filter-skipped"> Skipped</label>
-                        <label><input value="obsoleted" name="result" type="checkbox" id="filter-obsoleted"> Obsoleted</label>
-                        <label><input value="parallel_failed" name="result" type="checkbox" id="filter-parallel_failed"> Parallel failed</label>
-                        <label><input value="parallel_restarted" name="result" type="checkbox" id="filter-parallel_restarted"> Parallel restarted</label>
-                        <label><input value="user_cancelled" name="result" type="checkbox" id="filter-user_cancelled"> User cancelled</label>
-                        <label><input value="user_restarted" name="result" type="checkbox" id="filter-user_restarted"> User restarted</label>
+                        % for my $result (OpenQA::Schema::Result::Jobs::RESULTS) {
+                            <label><input value="<%= $result %>" name="result" type="checkbox" id="filter-<%= $result %>"> <%= ucfirst $result =~ s/_/ /r %></label>
+                        % }
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="filter-states">
                         <strong>State</strong>
-                        <label><input value="scheduled" name="state" type="checkbox" id="filter-scheduled"> Scheduled</label>
-                        <label><input value="running" name="state" type="checkbox" id="filter-running"> Running</label>
-                        <label><input value="cancelled" name="state" type="checkbox" id="filter-cancelled"> Cancelled</label>
-                        <label><input value="waiting" name="state" type="checkbox" id="filter-waiting"> Waiting</label>
-                        <label><input value="done" name="state" type="checkbox" id="filter-done"> Done</label>
-                        <label><input value="uploading" name="state" type="checkbox" id="filter-uploading"> Uploading</label>
+                        % for my $state (OpenQA::Schema::Result::Jobs::STATES) {
+                            <label><input value="<%= $state %>" name="state" type="checkbox" id="filter-<%= $state %>"> <%= ucfirst $state =~ s/_/ /r %></label>
+                        % }
                     </div>
                     <div class="form-group">
                         <strong>Architecture</strong>

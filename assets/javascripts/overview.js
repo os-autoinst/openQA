@@ -67,16 +67,11 @@ function setupOverview() {
     }
     
     // set enabled/disabled state of checkboxes (according to current filter)
-    var resultNames = ['none', 'skipped', 'obsoleted', 'parallel_failed', 'parallel_restarted', 'user_cancelled', 'user_restarted', 'passed', 'incomplete', 'softfailed', 'failed', 'scheduled', 'running', 'none', 'unknown'];
-    for(var i = 0; i < resultNames.length; ++i) {
-        var result = resultNames[i];
-        $('#filter-' + result).prop('checked', results[result]);
-    }
-    
-    var stateNames = ['scheduled', 'running', 'cancelled', 'waiting', 'done', 'uploading'];
-    for(var i = 0; i < stateNames.length; ++i) {
-        var state = stateNames[i];
-        $('#filter-' + state).prop('checked', states[state]);
-    }
+    $('#filter-results input').each(function(index, element) {
+        element.checked = results[element.id.substr(7)];
+    });
+    $('#filter-states input').each(function(index, element) {
+        element.checked = states[element.id.substr(7)];
+    });
 }
 
