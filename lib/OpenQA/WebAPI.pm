@@ -407,6 +407,10 @@ sub startup {
     $api_ru->put('/groups/:group_id/comments/:comment_id')->name('apiv1_put_group_comment')->to('comment#update');
     $api_ra->delete('/groups/:group_id/comments/:comment_id')->name('apiv1_delete_group_comment')->to('comment#delete');
 
+    # api/v1/subscriptions
+    $api_ru->get('subscriptions')->name('apiv1_list_subscriptions')->to('subscription#list');
+    $api_ru->post('subscriptions')->name('apiv1_subscribe')->to('subscription#subscribe');
+
     # json-rpc methods not migrated to this api: echo, list_commands
     ###
     ## JSON API ends here
