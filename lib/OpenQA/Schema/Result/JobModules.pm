@@ -231,12 +231,12 @@ sub store_needle_infos($;$) {
 
     for my $detail (@{$details}) {
         if ($detail->{needle}) {
-            my $nfn = sprintf("%s/%s.json", $self->job->needle_dir(), $detail->{needle});
+            my $nfn = $detail->{json};
             my $needle = OpenQA::Schema::Result::Needles::update_needle($nfn, $self, 1, $needle_cache);
             $needles{$needle->id} ||= 1;
         }
         for my $needle (@{$detail->{needles} || []}) {
-            my $nfn = sprintf("%s/%s.json", $self->job->needle_dir(), $needle->{name});
+            my $nfn = $needle->{json};
             my $needle = OpenQA::Schema::Result::Needles::update_needle($nfn, $self, 0, $needle_cache);
             # failing needles are more interesting than succeeding, so ignore previous values
             $needles{$needle->id} = -1;
