@@ -201,7 +201,7 @@ sub _message {
     }
 }
 
-sub _get_dead_worker_jobs {
+sub _get_stale_worker_jobs {
     my ($threshold) = @_;
 
     my $schema = OpenQA::Schema::connect_db;
@@ -221,7 +221,8 @@ sub _get_dead_worker_jobs {
 sub _is_job_considered_dead {
     my ($job) = @_;
 
-    # much bigger timeout for uploading jobs
+    # much bigger timeout for uploading jobs; while uploading files,
+    # worker process is blocked and cannot send status updates
     if ($job->state eq OpenQA::Schema::Result::Jobs::UPLOADING) {
         my $delta = DateTime->now()->epoch() - $job->worker->t_updated->epoch();
         return if $delta > 1000;
@@ -231,12 +232,13 @@ sub _is_job_considered_dead {
     return 1;
 }
 
-# Running as recurring timer, each 20minutes check if worker with job has been updated in last 10s
+# Check if worker with job has been updated recently; if not, assume it
+# got stuck somehow and duplicate or incomplete the job
 sub _workers_checker {
 
-    my $dead_jobs = _get_dead_worker_jobs(10);
-    my $ipc       = OpenQA::IPC->ipc;
-    for my $job ($dead_jobs->all) {
+    my $stale_jobs = _get_stale_worker_jobs(15);
+    my $ipc        = OpenQA::IPC->ipc;
+    for my $job ($stale_jobs->all) {
         next unless _is_job_considered_dead($job);
 
         $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
