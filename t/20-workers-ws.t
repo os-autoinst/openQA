@@ -49,11 +49,11 @@ sub _check_job_incomplete {
     return $job;
 }
 
-subtest 'worker with job and not updated in last 10s is considered dead' => sub {
+subtest 'worker with job and not updated in last 50s is considered dead' => sub {
     _check_job_running($_) for (99961, 99963);
     # move the updated timestamp of the workers to avoid sleeping
     my $dtf = $schema->storage->datetime_parser;
-    my $dt = DateTime->from_epoch(epoch => time() - 20, time_zone => 'UTC');
+    my $dt = DateTime->from_epoch(epoch => time() - 50, time_zone => 'UTC');
 
     $schema->resultset('Workers')->update_all({t_updated => $dtf->format_datetime($dt)});
     OpenQA::WebSockets::Server::_workers_checker();

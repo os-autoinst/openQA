@@ -225,9 +225,11 @@ sub _is_job_considered_dead {
     # worker process is blocked and cannot send status updates
     if ($job->state eq OpenQA::Schema::Result::Jobs::UPLOADING) {
         my $delta = DateTime->now()->epoch() - $job->worker->t_updated->epoch();
-        return if $delta > 1000;
+        log_debug("uploading worker not updated for $delta seconds " . $job->id);
+        return ($delta > 1000);
     }
 
+    log_debug("job considered dead: " . $job->id);
     # default timeout for the rest
     return 1;
 }
@@ -236,7 +238,7 @@ sub _is_job_considered_dead {
 # got stuck somehow and duplicate or incomplete the job
 sub _workers_checker {
 
-    my $stale_jobs = _get_stale_worker_jobs(15);
+    my $stale_jobs = _get_stale_worker_jobs(40);
     my $ipc        = OpenQA::IPC->ipc;
     for my $job ($stale_jobs->all) {
         next unless _is_job_considered_dead($job);
