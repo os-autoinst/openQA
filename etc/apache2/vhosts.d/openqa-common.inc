@@ -11,6 +11,7 @@ DocumentRoot /usr/share/openqa/public
 <Directory "/var/lib/openqa/share/factory">
     AllowOverride None
     Require all granted
+    Options SymLinksIfOwnerMatch
 </Directory>
 Alias /assets "/var/lib/openqa/share/factory"
 
