@@ -49,6 +49,7 @@ ProxyPass /javascripts !
 ProxyPass /stylesheets !
 ProxyPass /assets !
 ProxyPass /error !
+ProxyPass /server-status !
 
 #webSocket proxy pass to different port
 ProxyPass "/api/v1/ws/" "ws://localhost:9527/ws/" keepalive=On
