@@ -162,8 +162,8 @@ needs to be changed. After modifying files in +lib/OpenQA/Schema/Result+
 there are some steps that have to be followed so that new database instances
 and upgrades include those changes.
 
-.  First, you need to increase the database version number in the $VERSION
-   variable at the first lines of the +lib/OpenQA/Schema/Schema.pm+ file.
+.  First, you need to increase the database version number in the `$VERSION`
+   variable in the +lib/OpenQA/Schema.pm+ file.
    Note that it's recommended to notify the other developers before doing so,
    to synchronize in case there are more developers wanting to increase the
    version number at the same time.
@@ -263,4 +263,4 @@ Authentication module is expected to return HASH:
 --------------------------------------------------------------------------------
 
 Authentication module is expected to create or update user entry in OpenQA database
-after user validation user. See included modules for inspiration.
+after user validation. See included modules for inspiration.
