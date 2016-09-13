@@ -12,6 +12,12 @@ DocumentRoot /usr/share/openqa/public
     AllowOverride None
     Require all granted
     Options SymLinksIfOwnerMatch
+    <FilesMatch "Win10_.*_x64\.iso$">
+        Require all denied
+    </FilesMatch>
+    <FilesMatch "[wW]indows.*\.(qcow2|hda)$">
+        Require all denied
+    </FilesMatch>
 </Directory>
 Alias /assets "/var/lib/openqa/share/factory"
 
