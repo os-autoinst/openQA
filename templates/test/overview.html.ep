@@ -50,6 +50,34 @@
             % }
         </div>
     </div>
+    <div class="panel panel-default" id="filter-panel">
+        <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form<span></div>
+        <div class="panel-body">
+            <form action="#" type="get" id="filter-form">
+                <div class="form-group" id="filter-results">
+                    <strong>Result</strong>
+                    % for my $result (OpenQA::Schema::Result::Jobs::RESULTS) {
+                        <label><input value="<%= $result %>" name="result" type="checkbox" id="filter-<%= $result %>"> <%= ucfirst $result =~ s/_/ /r %></label>
+                    % }
+                </div>
+                <div class="form-group" id="filter-states">
+                    <strong>State</strong>
+                    % for my $state (OpenQA::Schema::Result::Jobs::STATES) {
+                        <label><input value="<%= $state %>" name="state" type="checkbox" id="filter-<%= $state %>"> <%= ucfirst $state =~ s/_/ /r %></label>
+                    % }
+                </div>
+                <div class="form-group">
+                    <strong>Architecture</strong>
+                    <input type="text" class="form-control" name="arch" placeholder="any" id="filter-arch">
+                </div>
+                <div class="form-group">
+                    <strong>Misc</strong>
+                    <label><input value="1" name="todo" type="checkbox" id="filter-todo"> TODO</label>
+                </div>
+                <button type="submit" class="btn btn-default">Apply</button>
+            </form>
+        </div>
+    </div>
     % my $failedid;
     % for my $type (@$types) {
         <h3>Flavor: <%= $type %></h3>
@@ -84,32 +112,4 @@
             </tbody>
         </table>
     % }
-    <div class="panel panel-default">
-            <div class="panel-heading">Filter</div>
-            <div class="panel-body">
-                <form action="#" type="get" id="filter-form">
-                    <div class="form-group" id="filter-results">
-                        <strong>Result</strong>
-                        % for my $result (OpenQA::Schema::Result::Jobs::RESULTS) {
-                            <label><input value="<%= $result %>" name="result" type="checkbox" id="filter-<%= $result %>"> <%= ucfirst $result =~ s/_/ /r %></label>
-                        % }
-                    </div>
-                    <div class="form-group" id="filter-states">
-                        <strong>State</strong>
-                        % for my $state (OpenQA::Schema::Result::Jobs::STATES) {
-                            <label><input value="<%= $state %>" name="state" type="checkbox" id="filter-<%= $state %>"> <%= ucfirst $state =~ s/_/ /r %></label>
-                        % }
-                    </div>
-                    <div class="form-group">
-                        <strong>Architecture</strong>
-                        <input type="text" class="form-control" name="arch" placeholder="any" id="filter-arch">
-                    </div>
-                    <div class="form-group">
-                        <strong>Misc</strong>
-                        <label><input value="1" name="todo" type="checkbox" id="filter-todo"> TODO</label>
-                    </div>
-                    <button type="submit" class="btn btn-default">Apply</button>
-                </form>
-            </div>
-    </div>
 </div>
