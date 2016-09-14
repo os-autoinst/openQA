@@ -104,8 +104,9 @@ sub _group_result {
             }
             $self->app->log->error("MISSING S:" . $job->state . " R:" . $job->result);
         }
-        $jr{reviewed} = $jr{failed} > 0 && $jr{labeled} == $jr{failed};
-        $res{$b} = \%jr;
+        $jr{reviewed_all_passed} = $jr{passed} == $count;
+        $jr{reviewed}            = $jr{failed} > 0 && $jr{labeled} == $jr{failed};
+        $res{$b}                 = \%jr;
         $max_jobs = $count if ($count > $max_jobs);
         last if (++$buildnr >= $limit);
     }

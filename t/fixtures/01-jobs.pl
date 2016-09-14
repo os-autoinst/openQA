@@ -230,7 +230,7 @@
         result     => "softfailed",
         state      => "done",
         backend    => 'qemu',
-        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hour ago
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 14400, 'UTC'),    # Four hours ago
         t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 18000, 'UTC'),    # Five hours ago
         t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
         TEST       => "textmode",
@@ -243,6 +243,27 @@
         jobs_assets => [{asset_id => 1},],
         retry_avbl  => 3,
         settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}]
+    },
+    Jobs => {
+        id         => 99947,
+        group_id   => 1001,
+        priority   => 35,
+        result     => "passed",
+        state      => "done",
+        backend    => 'qemu',
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),     # Two hours ago
+        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 14300, 'UTC'),    # Three hours ago
+        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),     # One hour ago
+        TEST       => "textmode",
+        FLAVOR     => 'DVD',
+        DISTRI     => 'opensuse',
+        BUILD      => '0092',
+        VERSION    => '13.1',
+        MACHINE    => '32bit',
+        ARCH       => 'i586',
+        jobs_assets => [{asset_id => 1},],
+        retry_avbl  => 3,
+        settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0092-Media.iso'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}]
     },
     Jobs => {
         id         => 99963,

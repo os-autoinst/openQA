@@ -106,7 +106,7 @@ subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {
     my $get = $t->get_ok('/group_overview/1001?only_tagged=1')->status_is(200);
     is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 1, 'only one tagged build is shown');
     $get = $t->get_ok('/group_overview/1001?only_tagged=0')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 4, 'all builds shown again');
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 5, 'all builds shown again');
 };
 
 =pod

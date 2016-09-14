@@ -42,7 +42,7 @@ like($t->tx->res->dom->at('#res_99944 ~ .build a')->{href}, qr{/tests/overview?}
 my $build = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#previous_results .build')->all_text);
 is($build, '0091', 'build of previous job is shown');
 $get = $t->get_ok($previous_results_header->at('a')->{href})->status_is(200);
-is($t->tx->res->dom->at('#info_box .panel-heading a')->{href}, '/tests/99946', 'latest link points to last in scenario');
+is($t->tx->res->dom->at('#info_box .panel-heading a')->{href}, '/tests/99947', 'latest link points to last in scenario');
 $get = $t->get_ok('/tests/99946?limit_previous=1#previous')->status_is(200);
 my $table_rows = $t->tx->res->dom->find('#previous tbody tr');
 is($table_rows->size, 1, 'can be limited with query parameter');
