@@ -109,8 +109,8 @@ sub dead {
     my ($self) = @_;
 
     my $dt = DateTime->now(time_zone => 'UTC');
-    # check for workers active in last 10s (last seen should be updated each 5s)
-    $dt->subtract(seconds => 10);
+    # check for workers active in last 40s (last seen should be updated each 10s)
+    $dt->subtract(seconds => 40);
 
     $self->t_updated < $dt;
 }
