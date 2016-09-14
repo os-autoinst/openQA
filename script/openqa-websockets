@@ -19,9 +19,16 @@ use strict;
 use warnings;
 
 use FindBin;
-BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
+use Mojo::Home;
+BEGIN {
+    unshift @INC, "$FindBin::Bin/../lib";
+    if (!$ENV{MOJO_HOME}) {
+        # overwrite detect as it misjudges our sub apps
+        $ENV{MOJO_HOME} = Mojo::Home->new->detect('OpenQA::WebAPI');
+    }
+}
 
-$ENV{'MOJO_LISTEN'} ||= 'http://localhost:9527/';
+$ENV{MOJO_LISTEN} ||= 'http://localhost:9527/';
 
 # allow up to 20GB - hdd images
 $ENV{MOJO_MAX_MESSAGE_SIZE}   = 1024 * 1024 * 1024 * 20;
