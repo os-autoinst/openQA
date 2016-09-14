@@ -72,7 +72,7 @@ $t->app($app);
 my $get        = $t->get_ok('/api/v1/jobs');
 my @jobs       = @{$get->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
-is($jobs_count, 14);
+is($jobs_count, 15);
 my %jobs = map { $_->{id} => $_ } @jobs;
 is($jobs{99981}->{state},    'cancelled');
 is($jobs{99963}->{state},    'running');
@@ -82,9 +82,9 @@ is($jobs{99963}->{clone_id}, undef);
 
 # That means that only 9 are current and only 10 are relevant
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 11);
-$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
 is(scalar(@{$get->tx->res->json->{jobs}}), 12);
+$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
+is(scalar(@{$get->tx->res->json->{jobs}}), 13);
 
 # check limit quantity
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5});
@@ -140,7 +140,7 @@ my $cloned = $new_jobs{$new_jobs{99939}->{clone_id}};
 
 # The number of current jobs doesn't change
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 11, 'job count stay the same');
+is(scalar(@{$get->tx->res->json->{jobs}}), 12, 'job count stay the same');
 
 # Test /jobs/X/restart and /jobs/X
 $get = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
