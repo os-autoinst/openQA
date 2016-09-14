@@ -336,7 +336,7 @@ sub job_set_running {
 
 =over
 
-=item Arguments: HASH { jobid => SCALAR, dup_type_auto => SCALAR, retry_avbl => SCALAR }
+=item Arguments: HASHREF { jobid => SCALAR, dup_type_auto => SCALAR, retry_avbl => SCALAR }
 
 =item Return value: ID of new job
 
@@ -346,16 +346,16 @@ Handle individual job restart including associated job and asset dependencies
 
 =cut
 sub job_duplicate {
-    my %args = @_;
+    my ($args) = @_;
     # set this clone was triggered by manually if it's not auto-clone
-    $args{dup_type_auto} = 0 unless defined $args{dup_type_auto};
+    $args->{dup_type_auto} = 0 unless defined $args->{dup_type_auto};
 
-    my $job = schema->resultset("Jobs")->find({id => $args{jobid}});
+    my $job = schema->resultset("Jobs")->find({id => $args->{jobid}});
     return unless $job;
 
-    if ($args{dup_type_auto}) {
+    if ($args->{dup_type_auto}) {
         if (int($job->retry_avbl) > 0) {
-            $args{retry_avbl} = int($job->retry_avbl) - 1;
+            $args->{retry_avbl} = int($job->retry_avbl) - 1;
         }
         else {
             log_debug("Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually.");
@@ -364,20 +364,20 @@ sub job_duplicate {
     }
     else {
         if (int($job->retry_avbl) > 0) {
-            $args{retry_avbl} = int($job->retry_avbl);
+            $args->{retry_avbl} = int($job->retry_avbl);
         }
         else {
-            $args{retry_avbl} = 1;    # set retry_avbl back to 1
+            $args->{retry_avbl} = 1;    # set retry_avbl back to 1
         }
     }
 
-    my %clones = $job->duplicate(\%args);
+    my %clones = $job->duplicate($args);
     unless (%clones) {
         log_debug('duplication failed');
         return;
     }
     my @originals = keys %clones;
-    # abort jobs restarted because of dependencies (exclude the original $args{jobid})
+    # abort jobs restarted because of dependencies (exclude the original $args->{jobid})
     my $jobs = schema->resultset("Jobs")->search(
         {
             id    => {'!=' => $job->id, '-in' => \@originals},
@@ -436,7 +436,7 @@ sub job_restart {
 
     my @duplicated;
     while (my $j = $jobs->next) {
-        my $id = job_duplicate(jobid => $j->id);
+        my $id = job_duplicate({jobid => $j->id});
         push @duplicated, $id if $id;
     }
 

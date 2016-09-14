@@ -43,7 +43,7 @@ sub job_get {
     return $job;
 }
 
-my $new_job_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => 99963);
+my $new_job_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => 99963});
 ok($new_job_id, "got new job id");
 
 my $job = job_get($new_job_id);
@@ -93,7 +93,7 @@ $job = job_get(99927);
 is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
 
 
-$new_job_id = OpenQA::Scheduler::Scheduler::job_duplicate(jobid => 99981);
+$new_job_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => 99981});
 ok($new_job_id, "duplicate new job for iso test");
 
 $job = job_get($new_job_id);

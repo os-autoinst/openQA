@@ -370,9 +370,8 @@ sub duplicate {
         $args{dup_type_auto} = 1;
     }
 
-    my $ipc = OpenQA::IPC->ipc;
-    my $id = $ipc->scheduler('job_duplicate', \%args);
-    $self->emit_event('openqa_job_duplicate', {id => $jobid, auto => $args{dup_type_auto}, result => $id}) if ($id);
+    my $id = OpenQA::Scheduler::Scheduler::job_duplicate(\%args);
+    $self->emit_event('openqa_job_duplicate', {id => $jobid, auto => $args{dup_type_auto} // 0, result => int($id)}) if $id;
     $self->render(json => {id => $id});
 }
 

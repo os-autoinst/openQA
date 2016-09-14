@@ -407,8 +407,8 @@ for CHAINED dependencies:
 
 =cut
 sub duplicate {
-    my $self    = shift;
-    my $args    = shift || {};
+    my ($self, $args) = @_;
+    $args ||= {};
     my $rsource = $self->result_source;
     my $schema  = $rsource->schema;
 
