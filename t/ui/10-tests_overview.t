@@ -157,11 +157,12 @@ my $baseurl = $driver->get_current_url();
 
 # Test initial state of form and applying changes
 $driver->get($baseurl . 'tests/overview?distri=opensuse&version=Factory&build=0048&todo=1&result=passed');
-$driver->find_element('#filter-todo',        'css')->click();
-$driver->find_element('#filter-passed',      'css')->click();
-$driver->find_element('#filter-failed',      'css')->click();
-$driver->find_element('#filter-form button', 'css')->click();
-$driver->find_element('#res_DVD_x86_64_doc', 'css');
+$driver->find_element('#filter-panel .panel-heading', 'css')->click();
+$driver->find_element('#filter-todo',                 'css')->click();
+$driver->find_element('#filter-passed',               'css')->click();
+$driver->find_element('#filter-failed',               'css')->click();
+$driver->find_element('#filter-form button',          'css')->click();
+$driver->find_element('#res_DVD_x86_64_doc',          'css');
 my @filtered_out = $driver->find_elements('#res_DVD_x86_64_kde', 'css');
 is(scalar @filtered_out, 0, 'result filter not correctly applied');
 

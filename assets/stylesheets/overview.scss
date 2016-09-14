@@ -22,22 +22,35 @@
     margin-right: 8px;
 }
 
-#filter-form {
-    strong {
-        display: block;
+#filter-panel {
+    .panel-heading {
+        cursor: pointer;
+
+        span {
+            float: right;
+            color: #555;
+            font-weight: 500;
+        }
+    }
+    .panel-body {
+        display: none;
     }
 
-    .form-group {
-        label {
-            margin-left: 0px;
-            padding-left: 0px;
-            margin-right: 20px;
-            font-weight: normal;
+    #filter-form {
+        strong {
+            display: block;
         }
-
-        input {
-            margin-right: 2px;
-            padding-right: 0px;
+        .form-group {
+            label {
+                margin-left: 0px;
+                padding-left: 0px;
+                margin-right: 20px;
+                font-weight: normal;
+            }
+            input {
+                margin-right: 2px;
+                padding-right: 0px;
+            }
         }
     }
 }
