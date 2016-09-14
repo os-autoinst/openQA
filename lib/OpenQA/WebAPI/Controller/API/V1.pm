@@ -31,10 +31,9 @@ sub auth {
         }
     }
     else {                                # No session (probably not a browser)
-        my $headers   = $self->req->headers;
-        my $key       = $headers->header('X-API-Key');
-        my $hash      = $headers->header('X-API-Hash');
-        my $timestamp = $headers->header('X-API-Microtime');
+        my $headers = $self->req->headers;
+        my $key     = $headers->header('X-API-Key');
+        my $hash    = $headers->header('X-API-Hash');
         my $api_key;
         if ($key) {
             $self->app->log->debug("API key from client: *$key*");
@@ -47,8 +46,10 @@ sub auth {
         if ($api_key) {
             $self->app->log->debug(sprintf "Key is for user '%s'", $api_key->user->username);
             my $msg = $self->req->url->to_string;
-            $self->app->log->debug("$hash $msg");
-            if ($self->_valid_hmac($hash, $msg, $timestamp, $api_key)) {
+            #$self->app->log->debug("$hash $msg");
+            my $timestamp          = $headers->header('X-API-Microtime');
+            my $build_tx_timestamp = $headers->header('X-Build-Tx-Time');
+            if ($self->_valid_hmac($hash, $msg, $build_tx_timestamp, $timestamp, $api_key)) {
                 $user = $api_key->user;
             }
             else {
@@ -116,8 +117,8 @@ sub auth_jobtoken {
 }
 
 sub _is_timestamp_valid {
-    my ($timestamp) = @_;
-    return (time - $timestamp <= 300);
+    my ($build_tx_timestamp, $timestamp) = @_;
+    return ($build_tx_timestamp - $timestamp <= 300);
 }
 
 sub _is_expired {
@@ -129,10 +130,9 @@ sub _is_expired {
 }
 
 sub _valid_hmac {
-    my $self = shift;
-    my ($hash, $request, $timestamp, $api_key) = (shift, shift, shift, shift);
+    my ($self, $hash, $request, $build_tx_timestamp, $timestamp, $api_key) = @_;
 
-    return 0 unless _is_timestamp_valid($timestamp);
+    return 0 unless _is_timestamp_valid($build_tx_timestamp, $timestamp);
     return 0 if _is_expired($api_key);
     return 0 unless $api_key->secret;
 
