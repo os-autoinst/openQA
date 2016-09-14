@@ -131,6 +131,14 @@ sub startup {
             }
         });
 
+    # Mark build_tx time in the header for HMAC time stamp check
+    # to avoid large timeouts on uploads
+    $self->hook(
+        after_build_tx => sub {
+            my ($tx, $app) = @_;
+            $tx->req->headers->header('X-Build-Tx-Time' => time);
+        });
+
     # load auth module
     my $auth_method = $self->config->{auth}->{method};
     my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
