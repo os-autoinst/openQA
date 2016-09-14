@@ -55,7 +55,7 @@ sub log_name {
 # only needed to get $HOME/etc/openqa - so take /etc for scheduler
 sub home {
     my ($self) = @_;
-    return '/';
+    return $ENV{MOJO_HOME} || '/';
 }
 
 1;

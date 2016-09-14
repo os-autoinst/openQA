@@ -28,7 +28,7 @@ find -name '*.tdy' -delete
 
 find . \( -name '*.p[lm]' -o -name '*.t' \) -print0 | xargs -0 perltidy $TIDY_ARGS
 
-find script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,clean_needles} -print0 | xargs -0 perltidy $TIDY_ARGS
+find script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,clean_needles,openqa-scheduler,openqa-websockets} -print0 | xargs -0 perltidy $TIDY_ARGS
 
 while read file; do
     if ! diff -u ${file%.tdy} $file; then
