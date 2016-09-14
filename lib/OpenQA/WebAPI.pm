@@ -62,9 +62,9 @@ has secrets => sub {
     return $ret;
 };
 
-has log_name => sub {
+sub log_name {
     return $$;
-};
+}
 
 # This method will run once at server start
 sub startup {
