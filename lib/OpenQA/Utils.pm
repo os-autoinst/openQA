@@ -296,21 +296,23 @@ sub parse_assets_from_settings {
     return $assets;
 }
 
+my %bugrefs = (
+    bnc => 'https://bugzilla.novell.com/show_bug.cgi?id=',
+    bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
+    boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
+    poo => 'https://progress.opensuse.org/issues/',
+);
 sub bugurl {
     my ($bugref) = @_;
-    my %bugrefs = (
-        bnc => 'https://bugzilla.novell.com/show_bug.cgi?id=',
-        bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
-        boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
-        poo => 'https://progress.opensuse.org/issues/',
-    );
     return $bugrefs{$bugref};
 }
 
 sub bugref_to_href {
     my ($text) = @_;
+    my $regex = join('|', keys %bugrefs);
+    $regex = qr/(($regex)#(\d+))(?=\s|$)/;
+    $text =~ s{$regex}{<a href="@{[$bugrefs{$2}]}$3">$1</a>}gi;
 
-    $text =~ s{((bnc|bsc|boo|poo)#(\d+))}{<a href="@{[bugurl($2)]}$3">$1</a>}gi;
 
     return $text;
 }

@@ -168,7 +168,9 @@ subtest 'commenting in the group overview' => sub {
 
 subtest 'URL auto-replace' => sub {
     $driver->find_element('#text', 'css')->send_keys('
-        foo@bar foo#bar
+        foo@bar foo#bar should not be detected as bugref
+        bsc#2436346bla should not be detected, too
+        bsc#2436346bla2
         <a href="https://openqa.example.com/foo/bar">https://openqa.example.com/foo/bar</a>: http://localhost:9562
         https://openqa.example.com/tests/181148 (reference http://localhost/foo/bar )
         bsc#1234 boo#2345 poo#3456 t#4567
@@ -181,6 +183,7 @@ subtest 'URL auto-replace' => sub {
     my @comments = $driver->find_elements('div.media-comment p', 'css');
     is($comments[1]->get_text(), $test_message, "body of first comment after adding another");
 
+    like($comments[0]->get_text(), qr/bsc#1234 boo#2345 poo#3456 t#4567/);
     my @urls = $driver->find_elements('div.media-comment a', 'css');
     is((shift @urls)->get_text(), 'https://openqa.example.com/foo/bar',      "url1");
     is((shift @urls)->get_text(), 'http://localhost:9562',                   "url2");
