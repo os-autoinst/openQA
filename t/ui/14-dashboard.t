@@ -64,6 +64,10 @@ is($driver->find_element('#more_builds b', 'css')->get_text(), 400, 'limited to 
 $driver->find_element('tagged', 'link_text')->click();
 is(scalar @{$driver->find_elements('h4', 'css')}, 0, 'no tagged builds exist');
 
+is($driver->get($baseurl . '?match=test'), 1, 'index page accepts match parameter to filter job groups');
+is(scalar @{$driver->find_elements('h4', 'css')}, 1, 'only one job group shown');
+is($driver->find_element('opensuse test', 'link_text')->get_text, 'opensuse test');
+
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 t::ui::PhantomTest::kill_phantom();
