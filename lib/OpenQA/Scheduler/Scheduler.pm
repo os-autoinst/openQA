@@ -367,9 +367,6 @@ sub job_restart {
         {
             id    => $jobids,
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
-        },
-        {
-            colums => [qw/id/],
         });
 
     $jobs->search(

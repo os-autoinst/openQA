@@ -682,9 +682,7 @@ sub auto_duplicate {
         {
             id    => {'!=' => $self->id, '-in' => \@originals},
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
-        },
-        {
-            colums => [qw/id/]});
+        });
 
     $jobs->search(
         {
