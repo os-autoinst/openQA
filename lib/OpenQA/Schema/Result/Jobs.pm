@@ -377,7 +377,7 @@ sub can_be_duplicated {
 
 =item Arguments: optional hash reference containing the key 'prio'
 
-=item Return value: the new job or array of duplicated jobs if duplication suceeded,
+=item Return value: hash of duplicated jobs if duplication suceeded,
                     undef otherwise
 
 =back
@@ -420,10 +420,10 @@ sub duplicate {
 
     # store mapping of all duplications for return - need old job IDs for state mangling
     my %duplicated_ids;
-    my @direct_deps_parents_parallel  = ();
-    my @direct_deps_parents_chained   = ();
-    my @direct_deps_children_parallel = ();
-    my @direct_deps_children_chained  = ();
+    my @direct_deps_parents_parallel;
+    my @direct_deps_parents_chained;
+    my @direct_deps_children_parallel;
+    my @direct_deps_children_chained;
 
     # we can start traversing clone graph anywhere, so first we travers upwards then downwards
     # since we do this in each duplication, we need to prevent double cloning of ourselves
@@ -450,7 +450,7 @@ sub duplicate {
                 while (!%dups && !$p->can_be_duplicated) {
                     if ($p->state eq SCHEDULED) {
                         # we use SCHEDULED as is, just route dependencies
-                        %dups = ($p->id => $p->id);
+                        %dups = ($p->id => $p);
                         last;
                     }
                     else {
@@ -468,7 +468,7 @@ sub duplicate {
             }
             else {
                 # reroute to CHAINED parents, those are not being cloned when child is restarted
-                push @direct_deps_parents_chained, $p->id;
+                push @direct_deps_parents_chained, $p;
             }
         }
         elsif ($jobs_map->{$p->id}) {
@@ -477,7 +477,7 @@ sub duplicate {
                 push @direct_deps_parents_parallel, $jobs_map->{$p->id};
             }
             else {
-                push @direct_deps_parents_chained, $p->id;
+                push @direct_deps_parents_chained, $p;
             }
         }
         # else ignore since the jobs is being processed and we are also indirect descendand
@@ -505,7 +505,7 @@ sub duplicate {
             while (!%dups && !$c->can_be_duplicated) {
                 if ($c->state eq SCHEDULED) {
                     # we use SCHEDULED as is, just route dependencies - create new, remove existing
-                    %dups = ($c->id => $c->id);
+                    %dups = ($c->id => $c);
                     $cd->delete;
                     last;
                 }
@@ -600,28 +600,28 @@ sub duplicate {
     for my $p (@direct_deps_parents_parallel) {
         $res->parents->create(
             {
-                parent_job_id => $p,
+                parent_job_id => $p->id,
                 dependency    => OpenQA::Schema::Result::JobDependencies->PARALLEL,
             });
     }
     for my $p (@direct_deps_parents_chained) {
         $res->parents->create(
             {
-                parent_job_id => $p,
+                parent_job_id => $p->id,
                 dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
             });
     }
     for my $c (@direct_deps_children_parallel) {
         $res->children->create(
             {
-                child_job_id => $c,
+                child_job_id => $c->id,
                 dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
             });
     }
     for my $c (@direct_deps_children_chained) {
         $res->children->create(
             {
-                child_job_id => $c,
+                child_job_id => $c->id,
                 dependency   => OpenQA::Schema::Result::JobDependencies->CHAINED,
             });
     }
@@ -629,8 +629,8 @@ sub duplicate {
     # when dependency network is recreated, associate assets
     $res->register_assets_from_settings;
     # we are done, mark it in jobs_map
-    $jobs_map->{$self->id} = $res->id;
-    return ($self->id => $res->id, %duplicated_ids);
+    $jobs_map->{$self->id} = $res;
+    return ($self->id => $res, %duplicated_ids);
 }
 
 =head2 auto_duplicate
@@ -648,7 +648,6 @@ Handle individual job restart including associated job and asset dependencies
 =cut
 sub auto_duplicate {
     my ($self, $args) = @_;
-    log_debug("auto_duplicate " . $self->id);
     $args //= {};
     # set this clone was triggered by manually if it's not auto-clone
     $args->{dup_type_auto} //= 0;
@@ -702,10 +701,10 @@ sub auto_duplicate {
         $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
 
-    log_debug('new job ' . $clones{$self->id});
+    log_debug('new job ' . $clones{$self->id}->id);
     my $ipc = OpenQA::IPC->ipc;
     $ipc->websockets('ws_notify_workers');
-    return $clones{$self->id};
+    return $clones{$self->id}->id;
 }
 
 sub set_property {

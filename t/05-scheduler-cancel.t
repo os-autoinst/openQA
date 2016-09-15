@@ -44,7 +44,7 @@ sub job_get {
 }
 
 my $new_job_id = job_get(99963)->auto_duplicate;
-ok($new_job_id, "got new job id");
+ok($new_job_id, "got new job id $new_job_id");
 
 my $job = job_get($new_job_id);
 is($job->state, 'scheduled', "new job is scheduled");

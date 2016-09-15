@@ -32,7 +32,7 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $minimalx = $t->app->db->resultset("Jobs")->find({id => 99926});
 my %clones   = $minimalx->duplicate();
-my $clone    = $t->app->db->resultset("Jobs")->find({id => $clones{$minimalx->id}});
+my $clone    = $clones{$minimalx->id};
 
 isnt($clone->id, $minimalx->id, "is not the same job");
 is($clone->TEST,       "minimalx",  "but is the same test");
@@ -58,7 +58,7 @@ is($minimalx->duplicate, undef, "cannot clone after reloading");
 # But cloning the clone should be possible after job state change
 $clone->state(OpenQA::Schema::Result::Jobs::CANCELLED);
 %clones = $clone->duplicate({prio => 35, retry_avbl => 2});
-my $second = $t->app->db->resultset("Jobs")->find({id => $clones{$clone->id}});
+my $second = $clones{$clone->id};
 is($second->TEST,       "minimalx", "same test again");
 is($second->priority,   35,         "with adjusted priority");
 is($second->retry_avbl, 2,          "with adjusted retry_avbl");
