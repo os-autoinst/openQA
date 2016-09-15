@@ -425,12 +425,11 @@ $jobX->discard_changes;
 # done    sch.
 
 # when Y is scheduled and X is duplicated, Y must be rerouted to depend on X now
-my $jobX2_id = $jobX->auto_duplicate;
+my $jobX2 = $jobX->auto_duplicate;
 $jobY->discard_changes;
-is($jobX2_id, $jobY->parents->single->parent_job_id, 'jobY parent is now jobX clone');
-my $jobX2 = job_get_deps_rs($jobX2_id);
-is($jobX2->clone, undef, "no clone");
-is($jobY->clone,  undef, "no clone");
+is($jobX2->id,    $jobY->parents->single->parent_job_id, 'jobY parent is now jobX clone');
+is($jobX2->clone, undef,                                 "no clone");
+is($jobY->clone,  undef,                                 "no clone");
 
 # current state:
 #
@@ -451,7 +450,7 @@ ok($jobY->done(result => 'passed'), 'jobY set to done');
 # X2 <---- Y
 # done    done
 
-my $jobY2_id = $jobY->auto_duplicate;
+my $jobY2 = $jobY->auto_duplicate;
 
 # current state:
 #
@@ -463,13 +462,11 @@ my $jobY2_id = $jobY->auto_duplicate;
 # X2 <---- Y2
 # done    sch.
 
+is_deeply($jobY2->to_hash(deps => 1)->{parents}, {Chained => [$jobX2->id], Parallel => []}, 'jobY2 parent is now jobX2');
+is($jobX2->{clone_id}, undef, "X no clone");
+is($jobY2->clone_id,   undef, "Y no clone");
 
-my $jobY2 = job_get_deps($jobY2_id);
-is_deeply($jobY2->{parents}, {Chained => [$jobX2_id], Parallel => []}, 'jobY2 parent is now jobX2');
-is($jobX2->{clone_id}, undef, "no clone");
-is($jobY2->{clone_id}, undef, "no clone");
-
-ok(job_get($jobY2_id)->done(result => 'passed'), 'jobY2 set to done');
+ok($jobY2->done(result => 'passed'), 'jobY2 set to done');
 
 # current state:
 #
@@ -482,7 +479,7 @@ ok(job_get($jobY2_id)->done(result => 'passed'), 'jobY2 set to done');
 # done    done
 
 
-my $jobX3_id = $jobX2->auto_duplicate;
+my $jobX3 = $jobX2->auto_duplicate;
 
 # current state:
 #
@@ -497,13 +494,12 @@ my $jobX3_id = $jobX2->auto_duplicate;
 # X3 <---- Y3
 # sch.    sch.
 
-my $jobX3 = job_get_deps($jobX3_id);
-$jobY2 = job_get_deps($jobY2_id);    #refresh
-isnt($jobY2->{clone_id}, undef, "child job Y2 has been cloned together with parent X2");
+$jobY2->discard_changes;
+isnt($jobY2->clone_id, undef, "child job Y2 has been cloned together with parent X2");
 
-my $jobY3_id = $jobY2->{clone_id};
+my $jobY3_id = $jobY2->clone_id;
 my $jobY3    = job_get_deps($jobY3_id);
-is_deeply($jobY3->{parents}, {Chained => [$jobX3_id], Parallel => []}, 'jobY3 parent is now jobX3');
+is_deeply($jobY3->{parents}, {Chained => [$jobX3->id], Parallel => []}, 'jobY3 parent is now jobX3');
 
 
 # checking siblings scenario
@@ -563,7 +559,7 @@ ok($jobJ->clone, 'jobJ cloned');
 ok($jobH->clone, 'jobH cloned');
 ok($jobK->clone, 'jobK cloned');
 
-my $jobJ2 = job_get_deps($jobL2)->{parents}->{Parallel}->[0];
+my $jobJ2 = $jobL2->to_hash(deps => 1)->{parents}->{Parallel}->[0];
 is($jobJ2, $jobJ->clone->id, 'J2 cloned with parallel parent dep');
 my $jobH2 = job_get_deps($jobJ2)->{parents}->{Parallel}->[0];
 is($jobH2, $jobH->clone->id, 'H2 cloned with parallel parent dep');
@@ -644,26 +640,25 @@ ok($jobU->clone,  'jobU cloned');
 ok($jobR->clone,  'jobR cloned');
 ok($jobT->clone,  'jobT cloned');
 
-$jobU2 = job_get_deps($jobU2);
-$jobQ  = job_get_deps($jobQ->id);
+$jobQ = job_get_deps($jobQ->id);
 my $jobW2 = job_get_deps($jobW->clone->id);
 my $jobR2 = job_get_deps($jobR->clone->id);
 my $jobT2 = job_get_deps($jobT->clone->id);
 
 my @sorted_got = sort(@{$jobQ->{children}->{Chained}});
-my @sorted_exp = sort(($jobW2->{id}, $jobU2->{id}, $jobR2->{id}, $jobT2->{id}, $jobW->id, $jobU->id, $jobR->id, $jobT->id));
+my @sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id}, $jobW->id, $jobU->id, $jobR->id, $jobT->id));
 is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs');
 
 @sorted_got = sort(@{$jobT2->{parents}->{Parallel}});
-@sorted_exp = sort(($jobW2->{id}, $jobU2->{id}, $jobR2->{id}));
+@sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}));
 is_deeply(\@sorted_got, \@sorted_exp, 'jobT is parallel child of all jobs except jobQ');
 
 is_deeply($jobW2->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobW2 has no child dependency to sibling');
-is_deeply($jobU2->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobU2 has no child dependency to sibling');
+is_deeply($jobU2->to_hash(deps => 1)->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobU2 has no child dependency to sibling');
 is_deeply($jobR2->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobR2 has no child dependency to sibling');
 
 is_deeply($jobW2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobW2 has no parent dependency to sibling');
-is_deeply($jobU2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobU2 has no parent dependency to sibling');
+is_deeply($jobU2->to_hash(deps => 1)->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobU2 has no parent dependency to sibling');
 is_deeply($jobR2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobR2 has no parent dependency to sibling');
 
 # check cloning of clones
@@ -713,7 +708,7 @@ ok($jobP->clone,  'jobP cloned');
 ok($jobO->clone,  'jobO cloned');
 ok(!$jobI->clone, 'jobI not cloned');
 
-$jobO2 = job_get_deps($jobO2);
+$jobO2 = job_get_deps($jobO2->id);
 $jobI  = job_get_deps($jobI->id);
 my $jobP2 = job_get_deps($jobP->clone->id);
 
@@ -744,7 +739,7 @@ $jobO2->discard_changes;
 ok($jobP2->clone, 'jobP2 cloned');
 ok($jobO2->clone, 'jobO2 cloned');
 
-$jobI2 = job_get_deps($jobI2);
+$jobI2 = job_get_deps($jobI2->id);
 my $jobO3 = job_get_deps($jobO2->clone->id);
 my $jobP3 = job_get_deps($jobP2->clone->id);
 
@@ -789,8 +784,8 @@ $jobB->update;
 #   \- D
 
 # B failed, auto clone it
-my $jobBc_id = $jobB->auto_duplicate({dup_type_auto => 1});
-ok($jobBc_id, 'jobB duplicated');
+my $jobBc = $jobB->auto_duplicate({dup_type_auto => 1});
+ok($jobBc, 'jobB duplicated');
 
 # update local copy from DB
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
@@ -801,7 +796,7 @@ use Data::Dump qw/pp/;
 # A <- B' (clone of B)
 #   |- C
 #   \- D
-my $jobBc_h = job_get_deps($jobBc_id);
+my $jobBc_h = job_get_deps($jobBc->id);
 is_deeply($jobBc_h->{parents}->{Chained}, [$jobA->id], 'jobBc has jobA as chained parent');
 is($jobBc_h->{settings}{TEST}, $jobB->TEST, 'jobBc test and jobB test are equal');
 
@@ -820,14 +815,14 @@ $jobB->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobB->clone->update;
 
 # clone A
-my $jobA2_id = $jobA->auto_duplicate;
-ok($jobA2_id, 'jobA duplicated');
+$jobA2 = $jobA->auto_duplicate;
+ok($jobA2, 'jobA duplicated');
 $jobA->discard_changes;
 
 $jobA->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobA->clone->update;
-$jobA2_id = $jobA->clone->auto_duplicate;
-ok($jobA2_id, 'jobA->clone duplicated');
+$jobA2 = $jobA->clone->auto_duplicate;
+ok($jobA2, 'jobA->clone duplicated');
 
 # update local copy from DB
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
@@ -839,20 +834,20 @@ $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 #    \- D2
 ok($jobB->clone->clone, 'jobB clone jobBc was cloned');
 my $jobB2_h = job_get_deps($jobB->clone->clone->id);
-is_deeply($jobB2_h->{parents}->{Chained}, [$jobA2_id], 'jobB2 has jobA2 as chained parent');
+is_deeply($jobB2_h->{parents}->{Chained}, [$jobA2->id], 'jobB2 has jobA2 as chained parent');
 is($jobB2_h->{settings}{TEST}, $jobB->TEST, 'jobB2 test and jobB test are equal');
 
 ok($jobC->clone, 'jobC was cloned');
 my $jobC2_h = job_get_deps($jobC->clone->id);
-is_deeply($jobC2_h->{parents}->{Chained}, [$jobA2_id], 'jobC2 has jobA2 as chained parent');
+is_deeply($jobC2_h->{parents}->{Chained}, [$jobA2->id], 'jobC2 has jobA2 as chained parent');
 is($jobC2_h->{settings}{TEST}, $jobC->TEST, 'jobC2 test and jobC test are equal');
 
 ok($jobD->clone, 'jobD was cloned');
 my $jobD2_h = job_get_deps($jobD->clone->id);
-is_deeply($jobD2_h->{parents}->{Chained}, [$jobA2_id], 'jobD2 has jobA2 as chained parent');
+is_deeply($jobD2_h->{parents}->{Chained}, [$jobA2->id], 'jobD2 has jobA2 as chained parent');
 is($jobD2_h->{settings}{TEST}, $jobD->TEST, 'jobD2 test and jobD test are equal');
 
-my $jobA2_h = job_get_deps($jobA2_id);
+my $jobA2_h = job_get_deps($jobA2->id);
 is_deeply($jobA2_h->{children}->{Chained}, [$jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id}], 'jobA2 has jobB2, jobC2 and jobD2 as children');
 
 # situation parent is done, children running -> parent is cloned -> parent is running -> parent is cloned. Check all children has new parent
@@ -886,28 +881,28 @@ for ($jobB, $jobC, $jobD) {
     $_->update;
 }
 
-$jobA2_id = $jobA->auto_duplicate;
+$jobA2 = $jobA->auto_duplicate;
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 # check all children were cloned and has $jobA as parent
 for ($jobB, $jobC, $jobD) {
     ok($_->clone, 'job cloned');
     my $h = job_get_deps($_->clone->id);
-    is_deeply($h->{parents}{Chained}, [$jobA2_id], 'job has jobA2 as parent');
+    is_deeply($h->{parents}{Chained}, [$jobA2->id], 'job has jobA2 as parent');
 }
 
 # set jobA2 as running and clone it
 $jobA2 = $jobA->clone;
-is($jobA2->id, $jobA2_id, 'jobA2 is indeed jobA clone');
+is($jobA2->id, $jobA2->id, 'jobA2 is indeed jobA clone');
 $jobA2->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobA2->update;
-my $jobA3_id = $jobA2->auto_duplicate;
+my $jobA3 = $jobA2->auto_duplicate;
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 
 # check all children were cloned anymore and has $jobA3 as parent
 for ($jobB, $jobC, $jobD) {
     ok(!$_->clone->clone, 'job correctly not cloned');
     my $h = job_get_deps($_->clone->id);
-    is_deeply($h->{parents}{Chained}, [$jobA3_id], 'job has jobA3 as parent');
+    is_deeply($h->{parents}{Chained}, [$jobA3->id], 'job has jobA3 as parent');
 }
 
 # situation: chanied parent is done, children are all failed and has parallel dependency to the first sibling
@@ -946,14 +941,14 @@ for ($jobB, $jobC, $jobD) {
     $_->update;
 }
 
-$jobA2_id = $jobA->auto_duplicate;
+$jobA2 = $jobA->auto_duplicate;
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 
 # check all children were cloned and has $jobA as parent
 for ($jobB, $jobC, $jobD) {
     ok($_->clone, 'job cloned');
     my $h = job_get_deps($_->clone->id);
-    is_deeply($h->{parents}{Chained}, [$jobA2_id], 'job has jobA2 as parent');
+    is_deeply($h->{parents}{Chained}, [$jobA2->id], 'job has jobA2 as parent');
 }
 
 for ($jobC, $jobD) {

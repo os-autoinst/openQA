@@ -374,9 +374,20 @@ sub duplicate {
         $args->{dup_type_auto} = 1;
     }
 
-    my $id = $job->auto_duplicate($args);
-    $self->emit_event('openqa_job_duplicate', {id => $job->id, auto => $args->{dup_type_auto} // 0, result => int($id)}) if $id;
-    $self->render(json => {id => $id});
+    my $dup = $job->auto_duplicate($args);
+    if ($dup) {
+        $self->emit_event(
+            'openqa_job_duplicate',
+            {
+                id     => $job->id,
+                auto   => $args->{dup_type_auto} // 0,
+                result => $dup->id
+            });
+        $self->render(json => {id => $dup->id});
+    }
+    else {
+        $self->render(json => {});
+    }
 }
 
 sub whoami {

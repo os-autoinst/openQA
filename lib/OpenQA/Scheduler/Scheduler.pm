@@ -318,7 +318,7 @@ mark job as running. No error check. Meant to be called from worker!
 
 =cut
 sub job_set_running {
-    my $jobid = shift;
+    my ($jobid) = @_;
 
     my $r = schema->resultset("Jobs")->search(
         {
@@ -358,8 +358,8 @@ sub job_restart {
 
     my @duplicated;
     while (my $j = $jobs->next) {
-        my $id = $j->auto_duplicate;
-        push @duplicated, $id if $id;
+        my $job = $j->auto_duplicate;
+        push @duplicated, $job->id if $job;
     }
 
     # then tell workers to abort

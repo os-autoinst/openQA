@@ -704,7 +704,7 @@ sub auto_duplicate {
     log_debug('new job ' . $clones{$self->id}->id);
     my $ipc = OpenQA::IPC->ipc;
     $ipc->websockets('ws_notify_workers');
-    return $clones{$self->id}->id;
+    return $clones{$self->id};
 }
 
 sub set_property {

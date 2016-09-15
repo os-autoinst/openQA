@@ -43,13 +43,12 @@ sub job_get {
     return $job;
 }
 
-my $new_job_id = job_get(99963)->auto_duplicate;
-ok($new_job_id, "got new job id $new_job_id");
+my $new_job = job_get(99963)->auto_duplicate;
+ok($new_job, "got new job id " . $new_job->id);
 
-my $job = job_get($new_job_id);
-is($job->state, 'scheduled', "new job is scheduled");
+is($new_job->state, 'scheduled', "new job is scheduled");
 
-$job = job_get(99963);
+my $job = job_get(99963);
 is($job->state,      'running', "old job is running");
 is($job->t_finished, undef,     "There is a no finish time yet");
 
@@ -67,11 +66,11 @@ lj;
 my $ret = $schema->resultset('Jobs')->cancel_by_settings({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
 is($ret, 2, "two jobs cancelled by hash");
 
-$job = job_get($new_job_id);
+$job = $new_job;
 
 lj;
 
-$job = job_get($new_job_id);
+$job = $new_job->discard_changes;
 is($job->state, 'cancelled', "new job is cancelled");
 ok($job->t_finished, "There is a finish time");
 
@@ -93,10 +92,10 @@ $job = job_get(99927);
 is($job->state, 'scheduled', "unrelated job 99927 still scheduled");
 
 
-$new_job_id = job_get(99981)->auto_duplicate;
-ok($new_job_id, "duplicate new job for iso test");
+$new_job = job_get(99981)->auto_duplicate;
+ok($new_job, "duplicate new job for iso test");
 
-$job = job_get($new_job_id);
+$job = $new_job;
 is($job->state, 'scheduled', "new job is scheduled");
 
 lj;
