@@ -23,8 +23,9 @@ use Mojo::Home;
 BEGIN {
     unshift @INC, "$FindBin::Bin/../lib";
     if (!$ENV{MOJO_HOME}) {
+        require OpenQA::Utils;
         # overwrite detect as it misjudges our sub apps
-        $ENV{MOJO_HOME} = Mojo::Home->new->detect('OpenQA::WebAPI');
+        $ENV{MOJO_HOME} = Mojo::Home->new->detect('OpenQA::Utils');
     }
 }
 
