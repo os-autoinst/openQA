@@ -23,8 +23,11 @@ use Mojo::Home;
 BEGIN {
     unshift @INC, "$FindBin::Bin/../lib";
     if (!$ENV{MOJO_HOME}) {
+        # override default home as Mojo gets it wrong for our sub apps
+        # This 'require' is here because the 'home detect' method
+        # relies on %INC, which is only populated when the module is
+        # loaded: see #870 and #876
         require OpenQA::Utils;
-        # overwrite detect as it misjudges our sub apps
         $ENV{MOJO_HOME} = Mojo::Home->new->detect('OpenQA::Utils');
     }
 }
