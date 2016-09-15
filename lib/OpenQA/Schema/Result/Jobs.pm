@@ -417,7 +417,6 @@ sub duplicate {
     # skip this job if encountered again
     my $jobs_map = $args->{jobs_map} // {};
     $jobs_map->{$self->id} = 0;
-    log_debug('duplicating ' . $self->id);
 
     # store mapping of all duplications for return - need old job IDs for state mangling
     my %duplicated_ids;
@@ -634,6 +633,81 @@ sub duplicate {
     return ($self->id => $res->id, %duplicated_ids);
 }
 
+=head2 auto_duplicate
+
+=over
+
+=item Arguments: HASHREF { dup_type_auto => SCALAR, retry_avbl => SCALAR }
+
+=item Return value: ID of new job
+
+=back
+
+Handle individual job restart including associated job and asset dependencies
+
+=cut
+sub auto_duplicate {
+    my ($self, $args) = @_;
+    log_debug("auto_duplicate " . $self->id);
+    $args //= {};
+    # set this clone was triggered by manually if it's not auto-clone
+    $args->{dup_type_auto} //= 0;
+
+    if ($args->{dup_type_auto}) {
+        if (int($self->retry_avbl // 0) > 0) {
+            $args->{retry_avbl} = int($self->retry_avbl) - 1;
+        }
+        else {
+            log_debug("Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually.");
+            return;
+        }
+    }
+    else {
+        if (int($self->retry_avbl // 0) > 0) {
+            $args->{retry_avbl} = int($self->retry_avbl);
+        }
+        else {
+            $args->{retry_avbl} = 1;    # set retry_avbl back to 1
+        }
+    }
+
+    my %clones = $self->duplicate($args);
+    unless (%clones) {
+        log_debug('duplication failed');
+        return;
+    }
+    my @originals = keys %clones;
+    # abort jobs restarted because of dependencies (exclude the original $args->{jobid})
+    my $rsource = $self->result_source;
+    my $jobs    = $rsource->schema->resultset("Jobs")->search(
+        {
+            id    => {'!=' => $self->id, '-in' => \@originals},
+            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+        },
+        {
+            colums => [qw/id/]});
+
+    $jobs->search(
+        {
+            result => OpenQA::Schema::Result::Jobs::NONE,
+        }
+      )->update(
+        {
+            result => OpenQA::Schema::Result::Jobs::PARALLEL_RESTARTED,
+        });
+
+    while (my $j = $jobs->next) {
+        next unless $j->worker;
+        log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
+        $j->worker->send_command(command => 'abort', job_id => $j->id);
+    }
+
+    log_debug('new job ' . $clones{$self->id});
+    my $ipc = OpenQA::IPC->ipc;
+    $ipc->websockets('ws_notify_workers');
+    return $clones{$self->id};
+}
+
 sub set_property {
     my ($self, $key, $value) = @_;
     my $r = $self->settings->find({key => $key});
@@ -656,13 +730,13 @@ sub set_property {
 }
 
 # calculate overall result looking at the job modules
-sub calculate_result($) {
-    my ($job) = @_;
+sub calculate_result {
+    my ($self) = @_;
 
     my $overall;
     my $important_overall;    # just counting importants
 
-    for my $m ($job->modules->all) {
+    for my $m ($self->modules->all) {
         if ($m->result eq PASSED) {
             if ($m->important || $m->fatal) {
                 $important_overall ||= PASSED;

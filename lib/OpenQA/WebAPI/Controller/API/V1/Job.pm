@@ -274,7 +274,6 @@ sub ack_temporary {
         }
     }
     $self->render(text => "OK");
-
 }
 
 sub done {
@@ -284,7 +283,6 @@ sub done {
     my $result = $self->param('result');
     my $newbuild;
     $newbuild = 1 if defined $self->param('newbuild');
-
 
     my $job = $self->db->resultset('Jobs')->find($jobid);
     if (!$job) {
@@ -361,17 +359,23 @@ sub cancel {
 
 sub duplicate {
     my ($self) = @_;
+
     my $jobid = int($self->param('jobid'));
-    my %args = (jobid => $jobid);
+    my $job   = $self->db->resultset('Jobs')->find($jobid);
+    if (!$job) {
+        $self->reply->not_found;
+        return;
+    }
+    my $args;
     if (defined $self->param('prio')) {
-        $args{prio} = int($self->param('prio'));
+        $args->{prio} = int($self->param('prio'));
     }
     if (defined $self->param('dup_type_auto')) {
-        $args{dup_type_auto} = 1;
+        $args->{dup_type_auto} = 1;
     }
 
-    my $id = OpenQA::Scheduler::Scheduler::job_duplicate(\%args);
-    $self->emit_event('openqa_job_duplicate', {id => $jobid, auto => $args{dup_type_auto} // 0, result => int($id)}) if $id;
+    my $id = $job->auto_duplicate($args);
+    $self->emit_event('openqa_job_duplicate', {id => $job->id, auto => $args->{dup_type_auto} // 0, result => int($id)}) if $id;
     $self->render(json => {id => $id});
 }
 

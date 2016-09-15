@@ -221,6 +221,7 @@ $job = job_get_deps($jobE->id);
 is($job->{state},  "done",            "job_set_done changed state");
 is($job->{result}, "parallel_failed", "job_set_done changed result, jobE failed because of jobD");
 
+$jobF->discard_changes;
 $job = job_get_deps($jobF->id);
 is($job->{state}, "running", "job_set_done changed state");
 
@@ -239,7 +240,7 @@ $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => 
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
 
 # duplicate jobF, parents are duplicated too
-my $id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobF->id});
+my $id = $jobF->auto_duplicate;
 ok(defined $id, "duplicate works");
 
 $job = job_get_deps($jobA->id);    #unchanged
@@ -308,7 +309,7 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 
 # now duplicate jobE, parents A, D have to be duplicated,
 # C2 is scheduled so it can be used as parent of E2 without duplicating
-$id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobE->id});
+$id = $jobE->auto_duplicate;
 ok(defined $id, "duplicate works");
 
 $job = job_get_deps($jobA->id);    #cloned
@@ -424,7 +425,7 @@ $jobX->discard_changes;
 # done    sch.
 
 # when Y is scheduled and X is duplicated, Y must be rerouted to depend on X now
-my $jobX2_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobX->id});
+my $jobX2_id = $jobX->auto_duplicate;
 $jobY->discard_changes;
 is($jobX2_id, $jobY->parents->single->parent_job_id, 'jobY parent is now jobX clone');
 my $jobX2 = job_get_deps_rs($jobX2_id);
@@ -450,7 +451,7 @@ ok($jobY->done(result => 'passed'), 'jobY set to done');
 # X2 <---- Y
 # done    done
 
-my $jobY2_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobY->id});
+my $jobY2_id = $jobY->auto_duplicate;
 
 # current state:
 #
@@ -481,7 +482,7 @@ ok(job_get($jobY2_id)->done(result => 'passed'), 'jobY2 set to done');
 # done    done
 
 
-my $jobX3_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobX2_id});
+my $jobX3_id = $jobX2->auto_duplicate;
 
 # current state:
 #
@@ -550,7 +551,7 @@ $jobL->update;
 # | (parallel)   | (parallel)
 # K2             L2
 
-my $jobL2 = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobL->id});
+my $jobL2 = $jobL->auto_duplicate;
 ok($jobL2, 'jobL duplicated');
 # reload data from DB
 $jobH->discard_changes;
@@ -618,7 +619,7 @@ $jobT->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobT->update;
 
 # duplicate U
-my $jobU2 = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobU->id});
+my $jobU2 = $jobU->auto_duplicate;
 
 # expected state
 #
@@ -701,7 +702,7 @@ $jobI->update;
 #
 # P2 <-(parallel) O2 (clone of) O <-(parallel) I
 #
-my $jobO2 = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobO->id});
+my $jobO2 = $jobO->auto_duplicate;
 ok($jobO2, 'jobO duplicated');
 # reload data from DB
 $jobP->discard_changes;
@@ -733,7 +734,7 @@ $jobO2->update;
 #
 # P3 <-(parallel) O3 <-(parallel) I2
 #
-my $jobI2 = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobI->{id}});
+my $jobI2 = job_get($jobI->{id})->auto_duplicate;
 ok($jobI2, 'jobI duplicated');
 
 # reload data from DB
@@ -788,7 +789,7 @@ $jobB->update;
 #   \- D
 
 # B failed, auto clone it
-my $jobBc_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobB->id, dup_type_auto => 1});
+my $jobBc_id = $jobB->auto_duplicate({dup_type_auto => 1});
 ok($jobBc_id, 'jobB duplicated');
 
 # update local copy from DB
@@ -819,13 +820,13 @@ $jobB->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobB->clone->update;
 
 # clone A
-my $jobA2_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobA->id});
+my $jobA2_id = $jobA->auto_duplicate;
 ok($jobA2_id, 'jobA duplicated');
 $jobA->discard_changes;
 
 $jobA->clone->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobA->clone->update;
-$jobA2_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobA->clone->id});
+$jobA2_id = $jobA->clone->auto_duplicate;
 ok($jobA2_id, 'jobA->clone duplicated');
 
 # update local copy from DB
@@ -885,7 +886,7 @@ for ($jobB, $jobC, $jobD) {
     $_->update;
 }
 
-$jobA2_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobA->id});
+$jobA2_id = $jobA->auto_duplicate;
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 # check all children were cloned and has $jobA as parent
 for ($jobB, $jobC, $jobD) {
@@ -899,7 +900,7 @@ $jobA2 = $jobA->clone;
 is($jobA2->id, $jobA2_id, 'jobA2 is indeed jobA clone');
 $jobA2->state(OpenQA::Schema::Result::Jobs::RUNNING);
 $jobA2->update;
-my $jobA3_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobA2->id});
+my $jobA3_id = $jobA2->auto_duplicate;
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 
 # check all children were cloned anymore and has $jobA3 as parent
@@ -945,7 +946,7 @@ for ($jobB, $jobC, $jobD) {
     $_->update;
 }
 
-$jobA2_id = OpenQA::Scheduler::Scheduler::job_duplicate({jobid => $jobA->id});
+$jobA2_id = $jobA->auto_duplicate;
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 
 # check all children were cloned and has $jobA as parent

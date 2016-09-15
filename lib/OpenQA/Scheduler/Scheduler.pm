@@ -332,81 +332,6 @@ sub job_set_running {
     return $r;
 }
 
-=head2 job_duplicate
-
-=over
-
-=item Arguments: HASHREF { jobid => SCALAR, dup_type_auto => SCALAR, retry_avbl => SCALAR }
-
-=item Return value: ID of new job
-
-=back
-
-Handle individual job restart including associated job and asset dependencies
-
-=cut
-sub job_duplicate {
-    my ($args) = @_;
-    # set this clone was triggered by manually if it's not auto-clone
-    $args->{dup_type_auto} = 0 unless defined $args->{dup_type_auto};
-
-    my $job = schema->resultset("Jobs")->find({id => $args->{jobid}});
-    return unless $job;
-
-    if ($args->{dup_type_auto}) {
-        if (int($job->retry_avbl) > 0) {
-            $args->{retry_avbl} = int($job->retry_avbl) - 1;
-        }
-        else {
-            log_debug("Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually.");
-            return;
-        }
-    }
-    else {
-        if (int($job->retry_avbl) > 0) {
-            $args->{retry_avbl} = int($job->retry_avbl);
-        }
-        else {
-            $args->{retry_avbl} = 1;    # set retry_avbl back to 1
-        }
-    }
-
-    my %clones = $job->duplicate($args);
-    unless (%clones) {
-        log_debug('duplication failed');
-        return;
-    }
-    my @originals = keys %clones;
-    # abort jobs restarted because of dependencies (exclude the original $args->{jobid})
-    my $jobs = schema->resultset("Jobs")->search(
-        {
-            id    => {'!=' => $job->id, '-in' => \@originals},
-            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
-        },
-        {
-            colums => [qw/id/]});
-
-    $jobs->search(
-        {
-            result => OpenQA::Schema::Result::Jobs::NONE,
-        }
-      )->update(
-        {
-            result => OpenQA::Schema::Result::Jobs::PARALLEL_RESTARTED,
-        });
-
-    while (my $j = $jobs->next) {
-        next unless $j->worker;
-        log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
-        $j->worker->send_command(command => 'abort', job_id => $j->id);
-    }
-
-    log_debug('new job ' . $clones{$job->id});
-    my $ipc = OpenQA::IPC->ipc;
-    $ipc->websockets('ws_notify_workers');
-    return $clones{$job->id};
-}
-
 =head2 job_restart
 
 =over
@@ -429,14 +354,11 @@ sub job_restart {
         {
             id    => $jobids,
             state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES, OpenQA::Schema::Result::Jobs::FINAL_STATES],
-        },
-        {
-            columns => [qw/id/],
         });
 
     my @duplicated;
     while (my $j = $jobs->next) {
-        my $id = job_duplicate({jobid => $j->id});
+        my $id = $j->auto_duplicate;
         push @duplicated, $id if $id;
     }
 
