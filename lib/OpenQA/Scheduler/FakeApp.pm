@@ -58,4 +58,9 @@ sub home {
     return $ENV{MOJO_HOME} || '/';
 }
 
+sub emit_event {
+    my ($self, $event, $data) = @_;
+    # nothing to see here, move along
+}
+
 1;
