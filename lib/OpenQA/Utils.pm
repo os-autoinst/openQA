@@ -30,6 +30,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &parse_assets_from_settings
   &bugurl
   &bugref_to_href
+  &href_to_bugref
   &asset_type_from_setting
   &check_download_url
   &check_download_whitelist
@@ -296,22 +297,33 @@ sub parse_assets_from_settings {
     return $assets;
 }
 
+my %bugrefs = (
+    bnc => 'https://bugzilla.novell.com/show_bug.cgi?id=',
+    bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
+    boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
+    poo => 'https://progress.opensuse.org/issues/',
+);
+my %bugurls = reverse %bugrefs;
+
 sub bugurl {
     my ($bugref) = @_;
-    my %bugrefs = (
-        bnc => 'https://bugzilla.novell.com/show_bug.cgi?id=',
-        bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
-        boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
-        poo => 'https://progress.opensuse.org/issues/',
-    );
     return $bugrefs{$bugref};
 }
 
 sub bugref_to_href {
     my ($text) = @_;
+    my $regex = join('|', keys %bugrefs);
+    $regex = qr/(($regex)#(\d+))(?=\s|$)/;
+    $text =~ s{$regex}{<a href="@{[$bugrefs{$2}]}$3">$1</a>}gi;
+    return $text;
+}
 
-    $text =~ s{((bnc|bsc|boo|poo)#(\d+))}{<a href="@{[bugurl($2)]}$3">$1</a>}gi;
+sub href_to_bugref {
+    my ($text) = @_;
 
+    my $regex = join('|', values %bugrefs) =~ s/\?/\\\?/gr;
+    $regex = qr/($regex)(\d+)(?=\s|$)/;
+    $text =~ s{$regex}{@{[$bugurls{$1}]}#$2}gi;
     return $text;
 }
 
