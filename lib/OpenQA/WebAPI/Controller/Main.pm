@@ -120,11 +120,13 @@ sub index {
 
     my $limit_builds = $self->param('limit_builds') // 3;
     my $match = $self->param('match');
+    my @groups = $self->param('group');
     my @results;
 
     my $groups = $self->db->resultset('JobGroups')->search({}, {order_by => qw/name/});
     while (my $group = $groups->next) {
         next unless (!$match || $group->name =~ /$match/);
+        next unless (!$groups[0] || grep { $group->name eq $_ } @groups);
         my $res = $self->_group_result($group, $limit_builds);
         if (%$res) {
             $res->{_group} = $group;
