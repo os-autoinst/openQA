@@ -468,6 +468,7 @@ sub job_restart {
         $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
 
+    job_notify_workers();
     return @duplicated;
 }
 
