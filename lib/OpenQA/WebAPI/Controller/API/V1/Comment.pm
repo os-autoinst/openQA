@@ -18,6 +18,7 @@ use Date::Format;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::IPC;
+use OpenQA::Utils qw/href_to_bugref/;
 
 sub obj_comments {
     my ($self, $param, $table, $label) = @_;
@@ -70,7 +71,7 @@ sub create {
 
     my $res = $comments->create(
         {
-            text    => $text,
+            text    => href_to_bugref($text),
             user_id => $self->current_user->id
         });
     $self->emit_event('openqa_user_new_comment', {id => $res->id});
@@ -90,7 +91,7 @@ sub update {
     my $comment    = $comments->find($self->param('comment_id'));
     return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
     return $self->render(json => {error => "Forbidden (must be author)"},         status => 403) unless ($comment->user_id == $self->current_user->id);
-    my $res = $comment->update({text => $text});
+    my $res = $comment->update({text => href_to_bugref($text)});
     $self->emit_event('openqa_user_update_comment', {id => $comment->id});
     $self->render(json => {id => $res->id});
 }

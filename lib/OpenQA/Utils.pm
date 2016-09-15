@@ -30,6 +30,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &parse_assets_from_settings
   &bugurl
   &bugref_to_href
+  &href_to_bugref
   &asset_type_from_setting
   &check_download_url
   &check_download_whitelist
@@ -302,6 +303,8 @@ my %bugrefs = (
     boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
     poo => 'https://progress.opensuse.org/issues/',
 );
+my %bugurls = reverse %bugrefs;
+
 sub bugurl {
     my ($bugref) = @_;
     return $bugrefs{$bugref};
@@ -312,8 +315,15 @@ sub bugref_to_href {
     my $regex = join('|', keys %bugrefs);
     $regex = qr/(($regex)#(\d+))(?=\s|$)/;
     $text =~ s{$regex}{<a href="@{[$bugrefs{$2}]}$3">$1</a>}gi;
+    return $text;
+}
 
+sub href_to_bugref {
+    my ($text) = @_;
 
+    my $regex = join('|', values %bugrefs) =~ s/\?/\\\?/gr;
+    $regex = qr/($regex)(\d+)(?=\s|$)/;
+    $text =~ s{$regex}{@{[$bugurls{$1}]}#$2}gi;
     return $text;
 }
 
