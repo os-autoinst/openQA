@@ -17,6 +17,7 @@ package OpenQA::WebAPI::Controller::API::V1::Job;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::IPC;
+use OpenQA::Schema::Result::Jobs;
 use Try::Tiny;
 use DBIx::Class::Timestamps qw/now/;
 
@@ -300,6 +301,14 @@ sub done {
 
     # use $res as a result, it is recomputed result by scheduler
     $self->emit_event('openqa_job_done', {id => $jobid, result => $res, newbuild => $newbuild});
+
+    # notify workers if job has any chained children
+    my $children = $job->deps_hash->{children};
+    if (@{$children->{Chained}} && grep { $res eq $_ } OpenQA::Schema::Result::Jobs::OK_RESULTS) {
+        $self->app->log->debug("Job result OK and has chained children! Notifying workers");
+        my $ipc = OpenQA::IPC->ipc;
+        $ipc->websockets('ws_notify_workers');
+    }
 
     # See comment in set_command
     $self->render(json => {result => \$res});
