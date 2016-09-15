@@ -40,7 +40,7 @@ use OpenQA::Schema::Result::JobDependencies;
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw/log_debug parse_assets_from_settings asset_type_from_setting/;
+use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings asset_type_from_setting/;
 use db_helpers qw/rndstr/;
 
 use OpenQA::IPC;
@@ -142,7 +142,6 @@ sub _prefer_parallel {
     return;
 }
 
-# TODO: add some sanity check so the same host doesn't grab two jobs
 sub job_grab {
     my %args       = @_;
     my $workerid   = $args{workerid};
@@ -151,6 +150,11 @@ sub job_grab {
     my $workercaps = $args{workercaps};
 
     my $worker = _validate_workerid($workerid);
+    if ($worker->job) {
+        # TROUBLE ahead - do not call seen, to get into dead worker detection first
+        log_warning($worker->name . " still has a job, but wants to grab new one: " . $worker->job->id);
+        return {};
+    }
     $worker->seen($workercaps);
 
     my $result;

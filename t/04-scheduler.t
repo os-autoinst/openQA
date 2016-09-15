@@ -316,6 +316,8 @@ $result = OpenQA::Scheduler::Scheduler::job_set_running($job_id);
 $job    = job_get($job_id);
 ok($result == 0 && $job->state eq "running", "Retry job_set_running");
 
+# impossible to grab new job while old one running
+is_deeply({}, OpenQA::Scheduler::Scheduler::job_grab(%args), "not being able to grab twice");
 
 sleep 1;
 # Testing job_set_done
