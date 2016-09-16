@@ -1,7 +1,9 @@
 <div class="aligncenter" data-image="<%= url_for('test_img', filename => $screenshot) %>" id="step_view">
     Candidate needle:
-    <select id="needlediff_selector">
-        <option data-areas="[]" data-matches="[]">-None-</option>
+    % my $looking_for = ($tags)?' (Looking for: '. join(', ', @$tags)=~s/(.{40}).*/$1…/r .')':'';
+    % my $looking_for_title = ($tags)?"Looking for needle tags:\n- ". join("\n- ", @$tags):'';
+    <select id="needlediff_selector" title="<%= $looking_for_title %>">
+        <option data-areas="[]" data-matches="[]">-None-<%= $looking_for %></option>
         % for my $needle (@$needles) {
             % my $title = $needle->{min_similarity} . "%: " . $needle->{name};
             <option data-image="<%= $needle->{image} %>"

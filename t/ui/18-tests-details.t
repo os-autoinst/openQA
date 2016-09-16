@@ -70,6 +70,11 @@ $driver->find_element('[title="wait_serial"]', 'css')->click();
 ok($driver->find_element('#preview_container_out', 'css')->is_hidden(), "preview window closed after clicking again");
 unlike($driver->get_current_url(), qr/#step/, "current url doesn't contain #step hash anymore");
 
+$driver->find_element('[href="#step/bootloader/1"]', 'css')->click();
+t::ui::PhantomTest::wait_for_ajax;
+like($driver->find_element('option[data-matches="[]"]', 'css')->get_text(), qr/Looking for: inst-bootmenu/, "show searched needle tags");
+$driver->find_element('[href="#step/bootloader/1"]', 'css')->click();
+
 # test running view with Test::Mojo as phantomjs would get stuck on the
 # liveview/livelog forever
 my $t   = Test::Mojo->new('OpenQA::WebAPI');
