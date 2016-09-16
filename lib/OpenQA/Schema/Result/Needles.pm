@@ -85,15 +85,25 @@ sub update_needle {
     }
     if (!$needle) {
         # create a canonical path out of it
-        my $realpath = realpath($filename);
-        my $dir = $schema->resultset('NeedleDirs')->find_or_new({path => dirname($realpath)});
+        my $realpath       = realpath($filename);
+        my $needledir_path = realpath($module->job->needle_dir());
+        my $dir;
+        my $basename;
+        if (index($realpath, $needledir_path) != 0) {    # leave old behaviour as it is
+            $dir = $schema->resultset('NeedleDirs')->find_or_new({path => dirname($realpath)});
+            $basename = basename($realpath);
+        }
+        else {
+            $dir = $schema->resultset('NeedleDirs')->find_or_new({path => $needledir_path});
+            # basename should contain relative path to json in needledir
+            $basename = substr $realpath, length($needledir_path) + 1, length($realpath);
+        }
         if (!$dir->in_storage) {
             # first job seen defines the name
             my $name = sprintf "%s-%s", $module->job->DISTRI, $module->job->VERSION;
             $dir->name($name);
             $dir->insert;
         }
-        my $basename = basename($realpath);
         $needle ||= $dir->needles->find_or_new({filename => $basename, first_seen_module_id => $module->id}, {key => 'needles_dir_id_filename'});
     }
 
