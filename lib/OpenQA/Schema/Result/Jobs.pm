@@ -792,7 +792,7 @@ sub reduce_result {
 
     if ($args->{jobid}) {
         my $job = $app->db->resultset('Jobs')->find({id => $args->{jobid}});
-        if ($job->part_of_important_build) {
+        if ($job && $job->part_of_important_build) {
             $app->log->debug('Job ' . $job->id . ' is part of important build, skip cleanup');
             return;
         }
