@@ -52,5 +52,7 @@ is($res, q{Limit to 10 / 20 / 50 / 100 / 400 previous results}, 'more results ca
 $get = $t->get_ok($more_results->find('a[href]')->last->{href})->status_is(200);
 $res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#previous #more_results b')->all_text);
 like($res, qr/400/, 'limited to the selected number');
+$get = $t->get_ok('/tests/99939')->status_is(200);
+$get->element_exists_not('#res_99936', 'does not show jobs of different scenario (different machine)');
 
 done_testing();

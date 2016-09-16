@@ -74,7 +74,7 @@ $get->element_exists_not('#res_DVD_x86_64_doc');
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
 $get->status_is(200);
 $summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/\QPassed: 0 Soft Failure: 1 Failed: 1\E/i);
+like($summary, qr/\QPassed: 0 Soft Failure: 2 Failed: 1\E/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_x86_64');
@@ -140,7 +140,7 @@ $get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})->status_is(200);
 $summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/Passed: 0 Soft Failure: 1 Failed: 1/i, 'todo=1 shows all unlabeled failed');
+like($summary, qr/Passed: 0 Soft Failure: 2 Failed: 1/i, 'todo=1 shows all unlabeled failed');
 
 
 #
