@@ -308,7 +308,7 @@ my %bugurls = reverse %bugrefs;
 
 sub bugref_regex {
     my $regex = join('|', keys %bugrefs);
-    return qr/(($regex)#(\d+))(?=\s|$)/;
+    return qr/(($regex)#(\d+))(?![\w])/;
 }
 
 sub find_bugref {
@@ -333,7 +333,7 @@ sub href_to_bugref {
     my ($text) = @_;
 
     my $regex = join('|', values %bugrefs) =~ s/\?/\\\?/gr;
-    $regex = qr/($regex)(\d+)(?=\s|$)/;
+    $regex = qr/($regex)(\d+)(?![\w])/;
     $text =~ s{$regex}{@{[$bugurls{$1}]}#$2}gi;
     return $text;
 }

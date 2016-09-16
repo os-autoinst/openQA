@@ -173,7 +173,7 @@ subtest 'URL auto-replace' => sub {
         bsc#2436346bla2
         <a href="https://openqa.example.com/foo/bar">https://openqa.example.com/foo/bar</a>: http://localhost:9562
         https://openqa.example.com/tests/181148 (reference http://localhost/foo/bar )
-        bsc#1234 boo#2345 poo#3456 t#4567
+        bsc#1234 boo#2345,poo#3456 t#4567
         t#5678/modules/welcome/steps/1
         https://progress.opensuse.org/issues/6789
         https://bugzilla.novell.com/show_bug.cgi?id=1234'
@@ -185,7 +185,7 @@ subtest 'URL auto-replace' => sub {
     my @comments = $driver->find_elements('div.media-comment p', 'css');
     is($comments[1]->get_text(), $test_message, "body of first comment after adding another");
 
-    like($comments[0]->get_text(), qr/bsc#1234 boo#2345 poo#3456 t#4567 .*poo#6789 bnc#1234/);
+    like($comments[0]->get_text(), qr/bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bnc#1234/);
     my @urls = $driver->find_elements('div.media-comment a', 'css');
     is(scalar @urls, 11);
     is((shift @urls)->get_text(), 'https://openqa.example.com/foo/bar',      "url1");
