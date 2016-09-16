@@ -1,20 +1,20 @@
 <div class="aligncenter" data-image="<%= url_for('test_img', filename => $screenshot) %>" id="step_view">
-    <span class="candidate_needles">
-        Candidate needle:
-        <select id="needlediff_selector">
-            <option data-areas="[]" data-matches="[]">-None-</option>
-            % for my $needle (@$needles) {
-                % my $title = $needle->{min_similarity} . "%: " . $needle->{name};
-                <option data-image="<%= $needle->{image} %>"
-                        data-areas="<%= JSON::to_json($needle->{areas})%>"
-                        % if ($needle->{selected}) {
-                        selected="selected"
-                        % }
-                        data-matches="<%= JSON::to_json($needle->{matches}) %>">
-                    <%= $title %></option>
-            % }
-        </select>
-    </span>
+    Candidate needle:
+    % my $looking_for = ($tags)?' (Looking for: '. join(', ', @$tags)=~s/(.{40}).*/$1…/r .')':'';
+    % my $looking_for_title = ($tags)?"Looking for needle tags:\n- ". join("\n- ", @$tags):'';
+    <select id="needlediff_selector" title="<%= $looking_for_title %>">
+        <option data-areas="[]" data-matches="[]">-None-<%= $looking_for %></option>
+        % for my $needle (@$needles) {
+            % my $title = $needle->{min_similarity} . "%: " . $needle->{name};
+            <option data-image="<%= $needle->{image} %>"
+                    data-areas="<%= JSON::to_json($needle->{areas})%>"
+                    % if ($needle->{selected}) {
+                    selected="selected"
+                    % }
+                    data-matches="<%= JSON::to_json($needle->{matches}) %>">
+                <%= $title %></option>
+        % }
+    </select>
     <span class="step_actions">
         % if (is_operator) {
             %= stepaction_for 'Create new needle' => url_for('edit_step'), 'fa-thumb-tack'
