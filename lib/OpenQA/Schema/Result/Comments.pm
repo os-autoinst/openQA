@@ -15,6 +15,7 @@
 
 package OpenQA::Schema::Result::Comments;
 use base qw/DBIx::Class::Core/;
+use OpenQA::Utils qw/find_bugref/;
 use strict;
 
 __PACKAGE__->load_components(qw/Core/);
@@ -84,8 +85,7 @@ Returns bugref if C<$self> is bugref, e.g. 'bug#1234'.
 =cut
 sub bugref {
     my ($self) = @_;
-    $self->text =~ /\b([^t]+#\d+)\b/;
-    return $1;
+    return find_bugref($self->text);
 }
 
 =head2 label

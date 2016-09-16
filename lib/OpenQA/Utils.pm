@@ -28,6 +28,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &run_cmd_with_log
   &commit_git
   &parse_assets_from_settings
+  &find_bugref
   &bugurl
   &bugref_to_href
   &href_to_bugref
@@ -305,6 +306,17 @@ my %bugrefs = (
 );
 my %bugurls = reverse %bugrefs;
 
+sub bugref_regex {
+    my $regex = join('|', keys %bugrefs);
+    return qr/(($regex)#(\d+))(?![\w])/;
+}
+
+sub find_bugref {
+    my ($text) = @_;
+    $text =~ bugref_regex;
+    return $1;
+}
+
 sub bugurl {
     my ($bugref) = @_;
     return $bugrefs{$bugref};
@@ -312,8 +324,7 @@ sub bugurl {
 
 sub bugref_to_href {
     my ($text) = @_;
-    my $regex = join('|', keys %bugrefs);
-    $regex = qr/(($regex)#(\d+))(?=\s|$)/;
+    my $regex = bugref_regex;
     $text =~ s{$regex}{<a href="@{[$bugrefs{$2}]}$3">$1</a>}gi;
     return $text;
 }
@@ -322,7 +333,7 @@ sub href_to_bugref {
     my ($text) = @_;
 
     my $regex = join('|', values %bugrefs) =~ s/\?/\\\?/gr;
-    $regex = qr/($regex)(\d+)(?=\s|$)/;
+    $regex = qr/($regex)(\d+)(?![\w])/;
     $text =~ s{$regex}{@{[$bugurls{$1}]}#$2}gi;
     return $text;
 }

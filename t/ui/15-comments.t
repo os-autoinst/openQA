@@ -173,7 +173,7 @@ subtest 'URL auto-replace' => sub {
         bsc#2436346bla2
         <a href="https://openqa.example.com/foo/bar">https://openqa.example.com/foo/bar</a>: http://localhost:9562
         https://openqa.example.com/tests/181148 (reference http://localhost/foo/bar )
-        bsc#1234 boo#2345 poo#3456 t#4567
+        bsc#1234 boo#2345,poo#3456 t#4567
         t#5678/modules/welcome/steps/1
         https://progress.opensuse.org/issues/6789
         https://bugzilla.novell.com/show_bug.cgi?id=1234'
@@ -185,7 +185,7 @@ subtest 'URL auto-replace' => sub {
     my @comments = $driver->find_elements('div.media-comment p', 'css');
     is($comments[1]->get_text(), $test_message, "body of first comment after adding another");
 
-    like($comments[0]->get_text(), qr/bsc#1234 boo#2345 poo#3456 t#4567 .*poo#6789 bnc#1234/);
+    like($comments[0]->get_text(), qr/bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bnc#1234/);
     my @urls = $driver->find_elements('div.media-comment a', 'css');
     is(scalar @urls, 11);
     is((shift @urls)->get_text(), 'https://openqa.example.com/foo/bar',      "url1");
@@ -261,15 +261,32 @@ subtest 'commenting in test results including labels' => sub {
         $driver->find_element('opensuse', 'link_text')->click();
         is($driver->find_element('.review-all-passed', 'css')->get_attribute('title'), 'Reviewed (all passed)', 'build should be marked because all tests passed');
         is($driver->find_element('.review',            'css')->get_attribute('title'), 'Reviewed (1 comments)', 'build should be marked as labeled');
-        $driver->get($baseurl . 'tests/99926#comments');
-        $driver->find_element('#text',          'css')->send_keys('poo#9876');
-        $driver->find_element('#submitComment', 'css')->click();
-        t::ui::PhantomTest::wait_for_ajax;
-        $driver->find_element('Job Groups', 'link_text')->click();
-        like($driver->find_element('#current-build-overview', 'css')->get_text(), qr/\QBuild 87.5011\E/, 'on the right build');
-        $driver->find_element('#current-build-overview a', 'css')->click();
 
-        is($driver->find_element('#res_staging_e_x86_64_minimalx .fa-bolt', 'css')->get_attribute('title'), 'Bug(s) referenced: poo#9876', 'bolt icon shown for progress issues');
+        subtest 'progress items work, too' => sub {
+            $driver->get($baseurl . 'tests/99926#comments');
+            $driver->find_element('#text',          'css')->send_keys('poo#9876');
+            $driver->find_element('#submitComment', 'css')->click();
+            t::ui::PhantomTest::wait_for_ajax;
+            $driver->find_element('Job Groups', 'link_text')->click();
+            like($driver->find_element('#current-build-overview', 'css')->get_text(), qr/\QBuild 87.5011\E/, 'on the right build');
+            $driver->find_element('#current-build-overview a', 'css')->click();
+            is($driver->find_element('#res_staging_e_x86_64_minimalx .fa-bolt', 'css')->get_attribute('title'), 'Bug(s) referenced: poo#9876', 'bolt icon shown for progress issues');
+        };
+
+        subtest 'latest bugref but first in each comment' => sub {
+            $driver->get($baseurl . 'tests/99926#comments');
+            $driver->find_element('#text',          'css')->send_keys('poo#9875 poo#9874');
+            $driver->find_element('#submitComment', 'css')->click();
+            t::ui::PhantomTest::wait_for_ajax;
+            $driver->find_element('Job Groups', 'link_text')->click();
+            like($driver->find_element('#current-build-overview', 'css')->get_text(), qr/\QBuild 87.5011\E/, 'on the right build');
+            $driver->find_element('#current-build-overview a', 'css')->click();
+            my $bugref = $driver->find_element('#res_staging_e_x86_64_minimalx .fa-bolt', 'css');
+            is($bugref->get_attribute('title'), 'Bug(s) referenced: poo#9875', 'first bugref in latest comment wins');
+            $get = $t->get_ok($driver->get_current_url())->status_is(200);
+            is($get->tx->res->dom->at('#res_staging_e_x86_64_minimalx .fa-bolt')->parent->{href}, 'https://progress.opensuse.org/issues/9875');
+        };
+
         $driver->find_element('opensuse', 'link_text')->click();
     };
 };
