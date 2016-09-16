@@ -120,10 +120,12 @@ sub index {
     my ($self) = @_;
 
     my $limit_builds = $self->param('limit_builds') // 3;
+    my $group_params = $self->every_param('group');
     my @results;
 
     my $groups = $self->db->resultset('JobGroups')->search({}, {order_by => qw/name/});
     while (my $group = $groups->next) {
+        next unless (scalar @{$group_params} == 0 || (grep { $group->name =~ /$_/ } @$group_params));
         my $res = $self->_group_result($group, $limit_builds);
         if (%$res) {
             $res->{_group} = $group;

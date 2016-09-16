@@ -63,6 +63,17 @@ is($driver->find_element('#more_builds b', 'css')->get_text(), 400, 'limited to 
 $driver->find_element('tagged', 'link_text')->click();
 is(scalar @{$driver->find_elements('h4', 'css')}, 0, 'no tagged builds exist');
 
+is($driver->get($baseurl . '?group=opensuse'), 1, 'group parameter is not exact by default');
+is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'both job groups shown');
+is($driver->get($baseurl . '?group=test'), 1, 'group parameter filters as expected');
+is(scalar @{$driver->find_elements('h2', 'css')}, 1, 'only one job group shown');
+is($driver->find_element('opensuse test', 'link_text')->get_text, 'opensuse test');
+is($driver->get($baseurl . '?group=opensuse$'), 1, 'group parameter can be used for exact matching, though');
+is(scalar @{$driver->find_elements('h2', 'css')}, 1, 'only one job group shown');
+is($driver->find_element('opensuse', 'link_text')->get_text, 'opensuse');
+is($driver->get($baseurl . '?group=opensuse$&group=test'), 1, 'multiple group parameter can be use to ease building queries');
+is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'both job groups shown');
+
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 t::ui::PhantomTest::kill_phantom();
