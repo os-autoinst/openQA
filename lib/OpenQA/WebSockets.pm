@@ -66,4 +66,10 @@ sub ws_send_all {
     return OpenQA::WebSockets::Server::ws_send_all(@args);
 }
 
+dbus_method('ws_notify_workers');
+sub ws_notify_workers {
+    my ($self) = @_;
+    return OpenQA::WebSockets::Server::ws_send_all(('job_available'));
+}
+
 1;

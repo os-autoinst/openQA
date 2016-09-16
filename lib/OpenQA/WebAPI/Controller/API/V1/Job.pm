@@ -131,7 +131,7 @@ sub create {
                 run_at   => now(),
             });
 
-        OpenQA::Scheduler::Scheduler::job_notify_workers();
+        $ipc->websockets('ws_notify_workers');
     }
     catch {
         $status = 400;
