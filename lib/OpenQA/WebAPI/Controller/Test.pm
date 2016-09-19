@@ -300,7 +300,7 @@ sub _show {
     push(@conds, {'me.state'  => 'done'});
     push(@conds, {'me.result' => {-not_in => [OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS]}});
     push(@conds, {id          => {'<', $job->id}});
-    for my $key (OpenQA::Schema::Result::Jobs::SCENARIO_KEYS) {
+    for my $key (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
         push(@conds, {"me.$key" => $job->get_column($key)});
     }
     my $limit_previous = $self->param('limit_previous') // 10;    # arbitrary limit of previous results to show
@@ -310,7 +310,7 @@ sub _show {
     my $previous_jobs_rs = $self->db->resultset("Jobs")->search({-and => \@conds}, \%attrs);
     my @previous_jobs;
     while (my $prev = $previous_jobs_rs->next) {
-        $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_KEYS));
+        $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS));
         push(@previous_jobs, $prev);
     }
     my $job_labels = $self->_job_labels(\@previous_jobs);

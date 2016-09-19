@@ -42,7 +42,7 @@ $driver->find_element('Login', 'link_text')->click();
 is($driver->get_title(), "openQA", "back on main page");
 
 my @texts = map { $_->get_text() } $driver->find_elements('.progress-bar-softfailed', 'css');
-is_deeply(\@texts, ['0 softfailed', '0 softfailed', '1 softfailed', ''], 'Progress bars show soft fails');
+is_deeply(\@texts, ['0 softfailed', '0 softfailed', '2 softfailed', ''], 'Progress bars show soft fails');
 
 is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
 

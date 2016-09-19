@@ -99,7 +99,7 @@ subtest 'builds first tagged important, then unimportant dissappear (poo#12028)'
     my $get  = $t->get_ok('/group_overview/1001?limit_builds=1')->status_is(200);
     my @tags = $t->tx->res->dom->find('a[href^=/tests/]')->map('text')->each;
     is(scalar @tags, 1,           'only one build');
-    is($tags[0],     'Build0048', 'only youngest build present');
+    is($tags[0],     'Build0092', 'only youngest build present');
 };
 
 subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {
@@ -121,7 +121,7 @@ subtest 'no cleanup of important builds' => sub {
 
     my @jobs = $t->app->db->resultset('Jobs')->search({state => 'done', group_id => 1001})->all;
     my @jobs_in_build = grep { $_->settings_hash->{BUILD} eq '0048' } @jobs;
-    my $job           = $jobs_in_build[0];
+    my $job           = $jobs_in_build[1];
     my %args          = (resultdir => $job->result_dir, jobid => $job->id);
     my $filename      = $job->result_dir . '/autoinst-log.txt';
     open my $fh, ">>$filename" or die "touch $filename: $!\n";

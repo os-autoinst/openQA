@@ -144,8 +144,8 @@ sub create_temp_job_result_file {
 }
 
 my @jobs      = $t->app->db->resultset('Jobs')->search({state => 'done'})->all;
-my $resultdir = $jobs[1]->result_dir;
-my $jobid     = $jobs[1]->id;
+my $resultdir = $jobs[2]->result_dir;
+my $jobid     = $jobs[2]->id;
 my %args      = (resultdir => $resultdir, jobid => $jobid);
 
 subtest 'reduce_result gru task cleans up logs' => sub {
