@@ -663,7 +663,7 @@ sub auto_duplicate {
             $args->{retry_avbl} = int($self->retry_avbl) - 1;
         }
         else {
-            log_debug("Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually.");
+            log_warning("Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually.");
             return;
         }
     }
