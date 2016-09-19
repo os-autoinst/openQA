@@ -125,19 +125,14 @@ sub test_comment_editing {
         $driver->find_element('button.remove-edit-button', 'css')->click();
 
         # check confirmation and dismiss in the first place
-        # FIXME: simulate dismiss, $driver->dismiss_alert and get_alert_text don't work
         $driver->execute_script("window.confirm = function() { return false; }");
-        #is($driver->get_alert_text, "Do you really want to delete the comment written by Demo?", "confirmation is shown before removal");
-        #$driver->dismiss_alert;
 
         # the comment musn't be deleted yet
         is($driver->find_element('div.media-comment', 'css')->get_text(), $edited_test_message, "comment is still there after dismissing removal");
 
         # try to remove the first displayed comment again (and accept this time);
-        # FIXME: simulate acception, $driver->accept_alert doesn't work
         $driver->execute_script("window.confirm = function() { return true; };");
         $driver->find_element('button.remove-edit-button', 'css')->click();
-        #$driver->accept_alert;
         t::ui::PhantomTest::wait_for_ajax;
 
         # check whether the comment is gone
