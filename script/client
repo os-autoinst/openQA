@@ -71,7 +71,7 @@ lorem ipsum ...
 
 use strict;
 use FindBin;
-BEGIN { unshift @INC, "$FindBin::Bin/../lib" }
+BEGIN { unshift @INC, "$FindBin::RealBin/../lib" }
 
 use Data::Dump;
 use Mojo::URL;
