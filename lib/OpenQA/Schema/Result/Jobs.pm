@@ -62,6 +62,7 @@ use constant {
 };
 use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
 use constant COMPLETE_RESULTS => (PASSED, SOFTFAILED, FAILED);
+use constant OK_RESULTS => (PASSED, SOFTFAILED);
 use constant INCOMPLETE_RESULTS => (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
 
 # scenario keys w/o MACHINE. Add MACHINE when desired, commonly joined on
@@ -1378,7 +1379,7 @@ sub done {
 
     $self->update(\%new_val);
 
-    if (!grep { $result eq $_ } (PASSED, SOFTFAILED)) {
+    if (!grep { $result eq $_ } OK_RESULTS) {
         $self->_job_skip_children;
         $self->_job_stop_children;
     }

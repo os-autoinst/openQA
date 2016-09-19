@@ -114,12 +114,6 @@ sub job_grab {
     return OpenQA::Scheduler::Scheduler::job_grab(%$args);
 }
 
-dbus_method('job_notify_workers');
-sub job_notify_workers {
-    my ($self) = @_;
-    OpenQA::Scheduler::Scheduler::job_notify_workers;
-}
-
 dbus_method('job_restart', [['array', 'uint32']], [['array', 'uint32']]);
 sub job_restart {
     my ($self, $args) = @_;

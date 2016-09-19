@@ -26,7 +26,7 @@ use DBIx::Class::Timestamps qw/now/;
 
 use Carp;
 
-use OpenQA::Scheduler::Scheduler 'job_notify_workers';
+use OpenQA::Scheduler::Scheduler qw/asset_register/;
 
 # return settings key for given job settings
 sub _settings_key {
@@ -423,7 +423,8 @@ sub schedule_iso {
     # if the notification fails
     try {
         #notify workers new jobs are available
-        job_notify_workers;
+        my $ipc = OpenQA::IPC->ipc;
+        $ipc->websockets('ws_notify_workers');
     }
     catch {
         $self->app->log->warn("Failed to notify workers");

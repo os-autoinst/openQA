@@ -52,7 +52,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 @ISA = qw(Exporter);
 
 @EXPORT = qw(worker_register job_create
-  job_grab job_set_done job_set_waiting job_set_running job_notify_workers
+  job_grab job_set_done job_set_waiting job_set_running
   job_restart
   job_set_stop job_stop iso_stop_old_builds
   asset_list asset_get asset_delete asset_register
@@ -75,12 +75,6 @@ sub _validate_workerid($) {
 #
 # Jobs API
 #
-sub job_notify_workers {
-    # notify workers about new job
-    my $ipc = OpenQA::IPC->ipc;
-    $ipc->websockets('ws_send_all', 'job_available');
-}
-
 sub _prefer_parallel {
     my ($available_cond) = @_;
     my $running = schema->resultset("Jobs")->search(
@@ -291,7 +285,8 @@ sub job_grab {
 
     # starting one job from parallel group can unblock
     # other jobs from the group
-    job_notify_workers() if $job->children->count();
+    my $ipc = OpenQA::IPC->ipc;
+    $ipc->websockets('ws_notify_workers');
 
     return $job_hashref;
 }
@@ -407,7 +402,8 @@ sub job_duplicate {
     }
 
     log_debug('new job ' . $clones{$job->id});
-    job_notify_workers();
+    my $ipc = OpenQA::IPC->ipc;
+    $ipc->websockets('ws_notify_workers');
     return $clones{$job->id};
 }
 
