@@ -52,8 +52,8 @@ function setupOverview() {
     for (var j = 0; j < varPairs.length; ++j) {
         var pair = varPairs[j].split('=');
         if(pair.length > 1) {
-            var key = pair[0];
-            var val = pair[1];
+            var key = decodeURIComponent(pair[0]);
+            var val = decodeURIComponent(pair[1]);
             if(val.length < 1) {
                 continue;
             }

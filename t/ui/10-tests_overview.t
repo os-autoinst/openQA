@@ -166,6 +166,13 @@ $driver->find_element('#res_DVD_x86_64_doc',          'css');
 my @filtered_out = $driver->find_elements('#res_DVD_x86_64_kde', 'css');
 is(scalar @filtered_out, 0, 'result filter not correctly applied');
 
+# Test whether all URL parameter are passed correctly
+my $url_with_escaped_parameters = $baseurl . 'tests/overview?distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+$driver->get($url_with_escaped_parameters);
+$driver->find_element('#filter-panel .panel-heading', 'css')->click();
+$driver->find_element('#filter-form button',          'css')->click();
+is($driver->get_current_url(), $url_with_escaped_parameters . '#', 'escaped URL parameters are passed correctly');
+
 t::ui::PhantomTest::kill_phantom();
 
 done_testing();
