@@ -21,6 +21,18 @@ use strict;
 
 use OpenQA::IPC;
 use OpenQA::WebSockets::Server qw//;
+use OpenQA::Utils qw/log_debug/;
+
+# monkey patching for debugging IPC
+sub _is_method_allowed {
+    my ($self, $method) = @_;
+
+    my $ret = $self->SUPER::_is_method_allowed($method);
+    if ($ret) {
+        log_debug "IPC calling $method";
+    }
+    return $ret;
+}
 
 sub run {
     # config Mojo to get reactor
