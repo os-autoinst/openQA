@@ -62,9 +62,9 @@ has secrets => sub {
     return $ret;
 };
 
-has log_name => sub {
+sub log_name {
     return $$;
-};
+}
 
 # This method will run once at server start
 sub startup {
@@ -311,7 +311,7 @@ sub startup {
     $command_r->post('/')->name('apiv1_set_command')->to('job#set_command');
     $job_r->post('/restart')->name('apiv1_restart')->to('job#restart');            # job_restart
     $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');               # job_cancel
-    $job_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate');      # job_duplicate
+    $job_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate');
 
     # api/v1/workers
     $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');

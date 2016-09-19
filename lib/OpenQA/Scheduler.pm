@@ -99,15 +99,6 @@ sub asset_register {
     return $rs->id;
 }
 
-## Jobs
-dbus_method('job_duplicate', [['dict', 'string', 'string']], ['uint32']);
-sub job_duplicate {
-    my ($self, $args) = @_;
-    my $res = OpenQA::Scheduler::Scheduler::job_duplicate(%$args);
-    return 0 unless $res;
-    return $res;
-}
-
 dbus_method('job_grab', [['dict', 'string', ['variant']]], [['dict', 'string', ['variant']]]);
 sub job_grab {
     my ($self, $args) = @_;

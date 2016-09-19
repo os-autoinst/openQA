@@ -97,7 +97,7 @@ is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.done 
 $post = $t->post_ok("/api/v1/jobs/" . $job . "/duplicate")->status_is(200);
 my $newjob = $post->tx->res->json->{id};
 # check plugin called fedmsg-logger correctly
-is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.duplicate --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","auto":null,"id":' . $job . ',"remaining":1,"result":' . $newjob . '}', "job duplicate triggers fedmsg");
+is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.duplicate --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","auto":0,"id":' . $job . ',"remaining":1,"result":' . $newjob . '}', "job duplicate triggers fedmsg");
 
 # cancel the new job via API
 $post = $t->post_ok("/api/v1/jobs/" . $newjob . "/cancel")->status_is(200);

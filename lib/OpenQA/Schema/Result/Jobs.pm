@@ -377,7 +377,7 @@ sub can_be_duplicated {
 
 =item Arguments: optional hash reference containing the key 'prio'
 
-=item Return value: the new job or array of duplicated jobs if duplication suceeded,
+=item Return value: hash of duplicated jobs if duplication suceeded,
                     undef otherwise
 
 =back
@@ -407,8 +407,8 @@ for CHAINED dependencies:
 
 =cut
 sub duplicate {
-    my $self    = shift;
-    my $args    = shift || {};
+    my ($self, $args) = @_;
+    $args ||= {};
     my $rsource = $self->result_source;
     my $schema  = $rsource->schema;
 
@@ -417,14 +417,13 @@ sub duplicate {
     # skip this job if encountered again
     my $jobs_map = $args->{jobs_map} // {};
     $jobs_map->{$self->id} = 0;
-    log_debug('duplicating ' . $self->id);
 
     # store mapping of all duplications for return - need old job IDs for state mangling
     my %duplicated_ids;
-    my @direct_deps_parents_parallel  = ();
-    my @direct_deps_parents_chained   = ();
-    my @direct_deps_children_parallel = ();
-    my @direct_deps_children_chained  = ();
+    my @direct_deps_parents_parallel;
+    my @direct_deps_parents_chained;
+    my @direct_deps_children_parallel;
+    my @direct_deps_children_chained;
 
     # we can start traversing clone graph anywhere, so first we travers upwards then downwards
     # since we do this in each duplication, we need to prevent double cloning of ourselves
@@ -451,7 +450,7 @@ sub duplicate {
                 while (!%dups && !$p->can_be_duplicated) {
                     if ($p->state eq SCHEDULED) {
                         # we use SCHEDULED as is, just route dependencies
-                        %dups = ($p->id => $p->id);
+                        %dups = ($p->id => $p);
                         last;
                     }
                     else {
@@ -469,7 +468,7 @@ sub duplicate {
             }
             else {
                 # reroute to CHAINED parents, those are not being cloned when child is restarted
-                push @direct_deps_parents_chained, $p->id;
+                push @direct_deps_parents_chained, $p;
             }
         }
         elsif ($jobs_map->{$p->id}) {
@@ -478,7 +477,7 @@ sub duplicate {
                 push @direct_deps_parents_parallel, $jobs_map->{$p->id};
             }
             else {
-                push @direct_deps_parents_chained, $p->id;
+                push @direct_deps_parents_chained, $p;
             }
         }
         # else ignore since the jobs is being processed and we are also indirect descendand
@@ -506,7 +505,7 @@ sub duplicate {
             while (!%dups && !$c->can_be_duplicated) {
                 if ($c->state eq SCHEDULED) {
                     # we use SCHEDULED as is, just route dependencies - create new, remove existing
-                    %dups = ($c->id => $c->id);
+                    %dups = ($c->id => $c);
                     $cd->delete;
                     last;
                 }
@@ -601,28 +600,28 @@ sub duplicate {
     for my $p (@direct_deps_parents_parallel) {
         $res->parents->create(
             {
-                parent_job_id => $p,
+                parent_job_id => $p->id,
                 dependency    => OpenQA::Schema::Result::JobDependencies->PARALLEL,
             });
     }
     for my $p (@direct_deps_parents_chained) {
         $res->parents->create(
             {
-                parent_job_id => $p,
+                parent_job_id => $p->id,
                 dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
             });
     }
     for my $c (@direct_deps_children_parallel) {
         $res->children->create(
             {
-                child_job_id => $c,
+                child_job_id => $c->id,
                 dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
             });
     }
     for my $c (@direct_deps_children_chained) {
         $res->children->create(
             {
-                child_job_id => $c,
+                child_job_id => $c->id,
                 dependency   => OpenQA::Schema::Result::JobDependencies->CHAINED,
             });
     }
@@ -630,8 +629,84 @@ sub duplicate {
     # when dependency network is recreated, associate assets
     $res->register_assets_from_settings;
     # we are done, mark it in jobs_map
-    $jobs_map->{$self->id} = $res->id;
-    return ($self->id => $res->id, %duplicated_ids);
+    $jobs_map->{$self->id} = $res;
+    return ($self->id => $res, %duplicated_ids);
+}
+
+=head2 auto_duplicate
+
+=over
+
+=item Arguments: HASHREF { dup_type_auto => SCALAR, retry_avbl => SCALAR }
+
+=item Return value: ID of new job
+
+=back
+
+Handle individual job restart including associated job and asset dependencies. Note that
+the caller is responsible to notify the workers about the new job - the model is not doing that.
+
+I.e.
+    $job->auto_duplicate;
+    my $ipc = OpenQA::IPC->ipc;
+    $ipc->websockets('ws_notify_workers');
+
+=cut
+sub auto_duplicate {
+    my ($self, $args) = @_;
+    $args //= {};
+    # set this clone was triggered by manually if it's not auto-clone
+    $args->{dup_type_auto} //= 0;
+
+    if ($args->{dup_type_auto}) {
+        if (int($self->retry_avbl // 0) > 0) {
+            $args->{retry_avbl} = int($self->retry_avbl) - 1;
+        }
+        else {
+            log_warning("Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually.");
+            return;
+        }
+    }
+    else {
+        if (int($self->retry_avbl // 0) > 0) {
+            $args->{retry_avbl} = int($self->retry_avbl);
+        }
+        else {
+            $args->{retry_avbl} = 1;    # set retry_avbl back to 1
+        }
+    }
+
+    my %clones = $self->duplicate($args);
+    unless (%clones) {
+        log_debug('duplication failed');
+        return;
+    }
+    my @originals = keys %clones;
+    # abort jobs restarted because of dependencies (exclude the original $args->{jobid})
+    my $rsource = $self->result_source;
+    my $jobs    = $rsource->schema->resultset("Jobs")->search(
+        {
+            id    => {'!=' => $self->id, '-in' => \@originals},
+            state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
+        });
+
+    $jobs->search(
+        {
+            result => OpenQA::Schema::Result::Jobs::NONE,
+        }
+      )->update(
+        {
+            result => OpenQA::Schema::Result::Jobs::PARALLEL_RESTARTED,
+        });
+
+    while (my $j = $jobs->next) {
+        next unless $j->worker;
+        log_debug("enqueuing abort for " . $j->id . " " . $j->worker_id);
+        $j->worker->send_command(command => 'abort', job_id => $j->id);
+    }
+
+    log_debug('new job ' . $clones{$self->id}->id);
+    return $clones{$self->id};
 }
 
 sub set_property {
@@ -656,13 +731,13 @@ sub set_property {
 }
 
 # calculate overall result looking at the job modules
-sub calculate_result($) {
-    my ($job) = @_;
+sub calculate_result {
+    my ($self) = @_;
 
     my $overall;
     my $important_overall;    # just counting importants
 
-    for my $m ($job->modules->all) {
+    for my $m ($self->modules->all) {
         if ($m->result eq PASSED) {
             if ($m->important || $m->fatal) {
                 $important_overall ||= PASSED;

@@ -244,9 +244,10 @@ sub _workers_checker {
         next unless _is_job_considered_dead($job);
 
         $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
-        my $res = $ipc->scheduler('job_duplicate', {jobid => $job->id});
+        my $res = $job->auto_duplicate;
         if ($res) {
-            log_warning(sprintf('dead job %d aborted and duplicated', $job->id));
+            $ipc->websockets('ws_notify_workers');
+            log_warning(sprintf('dead job %d aborted and duplicated %d', $job->id, $res->id));
         }
         else {
             log_warning(sprintf('dead job %d aborted as incomplete', $job->id));

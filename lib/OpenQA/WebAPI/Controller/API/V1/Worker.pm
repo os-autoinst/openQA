@@ -64,8 +64,10 @@ sub _register {
     # ... restart job assigned to this worker
     if (my $job = $worker->job) {
         $job->set_property('JOBTOKEN');
+        $job->auto_duplicate;
         my $ipc = OpenQA::IPC->ipc;
-        $ipc->scheduler('job_duplicate', {jobid => $job->id});
+        $ipc->websockets('ws_notify_workers');
+
         # .. set it incomplete
         $job->update(
             {
