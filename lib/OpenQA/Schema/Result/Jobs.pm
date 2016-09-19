@@ -643,7 +643,13 @@ sub duplicate {
 
 =back
 
-Handle individual job restart including associated job and asset dependencies
+Handle individual job restart including associated job and asset dependencies. Note that
+the caller is responsible to notify the workers about the new job - the model is not doing that.
+
+I.e.
+    $job->auto_duplicate;
+    my $ipc = OpenQA::IPC->ipc;
+    $ipc->websockets('ws_notify_workers');
 
 =cut
 sub auto_duplicate {
@@ -700,8 +706,6 @@ sub auto_duplicate {
     }
 
     log_debug('new job ' . $clones{$self->id}->id);
-    my $ipc = OpenQA::IPC->ipc;
-    $ipc->websockets('ws_notify_workers');
     return $clones{$self->id};
 }
 

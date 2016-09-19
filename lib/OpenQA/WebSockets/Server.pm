@@ -246,6 +246,7 @@ sub _workers_checker {
         $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
         my $res = $job->auto_duplicate;
         if ($res) {
+            $ipc->websockets('ws_notify_workers');
             log_warning(sprintf('dead job %d aborted and duplicated %d', $job->id, $res->id));
         }
         else {

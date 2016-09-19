@@ -376,6 +376,8 @@ sub duplicate {
 
     my $dup = $job->auto_duplicate($args);
     if ($dup) {
+        my $ipc = OpenQA::IPC->ipc;
+        $ipc->websockets('ws_notify_workers');
         $self->emit_event(
             'openqa_job_duplicate',
             {

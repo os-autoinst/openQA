@@ -383,6 +383,11 @@ sub job_restart {
         $j->worker->send_command(command => 'abort', job_id => $j->id);
     }
 
+    # if we got new jobs, notify workers
+    if (@duplicated) {
+        my $ipc = OpenQA::IPC->ipc;
+        $ipc->websockets('ws_notify_workers');
+    }
     return @duplicated;
 }
 
