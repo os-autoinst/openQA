@@ -35,7 +35,7 @@ sub _is_method_allowed {
 
     my $ret = $self->SUPER::_is_method_allowed($method);
     if ($ret) {
-        log_debug "scheduler IPC calling $method";
+        log_debug "IPC calling $method";
     }
     return $ret;
 }
