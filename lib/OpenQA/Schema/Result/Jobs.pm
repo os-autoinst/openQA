@@ -969,6 +969,7 @@ sub store_image {
     mkdir($prefixdir) unless (-d $prefixdir);
     $asset->move_to($storepath);
     log_debug("store_image: $storepath");
+    return $storepath;
 }
 
 sub create_artefact {
@@ -985,16 +986,7 @@ sub create_artefact {
 
     $asset->move_to(join('/', $storepath, $asset->filename));
     log_debug("moved to $storepath " . $asset->filename);
-
-    # mark the worker as alive
-    if ($self->worker) {
-        $self->worker->seen;
-    }
-    else {
-        log_warning($self->id . " got an artefact but has no worker. huh?");
-    }
-
-    1;
+    return 1;
 }
 
 sub create_asset {
@@ -1021,14 +1013,6 @@ sub create_asset {
     $asset->move_to($abs);
     log_debug("moved to $abs");
     $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
-
-    # mark the worker as alive
-    if ($self->worker) {
-        $self->worker->seen;
-    }
-    else {
-        log_warning($self->id . " got an asset but has no worker. huh?");
-    }
 
     return $abs;
 }

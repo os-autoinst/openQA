@@ -242,6 +242,13 @@ sub create_artefact {
         $self->reply->not_found;
         return;
     }
+    # mark the worker as alive
+    if (!$job->worker) {
+        log_warning($job->id . " got an artefact but has no worker. huh?");
+        $self->reply->not_found;
+        return;
+    }
+    $job->worker->seen;
 
     if ($self->param('image')) {
         $job->store_image($self->param('file'), $self->param('md5'), $self->param('thumb') // 0);
