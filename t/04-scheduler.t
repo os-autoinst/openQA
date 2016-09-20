@@ -316,9 +316,6 @@ $result = OpenQA::Scheduler::Scheduler::job_set_running($job_id);
 $job    = job_get($job_id);
 ok($result == 0 && $job->state eq "running", "Retry job_set_running");
 
-# impossible to grab new job while old one running
-is_deeply({}, OpenQA::Scheduler::Scheduler::job_grab(%args), "not being able to grab twice");
-
 sleep 1;
 # Testing job_set_done
 $job = job_get($job_id);
@@ -360,6 +357,24 @@ $schema->resultset('Jobs')->find($job_id)->set_prio(100);
 $job = job_get($job_id);
 is($job->priority, 100, "job->set_prio");
 
+$result = $schema->resultset('Jobs')->find($job_id)->delete;
+my $no_job_id = job_get($job_id);
+ok($result && !defined $no_job_id, "job_delete");
+
+# Testing double grab
+%args   = (workerid => $worker->{id},);
+$job    = OpenQA::Scheduler::Scheduler::job_grab(%args);
+$job_id = $job->{id};
+$job    = job_get($job_id);
+is($job->state, 'running', 'grabed job runs');
+
+my $job4 = OpenQA::Scheduler::Scheduler::job_grab(%args);
+isnt($job4->{id}, $job_id, "Grabed another job");
+$job->discard_changes;
+is($job4->{state}, 'running',    'grabed job 4 runs');
+is($job->state,    'done',       'job 2 no longer runs');
+is($job->result,   'incomplete', 'first job set to incomplete');
+
 # Testing job_restart
 # TBD
 
@@ -369,17 +384,16 @@ is($job->priority, 100, "job->set_prio");
 # Testing job_fill_settings
 # TBD
 
-
-$result = $schema->resultset('Jobs')->find($job_id)->delete;
-my $no_job_id = job_get($job_id);
-ok($result && !defined $no_job_id, "job_delete");
-
 $result    = $schema->resultset('Jobs')->find($job2->id)->delete;
 $no_job_id = job_get($job2->id);
 ok($result && !defined $no_job_id, "job_delete");
 
 $result    = $schema->resultset('Jobs')->find($job3_id)->delete;
 $no_job_id = job_get($job3_id);
+ok($result && !defined $no_job_id, "job_delete");
+
+$result    = $schema->resultset('Jobs')->find($job4->{id})->delete;
+$no_job_id = job_get($job4->{id});
 ok($result && !defined $no_job_id, "job_delete");
 
 $current_jobs = list_jobs();

@@ -145,9 +145,10 @@ sub job_grab {
 
     my $worker = _validate_workerid($workerid);
     if ($worker->job) {
-        # TROUBLE ahead - do not call seen, to get into dead worker detection first
-        log_warning($worker->name . " still has a job, but wants to grab new one: " . $worker->job->id);
-        return {};
+        my $job = $worker->job;
+        log_warning($worker->name . " wants to grab a new job - killing the old one: " . $job->id);
+        $job->done(result => 'incomplete');
+        $job->auto_duplicate;
     }
     $worker->seen($workercaps);
 
