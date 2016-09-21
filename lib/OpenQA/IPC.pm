@@ -208,7 +208,7 @@ sub _dispatch {
     catch {
         confess "error getting ipc service: $_";
     };
-    my $object = $service->get_object('/' . $services{$target}, join('.', $openqa_prefix, $services{$target}));
+    my $object = $service->get_object('/' . $services{$target}, $service_name);
     log_debug("dispatching IPC $command to $target: " . pp(\@data));
     my $ret = $object->$command(@data);
     log_debug("IPC finished");

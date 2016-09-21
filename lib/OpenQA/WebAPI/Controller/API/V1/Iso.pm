@@ -420,15 +420,7 @@ sub schedule_iso {
             run_at   => now(),
         });
 
-    # if the notification fails
-    try {
-        #notify workers new jobs are available
-        my $ipc = OpenQA::IPC->ipc;
-        $ipc->websockets('ws_notify_workers');
-    }
-    catch {
-        $self->app->log->warn("Failed to notify workers");
-    };
+    notify_workers;
     $self->emit_event('openqa_iso_create', $args);
     return @ids;
 }

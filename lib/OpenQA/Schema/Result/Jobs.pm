@@ -648,8 +648,7 @@ the caller is responsible to notify the workers about the new job - the model is
 
 I.e.
     $job->auto_duplicate;
-    my $ipc = OpenQA::IPC->ipc;
-    $ipc->websockets('ws_notify_workers');
+    notify_workers;
 
 =cut
 sub auto_duplicate {

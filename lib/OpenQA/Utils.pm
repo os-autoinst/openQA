@@ -35,6 +35,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &asset_type_from_setting
   &check_download_url
   &check_download_whitelist
+  &notify_workers
 );
 
 
@@ -397,6 +398,16 @@ sub check_download_whitelist {
     }
     # empty list signals caller that check passed
     return ();
+}
+
+sub notify_workers {
+    my $ipc = OpenQA::IPC->ipc;
+
+    my $con = $ipc->{bus}->get_connection;
+    my $msg = $con->make_method_call_message("org.opensuse.openqa.Scheduler", "/Scheduler", "org.opensuse.openqa.Scheduler", "emit_jobs_available");
+    # do not wait for a reply - avoid deadlocks. this way we can even call it
+    # from within the scheduler without having to worry about reentering
+    $con->send($msg);
 }
 
 1;

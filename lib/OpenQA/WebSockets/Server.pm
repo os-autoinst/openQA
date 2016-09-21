@@ -18,7 +18,7 @@ use Mojolicious::Lite;
 use Mojo::Util 'hmac_sha1_sum';
 
 use OpenQA::IPC;
-use OpenQA::Utils qw/log_debug log_warning/;
+use OpenQA::Utils qw/log_debug log_warning notify_workers/;
 use OpenQA::Schema;
 use OpenQA::ServerStartup;
 
@@ -242,20 +242,25 @@ sub _is_job_considered_dead {
 sub _workers_checker {
 
     my $stale_jobs = _get_stale_worker_jobs(40);
-    my $ipc        = OpenQA::IPC->ipc;
     for my $job ($stale_jobs->all) {
         next unless _is_job_considered_dead($job);
 
         $job->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
         my $res = $job->auto_duplicate;
         if ($res) {
-            $ipc->websockets('ws_notify_workers');
+            # do it through the DBUS signal to avoid messing with file descriptors
+            notify_workers;
             log_warning(sprintf('dead job %d aborted and duplicated %d', $job->id, $res->id));
         }
         else {
             log_warning(sprintf('dead job %d aborted as incomplete', $job->id));
         }
     }
+}
+
+sub jobs_available {
+    OpenQA::WebSockets::Server::ws_send_all(('job_available'));
+    return;
 }
 
 # Mojolicious startup
@@ -281,6 +286,11 @@ sub setup {
 
     # start worker checker - check workers each 2 minutes
     Mojo::IOLoop->recurring(120 => \&_workers_checker);
+
+    my $service = OpenQA::IPC->ipc->{bus}->get_service("org.opensuse.openqa.Scheduler");
+    my $scheduler = $service->get_object("/Scheduler", "org.opensuse.openqa.Scheduler");
+
+    $scheduler->connect_to_signal("JobsAvailable" => \&jobs_available);
 
     return Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
 }
