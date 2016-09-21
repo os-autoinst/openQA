@@ -16,6 +16,7 @@
 package OpenQA::WebSockets::Server;
 use Mojolicious::Lite;
 use Mojo::Util 'hmac_sha1_sum';
+use Try::Tiny;
 
 use OpenQA::IPC;
 use OpenQA::Utils qw/log_debug log_warning notify_workers/;
@@ -259,6 +260,7 @@ sub _workers_checker {
 }
 
 sub jobs_available {
+    log_debug("jobs available");
     OpenQA::WebSockets::Server::ws_send_all(('job_available'));
     return;
 }
@@ -287,10 +289,18 @@ sub setup {
     # start worker checker - check workers each 2 minutes
     Mojo::IOLoop->recurring(120 => \&_workers_checker);
 
-    my $service = OpenQA::IPC->ipc->{bus}->get_service("org.opensuse.openqa.Scheduler");
-    my $scheduler = $service->get_object("/Scheduler", "org.opensuse.openqa.Scheduler");
-
-    $scheduler->connect_to_signal("JobsAvailable" => \&jobs_available);
+    my $connect_signal;
+    $connect_signal = sub {
+        try {
+            log_debug "connecting scheduler signal";
+            OpenQA::IPC->ipc->service('scheduler')->connect_to_signal(JobsAvailable => \&jobs_available);
+        }
+        catch {
+            log_debug "scheduler connect failed, retrying in 2 seconds";
+            Mojo::IOLoop->timer(2 => $connect_signal);
+        };
+    };
+    $connect_signal->();
 
     return Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
 }

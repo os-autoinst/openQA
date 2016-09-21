@@ -198,8 +198,8 @@ sub _get_fh_from_fd {
     return $fh;
 }
 
-sub _dispatch {
-    my ($self, $target, $command, @data) = @_;
+sub service {
+    my ($self, $target) = @_;
     my $service_name = join('.', $openqa_prefix, $services{$target});
     my $service;
     try {
@@ -208,7 +208,13 @@ sub _dispatch {
     catch {
         confess "error getting ipc service: $_";
     };
-    my $object = $service->get_object('/' . $services{$target}, $service_name);
+    return $service->get_object('/' . $services{$target}, $service_name);
+
+}
+
+sub _dispatch {
+    my ($self, $target, $command, @data) = @_;
+    my $object = $self->service($target);
     log_debug("dispatching IPC $command to $target: " . pp(\@data));
     my $ret = $object->$command(@data);
     log_debug("IPC finished");
