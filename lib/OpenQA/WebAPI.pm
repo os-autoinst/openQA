@@ -118,6 +118,9 @@ sub startup {
     # read assets/assetpack.def
     $self->asset->process;
 
+    # set cookie timeout to 48 hours (will be updated on each request)
+    $self->app->sessions->default_expiration(48 * 60 * 60);
+
     # set secure flag on cookies of https connections
     $self->hook(
         before_dispatch => sub {
