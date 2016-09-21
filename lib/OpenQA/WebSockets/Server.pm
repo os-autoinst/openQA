@@ -69,10 +69,13 @@ sub ws_send {
     }
 }
 
+# consider ws_send_all as broadcast and don't wait for confirmation
 sub ws_send_all {
     my ($msg) = @_;
-    foreach my $workerid (keys(%$worker_sockets)) {
-        ws_send($workerid, $msg);
+    foreach my $tx (values(%$worker_sockets)) {
+        if ($tx) {
+            $tx->send({json => {type => $msg}});
+        }
     }
 }
 

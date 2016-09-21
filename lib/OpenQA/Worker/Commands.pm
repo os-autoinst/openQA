@@ -33,8 +33,12 @@ sub websocket_commands {
     }
     else {
         # requests
-        my $type  = $json->{type};
-        my $jobid = $json->{jobid};
+        my $type = $json->{type};
+        if (!$type) {
+            printf STDERR 'Received WS message without type!';
+            return;
+        }
+        my $jobid = $json->{jobid} // '';
         my $joburl;
         my $ua = Mojo::UserAgent->new;
         if ($jobid) {
