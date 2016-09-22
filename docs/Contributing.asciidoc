@@ -232,6 +232,28 @@ export OPENQA_CONFIG=$PWD/etc/mine
 Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
 client.conf and workers.ini.
 
+How to setup PostgreSQL to test locally with production data
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. Install PosgreSQL - under openSUSE the following package are required:
+   +postgresql-server postgresql-init+
+
+2. Start the server: +systemctl start postgresql+
+
+3. The following steps need to be done by the user postgres: +su - postgres+
+
+4. Create user: +createuser your_username+ where +your_username+ must be the same
+   as the UNIX user you start your local openQA instance with.
+
+5. Create database: +createdb -O your_username openqa+
+
+6. The next steps must be done by the user you start your local openQA instance with.
+
+7. Import dump: +pg_restore -c -d openqa path/to/dump+
+
+8. Configure openQA to use PostgreSQL as described in +Installing.asciidoc+ under
+   'Other database engines'. User name and password are not required.
+
 Adding new authentication module
 --------------------------------
 
