@@ -121,7 +121,6 @@ sub ws_create {
     $self->on(json   => \&_message);
     $self->on(finish => \&_finish);
     ws_add_worker($workerid, $self->tx->max_websocket_size(10485760));
-    return $self->render(text => 'ack', status => 101);
 }
 
 sub ws_is_worker_connected {
