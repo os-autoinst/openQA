@@ -40,7 +40,7 @@ use OpenQA::Schema::Result::JobDependencies;
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings asset_type_from_setting/;
+use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings asset_type_from_setting notify_workers/;
 use db_helpers qw/rndstr/;
 
 use OpenQA::IPC;
@@ -286,8 +286,7 @@ sub job_grab {
 
     # starting one job from parallel group can unblock
     # other jobs from the group
-    my $ipc = OpenQA::IPC->ipc;
-    $ipc->websockets('ws_notify_workers');
+    notify_workers;
 
     return $job_hashref;
 }
@@ -386,8 +385,7 @@ sub job_restart {
 
     # if we got new jobs, notify workers
     if (@duplicated) {
-        my $ipc = OpenQA::IPC->ipc;
-        $ipc->websockets('ws_notify_workers');
+        notify_workers;
     }
     return @duplicated;
 }

@@ -109,7 +109,6 @@ sub list {
 sub create {
     my $self   = shift;
     my $params = $self->req->params->to_hash;
-    my $ipc    = OpenQA::IPC->ipc;
 
     # job_create expects upper case keys
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
@@ -132,7 +131,7 @@ sub create {
                 run_at   => now(),
             });
 
-        $ipc->websockets('ws_notify_workers');
+        notify_workers;
     }
     catch {
         $status = 400;
@@ -311,8 +310,7 @@ sub done {
     my $children = $job->deps_hash->{children};
     if (@{$children->{Chained}} && grep { $res eq $_ } OpenQA::Schema::Result::Jobs::OK_RESULTS) {
         $self->app->log->debug("Job result OK and has chained children! Notifying workers");
-        my $ipc = OpenQA::IPC->ipc;
-        $ipc->websockets('ws_notify_workers');
+        notify_workers;
     }
 
     # See comment in set_command
@@ -383,8 +381,7 @@ sub duplicate {
 
     my $dup = $job->auto_duplicate($args);
     if ($dup) {
-        my $ipc = OpenQA::IPC->ipc;
-        $ipc->websockets('ws_notify_workers');
+        notify_workers;
         $self->emit_event(
             'openqa_job_duplicate',
             {

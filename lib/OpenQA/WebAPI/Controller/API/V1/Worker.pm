@@ -65,8 +65,7 @@ sub _register {
     if (my $job = $worker->job) {
         $job->set_property('JOBTOKEN');
         $job->auto_duplicate;
-        my $ipc = OpenQA::IPC->ipc;
-        $ipc->websockets('ws_notify_workers');
+        notify_workers;
 
         # .. set it incomplete
         $job->update(

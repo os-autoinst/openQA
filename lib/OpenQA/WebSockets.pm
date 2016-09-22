@@ -56,6 +56,7 @@ sub new {
     bless $self, $class;
     # hook DBus to Mojo reactor
     $ipc->manage_events($reactor, $self);
+
     return $self;
 }
 
@@ -76,12 +77,6 @@ dbus_method('ws_send_all', ['string']);
 sub ws_send_all {
     my ($self, @args) = @_;
     return OpenQA::WebSockets::Server::ws_send_all(@args);
-}
-
-dbus_method('ws_notify_workers');
-sub ws_notify_workers {
-    my ($self) = @_;
-    return OpenQA::WebSockets::Server::ws_send_all(('job_available'));
 }
 
 1;

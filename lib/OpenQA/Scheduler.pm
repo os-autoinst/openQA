@@ -184,4 +184,12 @@ sub barrier_destroy {
     return 1;
 }
 
+dbus_signal('JobsAvailable');
+dbus_method('emit_jobs_available');
+sub emit_jobs_available {
+    my ($self) = @_;
+    $self->emit_signal("JobsAvailable");
+    return;
+}
+
 1;
