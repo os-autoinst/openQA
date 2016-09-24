@@ -257,7 +257,7 @@ sub _show {
 
     my $scenario = join('-', map { $job->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_KEYS);
 
-    $scenario .= "@" . $job->MACHINE;
+    $scenario .= "@" . $job->MACHINE if $job->MACHINE;
 
     $self->stash(testname => $job->name);
     $self->stash(distri   => $job->DISTRI);
