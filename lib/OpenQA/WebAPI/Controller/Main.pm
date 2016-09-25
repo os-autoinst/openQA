@@ -98,7 +98,7 @@ sub _group_result {
                 next;        # ignore
             }
             my $state = $job->state;
-            if (grep { /$state/ } (OpenQA::Schema::Result::Jobs::EXECUTION_STATES)) {
+            if (grep { /$state/ } (OpenQA::Schema::Result::Jobs::PENDING_STATES)) {
                 $jr{inprogress}++;
                 next;
             }
