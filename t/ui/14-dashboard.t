@@ -47,8 +47,12 @@ is(scalar @{$driver->find_elements('h4', 'css')}, 4);
 $driver->find_element('Build0091', 'link_text')->click();
 like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse test build 0091/, 'we are on build 91');
 
-is($driver->get($baseurl . '?time_limit_days=1&limit_builds=1'), 1, 'index page accepts query parameters');
+is($driver->get($baseurl . '?limit_builds=1'), 1, 'index page accepts limit_builds parameter');
 is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only one build per group shown');
+is($driver->get($baseurl . '?time_limit_days=0.02&limit_builds=100000'), 1, 'index page accepts time_limit_days parameter');
+is(scalar @{$driver->find_elements('h4', 'css')}, 0, 'no builds shown');
+is($driver->get($baseurl . '?time_limit_days=0.05&limit_builds=100000'), 1, 'index page accepts time_limit_days parameter');
+is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only the one hour old builds is shown');
 
 $driver->find_element('opensuse', 'link_text')->click();
 
