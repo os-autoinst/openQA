@@ -23,8 +23,10 @@ use OpenQA::Scheduler::Scheduler;
 use OpenQA::Schema::Result::Jobs;
 use JSON ();
 use File::Basename qw/dirname basename/;
-use Cwd qw/realpath/;
+use File::Path qw/remove_tree/;
+use Cwd qw/abs_path/;
 use Try::Tiny;
+use 5.012;    # so readdir assigns to $_ in a lone while test
 
 __PACKAGE__->table('job_modules');
 __PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
@@ -132,7 +134,7 @@ sub details {
     };
     for my $img (@$ret) {
         next unless $img->{screenshot};
-        my $link = readlink($dir . "/" . $img->{screenshot});
+        my $link = abs_path($dir . "/" . $img->{screenshot});
         next unless $link;
         my $base = basename($link);
         my $dir  = dirname($link);
@@ -144,7 +146,100 @@ sub details {
     return $ret;
 }
 
-sub job_module($$) {
+# gru task to migrate from XX/REST to XXX/YY/REST
+sub migrate_images {
+    my ($app, $args) = @_;
+
+    return unless $args->{prefix};
+    my $dh;
+    my $prefixdir = join('/', $OpenQA::Utils::imagesdir, $args->{prefix});
+    if (!opendir($dh, $prefixdir)) {
+        OpenQA::Utils::log_warning "Can't open $args->{prefix} in $OpenQA::Utils::imagesdir: $!";
+        return;
+    }
+    while (readdir $dh) {
+        # only rename .pngs not symlinked
+        if (-f "$prefixdir/$_" && !-l "$prefixdir/$_" && m/^(.*)\.png/) {
+            my $old = $_;
+            my $md5 = $args->{prefix} . $1;
+            my ($img, $thumb) = OpenQA::Utils::image_md5_filename($md5);
+
+            my $md5dir = dirname($img);
+            # will throw if there is a problem - but we can't ignore errors in the new
+            # paths
+            File::Path::make_path($md5dir);
+            File::Path::make_path("$md5dir/.thumbs");
+            OpenQA::Utils::log_debug "moving $args->{prefix}/$old to $img";
+            rename("$prefixdir/$old", $img);
+            # symlink as the testresults symlink here
+            symlink($img, "$prefixdir/$old");
+            rename("$prefixdir/.thumbs/$old", $thumb);
+            symlink($thumb, "$prefixdir/.thumbs/$old");
+        }
+    }
+    closedir($dh);
+}
+
+sub _relink_dir {
+    my ($dir) = @_;
+    my $dh;
+    if (!$dir || !opendir($dh, $dir)) {
+        # job has no results - so what
+        return;
+    }
+    while (readdir $dh) {
+        # only relink symlinked .pngs
+        if (-l "$dir/$_" && m/^(.*)\.png/) {
+            my $old     = "$dir/$_";
+            my $md5path = abs_path($old);
+            # skip stale symlinks
+            next unless $md5path;
+            my $md5dir = dirname($md5path);
+            File::Path::make_path($md5dir);
+            rename($old, "$old.old");
+            # symlink as the testresults symlink here
+            if (symlink($md5path, $old)) {
+                unlink("$old.old");
+            }
+        }
+    }
+    closedir($dh);
+    return 1;
+}
+
+# gru task - run after the above is done and relink the testresult images
+sub relink_testresults {
+    my ($app, $args) = @_;
+
+    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $jobs   = $schema->resultset("Jobs")->search(
+        {
+            id => {
+                '<=' => $args->{max_job},
+                '>'  => $args->{min_job}}
+        },
+        {order_by => ['id DESC']});
+    while (my $job = $jobs->next) {
+        if (_relink_dir($job->result_dir)) {
+            _relink_dir($job->result_dir . "/.thumbs");
+        }
+    }
+}
+
+# last gru task in the image migration
+sub rm_compat_symlinks {
+    my ($app, $args) = @_;
+
+    opendir(my $dh, $OpenQA::Utils::imagesdir) || die "Can't open /images: $!";
+    while (readdir $dh) {
+        if (m/^([^.].)$/) {
+            remove_tree("$OpenQA::Utils::imagesdir/$_");
+        }
+    }
+    closedir $dh;
+}
+
+sub job_module {
     my ($job, $name) = @_;
 
     my $schema = OpenQA::Scheduler::Scheduler::schema();

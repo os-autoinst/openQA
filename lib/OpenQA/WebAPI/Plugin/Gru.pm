@@ -124,6 +124,29 @@ sub run {
     # only fetch first 2 args
     my $self = shift;
     my $cmd  = shift;
+
+    opendir(my $dh, $OpenQA::Utils::imagesdir) || die "Can't open /images: $!";
+    while (readdir $dh) {
+        # schedule a migrate images job for each 2 char directory
+        if (m/^([^.].)$/) {
+            $self->app->gru->enqueue(migrate_images => {prefix => $_});
+        }
+    }
+    closedir $dh;
+    my $max   = $self->app->schema->resultset('Jobs')->get_column('id')->max;
+    my $delta = 1000;
+    while ($max > $delta) {
+        $self->app->gru->enqueue(relink_testresults => {max_job => $max, min_job => $max - $delta}, {priority => -4});
+        $max -= $delta;
+    }
+    $self->app->gru->enqueue(relink_testresults => {max_job => $max, min_job => 400000}, {priority => -5});
+
+    $self->app->gru->enqueue(rm_compat_symlinks => {max_job => $max, min_job => 400000}, {priority => -6});
+
+    if (!$cmd) {
+        print "gru: [list|run|\n";
+        return;
+    }
     if ($cmd eq 'list') {
         $self->cmd_list(@_);
         return;
