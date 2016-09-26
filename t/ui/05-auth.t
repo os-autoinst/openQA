@@ -65,7 +65,7 @@ is($res, 'Login', 'no-one logged in');
 # And log in as operator
 $test_case->login($t, 'percival');
 my $actions = OpenQA::Test::Case::trim_whitespace($t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
-like($actions, qr/Logged in as perci Operators Menu.*Manage API keys Logout/, 'perci has operator links');
+like($actions, qr/Logged in as perci Operators Menu.*Manage API keys API help Logout/, 'perci has operator links');
 unlike($actions, qr/Administrators Menu/, 'perci has no admin links');
 
 $t->get_ok('/api_keys')->status_is(200);
