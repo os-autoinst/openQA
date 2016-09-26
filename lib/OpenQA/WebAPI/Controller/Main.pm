@@ -20,117 +20,23 @@ use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 use Date::Format;
 use OpenQA::Schema::Result::Jobs;
-
-sub _group_result {
-    my ($self, $group, $limit) = @_;
-
-    my $time_limit_days = $self->param('time_limit_days') // 14;
-    $self->app->log->debug("Retrieving results for up to $limit builds up to $time_limit_days days old");
-    my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
-
-    my %res;
-    my $jobs = $group->jobs->search({"me.t_created" => $timecond});
-    my $builds = $jobs->search(
-        {},
-        {
-            select => ['BUILD', {min => 't_created', -as => 'first_hit'}],
-            as     => [qw/BUILD first_hit/],
-            order_by => {-desc => 'first_hit'},
-            group_by => [qw/BUILD/]});
-    my $max_jobs = 0;
-    my $buildnr  = 0;
-    for my $b (map { $_->BUILD } $builds->all) {
-        my $jobs = $self->db->resultset('Jobs')->search(
-            {
-                'me.BUILD'    => $b,
-                'me.group_id' => $group->id,
-                'me.clone_id' => undef,
-            },
-            {order_by => 'me.id DESC'});
-        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0, labeled => 0, softfailed => 0);
-
-        my $count = 0;
-        my %seen;
-        my @ids = map { $_->id } $jobs->all;
-        # prefetch comments to count. Any comment is considered a label here
-        # so a build is considered as 'reviewed' if all failures have at least
-        # a comment. This could be improved to distinguish between
-        # "only-labels", "mixed" and such
-        my $c = $self->db->resultset("Comments")->search({job_id => {in => \@ids}});
-        my %labels;
-        while (my $comment = $c->next) {
-            $labels{$comment->job_id}++;
-        }
-        $jobs->reset;
-
-        while (my $job = $jobs->next) {
-            $jr{distri}  //= $job->DISTRI;
-            $jr{version} //= $job->VERSION;
-            my $key = $job->TEST . "-" . $job->ARCH . "-" . $job->FLAVOR . "-" . $job->MACHINE;
-            next if $seen{$key}++;
-
-            $count++;
-            $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
-            if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
-                if ($job->result eq OpenQA::Schema::Result::Jobs::PASSED) {
-                    $jr{passed}++;
-                    next;
-                }
-                if ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED) {
-                    $jr{softfailed}++;
-                    next;
-                }
-
-                if (   $job->result eq OpenQA::Schema::Result::Jobs::FAILED
-                    || $job->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE)
-                {
-                    $jr{failed}++;
-                    $jr{labeled}++ if $labels{$job->id};
-                    next;
-                }
-                if (grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS) {
-                    next;    # ignore the rest
-                }
-            }
-            if (   $job->state eq OpenQA::Schema::Result::Jobs::CANCELLED
-                || $job->state eq OpenQA::Schema::Result::Jobs::OBSOLETED)
-            {
-                next;        # ignore
-            }
-            my $state = $job->state;
-            if (grep { /$state/ } (OpenQA::Schema::Result::Jobs::PENDING_STATES)) {
-                $jr{inprogress}++;
-                next;
-            }
-            $self->app->log->error("MISSING S:" . $job->state . " R:" . $job->result);
-        }
-        $jr{reviewed_all_passed} = $jr{passed} == $count;
-        $jr{reviewed}            = $jr{failed} > 0 && $jr{labeled} == $jr{failed};
-        $res{$b}                 = \%jr;
-        $max_jobs = $count if ($count > $max_jobs);
-        last if (++$buildnr >= $limit);
-    }
-    $res{_max} = $max_jobs if %res;
-
-    return \%res;
-
-}
+use OpenQA::BuildResults;
 
 sub index {
     my ($self) = @_;
 
-    my $limit_builds = $self->param('limit_builds') // 3;
+    my $limit_builds    = $self->param('limit_builds')    // 3;
+    my $time_limit_days = $self->param('time_limit_days') // 14;
+    $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
     my $group_params = $self->every_param('group');
-    my @results;
 
+    my @results;
     my $groups = $self->db->resultset('JobGroups')->search({}, {order_by => qw/name/});
+
     while (my $group = $groups->next) {
         next unless (scalar @{$group_params} == 0 || (grep { $group->name =~ /$_/ } @$group_params));
-        my $res = $self->_group_result($group, $limit_builds);
-        if (%$res) {
-            $res->{_group} = $group;
-            push(@results, $res);
-        }
+        my $build_results = OpenQA::BuildResults::compute_build_results($self->app, $group, $limit_builds, $time_limit_days);
+        push(@results, $build_results) if $build_results;
     }
     $self->stash('results', \@results);
 }
@@ -138,12 +44,14 @@ sub index {
 sub group_overview {
     my ($self) = @_;
 
-    my $limit_builds = $self->param('limit_builds') // 10;
-    my $only_tagged  = $self->param('only_tagged')  // 0;
-    my $group        = $self->db->resultset('JobGroups')->find($self->param('groupid'));
+    my $limit_builds    = $self->param('limit_builds')    // 10;
+    my $time_limit_days = $self->param('time_limit_days') // 14;
+    $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
+    my $only_tagged = $self->param('only_tagged') // 0;
+    my $group = $self->db->resultset('JobGroups')->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    my $res = $self->_group_result($group, $limit_builds);
+    my $res = OpenQA::BuildResults::compute_build_results($self->app, $group, $limit_builds, $time_limit_days);
     my @comments;
     my @pinned_comments;
     for my $comment ($group->comments->all) {
