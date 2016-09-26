@@ -129,12 +129,14 @@ use OpenQA::Utils qw/bugref_to_href/;
 sub _DoAutoLinks {
     my ($self, $text) = @_;
 
+    # auto-replace bugrefs with 'a href...'
+    $text = bugref_to_href($text);
+
     # auto-replace every http(s) reference which is not already either html
     # 'a href...' or markdown link '[link](url)' or enclosed by Text::Markdown
     # URL markers '<>'
     $text =~ s@(?<!['"(<>])($RE{URI})@<$1>@gi;
 
-    $text = bugref_to_href($text);
     # For tests make sure that references into test modules and needling steps also work
     $text =~ s{(t#([\w/]+))}{<a href="/tests/$2">$1</a>}gi;
 
