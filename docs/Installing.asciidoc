@@ -406,8 +406,18 @@ It is possible to use PostgreSQL or MariaDB / MySQL instead of SQLite, and
 indeed this is recommended for production deployments of openQA. You should
 create a database and a dedicated user account with full access to it. To
 configure access to the chosen database in openQA, edit +/etc/openqa/database.ini+
-and change the settings in the +[production]+ section. Here is an example for
-connecting to a remote PostgreSQL database with a username and password:
+and change the settings in the +[production]+ section.
+
+Example for connecting to local PostgreSQL database
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[source, ini]
+--------------------------------------------------------------------------------
+[production]
+dsn = dbi:Pg:dbname=openqa
+--------------------------------------------------------------------------------
+
+Example for connecting to remote PostgreSQL database
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 [source, ini]
 --------------------------------------------------------------------------------
 [production]
@@ -415,6 +425,9 @@ dsn = dbi:Pg:dbname=openqa;host=db.example.org
 user = openqa
 password = somepassword
 --------------------------------------------------------------------------------
+
+General notes
+~~~~~~~~~~~~~
 The +dsn+ value format technically depends on the database type (though at
 time of writing it's in fact identical for both supported databases). For
 PostgreSQL it's documented at
