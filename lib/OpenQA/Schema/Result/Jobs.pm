@@ -229,7 +229,7 @@ sub name {
 sub scenario_hash {
     my ($self) = @_;
     my %scenario = map { lc $_ => $self->get_column($_) } SCENARIO_WITH_MACHINE_KEYS;
-    return %scenario;
+    return \%scenario;
 }
 
 # return 0 if we have no worker

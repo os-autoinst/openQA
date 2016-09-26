@@ -41,7 +41,5 @@
 </table>
 </div>
 <div id="more_results">
-    Limit to
-    %= b join(' / ', map { $_ == $limit_previous ? "<b>$_</b>" : link_to($_ => url_with->query(limit_previous => $_) . '#previous') } (10, 20, 50, 100, 400))
-    previous results
+    Limit to <%== join(' / ', map { limit_previous_link($job->scenario_hash, $limit_previous, $_) } (10, 20, 50, 100, 400)) %> previous results
 </div>

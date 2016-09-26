@@ -26,8 +26,6 @@ use OpenQA::Test::Case;
 
 OpenQA::Test::Case->new->init_data;
 
-use t::ui::PhantomTest;
-
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $get       = $t->get_ok('/tests/99946#previous')->status_is(200);
@@ -49,7 +47,15 @@ is($table_rows->size, 1, 'can be limited with query parameter');
 my $more_results = $t->tx->res->dom->at('#previous #more_results');
 my $res          = OpenQA::Test::Case::trim_whitespace($more_results->all_text);
 is($res, q{Limit to 10 / 20 / 50 / 100 / 400 previous results}, 'more results can be requested');
-$get = $t->get_ok($more_results->find('a[href]')->last->{href})->status_is(200);
+my $limit_url = $more_results->find('a[href]')->last->{href};
+like($limit_url, qr/limit_previous=400/, 'limit URL includes limit');
+like($limit_url, qr/arch=i586/,          'limit URL includes architecture');
+like($limit_url, qr/flavor=DVD/,         'limit URL includes flavour');
+like($limit_url, qr/test=textmode/,      'limit URL includes test');
+like($limit_url, qr/version=13.1/,       'limit URL includes version');
+like($limit_url, qr/machine=32bit/,      'limit URL includes machine');
+like($limit_url, qr/distri=opensuse/,    'limit URL includes distri');
+$get = $t->get_ok($limit_url)->status_is(200);
 $res = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#previous #more_results b')->all_text);
 like($res, qr/400/, 'limited to the selected number');
 $get = $t->get_ok('/tests/99939')->status_is(200);

@@ -303,7 +303,8 @@ sub _show {
     for my $key (OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS) {
         push(@conds, {"me.$key" => $job->get_column($key)});
     }
-    my $limit_previous = $self->param('limit_previous') // 10;    # arbitrary limit of previous results to show
+    # arbitrary limit of previous results to show
+    my $limit_previous = $self->param('limit_previous') // 10;
     my %attrs = (
         rows     => $limit_previous,
         order_by => ['me.id DESC']);

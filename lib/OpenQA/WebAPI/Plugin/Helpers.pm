@@ -226,6 +226,18 @@ sub register {
         });
 
     $app->helper(
+        limit_previous_link => sub {
+            my ($c, $scenario_hash, $current_limit, $limit) = @_;
+            if ($current_limit eq $limit) {
+                return "<b>$limit</b>";
+            }
+            else {
+                $scenario_hash->{limit_previous} = $limit;
+                return '<a href="' . $c->url_with->query(%$scenario_hash) . '#previous">' . $limit . '</a>';
+            }
+        });
+
+    $app->helper(
         # emit_event helper, adds user, connection to events
         emit_event => sub {
             my ($self, $event, $data) = @_;
