@@ -106,9 +106,13 @@ sub call_phantom() {
     return $_driver = start_phantomjs($mojoport);
 }
 
-sub wait_for_ajax() {
+sub wait_for_ajax {
+    my ($check_interval) = (@_);
+    if (!$check_interval) {
+        $check_interval = 0.25;
+    }
     while (!$_driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
+        sleep $check_interval;
     }
 }
 
