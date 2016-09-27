@@ -223,8 +223,8 @@ sub overwrite_needle($) {
     ok(-f "$dir/$needlename.json", "$needlename.json overwritten");
 
     $driver->find_element('#flash-messages span a', 'css')->click();
-    # restart is an ajax call
-    t::ui::PhantomTest::wait_for_ajax;
+    # restart is an ajax call, for some reason the check/sleep interval must be at least 1 sec for this call
+    t::ui::PhantomTest::wait_for_ajax(1);
     is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', "no longer on needle editor");
 }
 

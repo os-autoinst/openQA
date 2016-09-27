@@ -84,11 +84,12 @@ sub check_comment {
     is($driver->find_element('div.media-comment', 'css')->get_text(), $supposed_text, "body");
 }
 
-#$driver->execute_script('location.reload = function(callback) { if(callback instanceof Function) { callback(); } };');
-
 # tests adding, editing and removing comments
 sub test_comment_editing {
     my ($in_test_results) = @_;
+
+    my @comments = $driver->find_elements('div.media-comment', 'css');
+    is(scalar @comments, 0, 'no comments present so far');
 
     subtest 'add' => sub {
         $driver->find_element('#text',          'css')->send_keys($test_message);
@@ -137,7 +138,7 @@ sub test_comment_editing {
 
         # check whether the comment is gone
         my @comments = $driver->find_elements('div.media-comment', 'css');
-        is(scalar @comments, 0, "removed comment is actually gone");
+        is(scalar @comments, 0, 'removed comment is actually gone');
 
         if ($in_test_results) {
             switch_to_comments_tab(0);
@@ -306,6 +307,9 @@ subtest 'editing when logged in as regular user' => sub {
         $driver->get($baseurl . 'group_overview/1001');
         $driver->find_element('#text',          'css')->send_keys($description_test_message);
         $driver->find_element('#submitComment', 'css')->click();
+        # need to reload the page for the pinning to take effect
+        # waiting for AJAX is required though to eliminate race condition
+        t::ui::PhantomTest::wait_for_ajax;
         $driver->get($baseurl . 'group_overview/1001');
         is($driver->find_element('#group_descriptions .media-comment', 'css')->get_text(), $description_test_message, 'comment is pinned');
     };
