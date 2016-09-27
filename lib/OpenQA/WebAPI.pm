@@ -206,7 +206,9 @@ sub startup {
     $step_r->get('/')->name('step')->to(action => 'view');
 
     $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
-    $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
+    # only needed during image migration
+    $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->to('file#thumb_image');
+    $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
 
     $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');
 

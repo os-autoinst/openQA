@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (c) 2015 SUSE LINUX, Nuernberg, Germany.
+# Copyright (c) 2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 use File::Which qw(which);
+use File::Path qw();
 
 # these are used to track assets being 'removed from disk' and 'deleted'
 # by mock methods (so we don't *actually* lose them)
@@ -137,7 +138,7 @@ sub create_temp_job_result_file {
     my ($resultdir) = @_;
 
     my $filename = $resultdir . '/autoinst-log.txt';
-    open my $fh, ">>$filename" or die "touch $filename: $!\n";
+    open(my $fh, ">>", $filename) or die "touch $filename: $!\n";
     close $fh;
     die 'temporary file could not be created' unless -e $filename;
     return $filename;
@@ -152,6 +153,42 @@ subtest 'reduce_result gru task cleans up logs' => sub {
     my $filename = create_temp_job_result_file($resultdir);
     run_gru('reduce_result' => \%args);
     ok(!-e $filename, 'file got cleaned');
+};
+
+subtest 'migrate_images' => sub {
+    File::Path::remove_tree('t/images/aa7/');
+    File::Path::make_path('t/data/openqa/images/aa/.thumbs');
+    copy('t/images/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png', 't/data/openqa/images/aa/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png');
+    copy('t/images/347/da6/61d0c3faf37d49d33b6fc308f2.png',         't/data/openqa/images/aa//7da661d0c3faf37d49d33b6fc308f2.png');
+    ok(!-l 't/data/openqa/images/aa/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png', 'no link yet');
+
+    run_gru('migrate_images' => {prefix => 'aa'});
+    ok(-l 't/data/openqa/images/aa/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png',  'now link');
+    ok(-e 't/data/openqa/images/aa7/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png', 'file moved');
+
+    File::Path::remove_tree('t/images/aa7/');
+};
+
+subtest 'relink_testresults' => sub {
+    File::Path::make_path('t/data/openqa/images/34/.thumbs');
+    symlink('../../../images/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png', 't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png');
+
+    # setup
+    unlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
+    symlink('../../../images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png', 't/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
+    like(readlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'), qr{\Q/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png\E}, 'link correct');
+
+    run_gru('relink_testresults' => {max_job => 1000000, min_job => 0});
+    like(readlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'), qr{\Qimages/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png\E}, 'relinked');
+};
+
+subtest 'rm_compat_symlinks' => sub {
+    File::Path::make_path(join('/', $OpenQA::Utils::imagesdir, '34', '.thumbs'));
+    symlink('../../../images/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png', 't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png');
+
+    ok(-e 't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png', 'thumb is there');
+    run_gru('rm_compat_symlinks' => {});
+    ok(!-e 't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png', 'thumb is gone');
 };
 
 done_testing();
