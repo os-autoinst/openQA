@@ -82,6 +82,10 @@ sub check_comment {
         is($driver->find_element('h4.media-heading', 'css')->get_text(), "$user_name wrote less than a minute ago", "heading");
     }
     is($driver->find_element('div.media-comment', 'css')->get_text(), $supposed_text, "body");
+    my $anchor = $driver->find_element('h4.media-heading .comment-anchor', 'css')->get_attribute('href');
+    $anchor =~ s/[^#]*#/#/;
+    like($anchor, qr/#comment-[0-9]+/, "anchor matches expected format");
+    is($driver->find_element("$anchor div.media-comment", 'css')->get_text(), $supposed_text, "body by anchor ref");
 }
 
 #$driver->execute_script('location.reload = function(callback) { if(callback instanceof Function) { callback(); } };');

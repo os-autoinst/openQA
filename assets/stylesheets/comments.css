@@ -27,3 +27,20 @@
 .comment-body .trigger-edit-button:hover, .comment-body .remove-edit-button:hover {
     opacity: 1;
 }
+
+.comment-body .comment-anchor {
+    color: #444;
+    cursor: pointer;
+}
+
+.comment-body .comment-anchor:hover {
+    text-decoration: none;
+}
+
+.comment-body .comment-anchor abbr {
+    cursor: pointer;
+}
+
+.comment-body .comment-anchor:hover abbr {
+    border-bottom: 1px solid #444;
+}

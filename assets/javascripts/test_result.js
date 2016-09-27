@@ -144,6 +144,9 @@ function checkResultHash() {
     } else if (!link) {
       setCurrentPreview(null);
     }
+  } else if (hash.search("#comment-") == 0) {
+    var commentstab = $("[href='#comments']");
+    commentstab.tab("show");
   } else {
     // reset
     setCurrentPreview(null);
