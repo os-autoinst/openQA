@@ -32,7 +32,7 @@ $color-state-running: #8BDFFF;
                 background-color: $color-softfail;
                 color: $color-result;
         }
-        .progress-bar-running {
+        .progress-bar-unfinished {
                 background-color: $color-state-running;
                 color: $color-result;
         }
