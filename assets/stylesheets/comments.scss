@@ -1,0 +1,48 @@
+.comment-body {
+        .comment-editing-control {
+                display: none;
+        }
+
+        textarea.comment-editing-control {
+                outline: none;
+                border: none;
+                padding: 0px;
+                margin: 0px;
+                color: #000;
+        }
+
+        .comment-buttons {
+                margin-top: -10px;
+                margin-bottom: 15px;
+        }
+
+        .trigger-edit-button, .remove-edit-button {
+                float: right;
+                margin-top: -2px;
+                margin-left: 4px;
+                border-radius: 100px;
+                height: 32px;
+                opacity: 0.6;
+	
+                &:hover {
+		     opacity: 1;
+	        }
+        }
+
+        .comment-anchor {
+                color: #444;
+                cursor: pointer;
+
+                abbr {
+                        cursor: pointer;
+                }
+
+                &:hover {
+                        text-decoration: none;
+
+                        abbr {
+                                border-bottom: 1px solid #444;
+                        }
+                }
+        }
+}
