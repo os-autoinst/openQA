@@ -220,6 +220,7 @@ sub relink_testresults {
         },
         {order_by => ['id DESC']});
     while (my $job = $jobs->next) {
+        OpenQA::Utils::log_debug "relinking images in " . $job->job->result_dir;
         if (_relink_dir($job->result_dir)) {
             _relink_dir($job->result_dir . "/.thumbs");
         }
