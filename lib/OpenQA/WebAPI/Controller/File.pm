@@ -178,7 +178,8 @@ sub thumb_image {
     push @{$self->{static}->paths}, $OpenQA::Utils::imagesdir;
 
     # name is an URL parameter and can't contain slashes, so it should be safe
-    return $self->serve_static_($self->param('md5_dirname') . "/.thumbs/" . $self->param('md5_basename'));
+    my $dir = $self->param('md5_dirname') || ($self->param('md5_1') . '/' . $self->param('md5_2'));
+    return $self->serve_static_("$dir/.thumbs/" . $self->param('md5_basename'));
 }
 
 1;

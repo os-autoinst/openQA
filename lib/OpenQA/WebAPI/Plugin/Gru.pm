@@ -124,6 +124,11 @@ sub run {
     # only fetch first 2 args
     my $self = shift;
     my $cmd  = shift;
+
+    if (!$cmd) {
+        print "gru: [list|run|\n";
+        return;
+    }
     if ($cmd eq 'list') {
         $self->cmd_list(@_);
         return;

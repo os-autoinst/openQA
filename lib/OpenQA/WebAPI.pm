@@ -206,7 +206,9 @@ sub startup {
     $step_r->get('/')->name('step')->to(action => 'view');
 
     $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
-    $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
+    # only needed during image migration
+    $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->to('file#thumb_image');
+    $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
 
     $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');
 
@@ -408,11 +410,14 @@ sub startup {
     ## JSON API ends here
     #
 
-    $self->gru->add_task(reduce_result  => \&OpenQA::Schema::Result::Jobs::reduce_result);
-    $self->gru->add_task(limit_assets   => \&OpenQA::Schema::Result::Assets::limit_assets);
-    $self->gru->add_task(download_asset => \&OpenQA::Schema::Result::Assets::download_asset);
-    $self->gru->add_task(scan_old_jobs  => \&OpenQA::Schema::Result::Needles::scan_old_jobs);
-    $self->gru->add_task(scan_needles   => \&OpenQA::Schema::Result::Needles::scan_needles);
+    $self->gru->add_task(reduce_result      => \&OpenQA::Schema::Result::Jobs::reduce_result);
+    $self->gru->add_task(limit_assets       => \&OpenQA::Schema::Result::Assets::limit_assets);
+    $self->gru->add_task(download_asset     => \&OpenQA::Schema::Result::Assets::download_asset);
+    $self->gru->add_task(scan_old_jobs      => \&OpenQA::Schema::Result::Needles::scan_old_jobs);
+    $self->gru->add_task(scan_needles       => \&OpenQA::Schema::Result::Needles::scan_needles);
+    $self->gru->add_task(migrate_images     => \&OpenQA::Schema::Result::JobModules::migrate_images);
+    $self->gru->add_task(relink_testresults => \&OpenQA::Schema::Result::JobModules::relink_testresults);
+    $self->gru->add_task(rm_compat_symlinks => \&OpenQA::Schema::Result::JobModules::rm_compat_symlinks);
 
     $self->validator->add_check(
         datetime => sub {

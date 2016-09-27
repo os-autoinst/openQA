@@ -211,9 +211,11 @@ sub save_base64_png($$$) {
 sub image_md5_filename($) {
     my ($md5) = @_;
 
-    my $prefix = substr($md5, 0, 2);
-    $md5 = substr($md5, 2);
-    return ($imagesdir . "/$prefix/$md5.png", $imagesdir . "/$prefix/.thumbs/$md5.png");
+    my $prefix1 = substr($md5, 0, 3);
+    $md5 = substr($md5, 3);
+    my $prefix2 = substr($md5, 0, 3);
+    $md5 = substr($md5, 3);
+    return ($imagesdir . "/$prefix1/$prefix2/$md5.png", $imagesdir . "/$prefix1/$prefix2/.thumbs/$md5.png");
 }
 
 sub run_cmd_with_log($) {
