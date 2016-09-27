@@ -4,7 +4,7 @@
 < https://cdn.datatables.net/1.10.12/css/dataTables.bootstrap.css
 < http://fontawesome.io/assets/font-awesome/css/font-awesome.css
 < stylesheets/overview.scss
-< stylesheets/comments.css
+< stylesheets/comments.scss
 < stylesheets/openqa.scss
 < http://harvesthq.github.io/chosen/chosen.css
 < stylesheets/result_preview.scss
