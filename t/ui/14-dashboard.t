@@ -78,7 +78,15 @@ is($driver->find_element('opensuse', 'link_text')->get_text, 'opensuse');
 is($driver->get($baseurl . '?group=opensuse$&group=test'), 1, 'multiple group parameter can be use to ease building queries');
 is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'both job groups shown');
 
-#t::ui::PhantomTest::make_screenshot('mojoResults.png');
+subtest 'filter form' => sub {
+    $driver->get($baseurl);
+    $driver->find_element('#filter-panel .panel-heading', 'css')->click();
+    $driver->find_element('#filter-group',                'css')->send_keys('SLE 12 SP2');
+    $driver->find_element('#filter-limit-builds',         'css')->send_keys('8');            # appended to default '3'
+    $driver->find_element('#filter-time-limit-days',      'css')->send_keys('2');            # appended to default '14'
+    $driver->find_element('#filter-form button',          'css')->click();
+    is($driver->get_current_url(), $baseurl . '?group=SLE+12+SP2&limit_builds=38&time_limit_days=142#', 'URL parameters for filter are correct');
+};
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();
