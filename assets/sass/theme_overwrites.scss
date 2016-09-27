@@ -118,6 +118,13 @@ a {
   @include transition(all 0.2s);
 }
 
+// this prevents firefox from showing two lines
+// as we create a line using border-bottom (chrome doesn't like text-decoration)
+// see https://github.com/twbs/bootstrap/issues/16574
+abbr[title], acronym[title] {
+  text-decoration: none;
+}
+
 // Tables =====================================================================
 
 .table-hover {

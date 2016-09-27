@@ -26,10 +26,14 @@ function renderDate(date) {
     return abbr;
 }
 
-function renderCommentHeading(comment) {
+function renderCommentHeading(comment, commentId) {
     var heading = $('<h4></h4>');
     heading.addClass('media-heading');
-    heading.append(comment.userName, ' wrote ', renderDate(comment.created));
+    var abbr_link = $('<a></a>');
+    abbr_link.prop('href', '#comment-' + commentId);
+    abbr_link.prop('class', 'comment-anchor');
+    abbr_link.append(renderDate(comment.created));
+    heading.append(comment.userName, ' wrote ', abbr_link);
     if(comment.created !== comment.updated) {
         heading.append(' (last edited ', renderDate(comment.updated), ')');
     }
@@ -81,7 +85,8 @@ function updateComment(form) {
                     url: url,
                     method: 'GET',
                     success: function(response) {
-                        headingElement.replaceWith(renderCommentHeading(response));
+                        var commentId = headingElement.find('[class="comment-anchor"]')[0].href.split('#comment-')[1];
+                        headingElement.replaceWith(renderCommentHeading(response, commentId));
                         textElement.val(response.text);
                         markdownElement.html(response.renderedMarkdown);
                         hideCommentEditor(form);
@@ -122,7 +127,7 @@ function addComment(form, insertAtBottom) {
                     method: 'GET',
                     success: function(response) {
                         var commentRow = $($('#comment-row-template').html().replace(/@comment_id@/g, commentId));
-                        commentRow.find('h4').replaceWith(renderCommentHeading(response));
+                        commentRow.find('h4').replaceWith(renderCommentHeading(response, commentId));
                         commentRow.find('[name="text"]').val(response.text);
                         commentRow.find('[name="markdown"]').html(response.renderedMarkdown);
                         var nextElement;
