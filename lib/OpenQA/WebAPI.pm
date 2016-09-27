@@ -206,8 +206,10 @@ sub startup {
     $step_r->get('/')->name('step')->to(action => 'view');
 
     $r->get('/needles/:distri/#name')->name('needle_file')->to('file#needle');
-    # only needed during image migration
-    $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->to('file#thumb_image');
+    # this route is used in the helper
+    $r->get('/image/:md5_dirname/.thumbs/#md5_basename')->name('thumb_image')->to('file#thumb_image');
+    # but this route is actually matched (in case apache is not catching this earlier)
+    # due to the split md5_dirname having a /
     $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
 
     $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');

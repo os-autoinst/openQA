@@ -157,6 +157,7 @@ sub migrate_images {
         OpenQA::Utils::log_warning "Can't open $args->{prefix} in $OpenQA::Utils::imagesdir: $!";
         return;
     }
+    OpenQA::Utils::log_debug "moving files in $prefixdir";
     while (readdir $dh) {
         # only rename .pngs not symlinked
         if (-f "$prefixdir/$_" && !-l "$prefixdir/$_" && m/^(.*)\.png/) {
@@ -169,7 +170,6 @@ sub migrate_images {
             # paths
             File::Path::make_path($md5dir);
             File::Path::make_path("$md5dir/.thumbs");
-            OpenQA::Utils::log_debug "moving $args->{prefix}/$old to $img";
             rename("$prefixdir/$old", $img);
             # symlink as the testresults symlink here
             symlink($img, "$prefixdir/$old");
