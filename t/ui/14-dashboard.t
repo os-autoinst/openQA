@@ -42,7 +42,7 @@ unless ($driver) {
 is($driver->get_title(), "openQA", "on main page");
 my $baseurl = $driver->get_current_url();
 
-is(scalar @{$driver->find_elements('h4', 'css')}, 4);
+is(scalar @{$driver->find_elements('h4', 'css')}, 4, '4 builds shown');
 
 $driver->find_element('Build0091', 'link_text')->click();
 like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse test build 0091/, 'we are on build 91');
