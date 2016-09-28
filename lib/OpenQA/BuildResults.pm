@@ -109,10 +109,12 @@ sub compute_build_results {
         $max_jobs = $count if ($count > $max_jobs);
         last if (++$buildnr >= $limit);
     }
-    $builds{_max} = $max_jobs if %builds;
-    $builds{_group} = $group;
-
-    return \%builds;
+    if (%builds) {
+        $builds{_max}   = $max_jobs;
+        $builds{_group} = $group;
+        return \%builds;
+    }
+    return;
 }
 
 1;
