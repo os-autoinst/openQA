@@ -32,19 +32,12 @@
         </div>
         <div class="col-md-8">
             % if ($max) {
-                <div class="progress build-dashboard">
-                    <div class="progress-bar progress-bar-passed" style="width: <%= $build_res->{passed} * 100 / $max %>%">
-                        <%= $build_res->{passed} %> passed
-                    </div>
-                    <div class="progress-bar progress-bar-running progress-bar-striped" style="width: <%= $build_res->{inprogress} * 100 / $max %>%">
-                        <%= $build_res->{inprogress} %> unfinished
-                    </div>
-                    <div class="progress-bar progress-bar-softfailed" style="width: <%= $build_res->{softfailed} * 100 / $max %>%">
-                        <%= $build_res->{softfailed} %> softfailed
-                    </div>
-                    <div class="progress-bar progress-bar-failed" style="width: <%= $build_res->{failed} * 100 / $max %>%">
-                        <%= $build_res->{failed} %> failed
-                    </div>
+                <div class="progress build-dashboard" title="<%= build_progress_bar_title($build_res) %>">
+                    %= build_progress_bar_section(passed => $build_res->{passed}, $max)
+                    %= build_progress_bar_section(unfinished => $build_res->{unfinished}, $max, 'progress-bar-striped')
+                    %= build_progress_bar_section(softfailed => $build_res->{softfailed}, $max)
+                    %= build_progress_bar_section(failed => $build_res->{failed}, $max)
+                    %= build_progress_bar_section(skipped => $build_res->{skipped}, $max)
                 </div>
             % }
         </div>

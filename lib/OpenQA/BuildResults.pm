@@ -43,7 +43,7 @@ sub compute_build_results {
                 'me.clone_id' => undef,
             },
             {order_by => 'me.id DESC'});
-        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, inprogress => 0, labeled => 0, softfailed => 0);
+        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, unfinished => 0, labeled => 0, softfailed => 0);
 
         my $count = 0;
         my %seen;
@@ -85,31 +85,36 @@ sub compute_build_results {
                     next;
                 }
                 if (grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS) {
-                    next;    # ignore the rest
+                    $jr{skipped}++;
+                    next;
                 }
             }
             if (   $job->state eq OpenQA::Schema::Result::Jobs::CANCELLED
                 || $job->state eq OpenQA::Schema::Result::Jobs::OBSOLETED)
             {
-                next;        # ignore
+                $jr{skipped}++;
+                next;
             }
             my $state = $job->state;
             if (grep { /$state/ } (OpenQA::Schema::Result::Jobs::PENDING_STATES)) {
-                $jr{inprogress}++;
+                $jr{unfinished}++;
                 next;
             }
             $app->log->error("MISSING S:" . $job->state . " R:" . $job->result);
         }
         $jr{reviewed_all_passed} = $jr{passed} == $count;
+        $jr{total}               = $count;
         $jr{reviewed}            = $jr{failed} > 0 && $jr{labeled} == $jr{failed};
         $builds{$b}              = \%jr;
         $max_jobs = $count if ($count > $max_jobs);
         last if (++$buildnr >= $limit);
     }
-    $builds{_max} = $max_jobs if %builds;
-    $builds{_group} = $group;
-
-    return \%builds;
+    if (%builds) {
+        $builds{_max}   = $max_jobs;
+        $builds{_group} = $group;
+        return \%builds;
+    }
+    return;
 }
 
 1;
