@@ -407,6 +407,9 @@ sub startup {
     $api_ru->put('/groups/:group_id/comments/:comment_id')->name('apiv1_put_group_comment')->to('comment#update');
     $api_ra->delete('/groups/:group_id/comments/:comment_id')->name('apiv1_delete_group_comment')->to('comment#delete');
 
+    # api/v1/build_results
+    $api_public_r->get('/build_results')->name('apiv1_build_results')->to('build_results#list');
+
     # json-rpc methods not migrated to this api: echo, list_commands
     ###
     ## JSON API ends here
