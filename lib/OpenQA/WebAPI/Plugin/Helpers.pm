@@ -254,6 +254,23 @@ sub register {
 
             return $c->tag('span', title => $text, sub { substr($text, 0, $length - 4) . " ..." });
         });
+
+    $app->helper(
+        build_progress_bar_section => sub {
+            my ($c, $key, $res, $max, $class) = @_;
+
+            $class //= '';
+            if ($res) {
+                return $c->tag(
+                    'div',
+                    class => 'progress-bar progress-bar-' . $key . ' ' . $class,
+                    style => 'width: ' . ($res * 100 / $max) . '%;',
+                    sub {
+                        $res . ' ' . $key;
+                    });
+            }
+            return '';
+        });
 }
 
 sub _step_thumbnail {

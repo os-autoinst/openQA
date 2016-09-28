@@ -85,13 +85,15 @@ sub compute_build_results {
                     next;
                 }
                 if (grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS) {
-                    next;    # ignore the rest
+                    $jr{skipped}++;
+                    next;
                 }
             }
             if (   $job->state eq OpenQA::Schema::Result::Jobs::CANCELLED
                 || $job->state eq OpenQA::Schema::Result::Jobs::OBSOLETED)
             {
-                next;        # ignore
+                $jr{skipped}++;
+                next;
             }
             my $state = $job->state;
             if (grep { /$state/ } (OpenQA::Schema::Result::Jobs::PENDING_STATES)) {

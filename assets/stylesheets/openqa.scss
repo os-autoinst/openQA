@@ -40,6 +40,10 @@ $color-state-running: #8BDFFF;
                 background-color: $color-failed;
                 color: white;
         }
+        .progress-bar-skipped {
+                background-color: lighten($color-state-cancelled, 12.5%);
+                color: white;
+        }
 }
 
 #info_box {
