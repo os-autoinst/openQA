@@ -32,7 +32,7 @@
         </div>
         <div class="col-md-8">
             % if ($max) {
-                <div class="progress build-dashboard">
+                <div class="progress build-dashboard" title="<%= build_progress_bar_title($build_res) %>">
                     %= build_progress_bar_section(passed => $build_res->{passed}, $max)
                     %= build_progress_bar_section(unfinished => $build_res->{unfinished}, $max, 'progress-bar-striped')
                     %= build_progress_bar_section(softfailed => $build_res->{softfailed}, $max)

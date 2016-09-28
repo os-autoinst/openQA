@@ -103,6 +103,7 @@ sub compute_build_results {
             $app->log->error("MISSING S:" . $job->state . " R:" . $job->result);
         }
         $jr{reviewed_all_passed} = $jr{passed} == $count;
+        $jr{total}               = $count;
         $jr{reviewed}            = $jr{failed} > 0 && $jr{labeled} == $jr{failed};
         $builds{$b}              = \%jr;
         $max_jobs = $count if ($count > $max_jobs);
