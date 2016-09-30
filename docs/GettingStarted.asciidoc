@@ -209,6 +209,18 @@ of the openQA security model, refer to the
 http://lizards.opensuse.org/2014/02/28/about-openqa-and-authentication/[detailed
 blog post] about the subject by the openQA development team.
 
+Using the client script
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Just as the worker uses an API key+secret every user of the +client script+
+must do the same. The same API key+secret as previously created can be used or
+a new one created over the webUI.
+
+The personal configuration should be stored in a file
++~/.config/openqa/client.conf+ in the same format as previously described for
+the +client.conf+, i.e. sections for each machine, e.g. `localhost`.
+
+
 Using job templates to automate jobs creation
 ---------------------------------------------
 [id="job_templates"]
