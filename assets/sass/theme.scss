@@ -7,10 +7,17 @@ $icon-font-path: '/fonts/';
 
 table a:not(.btn),
 .table a:not(.btn) {
-	  text-decoration: inherit;
+    text-decoration: inherit;
 }
 
+/* Add margin to progress bars for correct vertical alignment */
 div.progress {
     margin-top: $line-height-computed / 2;
     margin-bottom: $line-height-computed / 2;
+}
+
+/* However, progress bars inside table cells, eg. under /tests should not have margin */
+td div.progress {
+    margin-top: 0;
+    margin-bottom: 0;
 }

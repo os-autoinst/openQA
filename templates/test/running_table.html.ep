@@ -60,7 +60,7 @@
                     % end
                 </td>
                 <td style="padding: 7px 4px;" class="tprogress">
-                    <div class="progress" style="margin-bottom: 0;">
+                    <div class="progress">
                         % my $ptext = "";
                         % my $value = 100;
                         % my $classes = "";
