@@ -290,61 +290,36 @@ sub limit_assets {
     while (my $a = $assets->next) {
         OpenQA::Utils::log_error("Asset " . $a->type . "/" . $a->name . " is not in any job group, DELETE from assets where id=" . $a->id . ";");
     }
-    my $dh;
-    if (opendir($dh, $OpenQA::Utils::assetdir . "/iso")) {
-        my %isos;
-        while (readdir($dh)) {
-            next if $_ =~ m/CURRENT/;
-            next unless $_ =~ m/\.iso$/;
-            $isos{$_} = 0;
-        }
-        closedir($dh);
-        $assets = $app->db->resultset('Assets')->search({type => 'iso', name => {in => [keys %isos]}});
-        while (my $a = $assets->next) {
-            $isos{$a->name} = $a->id;
-        }
-        for my $iso (keys %isos) {
-            if ($isos{$iso} == 0) {
-                OpenQA::Utils::log_error "File iso/$iso is not a registered asset";
+    for my $type (qw/iso repo hdd/) {
+        my $dh;
+        if (opendir($dh, $OpenQA::Utils::assetdir . "/$type")) {
+            my %assets;
+            while (readdir($dh)) {
+                # very specific to our external syncing
+                next if $_ =~ m/CURRENT/;
+                next if -l "$OpenQA::Utils::assetdir/$type/$_";
+                # ignore files not owned by us
+                next unless -o "$OpenQA::Utils::assetdir/$type/$_";
+                if ($type eq 'repo') {
+                    next unless -d "$OpenQA::Utils::assetdir/$type/$_";
+                }
+                else {
+                    next unless -f "$OpenQA::Utils::assetdir/$type/$_";
+                    if ($type eq 'iso') {
+                        next unless $_ =~ m/\.iso$/;
+                    }
+                }
+                $assets{$_} = 0;
             }
-        }
-    }
-    if (opendir($dh, $OpenQA::Utils::assetdir . "/repo")) {
-        my %repos;
-        while (readdir($dh)) {
-            next if $_ eq '.' || $_ eq '..';
-            next if $_ =~ m/CURRENT/;
-            next if -l "$OpenQA::Utils::assetdir/repo/$_";
-            next unless -d "$OpenQA::Utils::assetdir/repo/$_";
-            $repos{$_} = 0;
-        }
-        closedir($dh);
-        $assets = $app->db->resultset('Assets')->search({type => 'repo', name => {in => [keys %repos]}});
-        while (my $a = $assets->next) {
-            $repos{$a->name} = $a->id;
-        }
-        for my $repo (keys %repos) {
-            if ($repos{$repo} == 0) {
-                OpenQA::Utils::log_error "Directory repo/$repo is not a registered asset";
+            closedir($dh);
+            $assets = $app->db->resultset('Assets')->search({type => $type, name => {in => [keys %assets]}});
+            while (my $a = $assets->next) {
+                $assets{$a->name} = $a->id;
             }
-        }
-    }
-    if (opendir($dh, $OpenQA::Utils::assetdir . "/hdd")) {
-        my %repos;
-        while (readdir($dh)) {
-            next if $_ eq '.' || $_ eq '..';
-            next if $_ =~ m/CURRENT/;
-            next unless -f "$OpenQA::Utils::assetdir/hdd/$_";
-            $repos{$_} = 0;
-        }
-        closedir($dh);
-        $assets = $app->db->resultset('Assets')->search({type => 'hdd', name => {in => [keys %repos]}});
-        while (my $a = $assets->next) {
-            $repos{$a->name} = $a->id;
-        }
-        for my $repo (keys %repos) {
-            if ($repos{$repo} == 0) {
-                OpenQA::Utils::log_error "Image hdd/$repo is not a registered asset";
+            for my $asset (keys %assets) {
+                if ($assets{$asset} == 0) {
+                    OpenQA::Utils::log_error "Asset $type/$asset is not registered";
+                }
             }
         }
     }
