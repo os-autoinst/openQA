@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -19,19 +19,18 @@ use OpenQA::Utils;
 use OpenQA::IPC;
 
 sub register {
-    my $self = shift;
+    my ($self) = @_;
 
     my $type = $self->param('type');
     my $name = $self->param('name');
 
-    my $ipc = OpenQA::IPC->ipc;
-    my $id = $ipc->scheduler('asset_register', {type => $type, name => $name});
+    my $asset = $self->app->schema->resultset("Assets")->register($type, $name);
 
     my $status = 200;
     my $json   = {};
-    if ($id) {
-        $json->{id} = $id;
-        $self->emit_event('openqa_asset_register', {id => $id, type => $type, name => $name});
+    if ($asset) {
+        $json->{id} = $asset->id;
+        $self->emit_event('openqa_asset_register', {id => $asset->id, type => $type, name => $name});
     }
     else {
         $status = 400;
@@ -69,15 +68,30 @@ sub get {
 }
 
 sub delete {
-    my $self = shift;
+    my ($self) = @_;
 
     my %args;
     for my $arg (qw/id type name/) {
         $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
     }
 
-    my $ipc = OpenQA::IPC->ipc;
-    my $rs = $ipc->scheduler('asset_delete', \%args);
+    my %cond;
+    my %attrs;
+
+    if (defined $args{id}) {
+        $cond{id} = $args{id};
+    }
+    elsif (defined $args{type} && defined $args{name}) {
+        $cond{name} = $args{name};
+        $cond{type} = $args{type};
+    }
+    else {
+        return;
+    }
+
+    my $asset = $self->app->schema->resultset("Assets")->search(\%cond, \%attrs);
+    return unless $asset;
+    my $rs = $asset->delete;
     $self->emit_event('openqa_asset_delete', \%args);
 
     $self->render(json => {count => $rs});

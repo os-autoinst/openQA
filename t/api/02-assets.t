@@ -156,10 +156,10 @@ $ret = $t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200)
 la;
 
 # try to register with invalid type
-like(warning { $ret = $t->post_ok('/api/v1/assets', form => {type => 'foo', name => $iso1})->status_is(400) }, qr/asset type \'foo\' invalid/);
+$ret = $t->post_ok('/api/v1/assets', form => {type => 'foo', name => $iso1})->status_is(400);
 
 # try to register non existing asset
-like(warning { $ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})->status_is(400) }, qr/asset name \'foo.iso\' invalid/);
+$ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})->status_is(400);
 
 # switch to operator (percival) and try some modifications
 $app = $t->app;

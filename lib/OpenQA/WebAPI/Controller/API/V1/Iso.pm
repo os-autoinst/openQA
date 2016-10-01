@@ -26,8 +26,6 @@ use DBIx::Class::Timestamps qw/now/;
 
 use Carp;
 
-use OpenQA::Scheduler::Scheduler qw/asset_register/;
-
 # return settings key for given job settings
 sub _settings_key {
     my ($settings) = @_;
@@ -265,7 +263,7 @@ sub schedule_iso {
     # register assets posted here right away, in case no job
     # templates produce jobs.
     for my $a (values %{parse_assets_from_settings($args)}) {
-        OpenQA::Scheduler::Scheduler::asset_register(%$a);
+        $self->app->schema->resultset("Assets")->register($a->{type}, $a->{name});
     }
     my $noobsolete = delete $args->{_NOOBSOLETEBUILD};
     $noobsolete //= 0;

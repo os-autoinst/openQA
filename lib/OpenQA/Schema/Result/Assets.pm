@@ -30,8 +30,6 @@ use Try::Tiny;
 
 use db_helpers;
 
-our %types = map { $_ => 1 } qw/iso repo hdd other/;
-
 __PACKAGE__->table('assets');
 __PACKAGE__->load_components(qw/Timestamps/);
 __PACKAGE__->add_columns(
@@ -59,7 +57,6 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/type name/]);
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'asset_id');
 __PACKAGE__->many_to_many(jobs => 'jobs_assets', 'job');
-
 
 sub _getDirSize {
     my ($dir, $size) = @_;
@@ -254,8 +251,7 @@ sub limit_assets {
         my %assets;
         my $assets = $app->db->resultset('Assets')->search(
             {
-                id => {-in => [map { $_->asset_id } @job_assets]}
-            });
+                id => {-in => [map { $_->asset_id } @job_assets]}});
         while (my $a = $assets->next) {
             $assets{$a->id} = $a;
         }
