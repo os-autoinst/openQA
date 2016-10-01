@@ -23,6 +23,7 @@ use OpenQA::Utils;
 use OpenQA::IPC;
 use Try::Tiny;
 use DBIx::Class::Timestamps qw/now/;
+use OpenQA::Schema::Result::JobDependencies;
 
 use Carp;
 

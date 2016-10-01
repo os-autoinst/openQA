@@ -257,7 +257,7 @@ sub limit_assets {
         }
         for my $a (@job_assets) {
             my $asset = $assets{$a->asset_id};
-            OpenQA::Utils::log_debug(sprintf "Group %s: %s/%s %d->%d", $g->name, $asset->type, $asset->name, $asset->size, $sizelimit);
+            OpenQA::Utils::log_debug(sprintf "Group %s: %s/%s %s->%s", $g->name, $asset->type, $asset->name, human_readable_size($asset->size // 0), human_readable_size($sizelimit));
             # ignore predefined images
             next if ($asset->type eq 'hdd' && $a->created_by == 0);
             $seen_asset{$asset->id} = $g->id;
