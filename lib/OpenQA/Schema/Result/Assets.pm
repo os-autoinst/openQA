@@ -318,7 +318,8 @@ sub limit_assets {
             }
             for my $asset (keys %assets) {
                 if ($assets{$asset} == 0) {
-                    OpenQA::Utils::log_error "Asset $type/$asset is not registered";
+                    OpenQA::Utils::log_error "Registering asset $type/$asset";
+                    $app->db->resultset('Assets')->register($type, $asset);
                 }
             }
         }
