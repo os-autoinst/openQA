@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -98,7 +98,7 @@ sub remove_from_disk {
     }
     elsif ($self->type eq 'repo') {
         use File::Path qw(remove_tree);
-        remove_tree($file) || die "can't remove $file";
+        remove_tree($file) || print "can't remove $file\n";
     }
 
 }
@@ -254,12 +254,14 @@ sub limit_assets {
         my %assets;
         my $assets = $app->db->resultset('Assets')->search(
             {
-                id => {-in => [map { $_->asset_id } @job_assets]}});
+                id => {-in => [map { $_->asset_id } @job_assets]}
+            });
         while (my $a = $assets->next) {
             $assets{$a->id} = $a;
         }
         for my $a (@job_assets) {
             my $asset = $assets{$a->asset_id};
+            OpenQA::Utils::log_debug(sprintf "Group %s: %s/%s %d->%d", $g->name, $asset->type, $asset->name, $asset->size, $sizelimit);
             # ignore predefined images
             next if ($asset->type eq 'hdd' && $a->created_by == 0);
             $seen_asset{$asset->id} = $g->id;
@@ -315,6 +317,7 @@ sub limit_assets {
         my %repos;
         while (readdir($dh)) {
             next if $_ eq '.' || $_ eq '..';
+            next if $_ =~ m/CURRENT/;
             next if -l "$OpenQA::Utils::assetdir/repo/$_";
             next unless -d "$OpenQA::Utils::assetdir/repo/$_";
             $repos{$_} = 0;
@@ -327,6 +330,25 @@ sub limit_assets {
         for my $repo (keys %repos) {
             if ($repos{$repo} == 0) {
                 OpenQA::Utils::log_error "Directory repo/$repo is not a registered asset";
+            }
+        }
+    }
+    if (opendir($dh, $OpenQA::Utils::assetdir . "/hdd")) {
+        my %repos;
+        while (readdir($dh)) {
+            next if $_ eq '.' || $_ eq '..';
+            next if $_ =~ m/CURRENT/;
+            next unless -f "$OpenQA::Utils::assetdir/hdd/$_";
+            $repos{$_} = 0;
+        }
+        closedir($dh);
+        $assets = $app->db->resultset('Assets')->search({type => 'hdd', name => {in => [keys %repos]}});
+        while (my $a = $assets->next) {
+            $repos{$a->name} = $a->id;
+        }
+        for my $repo (keys %repos) {
+            if ($repos{$repo} == 0) {
+                OpenQA::Utils::log_error "Image hdd/$repo is not a registered asset";
             }
         }
     }
