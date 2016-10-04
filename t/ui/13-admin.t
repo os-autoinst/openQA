@@ -77,8 +77,8 @@ sub add_job_group() {
     $driver->find_element('#name',   'css')->send_keys('Cool Group');
     $driver->find_element('#submit', 'css')->click();
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 3 of 3 entries/, 'group created');
-    is($driver->find_element('#group_1003', 'css')->get_text(), 'Cool Group', 'group created');
-    is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), 'Group Cool Group created', 'flash shown');
+    is($driver->find_element('#group_1003',                      'css')->get_text(), 'Cool Group 50 100 30 120 365 0', 'group created');
+    is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), 'Group Cool Group created',       'flash shown');
     #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 }
 
