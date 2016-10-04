@@ -449,16 +449,6 @@ table#users {
     }
 }
 
-.jobtemplate-header {
-    font-size: 2em;
-    background: #fff;
-    text-align: left;
-    margin-top: 10px;
-    padding-left: 20px;
-    border-top: solid 1px #333;
-    padding-bottom: 15px;
-}
-
 #sponsorbox {
     padding-top: 2em;
     padding-bottom: 0.5em;
@@ -489,4 +479,28 @@ a.restart-link {
 /* filter */
 .filter-panel-bottom {
     margin-top: 20px;
+}
+
+/* job template */
+#properties {
+    input[type='number'] {
+        width: 120px;
+        display: inline;
+    }
+
+    .properties-progress-indication {
+        display: none;
+    }
+}
+
+.jobtemplate-header {
+    font-size: 180%;
+    text-align: left;
+    margin-top: 10px;
+    padding-bottom: 5px;
+}
+
+#editor-info {
+    font-style: italic;
+    line-height: 240%;
 }
