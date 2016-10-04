@@ -14,6 +14,7 @@ function setupAdminNeedles() {
             { "data": "last_match" }
             ],
             "processing": true,
+            "serverSide": true,
             "order": [[0, "asc"], [1, "asc"]],
             "columnDefs": [
             {  "targets": [2,3],
