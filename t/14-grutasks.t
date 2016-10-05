@@ -175,6 +175,7 @@ subtest 'relink_testresults' => sub {
 
     # setup
     unlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
+    File::Path::make_path('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/');
     symlink('../../../images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png', 't/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
     like(readlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'), qr{\Q/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png\E}, 'link correct');
 
@@ -189,6 +190,14 @@ subtest 'rm_compat_symlinks' => sub {
     ok(-e 't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png', 'thumb is there');
     run_gru('rm_compat_symlinks' => {});
     ok(!-e 't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png', 'thumb is gone');
+};
+
+subtest 'human readable size' => sub {
+    is(human_readable_size(13443399680), '13GiB',   'two digits GB');
+    is(human_readable_size(8007188480),  '7.5GiB',  'smaller GB');
+    is(human_readable_size(-8007188480), '-7.5GiB', 'negative smaller GB');
+    is(human_readable_size(717946880),   '685MiB',  'large MB');
+    is(human_readable_size(245760),      '240KiB',  'less than a MB');
 };
 
 done_testing();

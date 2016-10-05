@@ -40,7 +40,7 @@ use OpenQA::Schema::Result::JobDependencies;
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings asset_type_from_setting notify_workers/;
+use OpenQA::Utils qw/log_debug log_warning notify_workers/;
 use db_helpers qw/rndstr/;
 
 use OpenQA::IPC;
@@ -55,7 +55,7 @@ our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
   job_grab job_set_done job_set_waiting job_set_running
   job_restart
   job_set_stop job_stop iso_stop_old_builds
-  asset_list asset_get asset_delete asset_register
+  asset_list
 );
 
 sub schema {
@@ -410,56 +410,6 @@ sub asset_list {
     }
 
     return schema->resultset("Assets")->search(\%cond, \%attrs);
-}
-
-sub asset_get {
-    my %args = @_;
-    my %cond;
-    my %attrs;
-
-    if (defined $args{id}) {
-        $cond{id} = $args{id};
-    }
-    elsif (defined $args{type} && defined $args{name}) {
-        $cond{name} = $args{name};
-        $cond{type} = $args{type};
-    }
-    else {
-        return;
-    }
-
-    return schema->resultset("Assets")->search(\%cond, \%attrs);
-}
-
-sub asset_delete {
-    my $asset = asset_get(@_);
-    return unless $asset;
-    return $asset->delete;
-}
-
-sub asset_register {
-    my %args = @_;
-
-    my $type = $args{type} // '';
-
-    unless ($OpenQA::Schema::Result::Assets::types{$type}) {
-        warn "asset type '$type' invalid";
-        return;
-    }
-    my $name = $args{name} // '';
-    unless ($name && $name =~ /^[0-9A-Za-z+-._]+$/ && -e join('/', $OpenQA::Utils::assetdir, $type, $name)) {
-        warn "asset name '$name' invalid or does not exist";
-        return;
-    }
-    my $asset = schema->resultset("Assets")->find_or_create(
-        {
-            type => $type,
-            name => $name,
-        },
-        {
-            key => 'assets_type_name',
-        });
-    return $asset;
 }
 
 1;

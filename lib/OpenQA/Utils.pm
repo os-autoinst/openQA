@@ -36,6 +36,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &check_download_url
   &check_download_whitelist
   &notify_workers
+  &human_readable_size
 );
 
 
@@ -414,6 +415,35 @@ sub notify_workers {
     # do not wait for a reply - avoid deadlocks. this way we can even call it
     # from within the scheduler without having to worry about reentering
     $con->send($msg);
+}
+
+sub _round_a_bit {
+    my ($size) = @_;
+
+    if ($size < 10) {
+        # give it one digit
+        return int($size * 10 + .5) / 10.;
+    }
+
+    return int($size + .5);
+}
+
+sub human_readable_size {
+    my ($size) = @_;
+
+    my $p = ($size < 0) ? '-' : '';
+    $size = abs($size) / 1024.;
+    if ($size < 1024) {
+        return $p . _round_a_bit($size) . "KiB";
+    }
+
+    $size /= 1024.;
+    if ($size < 1024) {
+        return $p . _round_a_bit($size) . "MiB";
+    }
+
+    $size /= 1024.;
+    return $p . _round_a_bit($size) . "GiB";
 }
 
 1;

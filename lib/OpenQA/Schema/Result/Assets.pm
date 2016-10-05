@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -30,8 +30,6 @@ use Try::Tiny;
 
 use db_helpers;
 
-our %types = map { $_ => 1 } qw/iso repo hdd other/;
-
 __PACKAGE__->table('assets');
 __PACKAGE__->load_components(qw/Timestamps/);
 __PACKAGE__->add_columns(
@@ -59,7 +57,6 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/type name/]);
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'asset_id');
 __PACKAGE__->many_to_many(jobs => 'jobs_assets', 'job');
-
 
 sub _getDirSize {
     my ($dir, $size) = @_;
@@ -98,7 +95,7 @@ sub remove_from_disk {
     }
     elsif ($self->type eq 'repo') {
         use File::Path qw(remove_tree);
-        remove_tree($file) || die "can't remove $file";
+        remove_tree($file) || print "can't remove $file\n";
     }
 
 }
@@ -260,6 +257,7 @@ sub limit_assets {
         }
         for my $a (@job_assets) {
             my $asset = $assets{$a->asset_id};
+            OpenQA::Utils::log_debug(sprintf "Group %s: %s/%s %s->%s", $g->name, $asset->type, $asset->name, human_readable_size($asset->size // 0), human_readable_size($sizelimit));
             # ignore predefined images
             next if ($asset->type eq 'hdd' && $a->created_by == 0);
             $seen_asset{$asset->id} = $g->id;
@@ -292,41 +290,37 @@ sub limit_assets {
     while (my $a = $assets->next) {
         OpenQA::Utils::log_error("Asset " . $a->type . "/" . $a->name . " is not in any job group, DELETE from assets where id=" . $a->id . ";");
     }
-    my $dh;
-    if (opendir($dh, $OpenQA::Utils::assetdir . "/iso")) {
-        my %isos;
-        while (readdir($dh)) {
-            next if $_ =~ m/CURRENT/;
-            next unless $_ =~ m/\.iso$/;
-            $isos{$_} = 0;
-        }
-        closedir($dh);
-        $assets = $app->db->resultset('Assets')->search({type => 'iso', name => {in => [keys %isos]}});
-        while (my $a = $assets->next) {
-            $isos{$a->name} = $a->id;
-        }
-        for my $iso (keys %isos) {
-            if ($isos{$iso} == 0) {
-                OpenQA::Utils::log_error "File iso/$iso is not a registered asset";
+    for my $type (qw/iso repo hdd/) {
+        my $dh;
+        if (opendir($dh, $OpenQA::Utils::assetdir . "/$type")) {
+            my %assets;
+            while (readdir($dh)) {
+                # very specific to our external syncing
+                next if $_ =~ m/CURRENT/;
+                next if -l "$OpenQA::Utils::assetdir/$type/$_";
+                # ignore files not owned by us
+                next unless -o "$OpenQA::Utils::assetdir/$type/$_";
+                if ($type eq 'repo') {
+                    next unless -d "$OpenQA::Utils::assetdir/$type/$_";
+                }
+                else {
+                    next unless -f "$OpenQA::Utils::assetdir/$type/$_";
+                    if ($type eq 'iso') {
+                        next unless $_ =~ m/\.iso$/;
+                    }
+                }
+                $assets{$_} = 0;
             }
-        }
-    }
-    if (opendir($dh, $OpenQA::Utils::assetdir . "/repo")) {
-        my %repos;
-        while (readdir($dh)) {
-            next if $_ eq '.' || $_ eq '..';
-            next if -l "$OpenQA::Utils::assetdir/repo/$_";
-            next unless -d "$OpenQA::Utils::assetdir/repo/$_";
-            $repos{$_} = 0;
-        }
-        closedir($dh);
-        $assets = $app->db->resultset('Assets')->search({type => 'repo', name => {in => [keys %repos]}});
-        while (my $a = $assets->next) {
-            $repos{$a->name} = $a->id;
-        }
-        for my $repo (keys %repos) {
-            if ($repos{$repo} == 0) {
-                OpenQA::Utils::log_error "Directory repo/$repo is not a registered asset";
+            closedir($dh);
+            $assets = $app->db->resultset('Assets')->search({type => $type, name => {in => [keys %assets]}});
+            while (my $a = $assets->next) {
+                $assets{$a->name} = $a->id;
+            }
+            for my $asset (keys %assets) {
+                if ($assets{$asset} == 0) {
+                    OpenQA::Utils::log_error "Registering asset $type/$asset";
+                    $app->db->resultset('Assets')->register($type, $asset);
+                }
             }
         }
     }

@@ -403,22 +403,7 @@ my $rs = OpenQA::Scheduler::Scheduler::asset_list();
 $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
 is_deeply(nots($rs->all()), {id => 1, name => "whatever.iso", type => "iso", size => undef, checksum => undef}, "asset list");
 
-my $asset = OpenQA::Scheduler::Scheduler::asset_get(type => 'iso', name => $settings{ISO});
-is($asset->single->id, 1, "asset get");
-
-$asset = OpenQA::Scheduler::Scheduler::asset_get(id => 1);
-is($asset->single->name, "whatever.iso", "asset get by id");
-
-$asset = OpenQA::Scheduler::Scheduler::asset_get(id => 2);
-is($asset->single, undef, "asset get with unassigned id");
-
-$asset = OpenQA::Scheduler::Scheduler::asset_get(blah => "blub");
-is($asset, undef, "asset get with invalid args");
-
-$asset = OpenQA::Scheduler::Scheduler::asset_register(type => 'iso', name => $settings{ISO});
-is($asset->id, 1, "asset register returns same");
-
-$asset = OpenQA::Scheduler::Scheduler::asset_delete(type => 'iso', name => $settings{ISO});
-is($asset, 1, "asset delete");
+my $asset = $schema->resultset('Assets')->register('iso', $settings{ISO});
+is($asset->name, $settings{ISO}, "asset register returns same");
 
 done_testing;

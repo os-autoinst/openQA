@@ -67,36 +67,12 @@ sub new {
 
 # Scheduler ABI goes here
 ## Assets
-dbus_method('asset_delete', [['dict', 'string', 'string']], ['uint32']);
-sub asset_delete {
-    my ($self, $args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::asset_delete(%$args);
-    return $rs;
-}
-
-dbus_method('asset_get', [['dict', 'string', 'string']], [['dict', 'string', 'string']]);
-sub asset_get {
-    my ($self, $args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::asset_get(%$args);
-    return {} unless $rs && $rs->first;
-    my %rs = $rs->first->get_columns;
-    return \%rs;
-}
-
 dbus_method('asset_list', [['dict', 'string', 'string']], [['array', ['dict', 'string', 'string']]]);
 sub asset_list {
     my ($self, $args) = @_;
     my $rs = OpenQA::Scheduler::Scheduler::asset_list(%$args);
     $rs->result_class('DBIx::Class::ResultClass::HashRefInflator');
     return [$rs->all];
-}
-
-dbus_method('asset_register', [['dict', 'string', 'string']], ['uint32']);
-sub asset_register {
-    my ($self, $args) = @_;
-    my $rs = OpenQA::Scheduler::Scheduler::asset_register(%$args);
-    return 0 unless $rs;
-    return $rs->id;
 }
 
 dbus_method('job_grab', [['dict', 'string', ['variant']]], [['dict', 'string', ['variant']]]);
