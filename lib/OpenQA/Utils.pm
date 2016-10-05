@@ -293,6 +293,7 @@ sub parse_assets_from_settings {
     my $assets = {};
 
     for my $k (keys %$settings) {
+        next if exists $settings->{$k . '_URL'};    # don't register assets that also have _URL variant defined
         my $type = asset_type_from_setting($k);
         if ($type) {
             $assets->{$k} = {type => $type, name => $settings->{$k}};
