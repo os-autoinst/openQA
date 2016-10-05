@@ -36,72 +36,40 @@ function setupOverview() {
 
 	});
 
-    // ensure TODO is false by default because the Browser auto remembers previous state
+    setupFilterForm();
     $('#filter-todo').prop('checked', false);
-    
+
     // find specified results
-    var varPairs = window.location.search.substring(1).split('&');
     var results = {};
     var states = {};
 
-    var currentFilter = [];
     var formatFilter = function(filter) {
         return filter.replace(/_/g, ' ');
     };
-
-    for (var j = 0; j < varPairs.length; ++j) {
-        var pair = varPairs[j].split('=');
-        if(pair.length > 1) {
-            var key = decodeURIComponent(pair[0]);
-            var val = decodeURIComponent(pair[1]);
-            if(val.length < 1) {
-                continue;
-            }
-            if (key === 'result') {
-                results[val] = true;
-                currentFilter.push(formatFilter(val));
-            } else if (key === 'state') {
-                states[val] = true;
-                currentFilter.push(formatFilter(val));
-            } else if (key === 'todo') {
-                $('#filter-todo').prop('checked', val !== '0');
-                currentFilter.push('TODO');
-            } else if (key === 'arch') {
-                $('#filter-arch').prop('value', val);
-                currentFilter.push(val);
-            } else {
-                var input = $('<input/>');
-                input.attr('value', val);
-                input.attr('name', key);
-                input.attr('hidden', true);
-                $('#filter-form').append(input);
-            }
+    var filterLabels = parseFilterArguments(function(key, val) {
+        if (key === 'result') {
+            results[val] = true;
+            return formatFilter(val);
+        } else if (key === 'state') {
+            states[val] = true;
+            return formatFilter(val);
+        } else if (key === 'todo') {
+            $('#filter-todo').prop('checked', val !== '0');
+            return 'TODO';
+        } else if (key === 'arch') {
+            $('#filter-arch').prop('value', val);
+            return val;
         }
-    }
-
-    // make filter form expandable
-    var filterHeading = $('#filter-panel .panel-heading');
-    filterHeading.on('click', function() {
-        $('#filter-panel .panel-body').toggle(200);
     });
 
     // set enabled/disabled state of checkboxes (according to current filter)
-    if(currentFilter.length > 0) {
+    if(filterLabels.length > 0) {
         $('#filter-results input').each(function(index, element) {
             element.checked = results[element.id.substr(7)];
         });
         $('#filter-states input').each(function(index, element) {
             element.checked = states[element.id.substr(7)];
         });
-        filterHeading.find('span').text('current: ' + currentFilter.join(', '));
     }
-
-    // don't add empty architecture to query parameters
-    $('#filter-form').on('submit', function() {
-        var archFilterElement = $('#filter-arch');
-        if(archFilterElement.val() === '') {
-            archFilterElement.remove();
-        }
-    });
 }
 

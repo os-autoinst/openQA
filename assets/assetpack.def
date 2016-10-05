@@ -29,6 +29,7 @@
 < https://cdn.datatables.net/1.10.12/js/jquery.dataTables.js
 < https://cdn.datatables.net/1.10.12/js/dataTables.bootstrap.js
 < http://timeago.yarp.com/jquery.timeago.js
+< javascripts/index.js
 < javascripts/admintable.js
 < javascripts/admin_user.js
 < javascripts/admin_needle.js
@@ -37,6 +38,7 @@
 < javascripts/assets.js
 < javascripts/job_templates.js
 < javascripts/overview.js
+< javascripts/filter_form.js
 < javascripts/comments.js
 < javascripts/keyevent.js
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/javascripts/bootstrap/collapse.js

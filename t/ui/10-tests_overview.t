@@ -147,7 +147,7 @@ like($summary, qr/Passed: 0 Soft Failure: 2 Failed: 1/i, 'todo=1 shows all unlab
 # Test filter form
 #
 
-# Test initial state or architecture text box
+# Test initial state of architecture text box
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', result => 'passed', arch => 'i686'})->status_is(200);
 # FIXME: works when testing manually, but accessing the value via Mojo doesn't work
 #is($t->tx->res->dom->at('#filter-arch')->val, 'i686', 'default state of architecture');
@@ -155,7 +155,7 @@ $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version =>
 is($driver->get_title(), "openQA", "on main page");
 my $baseurl = $driver->get_current_url();
 
-# Test initial state of form and applying changes
+# Test initial state of checkboxes and applying changes
 $driver->get($baseurl . 'tests/overview?distri=opensuse&version=Factory&build=0048&todo=1&result=passed');
 $driver->find_element('#filter-panel .panel-heading', 'css')->click();
 $driver->find_element('#filter-todo',                 'css')->click();
@@ -164,10 +164,10 @@ $driver->find_element('#filter-failed',               'css')->click();
 $driver->find_element('#filter-form button',          'css')->click();
 $driver->find_element('#res_DVD_x86_64_doc',          'css');
 my @filtered_out = $driver->find_elements('#res_DVD_x86_64_kde', 'css');
-is(scalar @filtered_out, 0, 'result filter not correctly applied');
+is(scalar @filtered_out, 0, 'result filter correctly applied');
 
 # Test whether all URL parameter are passed correctly
-my $url_with_escaped_parameters = $baseurl . 'tests/overview?distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
+my $url_with_escaped_parameters = $baseurl . 'tests/overview?arch=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
 $driver->find_element('#filter-panel .panel-heading', 'css')->click();
 $driver->find_element('#filter-form button',          'css')->click();
