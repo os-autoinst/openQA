@@ -27,18 +27,17 @@ sub index {
 
 sub _translate_days($) {
     my ($days) = @_;
-
-    time2str('%Y-%m-%d %H:%M:%S', time - $days * 3600 * 24, 'UTC');
+    return time2str('%Y-%m-%d %H:%M:%S', time - $days * 3600 * 24, 'UTC');
 }
 
 sub _translate_cond($) {
     my ($cond) = @_;
 
     if ($cond =~ m/^min(\d+)$/) {
-        return {">=" => _translate_days($1)};
+        return {'>=' => _translate_days($1)};
     }
     elsif ($cond =~ m/^max(\d+)$/) {
-        return {"<" => _translate_days($1)};
+        return {'<' => _translate_days($1)};
     }
     die "Unknown '$cond'";
 }
@@ -46,32 +45,58 @@ sub _translate_cond($) {
 sub ajax {
     my ($self) = @_;
 
-    my @conds;
+    # Only consider needles where the file is present
+    my @conds = ({file_present => 1});
+    my $total_needle_count = $self->db->resultset('Needles')->search({-and => \@conds})->count;
 
-    # This < max and >= min is a bit awkward, but postgresql goes on strike if put too big IN $subquery on it
-    # so this will be good enough
+    # Conditions for search
+    my $search_value = $self->param('search[value]');
+    push(@conds, {filename => {-like => '%' . $search_value . '%'}}) if $search_value;
+
+    # Make columns directory.name, last_seen.t_created and last_match.t_created available by joining with JobModules
+    # Required for ordering by those columns and also eases filtering
+    my $params = {prefetch => [qw/directory/]};
+    $params->{join} = [qw/directory last_seen last_match/];
+
+    # Parameter for order
+    my @columns = qw(directory.name filename last_seen.t_created last_match.t_created);
+    my @order_by_params;
+    my $index = 0;
+    while (1) {
+        my $column_index = $self->param("order[$index][column]");
+        my $column_order = $self->param("order[$index][dir]");
+        if (   defined($column_index)
+            && $column_index < scalar(@columns)
+            && ($column_order eq 'asc' || $column_order eq 'desc'))
+        {
+            last;
+        }
+        push(@order_by_params, {'-' . $column_order => $columns[$column_index]});
+        ++$index;
+    }
+    push(@order_by_params, {-asc => 'filename'}) unless @order_by_params;
+    $params->{order_by} = \@order_by_params;
+
+    # Conditions for filter
     my $seen_query = $self->param('last_seen');
     if ($seen_query && $seen_query ne 'none') {
-        my $query = $self->db->resultset("JobModules")->search({t_created => _translate_cond($self->param('last_seen'))})->get_column('id');
-        if ($seen_query =~ m/^max/) {
-            push(@conds, {last_seen_module_id => {'<', $query->max}});
-        }
-        else {
-            push(@conds, {last_seen_module_id => {'>=', $query->min}});
-        }
+        push(@conds, {'last_seen.t_created' => _translate_cond($self->param('last_seen'))});
     }
     my $match_query = $self->param('last_match');
     if ($match_query && $match_query ne 'none') {
-        my $query = $self->db->resultset("JobModules")->search({t_created => _translate_cond($self->param('last_match'))})->get_column('id');
-        if ($match_query =~ m/^max/) {
-            push(@conds, {-or => [{last_matched_module_id => {'<', $query->max}}, {last_matched_module_id => undef}]});
-        }
-        else {
-            push(@conds, {last_matched_module_id => {'>=', $query->min}});
-        }
+        push(@conds, {'last_match.t_created' => _translate_cond($self->param('last_match'))});
     }
-    push(@conds, {file_present => 1});
-    my $needles = $self->db->resultset("Needles")->search({-and => \@conds}, {prefetch => qw/directory/, order_by => 'filename'});
+
+    # Determine number of needles with all filters applied except paging
+    my $filtered_needle_count = $self->db->resultset('Needles')->search({-and => \@conds}, $params)->count;
+
+    # Parameter for paging
+    my $first_row = $self->param('start');
+    $params->{offset} = $first_row if $first_row;
+    my $row_limit = $self->param('length');
+    $params->{rows} = $row_limit if $row_limit;
+
+    my $needles = $self->db->resultset('Needles')->search({-and => \@conds}, $params);
 
     my @data;
     my %modules;
@@ -98,16 +123,22 @@ sub ajax {
         }
         push(@data, $hash);
     }
-    my $jobmodules = $self->db->resultset("JobModules")->search({id => {-in => [keys %modules]}});
+    my $jobmodules = $self->db->resultset('JobModules')->search({id => {-in => [keys %modules]}});
     # translate module id into time
     while (my $m = $jobmodules->next) {
-        $modules{$m->id} = $m->t_created->datetime() . "Z";
+        $modules{$m->id} = $m->t_created->datetime() . 'Z';
     }
     for my $d (@data) {
         $d->{last_seen} = $modules{$d->{last_seen}};
         $d->{last_match} = $modules{$d->{last_match} || 0} || 'never';
     }
-    $self->render(json => {data => \@data});
+
+    $self->render(
+        json => {
+            recordsTotal    => $total_needle_count,
+            recordsFiltered => $filtered_needle_count,
+            data            => \@data
+        });
 }
 
 sub module {
