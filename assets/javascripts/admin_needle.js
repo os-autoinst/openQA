@@ -72,7 +72,7 @@ function setupAdminNeedles() {
         var url = $('#confirm_delete').data('delete-url');
         if (ids.length) {
             url += "?";
-            $.each(ids, function(index) { url += "id=" + ids[index]; });
+            $.each(ids, function(index) { url += 'id=' + ids[index] + '&'; });
         }
         $.ajax({ url: url,
             type: 'DELETE',
