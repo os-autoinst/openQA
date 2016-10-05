@@ -39,6 +39,9 @@ sub index {
         push(@results, $build_results) if $build_results;
     }
     $self->stash('results', \@results);
+    $self->respond_to(
+        json => {json     => {results => \@results}},
+        html => {template => 'main/index'});
 }
 
 sub group_overview {
@@ -89,11 +92,13 @@ sub group_overview {
         }
     }
     $self->stash('result',          $res);
-    $self->stash('group',           $group);
     $self->stash('limit_builds',    $limit_builds);
     $self->stash('only_tagged',     $only_tagged);
     $self->stash('comments',        \@comments);
     $self->stash('pinned_comments', \@pinned_comments);
+    $self->respond_to(
+        json => {json     => {result => $res}},
+        html => {template => 'main/group_overview'});
 }
 
 1;

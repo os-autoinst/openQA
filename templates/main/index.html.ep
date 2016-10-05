@@ -22,7 +22,7 @@
 % for my $groupresults (@$results) {
     % my $group = delete $groupresults->{_group};
     <h2>
-        %= link_to $group->name => url_for('group_overview', groupid => $group->id)
+        %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})
     </h2>
     %= include 'main/group_builds', result => $groupresults, group => $group
 % }
