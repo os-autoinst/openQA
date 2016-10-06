@@ -88,5 +88,8 @@ subtest 'filter form' => sub {
     is($driver->get_current_url(), $baseurl . '?group=SLE+12+SP2&limit_builds=38&time_limit_days=142#', 'URL parameters for filter are correct');
 };
 
+$driver->get($baseurl . 'index.json');
+like($driver->get_page_source(), qr({"results":\[.*{"0048":), 'page rendered as JSON');
+
 t::ui::PhantomTest::kill_phantom();
 done_testing();

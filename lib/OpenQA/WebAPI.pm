@@ -216,9 +216,9 @@ sub startup {
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
+    $r->get('/index' => [format => ['html', 'json']])->to('main#index');
     # Default route
     $r->get('/')->name('index')->to('main#index');
-    $r->get('/index.json')->to('main#index');
 
     # Redirection for old links to openQAv1
     $r->get(
