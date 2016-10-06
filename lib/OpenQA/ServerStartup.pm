@@ -62,6 +62,10 @@ sub read_config {
         audit => {
             blacklist => '',
         },
+        mail_notification => {
+            from    => undef,
+            pretend => 0
+        },
     );
 
     # in development mode we use fake auth and log to stderr
