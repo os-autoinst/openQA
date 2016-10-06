@@ -252,4 +252,50 @@ ok(!@{$res->{jobs}}, 'no result for nonexising state');
 my $delete = $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
 $t->get_ok('/api/v1/jobs/99937')->status_is(404);
 
+$get = $t->get_ok('/group_overview/1001.json')->status_is(200);
+$get = $get->tx->res->json->{result};
+is_deeply({id => 1001, name => 'opensuse'}, $get->{_group});
+my $b48 = $get->{'0048'};
+delete $b48->{oldest};
+is_deeply(
+    {
+        reviewed            => '',
+        softfailed          => 1,
+        failed              => 1,
+        labeled             => 0,
+        reviewed_all_passed => '',
+        total               => 3,
+        passed              => 0,
+        distri              => 'opensuse',
+        unfinished          => 1,
+        version             => 'Factory'
+    },
+    $b48,
+    'Build 0048 exported'
+);
+
+$get = $t->get_ok('/index.json')->status_is(200);
+$get = $get->tx->res->json;
+is(@{$get->{results}}, 2);
+my $g1 = (shift @{$get->{results}});
+is($g1->{_group}->{name}, 'opensuse', 'First group is opensuse');
+my $b1 = $g1->{'0092'};
+delete $b1->{oldest};
+is_deeply(
+    $b1,
+    {
+        passed              => 1,
+        version             => '13.1',
+        distri              => 'opensuse',
+        labeled             => 0,
+        total               => 1,
+        failed              => 0,
+        unfinished          => 0,
+        reviewed            => '',
+        softfailed          => 0,
+        reviewed_all_passed => 1
+    },
+    'Build 92 of opensuse'
+);
+
 done_testing();
