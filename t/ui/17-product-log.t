@@ -20,6 +20,7 @@ BEGIN {
 use Mojo::Base;
 use Test::More;
 use Test::Mojo;
+use Test::Warnings;
 
 use OpenQA::Test::Case;
 use OpenQA::Client;
