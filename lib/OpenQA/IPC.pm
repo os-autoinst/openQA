@@ -215,6 +215,7 @@ sub service {
 sub _dispatch {
     my ($self, $target, $command, @data) = @_;
     my $object = $self->service($target);
+    # TODO that 'pp' is giving not so nice multi line output in log files
     log_debug("dispatching IPC $command to $target: " . pp(\@data));
     my $ret = $object->$command(@data);
     log_debug("IPC finished");

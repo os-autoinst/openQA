@@ -127,12 +127,15 @@ sub serve_static_($$) {
 
     my $asset = shift;
 
+    # TODO this 'pp' together with the 'in' is also giving a not so nice
+    # multi-line debug output that confuses logwarn
     $self->app->log->debug("looking for " . pp($asset) . " in " . pp($self->{static}->paths));
     if ($asset && !ref($asset)) {
         # TODO: check for plain file name
         $asset = $self->{static}->file($asset);
     }
 
+    # TODO also here
     $self->app->log->debug("found " . pp($asset));
 
     return $self->reply->not_found unless $asset;

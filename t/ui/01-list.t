@@ -67,7 +67,7 @@ my $job99946 = $driver->find_element('#results #job_99946', 'css');
 my @tds = $driver->find_child_elements($job99946, "td");
 is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', "medium of 99946");
 is((shift @tds)->get_text(), 'textmode@32bit',                      "test of 99946");
-is((shift @tds)->get_text(), '29 1',                                "result of 99946");
+is((shift @tds)->get_text(), '28 1 1',                              "result of 99946 (passed, softfailed, failed)");
 like((shift @tds)->get_text(), qr/about 3 hours ago/, "finish time of 99946");
 
 # Test 99963 is still running
