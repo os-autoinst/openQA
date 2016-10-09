@@ -22,6 +22,7 @@ use warnings;
 use DateTime;
 use Test::More;
 use Test::Warnings;
+use Test::Output qw/stderr_like/;
 use OpenQA::IPC;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
@@ -56,7 +57,10 @@ subtest 'worker with job and not updated in last 50s is considered dead' => sub 
     my $dt = DateTime->from_epoch(epoch => time() - 50, time_zone => 'UTC');
 
     $schema->resultset('Workers')->update_all({t_updated => $dtf->format_datetime($dt)});
-    OpenQA::WebSockets::Server::_workers_checker();
+    stderr_like {
+        OpenQA::WebSockets::Server::_workers_checker();
+    }
+    qr/dead job 99961 aborted and duplicated 99983\n.*dead job 99963 aborted as incomplete/;
     _check_job_incomplete($_) for (99961, 99963);
 };
 
