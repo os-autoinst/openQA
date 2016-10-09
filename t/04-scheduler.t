@@ -30,6 +30,7 @@ use Net::DBus::Test::MockObject;
 
 use Test::More;
 use Test::Warnings;
+use Test::Output qw/stderr_like/;
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -368,7 +369,11 @@ $job_id = $job->{id};
 $job    = job_get($job_id);
 is($job->state, 'running', 'grabbed job runs');
 
-my $job4 = OpenQA::Scheduler::Scheduler::job_grab(%args);
+my $job4;
+stderr_like {
+    $job4 = OpenQA::Scheduler::Scheduler::job_grab(%args);
+}
+qr/[WARN].*host.*wants to grab a new job - killing the old one: 2/;
 isnt($job4->{id}, $job_id, "grabbed another job");
 $job->discard_changes;
 is($job4->{state}, 'running',    'grabbed job 4 runs');
