@@ -764,7 +764,7 @@
         job_id   => 99946,
         category => 'installation',
         name     => 'logpackages',
-        result   => 'passed',
+        result   => 'softfailed',
     },
     JobModules => {
         script   => 'tests/installation/installer_desktopselection.pm',
