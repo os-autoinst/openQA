@@ -77,6 +77,8 @@ is(scalar @{$driver->find_elements('h2', 'css')}, 1, 'only one job group shown')
 is($driver->find_element('opensuse', 'link_text')->get_text, 'opensuse');
 is($driver->get($baseurl . '?group=opensuse$&group=test'), 1, 'multiple group parameter can be use to ease building queries');
 is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'both job groups shown');
+$driver->get($baseurl . '?group=');
+is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'a single, empty group parameter has no affect');
 
 subtest 'filter form' => sub {
     $driver->get($baseurl);
