@@ -72,7 +72,7 @@ unlike($driver->get_current_url(), qr/#step/, "current url doesn't contain #step
 
 $driver->find_element('[href="#step/bootloader/1"]', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
-like($driver->find_element('option[data-matches="[]"]', 'css')->get_text(), qr/Looking for: inst-bootmenu/, "show searched needle tags");
+like($driver->find_element('.step_actions .fa-info-circle', 'css')->get_attribute('title'), qr/inst-bootmenu/, "show searched needle tags");
 $driver->find_element('[href="#step/bootloader/1"]', 'css')->click();
 
 # test running view with Test::Mojo as phantomjs would get stuck on the
