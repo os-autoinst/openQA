@@ -34,7 +34,9 @@ sub index {
     my $groups = $self->db->resultset('JobGroups')->search({}, {order_by => qw/name/});
 
     while (my $group = $groups->next) {
-        next unless (scalar @{$group_params} == 0 || (grep { $group->name =~ /$_/ } @$group_params));
+        if (@$group_params) {
+            next unless grep { $_ eq '' || $group->name =~ /$_/ } @$group_params;
+        }
         my $build_results = OpenQA::BuildResults::compute_build_results($self->app, $group, $limit_builds, $time_limit_days);
         push(@results, $build_results) if $build_results;
     }
