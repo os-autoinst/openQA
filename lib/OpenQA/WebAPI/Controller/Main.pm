@@ -91,7 +91,13 @@ sub group_overview {
             delete $res->{$build} unless $res->{$build}->{tag};
         }
     }
-    $self->stash('result',          $res);
+    $self->stash('result', $res);
+    $self->stash(
+        'group',
+        {
+            id   => $group->id,
+            name => $group->name
+        });
     $self->stash('limit_builds',    $limit_builds);
     $self->stash('only_tagged',     $only_tagged);
     $self->stash('comments',        \@comments);
