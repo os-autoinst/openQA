@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -79,7 +79,6 @@ sub add_job_group() {
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 3 of 3 entries/, 'group created');
     is($driver->find_element('#group_1003',                      'css')->get_text(), 'Cool Group 50 100 30 120 365 0', 'group created');
     is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), 'Group Cool Group created',       'flash shown');
-    #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 }
 
 sub add_machine() {
@@ -162,7 +161,6 @@ sub add_test_suite() {
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     t::ui::PhantomTest::wait_for_ajax;
-    #$driver->capture_screenshot('add_test.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 8, "8 edit buttons afterwards");
 
     # can add entry with single, double quotes, special chars
@@ -177,17 +175,13 @@ sub add_test_suite() {
     $value->send_keys($suiteValue);
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     # now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
     # try to edit and save
     ok($driver->find_child_element($elem, './td/button[@title="Edit"]')->click(), 'editing enabled');
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     $name  = $driver->find_child_element($elem, './td/input[@type="text"]');
     $key   = $driver->find_child_element($elem, './td/span/span[@class="key"]');
@@ -198,17 +192,13 @@ sub add_test_suite() {
     ok($driver->find_child_element($elem, '//button[@title="Update"]')->click(), 'editing saved');
 
     # reread and compare to original
-    while (!$driver->execute_script("return jQuery.active == 0")) {
-        sleep 1;
-    }
+    t::ui::PhantomTest::wait_for_ajax;
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
 }
 #
 
 sub add_product() {
-    #print $driver->get_page_source();
-
     # go to product first
     $driver->find_element('#user-action a', 'css')->click();
     $driver->find_element('Medium types',   'link_text')->click();
@@ -252,7 +242,6 @@ sub add_product() {
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     t::ui::PhantomTest::wait_for_ajax;
-    #$driver->capture_screenshot('add_product.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 2, "2 edit buttons afterwards");
 
     # check the distri name will be lowercase after added a new one
@@ -261,15 +250,14 @@ sub add_product() {
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), '=', "new row empty");
     @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 6, "6 fields");    # one column has 2 fields
-    (shift @fields)->send_keys('OpeNSusE');    # distri name has capital letter and many upper/lower case combined
-    (shift @fields)->send_keys('13.2');        # version
-    (shift @fields)->send_keys('DVD');         # flavor
-    (shift @fields)->send_keys('ppc64le');     # arch
+    is(@fields, 6, "6 fields");             # one column has 2 fields
+    (shift @fields)->send_keys('OpeNSusE'); # distri name has capital letter and many upper/lower case combined
+    (shift @fields)->send_keys('13.2');     # version
+    (shift @fields)->send_keys('DVD');      # flavor
+    (shift @fields)->send_keys('ppc64le');  # arch
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     t::ui::PhantomTest::wait_for_ajax;
-    #$driver->capture_screenshot('add_product2.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons afterwards");
 
 }
@@ -301,7 +289,6 @@ $driver->find_element('//input[@type="submit"]')->submit();
 is($driver->get_title(), "openQA: Jobs for Cool Group", "on job groups");
 t::ui::PhantomTest::wait_for_ajax;
 
-#print $driver->get_page_source();
 my $td = $driver->find_element('#sle_13_DVD_arm19_xfce_chosen .search-field', 'css');
 is('', $td->get_text(), 'field is empty for product 2');
 $driver->mouse_move_to_location(element => $td);
@@ -325,17 +312,11 @@ is((shift @picks)->get_text(), '64bit', 'found one');
 is((shift @picks)->get_text(), 'HURRA', 'found two');
 is_deeply(\@picks, [], 'found no three');
 
-#print $driver->get_page_source();
-#t::ui::PhantomTest::make_screenshot('mojoResults.png');
-
 # briefly check the asset list
 $driver->find_element('#user-action a', 'css')->click();
 $driver->find_element('Assets',         'link_text')->click();
 is($driver->get_title(), "openQA: Assets", "on asset");
 t::ui::PhantomTest::wait_for_ajax;
-
-#t::ui::PhantomTest::make_screenshot('mojoResults.png');
-#print $driver->get_page_source();
 
 $td = $driver->find_element('tr#asset_1 td.t_created', 'css');
 is('about 2 hours ago', $td->get_text(), 'timeago 2h');
