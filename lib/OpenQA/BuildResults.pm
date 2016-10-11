@@ -36,6 +36,8 @@ sub compute_build_results {
     my $max_jobs = 0;
     my $buildnr  = 0;
     for my $b (map { $_->BUILD } $builds->all) {
+        last if (defined($limit) && ++$buildnr > $limit);
+
         my $jobs = $group->result_source->schema->resultset('Jobs')->search(
             {
                 'me.BUILD'    => $b,
@@ -107,7 +109,6 @@ sub compute_build_results {
         $jr{reviewed}            = $jr{failed} > 0 && $jr{labeled} == $jr{failed};
         $builds{$b}              = \%jr;
         $max_jobs = $count if ($count > $max_jobs);
-        last if (++$buildnr >= $limit);
     }
     if (%builds) {
         $builds{_max}   = $max_jobs;

@@ -1,7 +1,7 @@
 % my $max = delete $result->{_max};
 % for my $build (reverse sort keys %$result) {
     % my $build_res = $result->{$build};
-    <div class="row">
+    <div class="row build-row">
         <div class="col-md-4 text-nowrap">
             <h4>
                 <%= link_to "Build$build" => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $group->{id} ) %>

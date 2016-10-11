@@ -56,8 +56,12 @@ is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only the one hour old buil
 
 $driver->find_element('opensuse', 'link_text')->click();
 
+my $build_url = $driver->get_current_url();
 is(scalar @{$driver->find_elements('h4', 'css')}, 5, 'number of builds for opensuse');
-is($driver->get($driver->get_current_url() . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
+is($driver->get($build_url . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
+$driver->get($build_url . '?limit_builds=0');
+is(scalar @{$driver->find_elements('div.build-row h4', 'css')}, 0, 'all builds filtered out');
+is($driver->find_element('h2', 'css')->get_text(), 'Last Builds for Group opensuse', 'group name shown correctly when all builds filtered out');
 
 my $more_builds = $t->get_ok($baseurl . 'group_overview/1001')->tx->res->dom->at('#more_builds');
 my $res         = OpenQA::Test::Case::trim_whitespace($more_builds->all_text);

@@ -7,7 +7,7 @@
     $('.timeago').timeago();
 % end
 
-% my $group = delete $result->{_group};
+% delete $result->{_group};
 
 <h2>Last Builds for Group <%= $group->{name} %></h2>
 
