@@ -171,12 +171,12 @@ and upgrades include those changes.
 .  Then you need to generate the deployment files for new installations,
    this is done by running +./script/initdb --prepare_init+.
 
-.  Afterwards you need to generate the deployment files for new installations,
+.  Afterwards you need to generate the deployment files for existing installations,
    this is done by running +./script/upgradedb --prepare_upgrade+.
    After doing so, the directories +dbicdh/$ENGINE/deploy/<new version>+ and
-   +dbicdh/$ENGINE/upgrade/<prev version>-<new version>+ for SQLite, PosgreSQL
-   and MySQL should have been created with some SQL files inside containing
-   the statements to initialize the schema and to upgrade from one version
+   +dbicdh/$ENGINE/upgrade/<prev version>-<new version>+ for SQLite and PosgreSQL
+   should have been created with some SQL files inside containing the statements to
+   initialize the schema and to upgrade from one version
    to the next in the corresponding database engine.
 
 .  And finally, you need to create the fixtures files. Under

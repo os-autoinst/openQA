@@ -238,3 +238,34 @@ function alignCols() {
 	return archwidth;
 }
 
+function toggleEdit() {
+    $('#properties').toggle(250);
+}
+
+function showSubmitResults(form, result) {
+    form.find('.buttons').show();
+    form.find('.properties-progress-indication').hide();
+    form.find('.properties-status').html(result);
+}
+
+function submitProperties(form) {
+    var editorForm = $(form);
+    editorForm.find('.buttons').hide();
+    editorForm.find('.progress-indication').show();
+    $.ajax({
+        url: editorForm.data('put-url'),
+        method: 'PUT',
+        data: editorForm.serialize(),
+           success: function() {
+               var newTilte = $('#editor-name').val();
+               showSubmitResults(editorForm, '<span class="glyphicon glyphicon-floppy-saved" aria-hidden="true"></span> Changes applied');
+               $('#job-group-name').text(newTilte);
+               document.title = 'openQA: Jobs for ' + newTilte;
+           },
+           error: function(xhr, ajaxOptions, thrownError) {
+               showSubmitResults(editorForm, '<span class="glyphicon glyphicon-floppy-remove" aria-hidden="true"></span> Unable to apply changes');
+           }
+    });
+
+    return false;
+}

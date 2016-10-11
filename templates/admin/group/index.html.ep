@@ -15,6 +15,12 @@
         <thead>
             <tr>
                 <th>Name</th>
+                <th>Default priority</th>
+                <th>Size limit (GiB)</th>
+                <th>Log storage<br>duration (days)</th>
+                <th>Imporant log storage<br>duration (days)</th>
+                <th>Result storage<br>duration (days)</th>
+                <th>Imporant result storage<br>duration (days)</th>
             </tr>
         </thead>
         <tbody>
@@ -22,6 +28,24 @@
         <tr id="group_<%= $group->id %>">
             <td class="name">
                 %= link_to $group->name => url_for('admin_job_templates', groupid => $group->id)
+            </td>
+            <td>
+                %= $group->default_priority
+            </td>
+            <td>
+                %= $group->size_limit_gb
+            </td>
+            <td>
+                %= $group->keep_logs_in_days
+            </td>
+            <td>
+                %= $group->keep_important_logs_in_days
+            </td>
+            <td>
+                %= $group->keep_results_in_days
+            </td>
+            <td>
+                %= $group->keep_important_results_in_days
             </td>
         </tr>
         % }

@@ -296,19 +296,26 @@ sub startup {
     my $api_r_job = $api_job_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami');    # primarily for tests
 
+    # api/v1/job_groups
+    $api_public_r->get('/job_groups')->name('apiv1_list_job_groups')->to('job_group#list');
+    $api_public_r->get('/job_groups/:group_id')->name('apiv1_get_job_group')->to('job_group#list');
+    #$api_ra->post('/job_groups/:group_id')->name('apiv1_post_job_group')->to('job_group#create');
+    $api_ra->put('/job_groups/:group_id')->name('apiv1_put_job_group')->to('job_group#update');
+    #$api_ra->delete('/job_groups/:group_id')->name('apiv1_delete_job_group')->to('job_group#delete');
+
     # api/v1/jobs
     $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
-    $api_ro->post('/jobs')->name('apiv1_create_job')->to('job#create');            # job_create
+    $api_ro->post('/jobs')->name('apiv1_create_job')->to('job#create');    # job_create
     $api_ro->post('/jobs/cancel')->name('apiv1_cancel_jobs')->to('job#cancel');
     $api_ro->post('/jobs/restart')->name('apiv1_restart_jobs')->to('job#restart');
 
     my $job_r = $api_ro->route('/jobs/:jobid', jobid => qr/\d+/);
     $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show');
-    $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');              # job_delete
+    $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');      # job_delete
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
     # NO LONGER USED
-    $job_r->post('/result')->name('apiv1_job_result')->to('job#result');           # job_update_result
-    $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done');             # job_set_done
+    $job_r->post('/result')->name('apiv1_job_result')->to('job#result');    # job_update_result
+    $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done');      # job_set_done
     $job_r->post('/status')->name('apiv1_update_status')->to('job#update_status');
     $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
     $job_r->post('/ack_temporary')->to('job#ack_temporary');
@@ -317,8 +324,8 @@ sub startup {
     # job_set_waiting, job_set_continue
     my $command_r = $job_r->route('/set_:command', command => [qw(waiting running)]);
     $command_r->post('/')->name('apiv1_set_command')->to('job#set_command');
-    $job_r->post('/restart')->name('apiv1_restart')->to('job#restart');            # job_restart
-    $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');               # job_cancel
+    $job_r->post('/restart')->name('apiv1_restart')->to('job#restart');     # job_restart
+    $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');        # job_cancel
     $job_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate');
 
     # api/v1/workers
