@@ -173,6 +173,16 @@ $driver->find_element('#filter-panel .panel-heading', 'css')->click();
 $driver->find_element('#filter-form button',          'css')->click();
 is($driver->get_current_url(), $url_with_escaped_parameters . '#', 'escaped URL parameters are passed correctly');
 
+# Test failed module info async update
+$driver->get($baseurl . 'tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001');
+my $fmod = $driver->find_elements('.failedmodule', 'css')->[1];
+$driver->mouse_move_to_location(element => $fmod, xoffset => 8, yoffset => 8);
+t::ui::PhantomTest::wait_for_ajax;
+like($driver->find_elements('.failedmodule a', 'css')->[1]->get_attribute('href'), qr/\/3$/, 'ajax update failed module step');
+
+$t->get_ok('/tests/99937/modules/kate/fails')->json_is('/failed_needles' => ["test-kate-1"], 'correct failed needles');
+$t->get_ok('/tests/99937/modules/zypper_up/fails')->json_is('/first_failed_step' => 1, 'failed module: fallback to first step');
+
 t::ui::PhantomTest::kill_phantom();
 
 done_testing();

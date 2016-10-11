@@ -235,3 +235,36 @@ function setupResultButtons() {
    
 }
 
+function getFailedSteps(failed_module) {
+    if (failed_module.has_failed_steps) {
+        return;
+    }
+    failed_module.has_failed_steps = true;
+    var m = $(failed_module);
+    var a = m.children('a');
+    $.getJSON(m.data('async'), function(fails) {
+        var new_href = a.attr('href').replace(/\/1$/, '/'+fails.first_failed_step);
+        a.replaceWith('<a href="'+new_href+'">'+a.text()+'</a>');
+        if (fails.failed_needles.length) {
+            var new_title = '<p>Failed needles:</p><ul>';
+            $.each(fails.failed_needles, function(i, needle) {
+                new_title += '<li>'+needle+'</li>';
+            });
+            new_title += '</ul>'
+            m.attr('data-original-title', new_title);
+            if (m.next('.tooltip:visible').length) {
+                m.tooltip('show');
+            }
+        }
+        else {
+            m.attr('data-original-title', "");
+            m.tooltip('hide');
+        }
+    }).fail(function() {
+        failed_module.has_failed_steps = false;
+    });
+}
+
+function setupAsyncFailedResult() {
+    $(document).on('show.bs.tooltip', '.failedmodule', function() { getFailedSteps(this) });
+}

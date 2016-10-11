@@ -439,7 +439,7 @@ sub overview {
                 overall  => $overall,
                 jobid    => $job->id,
                 state    => "done",
-                failures => $job->failed_modules_with_needles(),
+                failures => $job->failed_modules(),
                 bug      => $job_labels->{$job->id}{bug},
                 label    => $job_labels->{$job->id}{label},
                 comments => $job_labels->{$job->id}{comments},
@@ -547,6 +547,45 @@ sub export {
         $self->write_chunk("\n\n");
     }
     $self->finish('END');
+}
+
+sub module_fails {
+    my ($self) = @_;
+
+    unless (defined $self->param('testid') and defined $self->param('moduleid')) {
+        return $self->reply->not_found;
+    }
+
+    my $module = $self->app->schema->resultset("JobModules")->search(
+        {
+            job_id => $self->param('testid'),
+            name   => $self->param('moduleid')})->first;
+
+    my @needles;
+
+    my $counter           = 0;
+    my $first_failed_step = 0;
+    for my $detail (@{$module->details}) {
+        $counter++;
+        next unless $detail->{result} eq 'fail';
+        if ($first_failed_step == 0) {
+            $first_failed_step = $counter;
+        }
+        for my $needle (@{$detail->{needles}}) {
+            push @needles, $needle->{name};
+        }
+    }
+
+    # Fallback to first step
+    if ($first_failed_step == 0) {
+        $first_failed_step = 1;
+    }
+
+    $self->render(
+        json => {
+            first_failed_step => $first_failed_step,
+            failed_needles    => \@needles
+        });
 }
 
 1;

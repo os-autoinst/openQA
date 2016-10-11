@@ -179,6 +179,7 @@ sub startup {
     my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0);
     $test_r->get('/')->name('test')->to('test#show');
+    $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
 
     $test_r->get('/details')->name('details')->to('test#details');
     $test_r->get('/status')->name('status')->to('running#status');

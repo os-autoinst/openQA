@@ -24,7 +24,7 @@
                         <i class="status fa fa-circle<%=  $css %>" title="Done: <%= $res %>"></i>
                     </a>
                 </span>
-                %= include 'test/tr_job_result_failedmodules', jobid => $prev->id, failedmodules => $prev->failed_modules_with_needles()
+                %= include 'test/tr_job_result_failedmodules', jobid => $prev->id, failedmodules => $prev->failed_modules()
                 %= include 'test/tr_job_result_details', jobid => $prev->id, res => $previous_labels->{$prev->id}
             </td>
             % my $query = {build => $prev->BUILD, distri => $distri, version => $version};
