@@ -64,24 +64,70 @@ $driver->find_element('Workers', 'link_text')->click();
 
 is($driver->get_title(), "openQA: Workers", "on workers overview");
 
-sub add_job_group() {
+subtest 'add product' => sub() {
+    # go to product first
     $driver->find_element('#user-action a', 'css')->click();
-    $driver->find_element('Job groups',     'link_text')->click();
+    $driver->find_element('Medium types',   'link_text')->click();
 
-    is($driver->get_title(), "openQA: Job groups", "on groups");
+    is($driver->get_title(), "openQA: Medium types", "on products");
     t::ui::PhantomTest::wait_for_ajax;
-    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'two groups in fixtures');
-    $driver->find_element('#submit', 'css')->click();
-    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'still two groups');
-    is($driver->find_element('#flash-messages .alert-warning span', 'css')->get_text(), 'Group name cannot be empty', 'error shown');
-    $driver->find_element('#name',   'css')->send_keys('Cool Group');
-    $driver->find_element('#submit', 'css')->click();
-    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 3 of 3 entries/, 'group created');
-    is($driver->find_element('#group_1003',                      'css')->get_text(), 'Cool Group 50 100 30 120 365 0', 'group created');
-    is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), 'Group Cool Group created',       'flash shown');
-}
+    my $elem = $driver->find_element('.admintable thead tr', 'css');
+    my @headers = $driver->find_child_elements($elem, 'th');
+    is(@headers, 6, "6 columns");
 
-sub add_machine() {
+    # the headers are specific to our fixtures - if they change, we have to adapt
+    is((shift @headers)->get_text(), "Distri",   "1st column");
+    is((shift @headers)->get_text(), "Version",  "2nd column");
+    is((shift @headers)->get_text(), "Flavor",   "3rd column");
+    is((shift @headers)->get_text(), "Arch",     "4th column");
+    is((shift @headers)->get_text(), "Settings", "5th column");
+    is((shift @headers)->get_text(), "Actions",  "6th column");
+
+    # now check one row by example
+    $elem = $driver->find_element('.admintable tbody tr:nth-child(1)', 'css');
+    @headers = $driver->find_child_elements($elem, 'td');
+
+    # the headers are specific to our fixtures - if they change, we have to adapt
+    is((shift @headers)->get_text(), "opensuse", "distri");
+    is((shift @headers)->get_text(), "13.1",     "version");
+    is((shift @headers)->get_text(), "DVD",      "flavor");
+    is((shift @headers)->get_text(), "i586",     "arch");
+
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 1, "1 edit button before");
+
+    is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium');
+
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), '=', "new row empty");
+    my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
+    is(@fields, 6, "6 fields");    # one column has 2 fields
+    (shift @fields)->send_keys('sle');      # distri
+    (shift @fields)->send_keys('13');       # version
+    (shift @fields)->send_keys('DVD');      # flavor
+    (shift @fields)->send_keys('arm19');    # arch
+
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
+    t::ui::PhantomTest::wait_for_ajax;
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 2, "2 edit buttons afterwards");
+
+    # check the distri name will be lowercase after added a new one
+    is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium');
+
+    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
+    is($elem->get_text(), '=', "new row empty");
+    @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
+    is(@fields, 6, "6 fields");             # one column has 2 fields
+    (shift @fields)->send_keys('OpeNSusE'); # distri name has capital letter and many upper/lower case combined
+    (shift @fields)->send_keys('13.2');     # version
+    (shift @fields)->send_keys('DVD');      # flavor
+    (shift @fields)->send_keys('ppc64le');  # arch
+
+    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
+    t::ui::PhantomTest::wait_for_ajax;
+    is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons afterwards");
+};
+
+subtest 'add machine' => sub() {
     # go to machines first
     $driver->find_element('#user-action a', 'css')->click();
     $driver->find_element('Machines',       'link_text')->click();
@@ -123,9 +169,9 @@ sub add_machine() {
     t::ui::PhantomTest::wait_for_ajax;
     #$driver->capture_screenshot('add_machine.png');
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 4, "4 edit buttons afterwards");
-}
+};
 
-sub add_test_suite() {
+subtest 'add test suite' => sub() {
     # go to tests first
     $driver->find_element('#user-action a', 'css')->click();
     $driver->find_element('Test suites',    'link_text')->click();
@@ -195,131 +241,118 @@ sub add_test_suite() {
     t::ui::PhantomTest::wait_for_ajax;
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
-}
-#
+};
 
-sub add_product() {
-    # go to product first
+subtest 'add job group' => sub() {
     $driver->find_element('#user-action a', 'css')->click();
-    $driver->find_element('Medium types',   'link_text')->click();
+    $driver->find_element('Job groups',     'link_text')->click();
 
-    is($driver->get_title(), "openQA: Medium types", "on products");
+    is($driver->get_title(), "openQA: Job groups", "on groups");
     t::ui::PhantomTest::wait_for_ajax;
-    my $elem = $driver->find_element('.admintable thead tr', 'css');
-    my @headers = $driver->find_child_elements($elem, 'th');
-    is(@headers, 6, "6 columns");
+    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'two groups in fixtures');
+    $driver->find_element('#submit', 'css')->click();
+    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'still two groups');
+    is($driver->find_element('#flash-messages .alert-warning span', 'css')->get_text(), 'Group name cannot be empty', 'error shown');
+    $driver->find_element('#name',   'css')->send_keys('Cool Group');
+    $driver->find_element('#submit', 'css')->click();
+    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 3 of 3 entries/, 'group created');
+    is($driver->find_element('#group_1003',                      'css')->get_text(), 'Cool Group 50 100 30 120 365 0', 'group created');
+    is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), 'Group Cool Group created',       'flash shown');
+};
 
-    # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "Distri",   "1st column");
-    is((shift @headers)->get_text(), "Version",  "2nd column");
-    is((shift @headers)->get_text(), "Flavor",   "3rd column");
-    is((shift @headers)->get_text(), "Arch",     "4th column");
-    is((shift @headers)->get_text(), "Settings", "5th column");
-    is((shift @headers)->get_text(), "Actions",  "6th column");
+subtest 'job property editor' => sub() {
+    is($driver->get_title(), 'openQA: Job groups', 'on job groups');
 
-    # now check one row by example
-    $elem = $driver->find_element('.admintable tbody tr:nth-child(1)', 'css');
-    @headers = $driver->find_child_elements($elem, 'td');
+    # navigate to editor first
+    $driver->find_element('Cool Group',               'link')->click();
+    $driver->find_element('#job-group-name + button', 'css')->click();
 
-    # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "opensuse", "distri");
-    is((shift @headers)->get_text(), "13.1",     "version");
-    is((shift @headers)->get_text(), "DVD",      "flavor");
-    is((shift @headers)->get_text(), "i586",     "arch");
+    subtest 'current/default values present' => sub() {
+        is($driver->find_element('#editor-name',                           'css')->get_value(), 'Cool Group', 'name');
+        is($driver->find_element('#editor-size-limit',                     'css')->get_value(), '100',        'size limit');
+        is($driver->find_element('#editor-keep-logs-in-days',              'css')->get_value(), '30',         'keep logs in days');
+        is($driver->find_element('#editor-keep-important-logs-in-days',    'css')->get_value(), '120',        'keep important logs in days');
+        is($driver->find_element('#editor-keep-results-in-days',           'css')->get_value(), '365',        'keep results in days');
+        is($driver->find_element('#editor-keep-important-results-in-days', 'css')->get_value(), '0',          'keep important results in days');
+        is($driver->find_element('#editor-default-priority',               'css')->get_value(), '50',         'default priority');
+        is($driver->find_element('#editor-description',                    'css')->get_value(), '',           'no description yet');
+    };
 
-    is(@{$driver->find_elements('//button[@title="Edit"]')}, 1, "1 edit button before");
+    subtest 'edit some properties' => sub() {
+        # those keys will be appended
+        $driver->find_element('#editor-name',                           'css')->send_keys(' has been edited!');
+        $driver->find_element('#editor-size-limit',                     'css')->send_keys('0');
+        $driver->find_element('#editor-keep-important-results-in-days', 'css')->send_keys('500');
+        $driver->find_element('#editor-description',                    'css')->send_keys('Test group');
+        $driver->find_element('p.buttons button.btn-primary',           'css')->click();
+        # ensure there is no race condition, even though the page is reloaded
+        t::ui::PhantomTest::wait_for_ajax;
 
-    is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium');
+        # now reload the page to see if we succeeded
+        $driver->get($driver->get_current_url());
+        is($driver->get_title(), 'openQA: Jobs for Cool Group has been edited!', 'new name on title');
+        $driver->find_element('#job-group-name + button', 'css')->click();
+        is($driver->find_element('#editor-name',                           'css')->get_value(), 'Cool Group has been edited!', 'name edited');
+        is($driver->find_element('#editor-size-limit',                     'css')->get_value(), '1000',                        'size edited');
+        is($driver->find_element('#editor-keep-important-results-in-days', 'css')->get_value(), '500',                         'keep important results in days edited');
+        is($driver->find_element('#editor-default-priority',               'css')->get_value(), '50',                          'default priority should be the same');
+        is($driver->find_element('#editor-description',                    'css')->get_value(), 'Test group',                  'description added');
+    };
+};
 
-    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
-    is($elem->get_text(), '=', "new row empty");
-    my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 6, "6 fields");    # one column has 2 fields
-    (shift @fields)->send_keys('sle');      # distri
-    (shift @fields)->send_keys('13');       # version
-    (shift @fields)->send_keys('DVD');      # flavor
-    (shift @fields)->send_keys('arm19');    # arch
+subtest 'edit mediums' => sub() {
+    is($driver->get_title(), 'openQA: Jobs for Cool Group has been edited!', 'on jobs for Cool Test has been edited!');
 
-    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     t::ui::PhantomTest::wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]')}, 2, "2 edit buttons afterwards");
+    $driver->find_element('Test new medium as part of this group', 'link')->click();
 
-    # check the distri name will be lowercase after added a new one
-    is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium');
+    my $select = $driver->find_element('#medium', 'css');
+    my $option = $driver->find_child_element($select, './option[contains(text(), "sle-13-DVD-arm19")]');
+    $option->click();
+    $select = $driver->find_element('#machine', 'css');
+    $option = $driver->find_child_element($select, './option[contains(text(), "HURRA")]');
+    $option->click();
+    $select = $driver->find_element('#test', 'css');
+    $option = $driver->find_child_element($select, './option[contains(text(), "xfce")]');
+    $option->click();
 
-    $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
-    is($elem->get_text(), '=', "new row empty");
-    @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 6, "6 fields");             # one column has 2 fields
-    (shift @fields)->send_keys('OpeNSusE'); # distri name has capital letter and many upper/lower case combined
-    (shift @fields)->send_keys('13.2');     # version
-    (shift @fields)->send_keys('DVD');      # flavor
-    (shift @fields)->send_keys('ppc64le');  # arch
+    $driver->find_element('//input[@type="submit"]')->submit();
 
-    is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
+    is($driver->get_title(), 'openQA: Jobs for Cool Group has been edited!', 'on job groups');
     t::ui::PhantomTest::wait_for_ajax;
-    is(@{$driver->find_elements('//button[@title="Edit"]')}, 3, "3 edit buttons afterwards");
 
-}
+    my $td = $driver->find_element('#sle_13_DVD_arm19_xfce_chosen .search-field', 'css');
+    is('', $td->get_text(), 'field is empty for product 2');
+    $driver->mouse_move_to_location(element => $td);
+    $driver->button_down();
+    t::ui::PhantomTest::wait_for_ajax;
 
-add_product();
-add_machine();
-add_test_suite();
+    $driver->send_keys_to_active_element('64bit');
+    # as we load this at runtime rather than `use`ing it, we have to
+    # access it explicitly like this
+    $driver->send_keys_to_active_element(Selenium::Remote::WDKeys->KEYS->{'enter'});
 
-add_job_group();
+    # now reload the page to see if we succeeded
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Job groups',     'link_text')->click();
 
-is($driver->get_title(), "openQA: Job groups", "on job groups");
+    is($driver->get_title(), 'openQA: Job groups', 'on groups');
+    $driver->find_element('Cool Group has been edited!', 'link')->click();
 
-$driver->find_element('Cool Group', 'link')->click();
-t::ui::PhantomTest::wait_for_ajax;
-$driver->find_element('Test new medium as part of this group', 'link')->click();
+    my @picks = $driver->find_elements('.search-choice', 'css');
+    is((shift @picks)->get_text(), '64bit', 'found one');
+    is((shift @picks)->get_text(), 'HURRA', 'found two');
+    is_deeply(\@picks, [], 'found no three');
 
-my $select = $driver->find_element('#medium', 'css');
-my $option = $driver->find_child_element($select, './option[contains(text(), "sle-13-DVD-arm19")]');
-$option->click();
-$select = $driver->find_element('#machine', 'css');
-$option = $driver->find_child_element($select, './option[contains(text(), "HURRA")]');
-$option->click();
-$select = $driver->find_element('#test', 'css');
-$option = $driver->find_child_element($select, './option[contains(text(), "xfce")]');
-$option->click();
+    # briefly check the asset list
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Assets',         'link_text')->click();
+    is($driver->get_title(), "openQA: Assets", "on asset");
+    t::ui::PhantomTest::wait_for_ajax;
 
-$driver->find_element('//input[@type="submit"]')->submit();
-
-is($driver->get_title(), "openQA: Jobs for Cool Group", "on job groups");
-t::ui::PhantomTest::wait_for_ajax;
-
-my $td = $driver->find_element('#sle_13_DVD_arm19_xfce_chosen .search-field', 'css');
-is('', $td->get_text(), 'field is empty for product 2');
-$driver->mouse_move_to_location(element => $td);
-$driver->button_down();
-sleep 1;
-
-$driver->send_keys_to_active_element('64bit');
-# as we load this at runtime rather than `use`ing it, we have to
-# access it explicitly like this
-$driver->send_keys_to_active_element(Selenium::Remote::WDKeys->KEYS->{'enter'});
-
-# now reload the page to see if we succeeded
-$driver->find_element('#user-action a', 'css')->click();
-$driver->find_element('Job groups',     'link_text')->click();
-
-is($driver->get_title(), "openQA: Job groups", "on groups");
-$driver->find_element('Cool Group', 'link')->click();
-
-my @picks = $driver->find_elements('.search-choice', 'css');
-is((shift @picks)->get_text(), '64bit', 'found one');
-is((shift @picks)->get_text(), 'HURRA', 'found two');
-is_deeply(\@picks, [], 'found no three');
-
-# briefly check the asset list
-$driver->find_element('#user-action a', 'css')->click();
-$driver->find_element('Assets',         'link_text')->click();
-is($driver->get_title(), "openQA: Assets", "on asset");
-t::ui::PhantomTest::wait_for_ajax;
-
-$td = $driver->find_element('tr#asset_1 td.t_created', 'css');
-is('about 2 hours ago', $td->get_text(), 'timeago 2h');
+    $td = $driver->find_element('tr#asset_1 td.t_created', 'css');
+    is('about 2 hours ago', $td->get_text(), 'timeago 2h');
+};
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();
