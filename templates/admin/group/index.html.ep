@@ -18,9 +18,9 @@
                 <th>Default priority</th>
                 <th>Size limit (GiB)</th>
                 <th>Log storage<br>duration (days)</th>
-                <th>Imporant log storage<br>duration (days)</th>
+                <th>Important log storage<br>duration (days)</th>
                 <th>Result storage<br>duration (days)</th>
-                <th>Imporant result storage<br>duration (days)</th>
+                <th>Important result storage<br>duration (days)</th>
             </tr>
         </thead>
         <tbody>

@@ -257,10 +257,10 @@ function submitProperties(form) {
         method: 'PUT',
         data: editorForm.serialize(),
            success: function() {
-               var newTilte = $('#editor-name').val();
+               var newJobName = $('#editor-name').val();
                showSubmitResults(editorForm, '<span class="glyphicon glyphicon-floppy-saved" aria-hidden="true"></span> Changes applied');
-               $('#job-group-name').text(newTilte);
-               document.title = 'openQA: Jobs for ' + newTilte;
+               $('#job-group-name').text(newJobName);
+               document.title = document.title.substr(0, 17) + newJobName;
            },
            error: function(xhr, ajaxOptions, thrownError) {
                showSubmitResults(editorForm, '<span class="glyphicon glyphicon-floppy-remove" aria-hidden="true"></span> Unable to apply changes');
