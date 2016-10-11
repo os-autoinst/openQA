@@ -44,6 +44,8 @@ my $test_order;
 my $stop_job_running;
 my $update_status_running;
 
+my $boundary = '--a_sTrinG-thAt_wIll_n0t_apPEar_iN_openQA_uPloads-61020111';
+
 my $tosend_images = {};
 my $tosend_files  = [];
 
@@ -157,10 +159,8 @@ sub upload {
     my $tx = $OpenQA::Worker::Common::ua->build_tx(POST => $ua_url => form => $form);
     # override the default boundary calculation - it reads whole file
     # and it can cause various timeouts
-    my $ct = $tx->req->headers->content_type;
-    my $boundary = encode_base64 join('', map chr(rand 256), 1 .. 32);
-    $boundary =~ s/\W/X/g;
-    $tx->req->headers->content_type("$ct; boundary=$boundary");
+    my $headers = $tx->req->headers;
+    $headers->content_type($headers->content_type . "; boundary=$boundary");
 
     my $res = $OpenQA::Worker::Common::ua->start($tx);
 
