@@ -30,6 +30,7 @@ use Net::DBus::Test::MockObject;
 
 use Test::More;
 use Test::Warnings;
+use Test::Output qw/stderr_like/;
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -267,41 +268,41 @@ is_deeply($current_jobs, [$jobs->[0]], "jobs with specified IDs (comma list)");
 # Testing job_grab
 %args = (workerid => $worker->{id},);
 my $rjobs_before = list_jobs(state => 'running');
-my $grabed       = OpenQA::Scheduler::Scheduler::job_grab(%args);
+my $grabbed      = OpenQA::Scheduler::Scheduler::job_grab(%args);
 my $rjobs_after  = list_jobs(state => 'running');
 
 ## test and add JOBTOKEN to job_ref after job_grab
-ok($grabed->{settings}->{JOBTOKEN}, "job token present");
-$job_ref->{settings}->{JOBTOKEN} = $grabed->{settings}->{JOBTOKEN};
-is_deeply($grabed->{settings}, $job_ref->{settings}, "settings correct");
-ok($grabed->{t_started} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job start timestamp updated");
+ok($grabbed->{settings}->{JOBTOKEN}, "job token present");
+$job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
+is_deeply($grabbed->{settings}, $job_ref->{settings}, "settings correct");
+ok($grabbed->{t_started} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job start timestamp updated");
 is(scalar(@{$rjobs_before}) + 1, scalar(@{$rjobs_after}), "number of running jobs");
 
-$grabed = job_get($job->id);
-is($grabed->worker->id, $worker->{id}, "correct worker assigned");
-ok($grabed->state eq "running", "Job is in running state");    # After job_grab the job is in running state.
+$grabbed = job_get($job->id);
+is($grabbed->worker->id, $worker->{id}, "correct worker assigned");
+ok($grabbed->state eq "running", "Job is in running state");    # After job_grab the job is in running state.
 
 # register worker again while it has a running job
 $id2 = $c->_register($schema, "host", "1", $workercaps);
 ok($id == $id2, "re-register worker got same id");
 
 # Now it's previous job must be set to done
-$grabed = job_get($job->id);
-is($grabed->state,  "done",       "Previous job is in done state");
-is($grabed->result, "incomplete", "result is incomplete");
-ok(!$grabed->settings_hash->{JOBTOKEN}, "job token no longer present");
+$grabbed = job_get($job->id);
+is($grabbed->state,  "done",       "Previous job is in done state");
+is($grabbed->result, "incomplete", "result is incomplete");
+ok(!$grabbed->settings_hash->{JOBTOKEN}, "job token no longer present");
 
-$grabed = OpenQA::Scheduler::Scheduler::job_grab(%args);
-isnt($job->id, $grabed->{id}, "new job grabbed");
-isnt($grabed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs");
+$grabbed = OpenQA::Scheduler::Scheduler::job_grab(%args);
+isnt($job->id, $grabbed->{id}, "new job grabbed");
+isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs");
 $job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC';
 
 ## update JOBTOKEN for isdeeply compare
-$job_ref->{settings}->{JOBTOKEN} = $grabed->{settings}->{JOBTOKEN};
+$job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
 
-is_deeply($grabed->{settings}, $job_ref->{settings}, "settings correct");
+is_deeply($grabbed->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job->id;
-my $job_id  = $grabed->{id};
+my $job_id  = $grabbed->{id};
 
 # Testing job_set_waiting
 $result = OpenQA::Scheduler::Scheduler::job_set_waiting($job_id);
@@ -366,12 +367,16 @@ ok($result && !defined $no_job_id, "job_delete");
 $job    = OpenQA::Scheduler::Scheduler::job_grab(%args);
 $job_id = $job->{id};
 $job    = job_get($job_id);
-is($job->state, 'running', 'grabed job runs');
+is($job->state, 'running', 'grabbed job runs');
 
-my $job4 = OpenQA::Scheduler::Scheduler::job_grab(%args);
-isnt($job4->{id}, $job_id, "Grabed another job");
+my $job4;
+stderr_like {
+    $job4 = OpenQA::Scheduler::Scheduler::job_grab(%args);
+}
+qr/[WARN].*host.*wants to grab a new job - killing the old one: 2/;
+isnt($job4->{id}, $job_id, "grabbed another job");
 $job->discard_changes;
-is($job4->{state}, 'running',    'grabed job 4 runs');
+is($job4->{state}, 'running',    'grabbed job 4 runs');
 is($job->state,    'done',       'job 2 no longer runs');
 is($job->result,   'incomplete', 'first job set to incomplete');
 

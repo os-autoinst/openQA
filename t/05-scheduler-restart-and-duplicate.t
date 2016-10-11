@@ -29,6 +29,7 @@ use OpenQA::Test::Database;
 
 use Test::More;
 use Test::Warnings;
+use Test::Output qw/stderr_like/;
 
 # create Test DBus bus and service for fake WebSockets call
 my $ipc = OpenQA::IPC->ipc('', 1);
@@ -159,7 +160,11 @@ $job3 = job_get($round3->id);
 is($job3->{retry_avbl}, 0, "the retry counter decreased");
 # need to change state from scheduled
 job_get_rs($job3->{id})->done(result => OpenQA::Schema::Result::Jobs::INCOMPLETE);
-my $round4_id = job_get_rs($round3->id)->auto_duplicate({dup_type_auto => 1});
+my $round4_id;
+stderr_like {
+    $round4_id = job_get_rs($round3->id)->auto_duplicate({dup_type_auto => 1});
+}
+qr/Could not auto-duplicated! The job are auto-duplicated too many times/;
 ok(!defined $round4_id, "no longer auto-duplicating");
 # need to change state from scheduled
 $job3 = job_get($round3->id);
