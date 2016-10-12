@@ -154,6 +154,7 @@ function checkResultHash() {
 }
 
 function setupResult(state, jobid) {
+  setupAsyncFailedResult();
   $(".current_preview").removeClass("current_preview");
 
   $(window).keydown(function(e) {

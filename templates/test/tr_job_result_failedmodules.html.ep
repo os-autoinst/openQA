@@ -1,27 +1,18 @@
 % my $count = 0;
 % my $limit = 25;
 
-% for my $failedmodule (sort keys %$failedmodules) {
+% for my $failedmodule (sort @$failedmodules) {
     % if ($count++) {
-      % my $more = (scalar(keys %$failedmodules)) - $count + 1;
+      % my $more = (scalar(@$failedmodules)) - $count + 1;
       % if ($more > 0 && $limit < 12) {
          +<%= $more %>
          % last;
       % }
     % }
-    % my $failedneedles = $failedmodules->{$failedmodule};
-    % my $step = 1;
-    % my $tooltip = '';
-    % if (@$failedneedles) {
-        % $step = $failedneedles->[0]->[1];
-        % if ($failedneedles->[0]->[0]) {
-            % $tooltip = "title='<p>Failed needles:</p><ul><li>" . join('</li><li>',
-            % sort map { $_->[0] } @$failedneedles) . "</li></ul>' data-toggle='tooltip'";
-        % }
-    % }
+    % my $async_url = url_for('test_module_fails', 'testid' => $jobid, 'moduleid' => $failedmodule);
 
-    <span <%= Mojo::ByteStream->new($tooltip) %> class="failedmodule" >
-        %= link_to trim_text($failedmodule, $limit) => url_for('test', 'testid' => $jobid) . "#step/$failedmodule/$step"
+    <span title="<i class='fa fa-refresh fa-spin fa-2x fa-fw'></i><span class='sr-only'>Loading...</span>" data-toggle="tooltip" class="failedmodule" data-async="<%= $async_url %>">
+        %= link_to trim_text($failedmodule, $limit) => url_for('test', 'testid' => $jobid) . "#step/$failedmodule/1"
 	% $limit -= length($failedmodule) > $limit ? $limit : length($failedmodule) + 2;
     </span>
 % }

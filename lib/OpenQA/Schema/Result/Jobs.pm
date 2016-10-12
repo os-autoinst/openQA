@@ -1016,29 +1016,14 @@ sub create_asset {
     return $abs;
 }
 
-sub failed_modules_with_needles {
-
+sub failed_modules {
     my ($self) = @_;
 
     my $fails = $self->modules->search({result => 'failed'});
-    my $failedmodules = {};
+    my $failedmodules = [];
 
     while (my $module = $fails->next) {
-
-        my @needles;
-
-        my $counter = 0;
-        for my $detail (@{$module->details}) {
-            $counter++;
-            next unless $detail->{result} eq 'fail';
-            for my $needle (@{$detail->{needles}}) {
-                push @needles, [$needle->{name}, $counter];
-            }
-        }
-        if (!@needles) {
-            push @needles, [undef, $counter];
-        }
-        $failedmodules->{$module->name} = \@needles;
+        push @$failedmodules, $module->name;
     }
     return $failedmodules;
 }
