@@ -245,7 +245,7 @@ sub limit_assets {
                 job_id => {-in => $g->jobs->get_column('id')->as_query},
             },
             {
-                select   => ['asset_id', 'created_by', {max => 't_created', -as => 'latest'},],
+                select   => ['asset_id', 'created_by', {max => 'job_id', -as => 'latest'},],
                 group_by => 'asset_id,created_by',
                 order_by => {-desc => 'latest'}})->all;
         my %assets;
