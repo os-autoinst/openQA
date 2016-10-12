@@ -248,36 +248,7 @@ sub run_cmd_with_log_return_error($) {
 
 sub commit_git {
     my ($args) = @_;
-
-    my $dir = $args->{dir};
-    if ($dir !~ /^\//) {
-        use Cwd qw/abs_path/;
-        $dir = abs_path($dir);
-    }
-    my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);
-    my @files;
-
-    for my $cmd (qw(add rm)) {
-        next unless $args->{$cmd};
-        push(@files, @{$args->{$cmd}});
-        unless (run_cmd_with_log([@git, $cmd, @{$args->{$cmd}}])) {
-            return;
-        }
-    }
-
-    my $message = $args->{message};
-    my $user    = $args->{user};
-    my $author  = sprintf('--author=%s <%s>', $user->fullname, $user->email);
-    unless (run_cmd_with_log([@git, 'commit', '-q', '-m', $message, $author, @files])) {
-        return;
-    }
-
-    if (($app->config->{'scm git'}->{do_push} || '') eq 'yes') {
-        unless (run_cmd_with_log([@git, 'push'])) {
-            return;
-        }
-    }
-    return 1;
+    return commit_git_return_error($args) ? undef : 1;
 }
 
 sub commit_git_return_error {
@@ -294,8 +265,10 @@ sub commit_git_return_error {
     for my $cmd (qw(add rm)) {
         next unless $args->{$cmd};
         push(@files, @{$args->{$cmd}});
-        my $error = run_cmd_with_log_return_error([@git, $cmd, @{$args->{$cmd}}]);
-        if ($error) {
+        my $res = run_cmd_with_log_return_error([@git, $cmd, @{$args->{$cmd}}]);
+        if (!$res->{status}) {
+            my $error = 'Unable to add/rm via Git';
+            $error .= ': ' . $res->{stderr} if $res->{stderr};
             return $error;
         }
     }
@@ -304,14 +277,18 @@ sub commit_git_return_error {
     my $user    = $args->{user};
     my $author  = sprintf('--author=%s <%s>', $user->fullname, $user->email);
     my $res     = run_cmd_with_log_return_error([@git, 'commit', '-q', '-m', $message, $author, @files]);
-    if ($res->{status} != 0) {
-        return 'Unable to commit: ' . ($res->{stderr} ? $res->{stderr} : 'Git returned ' . $res->{status});
+    if (!$res->{status}) {
+        my $error = 'Unable to commit via Git';
+        $error .= ': ' . $res->{stderr} if $res->{stderr};
+        return $error;
     }
 
     if (($app->config->{'scm git'}->{do_push} || '') eq 'yes') {
         $res = run_cmd_with_log_return_error([@git, 'push']);
-        if ($res->{status} != 0) {
-            return 'Unable to push commit: ' . ($res->{stderr} ? $res->{stderr} : 'Git returned ' . $res->{status});
+        if (!$res->{status}) {
+            my $error = 'Unable to push Git commit';
+            $error .= ': ' . $res->{stderr} if $res->{stderr};
+            return $error;
         }
     }
     return 0;

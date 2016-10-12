@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -22,14 +22,34 @@ BEGIN {
 
 use strict;
 use OpenQA::Utils;
+use OpenQA::Test::Case;
 use Test::More;
+use Test::Mojo;
 use Test::Warnings;
 use Test::Output qw/stderr_like/;
 
-ok(run_cmd_with_log(['echo', 'Hallo', 'Welt']));
+my $schema = OpenQA::Test::Case->new->init_data;
+
+ok(run_cmd_with_log([qw/echo Hallo Welt/]), 'run simple command');
+
 stderr_like {
-    is(run_cmd_with_log(['false']), "");
+    is(run_cmd_with_log([qw/false/]), '');
 }
-qr/[WARN].*[ERROR]/;
+qr/[WARN].*[ERROR]/i;    # error printed on stderr
+
+my $res = run_cmd_with_log_return_error([qw/echo Hallo Welt/]);
+ok($res->{status}, 'status ok');
+is($res->{stderr}, 'Hallo Welt', 'cmd output returned');
+
+$res = run_cmd_with_log_return_error([qw/false/]);
+ok(!$res->{status}, 'status not ok (non-zero status returned)');
+
+$res = commit_git_return_error {
+    dir     => '/some/dir',
+    cmd     => 'status',
+    message => 'test',
+    user    => $schema->resultset('Users')->first
+};
+is($res, 'Unable to commit via Git: fatal: Not a git repository: \'/some/dir/.git\'', 'Git error message returned');
 
 done_testing();

@@ -6,31 +6,40 @@
 % end
 
 <div class="modal fade" id="confirm_delete" tabindex="-1"
-        role="dialog" data-delete-url="<%= url_for('admin_needle_delete') %>">
-  <div class="modal-dialog">
+        role="dialog" data-delete-url="<%= url_for('admin_needle_delete') %>"
+        data-backdrop="static" data-keyboard="false">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Really delete following needles?</h4>
+        <button type="button" class="close" id="x_delete" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Needle deletion</h4>
       </div>
-      <div class="modal-body"></div>
+      <div class="modal-body">
+        <p id="deletion-question">Really delete following needles?</p>
+        <p id="deletion-ongoing">
+          <button type="button" class="btn btn-danger" id="abort_delete" style="float: right;">Abort</button>
+          <i class="fa fa-cog fa-spin fa-3x fa-fw"></i> Deletion ongoing, <span id="deletion-progress">some</span> needles remaining ...
+        </p>
+        <p id="deletion-finished"><i class="glyphicon glyphicon-ok"></i> All outstanding needles processed</p>
+        <table style="width: 100%">
+          <colgroup>
+            <col style="width: 50%" id="outstanding-col">
+            <col style="width: 50%" id="failed-col">
+          </colgroup>
+          <thead>
+            <tr><th>Outstanding needles</th><th>Failed needles</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><ul id="outstanding-needles"></ul></td>
+              <td><ul id="failed-needles"></ul></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-default" id="close_delete" data-dismiss="modal">Close</button>
         <button type="button" class="btn btn-primary" id="really_delete">Delete them</button>
-      </div>
-    </div><!-- /.modal-content -->
-  </div><!-- /.modal-dialog -->
-</div>
-<div class="modal fade" id="show_errors" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Errors occured when trying to delete the selected needles!</h4>
-      </div>
-      <div class="modal-body"></div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-primary" data-dismiss="modal">Ok</button>
       </div>
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->

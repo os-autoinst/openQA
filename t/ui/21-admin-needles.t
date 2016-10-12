@@ -28,9 +28,20 @@ use Time::HiRes qw(sleep);
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $fname = "t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.json";
-open(FNAME, '>', $fname);
-print FNAME "go away later";
+# locations for dummy needle files
+my $needle_dir       = 't/data/openqa/share/tests/opensuse/needles/';
+my $needle_json_file = $needle_dir . 'inst-timezone-text.json';
+my $needle_png_file  = $needle_dir . 'inst-timezone-text.png';
+
+# ensure needle dir can be listed (might not be the case because previous test run failed)
+chmod(0755, $needle_dir);
+
+# create dummy files for needle
+open(FNAME, '>', $needle_json_file);
+print FNAME 'go away later';
+close(FNAME);
+open(FNAME, '>', $needle_png_file);
+print FNAME 'go away later';
 close(FNAME);
 
 use t::ui::PhantomTest;
@@ -41,7 +52,7 @@ unless ($driver) {
     exit(0);
 }
 
-is(-f $fname, 1, "file is created");
+is(-f $needle_json_file, 1, "file is created");
 
 is($driver->get_title(), "openQA", "on main page");
 my $baseurl = $driver->get_current_url();
@@ -56,7 +67,7 @@ $driver->find_element('#user-action a', 'css')->click();
 $driver->find_element('Needles',        'link_text')->click();
 t::ui::PhantomTest::wait_for_ajax;
 
-my @trs = $driver->find_elements('tr', 'css');
+my @trs = $driver->find_elements('#needles tr', 'css');
 # skip header
 my @tds = $driver->find_child_elements($trs[1], 'td', 'css');
 is((shift @tds)->get_text(), 'fixtures', "Path is fixtures");
@@ -81,21 +92,50 @@ $driver->find_element('#user-action a', 'css')->click();
 $driver->find_element('Needles',        'link_text')->click();
 t::ui::PhantomTest::wait_for_ajax;
 
-$driver->find_element('td input', 'css')->click();
-t::ui::PhantomTest::wait_for_ajax;
-$driver->find_element('#delete_all', 'css')->click();
-# wait for the javascript to be done
-while (!$driver->find_element('#confirm_delete', 'css')->is_displayed()) {
-    sleep .1;
-}
-is($driver->find_element('#confirm_delete',              'css')->is_displayed(), 1,                                  'modal dialog');
-is($driver->find_element('#confirm_delete .modal-title', 'css')->get_text(),     'Really delete following needles?', 'title matches');
-is($driver->find_element('#confirm_delete .modal-body',  'css')->get_text(),     'inst-timezone-text.json',          'Right needle name displayed');
+subtest 'delete needle' => sub {
+    # disable animations to speed up test
+    $driver->execute_script('$(\'#confirm_delete\').removeClass(\'fade\');');
 
-$driver->find_element('#really_delete', 'css')->click();
-t::ui::PhantomTest::wait_for_ajax;
+    # select all needles and open modal dialog for deletion
+    $driver->find_element('td input', 'css')->click();
+    t::ui::PhantomTest::wait_for_ajax;
+    $driver->find_element('#delete_all', 'css')->click();
 
-is(-f $fname, undef, "file is gone");
+    is($driver->find_element('#confirm_delete', 'css')->is_displayed(), 1, 'modal dialog');
+    is($driver->find_element('#confirm_delete .modal-title', 'css')->get_text(), 'Needle deletion', 'title matches');
+    is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 1, 'one needle outstanding for deletion');
+    is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'no failed needles so far');
+    is($driver->find_element('#outstanding-needles li', 'css')->get_text(), 'inst-timezone-text.json', 'right needle name displayed');
+
+    subtest 'error case' => sub {
+        chmod(0444, $needle_dir);
+        $driver->find_element('#really_delete', 'css')->click();
+        is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
+        is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 1, 'but failed needle');
+        is($driver->find_element('#failed-needles li', 'css')->get_text(), "inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.json and t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.png", 'right needle name and error message displayed');
+        $driver->find_element('#close_delete', 'css')->click();
+    };
+
+    # select all needles again and re-open modal dialog for deletion
+    t::ui::PhantomTest::wait_for_ajax;    # required due to server-side datatable
+    $driver->find_element('td input',    'css')->click();
+    $driver->find_element('#delete_all', 'css')->click();
+    is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 1, 'still one needle outstanding for deletion');
+    is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'failed needles from last time shouldn\'t appear again when reopening deletion dialog');
+    is($driver->find_element('#outstanding-needles li', 'css')->get_text(), 'inst-timezone-text.json', 'still right needle name displayed');
+
+    subtest 'successful deletion' => sub {
+        chmod(0755, $needle_dir);
+        $driver->find_element('#really_delete', 'css')->click();
+        is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
+        is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'no failed needles');
+        $driver->find_element('#close_delete', 'css')->click();
+        t::ui::PhantomTest::wait_for_ajax;    # required due to server-side datatable
+        is(-f $needle_json_file, undef, 'JSON file is gone');
+        is(-f $needle_png_file,  undef, 'png file is gone');
+        is($driver->find_element('#needles tbody tr', 'css')->get_text(), 'No data available in table', 'no needles left');
+    };
+};
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();

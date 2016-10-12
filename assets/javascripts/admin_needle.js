@@ -50,65 +50,117 @@ function setupAdminNeedles() {
         $('input').prop('checked', false);
     });
     $('#delete_all').click(function() {
-        var todelete = 0;
-        var ul = $('<ul/>');
+        $('#deletion-question').show();
+        $('#deletion-ongoing').hide();
+        $('#deletion-finished').hide();
+        $('#failed-needles').empty();
+        $('#outstanding-needles').empty();
+        $('#really_delete').show();
+        $('#close_delete').show();
+        $('#x_delete').show();
+        $('#abort_delete').hide();
+
+        var ids = [];
         $('input:checked').each(function(index) {
             var li = $('<li/>');
             var label = $(this).parent('td').find('label');
             li.html(label.html());
-            li.data('id', label.data('id'));
-            todelete += 1;
-            ul.append(li);
+            li.attr('id', 'deletion-item-' + label.data('id'));
+            ids.push(label.data('id'));
+            $('#outstanding-needles').append(li);
         });
-        if (todelete > 0) {
-            $('#confirm_delete .modal-body').html(ul);
+        if (ids.length > 0) {
+            $('#really_delete').data('ids', ids);
             $('#confirm_delete').modal();
         }
     });
+
     $('#really_delete').click(function() {
-        var ids = [];
-        $('#confirm_delete .modal-body ul li').each(function(index) {
-            ids.push(parseInt($(this).data('id')));
-        });
-        // delete requests don't support data in the body
-        var url = $('#confirm_delete').data('delete-url');
-        if (ids.length) {
-            url += "?";
-            $.each(ids, function(index) { url += 'id=' + ids[index] + '&'; });
-        }
-        $('#confirm_delete .modal-body').html('<i class="fa fa-cog fa-spin fa-3x fa-fw"></i> Deleting ...');
-        $.ajax({ url: url,
-            type: 'DELETE',
-            success: reloadNeedlesTable,
-            error: function(xhr, ajaxOptions, thrownError) {
-                $('#show_errors .modal-body').text('Error: ' + thrownError);
-                $('#show_errors').modal();
-            }
-        });
-        return true;
+        return startDeletion($(this).data('ids'));
     });
+
+    $('#abort_delete').click(function() {
+        $('#outstanding-needles').data('aborted', true);
+    });
+
+    function startDeletion(ids) {
+        var outstandingList = $('#outstanding-needles');
+        var failedList = $('#failed-needles');
+        var deletionProgressElement = $('#deletion-progress');
+        var url = $('#confirm_delete').data('delete-url') + '?id=';
+
+        // hide/show elements
+        $('#deletion-question').hide();
+        $('#deletion-ongoing').show();
+        $('#really_delete').hide();
+        $('#close_delete').hide();
+        $('#x_delete').hide();
+        $('#abort_delete').show();
+
+        // ensure previous 'aborted'-flag is cleared
+        $('#outstanding-needles').data('aborted', false);
+
+        // failed needles will be displayed at the top first, so it makes sense
+        // to scroll there
+        $('#confirm_delete').animate({scrollTop: 0}, 'fast');
+
+        // delete needle by needle
+        var deleteNext = function() {
+            if(!outstandingList.data('aborted') && ids.length > 0) {
+                // update progress
+                deletionProgressElement.text(ids.length);
+
+                // delete next ID
+                var id = ids.shift();
+                $.ajax({
+                    url: url + id,
+                    type: 'DELETE',
+                    success: function(response) {
+                        $.each(response.errors, function(index, error) {
+                            var errorElement = $('<li></li>');
+                            errorElement.append(error.display_name);
+                            errorElement.append($('<br>'));
+                            errorElement.append(error.message);
+                            failedList.append(errorElement);
+                        });
+                        $('#deletion-item-' + id).remove();
+                        deleteNext();
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        var errorElement = $('<li></li>');
+                        errorElement.append($('#deletion-item-' + id).text());
+                        errorElement.append($('<br>'));
+                        errorElement.append(thrownError);
+                        failedList.append(errorElement);
+                        $('#deletion-item-' + id).remove();
+                        deleteNext();
+                    }
+                });
+            } else {
+                // all needles deleted (at least tried to)
+                reloadNeedlesTable();
+                $('#deletion-ongoing').hide();
+                $('#abort_delete').hide();
+                $('#deletion-finished').show();
+                $('#close_delete').show();
+                $('#x_delete').show();
+                if(ids.length) {
+                    // allow to continue deleting outstanding needles after abort
+                    $('#really_delete').show();
+                }
+            }
+            return true;
+        };
+
+        deleteNext();
+        return true;
+    }
 
     function reloadNeedlesTable(response) {
         table.ajax.url(ajaxUrl());
-        table.ajax.reload(function() {
-            $('#confirm_delete').modal('hide');
-        });
-        if(response.removed_ids) {
-            var errorListElement = $('<ul></ul>');
-            $.each(response.errors, function(index, error) {
-                var errorElement = $('<li></li>');
-                errorElement.append(error.display_name);
-                errorElement.append($('<br>'));
-                errorElement.append(error.message);
-                errorListElement.append(errorElement);
-            });
-            var bodyElement = $('#show_errors .modal-body');
-            bodyElement.empty();
-            bodyElement.append($('<p>The following needles couldn\'t be deleted:</p>'));
-            bodyElement.append(errorListElement);
-            $('#show_errors').modal();
-        }
+        table.ajax.reload();
     }
+
     $('#last_seen_filter').change(reloadNeedlesTable);
     $('#last_match_filter').change(reloadNeedlesTable);
 }
