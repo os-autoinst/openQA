@@ -81,12 +81,7 @@ sub list {
 }
 
 sub list_ajax {
-    my ($self) = @_;
-    my $match;
-    if (defined($self->param('match'))) {
-        $match = $self->param('match');
-        $match =~ s/[^\w\[\]\{\}\(\),:.+*?\\\$^|-]//g;    # sanitize
-    }
+    my ($self)  = @_;
     my $assetid = $self->param('assetid');
     my $groupid = $self->param('groupid');
 
@@ -100,7 +95,6 @@ sub list_ajax {
         $scope = 'relevant' if $self->param('relevant') ne 'false';
         my $jobs = $self->db->resultset("Jobs")->complex_query(
             state   => 'done,cancelled',
-            match   => $match,
             scope   => $scope,
             assetid => $assetid,
             groupid => $groupid,

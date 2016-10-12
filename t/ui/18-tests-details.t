@@ -105,5 +105,10 @@ subtest 'route to latest' => sub {
 #print $driver->get_page_source();
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
+# test /details route
+$driver->get($baseurl . "tests/99946/details");
+$driver->find_element('installer_timezone', 'link_text')->click();
+is($driver->get_current_url(), $baseurl . "tests/99946/modules/installer_timezone/steps/1/src", "on src page from details route");
+
 t::ui::PhantomTest::kill_phantom();
 done_testing();
