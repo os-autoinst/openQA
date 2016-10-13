@@ -250,14 +250,19 @@ subtest 'add job group' => sub() {
     is($driver->get_title(), "openQA: Job groups", "on groups");
     t::ui::PhantomTest::wait_for_ajax;
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'two groups in fixtures');
-    $driver->find_element('#submit', 'css')->click();
-    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'still two groups');
-    is($driver->find_element('#flash-messages .alert-warning span', 'css')->get_text(), 'Group name cannot be empty', 'error shown');
-    $driver->find_element('#name',   'css')->send_keys('Cool Group');
-    $driver->find_element('#submit', 'css')->click();
+    $driver->find_element('#new_group_submit', 'css')->click();
+    like($driver->find_element('#groups_wrapper',        'css')->get_text(), qr/Showing 1 to 2 of 2 entries/,     'still two groups');
+    like($driver->find_element('#new_group_name_group ', 'css')->get_text(), qr/The group name mustn't be empty/, 'refuse creating group with empty name');
+    $driver->find_element('#new_group_name', 'css')->send_keys('Cool Group');
+    my $current_url = $driver->get_current_url();
+    $driver->find_element('#new_group_submit', 'css')->click();
+    t::ui::PhantomTest::wait_for_ajax;
+    # FIXME: testing redirection doesn't work without sleep - how to wait for page reload triggerd via JavaScript?
+    #sleep 1;
+    #like($driver->get_current_url(), qr/admin\/job_templates\/[\d]*$/, 'redirection successful');
+    $driver->get($current_url);
     like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 3 of 3 entries/, 'group created');
-    is($driver->find_element('#group_1003',                      'css')->get_text(), 'Cool Group 50 100 30 120 365 0', 'group created');
-    is($driver->find_element('#flash-messages .alert-info span', 'css')->get_text(), 'Group Cool Group created',       'flash shown');
+    is($driver->find_element('#group_1003', 'css')->get_text(), 'Cool Group 50 100 30 120 365 0', 'group created');
 };
 
 subtest 'job property editor' => sub() {

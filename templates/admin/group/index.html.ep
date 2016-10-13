@@ -53,13 +53,36 @@
     </table>
 
     % if (is_admin) {
-    <p>
-    %= form_for admin_new_group => (id => 'new_group_form') => (method => 'POST') => begin
-      <label for="name">New group:</label>
-      <input type="text" name="name" id="name" value="">
-      <input type="submit" name="submit" value="Create" id="submit" class="btn btn-default">
-    % end
-    </p>
+        <div class="panel panel-default">
+            <div class="panel-heading">New group</div>
+            <div class="panel-body">
+                <form action="#" id="new_group_form" onsubmit="return createGroup(this);"
+                  data-post-url="<%= url_for('apiv1_post_job_group') %>"
+                  data-redir-url="<%= url_for('admin_job_templates') %>"
+                  class="form-horizontal">
+                    <div class="form-group" id="new_group_name_group">
+                        <label for="new_group_name" class="col-sm-2 control-label">Name</label>
+                        <div class="col-sm-10">
+                            <input type="text" name="name" id="new_group_name" value="" class="form-control">
+                            <span class="help-block hidden">
+                                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                                The group name mustn't be empty.
+                            </span>
+                        <div>
+                    </div>
+                    <div class="form-group">
+                        <div class="col-sm-10">
+                            <button type="submit" id="new_group_submit" class="btn btn-primary">Create</button>
+                        </div>
+                    </div>
+                </form>
+                <p id="new_group_creating" class="hidden">Creating group ...</p>
+                <p id="new_group_error" class="hidden">
+                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                    Unable to create group: <span id="new_group_error_message"></span>
+                </p>
+            </div>
+        </div>
     % }
 </div>
 

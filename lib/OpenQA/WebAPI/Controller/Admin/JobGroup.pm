@@ -26,26 +26,6 @@ sub index {
     $self->render('admin/group/index');
 }
 
-sub create {
-    my ($self) = @_;
-    my $groupname = $self->param('name');
-
-    if ($groupname) {
-        my $ng = $self->db->resultset("JobGroups")->create({name => $groupname});
-        if ($ng) {
-            $self->emit_event('openqa_jobgroup_create', {groupname => $ng->name, id => $ng->id});
-            $self->flash('info', 'Group ' . $ng->name . ' created');
-        }
-        else {
-            $self->flash('error', "Creating group $groupname failed");
-        }
-    }
-    else {
-        $self->flash('error', 'Group name cannot be empty');
-    }
-    $self->redirect_to(action => 'index');
-}
-
 sub connect {
     my ($self) = @_;
 
