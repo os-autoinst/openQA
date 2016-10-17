@@ -176,7 +176,7 @@ subtest 'URL auto-replace' => sub {
         bsc#1234 boo#2345,poo#3456 t#4567
         t#5678/modules/welcome/steps/1
         https://progress.opensuse.org/issues/6789
-        https://bugzilla.novell.com/show_bug.cgi?id=1234
+        https://bugzilla.suse.com/show_bug.cgi?id=1234
         [bsc#1000629](https://bugzilla.suse.com/show_bug.cgi?id=1000629)
         <a href="https://bugzilla.suse.com/show_bug.cgi?id=1000629">bsc#1000629</a>'
     );
@@ -215,7 +215,7 @@ subtest 'URL auto-replace' => sub {
     like((shift @urls2)->get_attribute('href'), qr{/tests/4567}, "url8-href");
     like((shift @urls2)->get_attribute('href'), qr{/tests/5678/modules/welcome/steps}, "url9-href");
     is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/6789',         "url10-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.novell.com/show_bug.cgi?id=1234',  "url11-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234',    "url11-href");
     is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1000629', "url12-href");
     is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1000629', "url13-href");
 };
