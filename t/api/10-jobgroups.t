@@ -97,4 +97,48 @@ subtest 'update' => sub() {
         ]);
 };
 
+subtest 'create' => sub() {
+    my $post = $t->post_ok(
+        '/api/v1/job_groups',
+        form => {
+            name                        => 'Cool group',
+            size_limit_gb               => 200,
+            description                 => 'Test2',
+            keep_important_logs_in_days => 45
+        });
+    my $new_id = $post->tx->res->json->{id};
+
+    my $get = $t->get_ok('/api/v1/job_groups/' . $new_id)->status_is(200);
+    is_deeply(
+        $get->tx->res->json,
+        [
+            {
+                'name'                           => 'Cool group',
+                'parent_id'                      => undef,
+                'sort_order'                     => undef,
+                'keep_logs_in_days'              => 30,
+                'keep_important_logs_in_days'    => 45,
+                'default_priority'               => 50,
+                'description'                    => 'Test2',
+                'keep_results_in_days'           => 365,
+                'keep_important_results_in_days' => 0,
+                'size_limit_gb'                  => 200,
+                'id'                             => $new_id
+            },
+        ]);
+};
+
+subtest 'delete and error when listing non-existing group' => sub() {
+    $t->delete_ok('/api/v1/job_groups/3498371')->status_is(400);
+    my $new_id = $t->post_ok('/api/v1/job_groups', form => {name => 'To delete'})->tx->res->json->{id};
+    $t->delete_ok('/api/v1/job_groups/' . $new_id)->status_is(200);
+    my $get = $t->get_ok('/api/v1/job_groups/' . $new_id)->status_is(400);
+    is_deeply($get->tx->res->json, {error => 'Job group 1004 does not exist'});
+};
+
+subtest 'prevent deleting non-empty job group' => sub() {
+    my $delete = $t->delete_ok('/api/v1/job_groups/1001')->status_is(400);
+    is_deeply($delete->tx->res->json, {error => 'Job group 1001 is not empty'});
+};
+
 done_testing();
