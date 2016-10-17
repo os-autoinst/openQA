@@ -70,6 +70,18 @@ my $filen = "$dir/inst-timezone-text.json";
     close $fh;
 }
 
+sub open_needle_editor {
+    # init the preview
+    t::ui::PhantomTest::wait_for_ajax;
+
+    $driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
+
+    # init the diff
+    t::ui::PhantomTest::wait_for_ajax;
+
+    $driver->find_element('.step_actions .fa-thumb-tack', 'css')->click();
+}
+
 sub goto_editpage() {
     is($driver->get_title(), "openQA", "on main page");
     $baseurl = $driver->get_current_url();
@@ -82,15 +94,7 @@ sub goto_editpage() {
     $driver->get($baseurl . "tests/99946");
     is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
 
-    # init the preview
-    t::ui::PhantomTest::wait_for_ajax;
-
-    $driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
-
-    # init the diff
-    t::ui::PhantomTest::wait_for_ajax;
-
-    $driver->find_element('Create new needle', 'link_text')->click();
+    open_needle_editor;
 
     # no warnings about missing/bad needles present (yet)
     my @warnings = $driver->find_elements('#editor_warnings', 'css');
@@ -290,10 +294,7 @@ subtest 'Deletion of needle is handled gracefully' => sub {
     unlink $filen;
     $driver->get($baseurl . "tests/99946");
     is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
-    t::ui::PhantomTest::wait_for_ajax;
-    $driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
-    t::ui::PhantomTest::wait_for_ajax;
-    $driver->find_element('Create new needle', 'link_text')->click();
+    open_needle_editor;
     is($driver->get_title(), 'openQA: Needle Editor', 'needle editor still shows up');
     is($driver->find_element('#editor_warnings span', 'css')->get_text(), 'Could not find needle: inst-timezone-text for opensuse 13.1', 'warning about deleted needle is displayed');
 };

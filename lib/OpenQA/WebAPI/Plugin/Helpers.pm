@@ -64,6 +64,14 @@ sub register {
         });
 
     $app->helper(
+        stepaction_for => sub {
+            my ($c, $title, $url, $icon) = @_;
+            my $icons = $c->t(i => (class => "step_action fa $icon fa-lg fa-stack-1x")) . $c->t(i => (class => 'new fa fa-plus fa-stack-1x'));
+            my $content = $c->t(span => (class => 'fa-stack') => sub { $icons });
+            return $c->link_to($url => (title => $title) => sub { $content });
+        });
+
+    $app->helper(
         current_job_group => sub {
             my ($c) = @_;
 
