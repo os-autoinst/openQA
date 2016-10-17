@@ -153,7 +153,7 @@ function checkResultHash() {
   }
 }
 
-function setupResult(state, jobid) {
+function setupResult(state, jobid, status_url, details_url) {
   setupAsyncFailedResult();
   $(".current_preview").removeClass("current_preview");
 
@@ -200,7 +200,17 @@ function setupResult(state, jobid) {
     }
   }
   if (state == "running" || state == "waiting") {
-    setupRunning(jobid);
+    setupRunning(jobid, status_url, details_url);
+  }
+  else if (state == "scheduled") {
+    // reload when test starts
+    window.setInterval(function() {
+      $.ajax(status_url).done(function(newStatus) {
+        if (newStatus.state != 'scheduled') {
+          setTimeout(function() {location.href = location.href.replace(/#.*/, '');}, 1000);
+        }
+      });
+    }, 10000);
   }
   $(window).on("hashchange", checkResultHash);
   checkResultHash();

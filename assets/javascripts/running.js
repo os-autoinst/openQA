@@ -8,6 +8,8 @@ var testStatus = {
     needinput: null,
     interactive_requested: null,
     stop_waitforneedle_requested: null,
+    status_url: null,
+    details_url: null,
     img_reload_time: 0
 };
 
@@ -49,7 +51,7 @@ function updateTestStatus(newStatus) {
   
     // If a new module have been started, redraw module list
     if (testStatus.running != newStatus.running) {
-        $.ajax("/tests/" + testStatus.jobid + "/details").
+        $.ajax(testStatus.details_url).
             done(function(data) {
                 if (data.length > 0) {
                     // the result table must have a running row
@@ -213,7 +215,7 @@ function sendCommand(command) {
 }
 
 function updateStatus() {
-    $.ajax("/tests/" + testStatus.jobid + "/status").
+    $.ajax(testStatus.status_url).
         done(function(status) {
             updateTestStatus(status);
             setTimeout("updateStatus()", 1000);
@@ -222,8 +224,10 @@ function updateStatus() {
         });
 }
 
-function initStatus(jobid) {
+function initStatus(jobid, status_url, details_url) {
     testStatus.jobid = jobid;
+    testStatus.status_url = status_url;
+    testStatus.details_url = details_url;
     updateStatus();
 }
 
@@ -289,10 +293,10 @@ function initLivestream() {
 
 /********* LIVE STREAM END *********/
 
-function setupRunning(jobid) {
+function setupRunning(jobid, status_url, details_url) {
   initLivelog();
   initLivestream();
-  initStatus(jobid);
+  initStatus(jobid, status_url, details_url);
   
   $('#interactive0_button').click(enableInteractive);
   $('#interactive1_button').click(disableInteractive);
