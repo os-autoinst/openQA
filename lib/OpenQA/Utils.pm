@@ -14,6 +14,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
 @EXPORT  = qw(
   $prj
   $basedir
+  $prjdir
   $resultdir
   &data_name
   &needle_info
@@ -39,6 +40,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &check_download_whitelist
   &notify_workers
   &human_readable_size
+  &locate_asset
 );
 
 
@@ -50,16 +52,20 @@ if ($0 =~ /\.t$/) {
 
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use File::Basename;
+use File::Spec::Functions qw/catfile/;
 use Fcntl;
 use JSON "decode_json";
 our $basedir     = $ENV{OPENQA_BASEDIR} || "/var/lib";
 our $prj         = "openqa";
-our $resultdir   = "$basedir/$prj/testresults";
-our $assetdir    = "$basedir/$prj/factory";
+our $prjdir      = "$basedir/$prj";
+our $resultdir   = "$prjdir/testresults";
+our $assetdir    = "$prjdir/factory";
 our $isodir      = "$assetdir/iso";
-our $imagesdir   = "$basedir/$prj/images";
+our $hdddir      = "$assetdir/hdd";
+our $otherdir    = "$assetdir/other";
+our $imagesdir   = "$prjdir/images";
 our $hostname    = $ENV{SERVER_NAME};
-our $testcasedir = "$basedir/openqa/share/tests";
+our $testcasedir = "$prjdir/share/tests";
 our $app;
 
 # the desired new folder structure is
@@ -325,6 +331,17 @@ sub parse_assets_from_settings {
     }
 
     return $assets;
+}
+
+# find the actual disk location of a given asset.
+sub locate_asset {
+    my ($type, $name, $mustexist) = @_;
+    $mustexist //= 0;
+    my $trans = catfile($assetdir, $type, $name);
+    my $fixed = catfile($assetdir, $type, 'fixed', $name);
+    return $trans if (-e $trans);
+    return $fixed if (-e $fixed);
+    $mustexist ? return : return $trans;
 }
 
 my %bugrefs = (

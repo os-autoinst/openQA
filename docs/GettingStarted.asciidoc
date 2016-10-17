@@ -442,7 +442,7 @@ For Fedora, similarly, you can call:
 --------------------------------------------------------------------------------
 
 Some Fedora tests require special hard disk images to be present in
-+/var/lib/openqa/share/factory/hdd+. The +createhdds.py+ script in the
++/var/lib/openqa/share/factory/hdd/fixed+. The +createhdds.py+ script in the
 https://bitbucket.org/rajcze/openqa_fedora_tools.git[openqa_fedora_tools]
 repository can be used to create these. See the documentation in that repo
 for more information.

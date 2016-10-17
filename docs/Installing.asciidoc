@@ -375,13 +375,21 @@ directories, most of which must be owned by the user that runs openQA
 * +images+ is where the server stores test screenshots and thumbnails
 * +share+ contains shared directories for remote workers, can be owned by root
 * +share/factory+ contains test assets and temp directory, can be owned by root but sysadmin must create subdirs
-* +share/factory/iso+ contains ISOs for tests
-* +share/factory/hdd+ contains hard disk images for tests
-* +share/factory/repo+ contains repositories for tests
-* +share/factory/other+ contains miscellaneous test assets (e.g. kernels and initrds)
+* +share/factory/iso+ and +share/factory/iso/fixed+ contain ISOs for tests
+* +share/factory/hdd+ and +share/factory/hdd/fixed+ contain hard disk images for tests
+* +share/factory/repo+ and +share/factory/repo/fixed+ contain repositories for tests
+* +share/factory/other+ and +share/factory/other/fixed+ contain miscellaneous test assets (e.g. kernels and initrds)
 * +share/factory/tmp+ is used as a temporary directory (openQA will create it if it owns +share/factory+)
 * +share/tests+ contains the tests themselves
 * +testresults+ is where the server stores test logs and test-generated assets
+
+Each of the asset directories (+factory/iso+, +factory/hdd+, +factory/repo+ and
++factory/other+) may contain a +fixed/+ subdirectory, and assets of the same
+type may be placed in that directory. Placing an asset in the +fixed/+
+subdirectory indicates that it should not be deleted to save space: the GRU
+task which removes old assets when the size of all assets for a given job
+group is above a specified size will ignore assets in the +fixed/+
+subdirectories.
 
 It also contains several symlinks which are necessary due to various things
 moving around over the course of openQA's development. All the symlinks

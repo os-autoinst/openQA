@@ -23,6 +23,7 @@ use strict;
 use warnings;
 use Data::Dump qw/pp dd/;
 use File::Path qw/remove_tree/;
+use File::Spec::Functions 'catfile';
 use Test::More;
 use Test::Warnings;
 use OpenQA::Scheduler::Scheduler qw/job_grab job_restart/;
@@ -30,6 +31,7 @@ use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::IPC;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
+use OpenQA::Utils;
 
 # create Test DBus bus and service for fake WebSockets call
 my $ipc = OpenQA::IPC->ipc('', 1);
@@ -107,14 +109,15 @@ is($jobA->done(result => 'passed'), 'passed', 'jobA job set to done');
 is($cloneA->done(result => 'passed'), 'passed', 'cloneA job set to done');
 
 # register asset and mark as created by cloneA
-my $ja = sprintf('%08d-%s', $cloneA->id, 'jobasset.raw');
-open(my $fh, '>', join('/', $OpenQA::Utils::assetdir, 'hdd', $ja));
+my $janame = sprintf('%08d-%s', $cloneA->id, 'jobasset.raw');
+my $japath = catfile($OpenQA::Utils::assetdir, 'hdd', $janame);
+open(my $fh, '>', $japath);
 # give it some content to test ensure_size
 print $fh "foobar";
 close($fh);
-$ja = $schema->resultset('Assets')->create(
+my $ja = $schema->resultset('Assets')->create(
     {
-        name => $ja,
+        name => $janame,
         type => 'hdd',
     });
 $schema->resultset('JobsAssets')->create(
@@ -141,25 +144,49 @@ $jobB->discard_changes();
 ok($jobB->clone, 'jobB has a clone after cloning asset creator');
 
 # create a repo asset for the following tests
-my $repo = join('/', $OpenQA::Utils::assetdir, 'repo', 'testrepo');
+my $repopath = catfile($OpenQA::Utils::assetdir, 'repo', 'testrepo');
 # ensure no leftovers from previous testing
-remove_tree($repo);
+remove_tree($repopath);
 # create the dir
-mkdir($repo);
+mkdir($repopath);
 # create some test content to test nested dir size discovery
-my $testdir = join('/', $repo, 'testdir');
+my $testdir = catfile($repopath, 'testdir');
 mkdir($testdir);
-open($fh, '>', join('/', $repo, 'testfile'));
+open($fh, '>', catfile($repopath, 'testfile'));
 print $fh 'foobar';
 close($fh);
-open($fh, '>', join('/', $testdir, 'testfile2'));
+open($fh, '>', catfile($testdir, 'testfile2'));
 print $fh 'meep';
 close($fh);
-$repo = $schema->resultset('Assets')->create(
+my $repo = $schema->resultset('Assets')->create(
     {
         name => 'testrepo',
         type => 'repo',
     });
+
+# create a test 'fixed' asset
+my $fixedpath = catfile($OpenQA::Utils::assetdir, 'hdd', 'fixed', 'fixed.img');
+open($fh, '>', $fixedpath);
+close($fh);
+my $fixed = $schema->resultset('Assets')->create(
+    {
+        name => 'fixed.img',
+        type => 'hdd',
+    });
+
+# test is_fixed
+ok(!$ja->is_fixed(),   'ja should not be considered a fixed asset');
+ok(!$repo->is_fixed(), 'repo should not be considered a fixed asset');
+ok($fixed->is_fixed(), 'fixed should be considered a fixed asset');
+
+# test Utils::locate_asset
+my $expected = catfile($OpenQA::Utils::assetdir, 'hdd', 'fixed', 'fixed.img');
+is(locate_asset('hdd', 'fixed.img', 1), $expected, 'locate_asset should find fixed asset in fixed location');
+$expected = catfile($OpenQA::Utils::assetdir, 'repo', 'testrepo');
+is(locate_asset('repo', 'testrepo', 1), $expected, 'locate_asset should find testrepo in expected location');
+$expected = catfile($OpenQA::Utils::assetdir, 'iso', 'nex.iso');
+is(locate_asset('iso', 'nex.iso', 0), $expected, 'locate_asset 0 should give location for non-existent asset');
+ok(!locate_asset('iso', 'nex.iso', 1), 'locate_asset 1 should not give location for non-existent asset');
 
 # test ensure_size
 is($ja->ensure_size(),   6,  'ja asset size should be 6');
@@ -167,11 +194,14 @@ is($repo->ensure_size(), 10, 'repo asset size should be 10');
 
 # test remove_from_disk
 $ja->remove_from_disk();
+$fixed->remove_from_disk();
 $repo->remove_from_disk();
-ok(!-e $ja,   "ja asset should have been removed");
-ok(!-e $repo, "repo asset should have been removed");
+ok(!-e $japath,    "ja asset should have been removed");
+ok(!-e $fixedpath, "fixed asset should have been removed");
+ok(!-e $repopath,  "repo asset should have been removed");
 
 # for safety
-unlink($ja->disk_file);
-remove_tree($repo->disk_file);
+unlink($japath);
+unlink($fixedpath);
+remove_tree($repopath);
 done_testing();

@@ -30,7 +30,6 @@ use Data::Dump qw/dd pp/;
 use Date::Format qw/time2str/;
 use DBIx::Class::Timestamps qw/now/;
 use DateTime;
-use File::Spec::Functions qw/catfile catdir/;
 use File::Temp qw/tempdir/;
 use Mojo::URL;
 use Try::Tiny;

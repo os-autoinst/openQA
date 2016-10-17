@@ -67,6 +67,13 @@ sub mock_size_45 {
     return 45 * 1024 * 1024 * 1024;
 }
 
+# a mock 'is_fixed' which considers one of our fixtures to be 'fixed'
+# (for limit_assets testing)
+sub mock_fixed {
+    my ($self) = @_;
+    return ($self->name eq 'openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+}
+
 my $module = new Test::MockModule('OpenQA::Schema::Result::Assets');
 $module->mock(delete           => \&mock_delete);
 $module->mock(remove_from_disk => \&mock_remove);
@@ -133,6 +140,16 @@ $delsize = @deleted;
 is($remsize, 2, "two assets should have been 'removed' at size 45GiB");
 is($delsize, 2, "two assets should have been 'deleted' at size 45GiB");
 
+# empty the tracking arrays before next test
+@removed = ();
+@deleted = ();
+
+# if one asset is 'fixed', it should be skipped by limit_assets and so
+# we should be under the limit and no removals should occur
+$module->mock(is_fixed => \&mock_fixed);
+run_gru('limit_assets');
+is_deeply(\@removed, [], "nothing should have been 'removed' with a 'fixed' asset");
+is_deeply(\@deleted, [], "nothing should have been 'deleted' with a 'fixed' asset");
 
 sub create_temp_job_result_file {
     my ($resultdir) = @_;

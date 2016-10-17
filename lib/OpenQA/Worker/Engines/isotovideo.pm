@@ -18,7 +18,7 @@ use strict;
 use warnings;
 
 use OpenQA::Worker::Common;
-use OpenQA::Utils qw//;
+use OpenQA::Utils qw/locate_asset/;
 
 use POSIX qw/:sys_wait_h strftime uname/;
 use JSON qw/to_json/;
@@ -75,8 +75,8 @@ sub engine_workit($) {
 
     for my $isokey (qw/ISO/, map { "ISO_$_" } (1 .. 9)) {
         if (my $iso = $job->{settings}->{$isokey}) {
-            $iso = join('/', ISO_DIR, $iso);
-            unless (-e $iso) {
+            $iso = locate_asset('iso', $iso, 1);
+            unless ($iso) {
                 my $error = "$iso does not exist!";
                 return {error => $error};
             }
@@ -86,8 +86,8 @@ sub engine_workit($) {
 
     for my $otherkey (qw/KERNEL INITRD/) {
         if (my $file = $job->{settings}->{$otherkey}) {
-            $file = join('/', OTHER_DIR, $file);
-            unless (-e $file) {
+            $file = locate_asset('other', $file, 1);
+            unless ($file) {
                 my $error = "$file does not exist!";
                 return {error => $error};
             }
@@ -99,8 +99,8 @@ sub engine_workit($) {
     for my $i (1 .. $nd) {
         my $hdd = $job->{settings}->{"HDD_$i"} || undef;
         if ($hdd) {
-            $hdd = join('/', HDD_DIR, $hdd);
-            unless (-e $hdd) {
+            $hdd = locate_asset('hdd', $hdd, 1);
+            unless ($hdd) {
                 my $error = "$hdd does not exist!";
                 return {error => $error};
             }
@@ -116,7 +116,7 @@ sub engine_workit($) {
         print "setting $k=$v\n" if $verbose;
         $vars{$k} = $v;
     }
-    $vars{ASSETDIR}   = ASSET_DIR;
+    $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
     $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION});
     $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION});
     _save_vars(\%vars);
