@@ -304,7 +304,7 @@ sub parse_assets_from_settings {
 }
 
 my %bugrefs = (
-    bnc => 'https://bugzilla.novell.com/show_bug.cgi?id=',
+    bnc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
     bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
     boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
     poo => 'https://progress.opensuse.org/issues/',
