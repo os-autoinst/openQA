@@ -61,13 +61,23 @@ Basic configuration
 Apache proxy
 ~~~~~~~~~~~~
 
-It's recommended to run openQA behind an apache proxy. See the
+It is required to run openQA behind an http proxy (apache, nginx, etc..). See the
 +openqa.conf.template+ config file in +/etc/apache2/vhosts.d+ (openSUSE) or
-+/etc/httpd/conf.d+ (Fedora). To make everything work correctly on openSUSE,
-you need to enable the 'headers', 'proxy', 'proxy_http' and 'proxy_wstunnel'
-modules using 'a2enmod'. This is not necessary on Fedora. For a basic setup,
-you can copy +openqa.conf.template+ to +openqa.conf+ and modify the
-+ServerName+ setting. This will direct all HTTP traffic to openQA.
++/etc/httpd/conf.d+ (Fedora). To make everything work correctly on openSUSE, you
+need to enable the 'headers', 'proxy', 'proxy_http' and 'proxy_wstunnel' modules
+using 'a2enmod'. This is not necessary on Fedora. For a basic setup, you can
+copy +openqa.conf.template+ to +openqa.conf+ and modify the +ServerName+
+setting. This will direct all HTTP traffic to openQA.
+
+[source,sh]
+--------------------------------------------------------------------------------
+# openSUSE Only
+# You can check what modules are enabled by using 'a2enmod -l'
+a2enmod headers
+a2enmod proxy
+a2enmod proxy_http
+a2enmod proxy_wstunnel
+--------------------------------------------------------------------------------
 
 TLS/SSL
 ~~~~~~~
@@ -105,6 +115,14 @@ systemctl restart httpd
 The openQA web UI should be available on http://localhost/ now. To ensure
 openQA runs on each boot, you should also +systemctl enable+ the same services.
 
+[source,sh]
+--------------------------------------------------------------------------------
+systemctl enable openqa-scheduler
+systemctl enable openqa-gru
+systemctl enable openqa-websockets
+systemctl enable openqa-webui
+--------------------------------------------------------------------------------
+
 Run workers
 ~~~~~~~~~~~
 
@@ -120,16 +138,16 @@ zypper in openQA-worker
 dnf install openqa-worker
 --------------------------------------------------------------------------------
 
-To allow workers to access your instance, you need to log into
-openQA as operator and create a pair of API key and secret. Once you
-are logged in, follow the link 'manage API keys' in the top right
-corner. Click the 'create' button to generate +key+ and +secret+. There is
-also a script available for creating an admin user and an API key+secret
-pair non-interactively, +/usr/share/openqa/script/create_admin+, which can
-be useful for scripted deployments of openQA. Copy and paste the key and
-secret into +/etc/openqa/client.conf+ on the machine(s) where the worker
-is installed. Make sure to put in a section reflecting your webserver URL.
-In the simplest case, your +client.conf+ may look like this:
+To allow workers to access your instance, you need to log into openQA as
+operator and create a pair of API key and secret. Once you are logged in, in the
+top right corner, is the user menu, follow the link 'manage API keys'.  Click
+the 'create' button to generate +key+ and +secret+. There is also a script
+available for creating an admin user and an API key+secret pair
+non-interactively, +/usr/share/openqa/script/create_admin+, which can be useful
+for scripted deployments of openQA. Copy and paste the key and secret into
++/etc/openqa/client.conf+ on the machine(s) where the worker is installed. Make
+sure to put in a section reflecting your webserver URL. In the simplest case,
+your +client.conf+ may look like this:
 
 [source,ini]
 --------------------------------------------------------------------------------
@@ -137,7 +155,6 @@ In the simplest case, your +client.conf+ may look like this:
 key = 0123456789ABCDEF
 secret = 0123456789ABCDEF
 --------------------------------------------------------------------------------
-
 
 To start the workers you can use the provided systemd files via +systemctl
 start openqa-worker@1+. This will start worker number one. You can start as
