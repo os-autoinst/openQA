@@ -176,9 +176,10 @@ subtest 'URL auto-replace' => sub {
         bsc#1234 boo#2345,poo#3456 t#4567
         t#5678/modules/welcome/steps/1
         https://progress.opensuse.org/issues/6789
-        https://bugzilla.suse.com/show_bug.cgi?id=1234
+        https://bugzilla.novell.com/show_bug.cgi?id=1234
         [bsc#1000629](https://bugzilla.suse.com/show_bug.cgi?id=1000629)
-        <a href="https://bugzilla.suse.com/show_bug.cgi?id=1000629">bsc#1000629</a>'
+        <a href="https://bugzilla.suse.com/show_bug.cgi?id=1000629">bsc#1000629</a>
+        bnc#1246'
     );
     $driver->find_element('#submitComment', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
@@ -187,9 +188,9 @@ subtest 'URL auto-replace' => sub {
     my @comments = $driver->find_elements('div.media-comment p', 'css');
     is($comments[1]->get_text(), $test_message, "body of first comment after adding another");
 
-    like($comments[0]->get_text(), qr/bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bnc#1234 bsc#1000629 bsc#1000629/);
+    like($comments[0]->get_text(), qr/bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#1234 bsc#1000629 bsc#1000629/);
     my @urls = $driver->find_elements('div.media-comment a', 'css');
-    is(scalar @urls, 13);
+    is(scalar @urls, 14);
     is((shift @urls)->get_text(), 'https://openqa.example.com/foo/bar',      "url1");
     is((shift @urls)->get_text(), 'http://localhost:9562',                   "url2");
     is((shift @urls)->get_text(), 'https://openqa.example.com/tests/181148', "url3");
@@ -200,9 +201,10 @@ subtest 'URL auto-replace' => sub {
     is((shift @urls)->get_text(), 't#4567',                                  "url8");
     is((shift @urls)->get_text(), 't#5678/modules/welcome/steps/1',          "url9");
     is((shift @urls)->get_text(), 'poo#6789',                                "url10");
-    is((shift @urls)->get_text(), 'bnc#1234',                                "url11");
+    is((shift @urls)->get_text(), 'bsc#1234',                                "url11");
     is((shift @urls)->get_text(), 'bsc#1000629',                             "url12");
     is((shift @urls)->get_text(), 'bsc#1000629',                             "url13");
+    is((shift @urls)->get_text(), 'bnc#1246',                                "url14");
 
     my @urls2 = $driver->find_elements('div.media-comment a', 'css');
     is((shift @urls2)->get_attribute('href'), 'https://openqa.example.com/foo/bar',                 "url1-href");
@@ -218,6 +220,7 @@ subtest 'URL auto-replace' => sub {
     is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234',    "url11-href");
     is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1000629', "url12-href");
     is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1000629', "url13-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1246',    "url14-href");
 };
 
 subtest 'commenting in test results including labels' => sub {

@@ -309,7 +309,12 @@ my %bugrefs = (
     boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
     poo => 'https://progress.opensuse.org/issues/',
 );
-my %bugurls = reverse %bugrefs;
+my %bugurls = (
+    'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
+    $bugrefs{bsc}                                  => 'bsc',
+    $bugrefs{boo}                                  => 'boo',
+    $bugrefs{poo}                                  => 'poo',
+);
 
 sub bugref_regex {
     my $regex = join('|', keys %bugrefs);
@@ -337,7 +342,7 @@ sub bugref_to_href {
 sub href_to_bugref {
     my ($text) = @_;
 
-    my $regex = join('|', values %bugrefs) =~ s/\?/\\\?/gr;
+    my $regex = join('|', keys %bugurls) =~ s/\?/\\\?/gr;
     $regex = qr/(?<!["\(\[])($regex)(\d+)(?![\w])/;
     $text =~ s{$regex}{@{[$bugurls{$1}]}#$2}gi;
     return $text;
