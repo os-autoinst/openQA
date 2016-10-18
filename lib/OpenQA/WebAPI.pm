@@ -313,8 +313,6 @@ sub startup {
     $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
-    # NO LONGER USED
-    $job_r->post('/result')->name('apiv1_job_result')->to('job#result');
     $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done');
     $job_r->post('/status')->name('apiv1_update_status')->to('job#update_status');
     $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
