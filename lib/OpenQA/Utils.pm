@@ -26,7 +26,9 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &log_error
   &save_base64_png
   &run_cmd_with_log
+  &run_cmd_with_log_return_error
   &commit_git
+  &commit_git_return_error
   &parse_assets_from_settings
   &find_bugref
   &bugurl
@@ -221,6 +223,11 @@ sub image_md5_filename($) {
 
 sub run_cmd_with_log($) {
     my ($cmd) = @_;
+    return run_cmd_with_log_return_error($cmd)->{status};
+}
+
+sub run_cmd_with_log_return_error($) {
+    my ($cmd) = @_;
     my ($stdin, $stdout_err, $ret);
     log_info('Running cmd: ' . join(' ', @$cmd));
     $ret = IPC::Run::run($cmd, \$stdin, '>&', \$stdout_err);
@@ -233,10 +240,18 @@ sub run_cmd_with_log($) {
         log_warning($stdout_err);
         log_error('cmd returned non-zero value');
     }
-    return $ret;
+    return {
+        status => $ret,
+        stderr => $stdout_err
+    };
 }
 
 sub commit_git {
+    my ($args) = @_;
+    return commit_git_return_error($args) ? undef : 1;
+}
+
+sub commit_git_return_error {
     my ($args) = @_;
 
     my $dir = $args->{dir};
@@ -250,24 +265,33 @@ sub commit_git {
     for my $cmd (qw(add rm)) {
         next unless $args->{$cmd};
         push(@files, @{$args->{$cmd}});
-        unless (run_cmd_with_log([@git, $cmd, @{$args->{$cmd}}])) {
-            return;
+        my $res = run_cmd_with_log_return_error([@git, $cmd, @{$args->{$cmd}}]);
+        if (!$res->{status}) {
+            my $error = 'Unable to add/rm via Git';
+            $error .= ': ' . $res->{stderr} if $res->{stderr};
+            return $error;
         }
     }
 
     my $message = $args->{message};
     my $user    = $args->{user};
     my $author  = sprintf('--author=%s <%s>', $user->fullname, $user->email);
-    unless (run_cmd_with_log([@git, 'commit', '-q', '-m', $message, $author, @files])) {
-        return;
+    my $res     = run_cmd_with_log_return_error([@git, 'commit', '-q', '-m', $message, $author, @files]);
+    if (!$res->{status}) {
+        my $error = 'Unable to commit via Git';
+        $error .= ': ' . $res->{stderr} if $res->{stderr};
+        return $error;
     }
 
     if (($app->config->{'scm git'}->{do_push} || '') eq 'yes') {
-        unless (run_cmd_with_log([@git, 'push'])) {
-            return;
+        $res = run_cmd_with_log_return_error([@git, 'push']);
+        if (!$res->{status}) {
+            my $error = 'Unable to push Git commit';
+            $error .= ': ' . $res->{stderr} if $res->{stderr};
+            return $error;
         }
     }
-    return 1;
+    return 0;
 }
 
 sub asset_type_from_setting {

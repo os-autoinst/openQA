@@ -198,7 +198,7 @@ sub remove {
 
     my $fname      = $self->path;
     my $screenshot = $fname =~ s/.json$/.png/r;
-    $OpenQA::Utils::app->log->debug("remove needle $fname and $screenshot");
+    $OpenQA::Utils::app->log->debug("Remove needle $fname and $screenshot");
 
     if (($OpenQA::Utils::app->config->{global}->{scm} || '') eq 'git') {
         my $args = {
@@ -206,17 +206,22 @@ sub remove {
             rm      => [$fname, $screenshot],
             user    => $user,
             message => sprintf("admin remove of %s/%s", $self->directory->name, $self->filename)};
-        if (!commit_git($args)) {
-            return;
-        }
+        my $error = commit_git_return_error($args);
+        return $error if $error;
     }
     else {
-        unlink($fname);
-        unlink($screenshot);
+        my @error_files;
+        unlink($fname)      or push(@error_files, $fname);
+        unlink($screenshot) or push(@error_files, $screenshot);
+        if (@error_files) {
+            my $error = 'Unable to delete ' . join(' and ', @error_files);
+            $OpenQA::Utils::app->log->debug($error);
+            return $error;
+        }
     }
     $self->check_file;
     $self->update;
-    return 1;
+    return 0;
 }
 
 sub check_file {

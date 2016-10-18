@@ -310,6 +310,9 @@ table.dataTable {
         td.test {
                 text-align: left;
         }
+        label {
+                font-weight: normal;
+        }
 }
 table.admintable {
         td.editable {
@@ -508,4 +511,11 @@ a.restart-link {
 #editor-info {
     font-style: italic;
     line-height: 240%;
+}
+
+/* admin needle editor */
+#confirm_delete {
+    table td {
+        vertical-align: top;
+    }
 }

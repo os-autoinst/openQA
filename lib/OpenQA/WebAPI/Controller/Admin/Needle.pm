@@ -156,14 +156,40 @@ sub module {
 sub delete {
     my ($self) = @_;
     my @removed_ids;
-    for my $p (@{$self->every_param('id')}) {
-        if (!$self->db->resultset('Needles')->find($p)->remove($self->current_user)) {
-            last;
+    my @errors;
+    for my $needle_id (@{$self->every_param('id')}) {
+        my $needle = $self->db->resultset('Needles')->find($needle_id);
+        if (!$needle) {
+            push(
+                @errors,
+                {
+                    id           => $needle_id,
+                    display_name => $needle_id,
+                    message      => "Unable to find $needle_id"
+                });
+            next;
         }
-        push @removed_ids, $p;
+
+        my $error = $needle->remove($self->current_user);
+        if ($error) {
+            push(
+                @errors,
+                {
+                    id           => $needle_id,
+                    display_name => $needle->filename,
+                    message      => $error
+                });
+        }
+        else {
+            push(@removed_ids, $needle_id);
+        }
     }
     $self->emit_event('openqa_needle_delete', {id => \@removed_ids});
-    $self->render(text => 'ok');
+    $self->render(
+        json => {
+            removed_ids => \@removed_ids,
+            errors      => \@errors
+        });
 }
 
 1;
