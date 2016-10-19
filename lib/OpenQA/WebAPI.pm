@@ -313,8 +313,6 @@ sub startup {
     $api_public_r->route('/jobs/:jobid', jobid => qr/\d+/)->get('/')->name('apiv1_job')->to('job#show');
     $job_r->delete('/')->name('apiv1_delete_job')->to('job#destroy');
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
-    # NO LONGER USED
-    $job_r->post('/result')->name('apiv1_job_result')->to('job#result');
     $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done');
     $job_r->post('/status')->name('apiv1_update_status')->to('job#update_status');
     $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
@@ -333,9 +331,10 @@ sub startup {
     $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');
     my $worker_r = $api_ro->route('/workers/:workerid', workerid => qr/\d+/);
     $api_public_r->route('/workers/:workerid', workerid => qr/\d+/)->get('/')->name('apiv1_worker')->to('worker#show');
-    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');    #command_enqueue
-    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');                 # job_grab
-                                                                                          # redirect for older workers
+    $worker_r->post('/commands/')->name('apiv1_create_command')->to('command#create');
+    $worker_r->post('/grab_job')->name('apiv1_grab_job')->to('job#grab');
+
+    # redirect for older workers
     $worker_r->websocket(
         '/ws' => sub {
             my $c        = shift;
@@ -363,9 +362,9 @@ sub startup {
     $mm_api->get('/parents')->name('apiv1_mm_parents')->to('mm#get_parents');
 
     # api/v1/isos
-    $api_ro->post('/isos')->name('apiv1_create_iso')->to('iso#create');                 # iso_new
-    $api_ra->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');       # iso_delete
-    $api_ro->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');    # iso_cancel
+    $api_ro->post('/isos')->name('apiv1_create_iso')->to('iso#create');
+    $api_ra->delete('/isos/#name')->name('apiv1_destroy_iso')->to('iso#destroy');
+    $api_ro->post('/isos/#name/cancel')->name('apiv1_cancel_iso')->to('iso#cancel');
 
     # api/v1/assets
     $api_ro->post('/assets')->name('apiv1_post_asset')->to('asset#register');
