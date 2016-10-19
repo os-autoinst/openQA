@@ -26,8 +26,9 @@
         name => 'openSUSE-13.1-x86_64.hda.xz',
     },
     JobGroups => {
-        id   => 1001,
-        name => 'opensuse'
+        id          => 1001,
+        name        => 'opensuse',
+        description => '##Test description\n\nwith bugref bsc#1234',
     },
     JobGroups => {
         id   => 1002,

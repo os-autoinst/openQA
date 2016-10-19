@@ -54,10 +54,14 @@ is(scalar @{$driver->find_elements('h4', 'css')}, 0, 'no builds shown');
 is($driver->get($baseurl . '?time_limit_days=0.05&limit_builds=100000'), 1, 'index page accepts time_limit_days parameter');
 is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only the one hour old builds is shown');
 
+# group overview
 $driver->find_element('opensuse', 'link_text')->click();
-
 my $build_url = $driver->get_current_url();
 is(scalar @{$driver->find_elements('h4', 'css')}, 5, 'number of builds for opensuse');
+is($driver->find_element('#group_description',   'css')->get_text(),            'Test description\n\nwith bugref bsc#1234',       'description shown');
+is($driver->find_element('#group_description a', 'css')->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bugref in description rendered as link');
+$driver->get($baseurl . '/group_overview/1002');
+is(scalar @{$driver->find_elements('#group_description', 'css')}, 0, 'no well for group description shown if none present');
 is($driver->get($build_url . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
 $driver->get($build_url . '?limit_builds=0');
 is(scalar @{$driver->find_elements('div.build-row h4', 'css')}, 0, 'all builds filtered out');

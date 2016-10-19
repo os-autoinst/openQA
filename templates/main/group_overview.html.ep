@@ -11,6 +11,11 @@
 
 <h2>Last Builds for Group <%= $group->{name} %></h2>
 
+% if($description) {
+    <div class="well well-lg" id="group_description">
+        %= $description
+    </div>
+% }
 % if ($pinned_comments) {
     <div id="group_descriptions">
     % for my $comment (@$pinned_comments) {

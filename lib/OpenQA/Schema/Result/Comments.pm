@@ -117,7 +117,7 @@ sub rendered_markdown {
     my ($self) = @_;
 
     my $m = CommentsMarkdownParser->new;
-    Mojo::ByteStream->new($m->markdown($self->text));
+    return Mojo::ByteStream->new($m->markdown($self->text));
 }
 
 package CommentsMarkdownParser;
