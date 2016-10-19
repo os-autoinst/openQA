@@ -1,0 +1,1 @@
+Test bugref bsc#1234
