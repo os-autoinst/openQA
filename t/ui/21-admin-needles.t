@@ -110,6 +110,7 @@ subtest 'delete needle' => sub {
     subtest 'error case' => sub {
         chmod(0444, $needle_dir);
         $driver->find_element('#really_delete', 'css')->click();
+        t::ui::PhantomTest::wait_for_ajax;
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
         is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 1, 'but failed needle');
         is($driver->find_element('#failed-needles li', 'css')->get_text(), "inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.json and t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.png", 'right needle name and error message displayed');
@@ -127,6 +128,7 @@ subtest 'delete needle' => sub {
     subtest 'successful deletion' => sub {
         chmod(0755, $needle_dir);
         $driver->find_element('#really_delete', 'css')->click();
+        t::ui::PhantomTest::wait_for_ajax;
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
         is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'no failed needles');
         $driver->find_element('#close_delete', 'css')->click();

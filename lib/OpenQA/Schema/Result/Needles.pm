@@ -20,7 +20,7 @@ use File::Basename;
 use Cwd "realpath";
 use strict;
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Utils qw(commit_git);
+use OpenQA::Utils qw(commit_git_return_error);
 
 use db_helpers;
 
