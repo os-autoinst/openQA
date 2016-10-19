@@ -1,1 +1,3 @@
-<pre><%= $textresult %></pre>
+% use Mojo::Util qw(xml_escape);
+% use OpenQA::Utils;
+<pre><%== bugref_to_href(xml_escape($textresult)) %></pre>
