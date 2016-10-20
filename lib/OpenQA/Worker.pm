@@ -22,6 +22,7 @@ use Mojo::Server::Daemon;
 use Mojo::IOLoop;
 
 use OpenQA::Client;
+use OpenQA::Utils qw//;
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Commands;
 use OpenQA::Worker::Pool qw/lockit clean_pool/;
@@ -31,7 +32,7 @@ sub init {
     my ($worker_options, %options) = @_;
     $worker_settings = $worker_options;
     $instance        = $options{instance} if defined $options{instance};
-    $pooldir         = OPENQA_BASE . '/pool/' . $instance;
+    $pooldir         = $OpenQA::Utils::prjdir . '/pool/' . $instance;
     $nocleanup       = $options{"no-cleanup"};
     $verbose         = $options{verbose} if defined $options{verbose};
 

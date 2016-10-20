@@ -17,7 +17,7 @@
 package OpenQA::Schema::ResultSet::Assets;
 use strict;
 use base qw/DBIx::Class::ResultSet/;
-use OpenQA::Utils qw/log_warning/;
+use OpenQA::Utils qw/log_warning locate_asset/;
 
 sub register {
     my ($self, $type, $name) = @_;
@@ -27,8 +27,12 @@ sub register {
         log_warning "asset type '$type' invalid";
         return;
     }
-    unless ($name && $name =~ /^[0-9A-Za-z+-._]+$/ && -e join('/', $OpenQA::Utils::assetdir, $type, $name)) {
-        log_warning "asset name '$name' invalid or does not exist";
+    unless ($name && $name =~ /^[0-9A-Za-z+-._]+$/) {
+        log_warning "asset name '$name' invalid";
+        return;
+    }
+    unless (locate_asset $type, $name, 1) {
+        log_warning "no file found for asset '$name' type '$type'";
         return;
     }
     my $asset = $self->find_or_create(

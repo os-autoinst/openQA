@@ -17,7 +17,6 @@ package OpenQA::WebAPI::Controller::API::V1::Iso;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'url_unescape';
 use File::Basename;
-use File::Spec::Functions qw/catfile catdir/;
 
 use OpenQA::Utils;
 use OpenQA::IPC;
@@ -291,8 +290,9 @@ sub schedule_iso {
         else {
             $short = substr($arg, 0, -4);    # remove _URL substring
         }
+        # We're only going to allow downloading of asset types. We also
+        # need this to determine the download location later
         my $assettype = asset_type_from_setting($short);
-        # We're only going to allow downloading of asset types
         unless ($assettype) {
             OpenQA::Utils::log_debug("_URL downloading only allowed for asset types! $short is not an asset type");
             next;
@@ -315,11 +315,8 @@ sub schedule_iso {
         else {
             $filename = $args->{$short};
         }
-        # full path to download target location. We need to guess
-        # the asset type to know where to put it, using the same
-        # subroutine as parse_assets_from_settings
-        my $dir = catdir($OpenQA::Utils::assetdir, $assettype);
-        my $fullpath = catfile($dir, $filename);
+        # Find where we should download the file to
+        my $fullpath = locate_asset($assettype, $filename, 0);
 
         unless (-s $fullpath) {
             # if the file doesn't exist, add the url/target path and extraction

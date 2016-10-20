@@ -23,7 +23,7 @@ use OpenQA::IPC;
 use Date::Format;
 use Archive::Extract;
 use File::Basename;
-use File::Spec::Functions 'catdir';
+use File::Spec::Functions 'catfile';
 use Mojo::UserAgent;
 use File::Spec::Functions 'splitpath';
 use Try::Tiny;
@@ -81,7 +81,12 @@ sub _getDirSize {
 
 sub disk_file {
     my ($self) = @_;
-    sprintf("%s/%s/%s", $OpenQA::Utils::assetdir, $self->type, $self->name);
+    return locate_asset($self->type, $self->name, 0);
+}
+
+sub is_fixed {
+    my ($self) = @_;
+    return (index($self->disk_file, catfile('fixed', $self->name)) > -1);
 }
 
 sub remove_from_disk {
@@ -196,7 +201,7 @@ sub download_asset {
         my $ae = Archive::Extract->new(archive => $dlpath);
         # Remove last extension from the end of filename
         my ($filename, $dirs, $suffix) = fileparse($dlpath, qr/\.[^.]*/);
-        $filename = catdir($dirs, $filename);
+        $filename = catfile($dirs, $filename);
 
         OpenQA::Utils::log_debug("Extracting to $filename");
 
@@ -258,8 +263,8 @@ sub limit_assets {
         for my $a (@job_assets) {
             my $asset = $assets{$a->asset_id};
             OpenQA::Utils::log_debug(sprintf "Group %s: %s/%s %s->%s", $g->name, $asset->type, $asset->name, human_readable_size($asset->size // 0), human_readable_size($sizelimit));
-            # ignore predefined images
-            next if ($asset->type eq 'hdd' && $a->created_by == 0);
+            # ignore fixed assets
+            next if ($asset->is_fixed);
             $seen_asset{$asset->id} = $g->id;
             my $size = $asset->ensure_size;
             if ($size > 0 && $reduceto > 0) {
@@ -294,24 +299,38 @@ sub limit_assets {
         my $dh;
         if (opendir($dh, $OpenQA::Utils::assetdir . "/$type")) {
             my %assets;
+            my @paths;
             while (readdir($dh)) {
-                # very specific to our external syncing
-                next if $_ =~ m/CURRENT/;
-                next if -l "$OpenQA::Utils::assetdir/$type/$_";
-                # ignore files not owned by us
-                next unless -o "$OpenQA::Utils::assetdir/$type/$_";
-                if ($type eq 'repo') {
-                    next unless -d "$OpenQA::Utils::assetdir/$type/$_";
+                unless ($_ eq 'fixed' or $_ eq '.' or $_ eq '..') {
+                    push(@paths, "$OpenQA::Utils::assetdir/$type/$_");
                 }
-                else {
-                    next unless -f "$OpenQA::Utils::assetdir/$type/$_";
-                    if ($type eq 'iso') {
-                        next unless $_ =~ m/\.iso$/;
-                    }
-                }
-                $assets{$_} = 0;
             }
             closedir($dh);
+            if (opendir($dh, $OpenQA::Utils::assetdir . "/$type" . "/fixed")) {
+                while (readdir($dh)) {
+                    unless ($_ eq 'fixed' or $_ eq '.' or $_ eq '..') {
+                        push(@paths, "$OpenQA::Utils::assetdir/$type/fixed/$_");
+                    }
+                }
+                closedir($dh);
+            }
+            for my $path (@paths) {
+                # very specific to our external syncing
+                next if basename($path) =~ m/CURRENT/;
+                next if -l $path;
+                # ignore files not owned by us
+                next unless -o $path;
+                if ($type eq 'repo') {
+                    next unless -d $path;
+                }
+                else {
+                    next unless -f $path;
+                    if ($type eq 'iso') {
+                        next unless $path =~ m/\.iso$/;
+                    }
+                }
+                $assets{basename($path)} = 0;
+            }
             $assets = $app->db->resultset('Assets')->search({type => $type, name => {in => [keys %assets]}});
             while (my $a = $assets->next) {
                 $assets{$a->name} = $a->id;

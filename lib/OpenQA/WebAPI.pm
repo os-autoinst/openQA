@@ -28,7 +28,6 @@ use Mojolicious::Commands;
 use DateTime;
 use Cwd qw/abs_path/;
 use File::Path qw/make_path/;
-use OpenQA::Worker::Common qw/ASSET_DIR/;
 
 # reinit pseudo random number generator in every child to avoid
 # starting off with the same state.
@@ -78,7 +77,7 @@ sub startup {
     OpenQA::ServerStartup::setup_logging($self);
 
     unless ($ENV{MOJO_TMPDIR}) {
-        $ENV{MOJO_TMPDIR} = ASSET_DIR . '/tmp';
+        $ENV{MOJO_TMPDIR} = $OpenQA::Utils::assetdir . '/tmp';
         # Try to create tmpdir if it doesn't exist but don't die if failed to create
         if (!-e $ENV{MOJO_TMPDIR}) {
             eval { make_path($ENV{MOJO_TMPDIR}); };
