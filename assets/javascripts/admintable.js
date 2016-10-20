@@ -7,6 +7,11 @@ function htmlEscape(str) {
     .replace(/>/g, '&gt;');
 }
 
+function updateTextArea(textArea) {
+    textArea.style.height = 'auto';
+    textArea.style.height = Math.min(textArea.scrollHeight + 5, 300) + 'px';
+}
+
 function table_row (data, table, edit, is_admin)
 {
     var html = "<tr>";
@@ -55,6 +60,9 @@ function table_row (data, table, edit, is_admin)
             else {
                 html += '<td>';
             }
+            if (edit) {
+                html += '<textarea class="key-value-pairs" oninput="updateTextArea(this);">';
+            }
             if (data['settings']) {
                 for (var j = 0; j < data['settings'].length; j++) {
                     var k = htmlEscape(data['settings'][j]['key']);
@@ -68,7 +76,7 @@ function table_row (data, table, edit, is_admin)
 
                     var v = htmlEscape(data['settings'][j]['value']);
                     if (edit) {
-                        html += '<span class="key-value-pair"><span class="key">' + k + '</span>=<input type="text" class="value" value="' + v + '"/></span><br/>'
+                        html += k + '=' + v + '\n';
                     }
                     else {
                         html += '<span class="key-value-pair"><span class="key">' + k + '</span>=<span class="value">' + v + '</span></span><br/>';
@@ -76,7 +84,7 @@ function table_row (data, table, edit, is_admin)
                 }
             }
             if (edit) {
-                 html += '<span class="key-value-pair"><input class="key" type="text"/>=<input type="text" class="value"/></span><br/>';
+                html += '</textarea>';
             }
             html += '</td>';
         } else if (th.hasClass("col_action")) {
@@ -124,12 +132,13 @@ function refresh_table_row (tr, id, edit)
         type: "GET",
         dataType: 'json',
         success: function(resp) {
-//            alert(JSON.stringify());
             var db_table = Object.keys(resp)[0];
             var json_row = resp[db_table][0];
             var table = $(tr).closest('table');
-            var new_tr_html = table_row(json_row, table, edit, 1);
-            $(tr).replaceWith(new_tr_html);
+            $(tr).replaceWith(table_row(json_row, table, edit, 1));
+            table.find('textarea').each(function() {
+                updateTextArea(this);
+            })
         },
         error: admintable_api_error
     });
@@ -137,79 +146,89 @@ function refresh_table_row (tr, id, edit)
 
 function submit_table_row(tr, id)
 {
-    var data = {};
-    $(tr).find('td').each (function() {
-        var th = $(this).closest('table').find('th').eq( this.cellIndex );
-        
-        var name = th.text().trim().toLowerCase();
-        
-        if (th.hasClass("col_value")) {
-            var value = $(this).find("input").val();
-            // distri name must be lowercase
-            if (name == 'distri') {
-                value = value.toLowerCase();
+    try {
+        var data = {};
+        $(tr).find('td').each (function() {
+            var th = $(this).closest('table').find('th').eq( this.cellIndex );
+
+            var name = th.text().trim().toLowerCase();
+
+            if (th.hasClass("col_value")) {
+                var value = $(this).find("input").val();
+                // distri name must be lowercase
+                if (name == 'distri') {
+                    value = value.toLowerCase();
+                }
+                data[name] = value;
             }
-            data[name] = value;
-        }
-        else if (th.hasClass("col_settings")) {
-            var value = $(this).find("input").val();
-            if (value) {
-                data["settings[" + name + "]"] = value;
+            else if (th.hasClass("col_settings")) {
+                var value = $(this).find("input").val();
+                if (value) {
+                    data["settings[" + name + "]"] = value;
+                }
             }
-        }
-        else if (th.hasClass("col_settings_list")) {
-            $(this).find('.key-value-pair').each (function() {
-                var key;
-                var k = $(this).find('span.key');
-                if (k.length) {
-                    key = k.text().trim();
-                }
-                else {
-                    k = $(this).find('input.key');
-                    if (k.length) key = k.val();
-                }
-                if (key) {
-                    var value = $(this).find('input.value').val();
-                    if (value) {
-                        data["settings[" + key + "]"] = value;
-                    }
-                }
+            else if (th.hasClass("col_settings_list")) {
+                data.settings = {};
+                $(this).find('.key-value-pairs').each (function() {
+                    $.each($(this).val().split('\n'), function(index) {
+                        // ignore empty lines
+                        if (this.length === 0) {
+                            return;
+                        }
+                        // determine key and value
+                        var equationSignIndex = this.indexOf('=');
+                        if (equationSignIndex < 1) {
+                            throw {
+                                type: 'invalid line',
+                                lineNo: index + 1,
+                                text: this
+                            };
+                        }
+                        var key = this.substr(0, equationSignIndex);
+                        var value = this.substr(equationSignIndex + 1);
+                        data.settings[key] = value;
+                    });
+                });
+            }
+        });
+
+        var url = $("#admintable_api_url").val();
+        if (id) {
+            // update
+            $.ajax({
+                url: url + "/" + id,
+                type: "POST",
+                dataType: 'json',
+                data: data,
+                headers: {
+                    'X-HTTP-Method-Override': 'PUT'
+                },
+                success: function(resp) {
+                    refresh_table_row(tr, id, false);
+                },
+                error: admintable_api_error
             });
         }
-    });
-    
-//    alert(JSON.stringify(data));
-    var url = $("#admintable_api_url").val();
-
-    if (id) {
-        // update
-        $.ajax({
-            url: url + "/" + id,
-            type: "POST",
-            dataType: 'json',
-            data: data,
-            headers: {
-                'X-HTTP-Method-Override': 'PUT'
-            },
-            success: function(resp) {
-                refresh_table_row(tr, id, false);
-            },
-            error: admintable_api_error
-        });
+        else {
+            // create new
+            $.ajax({
+                url: url,
+                type: "POST",
+                dataType: 'json',
+                data: data,
+                success: function(resp) {
+                    id = resp['id'];
+                    refresh_table_row(tr, id, false);
+                },
+                error: admintable_api_error
+            });
+        }
     }
-    else {
-        // create new
-        $.ajax({
-            url: url,
-            type: "POST",
-            dataType: 'json',
-            data: data,
-            success: function(resp) {
-                id = resp['id'];
-                refresh_table_row(tr, id, false);
-            },
-            error: admintable_api_error
-        });
+    catch(e) {
+        if(e.type !== 'invalid line') {
+            throw e;
+        }
+        window.alert('Line ' + e.lineNo + ' of settings is invalid: ' + e.text);
     }
 }
 
@@ -281,7 +300,7 @@ function populate_admin_table (is_admin)
                 }
                 table.find('tbody').html(html);
 		// a really stupid datatable
-		$('.admintable').DataTable( {
+                table.DataTable( {
                     "paging" : false,
                     "lengthChange": false,
                     "ordering": false

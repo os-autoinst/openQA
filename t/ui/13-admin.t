@@ -98,13 +98,14 @@ subtest 'add product' => sub() {
     is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium');
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
-    is($elem->get_text(), '=', "new row empty");
+    is($elem->get_text(), '', 'new row empty');
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 6, "6 fields");    # one column has 2 fields
+    is(@fields, 4, '4 input fields');
     (shift @fields)->send_keys('sle');      # distri
     (shift @fields)->send_keys('13');       # version
     (shift @fields)->send_keys('DVD');      # flavor
     (shift @fields)->send_keys('arm19');    # arch
+    is(scalar @{$driver->find_child_elements($elem, '//textarea')}, 1, '1 textarea');
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     t::ui::PhantomTest::wait_for_ajax;
@@ -114,13 +115,16 @@ subtest 'add product' => sub() {
     is($driver->find_element('//input[@value="New medium"]')->click(), 1, 'new medium');
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
-    is($elem->get_text(), '=', "new row empty");
+    is($elem->get_text(), '', 'new row empty');
     @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 6, "6 fields");             # one column has 2 fields
-    (shift @fields)->send_keys('OpeNSusE'); # distri name has capital letter and many upper/lower case combined
-    (shift @fields)->send_keys('13.2');     # version
-    (shift @fields)->send_keys('DVD');      # flavor
-    (shift @fields)->send_keys('ppc64le');  # arch
+    is(@fields, 4, '4 input fields');
+    (shift @fields)->send_keys('OpeNSusE');    # distri name has capital letter and many upper/lower case combined
+    (shift @fields)->send_keys('13.2');        # version
+    (shift @fields)->send_keys('DVD');         # flavor
+    (shift @fields)->send_keys('ppc64le');     # arch
+    @fields = $driver->find_child_elements($elem, '//textarea');
+    is(@fields, 1, '1 textarea');
+    (shift @fields)->send_keys("DVD=2\nIOS_MAXSIZE=4700372992");
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     t::ui::PhantomTest::wait_for_ajax;
@@ -147,7 +151,6 @@ subtest 'add machine' => sub() {
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
     @headers = $driver->find_child_elements($elem, 'td');
-
     # the headers are specific to our fixtures - if they change, we have to adapt
     is((shift @headers)->get_text(), "Laptop_64",                "name");
     is((shift @headers)->get_text(), "qemu",                     "backend");
@@ -158,16 +161,17 @@ subtest 'add machine' => sub() {
     is($driver->find_element('//input[@value="New machine"]')->click(), 1, 'new machine');
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
-    is($elem->get_text(), '=', "new row empty");
+    is($elem->get_text(), '', 'new row empty');
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 4, "4 fields");    # one column has 2 fields
+    is(@fields, 2, '2 input fields');
     (shift @fields)->send_keys('HURRA');    # name
     (shift @fields)->send_keys('ipmi');     # backend
-    (shift @fields)->send_keys('kvm32');    # cpu
-
+    @fields = $driver->find_child_elements($elem, '//textarea');
+    is(@fields, 1, '1 textarea');
+    (shift @fields)->send_keys("SERIALDEV=ttyS1\nTIMEOUT_SCALE=3\nWORKER_CLASS=64bit-ipmi");    # cpu
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     t::ui::PhantomTest::wait_for_ajax;
-    #$driver->capture_screenshot('add_machine.png');
+
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 4, "4 edit buttons afterwards");
 };
 
@@ -200,10 +204,12 @@ subtest 'add test suite' => sub() {
     is($driver->find_element('//input[@value="New test suite"]')->click(), 1, 'new test suite');
 
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
-    is($elem->get_text(), '=', "new row empty");
+    is($elem->get_text(), '', 'new row empty');
     my @fields = $driver->find_child_elements($elem, '//input[@type="text"]');
-    is(@fields, 3, "3 fields");    # one column has 2 fields
+    is(@fields, 1, '1 input field');
     (shift @fields)->send_keys('xfce');    # name
+    @fields = $driver->find_child_elements($elem, '//textarea');
+    is(@fields, 1, '1 textarea');
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     t::ui::PhantomTest::wait_for_ajax;
@@ -214,11 +220,11 @@ subtest 'add test suite' => sub() {
 
     is($driver->find_element('//input[@value="New test suite"]')->click(), 1, 'new test suite');
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
-    is($elem->get_text(), '=', "new row empty");
-    my ($name, $key, $value) = $driver->find_child_elements($elem, '//input[@type="text"]');
+    is($elem->get_text(), '', 'new row empty');
+    my $name     = $driver->find_child_element($elem, '//input[@type="text"]');
+    my $settings = $driver->find_child_element($elem, '//textarea');
     $name->send_keys($suiteName);
-    $key->send_keys($suiteKey);
-    $value->send_keys($suiteValue);
+    $settings->send_keys("$suiteKey=$suiteValue");
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
     t::ui::PhantomTest::wait_for_ajax;
@@ -228,13 +234,12 @@ subtest 'add test suite' => sub() {
     # try to edit and save
     ok($driver->find_child_element($elem, './td/button[@title="Edit"]')->click(), 'editing enabled');
     t::ui::PhantomTest::wait_for_ajax;
+
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
-    $name  = $driver->find_child_element($elem, './td/input[@type="text"]');
-    $key   = $driver->find_child_element($elem, './td/span/span[@class="key"]');
-    $value = $driver->find_child_element($elem, './td/span/input[@class="value"]');
-    is($name->get_value,  $suiteName,  'suite name edit box match');
-    is($key->get_text,    'testKey',   'key edit box matched sanitized key');
-    is($value->get_value, $suiteValue, 'value edit box matched sanitized key');
+    $name     = $driver->find_child_element($elem, './td/input[@type="text"]');
+    $settings = $driver->find_child_element($elem, './td/textarea');
+    is($name->get_value,    $suiteName,            'suite name edit box match');
+    is($settings->get_text, "testKey=$suiteValue", 'textarea matches sanitized key and value');
     ok($driver->find_child_element($elem, '//button[@title="Update"]')->click(), 'editing saved');
 
     # reread and compare to original
