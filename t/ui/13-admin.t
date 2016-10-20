@@ -249,25 +249,71 @@ subtest 'add test suite' => sub() {
 };
 
 subtest 'add job group' => sub() {
+    # navigate to job groups
+    $driver->find_element('#user-action a', 'css')->click();
+    $driver->find_element('Job groups',     'link_text')->click();
+    is($driver->get_title(), "openQA: Job groups", "on groups");
+
+    # check whether all job groups from fixtures are displayed
+    my $list_element = $driver->find_element('#job_group_list', 'css');
+    my @parent_group_entries = $driver->find_child_elements($list_element, 'li');
+    my $parentless_groups_entry = shift @parent_group_entries;
+    is($parentless_groups_entry->get_text(), "Miscellaneous groups\nopensuse\nopensuse test", 'parentless groups present');
+    is(@parent_group_entries, 0, 'only parentless groups present');
+
+    # disable animations to speed up test
+    $driver->execute_script('$(\'#add_group_modal\').removeClass(\'fade\'); jQuery.fx.off = true;');
+
+    # add new parentless group, leave name empty (which should lead to error)
+    $driver->find_child_element($parentless_groups_entry, 'div a.fa-plus', 'css')->click();
+    $driver->find_element('#create_group_button', 'css')->click();
+    t::ui::PhantomTest::wait_for_ajax;
+    $list_element = $driver->find_element('#job_group_list', 'css');
+    @parent_group_entries = $driver->find_child_elements($list_element, 'li');
+    $parentless_groups_entry = shift @parent_group_entries;
+    is($parentless_groups_entry->get_text(), "Miscellaneous groups\nopensuse\nopensuse test", 'still only two groups');
+    is(@parent_group_entries, 0, 'and also no more parent groups');
+    like($driver->find_element('#new_group_name_group ', 'css')->get_text(), qr/The group name must not be empty/, 'refuse creating group with empty name');
+
+    # add new parentless group (dialog should still be open), this time enter a name
+    $driver->find_element('#new_group_name',      'css')->send_keys('Cool Group');
+    $driver->find_element('#create_group_button', 'css')->click();
+    t::ui::PhantomTest::wait_for_ajax;
+
+    # new group should be present
+    $list_element = $driver->find_element('#job_group_list', 'css');
+    @parent_group_entries = $driver->find_child_elements($list_element, 'li');
+    $parentless_groups_entry = shift @parent_group_entries;
+    is($parentless_groups_entry->get_text(), "Miscellaneous groups\nCool Group\nopensuse\nopensuse test", 'new group as present');
+
+    # add new parent group
+    $driver->find_element('.add-parent-group',    'css')->click();
+    $driver->find_element('#new_group_name',      'css')->send_keys('New parent group');
+    $driver->find_element('#create_group_button', 'css')->click();
+    t::ui::PhantomTest::wait_for_ajax;
+
+    # check whether parent is present
+    $list_element = $driver->find_element('#job_group_list', 'css');
+    @parent_group_entries = $driver->find_child_elements($list_element, 'li');
+    is(@parent_group_entries, 2, 'now two parent groups present (one is parentless)');
+    my $new_groups_entry = shift @parent_group_entries;
+    is($new_groups_entry->get_text(), "New parent group", 'new group present');
+    $parentless_groups_entry = shift @parent_group_entries;
+    is($parentless_groups_entry->get_text(), "Miscellaneous groups\nCool Group\nopensuse\nopensuse test", 'new group present');
+
+    # test Drag & Drop: done manually, probably not worth to test automatically
+
+    # reload page to check whether the changes persist
     $driver->find_element('#user-action a', 'css')->click();
     $driver->find_element('Job groups',     'link_text')->click();
 
-    is($driver->get_title(), "openQA: Job groups", "on groups");
-    t::ui::PhantomTest::wait_for_ajax;
-    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 2 of 2 entries/, 'two groups in fixtures');
-    $driver->find_element('#new_group_submit', 'css')->click();
-    like($driver->find_element('#groups_wrapper',        'css')->get_text(), qr/Showing 1 to 2 of 2 entries/,     'still two groups');
-    like($driver->find_element('#new_group_name_group ', 'css')->get_text(), qr/The group name mustn't be empty/, 'refuse creating group with empty name');
-    $driver->find_element('#new_group_name', 'css')->send_keys('Cool Group');
-    my $current_url = $driver->get_current_url();
-    $driver->find_element('#new_group_submit', 'css')->click();
-    t::ui::PhantomTest::wait_for_ajax;
-    # FIXME: testing redirection doesn't work without sleep - how to wait for page reload triggerd via JavaScript?
-    #sleep 1;
-    #like($driver->get_current_url(), qr/admin\/job_templates\/[\d]*$/, 'redirection successful');
-    $driver->get($current_url);
-    like($driver->find_element('#groups_wrapper', 'css')->get_text(), qr/Showing 1 to 3 of 3 entries/, 'group created');
-    is($driver->find_element('#group_1003', 'css')->get_text(), 'Cool Group 50 100 30 120 365 0', 'group created');
+    $list_element = $driver->find_element('#job_group_list', 'css');
+    @parent_group_entries = $driver->find_child_elements($list_element, 'li');
+    is(@parent_group_entries, 2, 'now two parent groups present (one is parentless)');
+    $new_groups_entry = shift @parent_group_entries;
+    is($new_groups_entry->get_text(), "New parent group", 'new group present');
+    $parentless_groups_entry = shift @parent_group_entries;
+    is($parentless_groups_entry->get_text(), "Miscellaneous groups\nCool Group\nopensuse\nopensuse test", 'new group present');
 };
 
 subtest 'job property editor' => sub() {

@@ -502,9 +502,110 @@ a.restart-link {
     margin-top: 20px;
 }
 
-/* admin job manager */
+/* admin job group manager */
 #new_group_form button {
     margin-top: 15px;
+}
+
+a.add-parent-group {
+    float: right;
+    font-size: 215%;
+    padding: 5px;
+    text-decoration: none !important;
+    position: relative;
+    top: -10px;
+}
+
+#job_group_list {
+    margin: 0px 0px 20px 0px;
+    padding: 0px;
+
+    & > li {
+        padding-bottom: 4px !important;
+    }
+
+    li, div {
+        font-weight: 500;
+        font-size: 120%;
+        list-style-type: none;
+    }
+
+    ul {
+        margin: 0px;
+        padding: 0px;
+        margin-top: 1px;
+    }
+
+    li {
+        border: 1px solid #eee;
+        margin: 5px 0px;
+        padding: 5px;
+        font-weight: normal;
+        font-size: 115%;
+        clear: both;
+    }
+
+    ul li {
+        background-color: #fdfdfd;
+    }
+
+    [draggable='true'] {
+        cursor: move;
+    }
+
+    [draggable='false'] span.glyphicon {
+        display: none;
+    }
+
+    span.glyphicon, span.fa {
+        color: #aaa;
+        margin: 0px 5px;
+    }
+
+    span.glyphicon-menu-hamburger {
+        font-size: 80%;
+        margin: 3px;
+    }
+
+    a.fa-plus {
+        float: right;
+        display: inline-block;
+        margin: 5px;
+        text-decoration: none;
+    }
+
+    div.dragover {
+        margin-bottom: -3px;
+    }
+
+    li.dragover {
+        padding-bottom: 1px;
+    }
+
+    .dragover:after {
+        border-bottom: 2px dashed #446E9B;
+        content: " ";
+        position: relative;
+        display: block;
+        margin: 1px 0px;
+    }
+
+    li.dragover:after {
+        top: 7px;
+    }
+
+    .parent-dragover {
+        margin-top: -4px;
+    }
+
+    .parent-dragover:before {
+        border-top: 2px dashed #446E9B;
+        content: " ";
+        position: relative;
+        display: block;
+        top: -6px;
+        margin: 1px 0px;
+    }
 }
 
 /* job template */

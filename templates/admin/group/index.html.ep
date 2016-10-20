@@ -5,85 +5,85 @@
   $('#groups').DataTable();
 % end
 
-<div class="row">
-    <div class="col-sm-12">
-        <h2><%= title %></h2>
-
-    %= include 'layouts/info'
-
-    <table id="groups" class="table table-striped">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Default priority</th>
-                <th>Size limit (GiB)</th>
-                <th>Log storage<br>duration (days)</th>
-                <th>Important log storage<br>duration (days)</th>
-                <th>Result storage<br>duration (days)</th>
-                <th>Important result storage<br>duration (days)</th>
-            </tr>
-        </thead>
-        <tbody>
-        % while (my $group = $groups->next()) {
-        <tr id="group_<%= $group->id %>">
-            <td class="name">
-                %= link_to $group->name => url_for('admin_job_templates', groupid => $group->id)
-            </td>
-            <td>
-                %= $group->default_priority
-            </td>
-            <td>
-                %= $group->size_limit_gb
-            </td>
-            <td>
-                %= $group->keep_logs_in_days
-            </td>
-            <td>
-                %= $group->keep_important_logs_in_days
-            </td>
-            <td>
-                %= $group->keep_results_in_days
-            </td>
-            <td>
-                %= $group->keep_important_results_in_days
-            </td>
-        </tr>
-        % }
-        </tbody>
-    </table>
-
-    % if (is_admin) {
-        <div class="panel panel-default">
-            <div class="panel-heading">New group</div>
-            <div class="panel-body">
-                <form action="#" id="new_group_form" onsubmit="return createGroup(this);"
-                  data-post-url="<%= url_for('apiv1_post_job_group') %>"
-                  data-redir-url="<%= url_for('admin_job_templates') %>"
-                  class="form-horizontal">
+<div class="modal fade" id="add_group_modal" tabindex="-1" role="dialog" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form action="#" id="new_group_form" onsubmit="return createGroup(this);"
+              data-post-job-group-url="<%= url_for('apiv1_post_job_group') %>"
+              data-post-parent-group-url="<%= url_for('apiv1_post_parent_group') %>"
+              data-job-group-row-url="<%= url_for('admin_job_group_row') %>"
+              data-parent-group-row-url="<%= url_for('admin_parent_group_row') %>"
+              class="form-horizontal">
+                <div class="modal-header">
+                    <button type="reset" class="close" id="x_delete" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title"></h4>
+                </div>
+                <div class="modal-body">
                     <div class="form-group" id="new_group_name_group">
                         <label for="new_group_name" class="col-sm-2 control-label">Name</label>
                         <div class="col-sm-10">
                             <input type="text" name="name" id="new_group_name" value="" class="form-control">
                             <span class="help-block hidden">
                                 <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                                The group name mustn't be empty.
+                                The group name must not be empty.
                             </span>
-                        <div>
-                    </div>
-                    <div class="form-group">
-                        <div class="col-sm-10">
-                            <button type="submit" id="new_group_submit" class="btn btn-primary">Create</button>
                         </div>
                     </div>
-                </form>
-                <p id="new_group_creating" class="hidden">Creating group ...</p>
-                <p id="new_group_error" class="hidden">
-                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                    Unable to create group: <span id="new_group_error_message"></span>
-                </p>
-            </div>
-        </div>
-    % }
+                    <p id="new_group_creating" class="hidden">
+                        <i class="fa fa-cog fa-spin fa-3x fa-fw"></i>
+                        Creating group
+                    </p>
+                    <p id="new_group_error" class="hidden">
+                        <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                        Unable to create group: <strong id="new_group_error_message"></strong>
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="reset" class="btn btn-default" data-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary" id="create_group_button">Create</button>
+                </div>
+            </form>
+        </div><!-- /.modal-content -->
+    </div><!-- /.modal-dialog -->
 </div>
 
+<div class="row">
+    <div class="col-sm-12">
+        <h2><%= title %></h2>
+        %= include 'layouts/info'
+        % if (is_admin) {
+            <a href="#" onclick="return showAddParentGroup(this);" class="add-parent-group fa fa-2 fa-plus" title="Add new"></a>
+            <p>Drag & Drop job groups to order. Click on a group to edit group properties and jobs.</p>
+            <div id="reorganize_groups_panel" class="hidden">
+                <p id="reorganize_groups_progress" class="hidden">
+                    <i class="fa fa-cog fa-spin fa-3x fa-fw"></i>
+                    Committing changes
+                </p>
+                <div id="reorganize_groups_error" class="hidden panel panel-default">
+                    <div class="panel-heading">Saving</div>
+                    <div class="panel-body">
+                        <p>
+                            <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+                            Unable to save: <strong id="reorganize_groups_error_message"></strong>
+                        </p>
+                        <p>
+                            <button onclick="saveReorganizedGroups();" class="btn btn-primary">Retry saving</button>
+                            <button onclick="window.location.reload();" class="btn btn-default">Refresh page</button>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        % }
+        <ul id="job_group_list"
+            data-put-job-group-url="<%= url_for('apiv1_put_job_group') %>"
+            data-put-parent-group-url="<%= url_for('apiv1_put_parent_group') %>"
+        >
+            % my $parent_index = 0;
+            % while (my $group = $parent_groups->next()) {
+                %= include 'admin/group/parent_group_row', group => $group, parent_index => $parent_index
+                % ++$parent_index;
+            % }
+            %= include 'admin/group/parent_group_row', group => undef, parent_index => $parent_index, groups => $groups
+        </ul>
+    </div>
 </div>

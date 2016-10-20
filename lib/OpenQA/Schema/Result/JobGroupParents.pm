@@ -69,7 +69,7 @@ __PACKAGE__->add_unique_constraint([qw/name/]);
 
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobGroups', 'parent_id');
+__PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobGroups', 'parent_id', {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
 
 around 'default_size_limit_gb' => sub {
     my ($orig, $self) = @_;

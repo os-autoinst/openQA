@@ -20,10 +20,42 @@ use Mojo::Base 'Mojolicious::Controller';
 
 sub index {
     my ($self) = @_;
-    my $groups = $self->db->resultset("JobGroups")->search(undef, {order_by => 'name'});
 
-    $self->stash('groups', $groups);
+    my $parent_groups = $self->db->resultset('JobGroupParents')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
+    my $groups = $self->db->resultset('JobGroups')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
+
+    $self->stash('parent_groups', $parent_groups);
+    $self->stash('groups',        $groups);
     $self->render('admin/group/index');
+}
+
+sub group_page {
+    my ($self, $resultset, $template) = @_;
+
+    my $group_id = $self->param('groupid');
+    return $self->reply->not_found unless $group_id;
+
+    my $group = $self->db->resultset($resultset)->find($group_id);
+    return $self->reply->not_found unless $group;
+
+    $self->stash('group',       $group);
+    $self->stash('group_index', $group->sort_order);
+    $self->render($template);
+}
+
+sub parent_group_row {
+    my ($self) = @_;
+    $self->group_page('JobGroupParents', 'admin/group/parent_group_row');
+}
+
+sub job_group_row {
+    my ($self) = @_;
+    $self->group_page('JobGroups', 'admin/group/job_group_row');
+}
+
+sub edit_parent_group {
+    my ($self) = @_;
+    $self->group_page('JobGroupParents', 'admin/group/parent_group_property_editor');
 }
 
 sub connect {

@@ -53,7 +53,14 @@ sub load_properties {
     my %properties;
     for my $param ($self->resultset->result_source->columns) {
         my $value = $self->param($param);
-        $properties{$param} = $value if defined($value);
+        if (defined($value)) {
+            if ($param eq 'parent_id') {
+                $properties{$param} = ($value eq 'none') ? undef : $value;
+            }
+            else {
+                $properties{$param} = $value;
+            }
+        }
     }
     return \%properties;
 }
