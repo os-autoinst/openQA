@@ -107,4 +107,14 @@ around 'default_priority' => sub {
     return $self->get_column('default_priority') // ($self->parent ? $self->parent->default_priority : OpenQA::Schema::JobGroupDefaults::PRIORITY);
 };
 
+sub rendered_description {
+    my ($self) = @_;
+
+    if ($self->description) {
+        my $m = CommentsMarkdownParser->new;
+        return Mojo::ByteStream->new($m->markdown($self->description));
+    }
+    return;
+}
+
 1;

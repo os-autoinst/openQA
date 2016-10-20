@@ -93,6 +93,7 @@ sub group_overview {
             delete $res->{$build} unless $res->{$build}->{tag};
         }
     }
+
     $self->stash('result', $res);
     $self->stash(
         'group',
@@ -104,6 +105,7 @@ sub group_overview {
     $self->stash('only_tagged',     $only_tagged);
     $self->stash('comments',        \@comments);
     $self->stash('pinned_comments', \@pinned_comments);
+    $self->stash('description',     $group->rendered_description);
     $self->respond_to(
         json => {json     => {result => $res}},
         html => {template => 'main/group_overview'});
