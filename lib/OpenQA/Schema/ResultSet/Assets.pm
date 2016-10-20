@@ -20,7 +20,8 @@ use base qw/DBIx::Class::ResultSet/;
 use OpenQA::Utils qw/log_warning locate_asset/;
 
 sub register {
-    my ($self, $type, $name) = @_;
+    my ($self, $type, $name, $missingok) = @_;
+    $missingok //= 0;
 
     our %types = map { $_ => 1 } qw/iso repo hdd other/;
     unless ($types{$type}) {
@@ -32,7 +33,9 @@ sub register {
         return;
     }
     unless (locate_asset $type, $name, 1) {
-        log_warning "no file found for asset '$name' type '$type'";
+        if (!$missingok) {
+            log_warning "no file found for asset '$name' type '$type'";
+        }
         return;
     }
     my $asset = $self->find_or_create(
