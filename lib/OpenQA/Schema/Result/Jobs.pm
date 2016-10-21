@@ -23,7 +23,7 @@ use JSON;
 use Fcntl;
 use DateTime;
 use db_helpers;
-use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings/;
+use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings locate_asset/;
 use File::Basename qw/basename dirname/;
 use File::Path ();
 use DBIx::Class::Timestamps qw/now/;
@@ -1133,11 +1133,10 @@ sub register_assets_from_settings {
 sub _asset_find {
     my ($name, $type, $parents) = @_;
 
-    # add undef to parents so that we chek regular assets too
+    # add undef to parents so that we check regular assets too
     for my $parent (@$parents, undef) {
         my $fname = $parent ? sprintf("%08d-%s", $parent, $name) : $name;
-        my $path = join('/', $OpenQA::Utils::assetdir, $type, $fname);
-        return $fname if -e $path;
+        return $fname if (locate_asset($type, $fname, 1));
     }
     return;
 }
