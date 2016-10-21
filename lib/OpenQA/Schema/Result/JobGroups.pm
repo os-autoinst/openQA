@@ -114,7 +114,7 @@ sub rendered_description {
         my $m = CommentsMarkdownParser->new;
         return Mojo::ByteStream->new($m->markdown($self->description));
     }
-    return;
+    return '';
 }
 
 1;
