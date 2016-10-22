@@ -263,7 +263,7 @@ sub schedule_iso {
     # register assets posted here right away, in case no job
     # templates produce jobs.
     for my $a (values %{parse_assets_from_settings($args)}) {
-        $self->app->schema->resultset("Assets")->register($a->{type}, $a->{name});
+        $self->app->schema->resultset("Assets")->register($a->{type}, $a->{name}, 1);
     }
     my $noobsolete = delete $args->{_NOOBSOLETEBUILD};
     $noobsolete //= 0;
