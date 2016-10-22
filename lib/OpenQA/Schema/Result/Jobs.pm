@@ -1402,13 +1402,21 @@ sub done {
     my $newbuild = int($args{newbuild} // 0);
     $args{result} = OBSOLETED if $newbuild;
 
+    # cleanup
+    $self->set_property('JOBTOKEN');
+    $self->release_networks();
+    $self->owned_locks->delete;
+    $self->locked_locks->update({locked_by => undef});
+    if ($self->worker) {
+        # free the worker
+        $self->worker->update({job_id => undef});
+    }
+
     # update result if not provided
     my $result = $args{result} || $self->calculate_result();
     my %new_val = (state => DONE);
     # for cancelled jobs the result is already known
     $new_val{result} = $result if $self->result eq NONE;
-
-    $self->_cleanup;
 
     $self->update(\%new_val);
 
@@ -1420,20 +1428,6 @@ sub done {
     $self->carry_over_labels;
 
     return $result;
-}
-
-# free the worker and remove token and locks
-sub _cleanup {
-    my ($self) = @_;
-
-    $self->set_property('JOBTOKEN');
-    $self->release_networks();
-    $self->owned_locks->delete;
-    $self->locked_locks->update({locked_by => undef});
-    if ($self->worker) {
-        # free the worker
-        $self->worker->update({job_id => undef});
-    }
 }
 
 sub cancel {
@@ -1454,8 +1448,6 @@ sub cancel {
         $count += $self->_job_skip_children;
         $count += $self->_job_stop_children;
     }
-
-    $self->_cleanup;
     return $count;
 }
 1;
