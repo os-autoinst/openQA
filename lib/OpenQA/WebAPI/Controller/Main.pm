@@ -105,7 +105,8 @@ sub group_overview {
     $self->stash('only_tagged',     $only_tagged);
     $self->stash('comments',        \@comments);
     $self->stash('pinned_comments', \@pinned_comments);
-    $self->stash('description',     $group->rendered_description);
+    my $desc = $group->rendered_description;
+    $self->stash('description', $desc);
     $self->respond_to(
         json => {json     => {result => $res}},
         html => {template => 'main/group_overview'});
