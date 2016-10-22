@@ -23,7 +23,7 @@
     Assets => {
         id   => 5,
         type => 'hdd',
-        name => 'openSUSE-13.1-x86_64.hda.xz',
+        name => 'openSUSE-13.1-x86_64.hda',
     },
     JobGroups => {
         id          => 1001,

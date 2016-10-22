@@ -31,6 +31,7 @@ use Data::Dump;
 use OpenQA::IPC;
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
+use OpenQA::Utils 'locate_asset';
 
 OpenQA::Test::Case->new->init_data;
 
@@ -243,66 +244,95 @@ $t->app->config->{global}->{download_domains} = 'localhost';
 
 my $rsp;
 
+# we keep checking gru task count and args over and over in this next bit,
+# so let's not repeat the code over and over. If no 'expected args' are
+# passed, just checks there are no download_asset tasks in the queue; if an
+# array hash of 'expected args' is passed, checks there's one task in the
+# queue and its args match the hash, then deletes it. $desc is appended to
+# the test description so you know which one failed, if it fails.
+sub check_download_asset {
+    my ($desc, $expectargs) = @_;
+    my $rs = $t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'});
+    if ($expectargs) {
+        is($rs->count, 1, "gru task should be created: $desc");
+        my $args = $rs->first->args;
+        is_deeply($args, $expectargs, "download_asset task args should be as expected: $desc");
+        $rs->first->delete;
+    }
+    else {
+        is($rs->count, 0, "gru task should not be created: $desc");
+    }
+}
+
+# Similarly for checking a setting in the created jobs...takes the app, the
+# response object, the setting name, the expected value and the test
+# description as args.
+sub check_job_setting {
+    my ($t, $rsp, $setting, $expected, $desc) = @_;
+    my $newid = @{$rsp->json->{ids}}[0];
+    my $ret   = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
+    is($ret->tx->res->json->{job}->{settings}->{$setting}, $expected, $desc);
+}
+
 # Schedule download of an existing ISO
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost/openSUSE-13.1-DVD-i586-Build0091-Media.iso'}) };
 map { like($_, $expected, 'expected warning') } @warnings;
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 0, 'gru task should not be created');
+check_download_asset('existing ISO');
 
 # Schedule download of an existing HDD for extraction
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://localhost/openSUSE-13.1-x86_64.hda.xz'}) };
 map { like($_, $expected, 'expected warning') } @warnings;
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 0, 'gru task should not be created');
+check_download_asset('existing HDD');
 
 # Schedule download of a non-existing ISO
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost/nonexistent.iso'}) };
 is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
 map { like($_, $expected, 'expected warning') } @warnings;
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 1, 'gru task should be created');
+check_download_asset('non-existent ISO', ['http://localhost/nonexistent.iso', locate_asset('iso', 'nonexistent.iso', 0), 0]);
+check_job_setting($t, $rsp, 'ISO', 'nonexistent.iso', 'parameter ISO is correctly set from ISO_URL');
 
-# Schedule download of a non-existing HDD
+# Schedule download and uncompression of a non-existing HDD
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://localhost/nonexistent.hda.xz'}) };
 is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
 map { like($_, $expected, 'expected warning') } @warnings;
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'gru task should be created');
+check_download_asset('non-existent HDD (with uncompression)', ['http://localhost/nonexistent.hda.xz', locate_asset('hdd', 'nonexistent.hda', 0), 1]);
+check_job_setting($t, $rsp, 'HDD_1', 'nonexistent.hda', 'parameter HDD_1 is correctly set from HDD_1_DECOMPRESS_URL');
+
+# Schedule download of a non-existing ISO with a custom target name
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost/nonexistent2.iso', ISO => 'callitthis.iso'}) };
+map { like($_, $expected, 'expected warning') } @warnings;
+check_download_asset('non-existent ISO (with custom name)', ['http://localhost/nonexistent2.iso', locate_asset('iso', 'callitthis.iso', 0), 0]);
+check_job_setting($t, $rsp, 'ISO', 'callitthis.iso', 'parameter ISO is not overwritten when ISO_URL is set');
+
+# Schedule download and uncompression of a non-existing kernel with a custom target name
+@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', KERNEL_DECOMPRESS_URL => 'http://localhost/nonexistvmlinuz', KERNEL => 'callitvmlinuz'}) };
+is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
+map { like($_, $expected, 'expected warning') } @warnings;
+check_download_asset('non-existent kernel (with uncompression, custom name', ['http://localhost/nonexistvmlinuz', locate_asset('other', 'callitvmlinuz', 0), 1]);
+check_job_setting($t, $rsp, 'KERNEL', 'callitvmlinuz', 'parameter KERNEL is not overwritten when KERNEL_DECOMPRESS_URL is set');
 
 # Using non-asset _URL does not create gru job and schedule jobs
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', NO_ASSET_URL => 'http://localhost/nonexistent.iso'}) };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
+check_download_asset('non-asset _URL');
 
 # Using asset _URL but without filename extractable from URL create warning in log file, jobs, but no gru job
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost'}) };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
+check_download_asset('asset _URL without valid filename');
 
 # Using asset _URL outside of whitelist will yield 403
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://adamshost/nonexistent.iso'}, 403) };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
+check_download_asset('asset _URL not in whitelist');
 
 # Using asset _DECOMPRESS_URL outside of whitelist will yield 403
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://adamshost/nonexistent.hda.xz'}, 403) };
 map { like($_, $expected, 'expected warning') } @warnings;
 is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
-is($t->app->db->resultset("GruTasks")->search({taskname => 'download_asset'}), 2, 'no additional gru task should be created');
-
-# Using asset _URL will automatically create parameter without _URL
-@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO => $iso, KERNEL_URL => 'http://localhost/vmlinuz'}) };
-map { like($_, $expected, 'expected warning') } @warnings;
-
-$newid = @{$ret->tx->res->json->{ids}}[0];
-$ret   = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
-is($ret->tx->res->json->{job}->{settings}->{KERNEL}, 'vmlinuz', "parameter KERNEL is correctly set from KERNEL_URL");
-
-# Having parameter without _URL and the same with _URL will not overwrite it
-@warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO => $iso, KERNEL => 'vmlinuz.img.20160516', KERNEL_URL => 'http://localhost/vmlinuz'}) };
-map { ok($_ =~ $expected, 'expected warning') } @warnings;
-
-$newid = @{$ret->tx->res->json->{ids}}[0];
-$ret   = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
-is($ret->tx->res->json->{job}->{settings}->{KERNEL}, 'vmlinuz.img.20160516', "parameter KERNEL is not overwritten when KERNEL_URL is set");
+check_download_asset('asset _DECOMPRESS_URL not in whitelist');
 
 done_testing();

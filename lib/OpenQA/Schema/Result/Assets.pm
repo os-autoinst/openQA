@@ -25,6 +25,7 @@ use Archive::Extract;
 use File::Basename;
 use File::Spec::Functions 'catfile';
 use Mojo::UserAgent;
+use Mojo::URL;
 use File::Spec::Functions 'splitpath';
 use Try::Tiny;
 
@@ -136,15 +137,15 @@ sub hidden {
 # it in. scheduled in ISO controller
 sub download_asset {
     my ($app, $args) = @_;
-    my ($url, $dlpath, $do_extract) = @{$args};
+    my ($url, $assetpath, $do_extract) = @{$args};
     my $ipc = OpenQA::IPC->ipc;
     # Bail if the dest file exists (in case multiple downloads of same ISO
     # are scheduled)
-    return if (-e $dlpath);
+    return if (-e $assetpath);
 
-    my $dldir = (splitpath($dlpath))[1];
-    unless (-w $dldir) {
-        OpenQA::Utils::log_error("download_asset: cannot write to $dldir");
+    my $assetdir = (splitpath($assetpath))[1];
+    unless (-w $assetdir) {
+        OpenQA::Utils::log_error("download_asset: cannot write to $assetdir");
         # we're not going to die because this is a gru task and we don't
         # want to cause the Endless Gru Loop Of Despair, just return and
         # let the jobs fail
@@ -169,8 +170,12 @@ sub download_asset {
         notify_workers;
         return;
     }
-
-    OpenQA::Utils::log_debug("Downloading " . $url . " to " . $dlpath . "...");
+    if ($do_extract) {
+        OpenQA::Utils::log_debug("Downloading " . $url . ", uncompressing to " . $assetpath . "...");
+    }
+    else {
+        OpenQA::Utils::log_debug("Downloading " . $url . " to " . $assetpath . "...");
+    }
     my $ua = Mojo::UserAgent->new(max_redirects => 5);
     my $tx = $ua->build_tx(GET => $url);
     # Allow >16MiB downloads
@@ -179,11 +184,31 @@ sub download_asset {
     $tx = $ua->start($tx);
     if ($tx->success) {
         try {
-            $tx->res->content->asset->move_to($dlpath);
+            if ($do_extract) {
+                # Rename the downloaded data to the original file name, in
+                # MOJO_TMPDIR
+                my $tempfile = catfile($ENV{MOJO_TMPDIR}, Mojo::URL->new($url)->path->parts->[-1]);
+                $tx->res->content->asset->move_to($tempfile);
+
+                # Extract the temp archive file to the requested asset location
+                my $ae = Archive::Extract->new(archive => $tempfile);
+                my $ok = $ae->extract(to => $assetpath);
+                if (!$ok) {
+                    OpenQA::Utils::log_error("Extracting failed!");
+                }
+
+                # Remove the temporary file
+                unlink($tempfile);
+            }
+            else {
+                # Just directly move the downloaded data to the requested
+                # asset location
+                $tx->res->content->asset->move_to($assetpath);
+            }
         }
         catch {
             # again, we're trying not to die here, but log and return on fail
-            OpenQA::Utils::log_error("Error renaming temporary file to $dlpath: $_");
+            OpenQA::Utils::log_error("Error renaming or extracting temporary file to $assetpath: $_");
             notify_workers;
             return;
         };
@@ -191,30 +216,13 @@ sub download_asset {
     else {
         # Clean up after ourselves. Probably won't exist, but just in case
         OpenQA::Utils::log_error("Downloading failed! Deleting files");
-        unlink($dlpath);
+        unlink($assetpath);
         notify_workers;
         return;
     }
 
-    # Extract downloaded file when required
-    if ($do_extract) {
-        my $ae = Archive::Extract->new(archive => $dlpath);
-        # Remove last extension from the end of filename
-        my ($filename, $dirs, $suffix) = fileparse($dlpath, qr/\.[^.]*/);
-        $filename = catfile($dirs, $filename);
-
-        OpenQA::Utils::log_debug("Extracting to $filename");
-
-        my $ok = $ae->extract(to => $filename);
-
-        if (!$ok) {
-            OpenQA::Utils::log_error("Extracting failed! Deleting files");
-            unlink($dlpath);
-        }
-    }
-
-    # We want to notify workers either way: if we failed to download the ISO,
-    # we want the jobs to run and fail.
+    # We want to notify workers either way: if we failed to download, we
+    # want the jobs to run and fail.
     notify_workers;
 }
 

@@ -299,13 +299,12 @@ sub schedule_iso {
         }
         if (!$args->{$short}) {
             $filename = Mojo::URL->new($url)->path->parts->[-1];
-            $args->{$short} = $filename;
             if ($do_extract) {
-                # if user wants to extract downloaded file, parameter itself
-                # will point to uncompressed file with the same filename, but
-                # with last extension removed
-                $args->{$short} = fileparse($filename, qr/\.[^.]*/);
+                # if user wants to extract downloaded file, final filename
+                # will have last extension removed
+                $filename = fileparse($filename, qr/\.[^.]*/);
             }
+            $args->{$short} = $filename;
             if (!$args->{$short}) {
                 OpenQA::Utils::log_warning("Unable to get filename from $url. Ignoring $arg");
                 delete $args->{$short} unless $args->{$short};
