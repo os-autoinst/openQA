@@ -582,6 +582,8 @@ sub viewimg {
     my $dversion = $job->VERSION || '';
 
     my @needles;
+
+    # load primary needle match
     if ($module_detail->{needle}) {
         my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
         if ($needle) {    # possibly missing/broken file
@@ -594,6 +596,8 @@ sub viewimg {
             push(@needles, $info);
         }
     }
+
+    # load other needle matches
     if ($module_detail->{needles}) {
         my $needlename;
         my $needleinfo;
@@ -620,6 +624,7 @@ sub viewimg {
     }
 
     $self->stash('screenshot', $module_detail->{screenshot});
+    $self->stash('tags',       $module_detail->{tags});
     $self->stash('needles',    \@needles);
     return $self->render('step/viewimg');
 }

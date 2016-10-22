@@ -21,6 +21,7 @@ $color-bolt: #ffbf00; /* amber */
 $color-state-scheduled: #67A2B7;
 $color-state-cancelled: $color-module-none;
 $color-state-running: #8BDFFF;
+$color-step-actions: #666;
 
 .build-dashboard {
 
@@ -200,6 +201,10 @@ ul.modcategory {
 
 .no_hover:hover {
    text-decoration: none;
+}
+
+.candidate_needles {
+    margin-right: 1em;
 }
 
 /* special table stuff */
@@ -408,6 +413,16 @@ div.flags {
 
 .fa.comment, .fa.bookmark, .fa.bug, .fa.certificate, .fa.tag { color: $color-labels; }
 .fa-bolt { color: $color-bolt; }
+
+.step_actions {
+    .step_action { color: $color-step-actions; }
+    .new {
+        position: relative;
+        top: 8px;
+        left: 8px;
+        color: green;
+    }
+}
 
 table#users {
         td.role {
