@@ -275,7 +275,6 @@ subtest 'commenting in test results including labels' => sub {
         is($get->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href}, 'https://bugzilla.suse.com/show_bug.cgi?id=1234');
         $driver->find_element('opensuse', 'link_text')->click();
         is($driver->find_element('.review-all-passed', 'css')->get_attribute('title'), 'Reviewed (all passed)', 'build should be marked because all tests passed');
-        is($driver->find_element('.review',            'css')->get_attribute('title'), 'Reviewed (1 comments)', 'build should be marked as labeled');
 
         subtest 'progress items work, too' => sub {
             $driver->get($baseurl . 'tests/99926#comments');
