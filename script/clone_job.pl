@@ -62,6 +62,10 @@ do not clone parent jobs of type chained. This makes the job use the downloaded 
 
 do not try any download. You need to ensure all required assets are provided yourself.
 
+=item B<--parental-inheritance>
+
+provide parental job with variables from command line (they go to child job by default).
+
 =item B<--apikey> <value>
 
 specify the public key needed for API authentication
@@ -121,7 +125,7 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options, "from=s", "host=s", "dir=s", "apikey:s", "apisecret:s", "verbose|v", "skip-deps", "skip-chained-deps", "skip-download", "help|h",) or usage(1);
+GetOptions(\%options, "from=s", "host=s", "dir=s", "apikey:s", "apisecret:s", "verbose|v", "skip-deps", "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",) or usage(1);
 
 usage(1) unless @ARGV;
 usage(1) unless exists $options{'from'};
@@ -257,7 +261,7 @@ sub clone_job {
         $settings{_GROUP} = $job->{group};
     }
     delete $settings{NAME};    # usually autocreated
-    if ($depth == 0) {
+    if ($depth == 0 or $options{'parental-inheritance'}) {
         for my $arg (@ARGV) {
             if ($arg =~ /([A-Z0-9_]+)=(.*)/) {
                 if (defined $2) {
