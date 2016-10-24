@@ -345,14 +345,12 @@ function reactToSaveNeedle(data) {
 
 function saveNeedle(e) {
   var form = $("#save_needle_form");
-  var fdata = form.serialize();
-  var url = form.attr('action');
   $('#save').prop('disabled', true);
   $.ajax({
     type: "POST",
-    url: url,
-    data: fdata,
-    complete: function(data, status) { reactToSaveNeedle(data); }
+    url: form.attr('action'),
+    data: form.serialize(),
+    complete: reactToSaveNeedle
   });
   return false;
 }

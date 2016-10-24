@@ -144,11 +144,10 @@ sub add_workaround_property() {
     is($driver->find_element('#property_workaround', 'css')->is_selected(), 1, "workaround property selected");
 }
 
-# change_needle_value($xoffset, $yoffset)
 sub change_needle_value($$) {
-    my $xoffset    = shift;
-    my $yoffset    = shift;
-    my $pre_offset = 10;      # we need this value as first position the cursor moved on
+    my ($xoffset, $yoffset) = @_;
+
+    my $pre_offset = 10;    # we need this value as first position the cursor moved on
     my $decode_new_textarea;
 
     $elem = $driver->find_element('#needleeditor_textarea', 'css');
@@ -196,9 +195,12 @@ sub change_needle_value($$) {
     is($decode_new_textarea->{area}[0]->{match}, 99, "match level is 99 now");
 }
 
-# overwrite_needle($needlename);
 sub overwrite_needle($) {
-    my $needlename = shift;
+    my ($needlename) = @_;
+
+    # remove animation from modal to speed up test
+    $driver->execute_script('$(\'#modal-overwrite\').removeClass(\'fade\');');
+
     $driver->find_element('#needleeditor_name', 'css')->clear();
     is($driver->find_element('#needleeditor_name', 'css')->get_value(), "", "needle name input clean up");
     $driver->find_element('#needleeditor_name', 'css')->send_keys($needlename);
@@ -207,17 +209,8 @@ sub overwrite_needle($) {
     t::ui::PhantomTest::wait_for_ajax;
 
     my $diag;
-    my $is_displayed = 0;
-    # sometimes the overwrite warning is not there yet after the first call to
-    # 'wait_for_ajax' which has been observed only in tests so far
-    for my $retry (1 .. 10) {
-        $diag = $driver->find_element('#modal-overwrite', 'css');
-        $is_displayed = $driver->find_child_element($diag, '.modal-title', 'css')->is_displayed();
-        last if $is_displayed;
-        note("overwrite warning not found in retry $retry\n");
-        t::ui::PhantomTest::wait_for_ajax;
-    }
-    is($is_displayed, 1, "We can see the overwrite dialog");
+    $diag = $driver->find_element('#modal-overwrite', 'css');
+    is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "We can see the overwrite dialog");
     is($driver->find_child_element($diag, '.modal-title', 'css')->get_text(), "Sure to overwrite test-newneedle?", "Needle part of the title");
 
     $driver->find_element('#modal-overwrite-confirm', 'css')->click();
