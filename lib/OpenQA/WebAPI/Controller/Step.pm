@@ -434,7 +434,6 @@ sub save_needle_ajax {
     return 0 unless $self->init();
 
     my $validation = $self->validation;
-
     $validation->required('json');
     $validation->required('imagename')->like(qr/^[^.\/][^\/]{3,}\.png$/);
     $validation->optional('imagedistri')->like(qr/^[^.\/]+$/);
@@ -442,7 +441,7 @@ sub save_needle_ajax {
     $validation->required('needlename')->like(qr/^[^.\/][^\/]{3,}$/);
 
     if ($validation->has_error) {
-        my $error = 'wrong parameters';
+        my $error = 'wrong parameters:';
         for my $k (qw/json imagename imagedistri imageversion needlename/) {
             $self->app->log->error($k . ' ' . join(' ', @{$validation->error($k)})) if $validation->has_error($k);
             $error .= ' ' . $k if $validation->has_error($k);
