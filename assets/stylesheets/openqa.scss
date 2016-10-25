@@ -326,7 +326,7 @@ table.admintable {
         .key-value-pair .key {
             font-weight: bold;
         }
-        input[type="text"] {
+        input[type="text"], textarea {
                 width: 100%;
                 box-sizing: border-box;
                 -webkit-box-sizing: border-box;
@@ -337,6 +337,9 @@ table.admintable {
         }
         input[type="text"].value {
                 width: 10em;
+        }
+        textarea {
+            height: 100%;
         }
 }
 table.overview {
