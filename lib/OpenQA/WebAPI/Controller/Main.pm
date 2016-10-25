@@ -109,7 +109,19 @@ sub group_overview {
     my $desc = $group->rendered_description;
     $self->stash('description', $desc);
     $self->respond_to(
-        json => {json     => {result => $res, group => $self->stash('group'), max_jobs => $max_jobs}},
+        json => sub {
+            @comments        = map($_->hash, @comments);
+            @pinned_comments = map($_->hash, @pinned_comments);
+            $self->render(
+                json => {
+                    group           => $self->stash('group'),
+                    result          => $self->stash('result'),
+                    max_jobs        => $self->stash('max_jobs'),
+                    description     => $group->description,
+                    comments        => \@comments,
+                    pinned_comments => \@pinned_comments
+                });
+        },
         html => {template => 'main/group_overview'});
 }
 

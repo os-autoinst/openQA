@@ -120,6 +120,15 @@ sub rendered_markdown {
     return Mojo::ByteStream->new($m->markdown($self->text));
 }
 
+sub hash {
+    my ($self) = @_;
+    return {
+        user    => $self->user->name,
+        text    => $self->text,
+        created => $self->t_created
+    };
+}
+
 package CommentsMarkdownParser;
 require Text::Markdown;
 our @ISA = qw/Text::Markdown/;
