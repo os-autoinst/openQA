@@ -56,7 +56,9 @@ sub group_overview {
     my $group = $self->db->resultset('JobGroups')->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    my $res = OpenQA::BuildResults::compute_build_results($self->app, $group, $limit_builds, $time_limit_days);
+    my $cbr      = OpenQA::BuildResults::compute_build_results($self->app, $group, $limit_builds, $time_limit_days);
+    my $res      = $cbr->{result};
+    my $max_jobs = $cbr->{max_jobs};
     my @comments;
     my @pinned_comments;
     for my $comment ($group->comments->all) {
@@ -88,13 +90,12 @@ sub group_overview {
     }
     if ($only_tagged) {
         for my $build (keys %$res) {
-            next if ($build eq '_max');
             next unless $build;
             delete $res->{$build} unless $res->{$build}->{tag};
         }
     }
-
-    $self->stash('result', $res);
+    $self->stash('result',   $res);
+    $self->stash('max_jobs', $max_jobs);
     $self->stash(
         'group',
         {
@@ -108,7 +109,7 @@ sub group_overview {
     my $desc = $group->rendered_description;
     $self->stash('description', $desc);
     $self->respond_to(
-        json => {json     => {result => $res}},
+        json => {json     => {result => $res, group => $self->stash('group'), max_jobs => $max_jobs}},
         html => {template => 'main/group_overview'});
 }
 

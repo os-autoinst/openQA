@@ -110,15 +110,13 @@ sub compute_build_results {
         $builds{$b}              = \%jr;
         $max_jobs = $count if ($count > $max_jobs);
     }
-    if (%builds) {
-        $builds{_max}   = $max_jobs;
-        $builds{_group} = {
+    return {
+        result => (%builds) ? \%builds : {},
+        max_jobs => $max_jobs,
+        group    => {
             id   => $group->id,
             name => $group->name
-        };
-        return \%builds;
-    }
-    return;
+        }};
 }
 
 1;

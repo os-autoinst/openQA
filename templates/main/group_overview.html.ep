@@ -7,8 +7,6 @@
     $('.timeago').timeago();
 % end
 
-% delete $result->{_group};
-
 <h2>Last Builds for Group <%= $group->{name} %></h2>
 
 % if($description) {
