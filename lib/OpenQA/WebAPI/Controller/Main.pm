@@ -38,7 +38,7 @@ sub index {
             next unless grep { $_ eq '' || $group->name =~ /$_/ } @$group_params;
         }
         my $build_results = OpenQA::BuildResults::compute_build_results($self->app, $group, $limit_builds, $time_limit_days);
-        push(@results, $build_results) if $build_results;
+        push(@results, $build_results) if %{$build_results->{result}};
     }
     $self->stash('results', \@results);
     $self->respond_to(
