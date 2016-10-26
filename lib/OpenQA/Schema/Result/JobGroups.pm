@@ -99,7 +99,7 @@ around 'keep_results_in_days' => sub {
 
 around 'keep_important_results_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('keep_important_results_in_days') // ($self->parent ? $self->parent->default_keep_results_in_days : OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS);
+    return $self->get_column('keep_important_results_in_days') // ($self->parent ? $self->parent->default_keep_important_results_in_days : OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS);
 };
 
 around 'default_priority' => sub {

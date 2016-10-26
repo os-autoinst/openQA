@@ -17,49 +17,73 @@ package OpenQA::WebAPI::Controller::API::V1::JobGroup;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Schema::Result::JobGroups;
 
-sub list {
+# Helper methods
+
+sub is_parent {
+    my ($self) = @_;
+    return $self->req->url->path =~ qr/.*\/parent_groups/;
+}
+
+sub resultset {
+    my ($self) = @_;
+    return $self->db->resultset($self->is_parent ? 'JobGroupParents' : 'JobGroups');
+}
+
+sub find_group {
     my ($self) = @_;
 
     my $group_id = $self->param('group_id');
-    my $job_groups;
-    if ($group_id) {
-        $job_groups = $self->db->resultset('JobGroups')->search({id => $group_id});
-        return $self->render(json => {error => "Job group $group_id does not exist"}, status => 400) unless $job_groups->count;
-    }
-    else {
-        $job_groups = $self->db->resultset('JobGroups');
+    if (!$group_id) {
+        $self->render(json => {error => 'No group ID specified'}, status => 400);
+        return;
     }
 
-    my @results;
-    while (my $group = $job_groups->next) {
-        push(
-            @results,
-            {
-                id                             => $group->id,
-                name                           => $group->name,
-                parent_id                      => $group->parent_id,
-                size_limit_gb                  => $group->size_limit_gb,
-                keep_logs_in_days              => $group->keep_logs_in_days,
-                keep_important_logs_in_days    => $group->keep_important_logs_in_days,
-                keep_results_in_days           => $group->keep_results_in_days,
-                keep_important_results_in_days => $group->keep_important_results_in_days,
-                default_priority               => $group->default_priority,
-                sort_order                     => $group->sort_order,
-                description                    => $group->description
-            });
+    my $group = $self->resultset->find($group_id);
+    if (!$group) {
+        $self->render(json => {error => "Job group $group_id does not exist"}, status => 400);
+        return;
     }
-    $self->render(json => \@results);
+
+    return $group;
 }
 
 sub load_properties {
     my ($self) = @_;
 
     my %properties;
-    for my $param (qw(name parent_id size_limit_gb keep_logs_in_days keep_important_logs_in_days keep_results_in_days keep_important_results_in_days default_priority sort_order description)) {
+    for my $param ($self->resultset->result_source->columns) {
         my $value = $self->param($param);
         $properties{$param} = $value if defined($value);
     }
     return \%properties;
+}
+
+# Actual API entry points
+
+sub list {
+    my ($self) = @_;
+
+    my $groups;
+    my $group_id = $self->param('group_id');
+    if ($group_id) {
+        $groups = $self->resultset->search({id => $group_id});
+        return $self->render(json => {error => "Group $group_id does not exist"}, status => 400) unless $groups->count;
+    }
+    else {
+        $groups = $self->resultset;
+    }
+
+    my @results;
+    while (my $group = $groups->next) {
+        my %data;
+        for my $column_name ($group->result_source->columns) {
+            # don't return time stamps - it wouldn't be wrong, but it would make writing tests more complex
+            next if $column_name =~ qr/^t_.*/;
+            $data{$column_name} = $group->$column_name;
+        }
+        push(@results, \%data);
+    }
+    $self->render(json => \@results);
 }
 
 sub create {
@@ -68,8 +92,8 @@ sub create {
     my $group_name = $self->param('name');
     return $self->render(json => {error => 'No group name specified'}, status => 400) unless $group_name;
 
-    my $group = $self->db->resultset('JobGroups')->create($self->load_properties);
-    return $self->render(json => {error => 'Unable to create job group with specified properties'}, status => 400) unless $group;
+    my $group = $self->resultset->create($self->load_properties);
+    return $self->render(json => {error => 'Unable to create group with specified properties'}, status => 400) unless $group;
 
     $self->render(json => {id => $group->id});
 }
@@ -77,29 +101,26 @@ sub create {
 sub update {
     my ($self) = @_;
 
-    my $group_id = $self->param('group_id');
-    my $group    = $self->db->resultset('JobGroups')->find($group_id);
-    return $self->render(json => {error => "Job group $group_id does not exist"}, status => 400) unless $group;
+    my $group = $self->find_group;
+    return unless $group;
 
     my $res = $group->update($self->load_properties);
-    return $self->render(json => {error => "Specified job group $group_id exist but unable to update, though"}) unless $res;
+    return $self->render(json => {error => 'Specified job group ' . $group->id . ' exist but unable to update, though'}) unless $res;
     $self->render(json => {id => $res->id});
 }
 
 sub delete {
     my ($self) = @_;
 
-    my $group_id = $self->param('group_id');
-    my $group    = $self->db->resultset('JobGroups')->find($group_id);
-    if (!$group) {
-        return $self->render(json => {error => "Job group $group_id does not exist"}, status => 400);
-    }
-    if (scalar($group->jobs) != 0) {
-        return $self->render(json => {error => "Job group $group_id is not empty"}, status => 400);
+    my $group = $self->find_group();
+    return unless $group;
+
+    if ($group->can('jobs') && scalar($group->jobs) != 0) {
+        return $self->render(json => {error => 'Job group ' . $group->id . ' is not empty'}, status => 400);
     }
 
     my $res = $group->delete;
-    return $self->render(json => {error => "Specified job group $group_id exist but can not be deleted, though"}) unless $res;
+    return $self->render(json => {error => 'Specified job group ' . $group->id . ' exist but can not be deleted, though'}) unless $res;
     $self->render(json => {id => $res->id});
 }
 

@@ -302,6 +302,13 @@ sub startup {
     $api_ra->put('/job_groups/:group_id')->name('apiv1_put_job_group')->to('job_group#update');
     $api_ra->delete('/job_groups/:group_id')->name('apiv1_delete_job_group')->to('job_group#delete');
 
+    # api/v1/parent_groups
+    $api_public_r->get('/parent_groups')->name('apiv1_list_parent_groups')->to('job_group#list');
+    $api_public_r->get('/parent_groups/:group_id')->name('apiv1_get_parent_group')->to('job_group#list');
+    $api_ra->post('/parent_groups')->name('apiv1_post_parent_group')->to('job_group#create');
+    $api_ra->put('/parent_groups/:group_id')->name('apiv1_put_parent_group')->to('job_group#update');
+    $api_ra->delete('/parent_groups/:group_id')->name('apiv1_delete_job_group')->to('parent_group#delete');
+
     # api/v1/jobs
     $api_public_r->get('/jobs')->name('apiv1_jobs')->to('job#list');
     $api_ro->post('/jobs')->name('apiv1_create_job')->to('job#create');
