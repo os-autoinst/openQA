@@ -130,6 +130,10 @@ subtest 'create job group' => sub() {
         ],
         'list created job group'
     );
+
+    $get = $t->get_ok('/index.json')->status_is(200);
+    $get = $get->tx->res->json;
+    is(@{$get->{results}}, 2, 'empty job groups are not shown on index page');
 };
 
 subtest 'update job group' => sub() {
