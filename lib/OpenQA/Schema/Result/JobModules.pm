@@ -138,9 +138,12 @@ sub details {
         next unless $link;
         my $base = basename($link);
         my $dir  = dirname($link);
-        $dir =~ s,^.*/images/,,;
-        $img->{md5_dirname}  = $dir;
-        $img->{md5_basename} = $base;
+        # if linking into images, translate it into md5 lookup
+        if ($dir =~ m,/images/,) {
+            $dir =~ s,^.*/images/,,;
+            $img->{md5_dirname}  = $dir;
+            $img->{md5_basename} = $base;
+        }
     }
 
     return $ret;
