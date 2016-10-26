@@ -1,4 +1,3 @@
-% my $max = delete $result->{_max};
 % for my $build (reverse sort keys %$result) {
     % my $build_res = $result->{$build};
     <div class="row build-row">
@@ -30,13 +29,13 @@
             </h4>
         </div>
         <div class="col-md-8">
-            % if ($max) {
+            % if ($max_jobs) {
                 <div class="progress build-dashboard" title="<%= build_progress_bar_title($build_res) %>">
-                    %= build_progress_bar_section(passed => $build_res->{passed}, $max)
-                    %= build_progress_bar_section(unfinished => $build_res->{unfinished}, $max, 'progress-bar-striped')
-                    %= build_progress_bar_section(softfailed => $build_res->{softfailed}, $max)
-                    %= build_progress_bar_section(failed => $build_res->{failed}, $max)
-                    %= build_progress_bar_section(skipped => $build_res->{skipped}, $max)
+                    %= build_progress_bar_section(passed => $build_res->{passed}, $max_jobs)
+                    %= build_progress_bar_section(unfinished => $build_res->{unfinished}, $max_jobs, 'progress-bar-striped')
+                    %= build_progress_bar_section(softfailed => $build_res->{softfailed}, $max_jobs)
+                    %= build_progress_bar_section(failed => $build_res->{failed}, $max_jobs)
+                    %= build_progress_bar_section(skipped => $build_res->{skipped}, $max_jobs)
                 </div>
             % }
         </div>

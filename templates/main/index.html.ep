@@ -20,11 +20,13 @@
 </div>
 
 % for my $groupresults (@$results) {
-    % my $group = delete $groupresults->{_group};
+    % my $group    = delete $groupresults->{group};
+    % my $result   = delete $groupresults->{result};
+    % my $max_jobs = delete $groupresults->{max_jobs};
     <h2>
         %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})
     </h2>
-    %= include 'main/group_builds', result => $groupresults, group => $group
+    %= include 'main/group_builds', result => $result, group => $group, max_jobs => $max_jobs
 % }
 
 <div class="panel panel-default filter-panel-bottom" id="filter-panel">

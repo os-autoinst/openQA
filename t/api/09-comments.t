@@ -41,6 +41,19 @@ sub test_get_comment {
     is($get->tx->res->json->{text}, $supposed_text, 'comment text is correct');
 }
 
+sub test_get_comment_groups_json {
+    my ($id, $supposed_text) = @_;
+    my $get           = $t->get_ok("/group_overview/$id.json");
+    my $found_comment = 0;
+    for my $comment (@{$get->tx->res->json->{comments}}) {
+        if ($comment->{text} eq $supposed_text) {
+            $found_comment = 1;
+            last;
+        }
+    }
+    ok($found_comment, 'comment found in .json');
+}
+
 sub test_get_comment_invalid_job_or_group {
     my ($in, $id, $comment_id) = @_;
     my $get = $t->get_ok("/api/v1/$in/$id/comments/$comment_id")->status_is(404, 'comment not found');
@@ -112,6 +125,7 @@ subtest 'job comments' => sub {
 
 subtest 'group comments' => sub {
     test_comments(groups => 1001);
+    test_get_comment_groups_json(1001, $edited_test_message);
 };
 
 subtest 'admin can delete comments' => sub {
