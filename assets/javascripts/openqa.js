@@ -18,6 +18,7 @@ function getCookie(cname) {
 function setupForAll() {
     $('[data-toggle="tooltip"]').tooltip({html: true});
     $('[data-toggle="popover"]').popover({html: true});
+    $('[data-submenu]').submenupicker();
 
     $.ajaxSetup({
         headers:
