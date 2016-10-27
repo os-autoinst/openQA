@@ -51,7 +51,7 @@
         </div>
     </div>
     <div class="panel panel-default" id="filter-panel">
-        <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form<span></div>
+        <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
         <div class="panel-body">
             <form action="#" type="get" id="filter-form">
                 <div class="form-group" id="filter-results">

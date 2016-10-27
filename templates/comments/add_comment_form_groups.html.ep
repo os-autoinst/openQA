@@ -1,6 +1,6 @@
 <div class="form-group">
     <label for="text" class="col-sm-1 control-label">Comment
-        <img class="img-circle" src="<%= current_user->gravatar(60) %>">
+        <img class="img-circle" src="<%= current_user->gravatar(60) %>" alt="Own avatar">
     </label>
     <div class="col-sm-11">
         <textarea class="form-control" name="text" id="text" rows="5"></textarea>
