@@ -1,3 +1,5 @@
+#include <tunables/global>
+
 # ------------------------------------------------------------------
 #
 #    Copyright (C) 2015 SUSE Linux GmbH
@@ -8,7 +10,6 @@
 #
 # ------------------------------------------------------------------
 
-#include <tunables/global>
 
 /usr/share/openqa/script/worker {
   #include <abstractions/base>
@@ -26,16 +27,16 @@
   /dev/ r,
   /dev/bus/usb/ r,
   /dev/kvm rw,
+  /dev/net/tun rw,
   /dev/ptmx rw,
   /dev/pts/* rw,
   /dev/tty rw,
-  /dev/net/tun rw,
   /etc/libnl/classid r,
   /etc/openqa/client.conf r,
   /etc/openqa/workers.ini r,
   /etc/qemu/* r,
-  /etc/vde2/vdecmd r,
   /etc/udev/udev.conf r,
+  /etc/vde2/vdecmd r,
   /proc/*/auxv r,
   /proc/*/mountinfo r,
   /proc/*/net/psched r,
@@ -56,21 +57,19 @@
   /tmp/* rwk,
   /usr/bin/Xvnc rCx,
   /usr/bin/cat rix,
+  /usr/bin/cksum rix,
   /usr/bin/cp rix,
   /usr/bin/date rix,
   /usr/bin/dirname rix,
   /usr/bin/eatmydata rix,
   /usr/bin/git rix,
   /usr/bin/gzip rix,
-  /usr/bin/cksum rix,
+  /usr/bin/ionice rix,
   /usr/bin/ipmitool rix,
-  /usr/sbin/ipmiconsole rix,
   /usr/bin/isotovideo rix,
   /usr/bin/lscpu rix,
   /usr/bin/mkdir rix,
-  /usr/bin/snd2png rix,
   /usr/bin/nice rix,
-  /usr/bin/ionice rix,
   /usr/bin/optipng rix,
   /usr/bin/qemu-img rix,
   /usr/bin/qemu-kvm rix,
@@ -79,25 +78,28 @@
   /usr/bin/rsync rix,
   /usr/bin/sha1sum rix,
   /usr/bin/slirpvde rix,
+  /usr/bin/snd2png rix,
   /usr/bin/ssh-keygen rix,
   /usr/bin/tail rix,
   /usr/bin/tee rix,
   /usr/bin/uname rix,
   /usr/bin/unixcmd rix,
   /usr/bin/x3270 cx,
-  /usr/lib/git/git rix,
   /usr/lib*/qemu/block-curl.so rix,
   /usr/lib*/qemu/block-rbd.so mr,
-  /usr/lib/os-autoinst/backend/s390x/vars.json.py rcx,
+  /usr/lib/git/git rix,
   /usr/lib/os-autoinst/tools/absolutize rix,
   /usr/lib/os-autoinst/videoencoder rix,
   /usr/lib/utempter/utempter rix,
+  /usr/sbin/ipmiconsole rix,
   /usr/share/openqa/lib/DBIx/Class/Timestamps.pm r,
   /usr/share/openqa/lib/OpenQA/** r,
   /usr/share/openqa/lib/db_helpers.pm r,
   /usr/share/openqa/script/worker r,
   /usr/share/qemu/* r,
   /usr/share/qemu/keymaps/* r,
+  /var/lib/openqa/cache/ w,
+  /var/lib/openqa/cache/*/** rwcx,
   /var/lib/openqa/pool/ r,
   /var/lib/openqa/pool/*/ r,
   /var/lib/openqa/pool/*/** rwk,
@@ -145,5 +147,4 @@
     /var/lib/openqa/pool/1/x3trc.* w,
 
   }
-
 }
