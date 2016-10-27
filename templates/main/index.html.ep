@@ -30,9 +30,9 @@
 % }
 
 <div class="panel panel-default filter-panel-bottom" id="filter-panel">
-    <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form<span></div>
+    <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
     <div class="panel-body">
-        <form action="#" type="get" id="filter-form" class="">
+        <form action="#" type="get" id="filter-form">
             <div class="form-group">
                 <strong>Group</strong>
                 <input type="text" class="form-control" name="group" placeholder="all" id="filter-group">
@@ -46,7 +46,7 @@
                 <strong>Misc</strong>
                 <label><input value="1" name="only_tagged" type="checkbox" id="filter-only-tagged"> Only tagged</label>
             </div>
-                <button type="submit" class="btn btn-default">Apply</button>
+            <button type="submit" class="btn btn-default">Apply</button>
         </form>
     </div>
 </div>
