@@ -98,9 +98,15 @@ subtest 'filter form' => sub {
     is($driver->get_current_url(), $baseurl . '?group=SLE+12+SP2&limit_builds=38&time_limit_days=142#', 'URL parameters for filter are correct');
 };
 
+# JSON representation of index page
 $driver->get($baseurl . 'index.json');
 like($driver->get_page_source(), qr({"results":\[.*{"0048":), 'page rendered as JSON');
 
 like($t->get_ok($baseurl)->tx->res->dom->at('#filter-panel .help_popover')->{'data-title'}, qr/Help/, 'help popover is shown');
+
+# parent group overview
+# FIXME: Add new fixtures or add parents dynamically?
+#$driver->find_element('test parent group', 'link_text')->click();
+
 t::ui::PhantomTest::kill_phantom();
 done_testing();
