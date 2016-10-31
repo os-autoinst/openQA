@@ -216,7 +216,8 @@ sub startup {
     # due to the split md5_dirname having a /
     $r->get('/image/:md5_1/:md5_2/.thumbs/#md5_basename')->to('file#thumb_image');
 
-    $r->get('/group_overview/:groupid')->name('group_overview')->to('main#group_overview');
+    $r->get('/group_overview/:groupid')->name('group_overview')->to('main#job_group_overview');
+    $r->get('/parent_group_overview/:groupid')->name('parent_group_overview')->to('main#parent_group_overview');
 
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
