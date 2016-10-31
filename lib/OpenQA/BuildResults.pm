@@ -26,9 +26,20 @@ sub compute_build_results {
     my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
 
     my %builds;
-    my $jobs = $group->jobs->search({"me.t_created" => $timecond});
-    my $builds = $jobs->search(
-        {},
+    my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
+    my $group_ids;
+    if ($group->can('child_group_ids')) {
+        $group_ids = $group->child_group_ids;
+    }
+    else {
+        $group_ids = [$group->id];
+    }
+
+    my $builds = $jobs_resultset->search(
+        {
+            group_id  => {in => $group_ids},
+            t_created => $timecond
+        },
         {
             select => ['BUILD', {min => 't_created', -as => 'first_hit'}],
             as     => [qw/BUILD first_hit/],
@@ -39,11 +50,11 @@ sub compute_build_results {
     for my $b (map { $_->BUILD } $builds->all) {
         last if (defined($limit) && ++$buildnr > $limit);
 
-        my $jobs = $group->result_source->schema->resultset('Jobs')->search(
+        my $jobs = $jobs_resultset->search(
             {
-                'me.BUILD'    => $b,
-                'me.group_id' => $group->id,
-                'me.clone_id' => undef,
+                BUILD    => $b,
+                group_id => {in => $group_ids},
+                clone_id => undef,
             },
             {order_by => 'me.id DESC'});
         my %jr = (oldest => DateTime->now, passed => 0, failed => 0, unfinished => 0, labeled => 0, softfailed => 0);

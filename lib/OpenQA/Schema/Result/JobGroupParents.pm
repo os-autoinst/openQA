@@ -101,4 +101,32 @@ around 'default_priority' => sub {
     return $self->get_column('default_priority') // OpenQA::Schema::JobGroupDefaults::PRIORITY;
 };
 
+sub child_group_ids {
+    my ($self) = @_;
+
+    my @group_ids;
+    for my $group ($self->children) {
+        push(@group_ids, $group->id);
+    }
+    return \@group_ids;
+}
+
+sub jobs {
+    my ($self) = @_;
+
+    return $self->result_source->schema->resultset('Jobs')->search(
+        {
+            group_id => {in => $self->child_group_ids}});
+}
+
+sub rendered_description {
+    my ($self) = @_;
+
+    if ($self->description) {
+        my $m = CommentsMarkdownParser->new;
+        return Mojo::ByteStream->new($m->markdown($self->description));
+    }
+    return;
+}
+
 1;

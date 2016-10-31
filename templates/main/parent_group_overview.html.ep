@@ -1,0 +1,37 @@
+% layout 'bootstrap';
+% title '';
+
+%= include 'layouts/info'
+
+% content_for 'ready_function' => begin
+    $('.timeago').timeago();
+% end
+
+<h2>
+    Last Builds for <%= $group->{name} %>
+    % if (is_admin) {
+        <form action="<%= url_for('admin_edit_parent_group', groupid => $group->{id}) %>" class="corner-buttons">
+            <button type="submit" class="btn btn-default" title="Edit description, and other properties">
+                <span><span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit group</span>
+            </button>
+        </form>
+    % }
+</h2>
+<div class="well well-lg" id="group_description">
+    % if($description) {
+        %= $description
+    % }
+    <div id="child_groups">
+        <h3>Accumulated results for</h3>
+        <ul>
+        % for my $child_group (@$child_groups) {
+            <li>
+                %= link_to $child_group->name => url_for('group_overview', groupid => $child_group->id)
+            </l>
+        % }
+        </ul>
+    </div>
+</div>
+
+%= include 'main/group_builds', result => $result, group => undef
+%= include 'main/more_builds', limit_builds => $limit_builds
