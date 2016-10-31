@@ -615,6 +615,10 @@ a.add-parent-group {
         display: inline;
     }
 
+    label[title] {
+        cursor: help;
+    }
+
     .properties-progress-indication {
         display: none;
     }
@@ -637,6 +641,12 @@ a.add-parent-group {
 #editor-info {
     font-style: italic;
     line-height: 240%;
+}
+
+.corner-buttons {
+    width: auto;
+    display: inline;
+    float: right;
 }
 
 /* admin needle editor */

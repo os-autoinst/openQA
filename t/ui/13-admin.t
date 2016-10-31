@@ -320,8 +320,8 @@ subtest 'job property editor' => sub() {
     is($driver->get_title(), 'openQA: Job groups', 'on job groups');
 
     # navigate to editor first
-    $driver->find_element('Cool Group',               'link')->click();
-    $driver->find_element('#job-group-name + button', 'css')->click();
+    $driver->find_element('Cool Group',                    'link')->click();
+    $driver->find_element('#job-group-name + form button', 'css')->click();
 
     subtest 'current/default values present' => sub() {
         is($driver->find_element('#editor-name',                           'css')->get_value(), 'Cool Group', 'name');
@@ -347,7 +347,7 @@ subtest 'job property editor' => sub() {
         # now reload the page to see if we succeeded
         $driver->get($driver->get_current_url());
         is($driver->get_title(), 'openQA: Jobs for Cool Group has been edited!', 'new name on title');
-        $driver->find_element('#job-group-name + button', 'css')->click();
+        $driver->find_element('#job-group-name + form button', 'css')->click();
         is($driver->find_element('#editor-name',                           'css')->get_value(), 'Cool Group has been edited!', 'name edited');
         is($driver->find_element('#editor-size-limit',                     'css')->get_value(), '1000',                        'size edited');
         is($driver->find_element('#editor-keep-important-results-in-days', 'css')->get_value(), '500',                         'keep important results in days edited');

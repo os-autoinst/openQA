@@ -11,13 +11,13 @@ function loadJobTemplates(data) {
     var mediagroups = {};
     var groups = [];
     $.each(data.JobTemplates, function(i, jt) {
-	var medias = mediagroups[jt.product.group];
-	if (!medias) {
+	var media = mediagroups[jt.product.group];
+	if (!media) {
 	    groups.push(jt.product.group);
-	    medias = [];
+	    media = [];
 	}
-	medias.push(jt);
-	mediagroups[jt.product.group] = medias;
+	media.push(jt);
+	mediagroups[jt.product.group] = media;
     });
     groups.sort();
     $.each(groups, function(i, group) {
