@@ -22,7 +22,6 @@ use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings ':all';
-#use Test::Output qw/stdout_like stderr_like/;
 use OpenQA::Test::Case;
 
 use File::Path qw/make_path remove_tree/;
