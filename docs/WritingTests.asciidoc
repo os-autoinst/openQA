@@ -57,7 +57,8 @@ The following API is distribution specific and subject to change
 * +ensure_installed PACKAGES...+ Check that the specific application was installed in the system, if not then it will try to install it from download repositories.
 * +x11_start_program NAME+ Execute the graphical application NAME. How exactly depends on the desktop environment.
 * +become_root+ Become root (in a shell)
-* +script_run COMMAND[, TIMEOUT]+ Wrapper for type_string meant to type in shell commands. Waits TIMEOUT until idle (default 9s)
+* +script_run COMMAND[, TIMEOUT]+ Wrapper for type_string meant to type in shell commands. Waits TIMEOUT until idle (default 30s)
+* +assert_script_run COMMAND [, timeout => TIMEOUT] [, fail_message => FAIL_MESSAGE]+ Same as script_run but verifies that execution of the script was successful, ended with exit code 0.
 * +script_sudo COMMAND+ Use sudo to execute COMMAND, handling the optional password prompt.
 * +type_password+ Type default password (used for root and user)
 
