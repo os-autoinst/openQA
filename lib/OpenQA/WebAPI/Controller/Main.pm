@@ -21,6 +21,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Date::Format;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::BuildResults;
+use OpenQA::Utils;
 
 sub index {
     my ($self) = @_;
@@ -28,6 +29,8 @@ sub index {
     my $limit_builds    = $self->param('limit_builds')    // 3;
     my $time_limit_days = $self->param('time_limit_days') // 14;
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
+    my $only_tagged = $self->param('only_tagged') // 0;
+    my $show_tags   = $self->param('show_tags')   // $only_tagged;
     my $group_params = $self->every_param('group');
 
     my @results;
@@ -37,7 +40,20 @@ sub index {
         if (@$group_params) {
             next unless grep { $_ eq '' || $group->name =~ /$_/ } @$group_params;
         }
-        my $build_results = OpenQA::BuildResults::compute_build_results($self->app, $group, $limit_builds, $time_limit_days);
+        my $build_results = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days);
+
+        my $res = $build_results->{result};
+        if ($show_tags) {
+            for my $comment ($group->comments) {
+                OpenQA::BuildResults::evaluate_labels($res, $comment);
+            }
+        }
+        if ($only_tagged) {
+            for my $build (keys %$res) {
+                next unless $build;
+                delete $res->{$build} unless $res->{$build}->{tag};
+            }
+        }
         push(@results, $build_results) if %{$build_results->{result}};
     }
     $self->stash('results', \@results);
@@ -56,7 +72,7 @@ sub group_overview {
     my $group = $self->db->resultset('JobGroups')->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    my $cbr      = OpenQA::BuildResults::compute_build_results($self->app, $group, $limit_builds, $time_limit_days);
+    my $cbr      = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days);
     my $res      = $cbr->{result};
     my $max_jobs = $cbr->{max_jobs};
     my @comments;
@@ -69,24 +85,7 @@ sub group_overview {
         else {
             push(@comments, $comment);
         }
-
-        my @tag   = $comment->tag;
-        my $build = $tag[0];
-        next unless $build;
-        # Next line fixes poo#12028
-        next unless $res->{$build};
-        $self->app->log->debug('Tag found on build ' . $tag[0] . ' of type ' . $tag[1]);
-        $self->app->log->debug('description: ' . $tag[2]) if $tag[2];
-        if ($tag[1] eq '-important') {
-            $self->app->log->debug('Deleting tag on build ' . $build);
-            delete $res->{$build}->{tag};
-            next;
-        }
-
-        # ignore tags on non-existing builds
-        if ($res->{$build}) {
-            $res->{$build}->{tag} = {type => $tag[1], description => $tag[2]};
-        }
+        OpenQA::BuildResults::evaluate_labels($res, $comment);
     }
     if ($only_tagged) {
         for my $build (keys %$res) {

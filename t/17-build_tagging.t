@@ -105,9 +105,24 @@ subtest 'builds first tagged important, then unimportant dissappear (poo#12028)'
 
 subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {
     my $get = $t->get_ok('/group_overview/1001?only_tagged=1')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 1, 'only one tagged build is shown');
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 1, 'only one tagged build is shown (on group overview)');
     $get = $t->get_ok('/group_overview/1001?only_tagged=0')->status_is(200);
-    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 5, 'all builds shown again');
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 5, 'all builds shown again (on group overview)');
+
+    $get = $t->get_ok('/?only_tagged=1')->status_is(200);
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 1, 'only one tagged build is shown (on index page)');
+    is(scalar @{$t->tx->res->dom->find('h2')},               1, 'only one group shown anymore');
+    $get = $t->get_ok('/?only_tagged=0')->status_is(200);
+    is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')}, 4, 'all builds shown again (on index page)');
+    is(scalar @{$t->tx->res->dom->find('h2')},               2, 'two groups shown again');
+};
+
+subtest 'show_tags query parameter enables/disables tags on index page' => sub {
+    for my $enabled (0, 1) {
+        my $get = $t->get_ok('/?show_tags=' . $enabled)->status_is(200);
+        is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')},     4,        "all builds shown on index page (show_tags=$enabled)");
+        is(scalar @{$t->tx->res->dom->find("i[title='important']")}, $enabled, "tag (not) shown on index page (show_tags=$enabled)");
+    }
 };
 
 =pod
