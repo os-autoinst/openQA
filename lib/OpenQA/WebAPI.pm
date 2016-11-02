@@ -243,6 +243,9 @@ sub startup {
     $op_r->get('/job_templates/:groupid')->name('admin_job_templates')->to('job_template#index');
 
     $op_r->get('/groups')->name('admin_groups')->to('job_group#index');
+    $op_r->get('/job_group/:groupid')->name('admin_job_group_row')->to('job_group#job_group_row');
+    $op_r->get('/parent_group/:groupid')->name('admin_parent_group_row')->to('job_group#parent_group_row');
+    $op_r->get('/edit_parent_group/:groupid')->name('admin_edit_parent_group')->to('job_group#edit_parent_group');
     $op_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
 
     $op_r->get('/assets')->name('admin_assets')->to('asset#index');

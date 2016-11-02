@@ -11,13 +11,13 @@ function loadJobTemplates(data) {
     var mediagroups = {};
     var groups = [];
     $.each(data.JobTemplates, function(i, jt) {
-	var medias = mediagroups[jt.product.group];
-	if (!medias) {
+	var media = mediagroups[jt.product.group];
+	if (!media) {
 	    groups.push(jt.product.group);
-	    medias = [];
+	    media = [];
 	}
-	medias.push(jt);
-	mediagroups[jt.product.group] = medias;
+	media.push(jt);
+	mediagroups[jt.product.group] = media;
     });
     groups.sort();
     $.each(groups, function(i, group) {
@@ -159,7 +159,7 @@ function buildMediumGroup(group, media) {
 	tr.data('test-id', tests[test]['id']);
 	var shortname = test;
 	if (test.length >= 70) {
-		shortname = '<span title='+test+'>' + test.substr(0,67) + '...</span>';
+            shortname = '<span title='+test+'>' + test.substr(0,67) + '…</span>';
 	}
 	$('<td class="name">' + shortname + '</td>').appendTo(tr);
 	$('<td class="prio">' + tests[test]['prio'] + '</td>').appendTo(tr);

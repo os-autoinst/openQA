@@ -55,7 +55,7 @@ $get->element_exists('.review-all-passed', 'exactly one build is marked as \'rev
 
 $driver->find_element('opensuse', 'link_text')->click();
 
-is($driver->find_element('h2:first-of-type', 'css')->get_text(), 'Last Builds for Group opensuse', "on group overview");
+is($driver->find_element('h2:first-of-type', 'css')->get_text(), "Last Builds for Group opensuse\nEDIT JOB GROUP", 'on group overview');
 
 # define test message
 my $test_message             = "This is a cool test ☠";

@@ -1,0 +1,38 @@
+<li id="parent_group_<%= $group ? $group->id : 'none' %>" data-initial-index="<%= $parent_index %>">
+    <div
+    % if (is_admin) {
+        ondrop="insertParentGroup(event, this);" ondragover="checkParentDrop(event, this);"
+        ondragleave="leaveDrag(event, this);" draggable="true" ondragstart="dragParentGroup(event, this);"
+    % }
+    >
+        % if (is_admin) {
+            <a href="#" onclick="return showAddJobGroup(this);" class="fa fa-2 fa-plus" title="Add new in <%= $group ? $group->name : 'Miscellaneous groups' %>"></a>
+        % }
+        <span class="fa fa-2 fa-folder" aria-hidden="true"></span>
+        <span class="parent-group-name">
+            % if ($group) {
+                %= link_to $group->name => url_for('admin_edit_parent_group', groupid => $group->id)
+            % }
+            % else {
+                Miscellaneous groups
+            % }
+        </span>
+    </div>
+    <ul>
+        % my $group_index = 0;
+        % if ($group) {
+            % for my $child_group ($group->children) {
+                %= include 'admin/group/job_group_row', group => $child_group, group_index => $group_index, parent => $group->id
+                % ++$group_index;
+            % }
+        % }
+        % else {
+            % while (my $group = $groups->next()) {
+                % unless ($group->parent_id) {
+                    %= include 'admin/group/job_group_row', group => $group, group_index => $group_index, parent => 'none'
+                    % ++$group_index;
+                % }
+            % }
+        % }
+    </ul>
+</li>

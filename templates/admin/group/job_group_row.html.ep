@@ -1,0 +1,10 @@
+<li id="job_group_<%= $group->id %>" data-initial-index="<%= $group_index %>"
+    data-initial-parent="<%= $parent %>"
+    % if (is_admin) {
+        draggable="true" ondragstart="dragGroup(event, this);" ondrop="insertGroup(event, this);"
+        ondragover="checkDrop(event, this);" ondragleave="leaveDrag(event, this);"
+    % }
+    >
+    <span class="glyphicon glyphicon-menu-hamburger" aria-hidden="true"></span>
+    %= link_to $group->name => url_for('admin_job_templates', groupid => $group->id)
+</li>
