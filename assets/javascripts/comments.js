@@ -72,7 +72,7 @@ function updateComment(form) {
     if(text.length) {
         textElement.hide();
         markdownElement.show();
-        markdownElement.html('<em>Loading ...</em>');
+        markdownElement.html('<em>Loading…</em>');
         editorForm.find('[name="applyChanges"]').hide();
         editorForm.find('[name="discardChanges"]').hide();
         $.ajax({

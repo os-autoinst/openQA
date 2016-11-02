@@ -27,7 +27,7 @@
             %= include 'admin/group/group_property_editor', group => $group, is_parent => 0
         % }
         <div id="media">
-            <p id="loading">Loading... <i class="fa fa-spinner fa-spin"></i></p>
+            <p id="loading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
 
             <select id="machines-template" multiple="true"
                 % if (! is_admin ) {
@@ -47,7 +47,7 @@
                     disabled
                 % }
                 style="display: none">
-                <option value="">Select...</option>
+                <option value="">Select…</option>
                 % for my $test (@$tests) {
                     <option value="<%= $test->name %>" data-test-id="<%= $test->id %>">
                         %= $test->name

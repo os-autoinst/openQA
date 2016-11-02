@@ -105,7 +105,7 @@
                     </p>
                     <p class="properties-progress-indication">
                         <i class="fa fa-cog fa-spin fa-3x fa-fw"></i>
-                        <span class="sr-only">Loading...</span>
+                        <span class="sr-only">Loading…</span>
                     </p>
                     <p class="properties-status"></p>
                 </div>

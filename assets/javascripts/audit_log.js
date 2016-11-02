@@ -58,7 +58,7 @@ function loadAuditLogTable ()
                 // Limit length of displayed event data, expand on click
                 if (type === 'display' && data.length > 40) {
                     var parsed_data = JSON.stringify(JSON.parse(data), null, 2);
-                    return '<span id="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 38 )) + '...</span>';
+                    return '<span id="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 38 )) + '…</span>';
                 }
                 else {
                     return data;
@@ -138,7 +138,7 @@ function loadProductLogTable ()
             render: function ( data, type, row ) {
                 if (type === 'display' && data.length > 40) {
                     var parsed_data = JSON.stringify(JSON.parse(data), null, 2);
-                    return '<span class="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 38 )) + '...</span>';
+                    return '<span class="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 38 )) + '…</span>';
                 }
                 else
                     return data;

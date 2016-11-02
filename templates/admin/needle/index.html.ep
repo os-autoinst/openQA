@@ -18,7 +18,7 @@
         <p id="deletion-question">Really delete following needles?</p>
         <p id="deletion-ongoing">
           <button type="button" class="btn btn-danger" id="abort_delete" style="float: right;">Abort</button>
-          <i class="fa fa-cog fa-spin fa-3x fa-fw"></i> Deletion ongoing, <span id="deletion-progress">some</span> needles remaining ...
+          <i class="fa fa-cog fa-spin fa-3x fa-fw"></i> Deletion ongoing, <span id="deletion-progress">some</span> needles remaining…
         </p>
         <p id="deletion-finished"><i class="glyphicon glyphicon-ok"></i> All outstanding needles processed</p>
         <table style="width: 100%">

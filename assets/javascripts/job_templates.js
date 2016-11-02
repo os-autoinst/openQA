@@ -159,7 +159,7 @@ function buildMediumGroup(group, media) {
 	tr.data('test-id', tests[test]['id']);
 	var shortname = test;
 	if (test.length >= 70) {
-		shortname = '<span title='+test+'>' + test.substr(0,67) + '...</span>';
+            shortname = '<span title='+test+'>' + test.substr(0,67) + '…</span>';
 	}
 	$('<td class="name">' + shortname + '</td>').appendTo(tr);
 	$('<td class="prio">' + tests[test]['prio'] + '</td>').appendTo(tr);

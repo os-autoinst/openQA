@@ -13,7 +13,7 @@ function setupFilterForm() {
         if($('#filter-form').serialize() !== window.location.search.substring(1)) {
             // show progress indication
             $('#filter-form').hide();
-            $('#filter-panel .panel-body').append('<span id="filter-progress"><i class="fa fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter ...</span></span>');
+            $('#filter-panel .panel-body').append('<span id="filter-progress"><i class="fa fa-cog fa-spin fa-2x fa-fw"></i> <span>Applying filter…</span></span>');
         }
     });
 }
