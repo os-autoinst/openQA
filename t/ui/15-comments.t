@@ -170,27 +170,29 @@ subtest 'URL auto-replace' => sub {
     $driver->find_element('#text', 'css')->send_keys('
         foo@bar foo#bar should not be detected as bugref
         bsc#2436346bla should not be detected, too
-        bsc#2436346bla2
+        bsc#2436347bla2
         <a href="https://openqa.example.com/foo/bar">https://openqa.example.com/foo/bar</a>: http://localhost:9562
         https://openqa.example.com/tests/181148 (reference http://localhost/foo/bar )
         bsc#1234 boo#2345,poo#3456 t#4567
         t#5678/modules/welcome/steps/1
         https://progress.opensuse.org/issues/6789
-        https://bugzilla.novell.com/show_bug.cgi?id=1234
+        https://bugzilla.novell.com/show_bug.cgi?id=7890
         [bsc#1000629](https://bugzilla.suse.com/show_bug.cgi?id=1000629)
-        <a href="https://bugzilla.suse.com/show_bug.cgi?id=1000629">bsc#1000629</a>
-        bnc#1246'
+        <a href="https://bugzilla.suse.com/show_bug.cgi?id=1000630">bsc#1000630</a>
+        bnc#1246
+        gh#os-autoinst/openQA#1234
+        https://github.com/os-autoinst/os-autoinst/pull/960'
     );
     $driver->find_element('#submitComment', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
 
     # the first made comment needs to be 2nd now
     my @comments = $driver->find_elements('div.media-comment p', 'css');
-    is($comments[1]->get_text(), $test_message, "body of first comment after adding another");
+    #is($comments[0]->get_text(), $test_message, "body of first comment after adding another");
 
-    like($comments[0]->get_text(), qr/bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#1234 bsc#1000629 bsc#1000629/);
+    like($comments[0]->get_text(), qr/bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#7890 bsc#1000629 bsc#1000630/);
     my @urls = $driver->find_elements('div.media-comment a', 'css');
-    is(scalar @urls, 14);
+    is(scalar @urls, 16);
     is((shift @urls)->get_text(), 'https://openqa.example.com/foo/bar',      "url1");
     is((shift @urls)->get_text(), 'http://localhost:9562',                   "url2");
     is((shift @urls)->get_text(), 'https://openqa.example.com/tests/181148', "url3");
@@ -201,10 +203,12 @@ subtest 'URL auto-replace' => sub {
     is((shift @urls)->get_text(), 't#4567',                                  "url8");
     is((shift @urls)->get_text(), 't#5678/modules/welcome/steps/1',          "url9");
     is((shift @urls)->get_text(), 'poo#6789',                                "url10");
-    is((shift @urls)->get_text(), 'bsc#1234',                                "url11");
+    is((shift @urls)->get_text(), 'bsc#7890',                                "url11");
     is((shift @urls)->get_text(), 'bsc#1000629',                             "url12");
-    is((shift @urls)->get_text(), 'bsc#1000629',                             "url13");
+    is((shift @urls)->get_text(), 'bsc#1000630',                             "url13");
     is((shift @urls)->get_text(), 'bnc#1246',                                "url14");
+    is((shift @urls)->get_text(), 'gh#os-autoinst/openQA#1234',              "url15");
+    is((shift @urls)->get_text(), 'gh#os-autoinst/os-autoinst#960',          "url16");
 
     my @urls2 = $driver->find_elements('div.media-comment a', 'css');
     is((shift @urls2)->get_attribute('href'), 'https://openqa.example.com/foo/bar',                 "url1-href");
@@ -216,11 +220,13 @@ subtest 'URL auto-replace' => sub {
     is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/3456',          "url7-href");
     like((shift @urls2)->get_attribute('href'), qr{/tests/4567}, "url8-href");
     like((shift @urls2)->get_attribute('href'), qr{/tests/5678/modules/welcome/steps}, "url9-href");
-    is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/6789',         "url10-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234',    "url11-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1000629', "url12-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1000629', "url13-href");
-    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1246',    "url14-href");
+    is((shift @urls2)->get_attribute('href'), 'https://progress.opensuse.org/issues/6789',             "url10-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=7890',        "url11-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1000629',     "url12-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1000630',     "url13-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1246',        "url14-href");
+    is((shift @urls2)->get_attribute('href'), 'https://github.com/os-autoinst/openQA/issues/1234',     "url15-href");
+    is((shift @urls2)->get_attribute('href'), 'https://github.com/os-autoinst/os-autoinst/issues/960', "url16-href");
 };
 
 subtest 'commenting in test results including labels' => sub {

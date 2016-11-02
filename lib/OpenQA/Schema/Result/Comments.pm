@@ -147,7 +147,7 @@ sub _DoAutoLinks {
     $text =~ s@(?<!['"(<>])($RE{URI})@<$1>@gi;
 
     # For tests make sure that references into test modules and needling steps also work
-    $text =~ s{(t#([\w/]+))}{<a href="/tests/$2">$1</a>}gi;
+    $text =~ s{\b(t#([\w/]+))}{<a href="/tests/$2">$1</a>}gi;
 
     $text =~ s{(http://\S*\.gif$)}{<img src="$1"/>}gi;
     $self->SUPER::_DoAutoLinks($text);

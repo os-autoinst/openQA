@@ -348,43 +348,53 @@ my %bugrefs = (
     bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
     boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
     poo => 'https://progress.opensuse.org/issues/',
+    gh  => 'https://github.com/',
 );
 my %bugurls = (
     'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
     $bugrefs{bsc}                                  => 'bsc',
     $bugrefs{boo}                                  => 'boo',
     $bugrefs{poo}                                  => 'poo',
+    $bugrefs{gh}                                   => 'gh',
 );
 
 sub bugref_regex {
-    my $regex = join('|', keys %bugrefs);
-    return qr/(?<![\(\["\>])(($regex)#(\d+))(?![\w])/;
+    my $marker = join('|', keys %bugrefs);
+    my $repo_re = qr{[a-zA-Z/-]+};
+    # <marker>[#<project/repo>]#<id>
+    return qr{(?<![\(\["\>])(?<match>(?<marker>$marker)\#?(?<repo>$repo_re)?\#(?<id>\d+))(?![\w])};
 }
 
 sub find_bugref {
     my ($text) = @_;
     $text =~ bugref_regex;
-    return $1;
+    return $+{match};
 }
 
 sub bugurl {
     my ($bugref) = @_;
-    return $bugrefs{$bugref};
+    # in github '/pull/' and '/issues/' are interchangeable, e.g.
+    # calling https://github.com/os-autoinst/openQA/issues/966 will yield the
+    # same page as https://github.com/os-autoinst/openQA/pull/966 and vice
+    # versa for both an issue as well as pull request
+    $bugref =~ bugref_regex;
+    return $bugrefs{$+{marker}} . ($+{repo} ? "$+{repo}/issues/" : '') . $+{id};
 }
 
 sub bugref_to_href {
     my ($text) = @_;
     my $regex = bugref_regex;
-    $text =~ s{$regex}{<a href="@{[$bugrefs{$2}]}$3">$1</a>}gi;
+    $text =~ s{$regex}{<a href="@{[bugurl($+{match})]}">$+{match}</a>}gi;
     return $text;
 }
 
 sub href_to_bugref {
     my ($text) = @_;
-
     my $regex = join('|', keys %bugurls) =~ s/\?/\\\?/gr;
-    $regex = qr/(?<!["\(\[])($regex)(\d+)(?![\w])/;
-    $text =~ s{$regex}{@{[$bugurls{$1}]}#$2}gi;
+    # <repo> is optional, e.g. for github. For github issues and pull are
+    # interchangeable, see comment in 'bugurl', too
+    $regex = qr{(?<!["\(\[])(?<url_root>$regex)((?<repo>.*)/(issues|pull)/)?(?<id>\d+)(?![\w])};
+    $text =~ s{$regex}{@{[$bugurls{$+{url_root}} . ($+{repo} ? '#' . $+{repo} : '')]}#$+{id}}gi;
     return $text;
 }
 

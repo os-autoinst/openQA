@@ -41,15 +41,21 @@ my $res = run_cmd_with_log_return_error([qw/echo Hallo Welt/]);
 ok($res->{status}, 'status ok');
 is($res->{stderr}, 'Hallo Welt', 'cmd output returned');
 
-$res = run_cmd_with_log_return_error([qw/false/]);
+stderr_like {
+    $res = run_cmd_with_log_return_error([qw/false/]);
+}
+qr/.*\[ERROR\] cmd returned non-zero value/i;
 ok(!$res->{status}, 'status not ok (non-zero status returned)');
 
-$res = commit_git_return_error {
-    dir     => '/some/dir',
-    cmd     => 'status',
-    message => 'test',
-    user    => $schema->resultset('Users')->first
-};
+stderr_like {
+    $res = commit_git_return_error {
+        dir     => '/some/dir',
+        cmd     => 'status',
+        message => 'test',
+        user    => $schema->resultset('Users')->first
+    };
+}
+qr/fatal: Not a git repository.*\n.*cmd returned non-zero value/i;
 is($res, 'Unable to commit via Git: fatal: Not a git repository: \'/some/dir/.git\'', 'Git error message returned');
 
 done_testing();

@@ -50,17 +50,14 @@ sub register {
 
     $app->helper(
         bugurl_for => sub {
-            my ($c, $text) = @_;
-            if ($text =~ /(.*)#(.*)/) {
-                return bugurl($1) . $2;
-            }
-            return;
+            my ($c, $bugref) = @_;
+            return bugurl($bugref);
         });
 
     $app->helper(
         bugicon_for => sub {
             my ($c, $text) = @_;
-            return ($text =~ /poo#/) ? 'label_bug fa fa-bolt' : 'label_bug fa fa-bug';
+            return ($text =~ /(poo|gh)#/) ? 'label_bug fa fa-bolt' : 'label_bug fa fa-bug';
         });
 
     $app->helper(
