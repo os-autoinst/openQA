@@ -50,7 +50,7 @@ function previewSuccess(data, force) {
       checkPreviewVisible(a, pin);
     }
   });
-  $('[data-toggle="popover"]').popover();
+  $('[data-toggle="popover"]').popover({html: true});
 }
 
 function mapHash(hash) {
