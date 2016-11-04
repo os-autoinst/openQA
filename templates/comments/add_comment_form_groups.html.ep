@@ -3,7 +3,7 @@
         <img class="img-circle" src="<%= current_user->gravatar(60) %>" alt="Own avatar" title="<%= current_user->name %>">
     </label>
     <div class="col-sm-11">
-        <textarea class="form-control" name="text" id="text" rows="5"></textarea>
+        <textarea class="form-control" name="text" id="text" placeholder="Write your comments here (Markdown and special tags supported)…" rows="5"></textarea>
     </div>
 </div>
 <div class="form-group">
