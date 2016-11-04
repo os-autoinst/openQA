@@ -104,7 +104,9 @@
   /var/lib/openqa/pool/*/** rwk,
   /var/lib/openqa/share/* r,
   /var/lib/openqa/share/factory/hdd/* r,
+  /var/lib/openqa/share/factory/hdd/fixed/* r,
   /var/lib/openqa/share/factory/iso/* r,
+  /var/lib/openqa/share/factory/iso/fixed/* r,
   /var/lib/openqa/share/tests/** r,
 
 
