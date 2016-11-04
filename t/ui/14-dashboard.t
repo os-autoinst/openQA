@@ -101,5 +101,6 @@ subtest 'filter form' => sub {
 $driver->get($baseurl . 'index.json');
 like($driver->get_page_source(), qr({"results":\[.*{"0048":), 'page rendered as JSON');
 
+like($t->get_ok($baseurl)->tx->res->dom->at('#filter-panel .help_popover')->{'data-title'}, qr/Help/, 'help popover is shown');
 t::ui::PhantomTest::kill_phantom();
 done_testing();

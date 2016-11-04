@@ -46,11 +46,8 @@
                 <strong>Misc</strong>
                 <label><input value="1" name="only_tagged" type="checkbox" id="filter-only-tagged"> Only tagged</label>
                 % my $title = 'Help for \'Only tagged\'';
-                % my $content = 'Show only builds that have been tagged in the corresponding group overview comments<br/><br/>See <a href="https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Build-tagging-and-keeping-important-builds-gh591">here</a> for details';
-                <a tabindex="0" class="help_popover fa fa-question-circle" role="button"
-                    data-toggle="popover" data-trigger="focus"
-                    data-title="<%= $title %>"
-                    data-content="<%= $content %>"></a>
+                % my $content = 'Show only builds that have been tagged in the corresponding group overview comments';
+                %= help_popover $title => $content, 'https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Build-tagging-and-keeping-important-builds-gh591'
             </div>
             <button type="submit" class="btn btn-default">Apply</button>
         </form>
