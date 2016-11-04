@@ -20,7 +20,7 @@
         % my $content;
         % if ($tags && @$tags) {
             % $title = "Looking for needle tags";
-            % $content = '- ' . join("\n- ", @$tags);
+            % $content = '<ul>' . join("\n", map { "<li>$_</li>" } @$tags) . '</ul>';
         % }
         % else {
             % $title = "Saved screenshot";
