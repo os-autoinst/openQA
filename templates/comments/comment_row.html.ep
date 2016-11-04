@@ -1,7 +1,7 @@
 % if (!$context->{pinned}) {
     <div class="row comment-row">
         <div class="col-sm-1">
-            <img class="media-object img-circle" src="<%= $user->gravatar(60) %>" alt="profile">
+            <img class="media-object img-circle" src="<%= $user->gravatar(60) %>" alt="profile" title="<%= $user->name %>">
         </div>
     <div class="col-sm-11">
 % }
