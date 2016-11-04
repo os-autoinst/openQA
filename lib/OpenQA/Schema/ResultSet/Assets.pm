@@ -28,7 +28,7 @@ sub register {
         log_warning "asset type '$type' invalid";
         return;
     }
-    unless ($name && $name =~ /^[0-9A-Za-z+-._]+$/) {
+    unless ($name && $name =~ /^[0-9A-Za-z+-._@]+$/) {
         log_warning "asset name '$name' invalid";
         return;
     }
