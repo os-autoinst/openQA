@@ -100,7 +100,8 @@ sub test_asset {
         return $self->reply->not_found;
     }
 
-    my $path = '/assets/' . $asset{type} . '/' . $asset{name};
+    # find the asset URL path component, mustexist = 0, url = 1
+    my $path = locate_asset($asset{type}, $asset{name}, 0, 1);
     if ($self->param('subpath')) {
         $path .= '/' . $self->param('subpath');
         # better safe than sorry. Mojo seems to canonicalize the

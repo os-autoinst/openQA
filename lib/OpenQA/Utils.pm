@@ -332,15 +332,25 @@ sub parse_assets_from_settings {
     return $assets;
 }
 
-# find the actual disk location of a given asset.
+# find the actual location of a given asset. If $url is set, return the correct
+# URL path component (assets/type/(fixed)/name); otherwise, return the
+# filesystem path. If $mustexist is set, only return a value if we actually
+# find the asset; otherwise, if we don't find it, return the transient
+# filesystem path or URL path component.
 sub locate_asset {
-    my ($type, $name, $mustexist) = @_;
+    my ($type, $name, $mustexist, $url) = @_;
     $mustexist //= 0;
+    $url       //= 0;
     my $trans = catfile($assetdir, $type, $name);
     my $fixed = catfile($assetdir, $type, 'fixed', $name);
-    return $trans if (-e $trans);
-    return $fixed if (-e $fixed);
-    $mustexist ? return : return $trans;
+    my $transurl = join('/', '', 'assets', $type, $name);
+    my $fixedurl = join('/', '', 'assets', $type, 'fixed', $name);
+    return $transurl if (-e $trans && $url);
+    return $trans    if (-e $trans && !$url);
+    return $fixedurl if (-e $fixed && $url);
+    return $fixed    if (-e $fixed && !$url);
+    return           if ($mustexist);
+    $url ? return $transurl : return $trans;
 }
 
 my %bugrefs = (

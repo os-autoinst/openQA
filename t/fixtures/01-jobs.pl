@@ -217,7 +217,7 @@
         VERSION    => '13.1',
         MACHINE    => '32bit',
         backend    => 'qemu',
-        jobs_assets => [{asset_id => 1},],
+        jobs_assets => [{asset_id => 1}, {asset_id => 5}],
         retry_avbl  => 3,
         result_dir  => '00099946-opensuse-13.1-DVD-i586-Build0091-textmode',
         settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
