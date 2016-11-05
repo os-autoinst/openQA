@@ -175,6 +175,11 @@ sub startup {
 
     $r->get('/tests/export')->name('tests_export')->to('test#export');
     $r->post('/tests/list_ajax')->name('tests_ajax')->to('test#list_ajax');
+
+    # only provide a URL helper - this is overtaken by apache
+    $r->get('/assets/#assettype/#assetname')->name('download_asset')->to('file#download_asset');
+    $r->get('/assets/#assettype/fixed/#assetname')->name('download_fixed_asset')->to('file#download_asset');
+
     my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0);
     $test_r->get('/')->name('test')->to('test#show');

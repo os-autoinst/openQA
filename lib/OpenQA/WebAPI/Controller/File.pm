@@ -76,10 +76,17 @@ sub test_file {
     return $self->serve_static_($self->param('filename'));
 }
 
+sub download_asset {
+    my ($self) = @_;
+    # we handle this in apache
+    return $self->reply->not_found;
+}
+
 sub test_asset {
-    my $self  = shift;
+    my ($self) = @_;
+
     my $jobid = $self->param('testid');
-    my %cond  = ('me.id' => $jobid);
+    my %cond = ('me.id' => $jobid);
     if ($self->param('assetid')) {
         $cond{'asset.id'} = $self->param('assetid');
     }
@@ -100,7 +107,11 @@ sub test_asset {
         return $self->reply->not_found;
     }
 
-    my $path = '/assets/' . $asset{type} . '/' . $asset{name};
+    # find the asset path
+    my $path = locate_asset($asset{type}, $asset{name}, 0);
+    # map to URL
+    my $urlname = $path =~ m,/fixed/, ? 'download_fixed_asset' : 'download_asset';
+    $path = $self->url_for($urlname, assettype => $asset{type}, assetname => $asset{name});
     if ($self->param('subpath')) {
         $path .= '/' . $self->param('subpath');
         # better safe than sorry. Mojo seems to canonicalize the
@@ -122,10 +133,8 @@ sub test_isoimage {
     return $self->serve_static_($self->{job}->settings_hash->{ISO});
 }
 
-sub serve_static_($$) {
-    my $self = shift;
-
-    my $asset = shift;
+sub serve_static_ {
+    my ($self, $asset) = @_;
 
     $self->app->log->debug("looking for " . pp($asset) . " in " . pp($self->{static}->paths));
     if ($asset && !ref($asset)) {

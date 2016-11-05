@@ -180,13 +180,19 @@ ok(!$repo->is_fixed(), 'repo should not be considered a fixed asset');
 ok($fixed->is_fixed(), 'fixed should be considered a fixed asset');
 
 # test Utils::locate_asset
+# fixed HDD asset
 my $expected = catfile($OpenQA::Utils::assetdir, 'hdd', 'fixed', 'fixed.img');
 is(locate_asset('hdd', 'fixed.img', 1), $expected, 'locate_asset should find fixed asset in fixed location');
+
+# transient repo asset
 $expected = catfile($OpenQA::Utils::assetdir, 'repo', 'testrepo');
 is(locate_asset('repo', 'testrepo', 1), $expected, 'locate_asset should find testrepo in expected location');
+
+# non-existent ISO asset
 $expected = catfile($OpenQA::Utils::assetdir, 'iso', 'nex.iso');
 is(locate_asset('iso', 'nex.iso', 0), $expected, 'locate_asset 0 should give location for non-existent asset');
 ok(!locate_asset('iso', 'nex.iso', 1), 'locate_asset 1 should not give location for non-existent asset');
+
 
 # test ensure_size
 is($ja->ensure_size(),   6,  'ja asset size should be 6');

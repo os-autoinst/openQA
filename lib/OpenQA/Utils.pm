@@ -336,11 +336,14 @@ sub parse_assets_from_settings {
 sub locate_asset {
     my ($type, $name, $mustexist) = @_;
     $mustexist //= 0;
+
     my $trans = catfile($assetdir, $type, $name);
-    my $fixed = catfile($assetdir, $type, 'fixed', $name);
     return $trans if (-e $trans);
+
+    my $fixed = catfile($assetdir, $type, 'fixed', $name);
     return $fixed if (-e $fixed);
-    $mustexist ? return : return $trans;
+
+    return $mustexist ? undef : $trans;
 }
 
 my %bugrefs = (

@@ -38,13 +38,15 @@ $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-$t->get_ok('/tests/99938/images/logpackages-1.png')->status_is(200)->content_type_is('image/png')->header_is('Content-Length' => '48019');    # Exact size of logpackages-1.png
+# Exact size of logpackages-1.png
+$t->get_ok('/tests/99938/images/logpackages-1.png')->status_is(200)->content_type_is('image/png')->header_is('Content-Length' => '48019');
 
 $t->get_ok('/tests/99937/../99938/images/logpackages-1.png')->status_is(404);
 
 $t->get_ok('/tests/99938/images/thumb/logpackages-1.png')->status_is(200)->content_type_is('image/png')->header_is('Content-Length' => '6769');
 
-$t->get_ok('/tests/99946/images/logpackages-1.png')->header_is('Content-Length' => '211');                                                    # Not the same logpackages-1.png
+# Not the same logpackages-1.png
+$t->get_ok('/tests/99946/images/logpackages-1.png')->header_is('Content-Length' => '211');
 
 $t->get_ok('/tests/99938/images/doesntexist.png')->status_is(404);
 
@@ -63,13 +65,21 @@ $t->get_ok('/tests/99946/iso')->status_is(200)->header_is('Content-Disposition' 
 # check the download links
 my $req = $t->get_ok('/tests/99946')->status_is(200);
 $req->element_exists('#downloads #asset_1');
+$req->element_exists('#downloads #asset_5');
 my $res = OpenQA::Test::Case::trim_whitespace($req->tx->res->dom->at('#downloads #asset_1')->text);
-is($res,                                                    "openSUSE-13.1-DVD-i586-Build0091-Media.iso");
-is($req->tx->res->dom->at('#downloads #asset_1')->{'href'}, '/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+is($res,                                                  "openSUSE-13.1-DVD-i586-Build0091-Media.iso");
+is($req->tx->res->dom->at('#downloads #asset_1')->{href}, '/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+$res = OpenQA::Test::Case::trim_whitespace($req->tx->res->dom->at('#downloads #asset_5')->text);
+is($res,                                                  "openSUSE-13.1-x86_64.hda");
+is($req->tx->res->dom->at('#downloads #asset_5')->{href}, '/tests/99946/asset/hdd/openSUSE-13.1-x86_64.hda');
 
 # downloads are currently redirects
 $req = $t->get_ok('/tests/99946/asset/1')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
 $req = $t->get_ok('/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
+
+$req = $t->get_ok('/tests/99946/asset/5')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/hdd\/fixed\/openSUSE-13.1-x86_64.hda/);
+$req = $t->get_ok('/tests/99946/asset/hdd/openSUSE-13.1-x86_64.hda')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/hdd\/fixed\/openSUSE-13.1-x86_64.hda/);
+
 # verify error on invalid downloads
 $req = $t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404);
 
