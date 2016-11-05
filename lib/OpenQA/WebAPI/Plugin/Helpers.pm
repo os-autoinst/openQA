@@ -243,6 +243,21 @@ sub register {
         });
 
     $app->helper(
+        # generate popover help button with title, content and optional details_url
+        # Examples:
+        #   help_popover 'Help for me' => 'This is me'
+        #   help_popover 'Help for button' => 'Do not press this button!', 'http://nuke.me'
+        help_popover => sub {
+            my ($c, $title, $content, $details_url) = @_;
+            my $class = 'help_popover fa fa-question-circle';
+            if ($details_url) {
+                $content .= '<br/><br/>See ' . $c->link_to(here => $details_url) . ' for details';
+            }
+            my $data = {toggle => 'popover', trigger => 'focus', title => $title, content => $content};
+            return $c->t(a => (tabindex => 0, class => $class, role => 'button', (data => $data)));
+        });
+
+    $app->helper(
         # emit_event helper, adds user, connection to events
         emit_event => sub {
             my ($self, $event, $data) = @_;

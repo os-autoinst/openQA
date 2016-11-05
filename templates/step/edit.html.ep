@@ -152,6 +152,7 @@
                                         %= 'checked' if $properties->{workaround}
                                         >
                                 <label for="property_workaround">workaround</label>
+                                %= help_popover 'Help for the workaround property' => 'If a needle with the workaround property matches the match result is recorded as a \'soft-fail\'. It is suggested to mark the reason for this choice in either the name of the needle (e.g. my-name-bsc1234-20161224) or with special tags'
                             </div>
                         </div>
                         <button type="button" class="btn btn-default" id="review_json" title="Review JSON">Review JSON</button>
@@ -184,7 +185,7 @@
                         % if (is_operator) {
                             <div class="form-group row">
                                 <div class="col-sm-10">
-                                    <input type="text" class="form-control" id="newtag">
+                                    <input type="text" class="form-control" id="newtag" placeholder="Add new tags here">
                                 </div>
                                 <div class="col-sm-2">
                                     <button type="button" class="btn btn-default form-control" id="tag_add_button">Add</button>
@@ -213,6 +214,7 @@
                                 </option>
                             % }
                         </select>
+                        %= help_popover 'Select which image the needle should be based on' => 'Select either \'Screenshot\' to take the image as can be seen in the current test or one of the images from the existing needle candidates'
                     </div>
 
                     <div>

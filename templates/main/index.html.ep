@@ -45,6 +45,9 @@
             <div class="form-group">
                 <strong>Misc</strong>
                 <label><input value="1" name="only_tagged" type="checkbox" id="filter-only-tagged"> Only tagged</label>
+                % my $title = 'Help for \'Only tagged\'';
+                % my $content = 'Show only builds that have been tagged in the corresponding group overview comments';
+                %= help_popover $title => $content, 'https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Build-tagging-and-keeping-important-builds-gh591'
             </div>
             <button type="submit" class="btn btn-default">Apply</button>
         </form>
