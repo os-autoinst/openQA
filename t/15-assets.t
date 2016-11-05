@@ -183,20 +183,14 @@ ok($fixed->is_fixed(), 'fixed should be considered a fixed asset');
 # fixed HDD asset
 my $expected = catfile($OpenQA::Utils::assetdir, 'hdd', 'fixed', 'fixed.img');
 is(locate_asset('hdd', 'fixed.img', 1), $expected, 'locate_asset should find fixed asset in fixed location');
-$expected = join('/', '', 'assets', 'hdd', 'fixed', 'fixed.img');
-is(locate_asset('hdd', 'fixed.img', 1, 1), $expected, 'locate_asset correct URL path component for fixed asset');
 
 # transient repo asset
 $expected = catfile($OpenQA::Utils::assetdir, 'repo', 'testrepo');
 is(locate_asset('repo', 'testrepo', 1), $expected, 'locate_asset should find testrepo in expected location');
-$expected = join('/', '', 'assets', 'repo', 'testrepo');
-is(locate_asset('repo', 'testrepo', 1, 1), $expected, 'locate_asset correct URL path component for testrepo');
 
 # non-existent ISO asset
 $expected = catfile($OpenQA::Utils::assetdir, 'iso', 'nex.iso');
 is(locate_asset('iso', 'nex.iso', 0), $expected, 'locate_asset 0 should give location for non-existent asset');
-$expected = join('/', '', 'assets', 'iso', 'nex.iso');
-is(locate_asset('iso', 'nex.iso', 0, 1), $expected, 'locate_asset 0 correct URL path component for non-existent');
 ok(!locate_asset('iso', 'nex.iso', 1), 'locate_asset 1 should not give location for non-existent asset');
 
 
