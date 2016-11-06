@@ -54,7 +54,7 @@ sub auth {
             }
             else {
                 $self->app->log->error("hmac check failed");
-                if (!_is_timestamp_valid($timestamp)) {
+                if (!_is_timestamp_valid($build_tx_timestamp, $timestamp)) {
                     $reason = "timestamp mismatch";
                 }
                 elsif (_is_expired($api_key)) {
