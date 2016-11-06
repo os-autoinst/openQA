@@ -315,7 +315,7 @@ sub schedule_iso {
             $filename = $args->{$short};
         }
         # Find where we should download the file to
-        my $fullpath = locate_asset($assettype, $filename, 0);
+        my $fullpath = locate_asset($assettype, $filename, mustexist => 0);
 
         unless (-s $fullpath) {
             # if the file doesn't exist, add the url/target path and extraction

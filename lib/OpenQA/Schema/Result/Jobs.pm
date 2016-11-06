@@ -1136,7 +1136,7 @@ sub _asset_find {
     # add undef to parents so that we check regular assets too
     for my $parent (@$parents, undef) {
         my $fname = $parent ? sprintf("%08d-%s", $parent, $name) : $name;
-        return $fname if (locate_asset($type, $fname, 1));
+        return $fname if (locate_asset($type, $fname, mustexist => 1));
     }
     return;
 }
