@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -78,12 +78,20 @@ $req = $t->get_ok('/tests/99946/asset/1')->status_is(302)->header_like(Location 
 $req = $t->get_ok('/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
 
 $req = $t->get_ok('/tests/99946/asset/5')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/hdd\/fixed\/openSUSE-13.1-x86_64.hda/);
-$req = $t->get_ok('/tests/99946/asset/hdd/openSUSE-13.1-x86_64.hda')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/hdd\/fixed\/openSUSE-13.1-x86_64.hda/);
 
 # verify error on invalid downloads
-$req = $t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404);
+$t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404);
+
+$t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/repo\/testrepo\/README/);
+$t->get_ok('/tests/99961/asset/repo/testrepo/README/../README')->status_is(400)->content_is('invalid character in path');
+
+# verify 404 on download_assets - to be handled by apache (for now at least)
+$t->get_ok('/assets/repo/testrepo/README')->status_is(404);
+$t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(404);
+
 
 # TODO: also test repos
+
 
 SKIP: {
     skip "FIXME: allow to download only assets related to a test", 1;

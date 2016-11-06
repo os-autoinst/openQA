@@ -93,6 +93,11 @@ $cloneA = $schema->resultset('Jobs')->find(
 @assets = map { $_->asset_id } @assets;
 is($assets[0], $theasset, 'clone does have the same asset assigned');
 
+my $janame = sprintf('%08d-%s', $cloneA->id, 'jobasset.raw');
+my $japath = catfile($OpenQA::Utils::assetdir, 'hdd', $janame);
+# make sure it's gone before creating the job
+unlink($japath);
+
 ## test job is assigned all existing assets during creation and the rest during job grab
 # create new job depending on one normal and one job asset
 $settings{_START_AFTER_JOBS} = [$cloneA->id];
@@ -109,8 +114,6 @@ is($jobA->done(result => 'passed'), 'passed', 'jobA job set to done');
 is($cloneA->done(result => 'passed'), 'passed', 'cloneA job set to done');
 
 # register asset and mark as created by cloneA
-my $janame = sprintf('%08d-%s', $cloneA->id, 'jobasset.raw');
-my $japath = catfile($OpenQA::Utils::assetdir, 'hdd', $janame);
 open(my $fh, '>', $japath);
 # give it some content to test ensure_size
 print $fh "foobar";
@@ -133,7 +136,7 @@ $job = job_grab(workerid => $w);
 is($job->{id}, $jobB->id, 'jobB grabbed');
 @assets = $jobB->jobs_assets;
 @assets = map { $_->asset_id } @assets;
-is(scalar @assets, 2, 'two asset assigned after grabbing');
+is(scalar @assets, 2, 'two assets assigned after grabbing');
 is_deeply(\@assets, [$theasset, $ja->id], 'using correct assets');
 
 ## test job is duped when depends on asset created by duping job
@@ -144,7 +147,7 @@ $jobB->discard_changes();
 ok($jobB->clone, 'jobB has a clone after cloning asset creator');
 
 # create a repo asset for the following tests
-my $repopath = catfile($OpenQA::Utils::assetdir, 'repo', 'testrepo');
+my $repopath = catfile($OpenQA::Utils::assetdir, 'repo', 'tmprepo');
 # ensure no leftovers from previous testing
 remove_tree($repopath);
 # create the dir
@@ -152,7 +155,7 @@ mkdir($repopath);
 # create some test content to test nested dir size discovery
 my $testdir = catfile($repopath, 'testdir');
 mkdir($testdir);
-open($fh, '>', catfile($repopath, 'testfile'));
+open($fh, '>', catfile($repopath, 'testfile')) || die "can't open testfile in $repopath";
 print $fh 'foobar';
 close($fh);
 open($fh, '>', catfile($testdir, 'testfile2'));
@@ -160,7 +163,7 @@ print $fh 'meep';
 close($fh);
 my $repo = $schema->resultset('Assets')->create(
     {
-        name => 'testrepo',
+        name => 'tmprepo',
         type => 'repo',
     });
 
@@ -182,16 +185,19 @@ ok($fixed->is_fixed(), 'fixed should be considered a fixed asset');
 # test Utils::locate_asset
 # fixed HDD asset
 my $expected = catfile($OpenQA::Utils::assetdir, 'hdd', 'fixed', 'fixed.img');
-is(locate_asset('hdd', 'fixed.img', 1), $expected, 'locate_asset should find fixed asset in fixed location');
+is(locate_asset('hdd', 'fixed.img', mustexist => 1), $expected, 'locate_asset should find fixed asset in fixed location');
+# relative
+$expected = catfile('hdd', 'fixed', 'fixed.img');
+is(locate_asset('hdd', 'fixed.img', mustexist => 1, relative => 1), $expected, 'locate_asset should return fixed path as relative');
 
 # transient repo asset
-$expected = catfile($OpenQA::Utils::assetdir, 'repo', 'testrepo');
-is(locate_asset('repo', 'testrepo', 1), $expected, 'locate_asset should find testrepo in expected location');
+$expected = catfile($OpenQA::Utils::assetdir, 'repo', 'tmprepo');
+is(locate_asset('repo', 'tmprepo', mustexist => 1), $expected, 'locate_asset should find tmprepo in expected location');
 
 # non-existent ISO asset
 $expected = catfile($OpenQA::Utils::assetdir, 'iso', 'nex.iso');
-is(locate_asset('iso', 'nex.iso', 0), $expected, 'locate_asset 0 should give location for non-existent asset');
-ok(!locate_asset('iso', 'nex.iso', 1), 'locate_asset 1 should not give location for non-existent asset');
+is(locate_asset('iso', 'nex.iso'), $expected, 'locate_asset 0 should give location for non-existent asset');
+ok(!locate_asset('iso', 'nex.iso', mustexist => 1), 'locate_asset 1 should not give location for non-existent asset');
 
 
 # test ensure_size
