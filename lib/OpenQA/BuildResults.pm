@@ -76,6 +76,7 @@ sub compute_build_results {
                 }
                 if ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED) {
                     $jr{softfailed}++;
+                    $jr{labeled}++ if $labels{$job->id};
                     next;
                 }
 
@@ -106,8 +107,9 @@ sub compute_build_results {
         }
         $jr{reviewed_all_passed} = $jr{passed} == $count;
         $jr{total}               = $count;
-        $jr{reviewed}            = $jr{failed} > 0 && $jr{labeled} == $jr{failed};
-        $builds{$b}              = \%jr;
+        my $failed = $jr{failed} + $jr{softfailed};
+        $jr{reviewed} = $failed > 0 && $jr{labeled} == $failed;
+        $builds{$b} = \%jr;
         $max_jobs = $count if ($count > $max_jobs);
     }
     return {
