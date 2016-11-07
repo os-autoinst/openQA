@@ -332,18 +332,26 @@ sub parse_assets_from_settings {
     return $assets;
 }
 
-# find the actual disk location of a given asset.
+sub _relative_or_absolute {
+    my ($path, $relative) = @_;
+
+    return $path if $relative;
+    return catfile($assetdir, $path);
+}
+
+# find the actual disk location of a given asset. Supported arguments are
+# mustexist => 1 - return undef if the asset is not present
+# relative => 1 - return path below assetdir, otherwise absolute path
 sub locate_asset {
-    my ($type, $name, $mustexist) = @_;
-    $mustexist //= 0;
+    my ($type, $name, %args) = @_;
 
-    my $trans = catfile($assetdir, $type, $name);
-    return $trans if (-e $trans);
+    my $trans = catfile($type, $name);
+    return _relative_or_absolute($trans, $args{relative}) if -e _relative_or_absolute($trans);
 
-    my $fixed = catfile($assetdir, $type, 'fixed', $name);
-    return $fixed if (-e $fixed);
+    my $fixed = catfile($type, 'fixed', $name);
+    return _relative_or_absolute($fixed, $args{relative}) if -e _relative_or_absolute($fixed);
 
-    return $mustexist ? undef : $trans;
+    return $args{mustexist} ? undef : _relative_or_absolute($trans, $args{relative});
 }
 
 my %bugrefs = (

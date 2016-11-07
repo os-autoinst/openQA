@@ -288,27 +288,27 @@ check_download_asset('existing HDD');
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost/nonexistent.iso'}) };
 is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
 map { like($_, $expected, 'expected warning') } @warnings;
-check_download_asset('non-existent ISO', ['http://localhost/nonexistent.iso', locate_asset('iso', 'nonexistent.iso', 0), 0]);
+check_download_asset('non-existent ISO', ['http://localhost/nonexistent.iso', locate_asset('iso', 'nonexistent.iso', mustexist => 0), 0]);
 check_job_setting($t, $rsp, 'ISO', 'nonexistent.iso', 'parameter ISO is correctly set from ISO_URL');
 
 # Schedule download and uncompression of a non-existing HDD
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', HDD_1_DECOMPRESS_URL => 'http://localhost/nonexistent.hda.xz'}) };
 is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
 map { like($_, $expected, 'expected warning') } @warnings;
-check_download_asset('non-existent HDD (with uncompression)', ['http://localhost/nonexistent.hda.xz', locate_asset('hdd', 'nonexistent.hda', 0), 1]);
+check_download_asset('non-existent HDD (with uncompression)', ['http://localhost/nonexistent.hda.xz', locate_asset('hdd', 'nonexistent.hda', mustexist => 0), 1]);
 check_job_setting($t, $rsp, 'HDD_1', 'nonexistent.hda', 'parameter HDD_1 is correctly set from HDD_1_DECOMPRESS_URL');
 
 # Schedule download of a non-existing ISO with a custom target name
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', ISO_URL => 'http://localhost/nonexistent2.iso', ISO => 'callitthis.iso'}) };
 map { like($_, $expected, 'expected warning') } @warnings;
-check_download_asset('non-existent ISO (with custom name)', ['http://localhost/nonexistent2.iso', locate_asset('iso', 'callitthis.iso', 0), 0]);
+check_download_asset('non-existent ISO (with custom name)', ['http://localhost/nonexistent2.iso', locate_asset('iso', 'callitthis.iso', mustexist => 0), 0]);
 check_job_setting($t, $rsp, 'ISO', 'callitthis.iso', 'parameter ISO is not overwritten when ISO_URL is set');
 
 # Schedule download and uncompression of a non-existing kernel with a custom target name
 @warnings = warnings { $rsp = schedule_iso({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', KERNEL_DECOMPRESS_URL => 'http://localhost/nonexistvmlinuz', KERNEL => 'callitvmlinuz'}) };
 is($rsp->json->{count}, 10, 'a regular ISO post creates the expected number of jobs');
 map { like($_, $expected, 'expected warning') } @warnings;
-check_download_asset('non-existent kernel (with uncompression, custom name', ['http://localhost/nonexistvmlinuz', locate_asset('other', 'callitvmlinuz', 0), 1]);
+check_download_asset('non-existent kernel (with uncompression, custom name', ['http://localhost/nonexistvmlinuz', locate_asset('other', 'callitvmlinuz', mustexist => 0), 1]);
 check_job_setting($t, $rsp, 'KERNEL', 'callitvmlinuz', 'parameter KERNEL is not overwritten when KERNEL_DECOMPRESS_URL is set');
 
 # Using non-asset _URL does not create gru job and schedule jobs

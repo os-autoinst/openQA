@@ -32,7 +32,7 @@ sub register {
         log_warning "asset name '$name' invalid";
         return;
     }
-    unless (locate_asset $type, $name, 1) {
+    unless (locate_asset $type, $name, mustexist => 1) {
         if (!$missingok) {
             log_warning "no file found for asset '$name' type '$type'";
         }

@@ -22,6 +22,7 @@ BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
 use OpenQA::Utils;
 use File::Basename;
 use File::Spec;
+use File::Spec::Functions qw(catfile);
 
 use Data::Dump qw(pp);
 
@@ -99,7 +100,7 @@ sub test_asset {
     }
 
     my %asset;
-    my $res = $self->db->resultset('Jobs')->search(\%cond, {join => {jobs_assets => 'asset'}, +select => [qw/asset.name asset.type/], +as => ['name', 'type']});
+    my $res = $self->db->resultset('Jobs')->search(\%cond, {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)]});
     if ($res and $res->first) {
         %asset = $res->first->get_columns;
     }
@@ -108,17 +109,12 @@ sub test_asset {
     }
 
     # find the asset path
-    my $path = locate_asset($asset{type}, $asset{name}, 0);
-    # map to URL
-    my $urlname = $path =~ m,/fixed/, ? 'download_fixed_asset' : 'download_asset';
-    $path = $self->url_for($urlname, assettype => $asset{type}, assetname => $asset{name});
-    if ($self->param('subpath')) {
-        $path .= '/' . $self->param('subpath');
-        # better safe than sorry. Mojo seems to canonicalize the
-        # urls for us already so this is actually not needed
-        return $self->render_exception('invalid character in path') if ($path =~ /\/\.\./ || $path =~ /\.\.\//);
-    }
+    my $path = locate_asset($asset{type}, $asset{name}, relative => 1);
+    $path = catfile($path, $self->param('subpath')) if $self->param('subpath');
+    return $self->render(text => 'invalid character in path', status => 400) if ($path =~ /\/\.\./ || $path =~ /\.\.\//);
 
+    # map to URL - mojo will canonalize
+    $path = $self->url_for('download_asset', assetpath => $path);
     $self->app->log->debug("redirect to $path");
     return $self->redirect_to($path);
 }

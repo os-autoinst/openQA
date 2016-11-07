@@ -75,7 +75,7 @@ sub engine_workit($) {
 
     for my $isokey (qw/ISO/, map { "ISO_$_" } (1 .. 9)) {
         if (my $isoname = $job->{settings}->{$isokey}) {
-            my $iso = locate_asset('iso', $isoname, 1);
+            my $iso = locate_asset('iso', $isoname, mustexist => 1);
             unless ($iso) {
                 my $error = "Cannot find ISO asset $isoname!";
                 return {error => $error};
@@ -86,7 +86,7 @@ sub engine_workit($) {
 
     for my $otherkey (qw/KERNEL INITRD/) {
         if (my $filename = $job->{settings}->{$otherkey}) {
-            my $file = locate_asset('other', $filename, 1);
+            my $file = locate_asset('other', $filename, mustexist => 1);
             unless ($file) {
                 my $error = "Cannot find OTHER asset $filename!";
                 return {error => $error};
@@ -99,7 +99,7 @@ sub engine_workit($) {
     for my $i (1 .. $nd) {
         my $hddname = $job->{settings}->{"HDD_$i"} || undef;
         if ($hddname) {
-            my $hdd = locate_asset('hdd', $hddname, 1);
+            my $hdd = locate_asset('hdd', $hddname, mustexist => 1);
             unless ($hdd) {
                 my $error = "Cannot find HDD asset $hddname!";
                 return {error => $error};

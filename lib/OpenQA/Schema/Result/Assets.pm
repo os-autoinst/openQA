@@ -23,10 +23,9 @@ use OpenQA::IPC;
 use Date::Format;
 use Archive::Extract;
 use File::Basename;
-use File::Spec::Functions 'catfile';
+use File::Spec::Functions qw(catfile splitpath);
 use Mojo::UserAgent;
 use Mojo::URL;
-use File::Spec::Functions 'splitpath';
 use Try::Tiny;
 
 use db_helpers;
@@ -82,7 +81,7 @@ sub _getDirSize {
 
 sub disk_file {
     my ($self) = @_;
-    return locate_asset($self->type, $self->name, 0);
+    return locate_asset($self->type, $self->name);
 }
 
 sub is_fixed {

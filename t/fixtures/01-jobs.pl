@@ -26,6 +26,11 @@
         type => 'hdd',
         name => 'openSUSE-13.1-x86_64.hda',
     },
+    Assets => {
+        id   => 6,
+        type => 'repo',
+        name => 'testrepo',
+    },
     JobGroups => {
         id          => 1001,
         name        => 'opensuse',
@@ -378,16 +383,18 @@
         state      => "running",
         t_finished => undef,
         backend    => 'qemu',
-        t_started  => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),     # 10 minutes ago
-        t_created  => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),    # Two hours ago
-        TEST       => "kde",
-        ARCH       => 'x86_64',
-        BUILD      => '0091',
-        DISTRI     => 'opensuse',
-        FLAVOR     => 'NET',
-        MACHINE    => '64bit',
-        VERSION    => '13.1',
-        jobs_assets => [{asset_id => 2},],
+        # 10 minutes ago
+        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 600, 'UTC'),
+        # Two hours ago
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 7200, 'UTC'),
+        TEST      => "kde",
+        ARCH      => 'x86_64',
+        BUILD     => '0091',
+        DISTRI    => 'opensuse',
+        FLAVOR    => 'NET',
+        MACHINE   => '64bit',
+        VERSION   => '13.1',
+        jobs_assets => [{asset_id => 2}, {asset_id => 6},],
         retry_avbl  => 3,
         settings => [{key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'}, {key => 'DVD', value => '1'},]
     },
