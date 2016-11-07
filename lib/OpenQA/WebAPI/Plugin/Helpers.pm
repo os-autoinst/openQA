@@ -246,12 +246,12 @@ sub register {
         # generate popover help button with title, content and optional details_url
         # Examples:
         #   help_popover 'Help for me' => 'This is me'
-        #   help_popover 'Help for button' => 'Do not press this button!', 'http://nuke.me'
+        #   help_popover 'Help for button' => 'Do not press this button!', 'http://nuke.me' => 'Nuke'
         help_popover => sub {
-            my ($c, $title, $content, $details_url) = @_;
+            my ($c, $title, $content, $details_url, $details_text) = @_;
             my $class = 'help_popover fa fa-question-circle';
             if ($details_url) {
-                $content .= '<br/><br/>See ' . $c->link_to(here => $details_url) . ' for details';
+                $content .= '<p>See ' . $c->link_to($details_text ? $details_text : here => $details_url) . ' for details</p>';
             }
             my $data = {toggle => 'popover', trigger => 'focus', title => $title, content => $content};
             return $c->t(a => (tabindex => 0, class => $class, role => 'button', (data => $data)));

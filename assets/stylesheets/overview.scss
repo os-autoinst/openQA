@@ -44,12 +44,15 @@
             label {
                 margin-left: 0px;
                 padding-left: 0px;
-                margin-right: 20px;
                 font-weight: normal;
             }
             input {
+                margin-left: 20px;
                 margin-right: 2px;
                 padding-right: 0px;
+            }
+            strong + input {
+                margin-left: 0px;
             }
         }
     }

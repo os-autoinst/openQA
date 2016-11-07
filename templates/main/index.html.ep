@@ -44,11 +44,18 @@
             </div>
             <div class="form-group">
                 <strong>Misc</strong>
-                <label><input value="1" name="show_tags" type="checkbox" id="filter-show-tags"> Show tags</label>
-                <label><input value="1" name="only_tagged" type="checkbox" id="filter-only-tagged"> Only tagged</label>
-                % my $title = 'Help for \'Only tagged\'';
-                % my $content = 'Show only builds that have been tagged in the corresponding group overview comments';
-                %= help_popover $title => $content, 'https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Build-tagging-and-keeping-important-builds-gh591'
+                <input value="1" name="show_tags" type="checkbox" id="filter-show-tags">
+                <label for="filter-show-tags">Show tags</label>
+                <%= help_popover('Help for <i>Show tags</i>' => '<p>Show tags from the corresponding group overview comments</p>',
+                    'https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Build-tagging-and-keeping-important-builds-gh591' => 'Wiki')
+                %>
+                <input value="1" name="only_tagged" type="checkbox" id="filter-only-tagged">
+                <label for="filter-only-tagged">Only tagged</label>
+                <%= help_popover('Help for <i>Only tagged</i>' => '
+                    <p>Show only builds that have been tagged in the corresponding group overview comments</p>
+                    <p>Implies <i>Show tags</i></p>',
+                    'https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Build-tagging-and-keeping-important-builds-gh591' => 'Wiki')
+                %>
             </div>
             <button type="submit" class="btn btn-default">Apply</button>
         </form>
