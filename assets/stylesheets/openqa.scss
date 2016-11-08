@@ -200,7 +200,7 @@ ul.modcategory {
 }
 
 .no_hover:hover {
-   text-decoration: none;
+    text-decoration: none;
 }
 
 .candidate_needles {
@@ -208,7 +208,16 @@ ul.modcategory {
 }
 
 .help_popover  {
-    margin-left: 1em;
+    margin: 0px 5px;
+
+    &:focus, &:hover {
+        outline: none;
+        text-decoration: none;
+    }
+}
+
+.popover code {
+    word-break: break-all;
 }
 
 /* special table stuff */

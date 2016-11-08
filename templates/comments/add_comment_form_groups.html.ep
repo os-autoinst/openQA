@@ -11,9 +11,33 @@
         <button class="btn btn-success btn-circle" type="submit" id="submitComment">
             <span class="glyphicon glyphicon-send"></span>
             Submit comment</button>
-        % my $title = 'Help for comments';
-        % my $content = 'The comment field supports Markdown, automatic detection of URLs and special tags to record bug references, \'labels\' as well as \'build tagging\'. For bugreferences write <i>bugtracker_shortname</i>#<i>bug_nr</i> in a comment, e.g. "bsc#1234", for generic labels use label:<i>keyword</i> where <i>keyword</i> can be any valid character up to the next whitespace, e.g. "false_positive". The keywords are not defined within openQA itself. A valid list of keywords should be decided upon within each project or environment of one openQA instance. Also github pull requests and issues can be linked using the generic format <i>marker</i>[#<i>project/repo</i>]#<i>id</i>, e.g. gh#os-autoinst/openQA#1234. You can also write (or copy-paste) full links to bugs and issues. The links are automatically changed to the shortlinks (e.g. https://progress.opensuse.org/issues/11110 turns into poo#11110).';
-        %= help_popover $title => $content, 'https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Advanced-features-in-openQA'
+            <% my $content = '
+                <p>
+                    The comment field supports Markdown, automatic detection of URLs and special tags to record bug references, \'labels\'
+                    as well as \'build tagging\'.
+                </p>
+                <ul>
+                    <li>
+                        For bugreferences write <code><i>bugtracker_shortname</i>#<i>bug_nr</i></code> in a comment, e.g. <code>bsc#1234</code>.
+                    </li>
+                    <li>
+                        For generic labels use <code>label:<i>keyword</i></code> where <i>keyword</i> can be any valid character up to the next whitespace, e.g. "false_positive".
+                    </li>
+                </ul>
+                <p>
+                    The keywords are not defined within openQA itself. A valid list of keywords should be decided upon within each project or
+                    environment of one openQA instance.
+                </p>
+                <p>
+                    Also GitHub pull requests and issues can be linked using the generic format <i>marker</i>[#<i>project/repo</i>]#<i>id</i>,
+                    e.g. gh#os-autoinst/openQA#1234. You can also write (or copy-paste) full links to bugs and issues.
+                </p>
+                <p>
+                    The links are automatically changed to the shortlinks (e.g. <code>https://progress.opensuse.org/issues/11110</code> turns
+                    into <code>poo#11110</code>).
+                </p>';
+            %>
+            %= help_popover 'Help for comments' => $content, 'https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Advanced-features-in-openQA' => 'Wiki'
     </div>
 
 </div>

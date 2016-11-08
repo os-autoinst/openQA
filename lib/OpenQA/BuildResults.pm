@@ -17,10 +17,11 @@
 package OpenQA::BuildResults;
 use strict;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Utils;
 use Date::Format;
 
 sub compute_build_results {
-    my ($app, $group, $limit, $time_limit_days) = @_;
+    my ($group, $limit, $time_limit_days) = @_;
 
     my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
 
@@ -103,7 +104,7 @@ sub compute_build_results {
                 $jr{unfinished}++;
                 next;
             }
-            $app->log->error("MISSING S:" . $job->state . " R:" . $job->result);
+            log_error("MISSING S:" . $job->state . " R:" . $job->result);
         }
         $jr{reviewed_all_passed} = $jr{passed} == $count;
         $jr{total}               = $count;
@@ -119,6 +120,28 @@ sub compute_build_results {
             id   => $group->id,
             name => $group->name
         }};
+}
+
+sub evaluate_labels {
+    my ($res, $comment) = @_;
+
+    my @tag   = $comment->tag;
+    my $build = $tag[0];
+    return unless $build;
+    # Next line fixes poo#12028
+    return unless $res->{$build};
+    log_debug('Tag found on build ' . $tag[0] . ' of type ' . $tag[1]);
+    log_debug('description: ' . $tag[2]) if $tag[2];
+    if ($tag[1] eq '-important') {
+        log_debug('Deleting tag on build ' . $build);
+        delete $res->{$build}->{tag};
+        return;
+    }
+
+    # ignore tags on non-existing builds
+    if ($res->{$build}) {
+        $res->{$build}->{tag} = {type => $tag[1], description => $tag[2]};
+    }
 }
 
 1;
