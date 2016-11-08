@@ -60,7 +60,7 @@ sub _save_vars($) {
 }
 
 sub engine_workit($) {
-    my $job = shift;
+    my ($job) = @_;
 
     # XXX: this should come from the worker table. Only included
     # here for convenience when looking at the pool of
@@ -97,7 +97,7 @@ sub engine_workit($) {
 
     my $nd = $job->{settings}->{NUMDISKS} || 2;
     for my $i (1 .. $nd) {
-        my $hddname = $job->{settings}->{"HDD_$i"} || undef;
+        my $hddname = $job->{settings}->{"HDD_$i"};
         if ($hddname) {
             my $hdd = locate_asset('hdd', $hddname, mustexist => 1);
             unless ($hdd) {
