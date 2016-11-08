@@ -196,6 +196,24 @@ settings:
 /usr/share/openqa/script/clone_job.pl --from localhost --host localhost 42 FOO=bar BAZ=
 --------------------------------------------------------------------------------
 
+If you do not want a cloned job to start up in the same job group as the job
+you cloned from, e.g. to not pollute build results you the job group can be
+overwritten, too, using the special variable +_GROUP+. Add the quoted group
+name, e.g.:
+
+[source,sh]
+-------------
+/usr/share/openqa/script/clone_job.pl --from localhost 42 _GROUP="openSUSE Tumbleweed"
+-------------
+
+The special group value +0+ means that the group connection will be separated
+and the job will not appear as a job in any job group, e.g.:
+
+[source,sh]
+-------------
+/usr/share/openqa/script/clone_job.pl --from localhost 42 _GROUP=0
+-------------
+
 Using snapshots to speed up development of tests
 ------------------------------------------------
 [id="snapshots"]
