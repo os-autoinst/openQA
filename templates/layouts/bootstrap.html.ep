@@ -61,13 +61,30 @@
                       </li>
 
                       <li class="dropdown">
-                          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Job Groups<span class="caret"></span></a>
+                          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-submenu>Job Groups<span class="caret"></span></a>
                           <ul class="dropdown-menu">
                               %= current_job_group
-                              % for my $jg ($self->db->resultset('JobGroups')->search({}, {order_by => 'name'})->all) {
-                                  <li>
-                                      %= link_to $jg->name => url_for('group_overview', groupid => $jg->id)
-                                  </li>
+                              % for my $parent_group ($self->db->resultset('JobGroupParents')->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all) {
+                                  % my @children = $parent_group->children;
+                                  % if(scalar(@children)) {
+                                    <li class="dropdown-submenu">
+                                        %= link_to $parent_group->name => url_for('admin_edit_parent_group', groupid => $parent_group->id)
+                                        % if(scalar(@children)) {
+                                            <ul  class="dropdown-menu">
+                                                % for my $group (@children) {
+                                                    <li>
+                                                        %= link_to $group->name => url_for('group_overview', groupid => $group->id)
+                                                    </li>
+                                                % }
+                                            </ul>
+                                        % }
+                                    </li>
+                                  % }
+                              % }
+                              % for my $group ($self->db->resultset('JobGroups')->search({parent_id => undef}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all) {
+                                    <li>
+                                        %= link_to $group->name => url_for('group_overview', groupid => $group->id)
+                                    </li>
                               % }
                           </ul>
                       </li>
