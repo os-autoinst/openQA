@@ -21,9 +21,9 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
-use Test::Warnings;
+use Test::Warnings ':all';
 use Mojo::URL;
-use Mojo::Util qw(encode);
+use Mojo::Util qw(encode hmac_sha1_sum);
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::IPC;
@@ -68,6 +68,82 @@ my $ipc = OpenQA::IPC->ipc('', 1);
 my $ws = OpenQA::WebSockets->new;
 
 my $ret;
+
+subtest 'access limiting for non authenticated users' => sub() {
+    $t->get_ok('/api/v1/jobs')->status_is(200);
+    $t->get_ok('/api/v1/products')->status_is(403);
+    like(warning { $t->delete_ok('/api/v1/assets/1')->status_is(403) }, qr/missing apisecret/);
+};
+
+subtest 'access limiting for authenticated users but not operators nor admins' => sub() {
+    $t->ua->apikey('LANCELOTKEY01');
+    $t->ua->apisecret('MANYPEOPLEKNOW');
+    $t->get_ok('/api/v1/jobs')->status_is(200);
+    $t->get_ok('/api/v1/products')->status_is(403);
+    $t->delete_ok('/api/v1/assets/1')->status_is(403);
+};
+
+subtest 'access limiting for authenticated operators but not admins' => sub() {
+    $t->ua->apikey('PERCIVALKEY01');
+    $t->ua->apisecret('PERCIVALSECRET01');
+    $t->get_ok('/api/v1/jobs')->status_is(200);
+    $t->get_ok('/api/v1/products')->status_is(200);
+    $t->delete_ok('/api/v1/assets/1')->status_is(403);
+};
+
+subtest 'access granted for admins' => sub() {
+    $t->ua->apikey('ARTHURKEY01');
+    $t->ua->apisecret('EXCALIBUR');
+    $t->get_ok('/api/v1/jobs')->status_is(200);
+    $t->get_ok('/api/v1/products')->status_is(200);
+    $t->delete_ok('/api/v1/assets/1')->status_is(200);
+};
+
+subtest 'wrong api key - expired' => sub() {
+    $t->ua->apikey('EXPIREDKEY01');
+    $t->ua->apisecret('WHOCARESAFTERALL');
+    $t->get_ok('/api/v1/jobs')->status_is(200);
+    $ret = $t->get_ok('/api/v1/products')->status_is(403);
+    is($ret->tx->res->json->{error}, 'api key expired', 'key expired error');
+    $t->delete_ok('/api/v1/assets/1')->status_is(403);
+    is($ret->tx->res->json->{error}, 'api key expired', 'key expired error');
+};
+
+subtest 'wrong api key - not maching key + secret' => sub() {
+    $t->ua->apikey('EXPIREDKEY01');
+    $t->ua->apisecret('INVALIDSECRET');
+    $t->get_ok('/api/v1/jobs')->status_is(200);
+    $ret = $t->get_ok('/api/v1/products')->status_is(403);
+    $t->delete_ok('/api/v1/assets/1')->status_is(403);
+};
+
+subtest 'wrong api key - replay attack' => sub() {
+    $t->ua->apikey('ARTHURKEY01');
+    $t->ua->apisecret('EXCALIBUR');
+    $t->ua->unsubscribe('start');
+    $t->ua->on(
+        start => sub {
+            my ($self, $tx) = @_;
+
+            my $timestamp = 0;
+            my %headers   = (
+                Accept            => 'application/json',
+                'X-API-Key'       => $self->apikey,
+                'X-API-Microtime' => $timestamp,
+                'X-API-Hash'      => hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret),
+            );
+
+            while (my ($k, $v) = each %headers) {
+                $tx->req->headers->header($k, $v);
+            }
+        });
+    $t->get_ok('/api/v1/jobs')->status_is(200);
+    $ret = $t->get_ok('/api/v1/products')->status_is(403);
+    is($ret->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
+    $t->delete_ok('/api/v1/assets/1')->status_is(403);
+    is($ret->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
+};
+
 
 SKIP: {
     skip "FIXME: how to test Mojo::Lite using Mojo::Test?", 1;
