@@ -334,11 +334,11 @@ sub setup_websocket {
             else {
                 my $err = $tx->error;
                 $ws = undef;
-                warn "Unable to upgrade connection to WebSocket: " . $err->{code} . ". proxy_wstunnel enabled?" if defined $err;
-                if ($err->{code} eq '404') {
-                    # worker id suddenly not known anymore. Abort. If workerid
-                    # is unset we already detected that in api_call
-                    if ($workerid) {
+                if (defined $err) {
+                    warn "Unable to upgrade connection to WebSocket: " . $err->{code} . ". proxy_wstunnel enabled?";
+                    if ($err->{code} eq '404' && $workerid) {
+                        # worker id suddenly not known anymore. Abort. If workerid
+                        # is unset we already detected that in api_call
                         $workerid = undef;
                         OpenQA::Worker::Jobs::stop_job('api-failure');
                         add_timer('register_worker', 10, \&register_worker, 1);
