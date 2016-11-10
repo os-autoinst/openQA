@@ -64,27 +64,22 @@
                           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false" data-submenu>Job Groups<span class="caret"></span></a>
                           <ul class="dropdown-menu">
                               %= current_job_group
-                              % for my $parent_group ($self->db->resultset('JobGroupParents')->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all) {
-                                  % my @children = $parent_group->children;
-                                  % if(scalar(@children)) {
-                                    <li class="dropdown-submenu">
-                                        %= link_to $parent_group->name => url_for('admin_edit_parent_group', groupid => $parent_group->id)
-                                        % if(scalar(@children)) {
-                                            <ul  class="dropdown-menu">
-                                                % for my $group (@children) {
-                                                    <li>
-                                                        %= link_to $group->name => url_for('group_overview', groupid => $group->id)
-                                                    </li>
-                                                % }
-                                            </ul>
-                                        % }
-                                    </li>
+                              % for my $parent_or_group (@$job_groups_and_parents) {
+                                  % if ($parent_or_group->can('children')) {
+                                      % my @children = $parent_or_group->children;
+                                      % if (scalar(@children)) {
+                                          <li class="dropdown-submenu">
+                                              %= link_to $parent_or_group->name => url_for('admin_edit_parent_group', groupid => $parent_or_group->id)
+                                              <ul class="dropdown-menu">
+                                                  % for my $group (@children) {
+                                                      %= group_link_menu_entry $group;
+                                                  % }
+                                              </ul>
+                                          </li>
+                                      % }
+                                  % } else {
+                                      %= group_link_menu_entry $parent_or_group;
                                   % }
-                              % }
-                              % for my $group ($self->db->resultset('JobGroups')->search({parent_id => undef}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all) {
-                                    <li>
-                                        %= link_to $group->name => url_for('group_overview', groupid => $group->id)
-                                    </li>
                               % }
                           </ul>
                       </li>

@@ -20,7 +20,7 @@ use Mojo::Base 'Mojolicious';
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
-use OpenQA::Utils qw/log_warning/;
+use OpenQA::Utils qw/log_warning job_groups_and_parents/;
 use OpenQA::ServerStartup;
 
 use Mojo::IOLoop;
@@ -131,6 +131,7 @@ sub startup {
             if (my $days = $c->app->config->{global}->{hsts}) {
                 $c->res->headers->header('Strict-Transport-Security', sprintf 'max-age=%d; includeSubDomains', $days * 24 * 60 * 60);
             }
+            $c->stash('job_groups_and_parents', job_groups_and_parents);
         });
 
     # Mark build_tx time in the header for HMAC time stamp check

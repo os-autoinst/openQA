@@ -298,6 +298,12 @@ sub register {
             my @keys = qw(passed unfinished softfailed failed skipped total);
             return join("\n", map("$_: $res->{$_}", grep($res->{$_}, @keys)));
         });
+
+    $app->helper(
+        group_link_menu_entry => sub {
+            my ($c, $group) = @_;
+            return $c->tag('li', $c->link_to($group->name => $c->url_for('group_overview', groupid => $group->id)));
+        });
 }
 
 sub _step_thumbnail {

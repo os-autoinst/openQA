@@ -41,6 +41,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &notify_workers
   &human_readable_size
   &locate_asset
+  &job_groups_and_parents
 );
 
 
@@ -511,6 +512,27 @@ sub human_readable_size {
 
     $size /= 1024.;
     return $p . _round_a_bit($size) . "GiB";
+}
+
+# query group parents and job groups and let the database sort it for us - and merge it afterwards
+sub job_groups_and_parents {
+    my @parents = $app->db->resultset('JobGroupParents')->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
+    my @groups_without_parent = $app->db->resultset('JobGroups')->search({parent_id => undef}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
+    my @res;
+    my $first_parent = shift @parents;
+    my $first_group  = shift @groups_without_parent;
+    while ($first_parent || $first_group) {
+        my $pick_parent = $first_parent && (!$first_group || ($first_group->sort_order // 0) > ($first_parent->sort_order // 0));
+        if ($pick_parent) {
+            push(@res, $first_parent);
+            $first_parent = shift @parents;
+        }
+        else {
+            push(@res, $first_group);
+            $first_group = shift @groups_without_parent;
+        }
+    }
+    return \@res;
 }
 
 1;
