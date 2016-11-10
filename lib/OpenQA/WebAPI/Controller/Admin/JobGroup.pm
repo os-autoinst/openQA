@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::WebAPI::Controller::Admin::JobGroup;
+use OpenQA::Utils qw/job_groups_and_parents/;
 use strict;
 use Mojo::Base 'Mojolicious::Controller';
 
@@ -24,8 +25,9 @@ sub index {
     my $parent_groups = $self->db->resultset('JobGroupParents')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
     my $groups = $self->db->resultset('JobGroups')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
 
-    $self->stash('parent_groups', $parent_groups);
-    $self->stash('groups',        $groups);
+    $self->stash('job_groups_and_parents_for_editor', job_groups_and_parents);
+    $self->stash('parent_groups',                     $parent_groups);
+    $self->stash('groups',                            $groups);
     $self->render('admin/group/index');
 }
 
@@ -38,8 +40,9 @@ sub group_page {
     my $group = $self->db->resultset($resultset)->find($group_id);
     return $self->reply->not_found unless $group;
 
-    $self->stash('group',       $group);
-    $self->stash('group_index', $group->sort_order);
+    $self->stash('group',     $group);
+    $self->stash('index',     $group->sort_order);
+    $self->stash('parent_id', $group->can('parent_id') && $group->parent_id // 'none');
     $self->render($template);
 }
 

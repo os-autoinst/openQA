@@ -257,22 +257,22 @@ subtest 'add job group' => sub() {
     # check whether all job groups from fixtures are displayed
     my $list_element = $driver->find_element('#job_group_list', 'css');
     my @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    my $parentless_groups_entry = shift @parent_group_entries;
-    is($parentless_groups_entry->get_text(), "Miscellaneous groups\nopensuse\nopensuse test", 'parentless groups present');
-    is(@parent_group_entries, 0, 'only parentless groups present');
+    is((shift @parent_group_entries)->get_text(), 'opensuse',      'first parentless group present');
+    is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group present');
+    is(@parent_group_entries,                     0,               'only parentless groups present');
 
     # disable animations to speed up test
     $driver->execute_script('$(\'#add_group_modal\').removeClass(\'fade\'); jQuery.fx.off = true;');
 
     # add new parentless group, leave name empty (which should lead to error)
-    $driver->find_child_element($parentless_groups_entry, 'div a.fa-plus', 'css')->click();
+    $driver->find_element('//a[@title="Add new job group on top-level"]')->click();
     $driver->find_element('#create_group_button', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
     $list_element = $driver->find_element('#job_group_list', 'css');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    $parentless_groups_entry = shift @parent_group_entries;
-    is($parentless_groups_entry->get_text(), "Miscellaneous groups\nopensuse\nopensuse test", 'still only two groups');
-    is(@parent_group_entries, 0, 'and also no more parent groups');
+    is((shift @parent_group_entries)->get_text(), 'opensuse',      'first parentless group present');
+    is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group present');
+    is(@parent_group_entries,                     0,               'and also no more parent groups');
     like($driver->find_element('#new_group_name_group ', 'css')->get_text(), qr/The group name must not be empty/, 'refuse creating group with empty name');
 
     # add new parentless group (dialog should still be open), this time enter a name
@@ -283,11 +283,13 @@ subtest 'add job group' => sub() {
     # new group should be present
     $list_element = $driver->find_element('#job_group_list', 'css');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    $parentless_groups_entry = shift @parent_group_entries;
-    is($parentless_groups_entry->get_text(), "Miscellaneous groups\nCool Group\nopensuse\nopensuse test", 'new group as present');
+    is((shift @parent_group_entries)->get_text(), 'Cool Group',    'new parentless group present');
+    is((shift @parent_group_entries)->get_text(), 'opensuse',      'first parentless group from fixtures present');
+    is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group from fixtures present');
+    is(@parent_group_entries,                     0,               'no further grops present');
 
     # add new parent group
-    $driver->find_element('.add-parent-group',    'css')->click();
+    $driver->find_element('//a[@title="Add new folder"]')->click();
     $driver->find_element('#new_group_name',      'css')->send_keys('New parent group');
     $driver->find_element('#create_group_button', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
@@ -295,13 +297,11 @@ subtest 'add job group' => sub() {
     # check whether parent is present
     $list_element = $driver->find_element('#job_group_list', 'css');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    is(@parent_group_entries, 2, 'now two parent groups present (one is parentless)');
+    is(@parent_group_entries, 4, 'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
     my $new_groups_entry = shift @parent_group_entries;
-    is($new_groups_entry->get_text(), "New parent group", 'new group present');
-    $parentless_groups_entry = shift @parent_group_entries;
-    is($parentless_groups_entry->get_text(), "Miscellaneous groups\nCool Group\nopensuse\nopensuse test", 'new group present');
+    is($new_groups_entry->get_text(), 'New parent group', 'new group present');
 
-    # test Drag & Drop: done manually, probably not worth to test automatically
+    # test Drag & Drop: done manually
 
     # reload page to check whether the changes persist
     $driver->find_element('#user-action a', 'css')->click();
@@ -309,11 +309,11 @@ subtest 'add job group' => sub() {
 
     $list_element = $driver->find_element('#job_group_list', 'css');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    is(@parent_group_entries, 2, 'now two parent groups present (one is parentless)');
-    $new_groups_entry = shift @parent_group_entries;
-    is($new_groups_entry->get_text(), "New parent group", 'new group present');
-    $parentless_groups_entry = shift @parent_group_entries;
-    is($parentless_groups_entry->get_text(), "Miscellaneous groups\nCool Group\nopensuse\nopensuse test", 'new group present');
+    is(@parent_group_entries,                     4,                  'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
+    is((shift @parent_group_entries)->get_text(), 'Cool Group',       'new parentless group present');
+    is((shift @parent_group_entries)->get_text(), 'opensuse',         'first parentless group from fixtures present');
+    is((shift @parent_group_entries)->get_text(), 'opensuse test',    'second parentless group from fixtures present');
+    is((shift @parent_group_entries)->get_text(), 'New parent group', 'new group present');
 };
 
 subtest 'job property editor' => sub() {

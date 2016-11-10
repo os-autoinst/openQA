@@ -522,31 +522,32 @@ a.restart-link {
 
 a.add-parent-group {
     float: right;
-    font-size: 215%;
+
+    margin-left: 10px;
     padding: 5px;
     text-decoration: none !important;
     position: relative;
-    top: -10px;
+
+    i {
+        font-size: 215%;
+        top: -10px;
+
+        & + i {
+            color: white;
+            margin-top: 2px;
+            font-size: 140%;
+        }
+    }
 }
 
 #job_group_list {
     margin: 0px 0px 20px 0px;
     padding: 0px;
 
-    & > li {
-        padding-bottom: 4px !important;
-    }
-
     li, div {
         font-weight: 500;
         font-size: 120%;
         list-style-type: none;
-    }
-
-    ul {
-        margin: 0px;
-        padding: 0px;
-        margin-top: 1px;
     }
 
     li {
@@ -556,10 +557,35 @@ a.add-parent-group {
         font-weight: normal;
         font-size: 115%;
         clear: both;
+
+        &.dragover {
+            padding-bottom: 0px !important;
+            &:after {
+                top: 6px;
+            }
+        }
     }
 
-    ul li {
-        background-color: #fdfdfd;
+    & > li {
+        padding-bottom: 4px !important;
+    }
+
+    ul {
+        margin: 0px;
+        padding: 0px;
+        margin-top: 1px;
+
+        li {
+            background-color: #fdfdfd;
+            font-size: 90%;
+
+            &.dragover {
+                padding-bottom: 1px !important;
+                &:after {
+                    top: 7px;
+                }
+            }
+        }
     }
 
     [draggable='true'] {
@@ -570,14 +596,15 @@ a.add-parent-group {
         display: none;
     }
 
-    span.glyphicon, span.fa {
-        color: #aaa;
-        margin: 0px 5px;
-    }
-
-    span.glyphicon-menu-hamburger {
-        font-size: 80%;
-        margin: 3px;
+    span {
+        &.glyphicon, &.fa {
+            color: #aaa;
+            margin: 0px 5px;
+        }
+        &.glyphicon-menu-hamburger {
+            font-size: 80%;
+            margin: 3px;
+        }
     }
 
     a.fa-plus {
@@ -591,20 +618,12 @@ a.add-parent-group {
         margin-bottom: -3px;
     }
 
-    li.dragover {
-        padding-bottom: 1px;
-    }
-
     .dragover:after {
         border-bottom: 2px dashed #446E9B;
         content: " ";
         position: relative;
         display: block;
         margin: 1px 0px;
-    }
-
-    li.dragover:after {
-        top: 7px;
     }
 
     .parent-dragover {
@@ -618,6 +637,13 @@ a.add-parent-group {
         display: block;
         top: -6px;
         margin: 1px 0px;
+    }
+
+    .enforce-parent-drop {
+        position: relative;
+        top: -15px;
+        height: 25px;
+        margin-bottom: -25px;
     }
 }
 

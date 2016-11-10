@@ -1,8 +1,14 @@
 function showAddJobGroup(plusElement) {
-    var parentLiElement = $(plusElement).closest('li');
-    var parentId = parentLiElement.prop('id').substr(13);
-    if(parentId !== 'none') {
-        parentId = parseInt(parentId);
+    if(plusElement) {
+        var parentLiElement = $(plusElement).closest('li');
+        var parentId = parentLiElement.prop('id').substr(13);
+        if(parentId !== 'none') {
+            parentId = parseInt(parentId);
+        }
+        var title = 'Add job group in ' + parentLiElement.find('.parent-group-name').text().trim();
+    } else {
+        var parentId = 'none';
+        var title = 'Add new job group on top-level';
     }
 
     var formElement = $('#new_group_form');
@@ -12,7 +18,7 @@ function showAddJobGroup(plusElement) {
 
     var addGroupElement = $('#add_group_modal');
 
-    addGroupElement.find('.modal-title').text('Add job group in ' + parentLiElement.find('.parent-group-name').text().trim());
+    addGroupElement.find('.modal-title').text(title);
     addGroupElement.modal();
     return false;
 }
@@ -23,7 +29,7 @@ function showAddParentGroup() {
     formElement.trigger('reset');
 
     var addGroupElement = $('#add_group_modal');
-    addGroupElement.find('.modal-title').text('Add new top-level group');
+    addGroupElement.find('.modal-title').text('Add new folder');
     addGroupElement.modal();
     return false;
 }
@@ -76,9 +82,11 @@ function createGroup(form) {
         var postUrl = editorForm.data('post-job-group-url');
         var rowUrl = editorForm.data('job-group-row-url');
         var parentId = editorForm.data('parent-id');
-        var targetElement = $('#parent_group_' + parentId).find('ul');
         if(parentId !== 'none') {
+            var targetElement = $('#parent_group_' + parentId).find('ul');
             data += '&parent_id=' + parentId;
+        } else {
+            var targetElement = $('#job_group_list');
         }
     }
 
@@ -87,6 +95,10 @@ function createGroup(form) {
         method: 'POST',
         data: data,
         success: function(response) {
+            if(!response) {
+                showError('Server returned no response');
+                return;
+            }
             var id = response.id;
             if(!id) {
                 showError('Server returned no ID');
@@ -110,29 +122,43 @@ function removeAllDropIndicators() {
     $('.parent-dragover').removeClass('parent-dragover');
 }
 
-function checkDrop(event, parentLiElement) {
-    if(dragData && !dragData.isParent) {
+function checkDrop(event, parentDivElement) {
+    if(dragData) {
+        var parentLiElement = parentDivElement.parentElement;
+        var isTopLevel = parentLiElement.parentElement.id === 'job_group_list';
+
+        if(dragData.isParent && !isTopLevel) {
+            return;
+        }
+
         event.preventDefault();
         removeAllDropIndicators();
         $(parentLiElement).addClass('dragover');
     }
 }
 
-function checkParentDrop(event, parentLiElement) {
+function checkParentDrop(event, parentDivElement, enforceParentDrop, noChildDrop) {
     if(dragData) {
+        if(noChildDrop && dragData.isParent) {
+            return;
+        }
+
         event.preventDefault();
+        event.stopPropagation();
+
         removeAllDropIndicators();
-        if(dragData.isParent) {
-            $(parentLiElement).addClass('parent-dragover');
+        if((dragData.enforceParentDrop = enforceParentDrop) || dragData.isParent) {
+            $(parentDivElement).addClass('parent-dragover');
         } else {
-            $(parentLiElement).addClass('dragover');
+            $(parentDivElement).addClass('dragover');
         }
     }
 }
 
-function leaveDrag(event, parentLiElement) {
-    $(parentLiElement).removeClass('dragover');
-    $(parentLiElement).removeClass('parent-dragover');
+function leaveDrag(event, parentDivElement) {
+    $(parentDivElement).removeClass('dragover');
+    $(parentDivElement).removeClass('parent-dragover');
+    $(parentDivElement.parentElement).removeClass('dragover');
 }
 
 function concludeDrop(dropTargetElement) {
@@ -152,7 +178,7 @@ function insertParentGroup(event, parentLiElement) {
     if(dragData) {
         dragData.liElement.hide();
 
-        if(dragData.isParent) {
+        if(dragData.isParent || dragData.enforceParentDrop) {
             dragData.liElement.insertBefore($(parentLiElement).parent());
         } else {
             dragData.liElement.prependTo($(parentLiElement).parent().find('ul'));
@@ -162,9 +188,10 @@ function insertParentGroup(event, parentLiElement) {
     }
 }
 
-function insertGroup(event, siblingLiElement) {
+function insertGroup(event, siblingDivElement) {
     event.preventDefault();
     if(dragData) {
+        var siblingLiElement = siblingDivElement.parentElement;
         dragData.liElement.hide();
         dragData.liElement.insertAfter($(siblingLiElement));
         dragData.liElement.fadeIn('slow');
@@ -172,14 +199,17 @@ function insertGroup(event, siblingLiElement) {
     }
 }
 
-function dragGroup(event, groupLiElement) {
+function dragGroup(event, groupDivElement) {
     // workaround for Firefox which insists on having data in dataTransfer
     event.dataTransfer.setData('make', 'firefox happy');
 
     // this variable is actually used to store the data (to preserve DOM element)
+    var groupLiElement = groupDivElement.parentElement;
     dragData = {
         id: groupLiElement.id,
-        liElement: $(groupLiElement)
+        liElement: $(groupLiElement),
+        isParent: false,
+        isTopLevel: groupLiElement.parentElement.id === 'job_group_list'
     };
 }
 
@@ -189,7 +219,8 @@ function dragParentGroup(event, groupDivElement) {
     dragData = {
         id: groupLiElement.id,
         liElement: $(groupLiElement),
-        isParent: true
+        isParent: true,
+        isTopLevel: true
     };
 }
 
@@ -217,20 +248,27 @@ function saveReorganizedGroups() {
         $('#reorganize_groups_error').removeClass('hidden');
         $('#reorganize_groups_progress').addClass('hidden');
         $('#reorganize_groups_error_message').text(thrownError ? thrownError : 'something went wrong');
-        $('html, body').animate({scrollTop: commentRow.offset().top}, 1000);
+        $('html, body').animate({scrollTop: 0}, 1000);
     };
 
     var handleSuccess = function(response, groupLi, index, parentId) {
-        var id = response.id;
-        if(!id) {
-            showError('Server returned no ID');
+        if(!response) {
+            handleError(undefined, undefined, 'Server returned nothing');
             return;
         }
 
-        // update initial value (to avoid queries for already commited changes)
-        groupLi.data('initial-index', index);
-        if(parentId) {
-            groupLi.data('initial-parent', parentId);
+        if(!response.nothingToDo) {
+            var id = response.id;
+            if(!id) {
+                handleError(undefined, undefined, 'Server returned no ID');
+                return;
+            }
+
+            // update initial value (to avoid queries for already commited changes)
+            groupLi.data('initial-index', index);
+            if(parentId) {
+                groupLi.data('initial-parent', parentId);
+            }
         }
 
         if(ajaxQueries.length) {
@@ -249,56 +287,65 @@ function saveReorganizedGroups() {
     };
 
     // determine what changed to make required AJAX queries
-    jobGroupList.children('li').each(function(parentGroupIndex) {
-        var parentGroupLi = $(this);
+    jobGroupList.children('li').each(function(groupIndex) {
+        var groupLi = $(this);
 
-        if(this.id !== 'parent_group_none') {
-            var parentGroupId = parseInt(this.id.substr(13));
-            if(parentGroupIndex != parentGroupLi.data('initial-index')) {
-                // index of parent group changed -> update sort order
-                ajaxQueries.push({
-                    url: updateParentGroupUrl + parentGroupId,
-                    method: 'PUT',
-                    data: {
-                        sort_order: parentGroupIndex
-                    },
-                    success: function(response) {
-                        handleSuccess(response, parentGroupLi, parentGroupIndex);
-                    },
-                    error: handleError
-                });
-            }
-        } else {
-            var parentGroupId = 'none';
+        if(this.id.indexOf('job_group_') === 0) {
+            var isParent = false;
+            var groupId = parseInt(this.id.substr(10));
+            var updateGroupUrl = updateJobGroupUrl;
+        } else if(this.id.indexOf('parent_group_') === 0) {
+            var isParent = true;
+            var groupId = parseInt(this.id.substr(13));
+            var updateGroupUrl = updateParentGroupUrl;
+        }
+        var parentId = groupLi.data('initial-parent');
+
+        if(groupIndex != groupLi.data('initial-index') || parentId !== 'none') {
+            // index of parent group changed -> update sort order
+            ajaxQueries.push({
+                url: updateGroupUrl + groupId,
+                method: 'PUT',
+                data: {
+                    sort_order: groupIndex,
+                    parent_id: 'none'
+                },
+                success: function(response) {
+                    handleSuccess(response, groupLi, groupIndex);
+                },
+                error: handleError
+            });
         }
 
-        parentGroupLi.find('ul').children('li').each(function(jobGroupIndex) {
-            var jobGroupLi = $(this);
-            var jobGroupId = parseInt(this.id.substr(10));
+        if(isParent) {
+            groupLi.find('ul').children('li').each(function(childGroupIndex) {
+                var jobGroupLi = $(this);
+                var jobGroupId = parseInt(this.id.substr(10));
 
-            if(jobGroupIndex != jobGroupLi.data('initial-index')
-                || parentGroupId != jobGroupLi.data('initial-parent')) {
-                // index or parent of job group changed -> update parent and sort order
-                ajaxQueries.push({
-                    url: updateJobGroupUrl + jobGroupId,
-                    method: 'PUT',
-                    data: {
-                        sort_order: jobGroupIndex,
-                        parent_id: parentGroupId
-                    },
-                    success: function(response) {
-                        handleSuccess(response, jobGroupLi, jobGroupIndex, parentGroupId);
-                    },
-                    error: handleError
-                });
-            }
-        });
+                if(childGroupIndex != jobGroupLi.data('initial-index')
+                    || groupId != jobGroupLi.data('initial-parent')) {
+                    // index or parent of job group changed -> update parent and sort order
+                    ajaxQueries.push({
+                        url: updateJobGroupUrl + jobGroupId,
+                        method: 'PUT',
+                        data: {
+                            sort_order: childGroupIndex,
+                            parent_id: groupId
+                        },
+                        success: function(response) {
+                            handleSuccess(response, jobGroupLi, childGroupIndex, groupId);
+                        },
+                        error: handleError
+                    });
+                }
+            });
+        }
     });
 
     if (ajaxQueries.length) {
         $.ajax(ajaxQueries.shift());
     } else {
-        handleSuccess();
+        handleSuccess({nothingToDo: true});
     }
     return false;
 }
