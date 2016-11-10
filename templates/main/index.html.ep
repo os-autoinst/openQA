@@ -23,10 +23,18 @@
     % my $group    = $groupresults->{group};
     % my $result   = $groupresults->{result};
     % my $max_jobs = $groupresults->{max_jobs};
-    <h2>
-        %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})
-    </h2>
-    %= include 'main/group_builds', result => $result, group => $group, max_jobs => $max_jobs
+
+    % if (@{$groupresults->{children}}) {
+        <h2>
+            %= link_to $group->{name} => url_for('parent_group_overview', groupid => $group->{id})
+        </h2>
+        %= include 'main/group_builds', result => $result, group => $group, max_jobs => $max_jobs, children => $groupresults->{children}
+    % } else {
+        <h2>
+            %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})
+        </h2>
+        %= include 'main/group_builds', result => $result, group => $group, max_jobs => $max_jobs, children => undef
+    % }
 % }
 
 <div class="panel panel-default filter-panel-bottom" id="filter-panel">
