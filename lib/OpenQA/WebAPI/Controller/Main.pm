@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,9 +34,9 @@ sub index {
     my $group_params = $self->every_param('group');
 
     my @results;
-    my $groups = $self->db->resultset('JobGroups')->search({}, {order_by => qw/name/});
+    my $groups = $self->stash('job_groups_and_parents');
 
-    while (my $group = $groups->next) {
+    for my $group (@$groups) {
         if (@$group_params) {
             next unless grep { $_ eq '' || $group->name =~ /$_/ } @$group_params;
         }
@@ -75,6 +75,8 @@ sub group_overview {
     my $cbr      = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days);
     my $res      = $cbr->{result};
     my $max_jobs = $cbr->{max_jobs};
+    $self->stash(children => $cbr->{children});
+
     my @comments;
     my @pinned_comments;
     if ($group->can('comments')) {

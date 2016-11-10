@@ -33,5 +33,5 @@
     </div>
 </div>
 
-%= include 'main/group_builds', result => $result, group => undef
+%= include 'main/group_builds', result => $result, group => $group, children => $children
 %= include 'main/more_builds', limit_builds => $limit_builds
