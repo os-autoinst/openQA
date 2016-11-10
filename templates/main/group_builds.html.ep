@@ -3,16 +3,24 @@
     <div class="row build-row">
         <div class="col-md-4 text-nowrap">
             <h4>
-                <%= link_to "Build$build" => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $group->{id} ) %>
-                (<abbr class="timeago" title="<%= $build_res->{oldest}->datetime() %>Z">
-                %= delete $build_res->{oldest}
-                </abbr>)
-                % my $group_build_id = $group->{id} . '-' . $build;
-                % my $tag = $build_res->{tag};
-                % if ($tag) {
-                    <span id="tag-<%= $group_build_id %>">
-                        <i class="tag fa fa-tag" title="<%= $tag->{type}; %>"><%= $tag->{description} %></i>
-                    </span>
+                % my $group_build_id;
+                % if ($group) {
+                    %= link_to "Build$build" => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $group->{id} )
+                    (<abbr class="timeago" title="<%= $build_res->{oldest}->datetime() %>Z">
+                    %= delete $build_res->{oldest}
+                    </abbr>)
+
+                    % $group_build_id = $group->{id} . '-' . $build;
+                    % my $tag = $build_res->{tag};
+                    % if ($tag) {
+                        <span id="tag-<%= $group_build_id %>">
+                            <i class="tag fa fa-tag" title="<%= $tag->{type}; %>"><%= $tag->{description} %></i>
+                        </span>
+                    % }
+                % }
+                % else {
+                    % $group_build_id = $build;
+                    %= "Build$build"
                 % }
                 % my $reviewed = $build_res->{reviewed};
                 % if ($reviewed) {
