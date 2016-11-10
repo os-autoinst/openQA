@@ -103,12 +103,7 @@ around 'default_priority' => sub {
 
 sub child_group_ids {
     my ($self) = @_;
-
-    my @group_ids;
-    for my $group ($self->children) {
-        push(@group_ids, $group->id);
-    }
-    return \@group_ids;
+    return [map { $_->id } $self->children];
 }
 
 sub jobs {
@@ -122,11 +117,9 @@ sub jobs {
 sub rendered_description {
     my ($self) = @_;
 
-    if ($self->description) {
-        my $m = CommentsMarkdownParser->new;
-        return Mojo::ByteStream->new($m->markdown($self->description));
-    }
-    return;
+    return unless $self->description;
+    my $m = CommentsMarkdownParser->new;
+    return Mojo::ByteStream->new($m->markdown($self->description));
 }
 
 1;
