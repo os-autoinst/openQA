@@ -243,6 +243,12 @@ sub complex_query {
         $attrs{rows} = $args{limit};
     }
     $attrs{page} = $args{page} || 0;
+    if ($args{before}) {
+        push(@conds, {'me.id' => {'<', $args{before}}});
+    }
+    if ($args{after}) {
+        push(@conds, {'me.id' => {'>', $args{after}}});
+    }
     if ($args{assetid}) {
         push(@joins, 'jobs_assets');
         push(
