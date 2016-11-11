@@ -60,10 +60,16 @@ $t->app($app);
 # 99981 cancelled  no clone
 # 99963 running    no clone
 # 99962 done       clone_id: 99963 (running)
+# 99961 running    no clone
+# 99947 done       no clone
 # 99946 done       no clone
 # 99945 done       clone_id: 99946 (also done)
+# 99944 done       clone_id: 99945 (also done)
+# 99940 done       no clone
+# 99939 done       no clone
 # 99938 done       no clone
 # 99937 done       no clone
+# 99936 done       no clone
 # 99928 scheduled  no clone
 # 99927 scheduled  no clone
 # 99926 done       no clone
@@ -122,6 +128,26 @@ $get = $t->get_ok('/api/v1/jobs?test=kde&result=softfailed&machine=64bit');
 is(scalar(@{$get->tx->res->json->{jobs}}), 1);
 $get = $t->get_ok('/api/v1/jobs?test=kde&result=passed&machine=64bit');
 is(scalar(@{$get->tx->res->json->{jobs}}), 0);
+
+# test limiting options
+$get = $t->get_ok('/api/v1/jobs?limit=5');
+is(scalar(@{$get->tx->res->json->{jobs}}), 5);
+$get = $t->get_ok('/api/v1/jobs?limit=1');
+is(scalar(@{$get->tx->res->json->{jobs}}), 1);
+is($get->tx->res->json->{jobs}->[0]->{id}, 99981);
+$get = $t->get_ok('/api/v1/jobs?limit=1&page=2');
+is(scalar(@{$get->tx->res->json->{jobs}}), 1);
+is($get->tx->res->json->{jobs}->[0]->{id}, 99963);
+$get = $t->get_ok('/api/v1/jobs?before=99928');
+is(scalar(@{$get->tx->res->json->{jobs}}), 2);
+$get = $t->get_ok('/api/v1/jobs?after=99945');
+is(scalar(@{$get->tx->res->json->{jobs}}), 6);
+
+# test multiple arg forms
+$get = $t->get_ok('/api/v1/jobs?ids=99981,99963,99926');
+is(scalar(@{$get->tx->res->json->{jobs}}), 3);
+$get = $t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926');
+is(scalar(@{$get->tx->res->json->{jobs}}), 3);
 
 # Test /jobs/restart
 my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})->status_is(200);
