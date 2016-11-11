@@ -1,0 +1,48 @@
+#!/usr/bin/bash
+set -x 
+set -e
+asciidoctor_bin=$(which asciidoctor)
+shortref=$(git rev-parse --short HEAD)
+verbose_doc_name=$(date +%Y%m%d)"_"${shortref} #we are not intending to run this off a git repository
+tmpwd=$(mktemp -d -t openqa-doc-XXXX)
+publish=${0:-1}
+
+if [ ! -e ${asciidoctor_bin} ]; then
+        echo "Could not find asciidoctor binary in your path, please install it and run this command again"
+        exit 1;
+fi
+
+# HEAD must be clean
+git reset HEAD --hard
+
+cd docs
+mkdir ${tmpwd}/output 2>/dev/null || true #we don't care if the directory already exists
+cp -r images ${tmpwd}/output
+
+${asciidoctor_bin} -r asciidoctor-pdf -b pdf -o ${tmpwd}/output/openqa-documentation-${verbose_doc_name}.pdf index.asciidoc -d book
+${asciidoctor_bin} -o ${tmpwd}/output/openqa-documentation-${verbose_doc_name}.html index.asciidoc -d book
+
+echo "The output has been generated at ${tmpwd}/output"
+
+if [ $publish ]; then
+	cd ..
+
+	git checkout -b gh-pages origin/gh-pages || git checkout gh-pages
+	mkdir docs
+	cp -r ${tmpwd}/output/* docs
+	(
+		echo $(pwd)
+		cd docs
+		ls
+		ln -f openqa-documentation-${verbose_doc_name}.html index.html
+		ln -f openqa-documentation-${verbose_doc_name}.pdf current.pdf
+	)
+	rm -rf ${tmpwd}
+
+	git add docs
+	git commit -m "Update documentation to ${shortref}"
+	git push -f foursixnine
+	git checkout doc/generator_script
+	git reset HEAD --hard
+fi;
+
