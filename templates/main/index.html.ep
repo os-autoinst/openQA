@@ -27,6 +27,7 @@
     % if (@{$groupresults->{children}}) {
         <h2>
             %= link_to $group->{name} => url_for('parent_group_overview', groupid => $group->{id})
+            <span class="p">(+)</span>
         </h2>
         %= include 'main/group_builds', result => $result, group => $group, max_jobs => $max_jobs, children => $groupresults->{children}
     % } else {
