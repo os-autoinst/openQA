@@ -45,7 +45,7 @@ zypper ar -f obs://devel:openQA/openSUSE_Leap_42.1 openQA
 zypper ar -f obs://devel:openQA:Leap:42.1/openSUSE_Leap_42.1 openQA-perl-modules
 
 # openSUSE Tumbleweed
-zypper ar -f obs://devel:openQA/openSUSE_Factory openQA
+zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed openQA
 
 # all openSUSE
 zypper in openQA
