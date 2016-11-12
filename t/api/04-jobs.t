@@ -292,6 +292,7 @@ is_deeply(
         reviewed_all_passed => '',
         total               => 3,
         passed              => 0,
+        skipped             => 0,
         distri              => 'opensuse',
         unfinished          => 1,
         version             => 'Factory'
@@ -317,6 +318,7 @@ is_deeply(
         total               => 1,
         failed              => 0,
         unfinished          => 0,
+        skipped             => 0,
         reviewed            => '',
         softfailed          => 0,
         reviewed_all_passed => 1
