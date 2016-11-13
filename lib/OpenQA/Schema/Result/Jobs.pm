@@ -842,19 +842,7 @@ sub part_of_important_build {
         return;
     }
 
-    my $comments = $self->group->comments;
-    my $important;
-    while (my $comment = $comments->next) {
-        my @tag = $comment->tag;
-        next unless $tag[0] and ($tag[0] eq $build);
-        if ($tag[1] eq 'important') {
-            $important = 1;
-        }
-        elsif ($tag[1] eq '-important') {
-            $important = 0;
-        }
-    }
-    return $important;
+    return grep { $_ eq $build } @{$self->group->important_builds};
 }
 
 # gru job
@@ -1450,5 +1438,7 @@ sub cancel {
     }
     return $count;
 }
+
 1;
+
 # vim: set sw=4 et:
