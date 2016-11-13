@@ -1,0 +1,19 @@
+:toc: left
+:toclevels: 6
+:author: OpenQA Team
+:listing-caption: Listing
+:source-highlighter: pygments
+
+= openQA Documentation
+
+
+:sectnums:
+ifdef::basebackend-html[toc::[]]
+:sectnums!:
+include::GettingStarted.asciidoc[]
+include::Installing.asciidoc[]
+include::WritingTests.asciidoc[]
+include::Pitfalls.asciidoc[]
+include::Networking.asciidoc[]
+include::Contributing.asciidoc[]
+include::Branding.asciidoc[]

@@ -1,18 +1,17 @@
-openQA starter guide
-====================
-:author: openSUSE Team at SUSE
-:toc:
 
-Introduction
-------------
-[id="intro"]
+= openQA starter guide
+:toc: left
+:toclevels: 6
+:author: OpenQA Team
+
+== Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It uses virtual machines to
 reproduce the process, check the output (both serial console and
 screen) in every step and send the necessary keystrokes and commands to
 proceed to the next. openQA can check whether the system can be installed,
-whether it works properly in `live' mode, whether applications work
+whether it works properly in 'live' mode, whether applications work
 or whether the system responds as expected to different installation options and
 commands.
 
@@ -32,8 +31,7 @@ become a happy user. More advanced topics like installation, administration or
 development of new tests are covered by further documents available in the
 https://github.com/os-autoinst/openQA[official repository].
 
-Architecture
-------------
+== Architecture
 [id="architecture"]
 
 Although the project as a whole is referred to as openQA, there are in fact
@@ -60,12 +58,10 @@ application takes care of distributing test jobs among workers. Web
 application and workers don't have to run on the same machine but
 can be connected via network instead.
 
-Basic concepts
---------------
+== Basic concepts
 [id="concepts"]
 
-Jobs
-~~~~
+=== Jobs
 
 One of the most important features of openQA is that it can be used to test
 several combinations of actions and configurations. For every one of those
@@ -81,7 +77,7 @@ A job goes through several states:
 * *running* In progress.
 * *cancelled* The job was explicitly cancelled by the user or was replaced by a
   clone (see below).
-* *waiting* The job is in `interactive mode' (see below) and waiting for input.
+* *waiting* The job is in 'interactive mode' (see below) and waiting for input.
 * *done* Execution finished.
 
 Jobs in state 'done' have typically gone through a whole sequence of steps
@@ -90,7 +86,7 @@ partial results, a finished job also provides an overall result from the
 following list.
 
 * *none* For jobs that have not reached the 'done' state.
-* *passed* No critical check failed during the process. It doesn't necessarily 
+* *passed* No critical check failed during the process. It doesn't necessarily
   mean that all testmodules where successful or that no single assertion failed.
 * *failed* At least one assertion considered to be critical was not satisfied at some
   point.
@@ -108,11 +104,10 @@ From that point in time, the clone becomes the current version and the original
 job is considered outdated (and can be filtered in the listing) but its
 information and results (if any) are kept for future reference.
 
-Needles
-~~~~~~~
+=== Needles
 
 One of the main mechanisms for openQA to know the state of the virtual machine
-is checking the presence of some elements in the machine's `screen'.
+is checking the presence of some elements in the machine's 'screen'.
 This is performed using fuzzy image matching between the screen and the so
 called 'needles'. A needle specifies both the elements to search for and a
 list of tags used to decide which needles should be used at any moment.
@@ -142,8 +137,7 @@ tags.
 }
 -------------------------------------------------------------------
 
-Interactive mode
-~~~~~~~~~~~~~~~~
+=== Interactive mode
 
 There are several points in time during the execution of a job at which openQA
 tries to match the screen with the available needles, reacting to the result of
@@ -170,9 +164,7 @@ operating system or when the look & feel have changed and several needles need
 to be adjusted accordingly.
 
 
-Access management
------------------
-[id="auth"]
+=== Access management
 
 Some actions in openQA require special privileges. openQA provides
 authentication through http://en.wikipedia.org/wiki/OpenID[openID]. By default,
@@ -209,29 +201,26 @@ of the openQA security model, refer to the
 http://lizards.opensuse.org/2014/02/28/about-openqa-and-authentication/[detailed
 blog post] about the subject by the openQA development team.
 
-Using the client script
-~~~~~~~~~~~~~~~~~~~~~~~
+==Using the client script
+:openqa-personal-configuration: ~/.config/openqa/client.conf
 
 Just as the worker uses an API key+secret every user of the +client script+
 must do the same. The same API key+secret as previously created can be used or
 a new one created over the webUI.
 
 The personal configuration should be stored in a file
-+~/.config/openqa/client.conf+ in the same format as previously described for
+`{openqa-personal-configuration}` in the same format as previously described for
 the +client.conf+, i.e. sections for each machine, e.g. `localhost`.
 
-
-Using job templates to automate jobs creation
----------------------------------------------
+== Using job templates to automate jobs creation
 [id="job_templates"]
 
-The problem
-~~~~~~~~~~~
+=== The problem
 
 When testing an operating system, especially when doing continuous testing,
 there is always a certain combination of jobs, each one with its own
 settings, that needs to be run for every revision. Those combinations can be
-different for different `flavors' of the same revision, like running a different
+different for different 'flavors' of the same revision, like running a different
 set of jobs for each architecture or for the Full and the Lite versions. This
 combinational problem can go one step further if openQA is being used for
 different kinds of tests, like running some simple pre-integration tests
@@ -268,21 +257,20 @@ can be tested in x86-64 and i586 machines. If we write this as a
 triples, we can create a list like this to characterize KDE tests:
 
   (Product,             Test Suite, Machine)
-  (openSUSE-DVD-x86_64, KDE,        64bit) 
+  (openSUSE-DVD-x86_64, KDE,        64bit)
   (openSUSE-DVD-x86_64, KDE,        Laptop-64bit)
   (openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
-  (openSUSE-DVD-i586,   KDE,        32bit) 
-  (openSUSE-DVD-i586,   KDE,        Laptop-32bit) 
+  (openSUSE-DVD-i586,   KDE,        32bit)
+  (openSUSE-DVD-i586,   KDE,        Laptop-32bit)
   (openSUSE-DVD-x86_64, KDE,        USBBoot-32bit)
-  (openSUSE-DVD-i586,   KDE,        64bit) 
-  (openSUSE-DVD-i586,   KDE,        Laptop-64bit) 
+  (openSUSE-DVD-i586,   KDE,        64bit)
+  (openSUSE-DVD-i586,   KDE,        Laptop-64bit)
   (openSUSE-DVD-x86_64, KDE,        USBBoot-64bit)
 
 For every triplet, we need to configure a different instance of
 os-autoinst with a different set of parameters.
 
-Medium Types (products)
-~~~~~~~~~~~~~~~~~~~~~~~
+=== Medium Types (products)
 
 A medium type (product) in openQA is a simple description without any concrete
 meaning. It basically consists of a name and a set of variables that
@@ -301,8 +289,7 @@ Some example variables used by openSUSE are:
 * +PROMO+ marks the promotional product.
 * +RESCUECD+ is set to 1 for rescue CD images.
 
-Test Suites
-~~~~~~~~~~~
+=== Test Suites
 
 This is the form where we define the different tests that we created
 for openQA. A test consists of a name, a priority (used in the
@@ -346,8 +333,7 @@ and/or os-autoinst's own behavior are:
 * +RAIDLEVEL+ RAID configuration variable
 * +QEMUVGA+ parameter to declare the video hardware configuration in QEMU
 
-Machines
-~~~~~~~~
+=== Machines
 
 You need to have at least one machine set up to be able to run any
 tests. Those machines represent virtual machine types that you want to
@@ -370,8 +356,8 @@ of how the test machine is set up. A few important examples:
 ** +USBBOOT+ when set to 1, the image will be loaded through an
    emulated USB stick.
 
-Variable expansion
-~~~~~~~~~~~~~~~~~~
+=== Variable expansion
+
 Any variable defined in Test Suite, Machine or Product table can refer to another
 variable using this syntax: +%NAME%+. When the test job is created, the string
 will be substituted with the value of the specified variable at that time.
@@ -390,19 +376,17 @@ may be expanded to this job variable:
 PUBLISH_HDD_1 = opensuse-13.1-i586-kde.qcow2
 --------------------------------------------------------------------------------
 
-Testing openSUSE or Fedora
---------------------------
+== Testing openSUSE or Fedora
 
 An easy way to start using openQA is to start testing openSUSE or Fedora as they
 have everything setup and prepared to ease the initial deployment. If you want
 to play deeper, you can configure the whole openQA manually from scratch, but
 this document should help you to get started faster.
 
-Getting tests
-~~~~~~~~~~~~~
+=== Getting tests
 
 First you need to get actual tests. You can get openSUSE tests and needles (the
-expected results) from 
+expected results) from
 https://github.com/os-autoinst/os-autoinst-distri-opensuse[GitHub]. It belongs
 into the +/var/lib/openqa/tests/opensuse+ directory. To make it easier, you can just
 run
@@ -428,8 +412,7 @@ cd ..
 chown -R geekotest fedora/
 --------------------------------------------------------------------------------
 
-Getting openQA configuration
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=== Getting openQA configuration
 
 To get everything configured to actually run the tests, there are plenty of
 options to set in the admin interface. If you plan to test openSUSE Factory, using
@@ -443,7 +426,7 @@ following command:
 
 This will load some default settings that were used at some point of time in
 openSUSE production openQA. Therefore those should work reasonably well with
-openSUSE tests and needles. This script uses +/usr/share/openqa/script/load_templates+, 
+openSUSE tests and needles. This script uses +/usr/share/openqa/script/load_templates+,
 consider reading its help page (+--help+) for documentation on possible extra arguments.
 
 For Fedora, similarly, you can call:
@@ -459,8 +442,7 @@ https://bitbucket.org/rajcze/openqa_fedora_tools.git[openqa_fedora_tools]
 repository can be used to create these. See the documentation in that repo
 for more information.
 
-Adding a new ISO to test
-~~~~~~~~~~~~~~~~~~~~~~~~
+=== Adding a new ISO to test
 
 To start testing a new ISO put it in +/var/lib/openqa/share/factory/iso+ and call
 the following commands:
@@ -498,6 +480,6 @@ For Fedora, a sample run might be:
          BUILD=Rawhide-20160308.n.0
 --------------------------------------------------------------------------------
 
-Pitfalls
---------
-Take a look at link:Pitfalls.asciidoc[Documented Pitfalls]
+== Pitfalls
+
+Take a look at link:Pitfalls.asciidoc[Documented Pitfalls].
