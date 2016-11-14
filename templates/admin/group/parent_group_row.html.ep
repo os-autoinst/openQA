@@ -1,38 +1,39 @@
-<li id="parent_group_<%= $group ? $group->id : 'none' %>" data-initial-index="<%= $parent_index %>">
+<li
+    id="parent_group_<%= $group->id %>"
+    data-initial-index="<%= $index %>"
+    data-initial-parent="<%= $parent_id %>"
+>
     <div
-    % if (is_admin) {
-        ondrop="insertParentGroup(event, this);" ondragover="checkParentDrop(event, this);"
-        ondragleave="leaveDrag(event, this);" draggable="true" ondragstart="dragParentGroup(event, this);"
-    % }
+        % if (is_admin) {
+            ondrop="insertParentGroup(event, this);"
+            ondragover="checkParentDrop(event, this);"
+            ondragstart="dragParentGroup(event, this);"
+            class="no-enforce-parent-drop"
+            ondragleave="leaveDrag(event, this);" draggable="true"
+        % }
     >
         % if (is_admin) {
-            <a href="#" onclick="return showAddJobGroup(this);" class="fa fa-2 fa-plus" title="Add new in <%= $group ? $group->name : 'Miscellaneous groups' %>"></a>
+            <div
+                class="enforce-parent-drop"
+                ondrop="insertParentGroup(event, this.parentElement);"
+                ondragover="checkParentDrop(event, this.parentElement, true);"
+                ondragstart="dragParentGroup(event, this.parentElement);"
+            >
+            </div>
+        % }
+        % if (is_admin) {
+            <a href="#" onclick="return showAddJobGroup(this);" class="fa fa-2 fa-plus" title="Add new job group in <%= $group->name %>"></a>
         % }
         <span class="fa fa-2 fa-folder" aria-hidden="true"></span>
         <span class="parent-group-name">
-            % if ($group) {
-                %= link_to $group->name => url_for('admin_edit_parent_group', groupid => $group->id)
-            % }
-            % else {
-                Miscellaneous groups
-            % }
+            %= link_to $group->name => url_for('admin_edit_parent_group', groupid => $group->id)
         </span>
     </div>
     <ul>
-        % my $group_index = 0;
-        % if ($group) {
-            % for my $child_group ($group->children) {
-                %= include 'admin/group/job_group_row', group => $child_group, group_index => $group_index, parent => $group->id
-                % ++$group_index;
-            % }
-        % }
-        % else {
-            % while (my $group = $groups->next()) {
-                % unless ($group->parent_id) {
-                    %= include 'admin/group/job_group_row', group => $group, group_index => $group_index, parent => 'none'
-                    % ++$group_index;
-                % }
-            % }
+        % my $child_index = 0;
+        % for my $child_group ($group->children) {
+            %= include 'admin/group/job_group_row', is_parent => 0, group => $child_group, index => $child_index, parent => $group->id, parent_id => $group->id
+            % ++$child_index;
         % }
     </ul>
 </li>

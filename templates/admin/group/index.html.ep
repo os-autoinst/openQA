@@ -52,7 +52,13 @@
         <h2><%= title %></h2>
         %= include 'layouts/info'
         % if (is_admin) {
-            <a href="#" onclick="return showAddParentGroup(this);" class="add-parent-group fa fa-2 fa-plus" title="Add new"></a>
+            <a href="#" onclick="return showAddParentGroup(this);" class="add-parent-group fa-stack" title="Add new folder">
+                <i class="fa fa-folder fa-stack-1x"></i>
+                <i class="fa fa-plus fa-stack-1x"></i>
+            </a>
+            <a href="#" onclick="return showAddJobGroup();" class="add-parent-group fa-stack" title="Add new job group on top-level">
+                <i class="fa fa-plus fa-stack-1x"></i>
+            </a>
             <p>Drag & Drop job groups to order. Click on a group to edit group properties and jobs.</p>
             <div id="reorganize_groups_panel" class="hidden">
                 <p id="reorganize_groups_progress" class="hidden">
@@ -78,12 +84,11 @@
             data-put-job-group-url="<%= url_for('apiv1_put_job_group') %>"
             data-put-parent-group-url="<%= url_for('apiv1_put_parent_group') %>"
         >
-            % my $parent_index = 0;
-            % while (my $group = $parent_groups->next()) {
-                %= include 'admin/group/parent_group_row', group => $group, parent_index => $parent_index
-                % ++$parent_index;
+            % my $index = 0;
+            % for my $group (@$job_groups_and_parents_for_editor) {
+                %= include $group->can('children') ? 'admin/group/parent_group_row' : 'admin/group/job_group_row', group => $group, index => $index, parent_id => 'none'
+                % ++$index;
             % }
-            %= include 'admin/group/parent_group_row', group => undef, parent_index => $parent_index, groups => $groups
         </ul>
     </div>
 </div>
