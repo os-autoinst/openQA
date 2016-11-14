@@ -202,6 +202,10 @@ sub delete {
     # we need to remove the modules one by one to get their delete functions called
     # otherwise dbix leaves this to the database
     $self->modules->delete_all;
+
+    # remove result directory if already existant
+    File::Path::rmtree($self->result_dir());
+
     return $self->SUPER::delete;
 }
 
