@@ -177,17 +177,29 @@ subtest 'update job group' => sub() {
 };
 
 subtest 'delete job group and error when listing non-existing group' => sub() {
-    $t->delete_ok('/api/v1/job_groups/3498371')->status_is(400);
+    $t->delete_ok('/api/v1/job_groups/3498371')->status_is(404);
     my $new_id = $t->post_ok('/api/v1/job_groups', form => {name => 'To delete'})->tx->res->json->{id};
     my $delete = $t->delete_ok('/api/v1/job_groups/' . $new_id)->status_is(200);
     is($delete->tx->res->json->{id}, $new_id, 'correct ID returned');
-    my $get = $t->get_ok('/api/v1/job_groups/' . $new_id)->status_is(400);
+    my $get = $t->get_ok('/api/v1/job_groups/' . $new_id)->status_is(404);
     is_deeply($get->tx->res->json, {error => 'Group 1004 does not exist'}, 'error about non-existing group');
 };
 
 subtest 'prevent deleting non-empty job group' => sub() {
-    my $delete = $t->delete_ok('/api/v1/job_groups/1001')->status_is(400);
-    is_deeply($delete->tx->res->json, {error => 'Job group 1001 is not empty'});
+    my $delete = $t->delete_ok('/api/v1/job_groups/1002')->status_is(400);
+    is_deeply($delete->tx->res->json, {error => 'Job group 1002 is not empty'});
+    my $get = $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(200);
+    is_deeply($get->tx->res->json, {ids => [99961]}, '1002 contains one job');
+    $get = $t->get_ok('/api/v1/job_groups/1002/jobs?expired=1')->status_is(200);
+    is_deeply($get->tx->res->json, {ids => []}, '1002 contains no expired job');
+    my $rd = 't/data/openqa/testresults/00099961-opensuse-13.1-DVD-x86_64-Build0091-kde';
+    ok(-d $rd, 'result dir of job exists');
+    $t->delete_ok('/api/v1/jobs/99961')->status_is(200);
+    ok(!-d $rd, 'result dir of job gone');
+    $get = $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(200);
+    is_deeply($get->tx->res->json, {ids => []}, '1002 contains no more jobs');
+    $t->delete_ok('/api/v1/job_groups/1002')->status_is(200);
+    $get = $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(404);
 };
 
 done_testing();

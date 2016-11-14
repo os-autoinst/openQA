@@ -17,6 +17,7 @@ package OpenQA::Schema::Result::JobGroups;
 use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
 use base qw/DBIx::Class::Core/;
+use Date::Format qw(time2str);
 use strict;
 
 __PACKAGE__->table('job_groups');
@@ -115,6 +116,48 @@ sub rendered_description {
         return Mojo::ByteStream->new($m->markdown($self->description));
     }
     return;
+}
+
+# check the group comments for important builds
+sub important_builds {
+    my ($self) = @_;
+
+    my %importants;
+    my $comments = $self->comments;
+    while (my $comment = $comments->next) {
+        my @tag = $comment->tag;
+        next unless $tag[0];
+        if ($tag[1] eq 'important') {
+            $importants{$tag[0]} = 1;
+        }
+        elsif ($tag[1] eq '-important') {
+            delete $importants{$tag[0]};
+        }
+    }
+    return [sort keys %importants];
+}
+
+# list all jobs that are expired
+sub expired_jobs {
+    my ($self) = @_;
+
+    my @ors;
+    my $important_builds = $self->important_builds;
+
+    # 0 means forever
+    return [] unless $self->keep_results_in_days;
+
+    # all jobs not in important builds that are expired
+    my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $self->keep_results_in_days, 'UTC')};
+    push(@ors, {BUILD => {-not_in => $important_builds}, t_finished => $timecond});
+
+    if ($self->keep_important_results_in_days) {
+        # expired jobs in important builds
+        my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $self->keep_important_results_in_days, 'UTC')};
+        push(@ors, {BUILD => {-in => $important_builds}, t_finished => $timecond});
+    }
+    my $jobs = $self->jobs->search({-or => \@ors}, {order_by => qw/id/});
+    return [$jobs->all];
 }
 
 1;

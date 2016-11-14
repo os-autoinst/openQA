@@ -23,7 +23,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-
+use Date::Format qw(time2str);
 
 my $test_case;
 my $t;
@@ -147,6 +147,26 @@ subtest 'no cleanup of important builds' => sub {
     $t->app->gru->enqueue('reduce_result' => \%args);
     $c->run('run', '-o');
     ok(-e $filename, 'file still exists');
+};
+
+sub _map_expired {
+    my ($jg) = @_;
+    my $jobs = $jg->expired_jobs;
+    return [map { $_->id } @$jobs];
+}
+
+subtest 'expired_jobs' => sub {
+    my $jg = $t->app->db->resultset('JobGroups')->find(1001);
+    is_deeply($jg->expired_jobs, [], 'no jobs expired');
+    $t->app->db->resultset('Jobs')->find(99938)->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    is_deeply($jg->expired_jobs, [], 'still no jobs expired');
+    $jg->update({keep_results_in_days => 5});
+    # now the unimportant jobs are expired
+    is_deeply(_map_expired($jg), [qw(99937 99981)], '2 jobs expired');
+    $jg->update({keep_important_results_in_days => 15});
+    is_deeply(_map_expired($jg), [qw(99937 99981)], 'still 2 jobs expired');
+    $jg->update({keep_important_results_in_days => 10});
+    is_deeply(_map_expired($jg), [qw(99937 99938 99981)], 'now important 99938 expired too');
 };
 
 done_testing;
