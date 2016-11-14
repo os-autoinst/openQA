@@ -131,6 +131,8 @@ sub compute_build_results {
                 count_job($job, $jr{children}->{$job->group_id}, \%labels);
             }
         }
+        $jr{escaped_id} = $b;
+        $jr{escaped_id} =~ s/\W/_/g;
         $jr{reviewed_all_passed} = $jr{passed} == $count;
         $jr{total}               = $count;
         my $failed = $jr{failed} + $jr{softfailed};

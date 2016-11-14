@@ -1,12 +1,12 @@
 % for my $build (reverse sort keys %$result) {
     % my $build_res = $result->{$build};
     % my $group_id;
-    <div class="row build-row">
+    <div class="row build-row <%= $children ? ($default_expanded ? 'children-expanded' : 'children-collapsed') : 'no-children' %>">
         <div class="col-md-4 text-nowrap">
             <h4>
                 % if ($children) {
-                    % $group_id = "group$group->{id}_build$build";
-                    <a href="#<%= $group_id %>" data-toggle="collapse">Build<%= $build %></a>
+                    % $group_id = "group$group->{id}_build$build_res->{escaped_id}";
+                    <a href="#<%= $group_id %>" onclick="return toggleChildGroups(this);" data-toggle="collapse">Build<%= $build %></a>
                 % } else {
                     %= link_to "Build$build" => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $group->{id} )
                 % }
@@ -43,17 +43,15 @@
         </div>
     </div>
     % if ($children) {
-        <div id="<%= $group_id %>" class="collapse build_group_children">
-            % for my $child (@{$children || []}) {
+        <div id="<%= $group_id %>" class="build_group_children <%= $default_expanded ? '' : 'collapse' %>">
+            % for my $child (@{$children}) {
                 % my $r = $build_res->{children}->{$child->{id}};
                 % my $jobs = $r->{passed} + $r->{unfinished} + $r->{softfailed} + $r->{failed} + $r->{skipped};
                 % if ($jobs) {
                     <div class="row build-row">
                         <div class="col-md-4 text-nowrap">
                             <h4>
-                                <span style="margin-left: 1em">
-                                    %= link_to $child->{name} => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $child->{id} )
-                                </span>
+                                %= link_to $child->{name} => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $child->{id} )
                             </h4>
                         </div>
                         <div class="col-md-8">

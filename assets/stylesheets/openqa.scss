@@ -47,6 +47,43 @@ $color-step-actions: #666;
         }
 }
 
+.build_group_children {
+    & > div {
+        margin-left: 17px;
+    }
+
+    h4, .progress {
+        margin-top: 0px;
+        margin-bottom: 10px;
+    }
+}
+
+.build_group_children, .build-row {
+    h4:before {
+        display: inline-box;
+        min-width: 10px;
+        content: "•";
+    }
+}
+
+.children-collapsed h4:before {
+    content: "▸";
+    position: relative;
+    top: -2px;
+}
+
+.children-expanded h4:before {
+    content: "▾";
+    position: relative;
+    top: -2px;
+}
+
+h2 .fa {
+    color: $color-labels;
+    margin-right: 5px;
+    font-size: 90%;
+}
+
 #info_box {
         &.panel-warning .panel-heading {
                 background-color: $color-softfail;

@@ -34,3 +34,10 @@ function addFlash(status, text) {
     div.addClass('alert-' + status);
     flash.append(div);
 }
+
+function toggleChildGroups(link) {
+    var buildRow = $(link).parents('.build-row');
+    buildRow.toggleClass('children-collapsed');
+    buildRow.toggleClass('children-expanded');
+    return false;
+}
