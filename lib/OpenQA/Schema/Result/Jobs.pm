@@ -204,7 +204,9 @@ sub delete {
     $self->modules->delete_all;
 
     # remove result directory if already existant
-    File::Path::rmtree($self->result_dir());
+    if ($self->result_dir() && -d $self->result_dir()) {
+        File::Path::rmtree($self->result_dir());
+    }
 
     return $self->SUPER::delete;
 }

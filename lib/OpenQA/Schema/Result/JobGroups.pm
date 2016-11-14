@@ -157,7 +157,7 @@ sub expired_jobs {
         push(@ors, {BUILD => {-in => $important_builds}, t_finished => $timecond});
     }
     my $jobs = $self->jobs->search({-or => \@ors}, {order_by => qw/id/});
-    return [map { $_->id } $jobs->all];
+    return [$jobs->all];
 }
 
 1;

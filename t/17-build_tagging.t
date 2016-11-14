@@ -149,6 +149,12 @@ subtest 'no cleanup of important builds' => sub {
     ok(-e $filename, 'file still exists');
 };
 
+sub _map_expired {
+    my ($jg) = @_;
+    my $jobs = $jg->expired_jobs;
+    return [map { $_->id } @$jobs];
+}
+
 subtest 'expired_jobs' => sub {
     my $jg = $t->app->db->resultset('JobGroups')->find(1001);
     is_deeply($jg->expired_jobs, [], 'no jobs expired');
@@ -156,11 +162,11 @@ subtest 'expired_jobs' => sub {
     is_deeply($jg->expired_jobs, [], 'still no jobs expired');
     $jg->update({keep_results_in_days => 5});
     # now the unimportant jobs are expired
-    is_deeply($jg->expired_jobs, [qw(99937 99981)], '2 jobs expired');
+    is_deeply(_map_expired($jg), [qw(99937 99981)], '2 jobs expired');
     $jg->update({keep_important_results_in_days => 15});
-    is_deeply($jg->expired_jobs, [qw(99937 99981)], 'still 2 jobs expired');
+    is_deeply(_map_expired($jg), [qw(99937 99981)], 'still 2 jobs expired');
     $jg->update({keep_important_results_in_days => 10});
-    is_deeply($jg->expired_jobs, [qw(99937 99938 99981)], 'now important 99938 expired too');
+    is_deeply(_map_expired($jg), [qw(99937 99938 99981)], 'now important 99938 expired too');
 };
 
 done_testing;

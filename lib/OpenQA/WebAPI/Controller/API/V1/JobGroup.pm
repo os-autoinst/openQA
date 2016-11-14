@@ -33,14 +33,14 @@ sub find_group {
     my ($self) = @_;
 
     my $group_id = $self->param('group_id');
-    if (!$group_id) {
+    if (!defined $group_id) {
         $self->render(json => {error => 'No group ID specified'}, status => 400);
         return;
     }
 
     my $group = $self->resultset->find($group_id);
     if (!$group) {
-        $self->render(json => {error => "Job group $group_id does not exist"}, status => 400);
+        $self->render(json => {error => "Job group $group_id does not exist"}, status => 404);
         return;
     }
 
@@ -74,7 +74,7 @@ sub list {
     my $group_id = $self->param('group_id');
     if ($group_id) {
         $groups = $self->resultset->search({id => $group_id});
-        return $self->render(json => {error => "Group $group_id does not exist"}, status => 400) unless $groups->count;
+        return $self->render(json => {error => "Group $group_id does not exist"}, status => 404) unless $groups->count;
     }
     else {
         $groups = $self->resultset;
@@ -114,6 +114,22 @@ sub update {
     my $res = $group->update($self->load_properties);
     return $self->render(json => {error => 'Specified job group ' . $group->id . ' exist but unable to update, though'}) unless $res;
     $self->render(json => {id => $res->id});
+}
+
+sub list_jobs {
+    my ($self) = @_;
+
+    my $group = $self->find_group;
+    return unless $group;
+
+    my @jobs;
+    if ($self->param('expired')) {
+        @jobs = @{$group->expired_jobs};
+    }
+    else {
+        @jobs = $group->jobs;
+    }
+    return $self->render(json => {ids => [sort map { $_->id } @jobs]});
 }
 
 sub delete {

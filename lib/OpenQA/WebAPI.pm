@@ -306,6 +306,7 @@ sub startup {
     # api/v1/job_groups
     $api_public_r->get('/job_groups')->name('apiv1_list_job_groups')->to('job_group#list');
     $api_public_r->get('/job_groups/:group_id')->name('apiv1_get_job_group')->to('job_group#list');
+    $api_public_r->get('/job_groups/:group_id/jobs')->name('apiv1_get_job_group_jobs')->to('job_group#list_jobs');
     $api_ra->post('/job_groups')->name('apiv1_post_job_group')->to('job_group#create');
     $api_ra->put('/job_groups/:group_id')->name('apiv1_put_job_group')->to('job_group#update');
     $api_ra->delete('/job_groups/:group_id')->name('apiv1_delete_job_group')->to('job_group#delete');
