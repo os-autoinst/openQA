@@ -292,9 +292,11 @@ is_deeply(
         reviewed_all_passed => '',
         total               => 3,
         passed              => 0,
+        skipped             => 0,
         distri              => 'opensuse',
         unfinished          => 1,
-        version             => 'Factory'
+        version             => 'Factory',
+        escaped_id          => '0048',
     },
     $b48,
     'Build 0048 exported'
@@ -317,9 +319,11 @@ is_deeply(
         total               => 1,
         failed              => 0,
         unfinished          => 0,
+        skipped             => 0,
         reviewed            => '',
         softfailed          => 0,
-        reviewed_all_passed => 1
+        reviewed_all_passed => 1,
+        escaped_id          => '0092',
     },
     'Build 92 of opensuse'
 );

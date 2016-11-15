@@ -20,15 +20,68 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use Date::Format;
 
+sub count_job {
+    my ($job, $jr, $labels) = @_;
+
+    if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
+        if ($job->result eq OpenQA::Schema::Result::Jobs::PASSED) {
+            $jr->{passed}++;
+            return;
+        }
+        if ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED) {
+            $jr->{softfailed}++;
+            $jr->{labeled}++ if $labels->{$job->id};
+            return;
+        }
+        if (   $job->result eq OpenQA::Schema::Result::Jobs::FAILED
+            || $job->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE)
+        {
+            $jr->{failed}++;
+            $jr->{labeled}++ if $labels->{$job->id};
+            return;
+        }
+        if (grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS) {
+            $jr->{skipped}++;
+            return;
+        }
+    }
+    if (   $job->state eq OpenQA::Schema::Result::Jobs::CANCELLED
+        || $job->state eq OpenQA::Schema::Result::Jobs::OBSOLETED)
+    {
+        $jr->{skipped}++;
+        return;
+    }
+    my $state = $job->state;
+    if (grep { /$state/ } (OpenQA::Schema::Result::Jobs::PENDING_STATES)) {
+        $jr->{unfinished}++;
+        return;
+    }
+    log_error("MISSING S:" . $job->state . " R:" . $job->result);
+    return;
+}
+
 sub compute_build_results {
     my ($group, $limit, $time_limit_days) = @_;
 
     my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
 
     my %builds;
-    my $jobs = $group->jobs->search({"me.t_created" => $timecond});
-    my $builds = $jobs->search(
-        {},
+    my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
+    my $group_ids;
+    my @children;
+    if ($group->can('children')) {
+        @children  = $group->children;
+        $group_ids = $group->child_group_ids;
+    }
+    else {
+        $group_ids = [$group->id];
+    }
+
+    my $builds = $jobs_resultset->search(
+        {
+            group_id  => {in => $group_ids},
+            t_created => $timecond
+        },
         {
             select => ['BUILD', {min => 't_created', -as => 'first_hit'}],
             as     => [qw/BUILD first_hit/],
@@ -39,14 +92,17 @@ sub compute_build_results {
     for my $b (map { $_->BUILD } $builds->all) {
         last if (defined($limit) && ++$buildnr > $limit);
 
-        my $jobs = $group->result_source->schema->resultset('Jobs')->search(
+        my $jobs = $jobs_resultset->search(
             {
-                'me.BUILD'    => $b,
-                'me.group_id' => $group->id,
-                'me.clone_id' => undef,
+                BUILD    => $b,
+                group_id => {in => $group_ids},
+                clone_id => undef,
             },
             {order_by => 'me.id DESC'});
-        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, unfinished => 0, labeled => 0, softfailed => 0);
+        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, unfinished => 0, labeled => 0, softfailed => 0, skipped => 0);
+        for my $child (@children) {
+            $jr{children}->{$child->id} = {passed => 0, failed => 0, unfinished => 0, labeled => 0, softfailed => 0, skipped => 0};
+        }
 
         my $count = 0;
         my %seen;
@@ -70,42 +126,13 @@ sub compute_build_results {
 
             $count++;
             $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
-            if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
-                if ($job->result eq OpenQA::Schema::Result::Jobs::PASSED) {
-                    $jr{passed}++;
-                    next;
-                }
-                if ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED) {
-                    $jr{softfailed}++;
-                    $jr{labeled}++ if $labels{$job->id};
-                    next;
-                }
-
-                if (   $job->result eq OpenQA::Schema::Result::Jobs::FAILED
-                    || $job->result eq OpenQA::Schema::Result::Jobs::INCOMPLETE)
-                {
-                    $jr{failed}++;
-                    $jr{labeled}++ if $labels{$job->id};
-                    next;
-                }
-                if (grep { $job->result eq $_ } OpenQA::Schema::Result::Jobs::INCOMPLETE_RESULTS) {
-                    $jr{skipped}++;
-                    next;
-                }
+            count_job($job, \%jr, \%labels);
+            if ($jr{children}) {
+                count_job($job, $jr{children}->{$job->group_id}, \%labels);
             }
-            if (   $job->state eq OpenQA::Schema::Result::Jobs::CANCELLED
-                || $job->state eq OpenQA::Schema::Result::Jobs::OBSOLETED)
-            {
-                $jr{skipped}++;
-                next;
-            }
-            my $state = $job->state;
-            if (grep { /$state/ } (OpenQA::Schema::Result::Jobs::PENDING_STATES)) {
-                $jr{unfinished}++;
-                next;
-            }
-            log_error("MISSING S:" . $job->state . " R:" . $job->result);
         }
+        $jr{escaped_id} = $b;
+        $jr{escaped_id} =~ s/\W/_/g;
         $jr{reviewed_all_passed} = $jr{passed} == $count;
         $jr{total}               = $count;
         my $failed = $jr{failed} + $jr{softfailed};
@@ -116,6 +143,7 @@ sub compute_build_results {
     return {
         result => (%builds) ? \%builds : {},
         max_jobs => $max_jobs,
+        children => [map { {id => $_->id, name => $_->name} } @children],
         group    => {
             id   => $group->id,
             name => $group->name
