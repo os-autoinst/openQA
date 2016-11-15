@@ -255,15 +255,11 @@ sub _show {
     my ($self, $job) = @_;
     return $self->reply->not_found unless $job;
 
-    my $scenario = join('-', map { $job->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_KEYS);
-
-    $scenario .= "@" . $job->MACHINE if $job->MACHINE;
-
     $self->stash(testname => $job->name);
     $self->stash(distri   => $job->DISTRI);
     $self->stash(version  => $job->VERSION);
     $self->stash(build    => $job->BUILD);
-    $self->stash(scenario => $scenario);
+    $self->stash(scenario => $job->scenario);
     $self->stash(worker   => $job->worker);
 
     my $clone_of = $self->db->resultset("Jobs")->find({clone_id => $job->id});
