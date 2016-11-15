@@ -1,12 +1,20 @@
 % for my $build (reverse sort keys %$result) {
     % my $build_res = $result->{$build};
+    % my $group_id;
     <div class="row build-row">
         <div class="col-md-4 text-nowrap">
             <h4>
-                <%= link_to "Build$build" => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $group->{id} ) %>
+                % if ($children) {
+                    % $group_id = "group$group->{id}_build$build";
+                    <a href="#<%= $group_id %>" data-toggle="collapse">Build<%= $build %></a>
+                % } else {
+                    %= link_to "Build$build" => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $group->{id} )
+                % }
+
                 (<abbr class="timeago" title="<%= $build_res->{oldest}->datetime() %>Z">
-                %= delete $build_res->{oldest}
+                    %= $build_res->{oldest}
                 </abbr>)
+
                 % my $group_build_id = $group->{id} . '-' . $build;
                 % my $tag = $build_res->{tag};
                 % if ($tag) {
@@ -30,14 +38,30 @@
         </div>
         <div class="col-md-8">
             % if ($max_jobs) {
-                <div class="progress build-dashboard" title="<%= build_progress_bar_title($build_res) %>">
-                    %= build_progress_bar_section(passed => $build_res->{passed}, $max_jobs)
-                    %= build_progress_bar_section(unfinished => $build_res->{unfinished}, $max_jobs, 'progress-bar-striped')
-                    %= build_progress_bar_section(softfailed => $build_res->{softfailed}, $max_jobs)
-                    %= build_progress_bar_section(failed => $build_res->{failed}, $max_jobs)
-                    %= build_progress_bar_section(skipped => $build_res->{skipped}, $max_jobs)
-                </div>
+                %= include 'main/build_progressbar', max_jobs => $max_jobs, result => $build_res
             % }
         </div>
     </div>
+    % if ($children) {
+        <div id="<%= $group_id %>" class="collapse build_group_children">
+            % for my $child (@{$children || []}) {
+                % my $r = $build_res->{children}->{$child->{id}};
+                % my $jobs = $r->{passed} + $r->{unfinished} + $r->{softfailed} + $r->{failed} + $r->{skipped};
+                % if ($jobs) {
+                    <div class="row build-row">
+                        <div class="col-md-4 text-nowrap">
+                            <h4>
+                                <span style="margin-left: 1em">
+                                    %= link_to $child->{name} => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $child->{id} )
+                                </span>
+                            </h4>
+                        </div>
+                        <div class="col-md-8">
+                            %= include 'main/build_progressbar', max_jobs => $jobs, result => $r
+                        </div>
+                    </div>
+                % }
+            % }
+        </div>
+    % }
 % }

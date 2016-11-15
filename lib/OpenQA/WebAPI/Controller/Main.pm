@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,9 +34,9 @@ sub index {
     my $group_params = $self->every_param('group');
 
     my @results;
-    my $groups = $self->db->resultset('JobGroups')->search({}, {order_by => qw/name/});
+    my $groups = $self->stash('job_groups_and_parents');
 
-    while (my $group = $groups->next) {
+    for my $group (@$groups) {
         if (@$group_params) {
             next unless grep { $_ eq '' || $group->name =~ /$_/ } @$group_params;
         }
@@ -63,29 +63,33 @@ sub index {
 }
 
 sub group_overview {
-    my ($self) = @_;
+    my ($self, $resultset, $template) = @_;
 
     my $limit_builds    = $self->param('limit_builds')    // 10;
     my $time_limit_days = $self->param('time_limit_days') // 14;
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
     my $only_tagged = $self->param('only_tagged') // 0;
-    my $group = $self->db->resultset('JobGroups')->find($self->param('groupid'));
+    my $group = $self->db->resultset($resultset)->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
     my $cbr      = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days);
     my $res      = $cbr->{result};
     my $max_jobs = $cbr->{max_jobs};
+    $self->stash(children => $cbr->{children});
+
     my @comments;
     my @pinned_comments;
-    for my $comment ($group->comments->all) {
-        # find pinned comments
-        if ($comment->user->is_operator && CORE::index($comment->text, 'pinned-description') >= 0) {
-            push(@pinned_comments, $comment);
+    if ($group->can('comments')) {
+        for my $comment ($group->comments->all) {
+            # find pinned comments
+            if ($comment->user->is_operator && CORE::index($comment->text, 'pinned-description') >= 0) {
+                push(@pinned_comments, $comment);
+            }
+            else {
+                push(@comments, $comment);
+            }
+            OpenQA::BuildResults::evaluate_labels($res, $comment);
         }
-        else {
-            push(@comments, $comment);
-        }
-        OpenQA::BuildResults::evaluate_labels($res, $comment);
     }
     if ($only_tagged) {
         for my $build (keys %$res) {
@@ -105,6 +109,10 @@ sub group_overview {
     $self->stash('only_tagged',     $only_tagged);
     $self->stash('comments',        \@comments);
     $self->stash('pinned_comments', \@pinned_comments);
+    if ($group->can('children')) {
+        my @child_groups = $group->children->all;
+        $self->stash('child_groups', \@child_groups);
+    }
     my $desc = $group->rendered_description;
     $self->stash('description', $desc);
     $self->respond_to(
@@ -121,7 +129,17 @@ sub group_overview {
                     pinned_comments => \@pinned_comments
                 });
         },
-        html => {template => 'main/group_overview'});
+        html => {template => $template});
+}
+
+sub job_group_overview {
+    my ($self) = @_;
+    $self->group_overview('JobGroups', 'main/group_overview');
+}
+
+sub parent_group_overview {
+    my ($self) = @_;
+    $self->group_overview('JobGroupParents', 'main/parent_group_overview');
 }
 
 1;

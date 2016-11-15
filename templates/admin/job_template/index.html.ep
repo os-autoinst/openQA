@@ -17,7 +17,7 @@
                         <span><span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit job group properties</span>
                     </button>
                     <button type="submit" class="btn btn-default">
-                        <span><span class="glyphicon glyphicon-menu-left" aria-hidden="true"></span> Back to job groups</span>
+                        <span><span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> Manage all job groups</span>
                     </button>
                 </form>
             % }
