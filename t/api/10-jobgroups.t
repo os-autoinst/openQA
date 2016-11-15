@@ -176,13 +176,15 @@ subtest 'update job group' => sub() {
     );
 };
 
-subtest 'delete job group and error when listing non-existing group' => sub() {
-    $t->delete_ok('/api/v1/job_groups/3498371')->status_is(404);
-    my $new_id = $t->post_ok('/api/v1/job_groups', form => {name => 'To delete'})->tx->res->json->{id};
-    my $delete = $t->delete_ok('/api/v1/job_groups/' . $new_id)->status_is(200);
-    is($delete->tx->res->json->{id}, $new_id, 'correct ID returned');
-    my $get = $t->get_ok('/api/v1/job_groups/' . $new_id)->status_is(404);
-    is_deeply($get->tx->res->json, {error => 'Group 1004 does not exist'}, 'error about non-existing group');
+subtest 'delete job/parent group and error when listing non-existing group' => sub() {
+    for my $variant (qw(job_groups parent_groups)) {
+        $t->delete_ok("/api/v1/$variant/3498371")->status_is(404);
+        my $new_id = $t->post_ok("/api/v1/$variant", form => {name => 'To delete'})->tx->res->json->{id};
+        my $delete = $t->delete_ok("/api/v1/$variant/$new_id")->status_is(200);
+        is($delete->tx->res->json->{id}, $new_id, 'correct ID returned');
+        my $get = $t->get_ok("/api/v1/$variant/$new_id")->status_is(404);
+        is_deeply($get->tx->res->json, {error => "Group $new_id does not exist"}, 'error about non-existing group');
+    }
 };
 
 subtest 'prevent deleting non-empty job group' => sub() {
