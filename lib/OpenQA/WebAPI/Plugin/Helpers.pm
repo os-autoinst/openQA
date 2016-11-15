@@ -61,11 +61,18 @@ sub register {
         });
 
     $app->helper(
+        bug_report_actions => sub {
+            my ($c) = @_;
+            return $c->include_branding('external_reporting');
+        });
+
+    $app->helper(
         stepaction_for => sub {
-            my ($c, $title, $url, $icon) = @_;
+            my ($c, $title, $url, $icon, $class) = @_;
+            $class //= '';
             my $icons = $c->t(i => (class => "step_action fa $icon fa-lg fa-stack-1x")) . $c->t(i => (class => 'new fa fa-plus fa-stack-1x'));
             my $content = $c->t(span => (class => 'fa-stack') => sub { $icons });
-            return $c->link_to($url => (title => $title) => sub { $content });
+            return $c->link_to($url => (title => $title, class => $class) => sub { $content });
         });
 
     $app->helper(

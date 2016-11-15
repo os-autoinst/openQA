@@ -428,7 +428,7 @@ div.flags {
 .fa.result_user_restarted { color: $color-module-none; }
 
 .fa.comment, .fa.bookmark, .fa.bug, .fa.certificate, .fa.tag { color: $color-labels; }
-.fa-bolt { color: $color-bolt; }
+.label_bug.fa-bolt { color: $color-bolt; }
 
 .step_actions {
     .step_action { color: $color-step-actions; }

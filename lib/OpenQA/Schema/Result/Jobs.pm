@@ -238,6 +238,13 @@ sub scenario_hash {
     return \%scenario;
 }
 
+sub scenario {
+    my ($self) = @_;
+    my $scenario = join('-', map { $self->get_column($_) } SCENARIO_KEYS);
+    if (my $machine = $self->MACHINE) { $scenario .= "@" . $machine }
+    return $scenario;
+}
+
 # return 0 if we have no worker
 sub worker_id {
     my ($self) = @_;

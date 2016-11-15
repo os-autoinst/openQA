@@ -1,0 +1,79 @@
+%# % my $job = stash('job');
+% my $build = $job->BUILD;
+% my $step_url = url_for('step')->to_abs;
+% my $module = stash('moduleid');
+% my %product_details = ();
+% $product_details{short_desc} = "[Build $build] openQA test fails in $module";
+
+<% my %distri_to_prod = (
+    sle => 'SUSE Linux Enterprise',
+    opensuse => 'openSUSE',
+);%>
+<% my %flavor_to_prod_sle = (
+    Server => 'Server',
+    Desktop => 'Desktop',
+    SAP => 'for SAP Applications',
+);
+%>
+% my $distri = $distri_to_prod{$job->DISTRI};
+% my $product = '';
+% if ($job->DISTRI eq 'sle') {
+%     my $subproduct = $job->FLAVOR =~ s/(\w*)(-\w*)?/$1/r;
+%     my $version = $job->VERSION =~ s/-/ /r;
+%     if ($subproduct eq 'Server' && $version eq '12') {
+%         $version = '12 (SLES 12)';
+%     }
+%     $product = join(' ', $distri, $flavor_to_prod_sle{$subproduct}, $version);
+% }
+% else {
+%     $product = $job->VERSION eq 'Tumbleweed' ? 'Tumbleweed' : 'Distribution';
+% }
+% $product_details{product} = "$distri $product";
+% $product_details{bug_file_loc} = $step_url;
+% sub build_link {
+%     my ($job) = @_;
+%     return '[' . $job->BUILD . '](' . url_for('test', testid => $job->id)->to_abs .  ')';
+% }
+% my $scenario = $job->scenario;
+% my $first_known_bad = build_link($job) . ' (current job)';
+% my $last_good = '(unknown)';
+% for my $prev ($job->_previous_scenario_jobs) {
+%     if ($prev->result =~ '(passed|softfailed)') {
+%         $last_good = build_link($prev);
+%         last;
+%     }
+%     $first_known_bad = build_link($prev);
+% }
+% my $latest = url_for('latest')->query($job->scenario_hash)->to_abs;
+<% my $description = "### Observation
+
+openQA test in scenario $scenario fails in
+[$module]($step_url)
+
+
+## Reproducible
+
+Fails since (at least) Build $first_known_bad
+
+
+## Expected result
+
+Last good: $last_good (or more recent)
+
+
+## Further details
+
+Always latest result in this scenario: [latest]($latest)
+";
+%>
+% $product_details{comment} = $description;
+% my $product_url_new = 'https://bugzilla.opensuse.org/enter_bug.cgi';
+%= stepaction_for('Report product bug' => url_for($product_url_new)->query(%product_details), 'fa-bug', 'report product_bug');
+<% my %test_issue_params = (
+    'issue[subject]' => "test fails in $module",
+    'issue[description]' => $description,
+    'issue[category_id]' => 152,
+);
+%>
+% my $test_url_new = 'https://progress.opensuse.org/projects/openqatests/issues/new';
+%= stepaction_for('Report test issue' => url_for($test_url_new)->query(%test_issue_params), 'fa-bolt', 'report test_issue');

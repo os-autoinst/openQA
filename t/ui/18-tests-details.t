@@ -76,7 +76,15 @@ like($driver->find_element('.step_actions .fa-info-circle', 'css')->get_attribut
 $driver->find_element('.step_actions .fa-info-circle', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
 ok($driver->find_element('.step_actions .popover', 'css')->is_displayed(), "needle info is a clickable popover");
-$driver->find_element('[href="#step/bootloader/1"]', 'css')->click();
+$driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
+t::ui::PhantomTest::wait_for_ajax;
+my @report_links = $driver->find_elements('#preview_container_in .report', 'css');
+my @title = map { $_->get_attribute('title') } @report_links;
+is($title[0], 'Report product bug', 'product bug report URL available');
+is($title[1], 'Report test issue',  'test issue report URL available');
+my @url = map { $_->get_attribute('href') } @report_links;
+like($url[0], qr{bugzilla.*enter_bug.*tests%2F99937}, 'bugzilla link referencing current test');
+like($url[1], qr{progress.*new}, 'progress/redmine link for reporting test issues');
 
 # test running view with Test::Mojo as phantomjs would get stuck on the
 # liveview/livelog forever
