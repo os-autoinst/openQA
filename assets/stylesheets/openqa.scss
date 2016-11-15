@@ -62,18 +62,18 @@ $color-step-actions: #666;
     h4:before {
         display: inline-box;
         min-width: 10px;
-        content: "•";
+        content: '\25CF';
     }
 }
 
 .children-collapsed h4:before {
-    content: "▸";
+    content: "\25B8";
     position: relative;
     top: -2px;
 }
 
 .children-expanded h4:before {
-    content: "▾";
+    content: "\25BE";
     position: relative;
     top: -2px;
 }
