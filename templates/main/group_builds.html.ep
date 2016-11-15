@@ -43,7 +43,7 @@
         </div>
     </div>
     % if ($children) {
-        <div id="<%= $group_id %>" class="build_group_children <%= $default_expanded ? '' : 'collapse' %>">
+        <div id="<%= $group_id %>" class="build_group_children <%= $default_expanded ? 'in' : '' %> collapse">
             % for my $child (@{$children}) {
                 % my $r = $build_res->{children}->{$child->{id}};
                 % my $jobs = $r->{passed} + $r->{unfinished} + $r->{softfailed} + $r->{failed} + $r->{skipped};
