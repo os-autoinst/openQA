@@ -122,4 +122,11 @@ sub rendered_description {
     return Mojo::ByteStream->new($m->markdown($self->description));
 }
 
+sub tags {
+    my ($self) = @_;
+
+    # for now
+    return {};
+}
+
 1;

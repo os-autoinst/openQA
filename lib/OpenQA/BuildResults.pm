@@ -61,9 +61,7 @@ sub count_job {
 }
 
 sub compute_build_results {
-    my ($group, $limit, $time_limit_days) = @_;
-
-    my $timecond = {">" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
+    my ($group, $limit, $time_limit_days, $tags) = @_;
 
     my %builds;
     my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
@@ -77,16 +75,20 @@ sub compute_build_results {
         $group_ids = [$group->id];
     }
 
-    my $builds = $jobs_resultset->search(
-        {
-            group_id  => {in => $group_ids},
-            t_created => $timecond
-        },
-        {
-            select => ['BUILD', {min => 't_created', -as => 'first_hit'}],
-            as     => [qw/BUILD first_hit/],
-            order_by => {-desc => 'first_hit'},
-            group_by => [qw/BUILD/]});
+    # split the statement - give in to perltidy
+    my $search_opts = {
+        select => ['BUILD', {min => 't_created', -as => 'first_hit'}],
+        as     => [qw(BUILD first_hit)],
+        order_by => {-desc => 'first_hit'},
+        group_by => [qw(BUILD)]};
+    my $search_filter = {group_id => {in => $group_ids}};
+    if ($time_limit_days) {
+        $search_filter->{t_created} = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
+    }
+    if ($tags) {
+        $search_filter->{BUILD} = {-in => [keys %$tags]};
+    }
+    my $builds   = $jobs_resultset->search($search_filter, $search_opts);
     my $max_jobs = 0;
     my $buildnr  = 0;
     for my $b (map { $_->BUILD } $builds->all) {
@@ -148,28 +150,6 @@ sub compute_build_results {
             id   => $group->id,
             name => $group->name
         }};
-}
-
-sub evaluate_labels {
-    my ($res, $comment) = @_;
-
-    my @tag   = $comment->tag;
-    my $build = $tag[0];
-    return unless $build;
-    # Next line fixes poo#12028
-    return unless $res->{$build};
-    log_debug('Tag found on build ' . $tag[0] . ' of type ' . $tag[1]);
-    log_debug('description: ' . $tag[2]) if $tag[2];
-    if ($tag[1] eq '-important') {
-        log_debug('Deleting tag on build ' . $build);
-        delete $res->{$build}->{tag};
-        return;
-    }
-
-    # ignore tags on non-existing builds
-    if ($res->{$build}) {
-        $res->{$build}->{tag} = {type => $tag[1], description => $tag[2]};
-    }
 }
 
 1;
