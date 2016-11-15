@@ -1,11 +1,10 @@
-openQA developer guide
-======================
-:author: openSUSE Team at SUSE
-:toc:
 
-Introduction
-------------
-[id="intro"]
+= openQA developer guide
+:toc: left
+:toclevels: 6
+:author: OpenQA Team
+
+== Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It's free software released
@@ -18,11 +17,10 @@ openQA development improving the tool, fixing bugs and implementing new
 features. For information about writing or improving openQA tests, refer to the
 Tests Developer Guide. In both documents it's assumed that the reader is already
 familiar with openQA and has already read the Starter Guide. All those documents
-are available at the 
+are available at the
 https://github.com/os-autoinst/openQA[official repository].
 
-Development guidelines
-----------------------
+== Development guidelines
 [id="guidelines"]
 
 As mentioned, the central point of development is the
@@ -44,8 +42,7 @@ repositories can be found:
 As in most projects hosted on GitHub, pull request are always welcome and
 are the right way to contribute improvements and fixes.
 
-Rules for commits
-~~~~~~~~~~~~~~~~~
+=== Rules for commits
 [id="rules_for_commits"]
 
 * Every commit is checked by https://travis-ci.org/travis[Travis CI] as soon as
@@ -73,8 +70,7 @@ implications and how we can help each other to improve
 If this is too much hassle for you feel free to provide incomplete pull
 requests for consideration or create an issue with a code change proposal.
 
-Getting involved into development
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== Getting involved into development
 [id="getting_involved"]
 
 But developers willing to get really involved into the development of openQA or
@@ -82,7 +78,7 @@ people interested in following the always-changing roadmap should take a look
 at the https://progress.opensuse.org/projects/openqav3[openQAv3 project] in
 openSUSE's project management tool. This Redmine instance is used to coordinate
 the main development effort organizing the existing issues (bugs and desired
-features) into `target versions'.
+features) into 'target versions'.
 
 Currently developers meet in IRC channel
 irc://chat.freenode.net/opensuse-factory[#opensuse-factory] and in a daily
@@ -104,8 +100,7 @@ configured in the repositories to encourage contributors to raise the tests
 coverage with every commit and pull request. New features and bug fixes are
 expected to be backed with the corresponding tests.
 
-Technologies
-------------
+== Technologies
 [id="technologies"]
 
 Everything in openQA, from +os-autoinst+ to the web frontend and from the tests
@@ -151,11 +146,9 @@ package, one of the tests consists of a call to
 http://perltidy.sourceforge.net/[Perltidy] to ensure that the contributed code
 follows the most common Perl style conventions.
 
-Managing the database
----------------------
+== Managing the database
 
-How to change the database schema
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=== How to change the database schema
 
 During the development process there are cases in which the database schema
 needs to be changed. After modifying files in +lib/OpenQA/Schema/Result+
@@ -192,8 +185,7 @@ installed in a production server, you should run either
 +./script/initdb --init_database+ or +./script/upgradedb --upgrade_database+ to actually
 create or upgrade a database.
 
-How to add fixtures to the database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+=== How to add fixtures to the database
 
 Fixtures (initial data stored in tables at installation time) are stored
 in files into the +dbicdh/_common/deploy/_any/<version>+ and
@@ -209,12 +201,12 @@ problem) and sqlite doesn't support nested transactions.
 Executed SQL statements can be traced by setting the +DBIC_TRACE+ environment
 variable.
 
+[source,bash]
 --------------------------------------------------------------------------------
 export DBIC_TRACE=1
 --------------------------------------------------------------------------------
 
-How to overwrite config files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== How to overwrite config files
 
 It can be necessary during development to change the config files in +etc/+.
 For example you have to edit etc/openqa/database.ini to use another database.
@@ -232,8 +224,7 @@ export OPENQA_CONFIG=$PWD/etc/mine
 Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
 client.conf and workers.ini.
 
-How to setup PostgreSQL to test locally with production data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+== How to setup PostgreSQL to test locally with production data
 
 1. Install PosgreSQL - under openSUSE the following package are required:
    +postgresql-server postgresql-init+
@@ -254,8 +245,7 @@ How to setup PostgreSQL to test locally with production data
 8. Configure openQA to use PostgreSQL as described in +Installing.asciidoc+ under
    'Other database engines'. User name and password are not required.
 
-Adding new authentication module
---------------------------------
+== Adding new authentication module
 
 OpenQA comes with three authentication modules providing authentication methods:
 OpenID, iChain and Fake (see link:Installing.asciidoc[Installation - User authentication]).
@@ -267,7 +257,7 @@ If successful, module for given method is imported or the OpenQA ends with error
 
 
 Each authentication module is expected to export +auth_config+,
-+auth_login+ and +auth_logout+ functions. In case of request-response mechanism (as in 
++auth_login+ and +auth_logout+ functions. In case of request-response mechanism (as in
 OpenID), +auth_response+ is imported on demand.
 
 Currently there is no login page because all implemented methods use either 3rd party

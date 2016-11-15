@@ -1,11 +1,10 @@
-openQA tests developer guide
-============================
-:author: openSUSE Team at SUSE
-:toc:
 
-Introduction
-------------
-[id="intro"]
+= openQA tests developer guide
+:toc: left
+:toclevels: 6
+:author: OpenQA Team
+
+== Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It's free software released
@@ -16,11 +15,10 @@ https://github.com/os-autoinst[os-autoinst organization on GitHub].
 This document provides the information needed to start developing new tests for
 openQA or to improve the existing ones. It's
 assumed that the reader is already familiar with openQA and has already read the
-Starter Guide, available at the 
+Starter Guide, available at the
 https://github.com/os-autoinst/openQA[official repository].
 
-Basic
------
+== Basic
 [id="basic"]
 
 This section explains the basic layout of openQA tests and the API available in tests.
@@ -28,8 +26,8 @@ openQA tests are written in the *Perl* programming language. Some basic but no
 in-depth knowledge of Perl is needed. This document assumes that the reader
 is already familiar with Perl.
 
-API
-~~~
+== API
+[id="api"]
 
 https://github.com/os-autoinst/os-autoinst[os-autoinst] provides the
 API for the tests. The most commonly used functions are:
@@ -62,8 +60,7 @@ The following API is distribution specific and subject to change
 * +script_sudo COMMAND+ Use sudo to execute COMMAND, handling the optional password prompt.
 * +type_password+ Type default password (used for root and user)
 
-How to write tests
-~~~~~~~~~~~~~~~~~~
+== How to write tests
 
 openQA tests need to implement at least the *run* subroutine to
 contain the actual test code and the test needs to be loaded in the distribution's
@@ -88,7 +85,7 @@ that boots into the desktop when pressing enter at the boot loader:
 -------------------------------------------------------------------
 use base "basetest";
 use strict;
-use testapi; 
+use testapi;
 
 sub run {
     # wait for bootloader to appear
@@ -112,11 +109,11 @@ sub test_flags {
 1;
 -------------------------------------------------------------------
 
-Test Case Examples
-~~~~~~~~~~~~~~~~~~
+=== Test Case Examples
+[id="testcase_examples"]
 
-* Console test that installs software from remote repository via zypper command
-
+[caption="Example: "]
+.Console test that installs software from remote repository via zypper command
 [source,perl]
 ----------------------------------------------------------------------------------------------------------
 sub run() {
@@ -138,8 +135,8 @@ sub run() {
 }
 ----------------------------------------------------------------------------------------------------------
 
-* Typical X11 test testing kate
-
+[caption="Example: "]
+.Typical X11 test testing kate
 [source,perl]
 --------------------------------------------------------------
 sub run() {
@@ -152,7 +149,7 @@ sub run() {
     x11_start_program "kate";
 
     # check that kate execution succeeded
-    assert_screen 'test-kate-1', 10; 
+    assert_screen 'test-kate-1', 10;
 
     # close kate's welcome window and wait for system becoming idle
     send_key 'alt-c', 1;
@@ -171,8 +168,7 @@ sub run() {
 }
 --------------------------------------------------------------
 
-Variables
-~~~~~~~~~
+== Variables
 
 Test case behavior can be controlled via variables. Some basic
 variables like +DISTRI+, +VERSION+, +ARCH+ are always set.
@@ -184,8 +180,9 @@ on GitHub] for examples.
 
 Variables are accessible via the *get_var* and *check_var* functions.
 
-Modifying setting of an existing test
--------------------------------------
+== Test Development tricks
+
+=== Modifying setting of an existing test
 
 There is no interface to modify existing tests but the clone script
 can be used to create a new job that adds, removes or changes
@@ -214,8 +211,7 @@ and the job will not appear as a job in any job group, e.g.:
 /usr/share/openqa/script/clone_job.pl --from localhost 42 _GROUP=0
 -------------
 
-Using snapshots to speed up development of tests
-------------------------------------------------
+=== Using snapshots to speed up development of tests
 [id="snapshots"]
 
 Sometimes it's annoying to run the full installation to adjust some
@@ -226,19 +222,19 @@ help in this situation.
 Depending on the use case, there are two options to help:
 
 * create and *preserve* snapshots for *every test* module run (+MAKETESTSNAPSHOTS+)
-- offers more flexibility as test can be resumed almost at any point, however
-  disk space requirements are high (expect more than 30GB for one job)
-- this mode is useful for fixing non fatal issues in tests and debugging SUT
+  - offers more flexibility as test can be resumed almost at any point, however
+    disk space requirements are high (expect more than 30GB for one job)
+  - this mode is useful for fixing non fatal issues in tests and debugging SUT
 
 * create snapshot *after every successful* test module, *always overwrite* to preserve only latest (+TESTDEBUG+)
-- allows to skip just before the start of first failed test module, which can be limiting, but there are
+  - allows to skip just before the start of first failed test module, which can be limiting, but there are
   no additional hardware requirements.
-- this mode is useful for iterative test development
+  - this mode is useful for iterative test development
 
 In both modes there is no need to modify tests (i.e. adding +milestone+ test flag, it is implied).
 In later mode, every test module is also considered +fatal+. This means the job is aborted after first failed test module.
 
-
+[caption="Example: "]
 .Steps to enable snapshots for each test module (former mode):
 ----
 1. run the worker with --no-cleanup parameter. This will preserve the hard
@@ -259,6 +255,7 @@ Use qemu-img snapshot -l something.img to find out what snapshots
 are in the image. Snapshots are named `"test module category"-"test module name"` (e.g. `installation-start_install`)
 ----
 
+[caption="Example: "]
 .Steps to enable storing only last successful snapshot (latter mode):
 ----
 1. run the worker with --no-cleanup parameter. This will preserve the hard
@@ -276,8 +273,7 @@ variable must be also included:
 $ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1 SKIPTO=consoletest-yast2_i
 ----
 
-Assigning jobs to workers
--------------------------
+=== Assigning jobs to workers
 
 By default, any worker can get any job with the matching architecture.
 
@@ -288,7 +284,9 @@ assigned only to workers, which have the same variable in the configuration file
 For example, the following configuration ensures, that jobs with WORKER_CLASS=desktop
 can be assigned _only_ to worker instances 1 and 2.
 
-[workers.ini]
+[caption="File: "]
+.workers.ini
+[source=ini]
 --------------------------------------------------------------------------------
 [1]
 WORKER_CLASS = desktop
@@ -300,8 +298,7 @@ WORKER_CLASS = desktop
 # WORKER_CLASS is not set
 --------------------------------------------------------------------------------
 
-Writing multi-machine tests
----------------------------
+=== Writing multi-machine tests
 [id="mm-tests"]
 
 Scenarios requiring more than one system under test (SUT), like High Availability testing, are covered as multi-machine tests (MM tests) in this section.
@@ -313,7 +310,7 @@ etc. if required), which in principle is not part of the actual testing, must ha
 * OpenQA scheduler makes sure _tests are started as a group_ and in right order, _cancelled as a group_ if some dependencies are violated and _cloned as
 a group_ if requested.
 * OpenQA _does not synchronize_ individual steps of the tests.
-* OpenQA provides _locking server for basic synchronization_ of tests (e.g. wait until services are ready for failover), but the _correct usage of locks is 
+* OpenQA provides _locking server for basic synchronization_ of tests (e.g. wait until services are ready for failover), but the _correct usage of locks is
 test designer job_ (beware deadlocks).
 
 In short, writing multi-machine tests adds a few more layers of complexity:
@@ -322,8 +319,7 @@ In short, writing multi-machine tests adds a few more layers of complexity:
 2. synchronization between individual tests
 3. actual technical realization (i.e. link:Networking.asciidoc[custom networking])
 
-Job dependencies
-~~~~~~~~~~~~~~~~
+==== Job dependencies
 
 There are 2 types of dependencies: +CHAINED+ and +PARALLEL+:
 
@@ -347,13 +343,12 @@ won't work.
 Job dependencies are currently only possible between tests that are
 scheduled for the same machine.
 
-OpenQA worker requirements
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+==== OpenQA worker requirements
+
 +CHAINED+ dependency requires only one worker, since dependent jobs will run only after the first one finish.
 On the other hand +PARALLEL+ dependency requires at _least 2 workers_ for simple scenarios.
 
-Examples:
-^^^^^^^^^
+===== Examples:
 
 .+CHAINED+ - i.e. test basic functionality before going advanced - requires 1 worker
 ----
@@ -402,8 +397,8 @@ and then define B,C,D with PARALLEL_WITH=A
 A is parent test suite for B, C, D (all can run in parallel).
 Children B, C, D can run and finish anytime, but A must run until all B, C, D finishes.
 ----
-Test synchronization and locking API
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+=== Test synchronization and locking API
 
 OpenQA provides locking server through lock API. To use lock API import +lockapi+ package (_use lockapi;_) in your test file.
 Lock API provides three functions: +mutex_create+, +mutex_lock+, +mutex_unlock+. Each of these functions take one parameter: name of the lock.
@@ -422,10 +417,9 @@ same time and the same lock name is used, these locks are independent of each ot
 
 The +mmapi+ package provides +wait_for_children+, which the parent can use to wait for the children to complete.
 
-Example:
-^^^^^^^^
-
-parent job - wait until login prompt appear, assume services are started
+[caption="Example of mmapi: Parent Job"]
+.Wait until login prompt appear, assume services are started
+====
 [source,perl]
 --------------------------------------------------------------------------------
 use base "basetest";
@@ -449,8 +443,11 @@ sub run {
     wait_for_children;
 }
 --------------------------------------------------------------------------------
+====
 
-child job - check until parent is ready, then start testing services
+[caption="Example of mmapi: Child job"]
+.Check until parent is ready, then start testing services
+====
 [source,perl]
 --------------------------------------------------------------------------------
 use base "basetest";
@@ -475,7 +472,7 @@ sub run {
     type_string("secret\n");
 }
 --------------------------------------------------------------------------------
-
+====
 
 Sometimes it is useful to let a parent wait for certain action on a child, for example to verify
 server state after completed request. In this scenario the child creates
@@ -485,7 +482,9 @@ The child can however die at any time. To prevent parent deadlock in this situat
 parent has to pass child ID as a second parameter to mutex_lock(). If a child job
 with given ID already finished, mutex_lock() calls die.
 
-parent job - wait until the child reaches given point
+[caption="Example of mmapi: Parent Job"]
+.Wait until the child reaches given point
+====
 [source,perl]
 --------------------------------------------------------------------------------
 use base "basetest";
@@ -506,10 +505,13 @@ sub run {
     # continue with the test
 }
 --------------------------------------------------------------------------------
+====
 
-Getting info about parents / children
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Getting information about parents and children
 
+[caption="Example of mmapi: "]
+.Getting info about parents / children
+====
 [source,perl]
 --------------------------------------------------------------------------------
 use base "basetest";
@@ -547,16 +549,16 @@ sub run {
     # my $parent_vnc = $parent_info->{settings}->{VNC}
 }
 --------------------------------------------------------------------------------
+====
 
-Support Server based tests
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+=== Support Server based tests
 
-The idea is to have a dedicated "helper server" to allow advanced network based testing. 
+The idea is to have a dedicated "helper server" to allow advanced network based testing.
 
 Support server takes advantage of the basic parallel setup as described in the previous section, with the support server being the parent test 'A' and the test needing it being the child test 'B'. This ensures that the test 'B' always have the support server available.
 
-Preparing the supportserver:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+==== Preparing the supportserver:
+
 
 The support server image is created by calling a special test, based on the autoyast test:
 
@@ -565,7 +567,7 @@ The support server image is created by calling a special test, based on the auto
 /usr/share/openqa/script/client jobs post DISTRI=opensuse VERSION=13.2 \
     ISO=openSUSE-13.2-DVD-x86_64.iso  ARCH=x86_64 FLAVOR=Server-DVD \
     TEST=supportserver_generator MACHINE=64bit DESKTOP=textmode  INSTALLONLY=1 \
-    AUTOYAST=supportserver/autoyast_supportserver.xml SUPPORT_SERVER_GENERATOR=1 \    
+    AUTOYAST=supportserver/autoyast_supportserver.xml SUPPORT_SERVER_GENERATOR=1 \
     PUBLISH_HDD_1=supportserver.qcow2
 --------------------------------------------------------------------------------
 
@@ -574,8 +576,8 @@ should define correct user and password, as well as packages and the common conf
 
 More specific role the supportserver should take is then selected when the server is run in the actual test scenario.
 
-Using the supportserver:
-^^^^^^^^^^^^^^^^^^^^^^^^
+==== Using the supportserver:
+
 
 In the Test suites, the supportserver is defined by setting:
 
@@ -588,12 +590,13 @@ WORKER_CLASS=server,qemu_autoyast_tap_64
 --------------------------------------------------------------------------------
 
 where the +SUPPORT_SERVER_ROLES+ defines the specific role (see code in 'tests/support_server/setup.pm' for available roles and their definition), and
- +HDD_1+ variable must be the name of the supportserver image as defined via +PUBLISH_HDD_1+ variable during supportserver generation. If the support server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add +HDDMODEL=virtio-blk+. In case of qemu backend, one can also use +BOOTFROM=c+, for faster boot directly from the +HDD_1+ image.
- 
+ +HDD_1+ variable must be the name of the supportserver image as defined via +PUBLISH_HDD_1+ variable during supportserver generation. If the support
+server is based on older SUSE versions (opensuse 11.x, SLE11SP4..) it may also be needed to add +HDDMODEL=virtio-blk+. In case of qemu backend, one can
+also use +BOOTFROM=c+, for faster boot directly from the +HDD_1+ image.
 
 Then for the 'child' test using this supportserver, the following additional variable must be set:
 +PARALLEL_WITH=supportserver-pxe-tftp+
-where 'supportserver-pxe-tftp' is the name given to the supportserver in the test suites screen. 
+where 'supportserver-pxe-tftp' is the name given to the supportserver in the test suites screen.
 Once the tests are defined, they can be added to openQA in the usual way:
 
 [source,sh]
@@ -606,8 +609,9 @@ where the +DISTRI+, +VERSION+, +FLAVOR+ and +ARCH+ correspond to the job group c
 Note that the networking is provided by tap devices, so both jobs should run on machines defined by (apart from others) having +NICTYPE=tap+, +WORKER_CLASS=qemu_autoyast_tap_64+.
 
 
-Example - a simple tftp test:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[caption="Example of Support Server: "]
+.a simple tftp test
+====
 
 Let's assume that we want to test tftp client operation. For this, we setup the supportserver as a tftp server:
 [source,ini]
@@ -617,13 +621,16 @@ SUPPORT_SERVER=1
 SUPPORT_SERVER_ROLES=dhcp,tftp
 WORKER_CLASS=server,qemu_autoyast_tap_64
 --------------------------------------------------------------------------------
+====
 
-with a test-suites name +supportserver-opensuse-tftp+.
+With a test-suites name +supportserver-opensuse-tftp+.
 
 The actual test 'child' job, will then have to set +PARALLEL_WITH=supportserver-opensuse-tftp+, and also other variables according to the test requirements. For convenience, we have also started a dhcp server on the supportserver, but even without it, network could be set up manually by assigning a free ip address (e.g. 10.0.2.15) on the system of the test job.
 
-The code in the *.pm module doing the actual tftp test could then look something like this:
 
+[caption="Example of Support Server: "]
+.The code in the *.pm module doing the actual tftp test could then look something like the example below
+====
 [source,perl]
 --------------------------------------------------------------------------------
 use strict;
@@ -640,14 +647,15 @@ sub run {
   script_output($script);
 
 }
-
 --------------------------------------------------------------------------------
+====
 
 assuming of course, that the tested machine was already set up with necessary infrastructure for tftp, e.g. network was set up, tftp rpm installed and tftp service started, etc. All of this could be conveniently achieved using the autoyast installation, as shown in the next section.
 
 
-Example - autoyast based tftp test:
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+[caption="Example of Support Server: "]
+.autoyast based tftp test
+====
 
 Here we will use autoyast to setup the system of the test job and the os-autoinst autoyast testing infrastructure. For supportserver, this means using proxy to access qemu provided data, for dowloading autoyast profile and tftp verify script:
 
@@ -659,7 +667,6 @@ SUPPORT_SERVER_ROLES=pxe,qemuproxy
 WORKER_CLASS=server,qemu_autoyast_tap_64
 --------------------------------------------------------------------------------
 
-
 The actual test 'child' job, will then be defined as :
 
 [source,ini]
@@ -670,11 +677,13 @@ DESKTOP=textmode
 INSTALLONLY=1
 PARALLEL_WITH=supportserver-opensuse-tftp
 --------------------------------------------------------------------------------
+====
 
 again assuming the support server's name being +supportserver-opensuse-tftp+. Note that the +pxe+ role already contains +tftp+ and +dhcp+ server role, since they are needed for the pxe boot to work.
 
-The tftp test defined in the +autoyast_opensuse/opensuse_autoyast_tftp.sh+ file could be something like:
-
+[caption="Example of Support Server: "]
+.The tftp test defined in the +autoyast_opensuse/opensuse_autoyast_tftp.sh+ file could be something like:
+====
 [source,sh]
 --------------------------------------------------------------------------------
 set -e -x
@@ -685,3 +694,4 @@ diff -u test.txt test2.txt && echo "AUTOYAST OK"
 --------------------------------------------------------------------------------
 
 and the rest is done automatically, using already prepared test modules in +tests/autoyast+ subdirectory.
+====
