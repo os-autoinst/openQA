@@ -87,7 +87,7 @@ following list.
 
 * *none* For jobs that have not reached the 'done' state.
 * *passed* No critical check failed during the process. It doesn't necessarily
-  mean that all testmodules where successful or that no single assertion failed.
+  mean that all testmodules were successful or that no single assertion failed.
 * *failed* At least one assertion considered to be critical was not satisfied at some
   point.
 * *incomplete* The job is no longer running but no result was provided. Either
@@ -154,10 +154,10 @@ execution.
 * *stop waiting for needle* Stop the waitforneedle call immediately without timeout.
 * *continue waiting for needle* Continue testing but will get into waitforneedle
   in case it can not find the matched needle and timeout.
-* *reload needles and retry* Retry in 5 seconds and reloaded needles, it helps if
-  there is new needle is created before retry.
-* *open needle editor* Open needle editor then user can creating new needle or
-  modifing existing needle.
+* *reload needles and retry* Retries after 5 seconds and reloads needles. It helps if
+  a new needle is created before retry.
+* *open needle editor* Opens needle editor so the user can create a new needle or
+  modify the existing ones.
 
 The interactive mode is especially useful when creating needles for a new
 operating system or when the look & feel have changed and several needles need
