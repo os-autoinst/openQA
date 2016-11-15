@@ -1,14 +1,10 @@
 #!/bin/bash
 
-# don't force line length -l=0
-# don't change blank lines -fbl
-# no spaces before semicolons -nsfs
-# space before and after operators -bbao -baao
-# no spaces around () [] {} -pt=2 -bt=2 -sbt=2
-# stack closing tokens )} -sct
-TIDY_ARGS="-l=0 -fbl -nsfs -baao -bbao -pt=2 -bt=2 -sbt=2 -sct"
-check=
+#
+# perltidy rules can be found in ../.perltidyrc
+#
 
+check=
 if test "$1"  = '--check'; then
     shift
     check=1
@@ -26,7 +22,7 @@ test -e script/openqa || exit 1
 
 find -name '*.tdy' -delete
 
-find . \( -name '*.p[lm]' -o -name '*.t' \) -print0 | xargs -0 perltidy $TIDY_ARGS
+find . \( -name '*.p[lm]' -o -name '*.t' \) -print0 | xargs -0 perltidy --pro=.../.perltidyrc
 
 find script/{check_dependencies,client,initdb,openqa,worker,upgradedb,load_templates,dump_templates,clean_needles,openqa-scheduler,openqa-websockets} -print0 | xargs -0 perltidy $TIDY_ARGS
 
