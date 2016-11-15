@@ -7,10 +7,25 @@ openQA pitfalls
 Needle editing
 ==============
 
-- if a new needle is created based on a failed test, the new needle
+- If a new needle is created based on a failed test, the new needle
   will not be listed in old tests.
-- if an existing needle is updated with a new image or different
+- If an existing needle is updated with a new image or different
   areas, the old test will display the new needle which might be
   confusing
-- if a needle is deleted, old tests may display an error when viewing
+- If a needle is deleted, old tests may display an error when viewing
   them in the web UI.
+
+Mixed production and development environment
+============================================
+
+There are few things to take into account when running a development version and
+a packaged version of openqa:
+
+If the setup for the development scenario involves sharing +/var/lib/openqa+,
+it would be wise to have a shared group _openqa_, that will have write and execute
+permissions over said directory, so that _geekotest_ user and the normal development
+user can share the environment without problems.
+
+This approach will lead to a problem when the openqa package is updated, since the
+directory permissions will be changed again, nothing a `chmod -R g+rwx /var/lib/openqa/`
+and `chgrp -R openqa /var/lib/openqa` can not fix.

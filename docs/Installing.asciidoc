@@ -16,7 +16,7 @@ https://github.com/os-autoinst[os-autoinst organization on GitHub].
 This document provides the information needed to install and setup the tool, as
 well as information useful for everyday administration of the system. It's
 assumed that the reader is already familiar with openQA and has already read the
-Starter Guide, available at the 
+Starter Guide, available at the
 https://github.com/os-autoinst/openQA[official repository].
 
 Installation
@@ -177,7 +177,6 @@ Advanced configuration
 ----------------------
 [id="advanced"]
 
-
 User authentication
 ~~~~~~~~~~~~~~~~~~~
 
@@ -311,6 +310,23 @@ NFS clients are where openQA workers are running. Run following command:
 mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share
 --------------------------------------------------------------------------------
 
+Needle Caching  
+~~~~~~~~~~~~~~~
+
+If your network is slow or you experience long time to load needles you
+might want to consider needle caching. To use needle caching a directory
++/var/lib/openqa/cache+ must be created, and right permissions given to the
+'geekotest' user. If you install openQA through the repositories, said directory
+will be created for you.
+
+In the +/etc/openqa/workers.ini+
+
+[source,ini]
+--------------------------------------------------------------------------------
+[global]
+CACHEDIRECTORY = /var/lib/openqa/cache
+--------------------------------------------------------------------------------
+
 Auditing - tracking openQA changes
 ----------------------------------
 [id="auditing"]
@@ -346,7 +362,7 @@ Jobs:
   iso_create iso_delete iso_cancel
   jobtemplate_create jobtemplate_delete
   job_create job_grab job_delete job_update_result job_done jobs_restart job_restart job_cancel job_duplicate
-  jobgroup_create jobgroup_connect 
+  jobgroup_create jobgroup_connect
 Tables:
   table_create table_update table_delete
 Users:
@@ -528,7 +544,7 @@ SELECT * FROM jobs;
 .output job_dependencies.csv
 SELECT * FROM job_dependencies;
 .output jobs_assets.csv
-SELECT * FROM jobs_assets;     
+SELECT * FROM jobs_assets;
 --------------------------------------------------------------------------------
 
 Then, initialize the PostgreSQL database using the standard procedure and
