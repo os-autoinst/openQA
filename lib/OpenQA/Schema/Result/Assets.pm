@@ -296,11 +296,19 @@ sub limit_assets {
             $a->delete;
         }
     }
-    my $timecond = {"<" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * 2, 'UTC')};
+    my $timecond = {"<" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600, 'UTC')};
 
-    my $assets = $app->db->resultset('Assets')->search({t_created => $timecond, type => ['iso', 'repo'], id => {-not_in => [sort keys %seen_asset]}}, {order_by => [qw/type name/]});
+    my $assets = $app->db->resultset('Assets')->search({t_created => $timecond, type => [qw(iso hdd repo)], id => {-not_in => [sort keys %seen_asset]}}, {order_by => [qw(t_created)]});
     while (my $a = $assets->next) {
-        OpenQA::Utils::log_error("Asset " . $a->type . "/" . $a->name . " is not in any job group, DELETE from assets where id=" . $a->id . ";");
+        next if is_fixed($a);
+        my $delta = $a->t_created->delta_days(DateTime->now)->in_units('days');
+        if ($delta >= 14) {
+            $a->remove_from_disk;
+            $a->delete;
+        }
+        else {
+            OpenQA::Utils::log_warning("Asset " . $a->type . "/" . $a->name . " is not in any job group, will delete in " . (14 - $delta) . " days");
+        }
     }
     for my $type (qw/iso repo hdd/) {
         my $dh;
