@@ -1,4 +1,3 @@
-%# % my $job = stash('job');
 % my $build = $job->BUILD;
 % my $step_url = url_for('step')->to_abs;
 % my $module = stash('moduleid');
@@ -23,7 +22,7 @@
 %     if ($subproduct eq 'Server' && $version eq '12') {
 %         $version = '12 (SLES 12)';
 %     }
-%     $product = join(' ', $distri, $flavor_to_prod_sle{$subproduct}, $version);
+%     $product = join(' ', $flavor_to_prod_sle{$subproduct}, $version);
 % }
 % else {
 %     $product = $job->VERSION eq 'Tumbleweed' ? 'Tumbleweed' : 'Distribution';
