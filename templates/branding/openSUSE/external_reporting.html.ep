@@ -44,7 +44,7 @@
 %     $first_known_bad = build_link($prev);
 % }
 % my $latest = url_for('latest')->query($job->scenario_hash)->to_abs;
-<% my $description = "### Observation
+<% my $description = "## Observation
 
 openQA test in scenario $scenario fails in
 [$module]($step_url)
