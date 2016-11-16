@@ -59,7 +59,7 @@ $driver->find_element('opensuse', 'link_text')->click();
 my $build_url = $driver->get_current_url();
 $build_url =~ s/\?.*//;
 OpenQA::Utils::log_debug('build_url: ' . $build_url);
-is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'number of builds for opensuse');
+is(scalar @{$driver->find_elements('h4', 'css')}, 5, 'number of builds for opensuse');
 is($driver->find_element('#group_description',   'css')->get_text(),            'Test description\n\nwith bugref bsc#1234',       'description shown');
 is($driver->find_element('#group_description a', 'css')->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bugref in description rendered as link');
 $driver->get($baseurl . '/group_overview/1002');
