@@ -106,9 +106,7 @@ like($driver->get_page_source(), qr({"results":\[.*{"0048":), 'page rendered as 
 
 like($t->get_ok($baseurl)->tx->res->dom->at('#filter-panel .help_popover')->{'data-title'}, qr/Help/, 'help popover is shown');
 
-# parent group overview
-# FIXME: Add new fixtures or add parents dynamically?
-#$driver->find_element('test parent group', 'link_text')->click();
+# parent group overview: tested in t/22-dashboard.t
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();
