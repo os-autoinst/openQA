@@ -1,6 +1,6 @@
 <div id="more_builds">
     Limit to
-    %= b join(' / ', map { $_ == $limit_builds ? "<b>$_</b>" : link_to($_ => url_with->query([time_limit_days => 1000, limit_builds => $_])) } (10, 20, 50, 100, 400));
+    %= b join(' / ', map { $_ == $limit_builds ? "<b>$_</b>" : link_to($_ => url_with->query([limit_builds => $_])) } (10, 20, 50, 100, 400));
     builds, only
     % my %tagged = (tagged => 1, all => 0);
     % my %rtagged = reverse %tagged;

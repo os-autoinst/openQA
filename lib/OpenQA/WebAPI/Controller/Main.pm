@@ -24,6 +24,18 @@ use OpenQA::BuildResults;
 use OpenQA::Utils;
 use Scalar::Util qw(looks_like_number);
 
+
+sub _map_tags_into_build {
+    my ($res, $tags) = @_;
+
+    for my $build (keys %$res) {
+        if ($tags->{$build}) {
+            $res->{$build}->{tag} = $tags->{$build};
+        }
+    }
+    return;
+}
+
 sub index {
     my ($self) = @_;
 
@@ -43,19 +55,12 @@ sub index {
         if (@$group_params) {
             next unless grep { $_ eq '' || $group->name =~ /$_/ } @$group_params;
         }
-        my $build_results = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days);
+        my $tags = $group->tags;
+        my $build_results = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days, $only_tagged ? $tags : undef);
 
         my $res = $build_results->{result};
         if ($show_tags) {
-            for my $comment ($group->comments) {
-                OpenQA::BuildResults::evaluate_labels($res, $comment);
-            }
-        }
-        if ($only_tagged) {
-            for my $build (keys %$res) {
-                next unless $build;
-                delete $res->{$build} unless $res->{$build}->{tag};
-            }
+            _map_tags_into_build($res, $tags);
         }
         push(@results, $build_results) if %{$build_results->{result}};
     }
@@ -73,20 +78,16 @@ sub group_overview {
     my $limit_builds = $self->param('limit_builds');
     $limit_builds = 10 unless looks_like_number($limit_builds);
     my $time_limit_days = $self->param('time_limit_days');
-    $time_limit_days = 14 unless looks_like_number($time_limit_days);
+    $time_limit_days = 0 unless looks_like_number($time_limit_days);
 
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
     my $only_tagged = $self->param('only_tagged') // 0;
     my $group = $self->db->resultset($resultset)->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
-    my $cbr      = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days);
-    my $res      = $cbr->{result};
-    my $max_jobs = $cbr->{max_jobs};
-    $self->stash(children => $cbr->{children});
-
     my @comments;
     my @pinned_comments;
+    my $tags;
     if ($group->can('comments')) {
         for my $comment ($group->comments->all) {
             # find pinned comments
@@ -96,15 +97,16 @@ sub group_overview {
             else {
                 push(@comments, $comment);
             }
-            OpenQA::BuildResults::evaluate_labels($res, $comment);
         }
+        $tags = $group->tags;
     }
-    if ($only_tagged) {
-        for my $build (keys %$res) {
-            next unless $build;
-            delete $res->{$build} unless $res->{$build}->{tag};
-        }
-    }
+
+    my $cbr      = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days, $only_tagged ? $tags : undef);
+    my $res      = $cbr->{result};
+    my $max_jobs = $cbr->{max_jobs};
+    $self->stash(children => $cbr->{children});
+
+    _map_tags_into_build($res, $tags);
     $self->stash('result',   $res);
     $self->stash('max_jobs', $max_jobs);
     $self->stash(

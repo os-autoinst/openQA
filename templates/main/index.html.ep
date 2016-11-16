@@ -26,12 +26,12 @@
 
     % if (@{$groupresults->{children}}) {
         <h2>
-            %= link_to $group->{name} => url_for('parent_group_overview', groupid => $group->{id})->query(limit_builds => $limit_builds, time_limit_days => $time_limit_days)
+            %= link_to $group->{name} => url_for('parent_group_overview', groupid => $group->{id})
         </h2>
         %= include 'main/group_builds', result => $result, group => $group, max_jobs => $max_jobs, children => $groupresults->{children}, default_expanded => 0
     % } else {
         <h2>
-            %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})->query(limit_builds => $limit_builds, time_limit_days => $time_limit_days)
+            %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})
         </h2>
         %= include 'main/group_builds', result => $result, group => $group, max_jobs => $max_jobs, children => undef, default_expanded => 0
     % }

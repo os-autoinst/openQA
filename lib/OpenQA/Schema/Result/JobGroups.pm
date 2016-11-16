@@ -16,7 +16,8 @@
 package OpenQA::Schema::Result::JobGroups;
 use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
+use OpenQA::Utils qw(log_debug);
 use Date::Format qw(time2str);
 use strict;
 
@@ -158,6 +159,30 @@ sub expired_jobs {
     }
     my $jobs = $self->jobs->search({-or => \@ors}, {order_by => qw/id/});
     return [$jobs->all];
+}
+
+# parse comments and list the all builds mentioned
+sub tags {
+    my ($self) = @_;
+
+    my %res;
+    for my $comment ($self->comments) {
+        my @tag   = $comment->tag;
+        my $build = $tag[0];
+        next unless $build;
+        log_debug('Tag found on build ' . $tag[0] . ' of type ' . $tag[1]);
+        log_debug('description: ' . $tag[2]) if $tag[2];
+        if ($tag[1] eq '-important') {
+            log_debug('Deleting tag on build ' . $build);
+            delete $res{$build};
+            next;
+        }
+
+        # ignore tags on non-existing builds
+        $res{$build} = {type => $tag[1], description => $tag[2]};
+    }
+
+    return \%res;
 }
 
 1;
