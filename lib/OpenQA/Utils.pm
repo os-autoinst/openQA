@@ -219,13 +219,18 @@ sub save_base64_png($$$) {
 }
 
 sub image_md5_filename($) {
-    my ($md5) = @_;
+    my ($md5, $onlysuffix) = @_;
 
     my $prefix1 = substr($md5, 0, 3);
     $md5 = substr($md5, 3);
     my $prefix2 = substr($md5, 0, 3);
     $md5 = substr($md5, 3);
-    return ($imagesdir . "/$prefix1/$prefix2/$md5.png", $imagesdir . "/$prefix1/$prefix2/.thumbs/$md5.png");
+
+    if ($onlysuffix) {
+        # stored this way in the database
+        return catfile($$prefix1, $prefix2, "$md5.png");
+    }
+    return (catfile($imagesdir, $prefix1, $prefix2, "$md5.png"), catfile($imagesdir, $prefix1, $prefix2, '.thumbs', "$md5.png"));
 }
 
 sub run_cmd_with_log($) {

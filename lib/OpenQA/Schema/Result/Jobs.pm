@@ -994,7 +994,12 @@ sub store_image {
     my $prefixdir = dirname($storepath);
     File::Path::make_path($prefixdir);
     $asset->move_to($storepath);
-    log_debug("store_image: $storepath");
+
+    if (!$thumb) {
+        my $dbpath = OpenQA::Utils::image_md5_filename($md5, 1);
+        $self->result_source->schema->resultset('Screenshots')->create({filename => $dbpath, t_created => now()});
+        log_debug("store_image: $storepath");
+    }
     return $storepath;
 }
 

@@ -20,7 +20,7 @@ use File::Spec::Functions qw(catfile);
 use OpenQA::Utils qw(log_debug log_warning);
 
 __PACKAGE__->table('screenshots');
-__PACKAGE__->load_components(qw(InflateColumn::DateTime DynamicDefault));
+__PACKAGE__->load_components(qw(InflateColumn::DateTime));
 
 __PACKAGE__->add_columns(
     id => {
@@ -33,8 +33,8 @@ __PACKAGE__->add_columns(
     },
     # we don't care for t_updated, so just add t_created
     t_created => {
-        data_type                 => 'timestamp',
-        dynamic_default_on_create => 'now'
+        data_type   => 'timestamp',
+        is_nullable => 0,
     },
 );
 __PACKAGE__->set_primary_key('id');
