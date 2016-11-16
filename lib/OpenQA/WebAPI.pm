@@ -447,6 +447,7 @@ sub startup {
     $self->gru->add_task(migrate_images     => \&OpenQA::Schema::Result::JobModules::migrate_images);
     $self->gru->add_task(relink_testresults => \&OpenQA::Schema::Result::JobModules::relink_testresults);
     $self->gru->add_task(rm_compat_symlinks => \&OpenQA::Schema::Result::JobModules::rm_compat_symlinks);
+    $self->gru->add_task(scan_images        => \&OpenQA::Schema::Result::Screenshots::scan_images);
 
     $self->validator->add_check(
         datetime => sub {
