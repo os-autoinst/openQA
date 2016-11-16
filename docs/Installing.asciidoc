@@ -611,7 +611,7 @@ KVM doesn't work
 openid login times out
 ~~~~~~~~~~~~~~~~~~~~~~
 
-www.opensuse.org's openid provider may have trouble with IPv6. openQA shows a message like this:
+[opensuse's](https://www.opensuse.org) openid provider may have trouble with IPv6. openQA shows a message like this:
 
   no_identity_server: Could not determine ID provider from URL.
 
