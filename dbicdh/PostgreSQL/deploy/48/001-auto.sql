@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Wed Nov 16 16:04:09 2016
+-- Created on Thu Nov 17 07:49:45 2016
 -- 
 ;
 --
@@ -488,6 +488,17 @@ CREATE INDEX jobs_assets_idx_job_id on jobs_assets (job_id);
 
 ;
 --
+-- Table: screenshot_links
+--
+CREATE TABLE screenshot_links (
+  screenshot_id integer NOT NULL,
+  job_id integer NOT NULL
+);
+CREATE INDEX screenshot_links_idx_job_id on screenshot_links (job_id);
+CREATE INDEX screenshot_links_idx_screenshot_id on screenshot_links (screenshot_id);
+
+;
+--
 -- Table: job_templates
 --
 CREATE TABLE job_templates (
@@ -627,6 +638,14 @@ ALTER TABLE jobs_assets ADD CONSTRAINT jobs_assets_fk_asset_id FOREIGN KEY (asse
 ;
 ALTER TABLE jobs_assets ADD CONSTRAINT jobs_assets_fk_job_id FOREIGN KEY (job_id)
   REFERENCES jobs (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE;
+
+;
+ALTER TABLE screenshot_links ADD CONSTRAINT screenshot_links_fk_job_id FOREIGN KEY (job_id)
+  REFERENCES jobs (id) ON DELETE CASCADE ON UPDATE CASCADE DEFERRABLE;
+
+;
+ALTER TABLE screenshot_links ADD CONSTRAINT screenshot_links_fk_screenshot_id FOREIGN KEY (screenshot_id)
+  REFERENCES screenshots (id) DEFERRABLE;
 
 ;
 ALTER TABLE job_templates ADD CONSTRAINT job_templates_fk_group_id FOREIGN KEY (group_id)

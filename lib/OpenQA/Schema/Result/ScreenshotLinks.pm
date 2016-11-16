@@ -13,32 +13,26 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
-package OpenQA::Schema::Result::Screenshots;
+package OpenQA::Schema::Result::ScreenshotLinks;
 use base qw(DBIx::Class::Core);
 use strict;
 use File::Spec::Functions qw(catfile);
 use OpenQA::Utils qw(log_debug log_warning);
 
-__PACKAGE__->table('screenshots');
-__PACKAGE__->load_components(qw(InflateColumn::DateTime));
+__PACKAGE__->table('screenshot_links');
 
 __PACKAGE__->add_columns(
-    id => {
-        data_type         => 'integer',
-        is_auto_increment => 1,
-    },
-    filename => {
-        data_type   => 'text',
+    screenshot_id => {
+        data_type   => 'integer',
         is_nullable => 0,
     },
-    # we don't care for t_updated, so just add t_created
-    t_created => {
-        data_type   => 'timestamp',
+    job_id => {
+        data_type   => 'integer',
         is_nullable => 0,
-    },
-);
-__PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([qw(filename)]);
+    });
+
+__PACKAGE__->belongs_to(job        => 'OpenQA::Schema::Result::Jobs',        'job_id');
+__PACKAGE__->belongs_to(screenshot => 'OpenQA::Schema::Result::Screenshots', 'screenshot_id');
 
 sub _list_images_subdir {
     my ($app, $prefix, $dir) = @_;
@@ -80,8 +74,6 @@ sub scan_images {
         }
     }
     closedir($dh);
-    # TODO: if populate fails, resort to insert - this runs as GRU task and some images
-    # might already be in, but the filename is unique
     $app->db->resultset('Screenshots')->populate(\@files);
     return;
 }

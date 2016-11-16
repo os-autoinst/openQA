@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::SQLite
--- Created on Wed Nov 16 16:04:09 2016
+-- Created on Thu Nov 17 07:49:45 2016
 -- 
 
 ;
@@ -437,6 +437,17 @@ CREATE TABLE jobs_assets (
 CREATE INDEX jobs_assets_idx_asset_id ON jobs_assets (asset_id);
 CREATE INDEX jobs_assets_idx_job_id ON jobs_assets (job_id);
 CREATE UNIQUE INDEX jobs_assets_job_id_asset_id ON jobs_assets (job_id, asset_id);
+--
+-- Table: screenshot_links
+--
+CREATE TABLE screenshot_links (
+  screenshot_id integer NOT NULL,
+  job_id integer NOT NULL,
+  FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (screenshot_id) REFERENCES screenshots(id)
+);
+CREATE INDEX screenshot_links_idx_job_id ON screenshot_links (job_id);
+CREATE INDEX screenshot_links_idx_screenshot_id ON screenshot_links (screenshot_id);
 --
 -- Table: job_templates
 --

@@ -218,7 +218,7 @@ sub save_base64_png($$$) {
     return $newfile;
 }
 
-sub image_md5_filename($) {
+sub image_md5_filename {
     my ($md5, $onlysuffix) = @_;
 
     my $prefix1 = substr($md5, 0, 3);
@@ -228,7 +228,7 @@ sub image_md5_filename($) {
 
     if ($onlysuffix) {
         # stored this way in the database
-        return catfile($$prefix1, $prefix2, "$md5.png");
+        return catfile($prefix1, $prefix2, "$md5.png");
     }
     return (catfile($imagesdir, $prefix1, $prefix2, "$md5.png"), catfile($imagesdir, $prefix1, $prefix2, '.thumbs', "$md5.png"));
 }

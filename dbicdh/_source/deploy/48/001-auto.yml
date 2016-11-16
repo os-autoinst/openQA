@@ -1763,7 +1763,7 @@ schema:
           type: NORMAL
       name: job_templates
       options: []
-      order: 30
+      order: 31
     jobs:
       constraints:
         - deferrable: 1
@@ -2860,6 +2860,69 @@ schema:
       name: products
       options: []
       order: 10
+    screenshot_links:
+      constraints:
+        - deferrable: 1
+          expression: ''
+          fields:
+            - job_id
+          match_type: ''
+          name: screenshot_links_fk_job_id
+          on_delete: CASCADE
+          on_update: CASCADE
+          options: []
+          reference_fields:
+            - id
+          reference_table: jobs
+          type: FOREIGN KEY
+        - deferrable: 1
+          expression: ''
+          fields:
+            - screenshot_id
+          match_type: ''
+          name: screenshot_links_fk_screenshot_id
+          on_delete: ''
+          on_update: ''
+          options: []
+          reference_fields:
+            - id
+          reference_table: screenshots
+          type: FOREIGN KEY
+      fields:
+        job_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: job_id
+          order: 2
+          size:
+            - 0
+        screenshot_id:
+          data_type: integer
+          default_value: ~
+          is_nullable: 0
+          is_primary_key: 0
+          is_unique: 0
+          name: screenshot_id
+          order: 1
+          size:
+            - 0
+      indices:
+        - fields:
+            - job_id
+          name: screenshot_links_idx_job_id
+          options: []
+          type: NORMAL
+        - fields:
+            - screenshot_id
+          name: screenshot_links_idx_screenshot_id
+          options: []
+          type: NORMAL
+      name: screenshot_links
+      options: []
+      order: 30
     screenshots:
       constraints:
         - deferrable: 1
@@ -3561,6 +3624,7 @@ translator:
       - Needles
       - ProductSettings
       - Products
+      - ScreenshotLinks
       - Screenshots
       - Secrets
       - TestSuiteSettings

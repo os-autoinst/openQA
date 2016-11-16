@@ -187,6 +187,7 @@ __PACKAGE__->has_many(comments     => 'OpenQA::Schema::Result::Comments', 'job_i
 __PACKAGE__->has_many(networks => 'OpenQA::Schema::Result::JobNetworks', 'job_id');
 
 __PACKAGE__->has_many(gru_dependencies => 'OpenQA::Schema::Result::GruDependencies', 'job_id');
+__PACKAGE__->has_many(screenshot_links => 'OpenQA::Schema::Result::ScreenshotLinks', 'job_id');
 
 __PACKAGE__->add_unique_constraint([qw/slug/]);
 
