@@ -54,7 +54,7 @@ sub log_event {
     # we use IPC::Run rather than system() as it's easier to mock for testing
     my @command = ("fedmsg-logger", "--cert-prefix=openqa", "--modname=openqa", "--topic=$event", "--json-input", "--message=$event_data");
     my ($stdin, $stderr, $output) = (undef, undef, undef);
-    IPC::Run::run(\@command, \$stdin, \$output, \$stderr);
+    IPC::Run::start(\@command, \$stdin, \$output, \$stderr);
 }
 
 # when we get an event, convert it to fedmsg format and send it
