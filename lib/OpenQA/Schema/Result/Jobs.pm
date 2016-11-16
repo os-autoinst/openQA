@@ -1,3 +1,4 @@
+
 # Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
@@ -17,16 +18,17 @@
 package OpenQA::Schema::Result::Jobs;
 use strict;
 use warnings;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use Try::Tiny;
 use JSON;
 use Fcntl;
 use DateTime;
 use db_helpers;
-use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings locate_asset/;
-use File::Basename qw/basename dirname/;
+use OpenQA::Utils qw(log_debug log_warning parse_assets_from_settings locate_asset);
+use File::Basename qw(basename dirname);
+use File::Spec::Functions qw(catfile);
 use File::Path ();
-use DBIx::Class::Timestamps qw/now/;
+use DBIx::Class::Timestamps qw(now);
 
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
@@ -303,15 +305,16 @@ sub deps_hash {
 }
 
 sub add_result_dir_prefix {
-    my $rd = $_[1];
-    $rd = $OpenQA::Utils::resultdir . "/$rd" if $rd;
-    return $rd;
+    my ($self, $rd) = @_;
+
+    return catfile($self->num_prefix_dir, $rd) if $rd;
+    return;
 }
 
 sub remove_result_dir_prefix {
-    my $rd = $_[1];
-    $rd = basename($_[1]) if $rd;
-    return $rd;
+    my ($self, $rd) = @_;
+    return basename($rd) if $rd;
+    return;
 }
 
 sub set_prio {
@@ -896,15 +899,24 @@ sub reduce_result {
     File::Path::rmtree($resultdir . "ulogs");
 }
 
+sub num_prefix_dir {
+    my ($self) = @_;
+    my $numprefix = sprintf "%05d", $self->id / 1000;
+    return catfile($OpenQA::Utils::resultdir, $numprefix);
+}
+
 sub create_result_dir {
     my ($self) = @_;
     my $dir = $self->result_dir();
+
     if (!$dir) {
         $dir = sprintf "%08d-%s", $self->id, $self->name;
         $self->update({result_dir => $dir});
         $dir = $self->result_dir();
     }
     if (!-d $dir) {
+        my $npd = $self->num_prefix_dir;
+        mkdir($npd) unless -d $npd;
         my $days = 30;
         $days = $self->group->keep_logs_in_days if $self->group;
         my $cleanday = DateTime->now()->add(days => $days);
