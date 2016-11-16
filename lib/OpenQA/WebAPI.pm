@@ -189,6 +189,7 @@ sub startup {
     $test_r->get('/details')->name('details')->to('test#details');
     $test_r->get('/status')->name('status')->to('running#status');
     $test_r->get('/livelog')->name('livelog')->to('running#livelog');
+    $test_r->get('/liveterminal')->name('liveterminal')->to('running#liveterminal');
     $test_r->get('/streaming')->name('streaming')->to('running#streaming');
     $test_r->get('/edit')->name('edit_test')->to('running#edit');
 
