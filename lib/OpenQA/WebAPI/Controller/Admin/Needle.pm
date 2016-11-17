@@ -65,7 +65,12 @@ sub ajax {
     while (1) {
         my $column_index = $self->param("order[$index][column]");
         my $column_order = $self->param("order[$index][dir]");
-        if (!(defined($column_index) && $column_index < scalar(@columns) && ($column_order eq 'asc' || $column_order eq 'desc'))) {
+        if (
+            !(
+                   defined($column_index)
+                && $column_index < scalar(@columns)
+                && ($column_order eq 'asc' || $column_order eq 'desc')))
+        {
             last;
         }
         push(@order_by_params, {'-' . $column_order => $columns[$column_index]});

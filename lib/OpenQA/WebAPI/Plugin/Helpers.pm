@@ -70,7 +70,8 @@ sub register {
         stepaction_for => sub {
             my ($c, $title, $url, $icon, $class) = @_;
             $class //= '';
-            my $icons = $c->t(i => (class => "step_action fa $icon fa-lg fa-stack-1x")) . $c->t(i => (class => 'new fa fa-plus fa-stack-1x'));
+            my $icons = $c->t(i => (class => "step_action fa $icon fa-lg fa-stack-1x"))
+              . $c->t(i => (class => 'new fa fa-plus fa-stack-1x'));
             my $content = $c->t(span => (class => 'fa-stack') => sub { $icons });
             return $c->link_to($url => (title => $title, class => $class) => sub { $content });
         });
@@ -94,7 +95,8 @@ sub register {
                 if ($job->group_id) {
                     $query->{groupid} = $job->group_id;
                     $crumbs .= "\n<li id='current-group-overview'>";
-                    $crumbs .= $c->link_to(($job->group->name . ' (current)') => $c->url_for('group_overview', groupid => $job->group_id));
+                    $crumbs .= $c->link_to(
+                        ($job->group->name . ' (current)') => $c->url_for('group_overview', groupid => $job->group_id));
                     $crumbs .= "</li>";
                     $overview_text = "Build " . $job->BUILD;
                 }
@@ -104,7 +106,8 @@ sub register {
                 my $overview_url = $c->url_for('tests_overview')->query(%$query);
 
                 $crumbs .= "\n<li id='current-build-overview'>";
-                $crumbs .= $c->link_to($overview_url => sub { '<i class="glyphicon glyphicon-arrow-right"></i> ' . $overview_text });
+                $crumbs .= $c->link_to(
+                    $overview_url => sub { '<i class="glyphicon glyphicon-arrow-right"></i> ' . $overview_text });
                 $crumbs .= "</li>";
                 $crumbs .= "\n<li role='separator' class='divider'></li>\n";
                 return Mojo::ByteStream->new($crumbs);
@@ -123,7 +126,11 @@ sub register {
             my $c = shift;
 
             # If the value is not in the stash
-            if (!(defined($c->stash('current_user')) && ($c->stash('current_user')->{no_user} || defined($c->stash('current_user')->{user})))) {
+            if (
+                !(
+                    defined($c->stash('current_user'))
+                    && ($c->stash('current_user')->{no_user} || defined($c->stash('current_user')->{user}))))
+            {
 
                 my $user = undef;
                 if (my $id = $c->session->{user}) {
@@ -258,7 +265,8 @@ sub register {
             my ($c, $title, $content, $details_url, $details_text) = @_;
             my $class = 'help_popover fa fa-question-circle';
             if ($details_url) {
-                $content .= '<p>See ' . $c->link_to($details_text ? $details_text : here => $details_url) . ' for details</p>';
+                $content
+                  .= '<p>See ' . $c->link_to($details_text ? $details_text : here => $details_url) . ' for details</p>';
             }
             my $data = {toggle => 'popover', trigger => 'focus', title => $title, content => $content};
             return $c->t(a => (tabindex => 0, class => $class, role => 'button', (data => $data)));

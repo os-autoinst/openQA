@@ -172,7 +172,11 @@ sub send_command {
     return if (!defined $args{command});
 
     if (!grep { /^$args{command}$/ } COMMANDS) {
-        log_error(sprintf('Trying to issue unknown command "%s" for worker "%s:%n"', $args{command}, $self->host, $self->instance));
+        log_error(
+            sprintf(
+                'Trying to issue unknown command "%s" for worker "%s:%n"',
+                $args{command}, $self->host, $self->instance
+            ));
         return;
     }
 

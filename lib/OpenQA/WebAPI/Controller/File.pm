@@ -100,7 +100,10 @@ sub test_asset {
     }
 
     my %asset;
-    my $res = $self->db->resultset('Jobs')->search(\%cond, {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)]});
+    my $res
+      = $self->db->resultset('Jobs')
+      ->search(\%cond,
+        {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)]});
     if ($res and $res->first) {
         %asset = $res->first->get_columns;
     }
@@ -111,7 +114,8 @@ sub test_asset {
     # find the asset path
     my $path = locate_asset($asset{type}, $asset{name}, relative => 1);
     $path = catfile($path, $self->param('subpath')) if $self->param('subpath');
-    return $self->render(text => 'invalid character in path', status => 400) if ($path =~ /\/\.\./ || $path =~ /\.\.\//);
+    return $self->render(text => 'invalid character in path', status => 400)
+      if ($path =~ /\/\.\./ || $path =~ /\.\.\//);
 
     # map to URL - mojo will canonalize
     $path = $self->url_for('download_asset', assetpath => $path);

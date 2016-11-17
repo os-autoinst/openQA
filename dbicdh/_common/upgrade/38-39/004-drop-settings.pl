@@ -24,5 +24,6 @@ sub {
     my $schema = shift;
 
     # now we're done
-    $schema->resultset("JobSettings")->search({key => {-in => [qw/DISTRI VERSION FLAVOR ARCH MACHINE BUILD TEST/]}})->delete;
+    $schema->resultset("JobSettings")->search({key => {-in => [qw/DISTRI VERSION FLAVOR ARCH MACHINE BUILD TEST/]}})
+      ->delete;
   }

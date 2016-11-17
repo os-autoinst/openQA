@@ -63,7 +63,8 @@ sub lj {
 
 lj;
 
-my $ret = $schema->resultset('Jobs')->cancel_by_settings({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
+my $ret = $schema->resultset('Jobs')
+  ->cancel_by_settings({DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'x86_64'});
 is($ret, 2, "two jobs cancelled by hash");
 
 $job = $new_job;

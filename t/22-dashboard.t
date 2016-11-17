@@ -80,17 +80,38 @@ sub check_test_parent {
     my ($default_expanded) = @_;
 
     @h4 = $get->tx->res->dom->find("div.children-$default_expanded h4 a")->map('text')->each;
-    is_deeply(\@h4, ['Build87.5011', 'Build0092', 'Build0091', 'Build0048@0815', 'Build0048'], 'builds on parent-level shown');
+    is_deeply(
+        \@h4,
+        ['Build87.5011', 'Build0092', 'Build0091', 'Build0048@0815', 'Build0048'],
+        'builds on parent-level shown'
+    );
 
-    my @progress_bars = $get->tx->res->dom->find("div.children-$default_expanded .progress")->map('attr', 'title')->each;
-    is_deeply(\@progress_bars, ["failed: 1\ntotal: 1", "passed: 1\ntotal: 1", "passed: 2\nunfinished: 3\nskipped: 1\ntotal: 6", "failed: 1\ntotal: 1", "softfailed: 2\nfailed: 1\ntotal: 3",], 'parent-level progress bars are accumulated');
+    my @progress_bars
+      = $get->tx->res->dom->find("div.children-$default_expanded .progress")->map('attr', 'title')->each;
+    is_deeply(
+        \@progress_bars,
+        [
+            "failed: 1\ntotal: 1",
+            "passed: 1\ntotal: 1",
+            "passed: 2\nunfinished: 3\nskipped: 1\ntotal: 6",
+            "failed: 1\ntotal: 1",
+            "softfailed: 2\nfailed: 1\ntotal: 3",
+        ],
+        'parent-level progress bars are accumulated'
+    );
 
     @h4 = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 h4 a')->map('text')->each;
     is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both child groups shown under common build');
-    @progress_bars = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 .progress')->map('attr', 'title')->each;
-    is_deeply(\@progress_bars, ["passed: 2\nunfinished: 2\nskipped: 1\ntotal: 5", "unfinished: 1\ntotal: 1"], 'progress bars for child groups shown correctly');
+    @progress_bars
+      = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 .progress')->map('attr', 'title')->each;
+    is_deeply(
+        \@progress_bars,
+        ["passed: 2\nunfinished: 2\nskipped: 1\ntotal: 5", "unfinished: 1\ntotal: 1"],
+        'progress bars for child groups shown correctly'
+    );
 
-    is($get->tx->res->dom->find("div.children-$default_expanded .review-all-passed")->size, 1, 'badge shown on parent-level');
+    is($get->tx->res->dom->find("div.children-$default_expanded .review-all-passed")->size,
+        1, 'badge shown on parent-level');
 
     is($get->tx->res->dom->find("div.children-$default_expanded h4 span i.tag")->size, 0, 'no tags shown yet');
 }

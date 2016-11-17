@@ -64,7 +64,8 @@ sub lock {
     if (!$lock and $where =~ /^\d+$/) {
         my $schema = OpenQA::Scheduler::Scheduler::schema();
         # prevent deadlock - job that is supposed to create the lock already finished
-        return -1 if $schema->resultset("Jobs")->count({id => $where, state => [OpenQA::Schema::Result::Jobs::FINAL_STATES]});
+        return -1
+          if $schema->resultset("Jobs")->count({id => $where, state => [OpenQA::Schema::Result::Jobs::FINAL_STATES]});
     }
 
     # if no lock so far, there is no lock, return as locked

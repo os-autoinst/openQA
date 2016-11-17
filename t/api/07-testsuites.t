@@ -180,7 +180,8 @@ is_deeply(
     "Add test_suite"
 ) || diag explain $get->tx->res->json;
 
-$t->put_ok("/api/v1/test_suites/$test_suite_id", form => {name => "testsuite", "settings[TEST2]" => "val1"})->status_is(200);
+$t->put_ok("/api/v1/test_suites/$test_suite_id", form => {name => "testsuite", "settings[TEST2]" => "val1"})
+  ->status_is(200);
 
 $get = $t->get_ok("/api/v1/test_suites/$test_suite_id")->status_is(200);
 is_deeply(
@@ -204,10 +205,12 @@ $res = $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(404);    #
 
 # switch to operator (percival) and try some modifications
 $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(
+    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 $t->post_ok('/api/v1/test_suites', form => {name => "testsuite"})->status_is(403);
-$t->put_ok("/api/v1/test_suites/$test_suite_id", form => {name => "testsuite", "settings[TEST2]" => "val1"})->status_is(403);
+$t->put_ok("/api/v1/test_suites/$test_suite_id", form => {name => "testsuite", "settings[TEST2]" => "val1"})
+  ->status_is(403);
 $res = $t->delete_ok("/api/v1/test_suites/$test_suite_id")->status_is(403);
 
 done_testing();

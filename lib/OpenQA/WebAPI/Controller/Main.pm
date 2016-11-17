@@ -56,7 +56,8 @@ sub index {
             next unless grep { $_ eq '' || $group->name =~ /$_/ } @$group_params;
         }
         my $tags = $show_tags || $only_tagged ? $group->tags : undef;
-        my $build_results = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days, $only_tagged ? $tags : undef);
+        my $build_results = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
+            $only_tagged ? $tags : undef);
 
         my $res = $build_results->{result};
         if ($show_tags) {
@@ -101,7 +102,8 @@ sub group_overview {
     }
     $tags = $group->tags;
 
-    my $cbr      = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days, $only_tagged ? $tags : undef);
+    my $cbr = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
+        $only_tagged ? $tags : undef);
     my $res      = $cbr->{result};
     my $max_jobs = $cbr->{max_jobs};
     $self->stash(children => $cbr->{children});

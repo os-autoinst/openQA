@@ -60,10 +60,13 @@ use constant {
     USER_CANCELLED     => 'user_cancelled',        # cancelled by user via job_cancel
     USER_RESTARTED     => 'user_restarted',        # restarted by user via job_restart
 };
-use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
+use constant RESULTS => (NONE, PASSED, SOFTFAILED, FAILED, INCOMPLETE, SKIPPED,
+    OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED
+);
 use constant COMPLETE_RESULTS => (PASSED, SOFTFAILED, FAILED);
 use constant OK_RESULTS => (PASSED, SOFTFAILED);
-use constant INCOMPLETE_RESULTS => (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
+use constant INCOMPLETE_RESULTS =>
+  (INCOMPLETE, SKIPPED, OBSOLETED, PARALLEL_FAILED, PARALLEL_RESTARTED, USER_CANCELLED, USER_RESTARTED);
 
 # scenario keys w/o MACHINE. Add MACHINE when desired, commonly joined on
 # other keys with the '@' character
@@ -162,8 +165,12 @@ __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(settings => 'OpenQA::Schema::Result::JobSettings', 'job_id');
 __PACKAGE__->has_one(worker => 'OpenQA::Schema::Result::Workers', 'job_id');
-__PACKAGE__->belongs_to(clone => 'OpenQA::Schema::Result::Jobs',      'clone_id', {join_type => 'left', on_delete => 'SET NULL'});
-__PACKAGE__->belongs_to(group => 'OpenQA::Schema::Result::JobGroups', 'group_id', {join_type => 'left', on_delete => 'SET NULL'});
+__PACKAGE__->belongs_to(
+    clone => 'OpenQA::Schema::Result::Jobs',
+    'clone_id', {join_type => 'left', on_delete => 'SET NULL'});
+__PACKAGE__->belongs_to(
+    group => 'OpenQA::Schema::Result::JobGroups',
+    'group_id', {join_type => 'left', on_delete => 'SET NULL'});
 __PACKAGE__->might_have(origin => 'OpenQA::Schema::Result::Jobs', 'clone_id', {cascade_delete => 0});
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'job_id');
 __PACKAGE__->many_to_many(assets => 'jobs_assets', 'asset');
@@ -445,7 +452,10 @@ sub duplicate {
     ## now go and clone and recreate test dependencies - parents first
     my $parents = $self->parents->search(
         {
-            dependency => {-in => [OpenQA::Schema::Result::JobDependencies->PARALLEL, OpenQA::Schema::Result::JobDependencies->CHAINED]},
+            dependency => {
+                -in =>
+                  [OpenQA::Schema::Result::JobDependencies->PARALLEL, OpenQA::Schema::Result::JobDependencies->CHAINED]
+            },
         },
         {
             join => 'parent',
@@ -499,7 +509,10 @@ sub duplicate {
     ## go and clone and recreate test dependencies - running children tests, this cover also asset dependencies (use CHAINED dep)
     my $children = $self->children->search(
         {
-            dependency => {-in => [OpenQA::Schema::Result::JobDependencies->PARALLEL, OpenQA::Schema::Result::JobDependencies->CHAINED]},
+            dependency => {
+                -in =>
+                  [OpenQA::Schema::Result::JobDependencies->PARALLEL, OpenQA::Schema::Result::JobDependencies->CHAINED]
+            },
         },
         {
             join => 'child',
@@ -675,7 +688,9 @@ sub auto_duplicate {
             $args->{retry_avbl} = int($self->retry_avbl) - 1;
         }
         else {
-            log_warning("Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually.");
+            log_warning(
+"Could not auto-duplicated! The job are auto-duplicated too many times. Please restart the job manually."
+            );
             return;
         }
     }

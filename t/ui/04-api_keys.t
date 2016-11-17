@@ -84,7 +84,8 @@ $req = $t->get_ok('/api_keys')->status_is(200);
 $req->content_like(qr/API key not found/, 'error is displayed');
 
 # Try to create an API key for Lancelot
-$req = $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {user_id => 99902, user => 99902})->status_is(302);
+$req
+  = $t->post_ok('/api_keys', {'X-CSRF-Token' => $token} => form => {user_id => 99902, user => 99902})->status_is(302);
 $req = $t->get_ok('/api_keys')->status_is(200);
 $req->element_exists('#api_key_99902', 'Percival keys are there');
 $req->element_exists('#api_key_99908', 'and the new one belongs to Percival, not Lancelot');

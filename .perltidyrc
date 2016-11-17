@@ -1,4 +1,4 @@
--l=0     # don't force line length
+-l=120   # 120 characters per line
 -fbl     # don't change blank lines
 -nsfs    # no spaces before semicolons
 -baao    # space after operators

@@ -119,15 +119,21 @@ sub _manage_watch_on {
 
     if ($flags & &Net::DBus::Binding::Watch::READABLE) {
         my $fh = $self->_get_fh_from_fd($watch->get_fileno);
-        my $cb = Net::DBus::Callback->new(object => $watch, method => "handle", args => [&Net::DBus::Binding::Watch::READABLE]);
+        my $cb = Net::DBus::Callback->new(
+            object => $watch,
+            method => "handle",
+            args   => [&Net::DBus::Binding::Watch::READABLE]);
         # Net::DBus calls dispatch each time some event wakes it up, Mojo::Reactor does not support this kind of hooks
         $reactor->io($fh => sub { my ($self, $writable) = @_; $cb->invoke; $self->emit('dbus-dispatch') });
         $reactor->watch($fh, $watch->is_enabled, 0);
     }
     if ($flags & &Net::DBus::Binding::Watch::WRITABLE) {
         my $fh = $self->_get_fh_from_fd($watch->get_fileno, 1);
-        my $cb = Net::DBus::Callback->new(object => $watch, method => "handle", args => [&Net::DBus::Binding::Watch::WRITABLE]);
-        # Net::DBus calls flush event each time some event wakes it up, Mojo::Reactor does not support this kind of hooks
+        my $cb = Net::DBus::Callback->new(
+            object => $watch,
+            method => "handle",
+            args   => [&Net::DBus::Binding::Watch::WRITABLE]);
+       # Net::DBus calls flush event each time some event wakes it up, Mojo::Reactor does not support this kind of hooks
         $reactor->io($fh => sub { my ($self, $writable) = @_; $cb->invoke; $self->emit('dbus-flush') });
         $reactor->watch($fh, 0, $watch->is_enabled);
     }

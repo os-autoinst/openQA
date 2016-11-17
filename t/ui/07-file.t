@@ -39,11 +39,13 @@ $test_case->init_data;
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # Exact size of logpackages-1.png
-$t->get_ok('/tests/99938/images/logpackages-1.png')->status_is(200)->content_type_is('image/png')->header_is('Content-Length' => '48019');
+$t->get_ok('/tests/99938/images/logpackages-1.png')->status_is(200)->content_type_is('image/png')
+  ->header_is('Content-Length' => '48019');
 
 $t->get_ok('/tests/99937/../99938/images/logpackages-1.png')->status_is(404);
 
-$t->get_ok('/tests/99938/images/thumb/logpackages-1.png')->status_is(200)->content_type_is('image/png')->header_is('Content-Length' => '6769');
+$t->get_ok('/tests/99938/images/thumb/logpackages-1.png')->status_is(200)->content_type_is('image/png')
+  ->header_is('Content-Length' => '6769');
 
 # Not the same logpackages-1.png
 $t->get_ok('/tests/99946/images/logpackages-1.png')->header_is('Content-Length' => '211');
@@ -60,30 +62,37 @@ $t->get_ok('/tests/99938/file/y2logs.tar.bz2')->status_is(200);
 
 $t->get_ok('/tests/99938/file/ulogs/y2logs.tar.bz2')->status_is(404);
 
-$t->get_ok('/tests/99946/iso')->status_is(200)->header_is('Content-Disposition' => "attatchment; filename=openSUSE-13.1-DVD-i586-Build0091-Media.iso;");
+$t->get_ok('/tests/99946/iso')->status_is(200)
+  ->header_is('Content-Disposition' => "attatchment; filename=openSUSE-13.1-DVD-i586-Build0091-Media.iso;");
 
 # check the download links
 my $req = $t->get_ok('/tests/99946')->status_is(200);
 $req->element_exists('#downloads #asset_1');
 $req->element_exists('#downloads #asset_5');
 my $res = OpenQA::Test::Case::trim_whitespace($req->tx->res->dom->at('#downloads #asset_1')->text);
-is($res,                                                  "openSUSE-13.1-DVD-i586-Build0091-Media.iso");
-is($req->tx->res->dom->at('#downloads #asset_1')->{href}, '/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso');
+is($res, "openSUSE-13.1-DVD-i586-Build0091-Media.iso");
+is($req->tx->res->dom->at('#downloads #asset_1')->{href},
+    '/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso');
 $res = OpenQA::Test::Case::trim_whitespace($req->tx->res->dom->at('#downloads #asset_5')->text);
 is($res,                                                  "openSUSE-13.1-x86_64.hda");
 is($req->tx->res->dom->at('#downloads #asset_5')->{href}, '/tests/99946/asset/hdd/openSUSE-13.1-x86_64.hda');
 
 # downloads are currently redirects
-$req = $t->get_ok('/tests/99946/asset/1')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
-$req = $t->get_ok('/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
+$req = $t->get_ok('/tests/99946/asset/1')->status_is(302)
+  ->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
+$req = $t->get_ok('/tests/99946/asset/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(302)
+  ->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/iso\/openSUSE-13.1-DVD-i586-Build0091-Media.iso/);
 
-$req = $t->get_ok('/tests/99946/asset/5')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/hdd\/fixed\/openSUSE-13.1-x86_64.hda/);
+$req = $t->get_ok('/tests/99946/asset/5')->status_is(302)
+  ->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/hdd\/fixed\/openSUSE-13.1-x86_64.hda/);
 
 # verify error on invalid downloads
 $t->get_ok('/tests/99946/asset/iso/foobar.iso')->status_is(404);
 
-$t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302)->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/repo\/testrepo\/README/);
-$t->get_ok('/tests/99961/asset/repo/testrepo/README/../README')->status_is(400)->content_is('invalid character in path');
+$t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302)
+  ->header_like(Location => qr/(?:http:\/\/localhost:\d+)?\/assets\/repo\/testrepo\/README/);
+$t->get_ok('/tests/99961/asset/repo/testrepo/README/../README')->status_is(400)
+  ->content_is('invalid character in path');
 
 # verify 404 on download_assets - to be handled by apache (for now at least)
 $t->get_ok('/assets/repo/testrepo/README')->status_is(404);

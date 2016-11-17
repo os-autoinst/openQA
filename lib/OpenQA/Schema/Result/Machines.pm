@@ -41,6 +41,8 @@ __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw/name/]);
 __PACKAGE__->has_many(job_templates => 'OpenQA::Schema::Result::JobTemplates', 'machine_id');
-__PACKAGE__->has_many(settings => 'OpenQA::Schema::Result::MachineSettings', 'machine_id', {order_by => {-asc => 'key'}});
+__PACKAGE__->has_many(
+    settings => 'OpenQA::Schema::Result::MachineSettings',
+    'machine_id', {order_by => {-asc => 'key'}});
 
 1;

@@ -53,7 +53,8 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(
+    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 # INITIAL JOB LIST (from fixtures)
@@ -150,7 +151,8 @@ $get = $t->get_ok('/api/v1/jobs?ids=99981&ids=99963&ids=99926');
 is(scalar(@{$get->tx->res->json->{jobs}}), 3);
 
 # Test /jobs/restart
-my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})->status_is(200);
+my $post = $t->post_ok('/api/v1/jobs/restart', form => {jobs => [99981, 99963, 99962, 99946, 99945, 99927, 99939]})
+  ->status_is(200);
 
 $get = $t->get_ok('/api/v1/jobs');
 my @new_jobs = @{$get->tx->res->json->{jobs}};
@@ -183,13 +185,17 @@ close($fh);
 
 my $rp = "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/video.ogv";
 unlink($rp);                       # make sure previous tests don't fool us
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'video.ogv'}})->status_is(200);
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'video.ogv'}})
+  ->status_is(200);
 
 ok(-e $rp, 'video exist after');
 is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
 
 $rp = "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/y2logs.tar.bz2";
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'y2logs.tar.bz2'}, ulog => 1})->status_is(200);
+$post
+  = $t->post_ok(
+    '/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'y2logs.tar.bz2'}, ulog => 1})
+  ->status_is(200);
 $post->content_is('OK');
 ok(-e $rp, 'logs exist after');
 is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
@@ -197,7 +203,8 @@ is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches"
 
 $rp = "t/data/openqa/factory/hdd/hdd_image.qcow2";
 unlink($rp);
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+      {file => {file => $filename, filename => 'hdd_image.qcow2'}, asset => 'public'})->status_is(200);
 my $temp = $post->tx->res->json->{temporary};
 like($temp, qr,t/data/openqa/factory/hdd/hdd_image\.qcow2\.TEMP.*,);
 ok(-e $temp, "temporary exists");
@@ -210,7 +217,8 @@ is($ret->tx->res->json->{name}, 'hdd_image.qcow2');
 
 $rp = "t/data/openqa/factory/hdd/00099963-hdd_image2.qcow2";
 unlink($rp);
-$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'hdd_image2.qcow2'}, asset => 'private'})->status_is(200);
+$post = $t->post_ok('/api/v1/jobs/99963/artefact' => form =>
+      {file => {file => $filename, filename => 'hdd_image2.qcow2'}, asset => 'private'})->status_is(200);
 $temp = $post->tx->res->json->{temporary};
 like($temp, qr,t/data/openqa/factory/hdd/00099963-hdd_image2\.qcow2\.TEMP.*,);
 $t->post_ok('/api/v1/jobs/99963/ack_temporary' => form => {temporary => $temp});

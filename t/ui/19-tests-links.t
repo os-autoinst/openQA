@@ -56,7 +56,11 @@ $driver->find_element('logpackages', 'link_text')->click();
 is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results', 'on test page');
 
 # expect the failure to be displayed
-is($driver->find_element('#step_view', 'css')->get_attribute('data-image'), '/tests/99938/images/logpackages-1.png', 'Failure displayed');
+is(
+    $driver->find_element('#step_view', 'css')->get_attribute('data-image'),
+    '/tests/99938/images/logpackages-1.png',
+    'Failure displayed'
+);
 
 # now navigate back
 $driver->find_element('.navbar-brand', 'css')->click();

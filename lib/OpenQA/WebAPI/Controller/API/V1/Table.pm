@@ -80,8 +80,10 @@ sub list {
         json => {
             $table => [
                 map {
-                    my $row = $_;
-                    my %hash = ((map { ($_ => $row->get_column($_)) } @{$tables{$table}->{cols}}), settings => [map { {key => $_->key, value => $_->value} } $row->settings]);
+                    my $row  = $_;
+                    my %hash = (
+                        (map { ($_ => $row->get_column($_)) } @{$tables{$table}->{cols}}),
+                        settings => [map { {key => $_->key, value => $_->value} } $row->settings]);
                     \%hash;
                 } @result
             ]});

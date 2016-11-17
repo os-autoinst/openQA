@@ -57,7 +57,8 @@ my $t = Test::Mojo->new('OpenQA::WebAPI');
 # XXX: Test::Mojo loses its app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(
+    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 # create Test DBus bus and service for fake WebSockets
@@ -82,14 +83,26 @@ my $settings = {
 # create a job via API
 my $post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
 my $job = $post->tx->res->json->{id};
-is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.create --json-input --message={"ARCH":"x86_64","BUILD":"666","DESKTOP":"DESKTOP","DISTRI":"Unicorn","FLAVOR":"pink","ISO":"whatever.iso","ISO_MAXSIZE":"1","KVM":"KVM","MACHINE":"RainbowPC","TEST":"rainbow","VERSION":"42","id":' . $job . ',"remaining":1}', "job create triggers fedmsg");
+is(
+    $args,
+'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.create --json-input --message={"ARCH":"x86_64","BUILD":"666","DESKTOP":"DESKTOP","DISTRI":"Unicorn","FLAVOR":"pink","ISO":"whatever.iso","ISO_MAXSIZE":"1","KVM":"KVM","MACHINE":"RainbowPC","TEST":"rainbow","VERSION":"42","id":'
+      . $job
+      . ',"remaining":1}',
+    "job create triggers fedmsg"
+);
 
 # FIXME: restarting job via API emits an event in real use, but not if we do it here
 
 # set the job as done via API
 $post = $t->post_ok("/api/v1/jobs/" . $job . "/set_done")->status_is(200);
 # check plugin called fedmsg-logger correctly
-is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.done --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","id":' . $job . ',"newbuild":null,"remaining":0,"result":"failed"}', "job done triggers fedmsg");
+is(
+    $args,
+'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.done --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","id":'
+      . $job
+      . ',"newbuild":null,"remaining":0,"result":"failed"}',
+    "job done triggers fedmsg"
+);
 
 # we don't test update_results as comment indicates it's obsolete
 
@@ -97,12 +110,25 @@ is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.done 
 $post = $t->post_ok("/api/v1/jobs/" . $job . "/duplicate")->status_is(200);
 my $newjob = $post->tx->res->json->{id};
 # check plugin called fedmsg-logger correctly
-is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.duplicate --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","auto":0,"id":' . $job . ',"remaining":1,"result":' . $newjob . '}', "job duplicate triggers fedmsg");
+is(
+    $args,
+'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.duplicate --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","auto":0,"id":'
+      . $job
+      . ',"remaining":1,"result":'
+      . $newjob . '}',
+    "job duplicate triggers fedmsg"
+);
 
 # cancel the new job via API
 $post = $t->post_ok("/api/v1/jobs/" . $newjob . "/cancel")->status_is(200);
 # check plugin called fedmsg-logger correctly
-is($args, 'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.cancel --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","id":' . $newjob . ',"remaining":0}', "job cancel triggers fedmsg");
+is(
+    $args,
+'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.cancel --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","id":'
+      . $newjob
+      . ',"remaining":0}',
+    "job cancel triggers fedmsg"
+);
 
 # FIXME: deleting job via DELETE call to api/v1/jobs/$newjob fails with 500?
 

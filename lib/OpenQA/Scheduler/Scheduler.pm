@@ -99,7 +99,9 @@ sub _prefer_parallel {
             child_job_id => $available_cond
         });
 
-    return ({'-in' => $available_children->get_column('child_job_id')->as_query}) if ($available_children->count() > 0);    # we have scheduled children that are not blocked
+    # we have scheduled children that are not blocked
+    return ({'-in' => $available_children->get_column('child_job_id')->as_query})
+      if ($available_children->count() > 0);
 
     # children are blocked, we have to find and start their parents first
     my $parents = schema->resultset("JobDependencies")->search(
@@ -119,7 +121,8 @@ sub _prefer_parallel {
                 parent_job_id => $available_cond
             });
 
-        return ({'-in' => $available_parents->get_column('parent_job_id')->as_query}) if ($available_parents->count() > 0);
+        return ({'-in' => $available_parents->get_column('parent_job_id')->as_query})
+          if ($available_parents->count() > 0);
 
         # parents are blocked, lets check grandparents
         $parents = schema->resultset("JobDependencies")->search(

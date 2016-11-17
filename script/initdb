@@ -101,11 +101,12 @@ if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
 
 my $dh = DBIx::Class::DeploymentHandler->new(
     {
-        schema              => $schema,
-        script_directory    => $script_directory,
-        databases           => \@databases,
-        sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
-        force_overwrite     => $force,
+        schema           => $schema,
+        script_directory => $script_directory,
+        databases        => \@databases,
+        sql_translator_args =>
+          {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
+        force_overwrite => $force,
     });
 
 my $version = $dh->schema_version;
@@ -117,7 +118,8 @@ if ($prepare_init) {
 
         if (exists $deploy_dir{$version} and not $force) {
             print "The deploy directory already contains the schema for the current version.\n";
-            print "Use the --force option if you want to overwrite the contents of the $script_directory/$db/deploy/$version directory\n";
+            print
+"Use the --force option if you want to overwrite the contents of the $script_directory/$db/deploy/$version directory\n";
             exit 1;
         }
     }

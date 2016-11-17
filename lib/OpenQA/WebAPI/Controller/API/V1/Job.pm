@@ -25,7 +25,9 @@ sub list {
     my $self = shift;
 
     my %args;
-    for my $arg (qw/build iso distri version flavor maxage scope group groupid limit page before after arch hdd_1 test machine/) {
+    for my $arg (
+        qw/build iso distri version flavor maxage scope group groupid limit page before after arch hdd_1 test machine/)
+    {
         next unless defined $self->param($arg);
         $args{$arg} = $self->param($arg);
     }
@@ -154,8 +156,10 @@ sub grab {
     $caps->{cpu_opmode}    = $self->param('cpu_opmode');
     $caps->{mem_max}       = $self->param('mem_max');
 
-    my $res = $ipc->scheduler('job_grab', {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
-    $self->emit_event('openqa_job_grab', {workerid => $workerid, blocking => $blocking, workerip => $workerip, id => $res->{id}});
+    my $res = $ipc->scheduler('job_grab',
+        {workerid => $workerid, blocking => $blocking, workerip => $workerip, workercaps => $caps});
+    $self->emit_event('openqa_job_grab',
+        {workerid => $workerid, blocking => $blocking, workerip => $workerip, id => $res->{id}});
     $self->render(json => {job => $res});
 }
 

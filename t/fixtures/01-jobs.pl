@@ -46,15 +46,20 @@
         priority   => 56,
         result     => "incomplete",
         retry_avbl => 3,
-        settings   => [{key => 'DESKTOP', value => 'minimalx'}, {key => 'ISO', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'}, {key => 'ISO_MAXSIZE', value => 737280000}, {key => 'ISO_1', value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'}],
-        ARCH       => 'x86_64',
-        BUILD      => '87.5011',
-        DISTRI     => 'opensuse',
-        FLAVOR     => 'staging_e',
-        TEST       => 'minimalx',
-        VERSION    => 'Factory',
-        MACHINE    => '32bit',
-        state      => "done",
+        settings   => [
+            {key => 'DESKTOP',     value => 'minimalx'},
+            {key => 'ISO',         value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'},
+            {key => 'ISO_MAXSIZE', value => 737280000},
+            {key => 'ISO_1',       value => 'openSUSE-Factory-staging_e-x86_64-Build87.5011-Media.iso'}
+        ],
+        ARCH    => 'x86_64',
+        BUILD   => '87.5011',
+        DISTRI  => 'opensuse',
+        FLAVOR  => 'staging_e',
+        TEST    => 'minimalx',
+        VERSION => 'Factory',
+        MACHINE => '32bit',
+        state   => "done",
         # One hour ago
         t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600, 'UTC'),
         # Two hours ago
@@ -82,7 +87,16 @@
         MACHINE    => '32bit',
         BUILD      => '0091',
         VERSION    => '13.1',
-        settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'INSTALLONLY', value => '1'}, {key => 'RAIDLEVEL', value => '0'}, {key => 'DVD', value => '1'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'LIVETEST', value => '1'},]
+        settings   => [
+            {key => 'QEMUCPU',     value => 'qemu32'},
+            {key => 'INSTALLONLY', value => '1'},
+            {key => 'RAIDLEVEL',   value => '0'},
+            {key => 'DVD',         value => '1'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
+            {key => 'DESKTOP',     value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'LIVETEST',    value => '1'},
+        ]
     },
     Jobs => {
         id       => 99928,
@@ -102,7 +116,15 @@
         ARCH       => 'i586',
         VERSION    => '13.1',
         MACHINE    => '32bit',
-        settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'INSTALLONLY', value => '1'}, {key => 'RAIDLEVEL', value => '1'}, {key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},]
+        settings   => [
+            {key => 'QEMUCPU',     value => 'qemu32'},
+            {key => 'INSTALLONLY', value => '1'},
+            {key => 'RAIDLEVEL',   value => '1'},
+            {key => 'DVD',         value => '1'},
+            {key => 'DESKTOP',     value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
+        ]
     },
     Jobs => {
         id         => 99937,
@@ -123,7 +145,12 @@
         DISTRI      => 'opensuse',
         MACHINE     => '32bit',
         result_dir  => '00099937-opensuse-13.1-DVD-i586-Build0091-kde',
-        settings => [{key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'QEMUCPU', value => 'qemu32'}]
+        settings    => [
+            {key => 'DVD',         value => '1'},
+            {key => 'DESKTOP',     value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
+            {key => 'QEMUCPU',     value => 'qemu32'}]
     },
     Jobs => {
         id       => 99938,
@@ -147,7 +174,12 @@
         backend    => 'qemu',
         retry_avbl => 3,
         result_dir => '00099938-opensuse-Factory-DVD-x86_64-Build0048-doc',
-        settings => [{key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}]
+        settings   => [
+            {key => 'DVD',         value => '1'},
+            {key => 'DESKTOP',     value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO',         value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'},
+            {key => 'QEMUCPU',     value => 'qemu64'}]
     },
     Jobs => {
         id       => 99936,
@@ -168,7 +200,14 @@
         DISTRI     => 'opensuse',
         MACHINE    => '64bit-uefi',
         retry_avbl => 3,
-        settings => [{key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
+        settings   => [
+            {key => 'DVD',         value => '1'},
+            {key => 'DESKTOP',     value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO',         value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'},
+            {key => 'QEMUCPU',     value => 'qemu64'},
+            {key => 'HDD_1',       value => 'openSUSE-13.1-x86_64.hda'},
+        ]
     },
     Jobs => {
         id       => 99939,
@@ -193,7 +232,14 @@
         retry_avbl => 3,
         # no result dir, let us assume that this is an old test that has
         # already be pruned
-        settings => [{key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
+        settings => [
+            {key => 'DVD',         value => '1'},
+            {key => 'DESKTOP',     value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO',         value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'},
+            {key => 'QEMUCPU',     value => 'qemu64'},
+            {key => 'HDD_1',       value => 'openSUSE-13.1-x86_64.hda'},
+        ]
     },
     Jobs => {
         id       => 99940,
@@ -217,7 +263,12 @@
         backend    => 'qemu',
         retry_avbl => 3,
         result_dir => '00099938-opensuse-Factory-DVD-x86_64-Build0048-doc',
-        settings => [{key => 'DVD', value => '1'}, {key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'}, {key => 'QEMUCPU', value => 'qemu64'}]
+        settings   => [
+            {key => 'DVD',         value => '1'},
+            {key => 'DESKTOP',     value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO',         value => 'openSUSE-Factory-DVD-x86_64-Build0048-Media.iso'},
+            {key => 'QEMUCPU',     value => 'qemu64'}]
     },
     Jobs => {
         id       => 99946,
@@ -242,7 +293,15 @@
         jobs_assets => [{asset_id => 1}, {asset_id => 5}],
         retry_avbl  => 3,
         result_dir  => '00099946-opensuse-13.1-DVD-i586-Build0091-textmode',
-        settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'HDD_1', value => 'openSUSE-13.1-x86_64.hda'},]
+        settings    => [
+            {key => 'QEMUCPU',     value => 'qemu32'},
+            {key => 'DVD',         value => '1'},
+            {key => 'VIDEOMODE',   value => 'text'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
+            {key => 'DESKTOP',     value => 'textmode'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'HDD_1',       value => 'openSUSE-13.1-x86_64.hda'},
+        ]
     },
     Jobs => {
         id         => 99945,
@@ -264,7 +323,13 @@
         ARCH       => 'i586',
         jobs_assets => [{asset_id => 1},],
         retry_avbl  => 3,
-        settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}]
+        settings    => [
+            {key => 'QEMUCPU',     value => 'qemu32'},
+            {key => 'DVD',         value => '1'},
+            {key => 'VIDEOMODE',   value => 'text'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
+            {key => 'DESKTOP',     value => 'textmode'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'}]
     },
     Jobs => {
         id         => 99944,
@@ -286,7 +351,13 @@
         ARCH       => 'i586',
         jobs_assets => [{asset_id => 1},],
         retry_avbl  => 3,
-        settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}]
+        settings    => [
+            {key => 'QEMUCPU',     value => 'qemu32'},
+            {key => 'DVD',         value => '1'},
+            {key => 'VIDEOMODE',   value => 'text'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'},
+            {key => 'DESKTOP',     value => 'textmode'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'}]
     },
     Jobs => {
         id         => 99947,
@@ -307,7 +378,13 @@
         ARCH       => 'i586',
         jobs_assets => [{asset_id => 1},],
         retry_avbl  => 3,
-        settings => [{key => 'QEMUCPU', value => 'qemu32'}, {key => 'DVD', value => '1'}, {key => 'VIDEOMODE', value => 'text'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-i586-Build0092-Media.iso'}, {key => 'DESKTOP', value => 'textmode'}, {key => 'ISO_MAXSIZE', value => '4700372992'}]
+        settings    => [
+            {key => 'QEMUCPU',     value => 'qemu32'},
+            {key => 'DVD',         value => '1'},
+            {key => 'VIDEOMODE',   value => 'text'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-i586-Build0092-Media.iso'},
+            {key => 'DESKTOP',     value => 'textmode'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'}]
     },
     Jobs => {
         id         => 99963,
@@ -328,7 +405,12 @@
         jobs_assets => [{asset_id => 2},],
         retry_avbl  => 3,
         ARCH        => 'x86_64',
-        settings   => [{key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'}, {key => 'DVD', value => '1'}],
+        settings    => [
+            {key => 'DESKTOP',     value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},
+            {key => 'DVD',         value => '1'}
+        ],
         result_dir => '00099963-opensuse-13.1-DVD-x86_64-Build0091-kde',
     },
     Jobs => {
@@ -352,7 +434,12 @@
         retry_avbl  => 3,
         ARCH        => 'x86_64',
         result_dir  => '00099962-opensuse-13.1-DVD-x86_64-Build0091-kde',
-        settings => [{key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'}, {key => 'DVD', value => '1'},]
+        settings    => [
+            {key => 'DESKTOP',     value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},
+            {key => 'DVD',         value => '1'},
+        ]
     },
     Jobs => {
         id         => 99981,
@@ -373,7 +460,16 @@
         DISTRI    => 'opensuse',
         jobs_assets => [{asset_id => 3},],
         retry_avbl  => 3,
-        settings => [{key => 'DESKTOP', value => 'gnome'}, {key => 'ISO_MAXSIZE', value => '999999999'}, {key => 'LIVECD', value => '1'}, {key => 'ISO', value => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'}, {key => 'RAIDLEVEL', value => '0'}, {key => 'INSTALLONLY', value => '1'}, {key => 'GNOME', value => '1'}, {key => 'QEMUCPU', value => 'qemu32'},]
+        settings    => [
+            {key => 'DESKTOP',     value => 'gnome'},
+            {key => 'ISO_MAXSIZE', value => '999999999'},
+            {key => 'LIVECD',      value => '1'},
+            {key => 'ISO',         value => 'openSUSE-13.1-GNOME-Live-i686-Build0091-Media.iso'},
+            {key => 'RAIDLEVEL',   value => '0'},
+            {key => 'INSTALLONLY', value => '1'},
+            {key => 'GNOME',       value => '1'},
+            {key => 'QEMUCPU',     value => 'qemu32'},
+        ]
     },
     Jobs => {
         id         => 99961,
@@ -397,7 +493,12 @@
         jobs_assets => [{asset_id => 2}, {asset_id => 6},],
         retry_avbl  => 3,
         result_dir  => '00099961-opensuse-13.1-DVD-x86_64-Build0091-kde',
-        settings => [{key => 'DESKTOP', value => 'kde'}, {key => 'ISO_MAXSIZE', value => '4700372992'}, {key => 'ISO', value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'}, {key => 'DVD', value => '1'},]
+        settings    => [
+            {key => 'DESKTOP',     value => 'kde'},
+            {key => 'ISO_MAXSIZE', value => '4700372992'},
+            {key => 'ISO',         value => 'openSUSE-13.1-DVD-x86_64-Build0091-Media.iso'},
+            {key => 'DVD',         value => '1'},
+        ]
     },
 ]
 # vim: set sw=4 et:

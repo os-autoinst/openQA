@@ -186,7 +186,9 @@ $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w7_id);
 is($job->{id}, $jobH->id, "next job by prio, parent - server");
 
 $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w8_id);
-is($job->{id}, $jobJ->id, "I is a scheduled child of running H so it should have the highest prio, but this worker can't do it because of class -> take next job by prio instead");
+is($job->{id}, $jobJ->id,
+"I is a scheduled child of running H so it should have the highest prio, but this worker can't do it because of class -> take next job by prio instead"
+);
 
 $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w9_id);
 is($job->{id}, $jobI->id, "this worker can do jobI, child - client");

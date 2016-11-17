@@ -77,7 +77,11 @@ is((shift @tds)->get_text(), 'a day ago',          "last use is right");
 is((shift @tds)->get_text(), 'about 14 hours ago', "last match is right");
 
 $driver->find_element('a day ago', 'link_text')->click();
-like($driver->execute_script("return window.location.href"), qr(\Q/tests/99937#step/partitioning_finish/1\E), "redirected to right module");
+like(
+    $driver->execute_script("return window.location.href"),
+    qr(\Q/tests/99937#step/partitioning_finish/1\E),
+    "redirected to right module"
+);
 
 # go back to needles
 $driver->find_element('#user-action a', 'css')->click();
@@ -85,7 +89,11 @@ $driver->find_element('Needles',        'link_text')->click();
 t::ui::PhantomTest::wait_for_ajax;
 
 $driver->find_element('about 14 hours ago', 'link_text')->click();
-like($driver->execute_script("return window.location.href"), qr(\Q/tests/99937#step/partitioning/1\E), "redirected to right module too");
+like(
+    $driver->execute_script("return window.location.href"),
+    qr(\Q/tests/99937#step/partitioning/1\E),
+    "redirected to right module too"
+);
 
 # go back to needles
 $driver->find_element('#user-action a', 'css')->click();
@@ -105,7 +113,8 @@ subtest 'delete needle' => sub {
     is($driver->find_element('#confirm_delete .modal-title', 'css')->get_text(), 'Needle deletion', 'title matches');
     is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 1, 'one needle outstanding for deletion');
     is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'no failed needles so far');
-    is($driver->find_element('#outstanding-needles li', 'css')->get_text(), 'inst-timezone-text.json', 'right needle name displayed');
+    is($driver->find_element('#outstanding-needles li', 'css')->get_text(),
+        'inst-timezone-text.json', 'right needle name displayed');
 
     subtest 'error case' => sub {
         chmod(0444, $needle_dir);
@@ -113,7 +122,11 @@ subtest 'delete needle' => sub {
         t::ui::PhantomTest::wait_for_ajax;
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
         is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 1, 'but failed needle');
-        is($driver->find_element('#failed-needles li', 'css')->get_text(), "inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.json and t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.png", 'right needle name and error message displayed');
+        is(
+            $driver->find_element('#failed-needles li', 'css')->get_text(),
+"inst-timezone-text.json\nUnable to delete t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.json and t/data/openqa/share/tests/opensuse/needles/inst-timezone-text.png",
+            'right needle name and error message displayed'
+        );
         $driver->find_element('#close_delete', 'css')->click();
     };
 
@@ -121,9 +134,12 @@ subtest 'delete needle' => sub {
     t::ui::PhantomTest::wait_for_ajax;    # required due to server-side datatable
     $driver->find_element('td input',    'css')->click();
     $driver->find_element('#delete_all', 'css')->click();
-    is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 1, 'still one needle outstanding for deletion');
-    is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'failed needles from last time shouldn\'t appear again when reopening deletion dialog');
-    is($driver->find_element('#outstanding-needles li', 'css')->get_text(), 'inst-timezone-text.json', 'still right needle name displayed');
+    is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')},
+        1, 'still one needle outstanding for deletion');
+    is(scalar @{$driver->find_elements('#failed-needles li', 'css')},
+        0, 'failed needles from last time shouldn\'t appear again when reopening deletion dialog');
+    is($driver->find_element('#outstanding-needles li', 'css')->get_text(),
+        'inst-timezone-text.json', 'still right needle name displayed');
 
     subtest 'successful deletion' => sub {
         chmod(0755, $needle_dir);
@@ -135,7 +151,11 @@ subtest 'delete needle' => sub {
         t::ui::PhantomTest::wait_for_ajax;    # required due to server-side datatable
         is(-f $needle_json_file, undef, 'JSON file is gone');
         is(-f $needle_png_file,  undef, 'png file is gone');
-        is($driver->find_element('#needles tbody tr', 'css')->get_text(), 'No data available in table', 'no needles left');
+        is(
+            $driver->find_element('#needles tbody tr', 'css')->get_text(),
+            'No data available in table',
+            'no needles left'
+        );
     };
 };
 

@@ -99,7 +99,8 @@ sub check_authorized {
                 if (my $secret = $api_key->secret) {
                     my $sum = hmac_sha1_sum($self->req->url->to_string . $timestamp, $secret);
                     $user = $api_key->user;
-                    $self->app->log->debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
+                    $self->app->log->debug(sprintf "API auth by user: %s, operator: %d",
+                        $user->username, $user->is_operator);
                 }
             }
         }

@@ -29,7 +29,8 @@ sub index {
 sub productlog {
     my ($self) = @_;
     $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
-    my $events_rs = $self->db->resultset("AuditEvents")->search({event => 'iso_create'}, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 100});
+    my $events_rs = $self->db->resultset("AuditEvents")
+      ->search({event => 'iso_create'}, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 100});
     my @events;
     my $json = JSON->new();
     $json->allow_nonref(1);
@@ -53,7 +54,8 @@ sub ajax {
     if ($event_type_filter) {
         $query = {event => $event_type_filter};
     }
-    my $events_rs = $self->db->resultset("AuditEvents")->search($query, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 300});
+    my $events_rs = $self->db->resultset("AuditEvents")
+      ->search($query, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 300});
     my @events;
     while (my $event = $events_rs->next) {
         my $data = {

@@ -120,8 +120,10 @@ subtest 'only_tagged=1 query parameter shows only tagged (poo#11052)' => sub {
 subtest 'show_tags query parameter enables/disables tags on index page' => sub {
     for my $enabled (0, 1) {
         my $get = $t->get_ok('/?show_tags=' . $enabled)->status_is(200);
-        is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')},     4,        "all builds shown on index page (show_tags=$enabled)");
-        is(scalar @{$t->tx->res->dom->find("i[title='important']")}, $enabled, "tag (not) shown on index page (show_tags=$enabled)");
+        is(scalar @{$t->tx->res->dom->find('a[href^=/tests/]')},
+            4, "all builds shown on index page (show_tags=$enabled)");
+        is(scalar @{$t->tx->res->dom->find("i[title='important']")},
+            $enabled, "tag (not) shown on index page (show_tags=$enabled)");
     }
 };
 
@@ -158,7 +160,8 @@ sub _map_expired {
 subtest 'expired_jobs' => sub {
     my $jg = $t->app->db->resultset('JobGroups')->find(1001);
     is_deeply($jg->expired_jobs, [], 'no jobs expired');
-    $t->app->db->resultset('Jobs')->find(99938)->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    $t->app->db->resultset('Jobs')->find(99938)
+      ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
     is_deeply($jg->expired_jobs, [], 'still no jobs expired');
     $jg->update({keep_results_in_days => 5});
     # now the unimportant jobs are expired

@@ -22,7 +22,8 @@ use Carp;
 use POSIX qw/uname/;
 
 use base qw/Exporter/;
-our @EXPORT = qw/$job $workerid $verbose $instance $worker_settings $pooldir $nocleanup $worker_caps $testresults $openqa_url
+our @EXPORT
+  = qw/$job $workerid $verbose $instance $worker_settings $pooldir $nocleanup $worker_caps $testresults $openqa_url
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer
   api_call verify_workerid register_worker ws_call/;
@@ -220,7 +221,10 @@ sub api_call {
         }
         --$tries;
         my $err = $tx->error;
-        my $msg = $err->{code} ? "$tries: $err->{code} response: $err->{message}" : "$tries: Connection error: $err->{message}";
+        my $msg
+          = $err->{code} ?
+          "$tries: $err->{code} response: $err->{message}"
+          : "$tries: Connection error: $err->{message}";
         Carp::carp $msg;
         if (!$tries) {
             # abort the current job, we're in trouble - but keep running to grab the next

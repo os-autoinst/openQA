@@ -40,7 +40,8 @@ sub {
         "smp_32"     => 'qemu_i586',
         "smp_64"     => 'qemu_x86_64',
     );
-    my $workers_with_class = $schema->resultset('Machines')->search({'settings.key' => 'WORKER_CLASS'}, {columns => ['id'], join => ['settings']})->as_query;
+    my $workers_with_class = $schema->resultset('Machines')
+      ->search({'settings.key' => 'WORKER_CLASS'}, {columns => ['id'], join => ['settings']})->as_query;
     my $rs = $schema->resultset('Machines')->search({id => {-not_in => $workers_with_class}},);
     while (my $r = $rs->next()) {
         my $class;
@@ -59,13 +60,15 @@ sub {
 
     # set a worker class on all scheduled jobs so they won't suddely get
     # dispatched to any worker.
-    my $jobs_with_class = $schema->resultset('Jobs')->search({'settings.key' => 'WORKER_CLASS'}, {columns => ['id'], join => ['settings']})->as_query;
+    my $jobs_with_class = $schema->resultset('Jobs')
+      ->search({'settings.key' => 'WORKER_CLASS'}, {columns => ['id'], join => ['settings']})->as_query;
     $rs = $schema->resultset('Jobs')->search({id => {-not_in => $jobs_with_class}, state => 'scheduled'},);
     while (my $r = $rs->next()) {
         my $arch = $r->settings->find({key => 'ARCH'});
         next unless $arch;
         $arch = $arch->value;
-        my $result = $schema->resultset('JobSettings')->create({job_id => $r->id, key => 'WORKER_CLASS', value => 'qemu_' . $arch});
+        my $result = $schema->resultset('JobSettings')
+          ->create({job_id => $r->id, key => 'WORKER_CLASS', value => 'qemu_' . $arch});
         unless ($result) {
             warn "failed to set WORKER_CLASS on job $r->id";
             next;

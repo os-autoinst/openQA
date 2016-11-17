@@ -73,7 +73,8 @@ subtest '"happy path": failed->failed carries over last label' => sub {
     is($comments_previous[2],     $simple_comment, 'another comment present');
     $t->post_ok('/api/v1/jobs/99963/set_done', $auth => form => {result => 'failed'})->status_is(200);
     my @comments_current = @{comments('/tests/99963')};
-    my $comment_must     = '<a href="https://bugzilla.suse.com/show_bug.cgi?id=1234">bsc#1234</a>(Automatic takeover from <a href="/tests/99962">t#99962</a>)';
+    my $comment_must
+      = '<a href="https://bugzilla.suse.com/show_bug.cgi?id=1234">bsc#1234</a>(Automatic takeover from <a href="/tests/99962">t#99962</a>)';
     is(join('', @comments_current), $comment_must, 'only one label is carried over');
     like($comments_current[0], qr/\Q$second_label/, 'last entered label found, it is expanded');
 };

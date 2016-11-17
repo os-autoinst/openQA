@@ -92,23 +92,31 @@ is_deeply(
 my $res = $t->post_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(400);    # missing backend
 $res = $t->post_ok('/api/v1/machines', form => {backend => "kde/usb"})->status_is(400);        #missing name
 
-$res = $t->post_ok('/api/v1/machines', form => {name => "testmachine", backend => "qemu", "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})->status_is(200);
+$res
+  = $t->post_ok('/api/v1/machines',
+    form => {name => "testmachine", backend => "qemu", "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})
+  ->status_is(200);
 my $machine_id = $res->tx->res->json->{id};
 
 $res = $t->get_ok('/api/v1/machines', form => {name => "testmachine"})->status_is(200);
 is($res->tx->res->json->{Machines}->[0]->{id}, $machine_id);
 
-$res = $t->post_ok('/api/v1/machines', form => {name => "testmachineQ", backend => "qemu", "settings[TEST]" => "'v'al1", "settings[TEST2]" => "va'l\'1"})->status_is(200);
+$res
+  = $t->post_ok('/api/v1/machines',
+    form => {name => "testmachineQ", backend => "qemu", "settings[TEST]" => "'v'al1", "settings[TEST2]" => "va'l\'1"})
+  ->status_is(200);
 $res = $t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
 is($res->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
 is($res->tx->res->json->{Machines}->[0]->{settings}->[1]->{value}, "va'l\'1");
 
-$t->post_ok('/api/v1/machines', form => {name => "testmachineZ", backend => "qemu", "settings[TE'S\'T]" => "'v'al1"})->status_is(200);
+$t->post_ok('/api/v1/machines', form => {name => "testmachineZ", backend => "qemu", "settings[TE'S\'T]" => "'v'al1"})
+  ->status_is(200);
 $res = $t->get_ok('/api/v1/machines', form => {name => "testmachineQ"})->status_is(200);
 is($res->tx->res->json->{Machines}->[0]->{settings}->[0]->{key},   "TEST");
 is($res->tx->res->json->{Machines}->[0]->{settings}->[0]->{value}, "'v'al1");
 
-$res = $t->post_ok('/api/v1/machines', form => {name => "testmachine", backend => "qemu"})->status_is(400);    #already exists
+$res
+  = $t->post_ok('/api/v1/machines', form => {name => "testmachine", backend => "qemu"})->status_is(400); #already exists
 
 $get = $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
 is_deeply(
@@ -132,7 +140,8 @@ is_deeply(
     "Add machine"
 ) || diag explain $get->tx->res->json;
 
-$res = $t->put_ok("/api/v1/machines/$machine_id", form => {name => "testmachine", backend => "qemu", "settings[TEST2]" => "val1"})->status_is(200);
+$res = $t->put_ok("/api/v1/machines/$machine_id",
+    form => {name => "testmachine", backend => "qemu", "settings[TEST2]" => "val1"})->status_is(200);
 
 $get = $t->get_ok("/api/v1/machines/$machine_id")->status_is(200);
 is_deeply(
@@ -157,10 +166,14 @@ $res = $t->delete_ok("/api/v1/machines/$machine_id")->status_is(404);    #not fo
 
 # switch to operator (percival) and try some modifications
 $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(
+    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
-$t->post_ok('/api/v1/machines', form => {name => "testmachine", backend => "qemu", "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})->status_is(403);
-$t->put_ok("/api/v1/machines/$machine_id", form => {name => "testmachine", backend => "qemu", "settings[TEST2]" => "val1"})->status_is(403);
+$t->post_ok('/api/v1/machines',
+    form => {name => "testmachine", backend => "qemu", "settings[TEST]" => "val1", "settings[TEST2]" => "val1"})
+  ->status_is(403);
+$t->put_ok("/api/v1/machines/$machine_id",
+    form => {name => "testmachine", backend => "qemu", "settings[TEST2]" => "val1"})->status_is(403);
 $t->delete_ok("/api/v1/machines/$machine_id")->status_is(403);
 
 done_testing();

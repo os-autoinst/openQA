@@ -341,7 +341,16 @@ is_deeply(
 ) || diag explain $get->tx->res->json;
 
 # search by name
-$get = $t->get_ok("/api/v1/job_templates", form => {machine_name => '64bit', test_suite_name => 'RAID0', 'arch' => 'i586', 'distri' => 'opensuse', 'flavor' => 'DVD', 'version' => '13.1'})->status_is(200);
+$get = $t->get_ok(
+    "/api/v1/job_templates",
+    form => {
+        machine_name    => '64bit',
+        test_suite_name => 'RAID0',
+        'arch'          => 'i586',
+        'distri'        => 'opensuse',
+        'flavor'        => 'DVD',
+        'version'       => '13.1'
+    })->status_is(200);
 is_deeply(
     $get->tx->res->json,
     {
@@ -430,7 +439,8 @@ $res = $t->delete_ok("/api/v1/job_templates/$job_template_id2")->status_is(404);
 
 # switch to operator (percival) and try some modifications
 $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(
+    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 $t->post_ok(
     '/api/v1/job_templates',

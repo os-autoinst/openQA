@@ -93,7 +93,10 @@ sub read_config {
     for my $section (sort keys %defaults) {
         for my $k (sort keys %{$defaults{$section}}) {
             my $v = $cfg && $cfg->val($section, $k);
-            $v //= exists $mode_defaults{$app->mode}{$section}->{$k} ? $mode_defaults{$app->mode}{$section}->{$k} : $defaults{$section}->{$k};
+            $v //=
+              exists $mode_defaults{$app->mode}{$section}->{$k} ?
+              $mode_defaults{$app->mode}{$section}->{$k}
+              : $defaults{$section}->{$k};
             $app->config->{$section}->{$k} = $v if defined $v;
         }
     }

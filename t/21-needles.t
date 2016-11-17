@@ -64,14 +64,34 @@ my $drs = $schema->resultset('NeedleDirs');
 # there should be two files called test-rootneedle, that shouldn't be problem, because they have different needledir
 is($rs->count({filename => "test-rootneedle.json"}), 2);
 # there should be one test-rootneedle needle in fedora/needles needledir
-is($rs->search({filename => "test-rootneedle.json"})->search_related('directory', {path => {like => '%fedora/needles'}})->count(), 1);
+is(
+    $rs->search({filename => "test-rootneedle.json"})
+      ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
+    1
+);
 # there should be one needle that has fedora/needles needledir and it has relative path in its filename
-is($rs->search({filename => "gnome/browser/test-nestedneedle-2.json"})->search_related('directory', {path => {like => '%fedora/needles'}})->count(), 1);
+is(
+    $rs->search({filename => "gnome/browser/test-nestedneedle-2.json"})
+      ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
+    1
+);
 # this tests that there can be two needles with the same names in different directories
-is($rs->search({filename => "test-duplicate-needle.json"})->search_related('directory', {path => {like => '%fedora/needles'}})->count(), 1);
-is($rs->search({filename => "installer/test-duplicate-needle.json"})->search_related('directory', {path => {like => '%fedora/needles'}})->count(), 1);
+is(
+    $rs->search({filename => "test-duplicate-needle.json"})
+      ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
+    1
+);
+is(
+    $rs->search({filename => "installer/test-duplicate-needle.json"})
+      ->search_related('directory', {path => {like => '%fedora/needles'}})->count(),
+    1
+);
 # this tests needledir for nested needles placed under non-project needledir
-is($rs->search({filename => "test-kdeneedle.json"})->search_related('directory', {path => {like => '%archlinux/needles/kde'}})->count(), 1);
+is(
+    $rs->search({filename => "test-kdeneedle.json"})
+      ->search_related('directory', {path => {like => '%archlinux/needles/kde'}})->count(),
+    1
+);
 # all those needles should have file_present set to 1
 if (my $needle = $rs->next) {
     is($needle->file_present, 1);

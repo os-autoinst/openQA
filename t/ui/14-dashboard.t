@@ -45,13 +45,19 @@ my $baseurl = $driver->get_current_url();
 is(scalar @{$driver->find_elements('h4', 'css')}, 4, '4 builds shown');
 
 $driver->find_element('Build0091', 'link_text')->click();
-like($driver->find_element('#summary', 'css')->get_text(), qr/Overall Summary of opensuse test build 0091/, 'we are on build 91');
+like(
+    $driver->find_element('#summary', 'css')->get_text(),
+    qr/Overall Summary of opensuse test build 0091/,
+    'we are on build 91'
+);
 
 is($driver->get($baseurl . '?limit_builds=1'), 1, 'index page accepts limit_builds parameter');
 is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only one build per group shown');
-is($driver->get($baseurl . '?time_limit_days=0.02&limit_builds=100000'), 1, 'index page accepts time_limit_days parameter');
+is($driver->get($baseurl . '?time_limit_days=0.02&limit_builds=100000'),
+    1, 'index page accepts time_limit_days parameter');
 is(scalar @{$driver->find_elements('h4', 'css')}, 0, 'no builds shown');
-is($driver->get($baseurl . '?time_limit_days=0.05&limit_builds=100000'), 1, 'index page accepts time_limit_days parameter');
+is($driver->get($baseurl . '?time_limit_days=0.05&limit_builds=100000'),
+    1, 'index page accepts time_limit_days parameter');
 is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only the one hour old builds is shown');
 
 # group overview
@@ -60,14 +66,27 @@ my $build_url = $driver->get_current_url();
 $build_url =~ s/\?.*//;
 OpenQA::Utils::log_debug('build_url: ' . $build_url);
 is(scalar @{$driver->find_elements('h4', 'css')}, 5, 'number of builds for opensuse');
-is($driver->find_element('#group_description',   'css')->get_text(),            'Test description\n\nwith bugref bsc#1234',       'description shown');
-is($driver->find_element('#group_description a', 'css')->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bugref in description rendered as link');
+is(
+    $driver->find_element('#group_description', 'css')->get_text(),
+    'Test description\n\nwith bugref bsc#1234',
+    'description shown'
+);
+is(
+    $driver->find_element('#group_description a', 'css')->get_attribute('href'),
+    'https://bugzilla.suse.com/show_bug.cgi?id=1234',
+    'bugref in description rendered as link'
+);
 $driver->get($baseurl . '/group_overview/1002');
-is(scalar @{$driver->find_elements('#group_description', 'css')}, 0, 'no well for group description shown if none present');
+is(scalar @{$driver->find_elements('#group_description', 'css')},
+    0, 'no well for group description shown if none present');
 is($driver->get($build_url . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
 $driver->get($build_url . '?limit_builds=0');
 is(scalar @{$driver->find_elements('div.build-row h4', 'css')}, 0, 'all builds filtered out');
-is($driver->find_element('h2', 'css')->get_text(), 'Last Builds for Group opensuse', 'group name shown correctly when all builds filtered out');
+is(
+    $driver->find_element('h2', 'css')->get_text(),
+    'Last Builds for Group opensuse',
+    'group name shown correctly when all builds filtered out'
+);
 
 my $more_builds = $t->get_ok($baseurl . 'group_overview/1001')->tx->res->dom->at('#more_builds');
 my $res         = OpenQA::Test::Case::trim_whitespace($more_builds->all_text);
@@ -85,7 +104,8 @@ is($driver->find_element('opensuse test', 'link_text')->get_text, 'opensuse test
 is($driver->get($baseurl . '?group=opensuse$'), 1, 'group parameter can be used for exact matching, though');
 is(scalar @{$driver->find_elements('h2', 'css')}, 1, 'only one job group shown');
 is($driver->find_element('opensuse', 'link_text')->get_text, 'opensuse');
-is($driver->get($baseurl . '?group=opensuse$&group=test'), 1, 'multiple group parameter can be use to ease building queries');
+is($driver->get($baseurl . '?group=opensuse$&group=test'),
+    1, 'multiple group parameter can be use to ease building queries');
 is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'both job groups shown');
 $driver->get($baseurl . '?group=');
 is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'a single, empty group parameter has no affect');
@@ -97,14 +117,19 @@ subtest 'filter form' => sub {
     $driver->find_element('#filter-limit-builds',         'css')->send_keys('8');            # appended to default '3'
     $driver->find_element('#filter-time-limit-days',      'css')->send_keys('2');            # appended to default '14'
     $driver->find_element('#filter-form button',          'css')->click();
-    is($driver->get_current_url(), $baseurl . '?group=SLE+12+SP2&limit_builds=38&time_limit_days=142#', 'URL parameters for filter are correct');
+    is(
+        $driver->get_current_url(),
+        $baseurl . '?group=SLE+12+SP2&limit_builds=38&time_limit_days=142#',
+        'URL parameters for filter are correct'
+    );
 };
 
 # JSON representation of index page
 $driver->get($baseurl . 'index.json');
 like($driver->get_page_source(), qr({"results":\[.*{"0048":), 'page rendered as JSON');
 
-like($t->get_ok($baseurl)->tx->res->dom->at('#filter-panel .help_popover')->{'data-title'}, qr/Help/, 'help popover is shown');
+like($t->get_ok($baseurl)->tx->res->dom->at('#filter-panel .help_popover')->{'data-title'},
+    qr/Help/, 'help popover is shown');
 
 # parent group overview: tested in t/22-dashboard.t
 
