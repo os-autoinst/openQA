@@ -55,7 +55,7 @@ sub index {
         if (@$group_params) {
             next unless grep { $_ eq '' || $group->name =~ /$_/ } @$group_params;
         }
-        my $tags = $group->tags;
+        my $tags = $show_tags || $only_tagged ? $group->tags : undef;
         my $build_results = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days, $only_tagged ? $tags : undef);
 
         my $res = $build_results->{result};
@@ -98,8 +98,8 @@ sub group_overview {
                 push(@comments, $comment);
             }
         }
-        $tags = $group->tags;
     }
+    $tags = $group->tags;
 
     my $cbr      = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days, $only_tagged ? $tags : undef);
     my $res      = $cbr->{result};
