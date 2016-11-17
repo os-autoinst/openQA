@@ -170,11 +170,6 @@ sub scan_images_links {
         while (my $screenshot = $fns->next) {
             $screenshot->delete;
         }
-        $schema->resultset('Screenshots')->search(
-            {},
-            {
-                select => ['filename', {count => 'links'}],
-                as     => ['filename', 'link_count']});
     }
 }
 

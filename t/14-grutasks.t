@@ -227,4 +227,14 @@ subtest 'human readable size' => sub {
     is(human_readable_size(245760),      '240KiB',  'less than a MB');
 };
 
+subtest 'scan_images' => sub {
+    is($t->app->db->resultset('Screenshots')->count, 0, "no screenshots in fixtures");
+    run_gru('scan_images' => {prefix => '347'});
+    is($t->app->db->resultset('Screenshots')->count, 1, "one screenshot found");
+
+    run_gru('scan_images_links' => {min_job => 0, max_job => 100000});
+    my @links = sort map { $_->job_id } $t->app->db->resultset('ScreenshotLinks')->all;
+    is_deeply(\@links, [99937, 99938, 99940, 99946, 99962, 99963], "all links found");
+};
+
 done_testing();
