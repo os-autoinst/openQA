@@ -72,7 +72,7 @@ is_deeply(\@h4, ['opensuse', 'opensuse'], 'opensuse now shown as child group (li
 my $opensuse_test_group = $job_groups->find({name => 'opensuse test'});
 $opensuse_test_group->update({parent_id => $test_parent->id});
 
-$get = $t->get_ok('/?limit_builds=20')->status_is(200);
+$get = $t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
 @h2  = $get->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['Test parent'], 'only parent shown, no more top-level job groups');
 
@@ -91,6 +91,8 @@ sub check_test_parent {
     is_deeply(\@progress_bars, ["passed: 2\nunfinished: 2\nskipped: 1\ntotal: 5", "unfinished: 1\ntotal: 1"], 'progress bars for child groups shown correctly');
 
     is($get->tx->res->dom->find("div.children-$default_expanded .review-all-passed")->size, 1, 'badge shown on parent-level');
+
+    is($get->tx->res->dom->find("div.children-$default_expanded h4 span i.tag")->size, 0, 'no tags shown yet');
 }
 check_test_parent('collapsed');
 
@@ -104,5 +106,16 @@ for my $url (@urls) {
 # parent group overview
 $get = $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
 check_test_parent('expanded');
+
+# add tags (99901 is user ID of arthur)
+$opensuse_group->comments->create({text => 'tag:0092:important:some_tag', user_id => 99901});
+
+$get = $t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
+my @tags = $get->tx->res->dom->find('div.children-collapsed h4 span i.tag')->map('text')->each;
+is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
+
+$get  = $t->get_ok('/parent_group_overview/' . $test_parent->id . '?limit_builds=20&show_tags=1')->status_is(200);
+@tags = $get->tx->res->dom->find('div.children-expanded h4 span i.tag')->map('text')->each;
+is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
 
 done_testing;

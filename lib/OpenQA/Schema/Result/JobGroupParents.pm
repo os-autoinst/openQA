@@ -125,8 +125,14 @@ sub rendered_description {
 sub tags {
     my ($self) = @_;
 
-    # for now
-    return {};
+    my %res;
+    for my $child ($self->children) {
+        my $tags = $child->tags;
+        for my $key (keys %$tags) {
+            $res{$key} = $tags->{$key};
+        }
+    }
+    return \%res;
 }
 
 1;
