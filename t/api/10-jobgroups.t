@@ -194,7 +194,7 @@ subtest 'prevent deleting non-empty job group' => sub() {
     is_deeply($get->tx->res->json, {ids => [99961]}, '1002 contains one job');
     $get = $t->get_ok('/api/v1/job_groups/1002/jobs?expired=1')->status_is(200);
     is_deeply($get->tx->res->json, {ids => []}, '1002 contains no expired job');
-    my $rd = 't/data/openqa/testresults/00099961-opensuse-13.1-DVD-x86_64-Build0091-kde';
+    my $rd = 't/data/openqa/testresults/00099/00099961-opensuse-13.1-DVD-x86_64-Build0091-kde';
     ok(-d $rd, 'result dir of job exists');
     $t->delete_ok('/api/v1/jobs/99961')->status_is(200);
     ok(!-d $rd, 'result dir of job gone');

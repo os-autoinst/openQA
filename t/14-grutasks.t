@@ -67,11 +67,13 @@ sub mock_size_45 {
     return 45 * 1024 * 1024 * 1024;
 }
 
+
+
 my $module = new Test::MockModule('OpenQA::Schema::Result::Assets');
 $module->mock(delete           => \&mock_delete);
 $module->mock(remove_from_disk => \&mock_remove);
 
-my $schema = OpenQA::Test::Database->new->create();
+my $schema = OpenQA::Test::Case->new->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -185,19 +187,24 @@ subtest 'relink_testresults' => sub {
     );
 
     # setup
-    unlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
+    unlink('t/data/openqa/testresults/00099/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
     File::Path::make_path('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/');
-    symlink('../../../images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png',
-        't/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
+    symlink('../../../../images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png',
+        't/data/openqa/testresults/00099/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
     like(
-        readlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'),
+        readlink(
+            't/data/openqa/testresults/00099/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'),
         qr{\Q/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png\E},
         'link correct'
     );
 
     run_gru('relink_testresults' => {max_job => 1000000, min_job => 0});
-    like(readlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'),
-        qr{\Qimages/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png\E}, 'relinked');
+    like(
+        readlink(
+            't/data/openqa/testresults/00099/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'),
+        qr{\Qimages/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png\E},
+        'relinked'
+    );
 };
 
 subtest 'rm_compat_symlinks' => sub {

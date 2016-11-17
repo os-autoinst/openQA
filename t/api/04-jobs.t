@@ -183,7 +183,7 @@ seek($fh, 20 * 1024 * 1024, 0);    # create 200MB quick
 syswrite($fh, "X");
 close($fh);
 
-my $rp = "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/video.ogv";
+my $rp = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/video.ogv";
 unlink($rp);                       # make sure previous tests don't fool us
 $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'video.ogv'}})
   ->status_is(200);
@@ -191,7 +191,7 @@ $post = $t->post_ok('/api/v1/jobs/99963/artefact' => form => {file => {file => $
 ok(-e $rp, 'video exist after');
 is(calculate_file_md5($rp), "feeebd34e507d3a1641c774da135be77", "md5sum matches");
 
-$rp = "t/data/openqa/testresults/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/y2logs.tar.bz2";
+$rp = "t/data/openqa/testresults/00099/00099963-opensuse-13.1-DVD-x86_64-Build0091-kde/ulogs/y2logs.tar.bz2";
 $post
   = $t->post_ok(
     '/api/v1/jobs/99963/artefact' => form => {file => {file => $filename, filename => 'y2logs.tar.bz2'}, ulog => 1})

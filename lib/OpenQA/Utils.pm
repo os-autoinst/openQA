@@ -230,7 +230,9 @@ sub image_md5_filename {
         # stored this way in the database
         return catfile($prefix1, $prefix2, "$md5.png");
     }
-    return (catfile($imagesdir, $prefix1, $prefix2, "$md5.png"), catfile($imagesdir, $prefix1, $prefix2, '.thumbs', "$md5.png"));
+    return (
+        catfile($imagesdir, $prefix1, $prefix2, "$md5.png"),
+        catfile($imagesdir, $prefix1, $prefix2, '.thumbs', "$md5.png"));
 }
 
 sub run_cmd_with_log($) {
