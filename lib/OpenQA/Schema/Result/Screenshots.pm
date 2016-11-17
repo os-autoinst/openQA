@@ -17,6 +17,7 @@ package OpenQA::Schema::Result::Screenshots;
 use base qw(DBIx::Class::Core);
 use strict;
 use File::Spec::Functions qw(catfile);
+use File::Basename qw(basename dirname);
 use OpenQA::Utils qw(log_debug log_warning);
 use Try::Tiny;
 
@@ -56,6 +57,10 @@ sub delete {
     log_debug("removing screenshot " . $self->filename);
     if (!unlink(catfile($OpenQA::Utils::imagesdir, $self->filename))) {
         log_warning "can't remove " . $self->filename;
+    }
+    my $thumb = catfile($OpenQA::Utils::imagesdir, dirname($self->filename), '.thumbs', basename($self->filename));
+    if (!unlink($thumb)) {
+        log_warning "can't remove $thumb";
     }
     return $self->SUPER::delete;
 }
