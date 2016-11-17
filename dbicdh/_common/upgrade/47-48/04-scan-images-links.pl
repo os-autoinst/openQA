@@ -19,21 +19,23 @@
 use strict;
 use warnings;
 
-use File::Spec::Functions qw(catfile);
-use OpenQA::Utils;
+use File::Basename;
+use File::Find;
 
 sub {
     my ($schema) = @_;
 
-    my $jobs = $schema->resultset('Jobs')->search({});
+    use OpenQA::WebAPI::Plugin::Gru;
+    my $gru = OpenQA::WebAPI::Plugin::Gru->new;
 
-    while (my $job = $jobs->next) {
-        next unless $job->result_dir;
-
-        my $npd = $job->num_prefix_dir;
-        mkdir($npd) unless -d $npd;
-
-        my $olddir = catfile($OpenQA::Utils::resultdir, $job->get_column('result_dir'));
-        rename($olddir, $job->result_dir);
+    my $max = $schema->resultset('Jobs')->get_column('id')->max || 0;
+    my $delta = 1000;
+    while ($max > $delta) {
+        $gru->enqueue(scan_images_links => {max_job => $max, min_job => $max - $delta}, {priority => -8});
+        $max -= $delta;
+    }
+    # not needed on empty instances
+    if ($max) {
+        $gru->enqueue(scan_images_links => {max_job => $max, min_job => 0}, {priority => -8});
     }
   }

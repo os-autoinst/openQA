@@ -394,13 +394,7 @@ sub save_details {
             $d->{screenshot} = $self->_save_details_screenshot($d->{screenshot}, $existent_md5, $cleanup);
         }
     }
-    # insert the symlinks into the DB
-    my $data = [[qw(screenshot_id job_id)]];
-    my $dbids = $schema->resultset('Screenshots')->search({filename => {-in => \@dbpaths}}, {select => 'id'});
-    while (my $screenshot = $dbids->next) {
-        push(@$data, [$screenshot->id, $self->job_id]);
-    }
-    $schema->resultset('ScreenshotLinks')->populate($data);
+    OpenQA::Schema::Result::ScreenshotLinks::populate_images_to_job($schema, \@dbpaths, $self->job_id);
 
     $self->store_needle_infos($details);
     open(my $fh, ">", $self->job->result_dir . "/details-" . $self->name . ".json");

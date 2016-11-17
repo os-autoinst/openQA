@@ -102,4 +102,38 @@ sub scan_images {
     return;
 }
 
+# gru task - scan testresults and add them to Screenshotlinks
+sub scan_images_links {
+    my ($app, $args) = @_;
+
+    my $schema = OpenQA::Scheduler::Scheduler::schema();
+    my $jobs   = $schema->resultset("Jobs")->search(
+        {
+            id => {
+                '<=' => $args->{max_job},
+                '>'  => $args->{min_job}}
+        },
+        {order_by => ['id DESC']});
+    while (my $job = $jobs->next) {
+        my $dh;
+        my $rd = $job->result_dir;
+        next unless $rd && -d $rd;
+        if (!opendir($dh, $rd)) {
+            log_warning "Can't open test result of " . $job->id;
+            next;
+        }
+        my @imgs;
+        while (readdir $dh) {
+            my $fn = catfile($rd, $_);
+            if ($fn =~ /\.png$/ && -l $fn) {
+                my $lt = readlink($fn);
+                $lt =~ s,.*/images/,,;
+                push(@imgs, $lt);
+            }
+        }
+        closedir($dh);
+        OpenQA::Schema::Result::ScreenshotLinks::populate_images_to_job($schema, \@imgs, $job->id);
+    }
+}
+
 1;

@@ -78,4 +78,17 @@ sub scan_images {
     return;
 }
 
+sub populate_images_to_job {
+    my ($schema, $imgs, $job_id) = @_;
+
+    # insert the symlinks into the DB
+    my $data = [[qw(screenshot_id job_id)]];
+    my $dbids = $schema->resultset('Screenshots')->search({filename => {-in => $imgs}}, {select => 'id'});
+    while (my $screenshot = $dbids->next) {
+        push(@$data, [$screenshot->id, $job_id]);
+    }
+    $schema->resultset('ScreenshotLinks')->populate($data);
+    return;
+}
+
 1;
