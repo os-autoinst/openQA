@@ -40,6 +40,25 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(filename)]);
+__PACKAGE__->has_many(
+    links => 'OpenQA::Schema::Result::ScreenshotLinks',
+    'screenshot_id',
+    {cascade_delete => 0});
+__PACKAGE__->has_many(
+    links_outer => 'OpenQA::Schema::Result::ScreenshotLinks',
+    'screenshot_id',
+    {join_type => 'left outer'}, {cascade_delete => 0});
+
+# overload to remove on disk too
+sub delete {
+    my ($self) = @_;
+
+    log_debug("removing screenshot " . $self->filename);
+    if (!unlink(catfile($OpenQA::Utils::imagesdir, $self->filename))) {
+        log_warning "can't remove " . $self->filename;
+    }
+    return $self->SUPER::delete;
+}
 
 sub _list_images_subdir {
     my ($app, $prefix, $dir) = @_;
@@ -133,6 +152,31 @@ sub scan_images_links {
         }
         closedir($dh);
         OpenQA::Schema::Result::ScreenshotLinks::populate_images_to_job($schema, \@imgs, $job->id);
+    }
+
+    # last job is going to delete everything left
+    if (!$args->{min_job}) {
+        # the having attribute blocks all - even if the generated SQL is correct (at least for sqlite)
+        # so query all but stop at the first image with more than 0
+        my $fns = $schema->resultset('Screenshots')->search_rs(
+            {},
+            {
+                join     => 'links_outer',
+                select   => ['id', 'filename', {count => 'links_outer.job_id', -as => 'link_count'}],
+                as       => [qw(id filename link_count)],
+                order_by => 'link_count asc',
+                group_by => 'me.id',
+                #having => { 'COUNT(links_outer.job_id)' => { '=', 0 }}
+            });
+        while (my $screenshot = $fns->next) {
+            last if ($screenshot->get_column('link_count') > 0);
+            $screenshot->delete;
+        }
+        $schema->resultset('Screenshots')->search(
+            {},
+            {
+                select => ['filename', {count => 'links'}],
+                as     => ['filename', 'link_count']});
     }
 }
 
