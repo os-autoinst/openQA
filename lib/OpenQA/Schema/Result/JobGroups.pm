@@ -77,36 +77,54 @@ __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(jobs => 'OpenQA::Schema::Result::Jobs', 'group_id');
 __PACKAGE__->has_many(comments => 'OpenQA::Schema::Result::Comments', 'group_id', {order_by => 'id'});
-__PACKAGE__->belongs_to(parent => 'OpenQA::Schema::Result::JobGroupParents', 'parent_id', {join_type => 'left', on_delete => 'SET NULL'});
+__PACKAGE__->belongs_to(
+    parent => 'OpenQA::Schema::Result::JobGroupParents',
+    'parent_id', {join_type => 'left', on_delete => 'SET NULL'});
 
 around 'size_limit_gb' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('size_limit_gb') // ($self->parent ? $self->parent->default_size_limit_gb : OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB);
+    return $self->get_column('size_limit_gb')
+      // ($self->parent ? $self->parent->default_size_limit_gb : OpenQA::Schema::JobGroupDefaults::SIZE_LIMIT_GB);
 };
 
 around 'keep_logs_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('keep_logs_in_days') // ($self->parent ? $self->parent->default_keep_logs_in_days : OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS);
+    return $self->get_column('keep_logs_in_days')
+      // (
+        $self->parent ? $self->parent->default_keep_logs_in_days : OpenQA::Schema::JobGroupDefaults::KEEP_LOGS_IN_DAYS);
 };
 
 around 'keep_important_logs_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('keep_important_logs_in_days') // ($self->parent ? $self->parent->default_keep_important_logs_in_days : OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS);
+    return $self->get_column('keep_important_logs_in_days') // (
+        $self->parent ?
+          $self->parent->default_keep_important_logs_in_days
+        : OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS
+    );
 };
 
 around 'keep_results_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('keep_results_in_days') // ($self->parent ? $self->parent->default_keep_results_in_days : OpenQA::Schema::JobGroupDefaults::KEEP_RESULTS_IN_DAYS);
+    return $self->get_column('keep_results_in_days') // (
+        $self->parent ?
+          $self->parent->default_keep_results_in_days
+        : OpenQA::Schema::JobGroupDefaults::KEEP_RESULTS_IN_DAYS
+    );
 };
 
 around 'keep_important_results_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('keep_important_results_in_days') // ($self->parent ? $self->parent->default_keep_important_results_in_days : OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS);
+    return $self->get_column('keep_important_results_in_days') // (
+        $self->parent ?
+          $self->parent->default_keep_important_results_in_days
+        : OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS
+    );
 };
 
 around 'default_priority' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('default_priority') // ($self->parent ? $self->parent->default_priority : OpenQA::Schema::JobGroupDefaults::PRIORITY);
+    return $self->get_column('default_priority')
+      // ($self->parent ? $self->parent->default_priority : OpenQA::Schema::JobGroupDefaults::PRIORITY);
 };
 
 sub rendered_description {
@@ -154,7 +172,8 @@ sub expired_jobs {
 
     if ($self->keep_important_results_in_days) {
         # expired jobs in important builds
-        my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $self->keep_important_results_in_days, 'UTC')};
+        my $timecond
+          = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $self->keep_important_results_in_days, 'UTC')};
         push(@ors, {BUILD => {-in => $important_builds}, t_finished => $timecond});
     }
     my $jobs = $self->jobs->search({-or => \@ors}, {order_by => qw/id/});

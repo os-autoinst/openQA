@@ -163,11 +163,13 @@ $ret = $t->post_ok('/api/v1/assets', form => {type => 'iso', name => 'foo.iso'})
 
 # switch to operator (percival) and try some modifications
 $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(
+    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
 # test delete operation
-$ret = $t->delete_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(403, 'asset deletion forbidden for operator');
+$ret = $t->delete_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))
+  ->status_is(403, 'asset deletion forbidden for operator');
 # delete by name
 $ret = $t->delete_ok('/api/v1/assets/iso/' . $iso1)->status_is(403, 'asset deletion forbidden for operator');
 # asset must be still there

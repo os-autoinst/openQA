@@ -92,11 +92,12 @@ if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
 
 my $dh = DH->new(
     {
-        schema              => $schema,
-        script_directory    => $script_directory,
-        databases           => \@databases,
-        sql_translator_args => {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
-        force_overwrite     => $force,
+        schema           => $schema,
+        script_directory => $script_directory,
+        databases        => \@databases,
+        sql_translator_args =>
+          {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
+        force_overwrite => $force,
     });
 
 
@@ -116,7 +117,8 @@ if ($prepare_upgrades) {
 
         if (exists $upgrade_dir{$upgrade_directory} and not $force) {
             print "The upgrade directory already contains files to upgrade to the current version ($version)\n";
-            print "Use the --force option if you want to overwrite the contents of the $script_directory/$db/upgrade/$upgrade_directory directory\n";
+            print "Use the --force option if you want to overwrite the contents of the\n";
+            print "$script_directory/$db/upgrade/$upgrade_directory directory\n";
             exit 1;
         }
     }

@@ -52,7 +52,6 @@ sub {
             $searches->{"$where.key"}   = $key;
             $searches->{"$where.value"} = $value;
         }
-        #print $jt->machine->name, " ", $jt->product->name, " ", $jt->test_suite->name, " ", join(',', map { $_->id } $schema->resultset("Jobs")->search($searches, { join => \@joins })->all), " ", $jt->group_id, "\n";
         $schema->resultset("Jobs")->search($searches, {join => \@joins})->update_all({group_id => $jt->group_id});
     }
   }

@@ -22,8 +22,10 @@ use Mojo::Base 'Mojolicious::Controller';
 sub index {
     my ($self) = @_;
 
-    my $parent_groups = $self->db->resultset('JobGroupParents')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
-    my $groups = $self->db->resultset('JobGroups')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
+    my $parent_groups = $self->db->resultset('JobGroupParents')
+      ->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
+    my $groups
+      = $self->db->resultset('JobGroups')->search(undef, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
 
     $self->stash('job_groups_and_parents_for_editor', job_groups_and_parents);
     $self->stash('parent_groups',                     $parent_groups);

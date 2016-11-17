@@ -479,7 +479,11 @@ sub notify_workers {
     # ugly work around for Net::DBus::Test not being able to handle us using low level API
     return if ref($con) eq 'Net::DBus::Test::MockConnection';
 
-    my $msg = $con->make_method_call_message("org.opensuse.openqa.Scheduler", "/Scheduler", "org.opensuse.openqa.Scheduler", "emit_jobs_available");
+    my $msg = $con->make_method_call_message(
+        "org.opensuse.openqa.Scheduler",
+        "/Scheduler", "org.opensuse.openqa.Scheduler",
+        "emit_jobs_available"
+    );
     # do not wait for a reply - avoid deadlocks. this way we can even call it
     # from within the scheduler without having to worry about reentering
     $con->send($msg);
@@ -516,13 +520,17 @@ sub human_readable_size {
 
 # query group parents and job groups and let the database sort it for us - and merge it afterwards
 sub job_groups_and_parents {
-    my @parents = $app->db->resultset('JobGroupParents')->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
-    my @groups_without_parent = $app->db->resultset('JobGroups')->search({parent_id => undef}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
+    my @parents
+      = $app->db->resultset('JobGroupParents')->search({}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})
+      ->all;
+    my @groups_without_parent = $app->db->resultset('JobGroups')
+      ->search({parent_id => undef}, {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]})->all;
     my @res;
     my $first_parent = shift @parents;
     my $first_group  = shift @groups_without_parent;
     while ($first_parent || $first_group) {
-        my $pick_parent = $first_parent && (!$first_group || ($first_group->sort_order // 0) > ($first_parent->sort_order // 0));
+        my $pick_parent
+          = $first_parent && (!$first_group || ($first_group->sort_order // 0) > ($first_parent->sort_order // 0));
         if ($pick_parent) {
             push(@res, $first_parent);
             $first_parent = shift @parents;

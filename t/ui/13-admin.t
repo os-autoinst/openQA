@@ -228,7 +228,7 @@ subtest 'add test suite' => sub() {
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
     t::ui::PhantomTest::wait_for_ajax;
-    # now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
+# now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
     # try to edit and save
@@ -273,7 +273,11 @@ subtest 'add job group' => sub() {
     is((shift @parent_group_entries)->get_text(), 'opensuse',      'first parentless group present');
     is((shift @parent_group_entries)->get_text(), 'opensuse test', 'second parentless group present');
     is(@parent_group_entries,                     0,               'and also no more parent groups');
-    like($driver->find_element('#new_group_name_group ', 'css')->get_text(), qr/The group name must not be empty/, 'refuse creating group with empty name');
+    like(
+        $driver->find_element('#new_group_name_group ', 'css')->get_text(),
+        qr/The group name must not be empty/,
+        'refuse creating group with empty name'
+    );
 
     # add new parentless group (dialog should still be open), this time enter a name
     $driver->find_element('#new_group_name',      'css')->send_keys('Cool Group');
@@ -297,7 +301,8 @@ subtest 'add job group' => sub() {
     # check whether parent is present
     $list_element = $driver->find_element('#job_group_list', 'css');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    is(@parent_group_entries, 4, 'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
+    is(@parent_group_entries, 4,
+        'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
     my $new_groups_entry = shift @parent_group_entries;
     is($new_groups_entry->get_text(), 'New parent group', 'new group present');
 
@@ -309,7 +314,8 @@ subtest 'add job group' => sub() {
 
     $list_element = $driver->find_element('#job_group_list', 'css');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
-    is(@parent_group_entries,                     4,                  'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
+    is(@parent_group_entries, 4,
+        'now 4 top-level groups present (one is new parent, remaining are parentless job groups)');
     is((shift @parent_group_entries)->get_text(), 'Cool Group',       'new parentless group present');
     is((shift @parent_group_entries)->get_text(), 'opensuse',         'first parentless group from fixtures present');
     is((shift @parent_group_entries)->get_text(), 'opensuse test',    'second parentless group from fixtures present');
@@ -324,14 +330,16 @@ subtest 'job property editor' => sub() {
     $driver->find_element('#job-group-name + form button', 'css')->click();
 
     subtest 'current/default values present' => sub() {
-        is($driver->find_element('#editor-name',                           'css')->get_value(), 'Cool Group', 'name');
-        is($driver->find_element('#editor-size-limit',                     'css')->get_value(), '100',        'size limit');
-        is($driver->find_element('#editor-keep-logs-in-days',              'css')->get_value(), '30',         'keep logs in days');
-        is($driver->find_element('#editor-keep-important-logs-in-days',    'css')->get_value(), '120',        'keep important logs in days');
-        is($driver->find_element('#editor-keep-results-in-days',           'css')->get_value(), '365',        'keep results in days');
-        is($driver->find_element('#editor-keep-important-results-in-days', 'css')->get_value(), '0',          'keep important results in days');
-        is($driver->find_element('#editor-default-priority',               'css')->get_value(), '50',         'default priority');
-        is($driver->find_element('#editor-description',                    'css')->get_value(), '',           'no description yet');
+        is($driver->find_element('#editor-name',              'css')->get_value(), 'Cool Group', 'name');
+        is($driver->find_element('#editor-size-limit',        'css')->get_value(), '100',        'size limit');
+        is($driver->find_element('#editor-keep-logs-in-days', 'css')->get_value(), '30',         'keep logs in days');
+        is($driver->find_element('#editor-keep-important-logs-in-days', 'css')->get_value(),
+            '120', 'keep important logs in days');
+        is($driver->find_element('#editor-keep-results-in-days', 'css')->get_value(), '365', 'keep results in days');
+        is($driver->find_element('#editor-keep-important-results-in-days', 'css')->get_value(),
+            '0', 'keep important results in days');
+        is($driver->find_element('#editor-default-priority', 'css')->get_value(), '50', 'default priority');
+        is($driver->find_element('#editor-description',      'css')->get_value(), '',   'no description yet');
     };
 
     subtest 'edit some properties' => sub() {
@@ -348,11 +356,13 @@ subtest 'job property editor' => sub() {
         $driver->get($driver->get_current_url());
         is($driver->get_title(), 'openQA: Jobs for Cool Group has been edited!', 'new name on title');
         $driver->find_element('#job-group-name + form button', 'css')->click();
-        is($driver->find_element('#editor-name',                           'css')->get_value(), 'Cool Group has been edited!', 'name edited');
-        is($driver->find_element('#editor-size-limit',                     'css')->get_value(), '1000',                        'size edited');
-        is($driver->find_element('#editor-keep-important-results-in-days', 'css')->get_value(), '500',                         'keep important results in days edited');
-        is($driver->find_element('#editor-default-priority',               'css')->get_value(), '50',                          'default priority should be the same');
-        is($driver->find_element('#editor-description',                    'css')->get_value(), 'Test group',                  'description added');
+        is($driver->find_element('#editor-name', 'css')->get_value(), 'Cool Group has been edited!', 'name edited');
+        is($driver->find_element('#editor-size-limit', 'css')->get_value(), '1000', 'size edited');
+        is($driver->find_element('#editor-keep-important-results-in-days', 'css')->get_value(),
+            '500', 'keep important results in days edited');
+        is($driver->find_element('#editor-default-priority', 'css')->get_value(),
+            '50', 'default priority should be the same');
+        is($driver->find_element('#editor-description', 'css')->get_value(), 'Test group', 'description added');
     };
 };
 

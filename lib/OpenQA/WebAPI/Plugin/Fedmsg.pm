@@ -24,7 +24,7 @@ use JSON;
 use Mojo::IOLoop;
 use OpenQA::Schema::Result::Jobs;
 
-my @job_events     = qw/job_create job_delete job_cancel job_duplicate job_restart jobs_restart job_update_result job_done/;
+my @job_events = qw/job_create job_delete job_cancel job_duplicate job_restart jobs_restart job_update_result job_done/;
 my @comment_events = qw/user_new_comment user_update_comment user_delete_comment/;
 
 sub register {
@@ -52,7 +52,10 @@ sub log_event {
     # FIXME: should be some way for plugins to have configuration and then
     # cert-prefix could be configurable, for now we hard code it
     # we use IPC::Run rather than system() as it's easier to mock for testing
-    my @command = ("fedmsg-logger", "--cert-prefix=openqa", "--modname=openqa", "--topic=$event", "--json-input", "--message=$event_data");
+    my @command = (
+        "fedmsg-logger", "--cert-prefix=openqa", "--modname=openqa", "--topic=$event",
+        "--json-input",  "--message=$event_data"
+    );
     my ($stdin, $stderr, $output) = (undef, undef, undef);
     IPC::Run::run(\@command, \$stdin, \$output, \$stderr);
 }

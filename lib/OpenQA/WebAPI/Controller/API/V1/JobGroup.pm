@@ -100,7 +100,8 @@ sub create {
     return $self->render(json => {error => 'No group name specified'}, status => 400) unless $group_name;
 
     my $group = $self->resultset->create($self->load_properties);
-    return $self->render(json => {error => 'Unable to create group with specified properties'}, status => 400) unless $group;
+    return $self->render(json => {error => 'Unable to create group with specified properties'}, status => 400)
+      unless $group;
 
     $self->render(json => {id => $group->id});
 }
@@ -112,7 +113,8 @@ sub update {
     return unless $group;
 
     my $res = $group->update($self->load_properties);
-    return $self->render(json => {error => 'Specified job group ' . $group->id . ' exist but unable to update, though'}) unless $res;
+    return $self->render(json => {error => 'Specified job group ' . $group->id . ' exist but unable to update, though'})
+      unless $res;
     $self->render(json => {id => $res->id});
 }
 
@@ -143,7 +145,9 @@ sub delete {
     }
 
     my $res = $group->delete;
-    return $self->render(json => {error => 'Specified job group ' . $group->id . ' exist but can not be deleted, though'}) unless $res;
+    return $self->render(
+        json => {error => 'Specified job group ' . $group->id . ' exist but can not be deleted, though'})
+      unless $res;
     $self->render(json => {id => $res->id});
 }
 

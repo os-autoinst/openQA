@@ -185,10 +185,12 @@ ok($fixed->is_fixed(), 'fixed should be considered a fixed asset');
 # test Utils::locate_asset
 # fixed HDD asset
 my $expected = catfile($OpenQA::Utils::assetdir, 'hdd', 'fixed', 'fixed.img');
-is(locate_asset('hdd', 'fixed.img', mustexist => 1), $expected, 'locate_asset should find fixed asset in fixed location');
+is(locate_asset('hdd', 'fixed.img', mustexist => 1),
+    $expected, 'locate_asset should find fixed asset in fixed location');
 # relative
 $expected = catfile('hdd', 'fixed', 'fixed.img');
-is(locate_asset('hdd', 'fixed.img', mustexist => 1, relative => 1), $expected, 'locate_asset should return fixed path as relative');
+is(locate_asset('hdd', 'fixed.img', mustexist => 1, relative => 1),
+    $expected, 'locate_asset should return fixed path as relative');
 
 # transient repo asset
 $expected = catfile($OpenQA::Utils::assetdir, 'repo', 'tmprepo');

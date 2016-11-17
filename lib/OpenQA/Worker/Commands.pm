@@ -43,11 +43,13 @@ sub websocket_commands {
         my $ua = Mojo::UserAgent->new;
         if ($jobid) {
             if (!$job) {
-                printf STDERR 'Received command %s for job %u, but we do not have any assigned. Ignoring!%s', $type, $jobid, "\n";
+                printf STDERR 'Received command %s for job %u, but we do not have any assigned. Ignoring!%s', $type,
+                  $jobid, "\n";
                 return;
             }
             elsif ($jobid ne $job->{id}) {
-                printf STDERR 'Received command %s for different job id %u (our %u). Ignoring!%s', $type, $jobid, $job->{id}, "\n";
+                printf STDERR 'Received command %s for different job id %u (our %u). Ignoring!%s', $type, $jobid,
+                  $job->{id}, "\n";
                 return;
             }
         }

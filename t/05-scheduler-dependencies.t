@@ -49,7 +49,8 @@ sub job_get {
 
 sub job_get_deps_rs {
     my ($id) = @_;
-    my $job = $schema->resultset("Jobs")->search({'me.id' => $id}, {prefetch => ['settings', 'parents', 'children']})->first;
+    my $job
+      = $schema->resultset("Jobs")->search({'me.id' => $id}, {prefetch => ['settings', 'parents', 'children']})->first;
     return $job;
 }
 
@@ -172,8 +173,8 @@ is($job->{id},                  $jobF->id, "jobF");                        #dire
 is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
 
 $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w4_id);
-is($job->{id},                  $jobA->id, "jobA");                        # E is direct child of C, but A and D must be started first
-is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
+is($job->{id}, $jobA->id, "jobA");    # E is direct child of C, but A and D must be started first
+is($job->{settings}->{NICVLAN}, 1, "same vlan for whole group");
 
 $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w5_id);
 is($job->{id},                  $jobD->id, "jobD");                        # direct child of A
@@ -462,7 +463,8 @@ my $jobY2 = $jobY->auto_duplicate;
 # X2 <---- Y2
 # done    sch.
 
-is_deeply($jobY2->to_hash(deps => 1)->{parents}, {Chained => [$jobX2->id], Parallel => []}, 'jobY2 parent is now jobX2');
+is_deeply($jobY2->to_hash(deps => 1)->{parents}, {Chained => [$jobX2->id], Parallel => []},
+    'jobY2 parent is now jobX2');
 is($jobX2->{clone_id}, undef, "X no clone");
 is($jobY2->clone_id,   undef, "Y no clone");
 
@@ -646,7 +648,8 @@ my $jobR2 = job_get_deps($jobR->clone->id);
 my $jobT2 = job_get_deps($jobT->clone->id);
 
 my @sorted_got = sort(@{$jobQ->{children}->{Chained}});
-my @sorted_exp = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id}, $jobW->id, $jobU->id, $jobR->id, $jobT->id));
+my @sorted_exp
+  = sort(($jobW2->{id}, $jobU2->id, $jobR2->{id}, $jobT2->{id}, $jobW->id, $jobU->id, $jobR->id, $jobT->id));
 is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs');
 
 @sorted_got = sort(@{$jobT2->{parents}->{Parallel}});
@@ -654,11 +657,19 @@ is_deeply(\@sorted_got, \@sorted_exp, 'jobQ is chained parent to all jobs');
 is_deeply(\@sorted_got, \@sorted_exp, 'jobT is parallel child of all jobs except jobQ');
 
 is_deeply($jobW2->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobW2 has no child dependency to sibling');
-is_deeply($jobU2->to_hash(deps => 1)->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobU2 has no child dependency to sibling');
+is_deeply(
+    $jobU2->to_hash(deps => 1)->{children},
+    {Chained => [], Parallel => [$jobT2->{id}]},
+    'jobU2 has no child dependency to sibling'
+);
 is_deeply($jobR2->{children}, {Chained => [], Parallel => [$jobT2->{id}]}, 'jobR2 has no child dependency to sibling');
 
 is_deeply($jobW2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobW2 has no parent dependency to sibling');
-is_deeply($jobU2->to_hash(deps => 1)->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobU2 has no parent dependency to sibling');
+is_deeply(
+    $jobU2->to_hash(deps => 1)->{parents},
+    {Chained => [$jobQ->{id}], Parallel => []},
+    'jobU2 has no parent dependency to sibling'
+);
 is_deeply($jobR2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobR2 has no parent dependency to sibling');
 
 # check cloning of clones
@@ -848,7 +859,11 @@ is_deeply($jobD2_h->{parents}->{Chained}, [$jobA2->id], 'jobD2 has jobA2 as chai
 is($jobD2_h->{settings}{TEST}, $jobD->TEST, 'jobD2 test and jobD test are equal');
 
 my $jobA2_h = job_get_deps($jobA2->id);
-is_deeply($jobA2_h->{children}->{Chained}, [$jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id}], 'jobA2 has jobB2, jobC2 and jobD2 as children');
+is_deeply(
+    $jobA2_h->{children}->{Chained},
+    [$jobB2_h->{id}, $jobC2_h->{id}, $jobD2_h->{id}],
+    'jobA2 has jobB2, jobC2 and jobD2 as children'
+);
 
 # situation parent is done, children running -> parent is cloned -> parent is running -> parent is cloned. Check all children has new parent
 # A <- B

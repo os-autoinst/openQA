@@ -129,7 +129,11 @@ sub startup {
                 $c->app->sessions->secure(1);
             }
             if (my $days = $c->app->config->{global}->{hsts}) {
-                $c->res->headers->header('Strict-Transport-Security', sprintf 'max-age=%d; includeSubDomains', $days * 24 * 60 * 60);
+                $c->res->headers->header(
+                    'Strict-Transport-Security',
+                    sprintf 'max-age=%d; includeSubDomains',
+                    $days * 24 * 60 * 60
+                );
             }
             $c->stash('job_groups_and_parents', job_groups_and_parents);
         });
@@ -368,12 +372,15 @@ sub startup {
     $api_r_job->post('/mutex/:name')->name('apiv1_mutex_action')->to('locks#mutex_action');
     # api/v1/barriers/
     $api_r_job->post('/barrier')->name('apiv1_barrier_create')->to('locks#barrier_create');
-    $api_r_job->post('/barrier/:name', [name => qr/[0-9a-zA-Z_]+/])->name('apiv1_barrier_wait')->to('locks#barrier_wait');
-    $api_r_job->delete('/barrier/:name', [name => qr/[0-9a-zA-Z_]+/])->name('apiv1_barrier_destroy')->to('locks#barrier_destroy');
+    $api_r_job->post('/barrier/:name', [name => qr/[0-9a-zA-Z_]+/])->name('apiv1_barrier_wait')
+      ->to('locks#barrier_wait');
+    $api_r_job->delete('/barrier/:name', [name => qr/[0-9a-zA-Z_]+/])->name('apiv1_barrier_destroy')
+      ->to('locks#barrier_destroy');
 
     # api/v1/mm
     my $mm_api = $api_r_job->route('/mm');
-    $mm_api->get('/children/:status' => [status => [qw/running scheduled done/]])->name('apiv1_mm_running_children')->to('mm#get_children_status');
+    $mm_api->get('/children/:status' => [status => [qw/running scheduled done/]])->name('apiv1_mm_running_children')
+      ->to('mm#get_children_status');
     $mm_api->get('/children')->name('apiv1_mm_children')->to('mm#get_children');
     $mm_api->get('/parents')->name('apiv1_mm_parents')->to('mm#get_parents');
 

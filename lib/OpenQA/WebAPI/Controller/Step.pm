@@ -80,7 +80,8 @@ sub needle_url {
 
     if (defined($jsonfile) && $jsonfile) {
         if (defined($version) && $version) {
-            $self->url_for('needle_file', distri => $distri, name => $name)->query(version => $version, jsonfile => $jsonfile);
+            $self->url_for('needle_file', distri => $distri, name => $name)
+              ->query(version => $version, jsonfile => $jsonfile);
         }
         else {
             $self->url_for('needle_file', distri => $distri, name => $name)->query(jsonfile => $jsonfile);
@@ -176,7 +177,8 @@ sub edit {
         my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
 
         if (!$needle) {
-            my $error_message = sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion);
+            my $error_message
+              = sprintf("Could not find needle: %s for %s %s", $module_detail->{needle}, $distribution, $dversion);
             $self->app->log->error($error_message);
             push(@error_messages, $error_message);
         }
@@ -184,16 +186,18 @@ sub edit {
             my $matched = {
                 name           => $module_detail->{needle},
                 suggested_name => $self->_timestamp($module_detail->{needle}),
-                imageurl       => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json})->to_string,
-                imagename      => basename($needle->{image}),
-                imagedir       => dirname($needle->{image}),
-                imagedistri    => $needle->{distri},
-                imageversion   => $needle->{version},
-                area           => $needle->{area},
-                tags           => $needle->{tags},
-                json       => $needle->{json}       || "",
-                properties => $needle->{properties} || [],
-                matches    => $screenshot->{matches}};
+                imageurl =>
+                  $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json})
+                  ->to_string,
+                imagename    => basename($needle->{image}),
+                imagedir     => dirname($needle->{image}),
+                imagedistri  => $needle->{distri},
+                imageversion => $needle->{version},
+                area         => $needle->{area},
+                tags         => $needle->{tags},
+                json         => $needle->{json} || "",
+                properties   => $needle->{properties} || [],
+                matches      => $screenshot->{matches}};
             calc_min_similarity($matched, $module_detail->{area});
             $matched->{title} = $matched->{min_similarity} . "%: " . $matched->{name};
             push(@needles, $matched);
@@ -234,7 +238,8 @@ sub edit {
             $needleinfo = needle_info($needlename, $distribution, $dversion || '', $needle->{json});
 
             if (!defined $needleinfo) {
-                my $error_message = sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || '');
+                my $error_message
+                  = sprintf("Could not parse needle: %s for %s %s", $needlename, $distribution, $dversion || '');
                 $self->app->log->error($error_message);
                 push(@error_messages, $error_message);
 
@@ -248,17 +253,18 @@ sub edit {
                 name           => $needlename,
                 title          => $needlename,
                 suggested_name => $self->_timestamp($needlename),
-                imageurl       => $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json})->to_string,
-                imagename      => basename($needleinfo->{image}),
-                imagedir       => dirname($needleinfo->{image}),
-                imagedistri    => $needleinfo->{distri},
-                imageversion   => $needleinfo->{version},
-                tags           => $needleinfo->{tags},
-                area           => $needleinfo->{area},
-                json       => $needleinfo->{json}       || "",
-                properties => $needleinfo->{properties} || [],
-                matches    => [],
-                broken     => $needleinfo->{broken}};
+                imageurl =>
+                  $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json})->to_string,
+                imagename    => basename($needleinfo->{image}),
+                imagedir     => dirname($needleinfo->{image}),
+                imagedistri  => $needleinfo->{distri},
+                imageversion => $needleinfo->{version},
+                tags         => $needleinfo->{tags},
+                area         => $needleinfo->{area},
+                json         => $needleinfo->{json} || "",
+                properties   => $needleinfo->{properties} || [],
+                matches      => [],
+                broken       => $needleinfo->{broken}};
             push(@needles, $needlehash) unless $needlehash->{broken};
             for my $match (@{$needle->{area}}) {
                 $area = {
@@ -525,7 +531,8 @@ sub save_needle_ajax {
                 return $self->render(json => {error => "$needledir is not a git repo"});
             }
         }
-        $self->emit_event('openqa_needle_modify', {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
+        $self->emit_event('openqa_needle_modify',
+            {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
         my $info = {info => "Needle $needlename created/updated."};
         if ($job->can_be_duplicated) {
             $info->{restart} = $self->url_for('apiv1_restart', jobid => $job->id);
@@ -587,8 +594,9 @@ sub viewimg {
         my $needle = needle_info($module_detail->{needle}, $distribution, $dversion, $module_detail->{json});
         if ($needle) {    # possibly missing/broken file
             my $info = {
-                name    => $module_detail->{needle},
-                image   => $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json}),
+                name => $module_detail->{needle},
+                image =>
+                  $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json}),
                 areas   => $needle->{area},
                 matches => []};
             calc_matches($info, $module_detail->{area});

@@ -69,7 +69,9 @@ __PACKAGE__->add_unique_constraint([qw/name/]);
 
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->has_many(children => 'OpenQA::Schema::Result::JobGroups', 'parent_id', {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
+__PACKAGE__->has_many(
+    children => 'OpenQA::Schema::Result::JobGroups',
+    'parent_id', {order_by => [{-asc => 'sort_order'}, {-asc => 'name'}]});
 
 around 'default_size_limit_gb' => sub {
     my ($orig, $self) = @_;
@@ -83,7 +85,8 @@ around 'default_keep_logs_in_days' => sub {
 
 around 'default_keep_important_logs_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('default_keep_important_logs_in_days') // OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS;
+    return $self->get_column('default_keep_important_logs_in_days')
+      // OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_LOGS_IN_DAYS;
 };
 
 around 'default_keep_results_in_days' => sub {
@@ -93,7 +96,8 @@ around 'default_keep_results_in_days' => sub {
 
 around 'default_keep_important_results_in_days' => sub {
     my ($orig, $self) = @_;
-    return $self->get_column('default_keep_important_results_in_days') // OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS;
+    return $self->get_column('default_keep_important_results_in_days')
+      // OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS;
 };
 
 around 'default_priority' => sub {

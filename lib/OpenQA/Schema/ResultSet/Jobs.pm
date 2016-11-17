@@ -233,7 +233,7 @@ sub complex_query {
                 'me.result' => {    # these results should be hidden by default
                     -not_in => [
                         OpenQA::Schema::Result::Jobs::OBSOLETED,
-                        # OpenQA::Schema::Result::Jobs::USER_CANCELLED  I think USER_CANCELLED jobs should be available for restart
+             # OpenQA::Schema::Result::Jobs::USER_CANCELLED  I think USER_CANCELLED jobs should be available for restart
                     ]}});
     }
     if ($scope eq 'current') {
@@ -340,8 +340,9 @@ sub cancel_by_settings {
         # ... or belong to a tagged build, i.e. is considered important
         # this might be even the tag 'not important' but not much is lost if
         # we still not cancel these builds
-        my $groups_query = $jobs->get_column('group_id')->as_query;
-        my @important_builds = grep defined, map { ($_->tag)[0] } $schema->resultset('Comments')->search({'me.group_id' => {-in => $groups_query}});
+        my $groups_query     = $jobs->get_column('group_id')->as_query;
+        my @important_builds = grep defined,
+          map { ($_->tag)[0] } $schema->resultset('Comments')->search({'me.group_id' => {-in => $groups_query}});
         my @unimportant_jobs;
         while (my $j = $jobs_to_cancel->next) {
             next if grep ($j->BUILD eq $_, @important_builds);

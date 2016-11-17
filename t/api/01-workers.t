@@ -45,7 +45,10 @@ $t->app($app);
 
 my $ret;
 
-like(warning { $ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu'}) }, qr/missing apisecret/);
+like(
+    warning { $ret = $t->post_ok('/api/v1/workers', form => {host => 'localhost', instance => 1, backend => 'qemu'}) },
+    qr/missing apisecret/
+);
 is($ret->tx->res->code, 403, "register worker without API key fails");
 
 $t->ua(OpenQA::Client->new(api => 'testapi')->ioloop(Mojo::IOLoop->singleton));

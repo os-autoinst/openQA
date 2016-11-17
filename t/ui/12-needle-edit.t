@@ -58,7 +58,8 @@ remove_tree($dir);
 make_path($dir);
 
 # default needle JSON content
-my $default_json = '{"area" : [{"height" : 217,"type" : "match","width" : 384,"xpos" : 0,"ypos" : 0}],"tags" : ["ENV-VIDEOMODE-text","inst-timezone"]}';
+my $default_json
+  = '{"area" : [{"height" : 217,"type" : "match","width" : 384,"xpos" : 0,"ypos" : 0}],"tags" : ["ENV-VIDEOMODE-text","inst-timezone"]}';
 
 # create a fake json
 my $filen = "$dir/inst-timezone-text.json";
@@ -91,7 +92,11 @@ sub goto_editpage() {
     is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
 
     $driver->get($baseurl . "tests/99946");
-    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
+    is(
+        $driver->get_title(),
+        'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
+        'tests/99946 followed'
+    );
 
     open_needle_editor;
 
@@ -104,14 +109,15 @@ sub editpage_layout_check() {
     t::ui::PhantomTest::wait_for_ajax;
 
     # layout check
-    is($driver->find_element('#tags_select',  'css')->get_value(),   'inst-timezone-text', "inst-timezone tags selected");
-    is($driver->find_element('#image_select', 'css')->get_value(),   'screenshot',         "Screenshot background selected");
-    is($driver->find_element('#area_select',  'css')->get_value(),   'inst-timezone-text', "inst-timezone areas selected");
-    is($driver->find_element('#take_matches', 'css')->is_selected(), 1,                    "Matches selected");
+    is($driver->find_element('#tags_select', 'css')->get_value(), 'inst-timezone-text', "inst-timezone tags selected");
+    is($driver->find_element('#image_select', 'css')->get_value(), 'screenshot', "Screenshot background selected");
+    is($driver->find_element('#area_select', 'css')->get_value(), 'inst-timezone-text', "inst-timezone areas selected");
+    is($driver->find_element('#take_matches', 'css')->is_selected(), 1, "Matches selected");
 
     # check needle suggested name
     my $today = strftime("%Y%m%d", gmtime(time));
-    is($driver->find_element('#needleeditor_name', 'css')->get_value(), "inst-timezone-text-$today", "has correct needle name");
+    is($driver->find_element('#needleeditor_name', 'css')->get_value(),
+        "inst-timezone-text-$today", "has correct needle name");
 
     # ENV-VIDEOMODE-text and inst-timezone tag are selected
     is($driver->find_element('//input[@value="inst-timezone"]')->is_selected(), 1, "tag selected");
@@ -153,9 +159,17 @@ sub change_needle_value($$) {
     $decode_textarea = decode_json($elem->get_value());
 
     $elem = $driver->find_element('#needleeditor_canvas', 'css');
-    $driver->mouse_move_to_location(element => $elem, xoffset => $decode_textarea->{area}[0]->{xpos} + $pre_offset, yoffset => $decode_textarea->{area}[0]->{ypos} + $pre_offset);
+    $driver->mouse_move_to_location(
+        element => $elem,
+        xoffset => $decode_textarea->{area}[0]->{xpos} + $pre_offset,
+        yoffset => $decode_textarea->{area}[0]->{ypos} + $pre_offset
+    );
     $driver->button_down();
-    $driver->mouse_move_to_location(element => $elem, xoffset => $decode_textarea->{area}[0]->{xpos} + $xoffset + $pre_offset, yoffset => $decode_textarea->{area}[0]->{ypos} + $yoffset + $pre_offset);
+    $driver->mouse_move_to_location(
+        element => $elem,
+        xoffset => $decode_textarea->{area}[0]->{xpos} + $xoffset + $pre_offset,
+        yoffset => $decode_textarea->{area}[0]->{ypos} + $yoffset + $pre_offset
+    );
     $driver->button_up();
     t::ui::PhantomTest::wait_for_ajax;
     $elem = $driver->find_element('#needleeditor_textarea', 'css');
@@ -175,7 +189,8 @@ sub change_needle_value($$) {
     is($decode_new_textarea->{area}[0]->{type}, "ocr", "type is ocr");
     $driver->double_click;    # the match type change back to match
 
-    unlike($driver->find_element('#change-match', 'css')->get_attribute('class'), qr/disabled/, "match level now enabled");
+    unlike($driver->find_element('#change-match', 'css')->get_attribute('class'),
+        qr/disabled/, "match level now enabled");
 
     # test match level
     $driver->find_element('#change-match', 'css')->click();
@@ -210,18 +225,30 @@ sub overwrite_needle($) {
     my $diag;
     $diag = $driver->find_element('#modal-overwrite', 'css');
     is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "We can see the overwrite dialog");
-    is($driver->find_child_element($diag, '.modal-title', 'css')->get_text(), "Sure to overwrite test-newneedle?", "Needle part of the title");
+    is(
+        $driver->find_child_element($diag, '.modal-title', 'css')->get_text(),
+        "Sure to overwrite test-newneedle?",
+        "Needle part of the title"
+    );
 
     $driver->find_element('#modal-overwrite-confirm', 'css')->click();
 
     t::ui::PhantomTest::wait_for_ajax;
-    is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated. (restart job)", "highlight appears correct");
+    is(
+        $driver->find_element('#flash-messages span', 'css')->get_text(),
+        "Needle test-newneedle created/updated. (restart job)",
+        "highlight appears correct"
+    );
     ok(-f "$dir/$needlename.json", "$needlename.json overwritten");
 
     $driver->find_element('#flash-messages span a', 'css')->click();
     # restart is an ajax call, for some reason the check/sleep interval must be at least 1 sec for this call
     t::ui::PhantomTest::wait_for_ajax(1);
-    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', "no longer on needle editor");
+    is(
+        $driver->get_title(),
+        'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
+        "no longer on needle editor"
+    );
 }
 
 # start testing
@@ -244,7 +271,11 @@ $driver->find_element('#save', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
 
 # check state highlight appears with valid content
-is($driver->find_element('#flash-messages span', 'css')->get_text(), "Needle test-newneedle created/updated. (restart job)", "highlight appears correct");
+is(
+    $driver->find_element('#flash-messages span', 'css')->get_text(),
+    "Needle test-newneedle created/updated. (restart job)",
+    "highlight appears correct"
+);
 # check files are exists
 ok(-f "$dir/$needlename.json", "$needlename.json created");
 ok(-f "$dir/$needlename.png",  "$needlename.png created");
@@ -277,18 +308,28 @@ my $match = 0;
 for my $tag (@$new_tags) {
     $match = 1 if ($tag eq 'test-overwritetag');
 }
-is($match,                            1,                                                "found new tag in new needle");
-is($decode_json->{'area'}[0]->{xpos}, $decode_textarea->{'area'}[0]->{xpos} + $xoffset, "new xpos stored to new needle");
-is($decode_json->{'area'}[0]->{ypos}, $decode_textarea->{'area'}[0]->{ypos} + $yoffset, "new ypos stored to new needle");
+is($match, 1, "found new tag in new needle");
+is($decode_json->{'area'}[0]->{xpos}, $decode_textarea->{'area'}[0]->{xpos} + $xoffset,
+    "new xpos stored to new needle");
+is($decode_json->{'area'}[0]->{ypos}, $decode_textarea->{'area'}[0]->{ypos} + $yoffset,
+    "new ypos stored to new needle");
 
 subtest 'Deletion of needle is handled gracefully' => sub {
     # re-open the needle editor after deleting needle
     unlink $filen;
     $driver->get($baseurl . "tests/99946");
-    is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
+    is(
+        $driver->get_title(),
+        'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
+        'tests/99946 followed'
+    );
     open_needle_editor;
     is($driver->get_title(), 'openQA: Needle Editor', 'needle editor still shows up');
-    is($driver->find_element('#editor_warnings span', 'css')->get_text(), 'Could not find needle: inst-timezone-text for opensuse 13.1', 'warning about deleted needle is displayed');
+    is(
+        $driver->find_element('#editor_warnings span', 'css')->get_text(),
+        'Could not find needle: inst-timezone-text for opensuse 13.1',
+        'warning about deleted needle is displayed'
+    );
 };
 
 t::ui::PhantomTest::kill_phantom();
@@ -299,8 +340,11 @@ subtest '(created) needles can be accessed over API' => sub {
     my @warnings = warnings { $t->get_ok('/needles/opensuse/doesntexist.png')->status_is(404) };
     map { like($_, qr/No such file or directory/, 'expected warning') } @warnings;
 
-    $t->get_ok('/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/test-newneedle.json')->status_is(200)->content_type_is('image/png');
-    @warnings = warnings { $t->get_ok('/needles/opensuse/test-newneedle.png?jsonfile=/try/to/break_out.json')->status_is(403) };
+    $t->get_ok(
+        '/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/test-newneedle.json')
+      ->status_is(200)->content_type_is('image/png');
+    @warnings
+      = warnings { $t->get_ok('/needles/opensuse/test-newneedle.png?jsonfile=/try/to/break_out.json')->status_is(403) };
     map { like($_, qr/is not in a subdir of/, 'expected warning') } @warnings;
 };
 

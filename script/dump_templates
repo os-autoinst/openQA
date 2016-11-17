@@ -129,7 +129,11 @@ sub usage($) {
     exit $_[0];
 }
 
-GetOptions(\%options, "json", "host=s", "apibase=s", "apikey:s", "apisecret:s", "group=s@", "name=s@", "test=s@", "product=s@", "machine=s@", "full", "help|h",) or usage(1);
+GetOptions(
+    \%options,  "json",    "host=s",  "apibase=s",  "apikey:s",   "apisecret:s",
+    "group=s@", "name=s@", "test=s@", "product=s@", "machine=s@", "full",
+    "help|h",
+) or usage(1);
 
 usage(0) if $options{help};
 

@@ -84,7 +84,8 @@ sub compute_build_results {
         group_by => [qw(BUILD)]};
     my $search_filter = {group_id => {in => $group_ids}};
     if ($time_limit_days) {
-        $search_filter->{t_created} = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
+        $search_filter->{t_created}
+          = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
     }
     if ($tags) {
         $search_filter->{BUILD} = {-in => [keys %$tags]};
@@ -102,9 +103,19 @@ sub compute_build_results {
                 clone_id => undef,
             },
             {order_by => 'me.id DESC'});
-        my %jr = (oldest => DateTime->now, passed => 0, failed => 0, unfinished => 0, labeled => 0, softfailed => 0, skipped => 0, total => 0);
+        my %jr = (
+            oldest     => DateTime->now,
+            passed     => 0,
+            failed     => 0,
+            unfinished => 0,
+            labeled    => 0,
+            softfailed => 0,
+            skipped    => 0,
+            total      => 0
+        );
         for my $child (@children) {
-            $jr{children}->{$child->id} = {passed => 0, failed => 0, unfinished => 0, labeled => 0, softfailed => 0, skipped => 0, total => 0};
+            $jr{children}->{$child->id}
+              = {passed => 0, failed => 0, unfinished => 0, labeled => 0, softfailed => 0, skipped => 0, total => 0};
         }
 
         my %seen;

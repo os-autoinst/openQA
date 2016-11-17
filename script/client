@@ -90,7 +90,8 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options, "host=s", "apibase=s", "json", "verbose|v", "apikey:s", "apisecret:s", "params=s", "help|h|?",) or usage(1);
+GetOptions(\%options, "host=s", "apibase=s", "json", "verbose|v", "apikey:s", "apisecret:s", "params=s", "help|h|?",)
+  or usage(1);
 
 usage(1) unless @ARGV;
 $options{host}    ||= 'localhost';

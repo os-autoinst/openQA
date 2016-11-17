@@ -112,7 +112,8 @@ sub list_ajax {
     my @jobs = $self->db->resultset("Jobs")->search(
         {'me.id' => {in => \@ids}},
         {
-            columns  => [qw/me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST state clone_id test result group_id t_finished/],
+            columns =>
+              [qw/me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST state clone_id test result group_id t_finished/],
             order_by => ['me.t_finished DESC, me.id DESC'],
             prefetch => [qw/children parents/],
         })->all;
@@ -301,7 +302,9 @@ sub _show {
     my $previous_jobs_rs = $self->db->resultset("Jobs")->search({-and => \@conds}, \%attrs);
     my @previous_jobs;
     while (my $prev = $previous_jobs_rs->next) {
-        $self->app->log->debug("Previous result job " . $prev->id . ": " . join('-', map { $prev->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS));
+        $self->app->log->debug("Previous result job "
+              . $prev->id . ": "
+              . join('-', map { $prev->get_column($_) } OpenQA::Schema::Result::Jobs::SCENARIO_WITH_MACHINE_KEYS));
         push(@previous_jobs, $prev);
     }
     my $job_labels = $self->_job_labels(\@previous_jobs);
@@ -339,7 +342,8 @@ sub _job_labels {
     my ($self, $jobs) = @_;
 
     my %labels;
-    my $c = $self->db->resultset("Comments")->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
+    my $c
+      = $self->db->resultset("Comments")->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
     # previous occurences of bug or label are overwritten here so the
     # behaviour for multiple bugs or label references within one job is
     # undefined.

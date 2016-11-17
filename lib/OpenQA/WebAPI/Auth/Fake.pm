@@ -37,14 +37,20 @@ sub auth_login {
     my $headers = $self->req->headers;
 
     my %users;
-    $users{Demo}   = {fullname => 'Demo User', email => 'demo@user.org',      admin => 1, operator => 1, key => '1234567890ABCDEF'};
-    $users{nobody} = {fullname => 'Nobody',    email => 'nobody@example.com', admin => 0, operator => 0, key => '1111111111111111'};
+    $users{Demo}
+      = {fullname => 'Demo User', email => 'demo@user.org', admin => 1, operator => 1, key => '1234567890ABCDEF'};
+    $users{nobody}
+      = {fullname => 'Nobody', email => 'nobody@example.com', admin => 0, operator => 0, key => '1111111111111111'};
 
     my $user     = $self->req->param('user') || 'Demo';
     my $userinfo = $users{$user}             || die "No such user";
     $userinfo->{username} = $user;
 
-    $user = OpenQA::Schema::Result::Users->create_user($userinfo->{username}, $self->db, email => $userinfo->{email}, nickname => $userinfo->{username}, fullname => $userinfo->{fullname});
+    $user = OpenQA::Schema::Result::Users->create_user(
+        $userinfo->{username}, $self->db,
+        email    => $userinfo->{email},
+        nickname => $userinfo->{username},
+        fullname => $userinfo->{fullname});
     $user->is_admin($userinfo->{admin});
     $user->is_operator($userinfo->{operator});
     $user->update;

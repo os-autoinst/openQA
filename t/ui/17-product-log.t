@@ -48,10 +48,20 @@ $t->get_ok($url . '/admin/productlog')->status_is(200);
 # XXX: Test::Mojo loses it's app when setting a new ua
 # https://github.com/kraih/mojo/issues/598
 my $app = $t->app;
-$t->ua(OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
+$t->ua(
+    OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
-my $ret = $t->post_ok($url . '/api/v1/isos', form => {ISO => 'whatever.iso', DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'})->status_is(200);
+my $ret = $t->post_ok(
+    $url . '/api/v1/isos',
+    form => {
+        ISO     => 'whatever.iso',
+        DISTRI  => 'opensuse',
+        VERSION => '13.1',
+        FLAVOR  => 'DVD',
+        ARCH    => 'i586',
+        BUILD   => '0091'
+    })->status_is(200);
 is($ret->tx->res->json->{count}, 10, '10 new jobs created');
 
 # Log in as Demo in phantomjs webui

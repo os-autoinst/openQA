@@ -125,7 +125,11 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options, "from=s", "host=s", "dir=s", "apikey:s", "apisecret:s", "verbose|v", "skip-deps", "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",) or usage(1);
+GetOptions(
+    \%options,           "from=s",        "host=s",               "dir=s",
+    "apikey:s",          "apisecret:s",   "verbose|v",            "skip-deps",
+    "skip-chained-deps", "skip-download", "parental-inheritance", "help|h",
+) or usage(1);
 
 usage(1) unless @ARGV;
 usage(1) unless exists $options{'from'};

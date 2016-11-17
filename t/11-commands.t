@@ -57,7 +57,8 @@ for my $cmd (@valid_commands) {
 }
 
 #issue invalid commands
-stderr_like { $worker->send_command(command => 'foo', job_id => 0); } qr/\[ERROR\] Trying to issue unknown command "foo" for worker "localhost:"/;
+stderr_like { $worker->send_command(command => 'foo', job_id => 0); }
+qr/\[ERROR\] Trying to issue unknown command "foo" for worker "localhost:"/;
 isnt($OpenQA::WebSockets::Server::last_command, 'foo', 'refuse invalid commands');
 
 done_testing();

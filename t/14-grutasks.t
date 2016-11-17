@@ -160,8 +160,14 @@ subtest 'reduce_result gru task cleans up logs' => sub {
 subtest 'migrate_images' => sub {
     File::Path::remove_tree('t/images/aa7/');
     File::Path::make_path('t/data/openqa/images/aa/.thumbs');
-    copy('t/images/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png', 't/data/openqa/images/aa/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png');
-    copy('t/images/347/da6/61d0c3faf37d49d33b6fc308f2.png',         't/data/openqa/images/aa//7da661d0c3faf37d49d33b6fc308f2.png');
+    copy(
+        't/images/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png',
+        't/data/openqa/images/aa/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png'
+    );
+    copy(
+        't/images/347/da6/61d0c3faf37d49d33b6fc308f2.png',
+        't/data/openqa/images/aa//7da661d0c3faf37d49d33b6fc308f2.png'
+    );
     ok(!-l 't/data/openqa/images/aa/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png', 'no link yet');
 
     run_gru('migrate_images' => {prefix => 'aa'});
@@ -173,21 +179,33 @@ subtest 'migrate_images' => sub {
 
 subtest 'relink_testresults' => sub {
     File::Path::make_path('t/data/openqa/images/34/.thumbs');
-    symlink('../../../images/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png', 't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png');
+    symlink(
+        '../../../images/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png',
+        't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png'
+    );
 
     # setup
     unlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
     File::Path::make_path('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/');
-    symlink('../../../images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png', 't/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
-    like(readlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'), qr{\Q/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png\E}, 'link correct');
+    symlink('../../../images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png',
+        't/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png');
+    like(
+        readlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'),
+        qr{\Q/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png\E},
+        'link correct'
+    );
 
     run_gru('relink_testresults' => {max_job => 1000000, min_job => 0});
-    like(readlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'), qr{\Qimages/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png\E}, 'relinked');
+    like(readlink('t/data/openqa/testresults/00099937-opensuse-13.1-DVD-i586-Build0091-kde/.thumbs/zypper_up-3.png'),
+        qr{\Qimages/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png\E}, 'relinked');
 };
 
 subtest 'rm_compat_symlinks' => sub {
     File::Path::make_path(join('/', $OpenQA::Utils::imagesdir, '34', '.thumbs'));
-    symlink('../../../images/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png', 't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png');
+    symlink(
+        '../../../images/347/da6/.thumbs/61d0c3faf37d49d33b6fc308f2.png',
+        't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png'
+    );
 
     ok(-e 't/data/openqa/images/34/.thumbs/7da661d0c3faf37d49d33b6fc308f2.png', 'thumb is there');
     run_gru('rm_compat_symlinks' => {});

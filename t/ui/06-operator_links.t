@@ -81,7 +81,8 @@ is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo'
 $driver->find_element('#user-action a', 'css')->click();
 $driver->find_element('Users',          'link_text')->click;
 $driver->execute_script('$("#users").off("change")');
-$driver->execute_script('$("#users").on("change", "input[name=\"role\"]:radio", function() {$(this).parent("form").submit();})');
+$driver->execute_script(
+    '$("#users").on("change", "input[name=\"role\"]:radio", function() {$(this).parent("form").submit();})');
 $driver->find_element('//tr[./td[@class="nick" and text()="Demo"]]/td[@class="role"]//label[2]')->click;
 
 # refresh and return to admin pages

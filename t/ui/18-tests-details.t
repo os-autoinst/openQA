@@ -44,10 +44,15 @@ is($driver->get_title(), "openQA", "back on main page");
 is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 $driver->get($baseurl . "tests/99946");
-is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
+is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
+    'tests/99946 followed');
 
 $driver->find_element('installer_timezone', 'link_text')->click();
-is($driver->get_current_url(), $baseurl . "tests/99946/modules/installer_timezone/steps/1/src", "on src page for installer_timezone test");
+is(
+    $driver->get_current_url(),
+    $baseurl . "tests/99946/modules/installer_timezone/steps/1/src",
+    "on src page for installer_timezone test"
+);
 
 is($driver->find_element('.cm-comment', 'css')->get_text(), '#!/usr/bin/perl -w', "we have a perl comment");
 
@@ -64,7 +69,11 @@ is(current_tab, 'Details', 'back to details tab');
 $driver->find_element('[title="wait_serial"]', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
 ok($driver->find_element('#preview_container_out', 'css')->is_displayed(), "preview window opens on click");
-like($driver->find_element('#preview_container_in', 'css')->get_text(), qr/wait_serial expected/, "Preview text with wait_serial output shown");
+like(
+    $driver->find_element('#preview_container_in', 'css')->get_text(),
+    qr/wait_serial expected/,
+    "Preview text with wait_serial output shown"
+);
 like($driver->get_current_url(), qr/#step/, "current url contains #step hash");
 $driver->find_element('[title="wait_serial"]', 'css')->click();
 ok($driver->find_element('#preview_container_out', 'css')->is_hidden(), "preview window closed after clicking again");
@@ -72,7 +81,8 @@ unlike($driver->get_current_url(), qr/#step/, "current url doesn't contain #step
 
 $driver->find_element('[href="#step/bootloader/1"]', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
-like($driver->find_element('.step_actions .fa-info-circle', 'css')->get_attribute('data-content'), qr/inst-bootmenu/, "show searched needle tags");
+like($driver->find_element('.step_actions .fa-info-circle', 'css')->get_attribute('data-content'),
+    qr/inst-bootmenu/, "show searched needle tags");
 $driver->find_element('.step_actions .fa-info-circle', 'css')->click();
 t::ui::PhantomTest::wait_for_ajax;
 ok($driver->find_element('.step_actions .popover', 'css')->is_displayed(), "needle info is a clickable popover");
@@ -102,18 +112,25 @@ subtest 'render bugref links in thumbnail text windows' => sub {
     $driver->get($baseurl . 'tests/99946');
     $driver->find_element('[title="Soft Failed"]', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
-    is($driver->find_element('#preview_container_in', 'css')->get_text(), 'Test bugref bsc#1234', 'bugref text correct');
-    is($driver->find_element('#preview_container_in a', 'css')->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bugref href correct');
+    is($driver->find_element('#preview_container_in', 'css')->get_text(), 'Test bugref bsc#1234',
+        'bugref text correct');
+    is(
+        $driver->find_element('#preview_container_in a', 'css')->get_attribute('href'),
+        'https://bugzilla.suse.com/show_bug.cgi?id=1234',
+        'bugref href correct'
+    );
 };
 
 subtest 'route to latest' => sub {
-    $get = $t->get_ok($baseurl . 'tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')->status_is(200);
+    $get
+      = $t->get_ok($baseurl . 'tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
+      ->status_is(200);
     my $header = $t->tx->res->dom->at('#info_box .panel-heading a');
     is($header->text,   '99963',        'link shows correct test');
     is($header->{href}, '/tests/99963', 'latest link shows tests/99963');
     my $first_detail = $get->tx->res->dom->at('#details tbody > tr ~ tr');
-    is($first_detail->at('.component a')->{href},     '/tests/99963/modules/isosize/steps/1/src', 'correct src link');
-    is($first_detail->at('.links_a a')->{'data-url'}, '/tests/99963/modules/isosize/steps/1',     'correct needle link');
+    is($first_detail->at('.component a')->{href}, '/tests/99963/modules/isosize/steps/1/src', 'correct src link');
+    is($first_detail->at('.links_a a')->{'data-url'}, '/tests/99963/modules/isosize/steps/1', 'correct needle link');
     $get    = $t->get_ok($baseurl . 'tests/latest?flavor=DVD&arch=x86_64&test=kde')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .panel-heading a');
     is($header->{href}, '/tests/99963', '... as long as it is unique');
@@ -129,7 +146,11 @@ subtest 'route to latest' => sub {
 # test /details route
 $driver->get($baseurl . "tests/99946/details");
 $driver->find_element('installer_timezone', 'link_text')->click();
-is($driver->get_current_url(), $baseurl . "tests/99946/modules/installer_timezone/steps/1/src", "on src page from details route");
+is(
+    $driver->get_current_url(),
+    $baseurl . "tests/99946/modules/installer_timezone/steps/1/src",
+    "on src page from details route"
+);
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();

@@ -35,7 +35,8 @@ sub get_children_status {
     }
     my $jobid = $self->stash('job_id');
 
-    my @res = $self->db->resultset('Jobs')->search({'parents.parent_job_id' => $jobid, state => $status}, {columns => ['id'], join => 'parents'});
+    my @res = $self->db->resultset('Jobs')
+      ->search({'parents.parent_job_id' => $jobid, state => $status}, {columns => ['id'], join => 'parents'});
     my @res_ids = map { $_->id } @res;
     return $self->render(json => {jobs => \@res_ids}, status => 200);
 }
@@ -44,7 +45,9 @@ sub get_children {
     my ($self) = @_;
     my $jobid = $self->stash('job_id');
 
-    my @res = $self->db->resultset('Jobs')->search({'parents.parent_job_id' => $jobid, 'parents.dependency' => OpenQA::Schema::Result::JobDependencies::PARALLEL}, {columns => ['id', 'state'], join => 'parents'});
+    my @res = $self->db->resultset('Jobs')->search(
+        {'parents.parent_job_id' => $jobid, 'parents.dependency' => OpenQA::Schema::Result::JobDependencies::PARALLEL},
+        {columns => ['id', 'state'], join => 'parents'});
     my %res_ids = map { ($_->id, $_->state) } @res;
     return $self->render(json => {jobs => \%res_ids}, status => 200);
 }
@@ -53,7 +56,9 @@ sub get_parents {
     my ($self) = @_;
     my $jobid = $self->stash('job_id');
 
-    my @res = $self->db->resultset('Jobs')->search({'children.child_job_id' => $jobid, 'children.dependency' => OpenQA::Schema::Result::JobDependencies::PARALLEL}, {columns => ['id'], join => 'children'});
+    my @res = $self->db->resultset('Jobs')->search(
+        {'children.child_job_id' => $jobid, 'children.dependency' => OpenQA::Schema::Result::JobDependencies::PARALLEL},
+        {columns                 => ['id'], join                  => 'children'});
     my @res_ids = map { $_->id } @res;
     return $self->render(json => {jobs => \@res_ids}, status => 200);
 }

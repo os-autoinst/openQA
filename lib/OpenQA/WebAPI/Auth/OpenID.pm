@@ -102,9 +102,9 @@ sub auth_response {
     }
 
     my $csr = Net::OpenID::Consumer->new(
-        debug           => sub { $self->app->log->debug("Net::OpenID::Consumer: " . join(' ', @_)); },
-        ua              => LWP::UserAgent->new,
-        required_root   => $url,
+        debug         => sub { $self->app->log->debug("Net::OpenID::Consumer: " . join(' ', @_)); },
+        ua            => LWP::UserAgent->new,
+        required_root => $url,
         consumer_secret => $self->app->config->{_openid_secret},
         args            => \%params,
     );
@@ -155,7 +155,12 @@ sub auth_response {
                 }
             }
 
-            my $user = OpenQA::Schema::Result::Users->create_user($vident->{identity}, $self->db, email => $email, nickname => $nickname, fullname => $fullname);
+            my $user = OpenQA::Schema::Result::Users->create_user(
+                $vident->{identity}, $self->db,
+                email    => $email,
+                nickname => $nickname,
+                fullname => $fullname
+            );
 
             $msg = 'verified';
             $self->session->{user} = $vident->{identity};

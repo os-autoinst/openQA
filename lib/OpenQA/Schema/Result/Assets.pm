@@ -269,7 +269,11 @@ sub limit_assets {
         }
         for my $a (@job_assets) {
             my $asset = $assets{$a->asset_id};
-            OpenQA::Utils::log_debug(sprintf "Group %s: %s/%s %s->%s", $g->name, $asset->type, $asset->name, human_readable_size($asset->size // 0), human_readable_size($sizelimit));
+            OpenQA::Utils::log_debug(
+                sprintf "Group %s: %s/%s %s->%s",
+                $g->name, $asset->type, $asset->name,
+                human_readable_size($asset->size // 0),
+                human_readable_size($sizelimit));
             # ignore fixed assets
             next if ($asset->is_fixed);
             $seen_asset{$asset->id} = $g->id;
@@ -290,7 +294,8 @@ sub limit_assets {
         delete $toremove{$id};
     }
     if ($doremove) {
-        my $removes = $app->db->resultset('Assets')->search({id => {in => [sort keys %toremove]}}, {order_by => qw/t_created/});
+        my $removes
+          = $app->db->resultset('Assets')->search({id => {in => [sort keys %toremove]}}, {order_by => qw/t_created/});
         while (my $a = $removes->next) {
             $a->remove_from_disk;
             $a->delete;
@@ -298,7 +303,8 @@ sub limit_assets {
     }
     my $timecond = {"<" => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600, 'UTC')};
 
-    my $assets = $app->db->resultset('Assets')->search({t_created => $timecond, type => [qw(iso hdd repo)], id => {-not_in => [sort keys %seen_asset]}}, {order_by => [qw(t_created)]});
+    my $search = {t_created => $timecond, type => [qw(iso hdd repo)], id => {-not_in => [sort keys %seen_asset]}};
+    my $assets = $app->db->resultset('Assets')->search($search, {order_by => [qw(t_created)]});
     while (my $a = $assets->next) {
         next if is_fixed($a);
         my $delta = $a->t_created->delta_days(DateTime->now)->in_units('days');
@@ -307,7 +313,12 @@ sub limit_assets {
             $a->delete;
         }
         else {
-            OpenQA::Utils::log_warning("Asset " . $a->type . "/" . $a->name . " is not in any job group, will delete in " . (14 - $delta) . " days");
+            OpenQA::Utils::log_warning("Asset "
+                  . $a->type . "/"
+                  . $a->name
+                  . " is not in any job group, will delete in "
+                  . (14 - $delta)
+                  . " days");
         }
     }
     for my $type (qw/iso repo hdd/) {

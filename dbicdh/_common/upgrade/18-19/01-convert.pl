@@ -39,8 +39,12 @@ sub {
 
     # JobModules->result
     $schema->resultset('JobModules')->search({result_id => 0})->update({result => OpenQA::Schema::Result::Jobs::NONE});
-    $schema->resultset('JobModules')->search({result_id => 1})->update({result => OpenQA::Schema::Result::Jobs::PASSED});
-    $schema->resultset('JobModules')->search({result_id => 2})->update({result => OpenQA::Schema::Result::Jobs::FAILED});
-    $schema->resultset('JobModules')->search({result_id => 3})->update({result => OpenQA::Schema::Result::Jobs::INCOMPLETE});
-    $schema->resultset('JobModules')->search({result_id => 4})->update({result => OpenQA::Schema::Result::Jobs::SKIPPED});
+    $schema->resultset('JobModules')->search({result_id => 1})
+      ->update({result => OpenQA::Schema::Result::Jobs::PASSED});
+    $schema->resultset('JobModules')->search({result_id => 2})
+      ->update({result => OpenQA::Schema::Result::Jobs::FAILED});
+    $schema->resultset('JobModules')->search({result_id => 3})
+      ->update({result => OpenQA::Schema::Result::Jobs::INCOMPLETE});
+    $schema->resultset('JobModules')->search({result_id => 4})
+      ->update({result => OpenQA::Schema::Result::Jobs::SKIPPED});
   }

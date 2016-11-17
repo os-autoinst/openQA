@@ -104,7 +104,8 @@ sub update_needle {
             $dir->name($name);
             $dir->insert;
         }
-        $needle ||= $dir->needles->find_or_new({filename => $basename, first_seen_module_id => $module->id}, {key => 'needles_dir_id_filename'});
+        $needle ||= $dir->needles->find_or_new({filename => $basename, first_seen_module_id => $module->id},
+            {key => 'needles_dir_id_filename'});
     }
 
     # normally we would not need that, but the migration is working on the jobs from past backward
@@ -149,16 +150,19 @@ sub scan_old_jobs() {
 
     my $guard = $app->db->txn_scope_guard;
 
-    my $jobs = $app->db->resultset("Jobs")->search({-and => [{id => {'>', $minid}}, {id => {'<=', $maxid}}]}, {order_by => 'me.id ASC'});
+    my $jobs = $app->db->resultset("Jobs")
+      ->search({-and => [{id => {'>', $minid}}, {id => {'<=', $maxid}}]}, {order_by => 'me.id ASC'});
 
-    my $job_modules = $app->db->resultset('JobModules')->search({job_id => {-in => $jobs->get_column('id')->as_query}})->get_column('id')->as_query;
+    my $job_modules = $app->db->resultset('JobModules')->search({job_id => {-in => $jobs->get_column('id')->as_query}})
+      ->get_column('id')->as_query;
 
     # make sure we're not duplicating any previous data
     $app->db->resultset('JobModuleNeedles')->search({job_module_id => {-in => $job_modules}})->delete;
     my %needle_cache;
 
     while (my $job = $jobs->next) {
-        my $modules = $job->modules->search({"me.result" => {'!=', OpenQA::Schema::Result::Jobs::NONE}}, {order_by => 'me.id ASC'});
+        my $modules = $job->modules->search({"me.result" => {'!=', OpenQA::Schema::Result::Jobs::NONE}},
+            {order_by => 'me.id ASC'});
         while (my $module = $modules->next) {
 
             $module->job($job);
