@@ -156,20 +156,13 @@ sub scan_images_links {
 
     # last job is going to delete everything left
     if (!$args->{min_job}) {
-        # the having attribute blocks all - even if the generated SQL is correct (at least for sqlite)
-        # so query all but stop at the first image with more than 0
         my $fns = $schema->resultset('Screenshots')->search_rs(
             {},
             {
                 join     => 'links_outer',
-                select   => ['id', 'filename', {count => 'links_outer.job_id', -as => 'link_count'}],
-                as       => [qw(id filename link_count)],
-                order_by => 'link_count asc',
                 group_by => 'me.id',
-                #having => { 'COUNT(links_outer.job_id)' => { '=', 0 }}
-            });
+                having   => \['COUNT(links_outer.job_id) = 0']});
         while (my $screenshot = $fns->next) {
-            last if ($screenshot->get_column('link_count') > 0);
             $screenshot->delete;
         }
         $schema->resultset('Screenshots')->search(

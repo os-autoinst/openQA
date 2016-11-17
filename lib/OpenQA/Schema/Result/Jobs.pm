@@ -218,6 +218,21 @@ sub delete {
         File::Path::rmtree($self->result_dir());
     }
 
+    my $sls = $self->screenshot_links;
+    my @ids = map { $_->screenshot_id } $sls->all;
+    # delete all references
+    $self->screenshot_links->delete;
+    my $schema = $self->result_source->schema;
+
+    my $fns = $schema->resultset('Screenshots')->search(
+        {id => {-in => \@ids}},
+        {
+            join     => 'links_outer',
+            group_by => 'me.id',
+            having   => \['COUNT(links_outer.job_id) = 0']});
+    while (my $sc = $fns->next) {
+        $sc->delete;
+    }
     return $self->SUPER::delete;
 }
 
