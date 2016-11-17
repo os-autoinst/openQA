@@ -18,6 +18,7 @@ use base qw(DBIx::Class::Core);
 use strict;
 use File::Spec::Functions qw(catfile);
 use OpenQA::Utils qw(log_debug log_warning);
+use Try::Tiny;
 
 __PACKAGE__->table('screenshots');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime));
@@ -80,9 +81,24 @@ sub scan_images {
         }
     }
     closedir($dh);
-    # TODO: if populate fails, resort to insert - this runs as GRU task and some images
+    try {
+        $app->db->resultset('Screenshots')->populate(\@files);
+        @files = ();
+    }
+    catch {
+    };
+    # if populate fails, resort to insert - this runs as GRU task and some images
     # might already be in, but the filename is unique
-    $app->db->resultset('Screenshots')->populate(\@files);
+    shift @files;    # columns
+    for my $row (@files) {
+        try {
+            $app->db->resultset('Screenshots')->create({filename => $row->[0], t_created => $row->[1]});
+        }
+        catch {
+            my $error = shift;
+            log_debug "Inserting $row->[0] failed: $error";
+        };
+    }
     return;
 }
 

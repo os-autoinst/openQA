@@ -998,7 +998,16 @@ sub store_image {
 
     if (!$thumb) {
         my $dbpath = OpenQA::Utils::image_md5_filename($md5, 1);
-        $self->result_source->schema->resultset('Screenshots')->create({filename => $dbpath, t_created => now()});
+        try {
+            $self->result_source->schema->resultset('Screenshots')->create({filename => $dbpath, t_created => now()});
+        }
+        catch {
+            my $error = shift;
+            # this is actually more common as many tests run in parallel and are likely to find the same
+            # feature at the same time. We still only want the screenshot once. So while we accept the upload
+            # ones and even overwrite the file, we only accept the first database entry
+            log_debug("inserting $dbpath into screenshots failed: $error");
+        };
         log_debug("store_image: $storepath");
     }
     return $storepath;
