@@ -60,11 +60,7 @@ sub register {
             return ($text =~ /(poo|gh)#/) ? 'label_bug fa fa-bolt' : 'label_bug fa fa-bug';
         });
 
-    $app->helper(
-        bug_report_actions => sub {
-            my ($c) = @_;
-            return $c->include_branding('external_reporting');
-        });
+    $app->helper(bug_report_actions => sub { shift->include_branding('external_reporting') });
 
     $app->helper(
         stepaction_for => sub {
@@ -115,45 +111,24 @@ sub register {
             return;
         });
 
-    $app->helper(
-        db => sub {
-            my $c = shift;
-            $c->app->schema;
-        });
+    $app->helper(db => sub { shift->app->schema });
 
     $app->helper(
         current_user => sub {
             my $c = shift;
 
             # If the value is not in the stash
-            if (
-                !(
-                    defined($c->stash('current_user'))
-                    && ($c->stash('current_user')->{no_user} || defined($c->stash('current_user')->{user}))))
-            {
-
-                my $user = undef;
-                if (my $id = $c->session->{user}) {
-                    $user = $c->db->resultset("Users")->find({username => $id});
-                }
-                if ($user) {
-                    $c->stash(current_user => {user => $user});
-                }
-                else {
-                    $c->stash(current_user => {no_user => 1});
-                }
+            my $current_user = $c->stash('current_user');
+            unless ($current_user && ($current_user->{no_user} || defined $current_user->{user})) {
+                my $id = $c->session->{user};
+                my $user = $id ? $c->db->resultset("Users")->find({username => $id}) : undef;
+                $c->stash(current_user => $current_user = $user ? {user => $user} : {no_user => 1});
             }
-            my $is_user_def = defined($c->stash('current_user'))
-              && defined($c->stash('current_user')->{user});
 
-            return $is_user_def ? $c->stash('current_user')->{user} : undef;
+            return $current_user && defined $current_user->{user} ? $current_user->{user} : undef;
         });
 
-    $app->helper(
-        current_job => sub {
-            my ($c) = @_;
-            return $c->stash('job');
-        });
+    $app->helper(current_job => sub { shift->stash('job') });
 
     $app->helper(
         is_operator => sub {

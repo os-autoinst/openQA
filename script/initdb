@@ -118,8 +118,8 @@ if ($prepare_init) {
 
         if (exists $deploy_dir{$version} and not $force) {
             print "The deploy directory already contains the schema for the current version.\n";
-            print
-"Use the --force option if you want to overwrite the contents of the $script_directory/$db/deploy/$version directory\n";
+            print "Use the --force option if you want to overwrite the contents of the ";
+            print "$script_directory/$db/deploy/$version directory\n";
             exit 1;
         }
     }

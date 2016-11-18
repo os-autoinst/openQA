@@ -85,7 +85,9 @@ my $post = $t->post_ok("/api/v1/jobs" => form => $settings)->status_is(200);
 my $job = $post->tx->res->json->{id};
 is(
     $args,
-'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.create --json-input --message={"ARCH":"x86_64","BUILD":"666","DESKTOP":"DESKTOP","DISTRI":"Unicorn","FLAVOR":"pink","ISO":"whatever.iso","ISO_MAXSIZE":"1","KVM":"KVM","MACHINE":"RainbowPC","TEST":"rainbow","VERSION":"42","id":'
+    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.create --json-input --message='
+      . '{"ARCH":"x86_64","BUILD":"666","DESKTOP":"DESKTOP","DISTRI":"Unicorn","FLAVOR":"pink","ISO":"whatever.iso",'
+      . '"ISO_MAXSIZE":"1","KVM":"KVM","MACHINE":"RainbowPC","TEST":"rainbow","VERSION":"42","id":'
       . $job
       . ',"remaining":1}',
     "job create triggers fedmsg"
@@ -98,7 +100,9 @@ $post = $t->post_ok("/api/v1/jobs/" . $job . "/set_done")->status_is(200);
 # check plugin called fedmsg-logger correctly
 is(
     $args,
-'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.done --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","id":'
+    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.done --json-input --message='
+      . '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
+      . '"TEST":"rainbow","id":'
       . $job
       . ',"newbuild":null,"remaining":0,"result":"failed"}',
     "job done triggers fedmsg"
@@ -112,7 +116,9 @@ my $newjob = $post->tx->res->json->{id};
 # check plugin called fedmsg-logger correctly
 is(
     $args,
-'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.duplicate --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","auto":0,"id":'
+    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.duplicate --json-input --message='
+      . '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
+      . '"TEST":"rainbow","auto":0,"id":'
       . $job
       . ',"remaining":1,"result":'
       . $newjob . '}',
@@ -124,7 +130,9 @@ $post = $t->post_ok("/api/v1/jobs/" . $newjob . "/cancel")->status_is(200);
 # check plugin called fedmsg-logger correctly
 is(
     $args,
-'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.cancel --json-input --message={"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC","TEST":"rainbow","id":'
+    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=job.cancel --json-input --message='
+      . '{"ARCH":"x86_64","BUILD":"666","FLAVOR":"pink","ISO":"whatever.iso","MACHINE":"RainbowPC",'
+      . '"TEST":"rainbow","id":'
       . $newjob
       . ',"remaining":0}',
     "job cancel triggers fedmsg"

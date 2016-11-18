@@ -88,28 +88,18 @@ sub test_asset {
 
     my $jobid = $self->param('testid');
     my %cond = ('me.id' => $jobid);
-    if ($self->param('assetid')) {
-        $cond{'asset.id'} = $self->param('assetid');
-    }
+    if ($self->param('assetid')) { $cond{'asset.id'} = $self->param('assetid') }
     elsif ($self->param('assettype') and $self->param('assetname')) {
         $cond{name} = $self->param('assetname');
         $cond{type} = $self->param('assettype');
     }
-    else {
-        return $self->render(text => 'Missing or wrong parameters provided', status => 400);
-    }
+    else { return $self->render(text => 'Missing or wrong parameters provided', status => 400) }
 
     my %asset;
-    my $res
-      = $self->db->resultset('Jobs')
-      ->search(\%cond,
-        {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)]});
-    if ($res and $res->first) {
-        %asset = $res->first->get_columns;
-    }
-    else {
-        return $self->reply->not_found;
-    }
+    my $attrs = {join => {jobs_assets => 'asset'}, +select => [qw(asset.name asset.type)], +as => [qw(name type)]};
+    my $res = $self->db->resultset('Jobs')->search(\%cond, $attrs);
+    if ($res and $res->first) { %asset = $res->first->get_columns }
+    else                      { return $self->reply->not_found }
 
     # find the asset path
     my $path = locate_asset($asset{type}, $asset{name}, relative => 1);

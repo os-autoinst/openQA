@@ -22,72 +22,65 @@ sub list {
 
     my @templates;
     eval {
-        if ($self->param("job_template_id")) {
-            @templates = $self->db->resultset("JobTemplates")->search({id => $self->param("job_template_id")});
+        if (my $id = $self->param('job_template_id')) {
+            @templates = $self->db->resultset("JobTemplates")->search({id => $id});
         }
-        elsif ($self->param('machine_name')
-            || $self->param('machine_id')
-            || $self->param('test_suite_name')
-            || $self->param('test_suite_id')
-            || $self->param('group_id')
-            || $self->param('arch') && $self->param('distri') && $self->param('flavor') && $self->param('version')
-            || $self->param('product_id'))
-        {
 
-            my %params;
-
-            $params{'machine.name'}    = $self->param('machine_name')    if $self->param('machine_name');
-            $params{'test_suite.name'} = $self->param('test_suite_name') if $self->param('test_suite_name');
-            $params{'product.arch'}    = $self->param('arch')            if $self->param('arch');
-            $params{'product.distri'}  = $self->param('distri')          if $self->param('distri');
-            $params{'product.flavor'}  = $self->param('flavor')          if $self->param('flavor');
-            $params{'product.version'} = $self->param('version')         if $self->param('version');
-            for my $id (qw/machine_id test_suite_id product_id group_id/) {
-                $params{$id} = $self->param($id) if $self->param($id);
-            }
-            @templates
-              = $self->db->resultset("JobTemplates")
-              ->search(\%params,
-                {join => ['machine', 'test_suite', 'product'], prefetch => [qw/machine test_suite product/]});
-        }
         else {
-            @templates
-              = $self->db->resultset("JobTemplates")->search({}, {prefetch => [qw/machine test_suite product/]});
+
+            my %cond;
+            if (my $value = $self->param('machine_name'))    { $cond{'machine.name'}    = $value }
+            if (my $value = $self->param('test_suite_name')) { $cond{'test_suite.name'} = $value }
+            for my $id (qw(arch distri flavor version)) {
+                if (my $value = $self->param($id)) { $cond{"product.$id"} = $value }
+            }
+            for my $id (qw(machine_id test_suite_id product_id group_id)) {
+                if (my $value = $self->param($id)) { $cond{$id} = $value }
+            }
+
+            my $has_query = grep { $cond{$_} } (
+                qw(machine_name machine_id test_suite.name test_suite_id group_id product.arch product.distri),
+                qw(product.flavor product.version product_id)
+            );
+
+            if ($has_query) {
+                my $attrs
+                  = {join => ['machine', 'test_suite', 'product'], prefetch => [qw/machine test_suite product/]};
+                @templates = $self->db->resultset("JobTemplates")->search(\%cond, $attrs);
+            }
+            else {
+                @templates
+                  = $self->db->resultset("JobTemplates")->search({}, {prefetch => [qw/machine test_suite product/]});
+            }
         }
     };
-    my $error = $@;
 
-    if ($error) {
-        $self->render(json => {error => $error}, status => 404);
-        return;
-    }
+    if (my $error = $@) { return $self->render(json => {error => $error}, status => 404) }
 
-    $self->render(
-        json => {
-            JobTemplates => [
-                map {
-                    {
-                        id         => $_->id,
-                        prio       => $_->prio,
-                        group_name => $_->group ? $_->group->name : '',
-                        product    => {
-                            id      => $_->product_id,
-                            arch    => $_->product->arch,
-                            distri  => $_->product->distri,
-                            flavor  => $_->product->flavor,
-                            group   => $_->product->mediagroup,
-                            version => $_->product->version
-                        },
-                        machine => {
-                            id   => $_->machine_id,
-                            name => $_->machine ? $_->machine->name : ''
-                        },
-                        test_suite => {
-                            id   => $_->test_suite_id,
-                            name => $_->test_suite->name
-                        }}
-                } @templates
-            ]});
+    @templates = map {
+        {
+            id         => $_->id,
+            prio       => $_->prio,
+            group_name => $_->group ? $_->group->name : '',
+            product    => {
+                id      => $_->product_id,
+                arch    => $_->product->arch,
+                distri  => $_->product->distri,
+                flavor  => $_->product->flavor,
+                group   => $_->product->mediagroup,
+                version => $_->product->version
+            },
+            machine => {
+                id   => $_->machine_id,
+                name => $_->machine ? $_->machine->name : ''
+            },
+            test_suite => {
+                id   => $_->test_suite_id,
+                name => $_->test_suite->name
+            }}
+    } @templates;
+
+    $self->render(json => {JobTemplates => \@templates});
 }
 
 sub create {
