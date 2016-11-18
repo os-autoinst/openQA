@@ -130,10 +130,7 @@ sub startup {
             }
             if (my $days = $c->app->config->{global}->{hsts}) {
                 $c->res->headers->header(
-                    'Strict-Transport-Security',
-                    sprintf 'max-age=%d; includeSubDomains',
-                    $days * 24 * 60 * 60
-                );
+                    'Strict-Transport-Security' => sprintf('max-age=%d; includeSubDomains', $days * 24 * 60 * 60));
             }
             $c->stash('job_groups_and_parents', job_groups_and_parents);
         });

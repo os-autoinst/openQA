@@ -63,17 +63,9 @@ sub ajax {
     my @order_by_params;
     my $index = 0;
     while (1) {
-        my $column_index = $self->param("order[$index][column]");
+        my $column_index = $self->param("order[$index][column]") // @columns;
         my $column_order = $self->param("order[$index][dir]");
-        if (
-            !(
-                   defined($column_index)
-                && $column_index < scalar(@columns)
-                && ($column_order eq 'asc' || $column_order eq 'desc')))
-        {
-            last;
-        }
-        push(@order_by_params, {'-' . $column_order => $columns[$column_index]});
+        last unless $column_index < @columns && grep { $column_order eq $_ } qw(asc desc);
         ++$index;
     }
     push(@order_by_params, {-asc => 'filename'}) unless @order_by_params;

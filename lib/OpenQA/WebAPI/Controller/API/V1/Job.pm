@@ -25,11 +25,11 @@ sub list {
     my $self = shift;
 
     my %args;
-    for my $arg (
-        qw/build iso distri version flavor maxage scope group groupid limit page before after arch hdd_1 test machine/)
-    {
-        next unless defined $self->param($arg);
-        $args{$arg} = $self->param($arg);
+    my @args
+      = qw/build iso distri version flavor maxage scope group groupid limit page before after arch hdd_1 test machine/;
+    for my $arg (@args) {
+        next unless defined(my $value = $self->param($arg));
+        $args{$arg} = $value;
     }
     # For these, we accept a single value, a single instance of the arg
     # with a comma-separated list of values, or multiple instances of the
