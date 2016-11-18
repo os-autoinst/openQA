@@ -25,10 +25,6 @@ Installation
 
 The easiest way to install openQA is from packages. You can find openSUSE
 packages in OBS in the
-https://build.opensuse.org/project/show/devel:openQA:stable[openQA:stable]
-repository.
-
-The latest development version can also be found in OBS in the
 https://build.opensuse.org/project/show/devel:openQA[openQA:devel] repository.
 
 For Fedora, packages are available in the official repositories for Fedora 23
@@ -36,13 +32,9 @@ and later. Installation on these distributions is therefore pretty simple:
 
 [source,sh]
 --------------------------------------------------------------------------------
-# openSUSE 13.2 (stable version)
-zypper ar -f obs://devel:openQA:stable/openSUSE_13.2 openQA
-zypper ar -f obs://devel:openQA:13.2/openSUSE_13.2 openQA-perl-modules
-
-# openSUSE Leap 42.1
-zypper ar -f obs://devel:openQA/openSUSE_Leap_42.1 openQA
-zypper ar -f obs://devel:openQA:Leap:42.1/openSUSE_Leap_42.1 openQA-perl-modules
+# openSUSE Leap 42.2
+zypper ar -f obs://devel:openQA/openSUSE_Leap_42.2 openQA
+zypper ar -f obs://devel:openQA:Leap:42.2/openSUSE_Leap_42.2 openQA-perl-modules
 
 # openSUSE Tumbleweed
 zypper ar -f obs://devel:openQA/openSUSE_Tumbleweed openQA
