@@ -67,7 +67,6 @@ sub delete {
 
 sub _list_images_subdir {
     my ($app, $prefix, $dir) = @_;
-    log_debug "reading $prefix/$dir";
     my $subdir = catfile($OpenQA::Utils::imagesdir, $prefix, $dir);
     my $dh;
     if (!opendir($dh, $subdir)) {
@@ -77,7 +76,7 @@ sub _list_images_subdir {
     my @ret;
     while (readdir $dh) {
         my $fn = catfile($subdir, $_);
-        if (-f $fn) {
+        if ($fn =~ /.png$/ && -f $fn) {
             push(@ret, catfile($prefix, $dir, $_));
         }
     }
@@ -98,30 +97,33 @@ sub scan_images {
     }
     my @files;
     my $now = DateTime->now;
-    push(@files, [qw(filename t_created)]);
     while (readdir $dh) {
         if ($_ !~ /^\./ && -d "$prefixdir/$_") {
             push(@files, map { [$_, $now] } @{_list_images_subdir($app, $args->{prefix}, $_)});
         }
     }
     closedir($dh);
-    try {
-        $app->db->resultset('Screenshots')->populate(\@files);
-        @files = ();
-    }
-    catch {
-    };
-    # if populate fails, resort to insert - this runs as GRU task and some images
-    # might already be in, but the filename is unique
-    shift @files;    # columns
-    for my $row (@files) {
+    while (@files) {
+        my @part = splice @files, 0, 100;
         try {
-            $app->db->resultset('Screenshots')->create({filename => $row->[0], t_created => $row->[1]});
+            unshift(@part, [qw(filename t_created)]);
+            $app->db->resultset('Screenshots')->populate(\@part);
+            @part = ();
         }
         catch {
-            my $error = shift;
-            log_debug "Inserting $row->[0] failed: $error";
         };
+        # if populate fails, resort to insert - this runs as GRU task and some images
+        # might already be in, but the filename is unique
+        shift @part;    # columns
+        for my $row (@part) {
+            try {
+                $app->db->resultset('Screenshots')->create({filename => $row->[0], t_created => $row->[1]});
+            }
+            catch {
+                my $error = shift;
+                log_debug "Inserting $row->[0] failed: $error";
+            };
+        }
     }
     return;
 }
