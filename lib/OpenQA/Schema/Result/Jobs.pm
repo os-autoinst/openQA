@@ -1,4 +1,3 @@
-
 # Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
@@ -1017,11 +1016,8 @@ sub store_image {
             $self->result_source->schema->resultset('Screenshots')->create({filename => $dbpath, t_created => now()});
         }
         catch {
-            my $error = shift;
-            # this is actually more common as many tests run in parallel and are likely to find the same
-            # feature at the same time. We still only want the screenshot once. So while we accept the upload
-            # ones and even overwrite the file, we only accept the first database entry
-            log_debug("inserting $dbpath into screenshots failed: $error");
+            # this is actually meant to fail - the worker uploads symlinks first. But to be sure we have a DB entry
+            # in case this was missed, we still force create it
         };
         log_debug("store_image: $storepath");
     }
