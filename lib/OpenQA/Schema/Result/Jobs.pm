@@ -208,14 +208,10 @@ sub sqlt_deploy_hook {
 # overload to straighten out job modules
 sub delete {
     my ($self) = @_;
+
     # we need to remove the modules one by one to get their delete functions called
     # otherwise dbix leaves this to the database
     $self->modules->delete_all;
-
-    # remove result directory if already existant
-    if ($self->result_dir() && -d $self->result_dir()) {
-        File::Path::rmtree($self->result_dir());
-    }
 
     my $sls = $self->screenshot_links;
     my @ids = map { $_->screenshot_id } $sls->all;
@@ -232,7 +228,14 @@ sub delete {
     while (my $sc = $fns->next) {
         $sc->delete;
     }
-    return $self->SUPER::delete;
+    my $ret = $self->SUPER::delete;
+
+    # last step: remove result directory if already existant
+    if ($self->result_dir() && -d $self->result_dir()) {
+        File::Path::rmtree($self->result_dir());
+    }
+
+    return $ret;
 }
 
 sub name {

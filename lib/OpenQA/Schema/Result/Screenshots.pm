@@ -54,6 +54,11 @@ __PACKAGE__->has_many(
 sub delete {
     my ($self) = @_;
 
+    # first try to delete, if this fails due to foreign key violation, do not
+    # delete the file. It's possible that some other worker uploaded a symlink
+    # to this file while we're trying to delete the single job referencing it
+    my $ret = $self->SUPER::delete;
+
     log_debug("removing screenshot " . $self->filename);
     if (!unlink(catfile($OpenQA::Utils::imagesdir, $self->filename))) {
         log_warning "can't remove " . $self->filename;
@@ -62,7 +67,7 @@ sub delete {
     if (!unlink($thumb)) {
         log_warning "can't remove $thumb";
     }
-    return $self->SUPER::delete;
+    return $ret;
 }
 
 sub _list_images_subdir {
