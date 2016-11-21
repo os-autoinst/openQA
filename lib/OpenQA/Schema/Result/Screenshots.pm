@@ -48,7 +48,7 @@ __PACKAGE__->has_many(
 __PACKAGE__->has_many(
     links_outer => 'OpenQA::Schema::Result::ScreenshotLinks',
     'screenshot_id',
-    {join_type => 'left outer'}, {cascade_delete => 0});
+    {join_type => 'left outer', cascade_delete => 0});
 
 # overload to remove on disk too
 sub delete {

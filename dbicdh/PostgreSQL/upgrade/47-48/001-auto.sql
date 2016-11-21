@@ -26,7 +26,7 @@ ALTER TABLE "screenshot_links" ADD CONSTRAINT "screenshot_links_fk_job_id" FOREI
 
 ;
 ALTER TABLE "screenshot_links" ADD CONSTRAINT "screenshot_links_fk_screenshot_id" FOREIGN KEY ("screenshot_id")
-  REFERENCES "screenshots" ("id") DEFERRABLE;
+  REFERENCES "screenshots" ("id") ON UPDATE CASCADE DEFERRABLE;
 
 ;
 

@@ -1,6 +1,6 @@
 -- 
 -- Created by SQL::Translator::Producer::PostgreSQL
--- Created on Thu Nov 17 07:49:45 2016
+-- Created on Mon Nov 21 09:45:14 2016
 -- 
 ;
 --
@@ -645,7 +645,7 @@ ALTER TABLE screenshot_links ADD CONSTRAINT screenshot_links_fk_job_id FOREIGN K
 
 ;
 ALTER TABLE screenshot_links ADD CONSTRAINT screenshot_links_fk_screenshot_id FOREIGN KEY (screenshot_id)
-  REFERENCES screenshots (id) DEFERRABLE;
+  REFERENCES screenshots (id) ON UPDATE CASCADE DEFERRABLE;
 
 ;
 ALTER TABLE job_templates ADD CONSTRAINT job_templates_fk_group_id FOREIGN KEY (group_id)

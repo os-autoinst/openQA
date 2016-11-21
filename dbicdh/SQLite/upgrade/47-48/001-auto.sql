@@ -8,7 +8,7 @@ CREATE TABLE screenshot_links (
   screenshot_id integer NOT NULL,
   job_id integer NOT NULL,
   FOREIGN KEY (job_id) REFERENCES jobs(id) ON DELETE CASCADE ON UPDATE CASCADE,
-  FOREIGN KEY (screenshot_id) REFERENCES screenshots(id)
+  FOREIGN KEY (screenshot_id) REFERENCES screenshots(id) ON UPDATE CASCADE
 );
 
 ;

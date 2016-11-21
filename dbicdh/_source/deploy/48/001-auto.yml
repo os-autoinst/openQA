@@ -2882,7 +2882,7 @@ schema:
           match_type: ''
           name: screenshot_links_fk_screenshot_id
           on_delete: ''
-          on_update: ''
+          on_update: CASCADE
           options: []
           reference_fields:
             - id
