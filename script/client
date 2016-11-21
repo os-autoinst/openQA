@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,10 +15,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-=head1 boilerplate
-
-client - test openqa json interface
 
 =head1 SYNOPSIS
 
@@ -44,6 +40,21 @@ load get/post parameters from a json file. For example
    "VERSION" : "26",
 }
 
+=item B<--apibase>
+
+Set API base URL component, default: '/api/v1'
+
+=item B<--json>
+
+Output JSON instead of perl structures.
+
+=item B<--verbose, -v>
+
+Be verbose in output.
+
+=item B<--apikey> KEY, B<--apisecret> SECRET
+
+Specify api key and secret to use, overrides use of config file ~/.config/openqa/client.conf
 
 =item B<--help, -h>
 
@@ -53,19 +64,30 @@ print help
 
 =head1 SYNOPSIS
 
-top level entry points: jobs, workers, isos.
+Interact with the openQA API by specified route entry points and optionally
+operations, defaults to the 'get' operation, i.e. just reading out the data
+without changing it. See the help on the openQA instance you want to access
+for available API routes.
+
+Common top level entry points: jobs, workers, isos.
 
 =item client --host openqa.example.com jobs
 
+List all jobs. Caution: this will take a very long time or even timeout on big
+productive instances.
+
 =item client --host openqa.example.com jobs/1
+
+Show details of job nr. B<1>.
 
 =item client --host openqa.example.com jobs/1 delete
 
+Delete job nr. B<1> (permissions read from config file).
+
 =item client --host openqa.example.com isos post iso=bar.iso tests=blah
 
-=head1 DESCRIPTION
+Trigger jobs on iso B<bar.iso> matching test suite B<blah>.
 
-lorem ipsum ...
 
 =cut
 
