@@ -219,14 +219,24 @@ sub delete {
     $self->screenshot_links->delete;
     my $schema = $self->result_source->schema;
 
-    my $fns = $schema->resultset('Screenshots')->search(
-        {id => {-in => \@ids}},
-        {
-            join     => 'links_outer',
-            group_by => 'me.id',
-            having   => \['COUNT(links_outer.job_id) = 0']});
-    while (my $sc = $fns->next) {
-        $sc->delete;
+    # during the migration creating the screenshots table, we leave the
+    # screenshots alone. Because the outer join will reveal incomplete results
+    # and we will delete images linked only during the migration. The screenshots
+    # that would be deleted here, will be removed at the end of the migration as
+    # no further jobs are linking it
+    if (-e catfile($OpenQA::Utils::imagesdir, 'migration_marker')) {
+        log_debug "Skipping deleting screenshots, migration is in progress";
+    }
+    else {
+        my $fns = $schema->resultset('Screenshots')->search(
+            {id => {-in => \@ids}},
+            {
+                join     => 'links_outer',
+                group_by => 'me.id',
+                having   => \['COUNT(links_outer.job_id) = 0']});
+        while (my $sc = $fns->next) {
+            $sc->delete;
+        }
     }
     my $ret = $self->SUPER::delete;
 

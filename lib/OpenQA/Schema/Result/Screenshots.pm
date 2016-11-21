@@ -168,6 +168,10 @@ sub scan_images_links {
 
     # last job is going to delete everything left
     if (!$args->{min_job}) {
+        # remove migration marker. After this point jobs can freely delete
+        # screenshots
+        unlink(catfile($OpenQA::Utils::imagesdir, 'migration_marker'));
+
         my $fns = $schema->resultset('Screenshots')->search_rs(
             {},
             {

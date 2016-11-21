@@ -21,6 +21,7 @@ use warnings;
 
 use File::Basename;
 use File::Find;
+use File::Spec::Functions qw(catfile);
 
 sub {
     my ($schema) = @_;
@@ -29,6 +30,10 @@ sub {
     my $gru = OpenQA::WebAPI::Plugin::Gru->new;
 
     use OpenQA::Utils;
+    # touch migration marker
+    open(my $marker, '>', catfile($OpenQA::Utils::imagesdir, 'migration_marker'));
+    close($marker);
+
     opendir(my $dh, $OpenQA::Utils::imagesdir) || die "Can't open /images: $!";
     while (readdir $dh) {
         # schedule a migrate images job for each 3 char directory
