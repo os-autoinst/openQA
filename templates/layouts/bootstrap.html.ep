@@ -69,7 +69,7 @@
                                       % my @children = $parent_or_group->children;
                                       % if (scalar(@children)) {
                                           <li class="dropdown-submenu">
-                                              %= link_to $parent_or_group->name => url_for('admin_edit_parent_group', groupid => $parent_or_group->id)
+                                              %= link_to $parent_or_group->name => url_for('parent_group_overview', groupid => $parent_or_group->id)
                                               <ul class="dropdown-menu">
                                                   % for my $group (@children) {
                                                       %= group_link_menu_entry $group;
