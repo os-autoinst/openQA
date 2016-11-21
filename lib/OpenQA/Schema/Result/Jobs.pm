@@ -17,16 +17,17 @@
 package OpenQA::Schema::Result::Jobs;
 use strict;
 use warnings;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use Try::Tiny;
 use JSON;
 use Fcntl;
 use DateTime;
 use db_helpers;
-use OpenQA::Utils qw/log_debug log_warning parse_assets_from_settings locate_asset/;
-use File::Basename qw/basename dirname/;
+use OpenQA::Utils qw(log_debug log_warning parse_assets_from_settings locate_asset);
+use File::Basename qw(basename dirname);
+use File::Spec::Functions qw(catfile);
 use File::Path ();
-use DBIx::Class::Timestamps qw/now/;
+use DBIx::Class::Timestamps qw(now);
 
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
@@ -185,6 +186,7 @@ __PACKAGE__->has_many(comments     => 'OpenQA::Schema::Result::Comments', 'job_i
 __PACKAGE__->has_many(networks => 'OpenQA::Schema::Result::JobNetworks', 'job_id');
 
 __PACKAGE__->has_many(gru_dependencies => 'OpenQA::Schema::Result::GruDependencies', 'job_id');
+__PACKAGE__->has_many(screenshot_links => 'OpenQA::Schema::Result::ScreenshotLinks', 'job_id');
 
 __PACKAGE__->add_unique_constraint([qw/slug/]);
 
@@ -206,16 +208,49 @@ sub sqlt_deploy_hook {
 # overload to straighten out job modules
 sub delete {
     my ($self) = @_;
+
     # we need to remove the modules one by one to get their delete functions called
     # otherwise dbix leaves this to the database
     $self->modules->delete_all;
 
-    # remove result directory if already existant
+    my $sls = $self->screenshot_links;
+    my @ids = map { $_->screenshot_id } $sls->all;
+    # delete all references
+    $self->screenshot_links->delete;
+    my $schema = $self->result_source->schema;
+
+    # during the migration creating the screenshots table, we leave the
+    # screenshots alone. Because the outer join will reveal incomplete results
+    # and we will delete images linked only during the migration. The screenshots
+    # that would be deleted here, will be removed at the end of the migration as
+    # no further jobs are linking it
+    if (-e catfile($OpenQA::Utils::imagesdir, 'migration_marker')) {
+        log_debug "Skipping deleting screenshots, migration is in progress";
+    }
+    else {
+        # sqlite does not like too many variables, so splice it
+        while (@ids) {
+            my @part = splice @ids, 0, 300;
+
+            my $fns = $schema->resultset('Screenshots')->search(
+                {id => {-in => \@part}},
+                {
+                    join     => 'links_outer',
+                    group_by => 'me.id',
+                    having   => \['COUNT(links_outer.job_id) = 0']});
+            while (my $sc = $fns->next) {
+                $sc->delete;
+            }
+        }
+    }
+    my $ret = $self->SUPER::delete;
+
+    # last step: remove result directory if already existant
     if ($self->result_dir() && -d $self->result_dir()) {
         File::Path::rmtree($self->result_dir());
     }
 
-    return $self->SUPER::delete;
+    return $ret;
 }
 
 sub name {
@@ -303,15 +338,16 @@ sub deps_hash {
 }
 
 sub add_result_dir_prefix {
-    my $rd = $_[1];
-    $rd = $OpenQA::Utils::resultdir . "/$rd" if $rd;
-    return $rd;
+    my ($self, $rd) = @_;
+
+    return catfile($self->num_prefix_dir, $rd) if $rd;
+    return;
 }
 
 sub remove_result_dir_prefix {
-    my $rd = $_[1];
-    $rd = basename($_[1]) if $rd;
-    return $rd;
+    my ($self, $rd) = @_;
+    return basename($rd) if $rd;
+    return;
 }
 
 sub set_prio {
@@ -896,15 +932,24 @@ sub reduce_result {
     File::Path::rmtree($resultdir . "ulogs");
 }
 
+sub num_prefix_dir {
+    my ($self) = @_;
+    my $numprefix = sprintf "%05d", $self->id / 1000;
+    return catfile($OpenQA::Utils::resultdir, $numprefix);
+}
+
 sub create_result_dir {
     my ($self) = @_;
     my $dir = $self->result_dir();
+
     if (!$dir) {
         $dir = sprintf "%08d-%s", $self->id, $self->name;
         $self->update({result_dir => $dir});
         $dir = $self->result_dir();
     }
     if (!-d $dir) {
+        my $npd = $self->num_prefix_dir;
+        mkdir($npd) unless -d $npd;
         my $days = 30;
         $days = $self->group->keep_logs_in_days if $self->group;
         my $cleanday = DateTime->now()->add(days => $days);
@@ -982,7 +1027,18 @@ sub store_image {
     my $prefixdir = dirname($storepath);
     File::Path::make_path($prefixdir);
     $asset->move_to($storepath);
-    log_debug("store_image: $storepath");
+
+    if (!$thumb) {
+        my $dbpath = OpenQA::Utils::image_md5_filename($md5, 1);
+        try {
+            $self->result_source->schema->resultset('Screenshots')->create({filename => $dbpath, t_created => now()});
+        }
+        catch {
+            # this is actually meant to fail - the worker uploads symlinks first. But to be sure we have a DB entry
+            # in case this was missed, we still force create it
+        };
+        log_debug("store_image: $storepath");
+    }
     return $storepath;
 }
 
