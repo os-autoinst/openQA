@@ -1,11 +1,10 @@
-openQA pitfalls
-===============
-:author: openSUSE Team at SUSE
-:toc:
 
+= openQA pitfalls
+:toc: left
+:toclevels: 6
+:author: OpenQA Team
 
-Needle editing
-==============
+== Needle editing
 
 - If a new needle is created based on a failed test, the new needle
   will not be listed in old tests.
@@ -15,8 +14,7 @@ Needle editing
 - If a needle is deleted, old tests may display an error when viewing
   them in the web UI.
 
-Mixed production and development environment
-============================================
+== Mixed production and development environment
 
 There are few things to take into account when running a development version and
 a packaged version of openqa:

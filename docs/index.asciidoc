@@ -6,7 +6,6 @@
 
 = openQA Documentation
 
-
 :sectnums:
 ifdef::basebackend-html[toc::[]]
 :sectnums!:

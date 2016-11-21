@@ -4,7 +4,6 @@
 :toclevels: 6
 :author: OpenQA Team
 
-
 IMPORTANT: This overview is valid only when using QEMU backend!
 
 Which networking type to use is controlled by the `NICTYPE`
@@ -140,7 +139,7 @@ The VMs have unique MAC that differs in the last 16 bits (see /usr/lib/os-autoin
 `os-autoinst-openvswitch.service` sets up filtering rules for the following translation scheme which
 provide non-conflicting addresses visible from host:
 
-[source, bash]
+[source,sh]
 ----
 MAC 52:54:00:12:XX:YY -> IP 10.1.XX.YY
 ----

@@ -627,7 +627,6 @@ With a test-suites name +supportserver-opensuse-tftp+.
 
 The actual test 'child' job, will then have to set +PARALLEL_WITH=supportserver-opensuse-tftp+, and also other variables according to the test requirements. For convenience, we have also started a dhcp server on the supportserver, but even without it, network could be set up manually by assigning a free ip address (e.g. 10.0.2.15) on the system of the test job.
 
-
 [caption="Example of Support Server: "]
 .The code in the *.pm module doing the actual tftp test could then look something like the example below
 ====
