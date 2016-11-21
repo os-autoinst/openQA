@@ -110,6 +110,16 @@ sub check_test_parent {
         'progress bars for child groups shown correctly'
     );
 
+    my @urls = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 h4 a')->map('attr', 'href')->each;
+    is_deeply(
+        \@urls,
+        [
+            '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001',
+            '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002'
+        ],
+        'link URLs'
+    );
+
     is($get->tx->res->dom->find("div.children-$default_expanded .review-all-passed")->size,
         1, 'badge shown on parent-level');
 
@@ -138,5 +148,19 @@ is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
 $get  = $t->get_ok('/parent_group_overview/' . $test_parent->id . '?limit_builds=20&show_tags=1')->status_is(200);
 @tags = $get->tx->res->dom->find('div.children-expanded h4 span i.tag')->map('text')->each;
 is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
+
+# change DISTRI/VERSION of test in opensuse group to test whether links are still correct then
+$opensuse_group->jobs->update({VERSION => '14.2', DISTRI => 'suse'});
+
+$get = $t->get_ok('/?limit_builds=20&show_tags=0')->status_is(200);
+@urls = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 h4 a')->map('attr', 'href')->each;
+is_deeply(
+    \@urls,
+    [
+        '/tests/overview?distri=suse&version=14.2&build=0091&groupid=1001',
+        '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002'
+    ],
+    'URLs valid, even when distri/version differ'
+);
 
 done_testing;
