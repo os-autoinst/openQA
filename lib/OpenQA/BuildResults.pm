@@ -149,7 +149,6 @@ sub compute_build_results {
         $jr{escaped_id} = $b;
         $jr{escaped_id} =~ s/\W/_/g;
         $jr{reviewed_all_passed} = $jr{passed} == $jr{total};
-        #$jr{total}               = $count;
         my $failed = $jr{failed} + $jr{softfailed};
         $jr{reviewed} = $failed > 0 && $jr{labeled} == $failed;
         $builds{$b} = \%jr;

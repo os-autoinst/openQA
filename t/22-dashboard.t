@@ -139,7 +139,7 @@ $get = $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
 check_test_parent('expanded');
 
 # add tags (99901 is user ID of arthur)
-$opensuse_group->comments->create({text => 'tag:0092:important:some_tag', user_id => 99901});
+my $tag_for_0092_comment = $opensuse_group->comments->create({text => 'tag:0092:important:some_tag', user_id => 99901});
 
 $get = $t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
 my @tags = $get->tx->res->dom->find('div.children-collapsed h4 span i.tag')->map('text')->each;
@@ -148,6 +148,23 @@ is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
 $get  = $t->get_ok('/parent_group_overview/' . $test_parent->id . '?limit_builds=20&show_tags=1')->status_is(200);
 @tags = $get->tx->res->dom->find('div.children-expanded h4 span i.tag')->map('text')->each;
 is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
+
+$get  = $t->get_ok('/?limit_builds=20&only_tagged=1')->status_is(200);
+@tags = $get->tx->res->dom->find('div.children-collapsed h4 span i.tag')->map('text')->each;
+is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level (only tagged)');
+@h4 = $get->tx->res->dom->find("div.children-collapsed h4 a")->map('text')->each;
+is_deeply(\@h4, ['Build0092'], 'only tagged builds on parent-level shown');
+
+# now tag build 0091 to check build tagging when there are common builds
+$tag_for_0092_comment->delete();
+$opensuse_test_group->comments->create({text => 'tag:0091:important:some_tag', user_id => 99901});
+
+$get = $t->get_ok('/?limit_builds=20&only_tagged=1')->status_is(200);
+
+@h4 = $get->tx->res->dom->find("div.children-collapsed h4 a")->map('text')->each;
+is_deeply(\@h4, ['Build0091'], 'only tagged builds on parent-level shown (common build)');
+@h4 = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 h4 a')->map('text')->each;
+is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both groups shown, though');
 
 # change DISTRI/VERSION of test in opensuse group to test whether links are still correct then
 $opensuse_group->jobs->update({VERSION => '14.2', DISTRI => 'suse'});
