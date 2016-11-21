@@ -405,6 +405,7 @@ subtest 'edit mediums' => sub() {
     is($driver->get_title(), 'openQA: Job groups', 'on groups');
     $driver->find_element('Cool Group has been edited!', 'link')->click();
 
+    t::ui::PhantomTest::wait_for_ajax;
     my @picks = $driver->find_elements('.search-choice', 'css');
     is((shift @picks)->get_text(), '64bit', 'found one');
     is((shift @picks)->get_text(), 'HURRA', 'found two');

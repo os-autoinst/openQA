@@ -60,6 +60,7 @@ my $get;
 is($driver->get($baseurl . "results"), 1, "/results gets");
 is($driver->get_current_url(), $baseurl . "tests", "/results redirects to /tests ");
 
+t::ui::PhantomTest::wait_for_ajax();
 #print $driver->get_page_source();
 
 # Test 99946 is successful (29/0/1)
@@ -118,6 +119,7 @@ is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-RAID1@32bit t
 
 # return
 is($driver->get($baseurl . "tests"), 1, "/tests gets");
+t::ui::PhantomTest::wait_for_ajax();
 
 # Test 99938 failed, so it should be displayed in red
 my $job99938 = $driver->find_element('#results #job_99946', 'css');
