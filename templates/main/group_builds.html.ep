@@ -45,17 +45,17 @@
     % if ($children) {
         <div id="<%= $group_id %>" class="build_group_children <%= $default_expanded ? 'in' : '' %> collapse">
             % for my $child (@{$children}) {
-                % my $r = $build_res->{children}->{$child->{id}};
-                % my $jobs = $r->{passed} + $r->{unfinished} + $r->{softfailed} + $r->{failed} + $r->{skipped};
+                % my $child_res = $build_res->{children}->{$child->{id}};
+                % my $jobs = $child_res->{passed} + $child_res->{unfinished} + $child_res->{softfailed} + $child_res->{failed} + $child_res->{skipped};
                 % if ($jobs) {
                     <div class="row build-row">
                         <div class="col-md-4 text-nowrap">
                             <h4>
-                                %= link_to $child->{name} => url_for('tests_overview')->query(distri => $build_res->{distri}, version => $build_res->{version}, build => $build, groupid => $child->{id} )
+                                %= link_to $child->{name} => url_for('tests_overview')->query(distri => $child_res->{distri}, version => $child_res->{version}, build => $build, groupid => $child->{id})
                             </h4>
                         </div>
                         <div class="col-md-8">
-                            %= include 'main/build_progressbar', max_jobs => $jobs, result => $r
+                            %= include 'main/build_progressbar', max_jobs => $jobs, result => $child_res
                         </div>
                     </div>
                 % }

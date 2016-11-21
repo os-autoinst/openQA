@@ -140,7 +140,10 @@ sub compute_build_results {
             $jr{oldest} = $job->t_created if $job->t_created < $jr{oldest};
             count_job($job, \%jr, \%labels);
             if ($jr{children}) {
-                count_job($job, $jr{children}->{$job->group_id}, \%labels);
+                my $child = $jr{children}->{$job->group_id};
+                $child->{distri}  //= $job->DISTRI;
+                $child->{version} //= $job->VERSION;
+                count_job($job, $child, \%labels);
             }
         }
         $jr{escaped_id} = $b;
