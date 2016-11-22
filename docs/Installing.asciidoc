@@ -288,13 +288,13 @@ storage for her specific needs.
 
 Example of NFS configuration:
 NFS server is where openQA WebUI is running. Content of +/etc/exports+
-[source]
+[source,sh]
 --------------------------------------------------------------------------------
 /var/lib/openqa/share *(fsid=0,rw,no_root_squash,sync,no_subtree_check)
 --------------------------------------------------------------------------------
 
 NFS clients are where openQA workers are running. Run following command:
-[source, sh]
+[source,sh]
 --------------------------------------------------------------------------------
 mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share
 --------------------------------------------------------------------------------
@@ -325,7 +325,7 @@ workers are tracked under user whose API keys are workers using.
 Audit log is directly accessible from +Admin menu+.
 
 Auditing, by default enabled, can be disabled by global configuration option in +/etc/openqa/openqa.ini+:
-[source, ini]
+[source,ini]
 --------------------------------------------------------------------------------
 [global]
 audit_enabled = 0
@@ -333,7 +333,7 @@ audit_enabled = 0
 
 The audit section of +/etc/openqa/openqa.ini+ allows to exclude some events from logging using
 a space separated blacklist:
-[source, ini]
+[source,ini]
 --------------------------------------------------------------------------------
 [audit]
 blacklist = job_grab job_done
@@ -436,7 +436,7 @@ and change the settings in the +[production]+ section.
 
 === Example for connecting to local PostgreSQL database
 
-[source, ini]
+[source,ini]
 --------------------------------------------------------------------------------
 [production]
 dsn = dbi:Pg:dbname=openqa
@@ -444,7 +444,7 @@ dsn = dbi:Pg:dbname=openqa
 
 === Example for connecting to remote PostgreSQL database
 
-[source, ini]
+[source,ini]
 --------------------------------------------------------------------------------
 [production]
 dsn = dbi:Pg:dbname=openqa;host=db.example.org

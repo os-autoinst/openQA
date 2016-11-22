@@ -33,7 +33,7 @@ worker1 uses tap0, worker 2 uses tap1 and so on.
 For multiple networks per job (see +NETWORKS+ variable), the following numbering
 scheme is used:
 
-[source, bash]
+[source,sh]
 ---------------
 worker1: tap0 tap64 tap128 ...
 worker2: tap1 tap65 tap129 ...
@@ -50,14 +50,14 @@ network, required internet access etc on the host manually.
 TAP devices need be owned by the +_openqa-worker+ user for openQA to
 be able to access them.
 
-[source, bash]
+[source,sh]
 ---------------
 tunctl -u _openqa-worker -p -t tap0
 ---------------
 
 or Wicked way:
 [caption="File: "]
-[source, bash]
+[source,sh]
 ./etc/sysconfig/network/ifcfg-tap0
 ---------------
 BOOTPROTO='none'
@@ -73,7 +73,7 @@ TUNNEL_SET_OWNER='_openqa-worker'
 If you want to use TAP device which doesn't exist on the system,
 you need to set CAP_NET_ADMIN capability on qemu binary file:
 
-[source, bash]
+[source,sh]
 ---------------
 zypper in libcap-progs
 setcap CAP_NET_ADMIN=ep /usr/bin/qemu-system-x86_64
@@ -83,7 +83,7 @@ Network setup can be changed after qemu is started using network configure scrip
 specified in TAPSCRIPT variable.
 
 Sample script to add TAP device to existing bridge br0:
-[source, bash]
+[source,sh]
 ---------------
 sudo brctl addif br0 $1
 sudo ip link set $1 up
@@ -102,7 +102,7 @@ Compared to VDE setup discussed later, Open vSwitch is more complicated to confi
 but provides more robust and scalable network.
 
 Start Open vSwitch and add TAP devices:
-[source, bash]
+[source,sh]
 ---------------
 
 # start openvswitch.service
@@ -125,7 +125,7 @@ If the workers with TAP capability are spread across multiple hosts, the network
 See Open vSwitch http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation] for details.
 
 Example configuration of GRE tunnel:
-[source, bash]
+[source,sh]
 ----
 ovs-vsctl add-port br0 gre0 -- set interface gre0 type=gre options:remote_ip=<IP address of other host>
 ----
@@ -147,7 +147,7 @@ MAC 52:54:00:12:XX:YY -> IP 10.1.XX.YY
 That means that the local port of the bridge must be configured to IP 10.0.2.2
 and netmask /15 that covers 10.0.0.0 and 10.1.0.0 ranges.
 
-[source, bash]
+[source,sh]
 ---------------
 ip addr add 10.0.2.2/15 dev br0
 ip route add 10.0.0.0/15 dev br0
@@ -155,7 +155,7 @@ ip link set br0 up
 ---------------
 
 and permanently in /etc/sysconfig/network
-[source, bash]
+[source,sh]
 ---------------
 # /etc/sysconfig/network/ifcfg-br0
 BOOTPROTO='static'
@@ -169,7 +169,7 @@ NOTE: In some cases (e.g. on Leap) can be needed to start the OpenvSwitch servic
 
 The permanent configuration for wicked 0.6.23 and later should look like this:
 
-[source, bash]
+[source,sh]
 ---------------
 # /etc/sysconfig/network/ifcfg-br0
 BOOTPROTO='static'
@@ -185,7 +185,7 @@ The IP 10.0.2.2 can also serve as a gateway to access outside
 network. For this, a NAT between br0 and eth0 must be configured
 with SuSEfirewall or iptables.
 
-[source, bash]
+[source,sh]
 ---------------
 # configuration options for NAT with SuSEfirewall
 # /etc/sysconfig/SuSEfirewall
@@ -199,13 +199,13 @@ Then it is possible to start the os-autoinst-openvswitch.service
 The service uses +br0+ by default. It can be configured for another
 bridge name by setting +/etc/sysconfig/os-autoinst-openvswitch+
 
-[source, bash]
+[source,sh]
 ---------------
 OS_AUTOINST_USE_BRIDGE=bridge_name
 ---------------
 
 Then, start the service:
-[source, bash]
+[source,sh]
 ---------------
 systemctl start os-autoinst-openvswitch.service
 systemctl enable os-autoinst-openvswitch.service
@@ -230,7 +230,7 @@ Boot sequence with wicked 0.6.23 and newer:
 
 The configuration and operation can be checked by the following commands:
 
-[source,bash]
+[source,sh]
 ----
 ovs-vsctl show # shows the bridge br0, the tap devices are assigned to it
 ovs-ofctl dump-flows br0 # shows the rules installed by os-autoinst-openvswitch in table=0
@@ -241,7 +241,10 @@ ovs-ofctl dump-flows br0 # shows the rules installed by os-autoinst-openvswitch 
 * empty output indicates a problem with os-autoinst-openvswitch service
 * zero packet count or missing rules in table=1 indicate problem with tap devices
 
+[source,sh]
+----
 ipables -L -v
+----
 
 As long as the SUT has access to external network, there should be
 nonzero packet count in the forward chain between br0 and external
@@ -267,7 +270,7 @@ create a machine with the following settings:
 
 Start switch and user mode networking:
 
-[source, bash]
+[source,sh]
 ---------------
 systemctl start openqa-vde_switch
 systemctl start openqa-slirpvde

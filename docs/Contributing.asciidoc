@@ -201,7 +201,7 @@ problem) and sqlite doesn't support nested transactions.
 Executed SQL statements can be traced by setting the +DBIC_TRACE+ environment
 variable.
 
-[source,bash]
+[source,sh]
 --------------------------------------------------------------------------------
 export DBIC_TRACE=1
 --------------------------------------------------------------------------------
