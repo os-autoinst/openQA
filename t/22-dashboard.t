@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-# see also t/ui/14-dashboard.t for PhantomJS test
+# see also t/ui/14-dashboard.t and t/ui/14-dashboard-parents.t for PhantomJS test
 
 BEGIN {
     unshift @INC, 'lib';
@@ -35,6 +35,7 @@ my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csr
 $test_case->login($t, 'percival');
 my $job_groups    = $t->app->db->resultset('JobGroups');
 my $parent_groups = $t->app->db->resultset('JobGroupParents');
+my $jobs          = $t->app->db->resultset('Jobs');
 
 # regular job groups shown
 my $get = $t->get_ok('/')->status_is(200);
@@ -169,11 +170,30 @@ my $tag_for_0091_comment
   = $opensuse_test_group->comments->create({text => 'tag:0091:important:some_tag', user_id => 99901});
 
 $get = $t->get_ok('/?limit_builds=20&only_tagged=1')->status_is(200);
-
-@h4 = $get->tx->res->dom->find("div.children-collapsed h4 a")->map('text')->each;
+@h4  = $get->tx->res->dom->find("div.children-collapsed h4 a")->map('text')->each;
 is_deeply(\@h4, ['Build0091'], 'only tagged builds on parent-level shown (common build)');
 @h4 = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both groups shown, though');
+
+# temporarily create failed job with build 0048@0815 in opensuse test to verify that review badge is only shown
+# if all combinded builds are reviewed
+my $not_reviewed_job = $jobs->create(
+    {
+        BUILD    => '0048@0815',
+        DISTRI   => 'opensuse',
+        VERSION  => '42',
+        FLAVOR   => 'tape',
+        ARCH     => 'x86_64',
+        MACHINE  => 'xxx',
+        TEST     => 'dummy',
+        state    => OpenQA::Schema::Result::Jobs::DONE,
+        result   => OpenQA::Schema::Result::Jobs::FAILED,
+        group_id => $opensuse_test_group->id
+    });
+$get = $t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
+is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048@0815')->size,
+    0, 'review badge NOT shown for build 0048@0815 anymore');
+$not_reviewed_job->delete();
 
 # add review for job 99938 so build 0048 is reviewed, despite the unreviewed softfails
 $opensuse_group->jobs->find({id => 99938})->comments->create({text => 'poo#4321', user_id => 99901});
