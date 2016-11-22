@@ -72,6 +72,9 @@ is_deeply(\@h4, ['opensuse', 'opensuse'], 'opensuse now shown as child group (li
 my $opensuse_test_group = $job_groups->find({name => 'opensuse test'});
 $opensuse_test_group->update({parent_id => $test_parent->id});
 
+# and add review for build 0048@0815
+$opensuse_group->jobs->find({BUILD => '0048@0815'})->comments->create({text => 'poo#1234', user_id => 99901});
+
 $get = $t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
 @h2  = $get->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['Test parent'], 'only parent shown, no more top-level job groups');
@@ -85,6 +88,11 @@ sub check_test_parent {
         ['Build87.5011', 'Build0092', 'Build0091', 'Build0048@0815', 'Build0048'],
         'builds on parent-level shown'
     );
+
+    is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048@0815')->size,
+        1, 'review badge for build 0048@0815 shown');
+    is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048')->size,
+        0, 'review badge for build 0048 NOT shown yet');
 
     my @progress_bars
       = $get->tx->res->dom->find("div.children-$default_expanded .progress")->map('attr', 'title')->each;
@@ -157,7 +165,8 @@ is_deeply(\@h4, ['Build0092'], 'only tagged builds on parent-level shown');
 
 # now tag build 0091 to check build tagging when there are common builds
 $tag_for_0092_comment->delete();
-$opensuse_test_group->comments->create({text => 'tag:0091:important:some_tag', user_id => 99901});
+my $tag_for_0091_comment
+  = $opensuse_test_group->comments->create({text => 'tag:0091:important:some_tag', user_id => 99901});
 
 $get = $t->get_ok('/?limit_builds=20&only_tagged=1')->status_is(200);
 
@@ -165,6 +174,12 @@ $get = $t->get_ok('/?limit_builds=20&only_tagged=1')->status_is(200);
 is_deeply(\@h4, ['Build0091'], 'only tagged builds on parent-level shown (common build)');
 @h4 = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both groups shown, though');
+
+# add review for job 99938 so build 0048 is reviewed, despite the unreviewed softfails
+$opensuse_group->jobs->find({id => 99938})->comments->create({text => 'poo#4321', user_id => 99901});
+$get = $t->get_ok('/?limit_builds=20')->status_is(200);
+is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048')->size,
+    1, 'review badge for build 0048 shown, despite unreviewed softfails');
 
 # change DISTRI/VERSION of test in opensuse group to test whether links are still correct then
 $opensuse_group->jobs->update({VERSION => '14.2', DISTRI => 'suse'});
