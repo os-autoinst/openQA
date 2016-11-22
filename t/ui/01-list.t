@@ -24,6 +24,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
+use OpenQA::Test::Database;
 
 use OpenQA::IPC;
 use OpenQA::WebSockets;
@@ -40,7 +41,15 @@ use t::ui::PhantomTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = t::ui::PhantomTest::call_phantom();
+# By defining a custom hook we can customize the database based on fixtures.
+# We do not need job 99981 right now so delete it here just to have a helpful
+# example for customizing the test database
+sub schema_hook {
+    my $schema = OpenQA::Test::Database->new->create;
+    $schema->resultset('Jobs')->find(99981)->delete;
+}
+
+my $driver = t::ui::PhantomTest::call_phantom(\&schema_hook);
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -161,7 +170,7 @@ my @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tb
 
 is_deeply(
     \@jobs,
-    [qw(job_99940 job_99939 job_99938 job_99926 job_99936 job_99947 job_99962 job_99946 job_99937 job_99981)],
+    [qw(job_99940 job_99939 job_99938 job_99926 job_99936 job_99947 job_99962 job_99946 job_99937)],
     '99945 is not displayed'
 );
 $driver->find_element('#relevantfilter', 'css')->click();
@@ -183,7 +192,7 @@ t::ui::PhantomTest::wait_for_ajax();
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 is_deeply(
     \@jobs,
-    [qw(job_99940 job_99939 job_99938 job_99926 job_99936 job_99947 job_99962 job_99946 job_99937 job_99981)],
+    [qw(job_99940 job_99939 job_99938 job_99926 job_99936 job_99947 job_99962 job_99946 job_99937)],
     '99945 again hidden'
 );
 

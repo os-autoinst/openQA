@@ -9,12 +9,37 @@ our $mojopid;
 our $phantompid;
 our $mojoport;
 
+
+=head2 start_app
+
+  start_app([$schema_hook]);
+
+Fork a server instance with database creation and return the server port.
+
+By default the database is created based on the fixture set.
+
+The optional parameter C<$schema_hook> allows to provide a custom way of creating a database, e.g.
+
+    sub schema_hook {
+        my $schema = OpenQA::Test::Database->new->create;
+        # delete unused job id 1234
+        $schema->resultset('Jobs')->find(1234)->delete;
+    }
+    start_app(\&schema_hook);
+
+=cut
 sub start_app {
+    my ($schema_hook) = @_;
     $mojoport = Mojo::IOLoop::Server->generate_port;
 
     $mojopid = fork();
     if ($mojopid == 0) {
-        OpenQA::Test::Database->new->create;
+        if ($schema_hook) {
+            $schema_hook->();
+        }
+        else {
+            OpenQA::Test::Database->new->create;
+        }
         # TODO: start the server manually - and make it silent
         # Run openQa in test mode - it will mock Scheduler and Websockets DBus services
         $ENV{MOJO_MODE} = 'test';
@@ -94,7 +119,8 @@ sub make_screenshot($) {
     close($fh);
 }
 
-sub call_phantom() {
+sub call_phantom {
+    my ($schema_hook) = @_;
     # fail if phantomjs or Selenium::Remote::Driver are unavailable
     use IPC::Cmd qw[can_run];
     use Module::Load::Conditional qw/can_load/;
@@ -102,7 +128,7 @@ sub call_phantom() {
         return undef;
     }
 
-    my $mojoport = start_app;
+    my $mojoport = start_app($schema_hook);
     return $_driver = start_phantomjs($mojoport);
 }
 
