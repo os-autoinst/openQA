@@ -2,7 +2,7 @@
 = openQA tests developer guide
 :toc: left
 :toclevels: 6
-:author: OpenQA Team
+:author: openQA Team
 
 == Introduction
 

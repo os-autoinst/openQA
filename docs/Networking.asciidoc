@@ -2,7 +2,7 @@
 = Networking in OpenQA
 :toc: left
 :toclevels: 6
-:author: OpenQA Team
+:author: openQA Team
 
 IMPORTANT: This overview is valid only when using QEMU backend!
 

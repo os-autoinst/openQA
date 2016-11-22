@@ -1,6 +1,6 @@
 :toc: left
 :toclevels: 6
-:author: OpenQA Team
+:author: openQA Team
 :listing-caption: Listing
 :source-highlighter: pygments
 

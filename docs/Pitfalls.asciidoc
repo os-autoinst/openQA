@@ -2,7 +2,7 @@
 = openQA pitfalls
 :toc: left
 :toclevels: 6
-:author: OpenQA Team
+:author: openQA Team
 
 == Needle editing
 

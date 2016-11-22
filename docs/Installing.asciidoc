@@ -302,7 +302,7 @@ mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share
 === Needle Caching
 
 If your network is slow or you experience long time to load needles you
-might want to consider needle caching, to do this a directory
+might want to consider needle caching. To use needle caching a directory
 +/var/lib/openqa/cache+ must be created, and right permissions given to the
 'geekotest' user. If you install openQA through the repositories, said directory
 will be created for you.

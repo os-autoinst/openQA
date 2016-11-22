@@ -2,7 +2,7 @@
 = openQA developer guide
 :toc: left
 :toclevels: 6
-:author: OpenQA Team
+:author: openQA Team
 
 == Introduction
 
@@ -47,17 +47,23 @@ are the right way to contribute improvements and fixes.
 
 * Every commit is checked by https://travis-ci.org/travis[Travis CI] as soon as
 you create a pull request but you *should* run the openQA tests locally,
-i.e. before every commit call
+i.e. before every commit call:
+
+[source,sh]
 ----
 ./script/tidy
 ----
+
 to ensure your perl code changes are consistent with the style rules
 
 * You *may* also run local tests on your machine or in your own development
-environment to verify everything works as expected. Call
+environment to verify everything works as expected. Call:
+
+[source,sh]
 ----
 make test
 ----
+
 for unit and integration tests.
 
 * For git commit messages use the rules stated on
@@ -182,8 +188,8 @@ and upgrades include those changes.
 
 The above steps are executed in the developer's system. Once openQA is
 installed in a production server, you should run either
-+./script/initdb --init_database+ or +./script/upgradedb --upgrade_database+ to actually
-create or upgrade a database.
++./script/initdb --init_database+ or +./script/upgradedb --upgrade_database+
+to actually create or upgrade a database.
 
 === How to add fixtures to the database
 
@@ -202,9 +208,9 @@ Executed SQL statements can be traced by setting the +DBIC_TRACE+ environment
 variable.
 
 [source,sh]
---------------------------------------------------------------------------------
+----
 export DBIC_TRACE=1
---------------------------------------------------------------------------------
+----
 
 == How to overwrite config files
 
@@ -216,15 +222,18 @@ etc/openqa/openqa.ini.
 To avoid these changes getting in your git workflow, copy them to a new
 directory and set OPENQA_CONFIG in your shell setup files.
 
---------------------------------------------------------------------------------
+[source,sh]
+----
 cp -ar etc/openqa etc/mine
 export OPENQA_CONFIG=$PWD/etc/mine
---------------------------------------------------------------------------------
+----
+
 
 Note that OPENQA_CONFIG points to the directory containing openqa.ini, database.ini,
 client.conf and workers.ini.
 
 == How to setup PostgreSQL to test locally with production data
+:other-db-engines: link:Installing.asciidoc#other-database-engines[Other database engines]
 
 1. Install PosgreSQL - under openSUSE the following package are required:
    +postgresql-server postgresql-init+
@@ -242,13 +251,14 @@ client.conf and workers.ini.
 
 7. Import dump: +pg_restore -c -d openqa path/to/dump+
 
-8. Configure openQA to use PostgreSQL as described in +Installing.asciidoc+ under
-   'Other database engines'. User name and password are not required.
+8. Configure openQA to use PostgreSQL as described in the section {other-db-engines} of the installation guide.
+ User name and password are not required.
 
 == Adding new authentication module
+:user-authentication: link:Installing.asciidoc#user-authentication[User authentication]
 
 OpenQA comes with three authentication modules providing authentication methods:
-OpenID, iChain and Fake (see link:Installing.asciidoc[Installation - User authentication]).
+OpenID, iChain and Fake (see {user-authentication}).
 
 All authentication modules reside in +lib/OpenQA/Auth+ directory. During
 OpenQA start, +[auth]/method+ section of +/etc/openqa/openqa.ini+ is read and according
@@ -265,14 +275,15 @@ page or none.
 
 Authentication module is expected to return HASH:
 [source,perl]
---------------------------------------------------------------------------------
+----
+
 %res = (
     # error = 1 signals auth error
     error => 0|1
     # where to redirect the user
     redirect => ''
 );
---------------------------------------------------------------------------------
+----
 
 Authentication module is expected to create or update user entry in OpenQA database
 after user validation. See included modules for inspiration.
