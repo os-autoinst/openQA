@@ -14,7 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-# see also t/ui/14-dashboard.t for PhantomJS test
+# see also t/ui/14-dashboard.t and t/ui/14-dashboard-parents.t for PhantomJS test
 
 BEGIN {
     unshift @INC, 'lib';
