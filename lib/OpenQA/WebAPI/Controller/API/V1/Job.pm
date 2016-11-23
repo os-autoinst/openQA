@@ -336,11 +336,8 @@ sub restart {
 
     my $ipc = OpenQA::IPC->ipc;
     my $res = $ipc->scheduler('job_restart', $jobs);
-    if (@$res > 1) {
-        $self->emit_event('openqa_jobs_restart', {ids => $jobs, results => $res});
-    }
-    elsif (@$res == 1) {
-        $self->emit_event('openqa_job_restart', {id => $jobs->[0], result => $res->[0]});
+    for (my $i = 0; $i < @$res; $i++) {
+        $self->emit_event('openqa_job_restart', {id => $jobs->[$i], result => $res->[$i]});
     }
     my @urls = map { $self->url_for('test', testid => $_) } @$res;
     $self->render(json => {result => $res, test_url => \@urls});
