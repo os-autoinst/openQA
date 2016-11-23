@@ -1,11 +1,10 @@
-openQA installation guide
-=========================
-:author: openQA developers
-:toc:
 
-Introduction
-------------
-[id="intro"]
+= openQA installation guide
+:toc: left
+:toclevels: 6
+:author: openQA developers
+
+== Introduction
 
 openQA is an automated test tool that makes it possible to test the whole
 installation process of an operating system. It's free software released
@@ -19,19 +18,21 @@ assumed that the reader is already familiar with openQA and has already read the
 Starter Guide, available at the
 https://github.com/os-autoinst/openQA[official repository].
 
-Installation
-------------
-[id="installation"]
+== Installation
 
 The easiest way to install openQA is from packages. You can find openSUSE
 packages in OBS in the
+https://build.opensuse.org/project/show/devel:openQA:stable[openQA:stable]
+repository.
+
+The latest development version can also be found in OBS in the
 https://build.opensuse.org/project/show/devel:openQA[openQA:devel] repository.
 
 For Fedora, packages are available in the official repositories for Fedora 23
 and later. Installation on these distributions is therefore pretty simple:
 
 [source,sh]
---------------------------------------------------------------------------------
+----
 # openSUSE Leap 42.2
 zypper ar -f obs://devel:openQA/openSUSE_Leap_42.2 openQA
 zypper ar -f obs://devel:openQA:Leap:42.2/openSUSE_Leap_42.2 openQA-perl-modules
@@ -44,20 +45,17 @@ zypper in openQA
 
 # Fedora 23+
 dnf install openqa openqa-httpd
---------------------------------------------------------------------------------
+----
 
-Basic configuration
--------------------
-[id="basic"]
+== Basic configuration
 
-Apache proxy
-~~~~~~~~~~~~
+=== Apache proxy
 
 It is required to run openQA behind an http proxy (apache, nginx, etc..). See the
 +openqa.conf.template+ config file in +/etc/apache2/vhosts.d+ (openSUSE) or
 +/etc/httpd/conf.d+ (Fedora). To make everything work correctly on openSUSE, you
 need to enable the 'headers', 'proxy', 'proxy_http' and 'proxy_wstunnel' modules
-using 'a2enmod'. This is not necessary on Fedora. For a basic setup, you can
+using the command 'a2enmod'. This is not necessary on Fedora. For a basic setup, you can
 copy +openqa.conf.template+ to +openqa.conf+ and modify the +ServerName+
 setting. This will direct all HTTP traffic to openQA.
 
@@ -71,8 +69,7 @@ a2enmod proxy_http
 a2enmod proxy_wstunnel
 --------------------------------------------------------------------------------
 
-TLS/SSL
-~~~~~~~
+=== TLS/SSL
 
 By default openQA expects to be run with HTTPS. The +openqa-ssl.conf.template+
 Apache config file is available as a base for creating the Apache config; you
@@ -88,8 +85,8 @@ your host you must turn HTTPS off. You can do that in +/etc/openqa/openqa.ini+:
 httpsonly = 0
 --------------------------------------------------------------------------------
 
-Run the web UI
-~~~~~~~~~~~~~~
+== Run the web UI
+
 [source,sh]
 --------------------------------------------------------------------------------
 systemctl start openqa-scheduler
@@ -115,8 +112,7 @@ systemctl enable openqa-websockets
 systemctl enable openqa-webui
 --------------------------------------------------------------------------------
 
-Run workers
-~~~~~~~~~~~
+== Run workers
 
 Workers are processes running virtual machines to perform the actual
 testing. They are distributed as a separate package and can be installed on
@@ -165,12 +161,15 @@ installed 'os-autoinst' from packages make sure to pass +--isotovideo+ option
 to point to the checkout dir where isotovideo is, not to +/usr/lib+! Otherwise
 it will have trouble finding its perl modules.
 
-Advanced configuration
-----------------------
+== Where to now?
+
+From this point on, you can refer to the link:GettingStarted.asciidoc#testing-opensuse-or-fedora[getting started] guide to
+fetch the tests cases and possibly take a look at link:WritingTests.asciidoc[Test Developer Guide]
+
+== Advanced configuration
 [id="advanced"]
 
-User authentication
-~~~~~~~~~~~~~~~~~~~
+=== User authentication
 
 OpenQA supports three different authentication methods - OpenID (default), iChain
 and Fake. See +auth+ section in +/etc/openqa/openqa.ini+.
@@ -185,8 +184,8 @@ method = OpenID|iChain|Fake
 Independently of method used, the first user that logs in (if there is no admin yet)
 will automatically get administrator rights!
 
-OpenID
-~~~~~~
+=== OpenID
+
 By default openQA uses OpenID with opensuse.org as OpenID provider.
 OpenID method has its own +openid+ section in +/etc/openqa/openqa.ini+:
 
@@ -202,12 +201,12 @@ httpsonly = 1
 OpenQA supports only OpenID version up to 2.0. Newer OpenID-Connect and OAuth is
 not supported currently.
 
-iChain
-~~~~~~
+=== iChain
+
 Use only if you use iChain (NetIQ Access Manager) proxy on your hosting server.
 
-Fake
-~~~~
+=== Fake
+
 For development purposes only! Fake authentication bypass any authentication and
 automatically allow any login requests as 'Demo user' with administrator privileges
 and without password. To ease worker testing, API key and secret is created (or updated)
@@ -224,8 +223,7 @@ secret = 1234567890ABCDEF
 If you switch authentication method from Fake to any other, review your API keys!
 You may be vulnerable for up to a day until Fake API key expires.
 
-Setting up git support
-~~~~~~~~~~~~~~~~~~~~~~
+=== Setting up git support
 
 Editing needles from web can optionally commit new or changed needles
 automatically to git. To do so, you need to enable git support by setting
@@ -243,6 +241,7 @@ from the web UI.
 You can do so by setting your configuration in the repository
 (+/var/lib/os-autoinst/needles/.git/config+) to some reasonable defaults such as:
 
+[source,ini]
 --------------------------------------------------------------------------------
 [user]
 	email = whatever@example.com
@@ -260,8 +259,7 @@ do_push = yes
 Depending on your setup, you might need to generate and propagate
 ssh keys for user 'geekotest' to be able to push.
 
-Worker settings
-~~~~~~~~~~~~~~~
+=== Worker settings
 
 Default behavior for all workers is to use the 'Qemu' backend and connect to
 'http://localhost'. If you want to change some of those options, you can do so
@@ -279,8 +277,7 @@ Once you got workers running they should show up in the admin section of openQA 
 the workers section as 'idle'. When you get so far, you have your own instance
 of openQA up and running and all that is left is to set up some tests.
 
-Configuring remote workers
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+=== Configuring remote workers
 
 There are some additional requirements to get remote worker running. First is to
 ensure shared storage between openQA WebUI and workers.
@@ -291,19 +288,18 @@ storage for her specific needs.
 
 Example of NFS configuration:
 NFS server is where openQA WebUI is running. Content of +/etc/exports+
-[source]
+[source,sh]
 --------------------------------------------------------------------------------
 /var/lib/openqa/share *(fsid=0,rw,no_root_squash,sync,no_subtree_check)
 --------------------------------------------------------------------------------
 
 NFS clients are where openQA workers are running. Run following command:
-[source, sh]
+[source,sh]
 --------------------------------------------------------------------------------
 mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share
 --------------------------------------------------------------------------------
 
-Needle Caching  
-~~~~~~~~~~~~~~~
+=== Needle Caching
 
 If your network is slow or you experience long time to load needles you
 might want to consider needle caching. To use needle caching a directory
@@ -319,8 +315,7 @@ In the +/etc/openqa/workers.ini+
 CACHEDIRECTORY = /var/lib/openqa/cache
 --------------------------------------------------------------------------------
 
-Auditing - tracking openQA changes
-----------------------------------
+== Auditing - tracking openQA changes
 [id="auditing"]
 
 Auditing plugin enables openQA administrators to maintain overview about what is happening with the system.
@@ -330,7 +325,7 @@ workers are tracked under user whose API keys are workers using.
 Audit log is directly accessible from +Admin menu+.
 
 Auditing, by default enabled, can be disabled by global configuration option in +/etc/openqa/openqa.ini+:
-[source, ini]
+[source,ini]
 --------------------------------------------------------------------------------
 [global]
 audit_enabled = 0
@@ -338,38 +333,37 @@ audit_enabled = 0
 
 The audit section of +/etc/openqa/openqa.ini+ allows to exclude some events from logging using
 a space separated blacklist:
-[source, ini]
+[source,ini]
 --------------------------------------------------------------------------------
 [audit]
 blacklist = job_grab job_done
 --------------------------------------------------------------------------------
 
-List of events tracked by the auditing plugin:
-----
-Assets:
-  asset_register asset_delete
-Workers:
-  worker_register command_enqueue
-Jobs:
-  iso_create iso_delete iso_cancel
-  jobtemplate_create jobtemplate_delete
-  job_create job_grab job_delete job_update_result job_done jobs_restart job_restart job_cancel job_duplicate
-  jobgroup_create jobgroup_connect
-Tables:
-  table_create table_update table_delete
-Users:
-  user_new_comment user_update_comment user_delete_comment user_login
-Needles:
-  needle_delete needle_modify
-----
+=== List of events tracked by the auditing plugin:
+
+* Assets:
+** asset_register asset_delete
+* Workers:
+** worker_register command_enqueue
+* Jobs:
+** iso_create iso_delete iso_cancel
+** jobtemplate_create jobtemplate_delete
+** job_create job_grab job_delete job_update_result job_done jobs_restart job_restart job_cancel job_duplicate
+** jobgroup_create jobgroup_connect
+* Tables:
+** table_create table_update table_delete
+* Users:
+** user_new_comment user_update_comment user_delete_comment user_login
+* Needles:
+** needle_delete needle_modify
 
 Some of these events are very common and may clutter audit database. For this reason +job_grab+ and +job_done+
 events are blacklisted by default.
+
 [NOTE]
 Upgrading openQA does not automatically update +/etc/openqa/openqa.ini+. Review your configuration after upgrade.
 
-Filesystem Layout
------------------
+== Filesystem Layout
 [id="filesystem"]
 
 The openQA web interface can be started via +MOJO_REVERSE_PROXY=1 morbo script/openqa+ in
@@ -427,8 +421,7 @@ The worker needs to own +/var/lib/openqa/pool/$INSTANCE+, e.g.
 You can also give the whole pool directory to the +_openqa-worker+ user and let
 the workers create their own instance directories.
 
-Other database engines
-----------------------
+== Other database engines
 [id="otherdb"]
 
 By default, openQA will use an SQLite database: +/var/lib/openqa/db/db.sqlite+.
@@ -441,17 +434,17 @@ create a database and a dedicated user account with full access to it. To
 configure access to the chosen database in openQA, edit +/etc/openqa/database.ini+
 and change the settings in the +[production]+ section.
 
-Example for connecting to local PostgreSQL database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[source, ini]
+=== Example for connecting to local PostgreSQL database
+
+[source,ini]
 --------------------------------------------------------------------------------
 [production]
 dsn = dbi:Pg:dbname=openqa
 --------------------------------------------------------------------------------
 
-Example for connecting to remote PostgreSQL database
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-[source, ini]
+=== Example for connecting to remote PostgreSQL database
+
+[source,ini]
 --------------------------------------------------------------------------------
 [production]
 dsn = dbi:Pg:dbname=openqa;host=db.example.org
@@ -459,14 +452,15 @@ user = openqa
 password = somepassword
 --------------------------------------------------------------------------------
 
-General notes
-~~~~~~~~~~~~~
+=== General notes
+:DBD-Pg-DBI_Class_Methods: https://metacpan.org/pod/DBD::Pg#DBI-Class-Methods[DBD::Pg]
+:DBD-mysql_Class_Methods: https://metacpan.org/pod/DBD::mysql#DBI-Class-Methods[DBD::mysql]
+
 The +dsn+ value format technically depends on the database type (though at
 time of writing it's in fact identical for both supported databases). For
-PostgreSQL it's documented at
-http://search.cpan.org/~rudy/DBD-Pg/Pg.pm#DBI_Class_Methods ,
-for MySQL / MariaDB it's documented at
-http://search.cpan.org/~capttofu/DBD-mysql/lib/DBD/mysql.pm#Class_Methods
+PostgreSQL it's documented at {DBD-Pg-DBI_Class_Methods},
+for MySQL / MariaDB it's documented at {DBD-mysql_Class_Methods}
+
 
 If you intend to use a different database, it is best to create the database
 and configuration file before starting the services and connecting to the
@@ -475,8 +469,7 @@ database and may get confused when you try to switch to a different one. See
 the following section if you want to migrate an existing openQA-on-SQLite
 deployment to a different database.
 
-Changing the database engine
-----------------------------
+=== Changing the database engine
 [id="dbengine"]
 
 openQA is compatible with several database engines and comes with all the needed
@@ -581,17 +574,15 @@ SELECT SETVAL('job_settings_id_seq', (SELECT MAX(id) FROM job_settings));
 SELECT SETVAL('job_modules_id_seq', (SELECT MAX(id) FROM job_modules));
 ---------------------------------------------------------------------------------------
 
-Troubleshooting
----------------
+== Troubleshooting
 [id="troubleshooting"]
 
-Tests fail quickly
-~~~~~~~~~~~~~~~~~~
+=== Tests fail quickly
+
 
 Check the log files in +/var/lib/openqa/testresults+
 
-KVM doesn't work
-~~~~~~~~~~~~~~~~
+=== KVM doesn't work
 
 * make sure you have a machine with kvm support
 * make sure +kvm_intel+ or +kvm_amd+ modules are loaded
@@ -600,16 +591,15 @@ KVM doesn't work
 * make sure you are not already running other hypervisors such as VirtualBox
 * when running inside a vm make sure nested virtualization is enabled (pass nested=1 to your kvm module)
 
-openid login times out
-~~~~~~~~~~~~~~~~~~~~~~
+=== openid login times out
 
-www.opensuse.org openid provider may have trouble with IPv6. openQA shows a message like this:
+www.opensuse.org's openid provider may have trouble with IPv6. openQA shows a message like this:
 
   no_identity_server: Could not determine ID provider from URL.
 
 To avoid that switch off IPv6 or add a special route that prevents the system
 from trying to use IPv6 with www.opensuse.org:
-
+[source,sh]
 --------------------------------------------------------------------------------
 ip -6 r a to unreachable 2620:113:8044:66:130:57:66:6/128
 --------------------------------------------------------------------------------

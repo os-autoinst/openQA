@@ -1,11 +1,10 @@
 :toc: left
 :toclevels: 6
-:author: OpenQA Team
+:author: openQA Team
 :listing-caption: Listing
 :source-highlighter: pygments
 
 = openQA Documentation
-
 
 :sectnums:
 ifdef::basebackend-html[toc::[]]
