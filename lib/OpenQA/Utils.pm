@@ -5,6 +5,7 @@ require 5.002;
 use Carp;
 use IPC::Run();
 use Mojo::URL;
+use Regexp::Common 'URI';
 use Try::Tiny;
 
 require Exporter;
@@ -35,6 +36,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &bugurl
   &bugref_to_href
   &href_to_bugref
+  &url_to_href
   &asset_type_from_setting
   &check_download_url
   &check_download_whitelist
@@ -414,6 +416,12 @@ sub href_to_bugref {
     # interchangeable, see comment in 'bugurl', too
     $regex = qr{(?<!["\(\[])(?<url_root>$regex)((?<repo>.*)/(issues|pull)/)?(?<id>\d+)(?![\w])};
     $text =~ s{$regex}{@{[$bugurls{$+{url_root}} . ($+{repo} ? '#' . $+{repo} : '')]}#$+{id}}gi;
+    return $text;
+}
+
+sub url_to_href {
+    my ($text) = @_;
+    $text =~ s(($RE{URI}))(<a href="$1">$1</a>)gx;
     return $text;
 }
 

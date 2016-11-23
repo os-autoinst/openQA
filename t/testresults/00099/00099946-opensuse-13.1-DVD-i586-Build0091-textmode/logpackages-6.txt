@@ -1,1 +1,1 @@
-Test bugref bsc#1234
+Test bugref bsc#1234 https://fate.suse.com/321208
