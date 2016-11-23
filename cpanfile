@@ -50,6 +50,7 @@ requires 'Mojo::Base';
 requires 'Mojo::ByteStream';
 requires 'Mojo::IOLoop';
 requires 'Mojo::JSON';
+requires 'Mojo::RabbitMQ::Client';
 requires 'Mojo::URL';
 requires 'Mojo::Util';
 requires 'Mojolicious';
@@ -94,6 +95,7 @@ on 'test' => sub {
   requires 'Test::Pod';
   requires 'Test::Warnings';
   requires 'Test::MockModule';
+  requires 'Test::MockObject';
 };
 
 feature 'coverage', 'coverage for travis' => sub {
