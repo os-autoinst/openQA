@@ -125,7 +125,8 @@ sub hash {
     return {
         user    => $self->user->name,
         text    => $self->text,
-        created => $self->t_created
+        created => $self->t_created->datetime() . 'Z',
+        updated => $self->t_updated->datetime() . 'Z',
     };
 }
 
