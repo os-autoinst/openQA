@@ -11,13 +11,13 @@
 <% my %distri_to_prod = (
     sle => 'SUSE Linux Enterprise',
     opensuse => 'openSUSE',
-);%>
+); %>
 <% my %flavor_to_prod_sle = (
     Server => 'Server',
     Desktop => 'Desktop',
     SAP => 'for SAP Applications',
-);
-%>
+    'Server-HA' => 'High Availability Extension',
+); %>
 % my $distri = $distri_to_prod{$job->DISTRI};
 % my $product = '';
 % if ($job->DISTRI eq 'sle') {
@@ -67,8 +67,7 @@ Last good: $last_good (or more recent)
 ## Further details
 
 Always latest result in this scenario: [latest]($latest)
-";
-%>
+"; %>
 % $product_details{comment} = $description;
 % my $product_url_new = $distri_to_product_url_new{$job->DISTRI};
 %= stepaction_for('Report product bug' => url_for($product_url_new)->query(%product_details), 'fa-bug', 'report product_bug');
@@ -76,7 +75,6 @@ Always latest result in this scenario: [latest]($latest)
     'issue[subject]' => "test fails in $module",
     'issue[description]' => $description,
     'issue[category_id]' => 152,
-);
-%>
+); %>
 % my $test_url_new = 'https://progress.opensuse.org/projects/openqatests/issues/new';
 %= stepaction_for('Report test issue' => url_for($test_url_new)->query(%test_issue_params), 'fa-bolt', 'report test_issue');
