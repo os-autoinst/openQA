@@ -41,6 +41,7 @@ API for the tests. The most commonly used functions are:
 * +assert_screen NEEDLE[, TIMEOUT]+ Wait until NEEDLE is seen on the screen. Abort test and mark as failed if not found within TIMEOUT (default 30s).
 * +record_soft_failure+ Record a workaround applied in the test.
 * +wait_idle TIMEOUT+  Wait for max TIMEOUT seconds until system is idle.
+* +select_console STRING+ Switch to another TTY (text based or graphical), console names are defined by the distribution.
 * +wait_serial REGEX[, TIMEOUT]+ Wait until REGEX is seen on serial port. Return 0 if not found after TIMEOUT (default 90s)
 * +upload_logs FILE+ Type in necessary shell commands to save FILE in the test results
 * +assert_and_click NEEDLE[, BUTTON]+ Wait until NEEDLE is seen on the screen and click it in the middle of the smallest defined area
@@ -286,7 +287,7 @@ can be assigned _only_ to worker instances 1 and 2.
 
 [caption="File: "]
 .workers.ini
-[source=ini]
+[source,ini]
 --------------------------------------------------------------------------------
 [1]
 WORKER_CLASS = desktop
@@ -694,3 +695,95 @@ diff -u test.txt test2.txt && echo "AUTOYAST OK"
 
 and the rest is done automatically, using already prepared test modules in +tests/autoyast+ subdirectory.
 ====
+
+=== Using text consoles and the serial terminal
+
+Typically the OS you are testing will boot into a graphical shell e.g. The
+Gnome dekstop environment. This is fine if you wish to test a program with a
+GUI, but lets say you want to run some shell scripts then it is not so
+convenient.
+
+[caption="Switching to text mode: "]
+.To access a text based console or TTY, you can do something like the
+following.
+====
+[source,perl]
+--------------------------------------------------------------------------------
+use 5.018;
+use warnings;
+use base 'opensusebasetest';
+use testapi;
+use utils;
+
+sub run {
+    my $self = shift;
+    wait_boot;                     #Utility function defined by the SUSE distribution
+    select_console 'root-console';
+}
+
+1;
+--------------------------------------------------------------------------------
+
+This will select a text TTY and login as the root user (you could use
++become_root+ instead in this case). Had +select_console 'root-console'+ been
+used before then it would just select the TTY. Now that we are on a text
+console it is possible to run scripts and observe their output. Note that
++root-console+ is defined by the distribution, but also that calls to
++select_console+ can have far reaching consequences depending on what console
+is being selected and what backend/architecture the SUT is using.
+====
+
+[caption="Running a script: "]
+.Using the +assert_script_run+ and +script_output+ commands
+====
+[source,perl]
+--------------------------------------------------------------------------------
+assert_script_run('cd /proc');
+my $cpuinfo = script_output('cat cpuinfo');
+if($cpuinfo =~ m/avx2/) {
+    # Do something which needs avx2
+}
+else {
+    # Do some workaround
+}
+--------------------------------------------------------------------------------
+
+Note that it is usually not necessary to return text from the SUT to the test
+module for processing and it is often faster to do the processing in a shell
+script on the SUT. However you may find it more convenient, readable or
+reliable to do it in the Perl test module.
+====
+
+The +script_run+ and +script_output+ commands are high level commands which
+use +type_string+ and +wait_serial+ underneath. Sometimes you may wish to use
+lower level commands which give you more control, but be warned that it may
+also make your code less portable.
+
+==== Using a serial terminal
+
+IMPORTANT: You need a QEMU version >= 2.6.1 and to set the
++VIRTIO_CONSOLE+ variable to 1 to use this with the QEMU backend.
+
+Usually OpenQA controls the system under test using VNC. This allows the use
+of both graphical and text based consoles. Key presses are sent individually
+as VNC commands and output is returned in the form of screen images and text
+output from the SUT's serial port.
+
+Sending key presses over VNC is very slow so for tests which send a lot of
+text commands it is much faster to use a serial port for both sending and
+receiving TTY commands.
+
+[source,perl]
+--------------------------------------------------------------------------------
+select_console('root-virtio-terminal');  # Selects a virtio based serial terminal
+--------------------------------------------------------------------------------
+
+Changing input and output to a serial terminal has the side effect of changing
+where +wait_serial+ reads output from. This will cause some distribution
+specific utility functions to fail, however they can usually be fixed with the
++is_serial_terminal+ API function. To find out more look at the
++is_serial_terminal+ POD in +testapi.pm+.
+
+Another consequence of moving to a serial terminal is that none of the needle
+based commands will be available because there is no screen image to match
+against.
