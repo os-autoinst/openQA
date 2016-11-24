@@ -160,6 +160,10 @@ __PACKAGE__->add_columns(
         data_type   => 'timestamp',
         is_nullable => 1,
     },
+    logs_present => {
+        data_type     => 'boolean',
+        default_value => 1,
+    },
 );
 __PACKAGE__->add_timestamps;
 
