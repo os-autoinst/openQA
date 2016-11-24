@@ -157,10 +157,9 @@ sub important_builds {
 }
 
 sub _find_expired_jobs {
-    my ($self, $keep_in_days, $keep_important_in_days) = @_;
+    my ($self, $important_builds, $keep_in_days, $keep_important_in_days) = @_;
 
     my @ors;
-    my $important_builds = $self->important_builds;
 
     # 0 means forever
     return [] unless $keep_in_days;
@@ -174,19 +173,25 @@ sub _find_expired_jobs {
         my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $keep_important_in_days, 'UTC')};
         push(@ors, {BUILD => {-in => $important_builds}, t_finished => $timecond});
     }
-    return $self->jobs->search({-or => \@ors}, {order_by => qw/id/});
+    return $self->jobs->search({-or => \@ors}, {order_by => qw(id)});
 }
 
 sub find_jobs_with_expired_results {
-    my ($self) = @_;
+    my ($self, $important_builds) = @_;
 
-    return [$self->_find_expired_jobs($self->keep_results_in_days, $self->keep_important_results_in_days)->all];
+    $important_builds //= $self->important_builds;
+    return [
+        $self->_find_expired_jobs(
+            $important_builds, $self->keep_results_in_days, $self->keep_important_results_in_days
+        )->all
+    ];
 }
 
 sub find_jobs_with_expired_logs {
-    my ($self) = @_;
+    my ($self, $important_builds) = @_;
 
-    return [$self->_find_expired_jobs($self->keep_logs_in_days, $self->keep_important_logs_in_days)
+    $important_builds //= $self->important_builds;
+    return [$self->_find_expired_jobs($important_builds, $self->keep_logs_in_days, $self->keep_important_logs_in_days)
           ->search({logs_present => 1})->all
     ];
 }
@@ -197,10 +202,11 @@ sub limit_results_and_logs {
 
     my $groups = $app->db->resultset('JobGroups');
     while (my $group = $groups->next) {
-        for my $job (@{$group->find_jobs_with_expired_results}) {
+        my $important_builds = $group->important_builds;
+        for my $job (@{$group->find_jobs_with_expired_results($important_builds)}) {
             $job->delete;
         }
-        for my $job (@{$group->find_jobs_with_expired_logs}) {
+        for my $job (@{$group->find_jobs_with_expired_logs($important_builds)}) {
             $job->delete_logs;
         }
     }

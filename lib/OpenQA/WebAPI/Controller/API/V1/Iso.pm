@@ -417,6 +417,13 @@ sub schedule_iso {
             args     => [],
             run_at   => now(),
         });
+    $self->db->resultset('GruTasks')->create(
+        {
+            taskname => 'limit_results_and_logs',
+            priority => 5,
+            args     => [],
+            run_at   => now(),
+        });
 
     notify_workers;
     $self->emit_event('openqa_iso_create', $args);

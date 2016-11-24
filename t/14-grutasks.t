@@ -30,6 +30,7 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use File::Which qw(which);
 use File::Path qw();
+use Date::Format qw(time2str);
 
 # these are used to track assets being 'removed from disk' and 'deleted'
 # by mock methods (so we don't *actually* lose them)
@@ -138,7 +139,7 @@ $delsize = @deleted;
 is($remsize, 2, "two assets should have been 'removed' at size 45GiB");
 is($delsize, 2, "two assets should have been 'deleted' at size 45GiB");
 
-sub create_temp_job_result_file {
+sub create_temp_job_log_file {
     my ($resultdir) = @_;
 
     my $filename = $resultdir . '/autoinst-log.txt';
@@ -148,14 +149,13 @@ sub create_temp_job_result_file {
     return $filename;
 }
 
-my @jobs      = $t->app->db->resultset('Jobs')->search({state => 'done'})->all;
-my $resultdir = $jobs[2]->result_dir;
-my $jobid     = $jobs[2]->id;
-my %args      = (resultdir => $resultdir, jobid => $jobid);
-
-subtest 'reduce_result gru task cleans up logs' => sub {
-    my $filename = create_temp_job_result_file($resultdir);
-    run_gru('reduce_result' => \%args);
+subtest 'limit_results_and_logs gru task cleans up logs' => sub {
+    my @jobs = $t->app->db->resultset('Jobs')->search({state => 'done'})->all;
+    my $job = $jobs[2];
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    $job->group->update({"keep_logs_in_days" => 5});
+    my $filename = create_temp_job_log_file($job->result_dir);
+    run_gru('limit_results_and_logs');
     ok(!-e $filename, 'file got cleaned');
 };
 

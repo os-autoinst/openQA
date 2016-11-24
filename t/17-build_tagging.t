@@ -128,30 +128,6 @@ subtest 'show_tags query parameter enables/disables tags on index page' => sub {
     }
 };
 
-=pod
-Given a comment C<tag:<build_ref>:important> exists on a job group comments
-When GRU cleanup task is run
-And job OR job_group OR asset linked to build which is marked as important by comment as above
-Then "important builds" are skipped from cleanup
-=cut
-subtest 'no cleanup of important builds' => sub {
-    my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
-    $c->app($t->app);
-
-    my @jobs = $t->app->db->resultset('Jobs')->search({state => 'done', group_id => 1001})->all;
-    my @jobs_in_build = grep { $_->settings_hash->{BUILD} eq '0048' } @jobs;
-    my $job           = $jobs_in_build[1];
-    my %args          = (resultdir => $job->result_dir, jobid => $job->id);
-    my $filename      = $job->result_dir . '/autoinst-log.txt';
-    open my $fh, ">>$filename" or die "touch $filename: $!\n";
-    close $fh;
-
-    post_comment_1001 'tag:0048:important';
-    $t->app->gru->enqueue('reduce_result' => \%args);
-    $c->run('run', '-o');
-    ok(-e $filename, 'file still exists');
-};
-
 sub _map_expired {
     my ($jg, $method) = @_;
 
@@ -180,7 +156,6 @@ subtest 'expired jobs' => sub {
         $t->app->db->resultset('Jobs')->find(99938)
           ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
         is_deeply($jg->$m, [], 'still no jobs with expired ' . $file_type);
-
         $jg->update({"keep_${file_type}_in_days" => 5});
         # now the unimportant jobs are expired
         is_deeply(_map_expired($jg, $m), [qw(99937 99981)], '2 jobs with expired ' . $file_type);
@@ -196,6 +171,37 @@ subtest 'expired jobs' => sub {
     $t->app->db->resultset('Jobs')->find(99938)->update({logs_present => 0});
     is_deeply(_map_expired($jg, $m),
         [qw(99937 99981)], 'job with deleted logs not return among jobs with expired logs');
+};
+
+=pod
+Given a comment C<tag:<build_ref>:important> exists on a job group comments
+When GRU cleanup task is run
+And job OR job_group OR asset linked to build which is marked as important by comment as above
+Then "important builds" are skipped from cleanup
+=cut
+subtest 'no cleanup of important builds' => sub {
+    my $c = OpenQA::WebAPI::Plugin::Gru::Command::gru->new();
+    $c->app($t->app);
+
+    # build 0048 has already been tagged as important before
+    my @jobs     = $t->app->db->resultset('Jobs')->search({state => 'done', group_id => 1001, BUILD => '0048'})->all;
+    my $job      = $jobs[1];
+    my $filename = $job->result_dir . '/autoinst-log.txt';
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    $job->group->update(
+        {
+            keep_logs_in_days              => 10,
+            keep_important_logs_in_days    => 100,
+            keep_results_in_days           => 10,
+            keep_important_results_in_days => 100,
+        });
+
+    open my $fh, ">>$filename" or die "touch $filename: $!\n";
+    close $fh;
+
+    $t->app->gru->enqueue('limit_results_and_logs');
+    $c->run('run', '-o');
+    ok(-e $filename, 'file still exists');
 };
 
 done_testing;
