@@ -23,6 +23,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
+use OpenQA::Schema::JobGroupDefaults;
 use Date::Format qw(time2str);
 
 my $test_case;
@@ -152,24 +153,49 @@ subtest 'no cleanup of important builds' => sub {
 };
 
 sub _map_expired {
-    my ($jg) = @_;
-    my $jobs = $jg->expired_jobs;
+    my ($jg, $method) = @_;
+
+    my $jobs = $jg->$method;
     return [map { $_->id } @$jobs];
 }
 
-subtest 'expired_jobs' => sub {
+subtest 'expired jobs' => sub {
     my $jg = $t->app->db->resultset('JobGroups')->find(1001);
-    is_deeply($jg->expired_jobs, [], 'no jobs expired');
-    $t->app->db->resultset('Jobs')->find(99938)
-      ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
-    is_deeply($jg->expired_jobs, [], 'still no jobs expired');
-    $jg->update({keep_results_in_days => 5});
-    # now the unimportant jobs are expired
-    is_deeply(_map_expired($jg), [qw(99937 99981)], '2 jobs expired');
-    $jg->update({keep_important_results_in_days => 15});
-    is_deeply(_map_expired($jg), [qw(99937 99981)], 'still 2 jobs expired');
-    $jg->update({keep_important_results_in_days => 10});
-    is_deeply(_map_expired($jg), [qw(99937 99938 99981)], 'now important 99938 expired too');
+    my $m;
+
+    for my $file_type (qw(results logs)) {
+        # method name for file type
+        $m = 'find_jobs_with_expired_' . $file_type;
+
+        # ensure same defaults present
+        $jg->update(
+            {
+                "keep_${file_type}_in_days" => OpenQA::Schema::JobGroupDefaults::KEEP_RESULTS_IN_DAYS,
+                "keep_important_${file_type}_in_days" =>
+                  OpenQA::Schema::JobGroupDefaults::KEEP_IMPORTANT_RESULTS_IN_DAYS,
+            });
+
+        is_deeply($jg->$m, [], 'no jobs with expired ' . $file_type);
+
+        $t->app->db->resultset('Jobs')->find(99938)
+          ->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+        is_deeply($jg->$m, [], 'still no jobs with expired ' . $file_type);
+
+        $jg->update({"keep_${file_type}_in_days" => 5});
+        # now the unimportant jobs are expired
+        is_deeply(_map_expired($jg, $m), [qw(99937 99981)], '2 jobs with expired ' . $file_type);
+
+        $jg->update({"keep_important_${file_type}_in_days" => 15});
+        is_deeply(_map_expired($jg, $m), [qw(99937 99981)], 'still 2 jobs with expired ' . $file_type);
+
+        $jg->update({"keep_important_${file_type}_in_days" => 10});
+        is_deeply(_map_expired($jg, $m),
+            [qw(99937 99938 99981)], 'now also important job 99938 with expired ' . $file_type);
+    }
+
+    $t->app->db->resultset('Jobs')->find(99938)->update({logs_present => 0});
+    is_deeply(_map_expired($jg, $m),
+        [qw(99937 99981)], 'job with deleted logs not return among jobs with expired logs');
 };
 
 done_testing;

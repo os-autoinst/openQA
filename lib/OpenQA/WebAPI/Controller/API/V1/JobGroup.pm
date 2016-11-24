@@ -126,7 +126,7 @@ sub list_jobs {
 
     my @jobs;
     if ($self->param('expired')) {
-        @jobs = @{$group->expired_jobs};
+        @jobs = @{$group->find_jobs_with_expired_results};
     }
     else {
         @jobs = $group->jobs;
