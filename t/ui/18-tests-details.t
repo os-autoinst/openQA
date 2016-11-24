@@ -112,13 +112,14 @@ subtest 'render bugref links in thumbnail text windows' => sub {
     $driver->get($baseurl . 'tests/99946');
     $driver->find_element('[title="Soft Failed"]', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
-    is($driver->find_element('#preview_container_in', 'css')->get_text(), 'Test bugref bsc#1234',
-        'bugref text correct');
     is(
-        $driver->find_element('#preview_container_in a', 'css')->get_attribute('href'),
-        'https://bugzilla.suse.com/show_bug.cgi?id=1234',
-        'bugref href correct'
+        $driver->find_element('#preview_container_in', 'css')->get_text(),
+        'Test bugref bsc#1234 https://fate.suse.com/321208',
+        'bugref text correct'
     );
+    my @a = $driver->find_elements('#preview_container_in a', 'css');
+    is((shift @a)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bugref href correct');
+    is((shift @a)->get_attribute('href'), 'https://fate.suse.com/321208', 'regular href correct');
 };
 
 subtest 'route to latest' => sub {
