@@ -200,7 +200,7 @@ function setupResult(state, jobid, status_url, details_url) {
       }
     }
   }
-  if (state == "running" || state == "waiting") {
+  if (state == "running" || state == "waiting" || state == "uploading") {
     setupRunning(jobid, status_url, details_url);
   }
   else if (state == "scheduled") {
