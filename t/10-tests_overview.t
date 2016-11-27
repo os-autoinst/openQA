@@ -141,6 +141,16 @@ $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version =>
   ->status_is(200);
 like(get_summary, qr/Passed: 0 Soft Failure: 2 Failed: 1/i, 'todo=1 shows all unlabeled failed');
 
+# multiple groups can be shown at the same time
+$get     = $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002')->status_is(200);
+$summary = get_summary;
+like($summary, qr/Summary of opensuse, opensuse test/i, 'references both groups selected by query');
+like($summary, qr/Passed: 2 Failed: 0 Scheduled: 1 Running: 2 None: 1/i,
+    'shows latest jobs from both groups 1001/1002');
+$get->element_exists('#res_DVD_i586_kde',                           'job from group 1001 is shown');
+$get->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled', 'another job from group 1001');
+$get->element_exists('#res_NET_x86_64_kde .state_running',          'job from group 1002 is shown');
+
 #
 # Test filter form
 #

@@ -12,10 +12,10 @@
     <div id="summary" class="panel <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'panel-danger' : 'panel-success' %>">
         <div class="panel-heading">
             Overall Summary of
-            % if ($group) {
-                <b><%= link_to $group->name => url_for('group_overview', groupid => $group->id) %></b>
-            % } else
-            % {
+            % if (@$groups) {
+                <b><%= b join(', ', map { link_to $_->name => url_for('group_overview', groupid => $_->id) } @$groups) %></b>
+            % }
+            % else {
                 <b><%= $distri %> <%= $version %></b>
             % }
             build <%= $build %>
