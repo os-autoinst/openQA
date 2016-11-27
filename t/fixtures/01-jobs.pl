@@ -34,7 +34,7 @@
     JobGroups => {
         id          => 1001,
         name        => 'opensuse',
-        description => '##Test description\n\nwith bugref bsc#1234',
+        description => "##Test description\n\nwith bugref bsc#1234",
     },
     JobGroups => {
         id   => 1002,

@@ -68,7 +68,7 @@ OpenQA::Utils::log_debug('build_url: ' . $build_url);
 is(scalar @{$driver->find_elements('h4', 'css')}, 5, 'number of builds for opensuse');
 is(
     $driver->find_element('#group_description', 'css')->get_text(),
-    'Test description\n\nwith bugref bsc#1234',
+    "Test description\nwith bugref bsc#1234",
     'description shown'
 );
 is(
