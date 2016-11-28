@@ -120,8 +120,7 @@ sub stop_job($;$) {
     print "stop_job $aborted\n" if $verbose;
     $stop_job_running = 1;
 
-    # stop all job related timers
-    remove_timer('update_status');
+    # stop all job related timers except update_status
     remove_timer('check_backend');
     remove_timer('job_timeout');
 
@@ -139,6 +138,26 @@ sub stop_job($;$) {
     };
 
     $stop_job_check_status->();
+}
+
+sub _chunk_checksum {
+    my ($fh) = @_;
+    my $ctx = Digest::MD5->new;
+    my $data;
+    # do an initial status update
+    update_status();
+    my $time = time;
+    # read 100MB at a time so we don't block reading a huge file,
+    # update status every ~5 seconds as we are blocking the timer
+    while (read($fh, $data, 100000000)) {
+        my $newtime = time;
+        if ($newtime - $time > 5) {
+            $time = $newtime;
+            update_status();
+        }
+        $ctx->add($data);
+    }
+    return $ctx->hexdigest();
 }
 
 sub upload {
@@ -162,7 +181,22 @@ sub upload {
     my $headers = $tx->req->headers;
     $headers->content_type($headers->content_type . "; boundary=$boundary");
 
-    my $res = $OpenQA::Worker::Common::ua->start($tx);
+    my $res;
+    # We start the request in non-blocking fashion - with a callback -
+    # so that while it's running, which can take several minutes for
+    # large files, the update_status timer will continue to fire, so
+    # the server will know this worker is not dead
+    $OpenQA::Worker::Common::ua->start(
+        $tx => sub {
+            my ($ua, $tx) = @_;
+            $res = $tx;
+            return;
+        });
+    # We now 'block' until the result shows up (blocking in this way
+    # allows timers to run)
+    while (!$res && Mojo::IOLoop->is_running) {
+        Mojo::IOLoop->one_tick;
+    }
 
     if (my $err = $res->error) {
         my $msg;
@@ -183,15 +217,17 @@ sub upload {
     if ($res->res->json && $res->res->json->{temporary}) {
         my $csum1 = '1';
         my $size1;
-        if (open(my $cfd, "-|", "cksum", $res->res->json->{temporary})) {
-            ($csum1, $size1) = split(/ /, <$cfd>);
-            close($cfd);
+        if (open(my $tempfh, "<", $res->res->json->{temporary})) {
+            $csum1 = _chunk_checksum($tempfh);
+            $size1 = -s $res->res->json->{temporary};
+            close($tempfh);
         }
         my $csum2 = '2';
         my $size2;
-        if (open(my $cfd, "-|", "cksum", $file)) {
-            ($csum2, $size2) = split(/ /, <$cfd>);
-            close($cfd);
+        if (open(my $filefh, "<", $file)) {
+            $csum2 = _chunk_checksum($filefh);
+            $size2 = -s $file;
+            close($filefh);
         }
         open(my $log, '>>', "autoinst-log.txt");
         print $log "Checksum $csum1:$csum2 Sizes:$size1:$size2\n";
@@ -297,30 +333,36 @@ sub _stop_job($;$) {
                 last;
             }
         }
-
-        if ($aborted eq 'obsolete') {
-            printf "setting job %d to incomplete (obsolete)\n", $job->{id};
-            upload_status(1);
-            api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete', newbuild => 1});
-            $job_done = 1;
-        }
-        elsif ($aborted eq 'cancel') {
-            # not using job_incomplete here to avoid duplicate
-            printf "setting job %d to incomplete (cancel)\n", $job->{id};
-            upload_status(1);
-            api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
-            $job_done = 1;
-        }
-        elsif ($aborted eq 'timeout') {
-            printf "job %d spent more time than MAX_JOB_TIME\n", $job->{id};
-        }
-        elsif ($aborted eq 'done') {    # not aborted
-            printf "setting job %d to done\n", $job->{id};
-            upload_status(1);
-            api_call('post', 'jobs/' . $job->{id} . '/set_done');
-            $job_done = 1;
-        }
     }
+
+    # now we're actually done, remove the update_status timer (we have
+    # to do this as late as possible to prevent the dead job checker
+    # from deciding we're dead)
+    remove_timer('update_status');
+
+    if ($aborted eq 'obsolete') {
+        printf "setting job %d to incomplete (obsolete)\n", $job->{id};
+        upload_status(1);
+        api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete', newbuild => 1});
+        $job_done = 1;
+    }
+    elsif ($aborted eq 'cancel') {
+        # not using job_incomplete here to avoid duplicate
+        printf "setting job %d to incomplete (cancel)\n", $job->{id};
+        upload_status(1);
+        api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
+        $job_done = 1;
+    }
+    elsif ($aborted eq 'timeout') {
+        printf "job %d spent more time than MAX_JOB_TIME\n", $job->{id};
+    }
+    elsif ($aborted eq 'done') {    # not aborted
+        printf "setting job %d to done\n", $job->{id};
+        upload_status(1);
+        api_call('post', 'jobs/' . $job->{id} . '/set_done');
+        $job_done = 1;
+    }
+
     unless ($job_done || $aborted eq 'api-failure') {
         upload_status(1);
         printf "job %d incomplete\n", $job->{id};
