@@ -69,6 +69,15 @@ lorem ipsum ...
 
 =cut
 
+# Intentionally commented out - so far useful only for openQA debugging
+# =item B<--form>
+#
+# instead of appending supplied parameters as URL query, use HTTP forms
+#
+# to create nested forms use dotted syntax. For example:
+#
+# client jobs/1/artefact post file.file=bar file.filename=bar.log
+
 use strict;
 use FindBin;
 BEGIN { unshift @INC, "$FindBin::RealBin/../lib" }
@@ -90,7 +99,8 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options, "host=s", "apibase=s", "json", "verbose|v", "apikey:s", "apisecret:s", "params=s", "help|h|?",)
+GetOptions(\%options, "host=s", "apibase=s", "json", "verbose|v", "apikey:s", "apisecret:s", "params=s", 'form',
+    "help|h|?",)
   or usage(1);
 
 usage(1) unless @ARGV;
@@ -118,7 +128,7 @@ for my $arg (@ARGV) {
     if ($arg =~ /^(?:get|post|delete|put)$/i) {
         $method = lc $arg;
     }
-    elsif ($arg =~ /^([[:alnum:]_\[\]]+)=(.+)/) {
+    elsif ($arg =~ /^([[:alnum:]_\[\]\.]+)=(.+)/) {
         my $key   = $1;
         my $value = $2;
         # Mojo::URL no longer escapes / (https://github.com/kraih/mojo/commit/aab2f1f)
@@ -128,7 +138,7 @@ for my $arg (@ARGV) {
 }
 
 my $url;
-if ($options{'host'} !~ '/') {
+if ($options{host} !~ '/') {
     $url = Mojo::URL->new();
     $url->host($options{host});
     $url->scheme('http');
@@ -138,11 +148,32 @@ else {
 }
 
 $url->path($path);
-$url->query([%params]) if %params;
+
+if (!$options{form}) {
+    $url->query([%params]) if %params;
+}
+else {
+    my %form;
+    for (keys %params) {
+        if (/(\S+)\.(\S+)/) {
+            $form{$1}{$2} = $params{$_};
+        }
+        else {
+            $form{$_} = $params{$_};
+        }
+    }
+    %params = %form;
+}
 
 my $client = OpenQA::Client->new(apikey => $options{apikey}, apisecret => $options{apisecret}, api => $url->host);
 
-my $res = $client->$method($url)->res;
+my $res;
+if (!$options{form}) {
+    $res = $client->$method($url)->res;
+}
+else {
+    $res = $client->$method($url => form => \%params)->res;
+}
 if ($res->code == 200) {
     if ($options{json}) {
         print JSON->new->pretty->encode($res->json);
