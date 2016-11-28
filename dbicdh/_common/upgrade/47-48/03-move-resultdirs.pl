@@ -25,7 +25,7 @@ use OpenQA::Utils;
 sub {
     my ($schema) = @_;
 
-    my $jobs = $schema->resultset('Jobs')->search({});
+    my $jobs = $schema->resultset('Jobs')->search({}, {select => [qw(id result_dir)]});
 
     while (my $job = $jobs->next) {
         next unless $job->result_dir;
