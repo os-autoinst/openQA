@@ -160,6 +160,10 @@ __PACKAGE__->add_columns(
         data_type   => 'timestamp',
         is_nullable => 1,
     },
+    logs_present => {
+        data_type     => 'boolean',
+        default_value => 1,
+    },
 );
 __PACKAGE__->add_timestamps;
 
@@ -246,6 +250,8 @@ sub delete {
     my $ret = $self->SUPER::delete;
 
     # last step: remove result directory if already existant
+    # This must be executed after $self->SUPER::delete because it might fail and result_dir should not be
+    # deleted in the error case
     if ($self->result_dir() && -d $self->result_dir()) {
         File::Path::rmtree($self->result_dir());
     }
@@ -908,28 +914,24 @@ sub part_of_important_build {
     return grep { $_ eq $build } @{$self->group->important_builds};
 }
 
-# gru job
+# obsolete gru job, replaced by JobGroups::limit_results_and_logs
 sub reduce_result {
-    my ($app, $args) = @_;
+    return;
+}
 
-    if (!ref($args)) {
-        $args = {resultdir => $args};
-    }
+sub delete_logs {
+    my ($self) = @_;
 
-    if ($args->{jobid}) {
-        my $job = $app->db->resultset('Jobs')->find({id => $args->{jobid}});
-        if ($job && $job->part_of_important_build) {
-            $app->log->debug('Job ' . $job->id . ' is part of important build, skip cleanup');
-            return;
-        }
-    }
+    my $resultdir = $self->result_dir;
+    return unless $resultdir;
 
-    my $resultdir = $args->{resultdir};
-    $resultdir .= "/";
-    unlink($resultdir . "autoinst-log.txt");
-    unlink($resultdir . "video.ogv");
-    unlink($resultdir . "serial0.txt");
-    File::Path::rmtree($resultdir . "ulogs");
+    $resultdir .= '/';
+    unlink($resultdir . 'autoinst-log.txt');
+    unlink($resultdir . 'video.ogv');
+    unlink($resultdir . 'serial0.txt');
+    File::Path::rmtree($resultdir . 'ulogs');
+
+    $self->update({logs_present => 0});
 }
 
 sub num_prefix_dir {
@@ -952,9 +954,6 @@ sub create_result_dir {
         mkdir($npd) unless -d $npd;
         my $days = 30;
         $days = $self->group->keep_logs_in_days if $self->group;
-        my $cleanday = DateTime->now()->add(days => $days);
-        my %args = (resultdir => $dir, jobid => $self->id);
-        $OpenQA::Utils::app->gru->enqueue(reduce_result => \%args, {run_at => $cleanday});
         mkdir($dir) || die "can't mkdir $dir: $!";
     }
     my $sdir = $dir . "/.thumbs";

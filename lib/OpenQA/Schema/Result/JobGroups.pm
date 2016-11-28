@@ -156,28 +156,60 @@ sub important_builds {
     return [sort keys %importants];
 }
 
-# list all jobs that are expired
-sub expired_jobs {
-    my ($self) = @_;
+sub _find_expired_jobs {
+    my ($self, $important_builds, $keep_in_days, $keep_important_in_days) = @_;
 
     my @ors;
-    my $important_builds = $self->important_builds;
 
     # 0 means forever
-    return [] unless $self->keep_results_in_days;
+    return [] unless $keep_in_days;
 
     # all jobs not in important builds that are expired
-    my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $self->keep_results_in_days, 'UTC')};
+    my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $keep_in_days, 'UTC')};
     push(@ors, {BUILD => {-not_in => $important_builds}, t_finished => $timecond});
 
-    if ($self->keep_important_results_in_days) {
+    if ($keep_important_in_days) {
         # expired jobs in important builds
-        my $timecond
-          = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $self->keep_important_results_in_days, 'UTC')};
+        my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $keep_important_in_days, 'UTC')};
         push(@ors, {BUILD => {-in => $important_builds}, t_finished => $timecond});
     }
-    my $jobs = $self->jobs->search({-or => \@ors}, {order_by => qw/id/});
-    return [$jobs->all];
+    return $self->jobs->search({-or => \@ors}, {order_by => qw(id)});
+}
+
+sub find_jobs_with_expired_results {
+    my ($self, $important_builds) = @_;
+
+    $important_builds //= $self->important_builds;
+    return [
+        $self->_find_expired_jobs(
+            $important_builds, $self->keep_results_in_days, $self->keep_important_results_in_days
+        )->all
+    ];
+}
+
+sub find_jobs_with_expired_logs {
+    my ($self, $important_builds) = @_;
+
+    $important_builds //= $self->important_builds;
+    return [$self->_find_expired_jobs($important_builds, $self->keep_logs_in_days, $self->keep_important_logs_in_days)
+          ->search({logs_present => 1})->all
+    ];
+}
+
+# gru task, added when scheduling new iso
+sub limit_results_and_logs {
+    my ($app) = @_;
+
+    my $groups = $app->db->resultset('JobGroups');
+    while (my $group = $groups->next) {
+        my $important_builds = $group->important_builds;
+        for my $job (@{$group->find_jobs_with_expired_results($important_builds)}) {
+            $job->delete;
+        }
+        for my $job (@{$group->find_jobs_with_expired_logs($important_builds)}) {
+            $job->delete_logs;
+        }
+    }
 }
 
 # parse comments and list the all builds mentioned
