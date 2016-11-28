@@ -47,18 +47,34 @@ function loadAuditLogTable ()
             render: function ( data, type, row ) {
                 if (type === 'display')
                     // I want to have a link to events for cases when one wants to share interesing event
-                    return '<a href="' + audit_url + '?eventid=' + row.id + '">' + jQuery.timeago(data + " UTC") + '</a>';
+                    return '<a href="' + audit_url + '?eventid=' + row.id + '" title=' + data + '>' + jQuery.timeago(data + " UTC") + '</a>';
                 else
                     return data;
+            }
+        },
+        {
+            targets: 2,
+            render: function ( data, type, row ) {
+                // the connection info is not so important to warrant such retail space
+                if (type === 'display' && data) {
+                    return '<span id="audit_event_data" title="' + data + '">' + data.substr( 0, 8 ) + (data.length > 8 ? '…</span>' : '</span>');
+                }
+                else {
+                    return data;
+                }
             }
         },
         { 
             targets: 4,
             render: function ( data, type, row ) {
-                // Limit length of displayed event data, expand on click
-                if (type === 'display' && data.length > 40) {
-                    var parsed_data = JSON.stringify(JSON.parse(data), null, 2);
-                    return '<span id="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 38 )) + '…</span>';
+                if (type === 'display' && data) {
+                    var parsed_data;
+                    try {
+                        parsed_data = JSON.stringify(JSON.parse(data), null, 2);
+                    } catch (e) {
+                        parsed_data = data;
+                    }
+                    return '<span id="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 70)) + (parsed_data.length > 70 ? '…</span>' : '</span>');
                 }
                 else {
                     return data;
