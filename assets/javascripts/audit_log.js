@@ -1,5 +1,7 @@
 var audit_url;
 var ajax_url;
+var audit_rows;
+var audit_page;
 
 function htmlEscape(str) {
     return String(str)
@@ -27,9 +29,9 @@ $.fn.dataTable.ext.search.push(
 function loadAuditLogTable ()
 {
     $('#audit_log_table').DataTable( {
-    lengthMenu: [10, 25, 50],
+    lengthMenu: [20, 40, 100],
     ajax: {
-        url: ajax_url,
+        url: ajax_url + "?rows=" + audit_rows + "&page=" + audit_page,
         type: "GET",
         dataType: 'json'
     },

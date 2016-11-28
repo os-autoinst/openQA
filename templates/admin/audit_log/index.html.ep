@@ -2,8 +2,10 @@
 % title 'Audit log';
 
 % content_for 'ready_function' => begin
-    audit_url = "<%= url_for('audit_log') %>";
-    ajax_url  = "<%= url_for('audit_ajax') %>";
+    audit_url  = "<%= url_for('audit_log') %>";
+    ajax_url   = "<%= url_for('audit_ajax') %>";
+    audit_rows = <%= $rows %>;
+    audit_page = <%= $page %>;
     loadAuditLogTable();
 % end
 

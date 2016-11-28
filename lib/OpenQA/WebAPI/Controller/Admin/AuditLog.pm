@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE LLC
+# Copyright (C) 2015-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +15,8 @@
 
 
 package OpenQA::WebAPI::Controller::Admin::AuditLog;
-use strict;
+use 5.018;
+use warnings;
 use parent 'Mojolicious::Controller';
 use JSON ();
 use OpenQA::Utils 'log_warning';
@@ -23,6 +24,8 @@ use OpenQA::Utils 'log_warning';
 sub index {
     my ($self) = @_;
     $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
+    $self->stash('page', $self->param('page') // 1);
+    $self->stash('rows', $self->param('rows') // 600);
     $self->render('admin/audit_log/index');
 }
 
@@ -51,11 +54,13 @@ sub ajax {
     my ($self) = @_;
     my $query;
     my $event_type_filter = $self->param('eventType');
+    my $page              = $self->param('page') // 1;
+    my $rows              = $self->param('rows') // 600;
     if ($event_type_filter) {
         $query = {event => $event_type_filter};
     }
     my $events_rs = $self->db->resultset("AuditEvents")
-      ->search($query, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => 300});
+      ->search($query, {order_by => {-desc => 'me.id'}, prefetch => 'owner', rows => $rows, page => $page});
     my @events;
     while (my $event = $events_rs->next) {
         my $data = {
