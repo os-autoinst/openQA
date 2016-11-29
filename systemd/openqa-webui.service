@@ -10,7 +10,8 @@ Requires=openqa-scheduler.service openqa-websockets.service
 User=geekotest
 Environment="DBUS_STARTER_BUS_TYPE=system"
 # Our API commands are very expensive, so the default timeouts are too tight
-ExecStart=/usr/share/openqa/script/openqa prefork -m production --proxy -i 100 -H 400 -w 10
+# for the meaning of -a -G and -r, check https://progress.opensuse.org/issues/13876
+ExecStart=/usr/share/openqa/script/openqa prefork -m production --proxy -i 100 -H 400 -w 10 -a 100 -G 1000 -r 20
 
 [Install]
 WantedBy=multi-user.target
