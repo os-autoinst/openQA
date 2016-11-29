@@ -1,0 +1,12 @@
+% my $reviewed = $build_res->{reviewed};
+% if ($reviewed) {
+    <span id="<%= $id_prefix %>review-<%= $group_build_id %>">
+        <i class="review fa fa-certificate" title="Reviewed (<%= $build_res->{labeled}; %> <%= $build_res->{labeled} == 1 ? 'comment' : 'comments' %>)"></i>
+    </span>
+% }
+% my $reviewed_all_passed = $build_res->{reviewed_all_passed};
+% if ($reviewed_all_passed) {
+    <span id="<%= $id_prefix %>review-all-passed-<%= $group_build_id %>">
+        <i class="review-all-passed fa fa-certificate" title="Reviewed (all passed)"></i>
+    </span>
+% }
