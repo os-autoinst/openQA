@@ -336,4 +336,29 @@ is_deeply(
     'Build 92 of opensuse'
 );
 
+# post new job and check default priority
+my $job_properties = {
+    iso     => 'openSUSE-Tumbleweed-DVD-x86_64-Current.iso',
+    DISTRI  => 'opensuse',
+    VERSION => 'Tumbleweed',
+    FLAVOR  => 'DVD',
+    ARCH    => 'X86_64',
+    TEST    => 'awesome',
+    MACHINE => '64bit',
+    BUILD   => '1234',
+    _GROUP  => 'opensuse',
+};
+$post = $t->post_ok('/api/v1/jobs', form => $job_properties)->status_is(200);
+$get = $t->get_ok('/api/v1/jobs', form => $job_properties);
+is($get->tx->res->json->{jobs}->[0]->{group},    'opensuse');
+is($get->tx->res->json->{jobs}->[0]->{priority}, 50);
+
+# post new job in job group with customized default priority
+$t->app->db->resultset('JobGroups')->find({name => 'opensuse test'})->update({default_priority => 42});
+$job_properties->{_GROUP} = 'opensuse test';
+$post = $t->post_ok('/api/v1/jobs', form => $job_properties)->status_is(200);
+$get = $t->get_ok('/api/v1/jobs', form => $job_properties);
+is($get->tx->res->json->{jobs}->[1]->{group},    'opensuse test');
+is($get->tx->res->json->{jobs}->[1]->{priority}, 42);
+
 done_testing();

@@ -84,9 +84,13 @@ sub save_connect {
 
     $self->validation->required('groupid')->like(qr/^[0-9]+$/);
     my $group = $self->db->resultset("JobGroups")->find($self->param('groupid'));
+    if (!$group) {
+        $self->flash(error => 'Specified group ID ' . $self->param('groupid') . 'doesn\'t exist.');
+        $self->redirect_to('admin_groups');
+    }
 
     my $values = {
-        prio => $self->param('prio') // 50,
+        prio => $self->param('prio') // $group->default_priority,
         product_id    => $self->param('medium'),
         machine_id    => $self->param('machine'),
         group_id      => $group->id,
