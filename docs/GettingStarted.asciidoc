@@ -90,6 +90,9 @@ following list.
   mean that all testmodules were successful or that no single assertion failed.
 * *failed* At least one assertion considered to be critical was not satisfied at some
   point.
+* *softfailed* At least one non-critical assertion was not satisfied at some
+  point (eg. a softfailure has been recorded explicitly via +record_soft_failure+)
+  or workaround needles are in place.
 * *incomplete* The job is no longer running but no result was provided. Either
   it was cancelled while running or it crashed.
 
