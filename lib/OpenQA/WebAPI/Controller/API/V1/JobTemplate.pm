@@ -89,16 +89,15 @@ sub create {
     my $id;
     my $validation = $self->validation;
 
-    $validation->required('prio')->like(qr/^[0-9]+$/);
-
     if ($validation->optional('product_id')->like(qr/^[0-9]+$/)->is_valid) {
         $validation->required('machine_id')->like(qr/^[0-9]+$/);
         $validation->required('group_id')->like(qr/^[0-9]+$/);
         $validation->required('test_suite_id')->like(qr/^[0-9]+$/);
+        $validation->optional('prio')->like(qr/^[0-9]+$/);
 
         if ($validation->has_error) {
             $error = "wrong parameter: ";
-            for my $k (qw/product_id machine_id test_suite_id group_id/) {
+            for my $k (qw(product_id machine_id test_suite_id group_id)) {
                 $error .= $k if $validation->has_error($k);
             }
         }
@@ -121,10 +120,11 @@ sub create {
         $validation->required('distri');
         $validation->required('flavor');
         $validation->required('version');
+        $validation->required('prio')->like(qr/^[0-9]+$/);
 
         if ($validation->has_error) {
             $error = "wrong parameter: ";
-            for my $k (qw/group_name machine_name test_suite_name arch distri flavor version/) {
+            for my $k (qw(group_name machine_name test_suite_name arch distri flavor version)) {
                 $error .= $k if $validation->has_error($k);
             }
         }
