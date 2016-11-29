@@ -268,7 +268,7 @@ sub delete {
 }
 
 sub name {
-    my $self = shift;
+    my ($self) = @_;
     return $self->slug if $self->slug;
 
     if (!$self->{_name}) {

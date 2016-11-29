@@ -360,19 +360,16 @@ sub schedule_iso {
 
             # create a new job with these parameters and count if successful, do not send job notifies yet
             my $job = $self->db->resultset('Jobs')->create_from_settings($settings);
+            push @jobs, $job;
 
-            if ($job) {
-                push @jobs, $job;
+            $testsuite_ids{_settings_key($settings)} //= [];
+            push @{$testsuite_ids{_settings_key($settings)}}, $job->id;
 
-                $testsuite_ids{_settings_key($settings)} //= [];
-                push @{$testsuite_ids{_settings_key($settings)}}, $job->id;
-
-                # set prio if defined explicitely (otherwise default prio is used)
-                if (defined($prio)) {
-                    $job->priority($prio);
-                }
-                $job->update;
+            # set prio if defined explicitely (otherwise default prio is used)
+            if (defined($prio)) {
+                $job->priority($prio);
             }
+            $job->update;
         }
 
         # jobs are created, now recreate dependencies and extract ids

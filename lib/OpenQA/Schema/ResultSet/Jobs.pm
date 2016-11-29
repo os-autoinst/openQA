@@ -115,11 +115,11 @@ sub create_from_settings {
 
     my %new_job_args = (TEST => $settings{TEST});
 
-    if ($settings{NAME}) {
-        my $njobs = $self->search({slug => $settings{NAME}})->count;
-        return 0 if $njobs;
 
-        $new_job_args{slug} = $settings{NAME};
+    if (my $name = $settings{NAME}) {
+        my $njobs = $self->search({slug => $name})->count;
+        !$njobs or die "job with name \'$name\' already exists in database";
+        $new_job_args{slug} = $name;
         delete $settings{NAME};
     }
 
