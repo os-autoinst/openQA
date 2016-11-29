@@ -20,6 +20,7 @@ use base qw/DBIx::Class::ResultSet/;
 use DBIx::Class::Timestamps qw/now/;
 use Date::Format qw/time2str/;
 use OpenQA::Schema::Result::JobDependencies;
+use JSON;
 
 =head2 latest_build
 
@@ -122,8 +123,21 @@ sub create_from_settings {
         delete $settings{NAME};
     }
 
+    my $group;
+    my %group_args;
+    if ($settings{_GROUP_ID}) {
+        $group_args{id} = delete $settings{_GROUP_ID};
+    }
     if ($settings{_GROUP}) {
-        $new_job_args{group} = {name => delete $settings{_GROUP}};
+        my $group_name = delete $settings{_GROUP};
+        $group_args{name} = $group_name unless $group_args{id};
+    }
+    if (%group_args) {
+        $group = $self->result_source->schema->resultset('JobGroups')->find(\%group_args);
+        if ($group) {
+            $new_job_args{group_id} = $group->id;
+            $new_job_args{priority} = $group->default_priority;
+        }
     }
 
     if ($settings{_START_AFTER_JOBS}) {
@@ -175,6 +189,11 @@ sub create_from_settings {
     $self->result_source->schema->resultset("JobSettings")->populate(\@job_settings);
     # this will associate currently available assets with job
     $job->register_assets_from_settings;
+
+    if (%group_args && !$group) {
+        OpenQA::Utils::log_warning(
+            'Ignoring invalid group ' . to_json(\%group_args) . ' when creating new job ' . $job->id);
+    }
 
     return $job;
 }

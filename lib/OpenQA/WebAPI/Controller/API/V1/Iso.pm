@@ -355,8 +355,8 @@ sub schedule_iso {
         my %testsuite_ids;    # key: "suite:machine", value: array of job ids
 
         for my $settings (@{$jobs || []}) {
-            my $prio     = delete $settings->{PRIO};
-            my $group_id = delete $settings->{GROUP_ID};
+            my $prio = delete $settings->{PRIO};
+            $settings->{_GROUP_ID} = delete $settings->{GROUP_ID};
 
             # create a new job with these parameters and count if successful, do not send job notifies yet
             my $job = $self->db->resultset('Jobs')->create_from_settings($settings);
@@ -367,11 +367,10 @@ sub schedule_iso {
                 $testsuite_ids{_settings_key($settings)} //= [];
                 push @{$testsuite_ids{_settings_key($settings)}}, $job->id;
 
-                # change prio only if other than default prio
-                if (defined($prio) && $prio != 50) {
+                # set prio if defined explicitely (otherwise default prio is used)
+                if (defined($prio)) {
                     $job->priority($prio);
                 }
-                $job->group_id($group_id);
                 $job->update;
             }
         }
