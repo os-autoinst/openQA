@@ -31,6 +31,7 @@ use Net::DBus::Test::MockObject;
 use Test::More;
 use Test::Warnings;
 use Test::Output qw(stderr_like);
+use Test::Exception;
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -157,6 +158,10 @@ my %settings2 = %settings;
 $settings2{NAME}  = "OTHER NAME";
 $settings2{BUILD} = "44";
 my $job2 = $schema->resultset('Jobs')->create_from_settings(\%settings2);
+
+# try to call again with same settings
+throws_ok { $schema->resultset('Jobs')->create_from_settings(\%settings2) }
+qr/job with name 'OTHER NAME' already exists in database/, 'No two jobs with same name accepted';
 
 $job->set_prio(40);
 my $new_job = job_get_hash($job->id);
