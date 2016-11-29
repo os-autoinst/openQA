@@ -22,18 +22,7 @@
                         <i class="tag fa fa-tag" title="<%= $tag->{type}; %>"><%= $tag->{description} %></i>
                     </span>
                 % }
-                % my $reviewed = $build_res->{reviewed};
-                % if ($reviewed) {
-                    <span id="review-<%= $group_build_id %>">
-                        <i class="review fa fa-certificate" title="Reviewed (<%= $build_res->{labeled}; %> comments)"></i>
-                    </span>
-                % }
-                % my $reviewed_all_passed = $build_res->{reviewed_all_passed};
-                % if ($reviewed_all_passed) {
-                    <span id="review-all-passed-<%= $group_build_id %>">
-                        <i class="review-all-passed fa fa-certificate" title="Reviewed (all passed)"></i>
-                    </span>
-                % }
+                %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $build_res, id_prefix => ''
             </h4>
         </div>
         <div class="col-md-8">
@@ -52,6 +41,7 @@
                         <div class="col-md-4 text-nowrap">
                             <h4>
                                 %= link_to $child->{name} => url_for('tests_overview')->query(distri => $child_res->{distri}, version => $child_res->{version}, build => $build, groupid => $child->{id})
+                                %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $child_res, id_prefix => 'child-'
                             </h4>
                         </div>
                         <div class="col-md-8">

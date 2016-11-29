@@ -94,6 +94,8 @@ sub check_test_parent {
         1, 'review badge for build 0048@0815 shown');
     is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048')->size,
         0, 'review badge for build 0048 NOT shown yet');
+    is($get->tx->res->dom->find('#child-review-' . $test_parent->id . '-0048')->size,
+        0, 'review badge for build 0048 also on child-level NOT shown yet');
 
     my @progress_bars
       = $get->tx->res->dom->find("div.children-$default_expanded .progress")->map('attr', 'title')->each;
@@ -193,6 +195,8 @@ my $not_reviewed_job = $jobs->create(
 $get = $t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
 is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048@0815')->size,
     0, 'review badge NOT shown for build 0048@0815 anymore');
+is($get->tx->res->dom->find('#child-review-' . $test_parent->id . '-0048@0815')->size,
+    1, 'review badge for build 0048@0815 still shown on child-level');
 $not_reviewed_job->delete();
 
 # add review for job 99938 so build 0048 is reviewed, despite the unreviewed softfails
@@ -200,6 +204,8 @@ $opensuse_group->jobs->find({id => 99938})->comments->create({text => 'poo#4321'
 $get = $t->get_ok('/?limit_builds=20')->status_is(200);
 is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048')->size,
     1, 'review badge for build 0048 shown, despite unreviewed softfails');
+is($get->tx->res->dom->find('#child-review-' . $test_parent->id . '-0048')->size,
+    1, 'review badge for build 0048 shown on child-level, despite unreviewed softfails');
 
 # change DISTRI/VERSION of test in opensuse group to test whether links are still correct then
 $opensuse_group->jobs->update({VERSION => '14.2', DISTRI => 'suse'});

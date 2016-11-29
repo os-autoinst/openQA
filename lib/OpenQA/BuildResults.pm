@@ -61,6 +61,13 @@ sub count_job {
     return;
 }
 
+sub add_review_badge {
+    my ($build_res) = @_;
+
+    $build_res->{reviewed_all_passed} = $build_res->{passed} == $build_res->{total};
+    $build_res->{reviewed} = $build_res->{failed} > 0 && $build_res->{labeled} == $build_res->{failed};
+}
+
 sub compute_build_results {
     my ($group, $limit, $time_limit_days, $tags) = @_;
 
@@ -144,13 +151,13 @@ sub compute_build_results {
                 $child->{distri}  //= $job->DISTRI;
                 $child->{version} //= $job->VERSION;
                 count_job($job, $child, \%labels);
+                add_review_badge($child);
             }
         }
         $jr{escaped_id} = $b;
         $jr{escaped_id} =~ s/\W/_/g;
-        $jr{reviewed_all_passed} = $jr{passed} == $jr{total};
-        $jr{reviewed}            = $jr{failed} > 0 && $jr{labeled} == $jr{failed};
-        $builds{$b}              = \%jr;
+        add_review_badge(\%jr);
+        $builds{$b} = \%jr;
         $max_jobs = $jr{total} if ($jr{total} > $max_jobs);
     }
     return {
