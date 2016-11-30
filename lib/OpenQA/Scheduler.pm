@@ -17,16 +17,16 @@ package OpenQA::Scheduler;
 
 use strict;
 use warnings;
-use base qw/Net::DBus::Object/;
-use Net::DBus::Exporter qw/org.opensuse.openqa.Scheduler/;
+use base qw(Net::DBus::Object);
+use Net::DBus::Exporter qw(org.opensuse.openqa.Scheduler);
 use Net::DBus::Reactor;
-use Data::Dump qw/pp/;
+use Data::Dump qw(pp);
 
 use OpenQA::IPC;
 use OpenQA::Scheduler::FakeApp;
-use OpenQA::Scheduler::Scheduler qw//;
-use OpenQA::Scheduler::Locks qw//;
-use OpenQA::Utils qw/log_debug/;
+use OpenQA::Scheduler::Scheduler qw();
+use OpenQA::Scheduler::Locks qw();
+use OpenQA::Utils qw(log_debug);
 use OpenQA::ServerStartup;
 
 # monkey patching for debugging IPC

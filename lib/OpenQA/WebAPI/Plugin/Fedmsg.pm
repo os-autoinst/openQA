@@ -18,14 +18,14 @@ package OpenQA::WebAPI::Plugin::Fedmsg;
 use strict;
 use warnings;
 
-use parent qw/Mojolicious::Plugin/;
+use parent qw(Mojolicious::Plugin);
 use IPC::Run;
 use JSON;
 use Mojo::IOLoop;
 use OpenQA::Schema::Result::Jobs;
 
-my @job_events     = qw/job_create job_delete job_cancel job_duplicate job_restart job_update_result job_done/;
-my @comment_events = qw/comment_create comment_update comment_delete/;
+my @job_events     = qw(job_create job_delete job_cancel job_duplicate job_restart job_update_result job_done);
+my @comment_events = qw(comment_create comment_update comment_delete);
 
 sub register {
     my ($self, $app) = @_;

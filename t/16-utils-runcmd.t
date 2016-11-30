@@ -26,23 +26,23 @@ use OpenQA::Test::Case;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
-use Test::Output qw/stderr_like/;
+use Test::Output qw(stderr_like);
 
 my $schema = OpenQA::Test::Case->new->init_data;
 
-ok(run_cmd_with_log([qw/echo Hallo Welt/]), 'run simple command');
+ok(run_cmd_with_log([qw(echo Hallo Welt)]), 'run simple command');
 
 stderr_like {
-    is(run_cmd_with_log([qw/false/]), '');
+    is(run_cmd_with_log([qw(false)]), '');
 }
 qr/[WARN].*[ERROR]/i;    # error printed on stderr
 
-my $res = run_cmd_with_log_return_error([qw/echo Hallo Welt/]);
+my $res = run_cmd_with_log_return_error([qw(echo Hallo Welt)]);
 ok($res->{status}, 'status ok');
 is($res->{stderr}, 'Hallo Welt', 'cmd output returned');
 
 stderr_like {
-    $res = run_cmd_with_log_return_error([qw/false/]);
+    $res = run_cmd_with_log_return_error([qw(false)]);
 }
 qr/.*\[ERROR\] cmd returned non-zero value/i;
 ok(!$res->{status}, 'status not ok (non-zero status returned)');

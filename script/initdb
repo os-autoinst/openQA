@@ -24,8 +24,8 @@ BEGIN {
 use strict;
 use warnings;
 use DBIx::Class::DeploymentHandler;
-use File::Basename qw/dirname/;
-use POSIX qw/getuid getgid setuid setgid/;
+use File::Basename qw(dirname);
+use POSIX qw(getuid getgid setuid setgid);
 use OpenQA::Schema;
 use Getopt::Long;
 use IO::Dir;

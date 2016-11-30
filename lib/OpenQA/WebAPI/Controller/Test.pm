@@ -20,8 +20,8 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Schema::Result::Jobs;
 use File::Basename;
-use POSIX qw/strftime/;
-use JSON qw/decode_json/;
+use POSIX qw(strftime);
+use JSON qw(decode_json);
 
 sub list {
     my ($self) = @_;
@@ -113,9 +113,9 @@ sub list_ajax {
         {'me.id' => {in => \@ids}},
         {
             columns =>
-              [qw/me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST state clone_id test result group_id t_finished/],
+              [qw(me.id MACHINE DISTRI VERSION FLAVOR ARCH BUILD TEST state clone_id test result group_id t_finished)],
             order_by => ['me.t_finished DESC, me.id DESC'],
-            prefetch => [qw/children parents/],
+            prefetch => [qw(children parents)],
         })->all;
     # need to use all as the order is too complex for a cursor
     for my $job (@jobs) {
@@ -230,7 +230,7 @@ sub details {
         {
             id => $self->param('testid')
         },
-        {prefetch => qw/jobs_assets/})->first;
+        {prefetch => qw(jobs_assets)})->first;
     return $self->reply->not_found unless $job;
 
     my $modlist = read_test_modules($job);
@@ -248,7 +248,7 @@ sub show {
         {
             id => $self->param('testid')
         },
-        {prefetch => qw/jobs_assets/})->first;
+        {prefetch => qw(jobs_assets)})->first;
     return $self->_show($job);
 }
 
@@ -368,7 +368,7 @@ sub _job_labels {
 sub overview {
     my $self       = shift;
     my $validation = $self->validation;
-    for my $arg (qw/distri version/) {
+    for my $arg (qw(distri version)) {
         $validation->required($arg);
     }
     if ($validation->has_error) {
@@ -377,7 +377,7 @@ sub overview {
 
     my %search_args;
     my $group;
-    for my $arg (qw/distri version flavor build/) {
+    for my $arg (qw(distri version flavor build)) {
         next unless defined $self->param($arg);
         $search_args{$arg} = $self->param($arg);
     }

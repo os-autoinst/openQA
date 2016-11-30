@@ -17,7 +17,7 @@ BEGIN { unshift @INC, 'lib'; }
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use Mojo::Base -strict;
-use db_helpers qw/rndstr rndhex rndstrU rndhexU/;
+use db_helpers qw(rndstr rndhex rndstrU rndhexU);
 
 use Test::More;
 use Test::Warnings;

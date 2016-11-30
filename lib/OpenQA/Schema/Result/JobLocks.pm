@@ -14,11 +14,11 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::JobLocks;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use strict;
 
-__PACKAGE__->load_components(qw/OptimisticLocking Core/);
-__PACKAGE__->load_components(qw/Core/);
+__PACKAGE__->load_components(qw(OptimisticLocking Core));
+__PACKAGE__->load_components(qw(Core));
 __PACKAGE__->table('job_locks');
 __PACKAGE__->add_columns(
     name => {

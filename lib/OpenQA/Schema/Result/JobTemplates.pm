@@ -15,13 +15,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::JobTemplates;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use strict;
 
 use db_helpers;
 
 __PACKAGE__->table('job_templates');
-__PACKAGE__->load_components(qw/Timestamps/);
+__PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
@@ -50,7 +50,7 @@ __PACKAGE__->belongs_to(product    => 'OpenQA::Schema::Result::Products',   'pro
 __PACKAGE__->belongs_to(machine    => 'OpenQA::Schema::Result::Machines',   'machine_id');
 __PACKAGE__->belongs_to(test_suite => 'OpenQA::Schema::Result::TestSuites', 'test_suite_id');
 __PACKAGE__->belongs_to(group      => 'OpenQA::Schema::Result::JobGroups',  'group_id');
-__PACKAGE__->add_unique_constraint([qw/product_id machine_id test_suite_id/]);
+__PACKAGE__->add_unique_constraint([qw(product_id machine_id test_suite_id)]);
 
 sub variables {
     my $self = shift;

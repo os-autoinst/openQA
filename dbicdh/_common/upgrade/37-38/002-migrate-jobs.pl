@@ -23,7 +23,7 @@ use DBIx::Class::DeploymentHandler;
 sub {
     my $schema = shift;
 
-    my $jobs = $schema->resultset("Jobs")->search({worker_id => {'!=' => 0}}, {columns => [qw/id worker_id/]});
+    my $jobs = $schema->resultset("Jobs")->search({worker_id => {'!=' => 0}}, {columns => [qw(id worker_id)]});
 
     while (my $job = $jobs->next) {
         my $worker = $schema->resultset("Workers")->search({id => $job->get_column('worker_id')});

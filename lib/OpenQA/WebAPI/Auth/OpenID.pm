@@ -23,7 +23,7 @@ use Net::OpenID::Consumer;
 require Exporter;
 our (@ISA, @EXPORT_OK);
 @ISA       = qw(Exporter);
-@EXPORT_OK = qw/auth_config auth_login auth_response/;
+@EXPORT_OK = qw(auth_config auth_login auth_response);
 
 sub auth_config {
     my ($config) = @_;

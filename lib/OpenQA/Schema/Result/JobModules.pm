@@ -15,21 +15,21 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::JobModules;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 
 use strict;
 use db_helpers;
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::Schema::Result::Jobs;
 use JSON ();
-use File::Basename qw/dirname basename/;
-use File::Path qw/remove_tree/;
-use Cwd qw/abs_path/;
+use File::Basename qw(dirname basename);
+use File::Path qw(remove_tree);
+use Cwd qw(abs_path);
 use Try::Tiny;
 use 5.012;    # so readdir assigns to $_ in a lone while test
 
 __PACKAGE__->table('job_modules');
-__PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
+__PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
@@ -284,8 +284,8 @@ sub job_module_stats($) {
         {job_id => {in => $ids}},
         {
             select   => ['job_id', 'result', {count => 'id'}],
-            as       => [qw/job_id result count/],
-            group_by => [qw/job_id result/]});
+            as       => [qw(job_id result count)],
+            group_by => [qw(job_id result)]});
 
     while (my $line = $query->next) {
         $result_stat->{$line->job_id}->{$line->result} = $line->get_column('count');

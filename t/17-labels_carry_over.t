@@ -26,7 +26,7 @@ use OpenQA::Test::Case;
 use OpenQA::IPC;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
-use JSON qw/decode_json/;
+use JSON qw(decode_json);
 
 my $ipc = OpenQA::IPC->ipc('', 1);
 my $sh  = OpenQA::Scheduler->new;

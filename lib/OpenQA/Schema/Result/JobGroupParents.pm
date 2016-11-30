@@ -17,11 +17,11 @@
 package OpenQA::Schema::Result::JobGroupParents;
 use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use strict;
 
 __PACKAGE__->table('job_group_parents');
-__PACKAGE__->load_components(qw/Timestamps/);
+__PACKAGE__->load_components(qw(Timestamps));
 
 __PACKAGE__->add_columns(
     id => {
@@ -65,7 +65,7 @@ __PACKAGE__->add_columns(
         is_nullable => 1,
     });
 
-__PACKAGE__->add_unique_constraint([qw/name/]);
+__PACKAGE__->add_unique_constraint([qw(name)]);
 
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');

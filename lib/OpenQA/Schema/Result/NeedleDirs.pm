@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::NeedleDirs;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use strict;
 
 use db_helpers;
@@ -35,7 +35,7 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([qw/path/]);
+__PACKAGE__->add_unique_constraint([qw(path)]);
 
 __PACKAGE__->has_many(needles => 'OpenQA::Schema::Result::Needles', 'dir_id');
 

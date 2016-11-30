@@ -18,7 +18,7 @@ use Date::Format;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::IPC;
-use OpenQA::Utils qw/href_to_bugref/;
+use OpenQA::Utils qw(href_to_bugref);
 
 sub obj_comments {
     my ($self, $param, $table, $label) = @_;

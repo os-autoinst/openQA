@@ -15,12 +15,12 @@
 
 package OpenQA::Schema::Result::AuditEvents;
 use strict;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 
 # use db_helpers;
 
 __PACKAGE__->table('audit_events');
-__PACKAGE__->load_components(qw/Timestamps/);
+__PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',

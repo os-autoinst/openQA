@@ -30,8 +30,8 @@ use IO::Socket::INET;
 eval 'use Test::More::Color';
 eval 'use Test::More::Color "foreground"';
 
-use File::Path qw/make_path remove_tree/;
-use Module::Load::Conditional qw/can_load/;
+use File::Path qw(make_path remove_tree);
+use Module::Load::Conditional qw(can_load);
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
@@ -216,7 +216,7 @@ subtest 'add test suite' => sub() {
     is(@{$driver->find_elements('//button[@title="Edit"]')}, 8, "8 edit buttons afterwards");
 
     # can add entry with single, double quotes, special chars
-    my ($suiteName, $suiteKey, $suiteValue) = qw/t"e\\st'Suite\' te\'\\st"Ke"y; te'\""stVa;l%&ue/;
+    my ($suiteName, $suiteKey, $suiteValue) = qw(t"e\\st'Suite\' te\'\\st"Ke"y; te'\""stVa;l%&ue);
 
     is($driver->find_element('//input[@value="New test suite"]')->click(), 1, 'new test suite');
     $elem = $driver->find_element('.admintable tbody tr:last-child', 'css');

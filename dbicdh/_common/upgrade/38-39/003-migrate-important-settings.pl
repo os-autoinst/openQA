@@ -23,14 +23,14 @@ use DBIx::Class::DeploymentHandler;
 sub {
     my $schema = shift;
 
-    my $jobs = $schema->resultset("Jobs")->search({}, {columns => [qw/id/]});
+    my $jobs = $schema->resultset("Jobs")->search({}, {columns => [qw(id)]});
 
     while (my $job = $jobs->next) {
         # we can't use any model functions as they rely on new DB structure
         my $jss = $schema->resultset("JobSettings")->search(
             {
                 job_id => $job->id,
-                key    => {-in => [qw/DISTRI VERSION FLAVOR ARCH MACHINE BUILD TEST/]}});
+                key    => {-in => [qw(DISTRI VERSION FLAVOR ARCH MACHINE BUILD TEST)]}});
         my $updates;
         while (my $js = $jss->next) {
             $updates->{$js->key} = $js->value;

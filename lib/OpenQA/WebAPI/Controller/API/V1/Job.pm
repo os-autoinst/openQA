@@ -19,14 +19,14 @@ use OpenQA::Utils;
 use OpenQA::IPC;
 use OpenQA::Schema::Result::Jobs;
 use Try::Tiny;
-use DBIx::Class::Timestamps qw/now/;
+use DBIx::Class::Timestamps qw(now);
 
 sub list {
     my $self = shift;
 
     my %args;
     my @args
-      = qw/build iso distri version flavor maxage scope group groupid limit page before after arch hdd_1 test machine/;
+      = qw(build iso distri version flavor maxage scope group groupid limit page before after arch hdd_1 test machine);
     for my $arg (@args) {
         next unless defined(my $value = $self->param($arg));
         $args{$arg} = $value;
@@ -36,7 +36,7 @@ sub list {
     # arg. In all cases we're going to convert to an array ref of values:
     # we could let query_jobs do the string splitting for us, but this is
     # clearer.
-    for my $arg (qw/state ids result/) {
+    for my $arg (qw(state ids result)) {
         next unless defined $self->param($arg);
         if (index($self->param($arg), ',') != -1) {
             $args{$arg} = [split(',', $self->param($arg))];
@@ -96,7 +96,7 @@ sub list {
                 category => $module->category,
                 result   => $module->result,
                 flags    => []};
-            for my $flag (qw/important fatal milestone/) {
+            for my $flag (qw(important fatal milestone)) {
                 if ($module->get_column($flag)) {
                     push(@{$modulehash->{flags}}, $flag);
                 }

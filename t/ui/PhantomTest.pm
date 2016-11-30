@@ -123,7 +123,7 @@ sub call_phantom {
     my ($schema_hook) = @_;
     # fail if phantomjs or Selenium::Remote::Driver are unavailable
     use IPC::Cmd qw[can_run];
-    use Module::Load::Conditional qw/can_load/;
+    use Module::Load::Conditional qw(can_load);
     if (!can_run('phantomjs') || !can_load(modules => {'Selenium::Remote::Driver' => undef,})) {
         return undef;
     }

@@ -15,13 +15,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::WorkerProperties;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use strict;
 
 use db_helpers;
 
 __PACKAGE__->table('worker_properties');
-__PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
+__PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
