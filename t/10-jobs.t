@@ -308,4 +308,56 @@ subtest 'job with only important passes => overall is passed' => sub {
     is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
 };
 
+subtest 'job is market as linked if accessed from recognized referal' => sub {
+    $t->app->config->{global}->{recognized_referers}
+      = ['test.referer.info', 'test.referer1.info', 'test.referer2.info', 'test.referer3.info'];
+    my %_settings = %settings;
+    $_settings{TEST} = 'refJobTest';
+    my $job      = _job_create(\%_settings);
+    my $comments = $job->comments;
+    my $linked   = 0;
+    while (my $c = $comments->next) {
+        if ($c->label eq 'linked') {
+            $linked = 1;
+        }
+    }
+    is($linked, 0, 'new job is not linked');
+    $t->get_ok('/tests/' . $job->id => {Referer => 'http://test.referer.info'})->status_is(200);
+    $linked = 0;
+    $job->discard_changes;
+    $comments = $job->comments;
+    while (my $c = $comments->next) {
+        if ($c->label eq 'linked') {
+            $linked = 1;
+        }
+    }
+    is($linked, 1, 'job linked after accessed from known referer');
+};
+
+subtest 'job is not marked as linked if accessed from unrecognized referal' => sub {
+    $t->app->config->{global}->{recognized_referers}
+      = ['test.referer.info', 'test.referer1.info', 'test.referer2.info', 'test.referer3.info'];
+    my %_settings = %settings;
+    $_settings{TEST} = 'refJobTest2';
+    my $job      = _job_create(\%_settings);
+    my $comments = $job->comments;
+    my $linked   = 0;
+    while (my $c = $comments->next) {
+        if ($c->label eq 'linked') {
+            $linked = 1;
+        }
+    }
+    is($linked, 0, 'new job is not linked');
+    $t->get_ok('/tests/' . $job->id => {Referer => 'http://unknown.referer.info'})->status_is(200);
+    $linked = 0;
+    $job->discard_changes;
+    $comments = $job->comments;
+    while (my $c = $comments->next) {
+        if ($c->label eq 'linked') {
+            $linked = 1;
+        }
+    }
+    is($linked, 0, 'job not linked after accessed from unknown referer');
+};
+
 done_testing();

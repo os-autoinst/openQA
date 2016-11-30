@@ -243,12 +243,32 @@ sub show {
     my ($self) = @_;
 
     return $self->reply->not_found if (!defined $self->param('testid'));
+    my $referer = $self->req->headers->header('Referer') // '';
 
     my $job = $self->app->schema->resultset("Jobs")->search(
         {
             id => $self->param('testid')
         },
         {prefetch => qw(jobs_assets)})->first;
+    $referer = Mojo::URL->new($referer)->host;
+    if ($referer && grep { $referer eq $_ } @{$self->config->{global}->{recognized_referers}}) {
+        my $found    = 0;
+        my $comments = $job->comments;
+        while (my $comment = $comments->next) {
+            if ($comment->label eq 'linked') {
+                $found = 1;
+                last;
+            }
+        }
+        unless ($found) {
+            my $user = $self->app->schema->resultset('Users')->search({username => 'system'})->first;
+            $comments->create(
+                {
+                    text    => 'label:linked',
+                    user_id => $user->id
+                });
+        }
+    }
     return $self->_show($job);
 }
 
@@ -464,7 +484,10 @@ sub overview {
         }
 
         # Populate @configs and %archs
-        if ($job->MACHINE && $preferred_machines->{$job->ARCH} && $preferred_machines->{$job->ARCH} ne $job->MACHINE) {
+        if (   $job->MACHINE
+            && $preferred_machines->{$job->ARCH}
+            && $preferred_machines->{$job->ARCH} ne $job->MACHINE)
+        {
             $test .= "@" . $job->MACHINE;
         }
         push(@configs, $test) unless (grep { $test eq $_ } @configs);

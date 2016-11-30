@@ -28,17 +28,18 @@ sub read_config {
 
     my %defaults = (
         global => {
-            appname          => 'openQA',
-            base_url         => undef,
-            branding         => 'openSUSE',
-            allowed_hosts    => undef,
-            download_domains => undef,
-            suse_mirror      => undef,
-            scm              => undef,
-            hsts             => 365,
-            audit_enabled    => 1,
-            plugins          => undef,
-            hide_asset_types => 'repo',
+            appname             => 'openQA',
+            base_url            => undef,
+            branding            => 'openSUSE',
+            allowed_hosts       => undef,
+            download_domains    => undef,
+            suse_mirror         => undef,
+            scm                 => undef,
+            hsts                => 365,
+            audit_enabled       => 1,
+            plugins             => undef,
+            hide_asset_types    => 'repo',
+            recognized_referers => ''
         },
         auth => {
             method => 'OpenID',
@@ -106,6 +107,7 @@ sub read_config {
             $app->config->{$section}->{$k} = $v if defined $v;
         }
     }
+    $app->config->{global}->{recognized_referers} = [split(/ /, $app->config->{global}->{recognized_referers})];
     $app->config->{_openid_secret} = db_helpers::rndstr(16);
 }
 
