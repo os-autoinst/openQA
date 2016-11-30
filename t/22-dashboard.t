@@ -49,7 +49,7 @@ $get = $t->get_ok('/')->status_is(200);
 @h2  = $get->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['opensuse', 'opensuse test'], 'empty parent group not shown');
 
-# move opensue group to new parent group
+# move opensuse group to new parent group
 my $opensuse_group = $job_groups->find({name => 'opensuse'});
 $opensuse_group->update({parent_id => $test_parent->id});
 
@@ -178,7 +178,7 @@ is_deeply(\@h4, ['Build0091'], 'only tagged builds on parent-level shown (common
 is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both groups shown, though');
 
 # temporarily create failed job with build 0048@0815 in opensuse test to verify that review badge is only shown
-# if all combinded builds are reviewed
+# if all combined builds are reviewed
 my $not_reviewed_job = $jobs->create(
     {
         BUILD    => '0048@0815',
