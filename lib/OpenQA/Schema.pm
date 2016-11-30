@@ -26,7 +26,7 @@ use FindBin qw($Bin);
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION   = 49;
+our $VERSION   = 50;
 our @databases = qw(SQLite PostgreSQL);
 
 __PACKAGE__->load_namespaces;
@@ -108,6 +108,14 @@ sub _try_deploy_db {
             _db_tweaks($schema, 'PRAGMA synchronous = OFF;');
         }
         $dh->install;
+        # create system user right away
+        $schema->resultset('Users')->create(
+            {
+                username => 'system',
+                email    => 'noemail@open.qa',
+                fullname => 'openQA system user',
+                nickname => 'system'
+            });
     };
     umask $mask;
     return !$version;
