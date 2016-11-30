@@ -45,12 +45,12 @@ sub list {
 
             if ($has_query) {
                 my $attrs
-                  = {join => ['machine', 'test_suite', 'product'], prefetch => [qw/machine test_suite product/]};
+                  = {join => ['machine', 'test_suite', 'product'], prefetch => [qw(machine test_suite product)]};
                 @templates = $self->db->resultset("JobTemplates")->search(\%cond, $attrs);
             }
             else {
                 @templates
-                  = $self->db->resultset("JobTemplates")->search({}, {prefetch => [qw/machine test_suite product/]});
+                  = $self->db->resultset("JobTemplates")->search({}, {prefetch => [qw(machine test_suite product)]});
             }
         }
     };

@@ -17,7 +17,7 @@
 package db_helpers;
 
 use Mojo::Base 'Exporter';
-our @EXPORT_OK = qw/create_auto_timestamps rndstr rndhex rndstrU rndhexU/;
+our @EXPORT_OK = qw(create_auto_timestamps rndstr rndhex rndstrU rndhexU);
 
 use Carp;
 

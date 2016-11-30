@@ -18,10 +18,10 @@ use strict;
 use warnings;
 
 use OpenQA::Worker::Common;
-use OpenQA::Utils qw/locate_asset/;
+use OpenQA::Utils qw(locate_asset);
 
-use POSIX qw/:sys_wait_h strftime uname/;
-use JSON qw/to_json/;
+use POSIX qw(:sys_wait_h strftime uname);
+use JSON qw(to_json);
 use Fcntl;
 use Errno;
 
@@ -31,7 +31,7 @@ my $workerpid;
 require Exporter;
 our (@ISA, @EXPORT);
 @ISA    = qw(Exporter);
-@EXPORT = qw/engine_workit engine_check/;
+@EXPORT = qw(engine_workit engine_check);
 
 sub set_engine_exec {
     my ($path) = @_;
@@ -65,7 +65,7 @@ sub engine_workit($) {
     # XXX: this should come from the worker table. Only included
     # here for convenience when looking at the pool of
     # debugging.
-    for my $i (qw/QEMUPORT VNC OPENQA_HOSTNAME/) {
+    for my $i (qw(QEMUPORT VNC OPENQA_HOSTNAME)) {
         $job->{settings}->{$i} = $ENV{$i};
     }
     if (open(my $fh, '>', 'job.json')) {
@@ -73,7 +73,7 @@ sub engine_workit($) {
         close $fh;
     }
 
-    for my $isokey (qw/ISO/, map { "ISO_$_" } (1 .. 9)) {
+    for my $isokey (qw(ISO), map { "ISO_$_" } (1 .. 9)) {
         if (my $isoname = $job->{settings}->{$isokey}) {
             my $iso = locate_asset('iso', $isoname, mustexist => 1);
             unless ($iso) {
@@ -84,7 +84,7 @@ sub engine_workit($) {
         }
     }
 
-    for my $otherkey (qw/KERNEL INITRD/) {
+    for my $otherkey (qw(KERNEL INITRD)) {
         if (my $filename = $job->{settings}->{$otherkey}) {
             my $file = locate_asset('other', $filename, mustexist => 1);
             unless ($file) {

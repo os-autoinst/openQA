@@ -21,7 +21,7 @@ BEGIN {
 }
 
 use strict;
-use Data::Dump qw/pp dd/;
+use Data::Dump qw(pp dd);
 use OpenQA::IPC;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;

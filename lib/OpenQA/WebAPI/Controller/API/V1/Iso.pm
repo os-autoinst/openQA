@@ -21,7 +21,7 @@ use File::Basename;
 use OpenQA::Utils;
 use OpenQA::IPC;
 use Try::Tiny;
-use DBIx::Class::Timestamps qw/now/;
+use DBIx::Class::Timestamps qw(now);
 use OpenQA::Schema::Result::JobDependencies;
 
 use Carp;
@@ -117,7 +117,7 @@ sub _generate_jobs {
     }
 
     if (!@products) {
-        carp "no products found for " . join('-', map { $args->{$_} } qw/DISTRI VERSION FLAVOR ARCH/);
+        carp "no products found for " . join('-', map { $args->{$_} } qw(DISTRI VERSION FLAVOR ARCH));
     }
 
     my %wanted;    # jobs specified by $args->{TEST} or $args->{MACHINE} or their parents
@@ -128,7 +128,7 @@ sub _generate_jobs {
     for my $product (@products) {
         my @templates = $product->job_templates;
         unless (@templates) {
-            carp "no templates found for " . join('-', map { $args->{$_} } qw/DISTRI VERSION FLAVOR ARCH/);
+            carp "no templates found for " . join('-', map { $args->{$_} } qw(DISTRI VERSION FLAVOR ARCH));
         }
         for my $job_template (@templates) {
             my %settings = map { $_->key => $_->value } $product->settings;
@@ -330,7 +330,7 @@ sub schedule_iso {
     # relevant here.
     if (!$noobsolete && $jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
         my %cond;
-        for my $k (qw/DISTRI VERSION FLAVOR ARCH/) {
+        for my $k (qw(DISTRI VERSION FLAVOR ARCH)) {
             next unless $jobs->[0]->{$k};
             $cond{$k} = $jobs->[0]->{$k};
         }
@@ -439,7 +439,7 @@ sub create {
     $validation->required('ARCH');
     if ($validation->has_error) {
         my $error = "Error: missing parameters:";
-        for my $k (qw/DISTRI VERSION FLAVOR ARCH/) {
+        for my $k (qw(DISTRI VERSION FLAVOR ARCH)) {
             $self->app->log->debug(@{$validation->error($k)}) if $validation->has_error($k);
             $error .= ' ' . $k if $validation->has_error($k);
         }

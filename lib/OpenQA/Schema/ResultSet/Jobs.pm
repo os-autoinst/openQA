@@ -16,9 +16,9 @@
 
 package OpenQA::Schema::ResultSet::Jobs;
 use strict;
-use base qw/DBIx::Class::ResultSet/;
-use DBIx::Class::Timestamps qw/now/;
-use Date::Format qw/time2str/;
+use base qw(DBIx::Class::ResultSet);
+use DBIx::Class::Timestamps qw(now);
+use Date::Format qw(time2str);
 use OpenQA::Schema::Result::JobDependencies;
 use JSON;
 
@@ -52,11 +52,11 @@ sub latest_build {
     $attrs{join}     = 'settings';
     $attrs{rows}     = 1;
     $attrs{order_by} = {-desc => 'me.id'};    # More reliable for tests than t_created
-    $attrs{columns}  = qw/BUILD/;
+    $attrs{columns}  = qw(BUILD);
 
     while (my ($k, $v) = each %args) {
 
-        if (grep { $k eq $_ } qw/distri version flavor machine arch build test/) {
+        if (grep { $k eq $_ } qw(distri version flavor machine arch build test)) {
             push(@conds, {"me." . uc($k) => $v});
         }
         else {
@@ -167,7 +167,7 @@ sub create_from_settings {
     }
 
     # migrate the important keys
-    for my $key (qw/DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD/) {
+    for my $key (qw(DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD)) {
         $new_job_args{$key} = delete $settings{$key};
     }
 
@@ -203,7 +203,7 @@ sub complex_query {
 
     # For args where we accept a list of values, allow passing either an
     # array ref or a comma-separated list
-    for my $arg (qw/state ids result/) {
+    for my $arg (qw(state ids result)) {
         next unless $args{$arg};
         $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
     }
@@ -302,14 +302,14 @@ sub complex_query {
     elsif ($args{match}) {
         my @likes;
         # Text search across some settings
-        for my $key (qw/DISTRI FLAVOR BUILD TEST VERSION/) {
+        for my $key (qw(DISTRI FLAVOR BUILD TEST VERSION)) {
             push(@likes, {"me.$key" => {'-like' => "%$args{match}%"}});
         }
         push(@conds, -or => \@likes);
     }
     else {
         my %js_settings;
-        for my $key (qw/ISO HDD_1/) {
+        for my $key (qw(ISO HDD_1)) {
             $js_settings{$key} = $args{lc $key} if defined $args{lc $key};
         }
         if (%js_settings) {
@@ -317,7 +317,7 @@ sub complex_query {
             push(@conds, {'me.id' => {-in => $subquery->get_column('job_id')->as_query}});
         }
 
-        for my $key (qw/build distri version flavor arch test machine/) {
+        for my $key (qw(build distri version flavor arch test machine)) {
             if ($args{$key}) {
                 push(@conds, {"me." . uc($key) => $args{$key}});
             }
@@ -340,7 +340,7 @@ sub cancel_by_settings {
     my %precond = %{$settings};
     my %cond;
 
-    for my $key (qw/DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST/) {
+    for my $key (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
         if (defined $precond{$key}) {
             $cond{$key} = delete $precond{$key};
         }

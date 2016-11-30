@@ -19,7 +19,7 @@ BEGIN {
 
 use Test::More;
 use Test::Warnings ':all';
-use Test::Output qw/stderr_like/;
+use Test::Output qw(stderr_like);
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::Scheduler::Scheduler;

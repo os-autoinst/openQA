@@ -25,7 +25,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-use JSON qw/decode_json/;
+use JSON qw(decode_json);
 
 # init test case
 my $test_case = OpenQA::Test::Case->new;

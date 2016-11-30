@@ -64,7 +64,7 @@ subtest 'job with all modules passed => overall is passsed' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'A';
     my $job = _job_create(\%_settings);
-    for my $i (qw/a b c d/) {
+    for my $i (qw(a b c d)) {
         $job->insert_module({name => $i, category => $i, script => $i, flags => {}});
         $job->update_module($i, {result => 'ok', details => []});
     }
@@ -80,7 +80,7 @@ subtest 'job with at least one module failed => overall is failed' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'B';
     my $job = _job_create(\%_settings);
-    for my $i (qw/a b c d/) {
+    for my $i (qw(a b c d)) {
         $job->insert_module({name => $i, category => $i, script => $i, flags => {}});
         $job->update_module($i, {result => $i eq 'c' ? 'fail' : 'ok', details => []});
     }
@@ -96,7 +96,7 @@ subtest 'job with at least one softfailed and rest passed => overall is softfail
     my %_settings = %settings;
     $_settings{TEST} = 'C';
     my $job = _job_create(\%_settings);
-    for my $i (qw/a b c/) {
+    for my $i (qw(a b c)) {
         $job->insert_module({name => $i, category => $i, script => $i, flags => {}});
         $job->update_module($i, {result => 'ok', details => []});
     }
@@ -134,7 +134,7 @@ subtest 'job with all important modules passed and at least one unimportant fail
     my %_settings = %settings;
     $_settings{TEST} = 'E';
     my $job = _job_create(\%_settings);
-    for my $i (qw/a b c/) {
+    for my $i (qw(a b c)) {
         $job->insert_module({name => $i, category => $i, script => $i, flags => {important => 1}});
         $job->update_module($i, {result => 'ok', details => []});
     }
@@ -154,7 +154,7 @@ subtest
     my %_settings = %settings;
     $_settings{TEST} = 'F';
     my $job = _job_create(\%_settings);
-    for my $i (qw/a b/) {
+    for my $i (qw(a b)) {
         $job->insert_module({name => $i, category => $i, script => $i, flags => {important => 1}});
         $job->update_module($i, {result => 'ok', details => []});
     }
@@ -174,7 +174,7 @@ subtest 'job with one important module failed and at least one unimportant passe
     my %_settings = %settings;
     $_settings{TEST} = 'G';
     my $job = _job_create(\%_settings);
-    for my $i (qw/a b c/) {
+    for my $i (qw(a b c)) {
         $job->insert_module({name => $i, category => $i, script => $i, flags => {important => 0}});
         $job->update_module($i, {result => 'ok', details => []});
     }

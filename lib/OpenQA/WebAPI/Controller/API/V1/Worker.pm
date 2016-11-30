@@ -19,7 +19,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::IPC;
 use OpenQA::Utils;
 use OpenQA::Schema::Result::Jobs;
-use DBIx::Class::Timestamps qw/now/;
+use DBIx::Class::Timestamps qw(now);
 use Try::Tiny;
 
 sub list {
@@ -89,7 +89,7 @@ sub create {
     my ($self) = @_;
 
     my $validation       = $self->validation;
-    my @mandatory_params = (qw/host instance cpu_arch mem_max worker_class/);
+    my @mandatory_params = (qw(host instance cpu_arch mem_max worker_class));
     for my $k (@mandatory_params) {
         $validation->required($k);
     }

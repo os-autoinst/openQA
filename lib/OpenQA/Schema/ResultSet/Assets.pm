@@ -16,14 +16,14 @@
 
 package OpenQA::Schema::ResultSet::Assets;
 use strict;
-use base qw/DBIx::Class::ResultSet/;
-use OpenQA::Utils qw/log_warning locate_asset/;
+use base qw(DBIx::Class::ResultSet);
+use OpenQA::Utils qw(log_warning locate_asset);
 
 sub register {
     my ($self, $type, $name, $missingok) = @_;
     $missingok //= 0;
 
-    our %types = map { $_ => 1 } qw/iso repo hdd other/;
+    our %types = map { $_ => 1 } qw(iso repo hdd other);
     unless ($types{$type}) {
         log_warning "asset type '$type' invalid";
         return;

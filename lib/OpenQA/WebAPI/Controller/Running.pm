@@ -19,7 +19,7 @@ use strict;
 use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
-use JSON qw/encode_json decode_json/;
+use JSON qw(encode_json decode_json);
 use OpenQA::Utils;
 use OpenQA::IPC;
 use OpenQA::Schema::Result::Jobs;

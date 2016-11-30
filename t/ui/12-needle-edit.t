@@ -24,8 +24,8 @@ use Test::Mojo;
 use Test::Warnings ':all';
 use OpenQA::Test::Case;
 
-use File::Path qw/make_path remove_tree/;
-use POSIX qw/strftime/;
+use File::Path qw(make_path remove_tree);
+use POSIX qw(strftime);
 use JSON;
 
 use OpenQA::IPC;

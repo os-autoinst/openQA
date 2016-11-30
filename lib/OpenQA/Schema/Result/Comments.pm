@@ -14,12 +14,12 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::Comments;
-use base qw/DBIx::Class::Core/;
-use OpenQA::Utils qw/find_bugref/;
+use base qw(DBIx::Class::Core);
+use OpenQA::Utils qw(find_bugref);
 use strict;
 
-__PACKAGE__->load_components(qw/Core/);
-__PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
+__PACKAGE__->load_components(qw(Core));
+__PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->table('comments');
 __PACKAGE__->add_columns(
     id => {
@@ -131,9 +131,9 @@ sub hash {
 
 package CommentsMarkdownParser;
 require Text::Markdown;
-our @ISA = qw/Text::Markdown/;
-use Regexp::Common qw/URI/;
-use OpenQA::Utils qw/bugref_to_href/;
+our @ISA = qw(Text::Markdown);
+use Regexp::Common qw(URI);
+use OpenQA::Utils qw(bugref_to_href);
 
 sub _DoAutoLinks {
     my ($self, $text) = @_;

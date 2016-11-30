@@ -21,7 +21,7 @@ BEGIN {
 }
 
 use strict;
-use Data::Dump qw/pp dd/;
+use Data::Dump qw(pp dd);
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
@@ -802,7 +802,7 @@ ok($jobBc, 'jobB duplicated');
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 
 
-use Data::Dump qw/pp/;
+use Data::Dump qw(pp);
 # expected situation
 # A <- B' (clone of B)
 #   |- C

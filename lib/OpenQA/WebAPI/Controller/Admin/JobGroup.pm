@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::WebAPI::Controller::Admin::JobGroup;
-use OpenQA::Utils qw/job_groups_and_parents/;
+use OpenQA::Utils qw(job_groups_and_parents);
 use strict;
 use Mojo::Base 'Mojolicious::Controller';
 

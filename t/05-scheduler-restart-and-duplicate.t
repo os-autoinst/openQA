@@ -21,7 +21,7 @@ BEGIN {
 }
 
 use strict;
-use Data::Dump qw/pp dd/;
+use Data::Dump qw(pp dd);
 use OpenQA::Scheduler::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Utils;
@@ -29,7 +29,7 @@ use OpenQA::Test::Database;
 
 use Test::More;
 use Test::Warnings;
-use Test::Output qw/stderr_like/;
+use Test::Output qw(stderr_like);
 
 # create Test DBus bus and service for fake WebSockets call
 my $ipc = OpenQA::IPC->ipc('', 1);

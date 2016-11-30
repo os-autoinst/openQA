@@ -16,8 +16,8 @@
 
 package OpenQA::Test::Testresults;
 
-use File::Copy::Recursive qw/dircopy/;
-use File::Path qw/remove_tree/;
+use File::Copy::Recursive qw(dircopy);
+use File::Path qw(remove_tree);
 use OpenQA::Utils;
 use Mojo::Base -base;
 

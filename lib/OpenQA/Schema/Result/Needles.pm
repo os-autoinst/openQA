@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::Needles;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use File::Basename;
 use Cwd "realpath";
 use strict;
@@ -54,7 +54,7 @@ __PACKAGE__->add_columns(
     },
 );
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([qw/dir_id filename/]);
+__PACKAGE__->add_unique_constraint([qw(dir_id filename)]);
 __PACKAGE__->belongs_to(first_seen => 'OpenQA::Schema::Result::JobModules', 'first_seen_module_id');
 __PACKAGE__->belongs_to(last_seen  => 'OpenQA::Schema::Result::JobModules', 'last_seen_module_id');
 __PACKAGE__->belongs_to(last_match => 'OpenQA::Schema::Result::JobModules', 'last_matched_module_id');
@@ -140,7 +140,7 @@ sub update_needle {
 sub name() {
     my ($self) = @_;
 
-    return fileparse($self->filename, qw/.json/);
+    return fileparse($self->filename, qw(.json));
 }
 
 # gru task injected by migration - can be removed later

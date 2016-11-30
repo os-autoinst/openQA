@@ -6,12 +6,12 @@ use strict;
 require Exporter;
 our (@ISA, @EXPORT_OK);
 @ISA       = qw(Exporter);
-@EXPORT_OK = qw/now/;
+@EXPORT_OK = qw(now);
 
 sub add_timestamps {
     my $self = shift;
 
-    $self->load_components(qw/InflateColumn::DateTime DynamicDefault/);
+    $self->load_components(qw(InflateColumn::DateTime DynamicDefault));
 
     $self->add_columns(
         t_created => {

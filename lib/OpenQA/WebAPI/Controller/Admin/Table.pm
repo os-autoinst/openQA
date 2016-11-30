@@ -24,8 +24,8 @@ sub admintable {
         undef,
         {
             select   => ['key', {count => 'key'}],
-            as       => [qw/ key var_count /],
-            group_by => [qw/ key /],
+            as       => [qw( key var_count )],
+            group_by => [qw( key )],
             order_by => {-desc => 'count(key)'}});
     my @variables = map { $_->key } $rc->all();
     $self->stash('variables', \@variables);

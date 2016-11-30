@@ -18,8 +18,8 @@
 #
 
 use strict;
-use FindBin qw/$Bin/;
+use FindBin qw($Bin);
 
 open my $fd, '<', "$Bin/../DEPENDENCIES.txt" or die "$!";
-system(qw/sudo zypper in -C/, map { chomp; "perl($_)"; } <$fd>);
+system(qw(sudo zypper in -C), map { chomp; "perl($_)"; } <$fd>);
 # vim: set sw=4 sts=4 et:

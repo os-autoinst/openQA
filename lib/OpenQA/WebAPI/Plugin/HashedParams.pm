@@ -92,7 +92,7 @@ Mojolicious::Plugin::HashedParams - Transformation request parameters into a has
   get '/route' => sub {
     my $self = shift;
     # you can also use permit parameters
-    $self->hparams( qw/message/ );
+    $self->hparams( qw(message) );
     # return all parameters in the hash
     $self->hparams();
   };

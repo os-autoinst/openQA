@@ -104,7 +104,7 @@ by the parent.
 
 use strict;
 use warnings;
-use Data::Dump qw/dd pp/;
+use Data::Dump qw(dd pp);
 use Getopt::Long;
 use LWP::UserAgent;
 Getopt::Long::Configure("no_ignore_case");
