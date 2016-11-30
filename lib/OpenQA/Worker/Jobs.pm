@@ -21,6 +21,7 @@ use feature 'state';
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Pool qw/clean_pool/;
 use OpenQA::Worker::Engines::isotovideo;
+use OpenQA::Utils qw(wait_with_progress);
 
 use POSIX qw/strftime SIGTERM/;
 use File::Copy qw/copy move/;
@@ -153,16 +154,47 @@ sub upload {
     close $log;
     printf "uploading %s\n", $filename if $verbose;
 
-    my $ua_url = $OpenQA::Worker::Common::url->clone;
-    $ua_url->path("jobs/$job_id/artefact");
+    my $regular_upload_failed = 0;
+    my $retry_counter         = 5;
+    my $retry_limit           = 5;
+    my $tics                  = 5;
+    my $res;
 
-    my $tx = $OpenQA::Worker::Common::ua->build_tx(POST => $ua_url => form => $form);
-    # override the default boundary calculation - it reads whole file
-    # and it can cause various timeouts
-    my $headers = $tx->req->headers;
-    $headers->content_type($headers->content_type . "; boundary=$boundary");
 
-    my $res = $OpenQA::Worker::Common::ua->start($tx);
+    while (1) {
+        my $ua_url = $OpenQA::Worker::Common::url->clone;
+        $ua_url->path("jobs/$job_id/artefact");
+
+        my $tx = $OpenQA::Worker::Common::ua->build_tx(POST => $ua_url => form => $form);
+        # override the default boundary calculation - it reads whole file
+        # and it can cause various timeouts
+        my $headers = $tx->req->headers;
+        $headers->content_type($headers->content_type . "; boundary=$boundary");
+
+        if ($regular_upload_failed) {
+            printf "WARNING: Upload attempts remaining: %s/%s for %s, in %s seconds ", $retry_counter--,
+              $retry_limit, $filename, $tics;
+            wait_with_progress($tics);
+        }
+
+        $res = $OpenQA::Worker::Common::ua->start($tx);
+
+        # Upload known server failures (Instead of anything that's not 200)
+        if ($res->res->is_status_class(500)) {
+            $regular_upload_failed = 1;
+            next if $retry_counter;
+
+            # Just return if all upload retries have failed
+            # this will cause the next group of uploads to be triggered
+            my $msg = "All $retry_limit upload attempts have failed for $filename\n";
+            open(my $log, '>>', "autoinst-log.txt");
+            print $log $msg;
+            close $log;
+            print STDERR $msg;
+            return 0;
+        }
+        last;
+    }
 
     if (my $err = $res->error) {
         my $msg;

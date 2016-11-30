@@ -44,6 +44,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &human_readable_size
   &locate_asset
   &job_groups_and_parents
+  wait_with_progress
 );
 
 
@@ -556,6 +557,20 @@ sub job_groups_and_parents {
         }
     }
     return \@res;
+}
+
+sub wait_with_progress {
+    my ($interval) = @_;
+    my $tics;
+    local $| = 1;
+
+    do {
+        $tics++;
+        sleep(1);
+        print ".";
+    } while ($interval > $tics);
+
+    print "\n";
 }
 
 1;
