@@ -249,7 +249,7 @@ sub api_call {
 
     # This ugly. we need to "block" here so enter ioloop recursively
     while (!$done && Mojo::IOLoop->is_running) {
-        Mojo::IOLoop->one_tick;
+        Mojo::IOLoop->singleton->reactor->one_tick;
     }
 
     $call_running = 0;
