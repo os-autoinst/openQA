@@ -1,11 +1,14 @@
-% my $reviewed = $build_res->{reviewed};
-% if ($reviewed) {
-    <span id="<%= $id_prefix %>review-<%= $group_build_id %>">
-        <i class="review fa fa-certificate" title="Reviewed (<%= $build_res->{labeled}; %> <%= $build_res->{labeled} == 1 ? 'comment' : 'comments' %>)"></i>
+% if ($build_res->{reviewed_also_softfailed}) {
+    <span id="<%= $id_prefix %>review-also-softfailed-<%= $group_build_id %>">
+        <i class="review-also-softfailed fa fa-certificate" title="Reviewed including all softfailed (<%= $build_res->{all_labeled}; %> <%= $build_res->{all_labeled} == 1 ? 'comment' : 'comments' %>)"></i>
     </span>
 % }
-% my $reviewed_all_passed = $build_res->{reviewed_all_passed};
-% if ($reviewed_all_passed) {
+% elsif ($build_res->{reviewed}) {
+    <span id="<%= $id_prefix %>review-<%= $group_build_id %>">
+        <i class="review fa fa-certificate" title="Reviewed (<%= $build_res->{all_labeled}; %> <%= $build_res->{all_labeled} == 1 ? 'comment' : 'comments' %>)"></i>
+    </span>
+% }
+% if ($build_res->{reviewed_all_passed}) {
     <span id="<%= $id_prefix %>review-all-passed-<%= $group_build_id %>">
         <i class="review-all-passed fa fa-certificate" title="Reviewed (all passed)"></i>
     </span>
