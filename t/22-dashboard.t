@@ -192,7 +192,7 @@ my $not_reviewed_job = $jobs->create(
         result   => OpenQA::Schema::Result::Jobs::FAILED,
         group_id => $opensuse_test_group->id
     });
-$get = $t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
+$get = $t->get_ok('/?limit_builds=20')->status_is(200);
 is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048@0815')->size,
     0, 'review badge NOT shown for build 0048@0815 anymore');
 is($get->tx->res->dom->find('#child-review-' . $test_parent->id . '-0048@0815')->size,
@@ -206,6 +206,11 @@ is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048')->size,
     1, 'review badge for build 0048 shown, despite unreviewed softfails');
 is($get->tx->res->dom->find('#child-review-' . $test_parent->id . '-0048')->size,
     1, 'review badge for build 0048 shown on child-level, despite unreviewed softfails');
+# mark one softfailed job also with a bugref which should keep the reviewed badge
+$opensuse_group->jobs->find({id => 99939})->comments->create({text => 'poo#4322', user_id => 99901});
+$get = $t->get_ok('/?limit_builds=20')->status_is(200);
+is($get->tx->res->dom->find('#child-review-' . $test_parent->id . '-0048')->size,
+    1, 'review badge still there after labelling softfails');
 
 # change DISTRI/VERSION of test in opensuse group to test whether links are still correct then
 $opensuse_group->jobs->update({VERSION => '14.2', DISTRI => 'suse'});
