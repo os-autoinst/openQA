@@ -151,13 +151,12 @@ $args = '';
 # add a job comment via API
 $post = $t->post_ok("/api/v1/jobs/$job/comments" => form => {text => "test comment"})->status_is(200);
 # check plugin called fedmsg-logger correctly
-is(
+my $commonexpr = 'fedmsg-logger --cert-prefix=openqa --modname=openqa';
+my $dateexpr   = '\d{4}-\d{1,2}-\d{1,2}T\d{2}:\d{2}:\d{2}Z';
+like(
     $args,
-    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=user.new.comment --json-input --message='
-      . '{"created":null,"group_id":null,"job_id":'
-      . $job
-      . ',"text":"test comment","user":"perci"}',
-    "comment post triggers fedmsg"
+qr/$commonexpr --topic=comment.create --json-input --message=\{"created":"$dateexpr","group_id":null,"job_id":$job,"text":"test comment","updated":"$dateexpr","user":"perci"\}/,
+    'comment post triggers fedmsg'
 );
 # reset $args
 $args = '';
@@ -167,13 +166,10 @@ my $comment = $post->tx->res->json->{id};
 # update job comment via API
 my $put = $t->put_ok("/api/v1/jobs/$job/comments/$comment" => form => {text => "updated comment"})->status_is(200);
 # check plugin called fedmsg-logger correctly
-is(
+like(
     $args,
-    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=user.update.comment --json-input --message='
-      . '{"created":null,"group_id":null,"job_id":'
-      . $job
-      . ',"text":"updated comment","user":"perci"}',
-    "comment update triggers fedmsg"
+qr/$commonexpr --topic=comment.update --json-input --message=\{"created":"$dateexpr","group_id":null,"job_id":$job,"text":"updated comment","updated":"$dateexpr","user":"perci"\}/,
+    'comment update triggers fedmsg'
 );
 # reset $args
 $args = '';
@@ -183,12 +179,10 @@ $t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->i
 $t->app($app);
 # delete comment via API
 my $delete = $t->delete_ok("/api/v1/jobs/$job/comments/$comment")->status_is(200);
-is(
+like(
     $args,
-    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=user.delete.comment --json-input --message='
-      . '{"id":'
-      . $comment . '}',
-    "comment delete triggers fedmsg"
+qr/$commonexpr --topic=comment.delete --json-input --message=\{"created":"$dateexpr","group_id":null,"job_id":$job,"text":"updated comment","updated":"$dateexpr","user":"perci"\}/,
+    'comment delete triggers fedmsg'
 );
 # reset $args
 $args = '';
