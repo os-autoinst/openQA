@@ -37,8 +37,10 @@ use base qw(Exporter);
 our @EXPORT = qw(start_job stop_job check_job backend_running);
 
 my $worker;
-my $log_offset   = 0;
-my $max_job_time = 7200;    # 2h
+my $log_offset             = 0;
+my $serial_offset          = 0;
+my $serial_terminal_offset = 0;
+my $max_job_time           = 7200;    # 2h
 my $current_running;
 my $test_order;
 my $stop_job_running;
@@ -282,11 +284,12 @@ sub _stop_job($;$) {
             }
         }
 
-        for my $file (qw(video.ogv vars.json serial0 autoinst-log.txt)) {
+        for my $file (qw(video.ogv vars.json serial0 autoinst-log.txt virtio_console.log)) {
             next unless -e $file;
             # default serial output file called serial0
             my $ofile = $file;
             $ofile =~ s/serial0/serial0.txt/;
+            $ofile =~ s/virtio_console.log/serial_terminal.txt/;
             unless (
                 upload(
                     $job_id,
@@ -351,11 +354,12 @@ sub start_job {
     printf "got job %d: %s\n", $job->{id}, $name;
 
     # for the status call
-    $log_offset      = 0;
-    $current_running = undef;
-    $do_livelog      = 0;
-    $tosend_images   = {};
-    $tosend_files    = [];
+    $log_offset             = 0;
+    $serial_terminal_offset = 0;
+    $current_running        = undef;
+    $do_livelog             = 0;
+    $tosend_images          = {};
+    $tosend_files           = [];
 
     $worker = engine_workit($job);
     if ($worker->{error}) {
@@ -383,18 +387,18 @@ sub start_job {
 }
 
 sub log_snippet {
-    my $file = "$pooldir/autoinst-log.txt";
+    my ($file, $offset) = @_;
 
     my $fd;
     unless (open($fd, '<:raw', $file)) {
         return {};
     }
-    my $ret = {offset => $log_offset};
+    my $ret = {offset => $$offset};
 
-    sysseek($fd, $log_offset, Fcntl::SEEK_SET);
+    sysseek($fd, $$offset, Fcntl::SEEK_SET);
     sysread($fd, my $buf = '', 100000);
     $ret->{data} = $buf;
-    $log_offset = sysseek($fd, 0, 1);
+    $$offset = sysseek($fd, 0, 1);
     close($fd);
     return $ret;
 }
@@ -491,7 +495,10 @@ sub upload_status(;$) {
         }
     }
     if ($do_livelog) {
-        $status->{log} = log_snippet;
+        $status->{log}             = log_snippet("$pooldir/autoinst-log.txt",   \$log_offset);
+        $status->{serial_log}      = log_snippet("$pooldir/serial0",            \$serial_offset);
+        $status->{serial_terminal} = log_snippet("$pooldir/virtio_console.log", \$serial_terminal_offset);
+        print STDERR $status->{serial_terminal}->{data};
         my $screen = read_last_screen;
         $status->{screen} = $screen if $screen;
     }

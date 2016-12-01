@@ -75,17 +75,16 @@ sub edit {
     }
 }
 
-sub livelog {
-    my ($self) = @_;
-    return 0 unless $self->init();
+sub streamtext {
+    my ($self, $file_name, $start_hook, $close_hook) = @_;
+
     my $job    = $self->stash('job');
     my $worker = $job->worker;
-    # tell worker to increase status updates rate for more responsive updates
-    my $ipc = OpenQA::IPC->ipc;
-    $ipc->websockets('ws_send', $worker->id, 'livelog_start', $job->id);
+    $start_hook ||= sub { };
+    $close_hook ||= sub { };
+    my $logfile = $worker->get_property('WORKER_TMPDIR') . "/$file_name";
 
-    my $logfile = $worker->get_property('WORKER_TMPDIR') . '/autoinst-log-live.txt';
-
+    $start_hook->($worker, $job);
     $self->render_later;
     Mojo::IOLoop->stream($self->tx->connection)->timeout(900);
     $self->res->code(200);
@@ -115,9 +114,9 @@ sub livelog {
     # logfile and send them to the client, plus a utility function to
     # close the connection if anything goes wrong.
     my $id;
-    my $close = sub {
+    my $doclose = sub {
         Mojo::IOLoop->remove($id);
-        $ipc->websockets('ws_send', $worker->id, 'livelog_stop', $job->id);
+        $close_hook->();
         $self->finish;
         close $log;
         return;
@@ -139,7 +138,7 @@ sub livelog {
                 && $st[3] > 0
                 && $st[7] >= $size)
             {
-                return $close->();
+                return $doclose->();
             }
 
             # If there's new data, read it all and send it out. Then
@@ -160,8 +159,33 @@ sub livelog {
     $self->on(
         finish => sub {
             Mojo::IOLoop->remove($id);
-            $ipc->websockets('ws_send', $worker->id, 'livelog_stop', $job->id);
+            $close_hook->($worker, $job);
         });
+}
+
+sub livelog {
+    my ($self) = @_;
+    return 0 unless $self->init();
+    my $ipc = OpenQA::IPC->ipc;
+
+    my $start_hook = sub {
+        my ($worker, $job) = @_;
+        # tell worker to increase status updates rate for more responsive updates
+        $ipc->websockets('ws_send', $worker->id, 'livelog_start', $job->id);
+    };
+
+    my $close_hook = sub {
+        my ($worker, $job) = @_;
+        $ipc->websockets('ws_send', $worker->id, 'livelog_stop', $job->id);
+    };
+
+    $self->streamtext('autoinst-log-live.txt', $start_hook, $close_hook);
+}
+
+sub liveterminal {
+    my ($self) = @_;
+    return 0 unless $self->init();
+    $self->streamtext('serial-terminal-live.txt');
 }
 
 sub streaming {
@@ -179,7 +203,7 @@ sub streaming {
     # Set up a recurring timer to send the last screenshot to the client,
     # plus a utility function to close the connection if anything goes wrong.
     my $id;
-    my $close = sub {
+    my $doclose = sub {
         Mojo::IOLoop->remove($id);
         $self->finish;
         return;
@@ -198,7 +222,7 @@ sub streaming {
                     # Some browsers can't handle mpng (at least after reciving jpeg all the time)
                     my $data = file_content($self->app->static->file('images/suse-tested.png')->path);
                     $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
-                    $close->();
+                    $doclose->();
                 }
             }
         });

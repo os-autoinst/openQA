@@ -851,20 +851,19 @@ sub save_screenshot($) {
     unlink($tmpdir . "/$current") if $current;
 }
 
-sub append_log($) {
-    my ($self, $log) = @_;
+sub append_log($$) {
+    my ($self, $log, $file_name) = @_;
     return unless length($log->{data});
 
-    my $file = $self->worker->get_property('WORKER_TMPDIR');
-    return unless -d $file;    # we can't help
-    $file .= "/autoinst-log-live.txt";
-    if (sysopen(my $fd, $file, Fcntl::O_WRONLY | Fcntl::O_CREAT)) {
-        sysseek($fd, $log->{offset}, Fcntl::SEEK_SET);
-        syswrite($fd, $log->{data});
+    my $path = $self->worker->get_property('WORKER_TMPDIR');
+    return unless -d $path;    # we can't help
+    $path .= "/$file_name";
+    if (open(my $fd, '>>', $path)) {
+        print $fd $log->{data};
         close($fd);
     }
     else {
-        print STDERR "can't open $file: $!\n";
+        print STDERR "can't open $path: $!\n";
     }
 }
 
@@ -929,6 +928,7 @@ sub delete_logs {
     unlink($resultdir . 'autoinst-log.txt');
     unlink($resultdir . 'video.ogv');
     unlink($resultdir . 'serial0.txt');
+    unlink($resultdir . 'serial_terminal.txt');
     File::Path::rmtree($resultdir . 'ulogs');
 
     $self->update({logs_present => 0});
@@ -1115,7 +1115,9 @@ sub update_status {
         return $ret;
     }
 
-    $self->append_log($status->{log});
+    $self->append_log($status->{log},             "autoinst-log-live.txt");
+    $self->append_log($status->{serial_log},      "serial-terminal-live.txt");
+    $self->append_log($status->{serial_terminal}, "serial-terminal-live.txt");
     # delete from the hash so it becomes dumpable for debugging
     my $screen = delete $status->{screen};
     $self->save_screenshot($screen)                   if $screen;

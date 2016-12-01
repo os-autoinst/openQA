@@ -46,3 +46,7 @@
 </div>
 <input type="checkbox" id="scrolldown" checked="checked" />
 <label for="scrolldown">Autoscroll log</label>
+<div class="h5">Serial Output (serial0.txt and serial_terminal.txt)</div>
+<div class="panel panel-default">
+    <pre id="liveterminal" data-url='<%= url_for("liveterminal", testid => $testid) %>'></pre>
+</div>

@@ -245,23 +245,30 @@ function setScrolldown(newval) {
     }
 }
 
+function setDataListener(elem, callback) {
+    var events = new EventSource(elem.data('url'));
+    events.addEventListener('message', function(event) {
+        elem[0].innerHTML += JSON.parse(event.data)[0];
+	if (callback) callback();
+    }, false);
+}
+
 function initLivelog() {
     scrolldown = true;
     $('#scrolldown').attr('checked', true);
     
     // start stream
     var livelog = $('#livelog');
-    var events = new EventSource(livelog.data('url'));
-    events.addEventListener('message', function(event) {
-        livelog[0].innerHTML += JSON.parse(event.data)[0];
-        if (scrolldown) {
-            livelog[0].scrollTop = livelog[0].scrollHeight;
-        }
-    }, false);
+    setDataListener(livelog, function() {
+        if (scrolldown) livelog[0].scrollTop = livelog[0].scrollHeight;
+    });
+}
+
+function initLiveterminal() {
+    setDataListener($('#liveterminal'));
 }
 
 /********* LIVE LOG END *********/
-
 
 /********* LIVE STREAM *********/
 
@@ -295,6 +302,7 @@ function initLivestream() {
 
 function setupRunning(jobid, status_url, details_url) {
   initLivelog();
+  initLiveterminal();
   initLivestream();
   initStatus(jobid, status_url, details_url);
   
