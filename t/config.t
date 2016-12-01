@@ -61,6 +61,12 @@ is_deeply(
         },
         audit => {
             blacklist => 'job_grab job_done',
+        },
+        amqp => {
+            reconnect_timeout => 5,
+            url               => 'amqp://guest:guest@localhost:5672/',
+            exchange          => 'pubsub',
+            topic_prefix      => 'suse',
         }});
 
 $ENV{OPENQA_CONFIG} = 't';

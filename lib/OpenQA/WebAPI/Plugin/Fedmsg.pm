@@ -24,8 +24,8 @@ use JSON;
 use Mojo::IOLoop;
 use OpenQA::Schema::Result::Jobs;
 
-my @job_events = qw/job_create job_delete job_cancel job_duplicate job_restart jobs_restart job_update_result job_done/;
-my @comment_events = qw/user_new_comment user_update_comment user_delete_comment/;
+my @job_events     = qw/job_create job_delete job_cancel job_duplicate job_restart job_update_result job_done/;
+my @comment_events = qw/comment_create comment_update comment_delete/;
 
 sub register {
     my ($self, $app) = @_;

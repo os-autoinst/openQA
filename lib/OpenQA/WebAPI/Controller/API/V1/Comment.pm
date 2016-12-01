@@ -74,7 +74,7 @@ sub create {
             text    => href_to_bugref($text),
             user_id => $self->current_user->id
         });
-    $self->emit_event('openqa_user_new_comment', {id => $res->id});
+    $self->emit_event('openqa_comment_create', {id => $res->id});
     $self->render(json => {id => $res->id});
 }
 
@@ -93,7 +93,7 @@ sub update {
     return $self->render(json => {error => "Forbidden (must be author)"}, status => 403)
       unless ($comment->user_id == $self->current_user->id);
     my $res = $comment->update({text => href_to_bugref($text)});
-    $self->emit_event('openqa_user_update_comment', {id => $comment->id});
+    $self->emit_event('openqa_comment_update', {id => $comment->id});
     $self->render(json => {id => $res->id});
 }
 
@@ -106,8 +106,8 @@ sub delete {
     my $comment_id = $self->param('comment_id');
     my $comment    = $comments->find($self->param('comment_id'));
     return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
+    $self->emit_event('openqa_comment_delete', {id => $comment_id});
     my $res = $comment->delete();
-    $self->emit_event('openqa_user_delete_comment', {id => $res->id});
     $self->render(json => {id => $res->id});
 }
 

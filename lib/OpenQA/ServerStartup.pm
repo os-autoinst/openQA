@@ -62,6 +62,12 @@ sub read_config {
         audit => {
             blacklist => '',
         },
+        amqp => {
+            reconnect_timeout => 5,
+            url               => 'amqp://guest:guest@localhost:5672/',
+            exchange          => 'pubsub',
+            topic_prefix      => 'suse',
+        },
     );
 
     # in development mode we use fake auth and log to stderr
