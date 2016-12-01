@@ -49,7 +49,7 @@ $get = $t->get_ok('/')->status_is(200);
 @h2  = $get->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['opensuse', 'opensuse test'], 'empty parent group not shown');
 
-# move opensue group to new parent group
+# move opensuse group to new parent group
 my $opensuse_group = $job_groups->find({name => 'opensuse'});
 $opensuse_group->update({parent_id => $test_parent->id});
 
@@ -90,11 +90,10 @@ sub check_test_parent {
         'builds on parent-level shown'
     );
 
-    is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048@0815')->size,
+    $t->element_count_is('#review-also-softfailed-' . $test_parent->id . '-0048@0815',
         1, 'review badge for build 0048@0815 shown');
-    is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048')->size,
-        0, 'review badge for build 0048 NOT shown yet');
-    is($get->tx->res->dom->find('#child-review-' . $test_parent->id . '-0048')->size,
+    $t->element_count_is('#review-' . $test_parent->id . '-0048', 0, 'review badge for build 0048 NOT shown yet');
+    $t->element_count_is('#child-review-' . $test_parent->id . '-0048',
         0, 'review badge for build 0048 also on child-level NOT shown yet');
 
     my @progress_bars
@@ -131,10 +130,9 @@ sub check_test_parent {
         'link URLs'
     );
 
-    is($get->tx->res->dom->find("div.children-$default_expanded .review-all-passed")->size,
-        1, 'badge shown on parent-level');
+    $t->element_count_is("div.children-$default_expanded .review-all-passed", 1, 'badge shown on parent-level');
 
-    is($get->tx->res->dom->find("div.children-$default_expanded h4 span i.tag")->size, 0, 'no tags shown yet');
+    $t->element_count_is("div.children-$default_expanded h4 span i.tag", 0, 'no tags shown yet');
 }
 check_test_parent('collapsed');
 
@@ -178,7 +176,7 @@ is_deeply(\@h4, ['Build0091'], 'only tagged builds on parent-level shown (common
 is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both groups shown, though');
 
 # temporarily create failed job with build 0048@0815 in opensuse test to verify that review badge is only shown
-# if all combinded builds are reviewed
+# if all combined builds are reviewed
 my $not_reviewed_job = $jobs->create(
     {
         BUILD    => '0048@0815',
@@ -192,20 +190,116 @@ my $not_reviewed_job = $jobs->create(
         result   => OpenQA::Schema::Result::Jobs::FAILED,
         group_id => $opensuse_test_group->id
     });
-$get = $t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
-is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048@0815')->size,
-    0, 'review badge NOT shown for build 0048@0815 anymore');
-is($get->tx->res->dom->find('#child-review-' . $test_parent->id . '-0048@0815')->size,
-    1, 'review badge for build 0048@0815 still shown on child-level');
+$t->app->db->resultset('JobModules')->create(
+    {
+        script   => 'tests/x11/failing_module.pm',
+        job_id   => $not_reviewed_job->id,
+        category => 'x11',
+        name     => 'failing_module',
+        result   => 'failed'
+    });
+
+$get = $t->get_ok('/?limit_builds=20')->status_is(200);
+$t->element_count_is('#review-' . $test_parent->id . '-0048@0815',
+    0, 'badge (regular) NOT shown for build 0048@0815 anymore');
+$t->element_count_is('#review-also-softfailed-' . $test_parent->id . '-0048@0815',
+    0, 'review badge  (also softfailed) NOT shown for build 0048@0815 anymore');
+$t->element_count_is('#child-review-also-softfailed-' . $test_parent->id . '-0048@0815',
+    1, 'review badge (also softfailed) review badge for build 0048@0815 still shown on child-level');
+
+$not_reviewed_job->update({result => OpenQA::Schema::Result::Jobs::SOFTFAILED});
+$get = $t->get_ok('/?limit_builds=20')->status_is(200);
+$t->element_count_is('#review-' . $test_parent->id . '-0048@0815',
+    1, 'review badge (regular) shown for build 0048@0815 on parent level');
+$t->element_count_is('#child-review-also-softfailed-' . $test_parent->id . '-0048@0815',
+    1, 'review badge  (also softfailed) for build 0048@0815 still shown on child-level');
+
 $not_reviewed_job->delete();
 
-# add review for job 99938 so build 0048 is reviewed, despite the unreviewed softfails
-$opensuse_group->jobs->find({id => 99938})->comments->create({text => 'poo#4321', user_id => 99901});
-$get = $t->get_ok('/?limit_builds=20')->status_is(200);
-is($get->tx->res->dom->find('#review-' . $test_parent->id . '-0048')->size,
-    1, 'review badge for build 0048 shown, despite unreviewed softfails');
-is($get->tx->res->dom->find('#child-review-' . $test_parent->id . '-0048')->size,
-    1, 'review badge for build 0048 shown on child-level, despite unreviewed softfails');
+sub check_badge {
+    my ($reviewed_count, $reviewed_also_softfailed_count, $msg, $build) = @_;
+    $build //= '0048';
+    $get = $t->get_ok('/?limit_builds=20')->status_is(200);
+    $t->element_count_is('#review-' . $test_parent->id . '-' . $build,
+        $reviewed_count, $msg . ' (regular badge, parent-level)');
+    $t->element_count_is(
+        '#review-also-softfailed-' . $test_parent->id . '-' . $build,
+        $reviewed_also_softfailed_count,
+        $msg . ' (softfailed badge, parent-level)'
+    );
+    $t->element_count_is('#child-review-' . $test_parent->id . '-' . $build,
+        $reviewed_count, $msg . ' (regular badge, child-level)');
+    $t->element_count_is(
+        '#child-review-also-softfailed-' . $test_parent->id . '-' . $build,
+        $reviewed_also_softfailed_count,
+        $msg . ' (softfailed badge, child-level)'
+    );
+}
+
+# make one of the softfailed jobs a softfailed because of failed modules, not
+# because record_soft_failure or a workaround needle was found
+$t->app->db->resultset('JobModules')->create(
+    {
+        script   => 'tests/x11/failing_module.pm',
+        job_id   => 99936,
+        category => 'x11',
+        name     => 'failing_module',
+        result   => 'failed'
+    });
+
+# failed:                             not reviewed
+# softfailed without failing modules: not reviewed
+# softfailed with failing modules:    not reviewed
+check_badge(0, 0, 'no badge for completely unreviewed build');
+
+my $softfailed_without_failing_modules_label
+  = $opensuse_group->jobs->find({id => 99939})->comments->create({text => 'poo#4322', user_id => 99901});
+
+# failed:                             not reviewed
+# softfailed without failing modules: reviewed
+# softfailed with failing modules:    not reviewed
+check_badge(0, 0, 'no badge as long as not all failed reviewed');
+
+my $softfail_with_failing_modules_label
+  = $opensuse_group->jobs->find({id => 99936})->comments->create({text => 'poo#4322', user_id => 99901});
+
+# failed:                             not reviewed
+# softfailed without failing modules: reviewed
+# softfailed with failing modules:    reviewed
+check_badge(0, 0, 'no badge as long as not all failed reviewed');
+
+$softfail_with_failing_modules_label->delete;
+# add review for job 99938 (so now all failed jobs are reviewed but one softfailed is missing)
+my $failed_label = $opensuse_group->jobs->find({id => 99938})->comments->create({text => 'poo#4321', user_id => 99901});
+
+# failed:                             reviewed
+# softfailed without failing modules: reviewed
+# softfailed with failing modules:    not reviewed
+check_badge(1, 0, 'regular badge when all failed reviewed but softfailed with failing modules still unreviewed');
+
+$softfail_with_failing_modules_label
+  = $opensuse_group->jobs->find({id => 99936})->comments->create({text => 'poo#4322', user_id => 99901});
+
+# failed:                             reviewed
+# softfailed without failing modules: reviewed
+# softfailed with failing modules:    reviewed
+check_badge(0, 1, 'review badge for all failed and all softfailed with failed modules when everything reviewed');
+
+$softfailed_without_failing_modules_label->delete;
+
+# failed:                             reviewed
+# softfailed without failing modules: not reviewed
+# softfailed with failing modules:    reviewed
+check_badge(0, 1,
+'review badge for all failed and all softfailed with failed modules though there is an unreviewed softfailure without failing modules'
+);
+
+$softfail_with_failing_modules_label->delete;
+
+# failed:                             reviewed
+# softfailed without failing modules: not reviewed
+# softfailed with failing modules:    not reviewed
+check_badge(1, 0, 'regular badge when not softfailed reviewed');
 
 # change DISTRI/VERSION of test in opensuse group to test whether links are still correct then
 $opensuse_group->jobs->update({VERSION => '14.2', DISTRI => 'suse'});
