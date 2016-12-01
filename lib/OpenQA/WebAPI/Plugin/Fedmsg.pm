@@ -43,6 +43,11 @@ sub register {
 sub log_event {
     my ($event, $event_data) = @_;
 
+    # we're going to explicitly pass this as the modname
+    $event =~ s/^openqa_//;
+    # fedmsg uses dot separators
+    $event =~ s/_/\./g;
+
     # convert data to JSON, with reliable key ordering (helps the tests)
     $event_data = to_json($event_data, {canonical => 1, allow_blessed => 1});
 
@@ -65,10 +70,6 @@ sub log_event {
 sub on_job_event {
     my ($self, $app, $args) = @_;
     my ($user_id, $connection_id, $event, $event_data) = @$args;
-    # we're going to explicitly pass this as the modname
-    $event =~ s/^openqa_//;
-    # fedmsg uses dot separators
-    $event =~ s/_/\./;
     # find count of pending jobs for the same build
     # this is so we can tell when all tests for a build are done
     my $job = $app->db->resultset('Jobs')->find({id => $event_data->{id}});
@@ -92,17 +93,25 @@ sub on_job_event {
 
 sub on_comment_event {
     my ($self, $app, $args) = @_;
-    my ($comment_id, $connection_id, $event, $event_data) = @$args;
+    my ($user_id, $connection_id, $event, $event_data) = @$args;
+    my $hash;
 
-    # find comment in database
-    my $comment = $app->db->resultset('Comments')->find($event_data->{id});
-    return unless $comment;
+    # if event was a deletion, we'll have to create the hash, and we
+    # don't really know very much
+    if ($event eq 'openqa_user_delete_comment') {
+        $hash = {id => $event_data->{id}};
+    }
+    else {
+        # find comment in database
+        my $comment = $app->db->resultset('Comments')->find($event_data->{id});
+        return unless $comment;
 
-    # just send the hash already used for JSON representation
-    my $hash = $comment->hash;
-    # also include job_id/group_id
-    $hash->{job_id}   = $comment->job_id;
-    $hash->{group_id} = $comment->group_id;
+        # just send the hash already used for JSON representation
+        $hash = $comment->hash;
+        # also include job_id/group_id
+        $hash->{job_id}   = $comment->job_id;
+        $hash->{group_id} = $comment->group_id;
+    }
 
     log_event($event, $hash);
 }

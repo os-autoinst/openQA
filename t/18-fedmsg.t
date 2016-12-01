@@ -92,6 +92,8 @@ is(
       . ',"remaining":1}',
     "job create triggers fedmsg"
 );
+# reset $args
+$args = '';
 
 # FIXME: restarting job via API emits an event in real use, but not if we do it here
 
@@ -107,6 +109,8 @@ is(
       . ',"newbuild":null,"remaining":0,"result":"failed"}',
     "job done triggers fedmsg"
 );
+# reset $args
+$args = '';
 
 # we don't test update_results as comment indicates it's obsolete
 
@@ -124,6 +128,8 @@ is(
       . $newjob . '}',
     "job duplicate triggers fedmsg"
 );
+# reset $args
+$args = '';
 
 # cancel the new job via API
 $post = $t->post_ok("/api/v1/jobs/" . $newjob . "/cancel")->status_is(200);
@@ -137,7 +143,54 @@ is(
       . ',"remaining":0}',
     "job cancel triggers fedmsg"
 );
+# reset $args
+$args = '';
 
 # FIXME: deleting job via DELETE call to api/v1/jobs/$newjob fails with 500?
+
+# add a job comment via API
+$post = $t->post_ok("/api/v1/jobs/$job/comments" => form => {text => "test comment"})->status_is(200);
+# check plugin called fedmsg-logger correctly
+is(
+    $args,
+    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=user.new.comment --json-input --message='
+      . '{"created":null,"group_id":null,"job_id":'
+      . $job
+      . ',"text":"test comment","user":"perci"}',
+    "comment post triggers fedmsg"
+);
+# reset $args
+$args = '';
+# stash the comment ID
+my $comment = $post->tx->res->json->{id};
+
+# update job comment via API
+my $put = $t->put_ok("/api/v1/jobs/$job/comments/$comment" => form => {text => "updated comment"})->status_is(200);
+# check plugin called fedmsg-logger correctly
+is(
+    $args,
+    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=user.update.comment --json-input --message='
+      . '{"created":null,"group_id":null,"job_id":'
+      . $job
+      . ',"text":"updated comment","user":"perci"}',
+    "comment update triggers fedmsg"
+);
+# reset $args
+$args = '';
+
+# become admin (so we can delete the comment)
+$t->ua(OpenQA::Client->new(apikey => 'ARTHURKEY01', apisecret => 'EXCALIBUR')->ioloop(Mojo::IOLoop->singleton));
+$t->app($app);
+# delete comment via API
+my $delete = $t->delete_ok("/api/v1/jobs/$job/comments/$comment")->status_is(200);
+is(
+    $args,
+    'fedmsg-logger --cert-prefix=openqa --modname=openqa --topic=user.delete.comment --json-input --message='
+      . '{"id":'
+      . $comment . '}',
+    "comment delete triggers fedmsg"
+);
+# reset $args
+$args = '';
 
 done_testing();
