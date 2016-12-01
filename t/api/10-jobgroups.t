@@ -183,13 +183,17 @@ subtest 'delete job/parent group and error when listing non-existing group' => s
         my $delete = $t->delete_ok("/api/v1/$variant/$new_id")->status_is(200);
         is($delete->tx->res->json->{id}, $new_id, 'correct ID returned');
         my $get = $t->get_ok("/api/v1/$variant/$new_id")->status_is(404);
-        is_deeply($get->tx->res->json, {error => "Group $new_id does not exist"}, 'error about non-existing group');
+        is_deeply(
+            $get->tx->res->json,
+            {error => "Group $new_id does not exist", error_status => 404},
+            'error about non-existing group'
+        );
     }
 };
 
 subtest 'prevent deleting non-empty job group' => sub() {
     my $delete = $t->delete_ok('/api/v1/job_groups/1002')->status_is(400);
-    is_deeply($delete->tx->res->json, {error => 'Job group 1002 is not empty'});
+    is_deeply($delete->tx->res->json, {error => 'Job group 1002 is not empty', error_status => 400});
     my $get = $t->get_ok('/api/v1/job_groups/1002/jobs')->status_is(200);
     is_deeply($get->tx->res->json, {ids => [99961]}, '1002 contains one job');
     $get = $t->get_ok('/api/v1/job_groups/1002/jobs?expired=1')->status_is(200);

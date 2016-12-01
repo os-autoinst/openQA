@@ -475,6 +475,17 @@ sub startup {
         OpenQA::WebSockets->new;
         OpenQA::Scheduler->new;
     }
+
+    # add method to be called before rendering
+    $self->app->hook(
+        before_render => sub {
+            my ($c, $args) = @_;
+            # return errors as JSON if accepted but HTML not
+            if (!$c->accepts('html') && $c->accepts('json') && $args->{status} && $args->{status} != 200) {
+                # the JSON API might already provide JSON in some error cases which must be preserved
+                (($args->{json} //= {})->{error_status}) = $args->{status};
+            }
+        });
 }
 
 sub run {
