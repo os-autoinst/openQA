@@ -47,8 +47,7 @@ $get = $t->get_ok($previous_results_header->at('a')->{href})->status_is(200);
 is($t->tx->res->dom->at('#info_box .panel-heading a')->{href}, '/tests/99947',
     'latest link points to last in scenario');
 $get = $t->get_ok('/tests/99946?limit_previous=1#previous')->status_is(200);
-my $table_rows = $t->tx->res->dom->find('#previous tbody tr');
-is($table_rows->size, 1, 'can be limited with query parameter');
+$t->element_count_is('#previous tbody tr', 1, 'can be limited with query parameter');
 my $more_results = $t->tx->res->dom->at('#previous #more_results');
 my $res          = OpenQA::Test::Case::trim_whitespace($more_results->all_text);
 is($res, q{Limit to 10 / 20 / 50 / 100 / 400 previous results}, 'more results can be requested');
