@@ -30,7 +30,7 @@ use Net::DBus::Test::MockObject;
 
 use Test::More;
 use Test::Warnings;
-use Test::Output qw/stderr_like/;
+use Test::Output qw(stderr_like);
 
 my $schema = OpenQA::Test::Database->new->create(skip_fixtures => 1);
 

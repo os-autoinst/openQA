@@ -19,7 +19,7 @@ use Mojo::Util 'hmac_sha1_sum';
 use Try::Tiny;
 
 use OpenQA::IPC;
-use OpenQA::Utils qw/log_debug log_warning notify_workers/;
+use OpenQA::Utils qw(log_debug log_warning notify_workers);
 use OpenQA::Schema;
 use OpenQA::ServerStartup;
 
@@ -28,9 +28,9 @@ use db_profiler;
 require Exporter;
 our (@ISA, @EXPORT, @EXPORT_OK);
 
-@ISA       = qw/Exporter/;
-@EXPORT    = qw/ws_send ws_send_all/;
-@EXPORT_OK = qw/ws_create ws_is_worker_connected ws_add_worker ws_remove_worker/;
+@ISA       = qw(Exporter);
+@EXPORT    = qw(ws_send ws_send_all);
+@EXPORT_OK = qw(ws_create ws_is_worker_connected ws_add_worker ws_remove_worker);
 
 # worker->websockets mapping
 my $worker_sockets = {};

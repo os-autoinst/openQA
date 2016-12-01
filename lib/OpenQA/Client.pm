@@ -30,7 +30,7 @@ sub new {
     my $self = shift->SUPER::new;
     my %args = @_;
 
-    for my $i (qw/apikey apisecret/) {
+    for my $i (qw(apikey apisecret)) {
         next unless $args{$i};
         $self->$i($args{$i});
     }
@@ -43,7 +43,7 @@ sub new {
             next unless $file && -r $file;
             my $cfg = Config::IniFiles->new(-file => $file) || last;
             last unless $cfg->SectionExists($args{api});
-            for my $i (qw/key secret/) {
+            for my $i (qw(key secret)) {
                 my $attr = "api$i";
                 next if $self->$attr;
                 (my $val = $cfg->val($args{api}, $i)) =~ s/\s+$//;    # remove trailing whitespace

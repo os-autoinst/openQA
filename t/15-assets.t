@@ -21,12 +21,12 @@ BEGIN {
 
 use strict;
 use warnings;
-use Data::Dump qw/pp dd/;
-use File::Path qw/remove_tree/;
+use Data::Dump qw(pp dd);
+use File::Path qw(remove_tree);
 use File::Spec::Functions 'catfile';
 use Test::More;
 use Test::Warnings;
-use OpenQA::Scheduler::Scheduler qw/job_grab job_restart/;
+use OpenQA::Scheduler::Scheduler qw(job_grab job_restart);
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 use OpenQA::IPC;
 use OpenQA::WebSockets;

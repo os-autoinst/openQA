@@ -15,13 +15,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::Secrets;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use strict;
 
 use db_helpers;
 
 __PACKAGE__->table('secrets');
-__PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
+__PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
@@ -33,7 +33,7 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([qw/secret/]);
+__PACKAGE__->add_unique_constraint([qw(secret)]);
 
 sub new {
     my ($class, $attrs) = @_;

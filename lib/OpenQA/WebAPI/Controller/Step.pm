@@ -20,7 +20,7 @@ use OpenQA::Utils;
 use File::Basename;
 use File::Copy;
 use File::Which qw(which);
-use POSIX qw/strftime/;
+use POSIX qw(strftime);
 use Try::Tiny;
 use JSON;
 
@@ -448,7 +448,7 @@ sub save_needle_ajax {
 
     if ($validation->has_error) {
         my $error = 'wrong parameters:';
-        for my $k (qw/json imagename imagedistri imageversion needlename/) {
+        for my $k (qw(json imagename imagedistri imageversion needlename)) {
             $self->app->log->error($k . ' ' . join(' ', @{$validation->error($k)})) if $validation->has_error($k);
             $error .= ' ' . $k if $validation->has_error($k);
         }

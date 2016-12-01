@@ -20,7 +20,7 @@ use strict;
 require Exporter;
 our (@ISA, @EXPORT_OK);
 @ISA       = qw(Exporter);
-@EXPORT_OK = qw/auth_config auth_login auth_logout/;
+@EXPORT_OK = qw(auth_config auth_login auth_logout);
 
 sub auth_config {
     my ($config) = @_;

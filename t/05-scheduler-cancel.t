@@ -21,7 +21,7 @@ BEGIN {
 }
 
 use strict;
-use Data::Dump qw/pp dd/;
+use Data::Dump qw(pp dd);
 use OpenQA::IPC;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
@@ -206,7 +206,7 @@ subtest 'parallel parent fails -> children are cancelled (parallel_failed)' => s
 
     is($jobB->result, OpenQA::Schema::Result::Jobs::PARALLEL_FAILED, 'B result is parallel failed');
     is($jobC->result, OpenQA::Schema::Result::Jobs::PARALLEL_FAILED, 'C result is parallel failed');
-    is_deeply(\@OpenQA::WebSockets::Server::commands, [qw/cancel cancel/], 'both cancel commands issued');
+    is_deeply(\@OpenQA::WebSockets::Server::commands, [qw(cancel cancel)], 'both cancel commands issued');
 };
 
 done_testing();

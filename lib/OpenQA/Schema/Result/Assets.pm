@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::Assets;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use strict;
 
 use OpenQA::Utils;
@@ -31,7 +31,7 @@ use Try::Tiny;
 use db_helpers;
 
 __PACKAGE__->table('assets');
-__PACKAGE__->load_components(qw/Timestamps/);
+__PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
@@ -54,7 +54,7 @@ __PACKAGE__->add_columns(
     });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([qw/type name/]);
+__PACKAGE__->add_unique_constraint([qw(type name)]);
 __PACKAGE__->has_many(jobs_assets => 'OpenQA::Schema::Result::JobsAssets', 'asset_id');
 __PACKAGE__->many_to_many(jobs => 'jobs_assets', 'job');
 
@@ -295,7 +295,7 @@ sub limit_assets {
     }
     if ($doremove) {
         my $removes
-          = $app->db->resultset('Assets')->search({id => {in => [sort keys %toremove]}}, {order_by => qw/t_created/});
+          = $app->db->resultset('Assets')->search({id => {in => [sort keys %toremove]}}, {order_by => qw(t_created)});
         while (my $a = $removes->next) {
             $a->remove_from_disk;
             $a->delete;
@@ -321,7 +321,7 @@ sub limit_assets {
                   . " days");
         }
     }
-    for my $type (qw/iso repo hdd/) {
+    for my $type (qw(iso repo hdd)) {
         my $dh;
         if (opendir($dh, $OpenQA::Utils::assetdir . "/$type")) {
             my %assets;

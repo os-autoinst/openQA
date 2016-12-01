@@ -30,7 +30,7 @@ use OpenQA::Schema;
 use Getopt::Long;
 use IO::Dir;
 use Fcntl ':mode';
-use POSIX qw/setuid setgid/;
+use POSIX qw(setuid setgid);
 
 my $prepare_upgrades            = 0;
 my $upgrade_database            = 0;

@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::JobModuleNeedles;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use strict;
 
 __PACKAGE__->table('job_module_needles');
@@ -33,7 +33,7 @@ __PACKAGE__->add_columns(
         default_value => 1
     });
 
-__PACKAGE__->add_unique_constraint([qw/needle_id job_module_id/]);
+__PACKAGE__->add_unique_constraint([qw(needle_id job_module_id)]);
 
 __PACKAGE__->belongs_to(job_module => 'OpenQA::Schema::Result::JobModules', 'job_module_id');
 __PACKAGE__->belongs_to(needle     => 'OpenQA::Schema::Result::Needles',    'needle_id');

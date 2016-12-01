@@ -15,13 +15,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::TestSuites;
-use base qw/DBIx::Class::Core/;
+use base qw(DBIx::Class::Core);
 use strict;
 
 use db_helpers;
 
 __PACKAGE__->table('test_suites');
-__PACKAGE__->load_components(qw/Timestamps/);
+__PACKAGE__->load_components(qw(Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
@@ -36,7 +36,7 @@ __PACKAGE__->add_columns(
 );
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([qw/name/]);
+__PACKAGE__->add_unique_constraint([qw(name)]);
 __PACKAGE__->has_many(job_templates => 'OpenQA::Schema::Result::JobTemplates', 'test_suite_id');
 __PACKAGE__->has_many(
     settings => 'OpenQA::Schema::Result::TestSuiteSettings',

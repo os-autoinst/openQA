@@ -21,7 +21,7 @@ use strict;
 use warnings;
 use JSON;
 
-use DBIx::Class::Timestamps qw/now/;
+use DBIx::Class::Timestamps qw(now);
 
 use base 'Mojolicious::Plugin';
 

@@ -19,9 +19,9 @@ use warnings;
 use feature 'state';
 
 use Carp;
-use POSIX qw/uname/;
+use POSIX qw(uname);
 
-use base qw/Exporter/;
+use base qw(Exporter);
 our @EXPORT
   = qw/$job $workerid $verbose $instance $worker_settings $pooldir $nocleanup $worker_caps $testresults $openqa_url
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST

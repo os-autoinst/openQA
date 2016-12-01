@@ -66,9 +66,9 @@ BEGIN {
 }
 
 use strict;
-use File::Basename qw/dirname/;
+use File::Basename qw(dirname);
 use Try::Tiny;
-use Data::Dump qw/dd pp/;
+use Data::Dump qw(dd pp);
 use Mojo::Util qw(decamelize);
 use Mojo::URL;
 use OpenQA::Client;
@@ -126,7 +126,7 @@ else {
 
 my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $options{'apisecret'}, api => $url->host);
 
-my @tables = (qw/Machines TestSuites Products JobTemplates/);
+my @tables = (qw(Machines TestSuites Products JobTemplates));
 
 sub print_error {
     my ($res) = @_;

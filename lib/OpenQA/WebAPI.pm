@@ -20,14 +20,14 @@ use Mojo::Base 'Mojolicious';
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
-use OpenQA::Utils qw/log_warning job_groups_and_parents/;
+use OpenQA::Utils qw(log_warning job_groups_and_parents);
 use OpenQA::ServerStartup;
 
 use Mojo::IOLoop;
 use Mojolicious::Commands;
 use DateTime;
-use Cwd qw/abs_path/;
-use File::Path qw/make_path/;
+use Cwd qw(abs_path);
+use File::Path qw(make_path);
 
 # reinit pseudo random number generator in every child to avoid
 # starting off with the same state.
@@ -378,7 +378,7 @@ sub startup {
 
     # api/v1/mm
     my $mm_api = $api_r_job->route('/mm');
-    $mm_api->get('/children/:status' => [status => [qw/running scheduled done/]])->name('apiv1_mm_running_children')
+    $mm_api->get('/children/:status' => [status => [qw(running scheduled done)]])->name('apiv1_mm_running_children')
       ->to('mm#get_children_status');
     $mm_api->get('/children')->name('apiv1_mm_children')->to('mm#get_children');
     $mm_api->get('/parents')->name('apiv1_mm_parents')->to('mm#get_parents');

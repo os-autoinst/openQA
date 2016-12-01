@@ -26,11 +26,11 @@ use DBIx::Class 0.082801;
 use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
 use Data::Dumper;
-use Data::Dump qw/dd pp/;
-use Date::Format qw/time2str/;
-use DBIx::Class::Timestamps qw/now/;
+use Data::Dump qw(dd pp);
+use Date::Format qw(time2str);
+use DBIx::Class::Timestamps qw(now);
 use DateTime;
-use File::Temp qw/tempdir/;
+use File::Temp qw(tempdir);
 use Mojo::URL;
 use Try::Tiny;
 use OpenQA::Schema::Result::Jobs;
@@ -39,8 +39,8 @@ use OpenQA::Schema::Result::JobDependencies;
 use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
-use OpenQA::Utils qw/log_debug log_warning notify_workers/;
-use db_helpers qw/rndstr/;
+use OpenQA::Utils qw(log_debug log_warning notify_workers);
+use db_helpers qw(rndstr);
 
 use OpenQA::IPC;
 
@@ -216,7 +216,7 @@ sub job_grab {
                 state => OpenQA::Schema::Result::Jobs::SCHEDULED,
                 id    => \@available_cond,
             },
-            {order_by => {-asc => [qw/priority id/]}})->first;
+            {order_by => {-asc => [qw(priority id)]}})->first;
         if ($job) {
             # we do this in a transaction to avoid the same job being assigned
             # to two workers - the 2nd worker will fail the unique constraint in

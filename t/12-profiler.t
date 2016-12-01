@@ -23,7 +23,7 @@ use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
 
-use File::Temp qw/tempfile/;
+use File::Temp qw(tempfile);
 
 my ($fh, $filename) = tempfile();
 

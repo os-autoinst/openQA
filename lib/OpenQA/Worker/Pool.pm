@@ -18,13 +18,13 @@ use strict;
 use warnings;
 
 use Fcntl;
-use File::Path qw/make_path remove_tree/;
+use File::Path qw(make_path remove_tree);
 
-use OpenQA::Worker::Common qw/$nocleanup $pooldir/;
+use OpenQA::Worker::Common qw($nocleanup $pooldir);
 
-use base qw/Exporter/;
+use base qw(Exporter);
 our (@EXPORT_OK);
-@EXPORT_OK = qw/lockit clean_pool/;
+@EXPORT_OK = qw(lockit clean_pool);
 
 sub lockit() {
     if (!-e $pooldir) {

@@ -116,7 +116,7 @@ use OpenQA::Client;
 
 Getopt::Long::Configure("no_ignore_case");
 
-my %tables = map { $_ => 1 } qw/Machines TestSuites Products JobTemplates/;
+my %tables = map { $_ => 1 } qw(Machines TestSuites Products JobTemplates);
 
 my %options;
 
@@ -178,7 +178,7 @@ my $client = OpenQA::Client->new(apikey => $options{'apikey'}, apisecret => $opt
 
 my %result;
 
-for my $table (qw/Machines TestSuites Products JobTemplates/) {
+for my $table (qw(Machines TestSuites Products JobTemplates)) {
     if ($tables{$table}) {
         $url->path($options{'apibase'} . '/' . decamelize($table));
         my $res = $client->get($url)->res;
@@ -204,7 +204,7 @@ if ($tables{JobTemplates} && $options{full}) {
         }
         $options{test}->{$r->{test_suite}->{name}} = 1;
         $options{machine}->{$r->{machine}->{name}} = 1;
-        my $k = join('-', map { $r->{product}->{$_} } qw/distri version flavor arch/);
+        my $k = join('-', map { $r->{product}->{$_} } qw(distri version flavor arch));
         $options{product}->{$k} = 1;
     }
 }
@@ -215,7 +215,7 @@ for my $table (keys %result) {
         if ($table eq 'JobTemplates') {
             next if $options{group} && $r->{group_name} && !$options{group}->{$r->{group_name}};
             if ($options{product}) {
-                my $k = join('-', map { $r->{product}->{$_} } qw/distri version flavor arch/);
+                my $k = join('-', map { $r->{product}->{$_} } qw(distri version flavor arch));
                 next unless $options{product}->{$k};
             }
         }
@@ -226,7 +226,7 @@ for my $table (keys %result) {
             next;
         }
         if ($table eq 'Products' && $options{product}) {
-            my $k = join('-', map { $r->{$_} } qw/distri version flavor arch/);
+            my $k = join('-', map { $r->{$_} } qw(distri version flavor arch));
             next unless $options{product}->{$k};
         }
 

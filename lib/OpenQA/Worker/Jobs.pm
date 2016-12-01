@@ -19,22 +19,22 @@ use warnings;
 use feature 'state';
 
 use OpenQA::Worker::Common;
-use OpenQA::Worker::Pool qw/clean_pool/;
+use OpenQA::Worker::Pool qw(clean_pool);
 use OpenQA::Worker::Engines::isotovideo;
 
-use POSIX qw/strftime SIGTERM/;
-use File::Copy qw/copy move/;
-use File::Path qw/remove_tree/;
-use JSON qw/decode_json/;
+use POSIX qw(strftime SIGTERM);
+use File::Copy qw(copy move);
+use File::Path qw(remove_tree);
+use JSON qw(decode_json);
 use Fcntl;
 use MIME::Base64;
-use File::Basename qw/basename/;
+use File::Basename qw(basename);
 use File::Which qw(which);
 
 use POSIX ':sys_wait_h';
 
-use base qw/Exporter/;
-our @EXPORT = qw/start_job stop_job check_job backend_running/;
+use base qw(Exporter);
+our @EXPORT = qw(start_job stop_job check_job backend_running);
 
 my $worker;
 my $log_offset   = 0;
@@ -452,7 +452,7 @@ sub upload_status(;$) {
 
     # cherry-pick
 
-    for my $f (qw/interactive needinput/) {
+    for my $f (qw(interactive needinput)) {
         if ($os_status->{$f} || $do_livelog) {
             $status->{status}->{$f} = $os_status->{$f};
         }
@@ -601,7 +601,7 @@ sub read_module_result($) {
     my $result = read_json_file("result-$test.json");
     return unless $result;
     for my $d (@{$result->{details}}) {
-        for my $type (qw/screenshot audio text/) {
+        for my $type (qw(screenshot audio text)) {
             my $file = $d->{$type};
             next unless $file;
 

@@ -18,10 +18,10 @@
 package OpenQA::Schema::Result::Workers;
 use strict;
 use warnings;
-use base qw/DBIx::Class::Core/;
-use DBIx::Class::Timestamps qw/now/;
+use base qw(DBIx::Class::Core);
+use DBIx::Class::Timestamps qw(now);
 use Try::Tiny;
-use OpenQA::Utils qw/log_error/;
+use OpenQA::Utils qw(log_error);
 use OpenQA::IPC;
 use db_helpers;
 
@@ -31,7 +31,7 @@ use constant COMMANDS => qw/quit abort cancel obsolete job_available
   livelog_stop livelog_start/;
 
 __PACKAGE__->table('workers');
-__PACKAGE__->load_components(qw/InflateColumn::DateTime Timestamps/);
+__PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
@@ -50,9 +50,9 @@ __PACKAGE__->add_columns(
     });
 __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint([qw/host instance/]);
+__PACKAGE__->add_unique_constraint([qw(host instance)]);
 # only one worker can work on a job
-__PACKAGE__->add_unique_constraint([qw/job_id/]);
+__PACKAGE__->add_unique_constraint([qw(job_id)]);
 __PACKAGE__->belongs_to(job => 'OpenQA::Schema::Result::Jobs', 'job_id');
 __PACKAGE__->has_many(properties => 'OpenQA::Schema::Result::WorkerProperties', 'worker_id');
 

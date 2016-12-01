@@ -52,7 +52,7 @@ sub get {
     my $schema = $self->app->schema;
 
     my %args;
-    for my $arg (qw/id type name/) {
+    for my $arg (qw(id type name)) {
         $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
     }
 
@@ -71,7 +71,7 @@ sub delete {
     my ($self) = @_;
 
     my %args;
-    for my $arg (qw/id type name/) {
+    for my $arg (qw(id type name)) {
         $args{$arg} = $self->stash($arg) if defined $self->stash($arg);
     }
 

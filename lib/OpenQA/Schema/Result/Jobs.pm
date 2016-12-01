@@ -71,11 +71,11 @@ use constant INCOMPLETE_RESULTS =>
 
 # scenario keys w/o MACHINE. Add MACHINE when desired, commonly joined on
 # other keys with the '@' character
-use constant SCENARIO_KEYS => (qw/DISTRI VERSION FLAVOR ARCH TEST/);
+use constant SCENARIO_KEYS => (qw(DISTRI VERSION FLAVOR ARCH TEST));
 use constant SCENARIO_WITH_MACHINE_KEYS => (SCENARIO_KEYS, 'MACHINE');
 
 __PACKAGE__->table('jobs');
-__PACKAGE__->load_components(qw/InflateColumn::DateTime FilterColumn Timestamps/);
+__PACKAGE__->load_components(qw(InflateColumn::DateTime FilterColumn Timestamps));
 __PACKAGE__->add_columns(
     id => {
         data_type         => 'integer',
@@ -192,7 +192,7 @@ __PACKAGE__->has_many(networks => 'OpenQA::Schema::Result::JobNetworks', 'job_id
 __PACKAGE__->has_many(gru_dependencies => 'OpenQA::Schema::Result::GruDependencies', 'job_id');
 __PACKAGE__->has_many(screenshot_links => 'OpenQA::Schema::Result::ScreenshotLinks', 'job_id');
 
-__PACKAGE__->add_unique_constraint([qw/slug/]);
+__PACKAGE__->add_unique_constraint([qw(slug)]);
 
 __PACKAGE__->filter_column(
     result_dir => {
@@ -205,8 +205,8 @@ sub sqlt_deploy_hook {
 
     $sqlt_table->add_index(name => 'idx_jobs_state',       fields => ['state']);
     $sqlt_table->add_index(name => 'idx_jobs_result',      fields => ['result']);
-    $sqlt_table->add_index(name => 'idx_jobs_build_group', fields => [qw/BUILD group_id/]);
-    $sqlt_table->add_index(name => 'idx_jobs_scenario',    fields => [qw/VERSION DISTRI FLAVOR TEST MACHINE ARCH/]);
+    $sqlt_table->add_index(name => 'idx_jobs_build_group', fields => [qw(BUILD group_id)]);
+    $sqlt_table->add_index(name => 'idx_jobs_scenario',    fields => [qw(VERSION DISTRI FLAVOR TEST MACHINE ARCH)]);
 }
 
 # overload to straighten out job modules
@@ -268,7 +268,7 @@ sub name {
 
         my %formats = (BUILD => 'Build%s',);
 
-        for my $c (qw/DISTRI VERSION FLAVOR ARCH BUILD TEST/) {
+        for my $c (qw(DISTRI VERSION FLAVOR ARCH BUILD TEST)) {
             next unless $self->get_column($c);
             push @a, sprintf(($formats{$c} || '%s'), $self->get_column($c));
         }
@@ -316,7 +316,7 @@ sub settings_hash {
                 $self->{_settings}->{$var->key} = $var->value;
             }
         }
-        for my $c (qw/DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST/) {
+        for my $c (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
             $self->{_settings}->{$c} = $self->get_column($c);
         }
         $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
@@ -386,7 +386,7 @@ sub _hashref {
 
 sub to_hash {
     my ($job, %args) = @_;
-    my $j = _hashref($job, qw/id name priority state result clone_id retry_avbl t_started t_finished group_id/);
+    my $j = _hashref($job, qw(id name priority state result clone_id retry_avbl t_started t_finished group_id));
     if ($j->{group_id}) {
         $j->{group} = $job->group->name;
     }
