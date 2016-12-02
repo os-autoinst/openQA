@@ -237,4 +237,22 @@ subtest 'scan_images' => sub {
     is_deeply(\@links, [99937, 99938, 99940, 99946, 99962, 99963], "all links found");
 };
 
+subtest 'labeled jobs considered important' => sub {
+    my @jobs = $t->app->db->resultset('Jobs')->search({state => 'done'})->all;
+    my $job = $jobs[3];
+    # but gets cleaned after important limit - change finished to 12 days ago
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
+    $job->group->update({"keep_logs_in_days"           => 5});
+    $job->group->update({"keep_important_logs_in_days" => 20});
+    my $filename = create_temp_job_log_file($job->result_dir);
+    my $user = $t->app->db->resultset('Users')->find({username => 'system'});
+    $job->comments->create({text => 'label:linked from test.domain', user_id => $user->id});
+    run_gru('limit_results_and_logs');
+    ok(-e $filename, 'file did not get cleaned');
+    # but gets cleaned after important limit - change finished to 22 days ago
+    $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 22, 'UTC')});
+    run_gru('limit_results_and_logs');
+    ok(!-e $filename, 'file got cleaned');
+};
+
 done_testing();

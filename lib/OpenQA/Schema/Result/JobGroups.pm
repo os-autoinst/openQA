@@ -166,12 +166,21 @@ sub _find_expired_jobs {
 
     # all jobs not in important builds that are expired
     my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $keep_in_days, 'UTC')};
-    push(@ors, {BUILD => {-not_in => $important_builds}, t_finished => $timecond});
+
+    # filter out linked jobs
+    my $expired_jobs
+      = $self->jobs->search(
+        {BUILD => {-not_in => $important_builds}, t_finished => $timecond, text => {like => 'label:linked%'}},
+        {order_by => 'me.id', join => 'comments'});
+    my @linked_jobs = map { $_->id } $expired_jobs->all;
+    push(@ors, {BUILD => {-not_in => $important_builds}, t_finished => $timecond, id => {-not_in => \@linked_jobs}});
 
     if ($keep_important_in_days) {
         # expired jobs in important builds
         my $timecond = {'<' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $keep_important_in_days, 'UTC')};
-        push(@ors, {BUILD => {-in => $important_builds}, t_finished => $timecond});
+        push(@ors,
+            {-or => [{BUILD => {-in => $important_builds}}, {id => {-in => \@linked_jobs}}], t_finished => $timecond},
+        );
     }
     return $self->jobs->search({-or => \@ors}, {order_by => qw(id)});
 }
