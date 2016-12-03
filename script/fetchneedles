@@ -83,13 +83,14 @@ else
 	mkdir -p "$target"
 	cd "$target"
 	if [ ! -d .git ]; then
-		git clone -b "$branch" "$giturl" .
+		echo "cloning $giturl shallow. Call 'git fetch --unshallow' for full history"
+		git clone --depth 0 -b "$branch" "$giturl" .
 		git config user.email "$email"
 		git config user.name "$username"
 		if [ "$needles_separate" = 1 ]; then
 		    [ -d $(needlesdir) ] || mkdir $(needlesdir)
 		    cd $(needlesdir)
-		    git clone -b "$needles_branch" "$needles_giturl" .
+		    git clone --depth 0 -b "$needles_branch" "$needles_giturl" .
 		    git config user.email "$email"
 		    git config user.name "$username"
 		fi
