@@ -67,8 +67,8 @@ sub count_job {
 sub add_review_badge {
     my ($build_res) = @_;
 
-    $build_res->{reviewed_all_passed} = $build_res->{passed} == $build_res->{total};
-    $build_res->{reviewed_all_passed_or_softfailed}
+    $build_res->{all_passed} = $build_res->{passed} == $build_res->{total};
+    $build_res->{all_passed_or_softfailed}
       = $build_res->{passed} + $build_res->{softfailed} == $build_res->{total};
     $build_res->{reviewed} = $build_res->{failed} > 0 && $build_res->{labeled} >= $build_res->{failed};
     $build_res->{reviewed_also_softfailed}

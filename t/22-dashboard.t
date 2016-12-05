@@ -130,8 +130,8 @@ sub check_test_parent {
         'link URLs'
     );
 
-    $t->element_count_is("div.children-$default_expanded .review-all-passed", 1, 'badge shown on parent-level');
-    $t->element_count_is("div.children-$default_expanded h4 span i.tag",      0, 'no tags shown yet');
+    $t->element_count_is("div.children-$default_expanded .badge-all-passed", 1, 'badge shown on parent-level');
+    $t->element_count_is("div.children-$default_expanded h4 span i.tag",     0, 'no tags shown yet');
 }
 check_test_parent('collapsed');
 
@@ -219,17 +219,17 @@ $not_reviewed_job->delete();
 sub check_auto_badge {
     my ($all_passed_count, $all_passed_or_softfailed_count, $build) = @_;
     $build //= '0092';
-    $t->element_count_is('#review-all-passed-' . $test_parent->id . '-' . $build,
+    $t->element_count_is('#badge-all-passed-' . $test_parent->id . '-' . $build,
         $all_passed_count, "all passed review badge shown for build $build on parent level");
-    $t->element_count_is('#child-review-all-passed-' . $test_parent->id . '-' . $build,
+    $t->element_count_is('#child-badge-all-passed-' . $test_parent->id . '-' . $build,
         $all_passed_count, "all passed review badge shown for build $build on child-level");
     $t->element_count_is(
-        '#review-all-passed-or-softfailed-' . $test_parent->id . '-' . $build,
+        '#badge-all-passed-or-softfailed-' . $test_parent->id . '-' . $build,
         $all_passed_or_softfailed_count,
         "all passed review badge shown for build $build on parent level"
     );
     $t->element_count_is(
-        '#child-review-all-passed-or-softfailed-' . $test_parent->id . '-' . $build,
+        '#child-badge-all-passed-or-softfailed-' . $test_parent->id . '-' . $build,
         $all_passed_or_softfailed_count,
         "all passed review badge shown for build $build on child-level"
     );
