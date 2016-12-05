@@ -51,7 +51,7 @@ is($driver->get_title(), "openQA", "back on main page");
 # check 'reviewed' labels
 my $get = $t->get_ok($driver->get_current_url())->status_is(200);
 $get->element_exists_not('.review', 'no build is marked as \'reviewed\' as there are no comments yet');
-$get->element_exists('.review-all-passed', 'exactly one build is marked as \'reviewed\' because all tests passed');
+$get->element_exists('.badge-all-passed', 'exactly one build is marked as \'reviewed\' because all tests passed');
 
 $driver->find_element('opensuse', 'link_text')->click();
 
@@ -299,11 +299,8 @@ subtest 'commenting in test results including labels' => sub {
         is($get->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href},
             'https://bugzilla.suse.com/show_bug.cgi?id=1234');
         $driver->find_element('opensuse', 'link_text')->click();
-        is(
-            $driver->find_element('.review-all-passed', 'css')->get_attribute('title'),
-            'Reviewed (all passed)',
-            'build should be marked because all tests passed'
-        );
+        is($driver->find_element('.badge-all-passed', 'css')->get_attribute('title'),
+            'All passed', 'build should be marked because all tests passed');
 
         subtest 'progress items work, too' => sub {
             $driver->get($baseurl . 'tests/99926#comments');

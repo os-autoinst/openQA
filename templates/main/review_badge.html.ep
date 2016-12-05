@@ -8,8 +8,13 @@
         <i class="review fa fa-certificate" title="Reviewed (<%= $build_res->{all_labeled}; %> <%= $build_res->{all_labeled} == 1 ? 'comment' : 'comments' %>)"></i>
     </span>
 % }
-% if ($build_res->{reviewed_all_passed}) {
-    <span id="<%= $id_prefix %>review-all-passed-<%= $group_build_id %>">
-        <i class="review-all-passed fa fa-certificate" title="Reviewed (all passed)"></i>
+% if ($build_res->{all_passed}) {
+    <span id="<%= $id_prefix %>badge-all-passed-<%= $group_build_id %>">
+        <i class="badge-all-passed fa fa-certificate" title="All passed"></i>
+    </span>
+% }
+% elsif ($build_res->{all_passed_or_softfailed}) {
+    <span id="<%= $id_prefix %>badge-all-passed-or-softfailed-<%= $group_build_id %>">
+        <i class="badge-all-passed-or-softfailed fa fa-certificate" title="All either passed or softfailed"></i>
     </span>
 % }

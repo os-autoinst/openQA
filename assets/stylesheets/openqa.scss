@@ -9,6 +9,7 @@ $color-result: #3c3c3c;
 // backgrounds
 $color-result-missing: #ddd;
 $color-result-testing: #9df;
+$color-module-softfailed: #FFD048;
 $color-module-passed: #59DF24;
 $color-module-none: #aaaaaa;
 $color-resborder-ok: $color-module-passed;
@@ -547,8 +548,12 @@ a.restart-link {
     opacity: 0.5;
 }
 
-.review-all-passed {
+.badge-all-passed {
     color: $color-module-passed;
+}
+
+.badge-all-passed-or-softfailed {
+    color: $color-module-softfailed;
 }
 
 /* filter */

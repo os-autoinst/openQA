@@ -130,9 +130,8 @@ sub check_test_parent {
         'link URLs'
     );
 
-    $t->element_count_is("div.children-$default_expanded .review-all-passed", 1, 'badge shown on parent-level');
-
-    $t->element_count_is("div.children-$default_expanded h4 span i.tag", 0, 'no tags shown yet');
+    $t->element_count_is("div.children-$default_expanded .badge-all-passed", 1, 'badge shown on parent-level');
+    $t->element_count_is("div.children-$default_expanded h4 span i.tag",     0, 'no tags shown yet');
 }
 check_test_parent('collapsed');
 
@@ -215,6 +214,34 @@ $t->element_count_is('#child-review-also-softfailed-' . $test_parent->id . '-004
     1, 'review badge  (also softfailed) for build 0048@0815 still shown on child-level');
 
 $not_reviewed_job->delete();
+
+# auto badges when all passed or all either passed or softfailed
+sub check_auto_badge {
+    my ($all_passed_count, $all_passed_or_softfailed_count, $build) = @_;
+    $build //= '0092';
+    $t->element_count_is('#badge-all-passed-' . $test_parent->id . '-' . $build,
+        $all_passed_count, "all passed review badge shown for build $build on parent level");
+    $t->element_count_is('#child-badge-all-passed-' . $test_parent->id . '-' . $build,
+        $all_passed_count, "all passed review badge shown for build $build on child-level");
+    $t->element_count_is(
+        '#badge-all-passed-or-softfailed-' . $test_parent->id . '-' . $build,
+        $all_passed_or_softfailed_count,
+        "all passed review badge shown for build $build on parent level"
+    );
+    $t->element_count_is(
+        '#child-badge-all-passed-or-softfailed-' . $test_parent->id . '-' . $build,
+        $all_passed_or_softfailed_count,
+        "all passed review badge shown for build $build on child-level"
+    );
+}
+# all passed
+$get = $t->get_ok('/?limit_builds=20')->status_is(200);
+check_auto_badge(1, 0);
+# all passed or softfailed
+$jobs->find({id => 99947})->update({result => OpenQA::Schema::Result::Jobs::SOFTFAILED});
+$get = $t->get_ok('/?limit_builds=20')->status_is(200);
+check_auto_badge(0, 1);
+$jobs->find({id => 99947})->update({result => OpenQA::Schema::Result::Jobs::PASSED});
 
 sub check_badge {
     my ($reviewed_count, $reviewed_also_softfailed_count, $msg, $build) = @_;
