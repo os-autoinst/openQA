@@ -13,3 +13,8 @@
         <i class="review-all-passed fa fa-certificate" title="Reviewed (all passed)"></i>
     </span>
 % }
+% elsif ($build_res->{reviewed_all_passed_or_softfailed}) {
+    <span id="<%= $id_prefix %>review-all-passed-or-softfailed-<%= $group_build_id %>">
+        <i class="review-all-passed-or-softfailed fa fa-certificate" title="Reviewed (all either passed or softfailed)"></i>
+    </span>
+% }
