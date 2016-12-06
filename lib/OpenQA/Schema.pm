@@ -64,7 +64,8 @@ sub dsn {
 }
 
 sub deployment_check {
-    my ($schema) = @_;
+    my ($schema, $force_overwrite) = @_;
+    $force_overwrite //= 0;
     my $dir = $FindBin::Bin;
     while (abs_path($dir) ne '/') {
         last if (-d "$dir/dbicdh");
@@ -79,7 +80,7 @@ sub deployment_check {
             script_directory    => $dir,
             databases           => \@databases,
             sql_translator_args => {add_drop_table => 0},
-            force_overwrite     => 0
+            force_overwrite     => $force_overwrite
         });
     _try_deploy_db($dh) or _try_upgrade_db($dh);
 }

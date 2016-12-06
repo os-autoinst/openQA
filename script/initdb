@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 # Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -99,20 +100,20 @@ if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
         });
 }
 
-my $dh = DBIx::Class::DeploymentHandler->new(
-    {
-        schema           => $schema,
-        script_directory => $script_directory,
-        databases        => \@databases,
-        sql_translator_args =>
-          {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
-        force_overwrite => $force,
-    });
-
-my $version = $dh->schema_version;
-
-my %deploy_dir;
 if ($prepare_init) {
+    my $dh = DBIx::Class::DeploymentHandler->new(
+        {
+            schema           => $schema,
+            script_directory => $script_directory,
+            databases        => \@databases,
+            sql_translator_args =>
+              {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
+            force_overwrite => $force,
+        });
+
+    my $version = $dh->schema_version;
+
+    my %deploy_dir;
     foreach my $db (@databases) {
         tie %deploy_dir, 'IO::Dir', "$script_directory/$db/deploy";
 
@@ -128,7 +129,7 @@ if ($prepare_init) {
 }
 if ($init_database) {
     # Create the schema
-    $dh->install;
+    OpenQA::Schema::deployment_check($schema, $force);
 }
 
 # vim: set sw=4 sts=4 et:
