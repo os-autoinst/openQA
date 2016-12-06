@@ -22,9 +22,9 @@ BEGIN { $ENV{MAGICK_THREAD_LIMIT} = 1; }
 use OpenQA::Utils;
 use File::Basename;
 use File::Spec;
-use File::Spec::Functions qw(catfile);
+use File::Spec::Functions 'catfile';
 
-use Data::Dump qw(pp);
+use Data::Dump 'pp';
 
 use Mojolicious::Static;
 

@@ -16,9 +16,9 @@
 package OpenQA::Schema::Result::JobGroups;
 use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
-use base qw(DBIx::Class::Core);
-use OpenQA::Utils qw(log_debug);
-use Date::Format qw(time2str);
+use base 'DBIx::Class::Core';
+use OpenQA::Utils 'log_debug';
+use Date::Format 'time2str';
 use strict;
 
 __PACKAGE__->table('job_groups');

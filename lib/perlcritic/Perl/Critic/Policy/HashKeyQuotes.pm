@@ -3,7 +3,7 @@ package Perl::Critic::Policy::HashKeyQuotes;
 use strict;
 use warnings;
 
-use Perl::Critic::Utils qw{ :severities :classification :ppi };
+use Perl::Critic::Utils qw( :severities :classification :ppi );
 use base 'Perl::Critic::Policy';
 
 our $VERSION = '0.0.1';

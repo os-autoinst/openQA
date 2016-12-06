@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::JobModules;
-use base qw(DBIx::Class::Core);
+use base 'DBIx::Class::Core';
 
 use strict;
 use db_helpers;
@@ -23,8 +23,8 @@ use OpenQA::Scheduler::Scheduler;
 use OpenQA::Schema::Result::Jobs;
 use JSON ();
 use File::Basename qw(dirname basename);
-use File::Path qw(remove_tree);
-use Cwd qw(abs_path);
+use File::Path 'remove_tree';
+use Cwd 'abs_path';
 use Try::Tiny;
 use 5.012;    # so readdir assigns to $_ in a lone while test
 
@@ -250,14 +250,14 @@ sub job_module {
     return $schema->resultset("JobModules")->search({job_id => $job->id, name => $name})->first;
 }
 
-sub job_modules($) {
+sub job_modules {
     my ($job) = @_;
 
     my $schema = OpenQA::Scheduler::Scheduler::schema();
     return $schema->resultset("JobModules")->search({job_id => $job->id}, {order_by => 'id'})->all;
 }
 
-sub job_module_stats($) {
+sub job_module_stats {
     my ($jobs) = @_;
 
     my $result_stat = {};
@@ -294,7 +294,7 @@ sub job_module_stats($) {
     return $result_stat;
 }
 
-sub update_result($) {
+sub update_result {
     my ($self, $r) = @_;
 
     my $result = $r->{result};
@@ -316,7 +316,7 @@ sub update_result($) {
 
 # if you give a needle_cache, make sure to call
 # OpenQA::Schema::Result::Needles::update_needle_cache
-sub store_needle_infos($;$) {
+sub store_needle_infos {
     my ($self, $details, $needle_cache) = @_;
 
     my $schema = $self->result_source->schema;

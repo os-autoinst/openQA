@@ -22,8 +22,7 @@ use Date::Format;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::BuildResults;
 use OpenQA::Utils;
-use Scalar::Util qw(looks_like_number);
-
+use Scalar::Util 'looks_like_number';
 
 sub _map_tags_into_build {
     my ($res, $tags) = @_;

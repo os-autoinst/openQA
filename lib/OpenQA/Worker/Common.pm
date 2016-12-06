@@ -19,14 +19,14 @@ use warnings;
 use feature 'state';
 
 use Carp;
-use POSIX qw(uname);
+use POSIX 'uname';
 
-use base qw(Exporter);
-our @EXPORT
-  = qw/$job $workerid $verbose $instance $worker_settings $pooldir $nocleanup $worker_caps $testresults $openqa_url
+use base 'Exporter';
+our @EXPORT = qw($job $workerid $verbose $instance $worker_settings $pooldir $nocleanup
+  $worker_caps $testresults $openqa_url
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer
-  api_call verify_workerid register_worker ws_call/;
+  api_call verify_workerid register_worker ws_call);
 
 # Exported variables
 our $job;

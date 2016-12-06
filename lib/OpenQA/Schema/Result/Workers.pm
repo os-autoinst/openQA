@@ -18,17 +18,17 @@
 package OpenQA::Schema::Result::Workers;
 use strict;
 use warnings;
-use base qw(DBIx::Class::Core);
-use DBIx::Class::Timestamps qw(now);
+use base 'DBIx::Class::Core';
+use DBIx::Class::Timestamps 'now';
 use Try::Tiny;
-use OpenQA::Utils qw(log_error);
+use OpenQA::Utils 'log_error';
 use OpenQA::IPC;
 use db_helpers;
 
-use constant COMMANDS => qw/quit abort cancel obsolete job_available
+use constant COMMANDS => qw(quit abort cancel obsolete job_available
   enable_interactive_mode disable_interactive_mode
   stop_waitforneedle reload_needles_and_retry continue_waitforneedle
-  livelog_stop livelog_start/;
+  livelog_stop livelog_start);
 
 __PACKAGE__->table('workers');
 __PACKAGE__->load_components(qw(InflateColumn::DateTime Timestamps));
@@ -64,7 +64,7 @@ sub name {
     return $self->host . ":" . $self->instance;
 }
 
-sub seen(;$) {
+sub seen {
     my ($self, $workercaps) = @_;
     $self->update({t_updated => now()});
     $self->update_caps($workercaps) if $workercaps;
@@ -72,7 +72,7 @@ sub seen(;$) {
 
 # update worker's capabilities
 # param: workerid , workercaps
-sub update_caps($$) {
+sub update_caps {
     my ($self, $workercaps) = @_;
 
     for my $cap (keys %{$workercaps}) {
@@ -80,14 +80,14 @@ sub update_caps($$) {
     }
 }
 
-sub get_property($) {
+sub get_property {
     my ($self, $key) = @_;
 
     my $r = $self->properties->find({key => $key});
     return $r ? $r->value : undef;
 }
 
-sub set_property($$) {
+sub set_property {
 
     my ($self, $key, $val) = @_;
 

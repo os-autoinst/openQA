@@ -28,9 +28,9 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-use File::Which qw(which);
-use File::Path qw();
-use Date::Format qw(time2str);
+use File::Which 'which';
+use File::Path ();
+use Date::Format 'time2str';
 
 # these are used to track assets being 'removed from disk' and 'deleted'
 # by mock methods (so we don't *actually* lose them)

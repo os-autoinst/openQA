@@ -57,7 +57,7 @@ if ($0 =~ /\.t$/) {
 
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use File::Basename;
-use File::Spec::Functions qw(catfile);
+use File::Spec::Functions 'catfile';
 use Fcntl;
 use JSON "decode_json";
 our $basedir     = $ENV{OPENQA_BASEDIR} || "/var/lib";
@@ -216,7 +216,7 @@ sub save_base64_png($$$) {
     $newfile =~ s,\.png,,;
     $newfile =~ tr/a-zA-Z0-9-/_/cs;
     open(my $fh, ">", $dir . "/$newfile.png") || die "can't open $dir/$newfile.png: $!";
-    use MIME::Base64 qw(decode_base64);
+    use MIME::Base64 'decode_base64';
     $fh->print(decode_base64($png));
     close($fh);
     return $newfile;
@@ -274,7 +274,7 @@ sub commit_git_return_error {
 
     my $dir = $args->{dir};
     if ($dir !~ /^\//) {
-        use Cwd qw(abs_path);
+        use Cwd 'abs_path';
         $dir = abs_path($dir);
     }
     my @git = ('git', '--git-dir', "$dir/.git", '--work-tree', $dir);

@@ -22,7 +22,7 @@ use Mojo::Server::Daemon;
 use Mojo::IOLoop;
 
 use OpenQA::Client;
-use OpenQA::Utils qw();
+use OpenQA::Utils ();
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Commands;
 use OpenQA::Worker::Pool qw(lockit clean_pool);

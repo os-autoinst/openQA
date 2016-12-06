@@ -20,8 +20,8 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::Schema::Result::Jobs;
 use File::Basename;
-use POSIX qw(strftime);
-use JSON qw(decode_json);
+use POSIX 'strftime';
+use JSON 'decode_json';
 
 sub referer_check {
     my ($self) = @_;

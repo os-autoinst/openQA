@@ -17,7 +17,7 @@
 package OpenQA::Schema::Result::JobGroupParents;
 use OpenQA::Schema::JobGroupDefaults;
 use Class::Method::Modifiers;
-use base qw(DBIx::Class::Core);
+use base 'DBIx::Class::Core';
 use strict;
 
 __PACKAGE__->table('job_group_parents');

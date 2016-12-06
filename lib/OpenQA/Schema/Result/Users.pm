@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::Users;
-use base qw(DBIx::Class::Core);
+use base 'DBIx::Class::Core';
 use strict;
 
 __PACKAGE__->table('users');
@@ -69,8 +69,8 @@ sub name {
     return $self->{_name};
 }
 
-use URI::Escape qw(uri_escape);
-use Digest::MD5 qw(md5_hex);
+use URI::Escape 'uri_escape';
+use Digest::MD5 'md5_hex';
 
 sub gravatar {
     my ($self, $size) = @_;

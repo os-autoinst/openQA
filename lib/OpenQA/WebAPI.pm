@@ -26,8 +26,8 @@ use OpenQA::ServerStartup;
 use Mojo::IOLoop;
 use Mojolicious::Commands;
 use DateTime;
-use Cwd qw(abs_path);
-use File::Path qw(make_path);
+use Cwd 'abs_path';
+use File::Path 'make_path';
 
 # reinit pseudo random number generator in every child to avoid
 # starting off with the same state.

@@ -22,7 +22,7 @@ use File::Path qw(make_path remove_tree);
 
 use OpenQA::Worker::Common qw($nocleanup $pooldir);
 
-use base qw(Exporter);
+use base 'Exporter';
 our (@EXPORT_OK);
 @EXPORT_OK = qw(lockit clean_pool);
 

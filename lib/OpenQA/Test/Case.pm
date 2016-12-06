@@ -20,7 +20,7 @@ use OpenQA::Test::Database;
 use OpenQA::Test::Testresults;
 use OpenQA::Schema::Result::Users;
 use Mojo::Base -base;
-use Date::Format qw(time2str);
+use Date::Format 'time2str';
 use Mojo::JSON 'j';
 use Mojo::Util qw(b64_decode b64_encode hmac_sha1_sum);
 

@@ -19,22 +19,22 @@ use warnings;
 use feature 'state';
 
 use OpenQA::Worker::Common;
-use OpenQA::Worker::Pool qw(clean_pool);
+use OpenQA::Worker::Pool 'clean_pool';
 use OpenQA::Worker::Engines::isotovideo;
-use OpenQA::Utils qw(wait_with_progress);
+use OpenQA::Utils 'wait_with_progress';
 
 use POSIX qw(strftime SIGTERM);
 use File::Copy qw(copy move);
-use File::Path qw(remove_tree);
-use JSON qw(decode_json);
+use File::Path 'remove_tree';
+use JSON 'decode_json';
 use Fcntl;
 use MIME::Base64;
-use File::Basename qw(basename);
-use File::Which qw(which);
+use File::Basename 'basename';
+use File::Which 'which';
 
 use POSIX ':sys_wait_h';
 
-use base qw(Exporter);
+use base 'Exporter';
 our @EXPORT = qw(start_job stop_job check_job backend_running);
 
 my $worker;

@@ -18,7 +18,7 @@ package db_profiler;
 use strict;
 use base 'DBIx::Class::Storage::Statistics';
 
-use Time::HiRes qw(time);
+use Time::HiRes 'time';
 
 my $start;
 my $msg;

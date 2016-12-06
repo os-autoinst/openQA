@@ -14,14 +14,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::WebSockets;
-use base qw(Net::DBus::Object);
-use Net::DBus::Exporter qw(org.opensuse.openqa.WebSockets);
+use base 'Net::DBus::Object';
+use Net::DBus::Exporter 'org.opensuse.openqa.WebSockets';
 use Mojo::IOLoop;
 use strict;
 
 use OpenQA::IPC;
-use OpenQA::WebSockets::Server qw();
-use OpenQA::Utils qw(log_debug);
+use OpenQA::WebSockets::Server ();
+use OpenQA::Utils 'log_debug';
 
 # monkey patching for debugging IPC
 sub _is_method_allowed {

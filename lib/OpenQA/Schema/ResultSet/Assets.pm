@@ -16,7 +16,7 @@
 
 package OpenQA::Schema::ResultSet::Assets;
 use strict;
-use base qw(DBIx::Class::ResultSet);
+use base 'DBIx::Class::ResultSet';
 use OpenQA::Utils qw(log_warning locate_asset);
 
 sub register {

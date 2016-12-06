@@ -17,7 +17,7 @@
 package OpenQA::Schema::Result::Jobs;
 use strict;
 use warnings;
-use base qw(DBIx::Class::Core);
+use base 'DBIx::Class::Core';
 use Try::Tiny;
 use JSON;
 use Fcntl;
@@ -25,9 +25,9 @@ use DateTime;
 use db_helpers;
 use OpenQA::Utils qw(log_debug log_warning parse_assets_from_settings locate_asset);
 use File::Basename qw(basename dirname);
-use File::Spec::Functions qw(catfile);
+use File::Spec::Functions 'catfile';
 use File::Path ();
-use DBIx::Class::Timestamps qw(now);
+use DBIx::Class::Timestamps 'now';
 
 # The state and results constants are duplicated in the Python client:
 # if you change them or add any, please also update const.py.
@@ -837,7 +837,7 @@ sub calculate_result {
     return $important_overall || $overall || FAILED;
 }
 
-sub save_screenshot($) {
+sub save_screenshot {
     my ($self, $screen) = @_;
     return unless length($screen->{name});
 
@@ -851,7 +851,7 @@ sub save_screenshot($) {
     unlink($tmpdir . "/$current") if $current;
 }
 
-sub append_log($$) {
+sub append_log {
     my ($self, $log, $file_name) = @_;
     return unless length($log->{data});
 
@@ -867,7 +867,7 @@ sub append_log($$) {
     }
 }
 
-sub update_backend($) {
+sub update_backend {
     my ($self, $backend_info) = @_;
     $self->update(
         {
@@ -875,7 +875,7 @@ sub update_backend($) {
             backend_info => JSON::encode_json($backend_info->{backend_info})});
 }
 
-sub insert_module($$) {
+sub insert_module {
     my ($self, $tm) = @_;
     my $r = $self->modules->find_or_new({name => $tm->{name}});
     if (!$r->in_storage) {
@@ -892,7 +892,7 @@ sub insert_module($$) {
     return $r;
 }
 
-sub insert_test_modules($) {
+sub insert_test_modules {
     my ($self, $testmodules) = @_;
     for my $tm (@{$testmodules}) {
         $self->insert_module($tm);

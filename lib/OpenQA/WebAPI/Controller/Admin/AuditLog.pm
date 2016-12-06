@@ -18,7 +18,7 @@ package OpenQA::WebAPI::Controller::Admin::AuditLog;
 use strict;
 use parent 'Mojolicious::Controller';
 use JSON ();
-use OpenQA::Utils qw(log_warning);
+use OpenQA::Utils 'log_warning';
 
 sub index {
     my ($self) = @_;
