@@ -19,7 +19,7 @@ use Mojo::Util 'hmac_sha1_sum';
 use Try::Tiny;
 
 use OpenQA::IPC;
-use OpenQA::Utils qw(log_debug log_warning notify_workers);
+use OpenQA::Utils qw(log_debug log_warning log_error notify_workers);
 use OpenQA::Schema;
 use OpenQA::ServerStartup;
 
@@ -30,32 +30,21 @@ our (@ISA, @EXPORT, @EXPORT_OK);
 
 @ISA       = qw(Exporter);
 @EXPORT    = qw(ws_send ws_send_all);
-@EXPORT_OK = qw(ws_create ws_is_worker_connected ws_add_worker ws_remove_worker);
+@EXPORT_OK = qw(ws_create ws_is_worker_connected);
 
-# worker->websockets mapping
-my $worker_sockets = {};
+# id->worker mapping
+my $workers;
 
 # internal helpers prototypes
 sub _message;
 sub _get_worker;
 
-# websockets helper functions
-sub ws_add_worker {
-    my ($workerid, $ws_connection) = @_;
-    $worker_sockets->{$workerid} = $ws_connection;
-}
-
-sub ws_remove_worker {
-    my ($workerid) = @_;
-    delete $worker_sockets->{$workerid};
-}
-
 sub ws_send {
     my ($workerid, $msg, $jobid, $retry) = @_;
-    return unless ($workerid && $msg);
+    return unless ($workerid && $msg && $workers->{$workerid});
     $jobid ||= '';
     my $res;
-    my $tx = $worker_sockets->{$workerid};
+    my $tx = $workers->{$workerid}->{socket};
     if ($tx) {
         $res = $tx->send({json => {type => $msg, jobid => $jobid}});
     }
@@ -73,9 +62,9 @@ sub ws_send {
 # consider ws_send_all as broadcast and don't wait for confirmation
 sub ws_send_all {
     my ($msg) = @_;
-    foreach my $tx (values(%$worker_sockets)) {
-        if ($tx) {
-            $tx->send({json => {type => $msg}});
+    for my $tx (values %$workers) {
+        if ($tx->{socket}) {
+            $tx->{socket}->send({json => {type => $msg}});
         }
     }
 }
@@ -87,7 +76,7 @@ sub check_authorized {
     my $hash      = $headers->header('X-API-Hash');
     my $timestamp = $headers->header('X-API-Microtime');
     my $user;
-    $self->app->log->debug($key ? "API key from client: *$key*" : "No API key from client.");
+    log_debug($key ? "API key from client: *$key*" : "No API key from client.");
 
     my $schema = OpenQA::Schema::connect_db;
     my $api_key = $schema->resultset("ApiKeys")->find({key => $key});
@@ -99,8 +88,7 @@ sub check_authorized {
                 if (my $secret = $api_key->secret) {
                     my $sum = hmac_sha1_sum($self->req->url->to_string . $timestamp, $secret);
                     $user = $api_key->user;
-                    $self->app->log->debug(sprintf "API auth by user: %s, operator: %d",
-                        $user->username, $user->is_operator);
+                    log_debug(sprintf "API auth by user: %s, operator: %d", $user->username, $user->is_operator);
                 }
             }
         }
@@ -112,70 +100,64 @@ sub check_authorized {
 }
 
 sub ws_create {
-    my ($self)   = @_;
+    my ($self) = @_;
     my $workerid = $self->param('workerid');
-    my $worker   = _validate_workerid($workerid);
-    unless ($worker) {
-        return $self->render(text => 'Unauthorized', status =>);
+    unless ($workers->{$workerid}) {
+        my $db = app->schema->resultset("Workers")->find($workerid);
+        unless ($db) {
+            return $self->render(text => 'Unauthorized', status =>);
+        }
+        $workers->{$workerid} = {id => $workerid, db => $db, socket => undef, last_seen => time()};
     }
+    my $worker = $workers->{$workerid};
     # upgrade connection to websocket by subscribing to events
     $self->on(json   => \&_message);
     $self->on(finish => \&_finish);
-    ws_add_worker($workerid, $self->tx->max_websocket_size(10485760));
+    $worker->{socket} = $self->tx->max_websocket_size(10485760);
 }
 
 sub ws_is_worker_connected {
     my ($workerid) = @_;
-    return (defined $worker_sockets->{$workerid} ? 1 : 0);
+    return ($workers->{$workerid} && $workers->{$workerid}->{socket} ? 1 : 0);
 }
 
-# internal helpers
-sub _validate_workerid {
-    my ($workerid) = @_;
-    return app->schema->resultset("Workers")->find($workerid);
-}
-
-sub _get_workerid {
+sub _get_worker {
     my ($tx) = @_;
-    my $ret;
-    while (my ($id, $stored_tx) = each %$worker_sockets) {
-        if ($stored_tx->connection eq $tx->connection) {
-            $ret = $id;
+    for my $worker (values %$workers) {
+        if ($worker->{socket} && ($worker->{socket}->connection eq $tx->connection)) {
+            return $worker;
         }
     }
-    # reset hash iterator
-    keys(%$worker_sockets);
-    return $ret;
+    return;
 }
 
 sub _finish {
     my ($ws, $code, $reason) = @_;
     return unless ($ws);
 
-    my $workerid = _get_workerid($ws->tx);
-    unless ($workerid) {
-        $ws->app->log->error('Worker ID not found for given connection during connection close');
+    my $worker = _get_worker($ws->tx);
+    unless ($worker) {
+        log_error('Worker not found for given connection during connection close');
         return;
     }
-    $ws->app->log->debug("Worker $workerid websocket connection closed - $code\n");
-    ws_remove_worker($workerid);
+    log_debug(sprintf("Worker %u websocket connection closed - $code", $worker->{id}));
+    $worker->{socket} = undef;
 }
 
 sub _message {
     my ($ws, $json) = @_;
-    my $workerid = _get_workerid($ws->tx);
-    unless ($workerid) {
+    my $worker = _get_worker($ws->tx);
+    unless ($worker) {
         $ws->app->log->warn("A message received from unknown worker connection");
         return;
     }
     unless (ref($json) eq 'HASH') {
         use Data::Dumper;
-        $ws->app->log->error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $workerid));
+        log_error(sprintf('Received unexpected WS message "%s from worker %u', Dumper($json), $worker->id));
         return;
     }
 
-    my $worker = _validate_workerid($workerid);
-    $worker->seen();
+    $worker->{last_seen} = time();
     if ($json->{type} eq 'ok') {
         $ws->tx->send({json => {type => 'ok'}});
     }
@@ -197,11 +179,11 @@ sub _message {
             $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', $prop->{waitforneedle} ? 1 : 0);
         }
         else {
-            $ws->app->log->error("Unknown property received from worker $workerid");
+            log_error("Unknown property received from worker $worker->{id}");
         }
     }
     else {
-        $ws->app->log->error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $workerid));
+        log_error(sprintf('Received unknown message type "%s" from worker %u', $json->{type}, $worker->{id}));
     }
 }
 
@@ -210,14 +192,24 @@ sub _get_stale_worker_jobs {
 
     my $schema = OpenQA::Schema::connect_db;
 
+    # grab the workers we've seen lately
+    my @ok_workers;
+    for my $worker (values %$workers) {
+        if (time - $worker->{last_seen} <= $threshold) {
+            push(@ok_workers, $worker->{id});
+        }
+        else {
+            log_debug(sprintf("Worker %s not seen since %d seconds", $worker->{db}->name, time - $worker->{last_seen}));
+        }
+    }
     my $dtf = $schema->storage->datetime_parser;
     my $dt = DateTime->from_epoch(epoch => time() - $threshold, time_zone => 'UTC');
 
     my %cond = (
         state              => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES],
         'worker.t_updated' => {'<' => $dtf->format_datetime($dt)},
-    );
-    my %attrs = (join => 'worker',);
+        'worker.id'        => {-not_in => [sort @ok_workers]});
+    my %attrs = (join => 'worker');
 
     return $schema->resultset("Jobs")->search(\%cond, \%attrs);
 }
@@ -233,7 +225,7 @@ sub _is_job_considered_dead {
         return ($delta > 1000);
     }
 
-    log_debug("job considered dead: " . $job->id);
+    log_debug("job considered dead: " . $job->id . " worker " . $job->worker->id . " not seen");
     # default timeout for the rest
     return 1;
 }
@@ -242,7 +234,8 @@ sub _is_job_considered_dead {
 # got stuck somehow and duplicate or incomplete the job
 sub _workers_checker {
 
-    my $stale_jobs = _get_stale_worker_jobs(40);
+    my $threshold  = 40;
+    my $stale_jobs = _get_stale_worker_jobs($threshold);
     for my $job ($stale_jobs->all) {
         next unless _is_job_considered_dead($job);
 
@@ -260,7 +253,6 @@ sub _workers_checker {
 }
 
 sub jobs_available {
-    log_debug("jobs available");
     OpenQA::WebSockets::Server::ws_send_all(('job_available'));
     return;
 }
