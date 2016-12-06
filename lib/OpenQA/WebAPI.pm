@@ -182,6 +182,7 @@ sub startup {
     $r->get('/assets/*assetpath')->name('download_asset')->to('file#download_asset');
 
     my $test_r = $r->route('/tests/:testid', testid => qr/\d+/);
+    $test_r = $test_r->under('/')->to('test#referer_check');
     my $test_auth = $auth->route('/tests/:testid', testid => qr/\d+/, format => 0);
     $test_r->get('/')->name('test')->to('test#show');
     $test_r->get('/modules/:moduleid/fails')->name('test_module_fails')->to('test#module_fails');
