@@ -23,6 +23,16 @@ use File::Basename;
 use POSIX qw(strftime);
 use JSON qw(decode_json);
 
+sub referer_check {
+    my ($self) = @_;
+    return $self->reply->not_found if (!defined $self->param('testid'));
+    my $referer = $self->req->headers->header('Referer') // '';
+    if ($referer) {
+        mark_job_linked($self->param('testid'), $referer);
+    }
+    return 1;
+}
+
 sub list {
     my ($self) = @_;
 
@@ -464,7 +474,10 @@ sub overview {
         }
 
         # Populate @configs and %archs
-        if ($job->MACHINE && $preferred_machines->{$job->ARCH} && $preferred_machines->{$job->ARCH} ne $job->MACHINE) {
+        if (   $job->MACHINE
+            && $preferred_machines->{$job->ARCH}
+            && $preferred_machines->{$job->ARCH} ne $job->MACHINE)
+        {
             $test .= "@" . $job->MACHINE;
         }
         push(@configs, $test) unless (grep { $test eq $_ } @configs);

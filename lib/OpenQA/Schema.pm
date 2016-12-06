@@ -26,7 +26,7 @@ use FindBin qw($Bin);
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
-our $VERSION   = 49;
+our $VERSION   = 50;
 our @databases = qw(SQLite PostgreSQL);
 
 __PACKAGE__->load_namespaces;
@@ -64,7 +64,8 @@ sub dsn {
 }
 
 sub deployment_check {
-    my ($schema) = @_;
+    my ($schema, $force_overwrite) = @_;
+    $force_overwrite //= 0;
     my $dir = $FindBin::Bin;
     while (abs_path($dir) ne '/') {
         last if (-d "$dir/dbicdh");
@@ -79,7 +80,7 @@ sub deployment_check {
             script_directory    => $dir,
             databases           => \@databases,
             sql_translator_args => {add_drop_table => 0},
-            force_overwrite     => 0
+            force_overwrite     => $force_overwrite
         });
     _try_deploy_db($dh) or _try_upgrade_db($dh);
 }
@@ -108,6 +109,14 @@ sub _try_deploy_db {
             _db_tweaks($schema, 'PRAGMA synchronous = OFF;');
         }
         $dh->install;
+        # create system user right away
+        $schema->resultset('Users')->create(
+            {
+                username => 'system',
+                email    => 'noemail@open.qa',
+                fullname => 'openQA system user',
+                nickname => 'system'
+            });
     };
     umask $mask;
     return !$version;

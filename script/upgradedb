@@ -1,6 +1,7 @@
 #!/usr/bin/env perl
 
 # Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -32,20 +33,18 @@ use IO::Dir;
 use Fcntl ':mode';
 use POSIX qw(setuid setgid);
 
-my $prepare_upgrades            = 0;
-my $upgrade_database            = 0;
-my $help                        = 0;
-my $from_uninitialized_database = 0;
-my $force                       = 0;
+my $prepare_upgrades = 0;
+my $upgrade_database = 0;
+my $help             = 0;
+my $force            = 0;
 my $user;
 
 my $result = GetOptions(
-    "help"                        => \$help,
-    "from_uninitialized_database" => \$from_uninitialized_database,
-    "prepare_upgrades"            => \$prepare_upgrades,
-    "upgrade_database"            => \$upgrade_database,
-    "user=s"                      => \$user,
-    "force"                       => \$force
+    "help"             => \$help,
+    "prepare_upgrades" => \$prepare_upgrades,
+    "upgrade_database" => \$upgrade_database,
+    "user=s"           => \$user,
+    "force"            => \$force
 );
 
 if (!$prepare_upgrades and !$upgrade_database) {
@@ -59,8 +58,6 @@ if ($help) {
     print "                       and note those files should be commited to the source repo.\n";
     print "  --upgrade_database : Use the generated deployment files created with --prepare_upgrades\n";
     print "                       to actually upgrade a database.\n";
-    print "  --from_uninitialized_database : Create and populate an existing database as if it was\n";
-    print "                       initialized with the initdb script.\n";
     print "  --force            : Force overwriting existing data.\n";
     print "  --user=login       : Change uid before connecting the DB.\n";
     print "  --help             : This help message.\n";
@@ -90,28 +87,24 @@ if ($schema->dsn =~ /:SQLite:dbname=(.*)/) {
         });
 }
 
-my $dh = DH->new(
-    {
-        schema           => $schema,
-        script_directory => $script_directory,
-        databases        => \@databases,
-        sql_translator_args =>
-          {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
-        force_overwrite => $force,
-    });
-
-
-my $version = $dh->schema_version;
-
-#print "Schema version: $version\n";
-#print "Current DB version: $db_version\n";
-
-my $prev_version      = $version - 1;
-my $upgrade_directory = "$prev_version-$version";
-
-my %upgrade_dir;
-
 if ($prepare_upgrades) {
+    my $dh = DH->new(
+        {
+            schema           => $schema,
+            script_directory => $script_directory,
+            databases        => \@databases,
+            sql_translator_args =>
+              {add_drop_table => 0, producer_args => {sqlite_version => '3.7'}, quote_identifiers => 0},
+            force_overwrite => $force,
+        });
+
+
+    my $version = $dh->schema_version;
+
+    my $prev_version      = $version - 1;
+    my $upgrade_directory = "$prev_version-$version";
+
+    my %upgrade_dir;
     foreach my $db (@databases) {
         tie %upgrade_dir, 'IO::Dir', "$script_directory/$db/upgrade";
 
@@ -127,17 +120,7 @@ if ($prepare_upgrades) {
 }
 
 if ($upgrade_database) {
-    if ($from_uninitialized_database) {
-        print "'--from_uninitialized_database' not implemented yet\n";
-    }
-    my $db_version = $dh->version_storage->database_version;
-
-    if ($db_version == $version) {
-        print "Database already at version $version . No need to upgrade\n";
-    }
-    else {
-        $dh->upgrade;
-    }
+    OpenQA::Schema::deployment_check($schema, $force);
 }
 
 # vim: set sw=4 sts=4 et:

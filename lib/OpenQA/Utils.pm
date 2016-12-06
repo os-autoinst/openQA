@@ -45,6 +45,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &locate_asset
   &job_groups_and_parents
   wait_with_progress
+  mark_job_linked
 );
 
 
@@ -571,6 +572,35 @@ sub wait_with_progress {
     } while ($interval > $tics);
 
     print "\n";
+}
+
+sub mark_job_linked {
+    my ($jobid, $referer_url) = @_;
+
+    my $referer = Mojo::URL->new($referer_url)->host;
+    if ($referer && grep { $referer eq $_ } @{$app->config->{global}->{recognized_referers}}) {
+        my $job = $app->db->resultset('Jobs')->find({id => $jobid});
+        return unless $job;
+        my $found    = 0;
+        my $comments = $job->comments;
+        while (my $comment = $comments->next) {
+            if ($comment->label eq 'linked') {
+                $found = 1;
+                last;
+            }
+        }
+        unless ($found) {
+            my $user = $app->db->resultset('Users')->search({username => 'system'})->first;
+            $comments->create(
+                {
+                    text    => "label:linked Job mentioned in $referer_url",
+                    user_id => $user->id
+                });
+        }
+    }
+    elsif ($referer) {
+        log_debug("Unrecognized referer '$referer'");
+    }
 }
 
 1;
