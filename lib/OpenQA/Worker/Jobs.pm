@@ -530,7 +530,6 @@ sub upload_status(;$) {
         $status->{log}             = log_snippet("$pooldir/autoinst-log.txt",   \$log_offset);
         $status->{serial_log}      = log_snippet("$pooldir/serial0",            \$serial_offset);
         $status->{serial_terminal} = log_snippet("$pooldir/virtio_console.log", \$serial_terminal_offset);
-        print STDERR $status->{serial_terminal}->{data};
         my $screen = read_last_screen;
         $status->{screen} = $screen if $screen;
     }
