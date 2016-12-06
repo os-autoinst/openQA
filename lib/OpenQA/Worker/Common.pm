@@ -174,7 +174,8 @@ sub api_init {
 
 # send a command to openQA API
 sub api_call {
-    my ($method, $path, $params, $json_data, $ignore_errors) = @_;
+    my ($method, $path, $params, $json_data, $ignore_errors, $tries) = @_;
+    $tries //= 3;
     state $call_running;
 
     return unless verify_workerid();
@@ -210,6 +211,7 @@ sub api_call {
     my $cb;
     $cb = sub {
         my ($ua, $tx, $tries) = @_;
+
         if ($tx->success && $tx->success->json) {
             $res  = $tx->success->json;
             $done = 1;
@@ -219,13 +221,31 @@ sub api_call {
             $done = 1;
             return;
         }
+
+        # handle error case
         --$tries;
         my $err = $tx->error;
-        my $msg
-          = $err->{code} ?
-          "$tries: $err->{code} response: $err->{message}"
-          : "$tries: Connection error: $err->{message}";
-        Carp::carp $msg;
+        my $msg;
+
+        # format error message for log
+        if ($tx->res && $tx->res->json) {
+            # JSON API might provide error message
+            $msg = $tx->res->json->{error};
+        }
+        $msg //= $err->{message};
+        if ($err->{code}) {
+            $msg = "$err->{code} response: $err->{message}";
+            if ($err->{code} == 404) {
+                # don't retry on 404 errors (in this case we can't expect different
+                # results on further attempts)
+                $tries = 0;
+            }
+        }
+        else {
+            $msg = "Connection error: $err->{message}";
+        }
+        Carp::carp $msg . " (remaining tries: $tries)";
+
         if (!$tries) {
             # abort the current job, we're in trouble - but keep running to grab the next
             remove_timer('setup_websocket');
@@ -235,6 +255,7 @@ sub api_call {
             $done = 1;
             return;
         }
+
         $tx = $ua->build_tx(@args);
         add_timer(
             'api_call',
@@ -245,7 +266,7 @@ sub api_call {
             1
         );
     };
-    $ua->start($tx => sub { $cb->(@_, 3) });
+    $ua->start($tx => sub { $cb->(@_, $tries) });
 
     # This ugly. we need to "block" here so enter ioloop recursively
     while (!$done && Mojo::IOLoop->is_running) {
@@ -388,15 +409,21 @@ sub register_worker {
     }
     my $newid = $tx->success->json->{id};
 
-    if ($workerid && $workerid != $newid) {
+    if ($ws && $workerid && $workerid != $newid) {
         # terminate websocked if our worker id changed
         $ws->finish() if $ws;
+        $ws = undef;
     }
     $ENV{WORKERID} = $workerid = $newid;
 
     print "new worker id is $workerid...\n" if $verbose;
 
-    add_timer('setup_websocket', 0, \&setup_websocket, 1);
+    if ($ws) {
+        add_timer('check_job', 0, \&OpenQA::Worker::Jobs::check_job, 1);
+    }
+    else {
+        add_timer('setup_websocket', 0, \&setup_websocket, 1);
+    }
 }
 
 sub verify_workerid {

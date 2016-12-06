@@ -546,8 +546,19 @@ sub upload_status(;$) {
     }
     else {
         my $res = api_call('post', 'jobs/' . $job->{id} . '/status', undef, {status => $status});
-        upload_images($res->{known_images});
+        if (!$res) {
+            # web UI considers this worker already dead anyways, so just exit here
+            print STDERR
+              "Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)\n";
+            return;
+        }
+        if (!upload_images($res->{known_images})) {
+            print STDERR
+              "Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)\n";
+            return;
+        }
     }
+    return 1;
 }
 
 sub optimize_image {
@@ -568,6 +579,7 @@ sub upload_images {
     for my $md5 (@$known_images) {
         delete $tosend_images->{$md5};
     }
+    my $tx;
     my $ua_url = $OpenQA::Worker::Common::url->clone;
     $ua_url->path("jobs/" . $job->{id} . "/artefact");
 
@@ -587,14 +599,14 @@ sub upload_images {
         };
         # don't use api_call as it retries and does not allow form data
         # (refactor at some point)
-        $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+        $tx = $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
 
         $file = "$fileprefix/.thumbs/$file";
         if (-f $file) {
             optimize_image($file);
             $form->{file}->{file} = $file;
             $form->{thumb} = 1;
-            $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+            $tx = $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
         }
     }
     $tosend_images = {};
@@ -612,9 +624,10 @@ sub upload_images {
         };
         # don't use api_call as it retries and does not allow form data
         # (refactor at some point)
-        $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+        $tx = $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
     }
     $tosend_files = [];
+    return !$tx || $tx->success;
 }
 
 sub read_json_file {
