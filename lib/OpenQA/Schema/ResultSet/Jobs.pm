@@ -16,9 +16,9 @@
 
 package OpenQA::Schema::ResultSet::Jobs;
 use strict;
-use base qw(DBIx::Class::ResultSet);
-use DBIx::Class::Timestamps qw(now);
-use Date::Format qw(time2str);
+use base 'DBIx::Class::ResultSet';
+use DBIx::Class::Timestamps 'now';
+use Date::Format 'time2str';
 use OpenQA::Schema::Result::JobDependencies;
 use JSON;
 

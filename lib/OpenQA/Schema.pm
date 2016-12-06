@@ -14,15 +14,15 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema;
-use parent qw(DBIx::Class::Schema);
+use parent 'DBIx::Class::Schema';
 use strict;
 use warnings;
 
 use DBIx::Class::DeploymentHandler;
 use Config::IniFiles;
-use Cwd qw(abs_path);
+use Cwd 'abs_path';
 use Try::Tiny;
-use FindBin qw($Bin);
+use FindBin '$Bin';
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how

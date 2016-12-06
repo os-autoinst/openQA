@@ -17,7 +17,7 @@
 package OpenQA::WebAPI::Controller::Admin::Needle;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
-use Date::Format qw(time2str);
+use Date::Format 'time2str';
 
 sub index {
     my ($self) = @_;
@@ -55,7 +55,7 @@ sub ajax {
 
     # Make columns directory.name, last_seen.t_created and last_match.t_created available by joining with JobModules
     # Required for ordering by those columns and also eases filtering
-    my $params = {prefetch => [qw(directory)]};
+    my $params = {prefetch => ['directory']};
     $params->{join} = [qw(directory last_seen last_match)];
 
     # Parameter for order

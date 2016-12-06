@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::JobLocks;
-use base qw(DBIx::Class::Core);
+use base 'DBIx::Class::Core';
 use strict;
 
 __PACKAGE__->load_components(qw(OptimisticLocking Core));

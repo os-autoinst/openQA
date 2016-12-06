@@ -16,7 +16,7 @@
 
 package OpenQA::Schema::ResultSet::JobSettings;
 use strict;
-use base qw(DBIx::Class::ResultSet);
+use base 'DBIx::Class::ResultSet';
 
 =head2 query_for_settings
 

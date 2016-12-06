@@ -27,10 +27,10 @@ use DBIx::Class::ResultClass::HashRefInflator;
 use Digest::MD5;
 use Data::Dumper;
 use Data::Dump qw(dd pp);
-use Date::Format qw(time2str);
-use DBIx::Class::Timestamps qw(now);
+use Date::Format 'time2str';
+use DBIx::Class::Timestamps 'now';
 use DateTime;
-use File::Temp qw(tempdir);
+use File::Temp 'tempdir';
 use Mojo::URL;
 use Try::Tiny;
 use OpenQA::Schema::Result::Jobs;
@@ -40,7 +40,7 @@ use FindBin;
 use lib $FindBin::Bin;
 #use lib $FindBin::Bin.'Schema';
 use OpenQA::Utils qw(log_debug log_warning notify_workers);
-use db_helpers qw(rndstr);
+use db_helpers 'rndstr';
 
 use OpenQA::IPC;
 

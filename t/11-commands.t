@@ -19,7 +19,7 @@ BEGIN {
 
 use Test::More;
 use Test::Warnings ':all';
-use Test::Output qw(stderr_like);
+use Test::Output 'stderr_like';
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use OpenQA::Scheduler::Scheduler;
@@ -44,10 +44,10 @@ package main;
 
 my $schema = OpenQA::Schema::connect_db('test');
 #issue valid commands for worker 1
-my @valid_commands = qw/quit abort cancel obsolete
+my @valid_commands = qw(quit abort cancel obsolete
   stop_waitforneedle reload_needles_and_retry continue_waitforneedle
   enable_interactive_mode disable_interactive_mode job_available
-  livelog_stop livelog_start/;
+  livelog_stop livelog_start);
 
 my $worker = $schema->resultset('Workers')->find(1);
 

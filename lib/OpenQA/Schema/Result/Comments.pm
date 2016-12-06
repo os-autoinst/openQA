@@ -14,8 +14,8 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::Comments;
-use base qw(DBIx::Class::Core);
-use OpenQA::Utils qw(find_bugref);
+use base 'DBIx::Class::Core';
+use OpenQA::Utils 'find_bugref';
 use strict;
 
 __PACKAGE__->load_components(qw(Core));
@@ -133,8 +133,8 @@ sub hash {
 package CommentsMarkdownParser;
 require Text::Markdown;
 our @ISA = qw(Text::Markdown);
-use Regexp::Common qw(URI);
-use OpenQA::Utils qw(bugref_to_href);
+use Regexp::Common 'URI';
+use OpenQA::Utils 'bugref_to_href';
 
 sub _DoAutoLinks {
     my ($self, $text) = @_;

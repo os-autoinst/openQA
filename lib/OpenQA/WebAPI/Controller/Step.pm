@@ -19,8 +19,8 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use File::Basename;
 use File::Copy;
-use File::Which qw(which);
-use POSIX qw(strftime);
+use File::Which 'which';
+use POSIX 'strftime';
 use Try::Tiny;
 use JSON;
 

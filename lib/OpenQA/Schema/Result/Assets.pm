@@ -15,7 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::Assets;
-use base qw(DBIx::Class::Core);
+use base 'DBIx::Class::Core';
 use strict;
 
 use OpenQA::Utils;
@@ -99,7 +99,7 @@ sub remove_from_disk {
         unlink($file) || die "can't remove $file";
     }
     elsif ($self->type eq 'repo') {
-        use File::Path qw(remove_tree);
+        use File::Path 'remove_tree';
         remove_tree($file) || print "can't remove $file\n";
     }
 

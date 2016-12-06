@@ -23,12 +23,12 @@ use Net::DBus::Callback;
 use Net::DBus::Binding::Watch;
 
 use Mojo::IOLoop;
-use Data::Dump qw(pp);
+use Data::Dump 'pp';
 use Try::Tiny;
 use Carp;
 
-use Scalar::Util qw(weaken);
-use OpenQA::Utils qw(log_debug);
+use Scalar::Util 'weaken';
+use OpenQA::Utils 'log_debug';
 
 my $openqa_prefix = 'org.opensuse.openqa';
 my %services      = (

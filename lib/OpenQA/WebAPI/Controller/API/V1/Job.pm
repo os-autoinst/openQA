@@ -19,14 +19,14 @@ use OpenQA::Utils;
 use OpenQA::IPC;
 use OpenQA::Schema::Result::Jobs;
 use Try::Tiny;
-use DBIx::Class::Timestamps qw(now);
+use DBIx::Class::Timestamps 'now';
 
 sub list {
     my $self = shift;
 
     my %args;
-    my @args
-      = qw(build iso distri version flavor maxage scope group groupid limit page before after arch hdd_1 test machine);
+    my @args = qw(build iso distri version flavor maxage scope group
+      groupid limit page before after arch hdd_1 test machine);
     for my $arg (@args) {
         next unless defined(my $value = $self->param($arg));
         $args{$arg} = $value;

@@ -1,5 +1,5 @@
 package DBIx::Class::Timestamps;
-use base qw(DBIx::Class);
+use base 'DBIx::Class';
 use DateTime;
 use strict;
 

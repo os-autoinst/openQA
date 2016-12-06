@@ -18,7 +18,7 @@ package OpenQA::WebAPI::Plugin::Fedmsg;
 use strict;
 use warnings;
 
-use parent qw(Mojolicious::Plugin);
+use parent 'Mojolicious::Plugin';
 use IPC::Run;
 use JSON;
 use Mojo::IOLoop;

@@ -18,7 +18,7 @@ package OpenQA::WebAPI::Plugin::AMQP;
 use strict;
 use warnings;
 
-use parent qw/Mojolicious::Plugin/;
+use parent 'Mojolicious::Plugin';
 use JSON;
 use Mojo::IOLoop;
 use OpenQA::Utils;

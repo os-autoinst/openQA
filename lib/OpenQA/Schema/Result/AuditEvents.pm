@@ -15,7 +15,7 @@
 
 package OpenQA::Schema::Result::AuditEvents;
 use strict;
-use base qw(DBIx::Class::Core);
+use base 'DBIx::Class::Core';
 
 # use db_helpers;
 

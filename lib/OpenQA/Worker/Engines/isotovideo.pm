@@ -18,10 +18,10 @@ use strict;
 use warnings;
 
 use OpenQA::Worker::Common;
-use OpenQA::Utils qw(locate_asset);
+use OpenQA::Utils 'locate_asset';
 
 use POSIX qw(:sys_wait_h strftime uname);
-use JSON qw(to_json);
+use JSON 'to_json';
 use Fcntl;
 use Errno;
 

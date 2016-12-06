@@ -15,12 +15,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::Needles;
-use base qw(DBIx::Class::Core);
+use base 'DBIx::Class::Core';
 use File::Basename;
-use Cwd "realpath";
+use Cwd 'realpath';
 use strict;
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Utils qw(commit_git_return_error);
+use OpenQA::Utils 'commit_git_return_error';
 
 use db_helpers;
 

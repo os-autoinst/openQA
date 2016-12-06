@@ -19,7 +19,7 @@ package OpenQA::WebAPI::Plugin::Helpers;
 use strict;
 use warnings;
 use Mojo::ByteStream;
-use OpenQA::Utils qw(bugurl);
+use OpenQA::Utils 'bugurl';
 use db_helpers;
 
 use base 'Mojolicious::Plugin';

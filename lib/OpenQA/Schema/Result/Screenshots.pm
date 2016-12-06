@@ -14,9 +14,9 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Schema::Result::Screenshots;
-use base qw(DBIx::Class::Core);
+use base 'DBIx::Class::Core';
 use strict;
-use File::Spec::Functions qw(catfile);
+use File::Spec::Functions 'catfile';
 use File::Basename qw(basename dirname);
 use OpenQA::Utils qw(log_debug log_warning);
 use Try::Tiny;

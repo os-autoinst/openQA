@@ -21,7 +21,7 @@ use File::Basename;
 use OpenQA::Utils;
 use OpenQA::IPC;
 use Try::Tiny;
-use DBIx::Class::Timestamps qw(now);
+use DBIx::Class::Timestamps 'now';
 use OpenQA::Schema::Result::JobDependencies;
 
 use Carp;
