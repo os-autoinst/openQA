@@ -67,18 +67,15 @@ sub new {
 sub _add_auth_headers {
     my ($self, $ua, $tx) = @_;
 
-    unless ($self->apisecret && $self->apikey) {
-        carp "missing apisecret and/or apikey" unless $tx->req->method eq 'GET';
-        return;
-    }
-
     my $timestamp = time;
     my %headers   = (
         Accept            => 'application/json',
-        'X-API-Key'       => $self->apikey,
-        'X-API-Microtime' => $timestamp,
-        'X-API-Hash'      => hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret),
+        'X-API-Microtime' => $timestamp
     );
+    if ($self->apisecret && $self->apikey) {
+        $headers{'X-API-Key'} = $self->apikey;
+        $headers{'X-API-Hash'} = hmac_sha1_sum($self->_path_query($tx) . $timestamp, $self->apisecret);
+    }
 
     while (my ($k, $v) = each %headers) {
         $tx->req->headers->header($k, $v);
