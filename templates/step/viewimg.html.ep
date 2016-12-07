@@ -4,7 +4,7 @@
         <select id="needlediff_selector">
             <option data-areas="[]" data-matches="[]">-None-</option>
             % for my $needle (@$needles) {
-                % my $title = $needle->{min_similarity} . "%: " . $needle->{name};
+                % my $title = $needle->{avg_similarity} . "%: " . $needle->{name};
                 <option data-image="<%= $needle->{image} %>"
                         data-areas="<%= JSON::to_json($needle->{areas})%>"
                         % if ($needle->{selected}) {

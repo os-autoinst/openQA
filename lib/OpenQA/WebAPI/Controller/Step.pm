@@ -189,17 +189,17 @@ sub edit {
                 imageurl =>
                   $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json})
                   ->to_string,
-                imagename    => basename($needle->{image}),
-                imagedir     => dirname($needle->{image}),
-                imagedistri  => $needle->{distri},
-                imageversion => $needle->{version},
-                area         => $needle->{area},
-                tags         => $needle->{tags},
-                json         => $needle->{json} || "",
-                properties   => $needle->{properties} || [],
-                matches      => $screenshot->{matches}};
-            calc_min_similarity($matched, $module_detail->{area});
-            $matched->{title} = $matched->{min_similarity} . "%: " . $matched->{name};
+                imagename      => basename($needle->{image}),
+                imagedir       => dirname($needle->{image}),
+                imagedistri    => $needle->{distri},
+                imageversion   => $needle->{version},
+                area           => $needle->{area},
+                avg_similarity => map_error_to_avg($needle->{error}),
+                tags           => $needle->{tags},
+                json           => $needle->{json} || "",
+                properties     => $needle->{properties} || [],
+                matches        => $screenshot->{matches}};
+            $matched->{title} = $matched->{avg_similarity} . "%: " . $matched->{name};
             push(@needles, $matched);
         }
 
@@ -252,6 +252,7 @@ sub edit {
             my $needlehash = {
                 name           => $needlename,
                 title          => $needlename,
+                avg_similarity => map_error_to_avg($needle->{error}),
                 suggested_name => $self->_timestamp($needlename),
                 imageurl =>
                   $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json})->to_string,
@@ -279,8 +280,7 @@ sub edit {
                 #push(@{$screenshot->{matches}}, $area);
                 push(@{$needlehash->{matches}}, $area);
             }
-            calc_min_similarity($needlehash, $needle->{area});
-            $needlehash->{title} = $needlehash->{min_similarity} . "%: " . $needlehash->{name};
+            $needlehash->{title} = $needlehash->{avg_similarity} . "%: " . $needlehash->{name};
             for my $t (@{$needleinfo->{tags}}) {
                 push(@$tags, $t) unless grep(/^$t$/, @$tags);
             }
@@ -301,14 +301,14 @@ sub edit {
     }
 
     # the highest matches first
-    @needles = sort { $b->{min_similarity} <=> $a->{min_similarity} || $a->{name} cmp $b->{name} } @needles;
+    @needles = sort { $b->{avg_similarity} <=> $a->{avg_similarity} || $a->{name} cmp $b->{name} } @needles;
 
     # Default values
     #  - area: matches from best candidate
     #  - tags: tags from the screenshot
     my $default_needle = {};
     my $default_name;
-    if ($needles[0] && ($needles[0]->{min_similarity} || 0) > 70) {
+    if ($needles[0] && ($needles[0]->{avg_similarity} || 0) > 70) {
         $needles[0]->{selected}       = 1;
         $default_needle->{tags}       = $needles[0]->{tags};
         $default_needle->{area}       = $needles[0]->{matches};
@@ -546,7 +546,13 @@ sub save_needle_ajax {
     return;
 }
 
-sub calc_matches($$) {
+sub map_error_to_avg {
+    my ($error) = @_;
+
+    return int((1 - sqrt($error // 0)) * 100 + 0.5);
+}
+
+sub calc_matches {
     my ($needle, $areas) = @_;
 
     for my $area (@$areas) {
@@ -562,21 +568,8 @@ sub calc_matches($$) {
                 similarity => $sim
             });
     }
-    return calc_min_similarity($needle, $areas);
-}
-
-sub calc_min_similarity($$) {
-    my ($needle, $areas) = @_;
-
-    my $min_sim;
-
-    for my $area (@$areas) {
-        my $sim = int($area->{similarity} + 0.5);
-        if (!defined $min_sim || $min_sim > $sim) {
-            $min_sim = $sim;
-        }
-    }
-    return $needle->{min_similarity} = $min_sim;
+    $needle->{avg_similarity} //= map_error_to_avg($needle->{error});
+    return;
 }
 
 sub viewimg {
@@ -598,6 +591,7 @@ sub viewimg {
                 image =>
                   $self->needle_url($distribution, $module_detail->{needle} . '.png', $dversion, $needle->{json}),
                 areas   => $needle->{area},
+                error   => $module_detail->{error},
                 matches => []};
             calc_matches($info, $module_detail->{area});
             push(@needles, $info);
@@ -615,6 +609,7 @@ sub viewimg {
             my $info = {
                 name    => $needlename,
                 image   => $self->needle_url($distribution, "$needlename.png", $dversion, $needleinfo->{json}),
+                error   => $needle->{error},
                 areas   => $needleinfo->{area},
                 matches => []};
             calc_matches($info, $needle->{area});
@@ -623,10 +618,10 @@ sub viewimg {
     }
 
     # the highest matches first
-    @needles = sort { $b->{min_similarity} <=> $a->{min_similarity} || $a->{name} cmp $b->{name} } @needles;
+    @needles = sort { $b->{avg_similarity} <=> $a->{avg_similarity} || $a->{name} cmp $b->{name} } @needles;
 
     # preselect a rather good needle
-    if ($needles[0] && $needles[0]->{min_similarity} > 70) {
+    if ($needles[0] && $needles[0]->{avg_similarity} > 70) {
         $needles[0]->{selected} = 1;
     }
 
