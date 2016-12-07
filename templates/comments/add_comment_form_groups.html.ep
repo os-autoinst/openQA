@@ -13,7 +13,7 @@
             Submit comment</button>
             <% my $content = '
                 <p>
-                    The comment field supports Markdown, automatic detection of URLs and special tags to record bug references, \'labels\'
+                    The comment field supports Markdown, automatic detection of URLs and special tags to record issue references, \'labels\'
                     as well as \'build tagging\'.
                 </p>
                 <ul>
@@ -35,6 +35,10 @@
                 <p>
                     The links are automatically changed to the shortlinks (e.g. <code>https://progress.opensuse.org/issues/11110</code> turns
                     into <code>poo#11110</code>).
+                </p>
+                <p>
+                    Issue references are automatically carried over to the next jobs in the same scenario when the corresponding job fails in
+                    the same module or the failed modules did not change.
                 </p>';
             %>
             %= help_popover 'Help for comments' => $content, 'https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Advanced-features-in-openQA' => 'Wiki'

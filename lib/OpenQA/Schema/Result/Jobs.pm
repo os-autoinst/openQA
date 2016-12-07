@@ -1348,13 +1348,13 @@ sub _carry_over_candidate {
     return;
 }
 
-=head2 carry_over_labels
+=head2 carry_over_bugrefs
 
-carry over labels (i.e. special comments) from previous jobs to current result
-in the same scenario.
+carry over bugrefs (i.e. special comments) from previous jobs to current
+result in the same scenario.
 
 =cut
-sub carry_over_labels {
+sub carry_over_bugrefs {
     my ($self) = @_;
 
     # the carry over makes only sense for some jobs
@@ -1366,7 +1366,7 @@ sub carry_over_labels {
     my $comments = $prev->comments->search({}, {order_by => {-desc => 'me.id'}});
 
     while (my $comment = $comments->next) {
-        next if !($comment->bugref or $comment->label);
+        next if !($comment->bugref);
 
         my $text = $comment->text;
         if ($text !~ "Automatic takeover") {
@@ -1496,8 +1496,8 @@ sub done {
         $self->_job_skip_children;
         $self->_job_stop_children;
     }
-    # labels are there to mark reasons of failure - the function checks itself though
-    $self->carry_over_labels;
+    # bugrefs are there to mark reasons of failure - the function checks itself though
+    $self->carry_over_bugrefs;
 
     return $result;
 }

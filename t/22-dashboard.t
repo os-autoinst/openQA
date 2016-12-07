@@ -279,7 +279,7 @@ $t->app->db->resultset('JobModules')->create(
 # softfailed with failing modules:    not reviewed
 check_badge(0, 0, 'no badge for completely unreviewed build');
 
-my $softfailed_without_failing_modules_label
+my $softfailed_without_failing_modules_issueref
   = $opensuse_group->jobs->find({id => 99939})->comments->create({text => 'poo#4322', user_id => 99901});
 
 # failed:                             not reviewed
@@ -287,7 +287,7 @@ my $softfailed_without_failing_modules_label
 # softfailed with failing modules:    not reviewed
 check_badge(0, 0, 'no badge as long as not all failed reviewed');
 
-my $softfail_with_failing_modules_label
+my $softfail_with_failing_modules_issueref
   = $opensuse_group->jobs->find({id => 99936})->comments->create({text => 'poo#4322', user_id => 99901});
 
 # failed:                             not reviewed
@@ -295,16 +295,17 @@ my $softfail_with_failing_modules_label
 # softfailed with failing modules:    reviewed
 check_badge(0, 0, 'no badge as long as not all failed reviewed');
 
-$softfail_with_failing_modules_label->delete;
+$softfail_with_failing_modules_issueref->delete;
 # add review for job 99938 (so now all failed jobs are reviewed but one softfailed is missing)
-my $failed_label = $opensuse_group->jobs->find({id => 99938})->comments->create({text => 'poo#4321', user_id => 99901});
+my $failed_issueref
+  = $opensuse_group->jobs->find({id => 99938})->comments->create({text => 'poo#4321', user_id => 99901});
 
 # failed:                             reviewed
 # softfailed without failing modules: reviewed
 # softfailed with failing modules:    not reviewed
 check_badge(1, 0, 'regular badge when all failed reviewed but softfailed with failing modules still unreviewed');
 
-$softfail_with_failing_modules_label
+$softfail_with_failing_modules_issueref
   = $opensuse_group->jobs->find({id => 99936})->comments->create({text => 'poo#4322', user_id => 99901});
 
 # failed:                             reviewed
@@ -312,7 +313,7 @@ $softfail_with_failing_modules_label
 # softfailed with failing modules:    reviewed
 check_badge(0, 1, 'review badge for all failed and all softfailed with failed modules when everything reviewed');
 
-$softfailed_without_failing_modules_label->delete;
+$softfailed_without_failing_modules_issueref->delete;
 
 # failed:                             reviewed
 # softfailed without failing modules: not reviewed
@@ -321,7 +322,7 @@ check_badge(0, 1,
 'review badge for all failed and all softfailed with failed modules though there is an unreviewed softfailure without failing modules'
 );
 
-$softfail_with_failing_modules_label->delete;
+$softfail_with_failing_modules_issueref->delete;
 
 # failed:                             reviewed
 # softfailed without failing modules: not reviewed
