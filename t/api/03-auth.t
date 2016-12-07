@@ -72,7 +72,16 @@ my $ret;
 subtest 'access limiting for non authenticated users' => sub() {
     $t->get_ok('/api/v1/jobs')->status_is(200);
     $t->get_ok('/api/v1/products')->status_is(403);
-    like(warning { $t->delete_ok('/api/v1/assets/1')->status_is(403) }, qr/missing apisecret/);
+    my $delete = $t->delete_ok('/api/v1/assets/1')->status_is(403);
+    is($delete->tx->res->code, 403, 'delete forbidden');
+    is_deeply(
+        $delete->tx->res->json,
+        {
+            error        => 'no api key',
+            error_status => 403,
+        },
+        'error returned as JSON'
+    );
 };
 
 subtest 'access limiting for authenticated users but not operators nor admins' => sub() {
