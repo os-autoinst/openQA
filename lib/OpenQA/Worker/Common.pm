@@ -20,6 +20,8 @@ use feature 'state';
 
 use Carp;
 use POSIX 'uname';
+use Mojo::URL;
+use OpenQA::Client;
 
 use base 'Exporter';
 our @EXPORT = qw($job $workerid $verbose $instance $worker_settings $pooldir $nocleanup
@@ -244,7 +246,7 @@ sub api_call {
         else {
             $msg = "Connection error: $err->{message}";
         }
-        Carp::carp $msg . " (remaining tries: $tries)";
+        OpenQA::Utils::log_error($msg . " (remaining tries: $tries)");
 
         if (!$tries) {
             # abort the current job, we're in trouble - but keep running to grab the next
