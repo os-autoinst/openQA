@@ -354,9 +354,7 @@ sub _job_labels {
     my %labels;
     my $c
       = $self->db->resultset("Comments")->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
-    # previous occurences of bug or label are overwritten here so the
-    # behaviour for multiple bugs or label references within one job is
-    # undefined.
+    # previous occurences of bug or label are overwritten here.
     while (my $comment = $c->next()) {
         if (my $bugref = $comment->bugref) {
             $self->app->log->debug('found bug ticket reference ' . $bugref . ' for job ' . $comment->job_id);

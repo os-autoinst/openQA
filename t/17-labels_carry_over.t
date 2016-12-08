@@ -60,7 +60,7 @@ sub restart_with_result {
 }
 set_up;
 
-subtest '"happy path": failed->failed carries over last label' => sub {
+subtest '"happy path": failed->failed carries over last issue reference' => sub {
     my $label          = 'label:false_positive';
     my $second_label   = 'bsc#1234';
     my $simple_comment = 'just another simple comment';
@@ -80,14 +80,14 @@ subtest '"happy path": failed->failed carries over last label' => sub {
 };
 
 my $job;
-subtest 'failed->passed discards the label' => sub {
+subtest 'failed->passed discards all labels' => sub {
     my $res = restart_with_result(99963, 'passed');
     $job = $res->{result}[0];
     my @comments_new = @{comments($res->{test_url}[0])};
     is(scalar @comments_new, 0, 'no labels carried over to passed');
 };
 
-subtest 'passed->failed does not carry over old label' => sub {
+subtest 'passed->failed does not carry over old labels' => sub {
     my $res = restart_with_result($job, 'failed');
     $job = $res->{result}[0];
     my @comments_new = @{comments($res->{test_url}[0])};
@@ -101,14 +101,13 @@ subtest 'failed->failed without labels does not fail' => sub {
     is(scalar @comments_new, 0, 'nothing there, nothing appears');
 };
 
-subtest 'failed->failed labels which are not bugrefs are also carried over' => sub {
+subtest 'failed->failed labels which are not bugrefs are *not* carried over' => sub {
     my $label = 'label:any_label';
     $t->post_ok("/api/v1/jobs/$job/comments", $auth => form => {text => $label})->status_is(200);
-    my $res          = restart_with_result($job, 'failed');
+    my $res = restart_with_result($job, 'failed');
     my @comments_new = @{comments($res->{test_url}[0])};
-    my $comment_must = 'label:any_label(Automatic takeover from <a href="/tests/99985">t#99985</a>)';
-    is(join('', @comments_new), $comment_must, 'also simple labels are carried over');
-    is($comments_new[0], $label, 'simple label present in new result');
+    is(join('', @comments_new), '', 'no simple labels are carried over');
+    is(scalar @comments_new, 0, 'no simple label present in new result');
 };
 
 done_testing;
