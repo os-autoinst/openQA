@@ -227,11 +227,29 @@ sub result {
 # this is the general worker update call
 sub update_status {
     my ($self) = @_;
-    my $jobid  = int($self->stash('jobid'));
-    my $status = $self->req->json->{status};
-    my $job    = $self->app->schema->resultset("Jobs")->find($jobid);
-    my $ret    = $job->update_status($status);
+    my $jobid = int($self->stash('jobid'));
 
+    if (!$self->req->json) {
+        $self->render(json => {error => 'No status information provided'}, status => 400);
+        return;
+    }
+    my $status = $self->req->json->{status};
+
+    my $job = $self->app->schema->resultset("Jobs")->find($jobid);
+    if (!$job) {
+        OpenQA::Utils::log_info('Got status update for non-existing job: ' . $jobid);
+        $self->render(json => {error => 'Job does not exist'}, status => 404);
+        return;
+    }
+
+    my $ret = $job->update_status($status);
+    if (!$ret || $ret->{error} || $ret->{error_status}) {
+        $ret = {} unless $ret;
+        $ret->{error}        //= 'Unable to update status';
+        $ret->{error_status} //= 400;
+        $self->render(json => {error => $ret->{error}}, status => $ret->{error_status});
+        return;
+    }
     $self->render(json => $ret);
 }
 
@@ -242,15 +260,17 @@ sub create_artefact {
     my $jobid = int($self->stash('jobid'));
     my $job   = $self->app->schema->resultset("Jobs")->find($jobid);
     if (!$job) {
-        $self->reply->not_found;
+        OpenQA::Utils::log_info('Got artefact for non-existing job: ' . $jobid);
+        $self->render(json => {error => 'Job does not exist'}, status => 404);
+        return;
+    }
+    if (!$job->worker) {
+        OpenQA::Utils::log_info(
+            'Got artefact for job with no worker assigned (maybe running job already considered dead): ' . $jobid);
+        $self->render(json => {error => 'No worker assigned'}, status => 404);
         return;
     }
     # mark the worker as alive
-    if (!$job->worker) {
-        log_warning($job->id . " got an artefact but has no worker. huh?");
-        $self->reply->not_found;
-        return;
-    }
     $job->worker->seen;
 
     if ($self->param('image')) {

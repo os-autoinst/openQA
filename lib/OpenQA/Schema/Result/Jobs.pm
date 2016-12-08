@@ -1104,8 +1104,14 @@ sub update_status {
     my $ret = {result => 1};
 
     if (!$self->worker) {
-        log_warning($self->id . " got a status update but has no worker. huh?");
-        return $ret;
+        OpenQA::Utils::log_info(
+            'Got status update for job with no worker assigned (maybe running job already considered dead): '
+              . $self->id);
+        return {
+            result       => 0,
+            error_status => 404,
+            error        => 'No worker assigned'
+        };
     }
 
     # that is a bit of an abuse as we don't have anything of the

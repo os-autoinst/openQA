@@ -36,7 +36,8 @@ sub list {
 }
 
 # TODO: this function exists purely for unit tests to be able to register
-# workers without fixtures. We need to avoid this
+# workers without fixtures so usage elsewhere should be avoided
+# NOTE: currently this function is used in create (API entry point)
 sub _register {
     my ($self, $schema, $host, $instance, $caps) = @_;
 
