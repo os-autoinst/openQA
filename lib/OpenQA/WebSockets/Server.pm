@@ -225,7 +225,8 @@ sub _is_job_considered_dead {
         return ($delta > 1000);
     }
 
-    log_debug("job considered dead: " . $job->id . " worker " . $job->worker->id . " not seen");
+    log_debug(
+        "job considered dead: " . $job->id . " worker " . $job->worker->id . " not seen. In state " . $job->state);
     # default timeout for the rest
     return 1;
 }
