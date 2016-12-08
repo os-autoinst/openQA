@@ -150,25 +150,25 @@ $args = '';
 
 # add a job comment via API
 $post = $t->post_ok("/api/v1/jobs/$job/comments" => form => {text => "test comment"})->status_is(200);
+# stash the comment ID
+my $comment = $post->tx->res->json->{id};
 # check plugin called fedmsg-logger correctly
 my $commonexpr = 'fedmsg-logger --cert-prefix=openqa --modname=openqa';
 my $dateexpr   = '\d{4}-\d{1,2}-\d{1,2}T\d{2}:\d{2}:\d{2}Z';
 like(
     $args,
-qr/$commonexpr --topic=comment.create --json-input --message=\{"created":"$dateexpr","group_id":null,"job_id":$job,"text":"test comment","updated":"$dateexpr","user":"perci"\}/,
+qr/$commonexpr --topic=comment.create --json-input --message=\{"created":"$dateexpr","group_id":null,"id":$comment,"job_id":$job,"text":"test comment","updated":"$dateexpr","user":"perci"\}/,
     'comment post triggers fedmsg'
 );
 # reset $args
 $args = '';
-# stash the comment ID
-my $comment = $post->tx->res->json->{id};
 
 # update job comment via API
 my $put = $t->put_ok("/api/v1/jobs/$job/comments/$comment" => form => {text => "updated comment"})->status_is(200);
 # check plugin called fedmsg-logger correctly
 like(
     $args,
-qr/$commonexpr --topic=comment.update --json-input --message=\{"created":"$dateexpr","group_id":null,"job_id":$job,"text":"updated comment","updated":"$dateexpr","user":"perci"\}/,
+qr/$commonexpr --topic=comment.update --json-input --message=\{"created":"$dateexpr","group_id":null,"id":$comment,"job_id":$job,"text":"updated comment","updated":"$dateexpr","user":"perci"\}/,
     'comment update triggers fedmsg'
 );
 # reset $args
@@ -181,7 +181,7 @@ $t->app($app);
 my $delete = $t->delete_ok("/api/v1/jobs/$job/comments/$comment")->status_is(200);
 like(
     $args,
-qr/$commonexpr --topic=comment.delete --json-input --message=\{"created":"$dateexpr","group_id":null,"job_id":$job,"text":"updated comment","updated":"$dateexpr","user":"perci"\}/,
+qr/$commonexpr --topic=comment.delete --json-input --message=\{"created":"$dateexpr","group_id":null,"id":$comment,"job_id":$job,"text":"updated comment","updated":"$dateexpr","user":"perci"\}/,
     'comment delete triggers fedmsg'
 );
 # reset $args

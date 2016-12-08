@@ -96,22 +96,18 @@ sub on_comment_event {
     my ($user_id, $connection_id, $event, $event_data) = @$args;
     my $hash;
 
-    # if event was a deletion, we'll have to create the hash, and we
-    # don't really know very much
-    if ($event eq 'openqa_user_delete_comment') {
-        $hash = {id => $event_data->{id}};
-    }
-    else {
-        # find comment in database
-        my $comment = $app->db->resultset('Comments')->find($event_data->{id});
-        return unless $comment;
+    # find comment in database. on comment deletion, the mojo event
+    # is emitted *before* the comment is actually deleted, so this
+    # should still work
+    my $comment = $app->db->resultset('Comments')->find($event_data->{id});
+    return unless $comment;
 
-        # just send the hash already used for JSON representation
-        $hash = $comment->hash;
-        # also include job_id/group_id
-        $hash->{job_id}   = $comment->job_id;
-        $hash->{group_id} = $comment->group_id;
-    }
+    # just send the hash already used for JSON representation
+    $hash = $comment->hash;
+    # also include comment id, job_id, and group_id
+    $hash->{id}       = $comment->id;
+    $hash->{job_id}   = $comment->job_id;
+    $hash->{group_id} = $comment->group_id;
 
     log_event($event, $hash);
 }
