@@ -19,7 +19,7 @@
 
 <div class="row" id="result-row">
     <div class="col-sm-12">
-        %= include 'test/infopanel'
+        %= include 'test/infopanel', worker => $assigned_worker
         <div role="tabpanel">
 
             <ul class="nav nav-tabs" role="tablist" id="result_tabs">

@@ -189,5 +189,11 @@ sub send_command {
     return $res;
 }
 
+sub to_string {
+    my ($self) = @_;
+
+    return $self->host . ':' . $self->instance;
+}
+
 1;
 # vim: set sw=4 et:

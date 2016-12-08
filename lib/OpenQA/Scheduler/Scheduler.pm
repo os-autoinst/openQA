@@ -226,8 +226,9 @@ sub job_grab {
                     sub {
                         $job->update(
                             {
-                                state     => OpenQA::Schema::Result::Jobs::RUNNING,
-                                t_started => now(),
+                                state              => OpenQA::Schema::Result::Jobs::RUNNING,
+                                t_started          => now(),
+                                assigned_worker_id => $workerid,
                             });
                         $worker->job($job);
                         $worker->update;

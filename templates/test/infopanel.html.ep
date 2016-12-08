@@ -64,8 +64,7 @@
                         %= link_to $job->clone_id => url_for ('test', testid => $job->clone_id)
                     % }
                 </div>
-
-                <% if ($job->state eq 'scheduled') {  %>
+                % if ($job->state eq 'scheduled') {
                     Priority:
                         %  my $prio = $job->priority;
                         <span>
@@ -78,9 +77,10 @@
                             % end
                         </span>
                 % }
-
                 % if ($worker) {
-                    Assigned worker: <span title="VNC port: <%= 90 + $worker->instance %>"><%= $worker->host %>:<%= $worker->instance %></span>
+                    <div>
+                        Assigned worker: <span title="VNC port: <%= 90 + $worker->instance %>"><%= $worker->to_string %></span>
+                    </div>
                 % }
             </div>
         </div>
