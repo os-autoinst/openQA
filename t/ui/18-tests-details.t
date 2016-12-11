@@ -22,6 +22,7 @@ use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings ':all';
+use JSON;
 use OpenQA::Test::Case;
 
 my $test_case = OpenQA::Test::Case->new;
@@ -88,6 +89,7 @@ t::ui::PhantomTest::wait_for_ajax;
 ok($driver->find_element('.step_actions .popover', 'css')->is_displayed(), "needle info is a clickable popover");
 $driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
 t::ui::PhantomTest::wait_for_ajax;
+
 my @report_links = $driver->find_elements('#preview_container_in .report', 'css');
 my @title = map { $_->get_attribute('title') } @report_links;
 is($title[0], 'Report product bug', 'product bug report URL available');
@@ -151,6 +153,62 @@ is(
     $baseurl . "tests/99946/modules/installer_timezone/steps/1/src",
     "on src page from details route"
 );
+
+# create 2 needle files, so they are there. The fixtures are deleted in other tests
+my $ntext = <<EOM;
+{
+  "area": [
+    {
+      "type": "match",
+      "height": 42,
+      "ypos": 444,
+      "width": 131,
+      "xpos": 381
+    }
+  ],
+  "tags": [
+    "sudo-password"
+  ]
+}
+EOM
+
+open(my $fh, '>', 't/data/openqa/share/tests/opensuse/needles/sudo-passwordprompt-lxde.json');
+print $fh $ntext;
+close($fh);
+open($fh, '>', 't/data/openqa/share/tests/opensuse/needles/sudo-passwordprompt.json');
+print $fh $ntext;
+close($fh);
+
+sub test_with_error {
+    my ($needle, $error, $expect) = @_;
+
+    if (defined $needle) {
+        local $/;
+        my $fn
+          = 't/data/openqa/testresults/00099/00099946-opensuse-13.1-DVD-i586-Build0091-textmode/details-yast2_lan.json';
+        open(my $fh, '<', $fn);
+        my $details = decode_json(<$fh>);
+        close($fh);
+        $details->[0]->{needles}->[$needle]->{error} = $error;
+        open($fh, '>', $fn);
+        print $fh encode_json($details);
+        close($fh);
+    }
+
+    $driver->get($baseurl . "tests/99946#step/yast2_lan/1");
+    t::ui::PhantomTest::wait_for_ajax;
+
+    my $text = $driver->find_element('#needlediff_selector', 'css')->get_text();
+    $text =~ s,\s+, ,g;
+    is($text, $expect, "combo box matches");
+}
+
+# default fixture
+test_with_error(undef, undef, " -None- 63%: sudo-passwordprompt-lxde 52%: sudo-passwordprompt ");
+test_with_error(1,     0.1,   " -None- 68%: sudo-passwordprompt-lxde 52%: sudo-passwordprompt ");
+test_with_error(1,     0,     " -None- 100%: sudo-passwordprompt-lxde 52%: sudo-passwordprompt ");
+# when the error is the same, the one without suffix is first
+test_with_error(0, 0, " -None- 100%: sudo-passwordprompt 100%: sudo-passwordprompt-lxde ");
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();
