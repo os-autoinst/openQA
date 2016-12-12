@@ -471,6 +471,26 @@ sub update_status {
     return;
 }
 
+sub stop_livelog {
+    # We can have multiple viewers at the same time
+    $do_livelog--;
+    if ($do_livelog eq 0) {
+        print "Removing live_log mark, live views active\n";
+        unlink "$pooldir/live_log";
+    }
+}
+
+sub start_livelog {
+    # We can have multiple viewers at the same time
+    $do_livelog++;
+    open my $fh, '>', "$pooldir/live_log" or die "Cannot create live_log file";
+    close($fh);
+}
+
+sub has_logviewers {
+    return $do_livelog // 0;
+}
+
 # uploads current data
 sub upload_status(;$) {
     my ($final_upload) = @_;
@@ -489,7 +509,7 @@ sub upload_status(;$) {
     # cherry-pick
 
     for my $f (qw(interactive needinput)) {
-        if ($os_status->{$f} || $do_livelog) {
+        if ($os_status->{$f} || has_logviewers()) {
             $status->{status}->{$f} = $os_status->{$f};
         }
     }
@@ -526,7 +546,7 @@ sub upload_status(;$) {
             push @{$status->{test_order}}, @$extra_test_order;
         }
     }
-    if ($do_livelog) {
+    if (has_logviewers()) {
         $status->{log}             = log_snippet("$pooldir/autoinst-log.txt",   \$log_offset);
         $status->{serial_log}      = log_snippet("$pooldir/serial0",            \$serial_offset);
         $status->{serial_terminal} = log_snippet("$pooldir/virtio_console.log", \$serial_terminal_offset);
