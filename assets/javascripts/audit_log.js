@@ -12,26 +12,14 @@ function htmlEscape(str) {
     .replace(/>/g, '&gt;');
 }
 
-// FIXME: this isn't working yet and is not active
-function auditSeach(search_string) {
-    var ids    = search_string.match(/id: ?([^ ]+)/g);
-    var events = search_string.match(/event: ?([^ ]+)/g);
-    var users  = search_string.match(/user: ?([^ ]+)/g);
-    var conns  = search_string.match(/connection: ?([^ ]+)/g);
-    $('#audit_log_table').DataTable().column(1).search(ids, null, true).column(4).search(events, null, true).column(2).search(users. null, true).column(3).search(conns, null, true);
-    $('#audit_log_table').DataTable().draw();
-}
-
-$.fn.dataTable.ext.search.push(
-    // TODO: patch in auditSearch
-);
-
 function loadAuditLogTable ()
 {
     $('#audit_log_table').DataTable( {
     lengthMenu: [20, 40, 100],
+    processing: true,
+    serverSide: true,
     ajax: {
-        url: ajax_url + "?rows=" + audit_rows + "&page=" + audit_page,
+        url: ajax_url,
         type: "GET",
         dataType: 'json'
     },
@@ -56,15 +44,7 @@ function loadAuditLogTable ()
         },
         {
             targets: 2,
-            render: function ( data, type, row ) {
-                // the connection info is not so important to warrant such retail space
-                if (type === 'display' && data) {
-                    return '<span id="audit_event_data" title="' + data + '">' + data.substr( 0, 8 ) + (data.length > 8 ? '…</span>' : '</span>');
-                }
-                else {
-                    return data;
-                }
-            }
+            visible: false
         },
         { 
             targets: 4,
