@@ -369,11 +369,12 @@ sub setup_websocket {
                         $workerid = undef;
                         OpenQA::Worker::Jobs::stop_job('api-failure');
                         add_timer('register_worker', 10, \&register_worker, 1);
+                        return;
                     }
                 }
-                else {
-                    add_timer('setup_websocket', 10, \&setup_websocket, 1);
-                }
+                # just retry in any error case - except when the worker ID isn't known
+                # anymore (hence return 3 lines above)
+                add_timer('setup_websocket', 10, \&setup_websocket, 1);
             }
         });
 }
