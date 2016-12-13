@@ -110,12 +110,10 @@ sub group_overview {
     _map_tags_into_build($res, $tags);
     $self->stash('result',   $res);
     $self->stash('max_jobs', $max_jobs);
-    $self->stash(
-        'group',
-        {
-            id   => $group->id,
-            name => $group->name
-        });
+    my $group_hash = {
+        id   => $group->id,
+        name => $group->name,
+    };
     $self->stash('limit_builds',    $limit_builds);
     $self->stash('only_tagged',     $only_tagged);
     $self->stash('comments',        \@comments);
@@ -124,6 +122,11 @@ sub group_overview {
         my @child_groups = $group->children->all;
         $self->stash('child_groups', \@child_groups);
     }
+    elsif ($group->parent_id) {
+        $group_hash->{parent_id}   = $group->parent_id;
+        $group_hash->{parent_name} = $group->parent->name;
+    }
+    $self->stash('group', $group_hash);
     my $desc = $group->rendered_description;
     $self->stash('description', $desc);
     $self->respond_to(
@@ -132,7 +135,7 @@ sub group_overview {
             @pinned_comments = map($_->hash, @pinned_comments);
             $self->render(
                 json => {
-                    group           => $self->stash('group'),
+                    group           => $group_hash,
                     result          => $self->stash('result'),
                     max_jobs        => $self->stash('max_jobs'),
                     description     => $group->description,

@@ -84,7 +84,7 @@ $driver->get($build_url . '?limit_builds=0');
 is(scalar @{$driver->find_elements('div.build-row h4', 'css')}, 0, 'all builds filtered out');
 is(
     $driver->find_element('h2', 'css')->get_text(),
-    'Last Builds for Group opensuse',
+    'Last Builds for opensuse',
     'group name shown correctly when all builds filtered out'
 );
 

@@ -72,7 +72,7 @@ my $element = $driver->find_element('opensuse', 'link_text');
 ok($element->is_displayed(), 'link to child group expanded');
 
 # first try of click does not work for unknown reasons
-for (0 .. 7) {
+for (0 .. 10) {
     $driver->find_element('Build0091', 'link_text')->click();
     last if $driver->find_element('#group1_build0091 h4 a', 'css')->is_hidden();
 }

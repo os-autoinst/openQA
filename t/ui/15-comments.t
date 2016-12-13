@@ -57,7 +57,7 @@ $driver->find_element('opensuse', 'link_text')->click();
 
 is(
     $driver->find_element('h2:first-of-type', 'css')->get_text(),
-    "Last Builds for Group opensuse\nEDIT JOB GROUP",
+    "Last Builds for opensuse\nEDIT JOB GROUP",
     'on group overview'
 );
 
