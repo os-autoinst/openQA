@@ -152,6 +152,11 @@ __PACKAGE__->add_columns(
         is_foreign_key => 1,
         is_nullable    => 1
     },
+    assigned_worker_id => {
+        data_type      => 'integer',
+        is_foreign_key => 1,
+        is_nullable    => 1
+    },
     t_started => {
         data_type   => 'timestamp',
         is_nullable => 1,
@@ -170,6 +175,9 @@ __PACKAGE__->add_timestamps;
 __PACKAGE__->set_primary_key('id');
 __PACKAGE__->has_many(settings => 'OpenQA::Schema::Result::JobSettings', 'job_id');
 __PACKAGE__->has_one(worker => 'OpenQA::Schema::Result::Workers', 'job_id');
+__PACKAGE__->belongs_to(
+    assigned_worker => 'OpenQA::Schema::Result::Workers',
+    'assigned_worker_id', {join_type => 'left', on_delete => 'SET NULL'});
 __PACKAGE__->belongs_to(
     clone => 'OpenQA::Schema::Result::Jobs',
     'clone_id', {join_type => 'left', on_delete => 'SET NULL'});
@@ -389,6 +397,9 @@ sub to_hash {
     my $j = _hashref($job, qw(id name priority state result clone_id retry_avbl t_started t_finished group_id));
     if ($j->{group_id}) {
         $j->{group} = $job->group->name;
+    }
+    if ($job->assigned_worker_id) {
+        $j->{assigned_worker_id} = $job->assigned_worker_id;
     }
     $j->{settings} = $job->settings_hash;
     # hashes are left for script compatibility with schema version 38

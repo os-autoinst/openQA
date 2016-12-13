@@ -64,9 +64,9 @@
                         %= link_to $job->clone_id => url_for ('test', testid => $job->clone_id)
                     % }
                 </div>
-
-                <% if ($job->state eq 'scheduled') {  %>
-                    Priority:
+                % if ($job->state eq 'scheduled') {
+                    <div>
+                        Priority:
                         %  my $prio = $job->priority;
                         <span>
                             %= link_post url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio-10) => (class => 'prio-down') =>  ('data-remote' => 'true') => begin
@@ -77,10 +77,12 @@
                                 <i class="fa fa-plus-square-o"></i>
                             % end
                         </span>
+                    </div>
                 % }
-
                 % if ($worker) {
-                    Assigned worker: <span title="VNC port: <%= 90 + $worker->instance %>"><%= $worker->host %>:<%= $worker->instance %></span>
+                    <div>
+                        Assigned worker: <span title="VNC port: <%= 90 + $worker->instance %>"><%= $worker->to_string %></span>
+                    </div>
                 % }
             </div>
         </div>

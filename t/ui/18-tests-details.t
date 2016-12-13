@@ -24,13 +24,24 @@ use Test::Mojo;
 use Test::Warnings ':all';
 use JSON;
 use OpenQA::Test::Case;
+use OpenQA::Client;
+use Mojo::IOLoop;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
 use t::ui::PhantomTest;
 
-my $driver = t::ui::PhantomTest::call_phantom();
+sub schema_hook {
+    my $schema = OpenQA::Test::Database->new->create;
+    my $jobs   = $schema->resultset('Jobs');
+
+    # set assigned_worker_id to test whether worker still displayed when job set to done
+    # manually for PhantomJS test
+    $jobs->find(99963)->update({assigned_worker_id => 1});
+}
+
+my $driver = t::ui::PhantomTest::call_phantom(\&schema_hook);
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -103,8 +114,10 @@ like($url[1], qr{progress.*new}, 'progress/redmine link for reporting test issue
 my $t   = Test::Mojo->new('OpenQA::WebAPI');
 my $get = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
 
-# test that only one tab is active when using step url
-$t->element_count_is('.tab-pane.active', 1, 'only one tab visible at the same time');
+my @worker_text = $get->tx->res->dom->find('#info_box .panel-body div + div + div')->map('all_text')->each;
+like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker displayed when job running');
+
+$t->element_count_is('.tab-pane.active', 1, 'only one tab visible at the same time when using step url');
 
 my $href_to_isosize = $t->tx->res->dom->at('.component a[href*=installer_timezone]')->{href};
 $t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
@@ -209,6 +222,20 @@ test_with_error(1,     0.1,   " -None- 68%: sudo-passwordprompt-lxde 52%: sudo-p
 test_with_error(1,     0,     " -None- 100%: sudo-passwordprompt-lxde 52%: sudo-passwordprompt ");
 # when the error is the same, the one without suffix is first
 test_with_error(0, 0, " -None- 100%: sudo-passwordprompt 100%: sudo-passwordprompt-lxde ");
+
+# set job 99963 to done via API to tests whether worker is still displayed then
+my $t_api = Test::Mojo->new('OpenQA::WebAPI');
+my $app   = $t_api->app;
+$t_api->ua(
+    OpenQA::Client->new(apikey => '1234567890ABCDEF', apisecret => '1234567890ABCDEF')->ioloop(Mojo::IOLoop->singleton)
+);
+$t_api->app($app);
+my $post = $t_api->post_ok($baseurl . 'api/v1/jobs/99963/set_done', form => {result => 'FAILED'})
+  ->status_is(200, 'set job as done');
+
+$get         = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
+@worker_text = $get->tx->res->dom->find('#info_box .panel-body div + div + div')->map('all_text')->each;
+like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker still displayed when job set to done');
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();

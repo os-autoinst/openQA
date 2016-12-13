@@ -78,6 +78,10 @@ OpenQA::Schema::deployment_check($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 
+# check systemuser exists after upgrade
+my $user = $schema->resultset('Users')->find({username => 'system'});
+ok($user->id, 'system user does exists');
+
 SKIP: {
     eval { require SQL::Translator::Producer::Diagram; };
 

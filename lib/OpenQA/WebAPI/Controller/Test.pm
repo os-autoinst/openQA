@@ -266,12 +266,16 @@ sub _show {
     my ($self, $job) = @_;
     return $self->reply->not_found unless $job;
 
-    $self->stash(testname => $job->name);
-    $self->stash(distri   => $job->DISTRI);
-    $self->stash(version  => $job->VERSION);
-    $self->stash(build    => $job->BUILD);
-    $self->stash(scenario => $job->scenario);
-    $self->stash(worker   => $job->worker);
+    $self->stash(
+        {
+            testname        => $job->name,
+            distri          => $job->DISTRI,
+            version         => $job->VERSION,
+            build           => $job->BUILD,
+            scenario        => $job->scenario,
+            worker          => $job->worker,
+            assigned_worker => $job->assigned_worker,
+        });
 
     my $clone_of = $self->db->resultset("Jobs")->find({clone_id => $job->id});
 
