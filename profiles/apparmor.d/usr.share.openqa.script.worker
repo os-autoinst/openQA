@@ -13,6 +13,7 @@
 
 /usr/share/openqa/script/worker {
   #include <abstractions/X>
+  #include <abstractions/authentication>
   #include <abstractions/base>
   #include <abstractions/bash>
   #include <abstractions/nameservice>
@@ -73,6 +74,7 @@
   /usr/bin/mkdir rix,
   /usr/bin/nice rix,
   /usr/bin/optipng rix,
+  /usr/bin/pwd rix,
   /usr/bin/qemu-img rix,
   /usr/bin/qemu-kvm rix,
   /usr/bin/qemu-system-* rix,
@@ -89,6 +91,9 @@
   /usr/bin/x3270 cx,
   /usr/lib*/qemu/block-curl.so rix,
   /usr/lib*/qemu/block-rbd.so mr,
+  /usr/lib*/qemu/block-iscsi.so mr,
+  /usr/lib*/qemu/block-ssh.so mr,
+  /usr/lib/git/git rix,
   /usr/lib/os-autoinst/videoencoder rix,
   /usr/lib/utempter/utempter rix,
   /usr/sbin/ipmiconsole rix,
