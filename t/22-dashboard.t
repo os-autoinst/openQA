@@ -53,6 +53,14 @@ is_deeply(\@h2, ['opensuse', 'opensuse test'], 'empty parent group not shown');
 my $opensuse_group = $job_groups->find({name => 'opensuse'});
 $opensuse_group->update({parent_id => $test_parent->id});
 
+$get = $t->get_ok('/group_overview/' . $opensuse_group->id)->status_is(200);
+@h2  = $get->tx->res->dom->find('h2')->map('all_text')->each;
+like(
+    $h2[0],
+    qr/[ \n]*Last Builds for[ \n]*Test parent[ \n]*\/[ \n]*opensuse[ \n]*/,
+    'parent name also shown on group overview'
+);
+
 $get = $t->get_ok('/')->status_is(200);
 @h2  = $get->tx->res->dom->find('h2 a')->map('text')->each;
 is_deeply(\@h2, ['opensuse test', 'Test parent'], 'parent group shown and opensuse is no more on top-level');

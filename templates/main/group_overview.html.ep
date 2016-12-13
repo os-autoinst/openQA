@@ -8,7 +8,11 @@
 % end
 
 <h2>
-    Last Builds for Group
+    Last Builds for
+    % if ($group->{parent_id}) {
+        %= link_to $group->{parent_name} => url_for('parent_group_overview', groupid => $group->{parent_id})
+        /
+    % }
     %= $group->{name}
     % if (is_admin) {
         <form action="<%= url_for('admin_job_templates', groupid => $group->{id}) %>" class="corner-buttons">
