@@ -65,7 +65,8 @@
                     % }
                 </div>
                 % if ($job->state eq 'scheduled') {
-                    Priority:
+                    <div>
+                        Priority:
                         %  my $prio = $job->priority;
                         <span>
                             %= link_post url_for('apiv1_job_prio', 'jobid' => $job->id)->query(prio => $prio-10) => (class => 'prio-down') =>  ('data-remote' => 'true') => begin
@@ -76,6 +77,7 @@
                                 <i class="fa fa-plus-square-o"></i>
                             % end
                         </span>
+                    </div>
                 % }
                 % if ($worker) {
                     <div>

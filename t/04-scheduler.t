@@ -277,6 +277,7 @@ $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
 is_deeply($grabbed->{settings}, $job_ref->{settings}, "settings correct");
 ok($grabbed->{t_started} =~ /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/, "job start timestamp updated");
 is(scalar(@{$rjobs_before}) + 1, scalar(@{$rjobs_after}), "number of running jobs");
+is($rjobs_after->[-1]->{assigned_worker_id}, 1, 'assigned worker set');
 
 $grabbed = job_get($job->id);
 is($grabbed->worker->id, $worker->{id}, "correct worker assigned");
