@@ -324,8 +324,10 @@ sub settings_hash {
                 $self->{_settings}->{$var->key} = $var->value;
             }
         }
-        for my $c (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
-            $self->{_settings}->{$c} = $self->get_column($c);
+        for my $column (qw(DISTRI VERSION FLAVOR MACHINE ARCH BUILD TEST)) {
+            if (my $value = $self->$column) {
+                $self->{_settings}->{$column} = $value;
+            }
         }
         $self->{_settings}->{NAME} = sprintf "%08d-%s", $self->id, $self->name;
     }

@@ -18,6 +18,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
 use OpenQA::IPC;
 use OpenQA::Schema::Result::Jobs;
+use OpenQA::Utils 'find_job';
 use Try::Tiny;
 use DBIx::Class::Timestamps 'now';
 
@@ -251,6 +252,52 @@ sub update_status {
         return;
     }
     $self->render(json => $ret);
+}
+
+sub update {
+    my ($self) = @_;
+
+    my $job = find_job($self, $self->stash('jobid')) or return;
+    my $json = $self->req->json;
+    return $self->render(json => {error => 'No updates provided (must be provided as JSON)'}, status => 400)
+      unless $json;
+    my $settings = delete $json->{settings};
+
+    # validate specified columns (print error if at least one specified column does not exist)
+    my @allowed_cols = qw(group_id priority retry_avbl);
+    for my $key (keys %$json) {
+        if (!grep $_ eq $key, @allowed_cols) {
+            return $self->render(json => {error => "Column $key can not be set"}, status => 400);
+        }
+    }
+
+    # validate specified group
+    my $group_id = $json->{group_id};
+    if (defined($group_id) && !$self->db->resultset('JobGroups')->find(int($group_id))) {
+        return $self->render(json => {error => 'Group does not exist'}, status => 404);
+    }
+
+    # some settings are stored directly in job table and hence must be updated there
+    my @setting_cols = qw(TEST DISTRI VERSION FLAVOR ARCH BUILD MACHINE);
+    if ($settings) {
+        for my $setting_col (@setting_cols) {
+            $json->{$setting_col} = delete $settings->{$setting_col};
+        }
+    }
+
+    $job->update($json);
+
+    if ($settings) {
+        # update settings stored in extra job settings table
+        my @settings_keys = keys %$settings;
+        for my $key (@settings_keys) {
+            $job->set_property($key, $settings->{$key});
+        }
+        # ensure old entries are removed
+        $self->db->resultset('JobSettings')->search({job_id => $job->id, key => {-not_in => \@settings_keys}})->delete;
+    }
+
+    $self->render(json => {job_id => $job->id});
 }
 
 # used by the worker to upload files to the test
