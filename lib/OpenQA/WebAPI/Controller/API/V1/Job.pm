@@ -253,6 +253,18 @@ sub update_status {
     $self->render(json => $ret);
 }
 
+sub update_group {
+    my ($self) = @_;
+    my $job = $self->app->schema->resultset('Jobs')->find(int($self->stash('jobid')))
+      or return $self->render(json => {error => 'Job does not exist'}, status => 404);
+    my $group_id = $self->param('group_id')
+      or return $self->render(json => {error => 'No group specified (parameter group_id required)'}, status => 400);
+    my $group = $self->db->resultset('JobGroups')->find(int($group_id))
+      or return $self->render(json => {error => 'Job group does not exist'}, status => 404);
+    $job->update({group_id => $group_id});
+    $self->render(json => {job_id => $job->id, group_id => $group->id});
+}
+
 # used by the worker to upload files to the test
 sub create_artefact {
     my ($self) = @_;

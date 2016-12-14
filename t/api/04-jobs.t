@@ -371,4 +371,13 @@ $get = $t->get_ok('/api/v1/jobs', form => $job_properties);
 is($get->tx->res->json->{jobs}->[1]->{group},    'opensuse test');
 is($get->tx->res->json->{jobs}->[1]->{priority}, 42);
 
+$get = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+$t->json_is('/job/group' => 'opensuse', 'current group is opensuse');
+$post = $t->post_ok('/api/v1/jobs//group')->status_is(404);
+$post = $t->post_ok('/api/v1/jobs/99926/group')->status_is(400);
+$post = $t->post_ok('/api/v1/jobs/99926/group', form => {group_id => 1234})->status_is(404);
+$post = $t->post_ok('/api/v1/jobs/99926/group', form => {group_id => 1002})->status_is(200);
+$get  = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+$t->json_is('/job/group' => 'opensuse test', 'group changed to opensuse test');
+
 done_testing();
