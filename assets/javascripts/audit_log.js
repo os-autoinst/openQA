@@ -1,7 +1,5 @@
 var audit_url;
 var ajax_url;
-var audit_rows;
-var audit_page;
 
 function htmlEscape(str) {
     return String(str)
@@ -18,6 +16,9 @@ function loadAuditLogTable ()
     lengthMenu: [20, 40, 100],
     processing: true,
     serverSide: true,
+    search: {
+        search: searchquery,
+    },
     ajax: {
         url: ajax_url,
         type: "GET",

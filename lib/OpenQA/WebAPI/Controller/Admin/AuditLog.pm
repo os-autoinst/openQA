@@ -27,8 +27,21 @@ use OpenQA::Utils 'log_warning';
 sub index {
     my ($self) = @_;
     $self->stash(audit_enabled => $self->app->config->{global}{audit_enabled});
-    $self->stash('page', $self->param('page') // 1);
-    $self->stash('rows', $self->param('rows') // 600);
+    if ($self->param('eventid')) {
+        my $event
+          = $self->db->resultset('AuditEvents')->search({'me.id' => $self->param('eventid')}, {prefetch => 'owner'});
+        if ($event) {
+            $event = $event->single;
+            $self->stash('id',         $event->id);
+            $self->stash('date',       $event->t_created);
+            $self->stash('event',      $event->event);
+            $self->stash('connection', $event->connection_id);
+            $self->stash('owner',      $event->owner->nickname);
+            $self->stash('event_data', $event->event_data);
+            return $self->render('admin/audit_log/event');
+        }
+    }
+    $self->stash('search', $self->param('search'));
     $self->render('admin/audit_log/index');
 }
 
