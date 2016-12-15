@@ -49,6 +49,7 @@ function loadAuditLogTable ()
         },
         { 
             targets: 4,
+            width: "70%",
             render: function ( data, type, row ) {
                 if (type === 'display' && data) {
                     var parsed_data;
@@ -57,7 +58,7 @@ function loadAuditLogTable ()
                     } catch (e) {
                         parsed_data = data;
                     }
-                    return '<span id="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 70)) + (parsed_data.length > 70 ? '…</span>' : '</span>');
+                    return '<span id="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data) + '</span>';
                 }
                 else {
                     return data;
