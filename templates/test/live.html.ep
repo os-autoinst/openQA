@@ -7,7 +7,7 @@
     <tr>
         <td>Interactive:</td>
         <td id="interactive_indicator" data-next-status="">Unknown</td>
-        <td id="needinput_buttons">
+        <td>
             % if (is_operator) {
                 <a href="#" title="enable interactive mode" style="display:none"
                         id="interactive0_button" class="fa fa-wrench fa-2x"></a>
@@ -21,7 +21,7 @@
     <tr>
         <td>Waiting for input:</td>
         <td id="needinput_indicator">N/A</td>
-        <td id="needinput_buttons">
+        <td>
             % if (is_operator) {
                 <a href="#" title="continue waiting for needle" style="display:none" id="continue_button" class="fa fa-play fa-2x"></a>
                 <a href="#" title="reload needles and retry" style="display:none" id="retry_button" class="fa fa-repeat fa-2x"></a>
