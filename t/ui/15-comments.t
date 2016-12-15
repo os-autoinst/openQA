@@ -188,7 +188,10 @@ subtest 'URL auto-replace' => sub {
         <a href="https://bugzilla.suse.com/show_bug.cgi?id=1000630">bsc#1000630</a>
         bnc#1246
         gh#os-autoinst/openQA#1234
-        https://github.com/os-autoinst/os-autoinst/pull/960'
+        https://github.com/os-autoinst/os-autoinst/pull/960
+        bgo#768954 brc#1401123
+        https://bugzilla.gnome.org/show_bug.cgi?id=690345
+        https://bugzilla.redhat.com/show_bug.cgi?id=343098'
     );
     $driver->find_element('#submitComment', 'css')->click();
     t::ui::PhantomTest::wait_for_ajax;
@@ -197,9 +200,12 @@ subtest 'URL auto-replace' => sub {
     my @comments = $driver->find_elements('div.media-comment p', 'css');
     #is($comments[0]->get_text(), $test_message, "body of first comment after adding another");
 
-    like($comments[0]->get_text(), qr/bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#7890 bsc#1000629 bsc#1000630/);
+    # uses ( delimiter for qr as there are / in the text
+    like($comments[0]->get_text(),
+qr(bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#7890 bsc#1000629 bsc#1000630 bnc#1246 gh#os-autoinst/openQA#1234 gh#os-autoinst/os-autoinst#960 bgo#768954 brc#1401123)
+    );
     my @urls = $driver->find_elements('div.media-comment a', 'css');
-    is(scalar @urls, 16);
+    is(scalar @urls, 20);
     is((shift @urls)->get_text(), 'https://openqa.example.com/foo/bar',      "url1");
     is((shift @urls)->get_text(), 'http://localhost:9562',                   "url2");
     is((shift @urls)->get_text(), 'https://openqa.example.com/tests/181148', "url3");
@@ -216,6 +222,10 @@ subtest 'URL auto-replace' => sub {
     is((shift @urls)->get_text(), 'bnc#1246',                                "url14");
     is((shift @urls)->get_text(), 'gh#os-autoinst/openQA#1234',              "url15");
     is((shift @urls)->get_text(), 'gh#os-autoinst/os-autoinst#960',          "url16");
+    is((shift @urls)->get_text(), 'bgo#768954',                              "url17");
+    is((shift @urls)->get_text(), 'brc#1401123',                             "url18");
+    is((shift @urls)->get_text(), 'bgo#690345',                              "url19");
+    is((shift @urls)->get_text(), 'brc#343098',                              "url20");
 
     my @urls2 = $driver->find_elements('div.media-comment a', 'css');
     is((shift @urls2)->get_attribute('href'), 'https://openqa.example.com/foo/bar',                 "url1-href");
@@ -234,6 +244,10 @@ subtest 'URL auto-replace' => sub {
     is((shift @urls2)->get_attribute('href'), 'https://bugzilla.suse.com/show_bug.cgi?id=1246',        "url14-href");
     is((shift @urls2)->get_attribute('href'), 'https://github.com/os-autoinst/openQA/issues/1234',     "url15-href");
     is((shift @urls2)->get_attribute('href'), 'https://github.com/os-autoinst/os-autoinst/issues/960', "url16-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.gnome.org/show_bug.cgi?id=768954',     "url17-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.redhat.com/show_bug.cgi?id=1401123',   "url18-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.gnome.org/show_bug.cgi?id=690345',     "url19-href");
+    is((shift @urls2)->get_attribute('href'), 'https://bugzilla.redhat.com/show_bug.cgi?id=343098',    "url20-href");
 };
 
 subtest 'commenting in test results including labels' => sub {

@@ -370,6 +370,8 @@ my %bugrefs = (
     bnc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
     bsc => 'https://bugzilla.suse.com/show_bug.cgi?id=',
     boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
+    bgo => 'https://bugzilla.gnome.org/show_bug.cgi?id=',
+    brc => 'https://bugzilla.redhat.com/show_bug.cgi?id=',
     poo => 'https://progress.opensuse.org/issues/',
     gh  => 'https://github.com/',
 );
@@ -377,6 +379,8 @@ my %bugurls = (
     'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
     $bugrefs{bsc}                                  => 'bsc',
     $bugrefs{boo}                                  => 'boo',
+    $bugrefs{bgo}                                  => 'bgo',
+    $bugrefs{brc}                                  => 'brc',
     $bugrefs{poo}                                  => 'poo',
     $bugrefs{gh}                                   => 'gh',
 );
