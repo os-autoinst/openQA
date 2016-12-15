@@ -10,24 +10,15 @@ function htmlEscape(str) {
     .replace(/>/g, '&gt;');
 }
 
-// FIXME: this isn't working yet and is not active
-function auditSeach(search_string) {
-    var ids    = search_string.match(/id: ?([^ ]+)/g);
-    var events = search_string.match(/event: ?([^ ]+)/g);
-    var users  = search_string.match(/user: ?([^ ]+)/g);
-    var conns  = search_string.match(/connection: ?([^ ]+)/g);
-    $('#audit_log_table').DataTable().column(1).search(ids, null, true).column(4).search(events, null, true).column(2).search(users. null, true).column(3).search(conns, null, true);
-    $('#audit_log_table').DataTable().draw();
-}
-
-$.fn.dataTable.ext.search.push(
-    // TODO: patch in auditSearch
-);
-
 function loadAuditLogTable ()
 {
     $('#audit_log_table').DataTable( {
-    lengthMenu: [10, 25, 50],
+    lengthMenu: [20, 40, 100],
+    processing: true,
+    serverSide: true,
+    search: {
+        search: searchquery,
+    },
     ajax: {
         url: ajax_url,
         type: "GET",
@@ -47,18 +38,27 @@ function loadAuditLogTable ()
             render: function ( data, type, row ) {
                 if (type === 'display')
                     // I want to have a link to events for cases when one wants to share interesing event
-                    return '<a href="' + audit_url + '?eventid=' + row.id + '">' + jQuery.timeago(data + " UTC") + '</a>';
+                    return '<a href="' + audit_url + '?eventid=' + row.id + '" title=' + data + '>' + jQuery.timeago(data + " UTC") + '</a>';
                 else
                     return data;
             }
         },
+        {
+            targets: 2,
+            visible: false
+        },
         { 
             targets: 4,
+            width: "70%",
             render: function ( data, type, row ) {
-                // Limit length of displayed event data, expand on click
-                if (type === 'display' && data.length > 40) {
-                    var parsed_data = JSON.stringify(JSON.parse(data), null, 2);
-                    return '<span id="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data.substr( 0, 38 )) + '…</span>';
+                if (type === 'display' && data) {
+                    var parsed_data;
+                    try {
+                        parsed_data = JSON.stringify(JSON.parse(data), null, 2);
+                    } catch (e) {
+                        parsed_data = data;
+                    }
+                    return '<span id="audit_event_data" title="' + htmlEscape(parsed_data) + '">' + htmlEscape(parsed_data) + '</span>';
                 }
                 else {
                     return data;

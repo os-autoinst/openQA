@@ -1,12 +1,5 @@
 % layout 'bootstrap';
-% title 'Audit log';
-
-% content_for 'ready_function' => begin
-    audit_url   = "<%= url_for('audit_log') %>";
-    ajax_url    = "<%= url_for('audit_ajax') %>";
-    searchquery = "<%= $search %>";
-    loadAuditLogTable();
-% end
+% title 'Audit log event viewer';
 
 <div class="row">
     <div class="col-sm-12">
@@ -18,9 +11,12 @@
 
     %= include 'layouts/info'
 
+    %= link_to 'Back to audit log' => url_for('audit_log')->query(search => "date:$date");
+
     <table id="audit_log_table" class="table table-striped">
             <thead>
                 <tr>
+                    <th>Event ID</td>
                     <th>Time</th>
                     <th>User</th>
                     <th>Connection</th>
@@ -29,6 +25,12 @@
                 </tr>
             </thead>
             <tbody>
+                <td><%= $id %></td>
+                <td><%= $date %></td>
+                <td><%= $owner %></td>
+                <td><%= $connection %></td>
+                <td><%= $event %></td>
+                <td><%= $event_data %></td>
              </tbody>
         </table>
     </div>
