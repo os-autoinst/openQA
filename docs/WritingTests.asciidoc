@@ -703,7 +703,7 @@ and the rest is done automatically, using already prepared test modules in +test
 === Using text consoles and the serial terminal
 
 Typically the OS you are testing will boot into a graphical shell e.g. The
-Gnome dekstop environment. This is fine if you wish to test a program with a
+Gnome desktop environment. This is fine if you wish to test a program with a
 GUI, but lets say you want to run some shell scripts then it is not so
 convenient.
 
