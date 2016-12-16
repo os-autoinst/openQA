@@ -82,7 +82,9 @@ sub deployment_check {
             sql_translator_args => {add_drop_table => 0},
             force_overwrite     => $force_overwrite
         });
-    _try_deploy_db($dh) or _try_upgrade_db($dh);
+    return 2 if _try_deploy_db($dh);
+    return 1 if _try_upgrade_db($dh);
+    return 0;
 }
 
 sub _db_tweaks {
@@ -133,7 +135,7 @@ sub _try_upgrade_db {
         $dh->upgrade;
         return 1;
     }
-    return;
+    return 0;
 }
 
 1;

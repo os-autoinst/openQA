@@ -42,9 +42,10 @@ try {
 };
 ok(!$deployed_version, 'DB not deployed by plain schema connection');
 
-OpenQA::Schema::deployment_check($schema);
+my $ret = OpenQA::Schema::deployment_check($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
+is($ret, 2, 'Expected return value (2) for a deployment');
 
 $schema->storage->with_deferred_fk_checks(
     sub {
@@ -69,14 +70,16 @@ $dh = DBIx::Class::DeploymentHandler->new(
 $dh->install({version => $dh->schema_version - 2});
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version - 2, 'Schema at correct, old, version');
-OpenQA::Schema::deployment_check($schema);
+$ret = OpenQA::Schema::deployment_check($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
+is($ret, 1, 'Expected return value (1) for an upgrade');
 
 # check another deployment_check call doesn't do a thing
-OpenQA::Schema::deployment_check($schema);
+$ret = OpenQA::Schema::deployment_check($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
+is($ret, 0, 'Expected return value (0) for no action needed');
 
 # check systemuser exists after upgrade
 my $user = $schema->resultset('Users')->find({username => 'system'});
