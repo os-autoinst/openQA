@@ -126,6 +126,11 @@ subtest 'wrong api key - not maching key + secret' => sub() {
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
 };
 
+subtest 'no key, no secret' => sub {
+    $t->ua->apikey('NOTEXISTINGKEY');
+    $t->delete_ok('/api/v1/assets/1')->status_is(403);
+};
+
 subtest 'wrong api key - replay attack' => sub() {
     $t->ua->apikey('ARTHURKEY01');
     $t->ua->apisecret('EXCALIBUR');
