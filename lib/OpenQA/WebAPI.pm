@@ -336,6 +336,7 @@ sub startup {
     $job_r->post('/prio')->name('apiv1_job_prio')->to('job#prio');
     $job_r->post('/set_done')->name('apiv1_set_done')->to('job#done');
     $job_r->post('/status')->name('apiv1_update_status')->to('job#update_status');
+    $job_r->post('/group')->name('apiv1_update_group')->to('job#update_group');
     $job_r->post('/artefact')->name('apiv1_create_artefact')->to('job#create_artefact');
     $job_r->post('/ack_temporary')->to('job#ack_temporary');
 
