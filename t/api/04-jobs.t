@@ -371,4 +371,68 @@ $get = $t->get_ok('/api/v1/jobs', form => $job_properties);
 is($get->tx->res->json->{jobs}->[1]->{group},    'opensuse test');
 is($get->tx->res->json->{jobs}->[1]->{priority}, 42);
 
+subtest 'update job and job settings' => sub {
+    # check defaults
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    $t->json_is('/job/group'           => 'opensuse',  'current group');
+    $t->json_is('/job/priority'        => 56,          'current prio');
+    $t->json_is('/job/settings/ARCH'   => 'x86_64',    'current ARCH');
+    $t->json_is('/job/settings/FLAVOR' => 'staging_e', 'current FLAVOR');
+
+    # error cases
+    $t->put_ok('/api/v1/jobs/3134', json => {group_id => 1002})->status_is(404);
+    $t->json_is('/error' => 'Job does not exist', 'error when job id is invalid');
+    $t->put_ok('/api/v1/jobs/99926', json => {group_id => 1234})->status_is(404);
+    $t->json_is('/error' => 'Group does not exist', 'error when group id is invalid');
+    $t->put_ok('/api/v1/jobs/99926', json => {group_id => 1002, status => 1})->status_is(400);
+    $t->json_is('/error' => 'Column status can not be set', 'error when invalid/not accessible column specified');
+
+    # set columns of job table
+    $t->put_ok('/api/v1/jobs/99926', json => {group_id => 1002, priority => 53})->status_is(200);
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    $t->json_is('/job/group'            => 'opensuse test', 'group changed');
+    $t->json_is('/job/priority'         => 53,              'priority change');
+    $t->json_is('/job/settings/ARCH'    => 'x86_64',        'settings in job table not altered');
+    $t->json_is('/job/settings/DESKTOP' => 'minimalx',      'settings in job settings table not altered');
+
+    # set also job settings
+    $t->put_ok(
+        '/api/v1/jobs/99926',
+        json => {
+            priority => 50,
+            settings => {
+                ARCH    => 'i686',
+                DESKTOP => 'kde',
+                NEW_KEY => 'new value',
+            },
+        })->status_is(200);
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    $t->json_is('/job/group'            => 'opensuse test', 'group remained the same');
+    $t->json_is('/job/priority'         => 50,              'priority change');
+    $t->json_is('/job/settings/ARCH'    => 'i686',          'ARCH changed');
+    $t->json_is('/job/settings/DESKTOP' => 'kde',           'DESKTOP changed');
+    $t->json_is('/job/settings/NEW_KEY' => 'new value',     'NEW_KEY created');
+    $t->json_is('/job/settings/FLAVOR'  => undef,           'FLAVOR removed');
+
+    $t->put_ok('/api/v1/jobs/99926', json => {group_id => undef})->status_is(200);
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    $t->json_is('/job/group' => undef, 'group removed');
+
+    # set machine
+    $t->put_ok(
+        '/api/v1/jobs/99926',
+        json => {
+            settings => {
+                MACHINE => '64bit'
+            }})->status_is(200);
+    $t->get_ok('/api/v1/jobs/99926')->status_is(200);
+    $t->json_is(
+        '/job/settings' => {
+            NAME    => '00099926-@64bit',
+            MACHINE => '64bit',
+        },
+        'also name update, all other settings cleaned'
+    );
+};
+
 done_testing();

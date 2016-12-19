@@ -44,6 +44,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &human_readable_size
   &locate_asset
   &job_groups_and_parents
+  &find_job
   wait_with_progress
   mark_job_linked
 );
@@ -562,6 +563,18 @@ sub job_groups_and_parents {
         }
     }
     return \@res;
+}
+
+sub find_job {
+    my ($controller, $job_id) = @_;
+
+    my $job = $controller->app->schema->resultset('Jobs')->find(int($job_id));
+    if (!$job) {
+        $controller->render(json => {error => 'Job does not exist'}, status => 404);
+        return;
+    }
+
+    return $job;
 }
 
 sub wait_with_progress {
