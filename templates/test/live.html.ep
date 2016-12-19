@@ -10,11 +10,9 @@
         <td>
             % if (is_operator) {
                 <a href="#" title="enable interactive mode" style="display:none"
-                        id="interactive0_button" class="fa fa-wrench fa-2x"></a>
+                        id="interactive_enabled_button" class="fa fa-wrench fa-2x"></a>
                 <a href="#" title="disable interactive mode" style="display:none"
-                        id="interactive1_button" class="fa fa-paper-plane fa-2x"></a>
-                <i title="waiting for worker ..." class="fa fa-cog fa-2x fa-spin"
-                        id="interactive_spinner"></i>
+                        id="interactive_disabled_button" class="fa fa-paper-plane fa-2x"></a>
             % }
         </td>
     </tr>

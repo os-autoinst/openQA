@@ -172,10 +172,7 @@ sub _message {
     }
     elsif ($json->{type} eq 'property_change') {
         my $prop = $json->{data};
-        if (defined $prop->{interactive_mode}) {
-            $worker->set_property('INTERACTIVE_REQUESTED', $prop->{interactive_mode} ? 1 : 0);
-        }
-        elsif (defined $prop->{waitforneedle}) {
+        if (defined $prop->{waitforneedle}) {
             $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', $prop->{waitforneedle} ? 1 : 0);
         }
         else {

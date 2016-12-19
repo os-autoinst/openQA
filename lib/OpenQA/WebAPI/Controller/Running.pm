@@ -49,8 +49,7 @@ sub status {
     $results->{running} = $r->name() if $r;
 
     if ($workerid) {
-        $results->{interactive}                  = $job->worker->get_property('INTERACTIVE')                  // 0;
-        $results->{interactive_requested}        = $job->worker->get_property('INTERACTIVE_REQUESTED')        // 0;
+        $results->{interactive} = $job->worker->get_property('INTERACTIVE') // 0;
         $results->{stop_waitforneedle_requested} = $job->worker->get_property('STOP_WAITFORNEEDLE_REQUESTED') // 0;
     }
 
