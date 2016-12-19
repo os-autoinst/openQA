@@ -1,0 +1,9 @@
+{% for page in site.pages %}
+  {% if page.categories contains 'api' %}
+    <dl>
+      <dt>
+        <a href="{{ page.url | prepend: site.baseurl }}">API documentation for {{page.title}}</a>
+      </dt>
+    </dl>
+	{% endif %}
+{% endfor %}
