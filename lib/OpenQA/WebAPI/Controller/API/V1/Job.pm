@@ -193,11 +193,7 @@ sub set_command {
 sub destroy {
     my $self = shift;
 
-    my $job = $self->app->schema->resultset("Jobs")->find($self->stash('jobid'));
-    if (!$job) {
-        $self->reply->not_found;
-        return;
-    }
+    my $job = find_job($self, $self->stash('jobid')) or return;
     $self->emit_event('openqa_job_delete', {id => $job->id});
     $job->delete;
     $self->render(json => {result => 1});
@@ -205,8 +201,8 @@ sub destroy {
 
 sub prio {
     my ($self) = @_;
-    my $job    = $self->app->schema->resultset("Jobs")->find($self->stash('jobid'));
-    my $res    = $job->set_prio($self->param('prio'));
+    my $job = find_job($self, $self->stash('jobid')) or return;
+    my $res = $job->set_prio($self->param('prio'));
 
     # See comment in set_command
     $self->render(json => {result => \$res});
@@ -215,12 +211,12 @@ sub prio {
 # replaced in favor of done
 sub result {
     my ($self) = @_;
-    my $jobid  = int($self->stash('jobid'));
+    my $job    = find_job($self, $self->stash('jobid')) or return;
     my $result = $self->param('result');
     my $ipc    = OpenQA::IPC->ipc;
 
-    my $res = $self->app->schema->resultset("Jobs")->find($jobid)->update({result => $result});
-    $self->emit_event('openqa_job_update_result', {id => $jobid, result => $result}) if ($res);
+    my $res = $job->update({result => $result});
+    $self->emit_event('openqa_job_update_result', {id => $job->id, result => $result}) if ($res);
     # See comment in set_command
     $self->render(json => {result => \$res});
 }
@@ -228,7 +224,6 @@ sub result {
 # this is the general worker update call
 sub update_status {
     my ($self) = @_;
-    my $jobid = int($self->stash('jobid'));
 
     if (!$self->req->json) {
         $self->render(json => {error => 'No status information provided'}, status => 400);
@@ -236,10 +231,9 @@ sub update_status {
     }
     my $status = $self->req->json->{status};
 
-    my $job = $self->app->schema->resultset("Jobs")->find($jobid);
+    my $job = find_job($self, $self->stash('jobid'));
     if (!$job) {
-        OpenQA::Utils::log_info('Got status update for non-existing job: ' . $jobid);
-        $self->render(json => {error => 'Job does not exist'}, status => 404);
+        OpenQA::Utils::log_info('Got status update for non-existing job: ' . $self->stash('jobid'));
         return;
     }
 
@@ -305,10 +299,9 @@ sub create_artefact {
     my ($self) = @_;
 
     my $jobid = int($self->stash('jobid'));
-    my $job   = $self->app->schema->resultset("Jobs")->find($jobid);
+    my $job = find_job($self, $jobid);
     if (!$job) {
         OpenQA::Utils::log_info('Got artefact for non-existing job: ' . $jobid);
-        $self->render(json => {error => 'Job does not exist'}, status => 404);
         return;
     }
     if (!$job->worker) {
@@ -356,16 +349,11 @@ sub ack_temporary {
 sub done {
     my ($self) = @_;
 
-    my $jobid  = int($self->stash('jobid'));
+    my $job = find_job($self, $self->stash('jobid')) or return;
     my $result = $self->param('result');
     my $newbuild;
     $newbuild = 1 if defined $self->param('newbuild');
 
-    my $job = $self->db->resultset('Jobs')->find($jobid);
-    if (!$job) {
-        $self->reply->not_found;
-        return;
-    }
     my $res;
     if ($newbuild) {
         $res = $job->done(result => $result, newbuild => $newbuild);
@@ -375,7 +363,7 @@ sub done {
     }
 
     # use $res as a result, it is recomputed result by scheduler
-    $self->emit_event('openqa_job_done', {id => $jobid, result => $res, newbuild => $newbuild});
+    $self->emit_event('openqa_job_done', {id => $job->id, result => $res, newbuild => $newbuild});
 
     # notify workers if job has any chained children
     my $children = $job->deps_hash->{children};
@@ -418,7 +406,8 @@ sub cancel {
     my $ipc = OpenQA::IPC->ipc;
     my $res;
     if ($jobid) {
-        $self->db->resultset('Jobs')->find($jobid)->cancel;
+        my $job = find_job($self, $self->stash('jobid')) or return;
+        $job->cancel;
         $self->emit_event('openqa_job_cancel', {id => int($jobid)});
     }
     else {
@@ -434,11 +423,7 @@ sub duplicate {
     my ($self) = @_;
 
     my $jobid = int($self->param('jobid'));
-    my $job   = $self->db->resultset('Jobs')->find($jobid);
-    if (!$job) {
-        $self->reply->not_found;
-        return;
-    }
+    my $job = find_job($self, $self->stash('jobid')) or return;
     my $args;
     if (defined $self->param('prio')) {
         $args->{prio} = int($self->param('prio'));
