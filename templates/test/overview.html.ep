@@ -94,7 +94,7 @@
                 % for my $config (@$configs) {
                     % next unless $results->{$config}{$type};
                     <tr>
-                        <td class="name"><%= trim_text($config, 30) %></td>
+                        <td class="name"><%= trim_text($config, $name_limit) %></td>
                         % for my $arch (@{$archs->{$type}}) {
                             % my $res = $results->{$config}{$type}{$arch};
                             % my $jobid = $res->{jobid};

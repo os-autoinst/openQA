@@ -120,7 +120,9 @@ like($summary, qr/Summary of opensuse Factory build 87.5011/);
 like($summary, qr/Passed: 0 Incomplete: 1 Failed: 0/);
 
 # Advanced query parameters can be forwarded
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', result => 'passed'})
+$get
+  = $t->get_ok(
+    '/tests/overview' => form => {distri => 'opensuse', version => '13.1', result => 'passed', name_limit => 8})
   ->status_is(200);
 $summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
@@ -132,6 +134,8 @@ $get->element_exists_not('#res_DVD_x86_64_kde .state_running');
 $get->element_exists_not('#res_GNOME-Live_i686_RAID0 .state_cancelled');
 $get->element_exists_not('.result_failed');
 $get->element_exists_not('.state_cancelled');
+is($t->tx->res->dom->at('#res_DVD_i586_textmode')->preceding->[0]->all_text,
+    'text ...', 'test name is shortened with name limit');
 
 # This time show only failed
 $get
