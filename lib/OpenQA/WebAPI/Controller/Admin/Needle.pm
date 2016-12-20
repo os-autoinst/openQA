@@ -66,6 +66,7 @@ sub ajax {
         my $column_index = $self->param("order[$index][column]") // @columns;
         my $column_order = $self->param("order[$index][dir]");
         last unless $column_index < @columns && grep { $column_order eq $_ } qw(asc desc);
+        push(@order_by_params, {'-' . $column_order => $columns[$column_index]});
         ++$index;
     }
     push(@order_by_params, {-asc => 'filename'}) unless @order_by_params;
