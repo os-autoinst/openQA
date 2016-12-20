@@ -90,7 +90,6 @@ sub startup {
 
     # take care of DB deployment or migration before starting the main app
     my $schema = OpenQA::Schema::connect_db;
-    OpenQA::Schema::deployment_check($schema);
 
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 

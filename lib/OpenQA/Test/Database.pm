@@ -24,7 +24,7 @@ sub create {
     );
 
     # New db
-    my $schema = OpenQA::Schema::connect_db('test');
+    my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
     OpenQA::Schema::deployment_check($schema);
     $self->insert_fixtures($schema) unless $options{skip_fixtures};
 
