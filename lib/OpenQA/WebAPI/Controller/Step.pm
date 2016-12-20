@@ -455,7 +455,7 @@ sub save_needle_ajax {
         return $self->render(json => {error => "Error creating/updating needle: $error"});
     }
 
-    my $job          = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
+    my $job          = find_job($self, $self->param('testid')) or return;
     my $distribution = $job->DISTRI;
     my $dversion     = $job->VERSION || '';
     my $json         = $validation->param('json');
@@ -533,7 +533,10 @@ sub save_needle_ajax {
         }
         $self->emit_event('openqa_needle_modify',
             {needle => "$baseneedle.png", tags => $json_data->{tags}, update => 0});
-        my $info = {info => "Needle $needlename created/updated."};
+        my $info = {info => "Needle $needlename created/updated"};
+        if ($job->worker_id && $job->worker->get_property('INTERACTIVE')) {
+            $info->{interactive_job} = $job->id;
+        }
         if ($job->can_be_duplicated) {
             $info->{restart} = $self->url_for('apiv1_restart', jobid => $job->id);
         }

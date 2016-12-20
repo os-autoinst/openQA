@@ -313,16 +313,17 @@ function setMatch() {
 }
 
 function reactToSaveNeedle(data) {
-  if (data.status != 200) {
-    alert("Fatal error on saving needle");
-    $('#save').prop('disabled', false);
-    return;
+  if (data.status != 200 && (!data.responseJSON || !data.responseJSON.error)) {
+    data = {error: "Fatal error on saving needle"};
+  } else {
+    data = data.responseJSON;
   }
-  data = data.responseJSON;
   if (data.info) {
     var info = data.info;
-    if (data.restart) {
-      info += " (<a href='#' data-url='" + data.restart + "' class='restart-link'>restart job</a>)";
+    if (data.interactive_job) {
+      info += " - <a href='/tests/" + data.interactive_job + "#live'>back to live view</a>";
+    } else if (data.restart) {
+      info += " - <a href='#' data-url='" + data.restart + "' class='restart-link'>restart job</a>";
     }
     addFlash('info', info);
     $('#save').prop('disabled', false);
