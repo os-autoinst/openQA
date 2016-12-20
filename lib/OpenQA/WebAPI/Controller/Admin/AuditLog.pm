@@ -66,7 +66,7 @@ sub productlog {
     $self->render('admin/audit_log/productlog');
 }
 
-sub _addSingleQuery {
+sub _add_single_query {
     my ($query, $key, $search) = @_;
     if (grep { $key eq $_ } qw(event owner.nickname connection_id id event_data)) {
         push @{$query->{$key}}, ($key => {-like => '%' . $search . '%'});
@@ -94,7 +94,7 @@ sub _addSingleQuery {
     }
 }
 
-sub _getSearchQuery {
+sub _get_search_query {
     my ($search) = @_;
 
     my $query = {};
@@ -116,7 +116,7 @@ sub _getSearchQuery {
         }
         else {
             # we are starting new search group, push the current to the query
-            _addSingleQuery($query, $current_key, $current_search) if $current_search;
+            _add_single_query($query, $current_key, $current_search) if $current_search;
 
             my ($key, $search) = split(/:/, $s);
             # new search column found, assign key as current key and reset search to new search
@@ -125,7 +125,7 @@ sub _getSearchQuery {
         }
     }
     # add the last single query if anything is entered
-    _addSingleQuery($query, $current_key, $current_search) if $current_search;
+    _add_single_query($query, $current_key, $current_search) if $current_search;
 
     # add proper -and => -or structure to constructed query
     my $res;
@@ -135,39 +135,39 @@ sub _getSearchQuery {
     return $res;
 }
 
-sub _getOrdering {
-    my ($order_col, $order) = @_;
-    my %column_translation = (
-        event_time => 'me.t_created',
-        connection => 'connection_id',
-        user       => 'owner.nickname',
-        event_data => 'event_data',
-        event      => 'event'
-    );
-
-    return {"-$order" => $column_translation{$order_col}};
-}
-
 sub ajax {
     my ($self) = @_;
 
-    my $startRow = $self->param('start')         // 1;
-    my $rows     = $self->param('length')        // 20;
-    my $page     = int($startRow / $rows) + 1;
-    my $search   = $self->param('search[value]') // '';
+    my $search = $self->param('search[value]') // '';
     my $echo = int($self->param('_') // 0);
-    my $order_by = $self->param('order[0][column]') // 0;
-    my $order_cl = $self->param("columns[$order_by][data]");
-    my $order    = $self->param('order[0][dir]') // 'desc';
 
-    my $query = _getSearchQuery($search);
-    $order = _getOrdering($order_cl, $order);
+    my $query  = _get_search_query($search);
+    my $params = {};
+
+    # parameter for order
+    my @columns = qw(me.t_created connection_id owner.nickname event_data event);
+    my @order_by_params;
+    my $index = 0;
+    while (1) {
+        my $column_index = $self->param("order[$index][column]") // @columns;
+        my $column_order = $self->param("order[$index][dir]");
+        last unless $column_index < @columns && grep { $column_order eq $_ } qw(asc desc);
+        push(@order_by_params, {'-' . $column_order => $columns[$column_index]});
+        ++$index;
+    }
+    $params->{order_by} = \@order_by_params if @order_by_params;
+
+    # parameter for paging
+    my $first_row = $self->param('start');
+    $params->{offset} = $first_row if $first_row;
+    my $row_limit = $self->param('length');
+    $params->{rows} = $row_limit if $row_limit;
 
     my $events_rs = $self->db->resultset('AuditEvents')->search(undef, {prefetch => 'owner', cache => 1});
     my $fullSize = $events_rs->count;
     $events_rs = $events_rs->search($query);
     my $filteredSize = $events_rs->count;
-    $events_rs = $events_rs->search(undef, {order_by => $order, rows => $rows, page => $page});
+    $events_rs = $events_rs->search(undef, $params);
     my @events;
     while (my $event = $events_rs->next) {
         my $data = {
