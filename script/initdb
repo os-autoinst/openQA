@@ -55,7 +55,9 @@ if ($help) {
     print "                    Don't forget to increase the version before using this\n";
     print "                    and note those files should be commited to the source repo.\n";
     print "  --init_database : Use the generated deployment files created with --prepare_init\n";
-    print "                    to actually initialize a database.\n";
+    print "                    to actually initialize a database (or upgrade an outdated one).\n";
+    print "                    Exit code 4 indicates database already exists and is updated and\n";
+    print "                    --force was not used.\n";
     print "  --force         : Force overwriting existing data.\n";
     print "  --user=login    : Change uid before connecting the DB.\n";
     print "  --help          : This help message.\n";
@@ -129,7 +131,23 @@ if ($prepare_init) {
 }
 if ($init_database) {
     # Create the schema
-    OpenQA::Schema::deployment_check($schema, $force);
+    my $ret = OpenQA::Schema::deployment_check($schema, $force);
+    if ($ret == 0) {
+        print "Database already exists and schema is up to date.\n";
+        exit 4;
+    }
+    elsif ($ret == 2) {
+        print "Database initialized.\n";
+        exit 0;
+    }
+    elsif ($ret == 1) {
+        print "Database already exists, but schema was upgraded.\n";
+        exit 0;
+    }
+    else {
+        print "Unexpected result from deployment_check!\n";
+        exit 1;
+    }
 }
 
 # vim: set sw=4 sts=4 et:
