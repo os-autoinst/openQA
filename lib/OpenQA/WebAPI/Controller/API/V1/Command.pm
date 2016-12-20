@@ -30,14 +30,9 @@ sub create {
         $self->reply->not_found;
     }
 
-    my $res = $worker->send_command(command => $command);
-
-    if ($res && $res > 1) {
-        $self->reply(status => 200);
-    }
-    else {
-        $self->reply(json => {error => 'Worker not found by WebSockets server'}, status => 404);
-    }
+    # command is sent async, hence no error handling
+    $worker->send_command(command => $command);
+    $self->render(json => {ok => 1}, status => 200);
 }
 
 1;
