@@ -1,49 +1,72 @@
 #!/usr/bin/bash
-set -x 
-#set -e
+# Copyright (C) 2016 SUSE LLC
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 asciidoctor_bin=$(which asciidoctor)
 shortref=$(git rev-parse --short HEAD)
 verbose_doc_name=$(date +%Y%m%d)"_"${shortref} #we are not intending to run this off a git repository
 tmpwd=$(mktemp -d -t openqa-doc-XXXX)
-publish=${0:-1}
+REPO=$(git config remote.origin.url)
+SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
+TARGET_BRANCH="gh-pages"
+green="\e[23m\e[1m"
+: ${GH_PUBLISH:=0}
 
-if [ ! -e ${asciidoctor_bin} ]; then
+if [ ! -f ${asciidoctor_bin} ]; then
         echo "Could not find asciidoctor binary in your path, please install it and run this command again"
         exit 1;
 fi
 
-# HEAD must be clean
-git reset HEAD --hard
-
 cd docs
-mkdir ${tmpwd}/output 2>/dev/null || true #we don't care if the directory already exists
+mkdir ${tmpwd}/output 2>/dev/null || true # we don't care if the directory already exists
 cp -r images ${tmpwd}/output
 
 ${asciidoctor_bin} -r asciidoctor-pdf -b pdf -o ${tmpwd}/output/openqa-documentation-${verbose_doc_name}.pdf index.asciidoc -d book
 ${asciidoctor_bin} -o ${tmpwd}/output/openqa-documentation-${verbose_doc_name}.html index.asciidoc -d book
 
-echo "The output has been generated at ${tmpwd}/output"
+echo -e  "${green}The output has been generated at ${tmpwd}/output"bold
 
-if [ $publish ]; then
-	cd ..
+if [ ${GH_PUBLISH} && ${CONTINUOUS_INTEGRATION} ]; then
 
-	git checkout -b gh-pages origin/gh-pages || git checkout gh-pages
-	mkdir docs
-	cp -r ${tmpwd}/output/* docs
-	(
-		echo $(pwd)
-		cd docs
-		ls
-		ln -f openqa-documentation-${verbose_doc_name}.html index.html
-		ln -f openqa-documentation-${verbose_doc_name}.pdf current.pdf
-	)
-	rm -rf ${tmpwd}
+        if [ ${TRAVIS_PULL_REQUEST} ]; then
+                echo "No documentation will be published for pull requests"
+                exit 0;
+        fi
 
-	git add docs
-	git commit -m "Update documentation to ${shortref}"
-	cat ~/.git/config
-	git push
-	git checkout doc/generator_script
-	git reset HEAD --hard
+        if [ "${TRAVIS_BRANCH}" == "master" ]; then
+                echo "Branch is master"
+        else
+                echo "Branch is: ${TRAVIS_BRANCH}"
+        fi
+
+        cd ..
+        git clone $REPO out
+        cd out
+        git checkout $TARGET_BRANCH
+        git config user.name "Travis CI"
+        git config user.email "$COMMIT_AUTHOR_EMAIL"
+        mkdir docs
+        cp -r ${tmpwd}/output/* docs
+        cd docs
+        ln -f openqa-documentation-${verbose_doc_name}.html index.html
+        ln -f openqa-documentation-${verbose_doc_name}.pdf current.pdf
+        cd ..
+        git add docs
+        (cd .. && git log --pretty=fuller ${TRAVIS_COMMIT} -1 > out/last.commit)
+        git commit -F last.commit
+        git push $SSH_REPO $TARGET_BRANCH
+        rm -rf out
 fi;
-
