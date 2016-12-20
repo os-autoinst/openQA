@@ -4,6 +4,8 @@ perl:
 rvm:
   - 2.3
 before_install:
+  - openssl aes-256-cbc -K $encrypted_9e13c584f905_key -iv $encrypted_9e13c584f905_iv -in .openqa-travis.enc -out .openqa-travis -d
+  - chmod 600 .openqa-travis
   - echo "deb http://us.archive.ubuntu.com/ubuntu trusty main" | sudo tee /etc/apt/sources.list.d/trusty.list
   - sudo apt-get update
 install:
