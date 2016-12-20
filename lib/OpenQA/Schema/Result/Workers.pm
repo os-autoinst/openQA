@@ -171,7 +171,7 @@ sub send_command {
     my ($self, %args) = @_;
     return if (!defined $args{command});
 
-    if (!grep { /^$args{command}$/ } COMMANDS) {
+    if (!grep { $args{command} eq $_ } COMMANDS) {
         my $msg = 'Trying to issue unknown command "%s" for worker "%s:%n"';
         log_error(sprintf($msg, $args{command}, $self->host, $self->instance));
         return;
@@ -181,12 +181,10 @@ sub send_command {
     if (defined $OpenQA::Utils::app) {
         $OpenQA::Utils::app->emit_event('openqa_command_enqueue', {workerid => $self->id, command => $args{command}});
     }
-    my $res;
     try {
-        my $ipc = OpenQA::IPC->ipc;
-        $res = $ipc->websockets('ws_send', $self->id, $args{command}, $args{job_id});
+        OpenQA::IPC->ipc->websockets('ws_send', $self->id, $args{command}, $args{job_id});
     };
-    return $res;
+    return 1;
 }
 
 sub to_string {

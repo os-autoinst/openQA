@@ -254,7 +254,6 @@ sub job_grab {
     my $job_hashref = {};
     $job_hashref = $job->to_hash(assets => 1);
 
-    $worker->set_property('INTERACTIVE_REQUESTED',        0);
     $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', 0);
 
     # JOBTOKEN for test access to API

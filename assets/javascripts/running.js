@@ -6,7 +6,6 @@ var testStatus = {
     workerid: null,
     interactive: null,
     needinput: null,
-    interactive_requested: null,
     stop_waitforneedle_requested: null,
     status_url: null,
     details_url: null,
@@ -16,18 +15,10 @@ var testStatus = {
 // Update global variable testStatus
 function updateTestStatus(newStatus) {
     testStatus.workerid = newStatus.workerid;
-    if (testStatus.interactive != newStatus.interactive
-        || testStatus.interactive_requested != newStatus.interactive_requested) {
-        testStatus.interactive = newStatus.interactive;
-        testStatus.interactive_requested = newStatus.interactive_requested;
-        updateInteractiveIndicator();
-    }
-    if (testStatus.needinput != newStatus.needinput
-        || testStatus.stop_waitforneedle_requested != newStatus.stop_waitforneedle_requested) {
-        testStatus.needinput = newStatus.needinput;
-        testStatus.stop_waitforneedle_requested = newStatus.stop_waitforneedle_requested;
-        updateNeedinputIndicator();
-    }
+    testStatus.interactive = newStatus.interactive == true;
+    testStatus.needinput = newStatus.needinput == true;
+    testStatus.stop_waitforneedle_requested = newStatus.stop_waitforneedle_requested == true;
+    updateInteractiveIndicator();
     if (newStatus.state != 'running' && newStatus.state != 'waiting') {
           setTimeout(function() {location.reload();}, 2000);
           return;
@@ -101,64 +92,29 @@ function updateTestStatus(newStatus) {
 
 function updateInteractiveIndicator() {
     var indicator = $("#interactive_indicator");
-    //console.log("i r "+testStatus.interactive+" "+testStatus.interactive_requested);
     if (testStatus.interactive == null) {
         indicator.html("Unknown");
         $("#interactive_spinner").hide();
-        $("#interactive0_button").hide();
-        $("#interactive1_button").hide();
+        $("#interactive_enabled_button").hide();
+        $("#interactive_disabled_button").hide();
     }
     else if (testStatus.interactive == 1) {
         indicator.text("Yes");
-        if (testStatus.interactive_requested == 0) {
-            $("#interactive_spinner").show();
-            $("#interactive0_button").hide();
-            $("#interactive1_button").hide();
-        }
-        else {
-            $("#interactive_spinner").hide();
-            $("#interactive0_button").hide();
-            $("#interactive1_button").show();
-            if (!testStatus.needinput && !testStatus.stop_waitforneedle_requested) {
-                //  $("#stop_button").show();
-            }
-        }
+        $("#interactive_enabled_button").hide();
+        $("#interactive_disabled_button").show();
     }
     else {
         indicator.text("No");
-        if (testStatus.interactive_requested == 1) {
-            $("#interactive_spinner").show();
-            $("#interactive0_button").hide();
-            $("#interactive1_button").hide();
-        }
-        else {
-            $("#interactive_spinner").hide();
-            $("#interactive0_button").show();
-            $("#interactive1_button").hide();
-            // $("#stop_button").hide();
-        }
+        $("#interactive_enabled_button").show();
+        $("#interactive_disabled_button").hide();
     }
-    //indicator.highlight();
     updateNeedinputIndicator();
 }
 
 function updateNeedinputIndicator() {
     console.log("n r "+testStatus.needinput+" "+testStatus.stop_waitforneedle_requested);
     var indicator = $("#needinput_indicator");
-    if (testStatus.interactive != 1 || testStatus.needinput == null) {
-        indicator.text("N/A");
-        $("#crop_button").hide();
-        $("#continue_button").hide();
-        $("#retry_button").hide();
-        $("#stop_button").hide();
-        if (testStatus.needinput == null) {
-            $("#stop_waitforneedle_spinner").show();
-        }
-        else {
-            $("#stop_waitforneedle_spinner").hide();
-        }
-    }
-    else if (testStatus.needinput == 1) {
+    if (testStatus.needinput) {
         indicator.text("Yes");
         $("#stop_waitforneedle_spinner").hide();
         $("#crop_button").show();
@@ -180,7 +136,7 @@ function updateNeedinputIndicator() {
             $("#crop_button").hide();
             $("#continue_button").hide();
             $("#retry_button").hide();
-            if (testStatus.interactive && testStatus.interactive == testStatus.interactive_requested) {
+            if (testStatus.interactive) {
                 $("#stop_button").show();
             }
             else {
@@ -306,8 +262,8 @@ function setupRunning(jobid, status_url, details_url) {
   initLivestream();
   initStatus(jobid, status_url, details_url);
   
-  $('#interactive0_button').click(enableInteractive);
-  $('#interactive1_button').click(disableInteractive);
+  $('#interactive_enabled_button').click(enableInteractive);
+  $('#interactive_disabled_button').click(disableInteractive);
   
   $('#continue_button').click(function(e) {
     e.preventDefault();
