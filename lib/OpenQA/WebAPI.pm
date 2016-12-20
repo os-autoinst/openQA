@@ -231,6 +231,9 @@ sub startup {
     # Default route
     $r->get('/')->name('index')->to('main#index');
 
+    # shorter version of route to individual job results
+    $r->get('/t:testid' => sub { shift->redirect_to('test') });
+
     # Redirection for old links to openQAv1
     $r->get(
         '/results' => sub {

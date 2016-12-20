@@ -358,4 +358,6 @@ subtest 'job is not marked as linked if accessed from unrecognized referal' => s
     is($linked, 0, 'job not linked after accessed from unknown referer');
 };
 
+$t->get_ok('/t99946')->status_is(302)->header_like(Location => qr{tests/99946});
+
 done_testing();
