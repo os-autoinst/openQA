@@ -185,9 +185,9 @@ Variables are accessible via the *get_var* and *check_var* functions.
 
 === Modifying setting of an existing test
 
-There is no interface to modify existing tests but the clone script
+There is no interface to modify existing tests but the clone_job.pl script
 can be used to create a new job that adds, removes or changes
-settings:
+settings. This script is located at +/usr/share/openqa/script/+.
 
 [source,sh]
 --------------------------------------------------------------------------------
@@ -201,7 +201,7 @@ name, e.g.:
 
 [source,sh]
 -------------
-/usr/share/openqa/script/clone_job.pl --from localhost 42 _GROUP="openSUSE Tumbleweed"
+clone_job.pl --from localhost 42 _GROUP="openSUSE Tumbleweed"
 -------------
 
 The special group value +0+ means that the group connection will be separated
@@ -209,7 +209,7 @@ and the job will not appear as a job in any job group, e.g.:
 
 [source,sh]
 -------------
-/usr/share/openqa/script/clone_job.pl --from localhost 42 _GROUP=0
+clone_job.pl --from localhost 42 _GROUP=0
 -------------
 
 === Using snapshots to speed up development of tests
@@ -235,43 +235,47 @@ Depending on the use case, there are two options to help:
 In both modes there is no need to modify tests (i.e. adding +milestone+ test flag, it is implied).
 In later mode, every test module is also considered +fatal+. This means the job is aborted after first failed test module.
 
-[caption="Example: "]
-.Steps to enable snapshots for each test module (former mode):
-----
-1. run the worker with --no-cleanup parameter. This will preserve the hard
-disks after test runs.
+==== Enable snapshots for each module
 
-2. set +MAKETESTSNAPSHOTS=1+ on a job. This will make openQA save a
+* Run the worker with --no-cleanup parameter. This will preserve the hard
+ disks after test runs.
+
+* Set +MAKETESTSNAPSHOTS=1+ on a job. This will make openQA save a
 snapshot for every test module run. One way to do that is by cloning an
 existing job and adding the setting:
 
-$ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 MAKETESTSNAPSHOTS=1
-
-3. create a job again, this time setting the +SKIPTO+ variable to the snapshot
-you need. Again, clone_job.pl comes handy here:
-
-$ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 SKIPTO=consoletest-yast2_i
-
-Use qemu-img snapshot -l something.img to find out what snapshots
-are in the image. Snapshots are named `"test module category"-"test module name"` (e.g. `installation-start_install`)
+[source,sh]
+----
+clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 MAKETESTSNAPSHOTS=1
 ----
 
-[caption="Example: "]
-.Steps to enable storing only last successful snapshot (latter mode):
+* Create a job again, this time setting the +SKIPTO+ variable to the snapshot you need. Again, +clone_job.pl+ comes handy here:
+
+[source,sh]
 ----
-1. run the worker with --no-cleanup parameter. This will preserve the hard
-disks after test runs.
+clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 SKIPTO=consoletest-yast2_i
+----
 
-2. set +TESTDEBUG=1+ on a job. This will make openQA save a
-snapshot after each successful test module run. Snapshots are overwritten.
+* Use qemu-img snapshot -l something.img to find out what snapshots are in the image. Snapshots are named
+`"test module category"-"test module name"` (e.g. `installation-start_install`)
 
-$ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1
+==== Storing only the last sucessfull snapshot
 
-3. create a job again, this time setting the +SKIPTO+ variable to the snapshot
+* Run the worker with +--no-cleanup parameter+. This will preserve the hard disks after test runs.
+* Set +TESTDEBUG=1+ on a job. This will make openQA save a snapshot after each successful test module run. Snapshots are overwritten.
+
+[source,sh]
+----
+clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1
+----
+
+* Create a job again, this time setting the +SKIPTO+ variable to the snapshot
 which failed on previous run. If clone_job script is not used, +TESTDEBUG=1+
 variable must be also included:
 
-$ /usr/share/openqa/script/clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1 SKIPTO=consoletest-yast2_i
+[source,sh]
+----
+clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1 SKIPTO=consoletest-yast2_i
 ----
 
 === Assigning jobs to workers
