@@ -172,8 +172,13 @@ sub _message {
     }
     elsif ($json->{type} eq 'property_change') {
         my $prop = $json->{data};
+        if (defined $prop->{interactive_mode}) {
+            $worker->{db}->set_property('INTERACTIVE', $prop->{interactive_mode} ? 1 : 0);
+            # synchronize INTERACTIVE and STOP_WAITFORNEEDLE_REQUESTED properties
+            $prop->{waitforneedle} = 0 if !$prop->{interactive_mode};
+        }
         if (defined $prop->{waitforneedle}) {
-            $worker->set_property('STOP_WAITFORNEEDLE_REQUESTED', $prop->{waitforneedle} ? 1 : 0);
+            $worker->{db}->set_property('STOP_WAITFORNEEDLE_REQUESTED', $prop->{waitforneedle} ? 1 : 0);
         }
         else {
             log_error("Unknown property received from worker $worker->{id}");
