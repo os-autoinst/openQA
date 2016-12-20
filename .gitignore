@@ -26,3 +26,4 @@ t/data/openqa/factory/hdd/hdd_image.qcow2
 t/diagram-v*.png
 assets/cache/
 assets/assetpack.db
+.gitignore .openqa-travis

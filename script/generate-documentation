@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 set -x 
-set -e
+#set -e
 asciidoctor_bin=$(which asciidoctor)
 shortref=$(git rev-parse --short HEAD)
 verbose_doc_name=$(date +%Y%m%d)"_"${shortref} #we are not intending to run this off a git repository
@@ -41,7 +41,8 @@ if [ $publish ]; then
 
 	git add docs
 	git commit -m "Update documentation to ${shortref}"
-	git push -f foursixnine
+	cat ~/.git/config
+	git push
 	git checkout doc/generator_script
 	git reset HEAD --hard
 fi;
