@@ -61,8 +61,9 @@ sub reconnect {
 
     return if $self->{reconnecting};
     $self->{reconnecting} = 1;
+    OpenQA::Utils::log_info("AMQP reconnecting in $self->{config}->{amqp}{reconnect_timeout} seconds");
     Mojo::IOLoop->timer(
-        $self->{config}->{reconnect_timeout} => sub {
+        $self->{config}->{amqp}{reconnect_timeout} => sub {
             $self->{reconnecting} = 0;
             $self->connect();
         });
@@ -77,6 +78,7 @@ sub connect {
       ->catch(sub { OpenQA::Utils::log_warning("Failed to connect to AMQP server: " . $self->{config}->{amqp}{url}); });
     $self->{client}->on(
         open => sub {
+            OpenQA::Utils::log_info("AMQP connection established");
             my ($client) = @_;
 
             $self->{channel} = Mojo::RabbitMQ::Client::Channel->new();
