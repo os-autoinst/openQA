@@ -237,13 +237,14 @@ sub register {
         #   help_popover 'Help for me' => 'This is me'
         #   help_popover 'Help for button' => 'Do not press this button!', 'http://nuke.me' => 'Nuke'
         help_popover => sub {
-            my ($c, $title, $content, $details_url, $details_text) = @_;
+            my ($c, $title, $content, $details_url, $details_text, $placement) = @_;
             my $class = 'help_popover fa fa-question-circle';
             if ($details_url) {
                 $content
                   .= '<p>See ' . $c->link_to($details_text ? $details_text : here => $details_url) . ' for details</p>';
             }
             my $data = {toggle => 'popover', trigger => 'focus', title => $title, content => $content};
+            $data->{placement} = $placement if $placement;
             return $c->t(a => (tabindex => 0, class => $class, role => 'button', (data => $data)));
         });
 
