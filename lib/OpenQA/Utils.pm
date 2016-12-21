@@ -37,6 +37,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &bugref_to_href
   &href_to_bugref
   &url_to_href
+  &render_escaped_refs
   &asset_type_from_setting
   &check_download_url
   &check_download_whitelist
@@ -61,6 +62,7 @@ use File::Basename;
 use File::Spec::Functions 'catfile';
 use Fcntl;
 use JSON "decode_json";
+use Mojo::Util 'xml_escape';
 our $basedir     = $ENV{OPENQA_BASEDIR} || "/var/lib";
 our $prj         = "openqa";
 our $prjdir      = "$basedir/$prj";
@@ -430,6 +432,11 @@ sub url_to_href {
     my ($text) = @_;
     $text =~ s(($RE{URI}))(<a href="$1">$1</a>)gx;
     return $text;
+}
+
+sub render_escaped_refs {
+    my ($text) = @_;
+    return bugref_to_href(url_to_href(xml_escape($text)));
 }
 
 sub check_download_url {
