@@ -83,7 +83,7 @@ is(scalar @entries, 2, 'two elements when filtered by event');
 $search->clear;
 t::ui::PhantomTest::wait_for_ajax;
 
-$search->send_keys('date:today');
+$search->send_keys('newer:today');
 t::ui::PhantomTest::wait_for_ajax;
 sleep 1;
 @entries = $driver->find_child_elements($table, 'tbody/tr');
@@ -91,7 +91,7 @@ is(scalar @entries, 3, 'three elements when filtered by today time');
 $search->clear;
 t::ui::PhantomTest::wait_for_ajax;
 
-$search->send_keys('date:yesterday');
+$search->send_keys('older:today');
 t::ui::PhantomTest::wait_for_ajax;
 sleep 1;
 @entries = $driver->find_child_elements($table, 'tbody/tr/td');

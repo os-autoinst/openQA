@@ -67,65 +67,69 @@ sub productlog {
 }
 
 sub _add_single_query {
-    my ($query, $key, $search) = @_;
-    if (grep { $key eq $_ } qw(event owner.nickname connection_id id event_data)) {
-        push @{$query->{$key}}, ($key => {-like => '%' . $search . '%'});
+    my ($query, $key, $search_terms) = @_;
+
+    return unless @$search_terms;
+    my $search = join(' ', @$search_terms);
+    @$search_terms = ();
+
+    my %key_mapping = (
+        owner      => 'owner.nickname',
+        user       => 'owner.nickname',
+        data       => 'event_data',
+        connection => 'connection_id',
+        event      => 'event',
+    );
+    if (my $actual_key = $key_mapping{$key}) {
+        push(@{$query->{$actual_key}}, ($actual_key => {-like => '%' . $search . '%'}));
     }
-    elsif ($key eq 'me.t_created') {
-        my $t = parsedate($search, PREFER_PAST => 1, DATE_REQUIRED => 1);
-        my $t_end;
-        if ($search =~ /week/) {
-            $t_end = ONE_WEEK;
+    elsif ($key eq 'older' || $key eq 'newer') {
+        if ($search eq 'today') {
+            $search = '1 day ago';
         }
-        elsif ($search =~ /month/) {
-            $t_end = ONE_MONTH;
-        }
-        elsif ($search =~ /year/) {
-            $t_end = ONE_YEAR;
+        elsif ($search eq 'yesterday') {
+            $search = '2 days ago';
         }
         else {
-            $t_end = ONE_DAY;
+            $search = '1 ' . $search unless $search =~ /^[\s\d]/;
+            $search .= ' ago' unless $search =~ /\sago\s*$/;
         }
-
-        if ($t) {
-            $t = localtime($t);
-            push @{$query->{$key}}, (-and => [$key => {'>=' => $t->ymd()}, $key => {'<' => ($t + $t_end)->ymd()}]);
+        if (my $time = parsedate($search, PREFER_PAST => 1, DATE_REQUIRED => 1)) {
+            my $time_conditions = ($query->{'me.t_created'} //= {-and => []});
+            push(
+                @{$time_conditions->{-and}},
+                {
+                    'me.t_created' => {
+                        ($key eq 'newer' ? '>=' : '<') => localtime($time)->ymd()}});
         }
     }
 }
 
 sub _get_search_query {
-    my ($search) = @_;
-
-    my $query = {};
-    # rename some frequent queries to respective column names
-    $search =~ s/owner:/owner.nickname:/g;
-    $search =~ s/user:/owner.nickname:/g;
-    $search =~ s/date:/me.t_created:/g;
-    $search =~ s/data:/event_data:/g;
-    $search =~ s/connection:/connection_id:/g;
+    my ($raw_search) = @_;
 
     # construct query only from allowed columns
-    my @subsearch      = split(/ /, $search);
-    my $current_key    = 'event_data';
-    my $current_search = '';
+    my $query       = {};
+    my @subsearch   = split(/ /, $raw_search);
+    my $current_key = 'event_data';
+    my @current_search;
     for my $s (@subsearch) {
         if (CORE::index($s, ':') == -1) {
             # bareword - add to current_search
-            $current_search .= ' ' . $s;
+            push(@current_search, $s);
         }
         else {
-            # we are starting new search group, push the current to the query
-            _add_single_query($query, $current_key, $current_search) if $current_search;
+            # we are starting new search group, push the current to the query and reset it
+            _add_single_query($query, $current_key, \@current_search);
 
-            my ($key, $search) = split(/:/, $s);
-            # new search column found, assign key as current key and reset search to new search
-            $current_key    = $key;
-            $current_search = $search;
+            my ($key, $search_term) = split(/:/, $s);
+            # new search column found, assign key as current key
+            $current_key = $key;
+            push(@current_search, $search_term);
         }
     }
     # add the last single query if anything is entered
-    _add_single_query($query, $current_key, $current_search) if $current_search;
+    _add_single_query($query, $current_key, \@current_search);
 
     # add proper -and => -or structure to constructed query
     my $res;
