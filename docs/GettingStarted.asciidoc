@@ -152,7 +152,7 @@ virtual machine or one of the existing needles. Once the needles are adjusted,
 the user can command the job to reload the list of needles and continue with the
 execution.
 
-* *enable interactive mode* Get into waiting for input automatically(ie. waitforneedle)
+* *enable interactive mode* Get into waiting for input automatically (ie. waitforneedle)
   in case it can not find the matched needle and timeout.
 * *stop waiting for needle* Stop the waitforneedle call immediately without timeout.
 * *continue waiting for needle* Continue testing but will get into waitforneedle
