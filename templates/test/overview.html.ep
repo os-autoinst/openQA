@@ -91,8 +91,8 @@
                 </tr>
             </thead>
             <tbody>
-                % for my $config (@$configs) {
-                    % next unless $results->{$config}{$type};
+                % for my $config (sort keys %$results) {
+                    % next unless $results->{$config}{flavors}{$type};
                     <tr>
                         <td class="name"><%= trim_text($config, 30) %></td>
                         % for my $arch (@{$archs->{$type}}) {
