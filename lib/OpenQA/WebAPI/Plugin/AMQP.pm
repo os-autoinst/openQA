@@ -72,7 +72,7 @@ sub reconnect {
 sub connect {
     my $self = shift;
 
-    OpenQA::Utils::log_debug("Connecting to AMQP server");
+    OpenQA::Utils::log_info("Connecting to AMQP server");
     $self->{client} = Mojo::RabbitMQ::Client->new(url => $self->{config}->{amqp}{url});
     $self->{client}
       ->catch(sub { OpenQA::Utils::log_warning("Failed to connect to AMQP server: " . $self->{config}->{amqp}{url}); });
@@ -103,7 +103,8 @@ sub connect {
         });
     $self->{client}->on(
         error => sub {
-            OpenQA::Utils::log_warning("AMQP connection error");
+            my ($client, $error) = @_;
+            OpenQA::Utils::log_warning("AMQP connection error: $error");
             $self->reconnect();
         });
     $self->{client}->on(
