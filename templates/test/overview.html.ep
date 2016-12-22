@@ -79,7 +79,6 @@
             </form>
         </div>
     </div>
-    % my $failedid;
     % for my $type (@$types) {
         <h3>Flavor: <%= $type %></h3>
         <table id="results_<%= $type %>" class="overview table table-striped table-hover">
