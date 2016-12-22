@@ -18,6 +18,43 @@
 
     %= include 'layouts/info'
 
+    <span id="audit_log_search_popover">
+        <%= help_popover('Search' => '
+            <p>Allows to filter the log.</p>
+            <p>
+                By default, the filter will only consider the <em>Event data</em> column.
+                The following key words can be used to filter the other columns:
+            </p>
+            <table class="table">
+                <tr>
+                    <td><code>older:yyyy/mm/dd</code></td>
+                    <td>events older than the specified date</td>
+                </tr>
+                <tr>
+                    <td><code>newer:yyyy/mm/dd</code></td>
+                    <td>events newer than the specified date</td>
+                </tr>
+                <tr>
+                    <td><code>user:string</code></td>
+                    <td><em>User</em> column</td>
+                </tr>
+                <tr>
+                    <td><code>event:string</code></td>
+                    <td><em>Event</em> column</td>
+                </tr>
+                <tr>
+                    <td><code>data:string</code></td>
+                    <td><em>Event data</em> column</td>
+                </tr>
+            </table>
+            <p>
+                <strong>Example</strong><br>
+                <code>user:Demo newer:15 days older:2016/12/14 event:job_restart</code>
+            </p>
+            ', undef, undef, 'left');
+        %>
+    </span>
+
     <table id="audit_log_table" class="table table-striped">
             <thead>
                 <tr>

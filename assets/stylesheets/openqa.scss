@@ -316,6 +316,16 @@ ul.modcategory {
     overflow-y: scroll;
 }
 
+#audit_log_search_popover {
+    float: right;
+    margin-top: -15px;
+    margin-right: -5px;
+
+    .popover {
+        min-width: 30em;
+    }
+}
+
 /* User info header */
 
 #user-info {
