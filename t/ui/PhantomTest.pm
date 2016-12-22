@@ -3,12 +3,13 @@ package t::ui::PhantomTest;
 use Mojo::IOLoop::Server;
 # Start command line interface for application
 require Mojolicious::Commands;
+require OpenQA::Test::Database;
 
 our $_driver;
 our $mojopid;
 our $phantompid;
 our $mojoport;
-
+our $startingpid = 0;
 
 =head2 start_app
 
@@ -29,10 +30,11 @@ The optional parameter C<$schema_hook> allows to provide a custom way of creatin
 
 =cut
 sub start_app {
-    my ($schema_hook) = @_;
+    my ($schema_hook, $mode) = @_;
     $mojoport = Mojo::IOLoop::Server->generate_port;
 
-    $mojopid = fork();
+    $startingpid = $$;
+    $mojopid     = fork();
     if ($mojopid == 0) {
         if ($schema_hook) {
             $schema_hook->();
@@ -42,7 +44,8 @@ sub start_app {
         }
         # TODO: start the server manually - and make it silent
         # Run openQa in test mode - it will mock Scheduler and Websockets DBus services
-        $ENV{MOJO_MODE} = 'test';
+        $ENV{MOJO_MODE} = $mode || 'test';
+        $ENV{MOJO_LISTEN} = "127.0.0.1:$mojoport";
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'daemon', '-l', "http://127.0.0.1:$mojoport/");
         exit(0);
     }
@@ -106,7 +109,7 @@ sub start_phantomjs {
         die $@;
     }
 
-    return $driver;
+    return $_driver = $driver;
 }
 
 sub make_screenshot($) {
@@ -129,7 +132,7 @@ sub call_phantom {
     }
 
     my $mojoport = start_app($schema_hook);
-    return $_driver = start_phantomjs($mojoport);
+    return start_phantomjs($mojoport);
 }
 
 sub wait_for_ajax {
@@ -143,6 +146,7 @@ sub wait_for_ajax {
 }
 
 sub kill_phantom() {
+    return unless $$ == $startingpid;
     if ($_driver) {
         $_driver->quit();
         $_driver = undef;

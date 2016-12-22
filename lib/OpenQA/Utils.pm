@@ -361,6 +361,7 @@ sub locate_asset {
     my $trans = catfile($type, $name);
     return _relative_or_absolute($trans, $args{relative}) if -e _relative_or_absolute($trans);
 
+    print "LA " . _relative_or_absolute($trans) . "\n";
     my $fixed = catfile($type, 'fixed', $name);
     return _relative_or_absolute($fixed, $args{relative}) if -e _relative_or_absolute($fixed);
 
