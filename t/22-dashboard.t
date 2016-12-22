@@ -225,31 +225,34 @@ $not_reviewed_job->delete();
 
 # auto badges when all passed or all either passed or softfailed
 sub check_auto_badge {
-    my ($all_passed_count, $all_passed_or_softfailed_count, $build) = @_;
+    my ($all_passed_count, $build) = @_;
     $build //= '0092';
     $t->element_count_is('#badge-all-passed-' . $test_parent->id . '-' . $build,
         $all_passed_count, "all passed review badge shown for build $build on parent level");
     $t->element_count_is('#child-badge-all-passed-' . $test_parent->id . '-' . $build,
         $all_passed_count, "all passed review badge shown for build $build on child-level");
-    $t->element_count_is(
-        '#badge-all-passed-or-softfailed-' . $test_parent->id . '-' . $build,
-        $all_passed_or_softfailed_count,
-        "all passed review badge shown for build $build on parent level"
-    );
-    $t->element_count_is(
-        '#child-badge-all-passed-or-softfailed-' . $test_parent->id . '-' . $build,
-        $all_passed_or_softfailed_count,
-        "all passed review badge shown for build $build on child-level"
-    );
 }
 # all passed
 $get = $t->get_ok('/?limit_builds=20')->status_is(200);
-check_auto_badge(1, 0);
-# all passed or softfailed
+check_auto_badge(1);
+# all passed or softfailed without failed modules
 $jobs->find({id => 99947})->update({result => OpenQA::Schema::Result::Jobs::SOFTFAILED});
 $get = $t->get_ok('/?limit_builds=20')->status_is(200);
-check_auto_badge(0, 1);
+check_auto_badge(1);
+# softfailed with failed modules
+my $failed_module = $t->app->db->resultset('JobModules')->create(
+    {
+        script   => 'tests/x11/failing_module.pm',
+        job_id   => 99947,
+        category => 'x11',
+        name     => 'failing_module',
+        result   => 'failed'
+    });
+$jobs->find({id => 99947})->update({result => OpenQA::Schema::Result::Jobs::SOFTFAILED});
+$get = $t->get_ok('/?limit_builds=20')->status_is(200);
+check_auto_badge(0);
 $jobs->find({id => 99947})->update({result => OpenQA::Schema::Result::Jobs::PASSED});
+$failed_module->delete;
 
 sub check_badge {
     my ($reviewed_count, $reviewed_also_softfailed_count, $msg, $build) = @_;
@@ -336,6 +339,21 @@ $softfail_with_failing_modules_issueref->delete;
 # softfailed without failing modules: not reviewed
 # softfailed with failing modules:    not reviewed
 check_badge(1, 0, 'regular badge when not softfailed reviewed');
+
+$opensuse_group->jobs->find({id => 99938})->delete;
+
+# failed:                             deleted
+# softfailed without failing modules: not reviewed
+# softfailed with failing modules:    not reviewed
+check_badge(1, 0, 'gray badge when no failures but still softfailed with failing modules to be reviewed');
+
+$softfail_with_failing_modules_issueref
+  = $opensuse_group->jobs->find({id => 99936})->comments->create({text => 'poo#4322', user_id => 99901});
+
+# failed:                             deleted
+# softfailed without failing modules: not reviewed
+# softfailed with failing modules:    reviewed
+check_badge(0, 1, 'regular badge when no failures and all softfailed with failing modules reviewed');
 
 # change DISTRI/VERSION of test in opensuse group to test whether links are still correct then
 $opensuse_group->jobs->update({VERSION => '14.2', DISTRI => 'suse'});
