@@ -111,7 +111,7 @@ sub _get_search_query {
     # construct query only from allowed columns
     my $query       = {};
     my @subsearch   = split(/ /, $raw_search);
-    my $current_key = 'event_data';
+    my $current_key = 'data';
     my @current_search;
     for my $s (@subsearch) {
         if (CORE::index($s, ':') == -1) {
