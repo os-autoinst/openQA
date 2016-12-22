@@ -52,6 +52,8 @@ if [ ${GH_PUBLISH} && ${CONTINUOUS_INTEGRATION} ]; then
                 echo "Branch is: ${TRAVIS_BRANCH}"
         fi
 
+        cpan --install Pod::AsciiDoctor
+
         cd ..
         git clone $REPO out
         cd out
