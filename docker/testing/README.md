@@ -33,4 +33,12 @@ better know how to squash commits later on.
 So my routine is this loop:
 
     edit source
-    git commit -a -m "[ci skip] commit" && git push && above docker command
+    git commit -a -m "[ci skip] commit" && git push && docker stop -t 1 ci ; docker rm ci ; docker run --rm --name=ci -t ci /test.sh https://github.com/coolo/openQA.git full_stack_test t/full-stack.t
+
+# To debug tests
+
+The docker container is a black box to the outside, but you can execute additional shells in it
+for debugging
+
+     docker exec -t -i ci /bin/bash
+

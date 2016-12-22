@@ -24,6 +24,7 @@ use POSIX qw(:sys_wait_h strftime uname);
 use JSON 'to_json';
 use Fcntl;
 use Errno;
+use Cwd 'abs_path';
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -35,7 +36,9 @@ our (@ISA, @EXPORT);
 
 sub set_engine_exec {
     my ($path) = @_;
-    $isotovideo = $path;
+    die "Path to isotovideo invalid: $path" unless -f $path;
+    # save the absolute path as we chdir later
+    $isotovideo = abs_path($path);
 }
 
 sub _kill($) {
@@ -145,7 +148,7 @@ sub engine_workit($) {
         }
         open STDOUT, ">>", "autoinst-log.txt";
         open STDERR, ">&STDOUT";
-        exec "$isotovideo", '-d';
+        exec "perl", "$isotovideo", '-d';
         die "exec failed: $!\n";
     }
     else {

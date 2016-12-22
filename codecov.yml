@@ -20,7 +20,7 @@ coverage:
         branches: null
     project:
       default:
-        target: 68
+        target: 67
         only_pulls: true
     patch:
       default:

@@ -18,9 +18,9 @@ run git config --global user.email "you@example.com"
 run git config --global user.name "Your Name"
 copy perlw /root/bin/perlw
 run cd os-autoinst && /root/bin/perlw "cpanm -n --installdeps --with-feature=coverage ."
-run cd os-autoinst && sh autogen.sh && ./configure && make
+run cd os-autoinst && /root/bin/perlw ./autogen.sh && /root/bin/perlw make
 run cd openQA && /root/bin/perlw "cpanm -nq --installdeps --with-feature=coverage ."
 # prefetch assets
 run cd openQA && /root/bin/perlw "perl t/06-users.t"
+run apt-get -y install dbus-x11 dbus strace vim
 copy test.sh /
-
