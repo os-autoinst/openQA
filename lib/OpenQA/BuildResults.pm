@@ -20,6 +20,21 @@ use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use Date::Format;
 
+sub init_job_figures {
+    my ($job_result) = @_;
+
+    $job_result->{passed}                            = 0;
+    $job_result->{failed}                            = 0;
+    $job_result->{unfinished}                        = 0;
+    $job_result->{labeled}                           = 0;
+    $job_result->{labeled_softfailed}                = 0;
+    $job_result->{softfailed}                        = 0;
+    $job_result->{softfailed_with_failed_modules}    = 0;
+    $job_result->{softfailed_without_failed_modules} = 0;
+    $job_result->{skipped}                           = 0;
+    $job_result->{total}                             = 0;
+}
+
 sub count_job {
     my ($job, $jr, $labels) = @_;
 
@@ -34,6 +49,9 @@ sub count_job {
             if (@{$job->failed_modules}) {
                 $jr->{softfailed_with_failed_modules}++;
                 $jr->{labeled_softfailed}++ if $labels->{$job->id};
+            }
+            else {
+                $jr->{softfailed_without_failed_modules}++;
             }
             return;
         }
@@ -67,10 +85,10 @@ sub count_job {
 sub add_review_badge {
     my ($build_res) = @_;
 
-    $build_res->{all_passed} = $build_res->{passed} == $build_res->{total};
-    $build_res->{all_passed_or_softfailed}
-      = $build_res->{passed} + $build_res->{softfailed} == $build_res->{total};
-    $build_res->{reviewed} = $build_res->{failed} > 0 && $build_res->{labeled} >= $build_res->{failed};
+    $build_res->{all_passed}
+      = $build_res->{passed} + $build_res->{softfailed_without_failed_modules} == $build_res->{total};
+    $build_res->{reviewed}
+      = $build_res->{labeled} >= $build_res->{failed};
     $build_res->{reviewed_also_softfailed}
       = $build_res->{reviewed} && $build_res->{labeled_softfailed} >= $build_res->{softfailed_with_failed_modules};
     $build_res->{all_labeled} = $build_res->{labeled} + $build_res->{labeled_softfailed};
@@ -118,30 +136,10 @@ sub compute_build_results {
                 clone_id => undef,
             },
             {order_by => 'me.id DESC'});
-        my %jr = (
-            oldest                         => DateTime->now,
-            passed                         => 0,
-            failed                         => 0,
-            unfinished                     => 0,
-            labeled                        => 0,
-            labeled_softfailed             => 0,
-            softfailed                     => 0,
-            softfailed_with_failed_modules => 0,
-            skipped                        => 0,
-            total                          => 0
-        );
+        my %jr = (oldest => DateTime->now);
+        init_job_figures(\%jr);
         for my $child (@children) {
-            $jr{children}->{$child->id} = {
-                passed                         => 0,
-                failed                         => 0,
-                unfinished                     => 0,
-                labeled                        => 0,
-                labeled_softfailed             => 0,
-                softfailed                     => 0,
-                softfailed_with_failed_modules => 0,
-                skipped                        => 0,
-                total                          => 0
-            };
+            init_job_figures($jr{children}->{$child->id} = {});
         }
 
         my %seen;
