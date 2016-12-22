@@ -43,7 +43,7 @@ my %tables = (
 
 
 sub list {
-    my $self = shift;
+    my ($self) = @_;
 
     my $table = $self->param("table");
     my %search;
@@ -62,18 +62,12 @@ sub list {
 
     my @result;
     eval {
-        if (%search) {
-            @result = $self->db->resultset($table)->search(\%search);
-        }
-        else {
-            @result = $self->db->resultset($table)->all;
-        }
+        my $rs = $self->db->resultset($table);
+        @result = %search ? $rs->search(\%search) : $rs->all;
     };
     my $error = $@;
-
     if ($error) {
-        $self->render(json => {error => $error}, status => 404);
-        return;
+        return $self->render(json => {error => $error}, status => 404);
     }
 
     $self->render(
@@ -90,12 +84,8 @@ sub list {
 }
 
 sub create {
-    my $self  = shift;
-    my $table = $self->param("table");
-
-    my $error;
-    my $id;
-
+    my ($self)     = @_;
+    my $table      = $self->param("table");
     my %entry      = %{$tables{$table}->{defaults}};
     my $validation = $self->validation;
 
@@ -112,6 +102,8 @@ sub create {
     }
     $entry{settings} = \@settings;
 
+    my $error;
+    my $id;
     if ($validation->has_error) {
         $error = "wrong parameter: ";
         for my $par (@{$tables{$table}->{required}}) {
@@ -121,28 +113,16 @@ sub create {
     else {
         try { $id = $self->db->resultset($table)->create(\%entry)->id; } catch { $error = shift; };
     }
-
-    my $status;
-    my $json = {};
-
     if ($error) {
-        $json->{error} = $error;
-        $status = 400;
+        return $self->render(json => {error => $error}, status => 400);
     }
-    else {
-        $self->emit_event('openqa_table_create', {table => $table, %entry});
-        $json->{id} = $id;
-    }
-
-    $self->render(json => $json, status => $status);
+    $self->emit_event('openqa_table_create', {table => $table, %entry});
+    $self->render(json => {id => $id});
 }
 
 sub update {
-    my $self  = shift;
+    my ($self) = @_;
     my $table = $self->param("table");
-
-    my $error;
-    my $ret;
     my %entry;
     my $validation = $self->validation;
 
@@ -163,6 +143,8 @@ sub update {
 
     $entry{variables} = '';
 
+    my $error;
+    my $ret;
     if ($validation->has_error) {
         $error = "wrong parameter: ";
         for my $par (@{$tables{$table}->{required}}) {
@@ -194,43 +176,24 @@ sub update {
         };
     }
 
-    my $status;
-    my $json = {};
-
-    if ($ret) {
-        if ($ret == 0) {
-            $status = 404;
-            $error  = 'Not found';
-        }
-        else {
-            $json->{result} = int($ret);
-            $self->emit_event('openqa_table_update', {table => $table, name => $entry{name}, settings => \@settings});
-        }
+    if ($ret && $ret == 0) {
+        return $self->render(json => {error => 'Not found'}, status => 404);
     }
-    else {
-        # no need for emiting here, this is called in case of wrong parameters -> not emitting req part
-        $json->{error} = $error;
-        $status = 400;
+    if (!$ret) {
+        return $self->render(json => {error => $error}, status => 400);
     }
-
-    $self->render(json => $json, status => $status);
+    $self->emit_event('openqa_table_update', {table => $table, name => $entry{name}, settings => \@settings});
+    $self->render(json => {result => int($ret)});
 }
 
 
 sub destroy {
-    my $self  = shift;
-    my $table = $self->param("table");
-
+    my ($self)   = @_;
+    my $table    = $self->param("table");
     my $machines = $self->db->resultset('Machines');
-
-    my $status;
-    my $json = {};
-
     my $ret;
     my $error;
-
     my $res;
-
     my $entry_name;
 
     try {
@@ -245,22 +208,14 @@ sub destroy {
         $error = shift;
     };
 
-    if ($ret) {
-        if ($ret == 0) {
-            $status = 404;
-            $error  = 'Not found';
-        }
-        else {
-            $json->{result} = int($ret);
-            $self->emit_event('openqa_table_delete', {table => $table, name => $entry_name});
-        }
+    if ($ret && $ret == 0) {
+        return $self->render(json => {error => 'Not found'}, status => 404);
     }
-    else {
-        $json->{error} = $error;
-        $status = 400;
+    if (!$ret) {
+        return $self->render(json => {error => $error}, status => 400);
     }
-
-    $self->render(json => $json, status => $status);
+    $self->emit_event('openqa_table_delete', {table => $table, name => $entry_name});
+    $self->render(json => {result => int($ret)});
 }
 
 1;
