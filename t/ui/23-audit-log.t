@@ -35,6 +35,12 @@ if (!$driver) {
     exit(0);
 }
 
+sub wait_for_data_table {
+    t::ui::PhantomTest::wait_for_ajax;
+    # TODO: add some wait condition for rendering here
+    sleep 1;
+}
+
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 # we need to talk to the phantom instance or else we're using wrong database
 my $url = 'http://localhost:' . t::ui::PhantomTest::get_mojoport;
@@ -53,9 +59,7 @@ is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo'
 
 $driver->find_element('#user-action a', 'css')->click();
 $driver->find_element('Audit log',      'link_text')->click();
-# wait until datatables, wait_for_ajax isnt sufficient here, 1s seems enough though
-t::ui::PhantomTest::wait_for_ajax;
-sleep 1;
+wait_for_data_table;
 like($driver->get_title(), qr/Audit log/, 'on audit log');
 my $table = $driver->find_element('#audit_log_table', 'css');
 ok($table, 'audit table found');
@@ -67,42 +71,40 @@ ok($search, 'search box found');
 my @entries = $driver->find_child_elements($table, 'tbody/tr');
 is(scalar @entries, 3, 'three elements without filter');
 
+$search->send_keys('QA restart');
+wait_for_data_table;
+@entries = $driver->find_child_elements($table, 'tbody/tr');
+is(scalar @entries, 1, 'one element when filtered for event data');
+like($entries[0]->get_text(), qr/openQA restarted/, 'correct element displayed');
+$search->clear;
+
 $search->send_keys('user:system');
-t::ui::PhantomTest::wait_for_ajax;
-sleep 1;
+wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr');
 is(scalar @entries, 1, 'one element when filtered by user');
 $search->clear;
-t::ui::PhantomTest::wait_for_ajax;
 
 $search->send_keys('event:user_login');
-t::ui::PhantomTest::wait_for_ajax;
-sleep 1;
+wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr');
 is(scalar @entries, 2, 'two elements when filtered by event');
 $search->clear;
-t::ui::PhantomTest::wait_for_ajax;
 
 $search->send_keys('newer:today');
-t::ui::PhantomTest::wait_for_ajax;
-sleep 1;
+wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr');
 is(scalar @entries, 3, 'three elements when filtered by today time');
 $search->clear;
-t::ui::PhantomTest::wait_for_ajax;
 
 $search->send_keys('older:today');
-t::ui::PhantomTest::wait_for_ajax;
-sleep 1;
+wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr/td');
 is(scalar @entries, 1, 'one element when filtered by yesterday time');
 is($entries[0]->get_attribute('class'), 'dataTables_empty', 'but datatables are empty');
 $search->clear;
-t::ui::PhantomTest::wait_for_ajax;
 
 $search->send_keys('user:system event:startup date:today');
-t::ui::PhantomTest::wait_for_ajax;
-sleep 1;
+wait_for_data_table;
 @entries = $driver->find_child_elements($table, 'tbody/tr');
 is(scalar @entries, 1, 'one element when filtered by combination');
 
