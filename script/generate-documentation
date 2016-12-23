@@ -15,6 +15,78 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+function update_docs {
+
+        if [ "${TRAVIS_BRANCH}" == "master" ]; then
+                echo "Branch is master, generating documentation"
+        else
+                echo "Branch is: ${TRAVIS_BRANCH}, not generating any documentation"
+                exit 0
+        fi
+
+        cd ..
+        git clone $REPO out
+        cd out
+        git checkout $TARGET_BRANCH
+        git config user.name "Travis CI"
+        git config user.email "$COMMIT_AUTHOR_EMAIL"
+        mkdir docs
+        cp -r ${tmpwd}/output/* docs
+        cd docs
+        update_api
+        ln -f openqa-documentation-${verbose_doc_name}.html index.html
+        ln -f openqa-documentation-${verbose_doc_name}.pdf current.pdf
+
+        cd ..
+        git add _includes/api.html
+        git add $( find docs -regex '.*\.\(html\|\pdf\)' )
+        echo "Update documentation to commit ${shortref}" > last.commit
+        echo "" >> last.commit # somehow travis does not like \n
+        (cd .. && git log --pretty=fuller ${TRAVIS_COMMIT} -1 >> out/last.commit)
+        git commit -F last.commit
+        git push $SSH_REPO $TARGET_BRANCH
+        cd ..
+        rm -rf out
+
+}
+
+function  update_api {
+
+        cpanm --install Pod::AsciiDoctor
+
+        mkdir -p api/src
+        curl -o api/src/testapi.pm https://raw.githubusercontent.com/os-autoinst/os-autoinst/master/testapi.pm
+        cd api
+        ${TRAVIS_BUILD_DIR}/script/genapi.pl
+
+        for file in $(ls *.asciidoc | grep -v header ); do
+                ${asciidoctor_bin} $file
+        done;
+
+        for file in $( find -regex '.*\.html' ); do
+                header_template $file > $file.tmp
+                cat $file >> $file.tmp
+                mv $file.tmp $file
+        done;
+        cd ..
+
+}
+
+function header_template {
+filename=$( basename -s .html $1 )
+cat <<APIFILE
+---
+layout: null
+categories: [api]
+title: ${filename}
+permalink: /api/${filename}/
+---
+APIFILE
+
+}
+
+green="\e[23m\e[1m"
+
 asciidoctor_bin=$(which asciidoctor)
 shortref=$(git rev-parse --short HEAD)
 verbose_doc_name=$(date +%Y%m%d)"_"${shortref} #we are not intending to run this off a git repository
@@ -22,7 +94,7 @@ tmpwd=$(mktemp -d -t openqa-doc-XXXX)
 REPO=$(git config remote.origin.url)
 SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
 TARGET_BRANCH="gh-pages"
-green="\e[23m\e[1m"
+REPO_DIRECTORY=$PWD
 : ${GH_PUBLISH:=0}
 
 if [ ! -f ${asciidoctor_bin} ]; then
@@ -37,38 +109,8 @@ cp -r images ${tmpwd}/output
 ${asciidoctor_bin} -r asciidoctor-pdf -b pdf -o ${tmpwd}/output/openqa-documentation-${verbose_doc_name}.pdf index.asciidoc -d book
 ${asciidoctor_bin} -o ${tmpwd}/output/openqa-documentation-${verbose_doc_name}.html index.asciidoc -d book
 
-echo -e  "${green}The output has been generated at ${tmpwd}/output"bold
+echo -e  "${green}The output has been generated at ${tmpwd}/output"
 
-if [ ${GH_PUBLISH} && ${CONTINUOUS_INTEGRATION} ]; then
-
-        if [ ${TRAVIS_PULL_REQUEST} ]; then
-                echo "No documentation will be published for pull requests"
-                exit 0;
-        fi
-
-        if [ "${TRAVIS_BRANCH}" == "master" ]; then
-                echo "Branch is master"
-        else
-                echo "Branch is: ${TRAVIS_BRANCH}"
-        fi
-
-        cpan --install Pod::AsciiDoctor
-
-        cd ..
-        git clone $REPO out
-        cd out
-        git checkout $TARGET_BRANCH
-        git config user.name "Travis CI"
-        git config user.email "$COMMIT_AUTHOR_EMAIL"
-        mkdir docs
-        cp -r ${tmpwd}/output/* docs
-        cd docs
-        ln -f openqa-documentation-${verbose_doc_name}.html index.html
-        ln -f openqa-documentation-${verbose_doc_name}.pdf current.pdf
-        cd ..
-        git add docs
-        (cd .. && git log --pretty=fuller ${TRAVIS_COMMIT} -1 > out/last.commit)
-        git commit -F last.commit
-        git push $SSH_REPO $TARGET_BRANCH
-        rm -rf out
+if [ ${GH_PUBLISH} ] && [ ${CONTINUOUS_INTEGRATION} ]; then
+        update_docs
 fi;
