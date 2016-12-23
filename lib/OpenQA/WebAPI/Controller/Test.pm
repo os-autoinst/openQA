@@ -510,7 +510,8 @@ sub overview {
         types      => \@types,
         archs      => \%archs,
         results    => \%results,
-        aggregated => $aggregated
+        aggregated => $aggregated,
+        name_limit => $self->param('name_limit') // 30
     );
 }
 
