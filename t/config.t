@@ -73,14 +73,12 @@ is_deeply(
 $ENV{OPENQA_CONFIG} = 't';
 open(my $fd, '>', $ENV{OPENQA_CONFIG} . '/openqa.ini');
 print $fd "[global]\n";
-print $fd "allowed_hosts=foo bar\n";
 print $fd "suse_mirror=http://blah/\n";
 print $fd
 "recognized_referers = bugzilla.suse.com bugzilla.opensuse.org bugzilla.novell.com bugzilla.microfocus.com progress.opensuse.org github.com\n";
 close $fd;
 
 $t = Test::Mojo->new('OpenQA::WebAPI');
-ok($t->app->config->{global}->{allowed_hosts} eq 'foo bar',    'allowed hosts');
 ok($t->app->config->{global}->{suse_mirror} eq 'http://blah/', 'suse mirror');
 is_deeply(
     $t->app->config->{global}->{recognized_referers},

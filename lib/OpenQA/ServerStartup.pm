@@ -31,7 +31,6 @@ sub read_config {
             appname             => 'openQA',
             base_url            => undef,
             branding            => 'openSUSE',
-            allowed_hosts       => undef,
             download_domains    => undef,
             suse_mirror         => undef,
             scm                 => undef,
