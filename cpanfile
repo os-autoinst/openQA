@@ -100,7 +100,6 @@ on 'test' => sub {
   requires 'Test::MockModule';
   requires 'Test::MockObject';
   requires 'Test::Fatal';
-  requires 'Test::Exception';
 };
 
 feature 'coverage', 'coverage for travis' => sub {
