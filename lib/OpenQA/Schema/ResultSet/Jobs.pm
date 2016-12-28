@@ -114,15 +114,6 @@ sub create_from_settings {
     my %settings = %$settings;
 
     my %new_job_args = (TEST => $settings{TEST});
-
-
-    if (my $name = $settings{NAME}) {
-        my $njobs = $self->search({slug => $name})->count;
-        !$njobs or die "job with name \'$name\' already exists in database";
-        $new_job_args{slug} = $name;
-        delete $settings{NAME};
-    }
-
     my $group;
     my %group_args;
     if ($settings{_GROUP_ID}) {
