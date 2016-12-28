@@ -395,9 +395,11 @@ sub prepare_job_results {
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
     foreach my $job (@$jobs) {
-        my $test   = $job->TEST;
-        my $flavor = $job->FLAVOR || 'sweet';
-        my $arch   = $job->ARCH || 'noarch';
+        my $test    = $job->TEST;
+        my $distri  = $job->DISTRI || 'nodistri';
+        my $version = $job->VERSION || 'noversion';
+        my $flavor  = $job->FLAVOR || 'sweet';
+        my $arch    = $job->ARCH || 'noarch';
 
         my $result;
         if ($job->state eq 'done') {
