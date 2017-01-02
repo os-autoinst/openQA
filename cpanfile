@@ -105,4 +105,5 @@ on 'test' => sub {
 feature 'coverage', 'coverage for travis' => sub {
   requires 'Devel::Cover';
   requires 'Devel::Cover::Report::Coveralls';
+  requires 'Devel::Cover::Report::Codecov';
 };

@@ -29,8 +29,6 @@ script:
   # 'coverage-coveralls' calls checkstyle, tests and coverage analysis in
   # coveralls format
   - GH_PUBLISH=true bash script/generate-documentation
-  - make coverage-coveralls
-after_success:
-  - bash <(curl -s https://codecov.io/bash)
+  - make coverage-codecov
 #after_failure:
 #  - cat /tmp/openqa-debug.log

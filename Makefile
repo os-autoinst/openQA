@@ -101,9 +101,9 @@ coverage-test: cover_db/
 .PHONY: coverage
 coverage: coverage-html
 
-.PHONY: coverage-coveralls
-coverage-coveralls: cover_db/
-	cover ${COVER_OPTS} -report coveralls
+.PHONY: coverage-codecov
+coverage-codecov: cover_db/
+	cover ${COVER_OPTS} -report codecov
 
 cover_db/coverage.html: cover_db/
 	cover ${COVER_OPTS} -report html
