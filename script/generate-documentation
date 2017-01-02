@@ -17,7 +17,7 @@
 
 function update_docs {
 
-        if [ "${TRAVIS_BRANCH}" == "master" ]; then
+        if [ "${TRAVIS_BRANCH}" = "master" -a "${TRAVIS_PULL_REQUEST}" = false ]; then
                 echo "Branch is master, generating documentation"
         else
                 echo "Branch is: ${TRAVIS_BRANCH}, not generating any documentation"
