@@ -387,6 +387,12 @@ sub prepare_job_results {
 
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels($jobs);
+    my @job_names = map { $_->TEST } @$jobs;
+
+    # prefetch descriptions from test suites
+    my %desc_args = (name => {in => \@job_names});
+    my @descriptions = $self->db->resultset("TestSuites")->search(\%desc_args, {columns => [qw(name description)]});
+    my %descriptions = map { $_->name => $_->description } @descriptions;
 
     foreach my $job (@$jobs) {
         my $test   = $job->TEST;
@@ -452,9 +458,11 @@ sub prepare_job_results {
         push(@{$archs{$flavor}}, $arch) unless (grep { $arch eq $_ } @{$archs{$flavor}});
 
         # Populate %results
-        $results{$test} = {} unless $results{$test};
-        $results{$test}{$flavor} = {} unless $results{$test}{$flavor};
-        $results{$test}{$flavor}{$arch} = $result;
+        $results{$test}                   //= {};
+        $results{$test}{description}      //= $descriptions{$test};
+        $results{$test}{flavors}          //= {};
+        $results{$test}{flavors}{$flavor} //= {};
+        $results{$test}{flavors}{$flavor}{$arch} = $result;
     }
     return (\%archs, \%results, $aggregated);
 }

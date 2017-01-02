@@ -1,6 +1,7 @@
 % layout 'bootstrap';
 % title 'Test summary';
 % use OpenQA::Schema::Result::Jobs;
+% use OpenQA::Utils;
 
 % content_for 'ready_function' => begin
   setupOverview();
@@ -94,9 +95,19 @@
                 % for my $config (sort keys %$results) {
                     % next unless $results->{$config}{flavors}{$type};
                     <tr>
-                        <td class="name"><%= trim_text($config, 30) %></td>
+                        <td class="name">
+                            % my $test_label = trim_text($config, 30);
+                            % if (my $description = $results->{$config}{description}) {
+                                <a data-content="<p><%= href_to_bugref(render_escaped_refs($results->{$config}{description})) %></p>"
+                                data-title="<%= $config %>" data-toggle="popover" data-trigger="click" role="button" tabindex="0"><%= $test_label %></a>
+                            % }
+                            % else {
+                                <%= $test_label %>
+                            % }
+                        </td>
+
                         % for my $arch (@{$archs->{$type}}) {
-                            % my $res = $results->{$config}{$type}{$arch};
+                            % my $res = $results->{$config}{flavors}{$type}{$arch};
                             % my $jobid = $res->{jobid};
                             % my $state = $res->{state};
 

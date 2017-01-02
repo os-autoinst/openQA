@@ -65,6 +65,11 @@ t::ui::PhantomTest::wait_for_ajax;
 like($driver->find_elements('.failedmodule a', 'css')->[1]->get_attribute('href'),
     qr/\/3$/, 'ajax update failed module step');
 
+my @descriptions = $driver->find_elements('td.name a', 'css');
+is(scalar @descriptions, 1, 'only test suites with description content are shown as links');
+$descriptions[0]->click();
+is($driver->find_element('.popover-title', 'css')->get_text, 'kde', 'description popover shows content');
+
 t::ui::PhantomTest::kill_phantom();
 
 done_testing();

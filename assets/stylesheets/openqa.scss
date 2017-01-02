@@ -381,6 +381,10 @@ table.dataTable {
         }
 }
 table.admintable {
+        td {
+                max-width: 10em;
+                word-wrap: break-word;
+        }
         td.editable {
                 text-align: right;
         }
@@ -401,6 +405,7 @@ table.admintable {
         }
         textarea {
             height: 100%;
+            min-width: 10em;
         }
 }
 table.overview {

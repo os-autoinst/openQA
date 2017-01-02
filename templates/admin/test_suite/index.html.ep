@@ -16,6 +16,7 @@
                 <tr>
                     <th class="col_value">Name</th>
                     <th class="col_settings_list">Settings</th>
+                    <th class="col_description">Description</th>
                     <th class="col_action">Actions</th>
                 </tr>
             </thead>
