@@ -1,4 +1,3 @@
-COVERAGE_THRESHOLD ?= 69.6
 PROVE_ARGS ?= -r
 
 .PHONY: all
@@ -86,19 +85,15 @@ coverage-test: cover_db/
 .PHONY: coverage
 coverage: coverage-html
 
-.PHONY: coverage-coveralls
-coverage-coveralls: cover_db/
-	cover ${COVER_OPTS} -report coveralls
+.PHONY: coverage-codecov
+coverage-codecov: cover_db/
+	cover ${COVER_OPTS} -report codecov
 
 cover_db/coverage.html: cover_db/
 	cover ${COVER_OPTS} -report html
 
 .PHONY: coverage-html
 coverage-html: cover_db/coverage.html
-
-.PHONY: coverage-check
-coverage-check: cover_db/coverage.html
-	./script/check_coverage ${COVERAGE_THRESHOLD}
 
 public/favicon.ico: assets/images/logo.svg
 	for w in 16 32 64 128; do \
