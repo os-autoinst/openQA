@@ -74,15 +74,13 @@ sub connect {
 
     OpenQA::Utils::log_info("Connecting to AMQP server");
     $self->{client} = Mojo::RabbitMQ::Client->new(url => $self->{config}->{amqp}{url});
-    $self->{client}
-      ->catch(sub { OpenQA::Utils::log_warning("Failed to connect to AMQP server: " . $self->{config}->{amqp}{url}); });
     $self->{client}->on(
         open => sub {
             OpenQA::Utils::log_info("AMQP connection established");
             my ($client) = @_;
 
             $self->{channel} = Mojo::RabbitMQ::Client::Channel->new();
-            $self->{channel}->catch(sub { OpenQA::Utils::log_warning("Error on AMQP channel received"); });
+            $self->{channel}->catch(sub { OpenQA::Utils::log_warning("Error on AMQP channel received: " . $_[1]); });
 
             $self->{channel}->on(
                 open => sub {
