@@ -1,6 +1,5 @@
 codecov:
-  notify:
-    require_ci_to_pass: true
+  branch: master
 comment:
   behavior: default
   require_changes: true
@@ -10,7 +9,14 @@ coverage:
   - 70.0
   - 100.0
   round: down
+  notify:
+    irc:
+      default:
+        server: chat.freenode.irc
+	channel: #opensuse-factory
   status:
     changes: false
-    patch: true
-    project: true
+    project:
+      target: 69.2
+      only_pulls: true
+    patch: false
