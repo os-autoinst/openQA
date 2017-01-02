@@ -1,0 +1,8 @@
+#! /bin/bash
+
+set -xe
+
+source ~/perl5/perlbrew/etc/bashrc
+perlbrew use perl-5.18.2
+
+bash -c "$@"
