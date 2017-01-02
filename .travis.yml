@@ -23,9 +23,8 @@ install:
   - gem install asciidoctor-pdf --pre
   - cpanm -nq --installdeps --with-feature=coverage .
 script:
-  # 'coverage-coveralls' calls checkstyle, tests and coverage analysis in
-  # coveralls format
   - GH_PUBLISH=true bash script/generate-documentation
-  - MOJO_TMPDIR=$(mktemp -d) make coverage-coveralls coverage-check
+  # 'coverage-coveralls' calls checkstyle, tests and coverage analysis
+  - MOJO_TMPDIR=$(mktemp -d) make coverage-codecov
 after_failure:
   - cat /tmp/openqa-debug.log
