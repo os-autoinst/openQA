@@ -17,14 +17,6 @@
 
 function update_docs {
 
-        if [ "${TRAVIS_BRANCH}" = "master" -a "${TRAVIS_PULL_REQUEST}" = false ]; then
-                echo "Branch is master, generating documentation"
-        else
-                echo "Branch is: ${TRAVIS_BRANCH}, not generating any documentation"
-                exit 0
-        fi
-
-        cd ..
         git clone $REPO out
         cd out
         git checkout $TARGET_BRANCH
@@ -52,6 +44,9 @@ function update_docs {
 
 function  update_api {
 
+        # install dependencies
+        gem install asciidoctor pygments.rb
+        gem install asciidoctor-pdf --pre
         cpanm --install Pod::AsciiDoctor
 
         mkdir -p api/src
@@ -96,6 +91,8 @@ SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
 TARGET_BRANCH="gh-pages"
 REPO_DIRECTORY=$PWD
 : ${GH_PUBLISH:=0}
+SSH_KEY=$1
+SSH_IV=$2
 
 if [ -z "${asciidoctor_bin}" -o ! -f "${asciidoctor_bin}" ]; then
         echo "Could not find asciidoctor binary in your path, please install it and run this command again"
@@ -111,6 +108,29 @@ ${asciidoctor_bin} -o ${tmpwd}/output/openqa-documentation-${verbose_doc_name}.h
 
 echo -e  "${green}The output has been generated at ${tmpwd}/output"
 
+cd ..
+
 if [ ${GH_PUBLISH} ] && [ ${CONTINUOUS_INTEGRATION} ]; then
-        update_docs
-fi;
+    if [ "${TRAVIS_BRANCH}" != "master" ]; then
+	echo "Branch is: ${TRAVIS_BRANCH}, not generating any documentation"
+	exit 0
+    fi
+
+    if [ "${TRAVIS_PULL_REQUEST}" != false ]; then
+	echo "Build is a pull request, not generating any documentation"
+	exit 0
+    fi
+
+    if [ -z "${SSH_KEY}" -o -z "${SSH_IV}" ]; then
+	echo "Build is a pull request, not generating any documentation"
+	exit 0
+    fi
+
+    echo "Requirements met, generating documentation"
+    openssl aes-256-cbc -K $SSH_KEY -iv $SSH_IV -in .openqa-travis.enc -out .openqa-travis -d
+    eval "$(ssh-agent -s)"
+    chmod 600 .openqa-travis
+    ssh-add .openqa-travis
+
+    update_docs
+fi
