@@ -73,7 +73,7 @@ if ($user) {
     setuid($uid) || die "can't suid to $user";
 }
 
-my $schema = OpenQA::Schema::connect_db;
+my $schema = OpenQA::Schema::connect_db(check => 0);
 
 my $script_directory = "$FindBin::Bin/../dbicdh";
 my @databases        = qw( SQLite PostgreSQL );

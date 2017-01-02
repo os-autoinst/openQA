@@ -42,7 +42,7 @@ sub ws_send {
 
 package main;
 
-my $schema = OpenQA::Schema::connect_db('test');
+my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
 #issue valid commands for worker 1
 my @valid_commands = qw(quit abort cancel obsolete
   stop_waitforneedle reload_needles_and_retry continue_waitforneedle

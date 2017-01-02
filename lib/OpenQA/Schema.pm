@@ -23,6 +23,7 @@ use Config::IniFiles;
 use Cwd 'abs_path';
 use Try::Tiny;
 use FindBin '$Bin';
+use Fcntl ':flock';
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
@@ -36,16 +37,24 @@ sub _get_schema {
     return \$schema;
 }
 
+sub _find_config {
+    my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
+    return $cfgpath . '/database.ini';
+}
+
 sub connect_db {
+    my %args  = @_;
+    my $check = $args{check};
+    $check //= 1;
     my $schema = _get_schema;
     unless ($$schema) {
-        my $mode = shift || $ENV{OPENQA_DATABASE} || 'production';
+        my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
         my %ini;
-        my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
-        my $database_file = $cfgpath . '/database.ini';
+        my $database_file = _find_config;
         tie %ini, 'Config::IniFiles', (-file => $database_file);
         die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
         $$schema = __PACKAGE__->connect($ini{$mode});
+        deployment_check $$schema if ($check);
     }
     return $$schema;
 }
@@ -64,6 +73,10 @@ sub dsn {
 }
 
 sub deployment_check {
+    # lock config file to ensure only one thing will deploy/upgrade DB at once
+    my $dblockfile = _find_config;
+    open(my $dblock, '<', $dblockfile) or die "Can't open database lock file {$dblockfile}!";
+    flock($dblock, LOCK_EX) or die "Can't lock database lock file {$dblockfile}!";
     my ($schema, $force_overwrite) = @_;
     $force_overwrite //= 0;
     my $dir = $FindBin::Bin;
@@ -82,9 +95,11 @@ sub deployment_check {
             sql_translator_args => {add_drop_table => 0},
             force_overwrite     => $force_overwrite
         });
-    return 2 if _try_deploy_db($dh);
-    return 1 if _try_upgrade_db($dh);
-    return 0;
+    my $ret = 0;
+    $ret = 2 if _try_deploy_db($dh);
+    $ret = 1 if (!$ret && _try_upgrade_db($dh));
+    close($dblock) or die "Can't close database lock file ${dblockfile}!";
+    return $ret;
 }
 
 sub _db_tweaks {

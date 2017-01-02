@@ -27,8 +27,8 @@ use SQL::Translator;
 use OpenQA::Schema;
 use Try::Tiny;
 
-my $schema = OpenQA::Schema::connect_db('test');
-my $dh     = DBIx::Class::DeploymentHandler->new(
+my $schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
+my $dh = DBIx::Class::DeploymentHandler->new(
     {
         schema              => $schema,
         script_directory    => 'dbicdh',
@@ -40,7 +40,7 @@ my $deployed_version;
 try {
     $deployed_version = $dh->version_storage->database_version;
 };
-ok(!$deployed_version, 'DB not deployed by plain schema connection');
+ok(!$deployed_version, 'DB not deployed by plain schema connection with check => 0');
 
 my $ret = OpenQA::Schema::deployment_check($schema);
 ok($dh->version_storage->database_version, 'DB deployed');
@@ -57,7 +57,7 @@ $schema->storage->with_deferred_fk_checks(
     });
 
 OpenQA::Schema::disconnect_db;
-$schema = OpenQA::Schema::connect_db('test');
+$schema = OpenQA::Schema::connect_db(mode => 'test', check => 0);
 # redeploy DB to older version and check if deployment_check upgrades the DB
 $dh = DBIx::Class::DeploymentHandler->new(
     {
