@@ -34,6 +34,31 @@
             % }
         </tbody>
     </table>
+
+    <h3>Previous jobs</h3>
+    % if (@$previous_jobs) {
+        <table class="table">
+            <thead>
+                <th>Id</th>
+                <th>Name</th>
+            </thead>
+            <tbody>
+                % for my $job (@$previous_jobs) {
+                    <tr>
+                        <td>
+                            %= link_to $job->id => url_for ('test', testid => $job->id)
+                        </td>
+                        <td>
+                            %= $job->name
+                        </td>
+                    </tr>
+                % }
+            </tbody>
+        </table>
+    % }
+    % else {
+        <p>No previous jobs assigned</p>
+    % }
 </div>
 
 </div>

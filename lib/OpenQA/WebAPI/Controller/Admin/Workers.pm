@@ -17,6 +17,7 @@
 package OpenQA::WebAPI::Controller::Admin::Workers;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
+use Scalar::Util 'looks_like_number';
 
 sub _extend_info {
     my ($w) = @_;
@@ -43,8 +44,16 @@ sub index {
 sub show {
     my ($self) = @_;
 
-    my $w = $self->db->resultset('Workers')->find($self->param('worker_id'));
+    my $limit_previous_jobs = $self->param('limit_previous_jobs');
+    $limit_previous_jobs = 10 unless looks_like_number($limit_previous_jobs);
+
+    my $w = $self->db->resultset('Workers')->find($self->param('worker_id'))
+      or return $self->reply->not_found;
+
     $self->stash(worker => _extend_info($w));
+    my @previous_jobs = $w->previous_jobs({}, {rows => $limit_previous_jobs})->all;
+    $self->stash(previous_jobs => \@previous_jobs);
+
 
     $self->render('admin/workers/show');
 }
