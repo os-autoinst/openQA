@@ -266,8 +266,27 @@ abbr[title], acronym[title] {
 }
     
 .popover {
-  border: none;
+  border: 1px solid #ddd;
   @include box-shadow(0 1px 4px rgba(0,0,0,.3));
+
+  &.top .arrow:after {
+      bottom: 2px;
+  }
+
+  &.bottom .arrow:after {
+      top: 2px;
+      border-bottom-color: #f7f7f7;
+  }
+
+  &.left .arrow:after {
+      right: 2px;
+      bottom: -10px;
+  }
+
+  &.right .arrow:after {
+      left: 2px;
+      bottom: -10px;
+  }
 }
 
 .carousel {
