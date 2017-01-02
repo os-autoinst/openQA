@@ -101,7 +101,7 @@ addressed in the short term, either because the return of investment is not
 worth it or because they are out of the current scope of the development.
 
 openQA and os-autoinst repositories also include test suites aimed at preventing
-bugs and regressions in the software. https://coveralls.io/[Coveralls] is
+bugs and regressions in the software. https://codecov.io/[codecov] is
 configured in the repositories to encourage contributors to raise the tests
 coverage with every commit and pull request. New features and bug fixes are
 expected to be backed with the corresponding tests.
