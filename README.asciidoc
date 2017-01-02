@@ -1,5 +1,9 @@
-openQA image:https://api.travis-ci.org/os-autoinst/openQA.svg?branch=master[link=https://travis-ci.org/os-autoinst/openQA] image:https://codecov.io/gh/os-autoinst/openQA/branch/master/graph/badge.svg[link=https://codecov.io/gh/os-autoinst/openQA]
-================================================================================================================================================================================================================================================================================
+:travis-ci: image:https://api.travis-ci.org/os-autoinst/openQA.svg?branch=master[link=https://travis-ci.org/os-autoinst/openQA]
+:codecov: image:https://codecov.io/gh/os-autoinst/openQA/branch/master/graph/badge.svg[link=https://codecov.io/gh/os-autoinst/openQA]
+
+= openQA
+
+{codecov} {travis-ci}
 
 openQA is a testing framework that allows you to test GUI applications on one
 hand and bootloader and kernel on the other. In both cases, it is difficult to
@@ -10,20 +14,19 @@ Therefore openQA runs virtual machines and closely monitors their state and
 runs tests on them.
 
 The testing framework can be divided in two parts. The one that is hosted in
-this repository contains the web frontend and management logic (test 
+this repository contains the web frontend and management logic (test
 scheduling, management, high-level API, ...)
 
 The other part that you need to run openQA is the OS-autoinst test engine that
 is hosted in a separate https://github.com/os-autoinst/os-autoinst[repository].
 
-Getting started
----------------
+== Getting started
 
 The project's information is organized into four basic documents. As a first
 step, read the link:docs/GettingStarted.asciidoc[Starter Guide] and then, if
 needed, proceed to the link:docs/Installing.asciidoc[Installation Guide].
 
-If you are interested in development, check the 
+If you are interested in development, check the
 link:docs/Contributing.asciidoc[Developer Guide] or the
 link:docs/WritingTests.asciidoc[Tests Developer Guide], write your code and
 send a pull request ;-)
