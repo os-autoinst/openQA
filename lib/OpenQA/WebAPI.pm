@@ -263,6 +263,7 @@ sub startup {
 
     $op_r->get('/workers')->name('admin_workers')->to('workers#index');
     $op_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
+    $op_r->get('/workers/:worker_id/ajax')->name('admin_worker_previous_jobs_ajax')->to('workers#previous_jobs_ajax');
 
     $op_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
 

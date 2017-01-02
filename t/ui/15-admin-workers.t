@@ -43,7 +43,12 @@ $test_case->init_data;
 
 use t::ui::PhantomTest;
 
-my $driver = t::ui::PhantomTest::call_phantom();
+sub schema_hook {
+    OpenQA::Test::Database->new->create->resultset('Jobs')->search({id => {-in => [99926, 99928]}})
+      ->update({assigned_worker_id => 1});
+}
+
+my $driver = t::ui::PhantomTest::call_phantom(\&schema_hook);
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -78,8 +83,22 @@ my $body = $driver->find_element('//body');
 like($body->get_text(), qr/Status: .* job 99963/, 'still on 99963');
 like($body->get_text(), qr/JOBTOKEN token99963/,  'token for 99963');
 
-#print $driver->get_page_source();
-#t::ui::PhantomTest::make_screenshot('mojoResults.png');
+# previous jobs table
+t::ui::PhantomTest::wait_for_ajax;
+my $table = $driver->find_element('#previous_jobs', 'css');
+ok($table, 'previous jobs table found');
+my @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td');
+is(scalar @entries, 8, 'two previous jobs shown (4 cols per row)');
+is_deeply(
+    \@entries,
+    [
+        '99926',      'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
+        'incomplete', 'about 2 hours ago',
+        '99928',      'opensuse-13.1-DVD-i586-Build0091-RAID1@32bit',
+        'none',       'about 2 hours ago',
+    ],
+    'correct entries shown'
+);
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();

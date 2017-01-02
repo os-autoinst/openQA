@@ -4,6 +4,7 @@
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
     setupResultButtons();
+    setupWorkerNeedles();
 % end
 
 <div class="row">
@@ -20,7 +21,7 @@
     </div>
 
     <h3>Properties</h3>
-    <table class="table">
+    <table class="table table-striped">
         <thead>
             <th>Key</th>
             <th>Value</th>
@@ -36,29 +37,14 @@
     </table>
 
     <h3>Previous jobs</h3>
-    % if (@$previous_jobs) {
-        <table class="table">
-            <thead>
-                <th>Id</th>
-                <th>Name</th>
-            </thead>
-            <tbody>
-                % for my $job (@$previous_jobs) {
-                    <tr>
-                        <td>
-                            %= link_to $job->id => url_for ('test', testid => $job->id)
-                        </td>
-                        <td>
-                            %= $job->name
-                        </td>
-                    </tr>
-                % }
-            </tbody>
-        </table>
-    % }
-    % else {
-        <p>No previous jobs assigned</p>
-    % }
+    <table id="previous_jobs" class="table table-striped" data-ajax-url="<%= url_for('admin_worker_previous_jobs_ajax', worker_id => $worker->{id}) %>">
+        <thead>
+            <th>Id</th>
+            <th>Name</th>
+            <th>Result</th>
+            <th>Created</th>
+        </thead>
+    </table>
 </div>
 
 </div>
