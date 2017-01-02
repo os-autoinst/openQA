@@ -47,6 +47,12 @@ unless ($driver) {
     exit(0);
 }
 
+sub disable_bootstrap_fade_animation {
+    $driver->execute_script(
+"document.styleSheets[0].addRule('.fade', '-webkit-transition: none !important; transition: none !important;', 1);"
+    );
+}
+
 is($driver->get_title(), "openQA", "on main page");
 my $baseurl = $driver->get_current_url();
 $driver->find_element('Login', 'link_text')->click();
@@ -69,6 +75,7 @@ is(
 is($driver->find_element('.cm-comment', 'css')->get_text(), '#!/usr/bin/perl -w', "we have a perl comment");
 
 $driver->get($baseurl . "tests/99937");
+disable_bootstrap_fade_animation;
 sub current_tab {
     return $driver->find_element('.nav.nav-tabs .active', 'css')->get_text;
 }
