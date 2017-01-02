@@ -14,10 +14,10 @@
         <table id="workers" class="table table-striped">
             <thead>
                 <tr>
-                    <th>worker</th>
-                    <th>status</th>
-                    <th>connected</th>
-                    <th>current step</th>
+                    <th>Worker</th>
+                    <th>Status</th>
+                    <th>Connected</th>
+                    <th>Current step</th>
                 </tr>
             </thead>
             <tbody>

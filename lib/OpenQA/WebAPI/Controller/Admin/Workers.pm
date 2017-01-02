@@ -17,6 +17,7 @@
 package OpenQA::WebAPI::Controller::Admin::Workers;
 use Mojo::Base 'Mojolicious::Controller';
 use OpenQA::Utils;
+use Scalar::Util 'looks_like_number';
 
 sub _extend_info {
     my ($w) = @_;
@@ -43,10 +44,65 @@ sub index {
 sub show {
     my ($self) = @_;
 
-    my $w = $self->db->resultset('Workers')->find($self->param('worker_id'));
+    my $w = $self->db->resultset('Workers')->find($self->param('worker_id'))
+      or return $self->reply->not_found;
     $self->stash(worker => _extend_info($w));
 
     $self->render('admin/workers/show');
+}
+
+sub previous_jobs_ajax {
+    my ($self) = @_;
+
+    my $worker = $self->db->resultset('Workers')->find($self->param('worker_id'))
+      or return $self->render(
+        json   => {error => 'Specified worker does not exist'},
+        status => 404
+      );
+
+    my $total_count = $worker->previous_jobs->count;
+
+    # Parameter for order
+    my @columns = qw(id id result t_created);
+    my @order_by_params;
+    my $index = 0;
+    while (1) {
+        my $column_index = $self->param("order[$index][column]") // @columns;
+        my $column_order = $self->param("order[$index][dir]");
+        last unless $column_index < @columns && grep { $column_order eq $_ } qw(asc desc);
+        push(@order_by_params, {'-' . $column_order => $columns[$column_index]});
+        ++$index;
+    }
+    my $params = {order_by => \@order_by_params};
+
+    # Determine number of needles with all filters applied except paging
+    my $filtered_count = $worker->previous_jobs({}, $params)->count;
+
+    # Parameter for paging
+    my $first_row = $self->param('start');
+    $params->{offset} = $first_row if $first_row;
+    my $row_limit = $self->param('length');
+    $params->{rows} = $row_limit if $row_limit;
+
+    my $jobs = $worker->previous_jobs({}, $params);
+
+    my @data;
+    my %modules;
+    while (my $j = $jobs->next) {
+        my $hash = {
+            id      => $j->id,
+            name    => $j->name,
+            result  => $j->result,
+            created => $j->t_created->datetime() . 'Z'
+        };
+        push(@data, $hash);
+    }
+    $self->render(
+        json => {
+            recordsTotal    => $total_count,
+            recordsFiltered => $filtered_count,
+            data            => \@data
+        });
 }
 
 1;
