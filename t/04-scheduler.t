@@ -157,6 +157,13 @@ my %settings2 = %settings;
 $settings2{NAME}  = "OTHER NAME";
 $settings2{BUILD} = "44";
 my $job2 = $schema->resultset('Jobs')->create_from_settings(\%settings2);
+is($job2->id, 2);
+
+subtest 'calling again with same settings' => sub {
+    my $job3 = $schema->resultset('Jobs')->create_from_settings(\%settings2);
+    is($job3->id, 3, 'calling again with same settings yields new job');
+    $schema->resultset('Jobs')->find($job3->id)->delete;
+};
 
 $job->set_prio(40);
 my $new_job = job_get_hash($job->id);
@@ -167,7 +174,7 @@ my $jobs = [
     {
         t_finished => undef,
         id         => 2,
-        name       => "OTHER NAME",
+        name       => 'Unicorn-42-pink-x86_64-Build44-rainbow@RainbowPC',
         priority   => 50,
         result     => 'none',
         t_started  => undef,
@@ -188,7 +195,7 @@ my $jobs = [
             KVM         => "KVM",
             MACHINE     => "RainbowPC",
             ARCH        => 'x86_64',
-            NAME        => '00000002-OTHER NAME',
+            NAME        => '00000002-Unicorn-42-pink-x86_64-Build44-rainbow@RainbowPC',
         },
         assets => {
             iso => ['whatever.iso'],
@@ -296,10 +303,10 @@ ok(!$grabbed->settings_hash->{JOBTOKEN}, "job token no longer present");
 $grabbed = OpenQA::Scheduler::Scheduler::job_grab(%args);
 isnt($job->id, $grabbed->{id}, "new job grabbed");
 isnt($grabbed->{settings}->{JOBTOKEN}, $job_ref->{settings}->{JOBTOKEN}, "job token differs");
-$job_ref->{settings}->{NAME} = '00000003-Unicorn-42-pink-x86_64-Build666-rainbow@RainbowPC';
 
-## update JOBTOKEN for isdeeply compare
+## update refs for isdeeply compare
 $job_ref->{settings}->{JOBTOKEN} = $grabbed->{settings}->{JOBTOKEN};
+$job_ref->{settings}->{NAME}     = $grabbed->{settings}->{NAME};
 
 is_deeply($grabbed->{settings}, $job_ref->{settings}, "settings correct");
 my $job3_id = $job->id;

@@ -18,17 +18,7 @@ package OpenQA::WebAPI::Controller::Admin::Table;
 use Mojo::Base 'Mojolicious::Controller';
 
 sub admintable {
-    my ($self, $resultset, $template) = @_;
-
-    my $rc = $self->db->resultset($resultset)->search(
-        undef,
-        {
-            select   => ['key', {count => 'key'}],
-            as       => [qw( key var_count )],
-            group_by => [qw( key )],
-            order_by => {-desc => 'count(key)'}});
-    my @variables = map { $_->key } $rc->all();
-    $self->stash('variables', \@variables);
+    my ($self, $template) = @_;
     $self->render("admin/$template/index");
 }
 

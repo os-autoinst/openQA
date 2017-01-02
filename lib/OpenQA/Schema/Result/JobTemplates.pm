@@ -52,10 +52,4 @@ __PACKAGE__->belongs_to(test_suite => 'OpenQA::Schema::Result::TestSuites', 'tes
 __PACKAGE__->belongs_to(group      => 'OpenQA::Schema::Result::JobGroups',  'group_id');
 __PACKAGE__->add_unique_constraint([qw(product_id machine_id test_suite_id)]);
 
-sub variables {
-    my $self = shift;
-
-    $self->machine->variables . $self->test_suite->variables . $self->product->variables;
-}
-
 1;

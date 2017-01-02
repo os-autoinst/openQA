@@ -1,4 +1,4 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+# Copyright (C) 2014-2016 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -28,138 +28,12 @@ use t::ui::PhantomTest;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
 my $driver = t::ui::PhantomTest::call_phantom();
 
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
 }
-
-#
-# Overview with incorrect parameters
-#
-$t->get_ok('/tests/overview')->status_is(404);
-$t->get_ok('/tests/overview' => form => {build => '0091'})->status_is(404);
-$t->get_ok('/tests/overview' => form => {build => '0091', distri => 'opensuse'})->status_is(404);
-$t->get_ok('/tests/overview' => form => {build => '0091', version => '13.1'})->status_is(404);
-
-#
-# Overview of build 0091
-#
-my $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'});
-$get->status_is(200);
-
-my $summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/Overall Summary of opensuse 13\.1 build 0091/i);
-like($summary, qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
-
-# Check the headers
-$get->element_exists('#flavor_DVD_arch_i586');
-$get->element_exists('#flavor_DVD_arch_x86_64');
-$get->element_exists('#flavor_GNOME-Live_arch_i686');
-$get->element_exists_not('#flavor_GNOME-Live_arch_x86_64');
-$get->element_exists_not('#flavor_DVD_arch_i686');
-
-# Check some results (and it's overview_xxx classes)
-$get->element_exists('#res_DVD_i586_kde .result_passed');
-$get->element_exists('#res_GNOME-Live_i686_RAID0 i.state_cancelled');
-$get->element_exists('#res_DVD_i586_RAID1 i.state_scheduled');
-$get->element_exists_not('#res_DVD_x86_64_doc');
-
-#
-# Overview of build 0048
-#
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
-$get->status_is(200);
-$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/\QPassed: 0 Soft Failure: 2 Failed: 1\E/i);
-
-# Check the headers
-$get->element_exists('#flavor_DVD_arch_x86_64');
-$get->element_exists_not('#flavor_DVD_arch_i586');
-$get->element_exists_not('#flavor_GNOME-Live_arch_i686');
-
-# Check some results (and it's overview_xxx classes)
-$get->element_exists('#res_DVD_x86_64_doc .result_failed');
-$get->element_exists('#res_DVD_x86_64_kde .result_softfailed');
-$get->element_exists_not('#res_DVD_i586_doc');
-$get->element_exists_not('#res_DVD_i686_doc');
-
-my $failedmodules
-  = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#res_DVD_x86_64_doc .failedmodule a')->all_text);
-like($failedmodules, qr/logpackages/i, "failed modules are listed");
-
-#
-# Default overview for 13.1
-#
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1'});
-$get->status_is(200);
-$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/Summary of opensuse 13\.1 build 0091/i);
-like($summary, qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
-
-#
-# Default overview for Factory
-#
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory'});
-$get->status_is(200);
-$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/Summary of opensuse Factory build 0048\@0815/i);
-like($summary, qr/\QPassed: 0 Failed: 1\E/i);
-
-
-#
-# Still possible to check an old build
-#
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '87.5011'});
-$get->status_is(200);
-$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/Summary of opensuse Factory build 87.5011/);
-like($summary, qr/Passed: 0 Incomplete: 1 Failed: 0/);
-
-# Advanced query parameters can be forwarded
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', result => 'passed'})
-  ->status_is(200);
-$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
-like($summary, qr/Passed: 2 Failed: 0/i, "Only passed are shown");
-$get->element_exists('#res_DVD_i586_kde .result_passed');
-$get->element_exists('#res_DVD_i586_textmode .result_passed');
-$get->element_exists_not('#res_DVD_i586_RAID0 .state_scheduled');
-$get->element_exists_not('#res_DVD_x86_64_kde .state_running');
-$get->element_exists_not('#res_GNOME-Live_i686_RAID0 .state_cancelled');
-$get->element_exists_not('.result_failed');
-$get->element_exists_not('.state_cancelled');
-
-# This time show only failed
-$get
-  = $t->get_ok(
-    '/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', result => 'failed'})
-  ->status_is(200);
-$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/Passed: 0 Failed: 1/i);
-$get->element_exists('#res_DVD_x86_64_doc .result_failed');
-$get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
-
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
-  ->status_is(200);
-$summary = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#summary')->all_text);
-like($summary, qr/Passed: 0 Soft Failure: 2 Failed: 1/i, 'todo=1 shows all unlabeled failed');
-
-
-#
-# Test filter form
-#
-
-# Test initial state of architecture text box
-$get
-  = $t->get_ok(
-    '/tests/overview' => form => {distri => 'opensuse', version => 'Factory', result => 'passed', arch => 'i686'})
-  ->status_is(200);
-# FIXME: works when testing manually, but accessing the value via Mojo doesn't work
-#is($t->tx->res->dom->at('#filter-arch')->val, 'i686', 'default state of architecture');
 
 is($driver->get_title(), "openQA", "on main page");
 my $baseurl = $driver->get_current_url();
@@ -190,10 +64,6 @@ $driver->mouse_move_to_location(element => $fmod, xoffset => 8, yoffset => 8);
 t::ui::PhantomTest::wait_for_ajax;
 like($driver->find_elements('.failedmodule a', 'css')->[1]->get_attribute('href'),
     qr/\/3$/, 'ajax update failed module step');
-
-$t->get_ok('/tests/99937/modules/kate/fails')->json_is('/failed_needles' => ["test-kate-1"], 'correct failed needles');
-$t->get_ok('/tests/99937/modules/zypper_up/fails')
-  ->json_is('/first_failed_step' => 1, 'failed module: fallback to first step');
 
 t::ui::PhantomTest::kill_phantom();
 

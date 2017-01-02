@@ -114,15 +114,6 @@ sub create_from_settings {
     my %settings = %$settings;
 
     my %new_job_args = (TEST => $settings{TEST});
-
-    if ($settings{NAME}) {
-        my $njobs = $self->search({slug => $settings{NAME}})->count;
-        return 0 if $njobs;
-
-        $new_job_args{slug} = $settings{NAME};
-        delete $settings{NAME};
-    }
-
     my $group;
     my %group_args;
     if ($settings{_GROUP_ID}) {

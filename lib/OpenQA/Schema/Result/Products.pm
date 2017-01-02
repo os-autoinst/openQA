@@ -44,8 +44,9 @@ __PACKAGE__->add_columns(
     flavor => {
         data_type => 'text',
     },
-    variables => {
-        data_type => 'text',
+    description => {
+        data_type   => 'text',
+        is_nullable => 1,
     },
 );
 __PACKAGE__->add_timestamps;

@@ -375,55 +375,21 @@ sub _job_labels {
     return \%labels;
 }
 
-# Custom action enabling the openSUSE Release Team
-# to see the quality at a glance
-sub overview {
-    my $self       = shift;
-    my $validation = $self->validation;
-    for my $arg (qw(distri version)) {
-        $validation->required($arg);
-    }
-    if ($validation->has_error) {
-        return $self->render(text => 'Missing parameters', status => 404);
-    }
-
-    my %search_args;
-    my $group;
-    for my $arg (qw(distri version flavor build)) {
-        next unless defined $self->param($arg);
-        $search_args{$arg} = $self->param($arg);
-    }
-
-    if ($self->param('groupid') or $self->param('group')) {
-        my $search_term = $self->param('groupid') ? $self->param('groupid') : {name => $self->param('group')};
-        $group = $self->db->resultset("JobGroups")->find($search_term);
-        return $self->reply->not_found if (!$group);
-        $search_args{groupid} = $group->id;
-    }
-
-    if (!$search_args{build}) {
-        $search_args{build} = $self->db->resultset("Jobs")->latest_build(%search_args);
-    }
-    $search_args{scope} = 'current';
-
+# Take an job objects arrayref and prepare data structures for 'overview'
+sub prepare_job_results {
+    my ($self, $jobs) = @_;
     my @configs;
     my %archs;
     my %results;
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
-
-    # Forward all query parameters to jobs query to allow specifying additional
-    # query parameters which are then properly shown on the overview.
-    my $req_params = $self->req->params->to_hash;
-    %search_args = (%search_args, %$req_params);
-    my @latest_jobs        = $self->db->resultset("Jobs")->complex_query(%search_args)->latest_jobs;
-    my $preferred_machines = _calculate_preferred_machines(\@latest_jobs);
-    my @latest_jobs_ids    = map { $_->id } @latest_jobs;
+    my $preferred_machines = _calculate_preferred_machines($jobs);
+    my @latest_jobs_ids    = map { $_->id } @{$jobs};
     my $all_result_stats   = OpenQA::Schema::Result::JobModules::job_module_stats(\@latest_jobs_ids);
 
     # prefetch the number of available labels for those jobs
-    my $job_labels = $self->_job_labels(\@latest_jobs);
+    my $job_labels = $self->_job_labels($jobs);
 
-    foreach my $job (@latest_jobs) {
+    foreach my $job (@$jobs) {
         my $test   = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch   = $job->ARCH || 'noarch';
@@ -491,14 +457,52 @@ sub overview {
         $results{$test}{$flavor} = {} unless $results{$test}{$flavor};
         $results{$test}{$flavor}{$arch} = $result;
     }
+    return (\@configs, \%archs, \%results, $aggregated);
+}
 
+# A generic query page showing test results in a configurable matrix
+sub overview {
+    my ($self) = @_;
+    my $validation = $self->validation;
+    for my $arg (qw(distri version)) {
+        $validation->required($arg);
+    }
+    if ($validation->has_error) {
+        return $self->render(text => 'Missing parameters', status => 404);
+    }
+
+    my %search_args;
+    my $group;
+    for my $arg (qw(distri version flavor build)) {
+        next unless defined $self->param($arg);
+        $search_args{$arg} = $self->param($arg);
+    }
+
+    if ($self->param('groupid') or $self->param('group')) {
+        my $search_term = $self->param('groupid') ? $self->param('groupid') : {name => $self->param('group')};
+        $group = $self->db->resultset("JobGroups")->find($search_term);
+        return $self->reply->not_found if (!$group);
+        $search_args{groupid} = $group->id;
+    }
+
+    if (!$search_args{build}) {
+        $search_args{build} = $self->db->resultset("Jobs")->latest_build(%search_args);
+    }
+    $search_args{scope} = 'current';
+
+    # Forward all query parameters to jobs query to allow specifying additional
+    # query parameters which are then properly shown on the overview.
+    my $req_params = $self->req->params->to_hash;
+    %search_args = (%search_args, %$req_params);
+    my @latest_jobs = $self->db->resultset("Jobs")->complex_query(%search_args)->latest_jobs;
+    my ($configs, $archs, $results, $aggregated) = $self->prepare_job_results(\@latest_jobs);
     # Sorting everything
-    my @types = keys %archs;
-    @types   = sort @types;
-    @configs = sort @configs;
+    my @types = keys %$archs;
+    @types = sort @types;
+    my @configs = sort @$configs;
     for my $flavor (@types) {
-        my @sorted = sort(@{$archs{$flavor}});
-        $archs{$flavor} = \@sorted;
+        my @sorted = sort(@{$archs->{$flavor}});
+        $archs->{$flavor} = \@sorted;
     }
 
     $self->stash(
@@ -508,8 +512,8 @@ sub overview {
         group      => $group,
         configs    => \@configs,
         types      => \@types,
-        archs      => \%archs,
-        results    => \%results,
+        archs      => $archs,
+        results    => $results,
         aggregated => $aggregated
     );
 }

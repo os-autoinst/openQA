@@ -36,7 +36,7 @@ like(
     exception {
         OpenQA::Worker::Common::api_init(
             {
-                host => 'http://openqa.opensuse.org',
+                host => 'http://any_host',
             })
     },
     qr/API key.*needed/,
