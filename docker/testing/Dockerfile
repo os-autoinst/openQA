@@ -1,6 +1,6 @@
 # Docker file to test full-stack.t in a travis like environment
 FROM sonarsource/local-travis
-run wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2 -O /p.tar.bz2
+run wget http://stephan.kulow.org/phantomjs-2.1.1-linux-x86_64.tar.bz2 -O /p.tar.bz2
 run tar xvjf /p.tar.bz2
 run rm /p.tar.bz2
 run mv phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/bin
@@ -19,5 +19,5 @@ run cd openQA && perl t/06-users.t
 run git config --global user.email "you@example.com"
 run git config --global user.name "Your Name"
 run cd openQA && git fetch origin && git checkout try_full_stack
-copy t/full-stack.sh /
+copy full-stack.sh /
 
