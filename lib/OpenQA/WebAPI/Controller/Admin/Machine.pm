@@ -19,9 +19,7 @@ use strict;
 use parent 'OpenQA::WebAPI::Controller::Admin::Table';
 
 sub index {
-    my $self = shift;
-
-    $self->SUPER::admintable('MachineSettings', 'machine');
+    shift->SUPER::admintable('machine');
 }
 
 1;

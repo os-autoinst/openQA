@@ -81,10 +81,6 @@ __PACKAGE__->add_columns(
         data_type         => 'integer',
         is_auto_increment => 1,
     },
-    slug => {    # to be removed?
-        data_type   => 'text',
-        is_nullable => 1
-    },
     result_dir => {    # this is the directory below testresults
         data_type   => 'text',
         is_nullable => 1
@@ -200,8 +196,6 @@ __PACKAGE__->has_many(networks => 'OpenQA::Schema::Result::JobNetworks', 'job_id
 __PACKAGE__->has_many(gru_dependencies => 'OpenQA::Schema::Result::GruDependencies', 'job_id');
 __PACKAGE__->has_many(screenshot_links => 'OpenQA::Schema::Result::ScreenshotLinks', 'job_id');
 
-__PACKAGE__->add_unique_constraint([qw(slug)]);
-
 __PACKAGE__->filter_column(
     result_dir => {
         filter_to_storage   => 'remove_result_dir_prefix',
@@ -269,8 +263,6 @@ sub delete {
 
 sub name {
     my ($self) = @_;
-    return $self->slug if $self->slug;
-
     if (!$self->{_name}) {
         my @a;
 

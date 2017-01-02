@@ -126,9 +126,10 @@ is_deeply(
                     }]
             },
             {
-                'id'       => 1017,
-                'name'     => 'advanced_kde',
-                'settings' => [
+                'id'          => 1017,
+                'name'        => 'advanced_kde',
+                'description' => 'See kde for simple test',
+                'settings'    => [
                     {
                         'key'   => 'DESKTOP',
                         'value' => 'kde'
@@ -153,7 +154,8 @@ my $res = $t->post_ok(
     form => {
         name              => "testsuite",
         "settings[TEST]"  => "val1",
-        "settings[TEST2]" => "val1"
+        "settings[TEST2]" => "val1",
+        description       => "this is a new testsuite"
     })->status_is(200);
 my $test_suite_id = $res->tx->res->json->{id};
 
@@ -165,9 +167,10 @@ is_deeply(
     {
         'TestSuites' => [
             {
-                'id'       => $test_suite_id,
-                'name'     => 'testsuite',
-                'settings' => [
+                'id'          => $test_suite_id,
+                'name'        => 'testsuite',
+                'description' => 'this is a new testsuite',
+                'settings'    => [
                     {
                         'key'   => 'TEST',
                         'value' => 'val1'

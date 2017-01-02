@@ -23,21 +23,21 @@ use Try::Tiny;
 my %tables = (
     Machines => {
         keys => [['id'], ['name'],],
-        cols     => ['id',   'name', 'backend'],
+        cols     => ['id',   'name', 'backend', 'description'],
         required => ['name', 'backend'],
-        defaults => {variables => ""},
+        defaults => {description => undef},
     },
     TestSuites => {
         keys => [['id'], ['name'],],
-        cols     => ['id', 'name'],
+        cols     => ['id', 'name', 'description'],
         required => ['name'],
-        defaults => {variables => ""},
+        defaults => {description => undef},
     },
     Products => {
         keys => [['id'], ['distri', 'version', 'arch', 'flavor'],],
-        cols     => ['id',     'distri',  'version', 'arch', 'flavor'],
+        cols     => ['id',     'distri',  'version', 'arch', 'flavor', 'description'],
         required => ['distri', 'version', 'arch',    'flavor'],
-        defaults => {variables => "", name => ""},
+        defaults => {description => "", name => ""},
     },
 );
 
@@ -76,7 +76,12 @@ sub list {
                 map {
                     my $row  = $_;
                     my %hash = (
-                        (map { ($_ => $row->get_column($_)) } @{$tables{$table}->{cols}}),
+                        (
+                            map {
+                                my $val = $row->get_column($_);
+                                $val ? ($_ => $val) : ()
+                            } @{$tables{$table}->{cols}}
+                        ),
                         settings => [map { {key => $_->key, value => $_->value} } $row->settings]);
                     \%hash;
                 } @result
@@ -93,6 +98,7 @@ sub create {
         $validation->required($par);
         $entry{$par} = $self->param($par);
     }
+    $entry{description} = $self->param('description');
     my $hp = $self->hparams();
     my @settings;
     if ($hp->{settings}) {
@@ -130,7 +136,7 @@ sub update {
         $validation->required($par);
         $entry{$par} = $self->param($par);
     }
-
+    $entry{description} = $self->param('description');
     my $hp = $self->hparams();
     my @settings;
     my @keys;
@@ -140,8 +146,6 @@ sub update {
             push @keys, $k;
         }
     }
-
-    $entry{variables} = '';
 
     my $error;
     my $ret;
