@@ -11,7 +11,7 @@ env:
   global:
   - COMMIT_AUTHOR_EMAIL: "skynet@open.qa"
 before_install:
-  - openssl aes-256-cbc -K $encrypted_9e13c584f905_key -iv $encrypted_9e13c584f905_iv -in .openqa-travis.enc -out .openqa-travis -d
+  - openssl aes-256-cbc -K $encrypted_e2c381aa6b8c_key -iv $encrypted_e2c381aa6b8c_iv -in .openqa-travis.enc -out .openqa-travis -d
   - eval "$(ssh-agent -s)"
   - chmod 600 .openqa-travis
   - ssh-add .openqa-travis
