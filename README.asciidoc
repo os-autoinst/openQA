@@ -1,4 +1,4 @@
-openQA image:https://api.travis-ci.org/os-autoinst/openQA.svg?branch=master[link=https://travis-ci.org/os-autoinst/openQA] image:https://coveralls.io/repos/github/os-autoinst/openQA/badge.svg?branch=master[link=https://coveralls.io/github/os-autoinst/openQA?branch=master]
+openQA image:https://api.travis-ci.org/os-autoinst/openQA.svg?branch=master[link=https://travis-ci.org/os-autoinst/openQA] image:https://coveralls.io/repos/github/os-autoinst/openQA/badge.svg?branch=master[link=https://coveralls.io/github/os-autoinst/openQA?branch=master] image:https://codecov.io/gh/os-autoinst/openQA/branch/master/graph/badge.svg[link=https://codecov.io/gh/os-autoinst/openQA]
 ================================================================================================================================================================================================================================================================================
 
 openQA is a testing framework that allows you to test GUI applications on one

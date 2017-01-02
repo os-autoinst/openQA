@@ -126,9 +126,10 @@ GetOptions(
 usage(0) if ($options{help});
 
 sub read_worker_config($) {
-    my $instance   = shift;
+    my $instance = shift;
+    print "READ WORKER $ENV{OPENQA_CONFIG}\n";
     my $worker_dir = $ENV{OPENQA_CONFIG} || '/etc/openqa';
-    my $cfg        = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
+    my $cfg = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
 
     my $sets = {};
     foreach my $section ('global', $instance) {
@@ -138,7 +139,7 @@ sub read_worker_config($) {
             }
         }
     }
-    $sets->{'HOST'} ||= "localhost";
+    $sets->{HOST} ||= "localhost";
 
     return $sets;
 }
