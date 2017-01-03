@@ -294,21 +294,29 @@ subtest 'commenting in test results including labels' => sub {
         t::ui::PhantomTest::wait_for_ajax;
         $driver->find_element('Job Groups',                'link_text')->click();
         $driver->find_element('#current-build-overview a', 'css')->click();
-        is($driver->find_element('#res_DVD_x86_64_doc .fa-bookmark', 'css')->get_attribute('title'),
-            'true_positive', 'label icon shown');
+        is(
+            $driver->find_element('#res_DVD_x86_64_doc .fa-bookmark', 'css')->get_attribute('title'),
+            'Label: true_positive',
+            'label icon shown'
+        );
         $driver->get($baseurl . 'tests/99938#comments');
-        $driver->find_element('#text',          'css')->send_keys('bsc#1234');
+        $driver->find_element('#text',          'css')->send_keys('bsc#1234 poo#4321');
         $driver->find_element('#submitComment', 'css')->click();
         t::ui::PhantomTest::wait_for_ajax;
         $driver->find_element('Job Groups',                'link_text')->click();
         $driver->find_element('#current-build-overview a', 'css')->click();
         is(
             $driver->find_element('#res_DVD_x86_64_doc .fa-bug', 'css')->get_attribute('title'),
-            'Bug(s) referenced: bsc#1234',
-            'bug icon shown'
+            'Bug referenced: bsc#1234',
+            'bug icon shown for bsc#1234'
+        );
+        is(
+            $driver->find_element('#res_DVD_x86_64_doc .fa-bolt', 'css')->get_attribute('title'),
+            'Bug referenced: poo#4321',
+            'bug icon shown for poo#4321'
         );
         my @labels = $driver->find_elements('#res_DVD_x86_64_doc .test-label', 'css');
-        is(scalar @labels, 1, 'Only one label is shown at a time');
+        is(scalar @labels, 3, '3 bugrefs shown');
         $get = $t->get_ok($driver->get_current_url())->status_is(200);
         is($get->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href},
             'https://bugzilla.suse.com/show_bug.cgi?id=1234');
@@ -330,12 +338,12 @@ subtest 'commenting in test results including labels' => sub {
             $driver->find_element('#current-build-overview a', 'css')->click();
             is(
                 $driver->find_element('#res_staging_e_x86_64_minimalx .fa-bolt', 'css')->get_attribute('title'),
-                'Bug(s) referenced: poo#9876',
+                'Bug referenced: poo#9876',
                 'bolt icon shown for progress issues'
             );
         };
 
-        subtest 'latest bugref but first in each comment' => sub {
+        subtest 'latest bugref first' => sub {
             $driver->get($baseurl . 'tests/99926#comments');
             $driver->find_element('#text',          'css')->send_keys('poo#9875 poo#9874');
             $driver->find_element('#submitComment', 'css')->click();
@@ -347,11 +355,14 @@ subtest 'commenting in test results including labels' => sub {
                 'on the right build'
             );
             $driver->find_element('#current-build-overview a', 'css')->click();
-            my $bugref = $driver->find_element('#res_staging_e_x86_64_minimalx .fa-bolt', 'css');
-            is($bugref->get_attribute('title'), 'Bug(s) referenced: poo#9875', 'first bugref in latest comment wins');
+            my @bugrefs = $driver->find_elements('#res_staging_e_x86_64_minimalx .fa-bolt', 'css');
+            is($bugrefs[0]->get_attribute('title'), 'Bug referenced: poo#9876', 'first bugref shown');
+            is($bugrefs[1]->get_attribute('title'), 'Bug referenced: poo#9875', 'second bugref shown');
+            is($bugrefs[2]->get_attribute('title'), 'Bug referenced: poo#9874', 'third bugref shown');
+            is($bugrefs[3],                         undef,                      'correct number of bugrefs shown');
             $get = $t->get_ok($driver->get_current_url())->status_is(200);
             is($get->tx->res->dom->at('#res_staging_e_x86_64_minimalx .fa-bolt')->parent->{href},
-                'https://progress.opensuse.org/issues/9875');
+                'https://progress.opensuse.org/issues/9876');
         };
 
         $driver->find_element('opensuse', 'link_text')->click();

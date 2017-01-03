@@ -15,7 +15,7 @@
 
 package OpenQA::Schema::Result::Comments;
 use base 'DBIx::Class::Core';
-use OpenQA::Utils 'find_bugref';
+use OpenQA::Utils qw(find_bugref find_bugrefs);
 use strict;
 
 __PACKAGE__->load_components(qw(Core));
@@ -81,11 +81,20 @@ __PACKAGE__->belongs_to(
 
 =head2 bugref
 
-Returns bugref if C<$self> is bugref, e.g. 'bug#1234'.
+Returns the first bugref if C<$self> contains a bugref, e.g. 'bug#1234'.
 =cut
 sub bugref {
     my ($self) = @_;
     return find_bugref($self->text);
+}
+
+=head2 bugrefs
+
+Returns all bugrefs in C<$self>, e.g. 'bug#1234 poo#1234'.
+=cut
+sub bugrefs {
+    my ($self) = @_;
+    return find_bugrefs($self->text);
 }
 
 =head2 label
