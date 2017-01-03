@@ -12,11 +12,16 @@ coverage:
   notify:
     irc:
       default:
-        server: chat.freenode.irc
-	channel: #opensuse-factory
+        server: chat.freenode.net
+        channel: '##opensuse-factory'
   status:
-    changes: false
+    changes:
+      default:
+        branches: null
     project:
-      target: 69.2
-      only_pulls: true
-    patch: false
+      default:
+        target: 68
+        only_pulls: true
+    patch:
+      default:
+        branches: null
