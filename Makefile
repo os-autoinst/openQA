@@ -77,7 +77,22 @@ test: checkstyle
 # ignore tests and test related addons in coverage analysis
 COVER_OPTS ?= -ignore_re "^t/.*" -ignore lib/perlcritic/Perl/Critic/Policy/HashKeyQuotes.pm
 cover_db/:
-	MOJO_LOG_LEVEL=debug OPENQA_LOGFILE=/tmp/openqa-debug.log cover ${COVER_OPTS} -test -coverage default,-pod
+	export MOJO_LOG_LEVEL=debug ;\
+	export MOJO_TMPDIR=$$(mktemp -d) ;\
+	export OPENQA_LOGFILE=/tmp/openqa-debug.log ;\
+	if test "x$$FULLSTACK" = x1; then \
+	  if ! test -d ../os-autoinst; then \
+              if test "$$TRAVIS" = "true" ; then\
+		  git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
+		  (cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh) ;\
+	      fi ;\
+	  fi ;\
+	  eval $$(dbus-launch --sh-syntax) ;\
+	  export PERL5OPT="-MDevel::Cover=-db,$$(pwd)/cover_db,-coverage=default,-pod" ;\
+	  perl t/full-stack.t ;\
+	else \
+	  cover ${COVER_OPTS} -test -coverage default,-pod ;\
+	fi
 
 .PHONY: coverage-test
 coverage-test: cover_db/
@@ -87,7 +102,7 @@ coverage: coverage-html
 
 .PHONY: coverage-codecov
 coverage-codecov: cover_db/
-	cover ${COVER_OPTS} -report codecov
+	cover ${COVER_OPTS} -select_re "lib/.*" -report codecov
 
 cover_db/coverage.html: cover_db/
 	cover ${COVER_OPTS} -report html
