@@ -16,7 +16,16 @@
                 <tr>
                     <th class="col_value">Name</th>
                     <th class="col_settings_list">Settings</th>
-                    <th class="col_description">Description</th>
+                    <th class="col_description">
+                        Description
+                        <%= help_popover('Help for description' =>
+                            'An optional description can be entered for each
+                            test suite which is displayed as description on
+                            each test row on the test overview page
+                            <i>/tests/overview</i>',
+                            'https://github.com/os-autoinst/openQA/pull/1094' => 'pull request')
+                        %>
+                    </th>
                     <th class="col_action">Actions</th>
                 </tr>
             </thead>
