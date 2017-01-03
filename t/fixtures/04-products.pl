@@ -25,9 +25,10 @@
     },
 
     TestSuites => {
-        id       => 1002,
-        name     => "kde",
-        settings => [{key => "DESKTOP", value => "kde"}],
+        id          => 1002,
+        name        => "kde",
+        description => 'Simple kde test, before advanced_kde',
+        settings    => [{key => "DESKTOP", value => "kde"}],
     },
 
     TestSuites => {

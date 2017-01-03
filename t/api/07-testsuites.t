@@ -65,9 +65,10 @@ is_deeply(
                     }]
             },
             {
-                'id'       => 1002,
-                'name'     => 'kde',
-                'settings' => [
+                'id'          => 1002,
+                'name'        => 'kde',
+                'description' => 'Simple kde test, before advanced_kde',
+                'settings'    => [
                     {
                         'key'   => 'DESKTOP',
                         'value' => 'kde'

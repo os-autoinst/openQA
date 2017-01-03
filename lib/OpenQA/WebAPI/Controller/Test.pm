@@ -378,7 +378,6 @@ sub _job_labels {
 # Take an job objects arrayref and prepare data structures for 'overview'
 sub prepare_job_results {
     my ($self, $jobs) = @_;
-    my @configs;
     my %archs;
     my %results;
     my $aggregated = {none => 0, passed => 0, failed => 0, incomplete => 0, scheduled => 0, running => 0, unknown => 0};
@@ -388,6 +387,12 @@ sub prepare_job_results {
 
     # prefetch the number of available labels for those jobs
     my $job_labels = $self->_job_labels($jobs);
+    my @job_names = map { $_->TEST } @$jobs;
+
+    # prefetch descriptions from test suites
+    my %desc_args = (name => {in => \@job_names});
+    my @descriptions = $self->db->resultset("TestSuites")->search(\%desc_args, {columns => [qw(name description)]});
+    my %descriptions = map { $_->name => $_->description } @descriptions;
 
     foreach my $job (@$jobs) {
         my $test   = $job->TEST;
@@ -441,23 +446,25 @@ sub prepare_job_results {
             }
         }
 
-        # Populate @configs and %archs
+        # Populate %archs
         if (   $job->MACHINE
             && $preferred_machines->{$job->ARCH}
             && $preferred_machines->{$job->ARCH} ne $job->MACHINE)
         {
             $test .= "@" . $job->MACHINE;
         }
-        push(@configs, $test) unless (grep { $test eq $_ } @configs);
-        $archs{$flavor} = [] unless $archs{$flavor};
+        # poor mans set
+        $archs{$flavor} //= [];
         push(@{$archs{$flavor}}, $arch) unless (grep { $arch eq $_ } @{$archs{$flavor}});
 
         # Populate %results
-        $results{$test} = {} unless $results{$test};
-        $results{$test}{$flavor} = {} unless $results{$test}{$flavor};
-        $results{$test}{$flavor}{$arch} = $result;
+        $results{$test}                   //= {};
+        $results{$test}{description}      //= $descriptions{$test};
+        $results{$test}{flavors}          //= {};
+        $results{$test}{flavors}{$flavor} //= {};
+        $results{$test}{flavors}{$flavor}{$arch} = $result;
     }
-    return (\@configs, \%archs, \%results, $aggregated);
+    return (\%archs, \%results, $aggregated);
 }
 
 # A generic query page showing test results in a configurable matrix
@@ -495,11 +502,10 @@ sub overview {
     my $req_params = $self->req->params->to_hash;
     %search_args = (%search_args, %$req_params);
     my @latest_jobs = $self->db->resultset("Jobs")->complex_query(%search_args)->latest_jobs;
-    my ($configs, $archs, $results, $aggregated) = $self->prepare_job_results(\@latest_jobs);
+    my ($archs, $results, $aggregated) = $self->prepare_job_results(\@latest_jobs);
     # Sorting everything
     my @types = keys %$archs;
     @types = sort @types;
-    my @configs = sort @$configs;
     for my $flavor (@types) {
         my @sorted = sort(@{$archs->{$flavor}});
         $archs->{$flavor} = \@sorted;
@@ -510,7 +516,6 @@ sub overview {
         version    => $search_args{version},
         distri     => $search_args{distri},
         group      => $group,
-        configs    => \@configs,
         types      => \@types,
         archs      => $archs,
         results    => $results,

@@ -87,6 +87,18 @@ function table_row (data, table, edit, is_admin)
                 html += '</textarea>';
             }
             html += '</td>';
+        } else if (th.hasClass("col_description")) {
+            var description = '';
+            if (data[name]) description = htmlEscape(data[name]);
+            if (edit) {
+                html +=
+                '<td class="editable">' +
+                     '<textarea class="description">' + description + '</textarea>' +
+                 '</td>';
+            }
+            else {
+                html += '<td>' + description + '</td>';
+            }
         } else if (th.hasClass("col_action")) {
             html += '<td>';
             if (edit) {
@@ -190,6 +202,11 @@ function submit_table_row(tr, id)
                     });
                 });
             }
+            else if (th.hasClass("col_description")) {
+                var value = $(this).find('.description').val();
+                data[name] = value;
+            }
+
         });
 
         var url = $("#admintable_api_url").val();

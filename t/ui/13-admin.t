@@ -184,12 +184,13 @@ subtest 'add test suite' => sub() {
     t::ui::PhantomTest::wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr', 'css');
     my @headers = $driver->find_child_elements($elem, 'th');
-    is(@headers, 3, "3 columns");
+    is(@headers, 4, 'all columns');
 
     # the headers are specific to our fixtures - if they change, we have to adapt
-    is((shift @headers)->get_text(), "Name",     "1st column");
-    is((shift @headers)->get_text(), "Settings", "2th column");
-    is((shift @headers)->get_text(), "Actions",  "3th column");
+    is((shift @headers)->get_text(), "Name",        "1st column");
+    is((shift @headers)->get_text(), "Settings",    "2th column");
+    is((shift @headers)->get_text(), "Description", "3rd column");
+    is((shift @headers)->get_text(), "Actions",     "4th column");
 
     # now check one row by example
     $elem = $driver->find_element('.admintable tbody tr:nth-child(3)', 'css');
@@ -209,7 +210,7 @@ subtest 'add test suite' => sub() {
     is(@fields, 1, '1 input field');
     (shift @fields)->send_keys('xfce');    # name
     @fields = $driver->find_child_elements($elem, '//textarea');
-    is(@fields, 1, '1 textarea');
+    is(@fields, 2, '2 textareas');
 
     is($driver->find_element('//button[@title="Add"]')->click(), 1, 'added');
     t::ui::PhantomTest::wait_for_ajax;
