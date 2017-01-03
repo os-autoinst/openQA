@@ -368,8 +368,9 @@ sub call_websocket {
             }
             else {
                 $ws = undef;
-                if ($tx->completed) {
-                    call_websocket($ua_url->parse($tx->res->headers->location));
+                if (my $location_header = ($tx->completed ? $tx->res->headers->location : undef)) {
+                    print "Following ws redirection to: $location_header\n";
+                    call_websocket($ua_url->parse($location_header));
                 }
                 else {
                     my $err = $tx->error;
@@ -384,10 +385,10 @@ sub call_websocket {
                             return;
                         }
                     }
+                    # just retry in any error case - except when the worker ID isn't known
+                    # anymore (hence return 3 lines above)
+                    add_timer('setup_websocket', 10, \&setup_websocket, 1);
                 }
-                # just retry in any error case - except when the worker ID isn't known
-                # anymore (hence return 3 lines above)
-                add_timer('setup_websocket', 10, \&setup_websocket, 1);
             }
         });
 }
