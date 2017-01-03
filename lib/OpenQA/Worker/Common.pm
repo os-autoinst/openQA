@@ -341,6 +341,14 @@ sub setup_websocket {
     }
     $ua_url->path("ws/$workerid");
     print "WEBSOCKET $ua_url\n" if $verbose;
+
+    call_websocket($ua_url);
+}
+
+sub call_websocket;
+sub call_websocket {
+    my ($ua_url) = @_;
+
     $ua->websocket(
         $ua_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
             my ($ua, $tx) = @_;
@@ -359,17 +367,22 @@ sub setup_websocket {
                 $ws = $tx->max_websocket_size(10485760);
             }
             else {
-                my $err = $tx->error;
                 $ws = undef;
-                if (defined $err) {
-                    warn "Unable to upgrade connection to WebSocket: " . $err->{code} . ". proxy_wstunnel enabled?";
-                    if ($err->{code} eq '404' && $workerid) {
-                        # worker id suddenly not known anymore. Abort. If workerid
-                        # is unset we already detected that in api_call
-                        $workerid = undef;
-                        OpenQA::Worker::Jobs::stop_job('api-failure');
-                        add_timer('register_worker', 10, \&register_worker, 1);
-                        return;
+                if ($tx->completed) {
+                    call_websocket($ua_url->parse($tx->res->headers->location));
+                }
+                else {
+                    my $err = $tx->error;
+                    if (defined $err) {
+                        warn "Unable to upgrade connection to WebSocket: " . $err->{code} . ". proxy_wstunnel enabled?";
+                        if ($err->{code} eq '404' && $workerid) {
+                            # worker id suddenly not known anymore. Abort. If workerid
+                            # is unset we already detected that in api_call
+                            $workerid = undef;
+                            OpenQA::Worker::Jobs::stop_job('api-failure');
+                            add_timer('register_worker', 10, \&register_worker, 1);
+                            return;
+                        }
                     }
                 }
                 # just retry in any error case - except when the worker ID isn't known
