@@ -92,7 +92,7 @@ $time->text_like(qr/1[01] minutes ago/, 'right time for running');
 
 $get = $t->get_ok('/tests')->status_is(200);
 my @header = $t->tx->res->dom->find('h2')->map('text')->each;
-my @expected = ('2 jobs are running', '2 scheduled jobs', 'Last 10 finished jobs');
+my @expected = ('2 jobs are running', '2 scheduled jobs', 'Last 11 finished jobs');
 is_deeply(\@header, \@expected, 'all job summaries correct with defaults');
 
 $get      = $t->get_ok('/tests?limit=1')->status_is(200);
@@ -175,7 +175,7 @@ my @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tb
 
 is_deeply(
     \@jobs,
-    [qw(job_99940 job_99939 job_99938 job_99926 job_99936 job_99947 job_99962 job_99946 job_99937)],
+    [qw(job_99940 job_99939 job_99938 job_99926 job_99936 job_99947 job_99962 job_99946 job_80000 job_99937)],
     '99945 is not displayed'
 );
 $driver->find_element_by_id('relevantfilter')->click();
@@ -197,7 +197,7 @@ wait_for_ajax();
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 is_deeply(
     \@jobs,
-    [qw(job_99940 job_99939 job_99938 job_99926 job_99936 job_99947 job_99962 job_99946 job_99937)],
+    [qw(job_99940 job_99939 job_99938 job_99926 job_99936 job_99947 job_99962 job_99946 job_80000 job_99937)],
     '99945 again hidden'
 );
 

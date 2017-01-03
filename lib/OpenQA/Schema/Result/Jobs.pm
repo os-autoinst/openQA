@@ -117,28 +117,27 @@ __PACKAGE__->add_columns(
         is_nullable => 1,
     },
     TEST => {
-        data_type   => 'text',
-        is_nullable => 1
+        data_type => 'text'
     },
     DISTRI => {
-        data_type   => 'text',
-        is_nullable => 1
+        data_type     => 'text',
+        default_value => ''
     },
     VERSION => {
-        data_type   => 'text',
-        is_nullable => 1
+        data_type     => 'text',
+        default_value => ''
     },
     FLAVOR => {
-        data_type   => 'text',
-        is_nullable => 1
+        data_type     => 'text',
+        default_value => ''
     },
     ARCH => {
-        data_type   => 'text',
-        is_nullable => 1
+        data_type     => 'text',
+        default_value => ''
     },
     BUILD => {
-        data_type   => 'text',
-        is_nullable => 1
+        data_type     => 'text',
+        default_value => ''
     },
     MACHINE => {
         data_type   => 'text',

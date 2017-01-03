@@ -95,13 +95,13 @@ sub latest_jobs {
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
+        my $test    = $job->TEST;
         my $distri  = $job->DISTRI;
         my $version = $job->VERSION;
         my $build   = $job->BUILD;
-        my $test    = $job->TEST;
-        my $flavor  = $job->FLAVOR || 'sweet';
-        my $arch    = $job->ARCH || 'noarch';
-        my $machine = $job->MACHINE || 'nomachine';
+        my $flavor  = $job->FLAVOR;
+        my $arch    = $job->ARCH;
+        my $machine = $job->MACHINE // '';
         my $key     = "$distri-$version-$build-$test-$flavor-$arch-$machine";
         next if $seen{$key}++;
         push(@latest, $job);
@@ -159,7 +159,9 @@ sub create_from_settings {
 
     # migrate the important keys
     for my $key (qw(DISTRI VERSION FLAVOR ARCH TEST MACHINE BUILD)) {
-        $new_job_args{$key} = delete $settings{$key};
+        my $value = delete $settings{$key};
+        next unless $value;
+        $new_job_args{$key} = $value;
     }
 
     my $job = $self->create(\%new_job_args);
