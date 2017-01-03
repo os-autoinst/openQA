@@ -17,12 +17,7 @@
 
 function update_docs {
 
-        # install dependencies
-        gem install asciidoctor pygments.rb
-        gem install asciidoctor-pdf --pre
-        cpanm --install Pod::AsciiDoctor
-
-	call_asciidoctor
+        call_asciidoctor
 
         git clone $REPO out
         cd out
@@ -84,7 +79,7 @@ APIFILE
 
 green="\e[23m\e[1m"
 
-asciidoctor_bin=$(which asciidoctor)
+asciidoctor_bin="/bin/not/set"
 shortref=$(git rev-parse --short HEAD)
 verbose_doc_name=$(date +%Y%m%d)"_"${shortref} #we are not intending to run this off a git repository
 tmpwd=$(mktemp -d -t openqa-doc-XXXX)
@@ -96,12 +91,36 @@ REPO_DIRECTORY=$PWD
 SSH_KEY=$1
 SSH_IV=$2
 
-function call_asciidoctor {
+
+function check_asciidoctor {
+
+    asciidoctor_bin=$(which asciidoctor)
 
     if [ -z "${asciidoctor_bin}" -o ! -f "${asciidoctor_bin}" ]; then
         echo "Could not find asciidoctor binary in your path, please install it and run this command again"
+        echo "gem install asciidoctor pygments.rb"
+        echo "gem install asciidoctor-pdf --pre"
         exit 1
     fi
+
+}
+
+function set_sshkey {
+    openssl aes-256-cbc -K $SSH_KEY -iv $SSH_IV -in .openqa-travis.enc -out .openqa-travis -d
+    chmod 600 .openqa-travis
+    ssh-add .openqa-travis
+}
+
+function install_asciidoctor {
+    # install dependencies
+    gem install asciidoctor pygments.rb
+    gem install asciidoctor-pdf --pre
+    cpanm --install Pod::AsciiDoctor
+}
+
+function call_asciidoctor {
+
+    check_asciidoctor
 
     cd docs
     mkdir ${tmpwd}/output 2>/dev/null || true # we don't care if the directory already exists
@@ -132,12 +151,12 @@ if [ ${GH_PUBLISH} ] && [ ${CONTINUOUS_INTEGRATION} ]; then
     fi
 
     echo "Requirements met, generating documentation"
-    openssl aes-256-cbc -K $SSH_KEY -iv $SSH_IV -in .openqa-travis.enc -out .openqa-travis -d
-    eval "$(ssh-agent -s)"
-    chmod 600 .openqa-travis
-    ssh-add .openqa-travis
 
+    set_sshkey
+    eval "$(ssh-agent -s)"
+    install_asciidoctor
     update_docs
+
 else
     call_asciidoctor
 fi
