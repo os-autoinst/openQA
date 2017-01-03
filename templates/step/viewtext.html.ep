@@ -1,2 +1,1 @@
-% use OpenQA::Utils;
-<pre><%== render_escaped_refs($textresult) %></pre>
+<pre><%== rendered_refs_no_shortening $textresult %></pre>

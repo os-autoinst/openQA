@@ -1,7 +1,6 @@
 % layout 'bootstrap';
 % title 'Test summary';
 % use OpenQA::Schema::Result::Jobs;
-% use OpenQA::Utils;
 
 % content_for 'ready_function' => begin
   setupOverview();
@@ -115,7 +114,7 @@
                         <td class="name">
                             % my $test_label = trim_text($config, 30);
                             % if (my $description = $results->{$config}{description}) {
-                                <a data-content="<p><%= href_to_bugref(render_escaped_refs($results->{$config}{description})) %></p>"
+                                <a data-content="<p><%= rendered_refs $description %></p>"
                                 data-title="<%= $config %>" data-toggle="popover" data-trigger="focus" role="button" tabindex="0"><%= $test_label %></a>
                             % }
                             % else {
