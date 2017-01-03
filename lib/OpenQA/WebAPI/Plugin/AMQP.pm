@@ -45,15 +45,18 @@ sub register {
     $self->{config} = $self->{app}->config;
     my $ioloop = Mojo::IOLoop->singleton;
 
-    $self->connect();
+    $ioloop->next_tick(
+        sub {
+            $self->connect();
 
-    # register for events
-    for my $e (@job_events) {
-        $ioloop->on("openqa_$e" => sub { shift; $self->on_job_event(@_) });
-    }
-    for my $e (@comment_events) {
-        $ioloop->on("openqa_$e" => sub { shift; $self->on_comment_event(@_) });
-    }
+            # register for events
+            for my $e (@job_events) {
+                $ioloop->on("openqa_$e" => sub { shift; $self->on_job_event(@_) });
+            }
+            for my $e (@comment_events) {
+                $ioloop->on("openqa_$e" => sub { shift; $self->on_comment_event(@_) });
+            }
+        });
 }
 
 sub reconnect {
