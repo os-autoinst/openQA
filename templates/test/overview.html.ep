@@ -1,7 +1,6 @@
 % layout 'bootstrap';
 % title 'Test summary';
 % use OpenQA::Schema::Result::Jobs;
-% use OpenQA::Utils;
 
 % content_for 'ready_function' => begin
   setupOverview();
@@ -12,10 +11,10 @@
     <div id="summary" class="panel <%= ($aggregated->{failed} + $aggregated->{incomplete}) ? 'panel-danger' : 'panel-success' %>">
         <div class="panel-heading">
             Overall Summary of
-            % if ($group) {
-                <b><%= link_to $group->name => url_for('group_overview', groupid => $group->id) %></b>
-            % } else
-            % {
+            % if (@$groups) {
+                <b><%= b join(', ', map { link_to $_->name => url_for('group_overview', groupid => $_->id) } @$groups) %></b>
+            % }
+            % else {
                 <b><%= $distri %> <%= $version %></b>
             % }
             build <%= $build %>
@@ -52,7 +51,25 @@
         </div>
     </div>
     <div class="panel panel-default" id="filter-panel">
-        <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
+        <div class="panel-heading"><strong>Filter</strong>
+            <%= help_popover('Help for the <i>test overview</i>' => '
+                    <p>This page shows an overview of job results in a matrix
+                    view. Only the latest job for each scenario is shown. The
+                    view can be configured based on query parameters which can
+                    be set within this filter box.</p>
+                    <p><b>Caveat:</b> Based on the parameters the resulting
+                    job query might consider jobs as latest which do not
+                    represent the complete picture for a corresponding
+                    "latest" build so be careful with a more advanced
+                    selection of checkboxes with the interpretation of the
+                    results.</p>
+                    <p>Additional tweaking of the query is possible by leaving
+                    out query parameters completely or specifying them
+                    multiple times equivalent to an logical "or" search.</p>',
+                    'https://progress.opensuse.org/projects/openqav3/wiki/Wiki#Allow-group-overview-query-by-result-gh531' => 'Wiki')
+                %>
+            <span>no filter present, click to toggle filter form</span>
+        </div>
         <div class="panel-body">
             <form action="#" type="get" id="filter-form">
                 <div class="form-group" id="filter-results">
@@ -79,7 +96,6 @@
             </form>
         </div>
     </div>
-    % my $failedid;
     % for my $type (@$types) {
         <h3>Flavor: <%= $type %></h3>
         <table id="results_<%= $type %>" class="overview table table-striped table-hover">
@@ -98,8 +114,8 @@
                         <td class="name">
                             % my $test_label = trim_text($config, 30);
                             % if (my $description = $results->{$config}{description}) {
-                                <a data-content="<p><%= href_to_bugref(render_escaped_refs($results->{$config}{description})) %></p>"
-                                data-title="<%= $config %>" data-toggle="popover" data-trigger="click" role="button" tabindex="0"><%= $test_label %></a>
+                                <a data-content="<p><%= rendered_refs $description %></p>"
+                                data-title="<%= $config %>" data-toggle="popover" data-trigger="focus" role="button" tabindex="0"><%= $test_label %></a>
                             % }
                             % else {
                                 <%= $test_label %>

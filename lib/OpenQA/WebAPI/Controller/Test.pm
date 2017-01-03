@@ -479,17 +479,20 @@ sub overview {
     }
 
     my %search_args;
-    my $group;
+    my @groups;
     for my $arg (qw(distri version flavor build)) {
         next unless defined $self->param($arg);
         $search_args{$arg} = $self->param($arg);
     }
 
+    # By 'every_param' we make sure to use multiple values for groupid and
+    # group at the same time as a logical or, i.e. all specified groups are
+    # returned
     if ($self->param('groupid') or $self->param('group')) {
-        my $search_term = $self->param('groupid') ? $self->param('groupid') : {name => $self->param('group')};
-        $group = $self->db->resultset("JobGroups")->find($search_term);
-        return $self->reply->not_found if (!$group);
-        $search_args{groupid} = $group->id;
+        my @group_id_search   = map { {id   => $_} } @{$self->every_param('groupid')};
+        my @group_name_search = map { {name => $_} } @{$self->every_param('group')};
+        my @search_terms = (@group_id_search, @group_name_search);
+        @groups = $self->db->resultset("JobGroups")->search(\@search_terms)->all;
     }
 
     if (!$search_args{build}) {
@@ -515,7 +518,7 @@ sub overview {
         build      => $search_args{build},
         version    => $search_args{version},
         distri     => $search_args{distri},
-        group      => $group,
+        groups     => \@groups,
         types      => \@types,
         archs      => $archs,
         results    => $results,

@@ -19,7 +19,7 @@ package OpenQA::WebAPI::Plugin::Helpers;
 use strict;
 use warnings;
 use Mojo::ByteStream;
-use OpenQA::Utils 'bugurl';
+use OpenQA::Utils qw(bugurl render_escaped_refs href_to_bugref);
 use db_helpers;
 
 use base 'Mojolicious::Plugin';
@@ -70,6 +70,18 @@ sub register {
               . $c->t(i => (class => 'new fa fa-plus fa-stack-1x'));
             my $content = $c->t(span => (class => 'fa-stack') => sub { $icons });
             return $c->link_to($url => (title => $title, class => $class) => sub { $content });
+        });
+
+    $app->helper(
+        rendered_refs_no_shortening => sub {
+            my ($c, $text) = @_;
+            return render_escaped_refs($text);
+        });
+
+    $app->helper(
+        rendered_refs => sub {
+            my ($c, $text) = @_;
+            return href_to_bugref(render_escaped_refs($text));
         });
 
     $app->helper(
