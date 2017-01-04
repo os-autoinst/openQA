@@ -33,6 +33,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &commit_git_return_error
   &parse_assets_from_settings
   &find_bugref
+  &find_bugrefs
   &bugurl
   &bugref_to_href
   &href_to_bugref
@@ -399,6 +400,17 @@ sub find_bugref {
     my ($text) = @_;
     $text =~ bugref_regex;
     return $+{match};
+}
+
+sub find_bugrefs {
+    my ($text) = @_;
+    my @bugrefs;
+    my $bugref_regex = bugref_regex;
+
+    while ($text =~ /$bugref_regex/g) {
+        push(@bugrefs, $+{match});
+    }
+    return \@bugrefs;
 }
 
 sub bugurl {

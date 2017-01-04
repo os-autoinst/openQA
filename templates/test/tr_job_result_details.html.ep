@@ -1,17 +1,18 @@
 %# 'bentostrap' has an item 'label' which
 %# we do not want to use so we use 'test-label'
-% my $bug = $res->{bug};
-% if ($bug) {
-    <span id="bug-<%= $jobid %>">
-        <a href="<%= bugurl_for $bug %>">
-            <i class="test-label <%= bugicon_for $bug %>" title="Bug(s) referenced: <%= $bug %>"></i>
-        </a>
-    </span>
-% }
-% elsif ($res->{label}) {
+% #if (my $bugs = $res->{bugs}) {
+    % for my $bug (@{$res->{bugs}}) {
+        <span id="bug-<%= $jobid %>">
+            <a href="<%= bugurl_for $bug %>">
+                <i class="test-label <%= bugicon_for $bug %>" title="Bug referenced: <%= $bug %>"></i>
+            </a>
+        </span>
+    % }
+% #}
+% if ($res->{label}) {
     % my $label = $res->{label};
     <span id="test-label-<%= $jobid %>">
-        <i class="test-label label_<%= $label %> fa fa-bookmark" title="<%= $label %>"></i>
+        <i class="test-label label_<%= $label %> fa fa-bookmark" title="Label: <%= $label %>"></i>
     </span>
 % }
 % elsif ($res->{comments}) {

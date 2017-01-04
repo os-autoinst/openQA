@@ -360,12 +360,14 @@ sub _job_labels {
       = $self->db->resultset("Comments")->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
     # previous occurences of bug or label are overwritten here.
     while (my $comment = $c->next()) {
-        if (my $bugref = $comment->bugref) {
-            $self->app->log->debug('found bug ticket reference ' . $bugref . ' for job ' . $comment->job_id);
-            $labels{$comment->job_id}{bug} = $bugref;
+        my $bugrefs = $comment->bugrefs;
+        if (@$bugrefs) {
+            push(@{$labels{$comment->job_id}{bugs} //= []}, @$bugrefs);
+            $self->app->log->debug(
+                'Found bug ticket reference ' . join(' ', @$bugrefs) . ' for job ' . $comment->job_id);
         }
         elsif (my $label = $comment->label) {
-            $self->app->log->debug('found label ' . $label . ' for job ' . $comment->job_id);
+            $self->app->log->debug('Found label ' . $label . ' for job ' . $comment->job_id);
             $labels{$comment->job_id}{label} = $label;
         }
         else {
@@ -407,7 +409,7 @@ sub prepare_job_results {
                 next if $self->param('todo');
             }
             if ($self->param('todo')) {
-                next if $job_labels->{$job->id}{bug} || $job_labels->{$job->id}{label};
+                next if $job_labels->{$job->id}{bugs} || $job_labels->{$job->id}{label};
             }
             $result = {
                 passed   => $result_stats->{passed},
@@ -415,9 +417,9 @@ sub prepare_job_results {
                 failed   => $result_stats->{failed},
                 overall  => $overall,
                 jobid    => $job->id,
-                state    => "done",
+                state    => 'done',
                 failures => $job->failed_modules(),
-                bug      => $job_labels->{$job->id}{bug},
+                bugs     => $job_labels->{$job->id}{bugs},
                 label    => $job_labels->{$job->id}{label},
                 comments => $job_labels->{$job->id}{comments},
             };
