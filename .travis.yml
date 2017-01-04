@@ -12,9 +12,14 @@ env:
     - FULLSTACK=1
   global:
     - COMMIT_AUTHOR_EMAIL: "skynet@open.qa"
+addons:
+  apt:
+    packages:
+      - libgmp3-dev
+      - libdbus-1-dev
 before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install libgmp3-dev libdbus-1-dev
+  - cpanm local::lib
+  - eval "$(perl -Mlocal::lib=${HOME}/perl_modules)"
 install:
   - gem install sass
   - cpanm -nq --installdeps --with-feature=coverage .
@@ -24,3 +29,6 @@ script:
   - make coverage-codecov
 after_failure:
   - cat /tmp/openqa-debug.log
+cache:
+  directories:
+  - $HOME/perl_modules
