@@ -114,11 +114,11 @@ coverage:
 
 .PHONY: coverage-codecov
 coverage-codecov: coverage
-	cover ${COVER_OPTS} -report codecov
+	cover -report codecov
 
 .PHONY: coverage-html
 coverage-html: coverage
-	cover ${COVER_OPTS} -report html
+	cover -report html
 
 public/favicon.ico: assets/images/logo.svg
 	for w in 16 32 64 128; do \
