@@ -115,8 +115,9 @@ sub group_overview {
     $self->stash(children => $cbr->{children});
 
     _map_tags_into_build($res, $tags);
-    $self->stash('result',   $res);
-    $self->stash('max_jobs', $max_jobs);
+    $self->stash('result',             $res);
+    $self->stash('sorted_result_keys', $cbr->{sorted_result_keys});
+    $self->stash('max_jobs',           $max_jobs);
     my $group_hash = {
         id   => $group->id,
         name => $group->name,

@@ -1,4 +1,4 @@
-% for my $key (reverse sort keys %$result) {
+% for my $key (@{$sorted_result_keys}) {
     % my $build_res = $result->{$key};
     % my $build = $build_res->{build};
     % my $group_id;

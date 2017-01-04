@@ -19,6 +19,7 @@ use strict;
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils;
 use Date::Format;
+use Sort::Versions;
 
 sub init_job_figures {
     my ($job_result) = @_;
@@ -201,7 +202,9 @@ sub compute_build_results {
         $builds{join('-', $jr{version}, $jr{build})} = \%jr;
         $max_jobs = $jr{total} if ($jr{total} > $max_jobs);
     }
-    $result{max_jobs} = $max_jobs;
+    my @sorted_result_keys = reverse sort { versioncmp($a, $b) } keys %builds;
+    $result{sorted_result_keys} = \@sorted_result_keys;
+    $result{max_jobs}           = $max_jobs;
     return \%result;
 }
 

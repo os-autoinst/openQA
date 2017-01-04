@@ -65,6 +65,7 @@ requires 'Params::Util';
 requires 'Params::Validate';
 requires 'Perl::Tidy';
 requires 'Regexp::Common';
+requires 'Sort::Versions';
 requires 'SQL::SplitStatement';
 requires 'SQL::Translator';
 requires 'Scalar::Util';

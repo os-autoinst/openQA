@@ -36,7 +36,7 @@
     </div>
 % }
 
-%= include 'main/group_builds', result => $result, group => $group, children => undef, default_expanded => 1
+%= include 'main/group_builds', result => $result, sorted_result_keys => $sorted_result_keys, group => $group, children => undef, default_expanded => 1
 %= include 'main/more_builds', limit_builds => $limit_builds
 
 <h2>Comments</h2>
