@@ -42,9 +42,11 @@ unless ($driver) {
 is($driver->get_title(), "openQA", "on main page");
 my $baseurl = $driver->get_current_url();
 
-is(scalar @{$driver->find_elements('h4', 'css')}, 4, '4 builds shown');
+my @build_headings = $driver->find_elements('h4', 'css');
+is(scalar @build_headings, 4, '4 builds shown');
 
-$driver->find_element('Build0091', 'link_text')->click();
+# click on last build which should be Build0091
+$driver->find_child_element($build_headings[-1], 'a', 'css')->click();
 like(
     $driver->find_element('#summary', 'css')->get_text(),
     qr/Overall Summary of opensuse test build 0091/,
@@ -126,7 +128,7 @@ subtest 'filter form' => sub {
 
 # JSON representation of index page
 $driver->get($baseurl . 'index.json');
-like($driver->get_page_source(), qr({"results":\[.*{"0048":), 'page rendered as JSON');
+like($driver->get_page_source(), qr({"results":\[.*"Factory-0048":), 'page rendered as JSON');
 
 like($t->get_ok($baseurl)->tx->res->dom->at('#filter-panel .help_popover')->{'data-title'},
     qr/Help/, 'help popover is shown');

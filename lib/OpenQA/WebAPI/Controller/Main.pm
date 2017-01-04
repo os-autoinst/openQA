@@ -27,9 +27,16 @@ use Scalar::Util 'looks_like_number';
 sub _map_tags_into_build {
     my ($res, $tags) = @_;
 
-    for my $build (keys %$res) {
-        if ($tags->{$build}) {
-            $res->{$build}->{tag} = $tags->{$build};
+    for my $key (keys %$res) {
+        my $build = $res->{$key}->{build};
+        if ($tags->{$key}) {
+            $res->{$key}->{tag} = $tags->{$key};
+        }
+        # as fallback we are looking for build and not other criteria we can end
+        # up with multiple tags if the build appears more than once, e.g.
+        # for each version
+        elsif ($tags->{$build}) {
+            $res->{$key}->{tag} = $tags->{$build};
         }
     }
     return;
