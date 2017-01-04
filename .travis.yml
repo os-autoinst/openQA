@@ -2,21 +2,18 @@ sudo: required
 language: perl
 perl:
   - "5.18"
-rvm:
-  - 2.3
 addons: 
-    ssh_known_hosts: github.com
+  ssh_known_hosts: github.com
+  apt:
+    packages:
+      - libgmp3-dev
+      - libdbus-1-dev
 env:
   matrix:
     - FULLSTACK=0
     - FULLSTACK=1
   global:
-    - COMMIT_AUTHOR_EMAIL: "skynet@open.qa"
-addons:
-  apt:
-    packages:
-      - libgmp3-dev
-      - libdbus-1-dev
+    - COMMIT_AUTHOR_EMAIL=skynet@open.qa
 before_install:
   - cpanm local::lib
   - eval "$(perl -Mlocal::lib=${HOME}/perl_modules)"
