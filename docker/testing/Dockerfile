@@ -1,7 +1,7 @@
 # Docker file to test full-stack.t in a travis like environment
 FROM ubuntu:12.04
 run apt-get -y update
-run apt-get -y install software-properties-common
+run apt-get -y install python-software-properties
 run add-apt-repository -y ppa:kubuntu-ppa/backports
 run apt-get -y update
 run apt-get -y install libdbus-1-dev libssh2-1-dev libopencv-dev libtheora-dev libcv-dev libhighgui-dev tesseract-ocr libsndfile1-dev libfftw3-dev qemu-system automake libtool libxml2-dev libgmp3-dev ruby-sass git libssl-dev libgcrypt11-dev curl wget

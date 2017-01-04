@@ -10,8 +10,7 @@ addons:
       - libdbus-1-dev
 env:
   matrix:
-    - FULLSTACK=0 UITESTS=0
-    - FULLSTACK=0 UITESTS=1
+    - FULLSTACK=0
     - FULLSTACK=1
   global:
     - COMMIT_AUTHOR_EMAIL=skynet@open.qa

@@ -6,23 +6,22 @@ comment:
 coverage:
   precision: 2
   range:
-  - 60.0
-  - 95.0
+  - 70.0
+  - 100.0
   round: down
   notify:
     irc:
       default:
         server: chat.freenode.net
         channel: '##opensuse-factory'
-        threshold: 0.01
   status:
     changes:
       default:
         branches: null
     project:
       default:
-        target: auto
-        threshold: 0.1
+        target: 67
+        only_pulls: true
     patch:
       default:
         branches: null

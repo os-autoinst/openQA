@@ -71,54 +71,44 @@ checkstyle:
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle --include Perl::Critic::Policy::HashKeyQuote --include Perl::Critic::Policy::ConsistentQuoteLikeWords lib
 
 .PHONY: test
-test:
-	if test "$$TRAVIS" = "true"; then \
-	  $(MAKE) travis ;\
-	else \
-	   $(MAKE) checkstyle ;\
-	   OPENQA_CONFIG= prove ${PROVE_ARGS} ;\
-	fi
+test: checkstyle
+	OPENQA_CONFIG= prove ${PROVE_ARGS}
 
-.PHONY: travis
-travis:
-	if test "x$$TRAVIS" != "xtrue"; then \
-	  echo "You shouldn't run this outside of travis-ci env" ;\
-	  exit 1 ;\
-	fi
+# ignore tests and test related addons in coverage analysis
+COVER_OPTS ?= -ignore_re "^t/.*" -ignore lib/perlcritic/Perl/Critic/Policy/HashKeyQuotes.pm
+cover_db/:
 	export MOJO_LOG_LEVEL=debug ;\
 	export MOJO_TMPDIR=$$(mktemp -d) ;\
 	export OPENQA_LOGFILE=/tmp/openqa-debug.log ;\
 	if test "x$$FULLSTACK" = x1; then \
-	  git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
-	  (cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh) ;\
-          eval $$(dbus-launch --sh-syntax) ;\
-	  export PERL5OPT="$$PERL5OPT $$HARNESS_PERL_SWITCHES"; \
+	  if ! test -d ../os-autoinst; then \
+              if test "$$TRAVIS" = "true" ; then\
+		  git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
+		  (cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh) ;\
+	      fi ;\
+	  fi ;\
+	  eval $$(dbus-launch --sh-syntax) ;\
+	  export PERL5OPT="-MDevel::Cover=-db,$$(pwd)/cover_db,-coverage=default,-pod" ;\
 	  perl t/full-stack.t ;\
 	else \
-	  list= ;\
-	  if test "x$$UITESTS" = x1; then \
-	    list=t/ui ;\
-	  else \
-	    $(MAKE) checkstyle ;\
-	    list=$$(find t/ -name *.t | grep -v t/ui) ;\
-	  fi ;\
-          prove --timer -r $$list ;\
+	  cover ${COVER_OPTS} -test -coverage default,-pod ;\
 	fi
 
-# ignore tests and test related addons in coverage analysis
-COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage default,-pod
+.PHONY: coverage-test
+coverage-test: cover_db/
 
 .PHONY: coverage
-coverage:
-	cover ${COVER_OPTS} -test
+coverage: coverage-html
 
 .PHONY: coverage-codecov
-coverage-codecov: coverage
-	cover ${COVER_OPTS} -report codecov
+coverage-codecov: cover_db/
+	cover ${COVER_OPTS} -select_re "lib/.*" -report codecov
+
+cover_db/coverage.html: cover_db/
+	cover ${COVER_OPTS} -report html
 
 .PHONY: coverage-html
-coverage-html: coverage
-	cover ${COVER_OPTS} -report html
+coverage-html: cover_db/coverage.html
 
 public/favicon.ico: assets/images/logo.svg
 	for w in 16 32 64 128; do \
