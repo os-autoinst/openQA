@@ -75,8 +75,16 @@ sub dsn {
 sub deployment_check {
     # lock config file to ensure only one thing will deploy/upgrade DB at once
     my $dblockfile = _find_config;
-    open(my $dblock, '<', $dblockfile) or die "Can't open database lock file {$dblockfile}!";
-    flock($dblock, LOCK_EX) or die "Can't lock database lock file {$dblockfile}!";
+    my $dblock;
+    # LOCK_EX should always work if the file is open with write intent. If it's
+    # open with read intent, it may work if a native flock is being used, but
+    # not if lockf or fcntl emulation are used. So try and open in append mode,
+    # if we can't, open in read mode
+    open($dblock, '>>', $dblockfile)
+      or open($dblock, '<', $dblockfile)
+      or die "Can't open database lock file ${dblockfile}!";
+    # either way, if we can't LOCK_EX the file, die
+    flock($dblock, LOCK_EX) or die "Can't lock database lock file ${dblockfile}!";
     my ($schema, $force_overwrite) = @_;
     $force_overwrite //= 0;
     my $dir = $FindBin::Bin;
