@@ -85,21 +85,21 @@ is($driver->get_title(), "openQA", "back on main page");
 my $wsport = $mojoport + 1;
 my $wspid  = fork();
 if ($wspid == 0) {
-    $ENV{MOJO_LISTEN} = "127.0.0.1:$wsport";
+    $ENV{MOJO_LISTEN} = "http://127.0.0.1:$wsport";
     use OpenQA::WebSockets;
     OpenQA::WebSockets::run;
     Devel::Cover::report() if Devel::Cover->can('report');
     _exit(0);
 }
 else {
-    # wait for scheduler
+    # wait for websocket server
     my $wait = time + 20;
     while (time < $wait) {
         my $t      = time;
         my $socket = IO::Socket::INET->new(
             PeerHost => '127.0.0.1',
             PeerPort => $wsport,
-            Proto    => 'tcp',
+            Proto    => 'tcp'
         );
         last if $socket;
         sleep 1 if time - $t < 1;
@@ -113,6 +113,7 @@ symlink(abs_path("../os-autoinst/t/data/pitux-0.3.2.iso"), "t/full-stack.d/openq
   || die "can't symlink";
 
 make_path('t/full-stack.d/openqa/share/tests');
+unlink('t/full-stack.d/openqa/share/tests/pitux');
 symlink(abs_path('../os-autoinst/t/data/tests/'), 't/full-stack.d/openqa/share/tests/pitux')
   || die "can't symlink";
 

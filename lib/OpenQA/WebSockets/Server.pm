@@ -270,10 +270,7 @@ sub setup {
     OpenQA::ServerStartup::setup_logging(app);
 
     # use port one higher than WebAPI
-    my $port = 9527;
-    if ($ENV{MOJO_LISTEN} && $ENV{MOJO_LISTEN} =~ /.*:(\d{1,5})\/?$/) {
-        $port = $1;
-    }
+    my $listen = $ENV{MOJO_LISTEN} || "http://localhost:9527";
 
     under \&check_authorized;
     websocket '/ws/:workerid' => [workerid => qr/\d+/] => \&ws_create;
@@ -297,7 +294,7 @@ sub setup {
     };
     $connect_signal->();
 
-    return Mojo::Server::Daemon->new(app => app, listen => ["http://localhost:$port"]);
+    return Mojo::Server::Daemon->new(app => app, listen => ["$listen"]);
 }
 
 
