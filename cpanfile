@@ -53,7 +53,7 @@ requires 'Mojo::JSON';
 requires 'Mojo::RabbitMQ::Client';
 requires 'Mojo::URL';
 requires 'Mojo::Util';
-requires 'Mojolicious';
+requires 'Mojolicious', '< 7.14';
 requires 'Mojolicious::Commands';
 requires 'Mojolicious::Plugin';
 requires 'Mojolicious::Plugin::AssetPack', '>= 1.1';

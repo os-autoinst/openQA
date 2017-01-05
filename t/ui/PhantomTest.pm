@@ -30,7 +30,7 @@ The optional parameter C<$schema_hook> allows to provide a custom way of creatin
 
 =cut
 sub start_app {
-    my ($schema_hook, $mode) = @_;
+    my ($schema_hook) = @_;
     $mojoport = Mojo::IOLoop::Server->generate_port;
 
     $startingpid = $$;
@@ -44,7 +44,7 @@ sub start_app {
         }
         # TODO: start the server manually - and make it silent
         # Run openQa in test mode - it will mock Scheduler and Websockets DBus services
-        $ENV{MOJO_MODE} = $mode || 'test';
+        $ENV{MOJO_MODE}   = 'test';
         $ENV{MOJO_LISTEN} = "127.0.0.1:$mojoport";
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'daemon', '-l', "http://127.0.0.1:$mojoport/");
         exit(0);

@@ -41,6 +41,7 @@ use Module::Load::Conditional 'can_load';
 
 plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 
+unlink('t/full-stack.d/db/db.sqlite');
 open(my $conf, '>', 't/full-stack.d/config/database.ini');
 print $conf <<EOC;
 [production]
@@ -52,7 +53,7 @@ EOC
 close($conf);
 system("perl ./script/initdb --init_database");
 # make sure the assets are prefetched
-Mojolicious::Commands->start_app('OpenQA::WebAPI', 'version');
+Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0');
 
 use t::ui::PhantomTest;
 
@@ -71,7 +72,7 @@ if ($schedulerpid == 0) {
 }
 
 # we don't want no fixtures
-my $mojoport = t::ui::PhantomTest::start_app(sub { }, 'development');
+my $mojoport = t::ui::PhantomTest::start_app(sub { });
 my $driver = t::ui::PhantomTest::start_phantomjs($mojoport);
 
 is($driver->get_title(), "openQA", "on main page");
