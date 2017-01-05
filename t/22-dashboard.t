@@ -66,14 +66,14 @@ $get = $t->get_ok('/')->status_is(200);
 is_deeply(\@h2, ['opensuse test', 'Test parent'], 'parent group shown and opensuse is no more on top-level');
 
 my @h4 = $get->tx->res->dom->find('div.children-collapsed h4 a')->map('text')->each;
-is_deeply(\@h4, ['Build0092', 'Build0048@0815', 'Build0048'], 'builds on parent-level shown');
+is_deeply(\@h4, [qw(Build0048@0815 Build0048 Build0092)], 'builds on parent-level shown, sorted first by version');
 @h4 = $get->tx->res->dom->find('div.collapse h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse', 'opensuse'], 'opensuse now shown as child group (for each build)');
 
 # check build limit
 $get = $t->get_ok('/?limit_builds=2')->status_is(200);
 @h4  = $get->tx->res->dom->find('div.children-collapsed h4 a')->map('text')->each;
-is_deeply(\@h4, ['Build0092', 'Build0048'], 'builds on parent-level shown (limit builds)');
+is_deeply(\@h4, [qw(Build0048 Build0092)], 'builds on parent-level shown (limit builds)');
 @h4 = $get->tx->res->dom->find('div.collapse h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse'], 'opensuse now shown as child group (limit builds)');
 
@@ -94,11 +94,11 @@ sub check_test_parent {
     @h4 = $get->tx->res->dom->find("div.children-$default_expanded h4 a")->map('text')->each;
     is_deeply(
         \@h4,
-        ['Build87.5011', 'Build0092', 'Build0091', 'Build0048@0815', 'Build0048'],
+        ['Build87.5011', 'Build0048@0815', 'Build0048', 'Build0092', 'Build0091'],
         'builds on parent-level shown'
     );
 
-    $t->element_count_is('#review-also-softfailed-' . $test_parent->id . '-0048@0815',
+    $t->element_count_is('#review-also-softfailed-' . $test_parent->id . '-Factory-0048_0815',
         1, 'review badge for build 0048@0815 shown');
     $t->element_count_is('#review-' . $test_parent->id . '-0048', 0, 'review badge for build 0048 NOT shown yet');
     $t->element_count_is('#child-review-' . $test_parent->id . '-0048',
@@ -110,25 +110,27 @@ sub check_test_parent {
         \@progress_bars,
         [
             "failed: 1\ntotal: 1",
-            "passed: 1\ntotal: 1",
-            "passed: 2\nunfinished: 3\nskipped: 1\ntotal: 6",
             "failed: 1\ntotal: 1",
             "softfailed: 2\nfailed: 1\ntotal: 3",
+            "passed: 1\ntotal: 1",
+            "passed: 2\nunfinished: 3\nskipped: 1\ntotal: 6",
         ],
         'parent-level progress bars are accumulated'
     );
 
-    @h4 = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 h4 a')->map('text')->each;
+    @h4 = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 h4 a')->map('text')->each;
     is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both child groups shown under common build');
     @progress_bars
-      = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 .progress')->map('attr', 'title')->each;
+      = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 .progress')->map('attr', 'title')
+      ->each;
     is_deeply(
         \@progress_bars,
         ["passed: 2\nunfinished: 2\nskipped: 1\ntotal: 5", "unfinished: 1\ntotal: 1"],
         'progress bars for child groups shown correctly'
     );
 
-    my @urls = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 h4 a')->map('attr', 'href')->each;
+    my @urls
+      = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 h4 a')->map('attr', 'href')->each;
     is_deeply(
         \@urls,
         [
@@ -179,24 +181,24 @@ my $tag_for_0091_comment
 $get = $t->get_ok('/?limit_builds=20&only_tagged=1')->status_is(200);
 @h4  = $get->tx->res->dom->find("div.children-collapsed h4 a")->map('text')->each;
 is_deeply(\@h4, ['Build0091'], 'only tagged builds on parent-level shown (common build)');
-@h4 = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 h4 a')->map('text')->each;
+@h4 = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build13_1-0091 h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse test'], 'both groups shown, though');
 
 # temporarily create failed job with build 0048@0815 in opensuse test to verify that review badge is only shown
 # if all combined builds are reviewed
-my $not_reviewed_job = $jobs->create(
-    {
-        BUILD    => '0048@0815',
-        DISTRI   => 'opensuse',
-        VERSION  => '42',
-        FLAVOR   => 'tape',
-        ARCH     => 'x86_64',
-        MACHINE  => 'xxx',
-        TEST     => 'dummy',
-        state    => OpenQA::Schema::Result::Jobs::DONE,
-        result   => OpenQA::Schema::Result::Jobs::FAILED,
-        group_id => $opensuse_test_group->id
-    });
+my $job_hash = {
+    BUILD    => '0048@0815',
+    DISTRI   => 'opensuse',
+    VERSION  => 'Factory',
+    FLAVOR   => 'tape',
+    ARCH     => 'x86_64',
+    MACHINE  => 'xxx',
+    TEST     => 'dummy',
+    state    => OpenQA::Schema::Result::Jobs::DONE,
+    result   => OpenQA::Schema::Result::Jobs::FAILED,
+    group_id => $opensuse_test_group->id
+};
+my $not_reviewed_job = $jobs->create($job_hash);
 $t->app->db->resultset('JobModules')->create(
     {
         script   => 'tests/x11/failing_module.pm',
@@ -206,27 +208,21 @@ $t->app->db->resultset('JobModules')->create(
         result   => 'failed'
     });
 
+my $review_build_id = '-Factory-0048_0815';
 $get = $t->get_ok('/?limit_builds=20')->status_is(200);
-$t->element_count_is('#review-' . $test_parent->id . '-0048@0815',
+$t->element_count_is('#review-' . $test_parent->id . $review_build_id,
     0, 'badge (regular) NOT shown for build 0048@0815 anymore');
-$t->element_count_is('#review-also-softfailed-' . $test_parent->id . '-0048@0815',
+$t->element_count_is('#review-also-softfailed-' . $test_parent->id . $review_build_id,
     0, 'review badge  (also softfailed) NOT shown for build 0048@0815 anymore');
-$t->element_count_is('#child-review-also-softfailed-' . $test_parent->id . '-0048@0815',
+$t->element_count_is('#child-review-also-softfailed-' . $test_parent->id . $review_build_id,
     1, 'review badge (also softfailed) review badge for build 0048@0815 still shown on child-level');
-
-$not_reviewed_job->update({result => OpenQA::Schema::Result::Jobs::SOFTFAILED});
-$get = $t->get_ok('/?limit_builds=20')->status_is(200);
-$t->element_count_is('#review-' . $test_parent->id . '-0048@0815',
-    1, 'review badge (regular) shown for build 0048@0815 on parent level');
-$t->element_count_is('#child-review-also-softfailed-' . $test_parent->id . '-0048@0815',
-    1, 'review badge  (also softfailed) for build 0048@0815 still shown on child-level');
 
 $not_reviewed_job->delete();
 
 # auto badges when all passed or all either passed or softfailed
 sub check_auto_badge {
     my ($all_passed_count, $build) = @_;
-    $build //= '0092';
+    $build //= '13_1-0092';
     $t->element_count_is('#badge-all-passed-' . $test_parent->id . '-' . $build,
         $all_passed_count, "all passed review badge shown for build $build on parent level");
     $t->element_count_is('#child-badge-all-passed-' . $test_parent->id . '-' . $build,
@@ -256,7 +252,7 @@ $failed_module->delete;
 
 sub check_badge {
     my ($reviewed_count, $reviewed_also_softfailed_count, $msg, $build) = @_;
-    $build //= '0048';
+    $build //= 'Factory-0048';
     $get = $t->get_ok('/?limit_builds=20')->status_is(200);
     $t->element_count_is('#review-' . $test_parent->id . '-' . $build,
         $reviewed_count, $msg . ' (regular badge, parent-level)');
@@ -358,15 +354,38 @@ check_badge(0, 1, 'regular badge when no failures and all softfailed with failin
 # change DISTRI/VERSION of test in opensuse group to test whether links are still correct then
 $opensuse_group->jobs->update({VERSION => '14.2', DISTRI => 'suse'});
 
-$get = $t->get_ok('/?limit_builds=20&show_tags=0')->status_is(200);
-@urls = $get->tx->res->dom->find('div#group' . $test_parent->id . '_build0091 h4 a')->map('attr', 'href')->each;
-is_deeply(
-    \@urls,
-    [
-        '/tests/overview?distri=suse&version=14.2&build=0091&groupid=1001',
-        '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002'
-    ],
-    'URLs valid, even when distri/version differ'
+$get  = $t->get_ok('/?limit_builds=20&show_tags=0')->status_is(200);
+@urls = $get->tx->res->dom->find('h4 a')->each;
+is(scalar @urls, 12, 'now builds belong to different versions and are split');
+is(
+    $urls[1]->attr('href'),
+    '/tests/overview?distri=suse&version=14.2&build=87.5011&groupid=1001',
+    'most recent version/build'
 );
+is(
+    $urls[-1]->attr('href'),
+    '/tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1002',
+    'oldest version/build still shown'
+);
+
+subtest 'job groups with multiple version and builds' => sub {
+    my $group = $job_groups->create({name => 'multi version group'});
+    $job_hash->{group_id} = $group->id;
+    sub create_job_version_build {
+        my ($version, $build) = @_;
+        $job_hash->{VERSION} = $version;
+        $job_hash->{BUILD}   = $build;
+        $jobs->create($job_hash);
+    }
+    create_job_version_build('42.3', '0002');
+    create_job_version_build('42.3', '0001');
+    create_job_version_build('42.2', '2192');
+    create_job_version_build('42.2', '2191');
+    create_job_version_build('42.2', '0002');
+    $get = $t->get_ok('/group_overview/' . $group->id)->status_is(200);
+    my @h4 = $get->tx->res->dom->find("div.no-children h4 a")->map('text')->each;
+    my @build_names = map { 'Build' . $_ } qw(0002 0001 2192 2191 0002);
+    is_deeply(\@h4, \@build_names, 'builds shown sorted') || diag explain @h4;
+};
 
 done_testing;

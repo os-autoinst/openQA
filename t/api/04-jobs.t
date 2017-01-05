@@ -289,7 +289,7 @@ $t->get_ok('/api/v1/jobs/99937')->status_is(404);
 $get = $t->get_ok('/group_overview/1001.json')->status_is(200);
 $get = $get->tx->res->json;
 is_deeply({id => 1001, name => 'opensuse'}, $get->{group});
-my $b48 = $get->{result}->{'0048'};
+my $b48 = $get->{result}->{'Factory-0048'};
 delete $b48->{oldest};
 is_deeply(
     $b48,
@@ -310,7 +310,10 @@ is_deeply(
         distri                            => 'opensuse',
         unfinished                        => 1,
         version                           => 'Factory',
-        escaped_id                        => '0048',
+        escaped_version                   => 'Factory',
+        build                             => '0048',
+        escaped_build                     => '0048',
+        escaped_id                        => 'Factory-0048',
     },
     'Build 0048 exported'
 );
@@ -320,7 +323,7 @@ $get = $get->tx->res->json;
 is(@{$get->{results}}, 2);
 my $g1 = (shift @{$get->{results}});
 is($g1->{group}->{name}, 'opensuse', 'First group is opensuse');
-my $b1 = $g1->{result}->{'0092'};
+my $b1 = $g1->{result}->{'13.1-0092'};
 delete $b1->{oldest};
 is_deeply(
     $b1,
@@ -341,7 +344,11 @@ is_deeply(
         softfailed_without_failed_modules => 0,
         all_passed                        => 1,
         reviewed_also_softfailed          => '1',
-        escaped_id                        => '0092',
+        version                           => '13.1',
+        escaped_version                   => '13_1',
+        build                             => '0092',
+        escaped_build                     => '0092',
+        escaped_id                        => '13_1-0092',
     },
     'Build 92 of opensuse'
 );

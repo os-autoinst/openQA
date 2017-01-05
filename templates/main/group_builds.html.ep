@@ -1,5 +1,6 @@
-% for my $build (reverse sort keys %$result) {
-    % my $build_res = $result->{$build};
+% for my $key (reverse sort keys %$result) {
+    % my $build_res = $result->{$key};
+    % my $build = $build_res->{build};
     % my $group_id;
     <div class="row build-row <%= $children ? ($default_expanded ? 'children-expanded' : 'children-collapsed') : 'no-children' %>">
         <div class="col-md-4 text-nowrap">
@@ -15,7 +16,7 @@
                     %= $build_res->{oldest}
                 </abbr>)
 
-                % my $group_build_id = $group->{id} . '-' . $build;
+                % my $group_build_id = $group->{id} . '-' . $build_res->{escaped_id};
                 % my $tag = $build_res->{tag};
                 % if ($tag) {
                     <span id="tag-<%= $group_build_id %>">

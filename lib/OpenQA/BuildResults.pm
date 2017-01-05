@@ -97,8 +97,6 @@ sub add_review_badge {
 sub compute_build_results {
     my ($group, $limit, $time_limit_days, $tags) = @_;
 
-    my %builds;
-    my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
     my $group_ids;
     my @children;
     if ($group->can('children')) {
@@ -109,34 +107,57 @@ sub compute_build_results {
         $group_ids = [$group->id];
     }
 
+    my %builds;
+    my %result = (
+        result   => \%builds,
+        max_jobs => 0,
+        children => [map { {id => $_->id, name => $_->name} } @children],
+        group    => {
+            id   => $group->id,
+            name => $group->name
+        });
+
+    if (defined($limit) && int($limit) <= 0) {
+        return \%result;
+    }
+
     # split the statement - give in to perltidy
     my $search_opts = {
-        select => ['BUILD', {min => 't_created', -as => 'first_hit'}],
-        as     => [qw(BUILD first_hit)],
+        select => ['VERSION', 'BUILD', {min => 't_created', -as => 'first_hit'}],
+        as     => [qw(VERSION BUILD first_hit)],
+        # order-by is required here despite it is not relevant when iterating results
+        # because the ordering must be applied before the row limit is applied
         order_by => {-desc => 'first_hit'},
-        group_by => [qw(BUILD)]};
+        group_by => [qw(VERSION BUILD)]};
+    $search_opts->{rows} = $limit if defined($limit);
     my $search_filter = {group_id => {in => $group_ids}};
     if ($time_limit_days) {
         $search_filter->{t_created}
           = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
     }
     if ($tags) {
+        # caveat: A tag that references only a build, not including a version, might be ambiguous
         $search_filter->{BUILD} = {-in => [keys %$tags]};
     }
-    my $builds   = $jobs_resultset->search($search_filter, $search_opts);
-    my $max_jobs = 0;
-    my $buildnr  = 0;
-    for my $b (map { $_->BUILD } $builds->all) {
-        last if (defined($limit) && ++$buildnr > $limit);
 
+    my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
+    my $builds         = $jobs_resultset->search($search_filter, $search_opts);
+    my $max_jobs       = 0;
+    my $buildnr        = 0;
+    for my $b ($builds->all) {
         my $jobs = $jobs_resultset->search(
             {
-                BUILD    => $b,
+                VERSION  => $b->VERSION,
+                BUILD    => $b->BUILD,
                 group_id => {in => $group_ids},
                 clone_id => undef,
             },
             {order_by => 'me.id DESC'});
-        my %jr = (oldest => DateTime->now);
+        my %jr = (
+            build   => $b->BUILD,
+            version => $b->VERSION,
+            oldest  => DateTime->now
+        );
         init_job_figures(\%jr);
         for my $child (@children) {
             init_job_figures($jr{children}->{$child->id} = {});
@@ -156,8 +177,7 @@ sub compute_build_results {
         $jobs->reset;
 
         while (my $job = $jobs->next) {
-            $jr{distri}  //= $job->DISTRI;
-            $jr{version} //= $job->VERSION;
+            $jr{distri} //= $job->DISTRI;
             my $key = $job->TEST . "-" . $job->ARCH . "-" . $job->FLAVOR . "-" . $job->MACHINE;
             next if $seen{$key}++;
 
@@ -167,24 +187,22 @@ sub compute_build_results {
                 my $child = $jr{children}->{$job->group_id};
                 $child->{distri}  //= $job->DISTRI;
                 $child->{version} //= $job->VERSION;
+                $child->{build}   //= $job->BUILD;
                 count_job($job, $child, \%labels);
                 add_review_badge($child);
             }
         }
-        $jr{escaped_id} = $b;
-        $jr{escaped_id} =~ s/\W/_/g;
+        $jr{escaped_version} = $jr{version};
+        $jr{escaped_version} =~ s/\W/_/g;
+        $jr{escaped_build} = $jr{build};
+        $jr{escaped_build} =~ s/\W/_/g;
+        $jr{escaped_id} = join('-', $jr{escaped_version}, $jr{escaped_build});
         add_review_badge(\%jr);
-        $builds{$b} = \%jr;
+        $builds{join('-', $jr{version}, $jr{build})} = \%jr;
         $max_jobs = $jr{total} if ($jr{total} > $max_jobs);
     }
-    return {
-        result => (%builds) ? \%builds : {},
-        max_jobs => $max_jobs,
-        children => [map { {id => $_->id, name => $_->name} } @children],
-        group    => {
-            id   => $group->id,
-            name => $group->name
-        }};
+    $result{max_jobs} = $max_jobs;
+    return \%result;
 }
 
 1;
