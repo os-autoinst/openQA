@@ -22,25 +22,30 @@ our @EXPORT_OK = qw(create_auto_timestamps rndstr rndhex rndstrU rndhexU);
 use Carp;
 
 sub rndstr {
-    my $length = shift || 16;
-    my $chars = shift || ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+    my ($length, $chars) = @_;
+    $length //= 16;
+    $chars //= ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
     return join('', map { $chars->[rand @$chars] } 1 .. $length);
 }
 
 sub rndhex {
-    rndstr(shift, ['A' .. 'F', '0' .. '9']);
+    my ($length) = @_;
+    return rndstr($length, ['A' .. 'F', '0' .. '9']);
 }
 
 sub _rb {
     my ($fd, $max) = @_;
     my $b;
+    # uncoverable branch true
     read($fd, $b, 1) || croak "can't read random byte: $!";
     return int($max * ord($b) / 256.0);
 }
 
 sub rndstrU {
-    my $length = shift || 16;
-    my $chars = shift || ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+    my ($length, $chars) = @_;
+    $length //= 16;
+    $chars //= ['a' .. 'z', 'A' .. 'Z', '0' .. '9', '_'];
+    # uncoverable branch true
     open(my $fd, '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
     my $str = join('', map { $chars->[_rb($fd, scalar @$chars)] } 1 .. $length);
     close $fd;
@@ -48,9 +53,12 @@ sub rndstrU {
 }
 
 sub rndhexU {
-    my $length = shift || 16;
+    my ($length) = @_;
+    $length //= 16;
     my $toread = $length / 2 + $length % 2;
+    # uncoverable branch true
     open(my $fd, '<:raw:bytes', '/dev/urandom') || croak "can't open /dev/urandom: $!";
+    # uncoverable branch true
     read($fd, my $bytes, $toread) || croak "can't read random byte: $!";
     close $fd;
     return uc substr(unpack('H*', $bytes), 0, $length);
