@@ -106,7 +106,7 @@ travis:
 	fi
 
 # ignore tests and test related addons in coverage analysis
-COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage default,-pod
+COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Perl/Critic/Policy -coverage statement
 
 .PHONY: coverage
 coverage:
@@ -120,7 +120,7 @@ coverage-codecov: coverage
 
 .PHONY: coverage-html
 coverage-html: coverage
-	cover $(COVER_REPORT_OPTS) -report html
+	cover $(COVER_REPORT_OPTS) -report html_basic
 
 public/favicon.ico: assets/images/logo.svg
 	for w in 16 32 64 128; do \
