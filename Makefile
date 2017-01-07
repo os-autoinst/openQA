@@ -90,7 +90,7 @@ travis:
 	export OPENQA_LOGFILE=/tmp/openqa-debug.log ;\
 	if test "x$$FULLSTACK" = x1; then \
 	  git clone https://github.com/os-autoinst/os-autoinst.git ../os-autoinst ;\
-	  (cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh) ;\
+	  (cd ../os-autoinst && SETUP_FOR_TRAVIS=1 sh autogen.sh && make ) ;\
           eval $$(dbus-launch --sh-syntax) ;\
 	  export PERL5OPT="$$PERL5OPT $$HARNESS_PERL_SWITCHES"; \
 	  perl t/full-stack.t ;\
@@ -112,13 +112,15 @@ COVER_OPTS ?= -select_re "^/lib" -ignore_re '^t/.*' +ignore_re lib/perlcritic/Pe
 coverage:
 	cover ${COVER_OPTS} -test
 
+COVER_REPORT_OPTS ?= -select_re ^lib/
+
 .PHONY: coverage-codecov
 coverage-codecov: coverage
-	cover -select_re "lib/.*" -report codecov
+	cover $(COVER_REPORT_OPTS) -report codecov
 
 .PHONY: coverage-html
 coverage-html: coverage
-	cover -select_re "lib/.*" -report html
+	cover $(COVER_REPORT_OPTS) -report html
 
 public/favicon.ico: assets/images/logo.svg
 	for w in 16 32 64 128; do \
