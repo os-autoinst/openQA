@@ -31,7 +31,7 @@
             data-placement="bottom" data-title="<%= $title %>"
             data-content="<%= $content %>"></a>
         % if (is_operator) {
-            %= stepaction_for 'Create new needle' => url_for('edit_step'), 'fa-thumb-tack'
+            %= stepaction_for 'Create new needle' => url_for('edit_step'), 'fa-thumb-tack', 'create_new_needle'
         % }
         %= bug_report_actions
     </span>
