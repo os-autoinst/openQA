@@ -30,7 +30,6 @@ seq:
      - ./t/23-amqp.t
      - ./t/24-worker.t
      - ./t/api/02-assets.t
-     - ./t/api/02-iso.t
      - ./t/api/04-jobs.t
      - ./t/api/05-machines.t
      - ./t/api/08-jobtemplates.t

@@ -68,7 +68,7 @@ requires 'Regexp::Common';
 requires 'SQL::SplitStatement';
 requires 'SQL::Translator';
 requires 'Scalar::Util';
-requires 'Selenium::Remote::Driver';
+requires 'Selenium::Remote::Driver', '>= 1.0';
 requires 'Sub::Install';
 requires 'Sub::Name';
 requires 'Test::Compile';

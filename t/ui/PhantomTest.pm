@@ -7,7 +7,6 @@ require OpenQA::Test::Database;
 
 our $_driver;
 our $mojopid;
-our $phantompid;
 our $mojoport;
 our $startingpid = 0;
 
@@ -27,8 +26,9 @@ The optional parameter C<$schema_hook> allows to provide a custom way of creatin
         $schema->resultset('Jobs')->find(1234)->delete;
     }
     start_app(\&schema_hook);
-
 =cut
+
+
 sub start_app {
     my ($schema_hook) = @_;
     $mojoport = Mojo::IOLoop::Server->generate_port;
@@ -69,47 +69,17 @@ sub start_app {
 sub start_phantomjs {
     my ($mojoport) = @_;
 
-    my $phantomport = Mojo::IOLoop::Server->generate_port;
-
-    $phantompid = fork();
-    if ($phantompid == 0) {
-        exec('phantomjs', "--webdriver=127.0.0.1:$phantomport", "--debug=false");
-        die "phantomjs didn't start\n";
-    }
-    else {
-        # borrowed GPL code from WWW::Mechanize::PhantomJS
-        #$SIG{__DIE__} = sub { kill('TERM', $phantompid); };
-        my $wait = time + 20;
-        while (time < $wait) {
-            my $t      = time;
-            my $socket = IO::Socket::INET->new(
-                PeerHost => '127.0.0.1',
-                PeerPort => $phantomport,
-                Proto    => 'tcp',
-            );
-            sleep 1 if time - $t < 2;
-            last if $socket;
-        }
-    }
-    my $driver;
     # Connect to it
     eval {
-        $driver = Selenium::Remote::Driver->new('port' => $phantomport);
-        $driver->set_implicit_wait_timeout(5);
-        $driver->set_window_size(600, 800);
-        $driver->get("http://localhost:$mojoport/");
+        require Selenium::PhantomJS;
+        $_driver = Selenium::PhantomJS->new;
+        $_driver->set_implicit_wait_timeout(5);
+        $_driver->set_window_size(600, 800);
+        $_driver->get("http://localhost:$mojoport/");
     };
+    die $@ if ($@);
 
-    # if PhantomJS started, but so slow or unresponsive that SRD cannot connect to it,
-    # kill it manually to avoid waiting for it indefinitely
-    if ($@) {
-        kill 'TERM', $mojopid;
-        kill 'KILL', $phantompid;
-        $mojopid = $phantompid = undef;
-        die $@;
-    }
-
-    return $_driver = $driver;
+    return $_driver;
 }
 
 sub make_screenshot($) {
@@ -127,7 +97,7 @@ sub call_phantom {
     # fail if phantomjs or Selenium::Remote::Driver are unavailable
     use IPC::Cmd qw[can_run];
     use Module::Load::Conditional qw(can_load);
-    if (!can_run('phantomjs') || !can_load(modules => {'Selenium::Remote::Driver' => undef,})) {
+    if (!can_load(modules => {'Selenium::PhantomJS' => undef,})) {
         return undef;
     }
 
@@ -149,17 +119,13 @@ sub kill_phantom() {
     return unless $$ == $startingpid;
     if ($_driver) {
         $_driver->quit();
+        $_driver->shutdown_binary;
         $_driver = undef;
     }
     if ($mojopid) {
         kill('TERM', $mojopid);
         waitpid($mojopid, 0);
         $mojopid = undef;
-    }
-    if ($phantompid) {
-        kill('TERM', $phantompid);
-        waitpid($phantompid, 0);
-        $phantompid = undef;
     }
 }
 
