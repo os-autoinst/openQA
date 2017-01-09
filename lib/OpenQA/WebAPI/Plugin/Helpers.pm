@@ -88,9 +88,7 @@ sub register {
         current_job_group => sub {
             my ($c) = @_;
 
-            my $test = $c->param('testid');
-
-            if ($test) {
+            if ($c->param('testid') || $c->stash('testid')) {
                 my $crumbs;
                 my $distri  = $c->stash('distri');
                 my $build   = $c->stash('build');
