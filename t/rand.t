@@ -53,6 +53,7 @@ like($r, qr/^[0-9A-F]+$/a, "rndhex only consists of hex characters");
 is(length($r), length($r2), "same length");
 isnt($r, $r2, "rndhex produces different results");
 
+is(length(rndstrU), 16, 'default length 16');
 $r  = rndstrU 256;
 $r2 = rndstrU 256;
 is(length($r), 256, "length 256");
@@ -60,11 +61,14 @@ like($r, qr/^\w+$/a, "rndstrU only consists of word characters");
 is(length($r), length($r2), "same length");
 isnt($r, $r2, "rndstrU produces different results");
 
+is(length(rndhexU), 16, 'default length 16');
 $r  = rndhexU 97;
 $r2 = rndhexU 97;
 is(length($r), 97, "length 97");
 like($r, qr/^[0-9A-F]+$/a, "rndhexU only consists of hex characters");
 is(length($r), length($r2), "same length");
 isnt($r, $r2, "rndhexU produces different results");
+
+is(rndstrU(1, [qw(a)]), 'a', 'one random a is a a');
 
 done_testing();
