@@ -135,16 +135,18 @@ sub test_comment_editing {
         # try to remove the first displayed comment (wthe one which has just been edited)
         $driver->find_element('button.remove-edit-button', 'css')->click();
 
+        is($driver->get_alert_text, "Do you really want to delete the comment written by Demo?", "Alert opened");
         # check confirmation and dismiss in the first place
-        $driver->execute_script("window.confirm = function() { return false; }");
+        $driver->dismiss_alert;
 
         # the comment musn't be deleted yet
         is($driver->find_element('div.media-comment', 'css')->get_text(),
             $edited_test_message, "comment is still there after dismissing removal");
 
         # try to remove the first displayed comment again (and accept this time);
-        $driver->execute_script("window.confirm = function() { return true; };");
         $driver->find_element('button.remove-edit-button', 'css')->click();
+        is($driver->get_alert_text, "Do you really want to delete the comment written by Demo?", "Alert opened again");
+        $driver->accept_alert;
         t::ui::PhantomTest::wait_for_ajax;
 
         # check whether the comment is gone
