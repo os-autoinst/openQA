@@ -27,6 +27,7 @@ use OpenQA::Test::Case;
 OpenQA::Test::Case->new->init_data;
 
 use t::ui::PhantomTest;
+use Selenium::Remote::WDKeys;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
@@ -114,11 +115,14 @@ is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'a single, empty group para
 
 subtest 'filter form' => sub {
     $driver->get($baseurl);
-    $driver->find_element('#filter-panel .panel-heading', 'css')->click();
-    $driver->find_element('#filter-group',                'css')->send_keys('SLE 12 SP2');
-    $driver->find_element('#filter-limit-builds',         'css')->send_keys('8');            # appended to default '3'
-    $driver->find_element('#filter-time-limit-days',      'css')->send_keys('2');            # appended to default '14'
-    $driver->find_element('#filter-form button',          'css')->click();
+    $driver->find_element_by_css('#filter-panel .panel-heading')->click();
+    $driver->find_element_by_id('filter-group')->send_keys('SLE 12 SP2');
+    my $ele = $driver->find_element_by_id('filter-limit-builds');
+    $ele->send_keys(KEYS->{end}, '8');    # append to 3
+    $ele = $driver->find_element_by_id('filter-time-limit-days');
+    $ele->click();
+    $ele->send_keys(KEYS->{end}, '2');    # appended to default '14'
+    $driver->find_element_by_css('#filter-form button')->click();
     is(
         $driver->get_current_url(),
         $baseurl . '?group=SLE+12+SP2&limit_builds=38&time_limit_days=142#',
