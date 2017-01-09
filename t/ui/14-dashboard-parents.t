@@ -67,26 +67,26 @@ disable_bootstrap_animations();
 
 # test expanding/collapsing
 is(scalar @{$driver->find_elements('opensuse', 'link_text')}, 0, 'link to child group collapsed (in the first place)');
-$driver->find_element('Build0091', 'link_text')->click();
-my $element = $driver->find_element('opensuse', 'link_text');
+$driver->find_element_by_link_text('Build0091')->click();
+my $element = $driver->find_element_by_link_text('opensuse');
 ok($element->is_displayed(), 'link to child group expanded');
 
 # first try of click does not work for unknown reasons
 for (0 .. 10) {
-    $driver->find_element('Build0091', 'link_text')->click();
-    last if $driver->find_element('#group1_build13_1-0091 h4 a', 'css')->is_hidden();
+    $driver->find_element_by_link_text('Build0091')->click();
+    last if $driver->find_element('#group1_build13_1-0091 h4 a')->is_hidden();
 }
-ok($driver->find_element('#group1_build13_1-0091 h4 a', 'css')->is_hidden(), 'link to child group collapsed');
+ok($driver->find_element('#group1_build13_1-0091 h4 a')->is_hidden(), 'link to child group collapsed');
 
 # go to parent group overview
-$driver->find_element('Test parent', 'link_text')->click();
+$driver->find_element_by_link_text('Test parent')->click();
 disable_bootstrap_animations();
 
-ok($driver->find_element('#group1_build13_1-0091 h4 a', 'css')->is_displayed(), 'link to child group displayed');
+ok($driver->find_element('#group1_build13_1-0091 h4 a')->is_displayed(), 'link to child group displayed');
 my @links = $driver->find_elements('h4 a', 'css');
 is(scalar @links, 11, 'all links expanded in the first place');
-$driver->find_element('Build0091', 'link_text')->click();
-ok($driver->find_element('#group1_build13_1-0091 h4 a', 'css')->is_hidden(), 'link to child group collapsed');
+$driver->find_element_by_link_text('Build0091')->click();
+ok($driver->find_element('#group1_build13_1-0091 h4 a')->is_hidden(), 'link to child group collapsed');
 
 t::ui::PhantomTest::kill_phantom();
 done_testing();

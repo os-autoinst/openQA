@@ -41,7 +41,8 @@ sub schema_hook {
     $jobs->find(99963)->update({assigned_worker_id => 1});
 }
 
-my $driver = t::ui::PhantomTest::call_phantom(\&schema_hook);
+my $driver  = t::ui::PhantomTest::call_phantom(\&schema_hook);
+my $baseurl = $driver->get_current_url;
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -54,58 +55,57 @@ sub disable_bootstrap_fade_animation {
 }
 
 is($driver->get_title(), "openQA", "on main page");
-my $baseurl = $driver->get_current_url();
-$driver->find_element('Login', 'link_text')->click();
+$driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 
-is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
-$driver->get($baseurl . "tests/99946");
+$driver->get("/tests/99946");
 is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
     'tests/99946 followed');
 
-$driver->find_element('installer_timezone', 'link_text')->click();
-is(
+$driver->find_element_by_link_text('installer_timezone')->click();
+like(
     $driver->get_current_url(),
-    $baseurl . "tests/99946/modules/installer_timezone/steps/1/src",
+    qr{.*/tests/99946/modules/installer_timezone/steps/1/src$},
     "on src page for installer_timezone test"
 );
 
-is($driver->find_element('.cm-comment', 'css')->get_text(), '#!/usr/bin/perl -w', "we have a perl comment");
+is($driver->find_element('.cm-comment')->get_text(), '#!/usr/bin/perl -w', "we have a perl comment");
 
-$driver->get($baseurl . "tests/99937");
+$driver->get("/tests/99937");
 disable_bootstrap_fade_animation;
 sub current_tab {
-    return $driver->find_element('.nav.nav-tabs .active', 'css')->get_text;
+    return $driver->find_element('.nav.nav-tabs .active')->get_text;
 }
 is(current_tab, 'Details', 'starting on Details tab for completed job');
-$driver->find_element('Settings', 'link_text')->click();
+$driver->find_element_by_link_text('Settings')->click();
 is(current_tab, 'Settings', 'switched to settings tab');
 $driver->go_back();
 is(current_tab, 'Details', 'back to details tab');
 
-$driver->find_element('[title="wait_serial"]', 'css')->click();
+$driver->find_element('[title="wait_serial"]')->click();
 t::ui::PhantomTest::wait_for_ajax;
-ok($driver->find_element('#preview_container_out', 'css')->is_displayed(), "preview window opens on click");
+ok($driver->find_element_by_id('preview_container_out')->is_displayed(), "preview window opens on click");
 like(
-    $driver->find_element('#preview_container_in', 'css')->get_text(),
+    $driver->find_element_by_id('preview_container_in')->get_text(),
     qr/wait_serial expected/,
     "Preview text with wait_serial output shown"
 );
 like($driver->get_current_url(), qr/#step/, "current url contains #step hash");
-$driver->find_element('[title="wait_serial"]', 'css')->click();
-ok($driver->find_element('#preview_container_out', 'css')->is_hidden(), "preview window closed after clicking again");
+$driver->find_element('[title="wait_serial"]')->click();
+ok($driver->find_element_by_id('preview_container_out')->is_hidden(), "preview window closed after clicking again");
 unlike($driver->get_current_url(), qr/#step/, "current url doesn't contain #step hash anymore");
 
-$driver->find_element('[href="#step/bootloader/1"]', 'css')->click();
+$driver->find_element('[href="#step/bootloader/1"]')->click();
 t::ui::PhantomTest::wait_for_ajax;
-like($driver->find_element('.step_actions .fa-info-circle', 'css')->get_attribute('data-content'),
-    qr/inst-bootmenu/, "show searched needle tags");
-$driver->find_element('.step_actions .fa-info-circle', 'css')->click();
+my $elem = $driver->find_element('.step_actions .fa-info-circle');
+like($elem->get_attribute('data-content'), qr/inst-bootmenu/, "show searched needle tags");
+$elem->click();
 t::ui::PhantomTest::wait_for_ajax;
-ok($driver->find_element('.step_actions .popover', 'css')->is_displayed(), "needle info is a clickable popover");
-$driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
+ok($driver->find_element('.step_actions .popover')->is_displayed(), "needle info is a clickable popover");
+$driver->find_element_by_xpath('//a[@href="#step/installer_timezone/1"]')->click();
 t::ui::PhantomTest::wait_for_ajax;
 
 my @report_links = $driver->find_elements('#preview_container_in .report', 'css');
@@ -130,11 +130,11 @@ my $href_to_isosize = $t->tx->res->dom->at('.component a[href*=installer_timezon
 $t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
 
 subtest 'render bugref links in thumbnail text windows' => sub {
-    $driver->get($baseurl . 'tests/99946');
-    $driver->find_element('[title="Soft Failed"]', 'css')->click();
+    $driver->get('/tests/99946');
+    $driver->find_element('[title="Soft Failed"]')->click();
     t::ui::PhantomTest::wait_for_ajax;
     is(
-        $driver->find_element('#preview_container_in', 'css')->get_text(),
+        $driver->find_element_by_id('preview_container_in')->get_text(),
         'Test bugref bsc#1234 https://fate.suse.com/321208',
         'bugref text correct'
     );
@@ -145,7 +145,7 @@ subtest 'render bugref links in thumbnail text windows' => sub {
 
 subtest 'route to latest' => sub {
     $get
-      = $t->get_ok($baseurl . 'tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
+      = $t->get_ok('/tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
       ->status_is(200);
     my $header = $t->tx->res->dom->at('#info_box .panel-heading a');
     is($header->text,   '99963',        'link shows correct test');
@@ -153,13 +153,13 @@ subtest 'route to latest' => sub {
     my $first_detail = $get->tx->res->dom->at('#details tbody > tr ~ tr');
     is($first_detail->at('.component a')->{href}, '/tests/99963/modules/isosize/steps/1/src', 'correct src link');
     is($first_detail->at('.links_a a')->{'data-url'}, '/tests/99963/modules/isosize/steps/1', 'correct needle link');
-    $get    = $t->get_ok($baseurl . 'tests/latest?flavor=DVD&arch=x86_64&test=kde')->status_is(200);
+    $get    = $t->get_ok('/tests/latest?flavor=DVD&arch=x86_64&test=kde')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .panel-heading a');
     is($header->{href}, '/tests/99963', '... as long as it is unique');
-    $get    = $t->get_ok($baseurl . 'tests/latest?version=13.1')->status_is(200);
+    $get    = $t->get_ok('/tests/latest?version=13.1')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .panel-heading a');
     is($header->{href}, '/tests/99981', 'returns highest job nr of ambiguous group');
-    $get    = $t->get_ok($baseurl . 'tests/latest?test=kde&machine=32bit')->status_is(200);
+    $get    = $t->get_ok('/tests/latest?test=kde&machine=32bit')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .panel-heading a');
     is($header->{href}, '/tests/99937', 'also filter on machine');
     my $job_groups_links = $t->tx->res->dom->find('.nav .dropdown a + ul.dropdown-menu li a');
@@ -172,15 +172,15 @@ subtest 'route to latest' => sub {
     like($build_href, qr/groupid=1001/,    'href to test overview');
     like($build_href, qr/version=13.1/,    'href to test overview');
     like($build_href, qr/build=0091/,      'href to test overview');
-    $get = $t->get_ok($baseurl . 'tests/latest?test=foobar')->status_is(404);
+    $get = $t->get_ok('/tests/latest?test=foobar')->status_is(404);
 };
 
 # test /details route
-$driver->get($baseurl . "tests/99946/details");
-$driver->find_element('installer_timezone', 'link_text')->click();
-is(
+$driver->get("/tests/99946/details");
+$driver->find_element_by_link_text('installer_timezone')->click();
+like(
     $driver->get_current_url(),
-    $baseurl . "tests/99946/modules/installer_timezone/steps/1/src",
+    qr{.*/tests/99946/modules/installer_timezone/steps/1/src$},
     "on src page from details route"
 );
 
@@ -225,10 +225,10 @@ sub test_with_error {
         close($fh);
     }
 
-    $driver->get($baseurl . "tests/99946#step/yast2_lan/1");
+    $driver->get("/tests/99946#step/yast2_lan/1");
     t::ui::PhantomTest::wait_for_ajax;
 
-    my $text = $driver->find_element('#needlediff_selector', 'css')->get_text();
+    my $text = $driver->find_element_by_id('needlediff_selector')->get_text();
     $text =~ s,\s+, ,g;
     is($text, $expect, "combo box matches");
 }
@@ -247,7 +247,8 @@ $t_api->ua(
     OpenQA::Client->new(apikey => '1234567890ABCDEF', apisecret => '1234567890ABCDEF')->ioloop(Mojo::IOLoop->singleton)
 );
 $t_api->app($app);
-my $post = $t_api->post_ok($baseurl . 'api/v1/jobs/99963/set_done', form => {result => 'FAILED'})
+my $post
+  = $t_api->post_ok($baseurl . 'api/v1/jobs/99963/set_done', form => {result => 'FAILED'})
   ->status_is(200, 'set job as done');
 
 $get         = $t->get_ok($baseurl . 'tests/99963')->status_is(200);

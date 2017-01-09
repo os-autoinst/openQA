@@ -66,41 +66,41 @@ is($ret->tx->res->json->{count}, 10, '10 new jobs created');
 
 # Log in as Demo in phantomjs webui
 is($driver->get_title(), "openQA", "on main page");
-$driver->find_element('Login', 'link_text')->click();
+$driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-is($driver->get_title(), "openQA", "back on main page");
-is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->get_title(),                                   "openQA",            "back on main page");
+is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # Test Scheduled isos are displayed
-$driver->find_element('#user-action a',     'css')->click();
-$driver->find_element('Scheduled products', 'link_text')->click();
+$driver->find_element('#user-action a')->click();
+$driver->find_element_by_link_text('Scheduled products')->click();
 like($driver->get_title(), qr/Scheduled products log/, 'on product log');
-my $table = $driver->find_element('#product_log_table', 'css');
+my $table = $driver->find_element_by_id('product_log_table');
 ok($table, 'products tables found');
 
-my @rows  = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]');
+my @rows  = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 my $nrows = scalar @rows;
 my $row   = shift @rows;
-my $cell  = $driver->find_child_element($row, './td[2]');
+my $cell  = $driver->find_child_element($row, './td[2]', 'xpath');
 is($cell->get_text, 'opensuse', 'ISO scheduled for opensuse distri');
-$cell = $driver->find_child_element($row, './td[8]/span');
+$cell = $driver->find_child_element($row, './td[8]/span', 'xpath');
 like($cell->get_attribute('title'), qr/"ARCH": "i586"/, 'ISO data present');
-$cell = $driver->find_child_element($row, './td[1]/a');
+$cell = $driver->find_child_element($row, './td[1]/a', 'xpath');
 my ($id) = $cell->get_attribute('href') =~ m{$url/admin/auditlog\?eventid=(\d)};
 ok($id, 'time is actually link to event id');
 
 # Replay works for operator (perci)
-$cell = $driver->find_child_element($row, './td[9]/a');
+$cell = $driver->find_child_element($row, './td[9]/a', 'xpath');
 like($cell->get_attribute('href'), qr{$url/api/v1/isos}, 'replay action poinst to isos api route');
 $cell->click();
 $driver->refresh;
 # refresh page
-$driver->find_element('#user-action a',     'css')->click();
-$driver->find_element('Scheduled products', 'link_text')->click();
+$driver->find_element('#user-action a')->click();
+$driver->find_element_by_link_text('Scheduled products')->click();
 like($driver->get_title(), qr/Scheduled products log/, 'on product log');
-$table = $driver->find_element('#product_log_table', 'css');
+$table = $driver->find_element_by_id('product_log_table');
 ok($table, 'products tables found');
-@rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]');
+@rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 is(scalar @rows, $nrows + 1, 'iso rescheduled by replay action');
 
 t::ui::PhantomTest::kill_phantom();

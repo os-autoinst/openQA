@@ -70,29 +70,29 @@ $get->element_exists_not('#scheduled #job_99928 a.cancel');
 
 # operator has access to part of admin menu - using phantomjs
 is($driver->get_title(), "openQA", "on main page");
-$driver->find_element('Login', 'link_text')->click();
+$driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 # but ...
 
-is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # now hack ourselves to be just operator - this is stupid procedure, but we don't have API for user management
-$driver->find_element('#user-action a', 'css')->click();
-$driver->find_element('Users',          'link_text')->click;
+$driver->find_element('#user-action a')->click();
+$driver->find_element_by_link_text('Users')->click;
 $driver->execute_script('$("#users").off("change")');
 $driver->execute_script(
     '$("#users").on("change", "input[name=\"role\"]:radio", function() {$(this).parent("form").submit();})');
-$driver->find_element('//tr[./td[@class="nick" and text()="Demo"]]/td[@class="role"]//label[2]')->click;
+$driver->find_element_by_xpath('//tr[./td[@class="nick" and text()="Demo"]]/td[@class="role"]//label[2]')->click;
 
 # refresh and return to admin pages
 $driver->refresh;
 $driver->get($driver->get_current_url =~ s/users//r);
 
-$driver->find_element('#user-action a', 'css')->click();
+$driver->find_element('#user-action a')->click();
 # we should see test templates, groups, machines
 for my $item ('Medium types', 'Machines', 'Workers', 'Assets', 'Scheduled products') {
-    ok($driver->find_element($item, 'link_text'), "can see $item");
+    ok($driver->find_element_by_link_text($item), "can see $item");
 }
 # we shouldn't see users, audit
 for my $item ('Users', 'Audit log') {

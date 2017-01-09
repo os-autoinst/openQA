@@ -5,6 +5,10 @@ use Mojo::IOLoop::Server;
 require Mojolicious::Commands;
 require OpenQA::Test::Database;
 
+# specify the dependency here
+use Test::Selenium::Chrome 1.02;
+use Test::Selenium::PhantomJS;
+
 our $_driver;
 our $mojopid;
 our $mojoport;
@@ -43,7 +47,7 @@ sub start_app {
             OpenQA::Test::Database->new->create;
         }
         # TODO: start the server manually - and make it silent
-        # Run openQa in test mode - it will mock Scheduler and Websockets DBus services
+        # Run openQA in test mode - it will mock Scheduler and Websockets DBus services
         $ENV{MOJO_MODE}   = 'test';
         $ENV{MOJO_LISTEN} = "127.0.0.1:$mojoport";
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'daemon', '-l', "http://127.0.0.1:$mojoport/");
@@ -51,7 +55,8 @@ sub start_app {
     }
     else {
         #$SIG{__DIE__} = sub { kill('TERM', $mojopid); };
-        my $wait = time + 5;
+        # as this might download assets on first test, we need to wait a while
+        my $wait = time + 50;
         while (time < $wait) {
             my $t      = time;
             my $socket = IO::Socket::INET->new(
@@ -71,11 +76,28 @@ sub start_phantomjs {
 
     # Connect to it
     eval {
-        require Selenium::PhantomJS;
-        $_driver = Selenium::PhantomJS->new;
-        $_driver->set_implicit_wait_timeout(5);
+        my %opts = (
+            base_url          => "http://localhost:$mojoport/",
+            inner_window_size => [600, 800],
+            default_finder    => 'css',
+            webelement_class  => 'Test::Selenium::Remote::WebElement'
+        );
+        if ($ENV{SELENIUM_CHROME}) {
+            # chromedriver is unfortunately hidden on openSUSE
+            my @chromiumdirs = qw(/usr/lib64/chromium);
+            for my $dir (@chromiumdirs) {
+                if (-d $dir) {
+                    $ENV{PATH} = "$ENV{PATH}:$dir";
+                }
+            }
+            $_driver = Test::Selenium::Chrome->new(%opts);
+        }
+        else {
+            $_driver = Test::Selenium::PhantomJS->new(%opts);
+        }
+        $_driver->set_implicit_wait_timeout(2000);
         $_driver->set_window_size(600, 800);
-        $_driver->get("http://localhost:$mojoport/");
+        $_driver->get('/');
     };
     die $@ if ($@);
 
