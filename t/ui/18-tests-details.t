@@ -162,6 +162,16 @@ subtest 'route to latest' => sub {
     $get    = $t->get_ok($baseurl . 'tests/latest?test=kde&machine=32bit')->status_is(200);
     $header = $t->tx->res->dom->at('#info_box .panel-heading a');
     is($header->{href}, '/tests/99937', 'also filter on machine');
+    my $job_groups_links = $t->tx->res->dom->find('.nav .dropdown a + ul.dropdown-menu li a');
+    my ($job_group_text, $build_text) = $job_groups_links->map('text')->each;
+    my ($job_group_href, $build_href) = $job_groups_links->map('attr', 'href')->each;
+    is($job_group_text, 'opensuse (current)',   'link to current job group overview');
+    is($build_text,     ' Build 0091',          'link to test overview');
+    is($job_group_href, '/group_overview/1001', 'href to current job group overview');
+    like($build_href, qr/distri=opensuse/, 'href to test overview');
+    like($build_href, qr/groupid=1001/,    'href to test overview');
+    like($build_href, qr/version=13.1/,    'href to test overview');
+    like($build_href, qr/build=0091/,      'href to test overview');
     $get = $t->get_ok($baseurl . 'tests/latest?test=foobar')->status_is(404);
 };
 
