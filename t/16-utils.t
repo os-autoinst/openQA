@@ -27,7 +27,7 @@ use Test::More;
 is bugurl('bsc#1234'), 'https://bugzilla.suse.com/show_bug.cgi?id=1234', 'bug url is properly expanded';
 ok find_bugref('gh#os-autoinst/openQA#1234'), 'github bugref is recognized';
 is(find_bugref('bsc#1234 poo#4321'), 'bsc#1234', 'first bugres found');
-is_deeply(find_bugrefs('bsc#1234 poo#4321'), [qw(bsc#1234 poo#4321)], 'multiple bugrefs found');
+is_deeply(find_bugrefs('bsc#1234 poo#4321'), ['bsc#1234', 'poo#4321'], 'multiple bugrefs found');
 is_deeply(find_bugrefs('bc#1234 #4321'), [], 'no bugrefs found');
 is bugurl('gh#os-autoinst/openQA#1234'),                        'https://github.com/os-autoinst/openQA/issues/1234';
 is bugurl('poo#1234'),                                          'https://progress.opensuse.org/issues/1234';

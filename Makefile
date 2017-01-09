@@ -97,12 +97,12 @@ travis:
 	else \
 	  list= ;\
 	  if test "x$$UITESTS" = x1; then \
-	    list=t/ui ;\
+	    list=./t/ui ;\
 	  else \
 	    $(MAKE) checkstyle ;\
-	    list=$$(find t/ -name *.t | grep -v t/ui) ;\
+	    list=$$(find ./t/ -name *.t | grep -v t/ui | sort ) ;\
 	  fi ;\
-          prove --timer -r $$list ;\
+          prove --timer -r --jobs 2 $$list ;\
 	fi
 
 # ignore tests and test related addons in coverage analysis

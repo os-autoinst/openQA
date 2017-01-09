@@ -1,0 +1,42 @@
+---
+# we list here all jobs that are good to run in parallel with code checks. Every other
+# test not listed here is run afterwards
+seq:
+  - par:
+     - ./t/00-tidy.t
+     - ./t/01-compile-check-all}.t
+     - ./t/02-pod.t
+     - ./t/04-scheduler.t
+     - ./t/05-scheduler-cancel.t
+     - ./t/05-scheduler-capabilities.t
+     - ./t/05-scheduler-dependencies.t
+     - ./t/05-scheduler-restart-and-duplicate.t
+     - ./t/06-users.t
+     - ./t/07-api_jobtokens.t
+     - ./t/07-api_keys.t
+     - ./t/09-job_clone.t
+     - ./t/10-tests_overview.t
+     - ./t/13-joblocks.t
+     - ./t/15-assets.t
+     - ./t/16-utils-runcmd.t
+     - ./t/16-utils.t
+     - ./t/17-build_tagging.t
+     - ./t/17-labels_carry_over.t
+     - ./t/18-fedmsg.t
+     - ./t/19-tests-export.t
+     - ./t/20-workers-ws.t
+     - ./t/21-needles.t
+     - ./t/22-dashboard.t
+     - ./t/23-amqp.t
+     - ./t/24-worker.t
+     - ./t/api/02-assets.t
+     - ./t/api/02-iso.t
+     - ./t/api/04-jobs.t
+     - ./t/api/05-machines.t
+     - ./t/api/08-jobtemplates.t
+     - ./t/api/09-comments.t
+     - ./t/api/10-jobgroups.t
+     - ./t/basic.t
+     - ./t/deploy.t
+     - ./t/full-stack.t
+     - ./t/rand.t
