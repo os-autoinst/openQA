@@ -9,6 +9,10 @@ function setupFilterForm() {
         }
     });
 
+    $('#filter-panel .help_popover').on('click', function(event) {
+        event.stopPropagation();
+    });
+
     $('#filter-form').on('submit', function(event) {
         if($('#filter-form').serialize() !== window.location.search.substring(1)) {
             // show progress indication
