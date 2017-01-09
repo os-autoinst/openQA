@@ -74,12 +74,12 @@ sub open_needle_editor {
     # init the preview
     t::ui::PhantomTest::wait_for_ajax;
 
-    $driver->find_element('//a[@href="#step/installer_timezone/1"]')->click();
+    $driver->find_element_by_xpath('//a[@href="#step/installer_timezone/1"]')->click();
 
     # init the diff
     t::ui::PhantomTest::wait_for_ajax;
 
-    $driver->find_element('.step_actions .fa-thumb-tack', 'css')->click();
+    $driver->find_element_by_css('.step_actions .create_new_needle')->click();
 }
 
 sub goto_editpage() {
