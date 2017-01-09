@@ -347,19 +347,22 @@ subtest 'job property editor' => sub() {
 
     subtest 'edit some properties' => sub() {
         # those keys will be appended
-        $driver->find_element('#editor-name',                           'css')->send_keys(' has been edited!');
-        $driver->find_element('#editor-size-limit',                     'css')->send_keys('0');
-        $driver->find_element('#editor-keep-important-results-in-days', 'css')->send_keys('500');
-        $driver->find_element('#editor-description',                    'css')->send_keys('Test group');
-        $driver->find_element('p.buttons button.btn-primary',           'css')->click();
+        $driver->find_element_by_id('editor-name')->send_keys(' has been edited!');
+        my $ele = $driver->find_element_by_id('editor-size-limit');
+        $ele->click();
+        $ele->send_keys('1000');
+        $ele = $driver->find_element_by_id('editor-keep-important-results-in-days');
+        $ele->click();
+        $ele->send_keys('500');
+        $driver->find_element_by_id('editor-description')->send_keys('Test group');
+        $driver->find_element_by_css('p.buttons button.btn-primary')->click();
         # ensure there is no race condition, even though the page is reloaded
         t::ui::PhantomTest::wait_for_ajax;
 
-        # now reload the page to see if we succeeded
-        $driver->get($driver->get_current_url());
+        $driver->refresh();
         is($driver->get_title(), 'openQA: Jobs for Cool Group has been edited!', 'new name on title');
         $driver->find_element('#job-group-name + form button', 'css')->click();
-        is($driver->find_element('#editor-name', 'css')->get_value(), 'Cool Group has been edited!', 'name edited');
+        is($driver->find_element_by_id('editor-name')->get_value(), 'Cool Group has been edited!', 'name edited');
         is($driver->find_element('#editor-size-limit', 'css')->get_value(), '1000', 'size edited');
         is($driver->find_element('#editor-keep-important-results-in-days', 'css')->get_value(),
             '500', 'keep important results in days edited');
