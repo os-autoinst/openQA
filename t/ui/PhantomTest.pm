@@ -43,7 +43,7 @@ sub start_app {
             OpenQA::Test::Database->new->create;
         }
         # TODO: start the server manually - and make it silent
-        # Run openQa in test mode - it will mock Scheduler and Websockets DBus services
+        # Run openQA in test mode - it will mock Scheduler and Websockets DBus services
         $ENV{MOJO_MODE}   = 'test';
         $ENV{MOJO_LISTEN} = "127.0.0.1:$mojoport";
         Mojolicious::Commands->start_app('OpenQA::WebAPI', 'daemon', '-l', "http://127.0.0.1:$mojoport/");
