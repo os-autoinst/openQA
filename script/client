@@ -44,7 +44,7 @@ load get/post parameters from a json file. For example
 
 Set API base URL component, default: '/api/v1'
 
-=item B<--json>
+=item B<--json-output>
 
 Output JSON instead of perl structures.
 
@@ -55,6 +55,13 @@ Be verbose in output.
 =item B<--apikey> KEY, B<--apisecret> SECRET
 
 Specify api key and secret to use, overrides use of config file ~/.config/openqa/client.conf
+
+=item B<--json-data>
+
+Send JSON data (which is expected by some routes)
+
+For example:
+jobs/639172 put --json-data '{"group_id": 1}'
 
 =item B<--help, -h>
 
@@ -88,15 +95,14 @@ Delete job nr. B<1> (permissions read from config file).
 
 Trigger jobs on iso B<bar.iso> matching test suite B<blah>.
 
-
 =cut
 
 # Intentionally commented out - so far useful only for openQA debugging
 # =item B<--form>
 #
-# instead of appending supplied parameters as URL query, use HTTP forms
+# Use HTTP forms instead of appending supplied parameters as URL query
 #
-# to create nested forms use dotted syntax. For example:
+# To create nested forms use dotted syntax. For example:
 #
 # client jobs/1/artefact post file.file=bar file.filename=bar.log
 
@@ -121,11 +127,18 @@ sub usage($) {
     }
 }
 
-GetOptions(\%options, "host=s", "apibase=s", "json", "verbose|v", "apikey:s", "apisecret:s", "params=s", 'form',
-    "help|h|?",)
-  or usage(1);
+GetOptions(
+    \%options,     'host=s',   'apibase=s', 'json-output', 'verbose|v', 'apikey:s',
+    'apisecret:s', 'params=s', 'form',      'json-data:s', 'help|h|?'
+) or usage(1);
 
 usage(1) unless @ARGV;
+
+if ($options{form} && $options{'json-data'}) {
+    print STDERR "ERROR: The options --form and --json-data can not be combined.\n";
+    exit(2);
+}
+
 $options{host}    ||= 'localhost';
 $options{apibase} ||= '/api/v1';
 
@@ -190,14 +203,17 @@ else {
 my $client = OpenQA::Client->new(apikey => $options{apikey}, apisecret => $options{apisecret}, api => $url->host);
 
 my $res;
-if (!$options{form}) {
-    $res = $client->$method($url)->res;
+if ($options{form}) {
+    $res = $client->$method($url, form => \%params)->res;
+}
+elsif ($options{'json-data'}) {
+    $res = $client->$method($url, {'Content-Type' => 'application/json'} => $options{'json-data'})->res;
 }
 else {
-    $res = $client->$method($url => form => \%params)->res;
+    $res = $client->$method($url)->res;
 }
 if ($res->code == 200) {
-    if ($options{json}) {
+    if ($options{'json-output'}) {
         print JSON->new->pretty->encode($res->json);
     }
     else {
