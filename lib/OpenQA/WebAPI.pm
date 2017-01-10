@@ -112,6 +112,9 @@ sub startup {
             $self->plugin("OpenQA::WebAPI::Plugin::$plugin");
         }
     }
+    if ($self->config->{global}{profiling_enabled}) {
+        $self->plugin(NYTProf => {nytprof => {}});
+    }
 
     # read assets/assetpack.def
     $self->asset->process;

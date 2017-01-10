@@ -36,6 +36,7 @@ sub read_config {
             scm                 => undef,
             hsts                => 365,
             audit_enabled       => 1,
+            profiling_enabled   => 0,
             plugins             => undef,
             hide_asset_types    => 'repo',
             recognized_referers => ''
