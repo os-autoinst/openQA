@@ -144,7 +144,7 @@ symlink(abs_path('../os-autoinst/t/data/tests/'), 't/full-stack.d/openqa/share/t
   || die "can't symlink";
 
 sub client_call {
-    my ($args) = @_;
+    my ($args, $expected_ret) = @_;
     my $ret = system("perl ./script/client $connect_args $args");
     is($ret, 0, "Client $args succeeded");
 }
@@ -194,6 +194,16 @@ $driver->refresh();
 like($driver->find_element('#result-row .panel-body')->get_text(), qr/Result: passed/, 'test 1 is passed');
 
 ok(-s "t/full-stack.d/openqa/testresults/00000/00000001-$job_name/autoinst-log.txt", 'log file generated');
+
+my $post_group_res = `perl ./script/client $connect_args job_groups post name='New job group'`;
+my $group_id       = ($post_group_res =~ qr/{ *id *=> *([0-9]*) *}\n/);
+ok($group_id, 'regular post via client script');
+is(
+    `perl ./script/client $connect_args jobs/1 put --json-data '{"group_id": $group_id}'`,
+    "{ job_id => 1 }\n",
+    'send JSON data via client script'
+);
+like(`perl ./script/client $connect_args jobs/1`, qr/group_id *=> *$group_id/, 'group has been altered correctly');
 
 client_call("jobs/1/restart post");
 
