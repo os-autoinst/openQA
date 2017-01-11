@@ -24,6 +24,9 @@ use Cwd 'abs_path';
 use Try::Tiny;
 use FindBin '$Bin';
 use Fcntl ':flock';
+use File::Spec::Functions 'catfile';
+
+use OpenQA::Utils ();
 
 # after bumping the version please look at the instructions in the docs/Contributing.asciidoc file
 # on what scripts should be run and how
@@ -37,11 +40,6 @@ sub _get_schema {
     return \$schema;
 }
 
-sub _find_config {
-    my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
-    return $cfgpath . '/database.ini';
-}
-
 sub connect_db {
     my %args  = @_;
     my $check = $args{check};
@@ -50,7 +48,8 @@ sub connect_db {
     unless ($$schema) {
         my $mode = $args{mode} || $ENV{OPENQA_DATABASE} || 'production';
         my %ini;
-        my $database_file = _find_config;
+        my $cfgpath = $ENV{OPENQA_CONFIG} || "$Bin/../etc/openqa";
+        my $database_file = $cfgpath . '/database.ini';
         tie %ini, 'Config::IniFiles', (-file => $database_file);
         die 'Could not find database section \'' . $mode . '\' in ' . $database_file unless $ini{$mode};
         $$schema = __PACKAGE__->connect($ini{$mode});
@@ -74,16 +73,12 @@ sub dsn {
 
 sub deployment_check {
     # lock config file to ensure only one thing will deploy/upgrade DB at once
-    my $dblockfile = _find_config;
+    # we use a file in prjdir/db as the lock file as the install process and
+    # packages make this directory writeable by openQA user by default
+    my $dblockfile = catfile($OpenQA::Utils::prjdir, 'db', 'db.lock');
     my $dblock;
-    # LOCK_EX should always work if the file is open with write intent. If it's
-    # open with read intent, it may work if a native flock is being used, but
-    # not if lockf or fcntl emulation are used. So try and open in append mode,
-    # if we can't, open in read mode
-    open($dblock, '>>', $dblockfile)
-      or open($dblock, '<', $dblockfile)
-      or die "Can't open database lock file ${dblockfile}!";
-    # either way, if we can't LOCK_EX the file, die
+    # LOCK_EX works most reliably if the file is open with write intent
+    open($dblock, '>>', $dblockfile) or die "Can't open database lock file ${dblockfile}!";
     flock($dblock, LOCK_EX) or die "Can't lock database lock file ${dblockfile}!";
     my ($schema, $force_overwrite) = @_;
     $force_overwrite //= 0;
