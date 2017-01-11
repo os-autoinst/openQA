@@ -23,73 +23,45 @@ function highlightJobsHtml (children, parents) {
     return ' data-children="[' + children.toString() + ']" data-parents="[' + parents.toString() + ']" class="parent_child"';
 }
 
-
 function renderTestName ( data, type, row ) {
     if (type === 'display') {
         var html = '';
-	if (is_operator) {
-	    if (!row['clone']) {
-            var url = restart_url.replace('REPLACEIT', row['id']);
-            html += ' <a class="restart"';
-            html += ' href="' + url + '">';
-		html += '<i class="action fa fa-fw fa-repeat" title="Restart Job"></i></a>';
+        if (is_operator) {
+            if (!row.clone) {
+                var url = restart_url.replace('REPLACEIT', row.id);
+                html += ' <a class="restart"';
+                html += ' href="' + url + '">';
+                html += '<i class="action fa fa-fw fa-repeat" title="Restart Job"></i></a>';
             } else {
-		html += '<i class="fa fa-fw"></i>';
-	    }
-	}
-        html += '<a href="/tests/' + row['id'] + '">';
-        html += '<i class="status fa fa-circle result_' + row['result'] + '" title="Done: ' + row['result'] + '"></i>';
+                html += '<i class="fa fa-fw"></i>';
+            }
+        }
+        html += '<a href="/tests/' + row.id + '">';
+        html += '<i class="status fa fa-circle result_' + row.result + '" title="Done: ' + row.result + '"></i>';
         html += '</a> ';
         // the name
-        html += '<a href="/tests/' + row['id'] + '" class="name">' + data + '</a>';
+        html += '<a href="/tests/' + row.id + '" class="name">' + data + '</a>';
 
-        var deps = '';
-        if (row['deps']['parents']['Chained'].length) {
-            if (deps != '') deps += ', ';
-            if (row['deps']['parents']['Chained'].length == 1) {
-                deps += '1 Chained parent';
-            }
-            else {
-                deps += row['deps']['parents']['Chained'].length + ' Chained parents';
+        var parents = row.deps.parents;
+        var children = row.deps.children;
+        var depsTooltip = [];
+        depsTooltip.quantify = function(quandity, singular, plural) {
+            if (quandity) {
+                this.push([quandity, quandity === 1 ? singular : plural].join(' '));
             }
         }
-        if (row['deps']['parents']['Parallel'].length) {
-            if (deps != '') deps += ', ';
-            if (row['deps']['parents']['Parallel'].length == 1) {
-                deps += '1 Parallel parent';
-            }
-            else {
-                deps += row['deps']['parents']['Parallel'].length + ' Parallel parents';
-            }
-        }
-        if (row['deps']['children']['Chained'].length) {
-            if (deps != '') deps += ', ';
-            if (row['deps']['children']['Chained'].length == 1) {
-                deps += '1 Chained child';
-            }
-            else {
-                deps += row['deps']['children']['Chained'].length + ' Chained children';
-            }
-        }
-        if (row['deps']['children']['Parallel'].length) {
-            if (deps != '') deps += ', ';
-            if (row['deps']['children']['Parallel'].length == 1) {
-                deps += '1 Parallel child';
-            }
-            else {
-                deps += row['deps']['children']['Parallel'].length + ' Parallel children';
-            }
+        depsTooltip.quantify(parents.Chained.length, 'chained parent', 'chained parents');
+        depsTooltip.quantify(parents.Parallel.length, 'parellel parent', 'parellel parents');
+        depsTooltip.quantify(children.Chained.length, 'chained child', 'chained children');
+        depsTooltip.quantify(children.Parallel.length, 'parellel child', 'parellel children');
+        if (depsTooltip.length) {
+            html += ' <a href="/tests/' + row.id + '" title="' + depsTooltip.join(', ') + '"'
+            + highlightJobsHtml(children.Parallel.concat(children.Chained), parents.Parallel.concat(parents.Chained))
+            + '><i class="fa fa-code-fork"></i></a>';
         }
 
-        if (deps != '') {
-                html += ' <a href="/tests/' + row['id'] + '" title="' + deps + '"' +
-                highlightJobsHtml(row['deps']['children']['Parallel'].concat(row['deps']['children']['Chained']),
-                                    row['deps']['parents']['Parallel'].concat(row['deps']['parents']['Chained'])) +
-                '><i class="fa fa-code-fork"></i></a>';
-        }
-
-        if (row['clone'])
-            html += ' <a href="/tests/' + row['clone'] + '">(restarted)</a>';
+        if (row.clone)
+            html += ' <a href="/tests/' + row.clone + '">(restarted)</a>';
 
         return html;
     } else {

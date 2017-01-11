@@ -137,12 +137,12 @@ is($driver->find_element('#results #job_99926 .test .status.result_incomplete')-
 
 # parent-child
 my $child_e = $driver->find_element('#results #job_99938 .parent_child');
-is($child_e->get_attribute('title'),         "1 Chained parent", "dep info");
+is($child_e->get_attribute('title'),         "1 chained parent", "dep info");
 is($child_e->get_attribute('data-children'), "[]",               "no children");
 is($child_e->get_attribute('data-parents'),  "[99937]",          "parent");
 
 my $parent_e = $driver->find_element('#results #job_99937 .parent_child');
-is($parent_e->get_attribute('title'),         "1 Chained child", "dep info");
+is($parent_e->get_attribute('title'),         "1 chained child", "dep info");
 is($parent_e->get_attribute('data-children'), "[99938]",         "child");
 is($parent_e->get_attribute('data-parents'),  "[]",              "no parents");
 
