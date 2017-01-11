@@ -15,6 +15,9 @@ function highlightJobs () {
 }
 
 function unhighlightJobs( children, parents ) {
+    if (document.activeElement == this) {
+        return;
+    }
     removeClassFromArray($(this).data('children'), 'highlight_child');
     removeClassFromArray($(this).data('parents'), 'highlight_parent');
 }
@@ -175,6 +178,8 @@ function renderTestsList(jobs) {
 
     $(document).on('mouseover', '.parent_child', highlightJobs);
     $(document).on('mouseout', '.parent_child', unhighlightJobs);
+    $(document).on('focusin', '.parent_child', highlightJobs);
+    $(document).on('focusout', '.parent_child', unhighlightJobs);
 
     $(document).on("click", '.restart', function(event) {
 	event.preventDefault();
