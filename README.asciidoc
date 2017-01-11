@@ -26,6 +26,9 @@ The project's information is organized into four basic documents. As a first
 step, read the link:docs/GettingStarted.asciidoc[Starter Guide] and then, if
 needed, proceed to the link:docs/Installing.asciidoc[Installation Guide].
 
+For users of the openQA web interface or the REST API consult
+link:docs/UsersGuide.asciidoc[Users Guide].
+
 If you are interested in writing tests using openQA read the
 link:docs/WritingTests.asciidoc[Tests Developer Guide].
 
