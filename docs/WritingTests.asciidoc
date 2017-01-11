@@ -62,7 +62,9 @@ use testapi;
 
 sub run {
     # wait for bootloader to appear
-    assert_screen "bootloader", 30; # timeout 30 seconds
+    # with a timeout explicitly lower than the default because
+    # the bootloader screen will timeout itself
+    assert_screen "bootloader", 15;
 
     # press enter to boot right away
     send_key "ret";
@@ -90,21 +92,23 @@ sub test_flags {
 [source,perl]
 ----------------------------------------------------------------------------------------------------------
 sub run() {
-
     # change to root
     become_root;
 
     # output zypper repos to the serial
     script_run "zypper lr -d > /dev/$serialdev";
 
-    # install xdelta and insert a string 'xdelta_installed' to the serial
-    script_run "zypper --gpg-auto-import-keys -n in xdelta && echo 'xdelta_installed' > /dev/$serialdev";
+    # install xdelta and check that the installation was successful
+    assert_script_run 'zypper --gpg-auto-import-keys -n in xdelta';
+
+    # additionally write a custom string to serial port for later checking
+    script_run "echo 'xdelta_installed' > /dev/$serialdev";
 
     # detecting whether 'xdelta_installed' appears in the serial within 200 seconds
-    die "zypper install failed" unless wait_serial"xdelta_installed", 200;
+    die "we could not see expected output" unless wait_serial "xdelta_installed", 200;
 
-    # capture a screenshot and compare with needle 'test-zypper_in-1'
-    assert_screen 'test-zypper_in-1', 3;
+    # capture a screenshot and compare with needle 'test-zypper_in'
+    assert_screen 'test-zypper_in';
 }
 ----------------------------------------------------------------------------------------------------------
 
@@ -113,31 +117,31 @@ sub run() {
 [source,perl]
 --------------------------------------------------------------
 sub run() {
-
     # make sure kate was installed
     # if not ensure_installed will try to install it
-    ensure_installed "kate";
+    ensure_installed 'kate';
 
     # start kate
-    x11_start_program "kate";
+    x11_start_program 'kate';
 
     # check that kate execution succeeded
-    assert_screen 'test-kate-1', 10;
+    assert_screen 'kate-welcome_window';
 
-    # close kate's welcome window and wait for system becoming idle
-    send_key 'alt-c', 1;
+    # close kate's welcome window and wait for the window to disappear before
+    # continuing
+    wait_screen_change { send_key 'alt-c' };
 
-    # typing the string on kate
+    # typing a string in the editor window of kate
     type_string "If you can see this text kate is working.\n";
 
     # check the result
-    assert_screen 'test-kate-2', 5;
+    assert_screen 'kate-text_shown';
 
     # quit kate
-    send_key "ctrl-q";
+    send_key 'ctrl-q';
 
     # make sure kate was closed
-    assert_screen 'test-kate-3', 5;
+    assert_screen 'desktop';
 }
 --------------------------------------------------------------
 
@@ -406,11 +410,8 @@ use lockapi;
 use mmapi;
 
 sub run {
-    # wait for bootloader to appear
-    assert_screen "bootloader", 30; # timeout 30 seconds
-
-    # wait for the login to appear
-    assert_screen "login", 300;
+    assert_screen 'bootloader';
+    assert_screen 'login', 300;
 
     # services start automatically
     # unlock by creating the lock
@@ -433,11 +434,8 @@ use testapi;
 use lockapi;
 
 sub run {
-    # wait for bootloader to appear
-    assert_screen "bootloader", 30; # timeout 30 seconds
-
-    # wait for the login to appear
-    assert_screen "login", 300;
+    assert_screen 'bootloader';
+    assert_screen 'login', 300;
 
     # this blocks until lock is created then locks and immediately unlocks
     mutex_lock('services_ready');
@@ -497,7 +495,6 @@ use testapi;
 use mmapi;
 
 sub run {
-
     # returns a hash ref containing (id => state) for all children
     my $children = get_children();
 
@@ -614,7 +611,6 @@ use base 'basetest';
 use testapi;
 
 sub run {
-
   my $script="set -e -x\n";
   $script.="echo test >test.txt\n";
   $script.="time tftp ".$server_ip." -c put test.txt test2.txt\n";
@@ -692,8 +688,7 @@ use testapi;
 use utils;
 
 sub run {
-    my $self = shift;
-    wait_boot;                     #Utility function defined by the SUSE distribution
+    wait_boot;  # Utility function defined by the SUSE distribution
     select_console 'root-console';
 }
 
