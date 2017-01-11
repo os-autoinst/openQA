@@ -146,6 +146,21 @@ is($parent_e->get_attribute('title'),         "1 chained child", "dep info");
 is($parent_e->get_attribute('data-children'), "[99938]",         "child");
 is($parent_e->get_attribute('data-parents'),  "[]",              "no parents");
 
+# no highlighting in first place
+sub no_highlighting {
+    is(scalar @{$driver->find_elements('#results #job_99937.highlight_parent')}, 0, 'parent not highlighted');
+    is(scalar @{$driver->find_elements('#results #job_99938.highlight_child')},  0, 'child not highlighted');
+}
+no_highlighting;
+
+# job dependencies highlighted on hover
+$driver->move_to(element => $child_e);
+is(scalar @{$driver->find_elements('#results #job_99937.highlight_parent')}, 1, 'parent highlighted');
+$driver->move_to(element => $parent_e);
+is(scalar @{$driver->find_elements('#results #job_99938.highlight_child')}, 1, 'child highlighted');
+$driver->move_to(xoffset => 200, yoffset => 500);
+no_highlighting;
+
 # first check the relevant jobs
 my @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 
