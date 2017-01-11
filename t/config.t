@@ -40,6 +40,7 @@ is_deeply(
             branding            => 'openSUSE',
             hsts                => 365,
             audit_enabled       => 1,
+            profiling_enabled   => 0,
             hide_asset_types    => 'repo',
             recognized_referers => []
         },
