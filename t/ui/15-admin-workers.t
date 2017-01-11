@@ -55,39 +55,39 @@ unless ($driver) {
 }
 
 is($driver->get_title(), "openQA", "on main page");
-$driver->find_element('Login', 'link_text')->click();
+$driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 # but ...
 
-is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # Demo is admin, so go there
-$driver->find_element('#user-action a', 'css')->click();
-$driver->find_element('Workers',        'link_text')->click();
+$driver->find_element('#user-action a')->click();
+$driver->find_element_by_link_text('Workers')->click();
 
 is($driver->get_title(), "openQA: Workers", "on workers overview");
 
-is($driver->find_element('tr#worker_1 .worker', 'css')->get_text(), 'localhost:1',  'localhost:1');
-is($driver->find_element('tr#worker_2 .worker', 'css')->get_text(), 'remotehost:1', 'remotehost:1');
+is($driver->find_element('tr#worker_1 .worker')->get_text(), 'localhost:1',  'localhost:1');
+is($driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1');
 
 # we can't check if it's "working" as after 10s the worker is 'dead'
-like($driver->find_element('tr#worker_1 .status', 'css')->get_text(), qr/job 99963/, 'on 99963');
-like($driver->find_element('tr#worker_2 .status', 'css')->get_text(), qr/job 99961/, 'working 99961');
+like($driver->find_element('tr#worker_1 .status')->get_text(), qr/job 99963/, 'on 99963');
+like($driver->find_element('tr#worker_2 .status')->get_text(), qr/job 99961/, 'working 99961');
 
-$driver->find_element('tr#worker_1 .worker a', 'css')->click();
+$driver->find_element('tr#worker_1 .worker a')->click();
 
 is($driver->get_title(), 'openQA: Worker localhost:1', 'on worker 1');
 
-my $body = $driver->find_element('//body');
+my $body = $driver->find_element_by_xpath('//body');
 like($body->get_text(), qr/Status: .* job 99963/, 'still on 99963');
 like($body->get_text(), qr/JOBTOKEN token99963/,  'token for 99963');
 
 # previous jobs table
 t::ui::PhantomTest::wait_for_ajax;
-my $table = $driver->find_element('#previous_jobs', 'css');
+my $table = $driver->find_element_by_id('previous_jobs');
 ok($table, 'previous jobs table found');
-my @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td');
+my @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
 is(scalar @entries, 8, 'two previous jobs shown (4 cols per row)');
 is_deeply(
     \@entries,

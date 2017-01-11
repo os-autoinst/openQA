@@ -101,9 +101,9 @@ remove_tree('t/full-stack.d/openqa/testresults/');
 make_path('t/full-stack.d/openqa/testresults/');
 remove_tree('t/full-stack.d/openqa/images/');
 
-is($driver->get_title(), "openQA", "on main page");
-is($driver->find_element('#user-action', 'css')->get_text(), 'Login', "noone logged in");
-$driver->find_element('Login', 'link_text')->click();
+is($driver->get_title(),                                   "openQA", "on main page");
+is($driver->find_element_by_id('user-action')->get_text(), 'Login',  "noone logged in");
+$driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 # but ...
@@ -156,15 +156,15 @@ client_call(
 
 
 # verify it's displayed scheduled
-$driver->find_element('All Tests', 'link_text')->click();
+$driver->find_element_by_link_text('All Tests')->click();
 is($driver->get_title(), 'openQA: Test results', 'tests followed');
 like($driver->get_page_source(), qr/\Q<h2>1 scheduled jobs<\/h2>\E/, '1 job scheduled');
 t::ui::PhantomTest::wait_for_ajax;
 
 my $job_name = 'pitux-1-flavor-i386-Build1-pitux@coolone';
-$driver->find_element('pitux@coolone', 'link_text')->click();
+$driver->find_element_by_link_text('pitux@coolone')->click();
 is($driver->get_title(), "openQA: $job_name test results", 'scheduled test page');
-like($driver->find_element('#result-row .panel-body', 'css')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
+like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
 
 $workerpid = fork();
 if ($workerpid == 0) {
@@ -173,25 +173,25 @@ if ($workerpid == 0) {
 }
 
 my $count;
-for ($count = 0; $count < 30; $count++) {
-    last if $driver->find_element('#result-row .panel-body', 'css')->get_text() =~ qr/State: running/;
+for ($count = 0; $count < 130; $count++) {
+    last if $driver->find_element('#result-row .panel-body')->get_text() =~ qr/State: running/;
     sleep 1;
 }
 
 $driver->refresh();
 print "RUNING after $count seconds\n";
-like($driver->find_element('#result-row .panel-body', 'css')->get_text(), qr/State: running/, 'test 1 is running');
+like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: running/, 'test 1 is running');
 
-for ($count = 0; $count < 30; $count++) {
-    print $driver->find_element('#result-row .panel-body', 'css')->get_text();
-    last if $driver->find_element('#result-row .panel-body', 'css')->get_text() =~ qr/Result: passed/;
+for ($count = 0; $count < 130; $count++) {
+    print $driver->find_element('#result-row .panel-body')->get_text();
+    last if $driver->find_element('#result-row .panel-body')->get_text() =~ qr/Result: passed/;
     sleep 1;
 }
 
 print "PASSED after $count seconds\n";
 system("cat t/full-stack.d/openqa/testresults/00000/00000001-$job_name/autoinst-log.txt");
 $driver->refresh();
-like($driver->find_element('#result-row .panel-body', 'css')->get_text(), qr/Result: passed/, 'test 1 is passed');
+like($driver->find_element('#result-row .panel-body')->get_text(), qr/Result: passed/, 'test 1 is passed');
 
 ok(-s "t/full-stack.d/openqa/testresults/00000/00000001-$job_name/autoinst-log.txt", 'log file generated');
 

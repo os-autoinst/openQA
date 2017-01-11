@@ -41,9 +41,7 @@ unless ($driver) {
 # List with no parameters
 #
 is($driver->get_title(), "openQA", "on main page");
-my $baseurl = $driver->get_current_url();
-
-$driver->find_element('Login', 'link_text')->click();
+$driver->find_element_by_link_text('Login')->click();
 
 # we are back on the main page
 is($driver->get_title(), "openQA", "back on main page");
@@ -53,10 +51,10 @@ my $get = $t->get_ok($driver->get_current_url())->status_is(200);
 $get->element_exists_not('.review', 'no build is marked as \'reviewed\' as there are no comments yet');
 $get->element_exists('.badge-all-passed', 'exactly one build is marked as \'reviewed\' because all tests passed');
 
-$driver->find_element('opensuse', 'link_text')->click();
+$driver->find_element_by_link_text('opensuse')->click();
 
 is(
-    $driver->find_element('h2:first-of-type', 'css')->get_text(),
+    $driver->find_element('h2:first-of-type')->get_text(),
     "Last Builds for opensuse\nEDIT JOB GROUP",
     'on group overview'
 );
@@ -72,7 +70,7 @@ my $user_name                = 'Demo';
 # expects the current number of comments as argument (currently the easiest way to find the tab button)
 sub switch_to_comments_tab {
     my $current_comment_count = shift;
-    $driver->find_element("Comments ($current_comment_count)", 'link_text')->click();
+    $driver->find_element_by_link_text("Comments ($current_comment_count)")->click();
 }
 
 # checks comment heading and text for recently added comment
@@ -80,18 +78,17 @@ sub check_comment {
     my ($supposed_text, $edited) = @_;
 
     if ($edited) {
-        is($driver->find_element('h4.media-heading', 'css')->get_text(),
+        is($driver->find_element('h4.media-heading')->get_text(),
             "$user_name wrote less than a minute ago (last edited less than a minute ago)", "heading");
     }
     else {
-        is($driver->find_element('h4.media-heading', 'css')->get_text(),
-            "$user_name wrote less than a minute ago", "heading");
+        is($driver->find_element('h4.media-heading')->get_text(), "$user_name wrote less than a minute ago", "heading");
     }
-    is($driver->find_element('div.media-comment', 'css')->get_text(), $supposed_text, "body");
-    my $anchor = $driver->find_element('h4.media-heading .comment-anchor', 'css')->get_attribute('href');
+    is($driver->find_element('div.media-comment')->get_text(), $supposed_text, "body");
+    my $anchor = $driver->find_element('h4.media-heading .comment-anchor')->get_attribute('href');
     $anchor =~ s/[^#]*#/#/;
     like($anchor, qr/#comment-[0-9]+/, "anchor matches expected format");
-    is($driver->find_element("$anchor div.media-comment", 'css')->get_text(), $supposed_text, "body by anchor ref");
+    is($driver->find_element("$anchor div.media-comment")->get_text(), $supposed_text, "body by anchor ref");
 }
 
 # tests adding, editing and removing comments
@@ -102,8 +99,8 @@ sub test_comment_editing {
     is(scalar @comments, 0, 'no comments present so far');
 
     subtest 'add' => sub {
-        $driver->find_element('#text',          'css')->send_keys($test_message);
-        $driver->find_element('#submitComment', 'css')->click();
+        $driver->find_element_by_id('text')->send_keys($test_message);
+        $driver->find_element_by_id('submitComment')->click();
         t::ui::PhantomTest::wait_for_ajax;
 
         if ($in_test_results) {
@@ -114,13 +111,13 @@ sub test_comment_editing {
     };
 
     subtest 'edit' => sub {
-        $driver->find_element('button.trigger-edit-button', 'css')->click();
+        $driver->find_element('button.trigger-edit-button')->click();
         # wait 1 second to ensure initial time and last update time differ
         sleep 1;
 
         # try to edit the first displayed comment (the one which has just been added)
-        $driver->find_element('textarea.comment-editing-control', 'css')->send_keys($another_test_message);
-        $driver->find_element('button.comment-editing-control',   'css')->click();
+        $driver->find_element('textarea.comment-editing-control')->send_keys($another_test_message);
+        $driver->find_element('button.comment-editing-control')->click();
         t::ui::PhantomTest::wait_for_ajax;
 
         if ($in_test_results) {
@@ -133,18 +130,33 @@ sub test_comment_editing {
 
     subtest 'remove' => sub {
         # try to remove the first displayed comment (wthe one which has just been edited)
-        $driver->find_element('button.remove-edit-button', 'css')->click();
+        $driver->find_element('button.remove-edit-button')->click();
 
-        # check confirmation and dismiss in the first place
-        $driver->execute_script("window.confirm = function() { return false; }");
+        # phantomjs doesn't support alerts yet
+        if ($driver->isa('Test::Selenium::PhantomJS')) {
+            $driver->execute_script("window.confirm = function() { return false; }");
+        }
+        else {
+
+            is($driver->get_alert_text, "Do you really want to delete the comment written by Demo?", "Alert opened");
+            # check confirmation and dismiss in the first place
+            $driver->dismiss_alert;
+        }
 
         # the comment musn't be deleted yet
-        is($driver->find_element('div.media-comment', 'css')->get_text(),
+        is($driver->find_element('div.media-comment')->get_text(),
             $edited_test_message, "comment is still there after dismissing removal");
 
         # try to remove the first displayed comment again (and accept this time);
-        $driver->execute_script("window.confirm = function() { return true; };");
-        $driver->find_element('button.remove-edit-button', 'css')->click();
+        if ($driver->isa('Test::Selenium::PhantomJS')) {
+            $driver->execute_script("window.confirm = function() { return true; };");
+        }
+        $driver->find_element('button.remove-edit-button')->click();
+
+        if (!$driver->isa('Test::Selenium::PhantomJS')) {
+            $driver->alert_text_is("Do you really want to delete the comment written by Demo?");
+            $driver->accept_alert;
+        }
         t::ui::PhantomTest::wait_for_ajax;
 
         # check whether the comment is gone
@@ -156,8 +168,8 @@ sub test_comment_editing {
         }
 
         # re-add a comment with the original message
-        $driver->find_element('#text',          'css')->send_keys($test_message);
-        $driver->find_element('#submitComment', 'css')->click();
+        $driver->find_element_by_id('text')->send_keys($test_message);
+        $driver->find_element_by_id('submitComment')->click();
         t::ui::PhantomTest::wait_for_ajax;
 
         # check whether heading and comment text is displayed correctly
@@ -174,7 +186,7 @@ subtest 'commenting in the group overview' => sub {
 };
 
 subtest 'URL auto-replace' => sub {
-    $driver->find_element('#text', 'css')->send_keys('
+    $driver->find_element_by_id('text')->send_keys('
         foo@bar foo#bar should not be detected as bugref
         bsc#2436346bla should not be detected, too
         bsc#2436347bla2
@@ -193,7 +205,7 @@ subtest 'URL auto-replace' => sub {
         https://bugzilla.gnome.org/show_bug.cgi?id=690345
         https://bugzilla.redhat.com/show_bug.cgi?id=343098'
     );
-    $driver->find_element('#submitComment', 'css')->click();
+    $driver->find_element_by_id('submitComment')->click();
     t::ui::PhantomTest::wait_for_ajax;
 
     # the first made comment needs to be 2nd now
@@ -253,9 +265,9 @@ qr(bsc#1234 boo#2345,poo#3456 t#4567 .*poo#6789 bsc#7890 bsc#1000629 bsc#1000630
 subtest 'commenting in test results including labels' => sub {
 
     # navigate to comments tab of test result page
-    $driver->find_element('Job Groups', 'link_text')->click();
-    $driver->find_element('Build0048',  'link_text')->click();
-    $driver->find_element('.status',    'css')->click();
+    $driver->find_element_by_link_text('Job Groups')->click();
+    $driver->find_element_by_link_text('Build0048')->click();
+    $driver->find_element('.status')->click();
     is(
         $driver->get_title(),
         'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results',
@@ -266,52 +278,52 @@ subtest 'commenting in test results including labels' => sub {
     # do the same tests for comments as in the group overview
     test_comment_editing(1);
 
-    $driver->find_element('#text',          'css')->send_keys($test_message);
-    $driver->find_element('#submitComment', 'css')->click();
+    $driver->find_element_by_id('text')->send_keys($test_message);
+    $driver->find_element_by_id('submitComment')->click();
     t::ui::PhantomTest::wait_for_ajax;
 
     subtest 'check comment availability sign on test result overview' => sub {
-        $driver->find_element('Job Groups', 'link_text')->click();
+        $driver->find_element_by_link_text('Job Groups')->click();
         like(
-            $driver->find_element('#current-build-overview', 'css')->get_text(),
+            $driver->find_element_by_id('current-build-overview')->get_text(),
             qr/\QBuild 0048\E/,
             'on the right build'
         );
-        $driver->find_element('#current-build-overview a', 'css')->click();
+        $driver->find_element('#current-build-overview a')->click();
 
         is($driver->get_title(), "openQA: Test summary", "back on test group overview");
         is(
-            $driver->find_element('#res_DVD_x86_64_doc .fa-comment', 'css')->get_attribute('title'),
+            $driver->find_element('#res_DVD_x86_64_doc .fa-comment')->get_attribute('title'),
             '2 comments available',
             "test results show available comment(s)"
         );
     };
 
     subtest 'add label and bug and check availability sign' => sub {
-        $driver->get($baseurl . 'tests/99938#comments');
-        $driver->find_element('#text',          'css')->send_keys('label:true_positive');
-        $driver->find_element('#submitComment', 'css')->click();
+        $driver->get('/tests/99938#comments');
+        $driver->find_element_by_id('text')->send_keys('label:true_positive');
+        $driver->find_element_by_id('submitComment')->click();
         t::ui::PhantomTest::wait_for_ajax;
-        $driver->find_element('Job Groups',                'link_text')->click();
-        $driver->find_element('#current-build-overview a', 'css')->click();
+        $driver->find_element_by_link_text('Job Groups')->click();
+        $driver->find_element('#current-build-overview a')->click();
         is(
-            $driver->find_element('#res_DVD_x86_64_doc .fa-bookmark', 'css')->get_attribute('title'),
+            $driver->find_element('#res_DVD_x86_64_doc .fa-bookmark')->get_attribute('title'),
             'Label: true_positive',
             'label icon shown'
         );
-        $driver->get($baseurl . 'tests/99938#comments');
-        $driver->find_element('#text',          'css')->send_keys('bsc#1234 poo#4321');
-        $driver->find_element('#submitComment', 'css')->click();
+        $driver->get('/tests/99938#comments');
+        $driver->find_element_by_id('text')->send_keys('bsc#1234 poo#4321');
+        $driver->find_element_by_id('submitComment')->click();
         t::ui::PhantomTest::wait_for_ajax;
-        $driver->find_element('Job Groups',                'link_text')->click();
-        $driver->find_element('#current-build-overview a', 'css')->click();
+        $driver->find_element_by_link_text('Job Groups')->click();
+        $driver->find_element('#current-build-overview a')->click();
         is(
-            $driver->find_element('#res_DVD_x86_64_doc .fa-bug', 'css')->get_attribute('title'),
+            $driver->find_element('#res_DVD_x86_64_doc .fa-bug')->get_attribute('title'),
             'Bug referenced: bsc#1234',
             'bug icon shown for bsc#1234'
         );
         is(
-            $driver->find_element('#res_DVD_x86_64_doc .fa-bolt', 'css')->get_attribute('title'),
+            $driver->find_element('#res_DVD_x86_64_doc .fa-bolt')->get_attribute('title'),
             'Bug referenced: poo#4321',
             'bug icon shown for poo#4321'
         );
@@ -320,41 +332,41 @@ subtest 'commenting in test results including labels' => sub {
         $get = $t->get_ok($driver->get_current_url())->status_is(200);
         is($get->tx->res->dom->at('#res_DVD_x86_64_doc .fa-bug')->parent->{href},
             'https://bugzilla.suse.com/show_bug.cgi?id=1234');
-        $driver->find_element('opensuse', 'link_text')->click();
-        is($driver->find_element('.badge-all-passed', 'css')->get_attribute('title'),
+        $driver->find_element_by_link_text('opensuse')->click();
+        is($driver->find_element('.badge-all-passed')->get_attribute('title'),
             'All passed', 'build should be marked because all tests passed');
 
         subtest 'progress items work, too' => sub {
-            $driver->get($baseurl . 'tests/99926#comments');
-            $driver->find_element('#text',          'css')->send_keys('poo#9876');
-            $driver->find_element('#submitComment', 'css')->click();
+            $driver->get('/tests/99926#comments');
+            $driver->find_element_by_id('text')->send_keys('poo#9876');
+            $driver->find_element_by_id('submitComment')->click();
             t::ui::PhantomTest::wait_for_ajax;
-            $driver->find_element('Job Groups', 'link_text')->click();
+            $driver->find_element_by_link_text('Job Groups')->click();
             like(
-                $driver->find_element('#current-build-overview', 'css')->get_text(),
+                $driver->find_element_by_id('current-build-overview')->get_text(),
                 qr/\QBuild 87.5011\E/,
                 'on the right build'
             );
-            $driver->find_element('#current-build-overview a', 'css')->click();
+            $driver->find_element('#current-build-overview a')->click();
             is(
-                $driver->find_element('#res_staging_e_x86_64_minimalx .fa-bolt', 'css')->get_attribute('title'),
+                $driver->find_element('#res_staging_e_x86_64_minimalx .fa-bolt')->get_attribute('title'),
                 'Bug referenced: poo#9876',
                 'bolt icon shown for progress issues'
             );
         };
 
         subtest 'latest bugref first' => sub {
-            $driver->get($baseurl . 'tests/99926#comments');
-            $driver->find_element('#text',          'css')->send_keys('poo#9875 poo#9874');
-            $driver->find_element('#submitComment', 'css')->click();
+            $driver->get('/tests/99926#comments');
+            $driver->find_element_by_id('text')->send_keys('poo#9875 poo#9874');
+            $driver->find_element_by_id('submitComment')->click();
             t::ui::PhantomTest::wait_for_ajax;
-            $driver->find_element('Job Groups', 'link_text')->click();
+            $driver->find_element_by_link_text('Job Groups')->click();
             like(
-                $driver->find_element('#current-build-overview', 'css')->get_text(),
+                $driver->find_element_by_id('current-build-overview')->get_text(),
                 qr/\QBuild 87.5011\E/,
                 'on the right build'
             );
-            $driver->find_element('#current-build-overview a', 'css')->click();
+            $driver->find_element('#current-build-overview a')->click();
             my @bugrefs = $driver->find_elements('#res_staging_e_x86_64_minimalx .fa-bolt', 'css');
             is($bugrefs[0]->get_attribute('title'), 'Bug referenced: poo#9876', 'first bugref shown');
             is($bugrefs[1]->get_attribute('title'), 'Bug referenced: poo#9875', 'second bugref shown');
@@ -365,7 +377,7 @@ subtest 'commenting in test results including labels' => sub {
                 'https://progress.opensuse.org/issues/9876');
         };
 
-        $driver->find_element('opensuse', 'link_text')->click();
+        $driver->find_element_by_link_text('opensuse')->click();
     };
 };
 
@@ -382,40 +394,40 @@ subtest 'editing when logged in as regular user' => sub {
     }
 
     subtest 'test pinned comments' => sub {
-        $driver->get($baseurl . 'group_overview/1001');
-        $driver->find_element('#text',          'css')->send_keys($description_test_message);
-        $driver->find_element('#submitComment', 'css')->click();
+        $driver->get('/group_overview/1001');
+        $driver->find_element_by_id('text')->send_keys($description_test_message);
+        $driver->find_element_by_id('submitComment')->click();
         # need to reload the page for the pinning to take effect
         # waiting for AJAX is required though to eliminate race condition
         t::ui::PhantomTest::wait_for_ajax;
-        $driver->get($baseurl . 'group_overview/1001');
-        is($driver->find_element('#group_descriptions .media-comment', 'css')->get_text(),
+        $driver->get('/group_overview/1001');
+        is($driver->find_element('#group_descriptions .media-comment')->get_text(),
             $description_test_message, 'comment is pinned');
     };
 
-    $driver->get($baseurl . 'login?user=nobody');
+    $driver->get('/login?user=nobody');
     subtest 'test results' => sub {
-        $driver->get($baseurl . 'tests/99938#comments');
+        $driver->get('/tests/99938#comments');
         no_edit_no_remove_on_other_comments_expected;
-        $driver->find_element('#text',          'css')->send_keys('test by nobody');
-        $driver->find_element('#submitComment', 'css')->click();
+        $driver->find_element_by_id('text')->send_keys('test by nobody');
+        $driver->find_element_by_id('submitComment')->click();
         t::ui::PhantomTest::wait_for_ajax;
         switch_to_comments_tab(5);
         only_edit_for_own_comments_expected;
     };
 
     subtest 'group overview' => sub {
-        $driver->get($baseurl . 'group_overview/1001');
+        $driver->get('/group_overview/1001');
         no_edit_no_remove_on_other_comments_expected;
-        $driver->find_element('#text',          'css')->send_keys('test by nobody');
-        $driver->find_element('#submitComment', 'css')->click();
+        $driver->find_element_by_id('text')->send_keys('test by nobody');
+        $driver->find_element_by_id('submitComment')->click();
         t::ui::PhantomTest::wait_for_ajax;
         only_edit_for_own_comments_expected;
 
         # pinned comments are not shown (pinning is only possible when commentator is operator)
-        $driver->find_element('#text',          'css')->send_keys($description_test_message);
-        $driver->find_element('#submitComment', 'css')->click();
-        $driver->get($baseurl . 'group_overview/1001');
+        $driver->find_element_by_id('text')->send_keys($description_test_message);
+        $driver->find_element_by_id('submitComment')->click();
+        $driver->get('/group_overview/1001');
         my @comments = $driver->find_elements('.pinned-comment-row', 'css');
         is(scalar @comments, 1, 'there shouldn\'t appear more pinned comments');
     };

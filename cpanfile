@@ -56,7 +56,7 @@ requires 'Mojo::Util';
 requires 'Mojolicious', '< 7.14';
 requires 'Mojolicious::Commands';
 requires 'Mojolicious::Plugin';
-requires 'Mojolicious::Plugin::AssetPack', '>= 1.1';
+requires 'Mojolicious::Plugin::AssetPack', '>= 1.1, < 1.30';
 requires 'Mojolicious::Static';
 requires 'Net::DBus';
 requires 'Net::OpenID::Consumer';

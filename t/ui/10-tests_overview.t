@@ -40,12 +40,12 @@ my $baseurl = $driver->get_current_url();
 
 # Test initial state of checkboxes and applying changes
 $driver->get($baseurl . 'tests/overview?distri=opensuse&version=Factory&build=0048&todo=1&result=passed');
-$driver->find_element('#filter-panel .panel-heading', 'css')->click();
-$driver->find_element('#filter-todo',                 'css')->click();
-$driver->find_element('#filter-passed',               'css')->click();
-$driver->find_element('#filter-failed',               'css')->click();
-$driver->find_element('#filter-form button',          'css')->click();
-$driver->find_element('#res_DVD_x86_64_doc',          'css');
+$driver->find_element('#filter-panel .panel-heading')->click();
+$driver->find_element_by_id('filter-todo')->click();
+$driver->find_element_by_id('filter-passed')->click();
+$driver->find_element_by_id('filter-failed')->click();
+$driver->find_element('#filter-form button')->click();
+$driver->find_element_by_id('res_DVD_x86_64_doc');
 my @filtered_out = $driver->find_elements('#res_DVD_x86_64_kde', 'css');
 is(scalar @filtered_out, 0, 'result filter correctly applied');
 
@@ -53,8 +53,8 @@ is(scalar @filtered_out, 0, 'result filter correctly applied');
 my $url_with_escaped_parameters
   = $baseurl . 'tests/overview?arch=&distri=opensuse&build=0091&version=Staging%3AI&groupid=1001';
 $driver->get($url_with_escaped_parameters);
-$driver->find_element('#filter-panel .panel-heading', 'css')->click();
-$driver->find_element('#filter-form button',          'css')->click();
+$driver->find_element('#filter-panel .panel-heading')->click();
+$driver->find_element('#filter-form button')->click();
 is($driver->get_current_url(), $url_with_escaped_parameters . '#', 'escaped URL parameters are passed correctly');
 
 # Test failed module info async update
@@ -68,7 +68,7 @@ like($driver->find_elements('.failedmodule a', 'css')->[1]->get_attribute('href'
 my @descriptions = $driver->find_elements('td.name a', 'css');
 is(scalar @descriptions, 1, 'only test suites with description content are shown as links');
 $descriptions[0]->click();
-is($driver->find_element('.popover-title', 'css')->get_text, 'kde', 'description popover shows content');
+is($driver->find_element('.popover-title')->get_text, 'kde', 'description popover shows content');
 
 t::ui::PhantomTest::kill_phantom();
 

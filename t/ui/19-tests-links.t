@@ -36,45 +36,44 @@ unless ($driver) {
 }
 
 is($driver->get_title(), "openQA", "on main page");
-my $baseurl = $driver->get_current_url();
-$driver->find_element('Login', 'link_text')->click();
+$driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
 
 my @texts = map { $_->get_text() } $driver->find_elements('.progress-bar-softfailed', 'css');
 is_deeply(\@texts, ['2 softfailed'], 'Progress bars show soft fails');
 
-is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # follow a build to overview page
-$driver->find_element('Build0048', 'link_text')->click();
+$driver->find_element_by_link_text('Build0048')->click();
 is($driver->get_title(), "openQA: Test summary", "on overview page");
 
-is($driver->find_element('.result_softfailed', 'css')->get_text(), '', 'We see one softfail');
+is($driver->find_element('.result_softfailed')->get_text(), '', 'We see one softfail');
 # follow a build to the step page
-$driver->find_element('logpackages', 'link_text')->click();
+$driver->find_element_by_link_text('logpackages')->click();
 is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results', 'on test page');
 
 # expect the failure to be displayed
 is(
-    $driver->find_element('#step_view', 'css')->get_attribute('data-image'),
+    $driver->find_element_by_id('step_view')->get_attribute('data-image'),
     '/tests/99938/images/logpackages-1.png',
     'Failure displayed'
 );
 
 # now navigate back
-$driver->find_element('.navbar-brand', 'css')->click();
+$driver->find_element('.navbar-brand')->click();
 is($driver->get_title(), "openQA", "on main page");
 
-$driver->get($baseurl . "tests/99938#previous");
+$driver->get("/tests/99938#previous");
 
-is($driver->find_element('#scenario', 'css')->is_displayed(), 1, "Scenario header displayed");
-like($driver->find_element('#scenario', 'css')->get_text(), qr/Results for.*/, "Scenario header text");
+is($driver->find_element_by_id('scenario')->is_displayed(), 1, "Scenario header displayed");
+like($driver->find_element_by_id('scenario')->get_text(), qr/Results for.*/, "Scenario header text");
 
-$driver->find_element('Settings', 'link_text')->click();
+$driver->find_element_by_link_text('Settings')->click();
 like($driver->get_current_url(), qr(\Qtests/99938#settings\E$), "hash marks tab");
 
-$driver->find_element('Details', 'link_text')->click();
+$driver->find_element_by_link_text('Details')->click();
 like($driver->get_current_url(), qr(\Qtests/99938#\E$), "hash marks tab 2");
 
 t::ui::PhantomTest::kill_phantom();

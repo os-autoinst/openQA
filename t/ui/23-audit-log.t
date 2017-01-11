@@ -52,60 +52,60 @@ $t->get_ok($url . '/admin/auditlog')->status_is(200);
 
 # Log in as Demo in phantomjs webui
 is($driver->get_title(), "openQA", "on main page");
-$driver->find_element('Login', 'link_text')->click();
+$driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-is($driver->get_title(), "openQA", "back on main page");
-is($driver->find_element('#user-action', 'css')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->get_title(),                                   "openQA",            "back on main page");
+is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
-$driver->find_element('#user-action a', 'css')->click();
-$driver->find_element('Audit log',      'link_text')->click();
+$driver->find_element('#user-action a')->click();
+$driver->find_element_by_link_text('Audit log')->click();
 wait_for_data_table;
 like($driver->get_title(), qr/Audit log/, 'on audit log');
-my $table = $driver->find_element('#audit_log_table', 'css');
+my $table = $driver->find_element_by_id('audit_log_table');
 ok($table, 'audit table found');
 
 # search for name, event, date and combination
-my $search = $driver->find_element('input.form-control', 'css');
+my $search = $driver->find_element('input.form-control');
 ok($search, 'search box found');
 
-my @entries = $driver->find_child_elements($table, 'tbody/tr');
+my @entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
 is(scalar @entries, 3, 'three elements without filter');
 
 $search->send_keys('QA restart');
 wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr');
+@entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
 is(scalar @entries, 1, 'one element when filtered for event data');
 like($entries[0]->get_text(), qr/openQA restarted/, 'correct element displayed');
 $search->clear;
 
 $search->send_keys('user:system');
 wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr');
+@entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
 is(scalar @entries, 1, 'one element when filtered by user');
 $search->clear;
 
 $search->send_keys('event:user_login');
 wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr');
+@entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
 is(scalar @entries, 2, 'two elements when filtered by event');
 $search->clear;
 
 $search->send_keys('newer:today');
 wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr');
+@entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
 is(scalar @entries, 3, 'three elements when filtered by today time');
 $search->clear;
 
 $search->send_keys('older:today');
 wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr/td');
+@entries = $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
 is(scalar @entries, 1, 'one element when filtered by yesterday time');
 is($entries[0]->get_attribute('class'), 'dataTables_empty', 'but datatables are empty');
 $search->clear;
 
 $search->send_keys('user:system event:startup date:today');
 wait_for_data_table;
-@entries = $driver->find_child_elements($table, 'tbody/tr');
+@entries = $driver->find_child_elements($table, 'tbody/tr', 'xpath');
 is(scalar @entries, 1, 'one element when filtered by combination');
 
 
