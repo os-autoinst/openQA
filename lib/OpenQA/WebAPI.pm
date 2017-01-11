@@ -15,7 +15,7 @@
 
 package OpenQA::WebAPI;
 use strict;
-use Mojolicious 5.60;
+use Mojolicious 7.18;
 use Mojo::Base 'Mojolicious';
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
