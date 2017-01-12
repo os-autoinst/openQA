@@ -127,68 +127,70 @@ sub change_timer {
 
 ## prepare UA and URL for OpenQA-scheduler connection
 sub api_init {
-    my ($options) = @_;
-    my $host = $options->{host};
+    my ($host_settings, $options) = @_;
+    my @hosts = @{$host_settings->{HOSTS}};
 
-    if ($host !~ '/') {
-        $url = Mojo::URL->new();
-        $url->host($host);
-        $url->scheme('http');
-    }
-    else {
-        $url = Mojo::URL->new($host);
-    }
-
-    # Mojo7 does not have authority anymore, can be removed once we say Mojo6- is no longer supported
-    if ($url->can('authority')) {
-        $openqa_url = $url->authority;
-    }
-    else {
-        $openqa_url = $url->host_port;
-    }
-    # Relative paths are appended to the existing one
-    $url->path('/api/v1/');
-
-    my ($apikey, $apisecret) = ($options->{apikey}, $options->{apisecret});
-    $ua = OpenQA::Client->new(
-        api       => $url->host,
-        apikey    => $apikey,
-        apisecret => $apisecret
-    );
-    # disable keep alive to avoid time outs in strange places - we only reach the
-    # webapi once in a while so take the price of reopening the connection every time
-    # we do
-    $ua->max_connections(0);
-
-    unless ($ua->apikey && $ua->apisecret) {
-        unless ($apikey && $apisecret) {
-            die "API key and secret are needed for the worker connecting " . $url->host . "\n";
+    for my $host (@hosts) {
+        my ($ua, $url);
+        if ($host !~ '/') {
+            $url = Mojo::URL->new();
+            $url->host($host);
+            $url->scheme('http');
         }
-        $ua->apikey($apikey);
-        $ua->apisecret($apisecret);
+        else {
+            $url = Mojo::URL->new($host);
+        }
+
+        my $openqa_url;
+        # Mojo7 does not have authority anymore, can be removed once we say Mojo6- is no longer supported
+        if ($url->can('authority')) {
+            $openqa_url = $url->authority;
+        }
+        else {
+            $openqa_url = $url->host_port;
+        }
+        # Relative paths are appended to the existing one
+        $url->path('/api/v1/');
+
+        my ($apikey, $apisecret) = ($options->{apikey}, $options->{apisecret});
+        $ua = OpenQA::Client->new(
+            api       => $url->host,
+            apikey    => $apikey,
+            apisecret => $apisecret
+        );
+        # disable keep alive to avoid time outs in strange places - we only reach the
+        # webapi once in a while so take the price of reopening the connection every time
+        # we do
+        $ua->max_connections(0);
+
+        unless ($ua->apikey && $ua->apisecret) {
+            unless ($apikey && $apisecret) {
+                die "API key and secret are needed for the worker connecting " . $url->host . "\n";
+            }
+            $ua->apikey($apikey);
+            $ua->apisecret($apisecret);
+        }
+        $hosts->{$host}{ua}  = $ua;
+        $hosts->{$host}{url} = $url;
     }
 }
 
 # send a command to openQA API
 sub api_call {
-    my ($method, $path, $params, $json_data, $ignore_errors, $tries) = @_;
-    $tries //= 3;
-    state $call_running;
+    my ($method, $path, %args) = @_;
 
-    return unless verify_workerid();
+    my $host          = $args{host} // $current_host;
+    my $params        = $args{params};
+    my $json_data     = $args{json};
+    my $callback      = $args{callback};
+    my $ignore_errors = $args{ignore_errors} // 0;
+    my $tries         = $args{tries} // 3;
 
-    if ($call_running) {
-        # quit immediately
-        Mojo::IOLoop->next_tick(sub { });
-        Mojo::IOLoop->stop;
-        Carp::croak "recursive api_call is fatal";
-        return;
-    }
-
-    $call_running = 1;
+    die 'No worker id or webui host set!' unless verify_workerid($host);
 
     $method = uc $method;
-    my $ua_url = $url->clone;
+    my $ua_url = $hosts->{$host}{url}->clone;
+    my $ua     = $hosts->{$host}{ua};
 
     $ua_url->path($path =~ s/^\///r);
     $ua_url->query($params) if $params;
@@ -201,22 +203,17 @@ sub api_call {
         push @args, 'json', $json_data;
     }
 
-    my $res;
-    my $done = 0;
-
     my $tx = $ua->build_tx(@args);
     my $cb;
     $cb = sub {
         my ($ua, $tx, $tries) = @_;
-
+        my $res;
         if ($tx->success && $tx->success->json) {
-            $res  = $tx->success->json;
-            $done = 1;
-            return;
+            $res = $tx->success->json;
+            return $callback->($res);
         }
         elsif ($ignore_errors) {
-            $done = 1;
-            return;
+            return $callback->();
         }
 
         # handle error case
@@ -245,18 +242,17 @@ sub api_call {
 
         if (!$tries) {
             # abort the current job, we're in trouble - but keep running to grab the next
-            remove_timer('setup_websocket');
-            $workerid = undef;
             OpenQA::Worker::Jobs::stop_job('api-failure');
+            $hosts->{$host}{workerid} = undef;
+            $host = undef;
             add_timer('register_worker', 10, \&register_worker, 1);
-            $done = 1;
+            $callback->();
             return;
         }
 
         $tx = $ua->build_tx(@args);
         add_timer(
-            'api_call',
-            5,
+            '', 5,
             sub {
                 $ua->start($tx => sub { $cb->(@_, $tries) });
             },
@@ -265,21 +261,16 @@ sub api_call {
     };
     $ua->start($tx => sub { $cb->(@_, $tries) });
 
-    # This ugly. we need to "block" here so enter ioloop recursively
-    while (!$done && Mojo::IOLoop->is_running) {
-        Mojo::IOLoop->singleton->reactor->one_tick;
-    }
-
-    $call_running = 0;
-
-    return $res;
+    return;
 }
 
 sub ws_call {
     my ($type, $data) = @_;
+    die 'Current host not set!' unless $current_host;
     my $res;
     # this call is also non blocking, result and image upload is handled by json handles
     print "WEBSOCKET: $type\n" if $verbose;
+    my $ws = $hosts->{$current_host}{ws};
     $ws->send({json => {type => $type, jobid => $job->{id} || '', data => $data}});
 }
 
