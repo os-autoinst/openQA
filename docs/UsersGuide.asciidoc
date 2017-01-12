@@ -1,0 +1,56 @@
+
+= openQA users guide
+:toc: left
+:toclevels: 6
+:author: openQA developers
+
+== Introduction
+
+This document provides additional information for use of the web interface or
+the REST API as well as administration information.
+For administrators it is recommend to have read the
+link:Installing.asciidoc[installation guide] first to understand the structure
+of components as well as the configuration of an installed instance.
+
+== Use of the web interface
+
+In general the web UI should be intuitive or self-explanatory. Look out for the
+little blue help icons and click them for detailed help on specific sections.
+
+Some pages use queries to select what should be shown. The query parameters are
+generated on clickable links, for example starting from the index page or the
+group overview page clicking on single builds. On the query pages there can be
+UI elements to control the parameters, for example to look for more older
+builds or only show failed jobs or other settings. Additionally, the query
+parameters can be tweaked by hand if you want to provide a link to specific
+views.
+
+
+=== /tests/overview - Customizable test overview page
+
+The overview page is configurable by the filter box. Also, some additional
+query parameters can be provided which can be considered advanced or
+experimental. For example specifying no build will resolve the latest build
+which matches the other parameters specified. Specifying no group will show
+all jobs from all matching job groups. Also specifying multiple groups works,
+see <<overview_multiple_groups,the following example>>.
+
+[[overview_multiple_groups]]
+.The openQA test overview page showing multiple groups at once. The URL query parameters specify the groupid parameter two times to resolve both the "opensuse" and "opensuse test" group.
+image::images/tests-overview_multiple_groups.png[test overview page showing multiple groups]
+
+
+
+
+== Use of the REST API
+
+openQA includes a _client_ script which - depending on the distribution - is
+packaged independantly if you just want to interface with an existing openQA
+instance without needing to install the full package. Call
+`<openqa-folder>/script/client --help` for help (openSUSE: `openqa-client
+--help`).
+
+== Where to now?
+
+For test developers it is recommended to continue with the
+link:WritingTests.asciidoc[Test Developer Guide].

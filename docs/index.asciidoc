@@ -11,6 +11,7 @@ ifdef::basebackend-html[toc::[]]
 :sectnums!:
 include::GettingStarted.asciidoc[]
 include::Installing.asciidoc[]
+include::UsersGuide.asciidoc[]
 include::WritingTests.asciidoc[]
 include::Pitfalls.asciidoc[]
 include::Networking.asciidoc[]

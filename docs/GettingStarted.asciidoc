@@ -61,6 +61,60 @@ can be connected via network instead.
 == Basic concepts
 [id="concepts"]
 
+
+=== Glossary
+
+[horizontal]
+.The following terms are used within the context of openQA
+
+test modules:: an individual test case in a single perl module file, e.g.
+"sshxterm". If not further specified a test module is denoted with its "short
+name" equivalent to the filename including the test definition. The "full name"
+is composed of the _test group_ (TBC), which itself is formed by the top-folder
+of the test module file, and the short name, e.g. "x11-sshxterm" (for
+x11/sshxterm.pm)
+
+test suite:: a collection of _test modules_, e.g. "textmode". All _test
+modules_ within one _test suite_ are run serially
+
+job:: one run of individual test cases in a row denoted by a unique number for
+one instance of openQA, e.g. one installation with subsequent testing of
+applications within gnome
+
+test run:: equivalent to _job_
+
+test result:: the result of one job, e.g. "passed" with the details of each
+individual _test module_
+
+test step:: the execution of one _test module_ within a _job_
+
+distri:: a test distribution but also sometimes referring to a _product_
+(CAUTION: ambiguous, historically a "GNU/Linux distribution"), composed of
+multiple _test modules_ in a folder structure that compose _test suites_, e.g.
+"opensuse" (test distribution, short for "os-autoinst-distri-opensuse")
+
+product:: the main "system under test" (SUT), e.g. "openSUSE"
+
+job group:: equivalent to _product_, used in context of the webUI
+
+version:: one version of a _product_, don't confuse with _builds_, e.g.
+"Tumbleweed"
+
+flavor:: a specific variant of a _product_ to distinguish differing variants,
+e.g. "DVD"
+
+arch:: an architecture variant of a _product_, e.g. "x86_64"
+
+machine:: additional variant of machine, e.g. used for "64bit", "uefi", etc.
+
+scenario:: A composition of
++<distri>-<version>-<flavor>-<arch>-<test_suite>@<machine>+, e.g.
+"openSUSE-Tumbleweed-DVD-x86_64-gnome@64bit", nicknamed _koala_
+
+build:: Different versions of a product as tested, can be considered a
+"sub-version" of _version_, e.g. "Build1234"; *CAUTION:* ambiguity: either with
+the prefix "Build" included or not
+
 === Jobs
 
 One of the most important features of openQA is that it can be used to test
