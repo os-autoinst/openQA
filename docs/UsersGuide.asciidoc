@@ -26,6 +26,22 @@ parameters can be tweaked by hand if you want to provide a link to specific
 views.
 
 
+=== /tests/overview - Customizable test overview page
+
+The overview page is configurable by the filter box. Also, some additional
+query parameters can be provided which can be considered advanced or
+experimental. For example specifying no build will resolve the latest build
+which matches the other parameters specified. Specifying no group will show
+all jobs from all matching job groups. Also specifying multiple groups works,
+see <<overview_multiple_groups,the following example>>.
+
+[[overview_multiple_groups]]
+.The openQA test overview page showing multiple groups at once. The URL query parameters specify the groupid parameter two times to resolve both the "opensuse" and "opensuse test" group.
+image::images/tests-overview_multiple_groups.png[test overview page showing multiple groups]
+
+
+
+
 == Use of the REST API
 
 openQA includes a _client_ script which - depending on the distribution - is
