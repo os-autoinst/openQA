@@ -26,30 +26,25 @@ use OpenQA::Test::Case;
 use OpenQA::Schema::JobGroupDefaults;
 use Date::Format qw(time2str);
 
-my $test_case;
-my $t;
-my $auth;
-
 =head2 acceptance criteria
 
 =item tagged builds have a special mark making them distinguishable from other builds (e.g. a star icon)
 
 =cut
 
-sub set_up {
-    $test_case = OpenQA::Test::Case->new;
-    $test_case->init_data;
-    $t = Test::Mojo->new('OpenQA::WebAPI');
-    $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
-    $test_case->login($t, 'percival');
-}
+my $test_case = OpenQA::Test::Case->new;
+$test_case->init_data;
+my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $auth = {'X-CSRF-Token' => $t->ua->get('/tests')->res->dom->at('meta[name=csrf-token]')->attr('content')};
+$test_case->login($t, 'percival');
+
+my $jobs     = $t->app->db->resultset('Jobs');
+my $comments = $t->app->db->resultset('Comments');
 
 sub post_comment_1001 {
     my ($comment) = @_;
-    $t->post_ok('/api/v1/groups/1001/comments', $auth => form => {text => $comment})->status_is(200);
+    return $comments->create({group_id => 1001, user_id => 99901, text => $comment});
 }
-
-set_up;
 
 =pod
 Given 'group_overview' page
@@ -184,7 +179,7 @@ subtest 'no cleanup of important builds' => sub {
     $c->app($t->app);
 
     # build 0048 has already been tagged as important before
-    my @jobs     = $t->app->db->resultset('Jobs')->search({state => 'done', group_id => 1001, BUILD => '0048'})->all;
+    my @jobs     = $jobs->search({state => 'done', group_id => 1001, BUILD => '0048'})->all;
     my $job      = $jobs[1];
     my $filename = $job->result_dir . '/autoinst-log.txt';
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 12, 'UTC')});
