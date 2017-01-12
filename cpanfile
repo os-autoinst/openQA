@@ -1,7 +1,5 @@
 requires 'Archive::Extract';
-requires 'CGI';
 requires 'CSS::Minifier::XS', '>= 0.01';
-requires 'Cache::Cache';
 requires 'Carp';
 requires 'Clone';
 requires 'Config::IniFiles';
@@ -33,7 +31,6 @@ requires 'File::Path';
 requires 'File::Spec';
 requires 'FindBin';
 requires 'Getopt::Long';
-requires 'IO::Socket::INET6';
 requires 'IO::Socket::SSL';
 requires 'IPC::Cmd';
 requires 'IPC::Run';
