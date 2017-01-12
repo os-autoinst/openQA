@@ -199,4 +199,29 @@ subtest 'no cleanup of important builds' => sub {
     ok(-e $filename, 'file still exists');
 };
 
+subtest 'version tagging' => sub {
+    # alter jobs to have 2 jobs with the same build but different versions in opensuse group
+    $jobs->find(99940)->update({VERSION => '1.2-2', BUILD => '5000'});
+    $jobs->find(99938)->update({VERSION => '1.2-1', BUILD => '5000'});
+
+    $t->get_ok('/group_overview/1001')->status_is(200);
+    $t->element_exists_not('#tag-1001-1_2_2-5000', 'version 1.2-2 not tagged so far');
+    $t->element_exists_not('#tag-1001-1_2_1-5000', 'version 1.2-1 not tagged so far');
+
+    post_comment_1001('tag:5000:important:fallback');
+    $t->get_ok('/group_overview/1001')->status_is(200);
+    $t->text_is('#tag-1001-1_2_2-5000 i', 'fallback', 'version 1.2-2 has fallback tag');
+    $t->text_is('#tag-1001-1_2_1-5000 i', 'fallback', 'version 1.2-1 has fallback tag');
+
+    post_comment_1001('tag:1.2-2-5000:important:second');
+    $t->get_ok('/group_overview/1001')->status_is(200);
+    $t->text_is('#tag-1001-1_2_2-5000 i', 'second',   'version 1.2-2 has version-specific tag');
+    $t->text_is('#tag-1001-1_2_1-5000 i', 'fallback', 'version 1.2-1 has still fallback tag');
+
+    post_comment_1001('tag:1.2-1-5000:important:first');
+    $t->get_ok('/group_overview/1001')->status_is(200);
+    $t->text_is('#tag-1001-1_2_2-5000 i', 'second', 'version 1.2-2 has version-specific tag');
+    $t->text_is('#tag-1001-1_2_1-5000 i', 'first',  'version 1.2-1 has version-specific tag');
+};
+
 done_testing;
