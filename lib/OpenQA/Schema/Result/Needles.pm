@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE LLC
+# Copyright (C) 2015-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,10 +15,13 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 package OpenQA::Schema::Result::Needles;
+use 5.018;
+use warnings;
 use base 'DBIx::Class::Core';
 use File::Basename;
 use Cwd 'realpath';
-use strict;
+use File::Spec::Functions 'catdir';
+
 use OpenQA::Schema::Result::Jobs;
 use OpenQA::Utils 'commit_git_return_error';
 
@@ -79,6 +82,9 @@ sub update_needle {
     my $schema = OpenQA::Scheduler::Scheduler::schema();
     my $guard  = $schema->txn_scope_guard;
 
+    if (!-f $filename) {
+        $filename = catdir($OpenQA::Utils::prjdir, $filename);
+    }
     my $needle;
     if ($needle_cache) {
         $needle = $needle_cache->{$filename};
