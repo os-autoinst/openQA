@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux Products GmbH
+# Copyright (C) 2015-17 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Commands;
-use strict;
+use 5.012;
 use warnings;
 
 use OpenQA::Worker::Common;
@@ -40,7 +40,8 @@ sub websocket_commands {
         }
         my $jobid = $json->{jobid} // '';
         my $joburl;
-        my $ua = Mojo::UserAgent->new;
+        my $host = $ws_to_host->{$tx};
+        my $ua   = Mojo::UserAgent->new;
         if ($jobid) {
             if (!$job) {
                 printf STDERR 'Received command %s for job %u, but we do not have any assigned. Ignoring!%s', $type,
@@ -51,6 +52,13 @@ sub websocket_commands {
                 printf STDERR 'Received command %s for different job id %u (our %u). Ignoring!%s', $type, $jobid,
                   $job->{id}, "\n";
                 return;
+            }
+            elsif (!$current_host) {
+                die 'Job ids match but current host not set';
+            }
+            elsif ($current_host ne $host) {
+                print STDERR 'Received message from different host (%s) than we are working with (%s). Ignoring',
+                  $host, $current_host;
             }
         }
         if ($job) {
@@ -116,9 +124,9 @@ sub websocket_commands {
             # ignore keepalives, but dont' report as unknown
         }
         elsif ($type eq 'job_available') {
-            print "received job notification" if $verbose;
+            print "received job notification\n" if $verbose;
             if (!$job) {
-                check_job;
+                Mojo::IOLoop->next_tick(sub { check_job($host) });
             }
         }
         else {
