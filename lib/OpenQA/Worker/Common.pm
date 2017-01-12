@@ -24,7 +24,8 @@ use Mojo::URL;
 use OpenQA::Client;
 
 use base 'Exporter';
-our @EXPORT = qw($job $workerid $verbose $instance $worker_settings $pooldir $nocleanup
+our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
+  $hosts $ws_to_host $current_host
   $worker_caps $testresults $openqa_url
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer
@@ -32,7 +33,6 @@ our @EXPORT = qw($job $workerid $verbose $instance $worker_settings $pooldir $no
 
 # Exported variables
 our $job;
-our $workerid;
 our $verbose  = 0;
 our $instance = 'manual';
 our $worker_settings;
@@ -40,12 +40,16 @@ our $pooldir;
 our $nocleanup = 0;
 our $testresults;
 our $worker_caps;
-our $openqa_url;
 
 # package global variables
-our $url;
-our $ua;
-my $ws;
+# HASHREF with structure
+# {hostname => {url => Mojo::URL, ua => OpenQA::Client, ws => Mojo::Transaction::WebSockets}, workerid => uint}
+our $hosts;
+our $ws_to_host;
+
+# undef unless working on job - then contains hostname of webui we are working for
+our $current_host;
+
 my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
 
 # global constants
@@ -310,16 +314,22 @@ sub _get_capabilities {
 }
 
 sub setup_websocket {
+    my ($host) = @_;
+    die unless $host;
     # no point in trying if we are not registered
-    return unless verify_workerid();
+    my $workerid = $hosts->{$host}{workerid};
+    return unless $workerid;
 
     # if there is an existing web socket connection wait until it finishes.
-    if ($ws) {
-        add_timer('setup_websocket', 2, \&setup_websocket, 1);
+    if ($hosts->{$host}{ws}) {
+        Mojo::IOLoop->timer(
+            2 => sub {
+                setup_websocket($host);
+            });
         return;
     }
-    my $ua_url = $url->clone();
-    if ($url->scheme eq 'http') {
+    my $ua_url = $hosts->{$host}{url}->clone();
+    if ($ua_url->scheme eq 'http') {
         $ua_url->scheme('ws');
     }
     else {
@@ -328,58 +338,67 @@ sub setup_websocket {
     $ua_url->path("ws/$workerid");
     print "WEBSOCKET $ua_url\n" if $verbose;
 
-    call_websocket($ua_url);
+    call_websocket($host, $ua_url);
 }
 
 sub call_websocket;
 sub call_websocket {
-    my ($ua_url) = @_;
+    my ($host, $ua_url) = @_;
+    my $ua = $hosts->{$host}{ua};
 
     $ua->websocket(
         $ua_url => {'Sec-WebSocket-Extensions' => 'permessage-deflate'} => sub {
             my ($ua, $tx) = @_;
             if ($tx->is_websocket) {
                 # keep websocket connection busy
-                add_timer('ws_keepalive', 5, sub { $tx->send({json => {type => 'ok'}}) });
+                $hosts->{$host}{timers}{keepalive}
+                  = add_timer('', 5, sub { $tx->send({json => {type => 'ok'}}); });
+                print "checking job for $host\n";
+                OpenQA::Worker::Jobs::check_job($host);
                 # check for new job immediately
-                add_timer('check_job', 0, \&OpenQA::Worker::Jobs::check_job, 1);
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
                     finish => sub {
-                        add_timer('setup_websocket', 5, \&setup_websocket, 1);
-                        remove_timer('ws_keepalive');
-                        $ws = undef;
+                        remove_timer($hosts->{$host}{timers}{keepalive});
+                        add_timer('setup_websocket', 5, sub { setup_websocket($host) }, 1);
+                        delete $ws_to_host->{$hosts->{$host}{ws}};
+                        $hosts->{$host}{ws} = undef;
                     });
-                $ws = $tx->max_websocket_size(10485760);
+                $hosts->{$host}{ws} = $tx->max_websocket_size(10485760);
+                $ws_to_host->{$hosts->{$host}{ws}} = $host;
             }
             else {
-                $ws = undef;
+                delete $ws_to_host->{$hosts->{$host}{ws}};
+                $hosts->{$host}{ws} = undef;
                 if (my $location_header = ($tx->completed ? $tx->res->headers->location : undef)) {
                     print "Following ws redirection to: $location_header\n";
-                    call_websocket($ua_url->parse($location_header));
+                    call_websocket($host, $ua_url->parse($location_header));
                 }
                 else {
                     my $err = $tx->error;
                     if (defined $err) {
                         warn "Unable to upgrade connection to WebSocket: " . $err->{code} . ". proxy_wstunnel enabled?";
-                        if ($err->{code} eq '404' && $workerid) {
+                        if ($err->{code} eq '404' && $hosts->{$host}{workerid}) {
                             # worker id suddenly not known anymore. Abort. If workerid
                             # is unset we already detected that in api_call
-                            $workerid = undef;
+                            $hosts->{$host}{workerid} = undef;
                             OpenQA::Worker::Jobs::stop_job('api-failure');
-                            add_timer('register_worker', 10, \&register_worker, 1);
+                            add_timer('register_worker', 10, sub { register_worker($host) }, 1);
                             return;
                         }
                     }
                     # just retry in any error case - except when the worker ID isn't known
                     # anymore (hence return 3 lines above)
-                    add_timer('setup_websocket', 10, \&setup_websocket, 1);
+                    add_timer('setup_websocket', 10, sub { setup_websocket($host) }, 1);
                 }
             }
         });
 }
 
 sub register_worker {
+    my ($host, $dir) = @_;
+    die unless $host;
+
     $worker_caps             = _get_capabilities;
     $worker_caps->{host}     = $hostname;
     $worker_caps->{instance} = $instance;
@@ -394,43 +413,64 @@ sub register_worker {
         $worker_caps->{worker_class} = 'qemu_' . $worker_caps->{cpu_arch};
     }
 
-    print "registering worker ...\n" if $verbose;
+    print "registering worker with openQA $host...\n" if $verbose;
 
-    my $ua_url = $url->clone;
+    if (!$hosts->{$host}) {
+        warn "WebUI $host is unknown! - Should not happen but happened, exiting!";
+        Mojo::IOLoop->stop;
+        return;
+    }
+    # dir is set during initial registration call
+    $hosts->{$host}{dir} = $dir if $dir;
+
+    my $ua_url = $hosts->{$host}{url}->clone;
+    my $ua     = $hosts->{$host}{ua};
     $ua_url->path('workers');
     $ua_url->query($worker_caps);
     my $tx = $ua->post($ua_url => json => $worker_caps);
     unless ($tx->success && $tx->success->json) {
         if ($tx->error && $tx->error->{code} && $tx->error->{code} =~ /^4\d\d$/) {
             # don't retry when 4xx codes are returned. There is problem with scheduler
-            printf "server refused with code %s: %s\n", $tx->error->{code}, $tx->res->body;
-            Mojo::IOLoop->stop;
+            printf "ignoring server - server refused with code %s: %s\n", $tx->error->{code}, $tx->res->body;
+            delete $hosts->{$host};
+            Mojo::IOLoop->stop unless (scalar keys %$hosts);
         }
-        print "failed to register worker, retry ...\n" if $verbose;
-        add_timer('register_worker', 10, \&register_worker, 1);
+        else {
+            print "failed to register worker, retry in 10s ...\n" if $verbose;
+            add_timer('register_worker', 10, sub { register_worker($host) }, 1);
+        }
         return;
     }
-    my $newid = $tx->success->json->{id};
-
+    my $newid    = $tx->success->json->{id};
+    my $workerid = $hosts->{$host}{workerid};
+    my $ws       = $hosts->{$host}{ws};
     if ($ws && $workerid && $workerid != $newid) {
-        # terminate websocked if our worker id changed
+        # terminate websockets if our worker id changed
         $ws->finish() if $ws;
         $ws = undef;
     }
-    $ENV{WORKERID} = $workerid = $newid;
-
-    print "new worker id is $workerid...\n" if $verbose;
+    print "new worker id within WebUI $host is $newid...\n" if $verbose;
+    $hosts->{$host}{workerid} = $newid;
 
     if ($ws) {
-        add_timer('check_job', 0, \&OpenQA::Worker::Jobs::check_job, 1);
+        Mojo::IOLoop->next_tick(
+            sub {
+                OpenQA::Worker::Jobs::check_job($host);
+            });
     }
     else {
-        add_timer('setup_websocket', 0, \&setup_websocket, 1);
+        Mojo::IOLoop->next_tick(
+            sub {
+                setup_websocket($host);
+            });
     }
 }
 
 sub verify_workerid {
-    return $workerid;
+    my ($host) = @_;
+    $host //= $current_host;
+    return unless $host;
+    return $hosts->{$host}{workerid};
 }
 
 1;
