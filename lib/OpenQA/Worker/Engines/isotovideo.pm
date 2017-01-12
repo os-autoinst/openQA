@@ -65,6 +65,9 @@ sub _save_vars($) {
 sub engine_workit($) {
     my ($job) = @_;
 
+    # set base dir to the one assigned with webui
+    OpenQA::Utils::change_prjdir($hosts->{$current_host}{dir});
+
     # XXX: this should come from the worker table. Only included
     # here for convenience when looking at the pool of
     # debugging.
@@ -114,11 +117,14 @@ sub engine_workit($) {
     # pass worker instance and worker id to isotovideo
     # both used to create unique MAC and TAP devices if needed
     # workerid is also used by libvirt backend to identify VMs
-    my %vars = (OPENQA_URL => $openqa_url, WORKER_INSTANCE => $instance, WORKER_ID => $workerid);
+    my $openqa_url = $current_host;
+    my $workerid   = $hosts->{$current_host}{workerid};
+    my %vars       = (OPENQA_URL => $openqa_url, WORKER_INSTANCE => $instance, WORKER_ID => $workerid);
     while (my ($k, $v) = each %{$job->{settings}}) {
         print "setting $k=$v\n" if $verbose;
         $vars{$k} = $v;
     }
+
     $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
     $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION});
     $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION});
