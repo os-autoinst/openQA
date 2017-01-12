@@ -67,7 +67,7 @@ unlink('t/full-stack.d/db/db.sqlite');
 open(my $conf, '>', 't/full-stack.d/config/database.ini');
 print $conf <<EOC;
 [production]
-dsn = dbi:SQLite:dbname=t/full-stack.d/db/db.sqlite
+dsn = dbi:SQLite:dbname=t/full-stack.d/openqa/db/db.sqlite
 on_connect_call = use_foreign_keys
 on_connect_do = PRAGMA synchronous = OFF
 sqlite_unicode = 1
