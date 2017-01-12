@@ -13,7 +13,6 @@ env:
   matrix:
     - FULLSTACK=0 UITESTS=0
     - FULLSTACK=0 UITESTS=1 SELENIUM_CHROME=0
-    - FULLSTACK=0 UITESTS=1 SELENIUM_CHROME=1
     - FULLSTACK=1 SELENIUM_CHROME=0
     - FULLSTACK=1 SELENIUM_CHROME=1
   global:
@@ -21,9 +20,10 @@ env:
 before_install:
   - cpanm local::lib
   - eval "$(perl -Mlocal::lib=${HOME}/perl_modules)"
-  - export DISPLAY=:99.0
+  # prepare for chromedriver - so it's easier to test on travis
   # run it in before_install so it has some time to startup
   - sh -e /etc/init.d/xvfb start
+  - export DISPLAY=:99.0
   - mkdir -p $HOME/chrome
   - if ! test -f $HOME/chrome/chromedriver; then curl -s https://chromedriver.storage.googleapis.com/2.27/chromedriver_linux64.zip | funzip - > $HOME/chrome/chromedriver; fi
   - chmod a+x $HOME/chrome/chromedriver
