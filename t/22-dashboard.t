@@ -372,13 +372,22 @@ subtest 'proper build sorting for dotted build number' => sub {
     my $group = $job_groups->create({name => 'dotted version group'});
     $job_hash->{group_id} = $group->id;
     $job_hash->{VERSION}  = '42.1';
-    my @builds = qw(62.51 62.50 62.49 62.5);
+    my @builds = qw(
+      CURRENT
+      :TW.1181 :TW.1180 :TW.1179
+      :126416.perl-DBD-mysql.3690 :126006.gnome-control-center.3662 :125970.yast2.2588
+      20170112-2 20170112-1 20170111-2
+      62.51 62.50 62.49 62.5
+      0207
+      0185 0184 0183
+      0049@0207 0048@0206 0048@0205
+    );
     for my $build (@builds) {
         $job_hash->{BUILD} = $build;
         $jobs->create($job_hash);
     }
 
-    $get = $t->get_ok('/group_overview/' . $group->id)->status_is(200);
+    $get = $t->get_ok('/group_overview/' . $group->id . '?limit_builds=100')->status_is(200);
     my @h4 = $get->tx->res->dom->find("div.no-children h4 a")->map('text')->each;
     my @build_names = map { 'Build' . $_ } @builds;
     is_deeply(\@h4, \@build_names, 'builds shown sorted') || diag explain @h4;
