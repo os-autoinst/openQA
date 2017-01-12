@@ -72,12 +72,6 @@ my %cando = (
 
 ## Mojo timers ids
 my $timers = {
-    # register worker with web ui
-    register_worker => undef,
-    # set up websocket connection
-    setup_websocket => undef,
-    # check for commands from scheduler
-    ws_keepalive => undef,
     # check for new job
     check_job => undef,
     # update status of running job
@@ -92,33 +86,34 @@ my $timers = {
 
 sub add_timer {
     my ($timer, $timeout, $callback, $nonrecurring) = @_;
-    die "must specify timer\n" unless $timer;
     die "must specify callback\n" unless $callback && ref $callback eq 'CODE';
     # skip if timer already defined, but not if one shot timer (avoid the need to call remove_timer for nonrecurring)
-    return if ($timers->{$timer} && !$nonrecurring);
+    return if ($timer && $timers->{$timer} && !$nonrecurring);
     print "## adding timer $timer $timeout\n" if $verbose;
     my $timerid;
     if ($nonrecurring) {
-        $timerid = Mojo::IOLoop->timer(
-            $timeout => sub {
-                # automatically clean %$timers for single shot timers
-                remove_timer($timer);
-                $callback->();
-            });
+        $timerid = Mojo::IOLoop->timer($timeout => $callback);
     }
     else {
         $timerid = Mojo::IOLoop->recurring($timeout => $callback);
+        # store timerid for recurring global timers so we can stop them later
+        $timers->{$timer} = [$timerid, $callback] if $timer;
+  # there are still non-global host related timers, their $timerid is stored in respective $hosts->{$host}{timers} field
     }
-    $timers->{$timer} = [$timerid, $callback];
     return $timerid;
 }
 
 sub remove_timer {
     my ($timer) = @_;
-    return unless ($timer && $timers->{$timer});
+    return unless $timer;
     print "## removing timer $timer\n" if $verbose;
-    Mojo::IOLoop->remove($timers->{$timer}->[0]);
-    $timers->{$timer} = undef;
+    my $timerid = $timer;
+    if ($timers->{$timer}) {
+        # global timers needs translation to actual timerid
+        $timerid = $timers->{$timer}->[0];
+        delete $timers->{$timer};
+    }
+    Mojo::IOLoop->remove($timerid);
 }
 
 sub change_timer {
