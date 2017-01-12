@@ -53,7 +53,10 @@ mkdir "$DIR/tmp"
 touch "$DIR/openqa.ini"
 cp etc/openqa/database.ini $DIR
 
-export OPENQA_CONFIG=etc/openqa
+# for locking
+mkdir -p $DIR/openqa/db
+
+export OPENQA_BASEDIR=$DIR
 export OPENQA_LOGFILE="$DIR/logfile"
 export MOJO_TMPDIR="$DIR/tmp"
 export OPENQA_DATABASE=test
@@ -61,8 +64,6 @@ export OPENQA_DATABASE=test
 # 'version' is the smallest codepath we can hit to produce the assets
 ./script/openqa eval '1+0' -m test > /dev/null
 ./script/openqa eval '1+0' -m development > /dev/null
-# we don't want this hanging around
-rm -rf "$PREFIX/public/sass/.sass-cache"
 
 # asset/cache is now generated
 
