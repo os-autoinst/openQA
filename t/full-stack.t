@@ -63,8 +63,16 @@ sub turn_down_stack {
 
 }
 
+use t::ui::PhantomTest;
+
+# skip if phantomjs or Selenium::Remote::WDKeys isn't available
+use IPC::Cmd 'can_run';
+if (!can_run('phantomjs') || !can_load(modules => {'Selenium::PhantomJS' => undef,})) {
+    return undef;
+}
+
 unlink('t/full-stack.d/db/db.sqlite');
-open(my $conf, '>', 't/full-stack.d/config/database.ini');
+ok(open(my $conf, '>', 't/full-stack.d/config/database.ini'));
 print $conf <<EOC;
 [production]
 dsn = dbi:SQLite:dbname=t/full-stack.d/openqa/db/db.sqlite
@@ -73,17 +81,9 @@ on_connect_do = PRAGMA synchronous = OFF
 sqlite_unicode = 1
 EOC
 close($conf);
-system("perl ./script/initdb --init_database");
+is(system("perl ./script/initdb --init_database"), 0);
 # make sure the assets are prefetched
-Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0');
-
-use t::ui::PhantomTest;
-
-# skip if phantomjs or Selenium::Remote::WDKeys isn't available
-use IPC::Cmd 'can_run';
-if (!can_run('phantomjs') || !can_load(modules => {'Selenium::Remote::Driver' => undef,})) {
-    return undef;
-}
+ok(Mojolicious::Commands->start_app('OpenQA::WebAPI', 'eval', '1+0'));
 
 $schedulerpid = fork();
 if ($schedulerpid == 0) {
@@ -95,10 +95,13 @@ if ($schedulerpid == 0) {
 
 # we don't want no fixtures
 my $mojoport = t::ui::PhantomTest::start_app(sub { });
+ok($mojoport);
 my $driver = t::ui::PhantomTest::start_phantomjs($mojoport);
+ok($driver);
 
+# remove_tree dies on error
 remove_tree('t/full-stack.d/openqa/testresults/');
-make_path('t/full-stack.d/openqa/testresults/');
+ok(make_path('t/full-stack.d/openqa/testresults/'));
 remove_tree('t/full-stack.d/openqa/images/');
 
 is($driver->get_title(),                                   "openQA", "on main page");
