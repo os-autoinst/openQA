@@ -287,3 +287,8 @@ Authentication module is expected to return HASH:
 
 Authentication module is expected to create or update user entry in OpenQA database
 after user validation. See included modules for inspiration.
+
+== Customize base directory
+
+It is possible to customize the openQA base directory by setting the environment
+variable +OPENQA_BASEDIR+. The default value is +/var/lib+.

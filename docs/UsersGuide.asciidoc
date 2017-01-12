@@ -40,7 +40,13 @@ see <<overview_multiple_groups,the following example>>.
 image::images/tests-overview_multiple_groups.png[test overview page showing multiple groups]
 
 
+=== Highlighting job dependencies in 'All tests' table
 
+When hovering over the branch icon after the test name children of the job will
+be highlighted blue and parents red. So far this only works for jobs displayed on
+the same page of the table.
+
+image::images/highlighting_job_dependencies.png[highlighted child jobs]
 
 == Use of the REST API
 
