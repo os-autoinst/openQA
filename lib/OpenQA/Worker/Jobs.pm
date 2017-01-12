@@ -182,7 +182,7 @@ sub upload {
         $res = $OpenQA::Worker::Common::ua->start($tx);
 
         # Upload known server failures (Instead of anything that's not 200)
-        if ($res->res->is_status_class(500)) {
+        if ($res->res->is_server_error) {
             $regular_upload_failed = 1;
             next if $retry_counter;
 
