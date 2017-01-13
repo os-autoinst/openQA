@@ -25,6 +25,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &file_content
   &log_debug
   &log_warning
+  &log_info
   &log_error
   &save_base64_png
   &run_cmd_with_log
@@ -112,7 +113,7 @@ sub testcasedir($$) {
     return $dir;
 }
 
-# Call this when $prjdir is changed to reevalue all dependent directories
+# Call this when $prjdir is changed to re-evaluate all dependent directories
 sub change_prjdir {
     $prjdir    = shift;
     $resultdir = "$prjdir/testresults";

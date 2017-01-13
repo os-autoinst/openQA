@@ -21,7 +21,7 @@ use feature 'state';
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Pool 'clean_pool';
 use OpenQA::Worker::Engines::isotovideo;
-use OpenQA::Utils 'wait_with_progress';
+use OpenQA::Utils qw(wait_with_progress log_error log_warning log_debug log_info);
 
 use POSIX qw(strftime SIGTERM);
 use File::Copy qw(copy move);
@@ -99,7 +99,7 @@ sub check_job {
     return unless my $workerid = $hosts->{$host}{workerid};
     return if $job;
     $check_job_running->{$host} = 1;
-    print "checking for job with webui $host ...\n" if $verbose;
+    log_debug("checking for job with webui $host") if $verbose;
     api_call(
         'post',
         "workers/$workerid/grab_job",
@@ -130,7 +130,7 @@ sub stop_job {
     return if $job_id && $job_id != $job->{id};
     $job_id = $job->{id};
 
-    print "stop_job $aborted\n" if $verbose;
+    log_debug("stop_job $aborted") if $verbose;
     $stop_job_running = 1;
 
     # stop all job related timers
@@ -143,7 +143,7 @@ sub stop_job {
     my $stop_job_check_status;
     $stop_job_check_status = sub {
         if ($update_status_running) {
-            print "waiting for update_status to finish\n" if $verbose;
+            log_debug("waiting for update_status to finish") if $verbose;
             Mojo::IOLoop->timer(1 => $stop_job_check_status);
         }
         else {
@@ -165,7 +165,7 @@ sub upload {
     open(my $log, '>>', "autoinst-log.txt");
     printf $log "uploading %s\n", $filename;
     close $log;
-    printf "uploading %s\n", $filename if $verbose;
+    log_debug("uploading $filename") if $verbose;
 
     my $regular_upload_failed = 0;
     my $retry_counter         = 5;
@@ -185,8 +185,11 @@ sub upload {
         $headers->content_type($headers->content_type . "; boundary=$boundary");
 
         if ($regular_upload_failed) {
-            printf "WARNING: Upload attempts remaining: %s/%s for %s, in %s seconds ", $retry_counter--,
-              $retry_limit, $filename, $tics;
+            log_warning(
+                sprintf(
+                    'Upload attempts remaining: %s/%s for %s, in %s seconds',
+                    $retry_counter--, $retry_limit, $filename, $tics
+                ));
             wait_with_progress($tics);
         }
 
@@ -203,7 +206,7 @@ sub upload {
             open(my $log, '>>', "autoinst-log.txt");
             print $log $msg;
             close $log;
-            print STDERR $msg;
+            log_error($msg);
             return 0;
         }
         last;
@@ -220,7 +223,7 @@ sub upload {
         open(my $log, '>>', "autoinst-log.txt");
         print $log $msg;
         close $log;
-        print STDERR $msg;
+        log_error($msg);
         return 0;
     }
 
@@ -260,7 +263,7 @@ sub _stop_job {
     # now tell the webui that we're about to finish, but the following
     # process of killing the backend process and checksums uploads and
     # checksums again can take a long while, so the webui needs to know
-    print "stop_job 2nd part\n" if $verbose;
+    log_debug('stop_job 2nd part') if $verbose;
 
     # the update_status timers and such are gone by now (1st part), so we're
     # basically "single threaded" and can block
@@ -276,7 +279,7 @@ sub _stop_job_2 {
     my ($aborted, $job_id) = @_;
     _kill_worker($worker);
 
-    print "stop_job 3rd part\n" if $verbose;
+    log_debug('stop_job 3rd part') if $verbose;
 
     my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
@@ -351,34 +354,34 @@ sub _stop_job_2 {
         }
 
         if ($aborted eq 'obsolete') {
-            printf "setting job %d to incomplete (obsolete)\n", $job->{id};
+            log_debug('setting job ' . $job->{id} . ' to incomplete (obsolete)') if $verbose;
             upload_status(1, sub { _stop_job_finish({result => 'incomplete', newbuild => 1}) });
             $job_done = 1;
         }
         elsif ($aborted eq 'cancel') {
             # not using job_incomplete here to avoid duplicate
-            printf "setting job %d to incomplete (cancel)\n", $job->{id};
+            log_debug('setting job ' . $job->{id} . ' to incomplete (cancel)') if $verbose;
             upload_status(1, sub { _stop_job_finish({result => 'incomplete'}) });
             $job_done = 1;
         }
         elsif ($aborted eq 'timeout') {
-            printf "job %d spent more time than MAX_JOB_TIME\n", $job->{id};
+            log_warning('job ' . $job->{id} . ' spent more time than MAX_JOB_TIME');
         }
         elsif ($aborted eq 'done') {    # not aborted
-            printf "setting job %d to done\n", $job->{id};
+            log_debug('setting job ' . $job->{id} . 'to done') if $verbose;
             upload_status(1, \&_stop_job_finish);
             $job_done = 1;
         }
     }
     unless ($job_done || $aborted eq 'api-failure') {
-        printf "job %d incomplete\n", $job->{id};
+        log_debug('job ' . $job->{id} . 'incomplete') if $verbose;
         upload_status(1, sub { _stop_job_finish({result => 'incomplete'}) });
     }
 }
 
 sub _stop_job_finish {
     my ($params) = @_;
-    print "update status running $update_status_running\n";
+    log_debug("update status running $update_status_running") if $verbose;
     if ($update_status_running) {
         add_timer('', 1, sub { _stop_job_finish($params) }, 1);
         return;
@@ -388,7 +391,7 @@ sub _stop_job_finish {
         'jobs/' . $job->{id} . '/set_done',
         params   => $params,
         callback => sub {
-            warn sprintf("cleaning up %s...\n", $job->{settings}->{NAME});
+            log_info('cleaning up ' . $job->{settings}->{NAME});
             clean_pool();
             $job              = undef;
             $worker           = undef;
@@ -408,7 +411,7 @@ sub start_job {
     # update settings with worker-specific stuff
     @{$job->{settings}}{keys %$worker_settings} = values %$worker_settings;
     my $name = $job->{settings}->{NAME};
-    printf "got job %d: %s\n", $job->{id}, $name;
+    log_info(sprintf('got job %d: %s', $job->{id}, $name));
 
     # for the status call
     $log_offset             = 0;
@@ -492,7 +495,7 @@ sub read_last_screen {
 sub update_status {
     return if $update_status_running;
     $update_status_running = 1;
-    print "updating status\n" if $verbose;
+    log_debug('updating status') if $verbose;
     upload_status();
     return;
 }
@@ -501,7 +504,7 @@ sub stop_livelog {
     # We can have multiple viewers at the same time
     $do_livelog--;
     if ($do_livelog eq 0) {
-        print "Removing live_log mark, live views active\n";
+        log_debug('Removing live_log mark, live views active') if $verbose;
         unlink "$pooldir/live_log";
     }
 }
@@ -605,12 +608,13 @@ sub upload_status {
                 my ($res) = @_;
                 if (!$res) {
                     # web UI considers this worker already dead anyways, so just exit here
-                    print STDERR
-                      "Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)\n";
+                    log_error(
+                        'Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)');
                 }
                 elsif (!upload_images($res->{known_images})) {
-                    print STDERR
-"Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)\n";
+                    log_error(
+                        'Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)'
+                    );
                 }
                 $update_status_running = 0;
                 return $callback->() if $callback;
@@ -624,7 +628,7 @@ sub optimize_image {
     my ($image) = @_;
 
     if (which('optipng')) {
-        print("optipng $image\n") if $verbose;
+        log_debug("optipng $image") if $verbose;
         # be careful not to be too eager optimizing, this needs to be quick
         # or we will be considered a dead worker
         system('optipng', '-quiet', '-o2', $image);
@@ -644,7 +648,7 @@ sub upload_images {
 
     my $fileprefix = "$pooldir/testresults";
     while (my ($md5, $file) = each %$tosend_images) {
-        print "upload $file as $md5\n" if ($verbose);
+        log_debug("upload $file as $md5") if $verbose;
 
         optimize_image("$fileprefix/$file");
         my $form = {
@@ -671,7 +675,7 @@ sub upload_images {
     $tosend_images = {};
 
     for my $file (@$tosend_files) {
-        print "upload $file\n" if ($verbose);
+        log_debug("upload $file") if $verbose;
 
         my $form = {
             file => {
@@ -774,7 +778,7 @@ sub backend_running {
 }
 
 sub check_backend {
-    print "checking backend state ...\n" if $verbose;
+    log_debug("checking backend state") if $verbose;
     my $res = engine_check;
     if ($res && $res ne 'ok') {
         stop_job($res);

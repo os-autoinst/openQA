@@ -18,7 +18,7 @@ use strict;
 use warnings;
 
 use OpenQA::Worker::Common;
-use OpenQA::Utils 'locate_asset';
+use OpenQA::Utils qw(locate_asset log_error log_info log_debug);
 
 use POSIX qw(:sys_wait_h strftime uname);
 use JSON 'to_json';
@@ -121,7 +121,7 @@ sub engine_workit($) {
     my $workerid   = $hosts->{$current_host}{workerid};
     my %vars       = (OPENQA_URL => $openqa_url, WORKER_INSTANCE => $instance, WORKER_ID => $workerid);
     while (my ($k, $v) = each %{$job->{settings}}) {
-        print "setting $k=$v\n" if $verbose;
+        log_debug("setting $k=$v") if $verbose;
         $vars{$k} = $v;
     }
 
@@ -144,7 +144,7 @@ sub engine_workit($) {
         # create new process group
         setpgrp(0, 0);
         $ENV{TMPDIR} = $tmpdir;
-        printf "$$: WORKING %d\n", $job->{id};
+        log_info("$$: WORKING " . $job->{id});
         if (open(my $log, '>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
             printf $log "start time: %s\n", strftime("%F %T", gmtime);
@@ -168,13 +168,13 @@ sub engine_check {
     # abort job if backend crashed and reschedule it
     if (-e "$pooldir/backend.crashed") {
         unlink("$pooldir/backend.crashed");
-        print STDERR "backend crashed ...\n";
+        log_error('backend crashed ...');
         if (open(my $fh, '<', "$pooldir/os-autoinst.pid")) {
             local $/;
             my $pid = <$fh>;
             close $fh;
             if ($pid =~ /(\d+)/) {
-                print STDERR "killing os-autoinst $1\n";
+                log_info("killing os-autoinst $1");
                 _kill($1);
             }
         }
@@ -183,7 +183,7 @@ sub engine_check {
             my $pid = <$fh>;
             close $fh;
             if ($pid =~ /(\d+)/) {
-                print STDERR "killing qemu $1\n";
+                log_info("killing qemu $1");
                 _kill($1);
             }
         }
@@ -193,7 +193,7 @@ sub engine_check {
     # check if the worker is still running
     my $pid = waitpid($workerpid, WNOHANG);
     if ($verbose) {
-        printf "waitpid %d returned %d with status $?\n", $workerpid, $pid;
+        log_debug("waitpid $workerpid returned $pid with status $?");
     }
     if ($pid == -1 && $!{ECHILD}) {
         warn "we lost our child\n";

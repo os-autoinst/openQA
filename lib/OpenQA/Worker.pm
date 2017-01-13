@@ -24,7 +24,7 @@ use Mojo::IOLoop;
 use File::Spec::Functions 'catdir';
 
 use OpenQA::Client;
-use OpenQA::Utils ();
+use OpenQA::Utils qw(log_error log_debug);
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Commands;
 use OpenQA::Worker::Pool qw(lockit clean_pool);
@@ -63,10 +63,10 @@ sub main {
             }
         }
         unless ($dir) {
-            print STDERR "Can not find working directory for host $h. Ignoring host\n";
+            log_error("Can not find working directory for host $h. Ignoring host");
             next;
         }
-        print "Using dir $dir for host $h\n" if $verbose;
+        log_debug("Using dir $dir for host $h") if $verbose;
         Mojo::IOLoop->next_tick(sub { OpenQA::Worker::Common::register_worker($h, $dir) });
     }
 
@@ -78,7 +78,7 @@ sub main {
 
 sub catch_exit {
     my ($sig) = @_;
-    print STDERR "quit due to signal $sig\n";
+    log_info("quit due to signal $sig");
     if ($job && !$OpenQA::Worker::Jobs::stop_job_running) {
         Mojo::IOLoop->next_tick(
             sub {

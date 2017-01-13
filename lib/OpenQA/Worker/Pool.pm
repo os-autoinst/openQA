@@ -21,6 +21,7 @@ use Fcntl;
 use File::Path qw(make_path remove_tree);
 
 use OpenQA::Worker::Common qw($nocleanup $pooldir);
+use OpenQA::Utils 'log_error';
 
 use base 'Exporter';
 our (@EXPORT_OK);
@@ -54,7 +55,7 @@ sub check_qemu_pid {
     return unless $link;
     return unless $link =~ /\/qemu-[^\/]+$/;
 
-    print "QEMU ($pid -> $link) should be dead - WASUP?\n";
+    log_error("QEMU ($pid -> $link) should be dead - WASUP?");
     exit(1);
 }
 

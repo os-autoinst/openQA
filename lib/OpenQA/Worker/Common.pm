@@ -22,6 +22,7 @@ use Carp;
 use POSIX 'uname';
 use Mojo::URL;
 use OpenQA::Client;
+use OpenQA::Utils qw(log_error log_debug log_warning log_info);
 
 use base 'Exporter';
 our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
@@ -93,7 +94,7 @@ sub add_timer {
     die "must specify callback\n" unless $callback && ref $callback eq 'CODE';
     # skip if timer already defined, but not if one shot timer (avoid the need to call remove_timer for nonrecurring)
     return if ($timer && $timers->{$timer} && !$nonrecurring);
-    print "## adding timer $timer $timeout\n" if $verbose;
+    log_debug("## adding timer $timer $timeout") if $verbose;
     my $timerid;
     if ($nonrecurring) {
         $timerid = Mojo::IOLoop->timer($timeout => $callback);
@@ -110,7 +111,7 @@ sub add_timer {
 sub remove_timer {
     my ($timer) = @_;
     return unless $timer;
-    print "## removing timer $timer\n" if $verbose;
+    log_debug("## removing timer $timer") if $verbose;
     my $timerid = $timer;
     if ($timers->{$timer}) {
         # global timers needs translation to actual timerid
@@ -123,7 +124,7 @@ sub remove_timer {
 sub change_timer {
     my ($timer, $newtimeout, $callback) = @_;
     return unless ($timer && $timers->{$timer});
-    print "## changing timer $timer\n" if $verbose;
+    log_debug("## changing timer $timer") if $verbose;
     $callback = $timers->{$timer}->[1] unless $callback;
     remove_timer($timer);
     add_timer($timer, $newtimeout, $callback);
@@ -199,7 +200,7 @@ sub api_call {
     $ua_url->path($path =~ s/^\///r);
     $ua_url->query($params) if $params;
 
-    print $method . " $ua_url\n" if $verbose;
+    log_debug("$method $ua_url") if $verbose;
 
     my @args = ($method, $ua_url);
 
@@ -273,7 +274,7 @@ sub ws_call {
     die 'Current host not set!' unless $current_host;
     my $res;
     # this call is also non blocking, result and image upload is handled by json handles
-    print "WEBSOCKET: $type\n" if $verbose;
+    log_debug("WEBSOCKET: $type") if $verbose;
     my $ws = $hosts->{$current_host}{ws};
     $ws->send({json => {type => $type, jobid => $job->{id} || '', data => $data}});
 }
@@ -336,7 +337,7 @@ sub setup_websocket {
         $ua_url->scheme('wss');
     }
     $ua_url->path("ws/$workerid");
-    print "WEBSOCKET $ua_url\n" if $verbose;
+    log_debug("WEBSOCKET $ua_url") if $verbose;
 
     call_websocket($host, $ua_url);
 }
@@ -353,7 +354,7 @@ sub call_websocket {
                 # keep websocket connection busy
                 $hosts->{$host}{timers}{keepalive}
                   = add_timer('', 5, sub { $tx->send({json => {type => 'ok'}}); });
-                print "checking job for $host\n";
+                log_info("checking job for $host");
                 OpenQA::Worker::Jobs::check_job($host);
                 # check for new job immediately
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
@@ -371,7 +372,7 @@ sub call_websocket {
                 delete $ws_to_host->{$hosts->{$host}{ws}};
                 $hosts->{$host}{ws} = undef;
                 if (my $location_header = ($tx->completed ? $tx->res->headers->location : undef)) {
-                    print "Following ws redirection to: $location_header\n";
+                    log_info("Following ws redirection to: $location_header");
                     call_websocket($host, $ua_url->parse($location_header));
                 }
                 else {
@@ -413,7 +414,7 @@ sub register_worker {
         $worker_caps->{worker_class} = 'qemu_' . $worker_caps->{cpu_arch};
     }
 
-    print "registering worker with openQA $host...\n" if $verbose;
+    log_info("registering worker with openQA $host...");
 
     if (!$hosts->{$host}) {
         warn "WebUI $host is unknown! - Should not happen but happened, exiting!";
@@ -431,12 +432,13 @@ sub register_worker {
     unless ($tx->success && $tx->success->json) {
         if ($tx->error && $tx->error->{code} && $tx->error->{code} =~ /^4\d\d$/) {
             # don't retry when 4xx codes are returned. There is problem with scheduler
-            printf "ignoring server - server refused with code %s: %s\n", $tx->error->{code}, $tx->res->body;
+            log_warning(
+                sprintf('ignoring server - server refused with code %s: %s', $tx->error->{code}, $tx->res->body));
             delete $hosts->{$host};
             Mojo::IOLoop->stop unless (scalar keys %$hosts);
         }
         else {
-            print "failed to register worker, retry in 10s ...\n" if $verbose;
+            log_error('failed to register worker, retry in 10s ...');
             add_timer('register_worker', 10, sub { register_worker($host) }, 1);
         }
         return;
@@ -449,7 +451,7 @@ sub register_worker {
         $ws->finish() if $ws;
         $ws = undef;
     }
-    print "new worker id within WebUI $host is $newid...\n" if $verbose;
+    log_debug("new worker id within WebUI $host is $newid") if $verbose;
     $hosts->{$host}{workerid} = $newid;
 
     if ($ws) {
