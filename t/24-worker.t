@@ -35,6 +35,7 @@ use OpenQA::Worker::Jobs;
 like(
     exception {
         OpenQA::Worker::Common::api_init(
+            {HOSTS => ['http://any_host']},
             {
                 host => 'http://any_host',
             })
@@ -43,41 +44,52 @@ like(
     'auth required'
 );
 
-ok(
-    OpenQA::Worker::Common::api_init(
-        {
-            host      => 'this_host_should_not_exist',
-            apikey    => '1234',
-            apisecret => '4321',
-        }
-    ),
-    'init'
-);
+
+OpenQA::Worker::Common::api_init(
+    {HOSTS => ['this_host_should_not_exist']},
+    {
+        host      => 'this_host_should_not_exist',
+        apikey    => '1234',
+        apisecret => '4321',
+    });
+ok($hosts->{this_host_should_not_exist},      'entry for host created');
+ok($hosts->{this_host_should_not_exist}{ua},  'user agent created');
+ok($hosts->{this_host_should_not_exist}{url}, 'url object created');
+is($hosts->{this_host_should_not_exist}{workerid}, undef, 'worker not registered yet');
 
 # api_call
-is(api_call(), undef, 'no action on no worker id set');
-$workerid = 1;
+eval { api_call() };
+ok($@, 'no action or no worker id set');
+
+$hosts->{this_host_should_not_exist}{workerid} = 1;
+$current_host = 'this_host_should_not_exist';
 
 sub test_via_io_loop {
     my ($test_function) = @_;
     add_timer('api_call', 0, $test_function, 1);
-    Mojo::IOLoop->start();
+    Mojo::IOLoop->start;
 }
 
 test_via_io_loop sub {
-    my $res = api_call('post', 'jobs/500/status', {}, {status => 'RUNNING'}, 1, 1);
-    is($res, undef, 'error ignored');
+    api_call(
+        'post', 'jobs/500/status',
+        json          => {status => 'RUNNING'},
+        ignore_errors => 1,
+        tries         => 1,
+        callback => sub { my $res = shift; is($res, undef, 'error ignored') });
 
     stderr_like(
         sub {
-            $res = api_call('post', 'jobs/500/status', {}, {status => 'RUNNING'}, 0, 1);
+            api_call(
+                'post', 'jobs/500/status',
+                json  => {status => 'RUNNING'},
+                tries => 1,
+                callback => sub { my $res = shift; is($res, undef, 'error handled'); Mojo::IOLoop->stop() });
+            while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
         },
         qr/.*\[ERROR\] Connection error:.*(remaining tries: 0).*/i,
         'warning about 503 error'
     );
-    is($res, undef, 'error handled');
-
-    Mojo::IOLoop->stop();
 };
 
 done_testing();
