@@ -139,8 +139,8 @@ else {
 
 my $connect_args = "--apikey=1234567890ABCDEF --apisecret=1234567890ABCDEF --host=http://localhost:$mojoport";
 
-unlink("t/full-stack.d/openqa/factory/iso/pitux-0.3.2.iso");
-symlink(abs_path("../os-autoinst/t/data/pitux-0.3.2.iso"), "t/full-stack.d/openqa/factory/iso/pitux-0.3.2.iso")
+make_path('t/full-stack.d/openqa/share/factory/iso');
+symlink(abs_path("../os-autoinst/t/data/pitux-0.3.2.iso"), "t/full-stack.d/openqa/share/factory/iso/pitux-0.3.2.iso")
   || die "can't symlink";
 
 make_path('t/full-stack.d/openqa/share/tests');
