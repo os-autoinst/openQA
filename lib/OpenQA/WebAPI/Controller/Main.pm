@@ -25,18 +25,17 @@ use OpenQA::Utils;
 use Scalar::Util 'looks_like_number';
 
 sub _map_tags_into_build {
-    my ($res, $tags) = @_;
+    my ($results, $tags) = @_;
 
-    for my $key (keys %$res) {
-        my $build = $res->{$key}->{build};
-        if ($tags->{$key}) {
-            $res->{$key}->{tag} = $tags->{$key};
+    for my $res (@$results) {
+        if (my $full_tag = $tags->{$res->{key}}) {
+            $res->{tag} = $full_tag;
         }
-        # as fallback we are looking for build and not other criteria we can end
-        # up with multiple tags if the build appears more than once, e.g.
-        # for each version
-        elsif ($tags->{$build}) {
-            $res->{$key}->{tag} = $tags->{$build};
+        elsif (my $build_only_tag = $tags->{$res->{build}}) {
+            # as fallback we are looking for build and not other criteria we can end
+            # up with multiple tags if the build appears more than once, e.g.
+            # for each version
+            $res->{tag} = $build_only_tag;
         }
     }
     return;
@@ -65,11 +64,11 @@ sub index {
         my $build_results = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
             $only_tagged ? $tags : undef);
 
-        my $res = $build_results->{result};
+        my $build_results_for_group = $build_results->{build_results};
         if ($show_tags) {
-            _map_tags_into_build($res, $tags);
+            _map_tags_into_build($build_results_for_group, $tags);
         }
-        push(@results, $build_results) if %{$build_results->{result}};
+        push(@results, $build_results) if @{$build_results_for_group};
     }
     $self->stash('limit_builds',    $limit_builds);
     $self->stash('time_limit_days', $time_limit_days);
@@ -110,14 +109,13 @@ sub group_overview {
 
     my $cbr = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
         $only_tagged ? $tags : undef);
-    my $res      = $cbr->{result};
-    my $max_jobs = $cbr->{max_jobs};
+    my $build_results = $cbr->{build_results};
+    my $max_jobs      = $cbr->{max_jobs};
     $self->stash(children => $cbr->{children});
 
-    _map_tags_into_build($res, $tags);
-    $self->stash('result',             $res);
-    $self->stash('sorted_result_keys', $cbr->{sorted_result_keys});
-    $self->stash('max_jobs',           $max_jobs);
+    _map_tags_into_build($build_results, $tags);
+    $self->stash('build_results', $build_results);
+    $self->stash('max_jobs',      $max_jobs);
     my $group_hash = {
         id   => $group->id,
         name => $group->name,
@@ -144,8 +142,8 @@ sub group_overview {
             $self->render(
                 json => {
                     group           => $group_hash,
-                    result          => $self->stash('result'),
-                    max_jobs        => $self->stash('max_jobs'),
+                    build_results   => $build_results,
+                    max_jobs        => $max_jobs,
                     description     => $group->description,
                     comments        => \@comments,
                     pinned_comments => \@pinned_comments

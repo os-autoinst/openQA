@@ -1,5 +1,4 @@
-% for my $key (@{$sorted_result_keys}) {
-    % my $build_res = $result->{$key};
+% for my $build_res (@$build_results) {
     % my $build = $build_res->{build};
     % my $group_id;
     <div class="row build-row <%= $children ? ($default_expanded ? 'children-expanded' : 'children-collapsed') : 'no-children' %>">

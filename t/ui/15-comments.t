@@ -47,8 +47,10 @@ $driver->find_element_by_link_text('Login')->click();
 is($driver->get_title(), "openQA", "back on main page");
 
 # check 'reviewed' labels
-my $get = $t->get_ok($driver->get_current_url())->status_is(200);
+
+my $get = $t->get_ok('/?limit_builds=10')->status_is(200);
 $get->element_exists_not('.review', 'no build is marked as \'reviewed\' as there are no comments yet');
+$get->element_count_is('.review-also-softfailed', 2, 'exactly two builds wrongly marked as \'reviewed\'');
 $get->element_exists('.badge-all-passed', 'exactly one build is marked as \'reviewed\' because all tests passed');
 
 $driver->find_element_by_link_text('opensuse')->click();
