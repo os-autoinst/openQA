@@ -124,6 +124,19 @@ sub test_comments {
         test_get_comment_invalid_job_or_group('jobs', 1234, 35);
     };
 
+    subtest 'list multiple comments' => sub {
+        my $get      = $t->get_ok("/api/v1/$in/$id/comments")->status_is(200);
+        my $comments = $get->tx->res->json;
+        is(scalar @$comments, 1, 'one comment present');
+        my $comment = $comments->[0];
+        is($comment->{text}, $edited_test_message, 'text correct');
+        is(
+            $comment->{renderedMarkdown},
+            "<p>This is a cool test \x{2620} - this message will be\\nappended if editing works \x{2620}</p>\n",
+            'markdown correct'
+        );
+    };
+
     my $put = $t->put_ok("/api/v1/$in/$id/comments/$new_comment_id" => form => {text => ''})
       ->status_is(400, 'comment can not be updated without text');
     test_get_comment($in, $id, $new_comment_id, $edited_test_message);

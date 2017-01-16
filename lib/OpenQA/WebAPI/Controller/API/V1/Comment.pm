@@ -41,7 +41,20 @@ sub comments {
     }
 }
 
-# Returns the text and properties for a comment specified by job/group id and comment id (including rendered markdown).
+sub list {
+    my ($self) = @_;
+    my $comments = $self->comments();
+    return unless $comments;
+
+    my @comments;
+    while (my $comment = $comments->next) {
+        push(@comments, $comment->extended_hash);
+    }
+    $self->render(json => \@comments);
+}
+
+# Renders text and properties for a comment specified by job/group id and comment id
+# including rendered markdown and bugrefs
 sub text {
     my ($self) = @_;
     my $comments = $self->comments();
@@ -50,14 +63,7 @@ sub text {
     my $comment    = $comments->find($comment_id);
     return $self->render(json => {error => "Comment $comment_id does not exist"}, status => 404) unless $comment;
 
-    $self->render(
-        json => {
-            text             => $comment->text,
-            renderedMarkdown => $comment->rendered_markdown,
-            created          => $comment->t_created->strftime("%Y-%m-%d %H:%M:%S %z"),
-            updated          => $comment->t_updated->strftime("%Y-%m-%d %H:%M:%S %z"),
-            userName         => $comment->user->name
-        });
+    $self->render(json => $comment->extended_hash);
 }
 
 # Adds a new comment to the specified job/group.
