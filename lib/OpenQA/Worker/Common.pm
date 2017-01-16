@@ -27,7 +27,7 @@ use OpenQA::Utils qw(log_error log_debug log_warning log_info);
 use base 'Exporter';
 our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
   $hosts $ws_to_host $current_host
-  $worker_caps $testresults $openqa_url
+  $worker_caps $testresults
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer
   api_call verify_workerid register_worker ws_call);
@@ -138,22 +138,12 @@ sub api_init {
     for my $host (@hosts) {
         my ($ua, $url);
         if ($host !~ '/') {
-            $url = Mojo::URL->new();
-            $url->host($host);
-            $url->scheme('http');
+            $url = Mojo::URL->new->scheme('http')->host($host);
         }
         else {
             $url = Mojo::URL->new($host);
         }
 
-        my $openqa_url;
-        # Mojo7 does not have authority anymore, can be removed once we say Mojo6- is no longer supported
-        if ($url->can('authority')) {
-            $openqa_url = $url->authority;
-        }
-        else {
-            $openqa_url = $url->host_port;
-        }
         # Relative paths are appended to the existing one
         $url->path('/api/v1/');
 
@@ -169,11 +159,7 @@ sub api_init {
         $ua->max_connections(0);
 
         unless ($ua->apikey && $ua->apisecret) {
-            unless ($apikey && $apisecret) {
-                die "API key and secret are needed for the worker connecting " . $url->host . "\n";
-            }
-            $ua->apikey($apikey);
-            $ua->apisecret($apisecret);
+            die "API key and secret are needed for the worker connecting " . $url->host . "\n";
         }
         $hosts->{$host}{ua}  = $ua;
         $hosts->{$host}{url} = $url;
@@ -212,9 +198,8 @@ sub api_call {
     my $cb;
     $cb = sub {
         my ($ua, $tx, $tries) = @_;
-        my $res;
         if ($tx->success && $tx->success->json) {
-            $res = $tx->success->json;
+            my $res = $tx->success->json;
             return $callback->($res);
         }
         elsif ($ignore_errors) {
@@ -265,14 +250,12 @@ sub api_call {
         );
     };
     $ua->start($tx => sub { $cb->(@_, $tries) });
-
-    return;
 }
 
 sub ws_call {
     my ($type, $data) = @_;
     die 'Current host not set!' unless $current_host;
-    my $res;
+
     # this call is also non blocking, result and image upload is handled by json handles
     log_debug("WEBSOCKET: $type") if $verbose;
     my $ws = $hosts->{$current_host}{ws};

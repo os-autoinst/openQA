@@ -94,10 +94,12 @@ sub check_job {
     my (@todo) = @_;
     state $check_job_running;
     return unless @todo;
+
     my $host = shift @todo;
     return if $check_job_running->{$host};
     return unless my $workerid = $hosts->{$host}{workerid};
     return if $job;
+
     $check_job_running->{$host} = 1;
     log_debug("checking for job with webui $host") if $verbose;
     api_call(
@@ -107,7 +109,7 @@ sub check_job {
         host     => $host,
         callback => sub {
             my ($res) = @_;
-            return unless ($res && $res->{job});
+            return unless ($res);
             $job = $res->{job};
             if ($job && $job->{id}) {
                 Mojo::IOLoop->next_tick(sub { start_job($host) });
@@ -120,7 +122,6 @@ sub check_job {
         });
 }
 
-sub _stop_job;
 sub stop_job {
     my ($aborted, $job_id) = @_;
 
