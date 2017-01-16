@@ -112,7 +112,6 @@ function updateInteractiveIndicator() {
 }
 
 function updateNeedinputIndicator() {
-    console.log("n r "+testStatus.needinput+" "+testStatus.stop_waitforneedle_requested);
     var indicator = $("#needinput_indicator");
     if (testStatus.needinput) {
         indicator.text("Yes");
