@@ -40,6 +40,21 @@ see <<overview_multiple_groups,the following example>>.
 image::images/tests-overview_multiple_groups.png[test overview page showing multiple groups]
 
 
+=== Description of test suites
+
+Test suites can be described using API commands or the admin table for any operator using the web UI.
+
+[[test_suite_description_edit]]
+.Entering a test suite description in the admin table using the web interface:
+image::images/test_suite_description_edit.png[test suite description edit field]
+
+If a description is defined, the name of the test suite on the tests overview page shows up as a link. Clicking the link will show the description in a popup. The same syntax as for comments can be used, that is Markdown with custom extensions such as shortened links to ticket systems.
+
+[[test_suite_description_shown]]
+.popover in test overview with content as configured in the test suites database:
+image::images/test_suite_description_shown.png[test suite description popup]
+
+
 === Highlighting job dependencies in 'All tests' table
 
 When hovering over the branch icon after the test name children of the job will
