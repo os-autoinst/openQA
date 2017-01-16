@@ -93,6 +93,7 @@ sub start_phantomjs {
             $_driver = Test::Selenium::Chrome->new(%opts);
         }
         else {
+            $opts{custom_args} = "--webdriver-logfile=t/log_phantomjs --webdriver-loglevel=DEBUG";
             $_driver = Test::Selenium::PhantomJS->new(%opts);
         }
         $_driver->set_implicit_wait_timeout(2000);

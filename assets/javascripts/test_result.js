@@ -195,7 +195,7 @@ function setupResult(state, jobid, status_url, details_url) {
     if (state == "scheduled") {
       setResultHash("#settings", true);
     } else if (state == "running" || state == "waiting") {
-      if (!window.location.href.endsWith("#")) {
+      if (window.location.href.substr(-1) != "#") {
         setResultHash("#live", true);
       }
     }

@@ -31,6 +31,7 @@ use Data::Dumper;
 use IO::Socket::INET;
 use Cwd qw(abs_path getcwd);
 use POSIX '_exit';
+use Data::Dump 'pp';
 
 # optional but very useful
 eval 'use Test::More::Color';
@@ -71,7 +72,7 @@ if (!can_run('phantomjs') || !can_load(modules => {'Selenium::PhantomJS' => unde
     return undef;
 }
 
-unlink('t/full-stack.d/db/db.sqlite');
+unlink('t/full-stack.d/openqa/db/db.sqlite');
 ok(open(my $conf, '>', 't/full-stack.d/config/database.ini'));
 print $conf <<EOC;
 [production]
@@ -104,8 +105,8 @@ remove_tree('t/full-stack.d/openqa/testresults/');
 ok(make_path('t/full-stack.d/openqa/testresults/'));
 remove_tree('t/full-stack.d/openqa/images/');
 
-is($driver->get_title(),                                   "openQA", "on main page");
-is($driver->find_element_by_id('user-action')->get_text(), 'Login',  "noone logged in");
+$driver->title_is("openQA", "on main page");
+is($driver->find_element_by_id('user-action')->get_text(), 'Login', "noone logged in");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 is($driver->get_title(), "openQA", "back on main page");
@@ -157,7 +158,6 @@ client_call(
 "jobs post ISO=pitux-0.3.2.iso DISTRI=pitux ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 FLAVOR=flavor BUILD=1 MACHINE=coolone "
       . "QEMU_NO_TABLET=1 QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=pitux");
 
-
 # verify it's displayed scheduled
 $driver->find_element_by_link_text('All Tests')->click();
 is($driver->get_title(), 'openQA: Test results', 'tests followed');
@@ -168,6 +168,8 @@ my $job_name = 'pitux-1-flavor-i386-Build1-pitux@coolone';
 $driver->find_element_by_link_text('pitux@coolone')->click();
 is($driver->get_title(), "openQA: $job_name test results", 'scheduled test page');
 like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
+
+is(pp($driver->get_log('browser')), '[]', "no console logs");
 
 $workerpid = fork();
 if ($workerpid == 0) {
@@ -181,15 +183,21 @@ for ($count = 0; $count < 130; $count++) {
     sleep 1;
 }
 
+is(pp($driver->get_log('browser')), "[]", "no console logs");
+
 $driver->refresh();
 print "RUNING after $count seconds\n";
 like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: running/, 'test 1 is running');
 
 for ($count = 0; $count < 130; $count++) {
-    print $driver->find_element('#result-row .panel-body')->get_text();
     last if $driver->find_element('#result-row .panel-body')->get_text() =~ qr/Result: passed/;
     sleep 1;
 }
+
+# TODO: this creates a deadlock we need to sort. The loading of /livelog triggers a ws_send from the webui
+# to the worker but the worker is trying to upload the status so it won't reply to the websocket and so
+# all stalls. Until dbus times out
+# is(pp($driver->get_log('browser')), "[]", "no console logs");
 
 print "PASSED after $count seconds\n";
 system("cat t/full-stack.d/openqa/testresults/00000/00000001-$job_name/autoinst-log.txt");
