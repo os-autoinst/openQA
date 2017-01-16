@@ -282,14 +282,26 @@ ok(!@{$res->{jobs}}, 'no result for nonexising state');
 #
 # is($cloned->{state}, 'scheduled');
 
+# helper to find a build in the JSON results
+sub find_build {
+    my ($results, $build_id) = @_;
+
+    for my $build_res (@{$results->{build_results}}) {
+        OpenQA::Utils::log_debug('key: ' . $build_res->{key});
+        if ($build_res->{key} eq $build_id) {
+            return $build_res;
+        }
+    }
+}
+
 # delete the job with a registered job module
 my $delete = $t->delete_ok('/api/v1/jobs/99937')->status_is(200);
 $t->get_ok('/api/v1/jobs/99937')->status_is(404);
 
 $get = $t->get_ok('/group_overview/1001.json')->status_is(200);
 $get = $get->tx->res->json;
-is_deeply({id => 1001, name => 'opensuse'}, $get->{group});
-my $b48 = $get->{result}->{'Factory-0048'};
+is_deeply({id => 1001, name => 'opensuse'}, $get->{group}, 'group info');
+my $b48 = find_build($get, 'Factory-0048');
 delete $b48->{oldest};
 is_deeply(
     $b48,
@@ -314,16 +326,17 @@ is_deeply(
         build                             => '0048',
         escaped_build                     => '0048',
         escaped_id                        => 'Factory-0048',
+        key                               => 'Factory-0048',
     },
     'Build 0048 exported'
 );
 
-$get = $t->get_ok('/index.json')->status_is(200);
+$get = $t->get_ok('/index.json?limit_builds=10')->status_is(200);
 $get = $get->tx->res->json;
 is(@{$get->{results}}, 2);
 my $g1 = (shift @{$get->{results}});
 is($g1->{group}->{name}, 'opensuse', 'First group is opensuse');
-my $b1 = $g1->{result}->{'13.1-0092'};
+my $b1 = find_build($g1, '13.1-0092');
 delete $b1->{oldest};
 is_deeply(
     $b1,
@@ -349,6 +362,7 @@ is_deeply(
         build                             => '0092',
         escaped_build                     => '0092',
         escaped_id                        => '13_1-0092',
+        key                               => '13.1-0092',
     },
     'Build 92 of opensuse'
 );

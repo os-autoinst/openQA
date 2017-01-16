@@ -125,7 +125,7 @@ subtest 'filter form' => sub {
 
 # JSON representation of index page
 $driver->get('/index.json');
-like($driver->get_page_source(), qr({"results":\[.*"Factory-0048":), 'page rendered as JSON');
+like($driver->get_page_source(), qr("key":"Factory-0048"), 'page rendered as JSON');
 
 like($t->get_ok('/')->tx->res->dom->at('#filter-panel .help_popover')->{'data-title'},
     qr/Help/, 'help popover is shown');

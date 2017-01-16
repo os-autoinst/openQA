@@ -66,14 +66,14 @@ $get = $t->get_ok('/')->status_is(200);
 is_deeply(\@h2, ['opensuse test', 'Test parent'], 'parent group shown and opensuse is no more on top-level');
 
 my @h4 = $get->tx->res->dom->find('div.children-collapsed h4 a')->map('text')->each;
-is_deeply(\@h4, [qw(Build0048@0815 Build0048 Build0092)], 'builds on parent-level shown, sorted first by version');
+is_deeply(\@h4, [qw(Build87.5011 Build0048@0815 Build0048)], 'builds on parent-level shown, sorted first by version');
 @h4 = $get->tx->res->dom->find('div.collapse h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse', 'opensuse'], 'opensuse now shown as child group (for each build)');
 
 # check build limit
 $get = $t->get_ok('/?limit_builds=2')->status_is(200);
 @h4  = $get->tx->res->dom->find('div.children-collapsed h4 a')->map('text')->each;
-is_deeply(\@h4, [qw(Build0048 Build0092)], 'builds on parent-level shown (limit builds)');
+is_deeply(\@h4, [qw(Build87.5011 Build0048@0815)], 'builds on parent-level shown (limit builds)');
 @h4 = $get->tx->res->dom->find('div.collapse h4 a')->map('text')->each;
 is_deeply(\@h4, ['opensuse', 'opensuse'], 'opensuse now shown as child group (limit builds)');
 

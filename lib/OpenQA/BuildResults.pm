@@ -108,12 +108,12 @@ sub compute_build_results {
         $group_ids = [$group->id];
     }
 
-    my %builds;
+    my @sorted_results;
     my %result = (
-        result   => \%builds,
-        max_jobs => 0,
-        children => [map { {id => $_->id, name => $_->name} } @children],
-        group    => {
+        build_results => \@sorted_results,
+        max_jobs      => 0,
+        children      => [map { {id => $_->id, name => $_->name} } @children],
+        group         => {
             id   => $group->id,
             name => $group->name
         });
@@ -122,30 +122,38 @@ sub compute_build_results {
         return \%result;
     }
 
-    # split the statement - give in to perltidy
-    my $search_opts = {
-        select => ['VERSION', 'BUILD', {min => 't_created', -as => 'first_hit'}],
-        as     => [qw(VERSION BUILD first_hit)],
-        # order-by is required here despite it is not relevant when iterating results
-        # because the ordering must be applied before the row limit is applied
-        order_by => {-desc => 'first_hit'},
-        group_by => [qw(VERSION BUILD)]};
-    $search_opts->{rows} = $limit if defined($limit);
-    my $search_filter = {group_id => {in => $group_ids}};
+    # 400 is the max. limit selectable in the group overview
+    my $row_limit   = (defined($limit) && $limit > 400) ? $limit : 400;
+    my @search_cols = qw(VERSION BUILD);
+    my %search_opts = (
+        select   => [@search_cols, {max => 'id', -as => 'lasted_job'}],
+        group_by => \@search_cols,
+        order_by => {-desc => 'lasted_job'},
+        rows     => $row_limit
+    );
+    my %search_filter = (group_id => {in => $group_ids});
     if ($time_limit_days) {
-        $search_filter->{t_created}
+        $search_filter{t_created}
           = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
     }
     if ($tags) {
         # caveat: A tag that references only a build, not including a version, might be ambiguous
-        $search_filter->{BUILD} = {-in => [keys %$tags]};
+        $search_filter{BUILD} = {-in => [keys %$tags]};
     }
 
+    # find relevant builds
     my $jobs_resultset = $group->result_source->schema->resultset('Jobs');
-    my $builds         = $jobs_resultset->search($search_filter, $search_opts);
-    my $max_jobs       = 0;
-    my $buildnr        = 0;
-    for my $b ($builds->all) {
+    my @builds = $jobs_resultset->search(\%search_filter, \%search_opts)->all;
+    for my $build (@builds) {
+        $build->{key} = join('-', $build->VERSION, $build->BUILD);
+    }
+    my @relevant_builds = reverse sort { versioncmp($a->{key}, $b->{key}); } @builds;
+
+    my $max_jobs = 0;
+    my $buildnr  = 0;
+    for my $b (@relevant_builds) {
+        last if defined($limit) && (--$limit < 0);
+
         my $jobs = $jobs_resultset->search(
             {
                 VERSION  => $b->VERSION,
@@ -155,6 +163,7 @@ sub compute_build_results {
             },
             {order_by => 'me.id DESC'});
         my %jr = (
+            key     => $b->{key},
             build   => $b->BUILD,
             version => $b->VERSION,
             oldest  => DateTime->now
@@ -170,7 +179,7 @@ sub compute_build_results {
         # so a build is considered as 'reviewed' if all failures have at least
         # a comment. This could be improved to distinguish between
         # "only-labels", "mixed" and such
-        my $c = $group->result_source->schema->resultset("Comments")->search({job_id => {in => \@ids}});
+        my $c = $group->result_source->schema->resultset('Comments')->search({job_id => {in => \@ids}});
         my %labels;
         while (my $comment = $c->next) {
             $labels{$comment->job_id}++;
@@ -199,12 +208,10 @@ sub compute_build_results {
         $jr{escaped_build} =~ s/\W/_/g;
         $jr{escaped_id} = join('-', $jr{escaped_version}, $jr{escaped_build});
         add_review_badge(\%jr);
-        $builds{join('-', $jr{version}, $jr{build})} = \%jr;
+        push(@sorted_results, \%jr);
         $max_jobs = $jr{total} if ($jr{total} > $max_jobs);
     }
-    my @sorted_result_keys = reverse sort { versioncmp($a, $b) } keys %builds;
-    $result{sorted_result_keys} = \@sorted_result_keys;
-    $result{max_jobs}           = $max_jobs;
+    $result{max_jobs} = $max_jobs;
     return \%result;
 }
 
