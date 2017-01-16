@@ -101,13 +101,7 @@ sub testcasedir($$) {
     my $version = shift;
     # TODO actually "distri" is misused here. It should rather be something
     # like the name of the repository with all tests
-    my @dirs = (catdir($prjdir, 'share', 'tests', $distri), catdir($prjdir, 'tests', $distri));
-    my $dir;
-    for my $d (@dirs) {
-        if (-d $d) {
-            $dir = $d;
-        }
-    }
+    my ($dir) = grep { -d } (catdir($prjdir, 'share', 'tests', $distri), catdir($prjdir, 'tests', $distri));
     $dir .= "-$version" if $version && -e "$dir-$version";
 
     return $dir;

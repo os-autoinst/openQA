@@ -54,14 +54,7 @@ sub main {
             $host_settings->{$h}{SHARE_DIRECTORY},
             catdir($OpenQA::Utils::prjdir, $h),
             catdir($OpenQA::Utils::prjdir, 'share'));
-        my $dir;
-        for my $d (@dirs) {
-            next unless $d;
-            if (-d $d) {
-                $dir = $d;
-                last;
-            }
-        }
+        my ($dir) = grep { $_ && -d } @dirs;
         unless ($dir) {
             log_error("Can not find working directory for host $h. Ignoring host");
             next;
