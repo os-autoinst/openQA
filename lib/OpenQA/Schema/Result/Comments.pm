@@ -139,6 +139,18 @@ sub hash {
     };
 }
 
+sub extended_hash {
+    my ($self) = @_;
+    return {
+        text             => $self->text,
+        renderedMarkdown => $self->rendered_markdown,
+        bugrefs          => $self->bugrefs,
+        created          => $self->t_created->strftime("%Y-%m-%d %H:%M:%S %z"),
+        updated          => $self->t_updated->strftime("%Y-%m-%d %H:%M:%S %z"),
+        userName         => $self->user->name
+    };
+}
+
 package CommentsMarkdownParser;
 require Text::Markdown;
 our @ISA = qw(Text::Markdown);
