@@ -74,8 +74,8 @@ is(@$jobs, @$current_jobs + 1, "one more job after duplicating one job");
 $current_jobs = $jobs;
 
 my $job2 = job_get($job->id);
+is(delete $job2->{origin_id}, delete $job1->{id}, 'original job');
 # delete the obviously different fields
-delete $job1->{id};
 delete $job2->{id};
 delete $job1->{state};
 delete $job2->{state};
@@ -90,7 +90,7 @@ delete $job1->{settings}->{NAME};
 delete $job2->{settings}->{NAME};
 # assets are assigned during job grab and not cloned
 delete $job1->{assets};
-is_deeply($job1, $job2, "duplicated job equal");
+is_deeply($job1, $job2, 'duplicated job equal');
 
 my @ret = OpenQA::Scheduler::Scheduler::job_restart(99926);
 is(@ret, 0, "no job ids returned");
