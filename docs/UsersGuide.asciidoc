@@ -108,6 +108,17 @@ we can always refer to the attached data, e.g. for milestone builds, final
 releases, jobs for which long-lasting bug reports exist, etc.
 
 
+=== Filtering test results and builds ===
+
+At the top of the test results overview page is a form which allows filtering tests by result,
+architecture and TODO-status.
+
+image::images/filter_form.png[Filter form]
+
+There is also a similar form at the bottom of the index page which allows filtering builds by
+group and customizing the limits.
+
+
 === Highlighting job dependencies in 'All tests' table
 
 When hovering over the branch icon after the test name children of the job will
