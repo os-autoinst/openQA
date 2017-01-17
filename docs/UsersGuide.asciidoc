@@ -75,6 +75,39 @@ image::images/review_badges.png[Review badges]
 (To simplify, checking for false-negatives is not considered here.)
 
 
+=== Build tagging ===
+
+==== Tag builds with special comments on group overview ====
+
+Based on comments on the group overview individual builds can be tagged. As
+'build' by themselves do not own any data the job group is used to store this
+information. A tag has a build to link it to a build. It also has a type
+and an optional description. The type can later on be used to distinguish
+tag types.
+
+The generic format for tags is
+-------------
+tag:<build_id>:<type>[:<description>], e.g. tag:1234:important:Beta1.
+-------------
+
+The more recent tag always wins.
+
+A 'tag' icon is shown next to tagged builds together with the description on
+the group_overview page. The index page does not show tags by default to prevent
+a potential performance regression. Tags can be enabled on the index page using the
+corresponding option in the filter form at the bottom of the page.
+
+image::images/build_tagging.png[Example of a tag coment and corresponding tagged build]
+
+==== Keeping important builds ====
+
+As builds can now be tagged we come up with the convention that the
+'important' type - the only one for now - is used to tag every job that
+corresponds to a build as 'important' and keep the logs for these jobs longer so that
+we can always refer to the attached data, e.g. for milestone builds, final
+releases, jobs for which long-lasting bug reports exist, etc.
+
+
 === Highlighting job dependencies in 'All tests' table
 
 When hovering over the branch icon after the test name children of the job will
