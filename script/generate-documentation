@@ -24,7 +24,7 @@ function update_docs {
         git checkout $TARGET_BRANCH
         git config user.name "Travis CI"
         git config user.email "$COMMIT_AUTHOR_EMAIL"
-        mkdir docs
+        mkdir -p docs
         cp -r ${tmpwd}/output/* docs
         cd docs
         update_api
@@ -108,6 +108,7 @@ function check_asciidoctor {
 function set_sshkey {
     openssl aes-256-cbc -K $SSH_KEY -iv $SSH_IV -in .openqa-travis.enc -out .openqa-travis -d
     chmod 600 .openqa-travis
+    eval "$(ssh-agent -s)"
     ssh-add .openqa-travis
 }
 
@@ -153,7 +154,6 @@ if [ ${GH_PUBLISH} ] && [ ${CONTINUOUS_INTEGRATION} ]; then
     echo "Requirements met, generating documentation"
 
     set_sshkey
-    eval "$(ssh-agent -s)"
     install_asciidoctor
     update_docs
 
