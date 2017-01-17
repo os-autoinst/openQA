@@ -87,7 +87,6 @@ REPO=$(git config remote.origin.url)
 SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
 TARGET_BRANCH="gh-pages"
 REPO_DIRECTORY=$PWD
-: ${GH_PUBLISH:=0}
 SSH_KEY=$1
 SSH_IV=$2
 
@@ -135,20 +134,25 @@ function call_asciidoctor {
     cd ..
 }
 
-if [ ${GH_PUBLISH} ] && [ ${CONTINUOUS_INTEGRATION} ]; then
+if [ ${CONTINUOUS_INTEGRATION} ]; then
     if [ "${TRAVIS_BRANCH}" != "master" ]; then
-	echo "Branch is: ${TRAVIS_BRANCH}, not generating any documentation"
-	exit 0
+        echo "Branch is: ${TRAVIS_BRANCH}, not generating any documentation"
+        exit 0
     fi
 
     if [ "${TRAVIS_PULL_REQUEST}" != false ]; then
-	echo "Build is a pull request, not generating any documentation"
-	exit 0
+        echo "Build is a pull request, not generating any documentation"
+        exit 0
     fi
 
     if [ -z "${SSH_KEY}" -o -z "${SSH_IV}" ]; then
-	echo "Build is a pull request, not generating any documentation"
-	exit 0
+        echo "Build is a pull request, not generating any documentation"
+        exit 0
+    fi
+
+    if [ -z ${GH_PUBLISH} ]; then
+        echo "There's no need to generate the documentation"
+        exit 0
     fi
 
     echo "Requirements met, generating documentation"
