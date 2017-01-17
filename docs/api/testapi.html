@@ -11,7 +11,7 @@ permalink: /api/testapi/
 <!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 1.5.5">
-<title>internal</title>
+<title>introduction</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /* Asciidoctor default stylesheet | MIT License | http://asciidoctor.org */
@@ -429,6 +429,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel3">
+<li><a href="#_introduction">introduction</a></li>
 <li><a href="#_internal">internal</a>
 <ul class="sectlevel4">
 <li><a href="#_init">init</a></li>
@@ -445,6 +446,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_assert_and_click">assert_and_click</a></li>
 <li><a href="#_assert_and_dclick">assert_and_dclick</a></li>
 <li><a href="#_wait_screen_change">wait_screen_change</a></li>
+<li><a href="#_assert_screen_change">assert_screen_change</a></li>
 <li><a href="#_wait_still_screen">wait_still_screen</a></li>
 </ul>
 </li>
@@ -463,10 +465,10 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_is_serial_terminal">is_serial_terminal</a></li>
 <li><a href="#_wait_serial">wait_serial</a></li>
 <li><a href="#_x11_start_program">x11_start_program</a></li>
-<li><a href="#_script_run">script_run</a></li>
 <li><a href="#_assert_script_run">assert_script_run</a></li>
-<li><a href="#_script_sudo">script_sudo</a></li>
+<li><a href="#_script_run">script_run</a></li>
 <li><a href="#_assert_script_sudo">assert_script_sudo</a></li>
+<li><a href="#_script_sudo">script_sudo</a></li>
 <li><a href="#_script_output">script_output</a></li>
 <li><a href="#_validate_script_output">validate_script_output</a></li>
 <li><a href="#_become_root">become_root</a></li>
@@ -515,6 +517,7 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_save_memory_dump">save_memory_dump</a></li>
 <li><a href="#_save_storage_drives">save_storage_drives</a></li>
 <li><a href="#_freeze_vm">freeze_vm</a></li>
+<li><a href="#_resume_vm">resume_vm</a></li>
 <li><a href="#_parse_junit_log">parse_junit_log</a></li>
 <li><a href="#_wait_idle">wait_idle</a></li>
 </ul>
@@ -532,6 +535,23 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </div>
 </div>
 <div id="content">
+<div class="sect3">
+<h4 id="_introduction">introduction</h4>
+<div class="paragraph">
+<p>This test API module provides methods exposed by the os-autoinst backend to be
+used within tests.</p>
+</div>
+<div class="paragraph">
+<p>Many methods define a timeout parameter which can be scaled by setting the
+<code>TIMEOUT_SCALE</code> variable in the test settings which are read by the isotovideo
+process. The scale parameter can be used based on performance of workers to
+prevent false positive timeouts based on differing worker performance.</p>
+</div>
+<div class="paragraph">
+<p>os-autoinst is used in the openQA project.
++For more information on how to use openQA, please visit <a href="http://open.qa/documentation" class="bare">http://open.qa/documentation</a></p>
+</div>
+</div>
 <div class="sect3">
 <h4 id="_internal">internal</h4>
 <div class="sect4">
@@ -589,11 +609,17 @@ Takes an optional <code>$reason</code> string which is recorded in the log file.
 </div>
 </div>
 <div class="paragraph">
-<p>Wait for needle with tag <code>$mustmatch</code> to appear on SUT screen.
-<code>$mustmatch</code> can be string or <code>ARRAYREF</code> of string (<code>['tag1', 'tag2']</code>).</p>
+<p>Wait for needle with tag <code>$mustmatch</code> to appear on SUT screen. <code>$mustmatch</code>
+can be string or <code>ARRAYREF</code> of string (<code>['tag1', 'tag2']</code>). The maximum
+waiting time is defined by <code>$timeout</code>. It is recommended to use a value lower
+than the default timeout only when explicitly needed. <code>assert_screen</code> is not
+very suitable for checking performance expectations. Under the normal
+circumstance of the screen being shown this does not imply a longer waiting
+time as the method returns as soon as a successful needle match occured.</p>
 </div>
 <div class="paragraph">
-<p>Returns matched needle or throws <code>NeedleFailed</code> exception if $timeout timeout is hit. Default timeout is 30s.</p>
+<p>Returns matched needle or throws <code>NeedleFailed</code> exception if $timeout timeout
+is hit. Default timeout is 30s.</p>
 </div>
 </div>
 <div class="sect4">
@@ -606,6 +632,15 @@ Takes an optional <code>$reason</code> string which is recorded in the log file.
 <div class="paragraph">
 <p>Similar to <code>assert_screen</code> but does not throw exceptions. Use this for optional matches.
 Check <code>assert_screen</code> for parameters.</p>
+</div>
+<div class="paragraph">
+<p>Unlike <code>assert_screen</code> it is recommended to use the lowest possible timeout
+to prevent needless waiting time in case no match is expected behaviour. In
+general a value of 0s for the timeout should suffice, that is only checking
+once with no waiting time. In most cases a check_screen with a higher timeout
+can be replaced by <code>assert_screen</code> with multiple tags using an <code>ARRAYREF</code> in
+combination with <code>match_has_tag</code> or another synchronization call in before,
+for example <code>wait_screen_change</code> or <code>wait_still_screen</code>.</p>
 </div>
 <div class="paragraph">
 <p>Returns matched needle or <code>undef</code> if timeout is hit. Default timeout is 30s.</p>
@@ -654,7 +689,7 @@ of last matched region. If <code>$dclick</code> is set, do double click instead.
 <h5 id="_wait_screen_change">wait_screen_change</h5>
 <div class="literalblock">
 <div class="content">
-<pre>wait_screen_change { CODEREF [,$timeout] };</pre>
+<pre>wait_screen_change(CODEREF [,$timeout]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -674,6 +709,26 @@ within the block to avoid races between the action and the screen change.</p>
 </div>
 <div class="paragraph">
 <p>Returns true if screen changed or <code>undef</code> on timeout. Default timeout is 10s.</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_assert_screen_change">assert_screen_change</h5>
+<div class="literalblock">
+<div class="content">
+<pre>assert_screen_change(CODEREF [,$timeout]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run <code>CODEREF</code> with <code>wait_screen_change</code> but <code>die</code> if screen did not change
+within timeout. Look into <code>wait_screen_change</code> for details.</p>
+</div>
+<div class="paragraph">
+<p>Example:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>assert_screen_change { send_key 'alt-f4' };</pre>
+</div>
 </div>
 </div>
 <div class="sect4">
@@ -820,25 +875,6 @@ over serial or VNC.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_script_run">script_run</h5>
-<div class="literalblock">
-<div class="content">
-<pre>script_run($program [, $wait]);</pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Run <code>$program</code> (by assuming the console prompt and typing it).</p>
-</div>
-<div class="paragraph">
-<p>The <code>$wait</code> parameter will (unless 0) wait for the script to finish
-by following the script with an echo to serial line and waiting
-for it. Default timeout is 30s.</p>
-</div>
-<div class="paragraph">
-<p><em>Make sure the command does not write to the serial output.</em>'</p>
-</div>
-</div>
-<div class="sect4">
 <h5 id="_assert_script_run">assert_script_run</h5>
 <div class="literalblock">
 <div class="content">
@@ -854,25 +890,29 @@ for it. Default timeout is 30s.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>Run <code>$cmd</code> via <code>script_run</code> and <code>die</code> if its exit status is not zero.
-The exit status is checked by magic string on the serial port.
-See <code>script_run</code> for default timeout.
-<code>$fail_message</code> is returned in the die message if specified.</p>
+<p>Run <code>$cmd</code> via <code>script_run</code> and <code>die</code> if its exit status is not zero.  The
+exit status is checked by magic string on the serial port with a waiting time
+up do <code>$timeout</code>. Default timeout is 30s.
+Use <code>script_run</code> if <code>$cmd</code> can be expected to fail.</p>
 </div>
 <div class="paragraph">
-<p><em>Make sure the command does not write to the serial output.</em>'</p>
+<p><code>$fail_message</code> is returned in the die message if specified.</p>
 </div>
 </div>
 <div class="sect4">
-<h5 id="_script_sudo">script_sudo</h5>
+<h5 id="_script_run">script_run</h5>
 <div class="literalblock">
 <div class="content">
-<pre>script_sudo($program [, $wait]);</pre>
+<pre>script_run($program [, $wait]);</pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Run <code>$program</code> using sudo. Handle the sudo timeout and send password when appropriate.
-<code>$wait_seconds</code> defaults to 2 seconds.</p>
+<p>Run <code>$program</code> (by assuming the console prompt and typing it).</p>
+</div>
+<div class="paragraph">
+<p>The <code>$wait</code> parameter will (unless 0) wait for the script to finish
+by following the script with an echo to serial line and waiting
+for it. Default timeout is 30s.</p>
 </div>
 <div class="paragraph">
 <p><em>The implementation is distribution specific and not always available.</em>'</p>
@@ -891,7 +931,19 @@ status is not zero.
 See <code>wait_serial</code> for default timeout.</p>
 </div>
 <div class="paragraph">
-<p><em>Make sure the command does not write to the serial output.</em>'</p>
+<p><em>The implementation is distribution specific and not always available.</em>'</p>
+</div>
+</div>
+<div class="sect4">
+<h5 id="_script_sudo">script_sudo</h5>
+<div class="literalblock">
+<div class="content">
+<pre>script_sudo($program [, $wait]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run <code>$program</code> using sudo. Handle the sudo timeout and send password when appropriate.
+<code>$wait_seconds</code> defaults to 2 seconds.</p>
 </div>
 <div class="paragraph">
 <p><em>The implementation is distribution specific and not always available.</em>'</p>
@@ -1367,6 +1419,21 @@ and disk dumps can be extracted without any risk of data changing.</p>
 </div>
 </div>
 <div class="sect4">
+<h5 id="_resume_vm">resume_vm</h5>
+<div class="literalblock">
+<div class="content">
+<pre>resume_vm;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If the backend supports it, resume the vm.
+Call this method to start vm CPU explicitly if DELAYED_START is set.</p>
+</div>
+<div class="paragraph">
+<p><em>Currently only qemu backend is supported.</em>'</p>
+</div>
+</div>
+<div class="sect4">
 <h5 id="_parse_junit_log">parse_junit_log</h5>
 <div class="literalblock">
 <div class="content">
@@ -1504,7 +1571,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-01-02 13:31:14 UTC
+Last updated 2017-01-17 11:40:38 UTC
 </div>
 </div>
 </body>
