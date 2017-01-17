@@ -57,6 +57,8 @@ $t->ua(
     OpenQA::Client->new(apikey => 'PERCIVALKEY02', apisecret => 'PERCIVALSECRET02')->ioloop(Mojo::IOLoop->singleton));
 $t->app($app);
 
+$t->app->schema->resultset('Jobs')->find(99963)->update({assigned_worker_id => 1});
+
 # INITIAL JOB LIST (from fixtures)
 # 99981 cancelled  no clone
 # 99963 running    no clone
@@ -81,11 +83,15 @@ my @jobs       = @{$get->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
 is($jobs_count, 16);
 my %jobs = map { $_->{id} => $_ } @jobs;
-is($jobs{99981}->{state},    'cancelled');
-is($jobs{99963}->{state},    'running');
-is($jobs{99927}->{state},    'scheduled');
-is($jobs{99946}->{clone_id}, undef);
-is($jobs{99963}->{clone_id}, undef);
+is($jobs{99981}->{state},              'cancelled');
+is($jobs{99981}->{origin_id},          undef, 'no original job');
+is($jobs{99981}->{assigned_worker_id}, undef, 'no worker assigned');
+is($jobs{99963}->{state},              'running');
+is($jobs{99963}->{assigned_worker_id}, 1, 'worker 1 assigned');
+is($jobs{99927}->{state},              'scheduled');
+is($jobs{99946}->{clone_id},           undef, 'no clone');
+is($jobs{99946}->{origin_id},          99945, 'original job');
+is($jobs{99963}->{clone_id},           undef, 'no clone');
 
 # That means that only 9 are current and only 10 are relevant
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});

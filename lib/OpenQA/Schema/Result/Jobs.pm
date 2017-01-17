@@ -395,6 +395,9 @@ sub to_hash {
     if ($job->assigned_worker_id) {
         $j->{assigned_worker_id} = $job->assigned_worker_id;
     }
+    if (my $origin = $job->origin) {
+        $j->{origin_id} = $origin->id;
+    }
     $j->{settings} = $job->settings_hash;
     # hashes are left for script compatibility with schema version 38
     $j->{test} = $job->TEST;
