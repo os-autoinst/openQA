@@ -748,9 +748,16 @@ a.add-parent-group {
 }
 
 .corner-buttons {
-    width: auto;
-    display: inline;
+    display: inline-block;
     float: right;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    margin-left: 5px;
+}
+
+h2 + * {
+    /* ensure corner button doesn't influence elements after heading */
+    clear: right;
 }
 
 /* admin needle editor */
