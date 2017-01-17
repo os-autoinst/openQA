@@ -15,6 +15,7 @@ env:
     - FULLSTACK=0 UITESTS=1 SELENIUM_CHROME=0
     - FULLSTACK=1 SELENIUM_CHROME=0
     - FULLSTACK=1 SELENIUM_CHROME=1
+    - GH_PUBLISH=true
   global:
     - COMMIT_AUTHOR_EMAIL=skynet@open.qa
 before_install:
@@ -32,7 +33,7 @@ install:
   - gem install sass
   - cpanm -nq --installdeps --with-feature=coverage .
 script:
-  - GH_PUBLISH=true bash script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv
+  - bash script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv
   # 'coverage-codecov' calls checkstyle, tests and coverage analysis
   - make coverage-codecov
 after_failure:
