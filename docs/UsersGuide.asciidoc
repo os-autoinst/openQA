@@ -55,6 +55,70 @@ If a description is defined, the name of the test suite on the tests overview pa
 image::images/test_suite_description_shown.png[test suite description popup]
 
 
+=== Review badges ===
+
+Based on comments in the individual job results for each build a certificate
+icon is shown on the group overview page as well as the index page to indicate
+that every failure has been reviewed, e.g. a bug reference or a test issue
+reason is stated:
+
+image::images/review_badges.png[Review badges]
+
+==== Meaning of the different colors ====
+
+* The green icons shows up when there is no work to be done.
+* No icon is shown if at least one failure still need to be reviewed.
+* The gray icon is shown if at least one softfailure with failing modules still
+  need to be reviewed.
+* The black icon is shown if all review work has been done.
+
+(To simplify, checking for false-negatives is not considered here.)
+
+
+=== Build tagging ===
+
+==== Tag builds with special comments on group overview ====
+
+Based on comments on the group overview individual builds can be tagged. As
+'build' by themselves do not own any data the job group is used to store this
+information. A tag has a build to link it to a build. It also has a type
+and an optional description. The type can later on be used to distinguish
+tag types.
+
+The generic format for tags is
+-------------
+tag:<build_id>:<type>[:<description>], e.g. tag:1234:important:Beta1.
+-------------
+
+The more recent tag always wins.
+
+A 'tag' icon is shown next to tagged builds together with the description on
+the group_overview page. The index page does not show tags by default to prevent
+a potential performance regression. Tags can be enabled on the index page using the
+corresponding option in the filter form at the bottom of the page.
+
+image::images/build_tagging.png[Example of a tag coment and corresponding tagged build]
+
+==== Keeping important builds ====
+
+As builds can now be tagged we come up with the convention that the
+'important' type - the only one for now - is used to tag every job that
+corresponds to a build as 'important' and keep the logs for these jobs longer so that
+we can always refer to the attached data, e.g. for milestone builds, final
+releases, jobs for which long-lasting bug reports exist, etc.
+
+
+=== Filtering test results and builds ===
+
+At the top of the test results overview page is a form which allows filtering tests by result,
+architecture and TODO-status.
+
+image::images/filter_form.png[Filter form]
+
+There is also a similar form at the bottom of the index page which allows filtering builds by
+group and customizing the limits.
+
+
 === Highlighting job dependencies in 'All tests' table
 
 When hovering over the branch icon after the test name children of the job will
