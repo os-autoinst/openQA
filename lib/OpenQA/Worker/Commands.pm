@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux Products GmbH
+# Copyright (C) 2015-17 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,9 +14,10 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Commands;
-use strict;
+use 5.012;
 use warnings;
 
+use OpenQA::Utils qw(log_error log_warning log_debug);
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
 
@@ -35,62 +36,68 @@ sub websocket_commands {
         # requests
         my $type = $json->{type};
         if (!$type) {
-            printf STDERR 'Received WS message without type!';
+            log_warning('Received WS message without type!');
             return;
         }
         my $jobid = $json->{jobid} // '';
         my $joburl;
-        my $ua = Mojo::UserAgent->new;
+        my $host = $ws_to_host->{$tx};
+        my $ua   = Mojo::UserAgent->new;
         if ($jobid) {
             if (!$job) {
-                printf STDERR 'Received command %s for job %u, but we do not have any assigned. Ignoring!%s', $type,
-                  $jobid, "\n";
+                log_warning("Received command $type for job $jobid, but we do not have any assigned. Ignoring!");
                 return;
             }
             elsif ($jobid ne $job->{id}) {
-                printf STDERR 'Received command %s for different job id %u (our %u). Ignoring!%s', $type, $jobid,
-                  $job->{id}, "\n";
+                log_warning("Received command $type for different job id $jobid (our " . $job->{id} . '). Ignoring!');
                 return;
+            }
+            elsif (!$current_host) {
+                die 'Job ids match but current host not set';
+            }
+            elsif ($current_host ne $host) {
+                log_warning(
+                    "Received message from different host ($host) than we are working with ($current_host). Ignoring");
             }
         }
         if ($job) {
             $joburl = $job->{URL};
         }
         if ($type =~ m/quit|abort|cancel|obsolete/) {
-            print "received command: $type" if $verbose;
+            log_debug("received command: $type") if $verbose;
             stop_job($type);
         }
         elsif ($type eq 'stop_waitforneedle') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/stop_waitforneedle");
-                print "stop_waitforneedle triggered\n" if $verbose;
+                log_debug('stop_waitforneedle triggered') if $verbose;
                 ws_call('property_change', {waitforneedle => 1});
             }
         }
         elsif ($type eq 'reload_needles_and_retry') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/reload_needles");
-                print "needles will be reloaded\n" if $verbose;
+                log_debug('needles will be reloaded') if $verbose;
             }
         }
         elsif ($type eq 'enable_interactive_mode') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/interactive?state=1");
-                print "interactive mode enabled\n" if $verbose;
+                log_debug('interactive mode enabled') if $verbose;
                 ws_call('property_change', {interactive_mode => 1});
             }
         }
         elsif ($type eq 'disable_interactive_mode') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/interactive?state=0");
-                print "interactive mode disabled\n" if $verbose;
+                log_debug('interactive mode disabled') if $verbose;
                 ws_call('property_change', {interactive_mode => 0});
             }
         }
         elsif ($type eq 'continue_waitforneedle') {
             if (backend_running) {
                 $ua->post("$joburl/isotovideo/continue_waitforneedle");
-                print "waitforneedle will continue\n" if $verbose;
+                log_debug('waitforneedle will continue') if $verbose;
                 ws_call('property_change', {waitforneedle => 0});
             }
         }
@@ -98,14 +105,14 @@ sub websocket_commands {
             # change update_status timer if $job running
             if (backend_running) {
                 OpenQA::Worker::Jobs::start_livelog();
-                print "Starting livelog\n" if $verbose;
+                log_debug('Starting livelog') if $verbose;
                 change_timer('update_status', STATUS_UPDATES_FAST);
             }
         }
         elsif ($type eq 'livelog_stop') {
             # change update_status timer
             if (backend_running) {
-                print "Stopping livelog\n" if $verbose;
+                log_debug('Stopping livelog') if $verbose;
                 OpenQA::Worker::Jobs::stop_livelog();
                 unless (OpenQA::Worker::Jobs::has_logviewers()) {
                     change_timer('update_status', STATUS_UPDATES_SLOW);
@@ -116,13 +123,13 @@ sub websocket_commands {
             # ignore keepalives, but dont' report as unknown
         }
         elsif ($type eq 'job_available') {
-            print "received job notification" if $verbose;
+            log_debug('received job notification') if $verbose;
             if (!$job) {
-                check_job;
+                Mojo::IOLoop->next_tick(sub { check_job($host) });
             }
         }
         else {
-            print STDERR "got unknown command $type\n";
+            log_error("got unknown command $type");
         }
 
     }

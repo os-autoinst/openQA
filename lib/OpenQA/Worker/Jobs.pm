@@ -1,4 +1,4 @@
-# Copyright (C) 2015,2016 SUSE LLC
+# Copyright (C) 2015-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,14 +14,14 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Jobs;
-use strict;
+use 5.018;
 use warnings;
 use feature 'state';
 
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Pool 'clean_pool';
 use OpenQA::Worker::Engines::isotovideo;
-use OpenQA::Utils 'wait_with_progress';
+use OpenQA::Utils qw(wait_with_progress log_error log_warning log_debug log_info);
 
 use POSIX qw(strftime SIGTERM);
 use File::Copy qw(copy move);
@@ -91,27 +91,38 @@ sub _kill_worker($) {
 sub start_job;
 
 sub check_job {
-    state $running;
-    remove_timer('check_job');
-    return if $running;
-    return unless verify_workerid;
-    $running = 1;
-    if (!$job) {
-        print "checking for job ...\n" if $verbose;
-        my $res = api_call('post', "workers/$workerid/grab_job", $worker_caps) || {job => undef};
-        $job = $res->{job};
-        if ($job && $job->{id}) {
-            Mojo::IOLoop->next_tick(\&start_job);
-        }
-        else {
-            $job = undef;
-        }
-    }
-    $running = 0;
+    my (@todo) = @_;
+    state $check_job_running;
+    return unless @todo;
+
+    my $host = shift @todo;
+    return if $check_job_running->{$host};
+    return unless my $workerid = $hosts->{$host}{workerid};
+    return if $job;
+
+    $check_job_running->{$host} = 1;
+    log_debug("checking for job with webui $host") if $verbose;
+    api_call(
+        'post',
+        "workers/$workerid/grab_job",
+        params   => $worker_caps,
+        host     => $host,
+        callback => sub {
+            my ($res) = @_;
+            return unless ($res);
+            $job = $res->{job};
+            if ($job && $job->{id}) {
+                Mojo::IOLoop->next_tick(sub { start_job($host) });
+            }
+            else {
+                $job = undef;
+                Mojo::IOLoop->next_tick(sub { check_job(@todo) });
+            }
+            $check_job_running->{$host} = 0;
+        });
 }
 
-sub _stop_job($;$);
-sub stop_job($;$) {
+sub stop_job {
     my ($aborted, $job_id) = @_;
 
     # we call this function in all situations, so better check
@@ -120,7 +131,7 @@ sub stop_job($;$) {
     return if $job_id && $job_id != $job->{id};
     $job_id = $job->{id};
 
-    print "stop_job $aborted\n" if $verbose;
+    log_debug("stop_job $aborted") if $verbose;
     $stop_job_running = 1;
 
     # stop all job related timers
@@ -133,7 +144,7 @@ sub stop_job($;$) {
     my $stop_job_check_status;
     $stop_job_check_status = sub {
         if ($update_status_running) {
-            print "waiting for update_status to finish\n" if $verbose;
+            log_debug("waiting for update_status to finish") if $verbose;
             Mojo::IOLoop->timer(1 => $stop_job_check_status);
         }
         else {
@@ -146,6 +157,7 @@ sub stop_job($;$) {
 
 sub upload {
     my ($job_id, $form) = @_;
+    die 'No current_host!' unless verify_workerid;
     my $filename = $form->{file}->{filename};
     my $file     = $form->{file}->{file};
 
@@ -154,7 +166,7 @@ sub upload {
     open(my $log, '>>', "autoinst-log.txt");
     printf $log "uploading %s\n", $filename;
     close $log;
-    printf "uploading %s\n", $filename if $verbose;
+    log_debug("uploading $filename") if $verbose;
 
     my $regular_upload_failed = 0;
     my $retry_counter         = 5;
@@ -164,22 +176,25 @@ sub upload {
 
 
     while (1) {
-        my $ua_url = $OpenQA::Worker::Common::url->clone;
+        my $ua_url = $hosts->{$current_host}{url}->clone;
         $ua_url->path("jobs/$job_id/artefact");
 
-        my $tx = $OpenQA::Worker::Common::ua->build_tx(POST => $ua_url => form => $form);
+        my $tx = $hosts->{$current_host}{ua}->build_tx(POST => $ua_url => form => $form);
         # override the default boundary calculation - it reads whole file
         # and it can cause various timeouts
         my $headers = $tx->req->headers;
         $headers->content_type($headers->content_type . "; boundary=$boundary");
 
         if ($regular_upload_failed) {
-            printf "WARNING: Upload attempts remaining: %s/%s for %s, in %s seconds ", $retry_counter--,
-              $retry_limit, $filename, $tics;
+            log_warning(
+                sprintf(
+                    'Upload attempts remaining: %s/%s for %s, in %s seconds',
+                    $retry_counter--, $retry_limit, $filename, $tics
+                ));
             wait_with_progress($tics);
         }
 
-        $res = $OpenQA::Worker::Common::ua->start($tx);
+        $res = $hosts->{$current_host}{ua}->start($tx);
 
         # Upload known server failures (Instead of anything that's not 200)
         if ($res->res->is_server_error) {
@@ -192,7 +207,7 @@ sub upload {
             open(my $log, '>>', "autoinst-log.txt");
             print $log $msg;
             close $log;
-            print STDERR $msg;
+            log_error($msg);
             return 0;
         }
         last;
@@ -209,7 +224,7 @@ sub upload {
         open(my $log, '>>', "autoinst-log.txt");
         print $log $msg;
         close $log;
-        print STDERR $msg;
+        log_error($msg);
         return 0;
     }
 
@@ -243,23 +258,29 @@ sub upload {
     return 1;
 }
 
-sub _stop_job($;$) {
+sub _stop_job {
     my ($aborted, $job_id) = @_;
 
     # now tell the webui that we're about to finish, but the following
     # process of killing the backend process and checksums uploads and
     # checksums again can take a long while, so the webui needs to know
-    print "stop_job 2nd part\n" if $verbose;
+    log_debug('stop_job 2nd part') if $verbose;
 
     # the update_status timers and such are gone by now (1st part), so we're
     # basically "single threaded" and can block
 
     my $status = {uploading => 1};
-    api_call('post', "jobs/$job_id/status", undef, {status => $status});
+    api_call(
+        'post', "jobs/$job_id/status",
+        json => {status => $status},
+        callback => sub { _stop_job_2($aborted, $job_id); });
+}
 
+sub _stop_job_2 {
+    my ($aborted, $job_id) = @_;
     _kill_worker($worker);
 
-    print "stop_job 3rd part\n" if $verbose;
+    log_debug('stop_job 3rd part') if $verbose;
 
     my $name = $job->{settings}->{NAME};
     $aborted ||= 'done';
@@ -334,48 +355,56 @@ sub _stop_job($;$) {
         }
 
         if ($aborted eq 'obsolete') {
-            printf "setting job %d to incomplete (obsolete)\n", $job->{id};
-            upload_status(1);
-            api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete', newbuild => 1});
+            log_debug('setting job ' . $job->{id} . ' to incomplete (obsolete)') if $verbose;
+            upload_status(1, sub { _stop_job_finish({result => 'incomplete', newbuild => 1}) });
             $job_done = 1;
         }
         elsif ($aborted eq 'cancel') {
             # not using job_incomplete here to avoid duplicate
-            printf "setting job %d to incomplete (cancel)\n", $job->{id};
-            upload_status(1);
-            api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
+            log_debug('setting job ' . $job->{id} . ' to incomplete (cancel)') if $verbose;
+            upload_status(1, sub { _stop_job_finish({result => 'incomplete'}) });
             $job_done = 1;
         }
         elsif ($aborted eq 'timeout') {
-            printf "job %d spent more time than MAX_JOB_TIME\n", $job->{id};
+            log_warning('job ' . $job->{id} . ' spent more time than MAX_JOB_TIME');
         }
         elsif ($aborted eq 'done') {    # not aborted
-            printf "setting job %d to done\n", $job->{id};
-            upload_status(1);
-            api_call('post', 'jobs/' . $job->{id} . '/set_done');
+            log_debug('setting job ' . $job->{id} . 'to done') if $verbose;
+            upload_status(1, \&_stop_job_finish);
             $job_done = 1;
         }
     }
     unless ($job_done || $aborted eq 'api-failure') {
-        upload_status(1);
-        printf "job %d incomplete\n", $job->{id};
-        api_call('post', 'jobs/' . $job->{id} . '/set_done', {result => 'incomplete'});
+        log_debug('job ' . $job->{id} . 'incomplete') if $verbose;
+        upload_status(1, sub { _stop_job_finish({result => 'incomplete'}) });
     }
-    warn sprintf("cleaning up %s...\n", $job->{settings}->{NAME});
-    clean_pool();
-    $job              = undef;
-    $worker           = undef;
-    $stop_job_running = 0;
+}
 
-    if ($aborted eq 'quit') {
-        Mojo::IOLoop->stop;
+sub _stop_job_finish {
+    my ($params) = @_;
+    log_debug("update status running $update_status_running") if $verbose;
+    if ($update_status_running) {
+        add_timer('', 1, sub { _stop_job_finish($params) }, 1);
         return;
     }
-    # immediatelly check for already scheduled job
-    add_timer('check_job', 0, \&check_job, 1);
+    api_call(
+        'post',
+        'jobs/' . $job->{id} . '/set_done',
+        params   => $params,
+        callback => sub {
+            log_info('cleaning up ' . $job->{settings}->{NAME});
+            clean_pool();
+            $job              = undef;
+            $worker           = undef;
+            $stop_job_running = 0;
+            $current_host     = undef;
+            # immediatelly check for already scheduled job
+            Mojo::IOLoop->next_tick(sub { check_job(keys %$hosts) });
+        });
 }
 
 sub start_job {
+    my ($host) = @_;
     # block the job from having dangerous settings (isotovideo specific though)
     # it needs to come from worker_settings
     delete $job->{settings}->{GENERAL_HW_CMD_DIR};
@@ -383,7 +412,7 @@ sub start_job {
     # update settings with worker-specific stuff
     @{$job->{settings}}{keys %$worker_settings} = values %$worker_settings;
     my $name = $job->{settings}->{NAME};
-    printf "got job %d: %s\n", $job->{id}, $name;
+    log_info(sprintf('got job %d: %s', $job->{id}, $name));
 
     # for the status call
     $log_offset             = 0;
@@ -392,6 +421,8 @@ sub start_job {
     $do_livelog             = 0;
     $tosend_images          = {};
     $tosend_files           = [];
+    $current_host           = $host;
+    ($ENV{OPENQA_HOSTNAME}) = $host =~ m|([^/]+:?\d*)/?$|;
 
     $worker = engine_workit($job);
     if ($worker->{error}) {
@@ -465,9 +496,8 @@ sub read_last_screen {
 sub update_status {
     return if $update_status_running;
     $update_status_running = 1;
-    print "updating status\n" if $verbose;
+    log_debug('updating status') if $verbose;
     upload_status();
-    $update_status_running = 0;
     return;
 }
 
@@ -475,7 +505,7 @@ sub stop_livelog {
     # We can have multiple viewers at the same time
     $do_livelog--;
     if ($do_livelog eq 0) {
-        print "Removing live_log mark, live views active\n";
+        log_debug('Removing live_log mark, live views active') if $verbose;
         unlink "$pooldir/live_log";
     }
 }
@@ -492,8 +522,8 @@ sub has_logviewers {
 }
 
 # uploads current data
-sub upload_status(;$) {
-    my ($final_upload) = @_;
+sub upload_status {
+    my ($final_upload, $callback) = @_;
 
     return unless verify_workerid;
     return unless $job;
@@ -520,6 +550,8 @@ sub upload_status(;$) {
             $test_order = read_json_file('test_order.json');
             if (!$test_order) {
                 stop_job('no tests scheduled');
+                $update_status_running = 0;
+                return $callback->() if $callback;
                 return;
             }
             $status->{test_order} = $test_order;
@@ -555,7 +587,11 @@ sub upload_status(;$) {
     }
 
     # if there is nothing to say, don't say it (said my mother)
-    return unless %$status;
+    unless (%$status) {
+        $update_status_running = 0;
+        return $callback->() if $callback;
+        return;
+    }
 
     if ($os_status->{running}) {
         $status->{result}->{$os_status->{running}}->{result} = 'running';
@@ -565,18 +601,26 @@ sub upload_status(;$) {
         ws_call('status', $status);
     }
     else {
-        my $res = api_call('post', 'jobs/' . $job->{id} . '/status', undef, {status => $status});
-        if (!$res) {
-            # web UI considers this worker already dead anyways, so just exit here
-            print STDERR
-              "Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)\n";
-            return;
-        }
-        if (!upload_images($res->{known_images})) {
-            print STDERR
-              "Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)\n";
-            return;
-        }
+        api_call(
+            'post',
+            'jobs/' . $job->{id} . '/status',
+            json     => {status => $status},
+            callback => sub {
+                my ($res) = @_;
+                if (!$res) {
+                    # web UI considers this worker already dead anyways, so just exit here
+                    log_error(
+                        'Job aborted because web UI doesn\'t accept updates anymore (likely considers this job dead)');
+                }
+                elsif (!upload_images($res->{known_images})) {
+                    log_error(
+                        'Job aborted because web UI doesn\'t accept new images anymore (likely considers this job dead)'
+                    );
+                }
+                $update_status_running = 0;
+                return $callback->() if $callback;
+                return;
+            });
     }
     return 1;
 }
@@ -585,7 +629,7 @@ sub optimize_image {
     my ($image) = @_;
 
     if (which('optipng')) {
-        print("optipng $image\n") if $verbose;
+        log_debug("optipng $image") if $verbose;
         # be careful not to be too eager optimizing, this needs to be quick
         # or we will be considered a dead worker
         system('optipng', '-quiet', '-o2', $image);
@@ -600,12 +644,12 @@ sub upload_images {
         delete $tosend_images->{$md5};
     }
     my $tx;
-    my $ua_url = $OpenQA::Worker::Common::url->clone;
+    my $ua_url = $hosts->{$current_host}{url}->clone;
     $ua_url->path("jobs/" . $job->{id} . "/artefact");
 
     my $fileprefix = "$pooldir/testresults";
     while (my ($md5, $file) = each %$tosend_images) {
-        print "upload $file as $md5\n" if ($verbose);
+        log_debug("upload $file as $md5") if $verbose;
 
         optimize_image("$fileprefix/$file");
         my $form = {
@@ -619,20 +663,20 @@ sub upload_images {
         };
         # don't use api_call as it retries and does not allow form data
         # (refactor at some point)
-        $tx = $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+        $tx = $hosts->{$current_host}{ua}->post($ua_url => form => $form);
 
         $file = "$fileprefix/.thumbs/$file";
         if (-f $file) {
             optimize_image($file);
             $form->{file}->{file} = $file;
             $form->{thumb} = 1;
-            $tx = $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+            $tx = $hosts->{$current_host}{ua}->post($ua_url => form => $form);
         }
     }
     $tosend_images = {};
 
     for my $file (@$tosend_files) {
-        print "upload $file\n" if ($verbose);
+        log_debug("upload $file") if $verbose;
 
         my $form = {
             file => {
@@ -644,7 +688,7 @@ sub upload_images {
         };
         # don't use api_call as it retries and does not allow form data
         # (refactor at some point)
-        $tx = $OpenQA::Worker::Common::ua->post($ua_url => form => $form);
+        $tx = $hosts->{$current_host}{ua}->post($ua_url => form => $form);
     }
     $tosend_files = [];
     return !$tx || $tx->success;
@@ -672,6 +716,16 @@ sub read_module_result($) {
     my $result = read_json_file("result-$test.json");
     return unless $result;
     for my $d (@{$result->{details}}) {
+        if ($d->{json}) {
+            my $jsonfile = $d->{json};
+            $jsonfile = substr $jsonfile, length($OpenQA::Utils::prjdir) + 1, length($jsonfile);
+            $d->{json} = $jsonfile;
+        }
+        for my $n (@{$d->{needles}}) {
+            my $jsonfile = $n->{json};
+            $jsonfile = substr $jsonfile, length($OpenQA::Utils::prjdir) + 1, length($jsonfile);
+            $n->{json} = $jsonfile;
+        }
         for my $type (qw(screenshot audio text)) {
             my $file = $d->{$type};
             next unless $file;
@@ -725,7 +779,7 @@ sub backend_running {
 }
 
 sub check_backend {
-    print "checking backend state ...\n" if $verbose;
+    log_debug("checking backend state") if $verbose;
     my $res = engine_check;
     if ($res && $res ne 'ok') {
         stop_job($res);

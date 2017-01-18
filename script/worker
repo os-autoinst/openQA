@@ -108,7 +108,6 @@ Getopt::Long::Configure("no_ignore_case");
 use OpenQA::Worker;
 
 my %options;
-my $worker_settings;
 
 sub usage($) {
     my $r = shift;
@@ -125,35 +124,49 @@ GetOptions(
 
 usage(0) if ($options{help});
 
-sub read_worker_config($) {
-    my $instance   = shift;
+sub read_worker_config {
+    my ($instance, $host) = @_;
     my $worker_dir = $ENV{OPENQA_CONFIG} || '/etc/openqa';
-    my $cfg        = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
+    my $cfg = Config::IniFiles->new(-file => $worker_dir . '/workers.ini');
 
     my $sets = {};
-    foreach my $section ('global', $instance) {
+    for my $section ('global', $instance) {
         if ($cfg && $cfg->SectionExists($section)) {
-            foreach my $set ($cfg->Parameters($section)) {
+            for my $set ($cfg->Parameters($section)) {
                 $sets->{uc $set} = $cfg->val($section, $set);
             }
         }
     }
-    $sets->{'HOST'} ||= "localhost";
+    # use separate set as we may not want to advertise other host confiuration to the world in job settings
+    my $host_settings;
+    $host ||= $sets->{'HOST'} ||= 'localhost';
+    delete $sets->{'HOST'};
+    my @hosts = split / /, $host;
+    for my $section (@hosts) {
+        if ($cfg && $cfg->SectionExists($section)) {
+            for my $set ($cfg->Parameters($section)) {
+                $host_settings->{$section}{uc $set} = $cfg->val($section, $set);
+            }
+        }
+        else {
+            $host_settings->{$section} = {};
+        }
+    }
+    $host_settings->{'HOSTS'} = \@hosts;
 
-    return $sets;
+    return $sets, $host_settings;
 }
 
-$worker_settings = read_worker_config($options{instance});
+# count workers from 1 if not set - if tap devices are used worker would try to use tap -1
+$options{instance} ||= 1;
 
-$options{instance} ||= 0;
-$options{host} ||= $worker_settings->{'HOST'};
+my ($worker_settings, $host_settings) = read_worker_config($options{instance}, $options{host});
 
 # XXX: this should be sent to the scheduler to be included in the worker's table
 $ENV{QEMUPORT} = ($options{instance}) * 10 + 20002;
 $ENV{VNC}      = ($options{instance}) + 90;
-($ENV{OPENQA_HOSTNAME}) = $options{host} =~ m|([^/]+:?\d*)/?$|;
 
-OpenQA::Worker::init($worker_settings, %options);
-OpenQA::Worker::main();
+OpenQA::Worker::init($worker_settings, $host_settings, %options);
+OpenQA::Worker::main($host_settings);
 
 # vim: set sw=4 sts=4 et:

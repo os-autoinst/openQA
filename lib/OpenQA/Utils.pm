@@ -25,6 +25,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &file_content
   &log_debug
   &log_warning
+  &log_info
   &log_error
   &save_base64_png
   &run_cmd_with_log
@@ -60,21 +61,20 @@ if ($0 =~ /\.t$/) {
 
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use File::Basename;
-use File::Spec::Functions 'catfile';
+use File::Spec::Functions qw(catfile catdir);
 use Fcntl;
 use JSON "decode_json";
 use Mojo::Util 'xml_escape';
-our $basedir     = $ENV{OPENQA_BASEDIR} || "/var/lib";
-our $prj         = "openqa";
-our $prjdir      = "$basedir/$prj";
-our $resultdir   = "$prjdir/testresults";
-our $assetdir    = "$prjdir/factory";
-our $isodir      = "$assetdir/iso";
-our $hdddir      = "$assetdir/hdd";
-our $otherdir    = "$assetdir/other";
-our $imagesdir   = "$prjdir/images";
-our $hostname    = $ENV{SERVER_NAME};
-our $testcasedir = "$prjdir/share/tests";
+our $basedir   = $ENV{OPENQA_BASEDIR} || "/var/lib";
+our $prj       = "openqa";
+our $prjdir    = "$basedir/$prj";
+our $resultdir = "$prjdir/testresults";
+our $assetdir  = "$prjdir/factory";
+our $isodir    = "$assetdir/iso";
+our $hdddir    = "$assetdir/hdd";
+our $otherdir  = "$assetdir/other";
+our $imagesdir = "$prjdir/images";
+our $hostname  = $ENV{SERVER_NAME};
 our $app;
 
 # the desired new folder structure is
@@ -101,10 +101,21 @@ sub testcasedir($$) {
     my $version = shift;
     # TODO actually "distri" is misused here. It should rather be something
     # like the name of the repository with all tests
-    my $dir = "$testcasedir/$distri";
+    my ($dir) = grep { -d } (catdir($prjdir, 'share', 'tests', $distri), catdir($prjdir, 'tests', $distri));
     $dir .= "-$version" if $version && -e "$dir-$version";
 
     return $dir;
+}
+
+# Call this when $prjdir is changed to re-evaluate all dependent directories
+sub change_prjdir {
+    $prjdir    = shift;
+    $resultdir = "$prjdir/testresults";
+    $assetdir  = "$prjdir/factory";
+    $isodir    = "$assetdir/iso";
+    $hdddir    = "$assetdir/hdd";
+    $otherdir  = "$assetdir/other";
+    $imagesdir = "$prjdir/images";
 }
 
 sub needledir {
