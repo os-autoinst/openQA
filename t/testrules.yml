@@ -21,7 +21,6 @@ seq:
      - ./t/16-utils-runcmd.t
      - ./t/16-utils.t
      - ./t/17-build_tagging.t
-     - ./t/17-labels_carry_over.t
      - ./t/18-fedmsg.t
      - ./t/19-tests-export.t
      - ./t/20-workers-ws.t
