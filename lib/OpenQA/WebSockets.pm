@@ -36,26 +36,25 @@ sub _is_method_allowed {
 
 sub run {
     # config Mojo to get reactor
-    my $server = OpenQA::WebSockets::Server->setup();
+    my $server = OpenQA::WebSockets::Server->setup;
     # start DBus
-    my $self = OpenQA::WebSockets->new($server->ioloop->reactor);
+    my $self = OpenQA::WebSockets->new;
     $self->{server} = $server;
     # start IOLoop
     $server->run;
 }
 
 sub new {
-    my ($class, $reactor) = @_;
+    my ($class) = @_;
     $class = ref $class || $class;
-    # register @ IPC - we use DBus reactor here for symplicity
-    my $ipc = OpenQA::IPC->ipc($reactor);
+    my $ipc = OpenQA::IPC->ipc(1);
     return unless $ipc;
     my $service = $ipc->register_service('websockets');
     my $self = $class->SUPER::new($service, '/WebSockets');
     $self->{ipc} = $ipc;
     bless $self, $class;
     # hook DBus to Mojo reactor
-    $ipc->manage_events($reactor, $self);
+    $ipc->manage_events(Mojo::IOLoop->singleton->reactor, $self);
 
     return $self;
 }

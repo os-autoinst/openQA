@@ -1,4 +1,6 @@
-# Copyright (C) 2015 SUSE Linux GmbH
+#! /usr/bin/perl
+
+# Copyright (C) 2015-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +18,7 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base -strict;

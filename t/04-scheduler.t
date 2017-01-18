@@ -18,10 +18,10 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use strict;
-use OpenQA::IPC;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
@@ -68,9 +68,8 @@ sub nots {
 }
 
 # create Test DBus bus and service for fake WebSockets
-my $ipc = OpenQA::IPC->ipc('', 1);
-my $ws  = OpenQA::WebSockets->new();
-my $sh  = OpenQA::Scheduler->new();
+my $ws = OpenQA::WebSockets->new();
+my $sh = OpenQA::Scheduler->new();
 
 my $current_jobs = list_jobs();
 is_deeply($current_jobs, [], "assert database has no jobs to start with")

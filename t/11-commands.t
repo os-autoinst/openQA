@@ -1,4 +1,6 @@
-# Copyright (C) 2014 SUSE Linux Products GmbH
+#! /usr/bin/perl
+
+# Copyright (C) 2014-2017 SUSE Linux Products GmbH
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +17,7 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Test::More;
@@ -28,7 +31,6 @@ use OpenQA::WebSockets;
 OpenQA::Test::Case->new->init_data;
 
 # create Test DBus bus and service for fake WebSockets call
-my $ipc = OpenQA::IPC->ipc('', 1);
 my $ws = OpenQA::WebSockets->new;
 
 # monkey patch ws_send of OpenQA::WebSockets::Server to store received command

@@ -1,3 +1,5 @@
+#! /usr/bin/perl
+
 # Copyright (C) 2015 SUSE Linux GmbH
 #
 # This program is free software; you can redistribute it and/or modify
@@ -16,6 +18,7 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base -strict;
@@ -25,14 +28,12 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use Data::Dumper;
 
-use OpenQA::IPC;
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
 
 # create Test DBus bus and service for fake WebSockets and Scheduler call
-my $ipc = OpenQA::IPC->ipc('', 1);
-my $ws  = OpenQA::WebSockets->new;
-my $sh  = OpenQA::Scheduler->new;
+my $ws = OpenQA::WebSockets->new;
+my $sh = OpenQA::Scheduler->new;
 
 # optional but very useful
 eval 'use Test::More::Color';

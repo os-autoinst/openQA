@@ -22,6 +22,7 @@ BEGIN {
     unshift @INC, 'lib';
     $ENV{OPENQA_CONFIG}  = 't/full-stack.d/config';
     $ENV{OPENQA_BASEDIR} = abs_path('t/full-stack.d');
+    # DO NOT SET OPENQA_IPC_TEST HERE
 }
 
 use Mojo::Base -strict;
@@ -194,9 +195,7 @@ for ($count = 0; $count < 130; $count++) {
     sleep 1;
 }
 
-# TODO: this creates a deadlock we need to sort. The loading of /livelog triggers a ws_send from the webui
-# to the worker but the worker is trying to upload the status so it won't reply to the websocket and so
-# all stalls. Until dbus times out
+# TODO: there can be console logs if the /status returns 404
 # is(pp($driver->get_log('browser')), "[]", "no console logs");
 
 print "PASSED after $count seconds\n";
