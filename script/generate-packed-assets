@@ -60,6 +60,7 @@ export OPENQA_BASEDIR=$DIR
 export OPENQA_LOGFILE="$DIR/logfile"
 export MOJO_TMPDIR="$DIR/tmp"
 export OPENQA_DATABASE=test
+export OPENQA_TEST_IPC=1
 
 # 'version' is the smallest codepath we can hit to produce the assets
 ./script/openqa eval '1+0' -m test > /dev/null

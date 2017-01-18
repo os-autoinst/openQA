@@ -480,7 +480,6 @@ sub startup {
         log_warning('Running in test mode - dbus services mocked');
         require OpenQA::WebSockets;
         require OpenQA::Scheduler;
-        OpenQA::IPC->ipc('', 1);
         OpenQA::WebSockets->new;
         OpenQA::Scheduler->new;
     }
