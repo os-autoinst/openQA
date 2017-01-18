@@ -84,7 +84,7 @@ travis:
 	if test "x$$TRAVIS" != "xtrue"; then \
 	  echo "You shouldn't run this outside of travis-ci env" ;\
 	  exit 1 ;\
-	fi
+	fi ;\
 	export MOJO_LOG_LEVEL=debug ;\
 	export MOJO_TMPDIR=$$(mktemp -d) ;\
 	export OPENQA_LOGFILE=/tmp/openqa-debug.log ;\
@@ -114,9 +114,11 @@ coverage:
 
 COVER_REPORT_OPTS ?= -select_re ^lib/
 
-.PHONY: coverage-codecov
-coverage-codecov: coverage
-	cover $(COVER_REPORT_OPTS) -report codecov
+.PHONY: travis-codecov
+travis-codecov: coverage
+	if test "x$$GH_PUBLISH" != xtrue; then \
+	   cover $(COVER_REPORT_OPTS) -report codecov ;\
+	fi
 
 .PHONY: coverage-html
 coverage-html: coverage

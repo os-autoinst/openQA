@@ -34,8 +34,7 @@ install:
   - cpanm -nq --installdeps --with-feature=coverage .
 script:
   - bash script/generate-documentation $encrypted_e2c381aa6b8c_key $encrypted_e2c381aa6b8c_iv
-  # 'coverage-codecov' calls checkstyle, tests and coverage analysis
-  - make coverage-codecov
+  - make travis-codecov
 after_failure:
   - cat /tmp/openqa-debug.log
 cache:
