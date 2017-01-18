@@ -234,6 +234,7 @@ sub startup {
 
     # Default route
     $r->get('/')->name('index')->to('main#index');
+    $r->get('/changelog')->name('changelog')->to('main#changelog');
 
     # shorter version of route to individual job results
     $r->get('/t:testid' => sub { shift->redirect_to('test') });
