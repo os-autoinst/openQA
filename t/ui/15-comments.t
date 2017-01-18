@@ -55,11 +55,7 @@ $get->element_exists('.badge-all-passed', 'exactly one build is marked as \'revi
 
 $driver->find_element_by_link_text('opensuse')->click();
 
-is(
-    $driver->find_element('h2:first-of-type')->get_text(),
-    "Last Builds for opensuse\nEDIT JOB GROUP",
-    'on group overview'
-);
+is($driver->find_element('h2:first-of-type')->get_text(), 'Last Builds for opensuse', 'on group overview');
 
 # define test message
 my $test_message             = "This is a cool test ☠";
