@@ -27,6 +27,8 @@ function update_docs {
         mkdir -p docs
         cp -r ${tmpwd}/output/* docs
         cd docs
+        ls -l 
+        git add images
         update_api
         ln -f openqa-documentation-${verbose_doc_name}.html index.html
         ln -f openqa-documentation-${verbose_doc_name}.pdf current.pdf
