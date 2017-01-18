@@ -148,16 +148,11 @@ sub add_workaround_property() {
     is($driver->find_element_by_id('property_workaround')->is_selected(), 1, "workaround property selected");
 }
 
-sub change_needle_value($$) {
+sub create_needle {
     my ($xoffset, $yoffset) = @_;
 
     my $pre_offset = 10;    # we need this value as first position the cursor moved on
-    my $decode_new_textarea;
-
-    $elem            = $driver->find_element_by_id('needleeditor_textarea');
-    $decode_textarea = decode_json($elem->get_value());
-
-    $elem = $driver->find_element_by_id('needleeditor_canvas');
+    my $elem = $driver->find_element_by_id('needleeditor_canvas');
     $driver->mouse_move_to_location(
         element => $elem,
         xoffset => $decode_textarea->{area}[0]->{xpos} + $pre_offset,
@@ -171,9 +166,17 @@ sub change_needle_value($$) {
     );
     $driver->button_up();
     t::ui::PhantomTest::wait_for_ajax;
-    $elem = $driver->find_element_by_id('needleeditor_textarea');
+}
+
+sub change_needle_value($$) {
+    my ($xoffset, $yoffset) = @_;
+
+    decode_json($driver->find_element_by_id('needleeditor_textarea')->get_value());
+    create_needle($xoffset, $yoffset);
+
     # check the value of textarea again
-    $decode_new_textarea = decode_json($elem->get_value());
+    my $elem                = $driver->find_element_by_id('needleeditor_textarea');
+    my $decode_new_textarea = decode_json($elem->get_value());
     is($decode_new_textarea->{area}[0]->{xpos}, $xoffset, "new xpos correct");
     is($decode_new_textarea->{area}[0]->{ypos}, $yoffset, "new ypos correct");
 
@@ -220,7 +223,6 @@ sub overwrite_needle($) {
     is($driver->find_element_by_id('needleeditor_name')->get_value(), "$needlename", "new needle name inputed");
     $driver->find_element_by_id('save')->click();
     t::ui::PhantomTest::wait_for_ajax;
-
     my $diag;
     $diag = $driver->find_element_by_id('modal-overwrite');
     is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "We can see the overwrite dialog");
@@ -329,6 +331,17 @@ subtest 'Deletion of needle is handled gracefully' => sub {
         'Could not find needle: inst-timezone-text for opensuse 13.1',
         'warning about deleted needle is displayed'
     );
+};
+
+subtest 'areas/tags verified via JavaScript' => sub {
+    $driver->get('/tests/99938/modules/logpackages/steps/1/edit');
+    $driver->find_element_by_id('save')->click();
+    is(
+        $driver->find_element('.alert-danger span')->get_text(),
+        "Unable to save needle:\nNo tags specified.\nNo areas defined.",
+        'areas/tags verified via JavaScript'
+    );
+    $driver->find_element('.alert-danger button')->click();
 };
 
 t::ui::PhantomTest::kill_phantom();
