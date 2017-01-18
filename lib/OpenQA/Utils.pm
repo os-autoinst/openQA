@@ -376,6 +376,7 @@ my %bugrefs = (
     boo => 'https://bugzilla.opensuse.org/show_bug.cgi?id=',
     bgo => 'https://bugzilla.gnome.org/show_bug.cgi?id=',
     brc => 'https://bugzilla.redhat.com/show_bug.cgi?id=',
+    bko => 'https://bugzilla.kernel.org/show_bug.cgi?id=',
     poo => 'https://progress.opensuse.org/issues/',
     gh  => 'https://github.com/',
 );
@@ -385,6 +386,7 @@ my %bugurls = (
     $bugrefs{boo}                                  => 'boo',
     $bugrefs{bgo}                                  => 'bgo',
     $bugrefs{brc}                                  => 'brc',
+    $bugrefs{bko}                                  => 'bko',
     $bugrefs{poo}                                  => 'poo',
     $bugrefs{gh}                                   => 'gh',
 );
