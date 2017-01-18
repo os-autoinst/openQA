@@ -1,4 +1,4 @@
-# Copyright (C) 2016 SUSE LLC
+# Copyright (C) 2016-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,6 +27,7 @@ use Test::Mojo;
 use Test::Warnings;
 use Test::Output qw(stdout_like stderr_like);
 use Test::Fatal;
+#use Scalar::Utils 'refaddr';
 
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Jobs;
@@ -58,7 +59,7 @@ ok($hosts->{this_host_should_not_exist}{url}, 'url object created');
 is($hosts->{this_host_should_not_exist}{workerid}, undef, 'worker not registered yet');
 
 # api_call
-eval { api_call() };
+eval { OpenQA::Worker::Common::api_call() };
 ok($@, 'no action or no worker id set');
 
 $hosts->{this_host_should_not_exist}{workerid} = 1;
@@ -66,12 +67,12 @@ $current_host = 'this_host_should_not_exist';
 
 sub test_via_io_loop {
     my ($test_function) = @_;
-    add_timer('api_call', 0, $test_function, 1);
+    add_timer('call', 0, $test_function, 1);
     Mojo::IOLoop->start;
 }
 
 test_via_io_loop sub {
-    api_call(
+    OpenQA::Worker::Common::api_call(
         'post', 'jobs/500/status',
         json          => {status => 'RUNNING'},
         ignore_errors => 1,
@@ -80,7 +81,7 @@ test_via_io_loop sub {
 
     stderr_like(
         sub {
-            api_call(
+            OpenQA::Worker::Common::api_call(
                 'post', 'jobs/500/status',
                 json  => {status => 'RUNNING'},
                 tries => 1,
@@ -90,6 +91,79 @@ test_via_io_loop sub {
         qr/.*\[ERROR\] Connection error:.*(remaining tries: 0).*/i,
         'warning about 503 error'
     );
+};
+
+$ENV{OPENQA_CONFIG} = 't';
+open(my $fh, '>>', $ENV{OPENQA_CONFIG} . '/client.conf') or die 'can not open client.conf for appending';
+print $fh "[host1]\nkey=1234\nsecret=1234\n";
+print $fh "[host2]\nkey=1234\nsecret=1234\n";
+print $fh "[host3]\nkey=1234\nsecret=1234\n";
+close $fh or die 'can not close client.conf after writing';
+
+subtest 'api init with multiple webuis' => sub {
+    OpenQA::Worker::Common::api_init({HOSTS => ['host1', 'host2', 'host3']});
+    for my $h (qw(host1 host2 host3)) {
+        ok($hosts->{$h},      "host $h entry present");
+        ok($hosts->{$h}{ua},  "ua object for $h present");
+        ok($hosts->{$h}{url}, "url object for $h present");
+        is($hosts->{$h}{workerid}, undef, "worker not registered after api_init for $h");
+    }
+};
+
+no warnings 'redefine';
+# redefine imported api_call within OpenQA::Worker::Jobs
+sub api_call {
+    my %args = @_;
+    $args{callback}->({job => {id => 10}});
+}
+*OpenQA::Worker::Jobs::api_call = \&api_call;
+
+# simulate we accepted the job
+sub OpenQA::Worker::Jobs::start_job {
+    my $host = shift;
+    $OpenQA::Worker::Common::job = "job set from $host";
+    Mojo::IOLoop->stop();
+}
+
+$hosts->{host1}{workerid} = 2;
+$hosts->{host2}{workerid} = 2;
+
+subtest 'check_job works when no job, then is ignored' => sub {
+    test_via_io_loop sub { OpenQA::Worker::Jobs::check_job('host1') };
+    while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
+    is($OpenQA::Worker::Common::job, 'job set from host1', 'job set');
+
+    test_via_io_loop sub { OpenQA::Worker::Jobs::check_job('host2'); Mojo::IOLoop->stop };
+    while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
+    is($OpenQA::Worker::Common::job, 'job set from host1', 'job still the same');
+};
+
+subtest 'test timer helpers' => sub {
+    my $t_recurrent = add_timer('recurrent', 5, sub { 1 });
+    ok(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent},            'timer registered in reactor');
+    ok(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{recurring}, 'timer is recurrent');
+    # add singleshot timer
+    my $t_single = add_timer('single', 6, sub { 1 }, 1);
+    ok(Mojo::IOLoop->singleton->reactor->{timers}{$t_single},             'timer registered in reactor');
+    ok(!Mojo::IOLoop->singleton->reactor->{timers}{$t_single}{recurring}, 'timer is not recurrent');
+    # remove timer
+    remove_timer('nonexistent');
+    remove_timer($t_single);
+    ok(!Mojo::IOLoop->singleton->reactor->{timers}{$t_single}, 'timer removed by timerid');
+    remove_timer('recurrent');
+    ok(!Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}, 'timer removed by timer mapping');
+    # change timer
+    is(change_timer('nonexistent'), undef, 'no timer id when trying to change nonexistent timer');
+    #my $xref = refaddr $x;
+    $t_recurrent = add_timer('recurrent', 5, sub { 1 });
+    is(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{after}, 5, 'timer registered for 5s');
+    my $x = Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{cb};
+    $t_recurrent = change_timer('recurrent', 10);
+    is(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{after},  10, 'timer registered for 10s');
+    is(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{cb}->(), 1,  'timer function match x');
+    $t_recurrent = change_timer('recurrent', 6, sub { 2 });
+    is(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{after},  6, 'timer registered for 6s');
+    is(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{cb}->(), 2, 'timer function match y');
 };
 
 done_testing();

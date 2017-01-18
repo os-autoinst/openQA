@@ -30,6 +30,7 @@ use Test::Output qw(stderr_like);
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
+require OpenQA::Worker::Commands;
 
 my $schema = OpenQA::Test::Database->new->create();
 OpenQA::Scheduler->new;
@@ -66,4 +67,66 @@ subtest 'worker with job and not updated in last 50s is considered dead' => sub 
     _check_job_incomplete($_) for (99961, 99963);
 };
 
+my $ws = testUA->new;
+
+no warnings qw(redefine once);
+*OpenQA::Worker::Commands::stop_job = sub {
+    my $reason = shift;
+    $OpenQA::Worker::Common::job = $reason;
+};
+
+*OpenQA::Worker::Commands::backend_running = sub {
+    return 1;
+};
+
+subtest 'worker accepted ws commands' => sub {
+    $OpenQA::Worker::Common::verbose      = 1;
+    $OpenQA::Worker::Common::hosts        = {host1 => {ws => $ws}};
+    $OpenQA::Worker::Common::ws_to_host   = {$ws => 'host1'};
+    $OpenQA::Worker::Common::current_host = 'host1';
+
+    for my $c (qw(quit abort cancel obsolete)) {
+        $OpenQA::Worker::Common::job = {id => 'job'};
+        OpenQA::Worker::Commands::websocket_commands($ws, {type => $c});
+        is($OpenQA::Worker::Common::job, $c, "job aborted as $c");
+    }
+
+    $OpenQA::Worker::Common::job = {id => 'job', URL => '127.0.0.1/nojob'};
+    for my $c (qw(stop_waitforneedle continue_waitforneedle)) {
+        OpenQA::Worker::Commands::websocket_commands($ws, {type => $c});
+        is($ws->get_last_command->[0]{json}{type}, 'property_change');
+        is($ws->get_last_command->[0]{json}{data}{waitforneedle}, $c eq 'stop_waitforneedle' ? 1 : 0);
+    }
+
+    for my $c (qw(enable_interactive_mode disable_interactive_mode)) {
+        OpenQA::Worker::Commands::websocket_commands($ws, {type => $c});
+        is($ws->get_last_command->[0]{json}{type}, 'property_change');
+        is($ws->get_last_command->[0]{json}{data}{interactive_mode}, $c eq 'enable_interactive_mode' ? 1 : 0);
+    }
+
+    $OpenQA::Worker::Common::pooldir = 't';
+    OpenQA::Worker::Commands::websocket_commands($ws, {type => 'livelog_start'});
+    is($OpenQA::Worker::Jobs::do_livelog, 1, 'livelog is started');
+    OpenQA::Worker::Commands::websocket_commands($ws, {type => 'livelog_stop'});
+    is($OpenQA::Worker::Jobs::do_livelog, 0, 'livelog is stopped');
+};
+
 done_testing();
+
+package testUA;
+sub new {
+    my $type = shift;
+    return bless {}, $type;
+}
+
+sub send {
+    my $self = shift;
+    push @{$self->{commands}}, \@_;
+}
+
+sub get_last_command {
+    my $self = shift;
+    return $self->{commands}[-1];
+}
+
+1;
