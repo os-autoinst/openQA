@@ -285,14 +285,15 @@ sub setup {
     $connect_signal = sub {
         try {
             log_debug "connecting scheduler signal";
-            OpenQA::IPC->ipc->service('scheduler')->connect_to_signal(JobsAvailable => \&jobs_available);
+            OpenQA::IPC->ipc(1)->service('scheduler')->connect_to_signal(JobsAvailable => \&jobs_available);
         }
         catch {
             log_debug "scheduler connect failed, retrying in 2 seconds";
             Mojo::IOLoop->timer(2 => $connect_signal);
         };
     };
-    $connect_signal->();
+    # delay that until the ioloop is up
+    Mojo::IOLoop->next_tick($connect_signal);
 
     return Mojo::Server::Daemon->new(app => app, listen => ["$listen"]);
 }

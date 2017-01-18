@@ -40,18 +40,21 @@ my %services      = (
 my %handles;
 
 sub new {
-    my ($class, $reactor, $test) = @_;
+    my ($class, $no_main_loop) = @_;
     $class = ref $class || $class;
     my $self = {};
     bless $self, $class;
 
+    # avoid undef
+    $no_main_loop //= 0;
+
     my $bus;
-    if (!$test) {
-        # for WebAPI and WebSockets we use Mojo with its own event loop, so use external reactor if supplied
-        $bus = Net::DBus->find(nomainloop => $reactor ? 1 : 0);
+    if ($ENV{OPENQA_TEST_IPC}) {
+        $bus = Net::DBus->test;
     }
     else {
-        $bus = Net::DBus->test;
+        # for WebAPI and WebSockets we use Mojo with its own event loop, so use external reactor if supplied
+        $bus = Net::DBus->find(nomainloop => $no_main_loop);
     }
     return unless $bus;
     $self->{bus} = $bus;
@@ -74,42 +77,40 @@ sub register_service {
 sub manage_events {
     my ($self, $reactor, $object) = @_;
     return unless $reactor;
-    if (ref($reactor) =~ /Mojo::Reactor/) {
-        # Hook DBus events to Mojo::Reactor
-        my $c = $self->{bus}->get_connection;
-        $c->set_watch_callbacks(
-            sub {
-                my ($object, $watch) = @_;
-                $self->_manage_watch_on($reactor, $watch);
-            },
-            sub {
-                my ($object, $watch) = @_;
-                $self->_manage_watch_off($reactor, $watch);
-            },
-            sub {
-                my ($object, $watch) = @_;
-                $self->_manage_watch_toggle($reactor, $watch);
-            },
-        );
-        # TODO add timeout
-        #             $c->set_timeout_callbacks(sub{
-        #                     my ($object, $watch) = @_;
-        #                     $self->_manage_timeout_on($reactor, $watch);
-        #                 },
-        #                 sub {return},
-        #                 sub {return},
-        #             );
-        if ($c->can("dispatch")) {
-            my $cb = Net::DBus::Callback->new(object => $c, method => "dispatch", args => []);
-            $reactor->on('dbus-dispatch' => sub { $cb->invoke });
-        }
-        if ($c->can("flush")) {
-            my $cb = Net::DBus::Callback->new(object => $c, method => "flush", args => []);
-            $reactor->on('dbus-flush' => sub { $cb->invoke });
-        }
+    die 'Unsupported reactor' unless ref($reactor) =~ /Mojo::Reactor/;
+    return if $ENV{OPENQA_TEST_IPC};
+
+    # Hook DBus events to Mojo::Reactor
+    my $c = $self->{bus}->get_connection;
+    $c->set_watch_callbacks(
+        sub {
+            my ($object, $watch) = @_;
+            $self->_manage_watch_on($reactor, $watch);
+        },
+        sub {
+            my ($object, $watch) = @_;
+            $self->_manage_watch_off($reactor, $watch);
+        },
+        sub {
+            my ($object, $watch) = @_;
+            $self->_manage_watch_toggle($reactor, $watch);
+        },
+    );
+    # TODO add timeout
+    #             $c->set_timeout_callbacks(sub{
+    #                     my ($object, $watch) = @_;
+    #                     $self->_manage_timeout_on($reactor, $watch);
+    #                 },
+    #                 sub {return},
+    #                 sub {return},
+    #             );
+    if ($c->can("dispatch")) {
+        my $cb = Net::DBus::Callback->new(object => $c, method => "dispatch", args => []);
+        $reactor->on('dbus-dispatch' => sub { $cb->invoke });
     }
-    else {
-        die 'Unsupported reactor';
+    if ($c->can("flush")) {
+        my $cb = Net::DBus::Callback->new(object => $c, method => "flush", args => []);
+        $reactor->on('dbus-flush' => sub { $cb->invoke });
     }
 }
 

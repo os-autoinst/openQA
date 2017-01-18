@@ -1,4 +1,6 @@
-# Copyright (C) 2016 SUSE LLC
+#! /usr/bin/perl
+
+# Copyright (C) 2016-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +17,8 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
+
 }
 
 use strict;
@@ -23,13 +27,11 @@ use DateTime;
 use Test::More;
 use Test::Warnings;
 use Test::Output qw(stderr_like);
-use OpenQA::IPC;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 
 my $schema = OpenQA::Test::Database->new->create();
-my $ipc = OpenQA::IPC->ipc('', 1);
 OpenQA::Scheduler->new;
 OpenQA::WebSockets->new;
 

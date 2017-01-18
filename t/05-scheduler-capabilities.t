@@ -18,11 +18,11 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use strict;
 use Data::Dump qw(pp dd);
-use OpenQA::IPC;
 use OpenQA::Scheduler;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
@@ -35,7 +35,6 @@ my $schema = OpenQA::Test::Database->new->create;    #(skip_fixtures => 1);
 #my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 # create Test DBus bus and service for fake WebSockets call
-my $ipc = OpenQA::IPC->ipc('', 1);
 my $ws = OpenQA::WebSockets->new;
 
 sub list_jobs {

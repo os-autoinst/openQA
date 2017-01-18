@@ -1,4 +1,6 @@
-# Copyright (C) 2015 SUSE Linux Products GmbH
+#! /usr/bin/perl
+
+# Copyright (C) 2015-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,6 +17,7 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use Mojo::Base -strict;
@@ -25,15 +28,13 @@ use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
 use Digest::MD5;
-use OpenQA::IPC;
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
 require OpenQA::Schema::Result::Jobs;
 
 # create Test DBus bus and service for fake WebSockets and Scheduler call
-my $ipc = OpenQA::IPC->ipc('', 1);
-my $ws  = OpenQA::WebSockets->new;
-my $sh  = OpenQA::Scheduler->new;
+my $ws = OpenQA::WebSockets->new;
+my $sh = OpenQA::Scheduler->new;
 
 sub calculate_file_md5($) {
     my ($file) = @_;

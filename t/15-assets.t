@@ -1,4 +1,4 @@
-#!/bin/perl
+#! /usr/bin/perl
 
 # Copyright (c) 2015 SUSE LINUX GmbH, Nuernberg, Germany.
 #
@@ -17,6 +17,7 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use strict;
@@ -28,13 +29,11 @@ use Test::More;
 use Test::Warnings;
 use OpenQA::Scheduler::Scheduler qw(job_grab job_restart);
 use OpenQA::WebAPI::Controller::API::V1::Worker;
-use OpenQA::IPC;
 use OpenQA::WebSockets;
 use OpenQA::Test::Database;
 use OpenQA::Utils;
 
 # create Test DBus bus and service for fake WebSockets call
-my $ipc = OpenQA::IPC->ipc('', 1);
 my $ws = OpenQA::WebSockets->new;
 
 my $schema;

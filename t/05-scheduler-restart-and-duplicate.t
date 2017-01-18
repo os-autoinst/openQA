@@ -18,6 +18,7 @@
 
 BEGIN {
     unshift @INC, 'lib';
+    $ENV{OPENQA_TEST_IPC} = 1;
 }
 
 use strict;
@@ -32,7 +33,6 @@ use Test::Warnings;
 use Test::Output qw(stderr_like);
 
 # create Test DBus bus and service for fake WebSockets call
-my $ipc = OpenQA::IPC->ipc('', 1);
 my $ws = OpenQA::WebSockets->new;
 
 my $schema = OpenQA::Test::Database->new->create();
