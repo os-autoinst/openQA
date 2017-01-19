@@ -1,5 +1,7 @@
 codecov:
   branch: master
+  notify:
+    after_n_builds: 4
 comment:
   behavior: default
   require_changes: true
@@ -9,19 +11,13 @@ coverage:
   - 60.0
   - 95.0
   round: down
-  notify:
-    irc:
-      default:
-        server: chat.freenode.net
-        channel: '##opensuse-factory'
-        threshold: 0.01
   status:
     changes:
       default:
         branches: null
     project:
       default:
-        target: 83.2
+        target: 85.3
         threshold: 0.1
     patch:
       default:
