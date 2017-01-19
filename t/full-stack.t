@@ -140,6 +140,7 @@ else {
 my $connect_args = "--apikey=1234567890ABCDEF --apisecret=1234567890ABCDEF --host=http://localhost:$mojoport";
 
 make_path('t/full-stack.d/openqa/share/factory/iso');
+unlink('t/full-stack.d/openqa/share/factory/iso/pitux-0.3.2.iso');
 symlink(abs_path("../os-autoinst/t/data/pitux-0.3.2.iso"), "t/full-stack.d/openqa/share/factory/iso/pitux-0.3.2.iso")
   || die "can't symlink";
 
@@ -195,8 +196,7 @@ for ($count = 0; $count < 130; $count++) {
     sleep 1;
 }
 
-# TODO: there can be console logs if the /status returns 404
-# is(pp($driver->get_log('browser')), "[]", "no console logs");
+is(pp($driver->get_log('browser')), "[]", "no console logs");
 
 print "PASSED after $count seconds\n";
 system("cat t/full-stack.d/openqa/testresults/00000/00000001-$job_name/autoinst-log.txt");

@@ -29,8 +29,12 @@ sub init {
 
     my $job = $self->app->schema->resultset("Jobs")->find($self->param('testid'));
 
-    unless (defined $job && $job->worker) {
+    unless (defined $job) {
         $self->reply->not_found;
+        return 0;
+    }
+    if (!$job->worker) {
+        $self->render(json => {state => $job->state});
         return 0;
     }
     $self->stash('job', $job);

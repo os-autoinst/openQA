@@ -14,15 +14,15 @@ var testStatus = {
 
 // Update global variable testStatus
 function updateTestStatus(newStatus) {
+    if (newStatus.state != 'running' && newStatus.state != 'waiting') {
+        setTimeout(function() {location.reload();}, 2000);
+        return;
+    }
     testStatus.workerid = newStatus.workerid;
     testStatus.interactive = newStatus.interactive == true;
     testStatus.needinput = newStatus.needinput == true;
     testStatus.stop_waitforneedle_requested = newStatus.stop_waitforneedle_requested == true;
     updateInteractiveIndicator();
-    if (newStatus.state != 'running' && newStatus.state != 'waiting') {
-          setTimeout(function() {location.reload();}, 2000);
-          return;
-    }
     $('#running_module').text(newStatus.running);
 
     // Reload broken thumbnails (that didn't exist yet when being requested) every 7 sec
