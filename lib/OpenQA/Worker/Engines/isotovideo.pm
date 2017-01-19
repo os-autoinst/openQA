@@ -126,6 +126,7 @@ sub engine_workit($) {
     }
 
     $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
+    $vars{PRJDIR}     = $OpenQA::Utils::prjdir;
     $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION});
     $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION});
     _save_vars(\%vars);
