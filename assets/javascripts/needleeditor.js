@@ -346,6 +346,18 @@ function reactToSaveNeedle(data) {
 
 function saveNeedle(e) {
   var form = $("#save_needle_form");
+  var errors = [];
+  var selection = window.needles[$('#tags_select').val()];
+  if(!selection.tags.length) {
+      errors.push('No tags specified.');
+  }
+  if(!selection.matches.length) {
+      errors.push('No areas defined.');
+  }
+  if(errors.length) {
+      addFlash('danger', '<strong>Unable to save needle:</strong><ul><li>' + errors.join('</li><li>') + '</li></ul>');
+      return false;
+  }
   $('#save').prop('disabled', true);
   $.ajax({
     type: "POST",
