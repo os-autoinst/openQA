@@ -24,7 +24,7 @@ use Mojo::IOLoop;
 use File::Spec::Functions 'catdir';
 
 use OpenQA::Client;
-use OpenQA::Utils qw(log_error log_debug);
+use OpenQA::Utils qw(log_error log_info log_debug);
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Commands;
 use OpenQA::Worker::Pool qw(lockit clean_pool);
