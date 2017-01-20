@@ -95,12 +95,12 @@ sub latest_jobs {
     my @latest;
     my %seen;
     foreach my $job (@jobs) {
-        my $distri  = $job->DISTRI;
-        my $version = $job->VERSION;
-        my $build   = $job->BUILD;
-        my $test    = $job->TEST;
-        my $flavor  = $job->FLAVOR || 'sweet';
-        my $arch    = $job->ARCH || 'noarch';
+        my $distri  = $job->DISTRI  || 'nodistri';
+        my $version = $job->VERSION || 'noversion';
+        my $build   = $job->BUILD   || 'nobuild';
+        my $test    = $job->TEST    || 'notest';
+        my $flavor  = $job->FLAVOR  || 'sweet';
+        my $arch    = $job->ARCH    || 'noarch';
         my $machine = $job->MACHINE || 'nomachine';
         my $key     = "$distri-$version-$build-$test-$flavor-$arch-$machine";
         next if $seen{$key}++;
