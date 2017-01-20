@@ -352,7 +352,7 @@ sub call_websocket {
                 $ws_to_host->{$hosts->{$host}{ws}} = $host;
             }
             else {
-                delete $ws_to_host->{$hosts->{$host}{ws}};
+                delete $ws_to_host->{$hosts->{$host}{ws}} if ($hosts->{$host}{ws});
                 $hosts->{$host}{ws} = undef;
                 if (my $location_header = ($tx->completed ? $tx->res->headers->location : undef)) {
                     log_info("Following ws redirection to: $location_header");
