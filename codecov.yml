@@ -1,7 +1,5 @@
 codecov:
   branch: master
-  notify:
-    after_n_builds: 4
 comment:
   behavior: default
   require_changes: true

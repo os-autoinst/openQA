@@ -115,11 +115,8 @@ coverage:
 COVER_REPORT_OPTS ?= -select_re ^lib/
 
 .PHONY: travis-codecov
-travis-codecov: 
-	if test "x$$GH_PUBLISH" != xtrue; then \
-	   cover ${COVER_OPTS} -test ;\
-	   cover $(COVER_REPORT_OPTS) -report codecov ;\
-	fi
+travis-codecov: coverage
+	cover $(COVER_REPORT_OPTS) -report codecov
 
 .PHONY: coverage-html
 coverage-html: coverage
