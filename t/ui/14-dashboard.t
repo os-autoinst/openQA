@@ -34,7 +34,7 @@ use Selenium::Remote::WDKeys;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = t::ui::PhantomTest::call_phantom();
+my $driver = call_phantom();
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -43,7 +43,7 @@ unless ($driver) {
 #
 # List with no parameters
 #
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 my @build_headings = $driver->find_elements('h4', 'css');
 is(scalar @build_headings, 4, '4 builds shown');
 
@@ -135,5 +135,5 @@ like($t->get_ok('/')->tx->res->dom->at('#filter-panel .help_popover')->{'data-ti
 
 # parent group overview: tested in t/22-dashboard.t
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 done_testing();

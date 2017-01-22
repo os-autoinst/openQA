@@ -29,14 +29,14 @@ use t::ui::PhantomTest;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $driver = t::ui::PhantomTest::call_phantom();
+my $driver = call_phantom();
 
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
 }
 
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 my $baseurl = $driver->get_current_url();
 
 # Test initial state of checkboxes and applying changes
@@ -62,7 +62,7 @@ is($driver->get_current_url(), $url_with_escaped_parameters . '#', 'escaped URL 
 $driver->get($baseurl . 'tests/overview?distri=opensuse&version=13.1&build=0091&groupid=1001');
 my $fmod = $driver->find_elements('.failedmodule', 'css')->[1];
 $driver->mouse_move_to_location(element => $fmod, xoffset => 8, yoffset => 8);
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 like($driver->find_elements('.failedmodule a', 'css')->[1]->get_attribute('href'),
     qr/\/3$/, 'ajax update failed module step');
 
@@ -71,6 +71,6 @@ is(scalar @descriptions, 1, 'only test suites with description content are shown
 $descriptions[0]->click();
 is($driver->find_element('.popover-title')->get_text, 'kde', 'description popover shows content');
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 
 done_testing();

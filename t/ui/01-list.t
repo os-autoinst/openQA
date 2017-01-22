@@ -49,7 +49,7 @@ sub schema_hook {
     $schema->resultset('Jobs')->find(99981)->delete;
 }
 
-my $driver = t::ui::PhantomTest::call_phantom(\&schema_hook);
+my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -58,7 +58,7 @@ unless ($driver) {
 #
 # List with no parameters
 #
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 my $get;
 
 #
@@ -67,7 +67,7 @@ my $get;
 is($driver->get("/results"), 1, "/results gets");
 like($driver->get_current_url(), qr{.*/tests}, "/results redirects to /tests ");
 
-t::ui::PhantomTest::wait_for_ajax();
+wait_for_ajax();
 #print $driver->get_page_source();
 
 # Test 99946 is successful (29/0/1)
@@ -110,11 +110,11 @@ is($driver->get("/tests"), 1, "/tests gets");
 isnt($driver->find_element('#scheduled #job_99928'), undef, '99928 scheduled');
 like($driver->find_element('#scheduled #job_99928 td.test a')->get_attribute('href'), qr{.*/tests/99928}, 'right link');
 $driver->find_element('#scheduled #job_99928 td.test a')->click();
-is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-RAID1@32bit test results', 'tests/99928 followed');
+$driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-RAID1@32bit test results', 'tests/99928 followed');
 
 # return
 is($driver->get("/tests"), 1, "/tests gets");
-t::ui::PhantomTest::wait_for_ajax();
+wait_for_ajax();
 
 # Test 99938 failed, so it should be displayed in red
 my $job99938 = $driver->find_element('#results #job_99946');
@@ -122,12 +122,11 @@ my $job99938 = $driver->find_element('#results #job_99946');
 is($driver->find_element('#results #job_99938 .test .status.result_failed')->get_text(), '', '99938 failed');
 like($driver->find_element('#results #job_99938 td.test a')->get_attribute('href'), qr{.*/tests/99938}, 'right link');
 $driver->find_element('#results #job_99938 td.test a')->click();
-is($driver->get_title(), 'openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results',
-    'tests/99938 followed');
+$driver->title_is('openQA: opensuse-Factory-DVD-x86_64-Build0048-doc@64bit test results', 'tests/99938 followed');
 
 # return
 is($driver->get("/tests"), 1, "/tests gets");
-t::ui::PhantomTest::wait_for_ajax();
+wait_for_ajax();
 
 my @links = $driver->find_elements('#results #job_99946 td.test a', 'css');
 is(@links, 2, 'only two links (icon, name, no restart)');
@@ -170,7 +169,7 @@ is_deeply(
     '99945 is not displayed'
 );
 $driver->find_element_by_id('relevantfilter')->click();
-t::ui::PhantomTest::wait_for_ajax();
+wait_for_ajax();
 
 # Test 99945 is not longer relevant (replaced by 99946) - but displayed for all
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
@@ -183,7 +182,7 @@ is_deeply(
 # now toggle back
 #print $driver->get_page_source();
 $driver->find_element_by_id('relevantfilter')->click();
-t::ui::PhantomTest::wait_for_ajax();
+wait_for_ajax();
 
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
 is_deeply(
@@ -193,7 +192,7 @@ is_deeply(
 );
 
 $driver->get("/tests?match=staging_e");
-t::ui::PhantomTest::wait_for_ajax();
+wait_for_ajax();
 
 #print $driver->get_page_source();
 @jobs = map { $_->get_attribute('id') } @{$driver->find_elements('#results tbody tr', 'css')};
@@ -203,20 +202,20 @@ is(@{$driver->find_elements('table.dataTable', 'css')}, 1, 'no scheduled, no run
 # now login to test restart links
 $driver->find_element_by_link_text('Login')->click();
 is($driver->get("/tests"), 1, "/tests gets");
-t::ui::PhantomTest::wait_for_ajax();
+wait_for_ajax();
 
 my $td = $driver->find_element('#results #job_99946 td.test');
 is($td->get_text(), 'textmode@32bit', 'correct test name');
 
 # click restart
 $driver->find_child_element($td, '.restart', 'css')->click();
-t::ui::PhantomTest::wait_for_ajax();
+wait_for_ajax();
 
-is($driver->get_title(), 'openQA: Test results', 'restart stays on page');
+$driver->title_is('openQA: Test results', 'restart stays on page');
 $td = $driver->find_element('#results #job_99946 td.test');
 is($td->get_text(), 'textmode@32bit (restarted)', 'restart removes link');
 
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 done_testing();

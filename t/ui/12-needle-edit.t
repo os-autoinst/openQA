@@ -43,7 +43,7 @@ $test_case->init_data;
 
 use t::ui::PhantomTest;
 
-my $driver = t::ui::PhantomTest::call_phantom();
+my $driver = call_phantom();
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -72,21 +72,21 @@ my $filen = "$dir/inst-timezone-text.json";
 
 sub open_needle_editor {
     # init the preview
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     $driver->find_element_by_xpath('//a[@href="#step/installer_timezone/1"]')->click();
 
     # init the diff
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     $driver->find_element('.step_actions .create_new_needle')->click();
 }
 
 sub goto_editpage() {
-    is($driver->get_title(), "openQA", "on main page");
+    $driver->title_is("openQA", "on main page");
     $driver->find_element_by_link_text('Login')->click();
     # we're back on the main page
-    is($driver->get_title(), "openQA", "back on main page");
+    $driver->title_is("openQA", "back on main page");
 
     is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
@@ -105,7 +105,7 @@ sub goto_editpage() {
 }
 
 sub editpage_layout_check() {
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     # layout check
     is($driver->find_element_by_id('tags_select')->get_value(), 'inst-timezone-text', "inst-timezone tags selected");
@@ -138,14 +138,14 @@ sub add_needle_tag(;$) {
     $elem = $driver->find_element_by_id('newtag');
     $elem->send_keys($tagname);
     $driver->find_element_by_id('tag_add_button')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     is($driver->find_element_by_xpath("//input[\@value=\"$tagname\"]")->is_selected(),
         1, "new tag found and was checked");
 }
 
 sub add_workaround_property() {
     $driver->find_element_by_id('property_workaround')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     is($driver->find_element_by_id('property_workaround')->is_selected(), 1, "workaround property selected");
 }
 
@@ -166,7 +166,7 @@ sub create_needle {
         yoffset => $decode_textarea->{area}[0]->{ypos} + $yoffset + $pre_offset
     );
     $driver->button_up();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 }
 
 sub change_needle_value($$) {
@@ -197,7 +197,7 @@ sub change_needle_value($$) {
 
     # test match level
     $driver->find_element_by_id('change-match')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     my $dialog = $driver->find_element_by_id('change-match-form');
 
@@ -223,7 +223,7 @@ sub overwrite_needle($) {
     $driver->find_element_by_id('needleeditor_name')->send_keys($needlename);
     is($driver->find_element_by_id('needleeditor_name')->get_value(), "$needlename", "new needle name inputed");
     $driver->find_element_by_id('save')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     my $diag;
     $diag = $driver->find_element_by_id('modal-overwrite');
     is($driver->find_child_element($diag, '.modal-title', 'css')->is_displayed(), 1, "We can see the overwrite dialog");
@@ -235,7 +235,7 @@ sub overwrite_needle($) {
 
     $driver->find_element_by_id('modal-overwrite-confirm')->click();
 
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     is(
         $driver->find_element('#flash-messages span')->get_text(),
         'Needle test-newneedle created/updated - restart job',
@@ -245,7 +245,7 @@ sub overwrite_needle($) {
 
     $driver->find_element('#flash-messages span a')->click();
     # restart is an ajax call, for some reason the check/sleep interval must be at least 1 sec for this call
-    t::ui::PhantomTest::wait_for_ajax(1);
+    wait_for_ajax(1);
     is(
         $driver->get_title(),
         'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
@@ -270,7 +270,7 @@ is($driver->find_element_by_id('needleeditor_name')->get_value(), "$needlename",
 
 # create new needle by clicked save button
 $driver->find_element_by_id('save')->click();
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 
 # check state highlight appears with valid content
 is(
@@ -326,7 +326,7 @@ subtest 'Deletion of needle is handled gracefully' => sub {
         'tests/99946 followed'
     );
     open_needle_editor;
-    is($driver->get_title(), 'openQA: Needle Editor', 'needle editor still shows up');
+    $driver->title_is('openQA: Needle Editor', 'needle editor still shows up');
     is(
         $driver->find_element('#editor_warnings span')->get_text(),
         'Could not find needle: inst-timezone-text for opensuse 13.1',
@@ -345,7 +345,7 @@ subtest 'areas/tags verified via JavaScript' => sub {
     $driver->find_element('.alert-danger button')->click();
 };
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 
 subtest '(created) needles can be accessed over API' => sub {
     my $t = Test::Mojo->new('OpenQA::WebAPI');

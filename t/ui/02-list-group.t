@@ -31,7 +31,7 @@ use t::ui::PhantomTest;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = t::ui::PhantomTest::call_phantom();
+my $driver = call_phantom();
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -40,7 +40,7 @@ unless ($driver) {
 #
 # List with no parameters
 #
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 #
 # Test the legacy redirection
 #
@@ -58,5 +58,5 @@ isnt($driver->find_element('#running #job_99963'), undef, '99963 listed');
 #t::ui::PhantomTest::make_screenshot('mojoResults.png');
 
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 done_testing();

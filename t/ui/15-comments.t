@@ -33,7 +33,7 @@ $test_case->init_data;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
-my $driver = t::ui::PhantomTest::call_phantom();
+my $driver = call_phantom();
 
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
@@ -43,11 +43,11 @@ unless ($driver) {
 #
 # List with no parameters
 #
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 
 # we are back on the main page
-is($driver->get_title(), "openQA", "back on main page");
+$driver->title_is("openQA", "back on main page");
 
 # check 'reviewed' labels
 
@@ -102,7 +102,7 @@ sub test_comment_editing {
     subtest 'add' => sub {
         $driver->find_element_by_id('text')->send_keys($test_message);
         $driver->find_element_by_id('submitComment')->click();
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
 
         if ($in_test_results) {
             switch_to_comments_tab(1);
@@ -119,7 +119,7 @@ sub test_comment_editing {
         # try to edit the first displayed comment (the one which has just been added)
         $driver->find_element('textarea.comment-editing-control')->send_keys($another_test_message);
         $driver->find_element('button.comment-editing-control')->click();
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
 
         if ($in_test_results) {
             switch_to_comments_tab(1);
@@ -158,7 +158,7 @@ sub test_comment_editing {
             $driver->alert_text_is("Do you really want to delete the comment written by Demo?");
             $driver->accept_alert;
         }
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
 
         # check whether the comment is gone
         my @comments = $driver->find_elements('div.media-comment', 'css');
@@ -171,7 +171,7 @@ sub test_comment_editing {
         # re-add a comment with the original message
         $driver->find_element_by_id('text')->send_keys($test_message);
         $driver->find_element_by_id('submitComment')->click();
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
 
         # check whether heading and comment text is displayed correctly
         if ($in_test_results) {
@@ -207,7 +207,7 @@ subtest 'URL auto-replace' => sub {
         https://bugzilla.redhat.com/show_bug.cgi?id=343098'
     );
     $driver->find_element_by_id('submitComment')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     # the first made comment needs to be 2nd now
     my @comments = $driver->find_elements('div.media-comment p', 'css');
@@ -281,7 +281,7 @@ subtest 'commenting in test results including labels' => sub {
 
     $driver->find_element_by_id('text')->send_keys($test_message);
     $driver->find_element_by_id('submitComment')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     subtest 'check comment availability sign on test result overview' => sub {
         $driver->find_element_by_link_text('Job Groups')->click();
@@ -292,7 +292,7 @@ subtest 'commenting in test results including labels' => sub {
         );
         $driver->find_element('#current-build-overview a')->click();
 
-        is($driver->get_title(), "openQA: Test summary", "back on test group overview");
+        $driver->title_is("openQA: Test summary", "back on test group overview");
         is(
             $driver->find_element('#res_DVD_x86_64_doc .fa-comment')->get_attribute('title'),
             '2 comments available',
@@ -304,7 +304,7 @@ subtest 'commenting in test results including labels' => sub {
         $driver->get('/tests/99938#comments');
         $driver->find_element_by_id('text')->send_keys('label:true_positive');
         $driver->find_element_by_id('submitComment')->click();
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
         $driver->find_element_by_link_text('Job Groups')->click();
         $driver->find_element('#current-build-overview a')->click();
         is(
@@ -315,7 +315,7 @@ subtest 'commenting in test results including labels' => sub {
         $driver->get('/tests/99938#comments');
         $driver->find_element_by_id('text')->send_keys('bsc#1234 poo#4321');
         $driver->find_element_by_id('submitComment')->click();
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
         $driver->find_element_by_link_text('Job Groups')->click();
         $driver->find_element('#current-build-overview a')->click();
         is(
@@ -341,7 +341,7 @@ subtest 'commenting in test results including labels' => sub {
             $driver->get('/tests/99926#comments');
             $driver->find_element_by_id('text')->send_keys('poo#9876');
             $driver->find_element_by_id('submitComment')->click();
-            t::ui::PhantomTest::wait_for_ajax;
+            wait_for_ajax;
             $driver->find_element_by_link_text('Job Groups')->click();
             like(
                 $driver->find_element_by_id('current-build-overview')->get_text(),
@@ -360,7 +360,7 @@ subtest 'commenting in test results including labels' => sub {
             $driver->get('/tests/99926#comments');
             $driver->find_element_by_id('text')->send_keys('poo#9875 poo#9874');
             $driver->find_element_by_id('submitComment')->click();
-            t::ui::PhantomTest::wait_for_ajax;
+            wait_for_ajax;
             $driver->find_element_by_link_text('Job Groups')->click();
             like(
                 $driver->find_element_by_id('current-build-overview')->get_text(),
@@ -400,7 +400,7 @@ subtest 'editing when logged in as regular user' => sub {
         $driver->find_element_by_id('submitComment')->click();
         # need to reload the page for the pinning to take effect
         # waiting for AJAX is required though to eliminate race condition
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
         $driver->get('/group_overview/1001');
         is($driver->find_element('#group_descriptions .media-comment')->get_text(),
             $description_test_message, 'comment is pinned');
@@ -412,7 +412,7 @@ subtest 'editing when logged in as regular user' => sub {
         no_edit_no_remove_on_other_comments_expected;
         $driver->find_element_by_id('text')->send_keys('test by nobody');
         $driver->find_element_by_id('submitComment')->click();
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
         switch_to_comments_tab(5);
         only_edit_for_own_comments_expected;
     };
@@ -422,7 +422,7 @@ subtest 'editing when logged in as regular user' => sub {
         no_edit_no_remove_on_other_comments_expected;
         $driver->find_element_by_id('text')->send_keys('test by nobody');
         $driver->find_element_by_id('submitComment')->click();
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
         only_edit_for_own_comments_expected;
 
         # pinned comments are not shown (pinning is only possible when commentator is operator)
@@ -434,6 +434,6 @@ subtest 'editing when logged in as regular user' => sub {
     };
 };
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 
 done_testing();

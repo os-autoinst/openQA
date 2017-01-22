@@ -48,7 +48,7 @@ sub schema_hook {
     }
 }
 
-my $driver = t::ui::PhantomTest::call_phantom(\&schema_hook);
+my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -62,7 +62,7 @@ sub disable_bootstrap_animations {
     );
 }
 
-is($driver->get_title(), 'openQA', 'on main page');
+$driver->title_is('openQA', 'on main page');
 my $baseurl = $driver->get_current_url();
 
 $driver->get($baseurl . '?limit_builds=20');
@@ -91,5 +91,5 @@ is(scalar @links, 11, 'all links expanded in the first place');
 $driver->find_element_by_link_text('Build0091')->click();
 ok($driver->find_element('#group1_build13_1-0091 h4 a')->is_hidden(), 'link to child group collapsed');
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 done_testing();
