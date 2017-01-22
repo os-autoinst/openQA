@@ -1,13 +1,18 @@
 package t::ui::PhantomTest;
+use base 'Exporter';
 
 use Mojo::IOLoop::Server;
 # Start command line interface for application
 require Mojolicious::Commands;
 require OpenQA::Test::Database;
 
+@EXPORT = qw(call_phantom kill_phantom wait_for_ajax javascript_console_is_empty);
+
 # specify the dependency here
 use Test::Selenium::Chrome 1.02;
 use Test::Selenium::PhantomJS;
+use Data::Dump 'pp';
+use Test::More;
 
 our $_driver;
 our $mojopid;
@@ -136,6 +141,10 @@ sub wait_for_ajax {
     while (!$_driver->execute_script("return jQuery.active == 0")) {
         sleep $check_interval;
     }
+}
+
+sub javascript_console_is_empty {
+    is(pp($_driver->get_log('browser')), "[]", "no errors on javascript console");
 }
 
 sub kill_phantom() {
