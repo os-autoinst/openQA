@@ -1094,16 +1094,21 @@ sub create_asset {
     return $abs;
 }
 
+sub has_failed_modules {
+    my ($self) = @_;
+    return $self->modules->count({result => 'failed'}, {rows => 1});
+}
+
 sub failed_modules {
     my ($self) = @_;
 
     my $fails = $self->modules->search({result => 'failed'});
-    my $failedmodules = [];
+    my @failedmodules;
 
     while (my $module = $fails->next) {
-        push @$failedmodules, $module->name;
+        push(@failedmodules, $module->name);
     }
-    return $failedmodules;
+    return \@failedmodules;
 }
 
 sub update_status {
