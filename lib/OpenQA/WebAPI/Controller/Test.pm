@@ -407,10 +407,17 @@ sub prepare_job_results {
         if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
             my $result_stats = $all_result_stats->{$jobid};
             my $overall      = $job->result;
+
             if ($todo) {
-                next if $job->result eq 'passed';
-                next if $job_labels->{$jobid}{bugs} || $job_labels->{$jobid}{label};
+                # skip all jobs NOT needed to be labeled for the black certificate icon to show up
+                next
+                  if $job->result eq OpenQA::Schema::Result::Jobs::PASSED
+                  || $job_labels->{$jobid}{bugs}
+                  || $job_labels->{$jobid}{label}
+                  || ( $job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED
+                    && $job->has_failed_modules);
             }
+
             $result = {
                 passed   => $result_stats->{passed},
                 unknown  => $result_stats->{unk},
