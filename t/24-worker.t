@@ -93,6 +93,23 @@ test_via_io_loop sub {
     );
 };
 
+# reset settings, previous error handler removed them
+$hosts->{this_host_should_not_exist}{workerid} = 1;
+$current_host = 'this_host_should_not_exist';
+
+test_via_io_loop sub {
+    ok(
+        OpenQA::Worker::Common::api_call(
+            'post', 'jobs/500/status',
+            json          => {status => 'RUNNING'},
+            ignore_errors => 1,
+            tries         => 1
+        ),
+        'api_call without callback does not fail'
+    );
+    Mojo::IOLoop->stop;
+};
+
 $ENV{OPENQA_CONFIG} = 't';
 open(my $fh, '>>', $ENV{OPENQA_CONFIG} . '/client.conf') or die 'can not open client.conf for appending';
 print $fh "[host1]\nkey=1234\nsecret=1234\n";

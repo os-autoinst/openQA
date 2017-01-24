@@ -173,7 +173,7 @@ sub api_call {
     my $host          = $args{host} // $current_host;
     my $params        = $args{params};
     my $json_data     = $args{json};
-    my $callback      = $args{callback};
+    my $callback      = $args{callback} // sub { };
     my $ignore_errors = $args{ignore_errors} // 0;
     my $tries         = $args{tries} // 3;
 
