@@ -52,7 +52,7 @@
     </div>
     <div class="panel panel-default" id="filter-panel">
         <div class="panel-heading"><strong>Filter</strong>
-            <%= help_popover('Help for the <i>test overview</i>' => '
+            <%= help_popover('Help for the <em>test overview</em>' => '
                     <p>This page shows an overview of job results in a matrix
                     view. Only the latest job for each scenario is shown. The
                     view can be configured based on query parameters which can
@@ -91,6 +91,10 @@
                 <div class="form-group">
                     <strong>Misc</strong>
                     <label><input value="1" name="todo" type="checkbox" id="filter-todo"> TODO</label>
+                    <%= help_popover('Help for the <em>TODO</em>-filter' => '
+                        <p>Shows only jobs that need to be labeled for the black review badge to show up</p>',
+                        'http://open.qa/docs/#_review_badges' => 'documentation about review badges')
+                    %>
                 </div>
                 <button type="submit" class="btn btn-default">Apply</button>
             </form>
