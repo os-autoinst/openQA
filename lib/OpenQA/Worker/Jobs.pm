@@ -717,14 +717,11 @@ sub read_module_result($) {
     return unless $result;
     for my $d (@{$result->{details}}) {
         if ($d->{json}) {
-            my $jsonfile = $d->{json};
-            $jsonfile = substr $jsonfile, length($OpenQA::Utils::prjdir) + 1, length($jsonfile);
-            $d->{json} = $jsonfile;
+            $d->{json} = $d->{json};
         }
         for my $n (@{$d->{needles}}) {
-            my $jsonfile = $n->{json};
-            $jsonfile = substr $jsonfile, length($OpenQA::Utils::prjdir) + 1, length($jsonfile);
-            $n->{json} = $jsonfile;
+            $n->{json} = $n->{json};
+
         }
         for my $type (qw(screenshot audio text)) {
             my $file = $d->{$type};

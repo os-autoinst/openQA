@@ -84,6 +84,10 @@ sub update_needle {
 
     if (!-f $filename) {
         $filename = catdir($OpenQA::Utils::prjdir, $filename);
+        if (!-f $filename) {
+            log_error(
+                "Needle file $filename not found where expected. Check $OpenQA::Utils::prjdir for distri symlinks");
+        }
     }
     my $needle;
     if ($needle_cache) {
