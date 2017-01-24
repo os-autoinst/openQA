@@ -32,14 +32,14 @@ use t::ui::PhantomTest;
 
 OpenQA::Test::Case->new->init_data;
 
-my $driver = t::ui::PhantomTest::call_phantom();
+my $driver = call_phantom();
 if (!$driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
 }
 
 sub wait_for_data_table {
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     # TODO: add some wait condition for rendering here
     sleep 1;
 }
@@ -54,10 +54,10 @@ $t->get_ok($url . '/login')->status_is(302);
 $t->get_ok($url . '/admin/auditlog')->status_is(200);
 
 # Log in as Demo in phantomjs webui
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-is($driver->get_title(),                                   "openQA",            "back on main page");
+$driver->title_is("openQA", "back on main page");
 is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 $driver->find_element('#user-action a')->click();
@@ -112,6 +112,6 @@ wait_for_data_table;
 is(scalar @entries, 1, 'one element when filtered by combination');
 
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 
 done_testing();

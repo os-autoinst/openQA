@@ -44,7 +44,7 @@ sub schema_hook {
     $jobs->find(99963)->update({assigned_worker_id => 1});
 }
 
-my $driver  = t::ui::PhantomTest::call_phantom(\&schema_hook);
+my $driver  = call_phantom(\&schema_hook);
 my $baseurl = $driver->get_current_url;
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
@@ -57,16 +57,15 @@ sub disable_bootstrap_fade_animation {
     );
 }
 
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-is($driver->get_title(), "openQA", "back on main page");
+$driver->title_is("openQA", "back on main page");
 
 is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 $driver->get("/tests/99946");
-is($driver->get_title(), 'openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results',
-    'tests/99946 followed');
+$driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-textmode@32bit test results', 'tests/99946 followed');
 
 $driver->find_element_by_link_text('installer_timezone')->click();
 like(
@@ -89,7 +88,7 @@ $driver->go_back();
 is(current_tab, 'Details', 'back to details tab');
 
 $driver->find_element('[title="wait_serial"]')->click();
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 ok($driver->find_element_by_id('preview_container_out')->is_displayed(), "preview window opens on click");
 like(
     $driver->find_element_by_id('preview_container_in')->get_text(),
@@ -102,14 +101,14 @@ ok($driver->find_element_by_id('preview_container_out')->is_hidden(), "preview w
 unlike($driver->get_current_url(), qr/#step/, "current url doesn't contain #step hash anymore");
 
 $driver->find_element('[href="#step/bootloader/1"]')->click();
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 my $elem = $driver->find_element('.step_actions .fa-info-circle');
 like($elem->get_attribute('data-content'), qr/inst-bootmenu/, "show searched needle tags");
 $elem->click();
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 ok($driver->find_element('.step_actions .popover')->is_displayed(), "needle info is a clickable popover");
 $driver->find_element_by_xpath('//a[@href="#step/installer_timezone/1"]')->click();
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 
 my @report_links = $driver->find_elements('#preview_container_in .report', 'css');
 my @title = map { $_->get_attribute('title') } @report_links;
@@ -135,7 +134,7 @@ $t->get_ok($baseurl . ($href_to_isosize =~ s@^/@@r))->status_is(200);
 subtest 'render bugref links in thumbnail text windows' => sub {
     $driver->get('/tests/99946');
     $driver->find_element('[title="Soft Failed"]')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     is(
         $driver->find_element_by_id('preview_container_in')->get_text(),
         'Test bugref bsc#1234 https://fate.suse.com/321208',
@@ -229,7 +228,7 @@ sub test_with_error {
     }
 
     $driver->get("/tests/99946#step/yast2_lan/1");
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     my $text = $driver->find_element_by_id('needlediff_selector')->get_text();
     $text =~ s,\s+, ,g;
@@ -258,5 +257,5 @@ $get         = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
 @worker_text = $get->tx->res->dom->find('#info_box .panel-body div + div + div')->map('all_text')->each;
 like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker still displayed when job set to done');
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 done_testing();

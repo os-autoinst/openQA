@@ -32,7 +32,7 @@ use t::ui::PhantomTest;
 
 OpenQA::Test::Case->new->init_data;
 
-my $driver = t::ui::PhantomTest::call_phantom();
+my $driver = call_phantom();
 if (!$driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -68,10 +68,10 @@ my $ret = $t->post_ok(
 is($ret->tx->res->json->{count}, 10, '10 new jobs created');
 
 # Log in as Demo in phantomjs webui
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-is($driver->get_title(),                                   "openQA",            "back on main page");
+$driver->title_is("openQA", "back on main page");
 is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # Test Scheduled isos are displayed
@@ -106,6 +106,6 @@ ok($table, 'products tables found');
 @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 is(scalar @rows, $nrows + 1, 'iso rescheduled by replay action');
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 
 done_testing();

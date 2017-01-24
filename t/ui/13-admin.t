@@ -42,7 +42,7 @@ $test_case->init_data;
 use t::ui::PhantomTest;
 use Selenium::Remote::WDKeys;
 
-my $driver = t::ui::PhantomTest::call_phantom();
+my $driver = call_phantom();
 unless ($driver) {
     plan skip_all => 'Install phantomjs to run these tests';
     exit(0);
@@ -52,7 +52,7 @@ $driver->title_is("openQA");
 is($driver->find_element_by_id('user-action')->get_text(), 'Login', "noone logged in");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-is($driver->get_title(), "openQA", "back on main page");
+$driver->title_is("openQA", "back on main page");
 # but ...
 
 is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
@@ -65,15 +65,15 @@ like($driver->find_element_by_id('user-action')->get_text(), qr/Administrators M
 # Demo is admin, so go there
 $driver->find_element_by_link_text('Workers')->click();
 
-is($driver->get_title(), "openQA: Workers", "on workers overview");
+$driver->title_is("openQA: Workers", "on workers overview");
 
 subtest 'add product' => sub() {
     # go to product first
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Medium types')->click();
 
-    is($driver->get_title(), "openQA: Medium types", "on products");
-    t::ui::PhantomTest::wait_for_ajax;
+    $driver->title_is("openQA: Medium types", "on products");
+    wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
     is(@headers, 6, "6 columns");
@@ -111,7 +111,7 @@ subtest 'add product' => sub() {
     is(scalar @{$driver->find_child_elements($elem, '//textarea', 'xpath')}, 1, '1 textarea');
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 2, "2 edit buttons afterwards");
 
     # check the distri name will be lowercase after added a new one
@@ -130,7 +130,7 @@ subtest 'add product' => sub() {
     (shift @fields)->send_keys("DVD=2\nIOS_MAXSIZE=4700372992");
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 3, "3 edit buttons afterwards");
 };
 
@@ -139,8 +139,8 @@ subtest 'add machine' => sub() {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Machines')->click();
 
-    is($driver->get_title(), "openQA: Machines", "on machines list");
-    t::ui::PhantomTest::wait_for_ajax;
+    $driver->title_is("openQA: Machines", "on machines list");
+    wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
     is(@headers, 4, "4 columns");
@@ -173,7 +173,7 @@ subtest 'add machine' => sub() {
     is(@fields, 1, '1 textarea');
     (shift @fields)->send_keys("SERIALDEV=ttyS1\nTIMEOUT_SCALE=3\nWORKER_CLASS=64bit-ipmi");    # cpu
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 4, "4 edit buttons afterwards");
 };
@@ -183,8 +183,8 @@ subtest 'add test suite' => sub() {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Test suites')->click();
 
-    is($driver->get_title(), "openQA: Test suites", "on test suites");
-    t::ui::PhantomTest::wait_for_ajax;
+    $driver->title_is("openQA: Test suites", "on test suites");
+    wait_for_ajax;
     my $elem = $driver->find_element('.admintable thead tr');
     my @headers = $driver->find_child_elements($elem, 'th');
     is(@headers, 4, 'all columns');
@@ -216,7 +216,7 @@ subtest 'add test suite' => sub() {
     is(@fields, 2, '2 textareas');
 
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     is(@{$driver->find_elements('//button[@title="Edit"]', 'xpath')}, 8, "8 edit buttons afterwards");
 
     # can add entry with single, double quotes, special chars
@@ -231,13 +231,13 @@ subtest 'add test suite' => sub() {
     $settings->send_keys("$suiteKey=$suiteValue");
     is($driver->find_element_by_xpath('//button[@title="Add"]')->click(), 1, 'added');
     # leave the ajax some time
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 # now read data back and compare to original, name and value shall be the same, key sanitized by removing all special chars
     $elem = $driver->find_element('.admintable tbody tr:last-child');
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
     # try to edit and save
     ok($driver->find_child_element($elem, './td/button[@title="Edit"]', 'xpath')->click(), 'editing enabled');
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     $elem     = $driver->find_element('.admintable tbody tr:last-child');
     $name     = $driver->find_child_element($elem, './td/input[@type="text"]', 'xpath');
@@ -247,7 +247,7 @@ subtest 'add test suite' => sub() {
     ok($driver->find_child_element($elem, '//button[@title="Update"]', 'xpath')->click(), 'editing saved');
 
     # reread and compare to original
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     $elem = $driver->find_element('.admintable tbody tr:last-child');
     is($elem->get_text(), "$suiteName testKey=$suiteValue", 'stored text is the same except key');
 };
@@ -256,7 +256,7 @@ subtest 'add job group' => sub() {
     # navigate to job groups
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Job groups')->click();
-    is($driver->get_title(), "openQA: Job groups", "on groups");
+    $driver->title_is("openQA: Job groups", "on groups");
 
     # check whether all job groups from fixtures are displayed
     my $list_element = $driver->find_element_by_id('job_group_list');
@@ -271,7 +271,7 @@ subtest 'add job group' => sub() {
     # add new parentless group, leave name empty (which should lead to error)
     $driver->find_element_by_xpath('//a[@title="Add new job group on top-level"]')->click();
     $driver->find_element_by_id('create_group_button')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     $list_element = $driver->find_element_by_id('job_group_list');
     @parent_group_entries = $driver->find_child_elements($list_element, 'li');
     is((shift @parent_group_entries)->get_text(), 'opensuse',      'first parentless group present');
@@ -286,7 +286,7 @@ subtest 'add job group' => sub() {
     # add new parentless group (dialog should still be open), this time enter a name
     $driver->find_element_by_id('new_group_name')->send_keys('Cool Group');
     $driver->find_element_by_id('create_group_button')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     # new group should be present
     $list_element = $driver->find_element_by_id('job_group_list');
@@ -300,7 +300,7 @@ subtest 'add job group' => sub() {
     $driver->find_element_by_xpath('//a[@title="Add new folder"]')->click();
     $driver->find_element_by_id('new_group_name')->send_keys('New parent group');
     $driver->find_element_by_id('create_group_button')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     # check whether parent is present
     $list_element = $driver->find_element_by_id('job_group_list');
@@ -327,7 +327,7 @@ subtest 'add job group' => sub() {
 };
 
 subtest 'job property editor' => sub() {
-    is($driver->get_title(), 'openQA: Job groups', 'on job groups');
+    $driver->title_is('openQA: Job groups', 'on job groups');
 
     # navigate to editor first
     $driver->find_element_by_link('Cool Group')->click();
@@ -358,10 +358,10 @@ subtest 'job property editor' => sub() {
         $driver->find_element_by_id('editor-description')->send_keys('Test group');
         $driver->find_element('p.buttons button.btn-primary')->click();
         # ensure there is no race condition, even though the page is reloaded
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
 
         $driver->refresh();
-        is($driver->get_title(), 'openQA: Jobs for Cool Group has been edited!', 'new name on title');
+        $driver->title_is('openQA: Jobs for Cool Group has been edited!', 'new name on title');
         $driver->find_element('.corner-buttons button')->click();
         is($driver->find_element_by_id('editor-name')->get_value(), 'Cool Group has been edited!', 'name edited');
         is($driver->find_element_by_id('editor-size-limit')->get_value(), '1000', 'size edited');
@@ -374,9 +374,9 @@ subtest 'job property editor' => sub() {
 };
 
 subtest 'edit mediums' => sub() {
-    is($driver->get_title(), 'openQA: Jobs for Cool Group has been edited!', 'on jobs for Cool Test has been edited!');
+    $driver->title_is('openQA: Jobs for Cool Group has been edited!', 'on jobs for Cool Test has been edited!');
 
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     $driver->find_element_by_link('Test new medium as part of this group')->click();
 
     my $select = $driver->find_element_by_id('medium');
@@ -391,14 +391,14 @@ subtest 'edit mediums' => sub() {
 
     $driver->find_element_by_xpath('//input[@type="submit"]')->submit();
 
-    is($driver->get_title(), 'openQA: Jobs for Cool Group has been edited!', 'on job groups');
-    t::ui::PhantomTest::wait_for_ajax;
+    $driver->title_is('openQA: Jobs for Cool Group has been edited!', 'on job groups');
+    wait_for_ajax;
 
     my $td = $driver->find_element('#sle_13_DVD_arm19_xfce_chosen .search-field');
     is('', $td->get_text(), 'field is empty for product 2');
     $driver->mouse_move_to_location(element => $td);
     $driver->button_down();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
 
     $driver->send_keys_to_active_element('64bit');
     # as we load this at runtime rather than `use`ing it, we have to
@@ -409,10 +409,10 @@ subtest 'edit mediums' => sub() {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Job groups')->click();
 
-    is($driver->get_title(), 'openQA: Job groups', 'on groups');
+    $driver->title_is('openQA: Job groups', 'on groups');
     $driver->find_element_by_link('Cool Group has been edited!')->click();
 
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     my @picks = $driver->find_elements('.search-choice');
     is((shift @picks)->get_text(), '64bit', 'found one');
     is((shift @picks)->get_text(), 'HURRA', 'found two');
@@ -421,12 +421,12 @@ subtest 'edit mediums' => sub() {
     # briefly check the asset list
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Assets')->click();
-    is($driver->get_title(), "openQA: Assets", "on asset");
-    t::ui::PhantomTest::wait_for_ajax;
+    $driver->title_is("openQA: Assets", "on asset");
+    wait_for_ajax;
 
     $td = $driver->find_element('tr#asset_1 td.t_created');
     is('about 2 hours ago', $td->get_text(), 'timeago 2h');
 };
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 done_testing();

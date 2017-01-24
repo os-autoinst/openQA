@@ -126,7 +126,13 @@ sub stop_job {
     my ($aborted, $job_id) = @_;
 
     # we call this function in all situations, so better check
-    return unless $job;
+    if (!$job) {
+        # in case there is no job, we can stop ther worker
+        # asap, otherwise wait for the actual stop to finish before
+        # do the IOloop stop
+        Mojo::IOLoop->stop if $aborted eq 'quit';
+        return;
+    }
     return if $stop_job_running;
     return if $job_id && $job_id != $job->{id};
     $job_id = $job->{id};
@@ -375,16 +381,20 @@ sub _stop_job_2 {
         }
     }
     unless ($job_done || $aborted eq 'api-failure') {
-        log_debug('job ' . $job->{id} . 'incomplete') if $verbose;
-        upload_status(1, sub { _stop_job_finish({result => 'incomplete'}) });
+        log_debug(sprintf 'job %d incomplete', $job->{id}) if $verbose;
+        if ($aborted eq 'quit') {
+            log_debug(sprintf "duplicating job %d\n", $job->{id});
+            api_call('post', 'jobs/' . $job->{id} . '/duplicate', {dup_type_auto => 1});
+        }
+        upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, $aborted eq 'quit') });
     }
 }
 
 sub _stop_job_finish {
-    my ($params) = @_;
+    my ($params, $quit) = @_;
     log_debug("update status running $update_status_running") if $verbose;
     if ($update_status_running) {
-        add_timer('', 1, sub { _stop_job_finish($params) }, 1);
+        add_timer('', 1, sub { _stop_job_finish($params, $quit) }, 1);
         return;
     }
     api_call(
@@ -398,8 +408,13 @@ sub _stop_job_finish {
             $worker           = undef;
             $stop_job_running = 0;
             $current_host     = undef;
-            # immediatelly check for already scheduled job
-            Mojo::IOLoop->next_tick(sub { check_job(keys %$hosts) });
+            if ($quit) {
+                Mojo::IOLoop->stop;
+            }
+            else {
+                # immediatelly check for already scheduled job
+                Mojo::IOLoop->next_tick(sub { check_job(keys %$hosts) });
+            }
         });
 }
 

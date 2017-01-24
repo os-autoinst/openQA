@@ -32,7 +32,6 @@ use Data::Dumper;
 use IO::Socket::INET;
 use Cwd qw(abs_path getcwd);
 use POSIX '_exit';
-use Data::Dump 'pp';
 
 # optional but very useful
 eval 'use Test::More::Color';
@@ -110,7 +109,7 @@ $driver->title_is("openQA", "on main page");
 is($driver->find_element_by_id('user-action')->get_text(), 'Login', "noone logged in");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-is($driver->get_title(), "openQA", "back on main page");
+$driver->title_is("openQA", "back on main page");
 # but ...
 
 my $wsport = $mojoport + 1;
@@ -149,82 +148,108 @@ unlink('t/full-stack.d/openqa/share/tests/pitux');
 symlink(abs_path('../os-autoinst/t/data/tests/'), 't/full-stack.d/openqa/share/tests/pitux')
   || die "can't symlink";
 
+sub client_output {
+    my ($args) = @_;
+    open(my $client, "perl ./script/client $connect_args $args|");
+    my $out;
+    while (<$client>) {
+        $out .= $_;
+    }
+    close($client);
+    return $out;
+}
+
 sub client_call {
-    my ($args, $expected_ret) = @_;
-    my $ret = system("perl ./script/client $connect_args $args");
-    is($ret, 0, "Client $args succeeded");
+    my ($args, $expected_out, $desc) = @_;
+    my $out = client_output $args;
+    is($?, 0, "Client $args succeeded");
+    if ($expected_out) {
+        like($out, $expected_out, $desc);
+    }
 }
 
 # schedule job
-client_call(
-"jobs post ISO=pitux-0.3.2.iso DISTRI=pitux ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 FLAVOR=flavor BUILD=1 MACHINE=coolone "
-      . "QEMU_NO_TABLET=1 QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=pitux");
+client_call('jobs post ISO=pitux-0.3.2.iso DISTRI=pitux ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
+      . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 '
+      . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=pitux');
 
 # verify it's displayed scheduled
 $driver->find_element_by_link_text('All Tests')->click();
-is($driver->get_title(), 'openQA: Test results', 'tests followed');
+$driver->title_is('openQA: Test results', 'tests followed');
 like($driver->get_page_source(), qr/\Q<h2>1 scheduled jobs<\/h2>\E/, '1 job scheduled');
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 
 my $job_name = 'pitux-1-flavor-i386-Build1-pitux@coolone';
 $driver->find_element_by_link_text('pitux@coolone')->click();
-is($driver->get_title(), "openQA: $job_name test results", 'scheduled test page');
+$driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
+javascript_console_is_empty;
 
-is(pp($driver->get_log('browser')), '[]', "no console logs");
-
-$workerpid = fork();
-if ($workerpid == 0) {
-    exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
-    die "FAILED TO START WORKER";
+sub start_worker {
+    $workerpid = fork();
+    if ($workerpid == 0) {
+        exec("perl ./script/worker --instance=1 $connect_args --isotovideo=../os-autoinst/isotovideo --verbose");
+        die "FAILED TO START WORKER";
+    }
 }
 
-my $count;
-for ($count = 0; $count < 130; $count++) {
-    last if $driver->find_element('#result-row .panel-body')->get_text() =~ qr/State: running/;
-    sleep 1;
+start_worker;
+
+sub wait_for_result_panel {
+    my ($result_panel, $desc) = @_;
+
+    for (my $count = 0; $count < 130; $count++) {
+        last if $driver->find_element('#result-row .panel-body')->get_text() =~ $result_panel;
+        sleep 1;
+    }
+    javascript_console_is_empty;
+    $driver->refresh();
+    like($driver->find_element('#result-row .panel-body')->get_text(), $result_panel, $desc);
 }
 
-is(pp($driver->get_log('browser')), "[]", "no console logs");
-
-$driver->refresh();
-print "RUNING after $count seconds\n";
-like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: running/, 'test 1 is running');
-
-for ($count = 0; $count < 130; $count++) {
-    last if $driver->find_element('#result-row .panel-body')->get_text() =~ qr/Result: passed/;
-    sleep 1;
+sub wait_for_job_running {
+    wait_for_result_panel qr/State: running/, 'job is running';
 }
-
-is(pp($driver->get_log('browser')), "[]", "no console logs");
-
-print "PASSED after $count seconds\n";
-system("cat t/full-stack.d/openqa/testresults/00000/00000001-$job_name/autoinst-log.txt");
-$driver->refresh();
-like($driver->find_element('#result-row .panel-body')->get_text(), qr/Result: passed/, 'test 1 is passed');
+wait_for_job_running;
+wait_for_result_panel qr/Result: passed/, 'test 1 is passed';
 
 ok(-s "t/full-stack.d/openqa/testresults/00000/00000001-$job_name/autoinst-log.txt", 'log file generated');
 
-my $post_group_res = `perl ./script/client $connect_args job_groups post name='New job group'`;
+my $post_group_res = client_output "job_groups post name='New job group'";
 my $group_id       = ($post_group_res =~ qr/{ *id *=> *([0-9]*) *}\n/);
 ok($group_id, 'regular post via client script');
-is(
-    `perl ./script/client $connect_args jobs/1 put --json-data '{"group_id": $group_id}'`,
-    "{ job_id => 1 }\n",
+client_call(
+    "jobs/1 put --json-data '{\"group_id\": $group_id}'",
+    qr/\Q{ job_id => 1 }\E/,
     'send JSON data via client script'
 );
-like(`perl ./script/client $connect_args jobs/1`, qr/group_id *=> *$group_id/, 'group has been altered correctly');
+client_call('jobs/1', qr/group_id *=> *$group_id/, 'group has been altered correctly');
 
-client_call("jobs/1/restart post");
+client_call('jobs/1/restart post', qr{\Qtest_url => ["/tests/2\E}, 'client returned new test_url');
+$driver->refresh();
+like($driver->find_element('#result-row .panel-body')->get_text(), qr/Cloned as 2/, 'test 1 is restarted');
+$driver->click_element_ok('2', 'link_text');
 
+wait_for_job_running;
+# now kill the worker
+kill TERM => $workerpid;
+is(waitpid($workerpid, 0), $workerpid, 'WORKER is done');
+$workerpid = undef;
 
+wait_for_result_panel qr/Result: incomplete/, 'test 2 crashed';
+like(
+    $driver->find_element('#result-row .panel-body')->get_text(),
+    qr/Cloned as 3/,
+    'test 2 is restarted by killing worker'
+);
+
+kill_phantom;
 turn_down_stack;
-t::ui::PhantomTest::kill_phantom();
 done_testing;
-exit(0);
 
 # in case it dies
 END {
+    kill_phantom;
     turn_down_stack;
     $? = 0;
 }

@@ -50,7 +50,7 @@ close(FNAME);
 
 use t::ui::PhantomTest;
 
-my $driver = t::ui::PhantomTest::call_phantom();
+my $driver = call_phantom();
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -58,17 +58,17 @@ unless ($driver) {
 
 is(-f $needle_json_file, 1, "file is created");
 
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-is($driver->get_title(), "openQA", "back on main page");
+$driver->title_is("openQA", "back on main page");
 
 is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # Demo is admin, so go there
 $driver->find_element('#user-action a')->click();
 $driver->find_element_by_link_text('Needles')->click();
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 
 my @trs = $driver->find_elements('#needles tr', 'css');
 # skip header
@@ -89,7 +89,7 @@ like(
 # go back to needles
 $driver->find_element('#user-action a')->click();
 $driver->find_element('Needles', 'link_text')->click();
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 
 $driver->find_element_by_link_text('about 14 hours ago')->click();
 like(
@@ -101,7 +101,7 @@ like(
 # go back to needles
 $driver->find_element('#user-action a')->click();
 $driver->find_element('Needles', 'link_text')->click();
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 
 subtest 'delete needle' => sub {
     # disable animations to speed up test
@@ -109,7 +109,7 @@ subtest 'delete needle' => sub {
 
     # select all needles and open modal dialog for deletion
     $driver->find_element('td input')->click();
-    t::ui::PhantomTest::wait_for_ajax;
+    wait_for_ajax;
     $driver->find_element_by_id('delete_all')->click();
 
     is($driver->find_element_by_id('confirm_delete')->is_displayed(), 1, 'modal dialog');
@@ -122,7 +122,7 @@ subtest 'delete needle' => sub {
     subtest 'error case' => sub {
         chmod(0444, $needle_dir);
         $driver->find_element_by_id('really_delete')->click();
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
         is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 1, 'but failed needle');
         is(
@@ -134,7 +134,7 @@ subtest 'delete needle' => sub {
     };
 
     # select all needles again and re-open modal dialog for deletion
-    t::ui::PhantomTest::wait_for_ajax;    # required due to server-side datatable
+    wait_for_ajax;    # required due to server-side datatable
     $driver->find_element('td input')->click();
     $driver->find_element_by_id('delete_all')->click();
     is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')},
@@ -147,16 +147,16 @@ subtest 'delete needle' => sub {
     subtest 'successful deletion' => sub {
         chmod(0755, $needle_dir);
         $driver->find_element_by_id('really_delete')->click();
-        t::ui::PhantomTest::wait_for_ajax;
+        wait_for_ajax;
         is(scalar @{$driver->find_elements('#outstanding-needles li', 'css')}, 0, 'no outstanding needles');
         is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'no failed needles');
         $driver->find_element_by_id('close_delete')->click();
-        t::ui::PhantomTest::wait_for_ajax;    # required due to server-side datatable
+        wait_for_ajax;    # required due to server-side datatable
         is(-f $needle_json_file,                                   undef,                        'JSON file is gone');
         is(-f $needle_png_file,                                    undef,                        'png file is gone');
         is($driver->find_element('#needles tbody tr')->get_text(), 'No data available in table', 'no needles left');
     };
 };
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 done_testing();

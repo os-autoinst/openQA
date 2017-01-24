@@ -49,16 +49,16 @@ sub schema_hook {
       ->update({assigned_worker_id => 1});
 }
 
-my $driver = t::ui::PhantomTest::call_phantom(\&schema_hook);
+my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
 }
 
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-is($driver->get_title(), "openQA", "back on main page");
+$driver->title_is("openQA", "back on main page");
 # but ...
 
 is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
@@ -67,7 +67,7 @@ is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', 
 $driver->find_element('#user-action a')->click();
 $driver->find_element_by_link_text('Workers')->click();
 
-is($driver->get_title(), "openQA: Workers", "on workers overview");
+$driver->title_is("openQA: Workers", "on workers overview");
 
 is($driver->find_element('tr#worker_1 .worker')->get_text(), 'localhost:1',  'localhost:1');
 is($driver->find_element('tr#worker_2 .worker')->get_text(), 'remotehost:1', 'remotehost:1');
@@ -78,14 +78,14 @@ like($driver->find_element('tr#worker_2 .status')->get_text(), qr/job 99961/, 'w
 
 $driver->find_element('tr#worker_1 .worker a')->click();
 
-is($driver->get_title(), 'openQA: Worker localhost:1', 'on worker 1');
+$driver->title_is('openQA: Worker localhost:1', 'on worker 1');
 
 my $body = $driver->find_element_by_xpath('//body');
 like($body->get_text(), qr/Status: .* job 99963/, 'still on 99963');
 like($body->get_text(), qr/JOBTOKEN token99963/,  'token for 99963');
 
 # previous jobs table
-t::ui::PhantomTest::wait_for_ajax;
+wait_for_ajax;
 my $table = $driver->find_element_by_id('previous_jobs');
 ok($table, 'previous jobs table found');
 my @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
@@ -101,5 +101,5 @@ is_deeply(
     'correct entries shown'
 );
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 done_testing();

@@ -76,7 +76,6 @@ sub catch_exit {
         Mojo::IOLoop->next_tick(
             sub {
                 stop_job('quit');
-                Mojo::IOLoop->stop;
             });
     }
     else {

@@ -29,7 +29,7 @@ use t::ui::PhantomTest;
 
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
-my $driver = t::ui::PhantomTest::call_phantom();
+my $driver = call_phantom();
 unless ($driver) {
     plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
     exit(0);
@@ -70,10 +70,10 @@ $get = $t->get_ok('/tests')->status_is(200);
 $get->element_exists_not('#scheduled #job_99928 a.cancel');
 
 # operator has access to part of admin menu - using phantomjs
-is($driver->get_title(), "openQA", "on main page");
+$driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
-is($driver->get_title(), "openQA", "back on main page");
+$driver->title_is("openQA", "back on main page");
 # but ...
 
 is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
@@ -101,5 +101,5 @@ for my $item ('Users', 'Audit log') {
     ok($@, "can not see $item");
 }
 
-t::ui::PhantomTest::kill_phantom();
+kill_phantom();
 done_testing();
