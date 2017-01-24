@@ -51,7 +51,7 @@ unless ($driver) {
 
 my $elem;
 my $decode_textarea;
-my $dir = "t/data/openqa/share/tests/opensuse/needles";
+my $dir = 't/data/openqa/share/tests/opensuse/needles';
 
 # clean up needles dir
 remove_tree($dir);
@@ -355,10 +355,21 @@ subtest '(created) needles can be accessed over API' => sub {
 
     $t->get_ok(
         '/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/test-newneedle.json')
-      ->status_is(200)->content_type_is('image/png');
-    @warnings
-      = warnings { $t->get_ok('/needles/opensuse/test-newneedle.png?jsonfile=/try/to/break_out.json')->status_is(403) };
+      ->status_is(200, 'needle accessible')->content_type_is('image/png');
+    @warnings = warnings {
+        $t->get_ok('/needles/opensuse/test-newneedle.png?jsonfile=/try/to/break_out.json')
+          ->status_is(403, 'access to files outside the test directory not granted')
+    };
     map { like($_, qr/is not in a subdir of/, 'expected warning') } @warnings;
+
+    my $tmp_dir = '/tmp/needles';
+    File::Path::rmtree($tmp_dir);
+    File::Copy::move($dir, $tmp_dir);
+    symlink($tmp_dir, $dir);
+    $t->get_ok(
+        '/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/test-newneedle.json')
+      ->status_is(200, 'needle also accessible when containing directory is a symlink')->content_type_is('image/png');
+    File::Path::rmtree($tmp_dir);
 };
 
 done_testing();

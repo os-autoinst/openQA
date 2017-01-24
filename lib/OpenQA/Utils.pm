@@ -22,6 +22,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &needledir
   &productdir
   &testcasedir
+  &is_in_tests
   &file_content
   &log_debug
   &log_warning
@@ -61,6 +62,7 @@ if ($0 =~ /\.t$/) {
 
 #use lib "/usr/share/openqa/cgi-bin/modules";
 use File::Basename;
+use File::Spec;
 use File::Spec::Functions qw(catfile catdir);
 use Fcntl;
 use JSON "decode_json";
@@ -96,15 +98,24 @@ sub productdir {
     return $dir;
 }
 
-sub testcasedir($$) {
-    my $distri  = shift;
-    my $version = shift;
+sub testcasedir {
+    my ($distri, $version) = @_;
+
     # TODO actually "distri" is misused here. It should rather be something
     # like the name of the repository with all tests
     my ($dir) = grep { -d } (catdir($prjdir, 'share', 'tests', $distri), catdir($prjdir, 'tests', $distri));
     $dir .= "-$version" if $version && -e "$dir-$version";
-
     return $dir;
+}
+
+sub is_in_tests {
+    my ($file) = @_;
+
+    $file = File::Spec->rel2abs($file);
+    # at least tests use a relative $prjdir, so it needs to be converted to absolute path as well
+    my $abs_projdir = File::Spec->rel2abs($prjdir);
+    return index($file, catdir($abs_projdir, 'share', 'tests')) == 0
+      || index($file, catdir($abs_projdir, 'tests')) == 0;
 }
 
 # Call this when $prjdir is changed to re-evaluate all dependent directories
