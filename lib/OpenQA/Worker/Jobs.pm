@@ -384,9 +384,17 @@ sub _stop_job_2 {
         log_debug(sprintf 'job %d incomplete', $job->{id}) if $verbose;
         if ($aborted eq 'quit') {
             log_debug(sprintf "duplicating job %d\n", $job->{id});
-            api_call('post', 'jobs/' . $job->{id} . '/duplicate', {dup_type_auto => 1});
+            api_call(
+                'post',
+                'jobs/' . $job->{id} . '/duplicate',
+                params   => {dup_type_auto => 1},
+                callback => sub {
+                    upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 1) });
+                });
         }
-        upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, $aborted eq 'quit') });
+        else {
+            upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 0) });
+        }
     }
 }
 
