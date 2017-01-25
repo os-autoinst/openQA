@@ -79,7 +79,7 @@ my $iso1 = 'test-dvd-1.iso';
 my $iso2 = 'test-dvd-2.iso';
 
 for my $i ($iso1, $iso2) {
-    ok(open(FH, '>', "t/data/openqa/factory/iso/$i"), "touch $i");
+    ok(open(FH, '>', "t/data/openqa/share/factory/iso/$i"), "touch $i");
     close FH;
 }
 
@@ -177,7 +177,7 @@ $ret = $t->delete_ok('/api/v1/assets/iso/' . $iso1)->status_is(403, 'asset delet
 $ret = $t->get_ok('/api/v1/assets/' . ($listing->[1]->{id} + 1))->status_is(200);
 
 for my $i ($iso1, $iso2) {
-    ok(unlink("t/data/openqa/factory/iso/$i"), "rm $i");
+    ok(unlink("t/data/openqa/share/factory/iso/$i"), "rm $i");
 }
 
 done_testing();

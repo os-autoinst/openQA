@@ -23,7 +23,7 @@ use Cwd 'realpath';
 use File::Spec::Functions 'catdir';
 
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Utils 'commit_git_return_error';
+use OpenQA::Utils qw(log_error commit_git_return_error);
 
 use db_helpers;
 
@@ -83,7 +83,7 @@ sub update_needle {
     my $guard  = $schema->txn_scope_guard;
 
     if (!-f $filename) {
-        $filename = catdir($OpenQA::Utils::prjdir, $filename);
+        $filename = catdir($OpenQA::Utils::sharedir, $filename);
         if (!-f $filename) {
             log_error(
                 "Needle file $filename not found where expected. Check $OpenQA::Utils::prjdir for distri symlinks");

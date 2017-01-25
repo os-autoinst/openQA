@@ -26,6 +26,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings ':all';
 use OpenQA::Test::Case;
+use Cwd qw(abs_path);
 
 use File::Path qw(make_path remove_tree);
 use POSIX qw(strftime);
@@ -362,14 +363,15 @@ subtest '(created) needles can be accessed over API' => sub {
     };
     map { like($_, qr/is not in a subdir of/, 'expected warning') } @warnings;
 
-    my $tmp_dir = '/tmp/needles';
+    my $tmp_dir = 't/tmp_needles';
     File::Path::rmtree($tmp_dir);
-    File::Copy::move($dir, $tmp_dir);
-    symlink($tmp_dir, $dir);
+    File::Copy::move($dir, $tmp_dir) || die 'failed to move';
+    symlink(abs_path($tmp_dir), $dir);
     $t->get_ok(
         '/needles/opensuse/test-newneedle.png?jsonfile=t/data/openqa/share/tests/opensuse/needles/test-newneedle.json')
       ->status_is(200, 'needle also accessible when containing directory is a symlink')->content_type_is('image/png');
-    File::Path::rmtree($tmp_dir);
+    unlink($dir);
+    File::Copy::move($tmp_dir, $dir);
 };
 
 done_testing();
