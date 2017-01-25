@@ -72,7 +72,7 @@ sub main {
 sub catch_exit {
     my ($sig) = @_;
     log_info("quit due to signal $sig");
-    if ($job && !$OpenQA::Worker::Jobs::stop_job_running) {
+    if ($job) {
         Mojo::IOLoop->next_tick(
             sub {
                 stop_job('quit');

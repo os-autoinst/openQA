@@ -126,14 +126,15 @@ sub stop_job {
     my ($aborted, $job_id) = @_;
 
     # we call this function in all situations, so better check
-    if (!$job) {
-        # in case there is no job, we can stop ther worker
-        # asap, otherwise wait for the actual stop to finish before
-        # do the IOloop stop
+    if (!$job || $stop_job_running) {
+        # in case there is no job, or if the job was asked to stop
+	# we stop the worker asap, otherwise wait for the actual 
+	# stop to finish before, or run into a condition where the job
+	# runs forever and worker Mojo::IOLoop->stop is never called
+        log_debug("Either there is no job running or we were asked to stop");
         Mojo::IOLoop->stop if $aborted eq 'quit';
         return;
     }
-    return if $stop_job_running;
     return if $job_id && $job_id != $job->{id};
     $job_id = $job->{id};
 
@@ -301,7 +302,6 @@ sub _stop_job_2 {
 
     if ($aborted ne 'quit' && $aborted ne 'abort' && $aborted ne 'api-failure') {
         # collect uploaded logs
-
         my @uploaded_logfiles = glob "$pooldir/ulogs/*";
         for my $file (@uploaded_logfiles) {
             next unless -f $file;
@@ -550,7 +550,14 @@ sub upload_status {
 
     return unless verify_workerid;
     return unless $job;
-    return unless $job->{URL};
+
+    # If the worker has a setup failure, the $job object is not
+    # properly set, and URL is not set, so we return.
+    if (!$job->{URL}) {
+        return $callback->() if $callback && $final_upload;
+        return;
+    }
+
     my $status = {};
 
     my $ua        = Mojo::UserAgent->new;
