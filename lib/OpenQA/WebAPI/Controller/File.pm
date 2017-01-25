@@ -40,14 +40,11 @@ sub needle {
     # make sure the directory of the file parameter is a real subdir of
     # testcasedir before applying it as needledir to prevent access
     # outside of the zoo
-    if ($jsonfile
-        && index(File::Spec->rel2abs($jsonfile), File::Spec->rel2abs(OpenQA::Utils::testcasedir($distri, $version)))
-        != 0)
-    {
-        warn "$jsonfile is not in a subdir of " . OpenQA::Utils::testcasedir($distri, $version);
-        return $self->render(text => "Forbidden", status => 403);
+    if ($jsonfile && !is_in_tests($jsonfile)) {
+        warn "$jsonfile is not in a subdir of $prjdir/share/tests or $prjdir/tests";
+        return $self->render(text => 'Forbidden', status => 403);
     }
-    my $needle = OpenQA::Utils::needle_info($name, $distri, $version, $jsonfile);
+    my $needle = needle_info($name, $distri, $version, $jsonfile);
     return $self->reply->not_found unless $needle;
 
     $self->{static} = Mojolicious::Static->new;
