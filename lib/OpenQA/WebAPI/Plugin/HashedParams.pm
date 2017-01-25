@@ -24,7 +24,7 @@ sub register {
                     $val =~ s/\\/\\\\/g;
                     $val =~ s/\'/\\\'/g;
 
-                    $key =~ s/[^\]\[0-9a-zA-Z_]//g;
+                    $key =~ s/[^\]\[0-9a-zA-Z_\+]//g;
                     $key =~ s/\[{2,}/\[/g;
                     $key =~ s/\]{2,}/\]/g;
                     $key =~ s/\\//g;
@@ -35,7 +35,7 @@ sub register {
                         push @list, $n if length($n) > 0;
                     }
 
-                    map $array[$index] .= "{$list[$_]}", 0 .. $#list;
+                    map $array[$index] .= "{'$list[$_]'}", 0 .. $#list;
 
                     $array[$index] .= " = '$val';";
                     $index++;

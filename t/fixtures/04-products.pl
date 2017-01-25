@@ -41,13 +41,17 @@
     TestSuites => {
         id       => 1014,
         name     => "client1",
-        settings => [{key => "DESKTOP", value => "kde"}, {key => "PARALLEL_WITH", value => "server"}],
+        settings => [
+            {key => "DESKTOP",       value => "kde"},
+            {key => "PARALLEL_WITH", value => "server"},
+            {key => "PRECEDENCE",    value => "wontoverride"}
+        ],
     },
 
     TestSuites => {
         id       => 1015,
         name     => "server",
-        settings => [{key => "DESKTOP", value => "textmode"}],
+        settings => [{key => "+PRECEDENCE", value => "overridden"}, {key => "DESKTOP", value => "textmode"}],
     },
 
     TestSuites => {

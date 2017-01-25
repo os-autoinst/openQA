@@ -117,7 +117,15 @@ $t->app->db->resultset("Jobs")->find(99928)->comments->create({text => 'any text
 # schedule the iso, this should not actually be possible. Only isos
 # with different name should result in new tests...
 my $res = schedule_iso(
-    {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0091'});
+    {
+        ISO        => $iso,
+        DISTRI     => 'opensuse',
+        VERSION    => '13.1',
+        FLAVOR     => 'DVD',
+        ARCH       => 'i586',
+        BUILD      => '0091',
+        PRECEDENCE => 'original'
+    });
 
 is($res->json->{count}, 10, "10 new jobs created");
 my @newids = @{$res->json->{ids}};
@@ -184,6 +192,12 @@ is($server_64->{priority}, 40,   'server_64 has priority according to job templa
 
 is($advanced_kde_32->{settings}->{PUBLISH_HDD_1}, 'opensuse-13.1-i586-kde-qemu32.qcow2', "variable expansion");
 is($advanced_kde_64->{settings}->{PUBLISH_HDD_1}, 'opensuse-13.1-i586-kde-qemu64.qcow2', "variable expansion");
+
+# variable precedence
+is($client1_32->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
+is($client1_64->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
+is($server_32->{settings}->{PRECEDENCE}, 'overridden', "precedence override (suite +PRECEDENCE beats post PRECEDENCE)");
+is($server_64->{settings}->{PRECEDENCE}, 'overridden', "precedence override (suite +PRECEDENCE beats post PRECEDENCE)");
 
 lj;
 

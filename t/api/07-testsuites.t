@@ -101,12 +101,20 @@ is_deeply(
                     {
                         'key'   => 'PARALLEL_WITH',
                         'value' => 'server'
+                    },
+                    {
+                        'key'   => 'PRECEDENCE',
+                        'value' => 'wontoverride'
                     }]
             },
             {
                 'id'       => 1015,
                 'name'     => 'server',
                 'settings' => [
+                    {
+                        'key'   => '+PRECEDENCE',
+                        'value' => 'overridden'
+                    },
                     {
                         'key'   => 'DESKTOP',
                         'value' => 'textmode'
