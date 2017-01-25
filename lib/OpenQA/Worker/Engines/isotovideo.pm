@@ -66,7 +66,7 @@ sub engine_workit($) {
     my ($job) = @_;
 
     # set base dir to the one assigned with webui
-    OpenQA::Utils::change_prjdir($hosts->{$current_host}{dir});
+    OpenQA::Utils::change_sharedir($hosts->{$current_host}{dir});
 
     # XXX: this should come from the worker table. Only included
     # here for convenience when looking at the pool of
@@ -126,7 +126,7 @@ sub engine_workit($) {
     }
 
     $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
-    $vars{PRJDIR}     = $OpenQA::Utils::prjdir;
+    $vars{PRJDIR}     = $OpenQA::Utils::sharedir;
     $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION});
     $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION});
     _save_vars(\%vars);

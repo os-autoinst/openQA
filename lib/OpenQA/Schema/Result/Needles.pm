@@ -83,7 +83,7 @@ sub update_needle {
     my $guard  = $schema->txn_scope_guard;
 
     if (!-f $filename) {
-        $filename = catdir($OpenQA::Utils::prjdir, $filename);
+        $filename = catdir($OpenQA::Utils::sharedir, $filename);
         if (!-f $filename) {
             log_error(
                 "Needle file $filename not found where expected. Check $OpenQA::Utils::prjdir for distri symlinks");

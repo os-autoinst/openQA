@@ -70,8 +70,9 @@ use Mojo::Util 'xml_escape';
 our $basedir   = $ENV{OPENQA_BASEDIR} || "/var/lib";
 our $prj       = "openqa";
 our $prjdir    = "$basedir/$prj";
+our $sharedir  = "$prjdir/share";
 our $resultdir = "$prjdir/testresults";
-our $assetdir  = "$prjdir/factory";
+our $assetdir  = "$sharedir/factory";
 our $isodir    = "$assetdir/iso";
 our $hdddir    = "$assetdir/hdd";
 our $otherdir  = "$assetdir/other";
@@ -119,14 +120,12 @@ sub is_in_tests {
 }
 
 # Call this when $prjdir is changed to re-evaluate all dependent directories
-sub change_prjdir {
-    $prjdir    = shift;
-    $resultdir = "$prjdir/testresults";
-    $assetdir  = "$prjdir/factory";
-    $isodir    = "$assetdir/iso";
-    $hdddir    = "$assetdir/hdd";
-    $otherdir  = "$assetdir/other";
-    $imagesdir = "$prjdir/images";
+sub change_sharedir {
+    $sharedir = shift;
+    $assetdir = "$sharedir/factory";
+    $isodir   = "$assetdir/iso";
+    $hdddir   = "$assetdir/hdd";
+    $otherdir = "$assetdir/other";
 }
 
 sub needledir {
