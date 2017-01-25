@@ -23,7 +23,7 @@ use Cwd 'realpath';
 use File::Spec::Functions 'catdir';
 
 use OpenQA::Schema::Result::Jobs;
-use OpenQA::Utils 'commit_git_return_error';
+use OpenQA::Utils qw(log_error commit_git_return_error);
 
 use db_helpers;
 
