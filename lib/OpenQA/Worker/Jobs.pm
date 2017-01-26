@@ -127,11 +127,11 @@ sub stop_job {
 
     # we call this function in all situations, so better check
     if (!$job || $stop_job_running) {
-        # in case there is no job, or if the job was asked to stop
-	# we stop the worker asap, otherwise wait for the actual 
-	# stop to finish before, or run into a condition where the job
-	# runs forever and worker Mojo::IOLoop->stop is never called
-        log_debug("Either there is no job running or we were asked to stop");
+        # In case there is no job, or if the job was asked to stop
+        # we stop the worker asap, otherwise wait for the actual
+        # stop to finish before, or run into a condition where the job
+        # runs forever and worker Mojo::IOLoop->stop is never called
+        log_debug("Either there is no job running ($stop_job_running) or we were asked to stop ($aborted)");
         Mojo::IOLoop->stop if $aborted eq 'quit';
         return;
     }
@@ -255,7 +255,6 @@ sub upload {
         if ($csum1 eq $csum2 && $size1 eq $size2) {
             my $ua_url = $hosts->{$current_host}{url}->clone;
             $ua_url->path("jobs/$job_id/ack_temporary");
-
             $hosts->{$current_host}{ua}->post($ua_url => form => {temporary => $res->res->json->{temporary}});
         }
         else {
