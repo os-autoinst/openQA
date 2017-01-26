@@ -88,8 +88,12 @@ sub connect {
             $self->{channel}->on(
                 open => sub {
                     my ($channel) = @_;
-                    $channel->declare_exchange(exchange => $self->{config}->{amqp}{exchange}, type => 'topic')
-                      ->deliver();
+                    $channel->declare_exchange(
+                        exchange => $self->{config}->{amqp}{exchange},
+                        type     => 'topic',
+                        passive  => 1,
+                        durable  => 1
+                    )->deliver();
                 });
             $self->{channel}->on(
                 close => sub {
