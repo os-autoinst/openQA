@@ -139,13 +139,13 @@ else {
 my $connect_args = "--apikey=1234567890ABCDEF --apisecret=1234567890ABCDEF --host=http://localhost:$mojoport";
 
 make_path('t/full-stack.d/openqa/share/factory/iso');
-unlink('t/full-stack.d/openqa/share/factory/iso/pitux-0.3.2.iso');
-symlink(abs_path("../os-autoinst/t/data/pitux-0.3.2.iso"), "t/full-stack.d/openqa/share/factory/iso/pitux-0.3.2.iso")
+unlink('t/full-stack.d/openqa/share/factory/iso/Core-7.2.iso');
+symlink(abs_path("../os-autoinst/t/data/Core-7.2.iso"), "t/full-stack.d/openqa/share/factory/iso/Core-7.2.iso")
   || die "can't symlink";
 
 make_path('t/full-stack.d/openqa/share/tests');
-unlink('t/full-stack.d/openqa/share/tests/pitux');
-symlink(abs_path('../os-autoinst/t/data/tests/'), 't/full-stack.d/openqa/share/tests/pitux')
+unlink('t/full-stack.d/openqa/share/tests/tinycore');
+symlink(abs_path('../os-autoinst/t/data/tests/'), 't/full-stack.d/openqa/share/tests/tinycore')
   || die "can't symlink";
 
 sub client_output {
@@ -169,9 +169,9 @@ sub client_call {
 }
 
 # schedule job
-client_call('jobs post ISO=pitux-0.3.2.iso DISTRI=pitux ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
+client_call('jobs post ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
       . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 '
-      . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=pitux');
+      . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core');
 
 # verify it's displayed scheduled
 $driver->find_element_by_link_text('All Tests')->click();
@@ -179,8 +179,8 @@ $driver->title_is('openQA: Test results', 'tests followed');
 like($driver->get_page_source(), qr/\Q<h2>1 scheduled jobs<\/h2>\E/, '1 job scheduled');
 wait_for_ajax;
 
-my $job_name = 'pitux-1-flavor-i386-Build1-pitux@coolone';
-$driver->find_element_by_link_text('pitux@coolone')->click();
+my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
+$driver->find_element_by_link_text('core@coolone')->click();
 $driver->title_is("openQA: $job_name test results", 'scheduled test page');
 like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 1 is scheduled');
 javascript_console_is_empty;
