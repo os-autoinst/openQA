@@ -29,7 +29,7 @@ assets/assetpack.db
 .openqa-travis
 t/full-stack.d/config/database.ini
 t/full-stack.d/db/db.sqlite
-t/full-stack.d/openqa/factory/iso/pitux-0.3.2.iso
+t/full-stack.d/openqa/factory/iso/Core-7.2.iso
 t/full-stack.d/openqa/images/
 t/full-stack.d/openqa/pool/
 t/full-stack.d/openqa/share/
