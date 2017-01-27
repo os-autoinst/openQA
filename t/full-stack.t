@@ -171,7 +171,7 @@ sub client_call {
 # schedule job
 client_call('jobs post ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
       . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 '
-      . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core');
+      . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2');
 
 # verify it's displayed scheduled
 $driver->find_element_by_link_text('All Tests')->click();
@@ -214,6 +214,7 @@ wait_for_job_running;
 wait_for_result_panel qr/Result: passed/, 'test 1 is passed';
 
 ok(-s "t/full-stack.d/openqa/testresults/00000/00000001-$job_name/autoinst-log.txt", 'log file generated');
+ok(-s 't/full-stack.d/openqa/share/factory/hdd/core-hdd.qcow2',                      'image of hdd uploaded');
 
 my $post_group_res = client_output "job_groups post name='New job group'";
 my $group_id       = ($post_group_res =~ qr/{ *id *=> *([0-9]*) *}\n/);

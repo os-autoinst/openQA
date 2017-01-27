@@ -252,10 +252,10 @@ sub upload {
         print $log "Checksum $csum1:$csum2 Sizes:$size1:$size2\n";
         close $log;
         if ($csum1 eq $csum2 && $size1 eq $size2) {
-            my $ua_url = $OpenQA::Worker::Common::url->clone;
+            my $ua_url = $hosts->{$current_host}{url}->clone;
             $ua_url->path("jobs/$job_id/ack_temporary");
 
-            $OpenQA::Worker::Common::ua->post($ua_url => form => {temporary => $res->res->json->{temporary}});
+            $hosts->{$current_host}{ua}->post($ua_url => form => {temporary => $res->res->json->{temporary}});
         }
         else {
             return 0;
