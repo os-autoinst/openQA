@@ -131,7 +131,9 @@ sub stop_job {
         # we stop the worker asap, otherwise wait for the actual
         # stop to finish before, or run into a condition where the job
         # runs forever and worker Mojo::IOLoop->stop is never called
-        log_debug("Either there is no job running ($stop_job_running) or we were asked to stop ($aborted)");
+        my $job_state = ($stop_job_running) ? "$stop_job_running" : 'No job was asked to stop|';
+        $job_state .= ($aborted) ? "|Reason: $aborted" : ' $aborted is empty';
+        log_debug("Either there is no job running or we were asked to stop: ($job_state)");
         Mojo::IOLoop->stop if $aborted eq 'quit';
         return;
     }

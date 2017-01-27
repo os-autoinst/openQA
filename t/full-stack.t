@@ -276,11 +276,11 @@ wait_for_result_panel qr/Result: incomplete/, 'Test 4 crashed as expected';
 # Slurp the whole file, it's not that big anyways
 my $filename = $resultdir . "00000/00000004-$job_name/autoinst-log.txt";
 open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
-my $autoinst_log = do { local($/); <$f> };
+my $autoinst_log = do { local ($/); <$f> };
 close($f);
 
 like($autoinst_log, qr/result: setup failure/, 'Test 4 state correct: setup failure');
-kill_worker; # Ensure that the worker can be killed with TERM signal
+kill_worker;    # Ensure that the worker can be killed with TERM signal
 
 kill_phantom;
 turn_down_stack;
