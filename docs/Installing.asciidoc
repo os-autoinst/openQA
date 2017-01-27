@@ -259,6 +259,24 @@ do_push = yes
 Depending on your setup, you might need to generate and propagate
 ssh keys for user 'geekotest' to be able to push.
 
+=== Referer settings to auto-mark important jobs
+
+Automatic cleanup of old results (see GRU jobs) can sometimes render important
+tests useless. For example bug report with link to openQA job which no longer
+exists. Job can be manually marked as important to prevent quick cleanup or
+referer can be set so when job is accessed from particular web page (for
+example bugzilla), this job is automatically labeled as linked and treated as
+important.
+
+List of recognized referers is space separated list configured in
++/etc/openqa/openqa.ini+:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[global]
+recognized_referers = bugzilla.suse.com bugzilla.opensuse.org
+--------------------------------------------------------------------------------
+
 === Worker settings
 
 Default behavior for all workers is to use the 'Qemu' backend and connect to
