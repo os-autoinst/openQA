@@ -144,6 +144,10 @@ sub needle_info {
     if (!$fn) {
         $fn = "$needledir/$name.json";
     }
+    elsif (!-f $fn) {
+        $fn = catfile($sharedir, $fn);
+        $needledir = dirname($fn);
+    }
     else {
         $needledir = dirname($fn);
     }

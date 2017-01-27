@@ -31,7 +31,8 @@
                   "h" : 29
                }
             ],
-            "name" : "sudo-passwordprompt"
+            "name" : "sudo-passwordprompt",
+            "json" : "tests/opensuse/needles/sudo-passwordprompt.json"
          },
          {
             "area" : [
