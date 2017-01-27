@@ -400,7 +400,7 @@ sub _stop_job_2 {
 
 sub _stop_job_finish {
     my ($params, $quit) = @_;
-    log_debug("update status running $update_status_running") if $verbose;
+    log_debug("update status running $update_status_running") if $verbose && $update_status_running;
     if ($update_status_running) {
         add_timer('', 1, sub { _stop_job_finish($params, $quit) }, 1);
         return;
