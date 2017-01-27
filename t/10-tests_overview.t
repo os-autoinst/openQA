@@ -36,14 +36,6 @@ sub get_summary {
 }
 
 #
-# Overview with incorrect parameters
-#
-$t->get_ok('/tests/overview')->status_is(404);
-$t->get_ok('/tests/overview' => form => {build => '0091'})->status_is(404);
-$t->get_ok('/tests/overview' => form => {build => '0091', distri => 'opensuse'})->status_is(404);
-$t->get_ok('/tests/overview' => form => {build => '0091', version => '13.1'})->status_is(404);
-
-#
 # Overview of build 0091
 #
 my $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', build => '0091'});
@@ -208,6 +200,22 @@ like(
     'multiple groups with no build specified yield latest build of first group'
 );
 like($summary, qr/Passed: 2 Failed: 0 Scheduled: 1 Running: 2 None: 1/i);
+
+# overview page searches for all available data with less specified parameters
+$t->get_ok('/tests/overview' => form => {build => '0091', version => '13.1'})->status_is(200);
+$t->get_ok('/tests/overview' => form => {build => '0091', distri  => 'opensuse'})->status_is(200);
+$t->get_ok('/tests/overview' => form => {build => '0091'})->status_is(200);
+$get     = $t->get_ok('/tests/overview')->status_is(200);
+$summary = get_summary;
+like($summary, qr/Summary of opensuse/i, 'shows all available latest jobs for the only present distri');
+like(
+    $summary,
+    qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i,
+    'shows latest jobs from all distri, version, build, flavor, arch'
+);
+$get->element_exists('#res_DVD_i586_kde');
+$get->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled');
+$get->element_exists('#res_NET_x86_64_kde .state_running');
 
 #
 # Test filter form

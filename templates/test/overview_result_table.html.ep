@@ -1,0 +1,42 @@
+% use OpenQA::Utils;
+<table id="results_<%= $type %>" class="overview table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>Test</th>
+            % my @archs = sort @$type_archs;
+            % for my $arch (@archs) {
+                <th id="flavor_<%= $type %>_arch_<%= $arch %>"><%= $arch %></th>
+            % }
+        </tr>
+    </thead>
+    <tbody>
+        % for my $config (sort keys %$type_results) {
+            % next unless $type_results->{$config};
+            <tr>
+                <td class="name">
+                    % my $test_label = trim_text($config, 30);
+                    % if (my $description = $type_results->{$config}{description}) {
+                        <a data-content="<p><%= href_to_bugref(render_escaped_refs($description)) %></p>"
+                        data-title="<%= $config %>" data-toggle="popover" data-trigger="focus" role="button" tabindex="0"><%= $test_label %></a>
+                    % }
+                    % else {
+                        <%= $test_label %>
+                    % }
+                </td>
+
+                % for my $arch (@archs) {
+                    % my $res = $type_results->{$config}{$arch};
+                    % my $jobid = $res->{jobid};
+                    % my $state = $res->{state};
+
+                    % if (!$state) {
+                        <td>-</td>
+                        % next;
+                    % }
+                    % my $resultid = join('_', $type, $arch, $config);
+                    %= include 'test/tr_job_result', resultid => $resultid, res => $res, state => $state, jobid => $jobid
+                % }
+            </tr>
+        % }
+    </tbody>
+</table>
