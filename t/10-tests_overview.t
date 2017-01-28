@@ -64,6 +64,13 @@ $get->element_exists('#res_GNOME-Live_i686_RAID0 i.state_cancelled');
 $get->element_exists('#res_DVD_i586_RAID1 i.state_scheduled');
 $get->element_exists_not('#res_DVD_x86_64_doc');
 
+my $form = {distri => 'opensuse', version => '13.1', build => '0091', group => 'opensuse 13.1'};
+$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+like(get_summary, qr/Overall Summary of opensuse 13\.1 build 0091/i, 'specifying group parameter');
+$form = {distri => 'opensuse', version => '13.1', build => '0091', groupid => 1001};
+$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+like(get_summary, qr/Overall Summary of opensuse build 0091/i, 'specifying groupid parameter');
+
 #
 # Overview of build 0048
 #
@@ -95,6 +102,14 @@ $summary = get_summary;
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i);
 like($summary, qr/Passed: 2 Failed: 0 Scheduled: 2 Running: 2 None: 1/i);
 
+$form = {distri => 'opensuse', version => '13.1', groupid => 1001};
+$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+like(
+    get_summary,
+    qr/Summary of opensuse build 0091/i,
+    'specifying job group but with no build yields latest build in this group'
+);
+
 #
 # Default overview for Factory
 #
@@ -115,8 +130,8 @@ like($summary, qr/Summary of opensuse Factory build 87.5011/);
 like($summary, qr/Passed: 0 Incomplete: 1 Failed: 0/);
 
 # Advanced query parameters can be forwarded
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => '13.1', result => 'passed'})
-  ->status_is(200);
+$form = {distri => 'opensuse', version => '13.1', result => 'passed'};
+$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse 13\.1 build 0091/i, "Still references the last build");
 like($summary, qr/Passed: 2 Failed: 0/i, "Only passed are shown");
@@ -129,20 +144,18 @@ $get->element_exists_not('.result_failed');
 $get->element_exists_not('.state_cancelled');
 
 # This time show only failed
-$get
-  = $t->get_ok(
-    '/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', result => 'failed'})
-  ->status_is(200);
+$form = {distri => 'opensuse', version => 'Factory', build => '0048', result => 'failed'};
+$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Failed: 1/i);
 $get->element_exists('#res_DVD_x86_64_doc .result_failed');
 $get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 
-$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
-  ->status_is(200);
+$form = {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1};
+$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Soft Failure: 2 Failed: 1/i, 'todo=1 shows all unlabeled failed');
 
 # multiple groups can be shown at the same time
-$get     = $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002')->status_is(200);
+$get = $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002&build=0091')->status_is(200);
 $summary = get_summary;
 like($summary, qr/Summary of opensuse, opensuse test/i, 'references both groups selected by query');
 like($summary, qr/Passed: 2 Failed: 0 Scheduled: 1 Running: 2 None: 1/i,
@@ -151,15 +164,16 @@ $get->element_exists('#res_DVD_i586_kde',                           'job from gr
 $get->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled', 'another job from group 1001');
 $get->element_exists('#res_NET_x86_64_kde .state_running',          'job from group 1002 is shown');
 
+$get = $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002')->status_is(404);
+like($get->tx->res->dom->content, qr/Specify.*build.*multiple groups/, 'multiple groups and no build is not supported');
+
 #
 # Test filter form
 #
 
 # Test initial state of architecture text box
-$get
-  = $t->get_ok(
-    '/tests/overview' => form => {distri => 'opensuse', version => 'Factory', result => 'passed', arch => 'i686'})
-  ->status_is(200);
+$form = {distri => 'opensuse', version => 'Factory', result => 'passed', arch => 'i686'};
+$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 # FIXME: works when testing manually, but accessing the value via Mojo doesn't work
 #is($t->tx->res->dom->at('#filter-arch')->val, 'i686', 'default state of architecture');
 
