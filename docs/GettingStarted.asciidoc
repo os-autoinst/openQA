@@ -476,6 +476,30 @@ may be expanded to this job variable:
 PUBLISH_HDD_1 = opensuse-13.1-i586-kde.qcow2
 --------------------------------------------------------------------------------
 
+=== Variable precedence
+
+It's possible to define the same variable in multiple places that would all be
+used for a single job - for instance, you may have a variable defined in both
+a test suite and a product that appear in the same job template. The precedence
+order for variables is as follows (from lowest to highest):
+
+* Product
+* Machine
+* Test suite
+* API POST query parameters
+
+That is, variable values set as part of the API request that triggers the jobs will
+'win' over values set at any of the other locations.
+
+If you need to override this precedence - for example, you want the value set in
+one particular test suite to take precedence over a setting of the same value from
+the API request - you can add a leading + to the variable name. For instance, if
+you set ++VARIABLE = foo+ in a test suite, and passed +VARIABLE=bar+ in the API
+request, the test suite setting would 'win' and the value would be foo.
+
+If the same variable is set with a + prefix in multiple places, the same precedence
+order described above will apply to those settings.
+
 == Testing openSUSE or Fedora
 
 An easy way to start using openQA is to start testing openSUSE or Fedora as they

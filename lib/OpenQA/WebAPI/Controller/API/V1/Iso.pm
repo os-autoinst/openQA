@@ -165,6 +165,17 @@ sub _generate_jobs {
             $settings{PRIO}     = $job_template->prio;
             $settings{GROUP_ID} = $job_template->group_id;
 
+            # allow some messing with the usual precedence order. If anything
+            # sets +VARIABLE, that setting will be used as VARIABLE regardless
+            # (so a product or template +VARIABLE beats a post'ed VARIABLE).
+            # if *multiple* things set +VARIABLE, whichever comes highest in
+            # the usual precedence order wins.
+            for (keys %settings) {
+                if (substr($_, 0, 1) eq '+') {
+                    $settings{substr($_, 1)} = delete $settings{$_};
+                }
+            }
+
             # variable expansion
             # replace %NAME% with $settings{NAME}
             my $expanded;
