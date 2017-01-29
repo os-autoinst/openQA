@@ -64,11 +64,19 @@ sub turn_down_stack {
 
 }
 
+sub kill_worker {
+    # now kill the worker
+    kill TERM => $workerpid;
+    is(waitpid($workerpid, 0), $workerpid, 'WORKER is done');
+    $workerpid = undef;
+}
+
 use t::ui::PhantomTest;
 
 # skip if phantomjs or Selenium::Remote::WDKeys isn't available
 use IPC::Cmd 'can_run';
 if (!can_run('phantomjs') || !can_load(modules => {'Selenium::PhantomJS' => undef,})) {
+    diag("Make sure that phantomjs binary is installed") unless (can_run('phantomjs'));
     return undef;
 }
 
@@ -100,9 +108,10 @@ ok($mojoport);
 my $driver = t::ui::PhantomTest::start_phantomjs($mojoport);
 ok($driver);
 
+my $resultdir = 't/full-stack.d/openqa/testresults/';
 # remove_tree dies on error
-remove_tree('t/full-stack.d/openqa/testresults/');
-ok(make_path('t/full-stack.d/openqa/testresults/'));
+remove_tree($resultdir);
+ok(make_path($resultdir));
 remove_tree('t/full-stack.d/openqa/images/');
 
 $driver->title_is("openQA", "on main page");
@@ -168,10 +177,13 @@ sub client_call {
     }
 }
 
+my $JOB_SETUP
+  = 'ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
+  . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 '
+  . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2';
+
 # schedule job
-client_call('jobs post ISO=Core-7.2.iso DISTRI=tinycore ARCH=i386 QEMU=i386 QEMU_NO_KVM=1 '
-      . 'FLAVOR=flavor BUILD=1 MACHINE=coolone QEMU_NO_TABLET=1 '
-      . 'QEMU_NO_FDC_SET=1 CDMODEL=ide-cd HDDMODEL=ide-drive VERSION=1 TEST=core PUBLISH_HDD_1=core-hdd.qcow2');
+client_call("jobs post $JOB_SETUP");
 
 # verify it's displayed scheduled
 $driver->find_element_by_link_text('All Tests')->click();
@@ -213,8 +225,8 @@ sub wait_for_job_running {
 wait_for_job_running;
 wait_for_result_panel qr/Result: passed/, 'test 1 is passed';
 
-ok(-s "t/full-stack.d/openqa/testresults/00000/00000001-$job_name/autoinst-log.txt", 'log file generated');
-ok(-s 't/full-stack.d/openqa/share/factory/hdd/core-hdd.qcow2',                      'image of hdd uploaded');
+ok(-s "$resultdir/00000/00000001-$job_name/autoinst-log.txt",   'log file generated');
+ok(-s 't/full-stack.d/openqa/share/factory/hdd/core-hdd.qcow2', 'image of hdd uploaded');
 
 my $post_group_res = client_output "job_groups post name='New job group'";
 my $group_id       = ($post_group_res =~ qr/{ *id *=> *([0-9]*) *}\n/);
@@ -232,10 +244,8 @@ like($driver->find_element('#result-row .panel-body')->get_text(), qr/Cloned as 
 $driver->click_element_ok('2', 'link_text');
 
 wait_for_job_running;
-# now kill the worker
-kill TERM => $workerpid;
-is(waitpid($workerpid, 0), $workerpid, 'WORKER is done');
-$workerpid = undef;
+
+kill_worker;
 
 wait_for_result_panel qr/Result: incomplete/, 'test 2 crashed';
 like(
@@ -243,6 +253,34 @@ like(
     qr/Cloned as 3/,
     'test 2 is restarted by killing worker'
 );
+
+client_call("jobs post $JOB_SETUP MACHINE=noassets HDD_1=nihilist_disk.hda");
+
+$driver->find_element_by_link_text('All Tests')->click();
+$driver->find_element_by_link_text('core@coolone')->click();
+
+$driver->find_element_by_id('cancel_running')->click();
+$driver->find_element_by_link_text('All Tests')->click();
+$driver->find_element_by_link_text('core@noassets')->click();
+
+
+$job_name = 'tinycore-1-flavor-i386-Build1-core@noassets';
+$driver->title_is("openQA: $job_name test results", 'scheduled test page');
+like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 4 is scheduled');
+
+javascript_console_is_empty;
+start_worker;
+
+wait_for_result_panel qr/Result: incomplete/, 'Test 4 crashed as expected';
+
+# Slurp the whole file, it's not that big anyways
+my $filename = $resultdir . "00000/00000004-$job_name/autoinst-log.txt";
+open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
+my $autoinst_log = do { local ($/); <$f> };
+close($f);
+
+like($autoinst_log, qr/result: setup failure/, 'Test 4 state correct: setup failure');
+kill_worker;    # Ensure that the worker can be killed with TERM signal
 
 kill_phantom;
 turn_down_stack;
