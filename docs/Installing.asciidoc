@@ -259,6 +259,24 @@ do_push = yes
 Depending on your setup, you might need to generate and propagate
 ssh keys for user 'geekotest' to be able to push.
 
+=== Referer settings to auto-mark important jobs
+
+Automatic cleanup of old results (see GRU jobs) can sometimes render important
+tests useless. For example bug report with link to openQA job which no longer
+exists. Job can be manually marked as important to prevent quick cleanup or
+referer can be set so when job is accessed from particular web page (for
+example bugzilla), this job is automatically labeled as linked and treated as
+important.
+
+List of recognized referers is space separated list configured in
++/etc/openqa/openqa.ini+:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[global]
+recognized_referers = bugzilla.suse.com bugzilla.opensuse.org
+--------------------------------------------------------------------------------
+
 === Worker settings
 
 Default behavior for all workers is to use the 'Qemu' backend and connect to
@@ -298,6 +316,46 @@ NFS clients are where openQA workers are running. Run following command:
 --------------------------------------------------------------------------------
 mount -t nfs openQA-webUI-host:/var/lib/openqa/share /var/lib/openqa/share
 --------------------------------------------------------------------------------
+
+=== Configuring worker to use more than one openQA server
+
+When there are multiple openQA web interfaces (openQA instances) available a worker
+can be configured to register and accept jobs from all of them.
+
+Requirements:
+
+* +/etc/openqa/client.conf+ must contain API keys and secrets to all instances
+* Shared storage from all instances must be properly mounted
+
+In the +/etc/openqa/workers.ini+ enter space-separated instance hosts and optionally
+configure where the shared storage is mounted. Example:
+
+[source,ini]
+--------------------------------------------------------------------------------
+[global]
+HOSTS = openqa.opensuse.org openqa.fedora.fedoraproject.org
+
+[openqa.opensuse.org]
+SHARE_DIRECTORY = /var/lib/openqa/opensuse
+
+[openqa.fedoraproject.org]
+SHARE_DIRECTORY = /var/lib/openqa/fedora
+--------------------------------------------------------------------------------
+
+Configuring +SHARE_DIRECTORY+ is not a hard requirement. Worker will try following
+directories prior registering with openQA instance:
+
+1. +SHARE_DIRECTORY+
+2. +/var/lib/openqa/$instance_host+
+3. +/var/lib/openqa/share+
+4. +/var/lib/openqa+
+5. fail if none of above is available
+
+Once worker registers to openQA instance it checks for available job and starts
+accepting websockets commands. Worker accepts jobs as they will come in, there
+is no priority, or other ordering, support at the moment.
+It is possible to mix local openQA instance with remote instances or use only
+remote instances.
 
 === Needle Caching
 
