@@ -29,7 +29,7 @@ our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
   $hosts $ws_to_host $current_host
   $worker_caps $testresults
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
-  add_timer remove_timer change_timer
+  add_timer remove_timer change_timer get_timer
   api_call verify_workerid register_worker ws_call);
 
 # Exported variables
@@ -129,6 +129,11 @@ sub change_timer {
     $callback = $timers->{$timer}->[1] unless $callback;
     remove_timer($timer);
     add_timer($timer, $newtimeout, $callback);
+}
+
+sub get_timer {
+    my ($timer) = @_;
+    return $timers->{$timer} if $timer;
 }
 
 ## prepare UA and URL for OpenQA-scheduler connection
