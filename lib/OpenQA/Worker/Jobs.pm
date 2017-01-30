@@ -450,9 +450,10 @@ sub start_job {
 
     $worker = engine_workit($job);
     if ($worker->{error}) {
-        warn "job is missing files, releasing job\n";
+        log_warning('job is missing files, releasing job');
         return stop_job("setup failure: $worker->{error}");
     }
+    my $jobid = $job->{id};
 
     # start updating status - slow updates if livelog is not running
     add_timer('update_status', STATUS_UPDATES_SLOW, \&update_status);
@@ -464,8 +465,8 @@ sub start_job {
         $job->{settings}->{MAX_JOB_TIME} || $max_job_time,
         sub {
             # abort job if it takes too long
-            if ($job) {
-                warn sprintf("max job time exceeded, aborting %s ...\n", $name);
+            if ($job && $job->{id} eq $jobid) {
+                log_warning("max job time exceeded, aborting $name");
                 stop_job('timeout');
             }
         },

@@ -101,10 +101,11 @@ sub add_timer {
     }
     else {
         $timerid = Mojo::IOLoop->recurring($timeout => $callback);
-        # store timerid for recurring global timers so we can stop them later
-        $timers->{$timer} = [$timerid, $callback] if $timer;
-  # there are still non-global host related timers, their $timerid is stored in respective $hosts->{$host}{timers} field
     }
+  # store timerid for global timers so we can stop them later
+  # there are still non-global host related timers, their $timerid is stored in respective $hosts->{$host}{timers} field
+    $timers->{$timer} = [$timerid, $callback] if $timer;
+
     return $timerid;
 }
 
