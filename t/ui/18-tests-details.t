@@ -44,12 +44,12 @@ sub schema_hook {
     $jobs->find(99963)->update({assigned_worker_id => 1});
 }
 
-my $driver  = call_phantom(\&schema_hook);
-my $baseurl = $driver->get_current_url;
+my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
-    plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
+    plan skip_all => $t::ui::PhantomTest::phantommissing;
     exit(0);
 }
+my $baseurl = $driver->get_current_url;
 
 sub disable_bootstrap_fade_animation {
     $driver->execute_script(

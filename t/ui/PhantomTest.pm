@@ -6,11 +6,8 @@ use Mojo::IOLoop::Server;
 require Mojolicious::Commands;
 require OpenQA::Test::Database;
 
-@EXPORT = qw(call_phantom kill_phantom wait_for_ajax javascript_console_is_empty);
+@EXPORT = qw($phantommissing check_phantom_modules call_phantom kill_phantom wait_for_ajax javascript_console_is_empty);
 
-# specify the dependency here
-use Test::Selenium::Chrome 1.02;
-use Test::Selenium::PhantomJS;
 use Data::Dump 'pp';
 use Test::More;
 
@@ -18,6 +15,8 @@ our $_driver;
 our $mojopid;
 our $mojoport;
 our $startingpid = 0;
+our $phantommissing
+  = 'Install Selenium::Remote::Driver and Selenium::PhantomJS (or Selenium::Chrome with SELENIUM_CHROME set) to run these tests';
 
 =head2 start_app
 
@@ -120,15 +119,22 @@ sub make_screenshot($) {
     close($fh);
 }
 
-sub call_phantom {
-    my ($schema_hook) = @_;
-    # fail if phantomjs or Selenium::Remote::Driver are unavailable
-    use IPC::Cmd qw[can_run];
+sub check_phantom_modules {
+    # load required modules if possible. DO NOT EVER PUT THESE IN
+    # 'use' FUNCTION CALLS! Always use can_load! Otherwise you will
+    # break the case where they are not available and tests should
+    # be skipped.
     use Module::Load::Conditional qw(can_load);
-    if (!can_load(modules => {'Selenium::PhantomJS' => undef,})) {
-        return undef;
-    }
+    my $modname = $ENV{SELENIUM_CHROME} ? 'Test::Selenium::Chrome' : 'Test::Selenium::PhantomJS';
+    my $modver = $ENV{SELENIUM_CHROME} ? '1.02' : undef;
+    return can_load(modules => {$modname => $modver, 'Selenium::Remote::Driver' => undef,});
+}
 
+sub call_phantom {
+    # return a phantomjs driver using specified schema hook if modules
+    # are available, otherwise return undef
+    return undef unless check_phantom_modules;
+    my ($schema_hook) = @_;
     my $mojoport = start_app($schema_hook);
     return start_phantomjs($mojoport);
 }

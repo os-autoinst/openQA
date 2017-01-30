@@ -21,6 +21,7 @@ BEGIN {
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
+use Module::Load::Conditional qw(can_load);
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
@@ -30,13 +31,19 @@ use OpenQA::Test::Case;
 OpenQA::Test::Case->new->init_data;
 
 use t::ui::PhantomTest;
-use Selenium::Remote::WDKeys;
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 my $driver = call_phantom();
 unless ($driver) {
-    plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
+    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    exit(0);
+}
+
+# DO NOT MOVE THIS INTO A 'use' FUNCTION CALL! It will cause the tests
+# to crash if the module is unavailable
+unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
+    plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
     exit(0);
 }
 
@@ -117,10 +124,10 @@ subtest 'filter form' => sub {
     $driver->find_element('#filter-panel .panel-heading')->click();
     $driver->find_element_by_id('filter-group')->send_keys('SLE 12 SP2');
     my $ele = $driver->find_element_by_id('filter-limit-builds');
-    $ele->send_keys(KEYS->{end}, '8');    # append to 3
+    $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '8');    # append to 3
     $ele = $driver->find_element_by_id('filter-time-limit-days');
     $ele->click();
-    $ele->send_keys(KEYS->{end}, '2');    # appended to default '14'
+    $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{end}, '2');    # appended to default '14'
     $driver->find_element('#filter-form button')->click();
     $url .= '?group=SLE+12+SP2&limit_builds=38&time_limit_days=142#';
     is($driver->get_current_url, $url, 'URL parameters for filter are correct');
