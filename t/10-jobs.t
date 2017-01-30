@@ -358,6 +358,44 @@ subtest 'job is not marked as linked if accessed from unrecognized referal' => s
     is($linked, 0, 'job not linked after accessed from unknown referer');
 };
 
+use OpenQA::Worker::Common 'get_timer';
+use OpenQA::Worker::Jobs;
+no warnings 'redefine';
+sub OpenQA::Worker::Jobs::engine_workit($) {
+    return shift;
+}
+
+sub OpenQA::Worker::Jobs::_stop_job {
+    return;
+}
+
+sub _check_timers {
+    my ($is_set) = @_;
+    my $set = 0;
+    for my $t (qw(check_backend update_status job_timeout)) {
+        my $timer = get_timer($t);
+        if ($timer) {
+            $set += 1 if Mojo::IOLoop->singleton->reactor->{timers}{$timer->[0]};
+        }
+    }
+    if ($is_set) {
+        is($set, 3, 'timers set');
+    }
+    else {
+        is($set, 0, 'timers not set');
+    }
+
+}
+
+subtest 'job timers are added after start job and removed after stop job' => sub {
+    _check_timers(0);
+    $OpenQA::Worker::Jobs::job = {id => 1, settings => {NAME => 'test_job'}};
+    OpenQA::Worker::Jobs::start_job('example.host');
+    _check_timers(1);
+    OpenQA::Worker::Jobs::stop_job('done');
+    _check_timers(0);
+};
+
 $t->get_ok('/t99946')->status_is(302)->header_like(Location => qr{tests/99946});
 
 done_testing();
