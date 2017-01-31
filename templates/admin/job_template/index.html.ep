@@ -3,29 +3,42 @@
 % title 'Jobs for ' . $group->name;
 
 % content_for 'ready_function' => begin
-    setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>, <%= is_admin %>);
+    user_is_admin = <%= is_admin ? 'true' : 'false' %>;
+    setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>);
 % end
 
 <div class="row">
     <div class="col-sm-12">
-        % if (is_admin) {
-            <form action="<%= url_for('admin_groups') %>" class="corner-buttons">
-                <button type="button" class="btn btn-default" onclick="toggleEdit();">
-                    <span><span class="glyphicon glyphicon-edit" aria-hidden="true"></span> Edit job group properties</span>
-                </button>
-                <button type="submit" class="btn btn-default">
-                    <span><span class="glyphicon glyphicon-th-list" aria-hidden="true"></span> Manage all job groups</span>
-                </button>
-            </form>
-        % }
+        <form action="<%= url_for('admin_groups') %>" class="corner-buttons">
+            <button type="button" class="btn btn-default" onclick="toggleEdit();">
+                <span>
+                    <span class="glyphicon glyphicon-edit" aria-hidden="true"></span>
+                    % if (is_admin) {
+                        Edit job group properties
+                    % }
+                    % else {
+                        Show job group properties
+                    % }
+                </span>
+            </button>
+            <button type="submit" class="btn btn-default">
+                <span>
+                    <span class="glyphicon glyphicon-th-list" aria-hidden="true"></span>
+                    % if (is_admin) {
+                        Manage all job groups
+                    % }
+                    % else {
+                        Show all job groups
+                    % }
+                </span>
+            </button>
+        </form>
         <h2>
             Jobs for
             <span id="job-group-name"><%= $group->name %></span>
         </h2>
         %= include 'layouts/info'
-        % if (is_admin) {
-            %= include 'admin/group/group_property_editor', group => $group, is_parent => 0
-        % }
+        %= include 'admin/group/group_property_editor', group => $group, is_parent => 0
         <div id="media">
             <p id="loading"><i class="fa fa-spinner fa-spin"></i> Loading…</p>
 
@@ -58,11 +71,11 @@
         </div>
 
         % if (is_admin) {
-        <p>
-            %= link_to url_for('job_group_new_media', groupid => $group->id) => begin
-                <i class="fa fa-plus-square"></i> Test new medium as part of this group
-            % end
-        </p>
+            <p>
+                %= link_to url_for('job_group_new_media', groupid => $group->id) => begin
+                    <i class="fa fa-plus-square"></i> Test new medium as part of this group
+                % end
+            </p>
         % }
     </div>
 

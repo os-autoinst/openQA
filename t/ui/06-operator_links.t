@@ -95,8 +95,9 @@ $driver->find_element('#user-action a')->click();
 for my $item ('Medium types', 'Machines', 'Workers', 'Assets', 'Scheduled products') {
     ok($driver->find_element_by_link_text($item), "can see $item");
 }
+
 # we shouldn't see users, audit
-for my $item ('Users', 'Audit log') {
+for my $item ('Users', 'Needles', 'Audit log') {
     eval { $driver->find_element($item, 'link_text') };
     ok($@, "can not see $item");
 }

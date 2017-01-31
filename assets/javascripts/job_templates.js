@@ -1,5 +1,6 @@
 var job_templates_url;
 var job_group_id;
+var user_is_admin;
 
 function setupJobTemplates(url, id) {
     job_templates_url = url;
@@ -135,7 +136,9 @@ function buildMediumGroup(group, media) {
     var table = $('<table class="table table-striped mediagroup" id="' + group + '"/>').appendTo(div);
     var thead = $('<thead/>').appendTo(table);
     var tr = $('<tr/>').appendTo(thead);
-    var tname = tr.append($('<th class="name">Test <a href="#" class="plus-sign"><i class="fa fa-plus"></i></a></th>'));
+    var tname = tr.append($('<th class="name">Test'
+        + (user_is_admin ? ' <a href="#" class="plus-sign"><i class="fa fa-plus"></i></a>' : '')
+        + '</th>'));
     tr.append($('<th class="prio">Prio</th>'));
     var archs = {};
     var tests = {};

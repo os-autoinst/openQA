@@ -40,7 +40,7 @@ $test_case->login($t, 'https://openid.camelot.uk/lancelot');
 # ...who should see a logout option but no link to API keys
 $res = OpenQA::Test::Case::trim_whitespace(
     $t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
-is($res, 'Logged in as lance Logout', 'lance is logged in');
+like($res, qr/Logged in as lance Operators Menu.*Logout/, 'lance is logged in');
 $t->get_ok('/api_keys')->status_is(403);
 
 #
@@ -56,7 +56,7 @@ $test_case->login($t, 'morgana');
 # ...who should see a logout option but no link to API keys
 $res = OpenQA::Test::Case::trim_whitespace(
     $t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
-is($res, 'Logged in as morgana Logout', 'morgana as no api keys');
+like($res, qr/Logged in as morgana Operators Menu.*API help Logout/, 'morgana as no api keys');
 $t->get_ok('/api_keys')->status_is(403);
 
 #
@@ -73,7 +73,6 @@ my $actions = OpenQA::Test::Case::trim_whitespace(
     $t->get_ok('/tests')->status_is(200)->tx->res->dom->at('#user-action')->all_text);
 like($actions, qr/Logged in as perci Operators Menu.*Manage API keys API help Logout/, 'perci has operator links');
 unlike($actions, qr/Administrators Menu/, 'perci has no admin links');
-
 $t->get_ok('/api_keys')->status_is(200);
 
 done_testing();

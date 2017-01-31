@@ -41,11 +41,7 @@ if (!$driver) {
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 # we need to talk to the phantom instance or else we're using wrong database
 my $url = 'http://localhost:' . t::ui::PhantomTest::get_mojoport;
-
-# Scheduled isos are only available to operators and admins
-$t->get_ok($url . '/admin/productlog')->status_is(302);
-$t->get_ok($url . '/login')->status_is(302);
-$t->get_ok($url . '/admin/productlog')->status_is(200);
+$t->get_ok($url . '/admin/productlog')->status_is(200, 'scheduled isos are public');
 
 # Schedule iso - need UA change to add security headers
 # XXX: Test::Mojo loses it's app when setting a new ua
