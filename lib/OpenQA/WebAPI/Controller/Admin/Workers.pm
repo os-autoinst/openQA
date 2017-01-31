@@ -63,7 +63,7 @@ sub previous_jobs_ajax {
     my $total_count = $worker->previous_jobs->count;
 
     # Parameter for order
-    my @columns = qw(id id result t_created);
+    my @columns = qw(id result t_finished);
     my @order_by_params;
     my $index = 0;
     while (1) {
@@ -73,29 +73,37 @@ sub previous_jobs_ajax {
         push(@order_by_params, {'-' . $column_order => $columns[$column_index]});
         ++$index;
     }
-    my $params = {order_by => \@order_by_params};
+    my %params = (order_by => \@order_by_params);
 
     # Determine number of needles with all filters applied except paging
-    my $filtered_count = $worker->previous_jobs({}, $params)->count;
+    my $filtered_count = $worker->previous_jobs({}, \%params)->count;
 
     # Parameter for paging
     my $first_row = $self->param('start');
-    $params->{offset} = $first_row if $first_row;
+    $params{offset} = $first_row if $first_row;
     my $row_limit = $self->param('length');
-    $params->{rows} = $row_limit if $row_limit;
+    $params{rows} = $row_limit if $row_limit;
+    $params{prefetch} = [qw(children parents)];
 
-    my $jobs = $worker->previous_jobs({}, $params);
+    my @jobs = $worker->previous_jobs({}, \%params)->all;
+    my @ids = map { $_->id } @jobs;
+    my $stats = OpenQA::Schema::Result::JobModules::job_module_stats(\@ids);
 
     my @data;
     my %modules;
-    while (my $j = $jobs->next) {
-        my $hash = {
-            id      => $j->id,
-            name    => $j->name,
-            result  => $j->result,
-            created => $j->t_created->datetime() . 'Z'
-        };
-        push(@data, $hash);
+    for my $job (@jobs) {
+        push(
+            @data,
+            {
+                id           => $job->id,
+                name         => $job->name,
+                deps         => $job->dependencies,
+                result       => $job->result,
+                result_stats => $stats->{$job->id},
+                state        => $job->state,
+                clone        => $job->clone_id,
+                finished     => $job->t_finished ? $job->t_finished->datetime() . 'Z' : undef,
+            });
     }
     $self->render(
         json => {

@@ -26,7 +26,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Case;
-use Data::Dumper;
+use Date::Format 'time2str';
 
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
@@ -89,14 +89,15 @@ wait_for_ajax;
 my $table = $driver->find_element_by_id('previous_jobs');
 ok($table, 'previous jobs table found');
 my @entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
-is(scalar @entries, 8, 'two previous jobs shown (4 cols per row)');
+is(scalar @entries, 6, 'two previous jobs shown (3 cols per row)');
 is_deeply(
     \@entries,
     [
-        '99926',      'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
-        'incomplete', 'about 2 hours ago',
-        '99928',      'opensuse-13.1-DVD-i586-Build0091-RAID1@32bit',
-        'none',       'about 2 hours ago',
+        'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit',
+        '0',
+        'about an hour ago',
+        'opensuse-13.1-DVD-i586-Build0091-RAID1@32bit',
+        '', 'not finished yet',
     ],
     'correct entries shown'
 );

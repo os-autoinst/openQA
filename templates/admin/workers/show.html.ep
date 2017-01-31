@@ -2,6 +2,8 @@
 % title "Worker " . $worker->{name};
 
 % content_for 'ready_function' => begin
+    is_operator = <%= (is_operator) ? 'true' : 'false' %>;
+    restart_url = "<%= url_for("apiv1_restart", jobid => 'REPLACEIT') %>";
     $('.timeago').timeago();
     setupResultButtons();
     setupWorkerNeedles();
@@ -37,12 +39,12 @@
     </table>
 
     <h3>Previous jobs</h3>
-    <table id="previous_jobs" class="table table-striped" data-ajax-url="<%= url_for('admin_worker_previous_jobs_ajax', worker_id => $worker->{id}) %>">
+    <table id="previous_jobs" class="table table-striped"
+      data-ajax-url="<%= url_for('admin_worker_previous_jobs_ajax', worker_id => $worker->{id}) %>">
         <thead>
-            <th>Id</th>
-            <th>Name</th>
+            <th>Test</th>
             <th>Result</th>
-            <th>Created</th>
+            <th>Finished</th>
         </thead>
     </table>
 </div>

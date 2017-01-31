@@ -72,6 +72,14 @@ function renderTestName ( data, type, row ) {
     }
 }
 
+function renderFinishedTimeAgo(data, type, row) {
+    if(type === 'display') {
+        return data ? jQuery.timeago(data) : 'not finished yet';
+    } else {
+        return data ? data : 0;
+    }
+}
+
 function renderTestResult( data, type, row ) {
     if (type === 'display') {
         var html = '';
@@ -154,12 +162,7 @@ function renderTestsList(jobs) {
               "render": renderTestName
             },
             { targets: 3,
-              "render": function ( data, type, row ) {
-                  if (type === 'display')
-                      return jQuery.timeago(data + " UTC");
-                  else
-                      return data;
-              }
+              "render": renderFinishedTimeAgo
             },
             { targets: 2,
               "render": renderTestResult

@@ -1,30 +1,20 @@
 function setupWorkerNeedles() {
 
     var table = $('#previous_jobs').DataTable(
-        { "ajax": $('#previous_jobs').data('ajax-url'),
+        {ajax: $('#previous_jobs').data('ajax-url'),
             deferRender: true,
             "columns": [
-                {"data": "id"},
-                {"data": "name", "orderable": false},
-                {"data": "result"},
-                {"data": "created"}
+                {data: "name", orderable: false},
+                {data: "result_stats"},
+                {data: "finished"}
             ],
-            "processing": true,
-            "serverSide": true,
-            "order": [[3, "desc"], [0, "asc"]],
-            "columnDefs": [
-            {  "targets": [0],
-                "className": "time",
-                "render": function (data, type, row) {
-                    return "<a href=\"/tests/" + data + "\">" + data + "</a>";
-                }
-            },
-            {  "targets": [3],
-                "className": "time",
-                "render": function (data, type, row) {
-                    return jQuery.timeago(new Date(data));
-                }
-            }
+            processing: true,
+            serverSide: true,
+            order: [[2, "desc"]],
+            columnDefs: [
+                {targets: 0, render: renderTestName},
+                {targets: 1, render: renderTestResult},
+                {targets: 2, render: renderFinishedTimeAgo}
             ]
         });
 

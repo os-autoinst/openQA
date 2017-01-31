@@ -1537,6 +1537,27 @@ sub cancel {
     return $count;
 }
 
+sub dependencies {
+    my ($self) = @_;
+
+    my %parents  = (Chained => [], Parallel => []);
+    my %children = (Chained => [], Parallel => []);
+
+    my $jp = $self->parents;
+    while (my $s = $jp->next) {
+        push(@{${parents}{$s->to_string}}, $s->parent_job_id);
+    }
+    my $jc = $self->children;
+    while (my $s = $jc->next) {
+        push(@{${children}{$s->to_string}}, $s->child_job_id);
+    }
+
+    return {
+        parents  => \%parents,
+        children => \%children
+    };
+}
+
 1;
 
 # vim: set sw=4 et:
