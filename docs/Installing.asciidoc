@@ -153,6 +153,7 @@ You can also run workers manually from command line.
 
 [source,sh]
 --------------------------------------------------------------------------------
+install -d -m 0755 -o _openqa-worker /var/lib/openqa/pool/X
 sudo -u _openqa-worker /usr/share/openqa/script/worker --instance X
 --------------------------------------------------------------------------------
 
