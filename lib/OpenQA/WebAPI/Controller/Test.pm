@@ -129,37 +129,25 @@ sub list_ajax {
         })->all;
     # need to use all as the order is too complex for a cursor
     for my $job (@jobs) {
-        # job dependencies
-        my %deps = (
-            parents  => {Chained => [], Parallel => []},
-            children => {Chained => [], Parallel => []});
-        my $jp = $job->parents;
-        while (my $s = $jp->next) {
-            push(@{$deps{parents}->{$s->to_string}}, $s->parent_job_id);
-        }
-        my $jc = $job->children;
-        while (my $s = $jc->next) {
-            push(@{$deps{children}->{$s->to_string}}, $s->child_job_id);
-        }
-
-        my $data = {
-            DT_RowId     => "job_" . $job->id,
-            id           => $job->id,
-            result_stats => $stats->{$job->id},
-            deps         => \%deps,
-            clone        => $job->clone_id,
-            test         => $job->TEST . "@" . ($job->MACHINE // ''),
-            distri  => $job->DISTRI  // '',
-            version => $job->VERSION // '',
-            flavor  => $job->FLAVOR  // '',
-            arch    => $job->ARCH    // '',
-            build   => $job->BUILD   // '',
-            testtime => $job->t_finished,
-            result   => $job->result,
-            group    => $job->group_id,
-            state    => $job->state
-        };
-        push @list, $data;
+        push(
+            @list,
+            {
+                DT_RowId     => "job_" . $job->id,
+                id           => $job->id,
+                result_stats => $stats->{$job->id},
+                deps         => $job->dependencies,
+                clone        => $job->clone_id,
+                test         => $job->TEST . "@" . ($job->MACHINE // ''),
+                distri  => $job->DISTRI  // '',
+                version => $job->VERSION // '',
+                flavor  => $job->FLAVOR  // '',
+                arch    => $job->ARCH    // '',
+                build   => $job->BUILD   // '',
+                testtime => $job->t_finished,
+                result   => $job->result,
+                group    => $job->group_id,
+                state    => $job->state
+            });
     }
     $self->render(json => {data => \@list});
 }
