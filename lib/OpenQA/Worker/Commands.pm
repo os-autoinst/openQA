@@ -124,7 +124,7 @@ sub websocket_commands {
         }
         elsif ($type eq 'job_available') {
             log_debug('received job notification') if $verbose;
-            if (!$job) {
+            if (!$job && $hosts->{$host}{accepting_jobs}) {
                 Mojo::IOLoop->next_tick(sub { check_job($host) });
             }
         }

@@ -241,9 +241,9 @@ sub api_call {
         if (!$tries) {
             # abort the current job, we're in trouble - but keep running to grab the next
             OpenQA::Worker::Jobs::stop_job('api-failure');
-            $hosts->{$host}{workerid} = undef;
-            $host = undef;
-            add_timer('register_worker', 10, \&register_worker, 1);
+            # stop accepting jobs and schedule reregistration - keep the rest running
+            $hosts->{$host}{accepting_jobs} = 0;
+            add_timer('register_worker', 10, sub { register_worker($host) }, 1);
             $callback->();
             return;
         }
@@ -345,6 +345,8 @@ sub call_websocket {
                 # keep websocket connection busy
                 $hosts->{$host}{timers}{keepalive}
                   = add_timer('', 5, sub { $tx->send({json => {type => 'ok'}}); });
+
+                $hosts->{$host}{accepting_jobs} = 1;
                 log_info("checking job for $host");
                 OpenQA::Worker::Jobs::check_job($host);
                 # check for new job immediately
@@ -415,6 +417,25 @@ sub register_worker {
     # dir is set during initial registration call
     $hosts->{$host}{dir} = $dir if $dir;
 
+    # test pool is from config, so it doesn't change
+    $hosts->{$host}{testpoolserver} = $testpoolserver;
+
+    # reset workerid
+    $hosts->{$host}{workerid} = undef;
+
+    # cleanup ws if active
+    my $ws = $hosts->{$host}{ws};
+    if ($ws) {
+        $ws->finish();
+    }
+
+    # remove timers if set
+    for my $t (keys %{$hosts->{$host}{timers}}) {
+        my $t_id = $hosts->{$host}{timers}{$t};
+        remove_timer($t) if $t;
+        $hosts->{$host}{timers}{$t} = undef;
+    }
+
     my $ua_url = $hosts->{$host}{url}->clone;
     my $ua     = $hosts->{$host}{ua};
     $ua_url->path('workers');
@@ -434,30 +455,12 @@ sub register_worker {
         }
         return;
     }
-    $hosts->{$host}{testpoolserver} = $testpoolserver;
-    my $newid    = $tx->success->json->{id};
-    my $workerid = $hosts->{$host}{workerid};
-    my $ws       = $hosts->{$host}{ws};
-    if ($ws && $workerid && $workerid != $newid) {
-        # terminate websockets if our worker id changed
-        $ws->finish() if $ws;
-        $ws = undef;
-    }
+    my $newid = $tx->success->json->{id};
+
     log_debug("new worker id within WebUI $host is $newid") if $verbose;
     $hosts->{$host}{workerid} = $newid;
 
-    if ($ws) {
-        Mojo::IOLoop->next_tick(
-            sub {
-                OpenQA::Worker::Jobs::check_job($host);
-            });
-    }
-    else {
-        Mojo::IOLoop->next_tick(
-            sub {
-                setup_websocket($host);
-            });
-    }
+    setup_websocket($host);
 }
 
 sub update_setup_status {
