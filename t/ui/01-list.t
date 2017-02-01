@@ -51,7 +51,7 @@ sub schema_hook {
 
 my $driver = call_phantom(\&schema_hook);
 unless ($driver) {
-    plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
+    plan skip_all => $t::ui::PhantomTest::phantommissing;
     exit(0);
 }
 

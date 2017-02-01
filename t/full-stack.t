@@ -73,11 +73,10 @@ sub kill_worker {
 
 use t::ui::PhantomTest;
 
-# skip if phantomjs or Selenium::Remote::WDKeys isn't available
-use IPC::Cmd 'can_run';
-if (!can_run('phantomjs') || !can_load(modules => {'Selenium::PhantomJS' => undef,})) {
-    diag("Make sure that phantomjs binary is installed") unless (can_run('phantomjs'));
-    return undef;
+# skip if appropriate modules aren't available
+unless (check_phantom_modules) {
+    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    exit(0);
 }
 
 unlink('t/full-stack.d/openqa/db/db.sqlite');
@@ -103,10 +102,8 @@ if ($schedulerpid == 0) {
 }
 
 # we don't want no fixtures
-my $mojoport = t::ui::PhantomTest::start_app(sub { });
-ok($mojoport);
-my $driver = t::ui::PhantomTest::start_phantomjs($mojoport);
-ok($driver);
+my $driver = call_phantom(sub { });
+my $mojoport = t::ui::PhantomTest::get_mojoport;
 
 my $resultdir = 't/full-stack.d/openqa/testresults/';
 # remove_tree dies on error

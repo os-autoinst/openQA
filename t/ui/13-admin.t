@@ -40,11 +40,17 @@ my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
 use t::ui::PhantomTest;
-use Selenium::Remote::WDKeys;
 
 my $driver = call_phantom();
 unless ($driver) {
-    plan skip_all => 'Install phantomjs to run these tests';
+    plan skip_all => $t::ui::PhantomTest::phantommissing;
+    exit(0);
+}
+
+# DO NOT MOVE THIS INTO A 'use' FUNCTION CALL! It will cause the tests
+# to crash if the module is unavailable
+unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
+    plan skip_all => 'Install Selenium::Remote::WDKeys to run this test';
     exit(0);
 }
 
@@ -350,10 +356,10 @@ subtest 'job property editor' => sub() {
         # those keys will be appended
         $driver->find_element_by_id('editor-name')->send_keys(' has been edited!');
         my $ele = $driver->find_element_by_id('editor-size-limit');
-        $ele->send_keys(KEYS->{control}, 'a');
+        $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $ele->send_keys('1000');
         $ele = $driver->find_element_by_id('editor-keep-important-results-in-days');
-        $ele->send_keys(KEYS->{control}, 'a');
+        $ele->send_keys(Selenium::Remote::WDKeys->KEYS->{control}, 'a');
         $ele->send_keys('500');
         $driver->find_element_by_id('editor-description')->send_keys('Test group');
         $driver->find_element('p.buttons button.btn-primary')->click();

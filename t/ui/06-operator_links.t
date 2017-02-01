@@ -31,7 +31,7 @@ my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 my $driver = call_phantom();
 unless ($driver) {
-    plan skip_all => 'Install phantomjs and Selenium::Remote::Driver to run these tests';
+    plan skip_all => $t::ui::PhantomTest::phantommissing;
     exit(0);
 }
 
