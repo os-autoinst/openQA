@@ -191,25 +191,30 @@ clone_job.pl --from localhost 42 _GROUP=0
 === Using snapshots to speed up development of tests
 [id="snapshots"]
 
-Sometimes it's annoying to run the full installation to adjust some
-test. It would be nice to have the VM jump to a certain point. +QEMU
-backend+ provides feature that allows a job to start from a snapshot that might
-help in this situation.
+For lower turn-around times during test development based on virtual machines
+the +QEMU backend+ provides a feature that allows a job to start from a
+snapshot which can help in this situation.
 
 Depending on the use case, there are two options to help:
 
-* create and *preserve* snapshots for *every test* module run (+MAKETESTSNAPSHOTS+)
-  - offers more flexibility as test can be resumed almost at any point, however
-    disk space requirements are high (expect more than 30GB for one job)
-  - this mode is useful for fixing non fatal issues in tests and debugging SUT
+* Create and *preserve* snapshots for *every test* module run (+MAKETESTSNAPSHOTS+)
+  - Offers more flexibility as the test can be resumed almost at any point.
+    However disk space requirements are high (expect more than 30GB for one
+    job)
+  - This mode is useful for fixing non-fatal issues in tests and debugging SUT
+    as more than just the snapshot of the last failed module is saved.
 
-* create snapshot *after every successful* test module, *always overwrite* to preserve only latest (+TESTDEBUG+)
-  - allows to skip just before the start of first failed test module, which can be limiting, but there are
-  no additional hardware requirements.
-  - this mode is useful for iterative test development
+* Create a snapshot *after every successful* test module while *always
+  overwriting* the existing snapshot to preserve only the latest (+TESTDEBUG+)
+  - Allows to skip just before the start of the first failed test module,
+    which can be limiting, but preserves disk space in comparison to
+    +MAKETESTSNAPSHOTS+.
+  - This mode is useful for iterative test development
 
-In both modes there is no need to modify tests (i.e. adding +milestone+ test flag, it is implied).
-In later mode, every test module is also considered +fatal+. This means the job is aborted after first failed test module.
+In both modes there is no need to modify tests (i.e. adding +milestone+ test
+flag as the behaviour  is implied). In the later mode every test module is
+also considered +fatal+. This means the job is aborted after the first failed
+test module.
 
 ==== Enable snapshots for each module
 
@@ -233,12 +238,13 @@ clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 SKIPTO=cons
 ----
 
 * Use qemu-img snapshot -l something.img to find out what snapshots are in the image. Snapshots are named
-`"test module category"-"test module name"` (e.g. `installation-start_install`)
+`"test module category"-"test module name"` (e.g. `installation-start_install`).
 
-==== Storing only the last sucessfull snapshot
+==== Storing only the last sucessful snapshot
 
 * Run the worker with +--no-cleanup parameter+. This will preserve the hard disks after test runs.
-* Set +TESTDEBUG=1+ on a job. This will make openQA save a snapshot after each successful test module run. Snapshots are overwritten.
+* Set +TESTDEBUG=1+ on a job. This will make openQA save a snapshot after each
+successful test module run. Snapshots are overwritten. The snapshot is named `lastgood` in all cases.
 
 [source,sh]
 ----
@@ -246,8 +252,9 @@ clone_job.pl --from https://openqa.opensuse.org  --host localhost 24 TESTDEBUG=1
 ----
 
 * Create a job again, this time setting the +SKIPTO+ variable to the snapshot
-which failed on previous run. If clone_job script is not used, +TESTDEBUG=1+
-variable must be also included:
+which failed on previous run. Make sure the new job will also have
++TESTDEBUG=1+ set. This can be ensured by the use of the clone_job script on
+the clone source job or specifying the variable explicitly:
 
 [source,sh]
 ----
