@@ -971,4 +971,84 @@ for ($jobC, $jobD) {
     is_deeply($h->{parents}{Parallel}, [$jobB->clone->id], 'job has jobB2 as parallel parent');
 }
 
+sub _job_create_set_done {
+    my ($settings, $state) = @_;
+    my $job = _job_create($settings);
+    # hack jobs to appear done to scheduler
+    #     my $state = int(rand(10)) > 5 ? OpenQA::Schema::Result::Jobs::DONE : OpenQA::Schema::Result::Jobs::CANCELLED;
+    #     print "$settings->{TEST} state is $state\n";
+    $job->state($state);
+    $job->result(OpenQA::Schema::Result::Jobs::PASSED);
+    $job->update;
+    return $job;
+}
+
+sub _job_cloned_and_related {
+    my ($jobA, $jobB) = @_;
+    ok($jobA->clone, 'jobA has a clone');
+    my $jobA_hash   = job_get_deps($jobA->id);
+    my $cloneA_hash = job_get_deps($jobA->clone->id);
+    ok($jobB->clone, 'jobB has a clone');
+    my $cloneB = $jobB->clone->id;
+
+    my $rel;
+    for my $r (qw(Chained Parallel)) {
+        my $res = grep { $_ eq $jobB->id } @{$jobA_hash->{children}{$r}};
+        if ($res) {
+            $rel = $r;
+            last;
+        }
+    }
+    ok($rel, "jobA is $rel parent of jobB");
+    my $res = grep { $_ eq $cloneB } @{$cloneA_hash->{children}{$rel}};
+    ok($res, "cloneA is $rel parent of cloneB");
+}
+
+
+subtest 'slepos test workers' => sub {
+    my %settingsSUS = %settings;
+    $settingsSUS{TEST} = 'SupportServer';
+    my %settingsAS = %settings;
+    $settingsAS{TEST} = 'AdminServer';
+    my %settingsBS = %settings;
+    $settingsBS{TEST} = 'BranchServer';
+    my %settingsIS = %settings;
+    $settingsIS{TEST} = 'ImageServer';
+    my %settingsIS2 = %settings;
+    $settingsIS2{TEST} = 'ImageServer2';
+    my %settingsT = %settings;
+    $settingsT{TEST} = 'Terminal';
+
+    # Support server
+    my $jobSUS = _job_create_set_done(\%settingsSUS, OpenQA::Schema::Result::Jobs::DONE);
+    # Admin Server 1
+    $settingsAS{_PARALLEL_JOBS} = [$jobSUS->id];
+    my $jobAS = _job_create_set_done(\%settingsAS, OpenQA::Schema::Result::Jobs::DONE);
+    # Image server 2
+    $settingsIS2{_START_AFTER_JOBS} = [$jobAS->id];
+    my $jobIS2 = _job_create_set_done(\%settingsIS2, OpenQA::Schema::Result::Jobs::DONE);
+    # Image server
+    $settingsIS{_PARALLEL_JOBS}    = [$jobSUS->id];
+    $settingsIS{_START_AFTER_JOBS} = [$jobAS->id];
+    my $jobIS = _job_create_set_done(\%settingsIS, OpenQA::Schema::Result::Jobs::CANCELLED);
+    # Branch server
+    $settingsBS{_PARALLEL_JOBS} = [$jobAS->id, $jobSUS->id];
+    my $jobBS = _job_create_set_done(\%settingsBS, OpenQA::Schema::Result::Jobs::DONE);
+    # Terminal
+    $settingsT{_PARALLEL_JOBS} = [$jobBS->id];
+    my $jobT = _job_create_set_done(\%settingsT, OpenQA::Schema::Result::Jobs::DONE);
+    # clone terminal
+    $jobT->duplicate;
+    $_->discard_changes for ($jobSUS, $jobAS, $jobIS, $jobIS2, $jobBS, $jobT);
+    # check dependencies of clones
+    ok(_job_cloned_and_related($jobSUS, $jobAS),  "jobSUS and jobAS");
+    ok(_job_cloned_and_related($jobSUS, $jobIS),  "jobSUS and jobIS");
+    ok(_job_cloned_and_related($jobSUS, $jobBS),  "jobSUS and jobBS");
+    ok(_job_cloned_and_related($jobAS,  $jobIS),  "jobAS and jobIS");
+    ok(_job_cloned_and_related($jobAS,  $jobIS2), "jobAS and jobIS2");
+    ok(_job_cloned_and_related($jobAS,  $jobBS),  "jobAS and jobBS");
+    ok(_job_cloned_and_related($jobBS,  $jobT),   "jobBS and jobT");
+};
+
+
 done_testing();

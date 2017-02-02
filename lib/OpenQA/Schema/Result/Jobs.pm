@@ -545,7 +545,7 @@ sub duplicate {
             }
         }
         elsif ($jobs_map->{$p->id}) {
-            # if $jobs_map->{$p->id} is true, job was already clones, lets create the relationship
+            # if $jobs_map->{$p->id} is true, job was already cloned, lets create the relationship
             if ($pd->dependency eq OpenQA::Schema::Result::JobDependencies->PARALLEL) {
                 push @direct_deps_parents_parallel, $jobs_map->{$p->id};
             }
@@ -674,28 +674,28 @@ sub duplicate {
 
     # recreate dependencies if exists for cloned parents/children
     for my $p (@direct_deps_parents_parallel) {
-        $res->parents->create(
+        $res->parents->find_or_create(
             {
                 parent_job_id => $p->id,
                 dependency    => OpenQA::Schema::Result::JobDependencies->PARALLEL,
             });
     }
     for my $p (@direct_deps_parents_chained) {
-        $res->parents->create(
+        $res->parents->find_or_create(
             {
                 parent_job_id => $p->id,
                 dependency    => OpenQA::Schema::Result::JobDependencies->CHAINED,
             });
     }
     for my $c (@direct_deps_children_parallel) {
-        $res->children->create(
+        $res->children->find_or_create(
             {
                 child_job_id => $c->id,
                 dependency   => OpenQA::Schema::Result::JobDependencies->PARALLEL,
             });
     }
     for my $c (@direct_deps_children_chained) {
-        $res->children->create(
+        $res->children->find_or_create(
             {
                 child_job_id => $c->id,
                 dependency   => OpenQA::Schema::Result::JobDependencies->CHAINED,
