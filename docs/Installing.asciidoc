@@ -52,11 +52,11 @@ dnf install openqa openqa-httpd
 === Apache proxy
 
 It is required to run openQA behind an http proxy (apache, nginx, etc..). See the
-+openqa.conf.template+ config file in +/etc/apache2/vhosts.d+ (openSUSE) or
+*openqa.conf.template* config file in */etc/apache2/vhosts.d* (openSUSE) or
 +/etc/httpd/conf.d+ (Fedora). To make everything work correctly on openSUSE, you
 need to enable the 'headers', 'proxy', 'proxy_http' and 'proxy_wstunnel' modules
 using the command 'a2enmod'. This is not necessary on Fedora. For a basic setup, you can
-copy +openqa.conf.template+ to +openqa.conf+ and modify the +ServerName+
+copy *openqa.conf.template* to *openqa.conf* and modify the +ServerName+ if required
 setting. This will direct all HTTP traffic to openQA.
 
 [source,sh]
@@ -162,14 +162,6 @@ installed 'os-autoinst' from packages make sure to pass +--isotovideo+ option
 to point to the checkout dir where isotovideo is, not to +/usr/lib+! Otherwise
 it will have trouble finding its perl modules.
 
-== Where to now?
-
-From this point on, you can refer to the link:GettingStarted.asciidoc#testing-opensuse-or-fedora[getting started] guide to
-fetch the tests cases and possibly take a look at link:WritingTests.asciidoc[Test Developer Guide]
-
-== Advanced configuration
-[id="advanced"]
-
 === User authentication
 
 OpenQA supports three different authentication methods - OpenID (default), iChain
@@ -223,6 +215,15 @@ secret = 1234567890ABCDEF
 
 If you switch authentication method from Fake to any other, review your API keys!
 You may be vulnerable for up to a day until Fake API key expires.
+
+== Where to now?
+
+From this point on, you can refer to the link:GettingStarted.asciidoc#testing-opensuse-or-fedora[getting started] guide to
+fetch the tests cases and possibly take a look at link:WritingTests.asciidoc[Test Developer Guide]
+
+== Advanced configuration
+[id="advanced"]
+
 
 === Setting up git support
 
