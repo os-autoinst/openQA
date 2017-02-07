@@ -605,7 +605,7 @@ Takes an optional <code>$reason</code> string which is recorded in the log file.
 <h5 id="_assert_screen">assert_screen</h5>
 <div class="literalblock">
 <div class="content">
-<pre>assert_screen($mustmatch [,$timeout]);</pre>
+<pre>assert_screen($mustmatch [, [$timeout] | [timeout =&gt; $timeout]] [, no_wait =&gt; $no_wait]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -615,7 +615,13 @@ waiting time is defined by <code>$timeout</code>. It is recommended to use a val
 than the default timeout only when explicitly needed. <code>assert_screen</code> is not
 very suitable for checking performance expectations. Under the normal
 circumstance of the screen being shown this does not imply a longer waiting
-time as the method returns as soon as a successful needle match occured.</p>
+time as the method returns as soon as a successful needle match occurred.</p>
+</div>
+<div class="paragraph">
+<p>Specify <code>$no_wait</code> to run the screen check as fast as possible that is
+possibly more than once per second which is default. Select this to check a
+screen which can change in a range faster than 1-2 seconds not to miss the
+screen to check for.</p>
 </div>
 <div class="paragraph">
 <p>Returns matched needle or throws <code>NeedleFailed</code> exception if $timeout timeout
@@ -626,7 +632,7 @@ is hit. Default timeout is 30s.</p>
 <h5 id="_check_screen">check_screen</h5>
 <div class="literalblock">
 <div class="content">
-<pre>check_screen($mustmatch [,$timeout]);</pre>
+<pre>check_screen($mustmatch [, [$timeout] | [timeout =&gt; $timeout]] [, no_wait =&gt; $no_wait]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -735,7 +741,7 @@ within timeout. Look into <code>wait_screen_change</code> for details.</p>
 <h5 id="_wait_still_screen">wait_still_screen</h5>
 <div class="literalblock">
 <div class="content">
-<pre>wait_still_screen([$stilltime_sec [, $timeout_sec [, $similarity_level]]]);</pre>
+<pre>wait_still_screen([$stilltime_sec [, $timeout [, $similarity_level]]]);</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -829,7 +835,7 @@ Default timeout is 30s, default stilltime is 7s.</p>
 <p>Determines if communication with the guest is being performed purely over a
 serial port. When true, the guest should have a tty attached to a serial port
 and os-autoinst sends commands to it as text. This differs from when a text
-console is selected in the guest, but VNC is being used to simulate keypresses.</p>
+console is selected in the guest, but VNC is being used to simulate key presses.</p>
 </div>
 <div class="paragraph">
 <p>When a serial terminal is selected you will not be able to use functions which
@@ -959,7 +965,7 @@ See <code>wait_serial</code> for default timeout.</p>
 </div>
 <div class="paragraph">
 <p>Run <code>$program</code> using sudo. Handle the sudo timeout and send password when appropriate.
-<code>$wait_seconds</code> defaults to 2 seconds.</p>
+<code>$wait</code> defaults to 2 seconds.</p>
 </div>
 <div class="paragraph">
 <p><em>The implementation is distribution specific and not always available.</em>'</p>
@@ -1423,9 +1429,10 @@ the default will be the current test&#8217;s name. The disk number will be alway
 </div>
 </div>
 <div class="paragraph">
-<p>If the backend supports it, freeze the vm. This will allow the vm to be
-paused/frozen within the test, but only from the post_fail_hook. So that memory
-and disk dumps can be extracted without any risk of data changing.</p>
+<p>If the backend supports it, freeze the virtual machine. This will allow the
+virtual machine to be paused/frozen within the test, but only from the
+post_fail_hook. So that memory and disk dumps can be extracted without any
+risk of data changing.</p>
 </div>
 <div class="paragraph">
 <p>Call this method to ensure memory and disk dump refer to the same machine state.</p>
@@ -1442,8 +1449,8 @@ and disk dumps can be extracted without any risk of data changing.</p>
 </div>
 </div>
 <div class="paragraph">
-<p>If the backend supports it, resume the vm.
-Call this method to start vm CPU explicitly if DELAYED_START is set.</p>
+<p>If the backend supports it, resume the virtual machine. Call this method to
+start virtual machine CPU explicitly if DELAYED_START is set.</p>
 </div>
 <div class="paragraph">
 <p><em>Currently only qemu backend is supported.</em>'</p>
@@ -1575,7 +1582,7 @@ replacing previous assets - useful for external users:</p>
 <p>If you just want to upload a file and verify that it was uploaded
 correctly on your own (e.g. in svirt console we don&#8217;t have a serial
 line and can&#8217;t rely on assert_script_run check), add an optional
-'nocheck' parameter:</p>
+<code>$nocheck</code> parameter:</p>
 </div>
 <div class="literalblock">
 <div class="content">
@@ -1587,7 +1594,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-02-02 11:14:05 UTC
+Last updated 2017-02-07 09:03:49 UTC
 </div>
 </div>
 </body>
