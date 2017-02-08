@@ -47,7 +47,7 @@ sub count_job {
         }
         if ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED) {
             $jr->{softfailed}++;
-            if (@{$job->failed_modules}) {
+            if ($job->has_failed_modules) {
                 $jr->{softfailed_with_failed_modules}++;
                 $jr->{labeled_softfailed}++ if $labels->{$job->id};
             }

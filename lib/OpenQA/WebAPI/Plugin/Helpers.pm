@@ -251,7 +251,9 @@ sub register {
             my $class = 'help_popover fa fa-question-circle';
             if ($details_url) {
                 $content
-                  .= '<p>See ' . $c->link_to($details_text ? $details_text : here => $details_url) . ' for details</p>';
+                  .= '<p>See '
+                  . $c->link_to($details_text ? $details_text : here => $details_url, target => 'blank')
+                  . ' for details</p>';
             }
             my $data = {toggle => 'popover', trigger => 'focus', title => $title, content => $content};
             $data->{placement} = $placement if $placement;

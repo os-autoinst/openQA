@@ -154,6 +154,23 @@ $form = {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1}
 $get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
 like(get_summary, qr/Passed: 0 Soft Failure: 2 Failed: 1/i, 'todo=1 shows all unlabeled failed');
 
+# add a failing module to one of the softfails to test 'TODO' option
+my $failing_module = $t->app->db->resultset('JobModules')->create(
+    {
+        script   => 'tests/x11/failing_module.pm',
+        job_id   => 99936,
+        category => 'x11',
+        name     => 'failing_module',
+        result   => 'failed'
+    });
+
+$get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
+  ->status_is(200);
+like(get_summary, qr/Passed: 0 Soft Failure: 1 Failed: 1/i, 'todo=1 shows all unlabeled failed');
+$t->element_exists('#res-99939', 'softfailed without failing module present');
+$t->element_exists_not('#res-99936', 'softfailed with failing module filtered out');
+$failing_module->delete();
+
 # multiple groups can be shown at the same time
 $get = $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002&build=0091')->status_is(200);
 $summary = get_summary;

@@ -344,10 +344,10 @@ sub _job_labels {
     my ($self, $jobs) = @_;
 
     my %labels;
-    my $c
-      = $self->db->resultset("Comments")->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
+    my $comments
+      = $self->db->resultset('Comments')->search({job_id => {in => [map { $_->id } @$jobs]}}, {order_by => 'me.id'});
     # previous occurences of bug or label are overwritten here.
-    while (my $comment = $c->next()) {
+    while (my $comment = $comments->next()) {
         my $bugrefs = $comment->bugrefs;
         if (@$bugrefs) {
             push(@{$labels{$comment->job_id}{bugs} //= []}, @$bugrefs);
@@ -381,54 +381,61 @@ sub prepare_job_results {
 
     # prefetch descriptions from test suites
     my %desc_args = (name => {in => \@job_names});
-    my @descriptions = $self->db->resultset("TestSuites")->search(\%desc_args, {columns => [qw(name description)]});
+    my @descriptions = $self->db->resultset('TestSuites')->search(\%desc_args, {columns => [qw(name description)]});
     my %descriptions = map { $_->name => $_->description } @descriptions;
 
+    my $todo = $self->param('todo');
     foreach my $job (@$jobs) {
+        my $jobid  = $job->id;
         my $test   = $job->TEST;
         my $flavor = $job->FLAVOR || 'sweet';
         my $arch   = $job->ARCH || 'noarch';
 
         my $result;
-        if ($job->state eq 'done') {
-            my $result_stats = $all_result_stats->{$job->id};
+        if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
+            my $result_stats = $all_result_stats->{$jobid};
             my $overall      = $job->result;
-            if ($job->result eq "passed") {
-                next if $self->param('todo');
+
+            if ($todo) {
+                # skip all jobs NOT needed to be labeled for the black certificate icon to show up
+                next
+                  if $job->result eq OpenQA::Schema::Result::Jobs::PASSED
+                  || $job_labels->{$jobid}{bugs}
+                  || $job_labels->{$jobid}{label}
+                  || ( $job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED
+                    && $job->has_failed_modules);
             }
-            if ($self->param('todo')) {
-                next if $job_labels->{$job->id}{bugs} || $job_labels->{$job->id}{label};
-            }
+
             $result = {
                 passed   => $result_stats->{passed},
                 unknown  => $result_stats->{unk},
                 failed   => $result_stats->{failed},
                 overall  => $overall,
-                jobid    => $job->id,
-                state    => 'done',
+                jobid    => $jobid,
+                state    => OpenQA::Schema::Result::Jobs::DONE,
                 failures => $job->failed_modules(),
-                bugs     => $job_labels->{$job->id}{bugs},
-                label    => $job_labels->{$job->id}{label},
-                comments => $job_labels->{$job->id}{comments},
+                bugs     => $job_labels->{$jobid}{bugs},
+                label    => $job_labels->{$jobid}{label},
+                comments => $job_labels->{$jobid}{comments},
             };
             $aggregated->{$overall}++;
         }
-        elsif ($job->state eq 'running') {
-            next if $self->param('todo');
+        elsif ($job->state eq OpenQA::Schema::Result::Jobs::RUNNING) {
+            next if $todo;
             $result = {
-                state => "running",
-                jobid => $job->id,
+                state => OpenQA::Schema::Result::Jobs::RUNNING,
+                jobid => $jobid,
             };
             $aggregated->{running}++;
         }
         else {
-            next if $self->param('todo');
+            next if $todo;
             $result = {
                 state    => $job->state,
-                jobid    => $job->id,
+                jobid    => $jobid,
                 priority => $job->priority,
             };
-            if ($job->state eq 'scheduled') {
+            if ($job->state eq OpenQA::Schema::Result::Jobs::SCHEDULED) {
                 $aggregated->{scheduled}++;
             }
             else {
