@@ -77,7 +77,6 @@ Example:
   BACKEND = qemu
   HOST = http://openqa.example.com
 
-
 =head1 SEE ALSO
 L<OpenQA::Client>
 
@@ -141,6 +140,7 @@ sub read_worker_config {
     my $host_settings;
     $host ||= $sets->{'HOST'} ||= 'localhost';
     delete $sets->{'HOST'};
+    die "Hosts in workers.ini is malformed, use space as separators ($host)" if grep /,/, $host;
     my @hosts = split / /, $host;
     for my $section (@hosts) {
         if ($cfg && $cfg->SectionExists($section)) {
