@@ -335,7 +335,7 @@ configure where the shared storage is mounted. Example:
 [source,ini]
 --------------------------------------------------------------------------------
 [global]
-HOSTS = openqa.opensuse.org openqa.fedora.fedoraproject.org
+HOST = openqa.opensuse.org openqa.fedora.fedoraproject.org
 
 [openqa.opensuse.org]
 SHARE_DIRECTORY = /var/lib/openqa/opensuse
