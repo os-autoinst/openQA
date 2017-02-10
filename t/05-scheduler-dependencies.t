@@ -1,6 +1,6 @@
 #!/usr/bin/env perl -w
 
-# Copyright (C) 2014-2016 SUSE LLC
+# Copyright (C) 2014-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -34,8 +34,6 @@ my $schema = OpenQA::Test::Database->new->create();
 
 # create Test DBus bus and service for fake WebSockets call
 my $ws = OpenQA::WebSockets->new;
-
-#my $t = Test::Mojo->new('OpenQA::WebAPI');
 
 sub list_jobs {
     my %args = @_;
@@ -75,13 +73,12 @@ my %settings = (
     NICTYPE     => 'tap'
 );
 
-my $workercaps = {};
-$workercaps->{cpu_modelname} = 'Rainbow CPU';
-$workercaps->{cpu_arch}      = 'x86_64';
-$workercaps->{cpu_opmode}    = '32-bit, 64-bit';
-$workercaps->{mem_max}       = '4096';
-
-
+my %workercaps = (
+    cpu_modelname => 'Rainbow CPU',
+    cpu_arch      => 'x86_64',
+    cpu_opmode    => '32-bit, 64-bit',
+    mem_max       => '4096'
+);
 
 # parallel dependencies
 #
@@ -91,42 +88,29 @@ $workercaps->{mem_max}       = '4096';
 #        ^
 #        \--- F
 
-my %settingsA = %settings;
-my %settingsB = %settings;
-my %settingsC = %settings;
-my %settingsD = %settings;
-my %settingsE = %settings;
-my %settingsF = %settings;
-
-$settingsA{TEST} = 'A';
-$settingsB{TEST} = 'B';
-$settingsC{TEST} = 'C';
-$settingsD{TEST} = 'D';
-$settingsE{TEST} = 'E';
-$settingsF{TEST} = 'F';
+my %settingsA = (%settings, TEST => 'A');
+my %settingsB = (%settings, TEST => 'B');
+my %settingsC = (%settings, TEST => 'C');
+my %settingsD = (%settings, TEST => 'D');
+my %settingsE = (%settings, TEST => 'E');
+my %settingsF = (%settings, TEST => 'F');
 
 sub _job_create {
-    my $job = $schema->resultset('Jobs')->create_from_settings(@_);
+    my ($settings, $parellel_jobs, $start_after_jobs) = @_;
+    $settings->{_PARALLEL_JOBS}    = $parellel_jobs    if $parellel_jobs;
+    $settings->{_START_AFTER_JOBS} = $start_after_jobs if $start_after_jobs;
+    my $job = $schema->resultset('Jobs')->create_from_settings($settings);
     # reload all values from database so we can check against default values
     $job->discard_changes;
     return $job;
 }
 
 my $jobA = _job_create(\%settingsA);
-
 my $jobB = _job_create(\%settingsB);
-
-$settingsC{_PARALLEL_JOBS} = [$jobB->id];
-my $jobC = _job_create(\%settingsC);
-
-$settingsD{_PARALLEL_JOBS} = [$jobA->id];
-my $jobD = _job_create(\%settingsD);
-
-$settingsE{_PARALLEL_JOBS} = $jobC->id . ',' . $jobD->id;    # test also IDs passed as comma separated string
-my $jobE = _job_create(\%settingsE);
-
-$settingsF{_PARALLEL_JOBS} = [$jobC->id];
-my $jobF = _job_create(\%settingsF);
+my $jobC = _job_create(\%settingsC, [$jobB->id]);
+my $jobD = _job_create(\%settingsD, [$jobA->id]);
+my $jobE = _job_create(\%settingsE, $jobC->id . ',' . $jobD->id);    # test also IDs passed as comma separated string
+my $jobF = _job_create(\%settingsF, [$jobC->id]);
 
 $jobA->set_prio(3);
 $jobB->set_prio(2);
@@ -135,65 +119,30 @@ $jobD->set_prio(1);
 $jobE->set_prio(1);
 $jobF->set_prio(1);
 
-#diag "jobA ", $jobA;
-#diag "jobB ", $jobB;
-#diag "jobC ", $jobC;
-#diag "jobD ", $jobD;
-#diag "jobE ", $jobE;
-#diag "jobF ", $jobF;
-
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 
-my $w1_id = $c->_register($schema, "host", "1", $workercaps);
-my $w2_id = $c->_register($schema, "host", "2", $workercaps);
-my $w3_id = $c->_register($schema, "host", "3", $workercaps);
-my $w4_id = $c->_register($schema, "host", "4", $workercaps);
-my $w5_id = $c->_register($schema, "host", "5", $workercaps);
-my $w6_id = $c->_register($schema, "host", "6", $workercaps);
-
-#websocket
-#my $ws1 = $t->websocket_ok("/api/v1/workers/$w1_id/ws");
-#my $ws2 = $t->websocket_ok("/api/v1/workers/$w2_id/ws");
-#my $ws3 = $t->websocket_ok("/api/v1/workers/$w3_id/ws");
-#my $ws4 = $t->websocket_ok("/api/v1/workers/$w4_id/ws");
-#my $ws5 = $t->websocket_ok("/api/v1/workers/$w5_id/ws");
-#my $ws6 = $t->websocket_ok("/api/v1/workers/$w6_id/ws");
-
-my $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w1_id);
-is($job->{id},                  $jobB->id, "jobB");                   #lowest prio of jobs without parents
-is($job->{settings}->{NICVLAN}, 1,         "first available vlan");
-
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w2_id);
-is($job->{id},                  $jobC->id, "jobC");                        #direct child of B
-is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
-
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w3_id);
-is($job->{id},                  $jobF->id, "jobF");                        #direct child of C
-is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
-
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w4_id);
-is($job->{id}, $jobA->id, "jobA");    # E is direct child of C, but A and D must be started first
-is($job->{settings}->{NICVLAN}, 1, "same vlan for whole group");
-
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w5_id);
-is($job->{id},                  $jobD->id, "jobD");                        # direct child of A
-is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
-
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w6_id);
-is($job->{id},                  $jobE->id, "jobE");                        # C and D are now running so we can start E
-is($job->{settings}->{NICVLAN}, 1,         "same vlan for whole group");
+my @worker_ids;
+for my $i (1 .. 6) {
+    push(@worker_ids, $c->_register($schema, 'host', "$i", \%workercaps));
+}
+my @jobs_in_expected_order = (
+    $jobB => 'lowest prio of jobs without parents',
+    $jobC => 'direct child of B',
+    $jobF => 'direct child of C',
+    $jobA => 'E is direct child of C, but A and D must be started first',
+    $jobD => 'direct child of A',
+    $jobE => 'C and D are now running so we can start E',
+);
+for my $i (0 .. 5) {
+    my $job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $worker_ids[$i]);
+    is($job->{id}, ${jobs_in_expected_order [$i * 2]}->id, ${jobs_in_expected_order [$i * 2 + 1]});
+    is($job->{settings}->{NICVLAN}, 1, 'same vlan for whole group');
+}
 
 # jobA failed
 my $result = $jobA->done(result => 'failed');
 is($result, 'failed', 'job_set_done');
-
-# then jobD and jobE, workers 5 and 6 must be canceled
-#$ws5->message_ok;
-#$ws5->message_is('cancel');
-
-#$ws6->message_ok;
-#$ws6->message_is('cancel');
 
 # reload changes from DB - jobs should be cancelled by failed jobA
 $jobD->discard_changes;
@@ -204,7 +153,7 @@ is($result, 'incomplete', 'job_set_done');
 $result = $jobE->done(result => 'incomplete');
 is($result, 'incomplete', 'job_set_done');
 
-$job = job_get_deps($jobA->id);
+my $job = job_get_deps($jobA->id);
 is($job->{state},  "done",   "job_set_done changed state");
 is($job->{result}, "failed", "job_set_done changed result");
 
@@ -227,7 +176,7 @@ $job = job_get_deps($jobF->id);
 is($job->{state}, "running", "job_set_done changed state");
 
 # check MM API for children status - available only for running jobs
-my $worker = $schema->resultset("Workers")->find($w2_id);
+my $worker = $schema->resultset("Workers")->find($worker_ids[1]);
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 $t->ua->on(
@@ -253,7 +202,6 @@ $job = job_get_deps($jobB->id);    # cloned
 is($job->{state}, "running", "no change");
 ok(defined $job->{clone_id}, "cloned");
 my $jobB2 = $job->{clone_id};
-
 
 $job = job_get_deps($jobC->id);    # cloned
 is($job->{state}, "running", "no change");
@@ -401,7 +349,7 @@ $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$job
 
 # job_grab now should return jobs from clonned group
 # we already called job_set_done on jobE, so worker 6 is available
-$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $w6_id);
+$job = OpenQA::Scheduler::Scheduler::job_grab(workerid => $worker_ids[5]);
 is($job->{id},                  $jobB2, "jobB2");            #lowest prio of jobs without parents
 is($job->{settings}->{NICVLAN}, 2,      "different vlan");
 
@@ -512,26 +460,15 @@ is_deeply($jobY3->{parents}, {Chained => [$jobX3->id], Parallel => []}, 'jobY3 p
 # ^             ^
 # | (parallel)  | (parallel)
 # K             L
-my %settingsH = %settings;
-my %settingsJ = %settings;
-my %settingsK = %settings;
-my %settingsL = %settings;
-
-$settingsH{TEST} = 'H';
-$settingsJ{TEST} = 'J';
-$settingsK{TEST} = 'K';
-$settingsL{TEST} = 'L';
+my %settingsH = (%settings, TEST => 'H');
+my %settingsJ = (%settings, TEST => 'J');
+my %settingsK = (%settings, TEST => 'K');
+my %settingsL = (%settings, TEST => 'L');
 
 my $jobH = _job_create(\%settingsH);
-
-$settingsK{_PARALLEL_JOBS} = [$jobH->id];
-my $jobK = _job_create(\%settingsK);
-
-$settingsJ{_PARALLEL_JOBS} = [$jobH->id];
-my $jobJ = _job_create(\%settingsJ);
-
-$settingsL{_PARALLEL_JOBS} = [$jobJ->id];
-my $jobL = _job_create(\%settingsL);
+my $jobK = _job_create(\%settingsK, [$jobH->id]);
+my $jobJ = _job_create(\%settingsJ, [$jobH->id]);
+my $jobL = _job_create(\%settingsL, [$jobJ->id]);
 
 # hack jobs to appear running to scheduler
 $jobH->state(OpenQA::Schema::Result::Jobs::RUNNING);
@@ -579,30 +516,17 @@ is($jobK2, $jobK->clone->id, 'K2 cloned with parallel children dep');
 #
 # Q is done; W,U,R and T is running
 
-my %settingsQ = %settings;
-my %settingsW = %settings;
-my %settingsU = %settings;
-my %settingsR = %settings;
-my %settingsT = %settings;
-
-$settingsQ{TEST} = 'Q';
-$settingsW{TEST} = 'W';
-$settingsU{TEST} = 'U';
-$settingsR{TEST} = 'R';
-$settingsT{TEST} = 'T';
+my %settingsQ = (%settings, TEST => 'Q');
+my %settingsW = (%settings, TEST => 'W');
+my %settingsU = (%settings, TEST => 'U');
+my %settingsR = (%settings, TEST => 'R');
+my %settingsT = (%settings, TEST => 'T');
 
 my $jobQ = _job_create(\%settingsQ);
-
-$settingsW{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobW = _job_create(\%settingsW);
-$settingsU{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobU = _job_create(\%settingsU);
-$settingsR{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobR = _job_create(\%settingsR);
-
-$settingsT{_PARALLEL_JOBS} = [$jobW->id, $jobU->id, $jobR->id];
-$settingsT{_START_AFTER_JOBS} = [$jobQ->id];
-my $jobT = _job_create(\%settingsT);
+my $jobW = _job_create(\%settingsW, undef, [$jobQ->id]);
+my $jobU = _job_create(\%settingsU, undef, [$jobQ->id]);
+my $jobR = _job_create(\%settingsR, undef, [$jobQ->id]);
+my $jobT = _job_create(\%settingsT, [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
 
 # hack jobs to appear to scheduler in desired state
 $jobQ->state(OpenQA::Schema::Result::Jobs::DONE);
@@ -680,20 +604,13 @@ is_deeply($jobR2->{parents}, {Chained => [$jobQ->{id}], Parallel => []}, 'jobR2 
 #
 # P <-(parallel) O <-(parallel) I
 #
-my %settingsP = %settings;
-my %settingsO = %settings;
-my %settingsI = %settings;
-
-$settingsP{TEST} = 'P';
-$settingsO{TEST} = 'O';
-$settingsI{TEST} = 'I';
+my %settingsP = (%settings, TEST => 'P');
+my %settingsO = (%settings, TEST => 'O');
+my %settingsI = (%settings, TEST => 'I');
 
 my $jobP = _job_create(\%settingsP);
-
-$settingsO{_PARALLEL_JOBS} = [$jobP->id];
-my $jobO = _job_create(\%settingsO);
-$settingsI{_PARALLEL_JOBS} = [$jobO->id];
-my $jobI = _job_create(\%settingsI);
+my $jobO = _job_create(\%settingsO, [$jobP->id]);
+my $jobI = _job_create(\%settingsI, [$jobO->id]);
 
 # hack jobs to appear to scheduler in desired state
 $jobP->state(OpenQA::Schema::Result::Jobs::DONE);
@@ -759,23 +676,15 @@ is_deeply($jobO3->{parents}->{Parallel}, [$jobP3->{id}], 'clone jobO3 gets new p
 
 # https://progress.opensuse.org/issues/10456
 
-%settingsA = %settings;
-%settingsB = %settings;
-%settingsC = %settings;
-%settingsD = %settings;
+%settingsA = (%settings, TEST => '116539');
+%settingsB = (%settings, TEST => '116569');
+%settingsC = (%settings, TEST => '116570');
+%settingsD = (%settings, TEST => '116571');
 
-$settingsA{TEST} = '116539';
-$settingsB{TEST} = '116569';
-$settingsC{TEST} = '116570';
-$settingsD{TEST} = '116571';
-
-$jobA                         = _job_create(\%settingsA);
-$settingsB{_START_AFTER_JOBS} = [$jobA->id];
-$jobB                         = _job_create(\%settingsB);
-$settingsC{_START_AFTER_JOBS} = [$jobA->id];
-$jobC                         = _job_create(\%settingsC);
-$settingsD{_START_AFTER_JOBS} = [$jobA->id];
-$jobD                         = _job_create(\%settingsD);
+$jobA = _job_create(\%settingsA);
+$jobB = _job_create(\%settingsB, undef, [$jobA->id]);
+$jobC = _job_create(\%settingsC, undef, [$jobA->id]);
+$jobD = _job_create(\%settingsD, undef, [$jobA->id]);
 
 # hack jobs to appear done to scheduler
 for ($jobA, $jobB, $jobC, $jobD) {
@@ -869,23 +778,15 @@ is_deeply(
 # A <- B
 #   |- C
 #   \- D
-%settingsA = %settings;
-%settingsB = %settings;
-%settingsC = %settings;
-%settingsD = %settings;
+%settingsA = (%settings, TEST => '116539A');
+%settingsB = (%settings, TEST => '116569A');
+%settingsC = (%settings, TEST => '116570A');
+%settingsD = (%settings, TEST => '116571A');
 
-$settingsA{TEST} = '116539A';
-$settingsB{TEST} = '116569A';
-$settingsC{TEST} = '116570A';
-$settingsD{TEST} = '116571A';
-
-$jobA                         = _job_create(\%settingsA);
-$settingsB{_START_AFTER_JOBS} = [$jobA->id];
-$jobB                         = _job_create(\%settingsB);
-$settingsC{_START_AFTER_JOBS} = [$jobA->id];
-$jobC                         = _job_create(\%settingsC);
-$settingsD{_START_AFTER_JOBS} = [$jobA->id];
-$jobD                         = _job_create(\%settingsD);
+$jobA = _job_create(\%settingsA);
+$jobB = _job_create(\%settingsB, undef, [$jobA->id]);
+$jobC = _job_create(\%settingsC, undef, [$jobA->id]);
+$jobD = _job_create(\%settingsD, undef, [$jobA->id]);
 
 # hack jobs to appear done to scheduler
 $jobA->state(OpenQA::Schema::Result::Jobs::DONE);
@@ -926,25 +827,15 @@ for ($jobB, $jobC, $jobD) {
 # A <-- B
 #    |  |
 #    \- D
-%settingsA = %settings;
-%settingsB = %settings;
-%settingsC = %settings;
-%settingsD = %settings;
+%settingsA = (%settings, TEST => '360-A');
+%settingsB = (%settings, TEST => '360-B');
+%settingsC = (%settings, TEST => '360-C');
+%settingsD = (%settings, TEST => '360-D');
 
-$settingsA{TEST} = '360-A';
-$settingsB{TEST} = '360-B';
-$settingsC{TEST} = '360-C';
-$settingsD{TEST} = '360-D';
-
-$jobA                         = _job_create(\%settingsA);
-$settingsB{_START_AFTER_JOBS} = [$jobA->id];
-$jobB                         = _job_create(\%settingsB);
-$settingsC{_START_AFTER_JOBS} = [$jobA->id];
-$settingsC{_PARALLEL_JOBS}    = [$jobB->id];
-$jobC                         = _job_create(\%settingsC);
-$settingsD{_START_AFTER_JOBS} = [$jobA->id];
-$settingsD{_PARALLEL_JOBS}    = [$jobB->id];
-$jobD                         = _job_create(\%settingsD);
+$jobA = _job_create(\%settingsA);
+$jobB = _job_create(\%settingsB, undef, [$jobA->id]);
+$jobC = _job_create(\%settingsC, [$jobB->id], [$jobA->id]);
+$jobD = _job_create(\%settingsD, [$jobB->id], [$jobA->id]);
 
 # hack jobs to appear done to scheduler
 $jobA->state(OpenQA::Schema::Result::Jobs::DONE);
@@ -975,8 +866,6 @@ sub _job_create_set_done {
     my ($settings, $state) = @_;
     my $job = _job_create($settings);
     # hack jobs to appear done to scheduler
-    #     my $state = int(rand(10)) > 5 ? OpenQA::Schema::Result::Jobs::DONE : OpenQA::Schema::Result::Jobs::CANCELLED;
-    #     print "$settings->{TEST} state is $state\n";
     $job->state($state);
     $job->result(OpenQA::Schema::Result::Jobs::PASSED);
     $job->update;
@@ -1003,7 +892,6 @@ sub _job_cloned_and_related {
     my $res = grep { $_ eq $cloneB } @{$cloneA_hash->{children}{$rel}};
     ok($res, "cloneA is $rel parent of cloneB");
 }
-
 
 subtest 'slepos test workers' => sub {
     my %settingsSUS = %settings;
@@ -1049,6 +937,5 @@ subtest 'slepos test workers' => sub {
     ok(_job_cloned_and_related($jobAS,  $jobBS),  "jobAS and jobBS");
     ok(_job_cloned_and_related($jobBS,  $jobT),   "jobBS and jobT");
 };
-
 
 done_testing();
