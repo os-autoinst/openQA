@@ -140,7 +140,7 @@ sub log_event {
     my $topic = $self->{config}->{amqp}{topic_prefix} . '.' . $event;
 
     # convert data to JSON, with reliable key ordering (helps the tests)
-    $event_data = to_json($event_data, {canonical => 1, allow_blessed => 1});
+    $event_data = to_json($event_data, {canonical => 1, allow_blessed => 1, ascii => 1});
 
     OpenQA::Utils::log_debug("Sending AMQP event: $topic");
 
