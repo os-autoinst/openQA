@@ -98,7 +98,8 @@ clone_job.pl --from localhost --host localhost 42 MAKETESTSNAPSHOTS=1 FOOBAR=
 Any parent jobs (chained or parallel) are also cloned unless C<--skip-deps> or
 C<--skip-chained-deps> is specified. If C<--skip-chained-deps> is not
 specified, it does not download any published HDD assets as they are generated
-by the parent.
+by the parent. Keep in mind that any additional parameters are not added to
+the also cloned parent jobs.
 
 =cut
 
