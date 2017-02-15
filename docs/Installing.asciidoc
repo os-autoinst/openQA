@@ -22,10 +22,6 @@ https://github.com/os-autoinst/openQA[official repository].
 
 The easiest way to install openQA is from packages. You can find openSUSE
 packages in OBS in the
-https://build.opensuse.org/project/show/devel:openQA:stable[openQA:stable]
-repository.
-
-The latest development version can also be found in OBS in the
 https://build.opensuse.org/project/show/devel:openQA[openQA:devel] repository.
 
 For Fedora, packages are available in the official repositories for Fedora 23
