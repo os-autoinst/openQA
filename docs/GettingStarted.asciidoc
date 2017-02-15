@@ -523,7 +523,7 @@ run
 Which will download the tests to the correct location and will set the correct
 rights as well.
 
-Fedora's tests are also in https://bitbucket.org/rajcze/openqa_fedora[git]. To
+Fedora's tests are also in https://pagure.io/fedora-qa/os-autoinst-distri-fedora[git]. To
 use them, you may do:
 
 [source,sh]
@@ -531,7 +531,8 @@ use them, you may do:
 cd /var/lib/openqa/share/tests
 mkdir fedora
 cd fedora
-git clone https://bitbucket.org/rajcze/openqa_fedora_tools.git
+git clone https://pagure.io/fedora-qa/os-autoinst-distri-fedora.git
+./templates --clean
 cd ..
 chown -R geekotest fedora/
 --------------------------------------------------------------------------------
@@ -562,7 +563,7 @@ For Fedora, similarly, you can call:
 
 Some Fedora tests require special hard disk images to be present in
 +/var/lib/openqa/share/factory/hdd/fixed+. The +createhdds.py+ script in the
-https://bitbucket.org/rajcze/openqa_fedora_tools.git[openqa_fedora_tools]
+https://pagure.io/fedora-qa/createhdds[createhdds]
 repository can be used to create these. See the documentation in that repo
 for more information.
 
