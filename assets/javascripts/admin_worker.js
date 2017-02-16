@@ -14,7 +14,7 @@ function setupWorkerNeedles() {
             columnDefs: [
                 {targets: 0, render: renderTestName},
                 {targets: 1, render: renderTestResult},
-                {targets: 2, render: renderFinishedTimeAgo}
+                {targets: 2, render: renderTimeAgo}
             ]
         });
 
