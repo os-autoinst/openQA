@@ -81,7 +81,9 @@ like((shift @tds)->get_text(), qr/about 3 hours ago/, "finish time of 99946");
 # Test 99963 is still running
 isnt($driver->find_element('#running #job_99963'), undef, '99963 still running');
 like($driver->find_element('#running #job_99963 td.test a')->get_attribute('href'), qr{.*/tests/99963}, 'right link');
-like($driver->find_element('#running #job_99963 td.time')->get_text(), qr/1[01] minutes ago/, 'right time for running');
+$time = $driver->find_element('#running #job_99963 td.time');
+$time->attribute_like('title', qr/.*Z/, 'right time title for running');
+$time->text_like(qr/1[01] minutes ago/, 'right time for running');
 
 $get = $t->get_ok('/tests')->status_is(200);
 my @header = $t->tx->res->dom->find('h2')->map('text')->each;
@@ -109,6 +111,9 @@ is($driver->get("/tests"), 1, "/tests gets");
 # Test 99928 is scheduled
 isnt($driver->find_element('#scheduled #job_99928'), undef, '99928 scheduled');
 like($driver->find_element('#scheduled #job_99928 td.test a')->get_attribute('href'), qr{.*/tests/99928}, 'right link');
+$time = $driver->find_element('#scheduled #job_99928 td.time');
+$time->attribute_like('title', qr/.*Z/, 'right time title for scheduled');
+$time->text_like(qr/2 hours ago/, 'right time for scheduled');
 $driver->find_element('#scheduled #job_99928 td.test a')->click();
 $driver->title_is('openQA: opensuse-13.1-DVD-i586-Build0091-RAID1@32bit test results', 'tests/99928 followed');
 

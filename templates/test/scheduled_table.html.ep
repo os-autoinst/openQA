@@ -69,7 +69,7 @@
 		    <i class="fa fa-plus-square-o"></i>
 		    % end
 		</td>
-		<td class="testtime" title="<%= $job->t_created %>"><%= $job->t_created->datetime() %>Z</td>
+		<td class="testtime" title="<%= $job->t_created %>Z"><%= $job->t_created->datetime() %>Z</td>
             </tr>
         % }
     </tbody>
