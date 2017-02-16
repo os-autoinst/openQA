@@ -76,7 +76,9 @@ my @tds = $driver->find_child_elements($job99946, "td");
 is((shift @tds)->get_text(), 'Build0091 of opensuse-13.1-DVD.i586', "medium of 99946");
 is((shift @tds)->get_text(), 'textmode@32bit',                      "test of 99946");
 is((shift @tds)->get_text(), '28 1 1',                              "result of 99946 (passed, softfailed, failed)");
-like((shift @tds)->get_text(), qr/about 3 hours ago/, "finish time of 99946");
+my $time = $driver->find_child_element(shift @tds, 'span');
+$time->attribute_like('title', qr/.*Z/, 'finish time title of 99946');
+$time->text_like(qr/about 3 hours ago/, "finish time of 99946");
 
 # Test 99963 is still running
 isnt($driver->find_element('#running #job_99963'), undef, '99963 still running');
