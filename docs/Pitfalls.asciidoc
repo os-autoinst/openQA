@@ -16,11 +16,12 @@
   
 == 403 messages when using scripts
 
-If you come across messages displaying +ERROR: 403 - Forbidden+, make 
-sure that the correct API key is present in client.conf file. 
-
-Also, if you are using a hostname other than +localhost+, pass *--host foo* to the script. 
-
+- If you come across messages displaying +ERROR: 403 - Forbidden+, make 
+  sure that the correct API key is present in client.conf file. 
+- If you are using a hostname other than +localhost+, pass *--host foo* to the script. 
+- If you are using fake authentication method, and the message says also "api key expired"
+  you can simply logout and log in again in the webUI and the expiration will be automatically
+  updated
 
 == Mixed production and development environment
 
