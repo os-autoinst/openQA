@@ -13,6 +13,14 @@
   confusing
 - If a needle is deleted, old tests may display an error when viewing
   them in the web UI.
+  
+== 403 messages when using scripts
+
+If you come across messages displaying +ERROR: 403 - Forbidden+, make 
+sure that the correct API key is present in client.conf file. 
+
+Also, if you are using a hostname other than +localhost+, pass *--host foo* to the script. 
+
 
 == Mixed production and development environment
 
