@@ -55,9 +55,7 @@ It is required to run openQA behind an http proxy (apache, nginx, etc..). See th
 *openqa.conf.template* config file in */etc/apache2/vhosts.d* (openSUSE) or
 +/etc/httpd/conf.d+ (Fedora). To make everything work correctly on openSUSE, you
 need to enable the 'headers', 'proxy', 'proxy_http' and 'proxy_wstunnel' modules
-using the command 'a2enmod'. This is not necessary on Fedora. For a basic setup, you can
-copy *openqa.conf.template* to *openqa.conf* and modify the +ServerName+ if required
-setting. This will direct all HTTP traffic to openQA.
+using the command 'a2enmod'. This is not necessary on Fedora. 
 
 [source,sh]
 --------------------------------------------------------------------------------
@@ -67,6 +65,14 @@ a2enmod headers
 a2enmod proxy
 a2enmod proxy_http
 a2enmod proxy_wstunnel
+--------------------------------------------------------------------------------
+
+For a basic setup, you can copy *openqa.conf.template* to *openqa.conf* and modify the +ServerName+ if required
+setting. This will direct all HTTP traffic to openQA.
+
+[source,sh]
+--------------------------------------------------------------------------------
+cp /etc/apache2/vhosts.d/openqa.conf.template /etc/apache2/vhosts.d/openqa.conf
 --------------------------------------------------------------------------------
 
 === TLS/SSL
@@ -140,8 +146,8 @@ your +client.conf+ may look like this:
 [source,ini]
 --------------------------------------------------------------------------------
 [localhost]
-key = 0123456789ABCDEF
-secret = 0123456789ABCDEF
+key = 1234567890ABCDEF
+secret = 1234567890ABCDEF
 --------------------------------------------------------------------------------
 
 To start the workers you can use the provided systemd files via +systemctl
