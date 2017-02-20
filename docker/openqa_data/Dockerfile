@@ -1,5 +1,5 @@
 FROM opensuse:42.2
-MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz<wnereiz@eienteiland.org>
+MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>
 
 RUN zypper --non-interactive in ca-certificates-mozilla git wget
 
