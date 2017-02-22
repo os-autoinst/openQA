@@ -2,7 +2,11 @@
 
 # prepare environment
 rm -f /run/dbus/pid
-/usr/share/openqa/script/upgradedb --user geekotest --upgrade_database
+if [ ! -f /data/db/db.sqlite ]; then
+  /usr/share/openqa/script/initdb --user geekotest --init_database
+else
+  /usr/share/openqa/script/upgradedb --user geekotest --upgrade_database
+fi
 
 # run services
 dbus-daemon --system --fork
