@@ -1,5 +1,6 @@
 FROM opensuse:42.2
 LABEL maintainer Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>, Sergio Lindo Mansilla <slindomansilla@suse.com>
+LABEL version="0.2"
 
 RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_42.2 openQA && \
     zypper ar -f obs://devel:openQA:Leap:42.2/openSUSE_Leap_42.2 openQA-perl-modules && \
