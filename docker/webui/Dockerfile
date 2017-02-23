@@ -36,7 +36,5 @@ RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \
     ln -s /data/db/db.sqlite /var/lib/openqa/db/db.sqlite && \
     chmod -R 777 /var/lib/openqa/pool
 
-VOLUME ["/var/lib/openqa/pool"]
-
 EXPOSE 80 443
 CMD ["/root/run_openqa.sh"]
