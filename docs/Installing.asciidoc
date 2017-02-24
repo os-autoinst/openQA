@@ -474,6 +474,7 @@ own tests, or use existing tests for some distribution or other piece of
 software.
 
 The worker needs to own +/var/lib/openqa/pool/$INSTANCE+, e.g.
+
 * +/var/lib/openqa/pool/1+
 * +/var/lib/openqa/pool/2+
 * .... - add more if you have more CPUs/disks
