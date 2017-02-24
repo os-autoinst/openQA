@@ -24,5 +24,6 @@ RUN chmod +x /root/qemu/*.sh && /root/qemu/kvm-mknod.sh && \
     ln -s /data/factory /var/lib/openqa/share/factory && \
     ln -s /data/tests /var/lib/openqa/share/tests
 
+USER _openqa-worker
 ENTRYPOINT ["/usr/share/openqa/script/worker", "--verbose", "--instance"]
 CMD ["1"]
