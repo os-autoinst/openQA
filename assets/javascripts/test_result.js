@@ -226,3 +226,63 @@ function setupResult(state, jobid, status_url, details_url) {
     setResultHash(tabshown);
   });
 }
+
+$(document).ready(function() {
+    $.ajax({
+        url: sessionStorage.getItem('openQA.requestURL'),
+        type: 'GET',
+        dataType: 'json',
+        success: function(resp) {
+            for (var i = 0; i < resp.modules.length; i++) {
+                if (resp.modules[i].result != 'passed') {
+                    showThumbnailsForModule(i, resp.modules[i]);
+                }
+            }
+        }
+    });
+});
+
+function setupUrls(audio_icon_url, terminal_icon_url, request_url) {
+    sessionStorage.setItem('openQA.audioIconURL', audio_icon_url);
+    sessionStorage.setItem('openQA.terminalIconURL', terminal_icon_url);
+    sessionStorage.setItem('openQA.requestURL', request_url);
+}
+
+function onClickShowThumbnails(moduleNumber) {
+    $.ajax({
+        url: sessionStorage.getItem('openQA.requestURL'),
+        type: 'GET',
+        dataType: 'json',
+        success: function(resp) {
+            showThumbnailsForModule(moduleNumber, resp.modules[moduleNumber]);
+        }
+    });
+}
+
+function showThumbnailsForModule(moduleNumber, moduleObj) {
+    var stepBegin = "<div class=\"links_a\"><div class=\"fa fa-caret-down\"></div><a class=\"no_hover\" data-url=\"";
+    var moduleHTML = " ";
+    var audio_icon_url = sessionStorage.getItem('openQA.audioIconURL');
+    var terminal_icon_url = sessionStorage.getItem('openQA.terminalIconURL');
+    for (var i = 0; i < moduleObj.details.length; i++) {
+        var step = moduleObj.details[i];
+        var href = "#step/" + moduleObj.name + "/" + step.num;
+        var title = step.text ? step.title : step.name;
+        moduleHTML += stepBegin + step.dataurl + "\"href=\"" + href + "\">";
+        if (step.screenshot) {
+            moduleHTML += step.thumbnail;
+        } else if (step.audio) {
+            moduleHTML += "<img src=\"" + audio_icon_url + "\" width=\"60\" height=\"45\" alt=\"" + step.name + "\" class=\"resborder resborder_" + step.result + "\"/>";
+        } else if (step.text) {
+            if (step.title == "wait_serial") {
+                moduleHTML += "<img src=\"" + terminal_icon_url + "\" width=\"60\" height=\"45\" alt=\"" + step.name + "\" class=\"resborder resborder_" + step.result + "\/>";
+            } else {
+                moduleHTML += "<span class=\"resborder resborder_" + step.result + "\"";
+                moduleHTML += step.title ? step.title : 'Text';
+                moduleHTML += "</span>";
+            }
+        }
+        moduleHTML += "</a></div>";
+    }
+    document.getElementById("module" + moduleNumber).innerHTML = moduleHTML;
+}

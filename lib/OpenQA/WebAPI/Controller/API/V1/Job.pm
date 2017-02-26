@@ -176,6 +176,46 @@ sub show {
     }
 }
 
+sub showmodules {
+    my $self = shift;
+    my $job_id = int($self->stash('jobid'));
+    my @job_modules    = $self->db->resultset('JobModules')->search({job_id => $job_id})->all;
+    if (@job_modules){
+      my $category;
+      my @modlist;
+      for my $module (@job_modules){
+        # add link to $testresultdir/$name*.png via png CGI
+        my @details;
+        my $num = 1;
+        $DB::single = 1;
+        for my $step (@{$module->details}) {
+            $step->{num} = $num++;
+            $step->{dataurl} = $self -> url_for('step', moduleid => $module->name, stepid => $step->{num}, testid => $job_id);
+            $step->{thumbnail} = $self -> step_thumbnail($step, 60, $job_id, $module->{name}, $step->{num});
+            push(@details, $step);
+        }
+        push(
+            @modlist,
+            {
+                name      => $module->name,
+                result    => $module->result,
+                details   => \@details,
+                milestone => $module->milestone,
+                important => $module->important,
+                fatal     => $module->fatal
+            });
+        if (!$category || $category ne $module->category) {
+            $category = $module->category;
+            $modlist[-1]->{category} = $category;
+        }
+      }
+      $self->render(json => {modules => \@modlist});
+    }
+    else {
+        $self->reply->not_found;
+    }
+}
+
 # set_waiting and set_running
 sub set_command {
     my $self    = shift;

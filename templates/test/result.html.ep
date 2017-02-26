@@ -9,6 +9,7 @@
     $('.timeago').timeago();
     setupResultButtons();
     setupResult('<%= $job->state %>', <%= $job->id %>, '<%= url_for('status', testid => $job->id) %>', '<%= url_for('details', testid => $job->id) %>');
+    setupUrls('<%== icon_url 'audio.svg' %>','<%= icon_url 'terminal.svg' %>','<%== url_for('apiv1_jobmodule',jobid => $job->id) %>');
 % end
 
 <div class="row">

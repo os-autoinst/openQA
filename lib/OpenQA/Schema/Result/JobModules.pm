@@ -250,6 +250,7 @@ sub job_module {
     return $schema->resultset("JobModules")->search({job_id => $job->id, name => $name})->first;
 }
 
+# TODO replace $job by $job_id because it is simpler
 sub job_modules {
     my ($job) = @_;
 
