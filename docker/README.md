@@ -1,8 +1,10 @@
 # Get docker images
 
-You can either build the images locally, or get our "latest stable" version from the Docker hub. We recommend using the Docker hub option.
+You can either build the images locally, or get the images from the Docker hub. We recommend using the Docker hub option.
 
 ## Download images from the Docker hub
+
+### Fedora images
 
     docker pull fedoraqa/openqa_data
     docker pull fedoraqa/openqa_webui
@@ -10,9 +12,11 @@ You can either build the images locally, or get our "latest stable" version from
 
 ## Build images locally
 
-    docker build -t fedoraqa/openqa_webui:latest ./webui
-    docker build -t fedoraqa/openqa_worker:latest ./worker
-    docker build -t fedoraqa/openqa_data:latest ./openqa_data
+The Dockerfiles included in this project are for openSUSE:
+
+    docker build -t openqa_data ./openqa_data
+    docker build -t openqa_webui ./webui
+    docker build -t openqa_worker ./worker
 
 # Running OpenQA
 
@@ -28,7 +32,8 @@ It's also possible to use `tests` and `factory` from within the `openqa_data` co
 to ditch `openqa_data` container altogether (so you have only `webui` and `worker` containers and data is loaded and saved completely into your host
 system). If this is what you want, refer to [Keeping all data in the Data Volume Container] and [Keeping all data on the host system] sections respectively.
 
-## Update firewall rules
+## Update firewall rules (Fedora)
+
 There is a [bug in Fedora](https://bugzilla.redhat.com/show_bug.cgi?id=1244124) with `docker-1.7.0-6` package that prevents
 containers to communicate with each other - it prevents worker to connect to WebUI. As a workaround, run:
 
@@ -39,16 +44,20 @@ on host machine.
 
 ## Create directory structure
 
+In case you want to have the big files (isos and disk images, test and needles) outside of the docker volume container,
+you should create this file structrure from within the directory you are going to execute the container.
+
     mkdir -p data/factory/{iso,hdd} data/tests
 
-It is also necessary to either run all containers in privileged mode, or set selinux properly:
+It could be necessary to either run all containers in privileged mode, or set selinux properly. If you are having problems with it, run this command:
 
     chcon -Rt svirt_sandbox_file_t data
 
 ## Run the Data & WebUI containers
 
+    # Fedora
     docker run -d -h openqa_data --name openqa_data -v `pwd`/data/factory:/data/factory -v `pwd`/data/tests:/data/tests fedoraqa/openqa_data
-    docker run -d -h openqa_webui --volumes-from openqa_data --name openqa_webui -p 80:80 -p 443:443 fedoraqa/openqa_webui
+    docker run -d -h openqa_webui --name openqa_webui --volumes-from openqa_data -p 80:80 -p 443:443 fedoraqa/openqa_webui
 
 You can change the `-p` parameters if you do not want the openQA instance to own ports 80 and 443, e.g. `-p 8080:80 -p 8043:443`, but this will cause problems if you wish to set up workers on other hosts (see below). You do need root privileges to bind ports 80 and 443 in this way.
 
@@ -57,9 +66,9 @@ create the API keys in the OpenQA's web interface, and store the configuration i
 
 ### Change the OpenID provider
 
-https://id.fedoraproject.org/ is set as a default OpenID provider. To change it, run:
+https://www.opensuse.org/openid/user/ is set as a default OpenID provider. To change it, run:
 
-    docker exec -ti openqa_data /scripts/set_openid
+    docker exec -it openqa_data /scripts/set_openid
 
 and enter the Provider's URL.
 
@@ -67,17 +76,21 @@ and enter the Provider's URL.
 
 Go to https://localhost/api_keys, generate key and secret. Then run:
 
-    docker exec -ti openqa_data /scripts/client-conf set -l (KEY) (SECRET)
+    docker exec -it openqa_data /scripts/client-conf set -l KEY SECRET
+    # Where KEY is your openQA instance key
+    # and SECRET is your openQA instance secret
 
 ## Run the Worker container
 
-    docker run -h openqa_worker_1 --name openqa_worker_1 -d --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
+    # Fedora
+    docker run -d -h openqa_worker_1 --name openqa_worker_1 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
 Check whether the worker connected in the WebUI's administration interface.
 
 To add more workers, increase number that is used in hostname and container name, so to add worker 2 use:
 
-    docker run -h openqa_worker_2 --name openqa_worker_2 -d --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
+    # Fedora
+    docker run -d -h openqa_worker_2 --name openqa_worker_2 --link openqa_webui:openqa_webui --volumes-from openqa_data --privileged fedoraqa/openqa_worker
 
 ## Enable services
 
@@ -93,7 +106,15 @@ Of course, if you set up two workers, also do `sudo systemctl enable openqa-work
 
 ## Get tests, ISOs and create disks
 
-You have to put your tests under `data/tests` directory and ISOs under `data/factory/iso` directory. For example, for testing Fedora, run:
+You have to put your tests under `data/tests` directory and ISOs under `data/factory/iso` directory.
+
+### openSUSE
+
+For testing openSUSE, follow [this guide](https://github.com/os-autoinst/openQA/blob/master/docs/GettingStarted.asciidoc#testing-opensuse-or-fedora).
+
+### Fedora
+
+For testing Fedora, run:
 
     git clone https://bitbucket.org/rajcze/openqa_fedora data/tests/fedora
     wget https://dl.fedoraproject.org/pub/alt/stage/22_Beta_RC3/Server/x86_64/iso/Fedora-Server-netinst-x86_64-22_Beta.iso -O data/factory/iso/Fedora-Server-netinst-x86_64-22_Beta_RC3.iso
@@ -194,7 +215,7 @@ Then continue with tests and ISOs downloading as before.
 ## Developing tests with Container setup
 
 With this setup, the needles created from the WebUI will almost certainly have different owner and group than your user account.
-As we have the tests in GIT, and still want to retain the original owner and permission, even as we update/crate needles from OpenQA.
+As we have the tests in GIT, and still want to retain the original owner and permission, even as we update/create needles from OpenQA.
 To accomplish this, we are using BindFS. An example entry in `/etc/fstab`:
 
     bindfs#/home/jskladan/src/openQA/openqa_fedora    /home/jskladan/src/openQA/openqa_fedora_tools/docker/data/tests/fedora    fuse    create-for-user=jskladan,create-for-group=jskladan,create-with-perms=664:a+X,perms=777    0    0
