@@ -84,7 +84,7 @@ print help
 
 =back
 
-=head1 DESCRIPTION
+=head1 SYNOPSIS
 
 Clone job from another instance. Downloads all assets associated
 with the job. Optionally settings can be modified.
