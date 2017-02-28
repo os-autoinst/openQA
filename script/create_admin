@@ -75,12 +75,12 @@ unless ($key) {
 }
 
 my $schema = OpenQA::Schema::connect_db();
-my $users = $schema->resultset('Users');
+my $users = $schema->resultset('Users')->find({ is_admin => 1 });
 if ($users != 0) {
-    warn "A user already exists! Use client or web UI to create further users.\n";
+    warn "An admin user already exists! Use client or web UI to create further users.\n";
     exit 1;
 }
-my $account = OpenQA::Schema::Result::Users->create_user($user, $schema, email => $email, nickname => $nickname, fullname => $fullname);
+my $account = OpenQA::Schema::Result::Users->create_user($user, $schema, email => $email, nickname => $nickname, fullname => $fullname, is_admin => 1);
 
 $schema->resultset("ApiKeys")->create({user_id => $account->id, key => $key, secret => $secret});
 
