@@ -34,7 +34,9 @@ RUN rm -rf /etc/openqa/openqa.ini /etc/openqa/client.conf \
     ln -s /data/tests /var/lib/openqa/share/tests && \
     ln -s /data/testresults /var/lib/openqa/testresults && \
     ln -s /data/db/db.sqlite /var/lib/openqa/db/db.sqlite && \
-    chmod -R 777 /var/lib/openqa/pool
+    chown -R geekotest /usr/share/openqa /var/lib/openqa /var/log/openqa && \
+    chmod ug+rw /usr/share/openqa /var/lib/openqa /var/log/openqa && \
+    find /usr/share/openqa /var/lib/openqa /var/log/openqa -type d -exec chmod ug+x {} \;
 
 EXPOSE 80 443
 CMD ["/root/run_openqa.sh"]
