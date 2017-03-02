@@ -51,6 +51,7 @@ subtest 'list job groups' => sub() {
                 keep_results_in_days           => 365,
                 keep_important_results_in_days => 0,
                 size_limit_gb                  => 100,
+                build_version_sort             => 1,
                 id                             => 1001
             },
             {
@@ -58,6 +59,7 @@ subtest 'list job groups' => sub() {
                 keep_results_in_days           => 365,
                 keep_important_results_in_days => 0,
                 size_limit_gb                  => 100,
+                build_version_sort             => 1,
                 id                             => 1002,
                 name                           => 'opensuse test',
                 parent_id                      => undef,
@@ -125,6 +127,7 @@ subtest 'create job group' => sub() {
                 keep_results_in_days           => 365,
                 keep_important_results_in_days => 0,
                 size_limit_gb                  => 200,
+                build_version_sort             => 1,
                 id                             => $new_id
             },
         ],
@@ -149,6 +152,7 @@ subtest 'update job group' => sub() {
         '/api/v1/job_groups/1001',
         form => {
             size_limit_gb               => 101,
+            build_version_sort          => 0,
             description                 => 'Test',
             keep_important_logs_in_days => 45,
             parent_id                   => $new_id,
@@ -169,6 +173,7 @@ subtest 'update job group' => sub() {
                 keep_results_in_days           => 365,
                 keep_important_results_in_days => 366,          # changed through inheritance
                 size_limit_gb                  => 101,
+                build_version_sort             => 0,
                 id                             => 1001,
             },
         ],

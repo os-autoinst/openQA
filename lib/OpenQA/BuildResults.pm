@@ -147,11 +147,18 @@ sub compute_build_results {
     for my $build (@builds) {
         $build->{key} = join('-', $build->VERSION, $build->BUILD);
     }
-    my @relevant_builds = reverse sort { versioncmp($a->{key}, $b->{key}); } @builds;
+    # sort by treating the key as a version number, if job group
+    # indicates this is OK (the default). otherwise, list remains
+    # sorted on the most recent job for each build
+    my $versort = 1;
+    $versort = $group->build_version_sort if $group->can('build_version_sort');
+    if ($versort) {
+        @builds = reverse sort { versioncmp($a->{key}, $b->{key}); } @builds;
+    }
 
     my $max_jobs = 0;
     my $buildnr  = 0;
-    for my $b (@relevant_builds) {
+    for my $b (@builds) {
         last if defined($limit) && (--$limit < 0);
 
         my $jobs = $jobs_resultset->search(
