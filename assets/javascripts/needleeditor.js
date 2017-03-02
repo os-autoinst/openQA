@@ -108,19 +108,22 @@ NeedleEditor.prototype.UpdateTextArea = function() {
 }
 
 NeedleEditor.prototype.AddTag = function(tag, checked) {
-  var label = document.createElement('label');
   var input = document.createElement('input');
-  var editor = this;
   input.type = "checkbox";
   input.value = tag;
   input.checked = checked;
+  input.id = 'tagInput' + this.tags.childNodes.length;
+  var editor = this;
   input.addEventListener("click", function(e, f) {
     editor.changeTag(e.target.value, e.target.checked);
   });
-  this.tags.appendChild(label);
-  label.appendChild(input);
+  var div = document.createElement('div');
+  var label = document.createElement('label');
   label.appendChild(document.createTextNode(tag));
-  label.appendChild(document.createElement('br'));
+  label.htmlFor = input.id;
+  div.appendChild(input);
+  div.appendChild(label);
+  this.tags.appendChild(div);
   return input;
 }
 
