@@ -393,7 +393,7 @@ function setup_needle_editor(imageurl, default_needle)
   });
 
   $('#tag_add_button').click(addTag);
-  $('#newtag').keypress(function() {
+  $('#newtag').keypress(function(event) {
     if (event.keyCode==13)
       return addTag();
     return true;
