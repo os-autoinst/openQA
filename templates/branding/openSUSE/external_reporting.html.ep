@@ -43,7 +43,7 @@
 % }
 % elsif ($job->DISTRI eq 'casp') {
 %     # sic!
-%     $product = "1 .0\x{00A0}(CASP/MicroOS)";
+%     $product = "1 .0\x{00A0}(CaaSP/MicroOS)";
 % }
 % $product_details{product} = "$distri $product";
 % $product_details{bug_file_loc} = $step_url;
