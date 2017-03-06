@@ -143,7 +143,7 @@ sub list_ajax {
                 flavor  => $job->FLAVOR  // '',
                 arch    => $job->ARCH    // '',
                 build   => $job->BUILD   // '',
-                testtime => $job->t_finished,
+                testtime => $job->t_finished . 'Z',
                 result   => $job->result,
                 group    => $job->group_id,
                 state    => $job->state

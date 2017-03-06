@@ -81,7 +81,7 @@
                         </div>
                     </div>
                 </td>
-                <td class="testtime" title="<%= $job->t_started %>"><%= $job->t_started->datetime() %>Z</td>
+                <td class="testtime" title="<%= $job->t_started %>Z"><%= $job->t_started->datetime() %>Z</td>
             </tr>
         % }
     </tbody>

@@ -72,9 +72,9 @@ function renderTestName ( data, type, row ) {
     }
 }
 
-function renderFinishedTimeAgo(data, type, row) {
+function renderTimeAgo(data, type, row) {
     if(type === 'display') {
-        return data ? jQuery.timeago(data) : 'not finished yet';
+        return data ? ('<span title="' + data + '">' + jQuery.timeago(data) + '</span>') : 'not finished yet';
     } else {
         return data ? data : 0;
     }
@@ -162,7 +162,8 @@ function renderTestsList(jobs) {
               "render": renderTestName
             },
             { targets: 3,
-              "render": renderFinishedTimeAgo
+              className: "time",
+              "render": renderTimeAgo
             },
             { targets: 2,
               "render": renderTestResult
