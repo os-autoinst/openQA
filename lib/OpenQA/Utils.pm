@@ -102,10 +102,13 @@ sub productdir {
 sub testcasedir {
     my ($distri, $version) = @_;
 
+    my @dirs = (catdir($prjdir, 'share', 'tests', $distri), catdir($prjdir, 'tests', $distri));
+    if ($version) {
+        unshift @dirs, catdir($prjdir, 'share', 'tests', "$distri-$version");
+    }
     # TODO actually "distri" is misused here. It should rather be something
     # like the name of the repository with all tests
-    my ($dir) = grep { -d } (catdir($prjdir, 'share', 'tests', $distri), catdir($prjdir, 'tests', $distri));
-    $dir .= "-$version" if $version && -e "$dir-$version";
+    my ($dir) = grep { -d } @dirs;
     return $dir;
 }
 
