@@ -69,6 +69,11 @@ __PACKAGE__->add_columns(
     description => {
         data_type   => 'text',
         is_nullable => 1,
+    },
+    build_version_sort => {
+        data_type     => 'boolean',
+        default_value => 1,
+        is_nullable   => 0,
     });
 
 __PACKAGE__->add_unique_constraint([qw(name)]);

@@ -81,10 +81,6 @@ ok($dh->version_storage->database_version, 'DB deployed');
 is($dh->version_storage->database_version, $dh->schema_version, 'Schema at correct version');
 is($ret, 0, 'Expected return value (0) for no action needed');
 
-# check systemuser exists after upgrade
-my $user = $schema->resultset('Users')->find({username => 'system'});
-ok($user->id, 'system user does exists');
-
 SKIP: {
     eval { require SQL::Translator::Producer::Diagram; };
 

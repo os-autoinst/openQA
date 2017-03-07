@@ -368,6 +368,14 @@ is(
     'oldest version/build still shown'
 );
 
+# helper sub used by next two subtests
+sub check_builds {
+    my ($build_names, $group, $msg) = @_;
+    $get = $t->get_ok('/group_overview/' . $group->id . '?limit_builds=100')->status_is(200);
+    my @h4 = $get->tx->res->dom->find("div.no-children h4 a")->map('text')->each;
+    is_deeply(\@h4, $build_names, $msg) || diag explain @h4;
+}
+
 subtest 'proper build sorting for dotted build number' => sub {
     my $group = $job_groups->create({name => 'dotted version group'});
     $job_hash->{group_id} = $group->id;
@@ -387,10 +395,15 @@ subtest 'proper build sorting for dotted build number' => sub {
         $jobs->create($job_hash);
     }
 
-    $get = $t->get_ok('/group_overview/' . $group->id . '?limit_builds=100')->status_is(200);
-    my @h4 = $get->tx->res->dom->find("div.no-children h4 a")->map('text')->each;
+    # with version sorting, builds should be sorted in order shown
     my @build_names = map { 'Build' . $_ } @builds;
-    is_deeply(\@h4, \@build_names, 'builds shown sorted') || diag explain @h4;
+    check_builds(\@build_names, $group, 'builds shown sorted by dotted number');
+
+    # without version sorting, builds should be sorted in reverse order
+    # (as the build which most recently had a job created sorts first)
+    $group->update({build_version_sort => 0});
+    @build_names = reverse @build_names;
+    check_builds(\@build_names, $group, 'builds shown sorted by dotted number');
 };
 
 subtest 'job groups with multiple version and builds' => sub {
@@ -402,15 +415,23 @@ subtest 'job groups with multiple version and builds' => sub {
         $job_hash->{BUILD}   = $build;
         $jobs->create($job_hash);
     }
+
+    # create some test builds with jobs
     create_job_version_build('42.3', '0002');
     create_job_version_build('42.3', '0001');
     create_job_version_build('42.2', '2192');
     create_job_version_build('42.2', '2191');
     create_job_version_build('42.2', '0002');
-    $get = $t->get_ok('/group_overview/' . $group->id)->status_is(200);
-    my @h4 = $get->tx->res->dom->find("div.no-children h4 a")->map('text')->each;
+
+    # with version sorting, builds should be sorted in order shown
     my @build_names = map { 'Build' . $_ } qw(0002 0001 2192 2191 0002);
-    is_deeply(\@h4, \@build_names, 'builds shown sorted') || diag explain @h4;
+    check_builds(\@build_names, $group, 'builds shown sorted by dotted versions');
+
+    # without version sorting, builds should be sorted in reverse order
+    # (as the build which most recently had a job created sorts first)
+    $group->update({build_version_sort => 0});
+    @build_names = reverse @build_names;
+    check_builds(\@build_names, $group, 'builds shown sorted by job creation time');
 };
 
 done_testing;

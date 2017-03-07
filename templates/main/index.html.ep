@@ -22,7 +22,6 @@
 % for my $groupresults (@$results) {
     % my $group              = $groupresults->{group};
     % my $build_results      = $groupresults->{build_results};
-    % my $sorted_result_keys = $groupresults->{sorted_result_keys};
     % my $max_jobs           = $groupresults->{max_jobs};
 
     % if (@{$groupresults->{children}}) {
@@ -34,7 +33,7 @@
         <h2>
             %= link_to $group->{name} => url_for('group_overview', groupid => $group->{id})
         </h2>
-        %= include 'main/group_builds', build_results => $build_results, sorted_result_keys => $sorted_result_keys, group => $group, max_jobs => $max_jobs, children => undef, default_expanded => 0
+        %= include 'main/group_builds', build_results => $build_results, group => $group, max_jobs => $max_jobs, children => undef, default_expanded => 0
     % }
 % }
 
