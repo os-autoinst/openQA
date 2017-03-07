@@ -39,6 +39,7 @@ $t->app($app);
 sub test_get_comment {
     my ($in, $id, $comment_id, $supposed_text) = @_;
     my $get = $t->get_ok("/api/v1/$in/$id/comments/$comment_id");
+    is($get->tx->res->json->{id},   $comment_id,    'comment id is correct');
     is($get->tx->res->json->{text}, $supposed_text, 'comment text is correct');
 }
 
