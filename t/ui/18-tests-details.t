@@ -125,6 +125,8 @@ my $get = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
 
 my @worker_text = $get->tx->res->dom->find('#info_box .panel-body div + div + div')->map('all_text')->each;
 like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker displayed when job running');
+my @worker_href = $get->tx->res->dom->find('#info_box .panel-body div + div + div a')->map(attr => 'href')->each;
+is($worker_href[0], '/admin/workers/1', 'link to worker correct');
 
 $t->element_count_is('.tab-pane.active', 1, 'only one tab visible at the same time when using step url');
 
