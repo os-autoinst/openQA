@@ -182,7 +182,7 @@
                                 <div>
                                     <input type="checkbox" name="tags" id="tag_<%= $tag %>" class="tag_checkbox"
                                             value="<%= $tag %>" <%= 'readonly="readonly" disabled="disabled"' unless (is_operator) %> >
-                                    %= $tag
+                                    %= label_for "tag_$tag" => $tag
                                 </div>
                             % }
                         </div>
