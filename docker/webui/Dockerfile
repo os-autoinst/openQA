@@ -1,12 +1,11 @@
-FROM opensuse:42.1
-MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz(@github)
+FROM opensuse:42.2
+MAINTAINER Jan Sedlak <jsedlak@redhat.com>, Josef Skladanka <jskladan@redhat.com>, wnereiz <wnereiz@eienteiland.org>
 
-# Add 'bash' to be able to run 'CMD'
-RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_42.1 openQA && \
-    zypper ar -f obs://devel:openQA:Leap:42.1/openSUSE_Leap_42.1 openQA-perl-modules && \
+RUN zypper ar -f obs://devel:openQA/openSUSE_Leap_42.2 openQA && \
+    zypper ar -f obs://devel:openQA:Leap:42.2/openSUSE_Leap_42.2 openQA-perl-modules && \
     zypper --gpg-auto-import-keys ref && \
     zypper --non-interactive in ca-certificates-mozilla curl && \
-    zypper --non-interactive in openQA apache2 hostname which w3m bash
+    zypper --non-interactive in --force-resolution openQA apache2 hostname which w3m
 
 
 # setup apache
