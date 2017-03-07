@@ -402,8 +402,8 @@ sub prepare_job_results {
                   if $job->result eq OpenQA::Schema::Result::Jobs::PASSED
                   || $job_labels->{$jobid}{bugs}
                   || $job_labels->{$jobid}{label}
-                  || ( $job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED
-                    && $job->has_failed_modules);
+                  || ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED
+                    && ($job_labels->{$jobid}{label} || !$job->has_failed_modules));
             }
 
             $result = {
