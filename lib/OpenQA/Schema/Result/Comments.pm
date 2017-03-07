@@ -142,6 +142,7 @@ sub hash {
 sub extended_hash {
     my ($self) = @_;
     return {
+        id               => $self->id,
         text             => $self->text,
         renderedMarkdown => $self->rendered_markdown,
         bugrefs          => $self->bugrefs,
