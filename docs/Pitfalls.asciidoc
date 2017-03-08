@@ -27,3 +27,27 @@ user can share the environment without problems.
 This approach will lead to a problem when the openqa package is updated, since the
 directory permissions will be changed again, nothing a `chmod -R g+rwx /var/lib/openqa/`
 and `chgrp -R openqa /var/lib/openqa` can not fix.
+
+== WebUI does not start because of denied permissions
+
+On some machines it can happen, that the openQA web UI refuses to start.
+If you spot something like this in your logfiles:
+
+  Mar 08 15:18:11 glados systemd[1]: Started The openQA web UI.
+  Mar 08 15:18:11 glados openqa[1530]: {UNKNOWN}: {UNKNOWN}: Permission denied
+  Mar 08 15:18:11 glados openqa[1530]: Compilation failed in require at /usr/share/openqa/script/../lib/OpenQA/Schema/Result/Assets.pm line 24, <DATA> line 1.
+  Mar 08 15:18:11 glados openqa[1530]: BEGIN failed--compilation aborted at /usr/share/openqa/script/../lib/OpenQA/Schema/Result/Assets.pm line 24, <DATA> line 1.
+  Mar 08 15:18:11 glados openqa[1530]: Compilation failed in require at /usr/lib/perl5/vendor_perl/5.24.0/Class/C3/Componentised.pm line 150, <DATA> line 1. at /usr/lib/perl5/vendor_perl/5.24.0/Class/C3/Componentised.pm line 155
+  Mar 08 15:18:11 glados openqa[1530]: Compilation failed in require at /usr/share/openqa/script/../lib/OpenQA/WebAPI.pm line 20, <DATA> line 1.
+  Mar 08 15:18:11 glados openqa[1530]: BEGIN failed--compilation aborted at /usr/share/openqa/script/../lib/OpenQA/WebAPI.pm line 20, <DATA> line 1.
+  Mar 08 15:18:11 glados openqa[1530]: Compilation failed in require at /usr/share/openqa/script/openqa line 33, <DATA> line 1.
+  Mar 08 15:18:11 glados openqa[1530]: BEGIN failed--compilation aborted at /usr/share/openqa/script/openqa line 33, <DATA> line 1.
+
+your problem is most probably apparmor. Check if it is running by issuing `systemctl status apparmor`.
+If apparmor is started, stop it and try to restart openqa-webui again:
+
+  systemctl stop apparmor
+  systemctl restart openqa-webui
+
+*Please note:* This stops an important security mechanism on your machine and should only be used as an temporary workaround.
+Please report a bug or PR as soon as you run into such problems to help improve compatibility between openQA and apparmor.
