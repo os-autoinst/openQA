@@ -3,7 +3,14 @@
 % title 'Jobs for ' . $group->name;
 
 % content_for 'ready_function' => begin
-    user_is_admin = <%= is_admin ? 'true' : 'false' %>;
+    user_is_admin =
+    % if(is_admin) {
+        true
+    % }
+    % else {
+        false
+    % }
+    ;
     setupJobTemplates("<%= url_for('apiv1_job_templates') %>", <%= $group->id %>);
 % end
 
