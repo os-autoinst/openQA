@@ -351,10 +351,12 @@ function saveNeedle(e) {
   var form = $("#save_needle_form");
   var errors = [];
   var selection = window.needles[$('#tags_select').val()];
+  var takeMatches = $('#take_matches').prop('checked');
   if(!selection.tags.length) {
       errors.push('No tags specified.');
   }
-  if(!selection.matches.length) {
+  if((!takeMatches && !selection.area.length)
+      || (takeMatches && !selection.matches.length)) {
       errors.push('No areas defined.');
   }
   if(errors.length) {

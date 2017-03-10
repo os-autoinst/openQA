@@ -294,11 +294,24 @@ my $xoffset = my $yoffset = 200;
 change_needle_value($xoffset, $yoffset);    # xoffset and yoffset 200 for new area
 overwrite_needle($needlename);
 
+subtest 'Saving needle without taking matches' => sub {
+    $driver->get('/tests/99938/modules/logpackages/steps/1/edit');
+    $driver->find_element_by_id('tag_ENV-DESKTOP-kde')->click();
+    $driver->find_element_by_id('take_matches')->click();
+    create_needle(20, 50);
+    $driver->find_element_by_id('save')->click();
+    is(
+        $driver->find_element('#flash-messages span')->get_text(),
+        'Needle logpackages-before-package-selection-20170310 created/updated - restart job',
+        'highlight appears correct'
+    );
+};
+
 # parse new needle json
 my $new_needle_path = "$dir/$needlename.json";
 my $overwrite_json;
 {
-    local $/;                               #Enable 'slurp' mode
+    local $/;    #Enable 'slurp' mode
     open my $fh, "<", $new_needle_path;
     $overwrite_json = <$fh>;
     close $fh;
