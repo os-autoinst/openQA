@@ -292,3 +292,15 @@ after user validation. See included modules for inspiration.
 
 It is possible to customize the openQA base directory by setting the environment
 variable +OPENQA_BASEDIR+. The default value is +/var/lib+.
+
+== Running tests of openQA itself
+
+To execute the testsuite locally, use +make test+. It is also possible to run a
+particular test for example +prove t/api/01-workers.t+.
+
+To run UI tests the package +perl-Selenium-Remote-Driver+ is required. Note that
+the version provided by Leap 42.2 is too old. The version from the repository
++devel-languages-perl+ can be used instead.
+
+To use ChromeDriver instead of PhantomJS the environment variable
++SELENIUM_CHROME+ can be set.
