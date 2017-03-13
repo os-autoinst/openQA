@@ -300,9 +300,9 @@ subtest 'Saving needle without taking matches' => sub {
     $driver->find_element_by_id('take_matches')->click();
     create_needle(20, 50);
     $driver->find_element_by_id('save')->click();
-    is(
+    like(
         $driver->find_element('#flash-messages span')->get_text(),
-        'Needle logpackages-before-package-selection-20170310 created/updated - restart job',
+        qr/Needle logpackages-before-package-selection-\d{8} created\/updated - restart job/,
         'highlight appears correct'
     );
 };
