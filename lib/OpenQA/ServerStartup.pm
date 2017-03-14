@@ -109,6 +109,7 @@ sub read_config {
     }
     $app->config->{global}->{recognized_referers} = [split(/ /, $app->config->{global}->{recognized_referers})];
     $app->config->{_openid_secret} = db_helpers::rndstr(16);
+    $app->config->{auth}->{method} =~ s/\s//g;
 }
 
 sub _log_format {
