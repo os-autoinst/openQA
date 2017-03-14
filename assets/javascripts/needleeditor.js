@@ -121,6 +121,7 @@ NeedleEditor.prototype.AddTag = function(tag, checked) {
   var label = document.createElement('label');
   label.appendChild(document.createTextNode(tag));
   label.htmlFor = input.id;
+  label.style.fontWeight = 'bold';
   div.appendChild(input);
   div.appendChild(label);
   this.tags.appendChild(div);
@@ -303,6 +304,7 @@ function addTag() {
   var input = $('#newtag');
   var checkbox = nEditor.AddTag(input.val(), false);
   input.val('');
+  input.keyup();
   checkbox.click();
   return false;
 }
@@ -455,6 +457,8 @@ function setup_needle_editor(imageurl, default_needle)
     });
     return false;
   });
+
+  $('#newtag').keyup(function() { $('#tag_add_button').prop('disabled', !this.value.length); });
 
   $('#save_needle_form').submit(saveNeedle);
   $(document).on('click', '.restart-link', restartJob);

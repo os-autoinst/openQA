@@ -192,7 +192,7 @@
                                     <input type="text" class="form-control" id="newtag" placeholder="Add new tags here">
                                 </div>
                                 <div class="col-sm-2">
-                                    <button type="button" class="btn btn-default form-control" id="tag_add_button">Add</button>
+                                    <button type="button" class="btn btn-default form-control" id="tag_add_button" disabled>Add</button>
                                 </div>
                             </div>
                         % }
