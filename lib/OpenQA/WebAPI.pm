@@ -152,8 +152,7 @@ sub startup {
     if ($@) {
         die sprintf('Unable to load auth module %s for method %s', $auth_module, $auth_method);
     }
-    $auth_module->import('auth_config');
-    auth_config($self->config);
+    $auth_module->auth_config($self->config);
 
     # Router
     my $r         = $self->routes;
