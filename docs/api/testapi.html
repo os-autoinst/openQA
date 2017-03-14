@@ -697,10 +697,11 @@ for example <code>wait_screen_change</code> or <code>wait_still_screen</code>.</
 </div>
 </div>
 <div class="paragraph">
-<p>Wait for needle with <code>$mustmatch</code> tag to appear on SUT screen. Then click <code>$button</code> in the middle
-of last matched region. If <code>$dclick</code> is set, do double click instead.
-<code>$mustmatch</code> can be string or <code>ARRAYREF</code> of strings (<code>['tag1', 'tag2']</code>).
-<code>$button</code> is by default <code>'left'</code>. <code>'left'</code> and <code>'right'</code> is supported.</p>
+<p>Wait for needle with <code>$mustmatch</code> tag to appear on SUT screen. Then click
+<code>$button</code> in the middle of the last match region as defined in the needle
+JSON file. If <code>$dclick</code> is set, do double click instead.  <code>$mustmatch</code> can
+be string or <code>ARRAYREF</code> of strings (<code>['tag1', 'tag2']</code>).  <code>$button</code> is by
+default <code>'left'</code>. <code>'left'</code> and <code>'right'</code> is supported.</p>
 </div>
 <div class="paragraph">
 <p>Throws <code>NeedleFailed</code> exception if <code>$timeout</code> timeout is hit. Default timeout is 30s.</p>
@@ -1620,7 +1621,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-03-14 08:48:30 UTC
+Last updated 2017-03-14 16:06:51 UTC
 </div>
 </div>
 </body>
