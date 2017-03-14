@@ -49,7 +49,7 @@ sub lj {
     my $ret  = $t->get_ok('/api/v1/jobs')->status_is(200);
     my @jobs = @{$ret->tx->res->json->{jobs}};
     for my $j (@jobs) {
-        printf "%d %-10s %s\n", $j->{id}, $j->{state}, $j->{name};
+        printf "%d %-10s %s (%s)\n", $j->{id}, $j->{state}, $j->{name}, $j->{priority};
     }
 }
 
@@ -275,6 +275,36 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     lj;
     ok(!grep({ $_->{settings}->{BUILD} =~ '009[2]' } @jobs), 'no jobs from intermediate, not-important build');
     is(scalar @jobs, 21, 'only the important jobs, jobs from the current build and the important build are scheduled');
+};
+
+subtest 'build obsoletion/depriorization' => sub {
+    my %iso = (ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0094');
+    $res = schedule_iso({%iso, BUILD => '0094'});
+    $ret = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
+    my @jobs = @{$ret->tx->res->json->{jobs}};
+    lj;
+    ok(!grep({ $_->{settings}->{BUILD} =~ '009[23]' } @jobs), 'recent build was obsoleted');
+    is(scalar @jobs, 21, 'current build and the important build are scheduled');
+    $res  = schedule_iso({%iso, BUILD => '0095', '_NOOBSOLETEBUILD' => 1});
+    $ret  = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
+    @jobs = @{$ret->tx->res->json->{jobs}};
+    lj;
+    my @jobs_previous_build = grep { $_->{settings}->{BUILD} eq '0094' } @jobs;
+    ok(@jobs_previous_build, 'previous build was not obsoleted');
+    is($jobs_previous_build[0]->{priority}, 40, 'job is at same priority as before');
+    is($jobs_previous_build[1]->{priority}, 40, 'second job, same priority');
+    # set one job to already highest allowed
+    $ret = $t->put_ok('/api/v1/jobs/' . $jobs_previous_build[1]->{id}, json => {priority => 100})->status_is(200);
+    my $job_at_prio_limit = $ret->tx->res->json->{job_id};
+    $res  = schedule_iso({%iso, BUILD => '0096', '_DEPRIORITIZEBUILD' => 1});
+    $ret  = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
+    @jobs = @{$ret->tx->res->json->{jobs}};
+    lj;
+    @jobs_previous_build = grep { $_->{settings}->{BUILD} eq '0094' } @jobs;
+    ok(@jobs_previous_build, 'old build still in progress');
+    is($jobs_previous_build[0]->{priority}, 50, 'job of previous build is deprioritized');
+    $t->get_ok('/api/v1/jobs/' . $job_at_prio_limit)->status_is(200);
+    $t->json_is('/job/state' => 'cancelled', 'older job already at priorization limit was cancelled');
 };
 
 $t->app->config->{global}->{download_domains} = 'localhost';
