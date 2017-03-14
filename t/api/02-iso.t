@@ -49,7 +49,7 @@ sub lj {
     my $ret  = $t->get_ok('/api/v1/jobs')->status_is(200);
     my @jobs = @{$ret->tx->res->json->{jobs}};
     for my $j (@jobs) {
-        printf "%d %-10s %s@%s\n", $j->{id}, $j->{state}, $j->{name}, $j->{settings}->{MACHINE};
+        printf "%d %-10s %s\n", $j->{id}, $j->{state}, $j->{name};
     }
 }
 
