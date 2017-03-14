@@ -121,6 +121,7 @@ NeedleEditor.prototype.AddTag = function(tag, checked) {
   var label = document.createElement('label');
   label.appendChild(document.createTextNode(tag));
   label.htmlFor = input.id;
+  label.style.fontWeight = 'bold';
   div.appendChild(input);
   div.appendChild(label);
   this.tags.appendChild(div);
