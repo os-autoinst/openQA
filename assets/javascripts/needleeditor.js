@@ -304,6 +304,7 @@ function addTag() {
   var input = $('#newtag');
   var checkbox = nEditor.AddTag(input.val(), false);
   input.val('');
+  input.keyup();
   checkbox.click();
   return false;
 }
@@ -456,6 +457,8 @@ function setup_needle_editor(imageurl, default_needle)
     });
     return false;
   });
+
+  $('#newtag').keyup(function() { $('#tag_add_button').prop('disabled', !this.value.length); });
 
   $('#save_needle_form').submit(saveNeedle);
   $(document).on('click', '.restart-link', restartJob);
