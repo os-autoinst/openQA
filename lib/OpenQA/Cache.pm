@@ -2,7 +2,6 @@ package OpenQA::Cache;
 use strict;
 use warnings;
 
-
 use File::Basename;
 use Fcntl qw(:flock);
 use Mojo::UserAgent;
@@ -10,39 +9,38 @@ use OpenQA::Utils qw(log_error log_info log_debug);
 use OpenQA::Worker::Common;
 use List::MoreUtils;
 use Data::Dumper;
-use Mojo::JSON qw(to_json from_json);
+use JSON;
 
 require Exporter;
 our (@ISA, @EXPORT);
 @ISA    = qw(Exporter);
 @EXPORT = qw(get_asset);
 
-my %cache;
+my $cache;
 my $host;
-my $limit   = 5;
-my $delete  = 0;
+my $limit   = 50;
+my $remove  = 1;
 my $db_file = "../cache.db";
 
 sub get {
     my ($asset) = @_;
-    my $index = List::MoreUtils::first_index { $_ eq $asset } @{$cache{$host}};
-    splice @{$cache{$host}}, $index, 1;
-    unshift @{$cache{$host}}, $asset;
+    my $index = List::MoreUtils::first_index { $_ eq $asset } @{$cache->{$host}};
+    splice @{$cache->{$host}}, $index, 1 if @{$cache->{$host}} > 0;
+    unshift @{$cache->{$host}}, $asset;
     expire_asset();
 }
 
 sub set {
     my ($asset) = @_;
-    unshift @{$cache{$host}}, $asset;
+    unshift @{$cache->{$host}}, $asset;
     expire_asset();
 }
 
 sub init {
     my $class;
     $host = shift;
-    @{$cache{$host}} = read_db();
+    @{$cache->{$host}} = read_db();
     log_debug(__PACKAGE__ . ": Initialized with $host");
-    log_debug(Dumper(\%cache));
 }
 
 sub update_setup_status {
@@ -59,16 +57,15 @@ sub update_setup_status {
 
 sub download_asset {
     my ($id, $type, $asset) = @_;
-    # $asset =~ s/share\///;
-    log_debug "Attemping to download: $host $asset, $type, $id";
-    my $ua = Mojo::UserAgent->new(max_redirects => 5);
-    $ua->max_response_size(0);    #set initial filesize of 20GB
-    my $tx = $ua->build_tx(GET => sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset));
 
-    log_debug "Set up the transaction";
     open(my $log, '>>', "autoinst-log.txt") or die("Cannot open autoinst-log.txt");
     local $| = 1;
     print $log "CACHE: Locking $asset";
+
+    print $log "Attemping to download: $host $asset, $type, $id";
+    my $ua = Mojo::UserAgent->new(max_redirects => 2);
+    $ua->max_response_size(0);    #set initial filesize of 20GB
+    my $tx = $ua->build_tx(GET => sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset));
 
     $ua->on(
         start => sub {
@@ -85,7 +82,6 @@ sub download_asset {
                     # Don't spam the webui, update only every 5 seconds
                     if (time - $last_updated > 5) {
                         update_setup_status $id;
-                        log_debug($progress . " < " . $current);
                         $last_updated = time;
                         if ($progress < $current) {
                             $progress = $current;
@@ -96,7 +92,6 @@ sub download_asset {
         });
 
     $tx = $ua->start($tx);
-    log_debug("saving to $asset");
     print $log "CACHE: " . basename($asset) . " download sucessful";
     close($log);
     $tx->res->content->asset->move_to($asset);
@@ -109,14 +104,14 @@ sub get_asset {
     $asset =~ s/share\///;
     # repo, kernel, and initrd should be also accepted here.
     $asset_type = (split /^(ISO|HDD)/, $asset_type)[1];
-
+    read_db();
     while () {
         log_debug "Trying to aquire lock";
         open(my $asset_fd, ">", $asset . ".lock");
 
         if (!flock($asset_fd, LOCK_EX | LOCK_NB)) {
             update_setup_status $job->{id};
-            log_debug("Asked to wait for lock, sleeping 10 secs");
+            log_debug("CACHE: Asked to wait for lock, sleeping 10 secs");
             sleep 10;
             next;
         }
@@ -130,6 +125,7 @@ sub get_asset {
             download_asset($job->{id}, lc($asset_type), $asset);
             set($asset);
         }
+
         write_db();
         flock($asset_fd, LOCK_UN);
         last;
@@ -137,47 +133,50 @@ sub get_asset {
     }
 
     unlink($asset . ".lock") or log_debug("Lock file for " . basename($asset) . " is not present");
-    log_debug "got $type " . basename($asset);
-
+    log_debug "$type for: " . basename($asset);
 }
 
 sub purge_cache {
     log_debug("Expiring all the assets");
-    map { expire_asset($_) } @{$cache{$host}};
+    map { expire_asset($_) } @{$cache->{$host}};
+    write_db();
 }
 
 sub expire_asset {
-    if (@{$cache{$host}} > $limit) {
-        my $asset = pop(@{$cache{$host}});
-        unlink($asset) if $delete;
-        log_debug("Purged $asset");
+    # currently only
+    while (@{$cache->{$host}} > $limit) {
+        my $asset = pop(@{$cache->{$host}});
+        unlink($asset) if $remove;
+        log_debug("Purged $asset due to $limit");
     }
+    write_db();
 }
 
 sub write_db {
-    open(my $file, ">", $db_file);
-    flock($file, LOCK_EX);
-    print $file to_json(\%cache);
-    close($file);
-    flock($file, LOCK_UN);
-    log_debug("Wrote db file");
+    open(my $fh, ">", $db_file);
+    flock($fh, LOCK_EX);
+    truncate($fh, 0) or die "cannot truncate $db_file: $!\n";
+    my $json = JSON->new->pretty->canonical;
+    print $fh $json->encode($cache);
+    close($fh);
+    log_debug("Saving cache db file");
 }
 
 sub read_db {
-    open(my $file, "<", $db_file);
 
-    flock($file, LOCK_EX);
-    my $data;
-    while (<$file>) {
-        $data .= $_;
-    }
+    local $/;    # use slurp mode to read the whole file at once.
+    open(my $fh, "<", $db_file) or die "$db_file could not be created";
+    flock($fh, LOCK_EX);
+    eval { $cache = JSON->new->relaxed->decode(<$fh>); };
+    die "parse error in $db_file:\n$@" if $@;
 
-    %cache = \from_json($data);
-    log_debug(Dumper(\%cache));
+    log_debug("Objects in the cache: ");
+    log_debug(Dumper($cache));
 
-    close($file);
-    flock($file, LOCK_UN);
-    log_debug("Wrote db file");
+    close($fh);
+    log_debug("Read cache db file");
+
 }
+
 
 1;
