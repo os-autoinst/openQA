@@ -135,6 +135,70 @@ instance without needing to install the full package. Call
 `<openqa-folder>/script/client --help` for help (openSUSE: `openqa-client
 --help`).
 
+Basics are described in the
+link:GettingStarted.asciidoc[Getting Started] guide.
+
+
+=== Triggering tests
+
+Tests can be triggered over multiple ways, using `clone_job.pl`, `jobs post`,
+`isos post` as well as retriggering existing jobs or whole media over the web
+UI.
+
+
+==== Cloning existing jobs - clone_job.pl ====
+
+If one wants to recreate an existing job from any publically available openQA
+instance the script `clone_job.pl` can be used to copy the necessary settings
+and assets to another instance and schedule the test. For the the test to be
+executed it has to be ensured that matching ressources can be found, for
+example a worker with matching `WORKER_CLASS` must be registered. More details
+on `clone_job.pl` can be found in link:WritingTests.asciidoc[Writing Tests].
+
+
+==== Spawning single new jobs - jobs post ====
+
+Single jobs can be spawned using the `jobs post` API route. All necessary
+settings on a job must be supplied in the API request. The "openQA client" has
+examples for this.
+
+
+==== Spawning multiple jobs based on templates - isos post ====
+
+The most common way of spawning jobs on production instances is using the
+`isos post` API route. Based on previously defined settings for media, job
+groups, machines and test suites jobs are triggered based on template
+matching. The link:GettingStarted.asciidoc[Getting Started] guide already
+mentioned examples. Additionally to the necessary template matching parameters
+more parameters can be specified which are forwarded to all triggered jobs.
+There are also special parameters which only have an influence on the way the
+triggering itself is done. These parameters all start with a leading
+underscore but are set as request parameters in the same way as the other
+parameters.
+
+[horizontal]
+.The following scheduling parameters exist
+
+_NOOBSOLETEBUILD:: Do not obsolete jobs in older builds which would be
+default. With this option jobs which are currently in execution, for example
+scheduled or running, are not cancelled when a new medium is triggered.
+
+_DEPRIORITIZEBUILD:: Setting this switch '1' will not immediately obsolete jobs of old
+builds but rather deprioritize them up to a configurable limit of priority.
+
+_DEPRIORITIZE_LIMIT:: The configurable limit of priority up to which jobs
+should be deprioritized. Needs `_DEPRIORITIZEBUILD`. Default 100.
+
+Example for `_DEPRIORITIZEBUILD` and `_DEPRIORITIZE_LIMIT`.
+
+[source,sh]
+--------------------------------------------------------------------------------
+openqa-client isos post ISO=my_iso.iso DISTRI=my_distri FLAVOR=sweet \
+         ARCH=my_arch VERSION=42 BUILD=1234 \
+         _DEPRIORITIZEBUILD=1 _DEPRIORITIZE_LIMIT=120 \
+--------------------------------------------------------------------------------
+
+
 == Where to now?
 
 For test developers it is recommended to continue with the

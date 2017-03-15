@@ -605,6 +605,10 @@ For Fedora, a sample run might be:
          BUILD=Rawhide-20160308.n.0
 --------------------------------------------------------------------------------
 
+More details on triggering tests can also be found in the
+link:UsersGuide.asciidoc[Users Guide].
+
+
 == Pitfalls
 
 Take a look at link:Pitfalls.asciidoc[Documented Pitfalls].

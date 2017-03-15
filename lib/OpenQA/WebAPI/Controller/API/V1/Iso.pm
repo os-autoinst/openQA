@@ -276,8 +276,10 @@ sub schedule_iso {
     for my $a (values %{parse_assets_from_settings($args)}) {
         $self->app->schema->resultset("Assets")->register($a->{type}, $a->{name}, 1);
     }
-    my $noobsolete = delete $args->{_NOOBSOLETEBUILD};
-    $noobsolete //= 0;
+    my $deprioritize       = delete $args->{_DEPRIORITIZEBUILD} // 0;
+    my $deprioritize_limit = delete $args->{_DEPRIORITIZE_LIMIT};
+    my $obsolete           = !(delete $args->{_NOOBSOLETEBUILD} // $deprioritize);
+
     # Any arg name ending in _URL is special: it tells us to download
     # the file at that URL before running the job
     my %downloads = ();
@@ -339,16 +341,22 @@ sub schedule_iso {
     # XXX: take some attributes from the first job to guess what old jobs to
     # cancel. We should have distri object that decides which attributes are
     # relevant here.
-    if (!$noobsolete && $jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
+
+    if (($obsolete || $deprioritize) && $jobs && $jobs->[0] && $jobs->[0]->{BUILD}) {
+        my $build = $jobs->[0]->{BUILD};
+        OpenQA::Utils::log_debug(
+            "Triggering new iso with build \'$build\', obsolete: $obsolete, deprioritize: $deprioritize");
         my %cond;
         for my $k (qw(DISTRI VERSION FLAVOR ARCH)) {
             next unless $jobs->[0]->{$k};
             $cond{$k} = $jobs->[0]->{$k};
         }
         if (%cond) {
+            # Prefer new build jobs over old ones either by cancelling old
+            # ones or deprioritizing them (up to a limit)
             try {
                 $self->emit_event('openqa_iso_cancel', \%cond);
-                $self->db->resultset('Jobs')->cancel_by_settings(\%cond, 1);    # have new build jobs instead
+                $self->db->resultset('Jobs')->cancel_by_settings(\%cond, 1, $deprioritize, $deprioritize_limit);
             }
             catch {
                 my $error = shift;

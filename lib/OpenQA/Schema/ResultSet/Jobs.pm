@@ -323,10 +323,12 @@ sub complex_query {
 }
 
 sub cancel_by_settings {
-    my ($self, $settings, $newbuild) = @_;
+    my ($self, $settings, $newbuild, $deprioritize, $deprio_limit) = @_;
+    $newbuild     //= 0;
+    $deprioritize //= 0;
+    $deprio_limit //= 100;
     my $rsource = $self->result_source;
     my $schema  = $rsource->schema;
-    $newbuild //= 0;
     # preserve original settings by deep copy
     my %precond = %{$settings};
     my %cond;
@@ -370,14 +372,27 @@ sub cancel_by_settings {
     # first scheduled to avoid worker grab
     $jobs = $jobs_to_cancel->search({state => OpenQA::Schema::Result::Jobs::SCHEDULED});
     while (my $j = $jobs->next) {
-        $cancelled_jobs += $j->cancel($newbuild);
+        $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
     }
     # then the rest
     $jobs = $jobs_to_cancel->search({state => [OpenQA::Schema::Result::Jobs::EXECUTION_STATES]});
     while (my $j = $jobs->next) {
-        $cancelled_jobs += $j->cancel($newbuild);
+        $cancelled_jobs += _cancel_or_deprioritize($j, $newbuild, $deprioritize, $deprio_limit);
     }
     return $cancelled_jobs;
+}
+
+sub _cancel_or_deprioritize {
+    my ($job, $newbuild, $deprioritize, $limit, $step) = @_;
+    $step //= 10;
+    if ($deprioritize) {
+        my $prio = $job->priority + $step;
+        if ($prio < $limit) {
+            $job->set_prio($prio);
+            return 0;
+        }
+    }
+    return $job->cancel($newbuild);
 }
 
 1;
