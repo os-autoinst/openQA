@@ -68,7 +68,7 @@ sub cache_assets {
     #cache ISO and HDD
     foreach my $this_asset (sort grep { /^(ISO|HDD)[_]*\d?$/ } keys %{$job->{settings}}) {
         log_debug("Found $this_asset, caching " . $job->{settings}->{$this_asset});
-        OpenQA::Cache::get_asset($job, $this_asset, $job->{settings}{$this_asset});
+        get_asset($job, $this_asset, $job->{settings}{$this_asset});
     }
 }
 
@@ -132,10 +132,11 @@ sub engine_workit($) {
         }
     }
 
-    if ( ! -e '/var/lib/openqa/share/'){
+    if (!-e '/var/lib/openqa/share/') {
         OpenQA::Cache::init($current_host);
         cache_assets($job);
-    } else {
+    }
+    else {
         log_info("CACHE: share directory found, asset caching is not enabled");
     }
 
