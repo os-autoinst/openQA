@@ -25,6 +25,7 @@ use JSON 'to_json';
 use Fcntl;
 use Errno;
 use Cwd 'abs_path';
+use OpenQA::Cache;
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -62,8 +63,25 @@ sub _save_vars($) {
     close($fd);
 }
 
+sub cache_assets {
+    my ($job) = @_;
+    #cache ISO and HDD
+    foreach my $this_asset (sort grep { /^(ISO|HDD)[_]*\d?$/ } keys %{$job->{settings}}) {
+        log_debug("Found $this_asset, caching " . $job->{settings}->{$this_asset});
+        OpenQA::Cache::get_asset($job, $this_asset, $job->{settings}{$this_asset});
+    }
+}
+
 sub engine_workit($) {
     my ($job) = @_;
+
+    if (open(my $log, '>', "autoinst-log.txt")) {
+        print $log "+++ setup notes +++\n";
+        printf $log "start time: %s\n", strftime("%F %T", gmtime);
+        my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
+        printf $log "running on $hostname:%d ($sysname $release $version $machine)\n", $instance;
+        close($log);
+    }
 
     # set base dir to the one assigned with webui
     OpenQA::Utils::change_sharedir($hosts->{$current_host}{dir});
@@ -114,6 +132,13 @@ sub engine_workit($) {
         }
     }
 
+    if ( ! -e '/var/lib/openqa/share/'){
+        OpenQA::Cache::init($current_host);
+        cache_assets($job);
+    } else {
+        log_info("CACHE: share directory found, asset caching is not enabled");
+    }
+
     # pass worker instance and worker id to isotovideo
     # both used to create unique MAC and TAP devices if needed
     # workerid is also used by libvirt backend to identify VMs
@@ -146,7 +171,7 @@ sub engine_workit($) {
         setpgrp(0, 0);
         $ENV{TMPDIR} = $tmpdir;
         log_info("$$: WORKING " . $job->{id});
-        if (open(my $log, '>', "autoinst-log.txt")) {
+        if (open(my $log, '>>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
             printf $log "start time: %s\n", strftime("%F %T", gmtime);
             my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
