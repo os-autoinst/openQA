@@ -101,12 +101,11 @@ sub download_asset {
 sub get_asset {
     my ($job, $asset_type, $asset) = @_;
     my $type;
-    $asset =~ s/share\///;
     # repo, kernel, and initrd should be also accepted here.
     $asset_type = (split /^(ISO|HDD)/, $asset_type)[1];
-    read_db();
     while () {
-        log_debug "Trying to aquire lock";
+    read_db();
+        log_debug "CACHE: Aquiring lock";
         open(my $asset_fd, ">", $asset . ".lock");
 
         if (!flock($asset_fd, LOCK_EX | LOCK_NB)) {
@@ -116,10 +115,11 @@ sub get_asset {
             next;
         }
 
-        if (-e $asset) {
+        if ( -s $asset ) {
             $type = "Cache Hit";
             get($asset);
         }
+
         else {
             $type = "Cache Miss";
             download_asset($job->{id}, lc($asset_type), $asset);
@@ -127,7 +127,7 @@ sub get_asset {
         }
 
         write_db();
-        flock($asset_fd, LOCK_UN);
+        close($asset_fd);
         last;
 
     }
@@ -165,16 +165,23 @@ sub write_db {
 sub read_db {
 
     local $/;    # use slurp mode to read the whole file at once.
-    open(my $fh, "<", $db_file) or die "$db_file could not be created";
-    flock($fh, LOCK_EX);
-    eval { $cache = JSON->new->relaxed->decode(<$fh>); };
-    die "parse error in $db_file:\n$@" if $@;
+    $cache = {};
+    if ( -e $db_file ){
+        open(my $fh, "<", $db_file) or die "$db_file could not be created";
+        flock($fh, LOCK_EX);
+        eval { $cache = JSON->new->relaxed->decode(<$fh>) };
 
-    log_debug("Objects in the cache: ");
-    log_debug(Dumper($cache));
+        log_debug "parse error in $db_file:\n$@" if $@;
+        log_debug("Objects in the cache: ");
+        log_debug(Dumper($cache));
+        close($fh);
+        log_debug("Read cache db file");
+    } else {
+        log_debug "Creating empty cache";
+        write_db;
+    }
 
-    close($fh);
-    log_debug("Read cache db file");
+
 
 }
 
