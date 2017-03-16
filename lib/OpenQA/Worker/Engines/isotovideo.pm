@@ -68,6 +68,7 @@ sub cache_assets {
     #cache ISO and HDD
     foreach my $this_asset (sort grep { /^(ISO|HDD)[_]*\d?$/ } keys %{$job->{settings}}) {
         log_debug("Found $this_asset, caching " . $job->{settings}->{$this_asset});
+        $job->{settings}{$this_asset} =~ s/share\///;
         get_asset($job, $this_asset, $job->{settings}{$this_asset});
     }
 }
@@ -132,7 +133,8 @@ sub engine_workit($) {
         }
     }
 
-    if (!-e '/var/lib/openqa/share/') {
+    # for now the only condition to enable syncing is $hosts->{$current_host}{dir}
+    if (!-e $hosts->{$current_host}{dir}) {
         OpenQA::Cache::init($current_host);
         cache_assets($job);
     }
