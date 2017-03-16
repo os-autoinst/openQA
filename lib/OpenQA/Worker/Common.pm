@@ -263,7 +263,6 @@ sub api_call {
     }
 }
 
-
 sub ws_call {
     my ($type, $data) = @_;
     die 'Current host not set!' unless $current_host;
