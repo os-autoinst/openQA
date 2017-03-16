@@ -104,7 +104,7 @@ sub get_asset {
     # repo, kernel, and initrd should be also accepted here.
     $asset_type = (split /^(ISO|HDD)/, $asset_type)[1];
     while () {
-    read_db();
+        read_db();
         log_debug "CACHE: Aquiring lock";
         open(my $asset_fd, ">", $asset . ".lock");
 
@@ -115,7 +115,7 @@ sub get_asset {
             next;
         }
 
-        if ( -s $asset ) {
+        if (-s $asset) {
             $type = "Cache Hit";
             get($asset);
         }
@@ -166,7 +166,7 @@ sub read_db {
 
     local $/;    # use slurp mode to read the whole file at once.
     $cache = {};
-    if ( -e $db_file ){
+    if (-e $db_file) {
         open(my $fh, "<", $db_file) or die "$db_file could not be created";
         flock($fh, LOCK_EX);
         eval { $cache = JSON->new->relaxed->decode(<$fh>) };
@@ -176,7 +176,8 @@ sub read_db {
         log_debug(Dumper($cache));
         close($fh);
         log_debug("Read cache db file");
-    } else {
+    }
+    else {
         log_debug "Creating empty cache";
         write_db;
     }
