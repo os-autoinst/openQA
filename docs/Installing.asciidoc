@@ -78,8 +78,16 @@ Apache config file is available as a base for creating the Apache config; you
 can copy it to +openqa-ssl.conf+ and uncomment any lines you like, then
 ensure a key and certificate are installed to the appropriate location
 (depending on distribution and whether you uncommented the lines for key and
-cert location in the config file). If you don't have a TLS/SSL certificate for
-your host you must turn HTTPS off. You can do that in +/etc/openqa/openqa.ini+:
+cert location in the config file). On openSUSE, you should also add *SSL* to the
+*APACHE_SERVER_FLAGS* so it looks like this in +/etc/sysconfig/apache2+:
+
+[source,sh]
+--------------------------------------------------------------------------------
+APACHE_SERVER_FLAGS="SSL"
+--------------------------------------------------------------------------------
+
+If you don't have a TLS/SSL certificate for your host you must turn HTTPS off.
+You can do that in +/etc/openqa/openqa.ini+:
 
 [source,ini]
 --------------------------------------------------------------------------------
