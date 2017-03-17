@@ -312,14 +312,9 @@ sub setup_websocket {
     my $workerid = $hosts->{$host}{workerid};
     return unless $workerid;
 
-    # if there is an existing web socket connection wait until it finishes.
-    if ($hosts->{$host}{ws}) {
-        Mojo::IOLoop->timer(
-            2 => sub {
-                setup_websocket($host);
-            });
-        return;
-    }
+    # if there is already an existing web socket connection then don't do anything.
+    # during setup there is none, and once established, finish hanler schedules automatic reconnect
+    return if ($hosts->{$host}{ws});
     my $ua_url = $hosts->{$host}{url}->clone();
     if ($ua_url->scheme eq 'http') {
         $ua_url->scheme('ws');
@@ -333,7 +328,6 @@ sub setup_websocket {
     call_websocket($host, $ua_url);
 }
 
-sub call_websocket;
 sub call_websocket {
     my ($host, $ua_url) = @_;
     my $ua = $hosts->{$host}{ua};
@@ -344,22 +338,23 @@ sub call_websocket {
             if ($tx->is_websocket) {
                 # keep websocket connection busy
                 $hosts->{$host}{timers}{keepalive}
-                  = add_timer('', 5, sub { $tx->send({json => {type => 'ok'}}); });
+                  = add_timer('keepalive', 5, sub { $tx->send({json => {type => 'ok'}}); });
 
-                $hosts->{$host}{accepting_jobs} = 1;
-                log_info("checking job for $host");
-                OpenQA::Worker::Jobs::check_job($host);
-                # check for new job immediately
                 $tx->on(json => \&OpenQA::Worker::Commands::websocket_commands);
                 $tx->on(
                     finish => sub {
                         remove_timer($hosts->{$host}{timers}{keepalive});
-                        add_timer('setup_websocket', 5, sub { setup_websocket($host) }, 1);
+                        $hosts->{$host}{timers}{setup_websocket}
+                          = add_timer('setup_websocket', 5, sub { setup_websocket($host) }, 1);
                         delete $ws_to_host->{$hosts->{$host}{ws}};
                         $hosts->{$host}{ws} = undef;
                     });
                 $hosts->{$host}{ws} = $tx->max_websocket_size(10485760);
                 $ws_to_host->{$hosts->{$host}{ws}} = $host;
+
+                $hosts->{$host}{accepting_jobs} = 1;
+                # check for new job immediately
+                OpenQA::Worker::Jobs::check_job($host);
             }
             else {
                 delete $ws_to_host->{$hosts->{$host}{ws}} if ($hosts->{$host}{ws});
@@ -377,13 +372,15 @@ sub call_websocket {
                             # is unset we already detected that in api_call
                             $hosts->{$host}{workerid} = undef;
                             OpenQA::Worker::Jobs::stop_job('api-failure');
-                            add_timer('register_worker', 10, sub { register_worker($host) }, 1);
+                            $hosts->{$host}{timers}{register_worker}
+                              = add_timer('register_worker', 10, sub { register_worker($host) }, 1);
                             return;
                         }
                     }
                     # just retry in any error case - except when the worker ID isn't known
                     # anymore (hence return 3 lines above)
-                    add_timer('setup_websocket', 10, sub { setup_websocket($host) }, 1);
+                    $hosts->{$host}{timers}{setup_websocket}
+                      = add_timer('setup_websocket', 10, sub { setup_websocket($host) }, 1);
                 }
             }
         });
@@ -392,6 +389,7 @@ sub call_websocket {
 sub register_worker {
     my ($host, $dir, $testpoolserver) = @_;
     die unless $host;
+    $hosts->{$host}{accepting_jobs} = 0;
 
     $worker_caps             = _get_capabilities;
     $worker_caps->{host}     = $hostname;
@@ -432,7 +430,7 @@ sub register_worker {
     # remove timers if set
     for my $t (keys %{$hosts->{$host}{timers}}) {
         my $t_id = $hosts->{$host}{timers}{$t};
-        remove_timer($t) if $t;
+        remove_timer($t_id) if $t_id;
         $hosts->{$host}{timers}{$t} = undef;
     }
 
@@ -441,21 +439,31 @@ sub register_worker {
     $ua_url->path('workers');
     $ua_url->query($worker_caps);
     my $tx = $ua->post($ua_url => json => $worker_caps);
-    unless ($tx->success && $tx->success->json) {
-        if ($tx->error && $tx->error->{code} && $tx->error->{code} =~ /^4\d\d$/) {
-            # don't retry when 4xx codes are returned. There is problem with scheduler
-            log_warning(
-                sprintf('ignoring server - server refused with code %s: %s', $tx->error->{code}, $tx->res->body));
-            delete $hosts->{$host};
-            Mojo::IOLoop->stop unless (scalar keys %$hosts);
+    if ($tx->error) {
+        my $err_code = $tx->error->{code};
+        if ($err_code) {
+            if ($err_code =~ /^4\d\d$/) {
+                # don't retry when 4xx codes are returned. There is problem with scheduler
+                log_error(
+                    sprintf('ignoring server - server refused with code %s: %s', $tx->error->{code}, $tx->res->body));
+                delete $hosts->{$host};
+                Mojo::IOLoop->stop unless (scalar keys %$hosts);
+            }
+            else {
+                log_warning(
+                    sprintf('failed to register worker %s - %s:%s, retry in 10s', $host, $err_code, $tx->res->body));
+                $hosts->{$host}{timers}{register_worker}
+                  = add_timer('register_worker', 10, sub { register_worker($host) }, 1);
+            }
         }
         else {
-            log_error('failed to register worker, retry in 10s ...');
-            add_timer('register_worker', 10, sub { register_worker($host) }, 1);
+            log_error("unable to connect to host $host, retry in 10s");
+            $hosts->{$host}{timers}{register_worker}
+              = add_timer('register_worker', 10, sub { register_worker($host) }, 1);
         }
         return;
     }
-    my $newid = $tx->success->json->{id};
+    my $newid = $tx->res->json->{id};
 
     log_debug("new worker id within WebUI $host is $newid") if $verbose;
     $hosts->{$host}{workerid} = $newid;
