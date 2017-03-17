@@ -72,7 +72,7 @@ my $ret;
 
 subtest 'access limiting for non authenticated users' => sub() {
     $t->get_ok('/api/v1/jobs')->status_is(200);
-    $t->get_ok('/api/v1/products')->status_is(403);
+    $t->get_ok('/api/v1/products')->status_is(200);
     my $delete = $t->delete_ok('/api/v1/assets/1')->status_is(403);
     is($delete->tx->res->code, 403, 'delete forbidden');
     is_deeply(
@@ -88,32 +88,32 @@ subtest 'access limiting for non authenticated users' => sub() {
 subtest 'access limiting for authenticated users but not operators nor admins' => sub() {
     $t->ua->apikey('LANCELOTKEY01');
     $t->ua->apisecret('MANYPEOPLEKNOW');
-    $t->get_ok('/api/v1/jobs')->status_is(200);
-    $t->get_ok('/api/v1/products')->status_is(403);
-    $t->delete_ok('/api/v1/assets/1')->status_is(403);
+    $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
+    $t->post_ok('/api/v1/assets')->status_is(403, 'restricted (operator and admin only)');
+    $t->delete_ok('/api/v1/assets/1')->status_is(403, 'restricted (admin only)');
 };
 
 subtest 'access limiting for authenticated operators but not admins' => sub() {
     $t->ua->apikey('PERCIVALKEY01');
     $t->ua->apisecret('PERCIVALSECRET01');
-    $t->get_ok('/api/v1/jobs')->status_is(200);
-    $t->get_ok('/api/v1/products')->status_is(200);
-    $t->delete_ok('/api/v1/assets/1')->status_is(403);
+    $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
+    $t->post_ok('/api/v1/jobs/99927/set_done')->status_is(200, 'accessible (operator and admin only)');
+    $t->delete_ok('/api/v1/assets/1')->status_is(403, 'restricted (admin only)');
 };
 
 subtest 'access granted for admins' => sub() {
     $t->ua->apikey('ARTHURKEY01');
     $t->ua->apisecret('EXCALIBUR');
-    $t->get_ok('/api/v1/jobs')->status_is(200);
-    $t->get_ok('/api/v1/products')->status_is(200);
-    $t->delete_ok('/api/v1/assets/1')->status_is(200);
+    $t->get_ok('/api/v1/jobs')->status_is(200, 'accessible (public)');
+    $t->post_ok('/api/v1/jobs/99927/set_done')->status_is(200, 'accessible (operator and admin only)');
+    $t->delete_ok('/api/v1/assets/1')->status_is(200, 'accessible (admin only)');
 };
 
 subtest 'wrong api key - expired' => sub() {
     $t->ua->apikey('EXPIREDKEY01');
     $t->ua->apisecret('WHOCARESAFTERALL');
     $t->get_ok('/api/v1/jobs')->status_is(200);
-    $ret = $t->get_ok('/api/v1/products')->status_is(403);
+    $ret = $t->post_ok('/api/v1/products/1')->status_is(403);
     is($ret->tx->res->json->{error}, 'api key expired', 'key expired error');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
     is($ret->tx->res->json->{error}, 'api key expired', 'key expired error');
@@ -123,7 +123,7 @@ subtest 'wrong api key - not maching key + secret' => sub() {
     $t->ua->apikey('EXPIREDKEY01');
     $t->ua->apisecret('INVALIDSECRET');
     $t->get_ok('/api/v1/jobs')->status_is(200);
-    $ret = $t->get_ok('/api/v1/products')->status_is(403);
+    $ret = $t->post_ok('/api/v1/products/1')->status_is(403);
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
 };
 
@@ -153,7 +153,7 @@ subtest 'wrong api key - replay attack' => sub() {
             }
         });
     $t->get_ok('/api/v1/jobs')->status_is(200);
-    $ret = $t->get_ok('/api/v1/products')->status_is(403);
+    $ret = $t->post_ok('/api/v1/products/1')->status_is(403);
     is($ret->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');
     $t->delete_ok('/api/v1/assets/1')->status_is(403);
     is($ret->tx->res->json->{error}, 'timestamp mismatch', 'timestamp mismatch error');

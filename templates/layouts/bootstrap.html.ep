@@ -92,35 +92,31 @@
                                   <span class="caret"></span>
                               </a>
                               <ul class="dropdown-menu">
-                                  % if (is_operator) {
-                                      <li class="dropdown-header">Operators Menu</li>
-                                      <li><%= link_to('Medium types' => url_for('admin_products')) %></li>
-                                      <li><%= link_to('Machines' => url_for('admin_machines')) %></li>
-                                      <li><%= link_to('Test suites' => url_for('admin_test_suites')) %></li>
-                                      <li><%= link_to('Job groups' => url_for('admin_groups')) %></li>
-                                      <li><%= link_to('Scheduled products' => url_for('admin_product_log')) %></li>
+                                <li class="dropdown-header">Operators Menu</li>
+                                <li><%= link_to('Medium types' => url_for('admin_products')) %></li>
+                                <li><%= link_to('Machines' => url_for('admin_machines')) %></li>
+                                <li><%= link_to('Test suites' => url_for('admin_test_suites')) %></li>
+                                <li><%= link_to('Job groups' => url_for('admin_groups')) %></li>
+                                <li><%= link_to('Scheduled products' => url_for('admin_product_log')) %></li>
 
-                                      <li><%= link_to('Assets' => url_for('admin_assets')) %></li>
-                                      <!-- Sure this is not the proper place for the workers view,
-                                      but the previous one was even more annoying -->
-                                      <li><%= link_to('Workers' => url_for('admin_workers')) %></li>
+                                <li><%= link_to('Assets' => url_for('admin_assets')) %></li>
+                                <!-- Sure this is not the proper place for the workers view,
+                                but the previous one was even more annoying -->
+                                <li><%= link_to('Workers' => url_for('admin_workers')) %></li>
 
-                                      % if (is_admin) {
-                                          <li role="separator" class="divider"></li>
-                                          <li class="dropdown-header">Administrators Menu</li>
-                                          <li><%= link_to('Users' => url_for('admin_users')) %></li>
-                                          <li><%= link_to('Needles' => url_for('admin_needles')) %></li>
-                                          <li><%= link_to('Audit log' => url_for('audit_log')) %></li>
-                                      % }
-                                      <li role="separator" class="divider"></li>
-                                      <li>
-                                         %= link_to "Manage API keys" => url_for('api_keys')
-                                         %= link_to "API help" => url_for('api_help')
-                                      </li>
-                                  % }
-                                  <li>
-                                      %= link_to('Logout' => url_for('logout') => 'data-method' => 'delete');
-                                  </li>
+                                % if (is_admin) {
+                                    <li role="separator" class="divider"></li>
+                                    <li class="dropdown-header">Administrators Menu</li>
+                                    <li><%= link_to('Users' => url_for('admin_users')) %></li>
+                                    <li><%= link_to('Needles' => url_for('admin_needles')) %></li>
+                                    <li><%= link_to('Audit log' => url_for('audit_log')) %></li>
+                                % }
+                                <li role="separator" class="divider"></li>
+                                % if (is_operator) {
+                                    <li><%= link_to "Manage API keys" => url_for('api_keys') %></li>
+                                % }
+                                <li><%= link_to "API help" => url_for('api_help') %></li>
+                                <li><%= link_to('Logout' => url_for('logout') => 'data-method' => 'delete') %></li>
                               </ul>
                           </li>
                       % } else {

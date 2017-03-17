@@ -243,23 +243,25 @@ sub startup {
     #
     ## Admin area starts here
     ###
-    my $admin_auth = $r->under('/admin')->to('session#ensure_admin');
-    my $admin_r    = $admin_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
-    my $op_auth    = $r->under('/admin')->to('session#ensure_operator');
-    my $op_r       = $op_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
+    my $admin_auth  = $r->under('/admin')->to('session#ensure_admin');
+    my $admin_r     = $admin_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
+    my $op_auth     = $r->under('/admin')->to('session#ensure_operator');
+    my $op_r        = $op_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
+    my $pub_admin_r = $r->route('/admin')->to(namespace => 'OpenQA::WebAPI::Controller::Admin');
 
     # operators accessible tables
-    $op_r->get('/products')->name('admin_products')->to('product#index');
-    $op_r->get('/machines')->name('admin_machines')->to('machine#index');
-    $op_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
+    $pub_admin_r->get('/products')->name('admin_products')->to('product#index');
+    $pub_admin_r->get('/machines')->name('admin_machines')->to('machine#index');
+    $pub_admin_r->get('/test_suites')->name('admin_test_suites')->to('test_suite#index');
 
-    $op_r->get('/job_templates/:groupid')->name('admin_job_templates')->to('job_template#index');
+    $pub_admin_r->get('/job_templates/:groupid')->name('admin_job_templates')->to('job_template#index');
 
-    $op_r->get('/groups')->name('admin_groups')->to('job_group#index');
-    $op_r->get('/job_group/:groupid')->name('admin_job_group_row')->to('job_group#job_group_row');
-    $op_r->get('/parent_group/:groupid')->name('admin_parent_group_row')->to('job_group#parent_group_row');
-    $op_r->get('/edit_parent_group/:groupid')->name('admin_edit_parent_group')->to('job_group#edit_parent_group');
-    $op_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
+    $pub_admin_r->get('/groups')->name('admin_groups')->to('job_group#index');
+    $pub_admin_r->get('/job_group/:groupid')->name('admin_job_group_row')->to('job_group#job_group_row');
+    $pub_admin_r->get('/parent_group/:groupid')->name('admin_parent_group_row')->to('job_group#parent_group_row');
+    $pub_admin_r->get('/edit_parent_group/:groupid')->name('admin_edit_parent_group')
+      ->to('job_group#edit_parent_group');
+    $pub_admin_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
 
     $op_r->get('/assets')->name('admin_assets')->to('asset#index');
 
@@ -267,7 +269,7 @@ sub startup {
     $op_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
     $op_r->get('/workers/:worker_id/ajax')->name('admin_worker_previous_jobs_ajax')->to('workers#previous_jobs_ajax');
 
-    $op_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
+    $pub_admin_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
 
     # admins accessible tables
     $admin_r->get('/users')->name('admin_users')->to('user#index');
@@ -403,33 +405,33 @@ sub startup {
     $api_ra->delete('/assets/#type/#name')->name('apiv1_delete_asset_name')->to('asset#delete');
 
     # api/v1/test_suites
-    $api_ro->get('test_suites')->name('apiv1_test_suites')->to('table#list', table => 'TestSuites');
+    $api_public_r->get('test_suites')->name('apiv1_test_suites')->to('table#list', table => 'TestSuites');
     $api_ra->post('test_suites')->to('table#create', table => 'TestSuites');
-    $api_ro->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
+    $api_public_r->get('test_suites/:id')->name('apiv1_test_suite')->to('table#list', table => 'TestSuites');
     $api_ra->put('test_suites/:id')->to('table#update', table => 'TestSuites');
     $api_ra->post('test_suites/:id')->to('table#update', table => 'TestSuites');    #in case PUT is not supported
     $api_ra->delete('test_suites/:id')->to('table#destroy', table => 'TestSuites');
 
     # api/v1/machines
-    $api_ro->get('machines')->name('apiv1_machines')->to('table#list', table => 'Machines');
+    $api_public_r->get('machines')->name('apiv1_machines')->to('table#list', table => 'Machines');
     $api_ra->post('machines')->to('table#create', table => 'Machines');
-    $api_ro->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
+    $api_public_r->get('machines/:id')->name('apiv1_machine')->to('table#list', table => 'Machines');
     $api_ra->put('machines/:id')->to('table#update', table => 'Machines');
     $api_ra->post('machines/:id')->to('table#update', table => 'Machines');         #in case PUT is not supported
     $api_ra->delete('machines/:id')->to('table#destroy', table => 'Machines');
 
     # api/v1/products
-    $api_ro->get('products')->name('apiv1_products')->to('table#list', table => 'Products');
+    $api_public_r->get('products')->name('apiv1_products')->to('table#list', table => 'Products');
     $api_ra->post('products')->to('table#create', table => 'Products');
-    $api_ro->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
+    $api_public_r->get('products/:id')->name('apiv1_product')->to('table#list', table => 'Products');
     $api_ra->put('products/:id')->to('table#update', table => 'Products');
     $api_ra->post('products/:id')->to('table#update', table => 'Products');         #in case PUT is not supported
     $api_ra->delete('products/:id')->to('table#destroy', table => 'Products');
 
     # api/v1/job_templates
-    $api_ro->get('job_templates')->name('apiv1_job_templates')->to('job_template#list');
+    $api_public_r->get('job_templates')->name('apiv1_job_templates')->to('job_template#list');
     $api_ra->post('job_templates')->to('job_template#create');
-    $api_ro->get('job_templates/:job_template_id')->name('apiv1_job_template')->to('job_template#list');
+    $api_public_r->get('job_templates/:job_template_id')->name('apiv1_job_template')->to('job_template#list');
     $api_ra->delete('job_templates/:job_template_id')->to('job_template#destroy');
 
     # api/v1/comments
