@@ -13,7 +13,7 @@
     sle => 'SUSE Linux Enterprise',
     opensuse => 'openSUSE',
     # sic!
-    casp => 'SUSE Containers as a  Service Platform',
+    casp => 'SUSE Container as a  Service Platform',
 ); %>
 <% my %flavor_to_prod_sle = (
     Server => 'Server',
