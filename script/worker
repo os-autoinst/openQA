@@ -86,7 +86,6 @@ L<OpenQA::Client>
 use strict;
 use warnings;
 
-
 BEGIN {
     #prepare for large files
     $ENV{MOJO_MAX_MESSAGE_SIZE}   = 1024 * 1024 * 1024 * 20;
@@ -106,6 +105,7 @@ use Getopt::Long;
 Getopt::Long::Configure("no_ignore_case");
 
 use OpenQA::Worker;
+use OpenQA::Worker::Common;
 
 my %options;
 
@@ -161,12 +161,12 @@ sub read_worker_config {
 $options{instance} ||= 1;
 
 my ($worker_settings, $host_settings) = read_worker_config($options{instance}, $options{host});
-
+$OpenQA::Worker::Common::worker_settings = $worker_settings;
 # XXX: this should be sent to the scheduler to be included in the worker's table
 $ENV{QEMUPORT} = ($options{instance}) * 10 + 20002;
 $ENV{VNC}      = ($options{instance}) + 90;
 
-OpenQA::Worker::init($worker_settings, $host_settings, %options);
+OpenQA::Worker::init($host_settings, \%options);
 OpenQA::Worker::main($host_settings);
 
 # vim: set sw=4 sts=4 et:

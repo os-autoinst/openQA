@@ -23,8 +23,11 @@ use OpenQA::Utils qw(locate_asset log_error log_info log_debug);
 use POSIX qw(:sys_wait_h strftime uname);
 use JSON 'to_json';
 use Fcntl;
+use File::Spec::Functions 'catdir';
+use File::Basename;
 use Errno;
 use Cwd 'abs_path';
+use OpenQA::Cache;
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -62,8 +65,45 @@ sub _save_vars($) {
     close($fd);
 }
 
+sub cache_assets {
+    my ($job) = @_;
+    #cache ISO and HDD
+    foreach my $this_asset (sort grep { /^(ISO|HDD)[_]*\d?$/ } keys %{$job->{settings}}) {
+        log_debug("Found $this_asset, caching " . $job->{settings}->{$this_asset});
+        my $asset = get_asset($job, $this_asset, $job->{settings}{$this_asset});
+        symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
+    }
+}
+
+sub cache_tests {
+
+    my ($shared_cache, $testpoolserver) = @_;
+    no autodie 'system';
+
+    my $start = time;
+    #Do an flock to ensure only one worker is trying to synchronize at a time.
+    my @cmd = qw(flock -E 999);
+    push @cmd, "$shared_cache/needleslock";
+    push @cmd, (qw(rsync -aP), $testpoolserver, qw(--delete --exclude=.git));
+    push @cmd, "$shared_cache/tests";
+
+    my $res = system(@cmd);
+
+    die "Failed to rsync tests: '$@' " if $res;
+    log_debug(sprintf("RSYNC: Synchronization of tests directory took %.2f seconds", time - $start));
+    return $shared_cache;
+}
+
 sub engine_workit($) {
     my ($job) = @_;
+
+    if (open(my $log, '>', "autoinst-log.txt")) {
+        print $log "+++ setup notes +++\n";
+        printf $log "start time: %s\n", strftime("%F %T", gmtime);
+        my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
+        printf $log "running on $hostname:%d ($sysname $release $version $machine)\n", $instance;
+        close($log);
+    }
 
     # set base dir to the one assigned with webui
     OpenQA::Utils::change_sharedir($hosts->{$current_host}{dir});
@@ -79,6 +119,79 @@ sub engine_workit($) {
         close $fh;
     }
 
+    # pass worker instance and worker id to isotovideo
+    # both used to create unique MAC and TAP devices if needed
+    # workerid is also used by libvirt backend to identify VMs
+    my $openqa_url = $current_host;
+    my $workerid   = $hosts->{$current_host}{workerid};
+    my %vars       = (OPENQA_URL => $openqa_url, WORKER_INSTANCE => $instance, WORKER_ID => $workerid);
+    while (my ($k, $v) = each %{$job->{settings}}) {
+        log_debug("setting $k=$v") if $verbose;
+        $vars{$k} = $v;
+    }
+
+    $vars{PRJDIR} = $OpenQA::Utils::sharedir;
+    my $shared_cache;
+
+    # for now the only condition to enable syncing is $hosts->{$current_host}{dir}
+    if ($worker_settings->{CACHEDIRECTORY} && $hosts->{$current_host}{testpoolserver}) {
+        my $host_to_cache = Mojo::URL->new($current_host)->host;
+        $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
+        $vars{PRJDIR} = $shared_cache;
+        OpenQA::Cache::init($current_host, $worker_settings->{CACHEDIRECTORY});
+        cache_assets($job);
+        cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver});
+        $shared_cache = catdir($shared_cache, 'tests');
+
+    }
+    else {
+        locate_local_assets();
+        log_info("CACHE: share directory found, asset caching is not enabled");
+    }
+
+
+
+    $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
+    $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+
+    _save_vars(\%vars);
+
+    # os-autoinst's commands server
+    $job->{URL} = "http://localhost:" . ($job->{settings}->{QEMUPORT} + 1) . "/" . $job->{settings}->{JOBTOKEN};
+
+    # create tmpdir for qemu to write here
+    my $tmpdir = "$pooldir/tmp";
+    mkdir($tmpdir) unless (-d $tmpdir);
+
+    my $child = fork();
+    die "failed to fork: $!\n" unless defined $child;
+
+    unless ($child) {
+        # create new process group
+        setpgrp(0, 0);
+        $ENV{TMPDIR} = $tmpdir;
+        log_info("$$: WORKING " . $job->{id});
+        if (open(my $log, '>>', "autoinst-log.txt")) {
+            print $log "+++ worker notes +++\n";
+            printf $log "start time: %s\n", strftime("%F %T", gmtime);
+            my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
+            printf $log "running on $hostname:%d ($sysname $release $version $machine)\n", $instance;
+            close($log);
+        }
+        open STDOUT, ">>", "autoinst-log.txt";
+        open STDERR, ">&STDOUT";
+        exec "perl", "$isotovideo", '-d';
+        die "exec failed: $!\n";
+    }
+    else {
+        $workerpid = $child;
+        return {pid => $child};
+    }
+
+}
+
+sub locate_local_assets {
     for my $isokey (qw(ISO), map { "ISO_$_" } (1 .. 9)) {
         if (my $isoname = $job->{settings}->{$isokey}) {
             my $iso = locate_asset('iso', $isoname, mustexist => 1);
@@ -105,7 +218,7 @@ sub engine_workit($) {
     for my $i (1 .. $nd) {
         my $hddname = $job->{settings}->{"HDD_$i"};
         if ($hddname) {
-            my $hdd = locate_asset('hdd', $hddname, mustexist => 1);
+            my $hdd = locate_asset('hdd', $hddname, mustexist =>);
             unless ($hdd) {
                 my $error = "Cannot find HDD asset $hddname!";
                 return {error => $error};
@@ -113,56 +226,6 @@ sub engine_workit($) {
             $job->{settings}->{"HDD_$i"} = $hdd;
         }
     }
-
-    # pass worker instance and worker id to isotovideo
-    # both used to create unique MAC and TAP devices if needed
-    # workerid is also used by libvirt backend to identify VMs
-    my $openqa_url = $current_host;
-    my $workerid   = $hosts->{$current_host}{workerid};
-    my %vars       = (OPENQA_URL => $openqa_url, WORKER_INSTANCE => $instance, WORKER_ID => $workerid);
-    while (my ($k, $v) = each %{$job->{settings}}) {
-        log_debug("setting $k=$v") if $verbose;
-        $vars{$k} = $v;
-    }
-
-    $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
-    $vars{PRJDIR}     = $OpenQA::Utils::sharedir;
-    $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION});
-    $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION});
-    _save_vars(\%vars);
-
-    # os-autoinst's commands server
-    $job->{URL} = "http://localhost:" . ($job->{settings}->{QEMUPORT} + 1) . "/" . $job->{settings}->{JOBTOKEN};
-
-    # create tmpdir for qemu to write here
-    my $tmpdir = "$pooldir/tmp";
-    mkdir($tmpdir) unless (-d $tmpdir);
-
-    my $child = fork();
-    die "failed to fork: $!\n" unless defined $child;
-
-    unless ($child) {
-        # create new process group
-        setpgrp(0, 0);
-        $ENV{TMPDIR} = $tmpdir;
-        log_info("$$: WORKING " . $job->{id});
-        if (open(my $log, '>', "autoinst-log.txt")) {
-            print $log "+++ worker notes +++\n";
-            printf $log "start time: %s\n", strftime("%F %T", gmtime);
-            my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
-            printf $log "running on $hostname:%d ($sysname $release $version $machine)\n", $instance;
-            close($log);
-        }
-        open STDOUT, ">>", "autoinst-log.txt";
-        open STDERR, ">&STDOUT";
-        exec "perl", "$isotovideo", '-d';
-        die "exec failed: $!\n";
-    }
-    else {
-        $workerpid = $child;
-        return {pid => $child};
-    }
-
 }
 
 sub engine_check {

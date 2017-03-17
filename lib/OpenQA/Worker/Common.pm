@@ -139,9 +139,7 @@ sub get_timer {
 ## prepare UA and URL for OpenQA-scheduler connection
 sub api_init {
     my ($host_settings, $options) = @_;
-    my @hosts = @{$host_settings->{HOSTS}};
-
-    for my $host (@hosts) {
+    for my $host (@{$host_settings->{HOSTS}}) {
         my ($ua, $url);
         if ($host !~ '/') {
             $url = Mojo::URL->new->scheme('http')->host($host);
@@ -202,60 +200,65 @@ sub api_call {
 
     my $tx = $ua->build_tx(@args);
     my $cb;
-    $cb = sub {
-        my ($ua, $tx, $tries) = @_;
-        if ($tx->success && $tx->success->json) {
-            my $res = $tx->success->json;
-            return $callback->($res);
-        }
-        elsif ($ignore_errors) {
-            return $callback->();
-        }
-
-        # handle error case
-        --$tries;
-        my $err = $tx->error;
-        my $msg;
-
-        # format error message for log
-        if ($tx->res && $tx->res->json) {
-            # JSON API might provide error message
-            $msg = $tx->res->json->{error};
-        }
-        $msg //= $err->{message};
-        if ($err->{code}) {
-            $msg = "$err->{code} response: $err->{message}";
-            if ($err->{code} == 404) {
-                # don't retry on 404 errors (in this case we can't expect different
-                # results on further attempts)
-                $tries = 0;
+    if ($callback eq "no") {
+        $ua->start($tx);
+    }
+    else {
+        $cb = sub {
+            my ($ua, $tx, $tries) = @_;
+            if ($tx->success && $tx->success->json) {
+                my $res = $tx->success->json;
+                return $callback->($res);
             }
-        }
-        else {
-            $msg = "Connection error: $err->{message}";
-        }
-        OpenQA::Utils::log_error($msg . " (remaining tries: $tries)");
+            elsif ($ignore_errors) {
+                return $callback->();
+            }
 
-        if (!$tries) {
-            # abort the current job, we're in trouble - but keep running to grab the next
-            OpenQA::Worker::Jobs::stop_job('api-failure');
-            $hosts->{$host}{workerid} = undef;
-            $host = undef;
-            add_timer('register_worker', 10, \&register_worker, 1);
-            $callback->();
-            return;
-        }
+            # handle error case
+            --$tries;
+            my $err = $tx->error;
+            my $msg;
 
-        $tx = $ua->build_tx(@args);
-        add_timer(
-            '', 5,
-            sub {
-                $ua->start($tx => sub { $cb->(@_, $tries) });
-            },
-            1
-        );
-    };
-    $ua->start($tx => sub { $cb->(@_, $tries) });
+            # format error message for log
+            if ($tx->res && $tx->res->json) {
+                # JSON API might provide error message
+                $msg = $tx->res->json->{error};
+            }
+            $msg //= $err->{message};
+            if ($err->{code}) {
+                $msg = "$err->{code} response: $err->{message}";
+                if ($err->{code} == 404) {
+                    # don't retry on 404 errors (in this case we can't expect different
+                    # results on further attempts)
+                    $tries = 0;
+                }
+            }
+            else {
+                $msg = "Connection error: $err->{message}";
+            }
+            OpenQA::Utils::log_error($msg . " (remaining tries: $tries)");
+
+            if (!$tries) {
+                # abort the current job, we're in trouble - but keep running to grab the next
+                OpenQA::Worker::Jobs::stop_job('api-failure');
+                $hosts->{$host}{workerid} = undef;
+                $host = undef;
+                add_timer('register_worker', 10, \&register_worker, 1);
+                $callback->();
+                return;
+            }
+
+            $tx = $ua->build_tx(@args);
+            add_timer(
+                '', 5,
+                sub {
+                    $ua->start($tx => sub { $cb->(@_, $tries) });
+                },
+                1
+            );
+        };
+        $ua->start($tx => sub { $cb->(@_, $tries) });
+    }
 }
 
 sub ws_call {
@@ -386,7 +389,7 @@ sub call_websocket {
 }
 
 sub register_worker {
-    my ($host, $dir) = @_;
+    my ($host, $dir, $testpoolserver) = @_;
     die unless $host;
 
     $worker_caps             = _get_capabilities;
@@ -432,6 +435,7 @@ sub register_worker {
         }
         return;
     }
+    $hosts->{$host}{testpoolserver} = $testpoolserver;
     my $newid    = $tx->success->json->{id};
     my $workerid = $hosts->{$host}{workerid};
     my $ws       = $hosts->{$host}{ws};
