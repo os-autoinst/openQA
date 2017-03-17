@@ -30,7 +30,6 @@ use Test::More;
 use Test::Mojo;
 use Data::Dumper;
 use IO::Socket::INET;
-use Cwd qw(abs_path getcwd);
 use POSIX '_exit';
 
 # optional but very useful
@@ -79,6 +78,7 @@ unless (check_phantom_modules) {
     exit(0);
 }
 
+unlink('t/full-stack.d/config/workers.ini');
 unlink('t/full-stack.d/openqa/db/db.sqlite');
 ok(open(my $conf, '>', 't/full-stack.d/config/database.ini'));
 print $conf <<EOC;
@@ -278,6 +278,32 @@ close($f);
 
 like($autoinst_log, qr/result: setup failure/, 'Test 4 state correct: setup failure');
 kill_worker;    # Ensure that the worker can be killed with TERM signal
+
+my $cachedir = 't/full-stack.d/cache';
+remove_tree($cachedir);
+ok(make_path($cachedir));
+
+my $cwd = getcwd;
+ok(open($conf, '>', 't/full-stack.d/config/workers.ini'));
+print $conf <<EOC;
+[global]
+CACHEDIRECTORY = $cachedir
+
+[http://localhost:$mojoport]
+TESTPOOLSERVER = $cwd/t/full-stack.d/openqa/share/tests
+EOC
+close($conf);
+
+client_call('jobs/3/restart post', qr{\Qtest_url => ["/tests/5\E}, 'client returned new test_url');
+
+$driver->get('/tests/5');
+like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled');
+start_worker;
+
+wait_for_job_running;
+die "GO";
+ok(-l 't/pool', "iso is symlinked to cache");
+wait_for_result_panel qr/Result: passed/, 'test 5 is passed';
 
 kill_phantom;
 turn_down_stack;

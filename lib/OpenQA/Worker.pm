@@ -51,7 +51,7 @@ sub main {
         # check if host`s working directory exists
         # if caching is not enabled
 
-        if ($host_settings->{$h}{TESTPOOLSERVER}) {
+        if ($worker_settings->{CACHEDIRECTORY}) {
             $dir = prepare_cache_directory($h, $worker_settings->{CACHEDIRECTORY});
         }
         else {
@@ -77,6 +77,7 @@ sub main {
 sub prepare_cache_directory {
     my ($current_host, $cachedirectory) = @_;
     my $host_to_cache = Mojo::URL->new($current_host)->host;
+    die "No cachedir" unless $cachedirectory;
     my $shared_cache = File::Spec->catdir($cachedirectory, $host_to_cache);
     File::Path::make_path($shared_cache) if (!-e $shared_cache);
     log_info("CACHE: caching is enabled, setting up $shared_cache");

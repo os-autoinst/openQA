@@ -139,8 +139,8 @@ sub read_worker_config {
     }
     # use separate set as we may not want to advertise other host confiuration to the world in job settings
     my $host_settings;
-    $host ||= $sets->{'HOST'} ||= 'localhost';
-    delete $sets->{'HOST'};
+    $host ||= $sets->{HOST} ||= 'localhost';
+    delete $sets->{HOST};
     my @hosts = split / /, $host;
     for my $section (@hosts) {
         if ($cfg && $cfg->SectionExists($section)) {
@@ -152,7 +152,7 @@ sub read_worker_config {
             $host_settings->{$section} = {};
         }
     }
-    $host_settings->{'HOSTS'} = \@hosts;
+    $host_settings->{HOSTS} = \@hosts;
 
     return $sets, $host_settings;
 }

@@ -149,7 +149,6 @@ sub engine_workit($) {
         $vars{PRJDIR} = $OpenQA::Utils::sharedir;
         my $error = locate_local_assets(\%vars);
         return $error if $error;
-        log_info("CACHE: share directory found, asset caching is not enabled");
     }
 
     $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
