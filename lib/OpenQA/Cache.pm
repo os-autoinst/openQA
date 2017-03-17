@@ -8,6 +8,7 @@ use Mojo::UserAgent;
 use OpenQA::Utils qw(log_error log_info log_debug);
 use OpenQA::Worker::Common;
 use List::MoreUtils;
+use File::Spec::Functions 'catdir';
 use Data::Dumper;
 use JSON;
 
@@ -18,6 +19,7 @@ our (@ISA, @EXPORT);
 
 my $cache;
 my $host;
+my $location;
 my $limit   = 50;
 my $remove  = 1;
 my $db_file = "../cache.db";
@@ -33,14 +35,14 @@ sub get {
 sub set {
     my ($asset) = @_;
     unshift @{$cache->{$host}}, $asset;
-    expire_asset();
+    get($asset);
 }
 
 sub init {
     my $class;
-    $host = shift;
+    ($host, $location) = @_;
     @{$cache->{$host}} = read_db();
-    log_debug(__PACKAGE__ . ": Initialized with $host");
+    log_debug(__PACKAGE__ . ": Initialized with $host at $location");
 }
 
 sub update_setup_status {
@@ -93,16 +95,20 @@ sub download_asset {
 
     $tx = $ua->start($tx);
     print $log "CACHE: " . basename($asset) . " download sucessful";
+    $asset = $tx->res->content->asset->move_to($asset);
     close($log);
-    $tx->res->content->asset->move_to($asset);
+    return $asset;
 
 }
 
 sub get_asset {
     my ($job, $asset_type, $asset) = @_;
     my $type;
+
     # repo, kernel, and initrd should be also accepted here.
     $asset_type = (split /^(ISO|HDD)/, $asset_type)[1];
+    $asset = catdir($location, $asset);
+
     while () {
         read_db();
         log_debug "CACHE: Aquiring lock";
@@ -134,6 +140,7 @@ sub get_asset {
 
     unlink($asset . ".lock") or log_debug("Lock file for " . basename($asset) . " is not present");
     log_debug "$type for: " . basename($asset);
+    return $asset;
 }
 
 sub purge_cache {
