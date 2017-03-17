@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Commands;
-use 5.012;
+use 5.018;
 use warnings;
 
 use OpenQA::Utils qw(log_error log_warning log_debug);
@@ -123,9 +123,15 @@ sub websocket_commands {
             # ignore keepalives, but dont' report as unknown
         }
         elsif ($type eq 'job_available') {
-            log_debug('received job notification') if $verbose;
+            log_debug("received job notification from $host") if $verbose;
             if (!$job && $hosts->{$host}{accepting_jobs}) {
                 Mojo::IOLoop->next_tick(sub { check_job($host) });
+            }
+            else {
+                if ($verbose) {
+                    my $jid = $job ? $job->{id} : '';
+                    log_debug("job notification ignored! job: $jid - accepting: $hosts->{$host}{accepting_jobs}");
+                }
             }
         }
         else {
