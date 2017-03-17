@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Common;
-use strict;
+use 5.018;
 use warnings;
 use feature 'state';
 
@@ -142,7 +142,7 @@ sub api_init {
     for my $host (@{$host_settings->{HOSTS}}) {
         my ($ua, $url);
         if ($host !~ '/') {
-            $url = Mojo::URL->new->scheme('http')->host($host);
+            $url = Mojo::URL->new->scheme('http')->host_port($host);
         }
         else {
             $url = Mojo::URL->new($host);
