@@ -66,19 +66,20 @@ sub _save_vars($) {
 }
 
 sub cache_assets {
-    my ($job) = @_;
+    my ($vars) = @_;
     #cache ISO and HDD
-    foreach my $this_asset (sort grep { /^(ISO|HDD)[_]*\d?$/ } keys %{$job->{settings}}) {
-        log_debug("Found $this_asset, caching " . $job->{settings}->{$this_asset});
-        my $asset = get_asset($job, $this_asset, $job->{settings}{$this_asset});
+    for my $this_asset (sort grep { /^(ISO|HDD)[_]*\d?$/ } keys %$vars) {
+        log_debug("Found $this_asset, caching " . $vars->{$this_asset});
+        my $asset = get_asset($job, $this_asset, $vars->{$this_asset});
+        return {error => "Can't download $vars->{$this_asset}"} unless $asset;
         symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
     }
+    return undef;
 }
 
 sub cache_tests {
 
     my ($shared_cache, $testpoolserver) = @_;
-    no autodie 'system';
 
     my $start = time;
     #Do an flock to ensure only one worker is trying to synchronize at a time.
@@ -89,9 +90,9 @@ sub cache_tests {
 
     my $res = system(@cmd);
 
-    die "Failed to rsync tests: '$@' " if $res;
+    return {error => "Failed to rsync tests: '$@'"} unless $res;
     log_debug(sprintf("RSYNC: Synchronization of tests directory took %.2f seconds", time - $start));
-    return $shared_cache;
+    return undef;
 }
 
 sub engine_workit($) {
@@ -130,7 +131,6 @@ sub engine_workit($) {
         $vars{$k} = $v;
     }
 
-    $vars{PRJDIR} = $OpenQA::Utils::sharedir;
     my $shared_cache;
 
     # for now the only condition to enable syncing is $hosts->{$current_host}{dir}
@@ -139,17 +139,18 @@ sub engine_workit($) {
         $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
         $vars{PRJDIR} = $shared_cache;
         OpenQA::Cache::init($current_host, $worker_settings->{CACHEDIRECTORY});
-        cache_assets($job);
-        cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver});
+        my $error = cache_assets(\%vars);
+        return $error if $error;
+        $error = cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver});
+        return $error if $error;
         $shared_cache = catdir($shared_cache, 'tests');
-
     }
     else {
-        locate_local_assets();
+        $vars{PRJDIR} = $OpenQA::Utils::sharedir;
+        my $error = locate_local_assets(\%vars);
+        return $error if $error;
         log_info("CACHE: share directory found, asset caching is not enabled");
     }
-
-
 
     $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
     $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
@@ -192,40 +193,43 @@ sub engine_workit($) {
 }
 
 sub locate_local_assets {
+    my ($vars) = @_;
+
     for my $isokey (qw(ISO), map { "ISO_$_" } (1 .. 9)) {
-        if (my $isoname = $job->{settings}->{$isokey}) {
+        if (my $isoname = $vars->{$isokey}) {
             my $iso = locate_asset('iso', $isoname, mustexist => 1);
             unless ($iso) {
                 my $error = "Cannot find ISO asset $isoname!";
                 return {error => $error};
             }
-            $job->{settings}->{$isokey} = $iso;
+            $vars->{$isokey} = $iso;
         }
     }
 
     for my $otherkey (qw(KERNEL INITRD)) {
-        if (my $filename = $job->{settings}->{$otherkey}) {
+        if (my $filename = $vars->{$otherkey}) {
             my $file = locate_asset('other', $filename, mustexist => 1);
             unless ($file) {
                 my $error = "Cannot find OTHER asset $filename!";
                 return {error => $error};
             }
-            $job->{settings}->{$otherkey} = $file;
+            $vars->{$otherkey} = $file;
         }
     }
 
-    my $nd = $job->{settings}->{NUMDISKS} || 2;
+    my $nd = $vars->{NUMDISKS} || 2;
     for my $i (1 .. $nd) {
-        my $hddname = $job->{settings}->{"HDD_$i"};
+        my $hddname = $vars->{"HDD_$i"};
         if ($hddname) {
-            my $hdd = locate_asset('hdd', $hddname, mustexist =>);
+            my $hdd = locate_asset('hdd', $hddname, mustexist => 1);
             unless ($hdd) {
                 my $error = "Cannot find HDD asset $hddname!";
                 return {error => $error};
             }
-            $job->{settings}->{"HDD_$i"} = $hdd;
+            $vars->{"HDD_$i"} = $hdd;
         }
     }
+    return undef;
 }
 
 sub engine_check {
