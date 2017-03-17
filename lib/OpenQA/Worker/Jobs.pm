@@ -266,6 +266,15 @@ sub upload {
     return 1;
 }
 
+sub _reset_state {
+    log_info('cleaning up ' . $job->{settings}->{NAME}) if $job;
+    clean_pool;
+    $job              = undef;
+    $worker           = undef;
+    $stop_job_running = 0;
+    $current_host     = undef;
+}
+
 sub _stop_job {
     my ($aborted, $job_id) = @_;
 
@@ -397,6 +406,9 @@ sub _stop_job_2 {
             upload_status(1, sub { _stop_job_finish({result => 'incomplete'}, 0) });
         }
     }
+    elsif ($aborted eq 'api-failure') {
+        _reset_state;
+    }
 }
 
 sub _stop_job_finish {
@@ -411,12 +423,7 @@ sub _stop_job_finish {
         'jobs/' . $job->{id} . '/set_done',
         params   => $params,
         callback => sub {
-            log_info('cleaning up ' . $job->{settings}->{NAME});
-            clean_pool();
-            $job              = undef;
-            $worker           = undef;
-            $stop_job_running = 0;
-            $current_host     = undef;
+            _reset_state;
             if ($quit) {
                 Mojo::IOLoop->stop;
             }
