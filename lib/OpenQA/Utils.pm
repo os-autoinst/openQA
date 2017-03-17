@@ -92,23 +92,22 @@ our $app;
 # testrepository name" and "old/new folder structure" within the
 # testrepository.
 sub productdir {
-    my ($distri, $version) = @_;
+    my ($distri, $version, $rootfortests) = @_;
 
-    my $dir = testcasedir($distri, $version);
+    my $dir = testcasedir($distri, $version, $rootfortests);
     return $dir . "/products/$distri" if -e "$dir/products/$distri";
     return $dir;
 }
 
 sub testcasedir {
-    my ($distri, $version) = @_;
-
-    my @dirs = (catdir($prjdir, 'share', 'tests', $distri), catdir($prjdir, 'tests', $distri));
-    if ($version) {
-        unshift @dirs, catdir($prjdir, 'share', 'tests', "$distri-$version");
+    my ($distri, $version, $rootfortests) = @_;
+    for my $dir (catdir($prjdir, 'share', 'tests'), catdir($prjdir, 'tests')) {
+        $rootfortests ||= $dir if -d $dir;
     }
     # TODO actually "distri" is misused here. It should rather be something
     # like the name of the repository with all tests
-    my ($dir) = grep { -d } @dirs;
+    my $dir = catdir($rootfortests, $distri);
+    $dir .= "-$version" if $version && -e "$dir-$version";
     return $dir;
 }
 

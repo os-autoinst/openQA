@@ -139,9 +139,7 @@ sub get_timer {
 ## prepare UA and URL for OpenQA-scheduler connection
 sub api_init {
     my ($host_settings, $options) = @_;
-    my @hosts = @{$host_settings->{HOSTS}};
-
-    for my $host (@hosts) {
+    for my $host (@{$host_settings->{HOSTS}}) {
         my ($ua, $url);
         if ($host !~ '/') {
             $url = Mojo::URL->new->scheme('http')->host($host);
@@ -391,7 +389,7 @@ sub call_websocket {
 }
 
 sub register_worker {
-    my ($host, $dir) = @_;
+    my ($host, $dir, $testpoolserver) = @_;
     die unless $host;
 
     $worker_caps             = _get_capabilities;
@@ -437,6 +435,7 @@ sub register_worker {
         }
         return;
     }
+    $hosts->{$host}{testpoolserver} = $testpoolserver;
     my $newid    = $tx->success->json->{id};
     my $workerid = $hosts->{$host}{workerid};
     my $ws       = $hosts->{$host}{ws};
