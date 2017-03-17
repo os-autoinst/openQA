@@ -180,7 +180,7 @@ sub get_job {
     my $job;
     my $url = $remote_url->clone;
     $url->path("jobs/$jobid");
-    my $tx = $remote->get($url);
+    my $tx = $remote->max_redirects(3)->get($url);
     if ($tx->success) {
         if ($tx->success->code == 200) {
             $job = $tx->success->json->{job};
@@ -283,7 +283,7 @@ sub clone_job {
     }
     print JSON->new->pretty->encode(\%settings) if ($options{verbose});
     $url->query(%settings);
-    my $tx = $local->post($url);
+    my $tx = $local->max_redirects(3)->post($url);
     if ($tx->success) {
         my $r = $tx->success->json->{id};
         if ($r) {
