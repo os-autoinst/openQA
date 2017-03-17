@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux Products GmbH
+# Copyright (C) 2015-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
 # with this program; if not, see <http://www.gnu.org/licenses/>.
 
 package OpenQA::Worker::Common;
-use strict;
+use 5.018;
 use warnings;
 use feature 'state';
 
@@ -144,7 +144,7 @@ sub api_init {
     for my $host (@hosts) {
         my ($ua, $url);
         if ($host !~ '/') {
-            $url = Mojo::URL->new->scheme('http')->host($host);
+            $url = Mojo::URL->new->scheme('http')->host_port($host);
         }
         else {
             $url = Mojo::URL->new($host);
