@@ -79,7 +79,7 @@ sub test_create_comment {
     return $post->tx->res->json->{id};
 }
 
-my $test_message         = 'This is a cool test ☠';
+my $test_message         = 'This is a cool test ☠ - http://open.qa';
 my $another_test_message = ' - this message will be\nappended if editing works ☠';
 my $edited_test_message  = $test_message . $another_test_message;
 
@@ -133,7 +133,7 @@ sub test_comments {
         is($comment->{text}, $edited_test_message, 'text correct');
         is(
             $comment->{renderedMarkdown},
-            "<p>This is a cool test \x{2620} - this message will be\\nappended if editing works \x{2620}</p>\n",
+"<p>This is a cool test \x{2620} - <a href=\"http://open.qa\">http://open.qa</a> - this message will be\\nappended if editing works \x{2620}</p>\n",
             'markdown correct'
         );
     };
