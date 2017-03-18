@@ -1,3 +1,18 @@
+# Copyright (C) 2017 SUSE LLC
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, see <http://www.gnu.org/licenses/>.
+
 package OpenQA::Cache;
 use strict;
 use warnings;
@@ -94,8 +109,14 @@ sub download_asset {
         });
 
     $tx = $ua->start($tx);
-    print $log "CACHE: " . basename($asset) . " download sucessful\n";
-    $asset = $tx->res->content->asset->move_to($asset);
+    if (!$tx->res->is_success) {
+        printf $log "CACHE: download of %s failed with %d: %s\n", basename($asset), $tx->res->code, $tx->res->message;
+        return undef;
+    }
+    else {
+        print $log "CACHE: " . basename($asset) . " download sucessful\n";
+        $asset = $tx->res->content->asset->move_to($asset);
+    }
     close($log);
     return $asset;
 
@@ -105,8 +126,6 @@ sub get_asset {
     my ($job, $asset_type, $asset) = @_;
     my $type;
 
-    # repo, kernel, and initrd should be also accepted here.
-    $asset_type = (split /^(ISO|HDD)/, $asset_type)[1];
     $asset = catdir($location, $asset);
 
     while () {
@@ -125,17 +144,19 @@ sub get_asset {
             $type = "Cache Hit";
             get($asset);
         }
-
         else {
             $type = "Cache Miss";
-            download_asset($job->{id}, lc($asset_type), $asset);
+            my $ret = download_asset($job->{id}, lc($asset_type), $asset);
+            if (!$ret) {
+                unlink($asset . ".lock");
+                return undef;
+            }
             set($asset);
         }
 
         write_db();
         close($asset_fd);
         last;
-
     }
 
     unlink($asset . ".lock") or log_debug("Lock file for " . basename($asset) . " is not present");
@@ -188,10 +209,6 @@ sub read_db {
         log_debug "Creating empty cache";
         write_db;
     }
-
-
-
 }
-
 
 1;

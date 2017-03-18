@@ -70,7 +70,7 @@ sub cache_assets {
 
     for my $this_asset (sort keys %$assetkeys) {
         log_debug("Found $this_asset, caching " . $vars->{$this_asset});
-        my $asset = get_asset($job, $this_asset, $vars->{$this_asset});
+        my $asset = get_asset($job, $assetkeys->{$this_asset}, $vars->{$this_asset});
         return {error => "Can't download $vars->{$this_asset}"} unless $asset;
         symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
     }
@@ -85,7 +85,7 @@ sub cache_tests {
     #Do an flock to ensure only one worker is trying to synchronize at a time.
     my @cmd = qw(flock -E 999);
     push @cmd, "$shared_cache/needleslock";
-    push @cmd, (qw(rsync -avP), "$testpoolserver/", qw(--delete));
+    push @cmd, (qw(rsync -avHP), "$testpoolserver/", qw(--delete));
     push @cmd, "$shared_cache/tests/";
 
     log_debug("Calling " . join(' ', @cmd));
