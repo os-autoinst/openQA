@@ -85,7 +85,7 @@ sub cache_tests {
     #Do an flock to ensure only one worker is trying to synchronize at a time.
     my @cmd = qw(flock -E 999);
     push @cmd, "$shared_cache/needleslock";
-    push @cmd, (qw(rsync -aP), $testpoolserver, qw(--delete --exclude=.git));
+    push @cmd, (qw(rsync -aP), $testpoolserver, qw(--delete));
     push @cmd, "$shared_cache/tests";
 
     my $res = system(@cmd);
