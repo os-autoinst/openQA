@@ -93,9 +93,9 @@ $t->get_ok('/tests/99961/asset/repo/testrepo/README')->status_is(302)
 $t->get_ok('/tests/99961/asset/repo/testrepo/README/../README')->status_is(400)
   ->content_is('invalid character in path');
 
-# verify 404 on download_assets - to be handled by apache (for now at least)
-$t->get_ok('/assets/repo/testrepo/README')->status_is(404);
-$t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(404);
+# download_asset is handled by apache normally, but make sure it works - important for fullstack test
+$t->get_ok('/assets/repo/testrepo/README')->status_is(200);
+$t->get_ok('/assets/iso/openSUSE-13.1-DVD-i586-Build0091-Media.iso')->status_is(200);
 
 
 # TODO: also test repos

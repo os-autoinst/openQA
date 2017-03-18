@@ -79,8 +79,15 @@ sub test_file {
 
 sub download_asset {
     my ($self) = @_;
-    # we handle this in apache
-    return $self->reply->not_found;
+
+    # we handle this in apache, but need it in tests for asset cache
+    # so minimal security is good enough
+    my $path = $self->param('assetpath');
+    return $self->reply->not_found if $path =~ qr/\.\./;
+
+    my $static = Mojolicious::Static->new;
+    $static->paths([$OpenQA::Utils::assetdir]);
+    return $self->rendered if $static->serve($self, $path);
 }
 
 sub test_asset {
@@ -110,9 +117,10 @@ sub test_asset {
     # map to URL - mojo will canonalize
     $path = $self->url_for('download_asset', assetpath => $path);
     $self->app->log->debug("redirect to $path");
+    # pass the redirect to the reverse proxy - might come back to use
+    # in case there is no proxy (e.g. in tests)
     return $self->redirect_to($path);
 }
-
 
 sub test_isoimage {
     my $self = shift;
