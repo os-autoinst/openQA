@@ -81,6 +81,13 @@ sub prepare_cache_directory {
     my $shared_cache = File::Spec->catdir($cachedirectory, $host_to_cache);
     File::Path::make_path($shared_cache);
     log_info("CACHE: caching is enabled, setting up $shared_cache");
+
+    # make sure the downloads are in the same file system - otherwise
+    # asset->move_to becomes a bit more expensive than it should
+    my $tmpdir = File::Spec->catdir($cachedirectory, 'tmp');
+    File::Path::make_path($tmpdir);
+    $ENV{MOJO_TMPDIR} = $tmpdir;
+
     return $shared_cache;
 }
 

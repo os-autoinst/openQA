@@ -26,7 +26,7 @@ use Fcntl;
 use File::Spec::Functions 'catdir';
 use File::Basename;
 use Errno;
-use Cwd 'abs_path';
+use Cwd qw(abs_path getcwd);
 use OpenQA::Cache;
 
 my $isotovideo = "/usr/bin/isotovideo";
@@ -73,6 +73,7 @@ sub cache_assets {
         my $asset = get_asset($job, $assetkeys->{$this_asset}, $vars->{$this_asset});
         return {error => "Can't download $vars->{$this_asset}"} unless $asset;
         symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
+        $vars->{$this_asset} = catdir(getcwd, basename($asset));
     }
     return undef;
 }
