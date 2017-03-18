@@ -160,7 +160,7 @@ sub engine_workit {
         my $host_to_cache = Mojo::URL->new($current_host)->host;
         $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
         $vars{PRJDIR} = $shared_cache;
-        OpenQA::Cache::init($current_host, $worker_settings->{CACHEDIRECTORY});
+        OpenQA::Worker::Cache::init($current_host, $worker_settings->{CACHEDIRECTORY});
         my $error = cache_assets(\%vars, $assetkeys);
         return $error if $error;
 
