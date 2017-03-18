@@ -62,9 +62,9 @@ sub download_asset {
 
     open(my $log, '>>', "autoinst-log.txt") or die("Cannot open autoinst-log.txt");
     local $| = 1;
-    print $log "CACHE: Locking $asset";
+    print $log "CACHE: Locking $asset\n";
 
-    print $log "Attemping to download: $host $asset, $type, $id";
+    print $log "Attemping to download: $host $asset, $type, $id\n";
     my $ua = Mojo::UserAgent->new(max_redirects => 2);
     $ua->max_response_size(0);    #set initial filesize of 20GB
     my $tx = $ua->build_tx(GET => sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset));
@@ -94,7 +94,7 @@ sub download_asset {
         });
 
     $tx = $ua->start($tx);
-    print $log "CACHE: " . basename($asset) . " download sucessful";
+    print $log "CACHE: " . basename($asset) . " download sucessful\n";
     $asset = $tx->res->content->asset->move_to($asset);
     close($log);
     return $asset;
