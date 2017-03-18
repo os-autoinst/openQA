@@ -391,10 +391,13 @@ Some example variables used by openSUSE are:
 
 === Test Suites
 
-This is the form where we define the different tests that we created
-for openQA. A test consists of a name, a priority (used in the
-scheduler to choose the next job) and a set of variables that are used
-inside this particular test.
+This is the form where we define the different tests that we created for
+openQA. A test consists of a name, a priority and a set of variables that are
+used inside this particular test. The priority is used in the scheduler to
+choose the next job. If multiple jobs are scheduled and their requirements for
+running them are fulfilled the ones with a lower value for the priority are
+triggered. The id is the second sorting key: Of two jobs with equal
+requirements and same priority the one with lower id is triggered first.
 
 Some sample variables used by openSUSE are:
 
