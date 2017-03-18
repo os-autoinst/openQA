@@ -81,7 +81,7 @@ sub download_asset {
 
     print $log "Attemping to download: $host $asset, $type, $id\n";
     my $ua = Mojo::UserAgent->new(max_redirects => 2);
-    $ua->max_response_size(0);    #set initial filesize of 20GB
+    $ua->max_response_size(0);
     my $tx = $ua->build_tx(GET => sprintf '%s/tests/%d/asset/%s/%s', $host, $id, $type, basename($asset));
 
     $ua->on(
