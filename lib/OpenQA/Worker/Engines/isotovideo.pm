@@ -66,9 +66,9 @@ sub _save_vars($) {
 }
 
 sub cache_assets {
-    my ($vars) = @_;
-    #cache ISO and HDD
-    for my $this_asset (sort grep { /^(ISO|HDD)[_]*\d?$/ } keys %$vars) {
+    my ($vars, $assetkeys) = @_;
+
+    for my $this_asset (sort keys %$assetkeys) {
         log_debug("Found $this_asset, caching " . $vars->{$this_asset});
         my $asset = get_asset($job, $this_asset, $vars->{$this_asset});
         return {error => "Can't download $vars->{$this_asset}"} unless $asset;
@@ -89,13 +89,32 @@ sub cache_tests {
     push @cmd, "$shared_cache/tests";
 
     my $res = system(@cmd);
-
-    return {error => "Failed to rsync tests: '$@'"} unless $res;
+    return {error => "Failed to rsync tests: '$@'"} if $res;
     log_debug(sprintf("RSYNC: Synchronization of tests directory took %.2f seconds", time - $start));
     return undef;
 }
 
-sub engine_workit($) {
+sub detect_asset_keys {
+    my ($vars) = @_;
+
+    my %res;
+    for my $isokey (qw(ISO), map { "ISO_$_" } (1 .. 9)) {
+        $res{$isokey} = 'iso' if $vars->{$isokey};
+    }
+
+    for my $otherkey (qw(KERNEL INITRD)) {
+        $res{$otherkey} = 'other' if $vars->{$otherkey};
+    }
+
+    my $nd = $vars->{NUMDISKS} || 2;
+    for my $i (1 .. $nd) {
+        my $hddkey = "HDD_$i";
+        $res{$hddkey} = 'hdd' if $vars->{$hddkey};
+    }
+    return \%res;
+}
+
+sub engine_workit {
     my ($job) = @_;
 
     if (open(my $log, '>', "autoinst-log.txt")) {
@@ -133,13 +152,15 @@ sub engine_workit($) {
 
     my $shared_cache;
 
+    my $assetkeys = detect_asset_keys(\%vars);
+
     # for now the only condition to enable syncing is $hosts->{$current_host}{dir}
     if ($worker_settings->{CACHEDIRECTORY} && $hosts->{$current_host}{testpoolserver}) {
         my $host_to_cache = Mojo::URL->new($current_host)->host;
         $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
         $vars{PRJDIR} = $shared_cache;
         OpenQA::Cache::init($current_host, $worker_settings->{CACHEDIRECTORY});
-        my $error = cache_assets(\%vars);
+        my $error = cache_assets(\%vars, $assetkeys);
         return $error if $error;
         $error = cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver});
         return $error if $error;
@@ -147,7 +168,7 @@ sub engine_workit($) {
     }
     else {
         $vars{PRJDIR} = $OpenQA::Utils::sharedir;
-        my $error = locate_local_assets(\%vars);
+        my $error = locate_local_assets(\%vars, $assetkeys);
         return $error if $error;
     }
 
@@ -192,41 +213,15 @@ sub engine_workit($) {
 }
 
 sub locate_local_assets {
-    my ($vars) = @_;
+    my ($vars, $assetkeys) = @_;
 
-    for my $isokey (qw(ISO), map { "ISO_$_" } (1 .. 9)) {
-        if (my $isoname = $vars->{$isokey}) {
-            my $iso = locate_asset('iso', $isoname, mustexist => 1);
-            unless ($iso) {
-                my $error = "Cannot find ISO asset $isoname!";
-                return {error => $error};
-            }
-            $vars->{$isokey} = $iso;
+    for my $key (keys %$assetkeys) {
+        my $file = locate_asset($assetkeys->{$key}, $vars->{$key}, mustexist => 1);
+        unless ($file) {
+            my $error = "Cannot find $key asset $assetkeys->{$key}/$vars->{$key}!";
+            return {error => $error};
         }
-    }
-
-    for my $otherkey (qw(KERNEL INITRD)) {
-        if (my $filename = $vars->{$otherkey}) {
-            my $file = locate_asset('other', $filename, mustexist => 1);
-            unless ($file) {
-                my $error = "Cannot find OTHER asset $filename!";
-                return {error => $error};
-            }
-            $vars->{$otherkey} = $file;
-        }
-    }
-
-    my $nd = $vars->{NUMDISKS} || 2;
-    for my $i (1 .. $nd) {
-        my $hddname = $vars->{"HDD_$i"};
-        if ($hddname) {
-            my $hdd = locate_asset('hdd', $hddname, mustexist => 1);
-            unless ($hdd) {
-                my $error = "Cannot find HDD asset $hddname!";
-                return {error => $error};
-            }
-            $vars->{"HDD_$i"} = $hdd;
-        }
+        $vars->{$key} = $file;
     }
     return undef;
 }
