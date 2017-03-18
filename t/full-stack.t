@@ -287,7 +287,7 @@ my $cwd = getcwd;
 ok(open($conf, '>', 't/full-stack.d/config/workers.ini'));
 print $conf <<EOC;
 [global]
-CACHEDIRECTORY = $cachedir
+CACHEDIRECTORY = $cwd/$cachedir
 
 [http://localhost:$mojoport]
 TESTPOOLSERVER = $cwd/t/full-stack.d/openqa/share/tests
@@ -301,8 +301,11 @@ like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: sch
 start_worker;
 
 wait_for_job_running;
-die "GO";
-ok(-l 't/pool', "iso is symlinked to cache");
+like(
+    readlink('t/full-stack.d/openqa/pool/1/Core-7.2.iso'),
+    qr(t/full-stack.d/cache/Core-7.2.iso),
+    "iso is symlinked to cache"
+);
 wait_for_result_panel qr/Result: passed/, 'test 5 is passed';
 
 kill_phantom;

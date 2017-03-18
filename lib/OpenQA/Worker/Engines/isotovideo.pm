@@ -85,9 +85,10 @@ sub cache_tests {
     #Do an flock to ensure only one worker is trying to synchronize at a time.
     my @cmd = qw(flock -E 999);
     push @cmd, "$shared_cache/needleslock";
-    push @cmd, (qw(rsync -aP), $testpoolserver, qw(--delete));
-    push @cmd, "$shared_cache/tests";
+    push @cmd, (qw(rsync -avP), "$testpoolserver/", qw(--delete));
+    push @cmd, "$shared_cache/tests/";
 
+    log_debug("Calling " . join(' ', @cmd));
     my $res = system(@cmd);
     return {error => "Failed to rsync tests: '$@'"} if $res;
     log_debug(sprintf("RSYNC: Synchronization of tests directory took %.2f seconds", time - $start));
