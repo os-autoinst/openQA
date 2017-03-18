@@ -18,7 +18,7 @@ use strict;
 use warnings;
 
 use File::Basename;
-use Fcntl qw(:flock);
+use Fcntl ':flock';
 use Mojo::UserAgent;
 use OpenQA::Utils qw(log_error log_info log_debug);
 use OpenQA::Worker::Common;
@@ -119,7 +119,6 @@ sub download_asset {
     }
     close($log);
     return $asset;
-
 }
 
 sub get_asset {
