@@ -68,7 +68,7 @@ install:
 
 .PHONY: checkstyle
 checkstyle:
-	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle --include Perl::Critic::Policy::HashKeyQuote --include Perl::Critic::Policy::ConsistentQuoteLikeWords lib
+	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle lib
 
 .PHONY: test
 test:

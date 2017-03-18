@@ -361,7 +361,7 @@ subtest 'job is not marked as linked if accessed from unrecognized referal' => s
 use OpenQA::Worker::Common 'get_timer';
 use OpenQA::Worker::Jobs;
 no warnings 'redefine';
-sub OpenQA::Worker::Jobs::engine_workit($) {
+sub OpenQA::Worker::Jobs::engine_workit {
     return shift;
 }
 

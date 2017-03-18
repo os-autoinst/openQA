@@ -20,11 +20,15 @@ use warnings;
 use OpenQA::Worker::Common;
 use OpenQA::Utils qw(locate_asset log_error log_info log_debug);
 
-use POSIX qw(:sys_wait_h strftime uname);
+use POSIX qw(:sys_wait_h strftime uname _exit);
 use JSON 'to_json';
 use Fcntl;
+use File::Spec::Functions 'catdir';
+use File::Basename;
 use Errno;
-use Cwd 'abs_path';
+use Cwd qw(abs_path getcwd);
+use OpenQA::Worker::Cache;
+use Time::HiRes 'sleep';
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -62,8 +66,65 @@ sub _save_vars($) {
     close($fd);
 }
 
-sub engine_workit($) {
+sub cache_assets {
+    my ($vars, $assetkeys) = @_;
+
+    for my $this_asset (sort keys %$assetkeys) {
+        log_debug("Found $this_asset, caching " . $vars->{$this_asset});
+        my $asset = get_asset($job, $assetkeys->{$this_asset}, $vars->{$this_asset});
+        return {error => "Can't download $vars->{$this_asset}"} unless $asset;
+        symlink($asset, basename($asset)) or die "cannot create link: $asset, $pooldir";
+        $vars->{$this_asset} = catdir(getcwd, basename($asset));
+    }
+    return undef;
+}
+
+# runs in a subprocess, so don't rely on setting variables, but return
+sub cache_tests {
+    my ($shared_cache, $testpoolserver) = @_;
+
+    my $start = time;
+    # Do an flock to ensure only one worker is trying to synchronize at a time.
+    my @cmd = ('flock', "$shared_cache/needleslock");
+    push @cmd, (qw(rsync -avHP), "$testpoolserver/", qw(--delete));
+    push @cmd, "$shared_cache/tests/";
+
+    log_debug("Calling " . join(' ', @cmd));
+    my $res = system(@cmd);
+    log_debug(sprintf("RSYNC: Synchronization of tests directory took %.2f seconds", time - $start));
+    exit($res);
+}
+
+sub detect_asset_keys {
+    my ($vars) = @_;
+
+    my %res;
+    for my $isokey (qw(ISO), map { "ISO_$_" } (1 .. 9)) {
+        $res{$isokey} = 'iso' if $vars->{$isokey};
+    }
+
+    for my $otherkey (qw(KERNEL INITRD)) {
+        $res{$otherkey} = 'other' if $vars->{$otherkey};
+    }
+
+    my $nd = $vars->{NUMDISKS} || 2;
+    for my $i (1 .. $nd) {
+        my $hddkey = "HDD_$i";
+        $res{$hddkey} = 'hdd' if $vars->{$hddkey};
+    }
+    return \%res;
+}
+
+sub engine_workit {
     my ($job) = @_;
+
+    if (open(my $log, '>', "autoinst-log.txt")) {
+        print $log "+++ setup notes +++\n";
+        printf $log "start time: %s\n", strftime("%F %T", gmtime);
+        my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
+        printf $log "running on $hostname:%d ($sysname $release $version $machine)\n", $instance;
+        close($log);
+    }
 
     # set base dir to the one assigned with webui
     OpenQA::Utils::change_sharedir($hosts->{$current_host}{dir});
@@ -79,41 +140,6 @@ sub engine_workit($) {
         close $fh;
     }
 
-    for my $isokey (qw(ISO), map { "ISO_$_" } (1 .. 9)) {
-        if (my $isoname = $job->{settings}->{$isokey}) {
-            my $iso = locate_asset('iso', $isoname, mustexist => 1);
-            unless ($iso) {
-                my $error = "Cannot find ISO asset $isoname!";
-                return {error => $error};
-            }
-            $job->{settings}->{$isokey} = $iso;
-        }
-    }
-
-    for my $otherkey (qw(KERNEL INITRD)) {
-        if (my $filename = $job->{settings}->{$otherkey}) {
-            my $file = locate_asset('other', $filename, mustexist => 1);
-            unless ($file) {
-                my $error = "Cannot find OTHER asset $filename!";
-                return {error => $error};
-            }
-            $job->{settings}->{$otherkey} = $file;
-        }
-    }
-
-    my $nd = $job->{settings}->{NUMDISKS} || 2;
-    for my $i (1 .. $nd) {
-        my $hddname = $job->{settings}->{"HDD_$i"};
-        if ($hddname) {
-            my $hdd = locate_asset('hdd', $hddname, mustexist => 1);
-            unless ($hdd) {
-                my $error = "Cannot find HDD asset $hddname!";
-                return {error => $error};
-            }
-            $job->{settings}->{"HDD_$i"} = $hdd;
-        }
-    }
-
     # pass worker instance and worker id to isotovideo
     # both used to create unique MAC and TAP devices if needed
     # workerid is also used by libvirt backend to identify VMs
@@ -125,10 +151,50 @@ sub engine_workit($) {
         $vars{$k} = $v;
     }
 
+    my $shared_cache;
+
+    my $assetkeys = detect_asset_keys(\%vars);
+
+    # for now the only condition to enable syncing is $hosts->{$current_host}{dir}
+    if ($worker_settings->{CACHEDIRECTORY} && $hosts->{$current_host}{testpoolserver}) {
+        my $host_to_cache = Mojo::URL->new($current_host)->host;
+        $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
+        $vars{PRJDIR} = $shared_cache;
+        OpenQA::Worker::Cache::init($current_host, $worker_settings->{CACHEDIRECTORY});
+        my $error = cache_assets(\%vars, $assetkeys);
+        return $error if $error;
+
+        # my attempts to use ioloop::subprocess failed, so go back to blocking
+        my $sync_child = fork();
+        if (!$sync_child) {
+            cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver});
+        }
+        else {
+            my $last_update = time;
+            while (waitpid($sync_child, WNOHANG) == 0) {
+                log_info "Waiting for subprocess";
+                if (time - $last_update > 5) {    # do not spam the webui
+                    update_setup_status;
+                    $last_update = time;
+                }
+                sleep .5;
+            }
+            if ($?) {
+                return {error => "Failed to rsync tests: exit $?"};
+            }
+        }
+        $shared_cache = catdir($shared_cache, 'tests');
+    }
+    else {
+        $vars{PRJDIR} = $OpenQA::Utils::sharedir;
+        my $error = locate_local_assets(\%vars, $assetkeys);
+        return $error if $error;
+    }
+
     $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
-    $vars{PRJDIR}     = $OpenQA::Utils::sharedir;
-    $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION});
-    $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION});
+    $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+    $vars{PRODUCTDIR} = OpenQA::Utils::productdir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
+
     _save_vars(\%vars);
 
     # os-autoinst's commands server
@@ -146,7 +212,7 @@ sub engine_workit($) {
         setpgrp(0, 0);
         $ENV{TMPDIR} = $tmpdir;
         log_info("$$: WORKING " . $job->{id});
-        if (open(my $log, '>', "autoinst-log.txt")) {
+        if (open(my $log, '>>', "autoinst-log.txt")) {
             print $log "+++ worker notes +++\n";
             printf $log "start time: %s\n", strftime("%F %T", gmtime);
             my ($sysname, $hostname, $release, $version, $machine) = POSIX::uname();
@@ -163,6 +229,20 @@ sub engine_workit($) {
         return {pid => $child};
     }
 
+}
+
+sub locate_local_assets {
+    my ($vars, $assetkeys) = @_;
+
+    for my $key (keys %$assetkeys) {
+        my $file = locate_asset($assetkeys->{$key}, $vars->{$key}, mustexist => 1);
+        unless ($file) {
+            my $error = "Cannot find $key asset $assetkeys->{$key}/$vars->{$key}!";
+            return {error => $error};
+        }
+        $vars->{$key} = $file;
+    }
+    return undef;
 }
 
 sub engine_check {

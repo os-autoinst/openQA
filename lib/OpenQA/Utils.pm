@@ -1,3 +1,17 @@
+# Copyright (C) 2012-2017 SUSE LLC
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+
 package OpenQA::Utils;
 use strict;
 require 5.002;
@@ -92,23 +106,22 @@ our $app;
 # testrepository name" and "old/new folder structure" within the
 # testrepository.
 sub productdir {
-    my ($distri, $version) = @_;
+    my ($distri, $version, $rootfortests) = @_;
 
-    my $dir = testcasedir($distri, $version);
+    my $dir = testcasedir($distri, $version, $rootfortests);
     return $dir . "/products/$distri" if -e "$dir/products/$distri";
     return $dir;
 }
 
 sub testcasedir {
-    my ($distri, $version) = @_;
-
-    my @dirs = (catdir($prjdir, 'share', 'tests', $distri), catdir($prjdir, 'tests', $distri));
-    if ($version) {
-        unshift @dirs, catdir($prjdir, 'share', 'tests', "$distri-$version");
+    my ($distri, $version, $rootfortests) = @_;
+    for my $dir (catdir($prjdir, 'share', 'tests'), catdir($prjdir, 'tests')) {
+        $rootfortests ||= $dir if -d $dir;
     }
     # TODO actually "distri" is misused here. It should rather be something
     # like the name of the repository with all tests
-    my ($dir) = grep { -d } @dirs;
+    my $dir = catdir($rootfortests, $distri);
+    $dir .= "-$version" if $version && -e "$dir-$version";
     return $dir;
 }
 

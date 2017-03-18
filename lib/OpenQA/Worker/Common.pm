@@ -1,4 +1,4 @@
-# Copyright (C) 2015 SUSE Linux Products GmbH
+# Copyright (C) 2015-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ use OpenQA::Utils qw(log_error log_debug log_warning log_info);
 use base 'Exporter';
 our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
   $hosts $ws_to_host $current_host
-  $worker_caps $testresults
+  $worker_caps $testresults update_setup_status
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer get_timer
   api_call verify_workerid register_worker ws_call);
@@ -139,9 +139,7 @@ sub get_timer {
 ## prepare UA and URL for OpenQA-scheduler connection
 sub api_init {
     my ($host_settings, $options) = @_;
-    my @hosts = @{$host_settings->{HOSTS}};
-
-    for my $host (@hosts) {
+    for my $host (@{$host_settings->{HOSTS}}) {
         my ($ua, $url);
         if ($host !~ '/') {
             $url = Mojo::URL->new->scheme('http')->host($host);
@@ -201,6 +199,10 @@ sub api_call {
     }
 
     my $tx = $ua->build_tx(@args);
+    if ($callback eq "no") {
+        $ua->start($tx);
+        return;
+    }
     my $cb;
     $cb = sub {
         my ($ua, $tx, $tries) = @_;
@@ -386,7 +388,7 @@ sub call_websocket {
 }
 
 sub register_worker {
-    my ($host, $dir) = @_;
+    my ($host, $dir, $testpoolserver) = @_;
     die unless $host;
 
     $worker_caps             = _get_capabilities;
@@ -432,6 +434,7 @@ sub register_worker {
         }
         return;
     }
+    $hosts->{$host}{testpoolserver} = $testpoolserver;
     my $newid    = $tx->success->json->{id};
     my $workerid = $hosts->{$host}{workerid};
     my $ws       = $hosts->{$host}{ws};
@@ -455,6 +458,17 @@ sub register_worker {
                 setup_websocket($host);
             });
     }
+}
+
+sub update_setup_status {
+    my $status = {setup => 1};
+    api_call(
+        'post',
+        'jobs/' . $job->{id} . '/status',
+        json     => {status => $status},
+        callback => "no",
+    );
+    log_debug("Update status so job is not considered dead.");
 }
 
 sub verify_workerid {
