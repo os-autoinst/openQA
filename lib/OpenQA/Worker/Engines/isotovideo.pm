@@ -20,14 +20,15 @@ use warnings;
 use OpenQA::Worker::Common;
 use OpenQA::Utils qw(locate_asset log_error log_info log_debug);
 
-use POSIX qw(:sys_wait_h strftime uname);
+use POSIX qw(:sys_wait_h strftime uname _exit);
 use JSON 'to_json';
 use Fcntl;
 use File::Spec::Functions 'catdir';
 use File::Basename;
 use Errno;
 use Cwd qw(abs_path getcwd);
-use OpenQA::Cache;
+use OpenQA::Worker::Cache;
+use Time::HiRes 'sleep';
 
 my $isotovideo = "/usr/bin/isotovideo";
 my $workerpid;
@@ -78,22 +79,20 @@ sub cache_assets {
     return undef;
 }
 
+# runs in a subprocess, so don't rely on setting variables, but return
 sub cache_tests {
-
     my ($shared_cache, $testpoolserver) = @_;
 
     my $start = time;
     # Do an flock to ensure only one worker is trying to synchronize at a time.
-    my @cmd = qw(flock);
-    push @cmd, "$shared_cache/needleslock";
+    my @cmd = ('flock', "$shared_cache/needleslock");
     push @cmd, (qw(rsync -avHP), "$testpoolserver/", qw(--delete));
     push @cmd, "$shared_cache/tests/";
 
     log_debug("Calling " . join(' ', @cmd));
     my $res = system(@cmd);
-    return {error => "Failed to rsync tests: '$@'"} if $res;
     log_debug(sprintf("RSYNC: Synchronization of tests directory took %.2f seconds", time - $start));
-    return undef;
+    exit($res);
 }
 
 sub detect_asset_keys {
@@ -164,8 +163,26 @@ sub engine_workit {
         OpenQA::Cache::init($current_host, $worker_settings->{CACHEDIRECTORY});
         my $error = cache_assets(\%vars, $assetkeys);
         return $error if $error;
-        $error = cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver});
-        return $error if $error;
+
+        # my attempts to use ioloop::subprocess failed, so go back to blocking
+        my $sync_child = fork();
+        if (!$sync_child) {
+            cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver});
+        }
+        else {
+            my $last_update = time;
+            while (waitpid($sync_child, WNOHANG) == 0) {
+                log_info "Waiting for subprocess";
+                if (time - $last_update > 5) {    # do not spam the webui
+                    update_setup_status;
+                    $last_update = time;
+                }
+                sleep .5;
+            }
+            if ($?) {
+                return {error => "Failed to rsync tests: exit $?"};
+            }
+        }
         $shared_cache = catdir($shared_cache, 'tests');
     }
     else {

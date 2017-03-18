@@ -27,7 +27,7 @@ use OpenQA::Utils qw(log_error log_debug log_warning log_info);
 use base 'Exporter';
 our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
   $hosts $ws_to_host $current_host
-  $worker_caps $testresults
+  $worker_caps $testresults update_setup_status
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
   add_timer remove_timer change_timer get_timer
   api_call verify_workerid register_worker ws_call);
@@ -458,6 +458,17 @@ sub register_worker {
                 setup_websocket($host);
             });
     }
+}
+
+sub update_setup_status {
+    my $status = {setup => 1};
+    api_call(
+        'post',
+        'jobs/' . $job->{id} . '/status',
+        json     => {status => $status},
+        callback => "no",
+    );
+    log_debug("Update status so job is not considered dead.");
 }
 
 sub verify_workerid {

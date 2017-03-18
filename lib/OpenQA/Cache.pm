@@ -60,18 +60,6 @@ sub init {
     log_debug(__PACKAGE__ . ": Initialized with $host at $location");
 }
 
-sub update_setup_status {
-    my $id = @_;
-    my $status = {setup => 1};
-    api_call(
-        'post',
-        'jobs/' . $job->{id} . '/status',
-        json     => {status => $status},
-        callback => "no",
-    );
-    log_debug("Update status so job is not considered dead.");
-}
-
 sub download_asset {
     my ($id, $type, $asset) = @_;
 
@@ -98,7 +86,7 @@ sub download_asset {
                     local $| = 1;
                     # Don't spam the webui, update only every 5 seconds
                     if (time - $last_updated > 5) {
-                        update_setup_status $id;
+                        update_setup_status;
                         $last_updated = time;
                         if ($progress < $current) {
                             $progress = $current;
@@ -133,7 +121,7 @@ sub get_asset {
         open(my $asset_fd, ">", $asset . ".lock");
 
         if (!flock($asset_fd, LOCK_EX | LOCK_NB)) {
-            update_setup_status $job->{id};
+            update_setup_status;
             log_debug("CACHE: Asked to wait for lock, sleeping 10 secs");
             sleep 10;
             next;
