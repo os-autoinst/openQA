@@ -82,8 +82,8 @@ sub cache_tests {
     my ($shared_cache, $testpoolserver) = @_;
 
     my $start = time;
-    #Do an flock to ensure only one worker is trying to synchronize at a time.
-    my @cmd = qw(flock -E 999);
+    # Do an flock to ensure only one worker is trying to synchronize at a time.
+    my @cmd = qw(flock);
     push @cmd, "$shared_cache/needleslock";
     push @cmd, (qw(rsync -avHP), "$testpoolserver/", qw(--delete));
     push @cmd, "$shared_cache/tests/";
