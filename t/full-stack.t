@@ -31,6 +31,7 @@ use Test::Mojo;
 use Data::Dumper;
 use IO::Socket::INET;
 use POSIX '_exit';
+use Fcntl ':mode';
 
 # optional but very useful
 eval 'use Test::More::Color';
@@ -224,6 +225,8 @@ wait_for_result_panel qr/Result: passed/, 'test 1 is passed';
 
 ok(-s "$resultdir/00000/00000001-$job_name/autoinst-log.txt",   'log file generated');
 ok(-s 't/full-stack.d/openqa/share/factory/hdd/core-hdd.qcow2', 'image of hdd uploaded');
+my $mode = S_IMODE((stat('t/full-stack.d/openqa/share/factory/hdd/core-hdd.qcow2'))[2]);
+is($mode, 420, 'exported image has correct permissions (420 -> 0644)');
 
 my $post_group_res = client_output "job_groups post name='New job group'";
 my $group_id       = ($post_group_res =~ qr/{ *id *=> *([0-9]*) *}\n/);

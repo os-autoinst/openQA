@@ -1089,6 +1089,7 @@ sub create_asset {
     my $suffix = '.TEMP-' . db_helpers::rndstr(8);
     my $abs = join('/', $fpath, $fname . $suffix);
     $asset->move_to($abs);
+    chmod 0644, $abs;
     log_debug("moved to $abs");
     $self->jobs_assets->create({job => $self, asset => {name => $fname, type => $type}, created_by => 1});
 
