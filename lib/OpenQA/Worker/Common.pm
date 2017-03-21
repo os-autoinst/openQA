@@ -416,7 +416,7 @@ sub register_worker {
     $hosts->{$host}{dir} = $dir if $dir;
 
     # test pool is from config, so it doesn't change
-    $hosts->{$host}{testpoolserver} = $testpoolserver;
+    $hosts->{$host}{testpoolserver} = $testpoolserver if $testpoolserver;
 
     # reset workerid
     $hosts->{$host}{workerid} = undef;
