@@ -31,6 +31,7 @@ use OpenQA::Test::Case;
 use File::Which 'which';
 use File::Path ();
 use Date::Format 'time2str';
+use Fcntl ':mode';
 
 # these are used to track assets being 'removed from disk' and 'deleted'
 # by mock methods (so we don't *actually* lose them)
@@ -253,6 +254,17 @@ subtest 'labeled jobs considered important' => sub {
     $job->update({t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 3600 * 24 * 22, 'UTC')});
     run_gru('limit_results_and_logs');
     ok(!-e $filename, 'file got cleaned');
+};
+
+subtest 'download assets with correct permissions' => sub {
+    # need to whitelist github
+    $t->app->config->{global}->{download_domains} = 'github.com';
+
+    my $assetsource = 'https://github.com/os-autoinst/os-autoinst/blob/master/t/data/Core-7.2.iso';
+    my $assetpath   = 't/data/openqa/share/factory/iso/Core-7.2.iso';
+    run_gru('download_asset' => [$assetsource, $assetpath, 0]);
+    ok(-f $assetpath, 'asset downloaded');
+    is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
 };
 
 done_testing();
