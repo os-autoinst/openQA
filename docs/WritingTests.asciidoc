@@ -75,10 +75,9 @@ sub run {
 
 sub test_flags {
     # without anything - rollback to 'lastgood' snapshot if failed
-    # 'fatal' - abort whole test suite if this fails (and set overall state)
+    # 'fatal' - abort whole test suite if this fails
     # 'milestone' - after this test succeeds, update 'lastgood'
-    # 'important' - if this fails, set the overall state to 'failed'
-    return { important => 1 };
+    return { fatal => 1 };
 }
 
 1;
