@@ -219,6 +219,8 @@ sub download_asset {
         notify_workers;
         return;
     }
+    # set proper permissions for downloaded asset
+    chmod 0644, $assetpath;
 
     # We want to notify workers either way: if we failed to download, we
     # want the jobs to run and fail.
