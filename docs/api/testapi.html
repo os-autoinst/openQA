@@ -1284,7 +1284,15 @@ any action on the system under test, but only store the parameters.</p>
 <h5 id="_select_console">select_console</h5>
 <div class="literalblock">
 <div class="content">
-<pre>select_console("root-console")</pre>
+<pre>select_console($console [, @args]);</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Example:</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>select_console("root-console");</pre>
 </div>
 </div>
 <div class="paragraph">
@@ -1298,6 +1306,10 @@ make sure to actually log in root. For the backend it&#8217;s just a <code>tty</
 object (in this example) - so it will ensure the console is active,
 but to setup the root shell on this console, the distribution needs
 to run test code.</p>
+</div>
+<div class="paragraph">
+<p>After the console selection the distribution callback
+<code>$distri-`console_selected&gt; is called with `@args</code>.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1621,7 +1633,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-03-21 10:40:25 UTC
+Last updated 2017-03-22 16:19:24 UTC
 </div>
 </div>
 </body>
