@@ -812,38 +812,21 @@ sub calculate_result {
     my ($self) = @_;
 
     my $overall;
-    my $important_overall;    # just counting importants
-
     for my $m ($self->modules->all) {
         if ($m->result eq PASSED) {
-            if ($m->important || $m->fatal) {
-                $important_overall ||= PASSED;
-            }
             $overall ||= PASSED;
         }
         elsif ($m->result eq SOFTFAILED) {
-            if ($m->important || $m->fatal) {
-                if (!defined $important_overall || $important_overall eq PASSED) {
-                    $important_overall = SOFTFAILED;
-                }
-            }
             if (!defined $overall || $overall eq PASSED) {
                 $overall = SOFTFAILED;
             }
         }
         else {
-            if ($m->important || $m->fatal) {
-                $important_overall = FAILED;
-            }
             $overall = FAILED;
         }
     }
-    # don't let go with overall PASSED if there were fails
-    if (($overall || FAILED) ne PASSED && ($important_overall || '') eq PASSED) {
-        $important_overall = SOFTFAILED;
-    }
 
-    return $important_overall || $overall || FAILED;
+    return $overall || FAILED;
 }
 
 sub save_screenshot {
@@ -1329,13 +1312,8 @@ sub _failure_reason {
     my @failed_modules;
     my $modules = $self->modules;
     while (my $m = $modules->next) {
-        if ($m->result eq FAILED || $m->result eq SOFTFAILED) {
-            # in case we don't see an important module, we return all modules
-            push(@failed_modules, $m->name);
-        }
-        if ($m->result eq FAILED && ($m->important || $m->fatal)) {
-            return $m->name;
-        }
+        next if ($m->result eq INCOMPLETE);
+        push(@failed_modules, $m->name . ':' . $m->result);
     }
     return join('', @failed_modules) || $self->result;
 }
