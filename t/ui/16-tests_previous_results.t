@@ -39,7 +39,7 @@ like(
 );
 $get->element_exists('#res_99945',                    'result from previous job');
 $get->element_exists('#res_99945 .result_passed',     'previous job was passed');
-$get->element_exists('#res_99944 .result_softfailed', 'previous job was passed (softfailed)');
+$get->element_exists('#res_99944 .result_softfailed', 'previous job was softfailed');
 like($t->tx->res->dom->at('#res_99944 ~ .build a')->{href}, qr{/tests/overview?}, 'build links to overview page');
 my $build = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#previous_results .build')->all_text);
 is($build, '0091', 'build of previous job is shown');
