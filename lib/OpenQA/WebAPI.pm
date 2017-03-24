@@ -225,7 +225,7 @@ sub startup {
     # Favicon
     $r->get('/favicon.ico' => sub { my $c = shift; $c->render_static('favicon.ico') });
     $r->get('/index' => [format => ['html', 'json']])->to('main#index');
-    $auth->get('/api_help' => sub { shift->render('admin/api_help') })->name('api_help');
+    $r->get('/api_help' => sub { shift->render('admin/api_help') })->name('api_help');
 
     # Default route
     $r->get('/')->name('index')->to('main#index');
@@ -263,11 +263,12 @@ sub startup {
       ->to('job_group#edit_parent_group');
     $pub_admin_r->get('/groups/connect/:groupid')->name('job_group_new_media')->to('job_group#connect');
 
-    $op_r->get('/assets')->name('admin_assets')->to('asset#index');
+    $pub_admin_r->get('/assets')->name('admin_assets')->to('asset#index');
 
-    $op_r->get('/workers')->name('admin_workers')->to('workers#index');
-    $op_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
-    $op_r->get('/workers/:worker_id/ajax')->name('admin_worker_previous_jobs_ajax')->to('workers#previous_jobs_ajax');
+    $pub_admin_r->get('/workers')->name('admin_workers')->to('workers#index');
+    $pub_admin_r->get('/workers/:worker_id')->name('admin_worker_show')->to('workers#show');
+    $pub_admin_r->get('/workers/:worker_id/ajax')->name('admin_worker_previous_jobs_ajax')
+      ->to('workers#previous_jobs_ajax');
 
     $pub_admin_r->get('/productlog')->name('admin_product_log')->to('audit_log#productlog');
 
