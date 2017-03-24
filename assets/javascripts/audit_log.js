@@ -33,7 +33,7 @@ function loadAuditLogTable ()
     ],
     order: [[0, 'desc']],
     columnDefs: [
-        { 
+        {
             targets: 0,
             render: function ( data, type, row ) {
                 if (type === 'display')
@@ -47,7 +47,7 @@ function loadAuditLogTable ()
             targets: 2,
             visible: false
         },
-        { 
+        {
             targets: 4,
             width: "70%",
             render: function ( data, type, row ) {
