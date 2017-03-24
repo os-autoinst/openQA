@@ -86,7 +86,7 @@ function renderTestResult( data, type, row ) {
         if (row['state'] === 'done') {
             html += data['passed'] + "<i class='fa module_passed fa-star' title='modules passed'></i>";
             if (data['softfailed']) {
-                html += " " + data['softfailed'] + "<i class='fa module_softfail fa-star-half-empty' title='modules with warnings'></i>";
+                html += " " + data['softfailed'] + "<i class='fa module_softfailed fa-star-half-empty' title='modules with warnings'></i>";
             }
             if (data['failed']) {
                 html += " " + data['failed'] + "<i class='fa module_failed fa-star-o' title='modules failed'></i>";

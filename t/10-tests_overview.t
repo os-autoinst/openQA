@@ -76,7 +76,7 @@ like(get_summary, qr/Overall Summary of opensuse build 0091/i, 'specifying group
 #
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
 $get->status_is(200);
-like(get_summary, qr/\QPassed: 0 Soft Failure: 2 Failed: 1\E/i);
+like(get_summary, qr/\QPassed: 0 Soft-Failed: 2 Failed: 1\E/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_x86_64');
@@ -172,7 +172,7 @@ $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version =>
   ->status_is(200);
 like(
     get_summary,
-    qr/Passed: 0 Soft Failure: 1 Failed: 1/i,
+    qr/Passed: 0 Soft-Failed: 1 Failed: 1/i,
     'todo=1 shows only unlabeled left failed as softfailed with failing modules was labeled'
 );
 $t->element_exists_not('#res-99939', 'softfailed without failing module filtered out');

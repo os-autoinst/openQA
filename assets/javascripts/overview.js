@@ -22,7 +22,7 @@ function setupOverview() {
             // remove the result class
 	    $(this).parents('td').find('.result_passed').removeClass('result_passed');
 	    $(this).parents('td').find('.result_failed').removeClass('result_failed');
-            $(this).parents('td').find('.result_softfail').removeClass('result_softfail');
+            $(this).parents('td').find('.result_softfailed').removeClass('result_softfailed');
 
 	    // If the API call returns a new id, a new job have been created to replace
 	    // the old one. In other case, the old job is being reused
