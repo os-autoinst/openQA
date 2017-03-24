@@ -206,8 +206,14 @@ $get->element_exists('#res_DVD_i586_kde',                           'job from gr
 $get->element_exists('#res_GNOME-Live_i686_RAID0 .state_cancelled', 'another job from group 1001');
 $get->element_exists('#res_NET_x86_64_kde .state_running',          'job from group 1002 is shown');
 
-$get = $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002')->status_is(404);
-like($get->tx->res->dom->content, qr/Specify.*build.*multiple groups/, 'multiple groups and no build is not supported');
+$get     = $t->get_ok('/tests/overview?distri=opensuse&version=13.1&groupid=1001&groupid=1002')->status_is(200);
+$summary = get_summary;
+like(
+    $summary,
+    qr/Summary of opensuse, opensuse test/i,
+    'multiple groups with no build specified yield latest build of first group'
+);
+like($summary, qr/Passed: 2 Failed: 0 Scheduled: 1 Running: 2 None: 1/i);
 
 #
 # Test filter form

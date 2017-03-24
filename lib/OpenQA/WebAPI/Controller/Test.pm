@@ -493,10 +493,8 @@ sub overview {
     }
 
     if (!$search_args{build}) {
-        if (@groups > 1) {
-            return $self->render(text => 'Specify a build when you want to lookup multiple groups', status => 404);
-        }
-        elsif (@groups == 1) {
+        if (@groups >= 1) {
+            $self->app->log->info('More than one group but no build specified, selecting build of first group');
             $search_args{groupid} = $groups[0]->id;
         }
         $search_args{build} = $self->db->resultset("Jobs")->latest_build(%search_args);
