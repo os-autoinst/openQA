@@ -71,6 +71,7 @@ image::images/review_badges.png[Review badges]
 * The gray icon is shown if at least one softfailure with failing modules still
   need to be reviewed.
 * The black icon is shown if all review work has been done.
+* The pink icon is shown if all unicorns in openQA have been found!
 
 (To simplify, checking for false-negatives is not considered here.)
 
