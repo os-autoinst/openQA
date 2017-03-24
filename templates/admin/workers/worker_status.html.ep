@@ -1,14 +1,12 @@
-% if($worker->{status} eq 'idle') {
-    Idle
-% } elsif ($worker->{status} eq 'running')
-% {
+% if($worker->{status} eq 'running') {
     Working on job <%= link_to $worker->{jobid}, url_for('test', testid => $worker->{jobid}) %>
 % } elsif ($worker->{status} eq 'dead' && $worker->{job} )
 % {
     Dead with job <%= link_to $worker->{jobid}, url_for('test', testid => $worker->{jobid}) %>
-% } else
-% {
-    Dead
+% } elsif ($worker->{connected}) {
+    Online
+% } else {
+    Offline
 % }
 % if($worker->{status} eq 'running' && defined($worker->{currentstep}) ) {
     - <%= $worker->{currentstep} %>

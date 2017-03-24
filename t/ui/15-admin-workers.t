@@ -1,6 +1,6 @@
 #! /usr/bin/perl
 
-# Copyright (C) 2015 SUSE Linux GmbH
+# Copyright (C) 2015-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -13,8 +13,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 
 BEGIN {
     unshift @INC, 'lib';
@@ -61,7 +60,7 @@ $driver->find_element_by_link_text('Login')->click();
 $driver->title_is("openQA", "back on main page");
 # but ...
 
-is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # Demo is admin, so go there
 $driver->find_element('#user-action a')->click();
