@@ -29,7 +29,9 @@
                     <th>Build</th>
                     <th>ISO</th>
                     <th>Settings</th>
-                    <th>Actions</th>
+                    % if (is_operator) {
+                        <th>Actions</th>
+                    % }
                 </tr>
             </thead>
             <tbody>
@@ -45,11 +47,13 @@
                     <td>ISO</td>
                     % my $data = $iso->{event_data};
                     <td class="event_data"><%= $data %></td>
-                    <td>
-                        %= link_to url_for('apiv1_create_iso') => (class => 'iso_restart') => begin
-                            <i class="action fa fa-repeat" title="Reschedule product tests"></i>
-                        % end
-                    </td>
+                    % if (is_operator) {
+                        <td>
+                            %= link_to url_for('apiv1_create_iso') => (class => 'iso_restart') => begin
+                                <i class="action fa fa-repeat" title="Reschedule product tests"></i>
+                            % end
+                        </td>
+                    % }
                  </tr>
             % }
             </tbody>

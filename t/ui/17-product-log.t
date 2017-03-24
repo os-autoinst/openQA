@@ -39,9 +39,9 @@ if (!$driver) {
 }
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
+
 # we need to talk to the phantom instance or else we're using wrong database
 my $url = 'http://localhost:' . t::ui::PhantomTest::get_mojoport;
-$t->get_ok($url . '/admin/productlog')->status_is(200, 'scheduled isos are public');
 
 # Schedule iso - need UA change to add security headers
 # XXX: Test::Mojo loses it's app when setting a new ua
@@ -63,21 +63,27 @@ my $ret = $t->post_ok(
     })->status_is(200);
 is($ret->tx->res->json->{count}, 10, '10 new jobs created');
 
+$driver->get($url . '/admin/productlog');
+like($driver->get_title(), qr/Scheduled products log/, 'on product log');
+my $table = $driver->find_element_by_id('product_log_table');
+ok($table, 'products tables present when not logged in');
+my @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
+is(scalar @rows, 1, 'one row present');
+my @restart_buttons = $driver->find_elements('.iso_restart', 'css');
+is(scalar @restart_buttons, 0, 'no restart buttons present when not logged in');
+
 # Log in as Demo in phantomjs webui
-$driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
-# we're back on the main page
-$driver->title_is("openQA", "back on main page");
-is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', 'logged in as demo');
 
 # Test Scheduled isos are displayed
 $driver->find_element('#user-action a')->click();
 $driver->find_element_by_link_text('Scheduled products')->click();
 like($driver->get_title(), qr/Scheduled products log/, 'on product log');
-my $table = $driver->find_element_by_id('product_log_table');
+$table = $driver->find_element_by_id('product_log_table');
 ok($table, 'products tables found');
 
-my @rows  = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
+@rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 my $nrows = scalar @rows;
 my $row   = shift @rows;
 my $cell  = $driver->find_child_element($row, './td[2]', 'xpath');
