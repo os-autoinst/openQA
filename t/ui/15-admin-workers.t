@@ -102,5 +102,23 @@ is_deeply(
     'correct entries shown'
 );
 
+# restart job
+$driver->find_child_element($table, 'a.restart', 'css')->click();
+wait_for_ajax;
+$table = $driver->find_element_by_id('previous_jobs');
+ok($table, 'still on same page (with table)');
+@entries = map { $_->get_text() } $driver->find_child_elements($table, 'tbody/tr/td', 'xpath');
+is_deeply(
+    \@entries,
+    [
+        'opensuse-Factory-staging_e-x86_64-Build87.5011-minimalx@32bit (restarted)',
+        '0',
+        'about an hour ago',
+        'opensuse-13.1-DVD-i586-Build0091-RAID1@32bit',
+        '', 'not finished yet',
+    ],
+    'the first job has been restarted'
+);
+
 kill_phantom();
 done_testing();

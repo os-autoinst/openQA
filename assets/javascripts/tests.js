@@ -185,24 +185,28 @@ function renderTestsList(jobs) {
     $(document).on('focusin', '.parent_child', highlightJobs);
     $(document).on('focusout', '.parent_child', unhighlightJobs);
 
+    setupTestButtons();
+}
+
+function setupTestButtons() {
     $(document).on("click", '.restart', function(event) {
-	event.preventDefault();
+        event.preventDefault();
         var restart_link = $(this);
         var link = $(this).parent('td');
         $.post(restart_link.attr("href")).done( function( data, res, xhr ) {
-	    link.append(' <a href="' + xhr.responseJSON.test_url + '" title="new test">(restarted)</a>');
-	});
+            link.append(' <a href="' + xhr.responseJSON.test_url + '" title="new test">(restarted)</a>');
+        });
         var i = $(this).find('i').removeClass('fa-repeat');
-	$(this).replaceWith(i);
+        $(this).replaceWith(i);
     });
 
     $(document).on('click', '.cancel', function(event) {
-	event.preventDefault();
+        event.preventDefault();
         var cancel_link = $(this);
         var test = $(this).parent('td');
         $.post(cancel_link.attr("href")).done( function( data ) { $(test).append(' (cancelled)'); });
-	var i = $(this).find('i').removeClass('fa-times-circle-o');
-	$(this).replaceWith(i);
+        var i = $(this).find('i').removeClass('fa-times-circle-o');
+        $(this).replaceWith(i);
     });
 }
 
