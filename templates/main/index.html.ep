@@ -19,6 +19,7 @@
     </div>
 </div>
 
+<a name="build-results"/>
 % for my $groupresults (@$results) {
     % my $group              = $groupresults->{group};
     % my $build_results      = $groupresults->{build_results};
