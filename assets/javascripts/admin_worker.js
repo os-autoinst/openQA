@@ -17,6 +17,6 @@ function setupWorkerNeedles() {
                 {targets: 2, render: renderTimeAgo}
             ]
         });
-
+    table.on('draw.dt', setupTestButtons);
     $('#previous_jobs_filter').hide();
 }
