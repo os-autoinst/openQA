@@ -1324,9 +1324,11 @@ sub _carry_over_candidate {
     my $current_failure_reason = $self->_failure_reason;
     my $prev_failure_reason    = '';
     my $state_changes          = 0;
+    my $lookup_depth           = 10;
+    my $state_changes_limit    = 3;
 
     # search for previous jobs
-    for my $job ($self->_previous_scenario_jobs(20)) {
+    for my $job ($self->_previous_scenario_jobs($lookup_depth)) {
         my $job_fr = $job->_failure_reason;
 
         log_debug(sprintf("checking take over from %d: %s vs %s", $job->id, $job_fr, $current_failure_reason));
@@ -1341,7 +1343,7 @@ sub _carry_over_candidate {
 
         # if the job changed failures more often, we assume
         # that the carry over is pointless
-        return if $state_changes > 4;
+        return if $state_changes > $state_changes_limit;
     }
     return;
 }
