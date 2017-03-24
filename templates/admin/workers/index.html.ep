@@ -16,7 +16,6 @@
                 <tr>
                     <th>Worker</th>
                     <th>Status</th>
-                    <th>Connected</th>
                     <th>Current step</th>
                 </tr>
             </thead>
@@ -30,13 +29,6 @@
                         <td class="status">
                             % stash(workername => $workername, worker => $worker);
                             %= include 'admin/workers/worker_status'
-                        </td>
-                        <td class="ws_connected">
-                            % if($worker->{connected}) {
-                                online
-                            % } else {
-                                offline
-                            % }
                         </td>
                         <td class="currentstep">
                             % if(defined($worker->{currentstep}) && $worker->{status} eq 'running') {
