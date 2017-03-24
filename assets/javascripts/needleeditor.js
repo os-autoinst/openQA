@@ -458,7 +458,10 @@ function setup_needle_editor(imageurl, default_needle)
     return false;
   });
 
-  $('#newtag').keyup(function() { $('#tag_add_button').prop('disabled', !this.value.length); });
+  $('#newtag').bind(
+      "propertychange change click keyup input paste",
+      function() { $('#tag_add_button').prop('disabled', !this.value.length); }
+  );
 
   $('#save_needle_form').submit(saveNeedle);
   $(document).on('click', '.restart-link', restartJob);
