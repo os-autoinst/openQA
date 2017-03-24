@@ -204,7 +204,7 @@ function setDataListener(elem, callback) {
     var events = new EventSource(elem.data('url'));
     events.addEventListener('message', function(event) {
         elem[0].innerHTML += JSON.parse(event.data)[0];
-	if (callback) callback();
+        if (callback) callback();
     }, false);
 }
 

@@ -23,7 +23,7 @@ var MINSIZE = 10;
 function Shape(x, y, w, h, fill) {
   // This is a very simple and unsafe constructor. All we're doing is checking if the values exist.
   // "x || 0" just means "if there is a value for x, use that. Otherwise use 0."
-  // But we aren't checking anything else! We could put "Lalala" for the value of x 
+  // But we aren't checking anything else! We could put "Lalala" for the value of x
   this.x = x || 0;
   this.y = y || 0;
   this.w = w || 1;
@@ -92,7 +92,7 @@ Shape.resize_cursor_styles = [
 
 function CanvasState(canvas) {
   // **** First some setup! ****
-  
+
   this.shape_changed_cb;
   this.new_shape_cb;
   this.bgImage = null;
@@ -117,7 +117,7 @@ function CanvasState(canvas) {
   this.htmlLeft = html.offsetLeft;
 
   // **** Keep track of state! ****
-  
+
   this.dirty = true; // when set to false, the canvas will redraw everything
   this.shapes = [];  // the collection of things to be drawn
   this.dragging = false; // Keep track of when we are dragging
@@ -127,16 +127,16 @@ function CanvasState(canvas) {
   this.selection = null;
   this.dragoffx = 0; // See mousedown and mousemove events for explanation
   this.dragoffy = 0;
-  
+
   // **** Then events! ****
-  
+
   // This is an example of a closure!
   // Right here "this" means the CanvasState. But we are making events on the Canvas itself,
   // and when the events are fired on the canvas the variable "this" is going to mean the canvas!
   // Since we still want to use this particular CanvasState in the events we have to save a reference to it.
   // This is our reference!
   var myState = this;
-  
+
   //fixes a problem where double clicking causes text to get selected on the canvas
   canvas.addEventListener('selectstart', function(e) { e.preventDefault(); return false; }, false);
   // Up, down, and move are for dragging
@@ -158,16 +158,16 @@ function CanvasState(canvas) {
       myState.dirty = true;
       myState.resizing = shape.is_resize(mx, my, myState.selectionWidth)
       if (myState.resizing == 0) {
-					myState.dragging = true;
+                                        myState.dragging = true;
       }
       return;
     }
     // havent returned means we have failed to select anything.
     // If there was an object selected, we deselect it
     if (myState.selection) {
-	myState.selection = null;
-	$(myState).trigger('shape.unselected');
-	myState.dirty = true; // Need to clear the old selection border
+        myState.selection = null;
+        $(myState).trigger('shape.unselected');
+        myState.dirty = true; // Need to clear the old selection border
     }
     myState.mousedown = true;
   }, true);
@@ -177,20 +177,20 @@ function CanvasState(canvas) {
       // We don't want to drag the object by its top-left corner, we want to drag it
       // from where we clicked. Thats why we saved the offset and use it here
       myState.selection.x = mouse.x - myState.dragoffx;
-      myState.selection.y = mouse.y - myState.dragoffy;   
+      myState.selection.y = mouse.y - myState.dragoffy;
       if (myState.selection.x < 0) {
-	  myState.selection.x = 0;
+          myState.selection.x = 0;
       } else if (myState.selection.x + myState.selection.w > this.width) {
-	  myState.selection.x = this.width - myState.selection.w;
+          myState.selection.x = this.width - myState.selection.w;
       }
       if (myState.selection.y < 0) {
-	myState.selection.y = 0;
+        myState.selection.y = 0;
       } else if (myState.selection.y + myState.selection.h > this.height) {
-	myState.selection.y = this.height - myState.selection.h;
+        myState.selection.y = this.height - myState.selection.h;
       }
       myState.dirty = true; // Something's dragging so we must redraw
       if (myState.shape_changed_cb) {
-	myState.shape_changed_cb(myState.selection);
+        myState.shape_changed_cb(myState.selection);
       }
     } else if (myState.resizing != 0) {
       var r = myState.resizing;
@@ -200,78 +200,78 @@ function CanvasState(canvas) {
 
       // special case, auto determine
       if (r == 5) {
-	if (mx < sel.x) {
-	  if (my < sel.y) {
-	    myState.resizing = r = 1;
-	  } else {
-	    myState.resizing = r = 7;
-	  }
-	} else {
-	  if (my < sel.y) {
-	    myState.resizing = r = 3;
-	  } else {
-	    myState.resizing = r = 9;
-	  }
-	}
+        if (mx < sel.x) {
+          if (my < sel.y) {
+            myState.resizing = r = 1;
+          } else {
+            myState.resizing = r = 7;
+          }
+        } else {
+          if (my < sel.y) {
+            myState.resizing = r = 3;
+          } else {
+            myState.resizing = r = 9;
+          }
+        }
       }
 
       // west
       if (r == 1 || r == 4 || r == 7) {
-	if (mx > sel.x+sel.w-MINSIZE) {
-	  mx = sel.x+sel.w-MINSIZE;
-	}
-	sel.w += sel.x-mx; sel.x = mx;
+        if (mx > sel.x+sel.w-MINSIZE) {
+          mx = sel.x+sel.w-MINSIZE;
+        }
+        sel.w += sel.x-mx; sel.x = mx;
       }
 
       // north
       if (r == 1 || r == 2 || r == 3) {
-	if (my > sel.y+sel.h-MINSIZE) {
-	  my = sel.y+sel.h-MINSIZE;
-	}
-	sel.h += sel.y-my; sel.y = my;
+        if (my > sel.y+sel.h-MINSIZE) {
+          my = sel.y+sel.h-MINSIZE;
+        }
+        sel.h += sel.y-my; sel.y = my;
       }
 
       // east
       if (r == 3 || r == 6 || r == 9) {
-	if (mx < sel.x+MINSIZE) {
-	  mx = sel.x+MINSIZE;
-	}
-	sel.w += mx-(sel.x+sel.w);
+        if (mx < sel.x+MINSIZE) {
+          mx = sel.x+MINSIZE;
+        }
+        sel.w += mx-(sel.x+sel.w);
       }
 
       // south
       if (r == 7 || r == 8 || r == 9) {
-	if (my < sel.y+MINSIZE) {
-	  my = sel.y+MINSIZE;
-	}
-	sel.h += my-(sel.y+sel.h);
+        if (my < sel.y+MINSIZE) {
+          my = sel.y+MINSIZE;
+        }
+        sel.h += my-(sel.y+sel.h);
       }
 
       if (myState.shape_changed_cb) {
-	myState.shape_changed_cb(myState.selection);
+        myState.shape_changed_cb(myState.selection);
       }
 
       myState.dirty = true;
     } else if (myState.mousedown) {
       if (myState.new_shape_cb) {
-	var mouse = myState.getMouse(e);
-	var shape = myState.new_shape_cb(mouse.x, mouse.y);
-	myState.dragoffx = mx - shape.x;
-	myState.dragoffy = my - shape.y;
-	myState.selection = shape;
-	myState.resizing = 5;
+        var mouse = myState.getMouse(e);
+        var shape = myState.new_shape_cb(mouse.x, mouse.y);
+        myState.dragoffx = mx - shape.x;
+        myState.dragoffy = my - shape.y;
+        myState.selection = shape;
+        myState.resizing = 5;
       }
     } else {
       var shape = myState.shape_at_cursor(mouse.x, mouse.y);
       if (shape) {
-	var resize = shape.is_resize(mouse.x, mouse.y, myState.selectionWidth);
-	if (resize != 0) {
-	  canvas.style.cursor = Shape.resize_cursor_styles[resize];
-	} else {
-	  canvas.style.cursor = 'move';
-	}
+        var resize = shape.is_resize(mouse.x, mouse.y, myState.selectionWidth);
+        if (resize != 0) {
+          canvas.style.cursor = Shape.resize_cursor_styles[resize];
+        } else {
+          canvas.style.cursor = 'move';
+        }
       } else {
-	canvas.style.cursor = 'default';
+        canvas.style.cursor = 'default';
       }
     }
   }, true);
@@ -287,9 +287,9 @@ function CanvasState(canvas) {
     myState.addShape(new Shape(mouse.x - 10, mouse.y - 10, MINSIZE, MINSIZE, 'rgba(0,255,0,.6)'));
   }, true);
   */
-  
+
   // **** Options! ****
-  
+
   this.selectionColor = '#CC0000';
   this.selectionWidth = 5;
   this.interval = 30;
@@ -329,9 +329,9 @@ CanvasState.prototype.draw = function() {
     if (this.bgImage) {
       this.ctx.drawImage(this.bgImage, 0, 0);
     }
-    
+
     // ** Add stuff you want drawn in the background all the time here **
-    
+
     // draw all shapes
     var l = shapes.length;
     for (var i = 0; i < l; i++) {
@@ -341,7 +341,7 @@ CanvasState.prototype.draw = function() {
           shape.x + shape.w < 0 || shape.y + shape.h < 0) continue;
       shapes[i].draw(ctx);
     }
-    
+
     // draw selection
     // right now this is just a stroke along the edge of the selected Shape
     if (this.selection != null) {
@@ -350,14 +350,14 @@ CanvasState.prototype.draw = function() {
       ctx.lineWidth = lineWidth;
       // plainly ignore in phantomjs
       if (typeof ctx.setLineDash === "function")
-	ctx.setLineDash([10, 15]);
+        ctx.setLineDash([10, 15]);
       var mySel = this.selection;
       ctx.strokeRect(mySel.x - lineWidth, mySel.y - lineWidth,
-		     mySel.w + lineWidth * 2, mySel.h + lineWidth * 2);
+                     mySel.w + lineWidth * 2, mySel.h + lineWidth * 2);
     }
-    
+
     // ** Add stuff you want drawn on top all the time here **
-    
+
     this.dirty = false;
   }
 }
@@ -377,7 +377,7 @@ CanvasState.prototype.get_selection = function() {
       return null;
     for (var i = 0; i < this.shapes.length; i++) {
       if (this.shapes[i] == this.selection)
-	return this.selection;
+        return this.selection;
     }
 }
 
@@ -387,8 +387,8 @@ CanvasState.prototype.get_shape = function(idx) {
 
 CanvasState.prototype.delete_shape_idx = function(idx) {
     if (this.shapes[idx] == this.selection) {
-	$(this).trigger('shape.unselected');
-	this.selection = null;
+        $(this).trigger('shape.unselected');
+        this.selection = null;
     }
     this.shapes.splice(idx, 1);
     this.dirty = true;
@@ -409,7 +409,7 @@ CanvasState.prototype.delete_shapes = function() {
 // If you wanna be super-correct this can be tricky, we have to worry about padding and borders
 CanvasState.prototype.getMouse = function(e) {
   var element = this.canvas, offsetX = 0, offsetY = 0, mx, my;
-  
+
   // Compute the total offset
   if (element.offsetParent !== undefined) {
     do {
@@ -425,7 +425,7 @@ CanvasState.prototype.getMouse = function(e) {
 
   mx = e.pageX - offsetX;
   my = e.pageY - offsetY;
-  
+
   // We return a simple javascript object (a hash) with x and y defined
   return {x: mx, y: my};
 }
