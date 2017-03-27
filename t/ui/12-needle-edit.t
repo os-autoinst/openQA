@@ -89,7 +89,7 @@ sub goto_editpage() {
     # we're back on the main page
     $driver->title_is("openQA", "back on main page");
 
-    is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
+    is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
 
     $driver->get("/tests/99946");
     is(

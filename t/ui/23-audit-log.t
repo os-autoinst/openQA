@@ -58,7 +58,7 @@ $driver->title_is("openQA", "on main page");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
-is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 $driver->find_element('#user-action a')->click();
 $driver->find_element_by_link_text('Audit log')->click();
