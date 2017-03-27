@@ -256,15 +256,18 @@ subtest 'labeled jobs considered important' => sub {
     ok(!-e $filename, 'file got cleaned');
 };
 
-subtest 'download assets with correct permissions' => sub {
-    # need to whitelist github
-    $t->app->config->{global}->{download_domains} = 'github.com';
+SKIP: {
+    skip 'no network available', 1 if $ENV{OBS_RUN};
+    subtest 'download assets with correct permissions' => sub {
+        # need to whitelist github
+        $t->app->config->{global}->{download_domains} = 'github.com';
 
-    my $assetsource = 'https://github.com/os-autoinst/os-autoinst/blob/master/t/data/Core-7.2.iso';
-    my $assetpath   = 't/data/openqa/share/factory/iso/Core-7.2.iso';
-    run_gru('download_asset' => [$assetsource, $assetpath, 0]);
-    ok(-f $assetpath, 'asset downloaded');
-    is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
-};
+        my $assetsource = 'https://github.com/os-autoinst/os-autoinst/blob/master/t/data/Core-7.2.iso';
+        my $assetpath   = 't/data/openqa/share/factory/iso/Core-7.2.iso';
+        run_gru('download_asset' => [$assetsource, $assetpath, 0]);
+        ok(-f $assetpath, 'asset downloaded');
+        is(S_IMODE((stat($assetpath))[2]), 0644, 'asset downloaded with correct permissions');
+    };
+}
 
 done_testing();
