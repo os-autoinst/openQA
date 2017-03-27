@@ -55,13 +55,13 @@ unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
 }
 
 $driver->title_is("openQA");
-is($driver->find_element_by_id('user-action')->get_text(), 'Login', "noone logged in");
+is($driver->find_element('#user-action a')->get_text(), 'Login', "noone logged in");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");
 # but ...
 
-is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # expand user menu
 $driver->find_element('#user-action a')->click();

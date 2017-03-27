@@ -46,7 +46,7 @@ $driver->title_is("openQA", "back on main page");
 my @texts = map { $_->get_text() } $driver->find_elements('.progress-bar-softfailed', 'css');
 is_deeply(\@texts, ['2 softfailed'], 'Progress bars show soft fails');
 
-is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # follow a build to overview page
 $driver->find_element_by_link_text('Build0048')->click();

@@ -113,7 +113,7 @@ ok(make_path($resultdir));
 remove_tree('t/full-stack.d/openqa/images/');
 
 $driver->title_is("openQA", "on main page");
-is($driver->find_element_by_id('user-action')->get_text(), 'Login', "noone logged in");
+is($driver->find_element('#user-action a')->get_text(), 'Login', "noone logged in");
 $driver->find_element_by_link_text('Login')->click();
 # we're back on the main page
 $driver->title_is("openQA", "back on main page");

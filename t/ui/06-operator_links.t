@@ -76,7 +76,7 @@ $driver->find_element_by_link_text('Login')->click();
 $driver->title_is("openQA", "back on main page");
 # but ...
 
-is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', "logged in as demo");
+is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
 
 # now hack ourselves to be just operator - this is stupid procedure, but we don't have API for user management
 $driver->find_element('#user-action a')->click();

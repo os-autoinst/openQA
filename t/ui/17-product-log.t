@@ -74,7 +74,7 @@ is(scalar @restart_buttons, 0, 'no restart buttons present when not logged in');
 
 # Log in as Demo in phantomjs webui
 $driver->find_element_by_link_text('Login')->click();
-is($driver->find_element_by_id('user-action')->get_text(), 'Logged in as Demo', 'logged in as demo');
+is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', 'logged in as demo');
 
 # Test Scheduled isos are displayed
 $driver->find_element('#user-action a')->click();
