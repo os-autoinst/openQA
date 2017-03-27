@@ -180,6 +180,7 @@ sub write_db {
     print $fh $json->encode($cache);
     close($fh);
     log_debug("Saving cache db file");
+    read_db();
 }
 
 sub read_db {
