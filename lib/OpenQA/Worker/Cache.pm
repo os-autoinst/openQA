@@ -36,7 +36,6 @@ my $cache;
 my $host;
 my $location;
 my $limit   = 50;
-my $remove  = 1;
 my $db_file = "cache.db";
 
 sub get {
@@ -56,7 +55,7 @@ sub set {
 sub init {
     my $class;
     ($host, $location) = @_;
-    $db_file = catdir($location,$db_file);
+    $db_file = catdir($location, $db_file);
     @{$cache->{$host}} = read_db();
     log_debug(__PACKAGE__ . ": Initialized with $host at $location");
 }
@@ -152,18 +151,23 @@ sub get_asset {
     return $asset;
 }
 
-sub purge_cache {
-    log_debug("Expiring all the assets");
-    map { expire_asset($_) } @{$cache->{$host}};
-    write_db();
-}
-
 sub expire_asset {
     # currently only
     while (@{$cache->{$host}} > $limit) {
+        my $count = @{$cache->{$host}};
         my $asset = pop(@{$cache->{$host}});
-        unlink($asset) if $remove;
-        log_debug("Purged $asset due to $limit");
+        if (-e $asset) {
+            unlink($asset);
+            if ($@) {
+                log_error("Cannot purge $asset: $@");
+            }
+            else {
+                log_debug("Purged $asset due to assets in cache ($count) being over $limit");
+            }
+        }
+        else {
+            log_debug("$asset does not exist, reference has been removed from the cache");
+        }
     }
     write_db();
 }
