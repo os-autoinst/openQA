@@ -29,13 +29,13 @@ our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
   $hosts $ws_to_host $current_host
   $worker_caps $testresults update_setup_status
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
-  add_timer remove_timer change_timer get_timer
+  add_timer remove_timer change_timer get_timer get_timers
   api_call verify_workerid register_worker ws_call);
 
 # Exported variables
 our $job;
 our $verbose  = 0;
-our $instance = 'manual';
+our $instance = 99;
 our $worker_settings;
 our $pooldir;
 our $nocleanup = 0;
@@ -129,6 +129,10 @@ sub change_timer {
     $callback = $timers->{$timer}->[1] unless $callback;
     remove_timer($timer);
     add_timer($timer, $newtimeout, $callback);
+}
+
+sub get_timers {
+    return keys(%$timers);
 }
 
 sub get_timer {
