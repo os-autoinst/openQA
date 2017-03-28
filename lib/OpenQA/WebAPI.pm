@@ -310,7 +310,7 @@ sub startup {
                 $port = $1 + 1;
             }
             $c->redirect_to("http://localhost:$port/ws/$workerid");
-        });
+        })->name('worker_websockets');
     my $api_job_auth = $r->under('/api/v1')->to(controller => 'API::V1', action => 'auth_jobtoken');
     my $api_r_job = $api_job_auth->route('/')->to(namespace => 'OpenQA::WebAPI::Controller::API::V1');
     $api_r_job->get('/whoami')->name('apiv1_jobauth_whoami')->to('job#whoami');    # primarily for tests
