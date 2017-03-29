@@ -36,7 +36,7 @@ my $cache;
 my $host;
 my $location;
 my $limit   = 50;
-my $db_file = "cache.db";
+my $db_file;
 
 sub get {
     my ($asset) = @_;
@@ -55,7 +55,7 @@ sub set {
 sub init {
     my $class;
     ($host, $location) = @_;
-    $db_file = catdir($location, $db_file);
+    $db_file = catdir($location, 'cache.db');
     @{$cache->{$host}} = read_db();
     log_debug(__PACKAGE__ . ": Initialized with $host at $location");
 }
