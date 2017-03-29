@@ -1332,18 +1332,25 @@ sub _carry_over_candidate {
         my $job_fr = $job->_failure_reason;
 
         log_debug(sprintf("checking take over from %d: %s vs %s", $job->id, $job_fr, $current_failure_reason));
-        # we found a good candidate
-        return $job if $job_fr eq $current_failure_reason;
+        if ($job_fr eq $current_failure_reason) {
+            log_debug("we found a good candidate");
+            return $job;
+        }
 
-        # ignore jobs with repeated problems
-        next if ($job_fr eq $prev_failure_reason);
+        if ($job_fr eq $prev_failure_reason) {
+            log_debug("ignoring job with repeated problem");
+            next;
+        }
 
         $prev_failure_reason = $job_fr;
         $state_changes++;
 
         # if the job changed failures more often, we assume
         # that the carry over is pointless
-        return if $state_changes > $state_changes_limit;
+        if ($state_changes > $state_changes_limit) {
+            log_debug("scenario changed state for more than $state_changes_limit, aborting search for carry over candidate");
+            return;
+        }
     }
     return;
 }
