@@ -46,6 +46,29 @@ sub post_comment_1001 {
     return $comments->create({group_id => 1001, user_id => 99901, text => $comment});
 }
 
+# this and 'create_job_version_build' are for adding jobs on the fly,
+# copied from 22-dashboard.t
+my $job_hash = {
+    BUILD    => '0048@0815',
+    DISTRI   => 'opensuse',
+    VERSION  => 'Factory',
+    FLAVOR   => 'tape',
+    ARCH     => 'x86_64',
+    MACHINE  => 'xxx',
+    TEST     => 'dummy',
+    state    => OpenQA::Schema::Result::Jobs::DONE,
+    result   => OpenQA::Schema::Result::Jobs::FAILED,
+    group_id => 1001
+};
+
+sub create_job_version_build {
+    my ($version, $build) = @_;
+    my %job_hash;
+    $job_hash->{VERSION} = $version;
+    $job_hash->{BUILD}   = $build;
+    $jobs->create($job_hash);
+}
+
 =pod
 Given 'group_overview' page
 When user creates comment with tag:<build_ref>:important:<tag_ref>
@@ -64,11 +87,12 @@ subtest 'tag icon on group overview on important build' => sub {
 };
 
 subtest 'test whether tags with @ work, too' => sub {
-    post_comment_1001 'tag:0048@0815:important:GM';
+    post_comment_1001 'tag:0048@0815:important:RC2';
     my $get  = $t->get_ok('/group_overview/1001')->status_is(200);
     my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
-    is(scalar @tags, 2,    'one build tagged');
-    is($tags[0],     'GM', 'tag description shown');
+    is(scalar @tags, 2, 'two builds tagged');
+    # this build will sort *above* the first build, so item 0
+    is($tags[0], 'RC2', 'tag description shown');
 };
 
 =pod
@@ -121,6 +145,26 @@ subtest 'show_tags query parameter enables/disables tags on index page' => sub {
         is(scalar @{$t->tx->res->dom->find("i[title='important']")},
             $enabled, "tag (not) shown on index page (show_tags=$enabled)");
     }
+};
+
+subtest 'test tags for Fedora compose-style BUILD values' => sub {
+    create_job_version_build('26', 'Fedora-26-20170329.n.0');
+    post_comment_1001 'tag:Fedora-26-20170329.n.0:important:candidate';
+    my $get  = $t->get_ok('/group_overview/1001')->status_is(200);
+    my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    is(scalar @tags, 2, 'two builds tagged');
+    # this build will sort *after* the remaining SUSE build, so item 1
+    is($tags[1], 'candidate', 'tag description shown');
+};
+
+subtest 'test tags for Fedora update-style BUILD values' => sub {
+    create_job_version_build('26', 'FEDORA-2017-3456ba4c93');
+    post_comment_1001 'tag:FEDORA-2017-3456ba4c93:important:critpath';
+    my $get  = $t->get_ok('/group_overview/1001')->status_is(200);
+    my @tags = $t->tx->res->dom->find('.tag')->map('text')->each;
+    is(scalar @tags, 3, 'three builds tagged');
+    # this build will sort *before* the other Fedora build, so item 1
+    is($tags[1], 'critpath', 'tag description shown');
 };
 
 sub _map_expired {
