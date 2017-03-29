@@ -275,32 +275,43 @@ subtest 'jobs belonging to important builds are not cancelled by new iso post' =
     lj;
     ok(!grep({ $_->{settings}->{BUILD} =~ '009[2]' } @jobs), 'no jobs from intermediate, not-important build');
     is(scalar @jobs, 21, 'only the important jobs, jobs from the current build and the important build are scheduled');
+    # now test with a VERSION-BUILD format tag
+    $tag = 'tag:13.1-0093:important';
+    $t->app->db->resultset("JobGroups")->find(1001)->comments->create({text => $tag, user_id => 99901});
+    $res = schedule_iso(
+        {ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0094'});
+    $ret  = $t->get_ok('/api/v1/jobs?state=scheduled');
+    @jobs = @{$ret->tx->res->json->{jobs}};
+    lj;
+    ok(grep({ $_->{settings}->{BUILD} eq '0091' } @jobs), 'we have jobs from important build 0091');
+    ok(grep({ $_->{settings}->{BUILD} eq '0093' } @jobs), 'we have jobs from important build 0093');
+    is(scalar @jobs, 31, 'only the important jobs, jobs from the current build and the important builds are scheduled');
 };
 
 subtest 'build obsoletion/depriorization' => sub {
-    my %iso = (ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0094');
-    $res = schedule_iso({%iso, BUILD => '0094'});
+    my %iso = (ISO => $iso, DISTRI => 'opensuse', VERSION => '13.1', FLAVOR => 'DVD', ARCH => 'i586', BUILD => '0095');
+    $res = schedule_iso({%iso, BUILD => '0095'});
     $ret = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
     my @jobs = @{$ret->tx->res->json->{jobs}};
     lj;
-    ok(!grep({ $_->{settings}->{BUILD} =~ '009[23]' } @jobs), 'recent build was obsoleted');
-    is(scalar @jobs, 21, 'current build and the important build are scheduled');
-    $res  = schedule_iso({%iso, BUILD => '0095', '_NOOBSOLETEBUILD' => 1});
+    ok(!grep({ $_->{settings}->{BUILD} =~ '009[24]' } @jobs), 'recent non-important builds were obsoleted');
+    is(scalar @jobs, 31, 'current build and the important build are scheduled');
+    $res  = schedule_iso({%iso, BUILD => '0096', '_NOOBSOLETEBUILD' => 1});
     $ret  = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
     @jobs = @{$ret->tx->res->json->{jobs}};
     lj;
-    my @jobs_previous_build = grep { $_->{settings}->{BUILD} eq '0094' } @jobs;
+    my @jobs_previous_build = grep { $_->{settings}->{BUILD} eq '0095' } @jobs;
     ok(@jobs_previous_build, 'previous build was not obsoleted');
     is($jobs_previous_build[0]->{priority}, 40, 'job is at same priority as before');
     is($jobs_previous_build[1]->{priority}, 40, 'second job, same priority');
     # set one job to already highest allowed
     $ret = $t->put_ok('/api/v1/jobs/' . $jobs_previous_build[1]->{id}, json => {priority => 100})->status_is(200);
     my $job_at_prio_limit = $ret->tx->res->json->{job_id};
-    $res  = schedule_iso({%iso, BUILD => '0096', '_DEPRIORITIZEBUILD' => 1});
+    $res  = schedule_iso({%iso, BUILD => '0097', '_DEPRIORITIZEBUILD' => 1});
     $ret  = $t->get_ok('/api/v1/jobs?state=scheduled')->status_is(200);
     @jobs = @{$ret->tx->res->json->{jobs}};
     lj;
-    @jobs_previous_build = grep { $_->{settings}->{BUILD} eq '0094' } @jobs;
+    @jobs_previous_build = grep { $_->{settings}->{BUILD} eq '0095' } @jobs;
     ok(@jobs_previous_build, 'old build still in progress');
     is($jobs_previous_build[0]->{priority}, 50, 'job of previous build is deprioritized');
     $t->get_ok('/api/v1/jobs/' . $job_at_prio_limit)->status_is(200);

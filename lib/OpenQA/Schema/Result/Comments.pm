@@ -119,9 +119,10 @@ e.g. 'tag:0123:important:GM' returns a list of '0123', 'important' and 'GM'.
 sub tag {
     my ($self) = @_;
     $self->text =~ /\btag:(?<build>[-.@\d\w]+):(?<type>[-@\d\w]+)(:(?<description>[@\d\w]+))?\b/;
-    # note: calling this 'build' is a slight lie, because it may be
-    # either VERSION-BUILD or just BUILD. Things that consume it must
-    # be aware of this
+    # note: 'build' here may be either VERSION-BUILD or just BUILD.
+    # If the tag is in VERSION-BUILD form it will return the entire
+    # value, it does not isolate the BUILD component. Things that
+    # consume it must be aware of this
     return $+{build}, $+{type}, $+{description};
 }
 
