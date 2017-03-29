@@ -35,7 +35,7 @@ our (@ISA, @EXPORT);
 my $cache;
 my $host;
 my $location;
-my $limit   = 50;
+my $limit = 50;
 my $db_file;
 
 sub get {
