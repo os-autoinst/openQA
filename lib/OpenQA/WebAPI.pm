@@ -355,6 +355,14 @@ sub startup {
     $job_r->post('/cancel')->name('apiv1_cancel')->to('job#cancel');
     $job_r->post('/duplicate')->name('apiv1_duplicate')->to('job#duplicate');
 
+    # api/v1/bugs
+    $api_public_r->get('/bugs')->name('apiv1_bugs')->to('bug#list');
+    $api_ro->post('/bugs')->name('apiv1_create_bug')->to('bug#create');
+    my $bug_r = $api_ro->route('/bugs/:id', bid => qr/\d+/);
+    $bug_r->get('/')->name('apiv1_show_bug')->to('bug#show');
+    $bug_r->put('/')->name('apiv1_put_bug')->to('bug#update');
+    $bug_r->delete('/')->name('apiv1_delete_bug')->to('bug#destroy');
+
     # api/v1/workers
     $api_public_r->get('/workers')->name('apiv1_workers')->to('worker#list');
     $api_ro->post('/workers')->name('apiv1_create_worker')->to('worker#create');
