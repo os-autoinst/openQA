@@ -40,7 +40,7 @@
                     <td class="links">
                         % for my $step (@{$module->{details}}) {
                             <div class="links_a">
-                                <div class="fa fa-caret-down"></div>
+                                <div class="fa fa-caret-up"></div>
                                 % my $url   = url_for('step', moduleid => $module->{name}, stepid => $step->{num}, testid => $testid);
                                 % my $href  = "#step/$module->{name}/$step->{num}";
                                 % my $title = $step->{text} ? $step->{title} : $step->{name};
