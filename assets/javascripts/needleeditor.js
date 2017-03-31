@@ -352,13 +352,14 @@ function reactToSaveNeedle(data) {
 function saveNeedle(e) {
   var form = $("#save_needle_form");
   var errors = [];
-  var selection = window.needles[$('#tags_select').val()];
-  var takeMatches = $('#take_matches').prop('checked');
-  if(!selection.tags.length) {
+  var tagSelection = window.needles[$('#tags_select').val()];
+  if(!tagSelection.tags.length) {
       errors.push('No tags specified.');
   }
-  if((!takeMatches && !selection.area.length)
-      || (takeMatches && !selection.matches.length)) {
+  var areaSelection = window.needles[$('#area_select').val()];
+  var takeMatches = $('#take_matches').prop('checked');
+  if((!takeMatches && !areaSelection.area.length)
+      || (takeMatches && !areaSelection.matches.length)) {
       errors.push('No areas defined.');
   }
   if(errors.length) {
