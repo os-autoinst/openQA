@@ -269,6 +269,21 @@ is($driver->find_element_by_id('needleeditor_name')->get_value(), "", "needle na
 $driver->find_element_by_id('needleeditor_name')->send_keys($needlename);
 is($driver->find_element_by_id('needleeditor_name')->get_value(), "$needlename", "new needle name inputed");
 
+# select 'Copy areas from: None'
+$driver->execute_script('$("#area_select option").eq(0).prop("selected", true)');
+$driver->find_element_by_id('save')->click();
+wait_for_ajax;
+is(
+    $driver->find_element('.alert-danger span')->get_text(),
+    "Unable to save needle:\nNo areas defined.",
+    'areas verified via JavaScript when "Copy areas from: None" selected'
+);
+# dismiss the alert (can't use click because of fade effect)
+$driver->execute_script('$(".alert-danger").remove()');
+
+# select 'Copy areas from: 100%: inst-timezone-text' again
+$driver->execute_script('$("#area_select option").eq(1).prop("selected", true)');
+
 # create new needle by clicked save button
 $driver->find_element_by_id('save')->click();
 wait_for_ajax;
