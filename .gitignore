@@ -4,9 +4,11 @@ cover_db/
 temp
 /testresults
 /t/data/openqa/db/*.sqlite
+/t/data/openqa/db/db.lock
 /t/data/openqa/testresults
 /t/data/openqa/share/tests
 /t/data/7da661d0c3faf37d49d33b6fc308f2.png
+/t/log_phantomjs
 /factory
 /public/packed/
 /public/sass/bootstrap.scss
