@@ -2,7 +2,7 @@
     % my $build = $build_res->{build};
     % my $group_id;
     <div class="row build-row <%= $children ? ($default_expanded ? 'children-expanded' : 'children-collapsed') : 'no-children' %>">
-        <div class="col-md-4 text-nowrap">
+        <div class="col-lg-4 text-nowrap">
             <h4>
                 % if ($children) {
                     % $group_id = "group$group->{id}_build$build_res->{escaped_id}";
@@ -25,7 +25,7 @@
                 %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $build_res, id_prefix => ''
             </h4>
         </div>
-        <div class="col-md-8">
+        <div class="col-lg-8">
             % if ($max_jobs) {
                 %= include 'main/build_progressbar', max_jobs => $max_jobs, result => $build_res
             % }
