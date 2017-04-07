@@ -96,8 +96,8 @@ my %settingsE = (%settings, TEST => 'E');
 my %settingsF = (%settings, TEST => 'F');
 
 sub _job_create {
-    my ($settings, $parellel_jobs, $start_after_jobs) = @_;
-    $settings->{_PARALLEL_JOBS}    = $parellel_jobs    if $parellel_jobs;
+    my ($settings, $parallel_jobs, $start_after_jobs) = @_;
+    $settings->{_PARALLEL_JOBS}    = $parallel_jobs    if $parallel_jobs;
     $settings->{_START_AFTER_JOBS} = $start_after_jobs if $start_after_jobs;
     my $job = $schema->resultset('Jobs')->create_from_settings($settings);
     # reload all values from database so we can check against default values

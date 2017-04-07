@@ -54,9 +54,9 @@ function renderTestName ( data, type, row ) {
             }
         }
         depsTooltip.quantify(parents.Chained.length, 'chained parent', 'chained parents');
-        depsTooltip.quantify(parents.Parallel.length, 'parellel parent', 'parellel parents');
+        depsTooltip.quantify(parents.Parallel.length, 'parallel parent', 'parallel parents');
         depsTooltip.quantify(children.Chained.length, 'chained child', 'chained children');
-        depsTooltip.quantify(children.Parallel.length, 'parellel child', 'parellel children');
+        depsTooltip.quantify(children.Parallel.length, 'parallel child', 'parallel children');
         if (depsTooltip.length) {
             html += ' <a href="/tests/' + row.id + '" title="' + depsTooltip.join(', ') + '"'
             + highlightJobsHtml(children.Parallel.concat(children.Chained), parents.Parallel.concat(parents.Chained))
