@@ -563,16 +563,8 @@ a.restart-link {
     width: auto;
 }
 
-.review {
-    opacity: 0.5;
-}
-
 .badge-all-passed {
     color: $color-module-passed;
-}
-
-.badge-all-passed-or-softfailed {
-    color: $color-module-softfailed;
 }
 
 #needleeditor_tags label {

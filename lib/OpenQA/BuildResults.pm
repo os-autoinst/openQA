@@ -24,16 +24,13 @@ use Sort::Versions;
 sub init_job_figures {
     my ($job_result) = @_;
 
-    $job_result->{passed}                            = 0;
-    $job_result->{failed}                            = 0;
-    $job_result->{unfinished}                        = 0;
-    $job_result->{labeled}                           = 0;
-    $job_result->{labeled_softfailed}                = 0;
-    $job_result->{softfailed}                        = 0;
-    $job_result->{softfailed_with_failed_modules}    = 0;
-    $job_result->{softfailed_without_failed_modules} = 0;
-    $job_result->{skipped}                           = 0;
-    $job_result->{total}                             = 0;
+    $job_result->{passed}     = 0;
+    $job_result->{failed}     = 0;
+    $job_result->{unfinished} = 0;
+    $job_result->{labeled}    = 0;
+    $job_result->{softfailed} = 0;
+    $job_result->{skipped}    = 0;
+    $job_result->{total}      = 0;
 }
 
 sub count_job {
@@ -47,13 +44,6 @@ sub count_job {
         }
         if ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED) {
             $jr->{softfailed}++;
-            if ($job->has_failed_modules) {
-                $jr->{softfailed_with_failed_modules}++;
-                $jr->{labeled_softfailed}++ if $labels->{$job->id};
-            }
-            else {
-                $jr->{softfailed_without_failed_modules}++;
-            }
             return;
         }
         if (   $job->result eq OpenQA::Schema::Result::Jobs::FAILED
@@ -86,13 +76,8 @@ sub count_job {
 sub add_review_badge {
     my ($build_res) = @_;
 
-    $build_res->{all_passed}
-      = $build_res->{passed} + $build_res->{softfailed_without_failed_modules} == $build_res->{total};
-    $build_res->{reviewed}
-      = $build_res->{labeled} >= $build_res->{failed};
-    $build_res->{reviewed_also_softfailed}
-      = $build_res->{reviewed} && $build_res->{labeled_softfailed} >= $build_res->{softfailed_with_failed_modules};
-    $build_res->{all_labeled} = $build_res->{labeled} + $build_res->{labeled_softfailed};
+    $build_res->{all_passed} = $build_res->{passed} + $build_res->{softfailed} >= $build_res->{total};
+    $build_res->{reviewed}   = $build_res->{labeled} >= $build_res->{failed};
 }
 
 sub compute_build_results {
