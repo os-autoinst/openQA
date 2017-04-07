@@ -32,6 +32,20 @@ link:docs/UsersGuide.asciidoc[Users Guide].
 If you are interested in writing tests using openQA read the
 link:docs/WritingTests.asciidoc[Tests Developer Guide].
 
+== Contributing
+[id="getting_involved"]
+
 If you are interested in contributing to openQA itself, check the
 link:docs/Contributing.asciidoc[Developer Guide], write your code and send a
 pull request ;-)
+
+=== Issue trackers and support
+:openqav3: https://progress.opensuse.org/projects/openqav3[openQAv3 project]
+
+Our main issue tracker is at {openqav3} in openSUSE's project management
+tool. This Redmine instance is used to coordinate the main development
+effort organizing the existing issues (bugs and desired features) into
+'target versions'.
+
+Currently developers meet in IRC channel
+irc://chat.freenode.net/opensuse-factory[#opensuse-factory]
