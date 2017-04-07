@@ -235,16 +235,20 @@ sub tags {
         my @tag   = $comment->tag;
         my $build = $tag[0];
         next unless $build;
-        log_debug('Tag found on build ' . $tag[0] . ' of type ' . $tag[1]);
+
+        my $version = $tag[3];
+        my $tag_id = $version ? "$version-$build" : $build;
+
+        log_debug('Tag found on build ' . $build . ' of type ' . $tag[1]);
         log_debug('description: ' . $tag[2]) if $tag[2];
         if ($tag[1] eq '-important') {
             log_debug('Deleting tag on build ' . $build);
-            delete $res{$build};
+            delete $res{$tag_id};
             next;
         }
 
         # ignore tags on non-existing builds
-        $res{$build} = {type => $tag[1], description => $tag[2]};
+        $res{$tag_id} = {build => $build, type => $tag[1], description => $tag[2], version => $version};
     }
 
     return \%res;

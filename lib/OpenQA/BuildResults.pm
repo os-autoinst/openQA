@@ -121,9 +121,19 @@ sub compute_build_results {
         $search_filter{t_created}
           = {'>' => time2str('%Y-%m-%d %H:%M:%S', time - 24 * 3600 * $time_limit_days, 'UTC')};
     }
+
+    # add search filter for tags
+    # caveat: a tag that references only a build, not including a version, might be ambiguous
     if ($tags) {
-        # caveat: A tag that references only a build, not including a version, might be ambiguous
-        $search_filter{BUILD} = {-in => [keys %$tags]};
+        my @builds;
+        my @versions;
+        for my $tag_id (keys %$tags) {
+            my $tag = $tags->{$tag_id};
+            push(@builds,   $tag->{build})   if $tag->{build};
+            push(@versions, $tag->{version}) if $tag->{version};
+        }
+        $search_filter{BUILD} = {-in => \@builds};
+        $search_filter{VERSION} = {-in => \@versions} if @versions;
     }
 
     # find relevant builds
