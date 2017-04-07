@@ -52,15 +52,14 @@ sub main {
         # if caching is not enabled
 
         if ($worker_settings->{CACHEDIRECTORY}) {
-            $dir = prepare_cache_directory($h, $worker_settings->{CACHEDIRECTORY});
+            prepare_cache_directory($h, $worker_settings->{CACHEDIRECTORY});
         }
-        else {
-            my @dirs = ($host_settings->{$h}{SHARE_DIRECTORY}, catdir($OpenQA::Utils::prjdir, 'share'));
-            ($dir) = grep { $_ && -d } @dirs;
-            unless ($dir) {
-                log_error("Can not find working directory for host $h. Ignoring host");
-                next;
-            }
+
+        my @dirs = ($host_settings->{$h}{SHARE_DIRECTORY}, catdir($OpenQA::Utils::prjdir, 'share'));
+        ($dir) = grep { $_ && -d } @dirs;
+        unless ($dir) {
+            log_error("Can not find working directory for host $h. Ignoring host");
+            next;
         }
 
         log_debug("Using dir $dir for host $h") if $verbose;
