@@ -3,13 +3,8 @@
         <i class="badge-all-passed fa fa-certificate" title="All passed"></i>
     </span>
 % }
-% elsif ($build_res->{reviewed_also_softfailed}) {
-    <span id="<%= $id_prefix %>review-also-softfailed-<%= $group_build_id %>">
-        <i class="review-also-softfailed fa fa-certificate" title="Reviewed including all softfailed (<%= $build_res->{all_labeled}; %> <%= $build_res->{all_labeled} == 1 ? 'comment' : 'comments' %>)"></i>
-    </span>
-% }
 % elsif ($build_res->{reviewed}) {
     <span id="<%= $id_prefix %>review-<%= $group_build_id %>">
-        <i class="review fa fa-certificate" title="Reviewed (<%= $build_res->{all_labeled}; %> <%= $build_res->{all_labeled} == 1 ? 'comment' : 'comments' %>)"></i>
+        <i class="review fa fa-certificate" title="Reviewed (<%= $build_res->{labeled}; %> <%= $build_res->{labeled} == 1 ? 'comment' : 'comments' %>)"></i>
     </span>
 % }

@@ -238,7 +238,7 @@ subtest 'job with no modules => overall is failed' => sub {
     is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
 };
 
-subtest 'carry over for soft fails' => sub {
+subtest 'carry over for soft-fails' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'K';
     my $job = _job_create(\%_settings);

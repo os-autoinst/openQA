@@ -76,7 +76,7 @@ like(get_summary, qr/Overall Summary of opensuse build 0091/i, 'specifying group
 #
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048'});
 $get->status_is(200);
-like(get_summary, qr/\QPassed: 0 Soft Failure: 2 Failed: 1\E/i);
+like(get_summary, qr/\QPassed: 0 Soft-Failed: 2 Failed: 1\E/i);
 
 # Check the headers
 $get->element_exists('#flavor_DVD_arch_x86_64');
@@ -152,11 +152,7 @@ $get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
 
 $form = {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1};
 $get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
-like(
-    get_summary,
-    qr/Passed: 0 Failed: 1/i,
-    'todo=1 shows only unlabeled left failed as softfailed with failing modules was labeled'
-);
+like(get_summary, qr/Passed: 0 Failed: 1/i, 'todo=1 shows only unlabeled left failed');
 
 # add a failing module to one of the softfails to test 'TODO' option
 my $failing_module = $t->app->db->resultset('JobModules')->create(
@@ -172,11 +168,11 @@ $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version =>
   ->status_is(200);
 like(
     get_summary,
-    qr/Passed: 0 Soft Failure: 1 Failed: 1/i,
-    'todo=1 shows only unlabeled left failed as softfailed with failing modules was labeled'
+    qr/Passed: 0 Soft-Failed: 1 Failed: 1/i,
+    'todo=1 shows only unlabeled left failed (previously softfailed) was labeled'
 );
-$t->element_exists_not('#res-99939', 'softfailed without failing module filtered out');
-$t->element_exists('#res-99936', 'softfailed with unreviewed failing module present');
+$t->element_exists_not('#res-99939', 'softfailed filtered out');
+$t->element_exists('#res-99936', 'unreviewed failed because of new failing module present');
 
 my $review_comment = $t->app->db->resultset('Comments')->create(
     {
@@ -186,12 +182,8 @@ my $review_comment = $t->app->db->resultset('Comments')->create(
     });
 $get = $t->get_ok('/tests/overview' => form => {distri => 'opensuse', version => 'Factory', build => '0048', todo => 1})
   ->status_is(200);
-like(
-    get_summary,
-    qr/Passed: 0 Failed: 1/i,
-    'todo=1 shows only unlabeled left failed as softfailed with failing modules was labeled'
-);
-$t->element_exists_not('#res-99936', 'softfailed with reviewed failing module filtered out');
+like(get_summary, qr/Passed: 0 Failed: 1/i, 'todo=1 shows only unlabeled left failed after new failed was labeled');
+$t->element_exists_not('#res-99936', 'reviewed failed filtered out');
 
 $review_comment->delete();
 $failing_module->delete();

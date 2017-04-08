@@ -167,7 +167,7 @@ sub register {
                 return '';
             }
             elsif ($res =~ /^fail/) {
-                return 'resultfail';
+                return 'resultfailed';
             }
             elsif ($res eq 'softfailed') {
                 return 'resultsoftfailed';
@@ -195,7 +195,7 @@ sub register {
                 return 'unknown';
             }
             elsif ($res eq 'softfailed') {
-                return 'soft failed';
+                return 'soft-failed';
             }
             else {
                 return $res;
@@ -325,7 +325,7 @@ sub _step_thumbnail {
         $imgurl = $c->url_for('test_thumbnail', testid => $testid, filename => $screenshot->{screenshot});
     }
     my $result = lc $screenshot->{result};
-    $result = 'softfail' if grep { $_ eq 'workaround' } (@{$screenshot->{properties} || []});
+    $result = 'softfailed' if grep { $_ eq 'workaround' } (@{$screenshot->{properties} || []});
     my $content = $c->image(
         $imgurl => width => $ref_width,
         height  => $ref_height,

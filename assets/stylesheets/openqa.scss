@@ -1,4 +1,4 @@
-$color-softfail: #EEB560;
+$color-softfailed: #EEB560;
 $color-ok: #CDFFB9;
 $color-warning: #ff9;
 $color-failed: #FF4E46;
@@ -31,7 +31,7 @@ $color-step-actions: #666;
                 color: $color-result;
         }
         .progress-bar-softfailed {
-                background-color: $color-softfail;
+                background-color: $color-softfailed;
                 color: $color-result;
         }
         .progress-bar-unfinished {
@@ -87,7 +87,7 @@ h2 .fa {
 
 #info_box {
         &.panel-warning .panel-heading {
-                background-color: $color-softfail;
+                background-color: $color-softfailed;
                 color: $color-result;
         }
 }
@@ -105,8 +105,8 @@ h2 .fa {
 .resultunknown { background-color: $color-result-missing; color: $color-result; }
 .resultrunning { background-color: $color-result-testing; color: $color-result; }
 .resultwarning { background-color: $color-warning; color: $color-result; }
-.resultsoftfailed { background-color: $color-softfail; color: $color-result; }
-.resultfail { background-color: $color-result-failed; color: $color-result; }
+.resultsoftfailed { background-color: $color-softfailed; color: $color-result; }
+.resultfailed { background-color: $color-result-failed; color: $color-result; }
 .resultfailed { background-color: $color-result-failed; color: $color-result; }
 .resultmissing { background-color: $color-result-missing; color: $color-result; }
 
@@ -174,7 +174,7 @@ td .resborder {
         border-color: $color-resborder-ok;
 }
 
-.resborder_fail {
+.resborder_failed {
         border-color: $color-resborder-fail;
 }
 
@@ -182,8 +182,8 @@ td .resborder {
         border-color: $color-resborder-unk;
 }
 
-.resborder_softfail {
-        border-color: $color-softfail;
+.resborder_softfailed {
+        border-color: $color-softfailed;
 }
 
 img.resborder_na {
@@ -470,7 +470,7 @@ div.flags {
 .fa.module_failed { color: $color-failed; }
 .fa.module_none { color: $color-module-none; }
 .fa.module_passed { color: $color-module-passed !important; }
-.fa.module_softfail { color: $color-softfail; }
+.fa.module_softfailed { color: $color-softfailed; }
 .fa.result_failed {color: $color-failed; }
 .fa.result_incomplete { color: $color-incomplete; }
 .fa.result_none { color: $color-module-none; }
@@ -479,7 +479,7 @@ div.flags {
 .fa.result_parallel_restarted { color: $color-module-none; }
 .fa.result_passed { color: $color-module-passed !important; }
 .fa.result_skipped { color: $color-module-none; }
-.fa.result_softfailed { color: $color-softfail; }
+.fa.result_softfailed { color: $color-softfailed; }
 .fa.result_unknown { color:$color-warning; }
 .fa.result_user_cancelled { color: $color-module-none; }
 .fa.result_user_restarted { color: $color-module-none; }
@@ -563,16 +563,8 @@ a.restart-link {
     width: auto;
 }
 
-.review {
-    opacity: 0.5;
-}
-
 .badge-all-passed {
     color: $color-module-passed;
-}
-
-.badge-all-passed-or-softfailed {
-    color: $color-module-softfailed;
 }
 
 #needleeditor_tags label {
