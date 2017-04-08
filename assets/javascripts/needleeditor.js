@@ -143,10 +143,10 @@ NeedleEditor.ShapeFromArea = function(a) {
 
 NeedleEditor.prototype.DrawAreas = function() {
   var editor = this;
-  // not yet there 
+  // not yet there
   if (!editor.cv)
     return false;
-  
+
   jQuery.each(editor.needle['area'], function(index, area) {
     editor.cv.addShape(NeedleEditor.ShapeFromArea(area));
   });
@@ -198,7 +198,7 @@ NeedleEditor.prototype.LoadNeedle = function(url) {
 
 NeedleEditor.prototype.LoadAreas = function(areas) {
   var editor = this;
-  
+
   editor.needle["area"] = areas;
   if (this.cv) {
     this.cv.delete_shapes();
@@ -264,7 +264,7 @@ NeedleEditor.prototype.setMatch = function(value) {
     }
     idx = 0;
   }
-  
+
   this.needle['area'][idx].match = parseFloat(value);
   this.UpdateTextArea();
 }
@@ -406,7 +406,7 @@ function setup_needle_editor(imageurl, default_needle)
       return addTag();
     return true;
   });
-  
+
   $('#property_workaround').click(function() { nEditor.changeProperty(this.name, this.checked); });
 
   $('#image_select').change(loadBackground);
@@ -439,7 +439,7 @@ function setup_needle_editor(imageurl, default_needle)
     }
     $('#match').val(nEditor.needle['area'][idx].match || 96);
   });
-  
+
   $('#review_json').popover({
     trigger: 'focus',
     content: function() { return $('#needleeditor_textarea').val(); },

@@ -40,11 +40,11 @@ function renderCommentHeading(comment, commentId) {
     return heading;
 }
 
-function deleteComment(deleteButton) {    
+function deleteComment(deleteButton) {
     var deleteButton = $(deleteButton);
     var author = deleteButton.data('author');
     var url = deleteButton.data('delete-url');
-    
+
     if(window.confirm("Do you really want to delete the comment written by " + author + "?")) {
         $.ajax({
             url: url,
@@ -102,7 +102,7 @@ function updateComment(form) {
                 showCommentEditor(form);
                 window.alert('The comment couldn\'t be updated: ' + thrownError);
             }
-        });   
+        });
     } else {
         window.alert('The comment text mustn\'t be empty.');
     }
@@ -112,7 +112,7 @@ function addComment(form, insertAtBottom) {
     var editorForm = $(form);
     var textElement = editorForm.find('[name="text"]');
     var text = textElement.val();
-    
+
     if(text.length) {
         var url = form.action;
         $.ajax({

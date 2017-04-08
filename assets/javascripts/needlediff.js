@@ -274,9 +274,9 @@ function setDiffScreenshot(differ, screenshotSrc) {
     var gray_canvas = document.createElement('canvas');
     gray_canvas.width = image.width;
     gray_canvas.height = image.height;
-    
+
     var gray_context = gray_canvas.getContext('2d');
-    
+
     gray_context.drawImage(image, 0, 0);
     var imageData = gray_context.getImageData(0, 0, image.width, image.height);
     var data = imageData.data;
@@ -305,7 +305,7 @@ function setNeedle() {
 
   window.differ.areas = sel.data('areas');
   window.differ.matches = sel.data('matches');
-  
+
   var src = sel.data('image');
 
   if (src) {

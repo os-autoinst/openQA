@@ -39,7 +39,7 @@ function updateTestStatus(newStatus) {
             }
         });
     }
-  
+
     // If a new module have been started, redraw module list
     if (testStatus.running != newStatus.running) {
         $.ajax(testStatus.details_url).
@@ -204,14 +204,14 @@ function setDataListener(elem, callback) {
     var events = new EventSource(elem.data('url'));
     events.addEventListener('message', function(event) {
         elem[0].innerHTML += JSON.parse(event.data)[0];
-	if (callback) callback();
+        if (callback) callback();
     }, false);
 }
 
 function initLivelog() {
     scrolldown = true;
     $('#scrolldown').attr('checked', true);
-    
+
     // start stream
     var livelog = $('#livelog');
     setDataListener(livelog, function() {
@@ -260,10 +260,10 @@ function setupRunning(jobid, status_url, details_url) {
   initLiveterminal();
   initLivestream();
   initStatus(jobid, status_url, details_url);
-  
+
   $('#interactive_enabled_button').click(enableInteractive);
   $('#interactive_disabled_button').click(disableInteractive);
-  
+
   $('#continue_button').click(function(e) {
     e.preventDefault();
     sendCommand('continue_waitforneedle');
@@ -276,7 +276,7 @@ function setupRunning(jobid, status_url, details_url) {
     e.preventDefault();
     sendCommand('stop_waitforneedle');
   });
-  
+
   $('#scrolldown').change(setScrolldown);
 }
 
