@@ -25,9 +25,9 @@
                         <div class="flags">
                             % if ($module->{fatal}) {
                                 <i class="flag fa fa-plug" title="Fatal: testsuite is aborted if this test fails"></i>
-                            % } elsif ($module->{important})
+                            % } elsif (!$module->{important})
                             % {
-                                <i class="flag fa fa-exclamation" title="Important: overall result is failed if this test fails"></i>
+                                <i class="flag fa fa-minus" title="Ignore failure: failure or soft failure of this test does not impact overall job result"></i>
                             % }
                             % if  ($module->{milestone}) {
                                 <i class="flag fa fa-anchor" title="Milestone: snapshot the state after this test for restoring"></i>
