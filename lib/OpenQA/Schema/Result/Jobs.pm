@@ -815,7 +815,11 @@ sub calculate_result {
 
     my $overall;
     for my $m ($self->modules->all) {
-        if ($m->result eq PASSED) {
+        # this condition might look a bit odd, but the effect is to
+        # ensure a job consisting *only* of ignore_failure modules
+        # will always result in PASSED, and otherwise, ignore_failure
+        # results are basically ignored
+        if ($m->result eq PASSED || !$m->important) {
             $overall ||= PASSED;
         }
         elsif ($m->result eq SOFTFAILED) {
@@ -879,9 +883,11 @@ sub insert_module {
     }
     $r->update(
         {
-            milestone => $tm->{flags}->{milestone} ? 1 : 0,
-            important => $tm->{flags}->{important} ? 1 : 0,
-            fatal     => $tm->{flags}->{fatal}     ? 1 : 0,
+            # we have 'important' in the db but 'ignore_failure' in the flags
+            # for historical reasons...see #1266
+            milestone => $tm->{flags}->{milestone}      ? 1 : 0,
+            important => $tm->{flags}->{ignore_failure} ? 0 : 1,
+            fatal     => $tm->{flags}->{fatal}          ? 1 : 0,
         });
     return $r;
 }
@@ -1307,10 +1313,6 @@ sub _previous_scenario_jobs {
 sub _failure_reason {
     my ($self) = @_;
 
-    if (!grep { $_ eq $self->result } (FAILED, SOFTFAILED, INCOMPLETE)) {
-        return 'GOOD';
-    }
-
     my @failed_modules;
     my $modules = $self->modules;
     while (my $m = $modules->next) {
@@ -1318,7 +1320,12 @@ sub _failure_reason {
             push(@failed_modules, $m->name . ':' . $m->result);
         }
     }
-    return join(',', @failed_modules) || $self->result;
+    if (@failed_modules) {
+        return join(',', @failed_modules) || $self->result;
+    }
+    else {
+        return 'GOOD';
+    }
 }
 
 sub _carry_over_candidate {
@@ -1330,10 +1337,12 @@ sub _carry_over_candidate {
     my $lookup_depth           = 10;
     my $state_changes_limit    = 3;
 
+    # we only do carryover for jobs with some kind of (soft) failure
+    return if $current_failure_reason eq 'GOOD';
+
     # search for previous jobs
     for my $job ($self->_previous_scenario_jobs($lookup_depth)) {
         my $job_fr = $job->_failure_reason;
-
         log_debug(sprintf("checking take over from %d: %s vs %s", $job->id, $job_fr, $current_failure_reason));
         if ($job_fr eq $current_failure_reason) {
             log_debug("found a good candidate");
@@ -1366,9 +1375,6 @@ result in the same scenario.
 =cut
 sub carry_over_bugrefs {
     my ($self) = @_;
-
-    # the carry over makes only sense for some jobs
-    return if !grep { $_ eq $self->result } (FAILED, SOFTFAILED, INCOMPLETE);
 
     my $prev = $self->_carry_over_candidate;
     return if !$prev;

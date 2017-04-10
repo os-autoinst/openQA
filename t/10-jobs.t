@@ -130,52 +130,54 @@ subtest 'job with at least one failed module and one softfailed => overall is fa
     is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
 };
 
-subtest 'job with all important modules passed and at least one unimportant failed => overall failed' => sub {
+subtest 'job with all modules passed and at least one ignore_failure failed => overall passed' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'E';
     my $job = _job_create(\%_settings);
     for my $i (qw(a b c)) {
-        $job->insert_module({name => $i, category => $i, script => $i, flags => {important => 1}});
+        $job->insert_module({name => $i, category => $i, script => $i, flags => {}});
         $job->update_module($i, {result => 'ok', details => []});
     }
-    $job->insert_module({name => 'd', category => 'd', script => 'd', flags => {}});
+    $job->insert_module({name => 'd', category => 'd', script => 'd', flags => {ignore_failure => 1}});
     $job->update_module('d', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
 };
 
 subtest
-  'job with important modules passed and at least one softfailed and at least one unimportant failed => overall failed'
+'job with important modules passed and at least one softfailed and at least one ignore_failure failed => overall softfailed'
   => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'F';
     my $job = _job_create(\%_settings);
     for my $i (qw(a b)) {
-        $job->insert_module({name => $i, category => $i, script => $i, flags => {important => 1}});
+        $job->insert_module({name => $i, category => $i, script => $i, flags => {}});
         $job->update_module($i, {result => 'ok', details => []});
     }
-    $job->insert_module({name => 'c', category => 'c', script => 'c', flags => {important => 1}});
+    $job->insert_module({name => 'c', category => 'c', script => 'c', flags => {}});
     $job->update_module('c', {result => 'ok', details => [], dents => 1});
-    $job->insert_module({name => 'd', category => 'd', script => 'd', flags => {}});
+    $job->insert_module({name => 'd', category => 'd', script => 'd', flags => {ignore_failure => 1}});
     $job->update_module('d', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
   };
 
-subtest 'job with one important module failed and at least one unimportant passed => overall failed' => sub {
+subtest
+'job with one "important" (old flag we now ignore) module failed and at least one ignore_failure passed => overall failed'
+  => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'G';
     my $job = _job_create(\%_settings);
     for my $i (qw(a b c)) {
-        $job->insert_module({name => $i, category => $i, script => $i, flags => {important => 0}});
+        $job->insert_module({name => $i, category => $i, script => $i, flags => {ignore_failure => 1}});
         $job->update_module($i, {result => 'ok', details => []});
     }
     $job->insert_module({name => 'd', category => 'd', script => 'd', flags => {important => 1}});
@@ -186,22 +188,50 @@ subtest 'job with one important module failed and at least one unimportant passe
     $job->done;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
-};
+  };
 
-subtest 'job with first unimportant and rest softfails => overall is failed' => sub {
+subtest 'job with first ignore_failure failed and rest softfails => overall is softfailed' => sub {
     my %_settings = %settings;
     $_settings{TEST} = 'H';
     my $job = _job_create(\%_settings);
-    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {ignore_failure => 1}});
     $job->update_module('a', {result => 'fail', details => []});
     $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {important => 1}});
-    $job->update_module('b', {result => 'ok', details => []});
+    $job->update_module('b', {result => 'ok', details => [], dents => 1});
     $job->update;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
     $job->done;
     $job->discard_changes;
-    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is($job->result, OpenQA::Schema::Result::Jobs::SOFTFAILED, 'job result is softfailed');
+};
+
+subtest 'job with one ignore_failure pass => overall is passed' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'H';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {ignore_failure => 1}});
+    $job->update_module('a', {result => 'ok', details => []});
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+};
+
+subtest 'job with one ignore_failure fail => overall is passed' => sub {
+    my %_settings = %settings;
+    $_settings{TEST} = 'H';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {ignore_failure => 1}});
+    $job->update_module('a', {result => 'fail', details => []});
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
 };
 
 subtest 'job with at least one softfailed => overall is softfailed' => sub {
@@ -244,7 +274,7 @@ subtest 'carry over for soft-fails' => sub {
     my $job = _job_create(\%_settings);
     $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
     $job->update_module('a', {result => 'ok', details => [], dents => 1});
-    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {important => 1}});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {}});
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
@@ -258,7 +288,7 @@ subtest 'carry over for soft-fails' => sub {
     $job = _job_create(\%_settings);
     $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
     $job->update_module('a', {result => 'ok', details => [], dents => 1});
-    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {important => 1}});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {}});
     $job->update_module('b', {result => 'ok', details => []});
     $job->update;
     $job->discard_changes;
@@ -273,9 +303,59 @@ subtest 'carry over for soft-fails' => sub {
     $_settings{BUILD} = '668';
     $job = _job_create(\%_settings);
     $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {}});
+    $job->update_module('a', {result => 'ok', details => [], dents => 1});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {}});
+    $job->update_module('b', {result => 'fail', details => []});
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is(0, $job->comments, 'no comment');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::FAILED, 'job result is failed');
+    is(0, $job->comments, 'no takeover');
+
+};
+
+subtest 'carry over for ignore_failure modules' => sub {
+    my %_settings = %settings;
+    $_settings{TEST}  = 'K';
+    $_settings{BUILD} = '669';
+    my $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {ignore_failure => 1}});
     $job->update_module('a', {result => 'fail', details => []});
-    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {important => 1}});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {}});
     $job->update_module('b', {result => 'ok', details => []});
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    $job->comments->create({text => 'bsc#101', user_id => 99901});
+
+    $_settings{BUILD} = '670';
+    $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {ignore_failure => 1}});
+    $job->update_module('a', {result => 'fail', details => []});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {}});
+    $job->update_module('b', {result => 'ok', details => []});
+    $job->update;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
+    is(0, $job->comments, 'no comment');
+    $job->done;
+    $job->discard_changes;
+    is($job->result, OpenQA::Schema::Result::Jobs::PASSED, 'job result is passed');
+    is(1, $job->comments, 'one comment');
+    like($job->comments->first->text, qr/\Qbsc#101\E/, 'right take over');
+
+    $_settings{BUILD} = '671';
+    $job = _job_create(\%_settings);
+    $job->insert_module({name => 'a', category => 'a', script => 'a', flags => {ignore_failure => 1}});
+    $job->update_module('a', {result => 'fail', details => []});
+    $job->insert_module({name => 'b', category => 'b', script => 'b', flags => {}});
+    $job->update_module('b', {result => 'fail', details => []});
     $job->update;
     $job->discard_changes;
     is($job->result, OpenQA::Schema::Result::Jobs::NONE, 'result is not yet set');
