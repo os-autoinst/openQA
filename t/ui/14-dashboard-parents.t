@@ -87,7 +87,7 @@ disable_bootstrap_animations();
 
 ok($driver->find_element('#group1_build13_1-0091 h4 a')->is_displayed(), 'link to child group displayed');
 my @links = $driver->find_elements('h4 a', 'css');
-is(scalar @links, 11, 'all links expanded in the first place');
+is(scalar @links, 12, 'all links expanded in the first place');
 $driver->find_element_by_link_text('Build0091')->click();
 ok($driver->find_element('#group1_build13_1-0091 h4 a')->is_hidden(), 'link to child group collapsed');
 
