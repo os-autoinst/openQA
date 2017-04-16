@@ -42,6 +42,8 @@ install:
 	install -D -m 640 etc/openqa/database.ini "$(DESTDIR)"/etc/openqa/database.ini
 
 	install -D -m 644 etc/logrotate.d/openqa "$(DESTDIR)"/etc/logrotate.d/openqa
+
+	install -D -m 644 etc/modprobe.d/50-openqa.conf "$(DESTDIR)"/etc/modprobe.d/50-openqa.conf
 #
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/{system,system-generators}
 	install -d -m 755 "$(DESTDIR)"/usr/lib/tmpfiles.d
