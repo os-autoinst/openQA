@@ -105,7 +105,7 @@
   /usr/share/qemu/keymaps/* r,
   /var/lib/openqa/cache/** rwk,
   /var/lib/openqa/pool/ r,
-  /var/lib/openqa/pool/*/ r,
+  /var/lib/openqa/pool/*/ rw,
   /var/lib/openqa/pool/*/** rwk,
   /var/lib/openqa/share/* r,
   /var/lib/openqa/share/factory/hdd/* r,
