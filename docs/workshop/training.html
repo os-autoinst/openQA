@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Understanding openQA</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <style type="text/css">
+      @import url(http://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+      body { font-family: 'Arial'; }
+      h1, h2, h3 {
+        font-family: 'Arial';
+        font-weight: normal;
+      }
+      .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; }
+      .graphic { width: 100%; }
+      .float-right { float: right; clear: right; }
+      .section { color: white; }
+      .green { color: #7AC142; }
+      .red { color: #ED1C24; }
+      .bold { font-weight: bold; }
+      .yellow { color: #FFDD00; }
+    </style>
+  </head>
+       <textarea id="source">
+layout: true
+name: intro
+background-image: url(screens/SUSE_template_2014_Libre-intro.png)
+---
+
+layout: true
+name: section
+class: middle, right
+background-image: url(screens/SUSE_template_2014_Libre-section.png)
+---
+
+layout: true
+name: default
+background-image: url(screens/SUSE_template_2014_Libre.png)
+---
+
+template: intro
+class: bottom, left
+###openQA overview
+Ondrej Holecek (oholecek@suse.com)
+---
+
+template: default
+name: agenda
+# Agenda
+- Tests and jobs
+
+
+- Test writing how-to
+
+
+- Installation and administration
+---
+
+template: section
+class: section
+# Tests and jobs
+---
+
+template: default
+# Architecture
+.center[.graphic[![openQA architecture](screens/openqa-architecture.png)]]
+
+- openQA
+ - WebUI, Scheduler, DB interface
+- Worker
+- os-autoinst
+???
+Overall architecture of openQA installation: openQA (WebUI + Scheduler), openQA-Worker, os-autoinst
+WebUI + Scheduler - in one package, central piece
+Worker - one package, interface between openqa and os-autoinst
+os-autoinst - one package, actual test engine, implements test backend
+
+- TODO: add picture
+---
+
+# Purpose
+
+- distribution acceptance tests
+  - moving towards integration testing
+
+
+- single machine testing
+  - basic support for multi-machine is in however
+
+
+- control SUT as user
+  - keyboard strokes, mouse movement
+
+
+- screenshot based result checking
+  - better text based result checking in progress
+---
+
+# openQA tests
+
+- `main.pm`
+```perl
+use autotest;
+if (get_var('TEST')) {
+      loadtest 'test.pm';
+}
+```
+
+- `tests/test.pm`
+```perl
+use base 'basetest';
+use testapi;
+if (get_var('TEST_DESKTOP')) {
+      assert_screen('generic_desktop', 200);
+}
+else {
+      wait_serial('login:');
+}
+```
+???
+main.pm - test loader, can't test anything requiring running VM. When main.pm is parsed, VM is not running. Use loadtest from autotest package to load test modules for future execution.
+test.pm - in tests subdirectory, based upon basetest or derivatives (opensusebasetest, installbasetest, y2logstep, ...). Use testapi for handy test functions and access to VM
+---
+
+# openQA tests (cont'd)
+
+- Test code
+  - test loader (`main.pm`)
+  - test code (under `/tests`)
+
+
+- Needles
+  - "screenshots with benefits"
+
+
+- Test API
+  - `testapi` imports
+  - `basetest`, `opensusebasetest`, ... base objects
+  - other APIs (`mmapi`, `lockapi`, ...)
+---
+
+# Test vs Job
+
+- Test
+  - test code and needles
+  - stateless
+  - static
+
+--
+
+
+- Job
+  - job is to test as process is to code
+  - influenced by test variables
+  - stateful (scheduled|running|done)
+  - `job = test_code($test_variables)` (figuratively)
+
+--
+
+.center[`You are writing tests, but working with jobs.`]
+---
+
+# openQA variables
+
+- simple key=value (string=string)
+- divided in logical categories
+  - Machines
+  - Test suites
+  - Medium types
+- and their relation matrix
+  - Job groups
+--
+
+
+.center[.graphic[![:scale 100%](screens/openqa-jobgroup.png)]]
+???
+---
+
+# Machines
+
+.center[.graphic[![openQA users](screens/openqa-admin-machines.png)]]
+
+- hypothetical SUT (System Under Test - the testing machine)
+- backend specific variables
+ - CPU model
+ - RAM size
+ - RAID
+ - ...
+ - https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc
+???
+Backend like QEMU, s390, IPMI, ...
+---
+
+# Test suites
+
+.center[.graphic[![openQA users](screens/openqa-admin-testsuites.png)]]
+
+- this is what one would call a test
+- test flow altering variables
+ - desktop selection
+ - install/upgrade path
+ - ...
+???
+---
+
+# Assets and Media
+
+.center[.graphic[![openQA users](screens/openqa-admin-media.png)]]
+
+- Assets are
+ - ISOs, HDDs, AutoYast profiles, ...
+ - everything test needs as a source
+- Media are
+ - assets matching templates
+ - variables related to installation source
+???
+---
+
+# Job Groups
+
+.center[.graphic[![openQA users](screens/openqa-admin-jobgroups.png)]]
+
+- organizing jobs to different categories
+  - staging tests, tumbleweed tests, AArch64 tests, ...
+- each group associated with some media
+
+???
+---
+
+# Obtaining openSUSE tests
+
+- 2 test directories - but use only one else you are asking for trouble!
+```bash
+> ll /var/lib/os-autoinst/
+tests -> /var/lib/openqa/share/tests
+```
+- get the test suite
+  - `/var/lib/openqa/tests/opensuse`
+  - openSUSE and SLES
+      - https://github.com/os-autoinst/os-autoinst-distri-opensuse
+  - Fedora
+      - https://bitbucket.org/rajcze/openqa_fedora/
+- get needles
+  - `/var/lib/openqa/tests/opensuse/needles`
+  - openSUSE
+      - https://github.com/os-autoinst/os-autoinst-needles-opensuse
+  - SLES
+      - https://gitlab.suse.de/openqa/os-autoinst-needles-sles
+
+???
+---
+
+# Running openQA tests
+
+- 'iso centric' approach
+  - create and schedule all jobs from matched media by single command
+  - openQA default work flow
+
+
+- 'job centric' approach
+  - create jobs by hand using API
+  - useful when developing one test and iso would create tens of them
+  - more initial work and long command line
+  - does not handle job dependencies!
+---
+
+# Scheduling the test suite
+
+- get new ISO and put it inside asset directory:
+```bash
+/var/lib/openqa/factory/iso
+```
+- create test jobs
+```bash
+/usr/share/openqa/script/client isos post  \
+           DISTRI=opensuse VERSION=tumbleweed  \
+           FLAVOR=DVD ARCH=x86_64              \
+           ISO=os.iso BUILD=20150427```
+ - DISTRI, VERSION, ARCH, FLAVOR are mandatory to match the ISO in media table
+ - ISO is (*only!*) the filename of iso inside asset directory
+ - output should be like
+```json
+{count => 29, ids => [411 .. 439] }
+```
+     - if count is zero, there were problems
+---
+
+# Scheduling individual tests
+
+```bash
+/usr/share/openqa/script/client jobs post       \
+        TEST=whatever BACKEND=qemu ARCH=x86_64  \
+        BUILD=20150524 VERSION=Tumbleweed       \
+        HDD_1=tumbleweed_kde.qcow2 YAST_HEAD=1  \
+        ISO=openSUSE-TW-DVD-x86_64-20150524.iso \
+        YAST_RUN_ONLY="console/yast2_i;x11/yast2_users"
+```
+- need to supply all required variables by hand
+- create exactly one or none job
+- output should be like
+```json
+{ id => 7 }
+```
+---
+
+# Restarting (cloning) jobs
+
+- individual jobs can be restarted
+  - technically jobs are duplicated to preserve old results
+- using WebUI
+.center[.graphic[![openQA users](screens/openqa-test-restart1.png)]]
+- using openQA API (e.g. via client script)
+```bash
+/usr/share/openqa/script/client jobs/$jobid/restart post```
+- using clone_job helper
+```bash
+/usr/share/openqa/script/clone_job.pl $jobid [$optional_variables]```
+---
+
+template: section
+class: section
+# Writing and updating tests
+???
+---
+
+# openQA test
+
+- test code + needles + variables
+
+--
+
+
+- test code
+  - simulate usual user input (keyboard strokes, mouse actions)
+  - and usual user output (visual comparison of results)
+  - can be divided in modules
+  - influenced by variables passed from scheduler
+
+--
+
+
+- needle
+  - expected visual output of SUT
+  - screenshot
+  - metadata
+      - regions to match
+      - tags
+
+---
+
+# Updating openQA test, why and what?
+
+- graphical mismatch
+  - why - new branding, different font, text updates, ...
+  - what - needle update is sufficient
+
+--
+
+
+- workflow change
+  - why - new installer, new tools, ...
+  - what - test module and sometimes needles
+
+--
+
+
+- new distri
+  - why - completely new openQA test
+  - what - need new test loader, test code and usually needles
+---
+
+# Interpreting results
+
+.center[.graphic[![Job results](screens/openqa-job-results.png)]]
+- Job results
+  - .bold[.green[ok]] or .bold[.red[fail]]
+
+--
+.float-right[.graphic[![Job results overview](screens/openqa-result-overview.png)]]
+- Job module results
+  - .green[passed], .red[failed], .yellow[soft failed], .yellow[none], .yellow[running], ...
+--
+
+  - job module flags influence overall result
+
+<table cols="2">
+<tr><td style="text-align: center;"><i class="fa fa-exclamation"></i></td><td>- result is fail if module failed</td></tr>
+<tr><td style="text-align: center;"><i class="fa fa-plug"></i></td><td>- result is fail and job is stopped if module failed</td></tr>
+<tr><td style="text-align: center;"><i class="fa fa-anchor"></i></td><td>- save VM snapshot if module passed</td></tr>
+</table>
+
+
+
+---
+.float-right[.graphic[![Needles overview](screens/openqa-needles-overview.png)]]
+# Needle matching
+
+- matching result
+  - match indicated by green border
+  - mismatch indicated by red border
+  - no matching done indicated by grey border
+
+--
+
+.float-right[.graphic[![Needles tag matching](screens/openqa-tag-selection2.png)]]
+- tag
+  - one needle can have multiple tags
+  - multiple needles can have the same tag
+  - allow changing needle without changing test code
+
+--
+
+
+- matching area
+  - area on the original screenshot
+  - matched against current SUT screen
+      - initially at the original location
+      - if not found, increase search margin until full screen
+
+---
+
+# Updating needles
+
+1. find failed match
+2. create new needle
+  - a) use screenshot as new base image
+  - b) copy tags and match area
+3. save
+
+
+.center[.graphic[![Needles tag matching](screens/openqa-needleeditor2.png)]]
+---
+
+# Test code update
+
+1. find failed job module
+2. find the failing code
+  - experience helps a lot ;)
+  - find autoinst.log from uploaded logs to find test code errors
+  - video replay to find workflow errors
+3. update it
+  - see test API later
+4. create PR!
+---
+
+# Creating new test from scratch
+
+1. choose name of the test suite (`DISTRI`)
+2. create test loader (`$DISRI/main.pm`)
+  - loads test modules
+  - don't call any actual test code there
+3. create test module code (`$DISTRI/tests/$module-name.pm`)
+  - see test API later
+  - reuse existing parts (see opensuse tests)
+4. run it and create needles as needed
+---
+
+# Test structure
+```bash
+# /var/lib/openqa/tests/opensuse
+
+data/
+lib/
+tests/
+needles/
+main.pm```
+- use data/ for test data
+- everything in lib/ is imported by test engine thus available to all tests
+- tests/ is where our test modules are
+- entry point `main.pm`
+```perl
+use autotest;
+autotest::loadtest($testfilename);```
+  - $testfilename relative to $testdir/tests
+  - imported by test engine before(!) SUT is running!
+---
+
+# Test loader - main.pm
+```perl
+loadtest "installation/partitioning.pm";
+if ( defined( get_var("RAIDLEVEL") ) ) {
+    loadtest "installation/partitioning_raid.pm";
+}
+if ( get_var("TOGGLEHOME") ) {
+    loadtest "installation/partitioning_togglehome.pm";
+}
+loadtest "installation/partitioning_finish.pm";
+...```
+
+- can access (get and set) jobs variables
+- use `loadtest` to load test modules
+- SUT is not yet running, DO NOT call test API functions
+---
+
+# Test module - tests/test.pm
+```perl
+use base "installbasetest";
+use strict;
+use testapi;
+
+sub run() {
+    # wait booted
+    assert_screen 'generic-desktop', 200;
+
+    x11_start_program('xterm');
+    become_root;
+
+    type_string "PS1=\$\n";    # set constant shell promt
+    sleep 1;
+
+    # Disable console screensaver
+    script_run("setterm -blank 0");
+}
+
+1;```
+---
+
+# Test modules
+- inherits from one of base tests
+```perl
+use base "opensusebasetest";```
+  - y2logstep, installbasetest, ...
+- mandatory subroutine
+```perl
+sub run() {
+      my $self = shift;
+      ...
+}```
+- optional test_flags
+```perl
+sub test_flags {
+      return { 'fatal' => 1, 'important' => 1, 'milestone' => 0 };
+}```
+---
+
+# Test API
+- part of os-autoinst package
+  - https://github.com/os-autoinst/os-autoinst/blob/master/testapi.pm
+  - `/usr/lib/os-autoinst/testapi.pm`
+
+```perl
+use testapi;```
+- variable management
+  - get_var, set_var, check_var
+- keyboard and mouse
+  - send_key, type_string, mouse_click, mouse_set, mouse_hide
+- script control
+  - script_run, script_sudo, validate_script_output
+- serial output
+  - wait_serial
+- display control
+  - assert_screen, check_screen
+
+???
+- the biggest part in the smallest slide
+---
+
+# Reporting results
+- two outcomes
+  - ok
+  - fail
+```perl
+sub run() {
+          my $self = shift;
+          $self->result('ok');
+}```
+- some API calls record that automatically
+  - assert_screen, wait_serial, validate_script_output, ...
+- severity of outcome influenced by test_flags
+- for warnings use record_soft_failure
+```perl
+use testapi;
+sub run() {
+      my $self = shift;
+      record_soft_failure;
+}```
+---
+
+# Debugging
+.float-right[.graphic[![autoinst.log](screens/openqa-autoinstlog.png)]]
+- debugging test
+  - autoinst-log.txt
+  - vars.json
+  - serial0.txt
+  - bmwqemu functions
+      - diag, fctres, fctinfo, fctwarn
+--
+- debugging SUT
+  - KEEPHDDS=1
+  - MAKESNAPSHOTS=1
+  - SKIPTO=$testmodule
+  - run worker with `--no-cleanup` option
+```bash
+/usr/share/openqa/script/clone_job.pl \
+                      $jobid SKIPTO=$testmodule```
+---
+
+# Test relations
+- CHAINED
+  - START_AFTER_TEST=testname
+  - eliminating redundant jobs
+  - reusing job assets
+- PARALLEL
+  - PARALLEL_WITH=testname
+  - e.g. for HA testing
+- can be used together
+---
+
+# Multi-Machine tests
+- standard part of os-autoinst package
+```perl
+use mmapi;
+use lockapi;```
+- locks for synchronization
+  - mutex_create, mutex_lock, mutex_unlock
+- related jobs status querying
+  - get_children_by_state
+- bare bones only
+???
+---
+
+# Job assets
+- use HDD image created by another job
+- creating - `STORE_HDD_1` or `PUBLISH_HDD_1`
+  - value of variable is asset name
+  - STORE_HDD_1 for private HDD assets
+  - PUBLISH_HDD_1 for public HDD assets
+- usage - HDD_1
+- use CHAINED relation to assure right order
+```
+testA:
+      STORE_HDD_1='A.qcow2'
+testB:
+      HDD_1='A.qcow2'
+      START_AFTER_TEST='testA'```
+???
+---
+
+# Resources
+- openQA (https://github.com/os-autoinst/openQA)
+- os-autoinst (https://github.com/os-autoinst/os-autoinst)
+  - check backend docs (https://github.com/os-autoinst/os-autoinst/blob/master/doc/backend_vars.asciidoc)
+- openSUSE tests (https://github.com/os-autoinst/os-autoinst-distri-opensuse)
+- internal needles (https://gitlab.suse.de/openqa/os-autoinst-needles-sles)
+---
+template: section
+class: section
+# Installation and administration
+---
+
+template: default
+# Installation
+
+- OBS (https://build.opensuse.org/project/show/devel:openQA)
+  - devel  devel:openQA
+  - stable devel:openQA:stable
+--
+
+- openQA WebUI
+  - openqa-common, openqa (, apache2)
+???
+Apache recommended unless localhost limited installation or routing magic
+--
+
+- Database
+  - sqlite3; postgresql; mariadb
+???
+MysQL, SQlite nad PostgreSQL databases are supported, openSUSE openQA runs atop PostgreSQL, dev ususally on sqlite
+--
+
+- openQA Worker
+  - openqa-common, openqa-worker, os-autoinst
+--
+
+- Backends
+  - qemu, kvm
+???
+Different requirements for different backends, but qemu with KVM is the default.
+---
+
+# Installation - configuration
+
+- check `/etc/openqa/database.ini`
+ - [producion] section
+ - default is SQLite
+???
+SQLite by default, check database.ini if want other database than sqlite.
+--
+
+- check `/etc/openqa/openqa.ini`
+ - authentication method
+ - logging
+???
+branding, git integration, debugging - by default debug! and auth method
+--
+
+- almost ready to start that thing!
+```bash
+systemctl start openqa-webui```
+```bash
+/usr/share/openqa/script/openqa daemon
+```
+- one thing left!
+???
+production vs. development environment
+---
+
+# User management - before running
+
+- `/etc/openqa/openqa.ini` section [auth]
+- OpenID
+ - default authentication method
+ - default provider - opensuse.org/openid
+--
+
+- iChain
+ - present, but not tested in production
+--
+
+- Fake
+ - !DANGER!
+ - for development only
+--
+
+- now start that thing!
+???
+fake - for presentations and dev work only, bypass all auth and log in as admin, creates one day API keys
+
+---
+
+# User management - WebUI
+
+.center[.graphic[![openQA users](screens/openqa-admin-users.png)]]
+
+- first one to log in becomes administrator
+???
+do not remove rights until you have more admins. openQA will not protest!
+--
+
+- set authorizations to individual users
+- operator and administrator levels
+ - operator can restart (clone) tests and create needles
+ - administrator has access to administration
+???
+---
+
+# API keys
+
+.center[.graphic[![openQA users](screens/openqa-admin-apikeys.png)]]
+
+- authentication for API access
+- authorization level tied with user
+- HMAC checking
+ - API key
+      - transferred in each authentication header
+ - API secret
+      - used as salt for message checksum
+???
+Used as authentication mechanism for API - CLI tools and worker communication
+API key is there to find appropriate API secret in database for hash check
+---
+
+# Worker configuration
+
+- `/etc/openqa/client.conf`
+ - API key and secret goes here
+- `/etc/openqa/worker.ini`
+ - backend and openQA hostname
+ - worker class override for special HW or configuration
+- shared storage for remote worker
+```bash
+/var/lib/openqa/share```
+ - up to admin, nfs usually
+ - read only mount is sufficient
+- start the worker
+```bash
+systemctl start openqa-worker@1```
+```bash
+/usr/share/openqa/script/worker --instance 1 --verbose```
+
+???
+Before test can be started, one last thing. Worker configuration
+And firewall, etc.
+Shared storage - read only is ok. Needed for assets and test distribution
+Run either using systemd or directly, useful for worker debugging, nothing interesting test wise
+---
+
+template: section
+class: section
+# EOF
+---
+
+class: middle, center
+# Contributor Guide - TODO
+---
+# Architecture
+???
+---
+# WebUI
+???
+---
+# Controllers
+???
+---
+# Schema
+???
+---
+# JS, jQuery, bootstrap
+???
+---
+# Scheduler
+???
+---
+# Worker
+???
+---
+# JOBTOKEN
+???
+---
+# WORKER_ID
+???
+---
+# WORKER_INSTANCE
+???
+---
+# WebSockets
+???
+---
+# os-autoinst / isotovideo
+???
+---
+# Backends
+
+--
+
+- QEMU backend
+???
+--
+
+- IMPI backend
+???
+--
+
+- s390 backend
+???
+---
+class: middle, center
+# Final notes
+???
+---
+    </textarea>
+    <script src="http://gnab.github.io/remark/downloads/remark-0.10.2.min.js" type="text/javascript">
+    </script>
+    <script type="text/javascript">
+      remark.macros['scale'] = function (percentage) {
+        var url = this;
+        return '<img src="' + url + '" style="width: ' + percentage + '" />';
+      };
+      var slideshow = remark.create({slideNumberFormat:'', ratio: "4:3"});
+    </script>
+  </body>
+</html>
