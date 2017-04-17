@@ -1,4 +1,4 @@
-#!/usr/bin/env perl
+#!/usr/bin/perl
 
 # Copyright (C) 2014-2016 SUSE LLC
 #
@@ -157,6 +157,16 @@ if ($options{params}) {
     my $info = JSON->new->relaxed->decode(<$fh>);
     close $fh;
     %params = %{$info};
+    ## FIXME:
+    ## if we don't set the TEST variable we get:
+    ## "org.freedesktop.DBus.Error.Failed: DBIx::Class::Storage::DBI::_dbh_execute(): DBI Exception: DBD::SQLite::st execute failed: NOT NULL constraint failed:
+    ## curiosly i tested with /usr/share/openqa/script/client --params wrongTEST.json jobs post
+    ## wrongTEST look like  "DISTRI" : "sle", "VERSION" : "Migration", "BUILD" : "GM", "ARCH" : "x86_64", "HDD_1" : "sles.iso"
+    ## and only the missing TEST variable is causing this exception. other variables don't cause the Exception, and user can
+    ## this is fix already the problem but , it will be better fo fix maybe on the right place. (?)
+    if (!exists($params{TEST})) {
+        die "variable \"TEST\:\"NAME__TEST\":variable must be set on *.json file\n";
+    }
 }
 
 for my $arg (@ARGV) {
