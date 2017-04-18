@@ -170,10 +170,10 @@ sub download_asset {
         return;
     }
     if ($do_extract) {
-        OpenQA::Utils::log_debug("Downloading " . $url . ", uncompressing to " . $assetpath . "...");
+        OpenQA::Utils::log_debug("Downloading $url, uncompressing to $assetpath...");
     }
     else {
-        OpenQA::Utils::log_debug("Downloading " . $url . " to " . $assetpath . "...");
+        OpenQA::Utils::log_debug("Downloading $url to $assetpath...");
     }
     my $ua = Mojo::UserAgent->new(max_redirects => 5);
     my $tx = $ua->build_tx(GET => $url);
@@ -214,7 +214,7 @@ sub download_asset {
     }
     else {
         # Clean up after ourselves. Probably won't exist, but just in case
-        OpenQA::Utils::log_error("Downloading failed! Deleting files");
+        OpenQA::Utils::log_error("Download of $url to $assetpath failed! Deleting files.");
         unlink($assetpath);
         notify_workers;
         return;
