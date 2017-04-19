@@ -217,7 +217,7 @@ if ($res->code == 200) {
     }
 }
 else {
-    printf STDERR "ERROR: %s - %s\n", $res->code, $res->message;
+    printf STDERR "ERROR: %s - %s\n", $res->code, $res->{error}->{message};
     if ($res->body) {
         if ($options{json}) {
             print JSON->new->pretty->encode($res->json);
