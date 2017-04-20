@@ -99,7 +99,7 @@ sub update_needle {
         my $needledir_path = realpath($module->job->needle_dir());
         my $dir;
         my $basename;
-        if (index($realpath, $needledir_path) != 0) {    # leave old behaviour as it is
+        if ($realpath && (index($realpath, $needledir_path) != 0)) {    # leave old behaviour as it is
             $dir = $schema->resultset('NeedleDirs')->find_or_new({path => dirname($realpath)});
             $basename = basename($realpath);
         }
