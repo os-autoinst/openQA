@@ -57,9 +57,7 @@ sub job_get_deps {
 }
 
 my $current_jobs = list_jobs();
-#diag explain $current_jobs;
-
-my %settings = (
+my %settings     = (
     DISTRI      => 'Unicorn',
     FLAVOR      => 'pink',
     VERSION     => '42',
@@ -72,7 +70,6 @@ my %settings = (
     ARCH        => 'x86_64',
     NICTYPE     => 'tap'
 );
-
 my %workercaps = (
     cpu_modelname => 'Rainbow CPU',
     cpu_arch      => 'x86_64',
@@ -80,14 +77,12 @@ my %workercaps = (
     mem_max       => '4096'
 );
 
-# parallel dependencies
-#
+# parallel dependencies:
 # A <--- D <--- E
 #              /
 # B <--- C <--/
 #        ^
 #        \--- F
-
 my %settingsA = (%settings, TEST => 'A');
 my %settingsB = (%settings, TEST => 'B');
 my %settingsC = (%settings, TEST => 'C');
@@ -105,6 +100,15 @@ sub _job_create {
     return $job;
 }
 
+sub _jobs_update_state {
+    my ($jobs, $state, $result) = @_;
+    for my $job (@$jobs) {
+        $job->state($state);
+        $job->result($result) if $result;
+        $job->update;
+    }
+}
+
 my $jobA = _job_create(\%settingsA);
 my $jobB = _job_create(\%settingsB);
 my $jobC = _job_create(\%settingsC, [$jobB->id]);
@@ -115,17 +119,12 @@ my $jobF = _job_create(\%settingsF, [$jobC->id]);
 $jobA->set_prio(3);
 $jobB->set_prio(2);
 $jobC->set_prio(4);
-$jobD->set_prio(1);
-$jobE->set_prio(1);
-$jobF->set_prio(1);
+$_->set_prio(1) for ($jobD, $jobE, $jobF);
 
 use OpenQA::WebAPI::Controller::API::V1::Worker;
 my $c = OpenQA::WebAPI::Controller::API::V1::Worker->new;
 
-my @worker_ids;
-for my $i (1 .. 6) {
-    push(@worker_ids, $c->_register($schema, 'host', "$i", \%workercaps));
-}
+my @worker_ids = map { $c->_register($schema, 'host', "$_", \%workercaps) } (1 .. 6);
 my @jobs_in_expected_order = (
     $jobB => 'lowest prio of jobs without parents',
     $jobC => 'direct child of B',
@@ -145,8 +144,7 @@ my $result = $jobA->done(result => 'failed');
 is($result, 'failed', 'job_set_done');
 
 # reload changes from DB - jobs should be cancelled by failed jobA
-$jobD->discard_changes;
-$jobE->discard_changes;
+$_->discard_changes for ($jobD, $jobE);
 # this should not change the result which is parallel_failed due to failed jobA
 $result = $jobD->done(result => 'incomplete');
 is($result, 'incomplete', 'job_set_done');
@@ -177,14 +175,12 @@ is($job->{state}, "running", "job_set_done changed state");
 
 # check MM API for children status - available only for running jobs
 my $worker = $schema->resultset("Workers")->find($worker_ids[1]);
-
-my $t = Test::Mojo->new('OpenQA::WebAPI');
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
 $t->ua->on(
     start => sub {
         my ($ua, $tx) = @_;
         $tx->req->headers->add('X-API-JobToken' => $worker->get_property('JOBTOKEN'));
     });
-
 $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$jobF->id]);
 $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
@@ -242,8 +238,7 @@ $t->get_ok('/api/v1/mm/children/running')->status_is(200)->json_is('/jobs' => [$
 $t->get_ok('/api/v1/mm/children/scheduled')->status_is(200)->json_is('/jobs' => []);
 $t->get_ok('/api/v1/mm/children/done')->status_is(200)->json_is('/jobs' => [$jobE->id]);
 
-# now we have
-#
+# now we have:
 # A <--- D <--- E
 # done   done   done
 #              /
@@ -323,8 +318,7 @@ is($job->{state},    "scheduled", "no change");
 is($job->{clone_id}, undef,       "no clones");
 is_deeply($job->{parents}, {Parallel => [$jobC2], Chained => []}, "cloned deps");
 
-# now we have
-#
+# now we have:
 # A <--- D <--- E
 # done   done   done
 #              /
@@ -333,7 +327,6 @@ is_deeply($job->{parents}, {Parallel => [$jobC2], Chained => []}, "cloned deps")
 #        ^
 #        \--- F
 #             run
-#
 #
 # A2 <--- D2 <--- E2
 # sch     sch     sch
@@ -368,8 +361,7 @@ is($jobX->done(result => 'passed'), 'passed', 'jobX set to done');
 # since we are skipping job_grab, reload missing columns from DB
 $jobX->discard_changes;
 
-# current state
-#
+# current state:
 # X <---- Y
 # done    sch.
 
@@ -381,7 +373,6 @@ is($jobX2->clone, undef,                                 "no clone");
 is($jobY->clone,  undef,                                 "no clone");
 
 # current state:
-#
 # X
 # done
 #
@@ -392,7 +383,6 @@ ok($jobX2->done(result => 'passed'), 'jobX2 set to done');
 ok($jobY->done(result => 'passed'), 'jobY set to done');
 
 # current state:
-#
 # X
 # done
 #
@@ -402,7 +392,6 @@ ok($jobY->done(result => 'passed'), 'jobY set to done');
 my $jobY2 = $jobY->auto_duplicate;
 
 # current state:
-#
 # X
 # done
 #
@@ -419,7 +408,6 @@ is($jobY2->clone_id,   undef, "Y no clone");
 ok($jobY2->done(result => 'passed'), 'jobY2 set to done');
 
 # current state:
-#
 # X
 # done
 #
@@ -428,11 +416,9 @@ ok($jobY2->done(result => 'passed'), 'jobY2 set to done');
 # X2 <---- Y2
 # done    done
 
-
 my $jobX3 = $jobX2->auto_duplicate;
 
 # current state:
-#
 # X
 # done
 #
@@ -451,11 +437,8 @@ my $jobY3_id = $jobY2->clone_id;
 my $jobY3    = job_get_deps($jobY3_id);
 is_deeply($jobY3->{parents}, {Chained => [$jobX3->id], Parallel => []}, 'jobY3 parent is now jobX3');
 
-
 # checking siblings scenario
-
 # original state, all job set as running
-#
 # H <-(parallel) J
 # ^             ^
 # | (parallel)  | (parallel)
@@ -471,14 +454,7 @@ my $jobJ = _job_create(\%settingsJ, [$jobH->id]);
 my $jobL = _job_create(\%settingsL, [$jobJ->id]);
 
 # hack jobs to appear running to scheduler
-$jobH->state(OpenQA::Schema::Result::Jobs::RUNNING);
-$jobH->update;
-$jobJ->state(OpenQA::Schema::Result::Jobs::RUNNING);
-$jobJ->update;
-$jobK->state(OpenQA::Schema::Result::Jobs::RUNNING);
-$jobK->update;
-$jobL->state(OpenQA::Schema::Result::Jobs::RUNNING);
-$jobL->update;
+_jobs_update_state([$jobH, $jobJ, $jobK, $jobL], OpenQA::Schema::Result::Jobs::RUNNING);
 
 # expected output after cloning D, all jobs scheduled
 # H2 <-(parallel) J2
@@ -489,10 +465,7 @@ $jobL->update;
 my $jobL2 = $jobL->auto_duplicate;
 ok($jobL2, 'jobL duplicated');
 # reload data from DB
-$jobH->discard_changes;
-$jobK->discard_changes;
-$jobJ->discard_changes;
-$jobL->discard_changes;
+$_->discard_changes for ($jobH, $jobK, $jobJ, $jobL);
 # check other clones
 ok($jobJ->clone, 'jobJ cloned');
 ok($jobH->clone, 'jobH cloned');
@@ -506,9 +479,7 @@ my $jobK2 = job_get_deps($jobH2)->{children}->{Parallel}->[0];
 is($jobK2, $jobK->clone->id, 'K2 cloned with parallel children dep');
 
 # checking all-in mixed scenario
-
-# original state
-#
+# original state:
 # Q <- (chained) W <-\ (parallel)
 #   ^- (chained) U <-- (parallel) T
 #   ^- (chained) R <-/ (parallel) | (chained)
@@ -529,22 +500,13 @@ my $jobR = _job_create(\%settingsR, undef, [$jobQ->id]);
 my $jobT = _job_create(\%settingsT, [$jobW->id, $jobU->id, $jobR->id], [$jobQ->id]);
 
 # hack jobs to appear to scheduler in desired state
-$jobQ->state(OpenQA::Schema::Result::Jobs::DONE);
-$jobQ->update;
-$jobW->state(OpenQA::Schema::Result::Jobs::RUNNING);
-$jobW->update;
-$jobU->state(OpenQA::Schema::Result::Jobs::RUNNING);
-$jobU->update;
-$jobR->state(OpenQA::Schema::Result::Jobs::RUNNING);
-$jobR->update;
-$jobT->state(OpenQA::Schema::Result::Jobs::RUNNING);
-$jobT->update;
+_jobs_update_state([$jobQ], OpenQA::Schema::Result::Jobs::DONE);
+_jobs_update_state([$jobW, $jobU, $jobR, $jobT], OpenQA::Schema::Result::Jobs::RUNNING);
 
 # duplicate U
 my $jobU2 = $jobU->auto_duplicate;
 
-# expected state
-#
+# expected state:
 # Q <- (chained) W2 <-\ (parallel)
 #   ^- (chained) E2 <-- (parallel) T2
 #   ^- (chained) R2 <-/ (parallel) | (chained)
@@ -554,11 +516,7 @@ my $jobU2 = $jobU->auto_duplicate;
 
 ok($jobU2, 'jobU duplicated');
 # reload data from DB
-$jobQ->discard_changes;
-$jobW->discard_changes;
-$jobU->discard_changes;
-$jobR->discard_changes;
-$jobT->discard_changes;
+$_->discard_changes for ($jobQ, $jobW, $jobU, $jobR, $jobT);
 # check other clones
 ok(!$jobQ->clone, 'jobQ not cloned');
 ok($jobW->clone,  'jobW cloned');
@@ -613,14 +571,8 @@ my $jobO = _job_create(\%settingsO, [$jobP->id]);
 my $jobI = _job_create(\%settingsI, [$jobO->id]);
 
 # hack jobs to appear to scheduler in desired state
-$jobP->state(OpenQA::Schema::Result::Jobs::DONE);
-$jobP->update;
-$jobO->state(OpenQA::Schema::Result::Jobs::DONE);
-$jobO->update;
-$jobI->state(OpenQA::Schema::Result::Jobs::DONE);
-$jobI->update;
+_jobs_update_state([$jobP, $jobO, $jobI], OpenQA::Schema::Result::Jobs::DONE);
 
-#
 # cloning O gets to expected state
 #
 # P2 <-(parallel) O2 (clone of) O <-(parallel) I
@@ -628,9 +580,7 @@ $jobI->update;
 my $jobO2 = $jobO->auto_duplicate;
 ok($jobO2, 'jobO duplicated');
 # reload data from DB
-$jobP->discard_changes;
-$jobO->discard_changes;
-$jobI->discard_changes;
+$_->discard_changes for ($jobP, $jobO, $jobI);
 # check other clones
 ok($jobP->clone,  'jobP cloned');
 ok($jobO->clone,  'jobO cloned');
@@ -647,22 +597,16 @@ is_deeply($jobO2->{parents}->{Parallel}, [$jobP2->{id}], 'clone jobO2 gets new p
 $jobO2 = $schema->resultset('Jobs')->search({id => $jobO2->{id}})->single;
 $jobP2 = $schema->resultset('Jobs')->search({id => $jobP2->{id}})->single;
 # set P2 running and O2 done
-$jobP2->state(OpenQA::Schema::Result::Jobs::RUNNING);
-$jobP2->update;
-$jobO2->state(OpenQA::Schema::Result::Jobs::DONE);
-$jobO2->update;
+_jobs_update_state([$jobP2], OpenQA::Schema::Result::Jobs::RUNNING);
+_jobs_update_state([$jobO2], OpenQA::Schema::Result::Jobs::DONE);
 
-#
-# cloning I gets to expected state
-#
+# cloning I gets to expected state:
 # P3 <-(parallel) O3 <-(parallel) I2
-#
 my $jobI2 = job_get($jobI->{id})->auto_duplicate;
 ok($jobI2, 'jobI duplicated');
 
 # reload data from DB
-$jobP2->discard_changes;
-$jobO2->discard_changes;
+$_->discard_changes for ($jobP2, $jobO2);
 
 ok($jobP2->clone, 'jobP2 cloned');
 ok($jobO2->clone, 'jobO2 cloned');
@@ -675,7 +619,6 @@ is_deeply($jobI2->{parents}->{Parallel}, [$jobO3->{id}], 'jobI2 got new parent j
 is_deeply($jobO3->{parents}->{Parallel}, [$jobP3->{id}], 'clone jobO3 gets new parent jobP3');
 
 # https://progress.opensuse.org/issues/10456
-
 %settingsA = (%settings, TEST => '116539');
 %settingsB = (%settings, TEST => '116569');
 %settingsC = (%settings, TEST => '116570');
@@ -687,18 +630,17 @@ $jobC = _job_create(\%settingsC, undef, [$jobA->id]);
 $jobD = _job_create(\%settingsD, undef, [$jobA->id]);
 
 # hack jobs to appear done to scheduler
-for ($jobA, $jobB, $jobC, $jobD) {
-    $_->state(OpenQA::Schema::Result::Jobs::DONE);
-    $_->result(OpenQA::Schema::Result::Jobs::PASSED);
-    $_->update;
-}
+_jobs_update_state(
+    [$jobA, $jobB, $jobC, $jobD],
+    OpenQA::Schema::Result::Jobs::DONE,
+    OpenQA::Schema::Result::Jobs::PASSED
+);
 
 # only job B failed as incomplete
 $jobB->result(OpenQA::Schema::Result::Jobs::INCOMPLETE);
 $jobB->update;
 
 # situation, all chained and done, B is incomplete:
-
 # A <- B
 #   |- C
 #   \- D
@@ -710,9 +652,7 @@ ok($jobBc, 'jobB duplicated');
 # update local copy from DB
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 
-
-use Data::Dump qw(pp);
-# expected situation
+# expected situation:
 # A <- B' (clone of B)
 #   |- C
 #   \- D
@@ -748,7 +688,6 @@ ok($jobA2, 'jobA->clone duplicated');
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
 
 # expected situation, all chained:
-
 # A2 <- B2 (clone of Bc)
 #    |- C2
 #    \- D2
@@ -774,7 +713,7 @@ is_deeply(
     'jobA2 has jobB2, jobC2 and jobD2 as children'
 );
 
-# situation parent is done, children running -> parent is cloned -> parent is running -> parent is cloned. Check all children has new parent
+# situation parent is done, children running -> parent is cloned -> parent is running -> parent is cloned. Check all children has new parent:
 # A <- B
 #   |- C
 #   \- D
@@ -789,13 +728,8 @@ $jobC = _job_create(\%settingsC, undef, [$jobA->id]);
 $jobD = _job_create(\%settingsD, undef, [$jobA->id]);
 
 # hack jobs to appear done to scheduler
-$jobA->state(OpenQA::Schema::Result::Jobs::DONE);
-$jobA->result(OpenQA::Schema::Result::Jobs::PASSED);
-$jobA->update;
-for ($jobB, $jobC, $jobD) {
-    $_->state(OpenQA::Schema::Result::Jobs::RUNNING);
-    $_->update;
-}
+_jobs_update_state([$jobA], OpenQA::Schema::Result::Jobs::DONE, OpenQA::Schema::Result::Jobs::PASSED);
+_jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Schema::Result::Jobs::RUNNING);
 
 $jobA2 = $jobA->auto_duplicate;
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
@@ -838,14 +772,8 @@ $jobC = _job_create(\%settingsC, [$jobB->id], [$jobA->id]);
 $jobD = _job_create(\%settingsD, [$jobB->id], [$jobA->id]);
 
 # hack jobs to appear done to scheduler
-$jobA->state(OpenQA::Schema::Result::Jobs::DONE);
-$jobA->result(OpenQA::Schema::Result::Jobs::PASSED);
-$jobA->update;
-for ($jobB, $jobC, $jobD) {
-    $_->state(OpenQA::Schema::Result::Jobs::DONE);
-    $_->result(OpenQA::Schema::Result::Jobs::FAILED);
-    $_->update;
-}
+_jobs_update_state([$jobA], OpenQA::Schema::Result::Jobs::DONE, OpenQA::Schema::Result::Jobs::PASSED);
+_jobs_update_state([$jobB, $jobC, $jobD], OpenQA::Schema::Result::Jobs::DONE, OpenQA::Schema::Result::Jobs::FAILED);
 
 $jobA2 = $jobA->auto_duplicate;
 $_->discard_changes for ($jobA, $jobB, $jobC, $jobD);
@@ -866,9 +794,7 @@ sub _job_create_set_done {
     my ($settings, $state) = @_;
     my $job = _job_create($settings);
     # hack jobs to appear done to scheduler
-    $job->state($state);
-    $job->result(OpenQA::Schema::Result::Jobs::PASSED);
-    $job->update;
+    _jobs_update_state([$job], $state, OpenQA::Schema::Result::Jobs::PASSED);
     return $job;
 }
 
