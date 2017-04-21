@@ -59,6 +59,12 @@ $color-step-actions: #666;
     }
 }
 
+.build-row h4 {
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+
 .build_group_children, .build-row {
     h4:before {
         display: inline-box;
