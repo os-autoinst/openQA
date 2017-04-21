@@ -71,13 +71,12 @@ checkstyle:
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle lib
 
 .PHONY: test
-test:
-	if test "$$TRAVIS" = "true"; then \
-	  $(MAKE) travis ;\
-	else \
-	   $(MAKE) checkstyle ;\
-	   OPENQA_CONFIG= prove ${PROVE_ARGS} ;\
-	fi
+ifeq ($(TRAVIS),true)
+test: travis
+else
+test: checkstyle
+	OPENQA_CONFIG= prove ${PROVE_ARGS}
+endif
 
 .PHONY: travis
 travis:
