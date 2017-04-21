@@ -62,7 +62,7 @@ sub log_event {
         "--json-input",  "--message=$event_data"
     );
     my ($stdin, $stderr, $output) = (undef, undef, undef);
-    IPC::Run::run(\@command, \$stdin, \$output, \$stderr);
+    IPC::Run::start(\@command, \$stdin, \$output, \$stderr);
 }
 
 # when we get an event, convert it to fedmsg format and send it
