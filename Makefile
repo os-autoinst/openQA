@@ -68,7 +68,9 @@ install:
 
 .PHONY: checkstyle
 checkstyle:
+ifneq ($(CHECKSTYLE),0)
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle lib
+endif
 
 .PHONY: test
 ifeq ($(TRAVIS),true)
