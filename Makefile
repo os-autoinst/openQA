@@ -68,16 +68,17 @@ install:
 
 .PHONY: checkstyle
 checkstyle:
+ifneq ($(CHECKSTYLE),0)
 	PERL5LIB=lib/perlcritic:$$PERL5LIB perlcritic --gentle lib
+endif
 
 .PHONY: test
-test:
-	if test "$$TRAVIS" = "true"; then \
-	  $(MAKE) travis ;\
-	else \
-	   $(MAKE) checkstyle ;\
-	   OPENQA_CONFIG= prove ${PROVE_ARGS} ;\
-	fi
+ifeq ($(TRAVIS),true)
+test: travis
+else
+test: checkstyle
+	OPENQA_CONFIG= prove ${PROVE_ARGS}
+endif
 
 .PHONY: travis
 travis:
