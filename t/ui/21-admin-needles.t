@@ -58,12 +58,11 @@ unless ($driver) {
 
 my @needle_files = qw(inst-timezone-text.json inst-timezone-text.png never-matched.json never-matched.png);
 subtest 'create dummy files for needles' => sub {
-    for my $file (@needle_files) {
-        my $file_path = $needle_dir . $file;
-        #open(FNAME, '>', $file_path);
-        ok(open(FNAME, '>', $file_path), $file . ' is created');
-        print FNAME 'go away later';
-        close(FNAME);
+    for my $file_name (@needle_files) {
+        my $file_path = $needle_dir . $file_name;
+        ok(open(my $file, '>', $file_path), $file_name . ' is created');
+        print $file 'go away later';
+        close($file);
     }
 };
 
@@ -74,10 +73,12 @@ $driver->title_is("openQA", "back on main page");
 
 is($driver->find_element('#user-action a')->get_text(), 'Logged in as Demo', "logged in as demo");
 
-# Demo is admin, so go there
-$driver->find_element('#user-action a')->click();
-$driver->find_element_by_link_text('Needles')->click();
-wait_for_ajax;
+sub goto_admin_needle_table {
+    $driver->find_element('#user-action a')->click();
+    $driver->find_element_by_link_text('Needles')->click();
+    wait_for_ajax;
+}
+goto_admin_needle_table();
 
 my @trs = $driver->find_elements('#needles tr', 'css');
 # skip header
@@ -98,10 +99,7 @@ like(
     "redirected to right module"
 );
 
-# go back to needles
-$driver->find_element('#user-action a')->click();
-$driver->find_element('Needles', 'link_text')->click();
-wait_for_ajax;
+goto_admin_needle_table();
 
 $driver->find_element_by_link_text('about 14 hours ago')->click();
 like(
@@ -110,10 +108,7 @@ like(
     "redirected to right module too"
 );
 
-# go back to needles
-$driver->find_element('#user-action a')->click();
-$driver->find_element('Needles', 'link_text')->click();
-wait_for_ajax;
+goto_admin_needle_table();
 
 subtest 'delete needle' => sub {
     # disable animations to speed up test
@@ -164,8 +159,8 @@ subtest 'delete needle' => sub {
         is(scalar @{$driver->find_elements('#failed-needles li',      'css')}, 0, 'no failed needles');
         $driver->find_element_by_id('close_delete')->click();
         wait_for_ajax;    # required due to server-side datatable
-        for my $file (@needle_files) {
-            is(-f $needle_dir . $file, undef, $file . ' is gone');
+        for my $file_name (@needle_files) {
+            is(-f $needle_dir . $file_name, undef, $file_name . ' is gone');
         }
         is($driver->find_element('#needles tbody tr')->get_text(), 'No data available in table', 'no needles left');
     };

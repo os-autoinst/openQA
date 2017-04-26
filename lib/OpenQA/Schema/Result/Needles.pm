@@ -60,8 +60,10 @@ __PACKAGE__->set_primary_key('id');
 __PACKAGE__->add_unique_constraint([qw(dir_id filename)]);
 __PACKAGE__->belongs_to(first_seen => 'OpenQA::Schema::Result::JobModules', 'first_seen_module_id');
 __PACKAGE__->belongs_to(last_seen  => 'OpenQA::Schema::Result::JobModules', 'last_seen_module_id');
-__PACKAGE__->belongs_to(last_match => 'OpenQA::Schema::Result::JobModules', 'last_matched_module_id');
-__PACKAGE__->belongs_to(directory  => 'OpenQA::Schema::Result::NeedleDirs', 'dir_id');
+__PACKAGE__->belongs_to(
+    last_match => 'OpenQA::Schema::Result::JobModules',
+    'last_matched_module_id', {join_type => 'LEFT'});
+__PACKAGE__->belongs_to(directory => 'OpenQA::Schema::Result::NeedleDirs', 'dir_id');
 
 __PACKAGE__->has_many(job_modules => 'OpenQA::Schema::Result::JobModuleNeedles', 'needle_id');
 
