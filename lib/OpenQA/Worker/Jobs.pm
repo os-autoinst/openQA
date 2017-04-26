@@ -385,7 +385,7 @@ sub _stop_job_2 {
             log_warning('job ' . $job->{id} . ' spent more time than MAX_JOB_TIME');
         }
         elsif ($aborted eq 'done') {    # not aborted
-            log_debug('setting job ' . $job->{id} . 'to done') if $verbose;
+            log_debug('setting job ' . $job->{id} . ' to done') if $verbose;
             upload_status(1, \&_stop_job_finish);
             $job_done = 1;
         }
