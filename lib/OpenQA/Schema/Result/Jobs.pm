@@ -1,4 +1,4 @@
-# Copyright (C) 2015-2016 SUSE LLC
+# Copyright (C) 2015-2017 SUSE LLC
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,7 +23,7 @@ use JSON;
 use Fcntl;
 use DateTime;
 use db_helpers;
-use OpenQA::Utils qw(log_debug log_warning parse_assets_from_settings locate_asset);
+use OpenQA::Utils qw(log_debug log_info log_warning parse_assets_from_settings locate_asset);
 use File::Basename qw(basename dirname);
 use File::Spec::Functions 'catfile';
 use File::Path ();
@@ -1174,10 +1174,6 @@ sub register_assets_from_settings {
 
     return unless keys %assets;
 
-    for my $a (values %assets) {
-        return if $a->{name} =~ /\//;    # TODO: use whitelist?
-    }
-
     my @parents_rs = $self->parents->search(
         {
             dependency => OpenQA::Schema::Result::JobDependencies->CHAINED,
@@ -1193,6 +1189,11 @@ sub register_assets_from_settings {
     # check assets and fix the file names
     for my $k (keys %assets) {
         my $a = $assets{$k};
+        if ($a->{name} =~ /\//) {
+            log_info "not registering asset $a->{name} containing /";
+            delete $assets{$k};
+            next;
+        }
         my $f_asset = _asset_find($a->{name}, $a->{type}, \@parents);
         unless (defined $f_asset) {
             # don't register asset not yet available

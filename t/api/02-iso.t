@@ -1,3 +1,5 @@
+#! /usr/bin/perl
+
 # Copyright (C) 2014-2016 SUSE LLC
 # Copyright (C) 2016 Red Hat
 #
@@ -342,14 +344,19 @@ sub check_download_asset {
     }
 }
 
+sub fetch_first_job {
+    my ($t, $rsp) = @_;
+    my $newid = $rsp->json->{ids}->[0];
+    return $t->get_ok("/api/v1/jobs/$newid")->status_is(200)->tx->res->json->{job};
+}
+
 # Similarly for checking a setting in the created jobs...takes the app, the
 # response object, the setting name, the expected value and the test
 # description as args.
 sub check_job_setting {
     my ($t, $rsp, $setting, $expected, $desc) = @_;
-    my $newid = @{$rsp->json->{ids}}[0];
-    my $ret   = $t->get_ok("/api/v1/jobs/$newid")->status_is(200);
-    is($ret->tx->res->json->{job}->{settings}->{$setting}, $expected, $desc);
+    my $ret = fetch_first_job($t, $rsp);
+    is($ret->{settings}->{$setting}, $expected, $desc);
 }
 
 # Schedule download of an existing ISO
@@ -477,5 +484,24 @@ $rsp = schedule_iso(
 );
 is($rsp->message, 'Asset download requested from non-whitelisted host adamshost');
 check_download_asset('asset _DECOMPRESS_URL not in whitelist');
+
+# schedule an existant ISO against a repo to verify the ISO is registered and the repo is not
+$rsp = schedule_iso(
+    {
+        DISTRI  => 'opensuse',
+        VERSION => '13.1',
+        FLAVOR  => 'DVD',
+        ARCH    => 'i586',
+        REPO_1  => 'http://open.qa/does-no-matter',
+        ISO     => 'openSUSE-13.1-DVD-i586-Build0091-Media.iso'
+    },
+    200
+);
+
+is_deeply(
+    fetch_first_job($t, $rsp)->{assets},
+    {iso => ['openSUSE-13.1-DVD-i586-Build0091-Media.iso']},
+    'ISO is scheduled'
+);
 
 done_testing();
