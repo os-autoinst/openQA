@@ -33,6 +33,6 @@
     </div>
 </div>
 
-<a name="build-results"/>
+<div id="build-results"></div>
 %= include 'main/group_builds', build_results => $build_results, group => $group, children => $children, default_expanded => 1
 %= include 'main/more_builds', limit_builds => $limit_builds
