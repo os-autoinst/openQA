@@ -129,7 +129,7 @@ my $res = schedule_iso(
         PRECEDENCE => 'original'
     });
 
-is($res->json->{count}, 10, "10 new jobs created");
+is($res->json->{count}, 10, '10 new jobs created');
 my @newids = @{$res->json->{ids}};
 my $newid  = $newids[0];
 
@@ -155,12 +155,8 @@ is_deeply(
     "server_32 is only parent of client2_32"
 );
 is_deeply($server_32->{parents}, {Parallel => [], Chained => []}, "server_32 has no parents");
-is($kde_32, undef, "kde is not created for 32bit machine");
-is_deeply(
-    $advanced_kde_32->{parents},
-    {Parallel => [], Chained => [$textmode_32->{id}]},
-    "textmode_32 is only parent of advanced_kde_32"
-);    # kde is not defined for 32bit machine
+is($kde_32,          undef, 'kde is not created for 32bit machine');
+is($advanced_kde_32, undef, 'advanced_kde is not created for 32bit machine');
 
 my $server_64       = find_job(\@jobs, \@newids, 'server',       '64bit');
 my $client1_64      = find_job(\@jobs, \@newids, 'client1',      '64bit');
@@ -180,20 +176,21 @@ is_deeply(
     "server_64 is only parent of client2_64"
 );
 is_deeply($server_64->{parents}, {Parallel => [], Chained => []}, "server_64 has no parents");
-is($textmode_64, undef, "textmode is not created for 64bit machine");
-is_deeply(
-    $advanced_kde_64->{parents},
-    {Parallel => [], Chained => [$kde_64->{id}]},
-    "kde_64 is only parent of advanced_kde_64"
-);    # textmode is not defined for 64bit machine
+eq_set($advanced_kde_64->{parents}->{Parallel}, [], 'advanced_kde_64 has no parallel parents');
+eq_set(
+    $advanced_kde_64->{parents}->{Chained},
+    [$kde_64->{id}, $textmode_64->{id}],
+    'advanced_kde_64 has two chained parents'
+);
 
 is($server_32->{group_id}, 1001, 'server_32 part of opensuse group');
 is($server_32->{priority}, 40,   'server_32 has priority according to job template');
 is($server_64->{group_id}, 1001, 'server_64 part of opensuse group');
 is($server_64->{priority}, 40,   'server_64 has priority according to job template');
 
-is($advanced_kde_32->{settings}->{PUBLISH_HDD_1}, 'opensuse-13.1-i586-kde-qemu32.qcow2', "variable expansion");
-is($advanced_kde_64->{settings}->{PUBLISH_HDD_1}, 'opensuse-13.1-i586-kde-qemu64.qcow2', "variable expansion");
+is($advanced_kde_32->{settings}->{PUBLISH_HDD_1},
+    undef, 'variable expansion because kde is not created for 32 bit machine');
+is($advanced_kde_64->{settings}->{PUBLISH_HDD_1}, 'opensuse-13.1-i586-kde-qemu64.qcow2', 'variable expansion');
 
 # variable precedence
 is($client1_32->{settings}->{PRECEDENCE}, 'original', "default precedence (post PRECEDENCE beats suite PRECEDENCE)");
@@ -243,7 +240,7 @@ $res = schedule_iso(
     200
 );
 
-is($res->json->{count}, 4, "4 new jobs created (one twice for both machine types)");
+is($res->json->{count}, 5, '5 new jobs created (two twice for both machine types)');
 
 # delete the iso
 # can not do as operator
