@@ -72,6 +72,7 @@ image::images/review_badges.png[Review badges]
 * The green icons shows up when there is no work to be done.
 * No icon is shown if at least one failure still need to be reviewed.
 * The black icon is shown if all review work has been done.
+* The pink icon is shown if all unicorns in openQA have been found!
 
 (To simplify, checking for false-negatives is not considered here.)
 
