@@ -252,7 +252,7 @@ sub upload {
             close($cfd);
         }
         open(my $log, '>>', "autoinst-log.txt");
-        print $log "Checksum $csum1:$csum2 Sizes:$size1:$size2\n";
+        print $log "Checksum comparison (actual:expected) $csum1:$csum2 with size (actual:expected) $size1:$size2\n";
         close $log;
         if ($csum1 eq $csum2 && $size1 eq $size2) {
             my $ua_url = $hosts->{$current_host}{url}->clone;
@@ -260,6 +260,7 @@ sub upload {
             $hosts->{$current_host}{ua}->post($ua_url => form => {temporary => $res->res->json->{temporary}});
         }
         else {
+            print $log "Checksum/size comparison of $filename FAILED\n";
             return 0;
         }
     }
