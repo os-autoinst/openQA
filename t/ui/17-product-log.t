@@ -32,7 +32,14 @@ use t::ui::PhantomTest;
 
 OpenQA::Test::Case->new->init_data;
 
-my $driver = call_phantom();
+sub schema_hook {
+    # simulate typo in START_AFTER_TEST to check for error message in this case
+    my $schema     = OpenQA::Test::Database->new->create;
+    my $test_suits = $schema->resultset('TestSuites');
+    $test_suits->find(1017)->settings->find({key => 'START_AFTER_TEST'})->update({value => 'kda,textmode'});
+}
+
+my $driver = call_phantom(\&schema_hook);
 if (!$driver) {
     plan skip_all => $t::ui::PhantomTest::phantommissing;
     exit(0);
@@ -61,7 +68,7 @@ my $ret = $t->post_ok(
         ARCH    => 'i586',
         BUILD   => '0091'
     })->status_is(200);
-is($ret->tx->res->json->{count}, 10, '10 new jobs created');
+is($ret->tx->res->json->{count}, 9, '9 new jobs created, 1 fails due to wrong START_AFTER_TEST');
 
 $driver->get($url . '/admin/productlog');
 like($driver->get_title(), qr/Scheduled products log/, 'on product log');
@@ -82,7 +89,6 @@ $driver->find_element_by_link_text('Scheduled products')->click();
 like($driver->get_title(), qr/Scheduled products log/, 'on product log');
 $table = $driver->find_element_by_id('product_log_table');
 ok($table, 'products tables found');
-
 @rows = $driver->find_child_elements($table, './tbody/tr[./td[text() = "whatever.iso"]]', 'xpath');
 my $nrows = scalar @rows;
 my $row   = shift @rows;
@@ -98,6 +104,12 @@ ok($id, 'time is actually link to event id');
 $cell = $driver->find_child_element($row, './td[9]/a', 'xpath');
 like($cell->get_attribute('href'), qr{$url/api/v1/isos}, 'replay action poinst to isos api route');
 $cell->click();
+wait_for_ajax;
+like(
+    $driver->find_element('#flash-messages span')->get_text(),
+qr/ISO rescheduled - 9 new jobs but 1 failed\s*START_AFTER_TEST=kda:64bit not found - check for typos and dependency cycles/,
+    'flash with error messages occurs'
+);
 $driver->refresh;
 # refresh page
 $driver->find_element('#user-action a')->click();

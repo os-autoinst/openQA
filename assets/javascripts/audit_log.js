@@ -155,7 +155,17 @@ function loadProductLogTable ()
         var event_data = table.row(action_row).data()[8];
         event_data = jQuery.parseJSON(event_data);
         $.post(restart_link, event_data).done( function( data, res, xhr ) {
-            action_cell.append('ISO rescheduled - ' + xhr.responseJSON.count + ' new jobs');
+            var json = xhr.responseJSON;
+            var message = 'ISO rescheduled - ' + json.ids.length + ' new jobs';
+            if(json.failed.length) {
+                message += ' but ' + json.failed.length + ' failed';
+                var details = '';
+                for(var i = 0; i != json.failed.length; ++i) {
+                    details += '<li><ul><li>' + json.failed[i].error_messages.join('</li><li>') + '</li></ul></li>';
+                }
+                addFlash('danger', '<strong>' + message + '</strong><ul>' + details + '</li></ul>');
+            }
+            action_cell.append(message);
         });
         var i = $(this).find('i').removeClass('fa-repeat');
         $(this).replaceWith(i);
