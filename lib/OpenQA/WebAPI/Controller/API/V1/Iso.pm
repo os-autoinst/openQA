@@ -235,36 +235,33 @@ sub _generate_jobs {
 sub job_create_dependencies {
     my ($self, $job, $testsuite_mapping) = @_;
 
+    my @error_messages;
     my $settings = $job->settings_hash;
-    for my $depname ('START_AFTER_TEST', 'PARALLEL_WITH') {
+    for my $dependency (
+        ['START_AFTER_TEST', OpenQA::Schema::Result::JobDependencies::CHAINED],
+        ['PARALLEL_WITH',    OpenQA::Schema::Result::JobDependencies::PARALLEL])
+    {
+        my ($depname, $deptype) = @$dependency;
         next unless defined $settings->{$depname};
         for my $testsuite (_parse_dep_variable($settings->{$depname}, $settings)) {
             if (!defined $testsuite_mapping->{$testsuite}) {
-                OpenQA::Utils::log_warning("$depname=$testsuite not found - check for typos and dependency cycles");
+                my $error_msg = "$depname=$testsuite not found - check for typos and dependency cycles";
+                OpenQA::Utils::log_warning($error_msg);
+                push(@error_messages, $error_msg);
             }
             else {
-                my $dep;
-                if ($depname eq 'START_AFTER_TEST') {
-                    $dep = OpenQA::Schema::Result::JobDependencies::CHAINED;
-                }
-                elsif ($depname eq 'PARALLEL_WITH') {
-                    $dep = OpenQA::Schema::Result::JobDependencies::PARALLEL;
-                }
-                else {
-                    die 'Unknown dependency type';
-                }
                 for my $parent (@{$testsuite_mapping->{$testsuite}}) {
-
                     $self->db->resultset('JobDependencies')->create(
                         {
                             child_job_id  => $job->id,
                             parent_job_id => $parent,
-                            dependency    => $dep,
+                            dependency    => $deptype,
                         });
                 }
             }
         }
     }
+    return \@error_messages;
 }
 
 
@@ -367,9 +364,10 @@ sub schedule_iso {
 
     # the jobs are now sorted parents first
 
-    my @ids     = ();
+    my @successful_job_ids;
+    my @failed_job_info;
     my $coderef = sub {
-        my @jobs = ();
+        my @jobs;
         # remember ids of created parents
         my %testsuite_ids;    # key: "suite:machine", value: array of job ids
 
@@ -393,15 +391,25 @@ sub schedule_iso {
 
         # jobs are created, now recreate dependencies and extract ids
         for my $job (@jobs) {
-            $self->job_create_dependencies($job, \%testsuite_ids);
-            push @ids, $job->id;
+            my $error_messages = $self->job_create_dependencies($job, \%testsuite_ids);
+            if (!@$error_messages) {
+                push(@successful_job_ids, $job->id);
+            }
+            else {
+                push(
+                    @failed_job_info,
+                    {
+                        job_id         => $job->id,
+                        error_messages => $error_messages
+                    });
+            }
         }
 
         # enqueue gru jobs
-        if (%downloads and @ids) {
+        if (%downloads and @successful_job_ids) {
             # array of hashrefs job_id => id; this is what create needs
             # to create entries in a related table (gru_dependencies)
-            my @jobsarray = map +{job_id => $_}, @ids;
+            my @jobsarray = map +{job_id => $_}, @successful_job_ids;
             for my $url (keys %downloads) {
                 my ($path, $do_extract) = @{$downloads{$url}};
                 $self->db->resultset('GruTasks')->create(
@@ -422,7 +430,8 @@ sub schedule_iso {
     catch {
         my $error = shift;
         $self->app->log->warn("Failed to schedule ISO: $error");
-        @ids = ();
+        push(@failed_job_info, map { {job_id => $_, error_messages => [$error],} } @successful_job_ids);
+        @successful_job_ids = ();
     };
 
     $self->db->resultset('GruTasks')->create(
@@ -442,7 +451,10 @@ sub schedule_iso {
 
     notify_workers;
     $self->emit_event('openqa_iso_create', $args);
-    return @ids;
+    return {
+        successful_job_ids => \@successful_job_ids,
+        failed_job_info    => \@failed_job_info,
+    };
 }
 
 sub create {
@@ -486,11 +498,23 @@ sub create {
         }
     }
 
-    my @ids = $self->schedule_iso(\%params);
-    my $cnt = scalar(@ids);
+    my $scheduled_jobs     = $self->schedule_iso(\%params);
+    my $successful_job_ids = $scheduled_jobs->{successful_job_ids};
+    my $failed_job_info    = $scheduled_jobs->{failed_job_info};
+    my $created_job_count  = scalar(@$successful_job_ids);
 
-    $self->app->log->debug("created $cnt jobs");
-    $self->render(json => {count => $cnt, ids => \@ids});
+    my $debug_message = "Created $created_job_count jobs";
+    if (my $failed_job_count = scalar(@$failed_job_info)) {
+        $debug_message .= " but failed to create $failed_job_count jobs";
+    }
+    $self->app->log->debug($debug_message);
+
+    $self->render(
+        json => {
+            count  => $created_job_count,
+            ids    => $successful_job_ids,
+            failed => $failed_job_info,
+        });
 }
 
 sub destroy {
