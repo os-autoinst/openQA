@@ -1,3 +1,4 @@
+# Last Modified: Tue May  9 11:58:28 2017
 #include <tunables/global>
 
 # ------------------------------------------------------------------
@@ -44,7 +45,6 @@
   /proc/*/net/psched r,
   /proc/*/stat r,
   /proc/*/status r,
-  /proc/bus/pci/devices r,
   /proc/filesystems r,
   /proc/meminfo r,
   /proc/sys/vm/overcommit_memory r,
@@ -54,7 +54,6 @@
   /sys/bus/ r,
   /sys/bus/usb/devices/ r,
   /sys/class/ r,
-  /sys/devices/** r,
   /sys/firmware/devicetree/base/ r,
   /tmp/* rwk,
   /usr/bin/Xvnc rCx,
@@ -70,7 +69,7 @@
   /usr/bin/ionice rix,
   /usr/bin/ipmitool rix,
   /usr/bin/isotovideo rix,
-  /usr/bin/lscpu rix,
+  /usr/bin/lscpu rCx,
   /usr/bin/mkdir rix,
   /usr/bin/nice rix,
   /usr/bin/optipng rix,
@@ -90,8 +89,8 @@
   /usr/bin/unixcmd rix,
   /usr/bin/x3270 cx,
   /usr/lib*/qemu/block-curl.so rix,
-  /usr/lib*/qemu/block-rbd.so mr,
   /usr/lib*/qemu/block-iscsi.so mr,
+  /usr/lib*/qemu/block-rbd.so mr,
   /usr/lib*/qemu/block-ssh.so mr,
   /usr/lib/git/git rix,
   /usr/lib/os-autoinst/videoencoder rix,
@@ -132,6 +131,14 @@
 
   }
 
+  profile /usr/bin/lscpu {
+    #include <abstractions/base>
+
+    /proc/** r,
+    /sys/devices/** r,
+    /usr/bin/lscpu mr,
+  }
+
   profile /usr/bin/x3270 {
     #include <abstractions/X>
     #include <abstractions/base>
@@ -154,5 +161,4 @@
     /var/lib/openqa/pool/1/x3trc.* w,
 
   }
-
 }
