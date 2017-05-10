@@ -19,7 +19,7 @@
     </div>
 </div>
 
-<a name="build-results"/>
+<div id="build-results"></div>
 % for my $groupresults (@$results) {
     % my $group              = $groupresults->{group};
     % my $build_results      = $groupresults->{build_results};
@@ -41,7 +41,7 @@
 <div class="panel panel-default filter-panel-bottom" id="filter-panel">
     <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>
     <div class="panel-body">
-        <form action="#" type="get" id="filter-form">
+        <form action="#" method="get" id="filter-form">
             <div class="form-group">
                 <strong>Group</strong>
                 <input type="text" class="form-control" name="group" placeholder="all" id="filter-group">

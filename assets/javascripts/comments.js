@@ -4,7 +4,7 @@ function showCommentEditor(form) {
     jform.find('[name="applyChanges"]').show();
     jform.find('[name="discardChanges"]').show();
     jform.find('[name="editComment"]').hide();
-    jform.find('[name="markdown"]').hide();
+    jform.find('.markdown').hide();
     jform.find('[name="removeComment"]').hide();
 }
 
@@ -14,7 +14,7 @@ function hideCommentEditor(form) {
     jform.find('[name="applyChanges"]').hide();
     jform.find('[name="discardChanges"]').hide();
     jform.find('[name="editComment"]').show();
-    jform.find('[name="markdown"]').show();
+    jform.find('.markdown').show();
     jform.find('[name="removeComment"]').show();
 }
 
@@ -65,9 +65,9 @@ function updateComment(form) {
     var editorForm = $(form);
     var url = editorForm.data('put-url');
     var headingElement = editorForm.find('h4');
-    var markdownElement = editorForm.find('[name="markdown"]');
+    var markdownElement = editorForm.find('.markdown');
     var textElement = editorForm.find('[name="text"]');
-    var markdown = editorForm.find('[name="markdown"]').html();
+    var markdown = markdownElement.html();
     var text = textElement.val();
     if(text.length) {
         textElement.hide();
@@ -129,7 +129,7 @@ function addComment(form, insertAtBottom) {
                         var commentRow = $($('#comment-row-template').html().replace(/@comment_id@/g, commentId));
                         commentRow.find('h4').replaceWith(renderCommentHeading(response, commentId));
                         commentRow.find('[name="text"]').val(response.text);
-                        commentRow.find('[name="markdown"]').html(response.renderedMarkdown);
+                        commentRow.find('.markdown').html(response.renderedMarkdown);
                         var nextElement;
                         if(!insertAtBottom) {
                             nextElement = $('.comment-row').first();
