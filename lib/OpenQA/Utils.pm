@@ -21,6 +21,7 @@ use IPC::Run();
 use Mojo::URL;
 use Regexp::Common 'URI';
 use Try::Tiny;
+use Mojo::File 'path';
 
 require Exporter;
 our ($VERSION, @ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
@@ -63,6 +64,7 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &locate_asset
   &job_groups_and_parents
   &find_job
+  &detect_current_version
   wait_with_progress
   mark_job_linked
 );
@@ -680,6 +682,41 @@ sub mark_job_linked {
     elsif ($referer) {
         log_debug("Unrecognized referer '$referer'");
     }
+}
+
+sub detect_current_version {
+    my ($path) = @_;
+
+    # Get application version
+    my $current_version = undef;
+    my $changelog_file  = path($path, 'public', 'Changelog');
+    my $head_file       = path($path, '.git', 'refs', 'heads', 'master');
+    my $refs_file       = path($path, '.git', 'packed-refs');
+
+    if (-e $changelog_file) {
+        my $changelog = $changelog_file->slurp;
+        if ($changelog && $changelog =~ /Update to version (\d+\.\d+\.\d+\.(\b[0-9a-f]{5,40}\b))\:/mi) {
+            $current_version = $1;
+        }
+    }
+    elsif (-e $head_file && -e $refs_file) {
+        my $master_head = $head_file->slurp;
+        my $packed_refs = $refs_file->slurp;
+
+        # Extrapolate latest tagged version and combine it
+        # with latest commit which heads is pointed to.
+        # This method have its limits while checking out different branches
+        # but emulates git-describe output without executing commands.
+        if ($master_head && $packed_refs) {
+            my $latest_ref = (grep(/tags/, split(/\s/, $packed_refs)))[-1];
+            my $partial_hash = substr($master_head, 0, 8);
+            if ($latest_ref && $partial_hash) {
+                my $tag = (split(/\//, $latest_ref))[-1];
+                $current_version = $tag ? "git-" . $tag . "-" . $partial_hash : undef;
+            }
+        }
+    }
+    return $current_version;
 }
 
 1;
