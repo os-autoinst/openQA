@@ -31,7 +31,7 @@
                             % }
                         % }
                     </h4>
-                    <div class="media-comment" name="markdown">
+                    <div class="media-comment markdown">
                         % if($comment) {
                             %= $comment->rendered_markdown
                         % }
