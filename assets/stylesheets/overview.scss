@@ -1,11 +1,11 @@
 .overview {
     .tooltip ul {
         text-align: left;
-        white-space: nowrap;
+        word-break: break-word;
     }
     
     .tooltip-inner {
-        /* we need smoe more space for all the needles */
+        /* we need some more space for all the needles */
         max-width: 400px;
     }
 }
