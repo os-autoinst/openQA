@@ -1,12 +1,12 @@
 .overview {
     .tooltip ul {
-	text-align: left;
-	white-space: nowrap;
+        text-align: left;
+        word-break: break-word;
     }
     
     .tooltip-inner {
-	/* we need smoe more space for all the needles */
-	max-width: 400px;
+        /* we need some more space for all the needles */
+        max-width: 400px;
     }
 }
 
@@ -14,7 +14,7 @@
     table-layout: fixed;
 
     td {
-	white-space: nowrap;
+        white-space: nowrap;
     }
 }
 
