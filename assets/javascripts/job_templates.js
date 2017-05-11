@@ -62,8 +62,20 @@ function finalizeTest(tr) {
     var test_select = tr.find('td.name select');
     if (!test_select)
         return;
+
+    // disable select and assign the selected ID to the row
     test_select.prop('disabled', true);
     tr.data('test-id', test_select.find('option:selected').data('test-id'));
+
+    // make test unavailable in other selections
+    var tbody = tr.parents('tbody');
+    presentTests = findPresentTests(tbody);
+    tbody.find('select').each(function(index, select) {
+        select = $(select);
+        if(!select.prop('disabled')) {
+            filterTestSelection(select, presentTests);
+        }
+    });
 }
 
 function templateAdded(chosen, selected) {
@@ -96,12 +108,40 @@ function testChanged() {
     chosens.prop('disabled', selected == '').trigger("chosen:updated");
 }
 
+function findPresentTests(table) {
+    var presentTests = [];
+    table.find('td.name').each(function(index, td) {
+        var test = td.innerText.trim();
+        if(!test) {
+            var select = $(td).find('select');
+            if(select && select.prop('disabled')) {
+                test = select.val();
+            }
+        }
+        if(test) {
+            presentTests.push(test);
+        }
+    });
+    return presentTests;
+}
+
+function filterTestSelection(select, presentTests) {
+    select.find('option').each(function(index, option) {
+        if(presentTests.indexOf(option.innerText.trim()) >= 0) {
+            $(option).remove();
+        }
+    });
+}
+
 function addTestRow() {
     var table = $(this).parents('table');
     var tbody = table.find('tbody');
+    var select = $('#tests-template').clone();
+    filterTestSelection(select, findPresentTests(tbody));
     var tr = $('<tr/>').prependTo(tbody);
     var td = $('<td class="name"></td>').appendTo(tr);
-    var select = $('#tests-template').clone().appendTo(td);
+    select.appendTo(td);
+
     select.show();
     select.change(testChanged);
     $('<td class="prio">50</td>').appendTo(tr);
