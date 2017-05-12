@@ -344,7 +344,7 @@ subtest 'Cache tests' => sub {
     like($result->{filename}, qr/Core-7/, "Core-7.2.iso is the first element");
 
     for (1 .. 5) {
-        $filename = "$cwd/$cachedir/$_";
+        $filename = "$cwd/$cachedir/$_.qcow2";
         open(my $tmpfile, '>', $filename);
         print $tmpfile $filename;
         $sql
@@ -355,35 +355,49 @@ subtest 'Cache tests' => sub {
         sleep 1;    # so that last_use is not the same for every item
     }
 
+    # Mark the Core-7.2 iso as being downloaded to force the worker to wait for the lock later on.
+    $sql = "update assets set downloading = 1 where filename = ? ";
+    $dbh->prepare($sql)->execute($result->{filename});
+
     $sql    = "SELECT * from assets order by last_use desc";
     $sth    = $dbh->prepare($sql);
     $result = $dbh->selectrow_hashref($sql);
+    like($result->{filename}, qr/5.qcow2$/, "file #5 is the newest element");
 
-    like($result->{filename}, qr/5$/, "file #5 is the newest element");
-
+    # Delete image #5 so that it gets cleaned up when the worker is initialized.
+    $sql = "delete from assets where filename = ? ";
+    $dbh->prepare($sql)->execute($result->{filename});
 
     #simple limit testing.
     client_call('jobs/5/restart post', qr{\Qtest_url => ["/tests/6\E}, 'client returned new test_url');
     $driver->get('/tests/6');
     like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
     start_worker;
-
-
     wait_for_result_panel qr/Result: passed/, 'test 6 is passed';
     kill_worker;
 
-    $filename = $resultdir . "00000/00000006-$job_name/autoinst-log.txt";
-    open($f, '<', $filename) or die "OPENING $filename: $!\n";
-    $autoinst_log = do { local ($/); <$f> };
-    close($f);
-
-    like($autoinst_log, qr/updating last use/, 'Test 6 Core-7.2.iso was not downloaded.');
+    ok(!-e $result->{filename}, "asset 5.qcow2 removed during cache init");
 
     $sql    = "SELECT * from assets order by last_use desc";
     $sth    = $dbh->prepare($sql);
     $result = $dbh->selectrow_hashref($sql);
 
     like($result->{filename}, qr/Core-7/, "Core-7.2.iso the most recent asset again ");
+
+    #simple limit testing.
+    client_call('jobs/6/restart post', qr{\Qtest_url => ["/tests/7\E}, 'client returned new test_url');
+    $driver->get('/tests/7');
+    like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 7 is scheduled');
+    start_worker;
+    wait_for_result_panel qr/Result: passed/, 'test 7 is passed';
+    kill_worker;
+
+    $filename = $resultdir . "00000/00000007-$job_name/autoinst-log.txt";
+    open($f, '<', $filename) or die "OPENING $filename: $!\n";
+    $autoinst_log = do { local ($/); <$f> };
+    close($f);
+
+    like($autoinst_log, qr/Content has not changed/, 'Test 7 Core-7.2.iso has not changed.');
 
 };
 
