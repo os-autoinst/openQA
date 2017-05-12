@@ -46,6 +46,9 @@ install:
 	install -d -m 755 "$(DESTDIR)"/usr/lib/systemd/{system,system-generators}
 	install -d -m 755 "$(DESTDIR)"/usr/lib/tmpfiles.d
 	install -m 644 systemd/openqa-worker@.service "$(DESTDIR)"/usr/lib/systemd/system
+	sed -e 's_^\(ExecStart=/usr/share/openqa/script/worker\) \(--instance %i\)$_\1 --no-cleanup \2_' \
+		systemd/openqa-worker@.service \
+		> "$(DESTDIR)"/usr/lib/systemd/system/openqa-worker-no-cleanup@.service
 	install -m 644 systemd/openqa-worker.target "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-webui.service "$(DESTDIR)"/usr/lib/systemd/system
 	install -m 644 systemd/openqa-gru.service "$(DESTDIR)"/usr/lib/systemd/system
