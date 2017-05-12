@@ -16,7 +16,6 @@
                 <tr>
                     <th>Worker</th>
                     <th>Status</th>
-                    <th>Current step</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,11 +28,6 @@
                         <td class="status">
                             % stash(workername => $workername, worker => $worker);
                             %= include 'admin/workers/worker_status'
-                        </td>
-                        <td class="currentstep">
-                            % if(defined($worker->{currentstep}) && $worker->{status} eq 'running') {
-                                %= $worker->{currentstep}
-                            % }
                         </td>
                     </tr>
                 % }
