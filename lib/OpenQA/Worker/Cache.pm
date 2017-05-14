@@ -24,6 +24,7 @@ use OpenQA::Utils qw(log_error log_info log_debug);
 use OpenQA::Worker::Common;
 use List::MoreUtils;
 use File::Spec::Functions 'catdir';
+use File::Path qw(remove_tree make_path);
 use Data::Dumper;
 use JSON;
 use DBI;
@@ -38,8 +39,8 @@ my $cache;
 my $host;
 my $location;
 our $limit = 50 * 1024 * 1024 * 1024;
-my $db_file = "cache.db";
-my $dsn     = "";
+my $db_file;
+my $dsn;
 my $dbh;
 my $cache_real_size;
 
@@ -47,9 +48,14 @@ END {
     $dbh->disconnect() if $dbh;
 }
 
-sub deploy_db {
+sub deploy_cache {
     local $/;
     my $sql = <DATA>;
+    log_info "Creating cache directory tree for $location";
+    remove_tree($location, {keep_root => 1});
+    make_path(File::Spec->catdir($location, Mojo::URL->new($host)->host));
+    make_path(File::Spec->catdir($location, 'tmp'));
+
     log_info "Deploying DB: $sql";
     $dbh = DBI->connect($dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 0})
       or die("Could not connect to the dbfile.");
@@ -60,9 +66,9 @@ sub deploy_db {
 
 sub init {
     ($host, $location) = @_;
-    $db_file = catdir($location, 'cache.db');
+    $db_file = catdir($location, 'cache.sqlite');
     $dsn = "dbi:SQLite:dbname=$db_file";
-    deploy_db unless (-e $db_file);
+    deploy_cache unless (-e $db_file);
     $dbh = DBI->connect($dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1})
       or die("Could not connect to the dbfile.");
     $cache_real_size = 0;
@@ -106,7 +112,7 @@ sub download_asset {
                         $last_updated = time;
                         if ($progress < $current) {
                             $progress = $current;
-                            print $log "CACHE: Downloading $asset :", $size == $len ? 100 : $progress . "\n";
+                            print $log "CACHE: Downloading $asset: ", $size == $len ? 100 : $progress . "%\n";
                         }
                     }
                 });
@@ -142,7 +148,9 @@ sub download_asset {
         }
     }
     else {
-        print $log "CACHE: Download of $asset failed with: " . $tx->res->error->{message} . "\n";
+        print $log "CACHE: Download of $asset failed with: "
+          . $tx->res->code . " - "
+          . $tx->res->error->{message} . "\n";
         purge_asset($asset);
         $asset = undef;
     }
@@ -163,7 +171,7 @@ sub get_asset {
         $result = try_lock_asset($asset);
         if (!$result) {
             update_setup_status;
-            log_debug "CACHE: waiting 5 seconds for the lock.";
+            log_debug "CACHE: Waiting 5 seconds for the lock.";
             sleep 5;
             next;
         }

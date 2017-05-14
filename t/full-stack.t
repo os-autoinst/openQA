@@ -287,12 +287,13 @@ kill_worker;    # Ensure that the worker can be killed with TERM signal
 my $cachedir = 't/full-stack.d/cache';
 remove_tree($cachedir);
 ok(make_path($cachedir), "Setting up Cache directory");
+my $cwd            = getcwd;
+my $cache_location = "$cwd/$cachedir";
 
-my $cwd = getcwd;
 open($conf, '>', 't/full-stack.d/config/workers.ini');
 print $conf <<EOC;
 [global]
-CACHEDIRECTORY = $cwd/$cachedir
+CACHEDIRECTORY = $cache_location
 CACHELIMIT = 50;
 
 [http://localhost:$mojoport]
@@ -305,17 +306,25 @@ ok(-e "t/full-stack.d/config/workers.ini", "Config file created.");
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
 
+    my $filename;
+    open($filename, '>', $cache_location . "/test.file");
+    print $filename "Hello World";
+    close($filename);
 
-    my $db_file  = "$cwd/$cachedir/cache.db";
+    make_path($cache_location . "/test_directory");
+
+    my $db_file  = "$cache_location/cache.sqlite";
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     client_call('jobs/3/restart post', qr{\Qtest_url => ["/tests/5\E}, 'client returned new test_url');
 
     $driver->get('/tests/5');
     like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled');
-    ok(!-e $db_file, "Cache.db is not present");
+    ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
     wait_for_job_running;
-    ok(-e $db_file, "cache.db file created");
+    ok(-e $db_file,                             "cache.sqlite file created");
+    ok(!-d $cache_location . "/test_directory", "Directory within cache, not present after deploy");
+    ok(!-e $cache_location . "/test.file",      "File within cache, not present after deploy");
 
     like(
         readlink('t/full-stack.d/openqa/pool/1/Core-7.2.iso'),
@@ -326,7 +335,7 @@ subtest 'Cache tests' => sub {
     wait_for_result_panel qr/Result: passed/, 'test 5 is passed';
     kill_worker;
 
-    my $filename = $resultdir . "00000/00000005-$job_name/autoinst-log.txt";
+    $filename = $resultdir . "00000/00000005-$job_name/autoinst-log.txt";
     open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
     $autoinst_log = do { local ($/); <$f> };
     close($f);
@@ -390,7 +399,6 @@ subtest 'Cache tests' => sub {
     like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 7 is scheduled');
     start_worker;
     wait_for_result_panel qr/Result: passed/, 'test 7 is passed';
-    kill_worker;
 
     $filename = $resultdir . "00000/00000007-$job_name/autoinst-log.txt";
     open($f, '<', $filename) or die "OPENING $filename: $!\n";
@@ -399,6 +407,19 @@ subtest 'Cache tests' => sub {
 
     like($autoinst_log, qr/Content has not changed/, 'Test 7 Core-7.2.iso has not changed.');
 
+    client_call("jobs post $JOB_SETUP HDD_1=non-existent.qcow2");
+    $driver->get('/tests/8');
+    wait_for_result_panel qr/Result: incomplete/, 'test 8 is incomplete';
+
+    $filename = $resultdir . "00000/00000008-$job_name/autoinst-log.txt";
+    open($f, '<', $filename) or die "OPENING $filename: $!\n";
+    $autoinst_log = do { local ($/); <$f> };
+    close($f);
+
+    like($autoinst_log, qr/non-existent.qcow2 failed with: 404 - Not Found/, 'Test 8 failure message found in log.');
+    like($autoinst_log, qr/result: setup failure/, 'Test 8 state correct: setup failure');
+
+    kill_worker;
 };
 
 kill_phantom;
