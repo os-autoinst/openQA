@@ -315,7 +315,7 @@ sub asset_lookup {
     my $lock_granted;
     my $result;
 
-    $sql    = "SELECT filename, etag, last_use, size from assets where filename = ? and downloading = 0";
+    $sql    = "SELECT filename, etag, last_use, size from assets where filename = ?";
     $sth    = $dbh->prepare($sql);
     $result = $dbh->selectrow_hashref($sql, undef, $asset);
     if (!$result) {
