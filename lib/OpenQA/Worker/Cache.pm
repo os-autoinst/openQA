@@ -368,14 +368,20 @@ sub check_limits {
         $sql    = "SELECT size, filename FROM assets WHERE downloading = 0 ORDER BY last_use asc";
         $sth    = $dbh->prepare($sql);
         $result = $dbh->selectrow_hashref($sql);
-
-        foreach my $asset ($result) {
-            if (purge_asset($asset->{filename})) {
-                $cache_real_size -= $asset->{size};
-                log_debug "Reclaiming " . $asset->{size} . " from $cache_real_size to make space for $limit";
-            }    # purge asset will die anyway in case of failure.
-            last if ($cache_real_size < $limit);
+        if ($result) {
+            foreach my $asset ($result) {
+                if (purge_asset($asset->{filename})) {
+                    $cache_real_size -= $asset->{size};
+                    log_debug "Reclaiming " . $asset->{size} . " from $cache_real_size to make space for $limit";
+                }    # purge asset will die anyway in case of failure.
+                last if ($cache_real_size < $limit);
+            }
         }
+        else {
+            log_error "There are not more elements to remove!";
+            last;
+        }
+
     }
     log_debug "CACHE: Health: Real size: $cache_real_size, Configured limit: $limit";
 }
