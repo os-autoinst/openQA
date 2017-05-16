@@ -20,6 +20,8 @@ BEGIN {
 }
 
 use strict;
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use File::Copy;
 use OpenQA::Test::Database;

@@ -22,6 +22,8 @@ BEGIN {
 
 use strict;
 use warnings;
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use Data::Dump qw(pp dd);
 use File::Path qw(remove_tree);
 use File::Spec::Functions 'catfile';

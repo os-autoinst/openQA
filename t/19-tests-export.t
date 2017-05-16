@@ -19,6 +19,8 @@ use warnings;
 
 BEGIN { unshift @INC, 'lib'; }
 
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use OpenQA::Test::Database;
 use Test::More;
 use Test::Mojo;

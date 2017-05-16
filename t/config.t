@@ -17,6 +17,8 @@ BEGIN { unshift @INC, 'lib'; }
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use Mojo::Base -strict;
+use FindBin;
+use lib "$FindBin::Bin/lib";
 
 use Test::More;
 use Test::Mojo;
