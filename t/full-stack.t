@@ -28,10 +28,12 @@ BEGIN {
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;
+use Test::Output 'stderr_like';
 use Data::Dumper;
 use IO::Socket::INET;
 use POSIX '_exit';
 use Fcntl ':mode';
+use DBI;
 
 # optional but very useful
 eval 'use Test::More::Color';
@@ -284,102 +286,140 @@ kill_worker;    # Ensure that the worker can be killed with TERM signal
 
 my $cachedir = 't/full-stack.d/cache';
 remove_tree($cachedir);
-ok(make_path($cachedir));
+ok(make_path($cachedir), "Setting up Cache directory");
+my $cwd            = getcwd;
+my $cache_location = "$cwd/$cachedir";
 
-my $cwd = getcwd;
-ok(open($conf, '>', 't/full-stack.d/config/workers.ini'));
+open($conf, '>', 't/full-stack.d/config/workers.ini');
 print $conf <<EOC;
 [global]
-CACHEDIRECTORY = $cwd/$cachedir
+CACHEDIRECTORY = $cache_location
+CACHELIMIT = 50;
 
 [http://localhost:$mojoport]
 TESTPOOLSERVER = $cwd/t/full-stack.d/openqa/share/tests
 EOC
 close($conf);
 
-client_call('jobs/3/restart post', qr{\Qtest_url => ["/tests/5\E}, 'client returned new test_url');
-
-$driver->get('/tests/5');
-like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled');
-start_worker;
-
-wait_for_job_running;
-like(
-    readlink('t/full-stack.d/openqa/pool/1/Core-7.2.iso'),
-    qr(t/full-stack.d/cache/Core-7.2.iso),
-    "iso is symlinked to cache"
-);
-
-wait_for_result_panel qr/Result: passed/, 'test 5 is passed';
-kill_worker;
-
-my $db_file = "$cwd/$cachedir/cache.db";
-
-sub get_cachedb {
-    local $/;    # use slurp mode to read the whole file at once.
-    my $cache;
-    open(my $fh, "<", $db_file) or not_ok("Could not open cache db file");
-    eval { $cache = JSON->new->relaxed->decode(<$fh>); };
-    close $fh;
-    return $cache;
-}
-
-sub save_cachedb {
-    my $cache = shift;
-    open(my $fh, ">", $db_file);
-    truncate($fh, 0) or die "cannot truncate $db_file: $!\n";
-    my $json = JSON->new->pretty->canonical;
-    print $fh $json->encode($cache);
-    close($fh);
-}
+ok(-e "t/full-stack.d/config/workers.ini", "Config file created.");
 
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
 
-    my $cache = get_cachedb();
-    # We know it's going to be this host because it's what was defined in
-    # the worker ini
-    my $host = "http://localhost:$mojoport";
-    ok(@{$cache->{$host}} eq 1, 'Number of elements in the cache is 1');
     my $filename;
-    my $index;
-    my $superior_limit;
+    open($filename, '>', $cache_location . "/test.file");
+    print $filename "Hello World";
+    close($filename);
 
-    for (1 .. 55) {
-        $filename = "$cwd/$cachedir/$_";
-        open(my $tmpfile, '>', $filename);
-        print $tmpfile $filename;
-        #close $tmpfile;
-        unshift(@{$cache->{$host}}, $filename);
-    }
+    make_path($cache_location . "/test_directory");
 
-    is($cache->{$host}[0], $filename, "$filename is in index 0");
-    like($cache->{$host}[55], qr/Core-7/, "Core-7.2.iso is in index 55");
+    my $db_file  = "$cache_location/cache.sqlite";
+    my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
+    client_call('jobs/3/restart post', qr{\Qtest_url => ["/tests/5\E}, 'client returned new test_url');
 
-    # Cache has been modified by hand to force the abnormal situation of
-    # more elements than permitted.
-    $superior_limit = $cache->{$host}[54];
-    ok(-e $superior_limit, "Asset outside boundaries still exists");
-    save_cachedb($cache);
-
-    client_call('jobs/5/restart post', qr{\Qtest_url => ["/tests/6\E}, 'client returned new test_url');
-    $driver->get('/tests/6');
-    like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
+    $driver->get('/tests/5');
+    like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 5 is scheduled');
+    ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
     wait_for_job_running;
+    ok(-e $db_file,                             "cache.sqlite file created");
+    ok(!-d $cache_location . "/test_directory", "Directory within cache, not present after deploy");
+    ok(!-e $cache_location . "/test.file",      "File within cache, not present after deploy");
+
     like(
         readlink('t/full-stack.d/openqa/pool/1/Core-7.2.iso'),
         qr(t/full-stack.d/cache/Core-7.2.iso),
         "iso is symlinked to cache"
     );
 
-    $cache = get_cachedb();
-    like($cache->{$host}[0], qr/Core-7/, "Core-7.2.iso is in index 0");
-    ok(!defined($cache->{$host}[54]), "Index 54 should not exist");
-    ok(!-e $superior_limit,           "$superior_limit Must not exist");
+    wait_for_result_panel qr/Result: passed/, 'test 5 is passed';
+    kill_worker;
 
+    $filename = $resultdir . "00000/00000005-$job_name/autoinst-log.txt";
+    open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
+    $autoinst_log = do { local ($/); <$f> };
+    close($f);
+
+    like($autoinst_log, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso.');
+    like($autoinst_log, qr/11116544/, 'Test 5 Core-7.2.iso size is correct.');
+
+    my $dbh
+      = DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1});
+    my $sql    = "SELECT * from assets order by last_use asc";
+    my $sth    = $dbh->prepare($sql);
+    my $result = $dbh->selectrow_hashref($sql);
+    # We know it's going to be this host because it's what was defined in
+    # the worker ini
+    like($result->{filename}, qr/Core-7/, "Core-7.2.iso is the first element");
+
+    for (1 .. 5) {
+        $filename = "$cwd/$cachedir/$_.qcow2";
+        open(my $tmpfile, '>', $filename);
+        print $tmpfile $filename;
+        $sql
+          = "INSERT INTO assets (downloading,filename,etag,last_use) VALUES (0, ?, 'Not valid', strftime('%s','now'));";
+        $sth = $dbh->prepare($sql);
+        $sth->bind_param(1, $filename);
+        $sth->execute();
+        sleep 1;    # so that last_use is not the same for every item
+    }
+
+    # Mark the Core-7.2 iso as being downloaded to force the worker to wait for the lock later on.
+    $sql = "update assets set downloading = 1 where filename = ? ";
+    $dbh->prepare($sql)->execute($result->{filename});
+
+    $sql    = "SELECT * from assets order by last_use desc";
+    $sth    = $dbh->prepare($sql);
+    $result = $dbh->selectrow_hashref($sql);
+    like($result->{filename}, qr/5.qcow2$/, "file #5 is the newest element");
+
+    # Delete image #5 so that it gets cleaned up when the worker is initialized.
+    $sql = "delete from assets where filename = ? ";
+    $dbh->prepare($sql)->execute($result->{filename});
+
+    #simple limit testing.
+    client_call('jobs/5/restart post', qr{\Qtest_url => ["/tests/6\E}, 'client returned new test_url');
+    $driver->get('/tests/6');
+    like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
+    start_worker;
     wait_for_result_panel qr/Result: passed/, 'test 6 is passed';
+    kill_worker;
 
+    ok(!-e $result->{filename}, "asset 5.qcow2 removed during cache init");
+
+    $sql    = "SELECT * from assets order by last_use desc";
+    $sth    = $dbh->prepare($sql);
+    $result = $dbh->selectrow_hashref($sql);
+
+    like($result->{filename}, qr/Core-7/, "Core-7.2.iso the most recent asset again ");
+
+    #simple limit testing.
+    client_call('jobs/6/restart post', qr{\Qtest_url => ["/tests/7\E}, 'client returned new test_url');
+    $driver->get('/tests/7');
+    like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 7 is scheduled');
+    start_worker;
+    wait_for_result_panel qr/Result: passed/, 'test 7 is passed';
+
+    $filename = $resultdir . "00000/00000007-$job_name/autoinst-log.txt";
+    open($f, '<', $filename) or die "OPENING $filename: $!\n";
+    $autoinst_log = do { local ($/); <$f> };
+    close($f);
+
+    like($autoinst_log, qr/Content has not changed/, 'Test 7 Core-7.2.iso has not changed.');
+
+    client_call("jobs post $JOB_SETUP HDD_1=non-existent.qcow2");
+    $driver->get('/tests/8');
+    wait_for_result_panel qr/Result: incomplete/, 'test 8 is incomplete';
+
+    $filename = $resultdir . "00000/00000008-$job_name/autoinst-log.txt";
+    open($f, '<', $filename) or die "OPENING $filename: $!\n";
+    $autoinst_log = do { local ($/); <$f> };
+    close($f);
+
+    like($autoinst_log, qr/non-existent.qcow2 failed with: 404 - Not Found/, 'Test 8 failure message found in log.');
+    like($autoinst_log, qr/result: setup failure/, 'Test 8 state correct: setup failure');
+
+    kill_worker;
 };
 
 kill_phantom;
