@@ -1,3 +1,4 @@
+@import "../sass/theme_variables.scss";
 $color-softfailed: #EEB560;
 $color-ok: #CDFFB9;
 $color-warning: #ff9;
@@ -64,6 +65,16 @@ $color-step-actions: #666;
     overflow: hidden;
 }
 
+.col-lg-4.text-nowrap {
+    display: flex;
+    align-items: baseline;
+}
+
+.col-lg-4.text-nowrap span {
+    font-size: $font-size-h4;
+    margin-left: 2px;
+    margin-right: 2px;
+}
 
 .build_group_children, .build-row {
     h4:before {

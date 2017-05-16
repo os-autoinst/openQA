@@ -163,15 +163,15 @@ my $tag_for_0092_comment = $opensuse_group->comments->create({text => 'tag:0092:
 
 sub check_tags {
     $get = $t->get_ok('/?limit_builds=20&show_tags=1')->status_is(200);
-    my @tags = $get->tx->res->dom->find('div.children-collapsed h4 span i.tag')->map('text')->each;
+    my @tags = $get->tx->res->dom->find('div.children-collapsed span i.tag')->map('text')->each;
     is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
 
     $get  = $t->get_ok('/parent_group_overview/' . $test_parent->id . '?limit_builds=20&show_tags=1')->status_is(200);
-    @tags = $get->tx->res->dom->find('div.children-expanded h4 span i.tag')->map('text')->each;
+    @tags = $get->tx->res->dom->find('div.children-expanded span i.tag')->map('text')->each;
     is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level');
 
     $get  = $t->get_ok('/?limit_builds=20&only_tagged=1')->status_is(200);
-    @tags = $get->tx->res->dom->find('div.children-collapsed h4 span i.tag')->map('text')->each;
+    @tags = $get->tx->res->dom->find('div.children-collapsed span i.tag')->map('text')->each;
     is_deeply(\@tags, ['some_tag'], 'tag is shown on parent-level (only tagged)');
     @h4 = $get->tx->res->dom->find("div.children-collapsed h4 a")->map('text')->each;
     is_deeply(\@h4, ['Build0092'], 'only tagged builds on parent-level shown');
