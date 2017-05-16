@@ -287,7 +287,7 @@ sub clone_job {
     if ($tx->success) {
         my $r = $tx->success->json->{id};
         if ($r) {
-            my $url = $remote_url->scheme . '://' . $remote_url->host . '/t' . $r;
+            my $url = $local_url->scheme . '://' . $local_url->host . '/t' . $r;
             print "Created job #$r: $job->{name} -> $url\n";
             $clone_map->{$jobid} = $r;
             return $r;
