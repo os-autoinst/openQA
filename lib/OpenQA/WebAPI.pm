@@ -20,7 +20,7 @@ use Mojo::Base 'Mojolicious';
 use OpenQA::Schema;
 use OpenQA::WebAPI::Plugin::Helpers;
 use OpenQA::IPC;
-use OpenQA::Utils qw(log_warning job_groups_and_parents);
+use OpenQA::Utils qw(log_warning job_groups_and_parents detect_current_version);
 use OpenQA::ServerStartup;
 
 use Mojo::IOLoop;
@@ -70,11 +70,11 @@ sub startup {
     my $self = shift;
 
     OpenQA::ServerStartup::read_config($self);
+    OpenQA::ServerStartup::setup_logging($self);
 
     # Set some application defaults
-    $self->defaults(appname => $self->app->config->{global}->{appname});
-
-    OpenQA::ServerStartup::setup_logging($self);
+    $self->defaults(appname         => $self->app->config->{global}->{appname});
+    $self->defaults(current_version => detect_current_version($self->app->home));
 
     unless ($ENV{MOJO_TMPDIR}) {
         $ENV{MOJO_TMPDIR} = $OpenQA::Utils::assetdir . '/tmp';
