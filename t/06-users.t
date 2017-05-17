@@ -21,6 +21,8 @@ BEGIN {
 }
 
 use strict;
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use OpenQA::Utils;
 use OpenQA::Test::Database;
 use Test::More;

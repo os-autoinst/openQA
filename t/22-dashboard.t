@@ -20,6 +20,8 @@ BEGIN {
     unshift @INC, 'lib';
 }
 
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use Mojo::Base -strict;
 use Test::More;
 use Test::Mojo;

@@ -23,6 +23,8 @@ BEGIN {
 
 use Module::Load::Conditional qw(can_load);
 use Mojo::Base -strict;
+use FindBin;
+use lib "$FindBin::Bin/../lib";
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;

@@ -17,6 +17,8 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 use strict;
+use FindBin;
+use lib "$FindBin::Bin/lib";
 
 BEGIN {
     unshift @INC, 'lib';

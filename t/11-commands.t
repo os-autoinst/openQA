@@ -20,6 +20,8 @@ BEGIN {
     $ENV{OPENQA_TEST_IPC} = 1;
 }
 
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Warnings ':all';
 use Test::Output 'stderr_like';
