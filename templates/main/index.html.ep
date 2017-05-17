@@ -69,7 +69,7 @@
                 %>
 
                 <input value="1" name="fullscreen" type="checkbox" id="filter-fullscreen">
-                <label for="filter-fullscreen">Enable fullscreen</label>
+                <label for="filter-fullscreen">Fullscreen</label>
                 <%= help_popover('Help for <i>Enable fullscreen</i>' => '<p>Show Fullscreen View</p>')
                 %>
 
