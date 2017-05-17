@@ -29,13 +29,13 @@ our @EXPORT = qw($job $verbose $instance $worker_settings $pooldir $nocleanup
   $hosts $ws_to_host $current_host
   $worker_caps $testresults update_setup_status
   STATUS_UPDATES_SLOW STATUS_UPDATES_FAST
-  add_timer remove_timer change_timer get_timer
+  add_timer remove_timer change_timer get_timer get_timers
   api_call verify_workerid register_worker ws_call);
 
 # Exported variables
 our $job;
 our $verbose  = 0;
-our $instance = 'manual';
+our $instance = 99;
 our $worker_settings;
 our $pooldir;
 our $nocleanup = 0;
@@ -129,6 +129,10 @@ sub change_timer {
     $callback = $timers->{$timer}->[1] unless $callback;
     remove_timer($timer);
     add_timer($timer, $newtimeout, $callback);
+}
+
+sub get_timers {
+    return keys(%$timers);
 }
 
 sub get_timer {
@@ -365,9 +369,10 @@ sub call_websocket {
                 }
                 else {
                     my $err = $tx->error;
-                    if (defined $err) {
-                        warn "Unable to upgrade connection to WebSocket: " . $err->{code} . ". proxy_wstunnel enabled?";
-                        if ($err->{code} eq '404' && $hosts->{$host}{workerid}) {
+                    if ($err) {
+                        my $err_msg = $err->{code} || $err->{message} || '';
+                        warn "Unable to upgrade connection to WebSocket: " . $err_msg . ". proxy_wstunnel enabled?";
+                        if ($err_msg eq '404' && $hosts->{$host}{workerid}) {
                             # worker id suddenly not known anymore. Abort. If workerid
                             # is unset we already detected that in api_call
                             $hosts->{$host}{workerid} = undef;
@@ -384,6 +389,41 @@ sub call_websocket {
                 }
             }
         });
+}
+
+sub _register_worker_handler {
+    my ($ua, $tx, $host) = @_;
+    if ($tx->error) {
+        my $err_code = $tx->error->{code};
+        if ($err_code) {
+            if ($err_code =~ /^4\d\d$/) {
+                # don't retry when 4xx codes are returned. There is problem with scheduler
+                $DB::single = 1;
+                log_error(
+                    sprintf('ignoring server - server refused with code %s: %s', $tx->error->{code}, $tx->res->body));
+                delete $hosts->{$host};
+                Mojo::IOLoop->stop unless (scalar keys %$hosts);
+            }
+            else {
+                log_warning(
+                    sprintf('failed to register worker %s - %s:%s, retry in 10s', $host, $err_code, $tx->res->body));
+                $hosts->{$host}{timers}{register_worker}
+                  = add_timer('register_worker', 10, sub { register_worker($host) }, 1);
+            }
+        }
+        else {
+            log_error("unable to connect to host $host, retry in 10s");
+            $hosts->{$host}{timers}{register_worker}
+              = add_timer('register_worker', 10, sub { register_worker($host) }, 1);
+        }
+        return;
+    }
+    my $newid = $tx->res->json->{id};
+
+    log_debug("new worker id within WebUI $host is $newid") if $verbose;
+    $hosts->{$host}{workerid} = $newid;
+
+    setup_websocket($host);
 }
 
 sub register_worker {
@@ -438,37 +478,7 @@ sub register_worker {
     my $ua     = $hosts->{$host}{ua};
     $ua_url->path('workers');
     $ua_url->query($worker_caps);
-    my $tx = $ua->post($ua_url => json => $worker_caps);
-    if ($tx->error) {
-        my $err_code = $tx->error->{code};
-        if ($err_code) {
-            if ($err_code =~ /^4\d\d$/) {
-                # don't retry when 4xx codes are returned. There is problem with scheduler
-                log_error(
-                    sprintf('ignoring server - server refused with code %s: %s', $tx->error->{code}, $tx->res->body));
-                delete $hosts->{$host};
-                Mojo::IOLoop->stop unless (scalar keys %$hosts);
-            }
-            else {
-                log_warning(
-                    sprintf('failed to register worker %s - %s:%s, retry in 10s', $host, $err_code, $tx->res->body));
-                $hosts->{$host}{timers}{register_worker}
-                  = add_timer('register_worker', 10, sub { register_worker($host) }, 1);
-            }
-        }
-        else {
-            log_error("unable to connect to host $host, retry in 10s");
-            $hosts->{$host}{timers}{register_worker}
-              = add_timer('register_worker', 10, sub { register_worker($host) }, 1);
-        }
-        return;
-    }
-    my $newid = $tx->res->json->{id};
-
-    log_debug("new worker id within WebUI $host is $newid") if $verbose;
-    $hosts->{$host}{workerid} = $newid;
-
-    setup_websocket($host);
+    $ua->post($ua_url => json => $worker_caps => sub { _register_worker_handler(@_, $host); });
 }
 
 sub update_setup_status {

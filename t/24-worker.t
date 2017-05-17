@@ -19,8 +19,10 @@ BEGIN {
 
 use strict;
 use warnings;
+use File::Temp 'tempfile';
 use OpenQA::Utils;
 use OpenQA::Test::Case;
+use OpenQA::Test::Database;
 use OpenQA::Client;
 use Test::More;
 use Test::Mojo;
@@ -66,9 +68,10 @@ $hosts->{this_host_should_not_exist}{workerid} = 1;
 $current_host = 'this_host_should_not_exist';
 
 sub test_via_io_loop {
-    my ($test_function) = @_;
-    add_timer('call', 0, $test_function, 1);
-    Mojo::IOLoop->start;
+    my ($test_function, $autostart) = @_;
+    $autostart //= 1;
+    Mojo::IOLoop->next_tick($test_function);
+    Mojo::IOLoop->start if $autostart;
 }
 
 test_via_io_loop sub {
@@ -129,14 +132,13 @@ subtest 'api init with multiple webuis' => sub {
 
 no warnings 'redefine';
 # redefine imported api_call within OpenQA::Worker::Jobs
-sub api_call {
+sub api_call_return_job {
     my %args = @_;
     $args{callback}->({job => {id => 10}});
 }
-*OpenQA::Worker::Jobs::api_call = \&api_call;
 
 # simulate we accepted the job
-sub OpenQA::Worker::Jobs::start_job {
+sub fake_start_job {
     my $host = shift;
     $OpenQA::Worker::Common::job = "job set from $host";
     Mojo::IOLoop->stop();
@@ -146,6 +148,11 @@ $hosts->{host1}{workerid} = 2;
 $hosts->{host2}{workerid} = 2;
 
 subtest 'check_job works when no job, then is ignored' => sub {
+    my $original_api_call  = \&OpenQA::Worker::Jobs::api_call;
+    my $original_start_job = \&OpenQA::Worker::Jobs::start_job;
+    *OpenQA::Worker::Jobs::api_call  = \&api_call_return_job;
+    *OpenQA::Worker::Jobs::start_job = \&fake_start_job;
+
     test_via_io_loop sub { OpenQA::Worker::Jobs::check_job('host1') };
     while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
     is($OpenQA::Worker::Common::job, 'job set from host1', 'job set');
@@ -153,6 +160,9 @@ subtest 'check_job works when no job, then is ignored' => sub {
     test_via_io_loop sub { OpenQA::Worker::Jobs::check_job('host2'); Mojo::IOLoop->stop };
     while (Mojo::IOLoop->is_running) { Mojo::IOLoop->singleton->reactor->one_tick }
     is($OpenQA::Worker::Common::job, 'job set from host1', 'job still the same');
+
+    *OpenQA::Worker::Jobs::api_call  = $original_api_call;
+    *OpenQA::Worker::Jobs::start_job = $original_start_job;
 };
 
 subtest 'test timer helpers' => sub {
@@ -182,5 +192,247 @@ subtest 'test timer helpers' => sub {
     is(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{after},  6, 'timer registered for 6s');
     is(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{cb}->(), 2, 'timer function match y');
 };
+
+sub remove_timers {
+    # clean all timers from previous tests
+    for my $t (get_timers(), 'register_worker') {
+        remove_timer($t);
+    }
+}
+
+undef $ENV{OPENQA_CONFIG};
+$ENV{MOJO_LOG_LEVEL} = 'warn';
+my $schema = OpenQA::Test::Database->new->create;
+my $t      = Test::Mojo->new('OpenQA::WebAPI');
+$t->app->log->level('warn');
+
+my $response_code  = 200;
+my $response_data  = '';
+my $expected_abort = '';
+my $job_checked    = 0;
+
+sub fake_stop_job {
+    my ($abort_reason, $jobid) = @_;
+    is($abort_reason, $expected_abort, "$abort_reason == $expected_abort");
+}
+
+sub fake_check_job {
+    $job_checked = 1;
+}
+
+sub test_working_environment {
+    my ($registered) = @_;
+
+    if ($registered) {
+        # check timers, worker id, ws, ... when worker is registered ok
+    }
+    else {
+        # check everything in order when not registered
+    }
+}
+
+$t->app->hook(
+    before_dispatch => sub {
+        my $c = shift;
+        if ($response_code) {
+            $c->render(text => $response_data, status => $response_code);
+        }
+        else {
+            return;
+        }
+    });
+
+# override websocket route
+my $r = $t->ua->server->app->routes;
+$r->find('worker_websockets')->remove;
+$r->websocket(
+    '/api/v1/ws/:workerid' => [workerid => qr/\d+/] => sub {
+        my $c        = shift;
+        my $workerid = $c->param('workerid');
+        ok($workerid, 'worker id provided during websocket registration');
+        $c->on(json   => sub { });
+        $c->on(finish => sub { });
+    });
+
+subtest 'register worker tests' => sub {
+    no warnings 'redefine';
+    my $original_stop_job = \&OpenQA::Worker::Jobs::stop_job;
+    *OpenQA::Worker::Jobs::stop_job = \&fake_stop_job;
+    my $original_check_job = \&OpenQA::Worker::Jobs::check_job;
+    *OpenQA::Worker::Jobs::check_job = \&fake_check_job;
+
+    remove_timers;
+    my $test_host = $t->ua->server->url->host_port;
+    OpenQA::Worker::Common::api_init(
+        {HOSTS => [$test_host]},
+        {
+            apikey    => 'PERCIVALKEY02',
+            apisecret => 'PERCIVALSECRET02',
+        });
+    ok($hosts->{$test_host}, 'Mojo::Test api initialized');
+
+    # connection refused
+    # TODO
+
+    # refused by unknown worker 404
+    $response_data = 'worker rejected';
+    $response_code = 404;
+
+    stderr_like(
+        sub {
+            OpenQA::Worker::Common::register_worker($test_host);
+            # need to wait here until non-blocking register call finishes
+            while ($hosts->{$test_host}) {
+                Mojo::IOLoop->one_tick;
+            }
+        },
+        qr/ignoring server - server refused with code 404: worker rejected/,
+        'correct error on 404'
+    );
+    pass('host removed by worker');
+    remove_timers;
+
+    # refused by unknown api keys 503
+    OpenQA::Worker::Common::api_init(
+        {HOSTS => [$test_host]},
+        {
+            apikey    => 'PERCIVALKEY02',
+            apisecret => 'PERCIVALSECRET02',
+        });
+    ok($hosts->{$test_host}, 'Mojo::Test api initialized');
+    $response_data = 'api key rejected';
+    $response_code = 503;
+
+    stderr_like(
+        sub {
+            OpenQA::Worker::Common::register_worker($test_host);
+            # need to wait here until non-blocking register call finishes
+            while (!$hosts->{$test_host}{timers}{register_worker}) {
+                Mojo::IOLoop->one_tick;
+            }
+        },
+        qr/503:api key rejected, retry in 10s/,
+        'correct error on 503'
+    );
+    pass('Register worker timer added after 503');
+    remove_timers;
+
+    # accepted 200
+    undef $response_code;
+    OpenQA::Worker::Common::register_worker($test_host);
+    # need to wait here until non-blocking register call finishes
+    while (!($hosts->{$test_host}{workerid} && $hosts->{$test_host}{ws})) {
+        Mojo::IOLoop->one_tick;
+    }
+    ok($hosts->{$test_host}{workerid}, 'Mojo::Test api registered');
+    ok($job_checked,                   'Job was checked as part of successful register call');
+
+    # worker reregistration
+    $job_checked = 0;
+    my $ws = $hosts->{$test_host}{ws};
+    OpenQA::Worker::Common::register_worker($test_host);
+    # need to wait here until non-blocking register call finishes
+    while (!($hosts->{$test_host}{workerid} && $hosts->{$test_host}{ws})) {
+        Mojo::IOLoop->one_tick;
+    }
+    ok($hosts->{$test_host}{workerid}, 'Mojo::Test api registered');
+    ok($job_checked,                   'Job was checked as part of successful register call');
+    isnt($ws, $hosts->{$test_host}{ws}, 'WS connection is new after reregistration');
+
+    *OpenQA::Worker::Jobs::start_job = $original_stop_job;
+    *OpenQA::Worker::Jobs::start_job = $original_check_job;
+};
+
+# subtest 'API calls handling' => sub {
+#     $OpenQA::Worker::Common::current_host = $test_host;
+#     # all ok - no timer for retry, no worker registration
+#     $responseCode = 200;
+#     test_via_io_loop sub {
+#         ok(
+#             OpenQA::Worker::Common::api_call(
+#                 'post', 'jobs/500/status',
+#                 json     => {status => 'RUNNING'},
+#                 callback => sub     { Mojo::IOLoop->stop }
+#             ),
+#             'test'
+#         );
+#     };
+#     ok(!check_timer('retry'),     'retry timer not set for response 200');
+#     ok(!check_timer('reconnect'), 'timer not set for response 200');
+#
+#     # 404 - no retry, worker registration scheduled
+#     $responseCode   = 404;
+#     $expected_abort = 'api-failure';
+#     test_via_io_loop(
+#         sub {
+#             ok(
+#                 OpenQA::Worker::Common::api_call(
+#                     'post', 'jobs/500/status',
+#                     json     => {status => 'RUNNING'},
+#                     callback => sub     { Mojo::IOLoop->stop }
+#                 ),
+#                 'test'
+#             );
+#         },
+#         0
+#     );
+#     ok(!check_timer('retry'),    'retry timer not set for response 404');
+#     ok(check_timer('reconnect'), 'reconnect timer set for response 404');
+#
+#     # 503 - retry timer
+#     # 200 after 503 - ok
+#     $responseCode = 503;
+#     test_via_io_loop sub {
+#         ok(
+#             OpenQA::Worker::Common::api_call(
+#                 'post', 'jobs/500/status',
+#                 json     => {status => 'RUNNING'},
+#                 tries    => 1,
+#                 callback => sub     { Mojo::IOLoop->stop }
+#             ),
+#             'test'
+#         );
+#     };
+#     ok(!check_timer('reconnect'), 'reconnect timer not set yet for response 503');
+#     ok(check_timer('retry'),      'retry timer set for 503');
+#     # modify timer
+#     $responseCode = 200;
+#     test_via_io_loop sub {
+#
+#     };
+#     ok(!check_timer('reconnect'), 'reconnect timer not set after 200 response');
+#     ok(!check_timer('retry'),     'retry timer not set for 200');
+#
+#     # 503 - retry timer
+#     # 503 after 503 - worker registration scheduled
+#
+#     $responseCode = 503;
+#     test_via_io_loop sub {
+#         ok(
+#             OpenQA::Worker::Common::api_call(
+#                 'post', 'jobs/500/status',
+#                 json     => {status => 'RUNNING'},
+#                 tries    => 1,
+#                 callback => sub     { Mojo::IOLoop->stop }
+#             ),
+#             'test'
+#         );
+#     };
+#     ok(!check_timer('reconnect'), 'reconnect timer not set yet for response 503');
+#     ok(check_timer('retry'),      'retry timer set for 503');
+#     test_via_io_loop sub {
+#         ok(
+#             OpenQA::Worker::Common::api_call(
+#                 'post', 'jobs/500/status',
+#                 json     => {status => 'RUNNING'},
+#                 tries    => 1,
+#                 callback => sub     { Mojo::IOLoop->stop }
+#             ),
+#             'test'
+#         );
+#     };
+#     ok(check_timer('reconnect'), 'reconnect timer set for response 503');
+#     ok(!check_timer('retry'),    'no retry timer set after tree retries');
+# };
 
 done_testing();
