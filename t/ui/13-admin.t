@@ -379,6 +379,21 @@ subtest 'job property editor' => sub() {
     };
 };
 
+sub is_element_text {
+    my ($elements, $expected, $message) = @_;
+    is_deeply(
+        [
+            map {
+                my $text = $_->get_text();
+                $text =~ s/^\s+|\s+$//g;
+                $text;
+            } @$elements
+        ],
+        $expected,
+        $message
+    );
+}
+
 subtest 'edit mediums' => sub() {
     $driver->title_is('openQA: Jobs for Cool Group has been edited!', 'on jobs for Cool Test has been edited!');
 
@@ -410,6 +425,37 @@ subtest 'edit mediums' => sub() {
     # as we load this at runtime rather than `use`ing it, we have to
     # access it explicitly like this
     $driver->send_keys_to_active_element(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    $driver->find_element('#sle-13-DVD .plus-sign')->click();
+    $select = $driver->find_element('#sle-13-DVD .name select');
+    ok($select, 'selection shown');
+
+    my @options = $driver->find_elements('#sle-13-DVD tr:first-of-type td:first-of-type option');
+    is_element_text(
+        \@options,
+        ['Select…', 'RAID0', 'advanced_kde', 'client1', 'client2', 'kde', 'server', "t\"e\\st\'Suite\\'", 'textmode'],
+        'xfce not selectable because test has already been added before'
+    );
+
+    # select advanced_kde option
+    $options[2]->click();
+    # to check whether the same test isn't selectable twice add another selection and also select advanced_kde
+    $driver->find_element('#sle-13-DVD .plus-sign')->click();
+    @options = $driver->find_elements('#sle-13-DVD tr:first-of-type td:first-of-type option');
+    $options[2]->click();
+    # now finalize the selection
+    $td = $driver->find_element('#undefined_arm19_new_chosen .search-field');
+    $driver->mouse_move_to_location(element => $td);
+    $driver->button_down();
+    wait_for_ajax;
+    $driver->send_keys_to_active_element('64bit');
+    $driver->send_keys_to_active_element(Selenium::Remote::WDKeys->KEYS->{'enter'});
+    # the test should not be selectable in the first select (which is now second) anymore
+    @options = $driver->find_elements('#sle-13-DVD tr:nth-of-type(2) td:first-of-type option');
+    is_element_text(
+        \@options,
+        ['Select…', 'RAID0', 'client1', 'client2', 'kde', 'server', "t\"e\\st\'Suite\\'", 'textmode'],
+        'advanced_kde not selectable twice'
+    );
 
     # now reload the page to see if we succeeded
     $driver->find_element('#user-action a')->click();
@@ -420,17 +466,16 @@ subtest 'edit mediums' => sub() {
 
     wait_for_ajax;
     my @picks = $driver->find_elements('.search-choice');
-    is((shift @picks)->get_text(), '64bit', 'found one');
-    is((shift @picks)->get_text(), 'HURRA', 'found two');
-    is_deeply(\@picks, [], 'found no three');
+    is_element_text(\@picks, [qw(64bit 64bit HURRA)], 'chosen tests present');
+};
 
-    # briefly check the asset list
+subtest 'asset list' => sub {
     $driver->find_element('#user-action a')->click();
     $driver->find_element_by_link_text('Assets')->click();
     $driver->title_is("openQA: Assets", "on asset");
     wait_for_ajax;
 
-    $td = $driver->find_element('tr#asset_1 td.t_created');
+    my $td = $driver->find_element('tr#asset_1 td.t_created');
     is('about 2 hours ago', $td->get_text(), 'timeago 2h');
 };
 
