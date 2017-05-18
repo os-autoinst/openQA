@@ -3,7 +3,7 @@
     % my $group_id;
     <div class="row build-row <%= $children ? ($default_expanded ? 'children-expanded' : 'children-collapsed') : 'no-children' %>">
         <div class="col-lg-4 text-nowrap">
-            <h4>
+            <span class='h4'>
                 % if ($children) {
                     % $group_id = "group$group->{id}_build$build_res->{escaped_id}";
                     <a href="#<%= $group_id %>" onclick="return toggleChildGroups(this);" data-toggle="collapse">Build<%= $build %></a>
@@ -17,7 +17,7 @@
 
                 % my $group_build_id = $group->{id} . '-' . $build_res->{escaped_id};
                 % my $tag = $build_res->{tag};
-            </h4>
+            </span>
             %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $build_res, id_prefix => ''
             % if ($tag) {
                 <span id="tag-<%= $group_build_id %>">
