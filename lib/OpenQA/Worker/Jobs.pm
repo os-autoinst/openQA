@@ -31,6 +31,7 @@ use Fcntl;
 use MIME::Base64;
 use File::Basename 'basename';
 use File::Which 'which';
+use Mojo::File 'path';
 
 use POSIX ':sys_wait_h';
 
@@ -504,15 +505,15 @@ my $lastscreenshot = '';
 # reads the base64 encoded content of a file below pooldir
 sub read_base64_file($) {
     my ($file) = @_;
-    my $c = OpenQA::Utils::file_content("$pooldir/$file");
+    my $c = path($pooldir, $file)->slurp;
     return encode_base64($c);
 }
 
 # reads the content of a file below pooldir and returns its md5
 sub calculate_file_md5($) {
     my ($file) = @_;
-    my $c      = OpenQA::Utils::file_content("$pooldir/$file");
-    my $md5    = Digest::MD5->new;
+    my $c = path($pooldir, $file)->slurp;
+    my $md5 = Digest::MD5->new;
     $md5->add($c);
     return $md5->clone->hexdigest;
 }

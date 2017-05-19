@@ -29,6 +29,7 @@ use Test::Warnings;
 use OpenQA::Test::Case;
 use OpenQA::Client;
 use Mojo::IOLoop;
+use Mojo::File 'path';
 use Digest::MD5;
 use OpenQA::WebSockets;
 use OpenQA::Scheduler;
@@ -40,7 +41,7 @@ my $sh = OpenQA::Scheduler->new;
 
 sub calculate_file_md5($) {
     my ($file) = @_;
-    my $c      = OpenQA::Utils::file_content($file);
+    my $c      = path($file)->slurp;
     my $md5    = Digest::MD5->new;
     $md5->add($c);
     return $md5->hexdigest;

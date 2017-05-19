@@ -14,6 +14,7 @@ use Cwd qw( abs_path getcwd );
 use OpenQA::Schema;
 use OpenQA::Utils;
 use Mojo::Base -base;
+use Mojo::File 'path';
 has fixture_path => 't/fixtures';
 
 sub create {
@@ -42,7 +43,7 @@ sub insert_fixtures {
 
     foreach my $fixture (glob "*.pl") {
 
-        my $info = eval file_content $fixture;    ## no critic
+        my $info = eval path($fixture)->slurp;    ## no critic
         chdir $cwd, croak "Could not insert fixture $fixture: $@" if $@;
 
         # Arrayrefs of rows, (dbic syntax) table defined by fixture filename
