@@ -35,6 +35,9 @@
 %         if ($subproduct eq 'Server' && $version eq '12') {
 %             $version = '12 (SLES 12)';
 %         }
+%         if ($subproduct eq 'Desktop-Updates' && $version eq '12 SP1') {
+%             $version = "12 SP1\x{00A0}(SLED 12 SP1)";
+%         }
 %         $product = join(' ', $flavor_to_prod_sle{$subproduct}, $version);
 %     }
 % }
