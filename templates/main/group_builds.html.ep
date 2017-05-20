@@ -3,7 +3,7 @@
     % my $group_id;
     <div class="row build-row <%= $children ? ($default_expanded ? 'children-expanded' : 'children-collapsed') : 'no-children' %>">
         <div class="col-lg-4 text-nowrap">
-            <h4>
+            <span class="h4">
                 % if ($children) {
                     % $group_id = "group$group->{id}_build$build_res->{escaped_id}";
                     <a href="#<%= $group_id %>" onclick="return toggleChildGroups(this);" data-toggle="collapse">Build<%= $build %></a>
@@ -17,7 +17,7 @@
 
                 % my $group_build_id = $group->{id} . '-' . $build_res->{escaped_id};
                 % my $tag = $build_res->{tag};
-            </h4>
+            </span>
             %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $build_res, id_prefix => ''
             % if ($tag) {
                 <span id="tag-<%= $group_build_id %>">
@@ -39,10 +39,10 @@
                 % if ($jobs) {
                     <div class="row build-row">
                         <div class="col-md-4 text-nowrap">
-                            <h4>
+                            <span class="h4">
                                 %= link_to $child->{name} => url_for('tests_overview')->query(distri => $child_res->{distri}, version => $child_res->{version}, build => $build, groupid => $child->{id})
                                 %= include 'main/review_badge', group_build_id => $group_build_id, build_res => $child_res, id_prefix => 'child-'
-                            </h4>
+                            </span>
                         </div>
                         <div class="col-md-8">
                             %= include 'main/build_progressbar', max_jobs => $jobs, result => $child_res

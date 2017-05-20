@@ -53,7 +53,7 @@ unless (can_load(modules => {'Selenium::Remote::WDKeys' => undef,})) {
 # List with no parameters
 #
 $driver->title_is("openQA", "on main page");
-my @build_headings = $driver->find_elements('h4', 'css');
+my @build_headings = $driver->find_elements('.h4', 'css');
 is(scalar @build_headings, 4, '4 builds shown');
 
 # click on last build which should be Build0091
@@ -65,18 +65,18 @@ like(
 );
 
 is($driver->get('/?limit_builds=1'), 1, 'index page accepts limit_builds parameter');
-is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only one build per group shown');
+is(scalar @{$driver->find_elements('.h4', 'css')}, 2, 'only one build per group shown');
 is($driver->get('/?time_limit_days=0.02&limit_builds=100000'), 1, 'index page accepts time_limit_days parameter');
-is(scalar @{$driver->find_elements('h4', 'css')}, 0, 'no builds shown');
+is(scalar @{$driver->find_elements('.h4', 'css')}, 0, 'no builds shown');
 is($driver->get('/?time_limit_days=0.05&limit_builds=100000'), 1, 'index page accepts time_limit_days parameter');
-is(scalar @{$driver->find_elements('h4', 'css')}, 2, 'only the one hour old builds is shown');
+is(scalar @{$driver->find_elements('.h4', 'css')}, 2, 'only the one hour old builds is shown');
 
 # group overview
 $driver->find_element_by_link_text('opensuse')->click();
 my $build_url = $driver->get_current_url();
 $build_url =~ s/\?.*//;
 OpenQA::Utils::log_debug('build_url: ' . $build_url);
-is(scalar @{$driver->find_elements('h4', 'css')}, 5, 'number of builds for opensuse');
+is(scalar @{$driver->find_elements('.h4', 'css')}, 5, 'number of builds for opensuse');
 is(
     $driver->find_element_by_id('group_description')->get_text(),
     "Test description\nwith bugref bsc#1234",
@@ -92,7 +92,7 @@ is(scalar @{$driver->find_elements('#group_description', 'css')},
     0, 'no well for group description shown if none present');
 is($driver->get($build_url . '?limit_builds=2'), 1, 'group overview page accepts query parameter, too');
 $driver->get($build_url . '?limit_builds=0');
-is(scalar @{$driver->find_elements('div.build-row h4', 'css')}, 0, 'all builds filtered out');
+is(scalar @{$driver->find_elements('div.build-row .h4', 'css')}, 0, 'all builds filtered out');
 is(
     $driver->find_element('h2')->get_text(),
     'Last Builds for opensuse',
@@ -105,7 +105,7 @@ is($res, q{Limit to 10 / 20 / 50 / 100 / 400 builds, only tagged / all}, 'more b
 $driver->find_element_by_link_text('400')->click();
 is($driver->find_element('#more_builds b')->get_text(), 400, 'limited to the selected number');
 $driver->find_element_by_link_text('tagged')->click();
-is(scalar @{$driver->find_elements('h4', 'css')}, 0, 'no tagged builds exist');
+is(scalar @{$driver->find_elements('.h4', 'css')}, 0, 'no tagged builds exist');
 
 is($driver->get('/?group=opensuse'), 1, 'group parameter is not exact by default');
 is(scalar @{$driver->find_elements('h2', 'css')}, 2, 'both job groups shown');
