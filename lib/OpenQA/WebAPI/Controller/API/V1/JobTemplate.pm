@@ -155,7 +155,7 @@ sub create {
     }
     else {
         $json->{id} = $id;
-        $self->emit_event('openqa_jobtemplate_create', {id => $id});
+        $self->emit_event('openqa_jobtemplate_create', {id => $id, %{$self->req->body_params->to_hash}})
     }
 
     $self->respond_to(
