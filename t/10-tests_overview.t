@@ -225,4 +225,69 @@ $t->get_ok('/tests/99937/modules/kate/fails')->json_is('/failed_needles' => ["te
 $t->get_ok('/tests/99937/modules/zypper_up/fails')
   ->json_is('/first_failed_step' => 1, 'failed module: fallback to first step');
 
+# Check if logpackages has failed, filtering with failed_modules
+$form = {distri => 'opensuse', version => 'Factory', failed_modules => 'logpackages'};
+$get = $t->get_ok('/tests/overview' => form => $form)->status_is(200);
+like(get_summary, qr/Passed: 0 Failed: 1/i);
+$get->element_exists('#res_DVD_x86_64_doc .result_failed');
+$get->element_exists_not('#res_DVD_x86_64_kde .result_passed');
+
+# Check if another random module haz failed
+$failing_module = $t->app->db->resultset('JobModules')->create(
+    {
+        script   => 'tests/x11/failing_module.pm',
+        job_id   => 99940,
+        category => 'x11',
+        name     => 'failing_module',
+        result   => 'failed'
+    });
+$get = $t->get_ok(
+    '/tests/overview' => form => {
+        distri         => 'opensuse',
+        version        => 'Factory',
+        failed_modules => 'failing_module'
+    })->status_is(200);
+
+like(get_summary, qr/Passed: 0 Failed: 1/i, 'failed_modules shows failed jobs');
+$get->element_exists('#res-99940',                         'foo_bar_failed_module failed');
+$get->element_exists('#res_DVD_x86_64_doc .result_failed', 'foo_bar_failed_module module failed');
+
+# Check if another random module haz failed
+$t->app->db->resultset('JobModules')->create(
+    {
+        script   => 'tests/x11/failing_module.pm',
+        job_id   => 99938,
+        category => 'x11',
+        name     => 'failing_module',
+        result   => 'failed'
+    });
+$get = $t->get_ok(
+    '/tests/overview' => form => {
+        distri         => 'opensuse',
+        version        => 'Factory',
+        failed_modules => 'failing_module,logpackages',
+    })->status_is(200);
+like(get_summary, qr/Passed: 0 Failed: 2/i, 'expected job failures matches');
+$failedmodules
+  = OpenQA::Test::Case::trim_whitespace($t->tx->res->dom->at('#res_DVD_x86_64_doc .failedmodule a')->all_text);
+like($failedmodules, qr/failing_module/i, 'failing_module module failed');
+
+# Check if failed_modules hides successful jobs even if a (fake) module failure is there
+$failing_module = $t->app->db->resultset('JobModules')->create(
+    {
+        script   => 'tests/x11/failing_module.pm',
+        job_id   => 99946,
+        category => 'x11',
+        name     => 'failing_module',
+        result   => 'failed'
+    });
+$get = $t->get_ok(
+    '/tests/overview' => form => {
+        distri         => 'opensuse',
+        version        => '13.1',
+        failed_modules => 'failing_module',
+    })->status_is(200);
+like(get_summary, qr/Passed: 0 Failed: 0/i, 'Job was successful, so failed_modules does not show it');
+$get->element_exists_not('#res-99946', 'no module has failed');
+
 done_testing();

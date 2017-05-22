@@ -89,6 +89,12 @@
                     <input type="text" class="form-control" name="arch" placeholder="any" id="filter-arch">
                 </div>
                 <div class="form-group">
+                    <strong>Failed modules</strong>
+                    <input name="failed_modules" type="text" id="filter-failed_modules" placeholder="failed modules, comma separated, e.g. mod1,mod2">
+                    <%= help_popover('Help for the <em>Failed Modules</em> filter' => '
+                        <p>Shows only the jobs that failed in the specified modules</p>') %>
+                </div>
+                <div class="form-group">
                     <strong>Misc</strong>
                     <label><input value="1" name="todo" type="checkbox" id="filter-todo"> TODO</label>
                     <%= help_popover('Help for the <em>TODO</em>-filter' => '
