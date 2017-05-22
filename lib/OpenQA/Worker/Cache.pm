@@ -65,9 +65,11 @@ sub deploy_cache {
 }
 
 sub init {
-    ($host, $location) = @_;
+    my $limit_override;
+    ($host, $location, $limit_override) = @_;
     $db_file = catdir($location, 'cache.sqlite');
     $dsn = "dbi:SQLite:dbname=$db_file";
+    $limit =  $limit_override * 1024 * 1024 * 1024 if $limit_override > 0;
     deploy_cache unless (-e $db_file);
     $dbh = DBI->connect($dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1})
       or die("Could not connect to the dbfile.");
@@ -290,7 +292,6 @@ sub update_asset {
         $sth->bind_param(2, $etag);
         $sth->bind_param(3, $size);
         $sth->bind_param(4, $asset);
-
         $sth->execute;
     };
 
