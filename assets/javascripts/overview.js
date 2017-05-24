@@ -60,6 +60,9 @@ function setupOverview() {
         } else if (key === 'arch') {
             $('#filter-arch').prop('value', val);
             return val;
+        } else if (key === 'failed_modules') {
+            $('#filter-failed_modules').prop('value', val);
+            return val;
         }
     });
 
@@ -73,4 +76,3 @@ function setupOverview() {
         });
     }
 }
-

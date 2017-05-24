@@ -194,7 +194,7 @@ sub complex_query {
 
     # For args where we accept a list of values, allow passing either an
     # array ref or a comma-separated list
-    for my $arg (qw(state ids result)) {
+    for my $arg (qw(state ids result failed_modules)) {
         next unless $args{$arg};
         $args{$arg} = [split(',', $args{$arg})] unless (ref($args{$arg}) eq 'ARRAY');
     }
@@ -207,6 +207,16 @@ sub complex_query {
         push @{$attrs{prefetch}}, 'settings';
         push @{$attrs{prefetch}}, 'parents';
         push @{$attrs{prefetch}}, 'children';
+    }
+
+    if ($args{failed_modules}) {
+        push @joins, "modules";
+        push(
+            @conds,
+            {
+                'modules.name'   => {-in => $args{failed_modules}},
+                'modules.result' => OpenQA::Schema::Result::Jobs::FAILED,
+            });
     }
 
     if ($args{state}) {

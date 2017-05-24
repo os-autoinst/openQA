@@ -399,6 +399,11 @@ sub prepare_job_results {
         my $arch   = $job->ARCH || 'noarch';
 
         my $result;
+
+        next
+          if $self->param("failed_modules")
+          && $job->result ne OpenQA::Schema::Result::Jobs::FAILED;
+
         if ($job->state eq OpenQA::Schema::Result::Jobs::DONE) {
             my $result_stats = $all_result_stats->{$jobid};
             my $overall      = $job->result;
@@ -412,6 +417,7 @@ sub prepare_job_results {
                   || ($job->result eq OpenQA::Schema::Result::Jobs::SOFTFAILED
                     && ($job_labels->{$jobid}{label} || !$job->has_failed_modules));
             }
+
 
             $result = {
                 passed   => $result_stats->{passed},
@@ -497,6 +503,10 @@ sub overview {
         my @group_name_search = map { {name => $_} } @{$self->every_param('group')};
         my @search_terms = (@group_id_search, @group_name_search);
         @groups = $self->db->resultset("JobGroups")->search(\@search_terms)->all;
+    }
+
+    if ($self->param('failed_modules')) {
+        $search_args{failed_modules} = $self->every_param('failed_modules');
     }
 
     if (!$search_args{build}) {
