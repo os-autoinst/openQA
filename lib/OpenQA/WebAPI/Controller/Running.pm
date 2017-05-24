@@ -19,6 +19,7 @@ use strict;
 use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 use Mojo::Util 'b64_encode';
+use Mojo::File 'path';
 use JSON qw(encode_json decode_json);
 use OpenQA::Utils;
 use OpenQA::IPC;
@@ -217,13 +218,13 @@ sub streaming {
             my $newfile = readlink("$basepath/last.png") || '';
             if ($lastfile ne $newfile) {
                 if (!-l $newfile || !$lastfile) {
-                    my $data = file_content("$basepath/$newfile");
+                    my $data = path($basepath, $newfile)->slurp;
                     $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
                     $lastfile = $newfile;
                 }
                 elsif (!-e $basepath . 'backend.run') {
                     # Some browsers can't handle mpng (at least after reciving jpeg all the time)
-                    my $data = file_content($self->app->static->file('images/suse-tested.png')->path);
+                    my $data = $self->app->static->file('images/suse-tested.png')->slurp;
                     $self->write("data: data:image/png;base64," . b64_encode($data, '') . "\n\n");
                     $doclose->();
                 }

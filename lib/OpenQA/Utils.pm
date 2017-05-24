@@ -38,7 +38,6 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &productdir
   &testcasedir
   &is_in_tests
-  &file_content
   &log_debug
   &log_warning
   &log_info
@@ -200,19 +199,6 @@ sub needle_info {
     $needle->{distri}    = $distri;
     $needle->{version}   = $version;
     return $needle;
-}
-
-sub file_content($;$) {
-    my ($fn, $enc) = @_;
-    my $mode = "<";
-    if ($enc) {
-        $mode = "$mode:encoding($enc)";
-    }
-    open(my $FCONTENT, $mode, $fn) or return;
-    local $/;
-    my $result = <$FCONTENT>;
-    close($FCONTENT);
-    return $result;
 }
 
 # logging helpers

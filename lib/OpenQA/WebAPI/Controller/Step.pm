@@ -16,6 +16,7 @@
 
 package OpenQA::WebAPI::Controller::Step;
 use Mojo::Base 'Mojolicious::Controller';
+use Mojo::File 'path';
 use OpenQA::Utils;
 use File::Basename;
 use File::Copy;
@@ -64,7 +65,12 @@ sub check_tabmode {
             $tabmode = 'audio';
         }
         elsif ($module_detail->{text}) {
-            $self->stash('textresult', file_content(join('/', $job->result_dir(), $module_detail->{text}), "UTF-8"));
+            my $file = path($job->result_dir(), $module_detail->{text})->open('<:encoding(UTF-8)');
+            my @file_content;
+            if (defined $file) {
+                @file_content = <$file>;
+            }
+            $self->stash('textresult', "@file_content");
             $tabmode = 'text';
         }
         $self->stash('module_detail', $module_detail);
@@ -369,8 +375,12 @@ sub src {
         $scriptpath ||= "";
         return $self->reply->not_found;
     }
-
-    my $script = file_content($scriptpath, "UTF-8");
+    my $script_h = path($scriptpath)->open('<:encoding(UTF-8)');
+    my @script_content;
+    if (defined $script_h) {
+        @script_content = <$script_h>;
+    }
+    my $script = "@script_content";
 
     $self->stash('script',     $script);
     $self->stash('scriptpath', $scriptpath);
