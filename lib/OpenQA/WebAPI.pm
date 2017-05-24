@@ -28,6 +28,7 @@ use Mojolicious::Commands;
 use DateTime;
 use Cwd 'abs_path';
 use File::Path 'make_path';
+use BSD::Resource 'getrusage';
 
 # reinit pseudo random number generator in every child to avoid
 # starting off with the same state.
@@ -475,6 +476,7 @@ sub startup {
             return;
         });
 
+    $self->_add_memory_limit;
     $self->_init_rand;
 
     # run fake dbus services in case of test mode
@@ -495,6 +497,27 @@ sub startup {
                 # the JSON API might already provide JSON in some error cases which must be preserved
                 (($args->{json} //= {})->{error_status}) = $args->{status};
             }
+        });
+}
+
+# Stop prefork workers gracefully once they reach a certain size
+sub _add_memory_limit {
+    my ($self) = @_;
+
+    my $max = $self->config->{global}{max_rss_limit};
+    return unless $max && $max > 0;
+
+    my $parent = $$;
+    Mojo::IOLoop->next_tick(
+        sub {
+            Mojo::IOLoop->recurring(
+                5 => sub {
+                    my $rss = (getrusage())[2];
+                    # RSS is in KB under Linux
+                    return unless $rss > $max;
+                    $self->log->debug(qq{Worker exceeded RSS limit "$rss > $max", restarting});
+                    Mojo::IOLoop->stop_gracefully;
+                }) if $parent ne $$;
         });
 }
 
