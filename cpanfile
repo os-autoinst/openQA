@@ -1,4 +1,5 @@
 requires 'Archive::Extract';
+requires 'BSD::Resource';
 requires 'CSS::Minifier::XS', '>= 0.01';
 requires 'Carp';
 requires 'Clone';
