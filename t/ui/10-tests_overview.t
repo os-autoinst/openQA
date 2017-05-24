@@ -30,7 +30,34 @@ use t::ui::PhantomTest;
 my $test_case = OpenQA::Test::Case->new;
 $test_case->init_data;
 
-my $driver = call_phantom();
+sub schema_hook {
+    my $schema   = OpenQA::Test::Database->new->create;
+    my $comments = $schema->resultset('Comments');
+    my $bugs     = $schema->resultset('Bugs');
+
+    $comments->create(
+        {
+            text    => 'bsc#111111 Python > Perl',
+            user_id => 1,
+            job_id  => 99937,
+        });
+
+    $comments->create(
+        {
+            text    => 'bsc#222222 D > Perl',
+            user_id => 1,
+            job_id  => 99946,
+        });
+
+    $bugs->create(
+        {
+            bugid     => 'bsc#111111',
+            refreshed => 1,
+            open      => 0,
+        });
+}
+
+my $driver = call_phantom(\&schema_hook);
 
 unless ($driver) {
     plan skip_all => $t::ui::PhantomTest::phantommissing;
@@ -71,6 +98,14 @@ my @descriptions = $driver->find_elements('td.name a', 'css');
 is(scalar @descriptions, 1, 'only test suites with description content are shown as links');
 $descriptions[0]->click();
 is($driver->find_element('.popover-title')->get_text, 'kde', 'description popover shows content');
+
+# Test bug status
+my @closed_bugs = $driver->find_elements('#bug-99937 .bug_closed', 'css');
+is(scalar @closed_bugs, 1, 'closed bug correctly shown');
+
+my @open_bugs = $driver->find_elements('#bug-99946 .label_bug', 'css');
+@closed_bugs = $driver->find_elements('#bug-99946 .bug_closed', 'css');
+ok((scalar @open_bugs == 1) && (scalar @closed_bugs == 0), 'open bug correctly shown');
 
 kill_phantom();
 

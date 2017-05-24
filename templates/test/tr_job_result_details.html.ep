@@ -3,7 +3,7 @@
 % for my $bug (@{$res->{bugs}}) {
     <span id="bug-<%= $jobid %>">
         <a href="<%= bugurl_for $bug %>">
-            <i class="test-label <%= bugicon_for $bug %>" title="Bug referenced: <%= $bug %>"></i>
+            <i class="test-label <%= bugicon_for $bug, $res->{bugdetails}->{$bug} %>" title="Bug referenced: <%= $bug %>"></i>
         </a>
     </span>
 % }
