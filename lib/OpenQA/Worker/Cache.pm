@@ -119,14 +119,24 @@ sub download_asset {
         });
 
     $tx = $ua->start($tx);
-
-    if ($tx->res->code == 304) {
+    my $code = ($tx->res->code) ? $tx->res->code : 521;    # Used by cloudflare to indicate web server is down.
+    if ($code eq 304) {
         if (toggle_asset_lock($asset, 0)) {
             print $log "CACHE: Content has not changed, not downloading the $asset but updating last use\n";
         }
         else {
             print $log "CACHE: Abnormal situation, bailing out\n";
             $asset = undef;
+        }
+    }
+    elsif ($tx->res->is_server_error) {
+        if (toggle_asset_lock($asset, 0)) {
+            print $log "CACHE: Could not download the asset, triggering a retry for $code.\n";
+            $asset = $code;
+        }
+        else {
+            print $log "CACHE: Abnormal situation, bailing out but still retying\n";
+            $asset = $code;
         }
     }
     elsif ($tx->res->is_success) {
@@ -148,9 +158,8 @@ sub download_asset {
         }
     }
     else {
-        print $log "CACHE: Download of $asset failed with: "
-          . $tx->res->code . " - "
-          . $tx->res->error->{message} . "\n";
+        my $message = $tx->res->error->{message};
+        print $log "CACHE: Download of $asset failed with: $code - $message\n";
         purge_asset($asset);
         $asset = undef;
     }
@@ -164,7 +173,7 @@ sub get_asset {
     my $result;
     my $ret;
     $asset = catdir($location, basename($asset));
-
+    my $n = 5;
     while () {
 
         log_debug "CACHE: Aquiring lock for $asset in the database";
@@ -176,14 +185,23 @@ sub get_asset {
             next;
         }
         $ret = download_asset($job->{id}, lc($asset_type), $asset, ($result->{etag}) ? $result->{etag} : undef);
-
         if (!$ret) {
-            return undef;
+            $asset = undef;
+            last;
         }
-
+        elsif ($ret =~ /^5[0-9]{2}$/ && --$n) {
+            log_debug "CACHE: Error $ret, retrying download for $n more tries";
+            log_debug "CACHE: Waiting 5 seconds for the next retry";
+            sleep 5;
+            next;
+        }
+        elsif (!$n) {
+            log_debug "CACHE: Too many download errors, aborting";
+            $asset = undef;
+            last;
+        }
         last;
     }
-
     return $asset;
 }
 
