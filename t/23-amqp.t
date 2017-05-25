@@ -36,6 +36,7 @@ use Test::MockObject;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use Mojo::File qw(tempdir path);
 
 my %client_context;
 
@@ -115,11 +116,9 @@ $channel_mock->fake_module(
 my $schema = OpenQA::Test::Database->new->create();
 
 # this test also serves to test plugin loading via config file
-$ENV{OPENQA_CONFIG} = 't';
-open(my $fd, '>', $ENV{OPENQA_CONFIG} . '/openqa.ini');
-print $fd "[global]\n";
-print $fd "plugins=AMQP\n";
-close $fd;
+my @conf = ("[global]\n", "plugins=AMQP\n");
+$ENV{OPENQA_CONFIG} = tempdir;
+path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 

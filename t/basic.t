@@ -22,6 +22,7 @@ use Test::More;
 use Test::Mojo;
 use Test::Warnings;
 use OpenQA::Test::Database;
+use Mojo::File qw(tempdir path);
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
 
@@ -31,16 +32,13 @@ $t->get_ok('/')->status_is(200)->content_like(qr/Welcome to openQA/i);
 sub test_auth_method_startup {
     my $auth = shift;
 
-    $ENV{OPENQA_CONFIG} = 't';
-    open(my $fd, '>', $ENV{OPENQA_CONFIG} . '/openqa.ini');
-    print $fd "[auth]\n";
-    print $fd "method = \t  $auth \t\n";
-    close $fd;
+    my @conf = ("[auth]\n", "method = \t  $auth \t\n");
+    $ENV{OPENQA_CONFIG} = tempdir;
+    path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
 
     no warnings 'redefine';
     my $t = Test::Mojo->new('OpenQA::WebAPI');
     ok($t->app->config->{auth}->{method} eq $auth, "started successfully with auth $auth");
-    unlink($ENV{OPENQA_CONFIG} . '/openqa.ini');
 }
 
 OpenQA::Test::Database->new->create(skip_fixtures => 1);
