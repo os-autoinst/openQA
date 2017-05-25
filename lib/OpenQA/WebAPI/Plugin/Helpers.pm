@@ -73,6 +73,16 @@ sub register {
         });
 
     $app->helper(
+        stepvideolink_for => sub {
+            my ($c, $testid, $frametime) = @_;
+            my $url = $c->url_for('test_file', testid => $testid, filename => 'video.ogv');
+            $url .= sprintf("#t=%s,%s", ${$frametime}[0], ${$frametime}[1]);
+            my $icon = $c->t(i => (class => "step_action fa fa-video-file-o fa-lg"));
+            my $class = "step_action fa fa-file-video-o fa-lg";
+            return $c->link_to($url => (title => "Jump to video", class => $class) => sub { "" });
+        });
+
+    $app->helper(
         rendered_refs_no_shortening => sub {
             my ($c, $text) = @_;
             return render_escaped_refs($text);

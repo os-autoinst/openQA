@@ -34,6 +34,9 @@
             %= stepaction_for 'Create new needle' => url_for('edit_step'), 'fa-thumb-tack', 'create_new_needle'
         % }
         %= bug_report_actions
+        % if ($frametime) {
+            %= stepvideolink_for $testid, $frametime
+        % }
     </span>
 </div>
 <div id="needle_diff">
