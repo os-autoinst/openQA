@@ -21,22 +21,19 @@ use FindBin;
 use lib "$FindBin::Bin/lib";
 
 use Test::More;
-use Test::Mojo;
 use Test::Warnings;
-use OpenQA::Test::Database;
+use Mojolicious;
+use OpenQA::ServerStartup;
 
-OpenQA::Test::Database->new->create(skip_fixtures => 1);
+subtest 'Test configuration default modes' => sub {
+    local $ENV{OPENQA_CONFIG} = undef;
 
-my $t = Test::Mojo->new('OpenQA::WebAPI');
-
-my $cfg = $t->app->config;
-
-is(length($cfg->{_openid_secret}), 16, "config has openid_secret");
-delete $cfg->{_openid_secret};
-
-is_deeply(
-    $cfg,
-    {
+    my $app = Mojolicious->new();
+    $app->mode("test");
+    OpenQA::ServerStartup::read_config($app);
+    my $config = $app->config;
+    is(length($config->{_openid_secret}), 16, "config has openid_secret");
+    my $test_config = {
         global => {
             appname             => 'openQA',
             branding            => 'openSUSE',
@@ -52,9 +49,6 @@ is_deeply(
         'scm git' => {
             do_push => 'no',
         },
-        logging => {
-            level => 'debug',
-        },
         openid => {
             provider  => 'https://www.opensuse.org/openid/user/',
             httpsonly => 1,
@@ -64,33 +58,79 @@ is_deeply(
             proxy  => 1,
         },
         audit => {
-            blacklist => 'job_grab job_done',
+            blacklist => '',
         },
         amqp => {
             reconnect_timeout => 5,
             url               => 'amqp://guest:guest@localhost:5672/',
             exchange          => 'pubsub',
             topic_prefix      => 'suse',
-        }});
+        }};
 
-$ENV{OPENQA_CONFIG} = 't';
-open(my $fd, '>', $ENV{OPENQA_CONFIG} . '/openqa.ini');
-print $fd "[global]\n";
-print $fd "suse_mirror=http://blah/\n";
-print $fd
-"recognized_referers = bugzilla.suse.com bugzilla.opensuse.org bugzilla.novell.com bugzilla.microfocus.com progress.opensuse.org github.com\n";
-close $fd;
+    # Test configuration generation with "test" mode
+    $test_config->{_openid_secret} = $config->{_openid_secret};
+    $test_config->{logging}->{level} = "debug";
+    is_deeply $config, $test_config, '"test" configuration';
 
-$t = Test::Mojo->new('OpenQA::WebAPI');
-ok($t->app->config->{global}->{suse_mirror} eq 'http://blah/', 'suse mirror');
-is_deeply(
-    $t->app->config->{global}->{recognized_referers},
-    [
-        qw(bugzilla.suse.com bugzilla.opensuse.org bugzilla.novell.com bugzilla.microfocus.com progress.opensuse.org github.com)
-    ],
-    'referers parsed correctly'
-);
+    # Test configuration generation with "development" mode
+    $app = Mojolicious->new();
+    $app->mode("development");
+    OpenQA::ServerStartup::read_config($app);
+    $config = $app->config;
+    $test_config->{_openid_secret} = $config->{_openid_secret};
+    is_deeply $config, $test_config, 'right "development" configuration';
 
-unlink($ENV{OPENQA_CONFIG} . '/openqa.ini');
+    # Test configuration generation with an unknown mode (should fallback to default)
+    $app = Mojolicious->new();
+    $app->mode("foo_bar");
+    OpenQA::ServerStartup::read_config($app);
+    $config                        = $app->config;
+    $test_config->{_openid_secret} = $config->{_openid_secret};
+    $test_config->{auth}->{method} = "OpenID";
+    delete $test_config->{logging};
+    is_deeply $config, $test_config, 'right default configuration';
+
+
+    # Test configuration generation with an unknown mode (should fallback to default)
+    $app = Mojolicious->new();
+    $app->mode("foo_bar");
+    OpenQA::ServerStartup::read_config($app);
+    $config                        = $app->config;
+    $test_config->{_openid_secret} = $config->{_openid_secret};
+    $test_config->{auth}->{method} = "OpenID";
+    delete $test_config->{logging};
+    is_deeply $config, $test_config, 'right default configuration';
+
+};
+
+subtest 'Test configuration override from file' => sub {
+    use Mojo::File 'tempdir';
+
+    my $t_dir = tempdir;
+    local $ENV{OPENQA_CONFIG} = $t_dir;
+    my $app  = Mojolicious->new();
+    my @data = (
+        "[global]\n",
+        "suse_mirror=http://blah/\n",
+"recognized_referers = bugzilla.suse.com bugzilla.opensuse.org bugzilla.novell.com bugzilla.microfocus.com progress.opensuse.org github.com\n",
+        "[audit]\n",
+        "blacklist = job_grab job_done\n"
+    );
+    $t_dir->child("openqa.ini")->spurt(@data);
+    OpenQA::ServerStartup::read_config($app);
+
+    ok -e $t_dir->child("openqa.ini");
+    ok($app->config->{global}->{suse_mirror} eq 'http://blah/',   'suse mirror');
+    ok($app->config->{audit}->{blacklist} eq 'job_grab job_done', 'audit blacklist');
+
+    is_deeply(
+        $app->config->{global}->{recognized_referers},
+        [
+            qw(bugzilla.suse.com bugzilla.opensuse.org bugzilla.novell.com bugzilla.microfocus.com progress.opensuse.org github.com)
+        ],
+        'referers parsed correctly'
+    );
+
+};
 
 done_testing();
