@@ -41,6 +41,20 @@
         name => 'opensuse test'
     },
     Jobs => {
+        # job with empty value settings as default
+        id         => 80000,
+        priority   => 50,
+        result     => "passed",
+        retry_avbl => 3,
+        TEST       => 'minimalx',
+        state      => "done",
+        # Really old
+        t_finished => time2str('%Y-%m-%d %H:%M:%S', time - 36000, 'UTC'),
+        # Really long ago
+        t_started => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+        t_created => time2str('%Y-%m-%d %H:%M:%S', time - 72000, 'UTC'),
+    },
+    Jobs => {
         id         => 99926,
         group_id   => 1001,
         priority   => 56,

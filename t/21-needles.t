@@ -31,6 +31,7 @@ use Test::Mojo;
 use Test::Warnings;
 
 my %settings = (
+    TEST    => 'test',
     DISTRI  => 'fedora',
     FLAVOR  => 'DVD',
     VERSION => '25',

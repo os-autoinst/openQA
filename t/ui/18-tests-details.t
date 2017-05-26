@@ -261,5 +261,9 @@ $get         = $t->get_ok($baseurl . 'tests/99963')->status_is(200);
 @worker_text = $get->tx->res->dom->find('#info_box .panel-body div + div + div')->map('all_text')->each;
 like($worker_text[0], qr/[ \n]*Assigned worker:[ \n]*localhost:1[ \n]*/, 'worker still displayed when job set to done');
 
+# now test the details of a job with nearly no settings which should yield no
+# warnings
+$get = $t->get_ok('/tests/80000')->status_is(200);
+
 kill_phantom();
 done_testing();

@@ -117,6 +117,9 @@ sub create {
     my %up_params = map { uc $_ => $params->{$_} } keys %$params;
     # restore URL encoded /
     my %params = map { $_ => $up_params{$_} =~ s@%2F@/@gr } keys %up_params;
+    if (!$params{TEST}) {
+        return $self->render(json => {error => 'TEST field mandatory'}, status => 400);
+    }
 
     my $json = {};
     my $status;
@@ -275,7 +278,7 @@ sub update {
     my @setting_cols = qw(TEST DISTRI VERSION FLAVOR ARCH BUILD MACHINE);
     if ($settings) {
         for my $setting_col (@setting_cols) {
-            $json->{$setting_col} = delete $settings->{$setting_col};
+            $json->{$setting_col} = delete $settings->{$setting_col} // '';
         }
     }
 

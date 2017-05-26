@@ -85,7 +85,7 @@ $t->app->schema->resultset('Jobs')->find(99963)->update({assigned_worker_id => 1
 my $get        = $t->get_ok('/api/v1/jobs');
 my @jobs       = @{$get->tx->res->json->{jobs}};
 my $jobs_count = scalar @jobs;
-is($jobs_count, 16);
+is($jobs_count, 17);
 my %jobs = map { $_->{id} => $_ } @jobs;
 is($jobs{99981}->{state},              'cancelled');
 is($jobs{99981}->{origin_id},          undef, 'no original job');
@@ -99,9 +99,9 @@ is($jobs{99963}->{clone_id},           undef, 'no clone');
 
 # That means that only 9 are current and only 10 are relevant
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 13);
-$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
 is(scalar(@{$get->tx->res->json->{jobs}}), 14);
+$get = $t->get_ok('/api/v1/jobs' => form => {scope => 'relevant'});
+is(scalar(@{$get->tx->res->json->{jobs}}), 15);
 
 # check limit quantity
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current', limit => 5});
@@ -150,7 +150,7 @@ $get = $t->get_ok('/api/v1/jobs?limit=1&page=2');
 is(scalar(@{$get->tx->res->json->{jobs}}), 1);
 is($get->tx->res->json->{jobs}->[0]->{id}, 99963);
 $get = $t->get_ok('/api/v1/jobs?before=99928');
-is(scalar(@{$get->tx->res->json->{jobs}}), 2);
+is(scalar(@{$get->tx->res->json->{jobs}}), 3);
 $get = $t->get_ok('/api/v1/jobs?after=99945');
 is(scalar(@{$get->tx->res->json->{jobs}}), 6);
 
@@ -178,7 +178,7 @@ my $cloned = $new_jobs{$new_jobs{99939}->{clone_id}};
 
 # The number of current jobs doesn't change
 $get = $t->get_ok('/api/v1/jobs' => form => {scope => 'current'});
-is(scalar(@{$get->tx->res->json->{jobs}}), 13, 'job count stay the same');
+is(scalar(@{$get->tx->res->json->{jobs}}), 14, 'job count stay the same');
 
 # Test /jobs/X/restart and /jobs/X
 $get = $t->get_ok('/api/v1/jobs/99926')->status_is(200);
@@ -392,6 +392,15 @@ $get = $t->get_ok('/api/v1/jobs', form => $job_properties);
 is($get->tx->res->json->{jobs}->[1]->{group},    'opensuse test');
 is($get->tx->res->json->{jobs}->[1]->{priority}, 42);
 
+$job_properties = {TEST => 'pretty_empty'};
+$post = $t->post_ok('/api/v1/jobs', form => $job_properties)->status_is(200);
+$t->get_ok('/api/v1/jobs/' . $post->tx->res->json->{id})->status_is(200);
+$t->json_is('/job/settings/TEST'    => 'pretty_empty');
+$t->json_is('/job/settings/MACHINE' => undef, 'machine was not set and is therefore undef');
+$t->json_is('/job/settings/DISTRI'  => undef);
+
+$post = $t->post_ok('/api/v1/jobs', form => {})->status_is(400);
+
 subtest 'update job and job settings' => sub {
     # check defaults
     $t->get_ok('/api/v1/jobs/99926')->status_is(200);
@@ -422,6 +431,7 @@ subtest 'update job and job settings' => sub {
         json => {
             priority => 50,
             settings => {
+                TEST    => 'minimalx',
                 ARCH    => 'i686',
                 DESKTOP => 'kde',
                 NEW_KEY => 'new value',
