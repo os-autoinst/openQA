@@ -15,6 +15,7 @@
 
 package OpenQA::Scheduler::FakeApp;
 use Mojo::Log;
+use Mojo::Home;
 use strict;
 use warnings;
 
@@ -24,6 +25,7 @@ sub new {
     my $self = bless {}, $class;
     $self->{config} = {};
     $self->{log}    = Mojo::Log->new;
+    $self->{home}   = Mojo::Home->new($ENV{MOJO_HOME} || '/');
     return $self;
 }
 
@@ -55,7 +57,7 @@ sub log_name {
 # only needed to get $HOME/etc/openqa - so take /etc for scheduler
 sub home {
     my ($self) = @_;
-    return $ENV{MOJO_HOME} || '/';
+    return $self->{home};
 }
 
 sub emit_event {
