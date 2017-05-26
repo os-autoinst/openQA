@@ -55,7 +55,7 @@ sub log_name {
 # only needed to get $HOME/etc/openqa - so take /etc for scheduler
 sub home {
     my ($self) = @_;
-    return $ENV{MOJO_HOME} || '/';
+    return Mojo::Home->new($ENV{MOJO_HOME} || '/');
 }
 
 sub emit_event {
