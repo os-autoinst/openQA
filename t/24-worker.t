@@ -29,6 +29,7 @@ use Test::Mojo;
 use Test::Warnings;
 use Test::Output qw(stdout_like stderr_like);
 use Test::Fatal;
+use Mojo::File qw(tempdir path);
 #use Scalar::Utils 'refaddr';
 
 use OpenQA::Worker::Common;
@@ -112,8 +113,12 @@ test_via_io_loop sub {
     Mojo::IOLoop->stop;
 };
 
-$ENV{OPENQA_CONFIG} = 't';
-open(my $fh, '>>', $ENV{OPENQA_CONFIG} . '/client.conf') or die 'can not open client.conf for appending';
+my @conf = ("[global]\n", "plugins=AMQP\n");
+$ENV{OPENQA_CONFIG} = tempdir;
+path($FindBin::Bin, "data")->child("client.conf")->copy_to(path($ENV{OPENQA_CONFIG})->make_path->child("client.conf"));
+ok -e path($ENV{OPENQA_CONFIG})->child('client.conf')->to_string;
+open(my $fh, '>>', path($ENV{OPENQA_CONFIG})->child('client.conf')->to_string)
+  or die 'can not open client.conf for appending';
 print $fh "[host1]\nkey=1234\nsecret=1234\n";
 print $fh "[host2]\nkey=1234\nsecret=1234\n";
 print $fh "[host3]\nkey=1234\nsecret=1234\n";

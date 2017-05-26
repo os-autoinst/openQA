@@ -36,6 +36,7 @@ use Test::MockModule;
 use Test::More;
 use Test::Mojo;
 use Test::Warnings;
+use Mojo::File qw(tempdir path);
 
 my $args;
 
@@ -52,11 +53,9 @@ $module->mock('run', \&mock_ipc_run);
 my $schema = OpenQA::Test::Database->new->create();
 
 # this test also serves to test plugin loading via config file
-$ENV{OPENQA_CONFIG} = 't';
-open(my $fd, '>', $ENV{OPENQA_CONFIG} . '/openqa.ini');
-print $fd "[global]\n";
-print $fd "plugins=Fedmsg\n";
-close $fd;
+my @conf = ("[global]\n", "plugins=Fedmsg\n");
+$ENV{OPENQA_CONFIG} = tempdir;
+path($ENV{OPENQA_CONFIG})->make_path->child("openqa.ini")->spurt(@conf);
 
 my $t = Test::Mojo->new('OpenQA::WebAPI');
 

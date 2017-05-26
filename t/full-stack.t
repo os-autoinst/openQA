@@ -20,13 +20,18 @@ use Cwd qw(abs_path getcwd);
 
 BEGIN {
     unshift @INC, 'lib';
-    $ENV{OPENQA_CONFIG}  = 't/full-stack.d/config';
-    $ENV{OPENQA_BASEDIR} = abs_path('t/full-stack.d');
+    use FindBin;
+    use Mojo::File qw(path tempdir);
+    $ENV{OPENQA_BASEDIR} = path(tempdir, 't', 'full-stack.d');
+    $ENV{OPENQA_CONFIG} = path($ENV{OPENQA_BASEDIR}, 'config')->make_path;
+    path($FindBin::Bin, "data")->child("openqa.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("openqa.ini"));
+    path($FindBin::Bin, "data")->child("database.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("database.ini"));
+    path($FindBin::Bin, "data")->child("workers.ini")->copy_to(path($ENV{OPENQA_CONFIG})->child("workers.ini"));
+    path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->make_path->child("db.lock")->spurt;
     # DO NOT SET OPENQA_IPC_TEST HERE
 }
 
 use Mojo::Base -strict;
-use FindBin;
 use lib "$FindBin::Bin/lib";
 use Test::More;
 use Test::Mojo;
@@ -49,6 +54,7 @@ plan skip_all => "set FULLSTACK=1 (be careful)" unless $ENV{FULLSTACK};
 my $workerpid;
 my $wspid;
 my $schedulerpid;
+my $sharedir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'share')->make_path;
 
 sub turn_down_stack {
     if ($workerpid) {
@@ -82,13 +88,12 @@ unless (check_phantom_modules) {
     plan skip_all => $t::ui::PhantomTest::phantommissing;
     exit(0);
 }
-
-unlink('t/full-stack.d/config/workers.ini');
-unlink('t/full-stack.d/openqa/db/db.sqlite');
-ok(open(my $conf, '>', 't/full-stack.d/config/database.ini'));
-print $conf <<EOC;
+path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string;
+ok -e path($ENV{OPENQA_BASEDIR}, 'openqa', 'db')->child("db.lock");
+ok(open(my $conf, '>', path($ENV{OPENQA_CONFIG})->child("database.ini")->to_string));
+print $conf <<"EOC";
 [production]
-dsn = dbi:SQLite:dbname=t/full-stack.d/openqa/db/db.sqlite
+dsn = dbi:SQLite:dbname=$ENV{OPENQA_BASEDIR}/openqa/db/db.sqlite
 on_connect_call = use_foreign_keys
 on_connect_do = PRAGMA synchronous = OFF
 sqlite_unicode = 1
@@ -110,11 +115,8 @@ if ($schedulerpid == 0) {
 my $driver = call_phantom(sub { });
 my $mojoport = t::ui::PhantomTest::get_mojoport;
 
-my $resultdir = 't/full-stack.d/openqa/testresults/';
-# remove_tree dies on error
-remove_tree($resultdir);
-ok(make_path($resultdir));
-remove_tree('t/full-stack.d/openqa/images/');
+my $resultdir = path($ENV{OPENQA_BASEDIR}, 'openqa', 'testresults')->make_path;
+ok -d $resultdir;
 
 $driver->title_is("openQA", "on main page");
 is($driver->find_element('#user-action a')->get_text(), 'Login', "noone logged in");
@@ -149,14 +151,15 @@ else {
 
 my $connect_args = "--apikey=1234567890ABCDEF --apisecret=1234567890ABCDEF --host=http://localhost:$mojoport";
 
-make_path('t/full-stack.d/openqa/share/factory/iso');
-unlink('t/full-stack.d/openqa/share/factory/iso/Core-7.2.iso');
-symlink(abs_path("../os-autoinst/t/data/Core-7.2.iso"), "t/full-stack.d/openqa/share/factory/iso/Core-7.2.iso")
+path($sharedir, 'factory', 'iso')->make_path;
+
+symlink(abs_path("../os-autoinst/t/data/Core-7.2.iso"),
+    path($sharedir, 'factory', 'iso')->child("Core-7.2.iso")->to_string)
   || die "can't symlink";
 
-make_path('t/full-stack.d/openqa/share/tests');
-unlink('t/full-stack.d/openqa/share/tests/tinycore');
-symlink(abs_path('../os-autoinst/t/data/tests/'), 't/full-stack.d/openqa/share/tests/tinycore')
+path($sharedir, 'tests')->make_path;
+
+symlink(abs_path('../os-autoinst/t/data/tests/'), path($sharedir, 'tests')->child("tinycore"))
   || die "can't symlink";
 
 sub client_output {
@@ -227,9 +230,9 @@ sub wait_for_job_running {
 wait_for_job_running;
 wait_for_result_panel qr/Result: passed/, 'test 1 is passed';
 
-ok(-s "$resultdir/00000/00000001-$job_name/autoinst-log.txt",   'log file generated');
-ok(-s 't/full-stack.d/openqa/share/factory/hdd/core-hdd.qcow2', 'image of hdd uploaded');
-my $mode = S_IMODE((stat('t/full-stack.d/openqa/share/factory/hdd/core-hdd.qcow2'))[2]);
+ok(-s path($resultdir, '00000', "00000001-$job_name")->make_path->child('autoinst-log.txt'), 'log file generated');
+ok(-s path($sharedir, 'factory', 'hdd')->make_path->child('core-hdd.qcow2'), 'image of hdd uploaded');
+my $mode = S_IMODE((stat(path($sharedir, 'factory', 'hdd')->child('core-hdd.qcow2')))[2]);
 is($mode, 420, 'exported image has correct permissions (420 -> 0644)');
 
 my $post_group_res = client_output "job_groups post name='New job group'";
@@ -278,7 +281,7 @@ start_worker;
 wait_for_result_panel qr/Result: incomplete/, 'Test 4 crashed as expected';
 
 # Slurp the whole file, it's not that big anyways
-my $filename = $resultdir . "00000/00000004-$job_name/autoinst-log.txt";
+my $filename = $resultdir . "/00000/00000004-$job_name/autoinst-log.txt";
 open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
 my $autoinst_log = do { local ($/); <$f> };
 close($f);
@@ -286,36 +289,33 @@ close($f);
 like($autoinst_log, qr/result: setup failure/, 'Test 4 state correct: setup failure');
 kill_worker;    # Ensure that the worker can be killed with TERM signal
 
-my $cachedir = 't/full-stack.d/cache';
-remove_tree($cachedir);
-ok(make_path($cachedir), "Setting up Cache directory");
-my $cwd            = getcwd;
-my $cache_location = "$cwd/$cachedir";
+my $cache_location = path($ENV{OPENQA_BASEDIR}, 'cache')->make_path;
+ok(-e $cache_location, "Setting up Cache directory");
 
-open($conf, '>', 't/full-stack.d/config/workers.ini');
+open($conf, '>', path($ENV{OPENQA_CONFIG})->child("workers.ini")->to_string);
 print $conf <<EOC;
 [global]
 CACHEDIRECTORY = $cache_location
 CACHELIMIT = 50;
 
 [http://localhost:$mojoport]
-TESTPOOLSERVER = $cwd/t/full-stack.d/openqa/share/tests
+TESTPOOLSERVER = $sharedir/tests
 EOC
 close($conf);
 
-ok(-e "t/full-stack.d/config/workers.ini", "Config file created.");
+ok(-e path($ENV{OPENQA_CONFIG})->child("workers.ini"), "Config file created.");
 
 # For now let's repeat the cache tests before extracting to separate test
 subtest 'Cache tests' => sub {
 
     my $filename;
-    open($filename, '>', $cache_location . "/test.file");
+    open($filename, '>', $cache_location->child("test.file"));
     print $filename "Hello World";
     close($filename);
 
-    make_path($cache_location . "/test_directory");
+    path($cache_location, "test_directory")->make_path;
 
-    my $db_file  = "$cache_location/cache.sqlite";
+    my $db_file  = $cache_location->child('cache.sqlite');
     my $job_name = 'tinycore-1-flavor-i386-Build1-core@coolone';
     client_call('jobs/3/restart post', qr{\Qtest_url => ["/tests/5\E}, 'client returned new test_url');
 
@@ -324,20 +324,20 @@ subtest 'Cache tests' => sub {
     ok(!-e $db_file, "cache.sqlite is not present");
     start_worker;
     wait_for_job_running;
-    ok(-e $db_file,                             "cache.sqlite file created");
-    ok(!-d $cache_location . "/test_directory", "Directory within cache, not present after deploy");
-    ok(!-e $cache_location . "/test.file",      "File within cache, not present after deploy");
+    ok(-e $db_file, "cache.sqlite file created");
+    ok(!-d path($cache_location, "test_directory"), "Directory within cache, not present after deploy");
+    ok(!-e $cache_location->child("test.file"), "File within cache, not present after deploy");
 
     like(
-        readlink('t/full-stack.d/openqa/pool/1/Core-7.2.iso'),
-        qr(t/full-stack.d/cache/Core-7.2.iso),
+        readlink(path($ENV{OPENQA_BASEDIR}, 'openqa', 'pool', '1')->child("Core-7.2.iso")),
+        qr($cache_location/Core-7.2.iso),
         "iso is symlinked to cache"
     );
 
     wait_for_result_panel qr/Result: passed/, 'test 5 is passed';
     kill_worker;
 
-    $filename = $resultdir . "00000/00000005-$job_name/autoinst-log.txt";
+    $filename = path($resultdir, '00000', "00000005-$job_name")->child("autoinst-log.txt");
     open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
     $autoinst_log = do { local ($/); <$f> };
     close($f);
@@ -355,7 +355,7 @@ subtest 'Cache tests' => sub {
     like($result->{filename}, qr/Core-7/, "Core-7.2.iso is the first element");
 
     for (1 .. 5) {
-        $filename = "$cwd/$cachedir/$_.qcow2";
+        $filename = $cache_location->child("$_.qcow2");
         open(my $tmpfile, '>', $filename);
         print $tmpfile $filename;
         $sql
@@ -402,7 +402,7 @@ subtest 'Cache tests' => sub {
     start_worker;
     wait_for_result_panel qr/Result: passed/, 'test 7 is passed';
 
-    $filename = $resultdir . "00000/00000007-$job_name/autoinst-log.txt";
+    $filename = path($resultdir, '00000', "00000007-$job_name")->child("autoinst-log.txt");
     open($f, '<', $filename) or die "OPENING $filename: $!\n";
     $autoinst_log = do { local ($/); <$f> };
     close($f);
@@ -413,7 +413,7 @@ subtest 'Cache tests' => sub {
     $driver->get('/tests/8');
     wait_for_result_panel qr/Result: incomplete/, 'test 8 is incomplete';
 
-    $filename = $resultdir . "00000/00000008-$job_name/autoinst-log.txt";
+    $filename = path($resultdir, '00000', "00000008-$job_name")->child("autoinst-log.txt");
     open($f, '<', $filename) or die "OPENING $filename: $!\n";
     $autoinst_log = do { local ($/); <$f> };
     close($f);
