@@ -22,6 +22,7 @@ use Config::IniFiles;
 use db_profiler;
 use db_helpers;
 use OpenQA::Utils;
+use Mojo::File 'path';
 
 sub read_config {
     my $app = shift;
@@ -94,8 +95,16 @@ sub read_config {
 
     # Mojo's built in config plugins suck. JSON for example does not
     # support comments
-    my $cfgpath = $ENV{OPENQA_CONFIG} || $app->home . '/etc/openqa';
-    my $cfg = Config::IniFiles->new(-file => $cfgpath . '/openqa.ini') || undef;
+    my $cfg;
+    my $cfgpath = $ENV{OPENQA_CONFIG} ? path($ENV{OPENQA_CONFIG}) : $app->home->child("etc", "openqa");
+    my $cfgfile = $cfgpath->child('openqa.ini');
+
+    if (-e $cfgfile) {
+        $cfg = Config::IniFiles->new(-file => $cfgfile->to_string) || undef;
+    }
+    else {
+        $app->log->warn("No configuration file supplied, will fallback to default configuration");
+    }
 
     for my $section (sort keys %defaults) {
         for my $k (sort keys %{$defaults{$section}}) {
@@ -112,18 +121,27 @@ sub read_config {
     $app->config->{auth}->{method} =~ s/\s//g;
 }
 
-sub _log_format {
-    my ($app, $time, $level, @lines) = @_;
-    return '[' . localtime($time) . "] [" . $app->log_name . ":$level] " . join "\n", @lines, '';
-}
-
 sub setup_logging {
     my ($app) = @_;
 
     my $config = $app->config;
     my $logfile = $ENV{OPENQA_LOGFILE} || $config->{logging}->{file};
-    $app->log->path($logfile);
-    $app->log->format(sub { _log_format($app, @_); });
+
+    if ($logfile) {
+        $app->log->path($logfile);
+        $app->log->format(
+            sub {
+                my ($time, $level, @lines) = @_;
+                return '[' . localtime($time) . "] [" . $app->log_name . ":$level] " . join "\n", @lines, '';
+            });
+    }
+    else {
+        $app->log->format(
+            sub {
+                my (undef, $level, @lines) = @_;
+                return '[' . $app->log_name . ":$level] " . join "\n", @lines, '';
+            });
+    }
 
     if ($logfile && $config->{logging}->{level}) {
         $app->log->level($config->{logging}->{level});
