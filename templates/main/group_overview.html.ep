@@ -40,16 +40,18 @@
 %= include 'main/group_builds', build_results => $build_results, group => $group, children => undef, default_expanded => 1
 %= include 'main/more_builds', limit_builds => $limit_builds
 
-<h2>Comments</h2>
-% for my $comment (reverse @$comments) {
-    %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => 'group', id => $group->{id}}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
-% }
+% if ($comments_enabled) {
+    <h2>Comments</h2>
+    % for my $comment (reverse @$comments) {
+        %= include 'comments/comment_row', comment_id => $comment->id, comment => $comment, user => $comment->user, context => {type => 'group', id => $group->{id}}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
+    % }
 
-% if (current_user) {
-    <script id="comment-row-template" type="text/template">
-        %= include 'comments/comment_row', comment_id => '@comment_id@', comment => 0, user => current_user, context => {type => 'group', id => $group->{id}}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
-    </script>
-    %= form_for url_for('apiv1_post_group_comment', group_id => $group->{id}) => (method => "post", class => "form-horizontal", id => "commentForm", onsubmit => "addComment(this, false); return false;") => begin
-        %= include 'comments/add_comment_form_groups'
-    % end
+    % if (current_user) {
+        <script id="comment-row-template" type="text/template">
+            %= include 'comments/comment_row', comment_id => '@comment_id@', comment => 0, user => current_user, context => {type => 'group', id => $group->{id}}, put_action => 'apiv1_put_group_comment', delete_action => 'apiv1_delete_group_comment'
+        </script>
+        %= form_for url_for('apiv1_post_group_comment', group_id => $group->{id}) => (method => "post", class => "form-horizontal", id => "commentForm", onsubmit => "addComment(this, false); return false;") => begin
+            %= include 'comments/add_comment_form_groups'
+        % end
+    % }
 % }

@@ -87,14 +87,15 @@ sub group_overview {
     $time_limit_days = 0 unless looks_like_number($time_limit_days);
 
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
-    my $only_tagged = $self->param('only_tagged') // 0;
-    my $group = $self->db->resultset($resultset)->find($self->param('groupid'));
+    my $only_tagged      = $self->param('only_tagged') // 0;
+    my $comments_enabled = $self->param('comments')    // 1;
+    my $group            = $self->db->resultset($resultset)->find($self->param('groupid'));
     return $self->reply->not_found unless $group;
 
     my @comments;
     my @pinned_comments;
     my $tags;
-    if ($group->can('comments')) {
+    if ($comments_enabled && $group->can('comments')) {
         for my $comment ($group->comments->all) {
             # find pinned comments
             if ($comment->user->is_operator && CORE::index($comment->text, 'pinned-description') >= 0) {
@@ -120,10 +121,11 @@ sub group_overview {
         id   => $group->id,
         name => $group->name,
     };
-    $self->stash('limit_builds',    $limit_builds);
-    $self->stash('only_tagged',     $only_tagged);
-    $self->stash('comments',        \@comments);
-    $self->stash('pinned_comments', \@pinned_comments);
+    $self->stash('limit_builds',     $limit_builds);
+    $self->stash('only_tagged',      $only_tagged);
+    $self->stash('comments_enabled', $comments_enabled);
+    $self->stash('comments',         \@comments);
+    $self->stash('pinned_comments',  \@pinned_comments);
     if ($group->can('children')) {
         my @child_groups = $group->children->all;
         $self->stash('child_groups', \@child_groups);

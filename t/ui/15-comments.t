@@ -435,6 +435,12 @@ subtest 'editing when logged in as regular user' => sub {
     };
 };
 
+subtest 'comment loading and rendering can be configured' => sub {
+    $driver->get('/group_overview/1001?comments=0');
+    my @comments = $driver->find_elements('.pinned-comment-row', 'css');
+    is(scalar @comments, 0, 'no comments found when disabled');
+};
+
 kill_phantom();
 
 done_testing();
