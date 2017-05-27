@@ -34,7 +34,7 @@ function update_docs {
 
         cd ..
         git add _includes/api.html
-        git add docs/index.html docs/current.pdf
+        git add docs/index.html docs/current.pdf docs/api/testapi.html
         echo "Update documentation to commit ${shortref}" > last.commit
         echo "" >> last.commit # somehow travis does not like \n
         (cd .. && git log --pretty=fuller ${TRAVIS_COMMIT} -1 >> out/last.commit)
