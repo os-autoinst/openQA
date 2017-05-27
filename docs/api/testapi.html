@@ -1579,15 +1579,16 @@ in the corresponding variable</p>
 <h5 id="_upload_logs">upload_logs</h5>
 <div class="literalblock">
 <div class="content">
-<pre>upload_logs($file [, failok =&gt; 0 ]);</pre>
+<pre>upload_logs($file [, failok =&gt; 0, timeout =&gt; 90 ]);</pre>
 </div>
 </div>
 <div class="paragraph">
 <p>Upload <code>$file</code> to OpenQA WebUI as a log file and
-return the uploaded file name. If failok is not set, a failed upload
-will cause the test to die. Failed uploads happen if the file does not
+return the uploaded file name. If failok is not set, a failed upload or
+timeout will cause the test to die. Failed uploads happen if the file does not
 exist or is over 20 GiB in size, so failok is useful when you just want
-to upload the file if it exists but not mind if it doesn&#8217;t.</p>
+to upload the file if it exists but not mind if it doesn&#8217;t. Default
+timeout is 90s.</p>
 </div>
 </div>
 <div class="sect4">
@@ -1633,7 +1634,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-04-07 12:11:47 UTC
+Last updated 2017-05-27 10:04:58 UTC
 </div>
 </div>
 </body>
