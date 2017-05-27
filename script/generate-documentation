@@ -12,8 +12,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License along
-# with this program; if not, write to the Free Software Foundation, Inc.,
-# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+# with this program; if not, see <http://www.gnu.org/licenses/>.
 
 function update_docs {
 
@@ -35,7 +34,7 @@ function update_docs {
 
         cd ..
         git add _includes/api.html
-        git add index.html current.pdf
+        git add docs/index.html docs/current.pdf
         echo "Update documentation to commit ${shortref}" > last.commit
         echo "" >> last.commit # somehow travis does not like \n
         (cd .. && git log --pretty=fuller ${TRAVIS_COMMIT} -1 >> out/last.commit)
