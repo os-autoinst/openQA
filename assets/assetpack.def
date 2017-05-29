@@ -17,6 +17,7 @@
 << https://raw.githubusercontent.com/twbs/bootstrap-sass/a73cc0f0e5c794206e9a70bc0b67e67cf37c1bca/assets/stylesheets/_bootstrap.scss
 < sass/theme.scss
 < https://raw.githubusercontent.com/vsn4ik/bootstrap-submenu/v2.0.4/dist/css/bootstrap-submenu.css
+< https://github.com/sorich87/bootstrap-tour/blob/v0.11.0/build/css/bootstrap-tour.min.css
 
 ! codemirror.css
 < https://raw.githubusercontent.com/codemirror/CodeMirror/8097c7e75ce7ef0512debe9967d7568626106e53/lib/codemirror.css
@@ -57,6 +58,7 @@
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap/tab.js
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap.js
 < https://raw.githubusercontent.com/twbs/bootstrap-sass/5d6b2ebba0c2a5885ce2f0e01e9218db3d3b5e47/assets/javascripts/bootstrap/transition.js
+< https://github.com/sorich87/bootstrap-tour/blob/v0.11.0/build/js/bootstrap-tour.min.js
 < http://harvesthq.github.io/chosen/chosen.jquery.js
 < https://cdnjs.cloudflare.com/ajax/libs/jquery-ujs/1.2.1/rails.js
 < javascripts/disable_animations.js [mode==test]
@@ -80,4 +82,3 @@
 
 ! audio.svg
 < images/audio.svg
-
