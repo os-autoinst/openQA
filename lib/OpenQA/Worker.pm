@@ -75,7 +75,7 @@ sub main {
 
 sub prepare_cache_directory {
     my ($current_host, $cachedirectory) = @_;
-    my $host_to_cache = Mojo::URL->new($current_host)->host;
+    my $host_to_cache = Mojo::URL->new($current_host)->host || $current_host;
     die "No cachedir" unless $cachedirectory;
     my $shared_cache = File::Spec->catdir($cachedirectory, $host_to_cache);
     File::Path::make_path($shared_cache);

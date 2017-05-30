@@ -38,7 +38,7 @@ our (@ISA, @EXPORT);
 my $cache;
 my $host;
 my $location;
-our $limit = 50 * 1024 * 1024 * 1024;
+our $limit = 50 * (1024**3);
 my $db_file;
 my $dsn;
 my $dbh;
@@ -53,7 +53,7 @@ sub deploy_cache {
     my $sql = <DATA>;
     log_info "Creating cache directory tree for $location";
     remove_tree($location, {keep_root => 1});
-    make_path(File::Spec->catdir($location, Mojo::URL->new($host)->host));
+    make_path(File::Spec->catdir($location, Mojo::URL->new($host)->host || $host));
     make_path(File::Spec->catdir($location, 'tmp'));
 
     log_info "Deploying DB: $sql";
@@ -147,7 +147,7 @@ sub download_asset {
         if ($size == $headers->content_length) {
             check_limits($size);
             update_asset($asset, $etag, $size);
-            print $log "CACHE: Asset download sucessful to $asset, Cache size is: $cache_real_size\n";
+            print $log "CACHE: Asset download successful to $asset, Cache size is: $cache_real_size\n";
         }
         else {
             print $log "CACHE: Size of $asset differs, Expected: "
@@ -326,10 +326,10 @@ sub purge_asset {
 
 sub cache_cleanup {
     my @assets = `find $location -maxdepth 1 -type f -name '*.img' -o -name '*.qcow2' -o -name '*.iso'`;
+    chomp @assets;
     foreach my $file (@assets) {
-        my $asset_size;
-        chomp $file;
-        $asset_size = (stat $file)[7];
+        my $asset_size = (stat $file)[7];
+        next if !defined $asset_size;
         $cache_real_size += $asset_size if asset_lookup($file);
     }
 }
@@ -361,8 +361,6 @@ sub check_limits {
     my $sql;
     my $sth;
     my $result;
-
-    my $wanted_size = $cache_real_size + $needed;
 
     while ($cache_real_size + $needed > $limit) {
         $sql    = "SELECT size, filename FROM assets WHERE downloading = 0 ORDER BY last_use asc";
