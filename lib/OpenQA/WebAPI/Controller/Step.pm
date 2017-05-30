@@ -641,6 +641,7 @@ sub viewimg {
     $self->stash('screenshot', $module_detail->{screenshot});
     $self->stash('tags',       $module_detail->{tags});
     $self->stash('needles',    \@needles);
+    $self->stash('frametime',  $module_detail->{frametime});
     return $self->render('step/viewimg');
 }
 

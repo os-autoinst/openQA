@@ -149,6 +149,22 @@ subtest 'render bugref links in thumbnail text windows' => sub {
     is((shift @a)->get_attribute('href'), 'https://fate.suse.com/321208', 'regular href correct');
 };
 
+subtest 'render video link if frametime is available' => sub {
+    $driver->get('/tests/99946');
+    $driver->find_element('[href="#step/bootloader/1"]')->click();
+    wait_for_ajax;
+    is(1, 1, 'dummy');
+    my @links = $driver->find_elements('.step_actions .fa-file-video-o');
+    is($#links, -1, 'no link without frametime');
+
+    $driver->find_element('[href="#step/bootloader/2"]')->click();
+    wait_for_ajax;
+    my @video_link_elems = $driver->find_elements('.step_actions .fa-file-video-o');
+    is($video_link_elems[0]->get_attribute('title'), 'Jump to video', 'video link exists');
+    like($video_link_elems[0]->get_attribute('href'), qr!/tests/99946/file/video.ogv#t=0.00,1.00!,
+        'video href correct');
+};
+
 subtest 'route to latest' => sub {
     $get
       = $t->get_ok('/tests/latest?distri=opensuse&version=13.1&flavor=DVD&arch=x86_64&test=kde&machine=64bit')
