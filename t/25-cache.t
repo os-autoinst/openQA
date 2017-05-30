@@ -66,13 +66,13 @@ $| = 1;
 truncate_log();
 # Mock of log_* methods used by Cache:
 
-my $module = new Test::MockModule('OpenQA::Utils');
+my $openqa_utils = new Test::MockModule('OpenQA::Utils');
 #log_error log_info log_debug
 
-$module->mock(log_info  => \&mock_log_info);
-$module->mock(log_error => \&mock_log_error);
-$module->mock(log_debug => \&mock_log_debug);
-$module->mock(delete    => \&mock_delete);
+$openqa_utils->mock(log_info  => \&mock_log_info);
+$openqa_utils->mock(log_error => \&mock_log_error);
+$openqa_utils->mock(log_debug => \&mock_log_debug);
+$openqa_utils->mock(delete    => \&mock_delete);
 
 # logging helpers
 sub mock_log_debug {
@@ -146,12 +146,11 @@ for (1 .. 3) {
 
 }
 
-$OpenQA::Worker::Cache::limit = 1000;
-OpenQA::Worker::Cache::init($host, $cachedir);
+OpenQA::Worker::Cache::init($host, $cachedir, 100);
 
 unlike read_log, qr/Deploying DB/, "Cache deploys the database.";
-like read_log, qr/CACHE: Health: Real size: 168, Configured limit: 1000/,
-  "Cache limit/size match the expected 1000/168)";
+like read_log, qr/CACHE: Health: Real size: 168, Configured limit: 107374182400/,
+  "Cache limit/size match the expected 100GB/168)";
 unlike read_log, qr/CACHE: Purging non registered.*[13].qcow2/, "Registered assets 1 and 3 were kept";
 like read_log,   qr/CACHE: Purging non registered.*2.qcow2/,    "Asset 2 was removed";
 truncate_log;
@@ -173,5 +172,6 @@ like $autoinst_log, qr/Downloading sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2 
 like $autoinst_log, qr/sle-12-SP3-x86_64-0368-textmode\@64bit.qcow2.*refused/,
   "Asset download fails with connection refused";
 
-remove_tree($cachedir);
+ok(remove_tree($cachedir), "Removed $cachedir");
+ok(unlink(catdir($ENV{LOGDIR},"autoinst-log.txt")), "Removed autoinst-log.txt");
 done_testing();
