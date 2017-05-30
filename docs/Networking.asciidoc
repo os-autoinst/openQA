@@ -188,7 +188,7 @@ with SuSEfirewall or iptables.
 [source,sh]
 ---------------
 # configuration options for NAT with SuSEfirewall
-# /etc/sysconfig/SuSEfirewall
+# /etc/sysconfig/SuSEfirewall2
 
 FW_ROUTE="yes"
 FW_MASQUERADE="yes"
