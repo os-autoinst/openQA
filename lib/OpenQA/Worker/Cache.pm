@@ -125,8 +125,8 @@ sub download_asset {
             print $log "CACHE: Content has not changed, not downloading the $asset but updating last use\n";
         }
         else {
-            print $log "CACHE: Abnormal situation, bailing out\n";
-            $asset = undef;
+            print $log "CACHE: Abnormal situation, retry to download \n";    # poo#19270 might give a hint
+            $asset = 520;
         }
     }
     elsif ($tx->res->is_server_error) {
@@ -135,7 +135,7 @@ sub download_asset {
             $asset = $code;
         }
         else {
-            print $log "CACHE: Abnormal situation, bailing out but still retying\n";
+            print $log "CACHE: Abnormal situation, retry to download\n";
             $asset = $code;
         }
     }
@@ -212,8 +212,8 @@ sub toggle_asset_lock {
     eval { $dbh->prepare($sql)->execute($toggle, $asset, $asset) or die $dbh->errstr; };
 
     if ($@) {
+        log_error "Rolling back $@";
         $dbh->rollback;
-        die "Rolling back $@";
     }
     else {
         return 1;
@@ -251,8 +251,8 @@ sub try_lock_asset {
     };
 
     if ($@) {
+        log_error "Rolling back $@";
         $dbh->rollback;
-        die "Rolling back $@";
     }
     else {
         if ($lock_granted) {
@@ -271,8 +271,8 @@ sub add_asset {
     eval { $dbh->prepare($sql)->execute($asset) or die $dbh->errstr; };
 
     if ($@) {
+        log_error "Rolling back $@";
         $dbh->rollback;
-        die "Rolling back $@";
     }
     else {
         return 1;
@@ -297,8 +297,8 @@ sub update_asset {
     $cache_real_size += $size;
 
     if ($@) {
+        log_error "Update asset failed. Rolling back $@";
         $dbh->rollback;
-        die "Rolling back $@";
     }
     else {
         log_info "CACHE: updating the $asset with $etag and $size";
@@ -318,8 +318,8 @@ sub purge_asset {
     };
 
     if ($@) {
+        log_error "Rolling back $@";
         $dbh->rollback;
-        die "Rolling back $@";
     }
     return 1;
 }
@@ -366,14 +366,20 @@ sub check_limits {
         $sql    = "SELECT size, filename FROM assets WHERE downloading = 0 ORDER BY last_use asc";
         $sth    = $dbh->prepare($sql);
         $result = $dbh->selectrow_hashref($sql);
-
-        foreach my $asset ($result) {
-            if (purge_asset($asset->{filename})) {
-                $cache_real_size -= $asset->{size};
-                log_debug "Reclaiming " . $asset->{size} . " from $cache_real_size to make space for $limit";
-            }    # purge asset will die anyway in case of failure.
-            last if ($cache_real_size < $limit);
+        if ($result) {
+            foreach my $asset ($result) {
+                if (purge_asset($asset->{filename})) {
+                    $cache_real_size -= $asset->{size};
+                    log_debug "Reclaiming " . $asset->{size} . " from $cache_real_size to make space for $limit";
+                }    # purge asset will die anyway in case of failure.
+                last if ($cache_real_size < $limit);
+            }
         }
+        else {
+            log_error "There are not more elements to remove!";
+            last;
+        }
+
     }
     log_debug "CACHE: Health: Real size: $cache_real_size, Configured limit: $limit";
 }
