@@ -190,4 +190,23 @@ subtest 'test timer helpers' => sub {
     is(Mojo::IOLoop->singleton->reactor->{timers}{$t_recurrent}{cb}->(), 2, 'timer function match y');
 };
 
+# Ensure stop_job gets executed to avoid uncovered changes in codecov
+subtest 'mock test stop_job' => sub {
+    use Mojo::Util 'monkey_patch';
+    $OpenQA::Worker::Common::job = {id => 9999};
+    $OpenQA::Worker::Common::verbose = 1;
+
+    my $stop_job = 0;
+    monkey_patch 'Mojo::IOLoop', timer => sub {
+        $stop_job = 1;
+    };
+    monkey_patch 'OpenQA::Worker::Jobs', upload_status => sub {
+        1;
+    };
+    OpenQA::Worker::Jobs::update_status;
+
+    OpenQA::Worker::Jobs::stop_job(0, 9999);
+    is $stop_job, 1, "stop_job() reached";
+};
+
 done_testing();
