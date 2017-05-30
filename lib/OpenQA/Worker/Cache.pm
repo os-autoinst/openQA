@@ -68,8 +68,12 @@ sub init {
     my $limit_override;
     ($host, $location, $limit_override) = @_;
     $db_file = catdir($location, 'cache.sqlite');
-    $dsn = "dbi:SQLite:dbname=$db_file";
-    $limit =  $limit_override * 1024 * 1024 * 1024 if $limit_override > 0;
+    $dsn     = "dbi:SQLite:dbname=$db_file";
+
+    if ($limit_override && $limit_override =~ /\d/){
+        $limit   = $limit_override * 1024 * 1024 * 1024;
+    }
+
     deploy_cache unless (-e $db_file);
     $dbh = DBI->connect($dsn, undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1})
       or die("Could not connect to the dbfile.");

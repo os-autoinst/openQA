@@ -296,7 +296,7 @@ open($conf, '>', path($ENV{OPENQA_CONFIG})->child("workers.ini")->to_string);
 print $conf <<EOC;
 [global]
 CACHEDIRECTORY = $cache_location
-CACHELIMIT = 11116554
+CACHELIMIT = 10
 
 [http://localhost:$mojoport]
 TESTPOOLSERVER = $sharedir/tests
