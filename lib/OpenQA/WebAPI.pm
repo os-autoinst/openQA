@@ -125,7 +125,6 @@ sub startup {
     if ($@) {
         die sprintf('Unable to load auth module %s for method %s', $auth_module, $auth_method);
     }
-    $auth_module->auth_config($self->config);
 
     # Read configurations expected by plugins.
     OpenQA::ServerStartup::update_config($self->config, @{$self->plugins->namespaces}, "OpenQA::WebAPI::Auth");
