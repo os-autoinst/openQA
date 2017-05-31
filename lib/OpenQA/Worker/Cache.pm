@@ -125,7 +125,7 @@ sub download_asset {
             print $log "CACHE: Content has not changed, not downloading the $asset but updating last use\n";
         }
         else {
-            print $log "CACHE: Abnormal situation, retry to download \n";    # poo#19270 might give a hint
+            print $log "CACHE: Abnormal situation, code 304. Retrying download\n";    # poo#19270 might give a hint
             $asset = 520;
         }
     }
@@ -135,7 +135,7 @@ sub download_asset {
             $asset = $code;
         }
         else {
-            print $log "CACHE: Abnormal situation, retry to download\n";
+            print $log "CACHE: Abnormal situation, server error. Retrying download\n";
             $asset = $code;
         }
     }
@@ -212,7 +212,7 @@ sub toggle_asset_lock {
     eval { $dbh->prepare($sql)->execute($toggle, $asset, $asset) or die $dbh->errstr; };
 
     if ($@) {
-        log_error "Rolling back $@";
+        log_error "toggle_asset_lock: Rolling back $@";
         $dbh->rollback;
     }
     else {
@@ -246,12 +246,12 @@ sub try_lock_asset {
             $lock_granted = 0;
         }
         else {
-            die "CACHE: Abnormal situation.";
+            die "CACHE: try_lock_asset: Abnormal situation.";
         }
     };
 
     if ($@) {
-        log_error "Rolling back $@";
+        log_error "try_lock_asset: Rolling back $@";
         $dbh->rollback;
     }
     else {
@@ -271,7 +271,7 @@ sub add_asset {
     eval { $dbh->prepare($sql)->execute($asset) or die $dbh->errstr; };
 
     if ($@) {
-        log_error "Rolling back $@";
+        log_error "add_asset: Rolling back $@";
         $dbh->rollback;
     }
     else {
@@ -318,7 +318,7 @@ sub purge_asset {
     };
 
     if ($@) {
-        log_error "Rolling back $@";
+        log_error "purge_asset: Rolling back $@";
         $dbh->rollback;
     }
     return 1;
@@ -376,7 +376,7 @@ sub check_limits {
             }
         }
         else {
-            log_error "There are not more elements to remove!";
+            log_error "There are no more elements to remove";
             last;
         }
 
