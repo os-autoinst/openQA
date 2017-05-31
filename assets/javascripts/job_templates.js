@@ -79,19 +79,21 @@ function finalizeTest(tr) {
 }
 
 function templateAdded(chosen, selected) {
-    var temp = {};
     var tr = chosen.parents('tr');
     finalizeTest(tr);
-    temp['prio'] = tr.find('.prio').text();
-    temp['group_id'] = job_group_id;
-    temp['product_id'] = chosen.data('product-id');
-    temp['machine_id'] = chosen.find('option[value="' + selected + '"]').data('machine-id');
-    temp['test_suite_id'] = tr.data('test-id');
+    var postData = {
+        prio: tr.find('.prio').text(),
+        group_id: job_group_id,
+        product_id: chosen.data('product-id'),
+        machine_id: chosen.find('option[value="' + selected + '"]').data('machine-id'),
+        test_suite_id: tr.data('test-id')
+    };
 
-    $.ajax({url: job_templates_url,
+    $.ajax({
+        url: job_templates_url,
         type: 'POST',
         dataType: 'json',
-        data: temp}).fail(addFailed).done(function(data) { addSucceeded(chosen, selected, data); });
+        data: postData}).fail(addFailed).done(function(data) { addSucceeded(chosen, selected, data); });
 }
 
 function chosenChanged(evt, param) {
