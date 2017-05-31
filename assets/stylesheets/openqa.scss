@@ -54,13 +54,13 @@ $color-step-actions: #666;
         margin-left: 17px;
     }
 
-    h4, .progress {
+    .h4, .progress {
         margin-top: 0px;
         margin-bottom: 10px;
     }
 }
 
-.build-row h4 {
+.build-row .h4 {
     text-overflow: ellipsis;
     overflow: hidden;
 }
@@ -77,20 +77,20 @@ $color-step-actions: #666;
 }
 
 .build_group_children, .build-row {
-    h4:before {
+    .h4:before {
         display: inline-box;
         min-width: 10px;
         content: '\25CF';
     }
 }
 
-.children-collapsed h4:before {
+.children-collapsed .h4:before {
     content: "\25B8";
     position: relative;
     top: -2px;
 }
 
-.children-expanded h4:before {
+.children-expanded .h4:before {
     content: "\25BE";
     position: relative;
     top: -2px;
