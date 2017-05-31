@@ -128,4 +128,37 @@ EOT
     is detect_current_version($git_dir), undef, "Git ref file shows no tag, version is undef";
 };
 
+subtest 'Plugins handling' => sub {
+
+    is path_to_class('foo/bar.pm'),     "foo::bar";
+    is path_to_class('foo/bar/baz.pm'), "foo::bar::baz";
+
+    ok grep("OpenQA::Utils", loaded_modules), "Can detect loaded modules";
+    ok grep("Test::More",    loaded_modules), "Can detect loaded modules";
+
+    is_deeply [loaded_plugins("OpenQA::Utils", "Test::More")], ["OpenQA::Utils", "Test::More"],
+      "Can detect loaded plugins, filtering by namespace";
+    ok grep("Test::More", loaded_plugins),
+      "loaded_plugins() behave like loaded_modules() when no arguments are supplied";
+
+    my $test_hash = {
+        auth => {
+            method => "Fake",
+            foo    => "bar"
+        },
+        baz => {
+            bar => "test"
+        }};
+
+    my $reconstructed_hash;
+
+    hashwalker $test_hash => sub {
+        my ($key, $value, $keys) = @_;
+        $reconstructed_hash->{@$keys[0]}->{$key} = $value;
+    };
+
+    is_deeply $reconstructed_hash, $test_hash, "hashwalker() reconstructed original hash correctly";
+
+};
+
 done_testing;

@@ -15,6 +15,16 @@
 
 BEGIN {
     unshift @INC, 'lib';
+
+    package OpenQA::FakePlugin::Fuzz;
+    use Mojo::Base -base;
+
+    has 'configuration_fields' => sub {
+        {
+            baz => {
+                test => 1
+            }};
+    };
 }
 
 use strict;
@@ -103,7 +113,78 @@ subtest 'Setup logging to file (ENV)' => sub {
     like $content, qr/\[.*\] \[test:info\] Works too/,    'right info message';
 };
 
+subtest 'Update configuration from Plugin requirements' => sub {
+    use Config::IniFiles;
+    use OpenQA::FakePlugin::Foo;
+    use OpenQA::FakePlugin::FooBar;
+    use OpenQA::FakePlugin::FooBaz;
+    use Mojolicious;
+
+    my $config;
+    $config->{ini_config} = Config::IniFiles->new();
+    $config->{ini_config}->AddSection("auth");
+    $config->{ini_config}->AddSection("bar");
+    $config->{ini_config}->AddSection("baz");
+    $config->{ini_config}->AddSection("bazzer");
+    $config->{ini_config}->AddSection("foofoo");
+
+    $config->{ini_config}->newval("auth",   "method",   "foobar");
+    $config->{ini_config}->newval("bar",    "foo",      "test");
+    $config->{ini_config}->newval("baz",    "foo",      "test2");
+    $config->{ini_config}->newval("baz",    "test",     "bartest");
+    $config->{ini_config}->newval("bazzer", "realfoo",  "win");
+    $config->{ini_config}->newval("foofoo", "is_there", "wohoo");
+
+    # Check if  Config::IniFiles object returns the right values
+    is $config->{ini_config}->val("auth", "method"), "foobar",
+      "Ini parser contains the right data for OpenQA::FakePlugin::Foo";
+    is $config->{ini_config}->val("bar", "foo"), "test",
+      "Ini parser contains the right data for OpenQA::FakePlugin::FooBar";
+    is $config->{ini_config}->val("baz", "foo"), "test2",
+      "Ini parser contains the right data for OpenQA::FakePlugin::FooBaz";
+    is $config->{ini_config}->val("baz", "test"), "bartest",
+      "Ini parser contains the right data for OpenQA::FakePlugin::Fuzz";
+    is $config->{ini_config}->val("bazzer", "realfoo"), "win",
+      "Ini parser contains the right data for OpenQA::FakePlugin::Fuzzer";
+    is $config->{ini_config}->val("foofoo", "is_there"), "wohoo",
+      "Ini parser contains the right data for OpenQA::FakePlugin::FooFoo";
+
+    # inline packages declaration needs to appear as "loaded"
+    $INC{"OpenQA/FakePlugin/Fuzz.pm"}   = undef;
+    $INC{"OpenQA/FakePlugin/Fuzzer.pm"} = undef;
+    OpenQA::ServerStartup::update_config($config, "OpenQA::FakePlugin");
+
+    ok exists($config->{auth}->{method}),      "Config option exists for OpenQA::FakePlugin::Foo";
+    ok exists($config->{bar}->{foo}),          "Config option exists for OpenQA::FakePlugin::FooBar";
+    ok exists($config->{baz}->{foo}),          "Config option exists for OpenQA::FakePlugin::FooBaz";
+    ok exists($config->{baz}->{test}),         "Config option exists for OpenQA::FakePlugin::Fuzz";
+    ok exists($config->{bazzer}->{realfoo}),   "Config option exists for OpenQA::FakePlugin::Fuzzer";
+    ok !exists($config->{foofoo}->{is_there}), "Config option doesn't exists(yet) for OpenQA::FakePlugin::Foofoo";
+
+    is $config->{auth}->{method},    "foobar",  "Right config option for OpenQA::FakePlugin::Foo";
+    is $config->{bar}->{foo},        "test",    "Right config option for OpenQA::FakePlugin::FooBar";
+    is $config->{baz}->{foo},        "test2",   "Right config option for OpenQA::FakePlugin::FooBaz";
+    is $config->{baz}->{test},       "bartest", "Right config option for OpenQA::FakePlugin::Fuzz";
+    is $config->{bazzer}->{realfoo}, "win",     "Right config option for OpenQA::FakePlugin::Fuzzer";
+
+    my $app = Mojolicious->new();
+    push @{$app->plugins->namespaces}, "OpenQA::FakePlugin";
+    $app->config->{ini_config} = $config->{ini_config};
+    $app->plugin("FooFoo");
+    OpenQA::ServerStartup::update_config($app->config, "OpenQA::FakePlugin");
+    is $app->config->{foofoo}->{is_there}, "wohoo", "Right config option for OpenQA::FakePlugin::Foofoo";
+};
 done_testing();
+
+package OpenQA::FakePlugin::Fuzzer;
+use Mojo::Base -base;
+
+sub configuration_fields {
+    {
+        bazzer => {
+            realfoo => 1
+        }};
+}
 
 package db_profiler;
 no warnings 'redefine';
