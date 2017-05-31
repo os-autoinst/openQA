@@ -70,7 +70,7 @@ function finalizeTest(tr) {
     // make test unavailable in other selections
     var tbody = tr.parents('tbody');
     presentTests = findPresentTests(tbody);
-    tbody.find('select').each(function(index, select) {
+    tbody.find('td.name select').each(function(index, select) {
         select = $(select);
         if(!select.prop('disabled')) {
             filterTestSelection(select, presentTests);
