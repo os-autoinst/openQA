@@ -60,7 +60,7 @@ function addSucceeded(chosen, selected, data) {
 // after a machine was added the select is final
 function finalizeTest(tr) {
     var test_select = tr.find('td.name select');
-    if (!test_select)
+    if (!test_select.length)
         return;
 
     // disable select and assign the selected ID to the row
