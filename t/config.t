@@ -39,6 +39,7 @@ subtest 'Test configuration default modes' => sub {
             branding            => 'openSUSE',
             hsts                => 365,
             audit_enabled       => 1,
+            max_rss_limit       => 0,
             profiling_enabled   => 0,
             hide_asset_types    => 'repo',
             recognized_referers => []
