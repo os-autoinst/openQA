@@ -85,6 +85,8 @@ sub group_overview {
     $limit_builds = 10 unless looks_like_number($limit_builds);
     my $time_limit_days = $self->param('time_limit_days');
     $time_limit_days = 0 unless looks_like_number($time_limit_days);
+    my $order_by = $self->param('order_by');
+    $order_by = undef unless $order_by and $order_by eq 't_created';  # strict checking but open to other ordering types
 
     $self->app->log->debug("Retrieving results for up to $limit_builds builds up to $time_limit_days days old");
     my $only_tagged = $self->param('only_tagged') // 0;
@@ -108,7 +110,7 @@ sub group_overview {
     $tags = $group->tags;
 
     my $cbr = OpenQA::BuildResults::compute_build_results($group, $limit_builds, $time_limit_days,
-        $only_tagged ? $tags : undef);
+        $only_tagged ? $tags : undef, $order_by);
     my $build_results = $cbr->{build_results};
     my $max_jobs      = $cbr->{max_jobs};
     $self->stash(children => $cbr->{children});
