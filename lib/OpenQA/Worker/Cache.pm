@@ -154,7 +154,7 @@ sub download_asset {
               . $headers->content_length
               . " / Downloaded: "
               . $size . "\n";
-            $asset = undef;
+            $asset = 598;    # 598 (Informal convention) Network read timeout error
         }
     }
     else {
