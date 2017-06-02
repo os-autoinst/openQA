@@ -20,7 +20,7 @@
     </div>
 </div>
 
-<div id="build-results">
+<div id="build-results"></div>
 % for my $groupresults (@$results) {
     % my $group              = $groupresults->{group};
     % my $build_results      = $groupresults->{build_results};
@@ -38,7 +38,6 @@
         %= include 'main/group_builds', build_results => $build_results, group => $group, max_jobs => $max_jobs, children => undef, default_expanded => 0
     % }
 % }
-</div>
 
 <div class="panel panel-default filter-panel-bottom" id="filter-panel">
     <div class="panel-heading"><strong>Filter</strong> <span>no filter present, click to toggle filter form</span></div>

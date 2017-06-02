@@ -52,8 +52,6 @@ sub index {
     my $only_tagged = $self->param('only_tagged') // 0;
     my $show_tags   = $self->param('show_tags')   // $only_tagged;
     my $group_params = $self->every_param('group');
-    my $fullscreen   = $self->param('fullscreen');
-    $self->stash('fullscreen', $fullscreen);
     my @results;
     my $groups = $self->stash('job_groups_and_parents');
 
