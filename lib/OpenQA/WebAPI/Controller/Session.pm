@@ -133,6 +133,22 @@ sub response {
     return $self->render(text => 'Forbidden', status => 403);
 }
 
+sub set_cookie {
+    my ($self) = @_;
+    my $key    = $self->param('key');
+    my $value  = $self->param('value');
+    return $self->render(text => 'Forbidden', status => 403) if !$key;
+
+    if ($value) {
+        $self->session->{$key} = $value;
+        return $self->render(json => {$key => $value});
+    }
+    else {
+        delete $self->session->{$key};
+        return $self->render(json => {$key => undef});
+    }
+}
+
 sub test {
     my $self = shift;
     $self->render(text => "You can see this because you are " . $self->current_user->username);

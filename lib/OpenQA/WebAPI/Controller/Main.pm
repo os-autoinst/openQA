@@ -86,6 +86,7 @@ sub group_overview {
     my $time_limit_days = $self->param('time_limit_days');
     $time_limit_days = 0 unless looks_like_number($time_limit_days);
     my $order_by = $self->param('order_by');
+
     if (   exists $self->session->{user}
         && exists $self->session->{favorite_parent_group_ordering}
         && $resultset eq 'JobGroupParents')
