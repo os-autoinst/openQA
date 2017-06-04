@@ -296,7 +296,7 @@ open($conf, '>', path($ENV{OPENQA_CONFIG})->child("workers.ini")->to_string);
 print $conf <<EOC;
 [global]
 CACHEDIRECTORY = $cache_location
-CACHELIMIT = 50;
+CACHELIMIT = 10
 
 [http://localhost:$mojoport]
 TESTPOOLSERVER = $sharedir/tests
@@ -335,91 +335,6 @@ subtest 'Cache tests' => sub {
     );
 
     wait_for_result_panel qr/Result: passed/, 'test 5 is passed';
-    kill_worker;
-
-    $filename = path($resultdir, '00000', "00000005-$job_name")->child("autoinst-log.txt");
-    open(my $f, '<', $filename) or die "OPENING $filename: $!\n";
-    $autoinst_log = do { local ($/); <$f> };
-    close($f);
-
-    like($autoinst_log, qr/Downloading Core-7.2.iso/, 'Test 5, downloaded the right iso.');
-    like($autoinst_log, qr/11116544/, 'Test 5 Core-7.2.iso size is correct.');
-
-    my $dbh
-      = DBI->connect("dbi:SQLite:dbname=$db_file", undef, undef, {RaiseError => 1, PrintError => 1, AutoCommit => 1});
-    my $sql    = "SELECT * from assets order by last_use asc";
-    my $sth    = $dbh->prepare($sql);
-    my $result = $dbh->selectrow_hashref($sql);
-    # We know it's going to be this host because it's what was defined in
-    # the worker ini
-    like($result->{filename}, qr/Core-7/, "Core-7.2.iso is the first element");
-
-    for (1 .. 5) {
-        $filename = $cache_location->child("$_.qcow2");
-        open(my $tmpfile, '>', $filename);
-        print $tmpfile $filename;
-        $sql
-          = "INSERT INTO assets (downloading,filename,etag,last_use) VALUES (0, ?, 'Not valid', strftime('%s','now'));";
-        $sth = $dbh->prepare($sql);
-        $sth->bind_param(1, $filename);
-        $sth->execute();
-        sleep 1;    # so that last_use is not the same for every item
-    }
-
-    # Mark the Core-7.2 iso as being downloaded to force the worker to wait for the lock later on.
-    $sql = "update assets set downloading = 1 where filename = ? ";
-    $dbh->prepare($sql)->execute($result->{filename});
-
-    $sql    = "SELECT * from assets order by last_use desc";
-    $sth    = $dbh->prepare($sql);
-    $result = $dbh->selectrow_hashref($sql);
-    like($result->{filename}, qr/5.qcow2$/, "file #5 is the newest element");
-
-    # Delete image #5 so that it gets cleaned up when the worker is initialized.
-    $sql = "delete from assets where filename = ? ";
-    $dbh->prepare($sql)->execute($result->{filename});
-
-    #simple limit testing.
-    client_call('jobs/5/restart post', qr{\Qtest_url => ["/tests/6\E}, 'client returned new test_url');
-    $driver->get('/tests/6');
-    like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 6 is scheduled');
-    start_worker;
-    wait_for_result_panel qr/Result: passed/, 'test 6 is passed';
-    kill_worker;
-
-    ok(!-e $result->{filename}, "asset 5.qcow2 removed during cache init");
-
-    $sql    = "SELECT * from assets order by last_use desc";
-    $sth    = $dbh->prepare($sql);
-    $result = $dbh->selectrow_hashref($sql);
-
-    like($result->{filename}, qr/Core-7/, "Core-7.2.iso the most recent asset again ");
-
-    #simple limit testing.
-    client_call('jobs/6/restart post', qr{\Qtest_url => ["/tests/7\E}, 'client returned new test_url');
-    $driver->get('/tests/7');
-    like($driver->find_element('#result-row .panel-body')->get_text(), qr/State: scheduled/, 'test 7 is scheduled');
-    start_worker;
-    wait_for_result_panel qr/Result: passed/, 'test 7 is passed';
-
-    $filename = path($resultdir, '00000', "00000007-$job_name")->child("autoinst-log.txt");
-    open($f, '<', $filename) or die "OPENING $filename: $!\n";
-    $autoinst_log = do { local ($/); <$f> };
-    close($f);
-
-    like($autoinst_log, qr/Content has not changed/, 'Test 7 Core-7.2.iso has not changed.');
-
-    client_call("jobs post $JOB_SETUP HDD_1=non-existent.qcow2");
-    $driver->get('/tests/8');
-    wait_for_result_panel qr/Result: incomplete/, 'test 8 is incomplete';
-
-    $filename = path($resultdir, '00000', "00000008-$job_name")->child("autoinst-log.txt");
-    open($f, '<', $filename) or die "OPENING $filename: $!\n";
-    $autoinst_log = do { local ($/); <$f> };
-    close($f);
-
-    like($autoinst_log, qr/non-existent.qcow2 failed with: 404 - Not Found/, 'Test 8 failure message found in log.');
-    like($autoinst_log, qr/result: setup failure/, 'Test 8 state correct: setup failure');
 
     kill_worker;
 };
