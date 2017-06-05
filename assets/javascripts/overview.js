@@ -1,3 +1,5 @@
+var ajax_set_cookie_url;
+var session_parentoverview_order;
 function setupOverview() {
     setupAsyncFailedResult();
     $('.cancel')
@@ -75,4 +77,37 @@ function setupOverview() {
             element.checked = states[element.id.substr(7)];
         });
     }
+}
+
+function toggleParentOverviewOrdering(current) {
+    var cookie_data;
+    if(current === 't_created'){
+      cookie_data = { key: "favorite_parent_group_ordering" };
+    } else {
+      cookie_data = { key: "favorite_parent_group_ordering", value: "t_created" };
+    }
+    if(cookie_data != null){
+      $.ajax({
+          url: ajax_set_cookie_url,
+          data: cookie_data,
+          method: 'GET',
+          success: function(response) {
+              if(response.favorite_parent_group_ordering === "t_created") {
+                session_parentoverview_order = "t_created";
+                //addFlash("info", "Now parent group overview will be ordered by date");
+                location.reload();
+              } else if(response.favorite_parent_group_ordering == null) {
+                session_parentoverview_order = null;
+                //addFlash("info", "Now parent group overview will be ordered by default");
+                location.reload();
+              }
+              //} else {
+              //  addFlash("error", "An error occurred when setting up cookies. You should not see me. ");
+              //}
+          },
+          error: function(xhr, ajaxOptions, thrownError) {
+              showError(thrownError + ' (requesting entry HTML, group probably added though! - reload page to find out)');
+          }
+      });
+  }
 }

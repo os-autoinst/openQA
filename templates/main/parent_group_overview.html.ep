@@ -5,6 +5,8 @@
 
 % content_for 'ready_function' => begin
     $('.timeago').timeago();
+    ajax_set_cookie_url    = "<%= url_for('set_cookie') %>";
+    session_parentoverview_order = "<%= session('favorite_parent_group_ordering') || 'none' %>";
 % end
 
 % if (is_admin) {
@@ -32,7 +34,16 @@
         </ul>
     </div>
 </div>
-
+% if(session('user')) {
+% my $display_order = (session('favorite_parent_group_ordering') and session('favorite_parent_group_ordering') eq "t_created") ? "build" : "date";
+  <div class="pull-right">
+    <a title="Order by <%= $display_order; %>" href="#" onclick="return toggleParentOverviewOrdering(session_parentoverview_order);">
+      <span id="parent_group_order_by_date">
+        <i id="parent_group_overview_order" class="fa fa-sort-amount-desc" aria-hidden="true"></i>Order by <%= $display_order; %>
+      </span>
+    </a>
+  </div>
+% }
 <div id="build-results"></div>
 %= include 'main/group_builds', build_results => $build_results, group => $group, children => $children, default_expanded => 1
 %= include 'main/more_builds', limit_builds => $limit_builds

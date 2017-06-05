@@ -81,7 +81,7 @@ sub add_review_badge {
 }
 
 sub compute_build_results {
-    my ($group, $limit, $time_limit_days, $tags) = @_;
+    my ($group, $limit, $time_limit_days, $tags, $order_by) = @_;
 
     my $group_ids;
     my @children;
@@ -111,7 +111,13 @@ sub compute_build_results {
     my $row_limit   = (defined($limit) && $limit > 400) ? $limit : 400;
     my @search_cols = qw(VERSION BUILD);
     my %search_opts = (
-        select   => [@search_cols, {max => 'id', -as => 'lasted_job'}],
+        select => [
+            @search_cols,
+            {
+                -as => 'lasted_job',
+                (min => $order_by) x !!($order_by),
+                (max => 'id') x !($order_by)}
+        ],
         group_by => \@search_cols,
         order_by => {-desc => 'lasted_job'},
         rows     => $row_limit
@@ -147,7 +153,7 @@ sub compute_build_results {
     # sorted on the most recent job for each build
     my $versort = 1;
     $versort = $group->build_version_sort if $group->can('build_version_sort');
-    if ($versort) {
+    if ($versort && !defined $order_by) {
         @builds = reverse sort { versioncmp($a->{key}, $b->{key}); } @builds;
     }
 

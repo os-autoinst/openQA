@@ -167,6 +167,7 @@ sub startup {
     $r->delete('/logout')->name('logout')->to('session#destroy');
     $r->get('/response')->to('session#response');
     $auth->get('/session/test')->to('session#test');
+    $logged_in->get('/session/set_cookie')->to('session#set_cookie')->name("set_cookie");
 
     my $apik_auth = $auth->route('/api_keys');
     $apik_auth->get('/')->name('api_keys')->to('api_key#index');
