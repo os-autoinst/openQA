@@ -153,7 +153,8 @@ sub download_asset {
             print $log "CACHE: Size of $asset differs, Expected: "
               . $headers->content_length
               . " / Downloaded: "
-              . $size . "\n";
+              . $asset->size
+              . "\n";    # At this point, trust the contents of Mojo::Asset
             $asset = 598;    # 598 (Informal convention) Network read timeout error
         }
     }
