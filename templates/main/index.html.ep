@@ -5,6 +5,7 @@
 
 % content_for 'ready_function' => begin
     setupIndexPage();
+    startTour();
 % end
 
 <div class="jumbotron">
