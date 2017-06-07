@@ -42,21 +42,11 @@ sub init {
 
 
     OpenQA::Worker::Common::api_init($host_settings, $options);
-    #OpenQA::Worker::Engines::isotovideo::set_engine_exec($options->{isotovideo}) if $options->{isotovideo};
-    #OpenQA::Worker::Engines::$engine::set_engine_exec($options->{engine_opts}) if $options->{engine_opts};
     if ( $options->{engine} eq "wicked" ) {
       OpenQA::Worker::Engines::wicked::set_engine_exec($options->{engine_opts}) if $options->{engine_opts};
     } else {
       OpenQA::Worker::Engines::isotovideo::set_engine_exec($options->{isotovideo}) if $options->{isotovideo};
     }
-    #switch($options->{engine}) {
-    #  case "wicked" {
-    #    OpenQA::Worker::Engines::wicked::set_engine_exec($options->{engine_opts}) if $options->{engine_opts};
-    #  }
-    #  else {
-    #    OpenQA::Worker::Engines::isotovideo::set_engine_exec($options->{isotovideo}) if $options->{isotovideo};
-    #  }
-    #}
 }
 
 sub main {
