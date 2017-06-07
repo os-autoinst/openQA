@@ -22,6 +22,7 @@ use Mojo::Server::Daemon;
 use Mojo::IOLoop;
 
 use File::Spec::Functions 'catdir';
+use Switch;
 
 use OpenQA::Client;
 use OpenQA::Utils qw(log_error log_info log_debug);
@@ -36,9 +37,22 @@ sub init {
     $pooldir   = $OpenQA::Utils::prjdir . '/pool/' . $instance;
     $nocleanup = $options->{"no-cleanup"};
     $verbose   = $options->{verbose} if defined $options->{verbose};
+#    $engine    = isotovideo
+#    $engine    = $options->{engine} if defined $opetions->{engine};
+
 
     OpenQA::Worker::Common::api_init($host_settings, $options);
-    OpenQA::Worker::Engines::isotovideo::set_engine_exec($options->{isotovideo}) if $options->{isotovideo};
+    #OpenQA::Worker::Engines::isotovideo::set_engine_exec($options->{isotovideo}) if $options->{isotovideo};
+    #OpenQA::Worker::Engines::$engine::set_engine_exec($options->{engine_opts}) if $options->{engine_opts};
+    switch($options->{engine}) {
+      case "wicked" {
+        OpenQA::Worker::Engines::wicked::set_engine_exec($options->{engine_opts}) if $options->{engine_opts};
+      }
+      else {
+        OpenQA::Worker::Engines::isotovideo::set_engine_exec($options->{isotovideo}) if $options->{isotovideo};
+      }
+
+    }
 }
 
 sub main {
