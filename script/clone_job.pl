@@ -301,7 +301,9 @@ sub clone_job {
         }
     }
     else {
-        die "failed to create job: ", pp($tx->res->body);
+        die "Failed to create job, empty response. Make sure your HTTP proxy is running, e.g. apache, nginx, etc."
+          unless $tx->res->body;
+        die "Failed to create job: ", pp($tx->res->body);
     }
 }
 
