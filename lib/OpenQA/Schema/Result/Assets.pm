@@ -193,7 +193,7 @@ sub download_asset {
                 my $ae = Archive::Extract->new(archive => $tempfile);
                 my $ok = $ae->extract(to => $assetpath);
                 if (!$ok) {
-                    OpenQA::Utils::log_error("Extracting failed!");
+                    OpenQA::Utils::log_error("Extracting $tempfile to $assetpath failed!");
                 }
 
                 # Remove the temporary file
@@ -365,7 +365,7 @@ sub limit_assets {
             }
             for my $asset (keys %assets) {
                 if ($assets{$asset} == 0) {
-                    OpenQA::Utils::log_error "Registering asset $type/$asset";
+                    OpenQA::Utils::log_info "Registering asset $type/$asset";
                     $app->db->resultset('Assets')->register($type, $asset);
                 }
             }
