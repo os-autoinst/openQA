@@ -741,6 +741,25 @@ within the block to avoid races between the action and the screen change.</p>
 </div>
 </div>
 <div class="paragraph">
+<p>Notice: If you use the second parameter, you could get the following warning</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>Useless use of private variable in void context</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To avoid it, use parentheses for the function call and the reserved word 'sub' for the callback
+subroutine block.</p>
+</div>
+<div class="literalblock">
+<div class="content">
+<pre>wait_screen_change(sub {
+  send_key 'esc';
+}, 15);</pre>
+</div>
+</div>
+<div class="paragraph">
 <p>Returns true if screen changed or <code>undef</code> on timeout. Default timeout is 10s.</p>
 </div>
 </div>
@@ -1634,7 +1653,7 @@ line and can&#8217;t rely on assert_script_run check), add an optional
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-01 07:39:03 UTC
+Last updated 2017-06-08 14:27:45 UTC
 </div>
 </div>
 </body>
