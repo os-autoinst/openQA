@@ -37,8 +37,8 @@ sub init {
     $pooldir   = $OpenQA::Utils::prjdir . '/pool/' . $instance;
     $nocleanup = $options->{"no-cleanup"};
     $verbose   = $options->{verbose} if defined $options->{verbose};
-    $engine    = isotovideo
-    $engine    = $options->{engine} if defined $opetions->{engine};
+    #$OpenQA::Worker::Jobs::engine    = "isotovideo";
+    $OpenQA::Worker::Jobs::engine    = "OpenQA::Worker::Engines::" . $options->{engine} if defined $options->{engine};
 
 
     OpenQA::Worker::Common::api_init($host_settings, $options);
