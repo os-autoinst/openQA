@@ -408,6 +408,7 @@ my %bugrefs = (
     bko => 'https://bugzilla.kernel.org/show_bug.cgi?id=',
     poo => 'https://progress.opensuse.org/issues/',
     gh  => 'https://github.com/',
+    kde => 'https://bugs.kde.org/show_bug.cgi?id=',
 );
 my %bugurls = (
     'https://bugzilla.novell.com/show_bug.cgi?id=' => 'bsc',
@@ -418,6 +419,7 @@ my %bugurls = (
     $bugrefs{bko}                                  => 'bko',
     $bugrefs{poo}                                  => 'poo',
     $bugrefs{gh}                                   => 'gh',
+    $bugrefs{kde}                                  => 'kde',
 );
 
 sub bugref_regex {
