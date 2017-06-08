@@ -20,6 +20,7 @@ use feature 'state';
 
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Pool 'clean_pool';
+use OpenQA::Worker::Engines::wicked;
 use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Utils qw(wait_with_progress log_error log_warning log_debug log_info);
 
@@ -52,6 +53,7 @@ my $boundary = '--a_sTrinG-thAt_wIll_n0t_apPEar_iN_openQA_uPloads-61020111';
 
 my $tosend_images = {};
 my $tosend_files  = [];
+my $engine = "OpenQA::Worker::Engines::isotovideo";
 
 our $do_livelog;
 
@@ -817,7 +819,7 @@ sub backend_running {
 
 sub check_backend {
     log_debug("checking backend state") if $verbose;
-    my $res = engine_check;
+    my $res = $engine->engine_check();
     if ($res && $res ne 'ok') {
         stop_job($res);
     }
