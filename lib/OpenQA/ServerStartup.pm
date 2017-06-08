@@ -102,6 +102,7 @@ sub read_config {
 
     if (-e $cfgfile) {
         $cfg = Config::IniFiles->new(-file => $cfgfile->to_string) || undef;
+        $app->config->{ini_config} = $cfg;
     }
     else {
         $app->log->warn("No configuration file supplied, will fallback to default configuration");
@@ -154,6 +155,37 @@ sub setup_logging {
     }
 
     $OpenQA::Utils::app = $app;
+}
+
+# Update config definition from plugin requests
+sub update_config {
+    my ($config, @namespaces) = @_;
+    return unless exists $config->{ini_config};
+
+    # Filter out what plugins are loaded from the used namespaces
+    foreach my $plugin (loaded_plugins(@namespaces)) {
+
+        # We take config only if the plugin has the method declared
+        next unless ($plugin->can("configuration_fields"));
+
+        # If it is a Mojo::Base class, it requires to be instantiated
+        # because the attributes are not populated until creation.
+        my $fields
+          = UNIVERSAL::isa($plugin, "Mojo::Base") ?
+          do { $plugin->new->configuration_fields() }
+          : $plugin->configuration_fields();
+
+        # We expect just hashrefs
+        next unless (ref($fields) eq "HASH");
+
+        # Walk the hash with the plugin returns that needs to be fetched
+        # by our Ini file parser and fill config from it
+        hashwalker $fields => sub {
+            my ($key, undef, $keys) = @_;
+            my $v = $config->{ini_config}->val(@$keys[0], $key);
+            $config->{@$keys[0]}->{$key} = $v if defined $v;
+        };
+    }
 }
 
 1;

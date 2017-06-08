@@ -94,14 +94,16 @@ sub startup {
 
     unshift @{$self->renderer->paths}, '/etc/openqa/templates';
 
+    # Load plugins
+    push @{$self->plugins->namespaces}, 'OpenQA::WebAPI::Plugin';
     $self->plugin(AssetPack => {pipes => [qw(Sass Css JavaScript Fetch OpenQA::WebAPI::AssetPipe Combine)]});
-    $self->plugin('OpenQA::WebAPI::Plugin::Helpers');
-    $self->plugin('OpenQA::WebAPI::Plugin::CSRF');
-    $self->plugin('OpenQA::WebAPI::Plugin::REST');
-    $self->plugin('OpenQA::WebAPI::Plugin::HashedParams');
-    $self->plugin('OpenQA::WebAPI::Plugin::Gru');
+
+    foreach my $plugin (qw(Helpers CSRF REST HashedParams Gru)) {
+        $self->plugin($plugin);
+    }
+
     if ($self->config->{global}{audit_enabled}) {
-        $self->plugin('OpenQA::WebAPI::Plugin::AuditLog', Mojo::IOLoop->singleton);
+        $self->plugin('AuditLog', Mojo::IOLoop->singleton);
     }
     # Load arbitrary plugins defined in config: 'plugins' in section
     # '[global]' can be a space-separated list of plugins to load, by
@@ -110,12 +112,24 @@ sub startup {
         my @plugins = split(' ', $self->config->{global}->{plugins});
         for my $plugin (@plugins) {
             $self->log->info("Loading external plugin $plugin");
-            $self->plugin("OpenQA::WebAPI::Plugin::$plugin");
+            $self->plugin($plugin);
         }
     }
     if ($self->config->{global}{profiling_enabled}) {
         $self->plugin(NYTProf => {nytprof => {}});
     }
+    # load auth module
+    my $auth_method = $self->config->{auth}->{method};
+    my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
+    eval "require $auth_module";    ## no critic
+    if ($@) {
+        die sprintf('Unable to load auth module %s for method %s', $auth_module, $auth_method);
+    }
+
+    # Read configurations expected by plugins.
+    OpenQA::ServerStartup::update_config($self->config, @{$self->plugins->namespaces}, "OpenQA::WebAPI::Auth");
+
+    # End plugin loading/handling
 
     # read assets/assetpack.def
     $self->asset->process;
@@ -145,15 +159,6 @@ sub startup {
             my ($tx, $app) = @_;
             $tx->req->headers->header('X-Build-Tx-Time' => time);
         });
-
-    # load auth module
-    my $auth_method = $self->config->{auth}->{method};
-    my $auth_module = "OpenQA::WebAPI::Auth::$auth_method";
-    eval "require $auth_module";    ## no critic
-    if ($@) {
-        die sprintf('Unable to load auth module %s for method %s', $auth_module, $auth_method);
-    }
-    $auth_module->auth_config($self->config);
 
     # Router
     my $r         = $self->routes;

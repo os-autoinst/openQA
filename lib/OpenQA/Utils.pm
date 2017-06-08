@@ -66,8 +66,11 @@ $VERSION = sprintf "%d.%03d", q$Revision: 1.12 $ =~ /(\d+)/g;
   &detect_current_version
   wait_with_progress
   mark_job_linked
+  path_to_class
+  loaded_modules
+  loaded_plugins
+  hashwalker
 );
-
 
 if ($0 =~ /\.t$/) {
     # This should result in the 't' directory, even if $0 is in a subdirectory
@@ -706,6 +709,39 @@ sub detect_current_version {
     }
     return $current_version;
 }
+
+# Resolves a path to class
+# path is expected to be in the form of the keys of %INC. e.g. : foo/bar/baz.pm
+sub path_to_class { substr join('::', split(/\//, shift)), 0, -3 }
+
+# Returns all modules that are loaded into memory
+sub loaded_modules {
+    map { path_to_class($_); } sort keys %INC;
+}
+
+# Fallback to loaded_modules if no arguments are given.
+# Accepts namespaces as arguments. If supplied, it will filter by them
+sub loaded_plugins {
+    my $ns = join("|", map { quotemeta } @_);
+    return @_ ? grep { /^$ns/ } loaded_modules() : loaded_modules();
+}
+
+# Walks a hash keeping keys as a stack
+sub hashwalker {
+    my ($hash, $callback, $keys) = @_;
+    $keys = [] if !$keys;
+    while (my ($key, $value) = each %$hash) {
+        push @$keys, $key;
+        if (ref($value) eq 'HASH') {
+            hashwalker($value, $callback, $keys);
+        }
+        else {
+            $callback->($key, $value, $keys);
+        }
+        pop @$keys;
+    }
+}
+
 
 1;
 # vim: set sw=4 et:
