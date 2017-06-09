@@ -156,41 +156,9 @@ sub engine_workit {
 
     my $assetkeys = detect_asset_keys(\%vars);
 
-    # for now the only condition to enable syncing is $hosts->{$current_host}{dir}
-    if ($worker_settings->{CACHEDIRECTORY} && $hosts->{$current_host}{testpoolserver}) {
-        my $host_to_cache = Mojo::URL->new($current_host)->host;
-        $shared_cache = catdir($worker_settings->{CACHEDIRECTORY}, $host_to_cache);
-        $vars{PRJDIR} = $shared_cache;
-        OpenQA::Worker::Cache::init($current_host, $worker_settings->{CACHEDIRECTORY});
-        my $error = cache_assets(\%vars, $assetkeys);
-        return $error if $error;
-
-        # my attempts to use ioloop::subprocess failed, so go back to blocking
-        my $sync_child = fork();
-        if (!$sync_child) {
-            cache_tests($shared_cache, $hosts->{$current_host}{testpoolserver});
-        }
-        else {
-            my $last_update = time;
-            while (waitpid($sync_child, WNOHANG) == 0) {
-                log_info "Waiting for subprocess";
-                if (time - $last_update > 5) {    # do not spam the webui
-                    update_setup_status;
-                    $last_update = time;
-                }
-                sleep .5;
-            }
-            if ($?) {
-                return {error => "Failed to rsync tests: exit $?"};
-            }
-        }
-        $shared_cache = catdir($shared_cache, 'tests');
-    }
-    else {
-        $vars{PRJDIR} = $OpenQA::Utils::sharedir;
-        my $error = locate_local_assets(\%vars, $assetkeys);
-        return $error if $error;
-    }
+    $vars{PRJDIR} = $OpenQA::Utils::sharedir;
+    my $error = locate_local_assets(\%vars, $assetkeys);
+    return $error if $error;
 
     $vars{ASSETDIR}   = $OpenQA::Utils::assetdir;
     $vars{CASEDIR}    = OpenQA::Utils::testcasedir($vars{DISTRI}, $vars{VERSION}, $shared_cache);
