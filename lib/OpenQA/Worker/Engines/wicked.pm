@@ -239,7 +239,7 @@ sub engine_workit {
         #DO (this is where the magic happens)
         #exec "perl", "$isotovideo", '-d';
         #exec  "su - jail; cd ; build-and-test-wicked-with-slenkins.sh";
-        exec  "sudo su - jenkins";
+        exec  "sudo su - jenkins; cd ; build-and-test-wicked-with-slenkins.sh";
         die "exec failed: $!\n";
     }
     else {
