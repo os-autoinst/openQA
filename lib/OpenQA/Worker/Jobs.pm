@@ -819,7 +819,8 @@ sub backend_running {
 
 sub check_backend {
     log_debug("checking backend state") if $verbose;
-    my $res = $engine->engine_check();
+    #my $res = $engine->engine_check();
+    my $res = engine_check();
     if ($res && $res ne 'ok') {
         stop_job($res);
     }
