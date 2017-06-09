@@ -17,6 +17,66 @@ package OpenQA::Worker::Engines::wicked;
 use strict;
 use warnings;
 
+
+
+#export epoch_date=$(date +%s)
+#export DISTRI="${DISTRI:-"sle"}"
+#export VERSION="${VERSION:-"12-SP3"}"
+#export ARCH="${ARCH:-"x86_64"}"
+#export FLAVOR="${FLAVOR:-"Server-DVD"}"
+#export MACHINE="${MACHINE:-"64bit"}"
+#export WORKER_CLASS="${WORKER_CLASS:-"zzzz_for_wicked"}"
+#export _GROUP="${_GROUP:-"Network"}"
+#export BUILD="${BUILD:-${epoch_date}}"
+
+
+
+#export BUILD_NAME="${BUILD_NAME:-"wicked_master_nanny"}"
+#export BUILD_NUMBER="${BUILD_NUMBER:-"1"}"
+#export COMPILE_WICKED="${COMPILE_WICKED:-"false"}"
+#export IMAGE_NAME_SUT="${IMAGE_NAME_SUT:-"SLE_12_SP3_Build0314-x86_64-default"}"
+#export WORKSPACE="${WORKSPACE:-"/var/lib/jenkins/workspace/wicked_master_nanny"}"
+
+
+#[DEBUG] setting NAME=00000012-sle-12-SP3-Server-DVD-x86_64-Build0420-installcheck@64bit
+#[DEBUG] setting BUILD_WE=0139
+#[DEBUG] setting QA_WEB_REPO=http://dist.suse.de/install/SLP/SLE-12-Module-Web-Scripting-LATEST/x86_64/CD1/
+#[DEBUG] setting HDDSIZEGB=20
+#[DEBUG] setting VIRTIO_CONSOLE=1
+#[DEBUG] setting BUILD_SLE=0420
+#[DEBUG] setting MACHINE=64bit
+#[DEBUG] setting ISO_MAXSIZE=4700372992
+#[DEBUG] setting FLAVOR=Server-DVD
+#[DEBUG] setting TEST=installcheck
+#[DEBUG] setting ISO=SLE-12-SP3-Server-DVD-x86_64-Build0420-Media1.iso
+#[DEBUG] setting DISTRI=sle
+#[DEBUG] setting BETA=1
+#[DEBUG] setting BETA_WE=1
+#[DEBUG] setting QEMUCPU=qemu64
+#[DEBUG] setting BUILD_HA=0179
+#[DEBUG] setting BUILD_SDK=0230
+#[DEBUG] setting REPO_0=SLE-12-SP3-Server-DVD-x86_64-Build0420-Media1
+#[DEBUG] setting BETA_SDK=1
+#[DEBUG] setting JOBTOKEN=vYHnbklcXeQXUOmu
+#[DEBUG] setting SCC_URL=http://Server-0420.proxy.scc.suse.de
+#[DEBUG] setting VNC=91
+#[DEBUG] setting ARCH=x86_64
+#[DEBUG] setting OPENQA_HOSTNAME=localhost
+#[DEBUG] setting SLENKINS_TESTSUITES_REPO=http://download.suse.de/ibs/Devel:/SLEnkins:/testsuites/SLE_12_SP3/
+#[DEBUG] setting SHUTDOWN_NEEDS_AUTH=1
+#[DEBUG] setting VERSION=12-SP3
+#[DEBUG] setting HDD_1=openqa_support_server_sles12sp1.x86_64.qcow2
+#[DEBUG] setting BUILD_HA_GEO=0138
+#[DEBUG] setting BUILD=0420
+#[DEBUG] setting WORKER_CLASS=qemu_x86_64
+#[DEBUG] setting SCC_REGCODE=30452ce234918d23
+#[DEBUG] setting BACKEND=qemu
+#[DEBUG] setting INSTALLCHECK=1
+#[DEBUG] setting QA_HEAD_REPO=http://dist.nue.suse.com/ibs/QA:/Head/SLE-12-SP3
+#[DEBUG] setting QEMUPORT=20012
+
+
+
 use OpenQA::Worker::Common;
 use OpenQA::Utils qw(locate_asset log_error log_info log_debug);
 
@@ -177,7 +237,8 @@ sub engine_workit {
         open STDOUT, ">>", "autoinst-log.txt";
         open STDERR, ">&STDOUT";
         #DO (this is where the magic happens)
-        exec "perl", "$isotovideo", '-d';
+        #exec "perl", "$isotovideo", '-d';
+        exec  "su - jail; cd ; build-and-test-wicked-with-slenkins.sh"
         die "exec failed: $!\n";
     }
     else {
