@@ -38,8 +38,8 @@ sub init {
     $nocleanup = $options->{"no-cleanup"};
     $verbose   = $options->{verbose} if defined $options->{verbose};
     #$OpenQA::Worker::Jobs::engine    = "isotovideo";
-    $OpenQA::Worker::Jobs::engine    = "OpenQA::Worker::Engines::" . $options->{engine} if defined $options->{engine};
-    log_debug("worker engine selected: $OpenQA::Worker::Jobs::engine") if $verbose
+    #$OpenQA::Worker::Jobs::engine    = "OpenQA::Worker::Engines::" . $options->{engine} if defined $options->{engine};
+    #log_debug("worker engine selected: $OpenQA::Worker::Jobs::engine") if $verbose
 
 
     OpenQA::Worker::Common::api_init($host_settings, $options);
