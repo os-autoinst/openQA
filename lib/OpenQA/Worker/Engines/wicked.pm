@@ -20,11 +20,6 @@ use warnings;
 
 
 #export epoch_date=$(date +%s)
-#export DISTRI="${DISTRI:-"sle"}"
-#export VERSION="${VERSION:-"12-SP3"}"
-#export ARCH="${ARCH:-"x86_64"}"
-#export FLAVOR="${FLAVOR:-"Server-DVD"}"
-#export MACHINE="${MACHINE:-"64bit"}"
 #export WORKER_CLASS="${WORKER_CLASS:-"zzzz_for_wicked"}"
 #export _GROUP="${_GROUP:-"Network"}"
 #export BUILD="${BUILD:-${epoch_date}}"
@@ -196,6 +191,7 @@ sub engine_workit {
     while (my ($k, $v) = each %{$job->{settings}}) {
         log_debug("setting $k=$v") if $verbose;
         $vars{$k} = $v;
+        $ENV{$k} = $v; #export them to the environment, too
     }
 
     my $shared_cache;
