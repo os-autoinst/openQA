@@ -62,6 +62,10 @@ function renderTestName ( data, type, row ) {
             + highlightJobsHtml(children.Parallel.concat(children.Chained), parents.Parallel.concat(parents.Chained))
             + '><i class="fa fa-code-fork"></i></a>';
         }
+        if (row.comment_count) {
+            html += ' <a href="/tests/' + row.id + '#comments"><i class="test-label label_comment fa fa-comment" title="' + row.comment_count + (row.comment_count != 1 ? ' comments' : ' comment') + ' available"'
+            + '></i></a>';
+        }
 
         if (row.clone)
             html += ' <a href="/tests/' + row.clone + '">(restarted)</a>';
