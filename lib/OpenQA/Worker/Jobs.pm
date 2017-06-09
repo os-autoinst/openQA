@@ -21,7 +21,7 @@ use feature 'state';
 use OpenQA::Worker::Common;
 use OpenQA::Worker::Pool 'clean_pool';
 use OpenQA::Worker::Engines::wicked;
-use OpenQA::Worker::Engines::isotovideo;
+#use OpenQA::Worker::Engines::isotovideo;
 use OpenQA::Utils qw(wait_with_progress log_error log_warning log_debug log_info);
 
 use POSIX qw(strftime SIGTERM);
