@@ -190,6 +190,7 @@ sub engine_workit {
         }
         open STDOUT, ">>", "autoinst-log.txt";
         open STDERR, ">&STDOUT";
+        #DO (this is where the magic happens)
         exec "perl", "$isotovideo", '-d';
         die "exec failed: $!\n";
     }
