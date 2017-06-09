@@ -238,7 +238,8 @@ sub engine_workit {
         open STDERR, ">&STDOUT";
         #DO (this is where the magic happens)
         #exec "perl", "$isotovideo", '-d';
-        exec  "su - jail; cd ; build-and-test-wicked-with-slenkins.sh";
+        #exec  "su - jail; cd ; build-and-test-wicked-with-slenkins.sh";
+        exec  "echo \"ala ma asa\"";
         die "exec failed: $!\n";
     }
     else {
