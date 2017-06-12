@@ -124,11 +124,25 @@ ovs-vsctl add-port br0 tap4 tag=999
 If the workers with TAP capability are spread across multiple hosts, the network must be connected.
 See Open vSwitch http://openvswitch.org/support/config-cookbooks/port-tunneling/[documentation] for details.
 
-Example configuration of GRE tunnel:
+Optionally you can join two (or maybe even more by gre2 and so on) host machines and its ovs bridges together by GRE tunnel to get more workers for one test.
+
+Change remote_ip value correspondingly and run comamand on both hosts:
 [source,sh]
 ----
-ovs-vsctl add-port br0 gre0 -- set interface gre0 type=gre options:remote_ip=<IP address of other host>
+ovs-vsctl add-port br0 gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
 ----
+
+Or by wicked way - call the following script from ifcfg-br0 by +PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"+ entry
+[source,sh]
+----
+# /etc/wicked/scripts/gre_tunnel_preup.sh
+#!/bin/sh
+action="$1"
+bridge="$2"
+ovs-vsctl --may-exist add-port $bridge gre1 -- set interface gre1 type=gre options:remote_ip=<IP address of other host>
+----
+
+NOTE: When using GRE tunnels keep in mind that VMs inside the ovs bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If you are using support_server/setup.pm the MTU will be set automatically to that value on support_server itself and it does MTU advertisement for DHCP clients as well.
 
 The virtual machines need access to os-autoinst webserver acessible
 via IP 10.0.2.2. The IP addresses of VMs are controlled by tests
@@ -179,6 +193,8 @@ OVS_BRIDGE='yes'
 OVS_BRIDGE_PORT_DEVICE_1='tap0'
 OVS_BRIDGE_PORT_DEVICE_2='tap1'
 OVS_BRIDGE_PORT_DEVICE_3='tap2'
+# Following needed for GRE
+PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh"
 ---------------
 
 The IP 10.0.2.2 can also serve as a gateway to access outside
@@ -193,6 +209,9 @@ with SuSEfirewall or iptables.
 FW_ROUTE="yes"
 FW_MASQUERADE="yes"
 FW_DEV_INT="br0"
+# Following needed for GRE
+FW_SERVICES_EXT_IP="GRE"
+FW_SERVICES_EXT_TCP="1723"
 ---------------
 
 Then it is possible to start the os-autoinst-openvswitch.service
