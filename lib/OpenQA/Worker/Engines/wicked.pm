@@ -236,7 +236,7 @@ sub engine_workit {
         #exec "perl", "$isotovideo", '-d';
         #exec  "su - jail; cd ; build-and-test-wicked-with-slenkins.sh";
         #exec  "sudo su - jenkins; cd ; build-and-test-wicked-with-slenkins.sh";
-        exec  "sudo su - jenkins; cd ; echo build-and-test-wicked-with-slenkins.sh";
+        exec  "sudo su - jenkins;  echo Ala ma asa";
         die "exec failed: $!\n";
     }
     else {
