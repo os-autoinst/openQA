@@ -237,7 +237,9 @@ sub engine_workit {
         #exec  "su - jail; cd ; build-and-test-wicked-with-slenkins.sh";
         #exec  "sudo su - jenkins; cd ; build-and-test-wicked-with-slenkins.sh";
         #exec  "sudo su - jenkins;  echo Ala ma asa";
-        exec  "echo Ala ma asa";
+        #exec  "echo Ala ma asa";
+        #exec  "sudo su -c bash -c \"cd ; build-and-test-wicked-with-slenkins.sh\" jenkins ";
+        exec  "sudo su -c bash -c \"echo Ala ma asa; whoami\" jenkins ";
         die "exec failed: $!\n";
     }
     else {
