@@ -4151,12 +4151,39 @@ ovs-vsctl add-port br0 tap4 <span class="tok-nv">tag</span><span class="tok-o">=
 See Open vSwitch <a href="http://openvswitch.org/support/config-cookbooks/port-tunneling/">documentation</a> for details.</p>
 </div>
 <div class="paragraph">
-<p>Example configuration of GRE tunnel:</p>
+<p>Optionally you can join two (or maybe even more by gre2 and so on) host machines and its ovs bridges together by GRE tunnel to get more workers for one test.</p>
+</div>
+<div class="paragraph">
+<p>Change remote_ip value correspondingly and run comamand on both hosts:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="pygments highlight"><code data-lang="sh">ovs-vsctl add-port br0 gre0 -- <span class="tok-nb">set</span> interface gre0 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
+<pre class="pygments highlight"><code data-lang="sh">ovs-vsctl add-port br0 gre1 -- <span class="tok-nb">set</span> interface gre1 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
 </div>
+</div>
+<div class="paragraph">
+<p>Or by wicked way - call the following script from ifcfg-br0 by PRE_UP_SCRIPT="wicked:gre_tunnel_preup.sh" entry</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="pygments highlight"><code data-lang="sh"><span class="tok-c1"># /etc/wicked/scripts/gre_tunnel_preup.sh</span>
+<span class="tok-c1">#!/bin/sh</span>
+<span class="tok-nv">action</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$1</span><span class="tok-s2">&quot;</span>
+<span class="tok-nv">bridge</span><span class="tok-o">=</span><span class="tok-s2">&quot;</span><span class="tok-nv">$2</span><span class="tok-s2">&quot;</span>
+ovs-vsctl --may-exist add-port <span class="tok-nv">$bridge</span> gre1 -- <span class="tok-nb">set</span> interface gre1 <span class="tok-nv">type</span><span class="tok-o">=</span>gre options:remote_ip<span class="tok-o">=</span>&lt;IP address of other host&gt;</code></pre>
+</div>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+When using GRE tunnels keep in mind that VMs inside the ovs bridges have to use MTU=1458 for their physical interfaces (eth0, eth1). If you are using support_server/setup.pm the MTU will be set automatically to that value on support_server itself and it does MTU advertisement for DHCP clients as well.
+</td>
+</tr>
+</table>
 </div>
 <div class="paragraph">
 <p>The virtual machines need access to os-autoinst webserver acessible
@@ -4224,7 +4251,9 @@ In some cases (e.g. on Leap) can be needed to start the OpenvSwitch service befo
 <span class="tok-nv">OVS_BRIDGE</span><span class="tok-o">=</span><span class="tok-s1">&#39;yes&#39;</span>
 <span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_1</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap0&#39;</span>
 <span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_2</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap1&#39;</span>
-<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_3</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap2&#39;</span></code></pre>
+<span class="tok-nv">OVS_BRIDGE_PORT_DEVICE_3</span><span class="tok-o">=</span><span class="tok-s1">&#39;tap2&#39;</span>
+<span class="tok-c1"># Following needed for GRE</span>
+<span class="tok-nv">PRE_UP_SCRIPT</span><span class="tok-o">=</span><span class="tok-s2">&quot;wicked:gre_tunnel_preup.sh&quot;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4239,7 +4268,10 @@ with SuSEfirewall or iptables.</p>
 
 <span class="tok-nv">FW_ROUTE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span>
 <span class="tok-nv">FW_MASQUERADE</span><span class="tok-o">=</span><span class="tok-s2">&quot;yes&quot;</span>
-<span class="tok-nv">FW_DEV_INT</span><span class="tok-o">=</span><span class="tok-s2">&quot;br0&quot;</span></code></pre>
+<span class="tok-nv">FW_DEV_INT</span><span class="tok-o">=</span><span class="tok-s2">&quot;br0&quot;</span>
+<span class="tok-c1"># Following needed for GRE</span>
+<span class="tok-nv">FW_SERVICES_EXT_IP</span><span class="tok-o">=</span><span class="tok-s2">&quot;GRE&quot;</span>
+<span class="tok-nv">FW_SERVICES_EXT_TCP</span><span class="tok-o">=</span><span class="tok-s2">&quot;1723&quot;</span></code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -4851,7 +4883,7 @@ format.</p>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-06-10 10:51:05 UTC
+Last updated 2017-06-12 08:52:20 UTC
 </div>
 </div>
 </body>
