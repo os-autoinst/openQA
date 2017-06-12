@@ -97,6 +97,7 @@ subtest 'create parent group' => sub() {
                 default_size_limit_gb                  => 200,
                 id                                     => $new_id,
                 description                            => undef,
+                build_version_sort                     => 1,
             },
         ],
         'list created parent group'

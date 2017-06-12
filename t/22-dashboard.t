@@ -349,9 +349,11 @@ is(
 
 # helper sub used by next two subtests
 sub check_builds {
-    my ($build_names, $group, $msg) = @_;
-    $get = $t->get_ok('/group_overview/' . $group->id . '?limit_builds=100')->status_is(200);
-    my @h4 = $get->tx->res->dom->find("div.no-children .h4 a")->map('text')->each;
+    my ($build_names, $group, $msg, $parent) = @_;
+    my $route     = $parent ? 'parent_group_overview' : 'group_overview';
+    my $div_class = $parent ? 'children-expanded'     : 'no-children';
+    $get = $t->get_ok("/$route/" . $group->id . '?limit_builds=100')->status_is(200);
+    my @h4 = $get->tx->res->dom->find("div.$div_class .h4 a")->map('text')->each;
     is_deeply(\@h4, $build_names, $msg) || diag explain @h4;
 }
 
@@ -412,5 +414,43 @@ subtest 'job groups with multiple version and builds' => sub {
     @build_names = reverse @build_names;
     check_builds(\@build_names, $group, 'builds shown sorted by job creation time');
 };
+
+subtest 'job parent groups with multiple version and builds' => sub {
+    $test_parent->update({build_version_sort => 1});
+
+    # parent group overview
+    $get = $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
+
+    my @build_names = map { 'Build' . $_ } qw(87.5011 0092 0091 0048@0815 0048 0091);
+    check_builds(\@build_names, $test_parent, 'parent group builds shown sorted by dotted versions',
+        'parent_group_overview');
+
+    $test_parent->update({build_version_sort => 0});
+
+    $get = $t->get_ok('/parent_group_overview/' . $test_parent->id)->status_is(200);
+    @build_names = map { 'Build' . $_ } qw(0091 0091 0092 0048@0815 0048 87.5011);
+    check_builds(\@build_names, $test_parent, 'parent group builds shown sorted by time', 'parent_group_overview');
+
+    my $second_test_parent = $parent_groups->create({name => 'Second test parent', sort_order => 2});
+
+    $get = $t->get_ok('/parent_group_overview/' . $second_test_parent->id)->status_is(200);
+
+    # Create a new parent group and put the job created by the other test into that one.
+    my $multi_version_group = $job_groups->find({name => 'multi version group'});
+    $multi_version_group->update({parent_id => $second_test_parent->id});
+
+    @build_names = map { 'Build' . $_ } qw(0002 0001 2192 2191 0002);
+    check_builds(\@build_names, $second_test_parent, 'parent group builds shown sorted by dotted versions',
+        'parent_group_overview');
+
+    $second_test_parent->update({build_version_sort => 0});
+
+    @build_names = reverse @build_names;
+    check_builds(\@build_names, $second_test_parent, 'parent group builds shown sorted by date',
+        'parent_group_overview');
+
+};
+
+
 
 done_testing;
