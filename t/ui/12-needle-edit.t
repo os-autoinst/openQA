@@ -124,7 +124,7 @@ sub editpage_layout_check() {
     # ENV-VIDEOMODE-text and inst-timezone tag are selected
     is($driver->find_element_by_xpath('//input[@value="inst-timezone"]')->is_selected(), 1, "tag selected");
 
-    # workround property doesn't selected
+    # workaround property isn't selected
     is($driver->find_element_by_id('property_workaround')->is_selected(), 0, "workaround property unselected");
 
     $elem            = $driver->find_element_by_id('needleeditor_textarea');
